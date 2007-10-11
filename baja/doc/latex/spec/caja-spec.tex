@@ -727,9 +727,10 @@ the original.}
 \begin{tabular}{ll}
   Caja expression   & translates to ES3 code equivalent to\\ 
   \hline
-                            & \code{function(\_\_\_OUTERS\_\_\_)\ \{} \\
-  /*caja module body*/      & \code{\ \ } /*translated module body*/ \\
-                            & \code{\}} \\
+                 & \code{\_\_\_.module(function(\_\_\_OUTERS\_\_\_)\ \{} \\
+  /*caja module body*/      
+                 & \code{\ \ } /*translated module body*/ \\
+                 & \code{\});} \\
   \hline
   \code{new F(a\ldots)}     & \code{\_\_\_.callNew(F,[a\ldots])} \\
   \code{this.id\_(a\ldots)} & /*unaltered*/ \\
