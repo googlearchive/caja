@@ -1,0 +1,13 @@
+#TeXlipse project settings
+#Wed Oct 10 22:17:44 PDT 2007
+builderNum=2
+outputDir=out/
+makeIndSty=
+bibrefDir=
+outputFormat=pdf
+tempDir=tmp
+mainTexFile=caja-spec.tex
+outputFile=caja-spec.pdf
+langSpell=en
+markDer=true
+srcDir=spec/

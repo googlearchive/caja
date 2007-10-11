@@ -801,8 +801,8 @@ case it is called as a constructor.}
   \code{hasOwnProp(obj,name)} 
        & \code{return Object.prototype.hasOwnProperty.call(obj,name);} \\
   \code{isJSONContainer(obj)} 
-       & \code{var constr = directConstructor(obj);} \\
-       & \code{return constr === Object || constr === Array;} \\ 
+       & \code{var Constr = directConstructor(obj);} \\
+       & \code{return Constr === Object || Constr === Array;} \\ 
   \code{isFrozen(obj)} 
        & \code{return hasOwnProp(obj,"\_\_\_FROZEN\_\_\_");} \\
   \code{freeze(obj)}*
@@ -823,8 +823,8 @@ case it is called as a constructor.}
   \code{allowSet(obj,name)}* & \code{require(!isFrozen(obj),\ldots);} \\
        & \code{return obj[name+"\_canSet\_\_\_"] = allowEnum(obj,name);} \\
   \hline
-  \code{isCtor(constr)}
-       & \code{return !!constr.\_\_\_CONSTRUCTOR\_\_\_;} \\
+  \code{isCtor(Constr)}
+       & \code{return !!Constr.\_\_\_CONSTRUCTOR\_\_\_;} \\
   \code{isMethod(meth)}
        & \code{return !!meth.\_\_\_METHOD\_OF\_\_\_;} \\
   \code{isMethodOf(meth,receiver)}
@@ -832,24 +832,24 @@ case it is called as a constructor.}
        & \code{\ \ return receiver instanceof meth.\_\_\_METHOD\_OF\_\_\_;} \\
        & \code{\} else\ \{ return !isCtor(meth); \}} \\
   \hline
-  \code{ctor(constr)}*
-       & \code{require(typeof constr === "function",\ldots);} \\
-       & \code{constr.\_\_\_CONSTRUCTOR\_\_\_ = true;} \\
-       & \code{return constr;} /*translator freezes constr later*/ \\
-  \code{method(constr,meth)}*
+  \code{ctor(Constr)}*
+       & \code{require(typeof Constr === "function",\ldots);} \\
+       & \code{Constr.\_\_\_CONSTRUCTOR\_\_\_ = true;} \\
+       & \code{return Constr;} /*translator freezes Constr later*/ \\
+  \code{method(Constr,meth)}*
        & \code{require(typeof meth === "function",\ldots);} \\
-       & \code{require(isCtor(constr),\ldots);} \\
-       & \code{meth.\_\_\_METHOD\_OF\_\_\_ = constr;} \\
+       & \code{require(isCtor(Constr),\ldots);} \\
+       & \code{meth.\_\_\_METHOD\_OF\_\_\_ = Constr;} \\
        & \code{return freeze(meth);} \\
-  \code{wrapMethod(constr,name,meth)}*
-       & \code{require(name in constr.prototype,\ldots);}\\
-       & \code{meth.\_\_\_ORIGINAL\_\_\_ = constr.prototype[name];}\\
-       & \code{constr.prototype[name] = meth;}\\
-       & \code{return method(constr,meth);}\\
+  \code{wrapMethod(Constr,name,meth)}*
+       & \code{require(name in Constr.prototype,\ldots);}\\
+       & \code{meth.\_\_\_ORIGINAL\_\_\_ = Constr.prototype[name];}\\
+       & \code{Constr.prototype[name] = meth;}\\
+       & \code{return method(Constr,meth);}\\
   \hline
-  \code{makeRaw(constr)}
+  \code{makeRaw(Constr)}
        & \code{function F()\ \{ this.\_\_\_RAW\_\_\_ = true; \}} \\
-       & \code{F.prototype = constr.prototype;} \\
+       & \code{F.prototype = Constr.prototype;} \\
        & \code{return new F();} \\
   \code{cookIfRaw(obj)}
        & \code{return delete obj.\_\_\_RAW\_\_\_;} \\
@@ -932,17 +932,17 @@ track the implications of side effects.}
 \begin{tabular}{ll}
   Methods of \code{\_\_\_}  & method body \\ 
   \hline 
-  \code{callNew(constr,args)} 
-       & \code{require(!isMethod(constr),\ldots);} \\
-       & \code{var result = constr.apply(makeRaw(constr), args);} \\
+  \code{callNew(Constr,args)} 
+       & \code{require(!isMethod(Constr),\ldots);} \\
+       & \code{var result = Constr.apply(makeRaw(Constr), args);} \\
        & \code{cookIfRaw(result);} /*remove RAW flag as soon as possible*/ \\
        & \code{return result;} \\
   \hline
-  \code{enterBase(constr,self)}
-       & \code{require(self instanceof constr),\ldots);} \\
+  \code{enterBase(Constr,self)}
+       & \code{require(self instanceof Constr),\ldots);} \\
        & \code{require(cookIfRaw(self),\ldots);} \\
-  \code{enterDerived(constr,self)}
-       & \code{require(self instanceof constr),\ldots);} \\
+  \code{enterDerived(Constr,self)}
+       & \code{require(self instanceof Constr),\ldots);} \\
        & \code{require(isRaw(self),\ldots);} \\
   \code{enterMethod(meth,self)}
        & \code{require(isMethodOf(meth,self),\ldots);} \\
