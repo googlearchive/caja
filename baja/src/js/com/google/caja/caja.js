@@ -158,10 +158,10 @@ var ___;
         
         if (!hasOwnProp('constructor')) { return obj.constructor; }
 
-        var oldConstr = obj.constructor;
+        var OldConstr = obj.constructor;
         if (!(delete obj.constructor)) { return undefined; }
         var result = obj.constructor;
-        obj.constructor = oldConstr;
+        obj.constructor = OldConstr;
         return result;
     }
 
@@ -173,8 +173,8 @@ var ___;
      * expressed in the JSON language.
      */
     function isJSONContainer(obj) {
-        var constr = directConstructor(obj);
-        return constr === Object || constr === Array;
+        var Constr = directConstructor(obj);
+        return Constr === Object || Constr === Array;
     }
 
     /**
@@ -224,8 +224,8 @@ var ___;
         return obj[name+'_canSet___'] = allowEnum(obj,name);
     }
 
-    /** Can Caja code only call constr with <tt>new</tt>? */
-    function isCtor(constr) { return !!constr.___CONSTRUCTOR___; }
+    /** Can Caja code only call Constr with <tt>new</tt>? */
+    function isCtor(Constr) { return !!Constr.___CONSTRUCTOR___; }
 
     /** Can Caja code only call meth as a method? */
     function isMethod(meth) { return !!meth.METHOD_OF; }
@@ -239,24 +239,34 @@ var ___;
         }
     }
 
-    /** Mark constr as something to be called only with <tt>new</tt>. */
-    function ctor(constr,opt_Sup,opt_name) {
-        requireType(constr,'function',opt_name);
-        require(!isMethod(constr), "Methods can't be constructors");
-        constr.___CONSTRUCTOR___ = true;
+    /** Mark Constr as something to be called only with <tt>new</tt>. */
+    function ctor(Constr,opt_Sup,opt_name) {
+        requireType(Constr,'function',opt_name);
+        require(!isMethod(Constr), "Methods can't be constructors");
+        Constr.___CONSTRUCTOR___ = true;
 	if (opt_Sup) {
-	    setSuper(constr,opt_Sup);
+	    setSuper(Constr,opt_Sup);
 	}
-        return constr; // translator freezes constructor later
+        return Constr; // translator freezes constructor later
     }
 
-    /** Mark meth as a method of instances of constr. */
-    function method(constr,meth,opt_name) {
+    /** Mark meth as a method of instances of Constr. */
+    function method(Constr,meth,opt_name) {
         requireType(meth,'function',opt_name);
-        require(isCtor(constr), 'constructor expected: '+constr);
+        require(isCtor(Constr), 'constructor expected: '+Constr);
         require(!isCtor(meth), "constructors can't be methods");
-        meth.___METHOD_OF___ = constr;
+        meth.___METHOD_OF___ = Constr;
         return freeze(meth);
+    }
+
+    /**
+     * For now, just freezes and returns it.
+     * <p>
+     * Will be able to provide the pluginMaker or a made plugin to
+     * some registered callback object.
+     */
+    function module(pluginMaker) {
+	return freeze(pluginMaker);
     }
 
     /**
@@ -272,9 +282,9 @@ var ___;
      * Caja's <tt>new</tt> translates to call makeRaw and pass the
      * result to the actual constructor.
      */
-    function makeRaw(constr) {
+    function makeRaw(Constr) {
         function F() { this.___RAW___ = true; }
-        F.prototype = constr.prototype;
+        F.prototype = Constr.prototype;
         return new F();
     }
 
@@ -464,9 +474,9 @@ var ___;
      * function so that a valid Caja constructor will proceed but a
      * valid Caja method will not.
      */
-    function callNew(constr,args) {
-        require(!isMethod(constr), "Can't 'new' a method");
-        var result = constr.apply(makeRaw(constr), args);
+    function callNew(Constr,args) {
+        require(!isMethod(Constr), "Can't 'new' a method");
+        var result = Constr.apply(makeRaw(Constr), args);
         cookIfRaw(result); // remove RAW flag as soon as possible
         return result;
     }
@@ -480,8 +490,8 @@ var ___;
      * use a constructor to re-initialize an already constructed
      * object.
      */
-    function enterBase(constr,self) {
-        require(self instanceof constr, 'entering stolen constructor');
+    function enterBase(Constr,self) {
+        require(self instanceof Constr, 'entering stolen constructor');
         require(cookIfRaw(self), "Can't call constructor as method");
     }
 
@@ -496,8 +506,8 @@ var ___;
      * the time any of the other constructors see it again, it's
      * already cooking.
      */
-    function enterDerived(constr,self) {
-        require(self instanceof constr, 'entering stolen constructor');
+    function enterDerived(Constr,self) {
+        require(self instanceof Constr, 'entering stolen constructor');
         require(isRaw(self), "Can't call constructor as method");
     }
 
@@ -585,38 +595,38 @@ var ___;
 
     /**
      * Whitelist constr.prototype[name] as a method that can be called
-     * on instances of constr.
+     * on instances of Constr.
      */
-    function allowMethod(constr,name) {
-        allowRead(constr.prototype,name);
-        method(constr,constr.prototype[name],name);
+    function allowMethod(Constr,name) {
+        allowRead(Constr.prototype,name);
+        method(Constr,Constr.prototype[name],name);
     }
 
     /**
-     * Replace the pre-existing constr.prototype[name] with meth,
+     * Replace the pre-existing Constr.prototype[name] with meth,
      * whitelist it, and make the original available to meth as
      * meth.___ORIGINAL___. 
      * <p>
      * This last step is only useful, of course, if meth is written in
      * Javascript, not Caja. 
      */
-    function wrapMethod(constr,name,meth) {
-        require(name in constr.prototype, 'missing: ' + name);
-        meth.___ORIGINAL___ = constr.prototype[name];
-        constr.prototype[name] = meth;
-        allowMethod(constr,name);
+    function wrapMethod(Constr,name,meth) {
+        require(name in Constr.prototype, 'missing: ' + name);
+        meth.___ORIGINAL___ = Constr.prototype[name];
+        Constr.prototype[name] = meth;
+        allowMethod(Constr,name);
     }
 
     /**
-     * Replace constr.prototype[name] with a wrapper that first
+     * Replace Constr.prototype[name] with a wrapper that first
      * verifies that <tt>this</tt> isn't frozen.
      * <p>
      * When a pre-existing Javascript method would mutate its object,
      * we need to wrap it to prevent such mutation from violating Caja
      * semantics.
      */
-    function allowMutator(constr,name) {
-        wrapMethod(constr,name, function newMeth(varargs) {
+    function allowMutator(Constr,name) {
+        wrapMethod(Constr,name, function newMeth(varargs) {
             require(!isFrozen(this), "Can't " + name + ' a frozen object');
             return newMeth.___ORIGINAL___.apply(this,arguments);
         });
@@ -856,6 +866,7 @@ var ___;
         isMethodOf: isMethodOf,
         ctor: ctor,
         method: method,
+	module: module,
         wrapMethod: wrapMethod,
         makeRaw: makeRaw,
 	isRaw: isRaw,
