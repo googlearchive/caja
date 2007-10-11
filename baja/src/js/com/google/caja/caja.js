@@ -684,8 +684,8 @@ var ___;
 
     ctor(Function,Object,'Function'); // seems dangerous, but doesn't add risk
     allowRead(Function.prototype,'prototype');
-    allowMethod(Function,'call');
-    allowMethod(Function,'apply');
+    allowMethod(Function,'call'); // XXX TODO Bug: Need to wrap
+    allowMethod(Function,'apply'); // XXX TODO Bug: Need to wrap
 
 
     ctor(Array,Object,'Array');
