@@ -9,14 +9,17 @@
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    sodipodi:docname="seesaw-pola.svg"
-   sodipodi:docbase="/Users/erights/workspace/capri-spec/src"
+   sodipodi:docbase="/Users/erights/workspace/caja-spec/spec"
    inkscape:version="0.45.1"
    sodipodi:version="0.32"
    id="svg1712"
    height="123.16584"
    width="146.43562"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
-   version="1.0">
+   version="1.0"
+   inkscape:export-filename="/Users/erights/Desktop/oopsla-dls/seesaw-pola.png"
+   inkscape:export-xdpi="629.35999"
+   inkscape:export-ydpi="629.35999">
   <defs
      id="defs3">
     <marker
@@ -108,7 +111,7 @@
      gridspacingx="8.0000000px"
      showgrid="true"
      inkscape:window-y="22"
-     inkscape:window-x="1440"
+     inkscape:window-x="257"
      inkscape:window-height="808"
      inkscape:window-width="1183"
      inkscape:current-layer="layer1"

@@ -660,6 +660,69 @@ TODO To be written
 
 \section{Examples}
 
+\begin{figure}
+\begin{alltt}
+function Brand(name) \{
+  caja.requireType(name,'string');
+  var flag = false;
+  var squirrel = null;
+
+  function Sealer(payload) \{
+    return function Box() \{
+      squirrel = payload;
+      flag = true;
+    \}
+  \}
+  function Unsealer(box) \{
+    flag = false; squirrel = null;
+    box();
+    caja.require(flag,\ldots);
+    return squirrel;
+  \}
+  return caja.freeze(\{
+    seal: Sealer,
+    unseal: Unsealer
+  \});
+\}
+\end{alltt}
+
+\caption[Rights Amplification]{Rights Amplification. xxx}
+\label{fig:rights-amp}
+\end{figure}
+
+\begin{figure}
+\begin{alltt}
+function Mint(name) \{
+  caja.requireType(name,'string');
+  var brand = Brand(name);
+  return function Purse(balance) \{
+    caja.requireNat(balance);
+    function decr(amount) \{
+      caja.requireNat(amount);
+      balance = 
+        caja.requireNat(balance - amount);
+    \}
+    return caja.freeze(\{
+      getBalance: function() \{
+        return balance; \},
+      makePurse:  function() \{
+        return Purse(0); \},
+      getDecr:    function() \{
+        return brand.seal(decr); \},
+      deposit: function(amount,src) \{
+        var box = src.getDecr();
+        brand.unseal(box)(amount);
+        balance += amount;
+      \}
+    \});
+  \}
+\}
+\end{alltt}
+
+\caption[The MintMaker Example]{The MintMaker Example. xxx}
+\label{fig:mintmaker}
+\end{figure}
+
 TODO To be written
 
 \section{The Caja translator}
@@ -674,7 +737,8 @@ TODO To be written
 
 We thank 
 Dirk Balfanz,
-Doug Crockford.
+Doug Crockford,
+Jed Donnelley.
 
 \appendix
 
@@ -754,16 +818,16 @@ the original.}
   \code{new F(a\ldots)}     & \code{\_\_\_.callNew(F,[a\ldots])} \\
   \code{this.id\_(a\ldots)} & /*unaltered*/ \\
   \code{this.id(a\ldots)} 
-                 & \code{\_\_\_.readProp(this,"id").call(this,a\ldots)} \\
+               & \code{\_\_\_.readProp(this,"id").call\_\_\_(this,a\ldots)} \\
   \code{foo.id(a\ldots)}  
-                 & \code{\_\_\_.readPub(foo,"id").call(foo,a\ldots)} \\
-  \code{foo(a\ldots)}       & \code{foo.call(\_\_\_.USELESS,a\ldots)} \\
+                 & \code{\_\_\_.readPub(foo,"id").call\_\_\_(foo,a\ldots)} \\
+  \code{foo(a\ldots)}       & \code{foo.call\_\_\_(\_\_\_.USELESS,a\ldots)} \\
   \hline
   \code{function F(a\ldots)\ \{}  
                  & \code{var F = \_\_\_.ctor(function(a\ldots)\ \{} \\
                  & \code{\ \ \_\_\_.enterDerived(F,this);} \\
   \code{\ \ F.Super.call(this,b\ldots);}
-                 & \code{\ \ F.Super.call(this,b\ldots);} \\
+                 & \code{\ \ F.Super.call\_\_\_(this,b\ldots);} \\
   \code{\ \ \ldots this\ldots\}}
                  & \code{\ \ \ldots this\ldots\})} \\
   \hline
@@ -968,7 +1032,7 @@ track the implications of side effects.}
        & \code{require(!cookIfRaw(self),\ldots);} \\
   \hline
   \code{args(original)}
-       & \code{return freeze(Array.prototype.slice.call(original,0));}
+       & \code{return freeze(Array.prototype.slice.call\_\_\_(original,0));}
 \end{tabular}
 
 \caption[Context Switching.]{Context Switching. Javascript code must not use 
