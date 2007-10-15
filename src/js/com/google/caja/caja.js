@@ -111,6 +111,17 @@ var ___;
                                  ' instead of ' + typeof specimen +
                                  ': ' + (opt_name||specimen));
         });
+	return specimen;
+    }
+
+    function requireNat(specimen) {
+        requireType(specimen,'number');
+        require(Math.floor(specimen) === specimen,
+                'Must be integral: '+specimen);
+        require(specimen >= 0,'Must not be negative: '+specimen);
+        require(Math.floor(specimen-1) === specimen-1,
+                'Beyond precision limit: '+specimen);
+	return specimen;
     }
 
     /**
@@ -125,6 +136,26 @@ var ___;
             (str.substring(strLen-sufLen,strLen) === suffix);
     }
 
+    Function.prototype.apply___ = Function.prototype.apply;
+    Function.prototype.apply = function(self,args) {
+        require(typeof self === 'object',
+                'Can only apply() with object: '+self+'/'+this+'/'+args);
+        require(self !== null,"Can't apply() with null");
+        // XXX TODO Bug: Allowing self to have a valueOf() opens a
+        // security hole in Firefox. But disallowing it breaks all
+        // objects, such as Object("foo"), that legitimately have a
+        // valueOf() method. Help!
+        //
+        // require(!('valueOf' in self),
+        //         'Apply() with valueOf() broken on Firefox');
+        return this.apply___(self,args);
+    };
+    Function.prototype.call___ = Function.prototype.call;
+    Function.prototype.call = function(self,varargs) {
+        var args = Array.prototype.slice.call___(arguments,1);
+        return this.apply(self,args);
+    };
+
     var originalHOP_ = Object.prototype.hasOwnProperty;
 
     /**
@@ -132,7 +163,7 @@ var ___;
      * <tt>obj.hasOwnProperty(prop)</tt> would normally mean in an
      * unmodified Javascript system.
      */
-    function hasOwnProp(obj,name) { return originalHOP_.call(obj,name); }
+    function hasOwnProp(obj,name) { return originalHOP_.call___(obj,name); }
 
     /**
      * Returns the 'constructor' property of obj's prototype.
@@ -148,18 +179,18 @@ var ___;
     function directConstructor(obj) {
         if (obj === null) { return undefined; }
         if (typeof obj !== 'object') {
-	    // Note that functions thereby return undefined,
-	    // so directConstructor() doesn't provide access to the
-	    // forbidden Function constructor.
+            // Note that functions thereby return undefined,
+            // so directConstructor() doesn't provide access to the
+            // forbidden Function constructor.
             return undefined;
         }
         // The following test will always return false in IE
         if ('__proto__' in obj) { 
-	    if (obj.__proto__ === null) { return undefined; }
-	    return obj.__proto__.constructor; 
-	}
+            if (obj.__proto__ === null) { return undefined; }
+            return obj.__proto__.constructor; 
+        }
         
-        if (!hasOwnProp('constructor')) { return obj.constructor; }
+        if (!hasOwnProp(obj,'constructor')) { return obj.constructor; }
 
         var OldConstr = obj.constructor;
         if (!(delete obj.constructor)) { return undefined; }
@@ -247,9 +278,9 @@ var ___;
         requireType(Constr,'function',opt_name);
         require(!isMethod(Constr), "Methods can't be constructors");
         Constr.___CONSTRUCTOR___ = true;
-	if (opt_Sup) {
-	    setSuper(Constr,opt_Sup);
-	}
+        if (opt_Sup) {
+            setSuper(Constr,opt_Sup);
+        }
         return Constr; // translator freezes constructor later
     }
 
@@ -269,7 +300,7 @@ var ___;
      * some registered callback object.
      */
     function module(pluginMaker) {
-	return freeze(pluginMaker);
+        return freeze(pluginMaker);
     }
 
     /**
@@ -479,7 +510,7 @@ var ___;
      */
     function callNew(Constr,args) {
         require(!isMethod(Constr), "Can't 'new' a method");
-        var result = Constr.apply(makeRaw(Constr), args);
+        var result = Constr.apply___(makeRaw(Constr), args);
         cookIfRaw(result); // remove RAW flag as soon as possible
         return result;
     }
@@ -537,7 +568,7 @@ var ___;
      * function.
      */
     function args(original) {
-        return freeze(Array.prototype.slice.call(original,0));
+        return freeze(Array.prototype.slice.call___(original,0));
     }
 
     /**
@@ -550,11 +581,17 @@ var ___;
      * relationships between Javascript constructors.
      */
     function setSuper(Sub,Sup) {
-	require(isCtor(Sub),'Only a constructor can inherit');
-	require(isCtor(Sup),'Can only inherit from a constructor');
-	require(!hasOwnProp(Sub,'Super'),"Can't inherit twice");
-	require(!isFrozen(Sub),'Sub constructor already frozen');
-	return Sub.Super = Sup;
+        requireType(Sub,'function');
+        require(!isMethod(Sub),"A method can't inherit");
+        require(isCtor(Sup),'Can only inherit from a constructor');
+        require(!hasOwnProp(Sub,'Super'),"Can't inherit twice");
+        require(!isFrozen(Sub),'Sub constructor already frozen');
+        // XXX possible vulnerability: setSuper does *not* mark Sub as
+        // a constructor, so that a pure function can be on the left
+        // of a def and can be a method, such as Brand(foo).seal(..).
+        //
+        // Sub.___CONSTRUCTOR___ = true;
+        return Sub.Super = Sup;
     }
 
     /**
@@ -569,31 +606,35 @@ var ___;
      * Sub.prototype and Sub itself.
      */
     function def(Sub,opt_Sup,opt_members,opt_statics) {
-	var Sup = opt_Sup || Object;
-	var members = opt_members || {};
-	var statics = opt_statics || {};
-	require(!('Super' in statics),
-		'The static name "Super" is reserved '+
-		'for the super-constructor');
+        var Sup = opt_Sup || Object;
+        var members = opt_members || {};
+        var statics = opt_statics || {};
+        require(!('Super' in statics),
+                'The static name "Super" is reserved '+
+                'for the super-constructor');
 
-	setSuper(Sub,Sup);
-	function PseudoSuper() {}
-	PseudoSuper.prototype = Sup.prototype;
-	Sub.prototype = new PseudoSuper();
-	Sub.prototype.constructor = Sub;
+        setSuper(Sub,Sup);
+        function PseudoSuper() {}
+        PseudoSuper.prototype = Sup.prototype;
+        Sub.prototype = new PseudoSuper();
+        Sub.prototype.constructor = Sub;
 
-	for (var mname in members) {
-	    if (canEnumPub(members,mname)) {
-		setPub(Sub.prototype,mname,readPub(members,mname));
-	    }
-	}
-	for (var sname in statics) {
-	    if (canEnumPub(statics,sname)) {
-		setPub(Sub,sname,readPub(statics,sname));
-	    }
-	}
-	freeze(Sub.prototype);
-	return freeze(Sub);
+        for (var mname in members) {
+            if (canEnumPub(members,mname)) {
+                // XXX Possible vulnerability: setProp vs setPub
+                setProp(Sub.prototype,mname,readPub(members,mname));
+            }
+        }
+        for (var sname in statics) {
+            if (canEnumPub(statics,sname)) {
+                // XXX Possible vulnerability: setProp vs setPub
+                setProp(Sub,sname,readPub(statics,sname));
+            }
+        }
+        freeze(Sub.prototype);
+        freeze(Sub);
+
+        // TODO return a builder object that allows further initialization.
     }
 
     /**
@@ -631,7 +672,7 @@ var ___;
     function allowMutator(Constr,name) {
         wrapMethod(Constr,name, function newMeth(varargs) {
             require(!isFrozen(this), "Can't " + name + ' a frozen object');
-            return newMeth.___ORIGINAL___.apply(this,arguments);
+            return newMeth.___ORIGINAL___.apply___(this,arguments);
         });
     }
 
@@ -681,14 +722,14 @@ var ___;
         return canReadPub(this,name) && hasOwnProp(this,name);
     });
     wrapMethod(Object,'propertyIsEnumerable', function pie(name) {
-        return canReadPub(this,name) && pie.___ORIGINAL___.call(this,name);
+        return canReadPub(this,name) && pie.___ORIGINAL___.call___(this,name);
     });
 
 
     ctor(Function,Object,'Function'); // seems dangerous, but doesn't add risk
     allowRead(Function.prototype,'prototype');
-    allowMethod(Function,'call'); // XXX TODO Bug: Need to wrap
-    allowMethod(Function,'apply'); // XXX TODO Bug: Need to wrap
+    allowMethod(Function,'apply');
+    allowMethod(Function,'call');
 
 
     ctor(Array,Object,'Array');
@@ -709,19 +750,19 @@ var ___;
     ]);
     wrapMethod(String,'match', function match(regexp) {
         requireMatchable(regexp);
-        return match.___ORIGINAL___.call(this,regexp);
+        return match.___ORIGINAL___.call___(this,regexp);
     });
     wrapMethod(String,'replace', function replace(searchValue,replaceValue) {
         requireMatchable(searchValue);
-        return replace.___ORIGINAL___.call(this,searchValue,replaceValue);
+        return replace.___ORIGINAL___.call___(this,searchValue,replaceValue);
     });
     wrapMethod(String,'search', function search(regexp) {
         requireMatchable(regexp);
-        return search.___ORIGINAL___.call(this,regexp);
+        return search.___ORIGINAL___.call___(this,regexp);
     });
     wrapMethod(String,'split', function split(separator,limit) {
         requireMatchable(separator);
-        return split.___ORIGINAL___.call(this,separator,limit);
+        return split.___ORIGINAL___.call___(this,separator,limit);
     });
 
 
@@ -781,7 +822,11 @@ var ___;
     
 
     caja = freeze({
-	directConstructor: directConstructor,
+        require: require,
+        requireType: requireType,
+        requireNat: requireNat,
+
+        directConstructor: directConstructor,
         isJSONContainer: isJSONContainer,
         isFrozen: isFrozen,
         freeze: freeze,
@@ -796,11 +841,11 @@ var ___;
         setPub: setPub,
         deletePub: deletePub,
 
-	def: def,
+        def: def,
     });
 
     var whitelist = {
-	caja: caja,
+        caja: caja,
 
         null: null,
         false: false,
@@ -853,8 +898,11 @@ var ___;
 
     ___ = freeze({
         require: require,
+        requireType: requireType,
+        requireNat: requireNat,
+
         hasOwnProp: hasOwnProp,
-	directConstructor: directConstructor,
+        directConstructor: directConstructor,
         isJSONContainer: isJSONContainer,
         isFrozen: isFrozen,
         freeze: freeze,
@@ -869,10 +917,10 @@ var ___;
         isMethodOf: isMethodOf,
         ctor: ctor,
         method: method,
-	module: module,
+        module: module,
         wrapMethod: wrapMethod,
         makeRaw: makeRaw,
-	isRaw: isRaw,
+        isRaw: isRaw,
         cookIfRaw: cookIfRaw,
 
         canReadProp: canReadProp,
@@ -892,17 +940,17 @@ var ___;
         enterBase: enterBase,
         enterDerived: enterDerived,
         enterMethod: enterMethod,
-	args: args,
+        args: args,
 
-	setSuper: setSuper,
-	def: def,
-	
-	allowMethod: allowMethod,
-	wrapMethod: wrapMethod,
-	allowMutator: allowMutator,
-	requireMatchable: requireMatchable,
-	all2: all2,
+        setSuper: setSuper,
+        def: def,
+        
+        allowMethod: allowMethod,
+        wrapMethod: wrapMethod,
+        allowMutator: allowMutator,
+        requireMatchable: requireMatchable,
+        all2: all2,
 
-	USELESS: USELESS
+        USELESS: USELESS
     });
 })();
