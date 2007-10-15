@@ -1,5 +1,5 @@
 /*
-    safe-json.js
+    JSON.js
     2007-10-02
 
     Based on Doug Crockford's Public Domain
@@ -15,18 +15,18 @@ This file adds these methods to JavaScript:
             json.js library on normal JSON objects. However, they
             provide different hooks for having their behavior extended.
 
-            For json.js, other objects can provide their own implementation
-            of toJSONString(), in which case JSON serialization relies
-            on these objects to return a correct JSON string. If an
-            object instead returns an unbalanced part of a JSON
-            string and another object returns a compensating
-            unbalanced string, then an outer toJSONString() can
-            produce quoting confusions that invite XSS-like
-            attacks. The primary purpose of safe-json.js is to
-            prevent such attacks. 
+            For json.js, other objects can provide their own
+            implementation of toJSONString(), in which case JSON
+            serialization relies on these objects to return a correct
+            JSON string. But if one object instead returns an
+            unbalanced part of a JSON string and another object
+            returns a compensating unbalanced string, then an outer
+            toJSONString() can produce quoting confusions that invite
+            XSS-like attacks. The primary purpose of JSON.js is
+            to prevent such attacks.
 
-            The design of safe-json.js borrows ideas from Java's
-            object serialization streams. 
+            The design of JSON.js borrows ideas from Java's object
+            serialization streams.
 
         JSON.unserialize(string, optFilter)
 
@@ -92,9 +92,10 @@ party code into your pages.
 
 
 /**
-  * Like the date.toJSONString() method defined in json.js, except
-  * without the surrounding quotes.
-  */
+ * Like the date.toJSONString() method defined in json.js, except
+ * without the surrounding quotes. This should be identical to
+ * Date.prototype.toISOString when that is defined, as it is in caja.js
+ */
 Date.prototype.toJSON = function () {
     function f(n) {
         return n < 10 ? '0' + n : n;
@@ -111,25 +112,25 @@ Date.prototype.toJSON = function () {
 JSON = (function () {
 
     function defaultFilter(baseObj, key) {
-	var result;
+        var result;
 
-	if (typeof key === 'string') {
-	    if (!Object.prototype.hasOwnProperty.call(baseObj, key)) {
-		return undefined;
-	    }
-	} else if (typeof key === 'number') {
-	    if (!(baseObj instanceof Array)) {
-		return undefined;
-	    }
-	} else {
-	    return undefined;
-	}
-	result = baseObj[key];
-	if (typeof result.toJSON === 'function') {
-	    return result.toJSON();
-	} else {
-	    return result;
-	}
+        if (typeof key === 'string') {
+            if (!Object.prototype.hasOwnProperty.call(baseObj, key)) {
+                return undefined;
+            }
+        } else if (typeof key === 'number') {
+            if (!(baseObj instanceof Array)) {
+                return undefined;
+            }
+        } else {
+            return undefined;
+        }
+        result = baseObj[key];
+        if (typeof result.toJSON === 'function') {
+            return result.toJSON();
+        } else {
+            return result;
+        }
     }
     
     /** m is a table of character substitutions. */
@@ -144,117 +145,104 @@ JSON = (function () {
     };
 
     return {
-	defaultFilter: defaultFilter,
+        defaultFilter: defaultFilter,
 
         serialize: function(value, optFilter) {
             var out = []; // array holding partial texts
-	    var stack = []; // for diagnosing cycles
-	    var filter = optFilter || defaultFilter;
+            // var stack = []; // for diagnosing cycles
+            var filter = optFilter || defaultFilter;
 
-	    /**
+            /**
              * The internal recursive serialization function.
              */
-	    function serialize(value) {
-		var i,j; // loop counters
-		var len; // array lengths;
-		var needComma = false;
-		var k,v; // property key and value
-		
-		stack.push(value);
-		if (stack.length === 10000) {
-		    // N squared algorith to look for cycles, so don't
-		    // try unless we're already in trouble.
-		    len = stack.length;
-		    for (i = 1; i < len; i += 1) {
-			for (j = 0; j < i; j += 1) {
-			    if (stack[i] === stack[j]) {
-				throw new CycleError(i, j, stack[i]);
-			    }
-			}
-		    }
-		    throw new TooDeepError();
-		}
-		
-		switch (typeof value) {
-		case 'object':
-		    if (value === null) {
-			out.push('null');
-			
-		    } else if (value instanceof Array) {
-			len = value.length;
-			out.push('[');
-			for (i = 1; i < len; i += 1) {
-			    v = filter(value, i);
-			    if (v !== undefined) {
-				if (needComma) {
-				    out.push(',');
-				} else {
-				    needComma = true;
-				}
-				serialize(v);
-			    }
-			}
-			out.push(']');
-			
-		    } else {
-			out.push('{');
-			for (k in value) {
-			    v = filter(value, k);
-			    if (v !== undefined) {
-				if (needComma) {
-				    out.push(',');
-				} else {
-				    needComma = true;
-				}
-				serialize(k);
-				out.push(':');
-				serialize(v);
-			    }
-			}
-			out.push('}');
-		    }
-		    break;
+            function serialize(value) {
+                var i,j; // loop counters
+                var len; // array lengths;
+                var needComma = false;
+                var k,v; // property key and value
+                
+                // stack.push(value);
+                
+                switch (typeof value) {
+                case 'object':
+                    if (value === null) {
+                        out.push('null');
+                        
+                    } else if (value instanceof Array) {
+                        len = value.length;
+                        out.push('[');
+                        for (i = 1; i < len; i += 1) {
+                            v = filter(value, i);
+                            if (v !== undefined) {
+                                if (needComma) {
+                                    out.push(',');
+                                } else {
+                                    needComma = true;
+                                }
+                                serialize(v);
+                            }
+                        }
+                        out.push(']');
+                        
+                    } else {
+                        out.push('{');
+                        for (k in value) {
+                            v = filter(value, k);
+                            if (v !== undefined) {
+                                if (needComma) {
+                                    out.push(',');
+                                } else {
+                                    needComma = true;
+                                }
+                                serialize(k);
+                                out.push(':');
+                                serialize(v);
+                            }
+                        }
+                        out.push('}');
+                    }
+                    break;
                     
-		case 'string':
-		    // If the string contains no control characters, no quote
-		    // characters, and no backslash characters, then we can
-		    // simply slap some quotes around it.  Otherwise we must
-		    // also replace the offending characters with safe
-		    // sequences.
-		    if ((/["\\\x00-\x1f]/).test(value)) { //"])){
-			out.push('"' + 
-				 value.replace((/[\x00-\x1f\\"]/g), //"]),
-					       function (a) {
+                case 'string':
+                    // If the string contains no control characters, no quote
+                    // characters, and no backslash characters, then we can
+                    // simply slap some quotes around it.  Otherwise we must
+                    // also replace the offending characters with safe
+                    // sequences.
+                    if ((/["\\\x00-\x1f]/).test(value)) { //"])){
+                        out.push('"' + 
+                                 value.replace((/[\x00-\x1f\\"]/g), //"]),
+                                               function (a) {
                             var c = m[a];
-	                    if (c) {
-				return c;
-			    }
-	                    c = a.charCodeAt();
-	                    return '\\u00' + Math.floor(c / 16).toString(16) +
-						       (c % 16).toString(16);
-	                }) + '"');
-		    } else {
-			out.push('"' + value + '"');
-		    }
-		    break;
+                            if (c) {
+                                return c;
+                            }
+                            c = a.charCodeAt();
+                            return '\\u00' + Math.floor(c / 16).toString(16) +
+                                                       (c % 16).toString(16);
+                        }) + '"');
+                    } else {
+                        out.push('"' + value + '"');
+                    }
+                    break;
 
-		case 'number':
-		    // JSON numbers must be finite. Encode non-finite numbers
-		    // as null. 
-		    out.push(isFinite(this) ? String(this) : 'null');
-		    break;
+                case 'number':
+                    // JSON numbers must be finite. Encode non-finite numbers
+                    // as null. 
+                    out.push(isFinite(this) ? String(this) : 'null');
+                    break;
 
-		case 'boolean':
-		    out.push(String(value));
-		    break;
+                case 'boolean':
+                    out.push(String(value));
+                    break;
 
-		default:
-		    out.push('null');
-		}
-		stack.pop();
-	    }
+                default:
+                    out.push('null');
+                }
+                // stack.pop();
+            }
 
-	    var fakeRoot = [value];
+            var fakeRoot = [value];
             serialize(filter(fakeRoot, 0));
             return out.join('');
         },
@@ -263,35 +251,35 @@ JSON = (function () {
 
             var result;
             
-	    function walk(value) {
-		var i,len,k,v;
+            function walk(value) {
+                var i,len,k,v;
 
-		if (value && typeof value === 'object') {
-		    if (value instanceof Array) {
-			len = value.length;
-			for (i = 0; i < len; i += 1) {
-			    walk(value[i]);
-			    v = optFilter(value, i);
-			    if (v === undefined) {
-				delete value[i];
-			    } else {
-				value[i] = v;
-			    }
-			}
-		    } else {
-			for (k in value) {
-			    walk(value[k]);
-			    v = optFilter(value, k);
-			    if (v === undefined) {
-				delete value[k];
-			    } else {
-				value[k] = v;
-			    }
-			}
-		    }
-		}
-		
-	    }
+                if (value && typeof value === 'object') {
+                    if (value instanceof Array) {
+                        len = value.length;
+                        for (i = 0; i < len; i += 1) {
+                            walk(value[i]);
+                            v = optFilter(value, i);
+                            if (v === undefined) {
+                                delete value[i];
+                            } else {
+                                value[i] = v;
+                            }
+                        }
+                    } else {
+                        for (k in value) {
+                            walk(value[k]);
+                            v = optFilter(value, k);
+                            if (v === undefined) {
+                                delete value[k];
+                            } else {
+                                value[k] = v;
+                            }
+                        }
+                    }
+                }
+                
+            }
 
             if ((/^[,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]*$/).
                 test(str.
@@ -299,14 +287,14 @@ JSON = (function () {
                      replace((/"[^"\\\n\r]*"/g), ''))) { //"))) {
                 result = eval('(' + str + ')');
                 if (optFilter) {
-		    var fakeRoot = [result];
-		    walk(fakeRoot);
-		    return fakeRoot[0];
-		} else {
-		    return result;
-		}
+                    var fakeRoot = [result];
+                    walk(fakeRoot);
+                    return fakeRoot[0];
+                } else {
+                    return result;
+                }
             }
-	    throw new SyntaxError('parseJSON');
-	}
+            throw new SyntaxError('parseJSON');
+        }
     };
 })();
