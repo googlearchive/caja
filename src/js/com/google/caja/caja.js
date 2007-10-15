@@ -143,11 +143,14 @@ var ___;
      * platform (like Firefox) in which this reliably gives us obj's
      * prototype.
      * <p>
-     * If obj is not an object or function, return undefined.
+     * If obj is a function or not an object, return undefined.
      */
     function directConstructor(obj) {
         if (obj === null) { return undefined; }
-        if (typeof obj !== 'object' && typeof obj !== 'function') {
+        if (typeof obj !== 'object') {
+	    // Note that functions thereby return undefined,
+	    // so directConstructor() doesn't provide access to the
+	    // forbidden Function constructor.
             return undefined;
         }
         // The following test will always return false in IE
