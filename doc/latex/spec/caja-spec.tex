@@ -744,6 +744,8 @@ Jed Donnelley.
 
 \section{Tables}
 
+\subsection{Property access}
+
 \begin{table*}
 \begin{tabular}{ll}
   Caja expression    & translates to ES3 code equivalent to\\ 
@@ -756,10 +758,8 @@ Jed Donnelley.
   \code{glob\_}      & /*rejected in all positions*/ \\        
   \hline
   \code{this.id\_}   & /*unaltered*/ \\
-  \code{this.id}
-    & \code{this.id\_canRead\_\_\_ ?\ this.id :\ \_\_\_.readProp(this,"id")}\\
-  \code{foo.id}
-    & \code{foo.id\_canRead\_\_\_ ?\ foo.id :\ \_\_\_.readPub(foo,"id")} \\
+  \code{this.id}     & \code{\_\_\_.readProp(this,"id")}\\
+  \code{foo.id}      & \code{\_\_\_.readPub(foo,"id")} \\
   \code{this[bar]}   & \code{\_\_\_.readProp(this,bar)} \\
   \code{foo[bar]}    & \code{\_\_\_.readPub(foo,bar)}  \\
   \code{glob}        & \code{\_\_\_OUTERS\_\_\_.glob} \\
@@ -773,12 +773,8 @@ Jed Donnelley.
   \code{for (key in foo)\ \{\ldots\}}  
     & \code{for (key in foo)\ \{if (canEnumPub(foo,key))\ \{\ldots\}\}} \\
   \hline
-  \code{this.id = baz}    
-    & \code{this.id\_canSet\_\_\_ ?\ (this.id = baz) :\
-\_\_\_.setProp(this,"id",baz)} \\
-  \code{foo.id = baz}     
-    & \code{foo.id\_canSet\_\_\_ ?\ (foo.id = baz) :\
-\_\_\_.setPub(foo,"id",baz)} \\
+  \code{this.id = baz}    & \code{\_\_\_.setProp(this,"id",baz)} \\
+  \code{foo.id = baz}     & \code{\_\_\_.setPub(foo,"id",baz)} \\
   \code{this[bar] = baz}  & \code{\_\_\_.setProp(this,bar,baz)} \\
   \code{foo[bar] = baz}   & \code{\_\_\_.setPub(foo,bar,baz)} \\
   \code{glob = baz}       & \code{\_\_\_OUTERS\_\_\_.glob = baz} \\
@@ -808,6 +804,165 @@ the original.}
 
 \begin{table*}
 \begin{tabular}{ll}
+  Methods of \code{\_\_\_}  & method body \\ 
+  \hline 
+  \code{require(test,complaint)}
+       & \code{if (test)\ \{ return true; \}} \\
+       & \code{throw new CajaRuntimeError(complaint);} \\
+  \hline
+  \code{canRead(obj,name)}  
+       & \code{return !!(obj[name+"\_flags\_\_\_"] \& \_\_\_.CAN\_READ);} \\
+  \code{canEnum(obj,name)}
+       & \code{return !!(obj[name+"\_flags\_\_\_"] \& \_\_\_.CAN\_ENUM);} \\
+  \code{canCall(obj,name)}
+       & \code{return !!(obj[name+"\_flags\_\_\_"] \& \_\_\_.CAN\_CALL);} \\
+  \code{canSet(obj,name)}
+       & \code{return !!(obj[name+"\_flags\_\_\_"] \& \_\_\_.CAN\_SET);} \\
+  \code{canDelete(obj,name)}
+       & \code{return !!(obj[name+"\_flags\_\_\_"] \& \_\_\_.CAN\_DELETE);} \\
+  \hline
+  \code{allowRead(obj,name)}* 
+       & \code{obj[name+"\_flags\_\_\_"] |= \_\_\_.CAN\_READ;} \\
+  \code{allowEnum(obj,name)}* 
+       & \code{obj[name+"\_flags\_\_\_"] |= (\_\_\_.CAN\_ENUM | \_\_\_.CAN\_READ);} \\
+  \code{allowCall(obj,name)}* 
+       & \code{obj[name+"\_flags\_\_\_"] |= \_\_\_.CAN\_CALL;} \\
+  \code{allowSet(obj,name)}* 
+       & \code{require(!isFrozen(obj),\ldots);} \\
+       & \code{obj[name+"\_flags\_\_\_"] \&= \~\_\_\_.CAN\_CALL;} \\
+       & \code{obj[name+"\_flags\_\_\_"] |= }\\
+       & \code{\ \ (\_\_\_.CAN\_SET | \_\_\_.CAN\_ENUM | \_\_\_.CAN\_READ);}\\ 
+  \code{allowDelete(obj,name)}* 
+       & \code{require(!isFrozen(obj),\ldots);} \\
+       & \code{obj[name+"\_flags\_\_\_"] |= \_\_\_.CAN\_DELETE;} \\
+       & /*other bookkeeping yet to be determined*/ \\
+  \hline 
+  \code{hasOwnProp(obj,name)} 
+       & \code{return Object.prototype.hasOwnProperty.call(obj,name);} \\
+  \code{isJSONContainer(obj)} 
+       & \code{var Constr = directConstructor(obj);} \\
+       & \code{return Constr === Object || Constr === Array;} \\ 
+  \code{isFrozen(obj)} 
+       & \code{return hasOwnProp(obj,"\_\_\_FROZEN\_\_\_");} \\
+  \code{freeze(obj)}*
+       & \code{for (k in obj)\ \{} \\
+       & \code{\ \ if (endsWith(k,"\_flags\_\_\_"))\ \{}\\
+       & \code{\ \ \ \ obj[k] \&= (\~\_\_\_.CAN\_SET \& \~\_\_\_.CAN\_DELETE);}\\ 
+       & \code{\ \ \}} \\
+       & \code{\}} \\
+       & \code{obj.\_\_\_FROZEN\_\_\_ = true;} \\
+       & \code{return obj;} \\
+\end{tabular}
+
+\caption[Hidden Attributes.]{Hidden Attributes. These methods handle the 
+concrete representations of object and property attributes. Only the methods 
+marked with a * should called by Javascript code during initialization of the 
+embedding app, in order to express taming decisions. All objects that are 
+reachable from the ES3 shared scope should be frozen, so that this shared 
+scope becomes transitively read-only to all Caja code.}
+\label{tab:hide-attr}
+\end{table*}
+
+\begin{table*}
+\begin{tabular}{ll}
+  Methods of \code{\_\_\_}  & method body \\ 
+  \hline 
+  \code{canReadProp(self,name)}
+       & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
+       & \code{return canRead(self,name);} \\
+  \code{readProp(self,name)}
+       & \code{return canReadProp(self,name) ?\ self[name] :\ undefined;} \\
+  \code{canReadPub(obj,name)}
+       & \code{if (endWith(name,"\_"))\ \{ return false; \}} \\
+       & \code{if (canRead(obj,name))\ \{ return true; \}} \\
+       & \code{if (!isJSONContainer(obj))\ \{ return false; \}} \\
+       & \code{if (!hasOwnProp(obj,name))\ \{ return false; \}} \\
+       & \code{return allowRead(obj,name);} /*memoize*/ \\
+  \code{readPub(obj,name)}
+       & \code{return canReadPub(obj,name) ?\ obj[name] :\ undefined;} \\
+  \hline
+  \code{canEnumProp(self,name)} 
+       & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
+       & \code{return canEnum(self,name);} \\
+  \code{canEnumPub(obj,name)}
+       & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
+       & \code{if (canEnum(obj,name))\ \{ return true; \}} \\
+       & \code{if (!isJSONContainer(obj))\ \{ return false; \}} \\
+       & \code{if (!hasOwnProp(obj,name))\ \{ return false; \}} \\
+       & \code{return allowEnum(obj,name);} /*memoize*/ \\
+  \hline
+  \code{canSetProp(self,name)}
+       & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
+       & \code{if (canSet(self,name))\ \{ return true; \}} \\
+       & \code{return !isFrozen(self);} \\
+  \code{setProp(self,name,val)}
+       & \code{require(canSetProp(self,name),\ldots);} \\
+       & \code{allowSet(self,name);} /*grant*/ \\
+       & \code{return self[name] = val;} \\
+  \code{canSetPub(obj,name)}
+       & \code{if (endWith(name,"\_"))\ \{ return false; \}} \\
+       & \code{if (canSet(obj,name))\ \{ return true; \}} \\
+       & \code{return !isFrozen(obj) \&\& isJSONContainer(obj);} \\
+  \code{setPub(obj,name,val)}
+       & \code{require(canSetPub(obj,name),\ldots);} \\
+       & \code{allowSet(obj,name);} /*grant*/ \\
+       & \code{return obj[name] = val;} \\
+  \hline               
+  \code{deleteProp(self,name)} 
+       & \code{require(canDeleteProp(self,name),\ldots);} \\
+       & /*XXX Bookkeeping yet to be determined*/ \\
+       & \code{return require(delete self[name],\ldots);} \\
+  \code{deletePub(obj,name)} 
+       & \code{require(canDeletePub(obj,name),\ldots);} \\
+       & \code{require(isJSONContainer(obj),\ldots);} \\
+       & /*XXX Bookkeeping yet to be determined*/ \\
+       & \code{return require(delete obj[name],\ldots);}
+\end{tabular}
+
+\caption[Property Access.]{Property Access. The calls to \code{allowRead} and
+\code{allowEnum} merely memoize a query result. The calls to \code{allowSet}
+track the implications of side effects.}
+\label{tab:prop-access}
+\end{table*}
+
+
+\begin{table*}
+\begin{tabular}{lll}
+  Global ES3 non-constructor & Property                   & Taming \\
+  \hline
+  \code{NaN}                &                             & ok \\
+  \code{Infinity}           &                             & ok \\
+  \code{undefined}          &                             & ok \\
+  \code{eval}               &                             & hidden \\
+  \code{parseInt}           &                             & ok \\
+  \code{parseFloat}         &                             & ok \\
+  \code{isNaN}              &                             & ok \\
+  \code{isFinite}           &                             & ok \\
+  \hline
+  \code{decodeURI}          &                             & ok \\
+  \code{decodeURIComponent} &                             & ok \\
+  \code{encodeURI}          &                             & ok \\
+  \code{encodeURIComponent} &                             & ok \\
+  \hline
+  \code{Math}               &                             & ok \\  
+                            & \code{random}               & ok* \\
+                            &           all others in ES3 & ok \\
+\end{tabular}
+
+\caption[Taming ES3 Global Non-Constructors.]{Taming ES3 Global 
+Non-Constructors. Except for \code{eval}, all non-constructors specified by 
+ES3 are visible in Caja's outer scope as immutable objects. Note that 
+\code{Math.random} is not actually immutable, and therefore neither is 
+\code{Math} nor Caja's outer scope itself. We allow it anyway for reasons
+explained in the text.}
+\label{tab:taming-es3}
+\end{table*}
+  
+\subsection{Function calling}
+
+
+\begin{table*}
+\begin{tabular}{ll}
   Caja expression   & translates to ES3 code equivalent to\\ 
   \hline
                  & \code{\_\_\_.module(function(\_\_\_OUTERS\_\_\_)\ \{} \\
@@ -818,9 +973,9 @@ the original.}
   \code{new F(a\ldots)}     & \code{\_\_\_.callNew(F,[a\ldots])} \\
   \code{this.id\_(a\ldots)} & /*unaltered*/ \\
   \code{this.id(a\ldots)} 
-               & \code{\_\_\_.readProp(this,"id").call\_\_\_(this,a\ldots)} \\
+               & \code{\_\_\_.invokeProp(this,"id",[a\ldots])} \\
   \code{foo.id(a\ldots)}  
-                 & \code{\_\_\_.readPub(foo,"id").call\_\_\_(foo,a\ldots)} \\
+               & \code{\_\_\_.invokePub(foo,"id",[a\ldots])} \\
   \code{foo(a\ldots)}       & \code{foo.call\_\_\_(\_\_\_.USELESS,a\ldots)} \\
   \hline
   \code{function F(a\ldots)\ \{}  
@@ -873,39 +1028,11 @@ case it is called as a constructor.}
 \end{table*}
 
 
+
 \begin{table*}
 \begin{tabular}{ll}
   Methods of \code{\_\_\_}  & method body \\ 
   \hline 
-  \code{require(test,complaint)}
-       & \code{if (test)\ \{ return true; \}} \\
-       & \code{throw new CajaRuntimeError(complaint);} \\
-  \hline 
-  \code{hasOwnProp(obj,name)} 
-       & \code{return Object.prototype.hasOwnProperty.call(obj,name);} \\
-  \code{isJSONContainer(obj)} 
-       & \code{var Constr = directConstructor(obj);} \\
-       & \code{return Constr === Object || Constr === Array;} \\ 
-  \code{isFrozen(obj)} 
-       & \code{return hasOwnProp(obj,"\_\_\_FROZEN\_\_\_");} \\
-  \code{freeze(obj)}*
-       & \code{for (k in obj)\ \{} \\
-       & \code{\ \ if (endsWith(k,"\_canSet\_\_\_"))\ \{ obj[k] = false; \}} \\
-       & \code{\}} \\
-       & \code{obj.\_\_\_FROZEN\_\_\_ = true;} \\
-       & \code{return obj;} \\
-  \hline
-  \code{canRead(obj,name)}  & \code{return !!obj[name+"\_canRead\_\_\_"];} \\
-  \code{canEnum(obj,name)}  & \code{return !!obj[name+"\_canEnum\_\_\_"];} \\
-  \code{canSet(obj,name)}   & \code{return !!obj[name+"\_canSet\_\_\_"];} \\
-  \hline
-  \code{allowRead(obj,name)}* 
-       & \code{return obj[name+"\_canRead\_\_\_"] = true;} \\
-  \code{allowEnum(obj,name)}* 
-       & \code{return obj[name+"\_canEnum\_\_\_"] = allowRead(obj,name);} \\
-  \code{allowSet(obj,name)}* & \code{require(!isFrozen(obj),\ldots);} \\
-       & \code{return obj[name+"\_canSet\_\_\_"] = allowEnum(obj,name);} \\
-  \hline
   \code{isCtor(Constr)}
        & \code{return !!Constr.\_\_\_CONSTRUCTOR\_\_\_;} \\
   \code{isMethod(meth)}
@@ -938,76 +1065,8 @@ case it is called as a constructor.}
        & \code{return delete obj.\_\_\_RAW\_\_\_;} \\
 \end{tabular}
 
-\caption[Hidden Attributes.]{Hidden Attributes. These methods handle the 
-concrete representations of object and property attributes. Only the methods 
-marked with a * should called by Javascript code during initialization of the 
-embedding app, in order to express taming decisions. All objects that are 
-reachable from the ES3 shared scope should be frozen, so that this shared 
-scope becomes transitively read-only to all Caja code.}
-\label{tab:hide-attr}
-\end{table*}
-
-
-\begin{table*}
-\begin{tabular}{ll}
-  Methods of \code{\_\_\_}  & method body \\ 
-  \hline 
-  \code{canReadProp(self,name)}
-       & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
-       & \code{return canRead(self,name);} \\
-  \code{readProp(self,name)}
-       & \code{return canReadProp(self,name) ?\ self[name] :\ undefined;} \\
-  \code{canReadPub(obj,name)}
-       & \code{if (endWith(name,"\_"))\ \{ return false; \}} \\
-       & \code{if (canRead(obj,name))\ \{ return true; \}} \\
-       & \code{if (!isJSONContainer(obj))\ \{ return false; \}} \\
-       & \code{if (!hasOwnProp(obj,name))\ \{ return false; \}} \\
-       & \code{return allowRead(obj,name);} /*memoize*/ \\
-  \code{readPub(obj,name)}
-       & \code{return canReadPub(obj,name) ?\ obj[name] :\ undefined;} \\
-  \hline
-  \code{canEnumProp(self,name)} 
-       & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
-       & \code{return canEnum(self,name);} \\
-  \code{canEnumPub(obj,name)}
-       & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
-       & \code{if (canEnum(obj,name))\ \{ return true; \}} \\
-       & \code{if (!isJSONContainer(obj))\ \{ return false; \}} \\
-       & \code{if (!hasOwnProp(obj,name))\ \{ return false; \}} \\
-       & \code{return allowEnum(obj,name);} /*memoize*/ \\
-  \hline
-  \code{canSetProp(self,name)}
-       & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
-       & \code{if (canSet(self,name))\ \{ return true; \}} \\
-       & \code{return !isFrozen(self);} \\
-  \code{setProp(self,name,val)}
-       & \code{require(canSetProp(self,name),\ldots);} \\
-       & \code{allowSet(self,name);} /*grant*/ \\
-       & \code{return self[name] = val;} \\
-  \code{canSetPub(obj,name)}
-       & \code{if (endWith(name,"\_"))\ \{ return false; \}} \\
-       & \code{if (canSet(obj,name))\ \{ return true; \}} \\
-       & \code{return !isFrozen(obj) \&\& isJSONContainer(obj);} \\
-  \code{setPub(obj,name,val)}
-       & \code{require(canSetPub(obj,name),\ldots);} \\
-       & \code{allowSet(obj,name);} /*grant*/ \\
-       & \code{return obj[name] = val;} \\
-  \hline               
-  \code{deleteProp(self,name)} 
-       & \code{require(canSetProp(self,name),\ldots);} \\
-       & /*XXX Bookkeeping yet to be determined*/ \\
-       & \code{return require(delete self[name],\ldots);} \\
-  \code{deletePub(obj,name)} 
-       & \code{require(canSetPub(obj,name),\ldots);} \\
-       & \code{require(isJSONContainer(obj),\ldots);} \\
-       & /*XXX Bookkeeping yet to be determined*/ \\
-       & \code{return require(delete obj[name],\ldots);}
-\end{tabular}
-
-\caption[Property Access.]{Property Access. The calls to \code{allowRead} and
-\code{allowEnum} merely memoize a query result. The calls to \code{allowSet}
-track the implications of side effects.}
-\label{tab:prop-access}
+\caption[Other Hidden Annotations.]{Other Hidden Annotations. xx.}
+\label{tab:hide-note}
 \end{table*}
 
 
@@ -1044,38 +1103,6 @@ a function can be called as a function, method, or constructor.}
 \end{table*}
 
 
-\begin{table*}
-\begin{tabular}{lll}
-  Global ES3 non-constructor & Property                   & Taming \\
-  \hline
-  \code{NaN}                &                             & ok \\
-  \code{Infinity}           &                             & ok \\
-  \code{undefined}          &                             & ok \\
-  \code{eval}               &                             & hidden \\
-  \code{parseInt}           &                             & ok \\
-  \code{parseFloat}         &                             & ok \\
-  \code{isNaN}              &                             & ok \\
-  \code{isFinite}           &                             & ok \\
-  \hline
-  \code{decodeURI}          &                             & ok \\
-  \code{decodeURIComponent} &                             & ok \\
-  \code{encodeURI}          &                             & ok \\
-  \code{encodeURIComponent} &                             & ok \\
-  \hline
-  \code{Math}               &                             & ok \\  
-                            & \code{random}               & ok* \\
-                            &           all others in ES3 & ok \\
-\end{tabular}
-
-\caption[Taming ES3 Global Non-Constructors.]{Taming ES3 Global 
-Non-Constructors. Except for \code{eval}, all non-constructors specified by 
-ES3 are visible in Caja's outer scope as immutable objects. Note that 
-\code{Math.random} is not actually immutable, and therefore neither is 
-\code{Math} nor Caja's outer scope itself. We allow it anyway for reasons
-explained in the text.}
-\label{tab:taming-es3}
-\end{table*}
-  
 \begin{table*}
 \begin{tabular}{lll}
   Global ES3 constructor         & Property                    & Taming \\
