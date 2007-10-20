@@ -32,7 +32,6 @@
 %% Literal code-like strings in normal text.
 \newcommand{\code}[1]{{\tt {#1}}}              % code
 
-
 %don't want date printed
 % \date{}
 
@@ -811,30 +810,29 @@ the original.}
        & \code{throw new CajaRuntimeError(complaint);} \\
   \hline
   \code{canRead(obj,name)}  
-       & \code{return !!(obj[name+"\_flags\_\_\_"] \& \_\_\_.CAN\_READ);} \\
+       & \code{return !!(obj[name+"\_flags\_\_\_"] \& CAN\_READ);} \\
   \code{canEnum(obj,name)}
-       & \code{return !!(obj[name+"\_flags\_\_\_"] \& \_\_\_.CAN\_ENUM);} \\
+       & \code{return !!(obj[name+"\_flags\_\_\_"] \& CAN\_ENUM);} \\
   \code{canCall(obj,name)}
-       & \code{return !!(obj[name+"\_flags\_\_\_"] \& \_\_\_.CAN\_CALL);} \\
+       & \code{return !!(obj[name+"\_flags\_\_\_"] \& CAN\_CALL);} \\
   \code{canSet(obj,name)}
-       & \code{return !!(obj[name+"\_flags\_\_\_"] \& \_\_\_.CAN\_SET);} \\
+       & \code{return !!(obj[name+"\_flags\_\_\_"] \& CAN\_SET);} \\
   \code{canDelete(obj,name)}
-       & \code{return !!(obj[name+"\_flags\_\_\_"] \& \_\_\_.CAN\_DELETE);} \\
+       & \code{return !!(obj[name+"\_flags\_\_\_"] \& CAN\_DELETE);} \\
   \hline
   \code{allowRead(obj,name)}* 
-       & \code{obj[name+"\_flags\_\_\_"] |= \_\_\_.CAN\_READ;} \\
+       & \code{obj[name+"\_flags\_\_\_"] |= CAN\_READ;} \\
   \code{allowEnum(obj,name)}* 
-       & \code{obj[name+"\_flags\_\_\_"] |= (\_\_\_.CAN\_ENUM | \_\_\_.CAN\_READ);} \\
+       & \code{obj[name+"\_flags\_\_\_"] |= CAN\_ENUM | CAN\_READ;} \\
   \code{allowCall(obj,name)}* 
-       & \code{obj[name+"\_flags\_\_\_"] |= \_\_\_.CAN\_CALL;} \\
+       & \code{obj[name+"\_flags\_\_\_"] |= CAN\_CALL;} \\
   \code{allowSet(obj,name)}* 
        & \code{require(!isFrozen(obj),\ldots);} \\
-       & \code{obj[name+"\_flags\_\_\_"] \&= \~\_\_\_.CAN\_CALL;} \\
-       & \code{obj[name+"\_flags\_\_\_"] |= }\\
-       & \code{\ \ (\_\_\_.CAN\_SET | \_\_\_.CAN\_ENUM | \_\_\_.CAN\_READ);}\\ 
+       & \code{obj[name+"\_flags\_\_\_"] \&= \~{}CAN\_CALL;} \\
+     & \code{obj[name+"\_flags\_\_\_"] |= CAN\_SET | CAN\_ENUM | CAN\_READ;}\\
   \code{allowDelete(obj,name)}* 
        & \code{require(!isFrozen(obj),\ldots);} \\
-       & \code{obj[name+"\_flags\_\_\_"] |= \_\_\_.CAN\_DELETE;} \\
+       & \code{obj[name+"\_flags\_\_\_"] |= CAN\_DELETE;} \\
        & /*other bookkeeping yet to be determined*/ \\
   \hline 
   \code{hasOwnProp(obj,name)} 
@@ -847,7 +845,7 @@ the original.}
   \code{freeze(obj)}*
        & \code{for (k in obj)\ \{} \\
        & \code{\ \ if (endsWith(k,"\_flags\_\_\_"))\ \{}\\
-       & \code{\ \ \ \ obj[k] \&= (\~\_\_\_.CAN\_SET \& \~\_\_\_.CAN\_DELETE);}\\ 
+       & \code{\ \ \ \ obj[k] \&= \~{}(CAN\_SET | CAN\_DELETE);}\\ 
        & \code{\ \ \}} \\
        & \code{\}} \\
        & \code{obj.\_\_\_FROZEN\_\_\_ = true;} \\
