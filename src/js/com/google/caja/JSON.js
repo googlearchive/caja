@@ -126,7 +126,7 @@ JSON = (function () {
             return undefined;
         }
         result = baseObj[key];
-        if (typeof result.toJSON === 'function') {
+        if (result && typeof result.toJSON === 'function') {
             return result.toJSON();
         } else {
             return result;
@@ -171,7 +171,7 @@ JSON = (function () {
                     } else if (value instanceof Array) {
                         len = value.length;
                         out.push('[');
-                        for (i = 1; i < len; i += 1) {
+                        for (i = 0; i < len; i += 1) {
                             v = filter(value, i);
                             if (v !== undefined) {
                                 if (needComma) {
