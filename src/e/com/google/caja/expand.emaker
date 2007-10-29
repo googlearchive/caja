@@ -144,10 +144,12 @@ bind expand(e, scope) {
                                                      ___.readPub($o3, ${`$p`})`
                                                 }
             match js`this[@s]`                  { def s2 := expand(s, scope)
-                                                  js`___.readProp(this, $s2)` }
+                                                  js`___.readProp(this, $s2)` 
+                                                }
             match js`@o[@s]`                    { def o2 := expand(o, scope)
                                                   def s2 := expand(s, scope)
-                                                  js`___.readPub($o2, $s2)` }
+                                                  js`___.readPub($o2, $s2)` 
+                                                }
         }}
         to visitSet() { return switch (e) {
             match js`@_.@{p}__ = @_`            { throw(`Properties cannot end in "__": ${p}__`) 
