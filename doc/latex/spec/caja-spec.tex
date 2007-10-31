@@ -395,6 +395,59 @@ has not explicitly indicated a failure, it executes within Javascript's
 semantics. By \emph{indicate a failure}, we mean either throwing an exception 
 or returning \code{undefined} for a property read. 
 
+\subsection{Caja overview}
+
+A great virtue of Javascript is that many people successfully programming in 
+it without first learning the language in any depth. To serve its intended 
+role, Caja must likewise be easily programmable with only shallow knowledge. 
+In this subsection, we provide a brief inaccurate overview of the differences 
+between Caja and Javascript, suitable for the casual Javascript programmer. 
+The rest of this document then accurately goes into more depth.
+
+\begin{description}
+
+  \item[Forbidden names.] Caja rejects all names ending with ``\_\_'' (double 
+  underscore). This gives the Caja implementation a place to store its 
+  bookkeeping information where it is invisible to the Caja programmer.
+  
+  \item[Frozen objects.] If an object is frozen, an attempt to set, add, or 
+  delete its properties will throw an exception instead. Functions and 
+  prototypes are implicitly frozen. In addition, the Caja programmer can 
+  explicitly freeze objects to prevent their direct modification. All objects 
+  in the default global scope are \emph{immutable}, or transitively frozen.
+  
+  \item[No shared global scope.] Each separately loaded module has its own
+  global scope which inherits from the default global scope, isolating them
+  from each other.
+
+  \item[Private names.] Property names ending in ``\_'' (single underscore) 
+  serve as protected instance variables. Such names can only appear to the 
+  left of ``\code{this.}''. As with Smalltalk instance variables, or 
+  \code{protected} instance variables in C++ or Java, these protected 
+  instance variables are visible up and down the inheritance chain within an 
+  object, but are not visible outside an object.
+  
+  \item[No method stealing.] The single underscore rule above only protects 
+  an object's state from its clients if its clients cannot add methods to it 
+  which alias its ``\code{this}''. Caja divides functions into three 
+  categories: \emph{simple functions} are those which do not mention 
+  ``\code{this}''. They are first class and can be used without further 
+  restriction. \emph{Constructors} are named functions which mention 
+  ``\code{this}''. \emph{Methods} are anonymous function which mention 
+  ``\code{this}''.
+
+  Neither constructors nor methods are first class. They can be used in ways 
+  that support stereotyped class-like Javascript programming patterns, but 
+  they cannot be stored in variables or passed as arguments. Fortunately, 
+  there's no loss of generality, because the Caja programmer can obtain the 
+  same effect by wrapping a constructor or a method in a simple function, and 
+  passing that simple function instead.
+  
+  \item[Crazy things are gone.] Caja contains no ``\code{with}'' or 
+  ``\code{eval}''.
+  
+\end{description}
+
 \subsection{Definitions}
 
 To explain the restrictions Caja imposes on Javascript, we need some
@@ -567,10 +620,8 @@ this scope.}
 
 
 
-The purpose of most of Caja's restrictions is to enable a reference to a 
-constructed object to serve as a capability.
-%% XXX TODO BUG: reprase to acct for Cajita.
-
+The purpose of most of Caja's restrictions is to enable a reference to an 
+object to serve as a capability.
 
 \subsection{Static restrictions}
 
