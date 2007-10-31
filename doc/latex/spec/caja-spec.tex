@@ -80,6 +80,88 @@ Javascript is an object-capability language.
 
 \section{Introduction}
 
+In a memory-safe object language, such as Javascript, object A can only 
+invoke object B if A has a reference to B. If A already has references to B 
+and C, A can invoke B passing C as an argument, giving B access to C. 
+Memory-safe object language with encapsulation, such as Java, \emph{protect 
+objects from their outside world}. The clients of an encapsulated object can 
+make requests using its public interface; but how the object reacts to these 
+requests is up to the object. An encapsulated object can ensure that 
+causality can only enter it according to the object model of computation.
+
+An \emph{object-capability language} is essentially a memory-safe object 
+language with encapsulation, with additional restrictions that \emph{protect 
+the outside world from the objects}. In an object-capability language, an 
+object can only cause effects outside itself by using the references it holds 
+to other objects. Objects have no powerful references by default, and are 
+granted new references only by normal message passing rules. Object 
+references thereby become the sole representation of rights to effect the 
+world, and normal message passing is the only rights transfer mechanism. An 
+object can be denied authority simply by not giving it those references which 
+would provide that authority.
+
+The browser sandbox already mostly protects the outside world from scripts 
+running on web pages. Another great virtue of Javascript is that many people 
+successfully program in it causally, without first learning the language in 
+any depth. Caja\footnote{
+%
+\emph{Caja} is Spanish for ``box''. With Caja, capabilities attenuate 
+Javascript authority.
+%
+} is designed to make as little impact as possible on regular Javascript 
+programming. In this section, we provide a brief inaccurate overview of the 
+differences between Caja and Javascript, suitable for the casual Javascript 
+programmer. The rest of this document then accurately goes into more depth.
+
+\begin{description}
+
+  \item[Forbidden names.] Caja rejects all names ending with ``\_\_'' (double
+  underscore). This gives the Caja implementation a place to store its
+  bookkeeping information where it is invisible to the Caja programmer.
+ 
+  \item[Frozen objects.] If an object is frozen, an attempt to set, add, or
+  delete its properties will throw an exception instead. Functions and
+  prototypes are implicitly frozen. In addition, the Caja programmer can
+  explicitly freeze objects to prevent their direct modification. All objects
+  in the default global scope are \emph{immutable}, or transitively frozen.
+ 
+  \item[No shared global scope.] Each separately loaded module has its own
+  global scope which inherits from the default global scope, isolating them
+  from each other.
+
+  \item[Private names.] Property names ending in ``\_'' (single underscore) 
+  serve as protected instance variables. Such names can only appear to the 
+  left of ``\code{this.}''. As with Smalltalk instance variables, or 
+  \code{protected} instance variables in C++, these protected instance 
+  variables are visible up and down the inheritance chain within an object, 
+  but are not visible outside an object.
+ 
+  \item[No method stealing.] The single underscore rule above only protects 
+  an object's state from its clients if its clients cannot add methods to it 
+  which alias its ``\code{this}''. Caja divides functions into three 
+  categories: \emph{simple functions} are those which do not mention 
+  ``\code{this}''. They are first class and can be used without further 
+  restriction. \emph{Constructors} are named functions which mention 
+  ``\code{this}''. \emph{Methods} are anonymous function which mention 
+  ``\code{this}''.
+
+  Neither constructors nor methods are first class. They can be used in ways
+  that support stereotyped class-like Javascript programming patterns, but
+  they cannot be stored in variables or passed as arguments. Fortunately,
+  there's no loss of generality, because the Caja programmer can obtain the
+  same effect by wrapping a constructor or a method in a simple function, and
+  passing that simple function instead.
+ 
+  \item[Crazy things are gone.] Caja contains no ``\code{with}'' or
+  ``\code{eval}''.
+ 
+\end{description}
+
+Hopefully, this is all the casual Caja programmer needs to know to get
+started.
+
+\section{Identity-centric Epicycles}
+
 \begin{figure}[t!]
   \resizebox{\columnwidth}{!}{\includegraphics{seesaw-pola}}
   
@@ -99,6 +181,10 @@ users can disable themselves from getting any work done \q{1} or enable
 scripts to destroy all their other work \q{2}.}
   \label{fig:dialog}
 \end{figure}
+
+This section explains a bit of the history of access control in the web
+browser, in order to explain the problems Caja addresses. It may safely be
+skipped.
 
 When a document contains live interactive programs, we say it contains 
 \emph{active content}. The computer industry has spent over a billion dollars 
@@ -194,15 +280,10 @@ Experience with Java, Scheme, OCaml, Pict, and others demonstrates that
 existing memory safe languages often already contain an expressive 
 object-capability subset~\cite[respectively]{joe-e, rees96security, emily, 
 backwater}. We refer to the object-capability subset of Javascript as 
-\emph{Caja}\footnote{
-%
-\emph{Caja} is Spanish for ``box''. With Caja, capabilities attenuate 
-Javascript authority.
-%
-}. The Caja translator restricts the Javascript it accepts to be within this 
-subset. This sanitized Javascript is still a general purpose object 
-programming language which Javascript programmers should find familiar, 
-pleasant, expressive, and easy to learn and use.
+\emph{Caja}. The Caja translator restricts the Javascript it accepts to be 
+within this subset. This sanitized Javascript is still a general purpose 
+object programming language which Javascript programmers should find 
+familiar, pleasant, expressive, and easy to learn and use.
 
 Some web apps could use the Caja translator to allow active content in their 
 passages~\qq{1}{5}. Other web apps could use Caja to overcome the limits of 
@@ -569,7 +650,7 @@ definition in both Cajita and full Caja.}
 
 \begin{figure}
 \begin{alltt}
-function PointClass(self, x, y)\ \{
+function PointMixin(self, x, y)\ \{
   self.toString = function()\ \{ 
     return "<" + self.getX() + "," + 
                  self.getY() + ">"; 
@@ -579,45 +660,42 @@ function PointClass(self, x, y)\ \{
   return self;
 \}
 function Point(x, y)\ \{
-  return caja.freeze(PointClass(\{\}, x, y));
+  return caja.freeze(PointMixin(\{\}, x, y));
 \}
 \end{alltt}
 
 \caption[Cajita Inheritance.]{Cajita Inheritance. In the Cajita inheritance 
 pattern, the equivalent of a non-final class is a function ending with 
-``\code{Class}'' with \code{self} as its first parameter. The method-like 
+``\code{Mixin}'' with \code{self} as its first parameter. The method-like 
 functions can use \code{self} analogously to the use of \code{this} in full 
 Caja, in order to refer to the overall object being defined. This 
-``\code{*Class}'' function should only be called by ``subclasses'' such as 
-WobblyPointClass below. If the class is non-abstract, it should also have a 
-constructor function such as
-\code{Point} for making direct instances.}
+``\code{*Mixin}'' function should only be called by ``subclasses'' such as 
+WobblyPointMixin below. If the class is non-abstract, it should also have a 
+pseudo-constructor function such as \code{Point} for making direct instances.}
 \label{fig:cajita-super-point}
 \end{figure}
 
 \begin{figure}
 \begin{alltt}
-function WobblyPointClass(self, x, y)\ \{
-  var super = caja.snapshot(
-                PointClass(self, x, y));
+function WobblyPointMixin(self, x, y)\ \{
+  var super = caja.snapshot(self);
   self.getX = function()\ \{ 
     return super.getX() + Math.random(); 
   \};
   return self;
 \}
 function WobblyPoint(x, y)\ \{
-  return caja.freeze(
-           WobblyPointClass(\{\}, x, y));
+  var self = PointMixin(\{\}, x, y));
+  self = WobblyPointMixin(self, x, y);
+  return caja.freeze(self);
 \}
 \end{alltt}
 
-\caption[Cajita WobblyPointClass.]{Cajita WobblyPointClass. The equivalent of 
-a non-final subclass is a ``\code{*Class}'' function with \code{self} as its 
-first parameter, where the body first calls the superclass to do its part of 
-initializing \code{self}. It calls \code{caja.snapshot} on the result to make 
-a frozen copy of the partially initialized \code{self} at that moment, to 
-serve as the conventional \code{super} for the other functions defined within 
-this scope.}
+\caption[Cajita WobblyPointMixin.]{Cajita WobblyPointMixin. The equivalent of 
+a non-final subclass is a ``\code{*Mixin}'' function with \code{self} as its 
+first parameter, where the body calls \code{caja.snapshot} to make a frozen 
+copy of the partially initialized \code{self} at that moment, to serve as the 
+conventional \code{super} for the other functions defined within this scope.}
 \label{fig:cajita-super-wobbly-point}
 \end{figure}
 
