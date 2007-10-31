@@ -116,8 +116,8 @@
      inkscape:window-width="1183"
      inkscape:current-layer="layer1"
      inkscape:document-units="px"
-     inkscape:cy="61.582924"
-     inkscape:cx="73.217815"
+     inkscape:cy="61.582927"
+     inkscape:cx="73.21781"
      inkscape:zoom="5.0419824"
      inkscape:pageshadow="2"
      inkscape:pageopacity="0.0"
@@ -226,18 +226,18 @@
     <text
        sodipodi:linespacing="100%"
        id="text2650"
-       y="314.35846"
-       x="310.17377"
+       y="316.35846"
+       x="300.17377"
        style="font-size:7px;font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:100%;writing-mode:lr-tb;text-anchor:middle;opacity:0.89000011;fill:#006000;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.625;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:1.79999995;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;font-family:Bitstream Vera Serif"
        xml:space="preserve"><tspan
          style="font-size:7px;font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:100%;writing-mode:lr-tb;text-anchor:middle;fill:#006000;fill-opacity:1;stroke-width:0.625;stroke-miterlimit:1.79999995;stroke-dasharray:none;stroke-dashoffset:0;font-family:Bitstream Vera Serif"
-         y="314.35846"
-         x="310.17377"
+         y="316.35846"
+         x="300.17377"
          sodipodi:role="line"
          id="tspan2658">Inadequate</tspan><tspan
          style="font-size:7px;font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:100%;writing-mode:lr-tb;text-anchor:middle;fill:#006000;fill-opacity:1;stroke-width:0.625;stroke-miterlimit:1.79999995;stroke-dasharray:none;stroke-dashoffset:0;font-family:Bitstream Vera Serif"
-         y="321.35846"
-         x="310.17377"
+         y="323.35846"
+         x="300.17377"
          sodipodi:role="line"
          id="tspan3199">authority</tspan></text>
     <path
@@ -247,8 +247,8 @@
        inkscape:connector-type="polyline"
        sodipodi:nodetypes="cc" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.60000002;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow1Mend);stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="M 250.72923,242.76318 L 303.65521,296.5213"
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.60000002;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow1Mend);stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;display:inline"
+       d="M 263.24432,258.33178 L 308.2663,242.46501"
        id="path6853"
        inkscape:connector-type="polyline"
        sodipodi:nodetypes="cc" />
@@ -265,13 +265,13 @@
        inkscape:connector-type="polyline"
        sodipodi:nodetypes="cc" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.60000002;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow1Mend);stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.60000002;stroke-linecap:butt;stroke-linejoin:miter;marker-end:none;stroke-miterlimit:4;stroke-dasharray:2.4000001,1.20000005;stroke-opacity:1;stroke-dashoffset:0"
        d="M 263.8415,260.44577 L 323.8258,260.84566"
        id="path9766"
        inkscape:connector-type="polyline"
        sodipodi:nodetypes="cc" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.60000002;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow1Mend);stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;display:inline"
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.60000002;stroke-linecap:butt;stroke-linejoin:miter;marker-end:none;stroke-miterlimit:4;stroke-dasharray:1.80000007,1.80000007;stroke-opacity:1;display:inline;stroke-dashoffset:0"
        d="M 251.7995,238.788 L 307.35518,239.18788"
        id="path10773"
        inkscape:connector-type="polyline"
@@ -432,5 +432,17 @@
            x="317.08441"
            y="253.17862">5</tspan></text>
     </g>
+    <path
+       sodipodi:nodetypes="cc"
+       inkscape:connector-type="polyline"
+       id="path3195"
+       d="M 343.00817,311.48547 L 330.71142,266.06684"
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.60000002;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow1Mend);stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;display:inline" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.60000002;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow1Mend);stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;display:inline"
+       d="M 337.98896,317.56514 L 311.61045,304.0784"
+       id="path3198"
+       inkscape:connector-type="polyline"
+       sodipodi:nodetypes="cc" />
   </g>
 </svg>
