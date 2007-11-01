@@ -6,6 +6,8 @@
     json.js
     2007-09-27
 
+...............................................................................
+
 This file adds these methods to JavaScript:
 
         JSON.serialize(value, optFilter)
@@ -229,7 +231,7 @@ JSON = (function () {
                 case 'number':
                     // JSON numbers must be finite. Encode non-finite numbers
                     // as null. 
-                    out.push(isFinite(this) ? String(this) : 'null');
+                    out.push(isFinite(value) ? String(value) : 'null');
                     break;
 
                 case 'boolean':
