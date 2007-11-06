@@ -38,7 +38,7 @@
 \sloppypar
 
 \title{Caja\\
-Safe active content in sanitized Javascript}
+Safe active content in sanitized JavaScript}
 \author{
         {\rm Mark S. Miller}
         \and 
@@ -66,7 +66,7 @@ Using Caja, web apps can safely allow scripts in third party content.
 
 The computer industry has only one significant success enabling documents to 
 carry active content safely: scripts in web pages. Normal users regularly 
-browse untrusted sites with Javascript turned on. Modulo browser bugs and 
+browse untrusted sites with JavaScript turned on. Modulo browser bugs and 
 phishing, they mostly remain safe. But even though web apps build on this 
 success, they fail to provide its power. Web apps generally remove scripts 
 from third party content, reducing content to passive data. Examples include 
@@ -76,64 +76,68 @@ from Google, Yahoo, Microsoft, HP, Wikipedia, or others.
 Were scripts in an object-capability language, web apps could provide active 
 content safely, simply, and flexibly. Surprisingly, this is possible within 
 existing web standards. Caja represents our discovery that a subset of 
-Javascript is an object-capability language.
+JavaScript is an object-capability language.
 
 \section{Introduction}
 
-In a memory-safe object language, such as Javascript, object A can only 
-invoke object B if A has a reference to B. If A already has references to B 
-and C, A can invoke B passing C as an argument, giving B access to C. 
-Memory-safe object language with encapsulation, such as Java, \emph{protect 
-objects from their outside world}. The clients of an encapsulated object can 
-make requests using its public interface; but how the object reacts to these 
-requests is up to the object. An encapsulated object can ensure that 
-causality can only enter it according to the object model of computation.
+In a memory-safe object language such as JavaScript, object A can only invoke 
+object B if A has a reference to B. If A already has references to B and C, A 
+can invoke B passing C as an argument, giving B access to C. Memory-safe 
+object language with encapsulation, such as Java, \emph{protect objects from 
+their outside world}. The clients of an encapsulated object can make requests 
+using its public interface. But how an object reacts to a request is up to 
+the object. An encapsulated object can ensure that causality can only enter 
+it according to the object model of computation.
 
 An \emph{object-capability language} is essentially a memory-safe object 
 language with encapsulation, with additional restrictions that \emph{protect 
-the outside world from the objects}. In an object-capability language, an 
-object can only cause effects outside itself by using the references it holds 
-to other objects. Objects have no powerful references by default, and are 
-granted new references only by normal message passing rules. Object 
-references thereby become the sole representation of rights to effect the 
-world, and normal message passing is the only rights transfer mechanism. An 
-object can be denied authority simply by not giving it those references which 
-would provide that authority.
+the outside world from the objects}.\footnote{
+%
+Thanks to Mark Lillibridge for this formulation.
+%
+} In an object-capability language, an object can only cause effects outside 
+itself by using the references it holds to other objects. Objects have no 
+powerful references by default, and are granted new references only by normal 
+message passing rules. Object references thereby become the sole 
+representation of rights to affect the world, and normal message passing is 
+the only rights transfer mechanism. An object can be denied authority simply 
+by not giving it those references which would provide that authority.
 
-The browser sandbox already mostly protects the outside world from scripts 
-running on web pages. A great virtue of Javascript is that many people 
-successfully program in it casually, without first learning the language in 
-any depth. Caja\footnote{
+The browser sandbox already mostly protects the world outside the browser 
+from scripts running on web pages. A great virtue of JavaScript is that many 
+people successfully program in it casually, without first learning the 
+language in any depth. Caja\footnote{
 %
-\emph{Caja} is Spanish for ``box''. With Caja, capabilities attenuate 
-Javascript authority.
+\emph{Caja} is Spanish for ``box''. With Caja, \textbf{c}apabilities 
+\textbf{a}ttenuate \textbf{J}avaScript \textbf{a}uthority.
 %
-} is an enforced subset of Javascript we designed to make as little impact as 
-possible on regular Javascript programming, while still providing 
+} is an enforced subset of JavaScript we designed to make as little impact as 
+possible on regular JavaScript programming, while still providing 
 object-capability security. In this section, we provide a brief inaccurate 
-overview of the differences between Caja and Javascript suitable for the 
-casual Javascript programmer. The rest of this document then accurately goes 
+overview of the differences between Caja and JavaScript suitable for the 
+casual JavaScript programmer. The rest of this document then accurately goes 
 into more depth.
 
 \begin{description}
 
-  \item[Forbidden names.] Caja rejects all names ending with ``\_\_'' (double
-  underscore). This gives the Caja implementation a place to store its
+  \item[Forbidden names.] Caja rejects all names ending with ``\_\_'' (double 
+  underscore). This gives the Caja implementation a place to store its 
   bookkeeping information where it is invisible to the Caja programmer.
  
-  \item[Frozen objects.] If an object is frozen, an attempt to set, add, or
-  delete its properties will throw an exception instead. Functions and
-  prototypes are implicitly frozen. In addition, the Caja programmer can
-  explicitly freeze objects to prevent their direct modification. All objects
-  in the default global scope are \emph{immutable}, or transitively frozen.
+  \item[Frozen objects.] If an object is frozen, an attempt to set, add, or 
+  delete its properties will throw an exception instead. Functions and 
+  prototypes are implicitly frozen. In addition, the Caja programmer can 
+  explicitly freeze objects to prevent their direct modification. All objects 
+  in the default global environment are \emph{immutable}, or transitively 
+  frozen.
  
-  \item[No shared global scope.] Each separately loaded module has its own
-  global scope which inherits from the default global scope, isolating them
-  from each other.
+  \item[No shared global environment.] Each separately loaded module has its 
+  own global environment which inherits from the default global environment, 
+  isolating them from each other.
 
   \item[Private names.] Property names ending in ``\_'' (single underscore) 
   serve as protected instance variables. Such names can only appear to the 
-  left of ``\code{this.}''. As with Smalltalk instance variables or 
+  right of ``\code{this.}''. As with Smalltalk instance variables or 
   \code{protected} instance variables in C++, these protected instance 
   variables are visible up and down the inheritance chain within an object, 
   but are not visible outside an object.
@@ -148,14 +152,14 @@ into more depth.
   ``\code{this}''.
 
   Neither constructors nor methods are first class. They can be used in ways 
-  that support stereotyped class-like Javascript programming patterns, but 
+  that support stereotyped class-like JavaScript programming patterns, but 
   they cannot be stored in variables or passed as arguments. Fortunately, 
   there's no loss of generality. The Caja programmer can obtain the same 
   effect by wrapping a constructor or a method in a simple function (such as 
   \code{F.make} in Figure~\ref{fig:func-obj}) and passing that simple 
   function instead.
  
-  \item[Crazy things are gone.] Caja contains no ``\code{with}'' or 
+  \item[Sharp knives removed.] Caja contains no ``\code{with}'' or 
   ``\code{eval}''. Caja bundles in a safe JSON library to support the most 
   common use of \code{eval}.
  
@@ -187,14 +191,14 @@ Hopefully, this is all the casual Caja programmer needs to know to get
 started. Section~\ref{sec:epicycles} explains a bit of the history of access 
 control in the web browser, in order to motivate the problems Caja addresses. 
 It may safely be skipped. Section~\ref{sec:subset} explains the problems 
-faced when securing Javascript, many of which involve the use of 
+faced when securing JavaScript, many of which involve the use of 
 ``\code{this}''. 
 
 We then present Caja in two stages. Section~\ref{sec:cajita-spec} presents 
 \emph{Cajita}, the subset of Caja without ``\code{this}''. For new code, 
 Cajita is a reasonably expressive language resembling an object-oriented 
 Scheme. Section~\ref{sec:caja-spec} then presents the remainder of the Caja 
-language beyond Cajita. Caja adds back enough of Javascript for most old 
+language beyond Cajita. Caja adds back enough of JavaScript for most old 
 habits and old code to port pleasantly and painlessly. Caja and Cajita 
 interoperate without problems. Section~\ref{sec:related} briefly surveys
 related work.
@@ -208,8 +212,8 @@ related work.
   \resizebox{\columnwidth}{!}{\includegraphics{seesaw-pola}}
   
 \caption[The Evolving Authority of Active Content]{The Evolving Authority of 
-Active Content. Identity-based access controls have led to thrashing between 
-lost functionality and lost safety. To have both, we need to provide 
+Active Content. Identity-centric access controls have led to thrashing 
+between lost functionality and lost safety. To have both, we need to provide 
 \emph{least authority}: adequate authority for desired functionality without 
 excess authority which invites abube.}
   \label{fig:evo-auth}
@@ -224,16 +228,16 @@ security mechanisms that have, so far, prevented web apps themselves from
 supporting active content. To navigate our way out of this maze, we must 
 first see how we got here.
 
-Today's desktop operating systems all use some form of identity-based access 
-control~\cite{karp:abac-soa}, in which an installed application runs 
+Today's desktop operating systems all use some form of identity-centric 
+access control~\cite{karp:abac-soa}, in which an installed application runs 
 \emph{as} its user, and so is entrusted with all its user's authority. Such 
 an application can provide its user all the functionality modern operating 
 systems support, but at the price of being able to do anything its user may 
 do. We depict this situation at~\q{2} on Figure~\ref{fig:evo-auth}. When you 
 run Solitaire, it can delete all your files while playing within the rules of 
-your system, without exploiting any bugs. (For the remainder of this document, 
-we will ignore hazards due to implementation bugs, and explain only hazards 
-due to architectural choices.)
+your system, without exploiting any bugs. (For the remainder of this 
+document, we will ignore hazards due to implementation bugs, and explain only 
+hazards due to architectural choices.)
 
 At first, the documents handled by applications were safe passive data~\q{1}. 
 Applications first supported active content by running scripts in documents 
@@ -247,7 +251,7 @@ led to the failures of inadequate authority shown on the lower right.
 The web browser is itself an installed application that runs scripts in two 
 contexts. Browser extensions run with all the user's authority~\q{2}. Scripts 
 in web pages run sandboxed, with no authority to the user's local files. The 
-browser's \emph{same origin policy}, another layer of identity-based 
+browser's \emph{same origin policy}, another layer of identity-centric 
 control~\cite{mashupos}, provides scripts with the authority to communicate 
 with their site of origin~\qq{1}{3}. Regarding both decisions, the user is 
 helpless. The user has no practical way to grant a script the authority to 
@@ -281,7 +285,7 @@ apps, the assets they value come to be the passages stored at these various
 origin sites. 
 
 To protect their user's remote passages, web apps employed yet another layer 
-of identity-based controls, relying on cookies or other forms of 
+of identity-centric controls, relying on cookies or other forms of 
 authentication to identify their user. But when scripts within these passages 
 ran, they would run within the web page containing the web app serving them, 
 and were thereby authorized to do anything their web app could do on behalf 
@@ -315,22 +319,22 @@ epicycle. Can we do better?
 If we could start over again, we could use an authorization-centric model 
 such as object-capabilities~\cite{DVH}. The object-capability alternative 
 naturally supports POLA, the principle of least authority, shown in the upper 
-right. An object in an object-capability language can only cause effects by 
-invoking the public interfaces of objects it can reach. An invocation 
-provides references to other objects as arguments, providing the invoked 
-object the least authority needed to carry out these 
-requests~\cite{RobustComposition}. Within these rules, active content would 
-run with exactly the authority explicitly provided by its containing 
-document. Surprisingly, we can gain these benefits simply by applying a 
-milder, non-lethal sanitizer.
+right of Figure~\ref{fig:evo-auth}. An object in an object-capability 
+language can only cause effects by invoking the public interfaces of objects 
+it can reach. An invocation provides references to other objects as 
+arguments, providing the invoked object the least authority needed to carry 
+out these requests~\cite{RobustComposition}. Within these rules, active 
+content would run with exactly the authority explicitly provided by its 
+containing document. Surprisingly, we can gain these benefits simply by 
+applying a milder, non-lethal sanitizer.
 
 Experience with Java, Scheme, OCaml, Pict, and others demonstrates that 
 existing memory safe languages often already contain an expressive 
 object-capability subset~\cite[respectively]{joe-e, rees96security, emily, 
-backwater}. We refer to the object-capability subset of Javascript as 
-\emph{Caja}. The Caja translator restricts the Javascript it accepts to be 
-within this subset. This sanitized Javascript is still a general purpose 
-object programming language which Javascript programmers should find 
+backwater}. We refer to the object-capability subset of JavaScript as 
+\emph{Caja}. The Caja translator restricts the JavaScript it accepts to be 
+within this subset. This sanitized JavaScript is still a general purpose 
+object programming language which JavaScript programmers should find 
 familiar, pleasant, expressive, and easy to learn and use.
 
 Some web apps could use the Caja translator to allow active content in their 
@@ -341,194 +345,20 @@ pages~\cite{darpareview, stiegler:polaris, seaborn:plash, bitfrost}. A web
 app, on detecting the presence of a powerbox, could offer to edit a local 
 file chosen by the user~\qq{4}{6}.
 
-Our starting point is Javascript 1.5 as documented in the third edition of 
+Our starting point is JavaScript 1.5 as documented in the third edition of 
 the EcmaScript 262 standard~\cite{ECMA-262}; hereafter \emph{ES3}. The 
 remainder of this document explains the differences between Caja---the 
-Javascript subset accepted by the Caja translator---and ES3. Other documents 
+JavaScript subset accepted by the Caja translator---and ES3. Other documents 
 will explain Caja's sanitization of the remaining elements of active web 
 content: HTML, CSS, and the DOM and other APIs provided by browsers to 
-Javascript. We refer collectively to the subset of these accepted by the 
+JavaScript. We refer collectively to the subset of these accepted by the 
 Caja translator as \emph{Caja web content}.
 
 
-\section{Subsetting Javascript}
+\section{Subsetting JavaScript}
 \label{sec:subset}
 
-Caja defines a subset of Javascript both syntactically and semantically. The 
-Caja translator rejects non-Caja input statically when it can. But because 
-of Javascript's dynamic nature, some of Caja's restrictions cannot be 
-imposed statically, so the Caja translator translates the Javascript it 
-accepts into Javascript with additional runtime checks. To facilitate 
-development, it is easy to write a Caja program so it can run correctly 
-whether it is run as a Caja program or run directly as an untranslated 
-Javascript program.
-
-A web app (or any other Javascript-based embedding application framework) can 
-be written partially in Javascript and partially in Caja. The web app loads 
-the Caja runtime library, which is written in Javascript, and which is 
-assumed by the Javascript output of the Caja translator. All untrusted 
-scripts must be provided as Caja source code, to be verified and translated 
-by the Caja translator. The translator's output is either included directly 
-in the containing web page or loaded by the Caja runtime.
-
-A loose analogy with machine and operating system architecture should help 
-explain the relationships. In the analogy, the full Javascript language 
-serves the role of the machine's full instruction set. Javascript's global 
-scope serves the role of physical memory addresses. The I/O-capable objects 
-provided to Javascript by a hosting environment, such as the DOM objects 
-provided by the browser, serve the role of devices.
-
-\begin{description}
-
-  \item[User-mode.] By a combination of static and dynamic checks, the 
-  translator allows only a safe ``user-mode'' subset of Javascript. As with 
-  user-mode instructions, this subset can compute any computable function, 
-  but cannot cause external effects nor sense the outside world.
-
-  \item[Address mapping.] A package of Caja source code to be translated 
-  together defines a \emph{Caja module}. All code within the same module 
-  share a global scope, but distinct modules see disjoint global scopes. The 
-  translator maps Caja global variable references to instead address 
-  module-relative fields.
-
-  \item[Context switching.] When Caja object A has a reference to Caja 
-  object B, this should enable A to invoke B's public interface but not 
-  access B's internal state. A and B should both be able to defend their 
-  integrity from the other's possible misbehavior.
-
-  \item[System calls, device drivers.] When a Caja object A invokes an 
-  object B written directly in Javascript, the operations provided by B serve 
-  the role of system calls. Caja protects B from A, but A is fully 
-  vulnerable to B. When B is a safe wrapper around one of the host's 
-  device-like objects, such as a DOM node, B also serves as a device driver.
-
-\end{description}
-
-A ``system call'' corresponds to a Caja object invoking a Javascript object. 
-A web app that is written entirely in Javascript and provides many services 
-to its Caja objects directly would be like a monolithic kernel. For 
-compatibility with existing Javascript apps, we support this usage pattern 
-but we don't recommend it. By analogy with kernel code at the boundary with 
-untrusted code, such Javascript code needs to maintain delicate invariants 
-that it is easy to get wrong.
-
-The other extreme is analogous to a micro-kernel. The minimal necessary 
-Javascript code would be the app-neutral Caja runtime itself, and a small 
-app-dependent powerbox providing device drivers and initialization. All other 
-services should be Caja objects to be invoked by other Caja objects. Most 
-of the logic of a web app should be structured as such Caja-based services.
-
-\subsection{Javascript specific problems}
-
-Most of the above remarks would apply equally well were we starting from 
-various other base languages. There are additional issues peculiar to 
-Javascript that we must deal with. Many of these issues are also software 
-engineering hazards for which Javascript programmers have developed 
-defensive programming conventions. Where possible, Caja copes with these 
-issues by adapting and enforcing these existing conventions.
-
-\begin{description}
-
-  \item[Unconstrained Properties.] Javascript objects contain 
-  \emph{properties}, i.e., named fields holding references to other objects. 
-  Javascript specifies that some properties are constrained to be 
-  \emph{Internal}, \emph{ReadOnly}, \emph{DontEnum}, or \emph{DontDelete}. 
-  Such constraints would help an object protect itself from its clients, but 
-  Javascript provides no way to express these constraints in the language.
-  Instead, any object defined in Javascript is freely mutated by any other
-  object with access to it. 
-  
-  \item[Global scope.] All Javascript code executing within the same
-  Javascript engine (such as a web page or iframe) implicitly share access to
-  the same global scope. Therefore, in Javascript, objects cannot be isolated
-  from each other.
-
-  \item[Implicit mutable state.] Some base Javascript objects, such as 
-  \code{Array.prototype}, are implicitly reachable even without naming any 
-  global variable names. Even after global scope problems are fixed, the 
-  mutability of these objects would prevent isolation.
-
-  \item[Lack of encapsulation.] To support the ``context switching'' 
-  criterion explained above, objects need to be able to encapsulate their 
-  private state. Javascript does provide one such mechanism: lexical 
-  variables captured by lexical closures. However, using this as the sole 
-  encapsulation mechanism for object patterns conflicts with existing 
-  Javascript programming practice.
-
-  \item[``\code{this}'' what?] Javascript's rules for binding ``\code{this}'' 
-  depend on whether a function is invoked by \emph{construction}, by 
-  \emph{method call}, by \emph{function call}, or by \emph{reflection}. If a 
-  function written to be called in one way is instead called in another way, 
-  its ``\code{this}'' might be rebound to a different object or even to the 
-  global scope.
-
-  \item[Foreign \code{for}/\code{in} loops.] Javascript's 
-  \code{for}/\code{in} loop enumerates the names of all an object's 
-  properties, whether inherited or not, unless the property is DontEnum, 
-  which the Javascript programmer has no way to express. As a result, some of 
-  these names need to be skipped by the loop body. Every Javascript coding 
-  style invents its own defensive pattern of additional tests to skip 
-  unwanted property names.
-    
-  \item[Weak static analysis.] Although Caja is less dynamic than Javascript, 
-  we still assume that it is impractical to perform any interesting analysis, 
-  such as type inference, both statically and safely. As a result, Caja's 
-  static restrictions can only enforce simple syntactic rules. Remaining 
-  restrictions must be enforced by runtime checks.
-  
-  \item[Fast path.] For the micro-kernel approach to be attractive, Caja's 
-  extra runtime checks must not cost too much. Frequent operations, such as 
-  property access using ``.'' must run close to full speed.
-  
-  \item[Uncontrolled language growth.] The ES3 spec allows one to add new 
-  dangerous properties to core objects while claiming ES3 compatibility. 
-  Javascript language implementors, platform providers, and standards 
-  committees may use of this freedom with unpredictable results. For example, 
-  some Javascript implementations have added dangerous properties, like 
-  \code{eval}, to core objects, like \code{Object.prototype}. A safe subset 
-  must deny access to these additional unknown properties. But since these 
-  new properties are often DontEnum, there isn't even a reliable way to 
-  detect them.
-  
-  \item[Browser compatibility.] Web content must work on widely deployed 
-  browsers whether on not these browsers strictly conform to the relevant 
-  standards. At the time of this writing, the plausible baseline platform is 
-  the intersection of ES3, Firefox 1.5, Internet Explorer 6, Opera 8.5, 
-  Safari 3, and their successors. Fortunately, these browsers do conform 
-  quite closely to ES3. Later versions of Caja may specify larger subsets of 
-  EC3.
-  
-  \item[Silent errors.] In Javascript, various operations, such as setting a 
-  ReadOnly property, fail silently rather than throwing an error. Program 
-  logic then proceeds along normal control flow paths premised on the 
-  assumption that these operations succeeded, leading to inconsistency. To 
-  program defensively in the face of this hazard, every assignment would be 
-  followed by a ``\emph{did it really happen?}'' test. This would render 
-  programs unreadable and unmaintainable. Where practical, Caja deviates from 
-  standard Javascript by throwing an exception rather than failing silently.
-  
-  \item[Feature testing.] The Javascript \emph{feature testing} pattern 
-  relies on a failed attempt to read a property returning \code{undefined} 
-  rather than throwing an exception. Since, in this case, the program 
-  naturally notices the problem anyway, Caja does not turn this case into a 
-  thrown exception.
-    
-\end{description}
-
-This last point about ``Silent errors'' is another reason to avoid the 
-monolithic kernel approach. Web apps in untranslated Javascript are 
-vulnerable to any malicious active content that finds a way to provoke a 
-silent error and exploit the resulting inconsistency.
-
-Caja is only a subset of Javascript in a limited sense: While a Caja program 
-has not explicitly indicated a failure, it executes within Javascript's 
-semantics. By \emph{indicate a failure}, we mean either throwing an exception 
-or returning \code{undefined} for a property read. 
-
-\section{Cajita Specification}
-\label{sec:cajita-spec}
-
-\begin{figure}
+\begin{figure}[t!]
 \begin{alltt}
 function Counter()\ \{
   var count = 0;
@@ -555,7 +385,80 @@ shareable counter service.}
 \label{fig:cajita-counter}
 \end{figure}
 
-\begin{figure}
+Caja defines a subset of JavaScript both syntactically and semantically. The 
+Caja translator rejects non-Caja input statically when it can. But because 
+of JavaScript's dynamic nature, some of Caja's restrictions cannot be 
+imposed statically, so the Caja translator translates the JavaScript it 
+accepts into JavaScript with additional runtime checks. To facilitate 
+development, it is easy to write a Caja program so it can run correctly 
+whether it is run as a Caja program or run directly as an untranslated 
+JavaScript program.
+
+A web app (or any other JavaScript-based embedding application framework) can 
+be written partially in JavaScript and partially in Caja. The web app loads 
+the Caja runtime library, which is written in JavaScript, and which is 
+assumed by the JavaScript output of the Caja translator. All untrusted 
+scripts must be provided as Caja source code, to be verified and translated 
+by the Caja translator. The translator's output is either included directly 
+in the containing web page or loaded by the Caja runtime.
+
+A loose analogy with machine and operating system architecture should help 
+explain the relationships. In the analogy, the full JavaScript language 
+serves the role of the machine's full instruction set. JavaScript's global 
+environment serves the role of physical memory addresses. The I/O-capable 
+objects provided to JavaScript by a hosting environment, such as the DOM 
+objects provided by the browser, serve the role of devices.
+
+\begin{description}
+
+  \item[User-mode.] By a combination of static and dynamic checks, the 
+  translator allows only a safe ``user-mode'' subset of JavaScript. As with 
+  user-mode instructions, this subset can compute any computable function, 
+  but cannot cause external effects nor sense the outside world.
+
+  \item[Address mapping.] A package of Caja source code to be translated 
+  together defines a \emph{Caja module}. All code within the same module 
+  share a global environment, but distinct modules see disjoint global 
+  environments. The translator maps Caja global variable references to 
+  instead address module-relative fields.
+
+  \item[Context switching.] When Caja object A has a reference to Caja 
+  object B, this should enable A to invoke B's public interface but not 
+  access B's internal state. A and B should both be able to defend their 
+  integrity from the other's possible misbehavior.
+
+  \item[System calls, device drivers.] When a Caja object A invokes an 
+  object B written directly in JavaScript, the operations provided by B serve 
+  the role of system calls. Caja protects B from A, but A is fully 
+  vulnerable to B. When B is a safe wrapper around one of the host's 
+  device-like objects, such as a DOM node, B also serves as a device driver.
+
+\end{description}
+
+A ``system call'' corresponds to a Caja object invoking a JavaScript object. 
+A web app that is written entirely in JavaScript and provides many services 
+to its Caja objects directly would be like a monolithic kernel. For 
+compatibility with existing JavaScript apps, we support this usage pattern 
+but we don't recommend it. By analogy with kernel code at the boundary with 
+untrusted code, such JavaScript code needs to maintain delicate invariants 
+that it is easy to get wrong.
+
+The other extreme is analogous to a micro-kernel. The minimal necessary 
+JavaScript code would be the app-neutral Caja runtime itself, and a small 
+app-dependent powerbox providing device drivers and initialization. All other 
+services should be Caja objects to be invoked by other Caja objects. Most 
+of the logic of a web app should be structured as such Caja-based services.
+
+\subsection{JavaScript specific problems}
+
+Most of the above remarks would apply equally well were we starting from 
+various other base languages. There are additional issues peculiar to 
+JavaScript that we must deal with. Many of these issues are also software 
+engineering hazards for which JavaScript programmers have developed 
+defensive programming conventions. Where possible, Caja copes with these 
+issues by adapting and enforcing these existing conventions.
+
+\begin{figure}[t!]
 \begin{alltt}
 function Point(x, y)\ \{
   return caja.freeze(\{
@@ -577,16 +480,16 @@ definition in both Cajita and full Caja.}
 \label{fig:cajita-point}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[t!]
 \begin{alltt}
-function PointMixin(self, x, y)\ \{
-  self.toString = function()\ \{ 
-    return "<" + self.getX() + "," + 
-                 self.getY() + ">"; 
+function PointMixin(that, x, y)\ \{
+  that.toString = function()\ \{ 
+    return "<" + that.getX() + "," + 
+                 that.getY() + ">"; 
   \};
-  self.getX = function()\ \{ return x; \};
-  self.getY = function()\ \{ return y; \};
-  return self;
+  that.getX = function()\ \{ return x; \};
+  that.getY = function()\ \{ return y; \};
+  return that;
 \}
 function Point(x, y)\ \{
   return caja.freeze(PointMixin(\{\}, x, y));
@@ -595,8 +498,8 @@ function Point(x, y)\ \{
 
 \caption[Cajita Inheritance.]{Cajita Inheritance. In the Cajita inheritance 
 pattern, the equivalent of a non-final class is a function ending with 
-``\code{Mixin}'' with \code{self} as its first parameter. The method-like 
-functions can use \code{self} analogously to the use of \code{this} in full 
+``\code{Mixin}'' with \code{that} as its first parameter. The method-like 
+functions can use \code{that} analogously to the use of \code{this} in full 
 Caja, in order to refer to the overall object being defined. This 
 ``\code{*Mixin}'' function should only be called by ``subclasses'' such as 
 WobblyPointMixin below. If the class is non-abstract, it should also have a 
@@ -604,34 +507,135 @@ pseudo-constructor function such as \code{Point} for making direct instances.}
 \label{fig:cajita-super-point}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[t!]
 \begin{alltt}
-function WobblyPointMixin(self, x, y)\ \{
-  var super = caja.snapshot(self);
-  self.getX = function()\ \{ 
+function WobblyPointMixin(that)\ \{
+  var super = caja.snapshot(that);
+  that.getX = function()\ \{ 
     return super.getX() + Math.random(); 
   \};
-  return self;
+  return that;
 \}
 function WobblyPoint(x, y)\ \{
-  var self = PointMixin(\{\}, x, y));
-  self = WobblyPointMixin(self, x, y);
-  return caja.freeze(self);
+  var that = PointMixin(\{\}, x, y));
+  that = WobblyPointMixin(that);
+  return caja.freeze(that);
 \}
 \end{alltt}
 
 \caption[Cajita WobblyPointMixin.]{Cajita WobblyPointMixin. The equivalent of 
-a non-final subclass is a ``\code{*Mixin}'' function with \code{self} as its 
+a non-final subclass is a ``\code{*Mixin}'' function with \code{that} as its 
 first parameter, where the body calls \code{caja.snapshot} to make a frozen 
-copy of the partially initialized \code{self} at that moment, to serve as the 
+copy of the partially initialized \code{that} at that moment, to serve as the 
 conventional \code{super} for the other functions defined within this scope.}
 \label{fig:cajita-super-wobbly-point}
 \end{figure}
 
 
 
+\begin{description}
 
-Most of the complexity of Caja is needed to defend against Javascript's rules 
+  \item[Unconstrained Properties.] JavaScript objects contain 
+  \emph{properties}, i.e., named fields holding references to other objects. 
+  JavaScript specifies that some properties are constrained to be 
+  \emph{Internal}, \emph{ReadOnly}, \emph{DontEnum}, or \emph{DontDelete}. 
+  Such constraints would help an object protect itself from its clients, but 
+  JavaScript provides no way to express these constraints in the language. 
+  Instead, any object defined in JavaScript is freely mutated by any other 
+  object with access to it.
+  
+  \item[Global environment.] All JavaScript code executing within the same 
+  JavaScript engine (such as a web page or iframe) implicitly share access to 
+  the same global environment. Therefore, in JavaScript, objects cannot be 
+  isolated from each other.
+
+  \item[Implicit mutable state.] Some base JavaScript objects, such as 
+  \code{Array.prototype}, are implicitly reachable even without naming any 
+  global variable names. Even after global environment problems are fixed, 
+  the mutability of these objects would prevent isolation.
+
+  \item[Lack of encapsulation.] To support the ``context switching'' 
+  criterion explained above, objects need to be able to encapsulate their 
+  private state. JavaScript does provide one such mechanism: lexical 
+  variables captured by lexical closures. However, using this as the sole 
+  encapsulation mechanism for object patterns conflicts with existing 
+  JavaScript programming practice.
+
+  \item[``\code{this}'' what?] JavaScript's rules for binding ``\code{this}'' 
+  depend on whether a function is invoked by \emph{construction}, by 
+  \emph{method call}, by \emph{function call}, or by \emph{reflection}. If a 
+  function written to be called in one way is instead called in another way, 
+  its ``\code{this}'' might be rebound to a different object or even to the 
+  global environment.
+
+  \item[Foreign \code{for}/\code{in} loops.] JavaScript's 
+  \code{for}/\code{in} loop enumerates the names of all an object's 
+  properties, whether inherited or not, unless the property is DontEnum, 
+  which the JavaScript programmer has no way to express. As a result, some of 
+  these names need to be skipped by the loop body. Every JavaScript coding 
+  style invents its own defensive pattern of additional tests to skip 
+  unwanted property names.
+    
+  \item[Weak static analysis.] Although Caja is less dynamic than JavaScript, 
+  we still assume that it is impractical to perform any interesting analysis, 
+  such as type inference, both statically and safely. As a result, Caja's 
+  static restrictions can only enforce simple syntactic rules. Remaining 
+  restrictions must be enforced by runtime checks.
+  
+  \item[Fast path.] For the micro-kernel approach to be attractive, Caja's 
+  extra runtime checks must not cost too much. Frequent operations, such as 
+  property access using ``.'' must run close to full speed.
+  
+  \item[Uncontrolled language growth.] The ES3 spec allows one to add new 
+  dangerous properties to core objects while claiming ES3 compatibility. 
+  JavaScript language implementors, platform providers, and standards 
+  committees make use of this freedom with unpredictable results. For 
+  example, some JavaScript implementations have added dangerous properties, 
+  like \code{eval}, to core objects, like \code{Object.prototype}. A safe 
+  subset must deny access to these additional unknown properties. But since 
+  these new properties are often DontEnum, there isn't even a reliable way to 
+  detect them.
+  
+  \item[Browser compatibility.] Web content must work on widely deployed 
+  browsers whether on not these browsers strictly conform to the relevant 
+  standards. At the time of this writing, the plausible baseline platform is 
+  the intersection of ES3, Firefox 1.5, Internet Explorer 6, Opera 8.5, 
+  Safari 3, and their successors. Fortunately, these browsers do conform 
+  quite closely to ES3. Later versions of Caja may specify larger subsets of 
+  ES3.
+  
+  \item[Silent errors.] In JavaScript, various operations, such as setting a 
+  ReadOnly property, fail silently rather than throwing an error. Program 
+  logic then proceeds along normal control flow paths premised on the 
+  assumption that these operations succeeded, leading to inconsistency. To 
+  program defensively in the face of this hazard, every assignment would be 
+  followed by a ``\emph{did it really happen?}'' test. This would render 
+  programs unreadable and unmaintainable. Where practical, Caja deviates from 
+  standard JavaScript by throwing an exception rather than failing silently.
+  
+  \item[Feature testing.] The JavaScript \emph{feature testing} pattern 
+  relies on a failed attempt to read a property returning \code{undefined} 
+  rather than throwing an exception. Since, in this case, the program 
+  naturally notices the problem anyway, Caja does not turn this case into a 
+  thrown exception.
+    
+\end{description}
+
+This last point about ``Silent errors'' is another reason to avoid the 
+monolithic kernel approach. Web apps in untranslated JavaScript are 
+vulnerable to any malicious active content that finds a way to provoke a 
+silent error and exploit the resulting inconsistency.
+
+Caja is only a subset of JavaScript in a limited sense: While a Caja program 
+has not explicitly indicated a failure, it executes within JavaScript's 
+semantics. By \emph{indicate a failure}, we mean either throwing an exception 
+or returning \code{undefined} for a property read. 
+
+\section{Cajita Specification}
+\label{sec:cajita-spec}
+
+
+Most of the complexity of Caja is needed to defend against JavaScript's rules 
 regarding the binding of ``\code{this}''. The subset of Caja without 
 ``\code{this}'' is a perfectly reasonable and expressive programming 
 language. Caja supports ``\code{this}'' in order to ease the porting of old 
@@ -641,6 +645,55 @@ which we refer to as \emph{Cajita}, the diminutive, meaning ``small box''.
 translated program is within Cajita.)
 
 TODO To be written
+
+
+\begin{figure}[t!]
+\begin{alltt}
+function F(a\ldots)\{\ldots\}
+F.prototype.mname = /*method or function*/;
+F.prototype.mname = /*expr with no F*/;
+\ldots
+F.sname = /*function or expr with no F*/;
+\ldots
+/*Generate \_\_\_.freeze(F.prototype); here*/
+/*Generate \_\_\_.freeze(F); here*/
+/*first use of F*/
+\end{alltt}
+
+\caption[Initializing the Default Prototype]{Initializing the Default
+Prototype. The normal syntactic pattern for expressing class-like code is
+accepted, so long as all behavior definition happens before the first use of
+F. The \emph{mnames} would typically be method names. The \emph{snames} name
+static members, to be accessed off the constructor.}
+\label{fig:use-proto}
+\end{figure}
+
+
+\begin{figure}[t!]
+\begin{alltt}
+// Shorthand using:
+// caja.def(F,Sup,opt_members,opt_statics);
+
+function F(a\ldots)\{
+  F.Super.call(this,b\ldots); //optional
+  \ldots
+\}
+caja.def(F, G,\ \{
+  mname: /*method, function, or expr*/),
+  \ldots
+\},\ \{
+  sname: /*function or expr*/),
+  \ldots
+\});
+/*first use of F*/
+\end{alltt}
+
+\caption[Shorthand.]{Shorthand. As a convenience, the translator recognizes 
+this pattern as still defining \emph{F} rather than using it. \code{caja.def}
+initializes \code{F.Super = G}, sets up the normal inheritance relationship
+between F and G, and freezes F.prototype and F.}
+\label{fig:shorthand}
+\end{figure}
 
 
 \subsection{Definitions}
@@ -692,7 +745,7 @@ an alleged Caja program text to instead be statically rejected.
 
     \item[Stable language.] Virtually any input which should be statically 
     rejected by ES3 is forbidden, even if it would be allowed by a target 
-    browser or later Javascript specifications. This includes any use of 
+    browser or later JavaScript specifications. This includes any use of 
     keywords reserved in ES3. But we reserve the right to include 
     \emph{de-facto extensions} to ES3 as explained below.
     
@@ -700,7 +753,7 @@ an alleged Caja program text to instead be statically rejected.
     ES3 that we can accept as input, but still translate to conforming 
     EcmaScript on output, we may add these to Caja. For example, we are 
     currently considering allowing backslash as a line continuation 
-    character, since this is allowed by virtually all Javascript 
+    character, since this is allowed by virtually all JavaScript 
     implementations and can be trivially translated to correct ES3.
 
     \item[Without ``\code{with}''.] The ``\code{with}'' keyword is forbidden. 
@@ -710,7 +763,7 @@ an alleged Caja program text to instead be statically rejected.
 
     \item[Beware unicode.] Non-Latin-1 characters are forbidden for now in 
     source text outside of string literals. Some of these create parsing 
-    problems on some widely deployed Javascript platforms. Prohibiting these 
+    problems on some widely deployed JavaScript platforms. Prohibiting these 
     protects against some char-encoding attacks. We expect to relax this 
     restriction once we know how to do so safely.
 
@@ -719,7 +772,7 @@ an alleged Caja program text to instead be statically rejected.
     triple underscore for use by the Caja translator output and the Caja 
     runtime code. Firefox reserves use of the double underscore for itself.
     
-    \item[RegExp syntax.] In Javascript implementations, the pattern syntax 
+    \item[RegExp syntax.] In JavaScript implementations, the pattern syntax 
     is often optimized into a static object with mutable state, violating 
     isolation. Caja translates the \code{/pattern/} syntax to \code{new 
     RegExp("pattern")}.
@@ -731,41 +784,98 @@ an alleged Caja program text to instead be statically rejected.
 \end{description}
 
 
-
 \subsection{Dynamic restrictions}
 
 TODO To be written
 
-\subsection{Outer scope restrictions}
+\subsection{Outer environment restrictions}
 
-In Javascript, all code loaded into the same Javascript execution environment 
-shares a common mutable global scope. To avoid confusion, we refer to the 
-corresponding concept in Caja as the \emph{outer scope}. The Caja outer scope
- comes in two layers:
+In JavaScript, all code loaded into the same JavaScript execution environment 
+shares a common mutable global environment. To avoid confusion, we refer to 
+the corresponding concept in Caja as the \emph{outer environment}. The Caja 
+outer environment comes in two layers:
 
-Caja's \emph{shared outer scope} contains the subset of the standard ES3 
-global scope that we deem to be safe. This includes all the objects and 
-properties defined by that standard, with the following caveats. Unless 
-stated otherwise, all the objects in this outer scope are transitively 
+Caja's \emph{shared outer environment} contains the subset of the standard 
+ES3 global environment that we deem to be safe. This includes all the objects 
+and properties defined by that standard, with the following caveats. Unless 
+stated otherwise, all the objects in this outer environment are transitively 
 immutable, so that they provide no ambient authority to objects defined 
-within this scope. The shared outer scope itself is frozen.
+within this environment. The shared outer environment itself is frozen.
 
 Each instantiation of a Caja module is a separate plugin. Each plugin 
-executes with a new \emph{per-plugin outer scope} which is mutable and 
-inherits from Caja's shared outer scope. Therefore, all objects within the 
-same plugin can implicitly communicate and interfere with each other. 
+executes with a new \emph{per-plugin outer environment} which is mutable and 
+inherits from Caja's shared outer environment. Therefore, all objects within 
+the same plugin can implicitly communicate and interfere with each other. 
 However, \emph{claim: two separate plugins, even if they instantiate the same 
 module, are isolated from each other.}
 
+\begin{figure}[t!]
+\begin{alltt}
+function Point(x, y)\ \{
+  this.x\_ = x;
+  this.y\_ = y;
+\};
+Point.prototype.toString = function()\ \{ 
+  return "<" + this.x\_ + "," + 
+               this.y\_ + ">"; 
+\};
+Point.prototype.getX = function()\ \{ 
+  return this.x\_; 
+\};
+Point.prototype.getY = function()\ \{ 
+  return this.y\_; 
+\};
+Point.prototype.add = function(other)\ \{
+  return new Point(
+    this.x\_ + other.getX(),
+    this.y\_ + other.getY());
+\};
+
+var pt = new Point(3, 5);
+\end{alltt}
+
+\caption[Generic Point Example.]{Generic Point Example.}
+\label{fig:generic-point}
+\end{figure}
+
+
+
+\begin{figure}[t!]
+\begin{alltt}
+function Point(x, y)\ \{
+  this.x\_ = x;
+  this.y\_ = y;
+\};
+Caja.def(Point, Object,\ \{
+  toString: function()\ \{ 
+    return "<" + this.x\_ + "," + 
+                 this.y\_ + ">"; 
+  \},
+  getX: function()\ \{ return this.x\_; \},
+  getY: function()\ \{ return this.y\_; \},
+  add: function(other)\ \{
+    return new Point(
+      this.x\_ + other.getX(),
+      this.y\_ + other.getY());
+  \}
+\});
+
+var pt = new Point(3, 5);
+\end{alltt}
+
+\caption[Brief Point Example.]{Brief Point Example.}
+\label{fig:brief-point}
+\end{figure}
+
 \begin{description}
 
-    \item[eval] The Caja global scope has no ``\code{eval}'' function. 
+    \item[eval] The Caja global environment has no ``\code{eval}'' function. 
     Instead, the ``\code{Caja.eval}'' method will evaluate Caja source code 
     with an explicitly provided set of variable bindings to serve as its 
-    initial global scope, as explained below.
+    initial global environment, as explained below.
     
-    \item[Function] The Javascript \code{Function} constructor is absent from 
-    the default Caja outer scope, and must not be available in Caja. 
+    \item[Function] The JavaScript \code{Function} constructor is absent from 
+    the default Caja outer environment, and must not be available in Caja.
 
     Unfortunately, \code{Function} is unsafe even when invoked as a normal 
     function, and we're currently hoping to stop protecting normal function 
@@ -773,26 +883,26 @@ module, are isolated from each other.}
     on normal function calls, the rest of the restrictions in this document 
     together make \code{Function} uncreachable from Caja programs.}
     
-    \item[function.constructor] The Javascript \code{constructor} property of 
+    \item[function.constructor] The JavaScript \code{constructor} property of 
     functions is absent from Caja.
 
-    \item[new Date()] In Javascript, ``\code{new Date()}''  gives ambient 
+    \item[new Date()] In JavaScript, ``\code{new Date()}''  gives ambient 
     access to the current date and time, in violation of object-capability 
     rules as well as dependency injection discipline. \code{Date} is 
-    therefore a member of the global scope which is not actually immutable. 
-    Further, this ambient access to the current time provides a timing 
-    channel, further impeding any attempts to stem the leakage of bits over 
-    covert channels. Nevertheless, despite these concerns, because it 
+    therefore a member of the global environment which is not actually 
+    immutable. Further, this ambient access to the current time provides a 
+    timing channel, further impeding any attempts to stem the leakage of bits 
+    over covert channels. Nevertheless, despite these concerns, because it 
     provides only a read-only channel for sensing the world, Caja provides 
-    the Javascript \code{Date} constructor to Caja programs.
+    the JavaScript \code{Date} constructor to Caja programs.
 
-    \item[Math.random()] The Javascript \code{Math.random} method is not even 
+    \item[Math.random()] The JavaScript \code{Math.random} method is not even 
     read-only. The ES3 standard places no obligations regarding quality of the
     randomness produced. In particular, an implementation could conform to ES3
     and still leak to a given caller of \code{Math.random()} the ability to
     infer how many previous times it had been called. Nevertheless, Caja
-    provides the Javascript \code{Math.random} method to Caja programs. We
-    recommend that Javascript platform providers provide good enough
+    provides the JavaScript \code{Math.random} method to Caja programs. We
+    recommend that JavaScript platform providers provide good enough
     randomness that this method doesn't serve as an information channel
     between otherwise-isolated plugins.
     
@@ -815,7 +925,7 @@ TODO To be written
 
 \subsection{Definitions}
 
-To explain the restrictions Caja imposes on Javascript, we need some
+To explain the restrictions Caja imposes on JavaScript, we need some
 additional definitions. 
 
 \begin{description}
@@ -857,114 +967,6 @@ an alleged Caja program text to instead be statically rejected.
 
 \end{description}
 
-\begin{figure}
-\begin{alltt}
-function F(a\ldots)\{\ldots\}
-F.prototype.mname = /*method or function*/;
-F.prototype.mname = /*expr with no F*/;
-\ldots
-F.sname = /*function or expr with no F*/;
-\ldots
-/*Generate \_\_\_.freeze(F.prototype); here*/
-/*Generate \_\_\_.freeze(F); here*/
-/*first use of F*/
-\end{alltt}
-
-\caption[Initializing the Default Prototype]{Initializing the Default
-Prototype. The normal syntactic pattern for expressing class-like code is
-accepted, so long as all behavior definition happens before the first use of
-F. The \emph{mnames} would typically be method names. The \emph{snames} name
-static members, to be accessed off the constructor.}
-\label{fig:use-proto}
-\end{figure}
-
-
-\begin{figure}
-\begin{alltt}
-// Shorthand using:
-// caja.def(F,Sup,opt_members,opt_statics);
-
-function F(a\ldots)\{
-  F.Super.call(this,b\ldots); //optional
-  \ldots
-\}
-caja.def(F, G,\ \{
-  mname: /*method, function, or expr*/),
-  \ldots
-\},\ \{
-  sname: /*function or expr*/),
-  \ldots
-\});
-/*first use of F*/
-\end{alltt}
-
-\caption[Shorthand.]{Shorthand. As a convenience, the translator recognizes 
-this pattern as still defining \emph{F} rather than using it. \code{caja.def}
-initializes \code{F.Super = G}, sets up the normal inheritance relationship
-between F and G, and freezes F.prototype and F.}
-\label{fig:shorthand}
-\end{figure}
-
-
-
-\begin{figure}
-\begin{alltt}
-function Point(x, y)\ \{
-  this.x\_ = x;
-  this.y\_ = y;
-\};
-Point.prototype.toString = function()\ \{ 
-  return "<" + this.x\_ + "," + 
-               this.y\_ + ">"; 
-\};
-Point.prototype.getX = function()\ \{ 
-  return this.x\_; 
-\};
-Point.prototype.getY = function()\ \{ 
-  return this.y\_; 
-\};
-Point.prototype.add = function(other)\ \{
-  return new Point(
-    this.x\_ + other.getX(),
-    this.y\_ + other.getY());
-\};
-
-var pt = new Point(3, 5);
-\end{alltt}
-
-\caption[Generic Point Example.]{Generic Point Example.}
-\label{fig:generic-point}
-\end{figure}
-
-
-
-\begin{figure}
-\begin{alltt}
-function Point(x, y)\ \{
-  this.x\_ = x;
-  this.y\_ = y;
-\};
-Caja.def(Point, Object,\ \{
-  toString: function()\ \{ 
-    return "<" + this.x\_ + "," + 
-                 this.y\_ + ">"; 
-  \},
-  getX: function()\ \{ return this.x\_; \},
-  getY: function()\ \{ return this.y\_; \},
-  add: function(other)\ \{
-    return new Point(
-      this.x\_ + other.getX(),
-      this.y\_ + other.getY());
-  \}
-\});
-
-var pt = new Point(3, 5);
-\end{alltt}
-
-\caption[Brief Point Example.]{Brief Point Example.}
-\label{fig:brief-point}
-\end{figure}
-
 Although constructors are normally frozen and the ``\code{prototype}'' 
 property of functions is generally not settable, we allow at least the 
 patterns shown in Figures~\ref{fig:use-proto} and~\ref{fig:shorthand} for 
@@ -984,19 +986,7 @@ that cannot be executed too early.
 Claim: \emph{No Caja program can cause an observable mutation of an object
 Caja considers frozen.}
 
-
-
-\subsection{Dynamic restrictions}
-
-TODO To be written
-
-\subsection{The Caja Library}
-
-TODO To be written
-
-\subsection{Examples}
-
-\begin{figure}
+\begin{figure}[t!]
 \begin{alltt}
 function Brand(name) \{
   caja.requireType(name,'string');
@@ -1026,7 +1016,7 @@ function Brand(name) \{
 \label{fig:rights-amp}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[t!]
 \begin{alltt}
 function Mint(name) \{
   caja.requireType(name,'string');
@@ -1061,6 +1051,18 @@ function Mint(name) \{
 \label{fig:mintmaker}
 \end{figure}
 
+
+
+\subsection{Dynamic restrictions}
+
+TODO To be written
+
+\subsection{The Caja Library}
+
+TODO To be written
+
+\subsection{Examples}
+
 TODO To be written
 
 \section{Related work}
@@ -1083,7 +1085,9 @@ Dirk Balfanz,
 Bruno Bowden,
 Doug Crockford,
 Jed Donnelley,
-Brendan Eich.
+Brendan Eich,
+Adam Langley, and
+Kevin Reid.
 
 \appendix
 
@@ -1139,10 +1143,10 @@ assumption that the Caja runtime environment is as specified, the Caja
 translator generates translations equivalent to those specified above, but 
 inlined and optimized where possible. The meaning of translating is thereby 
 determined by the specification of these entry points into the Caja runtime 
-library. Where we show a translation apparently duplicating an expression,
-the translator instead introduces temporary variables as needed so that
-each expression evaluates exactly as many times and in the same order as in
-the original.}
+library. Where we show a translation apparently duplicating an expression, 
+the translator instead introduces temporary variables as needed so that each 
+expression evaluates exactly as many times and in the same order as in the 
+original.}
 \label{tab:prop-xlate}
 \end{figure*}
 
@@ -1202,10 +1206,10 @@ the original.}
 
 \caption[Hidden Attributes.]{Hidden Attributes. These methods handle the 
 concrete representations of object and property attributes. Only the methods 
-marked with a * should called by Javascript code during initialization of the 
+marked with a * should called by JavaScript code during initialization of the 
 embedding app, in order to express taming decisions. All objects that are 
-reachable from the ES3 shared scope should be frozen, so that this shared 
-scope becomes transitively read-only to all Caja code.}
+reachable from the ES3 shared environment should be frozen, so that this 
+shared environment becomes transitively read-only to all Caja code.}
 \label{tab:hide-attr}
 \end{figure*}
 
@@ -1213,11 +1217,11 @@ scope becomes transitively read-only to all Caja code.}
 \begin{tabular}{ll}
   Methods of \code{\_\_\_}  & method body \\ 
   \hline 
-  \code{canReadProp(self,name)}
+  \code{canReadProp(that,name)}
        & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
-       & \code{return canRead(self,name);} \\
-  \code{readProp(self,name)}
-       & \code{return canReadProp(self,name) ?\ self[name] :\ undefined;} \\
+       & \code{return canRead(that,name);} \\
+  \code{readProp(that,name)}
+       & \code{return canReadProp(that,name) ?\ that[name] :\ undefined;} \\
   \code{canReadPub(obj,name)}
        & \code{if (endWith(name,"\_"))\ \{ return false; \}} \\
        & \code{if (canRead(obj,name))\ \{ return true; \}} \\
@@ -1227,9 +1231,9 @@ scope becomes transitively read-only to all Caja code.}
   \code{readPub(obj,name)}
        & \code{return canReadPub(obj,name) ?\ obj[name] :\ undefined;} \\
   \hline
-  \code{canEnumProp(self,name)} 
+  \code{canEnumProp(that,name)} 
        & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
-       & \code{return canEnum(self,name);} \\
+       & \code{return canEnum(that,name);} \\
   \code{canEnumPub(obj,name)}
        & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
        & \code{if (canEnum(obj,name))\ \{ return true; \}} \\
@@ -1237,14 +1241,14 @@ scope becomes transitively read-only to all Caja code.}
        & \code{if (!hasOwnProp(obj,name))\ \{ return false; \}} \\
        & \code{allowEnum(obj,name); return true;} /*memoize*/ \\
   \hline
-  \code{canSetProp(self,name)}
+  \code{canSetProp(that,name)}
        & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
-       & \code{if (canSet(self,name))\ \{ return true; \}} \\
-       & \code{return !isFrozen(self);} \\
-  \code{setProp(self,name,val)}
-       & \code{require(canSetProp(self,name),\ldots);} \\
-       & \code{allowSet(self,name);} /*grant*/ \\
-       & \code{return self[name] = val;} \\
+       & \code{if (canSet(that,name))\ \{ return true; \}} \\
+       & \code{return !isFrozen(that);} \\
+  \code{setProp(that,name,val)}
+       & \code{require(canSetProp(that,name),\ldots);} \\
+       & \code{allowSet(that,name);} /*grant*/ \\
+       & \code{return that[name] = val;} \\
   \code{canSetPub(obj,name)}
        & \code{if (endWith(name,"\_"))\ \{ return false; \}} \\
        & \code{if (canSet(obj,name))\ \{ return true; \}} \\
@@ -1254,10 +1258,10 @@ scope becomes transitively read-only to all Caja code.}
        & \code{allowSet(obj,name);} /*grant*/ \\
        & \code{return obj[name] = val;} \\
   \hline               
-  \code{deleteProp(self,name)} 
-       & \code{require(canDeleteProp(self,name),\ldots);} \\
+  \code{deleteProp(that,name)} 
+       & \code{require(canDeleteProp(that,name),\ldots);} \\
        & /*XXX Bookkeeping yet to be determined*/ \\
-       & \code{return require(delete self[name],\ldots);} \\
+       & \code{return require(delete that[name],\ldots);} \\
   \code{deletePub(obj,name)} 
        & \code{require(canDeletePub(obj,name),\ldots);} \\
        & \code{require(isJSONContainer(obj),\ldots);} \\
@@ -1297,10 +1301,10 @@ track the implications of side effects.}
 
 \caption[Taming ES3 Global Non-Constructors.]{Taming ES3 Global 
 Non-Constructors. Except for \code{eval}, all non-constructors specified by 
-ES3 are visible in Caja's outer scope as immutable objects. Note that 
+ES3 are visible in Caja's outer environment as immutable objects. Note that 
 \code{Math.random} is not actually immutable, and therefore neither is 
-\code{Math} nor Caja's outer scope itself. We allow it anyway for reasons
-explained in the text.}
+\code{Math} nor Caja's outer environment itself. We allow it anyway for 
+reasons explained in the text.}
 \label{tab:taming-es3}
 \end{figure*}
   
@@ -1426,27 +1430,28 @@ case it is called as a constructor.}
        & \code{cookIfRaw(result);} /*remove RAW flag as soon as possible*/ \\
        & \code{return result;} \\
   \hline
-  \code{enterBase(Constr,self)}
-       & \code{require(self instanceof Constr),\ldots);} \\
-       & \code{require(cookIfRaw(self),\ldots);} \\
-  \code{enterDerived(Constr,self)}
-       & \code{require(self instanceof Constr),\ldots);} \\
-       & \code{require(isRaw(self),\ldots);} \\
-  \code{enterMethod(meth,self)}
-       & \code{require(isMethodOf(meth,self),\ldots);} \\
-       & \code{require(!cookIfRaw(self),\ldots);} \\
+  \code{enterBase(Constr,that)}
+       & \code{require(that instanceof Constr),\ldots);} \\
+       & \code{require(cookIfRaw(that),\ldots);} \\
+  \code{enterDerived(Constr,that)}
+       & \code{require(that instanceof Constr),\ldots);} \\
+       & \code{require(isRaw(that),\ldots);} \\
+  \code{enterMethod(meth,that)}
+       & \code{require(isMethodOf(meth,that),\ldots);} \\
+       & \code{require(!cookIfRaw(that),\ldots);} \\
   \hline
   \code{args(original)}
        & \code{return freeze(Array.prototype.slice.call\_\_\_(original,0));}
 \end{tabular}
 
-\caption[Context Switching.]{Context Switching. Javascript code must not use 
-Javascript's \code{new} on Caja code. Beyond this, no matter whether caller 
-or callee is in Javascript or Caja, a constructor can be called as 
+\caption[Context Switching.]{Context Switching. JavaScript code must not use 
+JavaScript's \code{new} on Caja code. Beyond this, no matter whether caller 
+or callee is in JavaScript or Caja, a constructor can be called as 
 a constructor using \code{new}, a method can be called as a method, and 
 a function can be called as a function, method, or constructor.}
 \label{tab:context-switching}
 \end{figure*}
+
 
 
 \begin{figure*}
