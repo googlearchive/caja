@@ -190,12 +190,19 @@ var ___;
             return obj.__proto__.constructor; 
         }
         
-        if (!hasOwnProp(obj,'constructor')) { return obj.constructor; }
-
-        var OldConstr = obj.constructor;
-        if (!(delete obj.constructor)) { return undefined; }
-        var result = obj.constructor;
-        obj.constructor = OldConstr;
+	var result;
+        if (!hasOwnProp(obj,'constructor')) { 
+	    result = obj.constructor;
+	} else {
+            var OldConstr = obj.constructor;
+            if (!(delete obj.constructor)) { return undefined; }
+            result = obj.constructor;
+            obj.constructor = OldConstr;
+	}
+	if (result.prototype.constructor === result) {
+	    // Memoize, so it'll be faster next time.
+	    obj.__proto__ = result.prototype;
+	}
         return result;
     }
 
