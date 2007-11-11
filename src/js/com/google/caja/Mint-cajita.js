@@ -13,9 +13,9 @@
 // limitations under the License.
 // .............................................................................
 
-// This module is written in the Caja subset of Javascript. It should
+// This module is written in the Cajita subset of Javascript. It should
 // work whether run translated or untranslated. Either way, it depends
-// on caja.js and Brand.js, but not on anything else.
+// on caja.js and Brand-cajita.js, but not on anything else.
 
 
 function Mint(name) {
@@ -31,44 +31,41 @@ function Mint(name) {
             toString:   function() { return '<'+balance+' '+name+' bucks>'; },
             getBalance: function() { return balance; },
             makePurse:  function() { return Purse(0); },
-            getDecr:    function() { return brand.seal(decr); },
+            getDecr:    function() { return brand.sealer.seal(decr); },
             deposit:    function(amount, src) {
-		var newBal = caja.requireNat(balance + amount);
-                brand.unseal(src.getDecr())(amount);
+                var newBal = caja.requireNat(balance + amount);
+                brand.unsealer.unseal(src.getDecr())(amount);
                 balance = newBal;
             }
         });
     }
     return caja.freeze({
         toString: function() { return '<'+name+' bank>'; },
-	makeAcct: Purse
+        makeAcct: Purse
     });
 }
 
 /*
 Squarefree session to be turned into a unit test:
 
-var usd = Mint('usd')
-var aliceAcct = usd.makeAcct(100)
-var bobAcct = usd.makeAcct(200)
-var payment = aliceAcct.makePurse()
-payment.deposit(10,aliceAcct)
-aliceAcct
-<90 usd bucks>
+var usd = Mint('usd');
+var aliceAcct = usd.makeAcct(100);
+var bobAcct = usd.makeAcct(200);
+var payment = aliceAcct.makePurse();
+[aliceAcct,payment,bobAcct];
+<100 usd bucks>,<0 usd bucks>,<200 usd bucks>
 
-payment
-<10 usd bucks>
-
-bobAcct.deposit(10,payment)
-[aliceAcct,payment,bobAcct]
+payment.deposit(10,aliceAcct);
+bobAcct.deposit(10,payment);
+[aliceAcct,payment,bobAcct];
 <90 usd bucks>,<0 usd bucks>,<210 usd bucks>
 
-var euro = Mint('euro')
-var carolAcct = euro.makeAcct(300)
-carolAcct.deposit(10,bobAcct)
+var euro = Mint('euro');
+var carolAcct = euro.makeAcct(300);
+carolAcct.deposit(10,bobAcct);
 Error on line 98: not my box: <usd box>
 
-[aliceAcct,payment,bobAcct,carolAcct]
+[aliceAcct,payment,bobAcct,carolAcct];
 <90 usd bucks>,<0 usd bucks>,<210 usd bucks>,<300 euro bucks>
 
 */

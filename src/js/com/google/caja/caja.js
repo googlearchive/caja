@@ -13,6 +13,13 @@
 // limitations under the License.
 // .............................................................................
 
+// This module is the Caja runtime library. It is written in
+// Javascript, not Caja, and would be rejected by the Caja
+// translator. This module exports two globals: 
+// * "___" for use by the output of the Caja translator and by some
+//   other untranslated Javascript code.
+// * "caja" providing some common services to the Caja programmer.
+
 
 // Caja adds the following common Javascript extensions to ES3
 
@@ -111,7 +118,7 @@ var ___;
                                  ' instead of ' + typeof specimen +
                                  ': ' + (opt_name||specimen));
         });
-	return specimen;
+        return specimen;
     }
 
     function requireNat(specimen) {
@@ -119,11 +126,11 @@ var ___;
         require(Math.floor(specimen) === specimen,
                 'Must be integral: '+specimen);
         require(specimen >= 0,'Must not be negative: '+specimen);
-	// Could pre-compute precision limit, but probably not faster
-	// enough to be worth it.
+        // Could pre-compute precision limit, but probably not faster
+        // enough to be worth it.
         require(Math.floor(specimen-1) === specimen-1,
                 'Beyond precision limit: '+specimen);
-	return specimen;
+        return specimen;
     }
 
     /**
@@ -139,23 +146,23 @@ var ___;
     }
 
     if (Function.prototype.apply___ === undefined) {
-	Function.prototype.apply___ = Function.prototype.apply;
+        Function.prototype.apply___ = Function.prototype.apply;
     }
     Function.prototype.apply = function(that,args) {
         require(typeof that === 'object',
                 'Can only apply() with object: '+that+'/'+this+'/'+args);
         require(that !== null,"Can't apply() with null");
         // XXX TODO Bug: Allowing <tt>that</tt> to have a valueOf()
-	// opens a security hole in Firefox. But disallowing it breaks
-	// all objects, such as Object("foo"), that legitimately have
-	// a valueOf() method. Help!
+        // opens a security hole in Firefox. But disallowing it breaks
+        // all objects, such as Object("foo"), that legitimately have
+        // a valueOf() method. Help!
         //
         // require(!('valueOf' in that),
         //         'Apply() with valueOf() broken on Firefox');
         return this.apply___(that,args);
     };
     if (Function.prototype.call___ === undefined) {
-	Function.prototype.call___ = Function.prototype.call;
+        Function.prototype.call___ = Function.prototype.call;
     }
     Function.prototype.call = function(that,varargs) {
         var args = Array.prototype.slice.call___(arguments,1);
@@ -164,7 +171,7 @@ var ___;
 
     var originalHOP_ = Object.prototype.hasOwnProperty;
     if ('___ORIGINAL___' in originalHOP_) {
-	originalHOP_ = originalHOP_.___ORIGINAL___;
+        originalHOP_ = originalHOP_.___ORIGINAL___;
     }
 
     /**
@@ -199,19 +206,19 @@ var ___;
             return obj.__proto__.constructor; 
         }
         
-	var result;
+        var result;
         if (!hasOwnProp(obj,'constructor')) { 
-	    result = obj.constructor;
-	} else {
+            result = obj.constructor;
+        } else {
             var OldConstr = obj.constructor;
             if (!(delete obj.constructor)) { return undefined; }
             result = obj.constructor;
             obj.constructor = OldConstr;
-	}
-	if (result.prototype.constructor === result) {
-	    // Memoize, so it'll be faster next time.
-	    obj.__proto__ = result.prototype;
-	}
+        }
+        if (result.prototype.constructor === result) {
+            // Memoize, so it'll be faster next time.
+            obj.__proto__ = result.prototype;
+        }
         return result;
     }
 
@@ -303,8 +310,9 @@ var ___;
     /** Mark meth as a method of instances of Constr. */
     function method(Constr,meth,opt_name) {
         requireType(meth,'function',opt_name);
-        require(isCtor(Constr), 'constructor expected: '+Constr);
         require(!isCtor(meth), "constructors can't be methods");
+        requireType(Constr,'function');
+        require(!isMethod(Constr), "Methods can't have methods");
         meth.___METHOD_OF___ = Constr;
         return freeze(meth);
     }
@@ -599,15 +607,20 @@ var ___;
     function setSuper(Sub,Sup) {
         requireType(Sub,'function');
         require(!isMethod(Sub),"A method can't inherit");
-        require(isCtor(Sup),'Can only inherit from a constructor');
-        require(!hasOwnProp(Sub,'Super'),"Can't inherit twice");
-        require(!isFrozen(Sub),'Sub constructor already frozen');
-        // XXX possible vulnerability: setSuper does *not* mark Sub as
-        // a constructor, so that a pure function can be on the left
-        // of a def and can be a method, such as Brand(foo).seal(..).
-        //
-        // Sub.___CONSTRUCTOR___ = true;
-        return Sub.Super = Sup;
+        requireType(Sup,'function');
+        require(!isMethod(Sup,"Can't inherit from a method"));
+        if (hasOwnProp(Sub,'Super')) {
+            require(Sub.Super === Sup,"Can't inherit twice");
+        } else {
+            require(!isFrozen(Sub),'Sub constructor already frozen');
+            // XXX possible vulnerability: setSuper does *not* mark Sub as
+            // a constructor, so that a pure function can be on the left
+            // of a def and can be a pseudo-method, such as
+            // Brand(foo).seal(..).
+            //
+            // Sub.___CONSTRUCTOR___ = true;
+            Sub.Super = Sup;
+        }
     }
 
     /**
@@ -672,13 +685,13 @@ var ___;
      */
     function wrapMethod(Constr,name,meth) {
         require(name in Constr.prototype, 'missing: ' + name);
-	var original = Constr.prototype[name];
-	if ('___ORIGINAL___' in original) {
-	    // In case we're reloading, preserve the real original
-	    // while forgetting the previous wrapper. (This case
-	    // probably only comes up during development.)
-	    original = original.___ORIGINAL___;
-	}
+        var original = Constr.prototype[name];
+        if ('___ORIGINAL___' in original) {
+            // In case we're reloading, preserve the real original
+            // while forgetting the previous wrapper. (This case
+            // probably only comes up during development.)
+            original = original.___ORIGINAL___;
+        }
         meth.___ORIGINAL___ = original;
         Constr.prototype[name] = meth;
         allowMethod(Constr,name);

@@ -13,57 +13,62 @@
 // limitations under the License.
 // .............................................................................
 
-// This module is written in the Caja subset of Javascript. It should
+// This module is written in the Cajita subset of Javascript. It should
 // work whether run translated or untranslated. Either way, it depends
 // on caja.js, but not on anything else.
 
 /**
- * Returns a matched Sealer/Unsealer pair, where the boxes produced by
- * a Sealer can be unsealed only by the Unsealer of the same pair.
+ * Returns a matched sealer/unsealer pair, where the boxes produced by
+ * a sealer can be unsealed only by the unsealer of the same pair.
+ *
+ * @author Mark S. Miller, based on a pattern invented by Marc Stiegler.
  */
 function Brand(name) {
     caja.requireType(name,'string');
     var flag = false;
     var squirrel = null;
 
-    /** Returns a sealed box containing the payload. */
-    function Sealer(payload) {
+    var sealer = caja.freeze({
+        toString: function() { return '<'+name+' sealer>'; },
 
-        /** 
-         * Encapsulates the payload, but makes it available to its
-         * Unsealer.
-         */
-        function Box() {
-            squirrel = payload;
-            flag = true;
+        /** Returns a sealed box containing the payload. */
+        seal: function(payload) {
+
+            /** 
+             * Encapsulates the payload, but makes it available to its
+             * unsealer when provoked.
+             */
+            return caja.freeze({
+                toString: function() { return '<'+name+' box>'; },
+                provoke: function() {
+                    squirrel = payload;
+                    flag = true;
+                }
+            });
         }
-        caja.def(Box, Object, {}, {
-            toString: function() { return '<'+name+' box>'; }
-        });
-        return Box;
-    }
-    caja.def(Sealer, Object, {}, {
-        toString: function() { return '<'+name+' sealer>'; }
     });
 
-    /**
-     * Obtains the payload sealed within a Box sealer only by our Sealer.
-     */
-    function Unsealer(box) {
-        flag = false; squirrel = null;
-        box();
-        caja.require(flag,'not my box: '+box);
-        var result = squirrel;
-        // next two lines are probably unneeded, but just in case
-        flag = false; squirrel = null;
-        return result;
-    }
-    caja.def(Unsealer, Object, {}, {
-        toString: function() { return '<'+name+' unsealer>'; }
+    var unsealer = caja.freeze({
+        toString: function() { return '<'+name+' unsealer>'; },
+
+        /**
+         * Obtains the payload sealed within a box sealer only by our sealer.
+         */
+        unseal: function(box) {
+            flag = false; 
+            squirrel = null;
+            box.provoke();
+            caja.require(flag,'not my box: '+box);
+            var result = squirrel;
+            // next two lines are probably unneeded, but just in case
+            flag = false; 
+            squirrel = null;
+            return result;
+        }
     });
     return caja.freeze({
         toString: function() { return '<'+name+' brand>'; },
-        seal: Sealer,
-        unseal: Unsealer
+        sealer: sealer,
+        unsealer: unsealer
     });
 }

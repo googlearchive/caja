@@ -3,13 +3,18 @@
 
 // Adapted from Tyler's original at
 // https://vsci.hpl.hp.com/res/ref_send.js in order work on Caja
-// Depends on JSON.sj -- the Caja-friendly safe JSON library
+
+// This module is written in the Caja subset of Javascript. It should
+// work whether run translated or untranslated. Either way, it depends
+// on caja.js and JSON.js (the Caja-friendly safe JSON library), but
+// not on anything else. 
 
 var Q = function() {
     function enqueue(task) { setTimeout(task, 0); }
 
     /** The abstract supertype of all possibly-eventual references. */
     function Promise() {}
+    caja.def(Promise); // Needed only to work untranslated
 
     /** A rejected promise. */
     function Rejected(reason) {
@@ -155,7 +160,7 @@ var Q = function() {
         this['@'] = URL;
     }
     caja.def(Remote, Promise, {
-        cast: function() { return this; }
+        cast: function() { return this; },
         when: function(fulfill, reject) {
             var proxy = this;
             var urlref = proxy['@'];
@@ -370,7 +375,10 @@ var Q = function() {
         },
         defer: function() {
             var pQ = new Tail();
-            return caja.freeze({ promiseQ: pQ, resolver: new Head(pQ) });
+            return caja.freeze({ 
+                promiseQ: pQ, 
+                resolver: new Head(pQ) 
+            });
         },
         connect: function(URL) { return new Remote(URL); }
     });
