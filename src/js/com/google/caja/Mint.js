@@ -33,23 +33,24 @@ function Mint(name) {
             makePurse:  function() { return Purse(0); },
             getDecr:    function() { return brand.seal(decr); },
             deposit:    function(amount, src) {
+		var newBal = caja.requireNat(balance + amount);
                 brand.unseal(src.getDecr())(amount);
-                balance += amount;
+                balance = newBal;
             }
         });
     }
-    caja.def(Purse, Object, {}, {
-        toString: function() { return '<'+name+' bank>'; }
+    return caja.freeze({
+        toString: function() { return '<'+name+' bank>'; },
+	makeAcct: Purse
     });
-    return Purse;
 }
 
 /*
 Squarefree session to be turned into a unit test:
 
 var usd = Mint('usd')
-var aliceAcct = usd(100)
-var bobAcct = usd(200)
+var aliceAcct = usd.makeAcct(100)
+var bobAcct = usd.makeAcct(200)
 var payment = aliceAcct.makePurse()
 payment.deposit(10,aliceAcct)
 aliceAcct
@@ -63,7 +64,7 @@ bobAcct.deposit(10,payment)
 <90 usd bucks>,<0 usd bucks>,<210 usd bucks>
 
 var euro = Mint('euro')
-var carolAcct = euro(300)
+var carolAcct = euro.makeAcct(300)
 carolAcct.deposit(10,bobAcct)
 Error on line 98: not my box: <usd box>
 

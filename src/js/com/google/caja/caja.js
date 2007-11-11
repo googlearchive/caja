@@ -24,7 +24,7 @@ if (Array.prototype.indexOf === undefined) {
     Array.prototype.indexOf = function(specimen) {
         var i;
         var len = this.length;
-        for (var i = 0; i < length; i += 1) {
+        for (var i = 0; i < len; i += 1) {
             if (this[i] === specimen) {
                 return i;
             }
@@ -33,7 +33,7 @@ if (Array.prototype.indexOf === undefined) {
     };
 }
 
-if (Array.prototype.lastIndexOf == undefined) {
+if (Array.prototype.lastIndexOf === undefined) {
     /** 
      * Returns the last index at which the specimen is found (by
      * "===") or -1 if none.  
@@ -94,7 +94,7 @@ var ___;
         if (typeof complaint === 'function') {
             complaint = complaint();
         }
-        if (typeof complaint == 'string') {
+        if (typeof complaint === 'string') {
             complaint = new Error(complaint);
         }
         throw complaint;
@@ -119,6 +119,8 @@ var ___;
         require(Math.floor(specimen) === specimen,
                 'Must be integral: '+specimen);
         require(specimen >= 0,'Must not be negative: '+specimen);
+	// Could pre-compute precision limit, but probably not faster
+	// enough to be worth it.
         require(Math.floor(specimen-1) === specimen-1,
                 'Beyond precision limit: '+specimen);
 	return specimen;
@@ -136,27 +138,34 @@ var ___;
             (str.substring(strLen-sufLen,strLen) === suffix);
     }
 
-    Function.prototype.apply___ = Function.prototype.apply;
-    Function.prototype.apply = function(self,args) {
-        require(typeof self === 'object',
-                'Can only apply() with object: '+self+'/'+this+'/'+args);
-        require(self !== null,"Can't apply() with null");
-        // XXX TODO Bug: Allowing self to have a valueOf() opens a
-        // security hole in Firefox. But disallowing it breaks all
-        // objects, such as Object("foo"), that legitimately have a
-        // valueOf() method. Help!
+    if (Function.prototype.apply___ === undefined) {
+	Function.prototype.apply___ = Function.prototype.apply;
+    }
+    Function.prototype.apply = function(that,args) {
+        require(typeof that === 'object',
+                'Can only apply() with object: '+that+'/'+this+'/'+args);
+        require(that !== null,"Can't apply() with null");
+        // XXX TODO Bug: Allowing <tt>that</tt> to have a valueOf()
+	// opens a security hole in Firefox. But disallowing it breaks
+	// all objects, such as Object("foo"), that legitimately have
+	// a valueOf() method. Help!
         //
-        // require(!('valueOf' in self),
+        // require(!('valueOf' in that),
         //         'Apply() with valueOf() broken on Firefox');
-        return this.apply___(self,args);
+        return this.apply___(that,args);
     };
-    Function.prototype.call___ = Function.prototype.call;
-    Function.prototype.call = function(self,varargs) {
+    if (Function.prototype.call___ === undefined) {
+	Function.prototype.call___ = Function.prototype.call;
+    }
+    Function.prototype.call = function(that,varargs) {
         var args = Array.prototype.slice.call___(arguments,1);
-        return this.apply(self,args);
+        return this.apply(that,args);
     };
 
     var originalHOP_ = Object.prototype.hasOwnProperty;
+    if ('___ORIGINAL___' in originalHOP_) {
+	originalHOP_ = originalHOP_.___ORIGINAL___;
+    }
 
     /**
      * <tt>hasOwnProp(obj.prop)</tt> means what
@@ -357,16 +366,16 @@ var ___;
     /** 
      * Can a constructed Caja object read this property on itself? 
      * <p>
-     * Can a Caja method whose <tt>this</tt> is bound to <tt>self</tt>
+     * Can a Caja method whose <tt>this</tt> is bound to <tt>that</tt>
      * read its own <tt>name</tt> property? For properties added to
      * the object by Caja code, the answer is yes. For other
      * properties, which must therefore be inherited from a prototype
      * written in Java rather than Caja, the answer is: iff they were
      * whitelisted.
      */
-    function canReadProp(self,name) {
+    function canReadProp(that,name) {
         if (endsWith(name,'__')) { return false; }
-        return canRead(self,name);
+        return canRead(that,name);
     }
 
     /** 
@@ -375,8 +384,8 @@ var ___;
      * <p>
      * If it can't, it reads <tt>undefined</tt> instead.
      */
-    function readProp(self,name) {
-        return canReadProp(self,name) ? self[name] : undefined;
+    function readProp(that,name) {
+        return canReadProp(that,name) ? that[name] : undefined;
     }
 
     /** 
@@ -411,9 +420,9 @@ var ___;
      * For properties defined in Caja, this is generally the same as
      * canReadProp. Otherwise according to whitelisting.
      */
-    function canEnumProp(self,name) {
+    function canEnumProp(that,name) {
         if (endsWith(name,'__')) { return false; }
-        return canEnum(self,name);
+        return canEnum(that,name);
     }
 
     /** 
@@ -436,19 +445,19 @@ var ___;
      * <p>
      * Iff this object isn't frozen.
      */
-    function canSetProp(self,name) {
+    function canSetProp(that,name) {
         if (endsWith(name,'__')) { return false; }
-        if (canSet(self,name)) { return true; }
-        return !isFrozen(self);
+        if (canSet(that,name)) { return true; }
+        return !isFrozen(that);
     }
 
     /**
      * A Caja method tries to assign to this property of its object.
      */
-    function setProp(self,name,val) {
-        require(canSetProp(self,name), 'not settable: ' + name);
-        allowSet(self,name); // grant
-        return self[name] = val;
+    function setProp(that,name,val) {
+        require(canSetProp(that,name), 'not settable: ' + name);
+        allowSet(that,name); // grant
+        return that[name] = val;
     }
 
     /**
@@ -489,10 +498,10 @@ var ___;
      * conditions are not yet determined, and neither is the implied
      * bookkeeping. 
      */
-    function deleteProp(self,name) {
-        require(canSetProp(self,name), 'not deleteable: ' + name);
+    function deleteProp(that,name) {
+        require(canSetProp(that,name), 'not deleteable: ' + name);
         require(false, 'XXX deletion not yet supported');
-        return require(delete self[name], 'not deleted: ' + name);
+        return require(delete that[name], 'not deleted: ' + name);
     }
 
     /**
@@ -531,9 +540,9 @@ var ___;
      * use a constructor to re-initialize an already constructed
      * object.
      */
-    function enterBase(Constr,self) {
-        require(self instanceof Constr, 'entering stolen constructor');
-        require(cookIfRaw(self), "Can't call constructor as method");
+    function enterBase(Constr,that) {
+        require(that instanceof Constr, 'entering stolen constructor');
+        require(cookIfRaw(that), "Can't call constructor as method");
     }
 
     /**
@@ -547,9 +556,9 @@ var ___;
      * the time any of the other constructors see it again, it's
      * already cooking.
      */
-    function enterDerived(Constr,self) {
-        require(self instanceof Constr, 'entering stolen constructor');
-        require(isRaw(self), "Can't call constructor as method");
+    function enterDerived(Constr,that) {
+        require(that instanceof Constr, 'entering stolen constructor');
+        require(isRaw(that), "Can't call constructor as method");
     }
 
     /**
@@ -557,9 +566,9 @@ var ___;
      * as a method on a cooked or cooking object (a non-raw object) of
      * the expected type.
      */
-    function enterMethod(meth,self) {
-        require(isMethodOf(meth,self), 'entering stolen method');
-        require(!cookIfRaw(self), "Can't call method as constructor");
+    function enterMethod(meth,that) {
+        require(isMethodOf(meth,that), 'entering stolen method');
+        require(!cookIfRaw(that), "Can't call method as constructor");
     }
 
     /**
@@ -663,7 +672,14 @@ var ___;
      */
     function wrapMethod(Constr,name,meth) {
         require(name in Constr.prototype, 'missing: ' + name);
-        meth.___ORIGINAL___ = Constr.prototype[name];
+	var original = Constr.prototype[name];
+	if ('___ORIGINAL___' in original) {
+	    // In case we're reloading, preserve the real original
+	    // while forgetting the previous wrapper. (This case
+	    // probably only comes up during development.)
+	    original = original.___ORIGINAL___;
+	}
+        meth.___ORIGINAL___ = original;
         Constr.prototype[name] = meth;
         allowMethod(Constr,name);
     }
