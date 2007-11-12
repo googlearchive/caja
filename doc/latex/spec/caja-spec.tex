@@ -183,7 +183,7 @@ function test() \{
 can only be initialized and used with \code{new} and \code{instanceof}. 
 \code{F.prototype.getX} is a \emph{method}. It can only be called as a 
 method. \code{F.make} and \code{test} are \emph{simple functions}. They can 
-be passed around freely.}
+be passed around freely. \\ } \hrule
 \label{fig:func-obj}
 \end{figure}
 
@@ -215,7 +215,7 @@ related work.
 Active Content. Identity-centric access controls have led to thrashing 
 between lost functionality and lost safety. To have both, we need to provide 
 \emph{least authority}: adequate authority for desired functionality without 
-excess authority which invites abube.}
+excess authority which invites abube. \\ } \hrule
   \label{fig:evo-auth}
 \end{figure}
 
@@ -264,7 +264,7 @@ model successfully protected the user.
   
 \caption[Only Bad Choices.]{Only Bad Choices. When documents contain scripts, 
 users can disable themselves from getting any work done \q{1} or enable 
-scripts to destroy all their other work \q{2}.}
+scripts to destroy all their other work \q{2}. \\ } \hrule
   \label{fig:dialog}
 \end{figure}
 
@@ -313,7 +313,9 @@ epicycle. Can we do better?
   model the motion of the heavenly bodies using only circles. With each
   discovery that the model didn't fit, yet another layer of circle was added
   to adjust. By contrast, Kepler's ellipses fit the problem directly, with no
-  need for endless additional layers.}
+  need for endless additional layers. 
+  \\ } \hrule
+  \label{fig:epicycle}
 \end{figure}
 
 If we could start over again, we could use an authorization-centric model 
@@ -381,7 +383,7 @@ the returned object is explicitly Frozen; and the instance-state of the
 object---the count variable---is accessible only as encapsulated state 
 captured by these pseudo-methods. As a result, a reference to a counter 
 object is a proper protected capability, providing least authority to a 
-shareable counter service.}
+shareable counter service. \\ } \hrule
 \label{fig:cajita-counter}
 \end{figure}
 
@@ -476,7 +478,8 @@ var pt = Point(3, 5);
 \caption[A Cajita Point.]{A Cajita Point. As a baseline, we first express 
 this simple example in Cajita with no support for inheritance. Other 
 elaborations will show how to support inheritance and various styles of 
-definition in both Cajita and full Caja.}
+definition in both Cajita and full Caja. 
+\\ } \hrule
 \label{fig:cajita-point}
 \end{figure}
 
@@ -503,7 +506,8 @@ functions can use \code{that} analogously to the use of \code{this} in full
 Caja, in order to refer to the overall object being defined. This 
 ``\code{*Mixin}'' function should only be called by ``subclasses'' such as 
 WobblyPointMixin below. If the class is non-abstract, it should also have a 
-pseudo-constructor function such as \code{Point} for making direct instances.}
+pseudo-constructor function such as \code{Point} for making direct 
+instances. \\ } \hrule
 \label{fig:cajita-super-point}
 \end{figure}
 
@@ -527,8 +531,9 @@ function WobblyPoint(x, y)\ \{
 a non-final subclass is a ``\code{*Mixin}'' function with \code{that} as its 
 first parameter, where the body calls \code{caja.snapshot} to make a frozen 
 copy of the partially initialized \code{that} at that moment, to serve as the 
-conventional \code{super} for the other functions defined within this scope.}
-\label{fig:cajita-super-wobbly-point}
+conventional \code{super} for the other functions defined within this scope. 
+\\ } \hrule
+\label{fig:cajita-super-wobbly-point} 
 \end{figure}
 
 
@@ -621,6 +626,27 @@ conventional \code{super} for the other functions defined within this scope.}
     
 \end{description}
 
+\begin{figure}[t!]
+\begin{alltt}
+function F(a\ldots)\{\ldots\}
+F.prototype.mname = /*method or function*/;
+F.prototype.mname = /*expr with no F*/;
+\ldots
+F.sname = /*function or expr with no F*/;
+\ldots
+/*Generate \_\_\_.freeze(F.prototype); here*/
+/*Generate \_\_\_.freeze(F); here*/
+/*first use of F*/
+\end{alltt}
+
+\caption[Initializing the Default Prototype]{Initializing the Default
+Prototype. The normal syntactic pattern for expressing class-like code is
+accepted, so long as all behavior definition happens before the first use of
+F. The \emph{mnames} would typically be method names. The \emph{snames} name
+static members, to be accessed off the constructor. \\ } \hrule
+\label{fig:use-proto}
+\end{figure}
+
 This last point about ``Silent errors'' is another reason to avoid the 
 monolithic kernel approach. Web apps in untranslated JavaScript are 
 vulnerable to any malicious active content that finds a way to provoke a 
@@ -647,33 +673,9 @@ translated program is within Cajita.)
 TODO To be written
 
 
-\begin{figure}[t!]
-\begin{alltt}
-function F(a\ldots)\{\ldots\}
-F.prototype.mname = /*method or function*/;
-F.prototype.mname = /*expr with no F*/;
-\ldots
-F.sname = /*function or expr with no F*/;
-\ldots
-/*Generate \_\_\_.freeze(F.prototype); here*/
-/*Generate \_\_\_.freeze(F); here*/
-/*first use of F*/
-\end{alltt}
-
-\caption[Initializing the Default Prototype]{Initializing the Default
-Prototype. The normal syntactic pattern for expressing class-like code is
-accepted, so long as all behavior definition happens before the first use of
-F. The \emph{mnames} would typically be method names. The \emph{snames} name
-static members, to be accessed off the constructor.}
-\label{fig:use-proto}
-\end{figure}
-
 
 \begin{figure}[t!]
 \begin{alltt}
-// Shorthand using:
-// caja.def(F,Sup,opt_members,opt_statics);
-
 function F(a\ldots)\{
   F.Super.call(this,b\ldots); //optional
   \ldots
@@ -691,7 +693,7 @@ caja.def(F, G,\ \{
 \caption[Shorthand.]{Shorthand. As a convenience, the translator recognizes 
 this pattern as still defining \emph{F} rather than using it. \code{caja.def}
 initializes \code{F.Super = G}, sets up the normal inheritance relationship
-between F and G, and freezes F.prototype and F.}
+between F and G, and freezes F.prototype and F. \\ } \hrule
 \label{fig:shorthand}
 \end{figure}
 
@@ -834,8 +836,10 @@ Point.prototype.add = function(other)\ \{
 var pt = new Point(3, 5);
 \end{alltt}
 
-\caption[Generic Point Example.]{Generic Point Example.}
-\label{fig:generic-point}
+\caption[Caja Point Example.]{Caja Point Example. The point example, written
+in this common class-like pattern of Javascript programming, is valid Caja. 
+\\ } \hrule
+\label{fig:caja-point}
 \end{figure}
 
 
@@ -863,7 +867,11 @@ Caja.def(Point, Object,\ \{
 var pt = new Point(3, 5);
 \end{alltt}
 
-\caption[Brief Point Example.]{Brief Point Example.}
+\caption[Brief Point Example.]{Brief Point Example. \code{caja.def} is
+provided as a convenience for more compactly defining a ``class''. The second
+argument is a constructor representing a ``superclass''. A fourth optional
+argument provides static members.
+\\ } \hrule
 \label{fig:brief-point}
 \end{figure}
 
@@ -988,39 +996,40 @@ Caja considers frozen.}
 
 \begin{figure}[t!]
 \begin{alltt}
-function Brand(name) \{
-  caja.requireType(name,'string');
+function Brand() \{
   var flag = false;
   var squirrel = null;
 
-  function Sealer(payload) \{
-    return function Box() \{
-      squirrel = payload;
-      flag = true;
-    \}
-  \}
-  function Unsealer(box) \{
-    flag = false; squirrel = null;
-    box();
-    caja.require(flag,\ldots);
-    return squirrel;
-  \}
   return caja.freeze(\{
-    seal: Sealer,
-    unseal: Unsealer
+    seal: function(payload) \{
+      return function box() \{
+        squirrel = payload;
+        flag = true;
+      \}
+    \},
+    unseal: function(box) \{
+      flag = false; squirrel = null;
+      box();
+      caja.require(flag,\ldots);
+      return squirrel;
+    \}
   \});
 \}
 \end{alltt}
 
-\caption[Rights Amplification]{Rights Amplification. xxx}
+\caption[Rights Amplification]{Rights Amplification. Each brand has a 
+\code{seal} and \code{unseal} function, acting like a matched encryption and 
+decryption key. Sealing an object returns a sealed \code{box} that can only 
+be unsealed by the corresponding \code{unseal} function. The implementation 
+technique shown here is due to Marc Stiegler.
+\\ } \hrule
 \label{fig:rights-amp}
 \end{figure}
 
 \begin{figure}[t!]
 \begin{alltt}
-function Mint(name) \{
-  caja.requireType(name,'string');
-  var brand = Brand(name);
+function Mint() \{
+  var brand = Brand();
   return function Purse(balance) \{
     caja.requireNat(balance);
     function decr(amount) \{
@@ -1047,7 +1056,12 @@ function Mint(name) \{
 \}
 \end{alltt}
 
-\caption[The MintMaker Example]{The MintMaker Example. xxx}
+\caption[The MintMaker Example]{The MintMaker Example. Call to \code{Mint} 
+creates a \code{Purse} function for making purses holding new transferable 
+units of a distinct ``currency''. Given two purses of the same currency, one 
+can transfer money between them, but one can't violate conservation of 
+currency.
+\\ } \hrule
 \label{fig:mintmaker}
 \end{figure}
 
@@ -1093,20 +1107,18 @@ Kevin Reid.
 
 \section{Tables}
 
-\subsection{Property access}
 
 \begin{figure*}
 \begin{tabular}{ll}
   Caja expression    & translates to ES3 code equivalent to\\ 
   \hline
-  \code{with}        & /*rejected*/ \\
+  \code{with}        & /*rejected in all positions*/ \\
   \hline
   \code{this.id\_\_} & /*rejected in all positions*/ \\
   \code{foo.id\_}    & /*rejected in all positions*/ \\      
   \code{local\_\_}   & /*rejected in all positions*/ \\        
   \code{glob\_}      & /*rejected in all positions*/ \\        
   \hline
-  \code{this.id\_}   & /*unaltered*/ \\
   \code{this.id}     & \code{\_\_\_.readProp(this,"id")}\\
   \code{foo.id}      & \code{\_\_\_.readPub(foo,"id")} \\
   \code{this[bar]}   & \code{\_\_\_.readProp(this,bar)} \\
@@ -1118,9 +1130,11 @@ Kevin Reid.
   \code{bar in foo}            
     & \code{(bar in foo) \&\& \_\_\_.canReadPub(foo,bar)} \\
   \code{for (key in this)\ \{\ldots\}} 
-    &\code{for (key in this)\ \{if (canEnumProp(this,key))\ \{\ldots\}\}}\\
+    &\code{for (key in this)
+     \{if (\_\_\_.canEnumProp(this,key))\ \{\ldots\}\}}\\
   \code{for (key in foo)\ \{\ldots\}}  
-    & \code{for (key in foo)\ \{if (canEnumPub(foo,key))\ \{\ldots\}\}} \\
+    & \code{for (key in foo)
+     \{if (\_\_\_.canEnumPub(foo,key))\ \{\ldots\}\}} \\
   \hline
   \code{this.id = baz}    & \code{\_\_\_.setProp(this,"id",baz)} \\
   \code{foo.id = baz}     & \code{\_\_\_.setPub(foo,"id",baz)} \\
@@ -1153,6 +1167,68 @@ original.}
 
 \begin{figure*}
 \begin{tabular}{ll}
+  Caja expression & translates to ES3 code equivalent to\\ 
+  \hline
+                 & \code{\_\_\_.module(function(\_\_\_OUTERS\_\_\_)\ \{} \\
+  /*caja module body*/      
+                 & \code{\ \ } /*translated module body*/ \\
+                 & \code{\});} \\
+  \hline
+  \code{this.id(a\ldots)} 
+                            & \code{\_\_\_.callProp(this,"id",[a\ldots])} \\
+  \code{foo.id(a\ldots)}  
+                            & \code{\_\_\_.callPub(foo,"id",[a\ldots])} \\
+  \code{this[bar](a\ldots)} 
+                            & \code{\_\_\_.callProp(this,bar,[a\ldots])} \\
+  \code{foo[bar](a\ldots)}  
+                            & \code{\_\_\_.callPub(foo,bar,[a\ldots])} \\
+  \code{new foo(a\ldots)}   & \code{new \_\_\_.asCtor(foo)(a\ldots)} \\
+  \code{foo(a\ldots)}       & \code{\_\_\_.asSimpleFunc(foo)(a\ldots)} \\
+  \hline
+  \code{function C(a\ldots)\ \{}
+                 & \code{var C = \_\_\_.ctor(function(a\ldots)\ \{} \\
+  \code{\ \ C.Super.call(this,b\ldots);}
+                 & \code{\ \ C.Super.call\_\_\_(this,b\ldots);} \\
+  \code{\ \ \ldots\}}
+                 & \code{\ \ \ldots\})} \\
+  \code{function C(a\ldots)\ \{}
+                 & \code{var C = \_\_\_.ctor(function(a\ldots)\ \{} \\
+  \code{\ \ \ldots this\ldots\}}
+                 & \code{\ \ \ldots this\ldots\})}\\
+  \hline
+  \code{function(a\ldots)\ \{}
+                 & \code{\_\_\_.method(C,function(a\ldots)\ \{} \\
+  \code{\ \ \ldots this\ldots\}}
+                 & \code{\ \ \ldots this\ldots\})}\\
+  \hline
+  \code{function F(a\ldots)\ \{}
+                 & \code{var F = \_\_\_.simpleFunc(function(a\ldots)\ \{} \\
+  \code{\ \ \ldots\}}          & \code{\ \ \ldots\})} \\
+  
+  \code{function(a\ldots)\ \{} 
+                 & \code{\_\_\_.simpleFunc(function(a\ldots)\ \{} \\
+  \code{\ \ \ldots\}}          & \code{\ \ \ldots\})} \\
+  \hline
+  \code{arguments.callee}      & /*rejected*/ \\
+  \code{\ldots arguments\ldots} 
+                   &\code{var \_\_\_args\_\_\_ = \_\_\_.args(arguments);}\\
+                   & \code{\ldots \_\_\_args\_\_\_\ldots} \\
+  \hline
+  \code{/pattern/} & \code{new RegExp("pattern")}
+\end{tabular}
+
+\caption[Translating Callers and Callees]{Translating Callers and Callees. A 
+translated Caja module can be loaded/evaled once, creating an anonymous 
+plugin-maker function. Each time the plugin-maker representing a module is 
+called, it makes a new plugin. Unless their creator puts them in contact, 
+even plugins made by the same plugin-maker are isolated from each other. The 
+expansions above have additional static restrictions explained in the text.}
+\label{tab:call-xlate}
+\end{figure*}
+
+
+\begin{figure*}
+\begin{tabular}{ll}
   Methods of \code{\_\_\_}  & method body \\ 
   \hline 
   \code{require(test,complaint)}
@@ -1179,7 +1255,6 @@ original.}
        & \code{obj[name+"\_canCall\_\_\_"] = true;} \\
   \code{allowSet(obj,name)}* 
        & \code{require(!isFrozen(obj),\ldots);} \\
-       & \code{obj[name+"\_canCall\_\_\_"] = false;} \\
        & \code{allowEnum(obj,name);} \\
        & \code{obj[name+"\_canSet\_\_\_"] = true;}\\
   \code{allowDelete(obj,name)}* 
@@ -1188,7 +1263,7 @@ original.}
        & /*other bookkeeping yet to be determined*/ \\
   \hline 
   \code{hasOwnProp(obj,name)} 
-       & \code{return Object.prototype.hasOwnProperty.call(obj,name);} \\
+       & /*like the original: \code{obj.hasOwnProperty(name)}*/ \\
   \code{isJSONContainer(obj)} 
        & \code{var Constr = directConstructor(obj);} \\
        & \code{return Constr === Object || Constr === Array;} \\ 
@@ -1196,22 +1271,39 @@ original.}
        & \code{return hasOwnProp(obj,"\_\_\_FROZEN\_\_\_");} \\
   \code{freeze(obj)}*
        & \code{for (k in obj)\ \{} \\
-       & \code{\ \ if (endsWith(k,"\_canSet\_\_\_") || endsWith(k,"\_canDelete\_\_\_"))\ \{}\\
-       & \code{\ \ \ \ obj[k] = false;}\\ 
-       & \code{\ \ \}} \\
-       & \code{\}} \\
+       & \code{\ \ if (endsWith(k,"\_canSet\_\_\_") || 
+     endsWith(k,"\_canDelete\_\_\_"))\ \{}\\
+       & \code{\ \ \ \ obj[k] = false;\}\}}\\ 
        & \code{obj.\_\_\_FROZEN\_\_\_ = true;} \\
+       & \code{if (typeof obj === "function") \{ freeze(obj.prototype); \}} \\
        & \code{return obj;} \\
+  \hline 
+  \code{method(Constr,meth)}
+       & \code{require(typeof Constr === "function",\ldots);} \\
+       & \code{require(typeof meth === "function",\ldots);} \\
+       & \code{meth.\_\_\_METHOD\_OF\_\_\_ = Constr;} \\
+       & \code{return freeze(meth);} \\
+  \code{allowMethod(Constr,name)}*
+       & \code{method(Constr,Constr.prototype[meth]);} \\
+       & \code{allowCall(Constr,name);} \\
+  \code{wrapMethod(Constr,name,meth)}*
+       & \code{require(name in Constr.prototype,\ldots);} \\
+       & \code{require(typeof meth === "function",\ldots);} \\
+       & \code{meth.\_\_\_ORIGINAL\_\_\_ = Constr.prototype[name];}\\
+       & \code{Constr.prototype[name] = meth;}\\
+       & \code{allowMethod(Constr,name);} \\
+       & \code{return freeze(meth);} \\
 \end{tabular}
 
 \caption[Hidden Attributes.]{Hidden Attributes. These methods handle the 
-concrete representations of object and property attributes. Only the methods 
-marked with a * should called by JavaScript code during initialization of the 
-embedding app, in order to express taming decisions. All objects that are 
-reachable from the ES3 shared environment should be frozen, so that this 
-shared environment becomes transitively read-only to all Caja code.}
+concrete representations of object and property attributes. Only methods 
+marked with a * should be called by JavaScript code during initialization of 
+the embedding app to express taming decisions. All objects that are reachable 
+from the ES3 shared environment should be frozen, so that the shared 
+environment is transitively read-only to all Caja code.}
 \label{tab:hide-attr}
 \end{figure*}
+
 
 \begin{figure*}
 \begin{tabular}{ll}
@@ -1227,7 +1319,8 @@ shared environment becomes transitively read-only to all Caja code.}
        & \code{if (canRead(obj,name))\ \{ return true; \}} \\
        & \code{if (!isJSONContainer(obj))\ \{ return false; \}} \\
        & \code{if (!hasOwnProp(obj,name))\ \{ return false; \}} \\
-       & \code{allowRead(obj,name); return true;} /*memoize*/ \\
+       & \code{allowRead(obj,name);} /*memoize*/ \\
+       & \code{return true;} \\
   \code{readPub(obj,name)}
        & \code{return canReadPub(obj,name) ?\ obj[name] :\ undefined;} \\
   \hline
@@ -1239,7 +1332,8 @@ shared environment becomes transitively read-only to all Caja code.}
        & \code{if (canEnum(obj,name))\ \{ return true; \}} \\
        & \code{if (!isJSONContainer(obj))\ \{ return false; \}} \\
        & \code{if (!hasOwnProp(obj,name))\ \{ return false; \}} \\
-       & \code{allowEnum(obj,name); return true;} /*memoize*/ \\
+       & \code{allowEnum(obj,name);} /*memoize*/ \\
+       & \code{return true;} \\
   \hline
   \code{canSetProp(that,name)}
        & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
@@ -1266,7 +1360,10 @@ shared environment becomes transitively read-only to all Caja code.}
        & \code{require(canDeletePub(obj,name),\ldots);} \\
        & \code{require(isJSONContainer(obj),\ldots);} \\
        & /*XXX Bookkeeping yet to be determined*/ \\
-       & \code{return require(delete obj[name],\ldots);}
+       & \code{return require(delete obj[name],\ldots);} \\
+  \hline
+  \code{args(original)}
+       & \code{return freeze(Array.prototype.slice.call\_\_\_(original,0));}
 \end{tabular}
 
 \caption[Property Access.]{Property Access. The calls to \code{allowRead} and
@@ -1307,167 +1404,22 @@ ES3 are visible in Caja's outer environment as immutable objects. Note that
 reasons explained in the text.}
 \label{tab:taming-es3}
 \end{figure*}
-  
-\subsection{Function calling}
-
-
-\begin{figure*}
-\begin{tabular}{ll}
-  Caja expression   & translates to ES3 code equivalent to\\ 
-  \hline
-                 & \code{\_\_\_.module(function(\_\_\_OUTERS\_\_\_)\ \{} \\
-  /*caja module body*/      
-                 & \code{\ \ } /*translated module body*/ \\
-                 & \code{\});} \\
-  \hline
-  \code{new F(a\ldots)}     & \code{\_\_\_.callNew(F,[a\ldots])} \\
-  \code{this.id\_(a\ldots)} & /*unaltered*/ \\
-  \code{this.id(a\ldots)} 
-               & \code{\_\_\_.invokeProp(this,"id",[a\ldots])} \\
-  \code{foo.id(a\ldots)}  
-               & \code{\_\_\_.invokePub(foo,"id",[a\ldots])} \\
-  \code{foo(a\ldots)}       & \code{foo.call\_\_\_(\_\_\_.USELESS,a\ldots)} \\
-  \hline
-  \code{function F(a\ldots)\ \{}  
-                 & \code{var F = \_\_\_.ctor(function(a\ldots)\ \{} \\
-                 & \code{\ \ \_\_\_.enterDerived(F,this);} \\
-  \code{\ \ F.Super.call(this,b\ldots);}
-                 & \code{\ \ F.Super.call\_\_\_(this,b\ldots);} \\
-  \code{\ \ \ldots this\ldots\}}
-                 & \code{\ \ \ldots this\ldots\})} \\
-  \hline
-  \code{function F(a\ldots)\ \{}  
-                 & \code{var F = \_\_\_.ctor(function(a\ldots)\ \{} \\
-                 & \code{\ \ \_\_\_.enterBase(F,this);}\\
-  \code{\ \ \ldots this\ldots\}}
-                 & \code{\ \ \ldots this\ldots\})}\\
-  \hline
-  \code{function(a\ldots)\ \{}    
-                 & \code{\_\_\_.method(F,function(a\ldots)\ \{} \\
-                 & \code{\ \ \_\_\_.enterMethod(arguments.callee,this);}\\
-  \code{\ \ \ldots this\ldots\}}
-                 & \code{\ \ \ldots this\ldots\})}\\
-  
-  \hline
-  \code{function foo(a\ldots)\ \{}   
-                 & \code{var foo = \_\_\_.freeze(function(a\ldots)\ \{} \\
-  \code{\ \ \ldots\}}          
-                 & \code{\ \ \ldots; return undefined;\})} \\
-  
-  \code{function(a\ldots)\ \{}
-                 & \code{\_\_\_.freeze(function(a\ldots)\ \{} \\
-  \code{\ \ \ldots\}}          
-                 & \code{\ \ \ldots; return undefined;\})} \\
-  \hline
-  \code{arguments.callee}   & /*unaltered, to allow anonymous recursion*/ \\
-  \code{\ldots arguments\ldots} 
-     &\code{var \_\_\_args\_\_\_ = \_\_\_.args(arguments);}\\
-                 & \code{\ldots \_\_\_args\_\_\_\ldots} \\
-  \hline
-  \code{/pattern/} & \code{new RegExp("pattern")}
-\end{tabular}
-
-\caption[Translating Callers and Callees]{Translating Callers and Callees.
-A translated Caja module can be loaded/evaled once, creating an anonymous
-plugin-maker function. Each time the plugin-maker representing a module is
-called, it makes a new plugin. Unless their creator puts them in contact, even
-plugins made by the same plugin-maker are isolated from each other. A function
-that falls off the end is rewritten to return \code{undefined} explicitly, in
-case it is called as a constructor.}
-\label{tab:call-xlate}
-\end{figure*}
-
-
-
-\begin{figure*}
-\begin{tabular}{ll}
-  Methods of \code{\_\_\_}  & method body \\ 
-  \hline 
-  \code{isCtor(Constr)}
-       & \code{return !!Constr.\_\_\_CONSTRUCTOR\_\_\_;} \\
-  \code{isMethod(meth)}
-       & \code{return !!meth.\_\_\_METHOD\_OF\_\_\_;} \\
-  \code{isMethodOf(meth,receiver)}
-       & \code{if (isMethod(meth))\ \{} \\
-       & \code{\ \ return receiver instanceof meth.\_\_\_METHOD\_OF\_\_\_;} \\
-       & \code{\} else\ \{ return !isCtor(meth); \}} \\
-  \hline
-  \code{ctor(Constr)}*
-       & \code{require(typeof Constr === "function",\ldots);} \\
-       & \code{Constr.\_\_\_CONSTRUCTOR\_\_\_ = true;} \\
-       & \code{return Constr;} /*translator freezes Constr later*/ \\
-  \code{method(Constr,meth)}*
-       & \code{require(typeof meth === "function",\ldots);} \\
-       & \code{require(isCtor(Constr),\ldots);} \\
-       & \code{meth.\_\_\_METHOD\_OF\_\_\_ = Constr;} \\
-       & \code{return freeze(meth);} \\
-  \code{wrapMethod(Constr,name,meth)}*
-       & \code{require(name in Constr.prototype,\ldots);}\\
-       & \code{meth.\_\_\_ORIGINAL\_\_\_ = Constr.prototype[name];}\\
-       & \code{Constr.prototype[name] = meth;}\\
-       & \code{return method(Constr,meth);}\\
-  \hline
-  \code{makeRaw(Constr)}
-       & \code{function F()\ \{ this.\_\_\_RAW\_\_\_ = true; \}} \\
-       & \code{F.prototype = Constr.prototype;} \\
-       & \code{return new F();} \\
-  \code{cookIfRaw(obj)}
-       & \code{return delete obj.\_\_\_RAW\_\_\_;} \\
-\end{tabular}
-
-\caption[Other Hidden Annotations.]{Other Hidden Annotations. xx.}
-\label{tab:hide-note}
-\end{figure*}
-
-
-\begin{figure*}
-\begin{tabular}{ll}
-  Methods of \code{\_\_\_}  & method body \\ 
-  \hline 
-  \code{callNew(Constr,args)} 
-       & \code{require(!isMethod(Constr),\ldots);} \\
-       & \code{var result = Constr.apply(makeRaw(Constr), args);} \\
-       & \code{cookIfRaw(result);} /*remove RAW flag as soon as possible*/ \\
-       & \code{return result;} \\
-  \hline
-  \code{enterBase(Constr,that)}
-       & \code{require(that instanceof Constr),\ldots);} \\
-       & \code{require(cookIfRaw(that),\ldots);} \\
-  \code{enterDerived(Constr,that)}
-       & \code{require(that instanceof Constr),\ldots);} \\
-       & \code{require(isRaw(that),\ldots);} \\
-  \code{enterMethod(meth,that)}
-       & \code{require(isMethodOf(meth,that),\ldots);} \\
-       & \code{require(!cookIfRaw(that),\ldots);} \\
-  \hline
-  \code{args(original)}
-       & \code{return freeze(Array.prototype.slice.call\_\_\_(original,0));}
-\end{tabular}
-
-\caption[Context Switching.]{Context Switching. JavaScript code must not use 
-JavaScript's \code{new} on Caja code. Beyond this, no matter whether caller 
-or callee is in JavaScript or Caja, a constructor can be called as 
-a constructor using \code{new}, a method can be called as a method, and 
-a function can be called as a function, method, or constructor.}
-\label{tab:context-switching}
-\end{figure*}
-
 
 
 \begin{figure*}
 \begin{tabular}{lll}
   Global ES3 constructor         & Property                    & Taming \\
   \hline 
-  constructor                    &                             & default ok \\
+  constructor                    &                             & default ctor \\
   constructor\code{.prototype}   &                             & default ok \\
                                  & \code{constructor}          & hidden \\
-                                 & \code{toString}             & default ok \\
-                                 & \code{toLocaleString}       & default ok \\
-                                 & \code{valueOf}              & default ok \\
+                                 & \code{toString}             & default method \\
+                                 & \code{toLocaleString}       & default method \\
+                                 & \code{valueOf}              & default method \\
   instances                      & \code{length}               & default ok \\
   \hline
   \code{Object.prototype}        & \code{hasOwnProperty}       & wrapped \\
-                                 & \code{isPrototypeOf}        & ok \\
+                                 & \code{isPrototypeOf}        & method \\
                                  & \code{propertyIsEnumerable} & wrapped \\
   \hline
   \code{Function}                &                             & hidden \\
@@ -1477,25 +1429,25 @@ a function can be called as a function, method, or constructor.}
   instances                      & \code{prototype}            & ok \\
                                  & \code{length}               & ok \\
   \hline
-  \code{Array.prototype}         & \code{concat}               & ok \\
-                                 & \code{join}                 & ok \\
+  \code{Array.prototype}         & \code{concat}               & method \\
+                                 & \code{join}                 & method \\
                                  & \code{pop}                  & wrapped \\
                                  & \code{push}                 & wrapped \\
                                  & \code{reverse}              & wrapped \\
                                  & \code{shift}                & wrapped \\
-                                 & \code{slice}                & ok \\
+                                 & \code{slice}                & method \\
                                  & \code{sort}                 & wrapped \\
                                  & \code{splice}               & wrapped \\
                                  & \code{unshift}              & wrapped \\
-                                 & \code{indexOf}              & added \\
-                                 & \code{lastIndexOf}          & added \\
+                                 & \code{indexOf}              & added method \\
+                                 & \code{lastIndexOf}          & added method \\
   \hline
   \code{String}                  & \code{fromCharCode}         & ok \\
   \code{String.prototype}        & \code{match}                & wrapped \\
                                  & \code{replace}              & wrapped \\
                                  & \code{search}               & wrapped \\
                                  & \code{split}                & wrapped \\
-                                 &           all others in ES3 & ok \\
+                                 &           all others in ES3 & ok, method \\
 \end{tabular}
 
 \caption[Taming ES3 Global Constructors, Part 1.]{Taming ES3 Global
@@ -1513,23 +1465,23 @@ mutability constraints.}
 \begin{tabular}{lll}
   Global ES3 constructor         & Property                    & Taming \\
   \hline 
-  \code{Boolean}                 &                             & ok \\
+  \code{Boolean}                 &                             & ctor \\
   \hline
   \code{Number}                  & \code{MAX\_VALUE}           & ok \\
                                  & \code{MIN\_VALUE}           & ok \\
                                  & \code{NaN}                  & ok \\
                                  & \code{NEGATIVE\_INFINITY}   & ok \\
                                  & \code{POSITIVE\_INFINITY}   & ok \\
-  \code{Number.prototype}        & \code{toFixed}              & ok \\
-                                 & \code{toExponential}        & ok \\
-                                 & \code{toPrecision}          & ok \\
+  \code{Number.prototype}        & \code{toFixed}              & method \\
+                                 & \code{toExponential}        & method \\
+                                 & \code{toPrecision}          & method \\
   \hline
-  \code{Date}                    &                             & ok* \\
+  \code{Date}                    &                             & ctor* \\
                                  & \code{parse}                & ok \\
                                  & \code{UTC}                  & ok \\
-  \code{Date.prototype}          & \code{to*String} all in ES3 & ok \\
-                                 & \code{toISOString}          & added \\
-                                 & \code{get*}      all in ES3 & ok \\
+  \code{Date.prototype}          & \code{to*String} all in ES3 & method \\
+                                 & \code{toISOString}          & added method \\
+                                 & \code{get*}      all in ES3 & method \\
                                  & \code{set*}      all in ES3 & wrapped \\
   \hline
   \code{RegExp.prototype}        & \code{exec}                 & wrapped \\
@@ -1552,11 +1504,8 @@ Constructors, Part 2. The \code{Date} constructor itself gives ambient
 read-only access to the current time, and is therefore not immutable.
 We allow it anyway for reasons explained in the text.} 
 
-\label{tab:taming-es3-1}
+\label{tab:taming-es3-2}
 \end{figure*}
-
-
-
 
 
 \bibliographystyle{abbrv}
