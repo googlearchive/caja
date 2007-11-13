@@ -1,0 +1,10 @@
+* Decide what to do about javascript URLs.  Should we extract the way
+   we do handler attributes, or reject.
+* i18n for GxpCompiler.  Implement gxp:msg.
+* Warn on missing ids or classes in the GXP not present in the CSS or
+  vice versa.  For the former, possibly limit to those within a
+  certain edit distance of ones defined.
+* Post compiler checks -- no comments or non-latin chars in output
+  source.  No control characters in markup since chars 0-8 not allowed
+  in XML at all, not even escaped.
+  Other inexpensive assertions?

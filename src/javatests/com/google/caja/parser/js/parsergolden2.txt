@@ -1,0 +1,117 @@
+Block
+  ExpressionStmt
+    FunctionConstructor
+      Block
+        ReturnStmt
+          Operation : TERNARY
+            Operation : LESS_THAN
+              Reference : n
+              IntegerLiteral : 0
+            StringLiteral : 'negative'
+            StringLiteral : 'positive'
+  FunctionDeclaration : ICAL_daysBetween
+    FunctionConstructor : ICAL_daysBetween
+      FormalParam : y1
+      FormalParam : m1
+      FormalParam : d1
+      FormalParam : y2
+      FormalParam : m2
+      FormalParam : d2
+      Block
+        Declaration : d
+        Conditional
+          Operation : STRICTLY_EQUAL
+            Reference : y1
+            Reference : y2
+          Block
+            Conditional
+              Operation : STRICTLY_EQUAL
+                Operation : ASSIGN
+                  Reference : d
+                  Operation : SUBTRACTION
+                    Reference : m1
+                    Reference : m2
+                IntegerLiteral : 0
+              Block
+                ReturnStmt
+                  Operation : SUBTRACTION
+                    Reference : d1
+                    Reference : d2
+              Operation : LESS_THAN
+                Reference : d
+                IntegerLiteral : 0
+              Block
+                ExpressionStmt
+                  Operation : ASSIGN
+                    Reference : d
+                    Operation : SUBTRACTION
+                      Reference : d1
+                      Reference : d2
+                WhileLoop : 
+                  Block
+                    ExpressionStmt
+                      Operation : ASSIGN_SUB
+                        Reference : d
+                        Operation : FUNCTION_CALL
+                          Reference : ICAL_daysInMonth
+                          Reference : y1
+                          Operation : POST_INCREMENT
+                            Reference : m1
+                  Operation : LESS_THAN
+                    Reference : m1
+                    Reference : m2
+                ReturnStmt
+                  Reference : d
+              Block
+                ExpressionStmt
+                  Operation : ASSIGN
+                    Reference : d
+                    Operation : SUBTRACTION
+                      Reference : d1
+                      Reference : d2
+                WhileLoop : 
+                  Block
+                    ExpressionStmt
+                      Operation : ASSIGN_SUM
+                        Reference : d
+                        Operation : FUNCTION_CALL
+                          Reference : ICAL_daysInMonth
+                          Reference : y2
+                          Operation : POST_INCREMENT
+                            Reference : m2
+                  Operation : LESS_THAN
+                    Reference : m2
+                    Reference : m1
+                ReturnStmt
+                  Reference : d
+          Block
+            ReturnStmt
+              Operation : FUNCTION_CALL
+                Operation : MEMBER_ACCESS
+                  Reference : Math
+                  Reference : round
+                Operation : DIVISION
+                  Operation : SUBTRACTION
+                    Operation : FUNCTION_CALL
+                      Operation : MEMBER_ACCESS
+                        Reference : Date
+                        Reference : UTC
+                      Reference : y1
+                      Operation : SUBTRACTION
+                        Reference : m1
+                        IntegerLiteral : 1
+                      Reference : d1
+                    Operation : FUNCTION_CALL
+                      Operation : MEMBER_ACCESS
+                        Reference : Date
+                        Reference : UTC
+                      Reference : y2
+                      Operation : SUBTRACTION
+                        Reference : m2
+                        IntegerLiteral : 1
+                      Reference : d2
+                  Operation : MULTIPLICATION
+                    Operation : MULTIPLICATION
+                      IntegerLiteral : 24
+                      IntegerLiteral : 3600
+                    IntegerLiteral : 1000

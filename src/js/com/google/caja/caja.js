@@ -1,5 +1,5 @@
 // Copyright (C) 2007 Google Inc.
-//      
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -15,7 +15,7 @@
 
 // This module is the Caja runtime library. It is written in
 // Javascript, not Caja, and would be rejected by the Caja
-// translator. This module exports two globals: 
+// translator. This module exports two globals:
 // * "___" for use by the output of the Caja translator and by some
 //   other untranslated Javascript code.
 // * "caja" providing some common services to the Caja programmer.
@@ -24,9 +24,9 @@
 // Caja adds the following common Javascript extensions to ES3
 
 if (Array.prototype.indexOf === undefined) {
-    /** 
+    /**
      * Returns the first index at which the specimen is found (by
-     * "===") or -1 if none.  
+     * "===") or -1 if none.
      */
     Array.prototype.indexOf = function(specimen) {
         var i;
@@ -41,9 +41,9 @@ if (Array.prototype.indexOf === undefined) {
 }
 
 if (Array.prototype.lastIndexOf === undefined) {
-    /** 
+    /**
      * Returns the last index at which the specimen is found (by
-     * "===") or -1 if none.  
+     * "===") or -1 if none.
      */
     Array.prototype.lastIndexOf = function(specimen) {
         var i;
@@ -85,7 +85,7 @@ var ___;
 
 (function() {
 
-    /** 
+    /**
      * Like an assert that can't be turned off.
      * <p>
      * Either returns true (on success) or throws (on failure).
@@ -114,7 +114,7 @@ var ___;
      */
     function requireType(specimen,typename,opt_name) {
         require(typeof specimen === typename, function() {
-            return new TypeError('expected ' + typename + 
+            return new TypeError('expected ' + typename +
                                  ' instead of ' + typeof specimen +
                                  ': ' + (opt_name||specimen));
         });
@@ -134,14 +134,14 @@ var ___;
     }
 
     /**
-     * Does str end with suffix? 
+     * Does str end with suffix?
      */
     function endsWith(str,suffix) {
         requireType(str,'string');
         requireType(suffix,'string');
         var strLen = str.length;
         var sufLen = suffix.length;
-        return strLen >= sufLen && 
+        return strLen >= sufLen &&
             (str.substring(strLen-sufLen,strLen) === suffix);
     }
 
@@ -201,13 +201,13 @@ var ___;
             return undefined;
         }
         // The following test will always return false in IE
-        if ('__proto__' in obj) { 
+        if ('__proto__' in obj) {
             if (obj.__proto__ === null) { return undefined; }
-            return obj.__proto__.constructor; 
+            return obj.__proto__.constructor;
         }
-        
+
         var result;
-        if (!hasOwnProp(obj,'constructor')) { 
+        if (!hasOwnProp(obj,'constructor')) {
             result = obj.constructor;
         } else {
             var OldConstr = obj.constructor;
@@ -244,7 +244,7 @@ var ___;
      * properties.
      * <p>
      * XXX TODO BUG: Currently, this does not yet require that obj's
-     * prototype itself also be frozen. 
+     * prototype itself also be frozen.
      */
     function freeze(obj) {
         for (var k in obj) {
@@ -261,18 +261,18 @@ var ___;
     /** Tests whether the fast-path canSet flag is set. */
     function canSet(obj,name)  { return !!obj[name+'_canSet___']; }
 
-    /** 
+    /**
      * Sets the fast-path canRead flag.
      * <p>
      * The various <tt>allow*</tt> functions are called externally by
      * Javascript code to express whitelisting taming decisions. And
      * they are called internally to memoize decisions arrived at by
-     * other means. 
+     * other means.
      */
     function allowRead(obj,name) { return obj[name+'_canRead___'] = true; }
 
     /** allowEnum implies allowRead */
-    function allowEnum(obj,name) { 
+    function allowEnum(obj,name) {
         return obj[name+'_canEnum___'] = allowRead(obj,name);
     }
 
@@ -332,7 +332,7 @@ var ___;
      * base constructor?
      */
     function isRaw(obj) { return !!obj.___RAW___; }
-    
+
     /**
      * Makes a raw instance that inherits correctly but is not yet
      * constructed.
@@ -350,7 +350,7 @@ var ___;
      * A base constructor other than Object or Array should first cook
      * their <tt>this</tt>, and require that it wasn't already cooked.
      * <p>
-     * A constructed object has three states: 
+     * A constructed object has three states:
      * <ol>
      * <li>After allocation but before entering the base constructor,
      *     the object is "raw".
@@ -358,7 +358,7 @@ var ___;
      *     "cooking".
      * <li>Once it's fully constructed, i.e., once the actual
      *     constructor that was called with <tt>new</tt> exits, the
-     *     object is "cooked". 
+     *     object is "cooked".
      * </ol>
      * Currently, we do not represent the difference between "cooking"
      * and "cooked". But the difference is important for reasoning
@@ -371,8 +371,8 @@ var ___;
         return delete obj.___RAW___;
     }
 
-    /** 
-     * Can a constructed Caja object read this property on itself? 
+    /**
+     * Can a constructed Caja object read this property on itself?
      * <p>
      * Can a Caja method whose <tt>this</tt> is bound to <tt>that</tt>
      * read its own <tt>name</tt> property? For properties added to
@@ -386,7 +386,7 @@ var ___;
         return canRead(that,name);
     }
 
-    /** 
+    /**
      * A constructed Caja object's attempt to read this property on
      * itself.
      * <p>
@@ -396,8 +396,8 @@ var ___;
         return canReadProp(that,name) ? that[name] : undefined;
     }
 
-    /** 
-     * Can a Caja client of <tt>obj</tt> read its <name> property? 
+    /**
+     * Can a Caja client of <tt>obj</tt> read its <name> property?
      * <p>
      * If the property is Internal (i.e. ends in an '_'), then no.
      * If the property was defined by Caja code, then yes. If it was
@@ -411,7 +411,7 @@ var ___;
         if (!hasOwnProp(obj,name)) { return false; }
         return allowRead(obj,name); // memoize
     }
-    
+
     /**
      * Caja code attempting to read a property on something besides
      * <tt>this</tt>.
@@ -422,8 +422,8 @@ var ___;
         return canReadPub(obj,name) ? obj[name] : undefined;
     }
 
-    /** 
-     * Would a Caja for/in loop on <tt>this</tt> see this name? 
+    /**
+     * Would a Caja for/in loop on <tt>this</tt> see this name?
      * <p>
      * For properties defined in Caja, this is generally the same as
      * canReadProp. Otherwise according to whitelisting.
@@ -433,8 +433,8 @@ var ___;
         return canEnum(that,name);
     }
 
-    /** 
-     * Would a Caja for/in loop by a client of obj see this name? 
+    /**
+     * Would a Caja for/in loop by a client of obj see this name?
      * <p>
      * For properties defined in Caja, this is generally the same as
      * canReadProp. Otherwise according to whitelisting.
@@ -447,7 +447,7 @@ var ___;
         return allowEnum(obj,name); // memoize
     }
 
-    /** 
+    /**
      * Can a method of a Caja constructed object directly assign to
      * this property of its object?
      * <p>
@@ -472,8 +472,8 @@ var ___;
      * Can a client of obj directly assign to its name property?
      * <p>
      * If this property is Internal (i.e., ends with a '_') or if it
-     * is an own property of a frozen object, then no. 
-     * If this property is not Internal and was defined by Capri code,
+     * is an own property of a frozen object, then no.
+     * If this property is not Internal and was defined by Caja code,
      * then yes. If the object is a JSON container, then
      * yes. Otherwise according to whitelisting decisions.
      * <p>
@@ -498,13 +498,13 @@ var ___;
 
     /**
      * A Caja constructed object attempts to delete one of its own
-     * properties. 
+     * properties.
      * <p>
      * A property is only deletable if it is also settable.
      * <p>
      * XXX TODO BUG: This is not yet supported. The precise eabling
      * conditions are not yet determined, and neither is the implied
-     * bookkeeping. 
+     * bookkeeping.
      */
     function deleteProp(that,name) {
         require(canSetProp(that,name), 'not deleteable: ' + name);
@@ -518,7 +518,7 @@ var ___;
      * <p>
      * XXX TODO BUG: This is not yet supported. The precise eabling
      * conditions are not yet determined, and neither is the implied
-     * bookkeeping. 
+     * bookkeeping.
      */
     function deletePub(obj,name) {
         require(canSetPub(obj,name), "can't delete: " + name);
@@ -678,10 +678,10 @@ var ___;
     /**
      * Replace the pre-existing Constr.prototype[name] with meth,
      * whitelist it, and make the original available to meth as
-     * meth.___ORIGINAL___. 
+     * meth.___ORIGINAL___.
      * <p>
      * This last step is only useful, of course, if meth is written in
-     * Javascript, not Caja. 
+     * Javascript, not Caja.
      */
     function wrapMethod(Constr,name,meth) {
         require(name in Constr.prototype, 'missing: ' + name);
@@ -748,7 +748,7 @@ var ___;
         'log','max','min','pow','random','round','sin','sqrt','tan'
     ]);
 
-    
+
     ctor(Object,undefined,'Object');
     all2(allowMethod,Object,[
         'toString','toLocaleString','valueOf','isPrototypeOf'
@@ -813,7 +813,7 @@ var ___;
         'toFixed','toExponential','toPrecision'
     ]);
 
-    
+
     ctor(Date,Object,'Date');
     allowRead(Date,'parse');
     allowRead(Date,'UTC');
@@ -844,7 +844,7 @@ var ___;
     all2(allowRead,RegExp,[
         'source','global','ignoreCase','multiline','lastIndex'
     ]);
-    
+
 
     ctor(Error,Object,'Error');
     allowRead(Error,'name');
@@ -855,7 +855,7 @@ var ___;
     ctor(SyntaxError,Error,'SyntaxError');
     ctor(TypeError,Error,'TypeError');
     ctor(URIError,Error,'URIError');
-    
+
 
     caja = freeze({
         require: require,
@@ -906,7 +906,7 @@ var ___;
         Number: Number,
         Date: Date,
         RegExp: RegExp,
-        
+
         Error: Error,
         EvalError: EvalError,
         RangeError: RangeError,
@@ -980,7 +980,7 @@ var ___;
 
         setSuper: setSuper,
         def: def,
-        
+
         allowMethod: allowMethod,
         wrapMethod: wrapMethod,
         allowMutator: allowMutator,

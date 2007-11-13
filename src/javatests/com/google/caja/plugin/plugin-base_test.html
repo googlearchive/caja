@@ -1,0 +1,67 @@
+<html>
+<head>
+<title>Plugin Base Test</title>
+<script type=text/javascript
+ src=../../../../../java/com/google/caja/plugin/caps/wrap_capability.js
+ onerror="alert(this.src)"
+></script>
+<script type=text/javascript
+ src=../../../../../java/com/google/caja/plugin/plugin-base.js
+ onerror="alert(this.src)"
+></script>
+<script type=text/javascript src=asserts.js onerror="alert(this.src)"
+></script>
+<script type=text/javascript src=plugin-base_test.js onerror="alert(this.src)"
+></script>
+
+
+<!-- TEST NODE -->
+<style type=text/css id=styles>#hello-world > div { color: blue }</style>
+
+</head>
+<body>
+
+<!-- TEST NODES -->
+<div style="display:none">
+
+  <h1 id=nsPrefix-header class="nsPrefix-foo bar nsPrefix-baz"
+   >Header <b>text</b></h1>' +
+
+  <xmp id=foo-unsafe>Not html in <here></xmp>
+
+  <div id="divvy" style="background-color: red;">divvy</div>
+</div>
+
+
+<h1>Plugin Base Test</h1>
+<script type=text/javascript>
+var tests = [];
+for (var k in this) {
+  if (/^test/.test(k) && 'function' == typeof this[k]) { tests.push(k); }
+}
+if (!tests.length) {
+  // for some reason, IE won't iterate over the test functions
+  tests.push('testCheckUriRelative', 'testGet', 'testHtml', 'testHtmlAttr',
+             'testBlessHtml', 'testCss', 'testDomNode', 'testPrefix', 'testRequire',
+             'testWrap', 'testCssNumber', 'testCssColor', 'testCssUri');
+}
+for (var i = 0; i < tests.length; ++i) {
+  var k = tests[i];
+  document.writeln('<h2>' + k + '<\/h2>');
+  try {
+    this[k]();
+    document.writeln('<h3>Passed</\h3>');
+  } catch (e) {
+    var msg = 'message' in e ? e.message : String(e);
+    if ('object' === (typeof e) && 'stack' in e) {
+      msg += '\n\n' + e.stack;
+    }
+    document.writeln('<h3>Failed<\/h3>');
+    document.writeln(
+        '<pre>' + msg.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '<\/pre>');
+  }
+}
+</script>
+
+</body>
+</html>

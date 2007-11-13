@@ -1,0 +1,12 @@
+=== test:///position.css
+@template('position');
+@param('left');
+@param('top');
+
+left: $(left)px; top: $(top)px
+
+
+=== test:///csstest.js
+function main() {
+  getElementById('hello-base').setStyle(position(20, 20));
+}

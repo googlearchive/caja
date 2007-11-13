@@ -1,0 +1,16 @@
+function Foo(baz, boo) {
+  var out___ = [];
+  out___.push(TestPluginPrivate.c2___.call(TestPlugin, baz * boo, baz), TestPluginPrivate.c2___.call(TestPlugin, baz * boo, baz));
+  return plugin_blessHtml___(out___.join(''));
+}
+
+function Bar(boo, faz) {
+  var out___ = [];
+  if (boo >= 0 && faz >= 0) {
+    out___.push('<p>.</p>', TestPluginPrivate.c1___.call(TestPlugin, faz, boo - 1));
+  }
+  return plugin_blessHtml___(out___.join(''));
+}
+MISSING_TEMPLATE_PARAM : gxpcompilerinput3.gxp:7+1@148 - 12@159
+MISSING_TEMPLATE_PARAM : gxpcompilerinput3.gxp:7+1@148 - 12@159
+UNKNOWN_TEMPLATE_PARAM : gxpcompilerinput3.gxp:8+17@206 - 22@211

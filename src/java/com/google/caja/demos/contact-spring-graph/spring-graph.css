@@ -1,0 +1,55 @@
+// Copyright (C) 2007 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+/*
+ * a graph is a square region that contains nodes.  The nodes are defined
+ * below but rely on the graph having (position: relative) so that their
+ * absolute positions are relative to the graph.
+ * The rest of the styles are decorative.
+ */
+#graph {
+  width: 40em; height: 30em; position: relative; background: #eee;
+  border: 1px solid #888;
+}
+/*
+ * a graph node is absolutely positioned within the graph.  Since the
+ * positioning code assumes a correspondance between style.{left,top} and
+ * node.offset{Top,Left} it can't have any margin or border.
+ */
+#graph .node {
+  position: absolute;
+  margin: 0 0 0 0 !important;
+  border-width: 0px !important;
+  background: #fff;
+  text-align: center;
+}
+/*
+ * the anchor provides a fixed point in the center of the graph that nodes
+ * can be laid out relative-to.  The anchor is the first "node" in the
+ * spring-graph, and key other nodes have a high connection to it, thus
+ * keeping the layout roughly centered.
+ */
+#anchor {
+  position: absolute;
+  left: 15em; top: 15em;
+}
+
+.box {
+  border: 1px solid #000;
+  height: 1.5em;
+}
+
+.selected {
+  background: #e0e0ff !important;
+}

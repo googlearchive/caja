@@ -1,0 +1,1 @@
+function Pc(a,b){var c;if(b){c=new t(a)}else{a=new x(a.year,a.month,a.date,0,0,0);c=new t(a)}var d=[];var e;for(var f=0;f<48;++f){e=of(c.d());if(b){if(f==0){e+=" (0 minutes)"}else if(f==1){e+=" (30 minutes)"}else{e+=" ("+f/2+" hour";e+=f==2?")":"s)"}}d.push(e);c.advance(_CB_HALF_HOUR)}return d}

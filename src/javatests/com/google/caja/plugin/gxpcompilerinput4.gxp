@@ -1,0 +1,11 @@
+<gxp:template name="Bar">
+
+<gxp:param name="boo"/>
+<gxp:param name="faz"/>
+
+<gxp:if cond="boo >= 0 &amp;&amp; faz >= 0">
+  <p>.</p>
+  <call:Foo baz="faz" boo="boo - 1"/>
+</gxp:if>
+
+</gxp:template>

@@ -1,0 +1,17 @@
+<gxp:template name="styling">
+
+<div style="color: blue">
+
+<div
+ style="background: 'http://www.badness.com/pic.png'"></div>
+
+<div
+ style="content: '&lt;a onclick=javascript:bad()&gt;clicky&lt;/a&gt;'">
+
+</div>
+
+</div>
+
+<div style="border-style: solid; font: bolder inherit inherit; color: bogus; background: url(smiley.png)">Zoiks</div>
+
+</gxp:template>

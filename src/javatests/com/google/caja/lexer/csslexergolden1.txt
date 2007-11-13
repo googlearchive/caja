@@ -1,0 +1,1694 @@
+IDEN [ADDRESS]: csslexerinput1.css:1+1@1 - 8@8
+PUNC [,]: csslexerinput1.css:1+8@8 - 9@9
+SPAC [\n]: csslexerinput1.css:1+9@9 - 2+1@10
+IDEN [BLOCKQUOTE]: csslexerinput1.css:2+1@10 - 11@20
+PUNC [,]: csslexerinput1.css:2+11@20 - 12@21
+SPAC [ \n]: csslexerinput1.css:2+12@21 - 3+1@23
+IDEN [BODY]: csslexerinput1.css:3+1@23 - 5@27
+PUNC [,]: csslexerinput1.css:3+5@27 - 6@28
+SPAC [ ]: csslexerinput1.css:3+6@28 - 7@29
+IDEN [DD]: csslexerinput1.css:3+7@29 - 9@31
+PUNC [,]: csslexerinput1.css:3+9@31 - 10@32
+SPAC [ ]: csslexerinput1.css:3+10@32 - 11@33
+IDEN [DIV]: csslexerinput1.css:3+11@33 - 14@36
+PUNC [,]: csslexerinput1.css:3+14@36 - 15@37
+SPAC [ \n]: csslexerinput1.css:3+15@37 - 4+1@39
+IDEN [DL]: csslexerinput1.css:4+1@39 - 3@41
+PUNC [,]: csslexerinput1.css:4+3@41 - 4@42
+SPAC [ ]: csslexerinput1.css:4+4@42 - 5@43
+IDEN [DT]: csslexerinput1.css:4+5@43 - 7@45
+PUNC [,]: csslexerinput1.css:4+7@45 - 8@46
+SPAC [ \n]: csslexerinput1.css:4+8@46 - 5+1@48
+IDEN [FIELDSET]: csslexerinput1.css:5+1@48 - 9@56
+PUNC [,]: csslexerinput1.css:5+9@56 - 10@57
+SPAC [ ]: csslexerinput1.css:5+10@57 - 11@58
+IDEN [FORM]: csslexerinput1.css:5+11@58 - 15@62
+PUNC [,]: csslexerinput1.css:5+15@62 - 16@63
+SPAC [\n]: csslexerinput1.css:5+16@63 - 6+1@64
+IDEN [FRAME]: csslexerinput1.css:6+1@64 - 6@69
+PUNC [,]: csslexerinput1.css:6+6@69 - 7@70
+SPAC [ ]: csslexerinput1.css:6+7@70 - 8@71
+IDEN [FRAMESET]: csslexerinput1.css:6+8@71 - 16@79
+PUNC [,]: csslexerinput1.css:6+16@79 - 17@80
+SPAC [\n]: csslexerinput1.css:6+17@80 - 7+1@81
+IDEN [H1]: csslexerinput1.css:7+1@81 - 3@83
+PUNC [,]: csslexerinput1.css:7+3@83 - 4@84
+SPAC [ ]: csslexerinput1.css:7+4@84 - 5@85
+IDEN [H2]: csslexerinput1.css:7+5@85 - 7@87
+PUNC [,]: csslexerinput1.css:7+7@87 - 8@88
+SPAC [ ]: csslexerinput1.css:7+8@88 - 9@89
+IDEN [H3]: csslexerinput1.css:7+9@89 - 11@91
+PUNC [,]: csslexerinput1.css:7+11@91 - 12@92
+SPAC [ ]: csslexerinput1.css:7+12@92 - 13@93
+IDEN [H4]: csslexerinput1.css:7+13@93 - 15@95
+PUNC [,]: csslexerinput1.css:7+15@95 - 16@96
+SPAC [ \n]: csslexerinput1.css:7+16@96 - 8+1@98
+IDEN [H5]: csslexerinput1.css:8+1@98 - 3@100
+PUNC [,]: csslexerinput1.css:8+3@100 - 4@101
+SPAC [ ]: csslexerinput1.css:8+4@101 - 5@102
+IDEN [H6]: csslexerinput1.css:8+5@102 - 7@104
+PUNC [,]: csslexerinput1.css:8+7@104 - 8@105
+SPAC [ ]: csslexerinput1.css:8+8@105 - 9@106
+IDEN [IFRAME]: csslexerinput1.css:8+9@106 - 15@112
+PUNC [,]: csslexerinput1.css:8+15@112 - 16@113
+SPAC [ \n]: csslexerinput1.css:8+16@113 - 9+1@115
+IDEN [NOFRAMES]: csslexerinput1.css:9+1@115 - 9@123
+PUNC [,]: csslexerinput1.css:9+9@123 - 10@124
+SPAC [ \n]: csslexerinput1.css:9+10@124 - 10+1@126
+IDEN [OBJECT]: csslexerinput1.css:10+1@126 - 7@132
+PUNC [,]: csslexerinput1.css:10+7@132 - 8@133
+SPAC [ ]: csslexerinput1.css:10+8@133 - 9@134
+IDEN [OL]: csslexerinput1.css:10+9@134 - 11@136
+PUNC [,]: csslexerinput1.css:10+11@136 - 12@137
+SPAC [ ]: csslexerinput1.css:10+12@137 - 13@138
+IDEN [P]: csslexerinput1.css:10+13@138 - 14@139
+PUNC [,]: csslexerinput1.css:10+14@139 - 15@140
+SPAC [ \n]: csslexerinput1.css:10+15@140 - 11+1@142
+IDEN [UL]: csslexerinput1.css:11+1@142 - 3@144
+PUNC [,]: csslexerinput1.css:11+3@144 - 4@145
+SPAC [ ]: csslexerinput1.css:11+4@145 - 5@146
+IDEN [APPLET]: csslexerinput1.css:11+5@146 - 11@152
+PUNC [,]: csslexerinput1.css:11+11@152 - 12@153
+SPAC [ \n]: csslexerinput1.css:11+12@153 - 12+1@155
+IDEN [CENTER]: csslexerinput1.css:12+1@155 - 7@161
+PUNC [,]: csslexerinput1.css:12+7@161 - 8@162
+SPAC [ ]: csslexerinput1.css:12+8@162 - 9@163
+IDEN [DIR]: csslexerinput1.css:12+9@163 - 12@166
+PUNC [,]: csslexerinput1.css:12+12@166 - 13@167
+SPAC [ \n]: csslexerinput1.css:12+13@167 - 13+1@169
+IDEN [HR]: csslexerinput1.css:13+1@169 - 3@171
+PUNC [,]: csslexerinput1.css:13+3@171 - 4@172
+SPAC [ ]: csslexerinput1.css:13+4@172 - 5@173
+IDEN [MENU]: csslexerinput1.css:13+5@173 - 9@177
+PUNC [,]: csslexerinput1.css:13+9@177 - 10@178
+SPAC [ ]: csslexerinput1.css:13+10@178 - 11@179
+IDEN [PRE]: csslexerinput1.css:13+11@179 - 14@182
+SPAC [   ]: csslexerinput1.css:13+14@182 - 17@185
+PUNC [{]: csslexerinput1.css:13+17@185 - 18@186
+SPAC [ ]: csslexerinput1.css:13+18@186 - 19@187
+IDEN [display]: csslexerinput1.css:13+19@187 - 26@194
+PUNC [:]: csslexerinput1.css:13+26@194 - 27@195
+SPAC [ ]: csslexerinput1.css:13+27@195 - 28@196
+IDEN [block]: csslexerinput1.css:13+28@196 - 33@201
+SPAC [ ]: csslexerinput1.css:13+33@201 - 34@202
+PUNC [}]: csslexerinput1.css:13+34@202 - 35@203
+SPAC [\n]: csslexerinput1.css:13+35@203 - 14+1@204
+IDEN [LI]: csslexerinput1.css:14+1@204 - 3@206
+SPAC [              ]: csslexerinput1.css:14+3@206 - 17@220
+PUNC [{]: csslexerinput1.css:14+17@220 - 18@221
+SPAC [ ]: csslexerinput1.css:14+18@221 - 19@222
+IDEN [display]: csslexerinput1.css:14+19@222 - 26@229
+PUNC [:]: csslexerinput1.css:14+26@229 - 27@230
+SPAC [ ]: csslexerinput1.css:14+27@230 - 28@231
+IDEN [list-item]: csslexerinput1.css:14+28@231 - 37@240
+SPAC [ ]: csslexerinput1.css:14+37@240 - 38@241
+PUNC [}]: csslexerinput1.css:14+38@241 - 39@242
+SPAC [\n]: csslexerinput1.css:14+39@242 - 15+1@243
+IDEN [HEAD]: csslexerinput1.css:15+1@243 - 5@247
+SPAC [            ]: csslexerinput1.css:15+5@247 - 17@259
+PUNC [{]: csslexerinput1.css:15+17@259 - 18@260
+SPAC [ ]: csslexerinput1.css:15+18@260 - 19@261
+IDEN [display]: csslexerinput1.css:15+19@261 - 26@268
+PUNC [:]: csslexerinput1.css:15+26@268 - 27@269
+SPAC [ ]: csslexerinput1.css:15+27@269 - 28@270
+IDEN [none]: csslexerinput1.css:15+28@270 - 32@274
+SPAC [ ]: csslexerinput1.css:15+32@274 - 33@275
+PUNC [}]: csslexerinput1.css:15+33@275 - 34@276
+SPAC [\n]: csslexerinput1.css:15+34@276 - 16+1@277
+IDEN [TABLE]: csslexerinput1.css:16+1@277 - 6@282
+SPAC [           ]: csslexerinput1.css:16+6@282 - 17@293
+PUNC [{]: csslexerinput1.css:16+17@293 - 18@294
+SPAC [ ]: csslexerinput1.css:16+18@294 - 19@295
+IDEN [display]: csslexerinput1.css:16+19@295 - 26@302
+PUNC [:]: csslexerinput1.css:16+26@302 - 27@303
+SPAC [ ]: csslexerinput1.css:16+27@303 - 28@304
+IDEN [table]: csslexerinput1.css:16+28@304 - 33@309
+SPAC [ ]: csslexerinput1.css:16+33@309 - 34@310
+PUNC [}]: csslexerinput1.css:16+34@310 - 35@311
+SPAC [\n]: csslexerinput1.css:16+35@311 - 17+1@312
+IDEN [TR]: csslexerinput1.css:17+1@312 - 3@314
+SPAC [              ]: csslexerinput1.css:17+3@314 - 17@328
+PUNC [{]: csslexerinput1.css:17+17@328 - 18@329
+SPAC [ ]: csslexerinput1.css:17+18@329 - 19@330
+IDEN [display]: csslexerinput1.css:17+19@330 - 26@337
+PUNC [:]: csslexerinput1.css:17+26@337 - 27@338
+SPAC [ ]: csslexerinput1.css:17+27@338 - 28@339
+IDEN [table-row]: csslexerinput1.css:17+28@339 - 37@348
+SPAC [ ]: csslexerinput1.css:17+37@348 - 38@349
+PUNC [}]: csslexerinput1.css:17+38@349 - 39@350
+SPAC [\n]: csslexerinput1.css:17+39@350 - 18+1@351
+IDEN [THEAD]: csslexerinput1.css:18+1@351 - 6@356
+SPAC [           ]: csslexerinput1.css:18+6@356 - 17@367
+PUNC [{]: csslexerinput1.css:18+17@367 - 18@368
+SPAC [ ]: csslexerinput1.css:18+18@368 - 19@369
+IDEN [display]: csslexerinput1.css:18+19@369 - 26@376
+PUNC [:]: csslexerinput1.css:18+26@376 - 27@377
+SPAC [ ]: csslexerinput1.css:18+27@377 - 28@378
+IDEN [table-header-group]: csslexerinput1.css:18+28@378 - 46@396
+SPAC [ ]: csslexerinput1.css:18+46@396 - 47@397
+PUNC [}]: csslexerinput1.css:18+47@397 - 48@398
+SPAC [\n]: csslexerinput1.css:18+48@398 - 19+1@399
+IDEN [TBODY]: csslexerinput1.css:19+1@399 - 6@404
+SPAC [           ]: csslexerinput1.css:19+6@404 - 17@415
+PUNC [{]: csslexerinput1.css:19+17@415 - 18@416
+SPAC [ ]: csslexerinput1.css:19+18@416 - 19@417
+IDEN [display]: csslexerinput1.css:19+19@417 - 26@424
+PUNC [:]: csslexerinput1.css:19+26@424 - 27@425
+SPAC [ ]: csslexerinput1.css:19+27@425 - 28@426
+IDEN [table-row-group]: csslexerinput1.css:19+28@426 - 43@441
+SPAC [ ]: csslexerinput1.css:19+43@441 - 44@442
+PUNC [}]: csslexerinput1.css:19+44@442 - 45@443
+SPAC [\n]: csslexerinput1.css:19+45@443 - 20+1@444
+IDEN [TFOOT]: csslexerinput1.css:20+1@444 - 6@449
+SPAC [           ]: csslexerinput1.css:20+6@449 - 17@460
+PUNC [{]: csslexerinput1.css:20+17@460 - 18@461
+SPAC [ ]: csslexerinput1.css:20+18@461 - 19@462
+IDEN [display]: csslexerinput1.css:20+19@462 - 26@469
+PUNC [:]: csslexerinput1.css:20+26@469 - 27@470
+SPAC [ ]: csslexerinput1.css:20+27@470 - 28@471
+IDEN [table-footer-group]: csslexerinput1.css:20+28@471 - 46@489
+SPAC [ ]: csslexerinput1.css:20+46@489 - 47@490
+PUNC [}]: csslexerinput1.css:20+47@490 - 48@491
+SPAC [\n]: csslexerinput1.css:20+48@491 - 21+1@492
+IDEN [COL]: csslexerinput1.css:21+1@492 - 4@495
+SPAC [             ]: csslexerinput1.css:21+4@495 - 17@508
+PUNC [{]: csslexerinput1.css:21+17@508 - 18@509
+SPAC [ ]: csslexerinput1.css:21+18@509 - 19@510
+IDEN [display]: csslexerinput1.css:21+19@510 - 26@517
+PUNC [:]: csslexerinput1.css:21+26@517 - 27@518
+SPAC [ ]: csslexerinput1.css:21+27@518 - 28@519
+IDEN [table-column]: csslexerinput1.css:21+28@519 - 40@531
+SPAC [ ]: csslexerinput1.css:21+40@531 - 41@532
+PUNC [}]: csslexerinput1.css:21+41@532 - 42@533
+SPAC [\n]: csslexerinput1.css:21+42@533 - 22+1@534
+IDEN [COLGROUP]: csslexerinput1.css:22+1@534 - 9@542
+SPAC [        ]: csslexerinput1.css:22+9@542 - 17@550
+PUNC [{]: csslexerinput1.css:22+17@550 - 18@551
+SPAC [ ]: csslexerinput1.css:22+18@551 - 19@552
+IDEN [display]: csslexerinput1.css:22+19@552 - 26@559
+PUNC [:]: csslexerinput1.css:22+26@559 - 27@560
+SPAC [ ]: csslexerinput1.css:22+27@560 - 28@561
+IDEN [table-column-group]: csslexerinput1.css:22+28@561 - 46@579
+SPAC [ ]: csslexerinput1.css:22+46@579 - 47@580
+PUNC [}]: csslexerinput1.css:22+47@580 - 48@581
+SPAC [\n]: csslexerinput1.css:22+48@581 - 23+1@582
+IDEN [TD]: csslexerinput1.css:23+1@582 - 3@584
+PUNC [,]: csslexerinput1.css:23+3@584 - 4@585
+SPAC [ ]: csslexerinput1.css:23+4@585 - 5@586
+IDEN [TH]: csslexerinput1.css:23+5@586 - 7@588
+SPAC [          ]: csslexerinput1.css:23+7@588 - 17@598
+PUNC [{]: csslexerinput1.css:23+17@598 - 18@599
+SPAC [ ]: csslexerinput1.css:23+18@599 - 19@600
+IDEN [display]: csslexerinput1.css:23+19@600 - 26@607
+PUNC [:]: csslexerinput1.css:23+26@607 - 27@608
+SPAC [ ]: csslexerinput1.css:23+27@608 - 28@609
+IDEN [table-cell]: csslexerinput1.css:23+28@609 - 38@619
+SPAC [ ]: csslexerinput1.css:23+38@619 - 39@620
+PUNC [}]: csslexerinput1.css:23+39@620 - 40@621
+SPAC [\n]: csslexerinput1.css:23+40@621 - 24+1@622
+IDEN [CAPTION]: csslexerinput1.css:24+1@622 - 8@629
+SPAC [         ]: csslexerinput1.css:24+8@629 - 17@638
+PUNC [{]: csslexerinput1.css:24+17@638 - 18@639
+SPAC [ ]: csslexerinput1.css:24+18@639 - 19@640
+IDEN [display]: csslexerinput1.css:24+19@640 - 26@647
+PUNC [:]: csslexerinput1.css:24+26@647 - 27@648
+SPAC [ ]: csslexerinput1.css:24+27@648 - 28@649
+IDEN [table-caption]: csslexerinput1.css:24+28@649 - 41@662
+SPAC [ ]: csslexerinput1.css:24+41@662 - 42@663
+PUNC [}]: csslexerinput1.css:24+42@663 - 43@664
+SPAC [\n]: csslexerinput1.css:24+43@664 - 25+1@665
+IDEN [TH]: csslexerinput1.css:25+1@665 - 3@667
+SPAC [              ]: csslexerinput1.css:25+3@667 - 17@681
+PUNC [{]: csslexerinput1.css:25+17@681 - 18@682
+SPAC [ ]: csslexerinput1.css:25+18@682 - 19@683
+IDEN [font-weight]: csslexerinput1.css:25+19@683 - 30@694
+PUNC [:]: csslexerinput1.css:25+30@694 - 31@695
+SPAC [ ]: csslexerinput1.css:25+31@695 - 32@696
+IDEN [bolder]: csslexerinput1.css:25+32@696 - 38@702
+PUNC [;]: csslexerinput1.css:25+38@702 - 39@703
+SPAC [ ]: csslexerinput1.css:25+39@703 - 40@704
+IDEN [text-align]: csslexerinput1.css:25+40@704 - 50@714
+PUNC [:]: csslexerinput1.css:25+50@714 - 51@715
+SPAC [ ]: csslexerinput1.css:25+51@715 - 52@716
+IDEN [center]: csslexerinput1.css:25+52@716 - 58@722
+SPAC [ ]: csslexerinput1.css:25+58@722 - 59@723
+PUNC [}]: csslexerinput1.css:25+59@723 - 60@724
+SPAC [\n]: csslexerinput1.css:25+60@724 - 26+1@725
+IDEN [CAPTION]: csslexerinput1.css:26+1@725 - 8@732
+SPAC [         ]: csslexerinput1.css:26+8@732 - 17@741
+PUNC [{]: csslexerinput1.css:26+17@741 - 18@742
+SPAC [ ]: csslexerinput1.css:26+18@742 - 19@743
+IDEN [text-align]: csslexerinput1.css:26+19@743 - 29@753
+PUNC [:]: csslexerinput1.css:26+29@753 - 30@754
+SPAC [ ]: csslexerinput1.css:26+30@754 - 31@755
+IDEN [center]: csslexerinput1.css:26+31@755 - 37@761
+SPAC [ ]: csslexerinput1.css:26+37@761 - 38@762
+PUNC [}]: csslexerinput1.css:26+38@762 - 39@763
+SPAC [\n]: csslexerinput1.css:26+39@763 - 27+1@764
+IDEN [BODY]: csslexerinput1.css:27+1@764 - 5@768
+SPAC [            ]: csslexerinput1.css:27+5@768 - 17@780
+PUNC [{]: csslexerinput1.css:27+17@780 - 18@781
+SPAC [ ]: csslexerinput1.css:27+18@781 - 19@782
+IDEN [padding]: csslexerinput1.css:27+19@782 - 26@789
+PUNC [:]: csslexerinput1.css:27+26@789 - 27@790
+SPAC [ ]: csslexerinput1.css:27+27@790 - 28@791
+QUAN [8px]: csslexerinput1.css:27+28@791 - 31@794
+PUNC [;]: csslexerinput1.css:27+31@794 - 32@795
+SPAC [ ]: csslexerinput1.css:27+32@795 - 33@796
+IDEN [line-height]: csslexerinput1.css:27+33@796 - 44@807
+PUNC [:]: csslexerinput1.css:27+44@807 - 45@808
+SPAC [ ]: csslexerinput1.css:27+45@808 - 46@809
+QUAN [1.33]: csslexerinput1.css:27+46@809 - 50@813
+SPAC [ ]: csslexerinput1.css:27+50@813 - 51@814
+PUNC [}]: csslexerinput1.css:27+51@814 - 52@815
+SPAC [\n]: csslexerinput1.css:27+52@815 - 28+1@816
+IDEN [H1]: csslexerinput1.css:28+1@816 - 3@818
+SPAC [              ]: csslexerinput1.css:28+3@818 - 17@832
+PUNC [{]: csslexerinput1.css:28+17@832 - 18@833
+SPAC [ ]: csslexerinput1.css:28+18@833 - 19@834
+IDEN [font-size]: csslexerinput1.css:28+19@834 - 28@843
+PUNC [:]: csslexerinput1.css:28+28@843 - 29@844
+SPAC [ ]: csslexerinput1.css:28+29@844 - 30@845
+QUAN [2em]: csslexerinput1.css:28+30@845 - 33@848
+PUNC [;]: csslexerinput1.css:28+33@848 - 34@849
+SPAC [ ]: csslexerinput1.css:28+34@849 - 35@850
+IDEN [margin]: csslexerinput1.css:28+35@850 - 41@856
+PUNC [:]: csslexerinput1.css:28+41@856 - 42@857
+SPAC [ ]: csslexerinput1.css:28+42@857 - 43@858
+QUAN [.67em]: csslexerinput1.css:28+43@858 - 48@863
+SPAC [ ]: csslexerinput1.css:28+48@863 - 49@864
+QUAN [0]: csslexerinput1.css:28+49@864 - 50@865
+SPAC [ ]: csslexerinput1.css:28+50@865 - 51@866
+PUNC [}]: csslexerinput1.css:28+51@866 - 52@867
+SPAC [\n]: csslexerinput1.css:28+52@867 - 29+1@868
+IDEN [H2]: csslexerinput1.css:29+1@868 - 3@870
+SPAC [              ]: csslexerinput1.css:29+3@870 - 17@884
+PUNC [{]: csslexerinput1.css:29+17@884 - 18@885
+SPAC [ ]: csslexerinput1.css:29+18@885 - 19@886
+IDEN [font-size]: csslexerinput1.css:29+19@886 - 28@895
+PUNC [:]: csslexerinput1.css:29+28@895 - 29@896
+SPAC [ ]: csslexerinput1.css:29+29@896 - 30@897
+QUAN [1.5em]: csslexerinput1.css:29+30@897 - 35@902
+PUNC [;]: csslexerinput1.css:29+35@902 - 36@903
+SPAC [ ]: csslexerinput1.css:29+36@903 - 37@904
+IDEN [margin]: csslexerinput1.css:29+37@904 - 43@910
+PUNC [:]: csslexerinput1.css:29+43@910 - 44@911
+SPAC [ ]: csslexerinput1.css:29+44@911 - 45@912
+QUAN [.83em]: csslexerinput1.css:29+45@912 - 50@917
+SPAC [ ]: csslexerinput1.css:29+50@917 - 51@918
+QUAN [0]: csslexerinput1.css:29+51@918 - 52@919
+SPAC [ ]: csslexerinput1.css:29+52@919 - 53@920
+PUNC [}]: csslexerinput1.css:29+53@920 - 54@921
+SPAC [\n]: csslexerinput1.css:29+54@921 - 30+1@922
+IDEN [H3]: csslexerinput1.css:30+1@922 - 3@924
+SPAC [              ]: csslexerinput1.css:30+3@924 - 17@938
+PUNC [{]: csslexerinput1.css:30+17@938 - 18@939
+SPAC [ ]: csslexerinput1.css:30+18@939 - 19@940
+IDEN [font-size]: csslexerinput1.css:30+19@940 - 28@949
+PUNC [:]: csslexerinput1.css:30+28@949 - 29@950
+SPAC [ ]: csslexerinput1.css:30+29@950 - 30@951
+QUAN [1.17em]: csslexerinput1.css:30+30@951 - 36@957
+PUNC [;]: csslexerinput1.css:30+36@957 - 37@958
+SPAC [ ]: csslexerinput1.css:30+37@958 - 38@959
+IDEN [margin]: csslexerinput1.css:30+38@959 - 44@965
+PUNC [:]: csslexerinput1.css:30+44@965 - 45@966
+SPAC [ ]: csslexerinput1.css:30+45@966 - 46@967
+QUAN [1em]: csslexerinput1.css:30+46@967 - 49@970
+SPAC [ ]: csslexerinput1.css:30+49@970 - 50@971
+QUAN [0]: csslexerinput1.css:30+50@971 - 51@972
+SPAC [ ]: csslexerinput1.css:30+51@972 - 52@973
+PUNC [}]: csslexerinput1.css:30+52@973 - 53@974
+SPAC [\n]: csslexerinput1.css:30+53@974 - 31+1@975
+IDEN [H4]: csslexerinput1.css:31+1@975 - 3@977
+PUNC [,]: csslexerinput1.css:31+3@977 - 4@978
+SPAC [ ]: csslexerinput1.css:31+4@978 - 5@979
+IDEN [P]: csslexerinput1.css:31+5@979 - 6@980
+PUNC [,]: csslexerinput1.css:31+6@980 - 7@981
+SPAC [\n]: csslexerinput1.css:31+7@981 - 32+1@982
+IDEN [BLOCKQUOTE]: csslexerinput1.css:32+1@982 - 11@992
+PUNC [,]: csslexerinput1.css:32+11@992 - 12@993
+SPAC [ ]: csslexerinput1.css:32+12@993 - 13@994
+IDEN [UL]: csslexerinput1.css:32+13@994 - 15@996
+PUNC [,]: csslexerinput1.css:32+15@996 - 16@997
+SPAC [\n]: csslexerinput1.css:32+16@997 - 33+1@998
+IDEN [FIELDSET]: csslexerinput1.css:33+1@998 - 9@1006
+PUNC [,]: csslexerinput1.css:33+9@1006 - 10@1007
+SPAC [ ]: csslexerinput1.css:33+10@1007 - 11@1008
+IDEN [FORM]: csslexerinput1.css:33+11@1008 - 15@1012
+PUNC [,]: csslexerinput1.css:33+15@1012 - 16@1013
+SPAC [\n]: csslexerinput1.css:33+16@1013 - 34+1@1014
+IDEN [OL]: csslexerinput1.css:34+1@1014 - 3@1016
+PUNC [,]: csslexerinput1.css:34+3@1016 - 4@1017
+SPAC [ ]: csslexerinput1.css:34+4@1017 - 5@1018
+IDEN [DL]: csslexerinput1.css:34+5@1018 - 7@1020
+PUNC [,]: csslexerinput1.css:34+7@1020 - 8@1021
+SPAC [ ]: csslexerinput1.css:34+8@1021 - 9@1022
+IDEN [DIR]: csslexerinput1.css:34+9@1022 - 12@1025
+PUNC [,]: csslexerinput1.css:34+12@1025 - 13@1026
+SPAC [\n]: csslexerinput1.css:34+13@1026 - 35+1@1027
+IDEN [MENU]: csslexerinput1.css:35+1@1027 - 5@1031
+SPAC [            ]: csslexerinput1.css:35+5@1031 - 17@1043
+PUNC [{]: csslexerinput1.css:35+17@1043 - 18@1044
+SPAC [ ]: csslexerinput1.css:35+18@1044 - 19@1045
+IDEN [margin]: csslexerinput1.css:35+19@1045 - 25@1051
+PUNC [:]: csslexerinput1.css:35+25@1051 - 26@1052
+SPAC [ ]: csslexerinput1.css:35+26@1052 - 27@1053
+QUAN [1.33em]: csslexerinput1.css:35+27@1053 - 33@1059
+SPAC [ ]: csslexerinput1.css:35+33@1059 - 34@1060
+QUAN [0]: csslexerinput1.css:35+34@1060 - 35@1061
+SPAC [ ]: csslexerinput1.css:35+35@1061 - 36@1062
+PUNC [}]: csslexerinput1.css:35+36@1062 - 37@1063
+SPAC [\n]: csslexerinput1.css:35+37@1063 - 36+1@1064
+IDEN [H5]: csslexerinput1.css:36+1@1064 - 3@1066
+SPAC [              ]: csslexerinput1.css:36+3@1066 - 17@1080
+PUNC [{]: csslexerinput1.css:36+17@1080 - 18@1081
+SPAC [ ]: csslexerinput1.css:36+18@1081 - 19@1082
+IDEN [font-size]: csslexerinput1.css:36+19@1082 - 28@1091
+PUNC [:]: csslexerinput1.css:36+28@1091 - 29@1092
+SPAC [ ]: csslexerinput1.css:36+29@1092 - 30@1093
+QUAN [.83em]: csslexerinput1.css:36+30@1093 - 35@1098
+PUNC [;]: csslexerinput1.css:36+35@1098 - 36@1099
+SPAC [ ]: csslexerinput1.css:36+36@1099 - 37@1100
+IDEN [line-height]: csslexerinput1.css:36+37@1100 - 48@1111
+PUNC [:]: csslexerinput1.css:36+48@1111 - 49@1112
+SPAC [ ]: csslexerinput1.css:36+49@1112 - 50@1113
+QUAN [1.17em]: csslexerinput1.css:36+50@1113 - 56@1119
+PUNC [;]: csslexerinput1.css:36+56@1119 - 57@1120
+SPAC [ ]: csslexerinput1.css:36+57@1120 - 58@1121
+IDEN [margin]: csslexerinput1.css:36+58@1121 - 64@1127
+PUNC [:]: csslexerinput1.css:36+64@1127 - 65@1128
+SPAC [ ]: csslexerinput1.css:36+65@1128 - 66@1129
+QUAN [1.67em]: csslexerinput1.css:36+66@1129 - 72@1135
+SPAC [ ]: csslexerinput1.css:36+72@1135 - 73@1136
+QUAN [0]: csslexerinput1.css:36+73@1136 - 74@1137
+SPAC [ ]: csslexerinput1.css:36+74@1137 - 75@1138
+PUNC [}]: csslexerinput1.css:36+75@1138 - 76@1139
+SPAC [\n]: csslexerinput1.css:36+76@1139 - 37+1@1140
+IDEN [H6]: csslexerinput1.css:37+1@1140 - 3@1142
+SPAC [              ]: csslexerinput1.css:37+3@1142 - 17@1156
+PUNC [{]: csslexerinput1.css:37+17@1156 - 18@1157
+SPAC [ ]: csslexerinput1.css:37+18@1157 - 19@1158
+IDEN [font-size]: csslexerinput1.css:37+19@1158 - 28@1167
+PUNC [:]: csslexerinput1.css:37+28@1167 - 29@1168
+SPAC [ ]: csslexerinput1.css:37+29@1168 - 30@1169
+QUAN [.67em]: csslexerinput1.css:37+30@1169 - 35@1174
+PUNC [;]: csslexerinput1.css:37+35@1174 - 36@1175
+SPAC [ ]: csslexerinput1.css:37+36@1175 - 37@1176
+IDEN [margin]: csslexerinput1.css:37+37@1176 - 43@1182
+PUNC [:]: csslexerinput1.css:37+43@1182 - 44@1183
+SPAC [ ]: csslexerinput1.css:37+44@1183 - 45@1184
+QUAN [2.33em]: csslexerinput1.css:37+45@1184 - 51@1190
+SPAC [ ]: csslexerinput1.css:37+51@1190 - 52@1191
+QUAN [0]: csslexerinput1.css:37+52@1191 - 53@1192
+SPAC [ ]: csslexerinput1.css:37+53@1192 - 54@1193
+PUNC [}]: csslexerinput1.css:37+54@1193 - 55@1194
+SPAC [\n]: csslexerinput1.css:37+55@1194 - 38+1@1195
+IDEN [H1]: csslexerinput1.css:38+1@1195 - 3@1197
+PUNC [,]: csslexerinput1.css:38+3@1197 - 4@1198
+SPAC [ ]: csslexerinput1.css:38+4@1198 - 5@1199
+IDEN [H2]: csslexerinput1.css:38+5@1199 - 7@1201
+PUNC [,]: csslexerinput1.css:38+7@1201 - 8@1202
+SPAC [ ]: csslexerinput1.css:38+8@1202 - 9@1203
+IDEN [H3]: csslexerinput1.css:38+9@1203 - 11@1205
+PUNC [,]: csslexerinput1.css:38+11@1205 - 12@1206
+SPAC [ ]: csslexerinput1.css:38+12@1206 - 13@1207
+IDEN [H4]: csslexerinput1.css:38+13@1207 - 15@1209
+PUNC [,]: csslexerinput1.css:38+15@1209 - 16@1210
+SPAC [\n]: csslexerinput1.css:38+16@1210 - 39+1@1211
+IDEN [H5]: csslexerinput1.css:39+1@1211 - 3@1213
+PUNC [,]: csslexerinput1.css:39+3@1213 - 4@1214
+SPAC [ ]: csslexerinput1.css:39+4@1214 - 5@1215
+IDEN [H6]: csslexerinput1.css:39+5@1215 - 7@1217
+PUNC [,]: csslexerinput1.css:39+7@1217 - 8@1218
+SPAC [ ]: csslexerinput1.css:39+8@1218 - 9@1219
+IDEN [B]: csslexerinput1.css:39+9@1219 - 10@1220
+PUNC [,]: csslexerinput1.css:39+10@1220 - 11@1221
+SPAC [\n]: csslexerinput1.css:39+11@1221 - 40+1@1222
+IDEN [STRONG]: csslexerinput1.css:40+1@1222 - 7@1228
+SPAC [          ]: csslexerinput1.css:40+7@1228 - 17@1238
+PUNC [{]: csslexerinput1.css:40+17@1238 - 18@1239
+SPAC [ ]: csslexerinput1.css:40+18@1239 - 19@1240
+IDEN [font-weight]: csslexerinput1.css:40+19@1240 - 30@1251
+PUNC [:]: csslexerinput1.css:40+30@1251 - 31@1252
+SPAC [ ]: csslexerinput1.css:40+31@1252 - 32@1253
+IDEN [bolder]: csslexerinput1.css:40+32@1253 - 38@1259
+SPAC [ ]: csslexerinput1.css:40+38@1259 - 39@1260
+PUNC [}]: csslexerinput1.css:40+39@1260 - 40@1261
+SPAC [\n]: csslexerinput1.css:40+40@1261 - 41+1@1262
+IDEN [BLOCKQUOTE]: csslexerinput1.css:41+1@1262 - 11@1272
+SPAC [      ]: csslexerinput1.css:41+11@1272 - 17@1278
+PUNC [{]: csslexerinput1.css:41+17@1278 - 18@1279
+SPAC [ ]: csslexerinput1.css:41+18@1279 - 19@1280
+IDEN [margin-left]: csslexerinput1.css:41+19@1280 - 30@1291
+PUNC [:]: csslexerinput1.css:41+30@1291 - 31@1292
+SPAC [ ]: csslexerinput1.css:41+31@1292 - 32@1293
+QUAN [40px]: csslexerinput1.css:41+32@1293 - 36@1297
+PUNC [;]: csslexerinput1.css:41+36@1297 - 37@1298
+SPAC [ ]: csslexerinput1.css:41+37@1298 - 38@1299
+IDEN [margin-right]: csslexerinput1.css:41+38@1299 - 50@1311
+PUNC [:]: csslexerinput1.css:41+50@1311 - 51@1312
+SPAC [ ]: csslexerinput1.css:41+51@1312 - 52@1313
+QUAN [40px]: csslexerinput1.css:41+52@1313 - 56@1317
+SPAC [ ]: csslexerinput1.css:41+56@1317 - 57@1318
+PUNC [}]: csslexerinput1.css:41+57@1318 - 58@1319
+SPAC [\n]: csslexerinput1.css:41+58@1319 - 42+1@1320
+IDEN [I]: csslexerinput1.css:42+1@1320 - 2@1321
+PUNC [,]: csslexerinput1.css:42+2@1321 - 3@1322
+SPAC [ ]: csslexerinput1.css:42+3@1322 - 4@1323
+IDEN [CITE]: csslexerinput1.css:42+4@1323 - 8@1327
+PUNC [,]: csslexerinput1.css:42+8@1327 - 9@1328
+SPAC [ ]: csslexerinput1.css:42+9@1328 - 10@1329
+IDEN [EM]: csslexerinput1.css:42+10@1329 - 12@1331
+PUNC [,]: csslexerinput1.css:42+12@1331 - 13@1332
+SPAC [\n]: csslexerinput1.css:42+13@1332 - 43+1@1333
+IDEN [VAR]: csslexerinput1.css:43+1@1333 - 4@1336
+PUNC [,]: csslexerinput1.css:43+4@1336 - 5@1337
+SPAC [ ]: csslexerinput1.css:43+5@1337 - 6@1338
+IDEN [ADDRESS]: csslexerinput1.css:43+6@1338 - 13@1345
+SPAC [    ]: csslexerinput1.css:43+13@1345 - 17@1349
+PUNC [{]: csslexerinput1.css:43+17@1349 - 18@1350
+SPAC [ ]: csslexerinput1.css:43+18@1350 - 19@1351
+IDEN [font-style]: csslexerinput1.css:43+19@1351 - 29@1361
+PUNC [:]: csslexerinput1.css:43+29@1361 - 30@1362
+SPAC [ ]: csslexerinput1.css:43+30@1362 - 31@1363
+IDEN [italic]: csslexerinput1.css:43+31@1363 - 37@1369
+SPAC [ ]: csslexerinput1.css:43+37@1369 - 38@1370
+PUNC [}]: csslexerinput1.css:43+38@1370 - 39@1371
+SPAC [\n]: csslexerinput1.css:43+39@1371 - 44+1@1372
+IDEN [PRE]: csslexerinput1.css:44+1@1372 - 4@1375
+PUNC [,]: csslexerinput1.css:44+4@1375 - 5@1376
+SPAC [ ]: csslexerinput1.css:44+5@1376 - 6@1377
+IDEN [TT]: csslexerinput1.css:44+6@1377 - 8@1379
+PUNC [,]: csslexerinput1.css:44+8@1379 - 9@1380
+SPAC [ ]: csslexerinput1.css:44+9@1380 - 10@1381
+IDEN [CODE]: csslexerinput1.css:44+10@1381 - 14@1385
+PUNC [,]: csslexerinput1.css:44+14@1385 - 15@1386
+SPAC [\n]: csslexerinput1.css:44+15@1386 - 45+1@1387
+IDEN [KBD]: csslexerinput1.css:45+1@1387 - 4@1390
+PUNC [,]: csslexerinput1.css:45+4@1390 - 5@1391
+SPAC [ ]: csslexerinput1.css:45+5@1391 - 6@1392
+IDEN [SAMP]: csslexerinput1.css:45+6@1392 - 10@1396
+SPAC [       ]: csslexerinput1.css:45+10@1396 - 17@1403
+PUNC [{]: csslexerinput1.css:45+17@1403 - 18@1404
+SPAC [ ]: csslexerinput1.css:45+18@1404 - 19@1405
+IDEN [font-family]: csslexerinput1.css:45+19@1405 - 30@1416
+PUNC [:]: csslexerinput1.css:45+30@1416 - 31@1417
+SPAC [ ]: csslexerinput1.css:45+31@1417 - 32@1418
+IDEN [monospace]: csslexerinput1.css:45+32@1418 - 41@1427
+SPAC [ ]: csslexerinput1.css:45+41@1427 - 42@1428
+PUNC [}]: csslexerinput1.css:45+42@1428 - 43@1429
+SPAC [\n]: csslexerinput1.css:45+43@1429 - 46+1@1430
+IDEN [PRE]: csslexerinput1.css:46+1@1430 - 4@1433
+SPAC [             ]: csslexerinput1.css:46+4@1433 - 17@1446
+PUNC [{]: csslexerinput1.css:46+17@1446 - 18@1447
+SPAC [ ]: csslexerinput1.css:46+18@1447 - 19@1448
+IDEN [white-space]: csslexerinput1.css:46+19@1448 - 30@1459
+PUNC [:]: csslexerinput1.css:46+30@1459 - 31@1460
+SPAC [ ]: csslexerinput1.css:46+31@1460 - 32@1461
+IDEN [pre]: csslexerinput1.css:46+32@1461 - 35@1464
+SPAC [ ]: csslexerinput1.css:46+35@1464 - 36@1465
+PUNC [}]: csslexerinput1.css:46+36@1465 - 37@1466
+SPAC [\n]: csslexerinput1.css:46+37@1466 - 47+1@1467
+IDEN [BIG]: csslexerinput1.css:47+1@1467 - 4@1470
+SPAC [             ]: csslexerinput1.css:47+4@1470 - 17@1483
+PUNC [{]: csslexerinput1.css:47+17@1483 - 18@1484
+SPAC [ ]: csslexerinput1.css:47+18@1484 - 19@1485
+IDEN [font-size]: csslexerinput1.css:47+19@1485 - 28@1494
+PUNC [:]: csslexerinput1.css:47+28@1494 - 29@1495
+SPAC [ ]: csslexerinput1.css:47+29@1495 - 30@1496
+QUAN [1.17em]: csslexerinput1.css:47+30@1496 - 36@1502
+SPAC [ ]: csslexerinput1.css:47+36@1502 - 37@1503
+PUNC [}]: csslexerinput1.css:47+37@1503 - 38@1504
+SPAC [\n]: csslexerinput1.css:47+38@1504 - 48+1@1505
+IDEN [SMALL]: csslexerinput1.css:48+1@1505 - 6@1510
+PUNC [,]: csslexerinput1.css:48+6@1510 - 7@1511
+SPAC [ ]: csslexerinput1.css:48+7@1511 - 8@1512
+IDEN [SUB]: csslexerinput1.css:48+8@1512 - 11@1515
+PUNC [,]: csslexerinput1.css:48+11@1515 - 12@1516
+SPAC [ ]: csslexerinput1.css:48+12@1516 - 13@1517
+IDEN [SUP]: csslexerinput1.css:48+13@1517 - 16@1520
+SPAC [ ]: csslexerinput1.css:48+16@1520 - 17@1521
+PUNC [{]: csslexerinput1.css:48+17@1521 - 18@1522
+SPAC [ ]: csslexerinput1.css:48+18@1522 - 19@1523
+IDEN [font-size]: csslexerinput1.css:48+19@1523 - 28@1532
+PUNC [:]: csslexerinput1.css:48+28@1532 - 29@1533
+SPAC [ ]: csslexerinput1.css:48+29@1533 - 30@1534
+QUAN [.83em]: csslexerinput1.css:48+30@1534 - 35@1539
+SPAC [ ]: csslexerinput1.css:48+35@1539 - 36@1540
+PUNC [}]: csslexerinput1.css:48+36@1540 - 37@1541
+SPAC [\n]: csslexerinput1.css:48+37@1541 - 49+1@1542
+IDEN [SUB]: csslexerinput1.css:49+1@1542 - 4@1545
+SPAC [             ]: csslexerinput1.css:49+4@1545 - 17@1558
+PUNC [{]: csslexerinput1.css:49+17@1558 - 18@1559
+SPAC [ ]: csslexerinput1.css:49+18@1559 - 19@1560
+IDEN [vertical-align]: csslexerinput1.css:49+19@1560 - 33@1574
+PUNC [:]: csslexerinput1.css:49+33@1574 - 34@1575
+SPAC [ ]: csslexerinput1.css:49+34@1575 - 35@1576
+IDEN [sub]: csslexerinput1.css:49+35@1576 - 38@1579
+SPAC [ ]: csslexerinput1.css:49+38@1579 - 39@1580
+PUNC [}]: csslexerinput1.css:49+39@1580 - 40@1581
+SPAC [\n]: csslexerinput1.css:49+40@1581 - 50+1@1582
+IDEN [SUP]: csslexerinput1.css:50+1@1582 - 4@1585
+SPAC [             ]: csslexerinput1.css:50+4@1585 - 17@1598
+PUNC [{]: csslexerinput1.css:50+17@1598 - 18@1599
+SPAC [ ]: csslexerinput1.css:50+18@1599 - 19@1600
+IDEN [vertical-align]: csslexerinput1.css:50+19@1600 - 33@1614
+PUNC [:]: csslexerinput1.css:50+33@1614 - 34@1615
+SPAC [ ]: csslexerinput1.css:50+34@1615 - 35@1616
+IDEN [super]: csslexerinput1.css:50+35@1616 - 40@1621
+SPAC [ ]: csslexerinput1.css:50+40@1621 - 41@1622
+PUNC [}]: csslexerinput1.css:50+41@1622 - 42@1623
+SPAC [\n]: csslexerinput1.css:50+42@1623 - 51+1@1624
+IDEN [S]: csslexerinput1.css:51+1@1624 - 2@1625
+PUNC [,]: csslexerinput1.css:51+2@1625 - 3@1626
+SPAC [ ]: csslexerinput1.css:51+3@1626 - 4@1627
+IDEN [STRIKE]: csslexerinput1.css:51+4@1627 - 10@1633
+PUNC [,]: csslexerinput1.css:51+10@1633 - 11@1634
+SPAC [ ]: csslexerinput1.css:51+11@1634 - 12@1635
+IDEN [DEL]: csslexerinput1.css:51+12@1635 - 15@1638
+SPAC [  ]: csslexerinput1.css:51+15@1638 - 17@1640
+PUNC [{]: csslexerinput1.css:51+17@1640 - 18@1641
+SPAC [ ]: csslexerinput1.css:51+18@1641 - 19@1642
+IDEN [text-decoration]: csslexerinput1.css:51+19@1642 - 34@1657
+PUNC [:]: csslexerinput1.css:51+34@1657 - 35@1658
+SPAC [ ]: csslexerinput1.css:51+35@1658 - 36@1659
+IDEN [line-through]: csslexerinput1.css:51+36@1659 - 48@1671
+SPAC [ ]: csslexerinput1.css:51+48@1671 - 49@1672
+PUNC [}]: csslexerinput1.css:51+49@1672 - 50@1673
+SPAC [\n]: csslexerinput1.css:51+50@1673 - 52+1@1674
+IDEN [HR]: csslexerinput1.css:52+1@1674 - 3@1676
+SPAC [              ]: csslexerinput1.css:52+3@1676 - 17@1690
+PUNC [{]: csslexerinput1.css:52+17@1690 - 18@1691
+SPAC [ ]: csslexerinput1.css:52+18@1691 - 19@1692
+IDEN [border]: csslexerinput1.css:52+19@1692 - 25@1698
+PUNC [:]: csslexerinput1.css:52+25@1698 - 26@1699
+SPAC [ ]: csslexerinput1.css:52+26@1699 - 27@1700
+QUAN [1px]: csslexerinput1.css:52+27@1700 - 30@1703
+SPAC [ ]: csslexerinput1.css:52+30@1703 - 31@1704
+IDEN [inset]: csslexerinput1.css:52+31@1704 - 36@1709
+SPAC [ ]: csslexerinput1.css:52+36@1709 - 37@1710
+PUNC [}]: csslexerinput1.css:52+37@1710 - 38@1711
+SPAC [\n]: csslexerinput1.css:52+38@1711 - 53+1@1712
+IDEN [OL]: csslexerinput1.css:53+1@1712 - 3@1714
+PUNC [,]: csslexerinput1.css:53+3@1714 - 4@1715
+SPAC [ ]: csslexerinput1.css:53+4@1715 - 5@1716
+IDEN [UL]: csslexerinput1.css:53+5@1716 - 7@1718
+PUNC [,]: csslexerinput1.css:53+7@1718 - 8@1719
+SPAC [ ]: csslexerinput1.css:53+8@1719 - 9@1720
+IDEN [DIR]: csslexerinput1.css:53+9@1720 - 12@1723
+PUNC [,]: csslexerinput1.css:53+12@1723 - 13@1724
+SPAC [\n]: csslexerinput1.css:53+13@1724 - 54+1@1725
+IDEN [MENU]: csslexerinput1.css:54+1@1725 - 5@1729
+PUNC [,]: csslexerinput1.css:54+5@1729 - 6@1730
+SPAC [ ]: csslexerinput1.css:54+6@1730 - 7@1731
+IDEN [DD]: csslexerinput1.css:54+7@1731 - 9@1733
+SPAC [        ]: csslexerinput1.css:54+9@1733 - 17@1741
+PUNC [{]: csslexerinput1.css:54+17@1741 - 18@1742
+SPAC [ ]: csslexerinput1.css:54+18@1742 - 19@1743
+IDEN [margin-left]: csslexerinput1.css:54+19@1743 - 30@1754
+PUNC [:]: csslexerinput1.css:54+30@1754 - 31@1755
+SPAC [ ]: csslexerinput1.css:54+31@1755 - 32@1756
+QUAN [40px]: csslexerinput1.css:54+32@1756 - 36@1760
+SPAC [ ]: csslexerinput1.css:54+36@1760 - 37@1761
+PUNC [}]: csslexerinput1.css:54+37@1761 - 38@1762
+SPAC [\n]: csslexerinput1.css:54+38@1762 - 55+1@1763
+IDEN [OL]: csslexerinput1.css:55+1@1763 - 3@1765
+SPAC [              ]: csslexerinput1.css:55+3@1765 - 17@1779
+PUNC [{]: csslexerinput1.css:55+17@1779 - 18@1780
+SPAC [ ]: csslexerinput1.css:55+18@1780 - 19@1781
+IDEN [list-style-type]: csslexerinput1.css:55+19@1781 - 34@1796
+PUNC [:]: csslexerinput1.css:55+34@1796 - 35@1797
+SPAC [ ]: csslexerinput1.css:55+35@1797 - 36@1798
+IDEN [decimal]: csslexerinput1.css:55+36@1798 - 43@1805
+SPAC [ ]: csslexerinput1.css:55+43@1805 - 44@1806
+PUNC [}]: csslexerinput1.css:55+44@1806 - 45@1807
+SPAC [\n]: csslexerinput1.css:55+45@1807 - 56+1@1808
+IDEN [OL]: csslexerinput1.css:56+1@1808 - 3@1810
+SPAC [ ]: csslexerinput1.css:56+3@1810 - 4@1811
+IDEN [UL]: csslexerinput1.css:56+4@1811 - 6@1813
+PUNC [,]: csslexerinput1.css:56+6@1813 - 7@1814
+SPAC [ ]: csslexerinput1.css:56+7@1814 - 8@1815
+IDEN [UL]: csslexerinput1.css:56+8@1815 - 10@1817
+SPAC [ ]: csslexerinput1.css:56+10@1817 - 11@1818
+IDEN [OL]: csslexerinput1.css:56+11@1818 - 13@1820
+PUNC [,]: csslexerinput1.css:56+13@1820 - 14@1821
+SPAC [\n]: csslexerinput1.css:56+14@1821 - 57+1@1822
+IDEN [UL]: csslexerinput1.css:57+1@1822 - 3@1824
+SPAC [ ]: csslexerinput1.css:57+3@1824 - 4@1825
+IDEN [UL]: csslexerinput1.css:57+4@1825 - 6@1827
+PUNC [,]: csslexerinput1.css:57+6@1827 - 7@1828
+SPAC [ ]: csslexerinput1.css:57+7@1828 - 8@1829
+IDEN [OL]: csslexerinput1.css:57+8@1829 - 10@1831
+SPAC [ ]: csslexerinput1.css:57+10@1831 - 11@1832
+IDEN [OL]: csslexerinput1.css:57+11@1832 - 13@1834
+SPAC [    ]: csslexerinput1.css:57+13@1834 - 17@1838
+PUNC [{]: csslexerinput1.css:57+17@1838 - 18@1839
+SPAC [ ]: csslexerinput1.css:57+18@1839 - 19@1840
+IDEN [margin-top]: csslexerinput1.css:57+19@1840 - 29@1850
+PUNC [:]: csslexerinput1.css:57+29@1850 - 30@1851
+SPAC [ ]: csslexerinput1.css:57+30@1851 - 31@1852
+QUAN [0]: csslexerinput1.css:57+31@1852 - 32@1853
+PUNC [;]: csslexerinput1.css:57+32@1853 - 33@1854
+SPAC [ ]: csslexerinput1.css:57+33@1854 - 34@1855
+IDEN [margin-bottom]: csslexerinput1.css:57+34@1855 - 47@1868
+PUNC [:]: csslexerinput1.css:57+47@1868 - 48@1869
+SPAC [ ]: csslexerinput1.css:57+48@1869 - 49@1870
+QUAN [0]: csslexerinput1.css:57+49@1870 - 50@1871
+SPAC [ ]: csslexerinput1.css:57+50@1871 - 51@1872
+PUNC [}]: csslexerinput1.css:57+51@1872 - 52@1873
+SPAC [\n]: csslexerinput1.css:57+52@1873 - 58+1@1874
+IDEN [U]: csslexerinput1.css:58+1@1874 - 2@1875
+PUNC [,]: csslexerinput1.css:58+2@1875 - 3@1876
+SPAC [ ]: csslexerinput1.css:58+3@1876 - 4@1877
+IDEN [INS]: csslexerinput1.css:58+4@1877 - 7@1880
+SPAC [          ]: csslexerinput1.css:58+7@1880 - 17@1890
+PUNC [{]: csslexerinput1.css:58+17@1890 - 18@1891
+SPAC [ ]: csslexerinput1.css:58+18@1891 - 19@1892
+IDEN [text-decoration]: csslexerinput1.css:58+19@1892 - 34@1907
+PUNC [:]: csslexerinput1.css:58+34@1907 - 35@1908
+SPAC [ ]: csslexerinput1.css:58+35@1908 - 36@1909
+IDEN [underline]: csslexerinput1.css:58+36@1909 - 45@1918
+SPAC [ ]: csslexerinput1.css:58+45@1918 - 46@1919
+PUNC [}]: csslexerinput1.css:58+46@1919 - 47@1920
+SPAC [\n]: csslexerinput1.css:58+47@1920 - 59+1@1921
+IDEN [CENTER]: csslexerinput1.css:59+1@1921 - 7@1927
+SPAC [          ]: csslexerinput1.css:59+7@1927 - 17@1937
+PUNC [{]: csslexerinput1.css:59+17@1937 - 18@1938
+SPAC [ ]: csslexerinput1.css:59+18@1938 - 19@1939
+IDEN [text-align]: csslexerinput1.css:59+19@1939 - 29@1949
+PUNC [:]: csslexerinput1.css:59+29@1949 - 30@1950
+SPAC [ ]: csslexerinput1.css:59+30@1950 - 31@1951
+IDEN [center]: csslexerinput1.css:59+31@1951 - 37@1957
+SPAC [ ]: csslexerinput1.css:59+37@1957 - 38@1958
+PUNC [}]: csslexerinput1.css:59+38@1958 - 39@1959
+SPAC [\n]: csslexerinput1.css:59+39@1959 - 60+1@1960
+IDEN [BR]: csslexerinput1.css:60+1@1960 - 3@1962
+PUNC [:]: csslexerinput1.css:60+3@1962 - 4@1963
+IDEN [before]: csslexerinput1.css:60+4@1963 - 10@1969
+SPAC [       ]: csslexerinput1.css:60+10@1969 - 17@1976
+PUNC [{]: csslexerinput1.css:60+17@1976 - 18@1977
+SPAC [ ]: csslexerinput1.css:60+18@1977 - 19@1978
+IDEN [content]: csslexerinput1.css:60+19@1978 - 26@1985
+PUNC [:]: csslexerinput1.css:60+26@1985 - 27@1986
+SPAC [ ]: csslexerinput1.css:60+27@1986 - 28@1987
+STRI ["\\A"]: csslexerinput1.css:60+28@1987 - 32@1991
+SPAC [ ]: csslexerinput1.css:60+32@1991 - 33@1992
+PUNC [}]: csslexerinput1.css:60+33@1992 - 34@1993
+SPAC [\n\n]: csslexerinput1.css:60+34@1993 - 62+1@1995
+COMM [/* An example of style for HTML 4.0's ABBR/ACRONYM elements */]: csslexerinput1.css:62+1@1995 - 63@2057
+SPAC [\n\n]: csslexerinput1.css:62+63@2057 - 64+1@2059
+IDEN [ABBR]: csslexerinput1.css:64+1@2059 - 5@2063
+PUNC [,]: csslexerinput1.css:64+5@2063 - 6@2064
+SPAC [ ]: csslexerinput1.css:64+6@2064 - 7@2065
+IDEN [ACRONYM]: csslexerinput1.css:64+7@2065 - 14@2072
+SPAC [   ]: csslexerinput1.css:64+14@2072 - 17@2075
+PUNC [{]: csslexerinput1.css:64+17@2075 - 18@2076
+SPAC [ ]: csslexerinput1.css:64+18@2076 - 19@2077
+IDEN [font-variant]: csslexerinput1.css:64+19@2077 - 31@2089
+PUNC [:]: csslexerinput1.css:64+31@2089 - 32@2090
+SPAC [ ]: csslexerinput1.css:64+32@2090 - 33@2091
+IDEN [small-caps]: csslexerinput1.css:64+33@2091 - 43@2101
+PUNC [;]: csslexerinput1.css:64+43@2101 - 44@2102
+SPAC [ ]: csslexerinput1.css:64+44@2102 - 45@2103
+IDEN [letter-spacing]: csslexerinput1.css:64+45@2103 - 59@2117
+PUNC [:]: csslexerinput1.css:64+59@2117 - 60@2118
+SPAC [ ]: csslexerinput1.css:64+60@2118 - 61@2119
+QUAN [0.1em]: csslexerinput1.css:64+61@2119 - 66@2124
+SPAC [ ]: csslexerinput1.css:64+66@2124 - 67@2125
+PUNC [}]: csslexerinput1.css:64+67@2125 - 68@2126
+SPAC [\n]: csslexerinput1.css:64+68@2126 - 65+1@2127
+IDEN [A]: csslexerinput1.css:65+1@2127 - 2@2128
+PUNC [[]: csslexerinput1.css:65+2@2128 - 3@2129
+IDEN [href]: csslexerinput1.css:65+3@2129 - 7@2133
+PUNC []]: csslexerinput1.css:65+7@2133 - 8@2134
+SPAC [         ]: csslexerinput1.css:65+8@2134 - 17@2143
+PUNC [{]: csslexerinput1.css:65+17@2143 - 18@2144
+SPAC [ ]: csslexerinput1.css:65+18@2144 - 19@2145
+IDEN [text-decoration]: csslexerinput1.css:65+19@2145 - 34@2160
+PUNC [:]: csslexerinput1.css:65+34@2160 - 35@2161
+SPAC [ ]: csslexerinput1.css:65+35@2161 - 36@2162
+IDEN [underline]: csslexerinput1.css:65+36@2162 - 45@2171
+SPAC [ ]: csslexerinput1.css:65+45@2171 - 46@2172
+PUNC [}]: csslexerinput1.css:65+46@2172 - 47@2173
+SPAC [\n]: csslexerinput1.css:65+47@2173 - 66+1@2174
+PUNC [:]: csslexerinput1.css:66+1@2174 - 2@2175
+IDEN [focus]: csslexerinput1.css:66+2@2175 - 7@2180
+SPAC [          ]: csslexerinput1.css:66+7@2180 - 17@2190
+PUNC [{]: csslexerinput1.css:66+17@2190 - 18@2191
+SPAC [ ]: csslexerinput1.css:66+18@2191 - 19@2192
+IDEN [outline]: csslexerinput1.css:66+19@2192 - 26@2199
+PUNC [:]: csslexerinput1.css:66+26@2199 - 27@2200
+SPAC [ ]: csslexerinput1.css:66+27@2200 - 28@2201
+IDEN [thin]: csslexerinput1.css:66+28@2201 - 32@2205
+SPAC [ ]: csslexerinput1.css:66+32@2205 - 33@2206
+IDEN [dotted]: csslexerinput1.css:66+33@2206 - 39@2212
+SPAC [ ]: csslexerinput1.css:66+39@2212 - 40@2213
+IDEN [invert]: csslexerinput1.css:66+40@2213 - 46@2219
+SPAC [ ]: csslexerinput1.css:66+46@2219 - 47@2220
+PUNC [}]: csslexerinput1.css:66+47@2220 - 48@2221
+SPAC [\n\n\n]: csslexerinput1.css:66+48@2221 - 69+1@2224
+COMM [/* Begin bidirectionality settings (do not change) */]: csslexerinput1.css:69+1@2224 - 54@2277
+SPAC [\n]: csslexerinput1.css:69+54@2277 - 70+1@2278
+IDEN [BDO]: csslexerinput1.css:70+1@2278 - 4@2281
+PUNC [[]: csslexerinput1.css:70+4@2281 - 5@2282
+IDEN [DIR]: csslexerinput1.css:70+5@2282 - 8@2285
+PUNC [=]: csslexerinput1.css:70+8@2285 - 9@2286
+STRI ["ltr"]: csslexerinput1.css:70+9@2286 - 14@2291
+PUNC []]: csslexerinput1.css:70+14@2291 - 15@2292
+SPAC [  ]: csslexerinput1.css:70+15@2292 - 17@2294
+PUNC [{]: csslexerinput1.css:70+17@2294 - 18@2295
+SPAC [ ]: csslexerinput1.css:70+18@2295 - 19@2296
+IDEN [direction]: csslexerinput1.css:70+19@2296 - 28@2305
+PUNC [:]: csslexerinput1.css:70+28@2305 - 29@2306
+SPAC [ ]: csslexerinput1.css:70+29@2306 - 30@2307
+IDEN [ltr]: csslexerinput1.css:70+30@2307 - 33@2310
+PUNC [;]: csslexerinput1.css:70+33@2310 - 34@2311
+SPAC [ ]: csslexerinput1.css:70+34@2311 - 35@2312
+IDEN [unicode-bidi]: csslexerinput1.css:70+35@2312 - 47@2324
+PUNC [:]: csslexerinput1.css:70+47@2324 - 48@2325
+SPAC [ ]: csslexerinput1.css:70+48@2325 - 49@2326
+IDEN [bidi-override]: csslexerinput1.css:70+49@2326 - 62@2339
+SPAC [ ]: csslexerinput1.css:70+62@2339 - 63@2340
+PUNC [}]: csslexerinput1.css:70+63@2340 - 64@2341
+SPAC [\n]: csslexerinput1.css:70+64@2341 - 71+1@2342
+IDEN [BDO]: csslexerinput1.css:71+1@2342 - 4@2345
+PUNC [[]: csslexerinput1.css:71+4@2345 - 5@2346
+IDEN [DIR]: csslexerinput1.css:71+5@2346 - 8@2349
+PUNC [=]: csslexerinput1.css:71+8@2349 - 9@2350
+STRI ["rtl"]: csslexerinput1.css:71+9@2350 - 14@2355
+PUNC []]: csslexerinput1.css:71+14@2355 - 15@2356
+SPAC [  ]: csslexerinput1.css:71+15@2356 - 17@2358
+PUNC [{]: csslexerinput1.css:71+17@2358 - 18@2359
+SPAC [ ]: csslexerinput1.css:71+18@2359 - 19@2360
+IDEN [direction]: csslexerinput1.css:71+19@2360 - 28@2369
+PUNC [:]: csslexerinput1.css:71+28@2369 - 29@2370
+SPAC [ ]: csslexerinput1.css:71+29@2370 - 30@2371
+IDEN [rtl]: csslexerinput1.css:71+30@2371 - 33@2374
+PUNC [;]: csslexerinput1.css:71+33@2374 - 34@2375
+SPAC [ ]: csslexerinput1.css:71+34@2375 - 35@2376
+IDEN [unicode-bidi]: csslexerinput1.css:71+35@2376 - 47@2388
+PUNC [:]: csslexerinput1.css:71+47@2388 - 48@2389
+SPAC [ ]: csslexerinput1.css:71+48@2389 - 49@2390
+IDEN [bidi-override]: csslexerinput1.css:71+49@2390 - 62@2403
+SPAC [ ]: csslexerinput1.css:71+62@2403 - 63@2404
+PUNC [}]: csslexerinput1.css:71+63@2404 - 64@2405
+SPAC [\n\n]: csslexerinput1.css:71+64@2405 - 73+1@2407
+PUNC [*]: csslexerinput1.css:73+1@2407 - 2@2408
+PUNC [[]: csslexerinput1.css:73+2@2408 - 3@2409
+IDEN [DIR]: csslexerinput1.css:73+3@2409 - 6@2412
+PUNC [=]: csslexerinput1.css:73+6@2412 - 7@2413
+STRI ["ltr"]: csslexerinput1.css:73+7@2413 - 12@2418
+PUNC []]: csslexerinput1.css:73+12@2418 - 13@2419
+SPAC [    ]: csslexerinput1.css:73+13@2419 - 17@2423
+PUNC [{]: csslexerinput1.css:73+17@2423 - 18@2424
+SPAC [ ]: csslexerinput1.css:73+18@2424 - 19@2425
+IDEN [direction]: csslexerinput1.css:73+19@2425 - 28@2434
+PUNC [:]: csslexerinput1.css:73+28@2434 - 29@2435
+SPAC [ ]: csslexerinput1.css:73+29@2435 - 30@2436
+IDEN [ltr]: csslexerinput1.css:73+30@2436 - 33@2439
+PUNC [;]: csslexerinput1.css:73+33@2439 - 34@2440
+SPAC [ ]: csslexerinput1.css:73+34@2440 - 35@2441
+IDEN [unicode-bidi]: csslexerinput1.css:73+35@2441 - 47@2453
+PUNC [:]: csslexerinput1.css:73+47@2453 - 48@2454
+SPAC [ ]: csslexerinput1.css:73+48@2454 - 49@2455
+IDEN [embed]: csslexerinput1.css:73+49@2455 - 54@2460
+SPAC [ ]: csslexerinput1.css:73+54@2460 - 55@2461
+PUNC [}]: csslexerinput1.css:73+55@2461 - 56@2462
+SPAC [\n]: csslexerinput1.css:73+56@2462 - 74+1@2463
+PUNC [*]: csslexerinput1.css:74+1@2463 - 2@2464
+PUNC [[]: csslexerinput1.css:74+2@2464 - 3@2465
+IDEN [DIR]: csslexerinput1.css:74+3@2465 - 6@2468
+PUNC [=]: csslexerinput1.css:74+6@2468 - 7@2469
+STRI ["rtl"]: csslexerinput1.css:74+7@2469 - 12@2474
+PUNC []]: csslexerinput1.css:74+12@2474 - 13@2475
+SPAC [    ]: csslexerinput1.css:74+13@2475 - 17@2479
+PUNC [{]: csslexerinput1.css:74+17@2479 - 18@2480
+SPAC [ ]: csslexerinput1.css:74+18@2480 - 19@2481
+IDEN [direction]: csslexerinput1.css:74+19@2481 - 28@2490
+PUNC [:]: csslexerinput1.css:74+28@2490 - 29@2491
+SPAC [ ]: csslexerinput1.css:74+29@2491 - 30@2492
+IDEN [rtl]: csslexerinput1.css:74+30@2492 - 33@2495
+PUNC [;]: csslexerinput1.css:74+33@2495 - 34@2496
+SPAC [ ]: csslexerinput1.css:74+34@2496 - 35@2497
+IDEN [unicode-bidi]: csslexerinput1.css:74+35@2497 - 47@2509
+PUNC [:]: csslexerinput1.css:74+47@2509 - 48@2510
+SPAC [ ]: csslexerinput1.css:74+48@2510 - 49@2511
+IDEN [embed]: csslexerinput1.css:74+49@2511 - 54@2516
+SPAC [ ]: csslexerinput1.css:74+54@2516 - 55@2517
+PUNC [}]: csslexerinput1.css:74+55@2517 - 56@2518
+SPAC [\n\n]: csslexerinput1.css:74+56@2518 - 76+1@2520
+COMM [/* Elements that are block-level in HTML4 */]: csslexerinput1.css:76+1@2520 - 45@2564
+SPAC [\n]: csslexerinput1.css:76+45@2564 - 77+1@2565
+IDEN [ADDRESS]: csslexerinput1.css:77+1@2565 - 8@2572
+PUNC [,]: csslexerinput1.css:77+8@2572 - 9@2573
+SPAC [ ]: csslexerinput1.css:77+9@2573 - 10@2574
+IDEN [BLOCKQUOTE]: csslexerinput1.css:77+10@2574 - 20@2584
+PUNC [,]: csslexerinput1.css:77+20@2584 - 21@2585
+SPAC [ ]: csslexerinput1.css:77+21@2585 - 22@2586
+IDEN [BODY]: csslexerinput1.css:77+22@2586 - 26@2590
+PUNC [,]: csslexerinput1.css:77+26@2590 - 27@2591
+SPAC [ ]: csslexerinput1.css:77+27@2591 - 28@2592
+IDEN [DD]: csslexerinput1.css:77+28@2592 - 30@2594
+PUNC [,]: csslexerinput1.css:77+30@2594 - 31@2595
+SPAC [ ]: csslexerinput1.css:77+31@2595 - 32@2596
+IDEN [DIV]: csslexerinput1.css:77+32@2596 - 35@2599
+PUNC [,]: csslexerinput1.css:77+35@2599 - 36@2600
+SPAC [ ]: csslexerinput1.css:77+36@2600 - 37@2601
+IDEN [DL]: csslexerinput1.css:77+37@2601 - 39@2603
+PUNC [,]: csslexerinput1.css:77+39@2603 - 40@2604
+SPAC [ ]: csslexerinput1.css:77+40@2604 - 41@2605
+IDEN [DT]: csslexerinput1.css:77+41@2605 - 43@2607
+PUNC [,]: csslexerinput1.css:77+43@2607 - 44@2608
+SPAC [ ]: csslexerinput1.css:77+44@2608 - 45@2609
+IDEN [FIELDSET]: csslexerinput1.css:77+45@2609 - 53@2617
+PUNC [,]: csslexerinput1.css:77+53@2617 - 54@2618
+SPAC [ \n]: csslexerinput1.css:77+54@2618 - 78+1@2620
+IDEN [FORM]: csslexerinput1.css:78+1@2620 - 5@2624
+PUNC [,]: csslexerinput1.css:78+5@2624 - 6@2625
+SPAC [ ]: csslexerinput1.css:78+6@2625 - 7@2626
+IDEN [FRAME]: csslexerinput1.css:78+7@2626 - 12@2631
+PUNC [,]: csslexerinput1.css:78+12@2631 - 13@2632
+SPAC [ ]: csslexerinput1.css:78+13@2632 - 14@2633
+IDEN [FRAMESET]: csslexerinput1.css:78+14@2633 - 22@2641
+PUNC [,]: csslexerinput1.css:78+22@2641 - 23@2642
+SPAC [ ]: csslexerinput1.css:78+23@2642 - 24@2643
+IDEN [H1]: csslexerinput1.css:78+24@2643 - 26@2645
+PUNC [,]: csslexerinput1.css:78+26@2645 - 27@2646
+SPAC [ ]: csslexerinput1.css:78+27@2646 - 28@2647
+IDEN [H2]: csslexerinput1.css:78+28@2647 - 30@2649
+PUNC [,]: csslexerinput1.css:78+30@2649 - 31@2650
+SPAC [ ]: csslexerinput1.css:78+31@2650 - 32@2651
+IDEN [H3]: csslexerinput1.css:78+32@2651 - 34@2653
+PUNC [,]: csslexerinput1.css:78+34@2653 - 35@2654
+SPAC [ ]: csslexerinput1.css:78+35@2654 - 36@2655
+IDEN [H4]: csslexerinput1.css:78+36@2655 - 38@2657
+PUNC [,]: csslexerinput1.css:78+38@2657 - 39@2658
+SPAC [ ]: csslexerinput1.css:78+39@2658 - 40@2659
+IDEN [H5]: csslexerinput1.css:78+40@2659 - 42@2661
+PUNC [,]: csslexerinput1.css:78+42@2661 - 43@2662
+SPAC [ ]: csslexerinput1.css:78+43@2662 - 44@2663
+IDEN [H6]: csslexerinput1.css:78+44@2663 - 46@2665
+PUNC [,]: csslexerinput1.css:78+46@2665 - 47@2666
+SPAC [ ]: csslexerinput1.css:78+47@2666 - 48@2667
+IDEN [IFRAME]: csslexerinput1.css:78+48@2667 - 54@2673
+PUNC [,]: csslexerinput1.css:78+54@2673 - 55@2674
+SPAC [\n]: csslexerinput1.css:78+55@2674 - 79+1@2675
+IDEN [NOSCRIPT]: csslexerinput1.css:79+1@2675 - 9@2683
+PUNC [,]: csslexerinput1.css:79+9@2683 - 10@2684
+SPAC [ ]: csslexerinput1.css:79+10@2684 - 11@2685
+IDEN [NOFRAMES]: csslexerinput1.css:79+11@2685 - 19@2693
+PUNC [,]: csslexerinput1.css:79+19@2693 - 20@2694
+SPAC [ ]: csslexerinput1.css:79+20@2694 - 21@2695
+IDEN [OBJECT]: csslexerinput1.css:79+21@2695 - 27@2701
+PUNC [,]: csslexerinput1.css:79+27@2701 - 28@2702
+SPAC [ ]: csslexerinput1.css:79+28@2702 - 29@2703
+IDEN [OL]: csslexerinput1.css:79+29@2703 - 31@2705
+PUNC [,]: csslexerinput1.css:79+31@2705 - 32@2706
+SPAC [ ]: csslexerinput1.css:79+32@2706 - 33@2707
+IDEN [P]: csslexerinput1.css:79+33@2707 - 34@2708
+PUNC [,]: csslexerinput1.css:79+34@2708 - 35@2709
+SPAC [ ]: csslexerinput1.css:79+35@2709 - 36@2710
+IDEN [UL]: csslexerinput1.css:79+36@2710 - 38@2712
+PUNC [,]: csslexerinput1.css:79+38@2712 - 39@2713
+SPAC [ ]: csslexerinput1.css:79+39@2713 - 40@2714
+IDEN [APPLET]: csslexerinput1.css:79+40@2714 - 46@2720
+PUNC [,]: csslexerinput1.css:79+46@2720 - 47@2721
+SPAC [ ]: csslexerinput1.css:79+47@2721 - 48@2722
+IDEN [CENTER]: csslexerinput1.css:79+48@2722 - 54@2728
+PUNC [,]: csslexerinput1.css:79+54@2728 - 55@2729
+SPAC [ \n]: csslexerinput1.css:79+55@2729 - 80+1@2731
+IDEN [DIR]: csslexerinput1.css:80+1@2731 - 4@2734
+PUNC [,]: csslexerinput1.css:80+4@2734 - 5@2735
+SPAC [ ]: csslexerinput1.css:80+5@2735 - 6@2736
+IDEN [HR]: csslexerinput1.css:80+6@2736 - 8@2738
+PUNC [,]: csslexerinput1.css:80+8@2738 - 9@2739
+SPAC [ ]: csslexerinput1.css:80+9@2739 - 10@2740
+IDEN [MENU]: csslexerinput1.css:80+10@2740 - 14@2744
+PUNC [,]: csslexerinput1.css:80+14@2744 - 15@2745
+SPAC [ ]: csslexerinput1.css:80+15@2745 - 16@2746
+IDEN [PRE]: csslexerinput1.css:80+16@2746 - 19@2749
+PUNC [,]: csslexerinput1.css:80+19@2749 - 20@2750
+SPAC [ ]: csslexerinput1.css:80+20@2750 - 21@2751
+IDEN [LI]: csslexerinput1.css:80+21@2751 - 23@2753
+PUNC [,]: csslexerinput1.css:80+23@2753 - 24@2754
+SPAC [ ]: csslexerinput1.css:80+24@2754 - 25@2755
+IDEN [TABLE]: csslexerinput1.css:80+25@2755 - 30@2760
+PUNC [,]: csslexerinput1.css:80+30@2760 - 31@2761
+SPAC [ ]: csslexerinput1.css:80+31@2761 - 32@2762
+IDEN [TR]: csslexerinput1.css:80+32@2762 - 34@2764
+PUNC [,]: csslexerinput1.css:80+34@2764 - 35@2765
+SPAC [ ]: csslexerinput1.css:80+35@2765 - 36@2766
+IDEN [THEAD]: csslexerinput1.css:80+36@2766 - 41@2771
+PUNC [,]: csslexerinput1.css:80+41@2771 - 42@2772
+SPAC [ ]: csslexerinput1.css:80+42@2772 - 43@2773
+IDEN [TBODY]: csslexerinput1.css:80+43@2773 - 48@2778
+PUNC [,]: csslexerinput1.css:80+48@2778 - 49@2779
+SPAC [ ]: csslexerinput1.css:80+49@2779 - 50@2780
+IDEN [TFOOT]: csslexerinput1.css:80+50@2780 - 55@2785
+PUNC [,]: csslexerinput1.css:80+55@2785 - 56@2786
+SPAC [ \n]: csslexerinput1.css:80+56@2786 - 81+1@2788
+IDEN [COL]: csslexerinput1.css:81+1@2788 - 4@2791
+PUNC [,]: csslexerinput1.css:81+4@2791 - 5@2792
+SPAC [ ]: csslexerinput1.css:81+5@2792 - 6@2793
+IDEN [COLGROUP]: csslexerinput1.css:81+6@2793 - 14@2801
+PUNC [,]: csslexerinput1.css:81+14@2801 - 15@2802
+SPAC [ ]: csslexerinput1.css:81+15@2802 - 16@2803
+IDEN [TD]: csslexerinput1.css:81+16@2803 - 18@2805
+PUNC [,]: csslexerinput1.css:81+18@2805 - 19@2806
+SPAC [ ]: csslexerinput1.css:81+19@2806 - 20@2807
+IDEN [TH]: csslexerinput1.css:81+20@2807 - 22@2809
+PUNC [,]: csslexerinput1.css:81+22@2809 - 23@2810
+SPAC [ ]: csslexerinput1.css:81+23@2810 - 24@2811
+IDEN [CAPTION]: csslexerinput1.css:81+24@2811 - 31@2818
+SPAC [ \n                ]: csslexerinput1.css:81+31@2818 - 82+17@2836
+PUNC [{]: csslexerinput1.css:82+17@2836 - 18@2837
+SPAC [ ]: csslexerinput1.css:82+18@2837 - 19@2838
+IDEN [unicode-bidi]: csslexerinput1.css:82+19@2838 - 31@2850
+PUNC [:]: csslexerinput1.css:82+31@2850 - 32@2851
+SPAC [ ]: csslexerinput1.css:82+32@2851 - 33@2852
+IDEN [embed]: csslexerinput1.css:82+33@2852 - 38@2857
+SPAC [ ]: csslexerinput1.css:82+38@2857 - 39@2858
+PUNC [}]: csslexerinput1.css:82+39@2858 - 40@2859
+SPAC [\n]: csslexerinput1.css:82+40@2859 - 83+1@2860
+COMM [/* End bidi settings */]: csslexerinput1.css:83+1@2860 - 24@2883
+SPAC [\n\n\n]: csslexerinput1.css:83+24@2883 - 86+1@2886
+SYMB [@media]: csslexerinput1.css:86+1@2886 - 7@2892
+SPAC [ ]: csslexerinput1.css:86+7@2892 - 8@2893
+IDEN [print]: csslexerinput1.css:86+8@2893 - 13@2898
+SPAC [ ]: csslexerinput1.css:86+13@2898 - 14@2899
+PUNC [{]: csslexerinput1.css:86+14@2899 - 15@2900
+SPAC [\n  ]: csslexerinput1.css:86+15@2900 - 87+3@2903
+SYMB [@page]: csslexerinput1.css:87+3@2903 - 8@2908
+SPAC [         ]: csslexerinput1.css:87+8@2908 - 17@2917
+PUNC [{]: csslexerinput1.css:87+17@2917 - 18@2918
+SPAC [ ]: csslexerinput1.css:87+18@2918 - 19@2919
+IDEN [margin]: csslexerinput1.css:87+19@2919 - 25@2925
+PUNC [:]: csslexerinput1.css:87+25@2925 - 26@2926
+SPAC [ ]: csslexerinput1.css:87+26@2926 - 27@2927
+QUAN [10%]: csslexerinput1.css:87+27@2927 - 30@2930
+SPAC [ ]: csslexerinput1.css:87+30@2930 - 31@2931
+PUNC [}]: csslexerinput1.css:87+31@2931 - 32@2932
+SPAC [\n  ]: csslexerinput1.css:87+32@2932 - 88+3@2935
+IDEN [H1]: csslexerinput1.css:88+3@2935 - 5@2937
+PUNC [,]: csslexerinput1.css:88+5@2937 - 6@2938
+SPAC [ ]: csslexerinput1.css:88+6@2938 - 7@2939
+IDEN [H2]: csslexerinput1.css:88+7@2939 - 9@2941
+PUNC [,]: csslexerinput1.css:88+9@2941 - 10@2942
+SPAC [ ]: csslexerinput1.css:88+10@2942 - 11@2943
+IDEN [H3]: csslexerinput1.css:88+11@2943 - 13@2945
+PUNC [,]: csslexerinput1.css:88+13@2945 - 14@2946
+SPAC [\n  ]: csslexerinput1.css:88+14@2946 - 89+3@2949
+IDEN [H4]: csslexerinput1.css:89+3@2949 - 5@2951
+PUNC [,]: csslexerinput1.css:89+5@2951 - 6@2952
+SPAC [ ]: csslexerinput1.css:89+6@2952 - 7@2953
+IDEN [H5]: csslexerinput1.css:89+7@2953 - 9@2955
+PUNC [,]: csslexerinput1.css:89+9@2955 - 10@2956
+SPAC [ ]: csslexerinput1.css:89+10@2956 - 11@2957
+IDEN [H6]: csslexerinput1.css:89+11@2957 - 13@2959
+SPAC [    ]: csslexerinput1.css:89+13@2959 - 17@2963
+PUNC [{]: csslexerinput1.css:89+17@2963 - 18@2964
+SPAC [ ]: csslexerinput1.css:89+18@2964 - 19@2965
+IDEN [page-break-after]: csslexerinput1.css:89+19@2965 - 35@2981
+PUNC [:]: csslexerinput1.css:89+35@2981 - 36@2982
+SPAC [ ]: csslexerinput1.css:89+36@2982 - 37@2983
+IDEN [avoid]: csslexerinput1.css:89+37@2983 - 42@2988
+PUNC [;]: csslexerinput1.css:89+42@2988 - 43@2989
+SPAC [ ]: csslexerinput1.css:89+43@2989 - 44@2990
+IDEN [page-break-inside]: csslexerinput1.css:89+44@2990 - 61@3007
+PUNC [:]: csslexerinput1.css:89+61@3007 - 62@3008
+SPAC [ ]: csslexerinput1.css:89+62@3008 - 63@3009
+IDEN [avoid]: csslexerinput1.css:89+63@3009 - 68@3014
+SPAC [ ]: csslexerinput1.css:89+68@3014 - 69@3015
+PUNC [}]: csslexerinput1.css:89+69@3015 - 70@3016
+SPAC [\n  ]: csslexerinput1.css:89+70@3016 - 90+3@3019
+IDEN [BLOCKQUOTE]: csslexerinput1.css:90+3@3019 - 13@3029
+PUNC [,]: csslexerinput1.css:90+13@3029 - 14@3030
+SPAC [ \n  ]: csslexerinput1.css:90+14@3030 - 91+3@3034
+IDEN [PRE]: csslexerinput1.css:91+3@3034 - 6@3037
+SPAC [           ]: csslexerinput1.css:91+6@3037 - 17@3048
+PUNC [{]: csslexerinput1.css:91+17@3048 - 18@3049
+SPAC [ ]: csslexerinput1.css:91+18@3049 - 19@3050
+IDEN [page-break-inside]: csslexerinput1.css:91+19@3050 - 36@3067
+PUNC [:]: csslexerinput1.css:91+36@3067 - 37@3068
+SPAC [ ]: csslexerinput1.css:91+37@3068 - 38@3069
+IDEN [avoid]: csslexerinput1.css:91+38@3069 - 43@3074
+SPAC [ ]: csslexerinput1.css:91+43@3074 - 44@3075
+PUNC [}]: csslexerinput1.css:91+44@3075 - 45@3076
+SPAC [\n  ]: csslexerinput1.css:91+45@3076 - 92+3@3079
+IDEN [UL]: csslexerinput1.css:92+3@3079 - 5@3081
+PUNC [,]: csslexerinput1.css:92+5@3081 - 6@3082
+SPAC [ ]: csslexerinput1.css:92+6@3082 - 7@3083
+IDEN [OL]: csslexerinput1.css:92+7@3083 - 9@3085
+PUNC [,]: csslexerinput1.css:92+9@3085 - 10@3086
+SPAC [ ]: csslexerinput1.css:92+10@3086 - 11@3087
+IDEN [DL]: csslexerinput1.css:92+11@3087 - 13@3089
+SPAC [    ]: csslexerinput1.css:92+13@3089 - 17@3093
+PUNC [{]: csslexerinput1.css:92+17@3093 - 18@3094
+SPAC [ ]: csslexerinput1.css:92+18@3094 - 19@3095
+IDEN [page-break-before]: csslexerinput1.css:92+19@3095 - 36@3112
+PUNC [:]: csslexerinput1.css:92+36@3112 - 37@3113
+SPAC [ ]: csslexerinput1.css:92+37@3113 - 38@3114
+IDEN [avoid]: csslexerinput1.css:92+38@3114 - 43@3119
+SPAC [ ]: csslexerinput1.css:92+43@3119 - 44@3120
+PUNC [}]: csslexerinput1.css:92+44@3120 - 45@3121
+SPAC [\n]: csslexerinput1.css:92+45@3121 - 93+1@3122
+PUNC [}]: csslexerinput1.css:93+1@3122 - 2@3123
+SPAC [\n\n]: csslexerinput1.css:93+2@3123 - 95+1@3125
+SYMB [@media]: csslexerinput1.css:95+1@3125 - 7@3131
+SPAC [ ]: csslexerinput1.css:95+7@3131 - 8@3132
+IDEN [speech]: csslexerinput1.css:95+8@3132 - 14@3138
+SPAC [ ]: csslexerinput1.css:95+14@3138 - 15@3139
+PUNC [{]: csslexerinput1.css:95+15@3139 - 16@3140
+SPAC [\n  ]: csslexerinput1.css:95+16@3140 - 96+3@3143
+IDEN [H1]: csslexerinput1.css:96+3@3143 - 5@3145
+PUNC [,]: csslexerinput1.css:96+5@3145 - 6@3146
+SPAC [ ]: csslexerinput1.css:96+6@3146 - 7@3147
+IDEN [H2]: csslexerinput1.css:96+7@3147 - 9@3149
+PUNC [,]: csslexerinput1.css:96+9@3149 - 10@3150
+SPAC [ ]: csslexerinput1.css:96+10@3150 - 11@3151
+IDEN [H3]: csslexerinput1.css:96+11@3151 - 13@3153
+PUNC [,]: csslexerinput1.css:96+13@3153 - 14@3154
+SPAC [ \n  ]: csslexerinput1.css:96+14@3154 - 97+3@3158
+IDEN [H4]: csslexerinput1.css:97+3@3158 - 5@3160
+PUNC [,]: csslexerinput1.css:97+5@3160 - 6@3161
+SPAC [ ]: csslexerinput1.css:97+6@3161 - 7@3162
+IDEN [H5]: csslexerinput1.css:97+7@3162 - 9@3164
+PUNC [,]: csslexerinput1.css:97+9@3164 - 10@3165
+SPAC [ ]: csslexerinput1.css:97+10@3165 - 11@3166
+IDEN [H6]: csslexerinput1.css:97+11@3166 - 13@3168
+SPAC [    ]: csslexerinput1.css:97+13@3168 - 17@3172
+PUNC [{]: csslexerinput1.css:97+17@3172 - 18@3173
+SPAC [ ]: csslexerinput1.css:97+18@3173 - 19@3174
+IDEN [voice-family]: csslexerinput1.css:97+19@3174 - 31@3186
+PUNC [:]: csslexerinput1.css:97+31@3186 - 32@3187
+SPAC [ ]: csslexerinput1.css:97+32@3187 - 33@3188
+IDEN [paul]: csslexerinput1.css:97+33@3188 - 37@3192
+PUNC [,]: csslexerinput1.css:97+37@3192 - 38@3193
+SPAC [ ]: csslexerinput1.css:97+38@3193 - 39@3194
+IDEN [male]: csslexerinput1.css:97+39@3194 - 43@3198
+PUNC [;]: csslexerinput1.css:97+43@3198 - 44@3199
+SPAC [ ]: csslexerinput1.css:97+44@3199 - 45@3200
+IDEN [stress]: csslexerinput1.css:97+45@3200 - 51@3206
+PUNC [:]: csslexerinput1.css:97+51@3206 - 52@3207
+SPAC [ ]: csslexerinput1.css:97+52@3207 - 53@3208
+QUAN [20]: csslexerinput1.css:97+53@3208 - 55@3210
+PUNC [;]: csslexerinput1.css:97+55@3210 - 56@3211
+SPAC [ ]: csslexerinput1.css:97+56@3211 - 57@3212
+IDEN [richness]: csslexerinput1.css:97+57@3212 - 65@3220
+PUNC [:]: csslexerinput1.css:97+65@3220 - 66@3221
+SPAC [ ]: csslexerinput1.css:97+66@3221 - 67@3222
+QUAN [90]: csslexerinput1.css:97+67@3222 - 69@3224
+SPAC [ ]: csslexerinput1.css:97+69@3224 - 70@3225
+PUNC [}]: csslexerinput1.css:97+70@3225 - 71@3226
+SPAC [\n  ]: csslexerinput1.css:97+71@3226 - 98+3@3229
+IDEN [H1]: csslexerinput1.css:98+3@3229 - 5@3231
+SPAC [            ]: csslexerinput1.css:98+5@3231 - 17@3243
+PUNC [{]: csslexerinput1.css:98+17@3243 - 18@3244
+SPAC [ ]: csslexerinput1.css:98+18@3244 - 19@3245
+IDEN [pitch]: csslexerinput1.css:98+19@3245 - 24@3250
+PUNC [:]: csslexerinput1.css:98+24@3250 - 25@3251
+SPAC [ ]: csslexerinput1.css:98+25@3251 - 26@3252
+IDEN [x-low]: csslexerinput1.css:98+26@3252 - 31@3257
+PUNC [;]: csslexerinput1.css:98+31@3257 - 32@3258
+SPAC [ ]: csslexerinput1.css:98+32@3258 - 33@3259
+IDEN [pitch-range]: csslexerinput1.css:98+33@3259 - 44@3270
+PUNC [:]: csslexerinput1.css:98+44@3270 - 45@3271
+SPAC [ ]: csslexerinput1.css:98+45@3271 - 46@3272
+QUAN [90]: csslexerinput1.css:98+46@3272 - 48@3274
+SPAC [ ]: csslexerinput1.css:98+48@3274 - 49@3275
+PUNC [}]: csslexerinput1.css:98+49@3275 - 50@3276
+SPAC [\n  ]: csslexerinput1.css:98+50@3276 - 99+3@3279
+IDEN [H2]: csslexerinput1.css:99+3@3279 - 5@3281
+SPAC [            ]: csslexerinput1.css:99+5@3281 - 17@3293
+PUNC [{]: csslexerinput1.css:99+17@3293 - 18@3294
+SPAC [ ]: csslexerinput1.css:99+18@3294 - 19@3295
+IDEN [pitch]: csslexerinput1.css:99+19@3295 - 24@3300
+PUNC [:]: csslexerinput1.css:99+24@3300 - 25@3301
+SPAC [ ]: csslexerinput1.css:99+25@3301 - 26@3302
+IDEN [x-low]: csslexerinput1.css:99+26@3302 - 31@3307
+PUNC [;]: csslexerinput1.css:99+31@3307 - 32@3308
+SPAC [ ]: csslexerinput1.css:99+32@3308 - 33@3309
+IDEN [pitch-range]: csslexerinput1.css:99+33@3309 - 44@3320
+PUNC [:]: csslexerinput1.css:99+44@3320 - 45@3321
+SPAC [ ]: csslexerinput1.css:99+45@3321 - 46@3322
+QUAN [80]: csslexerinput1.css:99+46@3322 - 48@3324
+SPAC [ ]: csslexerinput1.css:99+48@3324 - 49@3325
+PUNC [}]: csslexerinput1.css:99+49@3325 - 50@3326
+SPAC [\n  ]: csslexerinput1.css:99+50@3326 - 100+3@3329
+IDEN [H3]: csslexerinput1.css:100+3@3329 - 5@3331
+SPAC [            ]: csslexerinput1.css:100+5@3331 - 17@3343
+PUNC [{]: csslexerinput1.css:100+17@3343 - 18@3344
+SPAC [ ]: csslexerinput1.css:100+18@3344 - 19@3345
+IDEN [pitch]: csslexerinput1.css:100+19@3345 - 24@3350
+PUNC [:]: csslexerinput1.css:100+24@3350 - 25@3351
+SPAC [ ]: csslexerinput1.css:100+25@3351 - 26@3352
+IDEN [low]: csslexerinput1.css:100+26@3352 - 29@3355
+PUNC [;]: csslexerinput1.css:100+29@3355 - 30@3356
+SPAC [ ]: csslexerinput1.css:100+30@3356 - 31@3357
+IDEN [pitch-range]: csslexerinput1.css:100+31@3357 - 42@3368
+PUNC [:]: csslexerinput1.css:100+42@3368 - 43@3369
+SPAC [ ]: csslexerinput1.css:100+43@3369 - 44@3370
+QUAN [70]: csslexerinput1.css:100+44@3370 - 46@3372
+SPAC [ ]: csslexerinput1.css:100+46@3372 - 47@3373
+PUNC [}]: csslexerinput1.css:100+47@3373 - 48@3374
+SPAC [\n  ]: csslexerinput1.css:100+48@3374 - 101+3@3377
+IDEN [H4]: csslexerinput1.css:101+3@3377 - 5@3379
+SPAC [            ]: csslexerinput1.css:101+5@3379 - 17@3391
+PUNC [{]: csslexerinput1.css:101+17@3391 - 18@3392
+SPAC [ ]: csslexerinput1.css:101+18@3392 - 19@3393
+IDEN [pitch]: csslexerinput1.css:101+19@3393 - 24@3398
+PUNC [:]: csslexerinput1.css:101+24@3398 - 25@3399
+SPAC [ ]: csslexerinput1.css:101+25@3399 - 26@3400
+IDEN [medium]: csslexerinput1.css:101+26@3400 - 32@3406
+PUNC [;]: csslexerinput1.css:101+32@3406 - 33@3407
+SPAC [ ]: csslexerinput1.css:101+33@3407 - 34@3408
+IDEN [pitch-range]: csslexerinput1.css:101+34@3408 - 45@3419
+PUNC [:]: csslexerinput1.css:101+45@3419 - 46@3420
+SPAC [ ]: csslexerinput1.css:101+46@3420 - 47@3421
+QUAN [60]: csslexerinput1.css:101+47@3421 - 49@3423
+SPAC [ ]: csslexerinput1.css:101+49@3423 - 50@3424
+PUNC [}]: csslexerinput1.css:101+50@3424 - 51@3425
+SPAC [\n  ]: csslexerinput1.css:101+51@3425 - 102+3@3428
+IDEN [H5]: csslexerinput1.css:102+3@3428 - 5@3430
+SPAC [            ]: csslexerinput1.css:102+5@3430 - 17@3442
+PUNC [{]: csslexerinput1.css:102+17@3442 - 18@3443
+SPAC [ ]: csslexerinput1.css:102+18@3443 - 19@3444
+IDEN [pitch]: csslexerinput1.css:102+19@3444 - 24@3449
+PUNC [:]: csslexerinput1.css:102+24@3449 - 25@3450
+SPAC [ ]: csslexerinput1.css:102+25@3450 - 26@3451
+IDEN [medium]: csslexerinput1.css:102+26@3451 - 32@3457
+PUNC [;]: csslexerinput1.css:102+32@3457 - 33@3458
+SPAC [ ]: csslexerinput1.css:102+33@3458 - 34@3459
+IDEN [pitch-range]: csslexerinput1.css:102+34@3459 - 45@3470
+PUNC [:]: csslexerinput1.css:102+45@3470 - 46@3471
+SPAC [ ]: csslexerinput1.css:102+46@3471 - 47@3472
+QUAN [50]: csslexerinput1.css:102+47@3472 - 49@3474
+SPAC [ ]: csslexerinput1.css:102+49@3474 - 50@3475
+PUNC [}]: csslexerinput1.css:102+50@3475 - 51@3476
+SPAC [\n  ]: csslexerinput1.css:102+51@3476 - 103+3@3479
+IDEN [H6]: csslexerinput1.css:103+3@3479 - 5@3481
+SPAC [            ]: csslexerinput1.css:103+5@3481 - 17@3493
+PUNC [{]: csslexerinput1.css:103+17@3493 - 18@3494
+SPAC [ ]: csslexerinput1.css:103+18@3494 - 19@3495
+IDEN [pitch]: csslexerinput1.css:103+19@3495 - 24@3500
+PUNC [:]: csslexerinput1.css:103+24@3500 - 25@3501
+SPAC [ ]: csslexerinput1.css:103+25@3501 - 26@3502
+IDEN [medium]: csslexerinput1.css:103+26@3502 - 32@3508
+PUNC [;]: csslexerinput1.css:103+32@3508 - 33@3509
+SPAC [ ]: csslexerinput1.css:103+33@3509 - 34@3510
+IDEN [pitch-range]: csslexerinput1.css:103+34@3510 - 45@3521
+PUNC [:]: csslexerinput1.css:103+45@3521 - 46@3522
+SPAC [ ]: csslexerinput1.css:103+46@3522 - 47@3523
+QUAN [40]: csslexerinput1.css:103+47@3523 - 49@3525
+SPAC [ ]: csslexerinput1.css:103+49@3525 - 50@3526
+PUNC [}]: csslexerinput1.css:103+50@3526 - 51@3527
+SPAC [\n  ]: csslexerinput1.css:103+51@3527 - 104+3@3530
+IDEN [LI]: csslexerinput1.css:104+3@3530 - 5@3532
+PUNC [,]: csslexerinput1.css:104+5@3532 - 6@3533
+SPAC [ ]: csslexerinput1.css:104+6@3533 - 7@3534
+IDEN [DT]: csslexerinput1.css:104+7@3534 - 9@3536
+PUNC [,]: csslexerinput1.css:104+9@3536 - 10@3537
+SPAC [ ]: csslexerinput1.css:104+10@3537 - 11@3538
+IDEN [DD]: csslexerinput1.css:104+11@3538 - 13@3540
+SPAC [    ]: csslexerinput1.css:104+13@3540 - 17@3544
+PUNC [{]: csslexerinput1.css:104+17@3544 - 18@3545
+SPAC [ ]: csslexerinput1.css:104+18@3545 - 19@3546
+IDEN [pitch]: csslexerinput1.css:104+19@3546 - 24@3551
+PUNC [:]: csslexerinput1.css:104+24@3551 - 25@3552
+SPAC [ ]: csslexerinput1.css:104+25@3552 - 26@3553
+IDEN [medium]: csslexerinput1.css:104+26@3553 - 32@3559
+PUNC [;]: csslexerinput1.css:104+32@3559 - 33@3560
+SPAC [ ]: csslexerinput1.css:104+33@3560 - 34@3561
+IDEN [richness]: csslexerinput1.css:104+34@3561 - 42@3569
+PUNC [:]: csslexerinput1.css:104+42@3569 - 43@3570
+SPAC [ ]: csslexerinput1.css:104+43@3570 - 44@3571
+QUAN [60]: csslexerinput1.css:104+44@3571 - 46@3573
+SPAC [ ]: csslexerinput1.css:104+46@3573 - 47@3574
+PUNC [}]: csslexerinput1.css:104+47@3574 - 48@3575
+SPAC [\n  ]: csslexerinput1.css:104+48@3575 - 105+3@3578
+IDEN [DT]: csslexerinput1.css:105+3@3578 - 5@3580
+SPAC [            ]: csslexerinput1.css:105+5@3580 - 17@3592
+PUNC [{]: csslexerinput1.css:105+17@3592 - 18@3593
+SPAC [ ]: csslexerinput1.css:105+18@3593 - 19@3594
+IDEN [stress]: csslexerinput1.css:105+19@3594 - 25@3600
+PUNC [:]: csslexerinput1.css:105+25@3600 - 26@3601
+SPAC [ ]: csslexerinput1.css:105+26@3601 - 27@3602
+QUAN [80]: csslexerinput1.css:105+27@3602 - 29@3604
+SPAC [ ]: csslexerinput1.css:105+29@3604 - 30@3605
+PUNC [}]: csslexerinput1.css:105+30@3605 - 31@3606
+SPAC [\n  ]: csslexerinput1.css:105+31@3606 - 106+3@3609
+IDEN [PRE]: csslexerinput1.css:106+3@3609 - 6@3612
+PUNC [,]: csslexerinput1.css:106+6@3612 - 7@3613
+SPAC [ ]: csslexerinput1.css:106+7@3613 - 8@3614
+IDEN [CODE]: csslexerinput1.css:106+8@3614 - 12@3618
+PUNC [,]: csslexerinput1.css:106+12@3618 - 13@3619
+SPAC [ ]: csslexerinput1.css:106+13@3619 - 14@3620
+IDEN [TT]: csslexerinput1.css:106+14@3620 - 16@3622
+SPAC [ ]: csslexerinput1.css:106+16@3622 - 17@3623
+PUNC [{]: csslexerinput1.css:106+17@3623 - 18@3624
+SPAC [ ]: csslexerinput1.css:106+18@3624 - 19@3625
+IDEN [pitch]: csslexerinput1.css:106+19@3625 - 24@3630
+PUNC [:]: csslexerinput1.css:106+24@3630 - 25@3631
+SPAC [ ]: csslexerinput1.css:106+25@3631 - 26@3632
+IDEN [medium]: csslexerinput1.css:106+26@3632 - 32@3638
+PUNC [;]: csslexerinput1.css:106+32@3638 - 33@3639
+SPAC [ ]: csslexerinput1.css:106+33@3639 - 34@3640
+IDEN [pitch-range]: csslexerinput1.css:106+34@3640 - 45@3651
+PUNC [:]: csslexerinput1.css:106+45@3651 - 46@3652
+SPAC [ ]: csslexerinput1.css:106+46@3652 - 47@3653
+QUAN [0]: csslexerinput1.css:106+47@3653 - 48@3654
+PUNC [;]: csslexerinput1.css:106+48@3654 - 49@3655
+SPAC [ ]: csslexerinput1.css:106+49@3655 - 50@3656
+IDEN [stress]: csslexerinput1.css:106+50@3656 - 56@3662
+PUNC [:]: csslexerinput1.css:106+56@3662 - 57@3663
+SPAC [ ]: csslexerinput1.css:106+57@3663 - 58@3664
+QUAN [0]: csslexerinput1.css:106+58@3664 - 59@3665
+PUNC [;]: csslexerinput1.css:106+59@3665 - 60@3666
+SPAC [ ]: csslexerinput1.css:106+60@3666 - 61@3667
+IDEN [richness]: csslexerinput1.css:106+61@3667 - 69@3675
+PUNC [:]: csslexerinput1.css:106+69@3675 - 70@3676
+SPAC [ ]: csslexerinput1.css:106+70@3676 - 71@3677
+QUAN [80]: csslexerinput1.css:106+71@3677 - 73@3679
+SPAC [ ]: csslexerinput1.css:106+73@3679 - 74@3680
+PUNC [}]: csslexerinput1.css:106+74@3680 - 75@3681
+SPAC [\n  ]: csslexerinput1.css:106+75@3681 - 107+3@3684
+IDEN [EM]: csslexerinput1.css:107+3@3684 - 5@3686
+SPAC [            ]: csslexerinput1.css:107+5@3686 - 17@3698
+PUNC [{]: csslexerinput1.css:107+17@3698 - 18@3699
+SPAC [ ]: csslexerinput1.css:107+18@3699 - 19@3700
+IDEN [pitch]: csslexerinput1.css:107+19@3700 - 24@3705
+PUNC [:]: csslexerinput1.css:107+24@3705 - 25@3706
+SPAC [ ]: csslexerinput1.css:107+25@3706 - 26@3707
+IDEN [medium]: csslexerinput1.css:107+26@3707 - 32@3713
+PUNC [;]: csslexerinput1.css:107+32@3713 - 33@3714
+SPAC [ ]: csslexerinput1.css:107+33@3714 - 34@3715
+IDEN [pitch-range]: csslexerinput1.css:107+34@3715 - 45@3726
+PUNC [:]: csslexerinput1.css:107+45@3726 - 46@3727
+SPAC [ ]: csslexerinput1.css:107+46@3727 - 47@3728
+QUAN [60]: csslexerinput1.css:107+47@3728 - 49@3730
+PUNC [;]: csslexerinput1.css:107+49@3730 - 50@3731
+SPAC [ ]: csslexerinput1.css:107+50@3731 - 51@3732
+IDEN [stress]: csslexerinput1.css:107+51@3732 - 57@3738
+PUNC [:]: csslexerinput1.css:107+57@3738 - 58@3739
+SPAC [ ]: csslexerinput1.css:107+58@3739 - 59@3740
+QUAN [60]: csslexerinput1.css:107+59@3740 - 61@3742
+PUNC [;]: csslexerinput1.css:107+61@3742 - 62@3743
+SPAC [ ]: csslexerinput1.css:107+62@3743 - 63@3744
+IDEN [richness]: csslexerinput1.css:107+63@3744 - 71@3752
+PUNC [:]: csslexerinput1.css:107+71@3752 - 72@3753
+SPAC [ ]: csslexerinput1.css:107+72@3753 - 73@3754
+QUAN [50]: csslexerinput1.css:107+73@3754 - 75@3756
+SPAC [ ]: csslexerinput1.css:107+75@3756 - 76@3757
+PUNC [}]: csslexerinput1.css:107+76@3757 - 77@3758
+SPAC [\n  ]: csslexerinput1.css:107+77@3758 - 108+3@3761
+IDEN [STRONG]: csslexerinput1.css:108+3@3761 - 9@3767
+SPAC [        ]: csslexerinput1.css:108+9@3767 - 17@3775
+PUNC [{]: csslexerinput1.css:108+17@3775 - 18@3776
+SPAC [ ]: csslexerinput1.css:108+18@3776 - 19@3777
+IDEN [pitch]: csslexerinput1.css:108+19@3777 - 24@3782
+PUNC [:]: csslexerinput1.css:108+24@3782 - 25@3783
+SPAC [ ]: csslexerinput1.css:108+25@3783 - 26@3784
+IDEN [medium]: csslexerinput1.css:108+26@3784 - 32@3790
+PUNC [;]: csslexerinput1.css:108+32@3790 - 33@3791
+SPAC [ ]: csslexerinput1.css:108+33@3791 - 34@3792
+IDEN [pitch-range]: csslexerinput1.css:108+34@3792 - 45@3803
+PUNC [:]: csslexerinput1.css:108+45@3803 - 46@3804
+SPAC [ ]: csslexerinput1.css:108+46@3804 - 47@3805
+QUAN [60]: csslexerinput1.css:108+47@3805 - 49@3807
+PUNC [;]: csslexerinput1.css:108+49@3807 - 50@3808
+SPAC [ ]: csslexerinput1.css:108+50@3808 - 51@3809
+IDEN [stress]: csslexerinput1.css:108+51@3809 - 57@3815
+PUNC [:]: csslexerinput1.css:108+57@3815 - 58@3816
+SPAC [ ]: csslexerinput1.css:108+58@3816 - 59@3817
+QUAN [90]: csslexerinput1.css:108+59@3817 - 61@3819
+PUNC [;]: csslexerinput1.css:108+61@3819 - 62@3820
+SPAC [ ]: csslexerinput1.css:108+62@3820 - 63@3821
+IDEN [richness]: csslexerinput1.css:108+63@3821 - 71@3829
+PUNC [:]: csslexerinput1.css:108+71@3829 - 72@3830
+SPAC [ ]: csslexerinput1.css:108+72@3830 - 73@3831
+QUAN [90]: csslexerinput1.css:108+73@3831 - 75@3833
+SPAC [ ]: csslexerinput1.css:108+75@3833 - 76@3834
+PUNC [}]: csslexerinput1.css:108+76@3834 - 77@3835
+SPAC [\n  ]: csslexerinput1.css:108+77@3835 - 109+3@3838
+IDEN [DFN]: csslexerinput1.css:109+3@3838 - 6@3841
+SPAC [           ]: csslexerinput1.css:109+6@3841 - 17@3852
+PUNC [{]: csslexerinput1.css:109+17@3852 - 18@3853
+SPAC [ ]: csslexerinput1.css:109+18@3853 - 19@3854
+IDEN [pitch]: csslexerinput1.css:109+19@3854 - 24@3859
+PUNC [:]: csslexerinput1.css:109+24@3859 - 25@3860
+SPAC [ ]: csslexerinput1.css:109+25@3860 - 26@3861
+IDEN [high]: csslexerinput1.css:109+26@3861 - 30@3865
+PUNC [;]: csslexerinput1.css:109+30@3865 - 31@3866
+SPAC [ ]: csslexerinput1.css:109+31@3866 - 32@3867
+IDEN [pitch-range]: csslexerinput1.css:109+32@3867 - 43@3878
+PUNC [:]: csslexerinput1.css:109+43@3878 - 44@3879
+SPAC [ ]: csslexerinput1.css:109+44@3879 - 45@3880
+QUAN [60]: csslexerinput1.css:109+45@3880 - 47@3882
+PUNC [;]: csslexerinput1.css:109+47@3882 - 48@3883
+SPAC [ ]: csslexerinput1.css:109+48@3883 - 49@3884
+IDEN [stress]: csslexerinput1.css:109+49@3884 - 55@3890
+PUNC [:]: csslexerinput1.css:109+55@3890 - 56@3891
+SPAC [ ]: csslexerinput1.css:109+56@3891 - 57@3892
+QUAN [60]: csslexerinput1.css:109+57@3892 - 59@3894
+SPAC [ ]: csslexerinput1.css:109+59@3894 - 60@3895
+PUNC [}]: csslexerinput1.css:109+60@3895 - 61@3896
+SPAC [\n  ]: csslexerinput1.css:109+61@3896 - 110+3@3899
+IDEN [S]: csslexerinput1.css:110+3@3899 - 4@3900
+PUNC [,]: csslexerinput1.css:110+4@3900 - 5@3901
+SPAC [ ]: csslexerinput1.css:110+5@3901 - 6@3902
+IDEN [STRIKE]: csslexerinput1.css:110+6@3902 - 12@3908
+SPAC [     ]: csslexerinput1.css:110+12@3908 - 17@3913
+PUNC [{]: csslexerinput1.css:110+17@3913 - 18@3914
+SPAC [ ]: csslexerinput1.css:110+18@3914 - 19@3915
+IDEN [richness]: csslexerinput1.css:110+19@3915 - 27@3923
+PUNC [:]: csslexerinput1.css:110+27@3923 - 28@3924
+SPAC [ ]: csslexerinput1.css:110+28@3924 - 29@3925
+QUAN [0]: csslexerinput1.css:110+29@3925 - 30@3926
+SPAC [ ]: csslexerinput1.css:110+30@3926 - 31@3927
+PUNC [}]: csslexerinput1.css:110+31@3927 - 32@3928
+SPAC [\n  ]: csslexerinput1.css:110+32@3928 - 111+3@3931
+IDEN [I]: csslexerinput1.css:111+3@3931 - 4@3932
+SPAC [             ]: csslexerinput1.css:111+4@3932 - 17@3945
+PUNC [{]: csslexerinput1.css:111+17@3945 - 18@3946
+SPAC [ ]: csslexerinput1.css:111+18@3946 - 19@3947
+IDEN [pitch]: csslexerinput1.css:111+19@3947 - 24@3952
+PUNC [:]: csslexerinput1.css:111+24@3952 - 25@3953
+SPAC [ ]: csslexerinput1.css:111+25@3953 - 26@3954
+IDEN [medium]: csslexerinput1.css:111+26@3954 - 32@3960
+PUNC [;]: csslexerinput1.css:111+32@3960 - 33@3961
+SPAC [ ]: csslexerinput1.css:111+33@3961 - 34@3962
+IDEN [pitch-range]: csslexerinput1.css:111+34@3962 - 45@3973
+PUNC [:]: csslexerinput1.css:111+45@3973 - 46@3974
+SPAC [ ]: csslexerinput1.css:111+46@3974 - 47@3975
+QUAN [60]: csslexerinput1.css:111+47@3975 - 49@3977
+PUNC [;]: csslexerinput1.css:111+49@3977 - 50@3978
+SPAC [ ]: csslexerinput1.css:111+50@3978 - 51@3979
+IDEN [stress]: csslexerinput1.css:111+51@3979 - 57@3985
+PUNC [:]: csslexerinput1.css:111+57@3985 - 58@3986
+SPAC [ ]: csslexerinput1.css:111+58@3986 - 59@3987
+QUAN [60]: csslexerinput1.css:111+59@3987 - 61@3989
+PUNC [;]: csslexerinput1.css:111+61@3989 - 62@3990
+SPAC [ ]: csslexerinput1.css:111+62@3990 - 63@3991
+IDEN [richness]: csslexerinput1.css:111+63@3991 - 71@3999
+PUNC [:]: csslexerinput1.css:111+71@3999 - 72@4000
+SPAC [ ]: csslexerinput1.css:111+72@4000 - 73@4001
+QUAN [50]: csslexerinput1.css:111+73@4001 - 75@4003
+SPAC [ ]: csslexerinput1.css:111+75@4003 - 76@4004
+PUNC [}]: csslexerinput1.css:111+76@4004 - 77@4005
+SPAC [\n  ]: csslexerinput1.css:111+77@4005 - 112+3@4008
+IDEN [B]: csslexerinput1.css:112+3@4008 - 4@4009
+SPAC [             ]: csslexerinput1.css:112+4@4009 - 17@4022
+PUNC [{]: csslexerinput1.css:112+17@4022 - 18@4023
+SPAC [ ]: csslexerinput1.css:112+18@4023 - 19@4024
+IDEN [pitch]: csslexerinput1.css:112+19@4024 - 24@4029
+PUNC [:]: csslexerinput1.css:112+24@4029 - 25@4030
+SPAC [ ]: csslexerinput1.css:112+25@4030 - 26@4031
+IDEN [medium]: csslexerinput1.css:112+26@4031 - 32@4037
+PUNC [;]: csslexerinput1.css:112+32@4037 - 33@4038
+SPAC [ ]: csslexerinput1.css:112+33@4038 - 34@4039
+IDEN [pitch-range]: csslexerinput1.css:112+34@4039 - 45@4050
+PUNC [:]: csslexerinput1.css:112+45@4050 - 46@4051
+SPAC [ ]: csslexerinput1.css:112+46@4051 - 47@4052
+QUAN [60]: csslexerinput1.css:112+47@4052 - 49@4054
+PUNC [;]: csslexerinput1.css:112+49@4054 - 50@4055
+SPAC [ ]: csslexerinput1.css:112+50@4055 - 51@4056
+IDEN [stress]: csslexerinput1.css:112+51@4056 - 57@4062
+PUNC [:]: csslexerinput1.css:112+57@4062 - 58@4063
+SPAC [ ]: csslexerinput1.css:112+58@4063 - 59@4064
+QUAN [90]: csslexerinput1.css:112+59@4064 - 61@4066
+PUNC [;]: csslexerinput1.css:112+61@4066 - 62@4067
+SPAC [ ]: csslexerinput1.css:112+62@4067 - 63@4068
+IDEN [richness]: csslexerinput1.css:112+63@4068 - 71@4076
+PUNC [:]: csslexerinput1.css:112+71@4076 - 72@4077
+SPAC [ ]: csslexerinput1.css:112+72@4077 - 73@4078
+QUAN [90]: csslexerinput1.css:112+73@4078 - 75@4080
+SPAC [ ]: csslexerinput1.css:112+75@4080 - 76@4081
+PUNC [}]: csslexerinput1.css:112+76@4081 - 77@4082
+SPAC [\n  ]: csslexerinput1.css:112+77@4082 - 113+3@4085
+IDEN [U]: csslexerinput1.css:113+3@4085 - 4@4086
+SPAC [             ]: csslexerinput1.css:113+4@4086 - 17@4099
+PUNC [{]: csslexerinput1.css:113+17@4099 - 18@4100
+SPAC [ ]: csslexerinput1.css:113+18@4100 - 19@4101
+IDEN [richness]: csslexerinput1.css:113+19@4101 - 27@4109
+PUNC [:]: csslexerinput1.css:113+27@4109 - 28@4110
+SPAC [ ]: csslexerinput1.css:113+28@4110 - 29@4111
+QUAN [0]: csslexerinput1.css:113+29@4111 - 30@4112
+SPAC [ ]: csslexerinput1.css:113+30@4112 - 31@4113
+PUNC [}]: csslexerinput1.css:113+31@4113 - 32@4114
+SPAC [\n  ]: csslexerinput1.css:113+32@4114 - 114+3@4117
+IDEN [A]: csslexerinput1.css:114+3@4117 - 4@4118
+PUNC [:]: csslexerinput1.css:114+4@4118 - 5@4119
+IDEN [link]: csslexerinput1.css:114+5@4119 - 9@4123
+SPAC [        ]: csslexerinput1.css:114+9@4123 - 17@4131
+PUNC [{]: csslexerinput1.css:114+17@4131 - 18@4132
+SPAC [ ]: csslexerinput1.css:114+18@4132 - 19@4133
+IDEN [voice-family]: csslexerinput1.css:114+19@4133 - 31@4145
+PUNC [:]: csslexerinput1.css:114+31@4145 - 32@4146
+SPAC [ ]: csslexerinput1.css:114+32@4146 - 33@4147
+IDEN [harry]: csslexerinput1.css:114+33@4147 - 38@4152
+PUNC [,]: csslexerinput1.css:114+38@4152 - 39@4153
+SPAC [ ]: csslexerinput1.css:114+39@4153 - 40@4154
+IDEN [male]: csslexerinput1.css:114+40@4154 - 44@4158
+SPAC [ ]: csslexerinput1.css:114+44@4158 - 45@4159
+PUNC [}]: csslexerinput1.css:114+45@4159 - 46@4160
+SPAC [\n  ]: csslexerinput1.css:114+46@4160 - 115+3@4163
+IDEN [A]: csslexerinput1.css:115+3@4163 - 4@4164
+PUNC [:]: csslexerinput1.css:115+4@4164 - 5@4165
+IDEN [visited]: csslexerinput1.css:115+5@4165 - 12@4172
+SPAC [     ]: csslexerinput1.css:115+12@4172 - 17@4177
+PUNC [{]: csslexerinput1.css:115+17@4177 - 18@4178
+SPAC [ ]: csslexerinput1.css:115+18@4178 - 19@4179
+IDEN [voice-family]: csslexerinput1.css:115+19@4179 - 31@4191
+PUNC [:]: csslexerinput1.css:115+31@4191 - 32@4192
+SPAC [ ]: csslexerinput1.css:115+32@4192 - 33@4193
+IDEN [betty]: csslexerinput1.css:115+33@4193 - 38@4198
+PUNC [,]: csslexerinput1.css:115+38@4198 - 39@4199
+SPAC [ ]: csslexerinput1.css:115+39@4199 - 40@4200
+IDEN [female]: csslexerinput1.css:115+40@4200 - 46@4206
+SPAC [ ]: csslexerinput1.css:115+46@4206 - 47@4207
+PUNC [}]: csslexerinput1.css:115+47@4207 - 48@4208
+SPAC [\n  ]: csslexerinput1.css:115+48@4208 - 116+3@4211
+IDEN [A]: csslexerinput1.css:116+3@4211 - 4@4212
+PUNC [:]: csslexerinput1.css:116+4@4212 - 5@4213
+IDEN [active]: csslexerinput1.css:116+5@4213 - 11@4219
+SPAC [      ]: csslexerinput1.css:116+11@4219 - 17@4225
+PUNC [{]: csslexerinput1.css:116+17@4225 - 18@4226
+SPAC [ ]: csslexerinput1.css:116+18@4226 - 19@4227
+IDEN [voice-family]: csslexerinput1.css:116+19@4227 - 31@4239
+PUNC [:]: csslexerinput1.css:116+31@4239 - 32@4240
+SPAC [ ]: csslexerinput1.css:116+32@4240 - 33@4241
+IDEN [betty]: csslexerinput1.css:116+33@4241 - 38@4246
+PUNC [,]: csslexerinput1.css:116+38@4246 - 39@4247
+SPAC [ ]: csslexerinput1.css:116+39@4247 - 40@4248
+IDEN [female]: csslexerinput1.css:116+40@4248 - 46@4254
+PUNC [;]: csslexerinput1.css:116+46@4254 - 47@4255
+SPAC [ ]: csslexerinput1.css:116+47@4255 - 48@4256
+IDEN [pitch-range]: csslexerinput1.css:116+48@4256 - 59@4267
+PUNC [:]: csslexerinput1.css:116+59@4267 - 60@4268
+SPAC [ ]: csslexerinput1.css:116+60@4268 - 61@4269
+QUAN [80]: csslexerinput1.css:116+61@4269 - 63@4271
+PUNC [;]: csslexerinput1.css:116+63@4271 - 64@4272
+SPAC [ ]: csslexerinput1.css:116+64@4272 - 65@4273
+IDEN [pitch]: csslexerinput1.css:116+65@4273 - 70@4278
+PUNC [:]: csslexerinput1.css:116+70@4278 - 71@4279
+SPAC [ ]: csslexerinput1.css:116+71@4279 - 72@4280
+IDEN [x-high]: csslexerinput1.css:116+72@4280 - 78@4286
+SPAC [ ]: csslexerinput1.css:116+78@4286 - 79@4287
+PUNC [}]: csslexerinput1.css:116+79@4287 - 80@4288
+SPAC [\n]: csslexerinput1.css:116+80@4288 - 117+1@4289
+PUNC [}]: csslexerinput1.css:117+1@4289 - 2@4290
+SPAC [\n\n]: csslexerinput1.css:117+2@4290 - 119+1@4292
+COMM [/* Additions */]: csslexerinput1.css:119+1@4292 - 16@4307
+SPAC [\n\n]: csslexerinput1.css:119+16@4307 - 121+1@4309
+COMM [/*/ Random crap**/]: csslexerinput1.css:121+1@4309 - 19@4327
+SPAC [\n]: csslexerinput1.css:121+19@4327 - 122+1@4328
+IDEN [PANIC]: csslexerinput1.css:122+1@4328 - 6@4333
+SPAC [ ]: csslexerinput1.css:122+6@4333 - 7@4334
+PUNC [{]: csslexerinput1.css:122+7@4334 - 8@4335
+SPAC [\n  ]: csslexerinput1.css:122+8@4335 - 123+3@4338
+IDEN [content]: csslexerinput1.css:123+3@4338 - 10@4345
+SPAC [    ]: csslexerinput1.css:123+10@4345 - 14@4349
+PUNC [{]: csslexerinput1.css:123+14@4349 - 15@4350
+SPAC [ ]: csslexerinput1.css:123+15@4350 - 16@4351
+STRI ['Don\\'t Panic \\\r\nZippy\\n\\\nDoo\\n\\\nDa\\\\']: csslexerinput1.css:123+16@4351 - 126+6@4389
+SPAC [ ]: csslexerinput1.css:126+6@4389 - 7@4390
+PUNC [}]: csslexerinput1.css:126+7@4390 - 8@4391
+PUNC [;]: csslexerinput1.css:126+8@4391 - 9@4392
+SPAC [\n  ]: csslexerinput1.css:126+9@4392 - 127+3@4395
+IDEN [background]: csslexerinput1.css:127+3@4395 - 13@4405
+SPAC [ ]: csslexerinput1.css:127+13@4405 - 14@4406
+PUNC [{]: csslexerinput1.css:127+14@4406 - 15@4407
+SPAC [ ]: csslexerinput1.css:127+15@4407 - 16@4408
+URI  [url( "http://panic.com/?do=nt#p")]: csslexerinput1.css:127+16@4408 - 49@4441
+PUNC [;]: csslexerinput1.css:127+49@4441 - 50@4442
+SPAC [ ]: csslexerinput1.css:127+50@4442 - 51@4443
+PUNC [}]: csslexerinput1.css:127+51@4443 - 52@4444
+SPAC [\n  ]: csslexerinput1.css:127+52@4444 - 128+3@4447
+IDEN [href]: csslexerinput1.css:128+3@4447 - 7@4451
+SPAC [       ]: csslexerinput1.css:128+7@4451 - 14@4458
+PUNC [{]: csslexerinput1.css:128+14@4458 - 15@4459
+SPAC [ ]: csslexerinput1.css:128+15@4459 - 16@4460
+URI  [url( http://panic.com/faq.html )]: csslexerinput1.css:128+16@4460 - 48@4492
+PUNC [;]: csslexerinput1.css:128+48@4492 - 49@4493
+SPAC [ ]: csslexerinput1.css:128+49@4493 - 50@4494
+PUNC [}]: csslexerinput1.css:128+50@4494 - 51@4495
+SPAC [\n  ]: csslexerinput1.css:128+51@4495 - 129+3@4498
+IDEN [onfoo]: csslexerinput1.css:129+3@4498 - 8@4503
+SPAC [      ]: csslexerinput1.css:129+8@4503 - 14@4509
+PUNC [{]: csslexerinput1.css:129+14@4509 - 15@4510
+SPAC [ ]: csslexerinput1.css:129+15@4510 - 16@4511
+FUNC [foo(]: csslexerinput1.css:129+16@4511 - 20@4515
+STRI ['\\t\\t\\tahoy there']: csslexerinput1.css:129+20@4515 - 38@4533
+PUNC [)]: csslexerinput1.css:129+38@4533 - 39@4534
+PUNC [;]: csslexerinput1.css:129+39@4534 - 40@4535
+SPAC [ ]: csslexerinput1.css:129+40@4535 - 41@4536
+PUNC [}]: csslexerinput1.css:129+41@4536 - 42@4537
+SPAC [\n]: csslexerinput1.css:129+42@4537 - 130+1@4538
+PUNC [}]: csslexerinput1.css:130+1@4538 - 2@4539
+SPAC [\n\n]: csslexerinput1.css:130+2@4539 - 132+1@4541
+SYMB [@media]: csslexerinput1.css:132+1@4541 - 7@4547
+SPAC [ ]: csslexerinput1.css:132+7@4547 - 8@4548
+IDEN [speech]: csslexerinput1.css:132+8@4548 - 14@4554
+SPAC [ ]: csslexerinput1.css:132+14@4554 - 15@4555
+PUNC [{]: csslexerinput1.css:132+15@4555 - 16@4556
+SPAC [\n  ]: csslexerinput1.css:132+16@4556 - 133+3@4559
+IDEN [PANIC]: csslexerinput1.css:133+3@4559 - 8@4564
+SPAC [        ]: csslexerinput1.css:133+8@4564 - 16@4572
+PUNC [{]: csslexerinput1.css:133+16@4572 - 17@4573
+SPAC [ ]: csslexerinput1.css:133+17@4573 - 18@4574
+IDEN [pitch]: csslexerinput1.css:133+18@4574 - 23@4579
+PUNC [:]: csslexerinput1.css:133+23@4579 - 24@4580
+SPAC [ ]: csslexerinput1.css:133+24@4580 - 25@4581
+IDEN [x-high]: csslexerinput1.css:133+25@4581 - 31@4587
+PUNC [;]: csslexerinput1.css:133+31@4587 - 32@4588
+SPAC [ ]: csslexerinput1.css:133+32@4588 - 33@4589
+IDEN [stress]: csslexerinput1.css:133+33@4589 - 39@4595
+PUNC [:]: csslexerinput1.css:133+39@4595 - 40@4596
+SPAC [ ]: csslexerinput1.css:133+40@4596 - 41@4597
+QUAN [40]: csslexerinput1.css:133+41@4597 - 43@4599
+SPAC [ ]: csslexerinput1.css:133+43@4599 - 44@4600
+DIRE [!IMPORTANT]: csslexerinput1.css:133+44@4600 - 54@4610
+PUNC [;]: csslexerinput1.css:133+54@4610 - 55@4611
+SPAC [ ]: csslexerinput1.css:133+55@4611 - 56@4612
+PUNC [}]: csslexerinput1.css:133+56@4612 - 57@4613
+SPAC [\n  ]: csslexerinput1.css:133+57@4613 - 134+3@4616
+IDEN [ONE-HALF]: csslexerinput1.css:134+3@4616 - 11@4624
+SPAC [     ]: csslexerinput1.css:134+11@4624 - 16@4629
+PUNC [{]: csslexerinput1.css:134+16@4629 - 17@4630
+SPAC [ ]: csslexerinput1.css:134+17@4630 - 18@4631
+IDEN [content]: csslexerinput1.css:134+18@4631 - 25@4638
+PUNC [:]: csslexerinput1.css:134+25@4638 - 26@4639
+SPAC [ ]: csslexerinput1.css:134+26@4639 - 27@4640
+QUAN [1]: csslexerinput1.css:134+27@4640 - 28@4641
+PUNC [/]: csslexerinput1.css:134+28@4641 - 29@4642
+QUAN [2]: csslexerinput1.css:134+29@4642 - 30@4643
+PUNC [;]: csslexerinput1.css:134+30@4643 - 31@4644
+SPAC [ ]: csslexerinput1.css:134+31@4644 - 32@4645
+PUNC [}]: csslexerinput1.css:134+32@4645 - 33@4646
+SPAC [\n  ]: csslexerinput1.css:134+33@4646 - 135+3@4649
+IDEN [INCLUDES]: csslexerinput1.css:135+3@4649 - 11@4657
+SPAC [     ]: csslexerinput1.css:135+11@4657 - 16@4662
+PUNC [{]: csslexerinput1.css:135+16@4662 - 17@4663
+SPAC [ ]: csslexerinput1.css:135+17@4663 - 18@4664
+IDEN [dont]: csslexerinput1.css:135+18@4664 - 22@4668
+PUNC [:]: csslexerinput1.css:135+22@4668 - 23@4669
+SPAC [ ]: csslexerinput1.css:135+23@4669 - 24@4670
+IDEN [know]: csslexerinput1.css:135+24@4670 - 28@4674
+SPAC [ ]: csslexerinput1.css:135+28@4674 - 29@4675
+PUNC [~=]: csslexerinput1.css:135+29@4675 - 31@4677
+SPAC [ ]: csslexerinput1.css:135+31@4677 - 32@4678
+IDEN [what]: csslexerinput1.css:135+32@4678 - 36@4682
+SPAC [ ]: csslexerinput1.css:135+36@4682 - 37@4683
+IDEN [this]: csslexerinput1.css:135+37@4683 - 41@4687
+SPAC [ ]: csslexerinput1.css:135+41@4687 - 42@4688
+IDEN [does]: csslexerinput1.css:135+42@4688 - 46@4692
+PUNC [;]: csslexerinput1.css:135+46@4692 - 47@4693
+SPAC [ ]: csslexerinput1.css:135+47@4693 - 48@4694
+PUNC [}]: csslexerinput1.css:135+48@4694 - 49@4695
+SPAC [\n  ]: csslexerinput1.css:135+49@4695 - 136+3@4698
+HASH [#id]: csslexerinput1.css:136+3@4698 - 6@4701
+SPAC [          ]: csslexerinput1.css:136+6@4701 - 16@4711
+PUNC [{]: csslexerinput1.css:136+16@4711 - 17@4712
+PUNC [}]: csslexerinput1.css:136+17@4712 - 18@4713
+SPAC [\n  ]: csslexerinput1.css:136+18@4713 - 137+3@4716
+IDEN [PUNCTUATION]: csslexerinput1.css:137+3@4716 - 14@4727
+SPAC [  ]: csslexerinput1.css:137+14@4727 - 16@4729
+PUNC [{]: csslexerinput1.css:137+16@4729 - 17@4730
+SPAC [ ]: csslexerinput1.css:137+17@4730 - 18@4731
+PUNC [@]: csslexerinput1.css:137+18@4731 - 19@4732
+SPAC [ ]: csslexerinput1.css:137+19@4732 - 20@4733
+PUNC [#]: csslexerinput1.css:137+20@4733 - 21@4734
+SPAC [ ]: csslexerinput1.css:137+21@4734 - 22@4735
+PUNC [}]: csslexerinput1.css:137+22@4735 - 23@4736
+SPAC [\n  ]: csslexerinput1.css:137+23@4736 - 138+3@4739
+PUNC [.]: csslexerinput1.css:138+3@4739 - 4@4740
+IDEN [class]: csslexerinput1.css:138+4@4740 - 9@4745
+SPAC [       ]: csslexerinput1.css:138+9@4745 - 16@4752
+PUNC [{]: csslexerinput1.css:138+16@4752 - 17@4753
+SPAC [ ]: csslexerinput1.css:138+17@4753 - 18@4754
+PUNC [-]: csslexerinput1.css:138+18@4754 - 19@4755
+IDEN [moz-oddity]: csslexerinput1.css:138+19@4755 - 29@4765
+PUNC [:]: csslexerinput1.css:138+29@4765 - 30@4766
+SPAC [ ]: csslexerinput1.css:138+30@4766 - 31@4767
+IDEN [odd]: csslexerinput1.css:138+31@4767 - 34@4770
+PUNC [;]: csslexerinput1.css:138+34@4770 - 35@4771
+SPAC [ ]: csslexerinput1.css:138+35@4771 - 36@4772
+IDEN [content]: csslexerinput1.css:138+36@4772 - 43@4779
+PUNC [:]: csslexerinput1.css:138+43@4779 - 44@4780
+SPAC [ ]: csslexerinput1.css:138+44@4780 - 45@4781
+STRI ["\\f800\\n'\\'"]: csslexerinput1.css:138+45@4781 - 57@4793
+PUNC [;]: csslexerinput1.css:138+57@4793 - 58@4794
+SPAC [ ]: csslexerinput1.css:138+58@4794 - 59@4795
+PUNC [}]: csslexerinput1.css:138+59@4795 - 60@4796
+SPAC [\n  ]: csslexerinput1.css:138+60@4796 - 139+3@4799
+IDEN [\\69 dent-with-\\65scps]: csslexerinput1.css:139+3@4799 - 24@4820
+SPAC [ ]: csslexerinput1.css:139+24@4820 - 25@4821
+PUNC [{]: csslexerinput1.css:139+25@4821 - 26@4822
+SPAC [  ]: csslexerinput1.css:139+26@4822 - 28@4824
+PUNC [}]: csslexerinput1.css:139+28@4824 - 29@4825
+SPAC [\n  ]: csslexerinput1.css:139+29@4825 - 140+3@4828
+IDEN [unicode-range]: csslexerinput1.css:140+3@4828 - 16@4841
+SPAC [ ]: csslexerinput1.css:140+16@4841 - 17@4842
+PUNC [{]: csslexerinput1.css:140+17@4842 - 18@4843
+SPAC [ ]: csslexerinput1.css:140+18@4843 - 19@4844
+UNIC [U+f000-ffff]: csslexerinput1.css:140+19@4844 - 30@4855
+SPAC [ ]: csslexerinput1.css:140+30@4855 - 31@4856
+DIRE [! IMPORTANT]: csslexerinput1.css:140+31@4856 - 42@4867
+PUNC [;]: csslexerinput1.css:140+42@4867 - 43@4868
+SPAC [ ]: csslexerinput1.css:140+43@4868 - 44@4869
+PUNC [}]: csslexerinput1.css:140+44@4869 - 45@4870
+SPAC [\n]: csslexerinput1.css:140+45@4870 - 141+1@4871
+PUNC [}]: csslexerinput1.css:141+1@4871 - 2@4872
+SPAC [\n\n]: csslexerinput1.css:141+2@4872 - 143+1@4874
+PUNC [!]: csslexerinput1.css:143+1@4874 - 2@4875
+SPAC [\n\n]: csslexerinput1.css:143+2@4875 - 145+1@4877
+IDEN [subs]: csslexerinput1.css:145+1@4877 - 5@4881
+SPAC [ ]: csslexerinput1.css:145+5@4881 - 6@4882
+PUNC [{]: csslexerinput1.css:145+6@4882 - 7@4883
+SPAC [\n  ]: csslexerinput1.css:145+7@4883 - 146+3@4886
+IDEN [left]: csslexerinput1.css:146+3@4886 - 7@4890
+PUNC [:]: csslexerinput1.css:146+7@4890 - 8@4891
+SPAC [ ]: csslexerinput1.css:146+8@4891 - 9@4892
+SUBS [$(x * y + z)]: csslexerinput1.css:146+9@4892 - 21@4904
+PUNC [;]: csslexerinput1.css:146+21@4904 - 22@4905
+SPAC [\n  ]: csslexerinput1.css:146+22@4905 - 147+3@4908
+IDEN [right]: csslexerinput1.css:147+3@4908 - 8@4913
+PUNC [:]: csslexerinput1.css:147+8@4913 - 9@4914
+SPAC [ ]: csslexerinput1.css:147+9@4914 - 10@4915
+SUBS [$(max(0, width - 20))em]: csslexerinput1.css:147+10@4915 - 33@4938
+PUNC [;]: csslexerinput1.css:147+33@4938 - 34@4939
+SPAC [\n  ]: csslexerinput1.css:147+34@4939 - 148+3@4942
+IDEN [bottom]: csslexerinput1.css:148+3@4942 - 9@4948
+PUNC [:]: csslexerinput1.css:148+9@4948 - 10@4949
+SPAC [ ]: csslexerinput1.css:148+10@4949 - 11@4950
+SUBS [$(parseInt("4)\\"))"))px]: csslexerinput1.css:148+11@4950 - 34@4973
+PUNC [;]: csslexerinput1.css:148+34@4973 - 35@4974
+SPAC [\n  ]: csslexerinput1.css:148+35@4974 - 149+3@4977
+IDEN [top]: csslexerinput1.css:149+3@4977 - 6@4980
+PUNC [:]: csslexerinput1.css:149+6@4980 - 7@4981
+SPAC [ ]: csslexerinput1.css:149+7@4981 - 8@4982
+SUBS [$("3(".length)in]: csslexerinput1.css:149+8@4982 - 24@4998
+PUNC [;]: csslexerinput1.css:149+24@4998 - 25@4999
+SPAC [\n]: csslexerinput1.css:149+25@4999 - 150+1@5000
+PUNC [}]: csslexerinput1.css:150+1@5000 - 2@5001
+SPAC [\n]: csslexerinput1.css:150+2@5001 - 151+1@5002
