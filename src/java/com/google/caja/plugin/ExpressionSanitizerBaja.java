@@ -32,10 +32,12 @@ import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.parser.js.RegexpLiteral;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Stack;
 
 /**
  *
@@ -210,6 +212,15 @@ public class ExpressionSanitizerBaja {
         } else if(ref.isSuper()) {
           superUsed = true;
         }
+      } else if (node instanceof RegexpLiteral) {
+        // /regex/ becomes RegExp('regex', '')
+        // /regex/modifiers becomes RegExp('regex', 'modifiers')
+        final RegexpLiteral regex = (RegexpLiteral) node;
+        String text = regex.getValue().toString();
+        final Operation call = new Operation(Operator.FUNCTION_CALL,
+            new Reference("RegExp"), string(regex.getMatchText()),
+            string(regex.getModifiers()));
+        ((MutableParseTreeNode) regex.getParent()).replaceChild(call, regex);
       } else if (node instanceof Operation) {
         final Operation op = (Operation) node;
         final Operator operator = op.getOperator();

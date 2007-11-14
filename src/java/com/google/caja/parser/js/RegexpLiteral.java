@@ -134,4 +134,15 @@ public final class RegexpLiteral extends Literal {
     }
     return true;
   }
+
+  public String getMatchText() {
+    String text = this.value.toString();
+    return text.substring(1, text.lastIndexOf('/'));
+  }
+
+  public String getModifiers() {
+    String text = this.value.toString();
+    return text.substring(text.lastIndexOf('/') + 1);
+  }
+ 
 }
