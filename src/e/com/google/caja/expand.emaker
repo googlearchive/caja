@@ -181,7 +181,7 @@ bind expand(e, scope) {
             # yet been frozen).
 	    match js`@fname.prototype = @mm` ? 
                 scope.isFuncName(fname)         { def mm2 := expandMemberMap(fname, mm, scope)
-                                                  js`___.setPub($fname, "prototype", $mm2)`
+                                                  js`___.setMemberMap($fname, $mm2)`
                                                 }
 
             # Exempt fname from expansion, so it can
