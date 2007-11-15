@@ -69,51 +69,46 @@ def reuseAll(exprs, scope) {
 
 /**
  * Given that member is an untranslated expression that may 
- * be a method in the context of constructor ctor, return 
+ * be a method in the context of function name fname, return 
  * the corresponding translated expression.
  */
-def expandMember(ctor, member, scope) {
-    if (!scope.isRawCtor(ctor))           { throw(`internal: not a raw ctor: $ctor`) }
+def expandMember(fname, member, scope) {
+    if (!scope.isFuncName(fname))         { throw(`internal: not statically a function name: $fname`) }
     
     return switch (member) {
-        match js`function(@ps*) {@b}` ? 
+        match js`function(@ps*) {@b*}` ? 
               !scope.isThisless(b)        { def scope2 := scope.nest()
                                             def p2s    := scope2.defineAll(ps)
                                             def b2     := expand(b, scope2)
-                                            js`___.method($ctor,function($p2s*) {
-                                                 ${scope2.tempDefs()};
-                                                 $b2
+                                            js`___.method($fname,function($p2s*) {
+                                                 ${scope2.tempDefs()}*;
+                                                 $b2*
                                                })`
                                           }
         match _                           { expand(member, scope) }            
 }
 
 /**
- * Given that optMemberMap is either the empty list, 
- * signifying absence, or a singleton list of JSON
- * object-map expression whose values may be methods in
- * the context of constructor ctor, return the 
- * corresponding optional translated object-map expression.
+ * Given that memberMap is a JSON object-map expression whose values
+ * may be methods in the context of function name fname, return the
+ * corresponding translated object-map expression. 
  */
-def expandOptMembers(ctor, optMemberMap, scope) {
-    if (!scope.isRawCtor(ctor))           { throw(`internal: not a raw ctor: $ctor`) }
+def expandMemberMap(fname, memberMap, scope) {
+    if (!scope.isFuncName(fname))         { throw(`internal: not statically a function name: $fname`) }
     
-    return switch (optMemberMap) {
-        match []                          { [] }
-        
-        match [js`{(@ks: @ms)*}`]         { var m2s := []
-                                            for i => m in ms {
-                                                if (ks[i] =~ js`@{_}_`) {
-                                                    throw(`Key may not end in "_": ${ks[i]}`)
-                                                }
-                                                m2s with= expandMember(ctor, m, scope)
-                                            }
-                                            [js`{($ks: $m2s)*}`]
+    return switch (memberMap) {
+        match js`({})`                    { js`({})` }
+        match js`({@{key}_: @_, @_*})`    { throw(`Key may not end in "_": ${key}_`) }
+        match js`({@key: @mem, @rests*})` ?
+            scope.isIdent(key)            { def mem2 := expandMember(fname, mem, scope)
+                                            def rest2s := expandMemberMap(fname, rests, scope)
+                                            js`({$key: $mem2, $rest2s*})`
                                           }
+        match js`({@keyExpr: @_, @_*})`   { throw(`Key expressions not yet supported: $keyExpr`) }
+        match _                           { throw(`Map expression expected: $memberMap`) }
     }
 }
                                                 
-
 /**
  * Given an untranslated expression and a scope, return a
  * corresponding translated expression.
@@ -127,18 +122,26 @@ bind expand(e, scope) {
                                                 }
             match js`@{_}__`                    { throw(`Variables cannot end in "__": $e`) }
             match js`@{_}_` ? scope.isGlobal(e) { throw(`Globals cannot end in "_": $e`) }
-            match _ ? scope.isCtor(e)           { throw(`Constructors are not first class: $e`) }
+
+	    # Constructor names can only be used in those static cases
+            # enumerated by other productions which exempt it from
+            # further expansion.
+            match _ ? scope.isCtorName(e)       { throw(`Constructors are not first class: $e`) }
+
+	    # Any first non-initialization use of a non-constructor
+	    # function name freezes it, dynamically preventing further
+	    # initialization. 
+	    match _ ? scope.isFuncName(e)       { js`___.freeze($e)` }
+
             match _ ? scope.isGlobal(e)         { js`___OUTER___.$e` }
             match _                             { e }
         }}
         to visitRead() { return switch (e) {
-            match js`@_.@{p}__`                 { throw(`Properties cannot end in "__": ${p}__`) 
-                                                }
+            match js`@_.@{p}__`                 { throw(`Properties cannot end in "__": ${p}__`) }
             match js`this.@p`                   { js`this.${p}_canRead___ ? this.$p :
                                                      ___.readProp(this, ${`$p`})`
                                                 }
-            match js`@_.@{p}_`                  { throw(`Public properties cannot end in "_": ${p}_`)
-                                                }
+            match js`@_.@{p}_`                  { throw(`Public properties cannot end in "_": ${p}_`) }
             match js`@o.@p`                     { def [o2,o3] := reuse(o, scope)
                                                   js`$o2.${p}_canRead___ ? $o3.$p :
                                                      ___.readPub($o3, ${`$p`})`
@@ -152,21 +155,41 @@ bind expand(e, scope) {
                                                 }
         }}
         to visitSet() { return switch (e) {
-            match js`@_.@{p}__ = @_`            { throw(`Properties cannot end in "__": ${p}__`) 
-                                                }
+            match js`@_.@{p}__ = @_`            { throw(`Properties cannot end in "__": ${p}__`) }
             match js`this.@p = @r`              { def [r2,r3] := reuse(r, scope)
                                                   js`$r2, (this.${p}_canSet___ ? this.$p = $r3 :
                                                            ___.setProp(this, ${`$p`}, $r3))`
                                                 }
-            match js`@_.@{p}_ = @_`             { throw(`Public properties cannot end in "_": ${p}_`)
+
+            # Exempts fname from expansion, so its
+	    # ".prototype" can continue to be initialized if fname has
+	    # not yet been frozen. It also allows methods to appear on
+	    # the right hand side. 
+            # By placing this ahead of the next production, we allow
+	    # ".prototype" members to end in a single "_", so they can be
+	    # internal. 
+            match js`@fname.prototype.@p = @m` ?
+                (scope.isFuncName(fname) &&
+		 `$p` !~ `constructor`)         { def m2 := expandMember(fname, m, scope)
+                                                  js`___.setMember($fname, ${`$p`}, $m2)`
                                                 }
-            match js`@c.@p = @r` ? 
-                  scope.isRawCtor(c)            { def r2 := expand(r, scope)
-                                                  js`___.setPub($c, ${`$p`}, $r2)`
+            match js`@_.@{p}_ = @_`             { throw(`Public properties cannot end in "_": ${p}_`) }
+
+            # Exempt fname from expansion, so its
+	    # ".prototype" can be initialized all at once by a map
+	    # expression that may contain methods (if fname has not
+            # yet been frozen).
+	    match js`@fname.prototype = @mm` ? 
+                scope.isFuncName(fname)         { def mm2 := expandMemberMap(fname, mm, scope)
+                                                  js`___.setPub($fname, "prototype", $mm2)`
                                                 }
-            match js`@c.prototype.@p = @m` ?
-                  scope.isRawCtor(c)            { def m2 := expandMember(c, m, scope)
-                                                  js`___.setMember($c.prototype, ${`$p`}, $m2)`
+
+            # Exempt fname from expansion, so it can
+            # continue to be initialized if it has not yet been frozen. 
+            match js`@fname.@p = @r` ? 
+                (scope.isFuncName(fname) &&
+		 `$p` !~ `Super`)               { def r2 := expand(r, scope)
+                                                  js`___.setPub($fname, ${`$p`}, $r2)`
                                                 }
             match js`@o.@p = @r`                { def [o2,o3] := reuse(o, scope)
                                                   def [r2,r3] := reuse(r, scope)
@@ -182,127 +205,137 @@ bind expand(e, scope) {
                                                   def r2 := expand(r, scope)
                                                   js`___.setPub($o2, $s2, $r2)` 
                                                 }            
-            match js`@v = @r` ? scope.isVar(v)  { def v2 := scope.define(v)
+            match js`@v = @r` ? 
+                  scope.isVar(v)                { def v2 := scope.defineAssign(v)
                                                   def r2 := expand(r, scope)
                                                   js`$v2 = $r2`
                                                 }
             match js`var @v = @r` ? 
-                  scope.isVar(v)                { def v2 := scope.define(v)
+                  scope.isVar(v)                { def v2 := scope.defineVar(v)
                                                   def r2 := expand(r, scope)
                                                   js`$v2 = $r2`
                                                 }
             match js`var @v` ? 
-                  scope.isVar(v)                { def v2 := scope.define(v)
+                  scope.isVar(v)                { def v2 := scope.defineVar(v)
                                                   js`$v2 = undefined`
                                                 }
         }}
         to visitNew() { return switch (e) {
-            match js`new @v(@as*)` ?
-                  scope.isCtor(v)               { def v2  := scope.useCtor(v)
-                                                  def a2s := expandAll(as, scope)
-                                                  js`new $v2($a2s*)` 
+            # Exempt ctor from expansion, which would reject it, but
+            # freeze ctor here in case this is its first
+            # non-initialization use.
+            match js`new @ctor(@as*)` ?
+                  scope.isCtorName(ctor)        { def a2s := expandAll(as, scope)
+                                                  js`new (___.asCtor($ctor))($a2s*)`
                                                 }
             match js`new @f(@as*)`              { def f2  := expand(f, scope)
                                                   def a2s := expandAll(as, scope)
-                                                  js`new $f2($a2s*)` 
+                                                  js`new (___.asCtor($f2))($a2s*)` 
                                                 }
         }}
         to visitCall() { return switch (e) {
-            match js`@_.@{m}__(@_*)`            { throw(`Selectors cannot end in "__": ${m}__`) 
-                                                }
+            match js`@_.@{m}__(@_*)`            { throw(`Selectors cannot end in "__": ${m}__`) }
             match js`this.@m(@as*)`             { def [a2s,a3s] := reuseAll(as, scope)
                                                   js`$a2s*, (this.${m}_canCall___ ? this.$m($a3s*) :
-                                                             ___.invokeProp(this, ${`$m`}, [$a3s*]))` 
+                                                             ___.callProp(this, ${`$m`}, [$a3s*]))` 
                                                 }
-            match js`@_.@{m}_(@_*)`             { throw(`Public selectors cannot end in "_": ${m}_`) 
-                                                }
-            match js`caja.def(@c,@base,
-                              @ms?,@ss?)` ?
-                   scope.isRawCtor(c) &&
-                   scope.isCtor(base)           { def base2 := scope.useCtor(base)
-                                                  def m2s   := expandOptMembers(c, ms, scope)
+            match js`@_.@{m}_(@_*)`             { throw(`Public selectors cannot end in "_": ${m}_`) }
+
+	    # Exempt both fname and base from further
+            # expansion. Freeze base in case this its first
+            # non-initialization use, in order to prevent further
+            # initialization. Note that we do not statically prevent
+            # other calls to caja.def that do not match these two
+            # cases. We simply handle them as regular method calls.
+            match js`caja.def(@fname,@base)` ?
+                   scope.isFuncName(fname) &&
+                   scope.isFuncName(base)       { js`caja.def($fname,___.freeze($base))` }
+
+	    # As above, but also allow a map containing methods in the
+            # third argument.
+            match js`caja.def(@fname,@base,@mm,@ss?)` ?
+                (scope.isFuncName(fname) &&
+                 scope.isFuncName(base) &&
+                 mm =~ js`({@_*})`)             { def mm2   := expandMemberMap(fname, mm, scope)
                                                   def s2s   := expandAll(ss, scope)
-                                                  js`caja.def($c,$base2,$m2s?,$s2s?)`
+                                                  js`caja.def($fname,___.freeze($base),$mm2,$s2s?)`
                                                 }
             match js`@o.@m(@as*)`               { def [o2,o3]   := reuse(o, scope)
                                                   def [a2s,a3s] := reuseAll(as, scope)
                                                   js`$o2, $a2s*, ($o3.${m}_canCall___ ? $o3.$m($a3s*) :
-                                                                  ___.invokePub($o3, ${`$m`}, [$a3s*]))` 
+                                                                  ___.callPub($o3, ${`$m`}, [$a3s*]))` 
                                                 }
             match js`this[@s](@as*)`            { def s2  := expand(s, scope)
                                                   def a2s := expandAll(as, scope)
-                                                  js`___.invokeProp(this, $s2, [$a2s*])`
+                                                  js`___.callProp(this, $s2, [$a2s*])`
                                                 }
             match js`@o[@s](@as*)`              { def o2  := expand(o, scope)
                                                   def s2  := expand(s, scope)
                                                   def a2s := expandAll(as, scope)
-                                                  js`___.invokePub($o2, $s2, [$a2s*])`
+                                                  js`___.callPub($o2, $s2, [$a2s*])`
                                                 }
             match js`@f(@as*)`                  { def f2  := expand(f, scope)
                                                   def a2s := expandAll(as, scope)
-                                                  js`$f2.call___(___.USELESS, $a2s*)`
+                                                  js`___.asSimpleFunc($f2)($a2s*)`
                                                 }
         }}
         to visitFunction() { return switch (e) {
-            match js`function(@ps*) {@b}` ?
-                  scope.isThisless(b)           { def scope2 := scope.nest()
+            match js`function(@ps*) {@bs*}` ?
+                  scope.isThisless(bs*)         { def scope2 := scope.nest()
                                                   def p2s    := scope2.defineAll(ps)
-                                                  def b2     := expand(b, scope2)
-                                                  js`___.freeze(function($p2s*) {
-                                                       ${scope2.tempDefs()};
-                                                       $b2; 
-                                                       return undefined; 
+                                                  def b2s    := expandAll(bs, scope2)
+                                                  js`___.freeze(___.simpleFunction(function($p2s*) {
+                                                       ${scope2.tempDefs()}*;
+                                                       $b2s*
                                                      })`
                                                 }
-            match js`function @f(@ps*) {@b}` ?
-                  scope.isThisless(b)           { def f2     := scope.define(f)
+	    match js`function @f(@ps*) {@bs*};` ?
+                  scope.isThisless(bs)          { def f2     := scope.defineFunc(f)
                                                   def scope2 := scope.nest()
                                                   def p2s    := scope2.defineAll(ps)
-                                                  def b2     := expand(b, scope2)
-                                                  js`$f2 = ___.freeze(function($p2s*) {
-                                                       ${scope2.tempDefs()};
-                                                       $b2; 
-                                                       return undefined; 
-                                                     })`
+                                                  def b2s    := expandAll(bs, scope2)
+                                                  js`$f2 = ___.simpleFunction(function($p2s*) {
+                                                       ${scope2.tempDefs()}*;
+                                                       $b2s*
+                                                     });`
                                                 }
-            match js`function(@_*) {@_}`        { throw(`Method in non-method context: $e`) 
-                                                }
+            match js`function(@_*) {@_}`        { throw(`Method in non-method context: $e`) }
             match js`function @f(@ps*) {
                        $f.Super.call(this, @as*);
-                       @b
-                     }`                         { def f2     := scope.defineCtor(f)
+                       @bs*
+                     };` ?
+                  scope.isThisless(as)          { def f2     := scope.defineCtor(f)
                                                   def scope2 := scope.nest()
                                                   def p2s    := scope2.defineAll(ps)
                                                   def a2s    := expandAll(as, scope2)
-                                                  def b2     := expand(b, scope2)
+                                                  def b2s    := expandAll(bs, scope2)
                                                   js`$f2 = ___.ctor(function($p2s*) {
-                                                       ${scope2.tempDefs()};
+                                                       ${scope2.tempDefs()}*;
                                                        $f2.Super.call___(this, $a2s*);
-                                                       $b2
-                                                     })`
+                                                       $b2s*
+                                                     });`
                                                 }
             match js`function @f(@ps*) {
-                       @b
-                     }`                         { def f2     := scope.defineCtor(f)
+                       @bs*
+                     };`                        { def f2     := scope.defineCtor(f)
                                                   def scope2 := scope.nest()
                                                   def p2s    := scope2.defineAll(ps)
-                                                  def b2     := expand(b, scope2)
+                                                  def b2s    := expandAll(bs, scope2)
                                                   js`$f2 = ___.ctor(function($p2s*) {
-                                                       ${scope2.tempDefs()};
-                                                       $b2
-                                                     })`
+                                                       ${scope2.tempDefs()}*;
+                                                       $b2s*
+                                                     });`
                                                 }
         }}
         to visitMap() { return switch (e) {
-            match js`{(@ks: @xs)*}`             { var x2s := []
-                                                  for i => x in xs {
-                                                      if (ks[i] =~ js`@{_}_`) {
-                                                          throw(`Key may not end in "_": ${ks[i]}`)
-                                                      }
-                                                      x2s with= expand(x, scope)
-                                                  }
-                                                  js`{($ks: $x2s)*}`
-                                                }
+            match js`({})`                    { js`({})` }
+            match js`({@{key}_: @_, @_*})`    { throw(`Key may not end in "_": ${key}_`) }
+            match js`({@key: @val, @rests*})` ?
+		scope.isIdent(key)            { def val2             := expand(val, scope)
+						def js`({@rest2s*})` := expand(js`({$rests*})`, scope)
+						js`({$key: $mem2, $rest2s*})`
+                                              }
+            match js`({@keyExpr: @_, @_*})`   { throw(`Key expressions not yet supported: $keyExpr`) }
         }}
     }
 }
