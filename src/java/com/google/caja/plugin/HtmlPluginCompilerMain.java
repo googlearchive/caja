@@ -99,7 +99,7 @@ public final class HtmlPluginCompilerMain {
     if (rc != 0) return rc;
 
     if (isBaja)
-      jsName = "___OUTERS___";
+      jsName += "___OUTERS___";
 
     HtmlPluginCompiler compiler =
         new HtmlPluginCompiler(readFile(inputFile), jsName,
