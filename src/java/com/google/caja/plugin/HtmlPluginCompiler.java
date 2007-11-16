@@ -360,7 +360,10 @@ public final class HtmlPluginCompiler {
   // plugin_initialize___(PLUGIN);
   private void setupJsTree() {
     if (meta.isBaja) {
-      this.jsTree = s(new Block(Collections.<Statement>emptyList()));
+      this.jsTree = s(new Block(
+          Arrays.<Statement>asList(
+              s(new Declaration(meta.namespaceName, null))
+          )));
     } else {
       this.jsTree = s(new Block(
                         Arrays.<Statement>asList(
