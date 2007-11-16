@@ -208,7 +208,7 @@ public final class HtmlDomParser {
     } catch (GxpCompiler.BadContentException ex) {
       throw new ParseException(
           new Message(
-              MessageType.IO_ERROR,
+              MessageType.PARSE_ERROR,
               pos,
               MessagePart.Factory.valueOf(
                   ("<" + tagName + "> tag."))));

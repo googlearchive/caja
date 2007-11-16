@@ -67,6 +67,7 @@ public enum MessageType implements MessageTypeInt {
       MessageLevel.ERROR),
   UNRECOGNIZED_REGEX_MODIFIERS(
       "%s: Unrecognized regular expression modifiers %s", MessageLevel.ERROR),
+  PARSE_ERROR("%s: Parse error in %s", MessageLevel.ERROR),
 
   // platform context
   NOT_IE("%s: Will not work in IE", MessageLevel.WARNING),

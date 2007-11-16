@@ -560,7 +560,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
           text.toString(), type, FilePosition.span(start, end));
     } catch (IOException ex) {
       throw new ParseException(
-          new Message(MessageType.IO_ERROR, p.getCurrentPosition()), ex);
+          new Message(MessageType.PARSE_ERROR, p.getCurrentPosition()), ex);
     }
   }
 

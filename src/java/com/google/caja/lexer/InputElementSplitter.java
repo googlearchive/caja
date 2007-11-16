@@ -214,7 +214,7 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
       }
     } catch (IOException ex) {
       throw new ParseException(
-          new Message(MessageType.IO_ERROR, p.getCurrentPosition()), ex);
+          new Message(MessageType.PARSE_ERROR, p.getCurrentPosition()), ex);
     }
 
     FilePosition pos = FilePosition.span(start, p.getCurrentPosition());
