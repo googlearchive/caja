@@ -602,7 +602,7 @@ public final class HtmlPluginCompiler {
   }
 
   private boolean rewriteGlobalReference() {
-    new HtmlGlobalReferenceRewriter(meta).rewrite(
+    new HtmlGlobalReferenceRewriter(meta, mq).rewrite(
         this.jsTree, Collections.<String>emptySet());
 
     boolean success = hasNoFatalErrors();
@@ -944,11 +944,15 @@ final class HtmlGlobalDefRewriterBaja extends HtmlGlobalDefRewriter {
 
 final class HtmlGlobalReferenceRewriter {
   final PluginMeta meta;
+  final MessageQueue mq;
 
   private static final Set<String> IMPLICIT_FUNCTION_DEFINITIONS =
     new HashSet<String>(Arrays.asList("arguments", Keyword.THIS.toString()));
 
-  HtmlGlobalReferenceRewriter(PluginMeta meta) { this.meta = meta; }
+  HtmlGlobalReferenceRewriter(PluginMeta meta, MessageQueue mq) {
+    this.meta = meta;
+    this.mq = mq;
+  }
 
   void rewrite(ParseTreeNode node, final Set<? extends String> locals) {
     node.acceptPreOrder(new Visitor() {
@@ -970,6 +974,13 @@ final class HtmlGlobalReferenceRewriter {
 
         if (node instanceof Reference) {
           Reference ref = (Reference) node;
+          String refName = ref.getIdentifier();
+          if (!node.getAttributes().is(ExpressionSanitizer.SYNTHETIC)) {
+            if (refName.endsWith("__")) {
+              mq.addMessage(MessageType.ILLEGAL_NAME, ref.getFilePosition(),
+                  MessagePart.Factory.valueOf(refName));
+            }
+          }
           MutableParseTreeNode parent =
             (MutableParseTreeNode) node.getParent();
           Operator parentOp = null;
