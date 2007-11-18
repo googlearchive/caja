@@ -54,12 +54,38 @@ public class ExpressionSanitizerBaja {
     rewriteFieldAccess(node);
     return true;
   }
-
+  
   // $1.$2 -> $1.$2_canRead___ ? $1.$2 : __.readPub($1,"$2")
   private final class FieldAccessRewriter implements Visitor {
-    // TODO(benl): make this work over nested functions. Also needs to deal with closures for ES4.
-    private boolean thisUsed = false;  // has "this" been used in the current function?
-    private boolean superUsed = false;  // has "super" been used in the current function?
+    // TODO(benl): if we switched FieldAccessRewriter to be pre-order, then it
+    // could do this on the fly. 
+    private final class FindThisAndSuper implements Visitor {
+      private boolean thisUsed = false;
+      private boolean superUsed = false;
+
+      // TODO(benl): Also needs to deal with closures for ES4.
+      public boolean visit(ParseTreeNode node) {
+        if (node instanceof FunctionDeclaration) {
+          // Don't descend into nested functions
+          return false;
+        } else if (node instanceof Reference) {
+          final Reference ref = (Reference) node;
+          if (ref.isThis()) {
+            thisUsed = true;
+          } else if(ref.isSuper()) {
+            superUsed = true;
+          }
+        }
+        // No need to look further once both are set
+        if (thisUsed && superUsed) {
+          return false;
+        }
+        return true;
+      }
+      
+      public boolean usedThis() { return thisUsed; }
+      public boolean usedSuper() { return superUsed; }
+    }
 
     // var TEMP;
     private Declaration declareTmp(Expression initializer) {
@@ -173,7 +199,8 @@ public class ExpressionSanitizerBaja {
     }
     // turn func(...) { ... } to var func = ___.ctor(function (...) {
     //    ___.enter[Base|Derived](func, this);  ... }
-    private void makeConstructor(final ParseTreeNode node) {
+    private void makeConstructor(final ParseTreeNode node, boolean thisUsed,
+        boolean superUsed) {
       final FunctionConstructor func
         = (FunctionConstructor) node.children().get(0);
       if (thisUsed) {
@@ -183,11 +210,11 @@ public class ExpressionSanitizerBaja {
       }
       final ExpressionStmt enterDerived = new ExpressionStmt(
           call___(superUsed ? "enterDerived" : "enterBase",
-          new Reference((String)node.children().get(0).getValue()),
+          new Reference((String)func.getValue()),
           new Reference("this")));
       func.getBody().prepend(enterDerived);
       final Operation call = call___("ctor", func);
-      final Declaration decl = new Declaration((String)node.children().get(0).getValue(), call);
+      final Declaration decl = new Declaration((String)func.getValue(), call);
       func.clearName();
       ((MutableParseTreeNode) node.getParent()).replaceChild(decl, node);
     }
@@ -195,22 +222,22 @@ public class ExpressionSanitizerBaja {
     public boolean visit(final ParseTreeNode node) {
       if (node.getAttributes().is(ExpressionSanitizer.SYNTHETIC)) { return true; }
       if (node instanceof FunctionConstructor) {
+        // skip it
       } else if (node instanceof FunctionDeclaration) {
-        if (superUsed) {
+        final FunctionConstructor func
+          = (FunctionConstructor) node.children().get(0);
+        FindThisAndSuper finder = new FindThisAndSuper();
+        func.getBody().acceptPreOrder(finder);
+        if (finder.usedSuper()) {
           // TODO(benl): the spec says the function should also include "this" - true? Or not?
-          makeConstructor(node);
-          superUsed = false;
-        } else if (thisUsed) {
-          makeConstructor(node);
+          makeConstructor(node, finder.usedThis(), true);
+        } else if (finder.usedThis()) {
+          makeConstructor(node, true, finder.usedSuper());
         }
-        thisUsed = false;
       } else if (node instanceof Reference) {
         final Reference ref = (Reference) node;
         if (ref.isThis()) {
           ref.setIdentifier(ReservedNames.LOCAL_THIS);
-          thisUsed = true;
-        } else if(ref.isSuper()) {
-          superUsed = true;
         }
       } else if (node instanceof RegexpLiteral) {
         // /regex/ becomes RegExp('regex', '')
