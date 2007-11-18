@@ -1,0 +1,59 @@
+<gxp:template name="aSquareMeal">
+  <gxp:param name="beer"/>
+  <gxp:param name="mayonnaise"/>
+  <gxp:param name="cheetos"/>
+
+<div id="b">
+  <gxp:attr name="bgcolor">
+    <gxp:if cond="isTuesday()">
+      red
+    <gxp:else/>
+      white
+    </gxp:if>
+  </gxp:attr>
+
+  <gxp:if cond="beer">
+    <h1><a name="beer">beer</a></h1>
+    <gxp:eval expr="beer"/> bottles of beer
+  <gxp:else/>
+    <div>Time for a beer run</div>
+
+    <gxp:if cond="mayonnaise &gt;= 50">
+      <h1 class="  smooth  eggy">mayonnaise</h1>
+      <gxp:eval expr="(mayonnaise / 50) | 0"/><![CDATA[ kilolitres of mayo]]>
+    <gxp:else/>
+      <div>Scraping the bottom of the barrel</div>
+
+      <gxp:if cond="!cheetos.isEmpty()">
+        <h1 expr:class="cheetos.flavor()">Cheetos</h1>
+        <gxp:loop var="cheeto" iterator="cheetos.cheesyGoodness()">
+          <p><gxp:eval expr="cheeto.munch()"/></p>
+        </gxp:loop>
+      <gxp:else/>
+        <h1 onclick="panic()">PANIC</h1>
+      </gxp:if>
+    </gxp:if>
+  </gxp:if>
+
+  Empty <p/>
+
+  <form name="hello">
+    <input type="text" name="widgy"/>
+    <textarea id="hellota" name="howAreYouToday">
+      How's it going?
+    </textarea>
+    <input type="submit" value="whack">
+      <gxp:attr name="id">
+        <gxp:if cond="saidHello">
+          reparte
+        <gxp:else/>
+          salutations
+        </gxp:if>
+      </gxp:attr>
+    </input>
+  </form>
+  <a href="help.html">Help</a>
+
+</div>
+
+</gxp:template>

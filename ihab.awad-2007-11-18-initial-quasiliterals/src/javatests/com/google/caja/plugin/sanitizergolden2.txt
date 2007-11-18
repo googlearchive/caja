@@ -1,0 +1,65 @@
+Block
+  FunctionDeclaration : foo
+    FunctionConstructor : foo
+      FormalParam : a
+      FormalParam : b
+      Block ; synthetic=true
+        ExpressionStmt ; synthetic=true
+          Operation : FUNCTION_CALL ; synthetic=true
+            Reference : plugin_require___ ; synthetic=true
+            Operation : STRICTLY_NOT_EQUAL ; synthetic=true
+              Reference : this ; synthetic=true
+              Reference : window ; synthetic=true
+        Conditional
+          Operation : LOGICAL_AND
+            Operation : GREATER_THAN
+              Reference : a
+              IntegerLiteral : 0
+            Operation : GREATER_THAN
+              Reference : b
+              IntegerLiteral : 0
+          Block
+            ReturnStmt
+              Operation : FUNCTION_CALL
+                Operation : MEMBER_ACCESS ; synthetic=true
+                  Reference : foo
+                  Reference : call ; synthetic=true
+                Reference : this ; synthetic=true
+                Reference : b
+                Operation : SUBTRACTION
+                  Reference : a
+                  IntegerLiteral : 1
+        TryStmt
+          Block
+            ExpressionStmt
+              Operation : FUNCTION_CALL
+                Operation : MEMBER_ACCESS ; synthetic=true
+                  Reference : bar
+                  Reference : call ; synthetic=true
+                Reference : this ; synthetic=true
+          CatchStmt
+            Declaration : safe_ex___ ; synthetic=true
+            Block
+              Declaration : e ; synthetic=true
+                Operation : ADDITION ; synthetic=true
+                  StringLiteral : '' ; synthetic=true
+                  Reference : safe_ex___ ; synthetic=true
+              ExpressionStmt
+                Operation : FUNCTION_CALL
+                  Operation : MEMBER_ACCESS ; synthetic=true
+                    Reference : alert
+                    Reference : call ; synthetic=true
+                  Reference : this ; synthetic=true
+                  Reference : e
+  Declaration : a
+    Operation : FUNCTION_CALL ; synthetic=true
+      Reference : plugin_get___ ; synthetic=true
+      Reference : bar
+      Reference : baz
+  ExpressionStmt
+    Operation : FUNCTION_CALL
+      Operation : MEMBER_ACCESS ; synthetic=true
+        Reference : eval
+        Reference : call ; synthetic=true
+      Reference : this ; synthetic=true
+      StringLiteral : 'badness()'

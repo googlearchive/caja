@@ -1,0 +1,91 @@
+Block
+  ExpressionStmt
+    Operation : FUNCTION_CALL
+      FunctionConstructor
+        Block
+          ExpressionStmt
+            Operation : FUNCTION_CALL
+              Reference : alert
+              StringLiteral : 'hello world'
+  ExpressionStmt
+    Operation : FUNCTION_CALL
+      FunctionConstructor : a
+        Block
+          ExpressionStmt
+            Operation : FUNCTION_CALL
+              Reference : alert
+              StringLiteral : 'hello world'
+  ExpressionStmt
+    FunctionConstructor
+      Block
+        ExpressionStmt
+          Operation : FUNCTION_CALL
+            Reference : alert
+            StringLiteral : 'hello world'
+  ExpressionStmt
+    FunctionConstructor : b
+      Block
+        ExpressionStmt
+          Operation : FUNCTION_CALL
+            Reference : alert
+            StringLiteral : 'hello world'
+  FunctionDeclaration : c
+    FunctionConstructor : c
+      Block
+        ExpressionStmt
+          Operation : FUNCTION_CALL
+            Reference : alert
+            StringLiteral : 'hello world'
+  Noop
+  ExpressionStmt
+    FunctionConstructor
+      Block
+        ExpressionStmt
+          Operation : FUNCTION_CALL
+            Reference : alert
+            StringLiteral : 'hello world'
+  Declaration : d
+    FunctionConstructor
+      Block
+        ExpressionStmt
+          Operation : FUNCTION_CALL
+            Reference : alert
+            StringLiteral : 'hello world'
+  Declaration : e
+    FunctionConstructor : f
+      Block
+        ExpressionStmt
+          Operation : FUNCTION_CALL
+            Reference : alert
+            StringLiteral : 'hello world'
+  ExpressionStmt
+    Operation : FUNCTION_CALL
+      Operation : MEMBER_ACCESS
+        ObjectConstructor
+          StringLiteral : 'x'
+          IntegerLiteral : 4
+          StringLiteral : 'y'
+          IntegerLiteral : 5
+          StringLiteral : 'invoke'
+          FunctionConstructor
+            Block
+              ExpressionStmt
+                Operation : FUNCTION_CALL
+                  Reference : doSomething
+                  Reference : this
+                  Operation : ADDITION
+                    Operation : MEMBER_ACCESS
+                      Reference : this
+                      Reference : x
+                    Operation : MEMBER_ACCESS
+                      Reference : this
+                      Reference : y
+        Reference : invoke
+  Block
+    LabeledStmtWrapper : block
+      ExpressionStmt
+        IntegerLiteral : 4
+  ExpressionStmt
+    ObjectConstructor
+      StringLiteral : 'objet'
+      IntegerLiteral : 4

@@ -1,0 +1,70 @@
+<html>
+<head>
+  <title>Contact List with a Spring Graph Plugin</title>
+
+  <script type=text/javascript>
+    window.onerror = function (msg, url, line) {
+      url = String(url);
+      alert(url.substring(url.lastIndexOf('/') + 1) + ':' + line + ' ' + msg);
+    };
+  </script>
+  <script type=text/javascript>
+    if (!window.console) {
+      window.console = { log: function (msg) { /*alert(msg);*/ } };
+    }
+  </script>
+
+  <!-- load the runtime environment -->
+  <script type=text/javascript src="wrap_capability.js"></script>
+  <script type=text/javascript src="plugin-base.js"></script>
+
+  <!-- load the embedding application -->
+  <script type=text/javascript src="event-list.js"></script>
+  <script type=text/javascript src="plugin-api.js"></script>
+
+  <!-- load the plugin styles -->
+  <link rel=stylesheet type=text/css href="plugin-files/plugin.css">
+
+</head>
+
+<body bgcolor=white>
+
+  <table cols=2 width=100%>
+    <tr>
+      <td width=50%>
+        <p>To the right is a javascript plugin
+        <small>(
+          <a href="http://eng/designdocs/javascript/plugins.html">
+            designdoc
+          </a>)
+        </small>
+        that reads a list of events from the embedding application, and then
+        performs some visualization.  It demonstrates that a plugin can
+        <ul>
+          <li>read information via an application provided api
+            (see plugin-api.js)
+          <li>generate a user interface using html templating, and CSS
+          <li>perform calculations and manipulate styles to update that
+            application
+          <li>schedule periodic tasks
+          <li>respond to user actions (click on a node) and send state back to
+            the application
+        </ul>
+      <td widt=50%>
+        <center>
+          <div style="width:41em; border:1px solid black; padding-bottom: .5em"
+          class="plugin">
+            <p>The plugin's interface is rooted here</p>
+            <div id="plugin-base"></div>
+          </div>
+        </center>
+  </table>
+
+  <p><small id=currentUser></small>
+
+</body>
+
+<!-- load the plugin now that we've set up its DOM subtree -->
+<script type=text/javascript src="plugin-files/plugin.js"></script>
+
+</html>

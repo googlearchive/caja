@@ -1,0 +1,12 @@
+=== test:///helloworld.gxp
+<gxp:template name="sayHello">
+  <h1>Hello World</h1>
+</gxp:template>
+
+=== test:///helloworld.css
+h1 { color: black; background: white }
+
+=== test:///helloworld.js
+function main() {
+  getElementById('hello-base').setInnerHTML(sayHello());
+}
