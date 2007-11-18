@@ -14,6 +14,16 @@
 
 package com.google.caja.parser.css;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Token;
 import com.google.caja.parser.ParseTreeNode;
@@ -25,16 +35,6 @@ import com.google.caja.util.Pair;
 import com.google.caja.util.SyntheticAttributeKey;
 import com.google.caja.util.SyntheticAttributes;
 
-import java.io.IOException;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 /**
  * A description of the values that can occur after a property.
  *
@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
  * http://www.w3.org/TR/CSS21/about.html#property-defs
  *
  * @author mikesamuel@gmail.com
+ * @author ihab.awad@gmail.com
  */
 public abstract class CssPropertySignature implements ParseTreeNode {
   private final List<CssPropertySignature> children;
@@ -60,6 +61,26 @@ public abstract class CssPropertySignature implements ParseTreeNode {
       last = child;
     }
     assert !this.children.contains(null);
+  }
+
+  public boolean isQuasiliteral() { return false; }
+  
+  public QuasiliteralQuantifier getQuasiliteralQuantifier() { return null; }
+  
+  public String getQuasiliteralIdentifier() { return null; }
+  
+  public Class<? extends ParseTreeNode> getQuasiMatchedClass() { return null; }
+  
+  public Map<String, ParseTreeNode> matchHere(ParseTreeNode specimen) {
+    throw new UnsupportedOperationException();
+  }
+  
+  public boolean shallowEquals(ParseTreeNode specimen) {
+    return false;
+  }
+  
+  public boolean deepEquals(ParseTreeNode specimen) {
+    return false;
   }
 
   /** A signature that can be repeated zero or more times. */

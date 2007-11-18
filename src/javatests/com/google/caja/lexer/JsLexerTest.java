@@ -17,7 +17,9 @@ package com.google.caja.lexer;
 import com.google.caja.util.TestUtil;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import junit.framework.TestCase;
 
@@ -105,6 +107,100 @@ public class JsLexerTest extends TestCase {
     assertEquals(golden, output.toString());
     //fail(golden + "\n\n  !=\n\n" + output);
 
+  }
+
+  public void testSimpleExpression() {
+    JsLexer lexer = createLexer("while (foo) { 1; }");
+    assertNext(lexer, JsTokenType.KEYWORD, "while");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "(");
+    assertNext(lexer, JsTokenType.WORD, "foo");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ")");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "{");
+    assertNext(lexer, JsTokenType.INTEGER, "1");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ";");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "}");
+    assertEmpty(lexer);
+  }
+
+  public void testQuasiExpressionSingle() {
+    JsLexer lexer = createLexer("@foo * 1;");
+    assertNext(lexer, JsTokenType.WORD, "@foo");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "*");
+    assertNext(lexer, JsTokenType.INTEGER, "1");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ";");
+    assertEmpty(lexer);
+  }
+
+  public void testQuasiExpressionStar() {
+    JsLexer lexer = createLexer("@foo* * 1;");
+    assertNext(lexer, JsTokenType.WORD, "@foo*");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "*");
+    assertNext(lexer, JsTokenType.INTEGER, "1");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ";");
+    assertEmpty(lexer);
+  }
+
+  public void testQuasiExpressionPlus() {
+    JsLexer lexer = createLexer("@foo+ + 1;");
+    assertNext(lexer, JsTokenType.WORD, "@foo+");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "+");
+    assertNext(lexer, JsTokenType.INTEGER, "1");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ";");
+    assertEmpty(lexer);
+  }
+
+  public void testQuasiExpressionSingleParens() {
+    JsLexer lexer = createLexer("(@foo)");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "(");
+    assertNext(lexer, JsTokenType.WORD, "@foo");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ")");
+    assertEmpty(lexer);
+  }
+
+  public void testQuasiExpressionStarParens() {
+    JsLexer lexer = createLexer("(@foo*)");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "(");
+    assertNext(lexer, JsTokenType.WORD, "@foo*");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ")");
+    assertEmpty(lexer);
+  }
+
+  public void testQuasiExpressionPlusParens() {
+    JsLexer lexer = createLexer("(@foo+)");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "(");
+    assertNext(lexer, JsTokenType.WORD, "@foo+");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ")");
+    assertEmpty(lexer);
+  }
+
+  private JsLexer createLexer(String src) {
+    InputSource input;
+    try {
+      input = new InputSource(new URI("file:///no/such/file"));
+    } catch (URISyntaxException e) {
+      throw new RuntimeException(e);
+    }
+    BufferedReader in = new BufferedReader(new StringReader(src));
+    return new JsLexer(in, input);
+  }
+
+  private void assertNext(JsLexer lexer, JsTokenType type, String text) {
+    Token<JsTokenType> tok = null;
+    try {
+      tok = lexer.next();
+    } catch (ParseException e) {
+      fail(e.toString());
+    }
+    assertEquals(type, tok.type);
+    assertEquals(text, tok.text);
+  }
+
+  public void assertEmpty(JsLexer lexer) {
+    try {
+      assertFalse(lexer.hasNext());
+    } catch (ParseException e) {
+      fail(e.toString());
+    }
   }
 
   public static void main(String[] args) throws Exception {

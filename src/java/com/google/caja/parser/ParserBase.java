@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
  * parsers.
  *
  * @author mikesamuel@gmail.com
+ * @author ihab.awad@gmail.com
  */
 public abstract class ParserBase {
   protected final JsTokenQueue tq;
@@ -70,10 +71,16 @@ public abstract class ParserBase {
 
   /**
    * String form of a regular expression that matches the javascript
-   * IdentifierOrKeyword production.
+   * IdentifierOrKeyword production, with extensions for quasiliteral
+   * syntax.
    * <p>From http://www.mozilla.org/js/language/js20/formal/lexer-grammar.html
+   * and based on http://www.erights.org/elang/grammar/quasi-overview.html
    * <pre>
-   * <b>IdentifierOrKeyword</b> -> IdentifierName
+   * <b>QuasiIdentifierOrKeyword</b> ->
+   *       IdentifierOrKeyword
+   *    |  QuasiliteralBegin IdentifierOrKeyword OptQuasiliteralQuantifier
+   * IdentifierOrKeyword ->
+   *       IdentifierName
    * IdentifierName ->
    *       InitialIdentifierCharacterOrEscape
    *    |  NullEscapes InitialIdentifierCharacterOrEscape
@@ -95,9 +102,16 @@ public abstract class ParserBase {
    *       x 2HexDigit
    *    |  u 4HexDigit
    *    |  U 8HexDigit
+   * QuasiliteralBegin ->
+   *       null
+   *    |  '@'
+   * OptQuasiliteralQuantifier ->
+   *       null
+   *    |  '*'
+   *    |  '+'
    * </pre>
    */
-  private static final Pattern IDENTIFIER_OR_KEYWORD_RE;
+  private static final Pattern QUASI_IDENTIFIER_OR_KEYWORD_RE;
   static {
     String hexDigit = "[0-9a-fA-F]";
     String hexEscape =
@@ -109,6 +123,8 @@ public abstract class ParserBase {
     String initialIdentifierCharacterOrEscape =
       "(?:" + initialIdentifierCharacter + "|\\\\" + hexEscape + ")";
     String nullEscape = "(?:\\\\_)";
+    String quasiliteralBegin = "@?";
+    String optQuasiliteralQuantifier = "[\\+\\*]?";
     /*
      * IdentifierName ->
      *       InitialIdentifierCharacterOrEscape
@@ -124,18 +140,19 @@ public abstract class ParserBase {
         "(?:" + nullEscape + "*" + initialIdentifierCharacterOrEscape
         + "(?:" + nullEscape + "|" + continuingIdentifierCharacterOrEscape
         + ")*)");
-    IDENTIFIER_OR_KEYWORD_RE = Pattern.compile("^" + identifierOrKeyword + "$");
+    String quasiIdentifierOrKeyword =
+        "(?:" + identifierOrKeyword + ")" +
+        "|" +
+        "(?:" +
+            quasiliteralBegin +
+            identifierOrKeyword +
+            optQuasiliteralQuantifier +
+         ")";
+    QUASI_IDENTIFIER_OR_KEYWORD_RE =
+        Pattern.compile("^" + quasiIdentifierOrKeyword + "$");
   }
 
   public static boolean isIdentifier(String s) {
-    return IDENTIFIER_OR_KEYWORD_RE.matcher(s).matches();
-  }
-
-  public static boolean isIdentifierStart(char ch) {
-    return Character.isLetter(ch) || ch == '$' || ch == '_';
-  }
-
-  public static boolean isIdentifierPart(char ch) {
-    return Character.isLetterOrDigit(ch) || ch == '$' || ch == '_';
+    return QUASI_IDENTIFIER_OR_KEYWORD_RE.matcher(s).matches();
   }
 }

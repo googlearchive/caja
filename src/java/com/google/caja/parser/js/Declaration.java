@@ -24,11 +24,11 @@ import java.io.IOException;
  * @author mikesamuel@gmail.com
  */
 public class Declaration extends AbstractStatement<Expression> {
-  private String identifier;
+  private Reference reference;
   private Expression initializer;
 
   public Declaration(String identifier, Expression initializer) {
-    this.identifier = identifier;
+    children.add(new Reference(identifier));
     if (null != initializer) { children.add(initializer); }
     childrenChanged();
   }
@@ -36,19 +36,20 @@ public class Declaration extends AbstractStatement<Expression> {
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.initializer = children.isEmpty() ? null : children.get(0);
-    if (children.size() > 1) {
+    this.reference = (Reference)children.get(0);    
+    this.initializer = children.size() < 2 ? null : children.get(1);
+    if (children.size() > 2) {
       throw new IllegalArgumentException(
-          "Declaration should only have at most 1 child");
+          "Declaration should only have at most 2 children");
     }
   }
 
-  public String getIdentifier() { return this.identifier; }
+  public String getIdentifier() { return reference.getIdentifier(); }
 
   public Expression getInitializer() { return this.initializer; }
 
   @Override
-  public String getValue() { return identifier; }
+  public String getValue() { return reference.getIdentifier(); }
 
   public void render(RenderContext rc) throws IOException {
     rc.out.append("var ");
@@ -61,7 +62,7 @@ public class Declaration extends AbstractStatement<Expression> {
    * {@code for (var a = 0, b = 1, ...)}.
    */
   void renderShort(RenderContext rc) throws IOException {
-    rc.out.append(identifier);
+    rc.out.append(reference.getIdentifier());
     if (null != initializer) {
       rc.out.append(" = ");
       initializer.render(rc);
