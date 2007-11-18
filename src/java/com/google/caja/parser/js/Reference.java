@@ -23,7 +23,7 @@ import java.io.IOException;
  *
  * @author mikesamuel@gmail.com
  */
-public class Reference extends AbstractExpression<Expression> {
+public final class Reference extends AbstractExpression<Expression> {
   private String identifier;
 
   public Reference(String identifier) {

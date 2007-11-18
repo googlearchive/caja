@@ -18,8 +18,9 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
-import java.util.Collections;
+
 import java.util.List;
+import java.util.Collections;
 
 /**
  * Sometimes called a function literal or a closure, an expression that
@@ -53,11 +54,6 @@ public final class FunctionConstructor
     this.body = (Block) children.get(n - 1);
   }
 
-  @Override
-  public boolean shallowEquals(ParseTreeNode specimen) {
-    return specimen instanceof FunctionConstructor;
-  }
-  
   public List<FormalParam> getParams() { return params; }
 
   public Block getBody() { return body; }

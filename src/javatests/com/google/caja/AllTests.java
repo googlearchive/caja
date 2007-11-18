@@ -14,12 +14,6 @@
 
 package com.google.caja;
 
-import java.util.regex.Pattern;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-
 import com.google.caja.lexer.CharProducerTest;
 import com.google.caja.lexer.CommentLexerTest;
 import com.google.caja.lexer.CssLexerTest;
@@ -28,11 +22,10 @@ import com.google.caja.lexer.JsLexerTest;
 import com.google.caja.lexer.LookaheadCharProducerTest;
 import com.google.caja.lexer.PunctuationTrieTest;
 import com.google.caja.parser.ParseTreeNodeTest;
-import com.google.caja.parser.css.Css2Test;
 import com.google.caja.parser.css.CssParserTest;
 import com.google.caja.parser.css.CssTreeTest;
+import com.google.caja.parser.css.Css2Test;
 import com.google.caja.parser.html.DomParserTest;
-import com.google.caja.parser.js.MatchTest;
 import com.google.caja.parser.js.ParserTest;
 import com.google.caja.parser.js.StringLiteralTest;
 import com.google.caja.plugin.CompiledPluginTest;
@@ -45,6 +38,12 @@ import com.google.caja.plugin.HtmlWhitelistTest;
 import com.google.caja.plugin.PluginCompilerTest;
 import com.google.caja.plugin.UrlUtilTest;
 import com.google.caja.plugin.caps.CapabilityRewriterTest;
+
+import java.util.regex.Pattern;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 /**
  * @author mikesamuel@gmail.com
@@ -78,7 +77,6 @@ public class AllTests {
           PluginCompilerTest.class,
           PunctuationTrieTest.class,
           StringLiteralTest.class,
-          MatchTest.class,
           UrlUtilTest.class,
         };
     Pattern testFilter = Pattern.compile(System.getProperty("test.filter", ""));

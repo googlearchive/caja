@@ -1,10 +1,10 @@
-// Copyright (C) 2005 Google Inc.
+// Copyright (C) 2005-2006 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,15 +14,6 @@
 
 package com.google.caja.parser;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Token;
 import com.google.caja.reporting.MessageContext;
@@ -30,19 +21,25 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.SyntheticAttributeKey;
 import com.google.caja.util.SyntheticAttributes;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.NoSuchElementException;
+
 /**
  * An abstract base class for a mutable parse tree node implementations.
- * 
+ *
  * @param <T> A base class for all children of this node.
  * @author mikesamuel@gmail.com
- * @author ihab.awad@gmail.com
  */
-public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
-    MutableParseTreeNode {
+public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
+    implements MutableParseTreeNode {
   private AbstractParseTreeNode<?> parent;
   private AbstractParseTreeNode<?> nextSibling, prevSibling;
   private FilePosition pos;
-  private List<Token<?>> comments = Collections.<Token<?>> emptyList();
+  private List<Token<?>> comments = Collections.<Token<?>>emptyList();
   private SyntheticAttributes attributes;
   // TODO(mikesamuel): make this private and let children use transactions to
   // set up child lists from the constructor.
@@ -55,43 +52,26 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
 
   /**
    * Return the parent of this node, a node such that
-   * <code>getParent().iterator()</code> will include <code>this</code>.
+   *  <code>getParent().iterator()</code> will include <code>this</code>.
    * Not valid until {@link #parentify()} has been called on the root node.
-   * 
    * @return null if {@link #parentify()} has not yet been called or if this is
-   *         the root node.
+   *   the root node.
    */
-  public ParseTreeNode getParent() {
-    return parent;
-  }
+  public ParseTreeNode getParent() { return parent; }
+  public ParseTreeNode getNextSibling() { return nextSibling; }
+  public ParseTreeNode getPrevSibling() { return prevSibling; }
+  public FilePosition getFilePosition() { return pos; }
+  public List<Token<?>> getComments() { return comments; }
+  public final List<? extends T> children() { return childrenExtern; }
 
-  public ParseTreeNode getNextSibling() {
-    return nextSibling;
-  }
-
-  public ParseTreeNode getPrevSibling() {
-    return prevSibling;
-  }
-
-  public FilePosition getFilePosition() {
-    return pos;
-  }
-
-  public List<Token<?>> getComments() {
-    return comments;
-  }
-
-  public final List<? extends T> children() {
-    return childrenExtern;
-  }
-  
   @SuppressWarnings("unchecked")
-  protected <T2 extends T> List<T2> childrenPart(int start, int end,
-      Class<T2> cl) {
+  protected <T2 extends T> List<T2> childrenPart(
+      int start, int end, Class<T2> cl) {
     List<T> sub = children.subList(start, end);
     for (T el : sub) {
       if (!cl.isInstance(el)) {
-        throw new ClassCastException("element not an instance of " + cl + " : "
+        throw new ClassCastException(
+            "element not an instance of " + cl + " : "
             + (null != el ? el.getClass() : "<null>"));
       }
     }
@@ -99,33 +79,27 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
   }
 
   public abstract Object getValue();
-
   public SyntheticAttributes getAttributes() {
     if (null == this.attributes) {
       this.attributes = new SyntheticAttributes();
     }
     return this.attributes;
   }
-
   public void setFilePosition(FilePosition pos) {
     this.pos = pos;
   }
-
   @SuppressWarnings("unchecked")
   public void setComments(List<? extends Token> comments) {
     List<Token<?>> tokens = (List<Token<?>>) comments;
-    this.comments =
-        !comments.isEmpty() ? Collections
-            .unmodifiableList(new ArrayList<Token<?>>(tokens)) : Collections
-            .<Token<?>> emptyList();
+    this.comments = !comments.isEmpty()
+        ? Collections.unmodifiableList(new ArrayList<Token<?>>(tokens))
+        : Collections.<Token<?>>emptyList();
   }
 
   // TODO(mikesamuel): remove this and make sure the parent link is consistently
   // maintained.
   /** Initializes the {@link #getParent} references. */
-  public void parentify() {
-    parentify(true);
-  }
+  public void parentify() { parentify(true); }
 
   protected void parentify(boolean recurse) {
     AbstractParseTreeNode<?> prev = null;
@@ -137,15 +111,11 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
         if (null != (achild.prevSibling = prev)) {
           prev.nextSibling = achild;
         }
-        if (recurse) {
-          achild.parentify(true);
-        }
+        if (recurse) { achild.parentify(true); }
         prev = achild;
       }
     }
-    if (null != prev) {
-      prev.nextSibling = null;
-    }
+    if (null != prev) { prev.nextSibling = null; }
   }
 
   private AbstractParseTreeNode getRoot() {
@@ -168,9 +138,7 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
     createMutation().removeChild(toRemove).execute();
   }
 
-  public Mutation createMutation() {
-    return new MutationImpl();
-  }
+  public Mutation createMutation() { return new MutationImpl(); }
 
   @SuppressWarnings("unchecked")
   private void setChild(int i, AbstractParseTreeNode<?> child) {
@@ -188,21 +156,17 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
 
   /**
    * Called to perform consistency checks on the child list after changes have
-   * been made. This can be overridden to do additional checks by subclasses,
+   * been made.  This can be overridden to do additional checks by subclasses,
    * and to update derived state, but all subclasses must chain to super after
    * performing their own checks.
-   * 
-   * <p>
-   * This method may throw any RuntimeException on an invalid child.
+   *
+   * <p>This method may throw any RuntimeException on an invalid child.
    * TODO(mikesamuel): maybe reliably throw an exception type, that includes
-   * information about the troublesome node.
-   * </p>
+   * information about the troublesome node.</p>
    */
   protected void childrenChanged() {
-    childrenExtern = Collections.<T> unmodifiableList(children);
-    if (children.contains(null)) {
-      throw new NullPointerException();
-    }
+    childrenExtern = Collections.<T>unmodifiableList(children);
+    if (children.contains(null)) { throw new NullPointerException(); }
   }
 
   protected void formatSelf(MessageContext context, Appendable out)
@@ -235,7 +199,8 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
     }
   }
 
-  public void format(MessageContext context, Appendable out) throws IOException {
+  public void format(MessageContext context, Appendable out)
+      throws IOException {
     formatTree(context, out);
   }
 
@@ -244,11 +209,10 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
     formatTree(context, 0, out);
   }
 
-  public final void formatTree(MessageContext context, int depth, Appendable out)
+  public final void formatTree(
+      MessageContext context, int depth, Appendable out)
       throws IOException {
-    for (int d = depth; --d >= 0;) {
-      out.append("  ");
-    }
+    for (int d = depth; --d >= 0;) { out.append("  "); }
     formatSelf(context, out);
     for (ParseTreeNode child : children()) {
       out.append("\n");
@@ -277,9 +241,7 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
     List<? extends ParseTreeNode> aChildren = this.children();
     List<? extends ParseTreeNode> bChildren = that.children();
     int n = aChildren.size();
-    if (n != bChildren.size()) {
-      return false;
-    }
+    if (n != bChildren.size()) { return false; }
     while (--n >= 0) {
       if (!aChildren.get(n).equals(bChildren.get(n))) {
         return false;
@@ -290,11 +252,9 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
 
 
   public boolean acceptPreOrder(Visitor v) {
-    AbstractParseTreeNode<?> oldParent = this.parent, oldNext =
-        this.nextSibling;
-    if (!v.visit(this)) {
-      return false;
-    }
+    AbstractParseTreeNode<?> oldParent = this.parent,
+                               oldNext = this.nextSibling;
+    if (!v.visit(this)) { return false; }
 
     // Descend into the replacement's children.
     // Handle the case where v.visit() replaces this with another, inserts
@@ -305,7 +265,7 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
       // child list.
       if (!this.childrenExtern.isEmpty()) {
         AbstractParseTreeNode<?> child =
-            (AbstractParseTreeNode<?>) this.childrenExtern.get(0);
+          (AbstractParseTreeNode<?>) this.childrenExtern.get(0);
         do {
           AbstractParseTreeNode<?> next = child.nextSibling;
           child.acceptPreOrder(v);
@@ -321,12 +281,10 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
     // child list.
     if (!childrenExtern.isEmpty()) {
       AbstractParseTreeNode<?> child =
-          (AbstractParseTreeNode<?>) childrenExtern.get(0);
+        (AbstractParseTreeNode<?>) childrenExtern.get(0);
       do {
         AbstractParseTreeNode<?> next = child.nextSibling;
-        if (!child.acceptPostOrder(v)) {
-          return false;
-        }
+        if (!child.acceptPostOrder(v)) { return false; }
         child = next;
       } while (null != child);
     }
@@ -347,16 +305,15 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
       AbstractParseTreeNode<?> n = stack.remove(0);
 
       do {
-        AbstractParseTreeNode<?> oldParent = n.parent, next = n.nextSibling;
+        AbstractParseTreeNode<?> oldParent = n.parent,
+                                      next = n.nextSibling;
 
-        if (!v.visit(n)) {
-          return false;
-        }
+        if (!v.visit(n)) { return false; }
 
         if (n.parent == oldParent && n.nextSibling == next
             && !n.childrenExtern.isEmpty()) {
           AbstractParseTreeNode child =
-              (AbstractParseTreeNode) n.childrenExtern.get(0);
+            (AbstractParseTreeNode) n.childrenExtern.get(0);
           stack.add(child);
         }
 
@@ -369,210 +326,28 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
 
   /** Uses identity hash code since this is mutable. */
   @Override
-  public final int hashCode() {
-    return super.hashCode();
-  }
+  public final int hashCode() { return super.hashCode(); }
 
   /** Uses identity hash code since this is mutable. */
   @Override
-  public final boolean equals(Object o) {
-    return this == o;
-  }
+  public final boolean equals(Object o) { return this == o; }
 
-  public boolean isQuasiliteral() {
-    return false;
-  }
-
-  public QuasiliteralQuantifier getQuasiliteralQuantifier() {
-    return null;
-  }
-
-  public String getQuasiliteralIdentifier() {
-    return null;
-  }
-  
-  public Class<? extends ParseTreeNode> getQuasiMatchedClass() {
-    return null;
-  }
-
-  public boolean deepEquals(ParseTreeNode specimen) {
-    AbstractParseTreeNode<?> aptnSpecimen;
-    try {
-      aptnSpecimen = (AbstractParseTreeNode<?>)specimen;
-    } catch (ClassCastException e) {
-      return false;
-    }
-    
-    if (!shallowEquals(specimen)) return false;
-    if (children.size() != aptnSpecimen.children.size()) return false;
-  
-    for (int i = 0; i < children.size(); i++) {
-      if (!children.get(i).deepEquals(aptnSpecimen.children.get(i)))
-        return false;
-    }
-    
-    return true;
-  }
-  
-  public boolean shallowEquals(ParseTreeNode specimen) {
-    return
-        specimen != null &&
-        this.getClass() == specimen.getClass() &&
-        (this.getValue() == null ?
-            specimen.getValue() == null :
-            this.getValue().equals(specimen.getValue()));
-  }
-  
-  public Map<String, ParseTreeNode> matchHere(final ParseTreeNode specimen) {
-    Map<String, AbstractParseTreeNode<?>> tmp =
-      new HashMap<String, AbstractParseTreeNode<?>>();
-      
-    List<AbstractParseTreeNode<?>> specimens =
-      new ArrayList<AbstractParseTreeNode<?>>();
-    specimens.add((AbstractParseTreeNode<?>)specimen);
-
-    if (consumeSpecimens(this, specimens, tmp)) {
-      final Map<String, ParseTreeNode> map = new HashMap<String, ParseTreeNode>();
-      for (String k : tmp.keySet()) map.put(k, tmp.get(k));
-      return map;
-    }
-    return null;
-  }
-
-  private static boolean matchChildren(
-      AbstractParseTreeNode<?> self,
-      AbstractParseTreeNode<?> specimen,
-      Map<String, AbstractParseTreeNode<?>> map) {
-    List<AbstractParseTreeNode<?>> specimenChildren =
-        new ArrayList<AbstractParseTreeNode<?>>();
-    addAll(specimenChildren, specimen.children);
-
-    for (int i = 0; i < self.children().size(); i++) {
-      AbstractParseTreeNode<?> child = (AbstractParseTreeNode<?>)
-          self.children.get(i);
-      if (!consumeSpecimens(child, specimenChildren, map))
-        return false;
-    }
-
-    return specimenChildren.size() == 0;
-  }
-
-  private static boolean consumeSpecimens(
-      AbstractParseTreeNode<?> self,
-      List<AbstractParseTreeNode<?>> specimens,
-      Map<String, AbstractParseTreeNode<?>> map) {
-    if (!self.isQuasiliteral()) {
-      return consumeConcrete(self, specimens, map);
-    } else {
-      switch (self.getQuasiliteralQuantifier()) {
-        case MULTIPLE:
-          return consumeMultiple(self, specimens, map);
-        case MULTIPLE_NONEMPTY:
-          return consumeMultipleNonempty(self, specimens, map);
-        case SINGLE:
-          return consumeSingle(self, specimens, map);
-        default:
-          throw new Error("Unrecognized quasiliteral quantifier");
-      }
-    }
-  }
-
-  private static boolean consumeConcrete(
-      AbstractParseTreeNode<?> self,
-      List<AbstractParseTreeNode<?>> specimens,
-      Map<String, AbstractParseTreeNode<?>> map) {
-    if (specimens.isEmpty()) return false;
-    if (self.shallowEquals(specimens.get(0)) && 
-        matchChildren(self, specimens.get(0), map)) {
-      specimens.remove(0);
-      return true;
-    }
-    return false;
-  }
-
-  private static boolean consumeMultiple(
-      AbstractParseTreeNode<?> self,
-      List<AbstractParseTreeNode<?>> specimens,
-      Map<String, AbstractParseTreeNode<?>> map) {
-    AbstractParseTreeNode<?> matches = new NodeContainer();
-    while (specimens.size() > 0 && isSpecimenCompatible(self, specimens.get(0)))
-      add(matches.children, specimens.remove(0));
-    return putIfDeepEquals(map, self.getQuasiliteralIdentifier(), matches);
-  }
-
-  private static boolean consumeMultipleNonempty(
-      AbstractParseTreeNode<?> self,
-      List<AbstractParseTreeNode<?>> specimens,
-      Map<String, AbstractParseTreeNode<?>> map) {
-    if (specimens.size() < 1) return false;
-    AbstractParseTreeNode<?> matches = new NodeContainer();
-    while (specimens.size() > 0 && isSpecimenCompatible(self, specimens.get(0)))
-      add(matches.children, specimens.remove(0));
-    return putIfDeepEquals(map, self.getQuasiliteralIdentifier(), matches);
-  }
-
-  private static boolean consumeSingle(
-      AbstractParseTreeNode<?> self,
-      List<AbstractParseTreeNode<?>> specimens,
-      Map<String, AbstractParseTreeNode<?>> map) {
-    return
-        specimens.size() >= 1 &&
-        isSpecimenCompatible(self, specimens.get(0)) &&
-        putIfDeepEquals(map, self.getQuasiliteralIdentifier(), specimens.remove(0));
-  }
-
-  private static boolean isSpecimenCompatible(
-      AbstractParseTreeNode<?> self,
-      AbstractParseTreeNode<?> specimen) {
-    if (!self.isQuasiliteral()) {
-      throw new Error();
-    }
-    if (self.getQuasiMatchedClass() == null) {
-      throw new Error(self.toString());
-    }
-    
-    return self.getQuasiMatchedClass().isAssignableFrom(specimen.getClass());
-  }
-  
-  private static boolean putIfDeepEquals(
-      Map<String, AbstractParseTreeNode<?>> map,
-      String key,
-      AbstractParseTreeNode<?> value) {
-    if (map.containsKey(key)) {
-     return map.get(key).deepEquals(value);
-    }
-    map.put(key, value);
-    return true;
-  }
-
-  private static void add(List<?> target, Object src) {
-    List<Object> oTarget = (List<Object>)target;
-    oTarget.add(src);
-  }
-  
-  private static void addAll(List<?> target, List<?> src) {
-    List<Object> oTarget = (List<Object>)target;
-    List<Object> oSrc = (List<Object>)src;
-    oTarget.addAll(oSrc);
-  }
-
-  public boolean substitute(Map<String, ParseTreeNode> map) {
-    return false; // TODO
-  }
-  
   private final class MutationImpl implements MutableParseTreeNode.Mutation {
 
     private List<Change> changes = new ArrayList<Change>();
 
-    public Mutation replaceChild(ParseTreeNode replacement, ParseTreeNode child) {
-      changes.add(new Replacement((AbstractParseTreeNode) replacement,
-          (AbstractParseTreeNode) child));
+    public Mutation replaceChild(
+        ParseTreeNode replacement, ParseTreeNode child) {
+      changes.add(
+          new Replacement((AbstractParseTreeNode) replacement,
+                          (AbstractParseTreeNode) child));
       return this;
     }
 
     public Mutation insertBefore(ParseTreeNode toAdd, ParseTreeNode before) {
-      changes.add(new Insertion((AbstractParseTreeNode) toAdd,
-          (AbstractParseTreeNode) before));
+      changes.add(
+          new Insertion((AbstractParseTreeNode) toAdd,
+                        (AbstractParseTreeNode) before));
       return this;
     }
 
@@ -583,15 +358,11 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
 
     @SuppressWarnings("finally")
     public void execute() {
-      for (Change change : changes) {
-        change.apply();
-      }
+      for (Change change : changes) { change.apply(); }
       try {
         childrenChanged();
       } catch (RuntimeException ex) {
-        for (int i = changes.size(); --i >= 0;) {
-          changes.get(i).rollback();
-        }
+        for (int i = changes.size(); --i >= 0;) { changes.get(i).rollback(); }
         try {
           childrenChanged();
         } finally {
@@ -616,9 +387,9 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
     abstract void apply();
 
     /**
-     * Rolls back the change effected by apply, and can assume that apply was
-     * the most recent change to this node, and that it will be called at most
-     * once after a given apply.
+     * Rolls back the change effected by apply, and can assume that apply
+     * was the most recent change to this node, and that it will be called
+     * at most once after a given apply.
      */
     abstract void rollback();
   }
@@ -628,7 +399,7 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
     private final AbstractParseTreeNode<?> replaced;
 
     Replacement(AbstractParseTreeNode<?> replacement,
-        AbstractParseTreeNode<?> replaced) {
+                AbstractParseTreeNode<?> replaced) {
       this.replacement = replacement;
       this.replaced = replaced;
     }
@@ -682,11 +453,9 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
 
       // This check corresponds to the replacement.parent == null check in apply
       // which has the effect of asserting that replacement is not rooted.
-      if (children.contains(replaced)) {
-        return;
-      }
+      if (children.contains(replaced)) { return; }
 
-      setChild(childIndex, replaced); // roll back
+      setChild(childIndex, replaced);  // roll back
 
       if (owner != replaced.parent) {
         replaced.parent = owner;
@@ -736,22 +505,20 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
     void rollback() {
       final AbstractParseTreeNode<T> owner = AbstractParseTreeNode.this;
 
-      if (children.contains(toRemove)) {
-        return;
-      }
+      if (children.contains(toRemove)) { return; }
 
       int childIndex = backupIndex;
       addChild(childIndex, toRemove);
       toRemove.parent = owner;
       if (childIndex > 0) {
         AbstractParseTreeNode<?> prev =
-            (AbstractParseTreeNode<?>) children.get(childIndex - 1);
+          (AbstractParseTreeNode<?>) children.get(childIndex - 1);
         toRemove.prevSibling = prev;
         toRemove.prevSibling.nextSibling = toRemove;
       }
       if (childIndex + 1 < children.size()) {
         AbstractParseTreeNode<?> next =
-            (AbstractParseTreeNode<?>) children.get(childIndex + 1);
+          (AbstractParseTreeNode<?>) children.get(childIndex + 1);
         toRemove.nextSibling = next;
         toRemove.nextSibling.prevSibling = toRemove;
       }
@@ -803,8 +570,8 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
         }
         before.prevSibling = toAdd;
       } else if (childIndex > 0) {
-        toAdd.prevSibling =
-            (AbstractParseTreeNode<T>) children.get(childIndex - 1);
+        toAdd.prevSibling = (AbstractParseTreeNode<T>)
+            children.get(childIndex - 1);
         toAdd.prevSibling.nextSibling = toAdd;
       }
 
@@ -817,8 +584,8 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode> implements
 
       int childIndex = backupIndex;
 
-      AbstractParseTreeNode<T> removed =
-          (AbstractParseTreeNode<T>) children.remove(childIndex);
+      AbstractParseTreeNode<T> removed = (AbstractParseTreeNode<T>)
+          children.remove(childIndex);
       assert removed == toAdd;
       assert toAdd.parent == owner;
 

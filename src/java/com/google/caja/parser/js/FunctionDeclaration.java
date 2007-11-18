@@ -14,7 +14,6 @@
 
 package com.google.caja.parser.js;
 
-import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
@@ -51,11 +50,6 @@ public final class FunctionDeclaration extends Declaration {
   @Override
   public boolean isTerminal() {
     return getInitializer().getBody().isTerminal();
-  }
-
-  @Override
-  public boolean shallowEquals(ParseTreeNode specimen) {
-    return specimen instanceof FunctionDeclaration;
   }
 
   @Override

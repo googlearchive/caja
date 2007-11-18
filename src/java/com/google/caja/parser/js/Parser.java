@@ -26,6 +26,7 @@ import com.google.caja.lexer.TokenQueue.Mark;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParserBase;
 import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
@@ -263,7 +264,6 @@ public final class Parser extends ParserBase {
     }
     Block b = new Block(stmts);
     finish(b, m);
-    rewriteQuasiliterals(b);
     return b;
   }
 
@@ -1306,12 +1306,6 @@ public final class Parser extends ParserBase {
     return astmt;
   }
 
-  private void rewriteQuasiliterals(Block block) {
-    new QuasiExpressionStmtPromoter().visit(block);
-    new QuasiReferenceSubstituter().visit(block);
-    new QuasiFormalParamSubstituter().visit(block);
-  }
-  
   private static boolean isAssignmentStmt(Statement stmt) {
     return stmt instanceof ExpressionStmt
            && isAssignmentOp(((ExpressionStmt) stmt).getExpression());

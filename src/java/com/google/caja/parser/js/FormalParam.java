@@ -23,7 +23,7 @@ import java.io.IOException;
  *
  * @author mikesamuel@gmail.com
  */
-public class FormalParam extends Declaration {
+public final class FormalParam extends Declaration {
   public FormalParam(String identifier) {
     super(identifier, null);
   }
