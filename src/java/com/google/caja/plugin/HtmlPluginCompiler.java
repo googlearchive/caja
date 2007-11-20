@@ -361,9 +361,8 @@ public final class HtmlPluginCompiler {
   private void setupJsTree() {
     if (meta.isBaja) {
       this.jsTree = s(new Block(
-          Arrays.<Statement>asList(
-              s(new Declaration(meta.namespaceName, null))
-          )));
+          Collections.<Statement>emptyList()
+          ));
     } else {
       this.jsTree = s(new Block(
                         Arrays.<Statement>asList(
@@ -444,44 +443,44 @@ public final class HtmlPluginCompiler {
         ((MutableParseTreeNode) job.toReplace.getParent()).replaceChild(
             templateRef, job.toReplace);
       }
-
-      // (myPlugin.document).write(myPlugin.c1___());
-      Block functionBody =
-        s(new Block(
-          Collections.singletonList(
-            s(new ExpressionStmt(
-              s(new Operation(
-                Operator.FUNCTION_CALL,
-                s(new Operation(
-                  Operator.MEMBER_ACCESS,
-                  s(new Operation(
-                    Operator.MEMBER_ACCESS,
-                    s(new Reference(meta.namespaceName)),
-                    s(new Reference("document")))),
-                  s(new Reference("write")))),
-                s(new Operation(
-                  Operator.FUNCTION_CALL,
-                  s(new Operation(
-                    Operator.MEMBER_ACCESS,
-                    s(new Reference(meta.namespaceName)),
-                    s(new Reference(job.sig.getAssignedName())))))))))))));
-
-      // (function () {
-      //    (myPlugin.document).write(myPlugin.c1___());
-      // }).call(myPlugin);
-      this.jsTree.insertBefore(
-          s(new ExpressionStmt(
-                s(new Operation(
-                      Operator.FUNCTION_CALL,
+      if (!meta.isBaja) {
+        // (myPlugin.document).write(myPlugin.c1___());
+        Block functionBody =
+          s(new Block(
+              Collections.singletonList(
+                  s(new ExpressionStmt(
                       s(new Operation(
-                            Operator.MEMBER_ACCESS,
-                            s(new FunctionConstructor(
-                                  null, Collections.<FormalParam>emptyList(),
-                                  functionBody)),
-                            s(new Reference("call")))),
-                      s(new Reference(meta.namespaceName)))))),
-          null);
+                          Operator.FUNCTION_CALL,
+                          s(new Operation(
+                              Operator.MEMBER_ACCESS,
+                              s(new Operation(
+                                  Operator.MEMBER_ACCESS,
+                                  s(new Reference(meta.namespaceName)),
+                                  s(new Reference("document")))),
+                                  s(new Reference("write")))),
+                                  s(new Operation(
+                                      Operator.FUNCTION_CALL,
+                                      s(new Operation(
+                                          Operator.MEMBER_ACCESS,
+                                          s(new Reference(meta.namespaceName)),
+                                          s(new Reference(job.sig.getAssignedName())))))))))))));
 
+        // (function () {
+        //    (myPlugin.document).write(myPlugin.c1___());
+        // }).call(myPlugin);
+        this.jsTree.insertBefore(
+            s(new ExpressionStmt(
+                s(new Operation(
+                    Operator.FUNCTION_CALL,
+                    s(new Operation(
+                        Operator.MEMBER_ACCESS,
+                        s(new FunctionConstructor(
+                            null, Collections.<FormalParam>emptyList(),
+                            functionBody)),
+                            s(new Reference("call")))),
+                            s(new Reference(meta.namespaceName)))))),
+                            null);
+      }
     } catch (GxpCompiler.BadContentException ex) {
       ex.toMessageQueue(mq);
     }
@@ -576,27 +575,12 @@ public final class HtmlPluginCompiler {
     }
     newChanges.execute();
 
-    // (function () { <initializer code> }).call(<plugin namespace);
-    // call
-    //   member access
-    //     function constructor
-    //       initializer body
-    //     reference: call
-    //   reference: plugin_namespace
+    // ___.loadModule(function (<namespace>) { <compiled code> })
     this.jsTree.insertBefore(
-        s(new ExpressionStmt(
-            s(new Operation(
-                  Operator.FUNCTION_CALL,
-                  s(new Operation(
-                        Operator.MEMBER_ACCESS,
-                        s(new FunctionConstructor(
-                              null, Collections.<FormalParam>emptyList(),
-                              initFunctionBody)),
-                        s(new Reference("call"))
-                        )),
-                  s(new Reference(meta.namespaceName))
-                  ))
-            )),
+        s(new ExpressionStmt(TreeConstruction.call(
+            TreeConstruction.memberAccess("___", "loadModule"),
+            TreeConstruction.function(null, initFunctionBody,
+                meta.namespaceName)))),
         null);
 
     boolean success = hasNoFatalErrors();
@@ -629,7 +613,7 @@ public final class HtmlPluginCompiler {
 
     boolean valid;
     if (meta.isBaja)
-      valid = new ExpressionSanitizerBaja(mq).sanitize(this.jsTree);
+      valid = new ExpressionSanitizerBaja(mq, meta).sanitize(this.jsTree);
     else
       valid = new ExpressionSanitizer(mq).sanitize(this.jsTree);
     boolean success = valid && hasNoFatalErrors();
@@ -1029,7 +1013,7 @@ final class HtmlGlobalReferenceRewriter {
 
     public boolean visit(ParseTreeNode node) {
       if (node instanceof FunctionConstructor) { return false; }
-      if (node instanceof Declaration) {
+      if (node instanceof Declaration && !(node instanceof FunctionDeclaration)) {
         locals.add(((Declaration) node).getIdentifier());
       }
       return true;

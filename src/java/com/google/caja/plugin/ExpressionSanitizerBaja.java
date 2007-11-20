@@ -21,7 +21,6 @@ import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
@@ -37,17 +36,18 @@ import com.google.caja.parser.js.RegexpLiteral;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Stack;
 
 /**
  *
  * @author benl@google.com (Ben Laurie)
  */
 public class ExpressionSanitizerBaja {
-  MessageQueue mq;
+  final MessageQueue mq;
+  final PluginMeta meta;
 
-  public ExpressionSanitizerBaja(MessageQueue mq) {
+  public ExpressionSanitizerBaja(MessageQueue mq, PluginMeta meta) {
     this.mq = mq;
+    this.meta = meta;
   }
 
   boolean sanitize(ParseTreeNode node) {
@@ -197,32 +197,30 @@ public class ExpressionSanitizerBaja {
       ((MutableParseTreeNode) toReplace.getParent()).replaceChild(ternary,
           toReplace);
     }
-    // turn func(...) { ... } to var func = ___.ctor(function (...) {
-    //    ___.enter[Base|Derived](func, this);  ... }
-    private void makeConstructor(final ParseTreeNode node, boolean thisUsed,
-        boolean superUsed) {
+    // func(...) { ... } to <namespace>.func = ___.<wrapper>(function(...) { ... })
+    private void makeFunction(final ParseTreeNode node, String wrapper) {
       final FunctionConstructor func
         = (FunctionConstructor) node.children().get(0);
-      if (thisUsed) {
-        final Statement localThis
-          = new Declaration(ReservedNames.LOCAL_THIS, new Reference("this"));
-        func.getBody().prepend(localThis);
-      }
-      final ExpressionStmt enterDerived = new ExpressionStmt(
-          call___(superUsed ? "enterDerived" : "enterBase",
-          new Reference((String)func.getValue()),
-          new Reference("this")));
-      func.getBody().prepend(enterDerived);
-      final Operation call = call___("ctor", func);
-      final Declaration decl = new Declaration((String)func.getValue(), call);
+      final Operation call = call___(wrapper, func);
+      final Statement assign = TreeConstruction.assign(
+          TreeConstruction.memberAccess(meta.namespaceName,
+              (String)func.getValue()),
+          call);
       func.clearName();
-      ((MutableParseTreeNode) node.getParent()).replaceChild(decl, node);
+      ((MutableParseTreeNode) node.getParent()).replaceChild(assign, node);
     }
 
     public boolean visit(final ParseTreeNode node) {
       if (node.getAttributes().is(ExpressionSanitizer.SYNTHETIC)) { return true; }
       if (node instanceof FunctionConstructor) {
-        // skip it
+        FunctionConstructor func = (FunctionConstructor) node;
+        FindThisAndSuper finder = new FindThisAndSuper();
+        func.getBody().acceptPreOrder(finder);
+        if (finder.thisUsed) {
+          final Statement localThis
+            = new Declaration(ReservedNames.LOCAL_THIS, new Reference("this"));
+          func.getBody().prepend(localThis);
+        }
       } else if (node instanceof FunctionDeclaration) {
         final FunctionConstructor func
           = (FunctionConstructor) node.children().get(0);
@@ -230,9 +228,11 @@ public class ExpressionSanitizerBaja {
         func.getBody().acceptPreOrder(finder);
         if (finder.usedSuper()) {
           // TODO(benl): the spec says the function should also include "this" - true? Or not?
-          makeConstructor(node, finder.usedThis(), true);
+          makeFunction(node, "ctor");
         } else if (finder.usedThis()) {
-          makeConstructor(node, true, finder.usedSuper());
+          makeFunction(node, "ctor");
+        } else {
+          makeFunction(node, "simpleFunc");
         }
       } else if (node instanceof Reference) {
         final Reference ref = (Reference) node;
