@@ -29,7 +29,7 @@ public class CapabilityRewriterTest extends TestCase {
 
   public void testRewriteCapability() throws Exception {
     String testRunner = "for (var k in this) if (/^test/.test(k)) this[k]();";
-    RhinoTestBed.runJs(
+    RhinoTestBed.runJs(null,
         new RhinoTestBed.Input(getClass(), "../asserts.js"),
         new RhinoTestBed.Input(getClass(), "wrap_capability.js"),
         new RhinoTestBed.Input(getClass(), "wrap_capability_test.js"),

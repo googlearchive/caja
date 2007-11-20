@@ -369,7 +369,7 @@ public class CompiledPluginTest extends TestCase {
 
     System.out.println(buf.toString());
 
-    RhinoTestBed.runJs(inputs);
+    RhinoTestBed.runJs(null, inputs);
   }
 
   private static class PluginFile {
