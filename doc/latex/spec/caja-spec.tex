@@ -108,8 +108,9 @@ from scripts running on web pages. A great virtue of JavaScript is that many
 people successfully program in it casually, without first learning the 
 language in any depth. Caja\footnote{
 %
-\emph{Caja} is Spanish for ``box''. With Caja, \textbf{c}apabilities 
-\textbf{a}ttenuate \textbf{J}avaScript \textbf{a}uthority.
+\emph{Caja}, pronounced ``KA-hah'', is Spanish for ``box''. With Caja, 
+\textbf{c}apabilities \textbf{a}ttenuate \textbf{J}avaScript 
+\textbf{a}uthority.
 %
 } is an enforced subset of JavaScript we designed to make as little impact as 
 possible on regular JavaScript programming, while still providing 
@@ -154,13 +155,12 @@ into more depth.
   Neither constructors nor methods are first class. They can be used in ways 
   that support stereotyped class-like JavaScript programming patterns, but 
   they cannot be stored in variables or passed as arguments. Fortunately, 
-  there's no loss of generality. The Caja programmer can obtain the same 
-  effect by wrapping a constructor or a method in a simple function (such as 
-  \code{F.make} in Figure~\ref{fig:func-obj}) and passing that simple 
-  function instead.
+  there's no loss of generality. For example, \code{F.make} in 
+  Figure~\ref{fig:func-obj} wraps \code{F} in a simple function that can be 
+  passed around freely.
  
   \item[Sharp knives removed.] Caja contains no ``\code{with}'' or 
-  ``\code{eval}''. Caja bundles in a safe JSON library to support the most 
+  ``\code{eval}''. Caja includes a safe JSON library to support the most 
   common use of \code{eval}.
  
 \end{description}
@@ -182,17 +182,16 @@ function test() \{
 \caption[Caja Functions]{Caja Functions. \code{F} is a \emph{constructor}. It 
 can only be initialized and used with \code{new} and \code{instanceof}. 
 \code{F.prototype.getX} is a \emph{method}. It can only be called as a 
-method. \code{F.make} and \code{test} are \emph{simple functions}. They can 
-be passed around freely. \\ } \hrule
+method. \code{F.make} and \code{test} are \emph{simple functions}. They are
+not restricted. \\ } \hrule
 \label{fig:func-obj}
 \end{figure}
 
 Hopefully, this is all the casual Caja programmer needs to know to get 
-started. Section~\ref{sec:epicycles} explains a bit of the history of access 
-control in the web browser, in order to motivate the problems Caja addresses. 
-It may safely be skipped. Section~\ref{sec:subset} explains the problems 
-faced when securing JavaScript, many of which involve the use of 
-``\code{this}''. 
+started. Section~\ref{sec:epicycles} is a partisan history of access control 
+on the web, in order to motivate the problems Caja addresses. It may safely 
+be skipped. Section~\ref{sec:subset} explains the problems faced when 
+securing JavaScript, many of which involve the use of ``\code{this}''.
 
 We then present Caja in two stages. Section~\ref{sec:cajita-spec} presents 
 \emph{Cajita}, the subset of Caja without ``\code{this}''. For new code, 
@@ -200,8 +199,9 @@ Cajita is a reasonably expressive language resembling an object-oriented
 Scheme. Section~\ref{sec:caja-spec} then presents the remainder of the Caja 
 language beyond Cajita. Caja adds back enough of JavaScript for most old 
 habits and old code to port pleasantly and painlessly. Caja and Cajita 
-interoperate without problems. Section~\ref{sec:related} briefly surveys
-related work.
+interoperate without problems. Section~\ref{sec:boundary} explains how 
+untranslated and translated code interact. Section~\ref{sec:related} briefly 
+surveys related work.
 
 
 
@@ -309,7 +309,7 @@ epicycle. Can we do better?
 \begin{figure}[t!]
   \resizebox{\columnwidth}{!}{\includegraphics{epicycles}}
 
-  \caption[Ptolomy's epicycles.]{Ptolomy's epicycles. Ptolomy attempted to
+  \caption[Ptolemy's epicycles.]{Ptolemy's epicycles. Ptolemy attempted to
   model the motion of the heavenly bodies using only circles. With each
   discovery that the model didn't fit, yet another layer of circle was added
   to adjust. By contrast, Kepler's ellipses fit the problem directly, with no
@@ -330,10 +330,10 @@ content would run with exactly the authority explicitly provided by its
 containing document. Surprisingly, we can gain these benefits simply by 
 applying a milder, non-lethal sanitizer.
 
-Experience with Java, Scheme, OCaml, Pict, and others demonstrates that 
+Experience with Java, Scheme, OCaml, Pict, Perl and others demonstrates that 
 existing memory safe languages often already contain an expressive 
 object-capability subset~\cite[respectively]{joe-e, rees96security, emily, 
-backwater}. We refer to the object-capability subset of JavaScript as 
+backwater, caperl}. We refer to the object-capability subset of JavaScript as 
 \emph{Caja}. The Caja translator restricts the JavaScript it accepts to be 
 within this subset. This sanitized JavaScript is still a general purpose 
 object programming language which JavaScript programmers should find 
@@ -371,30 +371,33 @@ function Counter()\ \{
     incr: function()\ \{ 
       return count += 1; 
     \},
+    decr: function()\ \{ 
+      return count -= 1; 
+    \}
   \});
 \};
 \end{alltt}
 
 \caption[A Cajita Counter.]{A Cajita Counter. Each call to \code{Counter()} 
-or produces a new counter object. Access to a counter provides the authority 
+produces a new counter object. Access to a counter provides the authority 
 to read, invoke, or enumerate its properties, all of which are simple 
-functions serving the role of methods. Caja functions are implicitly Frozen; 
-the returned object is explicitly Frozen; and the instance-state of the 
+functions serving the role of methods. Caja functions are implicitly frozen; 
+the returned object is explicitly frozen; and the instance-state of the 
 object---the count variable---is accessible only as encapsulated state 
-captured by these pseudo-methods. As a result, a reference to a counter 
-object is a proper protected capability, providing least authority to a 
-shareable counter service. \\ } \hrule
+captured by these pseudo-methods. A counter object as a whole, a well as each 
+of its pseudo-methods, are thus proper protected capabilities. Someone with 
+access only to a counter's \code{incr} function can increment \emph{that} 
+counter and observe the result, but not do anything else. \\ } \hrule
 \label{fig:cajita-counter}
 \end{figure}
 
 Caja defines a subset of JavaScript both syntactically and semantically. The 
-Caja translator rejects non-Caja input statically when it can. But because 
-of JavaScript's dynamic nature, some of Caja's restrictions cannot be 
-imposed statically, so the Caja translator translates the JavaScript it 
-accepts into JavaScript with additional runtime checks. To facilitate 
-development, it is easy to write a Caja program so it can run correctly 
-whether it is run as a Caja program or run directly as an untranslated 
-JavaScript program.
+Caja translator rejects non-Caja input statically when it can. But because of 
+JavaScript's dynamic nature, some of Caja's restrictions cannot be imposed 
+statically, so the Caja translator translates the JavaScript it accepts into 
+JavaScript with additional runtime checks. To facilitate development, it is 
+easy to write a program in the Caja subset of JavaScript so it can run 
+correctly whether it is run translated or not.
 
 A web app (or any other JavaScript-based embedding application framework) can 
 be written partially in JavaScript and partially in Caja. The web app loads 
@@ -516,7 +519,7 @@ instances. \\ } \hrule
 function WobblyPointMixin(that)\ \{
   var super = caja.snapshot(that);
   that.getX = function()\ \{ 
-    return super.getX() + Math.random(); 
+    return Math.random() + super.getX(); 
   \};
   return that;
 \}
@@ -604,10 +607,9 @@ conventional \code{super} for the other functions defined within this scope.
   \item[Browser compatibility.] Web content must work on widely deployed 
   browsers whether on not these browsers strictly conform to the relevant 
   standards. At the time of this writing, the plausible baseline platform is 
-  the intersection of ES3, Firefox 1.5, Internet Explorer 6, Opera 8.5, 
-  Safari 3, and their successors. Fortunately, these browsers do conform 
-  quite closely to ES3. Later versions of Caja may specify larger subsets of 
-  ES3.
+  the intersection of ES3, Firefox 1.5, Internet Explorer 6, Opera 9, Safari 
+  3, and their successors. Fortunately, these browsers do conform quite 
+  closely to ES3. Later versions of Caja may specify larger subsets of ES3.
   
   \item[Silent errors.] In JavaScript, various operations, such as setting a 
   ReadOnly property, fail silently rather than throwing an error. Program 
@@ -626,79 +628,43 @@ conventional \code{super} for the other functions defined within this scope.
     
 \end{description}
 
-\begin{figure}[t!]
-\begin{alltt}
-function F(a\ldots)\{\ldots\}
-F.prototype.mname = /*method or function*/;
-F.prototype.mname = /*expr with no F*/;
-\ldots
-F.sname = /*function or expr with no F*/;
-\ldots
-/*Generate \_\_\_.freeze(F.prototype); here*/
-/*Generate \_\_\_.freeze(F); here*/
-/*first use of F*/
-\end{alltt}
-
-\caption[Initializing the Default Prototype]{Initializing the Default
-Prototype. The normal syntactic pattern for expressing class-like code is
-accepted, so long as all behavior definition happens before the first use of
-F. The \emph{mnames} would typically be method names. The \emph{snames} name
-static members, to be accessed off the constructor. \\ } \hrule
-\label{fig:use-proto}
-\end{figure}
-
 This last point about ``Silent errors'' is another reason to avoid the 
 monolithic kernel approach. Web apps in untranslated JavaScript are 
 vulnerable to any malicious active content that finds a way to provoke a 
 silent error and exploit the resulting inconsistency.
 
-Caja is only a subset of JavaScript in a limited sense: While a Caja program 
-has not explicitly indicated a failure, it executes within JavaScript's 
-semantics. By \emph{indicate a failure}, we mean either throwing an exception 
-or returning \code{undefined} for a property read. 
+Because Caja failures aren't silent, Caja is a \emph{fail-stop 
+subset}\footnote{
+%
+We thank Dan Rabin for this formulation.
+%
+} of ES3: While a Caja program has not explicitly indicated a failure, 
+it executes within ES3's semantics. By \emph{indicate a failure}, we 
+mean either throwing an exception or returning \code{undefined} for a 
+property read. The \emph{Gotchas} sections below detail minor ways in which 
+Cajita and Caja are not quite fail-stop subsets of ES3.
+
 
 \section{Cajita Specification}
 \label{sec:cajita-spec}
-
 
 Most of the complexity of Caja is needed to defend against JavaScript's rules 
 regarding the binding of ``\code{this}''. The subset of Caja without 
 ``\code{this}'' is a perfectly reasonable and expressive programming 
 language. Caja supports ``\code{this}'' in order to ease the porting of old 
 code. For new code, we recommend sticking to the thisless subset of Caja, 
-which we refer to as \emph{Cajita}, the diminutive, meaning ``small box''. 
-(The Caja translator may eventually provide a switch to enforce that a 
-translated program is within Cajita.)
+which we refer to as \emph{Cajita}, the diminutive, meaning ``small 
+box''.\footnote{
+%
+The design of Cajita was inspired by Doug Crockford's \emph{ADsafe}.
+%
+}
 
-TODO To be written
-
-
-
-\begin{figure}[t!]
-\begin{alltt}
-function F(a\ldots)\{
-  F.Super.call(this,b\ldots); //optional
-  \ldots
-\}
-caja.def(F, G,\ \{
-  mname: /*method, function, or expr*/),
-  \ldots
-\},\ \{
-  sname: /*function or expr*/),
-  \ldots
-\});
-/*first use of F*/
-\end{alltt}
-
-\caption[Shorthand.]{Shorthand. As a convenience, the translator recognizes 
-this pattern as still defining \emph{F} rather than using it. \code{caja.def}
-initializes \code{F.Super = G}, sets up the normal inheritance relationship
-between F and G, and freezes F.prototype and F. \\ } \hrule
-\label{fig:shorthand}
-\end{figure}
-
-
-\subsection{Definitions}
+For now, we distinguish Caja and Cajita only for expository purposes. The 
+Caja runtime may eventually provide a safe \code{eval} operation. For 
+\code{eval} to accept Caja code, the Caja translator would need to be written 
+in JavaScript and included in the Caja download. To minimize download size, 
+Caja is likely to provide only a Cajita \code{eval}.
 
 To explain the restrictions Cajita imposes, we need some definitions.
 
@@ -715,25 +681,24 @@ To explain the restrictions Cajita imposes, we need some definitions.
   either named or anonymous. A simple function can be invoked \emph{as a 
   function} (\code{foo(a\ldots)}), \emph{as a method} 
   (\code{foo.id(a\ldots)}), or \emph{as a constructor} (\code{new 
-  Foo(a\ldots)}). Simple functions are first class---they can be stored in
+  Foo(a\ldots)}). Simple functions are first class---they can be stored in 
   variables and passed around freely, just like any other value.
   
-  \item[Frozen.] If an object is \emph{Frozen}, any attempt to directly 
+  \item[Frozen.] If an object is \emph{frozen}, any attempt to directly 
   assign to its properties, add new properties to it, or delete its 
   properties causes an exception to be thrown. Frozen is a shallow 
-  restriction: Frozen objects can retain and provide non-Frozen objects. 
-  (Imagine a frozen surface covering a liquid lake.) Once initialized, all 
-  Caja functions---simple functions, constructors, and methods---are 
-  implicitly frozen, as are constructor prototypes. The Caja runtime library 
-  additionally provides an explicit operation for freezing an object: 
+  restriction: Frozen objects can retain and provide non-frozen objects. 
+  (Imagine a frozen surface covering a liquid lake.) Once initialized, Caja 
+  functions are implicitly frozen. The Caja runtime library additionally 
+  provides an explicit operation for freezing JSON containers: 
   ``\code{caja.freeze(obj)}''.
   
-  \item[Immutable.] If an object is \emph{Immutable}, then it is Frozen, and 
-  all objects it has access to are themselves Immutable. Shared access to an 
-  Immutable object does not provide a communication channel, and so does not 
+  \item[Immutable.] If an object is \emph{immutable}, then it is frozen, and 
+  all objects it has access to are themselves immutable. Shared access to an 
+  immutable object does not provide a communication channel, and so does not 
   endanger isolation. With the exception of \code{Math.random} and 
   \code{Date}, all objects that are globally or implicitly accessible to all 
-  Caja programs are Immutable. We discuss these exceptions below.  
+  Caja programs are immutable. We discuss these exceptions below.
 
 \end{description}
 
@@ -752,11 +717,11 @@ an alleged Caja program text to instead be statically rejected.
     \emph{de-facto extensions} to ES3 as explained below.
     
     \item[De-facto extensions.] As we identify widely supported extensions of 
-    ES3 that we can accept as input, but still translate to conforming 
-    EcmaScript on output, we may add these to Caja. For example, we are 
-    currently considering allowing backslash as a line continuation 
-    character, since this is allowed by virtually all JavaScript 
-    implementations and can be trivially translated to correct ES3.
+    ES3 that we can accept as input, but still translate to conforming ES3 on 
+    output, we may add these to Caja. For example, we are currently 
+    considering allowing backslash as a line continuation character, since 
+    this is allowed by virtually all JavaScript implementations and can be 
+    trivially translated to correct ES3.
 
     \item[Without ``\code{with}''.] The ``\code{with}'' keyword is forbidden. 
     Because of the scope confusion it causes, ``\code{with}'' is a widely 
@@ -779,17 +744,41 @@ an alleged Caja program text to instead be statically rejected.
     isolation. Caja translates the \code{/pattern/} syntax to \code{new 
     RegExp("pattern")}.
     
-    \item[Caja features absent from Cajita.] See section~\ref{sec:caja-spec} 
-    for the rules governing the ``\code{this}'' keyword, identifiers ending 
-    in a single underscore, and the ``\code{new}'' keyword.
+    \item[Caja features absent from Cajita.] The ``\code{this}'' keyword, 
+    identifiers ending in a single underscore, and \emph{prototypes} are in 
+    Caja but not Cajita. Since Cajita code can call Caja and JavaScript APIs, 
+    \code{new} is available in Cajita.
+    
+    Since Cajita is only for new code, it prohibits certain syntactic 
+    oddities which Caja tolerates: Code which would provoke semicolon 
+    insertion is not legal Cajita. Cajita variable names are visible only 
+    according to the intersection of ES3's scoping rules and conventional 
+    block-level lexical scoping. This is essentially lexical scoping with the 
+    restriction that a function cannot contain two definitions of the same 
+    variable name, even in two separate blocks.
         
 \end{description}
 
 
 \subsection{Dynamic restrictions}
 
-TODO To be written
+\begin{description}
 
+  \item[Frozen Functions.] An anonymous simple function is implicitly frozen. 
+  A named simple function may be initialized, but is implicitly frozen 
+  immediately before its first non-initializing use or escaping occurrence. 
+  For example, the assignment to \code{box.toString} in 
+  Figure~\ref{fig:rights-amp} will succeed, because it occurs before box is 
+  implicitly frozen by the following \code{return} statement. Initializing 
+  assignments can be considered declarative initializations rather than 
+  mutations.
+  
+  \emph{Claim: No Caja program can cause a Caja-observable mutation of a 
+  function or of any object Caja considers frozen.}
+  
+\end{description}
+  
+  
 \subsection{Outer environment restrictions}
 
 In JavaScript, all code loaded into the same JavaScript execution environment 
@@ -808,91 +797,26 @@ Each instantiation of a Caja module is a separate plugin. Each plugin
 executes with a new \emph{per-plugin outer environment} which is mutable and 
 inherits from Caja's shared outer environment. Therefore, all objects within 
 the same plugin can implicitly communicate and interfere with each other. 
-However, \emph{claim: two separate plugins, even if they instantiate the same 
-module, are isolated from each other.}
 
-\begin{figure}[t!]
-\begin{alltt}
-function Point(x, y)\ \{
-  this.x\_ = x;
-  this.y\_ = y;
-\};
-Point.prototype.toString = function()\ \{ 
-  return "<" + this.x\_ + "," + 
-               this.y\_ + ">"; 
-\};
-Point.prototype.getX = function()\ \{ 
-  return this.x\_; 
-\};
-Point.prototype.getY = function()\ \{ 
-  return this.y\_; 
-\};
-Point.prototype.add = function(other)\ \{
-  return new Point(
-    this.x\_ + other.getX(),
-    this.y\_ + other.getY());
-\};
+\emph{Claim: Two separate plugins, even if they instantiate the same module, 
+are isolated from each other.}
 
-var pt = new Point(3, 5);
-\end{alltt}
-
-\caption[Caja Point Example.]{Caja Point Example. The point example, written
-in this common class-like pattern of Javascript programming, is valid Caja. 
-\\ } \hrule
-\label{fig:caja-point}
-\end{figure}
-
-
-
-\begin{figure}[t!]
-\begin{alltt}
-function Point(x, y)\ \{
-  this.x\_ = x;
-  this.y\_ = y;
-\};
-Caja.def(Point, Object,\ \{
-  toString: function()\ \{ 
-    return "<" + this.x\_ + "," + 
-                 this.y\_ + ">"; 
-  \},
-  getX: function()\ \{ return this.x\_; \},
-  getY: function()\ \{ return this.y\_; \},
-  add: function(other)\ \{
-    return new Point(
-      this.x\_ + other.getX(),
-      this.y\_ + other.getY());
-  \}
-\});
-
-var pt = new Point(3, 5);
-\end{alltt}
-
-\caption[Brief Point Example.]{Brief Point Example. \code{caja.def} is
-provided as a convenience for more compactly defining a ``class''. The second
-argument is a constructor representing a ``superclass''. A fourth optional
-argument provides static members.
-\\ } \hrule
-\label{fig:brief-point}
-\end{figure}
 
 \begin{description}
 
     \item[eval] The Caja global environment has no ``\code{eval}'' function. 
-    Instead, the ``\code{Caja.eval}'' method will evaluate Caja source code 
-    with an explicitly provided set of variable bindings to serve as its 
-    initial global environment, as explained below.
+    Instead, ``\code{Caja.eval}'' will evaluate Cajita source code (text or 
+    AST) with an explicitly provided set of variable bindings to serve as its 
+    initial outer environment, as explained below.
     
     \item[Function] The JavaScript \code{Function} constructor is absent from 
     the default Caja outer environment, and must not be available in Caja.
-
-    Unfortunately, \code{Function} is unsafe even when invoked as a normal 
-    function, and we're currently hoping to stop protecting normal function 
-    calls with a runtime check. \emph{Claim: Even without the runtime check 
-    on normal function calls, the rest of the restrictions in this document 
-    together make \code{Function} uncreachable from Caja programs.}
     
     \item[function.constructor] The JavaScript \code{constructor} property of 
     functions is absent from Caja.
+    
+    \emph{Claim: The restrictions stated in this document together make the 
+    \code{Function} object unreachable from Caja programs.}
 
     \item[new Date()] In JavaScript, ``\code{new Date()}''  gives ambient 
     access to the current date and time, in violation of object-capability 
@@ -916,32 +840,129 @@ argument provides static members.
     
 \end{description}
 
-\subsection{The Caja Library}
 
-TODO To be written
+\subsection{Cajita gotchas}
 
-\subsection{Examples}
+\begin{figure}[t!]
+\begin{alltt}
+function Point(x, y)\ \{
+  this.x\_ = x;
+  this.y\_ = y;
+\};
+Point.prototype.toString = function()\ \{ 
+  return "<" + this.getX() + "," + 
+               this.getY() + ">"; 
+\};
+Point.prototype.getX = function()\ \{ 
+  return this.x\_; 
+\};
+Point.prototype.getY = function()\ \{ 
+  return this.y\_; 
+\};
+
+var pt = new Point(3, 5);
+\end{alltt}
+
+\caption[A Caja Point.]{A Caja Point. The point example, written
+in this common class-like pattern of Javascript programming, is valid Caja.
+\code{Point} is frozen by its first use, after which neither it nor its
+prototype can be further initialized. \\ } \hrule
+\label{fig:caja-point}
+\end{figure}
 
 
-\section{Remaining Caja Specification}
-\label{sec:caja-spec}
-
-TODO To be written
-
-
-
-
-\subsection{Definitions}
-
-To explain the restrictions Caja imposes on JavaScript, we need some
-additional definitions. 
+Caja seeks to define a fail-stop subset of ES3, as explained above. However, 
+it falls short of this goal in several minor ways. To write a correct program 
+that executes correctly whether run translated or untranslated, it should 
+avoid these gotchas. In this section, we enumerate those gotchas relevant to 
+the Cajita subset of Caja.
 
 \begin{description}
 
-  \item[Constructed object.] An object defined by Caja code that's not a 
-  JSON container and not a function must have been constructed by calling 
-  ``\code{new}'' on a consructor other than \code{Array} or \code{Object}. 
-  Constructed objects and the ``\code{new}'' keyword are absent from Cajita.
+  \item[More sensible for/in loop.] More properties are visible and
+  enumeratable to untranslated programs than translated programs. To write a
+  program which will see the same properties whether run translated or not,
+  write the following instead:
+\begin{alltt}
+for (var k in obj) \{ 
+  if (caja.canEnumPub(obj,k)) \{\ldots\}
+\}
+\end{alltt}
+  This conditional does not affect the behavior of translated programs, so
+  programs that only need to run translated can safely leave it out. Using
+  \code{canEnumOwn} instead will further restrict the enumeration to
+  non-inherited properties, as is typically desired.
+
+  \item[Snapshot \code{arguments}.] In ES3, if \code{x} is the i'th parameter 
+  of a function, assignments to \code{x} are visible as changes to 
+  \code{arguments[i]}. In Caja, if ``\code{arguments}'' is mentioned, it is 
+  bound to a proper array snapshot of the arguments list when the function 
+  was entered, \emph{not} an array-like object. In order for Caja to be a 
+  fail-stop subset of ES3, a future version of the Caja translator will 
+  statically disallow assignments to any parameter variable within a function 
+  that mentions ``\code{arguments}''. But in the initial Caja implementation, 
+  this minor gotcha remains.
+  
+  \item[Sensible RegExp.] ES3 specifies that a literal regular expression 
+  pattern corresponds directly to a single mutable RegExp object. Caja, as 
+  well as the Internet Explorer version of JavaScript (JScript), instead 
+  create a new RegExp on each evaluation of a literal pattern, avoiding the 
+  implicit sharing of mutable state. For any program already compatible with 
+  JScript, this is not an issue.
+    
+\end{description}
+
+\begin{figure}[t!]
+\begin{alltt}
+function Point(x, y)\ \{
+  this.x\_ = x;
+  this.y\_ = y;
+\};
+Caja.def(Point, Object,\ \{
+  toString: function()\ \{ 
+    return "<" + this.getX() + "," + 
+                 this.getY() + ">"; 
+  \},
+  getX: function()\ \{ return this.x\_; \},
+  getY: function()\ \{ return this.y\_; \},
+\});
+\end{alltt}
+
+\caption[A Brief Caja Point.]{A Brief Caja Point. \code{caja.def} is a 
+convenience for more compactly defining a ``class''. The second argument is a 
+constructor representing a ``superclass''. The third argument provides 
+instance members, including methods. A fourth optional argument (unshown) 
+provides static members. \\ } \hrule
+\label{fig:brief-caja-point}
+\end{figure}
+
+
+\section{Caja Specification}
+\label{sec:caja-spec}
+
+Whereas Cajita is a small subset of JavaScript meant to support new code, 
+Caja is a large subset of JavaScript meant to ease the porting of old 
+JavaScript code and practices. Cajita is small enough that its security 
+properties can be understood. Caja seeks to accept as large a subset of 
+JavaScript as is practical without losing the security properties provided by 
+Cajita. In this section, we explain only the remaining elements of Caja 
+beyond the elements of Cajita already explained.
+
+To explain the remaining elements of Caja, we need some additional 
+definitions.
+
+\begin{description}
+
+  \item[Constructed object.] An object defined by Caja code that's not a JSON 
+  container and not a function must have been constructed by calling 
+  ``\code{new}'' on a function other than \code{Array} or \code{Object}. 
+
+  \item[Prototypes.] As in ES3, a constructed object's implicit 
+  \emph{prototype}---the object it directly inherits from---is the value of 
+  the ``\code{.prototype}'' property of the function which constructed it 
+  (which must have been called with ``\code{new}''). When a function is 
+  implicitly frozen, so is its \code{.prototype}. Until then, both it and its 
+  \code{.prototype} may be initialized. 
 
   \item[Constructors.] A named function whose body mentions ``\code{this}'' 
   is a \emph{constructor}. A constructor can only be invoked by construction, 
@@ -949,16 +970,39 @@ additional definitions.
   constructors are not \emph{first class values}. A constructor definition 
   and a constructor name can only appear in certain static contexts 
   enumerated below, in order to ensure that the constructor value does not 
-  escape. Constructors are absent from Cajita.
+  escape. Like a named simple function, a constructor and its 
+  ``\code{.prototype}'' may be initialized, but are implicitly frozen on 
+  first use. 
     
   \item[Methods.] An anonymous function whose body mentions ``\code{this}'' 
   is a \emph{method}. A method definition may only appear in prototype 
   property initializations. To avoid the confusions regarding 
   ``\code{this}'', Caja methods are also not first class. A property holding 
-  a method is \emph{call only}, it can be called but not read. Methods are 
-  absent from Cajita.
-
+  a method is \emph{call only}, it can be called but not read.
+  
 \end{description}
+
+
+\begin{figure}[t!]
+\begin{alltt}
+function WobblyPoint(x, y)\ \{
+  Point.call(this, x, y);
+\};
+Caja.def(WobblyPoint, Point,\ \{
+  getX: function()\ \{ 
+    return Math.random() +
+      Point.prototype.getX.call(this); 
+  \},
+\});
+\end{alltt}
+
+\caption[A Caja Subclass.]{A Caja Subclass. \code{caja.def} supports 
+classical inheritance. When the superclass argument is a function name, it 
+can be used as shown for \emph{super} construction and method calls. These 
+occurrences of \code{call} are exempt from the normal translation rules. 
+\\ } \hrule
+\label{fig:caja-subclass}
+\end{figure}
 
 
 \subsection{Static restrictions}
@@ -976,23 +1020,13 @@ an alleged Caja program text to instead be statically rejected.
 \end{description}
 
 Although constructors are normally frozen and the ``\code{prototype}'' 
-property of functions is generally not settable, we allow at least the 
-patterns shown in Figures~\ref{fig:use-proto} and~\ref{fig:shorthand} for 
-declaring a constructor, initializing it, and initializing its prototype. 
-Figures~\ref{fig:generic-point} and~\ref{fig:brief-point} show a familiar 
-example expressed in these patterns.
+property of functions is generally not settable, we allow the 
+patterns shown in Figures~\ref{fig:caja-point} and~\ref{fig:brief-caja-point} 
+for declaring a constructor, initializing it, and initializing its prototype.
 
-The first argument to ``\code{Caja.def}'' may be the prototype only of a 
-fresh definition of F. None of these initialization may make any other use of 
-F or F.prototype. All initialization of F and its prototype will therefore 
-precede any use of F. This means, in effect, that the assignments above can 
-be considered declarative initializations rather than mutations. The mention 
-of ``\code{Point}'' within the ``\code{add}'' method is not considered a 
-too-early usage of ``\code{Point}'' since it occurs only within a method body 
-that cannot be executed too early.
-
-Claim: \emph{No Caja program can cause an observable mutation of an object
-Caja considers frozen.}
+If the first argument to ``\code{Caja.def}'' is a function name, this is 
+considered an initializing use, and so does not implicitly freeze that 
+function. 
 
 \begin{figure}[t!]
 \begin{alltt}
@@ -1002,10 +1036,14 @@ function Brand() \{
 
   return caja.freeze(\{
     seal: function(payload) \{
-      return function box() \{
+      function box() \{
         squirrel = payload;
         flag = true;
       \}
+      box.toString = function() \{
+        return "(box)";
+      \};
+      return box;
     \},
     unseal: function(box) \{
       flag = false; squirrel = null;
@@ -1056,12 +1094,11 @@ function Mint() \{
 \}
 \end{alltt}
 
-\caption[The MintMaker Example]{The MintMaker Example. Call to \code{Mint} 
+\caption[The MintMaker Example]{The MintMaker Example. Calling \code{Mint()} 
 creates a \code{Purse} function for making purses holding new transferable 
 units of a distinct ``currency''. Given two purses of the same currency, one 
 can transfer money between them, but one can't violate conservation of 
-currency.
-\\ } \hrule
+currency. \\ } \hrule
 \label{fig:mintmaker}
 \end{figure}
 
@@ -1069,13 +1106,70 @@ currency.
 
 \subsection{Dynamic restrictions}
 
+\begin{description}
+
+  \item[Frozen prototypes.] In Caja, until a function is frozen, both it and 
+  the value of its ``\code{.prototype}'' property may be initialized. When a 
+  function is frozen, so is the value of its ``\code{.prototype}'' property. 
+  Therefore, only the instances at the leaves of the JavaScript inheritance 
+  tree may remain unfrozen.
+  
+   \item[Well formed inheritance.] JavaScript provides an interesting set of 
+   primitives for building non-standard inheritance arrangements. Many of 
+   these arrangements will break assumptions in other code. In practice, 
+   these primitives are used in a particular arrangement in which, for 
+   example, for all functions \code{F}, \code{F.prototype.constructor === F}. 
+   Caja allows only this classical inheritance pattern, so that Caja code and 
+   the Caja implementation can rely on it.
+   
+   \item[Shape change.] When one adds or deletes properties of an object, we 
+   can describe this as changing the shape of the object. Of course, no one 
+   can change the shape of a frozen object. Anyone with access to a 
+   non-frozen JSON container may freely change its shape. A constructed 
+   object can directly change its own shape, by assignment or \code{delete} 
+   using \code{this}. Clients of a constructed object cannot directly change 
+   its shape. But since a constructed object can directly change its own 
+   shape, it can provide methods enabling its clients to ask it to change its 
+   shape. In other words, a constructed object has control of its own shape.
+   
+   Adding a property that overrides an inherited property is considered a 
+   shape change, so only a constructed object may do this directly for 
+   itself. If a constructed object does create a public own property, its 
+   clients can directly assign to it.
+   
+  
+\end{description}
+
+\subsection{Caja gotchas}
+
 TODO To be written
 
-\subsection{The Caja Library}
+\section{The System/User Boundary}
+\label{sec:boundary}
 
 TODO To be written
 
-\subsection{Examples}
+\subsection{Taming}
+
+TODO To be written
+
+\subsection{Wrapping}
+
+TODO To be written
+
+\subsection{Mild translation}
+
+TODO To be written
+
+\subsection{Fault handling}
+
+TODO To be written
+
+\subsection{The Powerbox pattern}
+
+TODO To be written
+
+\subsection{Boundary gotchas}
 
 TODO To be written
 
@@ -1097,11 +1191,15 @@ TODO To be written
 We thank 
 Dirk Balfanz,
 Bruno Bowden,
+Andrea Campi,
 Doug Crockford,
 Jed Donnelley,
 Brendan Eich,
-Adam Langley, and
-Kevin Reid.
+Adam Langley,
+Marcel Laverdet,
+Kevin Reid,
+and
+Graham Spencer.
 
 \appendix
 
@@ -1169,7 +1267,7 @@ original.}
 \begin{tabular}{ll}
   Caja expression & translates to ES3 code equivalent to\\ 
   \hline
-                 & \code{\_\_\_.module(function(\_\_\_OUTERS\_\_\_)\ \{} \\
+                 & \code{\_\_\_.loadModule(function(\_\_\_OUTERS\_\_\_)\ \{}\\
   /*caja module body*/      
                  & \code{\ \ } /*translated module body*/ \\
                  & \code{\});} \\
@@ -1182,19 +1280,19 @@ original.}
                             & \code{\_\_\_.callProp(this,bar,[a\ldots])} \\
   \code{foo[bar](a\ldots)}  
                             & \code{\_\_\_.callPub(foo,bar,[a\ldots])} \\
-  \code{new foo(a\ldots)}   & \code{new \_\_\_.asCtor(foo)(a\ldots)} \\
+  \code{new foo(a\ldots)}   & \code{new (\_\_\_.asCtor(foo))(a\ldots)} \\
   \code{foo(a\ldots)}       & \code{\_\_\_.asSimpleFunc(foo)(a\ldots)} \\
   \hline
   \code{function C(a\ldots)\ \{}
                  & \code{var C = \_\_\_.ctor(function(a\ldots)\ \{} \\
   \code{\ \ C.Super.call(this,b\ldots);}
                  & \code{\ \ C.Super.call\_\_\_(this,b\ldots);} \\
-  \code{\ \ \ldots\}}
-                 & \code{\ \ \ldots\})} \\
+  \code{\ \ \ldots\};}
+                 & \code{\ \ \ldots\});} \\
   \code{function C(a\ldots)\ \{}
                  & \code{var C = \_\_\_.ctor(function(a\ldots)\ \{} \\
-  \code{\ \ \ldots this\ldots\}}
-                 & \code{\ \ \ldots this\ldots\})}\\
+  \code{\ \ \ldots this\ldots\};}
+                 & \code{\ \ \ldots this\ldots\});}\\
   \hline
   \code{function(a\ldots)\ \{}
                  & \code{\_\_\_.method(C,function(a\ldots)\ \{} \\
@@ -1203,18 +1301,23 @@ original.}
   \hline
   \code{function F(a\ldots)\ \{}
                  & \code{var F = \_\_\_.simpleFunc(function(a\ldots)\ \{} \\
-  \code{\ \ \ldots\}}          & \code{\ \ \ldots\})} \\
+  \code{\ \ \ldots\};}         & \code{\ \ \ldots\});} \\
   
-  \code{function(a\ldots)\ \{} 
-                 & \code{\_\_\_.simpleFunc(function(a\ldots)\ \{} \\
-  \code{\ \ \ldots\}}          & \code{\ \ \ldots\})} \\
+  \code{function F(a\ldots)\ \{}
+    & \code{var F = \_\_\_.freeze(\_\_\_.simpleFunc(function(a\ldots)\ \{} \\
+  \code{\ \ \ldots\}}         & \code{\ \ \ldots\}))} \\
+  
+  \code{function(a\ldots)\ \{}
+             & \code{\_\_\_.freeze(\_\_\_.simpleFunc(function(a\ldots)\ \{} \\
+  \code{\ \ \ldots\}}          & \code{\ \ \ldots\}))} \\
   \hline
   \code{arguments.callee}      & /*rejected*/ \\
   \code{\ldots arguments\ldots} 
                    &\code{var \_\_\_args\_\_\_ = \_\_\_.args(arguments);}\\
                    & \code{\ldots \_\_\_args\_\_\_\ldots} \\
   \hline
-  \code{/pattern/} & \code{new RegExp("pattern")}
+  \code{/pattern/} & \code{new RegExp("pattern")} \\
+  \code{/pattern/g} & \code{new RegExp("pattern", "g")} \\
 \end{tabular}
 
 \caption[Translating Callers and Callees]{Translating Callers and Callees. A 
@@ -1222,7 +1325,9 @@ translated Caja module can be loaded/evaled once, creating an anonymous
 plugin-maker function. Each time the plugin-maker representing a module is 
 called, it makes a new plugin. Unless their creator puts them in contact, 
 even plugins made by the same plugin-maker are isolated from each other. The 
-expansions above have additional static restrictions explained in the text.}
+expansions above have additional static restrictions explained in the text. 
+The use of a terminal ``\code{;}'' is shorthand for testing whether the 
+matching expression is evaluated for effects only, not for its value.}
 \label{tab:call-xlate}
 \end{figure*}
 
@@ -1286,13 +1391,6 @@ expansions above have additional static restrictions explained in the text.}
   \code{allowMethod(Constr,name)}*
        & \code{method(Constr,Constr.prototype[meth]);} \\
        & \code{allowCall(Constr,name);} \\
-  \code{wrapMethod(Constr,name,meth)}*
-       & \code{require(name in Constr.prototype,\ldots);} \\
-       & \code{require(typeof meth === "function",\ldots);} \\
-       & \code{meth.\_\_\_ORIGINAL\_\_\_ = Constr.prototype[name];}\\
-       & \code{Constr.prototype[name] = meth;}\\
-       & \code{allowMethod(Constr,name);} \\
-       & \code{return freeze(meth);} \\
 \end{tabular}
 
 \caption[Hidden Attributes.]{Hidden Attributes. These methods handle the 
@@ -1392,8 +1490,8 @@ track the implications of side effects.}
   \code{encodeURIComponent} &                             & ok \\
   \hline
   \code{Math}               &                             & ok \\  
-                            & \code{random}               & ok* \\
-                            &           all others in ES3 & ok \\
+                            & \code{random}               & callable* \\
+                            &           all others in ES3 & ok, callable \\
 \end{tabular}
 
 \caption[Taming ES3 Global Non-Constructors.]{Taming ES3 Global 
@@ -1418,44 +1516,47 @@ reasons explained in the text.}
                                  & \code{valueOf}              & default method \\
   instances                      & \code{length}               & default ok \\
   \hline
-  \code{Object.prototype}        & \code{hasOwnProperty}       & wrapped \\
+  \code{Object.prototype}        & \code{hasOwnProperty}       & handled \\
                                  & \code{isPrototypeOf}        & method \\
-                                 & \code{propertyIsEnumerable} & wrapped \\
+                                 & \code{propertyIsEnumerable} & handled \\
+                                 & \code{freeze\_}             & added method \\
   \hline
   \code{Function}                &                             & hidden \\
-  \code{Function.prototype}      &                             & ok? \\
-                                 & \code{apply}                & wrapped \\
-                                 & \code{call}                 & wrapped \\
+  \code{Function.prototype}      &                             & ok \\
+                                 & \code{apply}                & handled \\
+                                 & \code{call}                 & handled \\
   instances                      & \code{prototype}            & ok \\
                                  & \code{length}               & ok \\
   \hline
   \code{Array.prototype}         & \code{concat}               & method \\
                                  & \code{join}                 & method \\
-                                 & \code{pop}                  & wrapped \\
-                                 & \code{push}                 & wrapped \\
-                                 & \code{reverse}              & wrapped \\
-                                 & \code{shift}                & wrapped \\
+                                 & \code{pop}                  & handled \\
+                                 & \code{push}                 & handled \\
+                                 & \code{reverse}              & handled \\
+                                 & \code{shift}                & handled \\
                                  & \code{slice}                & method \\
-                                 & \code{sort}                 & wrapped \\
-                                 & \code{splice}               & wrapped \\
-                                 & \code{unshift}              & wrapped \\
+                                 & \code{sort}                 & handled \\
+                                 & \code{splice}               & handled \\
+                                 & \code{unshift}              & handled \\
                                  & \code{indexOf}              & added method \\
                                  & \code{lastIndexOf}          & added method \\
   \hline
-  \code{String}                  & \code{fromCharCode}         & ok \\
-  \code{String.prototype}        & \code{match}                & wrapped \\
-                                 & \code{replace}              & wrapped \\
-                                 & \code{search}               & wrapped \\
-                                 & \code{split}                & wrapped \\
+  \code{String}                  & \code{fromCharCode}         & callable \\
+  \code{String.prototype}        & \code{match}                & handled \\
+                                 & \code{replace}              & handled \\
+                                 & \code{search}               & handled \\
+                                 & \code{split}                & handled \\
                                  &           all others in ES3 & ok, method \\
 \end{tabular}
 
-\caption[Taming ES3 Global Constructors, Part 1.]{Taming ES3 Global
-Constructors, Part 1. The first section above shows the taming
-decisions that apply by default to global ES3 constructors, their prototypes,
-and their instances, unless stated otherwise in a specific table entry. The
-\code{Array} methods are wrapped to ensure they don't violate Caja's
-mutability constraints.}
+\caption[Taming ES3 Global Constructors, Part 1.]{Taming ES3 Global 
+Constructors, Part 1. The first section above shows the taming decisions that 
+apply by default to global ES3 constructors, their prototypes, and their 
+instances, unless stated otherwise in a specific table entry. A 
+\emph{handled} method acts differently when called by translated Caja code 
+than for untranslated JavaScript code. The handled \code{call} and 
+\code{apply} methods can only be invoked on simple functions. Handled 
+mutating methods like \code{Array.pop} obey Caja's mutability constraints. }
 \label{tab:taming-es3-1}
 \end{figure*}
 
@@ -1477,15 +1578,15 @@ mutability constraints.}
                                  & \code{toPrecision}          & method \\
   \hline
   \code{Date}                    &                             & ctor* \\
-                                 & \code{parse}                & ok \\
-                                 & \code{UTC}                  & ok \\
+                                 & \code{parse}                & callable \\
+                                 & \code{UTC}                  & callable \\
   \code{Date.prototype}          & \code{to*String} all in ES3 & method \\
                                  & \code{toISOString}          & added method \\
                                  & \code{get*}      all in ES3 & method \\
-                                 & \code{set*}      all in ES3 & wrapped \\
+                                 & \code{set*}      all in ES3 & handled \\
   \hline
-  \code{RegExp.prototype}        & \code{exec}                 & wrapped \\
-                                 & \code{test}                 & wrapped \\
+  \code{RegExp.prototype}        & \code{exec}                 & handled \\
+                                 & \code{test}                 & handled \\
   instances                      & \code{source}               & ok \\
                                  & \code{global}               & ok \\
                                  & \code{ignoreCase}           & ok \\
