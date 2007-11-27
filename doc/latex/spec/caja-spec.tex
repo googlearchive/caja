@@ -147,12 +147,12 @@ into more depth.
   an object's state from its clients if its clients cannot add methods to it 
   which alias its ``\code{this}''. Caja divides functions into three 
   categories: \emph{simple functions} are those which do not mention 
-  ``\code{this}''. They are first class and can be used without further 
+  ``\code{this}''. They are first-class and can be used without further 
   restriction. \emph{Constructors} are named functions which mention 
   ``\code{this}''. \emph{Methods} are anonymous function which mention 
   ``\code{this}''.
 
-  Neither constructors nor methods are first class. They can be used in ways 
+  Neither constructors nor methods are first-class. They can be used in ways 
   that support stereotyped class-like JavaScript programming patterns, but 
   they cannot be stored in variables or passed as arguments. Fortunately, 
   there's no loss of generality. For example, \code{F.make} in 
@@ -379,15 +379,17 @@ function Counter()\ \{
 \end{alltt}
 
 \caption[A Cajita Counter.]{A Cajita Counter. Each call to \code{Counter()} 
-produces a new counter object. Access to a counter provides the authority 
-to read, invoke, or enumerate its properties, all of which are simple 
-functions serving the role of methods. Caja functions are implicitly frozen; 
-the returned object is explicitly frozen; and the instance-state of the 
+produces a new counter object. Access to a counter provides the authority to 
+read, invoke, or enumerate its properties, all of which are simple functions 
+serving the role of methods. Caja functions are implicitly frozen; the 
+returned object is explicitly frozen; and the instance-state of the 
 object---the count variable---is accessible only as encapsulated state 
-captured by these pseudo-methods. A counter object as a whole, a well as each 
-of its pseudo-methods, are thus proper protected capabilities. Someone with 
-access only to a counter's \code{incr} function can increment \emph{that} 
-counter and observe the result, but not do anything else. \\ } \hrule
+captured by these pseudo-methods. A counter object as a whole, as well as 
+each of its pseudo-methods, are thus proper protected capabilities. Someone 
+with access only to a counter's \code{incr} function can increment 
+\emph{that} counter and observe the result, but not do anything else.
+% XXX Confusing. Needs clarification
+ \\ } \hrule
 \label{fig:cajita-counter}
 \end{figure}
 
@@ -681,7 +683,7 @@ To explain the restrictions Cajita imposes, we need some definitions.
   either named or anonymous. A simple function can be invoked \emph{as a 
   function} (\code{foo(a\ldots)}), \emph{as a method} 
   (\code{foo.id(a\ldots)}), or \emph{as a constructor} (\code{new 
-  Foo(a\ldots)}). Simple functions are first class---they can be stored in 
+  Foo(a\ldots)}). Simple functions are first-class---they can be stored in 
   variables and passed around freely, just like any other value.
   
   \item[Frozen.] If an object is \emph{frozen}, any attempt to directly 
@@ -704,6 +706,7 @@ To explain the restrictions Cajita imposes, we need some definitions.
 
 \subsection{Static restrictions}
 
+% XXX clarify: Caja vs Cajita
 Any source code statically accepted by the Caja translator is \emph{verified 
 Caja program text}. The presence of the following syntactic elements causes 
 an alleged Caja program text to instead be statically rejected.
@@ -879,19 +882,33 @@ the Cajita subset of Caja.
 
 \begin{description}
 
-  \item[More sensible for/in loop.] More properties are visible and
-  enumeratable to untranslated programs than translated programs. To write a
-  program which will see the same properties whether run translated or not,
-  write the following instead:
+  \item[Bare for/in loops.] More properties are visible and enumeratable to 
+  untranslated programs than translated programs. To write a program which 
+  will see the same properties whether run translated or not, write the 
+  following instead:
+%
 \begin{alltt}
 for (var k in obj) \{ 
-  if (caja.canEnumPub(obj,k)) \{\ldots\}
+  if (caja.canEnumPub(obj,k)) \{
+    {\ldots}k{\ldots}obj[k]\ldots
+  \}
 \}
 \end{alltt}
+%
   This conditional does not affect the behavior of translated programs, so
   programs that only need to run translated can safely leave it out. Using
   \code{canEnumOwn} instead will further restrict the enumeration to
-  non-inherited properties, as is typically desired.
+  non-inherited properties, as is typically desired. You can also use
+  \code{caja.each} to enumerate non-inherited properties:
+%
+\begin{alltt}
+caja.each(obj, function(k, v)\ \{ 
+  {\ldots}k{\ldots}v\ldots
+\});
+\end{alltt}
+%
+  When obj is an \code{instanceof Array}, then \code{caja.each} will enumerate
+  indexes rather than property names.
 
   \item[Snapshot \code{arguments}.] In ES3, if \code{x} is the i'th parameter 
   of a function, assignments to \code{x} are visible as changes to 
@@ -903,7 +920,7 @@ for (var k in obj) \{
   that mentions ``\code{arguments}''. But in the initial Caja implementation, 
   this minor gotcha remains.
   
-  \item[Sensible RegExp.] ES3 specifies that a literal regular expression 
+  \item[Isolated RegExps.] ES3 specifies that a literal regular expression 
   pattern corresponds directly to a single mutable RegExp object. Caja, as 
   well as the Internet Explorer version of JavaScript (JScript), instead 
   create a new RegExp on each evaluation of a literal pattern, avoiding the 
@@ -918,21 +935,19 @@ function Point(x, y)\ \{
   this.x\_ = x;
   this.y\_ = y;
 \};
-Caja.def(Point, Object,\ \{
+Point.prototype =\ \{
   toString: function()\ \{ 
     return "<" + this.getX() + "," + 
                  this.getY() + ">"; 
   \},
   getX: function()\ \{ return this.x\_; \},
-  getY: function()\ \{ return this.y\_; \},
-\});
+  getY: function()\ \{ return this.y\_; \}
+\};
 \end{alltt}
 
-\caption[A Brief Caja Point.]{A Brief Caja Point. \code{caja.def} is a 
-convenience for more compactly defining a ``class''. The second argument is a 
-constructor representing a ``superclass''. The third argument provides 
-instance members, including methods. A fourth optional argument (unshown) 
-provides static members. \\ } \hrule
+\caption[A Brief Caja Point.]{A Brief Caja Point. Caja also accepts this more
+compact pattern for initializing a top-level prototype all at once.
+\\ } \hrule
 \label{fig:brief-caja-point}
 \end{figure}
 
@@ -967,7 +982,7 @@ definitions.
   \item[Constructors.] A named function whose body mentions ``\code{this}'' 
   is a \emph{constructor}. A constructor can only be invoked by construction, 
   i.e., by a call using the ``\code{new}'' keyword. To enforce this, 
-  constructors are not \emph{first class values}. A constructor definition 
+  constructors are not \emph{first-class values}. A constructor definition 
   and a constructor name can only appear in certain static contexts 
   enumerated below, in order to ensure that the constructor value does not 
   escape. Like a named simple function, a constructor and its 
@@ -977,11 +992,14 @@ definitions.
   \item[Methods.] An anonymous function whose body mentions ``\code{this}'' 
   is a \emph{method}. A method definition may only appear in prototype 
   property initializations. To avoid the confusions regarding 
-  ``\code{this}'', Caja methods are also not first class. A property holding 
+  ``\code{this}'', Caja methods are also not first-class. A property holding 
   a method is \emph{call only}, it can be called but not read.
   
 \end{description}
 
+% XXX Need to justify why constructors and methods can't be first-class.
+% XXX Looks like we need to distinguish between intrinsic and extrinsic
+%     methods. 
 
 \begin{figure}[t!]
 \begin{alltt}
@@ -992,15 +1010,17 @@ Caja.def(WobblyPoint, Point,\ \{
   getX: function()\ \{ 
     return Math.random() +
       Point.prototype.getX.call(this); 
-  \},
+  \}
 \});
 \end{alltt}
 
 \caption[A Caja Subclass.]{A Caja Subclass. \code{caja.def} supports 
-classical inheritance. When the superclass argument is a function name, it 
-can be used as shown for \emph{super} construction and method calls. These 
-occurrences of \code{call} are exempt from the normal translation rules. 
-\\ } \hrule
+classical inheritance. The second argument serves as a ``superclass''. The 
+third argument provides instance members including methods. A fourth optional 
+argument (unshown) provides static members. When the superclass argument is a 
+function name, it can be used as shown for \emph{super} construction and 
+method calls. These occurrences of \code{call} are exempt from the normal 
+translation rules. \\ } \hrule
 \label{fig:caja-subclass}
 \end{figure}
 
@@ -1102,6 +1122,7 @@ currency. \\ } \hrule
 \label{fig:mintmaker}
 \end{figure}
 
+% XXX fig:rights-amp and fig:mintmaker need more explanation
 
 
 \subsection{Dynamic restrictions}
@@ -1291,13 +1312,13 @@ original.}
                  & \code{\ \ \ldots\});} \\
   \code{function C(a\ldots)\ \{}
                  & \code{var C = \_\_\_.ctor(function(a\ldots)\ \{} \\
-  \code{\ \ \ldots this\ldots\};}
-                 & \code{\ \ \ldots this\ldots\});}\\
+  \code{\ \ {\ldots}this\ldots\};}
+                 & \code{\ \ {\ldots}this\ldots\});}\\
   \hline
   \code{function(a\ldots)\ \{}
                  & \code{\_\_\_.method(C,function(a\ldots)\ \{} \\
-  \code{\ \ \ldots this\ldots\}}
-                 & \code{\ \ \ldots this\ldots\})}\\
+  \code{\ \ {\ldots}this\ldots\}}
+                 & \code{\ \ {\ldots}this\ldots\})}\\
   \hline
   \code{function F(a\ldots)\ \{}
                  & \code{var F = \_\_\_.simpleFunc(function(a\ldots)\ \{} \\
@@ -1312,12 +1333,13 @@ original.}
   \code{\ \ \ldots\}}          & \code{\ \ \ldots\}))} \\
   \hline
   \code{arguments.callee}      & /*rejected*/ \\
-  \code{\ldots arguments\ldots} 
+  \code{{\ldots}arguments\ldots} 
                    &\code{var \_\_\_args\_\_\_ = \_\_\_.args(arguments);}\\
-                   & \code{\ldots \_\_\_args\_\_\_\ldots} \\
+                   & \code{{\ldots}\_\_\_args\_\_\_\ldots} \\
   \hline
   \code{/pattern/} & \code{new RegExp("pattern")} \\
-  \code{/pattern/g} & \code{new RegExp("pattern", "g")} \\
+  \code{/pattern/flags} 
+     & \code{new RegExp("pattern", "flags")} /* where flags is [igm]* */ \\
 \end{tabular}
 
 \caption[Translating Callers and Callees]{Translating Callers and Callees. A 
@@ -1376,11 +1398,11 @@ matching expression is evaluated for effects only, not for its value.}
        & \code{return hasOwnProp(obj,"\_\_\_FROZEN\_\_\_");} \\
   \code{freeze(obj)}*
        & \code{for (k in obj)\ \{} \\
-       & \code{\ \ if (endsWith(k,"\_canSet\_\_\_") || 
-     endsWith(k,"\_canDelete\_\_\_"))\ \{}\\
+       & \code{\ \ if
+        (endsWith(k,"\_canSet\_\_\_")||endsWith(k,"\_canDelete\_\_\_"))\ \{}\\
        & \code{\ \ \ \ obj[k] = false;\}\}}\\ 
        & \code{obj.\_\_\_FROZEN\_\_\_ = true;} \\
-       & \code{if (typeof obj === "function") \{ freeze(obj.prototype); \}} \\
+       & \code{if (typeof obj === "function") \{ freeze(obj.prototype); \}}\\
        & \code{return obj;} \\
   \hline 
   \code{method(Constr,meth)}
