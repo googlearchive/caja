@@ -1354,6 +1354,47 @@ matching expression is evaluated for effects only, not for its value.}
 \end{figure*}
 
 
+
+\begin{figure*}
+\begin{tabular}{ll}
+  Caja expression & Special cases for function names and methods \\ 
+  \hline
+  \code{Foo.prototype.id = member;} & initialize, don't freeze \code{Foo} \\
+  \code{Foo.prototype = \{\ldots: member, {\ldots}\};} & \\
+  \code{Foo.id = \ldots; } & \\
+  \code{caja.def(Foo,\ldots)} & \\
+  \hline
+  \code{\ldots\ instanceof Foo} & allow, whether \code{Foo} frozen or not \\
+  \hline
+  \code{new Foo(\ldots)} & Freeze \code{Foo} to prevent further initialization
+  \\ 
+  \code{caja.def(Derived,Foo)} & \\
+  \code{caja.def(Derived,Foo,} & \\
+  \code{\ \ \ \ \ \ \ \ \ \{\ldots: member, {\ldots}\},} & \\
+  \code{\ \ \ \ \ \ \ \ \ \ldots)} & \\
+  {\ldots}Foo{\ldots} & For any other occurrence, if \code{Foo} is a \\
+                      & \ \ - constructor name, then it is disallowed. \\
+                      & \ \ - function name, then it is frozen. \\
+  \hline
+                           & Can only happen if \code{Foo} is already frozen\\
+  \code{Foo.Super.call(this,\ldots);} & Only at start of \code{Foo},\\
+                       & and only if the remaining args have no \code{this}.\\
+  \code{Foo.call(this,\ldots);}     & Only at start of \code{Derived}, \\
+                       & and only if the remaining args have no \code{this}.\\
+  \code{Foo.prototype.id.call(this,\ldots)} 
+                                    & Only within methods of \code{Derived} \\   
+\end{tabular}
+
+\caption[Special cases]{Special cases. When \code{Foo} is the name of a named
+function or a constructor, then these special cases are checked before the
+general translations rules. At the \code{member} positions above, either
+normal expressions or methods may appear.}
+\label{tab:special-cases}
+\end{figure*}
+
+
+
+
 \begin{figure*}
 \begin{tabular}{ll}
   Methods of \code{\_\_\_}  & method body \\ 
