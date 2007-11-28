@@ -1359,25 +1359,27 @@ matching expression is evaluated for effects only, not for its value.}
 \begin{tabular}{ll}
   Caja expression & Special cases for function names and methods \\ 
   \hline
-  \code{Foo.prototype.id = member;} & initialize, don't freeze \code{Foo} \\
+           \multicolumn{2}{c}{initialize, don't freeze \code{Foo}} \\
+  \code{Foo.prototype.id = member;} & \\
   \code{Foo.prototype = \{\ldots: member, {\ldots}\};} & \\
   \code{Foo.id = \ldots; } & \\
-  \code{caja.def(Foo,\ldots)} & \\
-  \hline
-  \code{\ldots\ instanceof Foo} & allow, whether \code{Foo} frozen or not \\
-  \hline
-  \code{new Foo(\ldots)} & Freeze \code{Foo} to prevent further initialization
-  \\ 
-  \code{caja.def(Derived,Foo)} & \\
-  \code{caja.def(Derived,Foo,} & \\
+  \code{caja.def(Foo,Base)} & \\
+  \code{caja.def(Foo,Base,} & \\
   \code{\ \ \ \ \ \ \ \ \ \{\ldots: member, {\ldots}\},} & \\
   \code{\ \ \ \ \ \ \ \ \ \ldots)} & \\
+  \hline
+   \multicolumn{2}{c}{freeze \code{Foo} to prevent further initialization} \\
+  \code{new Foo(\ldots)} & \\ 
+  \code{caja.def(Derived,Foo)} & \\
   {\ldots}Foo{\ldots} & For any other occurrence, if \code{Foo} is a \\
                       & \ \ - constructor name, then it is disallowed. \\
                       & \ \ - function name, then it is frozen. \\
   \hline
-                           & Can only happen if \code{Foo} is already frozen\\
-  \code{Foo.Super.call(this,\ldots);} & Only at start of \code{Foo},\\
+  \code{\ldots\ instanceof Foo} & allow, whether \code{Foo} frozen or not \\
+  \code{Foo = \ldots} & reject assignment to a function/constructor name \\
+  \hline
+     \multicolumn{2}{c}{can only happen if \code{Foo} is already frozen} \\ 
+          \code{Foo.Super.call(this,\ldots);} & Only at start of \code{Foo},\\
                        & and only if the remaining args have no \code{this}.\\
   \code{Foo.call(this,\ldots);}     & Only at start of \code{Derived}, \\
                        & and only if the remaining args have no \code{this}.\\
