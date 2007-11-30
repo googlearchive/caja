@@ -26,6 +26,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.RhinoTestBed;
 import com.google.caja.util.RhinoTestBed.Input;
+import junit.framework.AssertionFailedError;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -69,6 +70,8 @@ public class CompiledPluginTest extends TestCase {
                  "assertEquals('foo', 'bar');");
       fail("javascript asserts are borked");
     } catch (JavaScriptException ex) {
+      // pass
+    } catch (AssertionFailedError e) {
       // pass
     }
   }
