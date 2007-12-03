@@ -52,6 +52,8 @@
 
   <path id="classpath.compile">
     <pathelement path="${third_party}/jakarta_commons/commons-cli.jar"/>
+    <pathelement path="${third_party}/xerces-j/xerces-2_9_0/xercesImpl.jar"/>
+    <pathelement path="${third_party}/xerces-j/xerces-2_9_0/serializer.jar"/>
   </path>
 
   <path id="classpath.run">
@@ -259,6 +261,8 @@
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
     <unjar src="${third_party}/jakarta_commons/commons-cli.jar" dest="${lib}"/>
+    <unjar src="${third_party}/xerces-j/xerces-2_9_0/xercesImpl.jar" dest="${lib}"/>
+    <unjar src="${third_party}/xerces-j/xerces-2_9_0/serializer.jar" dest="${lib}"/>
     <jar destfile="${jars}/pluginc.jar" basedir="${lib}">
       <manifest>
         <attribute name="Main-Class"

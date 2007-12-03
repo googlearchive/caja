@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module>
+ <ModulePrefs title="My Friends List">
+   <Require feature="opensocial-0.5"/>
+ </ModulePrefs>
+ <Content type="html">
+   <![CDATA[
+
+   <div id="message" style="margin: 4px"></div>
+
+   <!--Note: The sample container does not support relative urls properly -->
+   <!--because the gadget does not live in an iframe. This will be fixed -->
+   <!--in a later version. For now simply change any urls in your gadget -->
+   <!--to be relative to the top level samplecontainer.html file. -->
+   <script src="examples/listfriends.js"></script>
+
+  ]]>
+  </Content>
+</Module>

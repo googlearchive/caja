@@ -443,6 +443,7 @@ public final class HtmlPluginCompiler {
         ((MutableParseTreeNode) job.toReplace.getParent()).replaceChild(
             templateRef, job.toReplace);
       }
+      // TODO(ihab.awad): Re-enable HTML rendering below after ensuring it conforms to Baja rules.
       if (!meta.isBaja) {
         // (myPlugin.document).write(myPlugin.c1___());
         Block functionBody =

@@ -36,7 +36,7 @@ import java.io.Writer;
 /**
  * Executable that invokes {@link HtmlPluginCompiler}.
  *
- * @author ihab@gmail.com
+ * @author ihab.awad@gmail.com
  */
 public final class HtmlPluginCompilerMain {
   private static final Option INPUT =
