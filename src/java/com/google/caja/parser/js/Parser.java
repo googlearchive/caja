@@ -1181,18 +1181,16 @@ public final class Parser extends ParserBase {
     Token<JsTokenType> typeComment = popTypeComment();
 
     boolean isDeclaration;
-    boolean isConst;
 
     if (tq.checkToken(Keyword.VAR)) {
       isDeclaration = true;
-      isConst = false;
     } else if (tq.checkToken(Keyword.CONST)) {
-      isDeclaration = isConst = true;
+      isDeclaration = true;
       mq.addMessage(
           MessageType.NOT_IE, FilePosition.span(
               m.getFilePosition(), tq.lastPosition()));
     } else {
-      isDeclaration = isConst = false;
+      isDeclaration = false;
     }
 
     if (isDeclaration) {
@@ -1304,16 +1302,6 @@ public final class Parser extends ParserBase {
       AbstractStatement<?> astmt, Token<JsTokenType> typeComment)
       throws ParseException {
     return astmt;
-  }
-
-  private static boolean isAssignmentStmt(Statement stmt) {
-    return stmt instanceof ExpressionStmt
-           && isAssignmentOp(((ExpressionStmt) stmt).getExpression());
-  }
-
-  private static boolean isAssignmentOp(Expression e) {
-    return e instanceof Operation
-           && Operator.ASSIGN == ((Operation) e).getOperator();
   }
 
   private static class FormalParamList {

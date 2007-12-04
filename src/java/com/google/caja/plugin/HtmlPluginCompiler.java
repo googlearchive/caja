@@ -49,10 +49,8 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.StringInputSource;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.StringFilePosition;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.TokenQueue;
@@ -68,6 +66,7 @@ import com.google.caja.util.Pair;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -191,8 +190,10 @@ public final class HtmlPluginCompiler {
     // crafted <div> already being there?
     // Also, if for some reason the plugin spec has lots of code on the first
     // line, the debugging char info will be off by 6 characters.
+    // FIXME(msamuel): fix this so that file positions point into the pluginSpec
+    // string instead of being offset by 4 due to the <div>.
     String syntheticPluginSpec = "<div> " + pluginSpec + "</div>";
-    StringInputSource is = new StringInputSource(syntheticPluginSpec);
+    InputSource is = new InputSource(URI.create("plugin-spec:///"));
     CharProducer cp = CharProducer.Factory.create(
         new StringReader(syntheticPluginSpec), is);
     ParseTreeNode input = parseHtml(is, cp);
@@ -201,7 +202,7 @@ public final class HtmlPluginCompiler {
     return input != null;
   }
 
-  public ParseTreeNode parseHtml(StringInputSource is, CharProducer cp)
+  public ParseTreeNode parseHtml(InputSource is, CharProducer cp)
   throws ParseException {
     HtmlLexer lexer = new HtmlLexer(cp);
     lexer.setTreatedAsXml(true);
@@ -210,7 +211,7 @@ public final class HtmlPluginCompiler {
     return HtmlDomParser.parseDocument(tq, this);
   }
 
-  public ParseTreeNode parseJsString(String script, StringFilePosition pos)
+  public ParseTreeNode parseJsString(String script, FilePosition pos)
       throws GxpCompiler.BadContentException {
     if (script.trim().equals("")) {
       return null;
@@ -229,7 +230,7 @@ public final class HtmlPluginCompiler {
   }
 
   public ParseTreeNode parseJs(
-      StringInputSource is, CharProducer cp, MessageQueue localMessageQueue)
+      InputSource is, CharProducer cp, MessageQueue localMessageQueue)
       throws ParseException {
     JsLexer lexer = new JsLexer(cp);
     JsTokenQueue tq = new JsTokenQueue(lexer, is);
@@ -240,7 +241,7 @@ public final class HtmlPluginCompiler {
     return body;
   }
 
-  public ParseTreeNode parseCssString(String style, StringFilePosition pos)
+  public ParseTreeNode parseCssString(String style, FilePosition pos)
       throws GxpCompiler.BadContentException {
     if (style.trim().equals("")) {
       return null;
@@ -257,7 +258,7 @@ public final class HtmlPluginCompiler {
     return styleAsParsedCss;
   }
 
-  public ParseTreeNode parseCss(StringInputSource is, CharProducer cp)
+  public ParseTreeNode parseCss(InputSource is, CharProducer cp)
       throws ParseException {
     CssLexer lexer = new CssLexer(cp);
     ParseTreeNode input;
@@ -636,8 +637,8 @@ public final class HtmlPluginCompiler {
         children.add((CssTree.CssStatement) child);
       }
     }
-    StringFilePosition pos = new StringFilePosition(
-        new StringInputSource(pluginSpec));
+    FilePosition pos = FilePosition.startOfFile(
+        new InputSource(URI.create("plugin-spec:///")));
 
     for (CssTree.CssStatement c : children) {
       ((MutableParseTreeNode)c.getParent()).removeChild(c);

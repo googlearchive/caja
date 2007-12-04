@@ -31,7 +31,7 @@ import java.util.Collections;
  *
  * @author mikesamuel@gmail.com
  */
-public class FilePosition implements MessagePart {
+public final class FilePosition implements MessagePart {
   // TODO(mikesamuel): need unittests
   // TODO(mikesamuel): undo CL 5667265 changes.
   private InputSource source;

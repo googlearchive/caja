@@ -39,7 +39,12 @@ public final class SwitchStmt extends LabeledStatement {
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    Expression valueExpr = (Expression) children.get(0);
+    ParseTreeNode valueExpr = children.get(0);
+    if (!(valueExpr instanceof Expression)) {
+      throw new ClassCastException(
+          "Expected " + Expression.class.getName() + " not "
+          + valueExpr.getClass().getName());
+    }
     for (ParseTreeNode node : children.subList(1, children.size())) {
       if (!(node instanceof SwitchCase)) {
         throw new ClassCastException(

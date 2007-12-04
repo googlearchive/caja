@@ -35,7 +35,7 @@ import java.util.Collection;
  *
  * @author mikesamuel@gmail.com
  */
-public class InputSource implements MessagePart {
+public final class InputSource implements MessagePart {
   // TODO(mikesamuel): undo CL 5667365
   private URI uri;
   private String uriStr;

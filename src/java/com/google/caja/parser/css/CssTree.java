@@ -1017,7 +1017,6 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       throws IOException {
     int pos = 0;
     int n = s.length();
-    boolean lastHex = false;
     for (int i = 0; i < n; ++i) {
       char ch = s.charAt(i);
       if (ch < 0x20 || ch >= 0x7f || ch == '\\' || ch == '\'' || ch == '\"') {

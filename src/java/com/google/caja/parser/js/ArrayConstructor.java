@@ -25,7 +25,7 @@ import java.util.List;
  */
 public final class ArrayConstructor
     extends AbstractExpression<Expression> {
-  public ArrayConstructor(List<Expression> elements) {
+  public ArrayConstructor(List<? extends Expression> elements) {
     this.children.addAll(elements);
     childrenChanged();
   }

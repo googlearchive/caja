@@ -17,8 +17,6 @@ package com.google.caja.util;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -114,8 +112,6 @@ public class RhinoTestBed {
   }
 
   private static void writeFile(File path, String contents) {
-    Reader r = new StringReader(contents);
-
     Writer w;
     try {
       w = new BufferedWriter(new FileWriter(path, false));
@@ -124,9 +120,10 @@ public class RhinoTestBed {
     }
 
     try {
-     w.write(contents);
-     if (contents.length() > 0 && !contents.endsWith("\n"))
-       w.write("\n");
+      w.write(contents);
+      if (contents.length() > 0 && !contents.endsWith("\n")) {
+        w.write("\n");
+      }
     } catch (IOException e)  {
       throw new RuntimeException(e);
     }

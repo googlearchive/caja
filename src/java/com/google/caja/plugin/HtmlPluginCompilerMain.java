@@ -27,7 +27,6 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.StringWriter;
 import java.io.IOException;
-import java.io.StringReader;
 import java.io.FileWriter;
 import java.io.BufferedWriter;
 import java.io.Reader;
@@ -195,8 +194,6 @@ public final class HtmlPluginCompilerMain {
   }
 
   private void writeFile(File path, String contents) {
-    Reader r = new StringReader(contents);
-
     Writer w;
     try {
       w = new BufferedWriter(new FileWriter(path, false));
@@ -205,9 +202,10 @@ public final class HtmlPluginCompilerMain {
     }
 
     try {
-     w.write(contents);
-     if (contents.length() > 0 && !contents.endsWith("\n"))
-       w.write("\n");
+      w.write(contents);
+      if (contents.length() > 0 && !contents.endsWith("\n")) {
+        w.write("\n");
+      } 
     } catch (IOException e)  {
       throw new RuntimeException(e);
     }

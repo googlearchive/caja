@@ -51,7 +51,6 @@ import java.util.regex.Pattern;
 public final class JsHtmlParser  {
   private final TokenQueue<HtmlTokenType> tq;
   private final MessageQueue mq;
-  private String currentTag;
   private String lastOpenHtmlTag;
   private String lastOpenTag;
   private String lastAttribName;
@@ -89,8 +88,7 @@ public final class JsHtmlParser  {
           if (isOpen) {
             if (isHtml) { lastOpenHtmlTag = tagName; }
             lastOpenTag = tagName;
-            currentTag = tagName;
-          } else {
+            } else {
             if (isHtml) {
               lastOpenHtmlTag = null;
               if (!pendingScripts.isEmpty()) {
@@ -106,8 +104,7 @@ public final class JsHtmlParser  {
           }
           break;
         case TAGEND:
-          currentTag = null;
-          if (t.text.endsWith("/>")) {
+            if (t.text.endsWith("/>")) {
             if (lastOpenTag.equals(lastOpenHtmlTag)) { lastOpenHtmlTag = null; }
             lastOpenTag = null;
           }
