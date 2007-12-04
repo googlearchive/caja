@@ -781,8 +781,8 @@ Cajita. Code containing these features is not Cajita-complaint.
     \item[Literal RegExp syntax.] In JavaScript implementations, the literal 
     pattern syntax is often optimized into a static object with mutable 
     state, violating isolation. Caja translates the \code{/pattern/} syntax 
-    to \code{new RegExp("pattern")}. In Cajita, the second form be written 
-    explicitly.
+    to \code{new RegExp("pattern")}. In Cajita, the second form must be
+    written explicitly.
     
     \item[for/in loops.] Because of the confusing semantics of JavaScript's 
     \code{for/in} loops, these are absent from Cajita. Instead, Cajita code 
@@ -806,7 +806,10 @@ Cajita. Code containing these features is not Cajita-complaint.
     according to the intersection of ES3's scoping rules and conventional 
     block-level lexical scoping. This is essentially lexical scoping with the 
     restriction that a function cannot contain two definitions of the same 
-    variable name, even in two separate blocks.
+    variable name, even in two separate blocks. If JavaScript scope analysis
+    and conventional block-level lexical scope analysis would disagree on the
+    variable bindings of a given piece of code, then that code is not
+    Cajita-compliant.     
     
     \item[Coercing equality.] JavaScript's coercing rules for the 
     ``\code{==}'' and ``\code{!=}'' operators are complex and accident prone. 
@@ -1142,9 +1145,9 @@ function Mint() \{
     return caja.freeze(\{
       getBalance: function() \{
         return balance; \},
-      makePurse:  function() \{
+      makePurse: function() \{
         return Purse(0); \},
-      getDecr:    function() \{
+      getDecr: function() \{
         return brand.seal(decr); \},
       deposit: function(amount,src) \{
         var newBal = 
