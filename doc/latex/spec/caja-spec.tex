@@ -136,7 +136,7 @@ into more depth.
   own global environment which inherits from the default global environment, 
   isolating them from each other.
 
-  \item[Private names.] Property names ending in ``\_'' (single underscore) 
+  \item[Internal names.] Property names ending in ``\_'' (single underscore) 
   serve as protected instance variables. Such names can only appear to the 
   right of ``\code{this.}''. As with Smalltalk instance variables or 
   \code{protected} instance variables in C++, these protected instance 
@@ -706,10 +706,10 @@ To explain the restrictions Cajita imposes, we need some definitions.
 
 \subsection{Static restrictions}
 
-% XXX clarify: Caja vs Cajita
-Any source code statically accepted by the Caja translator is \emph{verified 
-Caja program text}. The presence of the following syntactic elements causes 
-an alleged Caja program text to instead be statically rejected.
+Any source code statically accepted by the Caja translator is 
+\emph{Caja-compliant JavaScript program text}. Those satisfying further 
+static restrictions are also Cajita-compliant program texts. The following 
+restrictions apply to both Caja and Cajita.
 
 \begin{description}
 
@@ -742,23 +742,76 @@ an alleged Caja program text to instead be statically rejected.
     triple underscore for use by the Caja translator output and the Caja 
     runtime code. Firefox reserves use of the double underscore for itself.
     
-    \item[RegExp syntax.] In JavaScript implementations, the pattern syntax 
-    is often optimized into a static object with mutable state, violating 
-    isolation. Caja translates the \code{/pattern/} syntax to \code{new 
-    RegExp("pattern")}.
+    \item[What's ``new'' with you?] Since Cajita does not have \code{this}, 
+    constructors, nor prototypes, \code{new} isn't needed purely within 
+    Cajita. But since Cajita code must interoperate smoothly with Caja and 
+    untranslated JavaScript code, \code{new} is considered a valid part of
+    Cajita. 
+        
+\end{description}
+
+The following features are present in Caja in order to accommodate old code, 
+rather than to enhance expressiveness. Since Cajita is for new code, in order 
+to minimize the dowload size of the Cajita translator, as well as to simplify 
+the semantics of Cajita considered on its own, these features are absent from 
+Cajita. Code containing these features is not Cajita-complaint.
+
+\begin{description}
     
-    \item[Caja features absent from Cajita.] The ``\code{this}'' keyword, 
-    identifiers ending in a single underscore, and \emph{prototypes} are in 
-    Caja but not Cajita. Since Cajita code can call Caja and JavaScript APIs, 
-    \code{new} is available in Cajita.
+    \item[``this''.] The central difference between Caja and Cajita is that 
+    only Caja includes ``\code{this}''.
     
-    Since Cajita is only for new code, it prohibits certain syntactic 
-    oddities which Caja tolerates: Code which would provoke semicolon 
-    insertion is not legal Cajita. Cajita variable names are visible only 
+    \item[Internal names.] In Caja, an \emph{internal name} is a property 
+    name ending in ``\code{\_}'' (a single underbar). Such names are used for 
+    encapsulation in Caja but are prohibited in Cajita. Cajita's only 
+    encapsulation mechanism is lexical scoping.
+    
+    \item[Prototypes.] In Caja and Cajita, if ``\code{Foo}'' is a function 
+    name, then static properties of the function can be initialized until the 
+    first time the function is used. Cajita prohibits access to \code{Foo}'s 
+    ``\code{prototype}'' property, and so prevents use of JavaScript's 
+    prototype inheritance within Cajita.
+    
+    \item[``instanceof''.] Without ``\code{this}'' and prototypes, Cajita has 
+    no need for \code{instanceof}. Rather, JavaScript's \code{typeof} is 
+    almost an adequate type discriminator for Cajita. Cajita does allow the 
+    one special case meaningful within Cajita: ``\code{{\ldots}\ instanceof 
+    Array}''.
+    
+    \item[Literal RegExp syntax.] In JavaScript implementations, the literal 
+    pattern syntax is often optimized into a static object with mutable 
+    state, violating isolation. Caja translates the \code{/pattern/} syntax 
+    to \code{new RegExp("pattern")}. In Cajita, the second form be written 
+    explicitly.
+    
+    \item[for/in loops.] Because of the confusing semantics of JavaScript's 
+    \code{for/in} loops, these are absent from Cajita. Instead, Cajita code 
+    should enumerate the properties of \code{obj} by doing
+%
+\begin{alltt}
+    caja.each(obj, function(k, v)\ \{ 
+      {\ldots}k{\ldots}v\ldots 
+    \});
+\end{alltt}
+%
+    This code will reliably give the same results whether run translated or 
+    not. It will enumerate only the non-inherited publicly Caja-visible 
+    properties of \code{obj}. If \code{obj instanceof Array}, then \code{k} 
+    will enumerate successive indexes into the array.
+    
+    \item[Semicolon insertion.] Code which would provoke semicolon insertion 
+    is not legal Cajita.
+    
+    \item[Block-breaking scopes.] Cajita variable names are visible only 
     according to the intersection of ES3's scoping rules and conventional 
     block-level lexical scoping. This is essentially lexical scoping with the 
     restriction that a function cannot contain two definitions of the same 
     variable name, even in two separate blocks.
+    
+    \item[Coercing equality.] JavaScript's coercing rules for the 
+    ``\code{==}'' and ``\code{!=}'' operators are complex and accident prone. 
+    Cajita only includes the equality operators ``\code{===}'' and 
+    ``\code{!==}''.
         
 \end{description}
 
@@ -782,6 +835,34 @@ an alleged Caja program text to instead be statically rejected.
 \end{description}
   
   
+\begin{figure}[t!]
+\begin{alltt}
+function Point(x, y)\ \{
+  this.x\_ = x;
+  this.y\_ = y;
+\};
+Point.prototype.toString = function()\ \{ 
+  return "<" + this.getX() + "," + 
+               this.getY() + ">"; 
+\};
+Point.prototype.getX = function()\ \{ 
+  return this.x\_; 
+\};
+Point.prototype.getY = function()\ \{ 
+  return this.y\_; 
+\};
+
+var pt = new Point(3, 5);
+\end{alltt}
+
+\caption[A Caja Point.]{A Caja Point. The point example, written
+in this common class-like pattern of Javascript programming, is valid Caja.
+\code{Point} is frozen by its first use, after which neither it nor its
+prototype can be further initialized. \\ } \hrule
+\label{fig:caja-point}
+\end{figure}
+
+
 \subsection{Outer environment restrictions}
 
 In JavaScript, all code loaded into the same JavaScript execution environment 
@@ -846,34 +927,6 @@ are isolated from each other.}
 
 \subsection{Cajita gotchas}
 
-\begin{figure}[t!]
-\begin{alltt}
-function Point(x, y)\ \{
-  this.x\_ = x;
-  this.y\_ = y;
-\};
-Point.prototype.toString = function()\ \{ 
-  return "<" + this.getX() + "," + 
-               this.getY() + ">"; 
-\};
-Point.prototype.getX = function()\ \{ 
-  return this.x\_; 
-\};
-Point.prototype.getY = function()\ \{ 
-  return this.y\_; 
-\};
-
-var pt = new Point(3, 5);
-\end{alltt}
-
-\caption[A Caja Point.]{A Caja Point. The point example, written
-in this common class-like pattern of Javascript programming, is valid Caja.
-\code{Point} is frozen by its first use, after which neither it nor its
-prototype can be further initialized. \\ } \hrule
-\label{fig:caja-point}
-\end{figure}
-
-
 Caja seeks to define a fail-stop subset of ES3, as explained above. However, 
 it falls short of this goal in several minor ways. To write a correct program 
 that executes correctly whether run translated or untranslated, it should 
@@ -881,34 +934,6 @@ avoid these gotchas. In this section, we enumerate those gotchas relevant to
 the Cajita subset of Caja.
 
 \begin{description}
-
-  \item[Bare for/in loops.] More properties are visible and enumeratable to 
-  untranslated programs than translated programs. To write a program which 
-  will see the same properties whether run translated or not, write the 
-  following instead:
-%
-\begin{alltt}
-for (var k in obj) \{ 
-  if (caja.canEnumPub(obj,k)) \{
-    {\ldots}k{\ldots}obj[k]\ldots
-  \}
-\}
-\end{alltt}
-%
-  This conditional does not affect the behavior of translated programs, so
-  programs that only need to run translated can safely leave it out. Using
-  \code{canEnumOwn} instead will further restrict the enumeration to
-  non-inherited properties, as is typically desired. You can also use
-  \code{caja.each} to enumerate non-inherited properties:
-%
-\begin{alltt}
-caja.each(obj, function(k, v)\ \{ 
-  {\ldots}k{\ldots}v\ldots
-\});
-\end{alltt}
-%
-  When obj is an \code{instanceof Array}, then \code{caja.each} will enumerate
-  indexes rather than property names.
 
   \item[Snapshot \code{arguments}.] In ES3, if \code{x} is the i'th parameter 
   of a function, assignments to \code{x} are visible as changes to 
@@ -920,13 +945,6 @@ caja.each(obj, function(k, v)\ \{
   that mentions ``\code{arguments}''. But in the initial Caja implementation, 
   this minor gotcha remains.
   
-  \item[Isolated RegExps.] ES3 specifies that a literal regular expression 
-  pattern corresponds directly to a single mutable RegExp object. Caja, as 
-  well as the Internet Explorer version of JavaScript (JScript), instead 
-  create a new RegExp on each evaluation of a literal pattern, avoiding the 
-  implicit sharing of mutable state. For any program already compatible with 
-  JScript, this is not an issue.
-    
 \end{description}
 
 \begin{figure}[t!]
@@ -970,7 +988,7 @@ definitions.
 
   \item[Constructed object.] An object defined by Caja code that's not a JSON 
   container and not a function must have been constructed by calling 
-  ``\code{new}'' on a function other than \code{Array} or \code{Object}. 
+  ``\code{new}'' on a function other than \code{Array} or \code{Object}.
 
   \item[Prototypes.] As in ES3, a constructed object's implicit 
   \emph{prototype}---the object it directly inherits from---is the value of 
@@ -987,7 +1005,7 @@ definitions.
   enumerated below, in order to ensure that the constructor value does not 
   escape. Like a named simple function, a constructor and its 
   ``\code{.prototype}'' may be initialized, but are implicitly frozen on 
-  first use. 
+  first use.
     
   \item[Methods.] An anonymous function whose body mentions ``\code{this}'' 
   is a \emph{method}. A method definition may only appear in prototype 
@@ -1033,10 +1051,36 @@ an alleged Caja program text to instead be statically rejected.
 
 \begin{description}
 
-    \item[Internal properties.] An identifier ending in a single underscore 
-    may be used only to name Internal properties. It may appear only after a 
-    ``\code{this.}''.
+  \item[Internal properties.] An identifier ending in a single underscore may 
+  be used only to name Internal properties. It may appear only after a 
+  ``\code{this.}''.
+  
+  \item[Constructor names.] TODO
+  
+  \item[Methods.] TODO
 
+  \item[Exophoric functions.] When an anonymous function mentioning 
+  ``\code{this}'' appears in an illegal position for a Caja method, the Caja 
+  translator currently rejects the program. A future upwards compatible 
+  extension to Caja may instead classify these as \emph{exophoric functions}. 
+  And exophoric function mentions ``\code{this}'', but its referent for 
+  ``\code{this}'' is not statically apparent. To allow exophoric functions 
+  safely, we need only impose two rules:
+  
+  \begin{itemize}
+
+    \item The translator inserts a check at the beginning of exophoric 
+    functions, ensuring that ``\code{this}'' isn't bound to the global 
+    object. This ensures that exophoric functions cannot be called as 
+    functions.
+    
+    \item Within an exophoric function, ``\code{this}'' is not treated 
+    specially. ``\code{this.foo\_}'' is disallowed, and ``\code{this[x]}'' is 
+    translated to a check that x names a \emph{publicly} readable member of 
+    \code{this}.
+
+  \end{itemize}
+  
 \end{description}
 
 Although constructors are normally frozen and the ``\code{prototype}'' 
@@ -1163,7 +1207,42 @@ currency. \\ } \hrule
 
 \subsection{Caja gotchas}
 
-TODO To be written
+Caja seeks to define a fail-stop subset of ES3, as explained above. However, 
+it falls short of this goal in several minor ways. To write a correct program 
+that executes correctly whether run translated or untranslated, it should 
+avoid these gotchas. In this section, we enumerate those remaining gotchas
+relevant specifically to Caja.
+
+\begin{description}
+
+  \item[Bare for/in loops.] More properties are visible and enumeratable to 
+  untranslated programs than translated programs. To write a program which 
+  will see the same properties whether run translated or not, write the 
+  following instead:
+%
+\begin{alltt}
+for (var k in obj) \{ 
+  if (caja.canEnumPub(obj,k)) \{
+    {\ldots}k{\ldots}obj[k]\ldots
+  \}
+\}
+\end{alltt}
+%
+  This conditional does not affect the behavior of translated programs, so
+  programs that only need to run translated can safely leave it out. Using
+  \code{canEnumOwn} instead will further restrict the enumeration to
+  non-inherited properties, as is typically desired. The same effect can still
+  be obtained more compactly using Cajita's \code{caja.each} construct as
+  explained earlier.
+
+  \item[Isolated RegExps.] ES3 specifies that a literal regular expression 
+  pattern corresponds directly to a single mutable RegExp object. Caja, as 
+  well as the Internet Explorer version of JavaScript (JScript), instead 
+  create a new RegExp on each evaluation of a literal pattern, avoiding the 
+  implicit sharing of mutable state. For any program already compatible with 
+  JScript, this is not an issue.
+    
+\end{description}
 
 \section{The System/User Boundary}
 \label{sec:boundary}
@@ -1198,6 +1277,8 @@ TODO To be written
 \label{sec:related}
 
 \subsection{Browser Shield}
+
+TODO To be written
 
 \subsection{ADsafe}
 
@@ -1393,8 +1474,6 @@ general translations rules. At the \code{member} positions above, either
 normal expressions or methods may appear.}
 \label{tab:special-cases}
 \end{figure*}
-
-
 
 
 \begin{figure*}
