@@ -21,11 +21,13 @@ import com.google.caja.lexer.HtmlLexerTest;
 import com.google.caja.lexer.JsLexerTest;
 import com.google.caja.lexer.LookaheadCharProducerTest;
 import com.google.caja.lexer.PunctuationTrieTest;
+import com.google.caja.opensocial.DefaultGadgetRewriterTest;
 import com.google.caja.parser.ParseTreeNodeTest;
 import com.google.caja.parser.css.CssParserTest;
 import com.google.caja.parser.css.CssTreeTest;
 import com.google.caja.parser.css.Css2Test;
 import com.google.caja.parser.html.DomParserTest;
+import com.google.caja.parser.html.JsHtmlParserTest;
 import com.google.caja.parser.js.ParserTest;
 import com.google.caja.parser.js.StringLiteralTest;
 import com.google.caja.plugin.CompiledPluginTest;
@@ -34,6 +36,7 @@ import com.google.caja.plugin.CssValidatorTest;
 import com.google.caja.plugin.ExpressionSanitizerTest;
 import com.google.caja.plugin.GxpCompilerTest;
 import com.google.caja.plugin.GxpValidatorTest;
+import com.google.caja.plugin.HtmlCompiledPluginTest;
 import com.google.caja.plugin.HtmlWhitelistTest;
 import com.google.caja.plugin.PluginCompilerTest;
 import com.google.caja.plugin.UrlUtilTest;
@@ -64,12 +67,15 @@ public class AllTests {
           CssRewriterTest.class,
           CssTreeTest.class,
           CssValidatorTest.class,
+          DefaultGadgetRewriterTest.class,
           DomParserTest.class,
           ExpressionSanitizerTest.class,
           GxpCompilerTest.class,
           GxpValidatorTest.class,
+          HtmlCompiledPluginTest.class,
           HtmlLexerTest.class,
           HtmlWhitelistTest.class,
+          JsHtmlParserTest.class,
           JsLexerTest.class,
           LookaheadCharProducerTest.class,
           ParseTreeNodeTest.class,

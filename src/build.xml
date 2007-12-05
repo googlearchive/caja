@@ -52,8 +52,6 @@
 
   <path id="classpath.compile">
     <pathelement path="${third_party}/jakarta_commons/commons-cli.jar"/>
-    <pathelement path="${third_party}/xerces-j/xerces-2_9_0/xercesImpl.jar"/>
-    <pathelement path="${third_party}/xerces-j/xerces-2_9_0/serializer.jar"/>
   </path>
 
   <path id="classpath.run">
@@ -179,11 +177,13 @@
       <include name="**/caja/lexer/JsLexerTest.java"/>
       <include name="**/caja/lexer/LookaheadCharProducerTest.java"/>
       <include name="**/caja/lexer/PunctuationTrieTest.java"/>
+      <include name="**/caja/opensocial/DefaultGadgetRewriterTest.java"/>
       <include name="**/caja/parser/ParseTreeNodeTest.java"/>
       <include name="**/caja/parser/css/Css2Test.java"/>
       <include name="**/caja/parser/css/CssParserTest.java"/>
       <include name="**/caja/parser/css/CssTreeTest.java"/>
       <include name="**/caja/parser/html/DomParserTest.java"/>
+      <include name="**/caja/parser/html/JsHtmlParserTest.java"/>
       <include name="**/caja/parser/js/ParserTest.java"/>
       <include name="**/caja/parser/js/StringLiteralTest.java"/>
       <include name="**/caja/plugin/CompiledPluginTest.java"/>
@@ -192,6 +192,7 @@
       <include name="**/caja/plugin/ExpressionSanitizerTest.java"/>
       <include name="**/caja/plugin/GxpCompilerTest.java"/>
       <include name="**/caja/plugin/GxpValidatorTest.java"/>
+      <include name="**/caja/plugin/HtmlCompiledPluginTest.java"/>
       <include name="**/caja/plugin/HtmlWhitelistTest.java"/>
       <include name="**/caja/plugin/PluginCompilerTest.java"/>
       <include name="**/caja/plugin/UrlUtilTest.java"/>
@@ -210,11 +211,14 @@
         <include name="**/caja/lexer/lexertest1.js"/>
         <include name="**/caja/lexer/lexertest2.js"/>
         <include name="**/caja/lexer/testinput1.txt"/>
+        <include name="**/caja/opensocial/listfriends-inline.xml"/>
         <include name="**/caja/parser/css/cssparsergolden1.txt"/>
         <include name="**/caja/parser/css/cssparsergolden2.txt"/>
         <include name="**/caja/parser/css/cssparserinput1.css"/>
         <include name="**/caja/parser/css/cssparserinput2.css"/>
         <include name="**/caja/parser/css/cssrendergolden1.txt"/>
+        <include name="**/caja/parser/html/htmlparsertest1.gxp"/>
+        <include name="**/caja/parser/html/htmlparsergolden1.txt"/>
         <include name="**/caja/parser/js/parsergolden1.txt"/>
         <include name="**/caja/parser/js/parsergolden2.txt"/>
         <include name="**/caja/parser/js/parsergolden3.txt"/>
@@ -248,8 +252,26 @@
         <include name="**/caja/plugin/sanitizergolden1.js"/>
         <include name="**/caja/plugin/sanitizergolden2.txt"/>
         <include name="**/caja/plugin/sanitizerinput1.js"/>
+        <include name="**/caja/plugin/tmp-caja.js"/>
       </fileset>
     </copy>
+  </target>
+
+  <target name="opensocial" depends="PluginCompiler,dirs">
+    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+      <src path="${src}"/>
+      <classpath refid="classpath.compile"/>
+      <include name="**/caja/opensocial/DefaultGadgetRewriter.java"/>
+      <include name="**/caja/opensocial/GadgetParser.java"/>
+      <include name="**/caja/opensocial/GadgetRewriteException.java"/>
+      <include name="**/caja/opensocial/GadgetRewriter.java"/>
+      <include name="**/caja/opensocial/GadgetSpec.java"/>
+      <include name="**/caja/opensocial/UriCallback.java"/>
+      <include name="**/caja/opensocial/UriCallbackException.java"/>
+      <include name="**/caja/opensocial/UriCallbackOption.java"/>
+      <include name="**/caja/plugin/PluginCompilerMain.java"/>
+      <include name="**/caja/plugin/HtmlPluginCompilerMain.java"/>
+    </javac>
   </target>
 
   <target name="pluginc" depends="PluginCompiler,dirs">
@@ -261,8 +283,6 @@
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
     <unjar src="${third_party}/jakarta_commons/commons-cli.jar" dest="${lib}"/>
-    <unjar src="${third_party}/xerces-j/xerces-2_9_0/xercesImpl.jar" dest="${lib}"/>
-    <unjar src="${third_party}/xerces-j/xerces-2_9_0/serializer.jar" dest="${lib}"/>
     <jar destfile="${jars}/pluginc.jar" basedir="${lib}">
       <manifest>
         <attribute name="Main-Class"
@@ -272,7 +292,7 @@
   </target>
 
   <target name="TestUtil"
-   depends="pluginc,PluginCapabilities,dirs">
+   depends="opensocial,pluginc,PluginCapabilities,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${testsrc}"/>
       <classpath refid="classpath.tests.compile"/>
