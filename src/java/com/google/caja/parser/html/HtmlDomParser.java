@@ -167,6 +167,7 @@ public final class HtmlDomParser {
     FilePosition posBegin = last.pos;
     FilePosition posEnd = last.pos;
     Mark start = tokens.mark();
+    Mark end = start;
     while (true) {
       last = tokens.peek();
       if (last.type == HtmlTokenType.TAGBEGIN && isClose(last) &&
@@ -183,9 +184,9 @@ public final class HtmlDomParser {
         tokens.expectToken(">");
         break;
       }
+      end = tokens.mark();
       tokens.advance();
     }
-    Mark end = tokens.mark();
 
     // the TokenQueue skips over some things (e.g. whitespace) so it's important
     // that we go back and extract the tag's contents from the input
@@ -199,11 +200,12 @@ public final class HtmlDomParser {
         .replaceFirst("^(\\s*)<!--", "$1 ")
         .replaceFirst("-->(\\s*)", " $1");
 
+    String canonicalTagName = tagName.toLowerCase();
     try {
       ParseTreeNode node = null;
-      if (tagName.equals("script")) {
+      if (canonicalTagName.equals("script")) {
         node = c.parseJsString(tagContent, pos);
-      } else if (tagName.equals("style")) {
+      } else if (canonicalTagName.equals("style")) {
         node = c.parseCssString(tagContent, pos);
       }
       c.addInput(node);
@@ -212,8 +214,8 @@ public final class HtmlDomParser {
           new Message(
               MessageType.PARSE_ERROR,
               pos,
-              MessagePart.Factory.valueOf(
-                  ("<" + tagName + "> tag."))));
+              MessagePart.Factory.valueOf(("<" + tagName + "> tag."))),
+          ex);
     }
     return last;
   }
