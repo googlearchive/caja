@@ -190,7 +190,7 @@ def expandAll(exprs, scope) {
  * XXX TODO: Refactor the introduction of temps so we can switch
  * whether to 
  * <ul>
- * <li>simple accumulate them as here,
+ * <li>simply accumulate them as here,
  * <li>accumulate them, but release them soon after they're no longer
  *     needed, or
  * <li>use the <tt>(function(){...})()</tt> trick to create a 
@@ -493,7 +493,7 @@ bind expand(e, scope) {
                                                   def b2s    := expandAll(bs, scope2)
                                                   expandDef(f, js`___.ctor(function($ps*) {
                                                        ${scope2.tempDefs()}*;
-                                                       $f2.Super.call___(this, $a2s*);
+                                                       $f2.Super.call(this, $a2s*);
                                                        $b2s*
                                                      })`)
                                                 }

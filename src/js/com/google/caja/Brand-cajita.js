@@ -24,51 +24,51 @@
  * @author Mark S. Miller, based on a pattern invented by Marc Stiegler.
  */
 function Brand(name) {
-    caja.requireType(name,'string');
-    var flag = false;
-    var squirrel = null;
-
-    var sealer = caja.freeze({
-        toString: function() { return '<'+name+' sealer>'; },
-
-        /** Returns a sealed box containing the payload. */
-        seal: function(payload) {
-
-            /** 
-             * Encapsulates the payload, but makes it available to its
-             * unsealer when provoked.
-             */
-            return caja.freeze({
-                toString: function() { return '<'+name+' box>'; },
-                provoke: function() {
-                    squirrel = payload;
-                    flag = true;
-                }
-            });
+  caja.enforceType(name,'string');
+  var flag = false;
+  var squirrel = null;
+  
+  var sealer = caja.freeze({
+    toString: function() { return '<'+name+' sealer>'; },
+    
+    /** Returns a sealed box containing the payload. */
+    seal: function(payload) {
+      
+      /** 
+       * Encapsulates the payload, but makes it available to its
+       * unsealer when provoked.
+       */
+      return caja.freeze({
+        toString: function() { return '<'+name+' box>'; },
+        provoke: function() {
+          squirrel = payload;
+          flag = true;
         }
-    });
-
-    var unsealer = caja.freeze({
-        toString: function() { return '<'+name+' unsealer>'; },
-
-        /**
-         * Obtains the payload sealed within a box sealer only by our sealer.
-         */
-        unseal: function(box) {
-            flag = false; 
-            squirrel = null;
-            box.provoke();
-            caja.require(flag,'not my box: '+box);
-            var result = squirrel;
-            // next two lines are probably unneeded, but just in case
-            flag = false; 
-            squirrel = null;
-            return result;
-        }
-    });
-    return caja.freeze({
-        toString: function() { return '<'+name+' brand>'; },
-        sealer: sealer,
-        unsealer: unsealer
-    });
+      });
+    }
+  });
+  
+  var unsealer = caja.freeze({
+    toString: function() { return '<'+name+' unsealer>'; },
+    
+    /**
+     * Obtains the payload sealed within a box sealer only by our sealer.
+     */
+    unseal: function(box) {
+      flag = false; 
+      squirrel = null;
+      box.provoke();
+      flag || caja.fail('not my box: ',box);
+      var result = squirrel;
+      // next two lines are probably unneeded, but just in case
+      flag = false; 
+      squirrel = null;
+      return result;
+    }
+  });
+  return caja.freeze({
+    toString: function() { return '<'+name+' brand>'; },
+    sealer: sealer,
+    unsealer: unsealer
+  });
 }
