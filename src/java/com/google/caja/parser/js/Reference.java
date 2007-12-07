@@ -46,7 +46,8 @@ public final class Reference extends AbstractExpression<Expression> {
   }
 
   public boolean isThis() {
-    return this.identifier.equals("this") || this.identifier.equals(ReservedNames.LOCAL_THIS);
+    return this.identifier.equals("this")
+      || this.identifier.equals(ReservedNames.LOCAL_THIS);
   }
 
   public void render(RenderContext rc) throws IOException {
@@ -55,5 +56,10 @@ public final class Reference extends AbstractExpression<Expression> {
 
   public boolean isSuper() {
     return this.identifier.equals(ReservedNames.SUPER);
+  }
+
+  public boolean isArguments() {
+    return this.identifier.equals(ReservedNames.ARGUMENTS)
+      || this.identifier.equals(ReservedNames.LOCAL_ARGUMENTS);
   }
 }

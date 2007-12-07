@@ -62,6 +62,7 @@ public class ExpressionSanitizerBaja {
     private final class FindThisAndSuper implements Visitor {
       private boolean thisUsed = false;
       private boolean superUsed = false;
+      private boolean argumentsUsed = false;
 
       // TODO(benl): Also needs to deal with closures for ES4.
       public boolean visit(ParseTreeNode node) {
@@ -72,12 +73,14 @@ public class ExpressionSanitizerBaja {
           final Reference ref = (Reference) node;
           if (ref.isThis()) {
             thisUsed = true;
-          } else if(ref.isSuper()) {
+          } else if (ref.isSuper()) {
             superUsed = true;
+          } else if (ref.isArguments()) {
+            argumentsUsed = true;
           }
         }
-        // No need to look further once both are set
-        if (thisUsed && superUsed) {
+        // No need to look further once all are set
+        if (thisUsed && superUsed && argumentsUsed) {
           return false;
         }
         return true;
@@ -221,6 +224,12 @@ public class ExpressionSanitizerBaja {
             = new Declaration(ReservedNames.LOCAL_THIS, new Reference("this"));
           func.getBody().prepend(localThis);
         }
+        if (finder.argumentsUsed) {
+          final Statement localArgs
+            = new Declaration(ReservedNames.LOCAL_ARGUMENTS,
+                call___("args", new Reference("arguments")));
+          func.getBody().prepend(localArgs);
+        }
       } else if (node instanceof FunctionDeclaration) {
         final FunctionConstructor func
           = (FunctionConstructor) node.children().get(0);
@@ -238,6 +247,8 @@ public class ExpressionSanitizerBaja {
         final Reference ref = (Reference) node;
         if (ref.isThis()) {
           ref.setIdentifier(ReservedNames.LOCAL_THIS);
+        } else if (ref.isArguments()) {
+          ref.setIdentifier(ReservedNames.LOCAL_ARGUMENTS);
         }
       } else if (node instanceof RegexpLiteral) {
         // /regex/ becomes RegExp('regex', '')

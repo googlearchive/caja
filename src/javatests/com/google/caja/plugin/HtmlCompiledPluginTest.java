@@ -104,7 +104,7 @@ public class HtmlCompiledPluginTest extends TestCase {
     execGadget(
         "<script>" +
         "function f(a, fail) {" +
-          "arguments[0] = 1;" +
+          "try { arguments[0] = 1; } catch(e) {}" +
           "if (a) fail('Mutable arguments');" +
         "}" +
         "</script>",
@@ -182,7 +182,7 @@ public class HtmlCompiledPluginTest extends TestCase {
         "<script>" +
         "var x;" +
         "(function () { try { x=this.document.cookie; } catch(e) {} })();" +
-        "this.f = function(fail) { if (x) fail('this accesses global scope') };" +
+        "function f(fail) { if (x) fail('this accesses global scope') };" +
         "</script>",
         "___.latestOuters.f(fail);"
         );
