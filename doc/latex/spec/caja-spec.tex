@@ -353,10 +353,11 @@ Our starting point is JavaScript 1.5 as documented in the third edition of
 the EcmaScript 262 standard~\cite{ECMA-262}; hereafter \emph{ES3}. The 
 remainder of this document explains the differences between Caja---the 
 JavaScript subset accepted by the Caja translator---and ES3. Other documents 
-will explain Caja's sanitization of the remaining elements of active web 
-content: HTML, CSS, and the DOM and other APIs provided by browsers to 
-JavaScript. We refer collectively to the subset of these accepted by the 
-Caja translator as \emph{Caja web content}.
+will explain the interface between Caja and untranslated JavaScript, and 
+Caja's sanitization of the remaining elements of active web content: HTML, 
+CSS, and the DOM and other APIs provided by browsers to JavaScript. We refer 
+collectively to the subset of these accepted by the Caja translator as 
+\emph{Caja web content}.
 
 
 \section{Subsetting JavaScript}
@@ -665,9 +666,9 @@ The design of Cajita was inspired by Doug Crockford's \emph{ADsafe}.
 }
 
 The Caja runtime will provide a safe \code{caja.eval} operation. For 
-\code{eval} to accept Caja code, the Caja translator would need to be written 
-in JavaScript and included in the Caja download. To minimize download size, 
-\code{caja.eval} will instead accept only Cajita code.
+\code{caja.eval} to accept Caja code, the Caja translator would need to be 
+written in JavaScript and included in the Caja download. To minimize download 
+size, \code{caja.eval} will instead accept only Cajita code.
 
 To explain the restrictions Cajita imposes, we need some definitions.
 
@@ -708,9 +709,9 @@ To explain the restrictions Cajita imposes, we need some definitions.
 \subsection{Static restrictions}
 
 Any source code statically accepted by the Caja translator is 
-\emph{Caja-compliant JavaScript program text}. Those satisfying further 
-static restrictions are also Cajita-compliant program texts. The following 
-restrictions apply to both Caja and Cajita.
+\emph{Caja-compliant JavaScript program text}. Source code satisfying certain 
+additional static restrictions is also Cajita-compliant program text. The 
+following restrictions apply to both Caja and Cajita.
 
 \begin{description}
 
@@ -743,11 +744,11 @@ restrictions apply to both Caja and Cajita.
     triple underscore for use by the Caja translator output and the Caja 
     runtime code. Firefox reserves use of the double underscore for itself.
     
-    \item[What's ``new'' with you?] Since Cajita does not have \code{this}, 
+    \item[``new'' is ok.] Since Cajita does not have \code{this}, 
     constructors, nor prototypes, \code{new} isn't needed purely within 
     Cajita. But since Cajita code must interoperate smoothly with Caja and 
-    untranslated JavaScript code, \code{new} is considered a valid part of
-    Cajita. 
+    untranslated JavaScript code, \code{new} is considered a valid part of 
+    Cajita.
         
 \end{description}
 
@@ -1066,8 +1067,8 @@ an alleged Caja program text to instead be statically rejected.
   \item[Exophoric functions.] When an anonymous function mentioning 
   ``\code{this}'' appears in an illegal position for a Caja method, the Caja 
   translator currently rejects the program. A future upwards compatible 
-  extension to Caja may instead classify these as \emph{exophoric functions}. 
-  And exophoric function mentions ``\code{this}'', but its referent for 
+  extension to Caja will instead classify these as \emph{exophoric functions}. 
+  An exophoric function mentions ``\code{this}'', but its referent for 
   ``\code{this}'' is not statically apparent. To allow exophoric functions 
   safely, we need only impose two rules:
   
@@ -1247,35 +1248,6 @@ for (var k in obj) \{
   JScript, this is not an issue.
     
 \end{description}
-
-\section{The System/User Boundary}
-\label{sec:boundary}
-
-TODO To be written
-
-\subsection{Taming}
-
-TODO To be written
-
-\subsection{Wrapping}
-
-TODO To be written
-
-\subsection{Mild translation}
-
-TODO To be written
-
-\subsection{Fault handling}
-
-TODO To be written
-
-\subsection{The Powerbox pattern}
-
-TODO To be written
-
-\subsection{Boundary gotchas}
-
-TODO To be written
 
 \section{Related work}
 \label{sec:related}
