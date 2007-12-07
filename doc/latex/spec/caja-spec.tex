@@ -161,7 +161,9 @@ into more depth.
  
   \item[Sharp knives removed.] Caja contains no ``\code{with}'' or 
   ``\code{eval}''. Caja includes a safe JSON library to support the most 
-  common use of \code{eval}.
+  common use of \code{eval}, and a safe \code{caja.eval} for evaluating code 
+  in the \emph{Cajita} subset of Caja. Cajita is essentially the subset of
+  Caja without ``\code{this}''. 
  
 \end{description}
 
@@ -662,11 +664,10 @@ The design of Cajita was inspired by Doug Crockford's \emph{ADsafe}.
 %
 }
 
-For now, we distinguish Caja and Cajita only for expository purposes. The 
-Caja runtime may eventually provide a safe \code{eval} operation. For 
+The Caja runtime will provide a safe \code{caja.eval} operation. For 
 \code{eval} to accept Caja code, the Caja translator would need to be written 
 in JavaScript and included in the Caja download. To minimize download size, 
-Caja is likely to provide only a Cajita \code{eval}.
+\code{caja.eval} will instead accept only Cajita code.
 
 To explain the restrictions Cajita imposes, we need some definitions.
 
@@ -1115,7 +1116,7 @@ function Brand() \{
     unseal: function(box) \{
       flag = false; squirrel = null;
       box();
-      caja.require(flag,\ldots);
+      caja.enforce(flag,\ldots);
       return squirrel;
     \}
   \});
@@ -1136,11 +1137,11 @@ technique shown here is due to Marc Stiegler.
 function Mint() \{
   var brand = Brand();
   return function Purse(balance) \{
-    caja.requireNat(balance);
+    caja.enforceNat(balance);
     function decr(amount) \{
-      caja.requireNat(amount);
+      caja.enforceNat(amount);
       balance = 
-        caja.requireNat(balance - amount);
+        caja.enforceNat(balance - amount);
     \}
     return caja.freeze(\{
       getBalance: function() \{
@@ -1151,7 +1152,7 @@ function Mint() \{
         return brand.seal(decr); \},
       deposit: function(amount,src) \{
         var newBal = 
-          caja.requireNat(balance+amount);
+          caja.enforceNat(balance+amount);
         var box = src.getDecr();
         brand.unseal(box)(amount);
         balance += newBal;
@@ -1352,7 +1353,7 @@ Graham Spencer.
   \code{delete this[bar]} & \code{\_\_\_.deleteProp(this,bar)} \\
   \code{delete foo[bar]}  & \code{\_\_\_.deletePub(foo,bar)} \\
   \code{delete glob}      
-         & \code{\_\_\_.require(delete \_\_\_OUTERS\_\_\_.glob,\ldots)} \\
+         & \code{\_\_\_.enforce(delete \_\_\_OUTERS\_\_\_.glob,\ldots)} \\
 \end{tabular}
 
 \caption[Translating Property Access]{Translating Property Access. Under the 
@@ -1483,7 +1484,7 @@ normal expressions or methods may appear.}
 \begin{tabular}{ll}
   Methods of \code{\_\_\_}  & method body \\ 
   \hline 
-  \code{require(test,complaint)}
+  \code{enforce(test,complaint)}
        & \code{if (test)\ \{ return true; \}} \\
        & \code{throw new CajaRuntimeError(complaint);} \\
   \hline
@@ -1506,11 +1507,11 @@ normal expressions or methods may appear.}
   \code{allowCall(obj,name)}* 
        & \code{obj[name+"\_canCall\_\_\_"] = true;} \\
   \code{allowSet(obj,name)}* 
-       & \code{require(!isFrozen(obj),\ldots);} \\
+       & \code{enforce(!isFrozen(obj),\ldots);} \\
        & \code{allowEnum(obj,name);} \\
        & \code{obj[name+"\_canSet\_\_\_"] = true;}\\
   \code{allowDelete(obj,name)}* 
-       & \code{require(!isFrozen(obj),\ldots);} \\
+       & \code{enforce(!isFrozen(obj),\ldots);} \\
        & \code{obj[name+"\_canDelete\_\_\_"] = true;} \\
        & /*other bookkeeping yet to be determined*/ \\
   \hline 
@@ -1531,8 +1532,8 @@ normal expressions or methods may appear.}
        & \code{return obj;} \\
   \hline 
   \code{method(Constr,meth)}
-       & \code{require(typeof Constr === "function",\ldots);} \\
-       & \code{require(typeof meth === "function",\ldots);} \\
+       & \code{enforce(typeof Constr === "function",\ldots);} \\
+       & \code{enforce(typeof meth === "function",\ldots);} \\
        & \code{meth.\_\_\_METHOD\_OF\_\_\_ = Constr;} \\
        & \code{return freeze(meth);} \\
   \code{allowMethod(Constr,name)}*
@@ -1585,7 +1586,7 @@ environment is transitively read-only to all Caja code.}
        & \code{if (canSet(that,name))\ \{ return true; \}} \\
        & \code{return !isFrozen(that);} \\
   \code{setProp(that,name,val)}
-       & \code{require(canSetProp(that,name),\ldots);} \\
+       & \code{enforce(canSetProp(that,name),\ldots);} \\
        & \code{allowSet(that,name);} /*grant*/ \\
        & \code{return that[name] = val;} \\
   \code{canSetPub(obj,name)}
@@ -1593,19 +1594,19 @@ environment is transitively read-only to all Caja code.}
        & \code{if (canSet(obj,name))\ \{ return true; \}} \\
        & \code{return !isFrozen(obj) \&\& isJSONContainer(obj);} \\
   \code{setPub(obj,name,val)}
-       & \code{require(canSetPub(obj,name),\ldots);} \\
+       & \code{enforce(canSetPub(obj,name),\ldots);} \\
        & \code{allowSet(obj,name);} /*grant*/ \\
        & \code{return obj[name] = val;} \\
   \hline               
   \code{deleteProp(that,name)} 
-       & \code{require(canDeleteProp(that,name),\ldots);} \\
+       & \code{enforce(canDeleteProp(that,name),\ldots);} \\
        & /*XXX Bookkeeping yet to be determined*/ \\
-       & \code{return require(delete that[name],\ldots);} \\
+       & \code{return enforce(delete that[name],\ldots);} \\
   \code{deletePub(obj,name)} 
-       & \code{require(canDeletePub(obj,name),\ldots);} \\
-       & \code{require(isJSONContainer(obj),\ldots);} \\
+       & \code{enforce(canDeletePub(obj,name),\ldots);} \\
+       & \code{enforce(isJSONContainer(obj),\ldots);} \\
        & /*XXX Bookkeeping yet to be determined*/ \\
-       & \code{return require(delete obj[name],\ldots);} \\
+       & \code{return enforce(delete obj[name],\ldots);} \\
   \hline
   \code{args(original)}
        & \code{return freeze(Array.prototype.slice.call\_\_\_(original,0));}
