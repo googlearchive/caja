@@ -144,10 +144,13 @@ public class GadgetParser {
     Node module = d.createElement("Module");
     d.appendChild(module);
 
+    Node modulePrefs = d.createElement("ModulePrefs");
+    module.appendChild(modulePrefs);
+
     for (String key : gadgetSpec.getModulePrefs().keySet()) {
       Attr attr = d.createAttribute(key);
       attr.setValue(gadgetSpec.getModulePrefs().get(key));
-      module.getAttributes().setNamedItem(attr);
+      modulePrefs.getAttributes().setNamedItem(attr);
     }
 
     for (String feature : gadgetSpec.getRequiredFeatures()) {
@@ -155,7 +158,7 @@ public class GadgetParser {
       Attr attr = d.createAttribute("feature");
       attr.setValue(feature);
       require.getAttributes().setNamedItem(attr);
-      module.appendChild(require);
+      modulePrefs.appendChild(require);
     }
 
     Node contentNode = d.createElement("Content");

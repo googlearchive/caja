@@ -24,6 +24,9 @@ import java.util.Map;
  * user-supplied input and our rewriting machinery to guard against attacks
  * based on malformed input XML.
  *
+ * <p>TODO(ihab.awad): Consider a more generic representation that still guards against
+ * passing arbitrary XML through the rewriter.
+ *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class GadgetSpec {

@@ -22,6 +22,7 @@ import com.google.caja.lexer.JsLexerTest;
 import com.google.caja.lexer.LookaheadCharProducerTest;
 import com.google.caja.lexer.PunctuationTrieTest;
 import com.google.caja.opensocial.DefaultGadgetRewriterTest;
+import com.google.caja.opensocial.GadgetParserTest;
 import com.google.caja.parser.ParseTreeNodeTest;
 import com.google.caja.parser.css.CssParserTest;
 import com.google.caja.parser.css.CssTreeTest;
@@ -67,6 +68,7 @@ public class AllTests {
           CssRewriterTest.class,
           CssTreeTest.class,
           CssValidatorTest.class,
+          GadgetParserTest.class,
           DefaultGadgetRewriterTest.class,
           DomParserTest.class,
           ExpressionSanitizerTest.class,

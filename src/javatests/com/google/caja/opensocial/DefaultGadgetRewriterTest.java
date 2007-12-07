@@ -47,9 +47,14 @@ public class DefaultGadgetRewriterTest extends TestCase {
   public void setUp() { rewriter = new DefaultGadgetRewriter(); }
 
   public void tearDown() { rewriter = null; }
-  
+
   public void testBasic() throws Exception {
-    Reader input = new StringReader(TestUtil.readResource(getClass(), "listfriends-inline.xml"));
+    testRewriteNoError("listfriends-inline.xml");
+    testRewriteNoError("test-parsing.xml");
+  }
+
+  private void testRewriteNoError(String file) throws Exception {
+    Reader input = new StringReader(TestUtil.readResource(getClass(), file));
     Writer output = new StringWriter();
     rewriter.rewrite(null, input, uriCallback, output);
     System.out.println(output.toString());

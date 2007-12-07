@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- This file includes all syntactic elements of an OpenSocial gadget -->
+<!-- specification. It is intended for use as a very simple test of    -->
+<!-- proper parsing.                                                   -->
+
+<Module>
+  <ModulePrefs
+      title="A title"
+      directory_title="A directory title"
+      title_url="http://www.example.com/example.html"
+      description="A description"
+      author="A. Gadget Author"
+      author_email="gadget.author@example.com"
+      author_photo="http://example.com/example.jpg"
+      author_aboutme="About A. Gadget Author"
+      author_link="http://www.example.com/example.html"
+      author_quote="Quote from A. Gadget Author">
+
+    <Require feature="opensocial-0.5" />
+    <Require feature="dynamic-height" />
+    
+    <Locale
+        lang="en"
+        country="us"
+        messages="http://example.com/en_us.xml"
+        language_direction="__BIDI_START_EDGE__" />
+    <Locale
+        lang="ja"
+        country="jp"
+        messages="http://example.com/ja_jp.xml"
+        language_direction="__BIDI_END_EDGE__" />
+
+    <MayRequire type="platform" value="windows" min_version="0.7">
+      This gadget uses the OpenGL API.
+    </MayRequire>
+    <MayRequire type="platform" value="OpenGL" min_version="0.8">
+      This gadget uses the OpenGL API.
+    </MayRequire>
+
+    <UserPref
+        name="a"
+        display_name="A pref"
+        urlparam="A urlparam"
+        datatype="string"
+        required="true"
+        default_value="A string" />
+    <UserPref
+        name="b"
+        display_name="B pref"
+        urlparam="B urlparam"
+        datatype="bool"
+        required="true"
+        default_value="true" />
+    <UserPref
+        name="c"
+        display_name="C pref"
+        urlparam="C urlparam"
+        datatype="enum"
+        required="true"
+        default_value="4">      
+      <EnumValue value="3" display_value="Easy"/>
+      <EnumValue value="4" display_value="Medium"/>
+      <EnumValue value="5" display_value="Hard"/>
+    </UserPref>
+    <UserPref
+        name="d"
+        display_name="D pref"
+        urlparam="D urlparam"
+        datatype="hidden"
+        required="true"
+        default_value="dpref" />
+    <UserPref
+        name="e"
+        display_name="E pref"
+        urlparam="E urlparam"
+        datatype="list"
+        required="true"
+        default_value="epref" />
+    <!-- TODO(ihab.awad): Check on proper format for 'location' UserPrefs -->
+    <UserPref
+        name="f"
+        display_name="F pref"
+        urlparam="F urlparam"
+        datatype="location"
+        required="true"
+        default_value="fpref" />
+  </ModulePrefs>
+
+  <Content type="html">
+   <![CDATA[
+
+   <div id="message" style="margin: 4px"></div>
+
+   <!--Note: The sample container does not support relative urls properly -->
+   <!--because the gadget does not live in an iframe. This will be fixed -->
+   <!--in a later version. For now simply change any urls in your gadget -->
+   <!--to be relative to the top level samplecontainer.html file. -->
+
+   <script type="text/javascript">
+/**
+ * Request for friend information when the page loads.
+ */
+var init = function() {
+  document.getElementById('message').innerHTML = 'Requesting friends...';
+  var req = opensocial.newDataRequest();
+  req.add(req.newFetchPersonRequest('VIEWER'), 'viewer');
+  req.add(req.newFetchPeopleRequest ('VIEWER_FRIENDS'), 'viewerFriends');
+  req.send(onLoadFriends);
+};
+_IG_RegisterOnloadHandler(init);
+
+
+/**
+ * Parses the response to the friend information request and generates
+ * html to list the friends along with their display name and picture.
+ *
+ * @param {Object} dataResponse Friend information that was requested.
+ */
+function onLoadFriends(dataResponse) {
+  var viewer = dataResponse.get('viewer').getData();
+  var html = 'Friends of ' + viewer.getField('name');
+
+  html += ':<br><ul>';
+  var viewerFriends = dataResponse.get('viewerFriends').getData();
+  viewerFriends.each(function(person) {
+    html += '<li>' + person.getField('name') + '</li>';
+  });
+  html += '</ul>';
+
+  document.getElementById('message').innerHTML = html;
+};
+   </script>
+
+  ]]>
+  </Content>
+</Module>

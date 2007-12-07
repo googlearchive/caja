@@ -27,7 +27,7 @@ import java.net.URI;
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class DefaultGadgetRewriter implements GadgetRewriter {
-  private static final String JAVASCRIPT_PREFIX = "JAVASCRIPT_PREFIX";
+  private static final String JAVASCRIPT_PREFIX = "___OUTERS___";
   private static final String CSS_PREFIX = "CSS_PREFIX";
   private static final String ROOT_DIV_ID = "ROOT_DIV_ID";
 
@@ -36,7 +36,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter {
     rewrite(
         gadgetUri,
         new InputStreamReader(uriCallback.retrieve(gadgetUri, "text/xml")),
-        uriCallback, 
+        uriCallback,
         output);
   }
 
