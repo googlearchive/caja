@@ -21,9 +21,7 @@ import com.google.caja.reporting.RenderContext;
  * @author mikesamuel@gmail.com
  */
 public final class Noop extends AbstractStatement<Statement> {
-  public Noop() {
-    childrenChanged();
-  }
+  public Noop() {}
 
   @Override
   public Object getValue() { return null; }

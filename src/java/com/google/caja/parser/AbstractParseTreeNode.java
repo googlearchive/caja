@@ -24,7 +24,6 @@ import com.google.caja.util.SyntheticAttributes;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -36,30 +35,21 @@ import java.util.NoSuchElementException;
  */
 public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
     implements MutableParseTreeNode {
-  private AbstractParseTreeNode<?> parent;
-  private AbstractParseTreeNode<?> nextSibling, prevSibling;
   private FilePosition pos;
   private List<Token<?>> comments = Collections.<Token<?>>emptyList();
   private SyntheticAttributes attributes;
-  // TODO(mikesamuel): make this private and let children use transactions to
-  // set up child lists from the constructor.
-  protected final List<T> children = new ArrayList<T>();
-  private List<T> childrenExtern;
+  /**
+   * The list of children.  This can be appended to for efficient initialization
+   * but any operations that remove or insert except at the end require
+   * copy-on-write to provide for efficient visitors.
+   */
+  private List<T> children = new ArrayList<T>();
+  private List<T> childrenExtern = Collections.<T>unmodifiableList(children);
 
   protected AbstractParseTreeNode() {
-    // initialized via setters
+    // initialized via mutators
   }
 
-  /**
-   * Return the parent of this node, a node such that
-   *  <code>getParent().iterator()</code> will include <code>this</code>.
-   * Not valid until {@link #parentify()} has been called on the root node.
-   * @return null if {@link #parentify()} has not yet been called or if this is
-   *   the root node.
-   */
-  public ParseTreeNode getParent() { return parent; }
-  public ParseTreeNode getNextSibling() { return nextSibling; }
-  public ParseTreeNode getPrevSibling() { return prevSibling; }
   public FilePosition getFilePosition() { return pos; }
   public List<Token<?>> getComments() { return comments; }
   public final List<? extends T> children() { return childrenExtern; }
@@ -96,42 +86,16 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
         : Collections.<Token<?>>emptyList();
   }
 
-  // TODO(mikesamuel): remove this and make sure the parent link is consistently
-  // maintained.
-  /** Initializes the {@link #getParent} references. */
-  public void parentify() { parentify(true); }
-
-  protected void parentify(boolean recurse) {
-    AbstractParseTreeNode<?> prev = null;
-    for (ParseTreeNode child : children()) {
-      AbstractParseTreeNode<?> achild = (AbstractParseTreeNode<?>) child;
-      if (this != achild.parent) {
-        assert achild.parent == null;
-        achild.parent = this;
-        if (null != (achild.prevSibling = prev)) {
-          prev.nextSibling = achild;
-        }
-        if (recurse) { achild.parentify(true); }
-        prev = achild;
-      }
-    }
-    if (null != prev) { prev.nextSibling = null; }
-  }
-
-  private AbstractParseTreeNode getRoot() {
-    AbstractParseTreeNode t = this;
-    while (t.parent != null) {
-      t = t.parent;
-    }
-    return t;
-  }
-
   public void replaceChild(ParseTreeNode replacement, ParseTreeNode child) {
     createMutation().replaceChild(replacement, child).execute();
   }
 
   public void insertBefore(ParseTreeNode toAdd, ParseTreeNode before) {
     createMutation().insertBefore(toAdd, before).execute();
+  }
+
+  public void appendChild(ParseTreeNode toAppend) {
+    insertBefore(toAppend, null);
   }
 
   public void removeChild(ParseTreeNode toRemove) {
@@ -141,16 +105,21 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
   public Mutation createMutation() { return new MutationImpl(); }
 
   @SuppressWarnings("unchecked")
-  private void setChild(int i, AbstractParseTreeNode<?> child) {
+  private void setChild(int i, ParseTreeNode child) {
     children.set(i, (T) child);
   }
 
   @SuppressWarnings("unchecked")
-  private void addChild(int i, AbstractParseTreeNode<?> child) {
+  private void addChild(int i, ParseTreeNode child) {
     children.add(i, (T) child);
   }
 
-  private int indexOf(AbstractParseTreeNode<?> child) {
+  private void copyOnWrite() {
+    children = new ArrayList<T>(children);
+    childrenExtern = Collections.<T>unmodifiableList(children);
+  }
+
+  private int indexOf(ParseTreeNode child) {
     return children.indexOf(child);
   }
 
@@ -165,7 +134,6 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
    * information about the troublesome node.</p>
    */
   protected void childrenChanged() {
-    childrenExtern = Collections.<T>unmodifiableList(children);
     if (children.contains(null)) { throw new NullPointerException(); }
   }
 
@@ -231,6 +199,16 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
     return sb.toString();
   }
 
+  public String toStringDeep() {
+    StringBuilder sb = new StringBuilder();
+    try {
+      formatTree(new MessageContext(), sb);
+    } catch (IOException ex) {
+      throw new AssertionError("StringBuilders shouldn't throw IOExceptions");
+    }
+    return sb.toString();
+  }
+
   @Deprecated
   public final boolean equivalentTo(ParseTreeNode that) {
     Object valueA = this.getValue(), valueB = that.getValue();
@@ -250,77 +228,99 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
     return true;
   }
 
+  private enum TraversalType { PREORDER, POSTORDER; }
 
-  public boolean acceptPreOrder(Visitor v) {
-    AbstractParseTreeNode<?> oldParent = this.parent,
-                               oldNext = this.nextSibling;
-    if (!v.visit(this)) { return false; }
+  private boolean visitChildren(
+       Visitor v, AncestorChain<?> ancestors, TraversalType traversalType) {
+    if (this.children.isEmpty()) { return true; }
 
-    // Descend into the replacement's children.
-    // Handle the case where v.visit() replaces this with another, inserts
-    // another following, or deletes the node or a following node.
-    if (oldParent == this.parent && oldNext == this.nextSibling) {
-      // Not removed or replaced, so recurse to children.
-      // This loop is complicated because it needs to survive mutations to the
-      // child list.
-      if (!this.childrenExtern.isEmpty()) {
-        AbstractParseTreeNode<?> child =
-          (AbstractParseTreeNode<?>) this.childrenExtern.get(0);
-        do {
-          AbstractParseTreeNode<?> next = child.nextSibling;
-          child.acceptPreOrder(v);
-          child = next;
-        } while (null != child);
+    boolean result = true;
+    // This loop is complicated because it needs to survive mutations to the
+    // child list.
+    int n = this.children.size();
+    List<? extends ParseTreeNode> childrenCache = this.children;
+
+    ParseTreeNode next = childrenCache.get(0);
+    childLoop:
+    for (int i = 0; i < childrenCache.size(); ++i) {
+      if (childrenCache != this.children) {
+        // Used lastIndexOf so we make progress in case a child is on the
+        // children list multiple times.
+        int j = this.children.lastIndexOf(next);
+        if (j < 0) {
+          // Try to find the next one to use by looking at children we've
+          // already visited.
+          for (int k = i; --k >= 0;) {
+            j = this.children.lastIndexOf(childrenCache.get(k));
+            if (j >= 0) { break; }
+          }
+          if (j >= 0 && j < this.children.size()) {
+            ++j;  // Add one since we don't want to reprocess childrenCache[k].
+          } else {
+            // Check if children from the cached list that we haven't
+            // processed yet are still in the new list.
+            for (int k = i + 1; k < childrenCache.size(); ++k) {
+              j = this.children.lastIndexOf(childrenCache.get(k));
+              if (j >= 0) { break; }
+            }
+            // No children left to process.
+            if (j < 0) { break childLoop; }
+          }
+        }
+        i = j;
+        childrenCache = this.children;
+        next = childrenCache.get(i);
+      }
+
+      ParseTreeNode child = next;
+      next = (i + 1 < childrenCache.size() ? childrenCache.get(i + 1) : null);
+      switch (traversalType) {
+        case PREORDER:
+          child.acceptPreOrder(v, ancestors);
+          break;
+        case POSTORDER:
+          if (!child.acceptPostOrder(v, ancestors)) {
+            result = false;
+            break childLoop;
+          }
+          break;
       }
     }
+    return result;
+  }
+
+  private boolean stillInParent(AncestorChain<?> ancestors) {
+    // If ancestors is empty, then it can't have been removed from its parent
+    // by the Visitor unless the visitor has some handle to the parent through
+    // another mechanism.
+    return ancestors == null || ancestors.node.children().contains(this);
+  }
+
+  public final boolean acceptPreOrder(Visitor v, AncestorChain<?> ancestors) {
+    ancestors = new AncestorChain<AbstractParseTreeNode<T>>(ancestors, this);
+    if (!v.visit(ancestors)) { return false; }
+
+    // Handle the case where v.visit() replaces this with another, inserts
+    // another following, or deletes the node or a following node.
+    if (!stillInParent(ancestors.parent)) { return true; }
+
+    // Not removed or replaced, so recurse to children.
+    visitChildren(v, ancestors, TraversalType.PREORDER);
     return true;
   }
 
-  public boolean acceptPostOrder(Visitor v) {
-    // This loop is complicated because it needs to survive mutations to the
-    // child list.
-    if (!childrenExtern.isEmpty()) {
-      AbstractParseTreeNode<?> child =
-        (AbstractParseTreeNode<?>) childrenExtern.get(0);
-      do {
-        AbstractParseTreeNode<?> next = child.nextSibling;
-        if (!child.acceptPostOrder(v)) { return false; }
-        child = next;
-      } while (null != child);
+  public final boolean acceptPostOrder(Visitor v, AncestorChain<?> ancestors) {
+    ancestors = new AncestorChain<AbstractParseTreeNode<T>>(ancestors, this);
+    // Descend into this node's children.
+    if (!visitChildren(v, ancestors, TraversalType.POSTORDER)) {
+      return false;
     }
 
     // If this node has been orphaned, don't visit it...
-    // TODO(ihab): Do a more consistent refactoring to cover this case.
-    if (this.parent != null) {
-      return v.visit(this);
+    if (stillInParent(ancestors.parent)) {
+      return v.visit(ancestors);
     }
 
-    return true;
-  }
-
-  public final boolean acceptBreadthFirst(Visitor v) {
-    List<AbstractParseTreeNode> stack = new LinkedList<AbstractParseTreeNode>();
-    stack.add(this);
-    do {
-      AbstractParseTreeNode<?> n = stack.remove(0);
-
-      do {
-        AbstractParseTreeNode<?> oldParent = n.parent,
-                                      next = n.nextSibling;
-
-        if (!v.visit(n)) { return false; }
-
-        if (n.parent == oldParent && n.nextSibling == next
-            && !n.childrenExtern.isEmpty()) {
-          AbstractParseTreeNode child =
-            (AbstractParseTreeNode) n.childrenExtern.get(0);
-          stack.add(child);
-        }
-
-        n = next;
-      } while (null != n);
-
-    } while (!stack.isEmpty());
     return true;
   }
 
@@ -338,27 +338,37 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
 
     public Mutation replaceChild(
         ParseTreeNode replacement, ParseTreeNode child) {
-      changes.add(
-          new Replacement((AbstractParseTreeNode) replacement,
-                          (AbstractParseTreeNode) child));
+      changes.add(new Replacement(replacement, child));
       return this;
     }
 
     public Mutation insertBefore(ParseTreeNode toAdd, ParseTreeNode before) {
-      changes.add(
-          new Insertion((AbstractParseTreeNode) toAdd,
-                        (AbstractParseTreeNode) before));
+      changes.add(new Insertion(toAdd, before));
+      return this;
+    }
+
+    public Mutation appendChild(ParseTreeNode toAppend) {
+      return insertBefore(toAppend, null);
+    }
+
+    public Mutation appendChildren(Iterable<? extends ParseTreeNode> nodes) {
+      for (ParseTreeNode node : nodes) {
+        changes.add(new Insertion(node, null));
+      }
       return this;
     }
 
     public Mutation removeChild(ParseTreeNode toRemove) {
-      changes.add(new Removal((AbstractParseTreeNode) toRemove));
+      changes.add(new Removal(toRemove));
       return this;
     }
 
     @SuppressWarnings("finally")
     public void execute() {
-      for (Change change : changes) { change.apply(); }
+      boolean copied = false;
+      for (Change change : changes) {
+        copied = change.apply(copied);
+      }
       try {
         childrenChanged();
       } catch (RuntimeException ex) {
@@ -383,8 +393,12 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
     /**
      * Change the parse tree and store enough information so that rollback can
      * reverse it.
+     * @param copied true if the children list has already been copied by an
+     *     operation that requires copy on write.
+     * @return true if the children list has been copied by an operation
+     *     that requires copy on write.
      */
-    abstract void apply();
+    abstract boolean apply(boolean copied);
 
     /**
      * Rolls back the change effected by apply, and can assume that apply
@@ -395,29 +409,19 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
   }
 
   private final class Replacement extends Change {
-    private final AbstractParseTreeNode<?> replacement;
-    private final AbstractParseTreeNode<?> replaced;
+    private final ParseTreeNode replacement;
+    private final ParseTreeNode replaced;
 
-    Replacement(AbstractParseTreeNode<?> replacement,
-                AbstractParseTreeNode<?> replaced) {
+    Replacement(ParseTreeNode replacement, ParseTreeNode replaced) {
       this.replacement = replacement;
       this.replaced = replaced;
     }
 
-    void apply() {
+    @Override
+    boolean apply(boolean copied) {
       final AbstractParseTreeNode<T> owner = AbstractParseTreeNode.this;
-      // Make sure that it's not part of a tree already
-      if (replacement.parent != null) {
-        throw new IllegalArgumentException("Node already part of a parse tree");
-      }
-      // Make sure that adding replacement wouldn't introduce cycles.
-      // Since we know that replacement.parent == null, we know that replacement
-      // is a root, so we compare the replacement against the root of the tree
-      // that contains this node.
-      if (owner.getRoot() == replacement) {
-        throw new IllegalArgumentException(
-            "Adding the node would introduce cycles in the parse tree.");
-      }
+
+      if (!copied) { copyOnWrite(); }
 
       // Find where to insert
       int childIndex = indexOf(replaced);
@@ -426,27 +430,19 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
             "Node to replace is not a child of this node.");
       }
 
+      if (indexOf(replacement) >= 0) {
+        throw new NoSuchElementException(
+            "Node to add is already a child of this node.");
+      }
+
       // Update the child list
       backupIndex = childIndex;
       setChild(childIndex, replacement);
 
-      // Update the old node's state and insert replacement into the sibling
-      // list
-      replacement.parent = owner;
-      replaced.parent = null;
-      if (null != (replacement.prevSibling = replaced.prevSibling)) {
-        replacement.prevSibling.nextSibling = replacement;
-        replaced.prevSibling = null;
-      }
-      if (null != (replacement.nextSibling = replaced.nextSibling)) {
-        replacement.nextSibling.prevSibling = replacement;
-        replaced.nextSibling = null;
-      }
-
-      // Make sure that the replacement is parentified.
-      replacement.parentify();
+      return true;
     }
 
+    @Override
     void rollback() {
       final AbstractParseTreeNode<T> owner = AbstractParseTreeNode.this;
       int childIndex = backupIndex;
@@ -456,31 +452,20 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
       if (children.contains(replaced)) { return; }
 
       setChild(childIndex, replaced);  // roll back
-
-      if (owner != replaced.parent) {
-        replaced.parent = owner;
-        replacement.parent = null;
-        if (null != (replaced.prevSibling = replacement.prevSibling)) {
-          replaced.prevSibling.nextSibling = replaced;
-          replacement.prevSibling = null;
-        }
-        if (null != (replaced.nextSibling = replacement.nextSibling)) {
-          replaced.nextSibling.prevSibling = replaced;
-          replacement.nextSibling = null;
-        }
-        replaced.parentify();
-      }
     }
   }
 
   private final class Removal extends Change {
-    private final AbstractParseTreeNode<?> toRemove;
+    private final ParseTreeNode toRemove;
 
-    Removal(AbstractParseTreeNode<?> toRemove) {
+    Removal(ParseTreeNode toRemove) {
       this.toRemove = toRemove;
     }
 
-    void apply() {
+    @Override
+    boolean apply(boolean copied) {
+      if (!copied) { copyOnWrite(); }
+
       // Find which to remove
       int childIndex = indexOf(toRemove);
       if (childIndex < 0) {
@@ -491,68 +476,44 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
       backupIndex = childIndex;
       children.remove(childIndex);
 
-      // Update the old node's state and insert replacement into the sibling
-      // list
-      if (toRemove.nextSibling != null) {
-        toRemove.nextSibling.prevSibling = toRemove.prevSibling;
-      }
-      if (toRemove.prevSibling != null) {
-        toRemove.prevSibling.nextSibling = toRemove.nextSibling;
-      }
-      toRemove.parent = toRemove.nextSibling = toRemove.prevSibling = null;
+      return true;
     }
 
+    @Override
     void rollback() {
       final AbstractParseTreeNode<T> owner = AbstractParseTreeNode.this;
 
       if (children.contains(toRemove)) { return; }
 
-      int childIndex = backupIndex;
-      addChild(childIndex, toRemove);
-      toRemove.parent = owner;
-      if (childIndex > 0) {
-        AbstractParseTreeNode<?> prev =
-          (AbstractParseTreeNode<?>) children.get(childIndex - 1);
-        toRemove.prevSibling = prev;
-        toRemove.prevSibling.nextSibling = toRemove;
-      }
-      if (childIndex + 1 < children.size()) {
-        AbstractParseTreeNode<?> next =
-          (AbstractParseTreeNode<?>) children.get(childIndex + 1);
-        toRemove.nextSibling = next;
-        toRemove.nextSibling.prevSibling = toRemove;
-      }
+      addChild(backupIndex, toRemove);
     }
   }
 
   private final class Insertion extends Change {
-    private final AbstractParseTreeNode<?> toAdd;
-    private final AbstractParseTreeNode<?> before;
+    private final ParseTreeNode toAdd;
+    private final ParseTreeNode before;
 
-    Insertion(AbstractParseTreeNode<?> toAdd, AbstractParseTreeNode<?> before) {
+    Insertion(ParseTreeNode toAdd, ParseTreeNode before) {
       this.toAdd = toAdd;
       this.before = before;
     }
 
-    void apply() {
+    @Override
+    boolean apply(boolean copied) {
       final AbstractParseTreeNode<T> owner = AbstractParseTreeNode.this;
 
-      // Make sure that it's not part of a tree already
-      if (toAdd.parent != null) {
-        throw new IllegalArgumentException("Node already part of a parse tree");
-      }
-      // Make sure that adding replacement wouldn't introduce cycles
-      if (toAdd == owner.getRoot()) {
-        throw new IllegalArgumentException(
-            "Adding node to parent would introduce cycles in parse tree");
-      }
-
       // Find where to insert
-      int childIndex = children.size();
-      if (null != before) {
-        childIndex = indexOf(before);
+      int childIndex;
+      if (null == before) {
+        childIndex = children.size();
+      } else {
+        childIndex =  indexOf(before);
         if (childIndex < 0) {
           throw new NoSuchElementException("Child not in parent");
+        }
+        if (!copied) {
+          copyOnWrite();
+          copied = true;
         }
       }
 
@@ -560,42 +521,20 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
       backupIndex = childIndex;
       addChild(childIndex, toAdd);
 
-      // Insert toAdd into the sibling list
-      toAdd.parent = owner;
-      if (null != before) {
-        toAdd.nextSibling = before;
-        if (null != before.prevSibling) {
-          toAdd.prevSibling = before.prevSibling;
-          toAdd.prevSibling.nextSibling = toAdd;
-        }
-        before.prevSibling = toAdd;
-      } else if (childIndex > 0) {
-        toAdd.prevSibling = (AbstractParseTreeNode<T>)
-            children.get(childIndex - 1);
-        toAdd.prevSibling.nextSibling = toAdd;
-      }
-
-      // Make sure that the added node is parentified.
-      toAdd.parentify();
+      return copied;
     }
 
+    @Override
     void rollback() {
       final AbstractParseTreeNode<T> owner = AbstractParseTreeNode.this;
 
       int childIndex = backupIndex;
 
-      AbstractParseTreeNode<T> removed = (AbstractParseTreeNode<T>)
-          children.remove(childIndex);
-      assert removed == toAdd;
-      assert toAdd.parent == owner;
-
-      if (toAdd.nextSibling != null) {
-        toAdd.nextSibling.prevSibling = toAdd.prevSibling;
+      ParseTreeNode removed = children.remove(childIndex);
+      if (removed != toAdd) {
+        setChild(childIndex, removed);
+        throw new IllegalStateException();
       }
-      if (toAdd.prevSibling != null) {
-        toAdd.prevSibling.nextSibling = toAdd.nextSibling;
-      }
-      toAdd.parent = toAdd.nextSibling = toAdd.prevSibling = null;
     }
   }
 }

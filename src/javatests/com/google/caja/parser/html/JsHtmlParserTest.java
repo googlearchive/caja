@@ -17,8 +17,9 @@ package com.google.caja.parser.html;
 import com.google.caja.util.TestUtil;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageContext;
-import com.google.caja.parser.Visitor;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Statement;
 
 import java.io.IOException;
@@ -41,7 +42,8 @@ public class JsHtmlParserTest extends TestCase {
     parseTree.format(mc, output);
 
     parseTree.acceptPreOrder(new Visitor() {
-        public boolean visit(ParseTreeNode n) {
+        public boolean visit(AncestorChain<?> ancestors) {
+          ParseTreeNode n = ancestors.node;
           if (null == n.getFilePosition()) {
             StringBuilder sb = new StringBuilder();
             try {
@@ -54,7 +56,7 @@ public class JsHtmlParserTest extends TestCase {
           }
           return true;
         }
-      });
+      }, null);
 
     // check that parse tree matches
     String golden = TestUtil.readResource(getClass(), "htmlparsergolden1.txt");

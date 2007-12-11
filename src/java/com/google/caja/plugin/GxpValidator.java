@@ -17,6 +17,7 @@ package com.google.caja.plugin;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.html.HTML;
 import com.google.caja.html.HTML4;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.reporting.MessagePart;
@@ -41,7 +42,8 @@ public final class GxpValidator {
     this.mq = mq;
   }
 
-  public boolean validate(DomTree t) {
+  public boolean validate(AncestorChain<DomTree> tChain) {
+    DomTree t = tChain.node;
     boolean valid = true;
     switch (t.getType()) {
     case TAGBEGIN:
@@ -56,7 +58,7 @@ public final class GxpValidator {
             DomTree.Value nameT = attribs.get("name");
             if (null == nameT) {
               String parentTagName = "{unknown}";
-              ParseTreeNode parent = t.getParent();
+              ParseTreeNode parent = tChain.getParentNode();
               if (parent instanceof DomTree.Tag) {
                 parentTagName = ((DomTree.Tag) parent).getValue();
               }
@@ -71,7 +73,7 @@ public final class GxpValidator {
             HTML.Attribute a = HTML4.lookupAttribute(name);
             if (null == a) {
               String parentTagName = "{unknown}";
-              ParseTreeNode parent = t.getParent();
+              ParseTreeNode parent = tChain.getParentNode();
               if (parent instanceof DomTree.Tag) {
                 parentTagName = ((DomTree.Tag) parent).getValue();
               }
@@ -104,7 +106,7 @@ public final class GxpValidator {
       HTML.Attribute a = HTML4.lookupAttribute(attrName.toUpperCase());
       if (null == a) {
         String tagName = "{unknown}";
-        ParseTreeNode parent = t.getParent();
+        ParseTreeNode parent = tChain.getParentNode();
         if (parent instanceof DomTree.Tag) {
           tagName = ((DomTree.Tag) parent).getValue();
         }
@@ -126,7 +128,7 @@ public final class GxpValidator {
       throw new AssertionError(t.getType().toString());
     }
     for (DomTree child : t.children()) {
-      valid &= validate(child);
+      valid &= validate(new AncestorChain<DomTree>(tChain, child));
     }
     return valid;
   }

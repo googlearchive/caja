@@ -15,6 +15,7 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
@@ -59,7 +60,7 @@ final class CssRewriter {
    * @param t non null.  modified in place.
    * @return true if the resulting tree is safe.
    */
-  boolean rewrite(CssTree t) {
+  boolean rewrite(AncestorChain<CssTree> t) {
     boolean valid = true;
     // Once at the beginning, and again at the end.
     valid &= removeUnsafeConstructs(t);
@@ -69,8 +70,6 @@ final class CssRewriter {
     // declarations
     removeEmptyRuleSets(t);
     simplifyExprs(t);
-    collapseDeclarations(t);
-    collapseRulesets(t);
     if (null != meta.namespacePrefix) { namespaceIdents(t); }
     // Do this again to make sure no earlier changes introduce unsafe constructs
     valid &= removeUnsafeConstructs(t);
@@ -80,24 +79,26 @@ final class CssRewriter {
     return valid;
   }
 
-  private void removeEmptyDeclarations(CssTree t) {
-    t.acceptPreOrder(new Visitor() {
-        public boolean visit(ParseTreeNode node) {
+  private void removeEmptyDeclarations(AncestorChain<CssTree> t) {
+    t.node.acceptPreOrder(new Visitor() {
+        public boolean visit(AncestorChain<?> ancestors) {
+          ParseTreeNode node = ancestors.node;
           if (!(node instanceof CssTree.Declaration)) { return true; }
           CssTree.Declaration decl = (CssTree.Declaration) node;
           if (null == decl.getProperty()) {
-            ParseTreeNode parent = decl.getParent();
+            ParseTreeNode parent = ancestors.getParentNode();
             if (parent instanceof MutableParseTreeNode) {
               ((MutableParseTreeNode) parent).removeChild(decl);
             }
           }
           return false;
         }
-      });
+      }, t.parent);
   }
-  private void removeEmptyRuleSets(CssTree t) {
-    t.acceptPreOrder(new Visitor() {
-        public boolean visit(ParseTreeNode node) {
+  private void removeEmptyRuleSets(AncestorChain<CssTree> t) {
+    t.node.acceptPreOrder(new Visitor() {
+        public boolean visit(AncestorChain<?> ancestors) {
+          ParseTreeNode node = ancestors.node;
           if (!(node instanceof CssTree.RuleSet)) { return true; }
           CssTree.RuleSet rset = (CssTree.RuleSet) node;
           List<? extends CssTree> children = rset.children();
@@ -105,53 +106,44 @@ final class CssRewriter {
               || (children.get(children.size() - 1)
                   instanceof CssTree.Selector)) {
             // No declarations, so get rid of it.
-            ParseTreeNode parent = rset.getParent();
+            ParseTreeNode parent = ancestors.getParentNode();
             if (parent instanceof MutableParseTreeNode) {
               ((MutableParseTreeNode) parent).removeChild(rset);
             }
           }
           return false;
         }
-      });
+      }, t.parent);
   }
-  private void simplifyExprs(CssTree t) {
-    t.acceptPreOrder(new Visitor() {
-      public boolean visit(ParseTreeNode node) {
-        if (!(node instanceof CssTree.Term)) { return true; }
-        // #ffffff -> #fff
-        // lengths such as 0 0 0 0 -> 0
-        // rgb(0, 0, 0) -> #000
-        // TODO
-        return true;
-      }
-    });
+  private void simplifyExprs(AncestorChain<CssTree> t) {
+    t.node.acceptPreOrder(new Visitor() {
+        public boolean visit(AncestorChain<?> ancestors) {
+          ParseTreeNode node = ancestors.node;
+          if (!(node instanceof CssTree.Term)) { return true; }
+          // #ffffff -> #fff
+          // lengths such as 0 0 0 0 -> 0
+          // rgb(0, 0, 0) -> #000
+          // TODO
+          return true;
+        }
+      }, t.parent);
   }
-  private void collapseRulesets(@SuppressWarnings("unused") CssTree t) {
-    // Walk over the declarations, sort the properties, use them to generate a
-    // fingerprint as a key into a mapping from fingerprints -> declaration
-    // lists.
-    // For each list with more than 1 declaration, pull all the selectors into
-    // the first declaration and get rid of the rest.
-    // TODO(msamuel): implement
-  }
-  private void collapseDeclarations(@SuppressWarnings("unused") CssTree t) {
-    // If the same set of selectors appears in multiple places, collapse the
-    // properties
-    // TODO(msamuel): implement
-  }
-  private void namespaceIdents(CssTree t) {
+  private void namespaceIdents(AncestorChain<CssTree> t) {
     // Namespace classes and ids
-    t.acceptPreOrder(new Visitor() {
-        public boolean visit(ParseTreeNode node) {
+    t.node.acceptPreOrder(new Visitor() {
+        public boolean visit(AncestorChain<?> ancestors) {
+          ParseTreeNode node = ancestors.node;
           if (!(node instanceof CssTree.SimpleSelector)) { return true; }
           CssTree.SimpleSelector ss = (CssTree.SimpleSelector) node;
-          for (CssTree child : ss.children()) {
+          List<? extends CssTree> children = ss.children();
+          for (int i = 0, n = children.size(); i < n; ++i) {
+            CssTree child = children.get(i);
             if (child instanceof CssTree.ClassLiteral) {
               CssTree.ClassLiteral classLit = (CssTree.ClassLiteral) child;
-              if (classLit.getPrevSibling() instanceof CssTree.IdentLiteral
+              CssTree prevSibling = i > 0 ? children.get(i - 1) : null;
+              if (prevSibling instanceof CssTree.IdentLiteral
                   && "BODY".equalsIgnoreCase(
-                      ((CssTree.IdentLiteral) classLit.getPrevSibling())
-                      .getValue())) {
+                      ((CssTree.IdentLiteral) prevSibling).getValue())) {
                 // Don't rename a class if it applies to BODY.  See the code
                 // below that allows body.ie6 for browser handling.
                 return true;
@@ -167,16 +159,17 @@ final class CssRewriter {
           }
           return true;
         }
-      });
+      }, t.parent);
     // Make sure that each selector prefixed by a root rule
-    t.acceptPreOrder(new Visitor() {
-        public boolean visit(ParseTreeNode node) {
+    t.node.acceptPreOrder(new Visitor() {
+        public boolean visit(AncestorChain<?> ancestors) {
+          ParseTreeNode node = ancestors.node;
           if (!(node instanceof CssTree.Selector)) { return true; }
           CssTree.Selector sel = (CssTree.Selector) node;
           if (sel.children().isEmpty()
               || !(sel.children().get(0) instanceof CssTree.SimpleSelector)) {
             // Remove from parent
-            ParseTreeNode parent = sel.getParent();
+            ParseTreeNode parent = ancestors.getParentNode();
             if (parent instanceof MutableParseTreeNode) {
               ((MutableParseTreeNode) parent).removeChild(sel);
             }
@@ -187,11 +180,11 @@ final class CssRewriter {
             // it so that it remains topmost
             if ("BODY".equalsIgnoreCase(first.getElementName())) {
               // the next part had better be a DESCENDANT combinator
-              ParseTreeNode it = first.getNextSibling();
+              ParseTreeNode it = sel.children().get(1);
               if (it instanceof CssTree.Combination
                   && (CssTree.Combinator.DESCENDANT
                       == ((CssTree.Combination) it).getCombinator())) {
-                first = (CssTree.SimpleSelector) it.getNextSibling();
+                first = (CssTree.SimpleSelector) sel.children().get(2);
               }
             }
 
@@ -217,20 +210,21 @@ final class CssRewriter {
           }
           return false;
         }
-      });
+      }, t.parent);
   }
 
   private static final Set<String> ALLOWED_PSEUDO_SELECTORS =
       new HashSet<String>(Arrays.asList(
           "link", "visited", "hover", "active", "first-child", "first-letter"
           ));
-  boolean removeUnsafeConstructs(CssTree t) {
+  boolean removeUnsafeConstructs(AncestorChain<CssTree> t) {
     final Switch rewrote = new Switch();
 
     // 1) Check that all classes, ids, property names, etc. are valid
     //    css identifiers.
-    t.acceptPreOrder(new Visitor() {
-        public boolean visit(ParseTreeNode node) {
+    t.node.acceptPreOrder(new Visitor() {
+        public boolean visit(AncestorChain<?> ancestors) {
+          ParseTreeNode node = ancestors.node;
           if (node instanceof CssTree.SimpleSelector) {
             for (CssTree child : ((CssTree.SimpleSelector) node).children()) {
               if (child instanceof CssTree.Pseudo) {
@@ -255,7 +249,7 @@ final class CssRewriter {
               mq.addMessage(PluginMessageType.UNSAFE_CSS_IDENTIFIER,
                             p.getFilePosition(),
                             MessagePart.Factory.valueOf(p.getPropertyName()));
-              declarationFor(p).getAttributes().set(
+              declarationFor(ancestors).getAttributes().set(
                   CssValidator.INVALID, Boolean.TRUE);
               rewrote.set();
               return false;
@@ -263,19 +257,20 @@ final class CssRewriter {
           }
           return true;
         }
-      });
+      }, t.parent);
 
     // 2) Ban content properties, and attr pseudo selectors, and any other
     //    pseudo selectors that don't match the whitelist
-    t.acceptPreOrder(new Visitor() {
-        public boolean visit(ParseTreeNode node) {
+    t.node.acceptPreOrder(new Visitor() {
+        public boolean visit(AncestorChain<?> ancestors) {
+          ParseTreeNode node = ancestors.node;
           if (node instanceof CssTree.Property) {
             if ("content".equalsIgnoreCase(
                 ((CssTree.Property) node).getPropertyName())) {
               mq.addMessage(PluginMessageType.UNSAFE_CSS_PROPERTY,
                             node.getFilePosition(),
                             MessagePart.Factory.valueOf("content"));
-              declarationFor(node).getAttributes().set(
+              declarationFor(ancestors).getAttributes().set(
                   CssValidator.INVALID, Boolean.TRUE);
               rewrote.set();
             }
@@ -308,27 +303,28 @@ final class CssRewriter {
             if (remove) {
               // Delete the containing selector, since otherwise we'd broaden
               // the rule.
-              selectorFor(node).getAttributes().set(
+              selectorFor(ancestors).getAttributes().set(
                   CssValidator.INVALID, Boolean.TRUE);
             }
           }
           return true;
         }
-      });
+      }, t.parent);
     // 3) Remove any properties and attributes that didn't validate
-    t.acceptPreOrder(new Visitor() {
-        public boolean visit(ParseTreeNode node) {
+    t.node.acceptPreOrder(new Visitor() {
+        public boolean visit(AncestorChain<?> ancestors) {
+          ParseTreeNode node = ancestors.node;
           if (node instanceof CssTree.Property) {
             if (Boolean.TRUE.equals(node.getAttributes().get(
                                         CssValidator.INVALID))) {
-              declarationFor(node).getAttributes().set(
+              declarationFor(ancestors).getAttributes().set(
                   CssValidator.INVALID, Boolean.TRUE);
               rewrote.set();
             }
           } else if (node instanceof CssTree.Attrib) {
             if (Boolean.TRUE.equals(node.getAttributes().get(
                                         CssValidator.INVALID))) {
-              simpleSelectorFor(node).getAttributes().set(
+              simpleSelectorFor(ancestors).getAttributes().set(
                   CssValidator.INVALID, Boolean.TRUE);
               rewrote.set();
             }
@@ -366,7 +362,7 @@ final class CssRewriter {
 
             if (remove) {
               // condemn the containing declaration
-              CssTree.Declaration decl = declarationFor(term);
+              CssTree.Declaration decl = declarationFor(ancestors);
               if (null != decl) {
                 if (!decl.getAttributes().is(CssValidator.INVALID)) {
                   if (null != removeMsg) { mq.getMessages().add(removeMsg); }
@@ -377,43 +373,46 @@ final class CssRewriter {
           }
           return true;
         }
-      });
+      }, t.parent);
 
     // 4) Remove invalid nodes
-    t.acceptPreOrder(new Visitor() {
-        public boolean visit(ParseTreeNode node) {
+    t.node.acceptPreOrder(new Visitor() {
+        public boolean visit(AncestorChain<?> ancestors) {
+          ParseTreeNode node = ancestors.node;
           if (node.getAttributes().is(CssValidator.INVALID)) {
-            ((MutableParseTreeNode) node.getParent()).removeChild(node);
+            ((MutableParseTreeNode) ancestors.parent.node).removeChild(node);
             return false;
           }
           return true;
         }
-      });
+      }, t.parent);
 
     // 5) Cleanup.  Remove any rulesets with empty selectors
     // Since this is a post order traversal, we will first remove empty
     // selectors, and then consider any rulesets that have become empty due to
     // a lack of selectors.
-    t.acceptPostOrder(new Visitor() {
-        public boolean visit(ParseTreeNode node) {
+    t.node.acceptPostOrder(new Visitor() {
+        public boolean visit(AncestorChain<?> ancestors) {
+          ParseTreeNode node = ancestors.node;
           if ((node instanceof CssTree.Selector && node.children().isEmpty())
               || (node instanceof CssTree.RuleSet
                   && (node.children().isEmpty()
                       || node.children().get(0) instanceof CssTree.Declaration))
               ) {
-            ((MutableParseTreeNode) node.getParent()).removeChild(node);
+            ((MutableParseTreeNode) ancestors.parent.node).removeChild(node);
             return false;
           }
           return true;
         }
-      });
+      }, t.parent);
 
     return !rewrote.get();
   }
 
-  private void translateUrls(CssTree t) {
-      t.acceptPreOrder(new Visitor() {
-          public boolean visit(ParseTreeNode node) {
+  private void translateUrls(AncestorChain<CssTree> t) {
+      t.node.acceptPreOrder(new Visitor() {
+          public boolean visit(AncestorChain<?> ancestors) {
+            ParseTreeNode node = ancestors.node;
             if (node instanceof CssTree.Term
                 && CssPropertyPartType.URI ==
                 node.getAttributes().get(
@@ -434,31 +433,32 @@ final class CssRewriter {
             }
             return true;
           }
-        });
+        }, t.parent);
   }
 
-  private static CssTree.Declaration declarationFor(ParseTreeNode node) {
-    for (ParseTreeNode p = node; null != p; p = p.getParent()) {
-      if (p instanceof CssTree.Declaration) {
-        return (CssTree.Declaration) p;
+  private static CssTree.Declaration declarationFor(AncestorChain<?> chain) {
+    for (AncestorChain<?> c = chain; null != c; c = c.parent) {
+      if (c.node instanceof CssTree.Declaration) {
+        return (CssTree.Declaration) c.node;
       }
     }
     return null;
   }
 
-  private static CssTree.SimpleSelector simpleSelectorFor(ParseTreeNode node) {
-    for (ParseTreeNode p = node; null != p; p = p.getParent()) {
-      if (p instanceof CssTree.SimpleSelector) {
-        return (CssTree.SimpleSelector) p;
+  private static CssTree.SimpleSelector simpleSelectorFor(
+      AncestorChain<?> chain) {
+    for (AncestorChain<?> c = chain; null != c; c = c.parent) {
+      if (c.node instanceof CssTree.SimpleSelector) {
+        return (CssTree.SimpleSelector) c.node;
       }
     }
     return null;
   }
 
-  private static CssTree.Selector selectorFor(ParseTreeNode node) {
-    for (ParseTreeNode p = node; null != p; p = p.getParent()) {
-      if (p instanceof CssTree.Selector) {
-        return (CssTree.Selector) p;
+  private static CssTree.Selector selectorFor(AncestorChain<?> chain) {
+    for (AncestorChain<?> c = chain; null != c; c = c.parent) {
+      if (c.node instanceof CssTree.Selector) {
+        return (CssTree.Selector) c.node;
       }
     }
     return null;

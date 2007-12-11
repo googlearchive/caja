@@ -26,14 +26,13 @@ public final class ThrowStmt extends AbstractStatement<Expression> {
   private Expression exception;
 
   public ThrowStmt(Expression exception) {
-    this.children.add(exception);
-    childrenChanged();
+    createMutation().appendChild(exception).execute();
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.exception = children.get(0);
+    this.exception = children().get(0);
   }
 
   @Override

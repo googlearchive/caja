@@ -24,7 +24,9 @@ import com.google.caja.reporting.RenderContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import junit.framework.TestCase;
 
@@ -68,7 +70,6 @@ public class ParseTreeNodeTest extends TestCase {
     LabeledStmtWrapper b5 = new LabeledStmtWrapper(
         "$5", new Block(Arrays.asList(b[6], b[7], b[8])));
     root = new LabeledStmtWrapper("$0", new Block(Arrays.asList(b1, b5)));
-    root.parentify();
 
     b9 = new LabeledStmtWrapper(
         "$9", new Block(Arrays.asList(b[10], b[11], b[12])));
@@ -128,45 +129,30 @@ public class ParseTreeNodeTest extends TestCase {
 
   public void testVisitPreOrder() throws Exception {
     IntEnqueuer ie = new IntEnqueuer();
-    root.acceptPreOrder(ie);
+    root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4, 5, 6, 7, 8]", ie.getNums().toString());
   }
 
   public void testVisitPreOrderReturnHandling() throws Exception {
     IntEnqueuerExcept ie = new IntEnqueuerExcept(6);
-    root.acceptPreOrder(ie);
+    root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4, 5, 6, 7, 8]", ie.getNums().toString());
 
     ie = new IntEnqueuerExcept(1);
-    root.acceptPreOrder(ie);
+    root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 5, 6, 7, 8]", ie.getNums().toString());
   }
 
   public void testVisitPostOrder() throws Exception {
     IntEnqueuer ie = new IntEnqueuer();
-    root.acceptPostOrder(ie);
-    // TODO(ihab): Better refactor AbstractParseTreeNode.acceptPostOrder to
-    // handle case of visiting orphaned parent.
-    // assertEquals("[2, 3, 4, 1, 6, 7, 8, 5, 0]", ie.getNums().toString());
-    assertEquals("[2, 3, 4, 1, 6, 7, 8, 5]", ie.getNums().toString());
+    root.acceptPostOrder(ie, null);
+    assertEquals("[2, 3, 4, 1, 6, 7, 8, 5, 0]", ie.getNums().toString());
   }
 
   public void testVisitPostOrderReturnHandling() throws Exception {
     IntEnqueuerExcept ie = new IntEnqueuerExcept(6);
-    root.acceptPostOrder(ie);
+    root.acceptPostOrder(ie, null);
     assertEquals("[2, 3, 4, 1, 6]", ie.getNums().toString());
-  }
-
-  public void testVisitBreadthFirst() throws Exception {
-    IntEnqueuer ie = new IntEnqueuer();
-    root.acceptBreadthFirst(ie);
-    assertEquals("[0, 1, 5, 2, 3, 4, 6, 7, 8]", ie.getNums().toString());
-  }
-
-  public void testVisitBreadthFirstReturnHandling() throws Exception {
-    IntEnqueuerExcept ie = new IntEnqueuerExcept(6);
-    root.acceptBreadthFirst(ie);
-    assertEquals("[0, 1, 5, 2, 3, 4, 6]", ie.getNums().toString());
   }
 
   void doReplace() {
@@ -230,22 +216,15 @@ public class ParseTreeNodeTest extends TestCase {
   public void testVisitPreOrderPostReplace() throws Exception {
     doReplace();
     IntEnqueuer ie = new IntEnqueuer();
-    root.acceptPreOrder(ie);
+    root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4, 9, 10, 11, 12]", ie.getNums().toString());
   }
 
   public void testVisitPreorderDoesntDescendIntoReplaced()
       throws Exception {
     IntEnqueuerThatReplaces ie = new IntEnqueuerThatReplaces(5, b9);
-    root.acceptPreOrder(ie);
+    root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4, 5]", ie.getNums().toString());
-  }
-
-  public void testVisitBreadthFirstDoesntDescendIntoReplaced()
-      throws Exception {
-    IntEnqueuerThatReplaces ie = new IntEnqueuerThatReplaces(5, b9);
-    root.acceptBreadthFirst(ie);
-    assertEquals("[0, 1, 5, 2, 3, 4]", ie.getNums().toString());
   }
 
   void doInsert(int before) {
@@ -340,34 +319,22 @@ public class ParseTreeNodeTest extends TestCase {
   public void testVisitPreOrderPostInsert() throws Exception {
     doInsert(5);
     IntEnqueuer ie = new IntEnqueuer();
-    root.acceptPreOrder(ie);
+    root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4, 9, 10, 11, 12, 5, 6, 7, 8]",
                  ie.getNums().toString());
   }
 
   public void testVisitPreorderDoesntDescendIntoInserted() throws Exception {
     IntEnqueuerThatInserts ie = new IntEnqueuerThatInserts(5, b9);
-    root.acceptPreOrder(ie);
+    root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4, 5, 6, 7, 8]",
                  ie.getNums().toString());
   }
 
   public void testVisitPostOrderDoesntDescendIntoInserted() throws Exception {
     IntEnqueuerThatInserts ie = new IntEnqueuerThatInserts(5, b9);
-    root.acceptPostOrder(ie);
-    // TODO(ihab): Better refactor AbstractParseTreeNode.acceptPostOrder to
-    // handle case of visiting orphaned parent.
-    // assertEquals("[2, 3, 4, 1, 6, 7, 8, 5, 0]",
-    //               ie.getNums().toString());
-    assertEquals("[2, 3, 4, 1, 6, 7, 8, 5]",
-                 ie.getNums().toString());
-  }
-
-  public void testVisitBreadthFirstDoesntDescendIntoInserted()
-      throws Exception {
-    IntEnqueuerThatInserts ie = new IntEnqueuerThatInserts(5, b9);
-    root.acceptBreadthFirst(ie);
-    assertEquals("[0, 1, 5, 2, 3, 4, 6, 7, 8]",
+    root.acceptPostOrder(ie, null);
+    assertEquals("[2, 3, 4, 1, 6, 7, 8, 5, 0]",
                  ie.getNums().toString());
   }
 
@@ -435,34 +402,22 @@ public class ParseTreeNodeTest extends TestCase {
   public void testVisitPreOrderPostInsert2() throws Exception {
     doInsert(1);
     IntEnqueuer ie = new IntEnqueuer();
-    root.acceptPreOrder(ie);
+    root.acceptPreOrder(ie, null);
     assertEquals("[0, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8]",
                  ie.getNums().toString());
   }
 
   public void testVisitPreorderDoesntDescendIntoInserted2() throws Exception {
     IntEnqueuerThatInserts ie = new IntEnqueuerThatInserts(1, b9);
-    root.acceptPreOrder(ie);
+    root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4, 5, 6, 7, 8]",
                  ie.getNums().toString());
   }
 
   public void testVisitPostOrderDoesntDescendIntoInserted2() throws Exception {
     IntEnqueuerThatInserts ie = new IntEnqueuerThatInserts(1, b9);
-    root.acceptPostOrder(ie);
-    // TODO(ihab): Better refactor AbstractParseTreeNode.acceptPostOrder to
-    // handle case of visiting orphaned parent.
-    // assertEquals("[2, 3, 4, 1, 6, 7, 8, 5, 0]",
-    //              ie.getNums().toString());
-    assertEquals("[2, 3, 4, 1, 6, 7, 8, 5]",
-                 ie.getNums().toString());
-  }
-
-  public void testVisitBreadthFirstDoesntDescendIntoInserted2()
-      throws Exception {
-    IntEnqueuerThatInserts ie = new IntEnqueuerThatInserts(1, b9);
-    root.acceptBreadthFirst(ie);
-    assertEquals("[0, 1, 5, 2, 3, 4, 6, 7, 8]",
+    root.acceptPostOrder(ie, null);
+    assertEquals("[2, 3, 4, 1, 6, 7, 8, 5, 0]",
                  ie.getNums().toString());
   }
 
@@ -530,7 +485,7 @@ public class ParseTreeNodeTest extends TestCase {
   public void testVisitPreOrderPostInsert3() throws Exception {
     doInsert(-1);
     IntEnqueuer ie = new IntEnqueuer();
-    root.acceptPreOrder(ie);
+    root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]",
                  ie.getNums().toString());
   }
@@ -594,46 +549,27 @@ public class ParseTreeNodeTest extends TestCase {
   public void testVisitPreOrderPostRemove() throws Exception {
     doRemove(5);
     IntEnqueuer ie = new IntEnqueuer();
-    root.acceptPreOrder(ie);
+    root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4]", ie.getNums().toString());
   }
 
   public void testVisitPostOrderPostRemove() throws Exception {
     doRemove(5);
     IntEnqueuer ie = new IntEnqueuer();
-    root.acceptPostOrder(ie);
-    // TODO(ihab): Better refactor AbstractParseTreeNode.acceptPostOrder to
-    // handle case of visiting orphaned parent.
-    // assertEquals("[2, 3, 4, 1, 0]", ie.getNums().toString());
-    assertEquals("[2, 3, 4, 1]", ie.getNums().toString());
-  }
-
-  public void testVisitBreadthFirstPostRemove() throws Exception {
-    doRemove(5);
-    IntEnqueuer ie = new IntEnqueuer();
-    root.acceptBreadthFirst(ie);
-    assertEquals("[0, 1, 2, 3, 4]", ie.getNums().toString());
+    root.acceptPostOrder(ie, null);
+    assertEquals("[2, 3, 4, 1, 0]", ie.getNums().toString());
   }
 
   public void testVisitPreorderDoesntDescendIntoRemoved() throws Exception {
     IntEnqueuerThatRemoves ie = new IntEnqueuerThatRemoves(5);
-    root.acceptPreOrder(ie);
+    root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 2, 3, 4, 5]", ie.getNums().toString());
   }
 
   public void testVisitPostOrderDescendsIntoRemoved() throws Exception {
     IntEnqueuerThatRemoves ie = new IntEnqueuerThatRemoves(5);
-    root.acceptPostOrder(ie);
-    // TODO(ihab): Better refactor AbstractParseTreeNode.acceptPostOrder to
-    // handle case of visiting orphaned parent.
-    // assertEquals("[2, 3, 4, 1, 6, 7, 8, 5, 0]", ie.getNums().toString());
-    assertEquals("[2, 3, 4, 1, 6, 7, 8, 5]", ie.getNums().toString());
-  }
-
-  public void testVisitBreadthFirstDoesntDescendIntoRemoved() throws Exception {
-    IntEnqueuerThatRemoves ie = new IntEnqueuerThatRemoves(5);
-    root.acceptBreadthFirst(ie);
-    assertEquals("[0, 1, 5, 2, 3, 4]", ie.getNums().toString());
+    root.acceptPostOrder(ie, null);
+    assertEquals("[2, 3, 4, 1, 6, 7, 8, 5, 0]", ie.getNums().toString());
   }
 
   public void testFormatTreePostRemove2() throws Exception {
@@ -674,49 +610,60 @@ public class ParseTreeNodeTest extends TestCase {
   public void testVisitPreOrderPostRemove2() throws Exception {
     doRemove(1);
     IntEnqueuer ie = new IntEnqueuer();
-    root.acceptPreOrder(ie);
+    root.acceptPreOrder(ie, null);
     assertEquals("[0, 5, 6, 7, 8]", ie.getNums().toString());
   }
 
   public void testVisitPostOrderPostRemove2() throws Exception {
     doRemove(1);
     IntEnqueuer ie = new IntEnqueuer();
-    root.acceptPostOrder(ie);
-    // TODO(ihab): Better refactor AbstractParseTreeNode.acceptPostOrder to
-    // handle case of visiting orphaned parent.
-    // assertEquals("[6, 7, 8, 5, 0]", ie.getNums().toString());
-    assertEquals("[6, 7, 8, 5]", ie.getNums().toString());
-  }
-
-  public void testVisitBreadthFirstPostRemove2() throws Exception {
-    doRemove(1);
-    IntEnqueuer ie = new IntEnqueuer();
-    root.acceptBreadthFirst(ie);
-    assertEquals("[0, 5, 6, 7, 8]", ie.getNums().toString());
+    root.acceptPostOrder(ie, null);
+    assertEquals("[6, 7, 8, 5, 0]", ie.getNums().toString());
   }
 
   public void testVisitPreorderDoesntDescendIntoRemoved2() throws Exception {
     IntEnqueuerThatRemoves ie = new IntEnqueuerThatRemoves(1);
-    root.acceptPreOrder(ie);
+    root.acceptPreOrder(ie, null);
     assertEquals("[0, 1, 5, 6, 7, 8]", ie.getNums().toString());
   }
 
   public void testVisitPostOrderDescendsIntoRemoved2() throws Exception {
     IntEnqueuerThatRemoves ie = new IntEnqueuerThatRemoves(1);
-    root.acceptPostOrder(ie);
-    // TODO(ihab): Better refactor AbstractParseTreeNode.acceptPostOrder to
-    // handle case of visiting orphaned parent.
-    // assertEquals("[2, 3, 4, 1, 6, 7, 8, 5, 0]", ie.getNums().toString());
-    assertEquals("[2, 3, 4, 1, 6, 7, 8, 5]", ie.getNums().toString());
+    root.acceptPostOrder(ie, null);
+    assertEquals("[2, 3, 4, 1, 6, 7, 8, 5, 0]", ie.getNums().toString());
   }
 
-  public void testVisitBreadthFirstDoesntDescendIntoRemoved2()
-      throws Exception {
-    IntEnqueuerThatRemoves ie = new IntEnqueuerThatRemoves(1);
-    root.acceptBreadthFirst(ie);
-    assertEquals("[0, 1, 5, 6, 7, 8]", ie.getNums().toString());
+  public void testVisitPostOrderProceedsWhenNextDeleted() {
+    doInsert(-1);
+    IntEnqueuerThatMungesSiblings ie = new IntEnqueuerThatMungesSiblings(
+        6, new long[] { 6, 7 }, new long[0]);
+    root.acceptPreOrder(ie, null);
+    //   $5: {
+    //     6;
+    //     7;
+    //     8;
+    //   }
+    assertEquals("[0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12]",
+                 ie.getNums().toString());
   }
 
+  public void testVisitPostOrderProceedsWhenAllNextDeleted1() {
+    doInsert(-1);
+    IntEnqueuerThatMungesSiblings ie = new IntEnqueuerThatMungesSiblings(
+        7, new long[] { 7, 8 }, new long[] { 13 });
+    root.acceptPreOrder(ie, null);
+    assertEquals("[0, 1, 2, 3, 4, 5, 6, 13, 9, 10, 11, 12]",
+                 ie.getNums().toString());
+  }
+
+  public void testVisitPostOrderProceedsWhenAllNextDeleted2() {
+    doInsert(-1);
+    IntEnqueuerThatMungesSiblings ie = new IntEnqueuerThatMungesSiblings(
+        6, new long[] { 6, 7, 8 }, new long[0]);
+    root.acceptPreOrder(ie, null);
+    assertEquals("[0, 1, 2, 3, 4, 5, 9, 10, 11, 12]",
+                 ie.getNums().toString());
+  }
 
   static class IntEnqueuer implements Visitor {
     private List<Number> nums = new ArrayList<Number>();
@@ -734,8 +681,8 @@ public class ParseTreeNodeTest extends TestCase {
       return num;
     }
 
-    public boolean visit(ParseTreeNode n) {
-      processNode(n);
+    public boolean visit(AncestorChain<?> ancestors) {
+      processNode(ancestors.node);
       return true;
     }
 
@@ -749,7 +696,9 @@ public class ParseTreeNodeTest extends TestCase {
       this.exception = exception;
     }
 
-    public boolean visit(ParseTreeNode n) {
+    @Override
+    public boolean visit(AncestorChain<?> ancestors) {
+      ParseTreeNode n = ancestors.node;
       Number num = processNode(n);
       return num == null || exception != num.longValue();
     }
@@ -764,10 +713,13 @@ public class ParseTreeNodeTest extends TestCase {
       this.replacement = replacement;
     }
 
-    public boolean visit(ParseTreeNode n) {
+    @Override
+    public boolean visit(AncestorChain<?> ancestors) {
+      ParseTreeNode n = ancestors.node;
       Number num = processNode(n);
       if (null != num && num.longValue() == toReplace) {
-        ((MutableParseTreeNode) n.getParent()).replaceChild(replacement, n);
+        ((MutableParseTreeNode) ancestors.parent.node)
+            .replaceChild(replacement, n);
       }
       return true;
     }
@@ -782,10 +734,13 @@ public class ParseTreeNodeTest extends TestCase {
       this.toInsert = toInsert;
     }
 
-    public boolean visit(ParseTreeNode n) {
+    @Override
+    public boolean visit(AncestorChain<?> ancestors) {
+      ParseTreeNode n = ancestors.node;
       Number num = processNode(n);
       if (null != num && num.longValue() == this.num) {
-        ((MutableParseTreeNode) n.getParent()).insertBefore(toInsert, n);
+        ((MutableParseTreeNode) ancestors.parent.node)
+            .insertBefore(toInsert, n);
       }
       return true;
     }
@@ -798,10 +753,52 @@ public class ParseTreeNodeTest extends TestCase {
       this.toRemove = toRemove;
     }
 
-    public boolean visit(ParseTreeNode n) {
+    @Override
+    public boolean visit(AncestorChain<?> ancestors) {
+      ParseTreeNode n = ancestors.node;
       Number num = processNode(n);
       if (null != num && num.longValue() == toRemove) {
-        ((MutableParseTreeNode) n.getParent()).removeChild(n);
+        ((MutableParseTreeNode) ancestors.parent.node).removeChild(n);
+      }
+      return true;
+    }
+  }
+
+  static class IntEnqueuerThatMungesSiblings extends IntEnqueuer {
+    private Set<Long> toRemove;
+    private long[] toAdd;
+    private long remover;
+
+    IntEnqueuerThatMungesSiblings(long remover, long[] toRemove, long[] toAdd) {
+      this.remover = remover;
+      this.toRemove = new HashSet<Long>();
+      for (int i = 0; i < toRemove.length; ++i) {
+        this.toRemove.add(toRemove[i]);
+      }
+      this.toAdd = toAdd.clone();
+    }
+
+    public boolean visit(AncestorChain<?> ancestors) {
+      ParseTreeNode n = ancestors.node;
+      processNode(n);
+
+      if (n instanceof ExpressionStmt
+          && (((IntegerLiteral) n.children().get(0)).getValue().longValue()
+              == remover)) {
+        MutableParseTreeNode p = (MutableParseTreeNode) ancestors.parent.node;
+
+        List<ParseTreeNode> siblings
+            = new ArrayList<ParseTreeNode>(p.children());
+        for (ParseTreeNode sibling : siblings) {
+          Number num = ((IntegerLiteral) sibling.children().get(0)).getValue();
+          if (toRemove.contains(num.longValue())) {
+            p.removeChild(sibling);
+          }
+        }
+        for (int i = 0; i < toAdd.length; ++i) {
+          p.insertBefore(
+              new ExpressionStmt(new IntegerLiteral(toAdd[i])), null);
+        }
       }
       return true;
     }

@@ -33,7 +33,8 @@ public class DefaultGadgetRewriterTest extends TestCase {
       return UriCallbackOption.RETRIEVE;
     }
 
-    public InputStream retrieve(URI uri, String mimeType) throws UriCallbackException {
+    public InputStream retrieve(URI uri, String mimeType)
+        throws UriCallbackException {
       throw new UriCallbackException(uri, "Rewrite unsupported");
     }
 
@@ -44,8 +45,10 @@ public class DefaultGadgetRewriterTest extends TestCase {
 
   private GadgetRewriter rewriter;
 
+  @Override
   public void setUp() { rewriter = new DefaultGadgetRewriter(); }
 
+  @Override
   public void tearDown() { rewriter = null; }
 
   public void testBasic() throws Exception {

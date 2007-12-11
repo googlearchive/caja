@@ -41,6 +41,6 @@ public class MessageContext {
    * The synthetic attribute keys which should be output when dumping an AST for
    * debugging.
    */
-  public Set<? extends SyntheticAttributeKey> relevantKeys =
+  public Set<? extends SyntheticAttributeKey<?>> relevantKeys =
       Collections.<SyntheticAttributeKey<?>>emptySet();
 }

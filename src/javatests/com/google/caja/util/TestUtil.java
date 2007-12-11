@@ -128,7 +128,6 @@ public final class TestUtil {
       fileContent = p.parse();
       p.getTokenQueue().expectEmpty();
     }
-    fileContent.parentify();
     return fileContent;
   }
 

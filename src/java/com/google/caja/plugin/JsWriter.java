@@ -183,7 +183,6 @@ final class JsWriter {
     // Wrap in an ExpressionStmt so the expression is guaranteed to have a
     // proper parent
     ExpressionStmt stmt = new ExpressionStmt(e);
-    stmt.parentify();
 
     // Expression will be sanitized in a later pass
 

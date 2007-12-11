@@ -31,7 +31,6 @@ public final class BreakStmt extends AbstractStatement<Statement> {
 
   public BreakStmt(String label) {
     this.label = label;
-    childrenChanged();
   }
 
   @Override

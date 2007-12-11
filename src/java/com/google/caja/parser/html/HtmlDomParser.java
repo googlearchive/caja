@@ -21,13 +21,13 @@ import com.google.caja.lexer.Token;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenType;
 import com.google.caja.lexer.TokenQueue.Mark;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.plugin.HtmlPluginCompiler;
 import com.google.caja.plugin.GxpCompiler;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.parser.ParseTreeNode;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -208,7 +208,7 @@ public final class HtmlDomParser {
       } else if (canonicalTagName.equals("style")) {
         node = c.parseCssString(tagContent, pos);
       }
-      c.addInput(node);
+      c.addInput(new AncestorChain<ParseTreeNode>(node));
     } catch (GxpCompiler.BadContentException ex) {
       throw new ParseException(
           new Message(
@@ -225,7 +225,7 @@ public final class HtmlDomParser {
    * @param start inclusive
    * @param end exclusive
    */
-  private static <T extends TokenType> 
+  private static <T extends TokenType>
       String contentBetween(Mark start, Mark end, TokenQueue<T> q)
       throws ParseException {
     Mark orig = q.mark();
@@ -233,13 +233,13 @@ public final class HtmlDomParser {
     int endChar = q.currentPosition().endCharInFile();
     q.rewind(start);
     int startChar = q.currentPosition().startCharInFile();
-    
+
     StringBuilder sb = new StringBuilder(endChar - startChar);
     while (q.currentPosition().startCharInFile() < endChar) {
-      Token t = q.pop();
+      Token<T> t = q.pop();
       sb.append(t.text);
     }
-    
+
     q.rewind(orig);
     return sb.toString();
   }

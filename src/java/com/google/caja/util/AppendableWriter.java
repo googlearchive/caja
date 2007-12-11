@@ -14,6 +14,7 @@
 
 package com.google.caja.util;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.CharBuffer;
@@ -30,11 +31,18 @@ public class AppendableWriter extends Writer {
     this.appendable = appendable;
   }
 
+  @Override
   public void write(char[] cbuf, int off, int len) throws IOException {
     appendable.append(CharBuffer.wrap(cbuf, off, len));
   }
-
-  public void flush() throws IOException { }
-
-  public void close() throws IOException { }
+  
+  @Override
+  public void flush() { }
+  
+  @Override
+  public void close() throws IOException {
+    if (appendable instanceof Closeable) {
+      ((Closeable) appendable).close();
+    }
+  }
 }

@@ -31,7 +31,6 @@ public final class ContinueStmt extends AbstractStatement<Statement> {
 
   public ContinueStmt(String label) {
     this.label = label;
-    childrenChanged();
   }
 
   @Override

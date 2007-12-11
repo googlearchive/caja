@@ -20,7 +20,7 @@ package com.google.caja.util;
  * @author mikesamuel@gmail.com
  */
 public interface Criterion<T> {
-  // TODO(mikesamuel): replace "may be null" and "not null" shorhands with
+  // TODO(mikesamuel): replace "may be null" and "not null" shorthands with
   // @Nullable and @NotNull annotations
   // TODO(mikesamuel): replace with com.google.common.Predicate and the
   // factory with Predicates
@@ -33,8 +33,8 @@ public interface Criterion<T> {
 
   public static class Factory {
 
-    private static final Criterion OPTIMIST_SINGLETON =
-      new Criterion() {
+    private static final Criterion<?> OPTIMIST_SINGLETON =
+      new Criterion<Object>() {
         public boolean accept(Object _) {
           return true;
         }
@@ -42,8 +42,8 @@ public interface Criterion<T> {
         public String toString() { return "OptimistCriterion"; }
       };
 
-    private static final Criterion PESSIMIST_SINGLETON =
-      new Criterion() {
+    private static final Criterion<?> PESSIMIST_SINGLETON =
+      new Criterion<Object>() {
         public boolean accept(Object _) {
           return false;
         }
@@ -58,7 +58,7 @@ public interface Criterion<T> {
      */
     @SuppressWarnings("unchecked")
     public static <T> Criterion<T> optimist() {
-      return OPTIMIST_SINGLETON;
+      return (Criterion<T>) OPTIMIST_SINGLETON;
     }
 
     /**
@@ -67,7 +67,7 @@ public interface Criterion<T> {
      */
     @SuppressWarnings("unchecked")
     public static <T> Criterion<T> pessimist() {
-      return PESSIMIST_SINGLETON;
+      return (Criterion<T>) PESSIMIST_SINGLETON;
     }
 
     /**

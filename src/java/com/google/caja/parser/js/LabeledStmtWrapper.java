@@ -35,14 +35,13 @@ public final class LabeledStmtWrapper extends LabeledStatement {
 
   public LabeledStmtWrapper(String label, Statement body) {
     super(label);
-    this.children.add(body);
-    childrenChanged();
+    appendChild(body);
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.body = (Statement) children.get(0);
+    this.body = (Statement) children().get(0);
   }
 
   public void render(RenderContext rc) throws IOException {

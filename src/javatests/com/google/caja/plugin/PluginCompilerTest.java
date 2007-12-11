@@ -16,6 +16,7 @@ package com.google.caja.plugin;
 
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
@@ -77,7 +78,7 @@ public class PluginCompilerTest extends TestCase {
     String golden = TestUtil.readResource(getClass(), goldenFile);
 
     PluginMeta meta = new PluginMeta("MY_TEST_PLUGIN","pre",
-        "/plugin1", "rootDiv", false);
+                                     "/plugin1", "rootDiv", false);
     PluginCompiler pc = new PluginCompiler(meta);
 
     MessageContext mc = new MessageContext();
@@ -95,7 +96,7 @@ public class PluginCompilerTest extends TestCase {
           new StringReader(content), is);
       try {
         ParseTreeNode input = PluginCompilerMain.parseInput(is, cp, mq);
-        pc.addInput(input);
+        pc.addInput(new AncestorChain<ParseTreeNode>(input));
       } finally {
         cp.close();
       }

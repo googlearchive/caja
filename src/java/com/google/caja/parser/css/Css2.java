@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.css;
 
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.util.Criterion;
@@ -952,25 +953,27 @@ public final class Css2 {
     // Examine the property signatures and extract a list of keywords
     for (CssPropertyInfo pi : PROPERTIES.values()) {
       pi.sig.acceptPreOrder(new Visitor() {
-        public boolean visit(ParseTreeNode n) {
+        public boolean visit(AncestorChain<?> ancestors) {
+          ParseTreeNode n = ancestors.node;
           if (n instanceof CssPropertySignature.LiteralSignature) {
             String kw = ((CssPropertySignature.LiteralSignature) n).value;
             KEYWORDS.add(kw.toLowerCase());
           }
           return true;
         }
-      });
+      }, null);
     }
     for (SymbolInfo si : SYMBOLS.values()) {
       si.sig.acceptPreOrder(new Visitor() {
-        public boolean visit(ParseTreeNode n) {
+        public boolean visit(AncestorChain<?> ancestors) {
+          ParseTreeNode n = ancestors.node;
           if (n instanceof CssPropertySignature.LiteralSignature) {
             String kw = ((CssPropertySignature.LiteralSignature) n).value;
             KEYWORDS.add(kw.toLowerCase());
           }
           return true;
         }
-      });
+      }, null);
     }
     KEYWORDS.add("initial");
   }

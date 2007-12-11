@@ -21,6 +21,7 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.reporting.EchoingMessageQueue;
@@ -173,7 +174,7 @@ public class CssRewriterTest extends TestCase {
 
     new CssRewriter(
         new PluginMeta("Plugin", "test", "/foo", "rootDiv", false), mq)
-            .rewrite(t);
+            .rewrite(new AncestorChain<CssTree>(t));
 
     {
       StringBuilder msgBuf = new StringBuilder();
@@ -203,7 +204,7 @@ public class CssRewriterTest extends TestCase {
           });
       CssParser p = new CssParser(tq);
       CssTree t = p.parseStyleSheet();
-      new CssValidator(mq).validateCss(t);
+      new CssValidator(mq).validateCss(new AncestorChain<CssTree>(t));
       tq.expectEmpty();
       return t;
     } finally {

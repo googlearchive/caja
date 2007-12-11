@@ -14,42 +14,43 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.MessagePart;
-import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageType;
-import com.google.caja.parser.js.FunctionDeclaration;
-import com.google.caja.parser.js.Statement;
-import com.google.caja.parser.js.FormalParam;
-import com.google.caja.parser.js.ReturnStmt;
-import com.google.caja.parser.js.Operation;
-import com.google.caja.parser.js.Operator;
-import com.google.caja.parser.js.FunctionConstructor;
-import com.google.caja.parser.js.Reference;
-import com.google.caja.parser.js.Declaration;
-import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.ArrayConstructor;
-import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.Parser;
-import com.google.caja.parser.html.DomTree;
+import com.google.caja.html.HTML;
+import com.google.caja.html.HTML4;
+import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.CssLexer;
+import com.google.caja.lexer.CssTokenType;
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.HtmlTokenType;
+import com.google.caja.lexer.JsLexer;
+import com.google.caja.lexer.JsTokenQueue;
+import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.Token;
+import com.google.caja.lexer.TokenQueue;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.css.CssParser;
-import com.google.caja.lexer.HtmlTokenType;
-import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.CssTokenType;
-import com.google.caja.lexer.CssLexer;
-import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.TokenQueue;
-import com.google.caja.lexer.Token;
-import com.google.caja.lexer.JsTokenQueue;
-import com.google.caja.lexer.JsLexer;
-import com.google.caja.util.Pair;
+import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.js.ArrayConstructor;
+import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.Declaration;
+import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.FormalParam;
+import com.google.caja.parser.js.FunctionConstructor;
+import com.google.caja.parser.js.FunctionDeclaration;
+import com.google.caja.parser.js.Operation;
+import com.google.caja.parser.js.Operator;
+import com.google.caja.parser.js.Parser;
+import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.js.ReturnStmt;
+import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Criterion;
-import com.google.caja.html.HTML4;
-import com.google.caja.html.HTML;
+import com.google.caja.util.Pair;
 
 import java.io.StringReader;
 
@@ -305,11 +306,11 @@ public final class HtmlCompiler {
     // The validator will check that property values are well-formed,
     // marking those that aren't, and identifies all urls.
     CssValidator v = new CssValidator(mq);
-    boolean valid = v.validateCss(decls);
+    boolean valid = v.validateCss(new AncestorChain<CssTree>(decls));
     // The rewriter will remove any unsafe constructs.
     // and put urls in the proper filename namespace
     CssRewriter rw = new CssRewriter(meta, mq);
-    valid &= rw.rewrite(decls);
+    valid &= rw.rewrite(new AncestorChain<CssTree>(decls));
     // Notify the user that the style was changed.
     if (!valid) {
       mq.addMessage(
@@ -381,7 +382,6 @@ public final class HtmlCompiler {
 
     Block b = new Block(statements);
     b.setFilePosition(stmt.getFilePosition());
-    b.parentify();
 
     // expression will be sanitized in a later pass
 

@@ -27,15 +27,14 @@ public final class ReturnStmt extends AbstractStatement<Expression> {
 
   public ReturnStmt(Expression returnValue) {
     if (null != returnValue) {
-      children.add(returnValue);
+      appendChild(returnValue);
     }
-    childrenChanged();
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.returnValue = children.isEmpty() ? null : children.get(0);
+    this.returnValue = children().isEmpty() ? null : children().get(0);
   }
 
   public Expression getReturnValue() { return returnValue; }

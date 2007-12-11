@@ -79,6 +79,7 @@ public final class HTML {
     /**
      * @return just name, not proper HTML
      */
+    @Override
     public String toString() {
       return name_;
     }
@@ -140,6 +141,7 @@ public final class HTML {
     /**
      * @return Element name (name only, not proper HTML).
      */
+    @Override
     public String toString() {
       return name_;
     }

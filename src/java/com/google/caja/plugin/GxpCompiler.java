@@ -27,6 +27,7 @@ import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
@@ -159,12 +160,19 @@ public final class GxpCompiler {
       params.add(name);
     }
 
+    List<AncestorChain<? extends DomTree>> content
+        = new ArrayList<AncestorChain<? extends DomTree>>();
+    AncestorChain<DomTree.Tag> documentChain
+        = new AncestorChain<DomTree.Tag>(document);
+    for (DomTree child : children.subList(importEnd, children.size())) {
+      content.add(new AncestorChain<DomTree>(documentChain, child));
+    }
 
     TemplateSignature sig = new TemplateSignature(
         assertSafeJsIdentifier(templateName.getValue(), templateName),
         this.syntheticId(),
         params,
-        children.subList(importEnd, children.size()),
+        content,
         document.getFilePosition()
         );
     sigs.put(templateName.getValue(), sig);
@@ -199,8 +207,8 @@ public final class GxpCompiler {
               s(new ArrayConstructor(
                     Collections.<Expression>emptyList())))), null);
 
-    for (DomTree tree : sig.content) {
-      compileDom(tree, "out___", false, JsWriter.Esc.HTML, body);
+    for (AncestorChain<? extends DomTree> treeChain : sig.content) {
+      compileDom(treeChain, "out___", false, JsWriter.Esc.HTML, body);
     }
 
     // Join the html via out___.join('') and mark it as safe html
@@ -230,11 +238,14 @@ public final class GxpCompiler {
   }
 
   private void compileDom(
-      DomTree t, String tgt, boolean inAttrib, JsWriter.Esc escaping, Block b)
+      AncestorChain<? extends DomTree> tChain, String tgt, boolean inAttrib,
+      JsWriter.Esc escaping, Block b)
       throws BadContentException {
+    DomTree t = tChain.node;
     switch (t.getType()) {
     case TEXT:
-      JsWriter.appendText(trimText((DomTree.Text) t), escaping, tgt, b);
+      JsWriter.appendText(trimText(tChain.cast(DomTree.Text.class)),
+                          escaping, tgt, b);
       break;
     case CDATA:
       JsWriter.appendText(t.getValue(), escaping, tgt, b);
@@ -244,11 +255,12 @@ public final class GxpCompiler {
       String tagName = el.getValue();
       if (GxpValidator.isGxp(tagName)) {
         if ("gxp:if".equals(tagName)) {
-          handleIf(el, tgt, inAttrib, escaping, b);
+          handleIf(tChain.cast(DomTree.Tag.class), tgt, inAttrib, escaping, b);
         } else if ("gxp:eval".equals(tagName)) {
-          handleEval(el, tgt, escaping, b);
+          handleEval(tChain.cast(DomTree.Tag.class), tgt, escaping, b);
         } else if ("gxp:loop".equals(tagName)) {
-          handleLoop(el, tgt, inAttrib, escaping, b);
+          handleLoop(
+              tChain.cast(DomTree.Tag.class), tgt, inAttrib, escaping, b);
         } else if (tagName.startsWith("call:")) {
           if (inAttrib) {
             throw new BadContentException(
@@ -364,6 +376,8 @@ public final class GxpCompiler {
             if (HtmlTokenType.TAGBEGIN == child.getType()
                 && "gxp:attr".equals(child.getValue())) {
               DomTree.Tag attrEl = (DomTree.Tag) child;
+              AncestorChain<DomTree.Tag> attrElChain
+                  = new AncestorChain<DomTree.Tag>(tChain, attrEl);
               Map<String, DomTree.Value> attribMap =
                 new HashMap<String, DomTree.Value>();
               int s = gxpValidator.attribsAsMap(
@@ -401,7 +415,8 @@ public final class GxpCompiler {
               attrTrimmed = attrTrimmed.subList(s, attrTrimmed.size());
               if (null == wrapperFn) {
                 for (DomTree attr : attrTrimmed) {
-                  compileDom(attr, tgt, true, JsWriter.Esc.HTML_ATTRIB, b);
+                  compileDom(new AncestorChain<DomTree>(attrElChain, attr),
+                             tgt, true, JsWriter.Esc.HTML_ATTRIB, b);
                 }
               } else {
                 // We need to collect in a separate list before processing and
@@ -414,7 +429,8 @@ public final class GxpCompiler {
                           s(new ArrayConstructor(
                                 Collections.<Expression>emptyList())))), null);
                 for (DomTree attr : attrTrimmed) {
-                  compileDom(attr, synthId, true, JsWriter.Esc.NONE, b);
+                  compileDom(new AncestorChain<DomTree>(attrElChain, attr),
+                             synthId, true, JsWriter.Esc.NONE, b);
                 }
                 // plugin_htmlAttr___(<wrapper>(<synthId>.join(''), <nsPrefix>))
                 JsWriter.append(
@@ -454,7 +470,8 @@ public final class GxpCompiler {
             for (DomTree child : children.subList(i, children.size())) {
               if (!(HtmlTokenType.TAGBEGIN == child.getType()
                     && "gxp:attr".equals(child.getValue()))) {
-                compileDom(child, tgt, false, JsWriter.Esc.HTML, b);
+                compileDom(new AncestorChain<DomTree>(tChain, child),
+                           tgt, false, JsWriter.Esc.HTML, b);
                 wroteChildElement = true;
               }
             }
@@ -534,11 +551,20 @@ public final class GxpCompiler {
   private static final Set<String> ALLOWED_ATTR_PARAMS =
       Collections.singleton("name");
 
-  private static String trimText(DomTree.Text t) {
-    // Rrim any text on the inside or outside of a gxp tag
-    DomTree prev = (DomTree) t.getPrevSibling(),
-            next = (DomTree) t.getNextSibling();
-    ParseTreeNode parent = t.getParent();
+  private static String trimText(AncestorChain<DomTree.Text> tChain) {
+    DomTree.Text t = tChain.node;
+    // Trim any text on the inside or outside of a gxp tag
+    DomTree prev, next;
+    ParseTreeNode parent = tChain.getParentNode();
+    if (parent != null) {
+      List<? extends ParseTreeNode> siblings = parent.children();
+      int childIdx = siblings.indexOf(t);
+      prev = childIdx > 0 ? (DomTree) siblings.get(childIdx - 1) : null;
+      next = (childIdx + 1 < siblings.size()
+              ? (DomTree) siblings.get(childIdx + 1) : null);
+    } else {
+      prev = next = null;
+    }
     boolean isParentGxp = parent instanceof DomTree.Tag
                           && GxpValidator.isGxp(((DomTree) parent).getValue());
     boolean isFirstChild = null == prev || prev instanceof DomTree.Attrib;
@@ -566,9 +592,11 @@ public final class GxpCompiler {
     return value.substring(s, e);
   }
 
-  private void handleIf(DomTree.Tag t, String tgt,
+  private void handleIf(AncestorChain<DomTree.Tag> tChain, String tgt,
                         boolean inAttrib, JsWriter.Esc escaping, Block b)
       throws BadContentException {
+    DomTree.Tag t = tChain.node;
+
     // Should have one parameter exactly -- the condition
     List<? extends DomTree> children = t.children();
     Map<String, DomTree.Value> attribMap = new HashMap<String, DomTree.Value>();
@@ -600,20 +628,23 @@ public final class GxpCompiler {
             alternative));
     b.insertBefore(c, null);
     for (DomTree child : children.subList(attribEnd, alternativeStart)) {
-      compileDom(child, tgt, inAttrib, escaping, body);
+      compileDom(new AncestorChain<DomTree>(tChain, child),
+                 tgt, inAttrib, escaping, body);
     }
     if (null != alternative) {
       for (DomTree child :
                children.subList(alternativeStart + 1, children.size())) {
-        compileDom(child, tgt, inAttrib, escaping, alternative);
+        compileDom(new AncestorChain<DomTree>(tChain, child), tgt, inAttrib,
+                   escaping, alternative);
       }
     }
   }
 
   private void handleLoop(
-      DomTree.Tag t, String tgt, boolean inAttrib, JsWriter.Esc escaping,
-      Block b)
+      AncestorChain<DomTree.Tag> tChain, String tgt, boolean inAttrib,
+      JsWriter.Esc escaping, Block b)
       throws BadContentException {
+    DomTree.Tag t = tChain.node;
     // Should have two parameters -- the iterable and the variable
     Map<String, DomTree.Value> attribMap = new HashMap<String, DomTree.Value>();
     int attribEnd = gxpValidator.attribsAsMap(
@@ -678,12 +709,15 @@ public final class GxpCompiler {
 
     List<? extends DomTree> children = t.children();
     for (DomTree child : children.subList(attribEnd, children.size())) {
-      compileDom(child, tgt, inAttrib, escaping, forEachBody);
+      compileDom(new AncestorChain<DomTree>(tChain, child),
+                 tgt, inAttrib, escaping, forEachBody);
     }
   }
 
   private void handleEval(
-      DomTree.Tag t, String tgt, JsWriter.Esc escaping, Block b) {
+      AncestorChain<DomTree.Tag> tChain, String tgt, JsWriter.Esc escaping,
+      Block b) {
+    DomTree.Tag t = tChain.node;
     // Should have one parameters -- the expression
     Map<String, DomTree.Value> attribMap = new HashMap<String, DomTree.Value>();
     int attribEnd = gxpValidator.attribsAsMap(
@@ -795,11 +829,11 @@ public final class GxpCompiler {
     // The validator will check that property values are well-formed,
     // marking those that aren't, and identifies all urls.
     CssValidator cssValidator = new CssValidator(mq);
-    boolean valid = cssValidator.validateCss(decls);
+    boolean valid = cssValidator.validateCss(new AncestorChain<CssTree>(decls));
     // The rewriter will remove any unsafe constructs.
     // and put urls in the proper filename namespace
     CssRewriter rw = new CssRewriter(meta, mq);
-    valid &= rw.rewrite(decls);
+    valid &= rw.rewrite(new AncestorChain<CssTree>(decls));
     // Notify the user that the style was changed.
     if (!valid) {
       mq.addMessage(
@@ -881,7 +915,6 @@ public final class GxpCompiler {
 
     Block b = new Block(statements);
     b.setFilePosition(stmt.getFilePosition());
-    b.parentify();
 
     // Expression will be sanitized in a later pass
 
@@ -933,14 +966,14 @@ public final class GxpCompiler {
     final String templateName;
     final String assignedName;
     final List<DomTree.Value> parameterNames;
-    final List<? extends DomTree> content;
+    final List<AncestorChain<? extends DomTree>> content;
     final FilePosition loc;
 
     TemplateSignature(
         String templateName,
         String assignedName,
         List<DomTree.Value> params,
-        List<? extends DomTree> content,
+        List<AncestorChain<? extends DomTree>> content,
         FilePosition loc) {
       this.templateName = templateName;
       this.assignedName = assignedName;
@@ -954,7 +987,9 @@ public final class GxpCompiler {
     public List<? extends DomTree> getParameterNames() {
       return Collections.unmodifiableList(parameterNames);
     }
-    public List<? extends DomTree> getContent() { return content; }
+    public List<AncestorChain<? extends DomTree>> getContent() {
+      return content;
+    }
     public FilePosition getLocation() { return loc; }
   }
 

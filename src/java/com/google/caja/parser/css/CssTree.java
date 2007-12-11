@@ -39,9 +39,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
 
   CssTree(FilePosition pos, List<? extends CssTree> children) {
     this.setFilePosition(pos);
-    this.children.addAll(children);
-    childrenChanged();
-    parentify(false);
+    createMutation().appendChildren(children).execute();
   }
 
   @Override
@@ -100,7 +98,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     @Override
     protected void childrenChanged() {
       super.childrenChanged();
-      for (CssTree child : children) {
+      for (CssTree child : children()) {
         if (!(child instanceof Declaration)) {
           throw new IllegalArgumentException();
         }
@@ -330,6 +328,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     }
 
     public void render(RenderContext r) throws IOException {
+      List<? extends CssTree> children = children();
       int i = 0;
       while (i < children.size() && !(children.get(i) instanceof Declaration)) {
         ++i;
@@ -352,7 +351,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     public void render(RenderContext r) throws IOException {
 
       boolean needSpace = false;
-      for (CssTree child : children) {
+      for (CssTree child : children()) {
         if (!(child instanceof Combination
               && null == ((Combination) child).getCombinator().symbol)) {
           if (needSpace) { r.out.append(" "); }
@@ -375,7 +374,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     }
 
     public String getElementName() {
-      CssTree first = children.get(0);
+      CssTree first = children().get(0);
       if (first instanceof IdentLiteral) {
         return ((IdentLiteral) first).getValue();
       }
@@ -384,7 +383,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
 
     public void render(RenderContext r) throws IOException {
       // no spaces between because space is the DESCENDANT operator in Selector
-      for (CssTree child : children) { child.render(r); }
+      for (CssTree child : children()) { child.render(r); }
     }
   }
 
@@ -481,7 +480,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
 
     public void render(RenderContext r) throws IOException {
       r.out.append(':');
-      children.get(0).render(r);
+      children().get(0).render(r);
     }
   }
 
@@ -584,7 +583,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
 
     public void render(RenderContext r) throws IOException {
       boolean needSpace = false;
-      for (CssTree child : children) {
+      for (CssTree child : children()) {
         if (!(child instanceof Operation
               && null == ((Operation) child).getOperator().symbol)) {
           if (needSpace) {
@@ -826,7 +825,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     public void render(RenderContext r) throws IOException {
       escapeCssIdent(name, r.out);
       r.out.append('(');
-      children.get(0).render(r);
+      children().get(0).render(r);
       r.out.append(')');
     }
 

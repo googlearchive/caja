@@ -89,7 +89,7 @@ public final class HtmlPluginCompilerMain {
 
   private HtmlPluginCompilerMain() {}
 
-  public static void main(String[] argv) throws ParseException {
+  public static void main(String[] argv) {
     System.exit(new HtmlPluginCompilerMain().run(argv));
   }
 
@@ -205,7 +205,7 @@ public final class HtmlPluginCompilerMain {
       w.write(contents);
       if (contents.length() > 0 && !contents.endsWith("\n")) {
         w.write("\n");
-      } 
+      }
     } catch (IOException e)  {
       throw new RuntimeException(e);
     }

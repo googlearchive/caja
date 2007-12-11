@@ -20,6 +20,7 @@ import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.reporting.EchoingMessageQueue;
@@ -77,6 +78,7 @@ public class GxpValidatorTest extends TestCase {
     TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
         lexer, is, Criterion.Factory.<Token<HtmlTokenType>>optimist());
     DomTree t = DomParser.parseDocument(tq);
-    assertEquals(html, valid, new GxpValidator(mq).validate(t));
+    assertEquals(html, valid,
+                 new GxpValidator(mq).validate(new AncestorChain<DomTree>(t)));
   }
 }

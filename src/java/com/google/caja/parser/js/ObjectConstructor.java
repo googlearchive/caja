@@ -35,11 +35,12 @@ import java.util.List;
  */
 public final class ObjectConstructor extends AbstractExpression<Expression> {
   public ObjectConstructor(List<Pair<Literal, Expression>> properties) {
+    Mutation m = createMutation();
     for (Pair<Literal, Expression> p : properties) {
-      children.add(p.a);
-      children.add(p.b);
+      m.appendChild(p.a);
+      m.appendChild(p.b);
     }
-    childrenChanged();
+    m.execute();
   }
 
   @Override
@@ -74,10 +75,10 @@ public final class ObjectConstructor extends AbstractExpression<Expression> {
     rc.out.append("{");
     rc.indent += 2;
     boolean seen = false;
-    Iterator<Expression> els = children.iterator();
+    Iterator<? extends Expression> els = children().iterator();
     while (els.hasNext()) {
       Expression key = els.next(),
-                 value = els.next();
+               value = els.next();
       if (seen) {
         rc.out.append(",");
       } else {

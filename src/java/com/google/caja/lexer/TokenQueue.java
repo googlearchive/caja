@@ -195,7 +195,7 @@ public class TokenQueue<T extends TokenType> {
     final TokenList<?> savedCurrent, savedPrev;
     final TokenQueue<?> tq;
 
-    Mark(TokenQueue tq) {
+    Mark(TokenQueue<?> tq) {
       this.tq = tq;
       this.savedCurrent = tq.current;
       this.savedPrev = tq.prev;

@@ -14,9 +14,11 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  *
@@ -33,16 +35,18 @@ public final class ForLoop extends Loop implements NestedScope {
     super(label);
     if (null == initializer) { throw new NullPointerException(); }
     if (null == increment) { throw new NullPointerException(); }
-    children.add(0, initializer);
-    children.add(1, cond);
-    children.add(2, increment);
-    children.add(3, body);
-    childrenChanged();
+    createMutation()
+        .appendChild(initializer)
+        .appendChild(cond)
+        .appendChild(increment)
+        .appendChild(body)
+        .execute();
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
+    List<? extends ParseTreeNode> children = children();
     this.initializer = (Statement) children.get(0);
     this.condition = (Expression) children.get(1);
     this.increment = (Statement) children.get(2);

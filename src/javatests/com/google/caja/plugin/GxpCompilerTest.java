@@ -22,6 +22,7 @@ import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
@@ -411,7 +412,7 @@ public class GxpCompilerTest extends TestCase {
     boolean valid = true;
     for (int i = 0; i < doms.length; ++i) {
       DomTree.Tag dom = doms[i];
-      if (!new GxpValidator(mq).validate(dom)) {
+      if (!new GxpValidator(mq).validate(new AncestorChain<DomTree>(dom))) {
         valid = false;
         break;
       }
@@ -492,7 +493,7 @@ public class GxpCompilerTest extends TestCase {
     boolean valid = true;
     for (int i = 0; i < doms.length; ++i) {
       DomTree.Tag dom = doms[i];
-      if (!new GxpValidator(mq).validate(dom)) {
+      if (!new GxpValidator(mq).validate(new AncestorChain<DomTree>(dom))) {
         valid = false;
         break;
       }

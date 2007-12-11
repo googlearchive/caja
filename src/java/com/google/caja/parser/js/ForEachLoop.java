@@ -14,9 +14,11 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * <code>for (key in container) body</code>
@@ -31,10 +33,11 @@ public final class ForEachLoop extends LabeledStatement implements NestedScope {
   public ForEachLoop(String label, Declaration var, Expression container,
                      Statement body) {
     super(label);
-    children.add(var);
-    children.add(container);
-    children.add(body);
-    childrenChanged();
+    createMutation()
+        .appendChild(var)
+        .appendChild(container)
+        .appendChild(body)
+        .execute();
   }
 
   public ForEachLoop(
@@ -42,15 +45,17 @@ public final class ForEachLoop extends LabeledStatement implements NestedScope {
     super(label);
     ExpressionStmt varStmt = new ExpressionStmt(var);
     varStmt.setFilePosition(var.getFilePosition());
-    children.add(varStmt);
-    children.add(container);
-    children.add(body);
-    childrenChanged();
+    createMutation()
+        .appendChild(varStmt)
+        .appendChild(container)
+        .appendChild(body)
+        .execute();
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
+    List<? extends ParseTreeNode> children = children();
     this.var = (Statement) children.get(0);
     this.container = (Expression) children.get(1);
     this.body = (Statement) children.get(2);

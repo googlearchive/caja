@@ -40,7 +40,7 @@ import java.io.IOException;
  * Safe XML parser for gadget specifications. Rejects invalid markup.
  *
  * <p>TODO(ihab.awad): Sanitize and escape text in attribute values.
- * 
+ *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class GadgetParser {
@@ -105,9 +105,9 @@ public class GadgetParser {
     check("type".equals(name), "<Content> can only have \"type\" attribute");
 
     spec.setContentType(value);
-    
+
     StringBuilder content = new StringBuilder();
-    
+
     for (int i = 0; i < contentNode.getChildNodes().getLength(); i++) {
       if (contentNode.getChildNodes().item(i) instanceof Text) {
         Text text = (Text)contentNode.getChildNodes().item(i);
@@ -187,7 +187,7 @@ public class GadgetParser {
 
     builder.setEntityResolver(new EntityResolver() {
       public InputSource resolveEntity(String publicId, String systemId)
-          throws SAXException, IOException {
+          throws IOException {
         throw new IOException("Entity resolution not supported");
       }
     });

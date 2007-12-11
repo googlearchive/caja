@@ -15,6 +15,7 @@
 package com.google.caja.plugin;
 
 import com.google.caja.html.HTML4;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssPropertySignature;
@@ -74,22 +75,20 @@ public final class CssValidator {
   }
 
   /** True iff the given css tree is valid according to CSS2. */
-  public boolean validateCss(CssTree css) {
-    if (css instanceof CssTree.Declaration) {
-      return validateDeclaration((CssTree.Declaration) css);
-    } else if (css instanceof CssTree.Attrib) {
-      return validateAttrib((CssTree.Attrib) css);
-    } else if (css instanceof CssTree.SimpleSelector) {
-      if (!validateSimpleSelector((CssTree.SimpleSelector) css)) {
+  public boolean validateCss(AncestorChain<? extends CssTree> css) {
+    if (css.node instanceof CssTree.Declaration) {
+      return validateDeclaration((CssTree.Declaration) css.node);
+    } else if (css.node instanceof CssTree.Attrib) {
+      return validateAttrib((CssTree.Attrib) css.node);
+    } else if (css.node instanceof CssTree.SimpleSelector) {
+      if (!validateSimpleSelector((CssTree.SimpleSelector) css.node)) {
         return false;
       }
     }
 
     boolean valid = true;
-    for (CssTree child : css.children()) {
-      if (null != child) {
-        valid &= validateCss(child);
-      }
+    for (CssTree child : css.node.children()) {
+      valid &= validateCss(new AncestorChain<CssTree>(css, child));
     }
     return valid;
   }
@@ -900,11 +899,12 @@ final class SignatureResolver {
     if (true) { return; }
     if (!node.getAttributes().containsKey(NUM)) {
       node.acceptPreOrder(new Visitor() {
-          public boolean visit(ParseTreeNode n) {
+          public boolean visit(AncestorChain<?> ancestors) {
+            ParseTreeNode n = ancestors.node;
             n.getAttributes().set(NUM, Integer.valueOf(serialno++));
             return true;
           }
-        });
+        }, null);
     }
   }
 
@@ -913,7 +913,8 @@ final class SignatureResolver {
     check(node);
     StringBuilder sb = new StringBuilder();
     MessageContext mc = new MessageContext();
-    mc.relevantKeys = Collections.<SyntheticAttributeKey>singleton(NUM);
+    mc.relevantKeys
+        = Collections.<SyntheticAttributeKey<Integer>>singleton(NUM);
     try {
       node.formatTree(mc, 2, sb);
     } catch (java.io.IOException ex) {

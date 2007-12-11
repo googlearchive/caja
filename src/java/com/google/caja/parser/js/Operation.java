@@ -31,8 +31,7 @@ public class Operation extends AbstractExpression<Expression> {
   public Operation(Operator op, Expression... params) {
     this.op = op;
     if (null == op) { throw new NullPointerException(); }
-    children.addAll(Arrays.asList(params));
-    childrenChanged();
+    createMutation().appendChildren(Arrays.asList(params)).execute();
   }
 
   @Override
@@ -90,7 +89,7 @@ public class Operation extends AbstractExpression<Expression> {
         rc.out.append(op.getOpeningSymbol());
         boolean seen = false;
         rc.indent += 2;
-        for (Expression e : children.subList(1, children.size())) {
+        for (Expression e : children().subList(1, children().size())) {
           if (seen) {
             rc.out.append(", ");
           } else {
@@ -121,7 +120,7 @@ public class Operation extends AbstractExpression<Expression> {
   }
 
   private void renderParam(int i, RenderContext rc) throws IOException {
-    Expression e = children.get(i);
+    Expression e = children().get(i);
     if (!parenthesize(op, 0 == i, e)) {
       e.render(rc);
     } else {

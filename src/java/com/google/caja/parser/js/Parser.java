@@ -286,7 +286,7 @@ public final class Parser extends ParserBase {
       String label = parseIdentifier();
       if (tq.checkToken(Punctuation.COLON)) {
         t = tq.peek();
-        AbstractStatement s = null;
+        AbstractStatement<?> s = null;
         if (JsTokenType.KEYWORD == t.type) {
           switch (Keyword.fromString(t.text)) {
             case FOR: case DO: case WHILE: case SWITCH:
@@ -472,7 +472,7 @@ public final class Parser extends ParserBase {
     Token<JsTokenType> t = tq.peek();
 
     if (JsTokenType.KEYWORD == t.type) {
-      AbstractStatement s;
+      AbstractStatement<?> s;
       switch (Keyword.fromString(t.text)) {
         case FOR: case DO: case WHILE: case SWITCH:
           s = parseLoopOrSwitch("");
@@ -544,7 +544,7 @@ public final class Parser extends ParserBase {
         {
           tq.advance();
           Mark mv = tq.mark();
-          AbstractExpression value;
+          AbstractExpression<?> value;
           if (tq.isEmpty() || tq.lookaheadToken(Punctuation.SEMI)) {
             value = new UndefinedLiteral();
           } else {
@@ -661,7 +661,7 @@ public final class Parser extends ParserBase {
     return parseExpressionInt(insertionProtected);
   }
 
-  private AbstractExpression parseExpressionInt(boolean insertionProtected)
+  private AbstractExpression<?> parseExpressionInt(boolean insertionProtected)
       throws ParseException {
     Mark m = tq.mark();
     AbstractExpression<?> e = parseOp(Integer.MAX_VALUE, insertionProtected);
@@ -892,8 +892,8 @@ public final class Parser extends ParserBase {
     return new IntegerLiteral(lv);
   }
 
-  private AbstractExpression parseExpressionAtom() throws ParseException {
-    AbstractExpression e;
+  private AbstractExpression<?> parseExpressionAtom() throws ParseException {
+    AbstractExpression<?> e;
     Mark m = tq.mark();
 
     Token<JsTokenType> t = tq.pop();
@@ -1122,7 +1122,7 @@ public final class Parser extends ParserBase {
   }
 
   private Expression parseExpressionOrNoop(
-      AbstractExpression def, boolean insertionProtected)
+      AbstractExpression<?> def, boolean insertionProtected)
       throws ParseException {
     Mark m = tq.mark();
     if (tq.checkToken(Punctuation.SEMI)) {
@@ -1194,7 +1194,7 @@ public final class Parser extends ParserBase {
     }
 
     if (isDeclaration) {
-      AbstractStatement s;
+      AbstractStatement<?> s;
       Declaration d;
       {
         String ident = parseIdentifier();
@@ -1266,7 +1266,7 @@ public final class Parser extends ParserBase {
     return n;
   }
 
-  private void finish(AbstractParseTreeNode n, Mark startMark)
+  private void finish(AbstractParseTreeNode<?> n, Mark startMark)
       throws ParseException {
     FilePosition start;
     List<Token<JsTokenType>> comments;
@@ -1284,7 +1284,7 @@ public final class Parser extends ParserBase {
 
   private void finish(
       AbstractParseTreeNode<?> n, FilePosition start,
-      List<? extends Token> comments)
+      List<? extends Token<?>> comments)
       throws ParseException {
     n.setComments(comments);
 
@@ -1299,8 +1299,7 @@ public final class Parser extends ParserBase {
   }
 
   private AbstractStatement<?> associateTypeComment(
-      AbstractStatement<?> astmt, Token<JsTokenType> typeComment)
-      throws ParseException {
+      AbstractStatement<?> astmt, Token<JsTokenType> typeComment) {
     return astmt;
   }
 
@@ -1328,10 +1327,8 @@ public final class Parser extends ParserBase {
    * final tree.
    */
   private static class ActualList extends AbstractExpression<Expression> {
-
     ActualList(List<Expression> actuals) {
-      children.addAll(actuals);
-      childrenChanged();
+      createMutation().appendChildren(actuals).execute();
     }
 
     @Override

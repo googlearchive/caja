@@ -215,7 +215,7 @@ public final class CssParser {
         elements.add(parseCombinator());
       }
       elements.add(parseSimpleSelector());
-      Token t = tq.peek();
+      Token<CssTokenType> t = tq.peek();
       // Check whether the next token continues the selector.
       // See also http://www.w3.org/TR/REC-CSS2/selector.html#q1
       if (tq.isEmpty()

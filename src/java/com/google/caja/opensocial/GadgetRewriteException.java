@@ -16,6 +16,7 @@ package com.google.caja.opensocial;
 
 /**
  * Thrown when there is a problem in parsing or rewriting a gadget.
+ * FIXME(ihab): Why isn't this a Caja exception?
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */

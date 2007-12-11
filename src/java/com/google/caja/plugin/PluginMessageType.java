@@ -80,6 +80,9 @@ public enum PluginMessageType implements MessageTypeInt {
       "%s: tags not allowed inside an attribute: %s", MessageLevel.ERROR),
   CSS_SUBSTITUTION_NOT_ALLOWED_HERE(
       "%s: css substitution not allowed for type %s", MessageLevel.FATAL_ERROR),
+  TOO_MANY_HTML_JOBS(
+      "%s: there should be exactly one html input, instead seeing %s",
+      MessageLevel.FATAL_ERROR),
   ;
 
   private String formatString;

@@ -31,14 +31,13 @@ import java.util.List;
  */
 public final class MultiDeclaration extends AbstractStatement<Declaration> {
   public MultiDeclaration(List<? extends Declaration> decls) {
-    this.children.addAll(decls);
-    childrenChanged();
+    createMutation().appendChildren(decls).execute();
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    for (ParseTreeNode child : children) {
+    for (ParseTreeNode child : children()) {
       if (!(child instanceof Declaration)) {
         throw new IllegalArgumentException("Child must be a declaration");
       }
@@ -52,7 +51,7 @@ public final class MultiDeclaration extends AbstractStatement<Declaration> {
     rc.out.append("var ");
     rc.indent += 2;
     boolean seen = false;
-    for (Declaration decl : children) {
+    for (Declaration decl : children()) {
       if (seen) {
         rc.out.append(", ");
       } else {

@@ -47,15 +47,12 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
   private final Token<HtmlTokenType> start;
   private String value;
 
-  DomTree(
-      List<DomTree> children,
-      Token<HtmlTokenType> start, Token<HtmlTokenType> end) {
+  DomTree(List<DomTree> children,
+          Token<HtmlTokenType> start, Token<HtmlTokenType> end) {
     this.start = start;
     setFilePosition(FilePosition.span(start.pos, end.pos));
 
-    this.children.addAll(children);
-    childrenChanged();
-    parentify(false);
+    createMutation().appendChildren(children).execute();
   }
 
   /**

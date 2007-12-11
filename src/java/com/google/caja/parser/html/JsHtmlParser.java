@@ -24,6 +24,7 @@ import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.lexer.TokenQueue.Mark;
 import com.google.caja.parser.AbstractParseTreeNode;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Block;
@@ -147,7 +148,7 @@ public final class JsHtmlParser  {
   throws ParseException {
     FilePosition start = m.getFilePosition();
     FilePosition end = tq.lastPosition();
-    ((AbstractParseTreeNode) node).setFilePosition(
+    ((AbstractParseTreeNode<?>) node).setFilePosition(
         FilePosition.span(start, end));
     return node;
   }
@@ -265,11 +266,11 @@ public final class JsHtmlParser  {
   private FunctionDeclaration wrapHandler(Block body, FilePosition pos) {
     // if the body doesn't have a return statement, add one
     boolean hasReturnStatement = !body.acceptPostOrder(new Visitor() {
-        public boolean visit(ParseTreeNode node) {
+        public boolean visit(AncestorChain<?> ancestors) {
           // false will bubble up
-          return !(node instanceof ReturnStmt);
+          return !(ancestors.node instanceof ReturnStmt);
         }
-      });
+      }, null);
     if (!hasReturnStatement) {
       FilePosition end = FilePosition.endOf(pos);
 

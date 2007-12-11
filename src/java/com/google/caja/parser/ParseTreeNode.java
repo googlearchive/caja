@@ -31,22 +31,6 @@ import java.util.List;
  */
 public interface ParseTreeNode extends MessagePart, Renderable {
 
-  /**
-   * @return a ParseTreeNode such that this is in
-   *   <code>getParent().children()</code>, or null if this is a root node or
-   *   the tree is in the process of being built.
-   */
-  ParseTreeNode getParent();
-  /**
-   * The node that occurs after this in its {@link #getParent parent}'s
-   * {@link #children child list}.
-   */
-  ParseTreeNode getNextSibling();
-  /**
-   * The node that occurs before this in its {@link #getParent parent}'s
-   * {@link #children child list}.
-   */
-  ParseTreeNode getPrevSibling();
   FilePosition getFilePosition();
   List<Token<?>> getComments();
   /**
@@ -72,21 +56,18 @@ public interface ParseTreeNode extends MessagePart, Renderable {
    * traversal of a subtree if {@link Visitor#visit} of the root node returns
    * false.
    *
+   * @param v the visitor to apply.
+   * @param ancestors an initial set of ancestor nodes not containing this.
    * @return true iff visiting the root node yielded true.
    */
-  boolean acceptPreOrder(Visitor v);
+  boolean acceptPreOrder(Visitor v, AncestorChain<?> ancestors);
 
   /**
    * Like {@link #acceptPreOrder}, but post-order.
    *
+   * @param v the visitor to apply.
+   * @param ancestors an initial set of ancestor nodes not containing this.
    * @return true iff visiting the root node yielded true.
    */
-  boolean acceptPostOrder(Visitor v);
-
-  /**
-   * Like {@link #acceptPreOrder}, but in breadth-first order.
-   *
-   * @return true iff visiting the root node yielded true.
-   */
-  boolean acceptBreadthFirst(Visitor v);
+  boolean acceptPostOrder(Visitor v, AncestorChain<?> ancestors);
 }

@@ -16,6 +16,7 @@ package com.google.caja.parser.css;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Token;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.reporting.MessageContext;
@@ -29,7 +30,6 @@ import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.regex.Matcher;
@@ -255,34 +255,23 @@ public abstract class CssPropertySignature implements ParseTreeNode {
 
   public List<? extends CssPropertySignature> children() { return children; }
 
-  public final boolean acceptPreOrder(Visitor v) {
-    if (!v.visit(this)) { return false; }
+  public final boolean acceptPreOrder(Visitor v, AncestorChain<?> ancestors) {
+    ancestors = new AncestorChain<CssPropertySignature>(ancestors, this);
+    if (!v.visit(ancestors)) { return false; }
     for (CssPropertySignature child : children) {
-      child.acceptPreOrder(v);
+      child.acceptPreOrder(v, ancestors);
     }
     return true;
   }
 
-  public final boolean acceptPostOrder(Visitor v) {
+  public final boolean acceptPostOrder(Visitor v, AncestorChain<?> ancestors) {
+    ancestors = new AncestorChain<CssPropertySignature>(ancestors, this);
     for (CssPropertySignature child : children) {
-      if (!child.acceptPostOrder(v)) { return false; }
-    }
-    return v.visit(this);
-  }
-
-  public final boolean acceptBreadthFirst(Visitor v) {
-    LinkedList<CssPropertySignature> stack =
-      new LinkedList<CssPropertySignature>();
-    stack.add(this);
-    do {
-      for (CssPropertySignature t = stack.removeFirst();
-           t != null; t = t.nextSibling) {
-        if (!v.visit(t)) { return false; }
-        if (!t.children.isEmpty()) { stack.add(t.children.get(0)); }
+      if (!child.acceptPostOrder(v, ancestors)) {
+        return false;
       }
-    } while (!stack.isEmpty());
-
-    return true;
+    }
+    return v.visit(ancestors);
   }
 
   @Override

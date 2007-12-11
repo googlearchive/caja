@@ -29,15 +29,14 @@ public class Declaration extends AbstractStatement<Expression> {
 
   public Declaration(String identifier, Expression initializer) {
     this.identifier = identifier;
-    if (null != initializer) { children.add(initializer); }
-    childrenChanged();
+    if (null != initializer) { appendChild(initializer); }
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.initializer = children.isEmpty() ? null : children.get(0);
-    if (children.size() > 1) {
+    this.initializer = children().isEmpty() ? null : children().get(0);
+    if (children().size() > 1) {
       throw new IllegalArgumentException(
           "Declaration should only have at most 1 child");
     }

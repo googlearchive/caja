@@ -24,6 +24,7 @@ import java.util.List;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AbstractParseTreeNode;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
@@ -56,11 +57,11 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
               List<? extends CssTree.FunctionCall> params,
               CssTree css) {
     this.setFilePosition(pos);
-    this.children.add(name);
-    this.children.addAll(params);
-    this.children.add(css);
-    childrenChanged();
-    parentify(false);
+    createMutation()
+        .appendChild(name)
+        .appendChildren(params)
+        .appendChild(css)
+        .execute();
   }
 
   @Override
@@ -87,15 +88,15 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
   }
 
   public CssTree.FunctionCall getTemplateDeclaration() {
-    return (CssTree.FunctionCall) children.get(0);
+    return (CssTree.FunctionCall) children().get(0);
   }
 
   public Iterable<? extends CssTree.FunctionCall>
     getTemplateParamDeclarations() {
     return new Iterable<CssTree.FunctionCall>() {
       public Iterator<CssTree.FunctionCall> iterator() {
-        final Iterator<CssTree> paramDecls =
-          children.subList(1, children.size() - 1).iterator();
+        final Iterator<? extends CssTree> paramDecls =
+            children().subList(1, children().size() - 1).iterator();
         return new Iterator<CssTree.FunctionCall>() {
           public boolean hasNext() { return paramDecls.hasNext(); }
           public CssTree.FunctionCall next() {
@@ -110,8 +111,8 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
   public Iterable<String> getTemplateParamNames() {
     return new Iterable<String>() {
       public Iterator<String> iterator() {
-        final Iterator<CssTree> paramDecls =
-          children.subList(1, children.size() - 1).iterator();
+        final Iterator<? extends CssTree> paramDecls =
+            children().subList(1, children().size() - 1).iterator();
         return new Iterator<String>() {
           public boolean hasNext() { return paramDecls.hasNext(); }
           public String next() {
@@ -127,7 +128,7 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
   }
 
   public CssTree getCss() {
-    return children.get(children.size() - 1);
+    return children().get(children().size() - 1);
   }
 
   public void render(RenderContext r) throws IOException {
@@ -182,7 +183,7 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
   static void bodyToJavascript(
       CssTree cssTree, PluginMeta meta, String tgt, Block b, JsWriter.Esc esc,
       MessageQueue mq) throws BadContentException {
-    assert esc == JsWriter.Esc.NONE || esc == JsWriter.Esc.HTML_ATTRIB;
+    assert esc == JsWriter.Esc.NONE || esc == JsWriter.Esc.HTML_ATTRIB : esc;
 
     // Replace any substitutions with placeholders.
     // The below puts finds all substitutions and replaces them with the
@@ -191,10 +192,11 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
     final List<CssTree.Substitution> substitutions =
       new ArrayList<CssTree.Substitution>();
     cssTree.acceptPreOrder(new Visitor() {
-      public boolean visit(ParseTreeNode node) {
+      public boolean visit(AncestorChain<?> ancestors) {
+        ParseTreeNode node = ancestors.node;
         if (!(node instanceof CssTree.Substitution)) { return true; }
         CssTree.Substitution sub = (CssTree.Substitution) node;
-        CssTree.Term term = (CssTree.Term) sub.getParent();
+        CssTree.Term term = (CssTree.Term) ancestors.getParentNode();
         // Store the part type so we can get at it once sub has been removed
         // from the parse tree.
         sub.getAttributes().set(
@@ -211,7 +213,7 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
         substitutions.add(sub);
         return false;
       }
-    });
+    }, null);
 
     // Render the style to a canonical form with consistent escaping
     // conventions, so that we can avoid browser bugs.

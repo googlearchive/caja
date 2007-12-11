@@ -18,6 +18,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  *
@@ -28,14 +29,16 @@ public final class CatchStmt extends AbstractStatement<ParseTreeNode> {
   private Statement body;
 
   public CatchStmt(Declaration exception, Statement body) {
-    children.add(exception);
-    children.add(body);
-    childrenChanged();
+    createMutation()
+        .appendChild(exception)
+        .appendChild(body)
+        .execute();
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
+    List<? extends ParseTreeNode> children = children();
     this.exception = (Declaration) children.get(0);
     this.body = (Statement) children.get(1);
   }

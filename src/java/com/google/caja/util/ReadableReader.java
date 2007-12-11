@@ -14,6 +14,7 @@
 
 package com.google.caja.util;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.CharBuffer;
@@ -30,9 +31,15 @@ public class ReadableReader extends Reader {
     this.readable = readable;
   }
 
+  @Override
   public int read(char[] cbuf, int off, int len) throws IOException {
     return readable.read(CharBuffer.wrap(cbuf, off, len));
   }
 
-  public void close() throws IOException { }
+  @Override
+  public void close() throws IOException {
+    if (readable instanceof Closeable) {
+      ((Closeable) readable).close();
+    }
+  }
 }

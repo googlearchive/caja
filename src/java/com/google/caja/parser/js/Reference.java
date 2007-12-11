@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.Keyword;
 import com.google.caja.plugin.ReservedNames;
 import com.google.caja.reporting.RenderContext;
 
@@ -31,7 +32,6 @@ public final class Reference extends AbstractExpression<Expression> {
       throw new NullPointerException("null identifier");
     }
     this.identifier = identifier;
-    childrenChanged();
   }
 
   public String getIdentifier() { return this.identifier; }
@@ -46,8 +46,8 @@ public final class Reference extends AbstractExpression<Expression> {
   }
 
   public boolean isThis() {
-    return this.identifier.equals("this")
-      || this.identifier.equals(ReservedNames.LOCAL_THIS);
+    return this.identifier.equals(Keyword.THIS.toString())
+        || this.identifier.equals(ReservedNames.LOCAL_THIS);
   }
 
   public void render(RenderContext rc) throws IOException {

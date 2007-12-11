@@ -44,7 +44,7 @@ public class HtmlCompiledPluginTest extends TestCase {
   public void testEmptyGadget() throws Exception {
     execGadget("", "");
   }
-  
+
   public void testWrapperAccess() throws Exception {
     execGadget(
         "<script>x='test';</script>",
@@ -242,7 +242,8 @@ public class HtmlCompiledPluginTest extends TestCase {
               CompiledPluginTest.class,
               "caps/wrap_capability.js"),
               // TODO(benl): read this from where it really is
-//            new RhinoTestBed.Input(CompiledPluginTest.class, "../../../../../js/com/google/caja/caja.js"),
+//            new RhinoTestBed.Input(CompiledPluginTest.class,
+//            "../../../../../js/com/google/caja/caja.js"),
           new RhinoTestBed.Input(CompiledPluginTest.class, "tmp-caja.js"),
           new RhinoTestBed.Input(CompiledPluginTest.class, "html-sanitizer.js"),
           new RhinoTestBed.Input(

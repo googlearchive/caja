@@ -26,14 +26,13 @@ public final class DefaultCaseStmt extends SwitchCase {
   private Statement body;
 
   public DefaultCaseStmt(Statement body) {
-    this.children.add(body);
-    childrenChanged();
+    appendChild(body);
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.body = (Statement) children.get(0);
+    this.body = (Statement) children().get(0);
   }
 
   @Override

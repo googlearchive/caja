@@ -15,6 +15,7 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lexer.*;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
@@ -65,14 +66,14 @@ public final class PluginCompiler {
 
   public PluginMeta getPluginMeta() { return meta; }
 
-  public void addInput(ParseTreeNode input) {
+  public void addInput(AncestorChain<? extends ParseTreeNode> input) {
     inputs.add(new Input(input));
   }
 
   public List<? extends ParseTreeNode> getInputs() {
     ParseTreeNode[] inputsCopy = new ParseTreeNode[this.inputs.size()];
     for (int i = 0; i < inputsCopy.length; ++i) {
-      inputsCopy[i] = this.inputs.get(i).parsetree;
+      inputsCopy[i] = this.inputs.get(i).parsetree.node;
     }
     return Arrays.asList(inputsCopy);
   }
@@ -91,7 +92,7 @@ public final class PluginCompiler {
           // Have been rolled into the plugin namespace
           break;
         case CSS:
-          outputs.add(input.parsetree);
+          outputs.add(input.parsetree.node);
           break;
         default:
           throw new AssertionError();
@@ -190,7 +191,6 @@ public final class PluginCompiler {
                                 s(new Reference("plugin_initialize___")),
                                 s(new Reference(meta.namespacePrivateName))))))
                         )));
-    this.jsTree.parentify();
     return hasNoFatalErrors();
   }
 
@@ -199,17 +199,17 @@ public final class PluginCompiler {
     for (Input input : inputs) {
       if (InputType.JAVASCRIPT == input.type) {
         GxpCompileDirectiveReplacer r = new GxpCompileDirectiveReplacer(mq);
-        input.parsetree.acceptPreOrder(r);
+        input.parsetree.node.acceptPreOrder(r, input.parsetree.parent);
         jobs.addAll(r.getDoms());
       } else if (InputType.GXP == input.type) {
-        jobs.add(new GxpJob((DomTree.Tag) input.parsetree, null));
+        jobs.add(new GxpJob((DomTree.Tag) input.parsetree.node, null));
       }
     }
     GxpCompiler gxpc = new GxpCompiler(mq, meta);
     GxpValidator v = new GxpValidator(mq);
     for (Iterator<GxpJob> it = jobs.iterator(); it.hasNext();) {
       GxpJob job = it.next();
-      if (!v.validate(job.docRoot)) {
+      if (!v.validate(new AncestorChain<DomTree>(job.docRoot))) {
         it.remove();
         continue;
       }
@@ -250,8 +250,8 @@ public final class PluginCompiler {
             .insertBefore(templateRef, null)
             .execute();
         } else {
-          ((MutableParseTreeNode) job.toReplace.getParent()).replaceChild(
-              templateRef, job.toReplace);
+          ((MutableParseTreeNode) job.toReplace.parent.node).replaceChild(
+              templateRef, job.toReplace.node);
         }
       } catch (GxpCompiler.BadContentException ex) {
         ex.toMessageQueue(mq);
@@ -282,7 +282,7 @@ public final class PluginCompiler {
   private boolean compileCssTemplates() {
     for (Input input : inputs) {
       if (InputType.CSS_TEMPLATE != input.type) { continue; }
-      CssTemplate t = (CssTemplate) input.parsetree;
+      CssTemplate t = (CssTemplate) input.parsetree.node;
       FunctionConstructor function;
       try {
         function = t.toJavascript(meta, mq);
@@ -316,14 +316,14 @@ public final class PluginCompiler {
     for (Input input : inputs) {
       CssTree css;
       if (InputType.CSS == input.type) {
-        css = (CssTree.StyleSheet) input.parsetree;
+        css = (CssTree.StyleSheet) input.parsetree.node;
       } else if (InputType.CSS_TEMPLATE == input.type) {
-        css = ((CssTemplate) input.parsetree).getCss();
+        css = ((CssTemplate) input.parsetree.node).getCss();
       } else {
         continue;
       }
-      valid &= v.validateCss(css);
-      valid &= rw.rewrite(css);
+      valid &= v.validateCss(new AncestorChain<CssTree>(css));
+      valid &= rw.rewrite(new AncestorChain<CssTree>(css));
     }
 
     return valid && hasNoFatalErrors();
@@ -334,8 +334,8 @@ public final class PluginCompiler {
 
     for (Input input : inputs) {
       if (InputType.JAVASCRIPT == input.type) {
-        Block body = (Block) input.parsetree;
-        body.acceptPreOrder(rw);
+        Block body = (Block) input.parsetree.node;
+        body.acceptPreOrder(rw, null);
       }
     }
 
@@ -350,7 +350,7 @@ public final class PluginCompiler {
         = initFunctionBody.createMutation();
     for (Input input : inputs) {
       if (InputType.JAVASCRIPT == input.type) {
-        Block body = (Block) input.parsetree;
+        Block body = (Block) input.parsetree.node;
         MutableParseTreeNode.Mutation oldChanges = body.createMutation();
         for (Statement s : body.children()) {
           oldChanges.removeChild(s);
@@ -407,7 +407,8 @@ public final class PluginCompiler {
       System.err.println("rw\n" + out + "\n\n");
     }
 
-    boolean valid = new ExpressionSanitizer(mq).sanitize(this.jsTree);
+    boolean valid = new ExpressionSanitizer(mq).sanitize(
+        new AncestorChain<Block>(this.jsTree));
     return valid && hasNoFatalErrors();
   }
 
@@ -428,22 +429,23 @@ public final class PluginCompiler {
   }
 
   private static class Input {
-    final ParseTreeNode parsetree;
+    final AncestorChain<?> parsetree;
     final InputType type;
 
-    Input(ParseTreeNode parsetree) {
+    Input(AncestorChain<?> parsetree) {
       assert null != parsetree;
       this.parsetree = parsetree;
-      if (parsetree instanceof Statement) {
+      ParseTreeNode parsetreeNode = parsetree.node;
+      if (parsetreeNode instanceof Statement) {
         this.type = InputType.JAVASCRIPT;
-      } else if (parsetree instanceof DomTree.Tag) {
+      } else if (parsetreeNode instanceof DomTree.Tag) {
         this.type = InputType.GXP;
-      } else if (parsetree instanceof CssTree.StyleSheet) {
+      } else if (parsetreeNode instanceof CssTree.StyleSheet) {
         this.type = InputType.CSS;
-      } else if (parsetree instanceof CssTemplate) {
+      } else if (parsetreeNode instanceof CssTemplate) {
         this.type = InputType.CSS_TEMPLATE;
       } else {
-        throw new AssertionError("Unknown input type " + parsetree);
+        throw new AssertionError("Unknown input type " + parsetreeNode);
       }
     }
   }
@@ -467,7 +469,8 @@ final class GxpCompileDirectiveReplacer implements Visitor {
 
   List<GxpJob> getDoms() { return jobs; }
 
-  public boolean visit(ParseTreeNode node) {
+  public boolean visit(AncestorChain<?> ancestors) {
+    ParseTreeNode node = ancestors.node;
     if (!(node instanceof Operation)) { return true; }
     Operation op = (Operation) node;
     if (Operator.FUNCTION_CALL != op.getOperator()
@@ -477,10 +480,10 @@ final class GxpCompileDirectiveReplacer implements Visitor {
     Expression fn = op.children().get(0),
               arg = op.children().get(1);
     if (!(fn instanceof Reference
-        && "compileGxp".equals(((Reference) fn).getIdentifier()))) {
+          && "compileGxp".equals(((Reference) fn).getIdentifier()))) {
       return true;
     }
-    ParseTreeNode parent = op.getParent();
+    ParseTreeNode parent = ancestors.getParentNode();
     if (!(parent instanceof ExpressionStmt)) { return true; }
     try {
       CharProducer cp = stringExpressionAsCharProducer(arg);
@@ -495,7 +498,7 @@ final class GxpCompileDirectiveReplacer implements Visitor {
         throw new ParseException(new Message(
             PluginMessageType.CANT_CONVERT_TO_GXP, arg.getFilePosition(), arg));
       }
-      jobs.add(new GxpJob((DomTree.Tag) doc, (MutableParseTreeNode) parent));
+      jobs.add(new GxpJob((DomTree.Tag) doc, ancestors.parent));
     } catch (ParseException ex) {
       ex.toMessageQueue(mq);
     }
@@ -543,11 +546,11 @@ final class GxpCompileDirectiveReplacer implements Visitor {
 
 final class GxpJob {
   final DomTree.Tag docRoot;
-  final ParseTreeNode toReplace;
+  final AncestorChain<?> toReplace;
   GxpCompiler.TemplateSignature sig;
   FunctionConstructor compiled;
 
-  GxpJob(DomTree.Tag docRoot, ParseTreeNode toReplace) {
+  GxpJob(DomTree.Tag docRoot, AncestorChain<?> toReplace) {
     assert null != docRoot;
     this.docRoot = docRoot;
     this.toReplace = toReplace;
@@ -561,12 +564,14 @@ final class GlobalDefRewriter implements Visitor {
     this.meta = meta;
   }
 
-  public boolean visit(ParseTreeNode n) {
+  public boolean visit(AncestorChain<?> ancestors) {
+    ParseTreeNode n = ancestors.node;
     if (n instanceof FunctionConstructor) { return false; }
     if (n instanceof MultiDeclaration) {
       // Replace with a block.  Then recurse so that the declarations will get
       // converted to assignments
-      MutableParseTreeNode parent = (MutableParseTreeNode) n.getParent();
+      MutableParseTreeNode parent
+          = (MutableParseTreeNode) ancestors.getParentNode();
       MultiDeclaration multi = (MultiDeclaration) n;
       List<Declaration> decls = new ArrayList<Declaration>(multi.children());
       while (!multi.children().isEmpty()) {
@@ -575,11 +580,12 @@ final class GlobalDefRewriter implements Visitor {
       Block block = s(new Block(decls));
       block.setFilePosition(multi.getFilePosition());
       parent.replaceChild(block, multi);
-      block.acceptPreOrder(this);
+      block.acceptPreOrder(this, ancestors);
       return false;
     } else if (n instanceof Declaration) {
-      MutableParseTreeNode parent = (MutableParseTreeNode) n.getParent();
-      if (parent instanceof CatchStmt && null == n.getPrevSibling()) {
+      MutableParseTreeNode parent
+          = (MutableParseTreeNode) ancestors.getParentNode();
+      if (parent instanceof CatchStmt && parent.children().get(0) == n) {
         // Do not move the exception declaration in a catch block
         return false;
       }
@@ -589,13 +595,6 @@ final class GlobalDefRewriter implements Visitor {
         UndefinedLiteral placeholder = s(new UndefinedLiteral());
         placeholder.setFilePosition(FilePosition.endOf(d.getFilePosition()));
         initializer = placeholder;
-      } else if (d instanceof FunctionDeclaration) {
-        FunctionConstructor placeholder = new FunctionConstructor(
-            null, Collections.<FormalParam>emptyList(),
-            new Block(Collections.<Statement>emptyList()));
-        d.replaceChild(placeholder, initializer);
-      } else {
-        d.removeChild(initializer);
       }
 
       ExpressionStmt rewritten = s(
@@ -630,17 +629,18 @@ final class GlobalReferenceRewriter {
 
   void rewrite(ParseTreeNode node, final Set<? extends String> locals) {
     node.acceptPreOrder(new Visitor() {
-      public boolean visit(ParseTreeNode node) {
+      public boolean visit(AncestorChain<?> ancestors) {
+        ParseTreeNode node = ancestors.node;
         // If we see a function constructor, we need to compute a new set of
         // local declarations and recurse
         if (node instanceof FunctionConstructor) {
           FunctionConstructor c = (FunctionConstructor) node;
           Set<String> fnLocals = new HashSet<String>(locals);
           fnLocals.addAll(IMPLICIT_FUNCTION_DEFINITIONS);
-          LocalDeclarationInspector insp =
-            new LocalDeclarationInspector(fnLocals);
+          LocalDeclarationInspector insp
+              = new LocalDeclarationInspector(fnLocals);
           for (ParseTreeNode child : c.children()) {
-            child.acceptPreOrder(insp);
+            child.acceptPreOrder(insp, ancestors);
           }
           rewrite(c.getBody(), fnLocals);
           return false;
@@ -648,34 +648,33 @@ final class GlobalReferenceRewriter {
 
         if (node instanceof Reference) {
           Reference ref = (Reference) node;
-          MutableParseTreeNode parent =
-            (MutableParseTreeNode) node.getParent();
+          MutableParseTreeNode parent
+              = (MutableParseTreeNode) ancestors.getParentNode();
           // If node is part of a member access, and is not the leftmost
           // reference, then don't rewrite.  We don't want to rewrite the
           // b in a.b.
 
           // We also don't want to rewrite synthetic nodes -- nodes created by
-          // the PluginCompiler..
+          // the PluginCompiler.
+          List<? extends ParseTreeNode> siblings = parent.children();
           if (!locals.contains(ref.getIdentifier())
               && !ref.getAttributes().is(ExpressionSanitizer.SYNTHETIC)
-              && !(null == ref.getNextSibling()
-                   && parent instanceof Operation
+              && !(parent instanceof Operation
                    && (Operator.MEMBER_ACCESS
-                        == ((Operation) parent).getOperator()))) {
+                       == ((Operation) parent).getOperator())
+                   && siblings.size() - 1 == siblings.lastIndexOf(ref))) {
 
-            Reference placeholder = new Reference("_");
             Operation pluginReference = s(
                 new Operation(
                     Operator.MEMBER_ACCESS,
                     s(new Reference(meta.namespaceName)),
-                    placeholder));
+                    ref));
             parent.replaceChild(pluginReference, ref);
-            pluginReference.replaceChild(ref, placeholder);
           }
         }
         return true;
       }
-    });
+    }, null);
   }
 
   static <T extends ParseTreeNode> T s(T n) {
@@ -688,7 +687,8 @@ final class GlobalReferenceRewriter {
 
     LocalDeclarationInspector(Set<String> locals) { this.locals = locals; }
 
-    public boolean visit(ParseTreeNode node) {
+    public boolean visit(AncestorChain<?> ancestors) {
+      ParseTreeNode node = ancestors.node;
       if (node instanceof FunctionConstructor) { return false; }
       if (node instanceof Declaration) {
         locals.add(((Declaration) node).getIdentifier());

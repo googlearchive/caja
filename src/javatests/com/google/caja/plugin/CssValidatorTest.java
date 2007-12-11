@@ -20,6 +20,8 @@ import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
+import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.reporting.EchoingMessageQueue;
@@ -731,14 +733,14 @@ public final class CssValidatorTest extends TestCase {
   private void fails(String css) throws Exception {
     CssTree t = parseCss(css);
     CssValidator v = new CssValidator(mq);
-    assertTrue(css, !v.validateCss(t));
+    assertTrue(css, !v.validateCss(ac(t)));
   }
 
   private void warns(String css) throws Exception {
     CssTree t = parseCss(css);
     MessageQueue smq = new SimpleMessageQueue();
     CssValidator v = new CssValidator(smq);
-    boolean valid = v.validateCss(t);
+    boolean valid = v.validateCss(ac(t));
     mq.getMessages().addAll(smq.getMessages());
     assertTrue(css, valid);
     assertTrue(css, !smq.getMessages().isEmpty());
@@ -749,7 +751,7 @@ public final class CssValidatorTest extends TestCase {
     CssTree cssTree = parseCss(css);
     MessageQueue smq = new SimpleMessageQueue();
     CssValidator v = new CssValidator(smq);
-    boolean valid = v.validateCss(cssTree);
+    boolean valid = v.validateCss(ac(cssTree));
     mq.getMessages().addAll(smq.getMessages());
     assertTrue(css, valid);
 
@@ -761,5 +763,9 @@ public final class CssValidatorTest extends TestCase {
     cssTree.format(mc, sb);
     assertEquals(css, golden.trim(), sb.toString().trim());
     assertTrue(css, smq.getMessages().isEmpty());
+  }
+
+  private static <T extends ParseTreeNode> AncestorChain<T> ac(T node) {
+    return new AncestorChain<T>(node);
   }
 }

@@ -14,9 +14,11 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  *
@@ -27,14 +29,16 @@ public final class CaseStmt extends SwitchCase {
   private Statement body;
 
   public CaseStmt(Expression caseValue, Statement body) {
-    this.children.add(caseValue);
-    this.children.add(body);
-    childrenChanged();
+    createMutation()
+        .appendChild(caseValue)
+        .appendChild(body)
+        .execute();
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
+    List<? extends ParseTreeNode> children = children();
     this.caseValue = (Expression) children.get(0);
     this.body = (Statement) children.get(1);
   }

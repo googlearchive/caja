@@ -14,6 +14,8 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.lexer.Keyword;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
@@ -27,11 +29,11 @@ import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.js.RegexpLiteral;
 import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.parser.js.RegexpLiteral;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,22 +52,23 @@ public class ExpressionSanitizerBaja {
     this.meta = meta;
   }
 
-  boolean sanitize(ParseTreeNode node) {
-    rewriteFieldAccess(node);
+  boolean sanitize(AncestorChain<?> toSanitize) {
+    rewriteFieldAccess(toSanitize.node);
     return true;
   }
   
   // $1.$2 -> $1.$2_canRead___ ? $1.$2 : __.readPub($1,"$2")
   private final class FieldAccessRewriter implements Visitor {
     // TODO(benl): if we switched FieldAccessRewriter to be pre-order, then it
-    // could do this on the fly. 
+    // could do this on the fly.
     private final class FindThisAndSuper implements Visitor {
       private boolean thisUsed = false;
       private boolean superUsed = false;
       private boolean argumentsUsed = false;
 
       // TODO(benl): Also needs to deal with closures for ES4.
-      public boolean visit(ParseTreeNode node) {
+      public boolean visit(AncestorChain<?> ancestors) {
+        ParseTreeNode node = ancestors.node;
         if (node instanceof FunctionDeclaration) {
           // Don't descend into nested functions
           return false;
@@ -85,7 +88,7 @@ public class ExpressionSanitizerBaja {
         }
         return true;
       }
-      
+
       public boolean usedThis() { return thisUsed; }
       public boolean usedSuper() { return superUsed; }
     }
@@ -108,24 +111,26 @@ public class ExpressionSanitizerBaja {
       return new Operation(Operator.FUNCTION_CALL, callChildren);
     }
     // Replace toReplace with ___.what(args...)
-    private void replaceCall___(ParseTreeNode toReplace, String what,
-        Expression... args) {
+    private void replaceCall___(
+        AncestorChain<?> toReplace, String what, Expression... args) {
       final Operation call = call___(what, args);
-      ((MutableParseTreeNode) toReplace.getParent()).replaceChild(call, toReplace);
+      ((MutableParseTreeNode) toReplace.parent.node)
+          .replaceChild(call, toReplace.node);
     }
     // ___.whatPub(foo,...) or ____.whatProp(this,....)
     private Operation call___PubOrProp(String what, Expression... args) {
       String whatType = "Pub";
-      if (args[0] instanceof Reference && ((Reference) args[0]).isThis())
+      if (args[0] instanceof Reference && ((Reference) args[0]).isThis()) {
         whatType = "Prop";
+      }
       return call___(what + whatType, args);
     }
     // replace toReplace with ___.whatPub(foo,...) or ____.whatProp(this,....)
-    private void replaceCall___PubOrProp(ParseTreeNode toReplace, String what,
-        Expression... args) {
+    private void replaceCall___PubOrProp(
+        AncestorChain<?> toReplace, String what, Expression... args) {
       final Operation call = call___PubOrProp(what, args);
-      ((MutableParseTreeNode) toReplace.getParent()).replaceChild(call,
-          toReplace);
+      ((MutableParseTreeNode) toReplace.parent.node)
+          .replaceChild(call, toReplace.node);
     }
     private StringLiteral string(String str) {
       return new StringLiteral(StringLiteral.toQuotedValue(str));
@@ -179,13 +184,13 @@ public class ExpressionSanitizerBaja {
     // simpleCanTernary, but wrapped like (function() { var tmp=lhs;
     //   simpleCanTernary(lhs,...) })()
     private Operation canTernary(Expression lhs, String canWhat, String rhsName,
-        Operator op, Expression... args) {
+                                 Operator op, Expression... args) {
       // TODO(benl): why does Reference.IsLeftHandSide() always return true?
       final boolean isRef = lhs instanceof Reference;
       final boolean isThis = isRef && ((Reference) lhs).isThis();
-      final Operation ternary = simpleCanTernary(isThis, isRef
-          ? (String)lhs.getValue() : ReservedNames.TEMP, canWhat, rhsName, op,
-          args);
+      final Operation ternary = simpleCanTernary(
+          isThis, isRef ? (String) lhs.getValue() : ReservedNames.TEMP,
+          canWhat, rhsName, op, args);
       if (isRef) {
         return ternary;
       }
@@ -194,34 +199,39 @@ public class ExpressionSanitizerBaja {
           new ReturnStmt(ternary)));
       return privateScope(body);
     }
-    private void replaceCanTernary(ParseTreeNode toReplace,Expression lhs,
+    private void replaceCanTernary(
+        AncestorChain<?> toReplace, Expression lhs,
         String canWhat, String rhsName, Operator op, Expression... args) {
       Operation ternary = canTernary(lhs, canWhat, rhsName, op, args);
-      ((MutableParseTreeNode) toReplace.getParent()).replaceChild(ternary,
-          toReplace);
+      ((MutableParseTreeNode) toReplace.parent.node)
+          .replaceChild(ternary, toReplace.node);
     }
-    // func(...) { ... } to <namespace>.func = ___.<wrapper>(function(...) { ... })
-    private void makeFunction(final ParseTreeNode node, String wrapper) {
-      final FunctionConstructor func
-        = (FunctionConstructor) node.children().get(0);
+    // func(...) { ... }
+    // to <namespace>.func = ___.<wrapper>(function(...) { ... })
+    private void makeFunction(
+        AncestorChain<FunctionDeclaration> decl, String wrapper) {
+      final FunctionConstructor func = decl.node.getInitializer();
       final Operation call = call___(wrapper, func);
       final Statement assign = TreeConstruction.assign(
-          TreeConstruction.memberAccess(meta.namespaceName,
-              (String)func.getValue()),
+          TreeConstruction.memberAccess(meta.namespaceName, func.getName()),
           call);
       func.clearName();
-      ((MutableParseTreeNode) node.getParent()).replaceChild(assign, node);
+      ((MutableParseTreeNode) decl.parent.node).replaceChild(assign, decl.node);
     }
 
-    public boolean visit(final ParseTreeNode node) {
-      if (node.getAttributes().is(ExpressionSanitizer.SYNTHETIC)) { return true; }
+    public boolean visit(AncestorChain<?> ancestors) {
+      ParseTreeNode node = ancestors.node;
+      if (node.getAttributes().is(ExpressionSanitizer.SYNTHETIC)) {
+        return true;
+      }
       if (node instanceof FunctionConstructor) {
         FunctionConstructor func = (FunctionConstructor) node;
         FindThisAndSuper finder = new FindThisAndSuper();
-        func.getBody().acceptPreOrder(finder);
+        func.getBody().acceptPreOrder(finder, ancestors);
         if (finder.thisUsed) {
           final Statement localThis
-            = new Declaration(ReservedNames.LOCAL_THIS, new Reference("this"));
+              = new Declaration(ReservedNames.LOCAL_THIS,
+                                new Reference(Keyword.THIS.toString()));
           func.getBody().prepend(localThis);
         }
         if (finder.argumentsUsed) {
@@ -231,17 +241,20 @@ public class ExpressionSanitizerBaja {
           func.getBody().prepend(localArgs);
         }
       } else if (node instanceof FunctionDeclaration) {
-        final FunctionConstructor func
-          = (FunctionConstructor) node.children().get(0);
+        FunctionDeclaration decl = (FunctionDeclaration) node;
+        final FunctionConstructor func = decl.getInitializer();
         FindThisAndSuper finder = new FindThisAndSuper();
-        func.getBody().acceptPreOrder(finder);
+        func.getBody().acceptPreOrder(
+            finder, new AncestorChain<FunctionConstructor>(ancestors, func));
         if (finder.usedSuper()) {
-          // TODO(benl): the spec says the function should also include "this" - true? Or not?
-          makeFunction(node, "ctor");
+          // TODO(benl): the spec says the function should also include "this"
+          // - true? Or not?
+          makeFunction(ancestors.cast(FunctionDeclaration.class), "ctor");
         } else if (finder.usedThis()) {
-          makeFunction(node, "ctor");
+          makeFunction(ancestors.cast(FunctionDeclaration.class), "ctor");
         } else {
-          makeFunction(node, "simpleFunc");
+          makeFunction(ancestors.cast(FunctionDeclaration.class),
+                       "simpleFunc");
         }
       } else if (node instanceof Reference) {
         final Reference ref = (Reference) node;
@@ -257,7 +270,8 @@ public class ExpressionSanitizerBaja {
         final Operation call = new Operation(Operator.FUNCTION_CALL,
             new Reference("RegExp"), string(regex.getMatchText()),
             string(regex.getModifiers()));
-        ((MutableParseTreeNode) regex.getParent()).replaceChild(call, regex);
+        ((MutableParseTreeNode) ancestors.parent.node)
+            .replaceChild(call, regex);
       } else if (node instanceof Operation) {
         final Operation op = (Operation) node;
         final Operator operator = op.getOperator();
@@ -266,43 +280,53 @@ public class ExpressionSanitizerBaja {
         if (op.children().size() > 1) {
           rhs = op.children().get(1);
         }
-        final ParseTreeNode parent = op.getParent();
+        final MutableParseTreeNode parent
+            = (MutableParseTreeNode) ancestors.parent.node;
         Operator parentOp = null;
-        if (parent instanceof Operation)
-            parentOp = ((Operation) parent).getOperator();
+        if (parent instanceof Operation) {
+          parentOp = ((Operation) parent).getOperator();
+        }
         final boolean isLHS = node == parent.children().get(0);
         if (operator == Operator.MEMBER_ACCESS) {
           final String rhsName = (String)rhs.getValue();
-          // this.foo_ is left untouched. Anything with __ at the end will already have been rejected.
-          if (lhs instanceof Reference && ((Reference)lhs).isThis() && rhsName.endsWith("_")) {
+          // this.foo_ is left untouched. Anything with __ at the end will
+          // already have been rejected.
+          if (lhs instanceof Reference
+              && ((Reference) lhs).isThis() && rhsName.endsWith("_")) {
             return true;
           } else if (isLHS && parentOp == Operator.FUNCTION_CALL) {
             int numChildren = parent.children().size();
-            Expression[] args =
-                parent.children().subList(1, numChildren).toArray(new Expression[numChildren - 1]);
-            replaceCanTernary(parent, lhs, "Call", rhsName,
+            Expression[] args = parent.children().subList(1, numChildren)
+                .toArray(new Expression[numChildren - 1]);
+            replaceCanTernary(
+                ancestors.parent, lhs, "Call", rhsName,
                 Operator.FUNCTION_CALL, args);
           } else if (isLHS && parentOp == Operator.ASSIGN) {
-            replaceCanTernary(parent, lhs, "Set", rhsName,
+            replaceCanTernary(
+                ancestors.parent, lhs, "Set", rhsName,
                 Operator.ASSIGN, (Expression) parent.children().get(1));
           } else if (isLHS && parentOp == Operator.DELETE) {
-            replaceCall___PubOrProp(parent, "delete", lhs, string(rhsName));
+            replaceCall___PubOrProp(
+                ancestors.parent, "delete", lhs, string(rhsName));
           } else {
-            replaceCanTernary(op, lhs, "Read", rhsName, null);
+            replaceCanTernary(ancestors, lhs, "Read", rhsName, null);
           }
         } else if (operator == Operator.SQUARE_BRACKET) {
           if (isLHS && parentOp == Operator.ASSIGN) {
-            replaceCall___PubOrProp(parent, "set", lhs, rhs, (Expression) parent.children().get(1));
+            Expression child = (Expression) parent.children().get(1);
+            replaceCall___PubOrProp(ancestors.parent, "set", lhs, rhs, child);
           } if (isLHS && parentOp == Operator.DELETE) {
-            replaceCall___PubOrProp(parent, "delete", lhs, rhs);
+            replaceCall___PubOrProp(ancestors.parent, "delete", lhs, rhs);
           } else {
-            replaceCall___PubOrProp(op, "read", lhs, rhs);
+            replaceCall___PubOrProp(ancestors, "read", lhs, rhs);
           }
         } else if (operator == Operator.IN) {
           final Operation call = call___PubOrProp("canRead", rhs, lhs);
-          final Operation andAnd = new Operation(Operator.LOGICAL_AND, op, call);
-          ((MutableParseTreeNode)parent).replaceChild(andAnd, op);
+          final Operation andAnd
+              = new Operation(Operator.LOGICAL_AND, op, call);
+          parent.replaceChild(andAnd, op);
         } else if (operator == Operator.CONSTRUCTOR) {
+          // FIXME(benl): what if it's not as in (new Date)?
           assert parentOp == Operator.FUNCTION_CALL;
           assert rhs == null;
           // XXX(benl): Why does the class appear as a child of both CONSTRUCTOR
@@ -310,17 +334,16 @@ public class ExpressionSanitizerBaja {
           List<? extends Expression> constructorArgs = ((Operation) parent)
               .children().subList(1, parent.children().size());
           final ArrayConstructor args = new ArrayConstructor(constructorArgs);
-          replaceCall___(parent, "callNew", lhs, args);
+          replaceCall___(ancestors.parent, "callNew", lhs, args);
         }
       }
       return true;
     }
   }
 
-  private void rewriteFieldAccess(final ParseTreeNode node) {
-    final FieldAccessRewriter visitor = new FieldAccessRewriter();
+  private void rewriteFieldAccess(ParseTreeNode node) {
     // We use PostOrder because it visits all children, even those of changed
     // nodes. Note that children are processed first!
-    node.acceptPostOrder(visitor);
+    node.acceptPostOrder(new FieldAccessRewriter(), null);
   }
 }

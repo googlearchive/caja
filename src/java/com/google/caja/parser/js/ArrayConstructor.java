@@ -23,11 +23,9 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class ArrayConstructor
-    extends AbstractExpression<Expression> {
+public final class ArrayConstructor extends AbstractExpression<Expression> {
   public ArrayConstructor(List<? extends Expression> elements) {
-    this.children.addAll(elements);
-    childrenChanged();
+    createMutation().appendChildren(elements).execute();
   }
 
   @Override
@@ -37,7 +35,7 @@ public final class ArrayConstructor
     rc.out.append("[");
     rc.indent += 2;
     boolean seen = false;
-    for (Expression e : children) {
+    for (Expression e : children()) {
       if (seen) {
         rc.out.append(", ");
       } else {

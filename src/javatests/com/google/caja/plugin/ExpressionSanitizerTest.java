@@ -18,7 +18,9 @@ import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.NullLiteral;
@@ -65,7 +67,7 @@ public class ExpressionSanitizerTest extends TestCase {
     MessageQueue mq = new EchoingMessageQueue(
         new PrintWriter(new OutputStreamWriter(System.out)), mc);
     ParseTreeNode pt = TestUtil.parseTree(getClass(), "sanitizerinput1.js", mq);
-    new ExpressionSanitizer(mq).sanitize(pt);  // TODO: test output value
+    new ExpressionSanitizer(mq).sanitize(ac(pt));  // TODO: test output value
     StringBuilder out = new StringBuilder();
     RenderContext rc = new RenderContext(mc, out);
 
@@ -81,13 +83,13 @@ public class ExpressionSanitizerTest extends TestCase {
     MessageQueue mq = new EchoingMessageQueue(
         new PrintWriter(new OutputStreamWriter(System.out)), mc);
     Statement pt = TestUtil.parseTree(getClass(), "sanitizerinput1.js", mq);
-    new ExpressionSanitizer(mq).sanitize(pt);
+    new ExpressionSanitizer(mq).sanitize(ac(pt));
     StringBuilder out = new StringBuilder();
 
     pt.formatTree(mc, 0, out);
     assertEquals(golden.trim(), out.toString().trim());
 
-    checkFilePositionInviariants(pt);
+    checkFilePositionInviariants(ac(pt));
   }
 
   public void testArithmetic() throws Exception {
@@ -204,11 +206,9 @@ public class ExpressionSanitizerTest extends TestCase {
       Parser p = new Parser(tq, mq);
       jsBlock = p.parse();
       p.getTokenQueue().expectEmpty();
-      jsBlock.parentify();
     }
 
-    boolean actualSanitary =
-      new ExpressionSanitizer(mq).sanitize(jsBlock);
+    boolean actualSanitary = new ExpressionSanitizer(mq).sanitize(ac(jsBlock));
     StringBuilder actualBuf = new StringBuilder();
     RenderContext rc = new RenderContext(mc, actualBuf);
 
@@ -219,17 +219,18 @@ public class ExpressionSanitizerTest extends TestCase {
     assertEquals(input, sanitary, actualSanitary);
   }
 
-  private void checkFilePositionInviariants(ParseTreeNode n) {
+  private void checkFilePositionInviariants(AncestorChain<?> nChain) {
+    ParseTreeNode n = nChain.node;
     String msg = n + " : " + n.getFilePosition();
     try {
       // require that n start on or after its previous sibling
-      ParseTreeNode prev = n.getPrevSibling();
+      ParseTreeNode prev = nChain.getPrevSibling();
       assertTrue(msg, null == prev
                  || (prev.getFilePosition().endCharInFile()
                      <= n.getFilePosition().startCharInFile()));
 
       // require that n end on or before its next sibling
-      ParseTreeNode next = n.getNextSibling();
+      ParseTreeNode next = nChain.getNextSibling();
       assertTrue(msg, null == next
                  || (next.getFilePosition().startCharInFile()
                      >= n.getFilePosition().endCharInFile()));
@@ -246,7 +247,8 @@ public class ExpressionSanitizerTest extends TestCase {
       }
 
       for (ParseTreeNode c : children) {
-        checkFilePositionInviariants(c);
+        checkFilePositionInviariants(
+            new AncestorChain<ParseTreeNode>(nChain, c));
       }
     } catch (RuntimeException ex) {
       throw new RuntimeException(msg, ex);
@@ -271,6 +273,7 @@ public class ExpressionSanitizerTest extends TestCase {
 
   public void testIsAssignedOnly1() throws Exception {
     Reference r = new Reference("prototype");
+    // Foo.prototype = 'bar'
     ExpressionStmt es = new ExpressionStmt(
         new Operation(
             Operator.ASSIGN,
@@ -281,38 +284,40 @@ public class ExpressionSanitizerTest extends TestCase {
             new StringLiteral("'bar'")
             )
         );
-    es.parentify();
-    assertTrue(ExpressionSanitizer.isAssignedOnly(r, false));
-    assertTrue(ExpressionSanitizer.isAssignedOnly(r, true));
+    AncestorChain<Reference> rChain = chainTo(es, r);
+    assertTrue(ExpressionSanitizer.isAssignedOnly(rChain, false));
+    assertTrue(ExpressionSanitizer.isAssignedOnly(rChain, true));
   }
 
   public void testIsAssignedOnly2() throws Exception {
     Reference r = new Reference("prototype");
+    // prototype['foo'] = 'bar'
     ExpressionStmt es = new ExpressionStmt(
         new Operation(
             Operator.ASSIGN,
             new Operation(
-                Operator.MEMBER_ACCESS,
+                Operator.SQUARE_BRACKET,
                 r,
                 new StringLiteral("'foo'")),
             new StringLiteral("'bar'")
             )
         );
-    es.parentify();
-    assertTrue(!ExpressionSanitizer.isAssignedOnly(r, false));
-    assertTrue(!ExpressionSanitizer.isAssignedOnly(r, true));
+    AncestorChain<Reference> rChain = chainTo(es, r);
+    assertTrue(!ExpressionSanitizer.isAssignedOnly(rChain, false));
+    assertTrue(!ExpressionSanitizer.isAssignedOnly(rChain, true));
   }
 
   public void testIsAssignedOnly3() throws Exception {
     Reference r = new Reference("prototype");
     ExpressionStmt es = new ExpressionStmt(r);
-    es.parentify();
-    assertTrue(!ExpressionSanitizer.isAssignedOnly(r, false));
-    assertTrue(!ExpressionSanitizer.isAssignedOnly(r, true));
+    AncestorChain<Reference> rChain = chainTo(es, r);
+    assertTrue(!ExpressionSanitizer.isAssignedOnly(rChain, false));
+    assertTrue(!ExpressionSanitizer.isAssignedOnly(rChain, true));
   }
 
   public void testIsAssignedOnly4() throws Exception {
     Reference r = new Reference("r");
+    // x = r = null;
     ExpressionStmt es = new ExpressionStmt(
         new Operation(
             Operator.ASSIGN,
@@ -324,8 +329,33 @@ public class ExpressionSanitizerTest extends TestCase {
             )
         )
     );
-    es.parentify();
-    assertTrue(!ExpressionSanitizer.isAssignedOnly(r, false));
-    assertTrue(ExpressionSanitizer.isAssignedOnly(r, true));
+    AncestorChain<Reference> rChain = chainTo(es, r);
+    assertTrue(!ExpressionSanitizer.isAssignedOnly(rChain, false));
+    assertTrue(ExpressionSanitizer.isAssignedOnly(rChain, true));
+  }
+
+  /** The chain to x starting at root. */
+  private static <T extends ParseTreeNode> AncestorChain<T> chainTo(
+      ParseTreeNode root, T x) {
+    ChainFinder<T> finder = new ChainFinder<T>(x);
+    root.acceptPreOrder(finder, null);
+    return finder.result;
+  }
+  private static class ChainFinder<T extends ParseTreeNode> implements Visitor {
+    AncestorChain<T> result;
+    T target;
+
+    ChainFinder(T target) { this.target = target; }
+
+    public boolean visit(AncestorChain<?> ancestors) {
+      if (ancestors.node == target) {
+        result = new AncestorChain<T>(ancestors.parent, target);
+      }
+      return result == null;
+    }
+  }
+
+  private static <T extends ParseTreeNode> AncestorChain<T> ac(T node) {
+    return new AncestorChain<T>(node);
   }
 }

@@ -30,12 +30,11 @@ public final class Block
     extends AbstractStatement<Statement> implements NestedScope {
 
   public Block(List<? extends Statement> elements) {
-    this.children.addAll(elements);
-    childrenChanged();
+    createMutation().appendChildren(elements).execute();
   }
 
   public void prepend(Statement statement) {
-    insertBefore(statement, this.children.isEmpty()? null : this.children.get(0));
+    insertBefore(statement, children().isEmpty() ? null : children().get(0));
   }
 
   @Override
@@ -48,7 +47,7 @@ public final class Block
     if (pre) { rc.out.append(" "); }
     rc.out.append("{");
     rc.indent += 2;
-    for (Statement stmt : children) {
+    for (Statement stmt : children()) {
       rc.newLine();
       stmt.render(rc);
       if (!stmt.isTerminal()) {

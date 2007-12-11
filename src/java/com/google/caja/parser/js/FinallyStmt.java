@@ -26,14 +26,13 @@ public final class FinallyStmt extends AbstractStatement<Statement> {
   private Statement body;
 
   public FinallyStmt(Statement body) {
-    this.children.add(body);
-    childrenChanged();
+    appendChild(body);
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.body = children.get(0);
+    this.body = children().get(0);
   }
 
   @Override

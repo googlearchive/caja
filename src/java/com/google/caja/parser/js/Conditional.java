@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
+ * An if/else if/else statement.
  *
  * @author mikesamuel@gmail.com
  */
@@ -30,25 +31,27 @@ public final class Conditional extends AbstractStatement<ParseTreeNode> {
   public Conditional(
       List<Pair<Expression, Statement>> ifClauses, Statement elseClause) {
     if (ifClauses.isEmpty()) { throw new IllegalArgumentException(); }
+    Mutation m = createMutation();
     for (Pair<Expression, Statement> p : ifClauses) {
       Expression condition = p.a;
       Statement then = p.b;
       if (null == condition || null == then) {
         throw new IllegalArgumentException();
       }
-      this.children.add(condition);
-      this.children.add(then);
+      m.appendChild(condition);
+      m.appendChild(then);
     }
     if (null != elseClause) {
-      this.children.add(elseClause);
+      m.appendChild(elseClause);
     }
-    childrenChanged();
+    m.execute();
   }
 
   @Override
   public Object getValue() { return null; }
 
   public void render(RenderContext rc) throws IOException {
+    List<? extends ParseTreeNode> children = children();
     boolean seen = false;
     int i = 0;
     int n = children.size();

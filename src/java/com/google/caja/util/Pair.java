@@ -38,7 +38,7 @@ public final class Pair<A, B> {
   @Override
   public boolean equals(Object o) {
     if (!(o instanceof Pair)) { return false; }
-    Pair that = (Pair) o;
+    Pair<?, ?> that = (Pair<?, ?>) o;
     return (this.a == null ? that.a == null : this.a.equals(that.a))
       && (this.b == null ? that.b == null : this.b.equals(that.b));
   }

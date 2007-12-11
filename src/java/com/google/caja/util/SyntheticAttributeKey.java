@@ -45,7 +45,7 @@ public final class SyntheticAttributeKey<T>
     if (!(obj instanceof SyntheticAttributeKey)) {
       return false;
     }
-    SyntheticAttributeKey<?> that = (SyntheticAttributeKey) obj;
+    SyntheticAttributeKey<?> that = (SyntheticAttributeKey<?>) obj;
     return type.equals(that.type) && this.name.equals(that.name);
   }
 

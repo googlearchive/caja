@@ -179,6 +179,7 @@
       <include name="**/caja/lexer/PunctuationTrieTest.java"/>
       <include name="**/caja/lexer/escaping/EscapingTest.java"/>
       <include name="**/caja/opensocial/DefaultGadgetRewriterTest.java"/>
+      <include name="**/caja/opensocial/GadgetParserTest.java"/>
       <include name="**/caja/parser/ParseTreeNodeTest.java"/>
       <include name="**/caja/parser/css/Css2Test.java"/>
       <include name="**/caja/parser/css/CssParserTest.java"/>
@@ -214,6 +215,9 @@
         <include name="**/caja/lexer/lexertest2.js"/>
         <include name="**/caja/lexer/testinput1.txt"/>
         <include name="**/caja/opensocial/listfriends-inline.xml"/>
+        <include name="**/caja/opensocial/listfriends.js"/>
+        <include name="**/caja/opensocial/listfriends.xml"/>
+        <include name="**/caja/opensocial/test-parsing.xml"/>
         <include name="**/caja/parser/css/cssparsergolden1.txt"/>
         <include name="**/caja/parser/css/cssparsergolden2.txt"/>
         <include name="**/caja/parser/css/cssparserinput1.css"/>

@@ -27,11 +27,11 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.lexer.TokenQueue.Mark;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
-import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.reporting.Message;
@@ -178,7 +178,7 @@ public class PluginCompilerMain {
         if (null == parseTree) {
           parsePassed = false;
         } else {
-          compiler.addInput(parseTree);
+          compiler.addInput(new AncestorChain<ParseTreeNode>(parseTree));
         }
       } catch (ParseException ex) {
         ex.toMessageQueue(mq);
@@ -232,9 +232,7 @@ public class PluginCompilerMain {
       JsLexer lexer = new JsLexer(cp);
       JsTokenQueue tq = new JsTokenQueue(lexer, is);
       Parser p = new Parser(tq, mq);
-      Block body = p.parse();
-      body.parentify();
-      input = body;
+      input = p.parse();
       tq.expectEmpty();
     } else if (path.endsWith(".gxp")) {
       HtmlLexer lexer = new HtmlLexer(cp);

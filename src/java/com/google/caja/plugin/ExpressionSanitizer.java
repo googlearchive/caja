@@ -17,6 +17,7 @@ package com.google.caja.plugin;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.parser.AbstractParseTreeNode;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
@@ -50,7 +51,7 @@ import java.util.Map;
  */
 final class ExpressionSanitizer {
   static final SyntheticAttributeKey<Boolean> SYNTHETIC =
-    new SyntheticAttributeKey<Boolean>(Boolean.class, "synthetic");
+      new SyntheticAttributeKey<Boolean>(Boolean.class, "synthetic");
 
   private final MessageQueue mq;
 
@@ -87,12 +88,13 @@ final class ExpressionSanitizer {
     this.mq = mq;
   }
 
-  boolean sanitize(ParseTreeNode node) {
+  boolean sanitize(AncestorChain<?> toSanitize) {
     RewritingPass1 pass1 = new RewritingPass1();
-    node.acceptPostOrder(pass1);
-    rewriteFieldAccessesAsFunctionCalls(node);
-    if (node instanceof AbstractParseTreeNode) {
-      inferFilePositionsForSyntheticNodes((AbstractParseTreeNode<?>) node);
+    toSanitize.node.acceptPostOrder(pass1, toSanitize.parent);
+    rewriteFieldAccessesAsFunctionCalls(toSanitize);
+    if (toSanitize.node instanceof AbstractParseTreeNode) {
+      inferFilePositionsForSyntheticNodes(
+          (AncestorChain<AbstractParseTreeNode<?>>) toSanitize);
     }
     return pass1.isValid();
   }
@@ -107,7 +109,8 @@ final class ExpressionSanitizer {
 
     public boolean isValid() { return valid; }
 
-    public boolean visit(ParseTreeNode node) {
+    public boolean visit(AncestorChain<?>  ancestors) {
+      ParseTreeNode node = ancestors.node;
       if (node.getAttributes().is(SYNTHETIC)) { return true; }
       if (node instanceof Operation) {
         Operation op = (Operation) node;
@@ -158,9 +161,9 @@ final class ExpressionSanitizer {
           // TODO: do some very simple type inference on b if b is an operator.
 
           Operation sqbracketOp = (Operation) node;
-          if (!isAssignedOnly(sqbracketOp, false)) {
+          if (!isAssignedOnly(ancestors.cast(Operation.class), false)) {
             Expression a = sqbracketOp.children().get(0),
-              b = sqbracketOp.children().get(1);
+                b = sqbracketOp.children().get(1);
             sqbracketOp.removeChild(a);
             sqbracketOp.removeChild(b);
             Operation getter = s(new Operation(
@@ -169,21 +172,22 @@ final class ExpressionSanitizer {
                                      a,
                                      b));
             getter.setFilePosition(sqbracketOp.getFilePosition());
-            ((MutableParseTreeNode) sqbracketOp.getParent()).replaceChild(
+            ((MutableParseTreeNode) ancestors.parent.node).replaceChild(
                 getter, sqbracketOp);
           }
           break;
         case ASSIGN:
           // a.innerHTML = b -> a.setInnerHTML(b)
-          rewriteFieldAssignmentsAsFunctionCalls(op,
-              "innerHTML", "setInnerHTML");
+          rewriteFieldAssignmentsAsFunctionCalls(
+              ancestors.cast(Operation.class), "innerHTML", "setInnerHTML");
           // a.class = b -> a.setClass(b)
-          rewriteFieldAssignmentsAsFunctionCalls(op, "class", "setClass");
+          rewriteFieldAssignmentsAsFunctionCalls(
+              ancestors.cast(Operation.class), "class", "setClass");
           break;
         case ASSIGN_SUM:
           // a.innerHTML += b -> a.appendInnerHTML(b)
-          rewriteFieldAssignmentsAsFunctionCalls(op,
-              "innerHTML", "appendInnerHTML");
+          rewriteFieldAssignmentsAsFunctionCalls(
+              ancestors.cast(Operation.class), "innerHTML", "appendInnerHTML");
           break;
         default:
           break;
@@ -236,18 +240,20 @@ final class ExpressionSanitizer {
                         MessagePart.Factory.valueOf(ident));
           valid = false;
         // Disallow reference to .prototype except as an lvalue
-        } else if ("prototype".equals(ident) && !isAssignedOnly(r, false)) {
-          MutableParseTreeNode parent = (MutableParseTreeNode) r.getParent();
-          if (!isAssignedOnly(r, true)) {
+        } else if ("prototype".equals(ident) &&
+                   !isAssignedOnly(ancestors.cast(Expression.class), false)) {
+          MutableParseTreeNode parent
+              = (MutableParseTreeNode) ancestors.getParentNode();
+          if (!isAssignedOnly(ancestors.cast(Expression.class), true)) {
             if (parent instanceof Operation
                 && Operator.MEMBER_ACCESS == ((Operation) parent).getOperator()
-                && null != r.getPrevSibling()) {
+                && !ancestors.isFirstSibling()) {
               // Convert to plugin_get___ so that we can make sure it's only
               // used on user defined functions
               StringLiteral key =
                 s(new StringLiteral(StringLiteral.toQuotedValue(ident)));
               key.setFilePosition(r.getFilePosition());
-              Expression left = (Expression) r.getPrevSibling();
+              Expression left = (Expression) parent.children().get(0);
               // Remove left, so we can use it in callToGet
               parent.replaceChild(new UndefinedLiteral(), left);
               Operation callToGet = s(
@@ -256,8 +262,8 @@ final class ExpressionSanitizer {
                       s(new Reference("plugin_get___")),
                       left,
                       key));
-              MutableParseTreeNode gparent =
-                (MutableParseTreeNode) parent.getParent();
+              MutableParseTreeNode gparent
+                  = (MutableParseTreeNode) ancestors.parent.parent.node;
               gparent.replaceChild(callToGet, parent);
             } else {
               mq.addMessage(PluginMessageType.UNSAFE_ACCESS,
@@ -315,7 +321,8 @@ final class ExpressionSanitizer {
   }
 
   private void rewriteFieldAssignmentsAsFunctionCalls(
-      Operation op, String fieldName, String functionName) {
+      AncestorChain<Operation> opChain, String fieldName, String functionName) {
+    Operation op = opChain.node;
     Expression lhs = op.children().get(0);
     Expression rhs = op.children().get(1);
     if (lhs instanceof Operation) {
@@ -325,7 +332,7 @@ final class ExpressionSanitizer {
         Expression field = lhsOp.children().get(1);
         if (field instanceof Reference &&
             field.getValue().equals(fieldName)) {
-          ParseTreeNode parentNode = op.getParent();
+          ParseTreeNode parentNode = opChain.getParentNode();
           if (parentNode instanceof MutableParseTreeNode) {
             MutableParseTreeNode mutableParentNode =
                 (MutableParseTreeNode) parentNode;
@@ -346,16 +353,17 @@ final class ExpressionSanitizer {
     }
   }
 
-  private void rewriteFieldAccessesAsFunctionCalls(ParseTreeNode n) {
+  private void rewriteFieldAccessesAsFunctionCalls(AncestorChain<?> toRewrite) {
     FieldAccessRewriter visitor = new FieldAccessRewriter();
-    n.acceptPreOrder(visitor);
+    toRewrite.node.acceptPreOrder(visitor, toRewrite.parent);
   }
 
   private final class FieldAccessRewriter implements Visitor {
 
     public FieldAccessRewriter() {}
 
-    public boolean visit(ParseTreeNode node) {
+    public boolean visit(AncestorChain<?>  ancestors) {
+      ParseTreeNode node = ancestors.node;
       if (node.getAttributes().is(SYNTHETIC)) { return true; }
       if (node instanceof Operation) {
         Operation op = (Operation) node;
@@ -364,7 +372,7 @@ final class ExpressionSanitizer {
           Expression rhs = op.children().get(1);
           if (rhs instanceof Reference && FIELD_REWRITE_MAP
               .containsKey(rhs.getValue())) {
-            ParseTreeNode nodeParent = op.getParent();
+            ParseTreeNode nodeParent = ancestors.getParentNode();
             if (nodeParent instanceof MutableParseTreeNode) {
               MutableParseTreeNode parent = (MutableParseTreeNode) nodeParent;
               Expression newFunctionCall =
@@ -402,7 +410,8 @@ final class ExpressionSanitizer {
     return s.startsWith("__") || s.endsWith("__");
   }
 
-  static boolean isAssignedOnly(Expression e, boolean allowSecondary) {
+  static boolean isAssignedOnly(AncestorChain<? extends Expression> e,
+                                boolean allowSecondary) {
     // Allow if the expression is part of an lvalue.
     // Allow E in
     //   A.E = B
@@ -425,39 +434,43 @@ final class ExpressionSanitizer {
     //         C
     //       B
 
-    ParseTreeNode child = e;
-    ParseTreeNode p2 = child.getParent();
+    AncestorChain<? extends Expression> child = e;
+    AncestorChain<?> p2 = child.parent;
 
-    if (p2 instanceof Operation
-        && Operator.MEMBER_ACCESS == ((Operation) p2).getOperator()) {
-      if (null == child.getPrevSibling()) { return false; }
-      child = p2;
-      p2 = child.getParent();
+    if (p2 != null && p2.node instanceof Operation
+        && Operator.MEMBER_ACCESS == ((Operation) p2.node).getOperator()) {
+      if (child.isFirstSibling()) { return false; }
+      child = p2.cast(Operation.class);
+      p2 = child.parent;
     }
 
-    while (p2 instanceof Operation
-        && Operator.MEMBER_ACCESS == ((Operation) p2).getOperator()) {
+    while (p2 != null && p2.node instanceof Operation
+           && Operator.MEMBER_ACCESS == ((Operation) p2.node).getOperator()) {
       // lhs of member access
-      if (null == child.getNextSibling()) { return false; }
-      child = p2;
-      p2 = child.getParent();
+      if (child.isLastSibling()) { return false; }
+      child = p2.cast(Operation.class);
+      p2 = child.parent;
     }
 
-    ParseTreeNode p1 = p2;
-    if (!(p1 instanceof Operation)) { return false; }
-    if (Operator.ASSIGN != ((Operation) p1).getOperator()) { return false; }
-    if (null == child.getNextSibling()) { return false; }
+    AncestorChain<?> p1 = p2;
+    if (!(p1 != null && p1.node instanceof Operation)) {
+      return false;
+    }
+    if (Operator.ASSIGN != ((Operation) p1.node).getOperator()) {
+      return false;
+    }
+    if (child.isLastSibling()) { return false; }
 
-    ParseTreeNode p0 = p1.getParent();
+    AncestorChain<?> p0 = p1.parent;
     if (allowSecondary) {
-      while (p0 instanceof Operation
-             && Operator.ASSIGN == ((Operation) p0).getOperator()) {
-        if (null == p1.getPrevSibling()) { return false; }
+      while (p0 != null && p0.node instanceof Operation
+             && Operator.ASSIGN == ((Operation) p0.node).getOperator()) {
+        if (p1.isFirstSibling()) { return false; }
         p1 = p0;
-        p0 = p1.getParent();
+        p0 = p1.parent;
       }
     }
-    return p0 instanceof Statement;
+    return p0 != null && p0.node instanceof Statement;
   }
 
   /**
@@ -465,8 +478,9 @@ final class ExpressionSanitizer {
    * so that they can accurately report errors.
    */
   static FilePosition inferFilePositionsForSyntheticNodes(
-      AbstractParseTreeNode<?> node) {
+      AncestorChain<AbstractParseTreeNode<?>> nodeChain) {
 
+    AbstractParseTreeNode<?> node = nodeChain.node;
     // Constraints:
     // 1) A child's span must not exceed its parents
     // 2) A node's span must start on or after its previous sibling ends
@@ -475,17 +489,18 @@ final class ExpressionSanitizer {
     FilePosition pos = node.getFilePosition();
     if (null != pos) {
       for (ParseTreeNode child : node.children()) {
-        if (null == child) { continue; }
-        inferFilePositionsForSyntheticNodes((AbstractParseTreeNode<?>) child);
+        AbstractParseTreeNode<?> achild = (AbstractParseTreeNode<?>) child;
+        inferFilePositionsForSyntheticNodes(
+            new AncestorChain<AbstractParseTreeNode<?>>(nodeChain, achild));
       }
       return pos;
     }
 
     // Recurse first to get information from children
     for (ParseTreeNode child : node.children()) {
-      if (null == child) { continue; }
-      FilePosition childSpan =
-        inferFilePositionsForSyntheticNodes((AbstractParseTreeNode<?>) child);
+      AbstractParseTreeNode<?> achild = (AbstractParseTreeNode<?>) child;
+      FilePosition childSpan = inferFilePositionsForSyntheticNodes(
+          new AncestorChain<AbstractParseTreeNode<?>>(nodeChain, achild));
       pos = (null == pos)
           ? childSpan
           : (pos.source().equals(childSpan.source()) &&
@@ -500,23 +515,24 @@ final class ExpressionSanitizer {
     }
 
     {
-      ParseTreeNode tmp = node;
+      AncestorChain<?> tmp = nodeChain;
       predecessorLoop:
       do {
-        FilePosition prevPos = tmp.getFilePosition();
+        FilePosition prevPos = tmp.node.getFilePosition();
         if (null != prevPos) {
           pos = FilePosition.startOf(prevPos);
           break;
         }
-        for (ParseTreeNode prev;
-             null != (prev = tmp.getPrevSibling()); tmp = prev) {
+        int siblingIndex = tmp.indexInParent();
+        while (--siblingIndex >= 0) {
+          ParseTreeNode prev = tmp.parent.node.children().get(siblingIndex);
           prevPos = prev.getFilePosition();
           if (null != prevPos) {
             pos = FilePosition.endOf(prevPos);
             break predecessorLoop;
           }
         }
-        tmp = tmp.getParent();
+        tmp = tmp.parent;
       } while (null != tmp);
     }
 
@@ -526,18 +542,22 @@ final class ExpressionSanitizer {
     }
 
     {
-      ParseTreeNode tmp = node;
+      AncestorChain<?> tmp = nodeChain;
       successorLoop:
       do {
-        for (ParseTreeNode next;
-             null != (next = tmp.getNextSibling()); tmp = next) {
+        int siblingIndex = tmp.indexInParent();
+        int siblingLimit
+            = tmp.parent != null ? tmp.parent.node.children().size() : 0;
+
+        while (++siblingIndex < siblingLimit) {
+          ParseTreeNode next = tmp.parent.node.children().get(siblingIndex);
           FilePosition nextPos = next.getFilePosition();
           if (null != nextPos) {
             pos = FilePosition.startOf(nextPos);
             break successorLoop;
           }
         }
-        tmp = tmp.getParent();
+        tmp = tmp.parent;
       } while (null != tmp);
     }
 

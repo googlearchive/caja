@@ -17,6 +17,7 @@ package com.google.caja.plugin;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.reporting.EchoingMessageQueue;
@@ -322,7 +323,7 @@ public class CompiledPluginTest extends TestCase {
       CharProducer cp = CharProducer.Factory.create(pluginFile.input, is);
       try {
         ParseTreeNode input = PluginCompilerMain.parseInput(is, cp, mq);
-        pc.addInput(input);
+        pc.addInput(new AncestorChain<ParseTreeNode>(input));
       } finally {
         cp.close();
       }

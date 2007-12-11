@@ -17,6 +17,7 @@ package com.google.caja.parser.js;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * A try - catch - finally block.
@@ -29,19 +30,20 @@ public final class TryStmt extends AbstractStatement<Statement> {
   private FinallyStmt fin;
 
   public TryStmt(Statement body, CatchStmt cat, FinallyStmt fin) {
-    children.add(body);
+    Mutation m = createMutation().appendChild(body);
     if (cat != null) {
-      children.add(cat);
+      m.appendChild(cat);
     }
     if (fin != null) {
-      children.add(fin);
+      m.appendChild(fin);
     }
-    childrenChanged();
+    m.execute();
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
+    List<? extends Statement> children = children();
     this.body = children.get(0);
     Statement stmt1 = children.get(1);
     Statement stmt2 = children.size() >= 3 ? children.get(2) : null;

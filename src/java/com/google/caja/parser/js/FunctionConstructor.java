@@ -40,18 +40,17 @@ public final class FunctionConstructor
   public FunctionConstructor(
       String identifier, List<FormalParam> params, Block body) {
     this.identifier = identifier;
-    children.addAll(params);
-    children.add(body);
-    childrenChanged();
+    createMutation().appendChildren(params).appendChild(body).execute();
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    int n = children.size();
+    int n = children().size();
     this.params = Collections.<FormalParam>unmodifiableList(
-      childrenPart(0, n - 1, FormalParam.class));
-    this.body = (Block) children.get(n - 1);
+        childrenPart(0, n - 1, FormalParam.class));
+    for (FormalParam p : params) { }  // Implicit cast will check type
+    this.body = (Block) children().get(n - 1);
   }
 
   public List<FormalParam> getParams() { return params; }

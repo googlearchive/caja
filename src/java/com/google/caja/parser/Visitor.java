@@ -14,6 +14,22 @@
 
 package com.google.caja.parser;
 
+/**
+ * A visitor pattern for processing DOM subtrees.
+ * Receives nodes via the {@link ParseTreeNode#acceptPreOrder pre-order} and
+ * {@link ParseTreeNode#acceptPreOrder post-order} traversals.
+ *
+ * @author mikesamuel@gmail.com
+ */
 public interface Visitor {
-  public boolean visit(ParseTreeNode node);
+
+  /**
+   * Called on each node reached by the traversal to process that node.
+   *
+   * @param chain wraps the node to process, and its ancestors.  This is non
+   *    null, and the node to process is {@code chain.node}.
+   * @return whether to continue the traversal.  Returning false will end the
+   *    traversal early.
+   */
+  public boolean visit(AncestorChain<?> chain);
 }

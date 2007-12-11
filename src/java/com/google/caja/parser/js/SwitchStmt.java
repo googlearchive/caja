@@ -31,14 +31,13 @@ public final class SwitchStmt extends LabeledStatement {
   public SwitchStmt(
       String label, Expression valueExpr, List<SwitchCase> cases) {
     super(label);
-    children.add(valueExpr);
-    children.addAll(cases);
-    childrenChanged();
+    createMutation().appendChild(valueExpr).appendChildren(cases).execute();
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
+    List<? extends ParseTreeNode> children = children();
     ParseTreeNode valueExpr = children.get(0);
     if (!(valueExpr instanceof Expression)) {
       throw new ClassCastException(
@@ -70,7 +69,7 @@ public final class SwitchStmt extends LabeledStatement {
       rc.out.append(label);
       rc.out.append(": ");
     }
-    Iterator<ParseTreeNode> it = children.iterator();
+    Iterator<? extends ParseTreeNode> it = children().iterator();
     rc.out.append("switch (");
     rc.indent += 2;
     it.next().render(rc);

@@ -29,14 +29,13 @@ public final class ExpressionStmt extends AbstractStatement<Expression> {
   private Expression expr;
 
   public ExpressionStmt(Expression expr) {
-    children.add(expr);
-    childrenChanged();
+    appendChild(expr);
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.expr = children.get(0);
+    this.expr = children().get(0);
   }
 
   public Expression getExpression() { return expr; }

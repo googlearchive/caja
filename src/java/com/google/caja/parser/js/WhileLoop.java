@@ -31,25 +31,22 @@ public class WhileLoop extends Loop {
                    boolean isDoLoop) {
     super(label);
     if (isDoLoop) {
-      children.add(body);
-      children.add(condition);
+      createMutation().appendChild(body).appendChild(condition).execute();
     } else {
-      children.add(condition);
-      children.add(body);
+      createMutation().appendChild(condition).appendChild(body).execute();
     }
-    childrenChanged();
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.isDoLoop = children.get(0) instanceof Statement;
+    this.isDoLoop = children().get(0) instanceof Statement;
     if (isDoLoop) {
-      this.condition = (Expression) children.get(1);
-      this.body = (Statement) children.get(0);
+      this.condition = (Expression) children().get(1);
+      this.body = (Statement) children().get(0);
     } else {
-      this.condition = (Expression) children.get(0);
-      this.body = (Statement) children.get(1);
+      this.condition = (Expression) children().get(0);
+      this.body = (Statement) children().get(1);
     }
   }
 

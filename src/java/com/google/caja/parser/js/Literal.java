@@ -30,9 +30,7 @@ public abstract class Literal extends AbstractExpression<Expression> {
   // TODO(mikesamuel): find some way of rendering NaN and Infinity in a way
   // that doesn't allow reference masking.
 
-  protected Literal() {
-    childrenChanged();
-  }
+  protected Literal() {}
 
   @Override
   public abstract Object getValue();
@@ -42,7 +40,7 @@ public abstract class Literal extends AbstractExpression<Expression> {
   @Override
   protected final void childrenChanged() {
     super.childrenChanged();
-    if (!children.isEmpty()) { throw new IllegalStateException(); }
+    if (!children().isEmpty()) { throw new IllegalStateException(); }
   }
 
   public void render(RenderContext rc) throws IOException {

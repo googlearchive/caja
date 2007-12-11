@@ -32,7 +32,7 @@ public final class HtmlValidator {
     this.mq = mq;
   }
 
-  public boolean validate(DomTree t) {
+  public boolean validate(DomTree t, ParseTreeNode parent) {
     boolean valid = true;
     switch (t.getType()) {
     case TAGBEGIN:
@@ -54,7 +54,6 @@ public final class HtmlValidator {
       HTML.Attribute a = HTML4.lookupAttribute(attrName.toUpperCase());
       if (null == a) {
         String tagName = "{unknown}";
-        ParseTreeNode parent = t.getParent();
         if (parent instanceof DomTree.Tag) {
           tagName = ((DomTree.Tag) parent).getValue();
         }
@@ -74,7 +73,7 @@ public final class HtmlValidator {
       throw new AssertionError(t.getType().toString());
     }
     for (DomTree child : t.children()) {
-      valid &= validate(child);
+      valid &= validate(child, t);
     }
     return valid;
   }
