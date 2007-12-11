@@ -14,6 +14,9 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.escaping.Escaping;
+import com.google.caja.reporting.RenderContext;
+import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,6 +43,17 @@ public final class StringLiteral extends Literal {
     return !"".equals(getUnquotedValue());
   }
 
+  @Override
+  public void render(RenderContext rc) throws IOException {
+    if (rc.paranoid) {
+      rc.out.append('\'');
+      Escaping.escapeJsString(getUnquotedValue(), true, true, rc.out);
+      rc.out.append('\'');
+    } else {
+      super.render(rc);
+    }
+  }
+
   /**
    * If value is a quoted javascript string, represent the String value that
    * it represents.  Otherwise returns value.
@@ -51,6 +65,10 @@ public final class StringLiteral extends Literal {
   /**
    * If jsLiteral is a quoted javascript string, represent the String value that
    * it represents.  Otherwise returns the parameter unchanged.
+   * <p>
+   * This is useful for dealing with the keys in object constructors since they
+   * may be string literals, numeric literals, or bare words.
+   *
    * @param jsLiteral non null.
    */
   public static String getUnquotedValueOf(String jsLiteral) {
@@ -72,6 +90,7 @@ public final class StringLiteral extends Literal {
     return sb.toString();
   }
 
+  // TODO(msamuel): move unescaping to Escaping.java -- nobody will look there
   private static final Pattern UNESCAPE_PATTERN = Pattern.compile(
       "\\\\(?:u([0-9A-Fa-f]{4})|([0-3][0-7]{0,2}|[4-7][0-7]?)|([^u0-7]))"
       );
@@ -119,43 +138,6 @@ public final class StringLiteral extends Literal {
    */
   public static void escapeJsString(
       CharSequence s, char delim, StringBuilder sb) {
-    int end = s.length();
-    for (int i = 0; i < end; ++i) {
-      char ch = s.charAt(i);
-      switch (ch) {
-        case '\b': sb.append("\\b"); break;
-        case '\r': sb.append("\\r"); break;
-        case '\n': sb.append("\\n"); break;
-        case '\f': sb.append("\\f"); break;
-        case '\t': sb.append("\\t"); break;
-        case '\u000b': sb.append("\\v"); break;
-        case '\\': sb.append("\\\\"); break;
-        case '\"': sb.append("\\\""); break;
-        case '\'': sb.append("\\\'"); break;
-        default:
-          if (ch < 0x20 || ch == 0x7f) {
-            octalEscape(ch, sb);
-          } else if (ch >= 0x80) {
-            unicodeEscape(ch, sb);
-          } else {
-            if (ch == delim) { sb.append('\\'); }
-            sb.append(ch);
-          }
-          break;
-      }
-    }
-  }
-
-  static void octalEscape(char ch, StringBuilder sb) {
-    sb.append('\\').append((char) ('0' + ((ch & 0x1c0) >> 6)))
-        .append((char) ('0' + ((ch & 0x38) >> 3)))
-        .append((char) ('0' + (ch & 0x7)));
-  }
-
-  static void unicodeEscape(char ch, StringBuilder sb) {
-    sb.append("\\u").append("0123456789abcdef".charAt((ch >> 12) & 0xf))
-        .append("0123456789abcdef".charAt((ch >> 8) & 0xf))
-        .append("0123456789abcdef".charAt((ch >> 4) & 0xf))
-        .append("0123456789abcdef".charAt(ch & 0xf));
+    Escaping.escapeJsString(s, true, false, sb);
   }
 }

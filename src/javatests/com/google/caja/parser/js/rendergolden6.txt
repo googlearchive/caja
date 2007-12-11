@@ -1,0 +1,18 @@
+{
+  var w = /\074script\076/;
+  var x = a < /script\076/;
+  var y = [[0]] > 1;
+  var s = '\074/script\076' + '\074/script\076';
+  var t = ']]\076';
+  var r = /[\]]\076/;
+  var DOCTYPE = null;
+  var d = 0 < !DOCTYPE;
+  var e = '\074!DOCTYPE';
+  var f = /\074!DOCTYPE [ ]\076/;
+  var g = 0 & amp;
+  var o = {
+    '\074/script\076': 0,
+    ']]\076': 1,
+    '\074!DOCTYPE': 2
+  };
+}

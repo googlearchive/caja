@@ -28,11 +28,19 @@ public class RenderContext {
   public final MessageContext msgContext;
   /** to which output is written. */
   public final Appendable out;
+  /** bias towards less readable output in the interest of security. */
+  public final boolean paranoid;
 
   public RenderContext(MessageContext msgContext, Appendable out) {
+    this(msgContext, out, false);
+  }
+
+  public RenderContext(
+      MessageContext msgContext, Appendable out, boolean paranoid) {
     if (null == msgContext || null == out) { throw new NullPointerException(); }
     this.msgContext = msgContext;
     this.out = out;
+    this.paranoid = paranoid;
   }
 
   /** Write a new line and indent. */

@@ -656,8 +656,8 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
   public abstract static class CssLiteral extends CssExprAtom {
     private String value;
     /**
-     * @param inputValue the unescaped inputValue.  Any unicode escapes have been
-     *   converted to the corresponding character.
+     * @param inputValue the unescaped inputValue.  Any unicode escapes have
+     *   been converted to the corresponding character.
      */
     CssLiteral(FilePosition pos, String inputValue) {
       super(pos, Collections.<Expr>emptyList());
@@ -719,7 +719,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     }
     public void render(RenderContext r) throws IOException {
       r.out.append('\'');
-      escapeCssString(getValue(), r.out);
+      escapeCssString(getValue(), r.paranoid, r.out);
       r.out.append('\'');
     }
   }
@@ -782,7 +782,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     }
     public void render(RenderContext r) throws IOException {
       r.out.append("url('");
-      escapeCssString(getValue(), r.out);
+      escapeCssString(getValue(), r.paranoid, r.out);
       r.out.append("')");
     }
   }
@@ -896,27 +896,9 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
 
     public Operator getOperator() { return op; }
 
+    @Override
     public void render(RenderContext r) throws IOException {
       if (null != op.symbol) { r.out.append(op.symbol); }
-    }
-  }
-
-  /*
-   * TODO(ihab): Javadoc.
-   */
-  public static final class UnaryOperation extends CssTree {
-    final UnaryOperator op;
-
-    UnaryOperation(FilePosition pos, UnaryOperator op) {
-      super(pos, Collections.<CssTree>emptyList());
-      this.op = op;
-    }
-
-    @Override
-    public UnaryOperator getValue() { return op; }
-
-    public void render(RenderContext r) throws IOException {
-      r.out.append(op.symbol);
     }
   }
 
@@ -1013,13 +995,27 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     }
   }
 
-  private static void escapeCssString(String s, Appendable out)
+  private static void escapeCssString(
+      String s, boolean paranoid, Appendable out)
       throws IOException {
+    // TODO(mikesamuel): move parser/js/Escaping into caja.lexer and consolidate
+    // this with that?
     int pos = 0;
     int n = s.length();
     for (int i = 0; i < n; ++i) {
       char ch = s.charAt(i);
-      if (ch < 0x20 || ch >= 0x7f || ch == '\\' || ch == '\'' || ch == '\"') {
+      boolean esc = ch < 0x20 || ch >= 0x7f;
+      if (!esc) {
+        switch (ch) {
+          case '\\': case '\'': case '\"':
+            esc = true;
+            break;
+          case '<': case '>':
+            esc = paranoid;
+            break;
+        }
+      }
+      if (esc) {
         out.append(s, pos, i);
         pos = i + 1;
         hexEscape(ch, pos < n ? s.charAt(pos) : -1, out);

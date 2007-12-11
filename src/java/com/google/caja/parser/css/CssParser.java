@@ -466,7 +466,7 @@ public final class CssParser {
           s = s.substring(s.indexOf('(') + 1, s.lastIndexOf(')')).trim();
           s = unescape(s, false);
           tq.advance();
-          if (s.length() > 2) {
+          if (s.length() >= 2) {
             char ch0 = s.charAt(0);
             if (('\'' == ch0 || '\"' == ch0)
                 && ch0 == s.charAt(s.length() - 1)) {

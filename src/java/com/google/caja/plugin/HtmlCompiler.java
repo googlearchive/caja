@@ -319,7 +319,8 @@ public final class HtmlCompiler {
     }
 
     JsWriter.appendString(" style=\"", tgt, b);
-    CssTemplate.bodyToJavascript(decls, meta, tgt, b, JsWriter.Esc.HTML, mq);
+    CssTemplate.bodyToJavascript(
+        decls, meta, tgt, b, JsWriter.Esc.HTML_ATTRIB, mq);
     JsWriter.appendString("\"", tgt, b);
   }
 

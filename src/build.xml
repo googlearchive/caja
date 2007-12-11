@@ -66,14 +66,14 @@
   <path id="classpath.tests.run">
     <pathelement path="${third_party}/junit/junit.jar"/>
     <pathelement path="${third_party}/rhino/js.jar"/>
-    <pathelement path="${third_party}/emma/lib/emma.jar"/>
+    <pathelement path="${third_party}/emma/emma.jar"/>
     <pathelement path="${instr}/classes"/>
     <!-- In case instrumentation not enabled -->
     <pathelement path="${lib}"/>
   </path>
 
   <path id="classpath.emma">
-    <pathelement path="${third_party}/emma/lib/emma.jar"/>
+    <pathelement path="${third_party}/emma/emma.jar"/>
   </path>
 
   <path id="classpath.extensions">
@@ -177,6 +177,7 @@
       <include name="**/caja/lexer/JsLexerTest.java"/>
       <include name="**/caja/lexer/LookaheadCharProducerTest.java"/>
       <include name="**/caja/lexer/PunctuationTrieTest.java"/>
+      <include name="**/caja/lexer/escaping/EscapingTest.java"/>
       <include name="**/caja/opensocial/DefaultGadgetRewriterTest.java"/>
       <include name="**/caja/parser/ParseTreeNodeTest.java"/>
       <include name="**/caja/parser/css/Css2Test.java"/>
@@ -198,6 +199,7 @@
       <include name="**/caja/plugin/UrlUtilTest.java"/>
       <include name="**/caja/plugin/caps/CapabilityRewriterTest.java"/>
       <include name="**/caja/util/PipelineTest.java"/>
+      <include name="**/caja/util/SparseBitSetTest.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
     <copy todir="${lib}">
@@ -228,11 +230,13 @@
         <include name="**/caja/parser/js/parsertest3.js"/>
         <include name="**/caja/parser/js/parsertest4.js"/>
         <include name="**/caja/parser/js/parsertest5.js"/>
+        <include name="**/caja/parser/js/parsertest6.js"/>
         <include name="**/caja/parser/js/rendergolden1.txt"/>
         <include name="**/caja/parser/js/rendergolden2.txt"/>
         <include name="**/caja/parser/js/rendergolden3.txt"/>
         <include name="**/caja/parser/js/rendergolden4.txt"/>
         <include name="**/caja/parser/js/rendergolden5.txt"/>
+        <include name="**/caja/parser/js/rendergolden6.txt"/>
         <include name="**/caja/plugin/asserts.js"/>
         <include name="**/caja/plugin/browser-stubs.js"/>
         <include name="**/caja/plugin/gxpcompilergolden1.js"/>
@@ -317,6 +321,7 @@
       <include name="**/caja/plugin/GxpCompiler.java"/>
       <include name="**/caja/plugin/GxpValidator.java"/>
       <include name="**/caja/plugin/GlobalOptions.java"/>
+      <include name="**/caja/plugin/HtmlCompiler.java"/>
       <include name="**/caja/plugin/HtmlPluginCompiler.java"/>
       <include name="**/caja/plugin/HtmlWhitelist.java"/>
       <include name="**/caja/plugin/JsWriter.java"/>
@@ -481,6 +486,7 @@
       <include name="**/caja/lexer/TokenQueue.java"/>
       <include name="**/caja/lexer/TokenStream.java"/>
       <include name="**/caja/lexer/TokenType.java"/>
+      <include name="**/caja/lexer/escaping/*.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
   </target>
@@ -518,6 +524,7 @@
       <include name="**/caja/util/Pipeline.java"/>
       <include name="**/caja/util/PipelineException.java"/>
       <include name="**/caja/util/PipelineStage.java"/>
+      <include name="**/caja/util/SparseBitSet.java"/>
       <include name="**/caja/util/SyntheticAttributeKey.java"/>
       <include name="**/caja/util/SyntheticAttributes.java"/>
       <include name="**/caja/util/TransactionSafeMap.java"/>
@@ -573,11 +580,13 @@
    description="Turns on EMMA instrumentation and reporting." >
     <property name="emma.enabled" value="true" />
     <!--
-      - This property, if overriden via -Demma.filter=<list of filter specs>
+      - See http://emma.sourceforge.net/reference/ch02s06s02.html
+      - This property, can be overriden via -Demma.filter=<list of filter specs>
       - on ANT's command line, will set the coverage filter; by default, all
-      - classes found in ${lib} will be instrumented:
+      - com.google classes found in ${lib} will be instrumented.
+      - org.commons.cli.apache and other third_party classes will not be.
      -->
-    <property name="emma.filter" value=""/>
+    <property name="emma.filter" value="com.google.*"/>
   </target>
 
 </project>

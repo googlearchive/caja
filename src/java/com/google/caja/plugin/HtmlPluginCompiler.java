@@ -672,13 +672,13 @@ public final class HtmlPluginCompiler {
     boolean success = true;
     try {
       jsOut = new StringWriter();
-      RenderContext rc = new RenderContext(mc, jsOut);
+      RenderContext rc = new RenderContext(mc, jsOut, true);
       jsTree.render(rc);
       rc.newLine();
       outputJs = jsOut.toString();
 
       cssOut = new StringWriter();
-      rc = new RenderContext(mc, cssOut);
+      rc = new RenderContext(mc, cssOut, true);
       cssTree.render(rc);
       rc.newLine();
       outputCss = cssOut.toString();

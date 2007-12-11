@@ -115,28 +115,41 @@ public class ParserTest extends TestCase {
   }
 
   public void testParseTreeRendering1() throws Exception {
-    runRenderTest("parsertest1.js", "rendergolden1.txt");
+    runRenderTest("parsertest1.js", "rendergolden1.txt", false);
   }
   public void testParseTreeRendering2() throws Exception {
-    runRenderTest("parsertest2.js", "rendergolden2.txt");
+    runRenderTest("parsertest2.js", "rendergolden2.txt", false);
   }
   public void testParseTreeRendering3() throws Exception {
-    runRenderTest("parsertest3.js", "rendergolden3.txt");
+    runRenderTest("parsertest3.js", "rendergolden3.txt", false);
   }
   public void testParseTreeRendering4() throws Exception {
-    runRenderTest("parsertest4.js", "rendergolden4.txt");
+    runRenderTest("parsertest4.js", "rendergolden4.txt", false);
   }
   public void testParseTreeRendering5() throws Exception {
-    runRenderTest("parsertest5.js", "rendergolden5.txt");
+    runRenderTest("parsertest5.js", "rendergolden5.txt", false);
+  }
+  public void testSecureParseTreeRendering5() throws Exception {
+    runRenderTest("parsertest6.js", "rendergolden6.txt", true);
+
+    // Since we're doing these checks for security, double check that someone
+    // hasn't adjusted the golden file.
+    String golden = TestUtil.readResource(getClass(), "rendergolden6.txt")
+        .toLowerCase();
+    assertFalse(golden.contains("]]>"));
+    assertFalse(golden.contains("<!"));
+    assertFalse(golden.contains("<script"));
+    assertFalse(golden.contains("</script"));
   }
 
-  private void runRenderTest(String testFile, String goldenFile)
+  private void runRenderTest(
+      String testFile, String goldenFile, boolean paranoid)
       throws Exception {
     MessageContext mc = new MessageContext();
     MessageQueue mq = TestUtil.createTestMessageQueue(mc);
     Statement parseTree = TestUtil.parseTree(getClass(), testFile, mq);
 
-    RenderContext rc = new RenderContext(mc, new StringBuilder());
+    RenderContext rc = new RenderContext(mc, new StringBuilder(), true);
     parseTree.render(rc);
     rc.newLine();
 

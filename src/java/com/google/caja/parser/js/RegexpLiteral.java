@@ -14,6 +14,10 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.escaping.Escaping;
+import com.google.caja.reporting.RenderContext;
+import java.io.IOException;
+
 /**
  * A regular expression literal like <code>/foo/i</code>.
  *
@@ -35,6 +39,27 @@ public final class RegexpLiteral extends Literal {
     return value;
   }
 
+  @Override
+  public void render(RenderContext rc) throws IOException {
+    if (rc.paranoid) {
+      String body = getMatchText();
+      String mods = getModifiers();
+      if (!"".equals(body)) {
+        rc.out.append('/');
+        Escaping.normalizeRegex(body, true, true, rc.out);
+        rc.out.append('/').append(mods);
+      } else {
+        rc.out.append("(new (/./.constructor))('");
+        Escaping.escapeJsString(body, true, true, rc.out);
+        rc.out.append("','");
+        Escaping.escapeJsString(mods, true, true, rc.out);
+        rc.out.append("')");
+      }
+    } else {
+      super.render(rc);
+    }
+  }
+
   public static class RegexpWrapper {
     String regexpText;
 
@@ -46,7 +71,7 @@ public final class RegexpLiteral extends Literal {
     @Override
     public boolean equals(Object o) {
       return o instanceof RegexpWrapper
-        && ((RegexpWrapper) o).regexpText.equals(this.regexpText);
+          && ((RegexpWrapper) o).regexpText.equals(this.regexpText);
     }
 
     @Override
@@ -62,34 +87,7 @@ public final class RegexpLiteral extends Literal {
     public static RegexpWrapper valueOf(String pattern, String modifiers) {
       StringBuilder sb = new StringBuilder();
       sb.append('/');
-      for (int i = 0, n = pattern.length(); i < n; ++i) {
-        char ch = pattern.charAt(i);
-        switch (ch) {
-        case '\b': sb.append("\\b"); break;
-        case '\r': sb.append("\\r"); break;
-        case '\n': sb.append("\\n"); break;
-        case '\f': sb.append("\\f"); break;
-        case '\t': sb.append("\\t"); break;
-        case '\u000b': sb.append("\\v"); break;
-        case '/':
-          if (i == 0 || pattern.charAt(i - 1) != '\\') {
-            sb.append("\\/");
-          } else {
-            sb.append('/');
-          }
-          break;
-        default:
-          if (ch < 0x20 || ch == 0x7f) {
-            StringLiteral.octalEscape(ch, sb);
-          } else if (ch >= 0x80) {
-            // TODO(mikesamuel): warn unicode escaping can break safari
-            StringLiteral.unicodeEscape(ch, sb);
-          } else {
-            sb.append(ch);
-          }
-          break;
-        }
-      }
+      Escaping.normalizeRegex(pattern, false, false, sb);
       sb.append('/').append(modifiers);
       return new RegexpWrapper(sb.toString());
     }
@@ -144,5 +142,4 @@ public final class RegexpLiteral extends Literal {
     String text = this.value.toString();
     return text.substring(text.lastIndexOf('/') + 1);
   }
- 
 }

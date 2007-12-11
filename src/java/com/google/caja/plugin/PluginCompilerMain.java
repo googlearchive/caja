@@ -351,7 +351,7 @@ public class PluginCompilerMain {
         } else {
           throw new AssertionError(output.getClass().getName());
         }
-        RenderContext rc = new RenderContext(mc, out);
+        RenderContext rc = new RenderContext(mc, out, true);
         output.render(rc);
         rc.newLine();
       }

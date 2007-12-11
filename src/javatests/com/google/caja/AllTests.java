@@ -21,6 +21,7 @@ import com.google.caja.lexer.HtmlLexerTest;
 import com.google.caja.lexer.JsLexerTest;
 import com.google.caja.lexer.LookaheadCharProducerTest;
 import com.google.caja.lexer.PunctuationTrieTest;
+import com.google.caja.lexer.escaping.EscapingTest;
 import com.google.caja.opensocial.DefaultGadgetRewriterTest;
 import com.google.caja.opensocial.GadgetParserTest;
 import com.google.caja.parser.ParseTreeNodeTest;
@@ -42,6 +43,7 @@ import com.google.caja.plugin.HtmlWhitelistTest;
 import com.google.caja.plugin.PluginCompilerTest;
 import com.google.caja.plugin.UrlUtilTest;
 import com.google.caja.plugin.caps.CapabilityRewriterTest;
+import com.google.caja.util.SparseBitSetTest;
 
 import java.util.regex.Pattern;
 
@@ -68,10 +70,11 @@ public class AllTests {
           CssRewriterTest.class,
           CssTreeTest.class,
           CssValidatorTest.class,
-          GadgetParserTest.class,
           DefaultGadgetRewriterTest.class,
           DomParserTest.class,
+          EscapingTest.class,
           ExpressionSanitizerTest.class,
+          GadgetParserTest.class,
           GxpCompilerTest.class,
           GxpValidatorTest.class,
           HtmlCompiledPluginTest.class,
@@ -84,6 +87,7 @@ public class AllTests {
           ParserTest.class,
           PluginCompilerTest.class,
           PunctuationTrieTest.class,
+          SparseBitSetTest.class,
           StringLiteralTest.class,
           UrlUtilTest.class,
         };

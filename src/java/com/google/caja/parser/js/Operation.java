@@ -68,6 +68,10 @@ public class Operation extends AbstractExpression<Expression> {
         renderParam(0, rc);
         switch (getOperator()) {
           default:
+            // These spaces are necessary for security.
+            // If they are not present, then rendered javascript might include
+            // the strings ]]> or </script> which would prevent it from being
+            // safely embedded in HTML or XML.
             rc.out.append(" ")
                 .append(op.getSymbol())
                 .append(" ");
