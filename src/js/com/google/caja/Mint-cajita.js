@@ -19,30 +19,30 @@
 
 
 function Mint(name) {
-    caja.requireType(name,'string');
-    var brand = Brand(name);
-    function Purse(balance) {
-        caja.requireNat(balance);
-        function decr(amount) {
-            caja.requireNat(amount);
-            balance = caja.requireNat(balance - amount);
-        }
-        return caja.freeze({
-            toString:   function() { return '<'+balance+' '+name+' bucks>'; },
-            getBalance: function() { return balance; },
-            makePurse:  function() { return Purse(0); },
-            getDecr:    function() { return brand.sealer.seal(decr); },
-            deposit:    function(amount, src) {
-                var newBal = caja.requireNat(balance + amount);
-                brand.unsealer.unseal(src.getDecr())(amount);
-                balance = newBal;
-            }
-        });
+  caja.enforceType(name,'string');
+  var brand = new Brand(name);
+  function Purse(balance) {
+    caja.enforceNat(balance);
+    function decr(amount) {
+      caja.enforceNat(amount);
+      balance = caja.enforceNat(balance - amount);
     }
     return caja.freeze({
-        toString: function() { return '<'+name+' bank>'; },
-        makeAcct: Purse
+      toString:   function() { return '<'+balance+' '+name+' bucks>'; },
+      getBalance: function() { return balance; },
+      makePurse:  function() { return new Purse(0); },
+      getDecr:    function() { return brand.sealer.seal(decr); },
+      deposit:    function(amount, src) {
+        var newBal = caja.enforceNat(balance + amount);
+        brand.unsealer.unseal(src.getDecr())(amount);
+        balance = newBal;
+      }
     });
+  }
+  return caja.freeze({
+    toString: function() { return '<'+name+' bank>'; },
+    makeAcct: Purse
+  });
 }
 
 /*

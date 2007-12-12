@@ -92,7 +92,11 @@ if (Date.prototype.toISOString === undefined) {
 var caja;
 var ___;
 
-(function() {
+// Explicitly passing in the actual global object to avoid
+// ReferenceErrors when referring to potentially nonexistent objects
+// like console.
+
+(function(global) {
   
   /**
    * If there's a console.log(str), then redefine log(str) to call it.
@@ -102,9 +106,9 @@ var ___;
    * are still evaluated.
    */
   var log = function(str) {};
-  if (this.console && typeof console.log === 'function') {
+  if (global.console && typeof global.console.log === 'function') {
     log = function(str) {
-      console.log(str);
+      global.console.log(str);
     };
   }
 
@@ -132,6 +136,8 @@ var ___;
    * <p>
    * TODO(erights) We may deprecate this in favor of <pre>
    *     test || fail(varargs...)
+   * </pre> or <pre>
+   *     if (!test) { fail(varargs...); }
    * </pre>
    */
   function enforce(test, varargs) {
@@ -149,9 +155,10 @@ var ___;
    * specimen used only to generate friendlier error messages.
    */
   function enforceType(specimen, typename, opt_name) {
-    (typeof specimen === typename) ||
+    if (typeof specimen !== typename) {
       fail('expected ', typename, ' instead of ', typeof specimen,
            ': ', (opt_name || specimen));
+    }
     return specimen;
   }
   
@@ -164,16 +171,20 @@ var ___;
    */
   function enforceNat(specimen) {
     enforceType(specimen, 'number');
-    (Math.floor(specimen) === specimen) ||
+    if (Math.floor(specimen) !== specimen) {
       fail('Must be integral: ', specimen);
-    (specimen >= 0) ||
+    }
+    if (specimen < 0) {
       fail('Must not be negative: ', specimen);
+    }
     // Could pre-compute precision limit, but probably not faster
     // enough to be worth it.
-    (Math.floor(specimen-1) === specimen-1) ||
+    if (Math.floor(specimen-1) !== specimen-1) {
       fail('Beyond precision limit: ', specimen);
-    (Math.floor(specimen-1) < specimen) ||
+    }
+    if (Math.floor(specimen-1) >= specimen) {
       fail('Must not be infinite: ', specimen);
+    }
     return specimen;
   }
   
@@ -226,27 +237,15 @@ var ___;
    * <p>
    * SECURITY BUG STOPGAP TODO(erights)
    */
-  function canCallHasOwnProperty(obj) {
-    // Each of the following represents a different temporary
-    // empirical experiment until we understand the actual
-    // problem. Turn on one at a time.
-    
-    // If the bug is fixed, or you want to see the bug manifest.
-    // This case works fine on Safari 3.
-    //
-    // return true;
-    
-    // When we can assume a browser environment, so that we can
-    // assume that there is a global HTMLDivElement.
-    //
-    return !(obj instanceof HTMLDivElement);
-    
-    // This code will "work" even when Caja is used in a
-    // non-browser environment. However, this represents a
-    // security hole, in that a Caja object could also override
-    // toString() to return '[object HTMLDivElement]'.
-    //
-    // return obj.toString() !== '[object HTMLDivElement]'
+  var canCallHasOwnProperty = function(obj) { return true; };
+  
+  // When we're in a non-browser environment, such that there isn't
+  // a global HTMLDivElement, then we don't need to worry about
+  // this bug.
+  if (typeof global.HTMLDivElement === 'function') {
+    canCallHasOwnProperty = function(obj) {
+      return !(obj instanceof global.HTMLDivElement);
+    };
   }
   
   var originalHOP_ = Object.prototype.hasOwnProperty;
@@ -389,8 +388,9 @@ var ___;
     for (var i = 0; i < badFlags.length; i++) {
       var flag = badFlags[i];
       if (hasOwnProp(obj, flag)) {
-        (delete obj[flag]) ||
+        if (!(delete obj[flag])) {
           fail('internal: failed delete: ', obj, '.', flag);
+        }
       }
       if (obj[flag]) {
         // At the time of this writing, this case
@@ -429,8 +429,9 @@ var ___;
    * Like primFreeze(obj), but applicable only to JSON containers.
    */
   function freeze(obj) {
-    isJSONContainer(obj) ||
+    if (!isJSONContainer(obj)) {
       fail('caja.freeze(obj) applies only to JSON Containers: ', obj);
+    }
     return primFreeze(obj);
   }
   
@@ -440,8 +441,9 @@ var ___;
    * Even if the original is frozen, the copy will still be mutable.
    */
   function copy(obj) {
-    isJSONContainer(obj) ||
+    if (!isJSONContainer(obj)) {
       fail('caja.copy(obj) applies only to JSON Containers: ', obj);
+    }
     var result = (obj instanceof Array) ? [] : {};
     each(obj, simpleFunc(function(k, v) {
       result[k] = v;
@@ -502,8 +504,9 @@ var ___;
    * allowSet implies allowEnum and allowRead.
    */
   function allowSet(obj, name) {
-    !isFrozen(obj) ||
+    if (isFrozen(obj)) {
       fail("Can't set .", name, ' on frozen (', obj, ')');
+    }
     allowEnum(obj, name);
     obj[name + '_canSet___'] = true;
   }
@@ -513,8 +516,9 @@ var ___;
    * implemented. 
    */
   function allowDelete(obj, name) {
-    !isFrozen(obj) ||
+    if (isFrozen(obj)) {
       fail("Can't delete .", name, ' on frozen (', obj, ')');
+    }
     fail('TODO(erights): allowDelete() not yet implemented');
     obj[name + '_canDelete___'] = true;
   }
@@ -544,19 +548,23 @@ var ___;
    */
   function ctor(constr, opt_Sup, opt_name) {
     enforceType(constr, 'function', opt_name);
-    !isMethod(constr) ||
+    if (isMethod(constr)) {
       fail("Methods can't be constructors: ", constr);
-    !isSimpleFunc(constr) ||
+    }
+    if (isSimpleFunc(constr)) {
       fail("Simple functions can't be constructors: ", constr);
+    }
     constr.___CONSTRUCTOR___ = true;
     if (opt_Sup) {
       opt_Sup = asCtor(opt_Sup);
       if (hasOwnProp(constr, 'Super')) {
-        (constr.Super === opt_Sup) ||
+        if (constr.Super !== opt_Sup) {
           fail("Can't inherit twice: ", constr, ',', opt_Sup);
+        }
       } else {
-        !isFrozen(constr) ||
+        if (isFrozen(constr)) {
           fail('Derived constructor already frozen: ', constr);
+        }
         constr.Super = opt_Sup;
       }
     }
@@ -572,10 +580,12 @@ var ___;
    */
   function method(constr, meth, opt_name) {
     enforceType(meth, 'function', opt_name);
-    !isCtor(meth) ||
+    if (isCtor(meth)) {
       fail("constructors can't be methods: ", meth);
-    !isSimpleFunc(constr) ||
+    }
+    if (isSimpleFunc(constr)) {
       fail("Simple functions can't be methods: ", meth);
+    }
     meth.___METHOD_OF___ = asCtorOnly(constr);
     return primFreeze(meth);
   }
@@ -589,10 +599,12 @@ var ___;
    */
   function simpleFunc(fun, opt_name) {
     enforceType(fun, 'function', opt_name);
-    !isCtor(fun) ||
+    if (isCtor(fun)) {
       fail("Constructors can't be simple functions: ", fun);
-    !isMethod(fun) ||
+    }
+    if (isMethod(fun)) {
       fail("Methods can't be simple function: ", fun);
+    }
     fun.___SIMPLE_FUNC___ = true;
     fun.apply_canCall___ = true;
     fun.call_canCall___ = true;
@@ -606,8 +618,9 @@ var ___;
     }
     
     enforceType(constr, 'function');
-    !isMethod(constr) ||
+    if (isMethod(constr)) {
       fail("Methods can't be called as constructors: ", constr);
+    }
     fail("Untamed functions can't be called as constructors: ", constr);
   }
   
@@ -619,14 +632,16 @@ var ___;
   /** Only methods and simple functions can be called as methods */
   function asMethod(meth) {
     if (isSimpleFunc(meth) || isMethod(meth)) { 
-      isFrozen(meth) ||
+      if (!isFrozen(meth)) {
         fail('internal: non-frozen func stored as method: ', meth);
+      }
       return meth; 
     }
     
     enforceType(meth, 'function');
-    !isCtor(meth) ||
+    if (isCtor(meth)) {
       fail("Constructors can't be called as methods: ", meth);
+    }
     fail("Untamed functions can't be called as methods: ", meth);
   }
   
@@ -637,10 +652,12 @@ var ___;
     }
     
     enforceType(fun, 'function');
-    !isCtor(fun) ||
+    if (isCtor(fun)) {
       fail("Constructors can't be called as simple functions: ", fun);
-    !isMethod(fun) ||
+    }
+    if (isMethod(fun)) {
       fail("Methods can't be called as simple functions: ", fun);
+    }
     fail("Untamed functions can't be called as simple functions: ", fun);
   }
   
@@ -653,12 +670,14 @@ var ___;
    */
   function setMember(constr, name, member) {
     name = String(name);
-    !endsWith(name, '__') ||
+    if (endsWith(name, '__')) {
       fail('Reserved name: ', name);
+    }
     var proto = readPub(asCtorOnly(constr), 'prototype');
     // We allow prototype members to end in a single "_".
-    canSetProp(proto, name) ||
+    if (!canSetProp(proto, name)) {
       fail('not settable: ', name);
+    }
     if (member.___METHOD_OF___ === constr) {
       allowCall(proto, name);  // grant
     } else if (isSimpleFunc(member)) {
@@ -918,7 +937,8 @@ var ___;
     name = String(name);
     if (canSetProp(that, name)) {
       allowSet(that, name);  // grant
-      return that[name] = val;
+      that[name] = val;
+      return val;
     } else {
       return that.handleSet___(name, val);
     }
@@ -951,7 +971,8 @@ var ___;
     name = String(name);
     if (canSetPub(obj, name)) {
       allowSet(obj, name);  // grant
-      return obj[name] = val;
+      obj[name] = val;
+      return val;
     } else {
       return obj.handleSet___(name, val);
     }
@@ -1011,8 +1032,9 @@ var ___;
   function deletePub(obj, name) {
     name = String(name);
     if (canDeletePub(obj, name)) {
-      isJSONContainer(obj) ||
+      if (!isJSONContainer(obj)) {
         fail('unable to delete: ', name);
+      }
       fail('TODO(erights): deletion not yet supported');
       return (delete obj[name]) ||
         fail('not deleted: ', name);
@@ -1067,9 +1089,10 @@ var ___;
     var sup = opt_Sup || Object;
     var members = opt_members || {};
     var statics = opt_statics || {};
-    !('Super' in statics) ||
+    if ('Super' in statics) {
       fail('The static name "Super" is reserved ',
            'for the super-constructor');
+    }
     
     ctor(sub, sup);
     function PseudoSuper() {}
@@ -1088,7 +1111,81 @@ var ___;
   ////////////////////////////////////////////////////////////////////////
   // Taming mechanism
   ////////////////////////////////////////////////////////////////////////
-  
+
+  /**
+   * Arrange to handle read-faults on <tt>constr.prototype[name]</tt>
+   * by calling <tt>getHandler()</tt> as a method on the faulted
+   * object. 
+   * <p>
+   * In order for this fault-handler to get control, it's important
+   * that no one does a conflicting allowRead().
+   */
+  function useGetHandler(constr, name, getHandler) {
+    var handlerName = name + '_getter___';
+    constr.prototype[handlerName] = getHandler;
+  }
+
+  /**
+   * Arrange to handle call-faults on
+   * <tt>constr.prototype[name](args...)</tt> by calling
+   * <tt>applyHandler(args)</tt> as a method on the faulted object.
+   * <p>
+   * Note that <tt>applyHandler</tt> is called with a single argument,
+   * which is the list of arguments in the original call.
+   * <p>
+   * In order for this fault-handler to get control, it's important
+   * that no one does a conflicting allowCall(), allowSimpleFunc(), or
+   * allowMethod().
+   */
+  function useApplyHandler(constr, name, applyHandler) {
+    var handlerName = name + 'handler___';
+    constr.prototype[handlerName] = applyHandler;
+  }
+
+  /**
+   * Arrange to handle call-faults on
+   * <tt>constr.prototype[name](args...)</tt> by calling
+   * <tt>callHandler(args...)</tt> as a method on the faulted object.
+   * <p>
+   * Note that <tt>callHandler</tt> is called with the same arguments
+   * as the original call. 
+   * <p>
+   * In order for this fault-handler to get control, it's important
+   * that no one does a conflicting allowCall(), allowSimpleFunc(), or
+   * allowMethod().
+   */
+  function useCallHandler(constr, name, callHandler) {
+    useApplyHandler(constr, name, function(args) {
+      return callHandler.apply(this, args);
+    });
+  }
+
+  /**
+   * Arrange to handle set-faults on 
+   * <tt>constr.prototype[name] = newValue</tt> by calling
+   * <tt>setHandler(newValue)</tt> as a method on the faulted object. 
+   * <p>
+   * In order for this fault-handler to get control, it's important
+   * that no one does a conflicting allowSet().
+   */
+  function useSetHandler(constr, name, setHandler) {
+    var handlerName = name + '_setter___';
+    constr.prototype[handlerName] = setHandler;
+  }
+
+  /**
+   * Arrange to handle delete-faults on 
+   * <tt>delete constr.prototype[name]</tt> by calling
+   * <tt>deleteHandler()</tt> as a method on the faulted object. 
+   * <p>
+   * In order for this fault-handler to get control, it's important
+   * that no one does a conflicting allowDelete().
+   */
+  function useDeleteHandler(constr, name, deleteHandler) {
+    var handlerName = name + '_deleter___';
+    constr.prototype[handlerName] = deleteHandler;
+  }
+
   /**
    * Whilelist obj[name] as a simple function that can be either
    * called or read.
@@ -1109,22 +1206,6 @@ var ___;
   }
   
   /**
-   * Add callHandler as a fault handler for call-faults, but with
-   * explicit parameters. 
-   * <p>
-   * Assigns a wrapper method to name_handler___ for unpacking the
-   * arguments. In order for this fault
-   * handler to get control, it's important that no one does an
-   * allowCall(), allowSimpleFunc(), or allowMethod() on
-   * (constr,name).
-   */
-  function handleMethod(constr, name, callHandler) {
-    constr.prototype[name + '_handler___'] = function(args) {
-      callHandler.apply(this, args);
-    };
-  }
-  
-  /**
    * Virtually replace constr.prototype[name] with a fault-handler
    * wrapper that first verifies that <tt>this</tt> isn't frozen.
    * <p>
@@ -1137,11 +1218,12 @@ var ___;
    */
   function allowMutator(constr, name) {
     var original = constr.prototype[name];
-    constr.prototype[name + '_handler___'] = function(args) {
-      !isFrozen(this) ||
+    useApplyHandler(constr, name, function(args) {
+      if (isFrozen(this)) {
         fail("Can't .", name, ' a frozen object');
+      }
       return original.apply(this, args);
-    };
+    });
   }
   
   /**
@@ -1153,8 +1235,9 @@ var ___;
    */
   function enforceMatchable(regexp) {
     if (regexp instanceof RegExp) {
-      !isFrozen(regexp) ||
+      if (isFrozen(regexp)) {
         fail("Can't match with frozen RegExp: ", regexp);
+      }
     }
   }
   
@@ -1164,7 +1247,6 @@ var ___;
    * For all i in arg2s: func2(arg1,arg2s[i]).
    */
   function all2(func2, arg1, arg2s) {
-    var i;
     var len = arg2s.length;
     for (var i = 0; i < len; i += 1) {
       func2(arg1, arg2s[i]);
@@ -1190,13 +1272,13 @@ var ___;
     'toString', 'toLocaleString', 'valueOf', 'isPrototypeOf', 'freeze_'
   ]);
   allowRead(Object.prototype, 'length');
-  handleMethod(Object, 'hasOwnProperty',  function(name) {
-    var name = String(name);
+  useCallHandler(Object, 'hasOwnProperty',  function(name) {
+    name = String(name);
     return canReadPub(this, name) && hasOwnProp(this, name);
   });
   var pie_ = Object.prototype.propertyIsEnumerable;
-  handleMethod(Object, 'propertyIsEnumerable', function(name) {
-    var name = String(name);
+  useCallHandler(Object, 'propertyIsEnumerable', function(name) {
+    name = String(name);
     return canReadPub(this, name) && pie_.call(this, name);
   });
   
@@ -1206,10 +1288,10 @@ var ___;
   ctor(Function, Object, 'Function');
   
   allowRead(Function.prototype, 'prototype');
-  handleMethod(Function, 'apply', function(that, realArgs) {
+  useCallHandler(Function, 'apply', function(that, realArgs) {
     return asSimpleFunc(this).apply(that, realArgs[0]);
   });
-  handleMethod(Function, 'call', function(that, realArgs) {
+  useCallHandler(Function, 'call', function(that, realArgs) {
     return asSimpleFunc(this).apply(that, realArgs);
   });
   
@@ -1230,19 +1312,19 @@ var ___;
     'localeCompare', 'slice', 'substring',
     'toLowerCase', 'toLocaleLowerCase', 'toUpperCase', 'toLocaleUpperCase'
   ]);
-  handleMethod(String, 'match', function(regexp) {
+  useCallHandler(String, 'match', function(regexp) {
     enforceMatchable(regexp);
     return this.match(regexp);
   });
-  handleMethod(String, 'replace', function(searchValue, replaceValue) {
+  useCallHandler(String, 'replace', function(searchValue, replaceValue) {
     enforceMatchable(searchValue);
     return this.replace(searchValue, replaceValue);
   });
-  handleMethod(String, 'search', function(regexp) {
+  useCallHandler(String, 'search', function(regexp) {
     enforceMatchable(regexp);
     return this.search(regexp);
   });
-  handleMethod(String, 'split', function(separator, limit) {
+  useCallHandler(String, 'split', function(separator, limit) {
     enforceMatchable(separator);
     return this.split(separator, limit);
   });
@@ -1274,13 +1356,13 @@ var ___;
     'getTime', 'getFullYear', 'getUTCFullYear', 'getMonth', 'getUTCMonth',
     'getDate', 'getUTCDate', 'getHours', 'getUTCHours',
     'getMinutes', 'getUTCMinutes', 'getSeconds', 'getUTCSeconds',
-    'getMilliseconds', 'getUTCMilliseconds',
+    'getMilliseconds', 'getUTCMilliseconds'
   ]);
   all2(allowMutator, Date, [
     'setTime', 'setFullYear', 'setUTCFullYear', 'setMonth', 'setUTCMonth',
     'setDate', 'setUTCDate', 'setHours', 'setUTCHours',
     'setMinutes', 'setUTCMinutes', 'setSeconds', 'setUTCSeconds',
-    'setMilliseconds', 'setUTCMilliseconds',
+    'setMilliseconds', 'setUTCMilliseconds'
   ]);
   
   
@@ -1372,6 +1454,78 @@ var ___;
             [primFreeze(simpleFunc(module))]);
     return module;
   }
+
+  var registeredOuters = [];
+
+  /**
+   * Gets or assigns the id associated with this (assumed to be)
+   * outers object, registering it so that 
+   * <tt>getOuters(getId(outers)) ==== outers</tt>.
+   * <p>
+   * This system of registration and identification allows us to
+   * cajole html such as
+   * <pre>&lt;a onmouseover="alert(1)"&gt;Mouse here&lt;/a&gt;</pre>
+   * into html-writing JavaScript such as<pre>
+   * ___OUTERS___.document.innerHTML = "
+   *  &lt;a onmouseover=\"
+   *    (function(___OUTERS___) {
+   *      ___OUTERS___.alert(1);
+   *    })(___.getOuters(" + ___.getId(___OUTERS___) + "))
+   *  \"&gt;Mouse here&lt;/a&gt;
+   * ";
+   * </pre>
+   * If this is executed by a plugin whose outers is assigned id 42,
+   * it generates html with the same meaning as<pre>
+   * &lt;a onmouseover="___.getOuters(42).alert(1)"&gt;Mouse here&lt;/a&gt;
+   * </pre>
+   * <p>
+   * An outers is not registered and no id is assigned to it until the
+   * first call to <tt>getId</tt>. This way, an outers that is never
+   * registered, or that has been <tt>unregister</tt>ed since the last
+   * time it was registered, will still be garbage collectable.
+   */
+  function getId(outers) {
+    enforceType(outers, 'object', 'outers');
+    var id;
+    if ('id___' in outers) {
+      id = enforceType(outers.id___, 'number', 'id');
+    } else {
+      id = outers.id___ = registeredOuters.length;
+    }
+    registeredOuters[id] = outers;
+    return id;
+  }
+
+  /**
+   * Gets the outers object registered under this id.
+   * <p>
+   * If it has been <tt>unregistered</tt> since the last
+   * <tt>getId</tt> on it, then <tt>getOuters</tt> will fail.
+   */
+  function getOuters(id) {
+    var result = registeredOuters[enforceType(id, 'number', 'id')];
+    if (result === undefined) {
+      fail('outers#', id, ' unregistered');
+    }
+    return result;
+  }
+
+  /**
+   * If you know that this <tt>outers</tt> no longers needs to be
+   * accessed by <tt>getOuters</tt>, then you should
+   * <tt>unregister</tt> it so it can be garbage collected.
+   * <p>
+   * After unregister()ing, the id is not reassigned, and the outers
+   * remembers its id. If asked for another <tt>getId</tt>, it
+   * reregisters itself at its old id.
+   */
+  function unregister(outers) {
+    enforceType(outers, 'object', 'outers');      
+    if ('id___' in outers) {
+      var id = enforceType(outers.id___, 'number', 'id');
+      registeredOuters[id] = undefined;
+    }
+  }
   
   ////////////////////////////////////////////////////////////////////////
   // Exports
@@ -1399,7 +1553,7 @@ var ___;
     canDeletePub: canDeletePub,   deletePub: deletePub,
     
     // Other
-    def: def,
+    def: def
   };
   
   sharedOuters = {
@@ -1408,9 +1562,9 @@ var ___;
     'null': null,
     'false': false,
     'true': true,
-    NaN: NaN,
-    Infinity: Infinity,
-    undefined: undefined,
+    'NaN': NaN,
+    'Infinity': Infinity,
+    'undefined': undefined,
     parseInt: parseInt,
     parseFloat: parseFloat,
     isNaN: isNaN,
@@ -1488,9 +1642,14 @@ var ___;
     args: args,
     
     // Taming mechanism
+    useGetHandler: useGetHandler, 
+    useApplyHandler: useApplyHandler,
+    useCallHandler: useCallHandler,
+    useSetHandler: useSetHandler,
+    useDeleteHandler: useDeleteHandler,
+
     allowSimpleFunc: allowSimpleFunc,
     allowMethod: allowMethod,
-    handleMethod: handleMethod,
     allowMutator: allowMutator,
     enforceMatchable: enforceMatchable,
     all2: all2,
@@ -1503,12 +1662,17 @@ var ___;
     setNewModuleHandler: setNewModuleHandler,
     ignoreNewModule: ignoreNewModule,
     makeNormalNewModuleHandler: makeNormalNewModuleHandler,
-    loadModule: loadModule
+    loadModule: loadModule,
+
+    getId: getId,
+    getOuters: getOuters,
+    unregister: unregister
   };
   
   each(caja, simpleFunc(function(k, v) {
-    !(k in ___) ||
-      fail('internal: initialization conflict: ' + k);
+    if (k in ___) {
+      fail('internal: initialization conflict: ', k);
+    }
     if (typeof v === 'function') {
       simpleFunc(v);
       allowCall(caja, k);
@@ -1519,4 +1683,4 @@ var ___;
   
   setNewModuleHandler(makeNormalNewModuleHandler());
   
-})();
+})(this);

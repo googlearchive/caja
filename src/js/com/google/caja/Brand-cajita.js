@@ -58,7 +58,7 @@ function Brand(name) {
       flag = false; 
       squirrel = null;
       box.provoke();
-      flag || caja.fail('not my box: ',box);
+      if (!flag) { caja.fail('not my box: ',box); }
       var result = squirrel;
       // next two lines are probably unneeded, but just in case
       flag = false; 
