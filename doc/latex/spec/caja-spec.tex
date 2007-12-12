@@ -893,7 +893,7 @@ are isolated from each other.}
 \begin{description}
 
     \item[eval] The Caja global environment has no ``\code{eval}'' function. 
-    Instead, ``\code{Caja.eval}'' will evaluate Cajita source code (text or 
+    Instead, ``\code{caja.eval}'' will evaluate Cajita source code (text or 
     AST) with an explicitly provided set of variable bindings to serve as its 
     initial outer environment, as explained below.
     
@@ -948,6 +948,14 @@ the Cajita subset of Caja.
   statically disallow assignments to any parameter variable within a function 
   that mentions ``\code{arguments}''. But in the initial Caja implementation, 
   this minor gotcha remains.
+  
+  \item[Absent \code{ReferenceError}.] Is ES3, when a reference to an 
+  undefined variable is evaluated as an expression, a \code{ReferenceError} 
+  is thrown. The Caja translator translates a reference to an undefined 
+  variable into a reference to an outer variable. Given the current Caja 
+  translation rules, a reference to an undefined outer variable will evaluate
+  to \code{undefined} rather than throwing a \code{ReferenceError}. We expect
+  to repair this issue in a future Caja spec and implementation.
   
 \end{description}
 
