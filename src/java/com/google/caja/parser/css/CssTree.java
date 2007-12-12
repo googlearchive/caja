@@ -895,7 +895,6 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
 
     public Operator getOperator() { return op; }
 
-    @Override
     public void render(RenderContext r) throws IOException {
       if (null != op.symbol) { r.out.append(op.symbol); }
     }

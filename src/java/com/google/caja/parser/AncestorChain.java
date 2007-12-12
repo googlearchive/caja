@@ -9,14 +9,14 @@ package com.google.caja.parser;
  * @author msamuel@google.com (Mike Samuel)
  */
 public final class AncestorChain<T extends ParseTreeNode> {
-  public final AncestorChain<?> parent;
+  public final AncestorChain<? extends ParseTreeNode> parent;
   public final T node;
 
   public AncestorChain(T node) {
     this(null, node);
   }
 
-  public AncestorChain(AncestorChain<?> parent, T node) {
+  public AncestorChain(AncestorChain<? extends ParseTreeNode> parent, T node) {
     if (node == null) { throw new NullPointerException(); }
     assert parent == null || parent.node.children().contains(node);
     this.parent = parent;
