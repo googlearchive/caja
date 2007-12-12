@@ -19,8 +19,7 @@
 <html>
   <head>
     <title>Caja Rewriting of OpenSocial Gadgets</title>
-    <link rel="stylesheet" href="../common/documentStyle.css" type="text/css"/>
-  </head>
+    <link rel="stylesheet" href="../common/documentStyle.css" type="text/css"/></head>
   <body>
 
 <h1>Caja Rewriting of OpenSocial Gadgets</h1>
@@ -169,7 +168,7 @@ JavaScript that inserts explicit HTML, as in:</p>
 <pre>
 ___OUTERS___.document.innerHTML = "
   &lt;a onmouseover=\"
-    ___OUTERS___.alert(1)
+    return ___.asSimpleFunc(___OUTERS___.alert)(1);
   \"&gt;Mouse here&lt;/a&gt;
 ";
 </pre>
@@ -193,22 +192,43 @@ ___.getOuters(___.getId(___OUTERS___)) === ___OUTERS___
 
 <p>The value returned by <code>getId</code> can be used to securely
 retrieve the <code>___OUTERS___</code> object it was created
-with. Thus our final form of the rewritten HTML would be:</p>
-
+with. </p>
+<p>We translate the event handler code by first replacing all its free uses of
+  &quot;<code>this</code>&quot;  by &quot;<code>thisNode</code>&quot;. We then cajole it with &quot;<code>thisNode</code>&quot; and &quot;<code>event</code>&quot; treated
+  as local variables. The cajoled code is then placed after a &quot;<code>return</code>&quot; in the
+  body of a handler function with a generated unique <i><code>handleName___</code></i>.</p>
+<pre>___OUTERS___.<i>handlerName___</i> = function(thisNode, event) {
+  return ___.asSimpleFunc(___OUTERS___.alert)(1);
+};</pre>
+<p class="note">Should we prohibit &quot;<code>thisNode</code>&quot; from appearing in the
+  original event handler code? Probably.</p>
+<p>Thus our final form of the rewritten HTML would be:</p>
 <pre>
-___OUTERS___.document.innerHTML = "
+___OUTERS___.document.innerHTML = '
   &lt;a onmouseover=\"
-    (function(___OUTERS___) {
-      ___OUTERS___.alert(1);
-    })(___.getOuters(" + ___.getId(___OUTERS___) + "))
+    return plugin_dispatchEvent___(this,
+                                   event || window.event,
+                                   ' + ___.getId(___OUTERS___) + ',
+                                   '<i>handlerName</i>___');
   \"&gt;Mouse here&lt;/a&gt;
-";
+';
 </pre>
 
 <p>The <code>getId</code> function is unreadable to Caja code,
 which therefore cannot use it to sense information about its
-container.</p>
-
+container. The <code>plugin_dispatchEvent___</code> must be provided by the container, in
+  order to express its security / taming policy. We provide the following default:</p>
+<pre>/** 
+ * Default taming is to return obj itself. Depending on
+ * other taming decisions, it may be more appropriate to
+ * return an interposed wrapper.
+ */
+function plugin_tamed(obj) { return obj; }
+ 
+function plugin_dispatchEvent___(thisNode, event, pluginId, handlerName) {
+  return ___.getOuters(pluginId)[handlerName](plugin_tamed(thisNode), 
+                                              plugin_tamed(event));
+}</pre>
 <h2>Attribute value sanitizing</h2>
 
 <p class="note">TBD: Discuss threat model and how it will be addressed.</p>
