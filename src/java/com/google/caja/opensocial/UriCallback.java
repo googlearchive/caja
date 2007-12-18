@@ -14,7 +14,9 @@
 
 package com.google.caja.opensocial;
 
-import java.io.InputStream;
+import com.google.caja.lexer.ExternalReference;
+
+import java.io.Reader;
 import java.net.URI;
 
 /**
@@ -27,17 +29,19 @@ public interface UriCallback {
   /**
    * Inform the caller what to do with a content URI.
    *
-   * @param uri a URI for some content in a gadget.
+   * @param extref a reference for some content in a gadget.
    * @param mimeType the MIME type that is expected to be retrieved from that URI,
    * such as {@code text/plain} or {@code image/*}.
    * @return a {@code UriCallbackOption} indicating how to proceed.
    */
-  UriCallbackOption getOption(URI uri, String mimeType);
+  UriCallbackOption getOption(ExternalReference extref, String mimeType);
 
   /**
    * Retrieve the literal content of the specified URI.
+   * Note: Implementations are responsible for checking and complying with
+   * the site's robots.txt file.
    *
-   * @param uri a URI for some content in a gadget.
+   * @param extref a reference for some content in a gadget.
    * @param mimeType the MIME type that is expected to be retrieved from the URI,
    * such as {@code text/plain} or {@code image/*}.
    * @return the content returned by a GET on that URI.
@@ -45,12 +49,12 @@ public interface UriCallback {
    * error case is where the server returns some content not matching the expected MIME type,
    * which could indicate an attempted attack.
    */
-  InputStream retrieve(URI uri, String mimeType) throws UriCallbackException;
+  Reader retrieve(ExternalReference extref, String mimeType) throws UriCallbackException;
 
   /**
    * Rewrites a URI, perhaps to point to a proxy.
    *
-   * @param uri a URI for some content in a gadget.
+   * @param extref a reference for some content in a gadget.
    * @param mimeType the MIME type that is expected to be retrieved from the URI,
    * such as {@code text/plain} or {@code image/*}. The rewritten URI may refer
    * to a server that only passes through data of the expected MIME type, in order
@@ -58,5 +62,5 @@ public interface UriCallback {
    * @return a rewritten form of the URI.
    * @exception UriCallbackException if the URI could (or should) not be rewritten.
    */
-  URI rewrite(URI uri, String mimeType) throws UriCallbackException;
+  URI rewrite(ExternalReference extref, String mimeType) throws UriCallbackException;
 }

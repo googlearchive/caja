@@ -15,6 +15,7 @@
 package com.google.caja.parser.css;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
@@ -34,9 +35,6 @@ import java.util.regex.Pattern;
  * @author mikesamuel@gmail.com
  */
 public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
-  // TODO(mikesamuel): ensure that the rendered form does not include IE6 style
-  // /*nesting /*block*/ comments*/.  Maybe escape asterisks in string literals?
-
   CssTree(FilePosition pos, List<? extends CssTree> children) {
     this.setFilePosition(pos);
     createMutation().appendChildren(children).execute();
@@ -165,7 +163,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
    * </pre>
    */
   public static final class Media extends CssStatement {
-    Media(FilePosition pos, List<? extends CssTree> mediaAndRuleset) {
+    public Media(FilePosition pos, List<? extends CssTree> mediaAndRuleset) {
       super(pos, mediaAndRuleset);
     }
     public void render(RenderContext r) throws IOException {
@@ -195,7 +193,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
   public static final class Medium extends CssTree {
     final String ident;
 
-    Medium(FilePosition pos, String ident) {
+    public Medium(FilePosition pos, String ident) {
       super(pos, Collections.<CssTree>emptyList());
       this.ident = ident;
     }
@@ -204,7 +202,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     public String getValue() { return ident; }
 
     public void render(RenderContext r) throws IOException {
-      escapeCssIdent(ident, r.out);
+      Escaping.escapeCssIdent(ident, r.out);
     }
   }
 
@@ -230,7 +228,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       r.out.append("@page");
       if (null != ident) {
         r.out.append(' ');
-        escapeCssIdent(ident, r.out);
+        Escaping.escapeCssIdent(ident, r.out);
       }
       List<? extends CssTree> children = children();
       if (children.get(0) instanceof PseudoPage) {
@@ -269,7 +267,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
 
     public void render(RenderContext r) throws IOException {
       r.out.append(':');
-      escapeCssIdent(ident, r.out);
+      Escaping.escapeCssIdent(ident, r.out);
     }
   }
 
@@ -311,7 +309,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     public String getPropertyName() { return ident; }
 
     public void render(RenderContext r) throws IOException {
-      escapeCssIdent(ident, r.out);
+      Escaping.escapeCssIdent(ident, r.out);
     }
   }
 
@@ -430,7 +428,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
 
     public void render(RenderContext r) throws IOException {
       r.out.append('[');
-      escapeCssIdent(ident, r.out);
+      Escaping.escapeCssIdent(ident, r.out);
       if (!children().isEmpty()) {
         r.out.append(' ');
         renderSpaceGroup(children(), r);
@@ -551,7 +549,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
 
     public void render(RenderContext r) throws IOException {
       r.out.append('!');
-      escapeCssIdent(value.substring(1), r.out);
+      Escaping.escapeCssIdent(value.substring(1), r.out);
     }
   }
 
@@ -688,7 +686,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     }
     public void render(RenderContext r) throws IOException {
       r.out.append('#');
-      escapeCssIdent(getValue().substring(1), r.out);
+      Escaping.escapeCssIdent(getValue().substring(1), r.out);
     }
   }
 
@@ -703,7 +701,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     }
     public void render(RenderContext r) throws IOException {
       r.out.append('.');
-      escapeCssIdent(getValue().substring(1), r.out);
+      Escaping.escapeCssIdent(getValue().substring(1), r.out);
     }
   }
 
@@ -718,7 +716,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     }
     public void render(RenderContext r) throws IOException {
       r.out.append('\'');
-      escapeCssString(getValue(), r.paranoid, r.out);
+      Escaping.escapeCssString(getValue(), r.paranoid, r.out);
       r.out.append('\'');
     }
   }
@@ -781,7 +779,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     }
     public void render(RenderContext r) throws IOException {
       r.out.append("url('");
-      escapeCssString(getValue(), r.paranoid, r.out);
+      Escaping.escapeCssString(getValue(), r.paranoid, r.out);
       r.out.append("')");
     }
   }
@@ -796,7 +794,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       return IDENTLITERAL.matcher(value).matches();
     }
     public void render(RenderContext r) throws IOException {
-      escapeCssIdent(getValue(), r.out);
+      Escaping.escapeCssIdent(getValue(), r.out);
     }
   }
 
@@ -823,12 +821,11 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       assert 1 == children().size() && (children().get(0) instanceof Expr);
     }
     public void render(RenderContext r) throws IOException {
-      escapeCssIdent(name, r.out);
+      Escaping.escapeCssIdent(name, r.out);
       r.out.append('(');
       children().get(0).render(r);
       r.out.append(')');
     }
-
   }
 
   /**
@@ -990,82 +987,6 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
         needSpace = true;
       }
       child.render(r);
-    }
-  }
-
-  private static void escapeCssString(
-      String s, boolean paranoid, Appendable out)
-      throws IOException {
-    // TODO(mikesamuel): move parser/js/Escaping into caja.lexer and consolidate
-    // this with that?
-    int pos = 0;
-    int n = s.length();
-    for (int i = 0; i < n; ++i) {
-      char ch = s.charAt(i);
-      boolean esc = ch < 0x20 || ch >= 0x7f;
-      if (!esc) {
-        switch (ch) {
-          case '\\': case '\'': case '\"':
-            esc = true;
-            break;
-          case '<': case '>':
-            esc = paranoid;
-            break;
-        }
-      }
-      if (esc) {
-        out.append(s, pos, i);
-        pos = i + 1;
-        hexEscape(ch, pos < n ? s.charAt(pos) : -1, out);
-      }
-    }
-    out.append(s, pos, n);
-  }
-
-  private static void escapeCssIdent(String s, Appendable out)
-      throws IOException {
-    int pos = 0;
-    int n = s.length();
-    char ch0 = s.charAt(0);
-    // if the first character is a dash or a digit, we need to escape it.
-    // otherwise, tokenization might produce a number.
-    if (!(ch0 >= 'a' && ch0 <= 'z' || ch0 >= 'A' && ch0 <= 'Z')) {
-      pos = 1;
-      hexEscape(ch0, pos < n ? s.charAt(pos) : -1, out);
-    }
-    for (int i = 1; i < n; ++i) {
-      char ch = s.charAt(i);
-      if (!(ch == '-'
-            || ch >= 'a' && ch <= 'z'
-            || ch >= 'A' && ch <= 'Z'
-            || ch >= '0' && ch <= '9')) {
-        out.append(s, pos, i);
-        pos = i + 1;
-        hexEscape(ch, pos < n ? s.charAt(pos) : -1, out);
-      }
-    }
-    out.append(s, pos, n);
-  }
-
-  private static void hexEscape(char ch, int nextChar, Appendable out)
-      throws IOException {
-    out.append('\\');
-    int nChars = 1;
-    while (0 != ((0xf << (nChars << 2)) & ch)) { ++nChars; }
-    for (int i = nChars; --i >= 0;) {
-      out.append("0123456789ABCDEF".charAt((ch >> (i << 2)) & 0xf));
-    }
-    // We need a space between if the character following is a hex digit or
-    // a space character since the CSS {unicode} production specifies that any
-    // following space character is part of the escape.
-    // From http://www.w3.org/TR/CSS21/syndata.html#tokenization
-    // unicode        \\[0-9a-f]{1,6}(\r\n|[ \n\r\t\f])?
-    if ((nextChar >= '0' && nextChar <= '9')
-        || (nextChar >= 'a' && nextChar <= 'f')
-        || (nextChar >= 'A' && nextChar <= 'F')
-        || nextChar == ' ' || nextChar == '\r'
-        || nextChar == '\t' || nextChar == '\f') {
-      out.append(' ');
     }
   }
 }

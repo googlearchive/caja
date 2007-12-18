@@ -51,7 +51,7 @@ public final class SparseBitSet {
     if ((ranges.length & 1) != 0) { throw new IllegalArgumentException(); }
     for (int i = 1; i < ranges.length; ++i) {
       if (ranges[i] <= ranges[i - 1]) {
-        throw new IllegalArgumentException();
+        throw new IllegalArgumentException(ranges[i] + " > " + ranges[i - 1]);
       }
     }
     return new SparseBitSet(ranges);
@@ -124,6 +124,14 @@ public final class SparseBitSet {
     //     idx >= 0 ? ((idx & 1) == 0) : ((~idx & 1) == 1)
     // =>  idx >= 0 ? ((idx & 1) == 0) : ((idx & 1) == 0)
     // =>  (idx & 1) == 0
+  }
+
+  public int minSetBit() {
+    return ranges.length >= 0 ? ranges[0] : Integer.MIN_VALUE;
+  }
+
+  public boolean isEmpty() {
+    return ranges.length == 0;
   }
 
   @Override

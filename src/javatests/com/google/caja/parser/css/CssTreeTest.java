@@ -63,17 +63,17 @@ public class CssTreeTest extends TestCase {
         "a { background: '' }", true);
 
     assertRenderedForm(
-        "a {\n  background: 'foo\\5C bar\\27 Baz\\22zoicks\\A'\n}",
+        "a {\n  background: 'foo\\5C bar\\27 Baz\\22zoicks\\A '\n}",
         "a { background: 'foo\\\\bar\\'Baz\\\"zoicks\\0A' }", false);
     assertRenderedForm(
-        "a {\n  background: 'foo\\5C bar\\27 Baz\\22zoicks\\A'\n}",
-        "a { background: 'foo\\\\bar\\'Baz\\\"zoicks\\0A' }", true);
+        "a {\n  background: 'foo\\5C bar\\27 Baz\\22zoicks\\A '\n}",
+        "a { background: 'foo\\\\bar\\'Baz\\\"zoicks\\0A ' }", true);
 
     assertRenderedForm(
         "a {\n  background: '</script><b>'\n}",
         "a { background: '</script><b>' }", false);
     assertRenderedForm(
-        "a {\n  background: '\\3C/script\\3E\\3C b\\3E'\n}",
+        "a {\n  background: '\\3C/script\\3E\\3C b\\3E '\n}",
         "a { background: \"</script><b>\" }", true);
 
     assertRenderedForm(
@@ -81,12 +81,15 @@ public class CssTreeTest extends TestCase {
         "a { background: ']]>' }", false);
     assertRenderedForm(
         "a {\n  background: ']]>'\n}",
-        "a { background: ']]\\3E' }", false);
+        "a { background: ']]\\3E ' }", false);
     assertRenderedForm(
-        "a {\n  background: ']]\\3E'\n}",
+        "a {\n  background: ']]\\3E '\n}",
         "a { background: ']]\\3E' }", true);
     assertRenderedForm(
-        "a {\n  background: ']]\\3E'\n}",
+        "a {\n  background: ']]\\3E '\n}",
+        "a { background: ']]\\3E ' }", true);
+    assertRenderedForm(
+        "a {\n  background: ']]\\3E '\n}",
         "a { background: ']]>' }", true);
   }
 
@@ -132,7 +135,7 @@ public class CssTreeTest extends TestCase {
 
     try {
       assertRenderedForm(
-          "a {\n  background: url(']]\\3E')\n}",
+          "a {\n  background: url(']]\\3E ')\n}",
           "a { background: url(]]>) }", true);
     } catch (ParseException ex) {
       // pass
@@ -140,7 +143,7 @@ public class CssTreeTest extends TestCase {
 
     try {
       assertRenderedForm(
-          "a {\n  background: url(']]\\3E')\n}",
+          "a {\n  background: url(']]\\3E ')\n}",
           "a { background: url(']]>') }", true);
     } catch (ParseException ex) {
       // pass

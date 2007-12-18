@@ -778,6 +778,7 @@ public class ParseTreeNodeTest extends TestCase {
       this.toAdd = toAdd.clone();
     }
 
+    @Override
     public boolean visit(AncestorChain<?> ancestors) {
       ParseTreeNode n = ancestors.node;
       processNode(n);

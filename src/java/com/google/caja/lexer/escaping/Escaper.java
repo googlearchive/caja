@@ -16,7 +16,6 @@ package com.google.caja.lexer.escaping;
 
 import com.google.caja.util.SparseBitSet;
 import java.io.IOException;
-import java.util.Arrays;
 
 /**
  * A short lived object that encapsulates all the information needed to
@@ -26,15 +25,25 @@ import java.util.Arrays;
  */
 final class Escaper {
   private final CharSequence chars;
-  private final EscapeMap ascii;
-  private final SparseBitSet nonAscii;
+  private final EscapeMap precomputedEscapes;
+  private final SparseBitSet otherEscapes;
+  private final Encoder encoder;
   private final Appendable out;
+  private final int minNonPrecomputed;
 
-  Escaper(CharSequence chars, EscapeMap ascii, SparseBitSet nonAscii,
-          Appendable out) {
+  /**
+   * @param precomputedEscapes maps ascii characters to escape to the escapes.
+   *   Must not overlap with otherEscapes.  Escaped codepoints in precomputed
+   *   greater than otherEscapes.minSetBit() will be ignored.
+   */
+  Escaper(CharSequence chars, EscapeMap precomputedEscapes,
+          SparseBitSet otherEscapes, Encoder encoder, Appendable out) {
     this.chars = chars;
-    this.ascii = ascii;
-    this.nonAscii = nonAscii;
+    this.precomputedEscapes = precomputedEscapes;
+    this.otherEscapes = otherEscapes;
+    this.minNonPrecomputed
+        = otherEscapes.isEmpty() ? 128 : otherEscapes.minSetBit();
+    this.encoder = encoder;
     this.out = out;
   }
 
@@ -42,13 +51,23 @@ final class Escaper {
    * Treats chars as plain text, and appends to out the escaped version.
    */
   void escape() throws IOException {
-    int pos = 0;
     int end = chars.length();
-    int charCount;
-    for (int i = 0; i < end; i += charCount) {
-      int codepoint = Character.codePointAt(chars, i);
-      charCount = Character.charCount(codepoint);
-      if (escapeOneCodepoint(pos, i, codepoint)) { pos = i + charCount; }
+    if (end == 0) { return; }
+
+    int pos = 0;  // The index into chars past the last char written to out.
+
+    int codepoint = Character.codePointAt(chars, 0);
+    for (int i = 0; i < end;) {
+      int charCount = Character.charCount(codepoint);
+      int i2 = i + charCount;
+      int nextCodepoint = i2 < end ? Character.codePointAt(chars, i2) : -1;
+
+      if (escapeOneCodepoint(pos, i, codepoint, nextCodepoint)) {
+        pos = i2;
+      }
+
+      i = i2;
+      codepoint = nextCodepoint;
     }
     out.append(chars, pos, end);
   }
@@ -59,83 +78,62 @@ final class Escaper {
    * correctness are consistently escaped.
    */
   void normalize() throws IOException {
-    int pos = 0;
     int end = chars.length();
-    int charCount;
-    for (int i = 0; i < end; i += charCount) {
-      int codepoint = Character.codePointAt(chars, i);
-      charCount = Character.charCount(codepoint);
+    if (end == 0) { return; }
 
-      if (codepoint == '\\') {
-        // Already escaped.
-        int escStart = i;
-        i += charCount;
-        if (i < end) {
-          codepoint = Character.codePointAt(chars, i);
-          charCount = Character.charCount(codepoint);
+    int pos = 0;  // The index into chars past the last char written to out.
+
+    int codepoint = Character.codePointAt(chars, 0);
+    boolean escaped = false;  // Is the character we're considering escaped?
+    for (int i = 0; i < end;) {
+      int charCount = Character.charCount(codepoint);
+      int i2 = i + charCount;
+      int nextCodepoint = i2 < end ? Character.codePointAt(chars, i2) : -1;
+
+      if (escaped) {
+        escaped = false;
+        // end pos is (i - 1) so we don't include the backslash twice.
+        if (escapeOneCodepoint(pos, i - 1, codepoint, nextCodepoint)) {
+          pos = i2;
         }
-        // Try to escape it anyway.  Since we pass escStart in as the second
-        // arg instead of i, the output will not include the leading backslash
-        // if it does decide to re-escape.
-        if (escapeOneCodepoint(pos, escStart, codepoint)) {
-          pos = i + charCount;
-        }
-        // Otherwise don't unescape.  Maybe it has a special significance in
-        // the current context, like ? in regexps.
-      } else {
-        if (escapeOneCodepoint(pos, i, codepoint)) { pos = i + charCount; }
+      } else if (codepoint == '\\') {
+        escaped = true;
+      } else if (escapeOneCodepoint(pos, i, codepoint, nextCodepoint)) {
+        pos = i2;
       }
+
+      i = i2;
+      codepoint = nextCodepoint;
     }
     out.append(chars, pos, end);
   }
 
   /**
    * Escapes a single unicode codepoint onto the output buffer iff it is
-   * contained by either the nonAscii set or the ascii set.
+   * contained by either the otherEscapes set or the ascii set.
    * @param pos the position past the last character in chars that has been
    *   written to out.
    * @param limit the position past the last character in chars that should
    *   be written preceding codepoint.
    * @param codepoint the codepoint to check.
+   * @param nextCodepoint the next codepoint or -1 if none.
    * @return true iff characters between pos and limit and codepoint itself
    *   were written to out.  false iff out was not changed by this call.
    */
-  private boolean escapeOneCodepoint(int pos, int limit, int codepoint)
+  private boolean escapeOneCodepoint(
+      int pos, int limit, int codepoint, int nextCodepoint)
       throws IOException {
-    if (codepoint < 0x7f) {
-      String esc = ascii.getEscape(codepoint);
+    if (codepoint < minNonPrecomputed) {
+      String esc = precomputedEscapes.getEscape(codepoint);
       if (esc != null) {
         out.append(chars, pos, limit).append(esc);
         return true;
       }
-    } else if (nonAscii.contains(codepoint)) {
+    } else if (otherEscapes.contains(codepoint)) {
       out.append(chars, pos, limit);
-      if (!Character.isSupplementaryCodePoint(codepoint)) {
-        if (codepoint < 0x100) {
-          octalEscape((char) codepoint, out);
-        } else {
-          unicodeEscape((char) codepoint, out);
-        }
-      } else {
-        for (char surrogate : Character.toChars(codepoint)) {
-          unicodeEscape(surrogate, out);
-        }
-      }
+      encoder.encode(codepoint, nextCodepoint, out);
       return true;
     }
     return false;
-  }
-
-  static void octalEscape(char ch, Appendable out) throws IOException {
-    out.append('\\').append((char) ('0' + ((ch & 0x1c0) >> 6)))
-        .append((char) ('0' + ((ch & 0x38) >> 3)))
-        .append((char) ('0' + (ch & 0x7)));
-  }
-
-  static void unicodeEscape(char ch, Appendable out) throws IOException {
-    out.append("\\u").append("0123456789abcdef".charAt((ch >> 12) & 0xf))
-        .append("0123456789abcdef".charAt((ch >> 8) & 0xf))
-        .append("0123456789abcdef".charAt((ch >> 4) & 0xf))
-        .append("0123456789abcdef".charAt(ch & 0xf));
   }
 }

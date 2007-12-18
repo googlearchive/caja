@@ -199,16 +199,20 @@ public final class GxpCompiler {
       params.add(param);
     }
 
-    // var out = [];
+    String OUTPUT_ARRAY_NAME = "out___";
+    // Chunks of html should be pushed onto an array called out___
+    List<String> tgtChain = Arrays.asList(OUTPUT_ARRAY_NAME, "push");
+
+    // var out___ = [];
     Block body = s(new Block(Collections.<Statement>emptyList()));
     body.insertBefore(
         s(new Declaration(
-              "out___",
+              OUTPUT_ARRAY_NAME,
               s(new ArrayConstructor(
                     Collections.<Expression>emptyList())))), null);
 
     for (AncestorChain<? extends DomTree> treeChain : sig.content) {
-      compileDom(treeChain, "out___", false, JsWriter.Esc.HTML, body);
+      compileDom(treeChain, tgtChain, false, JsWriter.Esc.HTML, body);
     }
 
     // Join the html via out___.join('') and mark it as safe html
@@ -219,7 +223,7 @@ public final class GxpCompiler {
             s(new Reference("plugin_blessHtml___")),
             s(new Operation(Operator.FUNCTION_CALL,
                 s(new Operation(Operator.MEMBER_ACCESS,
-                                s(new Reference("out___")),
+                                s(new Reference(OUTPUT_ARRAY_NAME)),
                                 s(new Reference("join")))),
                 s(new StringLiteral("''"))
             ))
@@ -238,29 +242,30 @@ public final class GxpCompiler {
   }
 
   private void compileDom(
-      AncestorChain<? extends DomTree> tChain, String tgt, boolean inAttrib,
-      JsWriter.Esc escaping, Block b)
+      AncestorChain<? extends DomTree> tChain, List<String> tgtChain,
+      boolean inAttrib, JsWriter.Esc escaping, Block b)
       throws BadContentException {
     DomTree t = tChain.node;
     switch (t.getType()) {
     case TEXT:
       JsWriter.appendText(trimText(tChain.cast(DomTree.Text.class)),
-                          escaping, tgt, b);
+                          escaping, tgtChain, b);
       break;
     case CDATA:
-      JsWriter.appendText(t.getValue(), escaping, tgt, b);
+      JsWriter.appendText(t.getValue(), escaping, tgtChain, b);
       break;
     case TAGBEGIN:
       DomTree.Tag el = (DomTree.Tag) t;
       String tagName = el.getValue();
       if (GxpValidator.isGxp(tagName)) {
         if ("gxp:if".equals(tagName)) {
-          handleIf(tChain.cast(DomTree.Tag.class), tgt, inAttrib, escaping, b);
+          handleIf(
+              tChain.cast(DomTree.Tag.class), tgtChain, inAttrib, escaping, b);
         } else if ("gxp:eval".equals(tagName)) {
-          handleEval(tChain.cast(DomTree.Tag.class), tgt, escaping, b);
+          handleEval(tChain.cast(DomTree.Tag.class), tgtChain, escaping, b);
         } else if ("gxp:loop".equals(tagName)) {
           handleLoop(
-              tChain.cast(DomTree.Tag.class), tgt, inAttrib, escaping, b);
+              tChain.cast(DomTree.Tag.class), tgtChain, inAttrib, escaping, b);
         } else if (tagName.startsWith("call:")) {
           if (inAttrib) {
             throw new BadContentException(
@@ -269,7 +274,7 @@ public final class GxpCompiler {
                             MessagePart.Factory.valueOf("<" + tagName + ">")));
           }
           assert escaping != JsWriter.Esc.NONE;
-          handleCall(el, tgt, b);
+          handleCall(el, tgtChain, b);
         } else {
           mq.addMessage(
               PluginMessageType.UNKNOWN_TAG, el.getFilePosition(),
@@ -291,17 +296,17 @@ public final class GxpCompiler {
                           el.getFilePosition(),
                           MessagePart.Factory.valueOf("<" + tagName + ">")));
         }
-        JsWriter.appendString("<" + tagName, tgt, b);
+        JsWriter.appendString("<" + tagName, tgtChain, b);
         constraint.startTag(el);
         List<? extends DomTree> children = el.children();
         if (children.isEmpty()) {
           for (Pair<String, String> extra : constraint.tagDone(el)) {
             JsWriter.appendString(
                 " " + extra.a + "=\"" + JsWriter.htmlEscape(extra.b) + "\"",
-                tgt, b);
+                tgtChain, b);
           }
           if (requiresCloseTag(tagName)) {
-            JsWriter.appendString("></" + tagName + ">", tgt, b);
+            JsWriter.appendString("></" + tagName + ">", tgtChain, b);
           }
         } else {
           int i;
@@ -325,7 +330,7 @@ public final class GxpCompiler {
 
             if (!isExpr) {
               if ("style".equalsIgnoreCase(name)) {
-                compileStyleAttrib(attrib, tgt, b);
+                compileStyleAttrib(attrib, tgtChain, b);
               } else {
                 AttributeXform xform = xformForAttribute(tagName, name);
                 String value = (null != xform)
@@ -335,7 +340,7 @@ public final class GxpCompiler {
                 JsWriter.appendString(
                     " " + name + "=\""
                     + JsWriter.htmlEscape(wrapper.a + value + wrapper.b)
-                    + "\"", tgt, b);
+                    + "\"", tgtChain, b);
               }
             } else {   // Handle expr:foo="<expression>"
 
@@ -352,9 +357,10 @@ public final class GxpCompiler {
               }
 
               JsWriter.appendString(
-                  " " + name + "=\"" + JsWriter.htmlEscape(wrapper.a), tgt, b);
+                  " " + name + "=\"" + JsWriter.htmlEscape(wrapper.a),
+                  tgtChain, b);
               if (null == wrapperFn) {
-                JsWriter.append(asExpression(valueT), tgt, b);
+                JsWriter.append(asExpression(valueT), tgtChain, b);
               } else {
                 // Wrap the expression in a wrapper function
                 Operation e = s(new Operation(
@@ -363,10 +369,10 @@ public final class GxpCompiler {
                                     asExpression(valueT),
                                     s(new Reference(meta.namespacePrivateName))
                                     ));
-                JsWriter.append(e, tgt, b);
+                JsWriter.append(e, tgtChain, b);
               }
               JsWriter.appendString(
-                  JsWriter.htmlEscape(wrapper.b) + "\"", tgt, b);
+                  JsWriter.htmlEscape(wrapper.b) + "\"", tgtChain, b);
             }
             constraint.attributeDone(name);
           }
@@ -410,13 +416,14 @@ public final class GxpCompiler {
               if (null == wrapper) { continue; }
 
               JsWriter.appendString(
-                  " " + name + "=\"" + JsWriter.htmlEscape(wrapper.a), tgt, b);
+                  " " + name + "=\"" + JsWriter.htmlEscape(wrapper.a),
+                  tgtChain, b);
               List<? extends DomTree> attrTrimmed = attrEl.children();
               attrTrimmed = attrTrimmed.subList(s, attrTrimmed.size());
               if (null == wrapperFn) {
                 for (DomTree attr : attrTrimmed) {
                   compileDom(new AncestorChain<DomTree>(attrElChain, attr),
-                             tgt, true, JsWriter.Esc.HTML_ATTRIB, b);
+                             tgtChain, true, JsWriter.Esc.HTML_ATTRIB, b);
                 }
               } else {
                 // We need to collect in a separate list before processing and
@@ -430,7 +437,8 @@ public final class GxpCompiler {
                                 Collections.<Expression>emptyList())))), null);
                 for (DomTree attr : attrTrimmed) {
                   compileDom(new AncestorChain<DomTree>(attrElChain, attr),
-                             synthId, true, JsWriter.Esc.NONE, b);
+                             Arrays.asList(synthId, "push"), true,
+                             JsWriter.Esc.NONE, b);
                 }
                 // plugin_htmlAttr___(<wrapper>(<synthId>.join(''), <nsPrefix>))
                 JsWriter.append(
@@ -448,10 +456,10 @@ public final class GxpCompiler {
                                             s(new Reference("join")))),
                                       s(new StringLiteral("''")))),
                                 s(new Reference(meta.namespacePrivateName)))))),
-                    tgt, b);
+                    tgtChain, b);
               }
               JsWriter.appendString(
-                  JsWriter.htmlEscape(wrapper.b) + "\"", tgt, b);
+                  JsWriter.htmlEscape(wrapper.b) + "\"", tgtChain, b);
               constraint.attributeDone(name);
             }
           }
@@ -459,10 +467,10 @@ public final class GxpCompiler {
           for (Pair<String, String> extra : constraint.tagDone(el)) {
             JsWriter.appendString(
                 " " + extra.a + "=\"" + JsWriter.htmlEscape(extra.b) + "\"",
-                tgt, b);
+                tgtChain, b);
           }
 
-          JsWriter.appendString(">", tgt, b);
+          JsWriter.appendString(">", tgtChain, b);
 
           // Recurse to contents
           boolean wroteChildElement = false;
@@ -471,7 +479,7 @@ public final class GxpCompiler {
               if (!(HtmlTokenType.TAGBEGIN == child.getType()
                     && "gxp:attr".equals(child.getValue()))) {
                 compileDom(new AncestorChain<DomTree>(tChain, child),
-                           tgt, false, JsWriter.Esc.HTML, b);
+                           tgtChain, false, JsWriter.Esc.HTML, b);
                 wroteChildElement = true;
               }
             }
@@ -485,7 +493,7 @@ public final class GxpCompiler {
           }
 
           if (wroteChildElement || requiresCloseTag(tagName)) {
-            JsWriter.appendString("</" + tagName + ">", tgt, b);
+            JsWriter.appendString("</" + tagName + ">", tgtChain, b);
           }
         }
       }
@@ -592,8 +600,9 @@ public final class GxpCompiler {
     return value.substring(s, e);
   }
 
-  private void handleIf(AncestorChain<DomTree.Tag> tChain, String tgt,
-                        boolean inAttrib, JsWriter.Esc escaping, Block b)
+  private void handleIf(
+      AncestorChain<DomTree.Tag> tChain, List<String> tgtChain,
+      boolean inAttrib, JsWriter.Esc escaping, Block b)
       throws BadContentException {
     DomTree.Tag t = tChain.node;
 
@@ -629,20 +638,20 @@ public final class GxpCompiler {
     b.insertBefore(c, null);
     for (DomTree child : children.subList(attribEnd, alternativeStart)) {
       compileDom(new AncestorChain<DomTree>(tChain, child),
-                 tgt, inAttrib, escaping, body);
+                 tgtChain, inAttrib, escaping, body);
     }
     if (null != alternative) {
       for (DomTree child :
                children.subList(alternativeStart + 1, children.size())) {
-        compileDom(new AncestorChain<DomTree>(tChain, child), tgt, inAttrib,
-                   escaping, alternative);
+        compileDom(new AncestorChain<DomTree>(tChain, child), tgtChain,
+                   inAttrib, escaping, alternative);
       }
     }
   }
 
   private void handleLoop(
-      AncestorChain<DomTree.Tag> tChain, String tgt, boolean inAttrib,
-      JsWriter.Esc escaping, Block b)
+      AncestorChain<DomTree.Tag> tChain, List<String> tgtChain,
+      boolean inAttrib, JsWriter.Esc escaping, Block b)
       throws BadContentException {
     DomTree.Tag t = tChain.node;
     // Should have two parameters -- the iterable and the variable
@@ -710,13 +719,13 @@ public final class GxpCompiler {
     List<? extends DomTree> children = t.children();
     for (DomTree child : children.subList(attribEnd, children.size())) {
       compileDom(new AncestorChain<DomTree>(tChain, child),
-                 tgt, inAttrib, escaping, forEachBody);
+                 tgtChain, inAttrib, escaping, forEachBody);
     }
   }
 
   private void handleEval(
-      AncestorChain<DomTree.Tag> tChain, String tgt, JsWriter.Esc escaping,
-      Block b) {
+      AncestorChain<DomTree.Tag> tChain, List<String> tgtChain,
+      JsWriter.Esc escaping, Block b) {
     DomTree.Tag t = tChain.node;
     // Should have one parameters -- the expression
     Map<String, DomTree.Value> attribMap = new HashMap<String, DomTree.Value>();
@@ -749,10 +758,10 @@ public final class GxpCompiler {
         break;
       default: break;
     }
-    JsWriter.append(e, tgt, b);
+    JsWriter.append(e, tgtChain, b);
   }
 
-  private void handleCall(DomTree.Tag t, String tgt, Block b) {
+  private void handleCall(DomTree.Tag t, List<String> tgtChain, Block b) {
     String templateName = t.getValue().substring("call:".length());
     TemplateSignature sig = sigs.get(templateName);
     if (null == sig) {
@@ -814,10 +823,11 @@ public final class GxpCompiler {
           s(new Reference("call"))));
     operands[1] = s(new Reference(meta.namespaceName));
     Operation call = s(new Operation(Operator.FUNCTION_CALL, operands));
-    JsWriter.append(call, tgt, b);
+    JsWriter.append(call, tgtChain, b);
   }
 
-  private void compileStyleAttrib(DomTree.Attrib attrib, String tgt, Block b)
+  private void compileStyleAttrib(
+      DomTree.Attrib attrib, List<String> tgtChain, Block b)
       throws BadContentException {
     CssTree decls;
     try {
@@ -842,10 +852,10 @@ public final class GxpCompiler {
           MessagePart.Factory.valueOf(attrib.getAttribValue()));
     }
 
-    JsWriter.appendString(" style=\"", tgt, b);
+    JsWriter.appendString(" style=\"", tgtChain, b);
     CssTemplate.bodyToJavascript(
-        decls, meta, tgt, b, JsWriter.Esc.HTML_ATTRIB, mq);
-    JsWriter.appendString("\"", tgt, b);
+        decls, meta, tgtChain, b, JsWriter.Esc.HTML_ATTRIB, mq);
+    JsWriter.appendString("\"", tgtChain, b);
   }
 
   private CssTree.DeclarationGroup parseStyleAttrib(DomTree.Attrib t)
@@ -1074,7 +1084,7 @@ public final class GxpCompiler {
           // TODO(msamuel): Put url in the appropriate file-space namespace
           if (!UrlUtil.isDomainlessUrl(uri)) {
             throw new BadContentException(new Message(
-                PluginMessageType.EXPECTED_RELATIVE_URL,
+                PluginMessageType.DISALLOWED_URI,
                 t.getFilePosition(), MessagePart.Factory.valueOf(uriStr)));
           }
           return UrlUtil.translateUrl(uri, gxpc.meta.pathPrefix);

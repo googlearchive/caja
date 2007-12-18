@@ -14,13 +14,17 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.HtmlTokenType;
+import com.google.caja.lexer.TokenQueue;
+import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.DomTree;
 import com.google.caja.util.RhinoTestBed;
 
-import junit.framework.TestCase;
-
-import java.io.IOException;
 import java.io.StringReader;
+import java.net.URI;
+import junit.framework.TestCase;
 
 /**
  * End-to-end tests that compile a gadget to javascript and run the
@@ -206,28 +210,25 @@ public class HtmlCompiledPluginTest extends TestCase {
     execGadget(
         "<script>" +
         "function f(fail) {" +
-          "if (toSource) fail('top level toSource is accessible');" +
+          "if (toSource) {" +
+            "fail('top level toSource is accessible: ' + toSource);" +
+          "}" +
         "}" +
         "</script>",
         "___.latestOuters.f(fail);"
-    );
+        );
   }
 
-  public void execGadget(String gadget_spec, String tests)
-      throws IOException {
+  public void execGadget(String gadgetSpec, String tests) throws Exception {
     HtmlPluginCompiler compiler = new HtmlPluginCompiler(
-        gadget_spec, "test", "test", "test", true);
-    boolean failed=false;
-    try {
-      if (!compiler.run()){
-        failed = true;
-      }
-    } catch (ParseException e) {
-      e.toMessageQueue(compiler.getMessageQueue());
-      failed = true;
-    }
+        "test", "test", "test", true);
+    DomTree html = parseHtml(gadgetSpec);
+    if (html != null) { compiler.addInput(new AncestorChain<DomTree>(html)); }
+    
+    boolean failed = !compiler.run();
+
     if (failed) {
-      fail(compiler.getErrors());
+      fail();
     } else {
       String js = compiler.getOutputJs();
       System.out.println("Compiled gadget: " + js);
@@ -261,5 +262,14 @@ public class HtmlCompiledPluginTest extends TestCase {
         };
       RhinoTestBed.runJs(null, inputs);
     }
+  }
+
+  DomTree parseHtml(String html) throws Exception {
+    InputSource is
+        = new InputSource(new URI("content", null, "/" + html, null));
+    StringReader in = new StringReader(html);
+    TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(is, in, false);
+    if (tq.isEmpty()) { return null; }
+    return DomParser.parseFragment(tq);
   }
 }

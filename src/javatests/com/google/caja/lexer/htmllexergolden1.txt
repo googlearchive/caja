@@ -118,9 +118,17 @@ TAGEND     [>]  :  htmllexerinput1.html:50+67@1153 - 68@1154
 TEXT       [\n\n]  :  htmllexerinput1.html:50+68@1154 - 52+1@1156
 SERVERCODE [<% # some php code here\nwrite("<pre>$horriblySyntacticConstruct1</pre>\\n\\n");\n%>]  :  htmllexerinput1.html:52+1@1156 - 54+3@1236
 TEXT       [\n\n]  :  htmllexerinput1.html:54+3@1236 - 56+1@1238
-TAGBEGIN   [</body]  :  htmllexerinput1.html:56+1@1238 - 7@1244
-TAGEND     [>]  :  htmllexerinput1.html:56+7@1244 - 8@1245
-TEXT       [\n]  :  htmllexerinput1.html:56+8@1245 - 57+1@1246
-TAGBEGIN   [</html]  :  htmllexerinput1.html:57+1@1246 - 7@1252
-TAGEND     [>]  :  htmllexerinput1.html:57+7@1252 - 8@1253
-TEXT       [\n]  :  htmllexerinput1.html:57+8@1253 - 58+1@1254
+TAGBEGIN   [<script]  :  htmllexerinput1.html:56+1@1238 - 8@1245
+ATTRNAME   [type]  :  htmllexerinput1.html:56+9@1246 - 13@1250
+ATTRVALUE  ["text/javascript"]  :  htmllexerinput1.html:56+14@1251 - 31@1268
+TAGEND     [>]  :  htmllexerinput1.html:56+31@1268 - 32@1269
+UNESCAPED  [<!--\nalert("hello world");\n// -->]  :  htmllexerinput1.html:56+32@1269 - 58+7@1302
+TAGBEGIN   [</script]  :  htmllexerinput1.html:58+7@1302 - 15@1310
+TAGEND     [>]  :  htmllexerinput1.html:58+15@1310 - 16@1311
+TEXT       [\n\n]  :  htmllexerinput1.html:58+16@1311 - 60+1@1313
+TAGBEGIN   [</body]  :  htmllexerinput1.html:60+1@1313 - 7@1319
+TAGEND     [>]  :  htmllexerinput1.html:60+7@1319 - 8@1320
+TEXT       [\n]  :  htmllexerinput1.html:60+8@1320 - 61+1@1321
+TAGBEGIN   [</html]  :  htmllexerinput1.html:61+1@1321 - 7@1327
+TAGEND     [>]  :  htmllexerinput1.html:61+7@1327 - 8@1328
+TEXT       [\n]  :  htmllexerinput1.html:61+8@1328 - 62+1@1329

@@ -12,28 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.opensocial;
+package com.google.caja.lexer.escaping;
+
+import java.io.IOException;
 
 /**
- * Thrown when there is a problem in parsing or rewriting a gadget.
- * FIXME(msamuel): Why isn't this a Caja exception?
+ * Knows how to Encode a single codepoint to an output buffer.
  *
- * @author ihab.awad@gmail.com (Ihab Awad)
+ * @author mikesamuel@gmail.com (Mike Samuel)
  */
-public class GadgetRewriteException extends Exception {
-  public GadgetRewriteException() {
-    this(null, null);
-  }
+interface Encoder {
 
-  public GadgetRewriteException(String message) {
-    this(message, null);
-  }
-
-  public GadgetRewriteException(Throwable cause) {
-    this(null, cause);
-  }
-
-  public GadgetRewriteException(String message, Throwable cause) {
-    super(message, cause);
-  }
+  /**
+   * Write an escape sequence for codepoint onto out.
+   *
+   * @param codepoint the codepoint to escape.
+   * @param nextCodepoint the next codepoint or -1 if there is none.
+   * @param out the output buffer.
+   */
+  void encode(int codepoint, int nextCodepoint, Appendable out)
+      throws IOException;
 }

@@ -47,6 +47,10 @@ public class TokenQueue<T extends TokenType> {
     this.tokenFilter = tokenFilter;
   }
 
+  public TokenQueue(TokenStream<T> tokenStream, InputSource file) {
+    this(tokenStream, file, Criterion.Factory.<Token<T>>optimist());
+  }
+
   public InputSource getInputSource() { return this.file; }
 
   /** Null or the range within the file which is being parsed. */

@@ -568,6 +568,8 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
   static {
     ESCAPE_EXEMPT_TAGS.add("listing");
     ESCAPE_EXEMPT_TAGS.add("script");
+    ESCAPE_EXEMPT_TAGS.add("style");
+    ESCAPE_EXEMPT_TAGS.add("textarea");
     ESCAPE_EXEMPT_TAGS.add("xmp");
   }
 

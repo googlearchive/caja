@@ -29,7 +29,7 @@ function aSquareMeal(beer, mayonnaise, cheetos) {
       }
     }
   }
-  out___.push('Empty <p></p>\n\n  <form name=\"pre-hello\" onsubmit=\"return false\">\n    <input type=\"text\" name=\"widgy\">\n    <textarea id=\"pre-hellota\" name=\"howAreYouToday\">\n      How\'s it going?\n    </textarea>\n    <input type=\"submit\" value=\"whack\" id=\"');
+  out___.push('Empty <p></p>\n\n  <form name=\"pre-hello\" onsubmit=\"return false\">\n    <input type=\"text\" name=\"widgy\">\n    <textarea id=\"pre-hellota\" name=\"howAreYouToday\">\n      How&#39;s it going?\n    </textarea>\n    <input type=\"submit\" value=\"whack\" id=\"');
   var c5___ = [];
   if (saidHello) {
     c5___.push('reparte');

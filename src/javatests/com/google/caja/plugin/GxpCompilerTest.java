@@ -118,7 +118,7 @@ public class GxpCompilerTest extends TestCase {
       messages.add(Pair.pair(m.getMessageType(), (FilePosition) parts.get(0)));
     }
     assertEquals(
-        "[[EXPECTED_RELATIVE_URL, gxpcompilerinput2.gxp:6+21@84 - 53@116], "
+        "[[DISALLOWED_URI, gxpcompilerinput2.gxp:6+21@84 - 53@116], "
         + "[REWROTE_STYLE, gxpcompilerinput2.gxp:6+8@71 - 54@117], "
         + "[UNSAFE_CSS_PROPERTY, gxpcompilerinput2.gxp:9+9@139 - 16@146], "
         + "[REWROTE_STYLE, gxpcompilerinput2.gxp:9+8@138 - 71@201], "
@@ -177,7 +177,7 @@ public class GxpCompilerTest extends TestCase {
 
   public void testGxpWithBadUrl() throws Exception {
     assertRejected(
-        PluginMessageType.EXPECTED_RELATIVE_URL,
+        PluginMessageType.DISALLOWED_URI,
         "<gxp:template name=\"Test\">"
         + "<a href=\"http://evil.com/\">hello</a>"
         + "</gxp:template>");
@@ -444,7 +444,7 @@ public class GxpCompilerTest extends TestCase {
             max = msg.getMessageLevel();
           }
         }
-        if (null == max || MessageLevel.FATAL_ERROR.compareTo(max) > 0) {
+        if (null == max || MessageLevel.ERROR.compareTo(max) > 0) {
           for (ParseTreeNode javascript : javascripts) {
             javascript.formatTree(mc, 0, System.err);
           }

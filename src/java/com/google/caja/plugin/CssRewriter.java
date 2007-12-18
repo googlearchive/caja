@@ -346,7 +346,7 @@ final class CssRewriter {
               // the same url check as GxpCompiler
               if (!UrlUtil.isDomainlessUrl(uri)) {
                 removeMsg = new Message(
-                    PluginMessageType.EXPECTED_RELATIVE_URL,
+                    PluginMessageType.DISALLOWED_URI,
                     node.getFilePosition(),
                     MessagePart.Factory.valueOf(uriStr));
                 rewrote.set();
@@ -354,7 +354,7 @@ final class CssRewriter {
               }
             } catch (URISyntaxException ex) {
               removeMsg = new Message(
-                  PluginMessageType.MALFORMED_URL,
+                  PluginMessageType.DISALLOWED_URI,
                   node.getFilePosition(), MessagePart.Factory.valueOf(uriStr));
               rewrote.set();
               remove = true;

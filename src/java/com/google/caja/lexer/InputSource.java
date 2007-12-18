@@ -16,15 +16,10 @@ package com.google.caja.lexer;
 
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
-import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageType;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URI;
-import java.net.URL;
 import java.util.Collection;
 
 /**
@@ -36,7 +31,6 @@ import java.util.Collection;
  * @author mikesamuel@gmail.com
  */
 public final class InputSource implements MessagePart {
-  // TODO(mikesamuel): undo CL 5667365
   private URI uri;
   private String uriStr;
 
@@ -53,30 +47,6 @@ public final class InputSource implements MessagePart {
   }
 
   public URI getUri() { return this.uri; }
-
-  public String readSource() throws ParseException {
-    try {
-      InputStream in = new URL(getUri().toString()).openStream();
-      CharProducer cp =
-          CharProducer.Factory.create(new InputStreamReader(in, "UTF-8"), this);
-      String src = "";
-      int ch;
-      while (true) {
-        ch = cp.read();
-        if (ch < 0) {
-          break;
-        }
-        src += (char) ch;
-      }
-      return src;
-    } catch (IOException ex) {
-      throw new ParseException(
-          new Message(
-              MessageType.IO_ERROR,
-              MessagePart.Factory
-                  .valueOf("FilePosition: error reading source")));
-    }
-  }
 
   /**
    * A descriptive name for error messages which is not ambiguous with any of

@@ -19,22 +19,21 @@ import com.google.caja.html.HTML4;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
-import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
+import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.html.DomTree;
-import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.Declaration;
-import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
@@ -42,7 +41,6 @@ import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
-import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.reporting.Message;
@@ -54,7 +52,10 @@ import com.google.caja.util.Pair;
 
 import java.io.StringReader;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -64,16 +65,24 @@ import java.util.regex.Pattern;
 
 /**
  * Compiles HTML containing CSS and JavaScript to Javascript + safe CSS.
+ * This takes in a DOM, and outputs javascript that will render the DOM.
+ * The content can be rendered by either pushing it onto a buffer as in
+ * {@code tgtChain=['out__', 'push']} or to an emit function such as
+ * {@code tgtChain=['document', 'write']}.
+ *
+ * <p>
+ * TODO(mikesamuel): this shares a lot of code with GxpCompiler and the two
+ * should be merged.
+ * </p>
+ *
+ * @author mikesamuel@gmail.com
  */
-public final class HtmlCompiler {
+public class HtmlCompiler {
 
   private final MessageQueue mq;
   private final PluginMeta meta;
-  private Map<String, TemplateSignature> sigs =
-    new LinkedHashMap<String, TemplateSignature>();
   private Map<String, FunctionDeclaration> eventHandlers =
-    new LinkedHashMap<String, FunctionDeclaration>();
-  private int syntheticIdCounter;
+      new LinkedHashMap<String, FunctionDeclaration>();
 
   public HtmlCompiler(MessageQueue mq, PluginMeta meta) {
     if (null == mq) { throw new NullPointerException(); }
@@ -82,19 +91,12 @@ public final class HtmlCompiler {
   }
 
   /**
-   * Compiles the signature for the given document.
+   * May be overridden to apply a URI policy and return a URI that enforces that
+   * policy.
+   * @return null if the URI cannot be made safe.
    */
-  public TemplateSignature compileTemplateSignature(DomTree.Tag document) {
-
-    String id = this.syntheticId();
-
-    TemplateSignature sig = new TemplateSignature(
-        id,
-        document.children(),
-        document.getFilePosition()
-        );
-    sigs.put(id, sig);
-    return sig;
+  protected String rewriteUri(ExternalReference uri, String mimeType) {
+    return null;
   }
 
   /**
@@ -103,162 +105,154 @@ public final class HtmlCompiler {
    * <p>This method extracts embedded javascript but performs no validation on
    * it.</p>
    */
-  public FunctionConstructor compileDocument(TemplateSignature sig)
+  public Statement compileDocument(DomTree doc)
       throws GxpCompiler.BadContentException {
-    List<FormalParam> params = new ArrayList<FormalParam>();
 
-    // var out = [];
+    // Produce callse to ___OUTERS___.emitHtml___(<html>)
+    // with inlined calls to functions extracted from script bodies.
     Block body = s(new Block(Collections.<Statement>emptyList()));
-    body.insertBefore(
-        s(new Declaration(
-              "out___",
-              s(new ArrayConstructor(
-                    Collections.<Expression>emptyList())))), null);
-
-    for (DomTree tree : sig.content) {
-      compileDom(tree, "out___", false, JsWriter.Esc.HTML, body);
-    }
-
-    // join the html via out___.join('') and mark it as safe html
-    //   return plugin_blessHtml___(out.join(''));
-    ReturnStmt result = s(new ReturnStmt(
-                              s(new Operation(
-                                    Operator.FUNCTION_CALL,
-                                    s(new Reference("plugin_blessHtml___")),
-                                    s(new Operation(
-                                          Operator.FUNCTION_CALL,
-                                          s(new Operation(
-                                                Operator.MEMBER_ACCESS,
-                                                s(new Reference("out___")),
-                                                s(new Reference("join")))),
-                                          s(new StringLiteral("''"))
-            ))
-          ))
-        ));
-    body.insertBefore(result, null);
-    return s(new FunctionConstructor(sig.assignedName, params, body));
-  }
-
-  public Collection<? extends TemplateSignature> getSignatures() {
-    return sigs.values();
+    compileDom(doc, Arrays.asList("___OUTERS___", "emitHtml___"), body);
+    return body;
   }
 
   public Collection<? extends FunctionDeclaration> getEventHandlers() {
     return eventHandlers.values();
   }
 
-  private void compileDom(
-      DomTree t, String tgt, boolean inAttrib, JsWriter.Esc escaping, Block b)
+  /**
+   * Appends to block, statements that will call the function identified by
+   * tgtChain with snippets of html that comprise t.
+   *
+   * @param t the tree to render
+   * @param tgtChain the function to invoke with html chunks, such as
+   *   {@code ['out__', 'push']} to output
+   *   {@code out.push('<html>', foo, '</html>')}.
+   * @param b the block to which statements are added.
+   */
+  private void compileDom(DomTree t, List<String> tgtChain, Block b)
       throws GxpCompiler.BadContentException {
-    switch (t.getType()) {
-    case TEXT:
-      JsWriter.appendText(((DomTree.Text) t).getValue(), escaping, tgt, b);
-      break;
-    case CDATA:
-      JsWriter.appendText(t.getValue(), escaping, tgt, b);
-      break;
-    case TAGBEGIN:
-      DomTree.Tag el = (DomTree.Tag) t;
-      String tagName = el.getValue();
-
-      assertNotBlacklistedTag(el);
-
-      assert escaping != JsWriter.Esc.NONE;
-
-      DomAttributeConstraint constraint =
-          DomAttributeConstraint.Factory.forTag(tagName);
-
-      tagName = assertHtmlIdentifier(tagName, el);
-      if (inAttrib) {
-        throw new GxpCompiler.BadContentException(
-            new Message(PluginMessageType.TAG_NOT_ALLOWED_IN_ATTRIBUTE,
-                        el.getFilePosition(),
-                        MessagePart.Factory.valueOf("<" + tagName + ">")));
+    if (t instanceof DomTree.Fragment) {
+      for (DomTree child : t.children()) {
+        compileDom(child, tgtChain, b);
       }
-      JsWriter.appendString("<" + tagName, tgt, b);
-      constraint.startTag(el);
-      List<? extends DomTree> children = el.children();
-      if (children.isEmpty()) {
-        for (Pair<String, String> extra : constraint.tagDone(el)) {
-          JsWriter.appendString(
-              " " + extra.a + "=\"" + JsWriter.htmlEscape(extra.b) + "\"",
-              tgt, b);
-        }
-        if (requiresCloseTag(tagName)) {
-          JsWriter.appendString("></" + tagName + ">", tgt, b);
-        }
-      } else {
-        int i;
-        // output parameters
-        for (i = 0; i < children.size(); ++i) {
-          DomTree child = children.get(i);
-          if (HtmlTokenType.ATTRNAME != child.getType()) { break; }
-          DomTree.Attrib attrib = (DomTree.Attrib) child;
-          String name = attrib.getAttribName();
-          DomTree.Value valueT = attrib.getAttribValueNode();
+      return;
+    }
+    switch (t.getType()) {
+      case TEXT:
+        JsWriter.appendText(
+            ((DomTree.Text) t).getValue(), JsWriter.Esc.HTML, tgtChain, b);
+        break;
+      case CDATA:
+        JsWriter.appendText(t.getValue(), JsWriter.Esc.HTML, tgtChain, b);
+        break;
+      case TAGBEGIN:
+        DomTree.Tag el = (DomTree.Tag) t;
+        String tagName = el.getValue().toLowerCase();
 
-          name = assertHtmlIdentifier(name, attrib);
-
-          Pair<String, String> wrapper = constraint.attributeValueHtml(name);
-          if (null == wrapper) { continue; }
-
-          if ("style".equalsIgnoreCase(name)) {
-            compileStyleAttrib(attrib, tgt, b);
-          } else {
-            AttributeXform xform = xformForAttribute(tagName, name);
-            String value = (null != xform)
-                ? xform.apply(attrib, this)
-                : valueT.getValue();
-
-            JsWriter.appendString(
-                " " + name + "=\""
-                + JsWriter.htmlEscape(wrapper.a + value + wrapper.b)
-                + "\"", tgt, b);
+        if (tagName.equals("script")) {
+          String extractedFunctionName = el.getAttributes().get(
+              HtmlPluginCompiler.SCRIPT_TAG_CALLOUT_NAME);
+          if (extractedFunctionName != null) {
+            b.appendChild(
+                s(new ExpressionStmt(
+                      s(new Operation(
+                            Operator.FUNCTION_CALL,
+                            s(new Reference(extractedFunctionName)))))));
           }
-          constraint.attributeDone(name);
+          return;
+        } else if (tagName.equals("style")) {
+          // pass
+          return;
         }
 
-        for (Pair<String, String> extra : constraint.tagDone(el)) {
-          JsWriter.appendString(
-              " " + extra.a + "=\"" + JsWriter.htmlEscape(extra.b) + "\"",
-              tgt, b);
-        }
+        assertNotBlacklistedTag(el);
 
-        JsWriter.appendString(">", tgt, b);
+        DomAttributeConstraint constraint =
+            DomAttributeConstraint.Factory.forTag(tagName);
 
-        List<? extends DomTree> childrenRemaining =
-            children.subList(i, children.size());
-
-        // recurse to contents
-        boolean wroteChildElement = false;
-
-        if (tagName.equals("script") || tagName.equals("style")) {
-
-        } else if (tagAllowsContent(tagName)) {
-          for (DomTree child : childrenRemaining) {
-            compileDom(child, tgt, false, JsWriter.Esc.HTML, b);
-            wroteChildElement = true;
+        tagName = assertHtmlIdentifier(tagName, el);
+        JsWriter.appendString("<" + tagName, tgtChain, b);
+        constraint.startTag(el);
+        List<? extends DomTree> children = el.children();
+        if (children.isEmpty()) {
+          for (Pair<String, String> extra : constraint.tagDone(el)) {
+            JsWriter.appendString(
+                " " + extra.a + "=\"" + JsWriter.htmlEscape(extra.b) + "\"",
+                tgtChain, b);
+          }
+          if (requiresCloseTag(tagName)) {
+            JsWriter.appendString("></" + tagName + ">", tgtChain, b);
           }
         } else {
-          for (DomTree child : childrenRemaining) {
-            if (!isWhitespaceTextNode(child) && !isGxpAttrElement(child)) {
-              mq.addMessage(MessageType.MALFORMED_XHTML,
-                            child.getFilePosition(), child);
+          int i;
+          // output parameters
+          for (i = 0; i < children.size(); ++i) {
+            DomTree child = children.get(i);
+            if (HtmlTokenType.ATTRNAME != child.getType()) { break; }
+            DomTree.Attrib attrib = (DomTree.Attrib) child;
+            String name = attrib.getAttribName();
+            DomTree.Value valueT = attrib.getAttribValueNode();
+
+            name = assertHtmlIdentifier(name, attrib);
+
+            Pair<String, String> wrapper = constraint.attributeValueHtml(name);
+            if (null == wrapper) { continue; }
+
+            if ("style".equalsIgnoreCase(name)) {
+              compileStyleAttrib(attrib, tgtChain, b);
+            } else {
+              AttributeXform xform = xformForAttribute(tagName, name);
+              if (null == xform) {
+                JsWriter.appendString(
+                    " " + name + "=\""
+                    + JsWriter.htmlEscape(
+                          wrapper.a + valueT.getValue() + wrapper.b)
+                    + "\"", tgtChain, b);
+              } else {
+                xform.apply(
+                    new AncestorChain<DomTree.Attrib>(
+                        new AncestorChain<DomTree>(el), attrib),
+                    this, tgtChain, b);
+              }
+            }
+            constraint.attributeDone(name);
+          }
+
+          for (Pair<String, String> extra : constraint.tagDone(el)) {
+            JsWriter.appendString(
+                " " + extra.a + "=\"" + JsWriter.htmlEscape(extra.b) + "\"",
+                tgtChain, b);
+          }
+
+          JsWriter.appendString(">", tgtChain, b);
+
+          List<? extends DomTree> childrenRemaining =
+              children.subList(i, children.size());
+
+          // recurse to contents
+          boolean wroteChildElement = false;
+
+          if (tagAllowsContent(tagName)) {
+            for (DomTree child : childrenRemaining) {
+              compileDom(child, tgtChain, b);
+              wroteChildElement = true;
+            }
+          } else {
+            for (DomTree child : childrenRemaining) {
+              if (!isWhitespaceTextNode(child)) {
+                mq.addMessage(MessageType.MALFORMED_XHTML,
+                              child.getFilePosition(), child);
+              }
             }
           }
-        }
 
-        if (wroteChildElement || requiresCloseTag(tagName)) {
-          JsWriter.appendString("</" + tagName + ">", tgt, b);
+          if (wroteChildElement || requiresCloseTag(tagName)) {
+            JsWriter.appendString("</" + tagName + ">", tgtChain, b);
+          }
         }
-      }
-      break;
+        break;
       default:
-        throw new AssertionError(t.getType().name() +
-                                 "  " +
-                                 ((DomTree.Attrib) t).getAttribName() +
-                                 "  " +
-                                 ((DomTree.Attrib) t).getAttribValue());
+        throw new AssertionError(t.getType().name() + "  " + t.toStringDeep());
     }
   }
 
@@ -284,17 +278,36 @@ public final class HtmlCompiler {
     }
   }
 
+  /**
+   * True if the given name requires a close tag.
+   *   "TABLE" -> true, "BR" -> false.
+   * @param tag a tag name, such as {@code P} for {@code <p>} tags.
+   */
   private static boolean requiresCloseTag(String tag) {
     HTML.Element e = HTML4.lookupElement(tag.toUpperCase());
     return null == e || !e.isEmpty();
   }
 
+  /**
+   * True if the tag can have content.  False for unitary tags like
+   * {@code INPUT} and {@code BR}.
+   * @param tag a tag name, such as {@code P} for {@code <p>} tags.
+   */
   private static boolean tagAllowsContent(String tag) {
     HTML.Element e = HTML4.lookupElement(tag.toUpperCase());
     return null == e || !e.isEmpty();
   }
 
-  private void compileStyleAttrib(DomTree.Attrib attrib, String tgt, Block b)
+  /**
+   * Invokes the CSS validator to rewrite style attributes.
+   * @param attrib an attribute with name {@code "style"}.
+   * @param tgtChain the function to invoke with html chunks, such as
+   *   {@code ['out__', 'push']} to output
+   *   {@code out.push('<html>', foo, '</html>')}.
+   * @param b the block to which statements are added.
+   */
+  private void compileStyleAttrib(
+      DomTree.Attrib attrib, List<String> tgtChain, Block b)
       throws GxpCompiler.BadContentException {
     CssTree decls;
     try {
@@ -319,12 +332,15 @@ public final class HtmlCompiler {
           MessagePart.Factory.valueOf(attrib.getAttribValue()));
     }
 
-    JsWriter.appendString(" style=\"", tgt, b);
+    JsWriter.appendString(" style=\"", tgtChain, b);
     CssTemplate.bodyToJavascript(
-        decls, meta, tgt, b, JsWriter.Esc.HTML_ATTRIB, mq);
-    JsWriter.appendString("\"", tgt, b);
+        decls, meta, tgtChain, b, JsWriter.Esc.HTML_ATTRIB, mq);
+    JsWriter.appendString("\"", tgtChain, b);
   }
 
+  /**
+   * Parses a style attribute's value as a CSS declaration group.
+   */
   private CssTree.DeclarationGroup parseStyleAttrib(DomTree.Attrib t)
       throws ParseException {
     // parse the attribute value as CSS
@@ -352,6 +368,9 @@ public final class HtmlCompiler {
     return decls;
   }
 
+  /**
+   * Strip quotes from an attribute value if there are any.
+   */
   private static String deQuote(String s) {
     int len = s.length();
     if (len < 2) { return s; }
@@ -361,6 +380,10 @@ public final class HtmlCompiler {
            : s;
   }
 
+  /**
+   * Parses an {@code onclick} handler's or other handler's attribute value
+   * as a javascript statement.
+   */
   private Block asBlock(DomTree stmt) {
     // parse as a javascript expression.
     String src = deQuote(stmt.getToken().text);
@@ -384,7 +407,6 @@ public final class HtmlCompiler {
     b.setFilePosition(stmt.getFilePosition());
 
     // expression will be sanitized in a later pass
-
     return b;
   }
 
@@ -404,7 +426,7 @@ public final class HtmlCompiler {
    * identifier.
    */
   private String syntheticId() {
-    return "c" + (++syntheticIdCounter) + "___";
+    return meta.generateUniqueName("c");
   }
 
   /** is the given node a text node that consists only of whitespace? */
@@ -415,31 +437,6 @@ public final class HtmlCompiler {
       default:
         return false;
     }
-  }
-
-  private static boolean isGxpAttrElement(DomTree t) {
-    return (HtmlTokenType.TAGBEGIN == t.getType()
-            && "gxp:attr".equals(t.getValue()));
-  }
-
-  /** encapsulates a GXP templates name, and parameter declarations. */
-  public static final class TemplateSignature {
-    final String assignedName;
-    final List<? extends DomTree> content;
-    final FilePosition loc;
-
-    TemplateSignature(
-        String assignedName,
-        List<? extends DomTree> content,
-        FilePosition loc) {
-      this.assignedName = assignedName;
-      this.content = content;
-      this.loc = loc;
-    }
-
-    public String getAssignedName() { return assignedName; }
-    public List<? extends DomTree> getContent() { return content; }
-    public FilePosition getLocation() { return loc; }
   }
 
   /**
@@ -461,6 +458,8 @@ public final class HtmlCompiler {
       switch (a.getType()) {
       case SCRIPT:
         return AttributeXform.SCRIPT;
+      case URI:
+        return AttributeXform.URI;
       }
     }
     return null;
@@ -473,61 +472,73 @@ public final class HtmlCompiler {
         || "TEXTAREA".equals(tagName) || "MAP".equals(tagName);
   }
 
+  private static String guessMimeType(String tagName) {
+    if ("IMG".equalsIgnoreCase(tagName)) {
+      return "image/*";
+    }
+    return "*/*";
+  }
+
   /**
    * encapsulates a transformation on an html attribute value.
-   * Some transformations are performed at compile time, and some may be
-   * performed at runtime.
+   * Transformations are performed at compile time.
    */
   private static enum AttributeXform {
+    /** Applied to NMTOKENs such as {@code id} and {@code class} attributes. */
     NMTOKEN {
       @Override
-      String apply(DomTree.Attrib t, HtmlCompiler htmlc) {
+      void apply(AncestorChain<DomTree.Attrib> tChain, HtmlCompiler htmlc,
+                 List<String> tgtChain, Block out) {
+        DomTree.Attrib t = tChain.node;
         String nmTokens = t.getAttribValue();
         StringBuilder sb = new StringBuilder(nmTokens.length() + 16);
         boolean wasSpace = true;
         int pos = 0;
+
+        sb.append(' ').append(t.getAttribName()).append("=\"");
+        boolean firstIdent = true;
         for (int i = 0, n = nmTokens.length(); i < n; ++i) {
           char ch = nmTokens.charAt(i);
           boolean space = Character.isWhitespace(ch);
           if (space != wasSpace) {
             if (!space) {
-              if (0 != sb.length()) { sb.append(' '); }
-              sb.append(htmlc.meta.namespacePrefix).append('-');
+              if (!firstIdent) {
+                sb.append(' ');
+              } else {
+                firstIdent = false;
+              }
+              Escaping.escapeXml(htmlc.meta.namespacePrefix, true, sb);
+              sb.append('-');
               pos = i;
             } else {
-              sb.append(nmTokens.substring(pos, i));
+              Escaping.escapeXml(nmTokens.substring(pos, i), true, sb);
             }
             wasSpace = space;
           }
         }
-        if (!wasSpace) { sb.append(nmTokens.substring(pos)); }
-        return sb.toString();
-      }
-      @Override
-      String runtimeFunction(String tagName, String attribName, DomTree t,
-                             HtmlCompiler htmlc) {
-        return "plugin_prefix___";
+        if (!wasSpace) {
+          Escaping.escapeXml(nmTokens.substring(pos), true, sb);
+        }
+        sb.append('"');
+
+        JsWriter.appendString(sb.toString(), tgtChain, out);
       }
     },
+    /** Applied to CSS such as {@code style} attributes. */
     STYLE {
       @Override
-      String apply(DomTree.Attrib t, HtmlCompiler htmlc) {
+      void apply(AncestorChain<DomTree.Attrib> tChain, HtmlCompiler htmlc,
+                 List<String> tgtChain, Block out) {
         // should be handled in compileDOM
         throw new AssertionError();
       }
-      @Override
-      String runtimeFunction(String tagName, String attribName, DomTree t,
-                             HtmlCompiler htmlc)
-          throws GxpCompiler.BadContentException {
-        throw new GxpCompiler.BadContentException(new Message(
-            PluginMessageType.ATTRIBUTE_CANNOT_BE_DYNAMIC, t.getFilePosition(),
-            MessagePart.Factory.valueOf(tagName),
-            MessagePart.Factory.valueOf(attribName)));
-      }
     },
+    /** Applied to javascript such as {@code onclick} attributes. */
     SCRIPT {
       @Override
-      String apply(DomTree.Attrib t, HtmlCompiler htmlc) {
+      void apply(AncestorChain<DomTree.Attrib> tChain, HtmlCompiler htmlc,
+                 List<String> tgtChain, Block out) {
+        DomTree.Attrib t = tChain.node;
         // Extract the handler into a function so that it can be analyzed.
         Block handler = htmlc.asBlock(t.getAttribValueNode());
 
@@ -543,38 +554,71 @@ public final class HtmlCompiler {
                                   "event"))),
                         handler)))));
 
-        String owner = htmlc.meta.namespaceName;
-        return "return plugin_dispatchEvent___(event || window.event, this, "
-               + htmlc.meta.namespacePrivateName + ", "
-               + (null != owner ? owner + "." : "") + handlerFnName + ");";
+        JsWriter.appendString(
+            " " + t.getAttribName() + "=\""
+            + "return plugin_dispatchEvent___(event || window.event, this, ",
+            tgtChain, out);
+
+        JsWriter.append(
+            s(new Operation(
+                Operator.FUNCTION_CALL,
+                s(new Operation(
+                    Operator.MEMBER_ACCESS,
+                    s(new Reference("___")),
+                    s(new Reference("getId")))),
+                s(new Reference(htmlc.meta.namespaceName)))),
+            tgtChain, out);
+
+        StringBuilder sb = new StringBuilder(", '");
+        StringLiteral.escapeJsString(handlerFnName, sb);
+        sb.append("')\"");
+        JsWriter.appendString(sb.toString(), tgtChain, out);
       }
+    },
+    /** Applied to URIs such as {@code href} and {@code src} attributes. */
+    URI {
       @Override
-      String runtimeFunction(String tagName, String attribName, DomTree t,
-                             HtmlCompiler htmlc)
-          throws GxpCompiler.BadContentException {
-        throw new GxpCompiler.BadContentException(new Message(
-            PluginMessageType.ATTRIBUTE_CANNOT_BE_DYNAMIC, t.getFilePosition(),
-            MessagePart.Factory.valueOf(tagName),
-            MessagePart.Factory.valueOf(attribName)));
+      void apply(AncestorChain<DomTree.Attrib> tChain, HtmlCompiler htmlc,
+                 List<String> tgtChain, Block out) {
+        DomTree.Attrib t = tChain.node;
+        URI uri;
+        try {
+          uri = new URI(t.getAttribValue());
+        } catch (URISyntaxException ex) {
+          htmlc.mq.addMessage(PluginMessageType.MALFORMED_URL,
+                              t.getAttribValueNode().getFilePosition(),
+                              MessagePart.Factory.valueOf(t.getAttribValue()));
+          return;
+        }
+        String mimeType = guessMimeType(
+            ((DomTree.Tag) tChain.getParentNode()).getTagName());
+        String rewrittenUri = htmlc.rewriteUri(
+            new ExternalReference(
+                uri, t.getAttribValueNode().getFilePosition()),
+                mimeType);
+        if (rewrittenUri != null) {
+          StringBuilder html = new StringBuilder();
+          html.append(' ').append(t.getAttribName()).append("=\"");
+          Escaping.escapeXml(rewrittenUri, true, html);
+          html.append('"');
+          JsWriter.appendString(html.toString(), tgtChain, out);
+        } else {
+          htmlc.mq.addMessage(
+              PluginMessageType.DISALLOWED_URI,
+              t.getAttribValueNode().getFilePosition(),
+              MessagePart.Factory.valueOf(uri.toString()));
+        }
       }
     },
     ;
+
     /**
      * apply, at compile time, any preprocessing steps to the given attributes
      * value.
      */
-    abstract String apply(DomTree.Attrib t, HtmlCompiler htmlc)
+    abstract void apply(
+        AncestorChain<DomTree.Attrib> tChain,
+        HtmlCompiler htmlc, List<String> tgtChain, Block b)
         throws GxpCompiler.BadContentException;
-    /**
-     * given an attribute name, the gxp attribute that specifies it, and the
-     * compiler, return the name of a function that will take the attribute
-     * value and the namespace prefix and return the processed version of the
-     * value.
-     */
-    abstract String runtimeFunction(
-        String tagName, String attribName, DomTree nameNode, HtmlCompiler htmlc)
-        throws GxpCompiler.BadContentException;
-
   }
-
 }

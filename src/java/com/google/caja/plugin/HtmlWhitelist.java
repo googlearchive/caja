@@ -14,9 +14,12 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.util.Criterion;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -26,6 +29,8 @@ import java.util.Set;
 final class HtmlWhitelist {
 
   static final Set<String> ALLOWED_TAGS;
+
+  static final Map<String, Criterion<String>> ATTRIBUTE_CRITERIA;
 
   static {
     Set<String> allowedTags = new HashSet<String>();
@@ -126,5 +131,25 @@ final class HtmlWhitelist {
       "VAR"
       ));
     ALLOWED_TAGS = Collections.unmodifiableSet(allowedTags);
+
+    Map<String, Criterion<String>> attributeCriteria
+        = new HashMap<String, Criterion<String>>();
+    attributeCriteria.put(
+        "TARGET",
+        new Criterion<String>() {
+          public boolean accept(String s) {
+            // Either the name of a window or one of the special values that
+            // start with an underscore.
+            // From http://htmlhelp.com/reference/html40/values.html:
+            //   _blank renders the link in a new, unnamed window
+            //   _self renders the link in the current frame
+            //   _parent renders the link in the immediate FRAMESET parent
+            //   _top renders the link in the full, unframed window
+
+            // We allow only _blank
+            return "_blank".equals(s);
+          }
+        });
+    ATTRIBUTE_CRITERIA = Collections.unmodifiableMap(attributeCriteria);
   }
 }

@@ -176,12 +176,138 @@ public class EscapingTest extends TestCase {
         sb.toString());
   }
 
+
   public void testRegexNormalization() throws Exception {
     StringBuilder sb = new StringBuilder();
     Escaping.normalizeRegex(
         "<Foo+\\> \u2028 \\\\Ba*r \r Baz\\+\\+", false, true, sb);
     assertStringsEqual(
         "\\074Foo+\\076 \\u2028 \\\\Ba*r \\r Baz\\+\\+", sb.toString());
+  }
+
+  public void testEscapeXml() throws Exception {
+    StringBuilder sb = new StringBuilder();
+    Escaping.escapeXml(CHARS, false, sb);
+    assertStringsEqual(
+        (// all ctrl chars escaped
+         "&#0;&#1;&#2;&#3;&#4;&#5;&#6;&#7;"
+         + "&#8;\t\n&#xB;&#xC;\r\016\017"
+         + "\020\021\022\023\024\025\026\027"
+         + "\030\031\032\033\034\035\036\037"
+         + " !&quot;#$%&amp;&#39;()*+,-./"
+         + "0123456789:;&lt;=&gt;?"
+         + "@ABCDEFGHIJKLMNO"
+         + "PQRSTUVWXYZ[\\]^_"
+         + "&#96;abcdefghijklmno"
+         + "pqrstuvwxyz{|}~&#127;"
+         + "&#128;&#129;&#130;&#131;&#132;"
+         + "\u200e\u200f\u2010\u2028\u2029"
+         + "\ud834\udd20"
+         + "\ud834\udd77"
+         ),
+        sb.toString());
+  }
+
+  public void testEscapeCssString() throws Exception {
+    StringBuilder sb;
+
+    sb = new StringBuilder();
+    Escaping.escapeCssString(CHARS, false, sb);
+    assertStringsEqual(
+        ("\\0\\1\\2\\3\\4\\5\\6\\7"
+         + "\\8 \t\\A\\B \\C \\D\\E\\F"
+         + "\\10\\11\\12\\13\\14\\15\\16\\17"
+         + "\\18\\19\\1A\\1B\\1C\\1D\\1E\\1F "
+         + " !\\22#$%&\\27()*+,-./"
+         + "0123456789:;<=>?"
+         + "@ABCDEFGHIJKLMNO"
+         + "PQRSTUVWXYZ[\\5C]^_"
+         + "`abcdefghijklmno"
+         + "pqrstuvwxyz{|}~\\7F"
+         + "\\80\\81\\82\\83\\84"
+         + "\\200E\\200F\\2010\\2028\\2029"
+         + "\\D834\\DD20"
+         + "\\D834\\DD77 "
+         ),
+        sb.toString());
+
+    sb = new StringBuilder();
+    Escaping.escapeCssString(CHARS, true, sb);
+    assertStringsEqual(
+        ("\\0\\1\\2\\3\\4\\5\\6\\7"
+         + "\\8 \\9 \\A\\B \\C \\D\\E\\F"
+         + "\\10\\11\\12\\13\\14\\15\\16\\17"
+         + "\\18\\19\\1A\\1B\\1C\\1D\\1E\\1F "
+         + " !\\22#$%&\\27()\\2A+,-./"
+         + "0123456789:;\\3C=\\3E?"
+         + "@ABCDEFGHIJKLMNO"
+         + "PQRSTUVWXYZ[\\5C]^_"
+         + "`abcdefghijklmno"
+         + "pqrstuvwxyz{|}~\\7F"
+         + "\\80\\81\\82\\83\\84"
+         + "\\200E\\200F\\2010\\2028\\2029"
+         + "\\D834\\DD20"
+         + "\\D834\\DD77 "
+         ),
+        sb.toString());
+
+    sb = new StringBuilder();
+    Escaping.escapeCssString("<foo>", true, sb);
+    assertStringsEqual("\\3C foo\\3E ", sb.toString());
+
+    sb = new StringBuilder();
+    Escaping.escapeCssString("<Bar>", true, sb);
+    assertStringsEqual("\\3C Bar\\3E ", sb.toString());
+
+    sb = new StringBuilder();
+    Escaping.escapeCssString("<ZZZ>", true, sb);
+    assertStringsEqual("\\3CZZZ\\3E ", sb.toString());
+  }
+
+  public void testEscapeCssIdent() throws Exception {
+    StringBuilder sb;
+
+    sb = new StringBuilder();
+    Escaping.escapeCssIdent(CHARS, sb);
+    assertStringsEqual(
+        ("\\0\\1\\2\\3\\4\\5\\6\\7"
+         + "\\8 \\9 \\A\\B \\C \\D\\E\\F"
+         + "\\10\\11\\12\\13\\14\\15\\16\\17"
+         + "\\18\\19\\1A\\1B\\1C\\1D\\1E\\1F "
+         + "\\20\\21\\22\\23\\24\\25\\26\\27"
+         + "\\28\\29\\2A\\2B\\2C-\\2E\\2F "
+         + "0123456789\\3A\\3B\\3C\\3D\\3E\\3F"
+         + "\\40 ABCDEFGHIJKLMNO"
+         + "PQRSTUVWXYZ\\5B\\5C\\5D\\5E_"
+         + "\\60 abcdefghijklmno"
+         + "pqrstuvwxyz\\7B\\7C\\7D\\7E\\7F"
+         + "\\80\\81\\82\\83\\84"
+         + "\\200E\\200F\\2010\\2028\\2029"
+         + "\\D834\\DD20"
+         + "\\D834\\DD77 "
+         ),
+        sb.toString());
+
+    sb = new StringBuilder();
+    Escaping.escapeCssIdent("foo-bar", sb);
+    assertStringsEqual("foo-bar", sb.toString());
+
+    sb = new StringBuilder();
+    Escaping.escapeCssIdent("fo o", sb);
+    assertStringsEqual("fo\\20o", sb.toString());
+
+    sb = new StringBuilder();
+    Escaping.escapeCssIdent("0foo", sb);
+    assertStringsEqual("\\30 foo", sb.toString());
+
+    sb = new StringBuilder();
+    Escaping.escapeCssIdent("0zoicks", sb);
+    assertStringsEqual("\\30zoicks", sb.toString());
+
+
+    sb = new StringBuilder();
+    Escaping.escapeCssIdent("4", sb);
+    assertStringsEqual("\\34 ", sb.toString());
   }
 
   private static void assertStringsEqual(String a, String b) {

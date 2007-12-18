@@ -65,6 +65,8 @@ public interface CharProducer extends Closeable {
 
     public static CharProducer create(InputSource src) throws IOException {
       URL url = src.getUri().toURL();
+      // TODO(mikesamuel): this should probably be replaced with something
+      // pluggable that can properly check robots.txt.
       URLConnection conn = url.openConnection();
       conn.setDoInput(true);
       conn.setDoOutput(false);

@@ -17,6 +17,7 @@ package com.google.caja.plugin;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -132,7 +133,7 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
   }
 
   public void render(RenderContext r) throws IOException {
-    // TODO
+    throw new UnsupportedOperationException("NOT IMPLEMENTED YET");  // TODO
   }
 
   public FunctionConstructor toJavascript(PluginMeta meta, MessageQueue mq)
@@ -150,14 +151,14 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
 
     Block body = new Block(Collections.<Statement>emptyList());
 
-    String tgt = "___out___";
+    List<String> tgtChain = Arrays.asList("___out___", "push");
     body.insertBefore(
         s(new Declaration(
-              tgt,
+              tgtChain.get(0),
               s(new ArrayConstructor(Collections.<Expression>emptyList())))),
         null);
 
-    bodyToJavascript(getCss(), meta, tgt, body, JsWriter.Esc.NONE, mq);
+    bodyToJavascript(getCss(), meta, tgtChain, body, JsWriter.Esc.NONE, mq);
 
     body.insertBefore(
         s(new ReturnStmt(
@@ -168,7 +169,7 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
                           Operator.FUNCTION_CALL,
                           s(new Operation(
                                 Operator.MEMBER_ACCESS,
-                                s(new Reference(tgt)),
+                                s(new Reference(tgtChain.get(0))),
                                 s(new Reference("join")))),
                           s(new StringLiteral("''"))
                     ))
@@ -181,8 +182,9 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
   }
 
   static void bodyToJavascript(
-      CssTree cssTree, PluginMeta meta, String tgt, Block b, JsWriter.Esc esc,
-      MessageQueue mq) throws BadContentException {
+      CssTree cssTree, PluginMeta meta, List<String> tgtChain, Block b,
+      JsWriter.Esc esc, MessageQueue mq)
+      throws BadContentException {
     assert esc == JsWriter.Esc.NONE || esc == JsWriter.Esc.HTML_ATTRIB : esc;
 
     // Replace any substitutions with placeholders.
@@ -237,7 +239,7 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
       int end = css.indexOf("\0)", start + 3);
       int index = Integer.valueOf(css.substring(start + 3, end));
 
-      JsWriter.appendText(css.substring(pos, start), esc, tgt, b);
+      JsWriter.appendText(css.substring(pos, start), esc, tgtChain, b);
       pos = end + 2;
 
       CssTree.Substitution sub = substitutions.get(index);
@@ -281,11 +283,11 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
                           sub.getFilePosition(),
                           MessagePart.Factory.valueOf(t.name())));
       }
-      JsWriter.append(e, tgt, b);
-      JsWriter.appendText(suffix, esc, tgt, b);
+      JsWriter.append(e, tgtChain, b);
+      JsWriter.appendText(suffix, esc, tgtChain, b);
     }
 
-    JsWriter.appendText(css.substring(pos), esc, tgt, b);
+    JsWriter.appendText(css.substring(pos), esc, tgtChain, b);
   }
 
   private static Expression asExpression(

@@ -14,13 +14,26 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.CssLexer;
+import com.google.caja.lexer.CssTokenType;
+import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.HtmlTokenType;
+import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.JsLexer;
+import com.google.caja.lexer.JsTokenQueue;
+import com.google.caja.lexer.Keyword;
+import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.Token;
+import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.Visitor;
+import com.google.caja.parser.css.Css2;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.css.CssParser;
-import com.google.caja.parser.html.HtmlDomParser;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ObjectConstructor;
@@ -40,38 +53,27 @@ import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.UndefinedLiteral;
 import com.google.caja.parser.js.MultiDeclaration;
 import com.google.caja.parser.js.CatchStmt;
-import com.google.caja.reporting.MessageContext;
-import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageType;
-import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.CssLexer;
-import com.google.caja.lexer.CssTokenType;
-import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.HtmlLexer;
-import com.google.caja.lexer.HtmlTokenType;
-import com.google.caja.lexer.InputSource;
-import com.google.caja.lexer.JsLexer;
-import com.google.caja.lexer.JsTokenQueue;
-import com.google.caja.lexer.Keyword;
-import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.Token;
-import com.google.caja.lexer.TokenQueue;
+import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Pair;
+import com.google.caja.util.SyntheticAttributeKey;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -81,14 +83,18 @@ import java.util.Set;
  *
  * @author rdub@google.com (Ryan Williams)
  */
-public final class HtmlPluginCompiler {
+public class HtmlPluginCompiler {
+
+  /**
+   * A synthetic attribute that stores the name of a function extracted from a
+   * script tag.
+   */
+  static final SyntheticAttributeKey<String> SCRIPT_TAG_CALLOUT_NAME
+      = new SyntheticAttributeKey<String>(String.class, "scriptTagCallout");
 
   private MessageQueue mq;
   private MessageContext mc;
   private final PluginMeta meta;
-  private String pluginSpec;
-  // TODO(ihab): Delete this field since HtmlPluginCompiler only called once.
-  private boolean parsed;
   private final List<Input> inputs = new ArrayList<Input>();
   private Block jsTree;
   private CssTree cssTree;
@@ -100,35 +106,18 @@ public final class HtmlPluginCompiler {
   /** An object that is available to sandboxed code. */
   private ObjectConstructor pluginPrivate;
 
-  public HtmlPluginCompiler(String pluginSpec, String nsName, String nsPrefix,
-      String rootDivId, boolean isBaja) {
-    this(pluginSpec, new PluginMeta(nsName, nsPrefix, rootDivId, isBaja));
+  public HtmlPluginCompiler(String nsName, String nsPrefix,
+                            String rootDivId, boolean isBaja) {
+    this(new PluginMeta(nsName, nsPrefix, rootDivId, isBaja));
   }
 
-  public HtmlPluginCompiler(String pluginSpec, PluginMeta meta) {
+  public HtmlPluginCompiler(PluginMeta meta) {
+    // TODO(msamuel): pass in an input source with the pluginSpec so that
+    // we can report error messages during parsing.
     this.mq = new SimpleMessageQueue();
     this.mc = new MessageContext();
     this.mc.inputSources = new ArrayList<InputSource>();
     this.meta = meta;
-    this.pluginSpec = pluginSpec;
-    this.parsed = false;
-  }
-
-  public HtmlPluginCompiler(PluginMeta meta) {
-    this("", meta);
-  }
-  public HtmlPluginCompiler(String nsName, String nsPrefix,
-      String rootDivId, boolean isBaja) {
-    this("", new PluginMeta(nsName, nsPrefix, rootDivId, isBaja));
-  }
-
-  public String getPluginSpec() {
-    return pluginSpec;
-  }
-
-  public void setPluginSpec(String pluginSpec) {
-    this.pluginSpec = pluginSpec;
-    this.parsed = false;
   }
 
   public String getOutputJs() {
@@ -139,6 +128,8 @@ public final class HtmlPluginCompiler {
   }
 
   public MessageQueue getMessageQueue() { return mq; }
+
+  public MessageContext getMessageContext() { return mc; }
 
   public void setMessageQueue(MessageQueue inputMessageQueue) {
     assert null != inputMessageQueue;
@@ -152,7 +143,6 @@ public final class HtmlPluginCompiler {
       throw new NullPointerException();
     }
     inputs.add(new Input(input));
-    this.parsed = false;
   }
 
   public List<? extends ParseTreeNode> getInputs() {
@@ -178,60 +168,338 @@ public final class HtmlPluginCompiler {
   public Block getJavascript() { return this.jsTree; }
   public CssTree getCss() { return this.cssTree; }
 
-  public boolean parseInput(String inputPluginSpec) throws ParseException {
-    setPluginSpec(inputPluginSpec);
-    return parseSpec();
+  DomTree rewriteDomTree(DomTree t) {
+    // Rewrite styles and scripts.
+    // <script>foo()</script>  ->  <script>(cajoled foo)</script>
+    // <style>foo { ... }</style>  ->  <style>foo { ... }</style>
+    // <script src=foo.js></script>  ->  <script>(cajoled, inlined foo)</script>
+    // <link rel=stylesheet href=foo.css>
+    //     ->  <style>(cajoled, inlined styles)</style>
+    Visitor domRewriter = new Visitor() {
+        public boolean visit(AncestorChain<?> ancestors) {
+          DomTree n = (DomTree) ancestors.node;
+          if (n instanceof DomTree.Tag) {
+            MutableParseTreeNode parentNode
+                = (MutableParseTreeNode) ancestors.getParentNode();
+            DomTree.Tag tag = (DomTree.Tag) n;
+            String name = tag.getTagName().toLowerCase();
+            if ("script".equals(name)) {
+              rewriteScriptTag(tag, parentNode);
+            } else if ("style".equals(name)) {
+              rewriteStyleTag(tag, parentNode);
+            } else if ("link".equals(name)) {
+              rewriteLinkTag(tag, parentNode);
+            }
+          }
+          return true;
+        }
+      };
+    t.acceptPreOrder(domRewriter, null);
+    return t;
   }
 
-  private boolean parseSpec() throws ParseException {
-    // HACK: need to synthesize a top-level node here.
-    // would we want to make this encompassing div have the correct 'id' and
-    // 'class' attributes so that we could just put the output html on the page
-    // and it will work, rather than relying on the existence of a specially
-    // crafted <div> already being there?
-    // Also, if for some reason the plugin spec has lots of code on the first
-    // line, the debugging char info will be off by 6 characters.
-    // FIXME(msamuel): fix this so that file positions point into the pluginSpec
-    // string instead of being offset by 4 due to the <div>.
-    String syntheticPluginSpec = "<div> " + pluginSpec + "</div>";
-    InputSource is = new InputSource(URI.create("plugin-spec:///"));
-    CharProducer cp = CharProducer.Factory.create(
-        new StringReader(syntheticPluginSpec), is);
-    ParseTreeNode input = parseHtml(is, cp);
-    addInput(new AncestorChain<ParseTreeNode>(input));
-    this.parsed = true;
-    return input != null;
-  }
-
-  public ParseTreeNode parseHtml(InputSource is, CharProducer cp)
-  throws ParseException {
-    HtmlLexer lexer = new HtmlLexer(cp);
-    lexer.setTreatedAsXml(true);
-    TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
-        lexer, is, Criterion.Factory.<Token<HtmlTokenType>>optimist());
-    return HtmlDomParser.parseDocument(tq, this);
-  }
-
-  public ParseTreeNode parseJsString(String script, FilePosition pos)
-      throws GxpCompiler.BadContentException {
-    if (script.trim().equals("")) {
-      return null;
+  private void rewriteScriptTag(
+      DomTree.Tag scriptTag, MutableParseTreeNode parent) {
+    DomTree.Attrib type = lookupAttribute(scriptTag, "type");
+    DomTree.Attrib src = lookupAttribute(scriptTag, "src");
+    if (type != null && !isJavaScriptContentType(type.getAttribValue())) {
+      mq.addMessage(PluginMessageType.UNRECOGNIZED_CONTENT_TYPE,
+                    type.getFilePosition(),
+                    MessagePart.Factory.valueOf(type.getAttribValue()),
+                    MessagePart.Factory.valueOf(scriptTag.getTagName()));
+      parent.removeChild(scriptTag);
+      return;
     }
-    CharProducer cp = CharProducer.Factory.create(
-        new StringReader(script), pos);
-    ParseTreeNode scriptAsParsedJs;
+    // Name of a function created from the script tag contents.
+    String calloutName = getPluginMeta().generateUniqueName("scriptElement");
+    // The script contents.
+    CharProducer jsStream;
+    if (src == null) {  // Parse the script tag body.
+      jsStream = textNodesToCharProducer(scriptTag.children(), true);
+      if (jsStream == null) {
+        parent.removeChild(scriptTag);
+        return;
+      }
+    } else {  // Load the src attribute
+      URI srcUri;
+      try {
+        srcUri = new URI(src.getAttribValue());
+      } catch (URISyntaxException ex) {
+        mq.getMessages().add(
+            new Message(PluginMessageType.MALFORMED_URL, MessageLevel.ERROR,
+                        src.getFilePosition(), src));
+        parent.removeChild(scriptTag);
+        return;
+      }
+
+      // Fetch the script source.
+      jsStream = loadExternalResource(
+          new ExternalReference(
+              srcUri, src.getAttribValueNode().getFilePosition()),
+          "text/javascript");
+      if (jsStream == null) {
+        parent.removeChild(scriptTag);
+        mq.addMessage(
+            PluginMessageType.FAILED_TO_LOAD_EXTERNAL_URL,
+            src.getFilePosition(), MessagePart.Factory.valueOf("" + srcUri));
+        return;
+      }
+    }
+
+    // Parse the body and create a function.
+    Block parsedScriptBody;
     try {
-      scriptAsParsedJs = parseJs(pos.source(), cp, this.mq);
-    } catch (ParseException e) {
-      throw new GxpCompiler.BadContentException(
-          new Message(MessageType.IO_ERROR,
-                      MessagePart.Factory.valueOf("script doesn't parse")),
-          e);
+      parsedScriptBody = parseJs(
+          jsStream.getCurrentPosition().source(), jsStream, mq);
+    } catch (ParseException ex) {
+      ex.toMessageQueue(mq);
+      parent.removeChild(scriptTag);
+      return;
     }
-    return scriptAsParsedJs;
+
+    // function scriptBody_123__() { script_content...; }
+    Block scriptDelegate
+        = s(new Block(Collections.singletonList(
+                s(new FunctionDeclaration(
+                    calloutName,
+                    s(new FunctionConstructor(
+                          calloutName, Collections.<FormalParam>emptyList(),
+                          parsedScriptBody)))))));
+    scriptDelegate.setFilePosition(parsedScriptBody.getFilePosition());
+
+    // Register it for later processing.
+    addInput(new AncestorChain<Block>(scriptDelegate));
+
+    // Build a replacment element.
+    // <script type="text/javascript">MyPlugin.tmp123__()</script>
+    DomTree.Tag callout;
+    {
+      Token<HtmlTokenType> endToken = new Token<HtmlTokenType>(
+          ">", HtmlTokenType.TAGEND,
+          FilePosition.endOf(scriptTag.getFilePosition()));
+      callout = new DomTree.Tag(
+          Collections.<DomTree>emptyList(), scriptTag.getToken(), endToken);
+      callout.getAttributes().set(SCRIPT_TAG_CALLOUT_NAME, calloutName);
+    }
+
+    // Replace the external script tag with the inlined script.
+    parent.replaceChild(callout, scriptTag);
   }
 
-  public ParseTreeNode parseJs(
+  /**
+   * May be overridden to support loading of externally sourced script tags and
+   * stylesheets.
+   */
+  protected CharProducer loadExternalResource(
+      ExternalReference ref, String mimeType) {
+    return null;
+  }
+
+  /**
+   * May be overridden to apply a URI policy and return a URI that enforces that
+   * policy.
+   * @return null if the URI cannot be made safe.
+   */
+  protected String rewriteUri(ExternalReference uri, String mimeType) {
+    return null;
+  }
+
+  private void rewriteStyles(
+      DomTree.Tag styleTag, CharProducer cssStream, DomTree.Attrib media) {
+    DomTree.Attrib type = lookupAttribute(styleTag, "type");
+
+    if (type != null && !isCssContentType(type.getAttribValue())) {
+      mq.addMessage(PluginMessageType.UNRECOGNIZED_CONTENT_TYPE,
+                    type.getFilePosition(),
+                    MessagePart.Factory.valueOf(type.getAttribValue()),
+                    MessagePart.Factory.valueOf(styleTag.getTagName()));
+      return;
+    }
+
+    CssTree.StyleSheet stylesheet;
+    try {
+      stylesheet = parseCss(cssStream.getCurrentPosition().source(), cssStream);
+    } catch (ParseException ex) {
+      ex.toMessageQueue(mq);
+      return;
+    }
+
+    Set<String> mediaTypes = Collections.<String>emptySet();
+    if (media != null) {
+      String[] mediaTypeArr = media.getAttribValue().trim().split("\\s*,\\s*");
+      if (mediaTypeArr.length != 1 || !"".equals(mediaTypeArr[0])) {
+        mediaTypes = new LinkedHashSet<String>();
+        for (String mediaType : mediaTypeArr) {
+          if (!Css2.isMediaType(mediaType)) {
+            mq.addMessage(PluginMessageType.UNRECOGNIZED_MEDIA_TYPE,
+                          media.getFilePosition(),
+                          MessagePart.Factory.valueOf(mediaType));
+            continue;
+          }
+          mediaTypes.add(mediaType);
+        }
+      }
+    }
+    if (!(mediaTypes.isEmpty() || mediaTypes.contains("all"))) {
+      final List<CssTree.RuleSet> rules = new ArrayList<CssTree.RuleSet>();
+      stylesheet.acceptPreOrder(
+          new Visitor() {
+            public boolean visit(AncestorChain<?> ancestors) {
+              CssTree node = (CssTree) ancestors.node;
+              if (node instanceof CssTree.StyleSheet) { return true; }
+              if (node instanceof CssTree.RuleSet) {
+                rules.add((CssTree.RuleSet) node);
+                ((MutableParseTreeNode) ancestors.parent.node)
+                    .removeChild(node);
+              }
+              // Don't touch RuleSets that are not direct children of a
+              // stylesheet.
+              return false;
+            }
+          }, null);
+      if (!rules.isEmpty()) {
+        List<CssTree> mediaChildren = new ArrayList<CssTree>();
+        for (String mediaType : mediaTypes) {
+          mediaChildren.add(
+              new CssTree.Medium(type.getFilePosition(), mediaType));
+        }
+        mediaChildren.addAll(rules);
+        CssTree.Media mediaBlock = new CssTree.Media(
+            styleTag.getFilePosition(), mediaChildren);
+        stylesheet.appendChild(mediaBlock);
+      }
+    }
+
+    addInput(new AncestorChain<CssTree.StyleSheet>(stylesheet));
+  }
+
+  private void rewriteStyleTag(
+      DomTree.Tag styleTag, MutableParseTreeNode parent) {
+    parent.removeChild(styleTag);
+
+    CharProducer cssStream
+        = textNodesToCharProducer(styleTag.children(), false);
+    if (cssStream != null) {
+      rewriteStyles(styleTag, cssStream, null);
+    }
+  }
+
+  private void rewriteLinkTag(
+      DomTree.Tag styleTag, MutableParseTreeNode parent) {
+    parent.removeChild(styleTag);
+
+    DomTree.Attrib rel = lookupAttribute(styleTag, "rel");
+    if (rel == null
+        || !rel.getAttribValue().trim().equalsIgnoreCase("stylesheet")) {
+      // If it's not a stylesheet then ignore it.
+      // The HtmlValidator should complain but that's not our problem.
+      return;
+    }
+
+    DomTree.Attrib href = lookupAttribute(styleTag, "href");
+    DomTree.Attrib media = lookupAttribute(styleTag, "media");
+
+    if (href == null) {
+      mq.addMessage(
+          PluginMessageType.MISSING_ATTRIBUTE, styleTag.getFilePosition(),
+          MessagePart.Factory.valueOf("href"),
+          MessagePart.Factory.valueOf("style"));
+      return;
+    }
+
+    URI hrefUri;
+    try {
+      hrefUri = new URI(href.getAttribValue());
+    } catch (URISyntaxException ex) {
+      mq.getMessages().add(
+          new Message(PluginMessageType.MALFORMED_URL, MessageLevel.ERROR,
+                      href.getFilePosition(), href));
+      return;
+    }
+
+    // Fetch the stylesheet source.
+    CharProducer cssStream = loadExternalResource(
+        new ExternalReference(
+            hrefUri, href.getAttribValueNode().getFilePosition()),
+        "text/css");
+    if (cssStream == null) {
+      parent.removeChild(styleTag);
+      mq.addMessage(
+          PluginMessageType.FAILED_TO_LOAD_EXTERNAL_URL,
+          href.getFilePosition(), MessagePart.Factory.valueOf("" + hrefUri));
+      return;
+    }
+
+    rewriteStyles(styleTag, cssStream, media);
+  }
+
+  /**
+   * A CharProducer that produces characters from the concatenation of all
+   * the text nodes in the given node list.
+   */
+  private static CharProducer textNodesToCharProducer(
+      List<? extends DomTree> nodes, boolean stripComments) {
+    List<DomTree> textNodes = new ArrayList<DomTree>();
+    for (DomTree node : nodes) {
+      if (node instanceof DomTree.Text || node instanceof DomTree.CData) {
+        textNodes.add(node);
+      }
+    }
+    if (textNodes.isEmpty()) { return null; }
+    List<CharProducer> content = new ArrayList<CharProducer>();
+    for (int i = 0, n = textNodes.size(); i < n; ++i) {
+      DomTree node = textNodes.get(i);
+      String text = node.getValue();
+      if (stripComments) {
+        if (i == 0) {
+          text = text.replaceFirst("^(\\s*)<!--", "$1     ");
+        }
+        if (i + 1 == n) {
+          text = text.replaceFirst("-->(\\s*)$", "   $1");
+        }
+      }
+      content.add(CharProducer.Factory.create(
+          new StringReader(text),
+          FilePosition.startOf(node.getFilePosition())));
+    }
+    if (content.size() == 1) {
+      return content.get(0);
+    } else {
+      return CharProducer.Factory.chain(content.toArray(new CharProducer[0]));
+    }
+  }
+
+  /** "text/html;charset=UTF-8" -> "text/html" */
+  private static String getMimeType(String contentType) {
+    int typeEnd = contentType.indexOf(';');
+    if (typeEnd < 0) { typeEnd = contentType.length(); }
+    return contentType.substring(0, typeEnd).toLowerCase();
+  }
+
+  private static boolean isJavaScriptContentType(String contentType) {
+    String mimeType = getMimeType(contentType);
+    return ("text/javascript".equals(mimeType)
+            || "application/x-javascript".equals(mimeType)
+            || "type/ecmascript".equals(mimeType));
+  }
+
+  private static boolean isCssContentType(String contentType) {
+    return "text/css".equals(getMimeType(contentType));
+  }
+
+  private static DomTree.Attrib lookupAttribute(
+      DomTree.Tag el, String attribName) {
+    for (DomTree child : el.children()) {
+      if (!(child instanceof DomTree.Attrib)) { break; }
+      DomTree.Attrib attrib = (DomTree.Attrib) child;
+      if (attribName.equalsIgnoreCase(attrib.getAttribName())) {
+        return attrib;
+      }
+    }
+    return null;
+  }
+
+  public Block parseJs(
       InputSource is, CharProducer cp, MessageQueue localMessageQueue)
       throws ParseException {
     JsLexer lexer = new JsLexer(cp);
@@ -242,28 +510,10 @@ public final class HtmlPluginCompiler {
     return body;
   }
 
-  public ParseTreeNode parseCssString(String style, FilePosition pos)
-      throws GxpCompiler.BadContentException {
-    if (style.trim().equals("")) {
-      return null;
-    }
-    CharProducer cp = CharProducer.Factory.create(new StringReader(style), pos);
-    ParseTreeNode styleAsParsedCss;
-    try {
-      styleAsParsedCss = parseCss(pos.source(), cp);
-    } catch (ParseException e) {
-      throw new GxpCompiler.BadContentException(
-          new Message(MessageType.IO_ERROR,
-                      MessagePart.Factory.valueOf("style doesn't parse")),
-          e);
-    }
-    return styleAsParsedCss;
-  }
-
-  public ParseTreeNode parseCss(InputSource is, CharProducer cp)
+  public CssTree.StyleSheet parseCss(InputSource is, CharProducer cp)
       throws ParseException {
     CssLexer lexer = new CssLexer(cp);
-    ParseTreeNode input;
+    CssTree.StyleSheet input;
     TokenQueue<CssTokenType> tq = new TokenQueue<CssTokenType>(
         lexer, is, new Criterion<Token<CssTokenType>>() {
           public boolean accept(Token<CssTokenType> tok) {
@@ -283,38 +533,44 @@ public final class HtmlPluginCompiler {
    * THe output parse trees are available via {@link #getOutputs()}.
    * @return true on success, false on failure.
    */
-  public boolean run() throws ParseException {
-    if (!this.parsed) {
-      parseSpec();
-    }
-    return (// first we create an object to hold the plugin
+  public boolean run() {
+    return (// Create an object to hold the plugin
             setUpNamespace()
-            // then we make sure the css is well formed and we prefix all rules
+            // Extract unsafe bits from HTML
+            && rewriteHtml()
+            // Whitelist html tags and attributes, and supply values for
+            // attributes that are missing them.
+            && validateHtml()
+            // Compile the html and add a method to the plugin for the
+            // html and one for each extracted script tag and event handler.
+            && compileHtml()
+            // Make sure the css is well formed and prefix all rules
             // so that they don't affect nodes outside the plugin.
             && validateCss()
-            // Now we compile the html and add a method to the plugin for the
-            // html and one for each event handler.
-            && compileHtml()
-            // replace global definitions with operations that modify the
+            // Replace global definitions with operations that modify the
             // plugin.
             && moveGlobalDefinitionsIntoPluginNamespace()
-            // put all the top level javascript code into an initializer block
+            // Put all the top level javascript code into an initializer block
             // that will set up the plugin.
             && consolidateCodeIntoInitializerBody()
-            // replace references to globals with plugin accesses.
+            // Replace references to globals with plugin accesses.
             // The handling of global declarations happens before consolidation
             // so that we know what is global.  This happens after consolidation
             // since it needs to affect references inside code compiled from
             // html.
             && rewriteGlobalReference()
-            // rewrite the javascript to prevent runtime sandbox violations
+            // Rewrite the javascript to prevent runtime sandbox violations
             && validateJavascript()
-            // consolidate different CSS inputs from multiple <style> tags into
+            // Consolidate different CSS inputs from multiple <style> tags into
             // one awesome CssTree that can be outted to a .css file.
             && consolidateCss()
             && hasNoFatalErrors()
-            // store the raw output JS and CSS in Strings.
+            // Store the raw output JS and CSS in Strings.
+            // TODO(mikesamuel): don't do this.  Let the client supply a buffer,
+            // and render context.
             && renderOutputs()
+
+            && hasNoErrors()
             );
   }
 
@@ -391,133 +647,88 @@ public final class HtmlPluginCompiler {
     }
   }
 
+  private boolean rewriteHtml() {
+    for (int i = 0; i < inputs.size(); ++i) {
+      Input input = inputs.get(i);
+      if (InputType.HTML == input.type) {
+        rewriteDomTree((DomTree) input.parsetree.node);
+      }
+    }
+    return true;
+  }
+
+  private boolean validateHtml() {
+    HtmlValidator v = new HtmlValidator(mq);
+
+    boolean valid = true;
+    for (Input input : inputs) {
+      if (InputType.HTML == input.type) {
+        if (!v.validate((DomTree) input.parsetree.node, null)) {
+          valid = false;
+        }
+      }
+    }
+    return valid;
+  }
+
   private boolean compileHtml() {
     List<HtmlJob> jobs = new ArrayList<HtmlJob>();
     for (Input input : inputs) {
       if (InputType.HTML == input.type) {
-        jobs.add(new HtmlJob((DomTree.Tag) input.parsetree.node, null));
+        jobs.add(new HtmlJob((DomTree) input.parsetree.node, null));
       }
     }
-    if (jobs.size() != 1) {
-      mq.addMessage(PluginMessageType.TOO_MANY_HTML_JOBS,
-                    jobs.get(1).toReplace.node.getFilePosition(),
-                    MessagePart.Factory.valueOf(jobs.size()));
-      return false;
-    }
 
-    HtmlJob job = jobs.get(0);
-    HtmlCompiler htmlc = new HtmlCompiler(mq, meta);
-    HtmlValidator v = new HtmlValidator(mq);
-    if (!v.validate(job.docRoot, null)) {
-      System.err.println("Html invalid");
-      return false;
-    }
+    HtmlCompiler htmlc = new HtmlCompiler(mq, meta) {
+        @Override
+        protected String rewriteUri(ExternalReference uri, String mimeType) {
+          return HtmlPluginCompiler.this.rewriteUri(uri, mimeType);
+        }
+      };
 
-    job.sig = htmlc.compileTemplateSignature(job.docRoot);
-
-    try {
-      job.compiled = htmlc.compileDocument(job.sig);
-
-      // create a node under PluginMeta for the canonical reference.
-      // This is used for calls from one gxp to another to foil attacks
-      // that rewrite a called gxp to emit unsafe content.
-      this.pluginPrivate.createMutation()
-      .insertBefore(s(new StringLiteral(
-          StringLiteral.toQuotedValue(job.sig.assignedName))), null)
-          .insertBefore(job.compiled, null)
-          .execute();
-
-      Expression templateRef = s(
-          new Operation(
-              Operator.MEMBER_ACCESS,
-              s(new Reference(meta.namespacePrivateName)),
-              s(new Reference(job.sig.getAssignedName()))));
-
-      // either replace it or put a reference to it in the main plugin
-      if (null == job.toReplace) {
-        StringLiteral htmlName = s(
-            new StringLiteral(StringLiteral.toQuotedValue(
-                                  job.sig.assignedName)));
-        this.pluginNamespace.createMutation()
-            .insertBefore(htmlName, null)
-            .insertBefore(templateRef, null)
-            .execute();
-      } else {
-        ((MutableParseTreeNode) job.toReplace.parent.node)
-            .replaceChild(templateRef, job.toReplace.node);
+    List<Statement> renderedHtmlStatements = new ArrayList<Statement>();
+    for (HtmlJob job : jobs) {
+      try {
+        renderedHtmlStatements.add(htmlc.compileDocument(job.docRoot));
+      } catch (GxpCompiler.BadContentException ex) {
+        ex.toMessageQueue(mq);
       }
-      // TODO(ihab.awad): Re-enable HTML rendering below after ensuring it
-      // conforms to Baja rules.
-      if (!meta.isBaja) {
-        // (myPlugin.document).write(myPlugin.c1___());
-        Block functionBody =
-          s(new Block(
-              Collections.singletonList(
-                  s(new ExpressionStmt(
-                      s(new Operation(
-                          Operator.FUNCTION_CALL,
-                          s(new Operation(
-                              Operator.MEMBER_ACCESS,
-                              s(new Operation(
-                                  Operator.MEMBER_ACCESS,
-                                  s(new Reference(meta.namespaceName)),
-                                  s(new Reference("document")))),
-                                  s(new Reference("write")))),
-                                  s(new Operation(
-                                      Operator.FUNCTION_CALL,
-                                      s(new Operation(
-                                          Operator.MEMBER_ACCESS,
-                                          s(new Reference(meta.namespaceName)),
-                                          s(new Reference(
-                                                job.sig.getAssignedName()))
-                                          )))))))))));
-
-        // (function () {
-        //    (myPlugin.document).write(myPlugin.c1___());
-        // }).call(myPlugin);
-        this.jsTree.insertBefore(
-            s(new ExpressionStmt(
-                s(new Operation(
-                    Operator.FUNCTION_CALL,
-                    s(new Operation(
-                        Operator.MEMBER_ACCESS,
-                        s(new FunctionConstructor(
-                            null, Collections.<FormalParam>emptyList(),
-                            functionBody)),
-                            s(new Reference("call")))),
-                            s(new Reference(meta.namespaceName)))))),
-                            null);
-      }
-    } catch (GxpCompiler.BadContentException ex) {
-      ex.toMessageQueue(mq);
     }
 
     for (FunctionDeclaration handler : htmlc.getEventHandlers()) {
-      StringLiteral htmlName = s(
-          new StringLiteral(StringLiteral.toQuotedValue(
-              handler.getIdentifier())));
-      Expression function = handler.getInitializer();
-      handler.replaceChild(
-          new FunctionConstructor(
-              null,
-              Collections.<FormalParam>emptyList(),
-              new Block(Collections.<Statement>emptyList())),
-          function);
-      this.pluginNamespace.createMutation()
-          .insertBefore(htmlName, null)
-          .insertBefore(function, null)
-          .execute();
+      // function foo() { ... }
+      // => ___OUTERS___.foo = function foo() { ... };
+      Statement def = s(new ExpressionStmt(
+          s(new Operation(
+                Operator.ASSIGN,
+                s(new Operation(
+                      Operator.MEMBER_ACCESS,
+                      s(new Reference(meta.namespaceName)),
+                      s(new Reference(handler.getIdentifier())))),
+                handler.getInitializer()))));
+      addInput(new AncestorChain<Block>(
+                   new Block(Collections.singletonList(def))));
+    }
+
+    if (!renderedHtmlStatements.isEmpty()) {
+      Block htmlGeneration;
+      if (renderedHtmlStatements.size() == 1
+          && renderedHtmlStatements.get(0) instanceof Block) {
+        htmlGeneration = (Block) renderedHtmlStatements.get(0);
+      } else {
+        htmlGeneration = new Block(renderedHtmlStatements);
+      }
+      addInput(new AncestorChain<Block>(htmlGeneration));
     }
 
     boolean success = hasNoFatalErrors();
-    System.out.println("compileHtmls: " + success);
     return success;
   }
 
   /**
    * sanitizes and namespace any css inputs.
    * @return true if the input css was safe.  False if any destructive
-   *   modifications had to be made to make it safe, or if such modifivations
+   *   modifications had to be made to make it safe, or if such modifications
    *   were needed but could not be made.
    */
   private boolean validateCss() {
@@ -531,9 +742,6 @@ public final class HtmlPluginCompiler {
       if (InputType.CSS == input.type) {
         // The parsetree node is a CssTree.StyleSheet
         cssTree = input.parsetree.cast(CssTree.class);
-      } else if (InputType.CSS_TEMPLATE == input.type) {
-        cssTree = new AncestorChain<CssTree>(
-            input.parsetree, ((CssTemplate) input.parsetree.node).getCss());
       } else {
         continue;
       }
@@ -547,21 +755,17 @@ public final class HtmlPluginCompiler {
   }
 
   private boolean moveGlobalDefinitionsIntoPluginNamespace() {
-    HtmlGlobalDefRewriter rw;
-    if (meta.isBaja) {
-      rw = new HtmlGlobalDefRewriterBaja(meta);
-    } else {
-      rw = new HtmlGlobalDefRewriter(meta);
-    }
+    if (!meta.isBaja) {
+      HtmlGlobalDefRewriter rw = new HtmlGlobalDefRewriter(meta);
 
-    for (Input input : inputs) {
-      if (InputType.JAVASCRIPT == input.type) {
-        input.parsetree.node.acceptPreOrder(rw, input.parsetree.parent);
+      for (Input input : inputs) {
+        if (InputType.JAVASCRIPT == input.type) {
+          input.parsetree.node.acceptPreOrder(rw, input.parsetree.parent);
+        }
       }
     }
 
     boolean success = hasNoFatalErrors();
-    System.out.println("moveGlobalDefinitionsIntoPluginNamespace: " + success);
     return success;
   }
 
@@ -617,7 +821,6 @@ public final class HtmlPluginCompiler {
       } catch (java.io.IOException ex) {
         throw new AssertionError(ex);
       }
-      System.err.println("rw\n" + out + "\n\n");
     }
 
     boolean valid;
@@ -654,63 +857,44 @@ public final class HtmlPluginCompiler {
   }
 
   private boolean hasNoFatalErrors() {
-    String errs = getErrors();
-    if (errs.equals("")) {
-      return true;
-    }
-    System.err.println(errs);
-    return false;
+    return hasNoMessagesOfLevel(MessageLevel.FATAL_ERROR);
   }
 
-  public String getErrors() {
-    String errs = "";
+  private boolean hasNoErrors() {
+    return hasNoMessagesOfLevel(MessageLevel.ERROR);
+  }
+
+  private boolean hasNoMessagesOfLevel(MessageLevel level) {
     for (Message m : mq.getMessages()) {
-      if (MessageLevel.FATAL_ERROR.compareTo(m.getMessageLevel()) >= 0) {
-        errs += "Error: " + m + "\n";
+      if (level.compareTo(m.getMessageLevel()) <= 0) {
+        return false;
       }
     }
-    return errs;
+    return true;
   }
 
   private boolean renderOutputs() {
-    StringWriter cssOut = null, jsOut = null;
-    boolean success = true;
     try {
-      jsOut = new StringWriter();
+      StringBuilder jsOut = new StringBuilder();
       RenderContext rc = new RenderContext(mc, jsOut, true);
       jsTree.render(rc);
       rc.newLine();
       outputJs = jsOut.toString();
+    } catch (IOException ex) {
+      throw new RuntimeException("StringBuilders shouldn't throw", ex);
+    }
 
-      cssOut = new StringWriter();
-      rc = new RenderContext(mc, cssOut, true);
+    try {
+      StringBuilder cssOut = new StringBuilder();
+      RenderContext rc = new RenderContext(mc, cssOut, true);
       cssTree.render(rc);
       rc.newLine();
       outputCss = cssOut.toString();
     } catch (IOException ex) {
-      success = false;
-      mq.addMessage(MessageType.IO_ERROR,
-          MessagePart.Factory.valueOf("Output error: " + ex.toString()));
-      ex.printStackTrace();
-    } finally {
-      try {
-        if (null != cssOut) { cssOut.close(); }
-      } catch (IOException ex) {
-        success = false;
-        mq.addMessage(MessageType.IO_ERROR,
-            MessagePart.Factory.valueOf("Output error: " + ex.toString()));
-        ex.printStackTrace();
-      }
-      try {
-        if (null != jsOut) { jsOut.close(); }
-      } catch (IOException ex) {
-        success = false;
-        mq.addMessage(MessageType.IO_ERROR,
-            MessagePart.Factory.valueOf("Output error: " + ex.toString()));
-        ex.printStackTrace();
-      }
+      throw new RuntimeException("StringBuilders shouldn't throw", ex);
     }
-    return success;
+
+    return true;
   }
 
   /** make the given parse tree node synthetic. */
@@ -725,141 +909,37 @@ public final class HtmlPluginCompiler {
 
     Input(AncestorChain<?> parsetree) {
       assert null != parsetree;
-      this.parsetree = parsetree;
+
       ParseTreeNode parsetreeNode = parsetree.node;
       if (parsetreeNode instanceof Statement) {
         this.type = InputType.JAVASCRIPT;
-      } else if (parsetreeNode instanceof DomTree.Tag) {
+      } else if (parsetreeNode instanceof DomTree.Fragment
+                 || parsetreeNode instanceof DomTree.Tag) {
         this.type = InputType.HTML;
       } else if (parsetreeNode instanceof CssTree.StyleSheet) {
         this.type = InputType.CSS;
-      } else if (parsetreeNode instanceof CssTemplate) {
-        this.type = InputType.CSS_TEMPLATE;
       } else {
         throw new AssertionError("Unknown input type " + parsetreeNode);
       }
+
+      this.parsetree = parsetree;
     }
   }
 
   private enum InputType {
     CSS,
-    CSS_TEMPLATE,
     JAVASCRIPT,
-    GXP,
     HTML
     ;
   }
 }
 
-final class HtmlGxpCompileDirectiveReplacer implements Visitor {
-  private final List<HtmlGxpJob> jobs = new ArrayList<HtmlGxpJob>();
-  private final MessageQueue mq;
-  private final HtmlPluginCompiler c;
-
-  HtmlGxpCompileDirectiveReplacer(MessageQueue mq, HtmlPluginCompiler c) {
-    this.mq = mq;
-    this.c = c;
-  }
-
-  List<HtmlGxpJob> getDoms() { return jobs; }
-
-  public boolean visit(AncestorChain<?> ancestors) {
-    ParseTreeNode node = ancestors.node;
-    if (!(node instanceof Operation)) { return true; }
-    Operation op = (Operation) node;
-    if (Operator.FUNCTION_CALL != op.getOperator()
-        || 2 != op.children().size()) {
-      return true;
-    }
-    Expression fn = op.children().get(0),
-              arg = op.children().get(1);
-    if (!(fn instanceof Reference
-        && "compileGxp".equals(((Reference) fn).getIdentifier()))) {
-      return true;
-    }
-    MutableParseTreeNode parent
-        = (MutableParseTreeNode) ancestors.getParentNode();
-    if (!(parent instanceof ExpressionStmt)) { return true; }
-    try {
-      CharProducer cp = stringExpressionAsCharProducer(arg);
-      HtmlLexer lexer = new HtmlLexer(cp);
-      lexer.setTreatedAsXml(true);
-      TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
-          lexer, node.getFilePosition().source(),
-          Criterion.Factory.<Token<HtmlTokenType>>optimist());
-      DomTree doc = HtmlDomParser.parseDocument(tq, c);
-      tq.expectEmpty();
-      if (!(doc instanceof DomTree.Tag)) {
-        throw new ParseException(new Message(
-            PluginMessageType.CANT_CONVERT_TO_GXP, arg.getFilePosition(), arg));
-      }
-
-      jobs.add(new HtmlGxpJob((DomTree.Tag) doc, ancestors.parent));
-    } catch (ParseException ex) {
-      ex.toMessageQueue(mq);
-    }
-
-    return false;
-  }
-
-  private static CharProducer stringExpressionAsCharProducer(Expression e)
-      throws ParseException {
-    List<CharProducer> chunks = new ArrayList<CharProducer>();
-    stringExpressionAsCharProducer(e, chunks);
-    return chunks.size() == 1
-           ? chunks.get(0)
-           : CharProducer.Factory.chain(chunks.toArray(new CharProducer[0]));
-  }
-  private static void stringExpressionAsCharProducer(
-      Expression e, List<CharProducer> chunks) throws ParseException {
-    if (e instanceof StringLiteral) {
-      String literal = ((StringLiteral) e).getValue();
-      int n = literal.length();
-      if (n >= 2) {
-        char ch0 = literal.charAt(0);
-        if (('\'' == ch0 || '\"' == ch0) && literal.charAt(n - 1) == ch0) {
-          literal = " " + literal.substring(1, n - 1) + " ";
-        }
-      }
-      chunks.add(CharProducer.Factory.fromJsString(
-          CharProducer.Factory.create(
-              new StringReader(literal), e.getFilePosition())));
-      return;
-    } else if (e instanceof Operation) {
-      Operation op = (Operation) e;
-      if (Operator.ADDITION == op.getOperator()) {
-        for (Expression operand : op.children()) {
-          stringExpressionAsCharProducer(operand, chunks);
-        }
-        return;
-      }
-    }
-
-    throw new ParseException(new Message(
-        PluginMessageType.CANT_CONVERT_TO_GXP, e.getFilePosition(), e));
-  }
-}
-
-final class HtmlGxpJob {
-  final DomTree.Tag docRoot;
-  final AncestorChain<?> toReplace;
-  GxpCompiler.TemplateSignature sig;
-  FunctionConstructor compiled;
-
-  HtmlGxpJob(DomTree.Tag docRoot, AncestorChain<?> toReplace) {
-    assert null != docRoot;
-    this.docRoot = docRoot;
-    this.toReplace = toReplace;
-  }
-}
-
 final class HtmlJob {
-  final DomTree.Tag docRoot;
+  final DomTree docRoot;
   final AncestorChain<?> toReplace;
-  HtmlCompiler.TemplateSignature sig;
   FunctionConstructor compiled;
 
-  HtmlJob(DomTree.Tag docRoot, AncestorChain<?> toReplace) {
+  HtmlJob(DomTree docRoot, AncestorChain<?> toReplace) {
     assert null != docRoot;
     this.docRoot = docRoot;
     this.toReplace = toReplace;
@@ -927,15 +1007,6 @@ class HtmlGlobalDefRewriter implements Visitor {
 
 }
 
-final class HtmlGlobalDefRewriterBaja extends HtmlGlobalDefRewriter {
-  HtmlGlobalDefRewriterBaja(PluginMeta meta) { super(meta); }
-
-  @Override
-  public boolean visit(AncestorChain<?> ancestors) {
-    return true;  // TODO(msamuel): WTF?
-  }
-}
-
 final class HtmlGlobalReferenceRewriter {
   final PluginMeta meta;
   final MessageQueue mq;
@@ -973,7 +1044,7 @@ final class HtmlGlobalReferenceRewriter {
           if (!node.getAttributes().is(ExpressionSanitizer.SYNTHETIC)) {
             if (refName.endsWith("__")) {
               mq.addMessage(MessageType.ILLEGAL_NAME, ref.getFilePosition(),
-                  MessagePart.Factory.valueOf(refName));
+                            MessagePart.Factory.valueOf(refName));
             }
           }
           MutableParseTreeNode parent
@@ -1029,5 +1100,4 @@ final class HtmlGlobalReferenceRewriter {
       return true;
     }
   }
-
 }

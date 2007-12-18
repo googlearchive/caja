@@ -14,8 +14,11 @@
 
 package com.google.caja.parser.html;
 
+import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.HtmlTokenType;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
@@ -23,6 +26,7 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
 
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -44,6 +48,39 @@ public final class DomParser {
     ignoreTopLevelIgnorables(tokens);
     tokens.expectEmpty();
     return doc;
+  }
+
+  /**
+   * Parses a snippet of markup.
+   */
+  public static DomTree.Fragment parseFragment(TokenQueue<HtmlTokenType> tokens)
+      throws ParseException {
+    List<DomTree> topLevelNodes = new ArrayList<DomTree>();
+    do {
+      topLevelNodes.add(parseDom(tokens));
+    } while (!tokens.isEmpty());
+    return new DomTree.Fragment(topLevelNodes);
+  }
+
+  /**
+   * Creates a TokenQueue suitable for this class's parse methods.
+   * @param asXml true to parse as XML, false as HTML.
+   */
+  public static TokenQueue<HtmlTokenType> makeTokenQueue(
+      InputSource is, Reader in, boolean asXml) {
+    return makeTokenQueue(FilePosition.startOfFile(is), in, asXml);
+  }
+  /**
+   * Creates a TokenQueue suitable for this class's parse methods.
+   * @param pos the position of the first character on in.
+   * @param asXml true to parse as XML, false as HTML.
+   */
+  public static TokenQueue<HtmlTokenType> makeTokenQueue(
+      FilePosition pos, Reader in, boolean asXml) {
+    CharProducer cp = CharProducer.Factory.create(in, pos);
+    HtmlLexer lexer = new HtmlLexer(cp);
+    lexer.setTreatedAsXml(asXml);
+    return new TokenQueue<HtmlTokenType>(lexer, pos.source());
   }
 
   /**
@@ -91,6 +128,7 @@ public final class DomParser {
         case CDATA:
           return new DomTree.CData(t);
         case TEXT:
+        case UNESCAPED:
           return new DomTree.Text(t);
         case COMMENT:
           continue;

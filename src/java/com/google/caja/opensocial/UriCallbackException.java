@@ -14,25 +14,32 @@
 
 package com.google.caja.opensocial;
 
-import java.net.URI;
+import com.google.caja.CajaException;
+import com.google.caja.lexer.ExternalReference;
+import com.google.caja.plugin.PluginMessageType;
+import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessagePart;
 
 /**
  * Thrown when a URL cannot or should not be retrieved.
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
-public class UriCallbackException extends Exception {
-  private final URI uri;
+public class UriCallbackException extends CajaException {
+  private final ExternalReference extref;
 
-  public UriCallbackException(URI uri, String message) {
-    super(uri.toString() + " - " + message);
-    this.uri = uri;
+  public UriCallbackException(
+      ExternalReference extref, Throwable th) {
+    super(new Message(PluginMessageType.FAILED_TO_LOAD_EXTERNAL_URL,
+                      extref.getReferencePosition(),
+                      MessagePart.Factory.valueOf(extref.getUri().toString())),
+          th);
+    this.extref = extref;
   }
 
-  public UriCallbackException(Throwable cause) {
-    super(cause);
-    this.uri = null;
+  public UriCallbackException(ExternalReference extref) {
+    this(extref, null);
   }
 
-  public URI getUri() { return uri; }
+  public ExternalReference getExternalReference() { return extref; }
 }

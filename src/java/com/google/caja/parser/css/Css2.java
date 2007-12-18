@@ -63,6 +63,10 @@ public final class Css2 {
     return KEYWORDS.contains(name.toLowerCase());
   }
 
+  public static boolean isMediaType(String mediaType) {
+    return ALL_MEDIA.accept(mediaType);
+  }
+
   /**
    * Encapsulates a css property and its signatures.
    */
@@ -106,8 +110,10 @@ public final class Css2 {
     Pattern.compile("^[a-zA-Z][\\w\\-]*$");
   private static final Criterion<String> ALL_ELEMENTS
       = new RegexpCriterion(HTML_IDENTIFIER);
-  private static final Criterion<String> ALL_MEDIA
-      = new RegexpCriterion(CSS_IDENTIFIER);
+  // See http://www.w3.org/TR/REC-CSS2/media.html section 7.3
+  private static final Criterion<String> ALL_MEDIA = in(
+      "all", "aural", "braille", "embossed", "handheld", "print", "projection",
+      "screen", "tty", "tv");
 
   private static Criterion<String> in(String... elementGroups) {
     final Set<String> elements = new HashSet<String>();

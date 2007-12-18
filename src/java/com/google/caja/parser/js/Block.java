@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
@@ -35,6 +36,16 @@ public final class Block
 
   public void prepend(Statement statement) {
     insertBefore(statement, children().isEmpty() ? null : children().get(0));
+  }
+
+  @Override
+  protected void childrenChanged() {
+    super.childrenChanged();
+    for (ParseTreeNode child : children()) {
+      if (!(child instanceof Statement)) {
+        throw new ClassCastException("Expected statement, not " + child);
+      }
+    }
   }
 
   @Override

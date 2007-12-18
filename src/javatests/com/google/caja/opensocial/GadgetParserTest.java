@@ -16,12 +16,7 @@ package com.google.caja.opensocial;
 import com.google.caja.util.TestUtil;
 import junit.framework.TestCase;
 
-import java.io.InputStream;
-import java.io.Reader;
 import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.net.URI;
 
 /**
  * @author ihab.awad@gmail.com (Ihab Awad)
@@ -66,7 +61,7 @@ public class GadgetParserTest extends TestCase {
   }
 
   private String render(GadgetSpec spec) throws Exception {
-    StringWriter output = new StringWriter();
+    StringBuilder output = new StringBuilder();
     new GadgetParser().render(spec, output);
     return output.toString();
   }

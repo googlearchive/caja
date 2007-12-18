@@ -160,11 +160,6 @@ public final class FilePosition implements MessagePart {
   public int endCharInLine() { return this.endCharInLine; }
   public int length() { return this.endCharInFile - this.startCharInFile; }
 
-  public String readSource() throws ParseException {
-    String src = this.source.readSource();
-    return src.substring(this.startCharInFile - 1, this.endCharInFile);
-  }
-
   public void format(MessageContext context, Appendable out)
       throws IOException {
     if (!FilePosition.PREDEFINED.equals(this)) {

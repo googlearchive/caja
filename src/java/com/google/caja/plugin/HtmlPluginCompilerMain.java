@@ -14,23 +14,27 @@
 
 package com.google.caja.plugin;
 
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.BasicParser;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.HelpFormatter;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.DomTree;
+import com.google.caja.reporting.Message;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.StringWriter;
-import java.io.IOException;
-import java.io.FileWriter;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.Reader;
+import java.io.InputStreamReader;
 import java.io.Writer;
+
+import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
 
 /**
  * Executable that invokes {@link HtmlPluginCompiler}.
@@ -97,19 +101,35 @@ public final class HtmlPluginCompilerMain {
     int rc = processArguments(argv);
     if (rc != 0) return rc;
 
-    if (isBaja)
+    if (isBaja) {
       jsName += "___OUTERS___";
+    }
 
     HtmlPluginCompiler compiler =
-        new HtmlPluginCompiler(readFile(inputFile), jsName,
-            cssPrefix, rootDivId, isBaja);
-
+        new HtmlPluginCompiler(jsName, cssPrefix, rootDivId, isBaja);
     try {
+      compiler.addInput(
+          new AncestorChain<DomTree.Fragment>(parseHtmlFromFile(inputFile)));
+      compiler.addInput(
+          new AncestorChain<DomTree.Fragment>(parseHtmlFromFile(inputFile)));
+
       if (!compiler.run()) {
-        throw new RuntimeException(compiler.getErrors());
+        throw new RuntimeException();
       }
     } catch (ParseException e) {
-      throw new RuntimeException(e);
+      e.toMessageQueue(compiler.getMessageQueue());
+      return -1;
+    } catch (IOException ex) {
+      System.err.println(ex);
+      return -1;
+    } finally {
+      try {
+        for (Message m : compiler.getMessageQueue().getMessages()) {
+          m.format(compiler.getMessageContext(), System.err);
+        }
+      } catch (IOException ex) {
+        ex.printStackTrace();
+      }
     }
 
     writeFile(outputJsFile, compiler.getOutputJs());
@@ -168,29 +188,15 @@ public final class HtmlPluginCompilerMain {
     return -1;
   }
 
-  private String readFile(File path) {
-    Reader r;
+  private DomTree.Fragment parseHtmlFromFile(File f)
+      throws IOException, ParseException {
+    InputSource is = new InputSource(f.toURI());
+    Reader in = new InputStreamReader(new FileInputStream(f), "UTF-8");
     try {
-      r = new BufferedReader(new FileReader(path));
-    } catch (FileNotFoundException e) {
-      throw new RuntimeException(e);
+      return DomParser.parseFragment(DomParser.makeTokenQueue(is, in, false));
+    } finally {
+      in.close();
     }
-
-    Writer w = new StringWriter();
-
-    try {
-      for (int c; (c = r.read()) != -1; ) w.write(c);
-    } catch (IOException e)  {
-      throw new RuntimeException(e);
-    }
-
-    try {
-      r.close();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-
-    return w.toString();
   }
 
   private void writeFile(File path, String contents) {

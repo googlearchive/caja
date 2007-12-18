@@ -17,13 +17,10 @@ package com.google.caja.plugin;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.MessageTypeInt;
 
 import java.io.IOException;
-
-import java.util.EnumMap;
-import java.util.Formatter;
-import java.util.Map;
 
 /**
  * Messages for the PluginCompiler
@@ -45,6 +42,8 @@ public enum PluginMessageType implements MessageTypeInt {
   DUPLICATE_ATTRIBUTE(
       "%s: attribute %s duplicates one at %s", MessageLevel.WARNING),
   UNKNOWN_ATTRIBUTE("%s: unknown attribute %s on %s", MessageLevel.FATAL_ERROR),
+  DISALLOWED_ATTRIBUTE_VALUE("%s: attribute %s cannot have value %s",
+                             MessageLevel.ERROR),
   EXTRANEOUS_CONTENT("%s: unused content in tag %s", MessageLevel.FATAL_ERROR),
   UNKNOWN_TEMPLATE_PARAM(
       "%s: template %s defined at %s does not define a parameter %s",
@@ -54,9 +53,8 @@ public enum PluginMessageType implements MessageTypeInt {
       MessageLevel.FATAL_ERROR),
   BAD_IDENTIFIER("%s: bad identifier %s", MessageLevel.FATAL_ERROR),
   ATTRIBUTE_CANNOT_BE_DYNAMIC(
-      "%s: tag %s cannot have dynamic attribute %s", MessageLevel.FATAL_ERROR),
-  EXPECTED_RELATIVE_URL(
-      "%s: expected relative url, not %s", MessageLevel.FATAL_ERROR),
+      "%s: tag %s cannot have dynamic attribute %s", MessageLevel.ERROR),
+  DISALLOWED_URI("%s: url %s cannot be linked to", MessageLevel.FATAL_ERROR),
   MALFORMED_URL("%s: malformed url %s", MessageLevel.FATAL_ERROR),
   REWROTE_STYLE("%s: rewrote unsafe style attribute %s",
                 MessageLevel.FATAL_ERROR),
@@ -83,50 +81,32 @@ public enum PluginMessageType implements MessageTypeInt {
   TOO_MANY_HTML_JOBS(
       "%s: there should be exactly one html input, instead seeing %s",
       MessageLevel.FATAL_ERROR),
+  FAILED_TO_LOAD_EXTERNAL_URL(
+      "%s: failed to load external url %s", MessageLevel.WARNING),
+  UNRECOGNIZED_CONTENT_TYPE(
+      "%s: unrecognized content type %s for %s tag", MessageLevel.WARNING),
+  UNRECOGNIZED_MEDIA_TYPE(
+      "%s: unrecognized media type %s", MessageLevel.WARNING),
   ;
 
-  private String formatString;
-  private MessageLevel level;
+  private final String formatString;
+  private final MessageLevel level;
+  private final int paramCount;
 
   PluginMessageType(String formatString, MessageLevel level) {
     this.formatString = formatString;
     this.level = level;
+    this.paramCount = MessageType.formatStringArity(formatString);
+  }
+
+  public int getParamCount() {
+    return paramCount;
   }
 
   public void format(MessagePart[] parts, MessageContext context,
                      Appendable out) throws IOException {
-    Object[] partStrings = new Object[parts.length];
-    for (int i = 0; i < parts.length; ++i) {
-      StringBuilder sb = new StringBuilder();
-      parts[i].format(context, sb);
-      partStrings[i] = sb.toString();
-    }
-    new Formatter(out).format(formatString, partStrings);
+    MessageType.formatMessage(formatString, parts, context, out);
   }
 
   public MessageLevel getLevel() { return level; }
-
-  private static Map<PluginMessageType, Integer> PARAM_COUNTS =
-      new EnumMap<PluginMessageType, Integer>(PluginMessageType.class);
-
-  static {
-    for (PluginMessageType mt : PluginMessageType.values()) {
-      int count = 0;
-      for (int i = 0, n = mt.formatString.length(); i < n; ++i) {
-        char ch = mt.formatString.charAt(i);
-        if ('%' == ch) {
-          if (i + 1 < n && '%' != mt.formatString.charAt(i + 1)) {
-            ++count;
-          } else {
-            ++i;
-          }
-        }
-      }
-      PARAM_COUNTS.put(mt, Integer.valueOf(count));
-    }
-  }
-
-  public int getParamCount() {
-    return PARAM_COUNTS.get(this).intValue();
-  }
 }

@@ -43,9 +43,11 @@ public class EchoingMessageQueue implements MessageQueue {
       public void add(int index, Message element) {
         backing.add(index, element);
         try {
+          out.append(element.getMessageLevel().name()).append(':');
           element.format(mc, out);
           out.append('\n');
-          if (dumpStack) {
+          if (dumpStack && element.getMessageLevel()
+              .compareTo(MessageLevel.LINT) >= 0) {
             new Exception().printStackTrace(out);
           }
           out.flush();

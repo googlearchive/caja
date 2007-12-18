@@ -93,7 +93,7 @@
     classpathref="classpath.extensions" />
 
   <!--== rules ==-->
-  <target name="default" depends="pluginc,docs"
+  <target name="default" depends="pluginc,opensocial,docs"
    description="Builds the plugin compiler, and documentation."/>
 
   <target name="clean"
@@ -165,7 +165,7 @@
      <!-- overview="${src}/overview.html" -->
   </target>
 
-  <target name="AllTests" depends="TestUtil,dirs">
+  <target name="AllTests" depends="opensocial,pluginc,TestUtil,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${testsrc}"/>
       <classpath refid="classpath.tests.compile"/>
@@ -214,6 +214,9 @@
         <include name="**/caja/lexer/lexertest1.js"/>
         <include name="**/caja/lexer/lexertest2.js"/>
         <include name="**/caja/lexer/testinput1.txt"/>
+        <include name="**/caja/opensocial/example.xml"/>
+        <include name="**/caja/opensocial/example-gadget-files/*"/>
+        <include name="**/caja/opensocial/example-rewritten.xml"/>
         <include name="**/caja/opensocial/listfriends-inline.xml"/>
         <include name="**/caja/opensocial/listfriends.js"/>
         <include name="**/caja/opensocial/listfriends.xml"/>
@@ -269,16 +272,10 @@
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
-      <include name="**/caja/opensocial/DefaultGadgetRewriter.java"/>
-      <include name="**/caja/opensocial/GadgetParser.java"/>
-      <include name="**/caja/opensocial/GadgetRewriteException.java"/>
-      <include name="**/caja/opensocial/GadgetRewriter.java"/>
-      <include name="**/caja/opensocial/GadgetSpec.java"/>
-      <include name="**/caja/opensocial/UriCallback.java"/>
-      <include name="**/caja/opensocial/UriCallbackException.java"/>
-      <include name="**/caja/opensocial/UriCallbackOption.java"/>
-      <include name="**/caja/plugin/PluginCompilerMain.java"/>
+      <include name="**/caja/opensocial/*.java"/>
+      <include name="**/caja/plugin/HtmlPluginCompiler.java"/>
       <include name="**/caja/plugin/HtmlPluginCompilerMain.java"/>
+      <include name="**/caja/plugin/PluginCompilerMain.java"/>
     </javac>
   </target>
 
@@ -300,7 +297,7 @@
   </target>
 
   <target name="TestUtil"
-   depends="opensocial,pluginc,PluginCapabilities,dirs">
+   depends="PluginCapabilities,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${testsrc}"/>
       <classpath refid="classpath.tests.compile"/>
@@ -328,6 +325,7 @@
       <include name="**/caja/plugin/HtmlCompiler.java"/>
       <include name="**/caja/plugin/HtmlPluginCompiler.java"/>
       <include name="**/caja/plugin/HtmlWhitelist.java"/>
+      <include name="**/caja/plugin/HtmlValidator.java"/>
       <include name="**/caja/plugin/JsWriter.java"/>
       <include name="**/caja/plugin/PluginCompiler.java"/>
       <include name="**/caja/plugin/PluginMessageType.java"/>
@@ -355,9 +353,7 @@
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
-      <include name="**/caja/parser/html/DomParser.java"/>
-      <include name="**/caja/parser/html/DomTree.java"/>
-      <include name="**/caja/parser/html/JsHtmlParser.java"/>
+      <include name="**/caja/parser/html/*.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
   </target>
@@ -517,21 +513,14 @@
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
+      <include name="**/caja/lexer/ExternalReference.java"/>
       <include name="**/caja/lexer/FilePosition.java"/>
       <include name="**/caja/lexer/InputSource.java"/>
       <include name="**/caja/reporting/MessageContext.java"/>
       <include name="**/caja/reporting/MessagePart.java"/>
       <include name="**/caja/reporting/RenderContext.java"/>
       <include name="**/caja/reporting/Renderable.java"/>
-      <include name="**/caja/util/Criterion.java"/>
-      <include name="**/caja/util/Pair.java"/>
-      <include name="**/caja/util/Pipeline.java"/>
-      <include name="**/caja/util/PipelineException.java"/>
-      <include name="**/caja/util/PipelineStage.java"/>
-      <include name="**/caja/util/SparseBitSet.java"/>
-      <include name="**/caja/util/SyntheticAttributeKey.java"/>
-      <include name="**/caja/util/SyntheticAttributes.java"/>
-      <include name="**/caja/util/TransactionSafeMap.java"/>
+      <include name="**/caja/util/*.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
   </target>

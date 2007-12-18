@@ -42,6 +42,8 @@ public final class PluginMeta {
   public final String rootDomId;
   /** Are we doing Baja translations? */
   public final boolean isBaja;
+  /** Used to generate names that are unique within the plugin's namespace. */
+  private int guidCounter;
 
   public PluginMeta(String namespaceName, String namespacePrefix,
                     String rootDomId, boolean isBaja) {
@@ -70,6 +72,15 @@ public final class PluginMeta {
     } else {
       this.namespacePrivateName = this.namespaceName + "Private";
     }
+  }
+
+  /**
+   * Generates a name that can be used as an identifier in the plugin's
+   * namespace.
+   * @param prefix a valid javascript identifier prefix.
+   */
+  public String generateUniqueName(String prefix) {
+    return prefix + "_" + (++guidCounter) + "___";
   }
 
   private static final Pattern CONSTANT_NAME = Pattern.compile("^[A-Z_]+$");

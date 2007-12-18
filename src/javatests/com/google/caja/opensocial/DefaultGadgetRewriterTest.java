@@ -13,15 +13,24 @@
 
 package com.google.caja.opensocial;
 
+import com.google.caja.lexer.ExternalReference;
+import com.google.caja.reporting.EchoingMessageQueue;
+import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.util.TestUtil;
-import junit.framework.TestCase;
 
-import java.io.InputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
+import junit.framework.TestCase;
 
 /**
  * @author ihab.awad@gmail.com (Ihab Awad)
@@ -29,37 +38,169 @@ import java.net.URI;
 public class DefaultGadgetRewriterTest extends TestCase {
 
   private static final UriCallback uriCallback = new UriCallback() {
-    public UriCallbackOption getOption(URI uri, String mimeType) {
+    public UriCallbackOption getOption(
+        ExternalReference extref, String mimeType) {
       return UriCallbackOption.RETRIEVE;
     }
 
-    public InputStream retrieve(URI uri, String mimeType)
+    public Reader retrieve(ExternalReference extref, String mimeType)
         throws UriCallbackException {
-      throw new UriCallbackException(uri, "Rewrite unsupported");
+      if ("file".equals(extref.getUri().getScheme())) {
+        if (extref.getUri().toString().startsWith(
+                TestUtil.getResource(getClass(), "").toString())) {
+          try {
+            return new FileReader(extref.getUri().getPath());
+          } catch (FileNotFoundException ex) {
+            throw new UriCallbackException(extref, ex);
+          }
+        }
+      }
+      throw new UriCallbackException(extref);
     }
 
-    public URI rewrite(URI uri, String mimeType) throws UriCallbackException {
-      throw new UriCallbackException(uri, "Rewrite unsupported");
+    public URI rewrite(ExternalReference extref, String mimeType) {
+      try {
+        return URI.create(
+            "http://url-proxy.test.google.com/"
+            + "?url=" + URLEncoder.encode(extref.getUri().toString(), "UTF-8")
+            + "&mime-type=" + URLEncoder.encode(mimeType, "UTF-8"));
+      } catch (UnsupportedEncodingException ex) {
+        // If we don't support UTF-8 we're in trouble
+        throw new RuntimeException(ex);
+      }
     }
   };
 
-  private GadgetRewriter rewriter;
+  private DefaultGadgetRewriter rewriter;
 
   @Override
-  public void setUp() { rewriter = new DefaultGadgetRewriter(); }
+  public void setUp() {
+    rewriter = new DefaultGadgetRewriter(
+        new EchoingMessageQueue(
+            new PrintWriter(System.err), new MessageContext(), false));
+  }
 
   @Override
   public void tearDown() { rewriter = null; }
 
-  public void testBasic() throws Exception {
-    testRewriteNoError("listfriends-inline.xml");
-    testRewriteNoError("test-parsing.xml");
+  // Test Gadget parsing
+  public void testInlineGadget() throws Exception {
+    assertRewritePasses("listfriends-inline.xml", MessageLevel.WARNING);
   }
 
-  private void testRewriteNoError(String file) throws Exception {
+  public void testParsing() throws Exception {
+    assertRewritePasses("test-parsing.xml", MessageLevel.WARNING);
+  }
+
+  public void testSourcedGadget() throws Exception {
+    assertRewritePasses("listfriends.xml", MessageLevel.WARNING);
+  }
+
+  // Test Gadget rewriting
+  public void testExampleGadget() throws Exception {
+    assertRewriteMatches("example.xml", "example-rewritten.xml",
+                       MessageLevel.ERROR);
+  }
+
+  // Check that the validating and rewriting passes are hooked up.
+  public void testTargetsDisallowed() throws Exception {
+    assertRewriteFailsWithMessage(
+        "<a target=\"_top\">Redirect window</a>",
+        "attribute target cannot have value _top");
+  }
+
+  public void testMetaRefreshDisallowed() throws Exception {
+    assertRewriteFailsWithMessage(
+        "<meta http-equiv=\"refresh\" content=\"5;http://foo.com\"/>",
+        "tag meta is not allowed");
+  }
+
+  public void testStylesSanitized() throws Exception {
+    assertRewriteFailsWithMessage(
+        "<p style=\"color: expression(foo)\">Bar</p>",
+        "css property color has bad value: ==>expression(foo)<==");
+  }
+
+  private void assertRewritePasses(String file, MessageLevel failLevel)
+      throws Exception {
     Reader input = new StringReader(TestUtil.readResource(getClass(), file));
-    Writer output = new StringWriter();
-    rewriter.rewrite(null, input, uriCallback, output);
-    System.out.println(output.toString());
+    URI baseUri = TestUtil.getResource(getClass(), file);
+    rewriter.rewrite(baseUri, input, uriCallback, System.out);
+
+    checkMessages(failLevel);
+  }
+
+  private void assertRewriteMatches(
+      String file, String goldenFile, MessageLevel failLevel)
+      throws Exception {
+    Reader input = new StringReader(TestUtil.readResource(getClass(), file));
+    URI baseUri = TestUtil.getResource(getClass(), file);
+
+    StringBuilder sb = new StringBuilder();
+    rewriter.rewrite(baseUri, input, uriCallback, sb);
+    String actual = sb.toString().trim();
+
+    checkMessages(failLevel);
+
+    String expected = TestUtil.readResource(getClass(), goldenFile).trim();
+    if (!expected.equals(actual)) {
+      System.err.println(actual);
+      assertEquals(expected, actual);
+    }
+  }
+
+  private void assertRewriteFailsWithMessage(String htmlContent, String msg)
+      throws Exception {
+    Reader input = new StringReader(
+       "<?xml version=\"1.0\"?>"
+       + "<Module>"
+       + "<ModulePrefs title=\"Example Gadget\">"
+       + "<Require feature=\"opensocial-0.5\"/>"
+       + "</ModulePrefs>"
+       + "<Content type=\"html\">"
+       + "<![CDATA[" + htmlContent + "]]>"
+       + "</Content>"
+       + "</Module>");
+    URI baseUri = URI.create("http://unittest.google.com/foo/bar/");
+    try {
+      rewriter.rewrite(baseUri, input, uriCallback, System.out);
+      fail("rewrite should have failed with message " + msg);
+    } catch (GadgetRewriteException ex) {
+      // pass
+    }
+
+    List<Message> errors = getMessagesExceedingLevel(MessageLevel.ERROR);
+
+    assertFalse("Expected error msg: " + msg, errors.isEmpty());
+    String actualMsg = errors.get(0).format(new MessageContext());
+    // strip off the file position since that's tested in the modules that
+    // generate the errors.
+    actualMsg = actualMsg.substring(actualMsg.indexOf(": ") + 2).trim();
+    assertEquals(msg, actualMsg);
+  }
+
+  private List<Message> getMessagesExceedingLevel(MessageLevel limit) {
+    List<Message> matches = new ArrayList<Message>();
+    for (Message msg : rewriter.getMessageQueue().getMessages()) {
+      if (msg.getMessageLevel().compareTo(limit) >= 0) {
+        matches.add(msg);
+      }
+    }
+    return matches;
+  }
+
+  private void checkMessages(MessageLevel failLevel) {
+    List<Message> failures = getMessagesExceedingLevel(failLevel);
+    MessageContext mc = new MessageContext();
+    if (!failures.isEmpty()) {
+      StringBuilder sb = new StringBuilder();
+      for (Message failure : failures) {
+        sb.append(failure.getMessageLevel())
+            .append(" : ")
+            .append(failure.format(mc))
+            .append('\n');
+      }
+      fail(sb.toString().trim());
+    }
   }
 }

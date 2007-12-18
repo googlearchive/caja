@@ -14,6 +14,8 @@
 
 package com.google.caja.opensocial;
 
+import com.google.caja.lexer.ExternalReference;
+
 import java.io.IOException;
 import java.net.URI;
 
@@ -34,7 +36,7 @@ public interface GadgetRewriter {
    * <p>All URIs embedded in the gadget will be interpreted relative to {@code gadgetUri}
    * (unless, of course, they are absolute).
    *
-   * @param gadgetUri the URI of a gadget specification.
+   * @param ref a reference to the gadget spec to rewrite.
    * @param uriCallback a {@link UriCallback} object for resolving URIs.
    * @param output an {@code Appendable} to which the rewriter will write the Caja parsed
    * gadget specification, as a literal string of content.
@@ -42,7 +44,7 @@ public interface GadgetRewriter {
    * @exception GadgetRewriteException if there was a problem parsing the gadget.
    * @exception IOException if there was an I/O problem.
    */
-  void rewrite(URI gadgetUri, UriCallback uriCallback, Appendable output)
+  void rewrite(ExternalReference ref, UriCallback uriCallback, Appendable output)
       throws UriCallbackException, GadgetRewriteException, IOException;
 
   /**
@@ -58,7 +60,7 @@ public interface GadgetRewriter {
    * @exception UriCallbackException if the {@code urlCallback} threw an exception.
    * @exception GadgetRewriteException if there was a problem parsing the gadget.
    * @exception IOException if there was an I/O problem.
-   * @see #rewrite(URI, UriCallback, Appendable)
+   * @see #rewrite(ExternalReference, UriCallback, Appendable)
    */
   void rewrite(URI baseUri, Readable gadgetSpec, UriCallback uriCallback, Appendable output)
       throws UriCallbackException, GadgetRewriteException, IOException;

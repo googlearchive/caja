@@ -19,6 +19,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.Token;
+import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
@@ -49,9 +50,12 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
 
   DomTree(List<DomTree> children,
           Token<HtmlTokenType> start, Token<HtmlTokenType> end) {
-    this.start = start;
-    setFilePosition(FilePosition.span(start.pos, end.pos));
+    this(children, start, FilePosition.span(start.pos, end.pos));
+  }
 
+  DomTree(List<DomTree> children, Token<HtmlTokenType> tok, FilePosition pos) {
+    this.start = tok;
+    setFilePosition(pos);
     createMutation().appendChildren(children).execute();
   }
 
@@ -70,7 +74,7 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
    */
   @Override
   public String getValue() {
-    if (null == value) { value = computeValue(); }
+    if (null == value && null != start) { value = computeValue(); }
     return value;
   }
 
@@ -93,6 +97,8 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
     case CDATA:
       // Strip <![CDATA[ and ]]>
       return start.text.substring(9, start.text.length() - 3);
+    case UNESCAPED:
+      return start.text;
     default:
       return null;
     }
@@ -124,12 +130,6 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
     return sb.toString();
   }
 
-  /** Not yet implemented. */
-  public void render(RenderContext r) throws IOException {
-    // TODO: implement me
-    throw new UnsupportedOperationException();
-  }
-
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
@@ -142,18 +142,62 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
   }
 
   /**
+   * A node that serves as a top level container for other nodes.
+   * This can represent a snippet of markup.
+   */
+  public static final class Fragment extends DomTree {
+    public Fragment(List<DomTree> children) {
+      super(children,
+            new Token<HtmlTokenType>(
+                "", HtmlTokenType.IGNORABLE,
+                FilePosition.startOf(children.get(0).getFilePosition())),
+            FilePosition.span(
+                children.get(0).getFilePosition(),
+                children.get(children.size() - 1).getFilePosition()));
+    }
+
+    public void render(RenderContext r) throws IOException {
+      for (DomTree child : children()) {
+        child.render(r);
+      }
+    }
+  }
+
+  /**
    * A DOM element.  This node's value is its tag name.
    * Its chilren include its attributes, and the element content:
    * other tags, text nodes, CDATA sections.
    */
   public static final class Tag extends DomTree {
-    Tag(List<DomTree> children,
+    public Tag(List<DomTree> children,
         Token<HtmlTokenType> start, Token<HtmlTokenType> end) {
       super(children, start, end);
       assert start.type == HtmlTokenType.TAGBEGIN;
     }
 
     public String getTagName() { return getValue(); }
+
+    public void render(RenderContext r) throws IOException {
+      r.out.append('<');
+      renderHtmlIdentifier(getTagName(), r);
+      List<? extends DomTree> children = children();
+      int n = children.size();
+      int i = 0;
+      while (i < n) {
+        DomTree child = children.get(i);
+        if (!(child instanceof Attrib)) { break; }
+        r.out.append(' ');
+        child.render(r);
+        ++i;
+      }
+      r.out.append('>');
+      while (i < n) {
+        children.get(i++).render(r);
+      }
+      r.out.append("</");
+      renderHtmlIdentifier(getTagName(), r);
+      r.out.append('>');
+    }
   }
 
   /**
@@ -169,6 +213,13 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
     public String getAttribName() { return getValue(); }
     public String getAttribValue() { return children().get(0).getValue(); }
     public Value getAttribValueNode() { return (Value) children().get(0); }
+
+    public void render(RenderContext r) throws IOException {
+      renderHtmlIdentifier(getAttribName(), r);
+      r.out.append("=\"");
+      getAttribValueNode().render(r);
+      r.out.append('"');
+    }
   }
 
   /**
@@ -179,15 +230,24 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
       super(Collections.<DomTree>emptyList(), tok, tok);
       assert tok.type == HtmlTokenType.ATTRVALUE;
     }
+
+    public void render(RenderContext r) throws IOException {
+      renderHtmlAttributeValue(getValue(), r);
+    }
   }
 
   /**
    * A text node.  Its value is textual content.
    */
   public static final class Text extends DomTree {
-    Text(Token<HtmlTokenType> tok) {
+    public Text(Token<HtmlTokenType> tok) {
       super(Collections.<DomTree>emptyList(), tok, tok);
-      assert tok.type == HtmlTokenType.TEXT;
+      assert tok.type == HtmlTokenType.TEXT
+          || tok.type == HtmlTokenType.UNESCAPED;
+    }
+
+    public void render(RenderContext r) throws IOException {
+      renderHtml(getValue(), r);
     }
   }
 
@@ -199,5 +259,31 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
       super(Collections.<DomTree>emptyList(), tok, tok);
       assert tok.type == HtmlTokenType.CDATA;
     }
+
+    public void render(RenderContext r) throws IOException {
+      String value = getValue();
+      if (!value.contains("]]>")) {
+        r.out.append("<![CDATA[");
+        r.out.append(value);
+        r.out.append("]]>");
+      } else {
+        renderHtml(value, r);
+      }
+    }
+  }
+
+  private static void renderHtmlIdentifier(String text, RenderContext r)
+      throws IOException {
+    Escaping.escapeXml(text, true, r.out);    
+  }
+
+  private static void renderHtmlAttributeValue(String text, RenderContext r)
+      throws IOException {
+    Escaping.escapeXml(text, true, r.out);    
+  }
+
+  private static void renderHtml(String text, RenderContext r)
+      throws IOException {
+    Escaping.escapeXml(text, true, r.out);
   }
 }

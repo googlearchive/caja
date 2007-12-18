@@ -31,25 +31,29 @@ final class EscapeMap {
   }
 
   EscapeMap(EscapeMap base, Escape... asciiEscapes) {
-    assert asciiEscapes.length != 0;
-    Arrays.sort(asciiEscapes);
-    int max;
-    if (base == null) {
-      this.min = asciiEscapes[0].raw;
-      max = asciiEscapes[asciiEscapes.length - 1].raw;
+    if (asciiEscapes.length == 0) {
+      min = 0;
+      escapes = new String[0];
     } else {
-      this.min = Math.min(base.min, asciiEscapes[0].raw);
-      max = Math.max(asciiEscapes[asciiEscapes.length - 1].raw,
-                     base.min + base.escapes.length - 1);
-    }
-    this.escapes = new String[max - min + 1];
-    if (base != null) {
-      System.arraycopy(base.escapes, 0, this.escapes, base.min - this.min,
-                       base.escapes.length);
-    }
-    for (Escape esc : asciiEscapes) {
-      int idx = esc.raw - min;
-      if (escapes[idx] == null) { escapes[idx] = esc.escaped; }
+      Arrays.sort(asciiEscapes);
+      int max;
+      if (base == null) {
+        this.min = asciiEscapes[0].raw;
+        max = asciiEscapes[asciiEscapes.length - 1].raw;
+      } else {
+        this.min = Math.min(base.min, asciiEscapes[0].raw);
+        max = Math.max(asciiEscapes[asciiEscapes.length - 1].raw,
+                       base.min + base.escapes.length - 1);
+      }
+      this.escapes = new String[max - min + 1];
+      if (base != null) {
+        System.arraycopy(base.escapes, 0, this.escapes, base.min - this.min,
+                         base.escapes.length);
+      }
+      for (Escape esc : asciiEscapes) {
+        int idx = esc.raw - min;
+        if (escapes[idx] == null) { escapes[idx] = esc.escaped; }
+      }
     }
   }
 

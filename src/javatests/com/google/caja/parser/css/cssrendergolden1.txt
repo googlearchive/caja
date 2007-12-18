@@ -120,7 +120,7 @@ CENTER {
   text-align: center
 }
 BR:before {
-  content: '\A'
+  content: '\A '
 }
 ABBR, ACRONYM {
   font-variant: small-caps;

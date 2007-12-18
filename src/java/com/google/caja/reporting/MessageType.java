@@ -15,9 +15,7 @@
 package com.google.caja.reporting;
 
 import java.io.IOException;
-import java.util.EnumMap;
 import java.util.Formatter;
-import java.util.Map;
 
 /**
  * The type of a {Message message}.
@@ -157,16 +155,31 @@ public enum MessageType implements MessageTypeInt {
   CHECKPOINT("Checkpoint: %s at T+%s seconds", MessageLevel.LOG),
   ;
 
-  private String formatString;
-  private MessageLevel level;
+  private final String formatString;
+  private final MessageLevel level;
+  private final int paramCount;
 
   MessageType(String formatString, MessageLevel level) {
     this.formatString = formatString;
     this.level = level;
+    this.paramCount = formatStringArity(formatString);
   }
 
   public void format(MessagePart[] parts, MessageContext context,
                      Appendable out) throws IOException {
+    formatMessage(formatString, parts, context, out);
+  }
+
+  public MessageLevel getLevel() { return level; }
+
+  public int getParamCount() {
+    return paramCount;
+  }
+
+  public static void formatMessage(
+      String formatString, MessagePart[] parts, MessageContext context,
+      Appendable out)
+      throws IOException {
     Object[] partStrings = new Object[parts.length];
     for (int i = 0; i < parts.length; ++i) {
       StringBuilder sb = new StringBuilder();
@@ -176,29 +189,18 @@ public enum MessageType implements MessageTypeInt {
     new Formatter(out).format(formatString, partStrings);
   }
 
-  public MessageLevel getLevel() { return level; }
-
-  private static Map<MessageType, Integer> PARAM_COUNTS =
-    new EnumMap<MessageType, Integer>(MessageType.class);
-
-  static {
-    for (MessageType mt : MessageType.values()) {
-      int count = 0;
-      for (int i = 0, n = mt.formatString.length(); i < n; ++i) {
-        char ch = mt.formatString.charAt(i);
-        if ('%' == ch) {
-          if (i + 1 < n && '%' != mt.formatString.charAt(i + 1)) {
-            ++count;
-          } else {
-            ++i;
-          }
+  public static int formatStringArity(String formatString) {
+    int count = 0;
+    for (int i = 0, n = formatString.length(); i < n; ++i) {
+      char ch = formatString.charAt(i);
+      if ('%' == ch) {
+        if (i + 1 < n && '%' != formatString.charAt(i + 1)) {
+          ++count;
+        } else {
+          ++i;
         }
       }
-      PARAM_COUNTS.put(mt, Integer.valueOf(count));
     }
-  }
-
-  public int getParamCount() {
-    return PARAM_COUNTS.get(this).intValue();
+    return count;
   }
 }

@@ -21,6 +21,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
@@ -45,11 +46,12 @@ final class JsWriter {
    * precede it.
    *
    * @param toAppend an expression taht should evaluate to a string
-   * @param tgt the name of an Array to append to, like "out___"
+   * @param tgtMembers the parts of a dotted name of a function to call, such as
+   *   <code>{ "out___", "push" }</code> to append to an Array {@code "out___"}.
    * @param b a block to append the a statement whose side effect is to
    *   append the result of evaluating toAppend to the list described by tgt.
    */
-  static void append(Expression toAppend, String tgt, Block b) {
+  static void append(Expression toAppend, List<String> tgtMembers, Block b) {
     Operation fnCall = null;
     // Look for an existing call to push
     List<? extends Statement> children = b.children();
@@ -62,9 +64,7 @@ final class JsWriter {
           Expression fn = ((Operation) e).children().get(0);
           if (fn instanceof Operation) {
             Operation fnOp = (Operation) fn;
-            if (Operator.MEMBER_ACCESS == fnOp.getOperator()
-                && matchesReference(fnOp.children().get(0), tgt)
-                && matchesReference(fnOp.children().get(1), "push")) {
+            if (matchesChain(fnOp, tgtMembers)) {
               fnCall = (Operation) e;
             }
           }
@@ -73,12 +73,14 @@ final class JsWriter {
     }
     // Make one
     if (null == fnCall) {
+      Expression target = s(new Reference(tgtMembers.get(0)));
+      for (int i = 1; i < tgtMembers.size(); ++i) {
+        target = s(new Operation(Operator.MEMBER_ACCESS,
+                                 target, s(new Reference(tgtMembers.get(i)))));
+      }
+
       fnCall = s(new Operation(Operator.FUNCTION_CALL,
-                               s(new Operation(Operator.MEMBER_ACCESS,
-                                               s(new Reference(tgt)),
-                                               s(new Reference("push"))))
-                               )
-                 );
+                               target));
       b.insertBefore(s(new ExpressionStmt(fnCall)), null);
     }
     if (toAppend instanceof StringLiteral) {
@@ -101,62 +103,25 @@ final class JsWriter {
     fnCall.insertBefore(toAppend, null);
   }
 
-  static void appendString(String string, String tgt, Block b) {
-    append(s(new StringLiteral(StringLiteral.toQuotedValue(string))), tgt, b);
+  static void appendString(String string, List<String> tgtChain, Block b) {
+    JsWriter.append(
+        s(new StringLiteral(StringLiteral.toQuotedValue(string))), tgtChain, b);
   }
 
-  static void appendText(String text, Esc escaping, String tgt, Block b) {
+  static void appendText(
+      String text, Esc escaping, List<String> tgtChain, Block b) {
     if ("".equals(text)) { return; }
     JsWriter.append(
         s(new StringLiteral(
               StringLiteral.toQuotedValue(
                   escaping != JsWriter.Esc.NONE ? htmlEscape(text) : text))),
-                  tgt, b);
-  }
-
-  private static boolean matchesReference(Expression e, String label) {
-    return e instanceof Reference
-        && label.equals(((Reference) e).getIdentifier());
+                  tgtChain, b);
   }
 
   static String htmlEscape(String text) {
-    StringBuilder out = null;
-    int pos = 0;
-    int len = text.length();
-    for (int i = 0; i < len; ++i) {
-      char ch = text.charAt(i);
-      switch (ch) {
-        case '&':
-          if (out == null) { out = new StringBuilder(len * 2); }
-          out.append(text, pos, i).append("&amp;");
-          pos = i + 1;
-          break;
-        case '<':
-          if (out == null) { out = new StringBuilder(len * 2); }
-          out.append(text, pos, i).append("&lt;");
-          pos = i + 1;
-          break;
-        case '>':
-          if (out == null) { out = new StringBuilder(len * 2); }
-          out.append(text, pos, i).append("&gt;");
-          pos = i + 1;
-          break;
-        case '"':
-          if (out == null) { out = new StringBuilder(len * 2); }
-          out.append(text, pos, i).append("&quot;");
-          pos = i + 1;
-          break;
-        case '\r': case '\n': case '\t': break;
-        default:
-          if (ch < 0x20) {
-            if (out == null) { out = new StringBuilder(len * 2); }
-            out.append(text, pos, i).append("&#").append((int) ch).append(';');
-            pos = i + 1;
-          }
-          break;
-      }
-    }
-    return out != null ? out.append(text, pos, len).toString() : text;
+    StringBuilder out = new StringBuilder();
+    Escaping.escapeXml(text, false, out);
+    return out.toString();
   }
 
   static Expression asExpression(
@@ -191,6 +156,28 @@ final class JsWriter {
     return e;
   }
 
+  private static boolean matchesChain(Expression e, List<String> refChain) {
+    return matchesChain(e, refChain, refChain.size() - 1);
+  }
+
+  private static boolean matchesChain(
+      Expression e, List<String> refChain, int i) {
+    if (0 == i) {
+      if (!(e instanceof Reference)) { return false; }
+      String ident = ((Reference) e).getIdentifier();
+      return ident.equals(refChain.get(0));
+    }
+    if (!(e instanceof Operation)) { return false; }
+    Operation op = (Operation) e;
+    if (Operator.MEMBER_ACCESS != op.getOperator()) { return false; }
+    List<? extends Expression> children = op.children();
+    Expression lhs = children.get(0);
+    Expression rhs = children.get(1);
+    if (!(rhs instanceof Reference)) { return false; }
+    String ident = ((Reference) rhs).getIdentifier();
+    if (!ident.equals(refChain.get(i))) { return false; }
+    return matchesChain(lhs, refChain, i - 1);
+  }
 
   static enum Esc {
     HTML,
