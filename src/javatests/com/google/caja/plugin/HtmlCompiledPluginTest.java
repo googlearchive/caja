@@ -49,50 +49,108 @@ public class HtmlCompiledPluginTest extends TestCase {
     execGadget("", "");
   }
 
+  /**
+   * Tests that the container can get access to
+   * "virtual globals" defined in cajoled code.
+   * 
+   * @throws Exception
+   */
   public void testWrapperAccess() throws Exception {
     execGadget(
         "<script>x='test';</script>",
-        "if (___.latestOuters.x != 'test') fail('Cannot see inside the wrapper');"
+        "if (___.getNewModuleHandler().getOuters().x != 'test') {" +
+          "fail('Cannot see inside the wrapper');" +
+        "}"
         );
   }
 
-  public void testArrayPoisoning() throws Exception {
+  /**
+   * Tests that Array.prototype cannot be modified.
+   *  
+   * @throws Exception
+   */
+  public void testFrozenArray() throws Exception {
     execGadget(
-        "<script>try { Array.prototype[4] = 'four'; } catch(e) {}</script>",
-        "a=[]; if (a[4]=='four') fail('Array poisoned');"
+        "<script>" +
+        "var success = false;" +
+        "try {" + 
+          "Array.prototype[4] = 'four';" +
+        "} catch (e){" +
+          "success = true;" +
+        "}" +
+        "if (!success) fail('Array not frozen.');" +
+        "</script>",
+        ""
         );
   }
 
-  public void testObjectPoisoning() throws Exception {
+  /**
+   * Tests that Object.prototype cannot be modified.
+   * 
+   * @throws Exception
+   */
+  public void testFrozenObject() throws Exception {
     execGadget(
-        "<script>try { Object.prototype.toString = " +
-        "function(){ this.name='mud'; }; } catch(e) {}</script>",
-        "o={}; o.toString(); " +
-        "if (o.name) fail('Object poisoned');"
+        "<script>" +
+        "var success = false;" +
+        "try {" + 
+          "Object.prototype.x = 'X';" +
+        "} catch (e){" +
+          "success = true;" +
+        "}" +
+        "if (!success) fail('Object not frozen.');" +
+        "</script>",
+        ""
         );
   }
 
+  /**
+   * Tests that eval is uncallable.
+   * 
+   * @throws Exception
+   */
   public void testEval() throws Exception {
     execGadget(
-        "<script>x=eval;</script>",
-        "if (___.latestOuters.x) fail('eval is accessible');"
+        "<script>var success=false;" +
+          "try{eval('1')}catch(e){success=true;}" + 
+          "if (!success)fail('Outer eval is accessible.')</script>",
+        ""
         );
   }
 
+  /**
+   * Tests that Object.eval is uncallable.
+   * 
+   * @throws Exception
+   */
   public void testObjectEval() throws Exception {
     execGadget(
-        "<script>x=Object.eval;</script>",
-        "if (___.latestOuters.x) fail('Object.eval is accessible');"
+        "<script>var success=false;" +
+          "try{Object.eval('1')}catch(e){success=true;}" + 
+          "if (!success)fail('Object.eval is accessible.')</script>",
+        ""
         );
   }
 
+  /**
+   * Tests that cajoled code can't construct new Function objects.
+   * 
+   * @throws Exception
+   */
   public void testFunction() throws Exception {
     execGadget(
-        "<script>x=Function;</script>",
-        "if (___.latestOuters.x) fail('eval is accessible');"
+        "<script>var success=false;" +
+          "try{var f=new Function('1')}catch(e){success=true;}" + 
+          "if (!success)fail('Function constructor is accessible.')</script>",
+        ""
         );
   }
 
+  /**
+   * Tests that constructors are inaccessible.
+   * 
+   * @throws Exception
+   */
   public void testConstructor() throws Exception {
     try {
       execGadget(
@@ -104,44 +162,72 @@ public class HtmlCompiledPluginTest extends TestCase {
     }
   }
 
+  /**
+   * Tests that arguments to functions are not mutable through the
+   * arguments array.
+   * 
+   * @throws Exception
+   */
   public void testMutableArguments() throws Exception {
     execGadget(
         "<script>" +
-        "function f(a, fail) {" +
-          "try { arguments[0] = 1; } catch(e) {}" +
-          "if (a) fail('Mutable arguments');" +
+        "function f(a) {" +
+          "try{" + 
+            "arguments[0] = 1;" +
+            "if (a) fail('Mutable arguments');" +
+          "} catch (e) {" +
+             // pass
+          "}" +
         "}" +
+        "f(0);" +
         "</script>",
-        "___.latestOuters.f(0, fail);"
+        ""
         );
   }
 
+  /**
+   * Tests that the caller attribute is unreadable.
+   * 
+   * @throws Exception
+   */
   public void testCaller() throws Exception {
     execGadget(
         "<script>" +
-        "function f(fail) {" +
+        "function f(x) {" +
           "if (arguments.caller || f.caller) fail('caller is accessible');" +
         "}" +
+        "f(1);" +
         "</script>",
-        "___.latestOuters.f(fail);"
+        ""
         );
   }
 
+  /**
+   * Tests that the callee attribute is unreadable.
+   * 
+   * @throws Exception
+   */
   public void testCallee() throws Exception {
     execGadget(
         "<script>" +
-        "function f(fail) {" +
-          "if (arguments.callee || f.callee) fail('callee is accessible');" +
+        "function f(x) {" +
+          "if (arguments.callee || f.callee) fail('caller is accessible');" +
         "}" +
+        "f(1);" +
         "</script>",
-        "___.latestOuters.f(fail);"
+        ""
         );
   }
 
+  /**
+   * Tests that arguments are immutable from another function's scope.
+   * 
+   * @throws Exception
+   */
   public void testCrossScopeArguments() throws Exception {
     execGadget(
         "<script>" +
-        "function f(a, fail) {" +
+        "function f(a) {" +
           "g();" +
           "if (a) fail('Mutable cross scope arguments');" +
         "}\n" +
@@ -149,73 +235,93 @@ public class HtmlCompiledPluginTest extends TestCase {
           "if (f.arguments) " +
             "f.arguments[0] = 1;" +
         "}" +
+        "f(0);" +
         "</script>",
-        "___.latestOuters.f(0, fail);"
+        ""
         );
   }
 
-  public void testCatch1() throws Exception {
+  /**
+   * Tests that exceptions are not visible outside of the catch block.
+   * 
+   * @throws Exception
+   */
+  public void testCatch() throws Exception {
     execGadget(
         "<script>" +
-        "function f(fail) {" +
-          "var e = 0;" +
-          "try{ throw 1; } catch (e) {}" +
-          "if (e) fail('Exception visible out of proper scope');" +
-        "}" +
+        "var e = 0;" +
+        "try{ throw 1; } catch (e) {}" +
+        "if (e) fail('Exception visible out of proper scope');" +
         "</script>",
-        "___.latestOuters.f(fail);"
+        ""
         );
   }
 
-  public void testCatch2() throws Exception {
+  /**
+   * Tests that cajoled can refer to the virtual global scope.
+   * 
+   * @throws Exception
+   */
+  public void testVirtualGlobalThis() throws Exception {
     execGadget(
-        "<script>" +
-        "(function () {" +
-          "try{ throw 1; } catch (e) {}" +
-        "})();" +
-        "function f(fail) {" +
-          "if (e) fail('Exception visible out of proper scope');" +
-        "}" +
-        "</script>",
-        "___.latestOuters.f(fail);"
+        "<script>x=this;</script>",
+        ""
         );
   }
-
+  
+  /**
+   * Tests that the virtual global scope is not the real global scope.
+   * 
+   * @throws Exception
+   */
   public void testThisIsGlobalScope() throws Exception {
     execGadget(
-        "<script>" +
-        "var x;" +
-        "(function () { try { x=this.document.cookie; } catch(e) {} })();" +
-        "function f(fail) { if (x) fail('this accesses global scope') };" +
-        "</script>",
-        "___.latestOuters.f(fail);"
+        "<script>try{x=this;}catch(e){}</script>",
+        "if (___.getNewModuleHandler().getOuters().x === this)" +
+          "fail('Global scope is accessible');"
         );
   }
 
+  /**
+   * Tests that setTimeout is uncallable.
+   * 
+   * @throws Exception
+   */
   public void testSetTimeout() throws Exception {
     execGadget(
-        "<script>x=setTimeout;</script>",
-        "if (___.latestOuters.x === setTimeout) fail('setTimeout is accessible');"
+        "<script>success=false;try{setTimeout('1',10);}" +
+        "catch(e){success=true;}" +
+        "if(!success)fail('setTimeout is accessible');</script>",
+        ""
         );
   }
 
+  /**
+   * Tests that Object.watch is uncallable.
+   * 
+   * @throws Exception
+   */
   public void testObjectWatch() throws Exception {
     execGadget(
-        "<script>x={}; x=x.watch;</script>",
-        "if (___.latestOuters.x) fail('Object.watch is accessible');"
+        "<script>x={}; success=false;" +
+        "try{x.watch(y, function(){});}" +
+        "catch(e){success=true;}" +
+        "if(!success)fail('Object.watch is accessible');</script>",
+        ""
         );
   }
 
+  /**
+   * Tests that unreadable global properties are not readable by way of
+   * Object.toSource().
+   * 
+   * @throws Exception
+   */
   public void testToSource() throws Exception {
     execGadget(
-        "<script>" +
-        "function f(fail) {" +
-          "if (toSource) {" +
-            "fail('top level toSource is accessible: ' + toSource);" +
-          "}" +
-        "}" +
-        "</script>",
-        "___.latestOuters.f(fail);"
+        "<script>try{x=toSource();}catch(e){}" +
+        "if(x) fail('Global write-only values are readable.');</script>",
+        ""
         );
   }
 
@@ -239,14 +345,8 @@ public class HtmlCompiledPluginTest extends TestCase {
               "browser-stubs.js"),
           new RhinoTestBed.Input(CompiledPluginTest.class, "asserts.js"),
           // Plugin Framework
-          new RhinoTestBed.Input(
-              CompiledPluginTest.class,
-              "caps/wrap_capability.js"),
-              // TODO(benl): read this from where it really is
-//            new RhinoTestBed.Input(CompiledPluginTest.class,
-//            "../../../../../js/com/google/caja/caja.js"),
-          new RhinoTestBed.Input(CompiledPluginTest.class, "tmp-caja.js"),
-          new RhinoTestBed.Input(CompiledPluginTest.class, "html-sanitizer.js"),
+          new RhinoTestBed.Input(CompiledPluginTest.class, "../caja.js"),
+          new RhinoTestBed.Input(CompiledPluginTest.class, "container.js"),
           new RhinoTestBed.Input(
               new StringReader(
                   "var div = document.createElement('div');\n" +
