@@ -14,6 +14,10 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.parser.ParseTreeNode;
+
+import java.util.List;
+
 /**
  * The literal value "undefined".
  * Undefined is not a keyword, it's just a variable initialized to
@@ -26,6 +30,14 @@ public final class UndefinedLiteral extends Literal {
   public static final String VALUE_NAME = "undefined";
   public static final UndefinedPlaceholder VALUE = new UndefinedPlaceholder();
 
+  public UndefinedLiteral(UndefinedPlaceholder value,
+                          List<? extends ParseTreeNode> children) {
+    this();
+  }
+
+  public UndefinedLiteral() {
+  }
+  
   @Override
   public UndefinedPlaceholder getValue() {
     return VALUE;

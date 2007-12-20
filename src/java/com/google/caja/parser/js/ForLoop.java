@@ -30,11 +30,17 @@ public final class ForLoop extends Loop implements NestedScope {
   private Statement increment;
   private Statement body;
 
+  public ForLoop(String value, List<? extends ParseTreeNode> children) {
+    this(value,
+         (Statement) children.get(0),
+         (Expression) children.get(1),
+         (Statement) children.get(2),
+         (Statement) children.get(3));
+  }
+
   public ForLoop(String label, Statement initializer, Expression cond,
                  Statement increment, Statement body) {
     super(label);
-    if (null == initializer) { throw new NullPointerException(); }
-    if (null == increment) { throw new NullPointerException(); }
     createMutation()
         .appendChild(initializer)
         .appendChild(cond)
@@ -57,8 +63,6 @@ public final class ForLoop extends Loop implements NestedScope {
   public Expression getCondition() { return condition; }
   @Override
   public Statement getBody() { return body; }
-  @Override
-  public boolean isDoLoop() { return false; }
   public Statement getInitializer() { return this.initializer; }
   public Statement getIncrement() { return this.increment; }
 

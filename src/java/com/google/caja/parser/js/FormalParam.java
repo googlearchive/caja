@@ -17,6 +17,7 @@ package com.google.caja.parser.js;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * A function parameter declaration.
@@ -24,12 +25,16 @@ import java.io.IOException;
  * @author mikesamuel@gmail.com
  */
 public final class FormalParam extends Declaration {
-  public FormalParam(String identifier) {
-    super(identifier, null);
+  public FormalParam(Void value, List<? extends Expression> children) {
+    super(value, children);
+  }
+  
+  public FormalParam(Identifier identifier) {
+    super(identifier, (Expression)null);
   }
 
   @Override
   public void render(RenderContext rc) throws IOException {
-    rc.out.append(getIdentifier());
+    rc.out.append(getIdentifierName());
   }
 }

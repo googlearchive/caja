@@ -23,6 +23,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ExpressionStmt;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.NullLiteral;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
@@ -41,7 +42,6 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.URI;
 import java.util.Collections;
-import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -83,13 +83,15 @@ public class ExpressionSanitizerTest extends TestCase {
     MessageQueue mq = new EchoingMessageQueue(
         new PrintWriter(new OutputStreamWriter(System.out)), mc);
     Statement pt = TestUtil.parseTree(getClass(), "sanitizerinput1.js", mq);
+    TestUtil.checkFilePositionInvariants(pt);
+
     new ExpressionSanitizer(mq).sanitize(ac(pt));
     StringBuilder out = new StringBuilder();
 
     pt.formatTree(mc, 0, out);
     assertEquals(golden.trim(), out.toString().trim());
 
-    checkFilePositionInviariants(ac(pt));
+    TestUtil.checkFilePositionInvariants(pt);
   }
 
   public void testArithmetic() throws Exception {
@@ -219,42 +221,6 @@ public class ExpressionSanitizerTest extends TestCase {
     assertEquals(input, sanitary, actualSanitary);
   }
 
-  private void checkFilePositionInviariants(AncestorChain<?> nChain) {
-    ParseTreeNode n = nChain.node;
-    String msg = n + " : " + n.getFilePosition();
-    try {
-      // require that n start on or after its previous sibling
-      ParseTreeNode prev = nChain.getPrevSibling();
-      assertTrue(msg, null == prev
-                 || (prev.getFilePosition().endCharInFile()
-                     <= n.getFilePosition().startCharInFile()));
-
-      // require that n end on or before its next sibling
-      ParseTreeNode next = nChain.getNextSibling();
-      assertTrue(msg, null == next
-                 || (next.getFilePosition().startCharInFile()
-                     >= n.getFilePosition().endCharInFile()));
-
-      // require that n encompass its children
-      List<? extends ParseTreeNode> children = n.children();
-      if (!children.isEmpty()) {
-        ParseTreeNode first = children.get(0),
-                       last = children.get(children.size() - 1);
-        assertTrue(msg, first.getFilePosition().startCharInFile()
-                   >= n.getFilePosition().startCharInFile());
-        assertTrue(msg, last.getFilePosition().endCharInFile()
-                   <= n.getFilePosition().endCharInFile());
-      }
-
-      for (ParseTreeNode c : children) {
-        checkFilePositionInviariants(
-            new AncestorChain<ParseTreeNode>(nChain, c));
-      }
-    } catch (RuntimeException ex) {
-      throw new RuntimeException(msg, ex);
-    }
-  }
-
   public void testInProtectedNamespace() throws Exception {
     for (String s : new String[] {
            "__proto__", "plugin_get___", "plugin_require___", "safe_ex__",
@@ -272,14 +238,14 @@ public class ExpressionSanitizerTest extends TestCase {
   }
 
   public void testIsAssignedOnly1() throws Exception {
-    Reference r = new Reference("prototype");
+    Reference r = new Reference(new Identifier("prototype"));
     // Foo.prototype = 'bar'
     ExpressionStmt es = new ExpressionStmt(
         new Operation(
             Operator.ASSIGN,
             new Operation(
                 Operator.MEMBER_ACCESS,
-                new Reference("Foo"),
+                new Reference(new Identifier("Foo")),
                 r),
             new StringLiteral("'bar'")
             )
@@ -290,7 +256,7 @@ public class ExpressionSanitizerTest extends TestCase {
   }
 
   public void testIsAssignedOnly2() throws Exception {
-    Reference r = new Reference("prototype");
+    Reference r = new Reference(new Identifier("prototype"));
     // prototype['foo'] = 'bar'
     ExpressionStmt es = new ExpressionStmt(
         new Operation(
@@ -308,7 +274,7 @@ public class ExpressionSanitizerTest extends TestCase {
   }
 
   public void testIsAssignedOnly3() throws Exception {
-    Reference r = new Reference("prototype");
+    Reference r = new Reference(new Identifier("prototype"));
     ExpressionStmt es = new ExpressionStmt(r);
     AncestorChain<Reference> rChain = chainTo(es, r);
     assertTrue(!ExpressionSanitizer.isAssignedOnly(rChain, false));
@@ -316,12 +282,12 @@ public class ExpressionSanitizerTest extends TestCase {
   }
 
   public void testIsAssignedOnly4() throws Exception {
-    Reference r = new Reference("r");
+    Reference r = new Reference(new Identifier("r"));
     // x = r = null;
     ExpressionStmt es = new ExpressionStmt(
         new Operation(
             Operator.ASSIGN,
-            new Reference("x"),
+            new Reference(new Identifier("x")),
             new Operation(
                 Operator.ASSIGN,
                 r,

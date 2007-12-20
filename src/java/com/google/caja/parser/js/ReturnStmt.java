@@ -17,6 +17,7 @@ package com.google.caja.parser.js;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  *
@@ -24,6 +25,10 @@ import java.io.IOException;
  */
 public final class ReturnStmt extends AbstractStatement<Expression> {
   private Expression returnValue;
+
+  public ReturnStmt(Void value, List<? extends Expression> children) {
+    this(children.get(0));
+  }
 
   public ReturnStmt(Expression returnValue) {
     if (null != returnValue) {

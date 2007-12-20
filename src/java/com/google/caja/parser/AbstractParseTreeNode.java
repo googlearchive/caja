@@ -332,6 +332,17 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
   @Override
   public final boolean equals(Object o) { return this == o; }
 
+  @Override
+  public ParseTreeNode clone() {
+    List<ParseTreeNode> clonedChildren
+        = new ArrayList<ParseTreeNode>(children.size());
+    for (ParseTreeNode child : children) {
+      clonedChildren.add(child.clone());
+    }
+    return ParseTreeNodes.newNodeInstance(
+        getClass(), getValue(), clonedChildren);
+  }
+
   private final class MutationImpl implements MutableParseTreeNode.Mutation {
 
     private List<Change> changes = new ArrayList<Change>();

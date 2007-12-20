@@ -20,6 +20,15 @@ import java.util.regex.Pattern;
  * For a plugin, determines how its external dependencies are translated.
  */
 public final class PluginMeta {
+  public enum TranslationScheme {
+    /** The original code checked into SVN */
+    AAJA,
+    /** The programmatic tree walker strategy */
+    BAJA,
+    /** The quasiliteral rewriter */
+    CAJA
+  }
+
   /** The name of the javascript global variable that contains the namespace. */
   public final String namespaceName;
   /**
@@ -40,18 +49,18 @@ public final class PluginMeta {
    * comfortable assuming a single rootId.
    */
   public final String rootDomId;
-  /** Are we doing Baja translations? */
-  public final boolean isBaja;
+  /** What translation version are we using? */
+  public final TranslationScheme scheme;
   /** Used to generate names that are unique within the plugin's namespace. */
   private int guidCounter;
 
   public PluginMeta(String namespaceName, String namespacePrefix,
-                    String rootDomId, boolean isBaja) {
-    this(namespaceName, namespacePrefix, "", rootDomId, isBaja);
+                    String rootDomId, TranslationScheme scheme) {
+    this(namespaceName, namespacePrefix, "", rootDomId, scheme);
   }
 
   public PluginMeta(String namespaceName, String namespacePrefix,
-                    String pathPrefix, String rootDomId, boolean isBaja) {
+                    String pathPrefix, String rootDomId, TranslationScheme scheme) {
     if (null == namespaceName || null == namespacePrefix
         || null == pathPrefix || null == rootDomId) {
       throw new NullPointerException();
@@ -66,7 +75,7 @@ public final class PluginMeta {
     this.namespacePrefix = namespacePrefix;
     this.pathPrefix = pathPrefix;
     this.rootDomId = rootDomId;
-    this.isBaja = isBaja;
+    this.scheme = scheme;
     if (CONSTANT_NAME.matcher(this.namespaceName).matches()) {
       this.namespacePrivateName = this.namespaceName + "_PRIVATE";
     } else {

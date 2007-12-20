@@ -35,6 +35,7 @@ import com.google.caja.parser.css.Css2;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Expression;
@@ -107,8 +108,8 @@ public class HtmlPluginCompiler {
   private ObjectConstructor pluginPrivate;
 
   public HtmlPluginCompiler(String nsName, String nsPrefix,
-                            String rootDivId, boolean isBaja) {
-    this(new PluginMeta(nsName, nsPrefix, rootDivId, isBaja));
+                            String rootDivId, PluginMeta.TranslationScheme scheme) {
+    this(new PluginMeta(nsName, nsPrefix, rootDivId, scheme));
   }
 
   public HtmlPluginCompiler(PluginMeta meta) {
@@ -261,9 +262,9 @@ public class HtmlPluginCompiler {
     Block scriptDelegate
         = s(new Block(Collections.singletonList(
                 s(new FunctionDeclaration(
-                    calloutName,
+                    s(new Identifier(calloutName)),
                     s(new FunctionConstructor(
-                          calloutName, Collections.<FormalParam>emptyList(),
+                          s(new Identifier(calloutName)), Collections.<FormalParam>emptyList(),
                           parsedScriptBody)))))));
     scriptDelegate.setFilePosition(parsedScriptBody.getFilePosition());
 
@@ -618,7 +619,8 @@ public class HtmlPluginCompiler {
   // PLUGIN_PRIVATE.plugin = PLUGIN;
   // plugin_initialize___(PLUGIN);
   private void setupJsTree() {
-    if (meta.isBaja) {
+    if (meta.scheme == PluginMeta.TranslationScheme.BAJA ||
+        meta.scheme == PluginMeta.TranslationScheme.CAJA) {
       this.jsTree = s(new Block(
           Collections.<Statement>emptyList()
           ));
@@ -627,22 +629,22 @@ public class HtmlPluginCompiler {
                         Arrays.<Statement>asList(
                             // the private plugin
                             s(new Declaration(
-                                meta.namespacePrivateName, pluginPrivate)),
+                                s(new Identifier(meta.namespacePrivateName)), pluginPrivate)),
                             // the plugin namespace
                             s(new Declaration(
-                                meta.namespaceName, pluginNamespace)),
+                                s(new Identifier(meta.namespaceName)), pluginNamespace)),
                             s(new ExpressionStmt(s(new Operation(
                                 Operator.ASSIGN,
                                 s(new Operation(
                                     Operator.MEMBER_ACCESS,
-                                    s(new Reference(meta.namespacePrivateName)),
-                                    s(new Reference("plugin")))),
-                                s(new Reference(meta.namespaceName))
+                                    s(new Reference(s(new Identifier(meta.namespacePrivateName)))),
+                                    s(new Reference(s(new Identifier("plugin")))))),
+                                s(new Reference(s(new Identifier(meta.namespaceName))))
                                 )))),
                             s(new ExpressionStmt(s(new Operation(
                                 Operator.FUNCTION_CALL,
-                                s(new Reference("plugin_initialize___")),
-                                s(new Reference(meta.namespacePrivateName))))))
+                                s(new Reference(s(new Identifier("plugin_initialize___")))),
+                                s(new Reference(s(new Identifier(meta.namespacePrivateName))))))))
                         )));
     }
   }
@@ -703,7 +705,7 @@ public class HtmlPluginCompiler {
                 Operator.ASSIGN,
                 s(new Operation(
                       Operator.MEMBER_ACCESS,
-                      s(new Reference(meta.namespaceName)),
+                      s(new Reference(s(new Identifier(meta.namespaceName)))),
                       s(new Reference(handler.getIdentifier())))),
                 handler.getInitializer()))));
       addInput(new AncestorChain<Block>(
@@ -755,7 +757,7 @@ public class HtmlPluginCompiler {
   }
 
   private boolean moveGlobalDefinitionsIntoPluginNamespace() {
-    if (!meta.isBaja) {
+    if (meta.scheme == PluginMeta.TranslationScheme.AAJA) {
       HtmlGlobalDefRewriter rw = new HtmlGlobalDefRewriter(meta);
 
       for (Input input : inputs) {
@@ -802,8 +804,10 @@ public class HtmlPluginCompiler {
   }
 
   private boolean rewriteGlobalReference() {
-    new HtmlGlobalReferenceRewriter(meta, mq).rewrite(
-        this.jsTree, Collections.<String>emptySet());
+    if (meta.scheme != PluginMeta.TranslationScheme.CAJA) {
+      new HtmlGlobalReferenceRewriter(meta, mq).rewrite(
+          this.jsTree, Collections.<String>emptySet());
+    }
 
     boolean success = hasNoFatalErrors();
     System.out.println("rewriteGlobalReference: " + success);
@@ -824,13 +828,23 @@ public class HtmlPluginCompiler {
     }
 
     boolean valid;
-    if (meta.isBaja) {
-      valid = new ExpressionSanitizerBaja(mq, meta).sanitize(
-          new AncestorChain<Block>(this.jsTree));
-    } else {
-      valid = new ExpressionSanitizer(mq).sanitize(
-          new AncestorChain<Block>(this.jsTree));
+    switch (meta.scheme) {
+      case AAJA:
+        valid = new ExpressionSanitizer(mq).sanitize(
+            new AncestorChain<Block>(this.jsTree));
+        break;
+      case BAJA:
+        valid = new ExpressionSanitizerBaja(mq, meta).sanitize(
+            new AncestorChain<Block>(this.jsTree));
+        break;
+      case CAJA:
+        valid = new ExpressionSanitizerCaja(mq, meta).sanitize(
+            new AncestorChain<Block>(this.jsTree));
+        break;
+      default:
+        throw new RuntimeException("Unrecognized scheme: " + meta.scheme);
     }
+
     boolean success = valid && hasNoFatalErrors();
     System.out.println("validateJavascript: " + success);
     return success;
@@ -990,7 +1004,7 @@ class HtmlGlobalDefRewriter implements Visitor {
                     Operator.ASSIGN,
                     s(new Operation(
                         Operator.MEMBER_ACCESS,
-                        s(new Reference(meta.namespaceName)),
+                        s(new Reference(s(new Identifier(meta.namespaceName)))),
                         s(new Reference(d.getIdentifier())))),
                     initializer))));
       rewritten.setFilePosition(d.getFilePosition());
@@ -1040,7 +1054,7 @@ final class HtmlGlobalReferenceRewriter {
 
         if (node instanceof Reference) {
           Reference ref = (Reference) node;
-          String refName = ref.getIdentifier();
+          String refName = ref.getIdentifierName();
           if (!node.getAttributes().is(ExpressionSanitizer.SYNTHETIC)) {
             if (refName.endsWith("__")) {
               mq.addMessage(MessageType.ILLEGAL_NAME, ref.getFilePosition(),
@@ -1065,11 +1079,11 @@ final class HtmlGlobalReferenceRewriter {
               && !(!isFirstOperand && Operator.MEMBER_ACCESS == parentOp)
               && !(isFirstOperand && Operator.IN == parentOp)) {
 
-            Reference placeholder = new Reference("_");
+            Reference placeholder = s(new Reference(s(new Identifier("_"))));
             Operation pluginReference = s(
                 new Operation(
                     Operator.MEMBER_ACCESS,
-                    s(new Reference(meta.namespaceName)),
+                    s(new Reference(s(new Identifier(meta.namespaceName)))),
                     placeholder));
             parent.replaceChild(pluginReference, ref);
             pluginReference.replaceChild(ref, placeholder);
@@ -1095,7 +1109,7 @@ final class HtmlGlobalReferenceRewriter {
       if (node instanceof FunctionConstructor) { return false; }
       if (node instanceof Declaration
           && !(node instanceof FunctionDeclaration)) {
-        locals.add(((Declaration) node).getIdentifier());
+        locals.add(((Declaration) node).getIdentifierName());
       }
       return true;
     }

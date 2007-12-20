@@ -29,14 +29,15 @@ import com.google.caja.lexer.TokenQueue;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.css.CssParser;
+import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Parser;
@@ -51,7 +52,6 @@ import com.google.caja.util.Criterion;
 import com.google.caja.util.Pair;
 
 import java.io.StringReader;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -157,7 +157,7 @@ public class HtmlCompiler {
                 s(new ExpressionStmt(
                       s(new Operation(
                             Operator.FUNCTION_CALL,
-                            s(new Reference(extractedFunctionName)))))));
+                            s(new Reference(new Identifier(extractedFunctionName))))))));
           }
           return;
         } else if (tagName.equals("style")) {
@@ -546,12 +546,12 @@ public class HtmlCompiler {
         htmlc.eventHandlers.put(
             handlerFnName,
             s(new FunctionDeclaration(
-                  handlerFnName,
+                  new Identifier(handlerFnName),
                   s(new FunctionConstructor(
-                        null,
+                        new Identifier(null),
                         Collections.singletonList(
                             s(new FormalParam(
-                                  "event"))),
+                                  new Identifier("event")))),
                         handler)))));
 
         JsWriter.appendString(
@@ -564,9 +564,9 @@ public class HtmlCompiler {
                 Operator.FUNCTION_CALL,
                 s(new Operation(
                     Operator.MEMBER_ACCESS,
-                    s(new Reference("___")),
-                    s(new Reference("getId")))),
-                s(new Reference(htmlc.meta.namespaceName)))),
+                    s(new Reference(new Identifier("___"))),
+                    s(new Reference(new Identifier("getId"))))),
+                s(new Reference(new Identifier(htmlc.meta.namespaceName))))),
             tgtChain, out);
 
         StringBuilder sb = new StringBuilder(", '");

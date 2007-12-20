@@ -170,27 +170,37 @@ public final class PluginCompiler {
     // var PLUGIN = { .. };
     // PLUGIN_PRIVATE.plugin = PLUGIN;
     // plugin_initialize___(PLUGIN);
-    this.jsTree = s(new Block(
-                        Arrays.<Statement>asList(
-                            // The private plugin
-                            s(new Declaration(
-                                meta.namespacePrivateName, pluginPrivate)),
-                            // The plugin namespace
-                            s(new Declaration(
-                                meta.namespaceName, pluginNamespace)),
-                            s(new ExpressionStmt(s(new Operation(
-                                Operator.ASSIGN,
-                                s(new Operation(
-                                    Operator.MEMBER_ACCESS,
-                                    s(new Reference(meta.namespacePrivateName)),
-                                    s(new Reference("plugin")))),
-                                s(new Reference(meta.namespaceName))
+    this.jsTree
+        = s(new Block(Arrays.<Statement>asList(
+                // The private plugin
+                s(new Declaration(
+                      s(new Identifier(meta.namespacePrivateName)),
+                      pluginPrivate)),
+                // The plugin namespace
+                s(new Declaration(
+                      s(new Identifier(meta.namespaceName)), pluginNamespace)),
+                s(new ExpressionStmt(
+                      s(new Operation(
+                            Operator.ASSIGN,
+                            s(new Operation(
+                                  Operator.MEMBER_ACCESS,
+                                  s(new Reference(
+                                        s(new Identifier(
+                                              meta.namespacePrivateName)))),
+                                  s(new Reference(
+                                        s(new Identifier("plugin")))))),
+                            s(new Reference(
+                                  s(new Identifier(meta.namespaceName))))
                                 )))),
                             s(new ExpressionStmt(s(new Operation(
-                                Operator.FUNCTION_CALL,
-                                s(new Reference("plugin_initialize___")),
-                                s(new Reference(meta.namespacePrivateName))))))
-                        )));
+                                  Operator.FUNCTION_CALL,
+                                  s(new Reference(
+                                        s(new Identifier(
+                                              "plugin_initialize___")))),
+                                  s(new Reference(
+                                        s(new Identifier(
+                                              meta.namespacePrivateName))))))))
+                )));
     return hasNoFatalErrors();
   }
 
@@ -237,8 +247,9 @@ public final class PluginCompiler {
         Expression templateRef = s(
             new Operation(
                 Operator.MEMBER_ACCESS,
-                s(new Reference(meta.namespacePrivateName)),
-                s(new Reference(job.sig.getAssignedName()))));
+                s(new Reference(s(new Identifier(meta.namespacePrivateName)))),
+                s(new Reference(s(new Identifier(job.sig.getAssignedName()))))
+                ));
 
         // Either replace it or put a reference to it in the main plugin
         if (null == job.toReplace) {
@@ -262,13 +273,8 @@ public final class PluginCompiler {
     for (FunctionDeclaration handler : gxpc.getEventHandlers()) {
       StringLiteral gxpName = s(
           new StringLiteral(StringLiteral.toQuotedValue(
-              handler.getIdentifier())));
+              handler.getIdentifierName())));
       Expression function = handler.getInitializer();
-      handler.replaceChild(
-          new FunctionConstructor(
-              null, Collections.<FormalParam>emptyList(),
-              new Block(Collections.<Statement>emptyList())),
-          function);
       this.pluginNamespace.createMutation()
         .insertBefore(gxpName, null)
         .insertBefore(function, null)
@@ -292,7 +298,8 @@ public final class PluginCompiler {
       }
 
       StringLiteral templateName =
-        s(new StringLiteral(StringLiteral.toQuotedValue(function.getName())));
+        s(new StringLiteral(
+              StringLiteral.toQuotedValue(function.getIdentifier().getName())));
       this.pluginNamespace.createMutation()
         .insertBefore(templateName, null)
         .insertBefore(function, null)
@@ -375,11 +382,12 @@ public final class PluginCompiler {
                   s(new Operation(
                         Operator.MEMBER_ACCESS,
                         s(new FunctionConstructor(
-                              null, Collections.<FormalParam>emptyList(),
+                              s(new Identifier(null)),
+                              Collections.<FormalParam>emptyList(),
                               initFunctionBody)),
-                        s(new Reference("call"))
+                        s(new Reference(s(new Identifier("call"))))
                         )),
-                  s(new Reference(meta.namespaceName))
+                  s(new Reference(s(new Identifier(meta.namespaceName))))
                   ))
             )),
         null);
@@ -480,7 +488,7 @@ final class GxpCompileDirectiveReplacer implements Visitor {
     Expression fn = op.children().get(0),
               arg = op.children().get(1);
     if (!(fn instanceof Reference
-          && "compileGxp".equals(((Reference) fn).getIdentifier()))) {
+          && "compileGxp".equals(((Reference) fn).getIdentifierName()))) {
       return true;
     }
     ParseTreeNode parent = ancestors.getParentNode();
@@ -603,8 +611,9 @@ final class GlobalDefRewriter implements Visitor {
                     Operator.ASSIGN,
                     s(new Operation(
                         Operator.MEMBER_ACCESS,
-                        s(new Reference(meta.namespaceName)),
-                        s(new Reference(d.getIdentifier())))),
+                        s(new Reference(s(new Identifier(meta.namespaceName)))),
+                        s(new Reference(
+                              s(new Identifier(d.getIdentifierName())))))),
                     initializer))));
       rewritten.setFilePosition(d.getFilePosition());
       parent.replaceChild(rewritten, d);
@@ -657,7 +666,7 @@ final class GlobalReferenceRewriter {
           // We also don't want to rewrite synthetic nodes -- nodes created by
           // the PluginCompiler.
           List<? extends ParseTreeNode> siblings = parent.children();
-          if (!locals.contains(ref.getIdentifier())
+          if (!locals.contains(ref.getIdentifierName())
               && !ref.getAttributes().is(ExpressionSanitizer.SYNTHETIC)
               && !(parent instanceof Operation
                    && (Operator.MEMBER_ACCESS
@@ -667,7 +676,7 @@ final class GlobalReferenceRewriter {
             Operation pluginReference = s(
                 new Operation(
                     Operator.MEMBER_ACCESS,
-                    s(new Reference(meta.namespaceName)),
+                    s(new Reference(s(new Identifier(meta.namespaceName)))),
                     ref));
             parent.replaceChild(pluginReference, ref);
           }
@@ -691,7 +700,7 @@ final class GlobalReferenceRewriter {
       ParseTreeNode node = ancestors.node;
       if (node instanceof FunctionConstructor) { return false; }
       if (node instanceof Declaration) {
-        locals.add(((Declaration) node).getIdentifier());
+        locals.add(((Declaration) node).getIdentifierName());
       }
       return true;
     }

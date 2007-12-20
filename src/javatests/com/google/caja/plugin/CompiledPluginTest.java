@@ -70,10 +70,10 @@ public class CompiledPluginTest extends TestCase {
       execPlugin("console.log(\"testing test framework.  'foo' != 'bar'\");\n" +
                  "assertEquals('foo', 'bar');");
       fail("javascript asserts are borked");
-    } catch (JavaScriptException ex) {
-      // pass
     } catch (AssertionFailedError e) {
       // pass
+    } catch (Exception e) {
+      fail("javascript asserts are borked");
     }
   }
 
@@ -307,7 +307,7 @@ public class CompiledPluginTest extends TestCase {
   private static void execPlugin(String tests, PluginFile... pluginFiles)
       throws IOException, ParseException {
     PluginMeta meta =
-        new PluginMeta("PLUGIN", "pre", "/plugin1", "rootDiv", false);
+        new PluginMeta("PLUGIN", "pre", "/plugin1", "rootDiv", PluginMeta.TranslationScheme.AAJA);
     PluginCompiler pc = new PluginCompiler(meta);
 
     MessageContext mc = new MessageContext();

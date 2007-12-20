@@ -14,9 +14,11 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  *
@@ -25,37 +27,27 @@ import java.io.IOException;
 public class WhileLoop extends Loop {
   private Expression condition;
   private Statement body;
-  private boolean isDoLoop;
 
-  public WhileLoop(String label, Expression condition, Statement body,
-                   boolean isDoLoop) {
+  public WhileLoop(String label, List<? extends ParseTreeNode> children) {
+    this(label, (Expression) children.get(0), (Statement) children.get(1));
+  }
+
+  public WhileLoop(String label, Expression condition, Statement body) {
     super(label);
-    if (isDoLoop) {
-      createMutation().appendChild(body).appendChild(condition).execute();
-    } else {
-      createMutation().appendChild(condition).appendChild(body).execute();
-    }
+    createMutation().appendChild(condition).appendChild(body).execute();
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.isDoLoop = children().get(0) instanceof Statement;
-    if (isDoLoop) {
-      this.condition = (Expression) children().get(1);
-      this.body = (Statement) children().get(0);
-    } else {
-      this.condition = (Expression) children().get(0);
-      this.body = (Statement) children().get(1);
-    }
+    this.condition = (Expression) children().get(0);
+    this.body = (Statement) children().get(1);
   }
 
   @Override
   public Expression getCondition() { return condition; }
   @Override
   public Statement getBody() { return body; }
-  @Override
-  public boolean isDoLoop() { return isDoLoop; }
 
   public void render(RenderContext rc) throws IOException {
     String label = getLabel();
@@ -63,22 +55,11 @@ public class WhileLoop extends Loop {
       rc.out.append(label);
       rc.out.append(": ");
     }
-
-    if (isDoLoop()) {
-      rc.out.append("do");
-      body.renderBlock(rc, true, true, true);
-      rc.out.append("while (");
-      rc.indent += 2;
-      condition.render(rc);
-      rc.indent -= 2;
-      rc.out.append(")");
-    } else {
-      rc.out.append("while (");
-      rc.indent += 2;
-      condition.render(rc);
-      rc.indent -= 2;
-      rc.out.append(")");
-      body.renderBlock(rc, true, false, false);
-    }
+    rc.out.append("while (");
+    rc.indent += 2;
+    condition.render(rc);
+    rc.indent -= 2;
+    rc.out.append(")");
+    body.renderBlock(rc, true, false, false);
   }
 }

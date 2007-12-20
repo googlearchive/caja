@@ -221,10 +221,10 @@ public class HtmlCompiledPluginTest extends TestCase {
 
   public void execGadget(String gadgetSpec, String tests) throws Exception {
     HtmlPluginCompiler compiler = new HtmlPluginCompiler(
-        "test", "test", "test", true);
+        "___OUTERS___", "test", "test", PluginMeta.TranslationScheme.CAJA);
     DomTree html = parseHtml(gadgetSpec);
     if (html != null) { compiler.addInput(new AncestorChain<DomTree>(html)); }
-    
+
     boolean failed = !compiler.run();
 
     if (failed) {

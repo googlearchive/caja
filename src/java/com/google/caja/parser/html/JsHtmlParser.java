@@ -32,6 +32,7 @@ import com.google.caja.parser.js.BooleanLiteral;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
@@ -290,17 +291,23 @@ public final class JsHtmlParser  {
 
     FilePosition impliedNodePosition = FilePosition.startOf(pos);
 
-    FormalParam eventParam = new FormalParam("event");
+    Identifier eventParamId = new Identifier("event");
+    eventParamId.setFilePosition(impliedNodePosition);
+    FormalParam eventParam = new FormalParam(eventParamId);
     eventParam.setFilePosition(impliedNodePosition);
 
     // create the function
+    Identifier fcId = new Identifier(null);
+    fcId.setFilePosition(impliedNodePosition);
     FunctionConstructor fc = new FunctionConstructor(
-        null, Collections.<FormalParam>singletonList(eventParam), body);
+        fcId, Collections.<FormalParam>singletonList(eventParam), body);
     fc.setFilePosition(impliedNodePosition);
 
     // wrap the function in a declaration with an auto-generated name
     String name = createName(body.getFilePosition());
-    FunctionDeclaration fd = new FunctionDeclaration(name, fc);
+    Identifier fdId = new Identifier(name);
+    fdId.setFilePosition(impliedNodePosition);
+    FunctionDeclaration fd = new FunctionDeclaration(fdId, fc);
     fd.setFilePosition(impliedNodePosition);
 
     return fd;

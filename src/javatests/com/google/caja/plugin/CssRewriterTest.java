@@ -173,7 +173,7 @@ public class CssRewriterTest extends TestCase {
     }
 
     new CssRewriter(
-        new PluginMeta("Plugin", "test", "/foo", "rootDiv", false), mq)
+        new PluginMeta("Plugin", "test", "/foo", "rootDiv", PluginMeta.TranslationScheme.AAJA), mq)
             .rewrite(new AncestorChain<CssTree>(t));
 
     {

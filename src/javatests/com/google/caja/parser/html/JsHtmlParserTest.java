@@ -62,8 +62,8 @@ public class JsHtmlParserTest extends TestCase {
     String golden = TestUtil.readResource(getClass(), "htmlparsergolden1.txt");
     // get rid of classpath artifacts in anonymously named functions' names
     String actual = output.toString().replaceAll(
-        "FunctionDeclaration : _.*_com_google",
-        "FunctionDeclaration : ___com_google");
+        "Identifier : _.*_com_google",
+        "Identifier : ___com_google");
     assertEquals(golden, actual);
   }
 

@@ -1,43 +1,64 @@
 Block
-  Declaration : i
+  Declaration
+    Identifier : i
     Operation : ADDITION
       IntegerLiteral : 1
       IntegerLiteral : 1
-  FunctionDeclaration : F
-    FunctionConstructor : F
-      FormalParam : a
-      FormalParam : b
-      FormalParam : c
-      FormalParam : d
-      FormalParam : e
+  FunctionDeclaration
+    Identifier : F
+    FunctionConstructor
+      Identifier : F
+      FormalParam
+        Identifier : a
+      FormalParam
+        Identifier : b
+      FormalParam
+        Identifier : c
+      FormalParam
+        Identifier : d
+      FormalParam
+        Identifier : e
       Block
         ReturnStmt
           Operation : ADDITION
             Operation : ADDITION
-              Reference : a
+              Reference
+                Identifier : a
               Operation : DIVISION
                 Operation : MULTIPLICATION
-                  Reference : b
-                  Reference : c
-                Reference : d
-            Reference : e
+                  Reference
+                    Identifier : b
+                  Reference
+                    Identifier : c
+                Reference
+                  Identifier : d
+            Reference
+              Identifier : e
   MultiDeclaration
-    Declaration : x
+    Declaration
+      Identifier : x
       IntegerLiteral : 0
-    Declaration : y
-    Declaration : z
-    Declaration : else
+    Declaration
+      Identifier : y
+    Declaration
+      Identifier : z
+    Declaration
+      Identifier : else
   ExpressionStmt
     Operation : ASSIGN_SUM
-      Reference : x
+      Reference
+        Identifier : x
       Operation : ASSIGN
-        Reference : y
+        Reference
+          Identifier : y
         Operation : ASSIGN
-          Reference : z
+          Reference
+            Identifier : z
           IntegerLiteral : 14
   Conditional
     Operation : STRICTLY_EQUAL
-      Reference : y
+      Reference
+        Identifier : y
       Operation : SUBTRACTION
         Operation : SUBTRACTION
           IntegerLiteral : 1
@@ -46,31 +67,44 @@ Block
     Block
       ExpressionStmt
         Operation : FUNCTION_CALL
-          Reference : print
-          Reference : z
+          Reference
+            Identifier : print
+          Reference
+            Identifier : z
   Conditional
     Operation : LESS_THAN
-      Reference : x
-      Reference : y
+      Reference
+        Identifier : x
+      Reference
+        Identifier : y
     Block
       ExpressionStmt
         Operation : FUNCTION_CALL
-          Reference : print
-          Reference : x
+          Reference
+            Identifier : print
+          Reference
+            Identifier : x
     Operation : EQUAL
-      Reference : x
-      Reference : y
+      Reference
+        Identifier : x
+      Reference
+        Identifier : y
     ExpressionStmt
       Operation : FUNCTION_CALL
-        Reference : print
-        Reference : y
+        Reference
+          Identifier : print
+        Reference
+          Identifier : y
     ExpressionStmt
       Operation : FUNCTION_CALL
-        Reference : print
-        Reference : z
+        Reference
+          Identifier : print
+        Reference
+          Identifier : z
   ExpressionStmt
     Operation : ASSIGN
-      Reference : arr
+      Reference
+        Identifier : arr
       ArrayConstructor
         IntegerLiteral : 1
         IntegerLiteral : 2
@@ -86,26 +120,35 @@ Block
         UndefinedLiteral : undefined
         IntegerLiteral : 13
   ForLoop : 
-    Declaration : i
+    Declaration
+      Identifier : i
       IntegerLiteral : 0
     Operation : LESS_THAN
-      Reference : i
+      Reference
+        Identifier : i
       Operation : MEMBER_ACCESS
-        Reference : a
-        Reference : length
+        Reference
+          Identifier : a
+        Reference
+          Identifier : length
     ExpressionStmt
       Operation : PRE_INCREMENT
-        Reference : i
+        Reference
+          Identifier : i
     Block
       ExpressionStmt
         Operation : FUNCTION_CALL
-          Reference : print
+          Reference
+            Identifier : print
           Operation : MULTIPLICATION
             Operation : SQUARE_BRACKET
-              Reference : a
-              Reference : i
+              Reference
+                Identifier : a
+              Reference
+                Identifier : i
             IntegerLiteral : 2
-  Declaration : obj
+  Declaration
+    Identifier : obj
     ObjectConstructor
       StringLiteral : 'x'
       IntegerLiteral : 2
@@ -113,7 +156,8 @@ Block
       IntegerLiteral : 3
   SwitchStmt : 
     Operation : FUNCTION_CALL
-      Reference : foo
+      Reference
+        Identifier : foo
     CaseStmt
       IntegerLiteral : 1
       ReturnStmt
@@ -122,39 +166,50 @@ Block
       IntegerLiteral : 2
       Conditional
         Operation : STRICTLY_EQUAL
-          Reference : a
+          Reference
+            Identifier : a
           IntegerLiteral : 4
         Block
           BreakStmt : 
     CaseStmt
-      Reference : BAR
+      Reference
+        Identifier : BAR
       Block
         ExpressionStmt
           Operation : FUNCTION_CALL
-            Reference : f
+            Reference
+              Identifier : f
         ExpressionStmt
           Operation : FUNCTION_CALL
-            Reference : g
+            Reference
+              Identifier : g
     DefaultCaseStmt
       Block
         ExpressionStmt
           Operation : FUNCTION_CALL
-            Reference : zowie
+            Reference
+              Identifier : zowie
             Operation : FUNCTION_CALL
-              Reference : wowie
+              Reference
+                Identifier : wowie
         Noop
         Noop
   ForEachLoop : 
-    Declaration : i
-    Reference : array
+    Declaration
+      Identifier : i
+    Reference
+      Identifier : array
     Block
       ExpressionStmt
         Operation : FUNCTION_CALL
-          Reference : f
-          Reference : i
+          Reference
+            Identifier : f
+          Reference
+            Identifier : i
   ForEachLoop : 
     ExpressionStmt
-      Reference : i
+      Reference
+        Identifier : i
     ArrayConstructor
       IntegerLiteral : 1
       IntegerLiteral : 2
@@ -162,13 +217,18 @@ Block
     Block
       ExpressionStmt
         Operation : FUNCTION_CALL
-          Reference : f
-          Reference : i
-  Declaration : o
+          Reference
+            Identifier : f
+          Reference
+            Identifier : i
+  Declaration
+    Identifier : o
     Operation : CONSTRUCTOR
-      Reference : Object
+      Reference
+        Identifier : Object
   SwitchStmt : 
-    Reference : n
+    Reference
+      Identifier : n
     CaseStmt
       IntegerLiteral : 0
       Noop
@@ -178,38 +238,47 @@ Block
         Block
           ExpressionStmt
             Operation : FUNCTION_CALL
-              Reference : foo
+              Reference
+                Identifier : foo
         BreakStmt : 
     DefaultCaseStmt
       ExpressionStmt
         Operation : FUNCTION_CALL
-          Reference : panic
+          Reference
+            Identifier : panic
     CaseStmt
       IntegerLiteral : 2
       ExpressionStmt
         Operation : FUNCTION_CALL
-          Reference : bar
-  Declaration : n
+          Reference
+            Identifier : bar
+  Declaration
+    Identifier : n
     Operation : DIVISION
       RealLiteral : 1.0
       IntegerLiteral : 2
   WhileLoop : foo
-    Reference : x
+    Reference
+      Identifier : x
     Block
       Conditional
         Operation : FUNCTION_CALL
-          Reference : f
+          Reference
+            Identifier : f
         Block
           ContinueStmt : foo
       ExpressionStmt
         Operation : PRE_DECREMENT
-          Reference : x
+          Reference
+            Identifier : x
   ContinueStmt : bar
   SwitchStmt : label
-    Reference : x
+    Reference
+      Identifier : x
     CaseStmt
       IntegerLiteral : 4
       BreakStmt : label
   LabeledStmtWrapper : useless
     ExpressionStmt
-      Reference : hello
+      Reference
+        Identifier : hello

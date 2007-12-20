@@ -19,6 +19,7 @@ import com.google.caja.reporting.RenderContext;
 import java.io.IOException;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * An expression that applies an {@link Operator} to a number of operands.
@@ -27,6 +28,10 @@ import java.util.Arrays;
  */
 public class Operation extends AbstractExpression<Expression> {
   private Operator op;
+
+  public Operation(Operator value, List<? extends Expression> children) {
+    this(value, children.toArray(new Expression[children.size()]));
+  }
 
   public Operation(Operator op, Expression... params) {
     this.op = op;

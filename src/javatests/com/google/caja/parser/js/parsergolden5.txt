@@ -2,61 +2,80 @@ Block
   ExpressionStmt
     Operation : FUNCTION_CALL
       FunctionConstructor
+        Identifier
         Block
           ExpressionStmt
             Operation : FUNCTION_CALL
-              Reference : alert
+              Reference
+                Identifier : alert
               StringLiteral : 'hello world'
   ExpressionStmt
     Operation : FUNCTION_CALL
-      FunctionConstructor : a
+      FunctionConstructor
+        Identifier : a
         Block
           ExpressionStmt
             Operation : FUNCTION_CALL
-              Reference : alert
+              Reference
+                Identifier : alert
               StringLiteral : 'hello world'
   ExpressionStmt
     FunctionConstructor
+      Identifier
       Block
         ExpressionStmt
           Operation : FUNCTION_CALL
-            Reference : alert
+            Reference
+              Identifier : alert
             StringLiteral : 'hello world'
   ExpressionStmt
-    FunctionConstructor : b
+    FunctionConstructor
+      Identifier : b
       Block
         ExpressionStmt
           Operation : FUNCTION_CALL
-            Reference : alert
+            Reference
+              Identifier : alert
             StringLiteral : 'hello world'
-  FunctionDeclaration : c
-    FunctionConstructor : c
+  FunctionDeclaration
+    Identifier : c
+    FunctionConstructor
+      Identifier : c
       Block
         ExpressionStmt
           Operation : FUNCTION_CALL
-            Reference : alert
+            Reference
+              Identifier : alert
             StringLiteral : 'hello world'
   Noop
   ExpressionStmt
     FunctionConstructor
+      Identifier
       Block
         ExpressionStmt
           Operation : FUNCTION_CALL
-            Reference : alert
+            Reference
+              Identifier : alert
             StringLiteral : 'hello world'
-  Declaration : d
+  Declaration
+    Identifier : d
     FunctionConstructor
+      Identifier
       Block
         ExpressionStmt
           Operation : FUNCTION_CALL
-            Reference : alert
+            Reference
+              Identifier : alert
             StringLiteral : 'hello world'
-  Declaration : e
-    FunctionConstructor : f
+  Declaration
+    Identifier : e
+    FunctionConstructor
+      Identifier : f
       Block
         ExpressionStmt
           Operation : FUNCTION_CALL
-            Reference : alert
+            Reference
+              Identifier : alert
             StringLiteral : 'hello world'
   ExpressionStmt
     Operation : FUNCTION_CALL
@@ -68,19 +87,27 @@ Block
           IntegerLiteral : 5
           StringLiteral : 'invoke'
           FunctionConstructor
+            Identifier
             Block
               ExpressionStmt
                 Operation : FUNCTION_CALL
-                  Reference : doSomething
-                  Reference : this
+                  Reference
+                    Identifier : doSomething
+                  Reference
+                    Identifier : this
                   Operation : ADDITION
                     Operation : MEMBER_ACCESS
-                      Reference : this
-                      Reference : x
+                      Reference
+                        Identifier : this
+                      Reference
+                        Identifier : x
                     Operation : MEMBER_ACCESS
-                      Reference : this
-                      Reference : y
-        Reference : invoke
+                      Reference
+                        Identifier : this
+                      Reference
+                        Identifier : y
+        Reference
+          Identifier : invoke
   Block
     LabeledStmtWrapper : block
       ExpressionStmt

@@ -28,6 +28,10 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class Conditional extends AbstractStatement<ParseTreeNode> {
+  public Conditional(Void value, List<? extends ParseTreeNode> children) {
+    createMutation().appendChildren(children).execute();
+  }  
+
   public Conditional(
       List<Pair<Expression, Statement>> ifClauses, Statement elseClause) {
     if (ifClauses.isEmpty()) { throw new IllegalArgumentException(); }

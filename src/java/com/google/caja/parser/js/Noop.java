@@ -16,11 +16,17 @@ package com.google.caja.parser.js;
 
 import com.google.caja.reporting.RenderContext;
 
+import java.util.List;
+
 /**
  *
  * @author mikesamuel@gmail.com
  */
 public final class Noop extends AbstractStatement<Statement> {
+  public Noop(Void value, List<? extends Statement> children) {
+    assert children.isEmpty();
+  }
+
   public Noop() {}
 
   @Override

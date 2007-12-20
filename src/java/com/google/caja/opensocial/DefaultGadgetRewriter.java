@@ -24,6 +24,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.plugin.HtmlPluginCompiler;
+import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.MessageQueue;
 
 import java.io.IOException;
@@ -42,8 +43,18 @@ public class DefaultGadgetRewriter implements GadgetRewriter {
   private static final String ROOT_DIV_ID = "ROOT_DIV_ID";
 
   private MessageQueue mq;
+  private PluginMeta.TranslationScheme translationScheme;
   public DefaultGadgetRewriter(MessageQueue mq) {
     this.mq = mq;
+    this.translationScheme = PluginMeta.TranslationScheme.CAJA;
+  }
+
+  public PluginMeta.TranslationScheme getTranslationScheme() {
+    return translationScheme;
+  }
+
+  public void setTranslationScheme(PluginMeta.TranslationScheme translationScheme) {
+    this.translationScheme = translationScheme;
   }
 
   public MessageQueue getMessageQueue() {
@@ -96,7 +107,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter {
         is, new StringReader(htmlContent), false);
     if (tq.isEmpty()) { return null; }
     DomTree.Fragment contentTree = DomParser.parseFragment(tq);
-    
+
     if (contentTree == null) {
       mq.addMessage(OpenSocialMessageType.NO_CONTENT, is);
       throw new GadgetRewriteException("No content");
@@ -108,7 +119,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter {
       DomTree.Fragment content, final URI baseUri, final UriCallback callback)
       throws GadgetRewriteException {
     HtmlPluginCompiler compiler = new HtmlPluginCompiler(
-        JAVASCRIPT_PREFIX, DOM_PREFIX, ROOT_DIV_ID, true) {
+        JAVASCRIPT_PREFIX, DOM_PREFIX, ROOT_DIV_ID, translationScheme) {
           @Override
           protected CharProducer loadExternalResource(
               ExternalReference ref, String mimeType) {

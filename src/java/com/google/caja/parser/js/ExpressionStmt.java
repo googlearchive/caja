@@ -17,6 +17,7 @@ package com.google.caja.parser.js;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * A statement that contains an expression as its only child.  When control
@@ -27,6 +28,10 @@ import java.io.IOException;
  */
 public final class ExpressionStmt extends AbstractStatement<Expression> {
   private Expression expr;
+
+  public ExpressionStmt(Void value, List<? extends Expression> children) {
+    this(children.get(0));
+  }
 
   public ExpressionStmt(Expression expr) {
     appendChild(expr);

@@ -14,9 +14,11 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * A labeled statement implementation that can apply to any statement.
@@ -32,6 +34,10 @@ public final class LabeledStmtWrapper extends LabeledStatement {
   // TODO(mikesamuel): Erase the distinction between LabeledStmtWrapper and
   // LabeledStatement.
   private Statement body;
+
+  public LabeledStmtWrapper(String value, List<? extends ParseTreeNode> children) {
+    this(value, (Statement)children.get(0));
+  }
 
   public LabeledStmtWrapper(String label, Statement body) {
     super(label);

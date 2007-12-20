@@ -14,10 +14,22 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.parser.ParseTreeNode;
+
+import java.util.List;
+
 /**
  * @author mikesamuel@gmail.com
  */
 public final class NullLiteral extends Literal {
+  public NullLiteral(NullPlaceholder value,
+                     List<? extends ParseTreeNode> children) {
+    this();
+  }
+
+  public NullLiteral() {
+  }
+
   @Override
   public NullPlaceholder getValue() {
     return VALUE;

@@ -78,7 +78,7 @@ public class PluginCompilerTest extends TestCase {
     String golden = TestUtil.readResource(getClass(), goldenFile);
 
     PluginMeta meta = new PluginMeta("MY_TEST_PLUGIN","pre",
-                                     "/plugin1", "rootDiv", false);
+                                     "/plugin1", "rootDiv", PluginMeta.TranslationScheme.AAJA);
     PluginCompiler pc = new PluginCompiler(meta);
 
     MessageContext mc = new MessageContext();

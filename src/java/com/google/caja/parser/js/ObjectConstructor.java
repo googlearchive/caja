@@ -34,6 +34,10 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class ObjectConstructor extends AbstractExpression<Expression> {
+  public ObjectConstructor(Void value, List<? extends Expression> children) {
+    createMutation().appendChildren(children).execute();
+  }
+
   public ObjectConstructor(List<Pair<Literal, Expression>> properties) {
     Mutation m = createMutation();
     for (Pair<Literal, Expression> p : properties) {

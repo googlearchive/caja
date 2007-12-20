@@ -29,6 +29,9 @@ import java.util.List;
  */
 public final class Block
     extends AbstractStatement<Statement> implements NestedScope {
+  public Block(Void value, List<? extends Statement> children) {
+    this(children);
+  }
 
   public Block(List<? extends Statement> elements) {
     createMutation().appendChildren(elements).execute();

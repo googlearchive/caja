@@ -1,76 +1,109 @@
 Block
-  FunctionDeclaration : ___com_google_caja_parser_html_htmlparsertest1_gxp___ln_5__ch_14
+  FunctionDeclaration
+    Identifier : ___com_google_caja_parser_html_htmlparsertest1_gxp___ln_5__ch_14
     FunctionConstructor
-      FormalParam : event
+      Identifier
+      FormalParam
+        Identifier : event
       Block
         Block
           ExpressionStmt
             Operation : LOGICAL_AND
               Operation : FUNCTION_CALL
-                Reference : loading
+                Reference
+                  Identifier : loading
               Operation : FUNCTION_CALL
-                Reference : loaded
+                Reference
+                  Identifier : loaded
         ReturnStmt
           BooleanLiteral : true
   Block
     ExpressionStmt
       Operation : FUNCTION_CALL
         Operation : MEMBER_ACCESS
-          Reference : document
-          Reference : writeln
+          Reference
+            Identifier : document
+          Reference
+            Identifier : writeln
         StringLiteral : "generated from script tag"
-    Declaration : b
+    Declaration
+      Identifier : b
       Operation : LOGICAL_AND
-        Reference : c
-        Reference : d
-  FunctionDeclaration : ___com_google_caja_parser_html_htmlparsertest1_gxp___ln_15__ch_9
+        Reference
+          Identifier : c
+        Reference
+          Identifier : d
+  FunctionDeclaration
+    Identifier : ___com_google_caja_parser_html_htmlparsertest1_gxp___ln_15__ch_9
     FunctionConstructor
-      FormalParam : event
+      Identifier
+      FormalParam
+        Identifier : event
       Block
         Block
           ExpressionStmt
             Operation : FUNCTION_CALL
-              Reference : clicky
+              Reference
+                Identifier : clicky
         ReturnStmt
           BooleanLiteral : true
-  FunctionDeclaration : ___com_google_caja_parser_html_htmlparsertest1_gxp___ln_17__ch_14
+  FunctionDeclaration
+    Identifier : ___com_google_caja_parser_html_htmlparsertest1_gxp___ln_17__ch_14
     FunctionConstructor
-      FormalParam : event
+      Identifier
+      FormalParam
+        Identifier : event
       Block
         Block
           ExpressionStmt
             Operation : FUNCTION_CALL
-              Reference : divWasClicked
-              Reference : event
+              Reference
+                Identifier : divWasClicked
+              Reference
+                Identifier : event
         ReturnStmt
           BooleanLiteral : true
   Block
-    Declaration : b
+    Declaration
+      Identifier : b
       Operation : LOGICAL_AND
-        Reference : c
-        Reference : d
+        Reference
+          Identifier : c
+        Reference
+          Identifier : d
     ExpressionStmt
       Operation : ASSIGN
-        Reference : b
+        Reference
+          Identifier : b
         Operation : LOGICAL_AND
-          Reference : e
-          Reference : f
+          Reference
+            Identifier : e
+          Reference
+            Identifier : f
     ExpressionStmt
       Operation : FUNCTION_CALL
         Operation : MEMBER_ACCESS
-          Reference : document
-          Reference : writeln
+          Reference
+            Identifier : document
+          Reference
+            Identifier : writeln
         Operation : ADDITION
           StringLiteral : 'Hi '
-          Reference : _
-  FunctionDeclaration : ___com_google_caja_parser_html_htmlparsertest1_gxp___ln_36__ch_27
+          Reference
+            Identifier : _
+  FunctionDeclaration
+    Identifier : ___com_google_caja_parser_html_htmlparsertest1_gxp___ln_36__ch_27
     FunctionConstructor
-      FormalParam : event
+      Identifier
+      FormalParam
+        Identifier : event
       Block
         Block
           ExpressionStmt
             Operation : FUNCTION_CALL
-              Reference : handleThwacking
-              Reference : this
+              Reference
+                Identifier : handleThwacking
+              Reference
+                Identifier : this
         ReturnStmt
           BooleanLiteral : true

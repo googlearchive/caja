@@ -29,6 +29,10 @@ import java.util.Map;
 public final class ContinueStmt extends AbstractStatement<Statement> {
   private String label;
 
+  public ContinueStmt(String value, List<? extends Statement> children) {
+    this(value);
+  }
+
   public ContinueStmt(String label) {
     this.label = label;
   }

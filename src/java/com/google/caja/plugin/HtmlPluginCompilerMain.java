@@ -68,8 +68,8 @@ public final class HtmlPluginCompilerMain {
       new Option("r", "root_div_id", true,
           "ID of root <div> into which generated JS will inject content");
 
-  private static final Option IS_BAJA =
-      new Option("b", "baja", false, "Emit Baja code instead of Aaja code");
+  private static final Option SCHEME =
+      new Option("s", "caja", false, "Emit Baja code instead of Aaja code");
 
   private static final Options options = new Options();
 
@@ -80,7 +80,7 @@ public final class HtmlPluginCompilerMain {
     options.addOption(JS_NAME);
     options.addOption(CSS_PREFIX);
     options.addOption(ROOT_DIV_ID);
-    options.addOption(IS_BAJA);
+  //   options.addOption(IS_BAJA);
   }
 
   private File inputFile = null;
@@ -106,7 +106,7 @@ public final class HtmlPluginCompilerMain {
     }
 
     HtmlPluginCompiler compiler =
-        new HtmlPluginCompiler(jsName, cssPrefix, rootDivId, isBaja);
+        new HtmlPluginCompiler(jsName, cssPrefix, rootDivId, PluginMeta.TranslationScheme.CAJA);
     try {
       compiler.addInput(
           new AncestorChain<DomTree.Fragment>(parseHtmlFromFile(inputFile)));
@@ -146,7 +146,7 @@ public final class HtmlPluginCompilerMain {
       throw new RuntimeException(e);
     }
 
-    if (cl.hasOption(IS_BAJA.getOpt()))
+    // if (cl.hasOption(IS_BAJA.getOpt()))
       isBaja = true;
 
     if (cl.getOptionValue(INPUT.getOpt()) == null)

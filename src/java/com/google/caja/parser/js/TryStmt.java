@@ -29,6 +29,10 @@ public final class TryStmt extends AbstractStatement<Statement> {
   private CatchStmt cat;
   private FinallyStmt fin;
 
+  public TryStmt(Void value, List<? extends Statement> children) {
+    createMutation().appendChildren(children).execute();
+  }
+
   public TryStmt(Statement body, CatchStmt cat, FinallyStmt fin) {
     Mutation m = createMutation().appendChild(body);
     if (cat != null) {

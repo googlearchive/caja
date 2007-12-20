@@ -41,6 +41,7 @@ import com.google.caja.parser.js.ForEachLoop;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Parser;
@@ -58,7 +59,6 @@ import com.google.caja.util.Pair;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -194,7 +194,7 @@ public final class GxpCompiler {
     for (DomTree paramName : sig.parameterNames) {
       FormalParam param =
         s(new FormalParam(
-              assertSafeJsIdentifier(paramName.getValue(), paramName)));
+              new Identifier(assertSafeJsIdentifier(paramName.getValue(), paramName))));
       param.setFilePosition(paramName.getFilePosition());
       params.add(param);
     }
@@ -207,7 +207,7 @@ public final class GxpCompiler {
     Block body = s(new Block(Collections.<Statement>emptyList()));
     body.insertBefore(
         s(new Declaration(
-              OUTPUT_ARRAY_NAME,
+              new Identifier(OUTPUT_ARRAY_NAME),
               s(new ArrayConstructor(
                     Collections.<Expression>emptyList())))), null);
 
@@ -220,17 +220,17 @@ public final class GxpCompiler {
     ReturnStmt result = s(new ReturnStmt(
         s(new Operation(
             Operator.FUNCTION_CALL,
-            s(new Reference("plugin_blessHtml___")),
+            s(new Reference(new Identifier("plugin_blessHtml___"))),
             s(new Operation(Operator.FUNCTION_CALL,
                 s(new Operation(Operator.MEMBER_ACCESS,
-                                s(new Reference(OUTPUT_ARRAY_NAME)),
-                                s(new Reference("join")))),
+                                s(new Reference(new Identifier(OUTPUT_ARRAY_NAME))),
+                                s(new Reference(new Identifier("join"))))),
                 s(new StringLiteral("''"))
             ))
           ))
         ));
     body.insertBefore(result, null);
-    return s(new FunctionConstructor(sig.templateName, params, body));
+    return s(new FunctionConstructor(new Identifier(sig.templateName), params, body));
   }
 
   public Collection<? extends TemplateSignature> getSignatures() {
@@ -365,9 +365,9 @@ public final class GxpCompiler {
                 // Wrap the expression in a wrapper function
                 Operation e = s(new Operation(
                                     Operator.FUNCTION_CALL,
-                                    s(new Reference(wrapperFn)),
+                                    s(new Reference(new Identifier(wrapperFn))),
                                     asExpression(valueT),
-                                    s(new Reference(meta.namespacePrivateName))
+                                    s(new Reference(new Identifier(meta.namespacePrivateName)))
                                     ));
                 JsWriter.append(e, tgtChain, b);
               }
@@ -432,7 +432,7 @@ public final class GxpCompiler {
                 // var <synthId> = [];
                 b.insertBefore(
                     s(new Declaration(
-                          synthId,
+                          new Identifier(synthId),
                           s(new ArrayConstructor(
                                 Collections.<Expression>emptyList())))), null);
                 for (DomTree attr : attrTrimmed) {
@@ -444,18 +444,18 @@ public final class GxpCompiler {
                 JsWriter.append(
                     s(new Operation(
                           Operator.FUNCTION_CALL,
-                          s(new Reference("plugin_htmlAttr___")),
+                          s(new Reference(new Identifier("plugin_htmlAttr___"))),
                           s(new Operation(
                                 Operator.FUNCTION_CALL,
-                                s(new Reference(wrapperFn)),
+                                s(new Reference(new Identifier(wrapperFn))),
                                 s(new Operation(
                                       Operator.FUNCTION_CALL,
                                       s(new Operation(
                                             Operator.MEMBER_ACCESS,
-                                            s(new Reference(synthId)),
-                                            s(new Reference("join")))),
+                                            s(new Reference(new Identifier(synthId))),
+                                            s(new Reference(new Identifier("join"))))),
                                       s(new StringLiteral("''")))),
-                                s(new Reference(meta.namespacePrivateName)))))),
+                                s(new Reference(new Identifier(meta.namespacePrivateName))))))),
                     tgtChain, b);
               }
               JsWriter.appendString(
@@ -687,31 +687,31 @@ public final class GxpCompiler {
     String iteratorId = syntheticId(),
               keyName = syntheticId();
     b.insertBefore(
-        s(new Declaration(iteratorId, asExpression(iterator))), null);
+        s(new Declaration(new Identifier(iteratorId), asExpression(iterator))), null);
 
     Block forEachBody =
       s(new Block(
             Arrays.asList(
                 s(new Declaration(
-                      variableName,
+                      new Identifier(variableName),
                       s(new Operation(
                             Operator.SQUARE_BRACKET,
-                            s(new Reference(iteratorId)),
-                            s(new Reference(keyName)))))))));
+                            s(new Reference(new Identifier(iteratorId))),
+                            s(new Reference(new Identifier(keyName))))))))));
 
     Block ifBody =
       s(new Block(
             Arrays.asList(
                 s(new ForEachLoop(
                       null,
-                      s(new Declaration(keyName, null)),
-                      s(new Reference(iteratorId)),
+                      s(new Declaration(new Identifier(keyName), null)),
+                      s(new Reference(new Identifier(iteratorId))),
                       forEachBody)))));
     Conditional iteratorCheck =
       s(new Conditional(
             Collections.singletonList(
                 new Pair<Expression, Statement>(
-                    s(new Reference(iteratorId)),
+                    s(new Reference(new Identifier(iteratorId))),
                     ifBody)
                 ), null));
     b.insertBefore(iteratorCheck, null);
@@ -750,11 +750,11 @@ public final class GxpCompiler {
     switch (escaping) {
       case HTML:
         e = s(new Operation(Operator.FUNCTION_CALL,
-                            s(new Reference("plugin_html___")), e));
+                            s(new Reference(new Identifier("plugin_html___"))), e));
         break;
       case HTML_ATTRIB:
         e = s(new Operation(Operator.FUNCTION_CALL,
-                             s(new Reference("plugin_htmlAttr___")), e));
+                             s(new Reference(new Identifier("plugin_htmlAttr___"))), e));
         break;
       default: break;
     }
@@ -818,10 +818,10 @@ public final class GxpCompiler {
           Operator.MEMBER_ACCESS,
           s(new Operation(
               Operator.MEMBER_ACCESS,
-              s(new Reference(meta.namespacePrivateName)),
-              s(new Reference(sig.assignedName)))),
-          s(new Reference("call"))));
-    operands[1] = s(new Reference(meta.namespaceName));
+              s(new Reference(new Identifier(meta.namespacePrivateName))),
+              s(new Reference(new Identifier(sig.assignedName))))),
+          s(new Reference(new Identifier("call")))));
+    operands[1] = s(new Reference(new Identifier(meta.namespaceName)));
     Operation call = s(new Operation(Operator.FUNCTION_CALL, operands));
     JsWriter.append(call, tgtChain, b);
   }
@@ -1127,12 +1127,12 @@ public final class GxpCompiler {
         gxpc.eventHandlers.put(
             handlerFnName,
             s(new FunctionDeclaration(
-                  handlerFnName,
+                  new Identifier(handlerFnName),
                   s(new FunctionConstructor(
-                        null,
+                        new Identifier(null),
                         Collections.singletonList(
                             s(new FormalParam(
-                                  "event"))),
+                                  new Identifier("event")))),
                         handler)))));
 
         String owner = gxpc.meta.namespaceName;

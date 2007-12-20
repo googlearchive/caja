@@ -14,40 +14,55 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Introduces a variable into the current scope.
  *
  * @author mikesamuel@gmail.com
  */
-public class Declaration extends AbstractStatement<Expression> {
-  private String identifier;
+public class Declaration extends AbstractStatement<ParseTreeNode> {
+  private Identifier identifier;
   private Expression initializer;
 
-  public Declaration(String identifier, Expression initializer) {
-    this.identifier = identifier;
-    if (null != initializer) { appendChild(initializer); }
+  public Declaration(Void value, List<? extends ParseTreeNode> children) {
+    createMutation().appendChildren(children).execute();
+  }
+
+  public Declaration(Identifier identifier, Expression initializer) {
+    Mutation m = createMutation();
+    m.appendChild(identifier);
+    if (null != initializer) { m.appendChild(initializer); }
+    m.execute();
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.initializer = children().isEmpty() ? null : children().get(0);
-    if (children().size() > 1) {
+    List<? extends ParseTreeNode> children = children();
+    this.identifier = (Identifier) children.get(0);
+    this.initializer = (children.size() > 1
+                        ? (Expression) children.get(1)
+                        : null);
+    if (children.size() > 2) {
       throw new IllegalArgumentException(
-          "Declaration should only have at most 1 child");
+          "Declaration has extraneous children "
+          + children.subList(2, children.size()));
     }
   }
 
-  public String getIdentifier() { return this.identifier; }
+  public Identifier getIdentifier() { return this.identifier; }
+
+  public String getIdentifierName() { return this.identifier.getName(); }
 
   public Expression getInitializer() { return this.initializer; }
 
   @Override
-  public String getValue() { return identifier; }
+  public Object getValue() { return null; }
 
   public void render(RenderContext rc) throws IOException {
     rc.out.append("var ");
@@ -60,7 +75,12 @@ public class Declaration extends AbstractStatement<Expression> {
    * {@code for (var a = 0, b = 1, ...)}.
    */
   void renderShort(RenderContext rc) throws IOException {
-    rc.out.append(identifier);
+    String name = identifier.getName();
+    if (name == null) {
+      throw new IllegalStateException(
+          "null name for declaration at " + getFilePosition());
+    }
+    rc.out.append(name);
     if (null != initializer) {
       rc.out.append(" = ");
       initializer.render(rc);

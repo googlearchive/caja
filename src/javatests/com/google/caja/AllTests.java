@@ -25,13 +25,16 @@ import com.google.caja.lexer.escaping.EscapingTest;
 import com.google.caja.opensocial.DefaultGadgetRewriterTest;
 import com.google.caja.opensocial.GadgetParserTest;
 import com.google.caja.parser.ParseTreeNodeTest;
+import com.google.caja.parser.css.Css2Test;
 import com.google.caja.parser.css.CssParserTest;
 import com.google.caja.parser.css.CssTreeTest;
-import com.google.caja.parser.css.Css2Test;
 import com.google.caja.parser.html.DomParserTest;
 import com.google.caja.parser.html.JsHtmlParserTest;
 import com.google.caja.parser.js.ParserTest;
 import com.google.caja.parser.js.StringLiteralTest;
+import com.google.caja.parser.quasiliteral.DefaultRewriterTest;
+import com.google.caja.parser.quasiliteral.MatchTest;
+import com.google.caja.parser.quasiliteral.QuasiBuilderTest;
 import com.google.caja.plugin.CompiledPluginTest;
 import com.google.caja.plugin.CssRewriterTest;
 import com.google.caja.plugin.CssValidatorTest;
@@ -44,12 +47,11 @@ import com.google.caja.plugin.PluginCompilerTest;
 import com.google.caja.plugin.UrlUtilTest;
 import com.google.caja.plugin.caps.CapabilityRewriterTest;
 import com.google.caja.util.SparseBitSetTest;
-
-import java.util.regex.Pattern;
-
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+
+import java.util.regex.Pattern;
 
 /**
  * @author mikesamuel@gmail.com
@@ -90,6 +92,9 @@ public class AllTests {
           SparseBitSetTest.class,
           StringLiteralTest.class,
           UrlUtilTest.class,
+          MatchTest.class,
+          QuasiBuilderTest.class,
+          DefaultRewriterTest.class,
         };
     Pattern testFilter = Pattern.compile(System.getProperty("test.filter", ""));
     for (Class<? extends TestCase> testClass : testClasses) {

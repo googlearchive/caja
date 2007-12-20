@@ -14,8 +14,6 @@
 
 package com.google.caja.plugin;
 
-import java.util.List;
-
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.JsLexer;
@@ -26,6 +24,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Parser;
@@ -34,6 +33,8 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UndefinedLiteral;
 import com.google.caja.reporting.MessageQueue;
+
+import java.util.List;
 
 /**
  * Functions for composing javascript template functions.
@@ -73,10 +74,10 @@ final class JsWriter {
     }
     // Make one
     if (null == fnCall) {
-      Expression target = s(new Reference(tgtMembers.get(0)));
+      Expression target = s(new Reference(new Identifier(tgtMembers.get(0))));
       for (int i = 1; i < tgtMembers.size(); ++i) {
         target = s(new Operation(Operator.MEMBER_ACCESS,
-                                 target, s(new Reference(tgtMembers.get(i)))));
+                                 target, s(new Reference(new Identifier(tgtMembers.get(i))))));
       }
 
       fnCall = s(new Operation(Operator.FUNCTION_CALL,
@@ -164,7 +165,7 @@ final class JsWriter {
       Expression e, List<String> refChain, int i) {
     if (0 == i) {
       if (!(e instanceof Reference)) { return false; }
-      String ident = ((Reference) e).getIdentifier();
+      String ident = ((Reference) e).getIdentifierName();
       return ident.equals(refChain.get(0));
     }
     if (!(e instanceof Operation)) { return false; }
@@ -174,7 +175,7 @@ final class JsWriter {
     Expression lhs = children.get(0);
     Expression rhs = children.get(1);
     if (!(rhs instanceof Reference)) { return false; }
-    String ident = ((Reference) rhs).getIdentifier();
+    String ident = ((Reference) rhs).getIdentifierName();
     if (!ident.equals(refChain.get(i))) { return false; }
     return matchesChain(lhs, refChain, i - 1);
   }

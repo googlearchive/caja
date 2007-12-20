@@ -15,8 +15,10 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.escaping.Escaping;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * A regular expression literal like <code>/foo/i</code>.
@@ -25,6 +27,10 @@ import java.io.IOException;
  */
 public final class RegexpLiteral extends Literal {
   private RegexpWrapper value;
+
+  public RegexpLiteral(RegexpWrapper value, List<? extends ParseTreeNode> children) {
+    this(value);
+  }
 
   public RegexpLiteral(RegexpWrapper value) {
     this.value = value;

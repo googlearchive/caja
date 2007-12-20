@@ -46,17 +46,30 @@ public class JsLexer implements TokenStream<JsTokenType> {
   }
 
   public JsLexer(Reader r, InputSource source) {
-    this(CharProducer.Factory.create(r, source));
+    this(r, source, false);
+  }
+
+  public JsLexer(Reader r, InputSource source, boolean isQuasiliteral) {
+    this(CharProducer.Factory.create(r, source), isQuasiliteral);
   }
 
   public JsLexer(Reader r, FilePosition pos) {
-    this(CharProducer.Factory.create(r, pos));
+    this(r, pos, false);
+  }
+
+  public JsLexer(Reader r, FilePosition pos, boolean isQuasiliteral) {
+    this(CharProducer.Factory.create(r, pos), isQuasiliteral);
   }
 
   public JsLexer(CharProducer producer) {
+    this(producer, false);
+  }
+
+  public JsLexer(CharProducer producer, boolean isQuasiliteral) {
     this.ts = new WordClassifier(
         new InputElementJoiner(
-            new InputElementSplitter(producer, JAVASCRIPT_PUNCTUATOR),
+            new InputElementSplitter(producer, JAVASCRIPT_PUNCTUATOR,
+                                     isQuasiliteral),
             JAVASCRIPT_PUNCTUATOR));
   }
 

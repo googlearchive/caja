@@ -14,6 +14,10 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.parser.ParseTreeNode;
+
+import java.util.List;
+
 /**
  * A literal boolean value.
  *
@@ -21,6 +25,10 @@ package com.google.caja.parser.js;
  */
 public final class BooleanLiteral extends Literal {
   public final boolean value;
+
+  public BooleanLiteral(Boolean value, List<? extends ParseTreeNode> children) {
+    this(value);
+  }
 
   public BooleanLiteral(boolean value) {
     this.value = value;

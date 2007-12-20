@@ -26,6 +26,7 @@ import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
@@ -74,11 +75,11 @@ public class ExpressionSanitizerBaja {
           return false;
         } else if (node instanceof Reference) {
           final Reference ref = (Reference) node;
-          if (ref.isThis()) {
+          if (isThis(ref)) {
             thisUsed = true;
-          } else if (ref.isSuper()) {
+          } else if (isSuper(ref)) {
             superUsed = true;
-          } else if (ref.isArguments()) {
+          } else if (isArguments(ref)) {
             argumentsUsed = true;
           }
         }
@@ -95,18 +96,18 @@ public class ExpressionSanitizerBaja {
 
     // var TEMP;
     private Declaration declareTmp(Expression initializer) {
-      return new Declaration(ReservedNames.TEMP, initializer);
+      return new Declaration(new Identifier(ReservedNames.TEMP), initializer);
     }
     // instance.member
     private Operation anyMember(String instance, String member) {
-      return new Operation(Operator.MEMBER_ACCESS, new Reference(instance),
-                           new Reference(member));
+      return new Operation(Operator.MEMBER_ACCESS, createReference(instance),
+                           new Reference(new Identifier(member)));
     }
     // ___.what(args...)
     private Operation call___(String what, Expression... args) {
       Expression[] callChildren = new Expression[args.length + 1];
       callChildren[0] = new Operation(Operator.MEMBER_ACCESS,
-          new Reference("___"), new Reference(what));
+          createReference("___"), createReference(what));
       System.arraycopy(args, 0, callChildren, 1, args.length);
       return new Operation(Operator.FUNCTION_CALL, callChildren);
     }
@@ -120,7 +121,7 @@ public class ExpressionSanitizerBaja {
     // ___.whatPub(foo,...) or ____.whatProp(this,....)
     private Operation call___PubOrProp(String what, Expression... args) {
       String whatType = "Pub";
-      if (args[0] instanceof Reference && ((Reference) args[0]).isThis()) {
+      if (args[0] instanceof Reference && isThis((Reference) args[0])) {
         whatType = "Prop";
       }
       return call___(what + whatType, args);
@@ -137,8 +138,8 @@ public class ExpressionSanitizerBaja {
     }
     // (function() { body })()
     private Operation privateScope(Block body) {
-      final FunctionConstructor tempFn = new FunctionConstructor(null,
-          Collections.<FormalParam>emptyList(), body);
+      final FunctionConstructor tempFn = new FunctionConstructor(
+          new Identifier(null), Collections.<FormalParam>emptyList(), body);
       return new Operation(Operator.FUNCTION_CALL, tempFn);
     }
     // test ? thenValue : elseValue
@@ -172,9 +173,11 @@ public class ExpressionSanitizerBaja {
 
       // ___.<what>(Prop|Pub)((this|tmp), "rhsName", ...)
       Expression[] callChildren = new Expression[args.length + 3];
-      callChildren[0] = new Operation(Operator.MEMBER_ACCESS,
-          new Reference("___"), new Reference(canWhat.toLowerCase() + canType));
-      callChildren[1] = new Reference(subject);
+      callChildren[0] = new Operation(
+          Operator.MEMBER_ACCESS,
+          createReference("___"),
+          createReference(canWhat.toLowerCase() + canType));
+      callChildren[1] = createReference(subject);
       callChildren[2] = string(rhsName);
       System.arraycopy(args, 0, callChildren, 3, args.length);
       Operation elseOp = new Operation(Operator.FUNCTION_CALL, callChildren);
@@ -187,9 +190,11 @@ public class ExpressionSanitizerBaja {
                                  Operator op, Expression... args) {
       // TODO(benl): why does Reference.IsLeftHandSide() always return true?
       final boolean isRef = lhs instanceof Reference;
-      final boolean isThis = isRef && ((Reference) lhs).isThis();
+      final boolean isThis = isRef && isThis((Reference) lhs);
       final Operation ternary = simpleCanTernary(
-          isThis, isRef ? (String) lhs.getValue() : ReservedNames.TEMP,
+          isThis, (isRef
+                   ? ((Reference) lhs).getIdentifierName()
+                   : ReservedNames.TEMP),
           canWhat, rhsName, op, args);
       if (isRef) {
         return ternary;
@@ -213,9 +218,10 @@ public class ExpressionSanitizerBaja {
       final FunctionConstructor func = decl.node.getInitializer();
       final Operation call = call___(wrapper, func);
       final Statement assign = TreeConstruction.assign(
-          TreeConstruction.memberAccess(meta.namespaceName, func.getName()),
+          TreeConstruction.memberAccess(
+              meta.namespaceName, func.getIdentifierName()),
           call);
-      func.clearName();
+      func.getIdentifier().clearName();
       ((MutableParseTreeNode) decl.parent.node).replaceChild(assign, decl.node);
     }
 
@@ -229,15 +235,15 @@ public class ExpressionSanitizerBaja {
         FindThisAndSuper finder = new FindThisAndSuper();
         func.getBody().acceptPreOrder(finder, ancestors);
         if (finder.thisUsed) {
-          final Statement localThis
-              = new Declaration(ReservedNames.LOCAL_THIS,
-                                new Reference(Keyword.THIS.toString()));
+          final Statement localThis = new Declaration(
+              new Identifier(ReservedNames.LOCAL_THIS),
+              createReference(Keyword.THIS.toString()));
           func.getBody().prepend(localThis);
         }
         if (finder.argumentsUsed) {
           final Statement localArgs
-            = new Declaration(ReservedNames.LOCAL_ARGUMENTS,
-                call___("args", new Reference("arguments")));
+              = new Declaration(new Identifier(ReservedNames.LOCAL_ARGUMENTS),
+                                call___("args", createReference("arguments")));
           func.getBody().prepend(localArgs);
         }
       } else if (node instanceof FunctionDeclaration) {
@@ -258,17 +264,19 @@ public class ExpressionSanitizerBaja {
         }
       } else if (node instanceof Reference) {
         final Reference ref = (Reference) node;
-        if (ref.isThis()) {
-          ref.setIdentifier(ReservedNames.LOCAL_THIS);
-        } else if (ref.isArguments()) {
-          ref.setIdentifier(ReservedNames.LOCAL_ARGUMENTS);
+        if (isThis(ref)) {
+          ref.getIdentifier().setName(ReservedNames.LOCAL_THIS);
+        } else if (isArguments(ref)) {
+          ref.getIdentifier().setName(ReservedNames.LOCAL_ARGUMENTS);
         }
       } else if (node instanceof RegexpLiteral) {
         // /regex/ becomes RegExp('regex', '')
         // /regex/modifiers becomes RegExp('regex', 'modifiers')
         final RegexpLiteral regex = (RegexpLiteral) node;
-        final Operation call = new Operation(Operator.FUNCTION_CALL,
-            new Reference("RegExp"), string(regex.getMatchText()),
+        final Operation call = new Operation(
+            Operator.FUNCTION_CALL,
+            createReference("RegExp"),
+            string(regex.getMatchText()),
             string(regex.getModifiers()));
         ((MutableParseTreeNode) ancestors.parent.node)
             .replaceChild(call, regex);
@@ -288,11 +296,13 @@ public class ExpressionSanitizerBaja {
         }
         final boolean isLHS = node == parent.children().get(0);
         if (operator == Operator.MEMBER_ACCESS) {
-          final String rhsName = (String)rhs.getValue();
+          final String rhsName = (rhs instanceof Reference
+                                  ? ((Reference) rhs).getIdentifierName()
+                                  : null);
           // this.foo_ is left untouched. Anything with __ at the end will
           // already have been rejected.
           if (lhs instanceof Reference
-              && ((Reference) lhs).isThis() && rhsName.endsWith("_")) {
+              && isThis((Reference) lhs) && rhsName.endsWith("_")) {
             return true;
           } else if (isLHS && parentOp == Operator.FUNCTION_CALL) {
             int numChildren = parent.children().size();
@@ -346,4 +356,23 @@ public class ExpressionSanitizerBaja {
     // nodes. Note that children are processed first!
     node.acceptPostOrder(new FieldAccessRewriter(), null);
   }
+
+  private static Reference createReference(String identifier) {
+    return new Reference(new Identifier(identifier));
+  }
+
+  private static boolean isThis(Reference ref) {
+    return ref.getIdentifierName().equals(Keyword.THIS.toString())
+        || ref.getIdentifierName().equals(ReservedNames.LOCAL_THIS);
+  }
+
+  private static boolean isSuper(Reference ref) {
+    return ref.getIdentifierName().equals(ReservedNames.SUPER);
+  }
+
+  private static boolean isArguments(Reference ref) {
+    return ref.getIdentifierName().equals(ReservedNames.ARGUMENTS)
+        || ref.getIdentifierName().equals(ReservedNames.LOCAL_ARGUMENTS);
+  }
+
 }

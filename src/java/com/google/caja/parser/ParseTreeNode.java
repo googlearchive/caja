@@ -29,7 +29,7 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public interface ParseTreeNode extends MessagePart, Renderable {
+public interface ParseTreeNode extends MessagePart, Renderable, Cloneable {
 
   FilePosition getFilePosition();
   List<Token<?>> getComments();
@@ -70,4 +70,11 @@ public interface ParseTreeNode extends MessagePart, Renderable {
    * @return true iff visiting the root node yielded true.
    */
   boolean acceptPostOrder(Visitor v, AncestorChain<?> ancestors);
+
+  /**
+   * Create a deep clone of this {@code ParseTreeNode}.
+   *
+   * @return a deep clone of the node tree rooted at this {@code ParseTreeNode}.
+   */
+  ParseTreeNode clone();
 }

@@ -27,6 +27,7 @@ import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FunctionConstructor;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
@@ -49,8 +50,8 @@ import java.util.Map;
  *
  * @author mikesamuel@gmail.com
  */
-final class ExpressionSanitizer {
-  static final SyntheticAttributeKey<Boolean> SYNTHETIC =
+public final class ExpressionSanitizer {
+  public static final SyntheticAttributeKey<Boolean> SYNTHETIC =
       new SyntheticAttributeKey<Boolean>(Boolean.class, "synthetic");
 
   private final MessageQueue mq;
@@ -133,12 +134,12 @@ final class ExpressionSanitizer {
 
           Operation callOp = s(new Operation(
                                    Operator.MEMBER_ACCESS,
-                                   fn, s(new Reference("call"))));
+                                   fn, s(new Reference(new Identifier("call")))));
           setFilePosition(callOp, fn.getFilePosition());
           op.replaceChild(callOp, fn);
           Expression firstArg =
             op.children().size() > 1 ? op.children().get(1) : null;
-          op.insertBefore(s(new Reference(Keyword.THIS.toString())), firstArg);
+          op.insertBefore(s(new Reference(new Identifier(Keyword.THIS.toString()))), firstArg);
           break;
         case SQUARE_BRACKET:
           // a[b] -> plugin_get___(a, b)
@@ -168,7 +169,7 @@ final class ExpressionSanitizer {
             sqbracketOp.removeChild(b);
             Operation getter = s(new Operation(
                                      Operator.FUNCTION_CALL,
-                                     s(new Reference("plugin_get___")),
+                                     s(new Reference(new Identifier("plugin_get___"))),
                                      a,
                                      b));
             getter.setFilePosition(sqbracketOp.getFilePosition());
@@ -211,20 +212,20 @@ final class ExpressionSanitizer {
         }
         Declaration redec =
           s(new Declaration(
-                ex.getIdentifier(),
+                new Identifier(ex.getIdentifierName()),
                 s(new Operation(
                       Operator.ADDITION,
                       s(new StringLiteral("''")),
-                      s(new Reference("safe_ex___"))))));
+                      s(new Reference(new Identifier("safe_ex___")))))));
         Statement first =
           !bodyBlock.children().isEmpty() ? bodyBlock.children().get(0) : null;
         bodyBlock.insertBefore(redec, first);
 
-        cs.replaceChild(s(new Declaration("safe_ex___", null)), ex);
+        cs.replaceChild(s(new Declaration(new Identifier("safe_ex___"), (Expression)null)), ex);
       } else if (node instanceof Declaration) {
         // Disallow creation or reference to references
         // in the protected "__xxx__" and "xxx___" namespaces.
-        String ident = ((Declaration) node).getIdentifier();
+        String ident = ((Declaration) node).getIdentifierName();
         if (inProtectedNamespace(ident)) {
           mq.addMessage(PluginMessageType.UNSAFE_ACCESS, node.getFilePosition(),
                         MessagePart.Factory.valueOf(ident));
@@ -233,7 +234,7 @@ final class ExpressionSanitizer {
       } else if (node instanceof Reference) {
         // Disallow reference to stuff in the protected namespace
         Reference r = (Reference) node;
-        String ident = r.getIdentifier();
+        String ident = r.getIdentifierName();
         if (inProtectedNamespace(ident) || "caller".equals(ident)
             || "constructor".equals(ident)) {
           mq.addMessage(PluginMessageType.UNSAFE_ACCESS, node.getFilePosition(),
@@ -259,7 +260,7 @@ final class ExpressionSanitizer {
               Operation callToGet = s(
                   new Operation(
                       Operator.FUNCTION_CALL,
-                      s(new Reference("plugin_get___")),
+                      s(new Reference(new Identifier("plugin_get___"))),
                       left,
                       key));
               MutableParseTreeNode gparent
@@ -290,11 +291,11 @@ final class ExpressionSanitizer {
               new ExpressionStmt(
                   s(new Operation(
                       Operator.FUNCTION_CALL,
-                      s(new Reference("plugin_require___")),
+                      s(new Reference(new Identifier("plugin_require___"))),
                       s(new Operation(
                           Operator.STRICTLY_NOT_EQUAL,
-                          s(new Reference(Keyword.THIS.toString())),
-                          s(new Reference("window"))
+                          s(new Reference(new Identifier(Keyword.THIS.toString()))),
+                          s(new Reference(new Identifier("window")))
                       ))
                   ))
               ));
@@ -331,7 +332,7 @@ final class ExpressionSanitizer {
         Expression object = lhsOp.children().get(0);
         Expression field = lhsOp.children().get(1);
         if (field instanceof Reference &&
-            field.getValue().equals(fieldName)) {
+            ((Reference) field).getIdentifierName().equals(fieldName)) {
           ParseTreeNode parentNode = opChain.getParentNode();
           if (parentNode instanceof MutableParseTreeNode) {
             MutableParseTreeNode mutableParentNode =
@@ -343,7 +344,7 @@ final class ExpressionSanitizer {
                       s(new Operation(
                             Operator.MEMBER_ACCESS,
                             object,
-                            s(new Reference(functionName)))),
+                            s(new Reference(new Identifier(functionName))))),
                       rhs));
 
             mutableParentNode.replaceChild(newFunctionCall, op);
@@ -371,19 +372,20 @@ final class ExpressionSanitizer {
           Expression lhs = op.children().get(0);
           Expression rhs = op.children().get(1);
           if (rhs instanceof Reference && FIELD_REWRITE_MAP
-              .containsKey(rhs.getValue())) {
+              .containsKey(((Reference) rhs).getIdentifierName())) {
             ParseTreeNode nodeParent = ancestors.getParentNode();
             if (nodeParent instanceof MutableParseTreeNode) {
               MutableParseTreeNode parent = (MutableParseTreeNode) nodeParent;
+              String rewrittenName = FIELD_REWRITE_MAP.get(
+                  ((Reference) rhs).getIdentifierName());
               Expression newFunctionCall =
                   s(new Operation(
                         Operator.FUNCTION_CALL,
                         s(new Operation(
                               Operator.MEMBER_ACCESS,
                               lhs,
-                              s(new Reference(FIELD_REWRITE_MAP
-                                  .get(rhs.getValue())))))
-                        ));
+                              s(new Reference(new Identifier(rewrittenName)))
+                              ))));
               parent.replaceChild(newFunctionCall, op);
             }
           }
@@ -571,7 +573,7 @@ final class ExpressionSanitizer {
 
   private static boolean referencesThis(ParseTreeNode node) {
     if (node instanceof Reference) {
-      return Keyword.THIS.toString().equals(((Reference) node).getIdentifier());
+      return Keyword.THIS.toString().equals(((Reference) node).getIdentifierName());
     }
     if (node instanceof FunctionConstructor) {
       return false;

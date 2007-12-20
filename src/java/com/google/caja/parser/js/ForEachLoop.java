@@ -30,6 +30,11 @@ public final class ForEachLoop extends LabeledStatement implements NestedScope {
   private Expression container;
   private Statement body;
 
+  public ForEachLoop(String value, List<? extends ParseTreeNode> children) {
+    super(value);
+    createMutation().appendChildren(children).execute();
+  }
+
   public ForEachLoop(String label, Declaration var, Expression container,
                      Statement body) {
     super(label);

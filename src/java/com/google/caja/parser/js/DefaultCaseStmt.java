@@ -17,6 +17,7 @@ package com.google.caja.parser.js;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  *
@@ -24,6 +25,10 @@ import java.io.IOException;
  */
 public final class DefaultCaseStmt extends SwitchCase {
   private Statement body;
+
+  public DefaultCaseStmt(Void value, List<? extends Statement> children) {
+    this(children.get(0));
+  }
 
   public DefaultCaseStmt(Statement body) {
     appendChild(body);

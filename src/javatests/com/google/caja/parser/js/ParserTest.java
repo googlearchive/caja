@@ -40,6 +40,7 @@ public class ParserTest extends TestCase {
     MessageContext mc = new MessageContext();
     MessageQueue mq = TestUtil.createTestMessageQueue(mc);
     Statement parseTree = TestUtil.parseTree(getClass(), "parsertest1.js", mq);
+    TestUtil.checkFilePositionInvariants(parseTree);
 
     StringBuilder output = new StringBuilder();
     parseTree.format(mc, output);
@@ -47,6 +48,12 @@ public class ParserTest extends TestCase {
     // check that parse tree matches
     String golden = TestUtil.readResource(getClass(), "parsergolden1.txt");
     assertEquals(golden, output.toString());
+
+    // clone the parse tree, and check that it, too, matches
+    Statement cloneParseTree = (Statement)parseTree.clone();
+    StringBuilder cloneOutput = new StringBuilder();
+    cloneParseTree.format(mc, cloneOutput);
+    assertEquals(golden, cloneOutput.toString());    
 
     // check warnings on message queue
     Iterator<Message> msgs = mq.getMessages().iterator();
@@ -69,6 +76,7 @@ public class ParserTest extends TestCase {
     MessageContext mc = new MessageContext();
     MessageQueue mq = TestUtil.createTestMessageQueue(mc);
     Statement parseTree = TestUtil.parseTree(getClass(), "parsertest2.js", mq);
+    TestUtil.checkFilePositionInvariants(parseTree);
 
     StringBuilder output = new StringBuilder();
     parseTree.format(mc, output);
@@ -77,6 +85,12 @@ public class ParserTest extends TestCase {
     String golden = TestUtil.readResource(getClass(), "parsergolden2.txt");
     assertEquals(golden, output.toString());
 
+    // clone the parse tree, and check that it, too, matches
+    Statement cloneParseTree = (Statement)parseTree.clone();
+    StringBuilder cloneOutput = new StringBuilder();
+    cloneParseTree.format(mc, cloneOutput);
+    assertEquals(golden, cloneOutput.toString());
+    
     // check warnings on message queue
     Iterator<Message> msgs = mq.getMessages().iterator();
     assertTrue(msgs.hasNext());
@@ -92,6 +106,7 @@ public class ParserTest extends TestCase {
     MessageContext mc = new MessageContext();
     MessageQueue mq = TestUtil.createTestMessageQueue(mc);
     Statement parseTree = TestUtil.parseTree(getClass(), "parsertest3.js", mq);
+    TestUtil.checkFilePositionInvariants(parseTree);
 
     StringBuilder output = new StringBuilder();
     parseTree.format(mc, output);
@@ -99,12 +114,19 @@ public class ParserTest extends TestCase {
     // check that parse tree matches
     String golden = TestUtil.readResource(getClass(), "parsergolden3.txt");
     assertEquals(golden, output.toString());
+
+    // clone the parse tree, and check that it, too, matches
+    Statement cloneParseTree = (Statement)parseTree.clone();
+    StringBuilder cloneOutput = new StringBuilder();
+    cloneParseTree.format(mc, cloneOutput);
+    assertEquals(golden, cloneOutput.toString());    
   }
 
   public void testParser5() throws Exception {
     MessageContext mc = new MessageContext();
     MessageQueue mq = TestUtil.createTestMessageQueue(mc);
     Statement parseTree = TestUtil.parseTree(getClass(), "parsertest5.js", mq);
+    TestUtil.checkFilePositionInvariants(parseTree);
 
     StringBuilder output = new StringBuilder();
     parseTree.format(mc, output);
@@ -112,6 +134,12 @@ public class ParserTest extends TestCase {
     // check that parse tree matches
     String golden = TestUtil.readResource(getClass(), "parsergolden5.txt");
     assertEquals(golden, output.toString());
+
+    // clone the parse tree, and check that it, too, matches
+    Statement cloneParseTree = (Statement)parseTree.clone();
+    StringBuilder cloneOutput = new StringBuilder();
+    cloneParseTree.format(mc, cloneOutput);
+    assertEquals(golden, cloneOutput.toString());
   }
 
   public void testParseTreeRendering1() throws Exception {
@@ -148,6 +176,7 @@ public class ParserTest extends TestCase {
     MessageContext mc = new MessageContext();
     MessageQueue mq = TestUtil.createTestMessageQueue(mc);
     Statement parseTree = TestUtil.parseTree(getClass(), testFile, mq);
+    TestUtil.checkFilePositionInvariants(parseTree);
 
     RenderContext rc = new RenderContext(mc, new StringBuilder(), true);
     parseTree.render(rc);

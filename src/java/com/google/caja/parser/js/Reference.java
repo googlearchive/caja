@@ -14,52 +14,60 @@
 
 package com.google.caja.parser.js;
 
-import com.google.caja.lexer.Keyword;
-import com.google.caja.plugin.ReservedNames;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  *
  * @author mikesamuel@gmail.com
  */
-public final class Reference extends AbstractExpression<Expression> {
-  private String identifier;
+public final class Reference extends AbstractExpression<ParseTreeNode> {
+  private Identifier identifier;
 
-  public Reference(String identifier) {
-    if (null == identifier) {
-      throw new NullPointerException("null identifier");
-    }
-    this.identifier = identifier;
+  public Reference(Void value, List<ParseTreeNode> children) {
+    this((Identifier) children.get(0));
   }
 
-  public String getIdentifier() { return this.identifier; }
-  public void setIdentifier(String identifier) { this.identifier = identifier; }
+  public Reference(Identifier identifier) {
+    appendChild(identifier);
+  }
 
   @Override
-  public Object getValue() { return this.identifier; }
+  protected void childrenChanged() {
+    super.childrenChanged();
+    List<? extends ParseTreeNode> children = children();
+    this.identifier = (Identifier) children.get(0);
+    if (identifier.getName() == null) {
+      throw new NullPointerException();
+    }
+    if (children.size() > 1) {
+      throw new IllegalArgumentException(
+          "Reference has extraneous children "
+          + children.subList(1, children.size()));
+    }
+  }
+
+  public Identifier getIdentifier() { return this.identifier; }
+
+  public String getIdentifierName() { return this.identifier.getName(); }
+
+  @Override
+  public Object getValue() { return null; }
 
   @Override
   public boolean isLeftHandSide() {
     return true;
   }
 
-  public boolean isThis() {
-    return this.identifier.equals(Keyword.THIS.toString())
-        || this.identifier.equals(ReservedNames.LOCAL_THIS);
-  }
-
   public void render(RenderContext rc) throws IOException {
-    rc.out.append(identifier);
-  }
-
-  public boolean isSuper() {
-    return this.identifier.equals(ReservedNames.SUPER);
-  }
-
-  public boolean isArguments() {
-    return this.identifier.equals(ReservedNames.ARGUMENTS)
-      || this.identifier.equals(ReservedNames.LOCAL_ARGUMENTS);
+    String name = getIdentifierName();
+    if (name == null) {
+      throw new IllegalStateException(
+          "null name for declaration at " + getFilePosition());
+    }
+    rc.out.append(name);
   }
 }

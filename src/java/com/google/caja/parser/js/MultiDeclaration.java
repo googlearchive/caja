@@ -30,6 +30,10 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class MultiDeclaration extends AbstractStatement<Declaration> {
+  public MultiDeclaration(Void value, List<? extends Declaration> children) {
+    this(children);
+  }
+  
   public MultiDeclaration(List<? extends Declaration> decls) {
     createMutation().appendChildren(decls).execute();
   }

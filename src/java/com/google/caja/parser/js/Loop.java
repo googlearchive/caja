@@ -26,5 +26,4 @@ public abstract class Loop extends LabeledStatement {
 
   public abstract Expression getCondition();
   public abstract Statement getBody();
-  public abstract boolean isDoLoop();
 }

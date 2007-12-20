@@ -14,14 +14,6 @@
 
 package com.google.caja.plugin;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AbstractParseTreeNode;
@@ -35,6 +27,7 @@ import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
@@ -47,6 +40,14 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Represents a CSS template that can be compiled to a javascript function.
@@ -144,7 +145,7 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
       String paramName =
         (String) paramDecl.getArguments().getNthTerm(0).getExprAtom()
         .getValue();
-      FormalParam formal = new FormalParam(paramName);
+      FormalParam formal = new FormalParam(new Identifier(paramName));
       formal.setFilePosition(paramDecl.getFilePosition());
       params.add(formal);
     }
@@ -154,7 +155,7 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
     List<String> tgtChain = Arrays.asList("___out___", "push");
     body.insertBefore(
         s(new Declaration(
-              tgtChain.get(0),
+              new Identifier(tgtChain.get(0)),
               s(new ArrayConstructor(Collections.<Expression>emptyList())))),
         null);
 
@@ -164,19 +165,19 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
         s(new ReturnStmt(
               s(new Operation(
                     Operator.FUNCTION_CALL,
-                    s(new Reference("plugin_blessCss___")),
+                    s(new Reference(new Identifier("plugin_blessCss___"))),
                     s(new Operation(
                           Operator.FUNCTION_CALL,
                           s(new Operation(
                                 Operator.MEMBER_ACCESS,
-                                s(new Reference(tgtChain.get(0))),
-                                s(new Reference("join")))),
+                                s(new Reference(new Identifier(tgtChain.get(0)))),
+                                s(new Reference(new Identifier("join"))))),
                           s(new StringLiteral("''"))
                     ))
                ))
          )), null);
     body.setFilePosition(getCss().getFilePosition());
-    FunctionConstructor fn = new FunctionConstructor(identifier, params, body);
+    FunctionConstructor fn = new FunctionConstructor(new Identifier(identifier), params, body);
     fn.setFilePosition(this.getFilePosition());
     return fn;
   }
@@ -257,24 +258,24 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
         case TIME:
           // plugin_cssNumber___(...)
           e = s(new Operation(Operator.FUNCTION_CALL,
-                              s(new Reference("plugin_cssNumber___")), e));
+                              s(new Reference(new Identifier("plugin_cssNumber___"))), e));
           suffix = sub.getSuffix();
           break;
         case URI:
           // plugin_cssUri___(..., PLUGIN)
           e = s(new Operation(Operator.FUNCTION_CALL,
-                              s(new Reference("plugin_cssUri___")), e,
-                              s(new Reference(meta.namespacePrivateName))));
+                              s(new Reference(new Identifier("plugin_cssUri___"))), e,
+                              s(new Reference(new Identifier(meta.namespacePrivateName)))));
           if (esc == JsWriter.Esc.HTML_ATTRIB) {
             e = s(new Operation(Operator.FUNCTION_CALL,
-                                s(new Reference("plugin_htmlAttr___")), e));
+                                s(new Reference(new Identifier("plugin_htmlAttr___"))), e));
           }
           suffix = "";
           break;
         case COLOR:
           // plugin_cssHexColor___(...)
           e = s(new Operation(Operator.FUNCTION_CALL,
-                              s(new Reference("plugin_cssColor___")), e));
+                              s(new Reference(new Identifier("plugin_cssColor___"))), e));
           suffix = "";
           break;
         default:

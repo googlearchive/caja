@@ -28,6 +28,11 @@ import java.util.Map;
  * @author mikesamuel@gmail.com
  */
 public final class SwitchStmt extends LabeledStatement {
+  public SwitchStmt(String label, List<? extends ParseTreeNode> children) {
+    super(label);
+    createMutation().appendChildren(children).execute();
+  }
+
   public SwitchStmt(
       String label, Expression valueExpr, List<SwitchCase> cases) {
     super(label);

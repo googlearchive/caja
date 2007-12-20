@@ -14,6 +14,10 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.parser.ParseTreeNode;
+
+import java.util.List;
+
 /**
  * A number literal that was specified in hex or octal notation, or whose
  * decimal form had no decimal point.
@@ -42,6 +46,10 @@ public final class IntegerLiteral extends NumberLiteral {
    */
   public final long value;
 
+  public IntegerLiteral(Number value, List<? extends ParseTreeNode> children) {
+    this(value.longValue());
+  }
+  
   public IntegerLiteral(long value) {
     if (MIN_VALUE > value || value > MAX_VALUE) {
       throw new IllegalArgumentException("" + value);

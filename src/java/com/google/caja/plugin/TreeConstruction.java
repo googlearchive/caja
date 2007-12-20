@@ -20,6 +20,7 @@ import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
@@ -36,8 +37,8 @@ import java.util.Vector;
 public final class TreeConstruction {
  // thing.member
   static Operation memberAccess(String thing, String member) {
-    return s(new Operation(Operator.MEMBER_ACCESS, s(new Reference(thing)),
-        s(new Reference(member))));
+    return s(new Operation(Operator.MEMBER_ACCESS, s(new Reference(new Identifier(thing))),
+        s(new Reference(new Identifier(member)))));
   }
   // nodes[0](nodes[1...])
   static Operation call(Expression... nodes) {
@@ -47,9 +48,9 @@ public final class TreeConstruction {
   static FunctionConstructor function(String name, Block body, String...args) {
     List<FormalParam> params = new Vector<FormalParam>();
     for (String arg : args) {
-      params.add(s(new FormalParam(arg)));
+      params.add(s(new FormalParam(new Identifier(arg))));
     }
-    return s(new FunctionConstructor(name, params, body));
+    return s(new FunctionConstructor(new Identifier(name), params, body));
   }
   static ExpressionStmt assign(Expression lhs, Expression rhs) {
     return s(new ExpressionStmt(s(new Operation(Operator.ASSIGN, lhs, rhs))));

@@ -75,7 +75,8 @@ public class GxpCompilerTest extends TestCase {
     DomTree.Tag domTree = (DomTree.Tag) DomParser.parseDocument(tq);
     GxpCompiler gxpc = new GxpCompiler(
         mq,
-        new PluginMeta("TestPlugin", "pre", "/testplugin", "rootDiv", false));
+        new PluginMeta(
+            "TestPlugin", "pre", "/testplugin", "rootDiv",PluginMeta.TranslationScheme.AAJA));
     GxpCompiler.TemplateSignature sig = gxpc.compileTemplateSignature(domTree);
     ParseTreeNode compiled = gxpc.compileDocument(sig);
 
@@ -99,7 +100,8 @@ public class GxpCompilerTest extends TestCase {
     DomTree.Tag domTree = (DomTree.Tag) DomParser.parseDocument(tq);
     GxpCompiler gxpc = new GxpCompiler(
         mq,
-        new PluginMeta("TestPlugin", "pre", "/testplugin", "rootDiv", false));
+        new PluginMeta(
+            "TestPlugin", "pre", "/testplugin", "rootDiv", PluginMeta.TranslationScheme.AAJA));
     GxpCompiler.TemplateSignature sig = gxpc.compileTemplateSignature(domTree);
     ParseTreeNode compiled = gxpc.compileDocument(sig);
 
@@ -141,7 +143,8 @@ public class GxpCompilerTest extends TestCase {
         TestUtil.parseXml(getClass(), "gxpcompilerinput4.gxp", mq));
     GxpCompiler gxpc = new GxpCompiler(
         mq,
-        new PluginMeta("TestPlugin", "pre", "/testplugin", "rootDiv", false));
+        new PluginMeta(
+            "TestPlugin", "pre", "/testplugin", "rootDiv", PluginMeta.TranslationScheme.AAJA));
     GxpCompiler.TemplateSignature sig2 = gxpc.compileTemplateSignature(gxp2),
                                   sig3 = gxpc.compileTemplateSignature(gxp3);
 
@@ -389,7 +392,7 @@ public class GxpCompilerTest extends TestCase {
       new EchoingMessageQueue(
           new PrintWriter(new OutputStreamWriter(System.out)), mc);
     PluginMeta meta = new PluginMeta("TestPlugin", "pre",
-        "/testplugin", "rootDiv", false);
+        "/testplugin", "rootDiv", PluginMeta.TranslationScheme.AAJA);
 
 
     DomTree.Tag[] doms = new DomTree.Tag[gxps.length];
@@ -471,7 +474,7 @@ public class GxpCompilerTest extends TestCase {
       new EchoingMessageQueue(
           new PrintWriter(new OutputStreamWriter(System.out)), mc);
     PluginMeta meta = new PluginMeta("TestPlugin", "pre",
-        "/testplugin", "rootDiv", false);
+        "/testplugin", "rootDiv", PluginMeta.TranslationScheme.AAJA);
 
     DomTree.Tag[] doms = new DomTree.Tag[gxps.length];
     for (int i = 0; i < gxps.length; ++i) {

@@ -28,6 +28,10 @@ public final class CatchStmt extends AbstractStatement<ParseTreeNode> {
   private Declaration exception;
   private Statement body;
 
+  public CatchStmt(Void value, List<? extends ParseTreeNode> children) {
+    this((Declaration) children.get(0), (Statement) children.get(1));
+  }  
+
   public CatchStmt(Declaration exception, Statement body) {
     createMutation()
         .appendChild(exception)
@@ -52,7 +56,7 @@ public final class CatchStmt extends AbstractStatement<ParseTreeNode> {
   public void render(RenderContext rc) throws IOException {
     rc.out.append("catch (");
     rc.indent += 2;
-    rc.out.append(exception.getIdentifier());
+    rc.out.append(exception.getIdentifierName());
     rc.out.append(")");
     rc.indent -= 4;
     body.renderBlock(rc, true, false, false);

@@ -186,6 +186,8 @@
       <include name="**/caja/parser/css/CssTreeTest.java"/>
       <include name="**/caja/parser/html/DomParserTest.java"/>
       <include name="**/caja/parser/html/JsHtmlParserTest.java"/>
+      <include name="**/caja/parser/quasiliteral/MatchTest.java"/>
+      <include name="**/caja/parser/quasiliteral/QuasiBuilderTest.java"/>
       <include name="**/caja/parser/js/ParserTest.java"/>
       <include name="**/caja/parser/js/StringLiteralTest.java"/>
       <include name="**/caja/plugin/CompiledPluginTest.java"/>
@@ -294,6 +296,8 @@
          value="com.google.caja.plugin.HtmlPluginCompilerMain"/>
       </manifest>
     </jar>
+    <jar destfile="${jars}/pluginc-src.jar" basedir="${src}">
+    </jar>
   </target>
 
   <target name="TestUtil"
@@ -308,7 +312,7 @@
   </target>
 
   <target name="PluginCompiler"
-   depends="JsParserCore,CssParserCore,HtmlParserCore,HtmlSchema,dirs">
+   depends="CssParserCore,HtmlParserCore,HtmlSchema,Quasiliterals,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
@@ -381,6 +385,25 @@
     </javac>
   </target>
 
+  <target name="Quasiliterals"
+   depends="JsParserCore,dirs">
+    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+      <src path="${src}"/>
+      <classpath refid="classpath.compile"/>
+      <include name="**/caja/parser/quasiliteral/MultipleNonemptyQuasiHole.java"
+       />
+      <include name="**/caja/parser/quasiliteral/MultipleQuasiHole.java"/>
+      <include name="**/caja/parser/quasiliteral/ParseTreeNodeContainer.java"/>
+      <include name="**/caja/parser/quasiliteral/QuasiBuilder.java"/>
+      <include name="**/caja/parser/quasiliteral/QuasiHole.java"/>
+      <include name="**/caja/parser/quasiliteral/QuasiNode.java"/>
+      <include name="**/caja/parser/quasiliteral/Rewriter.java"/>
+      <include name="**/caja/parser/quasiliteral/SimpleQuasiNode.java"/>
+      <include name="**/caja/parser/quasiliteral/SingleQuasiHole.java"/>
+      <include name="**/caja/parser/quasiliteral/TrailingUnderscoresHole.java"/>
+    </javac>
+  </target>
+
   <target name="JsParserCore"
    depends="JsParserBase,Parser,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
@@ -399,6 +422,7 @@
       <include name="**/caja/parser/js/ContinueStmt.java"/>
       <include name="**/caja/parser/js/Declaration.java"/>
       <include name="**/caja/parser/js/DefaultCaseStmt.java"/>
+      <include name="**/caja/parser/js/DoWhileLoop.java"/>
       <include name="**/caja/parser/js/Expression.java"/>
       <include name="**/caja/parser/js/ExpressionStmt.java"/>
       <include name="**/caja/parser/js/FinallyStmt.java"/>
@@ -407,6 +431,7 @@
       <include name="**/caja/parser/js/FormalParam.java"/>
       <include name="**/caja/parser/js/FunctionConstructor.java"/>
       <include name="**/caja/parser/js/FunctionDeclaration.java"/>
+      <include name="**/caja/parser/js/Identifier.java"/>
       <include name="**/caja/parser/js/IntegerLiteral.java"/>
       <include name="**/caja/parser/js/LabeledStatement.java"/>
       <include name="**/caja/parser/js/LabeledStmtWrapper.java"/>

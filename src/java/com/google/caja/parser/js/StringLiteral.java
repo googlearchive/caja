@@ -14,9 +14,11 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.reporting.RenderContext;
 import java.io.IOException;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,6 +29,10 @@ import java.util.regex.Pattern;
  */
 public final class StringLiteral extends Literal {
   private String value;
+
+  public StringLiteral(String value, List<? extends ParseTreeNode> children) {
+    this(value);
+  }
 
   public StringLiteral(String value) {
     if (null == value) { throw new NullPointerException(); }

@@ -33,22 +33,33 @@ import java.util.Collections;
  */
 public final class FunctionConstructor
     extends AbstractExpression<ParseTreeNode> implements NestedScope {
-  private String identifier;
+  private Identifier identifier;
   private List<FormalParam> params;
   private Block body;
 
   public FunctionConstructor(
-      String identifier, List<FormalParam> params, Block body) {
-    this.identifier = identifier;
-    createMutation().appendChildren(params).appendChild(body).execute();
+      Void value, List<? extends ParseTreeNode> children) {
+    createMutation().appendChildren(children).execute();
+  }
+
+  
+  public FunctionConstructor(
+      Identifier identifier, List<FormalParam> params, Block body) {
+    createMutation()
+        .appendChild(identifier)
+        .appendChildren(params)
+        .appendChild(body)
+        .execute();
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    int n = children().size();
+    List<? extends ParseTreeNode> children = children();
+    int n = children.size();
+    this.identifier = (Identifier) children.get(0);
     this.params = Collections.<FormalParam>unmodifiableList(
-        childrenPart(0, n - 1, FormalParam.class));
+        childrenPart(1, n - 1, FormalParam.class));
     for (FormalParam p : params) { }  // Implicit cast will check type
     this.body = (Block) children().get(n - 1);
   }
@@ -57,15 +68,19 @@ public final class FunctionConstructor
 
   public Block getBody() { return body; }
 
-  public String getName() { return identifier; }
-  public void clearName() { identifier = null; }
+  public Identifier getIdentifier() { return identifier; }
+
+  public String getIdentifierName() { return identifier.getName(); }
 
   @Override
-  public Object getValue() { return identifier; }
+  public Object getValue() { return null; }
 
   public void render(RenderContext rc) throws IOException {
     rc.out.append("function ");
-    if (null != identifier) { rc.out.append(identifier); }
+    String name = identifier.getName();
+    if (null != name) {
+      rc.out.append(name);
+    }
     rc.out.append('(');
     rc.indent += 2;
     boolean seen = false;

@@ -28,6 +28,10 @@ public final class CaseStmt extends SwitchCase {
   private Expression caseValue;
   private Statement body;
 
+  public CaseStmt(Void value, List<? extends ParseTreeNode> children) {
+    this((Expression) children.get(0), (Statement) children.get(1));
+  }
+    
   public CaseStmt(Expression caseValue, Statement body) {
     createMutation()
         .appendChild(caseValue)

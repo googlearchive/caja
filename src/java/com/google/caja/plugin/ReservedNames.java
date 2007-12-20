@@ -21,6 +21,7 @@ package com.google.caja.plugin;
  */
 public class ReservedNames {
   public static final String LOCAL_THIS = "t___";
+  public static final String THIS = "this";
   public static final String SUPER = "Super";
   static final String TEMP = "x___";
   public static final String ARGUMENTS = "arguments";

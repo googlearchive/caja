@@ -24,6 +24,10 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class ArrayConstructor extends AbstractExpression<Expression> {
+  public ArrayConstructor(Void value, List<? extends Expression> children) {
+    this(children);
+  }
+
   public ArrayConstructor(List<? extends Expression> elements) {
     createMutation().appendChildren(elements).execute();
   }

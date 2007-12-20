@@ -15,6 +15,7 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.parser.ParseTreeNode;
 
 import java.io.IOException;
 
@@ -28,6 +29,10 @@ import java.util.Map;
  */
 public final class BreakStmt extends AbstractStatement<Statement> {
   private String label;
+
+  public BreakStmt(String value, List<? extends ParseTreeNode> children) {
+    this(value);
+  }
 
   public BreakStmt(String label) {
     this.label = label;

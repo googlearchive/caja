@@ -18,6 +18,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Token;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.Visitor;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
@@ -60,6 +61,12 @@ public abstract class CssPropertySignature implements ParseTreeNode {
       last = child;
     }
     assert !this.children.contains(null);
+  }
+
+  @Override
+  public CssPropertySignature clone() {
+    return (CssPropertySignature)
+        ParseTreeNodes.newNodeInstance(getClass(), getValue(), children());
   }
 
   /** A signature that can be repeated zero or more times. */

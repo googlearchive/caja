@@ -14,6 +14,10 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.parser.ParseTreeNode;
+
+import java.util.List;
+
 /**
  * A number literal backed by a double.
  *
@@ -22,6 +26,10 @@ package com.google.caja.parser.js;
 public final class RealLiteral extends NumberLiteral {
   public final double value;
 
+  public RealLiteral(Number value, List<? extends ParseTreeNode> children) {
+    this(value.doubleValue());
+  }
+  
   public RealLiteral(double value) { this.value = value; }
 
   @Override

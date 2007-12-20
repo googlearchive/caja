@@ -17,6 +17,7 @@ package com.google.caja.parser.js;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * A top level statement that declares a variable and assigns a function to it.
@@ -24,8 +25,12 @@ import java.io.IOException;
  * @author mikesamuel@gmail.com
  */
 public final class FunctionDeclaration extends Declaration {
+  public FunctionDeclaration(Void value, List<? extends Expression> children) {
+    super(value, children);
+  }
+
   public FunctionDeclaration(
-      String identifier, FunctionConstructor initializer) {
+      Identifier identifier, FunctionConstructor initializer) {
     super(identifier, initializer);
   }
 
@@ -55,7 +60,7 @@ public final class FunctionDeclaration extends Declaration {
   @Override
   public void render(RenderContext rc) throws IOException {
     FunctionConstructor fc = getInitializer();
-    rc.out.append("function ").append(getIdentifier()).append('(');
+    rc.out.append("function ").append(getIdentifierName()).append('(');
     rc.indent += 2;
     boolean seen = false;
     for (FormalParam p : fc.getParams()) {
