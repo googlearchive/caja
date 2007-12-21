@@ -149,9 +149,10 @@ public class GadgetRewriterMain {
     if (t != null)
       repeatCount = Integer.decode(t).intValue();
     
-    scheme = PluginMeta.TranslationScheme.CAJA;
     t = cl.getOptionValue(SCHEME.getOpt());
-    if (t.equalsIgnoreCase("aaja"))
+    if (t == null)
+      scheme = PluginMeta.TranslationScheme.CAJA;
+    else if (t.equalsIgnoreCase("aaja"))
       scheme = PluginMeta.TranslationScheme.AAJA;
     else if (t.equalsIgnoreCase("baja"))
       scheme = PluginMeta.TranslationScheme.BAJA;
