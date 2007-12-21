@@ -90,8 +90,8 @@ public class HtmlPluginCompiler {
    * A synthetic attribute that stores the name of a function extracted from a
    * script tag.
    */
-  static final SyntheticAttributeKey<String> SCRIPT_TAG_CALLOUT_NAME
-      = new SyntheticAttributeKey<String>(String.class, "scriptTagCallout");
+  static final SyntheticAttributeKey<Block> EXTRACTED_SCRIPT_BODY
+      = new SyntheticAttributeKey<Block>(Block.class, "extractedScript");
 
   private MessageQueue mq;
   private MessageContext mc;
@@ -107,8 +107,9 @@ public class HtmlPluginCompiler {
   /** An object that is available to sandboxed code. */
   private ObjectConstructor pluginPrivate;
 
-  public HtmlPluginCompiler(String nsName, String nsPrefix,
-                            String rootDivId, PluginMeta.TranslationScheme scheme) {
+  public HtmlPluginCompiler(
+      String nsName, String nsPrefix, String rootDivId,
+      PluginMeta.TranslationScheme scheme) {
     this(new PluginMeta(nsName, nsPrefix, rootDivId, scheme));
   }
 
@@ -211,8 +212,6 @@ public class HtmlPluginCompiler {
       parent.removeChild(scriptTag);
       return;
     }
-    // Name of a function created from the script tag contents.
-    String calloutName = getPluginMeta().generateUniqueName("scriptElement");
     // The script contents.
     CharProducer jsStream;
     if (src == null) {  // Parse the script tag body.
@@ -247,7 +246,8 @@ public class HtmlPluginCompiler {
       }
     }
 
-    // Parse the body and create a function.
+    // Parse the body and create a block that will be placed inline in
+    // loadModule.
     Block parsedScriptBody;
     try {
       parsedScriptBody = parseJs(
@@ -258,33 +258,20 @@ public class HtmlPluginCompiler {
       return;
     }
 
-    // function scriptBody_123__() { script_content...; }
-    Block scriptDelegate
-        = s(new Block(Collections.singletonList(
-                s(new FunctionDeclaration(
-                    s(new Identifier(calloutName)),
-                    s(new FunctionConstructor(
-                          s(new Identifier(calloutName)), Collections.<FormalParam>emptyList(),
-                          parsedScriptBody)))))));
-    scriptDelegate.setFilePosition(parsedScriptBody.getFilePosition());
-
-    // Register it for later processing.
-    addInput(new AncestorChain<Block>(scriptDelegate));
-
     // Build a replacment element.
-    // <script type="text/javascript">MyPlugin.tmp123__()</script>
-    DomTree.Tag callout;
+    // <script type="text/javascript"></script>
+    DomTree.Tag emptyScript;
     {
-      Token<HtmlTokenType> endToken = new Token<HtmlTokenType>(
+      Token<HtmlTokenType> endToken = Token.instance(
           ">", HtmlTokenType.TAGEND,
           FilePosition.endOf(scriptTag.getFilePosition()));
-      callout = new DomTree.Tag(
+      emptyScript = new DomTree.Tag(
           Collections.<DomTree>emptyList(), scriptTag.getToken(), endToken);
-      callout.getAttributes().set(SCRIPT_TAG_CALLOUT_NAME, calloutName);
+      emptyScript.getAttributes().set(EXTRACTED_SCRIPT_BODY, parsedScriptBody);
     }
 
     // Replace the external script tag with the inlined script.
-    parent.replaceChild(callout, scriptTag);
+    parent.replaceChild(emptyScript, scriptTag);
   }
 
   /**

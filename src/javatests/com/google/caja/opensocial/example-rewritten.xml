@@ -20,24 +20,18 @@
 <script type="text/javascript">
 {
   ___.loadModule(function (___OUTERS___) {
-      function scriptElement_1___() {
-        ___OUTERS___.externalScript = ___.simpleFunc(function () {
-            ___OUTERS___.alert('external script');
-          });
-      }
-      function scriptElement_3___() {
-        ___OUTERS___.handleClicky = ___.simpleFunc(function () {
-            ___OUTERS___.alert('You clicked something!!!');
-          });
-      }
-      ___OUTERS___.c_5___ = function (event) {
+      ___OUTERS___.c_1___ = function (thisNode___, event) {
         ___OUTERS___.handleClicky();
       };
-      ___OUTERS___.emitHtml___('\n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    \074p class=\"DOM-PREFIX-p1 DOM-PREFIX-p2\"\076Paragraph 1\074/p\076\n\n    ');
-      scriptElement_1___();
-      ___OUTERS___.emitHtml___('\n\n    \n    \074p id=\"DOM-PREFIX-p3\"\076Paragraph 2\074/p\076\n\n    \n    \n\n    \n    ');
-      scriptElement_3___();
-      ___OUTERS___.emitHtml___('\n\n    \074p\076\074a onclick=\"return plugin_dispatchEvent___(event || window.event, this, ', ___.getId(___OUTERS___), ', \'c_5___\')\"\076Paragraph 3\074/a\076\074/p\076\n\n    \074a href=\"http://url-proxy.test.google.com/?url=http%3A%2F%2Ffoo.com%2F&amp;mime-type=*%2F*\" target=\"_new\"\076External URL.  Apply URICallback.rewrite to me.\074/a\076\n\n    \n    \n\n    \n    \n    \n\n  ');
+      ___OUTERS___.emitHtml___('\n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    <p class=\"DOM-PREFIX-p1 DOM-PREFIX-p2\">Paragraph 1</p>\n\n    ');
+      ___OUTERS___.externalScript = ___.simpleFunc(function () {
+          ___OUTERS___.alert('external script');
+        });
+      ___OUTERS___.emitHtml___('\n\n    \n    <p id=\"DOM-PREFIX-p3\">Paragraph 2</p>\n\n    \n    \n\n    \n    ');
+      ___OUTERS___.handleClicky = ___.simpleFunc(function () {
+          ___OUTERS___.alert('You clicked something!!!');
+        });
+      ___OUTERS___.emitHtml___('\n\n    <p><a onclick=\"return plugin_dispatchEvent___(event || window.event, this, ', ___.getId(___OUTERS___), ', \'c_1___\')\">Paragraph 3</a></p>\n\n    <a href=\"http://url-proxy.test.google.com/?url=http%3A%2F%2Ffoo.com%2F&amp;mime-type=*%2F*\" target=\"_new\">External URL.  Apply URICallback.rewrite to me.</a>\n\n    \n    \n\n    \n    \n    \n\n  ');
     });
 }</script>
 ]]></Content></Module>

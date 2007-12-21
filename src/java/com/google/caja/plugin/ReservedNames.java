@@ -26,6 +26,8 @@ public class ReservedNames {
   static final String TEMP = "x___";
   public static final String ARGUMENTS = "arguments";
   public static final String LOCAL_ARGUMENTS = "a___";
+  /** The current node for an event handler function. */
+  public static final String THIS_NODE = "thisNode___";
 
   private ReservedNames() {
   }

@@ -29,6 +29,7 @@ import com.google.caja.lexer.TokenQueue;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomTree;
@@ -150,18 +151,16 @@ public class HtmlCompiler {
         String tagName = el.getValue().toLowerCase();
 
         if (tagName.equals("script")) {
-          String extractedFunctionName = el.getAttributes().get(
-              HtmlPluginCompiler.SCRIPT_TAG_CALLOUT_NAME);
-          if (extractedFunctionName != null) {
-            b.appendChild(
-                s(new ExpressionStmt(
-                      s(new Operation(
-                            Operator.FUNCTION_CALL,
-                            s(new Reference(new Identifier(extractedFunctionName))))))));
+          Block extractedScriptBody = el.getAttributes().get(
+              HtmlPluginCompiler.EXTRACTED_SCRIPT_BODY);
+          if (extractedScriptBody != null) {
+            b.createMutation().appendChildren(extractedScriptBody.children())
+                .execute();
           }
           return;
         } else if (tagName.equals("style")) {
-          // pass
+          // nothing to do.  Style tags get combined into one and output as
+          // CSS, not written via javascript.
           return;
         }
 
@@ -541,6 +540,7 @@ public class HtmlCompiler {
         DomTree.Attrib t = tChain.node;
         // Extract the handler into a function so that it can be analyzed.
         Block handler = htmlc.asBlock(t.getAttribValueNode());
+        rewriteEventHandlerReferences(handler);
 
         String handlerFnName = htmlc.syntheticId();
         htmlc.eventHandlers.put(
@@ -549,7 +549,9 @@ public class HtmlCompiler {
                   new Identifier(handlerFnName),
                   s(new FunctionConstructor(
                         new Identifier(null),
-                        Collections.singletonList(
+                        Arrays.asList(
+                            s(new FormalParam(
+                                  new Identifier(ReservedNames.THIS_NODE))),
                             s(new FormalParam(
                                   new Identifier("event")))),
                         handler)))));
@@ -620,5 +622,45 @@ public class HtmlCompiler {
         AncestorChain<DomTree.Attrib> tChain,
         HtmlCompiler htmlc, List<String> tgtChain, Block b)
         throws GxpCompiler.BadContentException;
+  }
+
+  /**
+   * Convert "this" -> "thisNode___" in event handlers.  Event handlers are
+   * run in a context where this points to the current node.
+   * We need to emulate that but still allow the event handlers to be simple
+   * functions, so we pass in the tamed node as the first parameter.
+   *
+   * The event handler goes from:<br>
+   *   {@code if (this.type === 'text') { alert(this.value); } }
+   * to a function like:<br>
+   *   {@code function (thisNode___, event) {
+   *       if (thisNode___.type === 'text') {
+   *         alert(thisNode___.value);
+   *       }
+   *     } }
+   * <p>
+   * And the resulting function is called via a handler attribute like
+   * {@code onchange="plugin_dispatchEvent___(this, node, 1234, 'handlerName')"}
+   */
+  static void rewriteEventHandlerReferences(Block block) {
+    block.acceptPreOrder(
+        new Visitor() {
+          public boolean visit(AncestorChain<?> ancestors) {
+            ParseTreeNode node = ancestors.node;
+            // Do not recurse into closures.
+            if (node instanceof FunctionConstructor) { return false; }
+            if (node instanceof Reference) {
+              Reference r = (Reference) node;
+              if (ReservedNames.THIS.equals(r.getIdentifierName())) {
+                Identifier oldRef = r.getIdentifier();
+                Identifier thisNode = new Identifier(ReservedNames.THIS_NODE);
+                thisNode.setFilePosition(oldRef.getFilePosition());
+                r.replaceChild(s(thisNode), oldRef);
+              }
+              return false;
+            }
+            return true;
+          }
+        }, null);
   }
 }
