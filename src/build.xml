@@ -39,6 +39,7 @@
   <!--== inputs ==-->
   <property name="src"         location="java"/>
   <property name="testsrc"     location="javatests"/>
+  <property name="javascript"  location="js"/>
   <property name="third_party" location="./third_party/java"/>
   <property name="demos"       location="java/com/google/caja/demos"/>
   <!--== outputs ==-->
@@ -246,8 +247,13 @@
         <include name="**/caja/parser/js/rendergolden4.txt"/>
         <include name="**/caja/parser/js/rendergolden5.txt"/>
         <include name="**/caja/parser/js/rendergolden6.txt"/>
+        <include name="**/caja/parser/quasiliteral/clickme.js"/>
+        <include name="**/caja/parser/quasiliteral/function.js"/>
+        <include name="**/caja/parser/quasiliteral/listfriends.js"/>
         <include name="**/caja/plugin/asserts.js"/>
         <include name="**/caja/plugin/browser-stubs.js"/>
+        <include name="**/caja/plugin/caps/wrap_capability_test.js"/>
+        <include name="**/caja/plugin/container.js"/>
         <include name="**/caja/plugin/gxpcompilergolden1.js"/>
         <include name="**/caja/plugin/gxpcompilergolden2.js"/>
         <include name="**/caja/plugin/gxpcompilergolden3.txt"/>
@@ -255,7 +261,6 @@
         <include name="**/caja/plugin/gxpcompilerinput2.gxp"/>
         <include name="**/caja/plugin/gxpcompilerinput3.gxp"/>
         <include name="**/caja/plugin/gxpcompilerinput4.gxp"/>
-        <include name="**/caja/plugin/caps/wrap_capability_test.js"/>
         <include name="**/caja/plugin/plugintest-csstest.golden"/>
         <include name="**/caja/plugin/plugintest-csstest.input"/>
         <include name="**/caja/plugin/plugintest-helloworld.golden"/>
@@ -266,6 +271,11 @@
         <include name="**/caja/plugin/sanitizergolden2.txt"/>
         <include name="**/caja/plugin/sanitizerinput1.js"/>
         <include name="**/caja/plugin/tmp-caja.js"/>
+      </fileset>
+    </copy>
+    <copy todir="${lib}">
+      <fileset dir="${javascript}">
+        <include name="**/caja/caja.js"/>
       </fileset>
     </copy>
   </target>
