@@ -62,6 +62,7 @@ public class GadgetRewriterMain {
     options.addOption(INPUT);
     options.addOption(OUTPUT);
     options.addOption(TIME);
+    options.addOption(SCHEME);
   }
   
   private GadgetRewriterMain() {
