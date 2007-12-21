@@ -291,7 +291,7 @@
     </javac>
   </target>
 
-  <target name="pluginc" depends="PluginCompiler,dirs">
+  <target name="pluginc" depends="PluginCompiler,dirs,opensocial">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
