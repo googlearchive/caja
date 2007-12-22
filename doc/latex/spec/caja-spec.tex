@@ -949,7 +949,7 @@ the Cajita subset of Caja.
   that mentions ``\code{arguments}''. But in the initial Caja implementation, 
   this minor gotcha remains.
   
-  \item[Absent \code{ReferenceError}.] Is ES3, when a reference to an 
+  \item[Absent \code{ReferenceError}.] In ES3, when a reference to an 
   undefined variable is evaluated as an expression, a \code{ReferenceError} 
   is thrown. The Caja translator translates a reference to an undefined 
   variable into a reference to an outer variable. Given the current Caja 
@@ -1010,20 +1010,10 @@ definitions.
   \code{.prototype} may be initialized. 
 
   \item[Constructors.] A named function whose body mentions ``\code{this}'' 
-  is a \emph{constructor}. A constructor can only be invoked by construction, 
-  i.e., by a call using the ``\code{new}'' keyword. To enforce this, 
-  constructors are not \emph{first-class values}. A constructor definition 
-  and a constructor name can only appear in certain static contexts 
-  enumerated below, in order to ensure that the constructor value does not 
-  escape. Like a named simple function, a constructor and its 
-  ``\code{.prototype}'' may be initialized, but are implicitly frozen on 
-  first use.
+  is a \emph{constructor}. 
     
   \item[Methods.] An anonymous function whose body mentions ``\code{this}'' 
-  is a \emph{method}. A method definition may only appear in prototype 
-  property initializations. To avoid the confusions regarding 
-  ``\code{this}'', Caja methods are also not first-class. A property holding 
-  a method is \emph{call only}, it can be called but not read.
+  is a \emph{method}. 
   
 \end{description}
 
@@ -1067,17 +1057,37 @@ an alleged Caja program text to instead be statically rejected.
   be used only to name Internal properties. It may appear only after a 
   ``\code{this.}''.
   
-  \item[Constructor names.] TODO
+  \item[Constructor names.] A constructor can only be invoked by 
+  construction, i.e., by a call using the ``\code{new}'' keyword. To enforce 
+  this, constructors are not \emph{first-class values}. A constructor 
+  definition and a constructor name can only appear in the static contexts 
+  enumerated Figure~\ref{tab:special-cases}, in order to ensure that the 
+  constructor value does not escape. Like a named simple function, a 
+  constructor and its ``\code{.prototype}'' may be initialized, but are 
+  implicitly frozen on first use.
   
-  \item[Methods.] TODO
+  \emph{Speculative future feature:} We are working on a new translation for
+  constructors that will allow constructor names to be treated as permissively
+  as declared function names.
+  
+  \item[Methods.] To avoid the confusions regarding ``\code{this}'', Caja 
+  methods are also not first-class. Methods may only appear in the three 
+  positions marked ``\code{member}'' in Figure~\ref{tab:special-cases}, as 
+  shown by example in Figures~\ref{fig:caja-point}, 
+  \ref{fig:brief-caja-point}, and~\ref{fig:caja-subclass}. Methods may thus 
+  be used only to initialize properties of prototypes. These properties will 
+  be marked callable but not readable, settable, enumerable, or deletable. If 
+  \code{x.foo}, is associated with a method, then \code{x.foo(\ldots)} is 
+  fine, but \code{x.foo} will return \code{undefined}.
 
-  \item[Exophoric functions.] When an anonymous function mentioning 
-  ``\code{this}'' appears in an illegal position for a Caja method, the Caja 
-  translator currently rejects the program. A future upwards compatible 
-  extension to Caja will instead classify these as \emph{exophoric functions}. 
-  An exophoric function mentions ``\code{this}'', but its referent for 
-  ``\code{this}'' is not statically apparent. To allow exophoric functions 
-  safely, we need only impose two rules:
+  \item[Exophoric functions.] \emph{Speculative future feature:} When an 
+  anonymous function mentioning ``\code{this}'' appears in an illegal 
+  position for a Caja method, the Caja translator currently rejects the 
+  program. A future upwards compatible extension to Caja may instead classify 
+  these as \emph{exophoric functions}. An exophoric function mentions 
+  ``\code{this}'', but its referent for ``\code{this}'' is not statically 
+  apparent. To allow exophoric functions safely, we need only impose two 
+  rules:
   
   \begin{itemize}
 
@@ -1088,8 +1098,8 @@ an alleged Caja program text to instead be statically rejected.
     
     \item Within an exophoric function, ``\code{this}'' is not treated 
     specially. ``\code{this.foo\_}'' is disallowed, and ``\code{this[x]}'' is 
-    translated to a check that x names a \emph{publicly} readable member of 
-    \code{this}.
+    translated to a check that \code{x} names a \emph{publicly} readable 
+    member of \code{this}.
 
   \end{itemize}
   
@@ -1276,6 +1286,7 @@ TODO To be written
 We thank 
 Dirk Balfanz,
 Bruno Bowden,
+Jon Bright,
 Andrea Campi,
 Doug Crockford,
 Jed Donnelley,
@@ -1369,15 +1380,10 @@ original.}
   \code{foo(a\ldots)}       & \code{\_\_\_.asSimpleFunc(foo)(a\ldots)} \\
   \hline
   \code{function C(a\ldots)\ \{}
-                 & \code{var C = \_\_\_.ctor(function(a\ldots)\ \{} \\
-  \code{\ \ C.Super.call(this,b\ldots);}
-                 & \code{\ \ C.Super.call\_\_\_(this,b\ldots);} \\
-  \code{\ \ \ldots\};}
-                 & \code{\ \ \ldots\});} \\
-  \code{function C(a\ldots)\ \{}
-                 & \code{var C = \_\_\_.ctor(function(a\ldots)\ \{} \\
+                 & \code{function C(a\ldots)\ \{} \\
   \code{\ \ {\ldots}this\ldots\};}
-                 & \code{\ \ {\ldots}this\ldots\});}\\
+                 & \code{\ \ {\ldots}this\ldots\};}\\
+                 & \code{\_\_\_.ctor(C);} \\
   \hline
   \code{function(a\ldots)\ \{}
                  & \code{\_\_\_.method(C,function(a\ldots)\ \{} \\
@@ -1385,15 +1391,16 @@ original.}
                  & \code{\ \ {\ldots}this\ldots\})}\\
   \hline
   \code{function F(a\ldots)\ \{}
-                 & \code{var F = \_\_\_.simpleFunc(function(a\ldots)\ \{} \\
-  \code{\ \ \ldots\};}         & \code{\ \ \ldots\});} \\
+                 & \code{function F(a\ldots)\ \{} \\
+  \code{\ \ \ldots\};}         & \code{\ \ \ldots\};} \\
+                               & \code{\_\_\_.simpleFunc(F);} \\
   
   \code{function F(a\ldots)\ \{}
-    & \code{var F = \_\_\_.freeze(\_\_\_.simpleFunc(function(a\ldots)\ \{} \\
+       & \code{\_\_\_.primFreeze(\_\_\_.simpleFunc(function F(a\ldots)\ \{} \\
   \code{\ \ \ldots\}}         & \code{\ \ \ldots\}))} \\
   
   \code{function(a\ldots)\ \{}
-             & \code{\_\_\_.freeze(\_\_\_.simpleFunc(function(a\ldots)\ \{} \\
+         & \code{\_\_\_.primFreeze(\_\_\_.simpleFunc(function(a\ldots)\ \{} \\
   \code{\ \ \ldots\}}          & \code{\ \ \ldots\}))} \\
   \hline
   \code{arguments.callee}      & /*rejected*/ \\
@@ -1413,10 +1420,11 @@ called, it makes a new plugin. Unless their creator puts them in contact,
 even plugins made by the same plugin-maker are isolated from each other. The 
 expansions above have additional static restrictions explained in the text. 
 The use of a terminal ``\code{;}'' is shorthand for testing whether the 
-matching expression is evaluated for effects only, not for its value.}
+matching expression is evaluated for effects only, not for its value. For each 
+top level named function declaration $F$, \code{\_\_\_OUTERS\_\_\_.F
+= \_\_\_.primFreeze(F);} is also emitted at the end of the module body.}
 \label{tab:call-xlate}
 \end{figure*}
-
 
 
 \begin{figure*}
@@ -1424,9 +1432,12 @@ matching expression is evaluated for effects only, not for its value.}
   Caja expression & Special cases for function names and methods \\ 
   \hline
            \multicolumn{2}{c}{initialize, don't freeze \code{Foo}} \\
-  \code{Foo.prototype.id = member;} & \\
-  \code{Foo.prototype = \{\ldots: member, {\ldots}\};} & \\
-  \code{Foo.id = \ldots; } & \\
+  \code{Foo.prototype.id = member;}
+                      & \code{\_\_\_.setMember(Foo, "id", member);} \\
+  \code{Foo.prototype = \{\ldots: member, {\ldots}\};} 
+                      & \code{\_\_\_.setMemberMap(Foo, \{\ldots\});} \\
+  \code{Foo.id = \ldots} 
+                      & \code{\_\_\_.setPub(Foo, "id", \ldots)} \\
   \code{caja.def(Foo,Base)} & \\
   \code{caja.def(Foo,Base,} & \\
   \code{\ \ \ \ \ \ \ \ \ \{\ldots: member, {\ldots}\},} & \\
@@ -1439,8 +1450,9 @@ matching expression is evaluated for effects only, not for its value.}
                       & \ \ - constructor name, then it is disallowed. \\
                       & \ \ - function name, then it is frozen. \\
   \hline
-  \code{\ldots\ instanceof Foo} & allow, whether \code{Foo} frozen or not \\
+  \code{\ldots\ instanceof Foo} & allow, whether \code{Foo} is frozen or not\\ 
   \code{Foo = \ldots} & reject assignment to a function/constructor name \\
+  \code{var Foo = \ldots} & reject conflicting initialization as well \\ 
   \hline
      \multicolumn{2}{c}{can only happen if \code{Foo} is already frozen} \\ 
           \code{Foo.Super.call(this,\ldots);} & Only at start of \code{Foo},\\
@@ -1493,7 +1505,7 @@ normal expressions or methods may appear.}
        & \code{enforce(!isFrozen(obj),\ldots);} \\
        & \code{obj[name+"\_canDelete\_\_\_"] = true;} \\
        & /*other bookkeeping yet to be determined*/ \\
-  \hline 
+  \hline
   \code{hasOwnProp(obj,name)} 
        & /*like the original: \code{obj.hasOwnProperty(name)}*/ \\
   \code{isJSONContainer(obj)} 
@@ -1501,20 +1513,21 @@ normal expressions or methods may appear.}
        & \code{return Constr === Object || Constr === Array;} \\ 
   \code{isFrozen(obj)} 
        & \code{return hasOwnProp(obj,"\_\_\_FROZEN\_\_\_");} \\
-  \code{freeze(obj)}*
+  \code{primFreeze(obj)}*
        & \code{for (k in obj)\ \{} \\
        & \code{\ \ if
         (endsWith(k,"\_canSet\_\_\_")||endsWith(k,"\_canDelete\_\_\_"))\ \{}\\
-       & \code{\ \ \ \ obj[k] = false;\}\}}\\ 
+       & \code{\ \ \ \ obj[k] = false; \}\}}\\ 
        & \code{obj.\_\_\_FROZEN\_\_\_ = true;} \\
-       & \code{if (typeof obj === "function") \{ freeze(obj.prototype); \}}\\
+       & \code{if (typeof obj === "function") \{}\\
+       & \code{\ \ primFreeze(obj.prototype); \}}\\
        & \code{return obj;} \\
   \hline 
   \code{method(Constr,meth)}
        & \code{enforce(typeof Constr === "function",\ldots);} \\
        & \code{enforce(typeof meth === "function",\ldots);} \\
        & \code{meth.\_\_\_METHOD\_OF\_\_\_ = Constr;} \\
-       & \code{return freeze(meth);} \\
+       & \code{return primFreeze(meth);} \\
   \code{allowMethod(Constr,name)}*
        & \code{method(Constr,Constr.prototype[meth]);} \\
        & \code{allowCall(Constr,name);} \\
@@ -1588,7 +1601,7 @@ environment is transitively read-only to all Caja code.}
        & \code{return enforce(delete obj[name],\ldots);} \\
   \hline
   \code{args(original)}
-       & \code{return freeze(Array.prototype.slice.call\_\_\_(original,0));}
+     & \code{return primFreeze(Array.prototype.slice.call\_\_\_(original,0));}
 \end{tabular}
 
 \caption[Property Access.]{Property Access. The calls to \code{allowRead} and
