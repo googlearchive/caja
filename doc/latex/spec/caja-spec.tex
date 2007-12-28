@@ -1379,29 +1379,38 @@ original.}
   \code{new foo(a\ldots)}   & \code{new (\_\_\_.asCtor(foo))(a\ldots)} \\
   \code{foo(a\ldots)}       & \code{\_\_\_.asSimpleFunc(foo)(a\ldots)} \\
   \hline
+           \multicolumn{2}{c}{Constructors} \\
   \code{function C(a\ldots)\ \{}
-                 & \code{function C(a\ldots)\ \{} \\
-  \code{\ \ {\ldots}this\ldots\};}
-                 & \code{\ \ {\ldots}this\ldots\};}\\
-                 & \code{\_\_\_.ctor(C);} \\
+  & \code{function C(var\_args)\ \{ return new C.make\_\_\_(arguments); \}} \\
+  \code{\ \ {\ldots}this{\ldots}\ \};}
+    & \code{function C\_init\_\_\_(a\ldots)\ \{ {\ldots}this{\ldots}\ \};} \\
+    & \code{\_\_\_.splitCtor(C,C\_init\_\_\_);} // move to function start \\
+    
+  \code{function C(a\ldots)\ \{}
+    & \code{\_\_\_.primFreeze(\_\_\_.splitCtor(function C(var\_args)\ \{}  \\
+  \code{\ \ {\ldots}this{\ldots}\ \}}
+    & \code{\ \ return new C.make\_\_\_(arguments);} \\
+    & \code{\}, function(a\ldots)\ \{\ {\ldots}this{\ldots}\ \}))} \\
+    
   \hline
+           \multicolumn{2}{c}{Methods} \\
   \code{function(a\ldots)\ \{}
                  & \code{\_\_\_.method(C,function(a\ldots)\ \{} \\
-  \code{\ \ {\ldots}this\ldots\}}
-                 & \code{\ \ {\ldots}this\ldots\})}\\
+  \code{\ \ {\ldots}this{\ldots}\ \}}
+                 & \code{\ \ {\ldots}this{\ldots}\ \})}\\
   \hline
-  \code{function F(a\ldots)\ \{}
-                 & \code{function F(a\ldots)\ \{} \\
-  \code{\ \ \ldots\};}         & \code{\ \ \ldots\};} \\
-                               & \code{\_\_\_.simpleFunc(F);} \\
+           \multicolumn{2}{c}{Simple-functions} \\
+  \code{function F(a\ldots)\ \{}   & \code{function F(a\ldots)\ \{} \\
+  \code{\ \ {\ldots}\ \};}         & \code{\ \ {\ldots}\ \};} \\
+    & \code{\_\_\_.simpleFunc(F);} // move to function start \\
   
   \code{function F(a\ldots)\ \{}
        & \code{\_\_\_.primFreeze(\_\_\_.simpleFunc(function F(a\ldots)\ \{} \\
-  \code{\ \ \ldots\}}         & \code{\ \ \ldots\}))} \\
+  \code{\ \ {\ldots}\ \}}         & \code{\ \ {\ldots}\ \}))} \\
   
   \code{function(a\ldots)\ \{}
          & \code{\_\_\_.primFreeze(\_\_\_.simpleFunc(function(a\ldots)\ \{} \\
-  \code{\ \ \ldots\}}          & \code{\ \ \ldots\}))} \\
+  \code{\ \ {\ldots}\ \}}          & \code{\ \ {\ldots}\ \}))} \\
   \hline
   \code{arguments.callee}      & /*rejected*/ \\
   \code{{\ldots}arguments\ldots} 
@@ -1415,14 +1424,14 @@ original.}
 
 \caption[Translating Callers and Callees]{Translating Callers and Callees. A 
 translated Caja module can be loaded/evaled once, creating an anonymous 
-plugin-maker function. Each time the plugin-maker representing a module is 
-called, it makes a new plugin. Unless their creator puts them in contact, 
-even plugins made by the same plugin-maker are isolated from each other. The 
-expansions above have additional static restrictions explained in the text. 
-The use of a terminal ``\code{;}'' is shorthand for testing whether the 
-matching expression is evaluated for effects only, not for its value. For each 
-top level named function declaration $F$, \code{\_\_\_OUTERS\_\_\_.F
-= \_\_\_.primFreeze(F);} is also emitted at the end of the module body.}
+plugin-maker function. Each time a plugin-maker is called, it makes a new 
+confined plugin. The use of a terminal ``\code{;}'' is shorthand for testing 
+whether the matching expression is evaluated for effects only, not for its 
+value. For each top level named function or constructor declaration $F$, we 
+also emit \\
+``\code{\_\_\_OUTERS\_\_\_.F = \_\_\_.primFreeze(F);}'' at the end of the 
+module body. Methods may only appear at the \code{member} positions in 
+Figure~\ref{tab:special-cases}.}
 \label{tab:call-xlate}
 \end{figure*}
 
@@ -1431,24 +1440,23 @@ top level named function declaration $F$, \code{\_\_\_OUTERS\_\_\_.F
 \begin{tabular}{ll}
   Caja expression & Special cases for function names and methods \\ 
   \hline
-           \multicolumn{2}{c}{initialize, don't freeze \code{Foo}} \\
+           \multicolumn{2}{c}{initializes, doesn't freeze \code{Foo}} \\
   \code{Foo.prototype.id = member;}
                       & \code{\_\_\_.setMember(Foo, "id", member);} \\
-  \code{Foo.prototype = \{\ldots: member, {\ldots}\};} 
+  \code{Foo.prototype = \{\ldots: member, {\ldots}\ \};} 
                       & \code{\_\_\_.setMemberMap(Foo, \{\ldots\});} \\
   \code{Foo.id = \ldots} 
                       & \code{\_\_\_.setPub(Foo, "id", \ldots)} \\
   \code{caja.def(Foo,Base)} & \\
   \code{caja.def(Foo,Base,} & \\
-  \code{\ \ \ \ \ \ \ \ \ \{\ldots: member, {\ldots}\},} & \\
+  \code{\ \ \ \ \ \ \ \ \ \{\ldots: member, {\ldots}\ \},} & \\
   \code{\ \ \ \ \ \ \ \ \ \ldots)} & \\
+  \code{member.bind(this,\ldots)} & anonymous method closure \\
   \hline
-   \multicolumn{2}{c}{freeze \code{Foo} to prevent further initialization} \\
+   \multicolumn{2}{c}{freezes \code{Foo} to prevent further initialization} \\
   \code{new Foo(\ldots)} & \\ 
-  \code{caja.def(Derived,Foo)} & \\
-  {\ldots}Foo{\ldots} & For any other occurrence, if \code{Foo} is a \\
-                      & \ \ - constructor name, then it is disallowed. \\
-                      & \ \ - function name, then it is frozen. \\
+  \code{caja.def(Derived,Foo,\ldots)} & \\
+  {\ldots}Foo{\ldots} & \code{\_\_\_.primFreeze(Foo)} \\
   \hline
   \code{\ldots\ instanceof Foo} & allow, whether \code{Foo} is frozen or not\\ 
   \code{Foo = \ldots} & reject assignment to a function/constructor name \\
