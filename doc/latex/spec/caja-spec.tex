@@ -335,12 +335,17 @@ Experience with Java, Scheme, OCaml, Pict, Perl and others demonstrates that
 existing memory safe languages often already contain an expressive 
 object-capability subset~\cite[respectively]{joe-e, rees96security, emily, 
 backwater, caperl}. We refer to the object-capability subset of JavaScript as 
-\emph{Caja}. The Caja translator restricts the JavaScript it accepts to be 
-within this subset. This sanitized JavaScript is still a general purpose 
-object programming language which JavaScript programmers should find 
-familiar, pleasant, expressive, and easy to learn and use.
+\emph{Caja}. This subset is still a general purpose object programming 
+language which JavaScript programmers should find familiar, pleasant, 
+expressive, and easy to learn and use. The Caja sanitizer translates the 
+JavaScript it accepts to be within this subset. The output of the Caja 
+sanitizer is \emph{cajoled\footnote{
+%
+We thanks Pat Patternson for this term.
+%
+} Javascript}.
 
-Some web apps could use the Caja translator to allow active content in their 
+Some web apps could use the Caja sanitizer to allow active content in their 
 passages~\qq{1}{5}. Other web apps could use Caja to overcome the limits of 
 iframes~\qq{3}{5}. Browser extensions, which run with their user's full 
 authority, could make a \emph{powerbox} available to scripts in 
@@ -351,12 +356,13 @@ file chosen by the user~\qq{4}{6}.
 Our starting point is JavaScript 1.5 as documented in the third edition of 
 the EcmaScript 262 standard~\cite{ECMA-262}; hereafter \emph{ES3}. The 
 remainder of this document explains the differences between Caja---the 
-JavaScript subset accepted by the Caja translator---and ES3. Other documents 
-will explain the interface between Caja and untranslated JavaScript, and 
+JavaScript subset accepted by the Caja sanitizer---and ES3. Other documents 
+will explain the interface between cajoled and uncajoled JavaScript, and 
 Caja's sanitization of the remaining elements of active web content: HTML, 
 CSS, and the DOM and other APIs provided by browsers to JavaScript. We refer 
-collectively to the subset of these accepted by the Caja translator as 
-\emph{Caja web content}.
+collectively to the subset of these accepted by the Caja sanitizer as 
+\emph{Caja web content}, and to the sanitizer's corresponding output as 
+\emph{Cajoled web content}.
 
 
 \section{Subsetting JavaScript}
@@ -396,20 +402,21 @@ with access only to a counter's \code{incr} function can increment
 \end{figure}
 
 Caja defines a subset of JavaScript both syntactically and semantically. The 
-Caja translator rejects non-Caja input statically when it can. But because of 
+Caja sanitizer rejects non-Caja input statically when it can. But because of 
 JavaScript's dynamic nature, some of Caja's restrictions cannot be imposed 
-statically, so the Caja translator translates the JavaScript it accepts into 
-JavaScript with additional runtime checks. To facilitate development, it is 
+statically, so the Caja sanitizer cajoles the JavaScript it accepts into 
+Javascript with additional runtime checks. To facilitate development, it is 
 easy to write a program in the Caja subset of JavaScript so it can run 
-correctly whether it is run translated or not.
+correctly whether it is cajoled or not.
 
 A web app (or any other JavaScript-based embedding application framework) can 
 be written partially in JavaScript and partially in Caja. The web app loads 
 the Caja runtime library, which is written in JavaScript, and which is 
-assumed by the JavaScript output of the Caja translator. All untrusted 
-scripts must be provided as Caja source code, to be verified and translated 
-by the Caja translator. The translator's output is either included directly 
-in the containing web page or loaded by the Caja runtime.
+assumed by the cajoled JavaScript output by the Caja sanitizer. All 
+untrusted scripts must be provided as Caja source code, to be statically 
+verified and cajoled by the Caja sanitizer. The sanitizer's output is 
+either included directly in the containing web page or loaded by the Caja 
+runtime.
 
 A loose analogy with machine and operating system architecture should help 
 explain the relationships. In the analogy, the full JavaScript language 
@@ -420,15 +427,15 @@ objects provided by the browser, serve the role of devices.
 
 \begin{description}
 
-  \item[User-mode.] By a combination of static and dynamic checks, the 
-  translator allows only a safe ``user-mode'' subset of JavaScript. As with 
+  \item[User-mode.] By a combination of static and dynamic checks, the Caja 
+  sanitizer allows only a safe ``user-mode'' subset of JavaScript. As with 
   user-mode instructions, this subset can compute any computable function, 
   but cannot cause external effects nor sense the outside world.
 
-  \item[Address mapping.] A package of Caja source code to be translated 
+  \item[Address mapping.] A package of Caja source code to be cajoled 
   together defines a \emph{Caja module}. All code within the same module 
   share a global environment, but distinct modules see disjoint global 
-  environments. The translator maps Caja global variable references to 
+  environments. The Caja sanitizer maps Caja global variable references to 
   instead address module-relative fields.
 
   \item[Context switching.] When Caja object A has a reference to Caja 
@@ -633,20 +640,27 @@ conventional \code{super} for the other functions defined within this scope.
 \end{description}
 
 This last point about ``Silent errors'' is another reason to avoid the 
-monolithic kernel approach. Web apps in untranslated JavaScript are 
-vulnerable to any malicious active content that finds a way to provoke a 
-silent error and exploit the resulting inconsistency.
+monolithic kernel approach. Web apps in uncajoled JavaScript are vulnerable 
+to any malicious active content that finds a way to provoke a silent error 
+and exploit the resulting inconsistency.
 
 Because Caja failures aren't silent, Caja is a \emph{fail-stop 
 subset}\footnote{
 %
 We thank Dan Rabin for this formulation.
 %
-} of ES3: While a Caja program has not explicitly indicated a failure, 
-it executes within ES3's semantics. By \emph{indicate a failure}, we 
-mean either throwing an exception or returning \code{undefined} for a 
-property read. The \emph{Gotchas} sections below detail minor ways in which 
-Cajita and Caja are not quite fail-stop subsets of ES3.
+} of ES3: While a Caja program has not explicitly indicated a failure, it 
+executes within ES3's semantics. By \emph{indicate a failure}, we mean either 
+throwing an exception or returning \code{undefined} for a property read. The 
+\emph{Gotchas} sections below detail minor ways in which Cajita and Caja are 
+not quite fail-stop subsets of ES3. A \emph{Caja-compliant} JavaScript 
+program is one which
+\begin{enumerate}
+  \item is statically accepted by the Caja sanitizer,
+  \item does not provoke Caja-induced failures when run cajoled, and
+  \item avoid these gotchas.
+\end{enumerate}
+Such a program should have the same semantics whether run cajoled or not.
 
 
 \section{Cajita Specification}
@@ -665,7 +679,7 @@ The design of Cajita was inspired by Doug Crockford's \emph{ADsafe}.
 }
 
 The Caja runtime will provide a safe \code{caja.eval} operation. For 
-\code{caja.eval} to accept Caja code, the Caja translator would need to be 
+\code{caja.eval} to accept Caja code, the Caja sanitizer would need to be 
 written in JavaScript and included in the Caja download. To minimize download 
 size, \code{caja.eval} will instead accept only Cajita code.
 
@@ -707,10 +721,16 @@ To explain the restrictions Cajita imposes, we need some definitions.
 
 \subsection{Static restrictions}
 
-Any source code statically accepted by the Caja translator is 
-\emph{Caja-compliant JavaScript program text}. Source code satisfying certain 
-additional static restrictions is also Cajita-compliant program text. The 
-following restrictions apply to both Caja and Cajita.
+Any source code statically accepted by the Caja sanitizer is a \emph{legal 
+Caja program}. A legal Caja program satisfying additional static restrictions 
+is also a \emph{legal Cajita program} and will be accepted by the Cajita 
+sanitizer. A Caja-compliant JavaScript program that is also a legal Cajita 
+program is a \emph{Cajita-compliant JavaScript program}---it will have the 
+same semantics whether uncajoled, cajoled by the Caja sanitizer, or cajoled 
+by the Cajita sanitizer.
+
+The static restrictions immediately below apply to both Caja and Cajita. This 
+is followed by the additional static restrictions specific to Cajita.
 
 \begin{description}
 
@@ -721,11 +741,11 @@ following restrictions apply to both Caja and Cajita.
     \emph{de-facto extensions} to ES3 as explained below.
     
     \item[De-facto extensions.] As we identify widely supported extensions of 
-    ES3 that we can accept as input, but still translate to conforming ES3 on 
+    ES3 that we can accept as input, but still cajole to conforming ES3 on 
     output, we may add these to Caja. For example, we are currently 
     considering allowing backslash as a line continuation character, since 
     this is allowed by virtually all JavaScript implementations and can be 
-    trivially translated to correct ES3.
+    trivially cajoled to correct ES3.
 
     \item[Without ``\code{with}''.] The ``\code{with}'' keyword is forbidden. 
     Because of the scope confusion it causes, ``\code{with}'' is a widely 
@@ -740,22 +760,22 @@ following restrictions apply to both Caja and Cajita.
 
     \item[Forbidden names.] An identifier ending with a double underscore is 
     forbidden, either as a variable name or a property name. We reserve the 
-    triple underscore for use by the Caja translator output and the Caja 
-    runtime code. Firefox reserves use of the double underscore for itself.
+    triple underscore for use by the sanitizer's cajoled output and by the 
+    Caja runtime. Firefox reserves the double underscore for itself.
     
     \item[``new'' is ok.] Since Cajita does not have \code{this}, 
     constructors, nor prototypes, \code{new} isn't needed purely within 
     Cajita. But since Cajita code must interoperate smoothly with Caja and 
-    untranslated JavaScript code, \code{new} is considered a valid part of 
+    uncajoled JavaScript code, \code{new} is considered a valid part of 
     Cajita.
         
 \end{description}
 
 The following features are present in Caja in order to accommodate old code, 
 rather than to enhance expressiveness. Since Cajita is for new code, in order 
-to minimize the dowload size of the Cajita translator, as well as to simplify 
+to minimize the dowload size of the Cajita sanitizer, as well as to simplify 
 the semantics of Cajita considered on its own, these features are absent from 
-Cajita. Code containing these features is not Cajita-complaint.
+Cajita. Code containing these features is not legal Cajita.
 
 \begin{description}
     
@@ -781,24 +801,24 @@ Cajita. Code containing these features is not Cajita-complaint.
     
     \item[Literal RegExp syntax.] In JavaScript implementations, the literal 
     pattern syntax is often optimized into a static object with mutable 
-    state, violating isolation. Caja translates the \code{/pattern/} syntax 
-    to \code{new RegExp("pattern")}. In Cajita, the second form must be
-    written explicitly.
+    state, violating isolation. The Caja sanitizer cajoles the 
+    \code{/pattern/} syntax to \code{new RegExp("pattern")}. In Cajita, the 
+    second form must be written explicitly.
     
     \item[for/in loops.] Because of the confusing semantics of JavaScript's 
     \code{for/in} loops, these are absent from Cajita. Instead, Cajita code 
     should enumerate the properties of \code{obj} by doing
 %
 \begin{alltt}
-    caja.each(obj, function(k, v)\ \{ 
-      {\ldots}k{\ldots}v\ldots 
-    \});
+caja.each(obj, function(k, v)\ \{
+  {\ldots}k{\ldots}v{\ldots}
+\});
 \end{alltt}
 %
-    This code will reliably give the same results whether run translated or 
-    not. It will enumerate only the non-inherited publicly Caja-visible 
-    properties of \code{obj}. If \code{obj instanceof Array}, then \code{k} 
-    will enumerate successive indexes into the array.
+    This code will reliably give the same results whether run cajoled or not. 
+    It will enumerate only the non-inherited publicly Caja-visible properties 
+    of \code{obj}. If \code{obj instanceof Array}, then \code{k} will 
+    enumerate successive indexes into the array.
     
     \item[Semicolon insertion.] Code which would provoke semicolon insertion 
     is not legal Cajita.
@@ -807,10 +827,10 @@ Cajita. Code containing these features is not Cajita-complaint.
     according to the intersection of ES3's scoping rules and conventional 
     block-level lexical scoping. This is essentially lexical scoping with the 
     restriction that a function cannot contain two definitions of the same 
-    variable name, even in two separate blocks. If JavaScript scope analysis
-    and conventional block-level lexical scope analysis would disagree on the
-    variable bindings of a given piece of code, then that code is not
-    Cajita-compliant.     
+    variable name, even in two separate blocks. If JavaScript scope analysis 
+    and conventional block-level lexical scope analysis would disagree on the 
+    variable bindings of a given piece of code, then that code is not 
+    legal Cajita.
     
     \item[Coercing equality.] JavaScript's coercing rules for the 
     ``\code{==}'' and ``\code{!=}'' operators are complex and accident prone. 
@@ -821,6 +841,8 @@ Cajita. Code containing these features is not Cajita-complaint.
 
 
 \subsection{Dynamic restrictions}
+
+The following restrictions apply to both Caja and Cajita.
 
 \begin{description}
 
@@ -868,6 +890,8 @@ prototype can be further initialized. \\ } \hrule
 
 
 \subsection{Outer environment restrictions}
+
+The following restrictions apply to both Caja and Cajita.
 
 In JavaScript, all code loaded into the same JavaScript execution environment 
 shares a common mutable global environment. To avoid confusion, we refer to 
@@ -933,7 +957,7 @@ are isolated from each other.}
 
 Caja seeks to define a fail-stop subset of ES3, as explained above. However, 
 it falls short of this goal in several minor ways. To write a correct program 
-that executes correctly whether run translated or untranslated, it should 
+that executes correctly whether run cajoled or uncajoled, it should 
 avoid these gotchas. In this section, we enumerate those gotchas relevant to 
 the Cajita subset of Caja.
 
@@ -944,18 +968,18 @@ the Cajita subset of Caja.
   \code{arguments[i]}. In Caja, if ``\code{arguments}'' is mentioned, it is 
   bound to a proper array snapshot of the arguments list when the function 
   was entered, \emph{not} an array-like object. In order for Caja to be a 
-  fail-stop subset of ES3, a future version of the Caja translator will 
+  fail-stop subset of ES3, a future version of the Caja sanitizer will 
   statically disallow assignments to any parameter variable within a function 
   that mentions ``\code{arguments}''. But in the initial Caja implementation, 
   this minor gotcha remains.
   
   \item[Absent \code{ReferenceError}.] In ES3, when a reference to an 
   undefined variable is evaluated as an expression, a \code{ReferenceError} 
-  is thrown. The Caja translator translates a reference to an undefined 
-  variable into a reference to an outer variable. Given the current Caja 
-  translation rules, a reference to an undefined outer variable will evaluate
-  to \code{undefined} rather than throwing a \code{ReferenceError}. We expect
-  to repair this issue in a future Caja spec and implementation.
+  is thrown. The Caja sanitizer cajoles a reference to an undefined variable 
+  into a reference to an outer variable. Given the current cajoling rules, a 
+  reference to an undefined outer variable will evaluate to \code{undefined} 
+  rather than throwing a \code{ReferenceError}. We expect to repair this 
+  issue in a future Caja spec and implementation.
   
 \end{description}
 
@@ -1040,16 +1064,16 @@ third argument provides instance members including methods. A fourth optional
 argument (unshown) provides static members. When the superclass argument is a 
 function name, it can be used as shown for \emph{super} construction and 
 method calls. These occurrences of \code{call} are exempt from the normal 
-translation rules. \\ } \hrule
+cajoling rules. \\ } \hrule
 \label{fig:caja-subclass}
 \end{figure}
 
 
 \subsection{Static restrictions}
 
-Any source code statically accepted by the Caja translator is \emph{verified 
-Caja program text}. The presence of the following syntactic elements causes 
-an alleged Caja program text to instead be statically rejected.
+Any source code statically accepted by the Caja sanitizer is a \emph{legal 
+Caja program}. The presence of the following syntactic elements causes a 
+program to instead be statically rejected.
 
 \begin{description}
 
@@ -1066,15 +1090,15 @@ an alleged Caja program text to instead be statically rejected.
   constructor and its ``\code{.prototype}'' may be initialized, but are 
   implicitly frozen on first use.
   
-  \emph{Speculative future feature:} We are working on a new translation for
-  constructors that will allow constructor names to be treated as permissively
-  as declared function names.
+  \emph{Speculative future feature:} We are working on a new cajoling rule 
+  for constructors that will allow constructor names to be treated as 
+  permissively as declared function names.
   
   \item[Methods.] To avoid the confusions regarding ``\code{this}'', Caja 
-  methods are also not first-class. Methods may only appear in the three 
-  positions marked ``\code{member}'' in Figure~\ref{tab:special-cases}, as 
-  shown by example in Figures~\ref{fig:caja-point}, 
-  \ref{fig:brief-caja-point}, and~\ref{fig:caja-subclass}. Methods may thus 
+  methods are also not first-class. Methods may only appear in the positions 
+  marked ``\code{member}'' in Figure~\ref{tab:special-cases}, as shown by 
+  example in Figures~\ref{fig:caja-point}, \ref{fig:brief-caja-point}, 
+  \ref{fig:caja-subclass}, and~\ref{fig:caja-anon-method}. Methods may thus 
   be used only to initialize properties of prototypes. These properties will 
   be marked callable but not readable, settable, enumerable, or deletable. If 
   \code{x.foo}, is associated with a method, then \code{x.foo(\ldots)} is 
@@ -1082,7 +1106,7 @@ an alleged Caja program text to instead be statically rejected.
 
   \item[Exophoric functions.] \emph{Speculative future feature:} When an 
   anonymous function mentioning ``\code{this}'' appears in an illegal 
-  position for a Caja method, the Caja translator currently rejects the 
+  position for a Caja method, the Caja sanitizer currently rejects the 
   program. A future upwards compatible extension to Caja may instead classify 
   these as \emph{exophoric functions}. An exophoric function mentions 
   ``\code{this}'', but its referent for ``\code{this}'' is not statically 
@@ -1091,19 +1115,30 @@ an alleged Caja program text to instead be statically rejected.
   
   \begin{itemize}
 
-    \item The translator inserts a check at the beginning of exophoric 
+    \item The Caja sanitizer inserts a check at the beginning of exophoric 
     functions, ensuring that ``\code{this}'' isn't bound to the global 
     object. This ensures that exophoric functions cannot be called as 
     functions.
     
     \item Within an exophoric function, ``\code{this}'' is not treated 
     specially. ``\code{this.foo\_}'' is disallowed, and ``\code{this[x]}'' is 
-    translated to a check that \code{x} names a \emph{publicly} readable 
-    member of \code{this}.
+    cajoled to a check that \code{x} names a \emph{publicly} readable member 
+    of \code{this}.
 
   \end{itemize}
   
 \end{description}
+
+\begin{figure}[t!]
+\begin{alltt}
+function TODO(x, y)\ \{
+  TODO
+\});
+\end{alltt}
+
+\caption[An Anonymous Caja Method.]{An Anonymous Caja Method. xx. \\ } \hrule
+\label{fig:caja-anon-method}
+\end{figure}
 
 Although constructors are normally frozen and the ``\code{prototype}'' 
 property of functions is generally not settable, we allow the 
@@ -1231,15 +1266,15 @@ currency. \\ } \hrule
 
 Caja seeks to define a fail-stop subset of ES3, as explained above. However, 
 it falls short of this goal in several minor ways. To write a correct program 
-that executes correctly whether run translated or untranslated, it should 
+that executes correctly whether run cajoled or uncajoled, it should 
 avoid these gotchas. In this section, we enumerate those remaining gotchas
 relevant specifically to Caja.
 
 \begin{description}
 
   \item[Bare for/in loops.] More properties are visible and enumeratable to 
-  untranslated programs than translated programs. To write a program which 
-  will see the same properties whether run translated or not, write the 
+  uncajoled programs than cajoled programs. To write a program which 
+  will see the same properties whether run cajoled or not, write the 
   following instead:
 %
 \begin{alltt}
@@ -1250,8 +1285,8 @@ for (var k in obj) \{
 \}
 \end{alltt}
 %
-  This conditional does not affect the behavior of translated programs, so
-  programs that only need to run translated can safely leave it out. Using
+  This conditional does not affect the behavior of cajoled programs, so
+  programs that only need to run cajoled can safely leave it out. Using
   \code{canEnumOwn} instead will further restrict the enumeration to
   non-inherited properties, as is typically desired. The same effect can still
   be obtained more compactly using Cajita's \code{caja.each} construct as
@@ -1304,7 +1339,7 @@ Graham Spencer.
 
 \begin{figure*}
 \begin{tabular}{ll}
-  Caja expression    & translates to ES3 code equivalent to\\ 
+  Caja expression    & cajoles to ES3 code equivalent to\\ 
   \hline
   \code{with}        & /*rejected in all positions*/ \\
   \hline
@@ -1346,26 +1381,26 @@ Graham Spencer.
          & \code{\_\_\_.enforce(delete \_\_\_OUTERS\_\_\_.glob,\ldots)} \\
 \end{tabular}
 
-\caption[Translating Property Access]{Translating Property Access. Under the 
+\caption[Cajoling Property Access]{Cajoling Property Access. Under the 
 assumption that the Caja runtime environment is as specified, the Caja 
-translator generates translations equivalent to those specified above, but 
-inlined and optimized where possible. The meaning of translating is thereby 
-determined by the specification of these entry points into the Caja runtime 
-library. Where we show a translation apparently duplicating an expression, 
-the translator instead introduces temporary variables as needed so that each 
-expression evaluates exactly as many times and in the same order as in the 
-original.}
+sanitizer generates cajoled Javascript equivalent to that specified above, 
+but inlined and optimized where possible. The meaning of sanitizing is 
+thereby determined by the specification of these entry points into the Caja 
+runtime library. Where we show cajoled code apparently duplicating an 
+expression, the Caja sanitizer instead introduces temporary variables as 
+needed so that each expression evaluates exactly as many times and in the 
+same order as in the original.}
 \label{tab:prop-xlate}
 \end{figure*}
 
 
 \begin{figure*}
 \begin{tabular}{ll}
-  Caja expression & translates to ES3 code equivalent to\\ 
+  Caja expression & cajoles to ES3 code equivalent to\\ 
   \hline
                  & \code{\_\_\_.loadModule(function(\_\_\_OUTERS\_\_\_)\ \{}\\
   /*caja module body*/      
-                 & \code{\ \ } /*translated module body*/ \\
+                 & \code{\ \ } /*cajoled module body*/ \\
                  & \code{\});} \\
   \hline
   \code{this.id(a\ldots)} 
@@ -1422,8 +1457,8 @@ original.}
      & \code{new RegExp("pattern", "flags")} /* where flags is [igm]* */ \\
 \end{tabular}
 
-\caption[Translating Callers and Callees]{Translating Callers and Callees. A 
-translated Caja module can be loaded/evaled once, creating an anonymous 
+\caption[Cajoling Callers and Callees]{Cajoling Callers and Callees. A 
+cajoled Caja module can be loaded/evaled once, creating an anonymous 
 plugin-maker function. Each time a plugin-maker is called, it makes a new 
 confined plugin. The use of a terminal ``\code{;}'' is shorthand for testing 
 whether the matching expression is evaluated for effects only, not for its 
@@ -1451,7 +1486,7 @@ Figure~\ref{tab:special-cases}.}
   \code{caja.def(Foo,Base,} & \\
   \code{\ \ \ \ \ \ \ \ \ \{\ldots: member, {\ldots}\ \},} & \\
   \code{\ \ \ \ \ \ \ \ \ \ldots)} & \\
-  \code{member.bind(this,\ldots)} & anonymous method closure \\
+  \code{member.bind(this,\ldots)} & anonymous method closure within method \\
   \hline
    \multicolumn{2}{c}{freezes \code{Foo} to prevent further initialization} \\
   \code{new Foo(\ldots)} & \\ 
@@ -1471,10 +1506,10 @@ Figure~\ref{tab:special-cases}.}
                                     & Only within methods of \code{Derived} \\   
 \end{tabular}
 
-\caption[Special cases]{Special cases. When \code{Foo} is the name of a named
-function or a constructor, then these special cases are checked before the
-general translations rules. At the \code{member} positions above, either
-normal expressions or methods may appear.}
+\caption[Cajoling Special Cases]{Cajoling Special Cases. When \code{Foo} is 
+the name of a named function or a constructor, then these special cases are 
+checked before the general cajoling rules. At the \code{member} positions 
+above, either normal expressions or methods may appear.}
 \label{tab:special-cases}
 \end{figure*}
 
@@ -1654,57 +1689,58 @@ reasons explained in the text.}
 
 \begin{figure*}
 \begin{tabular}{lll}
-  Global ES3 constructor         & Property                    & Taming \\
+  Global ES3 constructor       & Property                    & Taming \\
   \hline 
-  constructor                    &                             & default ctor \\
-  constructor\code{.prototype}   &                             & default ok \\
-                                 & \code{constructor}          & hidden \\
-                                 & \code{toString}             & default method \\
-                                 & \code{toLocaleString}       & default method \\
-                                 & \code{valueOf}              & default method \\
-  instances                      & \code{length}               & default ok \\
+  constructor                  &                             & default ctor \\
+  constructor\code{.prototype} &                             & hidden \\
+                               & \code{constructor}          & hidden \\
+                               & \code{toString}             & default method \\
+                               & \code{toLocaleString}       & default method \\
+                               & \code{valueOf}              & default method \\
+  instances                    & \code{length}               & default ok \\
   \hline
-  \code{Object.prototype}        & \code{hasOwnProperty}       & handled \\
-                                 & \code{isPrototypeOf}        & method \\
-                                 & \code{propertyIsEnumerable} & handled \\
-                                 & \code{freeze\_}             & added method \\
+  \code{Object.prototype}      & \code{hasOwnProperty}       & handled \\
+                               & \code{isPrototypeOf}        & method \\
+                               & \code{propertyIsEnumerable} & handled \\
+                               & \code{freeze\_}             & added method \\
   \hline
-  \code{Function}                &                             & hidden \\
-  \code{Function.prototype}      &                             & ok \\
-                                 & \code{apply}                & handled \\
-                                 & \code{call}                 & handled \\
-  instances                      & \code{prototype}            & ok \\
-                                 & \code{length}               & ok \\
+  \code{Function}              &                             & hidden \\
+  \code{Function.prototype}    &                             & hidden \\
+                               & \code{apply}                & handled \\
+                               & \code{call}                 & handled \\
+                               & \code{bind}                 & added method \\
+  instances                    & \code{prototype}            & hidden \\
+                               & \code{length}               & ok \\
   \hline
-  \code{Array.prototype}         & \code{concat}               & method \\
-                                 & \code{join}                 & method \\
-                                 & \code{pop}                  & handled \\
-                                 & \code{push}                 & handled \\
-                                 & \code{reverse}              & handled \\
-                                 & \code{shift}                & handled \\
-                                 & \code{slice}                & method \\
-                                 & \code{sort}                 & handled \\
-                                 & \code{splice}               & handled \\
-                                 & \code{unshift}              & handled \\
-                                 & \code{indexOf}              & added method \\
-                                 & \code{lastIndexOf}          & added method \\
+  \code{Array.prototype}       & \code{concat}               & method \\
+                               & \code{join}                 & method \\
+                               & \code{pop}                  & handled \\
+                               & \code{push}                 & handled \\
+                               & \code{reverse}              & handled \\
+                               & \code{shift}                & handled \\
+                               & \code{slice}                & method \\
+                               & \code{sort}                 & handled \\
+                               & \code{splice}               & handled \\
+                               & \code{unshift}              & handled \\
+                               & \code{indexOf}              & added method \\
+                               & \code{lastIndexOf}          & added method \\
   \hline
-  \code{String}                  & \code{fromCharCode}         & callable \\
-  \code{String.prototype}        & \code{match}                & handled \\
-                                 & \code{replace}              & handled \\
-                                 & \code{search}               & handled \\
-                                 & \code{split}                & handled \\
-                                 &           all others in ES3 & ok, method \\
+  \code{String}                & \code{fromCharCode}         & callable \\
+  \code{String.prototype}      & \code{match}                & handled \\
+                               & \code{replace}              & handled \\
+                               & \code{search}               & handled \\
+                               & \code{split}                & handled \\
+                               &           all others in ES3 & ok, method \\
 \end{tabular}
 
 \caption[Taming ES3 Global Constructors, Part 1.]{Taming ES3 Global 
 Constructors, Part 1. The first section above shows the taming decisions that 
 apply by default to global ES3 constructors, their prototypes, and their 
-instances, unless stated otherwise in a specific table entry. A 
-\emph{handled} method acts differently when called by translated Caja code 
-than for untranslated JavaScript code. The handled \code{call} and 
-\code{apply} methods can only be invoked on simple functions. Handled 
-mutating methods like \code{Array.pop} obey Caja's mutability constraints. }
+instances, unless stated otherwise in a specific table entry. A
+\emph{handled} method acts differently when called by cajoled \emph{vs.} 
+uncajoled code. The handled \code{call}, \code{apply}, and \code{bind} 
+methods can only be invoked on simple functions. Handled mutating methods 
+like \code{Array.pop} obey Caja's mutability constraints.}
 \label{tab:taming-es3-1}
 \end{figure*}
 
@@ -1712,39 +1748,39 @@ mutating methods like \code{Array.pop} obey Caja's mutability constraints. }
 
 \begin{figure*}
 \begin{tabular}{lll}
-  Global ES3 constructor         & Property                    & Taming \\
+  Global ES3 constructor  & Property                    & Taming \\
   \hline 
-  \code{Boolean}                 &                             & ctor \\
+  \code{Boolean}          &                             & ctor \\
   \hline
-  \code{Number}                  & \code{MAX\_VALUE}           & ok \\
-                                 & \code{MIN\_VALUE}           & ok \\
-                                 & \code{NaN}                  & ok \\
-                                 & \code{NEGATIVE\_INFINITY}   & ok \\
-                                 & \code{POSITIVE\_INFINITY}   & ok \\
-  \code{Number.prototype}        & \code{toFixed}              & method \\
-                                 & \code{toExponential}        & method \\
-                                 & \code{toPrecision}          & method \\
+  \code{Number}           & \code{MAX\_VALUE}           & ok \\
+                          & \code{MIN\_VALUE}           & ok \\
+                          & \code{NaN}                  & ok \\
+                          & \code{NEGATIVE\_INFINITY}   & ok \\
+                          & \code{POSITIVE\_INFINITY}   & ok \\
+  \code{Number.prototype} & \code{toFixed}              & method \\
+                          & \code{toExponential}        & method \\
+                          & \code{toPrecision}          & method \\
   \hline
-  \code{Date}                    &                             & ctor* \\
-                                 & \code{parse}                & callable \\
-                                 & \code{UTC}                  & callable \\
-  \code{Date.prototype}          & \code{to*String} all in ES3 & method \\
-                                 & \code{toISOString}          & added method \\
-                                 & \code{get*}      all in ES3 & method \\
-                                 & \code{set*}      all in ES3 & handled \\
+  \code{Date}             &                             & ctor* \\
+                          & \code{parse}                & callable \\
+                          & \code{UTC}                  & callable \\
+  \code{Date.prototype}   & \code{to*String} all in ES3 & method \\
+                          & \code{toISOString}          & added method \\
+                          & \code{get*}      all in ES3 & method \\
+                          & \code{set*}      all in ES3 & handled \\
   \hline
-  \code{RegExp.prototype}        & \code{exec}                 & handled \\
-                                 & \code{test}                 & handled \\
-  instances                      & \code{source}               & ok \\
-                                 & \code{global}               & ok \\
-                                 & \code{ignoreCase}           & ok \\
-                                 & \code{multiline}            & ok \\
-                                 & \code{lastIndex}            & ok \\
+  \code{RegExp.prototype} & \code{exec}                 & handled \\
+                          & \code{test}                 & handled \\
+  instances               & \code{source}               & ok \\
+                          & \code{global}               & ok \\
+                          & \code{ignoreCase}           & ok \\
+                          & \code{multiline}            & ok \\
+                          & \code{lastIndex}            & ok \\
   \hline 
-  \code{Error.prototype}         & \code{name}                 & ok \\
-                                 & \code{message}              & ok \\
-  \code{*Error}                  &                  all in ES3 & ok \\
-  \code{*Error.prototype}        &                  all in ES3 & ok \\
+  \code{Error.prototype}  & \code{name}                 & ok \\
+                          & \code{message}              & ok \\
+  \code{*Error}           &                  all in ES3 & ok \\
+  \code{*Error.prototype} &                  all in ES3 & ok \\
   
 \end{tabular}
 
