@@ -492,7 +492,8 @@ function Point(x, y)\ \{
   \});
 \};
 
-var pt = Point(3, 5);
+var ptA = Point(3, 5);
+var ptB = Point(4, 7);
 \end{alltt}
 
 \caption[A Cajita Point.]{A Cajita Point. As a baseline, we first express 
@@ -881,7 +882,8 @@ Point.prototype.getY = function()\ \{
   return this.y\_; 
 \};
 
-var pt = new Point(3, 5);
+var ptC = new Point(3, 5);
+var ptD = new Point(4, 7);
 \end{alltt}
 
 \caption[A Caja Point.]{A Caja Point. The point example, written
@@ -1180,8 +1182,8 @@ program to instead be statically rejected.
   must not contain an explicit \code{return}.
   
   \item[Methods.] To avoid the confusions regarding ``\code{this}'', Caja 
-  methods are restricted. Methods may only appear in the positions marked 
-  ``\code{member}'' in Figure~\ref{tab:special-cases}, as shown by example in 
+  methods may only appear in the positions marked ``\code{member}'' in 
+  Figure~\ref{tab:special-cases}, as shown by example in 
   Figures~\ref{fig:caja-point}, \ref{fig:brief-caja-point}, 
   \ref{fig:caja-subclass}, and~\ref{fig:caja-attached-method}. Methods may 
   thus be used to initialize properties of prototypes, or to abstract part of 
@@ -1385,9 +1387,9 @@ relevant specifically to Caja.
 %
 \begin{alltt}
 for (var k in obj)\ \{ 
-  if (caja.canEnumPub(obj,k))\ \{
-    {\ldots}k{\ldots}obj[k]\ldots
-  \}
+\ \ if (caja.canEnumPub(obj,k))\ \{
+\ \ \ \ {\ldots}k{\ldots}obj[k]\ldots
+\ \ \}
 \}
 \end{alltt}
 %
@@ -1409,14 +1411,33 @@ for (var k in obj)\ \{
   object's property, and that property is then invoked \emph{as a method} of 
   the object without using \code{new}, the constructor would run with its 
   \code{this} bound to that object, which in Caja would violate that object's 
-  encapsulation. Even worse, in JavaScript, if a constructor is called
-  \emph{as a function}, its \code{this} would be bound to the global
+  encapsulation. Even worse, in JavaScript, if a constructor is called 
+  \emph{as a function}, its \code{this} would be bound to the global 
   object---which would be a fatal escalation of privilege.
   
   In order for Caja to be both safe and a fail-stop subset of JavaScript, 
   these cases should fail. Instead, in the initial Caja implementation, in 
   these cases the constructor may instead act as if called with \code{new}. 
   This is safe, but it silently diverges from JavaScript behavior.
+  
+  \item[Attachment breaks identity] Figure~\ref{fig:cajita-point} and 
+  Figure~\ref{fig:caja-point} each instantiate two points. Both are in 
+  Caja-compliant JavaScript---they work correctly whether cajoled or not. 
+  After Figure~\ref{fig:cajita-point}, which is also Cajita-compliant, 
+  \code{ptA.getX===ptB.getX} will always be \code{false}. Whether cajoled or 
+  not, each point instance returns its own unique \code{getX} function.
+  
+  By contrast, \code{ptC.getX===ptD.getX} will be \code{true} if 
+  Figure~\ref{fig:caja-point} is run uncajoled, but \code{false} if cajoled. 
+  In uncajoled JavaScript, both operands return the 
+  \code{Point.prototype.getX} method itself. When cajoled, the left operand 
+  returns the method as attached to \code{ptC} whereas the right operand 
+  returns the method as attached to \code{ptD}. Calling an \emph{attached 
+  method} either fails or acts like calling the original method, and so 
+  remains within a fail-stop subset of JavaScript. But this difference in 
+  object identity is a genuine Caja gotcha. Caja-compliant programs should 
+  avoid testing the object identity of methods. Cajita-compliant programs 
+  need not worry.
 
 \end{description}
 
