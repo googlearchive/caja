@@ -1082,6 +1082,13 @@ subset of ES3.
   When bind has additional arguments, it returns a new function representing 
   \code{F} curried over these additional arguments.
   
+  \item[\code{(function()\{{\ldots\}})()} $\equiv$ \code{\{{\ldots}\}}]
+  
+  \ \\
+  In Cajita only, a simple-function as a thunk correctly abstracts over the 
+  code it contains, given that this code makes no reference to 
+  \code{arguments}.
+  
 \end{description}
 
 
@@ -1458,6 +1465,15 @@ ES3, but are all within a fail-stop subset of ES3.
   When \code{bind} has additional arguments, it returns a new function 
   representing \code{F} curried over these additional arguments.
   
+  \item[\code{(function()\{{\ldots}\}).call(this)} $\equiv$ 
+  \code{\{{\ldots}\}}]
+  
+  \ \\
+  In Caja, an attached method as a thunk correctly abstracts over the code it 
+  contains, given that this code makes no reference to \code{arguments} and 
+  does not define any variable names that conflict with variables defined or
+  used by its enclosing method or constructor.
+
 \end{description}
 
 
