@@ -169,14 +169,14 @@ into more depth.
 
 \begin{figure}[t!]
 \begin{alltt}
-function F(x) \{ this.x_ = x; \}
-F.prototype.getX = function() \{
+function F(x)\ \{ this.x_ = x; \}
+F.prototype.getX = function()\ \{
   return this.x_;
 \};
-F.make = function(x) \{
+F.make = function(x)\ \{
   return new F(x);
 \};
-function test() \{
+function test()\ \{
   return new F(3).getX() === 3;
 \}
 \end{alltt}
@@ -719,7 +719,7 @@ To explain the restrictions Cajita imposes, we need some definitions.
 
 \end{description}
 
-\subsection{Static restrictions}
+\subsection{Cajita static restrictions}
 
 Any source code statically accepted by the Caja sanitizer is a \emph{legal 
 Caja program}. A legal Caja program satisfying additional static restrictions 
@@ -840,7 +840,7 @@ caja.each(obj, function(k, v)\ \{
 \end{description}
 
 
-\subsection{Dynamic restrictions}
+\subsection{Cajita dynamic restrictions}
 
 The following restrictions apply to both Caja and Cajita.
 
@@ -859,8 +859,8 @@ The following restrictions apply to both Caja and Cajita.
   function or of any object Caja considers frozen.}
   
 \end{description}
-  
-  
+
+
 \begin{figure}[t!]
 \begin{alltt}
 function Point(x, y)\ \{
@@ -1006,6 +1006,69 @@ compact pattern for initializing a top-level prototype all at once.
 \end{figure}
 
 
+\subsection{Cajita regularities}
+
+The following regularities apply when calling simple-functions, whether the 
+calling code is in Cajita or Caja. When calling other functions, only the 
+weaker \emph{Caja regularities} explained in a later section apply. In both 
+sections, we list only regularities stronger than (but compatible with) those 
+provided by uncajoled JavaScript.
+
+\begin{description}
+  \item[\code{F(\ldots)} $\equiv$ \code{new F(\ldots)}]
+  
+  \ \\
+  The \code{new} keyword does not change the meaning of calling a 
+  simple-function.
+  
+  \item[\code{(x.id)} $\equiv$ \code{(true \&\& x.id)}]
+  
+  \ \\
+  In JavaScript, when the left operand of an \code{\&\&} expression evaluates 
+  to \code{true}, the \code{\&\&} expression as a whole evaluates to the 
+  value of its right operand. Therefore, you might expect the above 
+  regularity to hold in general. The next item sheds light on why it does not 
+  hold when the value of the right operand is a non-simple function.
+
+  \item[\code{(x.id)(\ldots)} $\equiv$ \code{(true \&\& x.id)(\ldots)}]
+  
+  \ \\
+  When the value of a property is a function, the expression on the left will 
+  call it \emph{as a method} on \code{x}, whereas the expression on the right 
+  will first extract the property value and then call it \emph{as a 
+  function}. Fortunately, when this value is a simple-function, these two 
+  forms of invocation have the same meaning.
+
+  \item[\code{F(\ldots)} $\equiv$ \code{F.call(V,\ldots)}]
+  
+  \ \\
+  When \code{F} is a simple function, the value of \code{V} is ignored. 
+  Assuming that \code{V} is an expression with no effects, such as a variable 
+  reference, then these two function calls have the same meaning.
+  
+  \item[\code{F(\ldots)} $\equiv$ \code{F.apply(V,[\ldots])}]
+  
+  \ \\
+  The \code{apply} method differs from \code{call} only in packaging all 
+  arguments together into a list.
+  
+  \item[\code{F(\ldots)} $\equiv$ \code{F.bind(V)(\ldots)}]
+  
+  \ \\
+  Like \code{call} and \code{apply}, the first argument to \code{bind} is 
+  ignored. A single-argument \code{bind} of a simple-function returns a 
+  function with equivalent invocation behavior.
+  
+  \item[\code{F(\ldots$_1$,\ldots$_2$)} $\equiv$ 
+  \code{F.bind(V,\ldots$_1$)(\ldots$_2$)}]
+
+  \ \\
+  When bind has additional arguments, it returns a new function representing 
+  \code{F} curried over these additional arguments.
+  
+\end{description}
+
+
 \section{Caja Specification}
 \label{sec:caja-spec}
 
@@ -1069,7 +1132,7 @@ cajoling rules. \\ } \hrule
 \end{figure}
 
 
-\subsection{Static restrictions}
+\subsection{Caja static restrictions}
 
 Any source code statically accepted by the Caja sanitizer is a \emph{legal 
 Caja program}. The presence of the following syntactic elements causes a 
@@ -1098,11 +1161,13 @@ program to instead be statically rejected.
   methods are also not first-class. Methods may only appear in the positions 
   marked ``\code{member}'' in Figure~\ref{tab:special-cases}, as shown by 
   example in Figures~\ref{fig:caja-point}, \ref{fig:brief-caja-point}, 
-  \ref{fig:caja-subclass}, and~\ref{fig:caja-anon-method}. Methods may thus 
-  be used only to initialize properties of prototypes. These properties will 
-  be marked callable but not readable, settable, enumerable, or deletable. If 
-  \code{x.foo}, is associated with a method, then \code{x.foo(\ldots)} is 
-  fine, but \code{x.foo} will return \code{undefined}.
+  \ref{fig:caja-subclass}, and~\ref{fig:caja-attached-method}. Methods may 
+  thus be used to initialize properties of prototypes, or to abstract 
+  part of the logic of an enclosing method or constructor. Method properties 
+  will be marked callable but not readable, settable, enumerable, or 
+  deletable. If \code{x.foo}, is associated with a method, then 
+  \code{x.foo(\ldots)} is fine, but \code{x.foo} will return \code{undefined}. 
+  TODO(No it won't.)
 
   \item[Exophoric functions.] \emph{Speculative future feature:} When an 
   anonymous function mentioning ``\code{this}'' appears in an illegal 
@@ -1131,13 +1196,24 @@ program to instead be statically rejected.
 
 \begin{figure}[t!]
 \begin{alltt}
-function TODO(x, y)\ \{
-  TODO
+function Shadow(model)\ \{
+  this.state_ = model.getState();
+  var listener = (function(newState)\ \{
+    this.state_ = newState;
+  \}).bind(this);
+  model.addStateListener(listener);
 \});
+Shadow.prototype.getState = function()\ \{
+  return this.state_;
+\};
 \end{alltt}
 
-\caption[An Anonymous Caja Method.]{An Anonymous Caja Method. xx. \\ } \hrule
-\label{fig:caja-anon-method}
+\caption[A Caja Attached Method.]{A Caja Attached Method. The method 
+appearing within the \code{Shadow} constructor is an \emph{attached method}. 
+It can only be used when its \code{this} is bound to the same object as its 
+creating context's \code{this}, as the above \code{bind} call ensures.\\ } 
+\hrule
+\label{fig:caja-attached-method}
 \end{figure}
 
 Although constructors are normally frozen and the ``\code{prototype}'' 
@@ -1151,22 +1227,22 @@ function.
 
 \begin{figure}[t!]
 \begin{alltt}
-function Brand() \{
+function Brand()\ \{
   var flag = false;
   var squirrel = null;
 
   return caja.freeze(\{
-    seal: function(payload) \{
-      function box() \{
+    seal: function(payload)\ \{
+      function box()\ \{
         squirrel = payload;
         flag = true;
       \}
-      box.toString = function() \{
+      box.toString = function()\ \{
         return "(box)";
       \};
       return box;
     \},
-    unseal: function(box) \{
+    unseal: function(box)\ \{
       flag = false; squirrel = null;
       box();
       caja.enforce(flag,\ldots);
@@ -1187,23 +1263,23 @@ technique shown here is due to Marc Stiegler.
 
 \begin{figure}[t!]
 \begin{alltt}
-function Mint() \{
+function Mint()\ \{
   var brand = Brand();
-  return function Purse(balance) \{
+  return function Purse(balance)\ \{
     caja.enforceNat(balance);
-    function decr(amount) \{
+    function decr(amount)\ \{
       caja.enforceNat(amount);
       balance = 
         caja.enforceNat(balance - amount);
     \}
     return caja.freeze(\{
-      getBalance: function() \{
+      getBalance: function()\ \{
         return balance; \},
-      makePurse: function() \{
+      makePurse: function()\ \{
         return Purse(0); \},
-      getDecr: function() \{
+      getDecr: function()\ \{
         return brand.seal(decr); \},
-      deposit: function(amount,src) \{
+      deposit: function(amount,src)\ \{
         var newBal = 
           caja.enforceNat(balance+amount);
         var box = src.getDecr();
@@ -1226,7 +1302,7 @@ currency. \\ } \hrule
 % XXX fig:rights-amp and fig:mintmaker need more explanation
 
 
-\subsection{Dynamic restrictions}
+\subsection{Caja dynamic restrictions}
 
 \begin{description}
 
@@ -1258,9 +1334,9 @@ currency. \\ } \hrule
    shape change, so only a constructed object may do this directly for 
    itself. If a constructed object does create a public own property, its 
    clients can directly assign to it.
-   
   
 \end{description}
+
 
 \subsection{Caja gotchas}
 
@@ -1278,8 +1354,8 @@ relevant specifically to Caja.
   following instead:
 %
 \begin{alltt}
-for (var k in obj) \{ 
-  if (caja.canEnumPub(obj,k)) \{
+for (var k in obj)\ \{ 
+  if (caja.canEnumPub(obj,k))\ \{
     {\ldots}k{\ldots}obj[k]\ldots
   \}
 \}
@@ -1300,6 +1376,53 @@ for (var k in obj) \{
   JScript, this is not an issue.
     
 \end{description}
+
+\subsection{Caja regularities}
+
+The following regularities apply when Caja code calls Caja simple-functions 
+and methods. We list only regularities stronger than (but compatible with) 
+those provided by uncajoled JavaScript. TODO: List constructor regularities.
+
+\begin{description}
+
+  \item[\code{x.id(\ldots)} $\equiv$ \code{(true \&\& x.id).call(x,\ldots)}]
+  
+  \item[\code{x.id(\ldots)} $\equiv$ \code{x.id.call(x,\ldots)}]
+  
+  \ \\
+  The code on the left calls \code{x.id} as a method on \code{x}. The code on 
+  the right first extracts the value of \code{x.id}. When \code{x.id} is a 
+  method, the extracted value is an \emph{attached method} whose attachment 
+  is \code{x}. When \code{x} is an expression with no effects and a stable 
+  value, such as a variable reference, the code on the right then calls the 
+  attached method's \code{call} method with its attachment and the original 
+  arguments. In this case, these two calls are equivalent.
+  
+  \item[\code{F.call(x,\ldots)} $\equiv$ \code{F.apply(x,[\ldots])}]
+  \item[\code{x.id(\ldots)} $\equiv$ \code{x.id.apply(x,[\ldots])}]
+  
+  \ \\
+  The \code{apply} method differs from \code{call} only in packaging all 
+  arguments together into a list.
+  
+  \item[\code{F.call(x,\ldots)} $\equiv$ \code{F.bind(x)(\ldots)}]
+  \item[\code{x.id(\ldots)} $\equiv$ \code{x.id.bind(x)(\ldots)}]
+    
+  \ \\
+  Binding an attached method to its attachment yields a conventional bound 
+  method---effectively a simple function of the remaining arguments.
+  
+  \item[\code{F.call(x,\ldots$_1$,\ldots$_2$)} $\equiv$ 
+  \code{F.bind(x,\ldots$_1$)(\ldots$_2$)}]
+  \item[\code{x.id(\ldots$_1$,\ldots$_2$)} $\equiv$ 
+  \code{x.id.bind(x,\ldots$_1$)(\ldots$_2$)}]
+
+  \ \\
+  When \code{bind} has additional arguments, it returns a new function 
+  representing \code{F} curried over these additional arguments.
+  
+\end{description}
+
 
 \section{Related work}
 \label{sec:related}
@@ -1486,24 +1609,29 @@ Figure~\ref{tab:special-cases}.}
   \code{caja.def(Foo,Base,} & \\
   \code{\ \ \ \ \ \ \ \ \ \{\ldots: member, {\ldots}\ \},} & \\
   \code{\ \ \ \ \ \ \ \ \ \ldots)} & \\
-  \code{member.bind(this,\ldots)} & anonymous method closure within method \\
+  \hline
+          \multicolumn{2}{c}{A method within a method or constructor} \\
+  \code{member}       & \code{\_\_\_.attach(this,member)} \\
   \hline
    \multicolumn{2}{c}{freezes \code{Foo} to prevent further initialization} \\
   \code{new Foo(\ldots)} & \\ 
   \code{caja.def(Derived,Foo,\ldots)} & \\
-  {\ldots}Foo{\ldots} & \code{\_\_\_.primFreeze(Foo)} \\
+  {\ldots} Foo {\ldots} & \code{{\ldots} \_\_\_.primFreeze(Foo) {\ldots}} \\
   \hline
   \code{\ldots\ instanceof Foo} & allow, whether \code{Foo} is frozen or not\\ 
-  \code{Foo = \ldots} & reject assignment to a function/constructor name \\
+  \code{Foo = \ldots}   & reject assignment to a function/constructor name \\
   \code{var Foo = \ldots} & reject conflicting initialization as well \\ 
   \hline
      \multicolumn{2}{c}{can only happen if \code{Foo} is already frozen} \\ 
-          \code{Foo.Super.call(this,\ldots);} & Only at start of \code{Foo},\\
+  \code{Foo.Super.call(this,\ldots);} 
+                       & Only at start of \code{Foo},\\
                        & and only if the remaining args have no \code{this}.\\
-  \code{Foo.call(this,\ldots);}     & Only at start of \code{Derived}, \\
+  \code{Foo.call(this,\ldots);}     
+                       & Only at start of \code{Derived}, \\
                        & and only if the remaining args have no \code{this}.\\
-  \code{Foo.prototype.id.call(this,\ldots)} 
-                                    & Only within methods of \code{Derived} \\   
+  \code{Foo.prototype.id} 
+                       & Only within methods of \code{Derived} \\
+                       & \code{\_\_\_.attach(this,Foo.prototype.id)}
 \end{tabular}
 
 \caption[Cajoling Special Cases]{Cajoling Special Cases. When \code{Foo} is 
@@ -1562,7 +1690,7 @@ above, either normal expressions or methods may appear.}
         (endsWith(k,"\_canSet\_\_\_")||endsWith(k,"\_canDelete\_\_\_"))\ \{}\\
        & \code{\ \ \ \ obj[k] = false; \}\}}\\ 
        & \code{obj.\_\_\_FROZEN\_\_\_ = true;} \\
-       & \code{if (typeof obj === "function") \{}\\
+       & \code{if (typeof obj === "function")\ \{}\\
        & \code{\ \ primFreeze(obj.prototype); \}}\\
        & \code{return obj;} \\
   \hline 
