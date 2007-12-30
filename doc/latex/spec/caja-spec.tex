@@ -815,13 +815,13 @@ Cajita. Code containing these features is not legal Cajita.
     should enumerate the properties of \code{obj} by doing
 %
 \begin{alltt}
-    caja.each(obj, function(k, v)\ \{ {\ldots}k{\ldots}v{\ldots} \});
+caja.forEach(obj,function(v,k)\{{\ldots}\});
 \end{alltt}
 %
     This code will reliably give the same results whether run cajoled or not. 
-    It will enumerate only the non-inherited publicly Caja-visible properties 
-    of \code{obj}. If \code{obj instanceof Array}, then \code{k} will 
-    enumerate successive indexes into the array.
+    It will enumerate only the non-inherited publicly Caja-visible property 
+    value / property name associations of \code{obj}. If \code{obj instanceof 
+    Array}, then \code{k} will enumerate successive indexes into the array.
     
     \item[Semicolon insertion.] Code which would provoke semicolon insertion 
     is not legal Cajita.
@@ -1013,9 +1013,9 @@ compact pattern for initializing a top-level prototype all at once. \\ }
 
 The following regularities apply when calling simple-functions, whether the 
 calling code is in Cajita or Caja. When calling other functions, only the 
-weaker \emph{Caja regularities} explained in a later section apply. These
-regularities are often stronger than ES3, but are all within a fail-stop
-subset of ES3.
+weaker \emph{Caja regularities} explained in a later section apply. The 
+regularities in both sections are often stronger than ES3, but are all within 
+a fail-stop subset of ES3.
 
 \begin{description}
   \item[\code{F(\ldots)} $\equiv$ \code{new F(\ldots)}]
@@ -1395,7 +1395,7 @@ for (var k in obj)\ \{
   programs that only need to run cajoled can safely leave it out. Using
   \code{canEnumOwn} instead will further restrict the enumeration to
   non-inherited properties, as is typically desired. The same effect can still
-  be obtained more compactly using Cajita's \code{caja.each} construct as
+  be obtained more compactly using Cajita's \code{caja.forEach} construct as
   explained earlier.
 
   \item[Isolated RegExps.] ES3 specifies that a literal regular expression 
