@@ -1188,29 +1188,6 @@ program to instead be statically rejected.
   \ref{fig:caja-subclass}, and~\ref{fig:caja-attached-method}. Methods may 
   thus be used to initialize properties of prototypes, or to abstract part of 
   the logic of an enclosing method or constructor.
-
-  \item[Exophoric functions.] \emph{Speculative future feature:} When an 
-  anonymous function mentioning ``\code{this}'' appears in an illegal 
-  position for a Caja method, the Caja sanitizer currently rejects the 
-  program. A future upwards compatible extension to Caja may instead classify 
-  these as \emph{exophoric functions}. An exophoric function mentions 
-  ``\code{this}'', but its referent for ``\code{this}'' is not statically 
-  apparent. To allow exophoric functions safely, we need only impose two 
-  rules:
-  
-  \begin{itemize}
-
-    \item The Caja sanitizer inserts a check at the beginning of exophoric 
-    functions, ensuring that ``\code{this}'' isn't bound to the global 
-    object. This ensures that exophoric functions cannot be called as 
-    functions.
-    
-    \item Within an exophoric function, ``\code{this}'' is not treated 
-    specially. ``\code{this.foo\_}'' is disallowed, and ``\code{this[x]}'' is 
-    cajoled to a check that \code{x} names a \emph{publicly} readable member 
-    of \code{this}.
-
-  \end{itemize}
   
 \end{description}
 
@@ -1324,6 +1301,9 @@ currency. \\ } \hrule
 
 \subsection{Caja dynamic restrictions}
 
+The following additional dynamic restrictions are relevant are relevant to
+Caja code.
+
 \begin{description}
 
   \item[Frozen prototypes.] In Caja, until a function is frozen, both it and 
@@ -1360,12 +1340,18 @@ currency. \\ } \hrule
    the statically exempted use of \code{call} mandated above for derived 
    constructors.
    
-   \item[Attached methods] If \code{x.foo}, is associated with a method, then 
-   \code{x.foo} will return an \emph{attached method} whose attachment is 
-   \code{x}. A method appearing within an enclosing constructor or method 
-   will evaluate to an attached method whose attachment is the value of 
-   \code{this} in this enclosing context. An attached method can only be 
-   invoked by calls that bind its \code{this} to its attachment.
+   \item[Attached methods] Any attempt to obtain a method as a value will 
+   instead yield an \emph{attached method}. If \code{x.foo(\ldots)} would 
+   directly call a method, then \code{x.foo} will return that method as 
+   attached to \code{x}. As shown in Figure~\ref{fig:caja-attached-method}, a 
+   method appearing within an enclosing constructor or method will evaluate 
+   to a method attached to the value of \code{this} in that lexical context. 
+   An attached method can only be invoked by calls that bind its \code{this} 
+   to its attachment, whether called as a method on its attachment, or called 
+   reflectively by providing its attachment as the first argument of 
+   \code{call}, \code{apply}, or \code{bind}. Since calling an attached 
+   method either fails or acts like calling the original method, attached 
+   methods are within a fail-stop subset of JavaScript.
   
 \end{description}
 
@@ -1432,9 +1418,7 @@ for (var k in obj)\ \{
   In uncajoled JavaScript, both operands return the 
   \code{Point.prototype.getX} method itself. When cajoled, the left operand 
   returns the method as attached to \code{ptC} whereas the right operand 
-  returns the method as attached to \code{ptD}. Calling an \emph{attached 
-  method} either fails or acts like calling the original method, and so 
-  remains within a fail-stop subset of JavaScript. But this difference in 
+  returns the method as attached to \code{ptD}. But this difference in 
   object identity is a genuine Caja gotcha. Caja-compliant programs should 
   avoid testing the object identity of methods. Cajita-compliant programs 
   need not worry.
