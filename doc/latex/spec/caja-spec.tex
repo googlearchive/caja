@@ -1599,67 +1599,75 @@ same order as in the original.}
 
 
 \begin{figure*}
-\begin{tabular}{ll}
-  Caja expression & cajoles to ES3 code equivalent to\\ 
+\begin{eqnarray}
+  \mathrm{Caja\ expression}  & \nonumber
+     & \mathrm{cajoles\ to\ ES3\ code\ equivalent\ to} \\ 
   \hline
-                 & \code{\_\_\_.loadModule(function(\_\_\_OUTERS\_\_\_)\ \{}\\
-  /*caja module body*/      
-                 & \code{\ \ } /*cajoled module body*/ \\
-                 & \code{\});} \\
+                            & \label{module}
+     & \code{\_\_\_.loadModule(function(\_\_\_OUTERS\_\_\_)\ \{} \\
+  /*caja\ module\ body*/    & \nonumber
+     & \code{\ \ } /*cajoled\ module\ body*/ \\
+                            & \nonumber
+     & \code{\});} \\
   \hline
-  \code{this.id(a\ldots)} 
-                            & \code{\_\_\_.callProp(this,"id",[a\ldots])} \\
-  \code{foo.id(a\ldots)}  
-                            & \code{\_\_\_.callPub(foo,"id",[a\ldots])} \\
-  \code{this[bar](a\ldots)} 
-                            & \code{\_\_\_.callProp(this,bar,[a\ldots])} \\
-  \code{foo[bar](a\ldots)}  
-                            & \code{\_\_\_.callPub(foo,bar,[a\ldots])} \\
-  \code{new foo(a\ldots)}   & \code{new (\_\_\_.asCtor(foo))(a\ldots)} \\
-  \code{foo(a\ldots)}       & \code{\_\_\_.asSimpleFunc(foo)(a\ldots)} \\
+  \code{this.id(a\ldots)}   & \label{call:internal}
+     & \code{\_\_\_.callProp(this,"id",[a\ldots])} \\
+  \code{foo.id(a\ldots)}    & \label{call:public}
+     & \code{\_\_\_.callPub(foo,"id",[a\ldots])} \\
+  \code{this[bar](a\ldots)} & \label{call:index-internal}
+     & \code{\_\_\_.callProp(this,bar,[a\ldots])} \\
+  \code{foo[bar](a\ldots)}  & \label{call:index-public}
+     & \code{\_\_\_.callPub(foo,bar,[a\ldots])} \\
+  \code{new\ foo(a\ldots)}  & \label{new:ctor}
+     & \code{new\ (\_\_\_.asCtor(foo))(a\ldots)} \\
+  \code{foo(a\ldots)}       & \label{call:func}
+     & \code{\_\_\_.asSimpleFunc(foo)(a\ldots)} \\
   \hline
-           \multicolumn{2}{c}{Constructors} \\
-  \code{function C(a\ldots)\ \{}
-  & \code{function C(var\_args)\ \{ return new C.make\_\_\_(arguments); \}} \\
-  \code{\ \ {\ldots}this{\ldots}\ \};}
-    & \code{function C\_init\_\_\_(a\ldots)\ \{ {\ldots}this{\ldots}\ \};} \\
-    & \code{\_\_\_.splitCtor(C,C\_init\_\_\_);} // move to function start \\
-    
-  \code{function C(a\ldots)\ \{}
-    & \code{\_\_\_.primFreeze(\_\_\_.splitCtor(function C(var\_args)\ \{}  \\
-  \code{\ \ {\ldots}this{\ldots}\ \}}
-    & \code{\ \ return new C.make\_\_\_(arguments);} \\
-    & \code{\}, function(a\ldots)\ \{\ {\ldots}this{\ldots}\ \}))} \\
-    
+%           \multicolumn{2}{c}{Constructors} \\
+  \code{function\ C(a\ldots)\ \{{\ldots}this{\ldots}\};} 
+                                       & \label{func:ctor-decl}
+& \code{function\ C(var\_args)\ \{ return\ new\ C.make\_\_\_(arguments); \}} \\
+                                       & \nonumber
+    & \code{function\ C\_init\_\_\_(a\ldots)\ \{ {\ldots}this{\ldots}\ \}} \\
+                                       & \nonumber
+ & \code{\_\_\_.splitCtor(C,C\_init\_\_\_);} /*move\ to\ function\ start*/ \\
+  \code{function\ C(a\ldots)\ \{{\ldots}this{\ldots}\}}      
+                                       & \label{func:ctor-expr} 
+     & \code{\_\_\_.primFreeze(\_\_\_.splitCtor(function\ C(var\_args)\ \{}\\
+                                       & \nonumber
+      & \code{\ \ return\ new\ C.make\_\_\_(arguments);} \\
+                                        & \nonumber
+      & \code{\}, function(a\ldots)\ \{{\ldots}this{\ldots}\}))} \\
+   \hline
+%           \multicolumn{2}{c}{Methods} \\
+   \code{function(a\ldots)\ \{{\ldots}this{\ldots}\}}         
+                                       & \label{member:method}
+     & \code{\_\_\_.method(C,function(a\ldots)\ \{{\ldots}this{\ldots}\})} \\
   \hline
-           \multicolumn{2}{c}{Methods} \\
-  \code{function(a\ldots)\ \{}
-                 & \code{\_\_\_.method(C,function(a\ldots)\ \{} \\
-  \code{\ \ {\ldots}this{\ldots}\ \}}
-                 & \code{\ \ {\ldots}this{\ldots}\ \})}\\
+%           \multicolumn{2}{c}{Simple-functions} \\
+  \code{function\ F(a\ldots)\ \{{\ldots}\};} 
+                                       & \label{func:named-decl}
+     & \code{function\ F(a\ldots)\ \{{\ldots}\}} \\
+                                       & \nonumber
+     & \code{\_\_\_.simpleFunc(F);} /*move\ to\ function\ start*/ \\
+   \code{function\ F(a\ldots)\ \{{\ldots}\}}      
+                                       & \label{func:named-expr}
+      & \code{\_\_\_.primFreeze(\_\_\_.simpleFunc(function\ F(a\ldots)\ \{{\ldots}\}))} \\
+   \code{function(a\ldots)\ \{{\ldots}\}}         
+                                       & \label{func:anon}
+      & \code{\_\_\_.primFreeze(\_\_\_.simpleFunc(function(a\ldots)\ \{{\ldots}\}))} \\
   \hline
-           \multicolumn{2}{c}{Simple-functions} \\
-  \code{function F(a\ldots)\ \{}   & \code{function F(a\ldots)\ \{} \\
-  \code{\ \ {\ldots}\ \};}         & \code{\ \ {\ldots}\ \};} \\
-    & \code{\_\_\_.simpleFunc(F);} // move to function start \\
-  
-  \code{function F(a\ldots)\ \{}
-       & \code{\_\_\_.primFreeze(\_\_\_.simpleFunc(function F(a\ldots)\ \{} \\
-  \code{\ \ {\ldots}\ \}}         & \code{\ \ {\ldots}\ \}))} \\
-  
-  \code{function(a\ldots)\ \{}
-         & \code{\_\_\_.primFreeze(\_\_\_.simpleFunc(function(a\ldots)\ \{} \\
-  \code{\ \ {\ldots}\ \}}          & \code{\ \ {\ldots}\ \}))} \\
+  \code{arguments.callee}              & \label{read:bad-callee}
+     & /*rejected*/ \\
+  \code{{\ldots}arguments\ldots}       & \label{read:args}
+  &\code{var\ args\_\_\_ = \_\_\_.args(arguments);} /*move\ to\ function\ start*/ \\ & \nonumber
+     & \code{{\ldots}args\_\_\_\ldots} \\
   \hline
-  \code{arguments.callee}      & /*rejected*/ \\
-  \code{{\ldots}arguments\ldots} 
-                   &\code{var \_\_\_args\_\_\_ = \_\_\_.args(arguments);}\\
-                   & \code{{\ldots}\_\_\_args\_\_\_\ldots} \\
-  \hline
-  \code{/pattern/} & \code{new RegExp("pattern")} \\
-  \code{/pattern/flags} 
-     & \code{new RegExp("pattern", "flags")} /* where flags is [igm]* */ \\
-\end{tabular}
+  \code{/pattern/}                     & \label{pattern:unary}
+     & \code{new\ RegExp("pattern")} \\
+  \code{/pattern/flags}                & \label{pattern:binary}
+   & \code{new\ RegExp("pattern", "flags")} /*where\ flags\ is\ [igm]*\ */
+\end{eqnarray}
 
 \caption[Cajoling Callers and Callees]{Cajoling Callers and Callees. A 
 cajoled Caja module can be loaded/evaled once, creating an anonymous 
