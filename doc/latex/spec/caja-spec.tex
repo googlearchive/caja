@@ -1518,50 +1518,71 @@ Graham Spencer.
 
 \section{Tables}
 
-
 \begin{figure*}
-\begin{tabular}{ll}
-  Caja expression    & cajoles to ES3 code equivalent to\\ 
+\begin{eqnarray}
+  \mathrm{Caja\ expression} & \nonumber
+      & \mathrm{cajoles\ to\ ES3\ code\ equivalent\ to} \\
   \hline
-  \code{with}        & /*rejected in all positions*/ \\
+  \code{with}               & \label{with:bad}
+      & \mathrm{/*rejected\ in\ all\ positions*/} \\
   \hline
-  \code{this.id\_\_} & /*rejected in all positions*/ \\
-  \code{foo.id\_}    & /*rejected in all positions*/ \\      
-  \code{local\_\_}   & /*rejected in all positions*/ \\        
-  \code{glob\_}      & /*rejected in all positions*/ \\        
+  \code{local\_\_}          & \label{var:bad-suffix}
+      & \mathrm{/*rejected\ in\ all\ positions*/} \\
+  \code{glob\_}             & \label{var:bad-global-suffix}
+      & \mathrm{/*rejected\ in\ all\ positions*/} \\
+  \code{glob}               & \label{var:global}
+      & \code{\_\_\_OUTERS\_\_\_.glob} \\
   \hline
-  \code{this.id}     & \code{\_\_\_.readProp(this,"id")}\\
-  \code{foo.id}      & \code{\_\_\_.readPub(foo,"id")} \\
-  \code{this[bar]}   & \code{\_\_\_.readProp(this,bar)} \\
-  \code{foo[bar]}    & \code{\_\_\_.readPub(foo,bar)}  \\
-  \code{glob}        & \code{\_\_\_OUTERS\_\_\_.glob} \\
+  \code{this.id\_\_}        & \label{read:bad-suffix}
+      & \mathrm{/*rejected\ in\ all\ positions*/} \\
+  \code{foo.id\_}           & \label{read:bad-internal}
+      & \mathrm{/*rejected\ in\ all\ positions*/} \\
+  \code{this.id}            & \label{read:internal}
+      & \code{\_\_\_.readProp(this,"id")} \\
+  \code{foo.id}             & \label{read:public}
+      & \code{\_\_\_.readPub(foo,"id")} \\
+  \code{this[bar]}          & \label{read:index-internal}
+      & \code{\_\_\_.readProp(this,bar)} \\
+  \code{foo[bar]}           & \label{read:index-public}
+      & \code{\_\_\_.readPub(foo,bar)} \\
   \hline
-  \code{bar in this}           
-    & \code{(bar in this) \&\& \_\_\_.canReadProp(this,bar)} \\
-  \code{bar in foo}            
-    & \code{(bar in foo) \&\& \_\_\_.canReadPub(foo,bar)} \\
-  \code{for (key in this)\ \{\ldots\}} 
-    &\code{for (key in this)
-     \{if (\_\_\_.canEnumProp(this,key))\ \{\ldots\}\}}\\
-  \code{for (key in foo)\ \{\ldots\}}  
-    & \code{for (key in foo)
-     \{if (\_\_\_.canEnumPub(foo,key))\ \{\ldots\}\}} \\
+  \code{bar\ in\ this}      & \label{in:internal}
+      & \code{(bar\ in\ this)\ \&\&\ \_\_\_.canReadProp(this,bar)} \\
+  \code{bar\ in\ foo}       & \label{in:public}
+      & \code{(bar\ in\ foo)\ \&\&\ \_\_\_.canReadPub(foo,bar)} \\
+  \code{for\ (key\ in\ this)\ \{\ldots\}} & \label{for:internal}
+      & \code{for\ (key\ in\ this)\
+                \{if\ (\_\_\_.canEnumProp(this,key))\ \{\ldots\}\}}\\
+  \code{for\ (key\ in\ foo)\ \{\ldots\}}  & \label{for:public}
+      & \code{for\ (key\ in\ foo)\
+                \{if\ (\_\_\_.canEnumPub(foo,key))\ \{\ldots\}\}} \\
   \hline
-  \code{this.id = baz}    & \code{\_\_\_.setProp(this,"id",baz)} \\
-  \code{foo.id = baz}     & \code{\_\_\_.setPub(foo,"id",baz)} \\
-  \code{this[bar] = baz}  & \code{\_\_\_.setProp(this,bar,baz)} \\
-  \code{foo[bar] = baz}   & \code{\_\_\_.setPub(foo,bar,baz)} \\
-  \code{glob = baz}       & \code{\_\_\_OUTERS\_\_\_.glob = baz} \\
-  \code{var glob = baz}   & \code{\_\_\_OUTERS\_\_\_.glob = baz} \\
-  \code{var glob}         & \code{\_\_\_OUTERS\_\_\_.glob = undefined} \\
-  \hline               
-  \code{delete this.id}   & \code{\_\_\_.deleteProp(this,"id")} \\
-  \code{delete foo.id}    & \code{\_\_\_.deletePub(foo,"id")} \\
-  \code{delete this[bar]} & \code{\_\_\_.deleteProp(this,bar)} \\
-  \code{delete foo[bar]}  & \code{\_\_\_.deletePub(foo,bar)} \\
-  \code{delete glob}      
-         & \code{\_\_\_.enforce(delete \_\_\_OUTERS\_\_\_.glob,\ldots)} \\
-\end{tabular}
+  \code{this.id = baz}      & \label{set:internal}
+      & \code{\_\_\_.setProp(this,"id",baz)} \\
+  \code{foo.id = baz}       & \label{set:public}
+      & \code{\_\_\_.setPub(foo,"id",baz)} \\
+  \code{this[bar] = baz}    & \label{set:index-internal}
+      & \code{\_\_\_.setProp(this,bar,baz)} \\
+  \code{foo[bar] = baz}     & \label{set:index-public}
+      & \code{\_\_\_.setPub(foo,bar,baz)} \\
+  \code{glob = baz}         & \label{set:global}
+      & \code{\_\_\_OUTERS\_\_\_.glob = baz} \\
+  \code{var\ glob = baz}    & \label{set:global-init}
+      & \code{\_\_\_OUTERS\_\_\_.glob = baz} \\
+  \code{var\ glob}          & \label{set:global-decl}
+      & \code{\_\_\_OUTERS\_\_\_.glob = undefined} \\
+  \hline
+  \code{delete\ this.id}    & \label{delete-internal}
+      & \code{\_\_\_.deleteProp(this,"id")} \\
+  \code{delete\ foo.id}     & \label{delete:public}
+      & \code{\_\_\_.deletePub(foo,"id")} \\
+  \code{delete\ this[bar]}  & \label{delete:index-internal}
+      & \code{\_\_\_.deleteProp(this,bar)} \\
+ \code{delete\ foo[bar]}    & \label{delete:index-public}
+      & \code{\_\_\_.deletePub(foo,bar)} \\
+  \code{delete\ glob}       & \label{delete:global}
+      & \code{\_\_\_.enforce(delete\ \_\_\_OUTERS\_\_\_.glob,\ldots)}
+\end{eqnarray}
 
 \caption[Cajoling Property Access]{Cajoling Property Access. Under the 
 assumption that the Caja runtime environment is as specified, the Caja 
@@ -1574,6 +1595,7 @@ needed so that each expression evaluates exactly as many times and in the
 same order as in the original.}
 \label{tab:prop-xlate}
 \end{figure*}
+
 
 
 \begin{figure*}
@@ -1909,8 +1931,6 @@ reasons explained in the text.}
                                & \code{sort}                 & handled \\
                                & \code{splice}               & handled \\
                                & \code{unshift}              & handled \\
-                               & \code{indexOf}              & added method \\
-                               & \code{lastIndexOf}          & added method \\
   \hline
   \code{String}                & \code{fromCharCode}         & callable \\
   \code{String.prototype}      & \code{match}                & handled \\
@@ -1952,7 +1972,6 @@ like \code{Array.pop} obey Caja's mutability constraints.}
                           & \code{parse}                & callable \\
                           & \code{UTC}                  & callable \\
   \code{Date.prototype}   & \code{to*String} all in ES3 & method \\
-                          & \code{toISOString}          & added method \\
                           & \code{get*}      all in ES3 & method \\
                           & \code{set*}      all in ES3 & handled \\
   \hline
