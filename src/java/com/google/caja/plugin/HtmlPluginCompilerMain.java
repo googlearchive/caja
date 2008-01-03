@@ -110,8 +110,6 @@ public final class HtmlPluginCompilerMain {
     try {
       compiler.addInput(
           new AncestorChain<DomTree.Fragment>(parseHtmlFromFile(inputFile)));
-      compiler.addInput(
-          new AncestorChain<DomTree.Fragment>(parseHtmlFromFile(inputFile)));
 
       if (!compiler.run()) {
         throw new RuntimeException();
@@ -126,6 +124,7 @@ public final class HtmlPluginCompilerMain {
       try {
         for (Message m : compiler.getMessageQueue().getMessages()) {
           m.format(compiler.getMessageContext(), System.err);
+          System.err.println();
         }
       } catch (IOException ex) {
         ex.printStackTrace();
