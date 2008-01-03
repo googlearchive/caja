@@ -1623,7 +1623,7 @@ same order as in the original.}
   \code{foo(a\ldots)}       & \label{call:func}
      & \code{\_\_\_.asSimpleFunc(foo)(a\ldots)} \\
   \hline
-%           \multicolumn{2}{c}{Constructors} \\
+                 \nonumber & \lefteqn{\mathrm{Constructors}} & \\
   \code{function\ C(a\ldots)\ \{{\ldots}this{\ldots}\};} 
                                        & \label{func:ctor-decl}
 & \code{function\ C(var\_args)\ \{ return\ new\ C.make\_\_\_(arguments); \}} \\
@@ -1639,12 +1639,12 @@ same order as in the original.}
                                         & \nonumber
       & \code{\}, function(a\ldots)\ \{{\ldots}this{\ldots}\}))} \\
    \hline
-%           \multicolumn{2}{c}{Methods} \\
+        \nonumber & \lefteqn{\mathrm{Methods}} & \\
    \code{function(a\ldots)\ \{{\ldots}this{\ldots}\}}         
                                        & \label{member:method}
      & \code{\_\_\_.method(C,function(a\ldots)\ \{{\ldots}this{\ldots}\})} \\
   \hline
-%           \multicolumn{2}{c}{Simple-functions} \\
+           \nonumber & \lefteqn{\mathrm{Simple-functions}} & \\
   \code{function\ F(a\ldots)\ \{{\ldots}\};} 
                                        & \label{func:named-decl}
      & \code{function\ F(a\ldots)\ \{{\ldots}\}} \\
@@ -1660,8 +1660,9 @@ same order as in the original.}
   \code{arguments.callee}              & \label{read:bad-callee}
      & /*rejected*/ \\
   \code{{\ldots}arguments\ldots}       & \label{read:args}
-  &\code{var\ args\_\_\_ = \_\_\_.args(arguments);} /*move\ to\ function\ start*/ \\ & \nonumber
      & \code{{\ldots}args\_\_\_\ldots} \\
+                                       & \nonumber
+&\code{var\ args\_\_\_ = \_\_\_.args(arguments);} /*move\ to\ function\ start*/ \\ 
   \hline
   \code{/pattern/}                     & \label{pattern:unary}
      & \code{new\ RegExp("pattern")} \\
@@ -1684,44 +1685,61 @@ Figure~\ref{tab:special-cases}.}
 
 
 \begin{figure*}
-\begin{tabular}{ll}
-  Caja expression & Special cases for function names and methods \\ 
+\begin{eqnarray}
+  \mathrm{Caja\ expression} & \nonumber
+      & \mathrm{Special\ cases\ for\ function\ names\ and\ methods} \\ 
   \hline
-           \multicolumn{2}{c}{initializes, doesn't freeze \code{Foo}} \\
-  \code{Foo.prototype.id = member;}
-                      & \code{\_\_\_.setMember(Foo, "id", member);} \\
-  \code{Foo.prototype = \{\ldots: member, {\ldots}\ \};} 
-                      & \code{\_\_\_.setMemberMap(Foo, \{\ldots\});} \\
-  \code{Foo.id = \ldots} 
-                      & \code{\_\_\_.setPub(Foo, "id", \ldots)} \\
-  \code{caja.def(Foo,Base)} & \\
-  \code{caja.def(Foo,Base,} & \\
-  \code{\ \ \ \ \ \ \ \ \ \{\ldots: member, {\ldots}\ \},} & \\
-  \code{\ \ \ \ \ \ \ \ \ \ldots)} & \\
+    \nonumber & \lefteqn{\mathrm{initializes,\ doesn't\ freeze\ \code{Foo}}} & \\
+  \code{Foo.prototype.id = member;}  & \label{set:member}
+      & \code{\_\_\_.setMember(Foo, "id", member);} \\
+  \code{Foo.prototype = \{\ldots:member,{\ldots}\};} 
+                      & \label{set:member-map}
+      & \code{\_\_\_.setMemberMap(Foo,\{\ldots:member,{\ldots}\});} \\
+  \code{Foo.id = \ldots}   & \label{set:static}
+      & \code{\_\_\_.setPub(Foo, "id", \ldots)} \\
+  \code{caja.def(Foo,Base)} & \label{call:caja-def}
+      & \\
+  \code{caja.def(Foo,Base,\{\ldots:member,{\ldots}\},\ldots)} 
+                      & \nonumber
+      & \\
   \hline
-          \multicolumn{2}{c}{A method within a method or constructor} \\
-  \code{member}       & \code{\_\_\_.attach(this,member)} \\
+        \nonumber & \lefteqn{\mathrm{A\ method\ within\ a\ method\ or\ constructor}} & \\
+  \code{member}       & \label{func:attached-method}
+      & \code{\_\_\_.attach(this,member)} \\
   \hline
-   \multicolumn{2}{c}{freezes \code{Foo} to prevent further initialization} \\
-  \code{new Foo(\ldots)} & \\ 
-  \code{caja.def(Derived,Foo,\ldots)} & \\
-  {\ldots} Foo {\ldots} & \code{{\ldots} \_\_\_.primFreeze(Foo) {\ldots}} \\
+ \nonumber & \lefteqn{\mathrm{freezes\ \code{Foo}\ to\ prevent\ further\ initialization}} &
+ \\ 
+  \code{new\ Foo(\ldots)} & \label{new:ctor}
+      & \\ 
+  \code{caja.def(Derived,Foo,\ldots)} & \nonumber
+      & \\
+  \code{{\ldots} Foo {\ldots}} & \label{var:func-name}
+      & \code{{\ldots} \_\_\_.primFreeze(Foo) {\ldots}} \\
   \hline
-  \code{\ldots\ instanceof Foo} & allow, whether \code{Foo} is frozen or not\\ 
-  \code{Foo = \ldots}   & reject assignment to a function/constructor name \\
-  \code{var Foo = \ldots} & reject conflicting initialization as well \\ 
+  \code{\ldots\ instanceof\ Foo} & \label{instanceof}
+      & allow,\ whether\ \code{Foo}\ is\ frozen\ or\ not\\ 
+  \code{Foo = \ldots}   & \label{set:bad-func-assign}
+      & reject\ assignment\ to\ a\ function/constructor\ name \\
+  \code{var\ Foo = \ldots} & \label{set:bad-func-init}
+      & reject\ conflicting\ initialization\ as\ well \\ 
   \hline
-     \multicolumn{2}{c}{can only happen if \code{Foo} is already frozen} \\ 
+ \nonumber & \lefteqn{\mathrm{can\ only\ happen\ if\ \code{Foo}\ is\ already\ frozen}} & \\ 
   \code{Foo.Super.call(this,\ldots);} 
-                       & Only at start of \code{Foo},\\
-                       & and only if the remaining args have no \code{this}.\\
+                       & \label{call:explicit-super-init}
+      & Only\ at\ start\ of\ \code{Foo},\\
+                       & \nonumber
+      & and\ only\ if\ the\ remaining\ args\ have\ no\ \code{this}.\\
   \code{Foo.call(this,\ldots);}     
-                       & Only at start of \code{Derived}, \\
-                       & and only if the remaining args have no \code{this}.\\
+                       & \label{call:implicit-super-init}
+      & Only\ at\ start\ of\ \code{Derived}, \\
+                       & \nonumber
+      & and\ only\ if\ the\ remaining\ args\ have\ no\ \code{this}.\\
   \code{Foo.prototype.id} 
-                       & Only within methods of \code{Derived} \\
-                       & \code{\_\_\_.attach(this,Foo.prototype.id)}
-\end{tabular}
+                       & \label{read:attach-super-method}
+      & Only\ within\ methods\ of\ \code{Derived} \\
+                       & \nonumber
+      & \code{\_\_\_.attach(this,Foo.prototype.id)}
+\end{eqnarray}
 
 \caption[Cajoling Special Cases]{Cajoling Special Cases. When \code{Foo} is 
 the name of a named function or a constructor, then these special cases are 
