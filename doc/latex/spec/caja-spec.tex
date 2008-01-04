@@ -1160,12 +1160,12 @@ ES3, but are all within a fail-stop subset of ES3.
 
 \begin{itemize}
 
-  \item The code on the left of Equation~\ref{eq:caja-new} of Figure~\ref{eqn:caja-regularities} calls \code{x.id} as 
-  a method on \code{x}. The code on the right first extracts the value of \code{x.id}. When \code{x.id} is a method, 
-  the extracted value is an \emph{attached method} whose attachment is \code{x}. When \code{x} is an expression with 
-  no effects and a stable value (such as a variable reference), the code on the right then calls the attached 
-  method's \code{call} method with its attachment and the original arguments. In this case, these two calls are 
-  equivalent.
+  \item The code on the left of Equation~\ref{eq:caja-true-call} of Figure~\ref{eqn:caja-regularities} calls 
+  \code{x.id} as a method on \code{x}. The code on the right first extracts the value of \code{x.id}. When 
+  \code{x.id} is a method, the extracted value is an \emph{attached method} whose attachment is \code{x}. When 
+  \code{x} is an expression with no effects and a stable value (such as a variable reference), the code on the right 
+  then calls the attached method's \code{call} method with its attachment and the original arguments. In this case, 
+  these two calls are equivalent.
   
   \item The \code{apply} method differs from \code{call} only in packaging all arguments together into a list.
   
@@ -1196,7 +1196,7 @@ Point.prototype.getX = function()\ \{
   return this.x\_; 
 \};
 Point.prototype.getY = function()\ \{ 
-  return this.y\_; 
+  return this.y\_;
 \};
 
 var ptC = new Point(3, 5);
