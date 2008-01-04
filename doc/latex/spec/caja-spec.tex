@@ -148,7 +148,7 @@ into more depth.
   \item[No ``this'' stealing.] The single underscore rule above only protects 
   an object's state from its clients if its clients cannot add methods to it 
   which alias its ``\code{this}''. Caja divides functions into three 
-  categories: \emph{simple functions} are those which do not mention 
+  categories: \emph{simple-functions} are those which do not mention 
   ``\code{this}''. They are first-class and can be used without further 
   restriction. \emph{Constructors} are named functions which mention 
   ``\code{this}''. \emph{Methods} are anonymous function which mention 
@@ -186,7 +186,7 @@ function test()\ \{
 \caption[Caja Functions]{Caja Functions. \code{F} is a \emph{constructor}. It 
 can only be initialized and used with \code{new} and \code{instanceof}. 
 \code{F.prototype.getX} is a \emph{method}. It can only be called as a 
-method. \code{F.make} and \code{test} are \emph{simple functions}. They are
+method. \code{F.make} and \code{test} are \emph{simple-functions}. They are
 not restricted. \\ } \hrule
 \label{fig:func-obj}
 \end{figure}
@@ -372,7 +372,7 @@ function Counter()\ \{
 
 \caption[A Cajita Counter.]{A Cajita Counter. Each call to \code{Counter()} 
 produces a new counter object. Access to a counter provides the authority to 
-read, invoke, or enumerate its properties, all of which are simple functions 
+read, invoke, or enumerate its properties, all of which are simple-functions 
 serving the role of methods. Caja functions are implicitly frozen; the 
 returned object is explicitly frozen; and the instance-state of the 
 object---the count variable---is accessible only as encapsulated state 
@@ -698,30 +698,29 @@ To explain the restrictions Cajita imposes, we need some definitions.
   an object inheriting directly from \code{Array.prototype} or 
   \code{Object.prototype}. JSON containers are normally created using the
   \code{[\ldots]} or \code{\{\ldots\}} syntaxes.
+  
+  \item[Invocation] A function can be invoked 
+  \begin{itemize}
+    \item \emph{as a function} (\code{foo(a\ldots)}),   
+    \item \emph{as a method} (\code{foo.m(a\ldots)}),
+    \item \emph{as a constructor} (\code{new Foo(a\ldots)}), or
+    \item \emph{reflectively} (by calling its \code{call}, \code{apply}, or \code{bind} methods).
+  \end{itemize}
 
-  \item[Simple functions.] A function whose body does not mention 
-  ``\code{this}'' is a \emph{simple function}. A simple function can be 
-  either named or anonymous. A simple function can be invoked \emph{as a 
-  function} (\code{foo(a\ldots)}), \emph{as a method} 
-  (\code{foo.id(a\ldots)}), or \emph{as a constructor} (\code{new 
-  Foo(a\ldots)}). Simple functions are first-class---they can be stored in 
+  \item[Simple-functions.] A function whose body does not mention ``\code{this}'' is a \emph{simple-function}. A 
+  simple-function can be either named or anonymous. Simple-functions are first-class---they can be stored in 
   variables and passed around freely, just like any other value.
   
-  \item[Frozen.] If an object is \emph{frozen}, any attempt to directly 
-  assign to its properties, add new properties to it, or delete its 
-  properties causes an exception to be thrown. Frozen is a shallow 
-  restriction: Frozen objects can retain and provide non-frozen objects. 
-  (Imagine a frozen surface covering a liquid lake.) Once initialized, Caja 
-  functions are implicitly frozen. The Caja runtime library additionally 
-  provides an explicit operation for freezing JSON containers: 
-  ``\code{caja.freeze(obj)}''.
+  \item[Frozen.] If an object is \emph{frozen}, any attempt to directly assign to its properties, add new properties 
+  to it, or delete its properties causes an exception to be thrown. Frozen is a shallow restriction: Frozen objects 
+  can retain and provide non-frozen objects. (Imagine a frozen surface covering a liquid lake.) Once initialized, 
+  Caja functions are implicitly frozen. The Caja runtime library additionally provides an explicit operation for 
+  freezing JSON containers: ``\code{caja.freeze(obj)}''.
   
-  \item[Immutable.] If an object is \emph{immutable}, then it is frozen, and 
-  all objects it has access to are themselves immutable. Shared access to an 
-  immutable object does not provide a communication channel, and so does not 
-  endanger isolation. With the exception of \code{Math.random} and 
-  \code{Date}, all objects that are globally or implicitly accessible to all 
-  Caja programs are immutable. We discuss these exceptions below.
+  \item[Immutable.] If an object is \emph{immutable}, then it is frozen, and all objects it has access to are 
+  themselves immutable. Shared access to an immutable object does not provide a communication channel, and so does 
+  not endanger isolation. With the exception of \code{Math.random} and \code{Date}, all objects that are globally or 
+  implicitly accessible to all Caja programs are immutable. We discuss these exceptions below.
 
 \end{description}
 
@@ -734,15 +733,15 @@ To explain the restrictions Cajita imposes, we need some definitions.
                                   & \equiv & \code{F.apply(v,[\ldots])}                \label{eq:sf-apply} \\
                                   & \equiv & \code{F.bind(v)(\ldots)}                  \label{eq:sf-bind-1} \\
   \code{F({\ldots}_1,{\ldots}_2)} & \equiv & \code{F.bind(v,{\ldots}_1)({\ldots}_2)}   \label{eq:sf-bind-n} \\
-  \code{x.id}                     & \equiv & \code{true\ \&\&\ x.id}                   \label{eq:sf-true} \\
-  \code{(x.id)(\ldots)}           & \equiv & \code{(true\ \&\&\ x.id)(\ldots)}         \label{eq:sf-true-call} \\
+  \code{x.m}                      & \equiv & \code{true\ \&\&\ x.m}                    \label{eq:sf-true} \\
+  \code{(x.m)(\ldots)}            & \equiv & \code{(true\ \&\&\ x.m)(\ldots)}          \label{eq:sf-true-call} \\
   \code{\{{\ldots}\}}             & \equiv & \code{(function()\{return\ {\ldots\}})()} \label{eq:sf-thunk}
 \end{eqnarray}
 
-\caption[Cajita Regularities.]{Cajita Regularities. Given that \code{F} is a simple-function, \code{x.id} holds a 
+\caption[Cajita Regularities.]{Cajita Regularities. Given that \code{F} is a simple-function, \code{x.m} holds a 
 simple-function, and $v$ is an expression with no effects and stable value (such as a variable reference), then most 
-of these equivalences hold in Caja as well as Cajita. Equation~\ref{eq:sf-thunk} holds in general only in Cajita. \\
-} \hrule
+of these equivalences hold in Caja as well as Cajita. Equation~(\ref{eq:sf-thunk}) holds in general only in Cajita.
+\\ } \hrule
 \label{eqn:simple-func}
 \end{figure}
 
@@ -753,8 +752,8 @@ regularities in both sections are often stronger than ES3, but are all within
 a fail-stop subset of ES3.
 
 \begin{itemize}
-  \item As shown in Equation~\ref{eq:sf-new} of Figure~\ref{eqn:simple-func}, the \code{new} keyword does not change 
-  the meaning of calling a simple-function.
+  \item As shown in Equation~(\ref{eq:sf-new}) of Figure~\ref{eqn:simple-func}, the \code{new} keyword does not 
+  change the meaning of calling a simple-function.
   
   \item When calling the \code{call}, \code{apply}, or \code{bind} method of a simple-function, the first argument is 
   ignored.
@@ -769,16 +768,16 @@ a fail-stop subset of ES3.
   
   \item In JavaScript, when the left operand of an \code{\&\&} expression evaluates to \code{true}, the \code{\&\&} 
   expression as a whole evaluates to the value of its right operand. Therefore, you might expect 
-  Equation~\ref{eq:sf-true} to hold in general. The next item sheds light on why it does not hold when the value of 
+  Equation~(\ref{eq:sf-true}) to hold in general. The next item sheds light on why it does not hold when the value of 
   the right operand is a non-simple-function.
 
-  \item When the value of a property is a function, the expression on the left of Equation~\ref{eq:sf-true-call} will 
-  call it \emph{as a method} on \code{x}, whereas the expression on the right will first extract the property value 
-  and then call it \emph{as a function}. Fortunately, when this value is a simple-function, these two forms of 
+  \item When the value of a property is a function, the expression on the left of Equation~(\ref{eq:sf-true-call}) 
+  will call it \emph{as a method} on \code{x}, whereas the expression on the right will first extract the property 
+  value and then call it \emph{as a function}. Fortunately, when this value is a simple-function, these two forms of 
   invocation have the same meaning.
 
-  \item In Cajita only, a simple-function as a thunk correctly abstracts over the 
-  code it contains, given that this code makes no reference to \code{arguments}.
+  \item In Cajita only, a simple-function correctly abstracts over the code it contains, given that this code makes 
+  no reference to \code{arguments}.
   
 \end{itemize}
 
@@ -989,8 +988,8 @@ The following restrictions apply to both Caja and Cajita.
 
 \begin{description}
 
-  \item[Frozen Functions.] An anonymous simple function is implicitly frozen. 
-  A named simple function may be initialized, but is implicitly frozen 
+  \item[Frozen Functions.] An anonymous simple-function is implicitly frozen. 
+  A named simple-function may be initialized, but is implicitly frozen 
   immediately before its first non-initializing use or escaping occurrence. 
   For example, the assignment to \code{box.toString} in 
   Figure~\ref{fig:rights-amp} will succeed, because it occurs before box is 
@@ -1138,19 +1137,20 @@ definitions.
 
 \begin{figure}
 \begin{eqnarray}
-  \code{x.id(\ldots)}        & \equiv & \code{(true \&\& x.id).call(x,\ldots)}         \label{eq:caja-true-call} \\
-                             & \equiv & \code{x.id.call(x,\ldots)}                     \label{eq:caja-call} \\
-                             & \equiv & \code{x.id.apply(x,[\ldots])}                  \label{eq:caja-apply} \\
-                             & \equiv & \code{x.id.bind(x)(\ldots)}                    \label{eq:caja-bind-1} \\
-  \code{x.id.bind(x)}        & \equiv & \code{(true\ \&\&\ x.id).bind(x)}              \label{eq:caja-true-bind} \\ 
-  \code{x.id({\ldots}_1,{\ldots}_2)} 
-                             & \equiv & \code{x.id.bind(x,{\ldots}_1)({\ldots}_2)}     \label{eq:caja-bind-n} \\
-  \code{\{{\ldots}\}}        & \equiv & \code{(function()\{}                           \label{eq:caja-thunk} \\
-                             &        & \code{\ \ return\ {\ldots\}}).call(this)}      \nonumber
+  \code{x.m(\ldots)}         & \equiv & \code{(true \&\& x.m).call(x,\ldots)}         \label{eq:caja-true-call} \\
+                             & \equiv & \code{x.m.call(x,\ldots)}                     \label{eq:caja-call} \\
+                             & \equiv & \code{x.m.apply(x,[\ldots])}                  \label{eq:caja-apply} \\
+                             & \equiv & \code{x.m.bind(x)(\ldots)}                    \label{eq:caja-bind-1} \\
+  \code{x.m.bind(x)}         & \equiv & \code{(true\ \&\&\ x.m).bind(x)}              \label{eq:caja-true-bind} \\ 
+  \code{x.m({\ldots}_1,{\ldots}_2)} 
+                             & \equiv & \code{x.m.bind(x,{\ldots}_1)({\ldots}_2)}     \label{eq:caja-bind-n} \\
+  \code{\{{\ldots}\}}        & \equiv & \code{(function()\{}                          \label{eq:caja-thunk} \\
+                             &        & \code{\ \ return\ {\ldots\}}).call(this)}     \nonumber
 \end{eqnarray}
 
-\caption[Caja Regularities.]{Caja Regularities. In Caja, given that \code{x.id} is associated with either a
-simple-function or a method, then these equivalences hold. \\ } \hrule
+\caption[Caja Regularities.]{Caja Regularities. In Caja, given that \code{x.m} is associated with either a 
+simple-function or a method, then these equivalences hold. Equation~(\ref{eq:caja-thunk}) holds only in the absence 
+of variable name conflicts. \\ } \hrule
 \label{eqn:caja-regularities}
 \end{figure}
 
@@ -1160,9 +1160,9 @@ ES3, but are all within a fail-stop subset of ES3.
 
 \begin{itemize}
 
-  \item The code on the left of Equation~\ref{eq:caja-true-call} of Figure~\ref{eqn:caja-regularities} calls 
-  \code{x.id} as a method on \code{x}. The code on the right first extracts the value of \code{x.id}. When 
-  \code{x.id} is a method, the extracted value is an \emph{attached method} whose attachment is \code{x}. When 
+  \item The code on the left of Equation~(\ref{eq:caja-true-call}) of Figure~\ref{eqn:caja-regularities} calls 
+  \code{x.m} as a method on \code{x}. The code on the right first extracts the value of \code{x.m}. When 
+  \code{x.m} is a method, the extracted value is an \emph{attached method} whose attachment is \code{x}. When 
   \code{x} is an expression with no effects and a stable value (such as a variable reference), the code on the right 
   then calls the attached method's \code{call} method with its attachment and the original arguments. In this case, 
   these two calls are equivalent.
@@ -1175,7 +1175,7 @@ ES3, but are all within a fail-stop subset of ES3.
   \item When \code{bind} has additional arguments, it returns a new function representing \code{F} curried over these 
   additional arguments.
   
-  \item In Caja, a bound attached method as a thunk correctly abstracts over the code it contains, given that this 
+  \item In Caja, an attached method correctly abstracts over the code it contains, given that this 
   code makes no reference to \code{arguments} and does not define any variable names that conflict with variables 
   defined or used by its enclosing method or constructor.
 
@@ -1231,7 +1231,7 @@ program to instead be statically rejected.
   first argument and no \code{this} appearing elsewhere in the argument list. 
   This use of \emph{call} is exempt from the normal translation rules.
   
-  Like a named simple function, a constructor and its ``\code{.prototype}'' 
+  Like a named simple-function, a constructor and its ``\code{.prototype}'' 
   may be initialized, but are implicitly frozen on first use. A constructor 
   must not contain an explicit \code{return}.
   
@@ -1335,6 +1335,30 @@ Caja code.
   
 \end{description}
 
+\begin{figure}[t!]
+\begin{alltt}
+function WobblyPoint(x, y)\ \{
+  Point.call(this, x, y);
+\};
+Caja.def(WobblyPoint, Point,\ \{
+  getX: function()\ \{ 
+    return Math.random() +
+      Point.prototype.getX.call(this); 
+  \}
+\});
+\end{alltt}
+
+\caption[A Caja Subclass.]{A Caja Subclass. \code{caja.def} supports 
+classical inheritance. The second argument serves as a ``superclass''. The 
+third argument provides instance members including methods. A fourth optional 
+argument (unshown) provides static members. When the superclass argument is a 
+function name, it can be used as shown for \emph{super} construction and 
+method calls. These occurrences of \code{call} are exempt from the normal 
+cajoling rules. \\ } \hrule
+\label{fig:caja-subclass}
+\end{figure}
+
+
 \subsection{Caja gotchas}
 
 Caja seeks to define a fail-stop subset of ES3, as explained above. However, 
@@ -1407,41 +1431,6 @@ for (var k in obj)\ \{
 
 \begin{figure}[t!]
 \begin{alltt}
-function WobblyPoint(x, y)\ \{
-  Point.call(this, x, y);
-\};
-Caja.def(WobblyPoint, Point,\ \{
-  getX: function()\ \{ 
-    return Math.random() +
-      Point.prototype.getX.call(this); 
-  \}
-\});
-\end{alltt}
-
-\caption[A Caja Subclass.]{A Caja Subclass. \code{caja.def} supports 
-classical inheritance. The second argument serves as a ``superclass''. The 
-third argument provides instance members including methods. A fourth optional 
-argument (unshown) provides static members. When the superclass argument is a 
-function name, it can be used as shown for \emph{super} construction and 
-method calls. These occurrences of \code{call} are exempt from the normal 
-cajoling rules. \\ } \hrule
-\label{fig:caja-subclass}
-\end{figure}
-
-
-\section{Related Work}
-\label{sec:related}
-
-\subsection{Browser Shield}
-
-TODO To be written
-
-\subsection{ADsafe}
-
-TODO To be written
-
-\begin{figure}[t!]
-\begin{alltt}
 function Shadow(model)\ \{
   this.state_ = model.getState();
   var listener = (function(newState)\ \{
@@ -1462,6 +1451,17 @@ creating context's \code{this}, as the above \code{bind} call ensures.\\ }
 \label{fig:caja-attached-method}
 \end{figure}
 
+
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Browser Shield}
+
+TODO To be written
+
+\subsection{ADsafe}
+
+TODO To be written
 
 \section{Conclusions}
 
@@ -1497,10 +1497,10 @@ Graham Spencer.
   \code{glob\_}             & \label{var:bad-global-suffix} & \mathrm{/*rejected\ in\ all\ positions*/} \\
   \code{glob}               & \label{var:global}        & \code{\_\_\_OUTERS\_\_\_.glob} \\
   \hline
-  \code{this.id\_\_}        & \label{read:bad-suffix}   & \mathrm{/*rejected\ in\ all\ positions*/} \\
-  \code{foo.id\_}           & \label{read:bad-internal} & \mathrm{/*rejected\ in\ all\ positions*/} \\
-  \code{this.id}            & \label{read:internal}     & \code{\_\_\_.readProp(this,"id")} \\
-  \code{foo.id}             & \label{read:public}       & \code{\_\_\_.readPub(foo,"id")} \\
+  \code{this.p\_\_}         & \label{read:bad-suffix}   & \mathrm{/*rejected\ in\ all\ positions*/} \\
+  \code{foo.p\_}            & \label{read:bad-internal} & \mathrm{/*rejected\ in\ all\ positions*/} \\
+  \code{this.p}             & \label{read:internal}     & \code{\_\_\_.readProp(this,"p")} \\
+  \code{foo.p}              & \label{read:public}       & \code{\_\_\_.readPub(foo,"p")} \\
   \code{this[bar]}          & \label{read:index-internal} & \code{\_\_\_.readProp(this,bar)} \\
   \code{foo[bar]}           & \label{read:index-public} & \code{\_\_\_.readPub(foo,bar)} \\
   \hline
@@ -1511,19 +1511,19 @@ Graham Spencer.
   \code{for\ (key\ in\ foo)\ \{\ldots\}}  & \label{for:public}
                                  & \code{for\ (key\ in\ foo)\ \{if\ (\_\_\_.canEnumPub(foo,key))\ \{\ldots\}\}} \\
   \hline
-  \code{this.id = baz}      & \label{set:internal}      & \code{\_\_\_.setProp(this,"id",baz)} \\
-  \code{foo.id = baz}       & \label{set:public}        & \code{\_\_\_.setPub(foo,"id",baz)} \\
+  \code{this.p = baz}       & \label{set:internal}      & \code{\_\_\_.setProp(this,"p",baz)} \\
+  \code{foo.p = baz}        & \label{set:public}        & \code{\_\_\_.setPub(foo,"p",baz)} \\
   \code{this[bar] = baz}    & \label{set:index-internal} & \code{\_\_\_.setProp(this,bar,baz)} \\
   \code{foo[bar] = baz}     & \label{set:index-public}  & \code{\_\_\_.setPub(foo,bar,baz)} \\
   \code{glob = baz}         & \label{set:global}        & \code{\_\_\_OUTERS\_\_\_.glob = baz} \\
   \code{var\ glob = baz}    & \label{set:global-init}   & \code{\_\_\_OUTERS\_\_\_.glob = baz} \\
   \code{var\ glob}          & \label{set:global-decl}   & \code{\_\_\_OUTERS\_\_\_.glob = undefined} \\
   \hline
-  \code{delete\ this.id}    & \label{delete-internal}   & \code{\_\_\_.deleteProp(this,"id")} \\
-  \code{delete\ foo.id}     & \label{delete:public}     & \code{\_\_\_.deletePub(foo,"id")} \\
+  \code{delete\ this.p}     & \label{delete-internal}   & \code{\_\_\_.deleteProp(this,"p")} \\
+  \code{delete\ foo.p}      & \label{delete:public}     & \code{\_\_\_.deletePub(foo,"p")} \\
   \code{delete\ this[bar]}  & \label{delete:index-internal} & \code{\_\_\_.deleteProp(this,bar)} \\
- \code{delete\ foo[bar]}    & \label{delete:index-public} & \code{\_\_\_.deletePub(foo,bar)} \\
-  \code{delete\ glob}       & \label{delete:global}  & \code{\_\_\_.enforce(delete\ \_\_\_OUTERS\_\_\_.glob,\ldots)}
+ \code{delete\ foo[bar]}    & \label{delete:index-public}   & \code{\_\_\_.deletePub(foo,bar)} \\
+  \code{delete\ glob}       & \label{delete:global}   & \code{\_\_\_.enforce(delete\ \_\_\_OUTERS\_\_\_.glob,\ldots)}
 \end{eqnarray}
 
 \caption[Cajoling Property Access]{Cajoling Property Access. Under the 
@@ -1542,18 +1542,18 @@ same order as in the original.}
 
 \begin{figure*}
 \begin{eqnarray}
-  \mathrm{Caja\ expression} & \nonumber                 & \mathrm{cajoles\ to\ ES3\ code\ equivalent\ to} \\ 
+  \mathrm{Caja\ expression} & \nonumber                & \mathrm{cajoles\ to\ ES3\ code\ equivalent\ to} \\ 
   \hline
                             & \label{module}           & \code{\_\_\_.loadModule(function(\_\_\_OUTERS\_\_\_)\ \{} \\
   /*caja\ module\ body*/    & \nonumber                & \code{\ \ } /*cajoled\ module\ body*/ \\
                             & \nonumber                & \code{\});} \\
   \hline
-  \code{this.id(a\ldots)}   & \label{call:internal}       & \code{\_\_\_.callProp(this,"id",[a\ldots])} \\
-  \code{foo.id(a\ldots)}    & \label{call:public}         & \code{\_\_\_.callPub(foo,"id",[a\ldots])} \\
+  \code{this.m(a\ldots)}   & \label{call:internal}     & \code{\_\_\_.callProp(this,"m",[a\ldots])} \\
+  \code{foo.m(a\ldots)}    & \label{call:public}       & \code{\_\_\_.callPub(foo,"m",[a\ldots])} \\
   \code{this[bar](a\ldots)} & \label{call:index-internal} & \code{\_\_\_.callProp(this,bar,[a\ldots])} \\
-  \code{foo[bar](a\ldots)}  & \label{call:index-public}   & \code{\_\_\_.callPub(foo,bar,[a\ldots])} \\
-  \code{new\ foo(a\ldots)}  & \label{new:ctor}            & \code{new\ (\_\_\_.asCtor(foo))(a\ldots)} \\
-  \code{foo(a\ldots)}       & \label{call:func}           & \code{\_\_\_.asSimpleFunc(foo)(a\ldots)} \\
+  \code{foo[bar](a\ldots)} & \label{call:index-public} & \code{\_\_\_.callPub(foo,bar,[a\ldots])} \\
+  \code{new\ foo(a\ldots)} & \label{new:ctor}          & \code{new\ (\_\_\_.asCtor(foo))(a\ldots)} \\
+  \code{foo(a\ldots)}      & \label{call:func}         & \code{\_\_\_.asSimpleFunc(foo)(a\ldots)} \\
   \hline
    \nonumber & \lefteqn{\mathrm{Constructors}} & \\
   \code{function\ C(a\ldots)\ \{{\ldots}this{\ldots}\};} 
@@ -1575,17 +1575,19 @@ same order as in the original.}
              & \nonumber               & \code{\_\_\_.simpleFunc(F);} /*move\ to\ function\ start*/ \\
   \code{function\ F(a\ldots)\ \{{\ldots}\}}      
              & \label{func:named-expr}
-                                & \code{\_\_\_.primFreeze(\_\_\_.simpleFunc(function\ F(a\ldots)\ \{{\ldots}\}))} \\
+                                 & \code{\_\_\_.primFreeze(\_\_\_.simpleFunc(function\ F(a\ldots)\ \{{\ldots}\}))} \\
   \code{function(a\ldots)\ \{{\ldots}\}}         
-             & \label{func:anon}    & \code{\_\_\_.primFreeze(\_\_\_.simpleFunc(function(a\ldots)\ \{{\ldots}\}))} \\ 
+             & \label{func:anon} & \code{\_\_\_.primFreeze(\_\_\_.simpleFunc(function(a\ldots)\ \{{\ldots}\}))} \\ 
   \hline
-  \code{arguments.callee}        & \label{read:bad-callee}      & /*rejected*/ \\
-  \code{{\ldots}arguments\ldots} & \label{read:args}            & \code{{\ldots}args\_\_\_\ldots} \\
+  \code{arguments.callee} 
+             & \label{read:bad-callee} & /*rejected*/ \\
+  \code{{\ldots}arguments\ldots} 
+             & \label{read:args}   & \code{{\ldots}args\_\_\_\ldots} \\
              & \nonumber           & \code{var\ args\_\_\_ = \_\_\_.args(arguments);} /*move\ to\ function\ start*/\\ 
   \hline
   \code{/pattern/}      & \label{pattern:unary}                 & \code{new\ RegExp("pattern")} \\
   \code{/pattern/flags} & \label{pattern:binary}
-                                             & \code{new\ RegExp("pattern", "flags")} /*where\ flags\ is\ [igm]*\ */
+                                   & \code{new\ RegExp("pattern", "flags")} /*where\ flags\ is\ [igm]*\ */
 \end{eqnarray}
 
 \caption[Cajoling Callers and Callees]{Cajoling Callers and Callees. A 
@@ -1604,13 +1606,13 @@ Figure~\ref{tab:special-cases}.}
 
 \begin{figure*}
 \begin{eqnarray}
-  \mathrm{Caja\ expression}          & \nonumber & \mathrm{Special\ cases\ for\ function\ names\ and\ methods} \\ 
+  \mathrm{Caja\ expression}         & \nonumber & \mathrm{Special\ cases\ for\ function\ names\ and\ methods} \\ 
   \hline
   \nonumber & \lefteqn{\mathrm{Initializes,\ doesn't\ freeze\ \code{Foo}}} & \\
-  \code{Foo.prototype.id = member;}  & \label{set:member} & \code{\_\_\_.setMember(Foo, "id", member);} \\
+  \code{Foo.prototype.m = member;}  & \label{set:member} & \code{\_\_\_.setMember(Foo, "m", member);} \\
   \code{Foo.prototype = \{\ldots:member,{\ldots}\};} 
                             & \label{set:member-map} & \code{\_\_\_.setMemberMap(Foo,\{\ldots:member,{\ldots}\});} \\
-  \code{Foo.id = \ldots}    & \label{set:static}     & \code{\_\_\_.setPub(Foo, "id", \ldots)} \\
+  \code{Foo.m = \ldots}     & \label{set:static}     & \code{\_\_\_.setPub(Foo, "m", \ldots)} \\
   \code{caja.def(Foo,Base)} & \label{call:caja-def}  & \\
   \code{caja.def(Foo,Base,\{\ldots:member,{\ldots}\},\ldots)} 
                             & \nonumber              & \\
@@ -1634,9 +1636,9 @@ Figure~\ref{tab:special-cases}.}
   \code{Foo.call(this,\ldots);} 
                    & \label{call:implicit-super-init} & Only\ at\ start\ of\ \code{Derived}, \\
                    & \nonumber                        & and\ only\ if\ the\ remaining\ args\ have\ no\ \code{this}.\\
-  \code{Foo.prototype.id} 
+  \code{Foo.prototype.m} 
                    & \label{read:attach-super-method} & Only\ within\ methods\ of\ \code{Derived} \\
-                   & \nonumber                        & \code{\_\_\_.attach(this,Foo.prototype.id)}
+                   & \nonumber                        & \code{\_\_\_.attach(this,Foo.prototype.m)}
 \end{eqnarray}
 
 \caption[Cajoling Special Cases]{Cajoling Special Cases. When \code{Foo} is 
@@ -1870,7 +1872,7 @@ apply by default to global ES3 constructors, their prototypes, and their
 instances, unless stated otherwise in a specific table entry. A
 \emph{handled} method acts differently when called by cajoled \emph{vs.} 
 uncajoled code. The handled \code{call}, \code{apply}, and \code{bind} 
-methods can only be invoked on simple functions. Handled mutating methods 
+methods can only be invoked on simple-functions. Handled mutating methods 
 like \code{Array.pop} obey Caja's mutability constraints.}
 \label{tab:taming-es3-1}
 \end{figure*}
