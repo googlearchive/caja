@@ -17,9 +17,13 @@ package com.google.caja.plugin;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.RenderContext;
+import com.google.caja.reporting.SimpleMessageQueue;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -68,9 +72,6 @@ public final class HtmlPluginCompilerMain {
       new Option("r", "root_div_id", true,
           "ID of root <div> into which generated JS will inject content");
 
-  private static final Option SCHEME =
-      new Option("s", "caja", false, "Emit Baja code instead of Aaja code");
-
   private static final Options options = new Options();
 
   static {
@@ -106,7 +107,10 @@ public final class HtmlPluginCompilerMain {
     }
 
     HtmlPluginCompiler compiler =
-        new HtmlPluginCompiler(jsName, cssPrefix, rootDivId, PluginMeta.TranslationScheme.CAJA);
+        new HtmlPluginCompiler(
+            new SimpleMessageQueue(),
+            new PluginMeta(jsName, cssPrefix, rootDivId,
+                           PluginMeta.TranslationScheme.CAJA));
     try {
       compiler.addInput(
           new AncestorChain<DomTree.Fragment>(parseHtmlFromFile(inputFile)));
@@ -131,8 +135,9 @@ public final class HtmlPluginCompilerMain {
       }
     }
 
-    writeFile(outputJsFile, compiler.getOutputJs());
-    writeFile(outputCssFile, compiler.getOutputCss());
+    
+    writeFile(outputJsFile, compiler.getJavascript());
+    writeFile(outputCssFile, compiler.getCss());
 
     return 0;
   }
@@ -198,7 +203,7 @@ public final class HtmlPluginCompilerMain {
     }
   }
 
-  private void writeFile(File path, String contents) {
+  private void writeFile(File path, ParseTreeNode contents) {
     Writer w;
     try {
       w = new BufferedWriter(new FileWriter(path, false));
@@ -207,10 +212,8 @@ public final class HtmlPluginCompilerMain {
     }
 
     try {
-      w.write(contents);
-      if (contents.length() > 0 && !contents.endsWith("\n")) {
-        w.write("\n");
-      }
+      RenderContext rc = new RenderContext(new MessageContext(), w, true);
+      w.write("\n");
     } catch (IOException e)  {
       throw new RuntimeException(e);
     }

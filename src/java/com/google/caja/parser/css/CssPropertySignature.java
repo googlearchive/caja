@@ -65,8 +65,7 @@ public abstract class CssPropertySignature implements ParseTreeNode {
 
   @Override
   public CssPropertySignature clone() {
-    return (CssPropertySignature)
-        ParseTreeNodes.newNodeInstance(getClass(), getValue(), children());
+    return ParseTreeNodes.newNodeInstance(getClass(), getValue(), children());
   }
 
   /** A signature that can be repeated zero or more times. */

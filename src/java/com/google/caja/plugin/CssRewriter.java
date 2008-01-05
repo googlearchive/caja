@@ -25,6 +25,7 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import static com.google.caja.plugin.SyntheticNodes.s;
 
 import java.io.IOException;
 import java.net.URI;
@@ -43,11 +44,11 @@ import java.util.regex.Pattern;
  *
  * @author mikesamuel@gmail.com
  */
-final class CssRewriter {
+public final class CssRewriter {
   private final PluginMeta meta;
   private final MessageQueue mq;
 
-  CssRewriter(PluginMeta meta, MessageQueue mq) {
+  public CssRewriter(PluginMeta meta, MessageQueue mq) {
     assert null != mq;
     assert null != meta;
     this.meta = meta;
@@ -60,7 +61,7 @@ final class CssRewriter {
    * @param t non null.  modified in place.
    * @return true if the resulting tree is safe.
    */
-  boolean rewrite(AncestorChain<CssTree> t) {
+  public boolean rewrite(AncestorChain<CssTree> t) {
     boolean valid = true;
     // Once at the beginning, and again at the end.
     valid &= removeUnsafeConstructs(t);
@@ -192,18 +193,13 @@ final class CssRewriter {
             // synthetic parts.
             FilePosition pos = FilePosition.startOf(first.getFilePosition());
 
-            CssTree.Combination op = new CssTree.Combination(
-                pos, CssTree.Combinator.DESCENDANT);
-            op.getAttributes().set(ExpressionSanitizer.SYNTHETIC, Boolean.TRUE);
+            CssTree.Combination op = s(new CssTree.Combination(
+                pos, CssTree.Combinator.DESCENDANT));
 
-            CssTree.ClassLiteral prefixId = new CssTree.ClassLiteral(
-                pos, "." + meta.namespacePrefix);
-            prefixId.getAttributes().set(
-                ExpressionSanitizer.SYNTHETIC, Boolean.TRUE);
-            CssTree.SimpleSelector prefixSel = new CssTree.SimpleSelector(
-                pos, Collections.singletonList(prefixId));
-            prefixSel.getAttributes().set(
-                ExpressionSanitizer.SYNTHETIC, Boolean.TRUE);
+            CssTree.ClassLiteral prefixId = s(new CssTree.ClassLiteral(
+                pos, "." + meta.namespacePrefix));
+            CssTree.SimpleSelector prefixSel = s(new CssTree.SimpleSelector(
+                pos, Collections.singletonList(prefixId)));
 
             sel.insertBefore(op, first);
             sel.insertBefore(prefixSel, op);

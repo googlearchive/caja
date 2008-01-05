@@ -73,6 +73,7 @@ public class AllTests {
           CssTreeTest.class,
           CssValidatorTest.class,
           DefaultGadgetRewriterTest.class,
+          DefaultRewriterTest.class,
           DomParserTest.class,
           EscapingTest.class,
           ExpressionSanitizerTest.class,
@@ -85,16 +86,15 @@ public class AllTests {
           JsHtmlParserTest.class,
           JsLexerTest.class,
           LookaheadCharProducerTest.class,
+          MatchTest.class,
           ParseTreeNodeTest.class,
           ParserTest.class,
           PluginCompilerTest.class,
           PunctuationTrieTest.class,
+          QuasiBuilderTest.class,
           SparseBitSetTest.class,
           StringLiteralTest.class,
           UrlUtilTest.class,
-          MatchTest.class,
-          QuasiBuilderTest.class,
-          DefaultRewriterTest.class,
         };
     Pattern testFilter = Pattern.compile(System.getProperty("test.filter", ""));
     for (Class<? extends TestCase> testClass : testClasses) {

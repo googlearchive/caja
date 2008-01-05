@@ -18,6 +18,7 @@ import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.TestUtil;
 
 import java.io.FileNotFoundException;
@@ -77,7 +78,12 @@ public class DefaultGadgetRewriterTest extends TestCase {
   public void setUp() {
     rewriter = new DefaultGadgetRewriter(
         new EchoingMessageQueue(
-            new PrintWriter(System.err), new MessageContext(), false));
+            new PrintWriter(System.err), new MessageContext(), false)) {
+          protected RenderContext createRenderContext(
+              Appendable out, MessageContext mc) {
+            return new RenderContext(mc, out, false);
+          }
+        };
   }
 
   @Override
@@ -138,15 +144,20 @@ public class DefaultGadgetRewriterTest extends TestCase {
 
     StringBuilder sb = new StringBuilder();
     rewriter.rewrite(baseUri, input, uriCallback, sb);
-    String actual = sb.toString().trim();
+    String actual = normalXml(sb.toString()).trim();
 
     checkMessages(failLevel);
 
-    String expected = TestUtil.readResource(getClass(), goldenFile).trim();
+    String expected
+        = normalXml(TestUtil.readResource(getClass(), goldenFile)).trim();
     if (!expected.equals(actual)) {
       System.err.println(actual);
       assertEquals(expected, actual);
     }
+  }
+
+  private static String normalXml(String xml) {
+    return xml.replaceFirst("^<\\?xml[^>]*>", "");
   }
 
   private void assertRewriteFailsWithMessage(String htmlContent, String msg)

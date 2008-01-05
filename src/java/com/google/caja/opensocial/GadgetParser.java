@@ -40,6 +40,7 @@ import java.io.IOException;
  * Safe XML parser for gadget specifications. Rejects invalid markup.
  *
  * <p>TODO(ihab.awad): Sanitize and escape text in attribute values.
+ * <p>TODO(mikesamuel): Rename this class because it's not a parser.
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
@@ -122,15 +123,16 @@ public class GadgetParser {
    * Given a {@code GadgetSpec}, render its contents as a string of XML text.
    *
    * @param gadgetSpec a gadget specification object as a {@code GadgetSpec}.
-   * @param output an {@code Appendable} to which the contents will be written.
+   * @param output the {@code Appendable} to which the contents will be written.
    * @exception GadgetRewriteException if there is a problem in rendering.
-   * @exception IOException if an I/O problem occurs.
    */
   public void render(GadgetSpec gadgetSpec, Appendable output)
-      throws GadgetRewriteException, IOException {
+      throws GadgetRewriteException {
     try {
+      Document doc = getDocument(gadgetSpec);
+      doc.setXmlStandalone(false);
       TransformerFactory.newInstance().newTransformer().transform(
-          new DOMSource(getDocument(gadgetSpec)),
+          new DOMSource(doc),
           new StreamResult(new AppendableWriter(output)));
     } catch (TransformerConfigurationException e) {
       throw new GadgetRewriteException(e);

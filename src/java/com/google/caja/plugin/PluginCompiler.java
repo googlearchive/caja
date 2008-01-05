@@ -31,6 +31,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Pair;
+import static com.google.caja.plugin.SyntheticNodes.s;
 
 import java.io.StringReader;
 
@@ -406,7 +407,7 @@ public final class PluginCompiler {
     if (false) {  // HACK DEBUG
       StringBuffer out = new StringBuffer();
       MessageContext mc = new MessageContext();
-      mc.relevantKeys = Collections.singleton(ExpressionSanitizer.SYNTHETIC);
+      mc.relevantKeys = Collections.singleton(SyntheticNodes.SYNTHETIC);
       try {
         jsTree.formatTree(mc, 2, out);
       } catch (java.io.IOException ex) {
@@ -428,12 +429,6 @@ public final class PluginCompiler {
       }
     }
     return true;
-  }
-
-  /** Make the given parse tree node synthetic. */
-  private static <T extends ParseTreeNode> T s(T t) {
-    t.getAttributes().set(ExpressionSanitizer.SYNTHETIC, Boolean.TRUE);
-    return t;
   }
 
   private static class Input {
@@ -620,12 +615,6 @@ final class GlobalDefRewriter implements Visitor {
     }
     return true;
   }
-
-  /** Make the given parse tree node synthetic. */
-  private static <T extends ParseTreeNode> T s(T t) {
-    t.getAttributes().set(ExpressionSanitizer.SYNTHETIC, Boolean.TRUE);
-    return t;
-  }
 }
 
 final class GlobalReferenceRewriter {
@@ -667,7 +656,7 @@ final class GlobalReferenceRewriter {
           // the PluginCompiler.
           List<? extends ParseTreeNode> siblings = parent.children();
           if (!locals.contains(ref.getIdentifierName())
-              && !ref.getAttributes().is(ExpressionSanitizer.SYNTHETIC)
+              && !ref.getAttributes().is(SyntheticNodes.SYNTHETIC)
               && !(parent instanceof Operation
                    && (Operator.MEMBER_ACCESS
                        == ((Operation) parent).getOperator())
@@ -684,11 +673,6 @@ final class GlobalReferenceRewriter {
         return true;
       }
     }, null);
-  }
-
-  static <T extends ParseTreeNode> T s(T n) {
-    n.getAttributes().set(ExpressionSanitizer.SYNTHETIC, Boolean.TRUE);
-    return n;
   }
 
   static final class LocalDeclarationInspector implements Visitor {

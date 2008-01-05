@@ -14,7 +14,6 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
@@ -24,6 +23,7 @@ import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
+import static com.google.caja.plugin.SyntheticNodes.s;
 
 import java.util.List;
 import java.util.Vector;
@@ -35,32 +35,30 @@ import java.util.Vector;
  *
  */
 public final class TreeConstruction {
- // thing.member
-  static Operation memberAccess(String thing, String member) {
-    return s(new Operation(Operator.MEMBER_ACCESS, s(new Reference(new Identifier(thing))),
-        s(new Reference(new Identifier(member)))));
+  /** {@code thing.member } */
+  public static Operation memberAccess(String thing, String member) {
+    return s(new Operation(Operator.MEMBER_ACCESS,
+        s(new Reference(s(new Identifier(thing)))),
+        s(new Reference(s(new Identifier(member))))));
   }
-  // nodes[0](nodes[1...])
-  static Operation call(Expression... nodes) {
+  /** {@code nodes[0](nodes[1...]) } */
+  public static Operation call(Expression... nodes) {
     return s(new Operation(Operator.FUNCTION_CALL, nodes));
   }
-  // function name(args) { body }
-  static FunctionConstructor function(String name, Block body, String...args) {
+  /** {@code function name(args) <body>} */
+  public static FunctionConstructor function(
+      String name, Block body, String... args) {
     List<FormalParam> params = new Vector<FormalParam>();
     for (String arg : args) {
-      params.add(s(new FormalParam(new Identifier(arg))));
+      params.add(s(new FormalParam(s(new Identifier(arg)))));
     }
-    return s(new FunctionConstructor(new Identifier(name), params, body));
+    return s(new FunctionConstructor(s(new Identifier(name)), params, body));
   }
-  static ExpressionStmt assign(Expression lhs, Expression rhs) {
+  
+  public static ExpressionStmt assign(Expression lhs, Expression rhs) {
     return s(new ExpressionStmt(s(new Operation(Operator.ASSIGN, lhs, rhs))));
   }
 
-  /** make the given parse tree node synthetic. */
-  private static <T extends ParseTreeNode> T s(T t) {
-    t.getAttributes().set(ExpressionSanitizer.SYNTHETIC, Boolean.TRUE);
-    return t;
-  }
   // Can't instantiate
   private TreeConstruction() {}
 }

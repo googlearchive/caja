@@ -22,7 +22,6 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
-import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.Operation;

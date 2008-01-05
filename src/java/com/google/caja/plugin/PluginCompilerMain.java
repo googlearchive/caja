@@ -82,7 +82,9 @@ public class PluginCompilerMain {
       args = parseFlags(args);
 
       meta = new PluginMeta(
-          namespaceName, namespacePrefix, pathPrefix, "", PluginMeta.TranslationScheme.AAJA);
+          namespaceName, namespacePrefix, pathPrefix, "",
+          PluginMeta.TranslationScheme.AAJA,
+          PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
       compiler = new PluginCompiler(meta);
 
       boolean success = true;

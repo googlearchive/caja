@@ -34,8 +34,8 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.UndefinedLiteral;
-import com.google.caja.plugin.ExpressionSanitizer;
 import com.google.caja.plugin.ReservedNames;
+import com.google.caja.plugin.SyntheticNodes;
 import com.google.caja.util.Pair;
 
 import java.util.ArrayList;
@@ -162,7 +162,7 @@ public class DefaultRewriter extends AbstractRewriter {
   }
 
   private boolean isSynthetic(ParseTreeNode node) {
-    Boolean value = node.getAttributes().get(ExpressionSanitizer.SYNTHETIC);
+    Boolean value = node.getAttributes().get(SyntheticNodes.SYNTHETIC);
     return value != null && value.booleanValue();
   }
 

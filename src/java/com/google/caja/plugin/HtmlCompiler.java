@@ -34,7 +34,6 @@ import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
@@ -45,12 +44,14 @@ import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.plugin.stages.RewriteHtmlStage;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Pair;
+import static com.google.caja.plugin.SyntheticNodes.s;
 
 import java.io.StringReader;
 import java.net.URI;
@@ -79,7 +80,6 @@ import java.util.regex.Pattern;
  * @author mikesamuel@gmail.com
  */
 public class HtmlCompiler {
-
   private final MessageQueue mq;
   private final PluginMeta meta;
   private Map<String, FunctionDeclaration> eventHandlers =
@@ -89,15 +89,6 @@ public class HtmlCompiler {
     if (null == mq) { throw new NullPointerException(); }
     this.mq = mq;
     this.meta = meta;
-  }
-
-  /**
-   * May be overridden to apply a URI policy and return a URI that enforces that
-   * policy.
-   * @return null if the URI cannot be made safe.
-   */
-  protected String rewriteUri(ExternalReference uri, String mimeType) {
-    return null;
   }
 
   /**
@@ -152,7 +143,7 @@ public class HtmlCompiler {
 
         if (tagName.equals("script")) {
           Block extractedScriptBody = el.getAttributes().get(
-              HtmlPluginCompiler.EXTRACTED_SCRIPT_BODY);
+              RewriteHtmlStage.EXTRACTED_SCRIPT_BODY);
           if (extractedScriptBody != null) {
             b.createMutation().appendChildren(extractedScriptBody.children())
                 .execute();
@@ -410,17 +401,6 @@ public class HtmlCompiler {
   }
 
   /**
-   * a convenience function used to mark all nodes created by the gxp compiler
-   * as {@link ExpressionSanitizer#SYNTHETIC synthetic}.  The only non synthetic
-   * nodes in the compiled javascript will be those corresponsing to javascript
-   * embedded in the gxp.
-   */
-  private static <T extends ParseTreeNode> T s(T t) {
-    t.getAttributes().set(ExpressionSanitizer.SYNTHETIC, Boolean.TRUE);
-    return t;
-  }
-
-  /**
    * produces an identifier that will not collide with any previously generated
    * identifier.
    */
@@ -594,7 +574,7 @@ public class HtmlCompiler {
         }
         String mimeType = guessMimeType(
             ((DomTree.Tag) tChain.getParentNode()).getTagName());
-        String rewrittenUri = htmlc.rewriteUri(
+        String rewrittenUri = htmlc.meta.getPluginEnvironment().rewriteUri(
             new ExternalReference(
                 uri, t.getAttribValueNode().getFilePosition()),
                 mimeType);
@@ -631,13 +611,13 @@ public class HtmlCompiler {
    * functions, so we pass in the tamed node as the first parameter.
    *
    * The event handler goes from:<br>
-   *   {@code if (this.type === 'text') { alert(this.value); } }
-   * to a function like:<br>
-   *   {@code function (thisNode___, event) {
-   *       if (thisNode___.type === 'text') {
-   *         alert(thisNode___.value);
-   *       }
-   *     } }
+   *   {@code if (this.type === 'text') alert(this.value); }
+   * to a function like:<pre>
+   *   function (thisNode___, event) {
+   *     if (thisNode___.type === 'text') {
+   *       alert(thisNode___.value);
+   *     }
+   *   }</pre>
    * <p>
    * And the resulting function is called via a handler attribute like
    * {@code onchange="plugin_dispatchEvent___(this, node, 1234, 'handlerName')"}

@@ -70,6 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import static com.google.caja.plugin.SyntheticNodes.s;
 
 /**
  * Compiles a subset of gxp to javascript.
@@ -929,17 +930,6 @@ public final class GxpCompiler {
     // Expression will be sanitized in a later pass
 
     return b;
-  }
-
-  /**
-   * A convenience function used to mark all nodes created by the gxp compiler
-   * as {@link ExpressionSanitizer#SYNTHETIC synthetic}.  The only non synthetic
-   * nodes in the compiled javascript will be those corresponsing to javascript
-   * embedded in the gxp.
-   */
-  private static <T extends ParseTreeNode> T s(T t) {
-    t.getAttributes().set(ExpressionSanitizer.SYNTHETIC, Boolean.TRUE);
-    return t;
   }
 
   /**

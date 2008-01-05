@@ -79,7 +79,7 @@ public class ExpressionSanitizerTest extends TestCase {
     String golden = TestUtil.readResource(getClass(), "sanitizergolden2.txt");
 
     MessageContext mc = new MessageContext();
-    mc.relevantKeys = Collections.singleton(ExpressionSanitizer.SYNTHETIC);
+    mc.relevantKeys = Collections.singleton(SyntheticNodes.SYNTHETIC);
     MessageQueue mq = new EchoingMessageQueue(
         new PrintWriter(new OutputStreamWriter(System.out)), mc);
     Statement pt = TestUtil.parseTree(getClass(), "sanitizerinput1.js", mq);

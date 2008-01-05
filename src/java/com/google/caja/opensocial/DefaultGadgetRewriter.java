@@ -21,11 +21,16 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.HtmlPluginCompiler;
+import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
+import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -44,6 +49,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter {
 
   private MessageQueue mq;
   private PluginMeta.TranslationScheme translationScheme;
+
   public DefaultGadgetRewriter(MessageQueue mq) {
     this.mq = mq;
     this.translationScheme = PluginMeta.TranslationScheme.CAJA;
@@ -73,7 +79,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter {
   }
 
   public void rewrite(URI baseUri, Readable gadgetSpec, UriCallback uriCallback, Appendable output)
-      throws UriCallbackException, GadgetRewriteException, IOException {
+      throws GadgetRewriteException, IOException {
     GadgetParser parser = new GadgetParser();
     GadgetSpec spec = parser.parse(gadgetSpec);
     spec.setContent(rewriteContent(baseUri, spec.getContent(), uriCallback));
@@ -94,10 +100,20 @@ public class DefaultGadgetRewriter implements GadgetRewriter {
 
     HtmlPluginCompiler compiler = compileGadget(htmlContent, baseUri, callback);
 
-    String style = compiler.getOutputCss().trim();
-    String script = compiler.getOutputJs().trim();
+    MessageContext mc = compiler.getMessageContext();
+    StringBuilder style = new StringBuilder();
+    StringBuilder script = new StringBuilder();
+    try {
+      CssTree css = compiler.getCss(); 
+      if (css != null) { css.render(createRenderContext(style, mc)); }
+      Block js = compiler.getJavascript();
+      if (js != null) { js.render(createRenderContext(script, mc)); }
+    } catch (IOException ex) {
+      // StringBuilders should not throw IOExceptions.
+      throw new RuntimeException(ex);
+    }
 
-    return rewriteContent(style, script);
+    return rewriteContent(style.toString(), script.toString());
   }
 
   private DomTree.Fragment parseHtml(URI uri, String htmlContent)
@@ -118,10 +134,10 @@ public class DefaultGadgetRewriter implements GadgetRewriter {
   private HtmlPluginCompiler compileGadget(
       DomTree.Fragment content, final URI baseUri, final UriCallback callback)
       throws GadgetRewriteException {
-    HtmlPluginCompiler compiler = new HtmlPluginCompiler(
-        JAVASCRIPT_PREFIX, DOM_PREFIX, ROOT_DIV_ID, translationScheme) {
-          @Override
-          protected CharProducer loadExternalResource(
+    PluginMeta meta = new PluginMeta(
+        JAVASCRIPT_PREFIX, DOM_PREFIX, "", ROOT_DIV_ID, translationScheme,
+        new PluginEnvironment() {
+          public CharProducer loadExternalResource(
               ExternalReference ref, String mimeType) {
             ExternalReference absRef = new ExternalReference(
                 baseUri.resolve(ref.getUri()), ref.getReferencePosition());
@@ -136,8 +152,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter {
                 content, new InputSource(absRef.getUri()));
           }
 
-          @Override
-          protected String rewriteUri(ExternalReference ref, String mimeType) {
+          public String rewriteUri(ExternalReference ref, String mimeType) {
             ExternalReference absRef = new ExternalReference(
                 baseUri.resolve(ref.getUri()), ref.getReferencePosition());
             try {
@@ -148,11 +163,12 @@ public class DefaultGadgetRewriter implements GadgetRewriter {
               return null;
             }
           }
-        };
+        });
+    
+    HtmlPluginCompiler compiler = new HtmlPluginCompiler(mq, meta);
 
     // Compile
     compiler.addInput(new AncestorChain<DomTree.Fragment>(content));
-    compiler.setMessageQueue(mq);
 
     if (!compiler.run()) {
       throw new GadgetRewriteException();
@@ -178,5 +194,10 @@ public class DefaultGadgetRewriter implements GadgetRewriter {
     }
 
     return results.toString();
+  }
+
+  protected RenderContext createRenderContext(
+      Appendable out, MessageContext mc) {
+    return new RenderContext(mc, out, true);
   }
 }

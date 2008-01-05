@@ -168,6 +168,7 @@ public interface CharProducer extends Closeable {
         posBuf = new MutableFilePosition(pos);
       }
 
+      @SuppressWarnings("fallthrough")
       public int read() throws IOException {
         int lookback = buf[offset - 1];  // Will read zero on first entry.
 
@@ -182,7 +183,7 @@ public interface CharProducer extends Closeable {
         switch (ch) {
           case '\n':
             if (lookback == '\r') { --posBuf.lineNo; }
-            // fallthru
+            // fall through
           case '\r':
             ++posBuf.lineNo;
             posBuf.charInLine = 1;

@@ -146,20 +146,20 @@ public class GadgetRewriterMain {
       return usage("Option \"" + OUTPUT.getLongOpt() + "\" missing");
 
     String t = cl.getOptionValue(TIME.getOpt());
-    if (t != null)
+    if (t != null) {
       repeatCount = Integer.decode(t).intValue();
+    }
     
-    t = cl.getOptionValue(SCHEME.getOpt());
-    if (t == null)
+    String schemeStr = cl.getOptionValue(SCHEME.getOpt());
+    if (schemeStr == null) {
       scheme = PluginMeta.TranslationScheme.CAJA;
-    else if (t.equalsIgnoreCase("aaja"))
-      scheme = PluginMeta.TranslationScheme.AAJA;
-    else if (t.equalsIgnoreCase("baja"))
-      scheme = PluginMeta.TranslationScheme.BAJA;
-    else if (t.equalsIgnoreCase("caja"))
-      scheme = PluginMeta.TranslationScheme.CAJA;
-    else
-      return usage("Bad scheme: " + t);
+    } else {
+      try {
+        scheme = PluginMeta.TranslationScheme.valueOf(schemeStr.toUpperCase());
+      } catch (IllegalArgumentException ex) {
+        return usage("Bad scheme: " + schemeStr);
+      }
+    }
     return 0;
   }
   

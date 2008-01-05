@@ -73,10 +73,7 @@ public class GxpCompilerTest extends TestCase {
     TokenQueue<HtmlTokenType> tq = TestUtil.parseXml(
         getClass(), "gxpcompilerinput1.gxp", mq);
     DomTree.Tag domTree = (DomTree.Tag) DomParser.parseDocument(tq);
-    GxpCompiler gxpc = new GxpCompiler(
-        mq,
-        new PluginMeta(
-            "TestPlugin", "pre", "/testplugin", "rootDiv",PluginMeta.TranslationScheme.AAJA));
+    GxpCompiler gxpc = new GxpCompiler(mq, makeTestPluginMeta());
     GxpCompiler.TemplateSignature sig = gxpc.compileTemplateSignature(domTree);
     ParseTreeNode compiled = gxpc.compileDocument(sig);
 
@@ -98,10 +95,7 @@ public class GxpCompilerTest extends TestCase {
     TokenQueue<HtmlTokenType> tq = TestUtil.parseXml(
         getClass(), "gxpcompilerinput2.gxp", mq);
     DomTree.Tag domTree = (DomTree.Tag) DomParser.parseDocument(tq);
-    GxpCompiler gxpc = new GxpCompiler(
-        mq,
-        new PluginMeta(
-            "TestPlugin", "pre", "/testplugin", "rootDiv", PluginMeta.TranslationScheme.AAJA));
+    GxpCompiler gxpc = new GxpCompiler(mq, makeTestPluginMeta());
     GxpCompiler.TemplateSignature sig = gxpc.compileTemplateSignature(domTree);
     ParseTreeNode compiled = gxpc.compileDocument(sig);
 
@@ -141,10 +135,7 @@ public class GxpCompilerTest extends TestCase {
         TestUtil.parseXml(getClass(), "gxpcompilerinput3.gxp", mq));
     DomTree.Tag gxp3 = (DomTree.Tag) DomParser.parseDocument(
         TestUtil.parseXml(getClass(), "gxpcompilerinput4.gxp", mq));
-    GxpCompiler gxpc = new GxpCompiler(
-        mq,
-        new PluginMeta(
-            "TestPlugin", "pre", "/testplugin", "rootDiv", PluginMeta.TranslationScheme.AAJA));
+    GxpCompiler gxpc = new GxpCompiler(mq, makeTestPluginMeta());
     GxpCompiler.TemplateSignature sig2 = gxpc.compileTemplateSignature(gxp2),
                                   sig3 = gxpc.compileTemplateSignature(gxp3);
 
@@ -391,9 +382,7 @@ public class GxpCompilerTest extends TestCase {
     MessageQueue mq = //new SimpleMessageQueue();
       new EchoingMessageQueue(
           new PrintWriter(new OutputStreamWriter(System.out)), mc);
-    PluginMeta meta = new PluginMeta("TestPlugin", "pre",
-        "/testplugin", "rootDiv", PluginMeta.TranslationScheme.AAJA);
-
+    PluginMeta meta = makeTestPluginMeta();
 
     DomTree.Tag[] doms = new DomTree.Tag[gxps.length];
     for (int i = 0; i < gxps.length; ++i) {
@@ -473,8 +462,7 @@ public class GxpCompilerTest extends TestCase {
     MessageQueue mq = //new SimpleMessageQueue();
       new EchoingMessageQueue(
           new PrintWriter(new OutputStreamWriter(System.out)), mc);
-    PluginMeta meta = new PluginMeta("TestPlugin", "pre",
-        "/testplugin", "rootDiv", PluginMeta.TranslationScheme.AAJA);
+    PluginMeta meta = makeTestPluginMeta();
 
     DomTree.Tag[] doms = new DomTree.Tag[gxps.length];
     for (int i = 0; i < gxps.length; ++i) {
@@ -541,5 +529,12 @@ public class GxpCompilerTest extends TestCase {
       assertEquals(actual, golden, actual);
     }
     assertEquals(expectValid, valid);
+  }
+
+  private PluginMeta makeTestPluginMeta() {
+    return new PluginMeta(
+        "TestPlugin", "pre", "/testplugin", "rootDiv",
+        PluginMeta.TranslationScheme.AAJA,
+        PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
   }
 }

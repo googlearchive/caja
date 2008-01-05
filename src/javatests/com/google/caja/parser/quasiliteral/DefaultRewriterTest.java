@@ -19,7 +19,6 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.reporting.MessageContext;

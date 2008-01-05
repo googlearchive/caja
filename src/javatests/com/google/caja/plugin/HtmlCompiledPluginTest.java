@@ -20,8 +20,14 @@ import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.js.Block;
+import com.google.caja.reporting.EchoingMessageQueue;
+import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.RhinoTestBed;
 
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.URI;
 import junit.framework.TestCase;
@@ -326,8 +332,14 @@ public class HtmlCompiledPluginTest extends TestCase {
   }
 
   public void execGadget(String gadgetSpec, String tests) throws Exception {
-    HtmlPluginCompiler compiler = new HtmlPluginCompiler(
-        "___OUTERS___", "test", "test", PluginMeta.TranslationScheme.CAJA);
+    MessageContext mc = new MessageContext();
+    MessageQueue mq = new EchoingMessageQueue(
+        new PrintWriter(System.err), mc, true);
+    PluginMeta meta = new PluginMeta(
+        "___OUTERS___", "test", "", "test", PluginMeta.TranslationScheme.CAJA,
+        PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
+    HtmlPluginCompiler compiler = new HtmlPluginCompiler(mq, meta);
+    compiler.setMessageContext(mc);
     DomTree html = parseHtml(gadgetSpec);
     if (html != null) { compiler.addInput(new AncestorChain<DomTree>(html)); }
 
@@ -336,7 +348,9 @@ public class HtmlCompiledPluginTest extends TestCase {
     if (failed) {
       fail();
     } else {
-      String js = compiler.getOutputJs();
+      Block jsTree = compiler.getJavascript();
+      StringBuilder js = new StringBuilder();
+      RenderContext rc = new RenderContext(mc, js, false);
       System.out.println("Compiled gadget: " + js);
       RhinoTestBed.Input[] inputs = new RhinoTestBed.Input[] {
           // Make the assertTrue, etc. functions available to javascript
@@ -355,7 +369,7 @@ public class HtmlCompiledPluginTest extends TestCase {
               "dom"),
           // The Gadget
           new RhinoTestBed.Input(
-              new StringReader(js),
+              new StringReader(js.toString()),
               "gadget"),
           // The tests
           new RhinoTestBed.Input(new StringReader(tests), "tests"),

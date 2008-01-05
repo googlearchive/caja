@@ -202,7 +202,6 @@
       <include name="**/caja/plugin/PluginCompilerTest.java"/>
       <include name="**/caja/plugin/UrlUtilTest.java"/>
       <include name="**/caja/plugin/caps/CapabilityRewriterTest.java"/>
-      <include name="**/caja/util/PipelineTest.java"/>
       <include name="**/caja/util/SparseBitSetTest.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
@@ -326,25 +325,10 @@
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
-      <include name="**/caja/plugin/CssPropertyPartType.java"/>
-      <include name="**/caja/plugin/CssRewriter.java"/>
-      <include name="**/caja/plugin/CssTemplate.java"/>
-      <include name="**/caja/plugin/CssValidator.java"/>
-      <include name="**/caja/plugin/DomAttributeConstraint.java"/>
-      <include name="**/caja/plugin/ExpressionSanitizer.java"/>
-      <include name="**/caja/plugin/ExpressionSanitizerBaja.java"/>
-      <include name="**/caja/plugin/GxpCompiler.java"/>
-      <include name="**/caja/plugin/GxpValidator.java"/>
-      <include name="**/caja/plugin/GlobalOptions.java"/>
-      <include name="**/caja/plugin/HtmlCompiler.java"/>
-      <include name="**/caja/plugin/HtmlPluginCompiler.java"/>
-      <include name="**/caja/plugin/HtmlWhitelist.java"/>
-      <include name="**/caja/plugin/HtmlValidator.java"/>
-      <include name="**/caja/plugin/JsWriter.java"/>
-      <include name="**/caja/plugin/PluginCompiler.java"/>
-      <include name="**/caja/plugin/PluginMessageType.java"/>
-      <include name="**/caja/plugin/PluginMeta.java"/>
-      <include name="**/caja/plugin/UrlUtil.java"/>
+      <include name="**/caja/plugin/*.java"/>
+      <include name="**/caja/plugin/stages/*.java"/>
+
+      <exclude name="**/caja/plugin/*Main.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
     <copy todir="${lib}">

@@ -40,8 +40,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.mozilla.javascript.JavaScriptException;
-
 import junit.framework.TestCase;
 
 /**
@@ -306,8 +304,10 @@ public class CompiledPluginTest extends TestCase {
    */
   private static void execPlugin(String tests, PluginFile... pluginFiles)
       throws IOException, ParseException {
-    PluginMeta meta =
-        new PluginMeta("PLUGIN", "pre", "/plugin1", "rootDiv", PluginMeta.TranslationScheme.AAJA);
+    PluginMeta meta = new PluginMeta(
+        "PLUGIN", "pre", "/plugin1", "rootDiv",
+        PluginMeta.TranslationScheme.AAJA,
+        PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
     PluginCompiler pc = new PluginCompiler(meta);
 
     MessageContext mc = new MessageContext();

@@ -53,7 +53,7 @@ public class ExpressionSanitizerBaja {
     this.meta = meta;
   }
 
-  boolean sanitize(AncestorChain<?> toSanitize) {
+  public boolean sanitize(AncestorChain<?> toSanitize) {
     rewriteFieldAccess(toSanitize.node);
     return true;
   }
@@ -227,7 +227,7 @@ public class ExpressionSanitizerBaja {
 
     public boolean visit(AncestorChain<?> ancestors) {
       ParseTreeNode node = ancestors.node;
-      if (node.getAttributes().is(ExpressionSanitizer.SYNTHETIC)) {
+      if (node.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
         return true;
       }
       if (node instanceof FunctionConstructor) {

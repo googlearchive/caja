@@ -36,7 +36,7 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UndefinedLiteral;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.util.SyntheticAttributeKey;
+import static com.google.caja.plugin.SyntheticNodes.s;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,9 +51,6 @@ import java.util.Map;
  * @author mikesamuel@gmail.com
  */
 public final class ExpressionSanitizer {
-  public static final SyntheticAttributeKey<Boolean> SYNTHETIC =
-      new SyntheticAttributeKey<Boolean>(Boolean.class, "synthetic");
-
   private final MessageQueue mq;
 
   private static final Map<String, String> FIELD_REWRITE_MAP;
@@ -100,11 +97,6 @@ public final class ExpressionSanitizer {
     return pass1.isValid();
   }
 
-  private static <T extends ParseTreeNode> T s(T t) {
-    t.getAttributes().set(SYNTHETIC, Boolean.TRUE);
-    return t;
-  }
-
   private final class RewritingPass1 implements Visitor {
     private boolean valid = true;
 
@@ -112,7 +104,7 @@ public final class ExpressionSanitizer {
 
     public boolean visit(AncestorChain<?>  ancestors) {
       ParseTreeNode node = ancestors.node;
-      if (node.getAttributes().is(SYNTHETIC)) { return true; }
+      if (node.getAttributes().is(SyntheticNodes.SYNTHETIC)) { return true; }
       if (node instanceof Operation) {
         Operation op = (Operation) node;
         switch (op.getOperator()) {
@@ -365,7 +357,7 @@ public final class ExpressionSanitizer {
 
     public boolean visit(AncestorChain<?>  ancestors) {
       ParseTreeNode node = ancestors.node;
-      if (node.getAttributes().is(SYNTHETIC)) { return true; }
+      if (node.getAttributes().is(SyntheticNodes.SYNTHETIC)) { return true; }
       if (node instanceof Operation) {
         Operation op = (Operation) node;
         if (op.getOperator() == Operator.MEMBER_ACCESS) {

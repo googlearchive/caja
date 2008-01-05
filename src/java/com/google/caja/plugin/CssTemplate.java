@@ -40,6 +40,7 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import static com.google.caja.plugin.SyntheticNodes.s;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -133,7 +134,7 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
     return children().get(children().size() - 1);
   }
 
-  public void render(RenderContext r) throws IOException {
+  public void render(RenderContext r) {
     throw new UnsupportedOperationException("NOT IMPLEMENTED YET");  // TODO
   }
 
@@ -298,11 +299,5 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
       CharProducer.Factory.fromHtmlAttribute(CharProducer.Factory.create(
           new StringReader("  " + sub.getBody()), pos));
     return JsWriter.asExpression(cp, pos, mq);
-  }
-
-  /** Make the given parse tree node synthetic. */
-  private static <T extends ParseTreeNode> T s(T t) {
-    t.getAttributes().set(ExpressionSanitizer.SYNTHETIC, Boolean.TRUE);
-    return t;
   }
 }

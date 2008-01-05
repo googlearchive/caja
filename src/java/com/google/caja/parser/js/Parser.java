@@ -71,8 +71,7 @@ import java.util.Set;
  * converts {@link MessageLevel#WARNING} and above to
  * {@link MessageLevel#FATAL_ERROR}.
  *
- * <pre>
- * {@code
+ * <xmp>
  * // Terminal productions
  * Program                 => <TerminatedStatement>*
  * Statement               => <TerminalStatement>
@@ -217,7 +216,7 @@ import java.util.Set;
  *                          | <NumberLiteral>
  *                          | <Keyword>  // set allowed interpreter dependent
  *   TrailingComma         => ','  // warn
- * }</pre>
+ * </xmp>
  * See also {@link Keyword} for definitions of keywords, {@link Operator} for
  * operator precedences and associativity, and {@link JsTokenType} for
  * definitions of Word, NumberLiteral, and StringLiteral.
@@ -907,6 +906,7 @@ public final class Parser extends ParserBase {
     return new IntegerLiteral(lv);
   }
 
+  @SuppressWarnings("fallthrough")
   private AbstractExpression<?> parseExpressionAtom() throws ParseException {
     AbstractExpression<?> e;
     Mark m = tq.mark();
@@ -977,7 +977,7 @@ public final class Parser extends ParserBase {
               break;  // Will be handled by the word handler below
           }
         }
-        // fallthru
+        // fall through
       }
       case WORD:
       {

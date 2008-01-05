@@ -20,7 +20,6 @@ import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.escaping.Escaping;
-import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
@@ -33,6 +32,7 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UndefinedLiteral;
 import com.google.caja.reporting.MessageQueue;
+import static com.google.caja.plugin.SyntheticNodes.s;
 
 import java.util.List;
 
@@ -185,11 +185,5 @@ final class JsWriter {
     HTML_ATTRIB,
     NONE,
     ;
-  }
-
-  /** Make the given parse tree node synthetic. */
-  private static <T extends ParseTreeNode> T s(T t) {
-    t.getAttributes().set(ExpressionSanitizer.SYNTHETIC, Boolean.TRUE);
-    return t;
   }
 }
