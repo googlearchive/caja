@@ -39,7 +39,9 @@ import com.google.caja.plugin.stages.ValidateCssStage;
 import com.google.caja.plugin.stages.ValidateHtmlStage;
 import com.google.caja.plugin.stages.ValidateJavascriptStage;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Pipeline;
 
@@ -55,7 +57,7 @@ import java.util.List;
 public class HtmlPluginCompiler {
   /**
    * A configurable pipeline that performs the compilation of HTML, CSS, and JS
-   * to CSS and JS. 
+   * to CSS and JS.
    */
   private Pipeline<Jobs> compilationPipeline;
   private Jobs jobs;
@@ -64,7 +66,16 @@ public class HtmlPluginCompiler {
     MessageContext mc = new MessageContext();
     mc.inputSources = new ArrayList<InputSource>();
     jobs = new Jobs(mc, mq, meta);
-    compilationPipeline = new Pipeline<Jobs>();
+    compilationPipeline = new Pipeline<Jobs>() {
+      @Override
+      protected boolean applyStage(Pipeline.Stage stage, Jobs jobs) {
+        jobs.getMessageQueue().addMessage(
+            MessageType.CHECKPOINT,
+            MessagePart.Factory.valueOf(stage.getClass().getSimpleName()),
+            MessagePart.Factory.valueOf(System.nanoTime() / 1e9));
+        return super.applyStage(stage, jobs);
+      }
+    };
     setupCompilationPipeline();
   }
 
@@ -87,7 +98,7 @@ public class HtmlPluginCompiler {
     jobs.getMessageContext().inputSources.add(
         input.node.getFilePosition().source());
   }
-  
+
   protected void setupCompilationPipeline() {
     List<Pipeline.Stage<Jobs>> stages = compilationPipeline.getStages();
     stages.add(new RewriteHtmlStage());
@@ -102,7 +113,7 @@ public class HtmlPluginCompiler {
     stages.add(new ConsolidateCssStage());
     stages.add(new CheckForErrorsStage());
   }
-  
+
   public Pipeline<Jobs> getCompilationPipeline() {
     return compilationPipeline;
   }
@@ -165,7 +176,7 @@ public class HtmlPluginCompiler {
 
   /**
    * run the compiler on all parse trees added via {@link #addInput}.
-   * THe output parse trees are available via {@link #getOutputs()}.
+   * The output parse trees are available via {@link #getOutputs()}.
    * @return true on success, false on failure.
    */
   public boolean run() {

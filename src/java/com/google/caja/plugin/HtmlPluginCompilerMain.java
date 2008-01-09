@@ -81,7 +81,6 @@ public final class HtmlPluginCompilerMain {
     options.addOption(JS_NAME);
     options.addOption(CSS_PREFIX);
     options.addOption(ROOT_DIV_ID);
-  //   options.addOption(IS_BAJA);
   }
 
   private File inputFile = null;
@@ -90,7 +89,6 @@ public final class HtmlPluginCompilerMain {
   private String jsName = null;
   private String cssPrefix = null;
   private String rootDivId = null;
-  private boolean isBaja = false;
 
   private HtmlPluginCompilerMain() {}
 
@@ -101,10 +99,6 @@ public final class HtmlPluginCompilerMain {
   private int run(String[] argv) {
     int rc = processArguments(argv);
     if (rc != 0) return rc;
-
-    if (isBaja) {
-      jsName += "___OUTERS___";
-    }
 
     HtmlPluginCompiler compiler =
         new HtmlPluginCompiler(
@@ -127,6 +121,7 @@ public final class HtmlPluginCompilerMain {
     } finally {
       try {
         for (Message m : compiler.getMessageQueue().getMessages()) {
+          System.err.print(m.getMessageLevel().name() + ": ");
           m.format(compiler.getMessageContext(), System.err);
           System.err.println();
         }
@@ -135,7 +130,6 @@ public final class HtmlPluginCompilerMain {
       }
     }
 
-    
     writeFile(outputJsFile, compiler.getJavascript());
     writeFile(outputCssFile, compiler.getCss());
 
@@ -149,9 +143,6 @@ public final class HtmlPluginCompilerMain {
     } catch (org.apache.commons.cli.ParseException e) {
       throw new RuntimeException(e);
     }
-
-    // if (cl.hasOption(IS_BAJA.getOpt()))
-      isBaja = true;
 
     if (cl.getOptionValue(INPUT.getOpt()) == null)
       return usage("Option \"" + INPUT.getLongOpt() + "\" missing");
@@ -211,11 +202,14 @@ public final class HtmlPluginCompilerMain {
       throw new RuntimeException(e);
     }
 
-    try {
+    if (contents != null) {
       RenderContext rc = new RenderContext(new MessageContext(), w, true);
-      w.write("\n");
-    } catch (IOException e)  {
-      throw new RuntimeException(e);
+      try {
+        contents.render(rc);
+        w.write("\n");
+      } catch (IOException e)  {
+        throw new RuntimeException(e);
+      }
     }
 
     try {

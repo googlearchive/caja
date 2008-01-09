@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.parser.ParserBase;
 import java.util.regex.Pattern;
 
 /**
@@ -75,6 +76,9 @@ public final class PluginMeta {
     if (!pathPrefix.startsWith("/") && !"".equals(pathPrefix)) {
       throw new IllegalArgumentException(pathPrefix);
     }
+    if (!ParserBase.isJavascriptIdentifier(namespaceName)) {
+      throw new IllegalArgumentException(namespaceName);
+    }
     this.namespaceName = namespaceName;
     this.namespacePrefix = namespacePrefix;
     this.pathPrefix = pathPrefix;
@@ -96,7 +100,7 @@ public final class PluginMeta {
   public String generateUniqueName(String prefix) {
     return prefix + "_" + (++guidCounter) + "___";
   }
-  
+
   public PluginEnvironment getPluginEnvironment() { return env; }
 
   private static final Pattern CONSTANT_NAME = Pattern.compile("^[A-Z_]+$");

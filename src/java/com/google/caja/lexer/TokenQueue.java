@@ -83,7 +83,7 @@ public class TokenQueue<T extends TokenType> {
     if (!isEmpty()) {
       throw new ParseException(
           new Message(MessageType.UNUSED_TOKENS,
-              MessagePart.Factory.valueOf(peek().text), currentPosition()));
+              currentPosition(), MessagePart.Factory.valueOf(peek().text)));
     }
   }
 

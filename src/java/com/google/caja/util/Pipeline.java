@@ -25,16 +25,20 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class Pipeline<T> {
+public class Pipeline<T> {
   private final List<Stage<T>> stages = new ArrayList<Stage<T>>();
 
-  public List<Stage<T>> getStages() { return stages; }
+  public final List<Stage<T>> getStages() { return stages; }
 
-  public boolean apply(T input) {
+  public final boolean apply(T input) {
     for (Stage<T> stage : stages) {
-      if (!stage.apply(input)) { return false; }
+      if (!applyStage(stage, input)) { return false; }
     }
     return true;
+  }
+
+  protected boolean applyStage(Stage<? super T> stage, T input) {
+    return stage.apply(input);
   }
 
   public interface Stage<S> {

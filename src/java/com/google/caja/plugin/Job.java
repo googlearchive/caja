@@ -68,4 +68,9 @@ public final class Job {
   public AncestorChain<?> getTarget() { return target; }
 
   public Job.JobType getType() { return type; }
+
+  @Override
+  public String toString() {
+    return "(Job " + getType().name() + " " + getRoot() + ")";
+  }
 }

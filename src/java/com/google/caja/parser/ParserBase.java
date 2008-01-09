@@ -156,7 +156,12 @@ public abstract class ParserBase {
             identifierOrKeyword +
             optQuasiliteralQuantifier +
          ")";
-    QUASI_IDENTIFIER_OR_KEYWORD_RE = Pattern.compile("^" + quasiIdentifierOrKeyword + "$");
+    QUASI_IDENTIFIER_OR_KEYWORD_RE
+        = Pattern.compile("^" + quasiIdentifierOrKeyword + "$");
+  }
+
+  public static boolean isJavascriptIdentifier(String s) {
+    return IDENTIFIER_OR_KEYWORD_RE.matcher(s).matches();
   }
 
   public boolean isIdentifier(String s) {
@@ -166,10 +171,12 @@ public abstract class ParserBase {
   }
 
   public boolean isIdentifierStart(char ch) {
-    return Character.isLetter(ch) || ch == '$' || ch == '_' || (isQuasiliteral && ch == '@');
+    return Character.isLetter(ch) || ch == '$' || ch == '_'
+        || (isQuasiliteral && ch == '@');
   }
 
   public boolean isIdentifierPart(char ch) {
-    return Character.isLetterOrDigit(ch) || ch == '$' || ch == '_' || (isQuasiliteral && ch == '@');
+    return Character.isLetterOrDigit(ch) || ch == '$' || ch == '_'
+        || (isQuasiliteral && ch == '@');
   }
 }

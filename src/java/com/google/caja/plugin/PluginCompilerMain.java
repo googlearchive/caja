@@ -372,7 +372,9 @@ public class PluginCompilerMain {
   private void dumpMessages() {
     try {
       for (Message m : mq.getMessages()) {
+        System.out.print(m.getMessageLevel() + ":");
         m.format(mc, System.out);
+        System.out.println();
       }
     } catch (IOException ex) {
       ex.printStackTrace();

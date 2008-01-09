@@ -53,7 +53,7 @@ public class CompileHtmlStage implements Pipeline.Stage<Jobs> {
     while (it.hasNext()) {
       Job job = it.next();
       if (Job.JobType.HTML != job.getType()) { continue; }
-      
+
       it.remove();
       try {
         renderedHtmlStatements.add(
