@@ -594,61 +594,53 @@ conventional \code{super} for the other functions defined within this scope.
   ``\code{this}'' might be rebound to a different object or even to the 
   global environment.
 
-  \item[Foreign for/in loops.] JavaScript's \code{for}/\code{in} loop 
-  enumerates the names of all an object's properties, whether inherited or 
-  not, unless the property is DontEnum, which the JavaScript programmer has 
-  no way to express. As a result, some of these names need to be skipped by 
-  the loop body. Every JavaScript coding style invents its own defensive 
-  pattern of additional tests to skip unwanted property names.
+  \item[Foreign for/in loops.] JavaScript's \code{for}/\code{in} loop enumerates the names of all an object's 
+  properties, whether inherited or not, unless the property is DontEnum, which the JavaScript programmer has no way 
+  to express. As a result, some of these names need to be skipped by the loop body. Every JavaScript coding style 
+  invents its own defensive pattern of additional tests to skip unwanted property names.
     
-  \item[Weak static analysis.] Although Caja is less dynamic than JavaScript, 
-  we still assume that it is impractical to perform any interesting analysis, 
-  such as type inference, both statically and safely. As a result, Caja's 
-  static restrictions can only enforce simple syntactic rules. Remaining 
-  restrictions must be enforced by runtime checks.
+  \item[Weak static analysis.] Although Caja is less dynamic than JavaScript, we still assume that it is impractical 
+  to perform any interesting analysis, such as type inference, both statically and safely. As a result, Caja's static 
+  restrictions can only enforce simple syntactic rules. Remaining restrictions must be enforced by runtime checks.
   
-  \item[Fast path.] For the micro-kernel approach to be attractive, Caja's 
-  extra runtime checks must not cost too much. Frequent operations, such as 
-  property access using ``.'' must run close to full speed.
+  \item[Fast path.] For the micro-kernel approach to be attractive, Caja's extra runtime checks must not cost too 
+  much. Frequent operations, such as property access using ``.'' must run close to full speed.
   
-  \item[Uncontrolled language growth.] The ES3 spec allows one to add new 
-  dangerous properties to core objects while claiming ES3 compatibility. 
-  JavaScript language implementors, platform providers, and standards 
-  committees make use of this freedom with unpredictable results. For 
-  example, some JavaScript implementations have added dangerous properties, 
-  like \code{eval}, to core objects, like \code{Object.prototype}. A safe 
-  subset must deny access to these additional unknown properties. But since 
-  these new properties are often DontEnum, there isn't even a reliable way to 
-  detect them.
+  \item[Uncontrolled language growth.] The ES3 spec allows one to add new dangerous properties to core objects while 
+  claiming ES3 compatibility. JavaScript language implementors, platform providers, and standards committees make use 
+  of this freedom with unpredictable results. For example, some JavaScript implementations have added dangerous 
+  properties, like \code{eval}, to core objects, like \code{Object.prototype}. A safe subset must deny access to 
+  these additional unknown properties. But since these new properties are often DontEnum, there isn't even a reliable 
+  way to detect them.
   
-  \item[Browser compatibility.] Web content must work on widely deployed 
-  browsers whether on not these browsers strictly conform to the relevant 
-  standards. At the time of this writing, the plausible baseline platform is 
-  the intersection of ES3, Firefox 1.5, Internet Explorer 6, Opera 9, Safari 
-  3, and their successors. Fortunately, these browsers do conform closely to 
-  ES3. Later versions of Caja may specify larger subsets of ES3.
+  \item[Browser compatibility.] Web content must work on widely deployed browsers whether on not these browsers 
+  strictly conform to the relevant standards. At the time of this writing, the plausible baseline platform is the 
+  intersection of ES3, Firefox 1.5, Internet Explorer 6, Opera 9, Safari 3, and their successors. Fortunately, these 
+  browsers do conform closely to ES3. Later versions of Caja may specify larger subsets of ES3.
   
-  \item[Silent errors.] In JavaScript, various operations, such as setting a 
-  ReadOnly property, fail silently rather than throwing an error. Program 
-  logic then proceeds along normal control flow paths premised on the 
-  assumption that these operations succeeded, leading to inconsistency. To 
-  program defensively in the face of this hazard, every assignment would be 
-  followed by a ``\emph{did it really happen?}'' test. This would render 
-  programs unreadable and unmaintainable. Where practical, Caja deviates from 
-  standard JavaScript by throwing an exception rather than failing silently.
+  \item[Multiple worlds.] As with many languages, each instantiation of a JavaScript language world creates a set of 
+  primordial objects (like \code{Object.prototype}) that are global to that world. Unlike other languages, JavaScript 
+  is built to support multiple interacting worlds. For example, in the browser environment, a new JavaScript world is 
+  created for each iframe. An object from one iframe can hold a direct reference to an object from another iframe of 
+  the same origin. This leads to some surprises. Even if \code{x} holds an array, \code{x instanceof Array} may 
+  evaluate to false because \code{x} is an instance of the \code{Array} from a different JavaScript world.
   
-  \item[Feature testing.] The JavaScript \emph{feature testing} pattern 
-  relies on a failed attempt to read a property returning \code{undefined} 
-  rather than throwing an exception. Since, in this case, the program 
-  naturally notices the problem anyway, Caja does not turn this case into a 
-  thrown exception.
+  \item[Silent errors.] In JavaScript, various operations, such as setting a ReadOnly property, fail silently rather 
+  than throwing an error. Program logic then proceeds along normal control flow paths premised on the assumption that 
+  these operations succeeded, leading to inconsistency. To program defensively in the face of this hazard, every 
+  assignment would be followed by a ``\emph{did it really happen?}'' test. This would render programs unreadable and 
+  unmaintainable. Where practical, Caja deviates from standard JavaScript by throwing an exception rather than 
+  failing silently.
+  
+  \item[Feature testing.] In JavaScript, reading a non-existent property returns \code{undefined} rather than 
+  throwing and exception. The JavaScript \emph{feature testing} pattern relies on this behavior. Since, in this case, 
+  the program naturally notices the problem anyway, Caja does not turn this case into a thrown exception.
     
 \end{description}
 
-This last point about ``Silent errors'' is another reason to avoid the 
-monolithic kernel approach. Web apps in uncajoled JavaScript are vulnerable 
-to any malicious active content that finds a way to provoke a silent error 
-and exploit the resulting inconsistency.
+The above point about ``Silent errors'' is another reason to avoid the monolithic kernel approach. Web apps in 
+uncajoled JavaScript are vulnerable to any malicious active content that finds a way to provoke a silent error and 
+exploit the resulting inconsistency.
 
 Because Caja failures aren't silent, Caja is a \emph{fail-stop 
 subset}\footnote{
@@ -693,15 +685,20 @@ To explain the restrictions Cajita imposes, we need some definitions.
 
 \begin{description}
 
-  \item[JSON Container.] An object whose prototype's ``\code{constructor}'' 
-  property is \code{Array} or \code{Object}, i.e., under normal conditions, 
-  an object inheriting directly from \code{Array.prototype} or 
-  \code{Object.prototype}. JSON containers are normally created using the
-  \code{[\ldots]} or \code{\{\ldots\}} syntaxes.
+  \item[Record] An object whose prototype's ``\code{constructor}'' property is \code{Object}, i.e., under normal 
+  conditions, an object inheriting directly from \code{Object.prototype}. Records are normally created using the 
+  \code{\{\ldots\}} syntax.
+
+  \item[Array] An object whose prototype's ``\code{constructor}'' property is \code{Array}, i.e., under normal 
+  conditions, an object inheriting directly from \code{Array.prototype}. Arrays are normally created using the 
+  \code{\[\ldots\]} syntax.
+
+  \item[JSON Container.] A record or array. These are the non-primitive objects that can be directly expressed in 
+  JSON syntax.
   
-  \item[Invocation] A function can be invoked 
+  \item[Invocation] A function can be invoked
   \begin{itemize}
-    \item \emph{as a function} (\code{foo(a\ldots)}),   
+    \item \emph{as a function} (\code{foo(a\ldots)}),
     \item \emph{as a method} (\code{foo.m(a\ldots)}),
     \item \emph{as a constructor} (\code{new Foo(a\ldots)}), or
     \item \emph{reflectively} (by calling its \code{call}, \code{apply}, or \code{bind} methods).
@@ -937,8 +934,10 @@ Cajita. Code containing these features is not legal Cajita.
     ``\code{prototype}'' property, and so prevents use of JavaScript's prototype inheritance within Cajita.
     
     \item[``instanceof''.] Without ``\code{this}'' and prototypes, Cajita has no need for \code{instanceof}. Rather, 
-    JavaScript's \code{typeof} is almost an adequate type discriminator for Cajita. Cajita does allow the one special 
-    case meaningful within Cajita: ``\code{{\ldots}\ instanceof Array}''.
+    JavaScript's \code{typeof} is almost an adequate type discriminator for Cajita. But Cajita still needs a way to 
+    distinguish records from arrays. We could allow the conventional \code{x instanceof Array} expression, but it 
+    does not work correctly when \code{x} is an array from another cajoled JavaScript world, such as another iframe 
+    with the same origin. Instead we provide \code{caja.isArray(x)} as a correct alternative.
     
     \item[Literal RegExp syntax.] In JavaScript implementations, the literal pattern syntax is often optimized into a 
     static object with mutable state, violating isolation. The Caja sanitizer cajoles the \code{/pattern/} syntax to 
@@ -947,9 +946,7 @@ Cajita. Code containing these features is not legal Cajita.
     \item[for/in loops.] Because of the confusing semantics of JavaScript's \code{for/in} loops, these are absent 
     from Cajita. Instead, Cajita code should enumerate the properties of \code{obj} by doing
 %
-\begin{alltt}
-caja.forEach(obj,function(v,k)\{{\ldots}\});
-\end{alltt}
+\begin{alltt}caja.forEach(obj,function(v,k)\{{\ldots}\});\end{alltt}
 %
     This code will reliably give the same results whether run cajoled or not. It will enumerate only the 
     non-inherited publicly Caja-visible property value / property name associations of \code{obj}. If \code{obj 
@@ -1166,8 +1163,8 @@ ES3, but are all within a fail-stop subset of ES3.
   additional arguments.
   
   \item An inner attached method, as shown in Figure~\ref{fig:caja-attached-method}, can only appear within an 
-  enclosing method or constructor. Equation~(\ref{eq:caja-thunk}) of Figure~\ref{eqn:caja-regularities} states that, in 
-  Caja, an inner attached method correctly abstracts over the code it contains. This holds when this code makes no 
+  enclosing method or constructor. Equation~(\ref{eq:caja-thunk}) of Figure~\ref{eqn:caja-regularities} states that, 
+  in Caja, an inner attached method correctly abstracts over the code it contains. This holds when this code makes no 
   reference to \code{arguments} and does not define any variable names that conflict with variables defined or used 
   by its enclosing method or constructor.
 
@@ -1195,9 +1192,9 @@ var ptC = new Point(3, 5);
 var ptD = new Point(4, 7);
 \end{alltt}
 
-\caption[A Caja Point.]{A Caja Point. The point example, written
-in this common class-like pattern of Javascript programming, is valid Caja.
-\code{Point} is frozen by its first use, after which neither \code{Point} nor \code{Point.prototype} can be further initialized. \\ } \hrule
+\caption[A Caja Point.]{A Caja Point. The point example, written in this common class-like pattern of Javascript 
+programming, is valid Caja. \code{Point} is frozen by its first use, after which neither \code{Point} nor 
+\code{Point.prototype} can be further initialized. \\ } \hrule
 \label{fig:caja-point}
 \end{figure}
 
