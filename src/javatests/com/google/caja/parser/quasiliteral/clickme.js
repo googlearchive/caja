@@ -34,7 +34,6 @@ function foo() {
 
 var init = function() {
   alert(arguments);
-  alert(this);
   document.getElementById('topScore').innerHTML = 'Requesting friends...';
   var req = opensocial.newDataRequest();
   req.add(req.newFetchPersonRequest('VIEWER'), 'viewer');

@@ -29,6 +29,8 @@ import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.reporting.DevNullMessageQueue;
 
 import java.io.StringReader;
@@ -112,7 +114,23 @@ public class QuasiBuilder {
         return buildMatchNode(Identifier.class, ((Identifier)n).getValue());
       }
     }
-    
+
+    if (n instanceof ObjectConstructor) {
+      if (n.children().size() == 2) {
+        if (n.children().get(0) instanceof StringLiteral) {
+          String key = ((StringLiteral)n.children().get(0)).getUnquotedValue();
+          if (key.startsWith("@") && key.endsWith("*")) {
+            if (n.children().get(1) instanceof Reference) {
+              String val = ((Reference)n.children().get(1)).getIdentifierName();
+              if (val.startsWith("@") && val.endsWith("*")) {
+                return buildObjectConstructorMatchNode(key, val);
+              }
+            }
+          }
+        }
+      }
+    }
+
     return buildSimpleNode(n);
   }
 
@@ -135,6 +153,10 @@ public class QuasiBuilder {
       return new MultipleNonemptyQuasiHole(
           matchedClass,
           quasiString.substring(1, quasiString.length() - 1));
+    } else if (quasiString.endsWith("?")) {
+      return new SingleOptionalQuasiHole(
+          matchedClass,
+          quasiString.substring(1, quasiString.length() - 1));
     } else {
       return new SingleQuasiHole(
           matchedClass,
@@ -152,6 +174,12 @@ public class QuasiBuilder {
       numberOfUnderscores++;
     }
     return new TrailingUnderscoresHole(quasiString, numberOfUnderscores);
+  }
+
+  private static QuasiNode buildObjectConstructorMatchNode(String keyExpr, String valueExpr) {
+    keyExpr = keyExpr.substring(1, keyExpr.length() - 1);
+    valueExpr = valueExpr.substring(1, valueExpr.length() - 1);    
+    return new ObjectConstructorHole(keyExpr, valueExpr);
   }
 
   private static QuasiNode[] buildChildrenOf(ParseTreeNode n) {

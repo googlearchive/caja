@@ -135,8 +135,12 @@
     <junit printsummary="yes" fork="yes">
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
       <classpath refid="classpath.tests.run"/>
-      <formatter type="plain" usefile="false"/>
-      <test name="com.google.caja.AllTests"/>
+      <formatter type="xml" usefile="true"/>
+      <batchtest todir="${reports}">
+        <fileset dir="${testsrc}">
+          <include name="**/*Test.java"/>
+	</fileset>
+      </batchtest>
       <sysproperty key="emma.coverage.out.file" value="${reports}/coverage.ec"/>
       <sysproperty key="emma.coverage.out.merge" value="false"/>
     </junit>
@@ -151,6 +155,11 @@
         <html outfile="${reports}/coverage.html" encoding="UTF-8"/>
       </report>
     </emma>
+    <!-- Generate the test results report. -->
+    <junitreport todir="${reports}">
+      <fileset dir="${reports}" includes="TEST-*.xml"/>
+      <report format="frames" todir="${reports}"/>
+    </junitreport>
   </target>
 
   <target name="docs" description="Builds javadoc documentation.">
@@ -189,6 +198,7 @@
       <include name="**/caja/parser/html/JsHtmlParserTest.java"/>
       <include name="**/caja/parser/quasiliteral/MatchTest.java"/>
       <include name="**/caja/parser/quasiliteral/QuasiBuilderTest.java"/>
+      <include name="**/caja/parser/quasiliteral/ScopeTest.java"/>
       <include name="**/caja/parser/js/ParserTest.java"/>
       <include name="**/caja/parser/js/StringLiteralTest.java"/>
       <include name="**/caja/plugin/CompiledPluginTest.java"/>

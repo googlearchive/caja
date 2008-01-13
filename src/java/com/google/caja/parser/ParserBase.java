@@ -109,12 +109,12 @@ public abstract class ParserBase {
    *    |  u 4HexDigit
    *    |  U 8HexDigit
    * QuasiliteralBegin ->
-   *       null
-   *    |  '@'
+   *       '@'
    * OptQuasiliteralQuantifier ->
    *       null
    *    |  '*'
    *    |  '+'
+   *    |  '?'
    * </pre>
    */
   private static final Pattern IDENTIFIER_OR_KEYWORD_RE;
@@ -131,7 +131,7 @@ public abstract class ParserBase {
       "(?:" + initialIdentifierCharacter + "|\\\\" + hexEscape + ")";
     String nullEscape = "(?:\\\\_)";
     String quasiliteralBegin = "@";
-    String optQuasiliteralQuantifier = "[\\+\\*]?";
+    String optQuasiliteralQuantifier = "[\\+\\*\\?]?";
     /*
      * IdentifierName ->
      *       InitialIdentifierCharacterOrEscape

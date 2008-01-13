@@ -212,7 +212,7 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
           } else {
             for (int ch2; (ch2 = p.read()) >= 0;) {
               if (isQuasiliteral && text.length() > 0 && text.charAt(0) == '@'
-                  && (ch2 == '*' || ch2 == '+')) {
+                  && (ch2 == '*' || ch2 == '+' || ch2 == '?')) {
                 text.append((char) ch2);
               } else  if (JsLexer.isJsSpace((char) ch2) || p.tokenBreak()
                           || '\'' == ch2 || '"' == ch2

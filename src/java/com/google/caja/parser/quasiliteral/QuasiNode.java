@@ -15,6 +15,7 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParseTreeNodes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -107,5 +108,14 @@ public abstract class QuasiNode {
 
   protected static boolean safeEquals(Object x, Object y) {
     return x != null ? x.equals(y) : y == null;
+  }
+  
+  protected static boolean putIfDeepEquals(
+      Map<String, ParseTreeNode> bindings,
+      String key,
+      ParseTreeNode value) {
+    if (bindings.containsKey(key)) return ParseTreeNodes.deepEquals(value, bindings.get(key));
+    bindings.put(key, value);
+    return true;
   }
 }

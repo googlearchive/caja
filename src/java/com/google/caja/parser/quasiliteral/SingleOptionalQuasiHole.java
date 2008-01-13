@@ -16,42 +16,37 @@ package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.parser.ParseTreeNode;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Quasiliteral "hole" matching zero to many values (regexp "*"). The match is always
- * greedy, and no backtracking is done.
+ * Quasiliteral "hole" matching an optional single value (regexp "?").
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
-public class MultipleQuasiHole extends SimpleQuasiHole {
-  public MultipleQuasiHole(Class<? extends ParseTreeNode> matchedClass, String identifier) {
+public class SingleOptionalQuasiHole extends SimpleQuasiHole {
+  public SingleOptionalQuasiHole(Class<? extends ParseTreeNode> matchedClass, String identifier) {
     super(matchedClass, identifier);
   }
 
   protected boolean consumeSpecimens(
       List<ParseTreeNode> specimens,
       Map<String, ParseTreeNode> bindings) {
-    List<ParseTreeNode> matches = new ArrayList<ParseTreeNode>();
-    while (specimens.size() > 0 && isCompatibleClass(specimens.get(0))) {
-      matches.add(specimens.remove(0).clone());
+    if (specimens.size() >= 1 &&
+        isCompatibleClass(specimens.get(0))) {
+      return putIfDeepEquals(bindings, getIdentifier(), specimens.remove(0).clone());
     }
-    return putIfDeepEquals(bindings, getIdentifier(), new ParseTreeNodeContainer(matches));
+    return true;
   }
 
   protected boolean createSubstitutes(
       List<ParseTreeNode> substitutes,
       Map<String, ParseTreeNode> bindings) {
-    if (bindings.containsKey(getIdentifier())) {
-      for (ParseTreeNode child : bindings.get(getIdentifier()).children()) {
-        substitutes.add(child.clone());
-      }
-      return true;
+    if (bindings.get(getIdentifier()) != null) {
+      substitutes.add(bindings.get(getIdentifier()).clone());
     }
-    return false;
+    return true;
   }
 
-  protected String getQuantifierSuffix() { return "*"; }
+  protected String getQuantifierSuffix() { return "?"; }
 }

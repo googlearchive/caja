@@ -21,59 +21,112 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Rewrites a parse tree.
  *
  * <p>TODO(ihab.awad): Refactor to a more general quasiliteral library for
  * {@code ParseTreeNode}s and a set of specific implementations for various
- * languages (JS, HTML, CSS, ...).
- *
- * <p>TODO(ihab.awad): All exceptions must be CajaExceptions.
+ * languages (JS, HTML, CSS, ...). At the moment, our problem is the fact
+ * that the {@code Scope} implementation is JavaScript specific.
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public abstract class AbstractRewriter {
+  
+  /**
+   * The special return value from a {@link Rule} that indicates the rule
+   * does not apply to the supplied input.
+   */
   protected static final ParseTreeNode NONE =
       new AbstractParseTreeNode<ParseTreeNode>() {
         public Object getValue() { return null; }
-        public void render(RenderContext r) throws IOException { }
+        public void render(RenderContext r) throws IOException {
+          throw new UnsupportedOperationException();
+        }
       };
 
-  protected static interface Rule {
-    ParseTreeNode fire(ParseTreeNode node, Scope scope);
+  /**
+   * A rewriting rule supplied by a subclass.
+   */
+  protected static abstract class Rule implements MessagePart {
+
+    private final String name;
+
+    /**
+     * Create a new {@code Rule}.
+     * @param name the unique name of this rule.
+     */
+    public Rule(String name) {
+      this.name = name;
+    }
+
+    /**
+     * @return the name of this {@code Rule}.
+     */
+    public String getName() { return name; }
+    
+    /**
+     * Process the given input, returning a rewritten node.
+     *
+     * @param node an input node.
+     * @param scope the current scope.
+     * @param mq a {@code MessageQueue} for error reporting.
+     * @return the rewritten node, or {@link AbstractRewriter#NONE} to indicate
+     * that this rule does not apply to the given input. 
+     */
+    public abstract ParseTreeNode fire(
+        ParseTreeNode node,
+        Scope scope,
+        MessageQueue mq);
+
+    /**
+     * @see MessagePart#format(MessageContext,Appendable)
+     */
+    public void format(MessageContext mc, Appendable out) throws IOException {
+      out.append("Rule \"" + name + "\"");
+    }
   }
 
   private final Map<String, QuasiNode> patternCache = new HashMap<String, QuasiNode>();      
   private final List<Rule> rules = new ArrayList<Rule>();
-  private final Map<Rule, String> ruleNames = new HashMap<Rule, String>();
+  private final Set<String> ruleNames = new HashSet<String>();
+  private final boolean logging;
 
-  public final ParseTreeNode expand(ParseTreeNode module) {
-    return expand(module, new Scope((Block)module));
+  protected AbstractRewriter(boolean logging) {
+    this.logging = logging;
   }
 
-  protected final ParseTreeNode expand(ParseTreeNode node, Scope scope) {
+  public final ParseTreeNode expand(ParseTreeNode module, MessageQueue mq) {
+    return expand(module, new Scope((Block)module), mq);
+  }
+
+  protected final ParseTreeNode expand(ParseTreeNode node, Scope scope, MessageQueue mq) {
     for (Rule rule : rules) {
 
       ParseTreeNode result = null;
       RuntimeException ex = null;
       
       try {
-        result = rule.fire(node, scope);
+        result = rule.fire(node, scope, mq);
       } catch (RuntimeException e) {
         ex = e;
       }
       
       if (result != NONE || ex != null) {
-        if (false) logResults(rule, node, result, ex);
+        if (logging) logResults(rule, node, result, ex);
         if (ex != null) throw ex;
         return result;
       }
@@ -90,7 +143,7 @@ public abstract class AbstractRewriter {
     StringBuilder s = new StringBuilder();
     s.append("-----------------------------------------------------------------------\n");
     if (rule != null) {
-      s.append("  rule: " + ruleNames.get(rule) + "\n");
+      s.append("  rule: " + rule.getName() + "\n");
     }
     if (input != null) {
       s.append(" input: (" + input.getClass().getSimpleName() + ") " + format(input) + "\n");
@@ -104,18 +157,23 @@ public abstract class AbstractRewriter {
     System.out.println(s.toString());
  }
 
-  protected void addRule(String name, Rule rule) {
-    if (ruleNames.values().contains(name)) {
-      throw new RuntimeException("Duplicate rule named: " + name);
-    }
+  protected void addRule(Rule rule) {
+    // We keep 'ruleNames' as a guard against programming errors
+    assert(!ruleNames.contains(rule.getName()));
     rules.add(rule);
-    ruleNames.put(rule, name);
+    ruleNames.add(rule.getName());
   }
 
   protected final boolean match(
+      QuasiNode pattern,
+      ParseTreeNode node) {
+    return match(pattern, node, new HashMap<String, ParseTreeNode>());
+  }
+
+  protected final boolean match(
+      QuasiNode pattern,
       ParseTreeNode node,
-      Map<String, ParseTreeNode> bindings,
-      QuasiNode pattern) {
+      Map<String, ParseTreeNode> bindings) {
     Map<String, ParseTreeNode> tempBindings = pattern.matchHere(node);
 
     if (tempBindings != null) {
@@ -126,21 +184,27 @@ public abstract class AbstractRewriter {
   }
 
   protected final boolean match(
+      String patternText,
+      ParseTreeNode node) {
+    return match(getPatternNode(patternText), node);
+  }
+
+  protected final boolean match(
+      String patternText,
       ParseTreeNode node,
-      Map<String, ParseTreeNode> bindings,
-      String patternText) {
-    return match(node, bindings, getPatternNode(patternText));
+      Map<String, ParseTreeNode> bindings) {
+    return match(getPatternNode(patternText), node, bindings);
   }
 
   protected final ParseTreeNode subst(
-      Map<String, ParseTreeNode> bindings,
-      String patternText) {
-    return subst(bindings, getPatternNode(patternText));
+      String patternText,
+      Map<String, ParseTreeNode> bindings) {
+    return subst(getPatternNode(patternText), bindings);
   }
 
   protected final ParseTreeNode subst(
-      Map<String, ParseTreeNode> bindings,
-      QuasiNode pattern) {
+      QuasiNode pattern,
+      Map<String, ParseTreeNode> bindings) {
     ParseTreeNode result = pattern.substituteHere(bindings);
 
     if (result == null) {
@@ -155,33 +219,36 @@ public abstract class AbstractRewriter {
   protected final ParseTreeNode substV(Object... args) {
     if (args.length %2 == 0) throw new RuntimeException("Wrong # of args for subst()");
     Map<String, ParseTreeNode> bindings = new HashMap<String, ParseTreeNode>();
-    for (int i = 0; i < args.length - 1; ){
+    for (int i = 1; i < args.length; ) {
       bindings.put(
           (String)args[i++],
           (ParseTreeNode)args[i++]);
     }
-    return subst(bindings, (String)args[args.length - 1]);    
+    return subst((String)args[0], bindings);
   }
 
   protected final void expandEntry(
       Map<String, ParseTreeNode> bindings,
       String key,
-      Scope scope) {
-    bindings.put(key, expand(bindings.get(key), scope));
+      Scope scope,
+      MessageQueue mq) {
+    bindings.put(key, expand(bindings.get(key), scope, mq));
   }
 
   protected final void expandEntries(
       Map<String, ParseTreeNode> bindings,
-      Scope scope) {
+      Scope scope,
+      MessageQueue mq) {
     for (String key : bindings.keySet()) {
-      expandEntry(bindings, key, scope);
+      expandEntry(bindings, key, scope, mq);
     }
   }
 
-  protected final ParseTreeNode expandAll(ParseTreeNode node, Scope scope) {
+  protected final ParseTreeNode expandAll(ParseTreeNode node, Scope scope, MessageQueue mq)
+      {
     List<ParseTreeNode> rewrittenChildren = new ArrayList<ParseTreeNode>();
     for (ParseTreeNode child : node.children()) {
-      rewrittenChildren.add(expand(child, scope));
+      rewrittenChildren.add(expand(child, scope, mq));
     }
 
     return ParseTreeNodes.newNodeInstance(

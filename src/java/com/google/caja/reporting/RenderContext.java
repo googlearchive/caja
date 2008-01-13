@@ -51,6 +51,7 @@ public class RenderContext {
 
   /** Write n spaces to {@link #out}. */
   public void indent(int n) throws IOException {
+    if (n < 0) return;
     while (n >= SPACES.length()) {
       out.append(SPACES);
       n -= SPACES.length();

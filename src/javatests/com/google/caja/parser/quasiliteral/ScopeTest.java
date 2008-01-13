@@ -42,41 +42,49 @@ public class ScopeTest extends TestCase {
     assertTrue(s0.isGlobal("x"));
     assertFalse(s0.isFunction("x"));
     assertFalse(s0.isDeclaredFunction("x"));
+    assertFalse(s0.isConstructor("x"));
 
     assertTrue(s0.isDefined("foo"));
     assertTrue(s0.isGlobal("foo"));
     assertTrue(s0.isFunction("foo"));
     assertTrue(s0.isDeclaredFunction("foo"));
+    assertFalse(s0.isConstructor("foo"));
 
     assertFalse(s0.isDefined("y"));
-    assertFalse(s0.isGlobal("y"));
+    assertTrue(s0.isGlobal("y"));
     assertFalse(s0.isFunction("y"));
     assertFalse(s0.isDeclaredFunction("y"));
+    assertFalse(s0.isConstructor("y"));
 
     assertFalse(s0.isDefined("z"));
-    assertFalse(s0.isGlobal("z"));
+    assertTrue(s0.isGlobal("z"));
     assertFalse(s0.isFunction("z"));
     assertFalse(s0.isDeclaredFunction("z"));
+    assertFalse(s0.isConstructor("z"));
 
     assertTrue(s1.isDefined("x"));
     assertTrue(s1.isGlobal("x"));
     assertFalse(s1.isFunction("x"));
     assertFalse(s1.isDeclaredFunction("x"));
+    assertFalse(s1.isConstructor("x"));
 
     assertTrue(s1.isDefined("foo"));
     assertTrue(s1.isGlobal("foo"));
     assertTrue(s1.isFunction("foo"));
     assertTrue(s1.isDeclaredFunction("foo"));
+    assertFalse(s1.isConstructor("foo"));
 
     assertTrue(s1.isDefined("y"));
     assertFalse(s1.isGlobal("y"));
     assertFalse(s1.isFunction("y"));
     assertFalse(s1.isDeclaredFunction("y"));
+    assertFalse(s1.isConstructor("y"));
 
     assertFalse(s1.isDefined("z"));
-    assertFalse(s1.isGlobal("z"));
+    assertTrue(s1.isGlobal("z"));
     assertFalse(s1.isFunction("z"));
-    assertFalse(s1.isDeclaredFunction("z"));    
+    assertFalse(s1.isDeclaredFunction("z"));
+    assertFalse(s1.isConstructor("z"));
   }
 
   public void testAnonymousFunction() throws Exception {
@@ -108,7 +116,7 @@ public class ScopeTest extends TestCase {
     assertFalse(s0.isDeclaredFunction("x"));
 
     assertFalse(s0.isDefined("foo"));
-    assertFalse(s0.isGlobal("foo"));
+    assertTrue(s0.isGlobal("foo"));
     assertFalse(s0.isFunction("foo"));
     assertFalse(s0.isDeclaredFunction("foo"));
 
@@ -148,6 +156,21 @@ public class ScopeTest extends TestCase {
 
     assertFalse(s0.isDefined("x"));
     assertTrue(s1.isDefined("x"));    
+  }
+
+  public void testConstructor() throws Exception {
+    ParseTreeNode n = TestUtil.parse(
+        "function ctor() { this.x = 3; }" +
+        "function notctor() { x = 3; }");
+    Scope s = new Scope((Block)n);
+
+    assertTrue(s.isConstructor("ctor"));
+    assertTrue(s.isDeclaredFunction("ctor"));
+    assertTrue(s.isFunction("ctor"));
+
+    assertFalse(s.isConstructor("notctor"));
+    assertTrue(s.isDeclaredFunction("notctor"));
+    assertTrue(s.isFunction("notctor"));
   }
 
   private FunctionConstructor findFunctionConstructor(ParseTreeNode root, String name) {

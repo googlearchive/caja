@@ -19,72 +19,129 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.Block;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.reporting.Message;
 import com.google.caja.util.TestUtil;
+import com.google.caja.plugin.ExpressionSanitizer;
+import com.google.caja.plugin.SyntheticNodes;
 import junit.framework.TestCase;
 
 import java.io.StringReader;
 import java.net.URI;
+import java.util.Collections;
 
 /**
- * Simple test harness for experimenting with quasiliteral rewrites. This
- * is not part of an automated test suite.
- *
  * @author ihab.awad@gmail.com
  */
-public class DefaultRewriterTest extends TestCase {
-  public void testSynthetic() throws Exception {
-    // TODO(ihab.awad): Check that synthetic nodes are passed through
+public class DefaultJsRewriterTest extends TestCase {
+  ////////////////////////////////////////////////////////////////////////
+  // Handling of synthetic nodes
+  ////////////////////////////////////////////////////////////////////////
+
+  public void testSyntheticIsUntouched() throws Exception {
+    ParseTreeNode input = parseText(
+        "function foo() { this; arguments; }");
+    setTreeSynthetic(input);
+    checkSucceeds(input, input);
+  }
+
+  public void testNestedInsideSyntheticIsExpanded() throws Exception {
+    ParseTreeNode innerInput = parseText("function foo() {}");
+    ParseTreeNode input = ParseTreeNodes.newNodeInstance(
+        Block.class,
+        null,
+        Collections.singletonList(innerInput));
+    setSynthetic(input);
+    ParseTreeNode expectedResult = parseText(
+        "{ ___OUTERS___.foo = ___.simpleFunc(function () {}); }");
+    checkSucceeds(input, expectedResult);
   }
 
   ////////////////////////////////////////////////////////////////////////
-  // with
+  // Handling of nested blocks
   ////////////////////////////////////////////////////////////////////////
 
-  public void testWith0() throws Exception {
+  public void testNestedBlockWithFunction() throws Exception {
+    checkSucceeds(
+        "{ function foo() {} }",
+        "{ ___OUTERS___.foo = ___.simpleFunc(function() {}); }");
+  }
+
+  public void testNestedBlockWithVariable() throws Exception {
+    checkSucceeds(
+        "{ var x = y; }",
+        "{ ___OUTERS___.x = ___OUTERS___.y; }");
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+  // Miscellaneous stuff
+  ////////////////////////////////////////////////////////////////////////
+
+  public void testVarUnderscore() throws Exception {
+  }
+
+  ////////////////////////////////////////////////////////////////////////
+  // Specific rules
+  ////////////////////////////////////////////////////////////////////////
+
+  public void testWith() throws Exception {
     // Our parser does not recognize "with" at all.
   }
 
-  ////////////////////////////////////////////////////////////////////////
-  // variable
-  ////////////////////////////////////////////////////////////////////////
-
-  public void testVariable0() throws Exception {
-    // Tested by other cases since not independent
+  public void testVarArgs() throws Exception {
+    checkSucceeds(
+        "var foo = function() {" +
+        "  p = arguments;" +
+        "};",
+        "___OUTERS___.foo = ___.primFreeze(___.simpleFunc(function() {" +
+        "  var a___ = ___.args(arguments);" +
+        "  ___OUTERS___.p = a___;" +
+        "}));");
   }
 
-  public void testVariable1() throws Exception {
-    // Tested by other cases since not independent
+  public void testVarThis() throws Exception {
+    checkSucceeds(
+        "function foo() {" +
+        "  p = this;" +
+        "}",
+        "___OUTERS___.foo = ___.ctor(function() {" +
+        "  var t___ = this;" +
+        "  ___OUTERS___.p = t___;" +
+        "});");
+    checkSucceeds(
+        "this;",
+        "___OUTERS___;");
   }
 
-  public void testVariable2() throws Exception {
+  public void testVarBadSuffix() throws Exception {
     checkFails(
         "function() { foo__; };",
         "Variables cannot end in \"__\"");
+    // Make sure *single* underscore is okay
+    checkSucceeds(
+        "function() { var foo_ = 3; }",
+        "___.primFreeze(___.simpleFunc(function() { var foo_ = 3; }))");
   }
 
-  public void testVariable3() throws Exception {
+  public void testVarBadGlobalSuffix() throws Exception {
     checkFails(
         "foo_;",
         "Globals cannot end in \"_\"");
   }
 
-  public void testVariable4() throws Exception {
-    /*
+  public void testVarBadCtorLeak() throws Exception {
     checkFails(
         "function Ctor() { this.x = 1; }; var c = Ctor;",
         "Constructors are not first class");
-    */
-    // TODO(ihab.awad): This fails the "Constructor cannot escape" case instead
-    // of the "Constructors are not first class" case; is there any way we can
-    // trigger variable_4 instead? Or is variable_4 redundant?
   }
 
-  public void testVariable5() throws Exception {
+  public void testVarFuncFreeze() throws Exception {
     checkSucceeds(
         "function() {"+
         "  function foo() {}" +
@@ -96,13 +153,13 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  public void testVariable6() throws Exception {
+  public void testVarGlobal() throws Exception {
     checkSucceeds(
         "foo;",
         "___OUTERS___.foo;");
   }
 
-  public void testVariable7() throws Exception {
+  public void testVarDefault() throws Exception {
     String unchanged =
         "var x = 3;" +
         "if (x) { }" +
@@ -117,72 +174,70 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  ////////////////////////////////////////////////////////////////////////
-  // read
-  ////////////////////////////////////////////////////////////////////////
-
-  public void testRead0() throws Exception {
+  public void testReadBadSuffix() throws Exception {
     checkFails(
         "x.y__;",
         "Properties cannot end in \"__\"");
   }
 
-  public void testRead1() throws Exception {
-    // TODO(ihab.awad): This throws "method in non-method context"
-    /*
+  public void testReadInternal() throws Exception {
     checkSucceeds(
-        "function() { this.x; };",
-        "function() { this.x_canRead___ ? this.x : ___.readProp(this, 'x'); };");
-    */
+        "function() {" +
+        "  function foo() {" +
+        "    p = this.x;" +
+        "  }" +
+        "};",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  var foo = ___.ctor(function() {" +
+        "    var t___ = this;" +
+        "    ___OUTERS___.p = t___.x_canRead___ ? t___.x : ___.readProp(t___, 'x');" +
+        "  });" +
+        "}));");
   }
 
-  public void testRead2() throws Exception {
+  public void testReadBadInternal() throws Exception {
     checkFails(
         "foo.bar_;",
         "Public properties cannot end in \"_\"");
   }
 
-  public void testRead3() throws Exception {
+  public void testReadPublic() throws Exception {
     checkSucceeds(
-        "foo.p;",
-        "(function() {" +
+        "p = foo.p;",
+        "___OUTERS___.p = (function() {" +
         "  var x___ = ___OUTERS___.foo;" +
-        "  x___.p_canRead___ ? x___.p : ___.readPub(x___, 'p');" +
+        "  return x___.p_canRead___ ? x___.p : ___.readPub(x___, 'p');" +
         "})();");
   }
 
-  public void testRead4() throws Exception {
+  public void testReadIndexInternal() throws Exception {
     checkSucceeds(
-        "function foo() { this[3]; }",
+        "function foo() { p = this[3]; }",
         "___OUTERS___.foo = ___.ctor(" +
         "  function() {" +
         "    var t___ = this;" +
-        "    ___.readProp(t___, 3);" +
+        "    ___OUTERS___.p = ___.readProp(t___, 3);" +
         "  }" +
         ");");
   }
   
-  public void testRead5() throws Exception {
+  public void testReadIndexPublic() throws Exception {
     checkSucceeds(
-        "function() { var foo; foo[3]; };",
+        "function() { var foo; p = foo[3]; };",
         "___.primFreeze(___.simpleFunc(" +
         "  function() {" +
-        "    var foo = undefined;" +
-        "    ___.readPub(foo, 3);" +
+        "    var foo;" +
+        "    ___OUTERS___.p = ___.readPub(foo, 3);" +
         "}));");
   }
 
-  ////////////////////////////////////////////////////////////////////////
-  // set - assignments
-  ////////////////////////////////////////////////////////////////////////
-
-  public void testSet0() throws Exception {
+  public void testSetBadSuffix() throws Exception {
     checkFails(
         "x.y__ = z;",
         "Properties cannot end in \"__\"");
   }
 
-  public void testSet1() throws Exception {
+  public void testSetInternal() throws Exception {
     checkSucceeds(
         "function() {" +
         "  function foo() { this.p = x; }" +
@@ -198,7 +253,7 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  public void testSet2() throws Exception {
+  public void testSetMember() throws Exception {
     checkSucceeds(
         "function() {" +
         "  function foo() {}" +
@@ -228,17 +283,31 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  public void testSet3() throws Exception {
+  public void testSetBadInternal() throws Exception {
     checkFails(
         "x.y_;",
         "Public properties cannot end in \"_\"");
   }
 
-  public void testSet4() throws Exception {
-    // TODO(ihab.awad): Implement. Have not reviewed expandMemberMap(...) stuff yet.
+  public void testSetMemberMap() throws Exception {
+    checkFails(
+        "function foo() {}" +
+        "foo.prototype = x;",  
+        "Map expression expected");
+    checkFails(
+        "function foo() {}" +
+        "foo.prototype = function() {};",
+        "Map expression expected");
+    checkSucceeds(
+        "function foo() {}" +
+        "foo.prototype = { k0: v0, k1: v1 };",
+        "___OUTERS___.foo = ___.simpleFunc(function() {});" +
+        "___.setMemberMap(" +
+        "  ___.primFreeze(___OUTERS___.foo)," +
+        "  { k0: ___OUTERS___.v0, k1: ___OUTERS___.v1 });");
   }
 
-  public void testSet5() throws Exception {
+  public void testSetStatic() throws Exception {
     checkSucceeds(
         "function() {" +
         "  function foo() {}" +
@@ -250,7 +319,7 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  public void testSet6() throws Exception {
+  public void testSetPublic() throws Exception {
     checkSucceeds(
         "function() {" +
         "  var x = undefined;" +
@@ -266,7 +335,7 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  public void testSet7() throws Exception {
+  public void testSetIndexInternal() throws Exception {
     checkSucceeds(
         "function() {" +
         "  function foo() {" +
@@ -281,7 +350,7 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  public void testSet8() throws Exception {
+  public void testSetIndexPublic() throws Exception {
     checkSucceeds(
         "function() {" +
         "  var o = undefined;" +
@@ -293,10 +362,7 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  // TODO(ihab.awad): Why does MarkM have 2 cases for the below in expand.emaker, both checking
-  // that "isVar" is true, and one with "var x = y" and the other with "x = y"?
-  
-  public  void testSet9() throws Exception {
+  public  void testSetInitialize() throws Exception {
     checkSucceeds(
         "function() {" +
         "  var v = x;" +
@@ -309,17 +375,17 @@ public class DefaultRewriterTest extends TestCase {
         "___OUTERS___.v = ___OUTERS___.x");
   }  
   
-  public  void testSet11() throws Exception {
+  public  void testSetDeclare() throws Exception {
     checkSucceeds(
         "function() {" +
         "  var v;" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var v = undefined;" +
+        "  var v;" +
         "}));");
   }
 
-  public void testNew0() throws Exception {
+  public void testNewCtor() throws Exception {
     checkSucceeds(
         "function() {" +
         "  function foo() {}" +
@@ -331,7 +397,7 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  public void testNew1() throws Exception {
+  public void testNewFunc() throws Exception {
     checkSucceeds(
         "function() {" +
         "  var foo = undefined;" +
@@ -343,13 +409,13 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  public void testCall0() throws Exception {
+  public void testCallBadSuffix() throws Exception {
     checkFails(
         "x.p__(3, 4);",
         "Selectors cannot end in \"__\"");
   }
   
-  public void testCall1() throws Exception {
+  public void testCallInternal() throws Exception {
     checkSucceeds(
         "function() {" +
         "  function foo() {" +
@@ -370,13 +436,13 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  public void testCall2() throws Exception {
+  public void testCallBadInternal() throws Exception {
     checkFails(
         "o.p_();",
         "Public selectors cannot end in \"_\"");
   }
 
-  public void testCall3() throws Exception {
+  public void testCallCajaDef2() throws Exception {
     checkSucceeds(
         "function() {" +
         "  function Point() {}" +
@@ -390,11 +456,46 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  public void testCall4() throws Exception {
-    // TODO(ihab.awad): Clarify expectations (and make object literals work!)
+  public void testCallCajaDef3Plus() throws Exception {
+    checkSucceeds(
+        "function() {" +
+        "  function Point() {}" +
+        "  function WigglyPoint() {}" +
+        "  caja.def(WigglyPoint, Point, { foo: x });" +
+        "};",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  var Point = ___.simpleFunc(function() {});" +
+        "  var WigglyPoint = ___.simpleFunc(function() {});" +
+        "  caja.def(WigglyPoint, Point, { foo: ___OUTERS___.x });" +
+        "}));");
+    checkSucceeds(
+        "function() {" +
+        "  function Point() {}" +
+        "  function WigglyPoint() {}" +
+        "  caja.def(WigglyPoint, Point, { foo: x }, { bar: y});" +
+        "};",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  var Point = ___.simpleFunc(function() {});" +
+        "  var WigglyPoint = ___.simpleFunc(function() {});" +
+        "  caja.def(WigglyPoint, Point, { foo: ___OUTERS___.x }, {bar: ___OUTERS___.y });" +
+        "}));");
+    checkFails(
+        "function() {" +
+        "  function Point() {}" +
+        "  function WigglyPoint() {}" +
+        "  caja.def(WigglyPoint, Point, x);" +
+        "};",
+        "Map expression expected");
+    checkFails(
+        "function() {" +
+        "  function Point() {}" +
+        "  function WigglyPoint() {}" +
+        "  caja.def(WigglyPoint, Point, { foo: x }, x);" +
+        "};",
+        "Map expression expected");
   }
 
-  public void testCall5() throws Exception {
+  public void testCallPublic() throws Exception {
     checkSucceeds(
         "o.m(x, y);",
         "(function() {" +
@@ -405,7 +506,7 @@ public class DefaultRewriterTest extends TestCase {
         "})();");
   }
 
-  public void testCall6() throws Exception {
+  public void testCallIndexInternal() throws Exception {
     checkSucceeds(
         "function() {" +
         "  function foo() {" +
@@ -420,19 +521,19 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  public void testCall7() throws Exception {
+  public void testCallIndexPublic() throws Exception {
     checkSucceeds(
         "x[y](z, t);",
         "___.callPub(___OUTERS___.x, ___OUTERS___.y, [___OUTERS___.z, ___OUTERS___.t]);");
   }
 
-  public void testCall8() throws Exception {
+  public void testCallFunc() throws Exception {
     checkSucceeds(
         "f(x, y);",
         "___.asSimpleFunc(___OUTERS___.f)(___OUTERS___.x, ___OUTERS___.y);");
   }
 
-  public void testFunction0() throws Exception {
+  public void testFuncAnonSimple() throws Exception {
     checkSucceeds(
         "function(x, y) { x = arguments; y = z; };",
         "___.primFreeze(___.simpleFunc(function(x, y) {" +
@@ -442,7 +543,7 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  public void testFunction1() throws Exception {
+  public void testFuncNamedSimpleDecl() throws Exception {
     checkSucceeds(
         "function() {" +
         "  function foo(x, y) {" +
@@ -459,7 +560,7 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  public void testFunction2() throws Exception {
+  public void testFuncNamedSimpleValue() throws Exception {
     checkSucceeds(
         "function() {" +
         "  var f = function foo(x, y) {" +
@@ -477,20 +578,19 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  public void testFunction3() throws Exception {
+  public void testFuncBadMethod() throws Exception {
     checkFails(
         "function(x) { x = this; };",
         "Method in non-method context");
   }
 
-  public void testFunction4() throws Exception {
+  public void testFuncBadCtor() throws Exception {
     checkFails(
         "var f = function foo(x) { x = this; };",
         "Constructor cannot escape");
   }
 
-  public void testFunction5() throws Exception {
-    // TODO(ihab.awad): MarkM says hmmmm -- ??
+  public void testFuncDerivedCtorDecl() throws Exception {
     checkSucceeds(
         "function() {" +
         "  function foo(x, y) {" +
@@ -507,8 +607,7 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  public void testFunction6() throws Exception {
-    // TODO(ihab.awad): MarkM says hmmmm -- ??    
+  public void testFuncCtorDecl() throws Exception {
     checkSucceeds(
         "function() {" +
         "  function foo(x, y) {" +
@@ -525,42 +624,25 @@ public class DefaultRewriterTest extends TestCase {
         "}));");
   }
 
-  public void testMap0() throws Exception {
-    // TODO(ihab.awad): Unresolved issues; see source file.
-  }
-
-  public void testMap1() throws Exception {
-    // TODO(ihab.awad): Implement object literals
-    /*
-    checkFails(
-        "var o = { x_: 3, y: 4 };",
-        "Key may not end in \"_\"");
-    */
-  }
-
-  public void testMap2() throws Exception {
-    // TODO(ihab.awad): Implement object literals
-    /*
+  public void testMapEmpty() throws Exception {
     checkSucceeds(
-        "function() {" +
-        "  var o = { k0: x, k1: y };" +
-        "};",
-        "function() {" +
-        "  var o = { k0: ___OUTERS___.x, k1: ___OUTERS___.y };" +            
-        "};");
-    */
+        "f = {};",
+        "___OUTERS___.f = {};");
   }
 
-  public void testMap3() throws Exception {
-    // TODO(ihab.awad): Implement object literals
-    /*
+  public void testMapBadKeySuffix() throws Exception {
     checkFails(
-        "var o = { 'a' + 'b' : 3 };",
-        "Key expressions not yet supported");
-    */
+        "var o = { x_: 3 };",
+        "Key may not end in \"_\"");
   }
 
-  public void testOther0() throws Exception {
+  public void testMapNonEmpty() throws Exception {
+    checkSucceeds(
+        "var o = { k0: x, k1: y };",
+        "___OUTERS___.o = { k0: ___OUTERS___.x, k1: ___OUTERS___.y };");
+  }
+
+  public void testOtherInstanceof() throws Exception {
     checkSucceeds(
         "function foo() {}" +
         "x instanceof foo;",      
@@ -568,65 +650,73 @@ public class DefaultRewriterTest extends TestCase {
         "___OUTERS___.x instanceof ___.primFreeze(___OUTERS___.foo);");
   }
 
-  public void testOther1() throws Exception {
+  public void testOtherBadInstanceof() throws Exception {
     checkFails(
         "var x = 3; y instanceof x;",
-        "Invoked instanceof on non-function");
+        "Invoked \"instanceof\" on non-function");
   }
 
-  //////////////////////////////////////////////////////////////////////////////////
-  //
-  // END OF NEW-STYLE, SYSTEMATIC TESTS OF REWRITER
-  // TESTS BELOW ARE _AD HOC_ OLD STUFF
-  //
-  //////////////////////////////////////////////////////////////////////////////////
-
-  public void testFunction() throws Exception {
-    // TODO(ihab.awad): Apply some test conditions
-    showTree("function.js");
+  public void testSpecimenClickme() throws Exception {
+    checkSucceeds(readResource("clickme.js"));
   }
 
-  public void testClickme() throws Exception {
-    // TODO(ihab.awad): Apply some test conditions
-    showTree("clickme.js");
+  public void testSpecimenListfriends() throws Exception {
+    checkSucceeds(readResource("listfriends.js"));
   }
 
-  public void testListfriends() throws Exception {
-    // TODO(ihab.awad): Apply some test conditions
-    showTree("listfriends.js");
+  private void setSynthetic(ParseTreeNode n) {
+    n.getAttributes().set(SyntheticNodes.SYNTHETIC, true);
   }
-  
+
+  private void setTreeSynthetic(ParseTreeNode n) {
+    setSynthetic(n);
+    for (ParseTreeNode child : n.children()) {
+      setTreeSynthetic(child);
+    }
+  }
+
   private void checkFails(String input, String error) throws Exception {
-    try {
-      new DefaultRewriter().expand(parseText(input));
-      fail("Should have failed on input: " + input);
-    } catch (Exception e) {
-      assertTrue(
-          "Error does not contain \"" + error + "\": " + e.toString(),
-          e.toString().contains(error));
+    MessageContext mc = new MessageContext();
+    MessageQueue mq = TestUtil.createTestMessageQueue(mc);
+    new DefaultJsRewriter(true).expand(parseText(input), mq);
+
+    StringBuilder messageText = new StringBuilder();
+    for (Message m : mq.getMessages()) {
+      m.format(mc, messageText);
+      messageText.append("\n");
+    }
+    assertTrue(
+        "Messages do not contain \"" + error + "\": " + messageText.toString(),
+        messageText.toString().contains(error));
+  }
+
+  private void checkSucceeds(
+      ParseTreeNode inputNode,
+      ParseTreeNode expectedResultNode)
+      throws Exception{
+    MessageQueue mq = TestUtil.createTestMessageQueue(new MessageContext());
+    ParseTreeNode actualResultNode = new DefaultJsRewriter().expand(inputNode, mq);
+    assertTrue(mq.getMessages().isEmpty());
+    if (expectedResultNode != null) {
+      assertEquals(
+          format(expectedResultNode),
+          format(actualResultNode));
     }
   }
 
   private void checkSucceeds(String input, String expectedResult) throws Exception {
-    ParseTreeNode expectedResultNode = parseText(expectedResult);
-    ParseTreeNode inputNode = parseText(input);
-    ParseTreeNode actualResultNode = new DefaultRewriter().expand(inputNode);
-    assertEquals(
-        format(expectedResultNode),
-        format(actualResultNode));
+    checkSucceeds(parseText(input), parseText(expectedResult));
   }
 
-  private void showTree(String resource) throws Exception {
-    ParseTreeNode program = parseResource(resource);
-    ParseTreeNode rewritten = new DefaultRewriter().expand(program);
-    System.out.println("program = " + format(program));
-    System.out.println("rewritten = " + format(rewritten));
+  private void checkSucceeds(String input) throws Exception {
+    checkSucceeds(parseText(input), null);
   }
 
   private static String format(ParseTreeNode n) throws Exception {
     StringBuilder output = new StringBuilder();
     n.render(new RenderContext(new MessageContext(), output));
-    // n.format(new MessageContext(), output);
+    // Alternative, to get "S-expression" tree representation for debug:
+    //   n.format(new MessageContext(), output);
     return output.toString();
   }
 
@@ -644,7 +734,7 @@ public class DefaultRewriterTest extends TestCase {
 
   }
 
-  public ParseTreeNode parseResource(String resource) throws Exception {
-    return parseText(TestUtil.readResource(getClass(), resource));    
+  private String readResource(String resource) throws Exception {
+    return TestUtil.readResource(getClass(), resource);    
   }
 }
