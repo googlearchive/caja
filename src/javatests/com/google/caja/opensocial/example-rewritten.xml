@@ -23,7 +23,7 @@
       ___OUTERS___.c_1___ = function (thisNode___, event) {
         ___.asSimpleFunc(___.primFreeze(___OUTERS___.handleClicky))();
       };
-      ___OUTERS___.emitHtml___('\n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    <p class=\"DOM-PREFIX-p1 DOM-PREFIX-p2\">Paragraph 1</p>\n\n    ');
+      ___OUTERS___.emitHtml___('\n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    <p class=\"DOM-PREFIX-p1 DOM-PREFIX-p2\">Paragraph 1</p>\n\n    ');
       ___OUTERS___.externalScript = ___.simpleFunc(function () {
           ___.asSimpleFunc(___OUTERS___.alert)('external script');
         });

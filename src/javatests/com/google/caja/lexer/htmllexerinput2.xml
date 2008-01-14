@@ -1,0 +1,19 @@
+<?xml version="1.0" ?>
+
+<!DOCTYPE foo>
+
+<!-- A Comment -->
+
+<foo>
+
+  <title>Not RCDATA</title>
+
+  <bar>Bar &amp; bar</bar>
+
+  <baz/>
+
+  <boo><![CDATA[ 1 < 2 &amp;& 4 ]> 3 ]]></boo>
+
+  <plaintext attrib="value">Not CDATA</plaintext>
+
+</foo>

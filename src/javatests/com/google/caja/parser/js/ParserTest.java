@@ -178,7 +178,7 @@ public class ParserTest extends TestCase {
     Statement parseTree = TestUtil.parseTree(getClass(), testFile, mq);
     TestUtil.checkFilePositionInvariants(parseTree);
 
-    RenderContext rc = new RenderContext(mc, new StringBuilder(), true);
+    RenderContext rc = new RenderContext(mc, new StringBuilder(), paranoid);
     parseTree.render(rc);
     rc.newLine();
 

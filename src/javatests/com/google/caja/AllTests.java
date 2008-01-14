@@ -46,6 +46,7 @@ import com.google.caja.plugin.HtmlWhitelistTest;
 import com.google.caja.plugin.PluginCompilerTest;
 import com.google.caja.plugin.UrlUtilTest;
 import com.google.caja.plugin.caps.CapabilityRewriterTest;
+import com.google.caja.util.JoinTest;
 import com.google.caja.util.SparseBitSetTest;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -83,6 +84,7 @@ public class AllTests {
           HtmlCompiledPluginTest.class,
           HtmlLexerTest.class,
           HtmlWhitelistTest.class,
+          JoinTest.class,
           JsHtmlParserTest.class,
           JsLexerTest.class,
           LookaheadCharProducerTest.class,

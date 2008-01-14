@@ -16,6 +16,7 @@ package com.google.caja.parser.html;
 
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.HtmlTextEscapingMode;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.Token;
@@ -48,14 +49,18 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
   private final Token<HtmlTokenType> start;
   private String value;
 
-  DomTree(List<DomTree> children,
+  DomTree(List<? extends DomTree> children,
           Token<HtmlTokenType> start, Token<HtmlTokenType> end) {
-    this(children, start, FilePosition.span(start.pos, end.pos));
+    this(children, start,
+         start.pos != null ? FilePosition.span(start.pos, end.pos) : null);
   }
 
-  DomTree(List<DomTree> children, Token<HtmlTokenType> tok, FilePosition pos) {
+  DomTree(List<? extends DomTree> children, Token<HtmlTokenType> tok,
+          FilePosition pos) {
     this.start = tok;
-    setFilePosition(pos);
+    if (pos != null) {
+      setFilePosition(pos);
+    }
     createMutation().appendChildren(children).execute();
   }
 
@@ -78,6 +83,10 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
     return value;
   }
 
+  protected final void setValue(String value) {
+    this.value = value;
+  }
+
   private String computeValue() {
     switch (start.type) {
     case TAGBEGIN:
@@ -87,8 +96,13 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
     case ATTRVALUE:
       {
         String s = start.text;
-        if (s.length() >= 2 && ('"' == s.charAt(0) || '\'' == s.charAt(0))) {
-          s = s.substring(1, s.length() - 1);
+        int n = s.length();
+        if (n >= 2) {
+          char ch0 = s.charAt(0);
+          if (s.charAt(n - 1) == ch0
+              && ('"' == ch0 || '\'' == ch0 || ch0 == '`')) {
+            s = s.substring(1, n - 1);
+          }
         }
         return xmlDecode(s);
       }
@@ -146,9 +160,13 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
    * This can represent a snippet of markup.
    */
   public static final class Fragment extends DomTree {
-    public Fragment(List<DomTree> children) {
+    public Fragment() {
+      super(Collections.<DomTree>emptyList(), NULL_TOKEN, NULL_TOKEN);
+    }
+
+    public Fragment(List<? extends DomTree> children) {
       super(children,
-            new Token<HtmlTokenType>(
+            Token.instance(
                 "", HtmlTokenType.IGNORABLE,
                 FilePosition.startOf(children.get(0).getFilePosition())),
             FilePosition.span(
@@ -162,6 +180,9 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
       }
     }
   }
+  private static final Token<HtmlTokenType> NULL_TOKEN
+      = Token.instance("", HtmlTokenType.IGNORABLE, null);
+
 
   /**
    * A DOM element.  This node's value is its tag name.
@@ -169,11 +190,20 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
    * other tags, text nodes, CDATA sections.
    */
   public static final class Tag extends DomTree {
-    public Tag(List<DomTree> children,
-        Token<HtmlTokenType> start, Token<HtmlTokenType> end) {
+    public Tag(List<? extends DomTree> children,
+               Token<HtmlTokenType> start, Token<HtmlTokenType> end) {
       super(children, start, end);
       assert start.type == HtmlTokenType.TAGBEGIN;
+      assert end.type == HtmlTokenType.TAGEND;
     }
+
+    public Tag(List<? extends DomTree> children,
+               Token<HtmlTokenType> start, FilePosition pos) {
+      super(children, start, pos);
+      assert start.type == HtmlTokenType.TAGBEGIN;
+    }
+
+    void setTagName(String canonicalTagName) { setValue(canonicalTagName); }
 
     public String getTagName() { return getValue(); }
 
@@ -190,13 +220,24 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
         child.render(r);
         ++i;
       }
-      r.out.append('>');
-      while (i < n) {
-        children.get(i++).render(r);
+      if (i == n && HtmlTextEscapingMode.isVoidElement(getTagName())) {
+        // This is safe regardless of whether the output is XML or HTML since
+        // we only skip the end tag for HTML elements that don't require one,
+        // and the slash will cause XML to treat it as a void tag.
+        r.out.append(" />");
+      } else {
+        r.out.append('>');
+        while (i < n) {
+          children.get(i++).render(r);
+        }
+        // This is not correct for HTML <plaintext> nodes, but live with it,
+        // since handling plaintext correctly would require omitting end tags
+        // for parent nodes, and so significantly complicate rendering for a
+        // node we shouldn't ever render anyway.
+        r.out.append("</");
+        renderHtmlIdentifier(getTagName(), r);
+        r.out.append('>');
       }
-      r.out.append("</");
-      renderHtmlIdentifier(getTagName(), r);
-      r.out.append('>');
     }
   }
 
@@ -210,15 +251,29 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
       super(Collections.<DomTree>singletonList(value), start, end);
       assert start.type == HtmlTokenType.ATTRNAME;
     }
+    Attrib(Value value, Token<HtmlTokenType> start, FilePosition pos) {
+      super(Collections.<DomTree>singletonList(value), start, pos);
+      assert start.type == HtmlTokenType.ATTRNAME;
+    }
     public String getAttribName() { return getValue(); }
     public String getAttribValue() { return children().get(0).getValue(); }
     public Value getAttribValueNode() { return (Value) children().get(0); }
+
+    void setAttribName(String canonicalName) { setValue(canonicalName); }
 
     public void render(RenderContext r) throws IOException {
       renderHtmlIdentifier(getAttribName(), r);
       r.out.append("=\"");
       getAttribValueNode().render(r);
       r.out.append('"');
+    }
+
+    @Override
+    public Attrib clone() {
+      Attrib clone = new Attrib(
+          getAttribValueNode().clone(), getToken(), getFilePosition());
+      clone.setAttribName(getAttribName());
+      return clone;
     }
   }
 
@@ -234,6 +289,11 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
     public void render(RenderContext r) throws IOException {
       renderHtmlAttributeValue(getValue(), r);
     }
+
+    @Override
+    public Value clone() {
+      return new Value(getToken());
+    }
   }
 
   /**
@@ -247,7 +307,12 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
     }
 
     public void render(RenderContext r) throws IOException {
-      renderHtml(getValue(), r);
+      if (getToken().type == HtmlTokenType.UNESCAPED) {
+        // TODO(mikesamuel): disallow this if the rendercontext specifies XML
+        r.out.append(getValue());
+      } else {
+        renderHtml(getValue(), r);
+      }
     }
   }
 
@@ -274,12 +339,12 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
 
   private static void renderHtmlIdentifier(String text, RenderContext r)
       throws IOException {
-    Escaping.escapeXml(text, true, r.out);    
+    Escaping.escapeXml(text, true, r.out);
   }
 
   private static void renderHtmlAttributeValue(String text, RenderContext r)
       throws IOException {
-    Escaping.escapeXml(text, true, r.out);    
+    Escaping.escapeXml(text, true, r.out);
   }
 
   private static void renderHtml(String text, RenderContext r)

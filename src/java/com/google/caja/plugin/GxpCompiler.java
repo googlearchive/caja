@@ -395,6 +395,7 @@ public final class GxpCompiler {
                 mq.addMessage(PluginMessageType.MISSING_ATTRIBUTE,
                               attrEl.getFilePosition(),
                               MessagePart.Factory.valueOf("name"), t);
+                continue;
               }
               String name = assertHtmlIdentifier(nameT.getValue(), nameT);
               AttributeXform xform = xformForAttribute(tagName, name);

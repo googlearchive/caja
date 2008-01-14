@@ -187,7 +187,7 @@ class InputElementJoiner extends AbstractTokenStream<JsTokenType> {
 
   private static Token<JsTokenType> combine(
     Token<JsTokenType> a, Token<JsTokenType> b, JsTokenType type) {
-    return new Token<JsTokenType>(
+    return Token.instance(
         a.text + b.text, type, FilePosition.span(a.pos, b.pos));
   }
 }

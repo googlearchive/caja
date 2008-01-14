@@ -237,7 +237,6 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
     boolean result = true;
     // This loop is complicated because it needs to survive mutations to the
     // child list.
-    int n = this.children.size();
     List<? extends ParseTreeNode> childrenCache = this.children;
 
     ParseTreeNode next = childrenCache.get(0);
@@ -430,8 +429,6 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
 
     @Override
     boolean apply(boolean copied) {
-      final AbstractParseTreeNode<T> owner = AbstractParseTreeNode.this;
-
       if (!copied) { copyOnWrite(); }
 
       // Find where to insert
@@ -455,7 +452,6 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
 
     @Override
     void rollback() {
-      final AbstractParseTreeNode<T> owner = AbstractParseTreeNode.this;
       int childIndex = backupIndex;
 
       // This check corresponds to the replacement.parent == null check in apply
@@ -492,8 +488,6 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
 
     @Override
     void rollback() {
-      final AbstractParseTreeNode<T> owner = AbstractParseTreeNode.this;
-
       if (children.contains(toRemove)) { return; }
 
       addChild(backupIndex, toRemove);
@@ -511,8 +505,6 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
 
     @Override
     boolean apply(boolean copied) {
-      final AbstractParseTreeNode<T> owner = AbstractParseTreeNode.this;
-
       // Find where to insert
       int childIndex;
       if (null == before) {
@@ -537,8 +529,6 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
 
     @Override
     void rollback() {
-      final AbstractParseTreeNode<T> owner = AbstractParseTreeNode.this;
-
       int childIndex = backupIndex;
 
       ParseTreeNode removed = children.remove(childIndex);

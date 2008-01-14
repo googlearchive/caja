@@ -46,6 +46,29 @@ public class HtmlLexerTest extends TestCase {
     assertEquals(golden, actual.toString());
   }
 
+  public void testXmlLexer() throws Exception {
+    // Read the input.
+    InputSource input = new InputSource(
+        TestUtil.getResource(getClass(), "htmllexerinput2.xml"));
+
+    // Do the lexing.
+    CharProducer p = CharProducer.Factory.create(input);
+    StringBuilder actual = new StringBuilder();
+    try {
+      HtmlLexer lexer = new HtmlLexer(p);
+      lexer.setTreatedAsXml(true);
+      lex(lexer, actual);
+    } finally {
+      p.close();
+    }
+
+    // Get the golden.
+    String golden = TestUtil.readResource(getClass(), "htmllexergolden2.txt");
+
+    // Compare.
+    assertEquals(golden, actual.toString());
+  }
+
 
   private void lex(HtmlLexer lexer, Appendable out) throws Exception {
     int maxTypeLength = 0;

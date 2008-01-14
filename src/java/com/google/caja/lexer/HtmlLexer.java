@@ -18,8 +18,7 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageType;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Locale;
 
 /**
  * A flexible lexer for html, gxp, and related document types.
@@ -198,6 +197,8 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
    */
   private String escapeExemptTagName = null;
 
+  private HtmlTextEscapingMode textEscapingMode;
+
   public HtmlInputSplitter(CharProducer p) { this.p = p; }
 
   /**
@@ -228,20 +229,29 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
     // reclassify as UNESCAPED, any tokens that appear in the middle.
     if (inEscapeExemptBlock) {
       if (token.type == HtmlTokenType.TAGBEGIN && '/' == token.text.charAt(1)
+          && textEscapingMode != HtmlTextEscapingMode.PLAIN_TEXT
           && canonTagName(token.text.substring(2)).equals(escapeExemptTagName)
           ) {
-        inEscapeExemptBlock = false;
-        escapeExemptTagName = null;
+        this.inEscapeExemptBlock = false;
+        this.escapeExemptTagName = null;
+        this.textEscapingMode = null;
       } else if (token.type != HtmlTokenType.SERVERCODE) {
-        token = reclassify(token, HtmlTokenType.UNESCAPED);
+        // classify RCDATA as text since it can contain entities
+        token = reclassify(
+            token, (this.textEscapingMode == HtmlTextEscapingMode.RCDATA
+                    ? HtmlTokenType.TEXT
+                    : HtmlTokenType.UNESCAPED));
       }
-    } else {
+    } else if (!asXml) {
       switch (token.type) {
         case TAGBEGIN:
           {
-            String tagName = token.text.substring(1);
-            if (this.isEscapeExemptTagName(tagName)) {
-              this.escapeExemptTagName = canonTagName(tagName);
+            String canonTagName = canonTagName(token.text.substring(1));
+            if (HtmlTextEscapingMode
+                .isTagFollowedByLiteralContent(canonTagName)) {
+              this.escapeExemptTagName = canonTagName;
+              this.textEscapingMode
+                  = HtmlTextEscapingMode.getModeForTag(canonTagName);
             }
             break;
           }
@@ -422,7 +432,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                     }
                     break;
                   case BANG:
-                    if ('[' == ch) {
+                    if ('[' == ch && asXml) {
                       state = State.CDATA;
                     } else if ('-' == ch) {
                       state = State.BANG_DASH;
@@ -564,21 +574,8 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
     }
   }
 
-  private static final Set<String> ESCAPE_EXEMPT_TAGS = new HashSet<String>();
-  static {
-    ESCAPE_EXEMPT_TAGS.add("listing");
-    ESCAPE_EXEMPT_TAGS.add("script");
-    ESCAPE_EXEMPT_TAGS.add("style");
-    ESCAPE_EXEMPT_TAGS.add("textarea");
-    ESCAPE_EXEMPT_TAGS.add("xmp");
-  }
-
-  protected boolean isEscapeExemptTagName(String tagName) {
-    return !asXml && ESCAPE_EXEMPT_TAGS.contains(canonTagName(tagName));
-  }
-
   protected String canonTagName(String tagName) {
-    return asXml ? tagName : tagName.toLowerCase();
+    return asXml ? tagName : tagName.toLowerCase(Locale.ENGLISH);
   }
 
   static <T extends TokenType>

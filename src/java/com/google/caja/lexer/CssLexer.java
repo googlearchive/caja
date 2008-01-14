@@ -122,7 +122,7 @@ public final class CssLexer implements TokenStream<CssTokenType> {
     FilePosition fp
         = FilePosition.span(pending.getFirst().pos, pending.getLast().pos);
     pending.clear();
-    pending.add(new Token<CssTokenType>(sb.toString(), type, fp));
+    pending.add(Token.instance(sb.toString(), type, fp));
   }
 
   /**
@@ -446,7 +446,7 @@ final class CssSplitter implements TokenStream<CssTokenType> {
       cp.getCurrentPosition(epos);
       assert sb.length() > 0
            : "ch=" + ch + " : " + chi + " : " + spos + " : " + type;
-      pending = new Token<CssTokenType>(sb.toString(), type,
+      pending = Token.instance(sb.toString(), type,
           FilePosition.instance(
               spos.source,
               spos.lineNo, spos.lineNo, spos.charInFile, spos.charInLine,

@@ -39,29 +39,29 @@ public class CssParserTest extends TestCase {
     InputSource is = new InputSource(URI.create("test:///"));
     FilePosition pos = FilePosition.instance(is, 1, 1, 1, 1);
     assertEquals("", CssParser.unescape(
-        new Token<CssTokenType>("", CssTokenType.IDENT, pos)));
+        Token.instance("", CssTokenType.IDENT, pos)));
     assertEquals("foo", CssParser.unescape(
-        new Token<CssTokenType>("foo", CssTokenType.IDENT, pos)));
+        Token.instance("foo", CssTokenType.IDENT, pos)));
     assertEquals("foo", CssParser.unescape(
-        new Token<CssTokenType>("f\\oo", CssTokenType.IDENT, pos)));
+        Token.instance("f\\oo", CssTokenType.IDENT, pos)));
     assertEquals("!important", CssParser.unescape(
-        new Token<CssTokenType>("! important", CssTokenType.IDENT, pos)));
+        Token.instance("! important", CssTokenType.IDENT, pos)));
     assertEquals("!important", CssParser.unescape(
-        new Token<CssTokenType>("!   important", CssTokenType.IDENT, pos)));
+        Token.instance("!   important", CssTokenType.IDENT, pos)));
     assertEquals("'foo bar'", CssParser.unescape(
-        new Token<CssTokenType>("'foo bar'", CssTokenType.STRING, pos)));
+        Token.instance("'foo bar'", CssTokenType.STRING, pos)));
     assertEquals("'foo bar'", CssParser.unescape(
-        new Token<CssTokenType>("'foo\\ bar'", CssTokenType.STRING, pos)));
+        Token.instance("'foo\\ bar'", CssTokenType.STRING, pos)));
     assertEquals("'foo bar'", CssParser.unescape(
-        new Token<CssTokenType>("'foo\\ b\\\nar'", CssTokenType.STRING, pos)));
+        Token.instance("'foo\\ b\\\nar'", CssTokenType.STRING, pos)));
     assertEquals("'foo bar'", CssParser.unescape(
-        new Token<CssTokenType>("'foo\\ b\\\rar'", CssTokenType.STRING, pos)));
+        Token.instance("'foo\\ b\\\rar'", CssTokenType.STRING, pos)));
     assertEquals("'ffoo bar'", CssParser.unescape(
-        new Token<CssTokenType>("'\\66 foo bar'", CssTokenType.STRING, pos)));
+        Token.instance("'\\66 foo bar'", CssTokenType.STRING, pos)));
     assertEquals("foo-bar", CssParser.unescape(
-        new Token<CssTokenType>("\\66oo-ba\\0072", CssTokenType.IDENT, pos)));
+        Token.instance("\\66oo-ba\\0072", CssTokenType.IDENT, pos)));
     assertEquals("\\66oo-bar", CssParser.unescape(
-        new Token<CssTokenType>("\\\\66oo-ba\\0072", CssTokenType.IDENT, pos)));
+        Token.instance("\\\\66oo-ba\\0072", CssTokenType.IDENT, pos)));
   }
 
   public void testCssParser1() throws Exception {

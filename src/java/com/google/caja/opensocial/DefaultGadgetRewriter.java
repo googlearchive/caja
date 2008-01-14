@@ -24,6 +24,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.html.OpenElementStack;
 import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.HtmlPluginCompiler;
 import com.google.caja.plugin.PluginEnvironment;
@@ -122,7 +123,8 @@ public class DefaultGadgetRewriter implements GadgetRewriter {
     TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(
         is, new StringReader(htmlContent), false);
     if (tq.isEmpty()) { return null; }
-    DomTree.Fragment contentTree = DomParser.parseFragment(tq);
+    DomTree.Fragment contentTree = DomParser.parseFragment(
+        tq, OpenElementStack.Factory.createHtml5ElementStack(mq));
 
     if (contentTree == null) {
       mq.addMessage(OpenSocialMessageType.NO_CONTENT, is);

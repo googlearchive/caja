@@ -53,6 +53,7 @@
 
   <path id="classpath.compile">
     <pathelement path="${third_party}/jakarta_commons/commons-cli.jar"/>
+    <pathelement path="${third_party}/htmlparser/htmlparser.jar"/>
   </path>
 
   <path id="classpath.run">
@@ -68,6 +69,7 @@
     <pathelement path="${third_party}/junit/junit.jar"/>
     <pathelement path="${third_party}/rhino/js.jar"/>
     <pathelement path="${third_party}/emma/emma.jar"/>
+    <pathelement path="${third_party}/htmlparser/htmlparser.jar"/>
     <pathelement path="${instr}/classes"/>
     <!-- In case instrumentation not enabled -->
     <pathelement path="${lib}"/>
@@ -212,6 +214,7 @@
       <include name="**/caja/plugin/PluginCompilerTest.java"/>
       <include name="**/caja/plugin/UrlUtilTest.java"/>
       <include name="**/caja/plugin/caps/CapabilityRewriterTest.java"/>
+      <include name="**/caja/util/JoinTest.java"/>
       <include name="**/caja/util/SparseBitSetTest.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
@@ -220,7 +223,9 @@
         <include name="**/caja/lexer/csslexergolden1.txt"/>
         <include name="**/caja/lexer/csslexerinput1.css"/>
         <include name="**/caja/lexer/htmllexergolden1.txt"/>
+        <include name="**/caja/lexer/htmllexergolden2.txt"/>
         <include name="**/caja/lexer/htmllexerinput1.html"/>
+        <include name="**/caja/lexer/htmllexerinput2.xml"/>
         <include name="**/caja/lexer/lexergolden1.txt"/>
         <include name="**/caja/lexer/lexergolden2.txt"/>
         <include name="**/caja/lexer/lexertest1.js"/>
@@ -324,8 +329,9 @@
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${testsrc}"/>
       <classpath refid="classpath.tests.compile"/>
-      <include name="**/caja/util/TestUtil.java"/>
+      <include name="**/caja/util/MoreAsserts.java"/>
       <include name="**/caja/util/RhinoTestBed.java"/>
+      <include name="**/caja/util/TestUtil.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
   </target>
@@ -498,6 +504,7 @@
       <include name="**/caja/lexer/CssLexer.java"/>
       <include name="**/caja/lexer/CssTokenType.java"/>
       <include name="**/caja/lexer/HtmlLexer.java"/>
+      <include name="**/caja/lexer/HtmlTextEscapingMode.java"/>
       <include name="**/caja/lexer/HtmlTokenType.java"/>
       <include name="**/caja/lexer/InputElementJoiner.java"/>
       <include name="**/caja/lexer/InputElementSplitter.java"/>

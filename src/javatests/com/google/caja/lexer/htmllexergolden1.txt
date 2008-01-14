@@ -71,7 +71,7 @@ TAGBEGIN   [<gxp:attr]  :  htmllexerinput1.html:35+1@756 - 10@765
 ATTRNAME   [name]  :  htmllexerinput1.html:35+11@766 - 15@770
 ATTRVALUE  ["onchange"]  :  htmllexerinput1.html:35+16@771 - 26@781
 TAGEND     [>]  :  htmllexerinput1.html:35+26@781 - 27@782
-CDATA      [<![CDATA[alert("<b>hi</b>");]]>]  :  htmllexerinput1.html:35+27@782 - 58@813
+TEXT       [alert("&lt;b&gt;hi&lt;/b&gt;");]  :  htmllexerinput1.html:35+27@782 - 58@813
 TAGBEGIN   [</gxp:attr]  :  htmllexerinput1.html:35+58@813 - 68@823
 TAGEND     [>]  :  htmllexerinput1.html:35+68@823 - 69@824
 TEXT       [\n]  :  htmllexerinput1.html:35+69@824 - 36+1@825
@@ -131,4 +131,6 @@ TAGEND     [>]  :  htmllexerinput1.html:60+7@1319 - 8@1320
 TEXT       [\n]  :  htmllexerinput1.html:60+8@1320 - 61+1@1321
 TAGBEGIN   [</html]  :  htmllexerinput1.html:61+1@1321 - 7@1327
 TAGEND     [>]  :  htmllexerinput1.html:61+7@1327 - 8@1328
-TEXT       [\n]  :  htmllexerinput1.html:61+8@1328 - 62+1@1329
+TEXT       [\n\n]  :  htmllexerinput1.html:61+8@1328 - 63+1@1330
+DIRECTIVE  [<![CDATA[ No such thing as a CDATA>]  :  htmllexerinput1.html:63+1@1330 - 36@1365
+TEXT       [ section in HTML ]]>\n]  :  htmllexerinput1.html:63+36@1365 - 64+1@1386

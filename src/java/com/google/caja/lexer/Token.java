@@ -29,7 +29,7 @@ public final class Token<T extends TokenType> {
     return new Token<TT>(text, type, pos);
   }
 
-  public Token(String text, T type, FilePosition pos) {
+  private Token(String text, T type, FilePosition pos) {
     this.text = text;
     this.type = type;
     this.pos = pos;

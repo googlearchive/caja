@@ -26,6 +26,8 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 
+import junit.framework.Assert;
+
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ScriptableObject;
 
@@ -67,8 +69,7 @@ public class RhinoTestBed {
       }
       return result;
     } catch (org.mozilla.javascript.JavaScriptException e) {
-      junit.framework.TestCase.fail(e.details() + "\n"
-          + e.getScriptStackTrace());
+      Assert.fail(e.details() + "\n" + e.getScriptStackTrace());
       return null;
     } finally {
       Context.exit();
