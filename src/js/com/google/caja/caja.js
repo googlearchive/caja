@@ -653,7 +653,7 @@ var ___;
     if (isCtor(meth)) {
       fail("constructors can't be methods: ", meth);
     }
-    if (isSimpleFunc(constr)) {
+    if (isSimpleFunc(meth)) {
       fail("Simple functions can't be methods: ", meth);
     }
     meth.___METHOD_OF___ = asCtorOnly(constr);
