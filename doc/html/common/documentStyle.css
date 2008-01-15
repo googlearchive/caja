@@ -43,6 +43,13 @@ h2 {
   font-size: 14pt;
 }
 
+h3 {
+  font-family: sans-serif;
+  font-style: italic;
+  font-size: 12pt;
+  margin-left: 12pt;
+}
+
 pre {
   border: 1px solid gray;
   background-color: #ffffef;

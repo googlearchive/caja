@@ -1,0 +1,487 @@
+<!--
+  -- Copyright (C) 2007 Google Inc.
+  --
+  -- Licensed under the Apache License, Version 2.0 (the "License");
+  -- you may not use this file except in compliance with the License.
+  -- You may obtain a copy of the License at
+  --
+  -- http://www.apache.org/licenses/LICENSE-2.0
+  --
+  -- Unless required by applicable law or agreed to in writing, software
+  -- distributed under the License is distributed on an "AS IS" BASIS,
+  -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  -- See the License for the specific language governing permissions and
+  -- limitations under the License.
+  -->
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+  <head>
+    <META http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Conversion of expand.emaker</title>
+    <link rel="stylesheet" href="../common/documentStyle.css" type="text/css"/></head>
+    <style type="text/css">
+      tr > td:first-child { min-width: 96pt; }
+      td { vertical-align: top; }
+      .section-head { font-size: 18pt; padding-top: 18pt; border-bottom: 1px solid #909090; }
+    </style>
+  </head>
+  <body>
+
+<h1>Conversion of <code>expand.emaker</code></h1>
+<p class="heading">Current as of rev 302</p>
+
+<table>
+
+<tr><td colspan="2" class="section-head">to visitWith()</td></tr>
+
+<tr>
+<td>with0 <em>(&amp; &#39;with&#39; ∉ Caja parser)</em></td>
+<td><pre>        to visitWith()                          { throw(`&quot;with&quot; disallowed: $e`) }</pre></td>
+</tr>
+
+<tr><td colspan="2" class="section-head">to visitVar()</td></tr>
+
+<tr>
+<td>variable0 var:args</td>
+<td><pre>            match js`arguments`                 { js`___args___` }</pre></td>
+</tr>
+
+<tr>
+<td>variable2 var:bad-suffix</td>
+<td><pre>            match js`@{_}__`                    { throw(`Variables cannot end in &quot;__&quot;: $e`) }</pre></td>
+</tr>
+
+<tr>
+<td>variable3 var:bad-global-suffix</td>
+<td><pre>            match js`@{_}_` ? e.isGlobal()      { throw(`Globals cannot end in &quot;_&quot;: $e`) }</pre></td>
+</tr>
+
+<tr>
+<td>variable4 var:bad-ctor-leak</td>
+<td><pre>            # Constructor names can only be used in those static cases
+            # enumerated by other productions which exempt it from
+            # further expansion.
+            match _ ? e.isCtorName()            { throw(`Constructors are not first class: $e`) }</pre></td>
+</tr>
+
+<tr>
+<td>variable5 var:func-freeze</td>
+<td><pre>            # Any first non-initialization use of a non-constructor
+            # function name freezes it, dynamically preventing further
+            # initialization. 
+            match _ ? e.isFuncName()            { js`___.primFreeze($e)` }</pre></td>
+</tr>
+
+<tr>
+<td>variable6 var:global</td>
+<td><pre>            match _ ? e.isGlobal()              { js`___OUTER___.$e` }</pre></td>
+</tr>
+
+<tr>
+<td>variable7 var:default</td>
+<td><pre>            match _                             { e }</pre></td>
+</tr>
+
+<tr><td colspan="2" class="section-head">to visitRead()</td></tr>
+
+<tr>
+<td>read0 read:bad-suffix</td>
+<td><pre>            match js`@_.@{p}__`                 { throw(`Properties cannot end in &quot;__&quot;: ${p}__`) }</pre></td>
+</tr>
+
+<tr>
+<td>read1read:internal</td>
+<td><pre>            match js`this.@p`                   { js`this.${p}_canRead___ ? this.$p :
+                                                     ___.readProp(this, ${`$p`})`
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>read2 read:bad-internal</td>
+<td><pre>            match js`@_.@{p}_`                  { throw(`Public properties cannot end in &quot;_&quot;: ${p}_`) }</pre></td>
+</tr>
+
+<tr>
+<td>read3 read:public</td>
+<td><pre>            match js`@o.@p`                     { def [o2,o3] := reuse(o, scope)
+                                                  js`$o2.${p}_canRead___ ? $o3.$p :
+                                                     ___.readPub($o3, ${`$p`})`
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>read4 read:index-internal</td>
+<td><pre>            match js`this[@s]`                  { def s2 := expand(s, scope)
+                                                  js`___.readProp(this, $s2)` 
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>read5 read:index-public</td>  
+<td><pre>            match js`@o[@s]`                    { def o2 := expand(o, scope)
+                                                  def s2 := expand(s, scope)
+                                                  js`___.readPub($o2, $s2)` 
+                                                }</pre></td>
+</tr>
+
+
+
+
+<tr><td colspan="2" class="section-head">to visitSet()</td></tr>
+
+<tr>
+<td>set0 set:bad-suffix</td>
+<td><pre>            match js`@_.@{p}__ = @_`            { throw(`Properties cannot end in &quot;__&quot;: ${p}__`) }</pre></td>
+</tr>
+
+<tr>
+<td>set1 set:internal</td>
+<td><pre>            match js`this.@p = @r`              { def [r2,r3] := reuse(r, scope)
+                                                  js`$r2, (this.${p}_canSet___ ? this.$p = $r3 :
+                                                           ___.setProp(this, ${`$p`}, $r3))`
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>set2 set:member</td>
+<td><pre>            # Exempts fname from expansion, so its
+            # &quot;.prototype&quot; can continue to be initialized if fname has
+            # not yet been frozen. It also allows methods to appear on
+            # the right hand side. 
+            # By placing this ahead of the next production, we allow
+            # &quot;.prototype&quot; members to end in a single &quot;_&quot;, so they can be
+            # internal. 
+            match js`@fname.prototype.@p = @m` ?
+                  (fname.isFuncName() &amp;&amp;
+                   `$p` !~ `constructor`)       { def m2 := expandMember(fname, m, scope)
+                                                  js`___.setMember($fname, ${`$p`}, $m2)`
+                                                }</pre></td>
+</tr>						
+
+<tr>
+<td>set3 set:bad-internal</td>  
+<td><pre>            match js`@_.@{p}_ = @_`             { throw(`Public properties cannot end in &quot;_&quot;: ${p}_`) }</pre></td>
+</tr>
+
+<tr>
+<td>set4 set:member-map</td>
+<td><pre>            # Exempt fname from expansion, so its
+            # &quot;.prototype&quot; can be initialized all at once by a map
+            # expression that may contain methods (if fname has not
+            # yet been frozen).
+            match <a href="mailto:js%60@fname.prototype" target="_blank">js`@fname.prototype</a> = @mm` ? 
+                  fname.isFuncName()            { def mm2 := expandMemberMap(fname, mm, scope)
+                                                  js`___.setMemberMap($fname, $mm2)`
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>set5 set:static</td>
+<td><pre>            # Exempt fname from expansion, so it can
+            # continue to be initialized if it has not yet been frozen. 
+            match js`@fname.@p = @r` ? 
+                  (fname.isFuncName() &amp;&amp;
+                   `$p` !~ `Super`)             { def r2 := expand(r, scope)
+                                                  js`___.setPub($fname, ${`$p`}, $r2)`
+                                                }</pre></td>
+</tr>						
+
+<tr>
+<td>set6 set:public</td>
+<td><pre>            match js`@o.@p = @r`                { def [o2,o3] := reuse(o, scope)
+                                                  def [r2,r3] := reuse(r, scope)
+                                                  js`$o2, $r2, ($o3.${p}_canSet___ ? $o3.$p = $r3 :
+                                                                ___.setPub($o3, ${`$p`}, $r3)`
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>set7 set:index-internal</td>
+<td><pre>            match js`this[@s] = @r`             { def s2 := expand(s, scope)
+                                                  def r2 := expand(r, scope)
+                                                  js`___.setProp(this, $s2, $r2)` 
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>set8 set:index-public</td>
+<td><pre>            match js`@o[@s] = @r`               { def o2 := expand(o, scope)
+                                                  def s2 := expand(s, scope)
+                                                  def r2 := expand(r, scope)
+                                                  js`___.setPub($o2, $s2, $r2)` 
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td><em>Covered by</em> recurse0 <em>in Java impl</em><br>
+  set:assign</td>  
+<td><pre>            match js`@v = @r` ? 
+                  v.isVar() &amp;&amp;
+                  !(v.isFuncName())             { expandDef(v, expand(r, scope)) }</pre></td>
+
+
+</tr><tr>
+<td>set9 set:initialize</td>  
+<td><pre>            match js`var @v = @r` ? 
+                  v.isVar() &amp;&amp;
+                  !(v.isFuncName())             { expandDef(v, expand(r, scope)) }</pre></td>
+</tr>
+
+
+<tr>
+<td>set11 set:declare</td>  
+<td><pre>            match js`var @v` ? 
+                  v.isVar() &amp;&amp;
+                  !(v.isFuncName())             { expandDef(v, js`undefined`) }</pre></td>
+</tr>		  
+
+
+
+<tr><td colspan="2" class="section-head">to visitNew()</td></tr>
+
+<tr>
+<td>new0 new:ctor</td>
+<td><pre>            # Exempt ctor from expansion, which would reject it, but
+            # freeze ctor here in case this is its first
+            # non-initialization use.
+            match js`new @ctor(@as*)` ?
+                  ctor.isCtorName()             { def a2s := expandAll(as, scope)
+                                                  js`new (___.asCtor($ctor))($a2s*)`
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>new1 new:func</td>
+<td><pre>            match js`new @f(@as*)`              { def f2  := expand(f, scope)
+                                                  def a2s := expandAll(as, scope)
+                                                  js`new (___.asCtor($f2))($a2s*)` 
+                                                }</pre></td>
+</tr>
+
+
+
+<tr><td colspan="2" class="section-head">to visitCall()</td></tr>
+
+<tr>
+<td>call0 call:bad-suffix</td>
+<td><pre>            match js`@_.@{m}__(@_*)`            { throw(`Selectors cannot end in &quot;__&quot;: ${m}__`) }</pre></td>
+</tr>
+
+<tr>
+<td>call1 call:internal</td>
+<td><pre>            match js`this.@m(@as*)`             { def [a2s,a3s] := reuseAll(as, scope)
+                                                  js`$a2s*, (this.${m}_canCall___ ? this.$m($a3s*) :
+                                                             ___.callProp(this, ${`$m`}, [$a3s*]))` 
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>call2 call:bad-internal</td>
+<td><pre>            match js`@_.@{m}_(@_*)`             { throw(`Public selectors cannot end in &quot;_&quot;: ${m}_`) }</pre></td>
+</tr>
+
+<tr>
+<td>call3 call:caja-def-2</td>
+<td><pre>            # Exempt both fname and base from further
+            # expansion. caja.def will freeze base in case this is its first
+            # non-initialization use, in order to prevent further
+            # initialization. Note that we do not statically prevent
+            # other calls to caja.def that do not match these two
+            # cases. We simply handle them as regular method calls.
+            match js`caja.def(@fname,@base)` ?
+                  fname.isFuncName() &amp;&amp;
+                  base.isFuncName()             { js`caja.def($fname,$base)` }</pre></td>
+</tr>
+
+<tr>
+<td>call4 call:caja-def-3plus</td>
+<td><pre>            # As above, but also allow a map containing methods in the
+            # third argument.
+            match js`caja.def(@fname,@base,@mm,<WBR>@ss?)` ?
+                  (fname.isFuncName() &amp;&amp;
+                   base.isFuncName() &amp;&amp;
+                   mm =~ js`({@_*})`)           { def mm2   := expandMemberMap(fname, mm, scope)
+                                                  def s2s   := expandAll(ss, scope)
+                                                  js`caja.def($fname,$base,$mm2,<WBR>$s2s?)`
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>call5 call:public</td>  
+<td><pre>            match js`@o.@m(@as*)`               { def [o2,o3]   := reuse(o, scope)
+                                                  def [a2s,a3s] := reuseAll(as, scope)
+                                                  js`$o2, $a2s*, ($o3.${m}_canCall___ ? $o3.$m($a3s*) :
+                                                                  ___.callPub($o3, ${`$m`}, [$a3s*]))` 
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>call6 call:index-internal</td>
+<td><pre>            match js`this[@s](@as*)`            { def s2  := expand(s, scope)
+                                                  def a2s := expandAll(as, scope)
+                                                  js`___.callProp(this, $s2, [$a2s*])`
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>call7 call:index-public</td>
+<td><pre>            match js`@o[@s](@as*)`              { def o2  := expand(o, scope)
+                                                  def s2  := expand(s, scope)
+                                                  def a2s := expandAll(as, scope)
+                                                  js`___.callPub($o2, $s2, [$a2s*])`
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>call8 call:func</td>
+<td><pre>            match js`@f(@as*)`                  { def f2  := expand(f, scope)
+                                                  def a2s := expandAll(as, scope)
+                                                  js`___.asSimpleFunc($f2)($a2s*<WBR>)`
+                                                }</pre></td>
+</tr>
+
+
+
+<tr><td colspan="2" class="section-head">to visitFunction()</td></tr>
+
+<tr>
+<td>function0 func:anon-simple</td>
+<td><pre>            # anonymous simple function
+            match js`function(@ps*) {@bs*}` ?
+                  !(anyFreeThis(bs))            { def scope2 := scope.nest(e)
+                                                  def b2s    := expandAll(bs, scope2)
+                                                  js`___.primFreeze(___.simpleFun<WBR>ction(function($ps*) {
+                                                       ${scope2.tempDefs()}*;
+                                                       $b2s*
+                                                  }))`
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>function2 <em>(note repositioned)</em><br>
+  func:named-simple-value</td>
+<td><pre>            # Named simple function used for value
+            match js`function @f(@ps*) {@bs*}` ?
+                  e.isForValue() &amp;&amp;
+                  !(anyFreeThis(bs))            { def scope2 := scope.nest(e)
+                                                  def b2s    := expandAll(bs, scope2)
+                                                  expandDef(f, js`___.primFreeze(___.simpleFun<WBR>ction(function($ps*) {
+                                                       ${scope2.tempDefs()}*;
+                                                       $b2s*
+                                                     }))`)
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>function1 func:named-simple-decl</td>
+<td><pre>            # Named simple function declaration
+            match js`function @f(@ps*) {@bs*}` ?
+                  !(anyFreeThis(bs))            { def scope2 := scope.nest(e)
+                                                  def b2s    := expandAll(bs, scope2)
+                                                  expandDef(f, js`___.simpleFunction(function<WBR>($ps*) {
+                                                       ${scope2.tempDefs()}*;
+                                                       $b2s*
+                                                     })`)
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>function3 func:bad-method</td>
+<td><pre>            # Methods can only appear is expandMember contexts
+            match js`function(@_*) {@bs*}` ?
+                  anyFreeThis(bs)               { throw(`Method in non-method context: $e`) }</pre></td>
+</tr>
+
+<tr>
+<td>function4 func:bad-ctor</td>
+<td><pre>            # Constructors can&#39;t be evaluated for their value
+            match js`function @f(@ps*) {
+                       @bs*
+                     }` ?
+                  e.isForValue() &amp;&amp;
+                  anyFreeThis(bs)               { throw(`Constructor can&#39;t escape: $e`) }</pre></td>
+</tr>
+
+<tr>
+<td>function5 func:derived-ctor-decl</td>
+<td><pre>            # A constructor first calling its super constructor to initialize this
+            match js`function @f(@ps*) {
+                       $f.Super.call(this, @as*);
+                       @bs*
+                     }` ?
+                  !(anyFreeThis(as))            { def scope2 := scope.nest(e)
+                                                  def a2s    := expandAll(as, scope2)
+                                                  def b2s    := expandAll(bs, scope2)
+                                                  expandDef(f, js`___.ctor(function($ps*) {
+                                                       ${scope2.tempDefs()}*;
+                                                       $f2.Super.call(this, $a2s*);
+                                                       $b2s*
+                                                     })`)
+                                                }</pre></td>
+</tr>
+
+<tr>
+<td>function6 func:ctor-decl</td>
+<td><pre>            # A constructor
+            match js`function @f(@ps*) {
+                       @bs*
+                     }` ?
+                  anyFreeThis(bs)               { def scope2 := scope.nest(e)
+                                                  def b2s    := expandAll(bs, scope2)
+                                                  expandDef(f, js`___.ctor(function($ps*) {
+                                                       ${scope2.tempDefs()}*;
+                                                       $b2s*
+                                                     })`)
+                                                }</pre></td>
+</tr>
+
+
+
+<tr><td colspan="2" class="section-head">to visitMap()</td></tr>
+
+<tr>
+<td>map0 map:empty</td>
+<td><pre>            match js`({})`                    { js`({})` }</pre></td>
+</tr>
+
+<tr>
+<td>map1 <em>(In Java, rolled into implementation of map2)<br>
+map: bad-key-suffix</em></td>
+<td><pre>            match js`({@{key}_: @_, @_*})`    { throw(`Key may not end in &quot;_&quot;: ${key}_`) }</pre></td>
+</tr>
+
+<tr>
+<td>map2 map:non-empty</td>
+<td><pre>            match js`({@key: @val, @rests*})` ?
+                  scope.isIdent(key)          { def val2             := expand(val, scope)
+                                                def js`({@rest2s*})` := expand(js`({$rests*})`, scope)
+                                                js`({$key: $mem2, $rest2s*})`
+                                              }</pre></td>
+</tr>
+
+<tr>
+<td><em>∉ JS anyway map:key-expr</em></td>
+<td><pre>            match js`({@keyExpr: @_, @_*})`   { throw(`Key expressions not yet supported: $keyExpr`) }</pre></td>
+</tr>
+
+
+
+<tr><td colspan="2" class="section-head">to visitOther()</td></tr>
+
+<tr>
+<td>other0 other:instanceof</td>
+<td><pre>            # A function or constructor name can be used on the right
+            # of an instanceof without constraint 
+            match js`$o instanceof $f` ?
+                  f.isFuncName()              { def o2 := expand(o, scope)
+                                                js`$o2 instanceof $f`
+                                              }</pre></td>
+</tr>					      
+
+
+
+</table>
+
+</body></html>
