@@ -31,7 +31,6 @@ import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TryStmt;
-import com.google.caja.parser.js.UndefinedLiteral;
 import com.google.caja.plugin.ReservedNames;
 import com.google.caja.util.Pair;
 import com.google.caja.reporting.MessageQueue;
@@ -83,6 +82,10 @@ public class DefaultJsRewriter extends JsRewriter {
     // try - try/catch/finally constructs
     ////////////////////////////////////////////////////////////////////////
 
+    /**
+     * TODO(ihab.awad): Implement these properly
+     *
+
     addRule(new Rule("tryCatch") {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
@@ -112,6 +115,8 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
+     */
+     
     ////////////////////////////////////////////////////////////////////////
     // variable - variable name handling
     ////////////////////////////////////////////////////////////////////////
@@ -563,7 +568,7 @@ public class DefaultJsRewriter extends JsRewriter {
           return substV(
               "(function() {" +
               "  @as*;" +
-              "  t___.@fm ? this.@m(@vs*) : ___.callProp(t___, @rm, [@vs*]);" +
+              "  return t___.@fm ? this.@m(@vs*) : ___.callProp(t___, @rm, [@vs*]);" +
               "})()",
               "as", aliases.b,
               "vs", aliases.a,
@@ -616,7 +621,7 @@ public class DefaultJsRewriter extends JsRewriter {
             return node;
           }
           ParseTreeNode ss = bindings.get("ss") == null ? null :
-              expandMemberMap(bindings.get("fname"), bindings.get("ss"), this, scope, mq);
+              expandAll(bindings.get("ss"), scope, mq);
           return substV(
               "caja.def(@fname, @base, @mm, @ss?)",
               "fname", bindings.get("fname"),
@@ -639,7 +644,7 @@ public class DefaultJsRewriter extends JsRewriter {
               "(function() {" +
               "  var x___ = @o;" +
               "  @as*;" +
-              "  x___.@fm ? x___.@m(@vs*) : ___.callPub(x___, @rm, [@vs*]);" +
+              "  return x___.@fm ? x___.@m(@vs*) : ___.callPub(x___, @rm, [@vs*]);" +
               "})()",
               "o",  expand(bindings.get("o"), scope, mq),
               "as", aliases.b,
@@ -884,7 +889,7 @@ public class DefaultJsRewriter extends JsRewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("({@keys*: @vals*})", node, bindings) &&
-            literalsEndWithUnderscores(bindings.get("keys"))) {
+            literalsEndWith(bindings.get("keys"), "_")) {
           mq.addMessage(
               JsRewriterMessageType.KEY_MAY_NOT_END_IN_UNDERSCORE,
               this, node);

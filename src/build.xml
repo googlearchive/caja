@@ -314,6 +314,7 @@
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
     <unjar src="${third_party}/jakarta_commons/commons-cli.jar" dest="${lib}"/>
+    <unjar src="${third_party}/htmlparser/htmlparser.jar" dest="${lib}"/>
     <jar destfile="${jars}/pluginc.jar" basedir="${lib}">
       <manifest>
         <attribute name="Main-Class"

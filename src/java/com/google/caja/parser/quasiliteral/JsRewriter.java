@@ -154,6 +154,19 @@ public abstract class JsRewriter extends AbstractRewriter {
     return expand(member, scope, mq);
   }
 
+  protected ParseTreeNode expandAllMembers(
+      ParseTreeNode fname,
+      ParseTreeNode members,
+      Rule rule,
+      Scope scope,
+      MessageQueue mq) {
+    List<ParseTreeNode> results = new ArrayList<ParseTreeNode>();
+    for (ParseTreeNode member : members.children()) {
+      results.add(expandMember(fname, member, rule, scope, mq));
+    }
+    return new ParseTreeNodeContainer(results);
+  }
+
   protected ParseTreeNode expandMemberMap(
       ParseTreeNode fname,
       ParseTreeNode memberMap,
@@ -167,10 +180,17 @@ public abstract class JsRewriter extends AbstractRewriter {
     Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
 
     if (match("({@keys*: @vals*})", memberMap, bindings)) {
+      if (literalsEndWith(bindings.get("keys"), "__")) {
+        mq.addMessage(
+            JsRewriterMessageType.MEMBER_KEY_MAY_NOT_END_IN_DOUBLE_UNDERSCORE,
+            rule, memberMap);
+        return memberMap;
+      }
+
       return substV(
           "({@keys*: @vals*})",
           "keys", bindings.get("keys"),
-          "vals", expand(bindings.get("vals"), scope, mq));
+          "vals", expandAllMembers(fname, bindings.get("vals"), rule, scope, mq));
     }
     
     mq.addMessage(JsRewriterMessageType.MAP_EXPRESSION_EXPECTED,
@@ -189,7 +209,7 @@ public abstract class JsRewriter extends AbstractRewriter {
           JsRewriterMessageType.MAP_EXPRESSION_EXPECTED,
           rule, node);
       return false;
-    } else if (literalsEndWithUnderscores(bindings.get("keys"))) {
+    } else if (literalsEndWith(bindings.get("keys"), "_")) {
       mq.addMessage(
           JsRewriterMessageType.KEY_MAY_NOT_END_IN_UNDERSCORE,
           rule, node);
@@ -210,10 +230,10 @@ public abstract class JsRewriter extends AbstractRewriter {
     return ((Identifier)id).getValue();
   }
 
-  protected boolean literalsEndWithUnderscores(ParseTreeNode container) {
+  protected boolean literalsEndWith(ParseTreeNode container, String suffix) {
     for (ParseTreeNode n : container.children()) {
       assert(n instanceof StringLiteral);
-      if (((StringLiteral)n).getUnquotedValue().endsWith("_")) {
+      if (((StringLiteral)n).getUnquotedValue().endsWith(suffix)) {
         return true;
       }
     }

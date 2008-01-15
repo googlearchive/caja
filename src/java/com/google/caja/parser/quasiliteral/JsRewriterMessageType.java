@@ -75,6 +75,10 @@ public enum JsRewriterMessageType implements MessageTypeInt {
       "Key may not end in \"_\": %s, %s",
       MessageLevel.FATAL_ERROR),
 
+  MEMBER_KEY_MAY_NOT_END_IN_DOUBLE_UNDERSCORE(
+      "Member key may not end in \"__\": %s, %s",
+      MessageLevel.FATAL_ERROR),
+
   CONSTRUCTORS_ARE_NOT_FIRST_CLASS(
       "Constructors are not first class: %s, %s",
       MessageLevel.FATAL_ERROR),

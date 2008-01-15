@@ -28,7 +28,6 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.Message;
 import com.google.caja.util.TestUtil;
-import com.google.caja.plugin.ExpressionSanitizer;
 import com.google.caja.plugin.SyntheticNodes;
 import junit.framework.TestCase;
 
@@ -93,6 +92,51 @@ public class DefaultJsRewriterTest extends TestCase {
   public void testWith() throws Exception {
     // Our parser does not recognize "with" at all.
   }
+
+  /**
+   * TODO(ihab.awad): Implement these properly
+   *
+
+  public void testTryCatch() throws Exception {
+    checkSucceeds(
+        "try {" +
+        "  x;" +
+        "} catch (e) {" +
+        "  e;" +
+        "  y;" +
+        "}",
+        "try {" +
+        "  ___OUTERS___.x;" +
+        "} catch (e) {" +
+        "  e;" +
+        "  ___OUTERS___.y;" +
+        "}");
+  }
+
+  public void testTryCatchFinally() throws Exception {
+    checkSucceeds(
+        "try {" +
+        "  x;" +
+        "} catch (e) {" +
+        "  e;" +
+        "  y;" +
+        "} finally {" +
+        "  z;" +
+        "}",
+        "try {" +
+        "  ___OUTERS___.x;" +
+        "} catch (e) {" +
+        "  e;" +
+        "  ___OUTERS___.y;" +
+        "} finally {" +
+        "  ___OUTERS___.z;" +
+        "}");
+  }
+
+  public void testTryFinally() throws Exception {
+  }
+
+  */
 
   public void testVarArgs() throws Exception {
     checkSucceeds(
@@ -289,7 +333,7 @@ public class DefaultJsRewriterTest extends TestCase {
         "Public properties cannot end in \"_\"");
   }
 
-  public void testSetMemberMap() throws Exception {
+  public void testSetMemberMap() throws Exception {    
     checkFails(
         "function foo() {}" +
         "foo.prototype = x;",  
@@ -300,11 +344,19 @@ public class DefaultJsRewriterTest extends TestCase {
         "Map expression expected");
     checkSucceeds(
         "function foo() {}" +
-        "foo.prototype = { k0: v0, k1: v1 };",
+        "foo.prototype = { k0: v0, k1: function() { this.p = 3; } };",
         "___OUTERS___.foo = ___.simpleFunc(function() {});" +
         "___.setMemberMap(" +
-        "  ___.primFreeze(___OUTERS___.foo)," +
-        "  { k0: ___OUTERS___.v0, k1: ___OUTERS___.v1 });");
+        "  ___.primFreeze(___OUTERS___.foo), {" +
+        "    k0: ___OUTERS___.v0," +
+        "    k1: ___.method(foo, function() { " +
+        "      var t___ = this;" +
+        "      (function() {" +
+        "        var x___ = 3;" +
+        "        t___.p_canSet___ ? (t___.p = x___) : ___.setProp(t___, 'p', x___);" +
+        "      })();" +
+        "    })" +
+        "});");
   }
 
   public void testSetStatic() throws Exception {
@@ -428,7 +480,7 @@ public class DefaultJsRewriterTest extends TestCase {
         "    (function() {" +
         "      var x0___ = ___OUTERS___.x;" +
         "      var x1___ = ___OUTERS___.y;" +
-        "      t___.f_canCall___ ?" +
+        "      return t___.f_canCall___ ?" +
         "          this.f(x0___, x1___) :" +
         "          ___.callProp(t___, 'f', [x0___, x1___]);" +
         "    })();" +
@@ -461,23 +513,46 @@ public class DefaultJsRewriterTest extends TestCase {
         "function() {" +
         "  function Point() {}" +
         "  function WigglyPoint() {}" +
-        "  caja.def(WigglyPoint, Point, { foo: x });" +
+        "  caja.def(WigglyPoint, Point, { m0: x, m1: function() { this.p = 3; } });" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
         "  var Point = ___.simpleFunc(function() {});" +
         "  var WigglyPoint = ___.simpleFunc(function() {});" +
-        "  caja.def(WigglyPoint, Point, { foo: ___OUTERS___.x });" +
+        "  caja.def(WigglyPoint, Point, {" +
+        "      m0: ___OUTERS___.x," +
+        "      m1: ___.method(WigglyPoint, function() {" +
+        "        var t___ = this;" +
+        "        (function() {" +
+        "          var x___ = 3;" +
+        "          t___.p_canSet___ ? (t___.p = x___) : ___.setProp(t___, 'p', x___);" +
+        "        })();" +            
+        "      })" +
+        "  });" +
         "}));");
     checkSucceeds(
         "function() {" +
         "  function Point() {}" +
         "  function WigglyPoint() {}" +
-        "  caja.def(WigglyPoint, Point, { foo: x }, { bar: y});" +
+        "  caja.def(WigglyPoint, Point," +
+        "      { m0: x, m1: function() { this.p = 3; } }," +
+        "      { s0: y, s1: function() { return 3; } });" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
         "  var Point = ___.simpleFunc(function() {});" +
         "  var WigglyPoint = ___.simpleFunc(function() {});" +
-        "  caja.def(WigglyPoint, Point, { foo: ___OUTERS___.x }, {bar: ___OUTERS___.y });" +
+        "  caja.def(WigglyPoint, Point, {" +
+        "      m0: ___OUTERS___.x," +
+        "      m1: ___.method(WigglyPoint, function() {" +
+        "        var t___ = this;" +
+        "        (function() {" +
+        "          var x___ = 3;" +
+        "          t___.p_canSet___ ? (t___.p = x___) : ___.setProp(t___, 'p', x___);" +
+        "        })();" +
+        "      })" +
+        "  }, {" +
+        "      s0: ___OUTERS___.y," +
+        "      s1: ___.primFreeze(___.simpleFunc(function() { return 3; }))" +
+        "  });" +            
         "}));");
     checkFails(
         "function() {" +
@@ -493,6 +568,13 @@ public class DefaultJsRewriterTest extends TestCase {
         "  caja.def(WigglyPoint, Point, { foo: x }, x);" +
         "};",
         "Map expression expected");
+    checkFails(
+        "function() {" +
+        "  function Point() {}" +
+        "  function WigglyPoint() {}" +
+        "  caja.def(WigglyPoint, Point, { foo: x }, { bar: function() { this.x = 3; } });" +
+        "};",
+        "Method in non-method context");
   }
 
   public void testCallPublic() throws Exception {
@@ -502,7 +584,9 @@ public class DefaultJsRewriterTest extends TestCase {
         "  var x___ = ___OUTERS___.o;" +
         "  var x0___ = ___OUTERS___.x;" +
         "  var x1___ = ___OUTERS___.y;" +
-        "  x___.m_canCall___ ? x___.m(x0___, x1___) : ___.callPub(x___, 'm', [x0___, x1___]);" +
+        "  return x___.m_canCall___ ?" +
+        "    x___.m(x0___, x1___) :" +
+        "    ___.callPub(x___, 'm', [x0___, x1___]);" +
         "})();");
   }
 
