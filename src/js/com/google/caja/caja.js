@@ -723,6 +723,30 @@ var ___;
     
     enforceType(fun, 'function');
     if (isCtor(fun)) {
+      if (fun === Number || fun === String || fun === Boolean) {
+        // TODO(erights): To avoid accidents, <tt>method</tt>,
+        // <tt>simpleFunc</tt>, and <tt>ctor</tt> each ensure that
+        // these classifications are exclusive. A function can be
+        // classified as in at most one of these categories. However,
+        // some primordial type conversion functions like
+        // <tt>String</tt> need to be invocable both ways, so we
+        // should probably relax this constraint.
+        // <p>
+        // But before we do, we should reexamine other
+        // implications. For example, simple-functions, when called
+        // reflectively by <tt>call</tt> or <tt>apply</tt> (and
+        // therefore <tt>bind</tt>), ignore their first argument,
+        // whereas constructors can be called reflectively by
+        // <tt>call</tt> to do super-initialization on behalf of a
+        // derived constructor.
+        // <p>
+        // Curiously, ES3 also defines function behavior different
+        // from constructor behavior for <tt>Object</tt>,
+        // <tt>Date</tt>, <tt>RegExp</tt>, and <tt>Error</tt>. (Not
+        // sure about <tt>Array</tt>.) We should understand these as
+        // well before introducing a proper solution.
+        return fun;
+      }
       fail("Constructors can't be called as simple functions: ", fun);
     }
     if (isMethod(fun)) {

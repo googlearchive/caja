@@ -15,9 +15,10 @@
 
 // If this module is loaded after caja.js is loaded, and in an
 // environment (such as produced by turning on Firebug) where
-// console.log is a function, then it will register console.log with
-// ___.setLogFunc() so caja.js will log its diagnostics to the Firebug
-// console.
+// <tt>console.log</tt> is a function, then it will register 
+// (a wrapper around) <tt>console.log</tt> with
+// <tt>___.setLogFunc()</tt> so caja.js will log its diagnostics 
+// to the Firebug console.
 
 // If you load triv-logger.js and log-to-console.js into the same
 // system, the last one loaded wins.
@@ -32,7 +33,9 @@
       global.console && 
       typeof global.console.log === 'function') {
 
-    ___.setLogFunc(global.console.log);
+    ___.setLogFunc(function(str) {
+      global.console.log(str);
+    });
   }
 
 })(this);
