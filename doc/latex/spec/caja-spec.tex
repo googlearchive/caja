@@ -154,6 +154,7 @@ into more depth.
   ``\code{this}''. \emph{Methods} are anonymous function which mention 
   ``\code{this}''.
   
+% TODO(erights): ``stereotyped'' is the wrong word
   Caja supports stereotyped class-like usage of constructors and methods, but 
   prohibits certain other dangerous usage patterns. A constructor can only be 
   called \emph{as a constructor} using \code{new}, or by a directly derived 
@@ -392,7 +393,7 @@ JavaScript's dynamic nature, some of Caja's restrictions cannot be imposed
 statically, so the Caja sanitizer translates the JavaScript it accepts into 
 \emph{cajoled\footnote{
 %
-We thanks Pat Patternson for this term.
+We thank Pat Patternson for this term.
 %
 } Javascript}---Javascript with additional runtime checks. To facilitate 
 development, it is easy to write a program in the Caja subset of JavaScript 
@@ -401,7 +402,7 @@ so it can run correctly whether it is cajoled or not.
 Our starting point is JavaScript as documented in the third edition of the 
 EcmaScript 262 standard~\cite{ECMA-262}; hereafter \emph{ES3}\footnote{
 %
-ES3 is approximately a bit more that JavaScript 1.4 and a bit less than 
+ES3 is approximately a bit more than JavaScript 1.4 and a bit less than 
 JavaScript 1.5.
 %
 }. The remainder of this document explains the differences between Caja---the 
@@ -414,6 +415,7 @@ collectively to the subset of these accepted by the Caja sanitizer as
 \emph{Cajoled web content}.
 
 \subsection{The OS analogy}
+\label{subsec:os-analog}
 
 A web app (or any other JavaScript-based embedding application framework) can 
 be written partially in JavaScript and partially in Caja. The web app loads 
@@ -472,6 +474,7 @@ services should be Caja objects to be invoked by other Caja objects. Most
 of the logic of a web app should be structured as such Caja-based services.
 
 \subsection{JavaScript specific problems}
+\label{subsec:js-probs}
 
 Most of the above remarks would apply equally well were we starting from 
 various other base languages. There are additional issues peculiar to 
@@ -526,7 +529,7 @@ pattern, the equivalent of a non-final class is a function ending with
 functions can use \code{that} analogously to the use of \code{this} in full 
 Caja, in order to refer to the overall object being defined. This 
 ``\code{*Mixin}'' function should only be called by ``subclasses'' such as 
-WobblyPointMixin below. If the class is non-abstract, it should also have a 
+WobblyPointMixin in Figure~\ref{fig:cajita-super-wobbly-point}. If the class is non-abstract, it should also have a 
 pseudo-constructor function such as \code{Point} for making direct 
 instances. \\ } \hrule
 \label{fig:cajita-super-point}
@@ -581,7 +584,7 @@ conventional \code{super} for the other functions defined within this scope.
   the mutability of these objects would prevent isolation.
 
   \item[Lack of encapsulation.] To support the ``context switching'' 
-  criterion explained above, objects need to be able to encapsulate their 
+  criterion explained in section~\ref{subsec:os-analog}, objects need to be able to encapsulate their 
   private state. JavaScript does provide one such mechanism: lexical 
   variables captured by lexical closures. However, using this as the sole 
   encapsulation mechanism for object patterns conflicts with existing 
@@ -642,17 +645,17 @@ The above point about ``Silent errors'' is another reason to avoid the monolithi
 uncajoled JavaScript are vulnerable to any malicious active content that finds a way to provoke a silent error and 
 exploit the resulting inconsistency.
 
-Because Caja failures aren't silent, Caja is a \emph{fail-stop 
-subset}\footnote{
+\subsection{A fail-stop subset}
+\label{subsec:fail-stop}
+
+Because Caja failures aren't silent, Caja is a \emph{fail-stop subset}\footnote{
 %
 We thank Dan Rabin for this formulation.
 %
-} of ES3: While a Caja program has not explicitly indicated a failure, it 
-executes within ES3's semantics. By \emph{indicate a failure}, we mean either 
-throwing an exception or returning \code{undefined} for a property read. The 
-\emph{Gotchas} sections below detail minor ways in which Cajita and Caja are 
-not quite fail-stop subsets of ES3. A \emph{Caja-compliant} JavaScript 
-program is one which
+} of ES3: While a Caja program has not explicitly indicated a failure, it executes within ES3's semantics. By 
+\emph{indicate a failure}, we mean either throwing an exception or returning \code{undefined} for a property read. 
+The \emph{Gotchas} sections~\ref{subsec:cajita-gotcha} and~\ref{subsec:caja-gotchas} detail minor ways in which 
+Cajita and Caja are not quite fail-stop subsets of ES3. A \emph{Caja-compliant} JavaScript program is one which
 \begin{enumerate}
   \item is statically accepted by the Caja sanitizer,
   \item does not provoke Caja-induced failures when run cajoled, and
@@ -717,7 +720,8 @@ To explain the restrictions Cajita imposes, we need some definitions.
   \item[Immutable.] If an object is \emph{immutable}, then it is frozen, and all objects it has access to are 
   themselves immutable. Shared access to an immutable object does not provide a communication channel, and so does 
   not endanger isolation. With the exception of \code{Math.random} and \code{Date}, all objects that are globally or 
-  implicitly accessible to all Caja programs are immutable. We discuss these exceptions below.
+  implicitly accessible to all Caja programs are immutable. We discuss these exceptions in 
+  section~\ref{subsec:outer-env}.
 
 \end{description}
 
@@ -803,7 +807,7 @@ function Brand()\ \{
     unseal: function(box)\ \{
       flag = false; squirrel = null;
       box();
-      caja.enforce(flag,\ldots);
+      if (!flag) \{ throw {\ldots}; \}
       return squirrel;
     \}
   \});
@@ -822,6 +826,7 @@ technique shown here is due to Marc Stiegler.
 
 
 \subsection{Cajita static restrictions}
+\label{subsec:cajita-static}
 
 Any source code statically accepted by the Caja sanitizer is a \emph{legal 
 Caja program}. A legal Caja program satisfying additional static restrictions 
@@ -969,6 +974,7 @@ Cajita. Code containing these features is not legal Cajita.
 
 
 \subsection{Cajita dynamic restrictions}
+\label{subsec:cajita:dynamic}
 
 The following restrictions apply to both Caja and Cajita.
 
@@ -990,6 +996,7 @@ The following restrictions apply to both Caja and Cajita.
 
 
 \subsection{Outer environment restrictions}
+\label{subsec:outer-env}
 
 The following restrictions apply to both Caja and Cajita.
 
@@ -1056,8 +1063,9 @@ are isolated from each other.}
 
 
 \subsection{Cajita gotchas}
+\label{subsec:cajita-gotcha}
 
-Caja seeks to define a fail-stop subset of ES3, as explained above. However, 
+Caja seeks to define a fail-stop subset of ES3, as explained in section~\ref{subsec:fail-stop}. However, 
 it falls short of this goal in several minor ways. To write a correct program 
 that executes correctly whether run cajoled or uncajoled, it should 
 avoid these gotchas. In this section, we enumerate those gotchas relevant to 
@@ -1200,6 +1208,7 @@ programming, is valid Caja. \code{Point} is frozen by its first use, after which
 
 
 \subsection{Caja static restrictions}
+\label{subsec:caja-static}
 
 Any source code statically accepted by the Caja sanitizer is a \emph{legal 
 Caja program}. The following syntactic explains why a program may instead be statically rejected.
@@ -1267,6 +1276,7 @@ compact pattern for initializing a top-level prototype all at once. \\ }
 
 
 \subsection{Caja dynamic restrictions}
+\label{subsec:caja-dynamic}
 
 The following additional dynamic restrictions are relevant are relevant to
 Caja code.
@@ -1309,7 +1319,7 @@ Caja code.
    
    \item[Non-reflective construstors] Any attempt to call a constructor's 
    \code{call}, \code{apply}, or \code{bind} methods must fail, except for 
-   the statically exempted use of \code{call} mandated above for derived 
+   the statically exempted use of \code{call} mandated in section~\ref{subsec:caja-static} for derived 
    constructors.
    
    \item[Attached methods] Any attempt to obtain a method as a value will 
@@ -1352,8 +1362,9 @@ cajoling rules. \\ } \hrule
 
 
 \subsection{Caja gotchas}
+\label{subsec:caja-gotchas}
 
-Caja seeks to define a fail-stop subset of ES3, as explained above. However, 
+Caja seeks to define a fail-stop subset of ES3, as explained in section~\ref{subsec:fail-stop}. However, 
 it falls short of this goal in several minor ways. To write a correct program 
 that executes correctly whether run cajoled or uncajoled, it should 
 avoid these gotchas. In this section, we enumerate those remaining gotchas
@@ -1379,7 +1390,7 @@ for (var k in obj)\ \{
   \code{canEnumOwn} instead will further restrict the enumeration to
   non-inherited properties, as is typically desired. The same effect can still
   be obtained more compactly using Cajita's \code{caja.forEach} construct as
-  explained earlier.
+  explained in section~\ref{subsec:cajita-static}.
 
   \item[Isolated RegExps.] ES3 specifies that a literal regular expression 
   pattern corresponds directly to a single mutable RegExp object. Caja, as 
@@ -1496,8 +1507,8 @@ Graham Spencer.
   \code{this[bar]}          & \label{read:index-internal} & \code{\_\_\_.readProp(this,bar)} \\
   \code{foo[bar]}           & \label{read:index-public} & \code{\_\_\_.readPub(foo,bar)} \\
   \hline
-  \code{bar\ in\ this}      & \label{in:internal}   & \code{(bar\ in\ this)\ \&\&\ \_\_\_.canReadProp(this,bar)} \\
-  \code{bar\ in\ foo}       & \label{in:public}         & \code{(bar\ in\ foo)\ \&\&\ \_\_\_.canReadPub(foo,bar)} \\
+  \code{bar\ in\ this}      & \label{in:internal}       & \code{\_\_\_.canReadProp(this,bar)} \\
+  \code{bar\ in\ foo}       & \label{in:public}         & \code{\_\_\_.canReadPub(foo,bar)} \\
   \code{for\ (key\ in\ this)\ \{\ldots\}} & \label{for:internal}
                                  & \code{for\ (key\ in\ this)\ \{if\ (\_\_\_.canEnumProp(this,key))\ \{\ldots\}\}}\\
   \code{for\ (key\ in\ foo)\ \{\ldots\}}  & \label{for:public}
@@ -1825,6 +1836,7 @@ reasons explained in the text.}
                                & \code{toLocaleString}       & default method \\
                                & \code{valueOf}              & default method \\
   instances                    & \code{length}               & default ok \\
+                               & /*stringified numbers*/     & default ok \\
   \hline
   \code{Object.prototype}      & \code{hasOwnProperty}       & handled \\
                                & \code{isPrototypeOf}        & method \\
@@ -1858,14 +1870,11 @@ reasons explained in the text.}
                                &           all others in ES3 & ok, method \\
 \end{tabular}
 
-\caption[Taming ES3 Global Constructors, Part 1.]{Taming ES3 Global 
-Constructors, Part 1. The first section above shows the taming decisions that 
-apply by default to global ES3 constructors, their prototypes, and their 
-instances, unless stated otherwise in a specific table entry. A
-\emph{handled} method acts differently when called by cajoled \emph{vs.} 
-uncajoled code. The handled \code{call}, \code{apply}, and \code{bind} 
-methods can only be invoked on simple-functions. Handled mutating methods 
-like \code{Array.pop} obey Caja's mutability constraints.}
+\caption[Taming ES3 Global Constructors, Part 1.]{Taming ES3 Global Constructors, Part 1. The first section above 
+shows the taming decisions that apply by default to global ES3 constructors, their prototypes, and their instances, 
+unless stated otherwise in a specific table entry. A \emph{stringified number} is any \code{x} for which \code{x === 
+String(Number(x))}. A \emph{handled} method acts differently when called by cajoled \emph{vs.} uncajoled code. 
+Handled mutating methods like \code{Array.pop} obey Caja's mutability constraints.}
 \label{tab:taming-es3-1}
 \end{figure*}
 
