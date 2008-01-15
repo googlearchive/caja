@@ -32,6 +32,7 @@ import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.ReadableReader;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -43,7 +44,7 @@ import java.net.URI;
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
-public class DefaultGadgetRewriter implements GadgetRewriter {
+public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewriter {
   private static final String JAVASCRIPT_PREFIX = "___OUTERS___";
   private static final String DOM_PREFIX = "DOM-PREFIX";
   private static final String ROOT_DIV_ID = "ROOT_DIV_ID";
@@ -85,6 +86,15 @@ public class DefaultGadgetRewriter implements GadgetRewriter {
     GadgetSpec spec = parser.parse(gadgetSpec);
     spec.setContent(rewriteContent(baseUri, spec.getContent(), uriCallback));
     parser.render(spec, output);
+  }
+
+  public void rewriteContent(URI baseUri,
+                             Readable gadgetSpec,
+                             UriCallback uriCallback,
+                             Appendable output)
+      throws UriCallbackException, GadgetRewriteException, IOException {
+    String contentString = readReadable(gadgetSpec);
+    output.append(rewriteContent(baseUri, contentString, uriCallback));
   }
 
   private String rewriteContent(
@@ -196,6 +206,21 @@ public class DefaultGadgetRewriter implements GadgetRewriter {
     }
 
     return results.toString();
+  }
+
+  private String readReadable(Readable input) {
+    StringBuilder sb = new StringBuilder();
+    Reader r = new ReadableReader(input);
+    try {
+      while (true) {
+        int c = r.read();
+        if (c < 0) break;
+        sb.append((char)c);
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return sb.toString();
   }
 
   protected RenderContext createRenderContext(
