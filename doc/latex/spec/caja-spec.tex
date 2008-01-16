@@ -954,8 +954,8 @@ Cajita. Code containing these features is not legal Cajita.
 \begin{alltt}caja.forEach(obj,function(v,k)\{{\ldots}\});\end{alltt}
 %
     This code will reliably give the same results whether run cajoled or not. It will enumerate only the 
-    non-inherited publicly Caja-visible property value / property name associations of \code{obj}. If \code{obj 
-    instanceof Array}, then \code{k} will enumerate successive indexes into the array.
+    non-inherited publicly Caja-visible property value / property name associations of \code{obj}. If 
+    \code{caja.isArray(obj)}, then \code{k} will enumerate successive indexes into the array.
     
     \item[Semicolon insertion.] Code which would provoke semicolon insertion is not legal Cajita.
     
@@ -1246,7 +1246,7 @@ property of functions is generally not accessible, we allow the
 patterns shown in Figures~\ref{fig:caja-point} and~\ref{fig:brief-caja-point} 
 for declaring a constructor, initializing it, and initializing its prototype.
 
-If the first argument to ``\code{Caja.def}'' is a function name, this is 
+If the first argument to ``\code{caja.def}'' is a function name, this is 
 considered an initializing use, and so does not implicitly freeze that 
 function. 
 
@@ -1278,8 +1278,7 @@ compact pattern for initializing a top-level prototype all at once. \\ }
 \subsection{Caja dynamic restrictions}
 \label{subsec:caja-dynamic}
 
-The following additional dynamic restrictions are relevant are relevant to
-Caja code.
+The following additional dynamic restrictions are relevant to Caja code.
 
 \begin{description}
 
@@ -1342,7 +1341,7 @@ Caja code.
 function WobblyPoint(x, y)\ \{
   Point.call(this, x, y);
 \}
-Caja.def(WobblyPoint, Point,\ \{
+caja.def(WobblyPoint, Point,\ \{
   getX: function()\ \{ 
     return Math.random() +
       Point.prototype.getX.call(this); 
@@ -1483,8 +1482,10 @@ Brendan Eich,
 Adam Langley,
 Marcel Laverdet,
 Kevin Reid,
+Graham Spencer,
 and
-Graham Spencer.
+Marc Stiegler
+for various comments and suggestions.
 
 \appendix
 
