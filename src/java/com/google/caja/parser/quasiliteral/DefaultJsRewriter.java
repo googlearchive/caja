@@ -521,7 +521,7 @@ public class DefaultJsRewriter extends JsRewriter {
             scope.isDeclaredFunction(getReferenceName(bindings.get("ctor")))) {
           return substV(
               "new (___.asCtor(@ctor))(@as*)",
-              "ctor", bindings.get("ctor"),
+              "ctor", expand(bindings.get("ctor"), scope, mq),
               "as", expandAll(bindings.get("as"), scope, mq));
         }
         return NONE;
@@ -597,7 +597,7 @@ public class DefaultJsRewriter extends JsRewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("caja.def(@fname, @base)", node, bindings) &&
-            scope.isFunction(getReferenceName(bindings.get("fname"))) &&
+            scope.isFunction(getReferenceName(expand(bindings.get("fname"),scope,mq))) &&
             scope.isFunction(getReferenceName(bindings.get("base")))) {
           return subst(
               "caja.def(@fname, @base)", bindings
