@@ -60,6 +60,7 @@ var html_sanitize = (function () {
    * appear to be part of a larger token.
    */
   var lex = function (html) {
+    html = String(html);
     var tokens = [];
     var inTag = false; // 0 outside tag, 1 inside tag
     while (html) {
