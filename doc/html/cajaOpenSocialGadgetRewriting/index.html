@@ -33,7 +33,7 @@ gadgets will present to a gadget container.</p>
 
 <h2>Portions rewritten</h2>
 
-<p>An OpenSocial gadget is an XML document that looks like the
+<p>An OpenSocial gadget is an XML document that often looks like the
 following simple example. (See the OpenSocial documentation for a
 normative description of the gadget format.)</p>
 
@@ -51,9 +51,9 @@ normative description of the gadget format.)</p>
 &lt;/Module&gt;
 </pre>
 
-<p>We will rewrite the material in the content area as described
-below. All other material will be passed through verbatim,
-<em>modulo</em> sanitizing of the element attribute values.</p>
+<p>Caja -- and this specification -- are only concerned with rewriting
+the <em>content area</em>. This is done via an instance of interface <a
+href="../../../src/java/com/google/caja/opensocial/GadgetContentRewriter.java"><code>GadgetContentRewriter</code></a>.</p>
 
 <h2>Content area rewriting</h2>
 
@@ -229,9 +229,34 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handlerName) {
   return ___.getOuters(pluginId)[handlerName](plugin_tamed(thisNode), 
                                               plugin_tamed(event));
 }</pre>
-<h2>Attribute value sanitizing</h2>
 
-<p class="note">TBD: Discuss threat model and how it will be addressed.</p>
+<h2>Original source context</h2>
+
+<p>A client of the Caja rewriting can provide annotations specifying
+locations in the original source written by the gadget developer, for
+use by Caja error messages and debugging information. Regardless of
+where they appear (in JS, HTML or CSS), these will be complete lines
+of text, starting from column 0, in the following form:</p>
+
+<pre>
+!@! LINE="<em>line</em>" FILE="<em>file</em>"<em>&lt;NL&gt;</em>
+!@! LINE="<em>line</em>"<em>&lt;NL&gt;</em>
+</pre>
+
+<p>where we define:</p>
+
+<blockquote>
+  
+<p><code><em>line</em></code> &mdash; a line number, expressed as the
+string representation of an integer.</p>
+
+<p><code><em>file</em></code> &mdash; a URL to a file.</p>
+
+<p><code><em>&lt;NL&gt;</em></code> &mdash; a newline character, which
+will be consumed by the Caja translator but will not be considered to
+be part of the original source.</p>
+
+</blockquote>
 
 </body>
 </html>
