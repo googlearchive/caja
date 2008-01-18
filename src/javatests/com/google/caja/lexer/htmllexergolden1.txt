@@ -126,11 +126,75 @@ UNESCAPED  [<!--\nalert("hello world");\n// -->]  :  htmllexerinput1.html:56+32@
 TAGBEGIN   [</script]  :  htmllexerinput1.html:58+7@1302 - 15@1310
 TAGEND     [>]  :  htmllexerinput1.html:58+15@1310 - 16@1311
 TEXT       [\n\n]  :  htmllexerinput1.html:58+16@1311 - 60+1@1313
-TAGBEGIN   [</body]  :  htmllexerinput1.html:60+1@1313 - 7@1319
-TAGEND     [>]  :  htmllexerinput1.html:60+7@1319 - 8@1320
-TEXT       [\n]  :  htmllexerinput1.html:60+8@1320 - 61+1@1321
-TAGBEGIN   [</html]  :  htmllexerinput1.html:61+1@1321 - 7@1327
-TAGEND     [>]  :  htmllexerinput1.html:61+7@1327 - 8@1328
-TEXT       [\n\n]  :  htmllexerinput1.html:61+8@1328 - 63+1@1330
-DIRECTIVE  [<![CDATA[ No such thing as a CDATA>]  :  htmllexerinput1.html:63+1@1330 - 36@1365
-TEXT       [ section in HTML ]]>\n]  :  htmllexerinput1.html:63+36@1365 - 64+1@1386
+TAGBEGIN   [<script]  :  htmllexerinput1.html:60+1@1313 - 8@1320
+TAGEND     [>]  :  htmllexerinput1.html:60+8@1320 - 9@1321
+UNESCAPED  [/* ]  :  htmllexerinput1.html:60+9@1321 - 12@1324
+TAGBEGIN   [</script]  :  htmllexerinput1.html:60+12@1324 - 20@1332
+TAGEND     [>]  :  htmllexerinput1.html:60+20@1332 - 21@1333
+TEXT       [ */alert('hi');]  :  htmllexerinput1.html:60+21@1333 - 36@1348
+TAGBEGIN   [</script]  :  htmllexerinput1.html:60+36@1348 - 44@1356
+TAGEND     [>]  :  htmllexerinput1.html:60+44@1356 - 45@1357
+TEXT       [\n]  :  htmllexerinput1.html:60+45@1357 - 61+1@1358
+TAGBEGIN   [<script]  :  htmllexerinput1.html:61+1@1358 - 8@1365
+TAGEND     [>]  :  htmllexerinput1.html:61+8@1365 - 9@1366
+UNESCAPED  [<!--/* </script> */alert('hi');-->]  :  htmllexerinput1.html:61+9@1366 - 43@1400
+TAGBEGIN   [</script]  :  htmllexerinput1.html:61+43@1400 - 51@1408
+TAGEND     [>]  :  htmllexerinput1.html:61+51@1408 - 52@1409
+TEXT       [\n\n]  :  htmllexerinput1.html:61+52@1409 - 63+1@1411
+TAGBEGIN   [<xmp]  :  htmllexerinput1.html:63+1@1411 - 5@1415
+ATTRNAME   [style]  :  htmllexerinput1.html:63+6@1416 - 11@1421
+ATTRVALUE  [color:blue]  :  htmllexerinput1.html:63+12@1422 - 22@1432
+TAGEND     [>]  :  htmllexerinput1.html:63+22@1432 - 23@1433
+UNESCAPED  [<!--/* ]  :  htmllexerinput1.html:63+23@1433 - 30@1440
+TAGBEGIN   [</xmp]  :  htmllexerinput1.html:63+30@1440 - 35@1445
+TAGEND     [>]  :  htmllexerinput1.html:63+35@1445 - 36@1446
+TEXT       [ */alert('hi');-->]  :  htmllexerinput1.html:63+36@1446 - 54@1464
+TAGBEGIN   [</xmp]  :  htmllexerinput1.html:63+54@1464 - 59@1469
+TAGEND     [>]  :  htmllexerinput1.html:63+59@1469 - 60@1470
+TEXT       [\n\n]  :  htmllexerinput1.html:63+60@1470 - 65+1@1472
+TAGBEGIN   [<style]  :  htmllexerinput1.html:65+1@1472 - 7@1478
+TAGEND     [>]  :  htmllexerinput1.html:65+7@1478 - 8@1479
+UNESCAPED  [<!-- p { contentf: '</style>' } -->]  :  htmllexerinput1.html:65+8@1479 - 43@1514
+TAGBEGIN   [</style]  :  htmllexerinput1.html:65+43@1514 - 50@1521
+TAGEND     [>]  :  htmllexerinput1.html:65+50@1521 - 51@1522
+TEXT       [\n\n]  :  htmllexerinput1.html:65+51@1522 - 67+1@1524
+TAGBEGIN   [<title]  :  htmllexerinput1.html:67+1@1524 - 7@1530
+TAGEND     [>]  :  htmllexerinput1.html:67+7@1530 - 8@1531
+TEXT       [Foo<!-- > </title> -->]  :  htmllexerinput1.html:67+8@1531 - 30@1553
+TAGBEGIN   [</title]  :  htmllexerinput1.html:67+30@1553 - 37@1560
+TAGEND     [>]  :  htmllexerinput1.html:67+37@1560 - 38@1561
+TEXT       [\n\n]  :  htmllexerinput1.html:67+38@1561 - 69+1@1563
+TAGBEGIN   [<textarea]  :  htmllexerinput1.html:69+1@1563 - 10@1572
+TAGEND     [>]  :  htmllexerinput1.html:69+10@1572 - 11@1573
+TEXT       [<!-- Zoicks </textarea>-->]  :  htmllexerinput1.html:69+11@1573 - 37@1599
+TAGBEGIN   [</textarea]  :  htmllexerinput1.html:69+37@1599 - 47@1609
+TAGEND     [>]  :  htmllexerinput1.html:69+47@1609 - 48@1610
+TEXT       [\n\n]  :  htmllexerinput1.html:69+48@1610 - 71+1@1612
+COMMENT    [<!-- An escaping text span start may share its U+002D HYPHEN-MINUS characters\n   - with its corresponding escaping text span end. -->]  :  htmllexerinput1.html:71+1@1612 - 72+56@1745
+TEXT       [\n]  :  htmllexerinput1.html:72+56@1745 - 73+1@1746
+TAGBEGIN   [<script]  :  htmllexerinput1.html:73+1@1746 - 8@1753
+TAGEND     [>]  :  htmllexerinput1.html:73+8@1753 - 9@1754
+UNESCAPED  [<!-->]  :  htmllexerinput1.html:73+9@1754 - 14@1759
+TAGBEGIN   [</script]  :  htmllexerinput1.html:73+14@1759 - 22@1767
+TAGEND     [>]  :  htmllexerinput1.html:73+22@1767 - 23@1768
+TEXT       [\n]  :  htmllexerinput1.html:73+23@1768 - 74+1@1769
+TAGBEGIN   [<script]  :  htmllexerinput1.html:74+1@1769 - 8@1776
+TAGEND     [>]  :  htmllexerinput1.html:74+8@1776 - 9@1777
+UNESCAPED  [<!--->]  :  htmllexerinput1.html:74+9@1777 - 15@1783
+TAGBEGIN   [</script]  :  htmllexerinput1.html:74+15@1783 - 23@1791
+TAGEND     [>]  :  htmllexerinput1.html:74+23@1791 - 24@1792
+TEXT       [\n]  :  htmllexerinput1.html:74+24@1792 - 75+1@1793
+TAGBEGIN   [<script]  :  htmllexerinput1.html:75+1@1793 - 8@1800
+TAGEND     [>]  :  htmllexerinput1.html:75+8@1800 - 9@1801
+UNESCAPED  [<!---->]  :  htmllexerinput1.html:75+9@1801 - 16@1808
+TAGBEGIN   [</script]  :  htmllexerinput1.html:75+16@1808 - 24@1816
+TAGEND     [>]  :  htmllexerinput1.html:75+24@1816 - 25@1817
+TEXT       [\n\n]  :  htmllexerinput1.html:75+25@1817 - 77+1@1819
+TAGBEGIN   [</body]  :  htmllexerinput1.html:77+1@1819 - 7@1825
+TAGEND     [>]  :  htmllexerinput1.html:77+7@1825 - 8@1826
+TEXT       [\n]  :  htmllexerinput1.html:77+8@1826 - 78+1@1827
+TAGBEGIN   [</html]  :  htmllexerinput1.html:78+1@1827 - 7@1833
+TAGEND     [>]  :  htmllexerinput1.html:78+7@1833 - 8@1834
+TEXT       [\n\n]  :  htmllexerinput1.html:78+8@1834 - 80+1@1836
+DIRECTIVE  [<![CDATA[ No such thing as a CDATA>]  :  htmllexerinput1.html:80+1@1836 - 36@1871
+TEXT       [ section in HTML ]]>\n]  :  htmllexerinput1.html:80+36@1871 - 81+1@1892

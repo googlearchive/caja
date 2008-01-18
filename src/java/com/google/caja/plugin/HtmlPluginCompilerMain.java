@@ -20,8 +20,10 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.html.OpenElementStack;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 
@@ -100,14 +102,16 @@ public final class HtmlPluginCompilerMain {
     int rc = processArguments(argv);
     if (rc != 0) return rc;
 
+    MessageQueue mq = new SimpleMessageQueue();
+
     HtmlPluginCompiler compiler =
         new HtmlPluginCompiler(
-            new SimpleMessageQueue(),
+            mq,
             new PluginMeta(jsName, cssPrefix, rootDivId,
                            PluginMeta.TranslationScheme.CAJA));
     try {
-      compiler.addInput(
-          new AncestorChain<DomTree.Fragment>(parseHtmlFromFile(inputFile)));
+      compiler.addInput(new AncestorChain<DomTree.Fragment>(
+          parseHtmlFromFile(inputFile, mq)));
 
       if (!compiler.run()) {
         throw new RuntimeException();
@@ -183,12 +187,14 @@ public final class HtmlPluginCompilerMain {
     return -1;
   }
 
-  private DomTree.Fragment parseHtmlFromFile(File f)
+  private DomTree.Fragment parseHtmlFromFile(File f, MessageQueue mq)
       throws IOException, ParseException {
     InputSource is = new InputSource(f.toURI());
     Reader in = new InputStreamReader(new FileInputStream(f), "UTF-8");
     try {
-      return DomParser.parseFragment(DomParser.makeTokenQueue(is, in, false));
+      return DomParser.parseFragment(
+          DomParser.makeTokenQueue(is, in, false),
+          OpenElementStack.Factory.createHtml5ElementStack(mq));
     } finally {
       in.close();
     }

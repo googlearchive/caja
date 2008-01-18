@@ -286,6 +286,36 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
     APP_DIRECTIVE_QMARK,
     SERVER_CODE,
     SERVER_CODE_PCT,
+
+    // From HTML 5 section 8.1.2.6
+    
+    // The text in CDATA and RCDATA elements must not contain any
+    // occurences of the string "</" followed by characters that
+    // case-insensitively match the tag name of the element followed
+    // by one of U+0009 CHARACTER TABULATION, U+000A LINE FEED (LF),
+    // U+000B LINE TABULATION, U+000C FORM FEED (FF), U+0020 SPACE,
+    // U+003E GREATER-THAN SIGN (>), or U+002F SOLIDUS (/), unless
+    // that string is part of an escaping text span.
+
+    // An escaping text span is a span of text (in CDATA and RCDATA
+    // elements) and character entity references (in RCDATA elements)
+    // that starts with an escaping text span start that is not itself
+    // in an escaping text span, and ends at the next escaping text
+    // span end.
+
+    // An escaping text span start is a part of text that consists of
+    // the four character sequence "<!--".
+
+    // An escaping text span end is a part of text that consists of
+    // the three character sequence "-->".
+
+    // An escaping text span start may share its U+002D HYPHEN-MINUS characters
+    // with its corresponding escaping text span end. 
+    UNESCAPED_LT_BANG,             // <!
+    UNESCAPED_LT_BANG_DASH,        // <!-
+    ESCAPING_TEXT_SPAN,            // Inside an escaping text span
+    ESCAPING_TEXT_SPAN_DASH,       // Seen - inside an escaping text span
+    ESCAPING_TEXT_SPAN_DASH_DASH,  // Seen -- inside an escaping text span
     ;
   }
 
@@ -379,12 +409,25 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                 state = State.SLASH;
                 break;
               case '!':  // Comment or declaration
+                if (!this.inEscapeExemptBlock) {
+                  state = State.BANG;
+                } else if (HtmlTextEscapingMode
+                           .allowsEscapingTextSpan(escapeExemptTagName)) {
+                  // Directives, and cdata suppressed in escape
+                  // exempt mode as they could obscure the close of the
+                  // escape exempty block, but comments are similar to escaping
+                  // text spans, and are significant in all CDATA and RCDATA
+                  // blocks except those inside <xmp> tags.
+                  // See "Escaping text spans" in section 8.1.2.6 of HTML5.
+                  // http://www.w3.org/html/wg/html5/#cdata-rcdata-restrictions
+                  state = State.UNESCAPED_LT_BANG;
+                } else {
+                  text.append((char) ch);
+                }
+                break;
               case '?':
                 if (!this.inEscapeExemptBlock) {
-                  // Comments, directives, and cdata suppressed in escape
-                  // exempt mode as they could obscure the close of the
-                  // escape exempty block.
-                  state = '!' == ch ? State.BANG : State.APP_DIRECTIVE;
+                  state = State.APP_DIRECTIVE;
                 } else {
                   text.append((char) ch);
                 }
@@ -393,7 +436,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                 state = State.SERVER_CODE;
                 break;
               default:
-                if (Character.isLetter(ch)) {
+                if (Character.isLetter(ch) && !this.inEscapeExemptBlock) {
                   state = State.TAGNAME;
                 } else if ('<' == ch) {
                   lookahead = ch;
@@ -513,6 +556,47 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                       state = State.DONE;
                     } else if ('%' != ch) {
                       state = State.SERVER_CODE;
+                    }
+                    break;
+                  case UNESCAPED_LT_BANG:
+                    if ('-' == ch) {
+                      state = State.UNESCAPED_LT_BANG_DASH;
+                    } else {
+                      type = HtmlTokenType.TEXT;
+                      state = State.DONE;
+                    }
+                    break;
+                  case UNESCAPED_LT_BANG_DASH:
+                    if ('-' == ch) {
+                      // According to HTML 5 section 8.1.2.6
+                      
+                      // An escaping text span start may share its
+                      // U+002D HYPHEN-MINUS characters with its
+                      // corresponding escaping text span end.
+                      state = State.ESCAPING_TEXT_SPAN_DASH_DASH;
+                    } else {
+                      type = HtmlTokenType.TEXT;
+                      state = State.DONE;
+                    }
+                    break;
+                  case ESCAPING_TEXT_SPAN:
+                    if ('-' == ch) {
+                      state = State.ESCAPING_TEXT_SPAN_DASH;
+                    }
+                    break;
+                  case ESCAPING_TEXT_SPAN_DASH:
+                    if ('-' == ch) {
+                      state = State.ESCAPING_TEXT_SPAN_DASH_DASH;
+                    } else {
+                      state = State.ESCAPING_TEXT_SPAN;
+                    }
+                    break;
+                  case ESCAPING_TEXT_SPAN_DASH_DASH:
+                    if ('>' == ch) {
+                      type = HtmlTokenType.TEXT;
+                      state = State.DONE;
+                    } else if ('-' != ch) {
+                      state = State.ESCAPING_TEXT_SPAN;
                     }
                     break;
                   case DONE:

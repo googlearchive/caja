@@ -117,6 +117,19 @@ public enum HtmlTextEscapingMode {
   }
 
   /**
+   * True iff the content following the given tag allows escaping text
+   * spans: {@code <!--&hellip;-->} that escape even things that might
+   * be an end tag for the corresponding open tag.
+   */
+  public static boolean allowsEscapingTextSpan(String canonTagName) {
+    // <xmp> and <plaintext> do not admit escaping text spans.
+    return "style".equals(canonTagName) || "script".equals(canonTagName)
+        || "title".equals(canonTagName) || "textarea".equals(canonTagName)
+        || "noembed".equals(canonTagName) || "noscript".equals(canonTagName)
+        || "noframes".equals(canonTagName);
+  }
+
+  /**
    * True if content immediately following the start tag must be treated as
    * special CDATA so that less-thans are not treated as starting tags, comments
    * or directives.

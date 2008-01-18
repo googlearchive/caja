@@ -57,6 +57,23 @@ write("<pre>$horriblySyntacticConstruct1</pre>\n\n");
 alert("hello world");
 // --></script>
 
+<script>/* </script> */alert('hi');</script>
+<script><!--/* </script> */alert('hi');--></script>
+
+<xmp style=color:blue><!--/* </xmp> */alert('hi');--></xmp>
+
+<style><!-- p { contentf: '</style>' } --></style>
+
+<title>Foo<!-- > </title> --></title>
+
+<textarea><!-- Zoicks </textarea>--></textarea>
+
+<!-- An escaping text span start may share its U+002D HYPHEN-MINUS characters
+   - with its corresponding escaping text span end. -->
+<script><!--></script>
+<script><!---></script>
+<script><!----></script>
+
 </body>
 </html>
 
