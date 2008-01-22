@@ -52,8 +52,8 @@ public abstract class AbstractRewriter {
    */
   protected static final ParseTreeNode NONE =
       new AbstractParseTreeNode<ParseTreeNode>() {
-        public Object getValue() { return null; }
-        public void render(RenderContext r) throws IOException {
+        @Override public Object getValue() { return null; }
+        public void render(RenderContext r) {
           throw new UnsupportedOperationException();
         }
       };
@@ -154,8 +154,8 @@ public abstract class AbstractRewriter {
     if (exception != null) {
       s.append(" error: ").append(exception.toString()).append("\n");
     }
-    System.out.println(s.toString());
- }
+    System.err.println(s.toString());
+  }
 
   protected void addRule(Rule rule) {
     // We keep 'ruleNames' as a guard against programming errors

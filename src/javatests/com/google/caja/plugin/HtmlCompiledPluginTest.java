@@ -26,10 +26,12 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.RhinoTestBed;
+import com.google.caja.util.TestUtil;
 
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.URI;
+import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 
 /**
@@ -37,12 +39,12 @@ import junit.framework.TestCase;
  * javascript under Rhino to test them.
  *
  * @author stay@google.com (Mike Stay)
- *
  */
 public class HtmlCompiledPluginTest extends TestCase {
 
   @Override
   protected void setUp() throws Exception {
+    TestUtil.enableContentUrls();
     super.setUp();
   }
 
@@ -253,25 +255,33 @@ public class HtmlCompiledPluginTest extends TestCase {
    * @throws Exception
    */
   public void testCatch() throws Exception {
-    execGadget(
-        "<script>" +
-        "var e = 0;" +
-        "try{ throw 1; } catch (e) {}" +
-        "if (e) fail('Exception visible out of proper scope');" +
-        "</script>",
-        ""
-        );
+    try {
+      execGadget(
+          "<script>" +
+          "var e = 0;" +
+          "try{ throw 1; } catch (e) {}" +
+          "if (e) fail('Exception visible out of proper scope');" +
+          "</script>",
+          ""
+          );
+      fail("Exception that masks var should not pass");
+    } catch (AssertionFailedError e) {
+      // pass
+    }
   }
 
   /**
-   * Tests that cajoled can refer to the virtual global scope.
+   * Tests that cajoled code can refer to the virtual global scope.
    * 
    * @throws Exception
    */
   public void testVirtualGlobalThis() throws Exception {
     execGadget(
         "<script>x=this;</script>",
-        ""
+
+        "if (___.getNewModuleHandler().getOuters().x"
+        + "!== ___.getNewModuleHandler().getOuters())"
+        + "  fail('this not rewritten to outers in global scope');"
         );
   }
   
@@ -325,13 +335,14 @@ public class HtmlCompiledPluginTest extends TestCase {
    */
   public void testToSource() throws Exception {
     execGadget(
-        "<script>try{x=toSource();}catch(e){}" +
+        "<script>var x;" +
+        "try{x=toSource();}catch(e){}" +
         "if(x) fail('Global write-only values are readable.');</script>",
         ""
         );
   }
 
-  public void execGadget(String gadgetSpec, String tests) throws Exception {
+  private void execGadget(String gadgetSpec, String tests) throws Exception {
     MessageContext mc = new MessageContext();
     MessageQueue mq = new EchoingMessageQueue(
         new PrintWriter(System.err), mc, true);
@@ -351,26 +362,29 @@ public class HtmlCompiledPluginTest extends TestCase {
       Block jsTree = compiler.getJavascript();
       StringBuilder js = new StringBuilder();
       RenderContext rc = new RenderContext(mc, js, false);
+      jsTree.render(rc);
       System.out.println("Compiled gadget: " + js);
+
+      String htmlStubUrl = TestUtil.makeContentUrl(
+          "<html><head/><body><div id=\"test-test\"/></body></html>");
+
       RhinoTestBed.Input[] inputs = new RhinoTestBed.Input[] {
-          // Make the assertTrue, etc. functions available to javascript
+          // Browser Stubs
+          new RhinoTestBed.Input(getClass(), "/js/jqueryjs/runtest/env.js"),
+          // Console Stubs
+          new RhinoTestBed.Input(getClass(), "console-stubs.js"),
+          // Initialize the DOM
           new RhinoTestBed.Input(
-              CompiledPluginTest.class,
-              "browser-stubs.js"),
-          new RhinoTestBed.Input(CompiledPluginTest.class, "asserts.js"),
-          // Plugin Framework
-          new RhinoTestBed.Input(CompiledPluginTest.class, "../caja.js"),
-          new RhinoTestBed.Input(CompiledPluginTest.class, "container.js"),
-          new RhinoTestBed.Input(
-              new StringReader(
-                  "var div = document.createElement('div');\n" +
-                  "div.id = 'test-test';\n" +
-                  "document.body.appendChild(div);\n"),
+              // Document not defined until window.location set.
+              new StringReader("location = '" + htmlStubUrl + "';\n"),
               "dom"),
-          // The Gadget
-          new RhinoTestBed.Input(
-              new StringReader(js.toString()),
-              "gadget"),
+          // Make the assertTrue, etc. functions available to javascript
+          new RhinoTestBed.Input(getClass(), "asserts.js"),
+          // Plugin Framework
+          new RhinoTestBed.Input(getClass(), "../caja.js"),
+          new RhinoTestBed.Input(getClass(), "container.js"),
+          // The gadget
+          new RhinoTestBed.Input(new StringReader(js.toString()), "gadget"),
           // The tests
           new RhinoTestBed.Input(new StringReader(tests), "tests"),
         };
@@ -379,8 +393,7 @@ public class HtmlCompiledPluginTest extends TestCase {
   }
 
   DomTree parseHtml(String html) throws Exception {
-    InputSource is
-        = new InputSource(new URI("content", null, "/" + html, null));
+    InputSource is = new InputSource(new URI("test://" + getName()));
     StringReader in = new StringReader(html);
     TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(is, in, false);
     if (tq.isEmpty()) { return null; }

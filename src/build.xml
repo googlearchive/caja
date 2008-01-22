@@ -40,7 +40,7 @@
   <property name="src"         location="java"/>
   <property name="testsrc"     location="javatests"/>
   <property name="javascript"  location="js"/>
-  <property name="third_party" location="./third_party/java"/>
+  <property name="third_party" location="./third_party"/>
   <property name="demos"       location="java/com/google/caja/demos"/>
   <!--== outputs ==-->
   <property name="reports"     location="ant-reports"/>  <!-- emma reports -->
@@ -52,8 +52,8 @@
   <property name="www"         location="ant-www"/>  <!-- demo files dir -->
 
   <path id="classpath.compile">
-    <pathelement path="${third_party}/jakarta_commons/commons-cli.jar"/>
-    <pathelement path="${third_party}/htmlparser/htmlparser.jar"/>
+    <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
+    <pathelement path="${third_party}/java/htmlparser/htmlparser.jar"/>
   </path>
 
   <path id="classpath.run">
@@ -61,29 +61,29 @@
   </path>
 
   <path id="classpath.tests.compile">
-    <pathelement path="${third_party}/junit/junit.jar"/>
-    <pathelement path="${third_party}/rhino/js.jar"/>
+    <pathelement path="${third_party}/java/junit/junit.jar"/>
+    <pathelement path="${third_party}/java/rhino/js.jar"/>
   </path>
 
   <path id="classpath.tests.run">
-    <pathelement path="${third_party}/junit/junit.jar"/>
-    <pathelement path="${third_party}/rhino/js.jar"/>
-    <pathelement path="${third_party}/emma/emma.jar"/>
-    <pathelement path="${third_party}/htmlparser/htmlparser.jar"/>
+    <pathelement path="${third_party}/java/junit/junit.jar"/>
+    <pathelement path="${third_party}/java/rhino/js.jar"/>
+    <pathelement path="${third_party}/java/emma/emma.jar"/>
+    <pathelement path="${third_party}/java/htmlparser/htmlparser.jar"/>
     <pathelement path="${instr}/classes"/>
     <!-- In case instrumentation not enabled -->
     <pathelement path="${lib}"/>
   </path>
 
   <path id="classpath.emma">
-    <pathelement path="${third_party}/emma/emma.jar"/>
+    <pathelement path="${third_party}/java/emma/emma.jar"/>
   </path>
 
   <path id="classpath.extensions">
-    <pathelement path="${third_party}/emma/emma_ant.jar"/>
-    <pathelement path="${third_party}/emma/emma.jar"/>
-    <pathelement path="${third_party}/junit/junit.jar"/>
-    <pathelement path="${third_party}/apache_ant/ant-junit.jar"/>
+    <pathelement path="${third_party}/java/emma/emma_ant.jar"/>
+    <pathelement path="${third_party}/java/emma/emma.jar"/>
+    <pathelement path="${third_party}/java/junit/junit.jar"/>
+    <pathelement path="${third_party}/java/apache_ant/ant-junit.jar"/>
   </path>
 
   <taskdef
@@ -198,6 +198,7 @@
       <include name="**/caja/parser/css/CssTreeTest.java"/>
       <include name="**/caja/parser/html/DomParserTest.java"/>
       <include name="**/caja/parser/html/JsHtmlParserTest.java"/>
+      <include name="**/caja/parser/quasiliteral/DefaultJsRewriterTest.java"/>
       <include name="**/caja/parser/quasiliteral/MatchTest.java"/>
       <include name="**/caja/parser/quasiliteral/QuasiBuilderTest.java"/>
       <include name="**/caja/parser/quasiliteral/ScopeTest.java"/>
@@ -265,8 +266,8 @@
         <include name="**/caja/parser/quasiliteral/function.js"/>
         <include name="**/caja/parser/quasiliteral/listfriends.js"/>
         <include name="**/caja/plugin/asserts.js"/>
-        <include name="**/caja/plugin/browser-stubs.js"/>
         <include name="**/caja/plugin/caps/wrap_capability_test.js"/>
+        <include name="**/caja/plugin/console-stubs.js"/>
         <include name="**/caja/plugin/container.js"/>
         <include name="**/caja/plugin/gxpcompilergolden1.js"/>
         <include name="**/caja/plugin/gxpcompilergolden2.js"/>
@@ -286,10 +287,11 @@
         <include name="**/caja/plugin/sanitizerinput1.js"/>
         <include name="**/caja/plugin/tmp-caja.js"/>
       </fileset>
-    </copy>
-    <copy todir="${lib}">
       <fileset dir="${javascript}">
         <include name="**/caja/caja.js"/>
+      </fileset>
+      <fileset dir="${third_party}">
+        <include name="js/jqueryjs/runtest/env.js"/>
       </fileset>
     </copy>
   </target>
@@ -313,8 +315,9 @@
       <include name="**/caja/plugin/HtmlPluginCompilerMain.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
-    <unjar src="${third_party}/jakarta_commons/commons-cli.jar" dest="${lib}"/>
-    <unjar src="${third_party}/htmlparser/htmlparser.jar" dest="${lib}"/>
+    <unjar src="${third_party}/java/jakarta_commons/commons-cli.jar"
+     dest="${lib}"/>
+    <unjar src="${third_party}/java/htmlparser/htmlparser.jar" dest="${lib}"/>
     <jar destfile="${jars}/pluginc.jar" basedir="${lib}">
       <manifest>
         <attribute name="Main-Class"
@@ -401,17 +404,7 @@
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
-      <include name="**/caja/parser/quasiliteral/MultipleNonemptyQuasiHole.java"
-       />
-      <include name="**/caja/parser/quasiliteral/MultipleQuasiHole.java"/>
-      <include name="**/caja/parser/quasiliteral/ParseTreeNodeContainer.java"/>
-      <include name="**/caja/parser/quasiliteral/QuasiBuilder.java"/>
-      <include name="**/caja/parser/quasiliteral/QuasiHole.java"/>
-      <include name="**/caja/parser/quasiliteral/QuasiNode.java"/>
-      <include name="**/caja/parser/quasiliteral/Rewriter.java"/>
-      <include name="**/caja/parser/quasiliteral/SimpleQuasiNode.java"/>
-      <include name="**/caja/parser/quasiliteral/SingleQuasiHole.java"/>
-      <include name="**/caja/parser/quasiliteral/TrailingUnderscoresHole.java"/>
+      <include name="**/caja/parser/quasiliteral/*.java" />
     </javac>
   </target>
 

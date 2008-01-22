@@ -79,6 +79,7 @@ public class DefaultGadgetRewriterTest extends TestCase {
     rewriter = new DefaultGadgetRewriter(
         new EchoingMessageQueue(
             new PrintWriter(System.err), new MessageContext(), false)) {
+          @Override
           protected RenderContext createRenderContext(
               Appendable out, MessageContext mc) {
             return new RenderContext(mc, out, false);

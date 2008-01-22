@@ -23,10 +23,11 @@ import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.Block;
+import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.reporting.Message;
 import com.google.caja.util.TestUtil;
 import com.google.caja.plugin.SyntheticNodes;
 import junit.framework.TestCase;
@@ -780,7 +781,11 @@ public class DefaultJsRewriterTest extends TestCase {
       throws Exception{
     MessageQueue mq = TestUtil.createTestMessageQueue(new MessageContext());
     ParseTreeNode actualResultNode = new DefaultJsRewriter().expand(inputNode, mq);
-    assertTrue(mq.getMessages().isEmpty());
+    for (Message m : mq.getMessages()) {
+      if (m.getMessageLevel().compareTo(MessageLevel.WARNING) >= 0) {
+        fail(m.toString());
+      }
+    }
     if (expectedResultNode != null) {
       assertEquals(
           format(expectedResultNode),

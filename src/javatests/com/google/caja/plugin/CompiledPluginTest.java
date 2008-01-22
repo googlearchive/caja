@@ -26,7 +26,7 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.RhinoTestBed;
-import com.google.caja.util.RhinoTestBed.Input;
+import com.google.caja.util.TestUtil;
 import junit.framework.AssertionFailedError;
 
 import java.io.IOException;
@@ -54,6 +54,7 @@ public class CompiledPluginTest extends TestCase {
 
   @Override
   protected void setUp() throws Exception {
+    TestUtil.enableContentUrls();
     super.setUp();
   }
 
@@ -182,9 +183,11 @@ public class CompiledPluginTest extends TestCase {
         "\n" +
         "\n  PLUGIN.main();" +
         "\n  assertEquals(" +
-        "\n      '<a href=\"/plugin1/foo.html?a=b&amp;c=d\"' +" +
-        "\n      ' title=\"&quot;hover text&quot;\" id=\"pre-id\"' +" +
-        "\n      ' class=\"pre-class1 pre-class2\" target=\"_new\">Clicky' +" +
+        "\n      '<a class=\"pre-class1 pre-class2\"' +" +
+        "\n      ' href=\"/plugin1/foo.html?a=b&amp;c=d\"' +" +
+        "\n      ' id=\"pre-id\" target=\"_new\"' +" +
+        "\n      ' title=\"&quot;hover text&quot;\"' +" +
+        "\n      '>Clicky' +" +
         "\n      '\\n  </a>'," +
         "\n      document.getElementById('pre-base').innerHTML" +
         "\n      );",
@@ -302,7 +305,7 @@ public class CompiledPluginTest extends TestCase {
    * compiles a plugin, and runs it.  Since Rhino does not have a window
    * context, we fake one.
    */
-  private static void execPlugin(String tests, PluginFile... pluginFiles)
+  private void execPlugin(String tests, PluginFile... pluginFiles)
       throws IOException, ParseException {
     PluginMeta meta = new PluginMeta(
         "PLUGIN", "pre", "/plugin1", "rootDiv",
@@ -349,21 +352,30 @@ public class CompiledPluginTest extends TestCase {
       rc.newLine();
     }
 
+    String htmlStubUrl = TestUtil.makeContentUrl("<html><head/><body/></html>");
+
     String compiledPlugin = buf.toString();
 
     RhinoTestBed.Input[] inputs = new RhinoTestBed.Input[] {
-      // Make the assertTrue, etc. functions available to javascript
-      new RhinoTestBed.Input(CompiledPluginTest.class, "browser-stubs.js"),
-      new RhinoTestBed.Input(CompiledPluginTest.class, "asserts.js"),
-      // Plugin Framework
-      new RhinoTestBed.Input(
-          CompiledPluginTest.class, "caps/wrap_capability.js"),
-      new RhinoTestBed.Input(CompiledPluginTest.class, "plugin-base.js"),
-      // The Plugin
-      new RhinoTestBed.Input(new StringReader(compiledPlugin), "plugin"),
-      // The tests
-      new RhinoTestBed.Input(new StringReader(tests), "tests"),
-    };
+        // Browser Stubs
+        new RhinoTestBed.Input(getClass(), "/js/jqueryjs/runtest/env.js"),
+        // Console Stubs
+        new RhinoTestBed.Input(getClass(), "console-stubs.js"),
+        // Initialize the DOM
+        new RhinoTestBed.Input(
+            // Document not defined until window.location set.
+            new StringReader("location = '" + htmlStubUrl + "';\n"),
+            "dom"),
+        // Make the assertTrue, etc. functions available to javascript
+        new RhinoTestBed.Input(getClass(), "asserts.js"),
+        // Plugin Framework
+        new RhinoTestBed.Input(getClass(), "caps/wrap_capability.js"),
+        new RhinoTestBed.Input(getClass(), "plugin-base.js"),
+        // The Plugin
+        new RhinoTestBed.Input(new StringReader(compiledPlugin), "plugin"),
+        // The tests
+        new RhinoTestBed.Input(new StringReader(tests), "tests"),
+        };
 
     for (Message msg : mq.getMessages()) {
       rc.newLine();
@@ -382,7 +394,7 @@ public class CompiledPluginTest extends TestCase {
     public PluginFile(String resource) throws IOException {
       this.source = resource;
       this.input = new InputStreamReader(
-          Input.class.getResourceAsStream(resource), "UTF-8");
+          RhinoTestBed.Input.class.getResourceAsStream(resource), "UTF-8");
     }
     /** @param source file path or url from which the javascript came. */
     public PluginFile(Reader input, String source) {

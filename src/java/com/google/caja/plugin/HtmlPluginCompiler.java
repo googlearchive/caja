@@ -68,7 +68,8 @@ public class HtmlPluginCompiler {
     jobs = new Jobs(mc, mq, meta);
     compilationPipeline = new Pipeline<Jobs>() {
       @Override
-      protected boolean applyStage(Pipeline.Stage stage, Jobs jobs) {
+      protected boolean applyStage(
+          Pipeline.Stage<? super Jobs> stage, Jobs jobs) {
         jobs.getMessageQueue().addMessage(
             MessageType.CHECKPOINT,
             MessagePart.Factory.valueOf(stage.getClass().getSimpleName()),

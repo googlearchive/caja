@@ -74,8 +74,7 @@ public enum MessageType implements MessageTypeInt {
   // symbol errors
   IMPLICIT_DEFINITION(
       "Symbol %s implicitly defined at %s", MessageLevel.WARNING),
-  SYMBOL_REDEFINED(
-      "%s: Symbol %s originally defined at %s", MessageLevel.ERROR),
+  SYMBOL_REDEFINED("%s: %s originally defined at %s", MessageLevel.ERROR),
   UNRECOGNIZED_TYPE("%s: No such type %s", MessageLevel.ERROR),
   INVALID_TYPE("Invalid type %s at %s", MessageLevel.ERROR),
   INVALID_DECLARATION(
@@ -102,8 +101,7 @@ public enum MessageType implements MessageTypeInt {
       "Type %s at %s has wrong parameters.  Expected %s",
       MessageLevel.ERROR),
   MASKING_SYMBOL(
-      "Reference to %s at %s resolves to an inaccessible symbol defined at %s."
-      + "  Symbol masks accessible symbol in higher scope", MessageLevel.ERROR),
+      "%s: Declaration of %s masks declaration at %s", MessageLevel.LINT),
   SCOPE_BLEED(
       "Symbol %s defined at %s is accessed across scope boundaries at %s",
       MessageLevel.ERROR),

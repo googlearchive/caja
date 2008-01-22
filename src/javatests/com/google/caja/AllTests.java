@@ -35,6 +35,7 @@ import com.google.caja.parser.js.StringLiteralTest;
 import com.google.caja.parser.quasiliteral.DefaultJsRewriterTest;
 import com.google.caja.parser.quasiliteral.MatchTest;
 import com.google.caja.parser.quasiliteral.QuasiBuilderTest;
+import com.google.caja.parser.quasiliteral.ScopeTest;
 import com.google.caja.plugin.CompiledPluginTest;
 import com.google.caja.plugin.CssRewriterTest;
 import com.google.caja.plugin.CssValidatorTest;
@@ -94,6 +95,7 @@ public class AllTests {
           PluginCompilerTest.class,
           PunctuationTrieTest.class,
           QuasiBuilderTest.class,
+          ScopeTest.class,
           SparseBitSetTest.class,
           StringLiteralTest.class,
           UrlUtilTest.class,

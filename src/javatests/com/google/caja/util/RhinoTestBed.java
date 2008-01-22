@@ -41,7 +41,8 @@ public class RhinoTestBed {
 
   /**
    * Runs the javascript from the given inputs in order, and returns the
-   * result. If dumpJsFile is not null, also put all the javascript in that file.
+   * result.
+   * If dumpJsFile is not null, also put all the javascript in that file.
    */
   public static Object runJs(final String dumpJsFile, Input... inputs)
   throws IOException {

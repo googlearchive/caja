@@ -33,9 +33,9 @@ import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.DevNullMessageQueue;
-import junit.framework.Assert;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,12 +43,21 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.net.URLStreamHandler;
+import java.net.URLStreamHandlerFactory;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import junit.framework.Assert;
 
 /**
  * Utilities for junit test cases.
@@ -208,9 +217,10 @@ public final class TestUtil {
   public static void checkFilePositionInvariants(ParseTreeNode root) {
     checkFilePositionInvariants(new AncestorChain<ParseTreeNode>(root));
   }
-  
+
   public static ParseTreeNode parse(String src) throws Exception {
-    InputSource inputSource = new InputSource(URI.create("built-in:///js-test"));
+    InputSource inputSource
+        = new InputSource(URI.create("built-in:///js-test"));
     Parser parser = new Parser(
         new JsTokenQueue(
             new JsLexer(
@@ -260,5 +270,113 @@ public final class TestUtil {
     } catch (RuntimeException ex) {
       throw new RuntimeException(msg, ex);
     }
+  }
+
+  /**
+   * Allow parsing of content: URLs which can be useful for the browser mocks
+   * since it allows us to specify HTML in a string.
+   * <p>
+   * This registers a handler for the <code>content</code> protocol so that
+   * {@code content:foo-bar} when loaded via {@code java.net.URL} will yield an
+   * {@code InputStream} containing the UTF-8 encoding of the string
+   * {@code "foo-bar"}.
+   */
+  public static void enableContentUrls() {
+    // Force loading of class that registers a handler for content: URLs.
+    SetupUrlHandlers.init();
+  }
+
+  public static String makeContentUrl(String content) {
+    try {
+      return "content:"
+          + URLEncoder.encode(content, "UTF-8").replace("+", "%20");
+    } catch (UnsupportedEncodingException ex) {
+      throw (AssertionError) new AssertionError(
+          "UTF-8 not supported").initCause(ex);
+    }
+  }
+}
+
+class SetupUrlHandlers {
+  static {
+    URL.setURLStreamHandlerFactory(new URLStreamHandlerFactory() {
+        private Map<String, URLStreamHandler> handlers
+            = new HashMap<String, URLStreamHandler>();
+
+        // The below scheme for extending URL handlers is written according to
+        // examples at:
+        // http://www.webbasedprogramming.com
+        // /Tricks-of-the-Java-Programming-Gurus/ch17.htm
+
+        public URLStreamHandler createURLStreamHandler(String protocol) {
+          protocol = protocol.toLowerCase(Locale.ENGLISH);
+
+          URLStreamHandler handler;
+          synchronized (handlers) {
+            handler = handlers.get(protocol);
+            if (handler == null) {
+              handler = createHandler(protocol);
+            }
+          }
+          return handler;
+        }
+
+        private URLStreamHandler createHandler(String protocol) {
+          if ("content".equalsIgnoreCase(protocol)) {
+            return new ContentUrlHandler();
+          } else if ("http".equals(protocol) || "https".equals(protocol)) {
+            // We could allow tests to stub out the internet, but
+            // we definitely don't want unittests loading arbitrary URIs.
+          } else {
+            // Make sure that we support file: and jar: URIs so that
+            // classloaders continue to work.
+            try {
+              String clname = "sun.net.www.protocol." + protocol + ".Handler";
+              return (URLStreamHandler) Class.forName(clname).newInstance();
+            } catch (Exception e) {
+              System.err.println("No URL Handler for protocol " + protocol);
+            }
+          }
+          return null;
+        }
+      });
+  }
+
+  public static void init() {}
+}
+
+class ContentUrlHandler extends URLStreamHandler {
+  @Override
+  protected URLConnection openConnection(URL url) {
+    return new URLConnection(url) {
+        private InputStream instream;
+
+        @Override
+        public void connect() {
+          if (connected) { return; }
+          connected = true;
+          URI uri;
+          try {
+            uri = url.toURI();
+          } catch (URISyntaxException ex) {
+            ex.printStackTrace();
+            return;
+          }
+          assert uri.isOpaque();
+          try {
+            instream = new ByteArrayInputStream(
+                uri.getSchemeSpecificPart().getBytes("UTF-8"));
+          } catch (UnsupportedEncodingException ex) {
+            throw (AssertionError) new AssertionError(
+                "UTF-8 not supported").initCause(ex);
+          }
+        }
+
+        @Override
+        public InputStream getInputStream() {
+          if (instream == null) { throw new IllegalStateException(); }
+          return instream;
+        }
+      };
   }
 }
