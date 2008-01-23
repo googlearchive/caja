@@ -128,4 +128,14 @@ COMM [/* and extending the example at line 30 " interleaved */]: lexertest1.js:5
 STRI [" */"]: lexertest1.js:57+58@1193 - 58+2@1200
 WORD [also]: lexertest1.js:58+2@1200 - 6@1204
 COMM [/* " /* */]: lexertest1.js:58+7@1205 - 17@1215
-COMM [// leave some whitespace at the end of this file  ]: lexertest1.js:60+1@1217 - 51@1267
+COMM [// Backslashes in character sets do not end regexs.]: lexertest1.js:60+1@1217 - 52@1268
+WORD [r]: lexertest1.js:61+1@1269 - 2@1270
+PUNC [=]: lexertest1.js:61+3@1271 - 4@1272
+REGE [/./]: lexertest1.js:61+5@1273 - 8@1276
+PUNC [,]: lexertest1.js:61+8@1276 - 9@1277
+REGE [/\//]: lexertest1.js:61+10@1278 - 14@1282
+PUNC [,]: lexertest1.js:61+14@1282 - 15@1283
+REGE [/[/]/]: lexertest1.js:61+16@1284 - 21@1289
+PUNC [,]: lexertest1.js:61+21@1289 - 22@1290
+REGE [/[\/]\//]: lexertest1.js:61+23@1291 - 31@1299
+COMM [// leave some whitespace at the end of this file  ]: lexertest1.js:63+1@1301 - 51@1351

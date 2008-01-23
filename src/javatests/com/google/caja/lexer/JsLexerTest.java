@@ -65,7 +65,6 @@ public class JsLexerTest extends TestCase {
     }
 
     assertEquals(golden, output.toString());
-    //fail(golden + "\n\n  !=\n\n" + output);
   }
 
   public void testLexer2() throws Exception {
@@ -105,8 +104,6 @@ public class JsLexerTest extends TestCase {
     }
 
     assertEquals(golden, output.toString());
-    //fail(golden + "\n\n  !=\n\n" + output);
-
   }
 
   public void testSimpleExpression() {

@@ -49,7 +49,8 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
     this(p, punctuation, false);
   }
 
-  public InputElementSplitter(CharProducer p, PunctuationTrie punctuation, boolean isQuasiliteral) {
+  public InputElementSplitter(
+      CharProducer p, PunctuationTrie punctuation, boolean isQuasiliteral) {
     this.p = new LineContinuingCharProducer(p);
     this.punctuation = punctuation;
     this.isQuasiliteral = isQuasiliteral;
@@ -148,21 +149,40 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
                     || JsLexer.isRegexp(lastNonCommentToken.text)) {
                   boolean closed = false;
                   boolean escaped = false;
+                  boolean inCharSet = false;
+
+                  regex_body:
                   do {
                     text.append((char) ch2);
-                    if (ch2 == '/' && !escaped) {
-                      closed = true;
+                    if (JsLexer.isJsLineSeparator((char) ch2)) {
+                      // will register as unterminated token below
                       break;
-                    } else if (JsLexer.isJsLineSeparator((char) ch2)) {
-                      break;  // will register as unterminated token below
+                    } else if (!escaped) {
+                      switch (ch2) {
+                        case '/':
+                          if (!inCharSet) {
+                            closed = true;
+                            break regex_body;
+                          }
+                          break;
+                        case '[':
+                          inCharSet = true;
+                          break;
+                        case ']':
+                          inCharSet = false;
+                          break;
+                        case '\\':
+                          escaped = true;
+                          break;
+                      }
+                    } else {
+                      escaped = false;
                     }
-                    escaped = !escaped && ch2 == '\\';
                   } while ((ch2 = p.read()) >= 0);
                   if (!closed) {
                     throw new ParseException(
                         new Message(MessageType.UNTERMINATED_STRING_TOKEN,
-                            FilePosition.span(
-                                start, p.getCurrentPosition())));
+                            FilePosition.span(start, p.getCurrentPosition())));
                   }
                   // Pick up any modifiers at the end, e.g. /foo/g
                   // Firefox fails on "/foo/instanceof RegExp" with an

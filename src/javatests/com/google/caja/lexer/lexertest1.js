@@ -57,4 +57,7 @@ elipsis...;
 /* and extending the example at line 30 " interleaved */ " */\
 "also /* " /* */
 
+// Backslashes in character sets do not end regexs.
+r = /./, /\//, /[/]/, /[\/]\//
+
 // leave some whitespace at the end of this file  
