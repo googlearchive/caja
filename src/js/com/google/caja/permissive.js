@@ -29,9 +29,8 @@
 
 
 (function() {
-  
-  ___.log('BEWARE: By loading permissive.js, ' +
-          'all Caja security is hereby waived');
+
+  ___.log('BEWARE: permissive.js loaded');
   
   /**
    * 
@@ -52,6 +51,8 @@
   }
   
   var oldKeeper = ___.getKeeper();
+
+  var enabled = false;
   
   ___.setKeeper({
 
@@ -61,10 +62,41 @@
     toString: function() { return '<Permissive Keeper>'; },
 
     /**
+     *
+     */
+    isEnabled: function() { return enabled; },
+
+    /**
+     * After loading permissive, one can 
+     * <tt>___.getKeeper().setEnabled(false)</tt>
+     * to disable the permissive behavior of the permissive keeper.
+     * <p>
+     * Note that this only causes it to stop allowing newly faulted
+     * things, but does not reverse the allowances it has already made
+     * in reaction to faults when it was enabled. In other words,
+     * disabling this keeper is a <i>desist</i>, not an
+     * <i>undo</i>. To get the effect of an undo, you must reload the
+     * page. (Or, in a non-browser environment, you must still somehow
+     * rebuild your live JavaScript environment.)
+     */
+    setEnabled: function(newEnabled) { 
+      if (newEnabled) {
+        ___.log('BEWARE: By enabling permissive.js, ' +
+                'all Caja security is hereby waived.');
+      } else {
+        ___.log('BEWARE: Disabling permissive.js only stops it ' +
+                'from allowing further operations in response to new ' +
+                'faults. It does not disallow those operations ' +
+                'already allowed. Consider reloading the page.');
+      }
+      enabled = newEnabled; 
+    },
+
+    /**
      * 
      */
     handleRead: function(obj, name) {
-      if (name in obj) {
+      if (enabled && name in obj) {
         var proto = find(obj, name);
         if (proto === obj) {
           ___.log('Allowing read of (' + obj + ').' + name);
@@ -82,7 +114,7 @@
      * 
      */
     handleCall: function(obj, name, args) {
-      if (typeof obj[name] === 'function') {
+      if (enabled && typeof obj[name] === 'function') {
         var proto = find(obj, name);
         if (proto === obj) {
           ___.log('Allowing call of (' + obj + ').' + name + '()');
@@ -100,11 +132,13 @@
      * 
      */
     handleSet: function(obj, name, val) {
-      ___.log('Allowing (' + obj + ').' + name + ' = ...');
-      ___.allowSet(obj, name);
-      obj[name] = val;
-      if (obj[name] === val) {
-        return val;
+      if (enabled) {
+        ___.log('Allowing (' + obj + ').' + name + ' = ...');
+        ___.allowSet(obj, name);
+        obj[name] = val;
+        if (obj[name] === val) {
+          return val;
+        }
       }
       return oldKeeper.handleSet(obj, name, val);
     },
@@ -113,7 +147,7 @@
      * 
      */
     handleDelete: function(obj, name) {
-      if (___.hasOwnProp(obj, name)) {
+      if (enabled && ___.hasOwnProp(obj, name)) {
         ___.log('Allowing delete (' + obj + ').' + name);
         ___.allowDelete(obj, name);
         if (delete obj[name]) {

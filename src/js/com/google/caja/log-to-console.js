@@ -33,8 +33,11 @@
       global.console && 
       typeof global.console.log === 'function') {
 
-    ___.setLogFunc(function(str) {
+    ___.setLogFunc(function(str, opt_stop) {
       global.console.log(str);
+      if (opt_stop) {
+        ({}).noSuchMethod(str);
+      }
     });
   }
 
