@@ -190,6 +190,10 @@ var window = this;
     get innerHTML(){
       return this.documentElement.outerHTML;
     },
+    get title() {
+      var titleNode = this.getElementsByTagName("title")[0];
+      return titleNode ? titleNode.innerHTML : '';
+    },
 
     get defaultView(){
       return {
@@ -314,10 +318,10 @@ var window = this;
 
   DOMElement.prototype = extend( new DOMNode(), {
     get nodeName(){
-      return this.tagName.toUpperCase();
+      return String(this.tagName.toUpperCase());
     },
     get tagName(){
-      return this._dom.getTagName();
+      return String(this._dom.getTagName());
     },
     toString: function(){
       return "<" + this.tagName + (this.id ? "#" + this.id : "" ) + ">";
@@ -449,7 +453,16 @@ var window = this;
     get value() { return this.getAttribute("value") || ""; },
     set value(val) { return this.setAttribute("value",val); },
 
-    get src() { return this.getAttribute("src") || ""; },
+    get href() {
+      if (!this._dom.hasAttribute("href")) { return undefined; }
+      return resolveUri(this, this.getAttribute("href"));
+    },
+    set href(val) { return this.setAttribute("href",val); },
+
+    get src() {
+      if (!this._dom.hasAttribute("src")) { return undefined; }
+      return resolveUri(this, this.getAttribute("src"));
+    },
     set src(val) { return this.setAttribute("src",val); },
 
     get id() { return this.getAttribute("id") || ""; },
@@ -457,7 +470,7 @@ var window = this;
 
     getAttribute: function(name){
       return this._dom.hasAttribute(name) ?
-        new String( this._dom.getAttribute(name) ) :
+        String( this._dom.getAttribute(name) ) :
         null;
     },
     setAttribute: function(name,value){
@@ -548,6 +561,25 @@ var window = this;
         a[i] = b[i];
     }
     return a;
+  }
+
+  /**
+   * Resolves a relative uri to an absolute one in the context of
+   * this document.
+   * This will resolve relative to any <base> or document.location
+   * as appropriate.
+   */
+  function resolveUri(node, uri) {
+    var doc = node.ownerDocument;
+    var bases = doc.getElementsByTagName("base");
+    var baseUri = null;
+    if ( bases.length && bases[0]._dom.hasAttribute("href") ) {
+      // Don't access "href" property to avoid inf. recursion
+      baseUri = bases[0].getAttribute("href");
+    } else {
+      baseUri = String(doc.location);
+    }
+    return String((new java.net.URI(baseUri)).resolve(uri));
   }
 
   // Helper method for generating the right

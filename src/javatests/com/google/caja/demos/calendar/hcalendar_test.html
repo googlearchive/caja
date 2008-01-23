@@ -1,0 +1,85 @@
+<html>
+<head>
+<script type=text/javascript src=../../plugin/asserts.js></script>
+<script type=text/javascript
+ src=../../../../../../java/com/google/caja/demos/calendar/util.js
+></script>
+<script type=text/javascript
+ src=../../../../../../java/com/google/caja/demos/calendar/html.js
+></script>
+<script type=text/javascript
+ src=../../../../../../java/com/google/caja/demos/calendar/uformat.js
+></script>
+<script type=text/javascript
+ src=../../../../../../java/com/google/caja/demos/calendar/hcalendar.js
+></script>
+<script type=text/javascript src=hcalendar_test.js></script>
+
+<style type=text/css>
+.good { color: #080 }
+.bad { color: #800; text-weight: bold }
+.detail { margin-left: 2em; white-space: pre }
+</style>
+</head>
+<body>
+<ul id=log></ul>
+
+<script type="text/javascript">
+function loadHtml(html, continuation) {
+  var iframe = document.createElement('IFRAME');
+  iframe.width = iframe.height = 100;
+  document.body.appendChild(iframe);
+  try {
+    iframe.contentDocument.write(html);
+    continuation(iframe.contentDocument);
+  } finally {
+    document.body.removeChild(iframe);
+  }
+}
+
+(function () {
+
+  function emit(text, className) {
+    var li = document.createElement('li');
+    li.className = className;
+    li.appendChild(document.createTextNode(text));
+    document.getElementById('log').appendChild(li);
+  }
+
+  var testNames = [];
+  for (var k in this) {
+    if (/^test/.test(k) && 'function' === typeof this[k]) {
+      testNames.push(k);
+    }
+  }
+
+  assertTrue(testNames.length > 0);
+
+  testNames.sort();
+
+  for (var i = 0; i < testNames.length; ++i) {
+    var testName = testNames[i];
+    this.console && this.console.time(testName);
+    var pass = false;
+    var error = null;
+    try {
+      this[testName]();
+      pass = true;
+    } catch (e) {
+      error = e;
+    }
+    this.console && this.console.timeEnd(testName);
+
+    if (pass) {
+      emit(testName + ' passed', 'good');
+    } else {
+      emit(testName + ' failed : ' + error, 'bad');
+      if (error && error.stack) {
+        emit(error.stack, 'detail');
+      }
+    }
+  }
+})();
+</script>
+</body>
+</html>

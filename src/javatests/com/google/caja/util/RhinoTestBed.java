@@ -58,7 +58,7 @@ public class RhinoTestBed {
         for (Input input : inputs) {
           allInputs += readReader(input.input);
         }
-        writeFile(new File("/tmp/js.all"), allInputs);
+        writeFile(new File(dumpJsFile), allInputs);
         Input input = new Input(new StringReader(allInputs), "all");
         result = context.evaluateReader(
             globalScope, input.input, input.source, 1, null);
@@ -90,6 +90,9 @@ public class RhinoTestBed {
     public Input(Reader input, String source) {
       this.input = input;
       this.source = source;
+    }
+    public Input(String javascript, String source) {
+      this(new StringReader(javascript), source);
     }
   }
 

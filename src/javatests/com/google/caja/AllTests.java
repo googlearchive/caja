@@ -14,6 +14,7 @@
 
 package com.google.caja;
 
+import com.google.caja.demos.calendar.HcalTest;
 import com.google.caja.lexer.CharProducerTest;
 import com.google.caja.lexer.CommentLexerTest;
 import com.google.caja.lexer.CssLexerTest;
@@ -82,6 +83,7 @@ public class AllTests {
           GadgetParserTest.class,
           GxpCompilerTest.class,
           GxpValidatorTest.class,
+          HcalTest.class,
           HtmlCompiledPluginTest.class,
           HtmlLexerTest.class,
           HtmlWhitelistTest.class,
