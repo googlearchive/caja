@@ -46,7 +46,6 @@
   <property name="reports"     location="ant-reports"/>  <!-- emma reports -->
   <property name="instr"       location="ant-instr"/>  <!-- instrumented src -->
   <property name="lib"         location="ant-lib"/>
-  <property name="testlib"     location="ant-testlib"/>
   <property name="docs"        location="ant-docs"/>
   <property name="jars"        location="ant-jars"/>
   <property name="www"         location="ant-www"/>  <!-- demo files dir -->
@@ -106,7 +105,6 @@
     <delete dir="${instr}"/>
     <delete dir="${jars}"/>
     <delete dir="${lib}"/>
-    <delete dir="${testlib}"/>
     <delete dir="${www}"/>
   </target>
 
@@ -116,7 +114,6 @@
     <mkdir dir="${instr}"/>
     <mkdir dir="${jars}"/>
     <mkdir dir="${lib}"/>
-    <mkdir dir="${testlib}"/>
     <mkdir dir="${www}"/>
   </target>
 
@@ -212,6 +209,7 @@
       <include name="**/caja/plugin/GxpCompilerTest.java"/>
       <include name="**/caja/plugin/GxpValidatorTest.java"/>
       <include name="**/caja/plugin/HtmlCompiledPluginTest.java"/>
+      <include name="**/caja/plugin/HtmlSanitizerTest.java"/>
       <include name="**/caja/plugin/HtmlWhitelistTest.java"/>
       <include name="**/caja/plugin/PluginCompilerTest.java"/>
       <include name="**/caja/plugin/UrlUtilTest.java"/>
@@ -221,6 +219,9 @@
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
     <copy todir="${lib}">
+      <fileset dir="${src}">
+        <include name="**/caja/plugin/html-sanitizer.js"/>
+      </fileset>
       <fileset dir="${testsrc}">
         <include name="**/caja/demos/calendar/*.js"/>
         <include name="**/caja/lexer/csslexergolden1.txt"/>
@@ -278,6 +279,7 @@
         <include name="**/caja/plugin/gxpcompilerinput2.gxp"/>
         <include name="**/caja/plugin/gxpcompilerinput3.gxp"/>
         <include name="**/caja/plugin/gxpcompilerinput4.gxp"/>
+        <include name="**/caja/plugin/html-sanitizer-test.js"/>
         <include name="**/caja/plugin/jsunit.js"/>
         <include name="**/caja/plugin/plugintest-csstest.golden"/>
         <include name="**/caja/plugin/plugintest-csstest.input"/>

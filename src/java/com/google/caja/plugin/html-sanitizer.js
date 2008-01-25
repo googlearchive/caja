@@ -375,7 +375,7 @@ var html_sanitize = (function () {
   }
 
   function escapeAttrib(s) {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/&/g, '&gt;')
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/\"/g, '&quot;');
   }
 
@@ -385,27 +385,28 @@ var html_sanitize = (function () {
     var out = [];
 
     var ignoring = false;
+    var open = false;
     for (var i = 0; i < toks.length; ++i) {
       var tok = toks[i], type = toks[++i];
-      //alert('tok=' + tok + ', type=' + type + ', ignoring=' + ignoring);
       if (TOK_TAG_BEGIN === type) {
         var name = tok.replace(/^[<\/]+/, '').toUpperCase();
         ignoring = !ELEMENTS.hasOwnProperty(name) || (ELEMENTS[name] & UNSAFE);
+        open = tok.charAt(1) !== '/';
       } else if (TOK_ATTRIB === type && !ignoring) {
+        if (!open) { continue; }
         var name = tok.match(/\w+/)[0].toUpperCase();
         if (!ATTRIBS.hasOwnProperty(name)) { continue; }
         var flags = ATTRIBS[name];
         if (flags & (SCRIPT_TYPE | STYLE_TYPE)) { continue; }
-        if (flags) {
+        if (flags || /[<>&]/.test(tok)) {
           // apply transforms
           // unescape value, transform it.  skip if null, otherwise reescape.
           var value = unescapedValueForAttrib(tok);
           if (null == value) { continue; }
           if ((flags & URI_TYPE) && opt_urlXform) {
             value = opt_urlXform(value);
-          }
-          if ((flags & NMTOKEN_TYPE) && opt_nmTokenXform) {
-            value = opt_nmTokenXForm(value);
+          } else if ((flags & NMTOKEN_TYPE) && opt_nmTokenXform) {
+            value = opt_nmTokenXform(value);
           }
           if (null == value) { continue; }
           tok = name + '="' + escapeAttrib(value) + '"';

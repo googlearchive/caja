@@ -44,6 +44,7 @@ import com.google.caja.plugin.ExpressionSanitizerTest;
 import com.google.caja.plugin.GxpCompilerTest;
 import com.google.caja.plugin.GxpValidatorTest;
 import com.google.caja.plugin.HtmlCompiledPluginTest;
+import com.google.caja.plugin.HtmlSanitizerTest;
 import com.google.caja.plugin.HtmlWhitelistTest;
 import com.google.caja.plugin.PluginCompilerTest;
 import com.google.caja.plugin.UrlUtilTest;
@@ -86,6 +87,7 @@ public class AllTests {
           HcalTest.class,
           HtmlCompiledPluginTest.class,
           HtmlLexerTest.class,
+          HtmlSanitizerTest.class,
           HtmlWhitelistTest.class,
           JoinTest.class,
           JsHtmlParserTest.class,
