@@ -32,6 +32,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.OpenElementStack;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.reporting.Message;
@@ -241,7 +242,8 @@ public class PluginCompilerMain {
       lexer.setTreatedAsXml(true);
       TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
           lexer, is, Criterion.Factory.<Token<HtmlTokenType>>optimist());
-      input = DomParser.parseDocument(tq);
+      input = DomParser.parseDocument(
+          tq, OpenElementStack.Factory.createXmlElementStack());
       tq.expectEmpty();
     } else if (path.endsWith(".css")) {
       CssLexer lexer = new CssLexer(cp);

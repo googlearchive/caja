@@ -26,6 +26,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.html.OpenElementStack;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
@@ -72,7 +73,8 @@ public class GxpCompilerTest extends TestCase {
         new PrintWriter(new OutputStreamWriter(System.out)), mc);
     TokenQueue<HtmlTokenType> tq = TestUtil.parseXml(
         getClass(), "gxpcompilerinput1.gxp", mq);
-    DomTree.Tag domTree = (DomTree.Tag) DomParser.parseDocument(tq);
+    DomTree.Tag domTree = (DomTree.Tag) DomParser.parseDocument(
+        tq, OpenElementStack.Factory.createXmlElementStack());
     GxpCompiler gxpc = new GxpCompiler(mq, makeTestPluginMeta());
     GxpCompiler.TemplateSignature sig = gxpc.compileTemplateSignature(domTree);
     ParseTreeNode compiled = gxpc.compileDocument(sig);
@@ -94,7 +96,8 @@ public class GxpCompilerTest extends TestCase {
         new PrintWriter(new OutputStreamWriter(System.out)), mc);
     TokenQueue<HtmlTokenType> tq = TestUtil.parseXml(
         getClass(), "gxpcompilerinput2.gxp", mq);
-    DomTree.Tag domTree = (DomTree.Tag) DomParser.parseDocument(tq);
+    DomTree.Tag domTree = (DomTree.Tag) DomParser.parseDocument(
+        tq, OpenElementStack.Factory.createXmlElementStack());
     GxpCompiler gxpc = new GxpCompiler(mq, makeTestPluginMeta());
     GxpCompiler.TemplateSignature sig = gxpc.compileTemplateSignature(domTree);
     ParseTreeNode compiled = gxpc.compileDocument(sig);
@@ -132,9 +135,11 @@ public class GxpCompilerTest extends TestCase {
         new PrintWriter(new OutputStreamWriter(System.out)), mc);
 
     DomTree.Tag gxp2 = (DomTree.Tag) DomParser.parseDocument(
-        TestUtil.parseXml(getClass(), "gxpcompilerinput3.gxp", mq));
+        TestUtil.parseXml(getClass(), "gxpcompilerinput3.gxp", mq),
+        OpenElementStack.Factory.createXmlElementStack());
     DomTree.Tag gxp3 = (DomTree.Tag) DomParser.parseDocument(
-        TestUtil.parseXml(getClass(), "gxpcompilerinput4.gxp", mq));
+        TestUtil.parseXml(getClass(), "gxpcompilerinput4.gxp", mq),
+        OpenElementStack.Factory.createXmlElementStack());
     GxpCompiler gxpc = new GxpCompiler(mq, makeTestPluginMeta());
     GxpCompiler.TemplateSignature sig2 = gxpc.compileTemplateSignature(gxp2),
                                   sig3 = gxpc.compileTemplateSignature(gxp3);
@@ -394,7 +399,8 @@ public class GxpCompilerTest extends TestCase {
       lexer.setTreatedAsXml(true);
       TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
           lexer, is, Criterion.Factory.<Token<HtmlTokenType>>optimist());
-      doms[i] = (DomTree.Tag) DomParser.parseDocument(tq);
+      doms[i] = (DomTree.Tag) DomParser.parseDocument(
+          tq, OpenElementStack.Factory.createXmlElementStack());
       tq.expectEmpty();
     }
 
@@ -474,7 +480,8 @@ public class GxpCompilerTest extends TestCase {
       lexer.setTreatedAsXml(true);
       TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
           lexer, is, Criterion.Factory.<Token<HtmlTokenType>>optimist());
-      doms[i] = (DomTree.Tag) DomParser.parseDocument(tq);
+      doms[i] = (DomTree.Tag) DomParser.parseDocument(
+          tq, OpenElementStack.Factory.createXmlElementStack());
       tq.expectEmpty();
     }
 

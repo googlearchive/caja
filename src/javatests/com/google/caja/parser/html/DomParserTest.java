@@ -94,7 +94,8 @@ public class DomParserTest extends TestCase {
 
   public void testParseDom() throws Exception {
     TokenQueue<HtmlTokenType> tq = tokenizeTestInput(DOM1_XML, true);
-    DomTree t = DomParser.parseDocument(tq);
+    DomTree t = DomParser.parseDocument(
+        tq, OpenElementStack.Factory.createXmlElementStack());
     StringBuilder actual = new StringBuilder();
     t.format(new MessageContext(), actual);
     assertEquals(DOM1_GOLDEN, actual.toString());

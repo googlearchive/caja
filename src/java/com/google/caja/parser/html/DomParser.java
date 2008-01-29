@@ -46,12 +46,6 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class DomParser {
-  public static DomTree parseDocument(TokenQueue<HtmlTokenType> tokens)
-      throws ParseException {
-    return parseDocument(
-        tokens, OpenElementStack.Factory.createXmlElementStack());
-  }
-
   public static DomTree parseDocument(
       TokenQueue<HtmlTokenType> tokens, OpenElementStack elementStack)
       throws ParseException {
@@ -75,15 +69,6 @@ public final class DomParser {
           DomParserMessageType.MISSING_DOCUMENT_ELEMENT, endPos));
     }
     return root.children().get(0);
-  }
-
-  /**
-   * Parses a snippet of markup.
-   */
-  public static DomTree.Fragment parseFragment(TokenQueue<HtmlTokenType> tokens)
-      throws ParseException {
-    return parseFragment(
-        tokens, OpenElementStack.Factory.createXmlElementStack());
   }
 
   /**

@@ -198,3 +198,9 @@ TAGEND     [>]  :  htmllexerinput1.html:78+7@1833 - 8@1834
 TEXT       [\n\n]  :  htmllexerinput1.html:78+8@1834 - 80+1@1836
 DIRECTIVE  [<![CDATA[ No such thing as a CDATA>]  :  htmllexerinput1.html:80+1@1836 - 36@1871
 TEXT       [ section in HTML ]]>\n]  :  htmllexerinput1.html:80+36@1871 - 81+1@1892
+TAGBEGIN   [<script]  :  htmllexerinput1.html:81+1@1892 - 8@1899
+TAGEND     [>]  :  htmllexerinput1.html:81+8@1899 - 9@1900
+UNESCAPED  [a<b]  :  htmllexerinput1.html:81+9@1900 - 12@1903
+TAGBEGIN   [</script]  :  htmllexerinput1.html:81+12@1903 - 20@1911
+TAGEND     [>]  :  htmllexerinput1.html:81+20@1911 - 21@1912
+TEXT       [\n]  :  htmllexerinput1.html:81+21@1912 - 82+1@1913

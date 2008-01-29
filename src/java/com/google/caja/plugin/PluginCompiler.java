@@ -22,6 +22,7 @@ import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.html.OpenElementStack;
 import com.google.caja.parser.js.*;
 import com.google.caja.plugin.GxpCompiler.BadContentException;
 import com.google.caja.reporting.Message;
@@ -495,7 +496,8 @@ final class GxpCompileDirectiveReplacer implements Visitor {
       TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
           lexer, node.getFilePosition().source(),
           Criterion.Factory.<Token<HtmlTokenType>>optimist());
-      DomTree doc = DomParser.parseDocument(tq);
+      DomTree doc = DomParser.parseDocument(
+          tq, OpenElementStack.Factory.createXmlElementStack());
       tq.expectEmpty();
       if (!(doc instanceof DomTree.Tag)) {
         throw new ParseException(new Message(

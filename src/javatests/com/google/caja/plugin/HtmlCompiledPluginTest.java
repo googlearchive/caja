@@ -20,6 +20,7 @@ import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.html.OpenElementStack;
 import com.google.caja.parser.js.Block;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
@@ -351,7 +352,7 @@ public class HtmlCompiledPluginTest extends TestCase {
         PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
     HtmlPluginCompiler compiler = new HtmlPluginCompiler(mq, meta);
     compiler.setMessageContext(mc);
-    DomTree html = parseHtml(gadgetSpec);
+    DomTree html = parseHtml(gadgetSpec, mq);
     if (html != null) { compiler.addInput(new AncestorChain<DomTree>(html)); }
 
     boolean failed = !compiler.run();
@@ -392,11 +393,12 @@ public class HtmlCompiledPluginTest extends TestCase {
     }
   }
 
-  DomTree parseHtml(String html) throws Exception {
+  DomTree parseHtml(String html, MessageQueue mq) throws Exception {
     InputSource is = new InputSource(new URI("test://" + getName()));
     StringReader in = new StringReader(html);
     TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(is, in, false);
     if (tq.isEmpty()) { return null; }
-    return DomParser.parseFragment(tq);
+    return DomParser.parseFragment(
+        tq, OpenElementStack.Factory.createHtml5ElementStack(mq));
   }
 }
