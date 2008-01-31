@@ -209,7 +209,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       jobs.getMessageQueue().addMessage(
           PluginMessageType.MISSING_ATTRIBUTE, styleTag.getFilePosition(),
           MessagePart.Factory.valueOf("href"),
-          MessagePart.Factory.valueOf("style"));
+          MessagePart.Factory.valueOf("link"));
       return;
     }
 

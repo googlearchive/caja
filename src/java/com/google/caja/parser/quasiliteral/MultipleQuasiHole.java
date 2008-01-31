@@ -36,7 +36,7 @@ public class MultipleQuasiHole extends SimpleQuasiHole {
       Map<String, ParseTreeNode> bindings) {
     List<ParseTreeNode> matches = new ArrayList<ParseTreeNode>();
     while (specimens.size() > 0 && isCompatibleClass(specimens.get(0))) {
-      matches.add(specimens.remove(0).clone());
+      matches.add(specimens.remove(0));
     }
     return putIfDeepEquals(bindings, getIdentifier(), new ParseTreeNodeContainer(matches));
   }

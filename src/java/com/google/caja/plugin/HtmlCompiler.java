@@ -526,19 +526,19 @@ public class HtmlCompiler {
         htmlc.eventHandlers.put(
             handlerFnName,
             s(new FunctionDeclaration(
-                  new Identifier(handlerFnName),
+                  new Identifier(handlerFnName),  // Not synthetic.
                   s(new FunctionConstructor(
                         new Identifier(null),
                         Arrays.asList(
                             s(new FormalParam(
-                                  new Identifier(ReservedNames.THIS_NODE))),
+                                  s(new Identifier(ReservedNames.THIS_NODE)))),
                             s(new FormalParam(
-                                  new Identifier("event")))),
+                                  s(new Identifier("event"))))),
                         handler)))));
 
         JsWriter.appendString(
             " " + t.getAttribName() + "=\""
-            + "return plugin_dispatchEvent___(event || window.event, this, ",
+            + "return plugin_dispatchEvent___(this, event || window.event, ",
             tgtChain, out);
 
         JsWriter.append(
@@ -635,6 +635,7 @@ public class HtmlCompiler {
                 Identifier oldRef = r.getIdentifier();
                 Identifier thisNode = new Identifier(ReservedNames.THIS_NODE);
                 thisNode.setFilePosition(oldRef.getFilePosition());
+                s(r);
                 r.replaceChild(s(thisNode), oldRef);
               }
               return false;

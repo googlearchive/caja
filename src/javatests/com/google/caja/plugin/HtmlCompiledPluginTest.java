@@ -343,6 +343,27 @@ public class HtmlCompiledPluginTest extends TestCase {
         );
   }
 
+  /**
+   * Empty styles should not cause parse failure.
+   * <a href="http://code.google.com/p/google-caja/issues/detail?id=56">bug</a>
+   */
+  public void testEmptyStyle() throws Exception {
+    execGadget("<style></style>", "");
+  }
+
+  /**
+   * Handlers should have their handlers rewritten.
+   */
+  public void testHandlerRewriting() throws Exception {
+    execGadget(
+        "<a onclick=\"foo(this)\">hi</a>",
+
+        "assertEquals('<a onclick=\"return plugin_dispatchEvent___(" +
+        "this, event || window.event, 0, \\'c_1___\\')\">hi</a>'," +
+        " outers.emitHtml___.htmlBuf_.join(''))"
+        );
+  }
+
   private void execGadget(String gadgetSpec, String tests) throws Exception {
     MessageContext mc = new MessageContext();
     MessageQueue mq = new EchoingMessageQueue(

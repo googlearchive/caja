@@ -31,7 +31,7 @@
       ___OUTERS___.handleClicky = ___.simpleFunc(function () {
           ___.asSimpleFunc(___OUTERS___.alert)('You clicked something!!!');
         });
-      ___OUTERS___.emitHtml___('\n\n    <p><a onclick=\"return plugin_dispatchEvent___(event || window.event, this, ', ___.getId(___OUTERS___), ', \'c_1___\')\">Paragraph 3</a></p>\n\n    <a href=\"http://url-proxy.test.google.com/?url=http%3A%2F%2Ffoo.com%2F&amp;mime-type=*%2F*\" target=\"_new\">External URL.  Apply URICallback.rewrite to me.</a>\n\n    \n    \n\n    \n    \n    \n\n  ');
+      ___OUTERS___.emitHtml___('\n\n    <p><a onclick=\"return plugin_dispatchEvent___(this, event || window.event, ', ___.getId(___OUTERS___), ', \'c_1___\')\">Paragraph 3</a></p>\n\n    <a href=\"http://url-proxy.test.google.com/?url=http%3A%2F%2Ffoo.com%2F&amp;mime-type=*%2F*\" target=\"_new\">External URL.  Apply URICallback.rewrite to me.</a>\n\n    \n    \n\n    \n    \n    \n\n  ');
     });
 }</script>
 ]]></Content></Module>
