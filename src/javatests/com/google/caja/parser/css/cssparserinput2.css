@@ -30,3 +30,7 @@ multiple \
 lines' }
 
 foo .extended-unicode { content: 'a1 \61\31  \0000611 \000061 1 \0061\0031' }
+
+/* CSS 2.1 allows _ in identifiers */
+#a_b {}
+.a_b {}

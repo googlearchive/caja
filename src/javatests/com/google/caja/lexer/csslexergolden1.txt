@@ -1626,8 +1626,7 @@ IDEN [class]: csslexerinput1.css:138+4@4740 - 9@4745
 SPAC [       ]: csslexerinput1.css:138+9@4745 - 16@4752
 PUNC [{]: csslexerinput1.css:138+16@4752 - 17@4753
 SPAC [ ]: csslexerinput1.css:138+17@4753 - 18@4754
-PUNC [-]: csslexerinput1.css:138+18@4754 - 19@4755
-IDEN [moz-oddity]: csslexerinput1.css:138+19@4755 - 29@4765
+IDEN [-moz-oddity]: csslexerinput1.css:138+18@4754 - 29@4765
 PUNC [:]: csslexerinput1.css:138+29@4765 - 30@4766
 SPAC [ ]: csslexerinput1.css:138+30@4766 - 31@4767
 IDEN [odd]: csslexerinput1.css:138+31@4767 - 34@4770

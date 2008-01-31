@@ -27,7 +27,14 @@ import java.util.regex.Pattern;
 
 /**
  * A lexer that recognizes the
- * <a href="http://www.w3.org/TR/REC-CSS2/grammar.html#q1">CSS 2 Grammar</a>
+ * <a href="http://www.w3.org/TR/CSS21/grammar.html#scanner">CSS 2.1 Grammar</a>
+ *
+ * TODO(mikesamuel): CSS2.1 has changed lexical conventions to effectively
+ * decode escapes at lex time in most contexts.  E.g., the rule
+ * <code>"@import"              IMPORT_SYM</code> now reads
+ * <code>@{I}{M}{P}{O}{R}{T}    {return IMPORT_SYM;}</code> and
+ * <code>{num}ms                TIME</code> now reads
+ * <code>{num}{M}{S}            {return TIME;}</code>.
  *
  * @author mikesamuel@gmail.com
  */
@@ -86,19 +93,31 @@ public final class CssLexer implements TokenStream<CssTokenType> {
 
     Token<CssTokenType> t = splitter.next();
     pending.add(t);
-    // !{w}important
-    if (t.type == CssTokenType.PUNCTUATION && "!".equals(t.text)
-        && splitter.hasNext()) {
-      Token<CssTokenType> t2 = splitter.next();
-      if (t2.type == CssTokenType.SPACE) {
-        pending.add(t2);
-        t2 = splitter.hasNext() ? splitter.next() : null;
-      }
-      if (null != t2) {
-        pending.add(t2);
-        if (t2.type == CssTokenType.IDENT
-            && "important".equalsIgnoreCase(t2.text)) {
-          reduce(CssTokenType.DIRECTIVE);
+    if (t.type == CssTokenType.PUNCTUATION && splitter.hasNext()) {
+      if ("!".equals(t.text)) {  // Join !important
+        // IMPORTANT_SYM        "!"({w}|{comment})*{I}{M}{P}{O}{R}{T}{A}{N}{T}
+        Token<CssTokenType> t2 = splitter.next();
+        while (t2 != null && (t2.type == CssTokenType.SPACE
+                              || t2.type == CssTokenType.COMMENT)) {
+          pending.add(t2);
+          t2 = splitter.hasNext() ? splitter.next() : null;
+        }
+        // TODO(mikesamuel): The !important is supposed to be significant
+        // regardless of case and whether or not a letter is hex escaped.
+        if (null != t2) {
+          pending.add(t2);
+          if (t2.type == CssTokenType.IDENT
+              && "important".equalsIgnoreCase(t2.text)) {
+            reduce(CssTokenType.DIRECTIVE);
+          }
+        }
+      } else if ("-".equals(t.text)) {  // Join '-'{nmstart}{nmchar}*
+        Token<CssTokenType> t2 = splitter.next();
+        if (null != t2) {
+          pending.add(t2);
+          if (t2.type == CssTokenType.IDENT) {
+            reduce(CssTokenType.IDENT);
+          }
         }
       }
     }
@@ -129,7 +148,8 @@ public final class CssLexer implements TokenStream<CssTokenType> {
    * Is the given character a whitespace character according to the CSS 2 spec.
    */
   public static boolean isSpaceChar(char ch) {
-    // w      [ \t\r\n\f]*
+    // s      [ \t\r\n\f]+
+    // w      {s}?
     switch (ch) {
       case ' ': case '\t': case '\r': case '\n': case '\f':
         return true;
@@ -208,7 +228,7 @@ final class CssSplitter implements TokenStream<CssTokenType> {
         cp.read();
 
         if (cp.lookahead() == '*') {
-          // \/\*[^*]*\*+([^/][^*]*\*+)*\/    /* ignore comments */
+          // \/\*[^*]*\*+([^/*][^*]*\*+)*\/    /* ignore comments */
           int state = 0;  // 0 - start, 1 - in comment, 2 - saw, 3 - done
           do {
             chi = cp.read();
@@ -424,7 +444,6 @@ final class CssSplitter implements TokenStream<CssTokenType> {
             }
           } while (state != 3);
           if (state != 3) {
-            System.err.println("sb=" + sb);
             throw new ParseException(new Message(
                 MessageType.UNTERMINATED_STRING_TOKEN,
                 spos.toFilePosition()));
@@ -468,8 +487,8 @@ final class CssSplitter implements TokenStream<CssTokenType> {
     cp.read();  // consume delim
 
     // {string}        STRING
-    // string1         \"([\t !#$%&(-~]|\\{nl}|\'|{nonascii}|{escape})*\"
-    // string2         \'([\t !#$%&(-~]|\\{nl}|\"|{nonascii}|{escape})*\'
+    // string1         \"([^\n\r\f\\"]|\\{nl}|{escape})*\"
+    // string2         \'([^\n\r\f\\']|\\{nl}|{escape})*\'
     // string          {string1}|{string2}
 
     int delim = chi;
@@ -503,18 +522,14 @@ final class CssSplitter implements TokenStream<CssTokenType> {
     }
     char ch = (char) chi;
     switch (ch) {
-      case '\t': case ' ': case '!': case '#': case '$': case '%': case '&':
-        break;
+      case '\n': case '\r': case '\f': case '\"': case '\'':
+        return false;
       case '\\':
         return parseEscapeOrNewline(sb);
-      default:
-        if ((ch >= '(' && ch <= '~') || isNonAscii(ch)) { break; }
-
-        return false;
     }
 
     cp.read();
-    sb.append((char) chi);
+    sb.append(ch);
     return true;
   }
 
@@ -590,7 +605,8 @@ final class CssSplitter implements TokenStream<CssTokenType> {
 
   private boolean parseIdent(StringBuilder sb)
       throws IOException, ParseException {
-    // ident      {nmstart}{nmchar}*
+    // ident      -?{nmstart}{nmchar}*
+    // We later join '-' to the front of an identifier, so don't start here.
     if (parseNmStart(sb)) {
       while (parseNmChar(sb)) { }
       return true;
@@ -610,12 +626,12 @@ final class CssSplitter implements TokenStream<CssTokenType> {
 
   private boolean parseNmStart(StringBuilder sb)
       throws IOException, ParseException {
-    // nmstart    [a-z]|{nonascii}|{escape}
+    // nmstart    [_a-z]|{nonascii}|{escape}
     // nonascii   [\200-\377]
     int chi = cp.lookahead();
     if (chi < 0) { return false; }
     if ((chi >= 'a' && chi <= 'z') || (chi >= 'A' && chi <= 'Z')
-        || (chi >= 0200 && chi <= 0377)) {
+        || (chi >= 0200 && chi <= 0377) || chi == '_') {
       sb.append((char) chi);
       cp.read();
       return true;
@@ -636,6 +652,8 @@ final class CssSplitter implements TokenStream<CssTokenType> {
 
   private boolean parseEscapeOrNewline(StringBuilder sb)
       throws IOException, ParseException {
+    // escape            {unicode}|\\[^\r\n\f0-9a-f]
+    // nl                \n|\r\n|\r|\f
     int chi = cp.lookahead();
     if (chi != '\\') { return false; }
 
@@ -643,26 +661,30 @@ final class CssSplitter implements TokenStream<CssTokenType> {
     cp.read();  // skip \\
 
     chi = cp.lookahead();
-    if ('\n' == chi) {
-      sb.append('\n');
-      cp.read();
-    } else if ('\r' == chi) {
-      sb.append('\r');
-      cp.read();
-      if ('\n' == cp.lookahead()) {
-        sb.append('\n');
+    switch (chi) {
+      case '\n': case '\f':
+        sb.append((char) chi);
         cp.read();
-      }
-    } else {
-      parseEscapeBody(sb);
+        break;
+      case '\r':
+        sb.append('\r');
+        cp.read();
+        if ('\n' == cp.lookahead()) {
+          sb.append('\n');
+          cp.read();
+        }
+        break;
+      default:
+        parseEscapeBody(sb);
+        break;
     }
     return true;
   }
 
   private void parseEscapeBody(StringBuilder sb)
       throws IOException, ParseException {
-    // unicode    \\{h}{1,6}[ \t\r\n\f]?
-    // escape     {unicode}|\\[ -~\200-\377]
+    // unicode    \\{h}{1,6}(\r\n|[ \t\r\n\f])?
+    // escape     {unicode}|\\[^\r\n\f0-9a-f]
     int chi = cp.read();
     if (chi < 0) {
       throw new ParseException(
@@ -683,8 +705,13 @@ final class CssSplitter implements TokenStream<CssTokenType> {
       if (chi >= 0 && CssLexer.isSpaceChar(ch = (char) chi)) {
         sb.append(ch);
         cp.read();
+
+        if ('\r' == ch && '\n' == cp.lookahead()) {
+          sb.append(ch);
+          cp.read();
+        }
       }
-    } else if ((ch >= ' ' && ch <= '~') || isNonAscii(ch)) {
+    } else if (ch != '\r' && ch != '\n' && ch != '\f') {
       sb.append(ch);
     } else {
       throw new ParseException(
@@ -696,7 +723,7 @@ final class CssSplitter implements TokenStream<CssTokenType> {
 
   private boolean parseNmChar(StringBuilder sb)
       throws IOException, ParseException {
-    // nmchar     [a-z0-9-]|{nonascii}|{escape}
+    // nmchar     [_a-z0-9-]|{nonascii}|{escape}
     if (parseNmStart(sb)) { return true; }
     int chi = cp.lookahead();
     if ((chi >= '0' && chi <= '9') || chi == '-') {

@@ -147,3 +147,13 @@ StyleSheet
       Expr
         Term
           StringLiteral : a1 a1 a1 a1 a1
+  RuleSet
+    Selector
+      SimpleSelector
+        IdLiteral : #a_b
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        ClassLiteral : .a_b
+    Declaration
