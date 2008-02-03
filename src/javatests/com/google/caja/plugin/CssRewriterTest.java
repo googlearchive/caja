@@ -110,6 +110,8 @@ public class CssRewriterTest extends TestCase {
     runTest("#foo { color: blue }", ".test #test-foo {\n  color: blue\n}");
     runTest("body.ie6 p { color: blue }",
             "body.ie6 .test p {\n  color: blue\n}");
+    runTest("body { margin: 0; }", ".test body {\n  margin: 0\n}");
+    runTest("body.ie6 { margin: 0; }", ".test body.ie6 {\n  margin: 0\n}");
     runTest("#foo > #bar { color: blue }",
             ".test #test-foo > #test-bar {\n  color: blue\n}");
     runTest("#foo .bar { color: blue }",
