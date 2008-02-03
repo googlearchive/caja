@@ -228,7 +228,7 @@ public final class CssRewriter {
                 // TODO: check argument if child now instanceof FunctionLiteral
               }
               String value = (String) child.getValue();
-              if (!isSafeSelectorPart(value)) {
+              if (value != null && !isSafeSelectorPart(value)) {
                 mq.addMessage(PluginMessageType.UNSAFE_CSS_IDENTIFIER,
                               child.getFilePosition(),
                               MessagePart.Factory.valueOf(value));
@@ -470,7 +470,7 @@ public final class CssRewriter {
     return SAFE_SELECTOR_PART.matcher(s).matches();
   }
   private static final Pattern SAFE_CSS_IDENTIFIER =
-    Pattern.compile("^[a-zA-Z][a-zA-Z0-9\\-]*$");
+    Pattern.compile("^[_a-zA-Z][_a-zA-Z0-9\\-]*$");
   /**
    * Restrict identifiers to ascii characters until we can test browser handling
    * of escape sequences.

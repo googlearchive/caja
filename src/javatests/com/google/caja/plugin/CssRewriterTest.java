@@ -155,6 +155,14 @@ public class CssRewriterTest extends TestCase {
             true);
   }
 
+  /**
+   * "*" selectors should rewrite properly.
+   * <a href="http://code.google.com/p/google-caja/issues/detail?id=57">bug</a>
+   */
+  public void testWildcardSelectors() throws Exception {
+    runTest("div * { margin: 0; }", ".test div  * {\n  margin: 0\n}", false);
+  }
+
   private void runTest(String css, String golden) throws Exception {
     runTest(css, golden, false);
   }
