@@ -206,6 +206,7 @@ public class HtmlPluginCompiler {
                 && tok.type != CssTokenType.SPACE;
           }
         });
+    if (tq.isEmpty()) { return null; }
 
     CssParser p = new CssParser(tq);
     input = p.parseStyleSheet();

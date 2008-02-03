@@ -257,6 +257,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     try {
       stylesheet = HtmlPluginCompiler.parseCss(
           cssStream.getCurrentPosition().source(), cssStream);
+      if (stylesheet == null) { return; }  // If all tokens ignorable.
     } catch (ParseException ex) {
       ex.toMessageQueue(jobs.getMessageQueue());
       return;

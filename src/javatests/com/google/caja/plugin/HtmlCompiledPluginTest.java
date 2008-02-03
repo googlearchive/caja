@@ -348,7 +348,7 @@ public class HtmlCompiledPluginTest extends TestCase {
    * <a href="http://code.google.com/p/google-caja/issues/detail?id=56">bug</a>
    */
   public void testEmptyStyle() throws Exception {
-    execGadget("<style></style>", "");
+    execGadget("<style> </style>", "");
   }
 
   /**
