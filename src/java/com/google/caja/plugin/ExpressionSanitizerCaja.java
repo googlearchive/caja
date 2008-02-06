@@ -16,7 +16,7 @@ package com.google.caja.plugin;
 
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.quasiliteral.DefaultJsRewriter;
+import com.google.caja.parser.quasiliteral.DefaultCajaRewriter;
 import com.google.caja.reporting.MessageQueue;
 
 /**
@@ -38,7 +38,7 @@ public class ExpressionSanitizerCaja {
         toSanitize.node;
     AbstractParseTreeNode<? extends AbstractParseTreeNode> result =
         (AbstractParseTreeNode<? extends AbstractParseTreeNode>)
-        new DefaultJsRewriter().expand(input, this.mq);
+        new DefaultCajaRewriter().expand(input, this.mq);
 
     for (AbstractParseTreeNode<?> child : input.children()) {
       input.removeChild(child);

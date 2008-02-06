@@ -24,11 +24,11 @@
         ___.asSimpleFunc(___.primFreeze(___OUTERS___.handleClicky))();
       };
       ___OUTERS___.emitHtml___('\n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    <p class=\"DOM-PREFIX-p1 DOM-PREFIX-p2\">Paragraph 1</p>\n\n    ');
-      ___OUTERS___.externalScript = ___.simpleFunc(function () {
+      ___OUTERS___.externalScript = ___.simpleFunc(function externalScript() {
           ___.asSimpleFunc(___OUTERS___.alert)('external script');
         });
       ___OUTERS___.emitHtml___('\n\n    \n    <p id=\"DOM-PREFIX-p3\">Paragraph 2</p>\n\n    \n    \n\n    \n    ');
-      ___OUTERS___.handleClicky = ___.simpleFunc(function () {
+      ___OUTERS___.handleClicky = ___.simpleFunc(function handleClicky() {
           ___.asSimpleFunc(___OUTERS___.alert)('You clicked something!!!');
         });
       ___OUTERS___.emitHtml___('\n\n    <p><a onclick=\"return plugin_dispatchEvent___(this, event || window.event, ', ___.getId(___OUTERS___), ', \'c_1___\')\">Paragraph 3</a></p>\n\n    <a href=\"http://url-proxy.test.google.com/?url=http%3A%2F%2Ffoo.com%2F&amp;mime-type=*%2F*\" target=\"_new\">External URL.  Apply URICallback.rewrite to me.</a>\n\n    \n    \n\n    \n    \n    \n\n  ');

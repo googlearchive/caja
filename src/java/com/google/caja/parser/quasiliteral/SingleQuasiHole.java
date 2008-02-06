@@ -35,7 +35,7 @@ public class SingleQuasiHole extends SimpleQuasiHole {
     return
         specimens.size() >= 1 &&
         isCompatibleClass(specimens.get(0)) &&
-        putIfDeepEquals(bindings, getIdentifier(), specimens.remove(0).clone());
+        putIfDeepEquals(bindings, getIdentifier(), specimens.remove(0));
   }
 
   protected boolean createSubstitutes(

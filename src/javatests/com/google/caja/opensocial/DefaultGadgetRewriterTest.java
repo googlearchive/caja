@@ -95,6 +95,10 @@ public class DefaultGadgetRewriterTest extends TestCase {
     assertRewritePasses("listfriends-inline.xml", MessageLevel.WARNING);
   }
 
+  public void testSocialHelloWorld() throws Exception {
+    assertRewritePasses("SocialHelloWorld.xml", MessageLevel.WARNING);
+  }
+
   public void testParsing() throws Exception {
     assertRewritePasses("test-parsing.xml", MessageLevel.WARNING);
   }

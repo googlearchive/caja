@@ -14,14 +14,13 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.reporting.MessageTypeInt;
+import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
-import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.reporting.MessageTypeInt;
 
 import java.io.IOException;
-import java.util.Formatter;
 
 /**
  * The type of a {Message message} for the JavaScript quasiliteral rewriter.
@@ -29,7 +28,7 @@ import java.util.Formatter;
  * @author mikesamuel@gmail.com
  * @author ihab.awad@gmail.com
  */
-public enum JsRewriterMessageType implements MessageTypeInt {
+public enum RewriterMessageType implements MessageTypeInt {
 
   VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE(
       "Variables cannot end in \"__\": %s, %s",
@@ -82,13 +81,25 @@ public enum JsRewriterMessageType implements MessageTypeInt {
   CONSTRUCTORS_ARE_NOT_FIRST_CLASS(
       "Constructors are not first class: %s, %s",
       MessageLevel.FATAL_ERROR),
+
+  CAJA_DEF_ON_NON_CTOR(
+    "caja.def called with non-constructor: %s, %s",
+    MessageLevel.FATAL_ERROR),
+
+  DUPLICATE_DEFINITION_OF_LOCAL_VARIABLE(
+      "Duplicate definition of local variable: %s",
+      MessageLevel.FATAL_ERROR),
+
+  NEW_ON_ARBITRARY_EXPRESSION_DISALLOWED(
+      "Cannot invoke \"new\" on an arbitrary expression: %s, %s",
+      MessageLevel.FATAL_ERROR),
   ;
 
   private final String formatString;
   private final MessageLevel level;
   private final int paramCount;
 
-  JsRewriterMessageType(String formatString, MessageLevel level) {
+  RewriterMessageType(String formatString, MessageLevel level) {
     this.formatString = formatString;
     this.level = level;
     this.paramCount = MessageType.formatStringArity(formatString);

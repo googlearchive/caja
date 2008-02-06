@@ -241,6 +241,7 @@
         <include name="**/caja/opensocial/listfriends-inline.xml"/>
         <include name="**/caja/opensocial/listfriends.js"/>
         <include name="**/caja/opensocial/listfriends.xml"/>
+        <include name="**/caja/opensocial/SocialHelloWorld.xml"/>
         <include name="**/caja/opensocial/test-parsing.xml"/>
         <include name="**/caja/parser/css/cssparsergolden1.txt"/>
         <include name="**/caja/parser/css/cssparsergolden2.txt"/>

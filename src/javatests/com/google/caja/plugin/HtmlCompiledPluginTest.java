@@ -128,20 +128,6 @@ public class HtmlCompiledPluginTest extends TestCase {
   }
 
   /**
-   * Tests that Object.eval is uncallable.
-   * 
-   * @throws Exception
-   */
-  public void testObjectEval() throws Exception {
-    execGadget(
-        "<script>var success=false;" +
-          "try{Object.eval('1')}catch(e){success=true;}" + 
-          "if (!success)fail('Object.eval is accessible.')</script>",
-        ""
-        );
-  }
-
-  /**
    * Tests that cajoled code can't construct new Function objects.
    * 
    * @throws Exception

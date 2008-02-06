@@ -34,7 +34,7 @@ public class SingleOptionalQuasiHole extends SimpleQuasiHole {
       Map<String, ParseTreeNode> bindings) {
     if (specimens.size() >= 1 &&
         isCompatibleClass(specimens.get(0))) {
-      return putIfDeepEquals(bindings, getIdentifier(), specimens.remove(0).clone());
+      return putIfDeepEquals(bindings, getIdentifier(), specimens.remove(0));
     }
     return true;
   }

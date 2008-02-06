@@ -15,8 +15,8 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Conditional;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FunctionConstructor;
@@ -31,35 +31,42 @@ import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TryStmt;
+import com.google.caja.parser.js.MultiDeclaration;
+import com.google.caja.parser.js.Declaration;
+import com.google.caja.parser.js.Operator;
+import com.google.caja.parser.js.Expression;
 import com.google.caja.plugin.ReservedNames;
 import com.google.caja.util.Pair;
 import com.google.caja.reporting.MessageQueue;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Rewrites a JavaScript parse tree to comply with default Caja rules.
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
-public class DefaultJsRewriter extends JsRewriter {
-  public DefaultJsRewriter() {
+public class DefaultCajaRewriter extends Rewriter {
+  public DefaultCajaRewriter() {
     this(true);
   }
   
-  public DefaultJsRewriter(boolean logging) {
+  public DefaultCajaRewriter(boolean logging) {
     super(logging);
 
     ////////////////////////////////////////////////////////////////////////
     // Do nothing if the node is already the result of some translation
     ////////////////////////////////////////////////////////////////////////
 
-    addRule(new Rule("synthetic0") {
+    addRule(new Rule("synthetic0", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (isSynthetic(node)) {
           if (node instanceof FunctionConstructor) {
-            scope = new Scope(scope, (FunctionConstructor)node);
+            scope = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node);
           }
           return expandAll(node, scope, mq);
         }
@@ -71,7 +78,7 @@ public class DefaultJsRewriter extends JsRewriter {
     // with - disallow the 'with' construct
     ////////////////////////////////////////////////////////////////////////
 
-    addRule(new Rule("with") {
+    addRule(new Rule("with", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         // Our parser does not recognize "with" at all.
         return NONE;
@@ -82,46 +89,56 @@ public class DefaultJsRewriter extends JsRewriter {
     // try - try/catch/finally constructs
     ////////////////////////////////////////////////////////////////////////
 
-    /**
-     * TODO(ihab.awad): Implement these properly
-     *
-
-    addRule(new Rule("tryCatch") {
+    addRule(new Rule("tryCatch", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("try { @s0*; } catch (@x) { @s1*; }", node, bindings)) {
+          TryStmt t = (TryStmt)node;
           return substV(
             "try { @s0*; } catch (@x) { @s1*; }",
             "s0",  expandAll(bindings.get("s0"), scope, mq),
-            "s1",  expandAll(bindings.get("s1"), scope, mq),
+            "s1",  expandAll(bindings.get("s1"), Scope.fromCatchStmt(scope, t.getCatchClause()), mq),
             "x", bindings.get("x"));
         }
         return NONE;
       }
     });
-
-    addRule(new Rule("tryCatchFinally") {
+        
+    addRule(new Rule("tryCatchFinally", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();        
         if (match("try { @s0*; } catch (@x) { @s1*; } finally { @s2*; }", node, bindings)) {
+          TryStmt t = (TryStmt)node;
           return substV(
-            "try { @s0*; } catch (@x) { @s1*; }",
+            "try { @s0*; } catch (@x) { @s1*; } finally { @s2*; }",
             "s0",  expandAll(bindings.get("s0"), scope, mq),
-            "s1",  expandAll(bindings.get("s1"), scope, mq),
+            "s1",  expandAll(bindings.get("s1"), Scope.fromCatchStmt(scope, t.getCatchClause()), mq),
             "s2",  expandAll(bindings.get("s2"), scope, mq),              
             "x", bindings.get("x"));
         }
         return NONE;
       }
     });
-
-     */
      
+    addRule(new Rule("tryFinally", this) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        if (match("try { @s0*; } finally { @s1*; }", node, bindings)) {
+          TryStmt t = (TryStmt)node;
+          return substV(
+            "try { @s0*; } finally { @s1*; }",
+            "s0",  expandAll(bindings.get("s0"), scope, mq),
+            "s1",  expandAll(bindings.get("s1"), scope, mq));
+        }
+        return NONE;
+      }
+    });
+
     ////////////////////////////////////////////////////////////////////////
     // variable - variable name handling
     ////////////////////////////////////////////////////////////////////////
 
-    addRule(new Rule("varArgs") {
+    addRule(new Rule("varArgs", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match(ReservedNames.ARGUMENTS, node, bindings)) {
@@ -131,7 +148,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("varThis") {
+    addRule(new Rule("varThis", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match(ReservedNames.THIS, node, bindings)) {
@@ -143,12 +160,12 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("varBadSuffix") {
+    addRule(new Rule("varBadSuffix", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@x__", node, bindings)) {
           mq.addMessage(
-              JsRewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+              RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
               this, node);
           return node;
         }
@@ -156,14 +173,14 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("varBadGlobalSuffix") {
+    addRule(new Rule("varBadGlobalSuffix", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@x_", node, bindings)) {
           String symbol = ((Identifier)bindings.get("x")).getValue() + "_";
           if (scope.isGlobal(symbol)) {
             mq.addMessage(
-                JsRewriterMessageType.GLOBALS_CANNOT_END_IN_UNDERSCORE,
+                RewriterMessageType.GLOBALS_CANNOT_END_IN_UNDERSCORE,
                 this, node); 
             return node;
           }
@@ -172,14 +189,14 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("varBadCtorLeak") {
+    addRule(new Rule("varBadCtorLeak", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@x", node, bindings) &&
             bindings.get("x") instanceof Reference &&
             scope.isConstructor(getReferenceName(bindings.get("x")))) {
           mq.addMessage(
-              JsRewriterMessageType.CONSTRUCTORS_ARE_NOT_FIRST_CLASS,
+              RewriterMessageType.CONSTRUCTORS_ARE_NOT_FIRST_CLASS,
               this, node);
           return node;
         }
@@ -187,44 +204,34 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("varFuncFreeze") {
+    addRule(new Rule("varFuncFreeze", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@x", node, bindings) &&
             bindings.get("x") instanceof Reference) {
           String name = getReferenceName(bindings.get("x"));
           if (scope.isFunction(name)) {
-            // TODO(ihab.awad): Figure out how to implement this without repeating varGlobal
-            return (scope.isGlobal(name) || !scope.isDefined(name))  ?
-                substV(
-                  "___.primFreeze(___OUTERS___.@x)",
-                  "x", bindings.get("x")) :
-                substV(
-                    "___.primFreeze(@x)",
-                    "x", bindings.get("x"));
+            return substV(
+                "___.primFreeze(@x)",
+                "x", expandReferenceToOuters(bindings.get("x"), scope, mq));
           }
         }
         return NONE;
       }
     });
 
-    addRule(new Rule("varGlobal") {
+    addRule(new Rule("varGlobal", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@x", node, bindings) &&
             bindings.get("x") instanceof Reference) {
-          String name = getReferenceName(bindings.get("x"));
-          if (scope.isGlobal(name) || !scope.isDefined(name)) {
-            return subst(
-                "___OUTERS___.@x", bindings
-            );
-          }
+          return expandReferenceToOuters(bindings.get("x"), scope, mq);
         }
         return NONE;
       }
     });
 
-    addRule(new Rule("varDefault") {
+    addRule(new Rule("varDefault", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@x", node, bindings) &&
@@ -239,12 +246,12 @@ public class DefaultJsRewriter extends JsRewriter {
     // read - reading values
     ////////////////////////////////////////////////////////////////////////
 
-    addRule(new Rule("readBadSuffix") {
+    addRule(new Rule("readBadSuffix", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@x.@y__", node, bindings)) {
           mq.addMessage(
-              JsRewriterMessageType.PROPERTIES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+              RewriterMessageType.PROPERTIES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
               this, node);
           return node;
         }
@@ -252,7 +259,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("readInternal") {
+    addRule(new Rule("readInternal", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("this.@p", node, bindings)) {
@@ -267,12 +274,12 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("readBadInternal") {
+    addRule(new Rule("readBadInternal", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@x.@y_", node, bindings)) {
           mq.addMessage(
-              JsRewriterMessageType.PUBLIC_PROPERTIES_CANNOT_END_IN_UNDERSCORE,
+              RewriterMessageType.PUBLIC_PROPERTIES_CANNOT_END_IN_UNDERSCORE,
               this, node);
           return node;
         }
@@ -280,7 +287,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("readPublic") {
+    addRule(new Rule("readPublic", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@o.@p", node, bindings)) {
@@ -299,7 +306,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("readIndexInternal") {
+    addRule(new Rule("readIndexInternal", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("this[@s]", node, bindings)) {
@@ -311,7 +318,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("readIndexPublic") {
+    addRule(new Rule("readIndexPublic", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@o[@s]", node, bindings)) {
@@ -328,12 +335,12 @@ public class DefaultJsRewriter extends JsRewriter {
     // set - assignments
     ////////////////////////////////////////////////////////////////////////
 
-    addRule(new Rule("setBadSuffix") {
+    addRule(new Rule("setBadSuffix", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@x.@y__ = @z", node, bindings)) {
           mq.addMessage(
-              JsRewriterMessageType.PROPERTIES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+              RewriterMessageType.PROPERTIES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
               this, node);
           return node;
         }
@@ -341,7 +348,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("setInternal") {
+    addRule(new Rule("setInternal", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("this.@p = @r", node, bindings)) {
@@ -360,7 +367,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("setMember") {
+    addRule(new Rule("setMember", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@fname.prototype.@p = @m;", node, bindings)) {
@@ -383,12 +390,12 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("setBadInternal") {
+    addRule(new Rule("setBadInternal", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@x.@y_ = @z", node, bindings)) {
           mq.addMessage(
-              JsRewriterMessageType.PUBLIC_PROPERTIES_CANNOT_END_IN_UNDERSCORE,
+              RewriterMessageType.PUBLIC_PROPERTIES_CANNOT_END_IN_UNDERSCORE,
               this, node);
           return node;
         }
@@ -396,7 +403,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("setMemberMap") {
+    addRule(new Rule("setMemberMap", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@fname.prototype = @mm", node, bindings) &&
@@ -410,7 +417,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("setStatic") {
+    addRule(new Rule("setStatic", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@fname.@p = @r", node, bindings) &&
@@ -429,7 +436,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("setPublic") {
+    addRule(new Rule("setPublic", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@o.@p = @r", node, bindings)) {
@@ -456,7 +463,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("setIndexInternal") {
+    addRule(new Rule("setIndexInternal", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("this[@s] = @r", node, bindings)) {
@@ -469,7 +476,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("setIndexPublic") {
+    addRule(new Rule("setIndexPublic", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@o[@s] = @r", node, bindings)) {
@@ -483,7 +490,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("setInitialize") {
+    addRule(new Rule("setInitialize", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("var @v = @r", node, bindings) &&
@@ -498,13 +505,25 @@ public class DefaultJsRewriter extends JsRewriter {
         return NONE;
       }
     });
-
-    addRule(new Rule("setDeclare") {
+    
+    addRule(new Rule("setDeclare", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("var @v", node, bindings) &&
             !scope.isFunction(getIdentifierName(bindings.get("v")))) {
-          return node;
+          if (scope.getParent() != null) {
+            return node;
+          } else {
+            ParseTreeNode expr = substV(
+                "___OUTERS___.@v",
+                "v", bindings.get("v"));
+            // Must now wrap the Expression in something Statement-like since
+            // that is what the enclosing context expects:
+            return ParseTreeNodes.newNodeInstance(
+                ExpressionStmt.class,
+                null,
+                Arrays.asList(new ParseTreeNode[] { expr }));
+          }
         }
         return NONE;
       }
@@ -514,28 +533,43 @@ public class DefaultJsRewriter extends JsRewriter {
     // new - new object creation
     ////////////////////////////////////////////////////////////////////////
 
-    addRule(new Rule("newCtor") {
+    addRule(new Rule("newCtor", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("new @ctor(@as*)", node, bindings) &&
+            bindings.get("ctor") instanceof Reference &&
             scope.isDeclaredFunction(getReferenceName(bindings.get("ctor")))) {
           return substV(
               "new (___.asCtor(@ctor))(@as*)",
-              "ctor", expand(bindings.get("ctor"), scope, mq),
+              "ctor", expandReferenceToOuters(bindings.get("ctor"), scope, mq),
               "as", expandAll(bindings.get("as"), scope, mq));
         }
         return NONE;
       }
     });
 
-    addRule(new Rule("newFunc") {
+    addRule(new Rule("newFunc", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (match("new @f(@as*)", node, bindings)) {
+        if (match("new @f(@as*)", node, bindings) &&
+            bindings.get("f") instanceof Reference) {
           return substV(
               "new (___.asCtor(@f))(@as*)",
-              "f", expand(bindings.get("f"), scope, mq),
+              "f", expandReferenceToOuters(bindings.get("f"), scope, mq),
               "as", expandAll(bindings.get("as"), scope, mq));
+        }
+        return NONE;
+      }
+    });
+
+    addRule(new Rule("newBadCtor", this) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        if (match("new @ctor(@as*)", node, bindings)) {
+          mq.addMessage(
+              RewriterMessageType.NEW_ON_ARBITRARY_EXPRESSION_DISALLOWED,
+              this, node);
+          return node;
         }
         return NONE;
       }
@@ -545,12 +579,12 @@ public class DefaultJsRewriter extends JsRewriter {
     // call - function calls
     ////////////////////////////////////////////////////////////////////////
 
-    addRule(new Rule("callBadSuffix") {
+    addRule(new Rule("callBadSuffix", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@o.@s__(@as*)", node, bindings)) {
           mq.addMessage(
-              JsRewriterMessageType.SELECTORS_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+              RewriterMessageType.SELECTORS_CANNOT_END_IN_DOUBLE_UNDERSCORE,
               this, node);
           return node;
         }
@@ -558,7 +592,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("callInternal") {
+    addRule(new Rule("callInternal", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("this.@m(@as*)", node, bindings)) {
@@ -580,12 +614,12 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("callBadInternal") {
+    addRule(new Rule("callBadInternal", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@o.@s_(@as*)", node, bindings)) {
           mq.addMessage(
-              JsRewriterMessageType.PUBLIC_SELECTORS_CANNOT_END_IN_UNDERSCORE,
+              RewriterMessageType.PUBLIC_SELECTORS_CANNOT_END_IN_UNDERSCORE,
               this, node);
           return node;
         }
@@ -593,7 +627,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("callCajaDef2") {
+    addRule(new Rule("callCajaDef2", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("caja.def(@fname, @base)", node, bindings) &&
@@ -607,7 +641,20 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("callCajaDef3Plus") {
+    addRule(new Rule("callCajaDef2Bad", this) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        if (match("caja.def(@fname, @base)", node, bindings)) {
+          mq.addMessage(
+              RewriterMessageType.CAJA_DEF_ON_NON_CTOR,
+              this, node);
+          return node;
+        }
+        return NONE;
+      }
+    });
+
+    addRule(new Rule("callCajaDef3Plus", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("caja.def(@fname, @base, @mm, @ss?)", node, bindings) &&
@@ -633,7 +680,20 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("callPublic") {
+    addRule(new Rule("callCajaDef3PlusBad", this) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        if (match("caja.def(@fname, @base, @mm, @ss?)", node, bindings)) {
+          mq.addMessage(
+              RewriterMessageType.CAJA_DEF_ON_NON_CTOR,
+              this, node);
+          return node;
+        }
+        return NONE;
+      }
+    });
+
+    addRule(new Rule("callPublic", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@o.@m(@as*)", node, bindings)) {
@@ -657,7 +717,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("callIndexInternal") {
+    addRule(new Rule("callIndexInternal", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("this[@s](@as*)", node, bindings)) {
@@ -670,7 +730,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("callIndexPublic") {
+    addRule(new Rule("callIndexPublic", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@o[@s](@as*)", node, bindings)) {
@@ -683,7 +743,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("callFunc") {
+    addRule(new Rule("callFunc", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@f(@as*)", node, bindings)) {
@@ -700,12 +760,12 @@ public class DefaultJsRewriter extends JsRewriter {
     // function - function definitions
     ////////////////////////////////////////////////////////////////////////
 
-    addRule(new Rule("funcAnonSimple") {
+    addRule(new Rule("funcAnonSimple", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         // Anonymous simple function constructor
         if (match("function(@ps*) { @bs*; }", node, bindings)) {
-          Scope s2 = new Scope(scope, (FunctionConstructor)node);
+          Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node);
           if (!s2.hasFreeThis()) {
             return substV(
                 "___.primFreeze(" +
@@ -723,22 +783,23 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("funcNamedSimpleDecl") {
+    addRule(new Rule("funcNamedSimpleDecl", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         // Named simple function declaration
         if (node.getClass() == FunctionDeclaration.class &&
             match("function @f(@ps*) { @bs*; }", node.children().get(1), bindings)) {
-          Scope s2 = new Scope(scope, (FunctionConstructor)node.children().get(1));
+          Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node.children().get(1));
           if (!s2.hasFreeThis()) {
             return expandDef(
                 new Reference((Identifier)bindings.get("f")),
                 substV(
                     "___.simpleFunc(" +
-                    "  function(@ps*) {" +
+                    "  function @f(@ps*) {" +
                     "    @fh*;" +
                     "    @bs*;" +
                     "});",
+                    "f", bindings.get("f"),
                     "ps", bindings.get("ps"),
                     "bs", expand(bindings.get("bs"), s2, mq),
                     "fh", getFunctionHeadDeclarations(this, s2, mq)),
@@ -751,12 +812,12 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("funcNamedSimpleValue") {
+    addRule(new Rule("funcNamedSimpleValue", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         // Named simple function constructor
         if (match(getPatternNode("function @f(@ps*) { @bs* }"), node, bindings)) {
-          Scope s2 = new Scope(scope, (FunctionConstructor)node);
+          Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node);
           if (!s2.hasFreeThis()) {
             return substV(
                 "___.primFreeze(" +
@@ -775,14 +836,14 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("funcBadMethod") {
+    addRule(new Rule("funcBadMethod", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("function(@ps*) { @bs*; }", node, bindings)) {
-          Scope s2 = new Scope(scope, (FunctionConstructor)node);
+          Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node);
           if (s2.hasFreeThis()) {
             mq.addMessage(
-                JsRewriterMessageType. METHOD_IN_NON_METHOD_CONTEXT,
+                RewriterMessageType. METHOD_IN_NON_METHOD_CONTEXT,
                 this, node);
             return node;
           }
@@ -791,15 +852,15 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("funcBadCtor") {
+    addRule(new Rule("funcBadCtor", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         // This catches a case where a named function is *not* part of a declaration.
         if (match("function @f(@ps*) { @bs*; }", node, bindings)) {
-          Scope s2 = new Scope(scope, (FunctionConstructor)node);
+          Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node);
           if (s2.hasFreeThis()) {
             mq.addMessage(
-                JsRewriterMessageType.CONSTRUCTOR_CANNOT_ESCAPE,
+                RewriterMessageType.CONSTRUCTOR_CANNOT_ESCAPE,
                 this, node);
             return node;
           }
@@ -808,7 +869,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("funcDerivedCtorDecl") {
+    addRule(new Rule("funcDerivedCtorDecl", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (node instanceof FunctionDeclaration &&
@@ -819,16 +880,17 @@ public class DefaultJsRewriter extends JsRewriter {
           Object fName = bindings.get("f").getValue();
           Object sfName = bindings.get("sf").children().get(0).getValue();          
           if (fName.equals(sfName)) {
-            if (!new Scope(scope, bindings.get("as")).hasFreeThis()) {
-              Scope s2 = new Scope(scope, (FunctionConstructor)node.children().get(1));
+            if (!Scope.fromParseTreeNodeContainer(scope, (ParseTreeNodeContainer)bindings.get("as")).hasFreeThis()) {
+              Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node.children().get(1));
               return expandDef(
                   new Reference((Identifier)bindings.get("f")),
                   substV(
-                      "___.ctor(function(@ps*) {" +
+                      "___.ctor(function @f(@ps*) {" +
                       "  @fh*;" +
                       "  @sf.Super.call(@th, @as*);" +
                       "  @bs*;" +
                       "});",
+                      "f", bindings.get("f"),
                       "ps", bindings.get("ps"),
                       "fh", getFunctionHeadDeclarations(this, s2, mq),
                       "sf", bindings.get("sf"),
@@ -845,20 +907,21 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("funcCtorDecl") {
+    addRule(new Rule("funcCtorDecl", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (node instanceof FunctionDeclaration &&
             match("function @f(@ps*) { @bs*; }", node.children().get(1), bindings)) {
-          Scope s2 = new Scope(scope, (FunctionConstructor)node.children().get(1));
+          Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node.children().get(1));
           if (s2.hasFreeThis()) {
             return expandDef(
                 new Reference((Identifier)bindings.get("f")),
                 substV(
-                    "___.ctor(function(@ps*) {" +
+                    "___.ctor(function @f(@ps*) {" +
                     "  @fh*;" +
                     "  @bs*;" +
                     "});",
+                    "f", bindings.get("f"),
                     "ps", bindings.get("ps"),
                     "fh", getFunctionHeadDeclarations(this, s2, mq),
                     "bs", expand(bindings.get("bs"), s2, mq)),
@@ -875,7 +938,7 @@ public class DefaultJsRewriter extends JsRewriter {
     // map - object literals
     ////////////////////////////////////////////////////////////////////////
 
-    addRule(new Rule("mapEmpty") {
+    addRule(new Rule("mapEmpty", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("({})", node, bindings)) {
@@ -885,13 +948,13 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("mapBadKeySuffix") {
+    addRule(new Rule("mapBadKeySuffix", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("({@keys*: @vals*})", node, bindings) &&
             literalsEndWith(bindings.get("keys"), "_")) {
           mq.addMessage(
-              JsRewriterMessageType.KEY_MAY_NOT_END_IN_UNDERSCORE,
+              RewriterMessageType.KEY_MAY_NOT_END_IN_UNDERSCORE,
               this, node);
           return node;
         }
@@ -899,7 +962,7 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("mapNonEmpty") {
+    addRule(new Rule("mapNonEmpty", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("({@keys*: @vals*})", node, bindings)) {
@@ -913,10 +976,63 @@ public class DefaultJsRewriter extends JsRewriter {
     });
 
     ////////////////////////////////////////////////////////////////////////
+    // multiDeclaration - multiple declarations
+    ////////////////////////////////////////////////////////////////////////
+
+    // TODO(ihab.awad): The 'multiDeclaration' implementation is hard
+    // to follow or maintain. Refactor asap.
+    addRule(new Rule("multiDeclaration", this) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof MultiDeclaration) {
+          boolean isDeclaration = false;
+          List<ParseTreeNode> results = new ArrayList<ParseTreeNode>();
+
+          for (ParseTreeNode child : node.children()) {
+            ParseTreeNode result = expand(child, scope, mq);
+            if (result.getClass() == Expression.class) {
+              results.add(result);
+            } else if (result.getClass() == ExpressionStmt.class) {
+              results.add(result.children().get(0));
+            } else if (result.getClass() == Declaration.class) {
+              results.add(result);
+              isDeclaration = true;
+            } else {
+              throw new RuntimeException("Unexpected result class: " + result.getClass());
+            }
+          }
+
+          if (!isDeclaration) {
+            ParseTreeNode output = results.get(0);
+            for (int i = 1; i < results.size(); i++) {
+              List<ParseTreeNode> children = Arrays.asList(new ParseTreeNode[] {
+                  output,
+                  results.get(i),
+              });
+              output = ParseTreeNodes.newNodeInstance(
+                  Operation.class,
+                  Operator.COMMA,
+                  children);
+            }
+            return ParseTreeNodes.newNodeInstance(
+                ExpressionStmt.class,
+                null,
+                Arrays.asList(new ParseTreeNode[] { output }));
+          } else {
+            return ParseTreeNodes.newNodeInstance(
+                MultiDeclaration.class,
+                null,
+                results);
+          }
+        }
+        return NONE;
+      }
+    });
+
+    ////////////////////////////////////////////////////////////////////////
     // other - things not otherwise covered
     ////////////////////////////////////////////////////////////////////////
 
-    addRule(new Rule("otherInstanceof") {
+    addRule(new Rule("otherInstanceof", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@o instanceof @f", node, bindings)) {
@@ -931,12 +1047,12 @@ public class DefaultJsRewriter extends JsRewriter {
       }
     });
 
-    addRule(new Rule("otherBadInstanceof") {
+    addRule(new Rule("otherBadInstanceof", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@o instanceof @f", node, bindings)) {
           mq.addMessage(
-              JsRewriterMessageType.INVOKED_INSTANCEOF_ON_NON_FUNCTION,
+              RewriterMessageType.INVOKED_INSTANCEOF_ON_NON_FUNCTION,
               this, node);
           return node;
         }
@@ -945,24 +1061,23 @@ public class DefaultJsRewriter extends JsRewriter {
     });
 
     ////////////////////////////////////////////////////////////////////////
-    // Automatically recurse into some structures
+    // recurse - automatically recurse into some structures
     ////////////////////////////////////////////////////////////////////////
 
-    addRule(new Rule("recurse") {
+    addRule(new Rule("recurse", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof ParseTreeNodeContainer ||
             node instanceof Block ||
-            node instanceof CatchStmt ||
             node instanceof Conditional ||
             node instanceof ExpressionStmt ||
             node instanceof Identifier ||
             node instanceof Literal ||
             node instanceof Loop ||
+            node instanceof MultiDeclaration ||
             node instanceof Noop ||
             node instanceof Operation ||
             node instanceof ReturnStmt ||
-            node instanceof ThrowStmt ||
-            node instanceof TryStmt) {
+            node instanceof ThrowStmt) {
           return expandAll(node, scope, mq);
         }
         return NONE;

@@ -39,7 +39,7 @@ import java.util.Collections;
 /**
  * @author ihab.awad@gmail.com
  */
-public class DefaultJsRewriterTest extends TestCase {
+public class DefaultCajaRewriterTest extends TestCase {
   ////////////////////////////////////////////////////////////////////////
   // Handling of synthetic nodes
   ////////////////////////////////////////////////////////////////////////
@@ -59,7 +59,7 @@ public class DefaultJsRewriterTest extends TestCase {
         Collections.singletonList(innerInput));
     setSynthetic(input);
     ParseTreeNode expectedResult = parseText(
-        "{ ___OUTERS___.foo = ___.simpleFunc(function () {}); }");
+        "{ ___OUTERS___.foo = ___.simpleFunc(function foo() {}); }");
     checkSucceeds(input, expectedResult);
   }
 
@@ -70,20 +70,13 @@ public class DefaultJsRewriterTest extends TestCase {
   public void testNestedBlockWithFunction() throws Exception {
     checkSucceeds(
         "{ function foo() {} }",
-        "{ ___OUTERS___.foo = ___.simpleFunc(function() {}); }");
+        "{ ___OUTERS___.foo = ___.simpleFunc(function foo() {}); }");
   }
 
   public void testNestedBlockWithVariable() throws Exception {
     checkSucceeds(
         "{ var x = y; }",
         "{ ___OUTERS___.x = ___OUTERS___.y; }");
-  }
-
-  ////////////////////////////////////////////////////////////////////////
-  // Miscellaneous stuff
-  ////////////////////////////////////////////////////////////////////////
-
-  public void testVarUnderscore() throws Exception {
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -94,19 +87,17 @@ public class DefaultJsRewriterTest extends TestCase {
     // Our parser does not recognize "with" at all.
   }
 
-  /**
-   * TODO(ihab.awad): Implement these properly
-   *
-
   public void testTryCatch() throws Exception {
     checkSucceeds(
         "try {" +
+        "  e;" +
         "  x;" +
         "} catch (e) {" +
         "  e;" +
         "  y;" +
         "}",
         "try {" +
+        "  ___OUTERS___.e;" +
         "  ___OUTERS___.x;" +
         "} catch (e) {" +
         "  e;" +
@@ -117,27 +108,40 @@ public class DefaultJsRewriterTest extends TestCase {
   public void testTryCatchFinally() throws Exception {
     checkSucceeds(
         "try {" +
+        "  e;" +
         "  x;" +
         "} catch (e) {" +
         "  e;" +
         "  y;" +
         "} finally {" +
+        "  e;" +
         "  z;" +
         "}",
         "try {" +
+        "  ___OUTERS___.e;" +
         "  ___OUTERS___.x;" +
         "} catch (e) {" +
         "  e;" +
         "  ___OUTERS___.y;" +
         "} finally {" +
+        "  ___OUTERS___.e;" +
         "  ___OUTERS___.z;" +
         "}");
   }
-
+  
   public void testTryFinally() throws Exception {
+    checkSucceeds(
+        "try {" +
+        "  x;" +
+        "} finally {" +
+        "  z;" +
+        "}",
+        "try {" +
+        "  ___OUTERS___.x;" +
+        "} finally {" +
+        "  ___OUTERS___.z;" +
+        "}");
   }
-
-  */
 
   public void testVarArgs() throws Exception {
     checkSucceeds(
@@ -155,7 +159,7 @@ public class DefaultJsRewriterTest extends TestCase {
         "function foo() {" +
         "  p = this;" +
         "}",
-        "___OUTERS___.foo = ___.ctor(function() {" +
+        "___OUTERS___.foo = ___.ctor(function foo() {" +
         "  var t___ = this;" +
         "  ___OUTERS___.p = t___;" +
         "});");
@@ -193,15 +197,36 @@ public class DefaultJsRewriterTest extends TestCase {
         "  var f = foo;" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.simpleFunc(function() {});" +
+        "  var foo = ___.simpleFunc(function foo() {});" +
         "  var f = ___.primFreeze(foo);" +
         "}));");
+    checkSucceeds(
+        "function foo() {}" +
+        "var f = foo;",
+        "___OUTERS___.foo = ___.simpleFunc(function foo() {});" +
+        "___OUTERS___.f = ___.primFreeze(___OUTERS___.foo);");
   }
 
   public void testVarGlobal() throws Exception {
     checkSucceeds(
         "foo;",
         "___OUTERS___.foo;");
+    checkSucceeds(
+        "function() {" +
+        "  foo;" +
+        "}",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  ___OUTERS___.foo;" +
+        "}));");
+    checkSucceeds(
+        "function() {" +
+        "  var foo;" +
+        "  foo;" +
+        "}",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  var foo;" +
+        "  foo;" +
+        "}));");
   }
 
   public void testVarDefault() throws Exception {
@@ -233,7 +258,7 @@ public class DefaultJsRewriterTest extends TestCase {
         "  }" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.ctor(function() {" +
+        "  var foo = ___.ctor(function foo() {" +
         "    var t___ = this;" +
         "    ___OUTERS___.p = t___.x_canRead___ ? t___.x : ___.readProp(t___, 'x');" +
         "  });" +
@@ -259,7 +284,7 @@ public class DefaultJsRewriterTest extends TestCase {
     checkSucceeds(
         "function foo() { p = this[3]; }",
         "___OUTERS___.foo = ___.ctor(" +
-        "  function() {" +
+        "  function foo() {" +
         "    var t___ = this;" +
         "    ___OUTERS___.p = ___.readProp(t___, 3);" +
         "  }" +
@@ -288,7 +313,7 @@ public class DefaultJsRewriterTest extends TestCase {
         "  function foo() { this.p = x; }" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.ctor(function() {" +
+        "  var foo = ___.ctor(function foo() {" +
         "    var t___ = this;" +
         "    (function() {" +
         "      var x___ = ___OUTERS___.x;" +
@@ -305,7 +330,7 @@ public class DefaultJsRewriterTest extends TestCase {
         "  foo.prototype.p = x;" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.simpleFunc(function() {});" +
+        "  var foo = ___.simpleFunc(function foo() {});" +
         "  (function() {" +
         "    var x___ = ___OUTERS___.x;" +
         "    ___.setMember(foo, 'p', x___);" +
@@ -317,7 +342,7 @@ public class DefaultJsRewriterTest extends TestCase {
         "  foo.prototype.p = function(a, b) { this; }" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +            
-        "  var foo = ___.simpleFunc(function() {});" +
+        "  var foo = ___.simpleFunc(function foo() {});" +
         "  (function() {" +
         "    var x___ = ___.method(foo, function(a, b) {" +
         "      var t___ = this;" +
@@ -346,7 +371,7 @@ public class DefaultJsRewriterTest extends TestCase {
     checkSucceeds(
         "function foo() {}" +
         "foo.prototype = { k0: v0, k1: function() { this.p = 3; } };",
-        "___OUTERS___.foo = ___.simpleFunc(function() {});" +
+        "___OUTERS___.foo = ___.simpleFunc(function foo() {});" +
         "___.setMemberMap(" +
         "  ___.primFreeze(___OUTERS___.foo), {" +
         "    k0: ___OUTERS___.v0," +
@@ -367,7 +392,7 @@ public class DefaultJsRewriterTest extends TestCase {
         "  foo.p = x;" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.simpleFunc(function() {});" +
+        "  var foo = ___.simpleFunc(function foo() {});" +
         "  ___.setPub(foo, 'p', ___OUTERS___.x);" +
         "}));");
   }
@@ -396,7 +421,7 @@ public class DefaultJsRewriterTest extends TestCase {
         "  }" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.ctor(function() {" +
+        "  var foo = ___.ctor(function foo() {" +
         "    var t___ = this;" +
         "    ___.setProp(t___, ___OUTERS___.x, ___OUTERS___.y);" +
         "  });" +
@@ -436,28 +461,48 @@ public class DefaultJsRewriterTest extends TestCase {
         "___.primFreeze(___.simpleFunc(function() {" +
         "  var v;" +
         "}));");
+    checkSucceeds(
+        "var v;",
+        "___OUTERS___.v;");
   }
 
   public void testNewCtor() throws Exception {
     checkSucceeds(
-        "function() {" +
-        "  function foo() {}" +
-        "  new foo(x, y);" +
-        "};",
-        "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.simpleFunc(function() {});" +
-        "  new (___.asCtor(foo))(___OUTERS___.x, ___OUTERS___.y);" +
-        "}));");
+        "function foo() { this.p = 3; }" +
+        "new foo(x, y);",
+        "___OUTERS___.foo = ___.ctor(function foo() {" +
+        "  var t___ = this;" +
+        "  (function() {" +
+        "    var x___ = 3;" +
+        "    t___.p_canSet___ ? (t___.p = x___) : ___.setProp(t___, 'p', x___);" +
+        "  })();" +
+        "});" +
+        "new (___.asCtor(___OUTERS___.foo))(___OUTERS___.x, ___OUTERS___.y);");
+    checkSucceeds(
+        "function foo() {}" +
+        "new foo(x, y);",
+        "___OUTERS___.foo = ___.simpleFunc(function foo() {});" +
+        "new (___.asCtor(___OUTERS___.foo))(___OUTERS___.x, ___OUTERS___.y);");
+  }
+
+  public void testNewBadCtor() throws Exception {
+    checkFails(
+        "new foo.bar();",
+        "Cannot invoke \"new\" on an arbitrary expression");
+    checkFails(
+        "new 3();",
+        "Cannot invoke \"new\" on an arbitrary expression");
+    checkFails(
+        "new (x + y)();",
+        "Cannot invoke \"new\" on an arbitrary expression");
   }
 
   public void testNewFunc() throws Exception {
     checkSucceeds(
         "function() {" +
-        "  var foo = undefined;" +
         "  new x(y, z);" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = undefined;" +
         "  new (___.asCtor(___OUTERS___.x))(___OUTERS___.y, ___OUTERS___.z);" +
         "}));");
   }
@@ -476,7 +521,7 @@ public class DefaultJsRewriterTest extends TestCase {
         "  }" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.ctor(function() {" +
+        "  var foo = ___.ctor(function foo() {" +
         "    var t___ = this;" +
         "    (function() {" +
         "      var x0___ = ___OUTERS___.x;" +
@@ -499,14 +544,31 @@ public class DefaultJsRewriterTest extends TestCase {
     checkSucceeds(
         "function() {" +
         "  function Point() {}" +
+        "  caja.def(Point, Object);" +
         "  function WigglyPoint() {}" +
         "  caja.def(WigglyPoint, Point);" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var Point = ___.simpleFunc(function() {});" +
-        "  var WigglyPoint = ___.simpleFunc(function() {});" +
+        "  var Point = ___.simpleFunc(function Point() {});" +
+        "  caja.def(Point, Object);" +
+        "  var WigglyPoint = ___.simpleFunc(function WigglyPoint() {});" +
         "  caja.def(WigglyPoint, Point);" +
         "}));");
+  }
+
+  public void testCallCajaDef2Bad() throws Exception {
+    checkFails(
+        "function() {" +
+        "  function Point() {}" +
+        "  caja.def(Point, Array);" +
+        "};",
+        "caja.def called with non-constructor");
+    checkFails(
+        "function() {" +
+        "  var Point = 3;" +
+        "  caja.def(Point, Object);" +
+        "};",
+        "caja.def called with non-constructor");
   }
 
   public void testCallCajaDef3Plus() throws Exception {
@@ -517,8 +579,8 @@ public class DefaultJsRewriterTest extends TestCase {
         "  caja.def(WigglyPoint, Point, { m0: x, m1: function() { this.p = 3; } });" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var Point = ___.simpleFunc(function() {});" +
-        "  var WigglyPoint = ___.simpleFunc(function() {});" +
+        "  var Point = ___.simpleFunc(function Point() {});" +
+        "  var WigglyPoint = ___.simpleFunc(function WigglyPoint() {});" +
         "  caja.def(WigglyPoint, Point, {" +
         "      m0: ___OUTERS___.x," +
         "      m1: ___.method(WigglyPoint, function() {" +
@@ -539,8 +601,8 @@ public class DefaultJsRewriterTest extends TestCase {
         "      { s0: y, s1: function() { return 3; } });" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var Point = ___.simpleFunc(function() {});" +
-        "  var WigglyPoint = ___.simpleFunc(function() {});" +
+        "  var Point = ___.simpleFunc(function Point() {});" +
+        "  var WigglyPoint = ___.simpleFunc(function WigglyPoint() {});" +
         "  caja.def(WigglyPoint, Point, {" +
         "      m0: ___OUTERS___.x," +
         "      m1: ___.method(WigglyPoint, function() {" +
@@ -578,6 +640,33 @@ public class DefaultJsRewriterTest extends TestCase {
         "Method in non-method context");
   }
 
+  public void testCallCajaDef3PlusBad() throws Exception {
+    checkFails(
+        "function() {" +
+        "  function Point() {}" +
+        "  caja.def(Point, Array, {});" +
+        "};",
+        "caja.def called with non-constructor");
+    checkFails(
+        "function() {" +
+        "  var Point = 3;" +
+        "  caja.def(Point, Object, {});" +
+        "};",
+        "caja.def called with non-constructor");
+    checkFails(
+        "function() {" +
+        "  function Point() {}" +
+        "  caja.def(Point, Array, {}, {});" +
+        "};",
+        "caja.def called with non-constructor");
+    checkFails(
+        "function() {" +
+        "  var Point = 3;" +
+        "  caja.def(Point, Object, {}, {});" +
+        "};",
+        "caja.def called with non-constructor");
+  }
+
   public void testCallPublic() throws Exception {
     checkSucceeds(
         "o.m(x, y);",
@@ -599,7 +688,7 @@ public class DefaultJsRewriterTest extends TestCase {
         "  }" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.ctor(function() {" +
+        "  var foo = ___.ctor(function foo() {" +
         "    var t___ = this;" +
         "    ___.callProp(t___, ___OUTERS___.x, [___OUTERS___.y, ___OUTERS___.z]);" +
         "  });" +
@@ -634,15 +723,24 @@ public class DefaultJsRewriterTest extends TestCase {
         "  function foo(x, y) {" +
         "    x = arguments;" +
         "    y = z;" +
+        "    return foo(x - 1, y - 1);" +
         "  }" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.simpleFunc(function(x, y) {" +
+        "  var foo = ___.simpleFunc(function foo(x, y) {" +
         "      var a___ = ___.args(arguments);" +
         "      x = a___;" +
         "      y = ___OUTERS___.z;" +
+        "      return ___.asSimpleFunc(___.primFreeze(foo))(x - 1, y - 1);" +
         "  });"+
         "}));");
+    checkSucceeds(
+        "function foo(x, y ) {" +
+        "  return foo(x - 1, y - 1);" +
+        "}",
+        "___OUTERS___.foo = ___.simpleFunc(function foo(x, y) {" +
+        "  return ___.asSimpleFunc(___.primFreeze(foo))(x - 1, y - 1);" +
+        "});");
   }
 
   public void testFuncNamedSimpleValue() throws Exception {
@@ -651,6 +749,7 @@ public class DefaultJsRewriterTest extends TestCase {
         "  var f = function foo(x, y) {" +
         "    x = arguments;" +
         "    y = z;" +
+        "    return foo(x - 1, y - 1);" +
         "  };" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
@@ -659,7 +758,15 @@ public class DefaultJsRewriterTest extends TestCase {
         "      var a___ = ___.args(arguments);" +
         "      x = a___;" +
         "      y = ___OUTERS___.z;" +
+        "      return ___.asSimpleFunc(___.primFreeze(foo))(x - 1, y - 1);" +            
         "  }));"+
+        "}));");
+    checkSucceeds(
+        "var foo = function foo(x, y ) {" +
+        "  return foo(x - 1, y - 1);" +
+        "}",
+        "___OUTERS___.foo = ___.primFreeze(___.simpleFunc(function foo(x, y) {" +
+        "  return ___.asSimpleFunc(___.primFreeze(foo))(x - 1, y - 1);" +
         "}));");
   }
 
@@ -684,7 +791,7 @@ public class DefaultJsRewriterTest extends TestCase {
         "  }" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.ctor(function(x, y) {" +
+        "  var foo = ___.ctor(function foo(x, y) {" +
         "    var t___ = this;" +
         "    foo.Super.call(t___, x + y);" +
         "    y = ___OUTERS___.z;" +
@@ -701,7 +808,7 @@ public class DefaultJsRewriterTest extends TestCase {
         "  }" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.ctor(function(x, y) {" +
+        "  var foo = ___.ctor(function foo(x, y) {" +
         "    var t___ = this;" +
         "    x = t___;" +
         "    y = ___OUTERS___.z;" +            
@@ -731,7 +838,7 @@ public class DefaultJsRewriterTest extends TestCase {
     checkSucceeds(
         "function foo() {}" +
         "x instanceof foo;",      
-        "___OUTERS___.foo = ___.simpleFunc(function() {});" +
+        "___OUTERS___.foo = ___.simpleFunc(function foo() {});" +
         "___OUTERS___.x instanceof ___.primFreeze(___OUTERS___.foo);");
   }
 
@@ -739,6 +846,167 @@ public class DefaultJsRewriterTest extends TestCase {
     checkFails(
         "var x = 3; y instanceof x;",
         "Invoked \"instanceof\" on non-function");
+  }
+
+  public void testMultiDeclaration() throws Exception {
+    // 'var' in global scope, part of a block
+    checkSucceeds(
+        "var x, y;",
+        "___OUTERS___.x, ___OUTERS___.y;");
+    checkSucceeds(
+        "var x = foo, y = bar;",
+        "___OUTERS___.x = ___OUTERS___.foo, ___OUTERS___.y = ___OUTERS___.bar;");
+    checkSucceeds(
+        "var x, y = bar;",
+        "___OUTERS___.x, ___OUTERS___.y = ___OUTERS___.bar;");
+    // 'var' in global scope, 'for' statement
+    checkSucceeds(
+        "for (var x, y; ; ) {}",
+        "for (___OUTERS___.x, ___OUTERS___.y; ; ) {}");
+    checkSucceeds(
+        "for (var x = foo, y = bar; ; ) {}",
+        "for (___OUTERS___.x = ___OUTERS___.foo, ___OUTERS___.y = ___OUTERS___.bar; ; ) {}");
+    checkSucceeds(
+        "for (var x, y = bar; ; ) {}",
+        "for (___OUTERS___.x, ___OUTERS___.y = ___OUTERS___.bar; ; ) {}");
+    // 'var' in global scope, part of a block
+    checkSucceeds(
+        "function() {" +
+        "  var x, y;" +
+        "}",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  var x, y;" +
+        "}));");
+    checkSucceeds(
+        "function() {" +
+        "  var x = foo, y = bar;" +
+        "}",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  var x = ___OUTERS___.foo, y = ___OUTERS___.bar;" +
+        "}));");
+    checkSucceeds(
+        "function() {" +
+        "  var x, y = bar;" +
+        "}",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  var x, y = ___OUTERS___.bar;" +
+        "}));");
+    // 'var' in global scope, 'for' statement        
+    checkSucceeds(
+        "function() {" +
+        "  for (var x, y; ; ) {}" +
+        "}",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  for (var x, y; ; ) {}" +
+        "}));");
+    checkSucceeds(
+        "function() {" +
+        "  for (var x = foo, y = bar; ; ) {}" +
+        "}",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  for (var x = ___OUTERS___.foo, y = ___OUTERS___.bar; ; ) {}" +
+        "}));");
+    checkSucceeds(
+        "function() {" +
+        "  for (var x, y = bar; ; ) {}" +
+        "}",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  for (var x, y = ___OUTERS___.bar; ; ) {}" +
+        "}));");
+  }
+
+  public void testRecurseParseTreeNodeContainer() throws Exception {
+    // Tested implicitly by other cases
+  }
+
+  public void testRecurseBlock() throws Exception {
+    // Tested implicitly by other cases
+  }
+
+  public void testRecurseConditional() throws Exception {
+    checkSucceeds(
+        "if (x === y) {" +
+        "  z;" +
+        "} else if (z === y) {" +
+        "  x;" +
+        "} else {" +
+        "  y;" +
+        "}",
+        "if (___OUTERS___.x === ___OUTERS___.y) {" +
+        "  ___OUTERS___.z;" +
+        "} else if (___OUTERS___.z === ___OUTERS___.y) {" +
+        "  ___OUTERS___.x;" +
+        "} else {" +
+        "  ___OUTERS___.y;" +
+        "}");
+  }
+
+  public void testRecurseExpressionStmt() throws Exception {
+    // Tested implicitly by other cases
+  }
+
+  public void testRecurseIdentifier() throws Exception {
+    // Tested implicitly by other cases
+  }
+
+  public void testRecurseLiteral() throws Exception {
+    checkSucceeds(
+        "3;",
+        "3;");
+  }
+
+  public void testRecurseLoop() throws Exception {
+    checkSucceeds(
+        "for (var k = 0; k < 3; k++) {" +
+        "  x;" +
+        "}",
+        "for (___OUTERS___.k = 0; ___OUTERS___.k < 3; ___OUTERS___.k++) {" +
+        "  ___OUTERS___.x;" +
+        "}");
+    checkSucceeds(
+        "function() {" +
+        "  for (var k = 0; k < 3; k++) {" +
+        "    x;" +
+        "  }" +
+        "};",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  for (var k = 0; k < 3; k++) {" +
+        "    ___OUTERS___.x;" +
+        "  }" +
+        "}));");
+  }
+
+  public void testRecurseNoop() throws Exception {
+    checkSucceeds(
+        ";",
+        ";");
+  }
+
+  public void testRecurseOperation() throws Exception {
+    checkSucceeds(
+        "x + y;",
+        "___OUTERS___.x + ___OUTERS___.y");
+  }
+
+  public void testRecurseReturnStmt() throws Exception {
+    checkSucceeds(
+        "return x;",
+        "return ___OUTERS___.x;");
+  }
+
+  public void testRecurseThrowStmt() throws Exception {
+    checkSucceeds(
+        "throw x;",
+        "throw ___OUTERS___.x;");
+    checkSucceeds(
+        "function() {" +
+        "  var x;" +
+        "  throw x;" +
+        "}",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  var x;" +
+        "  throw x;" +
+        "}));");
   }
 
   public void testSpecimenClickme() throws Exception {
@@ -763,7 +1031,7 @@ public class DefaultJsRewriterTest extends TestCase {
   private void checkFails(String input, String error) throws Exception {
     MessageContext mc = new MessageContext();
     MessageQueue mq = TestUtil.createTestMessageQueue(mc);
-    new DefaultJsRewriter(true).expand(parseText(input), mq);
+    new DefaultCajaRewriter(true).expand(parseText(input), mq);
 
     StringBuilder messageText = new StringBuilder();
     for (Message m : mq.getMessages()) {
@@ -780,7 +1048,7 @@ public class DefaultJsRewriterTest extends TestCase {
       ParseTreeNode expectedResultNode)
       throws Exception{
     MessageQueue mq = TestUtil.createTestMessageQueue(new MessageContext());
-    ParseTreeNode actualResultNode = new DefaultJsRewriter().expand(inputNode, mq);
+    ParseTreeNode actualResultNode = new DefaultCajaRewriter().expand(inputNode, mq);
     for (Message m : mq.getMessages()) {
       if (m.getMessageLevel().compareTo(MessageLevel.WARNING) >= 0) {
         fail(m.toString());
@@ -820,7 +1088,6 @@ public class DefaultJsRewriterTest extends TestCase {
     Statement stmt = p.parse();
     p.getTokenQueue().expectEmpty();
     return stmt;
-
   }
 
   private String readResource(String resource) throws Exception {

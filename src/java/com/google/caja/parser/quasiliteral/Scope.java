@@ -14,20 +14,31 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
-import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.ReservedNames;
+import com.google.caja.plugin.SyntheticNodes;
+import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
+import com.google.caja.util.Pair;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Arrays;
 import java.util.HashSet;
+import java.net.URI;
 
 /**
  * A scope analysis of a {@link com.google.caja.parser.ParseTreeNode}.
@@ -58,7 +69,7 @@ public class Scope {
     DECLARED_FUNCTION(FUNCTION),
 
     /**
-     * A constructor declaration, i.e., one which mentions 'this' in its body,
+     * A constructor declaration, i.e., one which mentions 'this' in its body.
      * Example: "foo" in the following --
      *
      * <pre>
@@ -78,69 +89,89 @@ public class Scope {
      * var t = function foo() { };
      * </pre>
      */
-    DATA();
+    DATA(),
 
-    private final HashSet<LocalType> implications;
+    /**
+     * A variable defined in a catch block.
+     * Example: "foo" in the following --
+     *
+     * <pre>
+     * catch (foo) { this.x = 3; }
+     * </pre>
+     */
+    CAUGHT_EXCEPTION,
+    ;
+
+    private final HashSet<LocalType> implications = new HashSet<LocalType>();
 
     private LocalType(LocalType... implications) {
-      this.implications = new HashSet<LocalType>();
-      this.implications.addAll(Arrays.asList(implications));
+      this.implications.add(this);
+      for (LocalType implication : implications) {
+        this.implications.addAll(implication.implications);
+      }
     }
 
     public boolean implies(LocalType type) {
-      if (this == type) return true;
-      for (LocalType i : implications) {
-        if (i.implies(type)) return true;
-      }
-      return false;
+      return implications.contains(type);
     }
   }
-  
-  private Scope parent;
+
+  private static final FilePosition PRIMORDIAL_OBJECTS_FILE_POSITION =
+      FilePosition.instance(
+          new InputSource(URI.create("built-in:///js-primordial-objects")),
+          0, 0, 0, 0, 0, 0, 0, 0);
+
+  private final Scope parent;
+  private final MessageQueue mq;
   private boolean containsThis;
   private boolean containsArguments;
-  private Map<String, LocalType> locals = new HashMap<String, LocalType>();
+  private final Map<String, Pair<LocalType, FilePosition>> locals
+      = new HashMap<String, Pair<LocalType, FilePosition>>();
 
-  // TODO(ihab.awad): Create scope from static methods.
-  // TODO(ihab.awad): Take a message queue for adding error messages.
-
-  /**
-   * Create a scope from some arbitrary parse tree nodes.
-   *
-   * @param parent the parent scope.
-   * @param root the node to use as a root.
-   */
-  public Scope(Scope parent, ParseTreeNode root) {
-    this.parent = parent;
-    walkBlock(root);
+  public static Scope fromRootBlock(Block root, MessageQueue mq) {
+    Scope s = new Scope(mq);
+    addPrimordialObjects(s);
+    walkBlock(s, root);
+    return s;
+  }
+  
+  public static Scope fromBlock(Scope parent, Block root) {
+    Scope s = new Scope(parent);
+    walkBlock(s, root);
+    return s;
   }
 
-
-  /**
-   * Create a top-level scope for a program.
-   *
-   * @param root the block representing the top level of the program.
-   */
-  public Scope(Block root) {
-    walkBlock(root);
+  public static Scope fromCatchStmt(Scope parent, CatchStmt root) {
+    Scope s = new Scope(parent);
+    declare(s, root.getException().getIdentifier(),
+            LocalType.CAUGHT_EXCEPTION);
+    return s;
   }
 
-  /**
-   * Create a nested scope for a function in a program.
-   *
-   * @param parent the parent scope of the function.
-   * @param root the function constituting the nested scope.
-   */
-  public Scope(Scope parent, FunctionConstructor root) {
-    this.parent = parent;
-    
-    if (root.getIdentifierName() != null &&
-        parent.getType(root.getIdentifierName()) != LocalType.DECLARED_FUNCTION) {
-      locals.put(root.getIdentifierName(), LocalType.FUNCTION);
+  public static Scope fromFunctionConstructor(Scope parent, FunctionConstructor root) {
+    Scope s = new Scope(parent);
+
+    // A function's name is bound to it in its body. After executing
+    //    var g = function f() { return f; };
+    // the following is true
+    //    typeof f === 'undefined' && g === g()
+    if (root.getIdentifierName() != null) {
+      declare(s, root.getIdentifier(), LocalType.FUNCTION);
     }
 
-    for (ParseTreeNode n : root.getParams()) walkBlock(n);
-    walkBlock(root.getBody());
+    for (ParseTreeNode n : root.getParams()) {
+      walkBlock(s, n);
+    }
+    
+    walkBlock(s, root.getBody());
+
+    return s;
+  }
+  
+  public static Scope fromParseTreeNodeContainer(Scope parent, ParseTreeNodeContainer root) {
+    Scope s = new Scope(parent);
+    walkBlock(s, root);
+    return s;
   }
 
   /**
@@ -188,6 +219,10 @@ public class Scope {
     return getType(name) != null;
   }
 
+  private boolean isDefinedAs(String name, LocalType type) {
+    return isDefined(name) && getType(name).implies(type);
+  }
+
   /**
    * In this scope or some enclosing scope, is a given name
    * defined as a function?
@@ -197,7 +232,19 @@ public class Scope {
    * scope. If 'name' is not defined, return false.
    */
   public boolean isFunction(String name) {
-    return isDefined(name) && getType(name).implies(LocalType.FUNCTION);
+    return isDefinedAs(name, LocalType.FUNCTION);
+  }
+
+  /**
+   * True if name is the name of the variable that a {@code catch} block's
+   * exception is bound to.
+   *
+   * @param name an identifier.
+   * @return whether 'name' is defined as the exception variable of
+   *   a {@code catch} block.
+   */
+  public boolean isException(String name) {
+    return isDefinedAs(name, LocalType.CAUGHT_EXCEPTION);
   }
 
   /**
@@ -206,10 +253,10 @@ public class Scope {
    *
    * @param name an identifier.
    * @return whether 'name' is defined as a declared function within this
-   * scope. If 'name' is not defined, return false.
+   *   scope. If 'name' is not defined, return false.
    */
   public boolean isDeclaredFunction(String name) {
-    return isDefined(name) && getType(name).implies(LocalType.DECLARED_FUNCTION);
+    return isDefinedAs(name, LocalType.DECLARED_FUNCTION);
   }
 
   /**
@@ -218,10 +265,10 @@ public class Scope {
    *
    * @param name an identifier.
    * @return whether 'name' is defined as a constructor within this
-   * scope. If 'name' is not defined, return false.
+   *   scope. If 'name' is not defined, return false.
    */
   public boolean isConstructor(String name) {
-    return isDefined(name) && getType(name).implies(LocalType.CONSTRUCTOR);
+    return isDefinedAs(name, LocalType.CONSTRUCTOR);
   }
 
   /**
@@ -237,41 +284,143 @@ public class Scope {
   }
 
   private LocalType getType(String name) {
-    return locals.containsKey(name) ?
-        locals.get(name) :
-        parent != null ? parent.getType(name) : null;
+    Scope current = this;
+    do {
+      Pair<LocalType, FilePosition> symbolDefinition = current.locals.get(name);
+      if (symbolDefinition != null) { return symbolDefinition.a; }
+      current = current.parent;
+    } while (current != null);
+    return null;
   }
 
-  private LocalType computeDeclarationType(Declaration decl) {
+  private Scope(MessageQueue mq) {    
+    this.parent = null;
+    this.mq = mq;
+  }
+
+  private Scope(Scope parent) {
+    this.parent = parent;
+    this.mq = parent.mq;
+  }
+
+  /**
+   * Add the primordial objects to a top-level scope. By marking some of these as
+   * CONSTRUCTORs, we allow them to be used as constructors at compile time. A
+   * container writer makes the separate decision whether to make them members of
+   *  ___OUTERS___ or not.
+   */
+  private static void addPrimordialObjects(Scope s) {
+    addLocal(s, "Global", LocalType.DATA);
+    addLocal(s, "Object", LocalType.CONSTRUCTOR);
+    addLocal(s, "Function", LocalType.DATA);
+    addLocal(s, "Array", LocalType.DATA);
+    addLocal(s, "String", LocalType.DATA);
+    addLocal(s, "Boolean", LocalType.DATA);
+    addLocal(s, "Number", LocalType.DATA);
+    addLocal(s, "Math", LocalType.DATA);
+    addLocal(s, "Date", LocalType.CONSTRUCTOR);
+    addLocal(s, "RegExp", LocalType.DATA);
+    addLocal(s, "Error", LocalType.CONSTRUCTOR);
+    addLocal(s, "EvalError", LocalType.CONSTRUCTOR);
+    addLocal(s, "RangeError", LocalType.CONSTRUCTOR);
+    addLocal(s, "ReferenceError", LocalType.CONSTRUCTOR);
+    addLocal(s, "SyntaxError", LocalType.CONSTRUCTOR);
+    addLocal(s, "TypeError", LocalType.CONSTRUCTOR);
+    addLocal(s, "URIError", LocalType.CONSTRUCTOR);
+  }
+  
+  private static void addLocal(Scope s, String name, LocalType type) {
+    s.locals.put(
+        name,
+        new Pair<LocalType, FilePosition>(
+            type,
+            PRIMORDIAL_OBJECTS_FILE_POSITION));
+  }
+
+  private static LocalType computeDeclarationType(Scope s, Declaration decl) {
     if (decl instanceof FunctionDeclaration) {
-      Scope s2 = new Scope(this, ((FunctionDeclaration)decl).getInitializer());
+      Scope s2 = fromFunctionConstructor(s, ((FunctionDeclaration)decl).getInitializer());
       return s2.hasFreeThis() ? LocalType.CONSTRUCTOR : LocalType.DECLARED_FUNCTION;
     }
     return LocalType.DATA;
   }
 
-  private void walkBlock(ParseTreeNode root) {
+  private static void walkBlock(final Scope s, ParseTreeNode root) {
     root.acceptPreOrder(new Visitor() {
       public boolean visit(AncestorChain<?> chain) {
         if (chain.node instanceof FunctionConstructor) {
           return false;
-        }
-        if (chain.node instanceof Declaration) {
-          LocalType type = computeDeclarationType((Declaration)chain.node);
-          String name = ((Declaration)chain.node).getIdentifierName();
-          if (locals.containsKey(name) && locals.get(name) != type) {
-            throw new RuntimeException("Duplicate definition of local: " + name);
-          }
-          locals.put(name, type);
-        }
-        if (chain.node instanceof Reference) {
+        } else if (chain.node instanceof CatchStmt) {
+          // We skip the CatchStmt's exception variable -- that is only defined within the
+          // CatchStmt's body -- but we dig into the body itself to grab all the declarations
+          // within it, which *are* hoisted into the parent scope.
+          ((CatchStmt)chain.node).getBody().acceptPreOrder(this, null);
+          return false;
+        } else if (chain.node instanceof Declaration) {
+          Declaration decl = (Declaration) chain.node;
+          declare(s, decl.getIdentifier(), computeDeclarationType(s, decl));
+        } else if (chain.node instanceof Reference) {
           String name = ((Reference)chain.node).getIdentifierName();
-          if (ReservedNames.ARGUMENTS.equals(name)) { containsArguments = true; }
-          if (ReservedNames.THIS.equals(name)) { containsThis = true; }
+          if (ReservedNames.ARGUMENTS.equals(name)) {
+            s.containsArguments = true;
+          }
+          if (ReservedNames.THIS.equals(name)) { s.containsThis = true; }
         }
         return true;
       }
     },
     null);
+  }
+
+  /**
+   * Add a symbol to the symbol table for this scope with the given type.
+   * If this symbol redefines another symbol with a different type, or masks
+   * an exception, then an error will be added to this Scope's MessageQueue.
+   */
+  private static void declare(Scope s, Identifier ident, LocalType type) {
+    String name = ident.getName();
+    Pair<LocalType, FilePosition> oldDefinition = s.locals.get(name);
+    if (oldDefinition != null) {
+      LocalType oldType = oldDefinition.a;
+      if (oldType != type) {
+        // This is an error because redeclaring a function declaration as a
+        // var makes analysis hard.
+        s.mq.getMessages().add(new Message(
+            MessageType.SYMBOL_REDEFINED,
+            MessageLevel.ERROR,
+            ident.getFilePosition(),
+            MessagePart.Factory.valueOf(name),
+            oldDefinition.b));
+      }
+    }
+    for (Scope ancestor = s.parent; ancestor != null;
+         ancestor = ancestor.parent) {
+      Pair<LocalType, FilePosition> maskedDefinition
+          = ancestor.locals.get(name);
+      if (maskedDefinition == null) { continue; }
+
+      LocalType maskedType = maskedDefinition.a;
+      if (maskedType != type) {
+        // Since different interpreters disagree about how exception
+        // declarations affect local variable declarations, we need to
+        // prevent exceptions masking locals and vice-versa.
+        MessageLevel level = (
+            (type == LocalType.CAUGHT_EXCEPTION
+             || maskedType == LocalType.CAUGHT_EXCEPTION)
+            ? MessageLevel.ERROR
+            : MessageLevel.LINT);
+        if (!ident.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
+          s.mq.getMessages().add(new Message(
+              MessageType.MASKING_SYMBOL,
+              level,
+              ident.getFilePosition(),
+              MessagePart.Factory.valueOf(name),
+              maskedDefinition.b));
+        }
+      }
+      break;
+    }
+
+    s.locals.put(name, Pair.pair(type, ident.getFilePosition()));
   }
 }
