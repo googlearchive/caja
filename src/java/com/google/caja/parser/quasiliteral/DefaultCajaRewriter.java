@@ -17,24 +17,29 @@ package com.google.caja.parser.quasiliteral;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.BreakStmt;
+import com.google.caja.parser.js.CaseStmt;
 import com.google.caja.parser.js.Conditional;
+import com.google.caja.parser.js.ContinueStmt;
+import com.google.caja.parser.js.Declaration;
+import com.google.caja.parser.js.DefaultCaseStmt;
+import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Loop;
+import com.google.caja.parser.js.MultiDeclaration;
 import com.google.caja.parser.js.Noop;
 import com.google.caja.parser.js.Operation;
+import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.ReturnStmt;
+import com.google.caja.parser.js.SwitchStmt;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TryStmt;
-import com.google.caja.parser.js.MultiDeclaration;
-import com.google.caja.parser.js.Declaration;
-import com.google.caja.parser.js.Operator;
-import com.google.caja.parser.js.Expression;
 import com.google.caja.plugin.ReservedNames;
 import com.google.caja.util.Pair;
 import com.google.caja.reporting.MessageQueue;
@@ -1067,8 +1072,12 @@ public class DefaultCajaRewriter extends Rewriter {
     addRule(new Rule("recurse", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof ParseTreeNodeContainer ||
+            node instanceof BreakStmt ||
             node instanceof Block ||
+            node instanceof CaseStmt ||
             node instanceof Conditional ||
+            node instanceof ContinueStmt ||
+            node instanceof DefaultCaseStmt ||
             node instanceof ExpressionStmt ||
             node instanceof Identifier ||
             node instanceof Literal ||
@@ -1077,6 +1086,7 @@ public class DefaultCajaRewriter extends Rewriter {
             node instanceof Noop ||
             node instanceof Operation ||
             node instanceof ReturnStmt ||
+            node instanceof SwitchStmt ||
             node instanceof ThrowStmt) {
           return expandAll(node, scope, mq);
         }
