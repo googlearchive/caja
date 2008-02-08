@@ -14,6 +14,8 @@
 
 package com.google.caja.util;
 
+import com.google.caja.parser.js.StringLiteral;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -25,6 +27,11 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import junit.framework.Assert;
 
@@ -45,7 +52,7 @@ public class RhinoTestBed {
    * If dumpJsFile is not null, also put all the javascript in that file.
    */
   public static Object runJs(final String dumpJsFile, Input... inputs)
-  throws IOException {
+      throws IOException {
     Context context = Context.enter();
     try {
       ScriptableObject globalScope = context.initStandardObjects();
@@ -77,6 +84,45 @@ public class RhinoTestBed {
     }
   }
 
+  /**
+   * Given an HTML file that references javascript sources, load all
+   * the scripts, set up the DOM using env.js, and start JSUnit.
+   *
+   * This lets us write test html files that can be run both
+   * in a browser, and automatically via ANT.
+   *
+   * @param base the class which should be used to resolve javascript files as
+   *   classpath resources.
+   * @param htmlResource path to html file relative to base
+   */
+  public static void runJsUnittestFromHtml(Class<?> base, String htmlResource)
+      throws IOException {
+    TestUtil.enableContentUrls();
+
+    StringBuilder html = new StringBuilder();
+    List<Input> inputs = new ArrayList<Input>();
+
+    // Stub out the Browser
+    inputs.add(new Input(RhinoTestBed.class, "../plugin/console-stubs.js"));
+    inputs.add(new Input(RhinoTestBed.class, "/js/jqueryjs/runtest/env.js"));
+    int injectHtmlIndex = inputs.size();
+
+    extractScriptsFromHtml(new Input(base, htmlResource), base, html, inputs);
+
+    // Set up the DOM.  env.js requires that location be set to a URI before it
+    // creates a DOM.  Since it fetches HTML via java.net.URL and passes it off
+    // to the org.w3c parser, we use a content: URL which is handled by handlers
+    // registed in TestUtil so that we can provide html without having a file
+    // handy.
+    String domJs = "window.location = "
+        + StringLiteral.toQuotedValue(TestUtil.makeContentUrl(html.toString()))
+        + ";";
+    inputs.add(injectHtmlIndex, new Input(domJs, htmlResource));
+
+    // Execute for side-effect
+    runJs(null, inputs.toArray(new Input[0]));
+  }
+
   /** An input javascript file. */
   public static final class Input {
     public final Reader input;
@@ -91,9 +137,13 @@ public class RhinoTestBed {
       this.input = input;
       this.source = source;
     }
+
     public Input(String javascript, String source) {
       this(new StringReader(javascript), source);
     }
+
+    @Override
+    public String toString() { return "(InputSource " + source + ")"; }
   }
 
   private static String readReader(Reader reader) {
@@ -141,6 +191,37 @@ public class RhinoTestBed {
     }
   }
 
+  private static void extractScriptsFromHtml(
+      Input input, Class<?> base, Appendable htmlOut, List<Input> jsOut)
+      throws IOException {
+    // Some quick and dirty parsing.  TODO(mikesamuel): do this properly
+    Pattern scriptPattern = Pattern.compile(
+        "<script\\b[^>]*>.*?</script\\b[^>]*>",
+        Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+    String html = readReader(input.input);
+    Matcher m = scriptPattern.matcher(html);
+    int pos = 0;
+    while (m.find()) {
+      htmlOut.append(html.substring(pos, m.start()));
+      pos = m.end();
+
+      String script = m.group();
+      int open = script.indexOf('>') + 1;
+
+      Pattern srcPattern
+          = Pattern.compile("\\bsrc\\s*=\\s*[\"']?([^\\s>\"']+)");
+      Matcher m2 = srcPattern.matcher(script.substring(0, open));
+      if (m2.find()) {
+        String src = m2.group(1);
+        jsOut.add(new Input(base, src));
+      } else {
+        int close = script.lastIndexOf("</");
+        String inlineScript = script.substring(open, close);
+        jsOut.add(new Input(new StringReader(inlineScript), input.source));
+      }
+    }
+    htmlOut.append(html.substring(pos));
+  }
 
   private RhinoTestBed() { /* uninstantiable */ }
 }

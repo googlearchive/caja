@@ -133,22 +133,24 @@ var VCALENDAR_CLASS_ = classMatcher_(['vcalendar']);
 var DUR_TIME_ = '(T(\\d+H(\\d+M(\\d+S)?)?|\\d+M(\\d+S)?|\\d+S))';
 var PERIOD_RE_ = new RegExp(
     '^[+-]?P(\\d+[WD]' + DUR_TIME_ + '?|' + DUR_TIME_ + ')$');
-var RRULE_RE_ =
-    /^FREQ=(YEAR|MONTH|DAI|WEEK|HOUR|MINUTE|SECOND)LY(;[A-Z0-9;,]+)?$/i;
-var NON_NEG_INT_RE_ = /^\d+$/;
-var POS_INT_RE_ = /^(0+|0*[1-9]\d+)$/;
-var INT_RE_ = /^[+-]?(0+|0*[1-9]\d+)$/;
-var NON_ZERO_INT_RE_ = /^[+-]?0*[1-9]\d+$/;
-var WDAY_RE_ = /^(MO|TU|WE|TH|FR|SA|SU)$/i;
-var BYDAY_RE_ = /^([+-]0*[1-9]\d+)?(MO|TU|WE|TH|FR|SA|SU)$/i;
-var STATUS_RE_ = /^(?:TENTATIVE|CONFIRMED|CANCELLED)$/i;
-var CLASS_RE_ = /^(?:PUBLIC|PRIVATE|CONFIDENTIAL)$/i;
-var TRANSP_RE_ = /^(?:TRANSPARENT|OPAQUE)$/i;
-var ROLE_RE_ = /^(?:CHAIR|(?:REQ|OPT|NON)-PARTICIPANT)$/i;
-var RSVP_RE_ = /^(?:TRUE|FALSE)$/i;
-var PSTAT_RE_ = /^(?:NEEDS-ACTION|ACCEPTED|DECLINED|TENTATIVE|DELEGATED)$/i;
-var CUTYPE_RE_ = /^(?:INDIVIDUAL|GROUP|RESOURCE|ROOM|UNKNOWN)$/i;
-var MAILTO_RE_ = /^mailto:/i;
+var RRULE_RE_ = new RegExp(
+    '^FREQ=(YEAR|MONTH|DAI|WEEK|HOUR|MINUTE|SECOND)LY(;[A-Z0-9;,]+)?$', 'i');
+var NON_NEG_INT_RE_ = new RegExp('^\\\d+$');
+var POS_INT_RE_ = new RegExp('^(0+|0*[1-9]\\d+)$');
+var INT_RE_ = new RegExp('^[+-]?(0+|0*[1-9]\\d+)$');
+var NON_ZERO_INT_RE_ = new RegExp('^[+-]?0*[1-9]\\d+$');
+var WDAY_RE_ = new RegExp('^(MO|TU|WE|TH|FR|SA|SU)$', 'i');
+var BYDAY_RE_ = new RegExp('^([+-]0*[1-9]\\d+)?(MO|TU|WE|TH|FR|SA|SU)$', 'i');
+var STATUS_RE_ = new RegExp('^(?:TENTATIVE|CONFIRMED|CANCELLED)$', 'i');
+var CLASS_RE_ = new RegExp('^(?:PUBLIC|PRIVATE|CONFIDENTIAL)$', 'i');
+var TRANSP_RE_ = new RegExp('^(?:TRANSPARENT|OPAQUE)$', 'i');
+var ROLE_RE_ = new RegExp('^(?:CHAIR|(?:REQ|OPT|NON)-PARTICIPANT)$', 'i');
+var RSVP_RE_ = new RegExp('^(?:TRUE|FALSE)$', 'i');
+var PSTAT_RE_ = new RegExp(
+    '^(?:NEEDS-ACTION|ACCEPTED|DECLINED|TENTATIVE|DELEGATED)$', 'i');
+var CUTYPE_RE_ = new RegExp(
+    '^(?:INDIVIDUAL|GROUP|RESOURCE|ROOM|UNKNOWN)$', 'i');
+var MAILTO_RE_ = new RegExp('^mailto:', 'i');
 
 /** defines vcalendar level properties. */
 var VCALENDAR_SCHEMA_ = {

@@ -18,8 +18,12 @@
  * in turn mimic junit.
  */
 
+
 function fail(msg) {
-  if (console) { console.log(msg); }
+  if (this.console) {
+    console.trace && console.trace();
+    console.log(msg);
+  }
   if (Error) { throw new Error(msg); }
   throw msg;
 }
@@ -94,5 +98,46 @@ function assertFalse() {
       assertEquals(arguments[0], false, arguments[1]);
       break;
     default: throw 'missing arguments ' + arguments;
+  }
+}
+
+function assertLessThan() {
+  var msg, a, b;
+  switch (arguments.length) {
+    case 2:
+      msg = null;
+      a = arguments[0];
+      b = arguments[1];
+      break;
+    case 3:
+      msg = arguments[0];
+      a = arguments[1];
+      b = arguments[2];
+      break;
+    default: throw 'missing arguments ' + argumetns;
+  }
+  if (!(a < b)) {
+    fail((msg ? msg + ' :: ' : '')
+         + '!(<<' + a + '>>: ' + (typeof a) + ' < '
+         + '<<' + b + '>>: ' + (typeof b) + ')');
+  }
+}
+
+function assertNull() {
+  var msg, a;
+  switch (arguments.length) {
+    case 1:
+      msg = null;
+      a = arguments[0];
+      break;
+    case 2:
+      msg = arguments[0];
+      a = arguments[1];
+      break;
+    default: throw 'missing arguments ' + argumetns;
+  }
+  if (a !== null) {
+    fail((msg ? msg + ' :: ' : '')
+         + 'Expected null, not ' + '<<' + a + '>>: ' + (typeof a));
   }
 }

@@ -1,0 +1,59 @@
+<html>
+<head>
+<title>Caja Calendar Demo</title>
+</head>
+<body>
+<p>A demo application that extracts
+<a href="http://microformats.org/wiki/hcalendar">&mu;formatted calendar data</a>
+from a read only DOM and displays it on a calendar widget.
+
+<p>This is meant to let us test different optimization strategies.
+
+<p>It consists of several pieces:
+<dl>
+<dt>hcalendar extractor
+<dd>walks a DOM to extracts calendar data generating an RFC 2445 VCALENDAR.
+Will test the performance of our tamed DOM.
+
+<dt>calendrical calculations.
+<dd>Will test the performance of cajoled code by doing some algorithmic work
+involving lots of primitive operations and method calls.
+
+<dt>calendar grid
+<dd>displays a set of events.
+Will test HTML rendering and sanitization.
+</dl>
+
+<h2>HCalendar Extractor</h2>
+<p>TODO(mikesamuel): write me
+
+
+<h2>Calendrical Calculations</h2>
+
+<p>A javascript port of {@link
+http://code.google.com/p/google-rfc-2445/}.  The main entry point is
+<code>rrule-cajita.js</code> which provides an interpreter for RRULEs
+and EXRULEs.
+
+<p><code>time-cajita.js</code> includes a date implementation that
+will let us test operations on primitives, give us the opportunity to
+test which numeric operations can be proven safe, and try out
+inlining.
+
+<p>This is written in Cajita and should help in profiling the
+javascript cajita translator.
+
+<p>There are a number of supporting files,
+<code>generators-cajita.js</code>, <code>filters-cajita.js</code>, and
+<code>conditions-cajita.js</code> all represent different rule parts
+in RFC 2445 RRULEs.</p>
+
+<p>There is a primitive timezone implementation in
+<code>timezone-cajita.js</code>.
+
+
+<h2>Calendar Grid</h2>
+<p>TODO(mikesamuel): write me
+
+</body>
+</html>

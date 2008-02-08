@@ -35,8 +35,8 @@ function jsunitRun() {
 
   for (var i = 0; i < testNames.length; ++i) {
     var testName = testNames[i];
-    console.time(testName);
+    this.console && console.time(testName);
     this[testName]();
-    console.timeEnd(testName);
+    this.console && console.timeEnd(testName);
   }
 }

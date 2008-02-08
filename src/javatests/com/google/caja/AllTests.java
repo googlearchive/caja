@@ -15,6 +15,7 @@
 package com.google.caja;
 
 import com.google.caja.demos.calendar.HcalTest;
+import com.google.caja.demos.calendar.RRuleTest;
 import com.google.caja.lexer.CharProducerTest;
 import com.google.caja.lexer.CommentLexerTest;
 import com.google.caja.lexer.CssLexerTest;
@@ -99,6 +100,7 @@ public class AllTests {
           PluginCompilerTest.class,
           PunctuationTrieTest.class,
           QuasiBuilderTest.class,
+          RRuleTest.class,
           ScopeTest.class,
           SparseBitSetTest.class,
           StringLiteralTest.class,

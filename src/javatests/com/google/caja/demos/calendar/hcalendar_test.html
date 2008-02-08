@@ -1,49 +1,59 @@
 <html>
 <head>
 <script type=text/javascript src=../../plugin/asserts.js></script>
-<script type=text/javascript
- src=../../../../../../java/com/google/caja/demos/calendar/util.js
-></script>
-<script type=text/javascript
- src=../../../../../../java/com/google/caja/demos/calendar/html.js
-></script>
-<script type=text/javascript
- src=../../../../../../java/com/google/caja/demos/calendar/uformat.js
-></script>
-<script type=text/javascript
- src=../../../../../../java/com/google/caja/demos/calendar/hcalendar.js
-></script>
+<script type=text/javascript src=util.js></script>
+<script type=text/javascript src=html.js></script>
+<script type=text/javascript src=uformat.js></script>
+<script type=text/javascript src=hcalendar.js></script>
 <script type=text/javascript src=hcalendar_test.js></script>
 
-<style type=text/css>
+<style type="text/css">
 .good { color: #080 }
 .bad { color: #800; text-weight: bold }
 .detail { margin-left: 2em; white-space: pre }
 </style>
 </head>
 <body>
-<ul id=log></ul>
+<ul id="log"></ul>
 
 <script type="text/javascript">
 function loadHtml(html, continuation) {
-  var iframe = document.createElement('IFRAME');
-  iframe.width = iframe.height = 100;
-  document.body.appendChild(iframe);
-  try {
-    iframe.contentDocument.write(html);
-    continuation(iframe.contentDocument);
-  } finally {
-    document.body.removeChild(iframe);
+  // If run inside Rhino, update the content the easy way
+  if (/^content:/.test(String(window.location))) {
+    window.location = 'content:' + encodeURIComponent(html);
+    continuation(window.document);
+  } else {
+    console.log('creating iframe location=' + window.location);
+    var iframe = document.createElement('IFRAME');
+    iframe.width = iframe.height = 100;
+    document.body.appendChild(iframe);
+    try {
+      iframe.contentDocument.write(html);
+      continuation(iframe.contentDocument);
+    } finally {
+      document.body.removeChild(iframe);
+    }
   }
 }
 
 (function () {
 
   function emit(text, className) {
-    var li = document.createElement('li');
-    li.className = className;
-    li.appendChild(document.createTextNode(text));
-    document.getElementById('log').appendChild(li);
+    var log = document.getElementById('log');
+    if (log) {
+      var li = document.createElement('li');
+      li.className = className;
+      li.appendChild(document.createTextNode(text));
+      log.appendChild(li);
+    }
+    if (this.console) {
+      if ('bad' === className) {
+        console.error(text);
+        console.trace();
+      } else {
+        console.log(text);
+      }
+    }
   }
 
   var testNames = [];
@@ -57,6 +67,8 @@ function loadHtml(html, continuation) {
 
   testNames.sort();
 
+  var errors = [];
+
   for (var i = 0; i < testNames.length; ++i) {
     var testName = testNames[i];
     this.console && this.console.time(testName);
@@ -67,6 +79,7 @@ function loadHtml(html, continuation) {
       pass = true;
     } catch (e) {
       error = e;
+      errors.push(error + (error.stack ? '\n' + error.stack : ''));
     }
     this.console && this.console.timeEnd(testName);
 
@@ -78,6 +91,10 @@ function loadHtml(html, continuation) {
         emit(error.stack, 'detail');
       }
     }
+  }
+
+  if (errors.length) {
+    throw errors.join('\n\n');
   }
 })();
 </script>

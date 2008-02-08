@@ -61,13 +61,13 @@ function sanitizeHtml(html) {
     for (var i = 0; i < HTML_TOKENS_.length; ++i) {
       var m = html.match(HTML_TOKENS_[i]);
       if (m) {
-        tok = (typeof m) == 'string' ? m : m[0];
+        tok = (typeof m) === 'string' ? m : m[0];
         html = html.substring(tok.length);
         break;
       }
     }
     if (tok.charAt(0) === '<') {
-      if (tok == '<') {
+      if (tok === '<') {
         out.push('&lt;');
       } else {
         var m = tok.match(/<(\/?)(\w+)/);
@@ -82,7 +82,7 @@ function sanitizeHtml(html) {
               out.push('<', tagName);
               var attribs = tok.substring(tagName.length + 1, tok.length - 1);
               for (var m = null;
-                   attribs && (m = attribs.match(ATTRIB_PATTERN_)) != null;
+                   attribs && (m = attribs.match(ATTRIB_PATTERN_)) !== null;
                    attribs = attribs.substring(m[0].length)) {
                 var name = m[1];
                 var value = m[2];

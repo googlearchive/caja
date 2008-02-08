@@ -104,7 +104,7 @@ function convertDate_(structuredDate) {
   if (!m) { return; }
   var chunks = [];
   for (var i = m.length; --i >= 1;) { chunks[i - 1] = m[i] || ''; }
-  if (chunks.length == 1) { chunks.push(''); }
+  if (chunks.length === 1) { chunks.push(''); }
 
   // Strip any fractional seconds from the end of the time portion.
   if (chunks[1]) {
@@ -153,7 +153,7 @@ function convertDate_(structuredDate) {
     var second = Number(timeParts[3]) || 0;
 
     if (zoneParts) {
-      var sign = zoneParts[1] == '-' ? -1 : 1;
+      var sign = zoneParts[1] === '-' ? -1 : 1;
       hour -= zoneParts[2] * sign;
       minute -= zoneParts[3] * sign;
       isUtc = true;
