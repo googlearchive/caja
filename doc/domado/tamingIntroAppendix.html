@@ -1,0 +1,119 @@
+
+<html><head><title>JavaScript Client Side API Taming for Caja</title></head>
+<body>
+<h2><center>JavaScript Client Side API Taming for Caja</center></h2>
+
+<p><center>by</br>
+Marc Stiegler, Mike Samuel, Mark Miller, Ihab Awad, Mike Stay, Peter Valchev, Ben Laurie</center></p>
+
+<h3>Introduction</h3>
+
+<p>This is a first comprehensive set of taming rules for the JavaScript Client Side API for the Caja object-capability variant of JavaScript. It is based on an analysis of that API as documented in the O'Reilly book JavaScript, A Definitive Guide, Edition 5. 
+
+<p>The goals of this object-capability taming of the client side API are 3-fold:
+<ol>
+<li>Ensure that, by default, caja modules are confined, i.e., there is no ambient authority they can use to engage in breaches.
+
+</li>
+<li>Minimize the risk that, when a programmer grants a reference to an authority-bearing object, he is surprised later to learn that he gave away more authority than he realized (which then results in a breach).</li>
+<li>Keep the API looking and feeling as much like the existing API as possible so that JavaScript programmers feel comfortable and become quickly productive when working with the caja API.</li>
+</ol>
+</p>
+<p>The bulk of the results of this taming analysis for the JavaScript client side API can be found in the associated spreadsheet. Due to time constraints, the taming rules in the spreadsheet contain a small number of less-used items that, while they are tamed, are marked with questions. The answers to these questions may change a future determination of how the item should be handled. Deeper analysis of these items may be postponed until a need for them arises.
+
+</p><p>
+The Appendix in this document contains a description of the rather complex algorithm followed by Caja to enable securely cooperative creation and usage of style rules. 
+</p>
+
+<h3>General Discussion</h3>
+
+<p>
+The spreadsheet that contains the taming analysis explicitly specifies, for every existing function and property, whether to leave it turned on, turn it off, or how to wrap it. This is done for expository purposes, so that one can see that every function and property was examined at least briefly for taming. However, this layout lures one toward the false belief that one could implement the taming by either white-listing the allowed functions, or black-listing the disallowed functions. Only white-listing is acceptable. There are attributes for elements that are not documented in the Edition 5 Definitive Guide; while the bulk of undocumented attributes are safe, one undocumented attribute has already been identified that has significant security implications (the "for" attribute). A blacklisting scheme would allow breaches via such elements. Fewer vulnerabilities will be experienced by adding such attributes as the need is identified.
+</p>
+<p>
+Several categories of API objects have been shut off. Flash-oriented functions and objects are turned off; allowing Flash elements in a cajoled page produces security issues too numerous and complex to be assessed in this taming effort. Similarly, Java applets and XSLT transformations have been shut off. Indeed, most items for manipulating XML documents, as opposed to HTML, have been shut off. 
+</p>
+
+<p>
+Large numbers of properties and functions that receive numbers as arguments have been marked to allow direct access by the cajoled module. This makes the assumption -- possibly in gross error -- that exotic non-numeric arguments cannot cause breach via weaknesses in an underlying implementation. An interesting avenue of attack would be to try to build an object that responds as one number the first time it is used, and responds as a different number the second time. If breaches can be identified using this or other mechanisms, the current taming rules must be made more rigorous by wrapping each of these functions and properties so that numeric arguments are coerced to true numbers before being given to the underlying element.
+</p>
+
+<p>
+Most functions and properties for most client side objects operate the same way under caja taming as under regular JavaScript. A quick introduction to the most significant changes is to examine the new objects and functions that have been added to the caja api under this taming. The intent of these new items is to re-enable, under capability discipline, significant features that have been shut off. On the spreadsheet, the new objects can be found at the bottom of the listing; new functions have also been added to existing objects, and can be found by running down the New? column. Much of the Highlights section is a discussion of these additions.
+</p>
+
+
+<h3>Highlights</h3>
+
+<h4>The Node as the unit of attenuated authority</h4>
+
+<p>The Node is the principle unit of attenuated authority. If module Alice hands module Bob a subnode, Bob has access authority over the subtree rooted in the subnode. Bob cannot access other nodes in Alice's node tree unless granted another reference to another node. Nodes can be wrapped with arbitrary intermediaries, including wrappers for such attenuations as revocable access and read-only access. The full range of object capability patterns of secure cooperation may be implemented with nodes. For example code for writing intermediaries, look at the implementations of util.readOnly(node) and util.revocable(node)</p>
+
+<h4>Enabling An Attenuated GetElementByID </h4>
+
+<p>Document.getElementById is one of the most-used functions in the JavaScript client side API. It is also one of the most insecure from an object-capability perspective. The simplistic solutions are that getElementById must be shut off (a severe usability/functionality failure) or it must be turned on and made ubiquitously available (a severe security breach). Solving this problem with a highly functional, JavaScript-style solution that was also secure, was perhaps the most complex taming problem addressed. Selection of the current solution required its own detailed analysis, as described in the companion document on GetElementById.
+
+</p><p>The outcome of this analysis is that there is a new getElementById function on the Node. If one node is found in the Node's subtree with the specified id, it is returned. However, if two or more nodes are found with the same id, the function throws an exception. A second function, Node.getElementsById(), returns an array of nodes with the id found in the subtree.
+
+</p><p>
+These new functions are natural enough outgrowths of GetElementById that they should be easy to learn and use. However, programmers using caja should remember that caja is designed specifically to enable secure cooperation. Consequently it will more often be the case that multiple caja modules by multiple parties will share nodes. This means id name collisions will be more likely in caja than in ordinary JavaScript. We recommend that caja programmers consider giving their nodes longer names, in the extreme possibly mimicking the package naming conventions in Java (so the creator of a node with id "foo" might instead give it the id "com.google.caja.foo", for example). This will minimize the risk of accidental id collision. </p>
+<p>While malicious name collision will remain possible, the getElementById algorithm fails safe. As a consequence, such an attack yields no more than a type of denial of service attack (one cannot retrieve one's node with getElementById if the attacker has write authority in the node subtree being searched for the id). Preventing DOS attacks of this style is considered a low priority in the caja environment, principally because such attacks are so weak compared to attacks that actually steal and abuse authority.
+</p>
+
+<h4>Focus Management</h4>
+<p>
+The power to change the focus is the power to surprise the user and the module the user intends to communicate with, a clear breach of confinement. Hence the normal focus-like methods must be shut off.
+
+</p><p> In the taming of traditional user interface widget kits, this problem is solved with the addition of a transferFocus(currentFocus, newFocus) method that allows confined objects to change the focus if and only if they can prove that they already hold the focus. The client side API, however, supplies no mechanism by which it can be ascertained (or even guessed with modest accuracy) where the focus currently resides. Hence, modules desiring to move the focus cannot prove they already have the focus. 
+
+</p><p>This taming supplies two partial solutions. There is an additional function on the Event that grants a one-use-only focusOnce(node) method, that allows a change of focus based on a user action. This use-once authority is revoked, whether it has been used or not, after event processing has completed.
+
+</p><p>Additionally, there is a powerbox.makeFocusManager() function that can be used to create a focus changing authority that can be delegated to modules deemed trustable with this power.
+</p>
+
+<h4>Authority leakage in Events</h4>
+
+<p>
+Event objects carry numerous properties for retrieving nodes associated with the event, such as srcElement and toElement. Accessing these nodes would often violate access control based on explicit grant of node references. However, access to these properties is often important for implementing interesting algorithms.
+</p>
+
+<p>The current solution, which covers many legitimate uses, uses the new function Node.unseal(sealedChildNode). For each node property on the Event object, there is a new getter function that will return a sealed reference to the node. Anyone who owns either the referenced node, or an ancestor of that node, can send the sealed node to that ancestor, which will unseal the child. In essence, if you can prove that you already have authority over the part of the tree containing the node referenced by an Event, you can retrieve the node from the Event. There is another function, Node.seal(), that can be used by programmers engaged in secure cooperation to implement the same pattern in their own code as is used in the Event handling.
+</p>
+
+<h4>Controlling Real Estate Usage with DoubleDiv</h4>
+
+<p>An inevitable problem with multiple parties sharing a window is, how do we divvy up the pixels among the participants? What if two parties both use css to instruct the browser to give them 100% of the width of the page, who wins?</p>
+
+<p>Under this taming, the grant of subsections of the window is done with a "doubleDiv", manufactured by the util.makeDoubleDiv function. A doubleDiv is comprised of an outer div that is used by the grantor of real estate to specify the page area limits of the contents, and an inner div which is conveyed to the recipient of the real estate. The inner div is the authority to draw in the space controlled by the outer div, without the authority to change the size or shape of that space. </p>
+
+<p>The doubleDiv is, from a visual layout perspective, the caja equivalent of an iframe. It may seem alluring to think of the doubleDiv as an object-capability iframe. However, the normal iframe represents a complex menagery of authorities that are hard to delegate on a Principle of Least Authority (POLA) basis because they are so intertwined. Under the taming rules presented here, one can think of the iframe authorities as being unbundled in a fashion that better supports POLA. While the doubleDiv embodies the iframe's control of layout, the Node is the more relevant embodiment (in a much more fine-grained, malleable, composable fashion) of the iframe's approximation of access control.
+</p>
+
+<p>The algorithm for makeDoubleDiv may become complex due to bugs in different browser implementations that have weak enforcement of the div tag's clipping power. Caja programmers are urged to use the caja-supplied makeDoubleDiv function rather than attempt to roll their own: if an exploit against doubleDiv is found and corrected in the caja function, programmers using the function will find their containment automatically upgraded the next time their code is cajoled.
+
+<h4>Links, Forms, Images, IFrames, XMLHttpRequests</h4>
+
+<p>
+Perhaps the most painful modification to the JavaScript client api that cannot be masked from the programmer is the inability to create links, forms, images, IFrames, and XMLHttpRequests without explicit authorization. These objects are able to communicate, a glaring violation of confinement. Unless these communication channels are shut off, users of business-oriented gadgets cannot allow those gadgets access to proprietary data without significant risk, which in turn reduces the number of users willing to use such gadgets.
+</p>
+
+<p>
+Authorizations for communication access to specific domains and urls is granted via the new powerbox functions (not accessible by cajoled modules) makeTransmitterMaker, makeSendReceiverMaker, and makeIFrameMaker. Once a grant of one of these authorities has been made, the holder can further attenuate, for further delegation, using the ambiently available utility functions attenuateTransmitter, attenuateSendReceiver, and attenuateIFrameMaker. Details can be found in the spreadsheet.
+</p>
+<p>In the future, much of the troublesomeness of explicit grant of these authorities could be alleviated by integrating caja with an object-oriented Web protocol, such as waterken web-keys. Such a protocol would extend the caja object-capability paradigm smoothly across the Web. The result would be that server resources could be made accessible strictly on the basis of POLA, unhindered by arbitrary layouts of resources across domains.
+</p>
+
+<h3>Appendix: The Style Rules Algorithm</h3>
+
+<p>Under caja, style rules are separately extracted during cajoling. New style rules cannot be created dynamically; all style rules must be explicitly declared for the cajoler. 
+</p>
+
+<p>The loadModule() function associates each module with an unmentionable name for a style rules class. The style rules extracted for the module during cajoling are included into the page prefixed with the module's (unmentionable) class. For example, a module with unmentionable name un1___ and a style rule for div would be included in the page as "un1___ div" rather than "div". There is a special case: if there is a mentionable name class on the body (which means it was written by the container, the modules do not in general have access to the body node), this class is put as a prefix to the module's class. For example, if the container has created a class body.ie_6, and the module defines a style rule for body.ie_6 div, the style marking for the element would be body.ie_6 un1___ div.
+</p>
+<p>Meanwhile, loadModule() also creates a function useMyStyles(el:HTMLElement), that encapsulates the module's class, and places it in the module's Outers. When invoked, this function marks the element with the module's style rule class. Nodes in the subtree beneath the element with this style rule class will inherit that class's rules. 
+
+</p>
+
+
+</body>
+</html>
