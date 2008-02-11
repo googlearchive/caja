@@ -20,12 +20,11 @@
 
 
 function fail(msg) {
-  if (this.console) {
-    console.trace && console.trace();
+  if (typeof console !== 'undefined') {
+    console.trace();
     console.log(msg);
   }
-  if (Error) { throw new Error(msg); }
-  throw msg;
+  throw new Error(msg);
 }
 
 function assertEquals() {
@@ -37,7 +36,8 @@ function assertEquals() {
     return n;
   }
   function commonSuffix(a, b, limit) {
-    var i = a.length, j = b.length;
+    var i = a.length;
+    var j = b.length;
     while (i > limit && j > limit && a.charAt(i - 1) == b.charAt(j - 1)) {
       --i;
       --j;
@@ -45,7 +45,9 @@ function assertEquals() {
     return a.length - i;
   }
 
-  var msg, a, b;
+  var msg;
+  var a;
+  var b;
   switch (arguments.length) {
     case 2:
       msg = null;
@@ -57,7 +59,7 @@ function assertEquals() {
       a = arguments[1];
       b = arguments[2];
       break;
-    default: throw 'missing arguments ' + argumetns;
+    default: throw 'missing arguments ' + arguments;
   }
   if (a !== b) {
     if (typeof a == 'string' && typeof b == 'string') {

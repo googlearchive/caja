@@ -57,7 +57,7 @@ if (!console) {
       // message to the console and throw an exception.
       assert: function (expression, var_args) {
         if (!expression) {
-          throw [].slice.apply(arguments, 1).join();
+          throw [].slice.call(arguments, 1).join();
         }
       },
 
