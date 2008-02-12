@@ -122,10 +122,11 @@
     <!-- Instrument the compiled class files to gather code coverage stats -->
     <emma enabled="${emma.enabled}">
       <instr instrpath="${lib}" destdir="${instr}" mode="fullcopy"
-       metadatafile="${reports}/metadata.em" merge="true">
+       metadatafile="${reports}/coverage/metadata.em" merge="true">
         <filter value="${emma.filter}"/>
       </instr>
     </emma>
+    <mkdir dir="${reports}/tests"/>
     <!--
       - If this fails to run, try with -verbose.  If you see a problem with
       - forking, check your JAVA and JAVA_HOME environment variables and make
@@ -134,30 +135,32 @@
     <junit printsummary="yes" fork="yes">
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
       <classpath refid="classpath.tests.run"/>
-      <formatter type="xml" usefile="true"/>
-      <batchtest todir="${reports}">
+      <formatter type="xml" usefile="true" unless="emma.enabled"/>
+      <batchtest todir="${reports}/tests" unless="emma.enabled">
         <fileset dir="${testsrc}">
           <include name="**/*Test.java"/>
         </fileset>
       </batchtest>
-      <sysproperty key="emma.coverage.out.file" value="${reports}/coverage.ec"/>
+      <sysproperty key="emma.coverage.out.file"
+       value="${reports}/coverage/coverage.ec"/>
       <sysproperty key="emma.coverage.out.merge" value="false"/>
+      <test name="com.google.caja.AllTests" if="emma.enabled"/>
     </junit>
     <!-- Generate the code coverage report. -->
     <emma enabled="${emma.enabled}">
       <report sourcepath="${src}:${testsrc}" sort="+block,+name,+method,+class"
        metrics="method:70,block:80,line:80,class:100">
-        <fileset dir="${reports}">
+        <fileset dir="${reports}/coverage">
           <include name="*.em" />
           <include name="*.ec" />
         </fileset>
-        <html outfile="${reports}/coverage.html" encoding="UTF-8"/>
+        <html outfile="${reports}/coverage/index.html" encoding="UTF-8"/>
       </report>
     </emma>
     <!-- Generate the test results report. -->
-    <junitreport todir="${reports}">
-      <fileset dir="${reports}" includes="TEST-*.xml"/>
-      <report format="frames" todir="${reports}"/>
+    <junitreport todir="${reports}/tests">
+      <fileset dir="${reports}/tests" includes="TEST-*.xml"/>
+      <report format="frames" todir="${reports}/tests"/>
     </junitreport>
   </target>
 
@@ -165,12 +168,13 @@
     <mkdir dir="${docs}"/>
     <javadoc sourcepath="${src}" destdir="${docs}" access="private"
      author="true"
-     bottom="Copyright (C) 2007 Google Inc.&lt;br&gt;
+     bottom="Copyright (C) 2008 Google Inc.&lt;br&gt;
              &lt;a href=http://www.apache.org/licenses/LICENSE-2.0&gt;
              Licensed under the Apache License, Version 2.0&lt;/a&gt;"
      docencoding="utf-8"
      packagenames="com/google/caja/*"
-     classpathref="classpath.compile"/>
+     classpathref="classpath.compile"
+     linksource="yes"/>
      <!-- overview="${src}/overview.html" -->
   </target>
 
