@@ -52,6 +52,7 @@
 
   <path id="classpath.compile">
     <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
+    <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/htmlparser/htmlparser.jar"/>
   </path>
 
@@ -61,14 +62,16 @@
 
   <path id="classpath.tests.compile">
     <pathelement path="${third_party}/java/junit/junit.jar"/>
+    <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/rhino/js.jar"/>
   </path>
 
   <path id="classpath.tests.run">
-    <pathelement path="${third_party}/java/junit/junit.jar"/>
-    <pathelement path="${third_party}/java/rhino/js.jar"/>
     <pathelement path="${third_party}/java/emma/emma.jar"/>
     <pathelement path="${third_party}/java/htmlparser/htmlparser.jar"/>
+    <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
+    <pathelement path="${third_party}/java/junit/junit.jar"/>
+    <pathelement path="${third_party}/java/rhino/js.jar"/>
     <pathelement path="${instr}/classes"/>
     <!-- In case instrumentation not enabled -->
     <pathelement path="${lib}"/>
@@ -183,6 +186,7 @@
       <src path="${testsrc}"/>
       <classpath refid="classpath.tests.compile"/>
       <include name="**/caja/AllTests.java"/>
+      <include name="**/caja/config/ConfigUtilTest.java"/>
       <include name="**/caja/demos/calendar/RRuleTest.java"/>
       <include name="**/caja/demos/calendar/HcalTest.java"/>
       <include name="**/caja/lexer/CharProducerTest.java"/>
@@ -357,7 +361,7 @@
   </target>
 
   <target name="PluginCompiler"
-   depends="CssParserCore,HtmlParserCore,HtmlSchema,Quasiliterals,dirs">
+   depends="CssParserCore,HtmlParserCore,HtmlSchema,Quasiliterals,Config,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
@@ -373,6 +377,15 @@
         <include name="**/caja/plugin/html-sanitizer.js"/>
       </fileset>
     </copy>
+  </target>
+
+  <target name="Config" depends="Reporting">
+    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+      <src path="${src}"/>
+      <classpath refid="classpath.compile"/>
+      <include name="**/caja/config/*.java"/>
+      <compilerarg line="-Xlint:unchecked"/>
+    </javac>
   </target>
 
   <target name="PluginCapabilities">
