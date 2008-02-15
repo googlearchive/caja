@@ -163,7 +163,8 @@
     <!-- Generate the test results report. -->
     <junitreport todir="${reports}/tests">
       <fileset dir="${reports}/tests" includes="TEST-*.xml"/>
-      <report format="frames" todir="${reports}/tests"/>
+      <report format="frames" todir="${reports}/tests"
+       styledir="${third_party}/ant/etc"/>
     </junitreport>
   </target>
 
