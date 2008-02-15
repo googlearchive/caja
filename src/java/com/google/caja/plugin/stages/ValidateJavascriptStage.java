@@ -17,6 +17,7 @@ package com.google.caja.plugin.stages;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
+import com.google.caja.plugin.ExpressionSanitizer;
 import com.google.caja.plugin.ExpressionSanitizerBaja;
 import com.google.caja.plugin.ExpressionSanitizerCaja;
 import com.google.caja.plugin.Job;
@@ -34,11 +35,15 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
     boolean valid = true;
     for (Job job : jobs.getJobsByType(Job.JobType.JAVASCRIPT)) {
       switch (jobs.getPluginMeta().scheme) {
+        case AAJA:
+          valid &= new ExpressionSanitizer(jobs.getMessageQueue())
+              .sanitize(job.getRoot());
+          break;
         case BAJA:
           valid &= new ExpressionSanitizerBaja(
               jobs.getMessageQueue(), jobs.getPluginMeta())
-          .sanitize(job.getRoot());
-        break;
+              .sanitize(job.getRoot());
+          break;
         case CAJA:
           // Pass in the rootmost scope that has non-synthetic children, so that
           // the Caja rules correctly identify global function declarations.

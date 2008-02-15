@@ -21,6 +21,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Pair;
@@ -81,11 +82,12 @@ public class PluginCompilerTest extends TestCase {
         "MY_TEST_PLUGIN","pre", "/plugin1", "rootDiv",
         PluginMeta.TranslationScheme.AAJA,
         PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
-    PluginCompiler pc = new PluginCompiler(meta);
 
     MessageContext mc = new MessageContext();
     MessageQueue mq = new EchoingMessageQueue(
-        new PrintWriter(new OutputStreamWriter(System.out)), mc);
+        new PrintWriter(new OutputStreamWriter(System.err)), mc);
+
+    PluginCompiler pc = new PluginCompiler(meta, mq);
 
     List<Pair<InputSource, String>> parts = parseConsolidatedPlugin(inputFile);
     List<InputSource> srcs = new ArrayList<InputSource>();
@@ -105,6 +107,13 @@ public class PluginCompilerTest extends TestCase {
     }
 
     boolean success = pc.run();
+    if (!success && passes) {
+      StringBuilder buf = new StringBuilder();
+      for (Message msg : mq.getMessages()) {
+        buf.append(msg.format(mc)).append('\n');
+      }
+      fail(buf.toString());
+    }
     assertEquals(passes, success);
 
     StringBuilder buf = new StringBuilder();
@@ -115,12 +124,14 @@ public class PluginCompilerTest extends TestCase {
       rc.newLine();
     }
     for (Message msg : mq.getMessages()) {
+      if (msg.getMessageLevel().compareTo(MessageLevel.LINT) < 0) { continue; }
       rc.newLine();
       buf.append(msg.getMessageType().toString()).append(" : ")
-         .append(msg.getMessageParts().get(0));
+          .append(msg.getMessageParts().get(0));
     }
 
     String actual = buf.toString();
+    System.err.println("\n" + actual + "\n\n");
     assertEquals(actual, golden.trim(), actual.trim());
   }
 

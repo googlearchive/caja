@@ -311,13 +311,12 @@ public class CompiledPluginTest extends TestCase {
         "PLUGIN", "pre", "/plugin1", "rootDiv",
         PluginMeta.TranslationScheme.AAJA,
         PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
-    PluginCompiler pc = new PluginCompiler(meta);
-
     MessageContext mc = new MessageContext();
     MessageQueue mq = new EchoingMessageQueue(
         new PrintWriter(new OutputStreamWriter(System.out)), mc);
+    PluginCompiler pc = new PluginCompiler(meta, mq);
 
-    pc.setMessageQueue(mq);
+    pc.setMessageContext(mc);
 
     List<InputSource> srcs = new ArrayList<InputSource>();
     for (PluginFile pluginFile : pluginFiles) {

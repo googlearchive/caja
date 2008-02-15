@@ -73,6 +73,8 @@ public class PluginCompilerMain {
   private MessageContext mc = new MessageContext();
   private PluginMeta meta;
   private PluginCompiler compiler;
+  private PluginMeta.TranslationScheme scheme
+      = PluginMeta.TranslationScheme.AAJA;
 
   {
     mc.inputSources = new ArrayList<InputSource>();
@@ -83,10 +85,9 @@ public class PluginCompilerMain {
       args = parseFlags(args);
 
       meta = new PluginMeta(
-          namespaceName, namespacePrefix, pathPrefix, "",
-          PluginMeta.TranslationScheme.AAJA,
+          namespaceName, namespacePrefix, pathPrefix, "", scheme,
           PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
-      compiler = new PluginCompiler(meta);
+      compiler = new PluginCompiler(meta, mq);
 
       boolean success = true;
       if (args.length == 0) {
@@ -148,6 +149,8 @@ public class PluginCompilerMain {
           value = value.substring(0, value.length() - 1);
         }
         this.pathPrefix = value;
+      } else if ("--scheme".equals(name)) {
+        this.scheme = PluginMeta.TranslationScheme.valueOf(value.toUpperCase());
       } else {
         usage();
         System.exit(1);
@@ -374,9 +377,9 @@ public class PluginCompilerMain {
   private void dumpMessages() {
     try {
       for (Message m : mq.getMessages()) {
-        System.out.print(m.getMessageLevel() + ":");
-        m.format(mc, System.out);
-        System.out.println();
+        System.err.print(m.getMessageLevel() + ":");
+        m.format(mc, System.err);
+        System.err.println();
       }
     } catch (IOException ex) {
       ex.printStackTrace();

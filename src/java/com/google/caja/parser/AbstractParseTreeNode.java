@@ -199,10 +199,12 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
     return sb.toString();
   }
 
-  public String toStringDeep() {
+  public String toStringDeep() { return toStringDeep(0); }
+
+  public String toStringDeep(int d) {
     StringBuilder sb = new StringBuilder();
     try {
-      formatTree(new MessageContext(), sb);
+      formatTree(new MessageContext(), d, sb);
     } catch (IOException ex) {
       throw new AssertionError("StringBuilders shouldn't throw IOExceptions");
     }

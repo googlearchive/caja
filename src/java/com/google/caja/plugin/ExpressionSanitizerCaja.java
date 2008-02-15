@@ -38,7 +38,7 @@ public class ExpressionSanitizerCaja {
         toSanitize.node;
     AbstractParseTreeNode<? extends AbstractParseTreeNode> result =
         (AbstractParseTreeNode<? extends AbstractParseTreeNode>)
-        new DefaultCajaRewriter().expand(input, this.mq);
+        new DefaultCajaRewriter(false).expand(input, this.mq);
 
     for (AbstractParseTreeNode<?> child : input.children()) {
       input.removeChild(child);

@@ -82,11 +82,11 @@ public final class ExpressionSanitizer {
     FIELD_REWRITE_MAP = Collections.unmodifiableMap(fieldRewriteMap);
   }
 
-  ExpressionSanitizer(MessageQueue mq) {
+  public ExpressionSanitizer(MessageQueue mq) {
     this.mq = mq;
   }
 
-  boolean sanitize(AncestorChain<?> toSanitize) {
+  public boolean sanitize(AncestorChain<?> toSanitize) {
     RewritingPass1 pass1 = new RewritingPass1();
     toSanitize.node.acceptPostOrder(pass1, toSanitize.parent);
     rewriteFieldAccessesAsFunctionCalls(toSanitize);

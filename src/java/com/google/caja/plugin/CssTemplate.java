@@ -55,7 +55,7 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-final class CssTemplate extends AbstractParseTreeNode<CssTree> {
+public final class CssTemplate extends AbstractParseTreeNode<CssTree> {
   CssTemplate(FilePosition pos, CssTree.FunctionCall name,
               List<? extends CssTree.FunctionCall> params,
               CssTree css) {
@@ -171,14 +171,16 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
                           Operator.FUNCTION_CALL,
                           s(new Operation(
                                 Operator.MEMBER_ACCESS,
-                                s(new Reference(new Identifier(tgtChain.get(0)))),
+                                s(new Reference(
+                                      new Identifier(tgtChain.get(0)))),
                                 s(new Reference(new Identifier("join"))))),
                           s(new StringLiteral("''"))
                     ))
                ))
          )), null);
     body.setFilePosition(getCss().getFilePosition());
-    FunctionConstructor fn = new FunctionConstructor(new Identifier(identifier), params, body);
+    FunctionConstructor fn
+        = new FunctionConstructor(new Identifier(identifier), params, body);
     fn.setFilePosition(this.getFilePosition());
     return fn;
   }
@@ -258,25 +260,33 @@ final class CssTemplate extends AbstractParseTreeNode<CssTree> {
         case PERCENTAGE:
         case TIME:
           // plugin_cssNumber___(...)
-          e = s(new Operation(Operator.FUNCTION_CALL,
-                              s(new Reference(new Identifier("plugin_cssNumber___"))), e));
+          e = s(new Operation(
+                    Operator.FUNCTION_CALL,
+                    s(new Reference(new Identifier("plugin_cssNumber___"))),
+                    e));
           suffix = sub.getSuffix();
           break;
         case URI:
           // plugin_cssUri___(..., PLUGIN)
-          e = s(new Operation(Operator.FUNCTION_CALL,
-                              s(new Reference(new Identifier("plugin_cssUri___"))), e,
-                              s(new Reference(new Identifier(meta.namespacePrivateName)))));
+          e = s(new Operation(
+                    Operator.FUNCTION_CALL,
+                    s(new Reference(new Identifier("plugin_cssUri___"))),
+                    e,
+                    s(new Reference(new Identifier(meta.namespacePrivateName)))
+                    ));
           if (esc == JsWriter.Esc.HTML_ATTRIB) {
-            e = s(new Operation(Operator.FUNCTION_CALL,
-                                s(new Reference(new Identifier("plugin_htmlAttr___"))), e));
+            e = s(new Operation(
+                      Operator.FUNCTION_CALL,
+                      s(new Reference(new Identifier("plugin_htmlAttr___"))),
+                      e));
           }
           suffix = "";
           break;
         case COLOR:
           // plugin_cssHexColor___(...)
-          e = s(new Operation(Operator.FUNCTION_CALL,
-                              s(new Reference(new Identifier("plugin_cssColor___"))), e));
+          e = s(new Operation(
+                    Operator.FUNCTION_CALL,
+                    s(new Reference(new Identifier("plugin_cssColor___"))), e));
           suffix = "";
           break;
         default:

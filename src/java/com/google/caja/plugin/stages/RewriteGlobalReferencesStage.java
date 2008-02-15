@@ -19,6 +19,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
+import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
@@ -49,33 +50,33 @@ import java.util.Set;
  * 
  * @author mikesamuel@gmail.com
  */
-public final class RewriteGlobalReferencesStage implements Pipeline.Stage<Jobs> {
+public final class RewriteGlobalReferencesStage
+    implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
 
     for (Job job : jobs.getJobsByType(Job.JobType.JAVASCRIPT)) {
-      new HtmlGlobalReferenceRewriter(
-          jobs.getPluginMeta(), jobs.getMessageQueue())
-          .rewrite(job.getRoot().node, Collections.<String>emptySet());
+      new GlobalReferenceRewriter(jobs.getPluginMeta(), jobs.getMessageQueue())
+          .rewrite(job.getRoot(), Collections.<String>emptySet());
     }
 
     return jobs.hasNoFatalErrors();
   }
 }
 
-final class HtmlGlobalReferenceRewriter {
+final class GlobalReferenceRewriter {
   final PluginMeta meta;
   final MessageQueue mq;
 
   private static final Set<String> IMPLICIT_FUNCTION_DEFINITIONS =
-    new HashSet<String>(Arrays.asList("arguments", Keyword.THIS.toString()));
+      new HashSet<String>(Arrays.asList("arguments", Keyword.THIS.toString()));
 
-  HtmlGlobalReferenceRewriter(PluginMeta meta, MessageQueue mq) {
+  GlobalReferenceRewriter(PluginMeta meta, MessageQueue mq) {
     this.meta = meta;
     this.mq = mq;
   }
 
-  void rewrite(ParseTreeNode node, final Set<? extends String> locals) {
-    node.acceptPreOrder(new Visitor() {
+  void rewrite(AncestorChain<?> ancestors, final Set<? extends String> locals) {
+    ancestors.node.acceptPreOrder(new Visitor() {
       public boolean visit(AncestorChain<?> ancestors) {
         ParseTreeNode node = ancestors.node;
         // if we see a function constructor, we need to compute a new set of
@@ -85,11 +86,11 @@ final class HtmlGlobalReferenceRewriter {
           Set<String> fnLocals = new HashSet<String>(locals);
           fnLocals.addAll(IMPLICIT_FUNCTION_DEFINITIONS);
           LocalDeclarationInspector insp =
-            new LocalDeclarationInspector(fnLocals);
+              new LocalDeclarationInspector(fnLocals);
           for (ParseTreeNode child : c.children()) {
             child.acceptPreOrder(insp, ancestors);
           }
-          rewrite(c.getBody(), fnLocals);
+          rewrite(new AncestorChain<Block>(ancestors, c.getBody()), fnLocals);
           return false;
         }
 
@@ -115,7 +116,7 @@ final class HtmlGlobalReferenceRewriter {
           // We also don't want to rewrite synthetic nodes -- nodes created by
           // the PluginCompiler..
           boolean isFirstOperand = ancestors.isFirstSibling();
-          if (!locals.contains(ref.getIdentifier())
+          if (!locals.contains(ref.getIdentifierName())
               && !ref.getAttributes().is(SyntheticNodes.SYNTHETIC)
               && !(!isFirstOperand && Operator.MEMBER_ACCESS == parentOp)
               && !(isFirstOperand && Operator.IN == parentOp)) {
@@ -132,7 +133,7 @@ final class HtmlGlobalReferenceRewriter {
         }
         return true;
       }
-    }, null);
+    }, ancestors.parent);
   }
 
   static final class LocalDeclarationInspector implements Visitor {
