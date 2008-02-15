@@ -1,13 +1,13 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
   <head>
-    <title></title>
-<script type=text/javascript
- src=../../../../../java/com/google/caja/plugin/html-sanitizer.js
-    ></script>
-<script type=text/javascript src=asserts.js></script>
-<script type=text/javascript src=html-sanitizer-test.js></script>
-<script type=text/javascript>
+    <title>HTML Sanitizer Tests</title>
+<script type="text/javascript" src="html4-defs.js"></script>
+<script type="text/javascript" src="html-sanitizer.js"></script>
+<script type="text/javascript" src="asserts.js"></script>
+<script type="text/javascript" src="html-sanitizer-test.js"></script>
+<script type="text/javascript" src="jsunit.js"></script>
+<script type="text/javascript">//<![CDATA[
 function handle(html) {
   try {
     html = html_sanitize(html);
@@ -17,12 +17,12 @@ function handle(html) {
     alert(e + '\n' + e.stack);
   }
 }
-</script>
+//]]></script>
 
   </head>
 
   <body>
-<script type=text/javascript>
+<script type="text/javascript">//<![CDATA[
 for (var k in window) {
   if (!(/^test/.test(k) && 'function' == typeof window[k])) { continue; }
   document.writeln('<h2>' + k + '<\/h2>');
@@ -39,14 +39,14 @@ for (var k in window) {
         '<pre>' + msg.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '<\/pre>');
   }
 }
-</script>
+//]]></script>
 
 
-<div id=out></div>
+<div id="out"></div>
 
 <form onsubmit="handle(this.html.value); return false">
-<input type=text name=html size=80>
-<input type=submit>
+<input type="text" name="html" size="80" />
+<input type="submit" />
 </form>
   </body>
 </html>

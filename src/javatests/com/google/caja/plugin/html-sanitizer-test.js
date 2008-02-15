@@ -28,41 +28,41 @@ function testEntities() {
 }
 
 function testEntities() {
-  assertEquals('<b>hello <i>world</i></b>',
+  assertEquals('<B>hello <I>world</I></B>',
                html_sanitize('<b>hello <i>world</i></b>'));
 }
 
 function testUnknownTagsRemoved() {
-  assertEquals('<b>hello <i>world</i></b>',
+  assertEquals('<B>hello <I>world</I></B>',
                html_sanitize('<b>hello <bogus><i>world</i></bogus></b>'));
 }
 
 function testUnsafeTagsRemoved() {
-  assertEquals('<b>hello <i>world</i></b>',
+  assertEquals('<B>hello <I>world</I></B>',
                html_sanitize('<b>hello <i>world</i>' +
                              '<script src=foo.js></script></b>'));
 }
 
 function testUnsafeAttributesRemoved() {
-  assertEquals('<b>hello <i >world</i></b>',
+  assertEquals('<B>hello <I>world</I></B>',
                html_sanitize(
                    '<b>hello <i onclick="takeOverWorld(this)">world</i></b>'));
 }
 
 function testCruftEscaped() {
-  assertEquals('<b>hello <i>world&lt;</i></b> &amp; tomorrow the universe',
+  assertEquals('<B>hello <I>world&lt;</I></B> &amp; tomorrow the universe',
                html_sanitize(
                    '<b>hello <i>world<</i></b> & tomorrow the universe'));
 }
 
 function testTagCruftRemoved() {
-  assertEquals('<b ID="foo"  >hello <i>world&lt;</i></b>',
+  assertEquals('<B ID="foo">hello <I>world&lt;</I></B>',
                html_sanitize('<b id="foo" / -->hello <i>world<</i></b>'));
 }
 
 function testIdsAndClassesPrefixed() {
   assertEquals(
-      '<b ID="p-foo" CLASS="p-boo p-bar p-baz">hello <i>world&lt;</i></b>',
+      '<B ID="p-foo" CLASS="p-boo p-bar p-baz">hello <I>world&lt;</I></B>',
       html_sanitize(
           '<b id="foo" class="boo bar baz">hello <i>world<</i></b>',
           undefined, nmTokenPrefixer('p-')));
@@ -70,7 +70,7 @@ function testIdsAndClassesPrefixed() {
 
 function testInvalidIdsAndClassesRemoved() {
   assertEquals(
-      '<b  CLASS="p-boo  p-baz">hello <i >world&lt;</i></b>',
+      '<B CLASS="p-boo  p-baz">hello <I>world&lt;</I></B>',
       html_sanitize(
           ('<b id="fo,o" class="boo bar/bar baz">'
            + 'hello <i class="i*j">world<</i></b>'),
@@ -80,12 +80,45 @@ function testInvalidIdsAndClassesRemoved() {
 function testNonStringInput() {
   var badHtml = '<b whacky=foo><script src=badness.js></script>bar</b id=foo>';
   assertEquals(
-      '<b >bar</b >',
+      '<B>bar</B>',
       html_sanitize({ toString: function () { return badHtml; } }));
 }
 
 function testSpecialCharsInAttributes() {
   assertEquals(
-      '<b TITLE="a&lt;b &amp;&amp; c&gt;b">bar</b>',
+      '<B TITLE="a&lt;b &amp;&amp; c&gt;b">bar</B>',
       html_sanitize('<b title="a<b && c>b">bar</b>'));
+}
+
+function testUnclosedTags() {
+  assertEquals('<DIV ID="foo">Bar<BR>Baz</DIV>',
+               html_sanitize('<div id="foo">Bar<br>Baz'));
+}
+
+function testUnopenedTags() {
+  assertEquals('Foo<B>Bar</B>Baz',
+               html_sanitize('Foo<b></select>Bar</b></b>Baz</select>'));
+}
+
+function testUnsafeEndTags() {
+  assertEquals(
+      '',
+      html_sanitize(
+          '</meta http-equiv="refesh" content="1;URL=http://evilgadget.com">'));
+}
+
+function testEmptyEndTags() {
+  assertEquals('<INPUT>', html_sanitize('<input></input>'));
+}
+
+function testOnLoadStripped() {
+  assertEquals(
+      '<IMG>',
+      html_sanitize('<img src=http://foo.com/bar ONLOAD=alert(1)>'));
+}
+
+function testClosingTagParameters() {
+  assertEquals(
+      '<P>Hello world',
+      html_sanitize('<p>Hello world</b style="width:expression(alert(1))">'));
 }

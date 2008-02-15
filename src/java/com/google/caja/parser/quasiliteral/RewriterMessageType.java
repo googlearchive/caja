@@ -79,12 +79,12 @@ public enum RewriterMessageType implements MessageTypeInt {
       MessageLevel.FATAL_ERROR),
 
   CONSTRUCTORS_ARE_NOT_FIRST_CLASS(
-      "Constructors are not first class: %s, %s",
+      "%s: Constructors are not first class: %s, %s",
       MessageLevel.FATAL_ERROR),
 
   CAJA_DEF_ON_NON_CTOR(
-    "caja.def called with non-constructor: %s, %s",
-    MessageLevel.FATAL_ERROR),
+      "caja.def called with non-constructor: %s, %s",
+      MessageLevel.FATAL_ERROR),
 
   DUPLICATE_DEFINITION_OF_LOCAL_VARIABLE(
       "Duplicate definition of local variable: %s",

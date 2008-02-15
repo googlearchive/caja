@@ -1,0 +1,123 @@
+<!--
+ - Copyright (C) 2008 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<html>
+  <head>
+    <title>Domita</title>
+    <style type="text/css">
+      .testcontainer { background: yellow }
+      .testcontainer.passed { background: #c0ffc0 }
+    </style>
+
+    <script src="../caja.js" onerror="console.error(this.src)"></script>
+    <script src="unicode.js" onerror="console.error(this.src)"></script>
+    <script src="html4-defs.js" onerror="console.error(this.src)"></script>
+    <script src="html-sanitizer.js" onerror="console.error(this.src)"></script>
+    <script src="domita.js" onerror="console.error(this.src)"></script>
+
+    <script type="text/javascript">
+      var testOuters = ___.copy(___.sharedOuters);
+      ___.getNewModuleHandler().setOuters(testOuters);
+      attachDocumentStub(
+           'xyz-',
+           {
+             rewrite:
+                 function (uri, mimeType) {
+                   if (!/^https?:\/\//i.test(uri)) { return null; }
+                   return 'http://gadget-proxy/?url=' + encodeURIComponent(uri)
+                       + '&mimeType=' + encodeURIComponent(mimeType);
+                 }
+           },
+           testOuters);
+      console.log('attached stubs');
+    </script>
+
+    <script src="domita_test_cajoled.js" onerror="console.error(this.src)"
+     ></script>
+
+    <script type="text/javascript">
+      for (var k in testOuters) {
+        if (/^test/.test(k) && !/___$/.test(k)
+            && 'function' === typeof testOuters[k]) {
+          this[k] = testOuters[k];
+        }
+      }
+      testOuters.console = {
+        log: function () { console.log.apply(console, arguments); },
+        warn: function () { console.warn.apply(console, arguments); },
+        error: function () { console.error.apply(console, arguments); },
+        trace: function () { console.trace(); }
+      };
+      ___.all2(___.allowCall, testOuters.console,
+               ['log', 'warn', 'error', 'trace']);
+
+      // Give unfiltered DOM access so we can check the results of actions.
+      testOuters.directAccess = {
+        getInnerHTML: function (tameNode) {
+          return tameNode.node___.innerHTML;
+        },
+        getAttribute: function (tameNode, name) {
+          return tameNode.node___.getAttribute(name);
+        }
+      };
+      ___.all2(___.allowCall, testOuters.directAccess,
+               ['getInnerHTML', 'getAttribute']);
+
+      testOuters.pass = function (id) {
+        var node = testOuters.document.getElementById(id);
+        if (!node) { console.trace(); }
+        node = node.node___;
+        node.appendChild(document.createTextNode('Passed ' + id));
+        node.className = (node.className || '') + ' passed';
+      };
+      ___.simpleFunc(testOuters.pass, 'pass');
+    </script>
+    <script src="asserts.js"></script>
+    <script src="jsunit.js"></script>
+  </head>
+
+  <body onload="jsunitRun()" bgcolor="white">
+    <div id="xyz-test-get-element-by-id" class="testcontainer"></div>
+    <div id="xyz-test-get-element-by-id-2" class="testcontainer"></div>
+
+    <div id="foo"></div>
+
+    <table id="xyz-test-element-id" class="testcontainer"></table>
+
+    <table id="xyz-test-create-element" class="testcontainer"></table>
+
+    <div id="xyz-test-inner-html" class="testcontainer"
+     ><a id="bar" href="http://foo.com?a=b&c=d" class="link" title="<click me!>"
+       target="_parent">Test <em id="xyz-em">Not</em>> run yet.</a>
+    </div>
+
+    <div class="testcontainer" id="xyz-test-forms"></div>
+
+    <div class="testcontainer" id="xyz-test-no-script"></div>
+
+    <p class="testcontainer" id="xyz-test-add-event-listener">
+      <b>click me</b>
+    </p>
+
+    <ol class="testcontainer" id="xyz-test-get-elements-by-tag-name">
+      <li>One
+      <li>Two
+      <li>Three
+        <ol><li>Pi</li><li>sqrt(10)</li>
+    </ol>
+    
+  </body>
+</html>

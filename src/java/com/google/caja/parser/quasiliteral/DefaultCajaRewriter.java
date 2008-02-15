@@ -202,7 +202,7 @@ public class DefaultCajaRewriter extends Rewriter {
             scope.isConstructor(getReferenceName(bindings.get("x")))) {
           mq.addMessage(
               RewriterMessageType.CONSTRUCTORS_ARE_NOT_FIRST_CLASS,
-              this, node);
+              node.getFilePosition(), this, node);
           return node;
         }
         return NONE;

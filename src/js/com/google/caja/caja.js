@@ -151,6 +151,7 @@ var ___;
    * the message of the Error that's thrown.
    */
   function fail(var_args) {
+    (typeof console !== 'undefined') && console.trace();
     var message = Array.prototype.slice.call(arguments, 0).join('');
     myLogFunc_(message, true);
     throw new Error(message);
@@ -394,31 +395,35 @@ var ___;
    */
   function directConstructor(obj) {
     if (obj === null) { return undefined; }
-    if (typeof obj !== 'object') {
-      // Note that functions thereby return undefined,
-      // so directConstructor() doesn't provide access to the
-      // forbidden Function constructor.
-      return undefined;
+    try {
+      if (typeof obj !== 'object') {
+        // Note that functions thereby return undefined,
+        // so directConstructor() doesn't provide access to the
+        // forbidden Function constructor.
+        return undefined;
+      }
+      // The following test will initially return false in IE
+      if (hasOwnProp(obj, '__proto__')) { 
+        if (obj.__proto__ === null) { return undefined; }
+        return obj.__proto__.constructor; 
+      }
+      var result;
+      if (!hasOwnProp(obj, 'constructor')) { 
+        result = obj.constructor;
+      } else {
+        var oldConstr = obj.constructor;
+        if (!(delete obj.constructor)) { return undefined; }
+        result = obj.constructor;
+        obj.constructor = oldConstr;
+      }
+      if (result.prototype.constructor === result) {
+        // Memoize, so it'll be faster next time.
+        obj.__proto__ = result.prototype;
+      }
+      return result;
+    } catch (ex) {
+      return null;
     }
-    // The following test will initially return false in IE
-    if (hasOwnProp(obj, '__proto__')) { 
-      if (obj.__proto__ === null) { return undefined; }
-      return obj.__proto__.constructor; 
-    }
-    var result;
-    if (!hasOwnProp(obj, 'constructor')) { 
-      result = obj.constructor;
-    } else {
-      var oldConstr = obj.constructor;
-      if (!(delete obj.constructor)) { return undefined; }
-      result = obj.constructor;
-      obj.constructor = oldConstr;
-    }
-    if (result.prototype.constructor === result) {
-      // Memoize, so it'll be faster next time.
-      obj.__proto__ = result.prototype;
-    }
-    return result;
   }
   
   /**
@@ -1028,8 +1033,10 @@ var ___;
     if (canCallPub(obj, name)) {
       var meth = obj[name];
       return meth.apply(obj, args);
-    } else {
+    } else if (obj.handleCall___) {
       return obj.handleCall___(name, args);
+    } else {
+      fail('not callable %o %s', obj, name);
     }
   }
   

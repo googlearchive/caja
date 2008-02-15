@@ -38,7 +38,7 @@ function assertEquals() {
   function commonSuffix(a, b, limit) {
     var i = a.length;
     var j = b.length;
-    while (i > limit && j > limit && a.charAt(i - 1) == b.charAt(j - 1)) {
+    while (i > limit && j > limit && a.charAt(i - 1) === b.charAt(j - 1)) {
       --i;
       --j;
     }
@@ -62,7 +62,7 @@ function assertEquals() {
     default: throw 'missing arguments ' + arguments;
   }
   if (a !== b) {
-    if (typeof a == 'string' && typeof b == 'string') {
+    if (typeof a === 'string' && typeof b === 'string') {
       var prefix = commonPrefix(a, b);
       var suffix = commonSuffix(a, b, prefix);
       msg = (msg ? msg + ' :: ' : '') + '<<' + a.substring(0, prefix) + '#' +

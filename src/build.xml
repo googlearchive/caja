@@ -182,7 +182,22 @@
      <!-- overview="${src}/overview.html" -->
   </target>
 
-  <target name="AllTests" depends="opensocial,pluginc,TestUtil,dirs">
+  <!-- Cajoles test resources that contain cajita to javascript. -->
+  <target name="CajoledTests" depends="pluginc,dirs">
+    <java classname="com.google.caja.plugin.PluginCompilerMain"
+     failonerror="yes">
+      <classpath refid="classpath.run"/>
+      <arg value="--out=${lib}/com/google/caja/plugin/domita_test_cajoled"/>
+      <arg value="--name=___OUTERS___"/>
+      <arg value="--scheme=caja"/>
+      <arg value="--pathPrefix=/"/>
+      <arg file="${testsrc}/com/google/caja/plugin/domita_test.js"/>
+      <arg file="${testsrc}/com/google/caja/plugin/asserts.js"/>
+    </java>
+  </target>
+
+  <target name="AllTests"
+   depends="opensocial,pluginc,TestUtil,CajoledTests,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${testsrc}"/>
       <classpath refid="classpath.tests.compile"/>
@@ -228,9 +243,15 @@
       <include name="**/caja/util/SparseBitSetTest.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
+
+    <!-- TODO(mikesamuel): Can we replace these tree copies with something
+      - that builds a symlink tree? -->
     <copy todir="${lib}">
       <fileset dir="${src}">
+        <include name="**/caja/plugin/domita.js"/>
+        <include name="**/caja/plugin/html4-defs.js"/>
         <include name="**/caja/plugin/html-sanitizer.js"/>
+        <include name="**/caja/plugin/unicode.js"/>
       </fileset>
       <fileset dir="${testsrc}">
         <include name="**/caja/demos/calendar/*_test.html"/>
@@ -284,6 +305,7 @@
         <include name="**/caja/plugin/caps/wrap_capability_test.js"/>
         <include name="**/caja/plugin/console-stubs.js"/>
         <include name="**/caja/plugin/container.js"/>
+        <include name="**/caja/plugin/domita_test.html"/>
         <include name="**/caja/plugin/jsunit.js"/>
         <include name="**/caja/plugin/gxpcompilergolden1.js"/>
         <include name="**/caja/plugin/gxpcompilergolden2.js"/>
@@ -293,6 +315,7 @@
         <include name="**/caja/plugin/gxpcompilerinput3.gxp"/>
         <include name="**/caja/plugin/gxpcompilerinput4.gxp"/>
         <include name="**/caja/plugin/html-sanitizer-test.js"/>
+        <include name="**/caja/plugin/test-sanitize.html"/>
         <include name="**/caja/plugin/jsunit.js"/>
         <include name="**/caja/plugin/plugintest-csstest.golden"/>
         <include name="**/caja/plugin/plugintest-csstest.input"/>
