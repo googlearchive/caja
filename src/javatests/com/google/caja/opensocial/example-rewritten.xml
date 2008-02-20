@@ -16,7 +16,6 @@
 .DOM-PREFIX .DOM-PREFIX-p1 {
   color: red
 }</style>
-<div id="ROOT_DIV_ID"></div>
 <script type="text/javascript">
 {
   ___.loadModule(function (___OUTERS___) {

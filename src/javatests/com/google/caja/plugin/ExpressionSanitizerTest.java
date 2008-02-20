@@ -20,19 +20,12 @@ import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.ExpressionStmt;
-import com.google.caja.parser.js.Identifier;
-import com.google.caja.parser.js.NullLiteral;
-import com.google.caja.parser.js.Operation;
-import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Parser;
-import com.google.caja.parser.js.Reference;
-import com.google.caja.parser.js.Statement;
-import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.reporting.EchoingMessageQueue;
+import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.TestUtil;
@@ -41,7 +34,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.URI;
-import java.util.Collections;
 
 import junit.framework.TestCase;
 
@@ -61,36 +53,23 @@ public class ExpressionSanitizerTest extends TestCase {
   }
 
   public void testCloseExpressionLoopholes() throws Exception {
+    // TODO(mikesamuel): fix catch block when exceptions sanitized
     String golden = TestUtil.readResource(getClass(), "sanitizergolden1.js");
 
     MessageContext mc = new MessageContext();
     MessageQueue mq = new EchoingMessageQueue(
-        new PrintWriter(new OutputStreamWriter(System.out)), mc);
+        new PrintWriter(new OutputStreamWriter(System.err)), mc);
+    PluginMeta meta = new PluginMeta("pre");
     ParseTreeNode pt = TestUtil.parseTree(getClass(), "sanitizerinput1.js", mq);
-    new ExpressionSanitizer(mq).sanitize(ac(pt));  // TODO: test output value
+    // TODO: test output value
+    new ExpressionSanitizerCaja(mq, meta).sanitize(ac(pt));
     StringBuilder out = new StringBuilder();
     RenderContext rc = new RenderContext(mc, out);
 
     pt.render(rc);
     assertEquals(golden.trim(), out.toString().trim());
-  }
-
-  public void testSyntheticnessAndFilePositionInference() throws Exception {
-    String golden = TestUtil.readResource(getClass(), "sanitizergolden2.txt");
-
-    MessageContext mc = new MessageContext();
-    mc.relevantKeys = Collections.singleton(SyntheticNodes.SYNTHETIC);
-    MessageQueue mq = new EchoingMessageQueue(
-        new PrintWriter(new OutputStreamWriter(System.out)), mc);
-    Statement pt = TestUtil.parseTree(getClass(), "sanitizerinput1.js", mq);
-    TestUtil.checkFilePositionInvariants(pt);
-
-    new ExpressionSanitizer(mq).sanitize(ac(pt));
-    StringBuilder out = new StringBuilder();
-
-    pt.formatTree(mc, 0, out);
-    assertEquals(golden.trim(), out.toString().trim());
-
+    // TODO(mikesamuel): Test that we get meaningful file positions out of the
+    // sanitizer.
     TestUtil.checkFilePositionInvariants(pt);
   }
 
@@ -99,105 +78,177 @@ public class ExpressionSanitizerTest extends TestCase {
   }
 
   public void testFunctionCalls() throws Exception {
-    runTest("f()", "{\n  f.call(this);\n}", true);
+    runTest("f()", "{\n  ___.asSimpleFunc(___OUTERS___.f)();\n}", true);
   }
 
-  public void testFunctionDeclarations() throws Exception {
-    // nothing changed
+  public void testSimpleFunc() throws Exception {
     runTest("function f() {}",
             "{\n"
-            + "  function f() {\n"
-            + "  }\n"
+            + "  ___OUTERS___.f = ___.simpleFunc(function f() {\n"
+            + "    });\n"
             + "}",
             true);
-    // a function that references this needs an assertion at the front
+  }
+  
+  public void testSimpleConstructor() throws Exception {
+    // A function that references this is a constructor.
     runTest("function f() { return this; }",
             "{\n"
-            + "  function f() {\n"
-            + "    plugin_require___(this !== window);\n"
-            + "    return this;\n"
-            + "  }\n"
+            + "  ___OUTERS___.f = ___.ctor(function f() {\n"
+            + "      var t___ = this;\n"
+            + "      return t___;\n"
+            + "    });\n"
             + "}",
             true);
-    // a function that doesn't reference this but contains a function that does,
-    // doesn't need an assertion at the front
+  }
+  
+  public void testClosuresInSimpleFunctions() throws Exception {
+    // A function that doesn't reference this but contains a function that does,
+    // is not a constructor.
     runTest("function f() { return function () { return this; }; }",
             "{\n"
-            + "  function f() {\n"
-            + "    return function () {\n"
-            + "      plugin_require___(this !== window);\n"
-            + "      return this;\n"
-            + "    };\n"
-            + "  }\n"
+            + "  ___OUTERS___.f = ___.simpleFunc(function f() {\n"
+            + "      return ___.ctor(function () {\n"
+            + "          var t___ = this;\n"
+            + "          return t___;\n"
+            + "        });\n"
+            + "    });\n"
             + "}",
             true);
-    // a function that reference this but returns a function that does not,
-    // does need an assertion at the front
+    // TODO(mikesamuel): crashes cajoler.
+  }
+  
+  public void testConstructorThatReturnsClosure() throws Exception {
+    // A function that reference this but returns a function that does not,
+    // is a constructor.
     runTest("function f() { "
             + "var self = this;"
             + "return function () { return self; };"
             + "}",
             "{\n"
-            + "  function f() {\n"
-            + "    plugin_require___(this !== window);\n"
-            + "    var self = this;\n"
-            + "    return function () {\n"
-            + "      return self;\n"
-            + "    };\n"
-            + "  }\n"
+            + "  ___OUTERS___.f = ___.ctor(function f() {\n"
+            + "      var t___ = this;\n"
+            + "      var self = t___;\n"
+            + "      return ___.primFreeze(___.simpleFunc(function () {\n"
+            + "            return self;\n"
+            + "          }));\n"
+            + "    });\n"
             + "}",
             true);
   }
 
 
   public void testBadDeclarations1() throws Exception {
+    // TODO(mikesamuel): Make sure this doesn't pass.
     runTest("function plugin_get___() { ; }",
             "{\n"
-            + "  function plugin_get___() {\n"
-            + "    ;\n"
-            + "  }\n"
+            + "  ___OUTERS___.plugin_get___"
+            + " = ___.simpleFunc(function plugin_get___() {\n"
+            + "      ;\n"
+            + "    });\n"
             + "}",
-        false);
+            false);
   }
 
   public void testBadDeclarations2() throws Exception {
+    // TODO(mikesamuel): Make sure this doesn't pass.
     runTest("var out___ = [ '<script></script>' ];",
-            "{\n  var out___ = ['<script></script>'];\n}", false);
+            "{\n  ___OUTERS___.out___ = ['<script></script>'];\n}", false);
   }
 
   public void testBadReference1() throws Exception {
-    runTest("var a = out___;", "{\n  var a = out___;\n}", false);
+    // TODO(mikesamuel): Make sure this doesn't pass.
+    runTest("var a = out___;", "{\n  ___OUTERS___.a = out___;\n}", false);
   }
 
   public void testBadReference2() throws Exception {
     runTest("f(MyClass.prototype);",
-            "{\n  f.call(this, plugin_get___(MyClass, 'prototype'));\n}",
-            // allowed, but should be denied by plugin_get___
+            "{\n  ___.asSimpleFunc(___OUTERS___.f)((function () {\n"
+            + "        var x___ = ___OUTERS___.MyClass;\n"
+            + "        return x___.prototype_canRead___ ? x___.prototype"
+            + " : ___.readPub(x___, 'prototype');\n"
+            + "      })());\n"
+            + "}",
+            // Allowed, but should be denied by ___.readPub
             true);
   }
 
   public void testAssignmentToPrototypeOk1() throws Exception {
     runTest("MyClass.prototype = new MyOtherClass;",
-            "{\n  MyClass.prototype = new MyOtherClass;\n}", true);
+            "{\n  (function () {\n"
+            + "      var x___ = ___OUTERS___.MyClass;\n"
+            + "      var x0___ = new ___OUTERS___.MyOtherClass;\n"
+            + "      x___.prototype_canSet___ ? (x___.prototype = x0___)"
+            + " : ___.setPub(x___, 'prototype', x0___);\n"
+            + "    })();\n"
+            + "}",
+            // Allowed.
+            true);
+  }
+
+  public void testAssignmentToPrototypeChains() throws Exception {
+    // TODO(mikesamuel): need return in inner closure.
+    runTest("MyClass.prototype = MyOtherClass.prototype = new YetAnotherClass;",
+            "{\n"
+            + "  (function () {\n"
+            + "      var x___ = ___OUTERS___.MyClass;\n"
+            + "      var x0___ = (function () {\n"
+            + "          var x___ = ___OUTERS___.MyOtherClass;\n"
+            + "          var x0___ = new ___OUTERS___.YetAnotherClass;\n"
+            + "          return x___.prototype_canSet___"
+            + " ? (x___.prototype = x0___)"
+            + " : ___.setPub(x___, 'prototype', x0___);\n"
+            + "        })();\n"
+            + "      x___.prototype_canSet___"
+            + " ? (x___.prototype = x0___)"
+            + " : ___.setPub(x___, 'prototype', x0___);\n"
+            + "    })();\n"
+            + "}",
+            // Allowed.
+            true);
   }
 
   public void testAssignmentToPrototypeOk2() throws Exception {
     runTest("MyClass.prototype.method = f;",
-            "{\n  MyClass.prototype.method = f;\n}", true);
+            "{\n" +
+            "  (function () {\n"
+            + "      var x___ = (function () {\n"
+            + "          var x___ = ___OUTERS___.MyClass;\n"
+            + "          return x___.prototype_canRead___"
+            + " ? x___.prototype : ___.readPub(x___, 'prototype');\n"
+            + "        })();\n"
+            + "      var x0___ = ___OUTERS___.f;\n"
+            + "      x___.method_canSet___"
+            + " ? (x___.method = x0___) : ___.setPub(x___, 'method', x0___);\n"
+            + "    })();\n"
+            + "}",
+            true);
   }
 
   public void testAssignmentToPrototypeNoCheating() throws Exception {
     runTest("x = MyClass.prototype = new MyOtherClass;",
-            "{\n  x = MyClass.prototype = new MyOtherClass;\n}", false);
+            "{\n"
+            + "  ___OUTERS___.x = (function () {\n"
+            + "      var x___ = ___OUTERS___.MyClass;\n"
+            + "      var x0___ = new ___OUTERS___.MyOtherClass;\n"
+            // No return allowed here.
+            + "      x___.prototype_canSet___"
+            + " ? (x___.prototype = x0___)"
+            + " : ___.setPub(x___, 'prototype', x0___);\n"
+            + "    })();\n"
+            + "}",
+            // Ok as long as the closure does not return a value.
+            true);
   }
 
   private void runTest(String input, String golden, boolean sanitary)
       throws Exception {
     MessageContext mc = new MessageContext();
     MessageQueue mq = new EchoingMessageQueue(
-        new PrintWriter(new OutputStreamWriter(System.out)), mc);
+        new PrintWriter(new OutputStreamWriter(System.err)), mc);
+    PluginMeta meta = new PluginMeta("pre");
 
-    InputSource is = new InputSource(new URI("test:///ExpressionSanitizer"));
+    InputSource is = new InputSource(new URI("test:///" + getName()));
     CharProducer cp = CharProducer.Factory.create(
         new StringReader(input), is);
     Block jsBlock;
@@ -210,13 +261,25 @@ public class ExpressionSanitizerTest extends TestCase {
       p.getTokenQueue().expectEmpty();
     }
 
-    boolean actualSanitary = new ExpressionSanitizer(mq).sanitize(ac(jsBlock));
+    boolean actualSanitary = new ExpressionSanitizerCaja(mq, meta)
+        .sanitize(ac(jsBlock));
+    if (actualSanitary) {
+      for (Message msg : mq.getMessages()) {
+        if (MessageLevel.ERROR.compareTo(msg.getMessageLevel()) <= 0) {
+          if (sanitary) {
+            fail(msg.toString());
+          }
+          break;
+        }
+      }
+    }
     StringBuilder actualBuf = new StringBuilder();
     RenderContext rc = new RenderContext(mc, actualBuf);
 
     jsBlock.render(rc);
 
     String actual = actualBuf.toString();
+    // TODO(mikesamuel): replace with a reparse and structural comparison.
     assertEquals(actual, golden.trim(), actual.trim());
     assertEquals(input, sanitary, actualSanitary);
   }
@@ -226,99 +289,73 @@ public class ExpressionSanitizerTest extends TestCase {
            "__proto__", "plugin_get___", "plugin_require___", "safe_ex__",
            "out___", "c1___", "plugin_checkUriRelative___", "plugin_html___",
            "plugin_prefix___", "plugin_dispatchEvent___", "plugin_log___",
-           "plugin_init___",
+           "plugin_init___", "__", "___",
          }) {
-      assertTrue(s, ExpressionSanitizer.inProtectedNamespace(s));
+      // TODO(mikesamuel): why are none of these blocked?
+      runTest(s, "{\n  " + s + ";\n}", false);
     }
+  }
+
+  public void testNotInProtectedNamespace() throws Exception {
+    // TODO(mikesamuel): make sure _ is not in the protected namespace.
     for (String s : new String[] {
-           "_", "x", "y", "foo", "$", "_x", "x_", "_x_",
+           "caja", "_", "x", "y", "foo", "$", "_x", "x_", "_x_",
          }) {
-      assertTrue(s, !ExpressionSanitizer.inProtectedNamespace(s));
+      runTest(s, "{\n  ___OUTERS___." + s + ";\n}", true);
     }
   }
 
-  public void testIsAssignedOnly1() throws Exception {
-    Reference r = new Reference(new Identifier("prototype"));
-    // Foo.prototype = 'bar'
-    ExpressionStmt es = new ExpressionStmt(
-        new Operation(
-            Operator.ASSIGN,
-            new Operation(
-                Operator.MEMBER_ACCESS,
-                new Reference(new Identifier("Foo")),
-                r),
-            new StringLiteral("'bar'")
-            )
-        );
-    AncestorChain<Reference> rChain = chainTo(es, r);
-    assertTrue(ExpressionSanitizer.isAssignedOnly(rChain, false));
-    assertTrue(ExpressionSanitizer.isAssignedOnly(rChain, true));
+  public void testAssignment1() throws Exception {
+    runTest(
+        "Foo.prototype = 'bar'",
+        "{\n"
+        + "  (function () {\n"
+        + "      var x___ = ___OUTERS___.Foo;\n"
+        + "      var x0___ = 'bar';\n"
+        + "      x___.prototype_canSet___"
+        + " ? (x___.prototype = x0___)"
+        + " : ___.setPub(x___, 'prototype', x0___);\n"
+        + "    })();\n"
+        + "}",
+        true);
   }
 
-  public void testIsAssignedOnly2() throws Exception {
-    Reference r = new Reference(new Identifier("prototype"));
-    // prototype['foo'] = 'bar'
-    ExpressionStmt es = new ExpressionStmt(
-        new Operation(
-            Operator.ASSIGN,
-            new Operation(
-                Operator.SQUARE_BRACKET,
-                r,
-                new StringLiteral("'foo'")),
-            new StringLiteral("'bar'")
-            )
-        );
-    AncestorChain<Reference> rChain = chainTo(es, r);
-    assertTrue(!ExpressionSanitizer.isAssignedOnly(rChain, false));
-    assertTrue(!ExpressionSanitizer.isAssignedOnly(rChain, true));
+  public void testAssignment2() throws Exception {
+    runTest(
+        "prototype['foo'] = 'bar'",
+        "{\n"
+        + "  ___.setPub(___OUTERS___.prototype, 'foo', 'bar');\n"
+        + "}",
+        true);
   }
 
-  public void testIsAssignedOnly3() throws Exception {
-    Reference r = new Reference(new Identifier("prototype"));
-    ExpressionStmt es = new ExpressionStmt(r);
-    AncestorChain<Reference> rChain = chainTo(es, r);
-    assertTrue(!ExpressionSanitizer.isAssignedOnly(rChain, false));
-    assertTrue(!ExpressionSanitizer.isAssignedOnly(rChain, true));
+  public void testIsGlobalPrototypeAvailable() throws Exception {
+    runTest(
+        "prototype",
+        "{\n"
+        + "  ___OUTERS___.prototype;\n"
+        + "}",
+        // TODO(mikesamuel): should this be available?
+        false);
   }
 
-  public void testIsAssignedOnly4() throws Exception {
-    Reference r = new Reference(new Identifier("r"));
-    // x = r = null;
-    ExpressionStmt es = new ExpressionStmt(
-        new Operation(
-            Operator.ASSIGN,
-            new Reference(new Identifier("x")),
-            new Operation(
-                Operator.ASSIGN,
-                r,
-                new NullLiteral()
-            )
-        )
-    );
-    AncestorChain<Reference> rChain = chainTo(es, r);
-    assertTrue(!ExpressionSanitizer.isAssignedOnly(rChain, false));
-    assertTrue(ExpressionSanitizer.isAssignedOnly(rChain, true));
+  public void testIsGlobalConstructorAvailable() throws Exception {
+    runTest(
+        "constructor",
+        "{\n"
+        + "  ___OUTERS___.constructor;\n"
+        + "}",
+        // TODO(mikesamuel): should this be available?
+        false);
   }
 
-  /** The chain to x starting at root. */
-  private static <T extends ParseTreeNode> AncestorChain<T> chainTo(
-      ParseTreeNode root, T x) {
-    ChainFinder<T> finder = new ChainFinder<T>(x);
-    root.acceptPreOrder(finder, null);
-    return finder.result;
-  }
-  private static class ChainFinder<T extends ParseTreeNode> implements Visitor {
-    AncestorChain<T> result;
-    T target;
-
-    ChainFinder(T target) { this.target = target; }
-
-    public boolean visit(AncestorChain<?> ancestors) {
-      if (ancestors.node == target) {
-        result = new AncestorChain<T>(ancestors.parent, target);
-      }
-      return result == null;
-    }
+  public void testAssignmentOnly3() throws Exception {
+    runTest(
+        "x = r = null",
+        "{\n"
+        + "  ___OUTERS___.x = ___OUTERS___.r = null;\n"
+        + "}",
+        true);
   }
 
   private static <T extends ParseTreeNode> AncestorChain<T> ac(T node) {

@@ -149,7 +149,7 @@ public abstract class Rule implements MessagePart {
 
   protected final ParseTreeNode expandAllTo(
       ParseTreeNode node,
-      Class parentNodeClass,
+      Class<? extends ParseTreeNode> parentNodeClass,
       Scope scope,
       MessageQueue mq) {
     List<ParseTreeNode> rewrittenChildren = new ArrayList<ParseTreeNode>();

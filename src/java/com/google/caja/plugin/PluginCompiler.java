@@ -35,23 +35,18 @@ import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
-import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.MultiDeclaration;
-import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
-import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UndefinedLiteral;
 import com.google.caja.plugin.stages.CheckForErrorsStage;
 import com.google.caja.plugin.stages.ConsolidateCodeStage;
 import com.google.caja.plugin.stages.ConsolidateCssStage;
-import com.google.caja.plugin.stages.RewriteGlobalReferencesStage;
 import com.google.caja.plugin.stages.ValidateCssStage;
 import com.google.caja.plugin.stages.ValidateJavascriptStage;
 import com.google.caja.plugin.GxpCompiler.BadContentException;
@@ -63,7 +58,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Criterion;
-import com.google.caja.util.Pair;
+import com.google.caja.util.Pipeline;
 import com.google.caja.util.Pipeline;
 import static com.google.caja.plugin.SyntheticNodes.s;
 
@@ -80,12 +75,6 @@ import java.util.*;
 public final class PluginCompiler {
   private final Pipeline<Jobs> compilationPipeline;
   private final Jobs jobs;
-  /** An object that is not available to sandboxed code. */
-  private ObjectConstructor pluginNamespace;
-  /** An object that is available to sandboxed code. */
-  private ObjectConstructor pluginPrivate;
-  /** The root of the output javascript tree. */
-  private Block jsTree;
 
   public PluginCompiler(PluginMeta meta) {
     this(meta, new SimpleMessageQueue());
@@ -100,10 +89,16 @@ public final class PluginCompiler {
       @Override
       protected boolean applyStage(
           Pipeline.Stage<? super Jobs> stage, Jobs jobs) {
+        //System.err.println("\n\n");
         jobs.getMessageQueue().addMessage(
             MessageType.CHECKPOINT,
             MessagePart.Factory.valueOf(stage.getClass().getSimpleName()),
             MessagePart.Factory.valueOf((System.nanoTime() - t0) / 1e9));
+        //for (Job job : jobs.getJobs()) {
+        //  System.err.println(
+        //      ((com.google.caja.parser.AbstractParseTreeNode)
+        //       job.getRoot().node).toStringDeep());
+        //}
         return super.applyStage(stage, jobs);
       }
     };
@@ -160,20 +155,10 @@ public final class PluginCompiler {
 
   protected void setupCompilationPipeline() {
     List<Pipeline.Stage<Jobs>> stages = compilationPipeline.getStages();
-    PluginMeta.TranslationScheme scheme = jobs.getPluginMeta().scheme;
-    if (scheme != PluginMeta.TranslationScheme.CAJA) {
-      stages.add(new SetUpNamespaceStage());
-    }
     stages.add(new ValidateCssStage());
     stages.add(new CompileGxpsStage());
     stages.add(new CompileCssTemplatesStage());
-    if (jobs.getPluginMeta().scheme != PluginMeta.TranslationScheme.CAJA) {
-      stages.add(new MoveGlobalDefinitionsIntoPluginNamespaceStage());
-      stages.add(new ConsolidateCodeIntoInitializerBodyStage());
-      stages.add(new RewriteGlobalReferencesStage());
-    } else {
-      stages.add(new ConsolidateCodeStage());
-    }
+    stages.add(new ConsolidateCodeStage());
     stages.add(new ValidateJavascriptStage());
     stages.add(new ConsolidateCssStage());
     stages.add(new CheckForErrorsStage());
@@ -186,77 +171,6 @@ public final class PluginCompiler {
    */
   public boolean run() {
     return compilationPipeline.apply(jobs);
-  }
-
-  private class SetUpNamespaceStage implements Pipeline.Stage<Jobs> {
-    public boolean apply(Jobs jobs) {
-      PluginMeta meta = getPluginMeta();
-
-      PluginCompiler.this.pluginNamespace = s(
-          new ObjectConstructor(
-              Collections.<Pair<Literal, Expression>>emptyList()));
-      // Create a meta object that contains the various prefixes and that is not
-      // reachable from the plugin
-      PluginCompiler.this.pluginPrivate = s(
-          new ObjectConstructor(
-              Collections.<Pair<Literal, Expression>>emptyList()));
-      // This will look something like
-      // var MyPluginMeta = {
-      //   'nsPrefix':   'foo',
-      //   'pathPrefix': '/plugin/',
-      //   'name':       'MyPlugin',
-      // };
-      pluginPrivate.createMutation()
-          .insertBefore(s(new StringLiteral("'nsPrefix'")), null)
-          .insertBefore(s(new StringLiteral(
-              StringLiteral.toQuotedValue(meta.namespacePrefix))), null)
-          .insertBefore(s(new StringLiteral("'pathPrefix'")), null)
-          .insertBefore(s(new StringLiteral(
-              StringLiteral.toQuotedValue(meta.pathPrefix))), null)
-          .insertBefore(s(new StringLiteral("'name'")), null)
-          .insertBefore(s(new StringLiteral(
-              StringLiteral.toQuotedValue(meta.namespaceName))), null)
-          .execute();
-      // Create a tree that contains the declarations for the two and some
-      // initialization code.
-      // var PLUGIN_PRIVATE = { ... };
-      // var PLUGIN = { .. };
-      // PLUGIN_PRIVATE.plugin = PLUGIN;
-      // plugin_initialize___(PLUGIN);
-      PluginCompiler.this.jsTree
-          = s(new Block(Arrays.<Statement>asList(
-                // The private plugin
-                s(new Declaration(
-                      s(new Identifier(meta.namespacePrivateName)),
-                      pluginPrivate)),
-                // The plugin namespace
-                s(new Declaration(
-                      s(new Identifier(meta.namespaceName)), pluginNamespace)),
-                s(new ExpressionStmt(
-                      s(new Operation(
-                            Operator.ASSIGN,
-                            s(new Operation(
-                                  Operator.MEMBER_ACCESS,
-                                  s(new Reference(
-                                        s(new Identifier(
-                                              meta.namespacePrivateName)))),
-                                  s(new Reference(
-                                        s(new Identifier("plugin")))))),
-                            s(new Reference(
-                                  s(new Identifier(meta.namespaceName))))
-                                )))),
-                            s(new ExpressionStmt(s(new Operation(
-                                  Operator.FUNCTION_CALL,
-                                  s(new Reference(
-                                        s(new Identifier(
-                                              "plugin_initialize___")))),
-                                  s(new Reference(
-                                        s(new Identifier(
-                                              meta.namespacePrivateName))))))))
-                )));
-
-      return hasNoFatalErrors();
-    }
   }
 
   private class CompileGxpsStage implements Pipeline.Stage<Jobs> {
@@ -305,68 +219,26 @@ public final class PluginCompiler {
           continue;
         }
 
-        if (jobs.getPluginMeta().scheme != PluginMeta.TranslationScheme.CAJA) {
-          // Create a node under PluginMeta for the canonical reference.
-          // This is used  for calls from one gxp to another to foil attacks
-          // that rewrite a called gxp to emit unsafe content.
-          PluginCompiler.this.pluginPrivate.createMutation()
-              .insertBefore(s(new StringLiteral(
-                  StringLiteral.toQuotedValue(job.sig.assignedName))), null)
-              .insertBefore(job.compiled, null)
-              .execute();
-
-          Expression templateRef = s(
-              new Operation(
-                  Operator.MEMBER_ACCESS,
-                  s(new Reference(
-                        s(new Identifier(meta.namespacePrivateName)))),
-                  s(new Reference(
-                        s(new Identifier(job.sig.getAssignedName()))))
-                  ));
-
-          // Either replace it or put a reference to it in the main plugin
-          if (null == job.toReplace) {
-            StringLiteral gxpName = s(
-                new StringLiteral(StringLiteral.toQuotedValue(
-                    job.sig.templateName)));
-            PluginCompiler.this.pluginNamespace.createMutation()
-                .insertBefore(gxpName, null)
-                .insertBefore(templateRef, null)
-               .execute();
-          } else {
-            ((MutableParseTreeNode) job.toReplace.parent.node).replaceChild(
-                templateRef, job.toReplace.node);
-          }
-        } else {
-          FunctionConstructor templateFn = (FunctionConstructor) job.compiled;
-          FunctionDeclaration template = new FunctionDeclaration(
-              templateFn.getIdentifier(), templateFn);
-          jobs.getJobs().add(
-              new Job(new AncestorChain<FunctionDeclaration>(template)));
-        }
+        FunctionConstructor templateFn = job.compiled;
+        FunctionDeclaration template = new FunctionDeclaration(
+            templateFn.getIdentifier(), templateFn);
+        // The name used by <gxp:call> tags to reach the template.
+        Declaration privateName = s(new Declaration(
+            s(new Identifier(job.sig.getAssignedName())),
+            new Reference(new Identifier(templateFn.getIdentifierName()))));
+        Block templateDecls = new Block(Arrays.asList(template, privateName));
+        jobs.getJobs().add(new Job(new AncestorChain<Block>(templateDecls)));
       }
 
       for (FunctionDeclaration handler : gxpc.getEventHandlers()) {
-        if (jobs.getPluginMeta().scheme != PluginMeta.TranslationScheme.CAJA) {
-          StringLiteral gxpName = s(
-              new StringLiteral(StringLiteral.toQuotedValue(
-                  handler.getIdentifierName())));
-          Expression function = handler.getInitializer();
-          PluginCompiler.this.pluginNamespace.createMutation()
-              .insertBefore(gxpName, null)
-              .insertBefore(function, null)
-              .execute();
-        } else {
-          jobs.getJobs().add(
-              new Job(new AncestorChain<FunctionDeclaration>(handler)));
-        }
+        jobs.getJobs().add(
+            new Job(new AncestorChain<FunctionDeclaration>(handler)));
       }
 
       return hasNoFatalErrors();
     }
   }
 
-  // TODO(mikesamuel): move these into their own files.
   /** Takes CSS templates and turns them into functions. */
   private class CompileCssTemplatesStage implements Pipeline.Stage<Jobs> {
     public boolean apply(Jobs jobs) {
@@ -380,85 +252,14 @@ public final class PluginCompiler {
           continue;
         }
 
-        StringLiteral templateName = s(new StringLiteral(
-            StringLiteral.toQuotedValue(function.getIdentifier().getName())));
-        PluginCompiler.this.pluginNamespace.createMutation()
-            .insertBefore(templateName, null)
-            .insertBefore(function, null)
-            .execute();
+        FunctionDeclaration decl = new FunctionDeclaration(
+            function.getIdentifier(), function);
+        jobs.getJobs().add(
+            new Job(new AncestorChain<FunctionDeclaration>(decl)));
       }
       return hasNoFatalErrors();
     }
   }
-
-  private class MoveGlobalDefinitionsIntoPluginNamespaceStage
-      implements Pipeline.Stage<Jobs> {
-    public boolean apply(Jobs jobs) {
-      GlobalDefRewriter rw = new GlobalDefRewriter(getPluginMeta());
-
-      for (Job job : jobs.getJobsByType(Job.JobType.JAVASCRIPT)) {
-        job.getRoot().node.acceptPreOrder(rw, job.getRoot().parent);
-      }
-
-      return hasNoFatalErrors();
-    }
-  }
-
-  private class ConsolidateCodeIntoInitializerBodyStage
-      implements Pipeline.Stage<Jobs> {
-    public boolean apply(Jobs jobs) {
-      PluginMeta meta = getPluginMeta();
-
-      // Create an initializer function
-      Block initFunctionBody = s(new Block(Collections.<Statement>emptyList()));
-
-      MutableParseTreeNode.Mutation newChanges
-          = initFunctionBody.createMutation();
-      for (Iterator<Job> jobIt = jobs.getJobs().iterator(); jobIt.hasNext();) {
-        Job job = jobIt.next();
-        if (job.getType() != Job.JobType.JAVASCRIPT) { continue; }
-        jobIt.remove();
-
-        Block body = job.getRoot().cast(Block.class).node;
-        MutableParseTreeNode.Mutation oldChanges = body.createMutation();
-        for (Statement s : body.children()) {
-          oldChanges.removeChild(s);
-          newChanges.insertBefore(s, null);
-        }
-        oldChanges.execute();
-      }
-      newChanges.execute();
-
-      // (function () { <initializer code> }).call(<plugin namespace);
-      // call
-      //   member access
-      //     function constructor
-      //       initializer body
-      //     reference: call
-      //   reference: plugin_namespace
-      PluginCompiler.this.jsTree.insertBefore(
-          s(new ExpressionStmt(
-              s(new Operation(
-                    Operator.FUNCTION_CALL,
-                    s(new Operation(
-                          Operator.MEMBER_ACCESS,
-                          s(new FunctionConstructor(
-                                s(new Identifier(null)),
-                                Collections.<FormalParam>emptyList(),
-                                initFunctionBody)),
-                          s(new Reference(s(new Identifier("call"))))
-                          )),
-                    s(new Reference(s(new Identifier(meta.namespaceName))))
-                    ))
-              )),
-          null);
-
-      jobs.getJobs().add(new Job(new AncestorChain<Block>(jsTree)));
-
-      return hasNoFatalErrors();
-    }
-  }
-
 
   private boolean hasNoFatalErrors() {
     for (Message m : getMessageQueue().getMessages()) {
@@ -618,11 +419,8 @@ final class GlobalDefRewriter implements Visitor {
           new ExpressionStmt(
               s(new Operation(
                     Operator.ASSIGN,
-                    s(new Operation(
-                        Operator.MEMBER_ACCESS,
-                        s(new Reference(s(new Identifier(meta.namespaceName)))),
-                        s(new Reference(
-                              s(new Identifier(d.getIdentifierName())))))),
+                    TreeConstruction.memberAccess(
+                        ReservedNames.OUTERS, d.getIdentifierName()),
                     initializer))));
       rewritten.setFilePosition(d.getFilePosition());
       parent.replaceChild(rewritten, d);
@@ -679,7 +477,7 @@ final class GlobalReferenceRewriter {
             Operation pluginReference = s(
                 new Operation(
                     Operator.MEMBER_ACCESS,
-                    s(new Reference(s(new Identifier(meta.namespaceName)))),
+                    s(new Reference(s(new Identifier(ReservedNames.OUTERS)))),
                     ref));
             parent.replaceChild(pluginReference, ref);
           }

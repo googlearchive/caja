@@ -28,9 +28,6 @@ import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
-import com.google.caja.parser.js.Operation;
-import com.google.caja.parser.js.Operator;
-import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
@@ -162,22 +159,14 @@ public final class CssTemplate extends AbstractParseTreeNode<CssTree> {
 
     bodyToJavascript(getCss(), meta, tgtChain, body, JsWriter.Esc.NONE, mq);
 
-    body.insertBefore(
+    body.appendChild(
         s(new ReturnStmt(
-              s(new Operation(
-                    Operator.FUNCTION_CALL,
-                    s(new Reference(new Identifier("plugin_blessCss___"))),
-                    s(new Operation(
-                          Operator.FUNCTION_CALL,
-                          s(new Operation(
-                                Operator.MEMBER_ACCESS,
-                                s(new Reference(
-                                      new Identifier(tgtChain.get(0)))),
-                                s(new Reference(new Identifier("join"))))),
-                          s(new StringLiteral("''"))
-                    ))
-               ))
-         )), null);
+              TreeConstruction.call(
+                  TreeConstruction.memberAccess(
+                      ReservedNames.OUTERS, "plugin_blessCss___"),
+                  TreeConstruction.call(
+                      TreeConstruction.memberAccess(tgtChain.get(0), "join"),
+                      s(new StringLiteral("''")))))));
     body.setFilePosition(getCss().getFilePosition());
     FunctionConstructor fn
         = new FunctionConstructor(new Identifier(identifier), params, body);
@@ -259,34 +248,33 @@ public final class CssTemplate extends AbstractParseTreeNode<CssTree> {
         case NUMBER:
         case PERCENTAGE:
         case TIME:
-          // plugin_cssNumber___(...)
-          e = s(new Operation(
-                    Operator.FUNCTION_CALL,
-                    s(new Reference(new Identifier("plugin_cssNumber___"))),
-                    e));
+          // ___OUTERS___.plugin_cssNumber___(...)
+          e = TreeConstruction.call(
+                  TreeConstruction.memberAccess(
+                        ReservedNames.OUTERS, "plugin_cssNumber___"),
+                  e);
           suffix = sub.getSuffix();
           break;
         case URI:
-          // plugin_cssUri___(..., PLUGIN)
-          e = s(new Operation(
-                    Operator.FUNCTION_CALL,
-                    s(new Reference(new Identifier("plugin_cssUri___"))),
-                    e,
-                    s(new Reference(new Identifier(meta.namespacePrivateName)))
-                    ));
+          // ___OUTERS___.plugin_cssUri___(...)
+          e = TreeConstruction.call(
+                  TreeConstruction.memberAccess(
+                        ReservedNames.OUTERS, "plugin_cssUri___"),
+                  e);
           if (esc == JsWriter.Esc.HTML_ATTRIB) {
-            e = s(new Operation(
-                      Operator.FUNCTION_CALL,
-                      s(new Reference(new Identifier("plugin_htmlAttr___"))),
-                      e));
+            e = TreeConstruction.call(
+                  TreeConstruction.memberAccess(
+                        ReservedNames.OUTERS, "plugin_htmlAttr___"),
+                  e);
           }
           suffix = "";
           break;
         case COLOR:
-          // plugin_cssHexColor___(...)
-          e = s(new Operation(
-                    Operator.FUNCTION_CALL,
-                    s(new Reference(new Identifier("plugin_cssColor___"))), e));
+          // ___OUTERS___.plugin_cssColor___(...)
+          e = TreeConstruction.call(
+                  TreeConstruction.memberAccess(
+                        ReservedNames.OUTERS, "plugin_cssColor___"),
+                  e);
           suffix = "";
           break;
         default:

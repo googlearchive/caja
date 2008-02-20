@@ -111,7 +111,7 @@ public class ParseTreeNodes {
     throw new RuntimeException("Cannot find clone ctor for node " + clazz);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "cast"})
   private static <T> List<Constructor<T>> declaredCtors(Class<T> clazz) {
     // This is typesafe because a constructor yields exactly the type T,
     // never a subclass.  Unfortunately getDeclaredConstructors loses type info

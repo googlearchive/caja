@@ -18,8 +18,9 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
 
 /**
  * A group of parse trees.  Rewriting starts with one or more input parse trees,
@@ -54,10 +55,11 @@ public class Jobs {
   /** May be mutated in place. */
   public List<Job> getJobs() { return jobs; }
 
-  public List<Job> getJobsByType(Job.JobType type) {
+  public List<Job> getJobsByType(Job.JobType type, Job.JobType... others) {
     List<Job> matches = new ArrayList<Job>();
+    EnumSet<Job.JobType> types = EnumSet.of(type, others);
     for (Job job : jobs) {
-      if (job.getType() == type) { matches.add(job); }
+      if (types.contains(job.getType())) { matches.add(job); }
     }
     return matches;
   }

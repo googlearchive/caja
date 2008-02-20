@@ -1,24 +1,19 @@
 {
-  var MY_TEST_PLUGIN_PRIVATE = {
-    'nsPrefix': 'pre',
-    'pathPrefix': '/plugin1',
-    'name': 'MY_TEST_PLUGIN',
-    'c1___': function sayHello() {
-      var out___ = [];
-      out___.push('<h1>Hello World</h1>');
-      return plugin_blessHtml___(out___.join(''));
-    }
-  };
-  var MY_TEST_PLUGIN = {
-    'sayHello': MY_TEST_PLUGIN_PRIVATE.c1___
-  };
-  MY_TEST_PLUGIN_PRIVATE.plugin = MY_TEST_PLUGIN;
-  plugin_initialize___(MY_TEST_PLUGIN_PRIVATE);
-  (function () {
-      MY_TEST_PLUGIN.main = function main() {
-        (MY_TEST_PLUGIN.getElementById('hello-base')).setInnerHTML(MY_TEST_PLUGIN.sayHello());
-      };
-    }).call(MY_TEST_PLUGIN);
+  ___.loadModule(function (___OUTERS___) {
+      ___OUTERS___.main = ___.simpleFunc(function main() {
+          (function () {
+              var x___ = ___.asSimpleFunc(___OUTERS___.getElementById)('hello-base');
+              var x0___ = ___.asSimpleFunc(___.primFreeze(___OUTERS___.sayHello))();
+              return x___.setInnerHTML_canCall___ ? x___.setInnerHTML(x0___) : ___.callPub(x___, 'setInnerHTML', [x0___]);
+            })();
+        });
+      ___OUTERS___.sayHello = ___.simpleFunc(function sayHello() {
+          var out___ = [];
+          out___.push('<h1>Hello World</h1>');
+          return ___OUTERS___.plugin_blessHtml___(out___.join(''));
+        });
+      var c1___ = ___.primFreeze(___OUTERS___.sayHello);
+    });
 }
 
 .pre h1 {

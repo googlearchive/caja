@@ -1,16 +1,14 @@
 {
-  function foo(a, b) {
-    plugin_require___(this !== window);
-    if (a > 0 && b > 0) {
-      return foo.call(this, b, a - 1);
-    }
-    try {
-      bar.call(this);
-    } catch (safe_ex___) {
-      var e = '' + safe_ex___;
-      alert.call(this, e);
-    }
-  }
-  var a = plugin_get___(bar, baz);
-  eval.call(this, 'badness()');
+  ___OUTERS___.foo = ___.simpleFunc(function foo(a, b) {
+      if (a > 0 && b > 0) {
+        return ___.asSimpleFunc(___.primFreeze(foo))(b, a - 1);
+      }
+      try {
+        ___.asSimpleFunc(___OUTERS___.bar)();
+      } catch (e) {
+        ___.asSimpleFunc(___OUTERS___.alert)(e);
+      }
+    });
+  ___OUTERS___.a = ___.readPub(___OUTERS___.bar, ___OUTERS___.baz);
+  ___.asSimpleFunc(___OUTERS___.eval)('badness()');
 }

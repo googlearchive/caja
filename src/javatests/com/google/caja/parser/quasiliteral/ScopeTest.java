@@ -44,6 +44,7 @@ public class ScopeTest extends TestCase {
     mq = TestUtil.createTestMessageQueue(new MessageContext());
   }
 
+  @Override
   public void tearDown() {
     this.mq = null;
   }
@@ -255,14 +256,14 @@ public class ScopeTest extends TestCase {
     Scope s1 = Scope.fromCatchStmt(s0, c);
     Scope s2 = Scope.fromFunctionConstructor(s1, fc);
 
-    // TODO(ihab.awad): This spurious LINT message is because 'foo' is declared in the outer
-    // scope, as DECLARED_FUNCTION, and within the function body, as FUNCTION. Fix the impl so
-    // this spurious message is not emitted.
-    assertMsgType(MessageType.MASKING_SYMBOL, mq.getMessages().get(0));
-    assertMsgLevel(MessageLevel.LINT, mq.getMessages().get(0));
+    assertEquals(1, mq.getMessages().size());
 
-    assertMsgType(MessageType.MASKING_SYMBOL, mq.getMessages().get(1));
-    assertMsgLevel(MessageLevel.ERROR, mq.getMessages().get(1));
+    // TODO(ihab.awad): This spurious LINT message is because 'foo' is
+    // declared in the outer scope, as DECLARED_FUNCTION, and within
+    // the function body, as FUNCTION. Fix the impl so this spurious
+    // message is not emitted.
+    assertMsgType(MessageType.MASKING_SYMBOL, mq.getMessages().get(0));
+    assertMsgLevel(MessageLevel.ERROR, mq.getMessages().get(0));
   }
 
   public void testMaskedExceptionVariablesSame() throws Exception {

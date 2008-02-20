@@ -81,7 +81,7 @@ public class CompiledPluginTest extends TestCase {
         "\n  var div = document.createElement('DIV');" +
         "\n  div.id = 'pre-hello-base';" +
         "\n  document.body.appendChild(div);" +
-        "\n  PLUGIN.main();" +
+        "\n  testOuters.main();" +
         "\n" +
         "\n  assertEquals(" +
         "\n      '<h1>Hello World</h1>'," +
@@ -100,7 +100,8 @@ public class CompiledPluginTest extends TestCase {
         new PluginFile(
             new StringReader(
                 "function main() {\n" +
-                "  getElementById('hello-base').setInnerHTML(sayHello());\n" +
+                "  document.getElementById('hello-base')\n" +
+                "      .setInnerHTML(sayHello());\n" +
                 "}"),
             "file:///hello-world.js")
         );
@@ -112,13 +113,13 @@ public class CompiledPluginTest extends TestCase {
         "\n  div.id = 'pre-base';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
-        "\n  PLUGIN.main(1);" +
+        "\n  testOuters.main(1);" +
         "\n  assertEquals(" +
         "\n      'Branch A'," +
         "\n      document.getElementById('pre-base').innerHTML" +
         "\n      );" +
         "\n" +
-        "\n  PLUGIN.main(0);" +
+        "\n  testOuters.main(0);" +
         "\n  assertEquals(" +
         "\n      'Branch B'," +
         "\n      document.getElementById('pre-base').innerHTML" +
@@ -137,7 +138,7 @@ public class CompiledPluginTest extends TestCase {
         new PluginFile(
             new StringReader(
                 "function main(c) {\n" +
-                "  getElementById('base').setInnerHTML(test(c));\n" +
+                "  document.getElementById('base').setInnerHTML(test(c));\n" +
                 "}"),
             "file:///conditional-test.js")
         );
@@ -149,7 +150,7 @@ public class CompiledPluginTest extends TestCase {
         "\n  div.id = 'pre-base';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
-        "\n  PLUGIN.main(['foo', 'bar', 'boo & baz']);" +
+        "\n  testOuters.main(['foo', 'bar', 'boo & baz']);" +
         "\n  assertEquals(" +
         "\n      '<ul><li>foo</li><li>bar</li>' +" +
         "\n      '<li>boo &amp; baz</li></ul>'," +
@@ -169,7 +170,8 @@ public class CompiledPluginTest extends TestCase {
         new PluginFile(
             new StringReader(
                 "function main(items) {\n" +
-                "  getElementById('base').setInnerHTML(test(items));\n" +
+                "  document.getElementById('base')\n" +
+                "      .setInnerHTML(test(items));\n" +
                 "}"),
             "file:///loop-test.js")
         );
@@ -181,7 +183,7 @@ public class CompiledPluginTest extends TestCase {
         "\n  div.id = 'pre-base';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
-        "\n  PLUGIN.main();" +
+        "\n  testOuters.main();" +
         "\n  assertEquals(" +
         "\n      '<a class=\"pre-class1 pre-class2\"' +" +
         "\n      ' href=\"/plugin1/foo.html?a=b&amp;c=d\"' +" +
@@ -220,7 +222,7 @@ public class CompiledPluginTest extends TestCase {
         new PluginFile(
             new StringReader(
                 "function main() {\n" +
-                "  getElementById('base').setInnerHTML(\n" +
+                "  document.getElementById('base').setInnerHTML(\n" +
                 "       test('foo.html?a=b&c=d', '\"hover text\"',\n" +
                 "            ['class1', 'class2']));\n" +
                 "}"),
@@ -234,7 +236,7 @@ public class CompiledPluginTest extends TestCase {
         "\n  div.id = 'pre-base';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
-        "\n  PLUGIN.main();" +
+        "\n  testOuters.main();" +
         "\n  assertEquals(" +
         "\n      '(1,2)(1,2)'," +
         "\n      document.getElementById('pre-base').innerHTML" +
@@ -258,7 +260,8 @@ public class CompiledPluginTest extends TestCase {
         new PluginFile(
             new StringReader(
                 "function main() {\n" +
-                "  getElementById('base').setInnerHTML(callerTemplate());\n" +
+                "  document.getElementById('base')\n" +
+                "      .setInnerHTML(callerTemplate());\n" +
                 "}"),
             "file:///call-test.js")
         );
@@ -270,7 +273,7 @@ public class CompiledPluginTest extends TestCase {
         "\n  div.id = 'pre-base';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
-        "\n  PLUGIN.main();" +
+        "\n  testOuters.main();" +
         "\n  assertEquals(" +
         "\n      'left: 25px;\\nwidth: 30px;\\nmargin: 5px 5px 5px 5px;\\n' +" +
         "\n      'color: #a0b0c0'," +
@@ -294,7 +297,7 @@ public class CompiledPluginTest extends TestCase {
         new PluginFile(
             new StringReader(
                 "function main() {\n" +
-                "  getElementById('base').setStyle(\n" +
+                "  document.getElementById('base').setStyle(\n" +
                 "      styles(20, 60, 5, 0x8090a0, 0xc0d0e0));\n" +
                 "}"),
             "file:///css-test.js")
@@ -308,12 +311,10 @@ public class CompiledPluginTest extends TestCase {
   private void execPlugin(String tests, PluginFile... pluginFiles)
       throws IOException, ParseException {
     PluginMeta meta = new PluginMeta(
-        "PLUGIN", "pre", "/plugin1", "rootDiv",
-        PluginMeta.TranslationScheme.AAJA,
-        PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
+        "pre", "/plugin1", PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
     MessageContext mc = new MessageContext();
     MessageQueue mq = new EchoingMessageQueue(
-        new PrintWriter(new OutputStreamWriter(System.out)), mc);
+        new PrintWriter(new OutputStreamWriter(System.err)), mc);
     PluginCompiler pc = new PluginCompiler(meta, mq);
 
     pc.setMessageContext(mc);
@@ -360,6 +361,10 @@ public class CompiledPluginTest extends TestCase {
         new RhinoTestBed.Input(getClass(), "/js/jqueryjs/runtest/env.js"),
         // Console Stubs
         new RhinoTestBed.Input(getClass(), "console-stubs.js"),
+        // Plugin Framework
+        new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
+        new RhinoTestBed.Input(getClass(), "caps/wrap_capability.js"),
+        new RhinoTestBed.Input(getClass(), "plugin-base.js"),
         // Initialize the DOM
         new RhinoTestBed.Input(
             // Document not defined until window.location set.
@@ -367,13 +372,16 @@ public class CompiledPluginTest extends TestCase {
             "dom"),
         // Make the assertTrue, etc. functions available to javascript
         new RhinoTestBed.Input(getClass(), "asserts.js"),
-        // Plugin Framework
-        new RhinoTestBed.Input(getClass(), "caps/wrap_capability.js"),
-        new RhinoTestBed.Input(getClass(), "plugin-base.js"),
+        new RhinoTestBed.Input(new StringReader(
+            "var testOuters = ___.getNewModuleHandler().getOuters();\n"
+            + "initPlugin(testOuters, 'pre', 'rootDiv', '/plugin1');"),
+            "container"),
         // The Plugin
-        new RhinoTestBed.Input(new StringReader(compiledPlugin), "plugin"),
+        new RhinoTestBed.Input(
+            new StringReader(compiledPlugin), getName() + "-plugin.js"),
         // The tests
-        new RhinoTestBed.Input(new StringReader(tests), "tests"),
+        new RhinoTestBed.Input(
+            new StringReader(tests), getName() + "-tests.js"),
         };
 
     for (Message msg : mq.getMessages()) {
@@ -382,7 +390,7 @@ public class CompiledPluginTest extends TestCase {
          .append(msg.getMessageParts().get(0));
     }
 
-    System.out.println(buf.toString());
+    System.err.println(buf.toString());
 
     RhinoTestBed.runJs(null, inputs);
   }

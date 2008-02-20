@@ -45,24 +45,12 @@ import java.net.URI;
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewriter {
-  private static final String JAVASCRIPT_PREFIX = "___OUTERS___";
   private static final String DOM_PREFIX = "DOM-PREFIX";
-  private static final String ROOT_DIV_ID = "ROOT_DIV_ID";
 
   private MessageQueue mq;
-  private PluginMeta.TranslationScheme translationScheme;
 
   public DefaultGadgetRewriter(MessageQueue mq) {
     this.mq = mq;
-    this.translationScheme = PluginMeta.TranslationScheme.CAJA;
-  }
-
-  public PluginMeta.TranslationScheme getTranslationScheme() {
-    return translationScheme;
-  }
-
-  public void setTranslationScheme(PluginMeta.TranslationScheme translationScheme) {
-    this.translationScheme = translationScheme;
   }
 
   public MessageQueue getMessageQueue() {
@@ -92,7 +80,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
                              Readable gadgetSpec,
                              UriCallback uriCallback,
                              Appendable output)
-      throws UriCallbackException, GadgetRewriteException, IOException {
+      throws GadgetRewriteException, IOException {
     String contentString = readReadable(gadgetSpec);
     output.append(rewriteContent(baseUri, contentString, uriCallback));
   }
@@ -146,8 +134,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
   private HtmlPluginCompiler compileGadget(
       DomTree.Fragment content, final URI baseUri, final UriCallback callback)
       throws GadgetRewriteException {
-    PluginMeta meta = new PluginMeta(
-        JAVASCRIPT_PREFIX, DOM_PREFIX, "", ROOT_DIV_ID, translationScheme,
+    PluginMeta meta = new PluginMeta(DOM_PREFIX, "",
         new PluginEnvironment() {
           public CharProducer loadExternalResource(
               ExternalReference ref, String mimeType) {
@@ -196,8 +183,6 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
           .append(style)
           .append("</style>\n");
     }
-
-    results.append("<div id=\"" + ROOT_DIV_ID + "\"></div>\n");
 
     if (!"".equals(script)) {
       results.append("<script type=\"text/javascript\">\n")

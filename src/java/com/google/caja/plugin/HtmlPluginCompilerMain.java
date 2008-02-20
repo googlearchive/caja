@@ -62,17 +62,9 @@ public final class HtmlPluginCompilerMain {
           "Output file path for translated CSS" +
           " (defaults to input with \".css\")");
 
-  private static final Option JS_NAME =
-      new Option("n", "js_name", true,
-          "Plugin JS variable name");
-
   private static final Option CSS_PREFIX =
       new Option("p", "css_prefix", true,
           "Plugin CSS namespace prefix");
-
-  private static final Option ROOT_DIV_ID =
-      new Option("r", "root_div_id", true,
-          "ID of root <div> into which generated JS will inject content");
 
   private static final Options options = new Options();
 
@@ -80,17 +72,13 @@ public final class HtmlPluginCompilerMain {
     options.addOption(INPUT);
     options.addOption(OUTPUT_JS);
     options.addOption(OUTPUT_CSS);
-    options.addOption(JS_NAME);
     options.addOption(CSS_PREFIX);
-    options.addOption(ROOT_DIV_ID);
   }
 
   private File inputFile = null;
   private File outputJsFile = null;
   private File outputCssFile = null;
-  private String jsName = null;
   private String cssPrefix = null;
-  private String rootDivId = null;
 
   private HtmlPluginCompilerMain() {}
 
@@ -104,11 +92,8 @@ public final class HtmlPluginCompilerMain {
 
     MessageQueue mq = new SimpleMessageQueue();
 
-    HtmlPluginCompiler compiler =
-        new HtmlPluginCompiler(
-            mq,
-            new PluginMeta(jsName, cssPrefix, rootDivId,
-                           PluginMeta.TranslationScheme.CAJA));
+    HtmlPluginCompiler compiler = new HtmlPluginCompiler(
+        mq, new PluginMeta(cssPrefix));
     try {
       compiler.addInput(new AncestorChain<DomTree.Fragment>(
           parseHtmlFromFile(inputFile, mq)));
@@ -151,10 +136,12 @@ public final class HtmlPluginCompilerMain {
     if (cl.getOptionValue(INPUT.getOpt()) == null)
       return usage("Option \"" + INPUT.getLongOpt() + "\" missing");
     inputFile = new File(cl.getOptionValue(INPUT.getOpt()));
-    if (!inputFile.exists())
+    if (!inputFile.exists()) {
       return usage("File \"" + inputFile + "\" does not exist");
-    if (!inputFile.isFile())
+    }
+    if (!inputFile.isFile()) {
       return usage("File \"" + inputFile + "\" is not a regular file");
+    }
 
     outputJsFile =
         cl.getOptionValue(OUTPUT_JS.getOpt()) == null ?
@@ -166,17 +153,10 @@ public final class HtmlPluginCompilerMain {
             substituteExtension(inputFile, "css") :
             new File(cl.getOptionValue(OUTPUT_CSS.getOpt()));
 
-    jsName = cl.getOptionValue(JS_NAME.getOpt());
-    if (jsName == null)
-      return usage("Option \"" + JS_NAME.getLongOpt() + "\" missing");
-
     cssPrefix = cl.getOptionValue(CSS_PREFIX.getOpt());
-    if (cssPrefix == null)
+    if (cssPrefix == null) {
       return usage("Option \"" + CSS_PREFIX.getLongOpt() + "\" missing");
-
-    rootDivId = cl.getOptionValue(ROOT_DIV_ID.getOpt());
-    if (rootDivId == null)
-      return usage("Option \"" + ROOT_DIV_ID.getLongOpt() + "\" missing");
+    }
 
     return 0;
   }

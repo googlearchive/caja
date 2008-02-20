@@ -1,24 +1,15 @@
 {
-  var MY_TEST_PLUGIN_PRIVATE = {
-    'nsPrefix': 'pre',
-    'pathPrefix': '/plugin1',
-    'name': 'MY_TEST_PLUGIN',
-    'c1___': function foo(param) {
-      var out___ = [];
-      out___.push(plugin_html___(param + MY_TEST_PLUGIN.global), plugin_html___(MY_TEST_PLUGIN.global - param));
-      return plugin_blessHtml___(out___.join(''));
-    }
-  };
-  var MY_TEST_PLUGIN = {
-    'foo': MY_TEST_PLUGIN_PRIVATE.c1___
-  };
-  MY_TEST_PLUGIN_PRIVATE.plugin = MY_TEST_PLUGIN;
-  plugin_initialize___(MY_TEST_PLUGIN_PRIVATE);
-  (function () {
-      MY_TEST_PLUGIN.pluginGlobal = undefined;
-      MY_TEST_PLUGIN.f = function f(fparam) {
-        var local = fparam + MY_TEST_PLUGIN.pluginGlobal;
-        return local;
-      };
-    }).call(MY_TEST_PLUGIN);
+  ___.loadModule(function (___OUTERS___) {
+      ___OUTERS___.pluginGlobal;
+      ___OUTERS___.f = ___.simpleFunc(function f(fparam) {
+          var local = fparam + ___OUTERS___.pluginGlobal;
+          return local;
+        });
+      ___OUTERS___.foo = ___.simpleFunc(function foo(param) {
+          var out___ = [];
+          out___.push(___OUTERS___.plugin_html___(param + ___OUTERS___.global), ___OUTERS___.plugin_html___(___OUTERS___.global - param));
+          return ___OUTERS___.plugin_blessHtml___(out___.join(''));
+        });
+      var c1___ = ___.primFreeze(___OUTERS___.foo);
+    });
 }

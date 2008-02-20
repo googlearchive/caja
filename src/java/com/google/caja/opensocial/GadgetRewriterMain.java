@@ -14,8 +14,6 @@
 package com.google.caja.opensocial;
 
 import com.google.caja.lexer.ExternalReference;
-import com.google.caja.plugin.PluginMeta;
-import com.google.caja.plugin.PluginMeta.TranslationScheme;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 
@@ -39,7 +37,6 @@ import java.net.URISyntaxException;
 
 /**
  * @author benl@google.com (Ben Laurie)
- *
  */
 public class GadgetRewriterMain {
   private static final Option INPUT =
@@ -48,13 +45,10 @@ public class GadgetRewriterMain {
     new Option("o", "output", true, "Output Gadget File");
   private static final Option TIME =
     new Option("t", "time", true, "Repeat n times and print timing info");
-  private static final Option SCHEME =
-    new Option("s", "scheme", true, "Rewriting rules: Aaja, Baja or Caja?");
   
   private String gadgetUrl;
   private String outputFile;
   private int repeatCount;
-  private TranslationScheme scheme;
 
   private static final Options options = new Options();
   
@@ -62,7 +56,6 @@ public class GadgetRewriterMain {
     options.addOption(INPUT);
     options.addOption(OUTPUT);
     options.addOption(TIME);
-    options.addOption(SCHEME);
   }
   
   private GadgetRewriterMain() {
@@ -119,7 +112,6 @@ public class GadgetRewriterMain {
     DefaultGadgetRewriter rewriter =
       new DefaultGadgetRewriter(new EchoingMessageQueue(
           new PrintWriter(System.err), new MessageContext(), false));
-    rewriter.setTranslationScheme(scheme);
     Writer w = new BufferedWriter(new FileWriter(outputFile));
     Callback cb = new Callback();
     URI uri = new URI(gadgetUrl);
@@ -148,17 +140,6 @@ public class GadgetRewriterMain {
     String t = cl.getOptionValue(TIME.getOpt());
     if (t != null) {
       repeatCount = Integer.decode(t).intValue();
-    }
-    
-    String schemeStr = cl.getOptionValue(SCHEME.getOpt());
-    if (schemeStr == null) {
-      scheme = PluginMeta.TranslationScheme.CAJA;
-    } else {
-      try {
-        scheme = PluginMeta.TranslationScheme.valueOf(schemeStr.toUpperCase());
-      } catch (IllegalArgumentException ex) {
-        return usage("Bad scheme: " + schemeStr);
-      }
     }
     return 0;
   }

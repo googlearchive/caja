@@ -27,6 +27,7 @@ import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
+import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssParser;
@@ -35,6 +36,7 @@ import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Conditional;
+import com.google.caja.parser.js.ContinueStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ForEachLoop;
@@ -193,9 +195,9 @@ public final class GxpCompiler {
     List<FormalParam> params = new ArrayList<FormalParam>();
 
     for (DomTree paramName : sig.parameterNames) {
-      FormalParam param =
-        s(new FormalParam(
-              new Identifier(assertSafeJsIdentifier(paramName.getValue(), paramName))));
+      FormalParam param = s(new FormalParam(
+          s(new Identifier(
+                assertSafeJsIdentifier(paramName.getValue(), paramName)))));
       param.setFilePosition(paramName.getFilePosition());
       params.add(param);
     }
@@ -217,21 +219,17 @@ public final class GxpCompiler {
     }
 
     // Join the html via out___.join('') and mark it as safe html
-    //   return plugin_blessHtml___(out.join(''));
+    //   return ___OUTERS___.plugin_blessHtml___(out.join(''));
     ReturnStmt result = s(new ReturnStmt(
-        s(new Operation(
-            Operator.FUNCTION_CALL,
-            s(new Reference(new Identifier("plugin_blessHtml___"))),
-            s(new Operation(Operator.FUNCTION_CALL,
-                s(new Operation(Operator.MEMBER_ACCESS,
-                                s(new Reference(new Identifier(OUTPUT_ARRAY_NAME))),
-                                s(new Reference(new Identifier("join"))))),
-                s(new StringLiteral("''"))
-            ))
-          ))
-        ));
+        TreeConstruction.call(
+            TreeConstruction.memberAccess(
+                ReservedNames.OUTERS, "plugin_blessHtml___"),
+            TreeConstruction.call(
+                TreeConstruction.memberAccess(OUTPUT_ARRAY_NAME, "join"),
+                s(new StringLiteral("''"))))));
     body.insertBefore(result, null);
-    return s(new FunctionConstructor(new Identifier(sig.templateName), params, body));
+    return s(new FunctionConstructor(s(new Identifier(sig.templateName)),
+                                     params, body));
   }
 
   public Collection<? extends TemplateSignature> getSignatures() {
@@ -334,14 +332,20 @@ public final class GxpCompiler {
                 compileStyleAttrib(attrib, tgtChain, b);
               } else {
                 AttributeXform xform = xformForAttribute(tagName, name);
-                String value = (null != xform)
-                             ? xform.apply(attrib, this)
-                             : valueT.getValue();
-
-                JsWriter.appendString(
-                    " " + name + "=\""
-                    + JsWriter.htmlEscape(wrapper.a + value + wrapper.b)
-                    + "\"", tgtChain, b);
+                
+                StringBuilder buf = new StringBuilder();
+                buf.append(' ').append(name).append("=\"");
+                Escaping.escapeXml(wrapper.a, false, buf);
+                if (null != xform) {
+                  JsWriter.appendString(buf.toString(), tgtChain, b);
+                  buf.setLength(0);
+                  xform.apply(attrib, this, tgtChain, b);
+                } else {
+                  Escaping.escapeXml(valueT.getValue(), false, buf);
+                }
+                Escaping.escapeXml(wrapper.b, false, buf);
+                buf.append("\"");
+                JsWriter.appendString(buf.toString(), tgtChain, b);
               }
             } else {   // Handle expr:foo="<expression>"
 
@@ -349,8 +353,8 @@ public final class GxpCompiler {
               AttributeXform xform = xformForAttribute(tagName, name);
               if (null != xform) {
                 try {
-                  wrapperFn =
-                    xform.runtimeFunction(tagName, name, attrib, this);
+                  wrapperFn = xform.runtimeFunction(
+                      tagName, name, attrib, this);
                 } catch (BadContentException ex) {
                   ex.toMessageQueue(mq);
                   continue;
@@ -364,12 +368,10 @@ public final class GxpCompiler {
                 JsWriter.append(asExpression(valueT), tgtChain, b);
               } else {
                 // Wrap the expression in a wrapper function
-                Operation e = s(new Operation(
-                                    Operator.FUNCTION_CALL,
-                                    s(new Reference(new Identifier(wrapperFn))),
-                                    asExpression(valueT),
-                                    s(new Reference(new Identifier(meta.namespacePrivateName)))
-                                    ));
+                Operation e = TreeConstruction.call(
+                    TreeConstruction.memberAccess(
+                        ReservedNames.OUTERS, wrapperFn),
+                    asExpression(valueT));
                 JsWriter.append(e, tgtChain, b);
               }
               JsWriter.appendString(
@@ -442,22 +444,17 @@ public final class GxpCompiler {
                              Arrays.asList(synthId, "push"), true,
                              JsWriter.Esc.NONE, b);
                 }
-                // plugin_htmlAttr___(<wrapper>(<synthId>.join(''), <nsPrefix>))
+                // <namespace>.plugin_htmlAttr___(<wrapper>(<synthId>.join('')))
                 JsWriter.append(
-                    s(new Operation(
-                          Operator.FUNCTION_CALL,
-                          s(new Reference(new Identifier("plugin_htmlAttr___"))),
-                          s(new Operation(
-                                Operator.FUNCTION_CALL,
-                                s(new Reference(new Identifier(wrapperFn))),
-                                s(new Operation(
-                                      Operator.FUNCTION_CALL,
-                                      s(new Operation(
-                                            Operator.MEMBER_ACCESS,
-                                            s(new Reference(new Identifier(synthId))),
-                                            s(new Reference(new Identifier("join"))))),
-                                      s(new StringLiteral("''")))),
-                                s(new Reference(new Identifier(meta.namespacePrivateName))))))),
+                    TreeConstruction.call(
+                        TreeConstruction.memberAccess(
+                            ReservedNames.OUTERS, "plugin_htmlAttr___"),
+                        TreeConstruction.call(
+                            TreeConstruction.memberAccess(
+                                ReservedNames.OUTERS, wrapperFn),
+                            TreeConstruction.call(
+                                TreeConstruction.memberAccess(synthId, "join"),
+                                s(new StringLiteral("''"))))),
                     tgtChain, b);
               }
               JsWriter.appendString(
@@ -688,35 +685,50 @@ public final class GxpCompiler {
     // }
     String iteratorId = syntheticId(),
               keyName = syntheticId();
-    b.insertBefore(
-        s(new Declaration(new Identifier(iteratorId), asExpression(iterator))), null);
+    b.appendChild(s(new Declaration(s(new Identifier(iteratorId)),
+                                    asExpression(iterator))));
 
-    Block forEachBody =
-      s(new Block(
-            Arrays.asList(
-                s(new Declaration(
-                      new Identifier(variableName),
-                      s(new Operation(
-                            Operator.SQUARE_BRACKET,
-                            s(new Reference(new Identifier(iteratorId))),
-                            s(new Reference(new Identifier(keyName))))))))));
+    // TODO(mikesamuel): use the proper rewriting rule for this when ihab
+    // gets around to implementing foreach loops.
+    Block forEachBody = s(new Block(Collections.<Statement>emptyList()));
+    forEachBody.createMutation().appendChild(
+        s(new Conditional(Collections.singletonList(
+              new Pair<Expression, Statement>(
+              s(new Operation(
+                    Operator.NOT,
+                    TreeConstruction.call(
+                        TreeConstruction.memberAccess("___", "canEnumPub"),
+                        s(new Reference(s(new Identifier(iteratorId)))),
+                        s(new Reference(s(new Identifier(keyName))))
+                        )
+                    )),
+              s(new ContinueStmt(null)))),
+              null)))
+          .appendChild(
+              s(new Declaration(
+                    new Identifier(variableName),
+                    s(new Operation(
+                          Operator.SQUARE_BRACKET,
+                          s(new Reference(s(new Identifier(iteratorId)))),
+                          s(new Reference(s(new Identifier(keyName))))
+                          ))
+                    )))
+          .execute();
 
-    Block ifBody =
-      s(new Block(
-            Arrays.asList(
-                s(new ForEachLoop(
-                      null,
-                      s(new Declaration(new Identifier(keyName), null)),
-                      s(new Reference(new Identifier(iteratorId))),
-                      forEachBody)))));
-    Conditional iteratorCheck =
-      s(new Conditional(
-            Collections.singletonList(
-                new Pair<Expression, Statement>(
-                    s(new Reference(new Identifier(iteratorId))),
-                    ifBody)
-                ), null));
-    b.insertBefore(iteratorCheck, null);
+    Block ifBody = s(new Block(Arrays.asList(
+        s(new ForEachLoop(
+              null,
+              s(new Declaration(s(new Identifier(keyName)), null)),
+              s(new Reference(s(new Identifier(iteratorId)))),
+              forEachBody)))));
+
+    Conditional iteratorCheck = s(new Conditional(
+        Collections.singletonList(
+            new Pair<Expression, Statement>(
+                s(new Reference(s(new Identifier(iteratorId)))),
+                ifBody)
+            ), null));
+    b.appendChild(iteratorCheck);
 
     List<? extends DomTree> children = t.children();
     for (DomTree child : children.subList(attribEnd, children.size())) {
@@ -749,16 +761,21 @@ public final class GxpCompiler {
     }
 
     Expression e = asExpression(expr);
+    String fnName;
     switch (escaping) {
       case HTML:
-        e = s(new Operation(Operator.FUNCTION_CALL,
-                            s(new Reference(new Identifier("plugin_html___"))), e));
+        fnName = "plugin_html___";
         break;
       case HTML_ATTRIB:
-        e = s(new Operation(Operator.FUNCTION_CALL,
-                             s(new Reference(new Identifier("plugin_htmlAttr___"))), e));
+        fnName = "plugin_htmlAttr___";
         break;
-      default: break;
+      default:
+        fnName = null;
+        break;
+    }
+    if (fnName != null) {
+      e = TreeConstruction.call(
+              TreeConstruction.memberAccess(ReservedNames.OUTERS, fnName), e);
     }
     JsWriter.append(e, tgtChain, b);
   }
@@ -813,17 +830,9 @@ public final class GxpCompiler {
 
     if (bad) { return; }
 
-    // Append
-    // <pluginMeta>.<assignedName>.call(this, <param 0>, ...);
-    operands[0] =
-      s(new Operation(
-          Operator.MEMBER_ACCESS,
-          s(new Operation(
-              Operator.MEMBER_ACCESS,
-              s(new Reference(new Identifier(meta.namespacePrivateName))),
-              s(new Reference(new Identifier(sig.assignedName))))),
-          s(new Reference(new Identifier("call")))));
-    operands[1] = s(new Reference(new Identifier(meta.namespaceName)));
+    // Append <assignedName>.call(___OUTERS___, <param 0>, ...);
+    operands[0] = TreeConstruction.memberAccess(sig.assignedName, "call");
+    operands[1] = s(new Reference(s(new Identifier(ReservedNames.OUTERS))));
     Operation call = s(new Operation(Operator.FUNCTION_CALL, operands));
     JsWriter.append(call, tgtChain, b);
   }
@@ -1037,7 +1046,8 @@ public final class GxpCompiler {
   private static enum AttributeXform {
     NMTOKEN {
       @Override
-      String apply(DomTree.Attrib t, GxpCompiler gxpc) {
+      void apply(
+          DomTree.Attrib t, GxpCompiler gxpc, List<String> tgtChain, Block b) {
         String nmTokens = t.getAttribValue();
         StringBuilder sb = new StringBuilder(nmTokens.length() + 16);
         boolean wasSpace = true;
@@ -1057,7 +1067,7 @@ public final class GxpCompiler {
           }
         }
         if (!wasSpace) { sb.append(nmTokens.substring(pos)); }
-        return sb.toString();
+        JsWriter.appendString(JsWriter.htmlEscape(sb.toString()), tgtChain, b);
       }
       @Override
       String runtimeFunction(String tagName, String attribName, DomTree t,
@@ -1067,7 +1077,8 @@ public final class GxpCompiler {
     },
     URI {
       @Override
-      String apply(DomTree.Attrib t, GxpCompiler gxpc)
+      void apply(
+          DomTree.Attrib t, GxpCompiler gxpc, List<String> tgtChain, Block b)
           throws BadContentException {
         String uriStr = t.getAttribValue();
         try {
@@ -1078,7 +1089,8 @@ public final class GxpCompiler {
                 PluginMessageType.DISALLOWED_URI,
                 t.getFilePosition(), MessagePart.Factory.valueOf(uriStr)));
           }
-          return UrlUtil.translateUrl(uri, gxpc.meta.pathPrefix);
+          String xuri = UrlUtil.translateUrl(uri, gxpc.meta.pathPrefix);
+          JsWriter.appendString(JsWriter.htmlEscape(xuri), tgtChain, b);
         } catch (URISyntaxException ex) {
           throw new BadContentException(new Message(
               PluginMessageType.MALFORMED_URL, t.getFilePosition(),
@@ -1094,7 +1106,8 @@ public final class GxpCompiler {
     },
     STYLE {
       @Override
-      String apply(DomTree.Attrib t, GxpCompiler gxpc) {
+      void apply(
+          DomTree.Attrib t, GxpCompiler gxpc, List<String> tgtChain, Block b) {
         // Should be handled in compileDOM
         throw new AssertionError();
       }
@@ -1110,26 +1123,39 @@ public final class GxpCompiler {
     },
     SCRIPT {
       @Override
-      String apply(DomTree.Attrib t, GxpCompiler gxpc) {
+      void apply(
+          DomTree.Attrib t, GxpCompiler gxpc, List<String> tgtChain, Block b) {
         // Extract the handler into a function so that it can be analyzed.
         Block handler = gxpc.asBlock(t.getAttribValueNode());
 
         String handlerFnName = gxpc.syntheticId();
         gxpc.eventHandlers.put(
             handlerFnName,
-            s(new FunctionDeclaration(
-                  new Identifier(handlerFnName),
-                  s(new FunctionConstructor(
-                        new Identifier(null),
-                        Collections.singletonList(
-                            s(new FormalParam(
-                                  new Identifier("event")))),
-                        handler)))));
+            new FunctionDeclaration(
+                new Identifier(handlerFnName),
+                s(new FunctionConstructor(
+                      new Identifier(null),
+                      Arrays.asList(
+                          s(new FormalParam(
+                                s(new Identifier(ReservedNames.THIS_NODE)))),
+                          s(new FormalParam(s(new Identifier("event"))))),
+                      // TODO(mikesamuel): replace instances of this in handler
+                      // with synthetic references to ReservedNames.THIS_NODE
+                      handler))));
 
-        String owner = gxpc.meta.namespaceName;
-        return "return plugin_dispatchEvent___(event || window.event, this, "
-               + gxpc.meta.namespacePrivateName + ", "
-               + (null != owner ? owner + "." : "") + handlerFnName + ");";
+        // ' foo="return plugin_dispatchevent___(this, event || window.event, ',
+        // ___.getId(___OUTERS___), ', \'myHandlerFn\');"'
+        JsWriter.appendString(
+            "return plugin_dispatchEvent___(this, event || window.event, ",
+            tgtChain, b);
+        JsWriter.append(
+            TreeConstruction.call(
+                TreeConstruction.memberAccess("___", "getId"),
+                s(new Reference(s(new Identifier(ReservedNames.OUTERS))))),
+            tgtChain, b);
+        JsWriter.appendString(
+            ", " + StringLiteral.toQuotedValue(handlerFnName) + ");",
+            tgtChain, b);
       }
       @Override
       String runtimeFunction(String tagName, String attribName, DomTree t,
@@ -1146,7 +1172,8 @@ public final class GxpCompiler {
      * Apply, at compile time, any preprocessing steps to the given attributes
      * value.
      */
-    abstract String apply(DomTree.Attrib t, GxpCompiler gxpc)
+    abstract void apply(
+        DomTree.Attrib t, GxpCompiler gxpc, List<String> chain, Block b)
         throws BadContentException;
     /**
      * Given an attribute name, the gxp attribute that specifies it, and the

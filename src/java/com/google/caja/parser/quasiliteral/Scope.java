@@ -400,7 +400,9 @@ public class Scope {
       if (maskedDefinition == null) { continue; }
 
       LocalType maskedType = maskedDefinition.a;
-      if (maskedType != type) {
+      if (maskedType != type
+          && !(maskedType == LocalType.DECLARED_FUNCTION
+               && type == LocalType.FUNCTION)) {
         // Since different interpreters disagree about how exception
         // declarations affect local variable declarations, we need to
         // prevent exceptions masking locals and vice-versa.

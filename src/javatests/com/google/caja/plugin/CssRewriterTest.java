@@ -183,10 +183,10 @@ public class CssRewriterTest extends TestCase {
     }
 
     new CssRewriter(
-        new PluginMeta("Plugin", "test", "/foo", "rootDiv",
-            PluginMeta.TranslationScheme.AAJA,
-            PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT), mq)
-            .rewrite(new AncestorChain<CssTree>(t));
+        new PluginMeta(
+            "test", "/foo", PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT),
+        mq)
+        .rewrite(new AncestorChain<CssTree>(t));
 
     {
       StringBuilder msgBuf = new StringBuilder();

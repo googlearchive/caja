@@ -8,24 +8,26 @@ function aSquareMeal(beer, mayonnaise, cheetos) {
   }
   out___.push('\">');
   if (beer) {
-    out___.push('<h1><a name=\"pre-beer\">beer</a></h1>', plugin_html___(beer), 'bottles of beer');
+    out___.push('<h1><a name=\"pre-beer\">beer</a></h1>', ___OUTERS___.plugin_html___(beer), 'bottles of beer');
   } else {
     out___.push('<div>Time for a beer run</div>');
     if (mayonnaise >= 50) {
-      out___.push('<h1 class=\"pre-smooth pre-eggy\">mayonnaise</h1>', plugin_html___(mayonnaise / 50 | 0), ' kilolitres of mayo');
+      out___.push('<h1 class=\"pre-smooth pre-eggy\">mayonnaise</h1>', ___OUTERS___.plugin_html___(mayonnaise / 50 | 0), ' kilolitres of mayo');
     } else {
       out___.push('<div>Scraping the bottom of the barrel</div>');
       if (!cheetos.isEmpty()) {
-        out___.push('<h1 class=\"', plugin_prefix___(cheetos.flavor(), TestPluginPrivate), '\">Cheetos</h1>');
+        out___.push('<h1 class=\"', ___OUTERS___.plugin_prefix___(cheetos.flavor()), '\">Cheetos</h1>');
         var c2___ = cheetos.cheesyGoodness();
         if (c2___) {
           for (var c3___ in c2___) {
+            if (!___.canEnumPub(c2___, c3___))
+              continue;
             var cheeto = c2___[c3___];
-            out___.push('<p>', plugin_html___(cheeto.munch()), '</p>');
+            out___.push('<p>', ___OUTERS___.plugin_html___(cheeto.munch()), '</p>');
           }
         }
       } else {
-        out___.push('<h1 onclick=\"return plugin_dispatchEvent___(event || window.event, this, TestPluginPrivate, TestPlugin.c4___);\">PANIC</h1>');
+        out___.push('<h1 onclick=\"return plugin_dispatchEvent___(this, event || window.event, ', ___.getId(___OUTERS___), ', \'c4___\');\">PANIC</h1>');
       }
     }
   }
@@ -36,9 +38,9 @@ function aSquareMeal(beer, mayonnaise, cheetos) {
   } else {
     c5___.push('salutations');
   }
-  out___.push(plugin_htmlAttr___(plugin_prefix___(c5___.join(''), TestPluginPrivate)), '\">\n  </form>\n  <a href=\"/testplugin/help.html\" target=\"_new\">Help</a>\n\n</div>');
-  return plugin_blessHtml___(out___.join(''));
+  out___.push(___OUTERS___.plugin_htmlAttr___(___OUTERS___.plugin_prefix___(c5___.join(''))), '\">\n  </form>\n  <a href=\"/testplugin/help.html\" target=\"_new\">Help</a>\n\n</div>');
+  return ___OUTERS___.plugin_blessHtml___(out___.join(''));
 }
-function c4___(event) {
+function c4___(thisNode___, event) {
   panic();
 }

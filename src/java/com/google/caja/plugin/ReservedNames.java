@@ -28,6 +28,11 @@ public class ReservedNames {
   public static final String LOCAL_ARGUMENTS = "a___";
   /** The current node for an event handler function. */
   public static final String THIS_NODE = "thisNode___";
+  /**
+   * The name of a plugin's global object in the scope in the outermost scope
+   * in which that plugin's code is defined.
+   */
+  public static final String OUTERS = "___OUTERS___";
 
   private ReservedNames() {
   }

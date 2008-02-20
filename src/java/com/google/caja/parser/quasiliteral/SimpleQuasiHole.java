@@ -15,9 +15,6 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.ParseTreeNodes;
-
-import java.util.Map;
 
 /**
  * Superclass of all quasiliteral "hole" nodes that bind one identifier to some value.

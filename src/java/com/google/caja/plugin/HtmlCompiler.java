@@ -548,7 +548,7 @@ public class HtmlCompiler {
                     Operator.MEMBER_ACCESS,
                     s(new Reference(new Identifier("___"))),
                     s(new Reference(new Identifier("getId"))))),
-                s(new Reference(new Identifier(htmlc.meta.namespaceName))))),
+                s(new Reference(new Identifier(ReservedNames.OUTERS))))),
             tgtChain, out);
 
         StringBuilder sb = new StringBuilder(", '");

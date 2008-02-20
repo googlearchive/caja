@@ -66,15 +66,12 @@ import java.util.regex.Pattern;
  */
 public class PluginCompilerMain {
   private String outPath = null;
-  private String namespaceName = "PLUGIN";
   private String namespacePrefix = "plugin";
   private String pathPrefix = "/plugin";
   private MessageQueue mq = new SimpleMessageQueue();
   private MessageContext mc = new MessageContext();
   private PluginMeta meta;
   private PluginCompiler compiler;
-  private PluginMeta.TranslationScheme scheme
-      = PluginMeta.TranslationScheme.AAJA;
 
   {
     mc.inputSources = new ArrayList<InputSource>();
@@ -85,7 +82,7 @@ public class PluginCompilerMain {
       args = parseFlags(args);
 
       meta = new PluginMeta(
-          namespaceName, namespacePrefix, pathPrefix, "", scheme,
+          namespacePrefix, pathPrefix,
           PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
       compiler = new PluginCompiler(meta, mq);
 
@@ -140,8 +137,6 @@ public class PluginCompilerMain {
       }
       if ("--out".equals(name)) {
         this.outPath = value;
-      } else if ("--name".equals(name)) {
-        this.namespaceName = value;
       } else if ("--prefix".equals(name)) {
         this.namespacePrefix = value;
       } else if ("--pathPrefix".equals(name)) {
@@ -149,8 +144,6 @@ public class PluginCompilerMain {
           value = value.substring(0, value.length() - 1);
         }
         this.pathPrefix = value;
-      } else if ("--scheme".equals(name)) {
-        this.scheme = PluginMeta.TranslationScheme.valueOf(value.toUpperCase());
       } else {
         usage();
         System.exit(1);
