@@ -188,8 +188,6 @@
      failonerror="yes">
       <classpath refid="classpath.run"/>
       <arg value="--out=${lib}/com/google/caja/plugin/domita_test_cajoled"/>
-      <arg value="--name=___OUTERS___"/>
-      <arg value="--scheme=caja"/>
       <arg value="--pathPrefix=/"/>
       <arg file="${testsrc}/com/google/caja/plugin/domita_test.js"/>
       <arg file="${testsrc}/com/google/caja/plugin/asserts.js"/>
