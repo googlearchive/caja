@@ -93,6 +93,10 @@ public enum RewriterMessageType implements MessageTypeInt {
   NEW_ON_ARBITRARY_EXPRESSION_DISALLOWED(
       "Cannot invoke \"new\" on an arbitrary expression: %s, %s",
       MessageLevel.FATAL_ERROR),
+
+  CANNOT_ASSIGN_TO_THIS(
+      "Cannot assign to \"this\": %s, %s",
+      MessageLevel.FATAL_ERROR),
   ;
 
   private final String formatString;

@@ -87,6 +87,212 @@ public class DefaultCajaRewriterTest extends TestCase {
     // Our parser does not recognize "with" at all.
   }
 
+  public void testForeach() throws Exception {
+    if (false) {
+    // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
+    checkSucceeds(
+        "for (var k in x) { k; }",
+        "{" +
+        "  ___OUTERS___.x0___ = ___OUTERS___.x;" +
+        "  ___OUTERS___.x1___ = undefined;" +
+        "  ___OUTERS___.k;" +
+        "  for (___OUTERS___.x1 in ___OUTERS___.x0___) {" +
+        "    if (___.canEnumPub(___OUTERS___.x0___, ___OUTERS___.x1___)) {" +
+        "      ___OUTERS___.k = ___OUTERS___.x1___;" +
+        "      ___OUTERS___.k;" +
+        "    }" +
+        "  }" +
+        "}");
+    }
+    checkSucceeds(
+        "function() {" +
+        "  for (var k in x) { k; }" +
+        "};",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  {" +
+        "    var x0___ = ___OUTERS___.x;" +
+        "    var x1___ = undefined;" +
+        "    var k;" +
+        "    for (x1___ in x0___) {" +
+        "      if (___.canEnumPub(x0___, x1___)) {" +
+        "        k = x1___;" +
+        "        k;" +
+        "      }" +
+        "    }" +
+        "  }" +
+        "}));");
+    if (false) {
+    // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed      
+    checkSucceeds(
+        "for (k in x) { k; }",
+        "{" +
+        "  ___OUTERS___.x0___ = ___OUTERS___.x;" +
+        "  ___OUTERS___.x1___ = undefined;" +
+        "  for (___OUTERS___.x1 in ___OUTERS___.x0___) {" +
+        "    if (___.canEnumPub(___OUTERS___.x0___, ___OUTERS___.x1___)) {" +
+        "      ___OUTERS___.k = ___OUTERS___.x1___;" +
+        "      ___OUTERS___.k;" +
+        "    }" +
+        "  }" +
+        "}");
+    }
+    checkSucceeds(
+        "function() {" +
+        "  for (k in x) { k; }" +
+        "};",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  {" +
+        "    var x0___ = ___OUTERS___.x;" +
+        "    var x1___ = undefined;" +
+        "    for (x1___ in x0___) {" +
+        "      if (___.canEnumPub(x0___, x1___)) {" +
+        "        ___OUTERS___.k = x1___;" +
+        "        ___OUTERS___.k;" +
+        "      }" +
+        "    }" +
+        "  }" +
+        "}));");
+    checkSucceeds(
+        "function() {" +
+        "  var k;" +
+        "  for (k in x) { k; }" +
+        "};",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  var k;" +
+        "  {" +
+        "    var x0___ = ___OUTERS___.x;" +
+        "    var x1___ = undefined;" +
+        "    for (x1___ in x0___) {" +
+        "      if (___.canEnumPub(x0___, x1___)) {" +
+        "        k = x1___;" +
+        "        k;" +
+        "      }" +
+        "    }" +
+        "  }" +
+        "}));");
+    if (false) {
+    // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
+    checkSucceeds(
+        "for (y.k in x) { y.k; }",
+        "{" +
+        "  ___OUTERS___.x0___ = ___OUTERS___.x;" +
+        "  ___OUTERS___.x1___ = undefined;" +
+        "  for (___OUTERS___.x1 in ___OUTERS___.x0___) {" +
+        "    if (___.canEnumPub(___OUTERS___.x0___, ___OUTERS___.x1___)) {" +
+        "      ___OUTERS___.y.k = ___OUTERS___.x1___;" +
+        "      ___OUTERS___.y.k;" +
+        "    }" +
+        "  }" +
+        "}");
+    }
+    if (false) {
+    // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
+    checkSucceeds(
+        "function() {" +
+        "  for (y.k in x) { y.k; }" +
+        "};",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  {" +
+        "    var x0___ = ___OUTERS___.x;" +
+        "    var x1___ = undefined;" +
+        "    for (x1___ in x0___) {" +
+        "      if (___.canEnumPub(x0___, x1___)) {" +
+        "        ___OUTERS___.y.k = x1___;" +
+        "        ___OUTERS___.y.k;" +
+        "      }" +
+        "    }" +
+        "  }" +
+        "}));");
+    }
+    checkSucceeds(
+        "function foo() {" +
+        "  for (var k in this) { k; }" +
+        "}",
+        "___OUTERS___.foo = ___.ctor(function foo() {" +
+        "  var t___ = this;" +
+        "  {" +
+        "    var x0___ = t___;" +
+        "    var x1___ = undefined;" +
+        "    var k;" +
+        "    for (x1___ in x0___) {" +
+        "      if (___.canEnumProp(x0___, x1___)) {" +
+        "        k = x1___;" +
+        "        k;" +
+        "      }" +
+        "    }" +
+        "  }" +
+        "});");
+    checkSucceeds(
+        "for (var k in this) { k; }",
+        "{" +
+        "  ___OUTERS___.x0___ = ___OUTERS___;" +
+        "  ___OUTERS___.x1___ = undefined;" +
+        "  ___OUTERS___.k;" +
+        "  for (x1___ in x0___) {" +
+        "    if (___.canEnumProp(x0___, x1___)) {" +
+        "      ___OUTERS___.k = x1___;" +
+        "      ___OUTERS___.k;" +
+        "    }" +
+        "  }" +
+        "}");
+    checkSucceeds(
+        "function foo() {" +
+        "  for (k in this) { k; }" +
+        "}",
+        "___OUTERS___.foo = ___.ctor(function foo() {" +
+        "  var t___ = this;" +
+        "  {" +
+        "    var x0___ = t___;" +
+        "    var x1___ = undefined;" +
+        "    for (x1___ in x0___) {" +
+        "      if (___.canEnumProp(x0___, x1___)) {" +
+        "        ___OUTERS___.k = x1___;" +
+        "        ___OUTERS___.k;" +
+        "      }" +
+        "    }" +
+        "  }" +
+        "});");
+    checkSucceeds(
+        "function foo() {" +
+        "  var k;" +
+        "  for (k in this) { k; }" +
+        "}",
+        "___OUTERS___.foo = ___.ctor(function foo() {" +
+        "  var t___ = this;" +
+        "  var k;" +
+        "  {" +
+        "    var x0___ = t___;" +
+        "    var x1___ = undefined;" +
+        "    for (x1___ in x0___) {" +
+        "      if (___.canEnumProp(x0___, x1___)) {" +
+        "        k = x1___;" +
+        "        k;" +
+        "      }" +
+        "    }" +
+        "  }" +
+        "});");
+    if (false) {
+    // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
+    checkSucceeds(
+        "function foo() {" +
+        "  for (y.k in this) { y.k; }" +
+        "}",
+        "___OUTERS___.foo = ___.ctor(function foo() {" +
+        "  var t___ = this;" +
+        "  {" +
+        "    var x0___ = t___;" +
+        "    var x1___ = undefined;" +
+        "    for (x1___ in x0___) {" +
+        "      if (___.canEnumProp(x0___, x1___)) {" +
+        "        ___OUTERS___.y.k = x1___;" +
+        "        ___OUTERS___.y.k;" +
+        "      }" +
+        "    }" +
+        "  }" +
+        "});");
+    }
+  }
+
   public void testTryCatch() throws Exception {
     checkSucceeds(
         "try {" +
@@ -99,9 +305,13 @@ public class DefaultCajaRewriterTest extends TestCase {
         "try {" +
         "  ___OUTERS___.e;" +
         "  ___OUTERS___.x;" +
-        "} catch (e) {" +
-        "  e;" +
-        "  ___OUTERS___.y;" +
+        "} catch (ex___) {" +
+        "  try {" +
+        "    throw ___.tameException(ex___);" +
+        "  } catch (e) {" +
+        "    e;" +
+        "    ___OUTERS___.y;" +
+        "  }" +
         "}");
   }
 
@@ -120,9 +330,13 @@ public class DefaultCajaRewriterTest extends TestCase {
         "try {" +
         "  ___OUTERS___.e;" +
         "  ___OUTERS___.x;" +
-        "} catch (e) {" +
-        "  e;" +
-        "  ___OUTERS___.y;" +
+        "} catch (ex___) {" +
+        "  try {" +
+        "    throw ___.tameException(ex___);" +
+        "  } catch (e) {" +
+        "    e;" +
+        "    ___OUTERS___.y;" +
+        "  }" +
         "} finally {" +
         "  ___OUTERS___.e;" +
         "  ___OUTERS___.z;" +
@@ -301,6 +515,15 @@ public class DefaultCajaRewriterTest extends TestCase {
         "}));");
   }
 
+  public void testSetBadThis() throws Exception {
+    checkFails(
+        "this = 3;",
+        "Cannot assign to \"this\"");
+    checkFails(
+        "function f() { this = 3; }",
+        "Cannot assign to \"this\"");
+  }
+
   public void testSetBadSuffix() throws Exception {
     checkFails(
         "x.y__ = z;",
@@ -317,7 +540,7 @@ public class DefaultCajaRewriterTest extends TestCase {
         "    var t___ = this;" +
         "    (function() {" +
         "      var x___ = ___OUTERS___.x;" +
-        "      t___.p_canSet___ ? (t___.p = x___) : ___.setProp(t___, 'p', x___);" +
+        "      return t___.p_canSet___ ? (t___.p = x___) : ___.setProp(t___, 'p', x___);" +
         "    })();" +
         "  });" +
         "}));");
@@ -333,7 +556,7 @@ public class DefaultCajaRewriterTest extends TestCase {
         "  var foo = ___.simpleFunc(function foo() {});" +
         "  (function() {" +
         "    var x___ = ___OUTERS___.x;" +
-        "    ___.setMember(foo, 'p', x___);" +
+        "    return ___.setMember(foo, 'p', x___);" +
         "  })();" +
         "}));");
     checkSucceeds(
@@ -348,7 +571,7 @@ public class DefaultCajaRewriterTest extends TestCase {
         "      var t___ = this;" +
         "      t___;" +
         "    });" +
-        "    ___.setMember(foo, 'p', x___);" +
+        "    return ___.setMember(foo, 'p', x___);" +
         "  })();" +            
         "}));");
   }
@@ -379,7 +602,7 @@ public class DefaultCajaRewriterTest extends TestCase {
         "      var t___ = this;" +
         "      (function() {" +
         "        var x___ = 3;" +
-        "        t___.p_canSet___ ? (t___.p = x___) : ___.setProp(t___, 'p', x___);" +
+        "        return t___.p_canSet___ ? (t___.p = x___) : ___.setProp(t___, 'p', x___);" +
         "      })();" +
         "    })" +
         "});");
@@ -408,7 +631,7 @@ public class DefaultCajaRewriterTest extends TestCase {
         "  (function() {" +
         "    var x___ = x;" +
         "    var x0___ = ___OUTERS___.y;" +
-        "    x___.p_canSet___ ? (x___.p = x0___) : ___.setPub(x___, 'p', x0___);" +
+        "    return x___.p_canSet___ ? (x___.p = x0___) : ___.setPub(x___, 'p', x0___);" +
         "  })();" +
         "}));");
   }
@@ -440,7 +663,13 @@ public class DefaultCajaRewriterTest extends TestCase {
         "}));");
   }
 
-  public  void testSetInitialize() throws Exception {
+  public void testSetBadInitialize() throws Exception {
+    checkFails(
+        "var x__ = 3",
+        "Variables cannot end in \"__\"");
+  }
+
+  public void testSetInitialize() throws Exception {
     checkSucceeds(
         "function() {" +
         "  var v = x;" +
@@ -453,6 +682,12 @@ public class DefaultCajaRewriterTest extends TestCase {
         "___OUTERS___.v = ___OUTERS___.x");
   }  
   
+  public void testSetBadDeclare() throws Exception {
+    checkFails(
+        "var x__",
+        "Variables cannot end in \"__\"");
+  }
+
   public  void testSetDeclare() throws Exception {
     checkSucceeds(
         "function() {" +
@@ -474,7 +709,7 @@ public class DefaultCajaRewriterTest extends TestCase {
         "  var t___ = this;" +
         "  (function() {" +
         "    var x___ = 3;" +
-        "    t___.p_canSet___ ? (t___.p = x___) : ___.setProp(t___, 'p', x___);" +
+        "    return t___.p_canSet___ ? (t___.p = x___) : ___.setProp(t___, 'p', x___);" +
         "  })();" +
         "});" +
         "new (___.asCtor(___OUTERS___.foo))(___OUTERS___.x, ___OUTERS___.y);");
@@ -587,7 +822,7 @@ public class DefaultCajaRewriterTest extends TestCase {
         "        var t___ = this;" +
         "        (function() {" +
         "          var x___ = 3;" +
-        "          t___.p_canSet___ ? (t___.p = x___) : ___.setProp(t___, 'p', x___);" +
+        "          return t___.p_canSet___ ? (t___.p = x___) : ___.setProp(t___, 'p', x___);" +
         "        })();" +            
         "      })" +
         "  });" +
@@ -609,7 +844,7 @@ public class DefaultCajaRewriterTest extends TestCase {
         "        var t___ = this;" +
         "        (function() {" +
         "          var x___ = 3;" +
-        "          t___.p_canSet___ ? (t___.p = x___) : ___.setProp(t___, 'p', x___);" +
+        "          return t___.p_canSet___ ? (t___.p = x___) : ___.setProp(t___, 'p', x___);" +
         "        })();" +
         "      })" +
         "  }, {" +
@@ -919,8 +1154,26 @@ public class DefaultCajaRewriterTest extends TestCase {
     // Tested implicitly by other cases
   }
 
+  public void testRecurseArrayConstructor() throws Exception {
+    checkSucceeds(
+        "foo = [ bar, baz ];",
+        "___OUTERS___.foo = [ ___OUTERS___.bar, ___OUTERS___.baz ];");
+  }
+
   public void testRecurseBlock() throws Exception {
     // Tested implicitly by other cases
+  }
+
+  public void testRecurseBreakStmt() throws Exception {
+    checkSucceeds(
+        "while (true) { break; }",
+        "while (true) { break; }");
+  }
+
+  public void testRecurseCaseStmt() throws Exception {
+    checkSucceeds(
+        "switch (x) { case 1: break; }",
+        "switch (___OUTERS___.x) { case 1: break; }");
   }
 
   public void testRecurseConditional() throws Exception {
@@ -941,6 +1194,18 @@ public class DefaultCajaRewriterTest extends TestCase {
         "}");
   }
 
+  public void testRecurseContinueStmt() throws Exception {
+    checkSucceeds(
+        "while (true) { continue; }",
+        "while (true) { continue; }");
+  }
+
+  public void testRecurseDefaultCaseStmt() throws Exception {
+    checkSucceeds(
+        "switch (x) { default: break; }",
+        "switch(___OUTERS___.x) { default: break; }");
+  }
+  
   public void testRecurseExpressionStmt() throws Exception {
     // Tested implicitly by other cases
   }
@@ -994,6 +1259,12 @@ public class DefaultCajaRewriterTest extends TestCase {
         "return ___OUTERS___.x;");
   }
 
+  public void testRecurseSwitchStmt() throws Exception {
+    checkSucceeds(
+        "switch (x) { }",
+        "switch (___OUTERS___.x) { }");
+  }
+  
   public void testRecurseThrowStmt() throws Exception {
     checkSucceeds(
         "throw x;",
@@ -1033,6 +1304,8 @@ public class DefaultCajaRewriterTest extends TestCase {
     MessageQueue mq = TestUtil.createTestMessageQueue(mc);
     new DefaultCajaRewriter(true).expand(parseText(input), mq);
 
+    assertFalse(mq.getMessages().isEmpty());
+    
     StringBuilder messageText = new StringBuilder();
     for (Message m : mq.getMessages()) {
       m.format(mc, messageText);

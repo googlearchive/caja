@@ -16,6 +16,7 @@ package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
+import com.google.caja.plugin.SyntheticNodes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,7 +80,9 @@ public class SimpleQuasiNode extends QuasiNode {
       if (!child.createSubstitutes(children, bindings)) return false;
     }
 
-    substitutes.add(ParseTreeNodes.newNodeInstance(clazz, value, children));
+    substitutes.add(
+        SyntheticNodes.s(
+            ParseTreeNodes.newNodeInstance(clazz, value, children)));
     return true;
   }
 

@@ -23,6 +23,7 @@ import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.Declaration;
+import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
@@ -221,7 +222,7 @@ public class ScopeTest extends TestCase {
     ParseTreeNode n = TestUtil.parse(
         "function foo() {} var foo;");
 
-    Scope s0 = Scope.fromRootBlock((Block)n, mq);
+    Scope.fromRootBlock((Block)n, mq);
 
     assertMsgType(MessageType.SYMBOL_REDEFINED, mq.getMessages().get(0));
     assertMsgLevel(MessageLevel.ERROR, mq.getMessages().get(0));
@@ -254,7 +255,7 @@ public class ScopeTest extends TestCase {
 
     Scope s0 = Scope.fromRootBlock((Block)n, mq);
     Scope s1 = Scope.fromCatchStmt(s0, c);
-    Scope s2 = Scope.fromFunctionConstructor(s1, fc);
+    Scope.fromFunctionConstructor(s1, fc);
 
     assertEquals(1, mq.getMessages().size());
 
@@ -276,11 +277,10 @@ public class ScopeTest extends TestCase {
     Block b0 = (Block)c0.getBody();
     TryStmt t1 = (TryStmt)b0.children().get(0);
     CatchStmt c1 = t1.getCatchClause();
-    Block b1 = (Block)c1.getBody();
 
     Scope sn = Scope.fromRootBlock((Block)n, mq);
     Scope sc0 = Scope.fromCatchStmt(sn, c0);
-    Scope sc1 = Scope.fromCatchStmt(sc0, c1);
+    Scope.fromCatchStmt(sc0, c1);
 
     assertEquals(0, mq.getMessages().size());
   }
@@ -321,6 +321,35 @@ public class ScopeTest extends TestCase {
     assertDefinedGlobalCtor(s, "SyntaxError");
     assertDefinedGlobalCtor(s, "TypeError");
     assertDefinedGlobalCtor(s, "URIError");
+  }
+
+  public void testNewTempVariable() throws Exception {
+    Block b = (Block)TestUtil.parse(
+        "function foo() {" +
+        "  try {" +
+        "  } catch (e) {"+
+        "  }" +
+        "}");    
+    Scope s0 = Scope.fromRootBlock(b, mq);
+    Scope s1 = null;
+    Scope s2 = null;
+
+    {
+      Declaration d = (Declaration)b.children().get(0);
+      FunctionConstructor fc = (FunctionConstructor)d.getInitializer();
+      s1 = Scope.fromFunctionConstructor(s0, fc);
+      TryStmt ts = (TryStmt)fc.getBody().children().get(0);
+      s2 = Scope.fromCatchStmt(s1, ts.getCatchClause());
+    }
+
+    assertEquals("x0___", s0.newTempVariable());
+    assertEquals("x1___", s0.newTempVariable());
+
+    assertEquals("x0___", s1.newTempVariable());
+    assertEquals("x1___", s1.newTempVariable());
+
+    assertEquals("x2___", s2.newTempVariable());
+    assertEquals("x3___", s2.newTempVariable());
   }
 
   private void assertDefinedGlobalValue(Scope s, String name) {

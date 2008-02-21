@@ -123,8 +123,10 @@ public class Scope {
 
   private final Scope parent;
   private final MessageQueue mq;
-  private boolean containsThis;
-  private boolean containsArguments;
+  private boolean containsThis = false;
+  private boolean containsArguments = false;
+  private boolean fromCatchStmt = false;
+  private int tempVariableCounter = 0;
   private final Map<String, Pair<LocalType, FilePosition>> locals
       = new HashMap<String, Pair<LocalType, FilePosition>>();
 
@@ -145,6 +147,7 @@ public class Scope {
     Scope s = new Scope(parent);
     declare(s, root.getException().getIdentifier(),
             LocalType.CAUGHT_EXCEPTION);
+    s.fromCatchStmt = true;
     return s;
   }
 
@@ -181,6 +184,31 @@ public class Scope {
    */
   public Scope getParent() {
     return parent;
+  }
+
+  /**
+   * Allocate a new, uniquely named temporary variable, which is named in a manner
+   * inaccessible to Caja code.
+   *
+   * <p>CAUTION: Creating a temporary variable in this way is effectively changing
+   * the Scope's knowledge of the parse tree node from underneath it, so that this
+   * Scope is now no longer an accurate reflection of the parse tree node.
+   *
+   * <p>Say you have user code that refers to global variable 'x'. If we assign a
+   * temporary variable 'x', then subsequent consultations of this Scope would lie
+   * about the fact that the user is using a global ... UNLESS we ALSO add to the
+   * parse tree the corresponding 'var x' statement.
+   *
+   * <p>That said, our temporary variables are underscore terminated so that they
+   * are not mentionable by legal Caja code.
+   *
+   * @return an new variable name.
+   */
+  public String newTempVariable() {
+    if (fromCatchStmt) return parent.newTempVariable();
+    String name = "x" + (tempVariableCounter++) + "___";
+    declare(this, new Identifier(name), LocalType.DATA);
+    return name;
   }
 
   /**
