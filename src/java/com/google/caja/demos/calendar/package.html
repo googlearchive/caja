@@ -19,6 +19,12 @@ Will test the performance of our tamed DOM.
 <dd>Will test the performance of cajoled code by doing some algorithmic work
 involving lots of primitive operations and method calls.
 
+<dt>layout
+<dd>Defines a mapping between date ranges and pairs of grid cells, uses that
+to break events into "Chips" (graphical representations of part of an event on
+screen), and defines algorithms to minimize overlap between Chips by shrinking
+them along their minor axis.
+
 <dt>calendar grid
 <dd>displays a set of events.
 Will test HTML rendering and sanitization.
@@ -50,6 +56,17 @@ in RFC 2445 RRULEs.</p>
 
 <p>There is a primitive timezone implementation in
 <code>timezone-cajita.js</code>.
+
+
+<h2>Layout</h2>
+<p><code>layout-policy.js</code> defines the mapping between date ranges
+and pairs of grid cells.  <code>layout.js</code> uses that to break
+events (defined in <code>event.js</code> into chips
+see <code>chip.js</code>).</p>
+
+<p>Finally <code>overlap.js</code> takes a group of Chips, and minimizes
+overlap between them.  It makes extensive use of <code>bitset.js</code>
+which is another good candidate for optimization.</p>
 
 
 <h2>Calendar Grid</h2>
