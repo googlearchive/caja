@@ -71,9 +71,7 @@ function test_01ComponentVeventDtstartDate() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\" content=\"text/html; charset="
        + "utf-8\" />",
@@ -103,9 +101,7 @@ function test_02ComponentVeventDtstartDatetime() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -137,9 +133,7 @@ function test_03ComponentVeventDtendDate() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -172,9 +166,7 @@ function test_04ComponentVeventDtendDatetime() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -212,9 +204,7 @@ function test_05CalendarSimple() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "    <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -254,9 +244,7 @@ function test_06ComponentVeventUriRelative() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -291,9 +279,7 @@ function test_07ComponentVeventDescriptionSimple() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -328,9 +314,7 @@ function test_08ComponentVeventMultipleClasses() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -370,9 +354,7 @@ function test_09ComponentVeventSummaryInImgAlt() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -420,9 +402,7 @@ function test_10ComponentVeventEntity() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -457,9 +437,7 @@ function test_11ComponentVeventSummaryInSubelements() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -502,9 +480,7 @@ function test_12ComponentVeventSummaryUrlInSameClass() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -544,9 +520,7 @@ function test_13ComponentVeventSummaryUrlProperty() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -589,9 +563,7 @@ function test_14CalendarAnniversary() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\""
-       + " \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "    <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -641,9 +613,7 @@ function test_15CalendarXmlLang() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">",
+       "<html xml:lang=\"en\">",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -686,9 +656,7 @@ function test_16CalendarForceOutlook() {
       [
        "<!-- @TODO - do we need a special test for this? is x2v working"
        + " with outlook? -->",
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\""
-       + " \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "    <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -734,9 +702,7 @@ function test_17ComponentVeventDescriptionValueInSubelements() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -789,9 +755,7 @@ function test_18ComponentVeventUid() {
        // '",  // removed
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -857,9 +821,7 @@ function testCalendarAttachments() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\""
-       + " \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "    <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -927,9 +889,7 @@ function testCalendarDel() {
        "<!--@TODO - wait on MarkM to figure out what\'s up with this test."
        + " <del>?  -->",
        "",
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\""
-       + " \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "    <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -983,9 +943,7 @@ function testCalendarFragment() {
        "END:VEVENT",
        "END:VCALENDAR"],  // removed trailing newline
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\""
-       + " \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "    <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1041,9 +999,7 @@ function testCalendarHtmlLang() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\""
-       + " \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html lang=\"en\">",
        "<head>",
        "    <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1085,9 +1041,7 @@ function testCalendarLangSubLang() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">",
+       "<html xml:lang=\"en\">",
        "<head>",
        "    <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1134,9 +1088,7 @@ function testCalendarThreedayconference() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "    <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1192,9 +1144,7 @@ function testCalendarTransparentReminder() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1244,9 +1194,7 @@ function testComponentVeventAttachment() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1288,9 +1236,7 @@ function testComponentVeventAttendeeMultiple() {
       [
        "<!-- @TODO - I don\'t think attendee stuff is implemented in X2V"
        + " ryan -->",
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1337,9 +1283,7 @@ function testComponentVeventAttendeeValue() {
        "END:VEVENT",
        "END:VCALENDAR"],  // removed trailing newline
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1377,9 +1321,7 @@ function testComponentVeventCalendarProperty() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1414,9 +1356,7 @@ function testComponentVeventCategory() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1449,9 +1389,7 @@ function testComponentVeventDel() {
        "END:VCALENDAR"],
       [
        "<!-- @TODO - ask MarkM about this. Did he mean to use <del>? -->",
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1500,9 +1438,7 @@ function testComponentVeventDescriptionBulletPointsAlternate() {
       [
        "<!-- @TODO - review the x2v formatting stuff for DESCRIPTION"
        + " - need to be careful about whitespace -->",
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1568,9 +1504,7 @@ function testComponentVeventDescriptionBulletPoints() {
        "END:VCALENDAR"],
       [
        "<!-- @TODO -->",
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1621,9 +1555,7 @@ function testComponentVeventDescriptionSubAndSup() {
        "END:VCALENDAR"],
       [
        "<!-- @TODO - eh?  -->",
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1660,9 +1592,7 @@ function testComponentVeventDescriptionValueInSubelements_2() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1697,9 +1627,7 @@ function testComponentVeventDtstamp() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1729,10 +1657,7 @@ function testComponentVeventLang() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\""
-       + " lang=\"en\">",
+       "<html xml:lang=\"en\" lang=\"en\">",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1781,9 +1706,7 @@ function testComponentVeventRdate() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
@@ -1846,9 +1769,7 @@ function testComponentVeventRrule_1() {
        "END:VCALENDAR"],
       [
        "<!-- @TODO implement RRULE -->",
-       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"",
-       "        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
-       "<html xmlns=\"http://www.w3.org/1999/xhtml\">",
+       "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""
        + " content=\"text/html; charset=utf-8\" />",
