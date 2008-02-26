@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.Formatter;
 
 /**
- * The type of a {Message message}.
+ * The type of a {@link Message message}.
  *
  * @author mikesamuel@gmail.com
  */
