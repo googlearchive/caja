@@ -1,24 +1,5 @@
-/***********************************************************************
- * Copyright (C) 2007 Google Inc.
- *      
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- **********************************************************************/
-
-.heading {
-  text-align: center;
-  font-family: sans-serif;
-  font-size: 10pt;
-  margin-bottom: 36pt;
+.figure {
+  margin-left: 0.5in;
 }
 
 .note {
@@ -32,36 +13,40 @@
   background-color: #efffef;
 }
 
-h1 {
+body {
+  margin-left: 0.75in;
+}
+
+h1,h2,h3,h4,h5,h6 {
+  color: blue;
   font-family: sans-serif;
-  font-size: 18pt;
+}
+
+h1 {
+  margin-left: -0.75in;
+  font-weight: bold;
   text-align: center;
 }
 
 h2 {
-  font-family: sans-serif;
-  font-size: 14pt;
+  margin-left: -0.625in;
 }
 
 h3 {
-  font-family: sans-serif;
+  margin-left: -0.5in;
   font-style: italic;
-  font-size: 12pt;
-  margin-left: 12pt;
 }
 
+code, tt {
+  color: blue;
+}
+
+/*
 pre {
-  border: 1px solid gray;
-  background-color: #ffffef;
-  margin-left: 48pt;
-  padding: 6pt;
-  color: #000090;
+  border: solid 1px brown;
+  padding: 5px;
+  margin-left: 0.25in;
+  margin-right: 0.25in;
+  background: cornsilk;    
 }
-
-code {
-  color: #000090;
-}
-
-p {
-  margin-left: 36pt;
-}
+*/

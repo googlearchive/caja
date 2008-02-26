@@ -1,0 +1,82 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+  <title>A General Visual Powerbox</title>
+  <link type="text/css" rel="stylesheet" href="../common/documentStyle.css"/>
+</head>
+
+<body>
+
+<h1>A General Visual Powerbox</h1>
+
+<h2>Introduction</h2>
+
+<p>We describe the boundaries of a general visual (drag and drop
+oriented) powerbox for a hypothetical object oriented software system
+with capability security and an object oriented user interface. We
+then summarize the open questions regarding how such a powerbox may
+behave.</p>
+
+<h2>Problem description</h2>
+
+<div class="figure"><img src="uiOverview.png"/></div>
+
+<div class="note">Images of Earth are from the source code for <a
+href="http://xplanet.sourceforge.net/">Xplanet</a>, which is under the
+GNU <a href="http://www.gnu.org/copyleft/gpl.html">General Public
+License</a>. Photograph of Aden Awad is &copy; 2007, Ihab Awad, and is
+released into the public domain. Thanks to Neal Gafter for suggesting
+the "drag something onto a map" problem.</div>
+
+<p>We present a hypothetical "mashup" application allowing the user to
+visualize the geographic location associated with any object that
+contains that information.</p>
+
+<h3>Base condition</h3>
+
+<p>The user starts with a stationery drawer that has "kinds of things"
+they may instantiate. They can use that affordance to create any
+number of maps; we show two in the diagram. Each map instance is
+completely isolated from any other.</p>
+
+<p>A user drags and drops arbitrary objects onto the map in order to
+visualize and keep track of their location. Dragging an object onto
+the map authorizes the map, by designation, to maintain a reference to
+that object in some way that the map can obtain the latitude and
+longitude (and, hopefully, nothing else).</p>
+
+<h3>Complication 1: Tile server</h3>
+
+<p>Our map allows panning and zooming to a fine level of detail.  We
+cannot reasonably expect the map application to include, as immutable
+static state compiled into the code, all the terrain images from all
+the world. Hence the map must be able to load, at run time, "tile"
+images at varying resolutions for display.</p>
+
+<h3>Complication 2: Popup details view</h3>
+
+<p>When the user moves the mouse pointer over a mapped object, the map
+is expected, with the help of the object displayed, to display a small
+popup view describing that object. For example, if the user mapped an
+item from their contacts list (as shown above) then moved the mouse
+pointer over it, the map would show a "business card" view with some
+basic information.</p>
+
+<h3>Complication 3: Event exchange</h3>
+
+<p>When an object is dragged onto the map, the map registers itself as
+listener for the geographic location, so it can be updated when the
+location changes. Furthermore, if the object dragged in allows the map
+to <em>set</em> its geographic location, the map allows that object to
+be directly dragged. This makes the map a piece of a larger mashup
+application construction kit. For example, an application might use it
+as a building block, allowing the user can drag their location around
+and see all the good restaurants within walking distance of their
+location. An advanced user with knowledge of scripting languages, or
+with access to a graphical application builder, may be able to
+construct such an application themselves.</p>
+
+</body>
+
+</html>
