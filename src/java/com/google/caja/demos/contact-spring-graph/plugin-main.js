@@ -28,10 +28,6 @@
  * @author mikesamuel@gmail.com
  */
 
-if (!Date.now) {
-  Date.now = function () { return (new Date()).getTime(); };
-}
-
 (function () {
   var calendar = getCalendar();
   var events = calendar.getEvents();
@@ -131,10 +127,10 @@ if (!Date.now) {
   // set up a timeout to update the layout periodically
   var scale = graphContainer.getOffsetWidth() / 6;
   var count = 0;
-  var t = Date.now();
+  var t = (new Date()).getTime();
   var MAX_STEPS = 70, PERIOD = 100;
   function step() {
-    var t1 = Date.now();
+    var t1 = (new Date()).getTime();
     //log('t1=' + t1 + ', t=' + t);
     var nSteps = ((t1 - t) / PERIOD) | 0;
     var done = springGraph.step(nSteps, scale, 3.0);

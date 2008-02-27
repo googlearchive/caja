@@ -31,13 +31,13 @@
  * a non-directed graph where nodes correspond to DOM nodes, and edges
  * correspond to the strength of the connection -- stronger connections imply
  * the nodes should be closer spatially.
- * @param {Array<DOMElement>} nodes
+ * @param {Array.<DOMElement>} nodes
  */
 function Graph(nodes) {
-  /** @type {Array<DOMElement> */
+  /** @type {Array.<DOMElement>} */
   this.nodes_ = [];
   for (var i = nodes.length; --i >= 0;) {
-    this.nodes_[i] = { domNode: nodes[i], dx_: 0, dy_: 0 };
+    this.nodes_[i] = { domNode: nodes[i], dx: 0, dy: 0 };
   }
   /**
    * a simple, triangular dense matrix implementation whose diagonal is 0.
@@ -61,7 +61,7 @@ function Graph(nodes) {
    *   (n - 2 + ((n - 1) * (n - 2)) / 2) + 1 space, which is the same as
    *   ((n + 1) * (n - 2)) / 2 + 1.
    *
-   * @type {Array<Number>}
+   * @type {Array.<number>}
    */
   this.edges_ = [];
   for (var i = ((nodes.length + 1) * (nodes.length - 2)) / 2 + 1; --i >= 0;) {
@@ -71,9 +71,9 @@ function Graph(nodes) {
 
 /**
  * sets the weight of an edge.
- * @param {Number} i a node index.
- * @param {Number} j another node index.
- * @param {Number} weight strength of the edge.
+ * @param {number} i a node index.
+ * @param {number} j another node index.
+ * @param {number} weight strength of the edge.
  */
 Graph.prototype.setWeight = function (i, j, weight) {
   if (i !== j) {
@@ -85,8 +85,8 @@ Graph.prototype.setWeight = function (i, j, weight) {
 /**
  * returns the weight of the edge from node i to node j.
  * If there is no edge, returns 0.
- * @param {Number} i a node index.
- * @param {Number} j another node index.
+ * @param {number} i a node index.
+ * @param {number} j another node index.
  */
 Graph.prototype.getWeight = function (i, j) {
   if (i === j) { return 0; }
@@ -95,13 +95,13 @@ Graph.prototype.getWeight = function (i, j) {
 
 };
 
-var COEFF_FRICTION_ = .632;
+var COEFF_FRICTION = .632;
 
 /**
  * computes new positions for the nodes, and moves them.
- * @param {Number} nSteps number of steps to advance
- * @param {Number} scale the length in pixels of an edge with weight 1.
- * @param {Number} threshold for convergence.  Based on sum speed of all nodes.
+ * @param {number} nSteps number of steps to advance
+ * @param {number} scale the length in pixels of an edge with weight 1.
+ * @param {number} threshold for convergence.  Based on sum speed of all nodes.
  */
 Graph.prototype.step = function (nSteps, scale, threshold) {
   if (!nSteps) { return false; }
@@ -113,16 +113,16 @@ Graph.prototype.step = function (nSteps, scale, threshold) {
   // apply friction so that things eventually stop moving
   for (var i = nNodes; --i >= 0;) {
     var graphNode = nodes[i];
-    graphNode.dx_ *= COEFF_FRICTION_;
-    graphNode.dy_ *= COEFF_FRICTION_;
+    graphNode.dx *= COEFF_FRICTION;
+    graphNode.dy *= COEFF_FRICTION;
   }
 
   // calculate centerpoints of nodes
   for (var i = nNodes; --i >= 0;) {
     var graphNode = nodes[i];
     var domNode = graphNode.domNode;
-    graphNode.x_ = domNode.getOffsetLeft() + (domNode.getOffsetWidth() >>> 1);
-    graphNode.y_ = domNode.getOffsetTop() + (domNode.getOffsetHeight() >>> 1);
+    graphNode.x = domNode.getOffsetLeft() + (domNode.getOffsetWidth() >>> 1);
+    graphNode.y = domNode.getOffsetTop() + (domNode.getOffsetHeight() >>> 1);
   }
 
   var naturalSpringLength = scale;
@@ -133,14 +133,14 @@ Graph.prototype.step = function (nSteps, scale, threshold) {
   var e = edges.length;  // iterator over sparse matrix
   for (var j = nNodes; --j >= 1;) {
     var nodeJ = nodes[j];
-    var xj = nodeJ.x_, yj = nodeJ.y_;
+    var xj = nodeJ.x, yj = nodeJ.y;
     var ddx = 0, ddy = 0;
     for (var i = j; --i >= 0;) {
       var weight = edges[--e];
       var nodeI = nodes[i];
 
       // displacent
-      var sx = (xj - nodeI.x_), sy = (yj - nodeI.y_);
+      var sx = (xj - nodeI.x), sy = (yj - nodeI.y);
       if (!sx) { sx = i % 2 ? 1 : -1; }
       if (!sy) { sy = j % 2 ? 1 : -1; }
       var sxSqr = sx * sx, sySqr = sy * sy;
@@ -168,18 +168,18 @@ Graph.prototype.step = function (nSteps, scale, threshold) {
 //    log('s=' + s + ', force=' + force + ', ax=' + ax + ', ay=' + ay +
 //        ', weight=' + weight);
 
-      nodeI.dx_ += ax;
-      nodeI.dy_ += ay;
+      nodeI.dx += ax;
+      nodeI.dy += ay;
       ddx += ax;
       ddy += ay;
     }
-    nodeJ.dx_ -= ddx;
-    nodeJ.dy_ -= ddy;
+    nodeJ.dx -= ddx;
+    nodeJ.dy -= ddy;
   }
   var totVelSqr = 0;
   for (var i = nNodes; --i >= 1;) {
     var node = nodes[i];
-    var dx = node.dx_, dy = node.dy_
+    var dx = node.dx, dy = node.dy;
     totVelSqr += dx * dx + dy * dy;
   }
 
@@ -190,13 +190,13 @@ Graph.prototype.step = function (nSteps, scale, threshold) {
     var width = domNode.getOffsetWidth(),
         height = domNode.getOffsetHeight();
     var newStyle = position(
-      graphNode.x_ + graphNode.dx_ * nSteps - width / 2,
-      graphNode.y_ + graphNode.dy_ * nSteps - height / 2,
+      graphNode.x + graphNode.dx * nSteps - width / 2,
+      graphNode.y + graphNode.dy * nSteps - height / 2,
       width,
       height);
-//  log('i=' + i + ' : id=' + domNode.getId() + ', x=' + graphNode.x_ + ', y=' +
-//      graphNode.y_ +
-//      ', dx=' + graphNode.dx_ + ', dy=' + graphNode.dy_ +
+//  log('i=' + i + ' : id=' + domNode.getId() + ', x=' + graphNode.x + ', y=' +
+//      graphNode.y +
+//      ', dx=' + graphNode.dx + ', dy=' + graphNode.dy +
 //      '\n\tnewStyle=' + newStyle.toString().replace(/\n/g, ' ') +
 //      '\n\toldStyle=' + domNode.getStyle().toString().replace(/\n/g, ' '));
     domNode.setStyle(newStyle);
@@ -236,14 +236,14 @@ Graph.prototype.initLayout = function () {
 
 };
 
-var selectedNode_ = null;
+var selectedNode = null;
 function selectNode(domNode) {
-  if (selectedNode_) {
-    selectedNode_.setClass('node');
+  if (selectedNode) {
+    selectedNode.setClass('node');
   }
   if (domNode) {
     domNode.setClass('node selected');
     setSelectedUser(domNode.getFirstChild().getInnerHTML());
   }
-  selectedNode_ = domNode;
+  selectedNode = domNode;
 }
