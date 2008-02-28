@@ -440,51 +440,13 @@ message to any object, and it does not return a first class object, so
 its behavior cannot easily be customized from within the language (and
 the customary classloader histrionics do <em>not</em> qualify).</p>
 
-<h3>Classes as refactories</h3>
+<h3>Computational refraction</h3>
 
-<p>To recover the generalizations possible with a class-like system,
-we present a pattern where a class is used in a role we refer to as a
-<em>refactory</em>. An object constructed using this pattern has the
-following structure:</p>
-
-<div class="figure"><img src="refactoryPattern.png"/></div>
-
-<ul>
-
-  <li><p><strong>proxy</strong> &mdash; hosts the public interface of
-  the object as a whole, and forwards requests to the
-  implementation. Maintains a reference to the class. The code for the
-  proxy is provided as a bootstrap service by the platform, and does
-  not participate in code evolution.</p></li>
-
-  <li><p><strong>implementation</strong> &mdash; implements the
-  functionality of the object.</p></li>
-
-  <li><p><strong>class</strong> &mdash; responsible for having
-  constructed the proxy and implementation in the first place,
-  supplying the proxy with a pointer to itself.</p></li>
-
-</ul>
-
-<p>The class serves as a factory for new instances, where the class
-constructs and returns the entire structure above. When the contents
-of the class change (e.g., if the class is locally edited, or if it is
-itself an unum), the proxy can be notified (e.g., it can subscribe to
-change messages from the class). At that point, it can send the
-<code>refactor</code> message to the class:</p>
-
-<pre name="code" class="js:nocontrols">
-myImplementation = myClass.refactor(myImplementation);
-</pre>
-
-<p>The result will be a new implementation object, containing as much
-as possible of the data in the previous implementation, but with
-static state as specified by the new class.</p>
-
-<p>This scheme can be accomplished by <em>computational
-refraction</em>, as described in <a
+<p>An approach to recover the generalizations possible with a
+class-like system is <em>computational refraction</em> as presented in
+<a
 href="http://lists.squeakfoundation.org/pipermail/squeak-e/2003-February/000027.html">this
-message by Mark Miller.</p>
+message</a> by Mark Miller.</p>
 
 </body>
 
