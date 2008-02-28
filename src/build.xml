@@ -40,7 +40,7 @@
   <property name="src"         location="java"/>
   <property name="testsrc"     location="javatests"/>
   <property name="javascript"  location="js"/>
-  <property name="third_party" location="./third_party"/>
+  <property name="third_party" location="third_party"/>
   <property name="demos"       location="java/com/google/caja/demos"/>
   <!--== outputs ==-->
   <property name="reports"     location="ant-reports"/>  <!-- emma reports -->
@@ -220,7 +220,6 @@
       <include name="**/caja/parser/css/CssTreeTest.java"/>
       <include name="**/caja/parser/html/DomParserTest.java"/>
       <include name="**/caja/parser/html/JsHtmlParserTest.java"/>
-      <include name="**/caja/parser/quasiliteral/DefaultJsRewriterTest.java"/>
       <include name="**/caja/parser/quasiliteral/MatchTest.java"/>
       <include name="**/caja/parser/quasiliteral/QuasiBuilderTest.java"/>
       <include name="**/caja/parser/quasiliteral/ScopeTest.java"/>
@@ -298,7 +297,6 @@
         <include name="**/caja/parser/js/rendergolden5.txt"/>
         <include name="**/caja/parser/js/rendergolden6.txt"/>
         <include name="**/caja/parser/quasiliteral/clickme.js"/>
-        <include name="**/caja/parser/quasiliteral/function.js"/>
         <include name="**/caja/parser/quasiliteral/listfriends.js"/>
         <include name="**/caja/plugin/asserts.js"/>
         <include name="**/caja/plugin/caps/wrap_capability_test.js"/>
@@ -532,10 +530,12 @@
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
+      <include name="**/caja/parser/AbstractParseTreeNode.java"/>
+      <include name="**/caja/parser/AncestorChain.java"/>
       <include name="**/caja/parser/MutableParseTreeNode.java"/>
       <include name="**/caja/parser/ParseTreeNode.java"/>
+      <include name="**/caja/parser/ParseTreeNodes.java"/>
       <include name="**/caja/parser/Visitor.java"/>
-      <include name="**/caja/parser/AbstractParseTreeNode.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
   </target>
@@ -578,15 +578,11 @@
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
       <include name="**/caja/CajaException.java"/>
-      <include name="**/caja/reporting/Message.java"/>
-      <include name="**/caja/reporting/MessageGroup.java"/>
-      <include name="**/caja/reporting/MessageLevel.java"/>
-      <include name="**/caja/reporting/MessageQueue.java"/>
-      <include name="**/caja/reporting/MessageType.java"/>
-      <include name="**/caja/reporting/MessageTypeInt.java"/>
-      <include name="**/caja/reporting/DevNullMessageQueue.java"/>
-      <include name="**/caja/reporting/EchoingMessageQueue.java"/>
-      <include name="**/caja/reporting/SimpleMessageQueue.java"/>
+      <include name="**/caja/reporting/*.java"/>
+      <exclude name="**/caja/reporting/MessageContext.java"/>
+      <exclude name="**/caja/reporting/MessagePart.java"/>
+      <exclude name="**/caja/reporting/RenderContext.java"/>
+      <exclude name="**/caja/reporting/Renderable.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
   </target>
@@ -633,7 +629,6 @@
      failonerror="yes">
       <classpath refid="classpath.run"/>
       <arg value="--out=${www}/contact-spring-graph/plugin-files/"/>
-      <arg value="--name=springGraph__"/>
       <arg value="--pathPrefix=/plugin-files/"/>
       <arg file="${demos}/contact-spring-graph/spring-graph.gxp"/>
       <arg file="${demos}/contact-spring-graph/spring-graph.css"/>
