@@ -116,6 +116,8 @@ sub collectCodeStats() {
   my $build_id = Date::Format::time2str("%Y%m%dT%H%M%S", time, "UTC");
   print STDERR "dashboard $build_id\n";
 
+  push(@status_log, qq'<varz name="time" value="' . (scalar time) . qq'"/>');
+
   print STDERR "updating\n";
   track(\&updateLocalClient, [], 'update', \@status_log);
 
@@ -144,11 +146,7 @@ sub collectCodeStats() {
   track(\&build, ['docs'], 'docs', \@status_log);
 
   print STDERR "building demos\n";
-  track(\&build, ['demos'], 'demos', \@status_log);
-
-  # Remove once we have real timing data.
-  push(@status_log,
-       qq'<varz name="fake_profile_data" value="' . (scalar time) . qq'"/>');
+  track(\&build, ['demos', 'testbed'], 'demos', \@status_log);
 
   print STDERR "making output directory\n";
   makeOutputDir();
