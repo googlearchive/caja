@@ -1,0 +1,490 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+  <title>Distribution in the Lively Kernel</title>
+  <link type="text/css" rel="stylesheet" href="../common/documentStyle.css"/>
+  <link type="text/css" rel="stylesheet" href="http://syntaxhighlighter.googlecode.com/svn/trunk/Styles/SyntaxHighlighter.css"/>
+  <script type="text/javascript" src="http://syntaxhighlighter.googlecode.com/svn/trunk/Scripts/shCore.js"></script>
+  <script type="text/javascript" src="http://syntaxhighlighter.googlecode.com/svn/trunk/Scripts/shBrushJScript.js"></script>
+  <script type="text/javascript" src="http://syntaxhighlighter.googlecode.com/svn/trunk/Scripts/shBrushXml.js"></script>
+  <script type="text/javascript">
+    function highlight() { dp.SyntaxHighlighter.HighlightAll('code'); }
+  </script>
+</head>
+
+<body onload="highlight()">
+
+<h1>Distribution in the Lively Kernel</h1>
+
+<h2>Introduction</h2>
+
+<p>We propose to evolve the Lively kernel into a system for
+user-directed distributed computing. We will:</p>
+
+<ol>
+
+  <li><p>Incorporate the <em>Uni-Tea</em> model to allow ubiquitous
+  sharing of distributed objects;</p></li>
+
+  <li><p>Use the <em>Caja</em> capability language, which is a subset
+  of JavaScript, to make this sharing secure;</p></li>
+
+  <li><p>Define a way for our objects to interoperate, at a
+  fine-grained level, with existing Web pages and Web browsing
+  workflows; and</p></li>
+  
+  <li><p>Empower the end-user, make the system more responsive and
+  live, and have a whole lot of fun.</p></li>
+  
+</ol>
+
+<h2>Background</h2>
+
+<h3>Lively</h3>
+
+<p>The <a href="http://research.sun.com/projects/lively/">Lively
+Kernel</a> is an implementation of a self-modifying, visually rich
+graphical system, in the tradition of Smalltalk and Squeak, in pure
+JavaScript. It runs in most Web browsers without modification, using
+the browser's native SVG support for rendering. The user interface is
+modeled after the Morphic GUI toolkit.</p>
+
+<h3>Uni-Tea</h3>
+
+<p>The <a
+href="http://www.erights.org/talks/uni-tea/index.html">Uni-Tea</a>
+model is a conceptual framework for distributed objects that abstracts
+over most common distribution strategies. Each distributed object, or
+<em>unum</em>, is represented in each address space from which it is
+accessible by a local object called a <em>presence</em>:</p>
+
+<div class="figure"><img src="unumPresence.png"/></div>
+
+<p>The unum is the emergent behavior of all the presences acting
+together. The state and code of each presence is faulted into the host
+address space via a number of mechanisms, such as:</p>
+
+<ul>
+
+  <li><p>Bootstrapping, whereby the presence is hard-coded into a
+  program to permit communication with some pre-arranged
+  unum;</p></li>
+
+  <li><p>Receiving the presence of the unum in the payload of a remote
+  message; or</p></li>
+  
+  <li><p>Resolving an identifier via some previously agreed-upon name
+  resolution mechanism. (Such a mechanism will itself likely culminate
+  in receiving the presence in the payload of a remote
+  message.)</p></li>
+
+</ul>
+
+<p>Each unum may possess references to other una. In this case, at
+least one presence of the possessor unum contains a presence of the
+unum referred to. In other words, una compose, and we can treat the
+presence of one unum as an entry point into an entire object
+graph:</p>
+
+<div class="figure"><img src="recursivePresence.png"/></div>
+
+<p>Each presence is responsible for implementing a protocol such that
+the contract of the unum as a whole is honored. For example:</p>
+
+<ul>
+
+  <li><p>If the unum guarantees global serializability of all its
+  operations, it might achieve this by choosing a master copy
+  (presence), to which all other presences forward requests. These
+  presences might, in turn, return a <a
+  href="http://www.erights.org/elib/distrib/pipeline.html">promise</a>
+  or <a
+  href="http://java.sun.com/j2se/1.5.0/docs/api/java/util/concurrent/Future.html">future</a>
+  for the result of each request, to be satisfied when the resulting
+  network roundtrip is complete.</p></li>
+
+  <li><p>Another unum may reserve the right to serve queries using
+  local, possibly stale data. Some presences could then serve requests
+  synchronously and without a network roundtrip.</p></li>
+
+  <li><p>Yet another unum might withhold some confidential state from
+  a presence because it does not trust the environment in which the
+  presence is hosted.</p></li>
+  
+</ul>
+
+<h3>Caja</h3>
+
+<p>A fine-grained capability security substrate is a necessary
+component of a mobile code framework such as we are proposing.  The
+Google <a href="http://code.google.com/p/google-caja/">Caja</a>
+project defines a fail-stop <a
+href="http://google-caja.googlecode.com/files/caja-spec-2008-01-15.pdf">subset</a>
+of the JavaScript language within which language level capability
+security may be enforced. Caja is currently implemented by translating
+("cajoling") Caja code to JavaScript, adding run-time checks where
+necessary. This strategy allows Caja to run on existing JavaScript
+engines and, specifically, allows us to port Lively to Caja with no
+loss of ubiquitous, zero-install availability.</p>
+
+<h2>Browser integration</h2>
+
+<p>Given an unum which is bound to a name via some naming service, it
+is possible for a Web service to construct an HTTP URL for that
+unum. The default response from the URL is a Web page containing some
+bootstrap JavaScript content. When this page is loaded into a browser,
+it will initialize a Lively interpreter containing a presence of the
+unum:</p>
+
+<div class="figure"><img src="presenceInBrowser.png"/></div>
+
+<p>Users can now bookmark and share references to this unum's URL
+using exising Web tools. And HTML authors may now embed a presence
+directly into any existing Web content using an
+<code>iframe</code>:</p>
+
+<div class="figure"><img src="presenceInIframe.png"/></div>
+
+<p>Given the necessary JavaScript libraries available easily,
+<em>e.g.</em>, in a manner that can be included as simple
+<code>script</code> elements, programmers can embed an unum into an
+existing Web application without having to rewrite the rest of their
+application:</p>
+
+<div class="figure"><img src="presenceInWebApp.png"/></div>
+
+<p>In this setting, we can expose the API of the unum to the enclosing
+JavaScript, allowing the two codebases to interoperate. And, since
+each Lively Kernel world can be represented as just another unum,
+access to a world is a simple matter of providing access to its unum
+using any of the techniques mentioned previously. A useful side effect
+is that Lively worlds can be shared between users, or used from
+multiple sites by the same user, without any special programming:</p>
+
+<div class="figure"><img src="worldsAsPresences.png"/></div>
+
+<p>The <a
+href="http://code.google.com/apis/opensocial/">OpenSocial</a> project,
+among others, is building an ecosystem of <a
+href="http://code.google.com/apis/gadgets/"><em>gadgets</em></a>. A
+gadget is a small JavaScript and HTML application which may be hosted
+in a third party Web page <em>container</em>:</p>
+
+<div class="figure"><img src="gadgetsPage.png"/></div>
+
+<p>A gadget is known by the URL to its <em>gadget spec</em>, which is
+
+<pre name="code" class="xml:nocontrols">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;Module&gt;
+&lt;ModulePrefs title="hello world example"/&gt;
+&lt;Content type="html"&gt;&lt;![CDATA[
+  &lt;h1&gt;Hello world!&lt;/h1&gt;
+  &lt;div id="foo"/&gt;
+  &lt;script&gt;
+    document.getElementById('foo').innerHTML = 'Hello folks';
+  &lt;/script&gt;
+]]&gt;&lt;/Content&gt;
+&lt;/Module&gt;
+</pre>
+
+<p>Note that the area inside the <code>Content</code> tag is
+essentially a Web page fragment, containing scripts and literal
+content. Similarly to the manner in which we hosted an unum as a Web
+page, we could host it as a gadget spec, building its content
+dynamically; thus a gadget spec URL like
+<code>http://abowman.googlepages.com/penguins.xml</code> which, from
+the point of view of OpenSocial, is the analogue of a "class" or an
+"application", would in our case represent a specific unum
+<em>instance</em> implemented by shipping mobile code, composed on the
+fly as needed, to the client.</p>
+
+<p>To accomplish this, we would need to ensure that the gadget
+container provides enough authority to the gadget thus instantiated,
+to allow the contained unum to run its protocols.</p>
+
+<h2>Identifier conversions</h2>
+
+<p>We would like to support clipboard operations (drag and drop, and
+copy and paste) applied to the identity of an unum. In so doing, we
+will need to translate its identifier to pass through clipboard
+channels that are unaware of Lively una. We will need to consider at
+least the following cases:</p>
+
+<div class="figure"><img src="dragAndDropCases.png"/></div>
+
+<h3>(1) Within one world</h3>
+
+<p>Transfer within the same world is trivial. Since we have full
+access to the same JavaScript context, we can share direct object
+references.</p>
+
+<h3>(2) Between two worlds</h3>
+
+<p>Two worlds running in separate JavaScript contexts must exchange
+unum identifiers using some mechanism that the native environment can
+support. We need to investigate drag and drop between separate browser
+windows. Can we override platform copy-paste behavior from JavaScript
+so that it seems to work (<em>e.g.</em>, &#x2318;-C and &#x2318;-V on
+the Mac; Ctrl-C and Ctrl-V on a PC).</div>
+
+<h3>(3) World to native bookmarks</h3>
+
+<p>When we copy an unum's identity to a native bookmarks context
+expecting an HTTP URL, we can transorm the identity to a URL that
+wraps the unum in a Web page with a JavaScript shim, as discussed
+earlier. We would also have to intercept the clipboard events so that
+the URL is transferred properly. If an unum is "hosted" by some remote
+server, it can negotiate with its server for a suitable URL. In the
+general case, however, <em>e.g.</em> if an unum is materialized purely
+by the collaboration of equal peers, it is not clear how such a URL
+would be generated.</p>
+
+<h3>(4) Native bookmarks to world</h3>
+
+<p>When we copy a URL from a native bookmarks context to a world, we
+need to "unwrap" the URL to obtain a native representation of the
+unum's identity. This is actually a hard problem because we assume
+that each unum could have a different way of doing the forward
+encoding, from its identity into a URL. A solution could be to require
+each unum's URL to respond to some special HTTP request, which would
+return the unum's identity in a more native form.</p>
+
+<h3>Discussion</h3>
+
+<p>We may simplify interoperability betwen a bookmarks context and
+Lively by defining a standard (though pehaps optional) "hosted unum"
+protocol allowing uniform access from either a plain browser,
+returning a container Web page with JavaScript shims containing a
+presence, or from within a Lively application, returning information
+that would directly instantiate a presence of the unum.</p>
+
+<p>One complication is that the JavaScript shims which make una
+accessible from Web pages run with full authority in JavaScript,
+making them part of the user's <a
+href="http://en.wikipedia.org/wiki/Trusted_computing_base">trusted
+computing base (TCB)</a>. This is not acceptable if the Web service
+that generates the shims is in a different trust domain from some of
+the una that are (recursively) embedded in the resulting presence. We
+can solve this in a quasi-centralized fashion if we define two
+orthogonal components:</p>
+
+<ol>
+
+  <li><p>An internal Lively unum protocol, that always uses Caja and
+  enforces object capability rules; and</p></li>
+
+  <li><p>A protocol for secular Web gateways that translate from
+  Lively unum references to HTTP Web pages and back.</p></li>
+
+</ol>
+
+<p>A user could then choose a trusted gateway, implicitly adding that
+to their TCB; individual una would not be able to choose the gateway
+on behalf of the user. This leaves open an attack vector where a user
+shares an unum URL (using the native clipboard) with another user,
+where the shared URL points to a compromised Lively gateway.</p>
+
+<h2>Models and views</h2>
+
+<p>The unum model does not require a model/view separation (though
+that may be useful for other purposes). Specifically, a presence of an
+unum may be a Morph. For the right implementation of the platform's
+GUI library, the presence will come to acquire pointers to native GUI
+objects (such as SVG DOM nodes) as a natural consequence of being
+unmarshaled at a destination and added to a scene graph.</p>
+
+<p>Being able to make distributed references to Morphs is useful, but
+we must still solve some conceptual problems:</p>
+
+<ul>
+
+  <li><p>If a user drags and drops a Morph displaying some document
+  into a target, are they gesturing with the Morph, or with some
+  underlying "model object" representing the document's
+  implementation?</p></li>
+
+  <li><p>If we respond to the previous question by building a scheme
+  whereby (some) Morph gestures always refer to the underlying
+  "model", how do we recover the utility of gesturing using the Morph
+  itself (<em>e.g.</em>, to construct a compound view) without
+  confusing a user with too many affordances?</p></li>
+
+  <li><p>How may we build a principled yet usable framework that
+  permits multiple views of an object (<em>e.g.</em>, an "Outline" and
+  "Presentation" view of a document)? Can, or should, this framework
+  permit third parties to provide view Morphs for common data
+  types?</p></li>
+  
+</ul>
+
+<h2>Local persistence</h2>
+
+<p>Initiatives such as the Google Gears <a
+href="http://code.google.com/apis/gears/api_database.html">Database</a>,
+Dojo <a href="http://dojotoolkit.org/node/115">Storage</a>, and HTML5
+<a
+href="http://www.whatwg.org/specs/web-apps/current-work/#storage">persistent
+storage</a> provide native persistence in the browser. This allows
+applications to continue to work offline, and cache their data for
+better performance.</p>
+
+<p>Using these advances to build Web applications that cache their
+state correctly is still very hard. The unum model is a step in the
+right direction, providing an abstraction -- and possible hooks for a
+framework -- where remote objects can cache their code and data and
+synchronize with servers.</p>
+
+<h2>Class evolution</h2>
+
+<p>JavaScript class patterns rely on the use of the
+<code>prototype</code> property of an object. This mechanism is both
+too powerful and not powerful enough:</p>
+
+<ul>
+
+  <li><p><strong>Too powerful</strong> &mdash; Anyone with access to a
+  function can change its <code>prototype</code> property, and
+  therefore the entire class hierarchy created when that function is
+  used with <code>new</code> to construct objects, and anyone with
+  access to an object's internal <code><em>[[prototype]]</em></code>
+  object can change its behavior at will by replacing properties.  By
+  allowing any external client to change its class structure at will,
+  an object's invariants are at risk, and the result of
+  <code>instanceof</code> is not a stable predictor of an object's
+  progeny. </p></li>
+
+  <li><p><strong>Not powerful enough</strong> &mdash; The
+  <code><em>[[prototype]]</em></code> of an object is fixed at
+  construction time so, in contrast with all the mutability elsewhere,
+  this aspect of the object remains strangely rigid.</p></li>
+
+</ul>
+
+<p>For a secure runtime, we need strong encapsulation and
+invariants. For long term orthogonal persistence, we need to change
+the static aspects (typically, the code) of live objects from within
+the system. We reconcile these goals via a two step process.</p>
+
+<h3>Cajita: simple, safe encapsulation</h3>
+
+<p>We recommend that Lively adopt <em>Cajita</em>, which is
+essentially the JavaScript language without <code>this</code>,
+<code>new</code> or the use of <code>prototype</code>s -- essentially
+an object oriented Scheme. An example of a constructor for a class
+<code>Point</code> in Cajita looks like the following:</p>
+
+<pre name="code" class="js:nocontrols">
+function makePoint(x, y) {
+  return caja.freeze({
+    getX: function() { return x; }
+    getY: function() { return y; }
+    toString: function() { return "(" + x + "," + y + ")"; }
+  });
+}
+</pre>
+
+<p>All objects are closures with a simple structure; inheritance is
+accomplished by chaining initializers prior to <code>freeze</code>ing
+the result.</p>
+
+<p>We believe that, for <em>de novo</em> code, Cajita presents the
+best fit for a simple, orthogonal capability language within
+JavaScript.  Its "everything is an object" model contrasts with the
+commonly accepted JavaScript practice of simulating the "import" of a
+large number of names (<em>e.g.</em>, "classes") into the global
+namespace and using them as static references, even though they are
+actually first-class, mutable objects. Cajita works well for building
+small modules of mobile code that are loaded in isolation, since
+Cajita programs work the same way independently of whether some
+external functionality is provided as an explicit parameter or
+"imported" via some mechanism.</p>
+
+<p>Consider a Cajita program that returns a random point. It could be
+coded as a function that takes a <code>Math</code> module as an
+explicit parameter:</p>
+
+<pre name="code" class="js:nocontrols">
+function makeRandomPoint(math) {
+  return makePoint(math.random(), math.random());
+}
+</pre>
+
+<p>or it could be given a capability to import modules:</p>
+
+<pre name="code" class="js:nocontrols">
+function makeRandomPoint(importer) {
+  var math = importer.import("Math");
+  return makePoint(math.random(), math.random());
+}
+</pre>
+
+<p>but in either case, everything is a direct object reference. The alternative
+in Java might look like:</p>
+
+<pre name="code" class="java:nocontrols">
+import java.lang.Math;
+public class RandomPoint {
+  public static String makeRandomPoint() {
+    return new Point(Math.random(), Math.random());
+  }
+}
+</pre>
+
+<p>where the reference to <code>import</code> is effectively a call to
+the classloader mechanism to import the code. This call is, however,
+"out of band" from the viewpoint of the code; it is not an explicit
+message to any object, and it does not return a first class object, so
+its behavior cannot easily be customized from within the language (and
+the customary classloader histrionics do <em>not</em> qualify).</p>
+
+<h3>Classes as refactories</h3>
+
+<p>To recover the generalizations possible with a class-like system,
+we present a pattern where a class is used in a role we refer to as a
+<em>refactory</em>. An object constructed using this pattern has the
+following structure:</p>
+
+<div class="figure"><img src="refactoryPattern.png"/></div>
+
+<ul>
+
+  <li><p><strong>proxy</strong> &mdash; hosts the public interface of
+  the object as a whole, and forwards requests to the
+  implementation. Maintains a reference to the class. The code for the
+  proxy is provided as a bootstrap service by the platform, and does
+  not participate in code evolution.</p></li>
+
+  <li><p><strong>implementation</strong> &mdash; implements the
+  functionality of the object.</p></li>
+
+  <li><p><strong>class</strong> &mdash; responsible for having
+  constructed the proxy and implementation in the first place,
+  supplying the proxy with a pointer to itself.</p></li>
+
+</ul>
+
+<p>The class serves as a factory for new instances, where the class
+constructs and returns the entire structure above. When the contents
+of the class change (e.g., if the class is locally edited, or if it is
+itself an unum), the proxy can be notified (e.g., it can subscribe to
+change messages from the class). At that point, it can send the
+<code>refactor</code> message to the class:</p>
+
+<pre name="code" class="js:nocontrols">
+myImplementation = myClass.refactor(myImplementation);
+</pre>
+
+<p>The result will be a new implementation object, containing as much
+as possible of the data in the previous implementation, but with
+static state as specified by the new class.</p>
+
+<p>This scheme can be accomplished by <em>computational
+refraction</em>, as described in <a
+href="http://lists.squeakfoundation.org/pipermail/squeak-e/2003-February/000027.html">this
+message by Mark Miller.</p>
+
+</body>
+
+</html>
