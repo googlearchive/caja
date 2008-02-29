@@ -16,6 +16,7 @@ package com.google.caja.plugin;
 
 import com.google.caja.html.HTML;
 import com.google.caja.html.HTML4;
+import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
@@ -82,11 +83,13 @@ import java.util.regex.Pattern;
 public class HtmlCompiler {
   private final MessageQueue mq;
   private final PluginMeta meta;
+  private final CssSchema cssSchema;
   private Map<String, FunctionDeclaration> eventHandlers =
       new LinkedHashMap<String, FunctionDeclaration>();
 
-  public HtmlCompiler(MessageQueue mq, PluginMeta meta) {
+  public HtmlCompiler(CssSchema cssSchema, MessageQueue mq, PluginMeta meta) {
     if (null == mq) { throw new NullPointerException(); }
+    this.cssSchema = cssSchema;
     this.mq = mq;
     this.meta = meta;
   }
@@ -308,7 +311,7 @@ public class HtmlCompiler {
 
     // The validator will check that property values are well-formed,
     // marking those that aren't, and identifies all urls.
-    CssValidator v = new CssValidator(mq);
+    CssValidator v = new CssValidator(cssSchema, mq);
     boolean valid = v.validateCss(new AncestorChain<CssTree>(decls));
     // The rewriter will remove any unsafe constructs.
     // and put urls in the proper filename namespace

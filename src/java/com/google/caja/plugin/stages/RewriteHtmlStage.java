@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin.stages;
 
+import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
@@ -23,7 +24,6 @@ import com.google.caja.lexer.Token;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.Visitor;
-import com.google.caja.parser.css.Css2;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
@@ -269,7 +269,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       if (mediaTypeArr.length != 1 || !"".equals(mediaTypeArr[0])) {
         mediaTypes = new LinkedHashSet<String>();
         for (String mediaType : mediaTypeArr) {
-          if (!Css2.isMediaType(mediaType)) {
+          if (!CssSchema.isMediaType(mediaType)) {
             jobs.getMessageQueue().addMessage(
                 PluginMessageType.UNRECOGNIZED_MEDIA_TYPE,
                 media.getFilePosition(),

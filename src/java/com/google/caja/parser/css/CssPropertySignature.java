@@ -336,7 +336,7 @@ public abstract class CssPropertySignature implements ParseTreeNode {
     }
   }
 
-  static final class Parser {
+  public static final class Parser {
     private static Pattern[] TOKENS = {
       // whitespace
       Pattern.compile("^\\s+"),
@@ -371,7 +371,7 @@ public abstract class CssPropertySignature implements ParseTreeNode {
       return toks.listIterator();
     }
 
-    static CssPropertySignature parseSignature(String sig) {
+    public static CssPropertySignature parseSignature(String sig) {
       ListIterator<String> toks = tokenizeSignature(sig);
       CssPropertySignature signature = parseSignature(toks);
       if (toks.hasNext()) {

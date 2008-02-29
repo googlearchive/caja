@@ -44,6 +44,6 @@ public interface WhiteList {
 
   /** An immutable description of an item. */
   public interface TypeDefinition  {
-    Object get(String key);
+    Object get(String key, Object defaultValue);
   }
 }

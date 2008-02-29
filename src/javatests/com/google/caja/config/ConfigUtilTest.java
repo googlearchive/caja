@@ -147,9 +147,9 @@ public class ConfigUtilTest extends TestCase {
             + "     ]"
             + "}"),
         makeSrc(), mq);
-    assertEquals("FOO", w.typeDefinitions().get("foo").get("name"));
-    assertEquals("Bar", w.typeDefinitions().get("bar").get("name"));
-    assertEquals("BAZ", w.typeDefinitions().get("baz").get("name"));
+    assertEquals("FOO", w.typeDefinitions().get("foo").get("name", null));
+    assertEquals("Bar", w.typeDefinitions().get("bar").get("name", null));
+    assertEquals("BAZ", w.typeDefinitions().get("baz").get("name", null));
     assertMessages();
   }
 
@@ -190,7 +190,7 @@ public class ConfigUtilTest extends TestCase {
                 ) + "\"]"
             + "}"),
         makeSrc(), mq);
-    assertEquals("Foo", w.typeDefinitions().get("foo").get("name"));
+    assertEquals("Foo", w.typeDefinitions().get("foo").get("name", null));
     assertMessages();
   }
 
@@ -216,7 +216,7 @@ public class ConfigUtilTest extends TestCase {
             + "     ]"
             + "}"),
         makeSrc(), mq);
-    assertEquals("FOO", w.typeDefinitions().get("foo").get("name"));
+    assertEquals("FOO", w.typeDefinitions().get("foo").get("name", null));
     assertMessages();
   }
   
@@ -239,7 +239,7 @@ public class ConfigUtilTest extends TestCase {
                 ) + "\"]"
             + "}"),
         makeSrc(), mq);
-    assertEquals("Foo", w.typeDefinitions().get("foo").get("name"));
+    assertEquals("Foo", w.typeDefinitions().get("foo").get("name", null));
     assertMessages("FATAL_ERROR: testUnresolvedAmbiguousDefinition:1+1:"
                    + " ambiguous type definition"
                    + " {\"name\":\"Foo\",\"key\":\"foo\"}"
@@ -274,7 +274,7 @@ public class ConfigUtilTest extends TestCase {
             + "     ]"
             + "}"),
         makeSrc(), mq);
-    assertEquals("Foo-3", w.typeDefinitions().get("foo").get("name"));
+    assertEquals("Foo-3", w.typeDefinitions().get("foo").get("name", null));
     assertMessages();
   }
 

@@ -18,6 +18,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessagePart;
 
@@ -95,7 +96,7 @@ public class ConfigUtil {
         throw new IllegalArgumentException("URI missing path: " + uri);
       }
       in = new FileInputStream(path);
-    } else if ("scheme".equals(scheme)) {
+    } else if ("resource".equals(scheme)) {
       String path = uri.getPath();
       if (path == null) {
         throw new IllegalArgumentException("URI missing path: " + uri);
@@ -118,14 +119,14 @@ public class ConfigUtil {
    * javascript parser with a JSON lexer if error message positions in config
    * files become a problem.
    *
-   * @param value an {@code application/JSON} file of the form described at
+   * @param in a {@code application/JSON} file of the form described at
    *     http://code.google.com/p/google-caja/wiki/CajaWhitelists
    * @param src the source of the JS.  Used to resolve relative URIs.
    * @param mq receives warnings and errors that don't prevent us from
    *     producing a whitelist.
    *
    * @return a WhiteList that may be invalid.  If mq contains no new
-   *     {@link MessageType#ERROR}s or more serious messages, then the return
+   *     {@link MessageLevel#ERROR}s or more serious messages, then the return
    *     value is valid.
    *
    * @throws IOException if we can't load an inherited whitelist.
@@ -148,7 +149,7 @@ public class ConfigUtil {
    *     producing a whitelist.
    *
    * @return a WhiteList that may be invalid.  If mq contains no new
-   *     {@link MessageType#ERROR}s or more serious messages, then the return
+   *     {@link MessageLevel#ERROR}s or more serious messages, then the return
    *     value is valid.
    *
    * @throws IOException if we can't load an inherited whitelist.
@@ -532,5 +533,14 @@ class TypeDefinitionImpl implements WhiteList.TypeDefinition {
     this.props = props;
   }
 
-  public Object get(String key) { return props.get(key); }
+  public Object get(String key, Object defaultValue) {
+    Object value = props.get(key);
+    if (value != null || props.containsKey(key)) { return value; }
+    return defaultValue;
+  }
+
+  @Override
+  public String toString() {
+    return "[TypeDefinition: " + props + "]";
+  }
 }

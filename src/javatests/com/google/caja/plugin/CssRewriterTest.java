@@ -14,9 +14,11 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
+import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
@@ -34,6 +36,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import java.util.Collections;
 
@@ -136,6 +139,9 @@ public class CssRewriterTest extends TestCase {
             ".test #test-foo {\n  background: url('/foo/bar.png')\n}");
     runTest("#foo { background: '/bar.png' }",
             ".test #test-foo {\n  background: '/foo/bar.png'\n}");
+    runTest("#foo { background: 'http://whitelisted-host.com/blinky.gif' }",
+            ".test #test-foo {\n  background:"
+            + " 'http://whitelisted-host.com/blinky.gif'\n}");
 
     // disallowed
     runTest("#foo { background: url('http://cnn.com/bar.png') }",
@@ -184,7 +190,36 @@ public class CssRewriterTest extends TestCase {
 
     new CssRewriter(
         new PluginMeta(
-            "test", "/foo", PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT),
+            "test", "/foo",
+            new PluginEnvironment() {
+              @Override
+              public CharProducer loadExternalResource(
+                  ExternalReference ref, String mimeType) {
+                return null;
+              }
+              @Override
+              public String rewriteUri(ExternalReference ref, String mimeType) {
+                URI uri = ref.getUri();
+
+                if (uri.getScheme() == null
+                    && uri.getHost() == null
+                    && uri.getPath() != null
+                    && uri.getPath().startsWith("/")) {
+                  try {
+                    return new URI(null, null, "/foo" + uri.getPath(),
+                                   uri.getQuery(), uri.getFragment())
+                        .toString();
+                  } catch (URISyntaxException ex) {
+                    ex.printStackTrace();
+                    return null;
+                  }
+                } else if ("whitelisted-host.com".equals(uri.getHost())) {
+                  return uri.toString();
+                } else {
+                  return null;
+                }
+              }
+            }),
         mq)
         .rewrite(new AncestorChain<CssTree>(t));
 
@@ -216,7 +251,8 @@ public class CssRewriterTest extends TestCase {
           });
       CssParser p = new CssParser(tq);
       CssTree t = p.parseStyleSheet();
-      new CssValidator(mq).validateCss(new AncestorChain<CssTree>(t));
+      new CssValidator(CssSchema.getDefaultCss21Schema(mq), mq)
+          .validateCss(new AncestorChain<CssTree>(t));
       tq.expectEmpty();
       return t;
     } finally {

@@ -51,13 +51,16 @@
   <property name="www"         location="ant-www"/>  <!-- demo files dir -->
 
   <path id="classpath.compile">
+    <pathelement path="${third_party}/java/htmlparser/htmlparser.jar"/>
     <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
-    <pathelement path="${third_party}/java/htmlparser/htmlparser.jar"/>
   </path>
 
   <path id="classpath.run">
     <pathelement path="${lib}"/>
+    <pathelement path="${third_party}/java/htmlparser/htmlparser.jar"/>
+    <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
+    <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
   </path>
 
   <path id="classpath.tests.compile">
@@ -201,8 +204,10 @@
       <classpath refid="classpath.tests.compile"/>
       <include name="**/caja/AllTests.java"/>
       <include name="**/caja/config/ConfigUtilTest.java"/>
-      <include name="**/caja/demos/calendar/RRuleTest.java"/>
       <include name="**/caja/demos/calendar/HcalTest.java"/>
+      <include name="**/caja/demos/calendar/LayoutTest.java"/>
+      <include name="**/caja/demos/calendar/RRuleTest.java"/>
+      <include name="**/caja/lang/css/CssSchemaTest.java"/>
       <include name="**/caja/demos/calendar/LayoutTest.java"/>
       <include name="**/caja/lexer/CharProducerTest.java"/>
       <include name="**/caja/lexer/CommentLexerTest.java"/>
@@ -215,16 +220,16 @@
       <include name="**/caja/opensocial/DefaultGadgetRewriterTest.java"/>
       <include name="**/caja/opensocial/GadgetParserTest.java"/>
       <include name="**/caja/parser/ParseTreeNodeTest.java"/>
-      <include name="**/caja/parser/css/Css2Test.java"/>
       <include name="**/caja/parser/css/CssParserTest.java"/>
       <include name="**/caja/parser/css/CssTreeTest.java"/>
       <include name="**/caja/parser/html/DomParserTest.java"/>
       <include name="**/caja/parser/html/JsHtmlParserTest.java"/>
+      <include name="**/caja/parser/js/ParserTest.java"/>
+      <include name="**/caja/parser/js/StringLiteralTest.java"/>
+      <include name="**/caja/parser/quasiliteral/DefaultCajaRewriterTest.java"/>
       <include name="**/caja/parser/quasiliteral/MatchTest.java"/>
       <include name="**/caja/parser/quasiliteral/QuasiBuilderTest.java"/>
       <include name="**/caja/parser/quasiliteral/ScopeTest.java"/>
-      <include name="**/caja/parser/js/ParserTest.java"/>
-      <include name="**/caja/parser/js/StringLiteralTest.java"/>
       <include name="**/caja/plugin/CompiledPluginTest.java"/>
       <include name="**/caja/plugin/CssRewriterTest.java"/>
       <include name="**/caja/plugin/CssValidatorTest.java"/>
@@ -382,7 +387,7 @@
   </target>
 
   <target name="PluginCompiler"
-   depends="CssParserCore,HtmlParserCore,HtmlSchema,Quasiliterals,Config,dirs">
+   depends="CssParserCore,HtmlParserCore,Schemas,Quasiliterals,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
@@ -426,25 +431,28 @@
     </javac>
   </target>
 
-  <target name="HtmlSchema" depends="dirs">
+  <target name="Schemas" depends="dirs,Config">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
+      <include name="**/caja/lang/*/*.java"/>
       <include name="**/caja/html/HTML.java"/>
       <include name="**/caja/html/HTML4.java"/>
       <include name="**/caja/html/HtmlWhitelist.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
+    <copy todir="${lib}">
+      <fileset dir="${src}">
+        <include name="**/caja/lang/*/*.json"/>
+      </fileset>
+    </copy>
   </target>
 
   <target name="CssParserCore" depends="Parser,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
-      <include name="**/caja/parser/css/Css2.java"/>
-      <include name="**/caja/parser/css/CssParser.java"/>
-      <include name="**/caja/parser/css/CssPropertySignature.java"/>
-      <include name="**/caja/parser/css/CssTree.java"/>
+      <include name="**/caja/parser/css/*.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
   </target>

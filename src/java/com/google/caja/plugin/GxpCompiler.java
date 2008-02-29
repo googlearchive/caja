@@ -17,9 +17,11 @@ package com.google.caja.plugin;
 import com.google.caja.CajaException;
 import com.google.caja.html.HTML;
 import com.google.caja.html.HTML4;
+import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
+import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.JsLexer;
@@ -88,14 +90,16 @@ public final class GxpCompiler {
   private final MessageQueue mq;
   private final PluginMeta meta;
   private final GxpValidator gxpValidator;
+  private final CssSchema cssSchema;
   private Map<String, TemplateSignature> sigs =
     new LinkedHashMap<String, TemplateSignature>();
   private Map<String, FunctionDeclaration> eventHandlers =
     new LinkedHashMap<String, FunctionDeclaration>();
   private int syntheticIdCounter;
 
-  public GxpCompiler(MessageQueue mq, PluginMeta meta) {
+  public GxpCompiler(CssSchema cssSchema, MessageQueue mq, PluginMeta meta) {
     if (null == mq) { throw new NullPointerException(); }
+    this.cssSchema = cssSchema;
     this.mq = mq;
     this.meta = meta;
     this.gxpValidator = new GxpValidator(mq);
@@ -849,7 +853,7 @@ public final class GxpCompiler {
 
     // The validator will check that property values are well-formed,
     // marking those that aren't, and identifies all urls.
-    CssValidator cssValidator = new CssValidator(mq);
+    CssValidator cssValidator = new CssValidator(cssSchema, mq);
     boolean valid = cssValidator.validateCss(new AncestorChain<CssTree>(decls));
     // The rewriter will remove any unsafe constructs.
     // and put urls in the proper filename namespace
@@ -1083,13 +1087,16 @@ public final class GxpCompiler {
         String uriStr = t.getAttribValue();
         try {
           URI uri = new URI(uriStr);
-          // TODO(msamuel): Put url in the appropriate file-space namespace
-          if (!UrlUtil.isDomainlessUrl(uri)) {
+          ExternalReference ref = new ExternalReference(
+              uri, t.getFilePosition());
+          String mimeType = "*/*";  // TODO(mikesamuel): fetch from htmlSchema
+          String xuri = gxpc.meta.getPluginEnvironment().rewriteUri(
+              ref, mimeType);
+          if (xuri == null) {
             throw new BadContentException(new Message(
                 PluginMessageType.DISALLOWED_URI,
                 t.getFilePosition(), MessagePart.Factory.valueOf(uriStr)));
           }
-          String xuri = UrlUtil.translateUrl(uri, gxpc.meta.pathPrefix);
           JsWriter.appendString(JsWriter.htmlEscape(xuri), tgtChain, b);
         } catch (URISyntaxException ex) {
           throw new BadContentException(new Message(

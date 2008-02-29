@@ -15,7 +15,9 @@
 package com.google.caja.plugin;
 
 import com.google.caja.CajaException;
+import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.HtmlTokenType;
@@ -45,6 +47,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,7 +78,8 @@ public class GxpCompilerTest extends TestCase {
         getClass(), "gxpcompilerinput1.gxp", mq);
     DomTree.Tag domTree = (DomTree.Tag) DomParser.parseDocument(
         tq, OpenElementStack.Factory.createXmlElementStack());
-    GxpCompiler gxpc = new GxpCompiler(mq, makeTestPluginMeta());
+    GxpCompiler gxpc = new GxpCompiler(
+        CssSchema.getDefaultCss21Schema(mq), mq, makeTestPluginMeta());
     GxpCompiler.TemplateSignature sig = gxpc.compileTemplateSignature(domTree);
     ParseTreeNode compiled = gxpc.compileDocument(sig);
 
@@ -98,7 +102,8 @@ public class GxpCompilerTest extends TestCase {
         getClass(), "gxpcompilerinput2.gxp", mq);
     DomTree.Tag domTree = (DomTree.Tag) DomParser.parseDocument(
         tq, OpenElementStack.Factory.createXmlElementStack());
-    GxpCompiler gxpc = new GxpCompiler(mq, makeTestPluginMeta());
+    GxpCompiler gxpc = new GxpCompiler(
+        CssSchema.getDefaultCss21Schema(mq), mq, makeTestPluginMeta());
     GxpCompiler.TemplateSignature sig = gxpc.compileTemplateSignature(domTree);
     ParseTreeNode compiled = gxpc.compileDocument(sig);
 
@@ -140,7 +145,8 @@ public class GxpCompilerTest extends TestCase {
     DomTree.Tag gxp3 = (DomTree.Tag) DomParser.parseDocument(
         TestUtil.parseXml(getClass(), "gxpcompilerinput4.gxp", mq),
         OpenElementStack.Factory.createXmlElementStack());
-    GxpCompiler gxpc = new GxpCompiler(mq, makeTestPluginMeta());
+    GxpCompiler gxpc = new GxpCompiler(
+        CssSchema.getDefaultCss21Schema(mq), mq, makeTestPluginMeta());
     GxpCompiler.TemplateSignature sig2 = gxpc.compileTemplateSignature(gxp2),
                                   sig3 = gxpc.compileTemplateSignature(gxp3);
 
@@ -407,7 +413,8 @@ public class GxpCompilerTest extends TestCase {
 
     GxpCompiler.TemplateSignature[] sigs =
       new GxpCompiler.TemplateSignature[doms.length];
-    GxpCompiler gxpc = new GxpCompiler(mq, meta);
+    GxpCompiler gxpc = new GxpCompiler(
+        CssSchema.getDefaultCss21Schema(mq), mq, meta);
     boolean valid = true;
     for (int i = 0; i < doms.length; ++i) {
       DomTree.Tag dom = doms[i];
@@ -487,7 +494,8 @@ public class GxpCompilerTest extends TestCase {
 
     GxpCompiler.TemplateSignature[] sigs =
       new GxpCompiler.TemplateSignature[doms.length];
-    GxpCompiler gxpc = new GxpCompiler(mq, meta);
+    GxpCompiler gxpc = new GxpCompiler(
+        CssSchema.getDefaultCss21Schema(mq), mq, meta);
     boolean valid = true;
     for (int i = 0; i < doms.length; ++i) {
       DomTree.Tag dom = doms[i];
@@ -541,6 +549,35 @@ public class GxpCompilerTest extends TestCase {
 
   private PluginMeta makeTestPluginMeta() {
     return new PluginMeta(
-        "pre", "/testplugin", PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
+        "pre", "/testplugin",
+        new PluginEnvironment() {
+            @Override
+            public CharProducer loadExternalResource(
+                ExternalReference ref, String mimeType) {
+              return null;
+            }
+            @Override
+            public String rewriteUri(ExternalReference ref, String mimeType) {
+              URI uri = ref.getUri();
+
+              if (uri.getScheme() == null
+                  && uri.getHost() == null
+                  && uri.getPath() != null) {
+                try {
+                  String path = uri.getPath();
+                  path = (path.startsWith("/") ? "/testplugin" : "/testplugin/")
+                      + path;
+                  return new URI(
+                      null, null, path, uri.getQuery(), uri.getFragment())
+                      .toString();
+                } catch (URISyntaxException ex) {
+                  ex.printStackTrace();
+                  return null;
+                }
+              } else {
+                return null;
+              }
+            }
+        });
   }
 }

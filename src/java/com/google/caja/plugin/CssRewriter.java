@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
@@ -326,8 +327,11 @@ public final class CssRewriter {
             String uriStr = content.getValue();
             try {
               URI uri = new URI(uriStr);
+              ExternalReference ref
+                  = new ExternalReference(uri, content.getFilePosition());
               // the same url check as GxpCompiler
-              if (!UrlUtil.isDomainlessUrl(uri)) {
+              if (meta.getPluginEnvironment().rewriteUri(ref, "image/*")
+                  == null) {
                 removeMsg = new Message(
                     PluginMessageType.DISALLOWED_URI,
                     node.getFilePosition(),
@@ -407,10 +411,16 @@ public final class CssRewriter {
               String uriStr = content.getValue();
               try {
                 URI uri = new URI(uriStr);
-                // prefix the uri properly
-                content.setValue(UrlUtil.translateUrl(uri, meta.pathPrefix));
+                // Rewrite the URI.
+                // TODO(mikesamuel): for content: and other uri types, use
+                // mime-type of text/*.
+                ExternalReference ref
+                    = new ExternalReference(uri, content.getFilePosition());
+                String rewrittenUri = meta.getPluginEnvironment().rewriteUri(
+                    ref, "image/*");
+                content.setValue(rewrittenUri);
               } catch (URISyntaxException ex) {
-                // should've been checked in removeUnsafeConstructs
+                // Should've been checked in removeUnsafeConstructs.
                 throw new AssertionError();
               }
             }

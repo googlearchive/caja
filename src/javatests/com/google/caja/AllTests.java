@@ -18,6 +18,7 @@ import com.google.caja.config.ConfigUtilTest;
 import com.google.caja.demos.calendar.HcalTest;
 import com.google.caja.demos.calendar.LayoutTest;
 import com.google.caja.demos.calendar.RRuleTest;
+import com.google.caja.lang.css.CssSchemaTest;
 import com.google.caja.lexer.CharProducerTest;
 import com.google.caja.lexer.CommentLexerTest;
 import com.google.caja.lexer.CssLexerTest;
@@ -29,7 +30,6 @@ import com.google.caja.lexer.escaping.EscapingTest;
 import com.google.caja.opensocial.DefaultGadgetRewriterTest;
 import com.google.caja.opensocial.GadgetParserTest;
 import com.google.caja.parser.ParseTreeNodeTest;
-import com.google.caja.parser.css.Css2Test;
 import com.google.caja.parser.css.CssParserTest;
 import com.google.caja.parser.css.CssTreeTest;
 import com.google.caja.parser.html.DomParserTest;
@@ -76,10 +76,10 @@ public class AllTests {
           CommentLexerTest.class,
           CompiledPluginTest.class,
           ConfigUtilTest.class,
-          Css2Test.class,
           CssLexerTest.class,
           CssParserTest.class,
           CssRewriterTest.class,
+          CssSchemaTest.class,
           CssTreeTest.class,
           CssValidatorTest.class,
           DefaultCajaRewriterTest.class,

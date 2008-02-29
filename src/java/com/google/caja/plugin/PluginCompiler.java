@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
@@ -73,8 +74,9 @@ import java.util.*;
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
 public final class PluginCompiler {
-  private final Pipeline<Jobs> compilationPipeline;
   private final Jobs jobs;
+  private Pipeline<Jobs> compilationPipeline;
+  private CssSchema cssSchema;
 
   public PluginCompiler(PluginMeta meta) {
     this(meta, new SimpleMessageQueue());
@@ -84,25 +86,7 @@ public final class PluginCompiler {
     MessageContext mc = new MessageContext();
     mc.inputSources = new ArrayList<InputSource>();
     jobs = new Jobs(mc, mq, meta);
-    compilationPipeline = new Pipeline<Jobs>() {
-      final long t0 = System.nanoTime();
-      @Override
-      protected boolean applyStage(
-          Pipeline.Stage<? super Jobs> stage, Jobs jobs) {
-        //System.err.println("\n\n");
-        jobs.getMessageQueue().addMessage(
-            MessageType.CHECKPOINT,
-            MessagePart.Factory.valueOf(stage.getClass().getSimpleName()),
-            MessagePart.Factory.valueOf((System.nanoTime() - t0) / 1e9));
-        //for (Job job : jobs.getJobs()) {
-        //  System.err.println(
-        //      ((com.google.caja.parser.AbstractParseTreeNode)
-        //       job.getRoot().node).toStringDeep());
-        //}
-        return super.applyStage(stage, jobs);
-      }
-    };
-    setupCompilationPipeline();
+    cssSchema = CssSchema.getDefaultCss21Schema(mq);
   }
 
   public MessageQueue getMessageQueue() { return jobs.getMessageQueue(); }
@@ -118,6 +102,11 @@ public final class PluginCompiler {
   }
 
   public PluginMeta getPluginMeta() { return jobs.getPluginMeta(); }
+
+  public void setCssSchema(CssSchema cssSchema) {
+    this.cssSchema = cssSchema;
+    compilationPipeline = null;
+  }
 
   public void addInput(AncestorChain<?> input) {
     jobs.getJobs().add(new Job(input));
@@ -154,8 +143,21 @@ public final class PluginCompiler {
   }
 
   protected void setupCompilationPipeline() {
+    compilationPipeline = new Pipeline<Jobs>() {
+      final long t0 = System.nanoTime();
+      @Override
+      protected boolean applyStage(
+          Pipeline.Stage<? super Jobs> stage, Jobs jobs) {
+        jobs.getMessageQueue().addMessage(
+            MessageType.CHECKPOINT,
+            MessagePart.Factory.valueOf(stage.getClass().getSimpleName()),
+            MessagePart.Factory.valueOf((System.nanoTime() - t0) / 1e9));
+        return super.applyStage(stage, jobs);
+      }
+    };
+
     List<Pipeline.Stage<Jobs>> stages = compilationPipeline.getStages();
-    stages.add(new ValidateCssStage());
+    stages.add(new ValidateCssStage(cssSchema));
     stages.add(new CompileGxpsStage());
     stages.add(new CompileCssTemplatesStage());
     stages.add(new ConsolidateCodeStage());
@@ -164,13 +166,18 @@ public final class PluginCompiler {
     stages.add(new CheckForErrorsStage());
   }
 
+  protected Pipeline<Jobs> getCompilationPipeline() {
+    if (compilationPipeline == null) { setupCompilationPipeline(); }
+    return compilationPipeline;
+  }
+  
   /**
    * Run the compiler on all parse trees added via {@link #addInput}.
    * The output parse trees are available via {@link #getOutputs()}.
    * @return true on success, false on failure.
    */
   public boolean run() {
-    return compilationPipeline.apply(jobs);
+    return getCompilationPipeline().apply(jobs);
   }
 
   private class CompileGxpsStage implements Pipeline.Stage<Jobs> {
@@ -193,7 +200,7 @@ public final class PluginCompiler {
             break;
         }
       }
-      GxpCompiler gxpc = new GxpCompiler(mq, meta);
+      GxpCompiler gxpc = new GxpCompiler(cssSchema, mq, meta);
       GxpValidator v = new GxpValidator(mq);
       for (Iterator<GxpJob> it = gxpJobs.iterator(); it.hasNext();) {
         GxpJob job = it.next();
