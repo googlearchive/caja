@@ -33,6 +33,7 @@ import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.DevNullMessageQueue;
+import com.google.caja.reporting.RenderContext;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -218,7 +219,7 @@ public final class TestUtil {
     checkFilePositionInvariants(new AncestorChain<ParseTreeNode>(root));
   }
 
-  public static ParseTreeNode parse(String src) throws Exception {
+  public static Block parse(String src) throws Exception {
     InputSource inputSource
         = new InputSource(URI.create("built-in:///js-test"));
     Parser parser = new Parser(
@@ -233,9 +234,21 @@ public final class TestUtil {
 
     Statement topLevelStatement = parser.parse();
     parser.getTokenQueue().expectEmpty();
-    return topLevelStatement;
+    return (Block)topLevelStatement;
   }
 
+  public static String format(ParseTreeNode n) throws Exception {
+    StringBuilder output = new StringBuilder();
+    n.format(new MessageContext(), output);
+    return output.toString();
+  }
+
+  public static String render(ParseTreeNode n) throws Exception {
+    StringBuilder output = new StringBuilder();
+    n.render(new RenderContext(new MessageContext(), output));
+    return output.toString();
+  }
+  
   private static void checkFilePositionInvariants(AncestorChain<?> nChain) {
     ParseTreeNode n = nChain.node;
     String msg = n + " : " + n.getFilePosition();

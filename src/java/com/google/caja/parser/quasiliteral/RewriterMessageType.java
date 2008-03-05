@@ -31,51 +31,51 @@ import java.io.IOException;
 public enum RewriterMessageType implements MessageTypeInt {
 
   VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE(
-      "Variables cannot end in \"__\": %s, %s",
+      "%s: Variables cannot end in \"__\": %s, %s",
       MessageLevel.FATAL_ERROR),
 
   PROPERTIES_CANNOT_END_IN_DOUBLE_UNDERSCORE(
-      "Properties cannot end in \"__\": %s, %s",
+      "%s: Properties cannot end in \"__\": %s, %s",
       MessageLevel.FATAL_ERROR),
 
   SELECTORS_CANNOT_END_IN_DOUBLE_UNDERSCORE(
-      "Selectors cannot end in \"__\": %s, %s",
+      "%s: Selectors cannot end in \"__\": %s, %s",
       MessageLevel.FATAL_ERROR),
 
   GLOBALS_CANNOT_END_IN_UNDERSCORE(
-      "Globals cannot end in \"_\": %s, %s",
+      "%s: Globals cannot end in \"_\": %s, %s",
       MessageLevel.FATAL_ERROR),
 
   PUBLIC_PROPERTIES_CANNOT_END_IN_UNDERSCORE(
-      "Public properties cannot end in \"_\": %s, %s",
+      "%s: Public properties cannot end in \"_\": %s, %s",
       MessageLevel.FATAL_ERROR),
 
   PUBLIC_SELECTORS_CANNOT_END_IN_UNDERSCORE(
-      "Public selectors cannot end in \"_\": %s, %s",
+      "%s: Public selectors cannot end in \"_\": %s, %s",
       MessageLevel.FATAL_ERROR),
 
   METHOD_IN_NON_METHOD_CONTEXT(
-      "Method in non-method context: %s, %s",
+      "%s: Method in non-method context: %s, %s",
       MessageLevel.FATAL_ERROR),
 
   CONSTRUCTOR_CANNOT_ESCAPE(
-      "Constructor cannot escape: %s, %s",
+      "%s: Constructor cannot escape: %s, %s",
       MessageLevel.FATAL_ERROR),
 
   INVOKED_INSTANCEOF_ON_NON_FUNCTION(
-      "Invoked \"instanceof\" on non-function: %s, %s",
+      "%s: Invoked \"instanceof\" on non-function: %s, %s",
       MessageLevel.FATAL_ERROR),
 
   MAP_EXPRESSION_EXPECTED(
-      "Map expression expected: %s, %s",
+      "%s: Map expression expected: %s, %s",
       MessageLevel.FATAL_ERROR),
 
   KEY_MAY_NOT_END_IN_UNDERSCORE(
-      "Key may not end in \"_\": %s, %s",
+      "%s: Key may not end in \"_\": %s, %s",
       MessageLevel.FATAL_ERROR),
 
   MEMBER_KEY_MAY_NOT_END_IN_DOUBLE_UNDERSCORE(
-      "Member key may not end in \"__\": %s, %s",
+      "%s: Member key may not end in \"__\": %s, %s",
       MessageLevel.FATAL_ERROR),
 
   CONSTRUCTORS_ARE_NOT_FIRST_CLASS(
@@ -83,19 +83,19 @@ public enum RewriterMessageType implements MessageTypeInt {
       MessageLevel.FATAL_ERROR),
 
   CAJA_DEF_ON_NON_CTOR(
-      "caja.def called with non-constructor: %s, %s",
+      "%s: caja.def called with non-constructor: %s, %s",
       MessageLevel.FATAL_ERROR),
 
   DUPLICATE_DEFINITION_OF_LOCAL_VARIABLE(
-      "Duplicate definition of local variable: %s",
+      "%s: Duplicate definition of local variable: %s",
       MessageLevel.FATAL_ERROR),
 
   NEW_ON_ARBITRARY_EXPRESSION_DISALLOWED(
-      "Cannot invoke \"new\" on an arbitrary expression: %s, %s",
+      "%s: Cannot invoke \"new\" on an arbitrary expression: %s, %s",
       MessageLevel.FATAL_ERROR),
 
   CANNOT_ASSIGN_TO_THIS(
-      "Cannot assign to \"this\": %s, %s",
+      "%s: Cannot assign to \"this\": %s, %s",
       MessageLevel.FATAL_ERROR),
   ;
 

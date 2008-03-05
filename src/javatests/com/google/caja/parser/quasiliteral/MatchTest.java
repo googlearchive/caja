@@ -235,18 +235,16 @@ public class MatchTest extends TestCase {
         "@a;",
         "x = 3;");
 
-    assertEquals(4, m.size());
+    assertEquals(3, m.size());
 
     assertEquals(Operation.class, m.get(0).getRoot().getClass());
     assertEquals(Operator.ASSIGN, ((Operation)m.get(0).getRoot()).getOperator());
 
     assertEquals(Reference.class, m.get(1).getRoot().getClass());
+    assertEquals("x", m.get(1).getRoot().children().get(0).getValue());
 
-    assertEquals(Identifier.class, m.get(2).getRoot().getClass());
-    assertEquals("x", ((Identifier)m.get(2).getRoot()).getValue());
-
-    assertEquals(IntegerLiteral.class, m.get(3).getRoot().getClass());
-    assertEquals(3, ((IntegerLiteral)m.get(3).getRoot()).getValue().intValue());
+    assertEquals(IntegerLiteral.class, m.get(2).getRoot().getClass());
+    assertEquals(3, ((IntegerLiteral)m.get(2).getRoot()).getValue().intValue());
   }
 
   public void testFunctionIdentifier() throws Exception {

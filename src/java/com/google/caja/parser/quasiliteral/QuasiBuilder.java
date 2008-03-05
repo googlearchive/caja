@@ -36,6 +36,7 @@ import com.google.caja.reporting.DevNullMessageQueue;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.net.URI;
 
 /**
  * Creates a JavaScript {@link QuasiNode} tree given a JavaScript
@@ -44,6 +45,13 @@ import java.util.List;
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class QuasiBuilder {
+
+  /**
+   * The stub {@code InputSource} associated with quasiliteral strings that appear
+   * directly in source code.
+   */
+  public static final InputSource NULL_INPUT_SOURCE =
+      new InputSource(URI.create("built-in:///js-quasi-literals"));
 
   /**
    * Given a quasiliteral pattern expressed as text, return a {@code QuasiNode}
@@ -84,7 +92,16 @@ public class QuasiBuilder {
 
     return build(topLevelNode);
   }
-  
+
+  /**
+   * @see #parseQuasiNode(InputSource,String)
+   * @see #NULL_INPUT_SOURCE
+   */
+  public static QuasiNode parseQuasiNode(
+      String pattern) throws ParseException {
+    return parseQuasiNode(NULL_INPUT_SOURCE, pattern);
+  }
+
   private static QuasiNode build(ParseTreeNode n) {
     if (n instanceof ExpressionStmt &&
         n.children().size() == 1 &&

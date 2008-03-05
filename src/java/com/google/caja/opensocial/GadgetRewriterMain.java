@@ -16,6 +16,7 @@ package com.google.caja.opensocial;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.BuildInfo;
 
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -145,6 +146,7 @@ public class GadgetRewriterMain {
   }
   
   private int usage(String msg) {
+    System.out.println(BuildInfo.getInstance().getBuildInfo());
     System.out.println(msg);
     new HelpFormatter().printHelp(getClass().getName(), options);
     return -1;

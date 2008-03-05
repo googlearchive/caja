@@ -340,8 +340,10 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
     for (ParseTreeNode child : children) {
       clonedChildren.add(child.clone());
     }
-    return ParseTreeNodes.newNodeInstance(
-        getClass(), getValue(), clonedChildren);
+    AbstractParseTreeNode<?> cloned = (AbstractParseTreeNode<?>)
+        ParseTreeNodes.newNodeInstance(getClass(), getValue(), clonedChildren);
+    cloned.setFilePosition(getFilePosition());
+    return cloned;
   }
 
   private final class MutationImpl implements MutableParseTreeNode.Mutation {

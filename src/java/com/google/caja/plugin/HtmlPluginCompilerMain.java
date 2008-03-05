@@ -26,6 +26,7 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.reporting.BuildInfo;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -162,6 +163,7 @@ public final class HtmlPluginCompilerMain {
   }
 
   private int usage(String msg) {
+    System.out.println(BuildInfo.getInstance().getBuildInfo());
     System.out.println(msg);
     new HelpFormatter().printHelp(getClass().getName(), options);
     return -1;

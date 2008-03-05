@@ -55,7 +55,7 @@ import com.google.caja.plugin.caps.CapabilityRewriterTest;
 import com.google.caja.reporting.SnippetProducerTest;
 import com.google.caja.util.JoinTest;
 import com.google.caja.util.SparseBitSetTest;
-
+import com.google.caja.reporting.BuildInfoTest;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -71,6 +71,7 @@ public class AllTests {
   public static Test suite() {
     TestSuite suite = new TestSuite("Caja Tests");
     Class<? extends TestCase>[] testClasses = new Class[] {
+          BuildInfoTest.class,
           CapabilityRewriterTest.class,
           CharProducerTest.class,
           CommentLexerTest.class,

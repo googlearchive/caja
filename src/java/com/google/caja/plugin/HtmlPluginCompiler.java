@@ -42,6 +42,7 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Pipeline;
 
@@ -64,6 +65,7 @@ public class HtmlPluginCompiler {
   private CssSchema cssSchema;
 
   public HtmlPluginCompiler(MessageQueue mq, PluginMeta meta) {
+    BuildInfo.getInstance().addBuildInfo(mq);
     MessageContext mc = new MessageContext();
     mc.inputSources = new ArrayList<InputSource>();
     jobs = new Jobs(mc, mq, meta);

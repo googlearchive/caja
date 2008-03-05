@@ -24,6 +24,7 @@ import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.ExpressionStmt;
+import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
@@ -51,13 +52,13 @@ public class ScopeTest extends TestCase {
   }
 
   public void testSimpleDeclaredFunction() throws Exception {
-    ParseTreeNode n = TestUtil.parse(
+    Block n = TestUtil.parse(
         "var x = 3;" +
         "function foo() {" +
         "  var y = 3;" +
         "  z = 4;" +
         "};");
-    Scope s0 = Scope.fromRootBlock((Block)n, mq);
+    Scope s0 = Scope.fromRootBlock(n, mq);
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, "foo"));
 
     assertTrue(s0.isDefined("x"));
@@ -110,9 +111,9 @@ public class ScopeTest extends TestCase {
   }
 
   public void testAnonymousFunction() throws Exception {
-    ParseTreeNode n = TestUtil.parse(
+    Block n = TestUtil.parse(
         "var x = function() {};");
-    Scope s0 = Scope.fromRootBlock((Block)n, mq);
+    Scope s0 = Scope.fromRootBlock(n, mq);
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, null));
 
     assertTrue(s0.isDefined("x"));
@@ -127,9 +128,9 @@ public class ScopeTest extends TestCase {
   }
 
   public void testNamedFunction() throws Exception {
-    ParseTreeNode n = TestUtil.parse(
+    Block n = TestUtil.parse(
         "var x = function foo() {};");
-    Scope s0 = Scope.fromRootBlock((Block)n, mq);
+    Scope s0 = Scope.fromRootBlock(n, mq);
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, "foo"));
     
     assertTrue(s0.isDefined("x"));
@@ -154,9 +155,9 @@ public class ScopeTest extends TestCase {
   }
 
   public void testNamedFunctionSameName() throws Exception {
-    ParseTreeNode n = TestUtil.parse(
+    Block n = TestUtil.parse(
         "var x = function x() {};");
-    Scope s0 = Scope.fromRootBlock((Block)n, mq);
+    Scope s0 = Scope.fromRootBlock(n, mq);
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, "x"));
 
     assertTrue(s0.isDefined("x"));
@@ -171,24 +172,23 @@ public class ScopeTest extends TestCase {
   }
 
   public void testFormalParams() throws Exception {
-    ParseTreeNode n = TestUtil.parse(
+    Block n = TestUtil.parse(
         "function f(x) {};");
-    Scope s0 = Scope.fromRootBlock((Block)n, mq);
+    Scope s0 = Scope.fromRootBlock(n, mq);
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, "f"));
-
+    
     assertFalse(s0.isDefined("x"));
     assertTrue(s1.isDefined("x"));    
   }
 
   public void testCatchBlocks() throws Exception {
-    ParseTreeNode n = TestUtil.parse(
+    Block n = TestUtil.parse(
         "try { } catch (e) { var x; }");
 
-    Block b = (Block) n;
-    TryStmt t = (TryStmt) b.children().get(0);
+    TryStmt t = (TryStmt) n.children().get(0);
     CatchStmt c = (CatchStmt) t.children().get(1);
 
-    Scope s0 = Scope.fromRootBlock((Block)n, mq);
+    Scope s0 = Scope.fromRootBlock(n, mq);
     Scope s1 = Scope.fromCatchStmt(s0, c);
 
     // e only defined in catch scope
@@ -201,7 +201,7 @@ public class ScopeTest extends TestCase {
   }
 
   public void testBodyOfNamedFunction() throws Exception {
-    ParseTreeNode n = TestUtil.parse(
+    Block n = TestUtil.parse(
         "function foo() { var x; }");
 
     Declaration fd = findNodeWithIdentifier(n, Declaration.class, "foo");
@@ -219,24 +219,23 @@ public class ScopeTest extends TestCase {
   }
 
   public void testSymbolRedefinedError() throws Exception {
-    ParseTreeNode n = TestUtil.parse(
+    Block n = TestUtil.parse(
         "function foo() {} var foo;");
 
-    Scope.fromRootBlock((Block)n, mq);
+    Scope.fromRootBlock(n, mq);
 
     assertMsgType(MessageType.SYMBOL_REDEFINED, mq.getMessages().get(0));
     assertMsgLevel(MessageLevel.ERROR, mq.getMessages().get(0));
   }
 
   public void testMaskedExceptionVariablesErrorA() throws Exception {
-    ParseTreeNode n = TestUtil.parse(
+    Block n = TestUtil.parse(
         "var e; try { } catch (e) { var x; }");
 
-    Block b = (Block) n;
-    TryStmt t = (TryStmt) b.children().get(1);
+    TryStmt t = (TryStmt) n.children().get(1);
     CatchStmt c = (CatchStmt) t.children().get(1);
 
-    Scope s0 = Scope.fromRootBlock((Block)n, mq);
+    Scope s0 = Scope.fromRootBlock(n, mq);
     Scope s1 = Scope.fromCatchStmt(s0, c);
 
     assertMsgType(MessageType.MASKING_SYMBOL, mq.getMessages().get(0));
@@ -244,11 +243,10 @@ public class ScopeTest extends TestCase {
   }
 
   public void testMaskedExceptionVariablesErrorB() throws Exception {
-    ParseTreeNode n = TestUtil.parse(
+    Block n = TestUtil.parse(
         "try { } catch (e) { function foo() { var e; } }");
 
-    Block b = (Block)n;
-    TryStmt t = (TryStmt)b.children().get(0);
+    TryStmt t = (TryStmt)n.children().get(0);
     CatchStmt c = (CatchStmt)t.children().get(1);
     Declaration d = findNodeWithIdentifier(n, Declaration.class, "foo");
     FunctionConstructor fc = (FunctionConstructor)d.getInitializer();
@@ -268,17 +266,16 @@ public class ScopeTest extends TestCase {
   }
 
   public void testMaskedExceptionVariablesSame() throws Exception {
-    ParseTreeNode n = TestUtil.parse(
+    Block outerBlock = TestUtil.parse(
         "try { } catch (e) { try { } catch (e) { var x; } }");
 
-    Block outerBlock = (Block)n;
     TryStmt t0 = (TryStmt)outerBlock.children().get(0);
     CatchStmt c0 = t0.getCatchClause();
     Block b0 = (Block)c0.getBody();
     TryStmt t1 = (TryStmt)b0.children().get(0);
     CatchStmt c1 = t1.getCatchClause();
 
-    Scope sn = Scope.fromRootBlock((Block)n, mq);
+    Scope sn = Scope.fromRootBlock(outerBlock, mq);
     Scope sc0 = Scope.fromCatchStmt(sn, c0);
     Scope.fromCatchStmt(sc0, c1);
 
@@ -286,10 +283,10 @@ public class ScopeTest extends TestCase {
   }
 
   public void testConstructor() throws Exception {
-    ParseTreeNode n = TestUtil.parse(
+    Block n = TestUtil.parse(
         "function ctor() { this.x = 3; }" +
         "function notctor() { x = 3; }");
-    Scope s = Scope.fromRootBlock((Block)n, mq);
+    Scope s = Scope.fromRootBlock(n, mq);
 
     assertTrue(s.isConstructor("ctor"));
     assertTrue(s.isDeclaredFunction("ctor"));
@@ -301,7 +298,7 @@ public class ScopeTest extends TestCase {
   }
 
   public void testPrimordialObjects() throws Exception {
-    Scope s = Scope.fromRootBlock((Block)TestUtil.parse("{}"), mq);
+    Scope s = Scope.fromRootBlock(TestUtil.parse("{}"), mq);
 
     assertDefinedGlobalValue(s, "Global");
     assertDefinedGlobalValue(s, "Function");
@@ -324,7 +321,7 @@ public class ScopeTest extends TestCase {
   }
 
   public void testNewTempVariable() throws Exception {
-    Block b = (Block)TestUtil.parse(
+    Block b = TestUtil.parse(
         "function foo() {" +
         "  try {" +
         "  } catch (e) {"+
@@ -350,6 +347,40 @@ public class ScopeTest extends TestCase {
 
     assertEquals("x2___", s2.newTempVariable());
     assertEquals("x3___", s2.newTempVariable());
+  }
+
+  public void testIsGlobal() throws Exception {
+    Block b = TestUtil.parse(
+        "try {" +
+        "} catch (e0) {" +
+        "  function foo() {" +
+        "    try {" +
+        "    } catch (e1) {" +
+        "    }" +
+        "  }" +
+        "}");
+
+    Scope sg = Scope.fromRootBlock(b, mq);
+    Scope sc0 = null;
+    Scope sfoo = null;
+    Scope sc1 = null;
+
+    {
+      TryStmt try0 = (TryStmt)b.children().get(0);
+      CatchStmt catch0 = try0.getCatchClause();
+      sc0 = Scope.fromCatchStmt(sg, catch0);
+      FunctionDeclaration foo = (FunctionDeclaration)catch0.getBody().children().get(0);
+      FunctionConstructor fooCtor = foo.getInitializer();
+      sfoo = Scope.fromFunctionConstructor(sc0, fooCtor);
+      TryStmt try1 = (TryStmt)fooCtor.getBody().children().get(0);
+      CatchStmt catch1 = try1.getCatchClause();
+      sc1 = Scope.fromCatchStmt(sfoo, catch1);
+    }
+
+    assertTrue(sg.isGlobal());
+    assertTrue(sc0.isGlobal());
+    assertFalse(sfoo.isGlobal());
+    assertFalse(sc1.isGlobal());        
   }
 
   private void assertDefinedGlobalValue(Scope s, String name) {

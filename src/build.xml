@@ -50,6 +50,10 @@
   <property name="jars"        location="ant-jars"/>
   <property name="www"         location="ant-www"/>  <!-- demo files dir -->
 
+  <property
+      name="build.info.file"
+      location="${lib}/com/google/caja/reporting/buildInfo.properties"/>  
+
   <path id="classpath.compile">
     <pathelement path="${third_party}/java/htmlparser/htmlparser.jar"/>
     <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
@@ -325,9 +329,7 @@
         <include name="**/caja/plugin/plugintest-helloworld.input"/>
         <include name="**/caja/plugin/plugintest-references.golden"/>
         <include name="**/caja/plugin/plugintest-references.input"/>
-        <include name="**/caja/plugin/sanitizergolden1.js"/>
         <include name="**/caja/plugin/sanitizergolden2.txt"/>
-        <include name="**/caja/plugin/sanitizerinput1.js"/>
         <include name="**/caja/plugin/tmp-caja.js"/>
       </fileset>
       <fileset dir="${src}">
@@ -353,7 +355,33 @@
     </javac>
   </target>
 
-  <target name="pluginc" depends="PluginCompiler,dirs,opensocial">
+  <target name="build.info">
+    <tstamp>
+      <format
+          property="build.timestamp"
+          pattern="yyyy-MM-dd HH:mm:ss"/>
+    </tstamp>
+    <exec
+        executable="svnversion"
+        failonerror="false"
+        failifexecutionfails="false"
+        dir="."
+        outputproperty="build.svnVersion"/>
+    <echo
+        append="false"
+        file="${build.info.file}"
+        message="# Caja Build Information${line.separator}"/>
+    <echo
+        append="true"
+        file="${build.info.file}"
+        message="svnVersion: ${build.svnVersion}${line.separator}"/>
+    <echo
+        append="true"
+        file="${build.info.file}"
+        message="timestamp: ${build.timestamp}${line.separator}"/>
+  </target>
+
+  <target name="pluginc" depends="PluginCompiler,dirs,opensocial,build.info">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>

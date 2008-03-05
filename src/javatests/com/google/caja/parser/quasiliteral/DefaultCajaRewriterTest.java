@@ -45,20 +45,20 @@ public class DefaultCajaRewriterTest extends TestCase {
   ////////////////////////////////////////////////////////////////////////
 
   public void testSyntheticIsUntouched() throws Exception {
-    ParseTreeNode input = parseText(
+    ParseTreeNode input = TestUtil.parse(
         "function foo() { this; arguments; }");
     setTreeSynthetic(input);
     checkSucceeds(input, input);
   }
 
   public void testNestedInsideSyntheticIsExpanded() throws Exception {
-    ParseTreeNode innerInput = parseText("function foo() {}");
+    ParseTreeNode innerInput = TestUtil.parse("function foo() {}");
     ParseTreeNode input = ParseTreeNodes.newNodeInstance(
         Block.class,
         null,
         Collections.singletonList(innerInput));
     setSynthetic(input);
-    ParseTreeNode expectedResult = parseText(
+    ParseTreeNode expectedResult = TestUtil.parse(
         "{ ___OUTERS___.foo = ___.simpleFunc(function foo() {}); }");
     checkSucceeds(input, expectedResult);
   }
@@ -100,6 +100,29 @@ public class DefaultCajaRewriterTest extends TestCase {
         "    if (___.canEnumPub(___OUTERS___.x0___, ___OUTERS___.x1___)) {" +
         "      ___OUTERS___.k = ___OUTERS___.x1___;" +
         "      ___OUTERS___.k;" +
+        "    }" +
+        "  }" +
+        "}");
+    }
+    if (false) {
+    // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
+    checkSucceeds(
+        "try { } catch (e) { for (var k in x) { k; } }",
+        "try {" +
+        "} catch (ex___) {" +
+        "  try {" +
+        "    throw ___.tameException(ex___);" +
+        "  } catch (e) {" +
+        "    {" +
+        "      ___OUTERS___.x0___ = ___OUTERS___.x;" +
+        "      ___OUTERS___.x1___ = undefined;" +
+        "      ___OUTERS___.k;" +
+        "      for (___OUTERS___.x1 in ___OUTERS___.x0___) {" +
+        "        if (___.canEnumPub(___OUTERS___.x0___, ___OUTERS___.x1___)) {" +
+        "          ___OUTERS___.k = ___OUTERS___.x1___;" +
+        "          ___OUTERS___.k;" +
+        "        }" +
+        "      }" +
         "    }" +
         "  }" +
         "}");
@@ -380,6 +403,16 @@ public class DefaultCajaRewriterTest extends TestCase {
     checkSucceeds(
         "this;",
         "___OUTERS___;");
+    checkSucceeds(
+        "try { } catch (e) { this; }",
+        "try {" +
+        "} catch (ex___) {" +
+        "  try {" +
+        "    throw ___.tameException(ex___);" +
+        "  } catch (e) {" +
+        "    ___OUTERS___;" +
+        "  }" +
+        "}");
   }
 
   public void testVarBadSuffix() throws Exception {
@@ -390,6 +423,27 @@ public class DefaultCajaRewriterTest extends TestCase {
     checkSucceeds(
         "function() { var foo_ = 3; }",
         "___.primFreeze(___.simpleFunc(function() { var foo_ = 3; }))");
+  }
+
+  public void testVarBadSuffixDeclaration() throws Exception {
+    checkFails(
+        "function foo__() { }",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "var foo__ = 3;",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "var foo__;",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "function() { function foo__() { } };",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "function() { var foo__ = 3; };",
+        "Variables cannot end in \"__\"");
+    checkFails(
+        "function() { var foo__; };",
+        "Variables cannot end in \"__\"");
   }
 
   public void testVarBadGlobalSuffix() throws Exception {
@@ -477,6 +531,19 @@ public class DefaultCajaRewriterTest extends TestCase {
         "    ___OUTERS___.p = t___.x_canRead___ ? t___.x : ___.readProp(t___, 'x');" +
         "  });" +
         "}));");
+    checkSucceeds(
+        "this.x;",
+        "___OUTERS___.x_canRead___ ? ___OUTERS___.x : ___.readProp(___OUTERS___, 'x');");
+    checkSucceeds(
+        "try { } catch (e) { this.x; }",
+        "try {" +
+        "} catch (ex___) {" +
+        "  try {" +
+        "    throw ___.tameException(ex___);" +
+        "  } catch (e) {" +
+        "    ___OUTERS___.x_canRead___ ? ___OUTERS___.x : ___.readProp(___OUTERS___, 'x');" +
+        "  }" +
+        "}");
   }
 
   public void testReadBadInternal() throws Exception {
@@ -503,6 +570,19 @@ public class DefaultCajaRewriterTest extends TestCase {
         "    ___OUTERS___.p = ___.readProp(t___, 3);" +
         "  }" +
         ");");
+    checkSucceeds(
+        "this[3];",
+        "___.readProp(___OUTERS___, 3);");
+    checkSucceeds(
+        "try { } catch (e) { this[3]; }",
+        "try {" +
+        "} catch (ex___) {" +
+        "  try {" +
+        "    throw ___.tameException(ex___);" +
+        "  } catch (e) {" +
+        "    ___.readProp(___OUTERS___, 3);" +
+        "  }" +
+        "}");
   }
   
   public void testReadIndexPublic() throws Exception {
@@ -544,6 +624,29 @@ public class DefaultCajaRewriterTest extends TestCase {
         "    })();" +
         "  });" +
         "}));");
+    checkSucceeds(
+        "this.p = x;",
+        "(function() {" +
+        "  var x___ = ___OUTERS___.x;" +
+        "  return ___OUTERS___.p_canSet___ ?" +
+        "      (___OUTERS___.p = x___) :" +
+        "      ___.setProp(___OUTERS___, 'p', x___);" +
+        "})();");
+    checkSucceeds(
+        "try { } catch (e) { this.p = x; }",
+        "try {" +
+        "} catch (ex___) {" +
+        "  try {" +
+        "    throw ___.tameException(ex___);" +
+        "  } catch (e) {" +
+        "      (function() {" +
+        "        var x___ = ___OUTERS___.x;" +
+        "        return ___OUTERS___.p_canSet___ ?" +
+        "            (___OUTERS___.p = x___) :" +
+        "            ___.setProp(___OUTERS___, 'p', x___);" +
+        "      })();" +
+        "  }" +
+        "}");
   }
 
   public void testSetMember() throws Exception {
@@ -699,6 +802,35 @@ public class DefaultCajaRewriterTest extends TestCase {
     checkSucceeds(
         "var v;",
         "___OUTERS___.v;");
+    checkSucceeds(
+        "try { } catch (e) { var v; }",
+        "try {" +
+        "} catch (ex___) {" +
+        "  try {" +
+        "    throw ___.tameException(ex___);" +
+        "  } catch (e) {" +
+        "    ___OUTERS___.v;" +
+        "  }" +
+        "}");
+  }
+
+  public void testNewCalllessCtor() throws Exception {
+    checkSucceeds(
+        "function foo() { this.p = 3; }" +
+        "new foo;",
+        "___OUTERS___.foo = ___.ctor(function foo() {" +
+        "  var t___ = this;" +
+        "  (function() {" +
+        "    var x___ = 3;" +
+        "    return t___.p_canSet___ ? (t___.p = x___) : ___.setProp(t___, 'p', x___);" +
+        "  })();" +
+        "});" +
+        "new (___.asCtor(___OUTERS___.foo))();");
+    checkSucceeds(
+        "function foo() {}" +
+        "new foo;",
+        "___OUTERS___.foo = ___.simpleFunc(function foo() {});" +
+        "new (___.asCtor(___OUTERS___.foo))();");
   }
 
   public void testNewCtor() throws Exception {
@@ -718,6 +850,11 @@ public class DefaultCajaRewriterTest extends TestCase {
         "new foo(x, y);",
         "___OUTERS___.foo = ___.simpleFunc(function foo() {});" +
         "new (___.asCtor(___OUTERS___.foo))(___OUTERS___.x, ___OUTERS___.y);");
+    checkSucceeds(
+        "function foo() {}" +
+        "new foo();",
+        "___OUTERS___.foo = ___.simpleFunc(function foo() {});" +
+        "new (___.asCtor(___OUTERS___.foo))();");
   }
 
   public void testNewBadCtor() throws Exception {
@@ -762,11 +899,32 @@ public class DefaultCajaRewriterTest extends TestCase {
         "      var x0___ = ___OUTERS___.x;" +
         "      var x1___ = ___OUTERS___.y;" +
         "      return t___.f_canCall___ ?" +
-        "          this.f(x0___, x1___) :" +
+        "          t___.f(x0___, x1___) :" +
         "          ___.callProp(t___, 'f', [x0___, x1___]);" +
         "    })();" +
         "  });" +
         "}));");
+    checkSucceeds(
+        "this.f()",
+        "(function() {" +
+        "  return ___OUTERS___.f_canCall___ ?" +
+        "      ___OUTERS___.f() :" +
+        "      ___.callProp(___OUTERS___, 'f', []);" +
+        "})()");
+    checkSucceeds(
+        "try { } catch (e) { this.f(); }",
+        "try {" +
+        "} catch (ex___) {" +
+        "  try {" +
+        "    throw ___.tameException(ex___);" +
+        "  } catch (e) {" +
+        "    (function() {" +
+        "      return ___OUTERS___.f_canCall___ ?" +
+        "          ___OUTERS___.f() :" +
+        "          ___.callProp(___OUTERS___, 'f', []);" +
+        "    })()" +
+        "  }" +
+        "}");
   }
 
   public void testCallBadInternal() throws Exception {
@@ -1049,6 +1207,24 @@ public class DefaultCajaRewriterTest extends TestCase {
         "    y = ___OUTERS___.z;" +            
         "  });" +
         "}));");
+    checkSucceeds(
+        "function() {" +
+        "  function foo() {" +
+        "    var self = this;" +
+        "    return function() { return self; };" +
+        "  }" +
+        "};",
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  var foo = ___.ctor(function foo() {" +
+        "    var t___ = this;" +
+        "    var self = t___;" +
+        "    return ___.primFreeze(___.simpleFunc(function() {" +
+        "      return self;" +            
+        "    }));" +
+        "  });" +
+        "}));");
+
+
   }
 
   public void testMapEmpty() throws Exception {
@@ -1251,6 +1427,12 @@ public class DefaultCajaRewriterTest extends TestCase {
     checkSucceeds(
         "x + y;",
         "___OUTERS___.x + ___OUTERS___.y");
+    checkSucceeds(
+        "1 + 2 * 3 / 4 - -5",
+        "1 + 2 * 3 / 4 - -5");
+    checkSucceeds(
+        "x  = y = 3;",
+        "___OUTERS___.x = ___OUTERS___.y = 3;");
   }
 
   public void testRecurseReturnStmt() throws Exception {
@@ -1302,7 +1484,7 @@ public class DefaultCajaRewriterTest extends TestCase {
   private void checkFails(String input, String error) throws Exception {
     MessageContext mc = new MessageContext();
     MessageQueue mq = TestUtil.createTestMessageQueue(mc);
-    new DefaultCajaRewriter(true).expand(parseText(input), mq);
+    new DefaultCajaRewriter(true).expand(TestUtil.parse(input), mq);
 
     assertFalse(mq.getMessages().isEmpty());
     
@@ -1319,7 +1501,7 @@ public class DefaultCajaRewriterTest extends TestCase {
   private void checkSucceeds(
       ParseTreeNode inputNode,
       ParseTreeNode expectedResultNode)
-      throws Exception{
+      throws Exception {
     MessageQueue mq = TestUtil.createTestMessageQueue(new MessageContext());
     ParseTreeNode actualResultNode = new DefaultCajaRewriter().expand(inputNode, mq);
     for (Message m : mq.getMessages()) {
@@ -1328,39 +1510,26 @@ public class DefaultCajaRewriterTest extends TestCase {
       }
     }
     if (expectedResultNode != null) {
+      // Test that the source code-like renderings are identical. This will catch any
+      // obvious differences between expected and actual.
       assertEquals(
-          format(expectedResultNode),
-          format(actualResultNode));
+          TestUtil.render(expectedResultNode),
+          TestUtil.render(actualResultNode));
+      // Then, for good measure, test that the S-expression-like formatted representations
+      // are also identical. This will catch any differences in tree topology that somehow
+      // do not appear in the source code representation (usually due to programming errors).
+      assertEquals(
+          TestUtil.format(expectedResultNode),
+          TestUtil.format(actualResultNode));
     }
   }
 
   private void checkSucceeds(String input, String expectedResult) throws Exception {
-    checkSucceeds(parseText(input), parseText(expectedResult));
+    checkSucceeds(TestUtil.parse(input), TestUtil.parse(expectedResult));
   }
 
   private void checkSucceeds(String input) throws Exception {
-    checkSucceeds(parseText(input), null);
-  }
-
-  private static String format(ParseTreeNode n) throws Exception {
-    StringBuilder output = new StringBuilder();
-    n.render(new RenderContext(new MessageContext(), output));
-    // Alternative, to get "S-expression" tree representation for debug:
-    //   n.format(new MessageContext(), output);
-    return output.toString();
-  }
-
-  public ParseTreeNode parseText(String text) throws Exception {
-    MessageContext mc = new MessageContext();
-    MessageQueue mq = TestUtil.createTestMessageQueue(mc);
-    InputSource is = new InputSource(new URI("file:///no/input/source"));
-    CharProducer cp = CharProducer.Factory.create(new StringReader(text), is);
-    JsLexer lexer = new JsLexer(cp);
-    JsTokenQueue tq = new JsTokenQueue(lexer, is, JsTokenQueue.NO_NON_DIRECTIVE_COMMENT);
-    Parser p = new Parser(tq, mq);
-    Statement stmt = p.parse();
-    p.getTokenQueue().expectEmpty();
-    return stmt;
+    checkSucceeds(TestUtil.parse(input), null);
   }
 
   private String readResource(String resource) throws Exception {

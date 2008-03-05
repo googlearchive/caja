@@ -192,12 +192,10 @@ public class CssRewriterTest extends TestCase {
         new PluginMeta(
             "test", "/foo",
             new PluginEnvironment() {
-              @Override
               public CharProducer loadExternalResource(
                   ExternalReference ref, String mimeType) {
                 return null;
               }
-              @Override
               public String rewriteUri(ExternalReference ref, String mimeType) {
                 URI uri = ref.getUri();
 

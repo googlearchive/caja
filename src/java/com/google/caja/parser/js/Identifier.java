@@ -15,6 +15,7 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
@@ -25,7 +26,7 @@ import java.util.List;
  *
  * @author ihab.awad@gmail.com
  */
-public final class Identifier extends AbstractExpression<ParseTreeNode> {
+public final class Identifier extends AbstractParseTreeNode<ParseTreeNode> {
   private String name;
 
   public Identifier(String name, List<? extends ParseTreeNode> children) {

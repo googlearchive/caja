@@ -124,9 +124,7 @@ public abstract class Rewriter {
       try {
         patternCache.put(
             patternText,
-            QuasiBuilder.parseQuasiNode(
-                new InputSource(URI.create("built-in:///js-quasi-literals")),
-                patternText));
+            QuasiBuilder.parseQuasiNode(patternText));
       } catch (ParseException e) {
         // Pattern programming error
         throw new RuntimeException(e);

@@ -151,6 +151,8 @@ public enum MessageType implements MessageTypeInt {
 
   // logging
   CHECKPOINT("Checkpoint: %s at T+%s seconds", MessageLevel.LOG),
+  BUILD_INFO("Google Caja. Copyright (C) 2008, Google Inc. Rev %s built on %s.",
+             MessageLevel.LOG),    
   ;
 
   private final String formatString;

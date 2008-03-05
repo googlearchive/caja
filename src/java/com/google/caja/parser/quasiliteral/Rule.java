@@ -234,7 +234,7 @@ public abstract class Rule implements MessagePart {
     if (scope.getParent() == null) {
       variableDefinition = substV(
           "___OUTERS___.@ref;",
-          "ref", SyntheticNodes.s(new Identifier(variableName)));
+          "ref", SyntheticNodes.s(new Reference(new Identifier(variableName))));
       variableDefinition = s(new ExpressionStmt((Expression)variableDefinition));
     } else {
       variableDefinition = substV(
@@ -259,7 +259,7 @@ public abstract class Rule implements MessagePart {
     if (inOuters) {
       variableDefinition = substV(
           "___OUTERS___.@ref = @rhs;",
-          "ref", SyntheticNodes.s(new Identifier(variableName)),
+          "ref", SyntheticNodes.s(new Reference(new Identifier(variableName))),
           "rhs", rewriter.expand(value, scope, mq));
       variableDefinition = s(new ExpressionStmt((Expression)variableDefinition));
     } else {
@@ -380,7 +380,7 @@ public abstract class Rule implements MessagePart {
       if (literalsEndWith(bindings.get("keys"), "__")) {
         mq.addMessage(
             RewriterMessageType.MEMBER_KEY_MAY_NOT_END_IN_DOUBLE_UNDERSCORE,
-            rule, memberMap);
+            memberMap.getFilePosition(), rule, memberMap);
         return memberMap;
       }
 
@@ -391,7 +391,7 @@ public abstract class Rule implements MessagePart {
     }
 
     mq.addMessage(RewriterMessageType.MAP_EXPRESSION_EXPECTED,
-        rule, memberMap);
+        memberMap.getFilePosition(), rule, memberMap);
     return memberMap;
   }
 
@@ -416,12 +416,12 @@ public abstract class Rule implements MessagePart {
     if (!match("({@keys*: @vals*})", node, bindings)) {
       mq.addMessage(
           RewriterMessageType.MAP_EXPRESSION_EXPECTED,
-          rule, node);
+          node.getFilePosition(), rule, node);
       return false;
     } else if (literalsEndWith(bindings.get("keys"), "_")) {
       mq.addMessage(
           RewriterMessageType.KEY_MAY_NOT_END_IN_UNDERSCORE,
-          rule, node);
+          node.getFilePosition(), rule, node);
       return false;
     }
     return true;

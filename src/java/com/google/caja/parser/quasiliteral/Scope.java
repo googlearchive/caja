@@ -238,6 +238,17 @@ public class Scope {
   }
 
   /**
+   * Is this effectively the global scope.
+   *
+   * <p>If this scope represents a <tt>catch</tt> block, then its parent is
+   * consulted, since the <tt>catch</tt> block provides a scope only for the
+   * exception variable.
+   */
+  public boolean isGlobal() {
+    return fromCatchStmt ? parent.isGlobal() : parent == null;
+  }
+
+  /**
    * Does this scope or some enclosing scope define a name?
    *
    * @param name an identifier.

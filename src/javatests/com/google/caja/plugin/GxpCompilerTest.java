@@ -551,12 +551,10 @@ public class GxpCompilerTest extends TestCase {
     return new PluginMeta(
         "pre", "/testplugin",
         new PluginEnvironment() {
-            @Override
             public CharProducer loadExternalResource(
                 ExternalReference ref, String mimeType) {
               return null;
             }
-            @Override
             public String rewriteUri(ExternalReference ref, String mimeType) {
               URI uri = ref.getUri();
 
