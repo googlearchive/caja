@@ -15,9 +15,9 @@
 package com.google.caja.plugin;
 
 import com.google.caja.CajaException;
-import com.google.caja.html.HTML;
-import com.google.caja.html.HTML4;
 import com.google.caja.lang.css.CssSchema;
+import com.google.caja.lang.html.HTML;
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
@@ -87,22 +87,27 @@ import static com.google.caja.plugin.SyntheticNodes.s;
  * @author mikesamuel@gmail.com
  */
 public final class GxpCompiler {
+  private final CssSchema cssSchema;
+  private final HtmlSchema htmlSchema;
   private final MessageQueue mq;
   private final PluginMeta meta;
   private final GxpValidator gxpValidator;
-  private final CssSchema cssSchema;
   private Map<String, TemplateSignature> sigs =
     new LinkedHashMap<String, TemplateSignature>();
   private Map<String, FunctionDeclaration> eventHandlers =
     new LinkedHashMap<String, FunctionDeclaration>();
   private int syntheticIdCounter;
 
-  public GxpCompiler(CssSchema cssSchema, MessageQueue mq, PluginMeta meta) {
-    if (null == mq) { throw new NullPointerException(); }
+  public GxpCompiler(CssSchema cssSchema, HtmlSchema htmlSchema,
+                     PluginMeta meta, MessageQueue mq) {
+    if (null == cssSchema || null == htmlSchema || null == meta || null == mq) {
+      throw new NullPointerException();
+    }
     this.cssSchema = cssSchema;
+    this.htmlSchema = htmlSchema;
     this.mq = mq;
     this.meta = meta;
-    this.gxpValidator = new GxpValidator(mq);
+    this.gxpValidator = new GxpValidator(htmlSchema, mq);
   }
 
   /**
@@ -335,15 +340,16 @@ public final class GxpCompiler {
               if ("style".equalsIgnoreCase(name)) {
                 compileStyleAttrib(attrib, tgtChain, b);
               } else {
-                AttributeXform xform = xformForAttribute(tagName, name);
-                
+                HTML.Attribute a = htmlSchema.lookupAttribute(tagName, name);
+                AttributeXform xform = xformForAttribute(a);
+
                 StringBuilder buf = new StringBuilder();
                 buf.append(' ').append(name).append("=\"");
                 Escaping.escapeXml(wrapper.a, false, buf);
                 if (null != xform) {
                   JsWriter.appendString(buf.toString(), tgtChain, b);
                   buf.setLength(0);
-                  xform.apply(attrib, this, tgtChain, b);
+                  xform.apply(a, attrib, this, tgtChain, b);
                 } else {
                   Escaping.escapeXml(valueT.getValue(), false, buf);
                 }
@@ -354,7 +360,8 @@ public final class GxpCompiler {
             } else {   // Handle expr:foo="<expression>"
 
               String wrapperFn = null;
-              AttributeXform xform = xformForAttribute(tagName, name);
+                HTML.Attribute a = htmlSchema.lookupAttribute(tagName, name);
+                AttributeXform xform = xformForAttribute(a);
               if (null != xform) {
                 try {
                   wrapperFn = xform.runtimeFunction(
@@ -404,7 +411,8 @@ public final class GxpCompiler {
                 continue;
               }
               String name = assertHtmlIdentifier(nameT.getValue(), nameT);
-              AttributeXform xform = xformForAttribute(tagName, name);
+              HTML.Attribute a = htmlSchema.lookupAttribute(tagName, name);
+              AttributeXform xform = xformForAttribute(a);
               String wrapperFn = null;
               if (null != xform) {
                 try {
@@ -529,23 +537,23 @@ public final class GxpCompiler {
     return s;
   }
 
-  private static void assertNotBlacklistedTag(DomTree node)
+  private void assertNotBlacklistedTag(DomTree node)
       throws BadContentException {
-    String tagName = node.getValue().toUpperCase();
-    if (!GxpValidator.isAllowedTag(tagName)) {
+    String tagName = node.getValue().toLowerCase();
+    if (!htmlSchema.isElementAllowed(tagName)) {
       throw new BadContentException(
           new Message(MessageType.MALFORMED_XHTML, node.getFilePosition(),
                     MessagePart.Factory.valueOf(tagName)));
     }
   }
 
-  private static boolean requiresCloseTag(String tag) {
-    HTML.Element e = HTML4.lookupElement(tag.toUpperCase());
+  private boolean requiresCloseTag(String tag) {
+    HTML.Element e = htmlSchema.lookupElement(tag.toLowerCase());
     return null == e || !e.isEmpty();
   }
 
-  private static boolean tagAllowsContent(String tag) {
-    HTML.Element e = HTML4.lookupElement(tag.toUpperCase());
+  private boolean tagAllowsContent(String tag) {
+    HTML.Element e = htmlSchema.lookupElement(tag.toLowerCase());
     return null == e || !e.isEmpty();
   }
 
@@ -853,7 +861,7 @@ public final class GxpCompiler {
 
     // The validator will check that property values are well-formed,
     // marking those that aren't, and identifies all urls.
-    CssValidator cssValidator = new CssValidator(cssSchema, mq);
+    CssValidator cssValidator = new CssValidator(cssSchema, htmlSchema, mq);
     boolean valid = cssValidator.validateCss(new AncestorChain<CssTree>(decls));
     // The rewriter will remove any unsafe constructs.
     // and put urls in the proper filename namespace
@@ -1011,23 +1019,19 @@ public final class GxpCompiler {
    * For a given html attribute, what kind of transformation do we have to
    * perform on the value?
    */
-  private static AttributeXform xformForAttribute(
-      String tagName, String attribute) {
-    attribute = attribute.toUpperCase();
-    if ("STYLE".equals(attribute)) { return AttributeXform.STYLE; }
-    if ("ID".equals(attribute)
-        || "CLASS".equals(attribute)
-        || ("NAME".equals(attribute) && !isInput(tagName))
-        || "FOR".equals(attribute)) {
-      return AttributeXform.NMTOKEN;
-    }
-    HTML.Attribute a = HTML4.lookupAttribute(attribute);
-    if (null != a) {
-      switch (a.getType()) {
+  private AttributeXform xformForAttribute(HTML.Attribute attrib) {
+    if (null != attrib) {
+      switch (attrib.getType()) {
+      case STYLE:
+        return AttributeXform.STYLE;
       case SCRIPT:
         return AttributeXform.SCRIPT;
       case URI:
         return AttributeXform.URI;
+      case CLASSES: case ID: case IDREF: case IDREFS: case GLOBAL_NAME:
+        return AttributeXform.NAMES_IDS_AND_CLASSES;
+      case LOCAL_NAME:
+        return null;
       default:
         return null;
       }
@@ -1037,9 +1041,10 @@ public final class GxpCompiler {
 
   /** Is an html element with the given name a form element? */
   private static boolean isInput(String tagName) {
-    tagName = tagName.toUpperCase();
-    return "INPUT".equals(tagName) || "SELECT".equals(tagName)
-        || "TEXTAREA".equals(tagName) || "MAP".equals(tagName);
+    tagName = tagName.toLowerCase();
+    return "input".equals(tagName) || "select".equals(tagName)
+        || "textarea".equals(tagName) || "map".equals(tagName)
+        || "button".equals(tagName);
   }
 
   /**
@@ -1048,10 +1053,10 @@ public final class GxpCompiler {
    * performed at runtime.
    */
   private static enum AttributeXform {
-    NMTOKEN {
+    NAMES_IDS_AND_CLASSES {
       @Override
-      void apply(
-          DomTree.Attrib t, GxpCompiler gxpc, List<String> tgtChain, Block b) {
+      void apply(HTML.Attribute typeInfo, DomTree.Attrib t, GxpCompiler gxpc,
+                 List<String> tgtChain, Block b) {
         String nmTokens = t.getAttribValue();
         StringBuilder sb = new StringBuilder(nmTokens.length() + 16);
         boolean wasSpace = true;
@@ -1081,15 +1086,17 @@ public final class GxpCompiler {
     },
     URI {
       @Override
-      void apply(
-          DomTree.Attrib t, GxpCompiler gxpc, List<String> tgtChain, Block b)
+      void apply(HTML.Attribute typeInfo, DomTree.Attrib t, GxpCompiler gxpc,
+                 List<String> tgtChain, Block b)
           throws BadContentException {
         String uriStr = t.getAttribValue();
         try {
           URI uri = new URI(uriStr);
           ExternalReference ref = new ExternalReference(
               uri, t.getFilePosition());
-          String mimeType = "*/*";  // TODO(mikesamuel): fetch from htmlSchema
+          String mimeType = typeInfo.getMimeTypes();
+          if (mimeType == null) { mimeType = "*/*"; }
+
           String xuri = gxpc.meta.getPluginEnvironment().rewriteUri(
               ref, mimeType);
           if (xuri == null) {
@@ -1113,8 +1120,8 @@ public final class GxpCompiler {
     },
     STYLE {
       @Override
-      void apply(
-          DomTree.Attrib t, GxpCompiler gxpc, List<String> tgtChain, Block b) {
+      void apply(HTML.Attribute typeInfo, DomTree.Attrib t, GxpCompiler gxpc,
+                 List<String> tgtChain, Block b) {
         // Should be handled in compileDOM
         throw new AssertionError();
       }
@@ -1130,8 +1137,8 @@ public final class GxpCompiler {
     },
     SCRIPT {
       @Override
-      void apply(
-          DomTree.Attrib t, GxpCompiler gxpc, List<String> tgtChain, Block b) {
+      void apply(HTML.Attribute typeInfo, DomTree.Attrib t, GxpCompiler gxpc,
+                 List<String> tgtChain, Block b) {
         // Extract the handler into a function so that it can be analyzed.
         Block handler = gxpc.asBlock(t.getAttribValueNode());
 
@@ -1180,7 +1187,8 @@ public final class GxpCompiler {
      * value.
      */
     abstract void apply(
-        DomTree.Attrib t, GxpCompiler gxpc, List<String> chain, Block b)
+        HTML.Attribute typeInfo, DomTree.Attrib t, GxpCompiler gxpc,
+        List<String> tgtChain, Block b)
         throws BadContentException;
     /**
      * Given an attribute name, the gxp attribute that specifies it, and the

@@ -15,6 +15,7 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lang.css.CssSchema;
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
@@ -77,6 +78,7 @@ public final class PluginCompiler {
   private final Jobs jobs;
   private Pipeline<Jobs> compilationPipeline;
   private CssSchema cssSchema;
+  private HtmlSchema htmlSchema;
 
   public PluginCompiler(PluginMeta meta) {
     this(meta, new SimpleMessageQueue());
@@ -87,6 +89,7 @@ public final class PluginCompiler {
     mc.inputSources = new ArrayList<InputSource>();
     jobs = new Jobs(mc, mq, meta);
     cssSchema = CssSchema.getDefaultCss21Schema(mq);
+    htmlSchema = HtmlSchema.getDefault(mq);
   }
 
   public MessageQueue getMessageQueue() { return jobs.getMessageQueue(); }
@@ -105,6 +108,11 @@ public final class PluginCompiler {
 
   public void setCssSchema(CssSchema cssSchema) {
     this.cssSchema = cssSchema;
+    compilationPipeline = null;
+  }
+
+  public void setHtmlSchema(HtmlSchema htmlSchema) {
+    this.htmlSchema = htmlSchema;
     compilationPipeline = null;
   }
 
@@ -157,7 +165,7 @@ public final class PluginCompiler {
     };
 
     List<Pipeline.Stage<Jobs>> stages = compilationPipeline.getStages();
-    stages.add(new ValidateCssStage(cssSchema));
+    stages.add(new ValidateCssStage(cssSchema, htmlSchema));
     stages.add(new CompileGxpsStage());
     stages.add(new CompileCssTemplatesStage());
     stages.add(new ConsolidateCodeStage());
@@ -170,7 +178,7 @@ public final class PluginCompiler {
     if (compilationPipeline == null) { setupCompilationPipeline(); }
     return compilationPipeline;
   }
-  
+
   /**
    * Run the compiler on all parse trees added via {@link #addInput}.
    * The output parse trees are available via {@link #getOutputs()}.
@@ -200,8 +208,8 @@ public final class PluginCompiler {
             break;
         }
       }
-      GxpCompiler gxpc = new GxpCompiler(cssSchema, mq, meta);
-      GxpValidator v = new GxpValidator(mq);
+      GxpCompiler gxpc = new GxpCompiler(cssSchema, htmlSchema, meta, mq);
+      GxpValidator v = new GxpValidator(htmlSchema, mq);
       for (Iterator<GxpJob> it = gxpJobs.iterator(); it.hasNext();) {
         GxpJob job = it.next();
         if (!v.validate(new AncestorChain<DomTree>(job.docRoot))) {

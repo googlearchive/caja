@@ -280,8 +280,7 @@ class JSONWhiteListLoader {
    */
   WhiteListSkeleton makeSkeleton(
       List<WhiteListSkeleton> loaded, Set<String> allowed, Set<String> denied,
-      List<JSONObject> definitions)
-      throws ParseException {
+      List<JSONObject> definitions) {
 
     // Apply the algo described at
     // http://code.google.com/p/google-caja/wiki/CajaWhitelists .

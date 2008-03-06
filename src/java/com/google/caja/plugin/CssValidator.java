@@ -14,8 +14,8 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.html.HTML4;
 import com.google.caja.lang.css.CssSchema;
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
@@ -68,11 +68,17 @@ public final class CssValidator {
   public static final SyntheticAttributeKey<Boolean> INVALID =
     new SyntheticAttributeKey<Boolean>(Boolean.class, "cssValidator-invalid");
 
-  private final MessageQueue mq;
   private final CssSchema cssSchema;
-  public CssValidator(CssSchema cssSchema, MessageQueue mq) {
-    if (null == cssSchema || null == mq) { throw new NullPointerException(); }
+  private final HtmlSchema htmlSchema;
+  private final MessageQueue mq;
+
+  public CssValidator(
+      CssSchema cssSchema, HtmlSchema htmlSchema, MessageQueue mq) {
+    if (null == cssSchema || null == htmlSchema || null == mq) {
+      throw new NullPointerException();
+    }
     this.cssSchema = cssSchema;
+    this.htmlSchema = htmlSchema;
     this.mq = mq;
   }
 
@@ -129,14 +135,14 @@ public final class CssValidator {
   private boolean validateSimpleSelector(CssTree.SimpleSelector sel) {
     String tagName = sel.getElementName();
     if (null == tagName) { return true; }
-    tagName = tagName.toUpperCase();
-    if (null != HTML4.lookupElement(tagName)) {
-      if (HtmlWhitelist.ALLOWED_TAGS.contains(tagName)
+    tagName = tagName.toLowerCase();
+    if (null != htmlSchema.lookupElement(tagName)) {
+      if (htmlSchema.isElementAllowed(tagName)
           // Make an exception for BODY which is handled specially by the
           // rewriter and which can be used as the basis for browser specific
           // rules, e.g.  body.ie6 p { ... }
-          // TODO(msamuel): parameterize the whitelist
-          || "BODY".equals(tagName)) {
+          // TODO(mikesamuel): parameterize the whitelist
+          || "body".equals(tagName)) {
         return true;
       }
       mq.addMessage(PluginMessageType.UNSAFE_TAG, sel.getFilePosition(),
@@ -154,8 +160,8 @@ public final class CssValidator {
    * Attrib must exist in html 4 whitelist.
    */
   private boolean validateAttrib(CssTree.Attrib attr) {
-    String attribName = attr.getIdent().toUpperCase();
-    if (null != HTML4.getWhitelist().lookupAttribute(attribName)) {
+    String attribName = attr.getIdent().toLowerCase();
+    if (null != htmlSchema.lookupAttribute("*", attribName)) {
       return true;
     } else {
       mq.addMessage(

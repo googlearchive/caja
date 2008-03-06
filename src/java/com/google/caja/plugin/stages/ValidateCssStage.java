@@ -15,6 +15,7 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.css.CssSchema;
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.plugin.CssRewriter;
@@ -30,9 +31,13 @@ import com.google.caja.util.Pipeline;
  */
 public final class ValidateCssStage implements Pipeline.Stage<Jobs> {
   private final CssSchema cssSchema;
+  private final HtmlSchema htmlSchema;
 
-  public ValidateCssStage(CssSchema cssSchema) {
+  public ValidateCssStage(CssSchema cssSchema, HtmlSchema htmlSchema) {
+    if (null == cssSchema) { throw new NullPointerException(); }
+    if (null == htmlSchema) { throw new NullPointerException(); }
     this.cssSchema = cssSchema;
+    this.htmlSchema = htmlSchema;
   }
 
   /**
@@ -45,7 +50,8 @@ public final class ValidateCssStage implements Pipeline.Stage<Jobs> {
     // TODO(mikesamuel): build up a list of classes and ids for use in
     // generating "no such symbol" warnings from the GXPs.
     boolean valid = true;
-    CssValidator v = new CssValidator(cssSchema, jobs.getMessageQueue());
+    CssValidator v = new CssValidator(
+        cssSchema, htmlSchema, jobs.getMessageQueue());
     CssRewriter rw = new CssRewriter(
         jobs.getPluginMeta(), jobs.getMessageQueue());
     for (Job job : jobs.getJobsByType(Job.JobType.CSS)) {

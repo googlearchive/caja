@@ -16,6 +16,7 @@ package com.google.caja.plugin;
 
 import com.google.caja.CajaException;
 import com.google.caja.lang.css.CssSchema;
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
@@ -79,7 +80,8 @@ public class GxpCompilerTest extends TestCase {
     DomTree.Tag domTree = (DomTree.Tag) DomParser.parseDocument(
         tq, OpenElementStack.Factory.createXmlElementStack());
     GxpCompiler gxpc = new GxpCompiler(
-        CssSchema.getDefaultCss21Schema(mq), mq, makeTestPluginMeta());
+        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
+        makeTestPluginMeta(), mq);
     GxpCompiler.TemplateSignature sig = gxpc.compileTemplateSignature(domTree);
     ParseTreeNode compiled = gxpc.compileDocument(sig);
 
@@ -103,7 +105,8 @@ public class GxpCompilerTest extends TestCase {
     DomTree.Tag domTree = (DomTree.Tag) DomParser.parseDocument(
         tq, OpenElementStack.Factory.createXmlElementStack());
     GxpCompiler gxpc = new GxpCompiler(
-        CssSchema.getDefaultCss21Schema(mq), mq, makeTestPluginMeta());
+        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
+        makeTestPluginMeta(), mq);
     GxpCompiler.TemplateSignature sig = gxpc.compileTemplateSignature(domTree);
     ParseTreeNode compiled = gxpc.compileDocument(sig);
 
@@ -146,7 +149,8 @@ public class GxpCompilerTest extends TestCase {
         TestUtil.parseXml(getClass(), "gxpcompilerinput4.gxp", mq),
         OpenElementStack.Factory.createXmlElementStack());
     GxpCompiler gxpc = new GxpCompiler(
-        CssSchema.getDefaultCss21Schema(mq), mq, makeTestPluginMeta());
+        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
+        makeTestPluginMeta(), mq);
     GxpCompiler.TemplateSignature sig2 = gxpc.compileTemplateSignature(gxp2),
                                   sig3 = gxpc.compileTemplateSignature(gxp3);
 
@@ -414,11 +418,13 @@ public class GxpCompilerTest extends TestCase {
     GxpCompiler.TemplateSignature[] sigs =
       new GxpCompiler.TemplateSignature[doms.length];
     GxpCompiler gxpc = new GxpCompiler(
-        CssSchema.getDefaultCss21Schema(mq), mq, meta);
+        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
+        meta, mq);
     boolean valid = true;
     for (int i = 0; i < doms.length; ++i) {
       DomTree.Tag dom = doms[i];
-      if (!new GxpValidator(mq).validate(new AncestorChain<DomTree>(dom))) {
+      if (!new GxpValidator(HtmlSchema.getDefault(mq), mq)
+          .validate(new AncestorChain<DomTree>(dom))) {
         valid = false;
         break;
       }
@@ -495,11 +501,13 @@ public class GxpCompilerTest extends TestCase {
     GxpCompiler.TemplateSignature[] sigs =
       new GxpCompiler.TemplateSignature[doms.length];
     GxpCompiler gxpc = new GxpCompiler(
-        CssSchema.getDefaultCss21Schema(mq), mq, meta);
+        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
+        meta, mq);
     boolean valid = true;
     for (int i = 0; i < doms.length; ++i) {
       DomTree.Tag dom = doms[i];
-      if (!new GxpValidator(mq).validate(new AncestorChain<DomTree>(dom))) {
+      if (!new GxpValidator(HtmlSchema.getDefault(mq), mq)
+          .validate(new AncestorChain<DomTree>(dom))) {
         valid = false;
         break;
       }
@@ -528,8 +536,10 @@ public class GxpCompilerTest extends TestCase {
       StringBuilder actualBuf = new StringBuilder();
       RenderContext rc = new RenderContext(mc, actualBuf);
       for (ParseTreeNode javascript : javascripts) {
-        javascript.render(rc);
-        rc.newLine();
+        if (javascript != null) {
+          javascript.render(rc);
+          rc.newLine();
+        }
       }
 
       String actual = actualBuf.toString().trim();

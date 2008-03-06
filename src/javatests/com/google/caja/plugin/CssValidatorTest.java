@@ -15,6 +15,7 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lang.css.CssSchema;
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
@@ -767,7 +768,8 @@ public final class CssValidatorTest extends TestCase {
   }
 
   private static CssValidator makeCssValidator(MessageQueue mq) {
-    return new CssValidator(CssSchema.getDefaultCss21Schema(mq), mq);
+    return new CssValidator(
+        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq), mq);
   }
 
   private static <T extends ParseTreeNode> AncestorChain<T> ac(T node) {

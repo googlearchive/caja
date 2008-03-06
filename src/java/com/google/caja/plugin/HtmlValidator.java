@@ -14,8 +14,8 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.html.HTML;
-import com.google.caja.html.HTML4;
+import com.google.caja.lang.html.HTML;
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.reporting.MessagePart;
@@ -23,15 +23,17 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Criterion;
 
 /**
- * Validates an xhtml dom.
+ * Validates an xhtml or html dom.
  *
  * @author mikesamuel@gmail.com
  */
 public final class HtmlValidator {
 
   private final MessageQueue mq;
+  private final HtmlSchema schema;
 
-  public HtmlValidator(MessageQueue mq) {
+  public HtmlValidator(HtmlSchema schema, MessageQueue mq) {
+    this.schema = schema;
     this.mq = mq;
   }
 
@@ -44,13 +46,13 @@ public final class HtmlValidator {
       // first occurrence of an attribute could be spoofed.
       {
         String tagName = t.getValue();
-        tagName = tagName.toUpperCase();
-        HTML.Element e = HTML4.lookupElement(tagName);
+        tagName = tagName.toLowerCase();
+        HTML.Element e = schema.lookupElement(tagName);
         if (null == e) {
           mq.addMessage(PluginMessageType.UNKNOWN_TAG, t.getFilePosition(),
                         MessagePart.Factory.valueOf(t.getValue()));
           valid = false;
-        } else if (!HtmlWhitelist.ALLOWED_TAGS.contains(tagName)) {
+        } else if (!schema.isElementAllowed(tagName)) {
           mq.addMessage(
               PluginMessageType.UNSAFE_TAG, t.getFilePosition(),
               MessagePart.Factory.valueOf(t.getValue()));
@@ -59,25 +61,23 @@ public final class HtmlValidator {
       }
       break;
     case ATTRNAME:
+      String tagName = "*";
+      if (parent instanceof DomTree.Tag) {
+        tagName = ((DomTree.Tag) parent).getValue();
+      }
       DomTree.Attrib attrib = (DomTree.Attrib) t;
       String attrName = attrib.getAttribName();
-      String ucaseAttrName = attrName.toUpperCase();
-      HTML.Attribute a = HTML4.lookupAttribute(ucaseAttrName);
-      if (null == a) {
-        String tagName = "{unknown}";
-        if (parent instanceof DomTree.Tag) {
-          tagName = ((DomTree.Tag) parent).getValue();
-        }
+      HTML.Attribute a = schema.lookupAttribute(tagName, attrName);
+      if (null == a || !schema.isAttributeAllowed(tagName, attrName)) {
         mq.addMessage(
             PluginMessageType.UNKNOWN_ATTRIBUTE, t.getFilePosition(),
             MessagePart.Factory.valueOf(attrName),
             MessagePart.Factory.valueOf(tagName));
         valid = false;
       }
-      // TODO(mikesamuel): whitelist attributes, by tag
-      Criterion<String> criteria
-          = HtmlWhitelist.ATTRIBUTE_CRITERIA.get(ucaseAttrName);
-      if (criteria != null && !criteria.accept(attrib.getAttribValue())) {
+      Criterion<? super String> criteria = schema.getAttributeCriteria(
+          tagName, attrName);
+      if (!criteria.accept(attrib.getAttribValue())) {
         mq.addMessage(
             PluginMessageType.DISALLOWED_ATTRIBUTE_VALUE,
             attrib.getAttribValueNode().getFilePosition(),
@@ -97,9 +97,5 @@ public final class HtmlValidator {
       valid &= validate(child, t);
     }
     return valid;
-  }
-
-  static boolean isAllowedTag(String tagName) {
-    return HtmlWhitelist.ALLOWED_TAGS.contains(tagName);
   }
 }

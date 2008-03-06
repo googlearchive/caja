@@ -161,20 +161,23 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       return;
     }
 
-    // Build a replacment element.
-    // <script type="text/javascript"></script>
-    DomTree.Tag emptyScript;
+    // Build a replacment element, <span/>, and link it to the extracted
+    // javascript, so that when the DOM is rendered, we can properly interleave
+    // the extract scripts with the scripts that generate markup.
+    DomTree.Tag placeholder;
     {
+      Token<HtmlTokenType> startToken = Token.instance(
+          "<span", HtmlTokenType.TAGBEGIN, scriptTag.getToken().pos);
       Token<HtmlTokenType> endToken = Token.instance(
-          ">", HtmlTokenType.TAGEND,
+          "/>", HtmlTokenType.TAGEND,
           FilePosition.endOf(scriptTag.getFilePosition()));
-      emptyScript = new DomTree.Tag(
-          Collections.<DomTree>emptyList(), scriptTag.getToken(), endToken);
-      emptyScript.getAttributes().set(EXTRACTED_SCRIPT_BODY, parsedScriptBody);
+      placeholder = new DomTree.Tag(
+          Collections.<DomTree>emptyList(), startToken, endToken);
+      placeholder.getAttributes().set(EXTRACTED_SCRIPT_BODY, parsedScriptBody);
     }
 
     // Replace the external script tag with the inlined script.
-    parent.replaceChild(emptyScript, scriptTag);
+    parent.replaceChild(placeholder, scriptTag);
   }
 
   private void rewriteStyleTag(

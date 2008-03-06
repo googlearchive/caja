@@ -15,6 +15,7 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.css.CssSchema;
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
@@ -44,16 +45,20 @@ import java.util.ListIterator;
  *
  * @author mikesamuel@gmail.com
  */
-public class CompileHtmlStage implements Pipeline.Stage<Jobs> {
+public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
   private final CssSchema cssSchema;
+  private final HtmlSchema htmlSchema;
 
-  public CompileHtmlStage(CssSchema cssSchema) {
+  public CompileHtmlStage(CssSchema cssSchema, HtmlSchema htmlSchema) {
+    if (null == cssSchema) { throw new NullPointerException(); }
+    if (null == htmlSchema) { throw new NullPointerException(); }
     this.cssSchema = cssSchema;
+    this.htmlSchema = htmlSchema;
   }
 
   public boolean apply(Jobs jobs) {
     HtmlCompiler htmlc = new HtmlCompiler(
-        cssSchema, jobs.getMessageQueue(), jobs.getPluginMeta());
+        cssSchema, htmlSchema, jobs.getMessageQueue(), jobs.getPluginMeta());
 
     List<Statement> renderedHtmlStatements = new ArrayList<Statement>();
 

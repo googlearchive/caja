@@ -19,6 +19,7 @@ import com.google.caja.demos.calendar.HcalTest;
 import com.google.caja.demos.calendar.LayoutTest;
 import com.google.caja.demos.calendar.RRuleTest;
 import com.google.caja.lang.css.CssSchemaTest;
+import com.google.caja.lang.html.HtmlSchemaTest;
 import com.google.caja.lexer.CharProducerTest;
 import com.google.caja.lexer.CommentLexerTest;
 import com.google.caja.lexer.CssLexerTest;
@@ -48,7 +49,6 @@ import com.google.caja.plugin.GxpCompilerTest;
 import com.google.caja.plugin.GxpValidatorTest;
 import com.google.caja.plugin.HtmlCompiledPluginTest;
 import com.google.caja.plugin.HtmlSanitizerTest;
-import com.google.caja.plugin.HtmlWhitelistTest;
 import com.google.caja.plugin.PluginCompilerTest;
 import com.google.caja.plugin.UrlUtilTest;
 import com.google.caja.plugin.caps.CapabilityRewriterTest;
@@ -95,7 +95,7 @@ public class AllTests {
           HtmlCompiledPluginTest.class,
           HtmlLexerTest.class,
           HtmlSanitizerTest.class,
-          HtmlWhitelistTest.class,
+          HtmlSchemaTest.class,
           JoinTest.class,
           JsHtmlParserTest.class,
           JsLexerTest.class,

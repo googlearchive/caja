@@ -14,9 +14,9 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.html.HTML;
-import com.google.caja.html.HTML4;
 import com.google.caja.lang.css.CssSchema;
+import com.google.caja.lang.html.HTML;
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
@@ -81,15 +81,20 @@ import java.util.regex.Pattern;
  * @author mikesamuel@gmail.com
  */
 public class HtmlCompiler {
+  private final CssSchema cssSchema;
+  private final HtmlSchema htmlSchema;
   private final MessageQueue mq;
   private final PluginMeta meta;
-  private final CssSchema cssSchema;
   private Map<String, FunctionDeclaration> eventHandlers =
       new LinkedHashMap<String, FunctionDeclaration>();
 
-  public HtmlCompiler(CssSchema cssSchema, MessageQueue mq, PluginMeta meta) {
-    if (null == mq) { throw new NullPointerException(); }
+  public HtmlCompiler(CssSchema cssSchema, HtmlSchema htmlSchema,
+                      MessageQueue mq, PluginMeta meta) {
+    if (null == cssSchema || null == htmlSchema || null == mq || null == meta) {
+      throw new NullPointerException();
+    }
     this.cssSchema = cssSchema;
+    this.htmlSchema = htmlSchema;
     this.mq = mq;
     this.meta = meta;
   }
@@ -144,14 +149,14 @@ public class HtmlCompiler {
         DomTree.Tag el = (DomTree.Tag) t;
         String tagName = el.getValue().toLowerCase();
 
-        if (tagName.equals("script")) {
+        if (tagName.equals("span")) {
           Block extractedScriptBody = el.getAttributes().get(
               RewriteHtmlStage.EXTRACTED_SCRIPT_BODY);
           if (extractedScriptBody != null) {
             b.createMutation().appendChildren(extractedScriptBody.children())
                 .execute();
+            return;
           }
-          return;
         } else if (tagName.equals("style")) {
           // nothing to do.  Style tags get combined into one and output as
           // CSS, not written via javascript.
@@ -261,10 +266,10 @@ public class HtmlCompiler {
     return s;
   }
 
-  private static void assertNotBlacklistedTag(DomTree node)
+  private void assertNotBlacklistedTag(DomTree node)
       throws GxpCompiler.BadContentException {
-    String tagName = node.getValue().toUpperCase();
-    if (!HtmlValidator.isAllowedTag(tagName)) {
+    String tagName = node.getValue().toLowerCase();
+    if (!htmlSchema.isElementAllowed(tagName)) {
       throw new GxpCompiler.BadContentException(
           new Message(MessageType.MALFORMED_XHTML, node.getFilePosition(),
                     MessagePart.Factory.valueOf(tagName)));
@@ -276,8 +281,8 @@ public class HtmlCompiler {
    *   "TABLE" -> true, "BR" -> false.
    * @param tag a tag name, such as {@code P} for {@code <p>} tags.
    */
-  private static boolean requiresCloseTag(String tag) {
-    HTML.Element e = HTML4.lookupElement(tag.toUpperCase());
+  private boolean requiresCloseTag(String tag) {
+    HTML.Element e = htmlSchema.lookupElement(tag.toLowerCase());
     return null == e || !e.isEmpty();
   }
 
@@ -286,8 +291,8 @@ public class HtmlCompiler {
    * {@code INPUT} and {@code BR}.
    * @param tag a tag name, such as {@code P} for {@code <p>} tags.
    */
-  private static boolean tagAllowsContent(String tag) {
-    HTML.Element e = HTML4.lookupElement(tag.toUpperCase());
+  private boolean tagAllowsContent(String tag) {
+    HTML.Element e = htmlSchema.lookupElement(tag.toLowerCase());
     return null == e || !e.isEmpty();
   }
 
@@ -311,7 +316,7 @@ public class HtmlCompiler {
 
     // The validator will check that property values are well-formed,
     // marking those that aren't, and identifies all urls.
-    CssValidator v = new CssValidator(cssSchema, mq);
+    CssValidator v = new CssValidator(cssSchema, htmlSchema, mq);
     boolean valid = v.validateCss(new AncestorChain<CssTree>(decls));
     // The rewriter will remove any unsafe constructs.
     // and put urls in the proper filename namespace
@@ -425,23 +430,24 @@ public class HtmlCompiler {
    * for a given html attribute, what kind of transformation do we have to
    * perform on the value?
    */
-  private static AttributeXform xformForAttribute(
+  private AttributeXform xformForAttribute(
       String tagName, String attribute) {
-    attribute = attribute.toUpperCase();
-    if ("STYLE".equals(attribute)) { return AttributeXform.STYLE; }
-    if ("ID".equals(attribute)
-        || "CLASS".equals(attribute)
-        || ("NAME".equals(attribute) && !isInput(tagName))
-        || "FOR".equals(attribute)) {
-      return AttributeXform.NMTOKEN;
-    }
-    HTML.Attribute a = HTML4.lookupAttribute(attribute);
+    tagName = tagName.toLowerCase();
+    attribute = attribute.toLowerCase();
+    HTML.Attribute a = htmlSchema.lookupAttribute(tagName, attribute);
     if (null != a) {
       switch (a.getType()) {
-      case SCRIPT:
-        return AttributeXform.SCRIPT;
-      case URI:
-        return AttributeXform.URI;
+        case ID:
+        case IDREF:
+        case GLOBAL_NAME:
+        case CLASSES:  // TODO(mikesamuel): remove classes per DOMando rules
+          return AttributeXform.NMTOKEN;
+        case STYLE:
+          return AttributeXform.STYLE;
+        case SCRIPT:
+          return AttributeXform.SCRIPT;
+        case URI:
+          return AttributeXform.URI;
       }
     }
     return null;
@@ -449,16 +455,16 @@ public class HtmlCompiler {
 
   /** is an html element with the given name a form element? */
   private static boolean isInput(String tagName) {
-    tagName = tagName.toUpperCase();
-    return "INPUT".equals(tagName) || "SELECT".equals(tagName)
-        || "TEXTAREA".equals(tagName) || "MAP".equals(tagName);
+    tagName = tagName.toLowerCase();
+    return "input".equals(tagName) || "select".equals(tagName)
+        || "textarea".equals(tagName) || "map".equals(tagName)
+        || "button".equals(tagName);
   }
 
-  private static String guessMimeType(String tagName) {
-    if ("IMG".equalsIgnoreCase(tagName)) {
-      return "image/*";
-    }
-    return "*/*";
+  private String guessMimeType(String tagName, String attribName) {
+    HTML.Attribute type = htmlSchema.lookupAttribute(tagName, attribName);
+    String mimeType = type.getMimeTypes();
+    return mimeType != null ? mimeType : "*/*";
   }
 
   /**
@@ -575,8 +581,9 @@ public class HtmlCompiler {
                               MessagePart.Factory.valueOf(t.getAttribValue()));
           return;
         }
-        String mimeType = guessMimeType(
-            ((DomTree.Tag) tChain.getParentNode()).getTagName());
+        String mimeType = htmlc.guessMimeType(
+            ((DomTree.Tag) tChain.getParentNode()).getTagName(),
+            tChain.node.getAttribName());
         String rewrittenUri = htmlc.meta.getPluginEnvironment().rewriteUri(
             new ExternalReference(
                 uri, t.getAttribValueNode().getFilePosition()),

@@ -208,8 +208,8 @@
       <classpath refid="classpath.tests.compile"/>
       <include name="**/caja/AllTests.java"/>
       <include name="**/caja/config/ConfigUtilTest.java"/>
-      <include name="**/caja/demos/calendar/HcalTest.java"/>
-      <include name="**/caja/demos/calendar/LayoutTest.java"/>
+      <include name="**/caja/demos/calendar/*Test.java"/>
+      <include name="**/caja/lang/html/HtmlSchemaTest.java"/>
       <include name="**/caja/demos/calendar/RRuleTest.java"/>
       <include name="**/caja/lang/css/CssSchemaTest.java"/>
       <include name="**/caja/demos/calendar/LayoutTest.java"/>
@@ -242,7 +242,6 @@
       <include name="**/caja/plugin/GxpValidatorTest.java"/>
       <include name="**/caja/plugin/HtmlCompiledPluginTest.java"/>
       <include name="**/caja/plugin/HtmlSanitizerTest.java"/>
-      <include name="**/caja/plugin/HtmlWhitelistTest.java"/>
       <include name="**/caja/plugin/PluginCompilerTest.java"/>
       <include name="**/caja/plugin/UrlUtilTest.java"/>
       <include name="**/caja/plugin/caps/CapabilityRewriterTest.java"/>
@@ -464,9 +463,6 @@
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
       <include name="**/caja/lang/*/*.java"/>
-      <include name="**/caja/html/HTML.java"/>
-      <include name="**/caja/html/HTML4.java"/>
-      <include name="**/caja/html/HtmlWhitelist.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
     <copy todir="${lib}">

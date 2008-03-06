@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.HtmlTokenType;
@@ -58,9 +59,7 @@ public class GxpValidatorTest extends TestCase {
     validate("<b id=\"bold\">Hello</b>", true);
     validate("<bogus id=\"bold\">Hello</bogus>", false);
     validate("<bogus unknown=\"bogus\">Hello</bogus>", false);
-    // TODO(ihab): Remove this and allow client custom whitelists.
-    // See class HtmlWhitelist for details.
-    if (false) { validate("<script>disallowed</script>", false); }
+    validate("<script>disallowed</script>", false);
     validate("<b><gxp:attr name=\"id\">hi</gxp:attr>Hello</b>", true);
     validate("<b expr:id=\"yo()\">Hello</b>", true);
     validate("<b><gxp:attr name=\"bogus\">hi</gxp:attr>Hello</b>", false);
@@ -81,6 +80,7 @@ public class GxpValidatorTest extends TestCase {
     DomTree t = DomParser.parseDocument(
         tq, OpenElementStack.Factory.createXmlElementStack());
     assertEquals(html, valid,
-                 new GxpValidator(mq).validate(new AncestorChain<DomTree>(t)));
+                 new GxpValidator(HtmlSchema.getDefault(mq), mq)
+                 .validate(new AncestorChain<DomTree>(t)));
   }
 }

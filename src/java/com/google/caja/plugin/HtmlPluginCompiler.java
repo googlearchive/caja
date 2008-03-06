@@ -15,6 +15,7 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lang.css.CssSchema;
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
@@ -63,6 +64,7 @@ public class HtmlPluginCompiler {
   private Pipeline<Jobs> compilationPipeline;
   private Jobs jobs;
   private CssSchema cssSchema;
+  private HtmlSchema htmlSchema;
 
   public HtmlPluginCompiler(MessageQueue mq, PluginMeta meta) {
     BuildInfo.getInstance().addBuildInfo(mq);
@@ -70,6 +72,7 @@ public class HtmlPluginCompiler {
     mc.inputSources = new ArrayList<InputSource>();
     jobs = new Jobs(mc, mq, meta);
     cssSchema = CssSchema.getDefaultCss21Schema(mq);
+    htmlSchema = HtmlSchema.getDefault(mq);
   }
 
   public MessageQueue getMessageQueue() { return jobs.getMessageQueue(); }
@@ -91,6 +94,11 @@ public class HtmlPluginCompiler {
     compilationPipeline = null;
   }
 
+  public void setHtmlSchema(HtmlSchema htmlSchema) {
+    this.htmlSchema = htmlSchema;
+    compilationPipeline = null;
+  }
+
   public void addInput(AncestorChain<?> input) {
     jobs.getJobs().add(new Job(input));
     jobs.getMessageContext().inputSources.add(
@@ -99,22 +107,23 @@ public class HtmlPluginCompiler {
 
   protected void setupCompilationPipeline() {
     compilationPipeline = new Pipeline<Jobs>() {
+      long t0 = System.nanoTime();
       @Override
       protected boolean applyStage(
           Pipeline.Stage<? super Jobs> stage, Jobs jobs) {
         jobs.getMessageQueue().addMessage(
             MessageType.CHECKPOINT,
             MessagePart.Factory.valueOf(stage.getClass().getSimpleName()),
-            MessagePart.Factory.valueOf(System.nanoTime() / 1e9));
+            MessagePart.Factory.valueOf((System.nanoTime() - t0) / 1e9));
         return super.applyStage(stage, jobs);
       }
     };
 
     List<Pipeline.Stage<Jobs>> stages = compilationPipeline.getStages();
     stages.add(new RewriteHtmlStage());
-    stages.add(new ValidateHtmlStage());
-    stages.add(new CompileHtmlStage(cssSchema));
-    stages.add(new ValidateCssStage(cssSchema));
+    stages.add(new ValidateHtmlStage(htmlSchema));
+    stages.add(new CompileHtmlStage(cssSchema, htmlSchema));
+    stages.add(new ValidateCssStage(cssSchema, htmlSchema));
     stages.add(new ConsolidateCodeStage());
     stages.add(new ValidateJavascriptStage());
     stages.add(new ConsolidateCssStage());

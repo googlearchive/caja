@@ -14,9 +14,9 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.lang.html.HTML;
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.HtmlTokenType;
-import com.google.caja.html.HTML;
-import com.google.caja.html.HTML4;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomTree;
@@ -35,11 +35,12 @@ import java.util.Set;
  * @author mikesamuel@gmail.com
  */
 public final class GxpValidator {
-
+  private final HtmlSchema schema;
   private final MessageQueue mq;
 
-  public GxpValidator(MessageQueue mq) {
+  public GxpValidator(HtmlSchema schema, MessageQueue mq) {
     this.mq = mq;
+    this.schema = schema;
   }
 
   public boolean validate(AncestorChain<DomTree> tChain) {
@@ -51,17 +52,18 @@ public final class GxpValidator {
         String tagName = t.getValue();
         if (isGxp(tagName)) {
           if ("gxp:attr".equals(tagName)) {
+            String parentTagName = "*";
+            ParseTreeNode parent = tChain.getParentNode();
+            if (parent instanceof DomTree.Tag) {
+              parentTagName = ((DomTree.Tag) parent).getValue();
+            }
+
             // It is invalid unless it has one child which is the name attribute
             Map<String, DomTree.Value> attribs =
               new HashMap<String, DomTree.Value>();
             attribsAsMap((DomTree.Tag) t, attribs, ALLOWED_ATTR_PARAMS);
             DomTree.Value nameT = attribs.get("name");
             if (null == nameT) {
-              String parentTagName = "{unknown}";
-              ParseTreeNode parent = tChain.getParentNode();
-              if (parent instanceof DomTree.Tag) {
-                parentTagName = ((DomTree.Tag) parent).getValue();
-              }
               mq.addMessage(
                   PluginMessageType.MISSING_ATTRIBUTE, t.getFilePosition(),
                   MessagePart.Factory.valueOf("name"),
@@ -69,15 +71,9 @@ public final class GxpValidator {
               valid = false;
               break;
             }
-            String name = nameT.getValue().toUpperCase();
-            HTML.Attribute a = HTML4.lookupAttribute(name);
+            String name = nameT.getValue().toLowerCase();
+            HTML.Attribute a = schema.lookupAttribute(parentTagName, name);
             if (null == a) {
-              String parentTagName = "{unknown}";
-              ParseTreeNode parent = tChain.getParentNode();
-              if (parent instanceof DomTree.Tag) {
-                parentTagName = ((DomTree.Tag) parent).getValue();
-              }
-
               mq.addMessage(
                   PluginMessageType.UNKNOWN_ATTRIBUTE,
                   nameT.getFilePosition(), nameT,
@@ -87,12 +83,12 @@ public final class GxpValidator {
           }
           break;
         }
-        tagName = tagName.toUpperCase();
-        HTML.Element e = HTML4.lookupElement(tagName);
+        tagName = tagName.toLowerCase();
+        HTML.Element e = schema.lookupElement(tagName);
         if (null == e) {
           mq.addMessage(PluginMessageType.UNKNOWN_TAG, t.getFilePosition(), t);
           valid = false;
-        } else if (!HtmlWhitelist.ALLOWED_TAGS.contains(tagName)) {
+        } else if (!schema.isElementAllowed(tagName)) {
           mq.addMessage(PluginMessageType.UNSAFE_TAG, t.getFilePosition(), t);
           valid = false;
         }
@@ -103,13 +99,15 @@ public final class GxpValidator {
       if (attrName.startsWith("expr:")) {
         attrName = attrName.substring("expr:".length());
       }
-      HTML.Attribute a = HTML4.lookupAttribute(attrName.toUpperCase());
-      if (null == a) {
-        String tagName = "{unknown}";
-        ParseTreeNode parent = tChain.getParentNode();
-        if (parent instanceof DomTree.Tag) {
-          tagName = ((DomTree.Tag) parent).getValue();
-        }
+      String tagName = "*";
+      ParseTreeNode parent = tChain.getParentNode();
+      if (parent instanceof DomTree.Tag) {
+        tagName = ((DomTree.Tag) parent).getValue();
+      }
+      String lTagName = tagName.toLowerCase(),
+          lAttrName = attrName.toLowerCase();
+      HTML.Attribute a = schema.lookupAttribute(lTagName, lAttrName);
+      if (null == a || !schema.isAttributeAllowed(lTagName, lAttrName)) {
         if (!isGxp(tagName)) {
           mq.addMessage(
               PluginMessageType.UNKNOWN_ATTRIBUTE, t.getFilePosition(),
@@ -118,7 +116,6 @@ public final class GxpValidator {
           valid = false;
         }
       }
-      // TODO(msamuel): Whitelist attributes, by tag.
       break;
     case TEXT: case CDATA:
     case ATTRVALUE:
@@ -131,10 +128,6 @@ public final class GxpValidator {
       valid &= validate(new AncestorChain<DomTree>(tChain, child));
     }
     return valid;
-  }
-
-  static boolean isAllowedTag(String tagName) {
-    return HtmlWhitelist.ALLOWED_TAGS.contains(tagName);
   }
 
   static boolean isGxp(String tagName) {

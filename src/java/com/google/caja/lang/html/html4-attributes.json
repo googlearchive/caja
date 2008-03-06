@@ -1,0 +1,42 @@
+{
+  "description": "See http://code.google.com/p/google-caja/wiki/CajaWhitelists",
+  "inherits": [
+      "html4-attributes-defs.json",
+      "html4-attributes-whitelist.json"
+      ]
+
+  "types": [
+      {
+        "key": "*:TARGET",
+        "optional": "false",
+        "type": "FRAME_TARGET",
+        "reason": [
+             "Either the name of a window or one of the special values that",
+             "start with an underscore.",
+             "From http://htmlhelp.com/reference/html40/values.html:",
+             "  _blank renders the link in a new, unnamed window",
+             "  _self renders the link in the current frame",
+             "  _parent renders the link in the immediate FRAMESET parent",
+             "  _top renders the link in the full, unframed window",
+             "",
+             "We allow only _blank.",
+             ],
+        "values": "_blank",
+      },
+      {
+        "key": "*:LANGUAGE",
+        "description": "predefined script language name",
+        "optional": true, "values": "text/javascript"
+      },
+      {
+        "key": "SCRIPT:TYPE",
+        "description": "content type of script language",
+        "optional": true, "pattern": "text/javascript(;.*)?"
+      },
+      {
+        "key": "STYLE:TYPE",
+        "description": "content type of a style language",
+        "optional": true, "pattern": "text/css(;.*)?"
+      },
+      ],
+}
