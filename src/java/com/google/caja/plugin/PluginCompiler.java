@@ -61,7 +61,6 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Pipeline;
-import com.google.caja.util.Pipeline;
 import static com.google.caja.plugin.SyntheticNodes.s;
 
 import java.io.StringReader;

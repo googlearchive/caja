@@ -20,30 +20,20 @@ package com.google.caja.plugin;
 public final class PluginMeta {
   /** A CSS&HTML identifier prefix used to namespace ids and classes. */
   public final String namespacePrefix;
-  /** A URI path prefix used to group all the files together. */
-  public final String pathPrefix;
   /** Used to generate names that are unique within the plugin's namespace. */
   private int guidCounter;
   /** Describes how resources external to the plugin definition are resolved. */
   private final PluginEnvironment env;
 
   public PluginMeta(String namespacePrefix) {
-    this(namespacePrefix, "", PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
+    this(namespacePrefix, PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
   }
 
-  public PluginMeta(String namespacePrefix, String pathPrefix,
-                    PluginEnvironment env) {
-    if (null == namespacePrefix || null == pathPrefix || env == null) {
+  public PluginMeta(String namespacePrefix, PluginEnvironment env) {
+    if (null == namespacePrefix || env == null) {
       throw new NullPointerException();
     }
-    if (pathPrefix.endsWith("/") && pathPrefix.length() > 1) {
-      throw new IllegalArgumentException(pathPrefix);
-    }
-    if (!pathPrefix.startsWith("/") && !"".equals(pathPrefix)) {
-      throw new IllegalArgumentException(pathPrefix);
-    }
     this.namespacePrefix = namespacePrefix;
-    this.pathPrefix = pathPrefix;
     this.env = env;
   }
 

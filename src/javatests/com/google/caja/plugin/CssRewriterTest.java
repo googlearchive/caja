@@ -191,7 +191,7 @@ public class CssRewriterTest extends TestCase {
 
     new CssRewriter(
         new PluginMeta(
-            "test", "/foo",
+            "test",
             new PluginEnvironment() {
               public CharProducer loadExternalResource(
                   ExternalReference ref, String mimeType) {

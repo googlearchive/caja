@@ -34,6 +34,7 @@ import junit.framework.TestCase;
 public class ConfigUtilTest extends TestCase {
   private MessageQueue mq;
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     mq = new SimpleMessageQueue();

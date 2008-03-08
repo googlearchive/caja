@@ -37,6 +37,7 @@ import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
@@ -44,16 +45,15 @@ import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Criterion;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -65,119 +65,61 @@ import java.util.regex.Pattern;
  * @author mikesamuel@gmail.com
  */
 public class PluginCompilerMain {
-  private String outPath = null;
-  private String namespacePrefix = "plugin";
-  private String pathPrefix = "/plugin";
-  private MessageQueue mq = new SimpleMessageQueue();
-  private MessageContext mc = new MessageContext();
-  private PluginMeta meta;
-  private PluginCompiler compiler;
+  private final MessageQueue mq;
+  private final MessageContext mc;
 
-  {
+  private PluginCompilerMain() {
+    mq = new SimpleMessageQueue();
+    mc = new MessageContext();
     mc.inputSources = new ArrayList<InputSource>();
   }
 
-  private boolean run(String[] args) {
+  private int run(String[] argv) {
+    Config config = new Config(
+        getClass(), System.err,
+        "Cajoles an HTML, CSS, and JS files to JS and CSS.");
+    if (!config.processArguments(argv)) {
+      return -1;
+    }
+
+    PluginMeta meta = new PluginMeta(
+        config.getCssPrefix(), PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
+    PluginCompiler compiler = new PluginCompiler(meta, mq);
+
+    boolean success;
     try {
-      args = parseFlags(args);
-
-      meta = new PluginMeta(
-          namespacePrefix, pathPrefix,
-          PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
-      compiler = new PluginCompiler(meta, mq);
-
-      boolean success = true;
-      if (args.length == 0) {
-        usage();
-        System.err.println(
-            "Please specify 1 or more input .js, .css, or .gxp files");
-        success = false;
-      }
-      if (success) {
-        success = parseInputs(args);
-      }
+      success = parseInputs(config.getInputFiles(), compiler);
       if (success) {
         success = compiler.run();
       }
       if (success) {
         try {
-          dumpOutputs();
+          dumpOutputs(compiler.getOutputs(), config.getOutputBase());
         } catch (IOException ex) {
           ex.printStackTrace();
           System.err.println("Failed to write outputs");
           success = false;
         }
       }
-      return success;
     } finally {
-      dumpMessages();
-    }
-  }
-
-  private String[] parseFlags(String[] args) {
-    // TODO(mikesamuel): replace with a CLI parsing library.
-    int i = 0;
-    while (i < args.length) {
-      String arg = args[i];
-      if (!arg.startsWith("--")) { break; }
-      if ("--".equals(arg)) {
-        ++i;
-        break;
-      }
-
-      String name, value;
-      int eq = arg.indexOf('=');
-      if (eq >= 0) {
-        name = arg.substring(0, eq);
-        value = arg.substring(eq + 1);
-        ++i;
-      } else {
-        name = arg;
-        value = args.length > ++i ? args[i++] : "";
-      }
-      if ("--out".equals(name)) {
-        this.outPath = value;
-      } else if ("--prefix".equals(name)) {
-        this.namespacePrefix = value;
-      } else if ("--pathPrefix".equals(name)) {
-        while (value.endsWith("/") && value.length() > 1) {
-          value = value.substring(0, value.length() - 1);
-        }
-        this.pathPrefix = value;
-      } else {
-        usage();
-        System.exit(1);
+      if (MessageLevel.ERROR.compareTo(
+              HtmlPluginCompilerMain.dumpMessages(mq, mc, System.err)) <= 0) {
+        success = false;
       }
     }
-    if (i > 0) {
-      String[] argsLeft = new String[args.length - i];
-      System.arraycopy(args, i, argsLeft, 0, argsLeft.length);
-      args = argsLeft;
-    }
-    if (null == this.outPath) {
-      usage();
-      System.err.println("Please specify an output path prefix via --out");
-      System.exit(1);
-    }
-    return args;
+
+    return success ? 0 : -1;
   }
 
-  private void usage() {
-    System.err.println(
-        "Usage: --out=<dir> [--name=<jsIdent>]"
-        + " [--prefix=<cssIdent>] [--pathPrefix=<uriPath>]");
-    // TODO: flesh out
-  }
-
-  private boolean parseInputs(String[] inputs) {
+  private boolean parseInputs(Collection<File> inputs, PluginCompiler pluginc) {
     boolean parsePassed = true;
-    for (String input : inputs) {
+    for (File input : inputs) {
       try {
         ParseTreeNode parseTree = parseInput(input);
         if (null == parseTree) {
           parsePassed = false;
         } else {
-          compiler.addInput(new AncestorChain<ParseTreeNode>(parseTree));
+          pluginc.addInput(new AncestorChain<ParseTreeNode>(parseTree));
         }
       } catch (ParseException ex) {
         ex.toMessageQueue(mq);
@@ -186,26 +128,13 @@ public class PluginCompilerMain {
     return parsePassed;
   }
 
-  private static final Pattern ABS_URI_RE = Pattern.compile("^\\w+://");
-
-  private ParseTreeNode parseInput(String inputPath)
+  private ParseTreeNode parseInput(File input)
       throws ParseException {
-    InputSource is;
-    if (ABS_URI_RE.matcher(inputPath).find()) {
-      try {
-        is = new InputSource(new URI(inputPath));
-      } catch (URISyntaxException ex) {
-        System.err.println("Bad input URI: " + inputPath);
-        System.exit(-1);
-        return null;
-      }
-    } else {
-      is = new InputSource(new File(inputPath));
-    }
+    InputSource is = new InputSource(input);
 
     mc.inputSources.add(is);
     try {
-      InputStream in = new URL(is.getUri().toString()).openStream();
+      InputStream in = new FileInputStream(input);
       CharProducer cp = CharProducer.Factory.create(
           new InputStreamReader(in, "UTF-8"), is);
       try {
@@ -325,14 +254,15 @@ public class PluginCompilerMain {
   private static final Pattern CSS_TEMPLATE_OR_PARAM_NAME =
     Pattern.compile("[\"\'](_?[a-z][a-z0-9_]*)[\"\']");
 
-  private void dumpOutputs() throws IOException {
-    File f = new File(this.outPath);
-    File prefix = f.isDirectory() ? new File(f, "plugin") : f;
+  private void dumpOutputs(
+      Collection<? extends ParseTreeNode> outputs, File outBase)
+      throws IOException {
+    File prefix = outBase.isDirectory() ? new File(outBase, "plugin") : outBase;
     File cssFile = new File(prefix + ".css");
     File jsFile = new File(prefix + ".js");
     Writer cssOut = null, jsOut = null;
     try {
-      for (ParseTreeNode output : compiler.getOutputs()) {
+      for (ParseTreeNode output : outputs) {
         Writer out;
         if (output instanceof Statement) {
           if (null == jsOut) {
@@ -367,24 +297,11 @@ public class PluginCompilerMain {
     }
   }
 
-  private void dumpMessages() {
-    try {
-      for (Message m : mq.getMessages()) {
-        System.err.print(m.getMessageLevel() + ":");
-        m.format(mc, System.err);
-        System.err.println();
-      }
-    } catch (IOException ex) {
-      ex.printStackTrace();
-    }
-  }
-
   public static void main(String[] args) {
     int exitCode;
     try {
       PluginCompilerMain main = new PluginCompilerMain();
-      boolean success = main.run(args);
-      exitCode = success ? 0 : 1;
+      exitCode = main.run(args);
     } catch (Exception ex) {
       ex.printStackTrace();
       exitCode = -1;

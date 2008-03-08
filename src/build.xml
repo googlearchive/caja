@@ -194,9 +194,13 @@
     <java classname="com.google.caja.plugin.PluginCompilerMain"
      failonerror="yes">
       <classpath refid="classpath.run"/>
-      <arg value="--out=${lib}/com/google/caja/plugin/domita_test_cajoled"/>
-      <arg value="--pathPrefix=/"/>
+      <arg value="--css_prefix"/>
+      <arg value="plugin"/>
+      <arg value="--out"/>
+      <arg file="${lib}/com/google/caja/plugin/domita_test_cajoled"/>
+      <arg value="--input"/>
       <arg file="${testsrc}/com/google/caja/plugin/domita_test.js"/>
+      <arg value="--input"/>
       <arg file="${testsrc}/com/google/caja/plugin/asserts.js"/>
     </java>
   </target>
@@ -348,7 +352,6 @@
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
       <include name="**/caja/opensocial/*.java"/>
-      <include name="**/caja/plugin/HtmlPluginCompiler.java"/>
       <include name="**/caja/plugin/HtmlPluginCompilerMain.java"/>
       <include name="**/caja/plugin/PluginCompilerMain.java"/>
     </javac>
@@ -660,12 +663,19 @@
     <java classname="com.google.caja.plugin.PluginCompilerMain"
      failonerror="yes">
       <classpath refid="classpath.run"/>
-      <arg value="--out=${www}/contact-spring-graph/plugin-files/"/>
-      <arg value="--pathPrefix=/plugin-files/"/>
+      <arg value="--css_prefix"/>
+      <arg value="plugin"/>
+      <arg value="--out"/>
+      <arg file="${www}/contact-spring-graph/plugin-files/"/>
+      <arg value="--input"/>
       <arg file="${demos}/contact-spring-graph/spring-graph.gxp"/>
+      <arg value="--input"/>
       <arg file="${demos}/contact-spring-graph/spring-graph.css"/>
+      <arg value="--input"/>
       <arg file="${demos}/contact-spring-graph/position.css"/>
+      <arg value="--input"/>
       <arg file="${demos}/contact-spring-graph/spring-graph.js"/>
+      <arg value="--input"/>
       <arg file="${demos}/contact-spring-graph/plugin-main.js"/>
     </java>
   </target>

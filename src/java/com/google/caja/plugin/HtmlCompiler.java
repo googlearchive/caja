@@ -453,14 +453,6 @@ public class HtmlCompiler {
     return null;
   }
 
-  /** is an html element with the given name a form element? */
-  private static boolean isInput(String tagName) {
-    tagName = tagName.toLowerCase();
-    return "input".equals(tagName) || "select".equals(tagName)
-        || "textarea".equals(tagName) || "map".equals(tagName)
-        || "button".equals(tagName);
-  }
-
   private String guessMimeType(String tagName, String attribName) {
     HTML.Attribute type = htmlSchema.lookupAttribute(tagName, attribName);
     String mimeType = type.getMimeTypes();

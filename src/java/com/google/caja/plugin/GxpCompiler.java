@@ -1039,14 +1039,6 @@ public final class GxpCompiler {
     return null;
   }
 
-  /** Is an html element with the given name a form element? */
-  private static boolean isInput(String tagName) {
-    tagName = tagName.toLowerCase();
-    return "input".equals(tagName) || "select".equals(tagName)
-        || "textarea".equals(tagName) || "map".equals(tagName)
-        || "button".equals(tagName);
-  }
-
   /**
    * Encapsulates a transformation on an html attribute value.
    * Some transformations are performed at compile time, and some may be

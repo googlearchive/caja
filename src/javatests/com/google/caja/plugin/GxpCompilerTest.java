@@ -559,7 +559,7 @@ public class GxpCompilerTest extends TestCase {
 
   private PluginMeta makeTestPluginMeta() {
     return new PluginMeta(
-        "pre", "/testplugin",
+        "pre",
         new PluginEnvironment() {
             public CharProducer loadExternalResource(
                 ExternalReference ref, String mimeType) {

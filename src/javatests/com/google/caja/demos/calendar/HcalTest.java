@@ -15,7 +15,6 @@
 package com.google.caja.demos.calendar;
 
 import com.google.caja.util.RhinoTestBed;
-import com.google.caja.util.TestUtil;
 import junit.framework.TestCase;
 
 /**

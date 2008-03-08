@@ -311,7 +311,7 @@ public class CompiledPluginTest extends TestCase {
   private void execPlugin(String tests, PluginFile... pluginFiles)
       throws IOException, ParseException {
     PluginMeta meta = new PluginMeta(
-        "pre", "/plugin1", PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
+        "pre", PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
     MessageContext mc = new MessageContext();
     MessageQueue mq = new EchoingMessageQueue(
         new PrintWriter(new OutputStreamWriter(System.err)), mc);

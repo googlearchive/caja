@@ -71,25 +71,18 @@ public interface Criterion<T> {
     }
 
     /**
-     * A criterion that is true if any of the given criteria accept
+     * A criterion that is true iff any of the given criteria accept
      * the candidate.
-     * @param criteria non null elements.
+     * @param a non null.
+     * @param b non null.
      * @return non null.
      */
     public static <T> Criterion<T> or(
-        Criterion<T>... criteria) {
-      final Criterion<T>[] criteriaCopy = defensiveCopy(criteria);
-      for (int i = criteriaCopy.length; --i >= 0;) {
-        if (null == criteriaCopy[i]) { throw new NullPointerException(); }
-      }
+        final Criterion<T> a, final Criterion<? super T> b) {
+      if (a == null || b == null) { throw new NullPointerException(); }
       return new Criterion<T>() {
           public boolean accept(T candidate) {
-            for (int i = 0; i < criteriaCopy.length; ++i) {
-              if (criteriaCopy[i].accept(candidate)) {
-                return true;
-              }
-            }
-            return false;
+            return a.accept(candidate) || b.accept(candidate);
           }
         };
     }
@@ -97,23 +90,16 @@ public interface Criterion<T> {
     /**
      * A criterion that is true iff all of the given criteria accept
      * the candidate.
-     * @param criteria non null elements.
+     * @param a non null.
+     * @param b non null.
      * @return non null.
      */
     public static <T> Criterion<T> and(
-        Criterion<T>... criteria) {
-      final Criterion<T>[] criteriaCopy = defensiveCopy(criteria);
-      for (int i = criteriaCopy.length; --i >= 0;) {
-        if (null == criteriaCopy[i]) { throw new NullPointerException(); }
-      }
+        final Criterion<T> a, final Criterion<? super T> b) {
+      if (null == a || null == b) { throw new NullPointerException(); }
       return new Criterion<T>() {
           public boolean accept(T candidate) {
-            for (int i = 0; i < criteriaCopy.length; ++i) {
-              if (!criteriaCopy[i].accept(candidate)) {
-                return false;
-              }
-            }
-            return true;
+            return a.accept(candidate) && b.accept(candidate);
           }
         };
     }
@@ -143,14 +129,6 @@ public interface Criterion<T> {
 
       @Override
       public String toString() { return "!" + c; }
-    }
-
-
-    @SuppressWarnings("unchecked")
-    private static <T> Criterion<T>[] defensiveCopy(Criterion<T>[] array) {
-      Criterion<T>[] copy = new Criterion[array.length];
-      System.arraycopy(array, 0, copy, 0, array.length);
-      return copy;
     }
   }
 }

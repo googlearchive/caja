@@ -134,7 +134,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
   private HtmlPluginCompiler compileGadget(
       DomTree.Fragment content, final URI baseUri, final UriCallback callback)
       throws GadgetRewriteException {
-    PluginMeta meta = new PluginMeta(DOM_PREFIX, "",
+    PluginMeta meta = new PluginMeta(DOM_PREFIX,
         new PluginEnvironment() {
           public CharProducer loadExternalResource(
               ExternalReference ref, String mimeType) {

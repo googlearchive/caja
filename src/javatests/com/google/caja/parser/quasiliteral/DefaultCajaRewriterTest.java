@@ -14,26 +14,17 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.InputSource;
-import com.google.caja.lexer.JsLexer;
-import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
-import com.google.caja.parser.js.Parser;
-import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.Block;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.TestUtil;
 import com.google.caja.plugin.SyntheticNodes;
 import junit.framework.TestCase;
 
-import java.io.StringReader;
-import java.net.URI;
 import java.util.Collections;
 
 /**

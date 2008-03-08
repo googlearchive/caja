@@ -25,7 +25,6 @@ import com.google.caja.util.Criterion;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -178,8 +177,9 @@ public final class HtmlSchema {
   public Criterion<? super String> getAttributeCriteria(
       String tagName, String attribName) {
     assert attribName.equals(attribName.toLowerCase());
-    Criterion specific = attributeCriteria.get(tagName + ":" + attribName);
-    Criterion general = attributeCriteria.get("*:" + attribName);
+    Criterion<String> specific
+        = attributeCriteria.get(tagName + ":" + attribName);
+    Criterion<String> general = attributeCriteria.get("*:" + attribName);
     if (specific != null) {
       return (general != null)
           ? Criterion.Factory.and(specific, general)

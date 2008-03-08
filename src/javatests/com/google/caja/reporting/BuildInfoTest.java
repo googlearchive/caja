@@ -25,12 +25,13 @@ public class BuildInfoTest extends TestCase {
   private BuildInfo getDefaultBuildInfo() throws Exception {
     return new BuildInfo(
       new ListResourceBundle() {
-         public Object[][] getContents() {
-           return new Object[][] {
-               { "svnVersion", "345M", },
-               { "timestamp", "January 1, 2007", },
-           };
-         }
+        @Override
+        public Object[][] getContents() {
+          return new Object[][] {
+              { "svnVersion", "345M", },
+              { "timestamp", "January 1, 2007", },
+          };
+        }
       });
   }
 

@@ -23,10 +23,10 @@ import junit.framework.TestCase;
  * @author mikesamuel@gmail.com
  */
 public class HtmlSchemaTest extends TestCase {
-
   MessageQueue mq;
   HtmlSchema schema;
 
+  @Override
   public void setUp() throws Exception {
     mq = new SimpleMessageQueue();
     schema = HtmlSchema.getDefault(mq);

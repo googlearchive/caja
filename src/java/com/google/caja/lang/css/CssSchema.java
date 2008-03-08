@@ -171,16 +171,6 @@ public final class CssSchema {
     };
   }
 
-  private static Criterion<String> notIn(String... elementGroups) {
-    final Set<String> elements = new HashSet<String>();
-    elements.addAll(Arrays.asList(elementGroups));
-    return new Criterion<String>() {
-      public boolean accept(String s) {
-        return !elements.contains(s);
-      }
-    };
-  }
-
   private static Criterion<String> criterionFromConfig(
       Object type, Criterion<String> permissiveCriterion) {
     if ("*".equals(type)) { return permissiveCriterion; }
@@ -202,7 +192,7 @@ public final class CssSchema {
       }
     }
     List<String> members = new ArrayList<String>();
-    for (Object member : (List) type) {
+    for (Object member : (List<?>) type) {
       if (member instanceof String) {
         members.add((String) member);
       } else {
