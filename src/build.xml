@@ -288,9 +288,8 @@
         <include name="**/caja/parser/css/cssrendergolden1.txt"/>
         <include name="**/caja/parser/html/htmlparsertest1.gxp"/>
         <include name="**/caja/parser/html/htmlparsergolden1.txt"/>
-        <include name="**/caja/parser/js/parsergolden*.txt"/>
-        <include name="**/caja/parser/js/parsertest*.js"/>
-        <include name="**/caja/parser/js/rendergolden*.txt"/>
+        <include name="**/caja/parser/js/*.js"/>
+        <include name="**/caja/parser/js/*.txt"/>
         <include name="**/caja/parser/quasiliteral/clickme.js"/>
         <include name="**/caja/parser/quasiliteral/listfriends.js"/>
         <include name="**/caja/plugin/asserts.js"/>

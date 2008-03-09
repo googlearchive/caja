@@ -18,13 +18,17 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.TestUtil;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import junit.framework.TestCase;
 
@@ -50,10 +54,12 @@ public class ParserTest extends TestCase {
   public void tearDown() throws Exception {
     super.tearDown();
     mc = null;
+    mq = null;
   }
 
   public void testParser() throws Exception {
-    runParseTest("parsertest1.js", "parsergolden1.txt");
+    runParseTest("parsertest1.js", "parsergolden1.txt",
+                 "Reserved word else used as an identifier");
 
     // Check warnings on message queue.
     Iterator<Message> msgs = mq.getMessages().iterator();
@@ -61,9 +67,9 @@ public class ParserTest extends TestCase {
     Message m1 = msgs.next();
     assertEquals(MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
                  m1.getMessageType());
-    assertEquals(Keyword.ELSE, m1.getMessageParts().get(0));
     assertFilePosition("parsertest1.js:11+29 - 33",
-        (FilePosition) m1.getMessageParts().get(1), mc);
+                       (FilePosition) m1.getMessageParts().get(0), mc);
+    assertEquals(Keyword.ELSE, m1.getMessageParts().get(1));
     assertTrue(msgs.hasNext());
     Message m2 = msgs.next();
     assertEquals(MessageType.NOT_IE, m2.getMessageType());
@@ -71,31 +77,30 @@ public class ParserTest extends TestCase {
                        (FilePosition) m2.getMessageParts().get(0), mc);
     assertTrue(!msgs.hasNext());
   }
-
   public void testParser2() throws Exception {
     runParseTest("parsertest2.js", "parsergolden2.txt");
-    
+
     // Check warnings on message queue.
     Iterator<Message> msgs = mq.getMessages().iterator();
     assertTrue(msgs.hasNext());
     Message m1 = msgs.next();
     assertEquals(MessageType.SEMICOLON_INSERTED, m1.getMessageType());
     assertFilePosition("parsertest2.js:3+3",
-        (FilePosition) m1.getMessageParts().get(0), mc);
+                       (FilePosition) m1.getMessageParts().get(0), mc);
     assertTrue(!msgs.hasNext());
   }
-
   public void testParser3() throws Exception {
     runParseTest("parsertest3.js", "parsergolden3.txt");
     assertTrue(mq.getMessages().isEmpty());
   }
-
   public void testParser5() throws Exception {
     runParseTest("parsertest5.js", "parsergolden5.txt");
   }
-
   public void testParser7() throws Exception {
     runParseTest("parsertest7.js", "parsergolden7.txt");
+  }
+  public void testParser8() throws Exception {
+    runParseTest("parsertest8.js", "parsergolden8.txt");
   }
 
   public void testParseTreeRendering1() throws Exception {
@@ -128,6 +133,9 @@ public class ParserTest extends TestCase {
   public void testParseTreeRendering7() throws Exception {
     runRenderTest("parsertest7.js", "rendergolden7.txt", false);
   }
+  public void testParseTreeRendering8() throws Exception {
+    runRenderTest("parsertest8.js", "rendergolden8.txt", true);
+  }
 
   private void runRenderTest(
       String testFile, String goldenFile, boolean paranoid)
@@ -152,7 +160,8 @@ public class ParserTest extends TestCase {
     assertEquals(golden, sb.toString());
   }
 
-  private void runParseTest(String testFile, String goldenFile)
+  private void runParseTest(
+      String testFile, String goldenFile, String ... errors)
       throws Exception {
     Statement parseTree = TestUtil.parseTree(getClass(), testFile, mq);
     TestUtil.checkFilePositionInvariants(parseTree);
@@ -169,5 +178,17 @@ public class ParserTest extends TestCase {
     StringBuilder cloneOutput = new StringBuilder();
     cloneParseTree.format(mc, cloneOutput);
     assertEquals(golden, cloneOutput.toString());    
+
+    Set<String> actualErrors = new LinkedHashSet<String>();
+    for (Message m : mq.getMessages()) {
+      if (MessageLevel.ERROR.compareTo(m.getMessageLevel()) <= 0) {
+        String error = m.toString();
+        actualErrors.add(error.substring(error.indexOf(": ") + 2));
+      }
+    }
+
+    Set<String> expectedErrors
+        = new LinkedHashSet<String>(Arrays.asList(errors));
+    assertEquals(expectedErrors, actualErrors);
   }
 }

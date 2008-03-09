@@ -494,19 +494,6 @@ public final class Parser extends ParserBase {
             tq.expectToken(Punctuation.RPAREN);
             Statement body = parseBody(false);
             sawElse = tq.checkToken(Keyword.ELSE);
-            if (!isTerminal(body) && !sawElse) {
-              if (tq.checkToken(Punctuation.SEMI)) {
-                sawElse = tq.checkToken(Keyword.ELSE);
-              } else {
-                // Error if no semicolon and insertion not allowed
-                if (!allowSemicolonInsertion()) {
-                  mq.addMessage(MessageType.EXPECTED_TOKEN,
-                                FilePosition.endOf(tq.lastPosition()),
-                                Punctuation.SEMI,
-                                MessagePart.Factory.valueOf(tq.peek().text));
-                }
-              }
-            }
             clauses.add(new Pair<Expression, Statement>(cond, body));
           } while (sawElse && tq.checkToken(Keyword.IF));
           if (sawElse) {
@@ -913,7 +900,7 @@ public final class Parser extends ParserBase {
       // Could cast to double and back to long and see if precision lost
       // inside a strict fp block?
       mq.addMessage(MessageType.UNREPRESENTABLE_INTEGER_LITERAL,
-              MessagePart.Factory.valueOf(t.text), t.pos);
+                    t.pos, MessagePart.Factory.valueOf(t.text));
     }
 
     return longValue.longValue();
@@ -1008,13 +995,13 @@ public final class Parser extends ParserBase {
             if (null != kw) {
             if (Keyword.THIS != kw) {
               mq.addMessage(MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
-                              Keyword.fromString(identifier),
-                              tq.lastPosition());
+                            tq.lastPosition(),
+                            Keyword.fromString(identifier));
             }
           } else if (!isIdentifier(identifier)) {
             mq.addMessage(MessageType.INVALID_IDENTIFIER,
-                            MessagePart.Factory.valueOf(identifier),
-                            tq.lastPosition());
+                          tq.lastPosition(),
+                          MessagePart.Factory.valueOf(identifier));
           }
           Identifier idNode = new Identifier(identifier);
           e = new Reference(idNode);
@@ -1204,8 +1191,7 @@ public final class Parser extends ParserBase {
       // none found, so maybe do insertion
       if (allowSemicolonInsertion()) {
         FilePosition semiPoint = FilePosition.endOf(tq.lastPosition());
-        mq.addMessage(
-            MessageType.SEMICOLON_INSERTED, semiPoint);
+        mq.addMessage(MessageType.SEMICOLON_INSERTED, semiPoint);
         return;
       }
       tq.expectToken(Punctuation.SEMI);  // Just used to throw an exception
@@ -1385,8 +1371,8 @@ public final class Parser extends ParserBase {
         if (!paramNames.add(p.getIdentifierName())) {
          mq.addMessage(
              MessageType.DUPLICATE_FORMAL_PARAM,
-             MessagePart.Factory.valueOf(p.getIdentifierName()),
-             p.getFilePosition());
+             p.getFilePosition(),
+             MessagePart.Factory.valueOf(p.getIdentifierName()));
         }
       }
       this.params = params;

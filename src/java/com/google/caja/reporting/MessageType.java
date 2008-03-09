@@ -41,7 +41,7 @@ public enum MessageType implements MessageTypeInt {
   UNTERMINATED_COMMENT_TOKEN(
       "%s: Unclosed comment", MessageLevel.FATAL_ERROR),
   UNREPRESENTABLE_INTEGER_LITERAL(
-      "Integer literal %s at %s doesn't fit in 51 bits", MessageLevel.WARNING),
+      "%s: Integer literal %s doesn't fit in 51 bits", MessageLevel.WARNING),
   MALFORMED_NUMBER("%s: Malformed number %s", MessageLevel.FATAL_ERROR),
   UNRECOGNIZED_ESCAPE("%s: Unrecognized escape '%s'", MessageLevel.FATAL_ERROR),
   MALFORMED_STRING("%s: Illegal char in string '%s'", MessageLevel.FATAL_ERROR),
@@ -57,12 +57,11 @@ public enum MessageType implements MessageTypeInt {
   SEMICOLON_INSERTED("%s: Semicolon inserted", MessageLevel.LINT),
   PLACEHOLDER_INSERTED("%s: Placeholder inserted", MessageLevel.WARNING),
   RESERVED_WORD_USED_AS_IDENTIFIER(
-      "Reserved word %s used as an identifier at %s", MessageLevel.ERROR),
-  INVALID_IDENTIFIER(
-      "Malformed identifier %s at %s", MessageLevel.ERROR),
+      "%s: Reserved word %s used as an identifier", MessageLevel.ERROR),
+  INVALID_IDENTIFIER("%s: Malformed identifier %s", MessageLevel.ERROR),
   UNEXPECTED_TOKEN("%s: Unexpected token %s", MessageLevel.ERROR),
-  DUPLICATE_FORMAL_PARAM("Duplicate formal parameter %s at %s",
-      MessageLevel.ERROR),
+  DUPLICATE_FORMAL_PARAM("%s: Duplicate formal parameter %s",
+                         MessageLevel.ERROR),
   UNRECOGNIZED_REGEX_MODIFIERS(
       "%s: Unrecognized regular expression modifiers %s", MessageLevel.ERROR),
   PARSE_ERROR("%s: Parse error in %s", MessageLevel.ERROR),

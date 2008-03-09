@@ -1,0 +1,52 @@
+Block
+  Conditional
+    Reference
+      Identifier : a
+    ExpressionStmt
+      Operation : ASSIGN
+        Reference
+          Identifier : b
+        Reference
+          Identifier : c
+  ExpressionStmt
+    Operation : ASSIGN
+      Reference
+        Identifier : d
+      Reference
+        Identifier : e
+  Conditional
+    Reference
+      Identifier : a
+    Conditional
+      Reference
+        Identifier : b
+      ExpressionStmt
+        Operation : FUNCTION_CALL
+          Reference
+            Identifier : c
+      ExpressionStmt
+        Operation : FUNCTION_CALL
+          Reference
+            Identifier : d
+    ExpressionStmt
+      Operation : FUNCTION_CALL
+        Reference
+          Identifier : e
+  Conditional
+    Reference
+      Identifier : a
+    Conditional
+      Reference
+        Identifier : b
+      ExpressionStmt
+        Operation : FUNCTION_CALL
+          Reference
+            Identifier : c
+      ExpressionStmt
+        Operation : FUNCTION_CALL
+          Reference
+            Identifier : d
+    ExpressionStmt
+      Operation : FUNCTION_CALL
+        Reference
+          Identifier : e

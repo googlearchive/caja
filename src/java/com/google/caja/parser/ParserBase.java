@@ -58,12 +58,12 @@ public abstract class ParserBase {
       case WORD:
         if (!isIdentifier(s)) {
           mq.addMessage(MessageType.INVALID_IDENTIFIER,
-                        MessagePart.Factory.valueOf(s), tq.currentPosition());
+                        tq.currentPosition(), MessagePart.Factory.valueOf(s));
         }
         break;
       case KEYWORD:
         mq.addMessage(MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
-                      Keyword.fromString(s), tq.currentPosition());
+                      tq.currentPosition(), Keyword.fromString(s));
         break;
       default:
         throw new ParseException(
