@@ -33,6 +33,7 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Pair;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -880,17 +881,29 @@ public final class Parser extends ParserBase {
         || current.startLogicalLineNo() > last.endLogicalLineNo();
   }
 
-  private NumberLiteral toNumberLiteral(Token<JsTokenType> t) {
+  private double toNumber(Token<JsTokenType> t) {
     if ("NaN".equals(t.text)) {
-      return new RealLiteral(Double.NaN);
+      return Double.NaN;
     } else if ("Infinity".equals(t.text)) {
-      return new RealLiteral(Double.POSITIVE_INFINITY);
+      return Double.POSITIVE_INFINITY;
     }
-    // TODO(mikesamuel): is parseDouble locale independent?
-    return new RealLiteral(Double.parseDouble(t.text));
+    // Double.parseDouble is not locale dependent.
+    return Double.parseDouble(t.text);
   }
 
-  private IntegerLiteral toIntegerLiteral(Token<JsTokenType> t) {
+  private String floatToString(Token<JsTokenType> t) {
+    if ("NaN".equals(t.text) || "Infinity".equals(t.text)) {
+      return t.text;
+    } else {
+      return NumberLiteral.numberToString(new BigDecimal(t.text));
+    }
+  }
+
+  private NumberLiteral toNumberLiteral(Token<JsTokenType> t) {
+    return new RealLiteral(toNumber(t));
+  }
+
+  private long toInteger(Token<JsTokenType> t) {
     Long longValue = Long.decode(t.text);
 
     // Make sure that the number fits in a 51 bit mantissa
@@ -903,7 +916,11 @@ public final class Parser extends ParserBase {
               MessagePart.Factory.valueOf(t.text), t.pos);
     }
 
-    return new IntegerLiteral(lv);
+    return longValue.longValue();
+  }
+
+  private IntegerLiteral toIntegerLiteral(Token<JsTokenType> t) {
+    return new IntegerLiteral(toInteger(t));
   }
 
   @SuppressWarnings("fallthrough")
@@ -1063,12 +1080,14 @@ public final class Parser extends ParserBase {
                     key = new StringLiteral(keyToken.text);
                     tq.advance();
                     break;
-                  case INTEGER:
-                    key = toIntegerLiteral(keyToken);
+                  case FLOAT:
+                    key = new StringLiteral(
+                        StringLiteral.toQuotedValue(floatToString(keyToken)));
                     tq.advance();
                     break;
-                  case FLOAT:
-                    key = toNumberLiteral(keyToken);
+                  case INTEGER:
+                    key = new StringLiteral(
+                        StringLiteral.toQuotedValue("" + toInteger(keyToken)));
                     tq.advance();
                     break;
                   default:

@@ -35,6 +35,7 @@ import com.google.caja.parser.css.CssParserTest;
 import com.google.caja.parser.css.CssTreeTest;
 import com.google.caja.parser.html.DomParserTest;
 import com.google.caja.parser.html.JsHtmlParserTest;
+import com.google.caja.parser.js.NumberLiteralTest;
 import com.google.caja.parser.js.ParserTest;
 import com.google.caja.parser.js.StringLiteralTest;
 import com.google.caja.parser.quasiliteral.DefaultCajaRewriterTest;
@@ -102,6 +103,7 @@ public class AllTests {
           LayoutTest.class,
           LookaheadCharProducerTest.class,
           MatchTest.class,
+          NumberLiteralTest.class,
           ParseTreeNodeTest.class,
           ParserTest.class,
           PluginCompilerTest.class,
