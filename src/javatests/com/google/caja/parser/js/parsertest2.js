@@ -1,5 +1,6 @@
 (function () {
-  return n < 0 ? 'negative' : 'positive';
+  var yes, no;
+  return n < 0 ? no==='negative' : yes='positive';
 })
 
 /** the number of days between two dates specified as (yr, month, dayOfMonth)

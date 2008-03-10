@@ -3,14 +3,25 @@ Block
     FunctionConstructor
       Identifier
       Block
+        MultiDeclaration
+          Declaration
+            Identifier : yes
+          Declaration
+            Identifier : no
         ReturnStmt
           Operation : TERNARY
             Operation : LESS_THAN
               Reference
                 Identifier : n
               IntegerLiteral : 0
-            StringLiteral : 'negative'
-            StringLiteral : 'positive'
+            Operation : STRICTLY_EQUAL
+              Reference
+                Identifier : no
+              StringLiteral : 'negative'
+            Operation : ASSIGN
+              Reference
+                Identifier : yes
+              StringLiteral : 'positive'
   FunctionDeclaration
     Identifier : ICAL_daysBetween
     FunctionConstructor

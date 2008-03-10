@@ -85,7 +85,7 @@ public class ParserTest extends TestCase {
     assertTrue(msgs.hasNext());
     Message m1 = msgs.next();
     assertEquals(MessageType.SEMICOLON_INSERTED, m1.getMessageType());
-    assertFilePosition("parsertest2.js:3+3",
+    assertFilePosition("parsertest2.js:4+3",
                        (FilePosition) m1.getMessageParts().get(0), mc);
     assertTrue(!msgs.hasNext());
   }

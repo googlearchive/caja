@@ -780,6 +780,8 @@ public final class Parser extends ParserBase {
           }
         } else if (OperatorType.POSTFIX == op.getType()) {
           right = null;
+        } else if (OperatorType.TERNARY == op.getType()) {
+          right = parseExpressionPart(insertionProtected);
         } else if (Operator.MEMBER_ACCESS != op) {
           right = parseOp(opprec, insertionProtected);
         } else {
@@ -826,7 +828,7 @@ public final class Parser extends ParserBase {
         case TERNARY:
           {
             tq.expectToken(op.getClosingSymbol());
-            Expression farRight = parseOp(opprec, insertionProtected);
+            Expression farRight = parseExpressionPart(insertionProtected);
             left = new Operation(op, left, right, farRight);
           }
           break;
