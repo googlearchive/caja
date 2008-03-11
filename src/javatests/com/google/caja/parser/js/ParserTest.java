@@ -97,7 +97,13 @@ public class ParserTest extends TestCase {
     runParseTest("parsertest5.js", "parsergolden5.txt");
   }
   public void testParser7() throws Exception {
-    runParseTest("parsertest7.js", "parsergolden7.txt");
+    runParseTest("parsertest7.js", "parsergolden7.txt",
+                 "Reserved word null used as an identifier",
+                 "Reserved word false used as an identifier",
+                 "Reserved word if used as an identifier",
+                 "Reserved word function used as an identifier",
+                 "Reserved word with used as an identifier",
+                 "Reserved word debugger used as an identifier");
   }
   public void testParser8() throws Exception {
     runParseTest("parsertest8.js", "parsergolden8.txt");

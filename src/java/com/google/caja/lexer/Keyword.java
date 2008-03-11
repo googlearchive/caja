@@ -24,19 +24,24 @@ import java.util.Map;
 /**
  * An enumeration of all javascript keywords.
  *
- * Included future reserved keywords as per the
- * @see
- * <a href="http://www.mozilla.org/js/language/es4/formal/parser-grammar.html"
- * >EcmaScript Parser Grammar</a>
+ * Included future reserved keywords as per section 2.2 of
+ * <a
+ * href="http://wiki.ecmascript.org/lib/exe/fetch.php?id=resources%3Aresources&amp;cache=cache&amp;media=resources:jscriptdeviationsfromes3.pdf"
+ * >JScript Deviations from ES3</a>
+ * and section 1.8 of
+ * <a href="http://www.ecmascript.org/es4/spec/incompatibilities.pdf"
+ * >Compatibility between ES3 and Proposed ES4</a>.
  *
  * @author mikesamuel@gmail.com
  */
 public enum Keyword implements MessagePart {
   ABSTRACT("abstract"),
-  AS("as"),
+  BOOLEAN("boolean"),
   BREAK("break"),
+  BYTE("byte"),
   CASE("case"),
   CATCH("catch"),
+  CHAR("char"),
   CLASS("class"),
   CONST("const"),
   CONTINUE("continue"),
@@ -44,12 +49,15 @@ public enum Keyword implements MessagePart {
   DEFAULT("default"),
   DELETE("delete"),
   DO("do"),
+  DOUBLE("double"),
   ELSE("else"),
   ENUM("enum"),
   EXPORT("export"),
   EXTENDS("extends"),
   FALSE("false"),
+  FINAL("final"),
   FINALLY("finally"),
+  FLOAT("float"),
   FOR("for"),
   FUNCTION("function"),
   GOTO("goto"),
@@ -58,17 +66,22 @@ public enum Keyword implements MessagePart {
   IMPORT("import"),
   IN("in"),
   INSTANCEOF("instanceof"),
+  INT("int"),
   INTERFACE("interface"),
-  IS("is"),
+  LET("let"),
+  LONG("long"),
   NAMESPACE("namespace"),
   NATIVE("native"),
   NEW("new"),
   NULL("null"),
+  OVERRIDE("override"),
   PACKAGE("package"),
   PRIVATE("private"),
   PROTECTED("protected"),
   PUBLIC("public"),
   RETURN("return"),
+  SHORT("short"),
+  STATIC("static"),
   SUPER("super"),
   SWITCH("switch"),
   SYNCHRONIZED("synchronized"),
@@ -85,9 +98,10 @@ public enum Keyword implements MessagePart {
   VOLATILE("volatile"),
   WHILE("while"),
   WITH("with"),
+  YIELD("yield"),
   ;
 
-  private String keywordText;
+  private final String keywordText;
 
   Keyword(String keywordText) { this.keywordText = keywordText; }
 

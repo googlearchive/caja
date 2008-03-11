@@ -1,6 +1,7 @@
 {
   (function () {
-    return n < 0 ? 'negative' : 'positive';
+    var yes, no;
+    return n < 0 ? no === 'negative' : (yes = 'positive');
   });
   function ICAL_daysBetween(y1, m1, d1, y2, m2, d2) {
     var d;

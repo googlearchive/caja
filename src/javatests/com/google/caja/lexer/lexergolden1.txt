@@ -82,7 +82,7 @@ PUNC [<<=]: lexertest1.js:35+6@750 - 9@753
 WORD [shift_amount]: lexertest1.js:35+10@754 - 22@766
 PUNC [;]: lexertest1.js:35+22@766 - 23@767
 FLOA [14.0005e-6]: lexertest1.js:37+1@769 - 11@779
-KEYW [is]: lexertest1.js:37+12@780 - 14@782
+WORD [is]: lexertest1.js:37+12@780 - 14@782
 WORD [one]: lexertest1.js:37+15@783 - 18@786
 WORD [token]: lexertest1.js:37+19@787 - 24@792
 PUNC [?]: lexertest1.js:37+24@792 - 25@793
