@@ -1,0 +1,11 @@
+URL: http://www.mozilla.org/rhino/download.html
+Version: 1.6R7
+License: MPL, GPL
+License File: LICENSE
+
+Description:
+A javascript interpreter implemented in Java.
+Docs at http://developer.mozilla.org/en/docs/Rhino_documentation
+
+Local Modifications:
+None
