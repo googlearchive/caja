@@ -23,6 +23,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessagePart;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -56,8 +57,8 @@ public class ConfigUtil {
    * to load from the file-system or from the classpath.
    *
    * @param uri a URI relative to base, or an absolute URI with scheme in
-   *   {@code ("content", "file", "resource")}.
-   * @param base null or a URI with scheme in {@code ("file", "resource")}.
+   *   {@code ("content", "resource")}.
+   * @param base null or a URI with scheme in {@code "resource"}.
    */
   public static Reader openConfigResource(URI uri, URI base)
       throws IOException {
@@ -68,9 +69,7 @@ public class ConfigUtil {
         throw new IllegalArgumentException("Missing base URI");
       }
       String scheme = base.getScheme();
-      if ((!"file".equalsIgnoreCase(scheme)
-           && !"resource".equalsIgnoreCase(scheme))
-          || !base.isAbsolute()) {
+      if (!("resource".equalsIgnoreCase(scheme) && base.isAbsolute())) {
         throw new IllegalArgumentException("base URI: " + base);
       }
 
@@ -90,18 +89,15 @@ public class ConfigUtil {
         throw new IllegalArgumentException("URI missing content: " + uri);
       }
       return new StringReader(content);
-    } else if ("file".equals(scheme)) {
-      String path = uri.getPath();
-      if (path == null) {
-        throw new IllegalArgumentException("URI missing path: " + uri);
-      }
-      in = new FileInputStream(path);
     } else if ("resource".equals(scheme)) {
       String path = uri.getPath();
       if (path == null) {
         throw new IllegalArgumentException("URI missing path: " + uri);
       }
       in = ConfigUtil.class.getResourceAsStream(path);
+      if (in == null) {
+        throw new FileNotFoundException(uri.toString());
+      }
     } else {
       throw new IllegalArgumentException("URI: " + uri);
     }
@@ -214,7 +210,7 @@ class JSONWhiteListLoader {
     List<WhiteListSkeleton> inherited = new ArrayList<WhiteListSkeleton>();
     if (inherits != null) {
       for (Object obj : inherits) {
-        // Match "file://..." or { "src": "file://..." }.
+        // Match "resource://..." or { "src": "resource://..." }.
         String srcStr = obj instanceof String
             ? (String) obj
             : expectString(expectJSONObject(obj, "inherits").get("src"),

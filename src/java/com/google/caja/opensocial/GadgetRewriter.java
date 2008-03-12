@@ -63,7 +63,7 @@ public interface GadgetRewriter {
    * @exception UriCallbackException if the {@code urlCallback} threw an exception.
    * @exception GadgetRewriteException if there was a problem parsing the gadget.
    * @exception IOException if there was an I/O problem.
-   * @see #rewrite(ExternalReference, UriCallback, Appendable)
+   * @see #rewrite(ExternalReference, UriCallback, String, Appendable)
    */
   void rewrite(URI baseUri, Readable gadgetSpec, UriCallback uriCallback,
                String view, Appendable output)

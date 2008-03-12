@@ -14,15 +14,11 @@
 package com.google.caja.opensocial;
 
 import com.google.caja.lexer.ExternalReference;
-import com.google.caja.reporting.EchoingMessageQueue;
-import com.google.caja.reporting.MessageContext;
+import com.google.caja.plugin.Config;
 import com.google.caja.reporting.BuildInfo;
-
-import org.apache.commons.cli.BasicParser;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
+import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.SimpleMessageQueue;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -40,30 +36,11 @@ import java.net.URISyntaxException;
  * @author benl@google.com (Ben Laurie)
  */
 public class GadgetRewriterMain {
-  private static final Option INPUT =
-    new Option("i", "input", true, "Input Gadget URL");
-  private static final Option OUTPUT =
-    new Option("o", "output", true, "Output Gadget File");
-  private static final Option TIME =
-    new Option("t", "time", true, "Repeat n times and print timing info");
-  private static final Option VIEW =
-    new Option("v", "view", true, "Gadget view to render (default is 'canvas')");
-  
-  private String gadgetUrl;
-  private String outputFile;
-  private int repeatCount;
-  private String gadgetView = "canvas";
+  private Config config;
 
-  private static final Options options = new Options();
-  
-  static {
-    options.addOption(INPUT);
-    options.addOption(OUTPUT);
-    options.addOption(TIME);
-  }
-  
   private GadgetRewriterMain() {
-    repeatCount = 0;
+    config = new Config(
+        getClass(), System.err, "Cajole an OpenSocial gadget spec's Content");
   }
 
   public static void main(String[] argv) throws GadgetRewriteException,
@@ -79,7 +56,7 @@ public class GadgetRewriterMain {
 
     public Reader retrieve(final ExternalReference extref,
                            final String mimeType) throws UriCallbackException {
-      System.out.println("Retrieving " + extref);
+      System.err.println("Retrieving " + extref);
       InputStream content;
       try {
         content = (InputStream)extref.getUri().toURL().getContent();
@@ -94,69 +71,32 @@ public class GadgetRewriterMain {
     }
   }
   
-  private int run(String[] argv) throws UriCallbackException,
-      GadgetRewriteException, IOException, URISyntaxException {
-    int rc = processArguments(argv);
-    if (rc != 0) return rc;
-
-    if (repeatCount == 0) {
-      runOnce();
-    } else {
-      long now = System.currentTimeMillis();
-      for (int n = 0; n < repeatCount; ++n)
-        runOnce();
-      System.out.println("Average time per rewrite "
-              + (System.currentTimeMillis() - now)/(float)repeatCount + "ms");
+  private int run(String[] argv)
+      throws UriCallbackException, GadgetRewriteException, IOException {
+    if (!config.processArguments(argv)) {
+      return -1;
     }
-    return 0;
-  }
 
-  private void runOnce() throws IOException, UriCallbackException,
-      GadgetRewriteException, MalformedURLException, URISyntaxException {
-    DefaultGadgetRewriter rewriter =
-      new DefaultGadgetRewriter(new EchoingMessageQueue(
-          new PrintWriter(System.err), new MessageContext(), false));
-    Writer w = new BufferedWriter(new FileWriter(outputFile));
-    Callback cb = new Callback();
-    URI uri = new URI(gadgetUrl);
-    Reader r = cb.retrieve(new ExternalReference(uri, null), null);
-    rewriter.rewrite(uri, r, cb, gadgetView, w);
-    w.flush();
-    w.close();
-  }
+    MessageQueue mq = new SimpleMessageQueue();
+    MessageContext mc = new MessageContext();
+    DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(mq);
+    rewriter.setCssSchema(config.getCssSchema(mq));
+    rewriter.setHtmlSchema(config.getHtmlSchema(mq));
 
-  private int processArguments(String[] argv) {
-    CommandLine cl;
+    Writer w = new BufferedWriter(new FileWriter(config.getOutputBase()));
     try {
-      cl = new BasicParser().parse(options, argv);
-    } catch (org.apache.commons.cli.ParseException e) {
-      throw new RuntimeException(e);
-    }
-
-    gadgetUrl = cl.getOptionValue(INPUT.getOpt());
-    if (gadgetUrl == null)
-      return usage("Option \"" + INPUT.getLongOpt() + "\" missing");
-    
-    outputFile = cl.getOptionValue(OUTPUT.getOpt());
-    if (outputFile == null)
-      return usage("Option \"" + OUTPUT.getLongOpt() + "\" missing");
-
-    String t = cl.getOptionValue(TIME.getOpt());
-    if (t != null) {
-      repeatCount = Integer.decode(t).intValue();
+      Callback cb = new Callback();
+      URI uri = config.getBaseUri();
+      Reader r = cb.retrieve(new ExternalReference(uri, null), null);
+      try {
+        rewriter.rewrite(uri, r, cb, config.getGadgetView(), w);
+      } finally {
+        r.close();
+      }
+    } finally {
+      w.close();
     }
     
-    t = cl.getOptionValue(VIEW.getOpt());
-    if (t != null) {
-      gadgetView = t;
-    }
     return 0;
-  }
-  
-  private int usage(String msg) {
-    System.out.println(BuildInfo.getInstance().getBuildInfo());
-    System.out.println(msg);
-    new HelpFormatter().printHelp(getClass().getName(), options);
-    return -1;
   }
 }

@@ -14,6 +14,8 @@
 
 package com.google.caja.opensocial;
 
+import com.google.caja.lang.css.CssSchema;
+import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.HtmlTokenType;
@@ -47,7 +49,9 @@ import java.net.URI;
 public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewriter {
   private static final String DOM_PREFIX = "DOM-PREFIX";
 
-  private MessageQueue mq;
+  private final MessageQueue mq;
+  private CssSchema cssSchema;
+  private HtmlSchema htmlSchema;
 
   public DefaultGadgetRewriter(MessageQueue mq) {
     this.mq = mq;
@@ -55,6 +59,13 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
 
   public MessageQueue getMessageQueue() {
     return mq;
+  }
+
+  public void setCssSchema(CssSchema cssSchema) {
+    this.cssSchema = cssSchema;
+  }
+  public void setHtmlSchema(HtmlSchema htmlSchema) {
+    this.htmlSchema = htmlSchema;
   }
 
   public void rewrite(ExternalReference gadgetRef, UriCallback uriCallback,
@@ -167,8 +178,9 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
         });
     
     HtmlPluginCompiler compiler = new HtmlPluginCompiler(mq, meta);
+    if (cssSchema != null) { compiler.setCssSchema(cssSchema); }
+    if (htmlSchema != null) { compiler.setHtmlSchema(htmlSchema); }
 
-    // Compile
     compiler.addInput(new AncestorChain<DomTree.Fragment>(content));
 
     if (!compiler.run()) {

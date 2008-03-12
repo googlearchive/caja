@@ -85,6 +85,8 @@ public class PluginCompilerMain {
     PluginMeta meta = new PluginMeta(
         config.getCssPrefix(), PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
     PluginCompiler compiler = new PluginCompiler(meta, mq);
+    compiler.setCssSchema(config.getCssSchema(mq));
+    compiler.setHtmlSchema(config.getHtmlSchema(mq));
 
     boolean success;
     try {
