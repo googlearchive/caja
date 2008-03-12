@@ -1,0 +1,16 @@
+StyleSheet
+  RuleSet
+    Selector
+      SimpleSelector
+        IdLiteral : #xxx
+    Declaration
+      Property : filter
+      Expr
+        Term
+          FunctionCall : alpha
+            Expr
+              Term
+                IdentLiteral : opacity
+              Operation : EQUAL
+              Term
+                QuantityLiteral : 50

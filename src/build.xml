@@ -283,8 +283,10 @@
         <include name="**/caja/opensocial/test-parsing.xml"/>
         <include name="**/caja/parser/css/cssparsergolden1.txt"/>
         <include name="**/caja/parser/css/cssparsergolden2.txt"/>
+        <include name="**/caja/parser/css/cssparsergolden3.txt"/>
         <include name="**/caja/parser/css/cssparserinput1.css"/>
         <include name="**/caja/parser/css/cssparserinput2.css"/>
+        <include name="**/caja/parser/css/cssparserinput3.css"/>
         <include name="**/caja/parser/css/cssrendergolden1.txt"/>
         <include name="**/caja/parser/html/htmlparsertest1.gxp"/>
         <include name="**/caja/parser/html/htmlparsergolden1.txt"/>

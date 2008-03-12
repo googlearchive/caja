@@ -65,36 +65,22 @@ public class CssParserTest extends TestCase {
   }
 
   public void testCssParser1() throws Exception {
-    String golden = TestUtil.readResource(getClass(), "cssparsergolden1.txt");
-    CssTree.StyleSheet stylesheet;
-    CharProducer cp = TestUtil.getResourceAsProducer(
-        getClass(), "cssparserinput1.css");
-    try {
-      CssLexer lexer = new CssLexer(cp);
-      TokenQueue<CssTokenType> tq = new TokenQueue<CssTokenType>(
-          lexer, cp.getCurrentPosition().source(),
-          new Criterion<Token<CssTokenType>>() {
-            public boolean accept(Token<CssTokenType> t) {
-              return CssTokenType.SPACE != t.type
-                  && CssTokenType.COMMENT != t.type;
-            }
-          });
-      CssParser p = new CssParser(tq);
-      stylesheet = p.parseStyleSheet();
-      tq.expectEmpty();
-    } finally {
-      cp.close();
-    }
-    StringBuilder sb = new StringBuilder();
-    stylesheet.format(new MessageContext(), sb);
-    assertEquals(golden.trim(), sb.toString().trim());
+      runTestCssParser("cssparserinput1.css", "cssparsergolden1.txt");
   }
 
   public void testCssParser2() throws Exception {
-    String golden = TestUtil.readResource(getClass(), "cssparsergolden2.txt");
+      runTestCssParser("cssparserinput2.css", "cssparsergolden2.txt");
+  }
+
+  public void testCssParser3() throws Exception {
+      runTestCssParser("cssparserinput3.css", "cssparsergolden3.txt");
+  }
+
+  private void runTestCssParser(String cssFile, String goldenFile) throws Exception {
+    String golden = TestUtil.readResource(getClass(), goldenFile);
     CssTree.StyleSheet stylesheet;
     CharProducer cp = TestUtil.getResourceAsProducer(
-        getClass(), "cssparserinput2.css");
+        getClass(), cssFile);
     try {
       CssLexer lexer = new CssLexer(cp);
       TokenQueue<CssTokenType> tq = new TokenQueue<CssTokenType>(
