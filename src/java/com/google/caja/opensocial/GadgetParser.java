@@ -35,6 +35,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Safe XML parser for gadget specifications. Rejects invalid markup.
@@ -50,12 +51,13 @@ public class GadgetParser {
    * Parse an OpenSocial gadget specification and return the result as an object.
    *
    * @param gadgetSpec a gadget specification, represented as a string of text.
+   * @param view the view to parse
    * @return a {@code GadgetSpec}.
    * @exception GadgetRewriteException if a problem in parsing occurs, or if the gadget
    * specification is not syntactically valid.
    * @exception IOException if an I/O problem occurs
    */
-  public GadgetSpec parse(Readable gadgetSpec) throws GadgetRewriteException, IOException {
+  public GadgetSpec parse(Readable gadgetSpec, String view) throws GadgetRewriteException, IOException {
     Document d;
     try {
       d = newDocumentBuilder().parse(new InputSource(new ReadableReader(gadgetSpec)));
@@ -66,7 +68,7 @@ public class GadgetParser {
     GadgetSpec spec = new GadgetSpec();
     getModulePrefs(d, spec);
     getRequiredFeatures(d, spec);
-    getContent(d, spec);
+    getContent(d, spec, view);
 
     return spec;
   }
@@ -95,15 +97,28 @@ public class GadgetParser {
     }
   }
 
-  private void getContent(Document doc, GadgetSpec spec) throws GadgetRewriteException {
+  private void getContent(Document doc, GadgetSpec spec, String view)
+  throws GadgetRewriteException {
     NodeList list = doc.getElementsByTagName("Content");
-    check(list.getLength() == 1, "Must have exactly one <Content>");
-    Node contentNode = list.item(0);
-    check(contentNode.getAttributes().getLength() == 1, "<Content> can only have one attribute");
+    Node contentNode = null;
+    for (int n = 0 ; n < list.getLength() ; ++n) {
+      Node node = list.item(n);
+      NamedNodeMap attr = node.getAttributes();
+      Node viewNode = attr.getNamedItem("view");
+      if (viewNode == null
+          || Arrays.asList(((Attr) viewNode).getValue().split("\\s*,\\s*"))
+             .contains(view)) {
+        contentNode = node;
+        break;
+      }
+    }
+    check(contentNode != null, "No content for view '" + view + "'");
 
-    String name = ((Attr)contentNode.getAttributes().item(0)).getName();
-    String value = ((Attr)contentNode.getAttributes().item(0)).getValue();
-    check("type".equals(name), "<Content> can only have \"type\" attribute");
+    Attr typeAttr = (Attr) contentNode.getAttributes().getNamedItem("type");
+    check(typeAttr != null, "No 'type' attribute for view '" + view + "'");
+    String value = typeAttr.getValue();
+    
+    check(value.equals("html"), "Can't handle Content type '" + value +"'");
 
     spec.setContentType(value);
 

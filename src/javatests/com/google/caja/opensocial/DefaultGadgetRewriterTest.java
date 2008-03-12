@@ -136,7 +136,7 @@ public class DefaultGadgetRewriterTest extends TestCase {
       throws Exception {
     Reader input = new StringReader(TestUtil.readResource(getClass(), file));
     URI baseUri = TestUtil.getResource(getClass(), file);
-    rewriter.rewrite(baseUri, input, uriCallback, System.out);
+    rewriter.rewrite(baseUri, input, uriCallback, "canvas", System.out);
 
     checkMessages(failLevel);
   }
@@ -148,7 +148,7 @@ public class DefaultGadgetRewriterTest extends TestCase {
     URI baseUri = TestUtil.getResource(getClass(), file);
 
     StringBuilder sb = new StringBuilder();
-    rewriter.rewrite(baseUri, input, uriCallback, sb);
+    rewriter.rewrite(baseUri, input, uriCallback, "canvas", sb);
     String actual = normalXml(sb.toString()).trim();
 
     checkMessages(failLevel);
@@ -179,7 +179,7 @@ public class DefaultGadgetRewriterTest extends TestCase {
        + "</Module>");
     URI baseUri = URI.create("http://unittest.google.com/foo/bar/");
     try {
-      rewriter.rewrite(baseUri, input, uriCallback, System.out);
+      rewriter.rewrite(baseUri, input, uriCallback, "canvas", System.out);
       fail("rewrite should have failed with message " + msg);
     } catch (GadgetRewriteException ex) {
       // pass

@@ -58,20 +58,22 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
   }
 
   public void rewrite(ExternalReference gadgetRef, UriCallback uriCallback,
-                      Appendable output)
+                      String view, Appendable output)
       throws UriCallbackException, GadgetRewriteException, IOException {
     assert gadgetRef.getUri().isAbsolute() : gadgetRef.toString();
     rewrite(
         gadgetRef.getUri(),
         uriCallback.retrieve(gadgetRef, "text/xml"),
         uriCallback,
+        view,
         output);
   }
 
-  public void rewrite(URI baseUri, Readable gadgetSpec, UriCallback uriCallback, Appendable output)
+  public void rewrite(URI baseUri, Readable gadgetSpec, UriCallback uriCallback,
+                      String view, Appendable output)
       throws GadgetRewriteException, IOException {
     GadgetParser parser = new GadgetParser();
-    GadgetSpec spec = parser.parse(gadgetSpec);
+    GadgetSpec spec = parser.parse(gadgetSpec, view);
     spec.setContent(rewriteContent(baseUri, spec.getContent(), uriCallback));
     parser.render(spec, output);
   }
@@ -170,7 +172,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
     compiler.addInput(new AncestorChain<DomTree.Fragment>(content));
 
     if (!compiler.run()) {
-      throw new GadgetRewriteException();
+      throw new GadgetRewriteException("Gadget has compile errors");
     }
 
     return compiler;

@@ -46,10 +46,13 @@ public class GadgetRewriterMain {
     new Option("o", "output", true, "Output Gadget File");
   private static final Option TIME =
     new Option("t", "time", true, "Repeat n times and print timing info");
+  private static final Option VIEW =
+    new Option("v", "view", true, "Gadget view to render (default is 'canvas')");
   
   private String gadgetUrl;
   private String outputFile;
   private int repeatCount;
+  private String gadgetView = "canvas";
 
   private static final Options options = new Options();
   
@@ -87,7 +90,7 @@ public class GadgetRewriterMain {
     }
 
     public URI rewrite(ExternalReference extref, String mimeType) {
-      throw new UnsupportedOperationException();
+      return extref.getUri();
     }
   }
   
@@ -117,7 +120,7 @@ public class GadgetRewriterMain {
     Callback cb = new Callback();
     URI uri = new URI(gadgetUrl);
     Reader r = cb.retrieve(new ExternalReference(uri, null), null);
-    rewriter.rewrite(uri, r, cb, w);
+    rewriter.rewrite(uri, r, cb, gadgetView, w);
     w.flush();
     w.close();
   }
@@ -141,6 +144,11 @@ public class GadgetRewriterMain {
     String t = cl.getOptionValue(TIME.getOpt());
     if (t != null) {
       repeatCount = Integer.decode(t).intValue();
+    }
+    
+    t = cl.getOptionValue(VIEW.getOpt());
+    if (t != null) {
+      gadgetView = t;
     }
     return 0;
   }

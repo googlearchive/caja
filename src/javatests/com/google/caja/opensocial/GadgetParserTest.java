@@ -52,12 +52,12 @@ public class GadgetParserTest extends TestCase {
     });
   }
 
-  private GadgetSpec parseFile(String gadgetFile) throws Exception {
-    return parseString(TestUtil.readResource(getClass(), gadgetFile));
+  private GadgetSpec parseFile(String gadgetFile, String view) throws Exception {
+    return parseString(TestUtil.readResource(getClass(), gadgetFile), view);
   }
 
-  private GadgetSpec parseString(String gadgetSpec) throws Exception {
-    return new GadgetParser().parse(new StringReader(gadgetSpec));
+  private GadgetSpec parseString(String gadgetSpec, String view) throws Exception {
+    return new GadgetParser().parse(new StringReader(gadgetSpec), view);
   }
 
   private String render(GadgetSpec spec) throws Exception {
@@ -67,8 +67,8 @@ public class GadgetParserTest extends TestCase {
   }
 
   private void testFile(String gadgetFile, Tests tests) throws Exception {
-    GadgetSpec spec = parseFile(gadgetFile);
+    GadgetSpec spec = parseFile(gadgetFile, "canvas");
     tests.test(spec);
-    tests.test(parseString(render(spec)));
+    tests.test(parseString(render(spec), "canvas"));
   }
 }
