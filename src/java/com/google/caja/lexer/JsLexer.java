@@ -15,9 +15,6 @@
 package com.google.caja.lexer;
 
 import java.io.Reader;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -27,13 +24,6 @@ import java.util.regex.Pattern;
  */
 public class JsLexer implements TokenStream<JsTokenType> {
   private TokenStream<JsTokenType> ts;
-
-  private static final Set<String> JAVASCRIPT_NUMERIC_KEYWORDS =
-  new HashSet<String>(
-      Arrays.asList(new String[] {
-          "NaN",  // not-a-number is a number
-          "Infinity",
-      }));
 
   private static PunctuationTrie JAVASCRIPT_PUNCTUATOR;
   static {
@@ -132,10 +122,10 @@ public class JsLexer implements TokenStream<JsTokenType> {
   }
 
   private static Pattern INTEGER_LITERAL_RE = Pattern.compile(
-      "^[+-]?((?:0x[0-9a-fA-F]*)"
+      "^[+-]?((?:0[xX][0-9a-fA-F]*)"
       + "|(?:0[0-7]*)"
       + "|(?:[1-9][0-9]*))"
-      + "[uU]?[lL]?$");
+      + "$");
 
   static class WordClassifier implements TokenStream<JsTokenType> {
 
@@ -155,8 +145,6 @@ public class JsLexer implements TokenStream<JsTokenType> {
         JsTokenType type = JsTokenType.WORD;
         if (null != Keyword.fromString(tok.text)) {
           type = JsTokenType.KEYWORD;
-        } else if (JAVASCRIPT_NUMERIC_KEYWORDS.contains(tok.text)) {
-          type = JsTokenType.FLOAT;
         } else if (0 < tok.text.length()) {
           char ch = tok.text.charAt(0);
           if ((ch >= '0' && ch <= '9') || '-' == ch || '+' == ch || '.' == ch) {
@@ -165,14 +153,12 @@ public class JsLexer implements TokenStream<JsTokenType> {
               type = JsTokenType.INTEGER;
             } else {
               String text = tok.text;
-              if ("fF".indexOf(text.charAt(text.length() - 1)) >= 0) {
-                text = text.substring(0, text.length() - 1);
-              }
               try {
                 Double.parseDouble(text);
                 type = JsTokenType.FLOAT;
               } catch (NumberFormatException ex) {
-                // not a valid numeric token
+                // Not a valid numeric token.  Will be rejected as an identifier
+                // by the parser.
               }
             }
           }

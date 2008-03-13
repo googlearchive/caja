@@ -60,4 +60,6 @@ elipsis...;
 // Backslashes in character sets do not end regexs.
 r = /./, /\//, /[/]/, /[\/]\//
 
+isNaN(NaN);
+
 // leave some whitespace at the end of this file  

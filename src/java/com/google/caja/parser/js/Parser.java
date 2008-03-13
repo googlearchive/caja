@@ -871,21 +871,12 @@ public final class Parser extends ParserBase {
   }
 
   private double toNumber(Token<JsTokenType> t) {
-    if ("NaN".equals(t.text)) {
-      return Double.NaN;
-    } else if ("Infinity".equals(t.text)) {
-      return Double.POSITIVE_INFINITY;
-    }
     // Double.parseDouble is not locale dependent.
     return Double.parseDouble(t.text);
   }
 
   private String floatToString(Token<JsTokenType> t) {
-    if ("NaN".equals(t.text) || "Infinity".equals(t.text)) {
-      return t.text;
-    } else {
-      return NumberLiteral.numberToString(new BigDecimal(t.text));
-    }
+    return NumberLiteral.numberToString(new BigDecimal(t.text));
   }
 
   private NumberLiteral toNumberLiteral(Token<JsTokenType> t) {
