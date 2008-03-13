@@ -177,7 +177,8 @@ final class CssSplitter implements TokenStream<CssTokenType> {
    */
   CssSplitter(CharProducer cp, boolean allowSubstitutions) {
     assert null != cp;
-    this.cp = LookaheadCharProducer.create(cp);
+    // Longest punctuation tokens are <!-- and --> so need LA(3).
+    this.cp = new LookaheadCharProducer(cp, 3);
     this.allowSubstitutions = allowSubstitutions;
   }
 
@@ -310,6 +311,30 @@ final class CssSplitter implements TokenStream<CssTokenType> {
         } else {
           //          .      *yytext
           type = CssTokenType.PUNCTUATION;
+        }
+
+      } else if (ch == '<' || ch == '-') {
+        // "<!--"          CDO
+        // "-->"           CDC
+
+        String tail = ch == '<' ? "!--" : "->";
+
+        sb.append(ch);
+        cp.read();
+
+        cp.fetch(tail.length());
+
+        boolean matchedTail = true;
+        for (int i = 0; i < tail.length(); ++i) {
+          if (cp.peek(i) != tail.charAt(i)) {
+            matchedTail = false;
+            break;
+          }
+        }
+        type = CssTokenType.PUNCTUATION;
+        if (matchedTail) {
+          sb.append(tail);
+          cp.consume(tail.length());
         }
 
       } else if ((ch >= '0' && ch <= '9') || '.' == ch) {

@@ -245,6 +245,7 @@
       <include name="**/caja/plugin/PluginCompilerTest.java"/>
       <include name="**/caja/plugin/UrlUtilTest.java"/>
       <include name="**/caja/plugin/caps/CapabilityRewriterTest.java"/>
+      <include name="**/caja/reporting/*Test.java"/>
       <include name="**/caja/util/JoinTest.java"/>
       <include name="**/caja/util/SparseBitSetTest.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
@@ -281,13 +282,9 @@
         <include name="**/caja/opensocial/listfriends.xml"/>
         <include name="**/caja/opensocial/SocialHelloWorld.xml"/>
         <include name="**/caja/opensocial/test-parsing.xml"/>
-        <include name="**/caja/parser/css/cssparsergolden1.txt"/>
-        <include name="**/caja/parser/css/cssparsergolden2.txt"/>
-        <include name="**/caja/parser/css/cssparsergolden3.txt"/>
-        <include name="**/caja/parser/css/cssparserinput1.css"/>
-        <include name="**/caja/parser/css/cssparserinput2.css"/>
-        <include name="**/caja/parser/css/cssparserinput3.css"/>
-        <include name="**/caja/parser/css/cssrendergolden1.txt"/>
+        <include name="**/caja/parser/css/cssparsergolden*.txt"/>
+        <include name="**/caja/parser/css/cssparserinput*.css"/>
+        <include name="**/caja/parser/css/cssrendergolden*.txt"/>
         <include name="**/caja/parser/html/htmlparsertest1.gxp"/>
         <include name="**/caja/parser/html/htmlparsergolden1.txt"/>
         <include name="**/caja/parser/js/*.js"/>
@@ -580,6 +577,7 @@
       <include name="**/caja/lexer/LineContinuingCharProducer.java"/>
       <include name="**/caja/lexer/LookaheadCharProducer.java"/>
       <include name="**/caja/lexer/NumberRecognizer.java"/>
+      <include name="**/caja/lexer/NumericEscapes.java"/>
       <include name="**/caja/lexer/ParseException.java"/>
       <include name="**/caja/lexer/Punctuation.java"/>
       <include name="**/caja/lexer/PunctuationTrie.java"/>

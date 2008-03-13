@@ -37,9 +37,10 @@ public class LookaheadCharProducerTest extends TestCase {
   }
 
   public void testReadAndLookahead() throws Exception {
-    LookaheadCharProducer cp = LookaheadCharProducer.create(
+    LookaheadCharProducer cp = new LookaheadCharProducer(
         CharProducer.Factory.create(new StringReader("abcdefgh"),
-                                    new InputSource(URI.create("test:///"))));
+                                    new InputSource(URI.create("test:///"))),
+        1);
     assertEquals('a', cp.read());
     assertEquals('b', cp.lookahead());
     assertEquals('b', cp.read());
@@ -59,9 +60,10 @@ public class LookaheadCharProducerTest extends TestCase {
   }
 
   public void testCurrentFilePosition() throws Exception {
-    LookaheadCharProducer cp = LookaheadCharProducer.create(
+    LookaheadCharProducer cp = new LookaheadCharProducer(
         CharProducer.Factory.create(new StringReader("abcdefgh"),
-                                    new InputSource(URI.create("test:///"))));
+                                    new InputSource(URI.create("test:///"))),
+        1);
     CharProducer.MutableFilePosition buf =
       new CharProducer.MutableFilePosition();
     cp.getCurrentPosition(buf);
@@ -117,9 +119,10 @@ public class LookaheadCharProducerTest extends TestCase {
   }
 
   public void testClose() throws Exception {
-    LookaheadCharProducer cp = LookaheadCharProducer.create(
+    LookaheadCharProducer cp = new LookaheadCharProducer(
         CharProducer.Factory.create(new StringReader("abcdefgh"),
-                                    new InputSource(URI.create("test:///"))));
+                                    new InputSource(URI.create("test:///"))),
+        1);
     assertEquals('a', cp.read());
     assertEquals('b', cp.lookahead());
     assertEquals('b', cp.read());

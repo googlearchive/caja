@@ -65,22 +65,26 @@ public class CssParserTest extends TestCase {
   }
 
   public void testCssParser1() throws Exception {
-      runTestCssParser("cssparserinput1.css", "cssparsergolden1.txt");
+    runTestCssParser("cssparserinput1.css", "cssparsergolden1.txt");
   }
 
   public void testCssParser2() throws Exception {
-      runTestCssParser("cssparserinput2.css", "cssparsergolden2.txt");
+    runTestCssParser("cssparserinput2.css", "cssparsergolden2.txt");
   }
 
   public void testCssParser3() throws Exception {
-      runTestCssParser("cssparserinput3.css", "cssparsergolden3.txt");
+    runTestCssParser("cssparserinput3.css", "cssparsergolden3.txt");
   }
 
-  private void runTestCssParser(String cssFile, String goldenFile) throws Exception {
+  public void testCssParser4() throws Exception {
+    runTestCssParser("cssparserinput4.css", "cssparsergolden4.txt");
+  }
+
+  private void runTestCssParser(String cssFile, String goldenFile)
+      throws Exception {
     String golden = TestUtil.readResource(getClass(), goldenFile);
     CssTree.StyleSheet stylesheet;
-    CharProducer cp = TestUtil.getResourceAsProducer(
-        getClass(), cssFile);
+    CharProducer cp = TestUtil.getResourceAsProducer(getClass(), cssFile);
     try {
       CssLexer lexer = new CssLexer(cp);
       TokenQueue<CssTokenType> tq = new TokenQueue<CssTokenType>(

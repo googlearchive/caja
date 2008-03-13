@@ -47,12 +47,20 @@ public final class CssParser {
   }
 
   public CssTree.StyleSheet parseStyleSheet() throws ParseException {
+    // stylesheet
+    //   : [ CHARSET_SYM STRING ';' ]?
+    //     [S|CDO|CDC]* [ import [S|CDO|CDC]* ]*
+    //     [ [ ruleset | media | page ] [S|CDO|CDC]* ]*
     Mark m = tq.mark();
     List<CssTree.CssStatement> stmts = new ArrayList<CssTree.CssStatement>();
-    while (lookaheadSymbol("@import")) {
+    while (true) {
+      skipTopLevelIgnorables();
+      if (!lookaheadSymbol("@import")) { break; }
       stmts.add(parseImport());
     }
-    while (!tq.isEmpty()) {
+    while (true) {
+      skipTopLevelIgnorables();
+      if (tq.isEmpty()) { break; }
       stmts.add(parseStatement());
     }
     return new CssTree.StyleSheet(pos(m), stmts);
@@ -610,6 +618,33 @@ public final class CssParser {
             MessageType.EXPECTED_TOKEN, t.pos,
             MessagePart.Factory.valueOf("{identifier}"),
             MessagePart.Factory.valueOf(t.text)));
+  }
+
+  /**
+   * Skip {@code <!--} and {@code -->} which can only be ignored in some
+   * contexts.
+   *
+   * From the lexical grammar:<pre>
+   * "<!--"              {return CDO;}
+   * "-->"               {return CDC;}
+   * </pre>
+   * 
+   * From the parser grammer:<pre>
+   * stylesheet
+   *   : [ CHARSET_SYM STRING ';' ]?
+   *     [S|<b>CDO|CDC</b>]* [ import [S|<b>CDO|CDC</b>]* ]*
+   *     [ [ ruleset | media | page ] [S|<b>CDO|CDC</b>]* ]*
+   * </pre>
+   */
+  private void skipTopLevelIgnorables() throws ParseException {
+    while (!tq.isEmpty()) {
+      Token<CssTokenType> t = tq.peek();
+      if (CssTokenType.PUNCTUATION != t.type
+          || !("<!--".equals(t.text) || "-->".equals(t.text))) {
+        break;
+      }
+      tq.advance();
+    }
   }
 
   /**

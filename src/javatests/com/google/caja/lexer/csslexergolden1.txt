@@ -1690,4 +1690,18 @@ SUBS [$("3(".length)in]: csslexerinput1.css:149+8@4982 - 24@4998
 PUNC [;]: csslexerinput1.css:149+24@4998 - 25@4999
 SPAC [\n]: csslexerinput1.css:149+25@4999 - 150+1@5000
 PUNC [}]: csslexerinput1.css:150+1@5000 - 2@5001
-SPAC [\n]: csslexerinput1.css:150+2@5001 - 151+1@5002
+SPAC [\n\n]: csslexerinput1.css:150+2@5001 - 152+1@5003
+PUNC [<!--]: csslexerinput1.css:152+1@5003 - 5@5007
+SPAC [ ]: csslexerinput1.css:152+5@5007 - 6@5008
+IDEN [an]: csslexerinput1.css:152+6@5008 - 8@5010
+SPAC [ ]: csslexerinput1.css:152+8@5010 - 9@5011
+IDEN [escaping]: csslexerinput1.css:152+9@5011 - 17@5019
+SPAC [ ]: csslexerinput1.css:152+17@5019 - 18@5020
+IDEN [-text]: csslexerinput1.css:152+18@5020 - 23@5025
+SPAC [ ]: csslexerinput1.css:152+23@5025 - 24@5026
+PUNC [<]: csslexerinput1.css:152+24@5026 - 25@5027
+IDEN [span]: csslexerinput1.css:152+25@5027 - 29@5031
+PUNC [>]: csslexerinput1.css:152+29@5031 - 30@5032
+SPAC [ ]: csslexerinput1.css:152+30@5032 - 31@5033
+PUNC [-->]: csslexerinput1.css:152+31@5033 - 34@5036
+SPAC [\n]: csslexerinput1.css:152+34@5036 - 153+1@5037

@@ -36,20 +36,13 @@ import junit.framework.TestCase;
  */
 public class CssTreeTest extends TestCase {
 
-  public void testRender() throws Exception {
-    String golden = TestUtil.readResource(getClass(), "cssrendergolden1.txt");
-    CssTree.StyleSheet stylesheet;
-    CharProducer cp = TestUtil.getResourceAsProducer(
-        getClass(), "cssparserinput1.css");
-    try {
-      stylesheet = parseStyleSheet(cp);
-    } finally {
-      cp.close();
-    }
-    StringBuilder sb = new StringBuilder();
-    RenderContext rc = new RenderContext(new MessageContext(), sb);
-    stylesheet.render(rc);
-    assertEquals(golden.trim(), sb.toString().trim());
+  public void testRender1() throws Exception {
+    runRenderTest("cssrendergolden1.txt", "cssparserinput1.css", false);
+  }
+
+  public void testRender4() throws Exception {
+    // Make sure we don't have <!-- or --> in output in paranoid mode.
+    runRenderTest("cssrendergolden4.txt", "cssparserinput4.css", true);
   }
 
   // TODO(msamuel): Test rendering of !important and combinators in selectors.
@@ -194,10 +187,27 @@ public class CssTreeTest extends TestCase {
         "hi { x: f(-3); y: +g( 2 ) }", true);
   }
 
-  private static void assertRenderedForm(
+  private void runRenderTest(
+      String goldenFile, String inputFile, boolean paranoid)
+      throws Exception {
+    String golden = TestUtil.readResource(getClass(), goldenFile);
+    CssTree.StyleSheet stylesheet;
+    CharProducer cp = TestUtil.getResourceAsProducer(getClass(), inputFile);
+    try {
+      stylesheet = parseStyleSheet(cp);
+    } finally {
+      cp.close();
+    }
+    StringBuilder sb = new StringBuilder();
+    RenderContext rc = new RenderContext(new MessageContext(), sb, paranoid);
+    stylesheet.render(rc);
+    assertEquals(golden.trim(), sb.toString().trim());
+  }
+
+  private void assertRenderedForm(
       String golden, String cssInput, boolean paranoid)
       throws Exception {
-    InputSource is = new InputSource(new URI("content", cssInput, null));
+    InputSource is = new InputSource(new URI("test:///" + getName()));
 
     MessageContext mc = new MessageContext();
     CharProducer cp = CharProducer.Factory.create(
