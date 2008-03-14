@@ -15,6 +15,7 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.html.HtmlSchema;
+import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.plugin.HtmlValidator;
 import com.google.caja.plugin.Job;
@@ -42,7 +43,7 @@ public final class ValidateHtmlStage implements Pipeline.Stage<Jobs> {
 
     boolean valid = true;
     for (Job job : jobs.getJobsByType(Job.JobType.HTML)) {
-      if (!v.validate((DomTree) job.getRoot().node, null)) {
+      if (!v.validate(job.getRoot().cast(DomTree.class))) {
         valid = false;
         // Keep going so that we can display error messages for all inputs.
       }

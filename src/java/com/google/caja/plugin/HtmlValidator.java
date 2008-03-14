@@ -16,8 +16,12 @@ package com.google.caja.plugin;
 
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
+import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomTree;
+import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Criterion;
@@ -28,7 +32,6 @@ import com.google.caja.util.Criterion;
  * @author mikesamuel@gmail.com
  */
 public final class HtmlValidator {
-
   private final MessageQueue mq;
   private final HtmlSchema schema;
 
@@ -37,7 +40,9 @@ public final class HtmlValidator {
     this.mq = mq;
   }
 
-  public boolean validate(DomTree t, ParseTreeNode parent) {
+  public boolean validate(AncestorChain<? extends DomTree> htmlRoot) {
+    DomTree t = htmlRoot.node;
+
     boolean valid = true;
     switch (t.getType()) {
     case TAGBEGIN:
@@ -53,17 +58,29 @@ public final class HtmlValidator {
                         MessagePart.Factory.valueOf(t.getValue()));
           valid = false;
         } else if (!schema.isElementAllowed(tagName)) {
-          mq.addMessage(
-              PluginMessageType.UNSAFE_TAG, t.getFilePosition(),
-              MessagePart.Factory.valueOf(t.getValue()));
-          valid = false;
+          boolean ignore = ignoreElement(tagName) && htmlRoot.parent != null
+              && htmlRoot.parent.node instanceof MutableParseTreeNode;
+          MessageLevel msgLevel = PluginMessageType.UNSAFE_TAG.getLevel();
+          if (ignore) {
+            msgLevel = MessageLevel.WARNING;
+          }
+          mq.getMessages().add(new Message(
+              PluginMessageType.UNSAFE_TAG, msgLevel, t.getFilePosition(),
+              MessagePart.Factory.valueOf(t.getValue())));
+          if (ignore) {
+            ((MutableParseTreeNode) htmlRoot.parent.node).removeChild(t);
+            return valid;
+          } else {
+            valid = false;
+          }
         }
       }
       break;
     case ATTRNAME:
       String tagName = "*";
-      if (parent instanceof DomTree.Tag) {
-        tagName = ((DomTree.Tag) parent).getValue();
+      if (htmlRoot.parent != null
+          && htmlRoot.parent.node instanceof DomTree.Tag) {
+        tagName = htmlRoot.parent.cast(DomTree.Tag.class).node.getValue();
       }
       DomTree.Attrib attrib = (DomTree.Attrib) t;
       String attrName = attrib.getAttribName();
@@ -87,15 +104,22 @@ public final class HtmlValidator {
       }
       break;
     case TEXT: case CDATA: case IGNORABLE:
-    case ATTRVALUE:
-    case COMMENT:
+    case ATTRVALUE: case COMMENT: case UNESCAPED:
       break;
     default:
       throw new AssertionError(t.getType().toString());
     }
     for (DomTree child : t.children()) {
-      valid &= validate(child, t);
+      valid &= validate(new AncestorChain<DomTree>(htmlRoot, child));
     }
     return valid;
+  }
+
+  /**
+   * Elements that can be safely removed from the DOM without changing behavior.
+   */
+  private static boolean ignoreElement(String tagName) {
+    return "noscript".equals(tagName) || "noembed".equals(tagName)
+        || "noframes".equals(tagName) || "title".equals(tagName);
   }
 }
