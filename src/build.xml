@@ -372,9 +372,17 @@
       <include name="**/caja/plugin/HtmlPluginCompilerMain.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
-    <unjar src="${third_party}/java/jakarta_commons/commons-cli.jar"
-     dest="${lib}"/>
-    <unjar src="${third_party}/java/htmlparser/htmlparser.jar" dest="${lib}"/>
+    <copy todir="${jars}">
+      <fileset dir="${third_party}/java/jakarta_commons">
+        <include name="commons-cli.jar"/>
+      </fileset>
+      <fileset dir="${third_party}/java/htmlparser">
+        <include name="htmlparser.jar"/>
+      </fileset>
+      <fileset dir="${third_party}/java/json_simple">
+        <include name="json_simple.jar"/>
+      </fileset>
+    </copy>
     <jar destfile="${jars}/pluginc.jar" basedir="${lib}">
       <manifest>
         <attribute name="Main-Class"

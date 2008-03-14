@@ -32,12 +32,12 @@ import com.google.caja.reporting.SimpleMessageQueue;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.InputStreamReader;
 import java.io.Writer;
+import java.net.URI;
 
 /**
  * Executable that invokes {@link HtmlPluginCompiler}.
@@ -71,10 +71,9 @@ public final class HtmlPluginCompilerMain {
       compiler.setCssSchema(config.getCssSchema(mq));
       compiler.setHtmlSchema(config.getHtmlSchema(mq));
       try {
-        for (File input : config.getInputFiles()) {
+        for (URI input : config.getInputUris()) {
           compiler.addInput(
-              new AncestorChain<DomTree.Fragment>(
-                  parseHtmlFromFile(input, mq)));
+              new AncestorChain<DomTree.Fragment>(parseHtmlFromUri(input, mq)));
         }
 
         if (!compiler.run()) {
@@ -101,10 +100,10 @@ public final class HtmlPluginCompilerMain {
     return MessageLevel.ERROR.compareTo(maxMessageLevel) > 0 ? 0 : -1;
   }
 
-  private DomTree.Fragment parseHtmlFromFile(File f, MessageQueue mq)
+  private DomTree.Fragment parseHtmlFromUri(URI input, MessageQueue mq)
       throws IOException, ParseException {
-    InputSource is = new InputSource(f.toURI());
-    Reader in = new InputStreamReader(new FileInputStream(f), "UTF-8");
+    InputSource is = new InputSource(input);
+    Reader in = new InputStreamReader(input.toURL().openStream(), "UTF-8");
     try {
       return DomParser.parseFragment(
           DomParser.makeTokenQueue(is, in, false),

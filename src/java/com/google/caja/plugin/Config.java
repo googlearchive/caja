@@ -55,19 +55,16 @@ public final class Config {
   private final Options options = new Options();
 
   private final Option INPUT = defineOption(
-      "i", "input", "Input file path containing mixed HTML, JS, and CSS.",
-      false);
+      "i", "input", "Input URI containing HTML, JS, or CSS.", false);
 
   private final Option OUTPUT_JS = defineOption(
       "j", "output_js",
-      "Output file path for translated JS" +
-      " (defaults to input with \".js\")",
+      "Output file path for translated JS (defaults to input with \".js\")",
       true);
 
   private final Option OUTPUT_CSS = defineOption(
       "c", "output_css",
-      "Output file path for translated CSS" +
-      " (defaults to input with \".css\")",
+      "Output file path for translated CSS (defaults to input with \".css\")",
       true);
 
   private final Option OUTPUT_BASE = defineOption(
@@ -76,8 +73,7 @@ public final class Config {
       true);
 
   private final Option CSS_PREFIX = defineOption(
-      "p", "css_prefix", "Plugin CSS namespace prefix",
-      false);
+      "p", "css_prefix", "Plugin CSS namespace prefix", false);
 
   private final Option CSS_PROPERTY_WHITELIST = defineOption(
       "css_prop_schema",
@@ -105,7 +101,7 @@ public final class Config {
   private final Class<?> mainClass;
   private final PrintWriter stderr;
   private final String usageText;
-  private List<File> inputFiles;
+  private List<URI> inputUris;
   private File outputBase;
   private File outputJsFile;
   private File outputCssFile;
@@ -126,7 +122,7 @@ public final class Config {
     this.usageText = usageText;
   }
 
-  public Collection<File> getInputFiles() { return inputFiles; }  
+  public Collection<URI> getInputUris() { return inputUris; }  
   public File getOutputJsFile() { return outputJsFile; }
   public File getOutputCssFile() { return outputCssFile; }
   public File getOutputBase() { return outputBase; }
@@ -163,26 +159,40 @@ public final class Config {
       try {
         cl = new BasicParser().parse(options, argv, false);
       } catch (org.apache.commons.cli.ParseException e) {
-        stderr.println(e.getMessage());
+        usage(e.getMessage(), stderr);
         return false;
       }
 
-      inputFiles = new ArrayList<File>();
+      inputUris = new ArrayList<URI>();
       if (cl.getOptionValues(INPUT.getOpt()) != null) {
         for (String input : cl.getOptionValues(INPUT.getOpt())) {
-          File inputFile = new File(input);
-          if (!inputFile.exists()) {
-            usage("File \"" + inputFile + "\" does not exist", stderr);
+          URI inputUri;
+          try {
+            if (input.indexOf(':') >= 0) {
+              inputUri = new URI(input);
+            } else {
+              File inputFile = new File(input);
+
+              if (!inputFile.exists()) {
+                usage("File \"" + input + "\" does not exist", stderr);
+                return false;
+              }
+              if (!inputFile.isFile()) {
+                usage("File \"" + input + "\" is not a regular file", stderr);
+                return false;
+              }
+
+              inputUri = inputFile.getAbsoluteFile().toURI();
+            }
+          } catch (URISyntaxException ex) {
+            usage("Input \"" + input + "\" is not a valid URI", stderr);
             return false;
           }
-          if (!inputFile.isFile()) {
-            usage("File \"" + inputFile + "\" is not a regular file", stderr);
-            return false;
-          }
-          inputFiles.add(inputFile);
+            
+          inputUris.add(inputUri);
         }
       }
-      if (inputFiles.isEmpty()) {
+      if (inputUris.isEmpty()) {
         usage("Option \"--" + INPUT.getLongOpt() + "\" missing", stderr);
         return false;
       }
@@ -194,23 +204,33 @@ public final class Config {
         outputCssFile = substituteExtension(outputBase, "css");
 
         if (cl.getOptionValue(OUTPUT_JS.getOpt()) != null) {
-          stderr.println("Can't specify both --out and --output_js");
+          usage("Can't specify both --out and --output_js", stderr);
           return false;
         }
         if (cl.getOptionValue(OUTPUT_CSS.getOpt()) != null) {
-          stderr.println("Can't specify both --out and --output_css");
+          usage("Can't specify both --out and --output_css", stderr);
           return false;
         }
       } else {
-        File inputFile = inputFiles.get(0);
+        URI inputUri = inputUris.get(0);
 
         outputJsFile = cl.getOptionValue(OUTPUT_JS.getOpt()) == null
-            ? substituteExtension(inputFile, "js")
+            ? toFileWithExtension(inputUri, "js")
             : new File(cl.getOptionValue(OUTPUT_JS.getOpt()));
 
         outputCssFile = cl.getOptionValue(OUTPUT_CSS.getOpt()) == null
-            ? substituteExtension(inputFile, "css")
+            ? toFileWithExtension(inputUri, "css")
             : new File(cl.getOptionValue(OUTPUT_CSS.getOpt()));
+
+        if (outputJsFile == null) {
+          usage("Please specify js output via " + OUTPUT_JS.getLongOpt(),
+                stderr);
+        }
+
+        if (outputCssFile == null) {
+          usage("Please specify css output via " + OUTPUT_CSS.getLongOpt(),
+                stderr);
+        }
       }
 
       if (outputJsFile.equals(outputCssFile)) {
@@ -219,11 +239,7 @@ public final class Config {
         return false;
       }
 
-      cssPrefix = cl.getOptionValue(CSS_PREFIX.getOpt());
-      if (cssPrefix == null) {
-        usage("Option \"--" + CSS_PREFIX.getLongOpt() + "\" missing", stderr);
-        return false;
-      }
+      cssPrefix = cl.getOptionValue(CSS_PREFIX.getOpt(), "DOM-PREFIX");
 
       try {
         cssPropertyWhitelistUri = new URI(cl.getOptionValue(
@@ -239,7 +255,7 @@ public final class Config {
         if (cl.getOptionValue(BASE_URI.getOpt()) != null) {
           baseUri = new URI(cl.getOptionValue(BASE_URI.getOpt()));
         } else {
-          baseUri = inputFiles.get(0).toURI();
+          baseUri = inputUris.get(0);
         }
       } catch (URISyntaxException ex) {
         stderr.println("Invalid whitelist URI: " + ex.getInput() + "\n    "
@@ -272,12 +288,16 @@ public final class Config {
         "\n" + usageText, false);
   }
 
-  private File substituteExtension(File file, String extension) {
+  private static File toFileWithExtension(URI uri, String extension) {
+    if (!"file".equalsIgnoreCase(uri.getScheme())) { return null; }
+
+    return substituteExtension(new File(uri.getPath()), extension);
+  }
+
+  private static File substituteExtension(File file, String extension) {
     String fileName = file.getName();
     int lastDot = fileName.lastIndexOf('.');
-    if (lastDot < 0) {
-      lastDot = fileName.length();
-    }
+    if (lastDot < 0) { lastDot = fileName.length(); }
     return new File(file.getParentFile(),
                     fileName.substring(0, lastDot) + "." + extension);
   }

@@ -45,13 +45,13 @@ import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Criterion;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -90,7 +90,7 @@ public class PluginCompilerMain {
 
     boolean success;
     try {
-      success = parseInputs(config.getInputFiles(), compiler);
+      success = parseInputs(config.getInputUris(), compiler);
       if (success) {
         success = compiler.run();
       }
@@ -113,9 +113,9 @@ public class PluginCompilerMain {
     return success ? 0 : -1;
   }
 
-  private boolean parseInputs(Collection<File> inputs, PluginCompiler pluginc) {
+  private boolean parseInputs(Collection<URI> inputs, PluginCompiler pluginc) {
     boolean parsePassed = true;
-    for (File input : inputs) {
+    for (URI input : inputs) {
       try {
         ParseTreeNode parseTree = parseInput(input);
         if (null == parseTree) {
@@ -130,13 +130,12 @@ public class PluginCompilerMain {
     return parsePassed;
   }
 
-  private ParseTreeNode parseInput(File input)
-      throws ParseException {
+  private ParseTreeNode parseInput(URI input) throws ParseException {
     InputSource is = new InputSource(input);
 
     mc.inputSources.add(is);
     try {
-      InputStream in = new FileInputStream(input);
+      InputStream in = input.toURL().openStream();
       CharProducer cp = CharProducer.Factory.create(
           new InputStreamReader(in, "UTF-8"), is);
       try {

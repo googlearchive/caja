@@ -42,7 +42,6 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.Statement;
-import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.UndefinedLiteral;
 import com.google.caja.plugin.ReservedNames;
 import static com.google.caja.plugin.SyntheticNodes.s;
