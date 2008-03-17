@@ -52,7 +52,7 @@
 
   <property
       name="build.info.file"
-      location="${lib}/com/google/caja/reporting/buildInfo.properties"/>  
+      location="${lib}/com/google/caja/reporting/buildInfo.properties"/>
 
   <path id="classpath.compile">
     <pathelement path="${third_party}/java/htmlparser/htmlparser.jar"/>
@@ -334,7 +334,6 @@
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
       <include name="**/caja/opensocial/*.java"/>
-      <include name="**/caja/plugin/HtmlPluginCompilerMain.java"/>
       <include name="**/caja/plugin/PluginCompilerMain.java"/>
     </javac>
   </target>
@@ -370,7 +369,6 @@
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
       <include name="**/caja/plugin/PluginCompilerMain.java"/>
-      <include name="**/caja/plugin/HtmlPluginCompilerMain.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
     <copy todir="${jars}">
@@ -387,7 +385,7 @@
     <jar destfile="${jars}/pluginc.jar" basedir="${lib}">
       <manifest>
         <attribute name="Main-Class"
-         value="com.google.caja.plugin.HtmlPluginCompilerMain"/>
+         value="com.google.caja.plugin.PluginCompilerMain"/>
       </manifest>
     </jar>
     <jar destfile="${jars}/pluginc-src.jar" basedir="${src}">

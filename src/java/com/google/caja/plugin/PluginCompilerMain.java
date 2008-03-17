@@ -34,12 +34,12 @@ import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.OpenElementStack;
 import com.google.caja.parser.js.Parser;
-import com.google.caja.parser.js.Statement;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Criterion;
@@ -64,7 +64,7 @@ import java.util.regex.Pattern;
  *
  * @author mikesamuel@gmail.com
  */
-public class PluginCompilerMain {
+public final class PluginCompilerMain {
   private final MessageQueue mq;
   private final MessageContext mc;
 
@@ -76,38 +76,31 @@ public class PluginCompilerMain {
 
   private int run(String[] argv) {
     Config config = new Config(
-        getClass(), System.err,
-        "Cajoles an HTML, CSS, and JS files to JS and CSS.");
+        getClass(), System.err, "Cajoles HTML, CSS, and JS files to JS & CSS.");
     if (!config.processArguments(argv)) {
       return -1;
     }
 
-    PluginMeta meta = new PluginMeta(
-        config.getCssPrefix(), PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
-    PluginCompiler compiler = new PluginCompiler(meta, mq);
-    compiler.setCssSchema(config.getCssSchema(mq));
-    compiler.setHtmlSchema(config.getHtmlSchema(mq));
-
-    boolean success;
+    boolean success = false;
+    MessageContext mc = null;
     try {
-      success = parseInputs(config.getInputUris(), compiler);
+      PluginMeta meta = new PluginMeta(
+          config.getCssPrefix(), PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
+      PluginCompiler compiler = new PluginCompiler(meta, mq);
+      mc = compiler.getMessageContext();
+      compiler.setCssSchema(config.getCssSchema(mq));
+      compiler.setHtmlSchema(config.getHtmlSchema(mq));
+
+      success = parseInputs(config.getInputUris(), compiler) && compiler.run();
+
       if (success) {
-        success = compiler.run();
-      }
-      if (success) {
-        try {
-          dumpOutputs(compiler.getOutputs(), config.getOutputBase());
-        } catch (IOException ex) {
-          ex.printStackTrace();
-          System.err.println("Failed to write outputs");
-          success = false;
-        }
+        writeFile(config.getOutputJsFile(), compiler.getJavascript());
+        writeFile(config.getOutputCssFile(), compiler.getCss());
       }
     } finally {
-      if (MessageLevel.ERROR.compareTo(
-              HtmlPluginCompilerMain.dumpMessages(mq, mc, System.err)) <= 0) {
-        success = false;
-      }
+      if (mc == null) { mc = new MessageContext(); }
+      MessageLevel maxMessageLevel = dumpMessages(mq, mc, System.err);
+      success &= MessageLevel.ERROR.compareTo(maxMessageLevel) > 0;
     }
 
     return success ? 0 : -1;
@@ -125,31 +118,36 @@ public class PluginCompilerMain {
         }
       } catch (ParseException ex) {
         ex.toMessageQueue(mq);
+        parsePassed = false;
+      } catch (IOException ex) {
+        mq.addMessage(MessageType.IO_ERROR,
+                      MessagePart.Factory.valueOf(ex.toString()));
+        parsePassed = false;
       }
     }
     return parsePassed;
   }
 
-  private ParseTreeNode parseInput(URI input) throws ParseException {
+  /** Parse one input from a URI. */
+  private ParseTreeNode parseInput(URI input)
+      throws IOException, ParseException {
     InputSource is = new InputSource(input);
-
     mc.inputSources.add(is);
+
+    // TODO(mikesamuel): capture the input as bytes, guess encoding, and
+    // store in a map so we can generate message snippets and side-by-side
+    // output.
+    InputStream in = input.toURL().openStream();
+    CharProducer cp = CharProducer.Factory.create(
+        new InputStreamReader(in, "UTF-8"), is);
     try {
-      InputStream in = input.toURL().openStream();
-      CharProducer cp = CharProducer.Factory.create(
-          new InputStreamReader(in, "UTF-8"), is);
-      try {
-        return parseInput(is, cp, mq);
-      } finally {
-        cp.close();
-      }
-    } catch (IOException ex) {
-      ex.printStackTrace();
-      System.err.println("Failed to read from " + is.getUri());
-      return null;
+      return parseInput(is, cp, mq);
+    } finally {
+      cp.close();
     }
   }
 
+  /** Classify an input by extension and use the appropriate parser. */
   static ParseTreeNode parseInput(
       InputSource is, CharProducer cp, MessageQueue mq)
       throws ParseException {
@@ -177,7 +175,7 @@ public class PluginCompilerMain {
           lexer, is, new Criterion<Token<CssTokenType>>() {
             public boolean accept(Token<CssTokenType> tok) {
               return tok.type != CssTokenType.COMMENT
-              && tok.type != CssTokenType.SPACE;
+                  && tok.type != CssTokenType.SPACE;
             }
           });
 
@@ -217,6 +215,10 @@ public class PluginCompilerMain {
     return input;
   }
 
+  /**
+   * Look for a construct like @foo('bar'); in CSS which serves as a CSS
+   * template directive.
+   */
   private static CssTree.FunctionCall requireSingleStringLiteralCall(
       Mark startMark, TokenQueue<CssTokenType> tq) throws ParseException {
     tq.expectToken("(");
@@ -253,49 +255,58 @@ public class PluginCompilerMain {
 
   /** Valid name for a css template or one of its parameters. */
   private static final Pattern CSS_TEMPLATE_OR_PARAM_NAME =
-    Pattern.compile("[\"\'](_?[a-z][a-z0-9_]*)[\"\']");
+      Pattern.compile("[\"\'](_?[a-z][a-z0-9_]*)[\"\']");
 
-  private void dumpOutputs(
-      Collection<? extends ParseTreeNode> outputs, File outBase)
-      throws IOException {
-    File prefix = outBase.isDirectory() ? new File(outBase, "plugin") : outBase;
-    File cssFile = new File(prefix + ".css");
-    File jsFile = new File(prefix + ".js");
-    Writer cssOut = null, jsOut = null;
+  /** Write the given parse tree to the given file. */
+  private void writeFile(File f, ParseTreeNode output) {
+    if (output == null) { return; }
     try {
-      for (ParseTreeNode output : outputs) {
-        Writer out;
-        if (output instanceof Statement) {
-          if (null == jsOut) {
-            jsOut = new OutputStreamWriter(
-                new FileOutputStream(jsFile), "UTF-8");
-          }
-          out = jsOut;
-        } else if (output instanceof CssTree) {
-          if (null == cssOut) {
-            cssOut = new OutputStreamWriter(
-                new FileOutputStream(cssFile), "UTF-8");
-          }
-          out = cssOut;
-        } else {
-          throw new AssertionError(output.getClass().getName());
-        }
+      Writer out = new OutputStreamWriter(new FileOutputStream(f), "UTF-8");
+      try {
         RenderContext rc = new RenderContext(mc, out, true);
         output.render(rc);
         rc.newLine();
+      } finally {
+        out.close();
       }
-    } finally {
-      try {
-        if (null != cssOut) { cssOut.close(); }
-      } catch (IOException ex) {
-        ex.printStackTrace();
-      }
-      try {
-        if (null != jsOut) { jsOut.close(); }
-      } catch (IOException ex) {
-        ex.printStackTrace();
-      }
+    } catch (IOException ex) {
+      mq.addMessage(MessageType.IO_ERROR,
+                    MessagePart.Factory.valueOf(ex.toString()));
     }
+  }
+
+  /**
+   * Dumps messages to the given output stream, returning the highest message
+   * level seen.
+   */
+  static MessageLevel dumpMessages(
+      MessageQueue mq, MessageContext mc, Appendable out) {
+    MessageLevel maxLevel = MessageLevel.values()[0];
+    for (Message m : mq.getMessages()) {
+      MessageLevel level = m.getMessageLevel();
+      if (maxLevel.compareTo(level) < 0) { maxLevel = level; }
+    }
+    MessageLevel ignoreLevel = null;
+    if (maxLevel.compareTo(MessageLevel.LINT) < 0) {
+      // If there's only checkpoints, be quiet.
+      ignoreLevel = MessageLevel.LOG;
+    }
+    try {
+      for (Message m : mq.getMessages()) {
+        MessageLevel level = m.getMessageLevel();
+        if (ignoreLevel != null && level.compareTo(ignoreLevel) <= 0) {
+          continue;
+        }
+        out.append(level.name() + ": ");
+        m.format(mc, out);
+        out.append("\n");
+
+        if (maxLevel.compareTo(level) < 0) { maxLevel = level; }
+      }
+    } catch (IOException ex) {
+      ex.printStackTrace();
+    }
+    return maxLevel;
   }
 
   public static void main(String[] args) {

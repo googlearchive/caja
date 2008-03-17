@@ -42,25 +42,31 @@ public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
     Block initFunctionBody = s(new Block(Collections.<Statement>emptyList()));
 
     MutableParseTreeNode.Mutation mut = initFunctionBody.createMutation();
-    
+
     ListIterator<Job> it = jobs.getJobs().listIterator();
     while (it.hasNext()) {
       Job job = it.next();
       if (Job.JobType.JAVASCRIPT != job.getType()) { continue; }
-      
-      Statement stmt = (Statement) job.getRoot().node;
-      if (stmt instanceof Block) {
-        Block body = (Block) stmt;
-        MutableParseTreeNode.Mutation old = body.createMutation();
-        for (Statement s : body.children()) {
-          old.removeChild(s);
-          mut.appendChild(s);
-        }
-        old.execute();
+
+      if (job.getTarget() != null) {
+        AncestorChain<?> toReplace = job.getTarget();
+        ((MutableParseTreeNode) toReplace.parent.node).replaceChild(
+            job.getRoot().node, toReplace.node);
       } else {
-        mut.appendChild(stmt);
+        Statement stmt = (Statement) job.getRoot().node;
+        if (stmt instanceof Block) {
+          Block body = (Block) stmt;
+          MutableParseTreeNode.Mutation old = body.createMutation();
+          for (Statement s : body.children()) {
+            old.removeChild(s);
+            mut.appendChild(s);
+          }
+          old.execute();
+        } else {
+          mut.appendChild(stmt);
+        }
       }
-      
+
       it.remove();
     }
     mut.execute();

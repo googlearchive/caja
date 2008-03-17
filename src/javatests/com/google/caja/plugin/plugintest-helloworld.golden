@@ -1,3 +1,8 @@
+.pre h1 {
+  color: black;
+  background: white
+}
+
 {
   ___.loadModule(function (___OUTERS___) {
       ___OUTERS___.main = ___.simpleFunc(function main() {
@@ -14,9 +19,4 @@
         });
       var c1___ = ___.primFreeze(___OUTERS___.sayHello);
     });
-}
-
-.pre h1 {
-  color: black;
-  background: white
 }

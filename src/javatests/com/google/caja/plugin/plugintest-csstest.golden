@@ -1,16 +1,16 @@
 {
   ___.loadModule(function (___OUTERS___) {
+      ___OUTERS___.position = ___.simpleFunc(function position(left, top) {
+          var ___out___ = [];
+          ___out___.push('left: ', ___OUTERS___.plugin_cssNumber___(left), 'px;\ntop: ', ___OUTERS___.plugin_cssNumber___(top), 'px');
+          return ___OUTERS___.plugin_blessCss___(___out___.join(''));
+        });
       ___OUTERS___.main = ___.simpleFunc(function main() {
           (function () {
               var x___ = ___.asSimpleFunc(___OUTERS___.getElementById)('hello-base');
               var x0___ = ___.asSimpleFunc(___.primFreeze(___OUTERS___.position))(20, 20);
               return x___.setStyle_canCall___ ? x___.setStyle(x0___) : ___.callPub(x___, 'setStyle', [x0___]);
             })();
-        });
-      ___OUTERS___.position = ___.simpleFunc(function position(left, top) {
-          var ___out___ = [];
-          ___out___.push('left: ', ___OUTERS___.plugin_cssNumber___(left), 'px;\ntop: ', ___OUTERS___.plugin_cssNumber___(top), 'px');
-          return ___OUTERS___.plugin_blessCss___(___out___.join(''));
         });
     });
 }

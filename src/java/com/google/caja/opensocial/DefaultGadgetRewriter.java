@@ -28,7 +28,7 @@ import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.html.OpenElementStack;
 import com.google.caja.parser.js.Block;
-import com.google.caja.plugin.HtmlPluginCompiler;
+import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.MessageContext;
@@ -110,13 +110,13 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
       throw new GadgetRewriteException(ex);
     }
 
-    HtmlPluginCompiler compiler = compileGadget(htmlContent, baseUri, callback);
+    PluginCompiler compiler = compileGadget(htmlContent, baseUri, callback);
 
     MessageContext mc = compiler.getMessageContext();
     StringBuilder style = new StringBuilder();
     StringBuilder script = new StringBuilder();
     try {
-      CssTree css = compiler.getCss(); 
+      CssTree css = compiler.getCss();
       if (css != null) { css.render(createRenderContext(style, mc)); }
       Block js = compiler.getJavascript();
       if (js != null) { js.render(createRenderContext(script, mc)); }
@@ -144,7 +144,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
     return contentTree;
   }
 
-  private HtmlPluginCompiler compileGadget(
+  private PluginCompiler compileGadget(
       DomTree.Fragment content, final URI baseUri, final UriCallback callback)
       throws GadgetRewriteException {
     PluginMeta meta = new PluginMeta(DOM_PREFIX,
@@ -176,8 +176,8 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
             }
           }
         });
-    
-    HtmlPluginCompiler compiler = new HtmlPluginCompiler(mq, meta);
+
+    PluginCompiler compiler = new PluginCompiler(meta, mq);
     if (cssSchema != null) { compiler.setCssSchema(cssSchema); }
     if (htmlSchema != null) { compiler.setHtmlSchema(htmlSchema); }
 

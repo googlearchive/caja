@@ -61,7 +61,7 @@ public class HtmlCompiledPluginTest extends TestCase {
   /**
    * Tests that the container can get access to
    * "virtual globals" defined in cajoled code.
-   * 
+   *
    * @throws Exception
    */
   public void testWrapperAccess() throws Exception {
@@ -75,14 +75,14 @@ public class HtmlCompiledPluginTest extends TestCase {
 
   /**
    * Tests that Array.prototype cannot be modified.
-   *  
+   *
    * @throws Exception
    */
   public void testFrozenArray() throws Exception {
     execGadget(
         "<script>" +
         "var success = false;" +
-        "try {" + 
+        "try {" +
           "Array.prototype[4] = 'four';" +
         "} catch (e){" +
           "success = true;" +
@@ -95,14 +95,14 @@ public class HtmlCompiledPluginTest extends TestCase {
 
   /**
    * Tests that Object.prototype cannot be modified.
-   * 
+   *
    * @throws Exception
    */
   public void testFrozenObject() throws Exception {
     execGadget(
         "<script>" +
         "var success = false;" +
-        "try {" + 
+        "try {" +
           "Object.prototype.x = 'X';" +
         "} catch (e){" +
           "success = true;" +
@@ -115,13 +115,13 @@ public class HtmlCompiledPluginTest extends TestCase {
 
   /**
    * Tests that eval is uncallable.
-   * 
+   *
    * @throws Exception
    */
   public void testEval() throws Exception {
     execGadget(
         "<script>var success=false;" +
-          "try{eval('1')}catch(e){success=true;}" + 
+          "try{eval('1')}catch(e){success=true;}" +
           "if (!success)fail('Outer eval is accessible.')</script>",
         ""
         );
@@ -129,13 +129,13 @@ public class HtmlCompiledPluginTest extends TestCase {
 
   /**
    * Tests that cajoled code can't construct new Function objects.
-   * 
+   *
    * @throws Exception
    */
   public void testFunction() throws Exception {
     execGadget(
         "<script>var success=false;" +
-          "try{var f=new Function('1')}catch(e){success=true;}" + 
+          "try{var f=new Function('1')}catch(e){success=true;}" +
           "if (!success)fail('Function constructor is accessible.')</script>",
         ""
         );
@@ -143,7 +143,7 @@ public class HtmlCompiledPluginTest extends TestCase {
 
   /**
    * Tests that constructors are inaccessible.
-   * 
+   *
    * @throws Exception
    */
   public void testConstructor() throws Exception {
@@ -160,14 +160,14 @@ public class HtmlCompiledPluginTest extends TestCase {
   /**
    * Tests that arguments to functions are not mutable through the
    * arguments array.
-   * 
+   *
    * @throws Exception
    */
   public void testMutableArguments() throws Exception {
     execGadget(
         "<script>" +
         "function f(a) {" +
-          "try{" + 
+          "try{" +
             "arguments[0] = 1;" +
             "if (a) fail('Mutable arguments');" +
           "} catch (e) {" +
@@ -182,7 +182,7 @@ public class HtmlCompiledPluginTest extends TestCase {
 
   /**
    * Tests that the caller attribute is unreadable.
-   * 
+   *
    * @throws Exception
    */
   public void testCaller() throws Exception {
@@ -199,7 +199,7 @@ public class HtmlCompiledPluginTest extends TestCase {
 
   /**
    * Tests that the callee attribute is unreadable.
-   * 
+   *
    * @throws Exception
    */
   public void testCallee() throws Exception {
@@ -216,7 +216,7 @@ public class HtmlCompiledPluginTest extends TestCase {
 
   /**
    * Tests that arguments are immutable from another function's scope.
-   * 
+   *
    * @throws Exception
    */
   public void testCrossScopeArguments() throws Exception {
@@ -238,7 +238,7 @@ public class HtmlCompiledPluginTest extends TestCase {
 
   /**
    * Tests that exceptions are not visible outside of the catch block.
-   * 
+   *
    * @throws Exception
    */
   public void testCatch() throws Exception {
@@ -259,7 +259,7 @@ public class HtmlCompiledPluginTest extends TestCase {
 
   /**
    * Tests that cajoled code can refer to the virtual global scope.
-   * 
+   *
    * @throws Exception
    */
   public void testVirtualGlobalThis() throws Exception {
@@ -271,10 +271,10 @@ public class HtmlCompiledPluginTest extends TestCase {
         + "  fail('this not rewritten to outers in global scope');"
         );
   }
-  
+
   /**
    * Tests that the virtual global scope is not the real global scope.
-   * 
+   *
    * @throws Exception
    */
   public void testThisIsGlobalScope() throws Exception {
@@ -305,7 +305,7 @@ public class HtmlCompiledPluginTest extends TestCase {
 
   /**
    * Tests that setTimeout is uncallable.
-   * 
+   *
    * @throws Exception
    */
   public void testSetTimeout() throws Exception {
@@ -319,7 +319,7 @@ public class HtmlCompiledPluginTest extends TestCase {
 
   /**
    * Tests that Object.watch is uncallable.
-   * 
+   *
    * @throws Exception
    */
   public void testObjectWatch() throws Exception {
@@ -335,7 +335,7 @@ public class HtmlCompiledPluginTest extends TestCase {
   /**
    * Tests that unreadable global properties are not readable by way of
    * Object.toSource().
-   * 
+   *
    * @throws Exception
    */
   public void testToSource() throws Exception {
@@ -374,7 +374,7 @@ public class HtmlCompiledPluginTest extends TestCase {
         new PrintWriter(System.err), mc, true);
     PluginMeta meta = new PluginMeta(
         "test", PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
-    HtmlPluginCompiler compiler = new HtmlPluginCompiler(mq, meta);
+    PluginCompiler compiler = new PluginCompiler(meta, mq);
     compiler.setMessageContext(mc);
     DomTree html = parseHtml(gadgetSpec, mq);
     if (html != null) { compiler.addInput(new AncestorChain<DomTree>(html)); }
