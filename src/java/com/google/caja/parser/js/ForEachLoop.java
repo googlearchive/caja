@@ -26,7 +26,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class ForEachLoop extends LabeledStatement implements NestedScope {
-  private Statement var;
+  private Statement keyReceiver;
   private Expression container;
   private Statement body;
 
@@ -46,10 +46,10 @@ public final class ForEachLoop extends LabeledStatement implements NestedScope {
   }
 
   public ForEachLoop(
-      String label, Reference var, Expression container, Statement body) {
+      String label, Expression lvalue, Expression container, Statement body) {
     super(label);
-    ExpressionStmt varStmt = new ExpressionStmt(var);
-    varStmt.setFilePosition(var.getFilePosition());
+    ExpressionStmt varStmt = new ExpressionStmt(lvalue);
+    varStmt.setFilePosition(lvalue.getFilePosition());
     createMutation()
         .appendChild(varStmt)
         .appendChild(container)
@@ -61,7 +61,13 @@ public final class ForEachLoop extends LabeledStatement implements NestedScope {
   protected void childrenChanged() {
     super.childrenChanged();
     List<? extends ParseTreeNode> children = children();
-    this.var = (Statement) children.get(0);
+    this.keyReceiver = (Statement) children.get(0);
+    if (keyReceiver instanceof ExpressionStmt) {
+      Expression e = ((ExpressionStmt) keyReceiver).getExpression();
+      if (!e.isLeftHandSide()) {
+        throw new IllegalArgumentException("Not an lvalue: " + e);
+      }
+    }
     this.container = (Expression) children.get(1);
     this.body = (Statement) children.get(2);
   }
@@ -75,7 +81,7 @@ public final class ForEachLoop extends LabeledStatement implements NestedScope {
 
     rc.out.append("for (");
     rc.indent += 2;
-    var.render(rc);
+    keyReceiver.render(rc);
     rc.out.append(" in ");
     container.render(rc);
     rc.indent -= 2;

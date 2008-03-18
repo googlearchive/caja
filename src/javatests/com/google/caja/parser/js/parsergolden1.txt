@@ -282,3 +282,18 @@ Block
     ExpressionStmt
       Reference
         Identifier : hello
+  ForEachLoop : 
+    ExpressionStmt
+      Operation : SQUARE_BRACKET
+        Reference
+          Identifier : arr
+        Operation : SUBTRACTION
+          Operation : MEMBER_ACCESS
+            Reference
+              Identifier : arr
+            Reference
+              Identifier : length
+          IntegerLiteral : 1
+    Reference
+      Identifier : o
+    Noop

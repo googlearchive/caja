@@ -73,4 +73,6 @@
       break label;
   }
   useless: hello;
+  for (arr[arr.length - 1] in o)
+    ;
 }

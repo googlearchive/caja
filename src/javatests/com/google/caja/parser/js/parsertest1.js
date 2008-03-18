@@ -90,3 +90,5 @@ label: switch (x) {
 
 // you can label other statements;
 useless: hello;
+
+for (arr[arr.length - 1] in o);
