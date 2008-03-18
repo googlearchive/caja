@@ -1137,17 +1137,17 @@ public final class GxpCompiler {
         String handlerFnName = gxpc.syntheticId();
         gxpc.eventHandlers.put(
             handlerFnName,
-            new FunctionDeclaration(
-                new Identifier(handlerFnName),
+            s(new FunctionDeclaration(
+                s(new Identifier(handlerFnName)),
                 s(new FunctionConstructor(
-                      new Identifier(null),
+                      s(new Identifier(handlerFnName)),
                       Arrays.asList(
                           s(new FormalParam(
                                 s(new Identifier(ReservedNames.THIS_NODE)))),
                           s(new FormalParam(s(new Identifier("event"))))),
                       // TODO(mikesamuel): replace instances of this in handler
                       // with synthetic references to ReservedNames.THIS_NODE
-                      handler))));
+                      handler)))));
 
         // ' foo="return plugin_dispatchevent___(this, event || window.event, ',
         // ___.getId(___OUTERS___), ', \'myHandlerFn\');"'

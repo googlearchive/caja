@@ -1,0 +1,7 @@
+From http://www.getfirebug.com/lite.html
+
+Firebug lite is not distributed with a license file but
+    http://groups.google.com/group/firebug/browse_thread/thread/b7151864d6d244b4/31adb0aab5ef8de0?lnk=gst
+is answered by one of the firebug committers who says the parent project's
+license file at http://fbug.googlecode.com/svn/trunk/license.txt also applies
+to firebug lite which lives in a sibling directory.
