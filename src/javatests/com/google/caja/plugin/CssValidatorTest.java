@@ -603,7 +603,33 @@ public final class CssValidatorTest extends TestCase {
   }
 
   public void testContent() throws Exception {
-    // TODO
+    // Tests a string that is not a URL.
+    runTest("body:before { content: 'Hello ' } body:after { content: 'World' }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : body\n"
+            + "        Pseudo\n"
+            + "          IdentLiteral : before\n"
+            + "    Declaration\n"
+            + "      Property : content\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=STRING"
+                        + " ; cssPropertyPart=content\n"
+            + "          StringLiteral : Hello \n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : body\n"
+            + "        Pseudo\n"
+            + "          IdentLiteral : after\n"
+            + "    Declaration\n"
+            + "      Property : content\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=STRING"
+                        + " ; cssPropertyPart=content\n"
+            + "          StringLiteral : World\n");
   }
 
   public void testBackground() throws Exception {

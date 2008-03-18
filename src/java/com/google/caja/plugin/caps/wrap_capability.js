@@ -144,7 +144,7 @@
  *
  * <p>Tested on Firefox 2.0, IE 6.0, Safari 2.0, Opera 9.10, and Rhino
  *
- * <p>TODO(mikeamuel): return an Object like { unlock: ..., constructor }
+ * <p>TODO(mikesamuel): return an Object like { unlock: ..., constructor }
  * instead of an array so clients don't have to unpack.</p>
  *
  * @param {Function} constructor

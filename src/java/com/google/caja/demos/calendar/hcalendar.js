@@ -442,12 +442,12 @@ function handleUrlContent_(node, globalProps) {
   var attrValue = null;
   switch (node.nodeName.toLowerCase()) {
     case 'a': case 'area':
-      // TODO: resolve the href attribute relative to globalProps.url?
+      // TODO(mikesamuel): resolve the href attrib relative to globalProps.url?
       attrValue = node.href  // correctly resolved relative to this document
         || node.getAttribute('href');
       break;
     case 'img':
-      // TODO: resolve the href attribute relative to globalProps.url?
+      // TODO(mikesamuel): resolve the href attrib relative to globalProps.url?
       attrValue = node.src  // correctly resolved relative to this document
         || node.getAttribute('src');
       break;
@@ -455,7 +455,7 @@ function handleUrlContent_(node, globalProps) {
       attrValue = node.data  // correctly resolved relative to this document
         || node.getAttribute('data');
       break;
-      // TODO: other url node/attrib pairs?
+      // TODO(mikesamuel): other url node/attrib pairs?
   }
   if (!attrValue) { return null; }
   var content = new ContentLine();

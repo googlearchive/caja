@@ -213,7 +213,7 @@ public final class CssRewriter {
             for (CssTree child : ((CssTree.SimpleSelector) node).children()) {
               if (child instanceof CssTree.Pseudo) {
                 child = child.children().get(0);
-                // TODO: check argument if child now instanceof FunctionLiteral
+                // TODO(mikesamuel): check argument if child now a FunctionCall
               }
               String value = (String) child.getValue();
               if (value != null && !isSafeSelectorPart(value)) {

@@ -57,8 +57,8 @@ import java.util.Set;
  * <li>Reports warnings on a queue where an error doesn't prevent any further
  *   errors, so that we can report multiple errors in a single compile pass
  *   instead of forcing developers to play whack-a-mole.
- * <li>Does not parse {@code with} blocks.  TODO: duplicate the code that
- *   handles {@link Keyword#WHILE}.
+ * <li>Does not parse {@code with} blocks.
+ *   TODO(mikesamuel): duplicate the code that handles {@link Keyword#WHILE}.
  * <li>Does not parse Firefox style {@code catch (<Identifier> if <Expression>)}
  *   since those don't work on IE and many other interpreters.
  * <li>Recognizes {@code const} since many interpreters do (not IE) but warns.

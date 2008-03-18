@@ -1768,7 +1768,6 @@ function testComponentVeventRrule_1() {
        "END:VEVENT",
        "END:VCALENDAR"],
       [
-       "<!-- @TODO implement RRULE -->",
        "<html>",
        "<head>",
        "  <meta http-equiv=\"Content-type\""

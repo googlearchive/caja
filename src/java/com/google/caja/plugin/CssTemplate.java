@@ -132,7 +132,8 @@ public final class CssTemplate extends AbstractParseTreeNode<CssTree> {
   }
 
   public void render(RenderContext r) {
-    throw new UnsupportedOperationException("NOT IMPLEMENTED YET");  // TODO
+    // TODO(mikesamuel): implement me
+    throw new UnsupportedOperationException("NOT IMPLEMENTED YET");
   }
 
   public FunctionConstructor toJavascript(PluginMeta meta, MessageQueue mq)

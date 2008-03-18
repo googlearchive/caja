@@ -169,7 +169,7 @@ instanceGenerators.bySetPosInstanceGenerator = function (
       // This speeds up things like the first weekday of the year:
       //     RRULE:FREQ=YEARLY;BYDAY=MO,TU,WE,TH,FR,BYSETPOS=1
       // that would otherwise generate 260+ instances per one emitted
-      // TODO(msamuel): this may be premature.  If needed, We could
+      // TODO(mikesamuel): this may be premature.  If needed, We could
       // improve more generally by inferring a BYMONTH generator based on
       // distribution of set positions within the year.
       var limit = allPositive ? maxPos : Infinity;
