@@ -15,9 +15,8 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomTree;
-import com.google.caja.plugin.HtmlValidator;
+import com.google.caja.plugin.HtmlSanitizer;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.Pipeline;
@@ -26,24 +25,24 @@ import com.google.caja.util.Pipeline;
  * Whitelist html tags and attributes, and supply values for key
  * attributes that are missing them.
  *
- * @see HtmlValidator 
+ * @see HtmlSanitizer 
  *
  * @author mikesamuel@gmail.com
  */
-public final class ValidateHtmlStage implements Pipeline.Stage<Jobs> {
+public final class SanitizeHtmlStage implements Pipeline.Stage<Jobs> {
   private final HtmlSchema htmlSchema;
 
-  public ValidateHtmlStage(HtmlSchema htmlSchema) {
+  public SanitizeHtmlStage(HtmlSchema htmlSchema) {
     if (null == htmlSchema) { throw new NullPointerException(); }
     this.htmlSchema = htmlSchema;
   }
 
   public boolean apply(Jobs jobs) {
-    HtmlValidator v = new HtmlValidator(htmlSchema, jobs.getMessageQueue());
+    HtmlSanitizer s = new HtmlSanitizer(htmlSchema, jobs.getMessageQueue());
 
     boolean valid = true;
     for (Job job : jobs.getJobsByType(Job.JobType.HTML)) {
-      if (!v.validate(job.getRoot().cast(DomTree.class))) {
+      if (!s.sanitize(job.getRoot().cast(DomTree.class))) {
         valid = false;
         // Keep going so that we can display error messages for all inputs.
       }

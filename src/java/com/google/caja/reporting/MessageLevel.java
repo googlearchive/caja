@@ -14,14 +14,37 @@
 
 package com.google.caja.reporting;
 
+/**
+ * The seriousness of a {@link Message}.
+ *
+ * @author mikesamuel@gmail.com
+ */
 public enum MessageLevel {
+  /** Fine grained info about the internal progress of the Cajoler. */
   LOG,
+  /** Broad info about the internal progress of the Cajoler. */
   SUMMARY,
+  /** Information inferred about source files. */
   INFERENCE,
+  /** Indicative of a possible problem in an input source file. */
   LINT,
+  /** Indicative of a probable problem in an input source file. */
   WARNING,
+  /**
+   * More serious than {@link #WARNING}, but the Cajoler can still produce a
+   * usable output.
+   */
   CRITICAL_WARNING,
+  /**
+   * Indicative of a part of an input that prevents the Cajoler from producing
+   * a usable output, but the Cajoler could continue to the next stage to
+   * produce messages that might shed more info on the problem.
+   */
   ERROR,
+  /**
+   * Like {@link #ERROR} but the problem is so serious there's no reason to
+   * proceed to the next processing stage.
+   */
   FATAL_ERROR,
   ;
 }

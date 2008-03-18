@@ -50,7 +50,7 @@ import com.google.caja.plugin.GxpCompilerTest;
 import com.google.caja.plugin.GxpValidatorTest;
 import com.google.caja.plugin.HtmlCompiledPluginTest;
 import com.google.caja.plugin.HtmlSanitizerTest;
-import com.google.caja.plugin.HtmlValidatorTest;
+import com.google.caja.plugin.JsHtmlSanitizerTest;
 import com.google.caja.plugin.PluginCompilerTest;
 import com.google.caja.plugin.UrlUtilTest;
 import com.google.caja.plugin.caps.CapabilityRewriterTest;
@@ -98,9 +98,9 @@ public class AllTests {
           HtmlLexerTest.class,
           HtmlSanitizerTest.class,
           HtmlSchemaTest.class,
-          HtmlValidatorTest.class,
           JoinTest.class,
           JsHtmlParserTest.class,
+          JsHtmlSanitizerTest.class,
           JsLexerTest.class,
           LayoutTest.class,
           LookaheadCharProducerTest.class,

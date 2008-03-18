@@ -242,7 +242,7 @@
       <include name="**/caja/plugin/GxpValidatorTest.java"/>
       <include name="**/caja/plugin/HtmlCompiledPluginTest.java"/>
       <include name="**/caja/plugin/HtmlSanitizerTest.java"/>
-      <include name="**/caja/plugin/HtmlValidatorTest.java"/>
+      <include name="**/caja/plugin/JsHtmlSanitizerTest.java"/>
       <include name="**/caja/plugin/PluginCompilerTest.java"/>
       <include name="**/caja/plugin/UrlUtilTest.java"/>
       <include name="**/caja/plugin/caps/CapabilityRewriterTest.java"/>

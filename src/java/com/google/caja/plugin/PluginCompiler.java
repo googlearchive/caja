@@ -28,8 +28,8 @@ import com.google.caja.plugin.stages.CompileHtmlStage;
 import com.google.caja.plugin.stages.ConsolidateCodeStage;
 import com.google.caja.plugin.stages.ConsolidateCssStage;
 import com.google.caja.plugin.stages.RewriteHtmlStage;
+import com.google.caja.plugin.stages.SanitizeHtmlStage;
 import com.google.caja.plugin.stages.ValidateCssStage;
-import com.google.caja.plugin.stages.ValidateHtmlStage;
 import com.google.caja.plugin.stages.ValidateJavascriptStage;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
@@ -124,7 +124,7 @@ public final class PluginCompiler {
 
     List<Pipeline.Stage<Jobs>> stages = compilationPipeline.getStages();
     stages.add(new RewriteHtmlStage());
-    stages.add(new ValidateHtmlStage(htmlSchema));
+    stages.add(new SanitizeHtmlStage(htmlSchema));
     stages.add(new CompileHtmlStage(cssSchema, htmlSchema));
     stages.add(new ValidateCssStage(cssSchema, htmlSchema));
     stages.add(new CompileGxpsStage(cssSchema, htmlSchema));
