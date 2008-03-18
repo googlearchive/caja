@@ -627,8 +627,12 @@
     </javac>
   </target>
 
-  <target name="demos" depends="dirs,pluginc"
-   description="Puts all the demo files together for easy browsing.">
+  <target name="demos" depends="springgraph,lolcat-search"
+   description="Puts all the demo files together for easy browsing."/>
+
+  <target name="springgraph" depends="dirs,pluginc"
+   description="A spring graph demo gadget">
+
     <mkdir dir="${www}/contact-spring-graph/plugin-files/"/>
 
     <copy todir="${www}/contact-spring-graph">
@@ -637,13 +641,11 @@
         <include name="event-list.js"/>
         <include name="plugin-api.js"/>
       </fileset>
-    </copy>
-    <copy todir="${www}/contact-spring-graph">
+
       <fileset dir="${src}/com/google/caja/plugin">
         <include name="plugin-base.js"/>
       </fileset>
-    </copy>
-    <copy todir="${www}/contact-spring-graph">
+
       <fileset dir="${src}/com/google/caja/plugin/caps">
         <include name="wrap_capability.js"/>
       </fileset>
@@ -668,6 +670,57 @@
       <arg file="${demos}/contact-spring-graph/plugin-main.js"/>
     </java>
   </target>
+
+
+  <target name="lolcat-search" depends="dirs,pluginc"
+   description="IM IN UR BUILD DEMOING UR GADGETZ">
+
+    <mkdir dir="${www}/lolcat-search/"/>
+
+    <java classname="com.google.caja.plugin.PluginCompilerMain"
+     failonerror="yes">
+      <classpath refid="classpath.run"/>
+      <arg value="--input"/>
+      <arg value="${src}/com/google/caja/demos/lolcat-search/searchbox.html"/>
+      <arg value="--output_js"/>
+      <arg value="${www}/lolcat-search/searchbox-cajoled.js"/>
+      <arg value="--output_css"/>
+      <arg value="${www}/lolcat-search/searchbox-cajoled.css"/>
+      <arg value="--css_prefix"/>
+      <arg value="searchbox"/>
+    </java>
+
+    <java classname="com.google.caja.plugin.PluginCompilerMain"
+     failonerror="yes">
+      <classpath refid="classpath.run"/>
+      <arg value="--input"/>
+      <arg value="${src}/com/google/caja/demos/lolcat-search/kittens.html"/>
+      <arg value="--output_js"/>
+      <arg value="${www}/lolcat-search/kittens-cajoled.js"/>
+      <arg value="--output_css"/>
+      <arg value="${www}/lolcat-search/kittens-cajoled.css"/>
+      <arg value="--css_prefix"/>
+      <arg value="kittens"/>
+    </java>
+
+    <copy todir="${www}/lolcat-search">
+      <fileset dir="${javascript}/com/google/caja">
+        <include name="caja.js"/>
+      </fileset>
+      <fileset dir="${third_party}/js/firebug">
+        <include name="firebugx.js"/>
+      </fileset>
+      <fileset dir="${src}/com/google/caja/demos/lolcat-search">
+        <include name="container.js"/>
+        <include name="chtml.js"/>
+        <include name="error.jpg"/>
+        <include name="loading.jpg"/>
+        <include name="search.html"/>
+        <include name="searchengine.js"/>
+      </fileset>
+    </copy>
+  </target>
+
 
   <!--
     - Enable Emma
