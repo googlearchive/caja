@@ -18,6 +18,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Statement;
 
 /**
@@ -49,7 +50,7 @@ public final class Job {
     this.root = root;
     this.target = target;
     ParseTreeNode rootNode = root.node;
-    if (rootNode instanceof Statement) {
+    if (rootNode instanceof Statement || rootNode instanceof Expression) {
       this.type = Job.JobType.JAVASCRIPT;
     } else if (rootNode instanceof DomTree.Tag
                && ((DomTree.Tag) rootNode).getTagName().startsWith("gxp:")) {

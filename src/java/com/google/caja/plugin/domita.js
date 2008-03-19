@@ -136,9 +136,36 @@ attachDocumentStub = (function () {
     subClass.prototype.constructor = subClass;
   }
 
+  // TODO(mikesamuel): replace with Mike Stay's trademarking.
+  function makeSealerUnsealerPair(exposeAsPrimitive) {
+    var cache;
+    function seal(x) {
+      var o = { test___: function () { cache = x; } };
+      if (exposeAsPrimitive) {
+        o.valueOf = function (typeHint) { return x; };
+        o.toString = function () { return String(x); };
+      }
+      return o;
+    }
+    function unseal(sealed) {
+      var x;
+      try {
+        cache = null;
+        sealed && sealed.test___ && sealed.test___();
+        x = cache;
+      } finally {
+        cache = null;
+      }
+      return x;
+    }
+    return { seal: seal, unseal: unseal };
+  }
+
+  var htmlSealerUnsealerPair = makeSealerUnsealerPair(true);
+  var cssSealerUnsealerPair = makeSealerUnsealerPair(false);
+
   // See above for a description of this function.
   function attachDocumentStub(idPrefix, uriCallback, outers) {
-
     var elementPolicies = {};
     elementPolicies.FORM = function (attribs) {
       // Forms must have a gated onsubmit handler or they must have an
@@ -159,7 +186,7 @@ attachDocumentStub = (function () {
       attribs.push('TARGET', '_blank');
       return attribs;
     };
-    
+
 
     /** Sanitize HTML applying the appropriate transformations. */
     function sanitizeHtml(htmlText) {
@@ -230,18 +257,21 @@ attachDocumentStub = (function () {
       });
 
     function rewriteAttribute(tagName, attribName, type, value) {
-      value = String(value);
       switch (type) {
         case html4.atype.IDREF:
+          value = String(value);
           if (!(value && isXmlName(value))) { return null; }
           return idPrefix + value;
         case html4.atype.NAME:
+          value = String(value);
           if (!(value && isXmlName(value))) { return null; }
           return value;
         case html4.atype.NMTOKENS:
+          value = String(value);
           if (!(value && isXmlNmTokens(value))) { return null; }
           return value;
         case html4.atype.SCRIPT:
+          value = String(value);
           // Translate a handler that calls a simple function like
           //   return foo(this, event)
 
@@ -260,17 +290,33 @@ attachDocumentStub = (function () {
           }
           return value;
         case html4.atype.URI:
+          value = String(value);
           if (!uriCallback) { return null; }
           // TODO(mikesamuel): determine mime type properly.
           return uriCallback.rewrite(value, '*/*') || null;
         case html4.atype.STYLE:
-          // TODO(mikesamuel): sanitize css
-          return null;
+          var cssPropertiesAndValues = cssSealerUnsealerPair.unseal(value);
+          if (!cssPropertiesAndValues) { return null; }
+
+          var css = [];
+          for (var i = 0; i < cssPropertiesAndValues.length; i += 2) {
+            var propName = cssPropertiesAndValues[i];
+            var propValue = cssPropertiesAndValues[i + 1];
+            // If the propertyName differs between DOM and CSS, there will
+            // be a semicolon between the two.
+            // E.g., 'background-color;backgroundColor'
+            // See CssTemplate.toPropertyValueList.
+            var semi = propName.indexOf(';');
+            if (semi >= 0) { propName = propName.substring(0, semi); }
+            css.push(propName + ' : ' + propValue);
+          }
+          return css.join(' ; ');
         case html4.atype.FRAME:
+          value = String(value);
           // Frames are ambient, so disallow reference.
           return null;
         default:
-          return value;
+          return String(value);
       }
     }
 
@@ -494,6 +540,7 @@ attachDocumentStub = (function () {
         // part of an entity.
         innerHtml = html.normalizeRCData(innerHtml);
       } else {
+        // TODO(mikesamuel): seal this?
         innerHtml = tameInnerHtml(innerHtml);
       }
       // TODO(mikesamuel): rewrite ids
@@ -505,13 +552,42 @@ attachDocumentStub = (function () {
       if (!html4.ELEMENTS.hasOwnProperty(tagName)) { throw new Error(); }
       var flags = html4.ELEMENTS[tagName];
       if (flags & html4.eflags.UNSAFE) { throw new Error(); }
-      html = String(html || '');
       if (flags & html4.eflags.RCDATA) {
+        html = String(html || '');
         html = html.normalizeRCData(html);
       } else {
-        html = sanitizeHtml(html);
+        var unsealed = htmlSealerUnsealerPair.unseal(html);
+        if (unsealed) {
+          html = unsealed;
+        } else {
+          html = sanitizeHtml(String(html || ''));
+        }
       }
       this.node___.innerHTML = html;
+    };
+    TameElement.prototype.setStyle = function (style) {
+      this.setAttribute('STYLE', style);
+    };
+    TameElement.prototype.getStyle = function () {
+      return this.node___.style.cssText;
+    };
+    TameElement.prototype.updateStyle = function (style) {
+      if (!this.editable___) { throw new Error(); }
+      var cssPropertiesAndValues = cssSealerUnsealerPair.unseal(style);
+      if (!cssPropertiesAndValues) { throw new Error(); }
+
+      var styleNode = this.node___.style;
+      for (var i = 0; i < cssPropertiesAndValues.length; i += 2) {
+        var propName = cssPropertiesAndValues[i];
+        var propValue = cssPropertiesAndValues[i + 1];
+        // If the propertyName differs between DOM and CSS, there will
+        // be a semicolon between the two.
+        // E.g., 'background-color;backgroundColor'
+        // See CssTemplate.toPropertyValueList.
+        var semi = propName.indexOf(';');
+        if (semi >= 0) { propName = propName.substring(semi + 1); }
+        style[propName] = propValue;
+      }
     };
     TameElement.prototype.addEventListener = function (name, listener, bubble) {
       if (!this.editable___) { throw new Error(); }
@@ -540,8 +616,10 @@ attachDocumentStub = (function () {
        ___.allowMethod, TameElement,
        ['addEventListener', 'getAttribute', 'setAttribute',
         'getClassName', 'setClassName', 'getId', 'setId',
-        'getInnerHTML', 'setInnerHTML', 'getTagName']);
-    exportFields(TameElement, ['className', 'id', 'innerHTML', 'tagName']);
+        'getInnerHTML', 'setInnerHTML', 'updateStyle', 'getStyle', 'setStyle',
+        'getTagName']);
+    exportFields(TameElement,
+                 ['className', 'id', 'innerHTML', 'tagName', 'style']);
 
 
     function TameFormElement(node, editable) {
@@ -686,9 +764,79 @@ attachDocumentStub = (function () {
     ___.all2(___.allowMethod, TameDocument,
              ['createElement', 'createTextNode', 'getElementById']);
 
-
     outers.tameNode___ = tameNode;
     outers.tameEvent___ = function (event) { return new TameEvent(event); };
+    outers.blessHtml___ = htmlSealerUnsealerPair.seal;
+    outers.blessCss___ = function (var_args) {
+      var arr = [];
+      for (var i = 0, n = arguments.length; i < n; ++i) {
+        arr[i] = arguments[i];
+      }
+      return cssSealerUnsealerPair.seal(arr);
+    }
+    outers.htmlAttr___ = function (s) {
+      return html.escapeAttrib(String(s || ''));
+    };
+    outers.html___ = function (s) {
+      var unsealed = htmlSealerUnsealerPair.unseal(s);
+      if (unsealed) { return unsealed; }
+      return html.escapeAttrib(String(s || ''));
+    };
+    outers.rewriteUri___ = function (uri, mimeType) {
+      var s = rewriteAttribute(null, null, html4.atype.URI, uri);
+      if (!s) { throw new Error(); }
+      return s;
+    };
+    outers.prefix___ = function (nmtokens) {
+      var p = String(nmtokens).replace(/^\s+|\s+$/g, '').split(/\s+/g);
+      var out = [];
+      for (var i = 0; i < p.length; ++i) {
+        nmtoken = rewriteAttribute(null, null, html4.atype.IDREF, p[i]);
+        if (!nmtoken) { throw new Error(nmtokens); }
+        out.push(nmtoken);
+      }
+      return out.join(' ');
+    };
+
+    /**
+     * given a number, outputs the equivalent css text.
+     * @param {number} num
+     * @return {string} an CSS representation of a number suitable for both html
+     *    attribs and plain text.
+     */
+    outers.cssNumber___ = function (num) {
+      if ('number' === typeof num && isFinite(num) && !isNaN(num)) {
+        return '' + num;
+      }
+      throw new Error(num);
+    };
+    /**
+     * given a number as 24 bits of RRGGBB, outputs a properly formatted CSS
+     * color.
+     * @param {Number} num
+     * @return {String} an CSS representation of num suitable for both html
+     *    attribs and plain text.
+     */
+    outers.cssColor___ = function (color) {
+      // TODO: maybe whitelist the color names defined for CSS if the arg is a
+      // string.
+      if ('number' !== typeof color || (color != (color | 0))) {
+        throw new Error(color);
+      }
+      var hex = '0123456789abcdef';
+      return '#' + hex.charAt((color >> 20) & 0xf)
+          + hex.charAt((color >> 16) & 0xf)
+          + hex.charAt((color >> 12) & 0xf)
+          + hex.charAt((color >> 8) & 0xf)
+          + hex.charAt((color >> 4) & 0xf)
+          + hex.charAt(color & 0xf);
+    };
+    outers.cssUri___ = function (uri, mimeType) {
+      var s = rewriteAttribute(null, null, html4.atype.URI, uri);
+      if (!s) { throw new Error(); }
+      return s;
+    };
+
     outers.document = new TameDocument(document, true);
   }
 

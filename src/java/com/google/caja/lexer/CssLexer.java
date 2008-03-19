@@ -48,7 +48,7 @@ public final class CssLexer implements TokenStream<CssTokenType> {
   }
 
   /**
-   * @param allowSubstitutions true iff $(...) style substitutions should be
+   * @param allowSubstitutions true iff ${...} style substitutions should be
    *   allowed as described at {@link CssTokenType#SUBSTITUTION}
    */
   public CssLexer(CharProducer cp, boolean allowSubstitutions) {
@@ -67,7 +67,7 @@ public final class CssLexer implements TokenStream<CssTokenType> {
   }
 
   /**
-   * True iff $(...) style substitutions should be
+   * True iff ${...} style substitutions should be
    * allowed as described at {@link CssTokenType#SUBSTITUTION}
    * @see #allowSubstitutions(boolean)
    */
@@ -172,7 +172,7 @@ final class CssSplitter implements TokenStream<CssTokenType> {
   private Token<CssTokenType> pending;
 
   /**
-   * @param allowSubstitutions true iff $(...) style substitutions should be
+   * @param allowSubstitutions true iff ${...} style substitutions should be
    *   allowed as described at {@link CssTokenType#SUBSTITUTION}
    */
   CssSplitter(CharProducer cp, boolean allowSubstitutions) {
@@ -423,11 +423,11 @@ final class CssSplitter implements TokenStream<CssTokenType> {
         }
 
       } else if (ch == '$' && allowSubstitutions) {
-        // $(<javascript tokens>)
+        // ${<javascript tokens>}
         sb.append(ch);
         cp.read();
 
-        if (cp.lookahead() != '(') {
+        if (cp.lookahead() != '{') {
           type = CssTokenType.PUNCTUATION;
         } else {
           // 0 - non string
@@ -448,9 +448,9 @@ final class CssSplitter implements TokenStream<CssTokenType> {
                 if (ch == '"' || ch == '\'') {
                   delim = ch;
                   state = 1;
-                } else if (ch == '(') {
+                } else if (ch == '{') {
                   ++nOpen;
-                } else if (ch == ')') {
+                } else if (ch == '}') {
                   if (--nOpen == 0) {
                     state = 3;
                   }

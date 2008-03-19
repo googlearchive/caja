@@ -645,7 +645,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       "^U\\+(?:[0-9a-fA-F]{1,6}-[0-9a-fA-F]{1,6}|[0-9a-fA-F?]{1,6})$",
       Pattern.CASE_INSENSITIVE);
   private static final Pattern SUBSTITUTION = Pattern.compile(
-      "^\\$\\(.*\\)(?:%|[a-z]+)?$", Pattern.DOTALL);
+      "^\\$\\{.*\\}(?:%|[a-z]+)?$", Pattern.DOTALL);
 
   /**
    * TODO(ihab): Javadoc.
@@ -841,12 +841,12 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
 
     public String getBody() {
       String value = getValue();
-      return value.substring(2, value.lastIndexOf(')'));
+      return value.substring(2, value.lastIndexOf('}'));
     }
 
     public String getSuffix() {
       String value = getValue();
-      return value.substring(value.lastIndexOf(')') + 1);
+      return value.substring(value.lastIndexOf('}') + 1);
     }
 
     @Override

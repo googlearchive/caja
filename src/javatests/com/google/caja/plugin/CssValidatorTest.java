@@ -680,7 +680,7 @@ public final class CssValidatorTest extends TestCase {
   }
 
   public void testPositionSubstitution() throws Exception {
-    runTest("p { left: $(3)px }",
+    runTest("p { left: ${3}px }",
             "StyleSheet\n"
             + "  RuleSet\n"
             + "    Selector\n"
@@ -691,11 +691,11 @@ public final class CssValidatorTest extends TestCase {
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=LENGTH"
                         + " ; cssPropertyPart=left\n"
-            + "          Substitution : $(3)px");
+            + "          Substitution : ${3}px");
   }
 
   public void testColorSubstitution() throws Exception {
-    runTest("p { background: $(shade << 16 | shade << 8 | shade) }",
+    runTest("p { background: ${shade << 16 | shade << 8 | shade} }",
             "StyleSheet\n"
             + "  RuleSet\n"
             + "    Selector\n"
@@ -706,11 +706,11 @@ public final class CssValidatorTest extends TestCase {
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=COLOR"
                         + " ; cssPropertyPart=background-color::color\n"
-            + "          Substitution : $(shade << 16 | shade << 8 | shade)");
+            + "          Substitution : ${shade << 16 | shade << 8 | shade}");
   }
 
   public void testUriSubstitution() throws Exception {
-    runTest("p { background: $(imageName + '.png')uri }",
+    runTest("p { background: ${imageName + '.png'}uri }",
             "StyleSheet\n"
             + "  RuleSet\n"
             + "    Selector\n"
@@ -721,8 +721,8 @@ public final class CssValidatorTest extends TestCase {
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=URI"
                         + " ; cssPropertyPart=background-image\n"
-            + "          Substitution : $(imageName + '.png')uri");
-    runTest("p { background-image: $(imageName + '.png') }",
+            + "          Substitution : ${imageName + '.png'}uri");
+    runTest("p { background-image: ${imageName + '.png'} }",
             "StyleSheet\n"
             + "  RuleSet\n"
             + "    Selector\n"
@@ -733,7 +733,7 @@ public final class CssValidatorTest extends TestCase {
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=URI"
                         + " ; cssPropertyPart=background-image\n"
-            + "          Substitution : $(imageName + '.png')");
+            + "          Substitution : ${imageName + '.png'}");
   }
 
   private CssTree parseCss(String css) throws Exception {

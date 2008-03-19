@@ -659,21 +659,21 @@ final class SignatureResolver {
       "^(?:" + REAL_NUMBER_RE + "(?:hz|kHz)|0+)$",
       Pattern.CASE_INSENSITIVE);
 
-  // Suffixes for substitutions.  A subsitution like $(x * 4)em can only be
+  // Suffixes for substitutions.  A subsitution like ${x * 4}em can only be
   // a length.  Substitutions without a suffix can only be of certain kinds
   private static final Pattern LENGTH_SUFFIX_RE = Pattern.compile(
-      "\\)(?:in|cm|mm|pt|pc|em|ex|px)$", Pattern.CASE_INSENSITIVE);
-  private static final Pattern PERCENTAGE_SUFFIX_RE = Pattern.compile("\\)%$");
-  private static final Pattern NUMBER_SUFFIX_RE = Pattern.compile("\\)$");
+      "\\}(?:in|cm|mm|pt|pc|em|ex|px)$", Pattern.CASE_INSENSITIVE);
+  private static final Pattern PERCENTAGE_SUFFIX_RE = Pattern.compile("\\}%$");
+  private static final Pattern NUMBER_SUFFIX_RE = Pattern.compile("\\}$");
   private static final Pattern COLOR_SUFFIX_RE = NUMBER_SUFFIX_RE;
   private static final Pattern ANGLE_SUFFIX_RE = Pattern.compile(
-      "\\)(?:deg|grad|rad)$", Pattern.CASE_INSENSITIVE);
+      "\\}(?:deg|grad|rad)$", Pattern.CASE_INSENSITIVE);
   private static final Pattern TIME_SUFFIX_RE = Pattern.compile(
-      "\\)(?:ms|s)$", Pattern.CASE_INSENSITIVE);
+      "\\}(?:ms|s)$", Pattern.CASE_INSENSITIVE);
   private static final Pattern FREQUENCY_SUFFIX_RE = Pattern.compile(
-      "\\)(?:hz|kHz)$", Pattern.CASE_INSENSITIVE);
+      "\\}(?:hz|kHz)$", Pattern.CASE_INSENSITIVE);
   private static final Pattern URI_SUFFIX_RE = Pattern.compile(
-      "\\)(?:uri)?$", Pattern.CASE_INSENSITIVE);
+      "\\}(?:uri)?$", Pattern.CASE_INSENSITIVE);
 
   /**
    * Handles symbols for which we don't have a signature.  Anything not handled

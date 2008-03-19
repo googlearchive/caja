@@ -1,15 +1,15 @@
 function Foo(baz, boo) {
   var out___ = [];
-  out___.push(c2___.call(___OUTERS___, baz * boo, baz), c2___.call(___OUTERS___, baz * boo, baz));
-  return ___OUTERS___.plugin_blessHtml___(out___.join(''));
+  out___.push(___OUTERS___.html___(c2___.call(___OUTERS___, baz * boo, baz)), ___OUTERS___.html___(c2___.call(___OUTERS___, baz * boo, baz)));
+  return ___OUTERS___.blessHtml___(out___.join(''));
 }
 
 function Bar(boo, faz) {
   var out___ = [];
   if (boo >= 0 && faz >= 0) {
-    out___.push('<p>.</p>', c1___.call(___OUTERS___, faz, boo - 1));
+    out___.push('<p>.</p>', ___OUTERS___.html___(c1___.call(___OUTERS___, faz, boo - 1)));
   }
-  return ___OUTERS___.plugin_blessHtml___(out___.join(''));
+  return ___OUTERS___.blessHtml___(out___.join(''));
 }
 MISSING_TEMPLATE_PARAM : gxpcompilerinput3.gxp:7+1@148 - 12@159
 MISSING_TEMPLATE_PARAM : gxpcompilerinput3.gxp:7+1@148 - 12@159

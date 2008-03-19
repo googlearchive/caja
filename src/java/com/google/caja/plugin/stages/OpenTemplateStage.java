@@ -15,14 +15,20 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.CssLexer;
+import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.Token;
+import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
+import com.google.caja.parser.css.CssParser;
+import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
@@ -34,9 +40,11 @@ import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UndefinedLiteral;
+import com.google.caja.plugin.CssTemplate;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.Criterion;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Pipeline;
 
@@ -56,7 +64,7 @@ import java.util.Set;
 public final class OpenTemplateStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
     for (Job job : jobs.getJobsByType(Job.JobType.JAVASCRIPT)) {
-      optimizeEvalTemplate(job.getRoot(), jobs);
+      optimizeOpenTemplate(job.getRoot(), jobs);
     }
     return jobs.hasNoFatalErrors();
   }
@@ -65,7 +73,7 @@ public final class OpenTemplateStage implements Pipeline.Stage<Jobs> {
    * Inlines calls to {@code eval(Template(...))} where {@code eval} and
    * {@code Template} are bound to the global scope.
    */
-  private static void optimizeEvalTemplate(AncestorChain<?> chain, Jobs jobs) {
+  private static void optimizeOpenTemplate(AncestorChain<?> chain, Jobs jobs) {
     ScopeChecker sc = new ScopeChecker();
     applyToScope(chain, sc);
     if (sc.variablesInScope.contains("eval")
@@ -76,7 +84,7 @@ public final class OpenTemplateStage implements Pipeline.Stage<Jobs> {
     applyToScope(chain, new Optimizer(jobs));
 
     for (AncestorChain<FunctionConstructor> innerScope : sc.innerScopes) {
-      optimizeEvalTemplate(innerScope, jobs);
+      optimizeOpenTemplate(innerScope, jobs);
     }
   }
 
@@ -126,7 +134,7 @@ public final class OpenTemplateStage implements Pipeline.Stage<Jobs> {
     Optimizer(Jobs jobs) {
       this.jobs = jobs;
     }
-    
+
     public boolean visit(AncestorChain<?> chain) {
       if (chain.node instanceof FunctionConstructor) {
         return false;
@@ -138,9 +146,10 @@ public final class OpenTemplateStage implements Pipeline.Stage<Jobs> {
       // Look for
       //   Operation : FUNCTION_CALL   ; evalCall
       //     Reference : eval          ; evalRef
-      //     Operation : FUNCTION)CALL ; tmplCall
+      //     Operation : FUNCTION_CALL ; tmplCall
       //       Reference : Template    ; tmplRef
       //       String concatenation    ; content
+      //       String mimeType         ; mimeType   (optional)
 
       Operation evalCall = (Operation) chain.node;
       if (evalCall.getOperator() != Operator.FUNCTION_CALL
@@ -155,7 +164,8 @@ public final class OpenTemplateStage implements Pipeline.Stage<Jobs> {
       }
 
       Expression rhs = evalCall.children().get(1);
-      if (!(rhs instanceof Operation && rhs.children().size() == 2)) {
+      if (!(rhs instanceof Operation
+            && (rhs.children().size() == 2 || rhs.children().size() == 3))) {
         return false;
       }
 
@@ -174,20 +184,63 @@ public final class OpenTemplateStage implements Pipeline.Stage<Jobs> {
           = flattenStringConcatenation(tmplCall.children().get(1));
       if (stringLiterals == null) { return false; }
 
-      Splitter splitter = new Splitter(stringLiterals, jobs.getMessageQueue());
-      splitter.split();
-      List<Expression> templateParts = splitter.parts;
-      if (templateParts == null) { return false; }
+      StringLiteral mimeType = null;
+      if (tmplCall.children().size() == 3) {
+        Expression e = tmplCall.children().get(2);
+        if (e instanceof StringLiteral) {
+          mimeType = (StringLiteral) e;
+        }
+      }
 
-      ((MutableParseTreeNode) chain.parent.node).replaceChild(
-          new Operation(
-              Operator.FUNCTION_CALL,
-              new Operation(
-                 Operator.CONSTRUCTOR,
-                 new Reference(new Identifier("StringInterpolation"))),
-              new ArrayConstructor(templateParts)),
-          chain.node);
+      if (matchesMimeType(mimeType, "text/css")) {
+        List<CharProducer> producers = new ArrayList<CharProducer>();
+        for (StringLiteral lit : stringLiterals) {
+          String s = lit.getValue();
+          FilePosition pos
+              = Splitter.clippedPos(lit.getFilePosition(), 1, s.length() - 1);
+          s = s.substring(1, s.length() - 1);
+          producers.add(CharProducer.Factory.fromJsString(
+              CharProducer.Factory.create(new StringReader(s), pos)));
+        }
+        CharProducer cp = CharProducer.Factory.chain(
+            producers.toArray(new CharProducer[0]));
 
+        CssLexer cssl = new CssLexer(cp, true);
+        TokenQueue<CssTokenType> tq = new TokenQueue<CssTokenType>(
+            cssl, evalCall.getFilePosition().source(),
+            new Criterion<Token<CssTokenType>>() {
+              public boolean accept(Token<CssTokenType> t) {
+                switch (t.type) {
+                  case SPACE: case COMMENT: return false;
+                  default: return true;
+                }
+              }
+            });
+        CssParser cssp = new CssParser(tq);
+        try {
+          CssTree.DeclarationGroup dg = cssp.parseDeclarationGroup();
+          CssTemplate t = new CssTemplate(evalCall.getFilePosition(), dg);
+          jobs.getJobs().add(new Job(new AncestorChain<CssTemplate>(t), chain));
+        } catch (ParseException ex) {
+          ex.toMessageQueue(jobs.getMessageQueue());
+          return false;
+        }
+      } else {
+        Splitter splitter
+            = new Splitter(stringLiterals, jobs.getMessageQueue());
+        splitter.split();
+        List<Expression> templateParts = splitter.parts;
+        if (templateParts == null) { return false; }
+
+        ((MutableParseTreeNode) chain.parent.node).replaceChild(
+            new Operation(
+                Operator.FUNCTION_CALL,
+                new Operation(
+                   Operator.CONSTRUCTOR,
+                   new Reference(new Identifier("StringInterpolation"))),
+                new ArrayConstructor(templateParts)),
+            chain.node);
+      }
       return false;
     }
   }
@@ -214,6 +267,16 @@ public final class OpenTemplateStage implements Pipeline.Stage<Jobs> {
       if (out == null) { break; }
     }
     return out;
+  }
+
+  private static boolean matchesMimeType(StringLiteral sl, String mimeType) {
+    if (sl == null) { return false; }
+    String candidateMimeType = sl.getUnquotedValue();
+    int semi = candidateMimeType.indexOf(';');
+    if (semi >= 0) {
+      candidateMimeType = candidateMimeType.substring(0, semi);
+    }
+    return candidateMimeType.equalsIgnoreCase(mimeType);
   }
 }
 
@@ -512,7 +575,7 @@ final class Splitter {
   /**
    * Interpolate the position of a substring of a StringLiteral.
    */
-  private static FilePosition clippedPos(FilePosition p, int start, int end) {
+  static FilePosition clippedPos(FilePosition p, int start, int end) {
     if (end <= 0) {
       return FilePosition.startOf(p);
     }

@@ -72,4 +72,28 @@ public class CssSchemaTest extends TestCase {
     assertTrue(cssSchema.isFunctionAllowed("rgb"));
     assertFalse(cssSchema.isFunctionAllowed("expression"));
   }
+
+  public void testPropertyInfo() {
+    assertEquals(null, cssSchema.getCssProperty("bogus"));
+
+    CssSchema.CssPropertyInfo colorInfo = cssSchema.getCssProperty("color");
+    assertEquals(null, colorInfo.defaultValue);
+    assertEquals("color", colorInfo.dom2property);
+
+    // Check one with a name that is a reserved keyword.
+    CssSchema.CssPropertyInfo floatInfo = cssSchema.getCssProperty("float");
+    assertEquals("none", floatInfo.defaultValue);
+    assertEquals("cssFloat", floatInfo.dom2property);
+
+    // Check two that share most of their definition via aliasing.
+    CssSchema.CssPropertyInfo marginTopInfo
+        = cssSchema.getCssProperty("margin-top");
+    assertEquals("0", marginTopInfo.defaultValue);
+    assertEquals("marginTop", marginTopInfo.dom2property);
+
+    CssSchema.CssPropertyInfo marginBottomInfo
+        = cssSchema.getCssProperty("margin-bottom");
+    assertEquals("0", marginBottomInfo.defaultValue);
+    assertEquals("marginBottom", marginBottomInfo.dom2property);
+  }
 }

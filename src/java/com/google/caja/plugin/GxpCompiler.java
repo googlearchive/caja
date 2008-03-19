@@ -211,15 +211,14 @@ public final class GxpCompiler {
       params.add(param);
     }
 
-    String OUTPUT_ARRAY_NAME = "out___";
     // Chunks of html should be pushed onto an array called out___
-    List<String> tgtChain = Arrays.asList(OUTPUT_ARRAY_NAME, "push");
+    List<String> tgtChain = Arrays.asList(ReservedNames.OUTPUT_BUFFER, "push");
 
     // var out___ = [];
     Block body = s(new Block(Collections.<Statement>emptyList()));
     body.insertBefore(
         s(new Declaration(
-              new Identifier(OUTPUT_ARRAY_NAME),
+              new Identifier(ReservedNames.OUTPUT_BUFFER),
               s(new ArrayConstructor(
                     Collections.<Expression>emptyList())))), null);
 
@@ -228,13 +227,14 @@ public final class GxpCompiler {
     }
 
     // Join the html via out___.join('') and mark it as safe html
-    //   return ___OUTERS___.plugin_blessHtml___(out.join(''));
+    //   return ___OUTERS___.blessHtml___(out.join(''));
     ReturnStmt result = s(new ReturnStmt(
         TreeConstruction.call(
             TreeConstruction.memberAccess(
-                ReservedNames.OUTERS, "plugin_blessHtml___"),
+                ReservedNames.OUTERS, ReservedNames.BLESS_HTML),
             TreeConstruction.call(
-                TreeConstruction.memberAccess(OUTPUT_ARRAY_NAME, "join"),
+                TreeConstruction.memberAccess(
+                    ReservedNames.OUTPUT_BUFFER, "join"),
                 s(new StringLiteral("''"))))));
     body.insertBefore(result, null);
     return s(new FunctionConstructor(s(new Identifier(sig.templateName)),
@@ -456,11 +456,11 @@ public final class GxpCompiler {
                              Arrays.asList(synthId, "push"), true,
                              JsWriter.Esc.NONE, b);
                 }
-                // <namespace>.plugin_htmlAttr___(<wrapper>(<synthId>.join('')))
+                // <namespace>.htmlAttr___(<wrapper>(<synthId>.join('')))
                 JsWriter.append(
                     TreeConstruction.call(
                         TreeConstruction.memberAccess(
-                            ReservedNames.OUTERS, "plugin_htmlAttr___"),
+                            ReservedNames.OUTERS, ReservedNames.HTML_ATTR),
                         TreeConstruction.call(
                             TreeConstruction.memberAccess(
                                 ReservedNames.OUTERS, wrapperFn),
@@ -529,7 +529,7 @@ public final class GxpCompiler {
       "^[a-z][_a-z0-9]*$", Pattern.CASE_INSENSITIVE);
   private static String assertSafeJsIdentifier(String s, DomTree node)
       throws BadContentException {
-    if (!JS_ID.matcher(s).matches() || s.endsWith("___")) {
+    if (!JS_ID.matcher(s).matches() || s.endsWith("__")) {
       throw new BadContentException(
           new Message(PluginMessageType.BAD_IDENTIFIER, node.getFilePosition(),
                       MessagePart.Factory.valueOf(s)));
@@ -776,10 +776,10 @@ public final class GxpCompiler {
     String fnName;
     switch (escaping) {
       case HTML:
-        fnName = "plugin_html___";
+        fnName = ReservedNames.HTML;
         break;
       case HTML_ATTRIB:
-        fnName = "plugin_htmlAttr___";
+        fnName = ReservedNames.HTML_ATTR;
         break;
       default:
         fnName = null;
@@ -842,17 +842,21 @@ public final class GxpCompiler {
 
     if (bad) { return; }
 
-    // Append <assignedName>.call(___OUTERS___, <param 0>, ...);
+    // Append ___OUTERS___.html___(
+    //     <assignedName>.call(___OUTERS___, <param 0>, ...));
     operands[0] = TreeConstruction.memberAccess(sig.assignedName, "call");
     operands[1] = s(new Reference(s(new Identifier(ReservedNames.OUTERS))));
-    Operation call = s(new Operation(Operator.FUNCTION_CALL, operands));
+
+    Operation call = TreeConstruction.call(
+        TreeConstruction.memberAccess(ReservedNames.OUTERS, ReservedNames.HTML),
+        s(new Operation(Operator.FUNCTION_CALL, operands)));
     JsWriter.append(call, tgtChain, b);
   }
 
   private void compileStyleAttrib(
       DomTree.Attrib attrib, List<String> tgtChain, Block b)
       throws BadContentException {
-    CssTree decls;
+    CssTree.DeclarationGroup decls;
     try {
       decls = parseStyleAttrib(attrib);
     } catch (ParseException ex) {
@@ -876,8 +880,8 @@ public final class GxpCompiler {
     }
 
     JsWriter.appendString(" style=\"", tgtChain, b);
-    CssTemplate.bodyToJavascript(
-        decls, meta, tgtChain, b, JsWriter.Esc.HTML_ATTRIB, mq);
+    CssTemplate.declGroupToStyleValue(
+        decls, tgtChain, b, JsWriter.Esc.HTML_ATTRIB, mq);
     JsWriter.appendString("\"", tgtChain, b);
   }
 
@@ -1073,7 +1077,7 @@ public final class GxpCompiler {
       @Override
       String runtimeFunction(String tagName, String attribName, DomTree t,
                              GxpCompiler gxpc) {
-        return "plugin_prefix___";
+        return ReservedNames.PREFIX;
       }
     },
     URI {
@@ -1107,7 +1111,7 @@ public final class GxpCompiler {
       @Override
       String runtimeFunction(String tagName, String attribName, DomTree t,
                              GxpCompiler gxpc) {
-        return "plugin_checkUriRelative___";
+        return ReservedNames.REWRITE_URI;
       }
     },
     STYLE {

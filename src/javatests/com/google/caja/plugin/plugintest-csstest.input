@@ -3,7 +3,7 @@
 @param('left');
 @param('top');
 
-left: $(left)px; top: $(top)px
+left: ${left}px; top: ${top}px
 
 
 === test:///csstest.js

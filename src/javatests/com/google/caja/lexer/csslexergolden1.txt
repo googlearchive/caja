@@ -1668,40 +1668,46 @@ SPAC [\n  ]: csslexerinput1.css:145+7@4883 - 146+3@4886
 IDEN [left]: csslexerinput1.css:146+3@4886 - 7@4890
 PUNC [:]: csslexerinput1.css:146+7@4890 - 8@4891
 SPAC [ ]: csslexerinput1.css:146+8@4891 - 9@4892
-SUBS [$(x * y + z)]: csslexerinput1.css:146+9@4892 - 21@4904
+SUBS [${x * y + z}]: csslexerinput1.css:146+9@4892 - 21@4904
 PUNC [;]: csslexerinput1.css:146+21@4904 - 22@4905
 SPAC [\n  ]: csslexerinput1.css:146+22@4905 - 147+3@4908
 IDEN [right]: csslexerinput1.css:147+3@4908 - 8@4913
 PUNC [:]: csslexerinput1.css:147+8@4913 - 9@4914
 SPAC [ ]: csslexerinput1.css:147+9@4914 - 10@4915
-SUBS [$(max(0, width - 20))em]: csslexerinput1.css:147+10@4915 - 33@4938
+SUBS [${max(0, width - 20)}em]: csslexerinput1.css:147+10@4915 - 33@4938
 PUNC [;]: csslexerinput1.css:147+33@4938 - 34@4939
 SPAC [\n  ]: csslexerinput1.css:147+34@4939 - 148+3@4942
 IDEN [bottom]: csslexerinput1.css:148+3@4942 - 9@4948
 PUNC [:]: csslexerinput1.css:148+9@4948 - 10@4949
 SPAC [ ]: csslexerinput1.css:148+10@4949 - 11@4950
-SUBS [$(parseInt("4)\\"))"))px]: csslexerinput1.css:148+11@4950 - 34@4973
+SUBS [${parseInt("4}\\"}}")}px]: csslexerinput1.css:148+11@4950 - 34@4973
 PUNC [;]: csslexerinput1.css:148+34@4973 - 35@4974
 SPAC [\n  ]: csslexerinput1.css:148+35@4974 - 149+3@4977
 IDEN [top]: csslexerinput1.css:149+3@4977 - 6@4980
 PUNC [:]: csslexerinput1.css:149+6@4980 - 7@4981
 SPAC [ ]: csslexerinput1.css:149+7@4981 - 8@4982
-SUBS [$("3(".length)in]: csslexerinput1.css:149+8@4982 - 24@4998
+SUBS [${"3{".length}in]: csslexerinput1.css:149+8@4982 - 24@4998
 PUNC [;]: csslexerinput1.css:149+24@4998 - 25@4999
-SPAC [\n]: csslexerinput1.css:149+25@4999 - 150+1@5000
-PUNC [}]: csslexerinput1.css:150+1@5000 - 2@5001
-SPAC [\n\n]: csslexerinput1.css:150+2@5001 - 152+1@5003
-PUNC [<!--]: csslexerinput1.css:152+1@5003 - 5@5007
-SPAC [ ]: csslexerinput1.css:152+5@5007 - 6@5008
-IDEN [an]: csslexerinput1.css:152+6@5008 - 8@5010
-SPAC [ ]: csslexerinput1.css:152+8@5010 - 9@5011
-IDEN [escaping]: csslexerinput1.css:152+9@5011 - 17@5019
-SPAC [ ]: csslexerinput1.css:152+17@5019 - 18@5020
-IDEN [-text]: csslexerinput1.css:152+18@5020 - 23@5025
-SPAC [ ]: csslexerinput1.css:152+23@5025 - 24@5026
-PUNC [<]: csslexerinput1.css:152+24@5026 - 25@5027
-IDEN [span]: csslexerinput1.css:152+25@5027 - 29@5031
-PUNC [>]: csslexerinput1.css:152+29@5031 - 30@5032
-SPAC [ ]: csslexerinput1.css:152+30@5032 - 31@5033
-PUNC [-->]: csslexerinput1.css:152+31@5033 - 34@5036
-SPAC [\n]: csslexerinput1.css:152+34@5036 - 153+1@5037
+SPAC [\n  ]: csslexerinput1.css:149+25@4999 - 150+3@5002
+IDEN [color]: csslexerinput1.css:150+3@5002 - 8@5007
+PUNC [:]: csslexerinput1.css:150+8@5007 - 9@5008
+SPAC [ ]: csslexerinput1.css:150+9@5008 - 10@5009
+SUBS [${({ color: '#fff'}).color}]: csslexerinput1.css:150+10@5009 - 37@5036
+PUNC [;]: csslexerinput1.css:150+37@5036 - 38@5037
+SPAC [\n]: csslexerinput1.css:150+38@5037 - 151+1@5038
+PUNC [}]: csslexerinput1.css:151+1@5038 - 2@5039
+SPAC [\n\n]: csslexerinput1.css:151+2@5039 - 153+1@5041
+PUNC [<!--]: csslexerinput1.css:153+1@5041 - 5@5045
+SPAC [ ]: csslexerinput1.css:153+5@5045 - 6@5046
+IDEN [an]: csslexerinput1.css:153+6@5046 - 8@5048
+SPAC [ ]: csslexerinput1.css:153+8@5048 - 9@5049
+IDEN [escaping]: csslexerinput1.css:153+9@5049 - 17@5057
+SPAC [ ]: csslexerinput1.css:153+17@5057 - 18@5058
+IDEN [-text]: csslexerinput1.css:153+18@5058 - 23@5063
+SPAC [ ]: csslexerinput1.css:153+23@5063 - 24@5064
+PUNC [<]: csslexerinput1.css:153+24@5064 - 25@5065
+IDEN [span]: csslexerinput1.css:153+25@5065 - 29@5069
+PUNC [>]: csslexerinput1.css:153+29@5069 - 30@5070
+SPAC [ ]: csslexerinput1.css:153+30@5070 - 31@5071
+PUNC [-->]: csslexerinput1.css:153+31@5071 - 34@5074
+SPAC [\n]: csslexerinput1.css:153+34@5074 - 154+1@5075

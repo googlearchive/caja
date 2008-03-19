@@ -33,8 +33,29 @@ public class ReservedNames {
    * in which that plugin's code is defined.
    */
   public static final String OUTERS = "___OUTERS___";
+  /** Trademarks a string as HTML PCDATA. */
+  public static final String BLESS_HTML = "blessHtml___";
+  /** Trademarks a string as CSS properties. */
+  public static final String BLESS_CSS = "blessCss___";
+  /** Escapes a string to an HTML attribute. */
+  public static final String HTML_ATTR = "htmlAttr___";
+  /** Escapes a string to a HTML PCDATA. */
+  public static final String HTML = "html___";
+  /**
+   * Applies {@link com.google.caja.opensocial.URICallback#rewrite} at runtime.
+   */
+  public static final String REWRITE_URI = "rewriteUri___";
+  /** Applies the id and nmtoken policy at runtime. */
+  public static final String PREFIX = "prefix___";
+  /** Coerces the argument to a CSS number. */
+  public static final String CSS_NUMBER = "cssNumber___";
+  /** Coerces the argument to a CSS color. */
+  public static final String CSS_COLOR = "cssColor___";
+  /** Coerces the argument to a CSS uri by applying the URICallback policy. */
+  public static final String CSS_URI = "cssUri___";
+  /** An output buffer for a compiled template. */
+  public static final String OUTPUT_BUFFER = "out___";
 
   private ReservedNames() {
   }
-
 }

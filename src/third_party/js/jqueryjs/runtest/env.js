@@ -301,19 +301,6 @@ var window = this;
 
   window.DOMElement = function(elem){
     this._dom = elem;
-    this.style = {
-      get opacity(){ return this._opacity; },
-      set opacity(val){ this._opacity = val + ""; }
-    };
-
-    // Load CSS info
-    var styles = (this.getAttribute("style") || "").split(/\s*;\s*/);
-
-    for ( var i = 0; i < styles.length; i++ ) {
-      var style = styles[i].split(/\s*:\s*/);
-      if ( style.length == 2 )
-        this.style[ style[0] ] = style[1];
-    }
   };
 
   DOMElement.prototype = extend( new DOMNode(), {
@@ -396,7 +383,29 @@ var window = this;
       this.appendChild( this.ownerDocument.createTextNode(text));
     },
 
-    style: {},
+    get style() {
+      var style = {
+        get opacity(){ return this._opacity; },
+        set opacity(val){ this._opacity = val + ""; }
+      };
+
+      // Load CSS info
+      style.cssText = this.getAttribute('style') || "";
+      var styles = style.cssText.split(/\s*;\s*/);
+
+      for ( var i = 0; i < styles.length; i++ ) {
+        var styleDeclaration = styles[i].split(/\s*:\s*/);
+        if ( styleDeclaration.length === 2 ) {
+          var k = styleDeclaration[0].replace(
+              /-([a-z])/g,
+              function (_, letter) { return letter.toUpperCase(); });
+          if (k === 'float') { k = 'cssFloat'; }
+          style[k] = styleDeclaration[1];
+        }
+      }
+      return style;
+    },
+
     clientHeight: 0,
     clientWidth: 0,
     offsetHeight: 0,
@@ -469,12 +478,13 @@ var window = this;
     set id(val) { return this.setAttribute("id",val); },
 
     getAttribute: function(name){
+      name = name.toLowerCase();
       return this._dom.hasAttribute(name) ?
         String( this._dom.getAttribute(name) ) :
         null;
     },
     setAttribute: function(name,value){
-      this._dom.setAttribute(name,value);
+      this._dom.setAttribute(name.toLowerCase(),value);
     },
     removeAttribute: function(name){
       this._dom.removeAttribute(name);

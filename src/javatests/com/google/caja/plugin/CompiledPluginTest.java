@@ -101,7 +101,7 @@ public class CompiledPluginTest extends TestCase {
             new StringReader(
                 "function main() {\n" +
                 "  document.getElementById('hello-base')\n" +
-                "      .setInnerHTML(sayHello());\n" +
+                "      .innerHTML = sayHello();\n" +
                 "}"),
             "file:///hello-world.js")
         );
@@ -186,7 +186,7 @@ public class CompiledPluginTest extends TestCase {
         "\n  testOuters.main();" +
         "\n  assertEquals(" +
         "\n      '<a class=\"pre-class1 pre-class2\"' +" +
-        "\n      ' href=\"/plugin1/foo.html?a=b&amp;c=d\"' +" +
+        "\n      ' href=\"http://proxy/?uri=foo.html%3fa%3db%26c%3dd\"' +" +
         "\n      ' id=\"pre-id\" target=\"_new\"' +" +
         "\n      ' title=\"&quot;hover text&quot;\"' +" +
         "\n      '>Clicky' +" +
@@ -275,8 +275,8 @@ public class CompiledPluginTest extends TestCase {
         "\n" +
         "\n  testOuters.main();" +
         "\n  assertEquals(" +
-        "\n      'left: 25px;\\nwidth: 30px;\\nmargin: 5px 5px 5px 5px;\\n' +" +
-        "\n      'color: #a0b0c0'," +
+        "\n      'left : 25px ; width : 30px ; margin : 5px 5px 5px 5px ; ' +" +
+        "\n      'color : #a0b0c0'," +
         "\n      document.getElementById('pre-base').style.cssText" +
         "\n      );",
         new PluginFile(
@@ -288,10 +288,10 @@ public class CompiledPluginTest extends TestCase {
                 "\n  @param('light');" +
                 "\n  @param('dark');" +
                 "\n" +
-                "\n  left: $(left + margin)px;" +
-                "\n  width: $(right - left - 2 * margin)px;" +
-                "\n  margin: $(margin)px $(margin)px $(margin)px $(margin)px;" +
-                "\n  color: $((light + dark) / 2);"  // simple interpolation
+                "\n  left: ${left + margin}px;" +
+                "\n  width: ${right - left - 2 * margin}px;" +
+                "\n  margin: ${margin}px ${margin}px ${margin}px ${margin}px;" +
+                "\n  color: ${(light + dark) / 2};"  // simple interpolation
                 ),
             "file:///css-test-1.css"),
         new PluginFile(
@@ -363,8 +363,10 @@ public class CompiledPluginTest extends TestCase {
         new RhinoTestBed.Input(getClass(), "console-stubs.js"),
         // Plugin Framework
         new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
-        new RhinoTestBed.Input(getClass(), "caps/wrap_capability.js"),
-        new RhinoTestBed.Input(getClass(), "plugin-base.js"),
+        new RhinoTestBed.Input(getClass(), "unicode.js"),
+        new RhinoTestBed.Input(getClass(), "html4-defs.js"),
+        new RhinoTestBed.Input(getClass(), "html-sanitizer.js"),
+        new RhinoTestBed.Input(getClass(), "domita.js"),
         // Initialize the DOM
         new RhinoTestBed.Input(
             // Document not defined until window.location set.
@@ -373,8 +375,12 @@ public class CompiledPluginTest extends TestCase {
         // Make the assertTrue, etc. functions available to javascript
         new RhinoTestBed.Input(getClass(), "asserts.js"),
         new RhinoTestBed.Input(new StringReader(
-            "var testOuters = ___.getNewModuleHandler().getOuters();\n"
-            + "initPlugin(testOuters, 'pre', 'rootDiv', '/plugin1');"),
+            "var uriCallback = { rewrite: function (uri, mimeType) {\n"
+            + "  return 'http://proxy/?uri=' + encodeURIComponent(uri);\n"
+            + "} };\n"
+            + "var testOuters = ___.getNewModuleHandler().getOuters();\n"
+            + "attachDocumentStub('pre-', uriCallback, testOuters);\n"
+            + "testOuters.log = ___.simpleFunc(function(s) {console.log(s)});"),
             "container"),
         // The Plugin
         new RhinoTestBed.Input(

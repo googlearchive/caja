@@ -153,14 +153,14 @@ public class CssRewriterTest extends TestCase {
 
   public void testSubstitutions() throws Exception {
     try {
-      runTest("#foo { left: $(x * 4)px; top: $(y * 4)px; }",
+      runTest("#foo { left: ${x * 4}px; top: ${y * 4}px; }",
               "", false);
       fail("allowed substitutions when parsing of substitutions disabled");
     } catch (ParseException ex) {
       // pass
     }
-    runTest("#foo { left: $(x * 4)px; top: $(y * 4)px; }",
-            ".test #test-foo {\n  left: $(x * 4)px;\n  top: $(y * 4)px\n}",
+    runTest("#foo { left: ${x * 4}px; top: ${y * 4}px; }",
+            ".test #test-foo {\n  left: ${x * 4}px;\n  top: ${y * 4}px\n}",
             true);
   }
 

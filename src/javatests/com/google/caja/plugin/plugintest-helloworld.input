@@ -8,5 +8,5 @@ h1 { color: black; background: white }
 
 === test:///helloworld.js
 function main() {
-  getElementById('hello-base').setInnerHTML(sayHello());
+  document.getElementById('hello-base').innerHTML = sayHello();
 }

@@ -190,7 +190,7 @@
   </target>
 
   <!-- Cajoles test resources that contain cajita to javascript. -->
-  <target name="CajoledTests" depends="pluginc,dirs">
+  <target name="CajoledTests" depends="opensocial,dirs">
     <java classname="com.google.caja.plugin.PluginCompilerMain"
      failonerror="yes">
       <classpath refid="classpath.run"/>
@@ -206,14 +206,14 @@
   </target>
 
   <target name="AllTests"
-   depends="opensocial,pluginc,TestUtil,CajoledTests,dirs">
+   depends="opensocial,TestUtil,CajoledTests,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${testsrc}"/>
       <classpath refid="classpath.tests.compile"/>
       <include name="**/caja/AllTests.java"/>
       <include name="**/caja/config/ConfigUtilTest.java"/>
       <include name="**/caja/demos/calendar/*Test.java"/>
-      <include name="**/caja/lang/html/HtmlSchemaTest.java"/>
+      <include name="**/caja/lang/*/*Test.java"/>
       <include name="**/caja/demos/calendar/RRuleTest.java"/>
       <include name="**/caja/lang/css/CssSchemaTest.java"/>
       <include name="**/caja/demos/calendar/LayoutTest.java"/>
@@ -234,18 +234,9 @@
       <include name="**/caja/parser/html/JsHtmlParserTest.java"/>
       <include name="**/caja/parser/js/*Test.java"/>
       <include name="**/caja/parser/quasiliteral/*Test.java"/>
-      <include name="**/caja/plugin/CompiledPluginTest.java"/>
-      <include name="**/caja/plugin/CssRewriterTest.java"/>
-      <include name="**/caja/plugin/CssValidatorTest.java"/>
-      <include name="**/caja/plugin/ExpressionSanitizerTest.java"/>
-      <include name="**/caja/plugin/GxpCompilerTest.java"/>
-      <include name="**/caja/plugin/GxpValidatorTest.java"/>
-      <include name="**/caja/plugin/HtmlCompiledPluginTest.java"/>
-      <include name="**/caja/plugin/HtmlSanitizerTest.java"/>
-      <include name="**/caja/plugin/JsHtmlSanitizerTest.java"/>
-      <include name="**/caja/plugin/PluginCompilerTest.java"/>
-      <include name="**/caja/plugin/UrlUtilTest.java"/>
+      <include name="**/caja/plugin/*Test.java"/>
       <include name="**/caja/plugin/caps/CapabilityRewriterTest.java"/>
+      <include name="**/caja/plugin/stages/*Test.java"/>
       <include name="**/caja/reporting/*Test.java"/>
       <include name="**/caja/util/JoinTest.java"/>
       <include name="**/caja/util/SparseBitSetTest.java"/>

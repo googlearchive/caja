@@ -28,7 +28,7 @@
        - should be connected to it to keep the graph roughly centered
       -->
     <div id="anchor" expr:title="nodeInfo[0].description"
-     style="width: $(nodeInfo[0].name.length)em">
+     style="width: ${nodeInfo[0].name.length}em">
 
       <div class="box">
         <gxp:eval expr="nodeInfo[0].name"/>
@@ -40,7 +40,7 @@
 
       <div class="node"
        expr:title="info.description"
-       style="width: $(info.name.length)em"
+       style="width: ${info.name.length}em"
        onclick="selectNode(this)">
 
         <gxp:attr name="id">

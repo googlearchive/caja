@@ -143,10 +143,11 @@ Da\\' };
 !
 
 subs {
-  left: $(x * y + z);
-  right: $(max(0, width - 20))em;
-  bottom: $(parseInt("4)\"))"))px;
-  top: $("3(".length)in;
+  left: ${x * y + z};
+  right: ${max(0, width - 20)}em;
+  bottom: ${parseInt("4}\"}}")}px;
+  top: ${"3{".length}in;
+  color: ${({ color: '#fff'}).color};
 }
 
 <!-- an escaping -text <span> -->

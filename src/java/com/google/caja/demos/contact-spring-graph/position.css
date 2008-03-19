@@ -29,7 +29,7 @@
 @param('width');
 @param('height');
 
-left: $(left | 0)px;
-top:  $(top | 0)px;
-width: $(width | 0)px;
-height: $(height | 0)px;
+left: ${left | 0}px;
+top:  ${top | 0}px;
+width: ${width | 0}px;
+height: ${height | 0}px;

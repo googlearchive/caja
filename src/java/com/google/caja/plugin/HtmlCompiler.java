@@ -307,7 +307,7 @@ public class HtmlCompiler {
   private void compileStyleAttrib(
       DomTree.Attrib attrib, List<String> tgtChain, Block b)
       throws GxpCompiler.BadContentException {
-    CssTree decls;
+    CssTree.DeclarationGroup decls;
     try {
       decls = parseStyleAttrib(attrib);
     } catch (ParseException ex) {
@@ -331,8 +331,8 @@ public class HtmlCompiler {
     }
 
     JsWriter.appendString(" style=\"", tgtChain, b);
-    CssTemplate.bodyToJavascript(
-        decls, meta, tgtChain, b, JsWriter.Esc.HTML_ATTRIB, mq);
+    CssTemplate.declGroupToStyleValue(
+        decls, tgtChain, b, JsWriter.Esc.HTML_ATTRIB, mq);
     JsWriter.appendString("\"", tgtChain, b);
   }
 

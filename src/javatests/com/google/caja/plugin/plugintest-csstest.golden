@@ -1,9 +1,7 @@
 {
   ___.loadModule(function (___OUTERS___) {
       ___OUTERS___.position = ___.simpleFunc(function position(left, top) {
-          var ___out___ = [];
-          ___out___.push('left: ', ___OUTERS___.plugin_cssNumber___(left), 'px;\ntop: ', ___OUTERS___.plugin_cssNumber___(top), 'px');
-          return ___OUTERS___.plugin_blessCss___(___out___.join(''));
+          return ___OUTERS___.blessCss___('left', ___OUTERS___.cssNumber___(left) + 'px', 'top', ___OUTERS___.cssNumber___(top) + 'px');
         });
       ___OUTERS___.main = ___.simpleFunc(function main() {
           (function () {

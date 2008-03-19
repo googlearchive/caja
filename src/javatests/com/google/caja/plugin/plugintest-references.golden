@@ -7,8 +7,8 @@
         });
       ___OUTERS___.foo = ___.simpleFunc(function foo(param) {
           var out___ = [];
-          out___.push(___OUTERS___.plugin_html___(param + ___OUTERS___.global), ___OUTERS___.plugin_html___(___OUTERS___.global - param));
-          return ___OUTERS___.plugin_blessHtml___(out___.join(''));
+          out___.push(___OUTERS___.html___(param + ___OUTERS___.global), ___OUTERS___.html___(___OUTERS___.global - param));
+          return ___OUTERS___.blessHtml___(out___.join(''));
         });
       var c1___ = ___.primFreeze(___OUTERS___.foo);
     });

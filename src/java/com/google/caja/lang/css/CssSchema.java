@@ -117,20 +117,35 @@ public final class CssSchema {
    * Encapsulates a css property and its signatures.
    */
   public static final class CssPropertyInfo extends SymbolInfo {
+    /**
+     * The set of media types for which this property is applicable.
+     * "pitch" is only applicable if the page is being spoken by a
+     * screen reader.
+     */
     public final Criterion<String> mediaGroups;
     public final boolean inherited;
+    /** Set of elements the property applies to. */
     public final Criterion<String> appliesTo;
+    /** May be null. */
     public final String defaultValue;
+    /**
+     * The name of the property in {@code htmlElement.style}.
+     * See <a href="http://developer.mozilla.org/en/docs/DOM:CSS">mozilla's
+     *     list</a>.
+     */
+    public final String dom2property;
 
     private CssPropertyInfo(
         String name, CssPropertySignature sig, Criterion<String> mediaGroups,
-        boolean inherited, Criterion<String> appliesTo, String defaultValue) {
+        boolean inherited, Criterion<String> appliesTo, String defaultValue,
+        String dom2property) {
       super(name, sig);
       this.mediaGroups = mediaGroups;
       this.inherited = inherited;
       // Not defensively copied.  This is usually an immutable AllSet.
       this.appliesTo = appliesTo;
       this.defaultValue = defaultValue;
+      this.dom2property = dom2property;
     }
   }
 
@@ -150,10 +165,12 @@ public final class CssSchema {
   }
 
   // TODO(mikesamuel): Is there any value in enumerating elements?
-  // Perhaps by using HTML4?
+  // Perhaps by using HTMLSchema?
   private static final Pattern HTML_IDENTIFIER = Pattern.compile("^[\\w\\-]+$");
   private static final Pattern CSS_IDENTIFIER =
-    Pattern.compile("^[a-zA-Z][\\w\\-]*$");
+    Pattern.compile("^[a-zA-Z\\-][\\w\\-]*$");
+  private static final Pattern JS_IDENTIFIER =
+    Pattern.compile("^[a-zA-Z_][\\w_]*$");
   private static final Criterion<String> ALL_ELEMENTS
       = new RegexpCriterion(HTML_IDENTIFIER);
   // See http://www.w3.org/TR/REC-CSS2/media.html section 7.3
@@ -177,13 +194,6 @@ public final class CssSchema {
     boolean invert = false;
     if (type instanceof Map) {
       Map<?, ?> map = (Map<?, ?>) type;
-      // Exclusions in the definitions specify things like
-      //     All elements except TABLE, TBODY, TFOOT, CAPTION, TR
-      // and inclusions specify things like
-      //     BUTTON, INPUT, SELECT, TEXTAREA
-
-      // The permissiveCriterion defines the universal set, so an
-      // exclude cannot be larger than "All".
       if (map.containsKey("exclude")) {
         invert = true;
         type = map.get("exclude");
@@ -214,7 +224,8 @@ public final class CssSchema {
       String defaultValue,
       Criterion<String> appliesTo,
       boolean inherited,
-      Criterion<String> mediaGroups) {
+      Criterion<String> mediaGroups,
+      String dom2property) {
     if ("".equals(defaultValue)) {
       throw new IllegalArgumentException(
           "Bad default value for symbol " + name + ", use null instead");
@@ -222,11 +233,14 @@ public final class CssSchema {
     if (!CSS_IDENTIFIER.matcher(name).matches()) {
       throw new IllegalArgumentException("Bad property name: " + name);
     }
+    if (!JS_IDENTIFIER.matcher(dom2property).matches()) {
+      throw new IllegalArgumentException("Bad DOM2 name: " + name);
+    }
 
     CssPropertySignature csssig = parseSignature(name, sig);
-    assert CSS_IDENTIFIER.matcher(name).matches();
     properties.put(name, new CssPropertyInfo(
-        name, csssig, mediaGroups, inherited, appliesTo, defaultValue));
+        name, csssig, mediaGroups, inherited, appliesTo, defaultValue,
+        dom2property));
   }
 
   private void defineSymbol(String name, String sig) {
@@ -247,7 +261,7 @@ public final class CssSchema {
       String aliasKey = (String) def.get("as", null);
       if (aliasKey != null) {
         // "as" aliases definition.
-        def = symbolsAndProperties.typeDefinitions().get(aliasKey);
+        def = merge(def, symbolsAndProperties.typeDefinitions().get(aliasKey));
       }
       if (key.startsWith("<") && key.endsWith(">")) {
         defineSymbol(
@@ -258,13 +272,15 @@ public final class CssSchema {
             def.get("appliesTo", "*"), ALL_ELEMENTS);
         Criterion<String> mediaGroups = criterionFromConfig(
             def.get("mediaGroups", "*"), ALL_MEDIA);
+        String dom2property = (String) def.get("dom2property", null);
         defineProperty(
             key,
             (String) def.get("signature", null),
             (String) def.get("default", null),
             appliesTo,
             Boolean.TRUE.equals(def.get("inherited", null)),
-            mediaGroups);
+            mediaGroups,
+            dom2property);
       }
     }
 
@@ -321,5 +337,14 @@ public final class CssSchema {
       throw new RuntimeException(
           "Error parsing symbol " + name + " with signature " + sig, ex);
     }
+  }
+
+  private static WhiteList.TypeDefinition merge(
+      final WhiteList.TypeDefinition wl1, final WhiteList.TypeDefinition wl2) {
+    return new WhiteList.TypeDefinition() {
+        public Object get(String key, Object defaultValue) {
+          return wl1.get(key, wl2.get(key, defaultValue));
+        }
+      };
   }
 }

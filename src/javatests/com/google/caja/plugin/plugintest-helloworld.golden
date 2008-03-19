@@ -7,15 +7,19 @@
   ___.loadModule(function (___OUTERS___) {
       ___OUTERS___.main = ___.simpleFunc(function main() {
           (function () {
-              var x___ = ___.asSimpleFunc(___OUTERS___.getElementById)('hello-base');
+              var x___ = (function () {
+                  var x___ = ___OUTERS___.document;
+                  var x0___ = 'hello-base';
+                  return x___.getElementById_canCall___ ? x___.getElementById(x0___) : ___.callPub(x___, 'getElementById', [x0___]);
+                })();
               var x0___ = ___.asSimpleFunc(___.primFreeze(___OUTERS___.sayHello))();
-              return x___.setInnerHTML_canCall___ ? x___.setInnerHTML(x0___) : ___.callPub(x___, 'setInnerHTML', [x0___]);
+              return x___.innerHTML_canSet___ ? (x___.innerHTML = x0___) : ___.setPub(x___, 'innerHTML', x0___);
             })();
         });
       ___OUTERS___.sayHello = ___.simpleFunc(function sayHello() {
           var out___ = [];
           out___.push('<h1>Hello World</h1>');
-          return ___OUTERS___.plugin_blessHtml___(out___.join(''));
+          return ___OUTERS___.blessHtml___(out___.join(''));
         });
       var c1___ = ___.primFreeze(___OUTERS___.sayHello);
     });
