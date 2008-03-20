@@ -220,7 +220,7 @@ public abstract class Rule implements MessagePart {
 
   protected Reference newReference(String name) {
     return
-        SyntheticNodes.s(new Reference(SyntheticNodes.s(new Identifier(name))));    
+        SyntheticNodes.s(new Reference(SyntheticNodes.s(new Identifier(name))));
   }
 
   protected Pair<ParseTreeNode, ParseTreeNode> reuseEmpty(
@@ -231,10 +231,11 @@ public abstract class Rule implements MessagePart {
       MessageQueue mq) {
     ParseTreeNode variableDefinition;
 
-    if (scope.getParent() == null) {
-      variableDefinition = substV(
-          "___OUTERS___.@ref;",
-          "ref", SyntheticNodes.s(new Reference(new Identifier(variableName))));
+    if (inOuters) {
+      variableDefinition = expandReferenceToOuters(
+          new Reference(new Identifier(variableName)),
+          scope,
+          mq);
       variableDefinition = s(new ExpressionStmt((Expression)variableDefinition));
     } else {
       variableDefinition = substV(
@@ -300,6 +301,10 @@ public abstract class Rule implements MessagePart {
         new ParseTreeNodeContainer(rhss));
   }
 
+  // TODO(ihab.awad): Refactor so the global case of this is not redundant with the
+  // rewriting we do for assignment in the global scope. Part of the problem is that
+  // the helper functions here "pretend" not to know about the rewriting rules, when
+  // in fact they are pretty closely coupled with them.
   protected ParseTreeNode expandDef(
       ParseTreeNode symbol,
       ParseTreeNode value,
@@ -309,16 +314,30 @@ public abstract class Rule implements MessagePart {
     if (!(symbol instanceof Reference)) {
       throw new RuntimeException("expandDef on non-Reference: " + symbol);
     }
-    String name = getReferenceName(symbol);
-    return scope.isGlobal(name) ?
-        new ExpressionStmt((Expression)substV(
-            "___OUTERS___.@s = @v",
+    String sName = getReferenceName(symbol);
+    if (scope.isGlobal(sName)) {
+      ParseTreeNode pva = new Reference(new Identifier("x___"));
+      ParseTreeNode pvb = substV(
+          "var @ref = @rhs;",
+          "ref", new Identifier("x___"),
+          "rhs", value);
+        return new ExpressionStmt((Expression)substV(
+            "(function() {" +
+            "  @pvb;" +
+            "  return ___OUTERS___.@sCanSet ? (___OUTERS___.@s = @pva) : " +
+            "                                 ___.setPub(___OUTERS___, @sName, @pva);" +
+            "})();",
             "s", symbol,
-            "v", value)) :
-        substV(
+            "sCanSet", new Reference(new Identifier(sName + "_canSet___")),
+            "sName", new StringLiteral(StringLiteral.toQuotedValue(sName)),
+            "pva", pva,
+            "pvb", pvb));
+    } else {
+        return substV(
             "var @s = @v",
             "s", symbol.children().get(0),
             "v", value);
+    }
   }
 
   protected ParseTreeNode expandMember(
@@ -341,7 +360,7 @@ public abstract class Rule implements MessagePart {
             "  @fh*;" +
             "  @bs*;" +
             "});",
-            "fname", fname,
+            "fname", expandReferenceToOuters(fname, scope, mq),
             "ps",    bindings.get("ps"),
             "bs",    rewriter.expand(bindings.get("bs"), s2, mq),
             "fh",    getFunctionHeadDeclarations(rule, s2, mq));
@@ -395,16 +414,21 @@ public abstract class Rule implements MessagePart {
     return memberMap;
   }
 
+  // TODO(erights): Remove this when first class constructors are checked in.
   protected ParseTreeNode expandReferenceToOuters(
       ParseTreeNode ref,
       Scope scope,
       MessageQueue mq) {
-    String name = getReferenceName(ref);
-    return scope.isGlobal(name) ?
-        substV(
-          "___OUTERS___.@x",
-          "x", ref) :
-        ref;
+    String xName = getReferenceName(ref);
+     if (scope.isGlobal(xName)) {
+        return substV(
+            "___OUTERS___.@xCanRead ? ___OUTERS___.@x : ___.readPub(___OUTERS___, @xName, true);",
+            "x", ref,
+            "xCanRead", new Reference(new Identifier(xName + "_canRead___")),
+            "xName", new StringLiteral(StringLiteral.toQuotedValue(xName)));
+    } else {
+        return ref;
+    }
   }
 
   protected boolean checkMapExpression(

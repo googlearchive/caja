@@ -236,8 +236,11 @@ var ___;
     /**
      * 
      */
-    handleRead: function(obj, name) {
+    handleRead: function(obj, name, opt_shouldThrow) {
       log('Not readable: (' + obj + ').' + name);
+      if (opt_shouldThrow) { 
+        throw new ReferenceError('' + name + ' is not defined');
+      }
       return undefined; 
     },
 
@@ -276,12 +279,12 @@ var ___;
   /**
    * 
    */
-  Object.prototype.handleRead___ = function(name) {
+  Object.prototype.handleRead___ = function(name, opt_shouldThrow) {
     var handlerName = name + '_getter___';
     if (this[handlerName]) {
-      return this[handlerName]();
+      return this[handlerName](opt_shouldThrow);
     }
-    return myKeeper_.handleRead(this, name);
+    return myKeeper_.handleRead(this, name, opt_shouldThrow);
   };
 
   /**
@@ -828,7 +831,8 @@ var ___;
    */
   function readProp(that, name) {
     name = String(name);
-    return canReadProp(that, name) ? that[name] : that.handleRead___(name);
+    if (canReadProp(that, name)) { return that[name]; }
+    return that.handleRead___(name, false);
   }
   
   /** 
@@ -853,11 +857,16 @@ var ___;
    * Caja code attempting to read a property on something besides
    * <tt>this</tt>.
    * <p>
-   * If it can't, it reads <tt>undefined</tt> instead.
+   * If it can't and <tt>opt_shouldThrow</tt> is absent or 
+   * false-ish, then <ttreadPub</tt> returns <tt>undefined</tt> 
+   * instead. But if <tt>opt_shouldThrow</tt> is true-ish, then 
+   * <tt>readPub</tt> throws <tt>ReferenceError</tt>, in order to
+   * simulate an attempt to read a non-existent global variable.
    */
-  function readPub(obj, name) {
+  function readPub(obj, name, opt_shouldThrow) {
     name = String(name);
-    return canReadPub(obj, name) ? obj[name] : obj.handleRead___(name);
+    if (canReadPub(obj, name)) { return obj[name]; }
+    return obj.handleRead___(name, opt_shouldThrow);
   }
   
   /**
@@ -1237,11 +1246,11 @@ var ___;
 
   /**
    * Arrange to handle read-faults on <tt>obj[name]</tt>
-   * by calling <tt>getHandler()</tt> as a method on the faulted
-   * object. 
+   * by calling <tt>getHandler(opt_shouldThrow)</tt> as a method on
+   * the faulted object. 
    * <p>
    * In order for this fault-handler to get control, it's important
-   * that no one does a conflicting allowRead().
+   * that no one does a conflicting <tt>allowRead()</tt>.
    */
   function useGetHandler(obj, name, getHandler) {
     obj[name + '_getter___'] = getHandler;

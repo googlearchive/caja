@@ -672,7 +672,7 @@ public final class Parser extends ParserBase {
       // The comma operator is left-associative so parse expression part in loop
       // instead of recursing
       Expression right = parseExpressionPart(insertionProtected);
-      e = new Operation(Operator.COMMA, e, right);
+      e = Operation.create(Operator.COMMA, e, right);
       finish(e, m);
     }
     return e;
@@ -716,7 +716,7 @@ public final class Parser extends ParserBase {
               new Message(MessageType.UNEXPECTED_TOKEN, t.pos,
                           MessagePart.Factory.valueOf(t.text)));
         }
-        left = new Operation(op, left);
+        left = Operation.create(op, left);
         finish(left, m);
         // Not pulling multiple operators off the stack means that
         // some prefix operator nestings are impossible.  This is intended.
@@ -828,7 +828,7 @@ public final class Parser extends ParserBase {
           {
             tq.expectToken(op.getClosingSymbol());
             Expression farRight = parseExpressionPart(insertionProtected);
-            left = new Operation(op, left, right, farRight);
+            left = Operation.create(op, left, right, farRight);
           }
           break;
           case BRACKET:
@@ -842,16 +842,16 @@ public final class Parser extends ParserBase {
               for (int i = 1; i < operands.length; ++i) {
                 operands[i] = params.get(i - 1);
               }
-              left = new Operation(op, operands);
+              left = Operation.create(op, operands);
             } else {
-              left = new Operation(op, left, right);
+              left = Operation.create(op, left, right);
             }
             break;
           case INFIX:
-            left = new Operation(op, left, right);
+            left = Operation.create(op, left, right);
             break;
           case POSTFIX:
-            left = new Operation(op, left);
+            left = Operation.create(op, left);
             break;
           default:
             throw new AssertionError();

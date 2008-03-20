@@ -8,19 +8,19 @@ Block
       Block
         Block
           ExpressionStmt
-            Operation : LOGICAL_AND
-              Operation : FUNCTION_CALL
+            ControlOperation : LOGICAL_AND
+              SpecialOperation : FUNCTION_CALL
                 Reference
                   Identifier : loading
-              Operation : FUNCTION_CALL
+              SpecialOperation : FUNCTION_CALL
                 Reference
                   Identifier : loaded
         ReturnStmt
           BooleanLiteral : true
   Block
     ExpressionStmt
-      Operation : FUNCTION_CALL
-        Operation : MEMBER_ACCESS
+      SpecialOperation : FUNCTION_CALL
+        SpecialOperation : MEMBER_ACCESS
           Reference
             Identifier : document
           Reference
@@ -28,7 +28,7 @@ Block
         StringLiteral : "generated from script tag"
     Declaration
       Identifier : b
-      Operation : LOGICAL_AND
+      ControlOperation : LOGICAL_AND
         Reference
           Identifier : c
         Reference
@@ -42,7 +42,7 @@ Block
       Block
         Block
           ExpressionStmt
-            Operation : FUNCTION_CALL
+            SpecialOperation : FUNCTION_CALL
               Reference
                 Identifier : clicky
         ReturnStmt
@@ -56,7 +56,7 @@ Block
       Block
         Block
           ExpressionStmt
-            Operation : FUNCTION_CALL
+            SpecialOperation : FUNCTION_CALL
               Reference
                 Identifier : divWasClicked
               Reference
@@ -66,28 +66,28 @@ Block
   Block
     Declaration
       Identifier : b
-      Operation : LOGICAL_AND
+      ControlOperation : LOGICAL_AND
         Reference
           Identifier : c
         Reference
           Identifier : d
     ExpressionStmt
-      Operation : ASSIGN
+      AssignOperation : ASSIGN
         Reference
           Identifier : b
-        Operation : LOGICAL_AND
+        ControlOperation : LOGICAL_AND
           Reference
             Identifier : e
           Reference
             Identifier : f
     ExpressionStmt
-      Operation : FUNCTION_CALL
-        Operation : MEMBER_ACCESS
+      SpecialOperation : FUNCTION_CALL
+        SpecialOperation : MEMBER_ACCESS
           Reference
             Identifier : document
           Reference
             Identifier : writeln
-        Operation : ADDITION
+        SimpleOperation : ADDITION
           StringLiteral : 'Hi '
           Reference
             Identifier : _
@@ -100,7 +100,7 @@ Block
       Block
         Block
           ExpressionStmt
-            Operation : FUNCTION_CALL
+            SpecialOperation : FUNCTION_CALL
               Reference
                 Identifier : handleThwacking
               Reference

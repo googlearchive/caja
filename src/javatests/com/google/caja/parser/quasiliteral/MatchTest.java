@@ -182,7 +182,6 @@ public class MatchTest extends TestCase {
         "foo___ = 5;");
     assertEquals(1, m.size());
     QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals(Identifier.class, m0.getBindings().get("a").getClass());
     assertEquals("foo", ((Identifier)m0.getBindings().get("a")).getValue());
   }
 
@@ -192,9 +191,7 @@ public class MatchTest extends TestCase {
         "x = 3;");
     assertEquals(1, m.size());
     QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals(Operation.class, m0.getRoot().getClass());
     assertEquals(Operator.ASSIGN, ((Operation)m0.getRoot()).getOperator());
-    assertEquals(IntegerLiteral.class, m0.getBindings().get("a").getClass());
     assertEquals(3, ((IntegerLiteral)m0.getBindings().get("a")).getValue().intValue());
     m = match(
         "x = @a;",
@@ -208,9 +205,7 @@ public class MatchTest extends TestCase {
         "x = y;");
     assertEquals(1, m.size());
     QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals(Operation.class, m0.getRoot().getClass());
     assertEquals(Operator.ASSIGN, ((Operation)m0.getRoot()).getOperator());
-    assertEquals(Reference.class, m0.getBindings().get("a").getClass());
     assertEquals("y", ((Reference)m0.getBindings().get("a")).getIdentifierName());
     m = match(
         "x = @a;",
@@ -224,9 +219,7 @@ public class MatchTest extends TestCase {
         "x = pi() * (r * r);");
     assertEquals(1, m.size());
     QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals(Operation.class, m0.getRoot().getClass());
     assertEquals(Operator.ASSIGN, ((Operation)m0.getRoot()).getOperator());
-    assertEquals(Operation.class, m0.getBindings().get("a").getClass());
     assertEquals(Operator.MULTIPLICATION, ((Operation)m0.getBindings().get("a")).getOperator());
   }
 
@@ -237,13 +230,10 @@ public class MatchTest extends TestCase {
 
     assertEquals(3, m.size());
 
-    assertEquals(Operation.class, m.get(0).getRoot().getClass());
     assertEquals(Operator.ASSIGN, ((Operation)m.get(0).getRoot()).getOperator());
-
     assertEquals(Reference.class, m.get(1).getRoot().getClass());
     assertEquals("x", m.get(1).getRoot().children().get(0).getValue());
 
-    assertEquals(IntegerLiteral.class, m.get(2).getRoot().getClass());
     assertEquals(3, ((IntegerLiteral)m.get(2).getRoot()).getValue().intValue());
   }
 
@@ -254,7 +244,6 @@ public class MatchTest extends TestCase {
     assertEquals(1, m.size());
     QuasiNode.QuasiMatch m0 = m.get(0);
     assertEquals(FunctionConstructor.class, m0.getRoot().getClass());
-    assertEquals(Identifier.class, m0.getBindings().get("a").getClass());
     assertEquals("x", ((Identifier)m0.getBindings().get("a")).getValue());
   }
 
@@ -264,7 +253,6 @@ public class MatchTest extends TestCase {
         "function x() { x = 3; y = 4; }");
     assertEquals(1, m.size());
     QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals(Identifier.class, m0.getBindings().get("a").getClass());
     assertEquals("x", ((Identifier)m0.getBindings().get("a")).getValue());
     m = match(
         "function @a() { x = 3; y = 4; }",
@@ -282,7 +270,7 @@ public class MatchTest extends TestCase {
     assertEquals(2, m0.getBindings().get("ps").children().size());
     assertEquals(FormalParam.class, m0.getBindings().get("ps").children().get(0).getClass());
     assertEquals(
-        "x", 
+        "x",
         ((FormalParam)m0.getBindings().get("ps").children().get(0)).getIdentifierName());
     assertEquals(2, m0.getBindings().get("b").children().size());
     assertEquals(ExpressionStmt.class, m0.getBindings().get("b").children().get(0).getClass());
@@ -294,9 +282,7 @@ public class MatchTest extends TestCase {
         "foo.bar;");
     assertEquals(1, m.size());
     QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals(Reference.class, m0.getBindings().get("a").getClass());
     assertEquals("foo", ((Reference)m0.getBindings().get("a")).getIdentifierName());
-    assertEquals(Reference.class, m0.getBindings().get("b").getClass());
     assertEquals("bar", ((Reference)m0.getBindings().get("b")).getIdentifierName());
   }
 
@@ -306,9 +292,7 @@ public class MatchTest extends TestCase {
         "foo[bar];");
     assertEquals(1, m.size());
     QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals(Reference.class, m0.getBindings().get("a").getClass());
     assertEquals("foo", ((Reference)m0.getBindings().get("a")).getIdentifierName());
-    assertEquals(Reference.class, m0.getBindings().get("b").getClass());
     assertEquals("bar", ((Reference)m0.getBindings().get("b")).getIdentifierName());
   }
 
@@ -318,9 +302,7 @@ public class MatchTest extends TestCase {
         "foo[\"bar\"];");
     assertEquals(1, m.size());
     QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals(Reference.class, m0.getBindings().get("a").getClass());
     assertEquals("foo", ((Reference)m0.getBindings().get("a")).getIdentifierName());
-    assertEquals(StringLiteral.class, m0.getBindings().get("b").getClass());
     assertEquals("bar", ((StringLiteral)m0.getBindings().get("b")).getUnquotedValue());
   }
 
@@ -330,9 +312,7 @@ public class MatchTest extends TestCase {
         "foo[3];");
     assertEquals(1, m.size());
     QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals(Reference.class, m0.getBindings().get("a").getClass());
     assertEquals("foo", ((Reference)m0.getBindings().get("a")).getIdentifierName());
-    assertEquals(IntegerLiteral.class, m0.getBindings().get("b").getClass());
     assertEquals(3, ((IntegerLiteral)m0.getBindings().get("b")).getValue().intValue());
   }
 
@@ -342,7 +322,6 @@ public class MatchTest extends TestCase {
         "new foo(x, y, z);");
     assertEquals(1, m.size());
     QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals(Reference.class, m0.getBindings().get("a").getClass());
     assertEquals("foo", ((Reference)m0.getBindings().get("a")).getIdentifierName());
     assertEquals(Reference.class, m0.getBindings().get("a").getClass());
     assertEquals(3, m0.getBindings().get("b").children().size());

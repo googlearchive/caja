@@ -1,7 +1,7 @@
 Block
   Declaration
     Identifier : i
-    Operation : ADDITION
+    SimpleOperation : ADDITION
       IntegerLiteral : 1
       IntegerLiteral : 1
   FunctionDeclaration
@@ -20,12 +20,12 @@ Block
         Identifier : e
       Block
         ReturnStmt
-          Operation : ADDITION
-            Operation : ADDITION
+          SimpleOperation : ADDITION
+            SimpleOperation : ADDITION
               Reference
                 Identifier : a
-              Operation : DIVISION
-                Operation : MULTIPLICATION
+              SimpleOperation : DIVISION
+                SimpleOperation : MULTIPLICATION
                   Reference
                     Identifier : b
                   Reference
@@ -45,64 +45,64 @@ Block
     Declaration
       Identifier : else
   ExpressionStmt
-    Operation : ASSIGN_SUM
+    AssignOperation : ASSIGN_SUM
       Reference
         Identifier : x
-      Operation : ASSIGN
+      AssignOperation : ASSIGN
         Reference
           Identifier : y
-        Operation : ASSIGN
+        AssignOperation : ASSIGN
           Reference
             Identifier : z
           IntegerLiteral : 14
   Conditional
-    Operation : STRICTLY_EQUAL
+    SimpleOperation : STRICTLY_EQUAL
       Reference
         Identifier : y
-      Operation : SUBTRACTION
-        Operation : SUBTRACTION
+      SimpleOperation : SUBTRACTION
+        SimpleOperation : SUBTRACTION
           IntegerLiteral : 1
           IntegerLiteral : 1
         IntegerLiteral : 1
     Block
       ExpressionStmt
-        Operation : FUNCTION_CALL
+        SpecialOperation : FUNCTION_CALL
           Reference
             Identifier : print
           Reference
             Identifier : z
   Conditional
-    Operation : LESS_THAN
+    SimpleOperation : LESS_THAN
       Reference
         Identifier : x
       Reference
         Identifier : y
     Block
       ExpressionStmt
-        Operation : FUNCTION_CALL
+        SpecialOperation : FUNCTION_CALL
           Reference
             Identifier : print
           Reference
             Identifier : x
-    Operation : EQUAL
+    SimpleOperation : EQUAL
       Reference
         Identifier : x
       Reference
         Identifier : y
     ExpressionStmt
-      Operation : FUNCTION_CALL
+      SpecialOperation : FUNCTION_CALL
         Reference
           Identifier : print
         Reference
           Identifier : y
     ExpressionStmt
-      Operation : FUNCTION_CALL
+      SpecialOperation : FUNCTION_CALL
         Reference
           Identifier : print
         Reference
           Identifier : z
   ExpressionStmt
-    Operation : ASSIGN
+    AssignOperation : ASSIGN
       Reference
         Identifier : arr
       ArrayConstructor
@@ -123,25 +123,25 @@ Block
     Declaration
       Identifier : i
       IntegerLiteral : 0
-    Operation : LESS_THAN
+    SimpleOperation : LESS_THAN
       Reference
         Identifier : i
-      Operation : MEMBER_ACCESS
+      SpecialOperation : MEMBER_ACCESS
         Reference
           Identifier : a
         Reference
           Identifier : length
     ExpressionStmt
-      Operation : PRE_INCREMENT
+      AssignOperation : PRE_INCREMENT
         Reference
           Identifier : i
     Block
       ExpressionStmt
-        Operation : FUNCTION_CALL
+        SpecialOperation : FUNCTION_CALL
           Reference
             Identifier : print
-          Operation : MULTIPLICATION
-            Operation : SQUARE_BRACKET
+          SimpleOperation : MULTIPLICATION
+            SpecialOperation : SQUARE_BRACKET
               Reference
                 Identifier : a
               Reference
@@ -155,7 +155,7 @@ Block
       StringLiteral : 'y'
       IntegerLiteral : 3
   SwitchStmt : 
-    Operation : FUNCTION_CALL
+    SpecialOperation : FUNCTION_CALL
       Reference
         Identifier : foo
     CaseStmt
@@ -165,7 +165,7 @@ Block
     CaseStmt
       IntegerLiteral : 2
       Conditional
-        Operation : STRICTLY_EQUAL
+        SimpleOperation : STRICTLY_EQUAL
           Reference
             Identifier : a
           IntegerLiteral : 4
@@ -176,20 +176,20 @@ Block
         Identifier : BAR
       Block
         ExpressionStmt
-          Operation : FUNCTION_CALL
+          SpecialOperation : FUNCTION_CALL
             Reference
               Identifier : f
         ExpressionStmt
-          Operation : FUNCTION_CALL
+          SpecialOperation : FUNCTION_CALL
             Reference
               Identifier : g
     DefaultCaseStmt
       Block
         ExpressionStmt
-          Operation : FUNCTION_CALL
+          SpecialOperation : FUNCTION_CALL
             Reference
               Identifier : zowie
-            Operation : FUNCTION_CALL
+            SpecialOperation : FUNCTION_CALL
               Reference
                 Identifier : wowie
         Noop
@@ -201,7 +201,7 @@ Block
       Identifier : array
     Block
       ExpressionStmt
-        Operation : FUNCTION_CALL
+        SpecialOperation : FUNCTION_CALL
           Reference
             Identifier : f
           Reference
@@ -216,14 +216,14 @@ Block
       IntegerLiteral : 3
     Block
       ExpressionStmt
-        Operation : FUNCTION_CALL
+        SpecialOperation : FUNCTION_CALL
           Reference
             Identifier : f
           Reference
             Identifier : i
   Declaration
     Identifier : o
-    Operation : CONSTRUCTOR
+    SpecialOperation : CONSTRUCTOR
       Reference
         Identifier : Object
   SwitchStmt : 
@@ -237,24 +237,24 @@ Block
       Block
         Block
           ExpressionStmt
-            Operation : FUNCTION_CALL
+            SpecialOperation : FUNCTION_CALL
               Reference
                 Identifier : foo
         BreakStmt : 
     DefaultCaseStmt
       ExpressionStmt
-        Operation : FUNCTION_CALL
+        SpecialOperation : FUNCTION_CALL
           Reference
             Identifier : panic
     CaseStmt
       IntegerLiteral : 2
       ExpressionStmt
-        Operation : FUNCTION_CALL
+        SpecialOperation : FUNCTION_CALL
           Reference
             Identifier : bar
   Declaration
     Identifier : n
-    Operation : DIVISION
+    SimpleOperation : DIVISION
       RealLiteral : 1.0
       IntegerLiteral : 2
   WhileLoop : foo
@@ -262,13 +262,13 @@ Block
       Identifier : x
     Block
       Conditional
-        Operation : FUNCTION_CALL
+        SpecialOperation : FUNCTION_CALL
           Reference
             Identifier : f
         Block
           ContinueStmt : foo
       ExpressionStmt
-        Operation : PRE_DECREMENT
+        AssignOperation : PRE_DECREMENT
           Reference
             Identifier : x
   ContinueStmt : bar
@@ -284,11 +284,11 @@ Block
         Identifier : hello
   ForEachLoop : 
     ExpressionStmt
-      Operation : SQUARE_BRACKET
+      SpecialOperation : SQUARE_BRACKET
         Reference
           Identifier : arr
-        Operation : SUBTRACTION
-          Operation : MEMBER_ACCESS
+        SimpleOperation : SUBTRACTION
+          SpecialOperation : MEMBER_ACCESS
             Reference
               Identifier : arr
             Reference

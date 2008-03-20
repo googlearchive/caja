@@ -450,7 +450,8 @@ public class Scope {
              || maskedType == LocalType.CAUGHT_EXCEPTION)
             ? MessageLevel.ERROR
             : MessageLevel.LINT);
-        if (!ident.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
+        if (!ident.getAttributes().is(SyntheticNodes.SYNTHETIC) &&
+            ident.getFilePosition() != null) {
           s.mq.getMessages().add(new Message(
               MessageType.MASKING_SYMBOL,
               level,

@@ -43,7 +43,9 @@ public class ExpressionSanitizerTest extends TestCase {
   }
 
   public void testFoo() throws Exception {
-    runTest("x", "___OUTERS___.x");
+    runTest(
+        "x",
+        "___OUTERS___.x_canRead___ ? ___OUTERS___.x : ___.readPub(___OUTERS___, 'x', true);");
   }
 
   private void runTest(String input, String golden)
@@ -59,7 +61,7 @@ public class ExpressionSanitizerTest extends TestCase {
 
     String goldenCmp = TestUtil.render(TestUtil.parse(golden));
 
-    assertEquals(inputCmp, goldenCmp);
+    assertEquals(goldenCmp, inputCmp);
   }
 
   private static <T extends ParseTreeNode> AncestorChain<T> ac(T node) {

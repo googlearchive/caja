@@ -76,11 +76,11 @@ final class JsWriter {
     if (null == fnCall) {
       Expression target = s(new Reference(new Identifier(tgtMembers.get(0))));
       for (int i = 1; i < tgtMembers.size(); ++i) {
-        target = s(new Operation(Operator.MEMBER_ACCESS,
+        target = s(Operation.create(Operator.MEMBER_ACCESS,
                                  target, s(new Reference(new Identifier(tgtMembers.get(i))))));
       }
 
-      fnCall = s(new Operation(Operator.FUNCTION_CALL,
+      fnCall = s(Operation.create(Operator.FUNCTION_CALL,
                                target));
       b.insertBefore(s(new ExpressionStmt(fnCall)), null);
     }

@@ -3,13 +3,13 @@ Block
     Reference
       Identifier : a
     ExpressionStmt
-      Operation : ASSIGN
+      AssignOperation : ASSIGN
         Reference
           Identifier : b
         Reference
           Identifier : c
   ExpressionStmt
-    Operation : ASSIGN
+    AssignOperation : ASSIGN
       Reference
         Identifier : d
       Reference
@@ -21,15 +21,15 @@ Block
       Reference
         Identifier : b
       ExpressionStmt
-        Operation : FUNCTION_CALL
+        SpecialOperation : FUNCTION_CALL
           Reference
             Identifier : c
       ExpressionStmt
-        Operation : FUNCTION_CALL
+        SpecialOperation : FUNCTION_CALL
           Reference
             Identifier : d
     ExpressionStmt
-      Operation : FUNCTION_CALL
+      SpecialOperation : FUNCTION_CALL
         Reference
           Identifier : e
   Conditional
@@ -39,14 +39,14 @@ Block
       Reference
         Identifier : b
       ExpressionStmt
-        Operation : FUNCTION_CALL
+        SpecialOperation : FUNCTION_CALL
           Reference
             Identifier : c
       ExpressionStmt
-        Operation : FUNCTION_CALL
+        SpecialOperation : FUNCTION_CALL
           Reference
             Identifier : d
     ExpressionStmt
-      Operation : FUNCTION_CALL
+      SpecialOperation : FUNCTION_CALL
         Reference
           Identifier : e

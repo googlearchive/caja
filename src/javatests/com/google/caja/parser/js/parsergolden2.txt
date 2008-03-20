@@ -9,16 +9,16 @@ Block
           Declaration
             Identifier : no
         ReturnStmt
-          Operation : TERNARY
-            Operation : LESS_THAN
+          ControlOperation : TERNARY
+            SimpleOperation : LESS_THAN
               Reference
                 Identifier : n
               IntegerLiteral : 0
-            Operation : STRICTLY_EQUAL
+            SimpleOperation : STRICTLY_EQUAL
               Reference
                 Identifier : no
               StringLiteral : 'negative'
-            Operation : ASSIGN
+            AssignOperation : ASSIGN
               Reference
                 Identifier : yes
               StringLiteral : 'positive'
@@ -42,18 +42,18 @@ Block
         Declaration
           Identifier : d
         Conditional
-          Operation : STRICTLY_EQUAL
+          SimpleOperation : STRICTLY_EQUAL
             Reference
               Identifier : y1
             Reference
               Identifier : y2
           Block
             Conditional
-              Operation : STRICTLY_EQUAL
-                Operation : ASSIGN
+              SimpleOperation : STRICTLY_EQUAL
+                AssignOperation : ASSIGN
                   Reference
                     Identifier : d
-                  Operation : SUBTRACTION
+                  SimpleOperation : SUBTRACTION
                     Reference
                       Identifier : m1
                     Reference
@@ -61,21 +61,21 @@ Block
                 IntegerLiteral : 0
               Block
                 ReturnStmt
-                  Operation : SUBTRACTION
+                  SimpleOperation : SUBTRACTION
                     Reference
                       Identifier : d1
                     Reference
                       Identifier : d2
-              Operation : LESS_THAN
+              SimpleOperation : LESS_THAN
                 Reference
                   Identifier : d
                 IntegerLiteral : 0
               Block
                 ExpressionStmt
-                  Operation : ASSIGN
+                  AssignOperation : ASSIGN
                     Reference
                       Identifier : d
-                    Operation : SUBTRACTION
+                    SimpleOperation : SUBTRACTION
                       Reference
                         Identifier : d1
                       Reference
@@ -83,18 +83,18 @@ Block
                 DoWhileLoop : 
                   Block
                     ExpressionStmt
-                      Operation : ASSIGN_SUB
+                      AssignOperation : ASSIGN_SUB
                         Reference
                           Identifier : d
-                        Operation : FUNCTION_CALL
+                        SpecialOperation : FUNCTION_CALL
                           Reference
                             Identifier : ICAL_daysInMonth
                           Reference
                             Identifier : y1
-                          Operation : POST_INCREMENT
+                          AssignOperation : POST_INCREMENT
                             Reference
                               Identifier : m1
-                  Operation : LESS_THAN
+                  SimpleOperation : LESS_THAN
                     Reference
                       Identifier : m1
                     Reference
@@ -104,10 +104,10 @@ Block
                     Identifier : d
               Block
                 ExpressionStmt
-                  Operation : ASSIGN
+                  AssignOperation : ASSIGN
                     Reference
                       Identifier : d
-                    Operation : SUBTRACTION
+                    SimpleOperation : SUBTRACTION
                       Reference
                         Identifier : d1
                       Reference
@@ -115,18 +115,18 @@ Block
                 DoWhileLoop : 
                   Block
                     ExpressionStmt
-                      Operation : ASSIGN_SUM
+                      AssignOperation : ASSIGN_SUM
                         Reference
                           Identifier : d
-                        Operation : FUNCTION_CALL
+                        SpecialOperation : FUNCTION_CALL
                           Reference
                             Identifier : ICAL_daysInMonth
                           Reference
                             Identifier : y2
-                          Operation : POST_INCREMENT
+                          AssignOperation : POST_INCREMENT
                             Reference
                               Identifier : m2
-                  Operation : LESS_THAN
+                  SimpleOperation : LESS_THAN
                     Reference
                       Identifier : m2
                     Reference
@@ -136,44 +136,44 @@ Block
                     Identifier : d
           Block
             ReturnStmt
-              Operation : FUNCTION_CALL
-                Operation : MEMBER_ACCESS
+              SpecialOperation : FUNCTION_CALL
+                SpecialOperation : MEMBER_ACCESS
                   Reference
                     Identifier : Math
                   Reference
                     Identifier : round
-                Operation : DIVISION
-                  Operation : SUBTRACTION
-                    Operation : FUNCTION_CALL
-                      Operation : MEMBER_ACCESS
+                SimpleOperation : DIVISION
+                  SimpleOperation : SUBTRACTION
+                    SpecialOperation : FUNCTION_CALL
+                      SpecialOperation : MEMBER_ACCESS
                         Reference
                           Identifier : Date
                         Reference
                           Identifier : UTC
                       Reference
                         Identifier : y1
-                      Operation : SUBTRACTION
+                      SimpleOperation : SUBTRACTION
                         Reference
                           Identifier : m1
                         IntegerLiteral : 1
                       Reference
                         Identifier : d1
-                    Operation : FUNCTION_CALL
-                      Operation : MEMBER_ACCESS
+                    SpecialOperation : FUNCTION_CALL
+                      SpecialOperation : MEMBER_ACCESS
                         Reference
                           Identifier : Date
                         Reference
                           Identifier : UTC
                       Reference
                         Identifier : y2
-                      Operation : SUBTRACTION
+                      SimpleOperation : SUBTRACTION
                         Reference
                           Identifier : m2
                         IntegerLiteral : 1
                       Reference
                         Identifier : d2
-                  Operation : MULTIPLICATION
-                    Operation : MULTIPLICATION
+                  SimpleOperation : MULTIPLICATION
+                    SimpleOperation : MULTIPLICATION
                       IntegerLiteral : 24
                       IntegerLiteral : 3600
                     IntegerLiteral : 1000

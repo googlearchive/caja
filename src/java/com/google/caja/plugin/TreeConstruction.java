@@ -37,13 +37,13 @@ import java.util.Vector;
 public final class TreeConstruction {
   /** {@code thing.member } */
   public static Operation memberAccess(String thing, String member) {
-    return s(new Operation(Operator.MEMBER_ACCESS,
+    return s(Operation.create(Operator.MEMBER_ACCESS,
         s(new Reference(s(new Identifier(thing)))),
         s(new Reference(s(new Identifier(member))))));
   }
   /** {@code nodes[0](nodes[1...]) } */
   public static Operation call(Expression... nodes) {
-    return s(new Operation(Operator.FUNCTION_CALL, nodes));
+    return s(Operation.create(Operator.FUNCTION_CALL, nodes));
   }
   /** {@code function name(args) <body>} */
   public static FunctionConstructor function(
@@ -56,7 +56,7 @@ public final class TreeConstruction {
   }
   
   public static ExpressionStmt assign(Expression lhs, Expression rhs) {
-    return s(new ExpressionStmt(s(new Operation(Operator.ASSIGN, lhs, rhs))));
+    return s(new ExpressionStmt(s(Operation.create(Operator.ASSIGN, lhs, rhs))));
   }
 
   // Can't instantiate

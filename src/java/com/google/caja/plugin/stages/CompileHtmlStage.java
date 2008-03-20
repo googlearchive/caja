@@ -80,9 +80,9 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
       // function c_1___() { ... }
       // => ___OUTERS___.c_1___ = function c_1___() { ... };
       Statement def = s(new ExpressionStmt(
-          s(new Operation(
+          s(Operation.create(
                 Operator.ASSIGN,
-                s(new Operation(
+                s(Operation.create(
                       Operator.MEMBER_ACCESS,
                       s(new Reference(s(new Identifier(ReservedNames.OUTERS)))),
                       s(new Reference(s(handler.getIdentifier()))))),

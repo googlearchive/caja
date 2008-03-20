@@ -706,7 +706,7 @@ public final class GxpCompiler {
     forEachBody.createMutation().appendChild(
         s(new Conditional(Collections.singletonList(
               new Pair<Expression, Statement>(
-              s(new Operation(
+              s(Operation.create(
                     Operator.NOT,
                     TreeConstruction.call(
                         TreeConstruction.memberAccess("___", "canEnumPub"),
@@ -719,7 +719,7 @@ public final class GxpCompiler {
           .appendChild(
               s(new Declaration(
                     new Identifier(variableName),
-                    s(new Operation(
+                    s(Operation.create(
                           Operator.SQUARE_BRACKET,
                           s(new Reference(s(new Identifier(iteratorId)))),
                           s(new Reference(s(new Identifier(keyName))))
@@ -849,7 +849,7 @@ public final class GxpCompiler {
 
     Operation call = TreeConstruction.call(
         TreeConstruction.memberAccess(ReservedNames.OUTERS, ReservedNames.HTML),
-        s(new Operation(Operator.FUNCTION_CALL, operands)));
+        s(Operation.create(Operator.FUNCTION_CALL, operands)));
     JsWriter.append(call, tgtChain, b);
   }
 

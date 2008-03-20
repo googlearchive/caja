@@ -543,9 +543,9 @@ public class HtmlCompiler {
             tgtChain, out);
 
         JsWriter.append(
-            s(new Operation(
+            s(Operation.create(
                 Operator.FUNCTION_CALL,
-                s(new Operation(
+                s(Operation.create(
                     Operator.MEMBER_ACCESS,
                     s(new Reference(new Identifier("___"))),
                     s(new Reference(new Identifier("getId"))))),

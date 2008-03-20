@@ -19,24 +19,91 @@ import com.google.caja.reporting.RenderContext;
 import java.io.IOException;
 
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * An expression that applies an {@link Operator} to a number of operands.
  *
  * @author mikesamuel@gmail.com
  */
-public class Operation extends AbstractExpression<Expression> {
+public abstract class Operation extends AbstractExpression<Expression> {
   private Operator op;
 
-  public Operation(Operator value, List<? extends Expression> children) {
-    this(value, children.toArray(new Expression[children.size()]));
-  }
-
-  public Operation(Operator op, Expression... params) {
+  protected Operation(Operator op, Expression... params) {
     this.op = op;
     if (null == op) { throw new NullPointerException(); }
     createMutation().appendChildren(Arrays.asList(params)).execute();
+  }
+
+  static public Operation create(Operator op, Expression... params) {
+    switch (op) {
+      case ASSIGN: // =
+      case ASSIGN_AND: // &=
+      case ASSIGN_DIV: // /=
+      case ASSIGN_LSH: // <<=
+      case ASSIGN_MOD: // %=
+      case ASSIGN_MUL: // *=
+      case ASSIGN_OR:  // &=
+      case ASSIGN_RSH: // >>=
+      case ASSIGN_SUB: // -=
+      case ASSIGN_SUM: // +=
+      case ASSIGN_USH: // >>>=
+      case ASSIGN_XOR: // ^=
+      case POST_DECREMENT: // x--
+      case POST_INCREMENT: // x++
+      case PRE_DECREMENT:  // --x
+      case PRE_INCREMENT:  // ++x
+      { 
+        return new AssignOperation(op, params);
+      }
+      case LOGICAL_AND: // &&
+      case LOGICAL_OR:  // ||
+      case TERNARY:     // ?:
+      {
+        return new ControlOperation(op, params);
+      }
+      case COMMA:          // ,
+      case CONSTRUCTOR:    // new
+      case DELETE:         // delete
+      case FUNCTION_CALL:  // ()
+      case MEMBER_ACCESS:  // .
+      case SQUARE_BRACKET: // []
+      case TYPEOF:         // typeof
+      case VOID:           // void
+      {
+        return new SpecialOperation(op, params);
+      }
+      case ADDITION:             // +
+      case BITWISE_AND:          // &
+      case BITWISE_OR:           // |
+      case BITWISE_XOR:          // ^
+      case DIVISION:             // /
+      case EQUAL:                // ==
+      case GREATER_EQUALS:       // >=
+      case GREATER_THAN:         // >
+      case IDENTITY:             // unary +
+      case IN:                   // in
+      case INSTANCE_OF:          // instanceof
+      case INVERSE:              // ~
+      case LESS_EQUALS:          // <=
+      case LESS_THAN:            // <
+      case LSHIFT:               // <
+      case MODULUS:              // %
+      case MULTIPLICATION:       // *
+      case NEGATION:             // unary -
+      case NOT:                  // !
+      case NOT_EQUAL:            // !=
+      case RSHIFT:               // >>
+      case RUSHIFT:              // >>>
+      case STRICTLY_EQUAL:       // ===
+      case STRICTLY_NOT_EQUAL:   // !==
+      case SUBTRACTION:          // -
+      {
+        return new SimpleOperation(op, params);
+      }
+      default: {
+        throw new RuntimeException("unexpected: " + op);
+      }
+    }
   }
 
   @Override

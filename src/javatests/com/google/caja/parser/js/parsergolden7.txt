@@ -16,7 +16,7 @@ Block
       StringLiteral : 'null'
       NullLiteral : null
       StringLiteral : 'undefined'
-      Operation : NOT
+      SimpleOperation : NOT
         Reference
           Identifier : defined
       StringLiteral : 'false'

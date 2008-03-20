@@ -9,28 +9,28 @@ Block
         Identifier : b
       Block ; synthetic=true
         ExpressionStmt ; synthetic=true
-          Operation : FUNCTION_CALL ; synthetic=true
+          SpecialOperation : FUNCTION_CALL ; synthetic=true
             Reference ; synthetic=true
               Identifier : plugin_require___
-            Operation : STRICTLY_NOT_EQUAL ; synthetic=true
+            SimpleOperation : STRICTLY_NOT_EQUAL ; synthetic=true
               Reference ; synthetic=true
                 Identifier : this
               Reference ; synthetic=true
                 Identifier : window
         Conditional
-          Operation : LOGICAL_AND
-            Operation : GREATER_THAN
+          ControlOperation : LOGICAL_AND
+            SimpleOperation : GREATER_THAN
               Reference
                 Identifier : a
               IntegerLiteral : 0
-            Operation : GREATER_THAN
+            SimpleOperation : GREATER_THAN
               Reference
                 Identifier : b
               IntegerLiteral : 0
           Block
             ReturnStmt
-              Operation : FUNCTION_CALL
-                Operation : MEMBER_ACCESS ; synthetic=true
+              SpecialOperation : FUNCTION_CALL
+                SpecialOperation : MEMBER_ACCESS ; synthetic=true
                   Reference
                     Identifier : foo
                   Reference ; synthetic=true
@@ -39,15 +39,15 @@ Block
                   Identifier : this
                 Reference
                   Identifier : b
-                Operation : SUBTRACTION
+                SimpleOperation : SUBTRACTION
                   Reference
                     Identifier : a
                   IntegerLiteral : 1
         TryStmt
           Block
             ExpressionStmt
-              Operation : FUNCTION_CALL
-                Operation : MEMBER_ACCESS ; synthetic=true
+              SpecialOperation : FUNCTION_CALL
+                SpecialOperation : MEMBER_ACCESS ; synthetic=true
                   Reference
                     Identifier : bar
                   Reference ; synthetic=true
@@ -60,13 +60,13 @@ Block
             Block
               Declaration ; synthetic=true
                 Identifier : e
-                Operation : ADDITION ; synthetic=true
+                SimpleOperation : ADDITION ; synthetic=true
                   StringLiteral : '' ; synthetic=true
                   Reference ; synthetic=true
                     Identifier : safe_ex___
               ExpressionStmt
-                Operation : FUNCTION_CALL
-                  Operation : MEMBER_ACCESS ; synthetic=true
+                SpecialOperation : FUNCTION_CALL
+                  SpecialOperation : MEMBER_ACCESS ; synthetic=true
                     Reference
                       Identifier : alert
                     Reference ; synthetic=true
@@ -77,7 +77,7 @@ Block
                     Identifier : e
   Declaration
     Identifier : a
-    Operation : FUNCTION_CALL ; synthetic=true
+    SpecialOperation : FUNCTION_CALL ; synthetic=true
       Reference ; synthetic=true
         Identifier : plugin_get___
       Reference
@@ -85,8 +85,8 @@ Block
       Reference
         Identifier : baz
   ExpressionStmt
-    Operation : FUNCTION_CALL
-      Operation : MEMBER_ACCESS ; synthetic=true
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : MEMBER_ACCESS ; synthetic=true
         Reference
           Identifier : eval
         Reference ; synthetic=true

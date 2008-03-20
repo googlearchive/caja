@@ -1,83 +1,83 @@
 Block
   ExpressionStmt
-    Operation : ASSIGN
+    AssignOperation : ASSIGN
       Reference
         Identifier : a
-      Operation : NEGATION
-        Operation : MEMBER_ACCESS
+      SimpleOperation : NEGATION
+        SpecialOperation : MEMBER_ACCESS
           Reference
             Identifier : a
           Reference
             Identifier : b
   ExpressionStmt
-    Operation : ASSIGN
+    AssignOperation : ASSIGN
       Reference
         Identifier : x
-      Operation : NEGATION
-        Operation : POST_INCREMENT
+      SimpleOperation : NEGATION
+        AssignOperation : POST_INCREMENT
           Reference
             Identifier : i
   ExpressionStmt
-    Operation : ASSIGN
+    AssignOperation : ASSIGN
       Reference
         Identifier : z
-      Operation : SQUARE_BRACKET
+      SpecialOperation : SQUARE_BRACKET
         Reference
           Identifier : foo
-        Operation : POST_INCREMENT
-          Operation : MEMBER_ACCESS
+        AssignOperation : POST_INCREMENT
+          SpecialOperation : MEMBER_ACCESS
             Reference
               Identifier : this
             Reference
               Identifier : bar
   ExpressionStmt
-    Operation : CONSTRUCTOR
-      Operation : SQUARE_BRACKET
+    SpecialOperation : CONSTRUCTOR
+      SpecialOperation : SQUARE_BRACKET
         Reference
           Identifier : Foo
         IntegerLiteral : 4
   ExpressionStmt
-    Operation : CONSTRUCTOR
-      Operation : SQUARE_BRACKET
+    SpecialOperation : CONSTRUCTOR
+      SpecialOperation : SQUARE_BRACKET
         Reference
           Identifier : Foo
         IntegerLiteral : 4
   ExpressionStmt
-    Operation : SQUARE_BRACKET
-      Operation : CONSTRUCTOR
+    SpecialOperation : SQUARE_BRACKET
+      SpecialOperation : CONSTRUCTOR
         Reference
           Identifier : Foo
       IntegerLiteral : 4
   ExpressionStmt
-    Operation : ASSIGN
+    AssignOperation : ASSIGN
       Reference
         Identifier : a
-      Operation : NOT
-        Operation : FUNCTION_CALL
-          Operation : CONSTRUCTOR
-            Operation : MEMBER_ACCESS
+      SimpleOperation : NOT
+        SpecialOperation : FUNCTION_CALL
+          SpecialOperation : CONSTRUCTOR
+            SpecialOperation : MEMBER_ACCESS
               Reference
                 Identifier : Foo
               Reference
                 Identifier : Bar
   ExpressionStmt
-    Operation : ASSIGN
+    AssignOperation : ASSIGN
       Reference
         Identifier : a
-      Operation : FUNCTION_CALL
-        Operation : CONSTRUCTOR
-          Operation : MEMBER_ACCESS
+      SpecialOperation : FUNCTION_CALL
+        SpecialOperation : CONSTRUCTOR
+          SpecialOperation : MEMBER_ACCESS
             Reference
               Identifier : Foo
             Reference
               Identifier : Bar
   ExpressionStmt
-    Operation : ASSIGN
+    AssignOperation : ASSIGN
       Reference
         Identifier : a
-      Operation : MEMBER_ACCESS
-        Operation : CONSTRUCTOR
-          Operation : MEMBER_ACCESS
+      SpecialOperation : MEMBER_ACCESS
+        SpecialOperation : CONSTRUCTOR
+          SpecialOperation : MEMBER_ACCESS
             Reference
               Identifier : Foo
             Reference

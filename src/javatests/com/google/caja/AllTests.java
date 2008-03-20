@@ -51,7 +51,6 @@ import com.google.caja.plugin.GxpValidatorTest;
 import com.google.caja.plugin.HtmlCompiledPluginTest;
 import com.google.caja.plugin.HtmlSanitizerTest;
 import com.google.caja.plugin.JsHtmlSanitizerTest;
-import com.google.caja.plugin.PluginCompilerTest;
 import com.google.caja.plugin.caps.CapabilityRewriterTest;
 import com.google.caja.reporting.SnippetProducerTest;
 import com.google.caja.util.JoinTest;
@@ -107,7 +106,6 @@ public class AllTests {
           NumberLiteralTest.class,
           ParseTreeNodeTest.class,
           ParserTest.class,
-          PluginCompilerTest.class,
           PunctuationTrieTest.class,
           QuasiBuilderTest.class,
           RRuleTest.class,

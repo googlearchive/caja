@@ -1,21 +1,21 @@
 Block
   ExpressionStmt
-    Operation : FUNCTION_CALL
+    SpecialOperation : FUNCTION_CALL
       FunctionConstructor
         Identifier
         Block
           ExpressionStmt
-            Operation : FUNCTION_CALL
+            SpecialOperation : FUNCTION_CALL
               Reference
                 Identifier : alert
               StringLiteral : 'hello world'
   ExpressionStmt
-    Operation : FUNCTION_CALL
+    SpecialOperation : FUNCTION_CALL
       FunctionConstructor
         Identifier : a
         Block
           ExpressionStmt
-            Operation : FUNCTION_CALL
+            SpecialOperation : FUNCTION_CALL
               Reference
                 Identifier : alert
               StringLiteral : 'hello world'
@@ -24,7 +24,7 @@ Block
       Identifier
       Block
         ExpressionStmt
-          Operation : FUNCTION_CALL
+          SpecialOperation : FUNCTION_CALL
             Reference
               Identifier : alert
             StringLiteral : 'hello world'
@@ -33,7 +33,7 @@ Block
       Identifier : b
       Block
         ExpressionStmt
-          Operation : FUNCTION_CALL
+          SpecialOperation : FUNCTION_CALL
             Reference
               Identifier : alert
             StringLiteral : 'hello world'
@@ -43,7 +43,7 @@ Block
       Identifier : c
       Block
         ExpressionStmt
-          Operation : FUNCTION_CALL
+          SpecialOperation : FUNCTION_CALL
             Reference
               Identifier : alert
             StringLiteral : 'hello world'
@@ -53,7 +53,7 @@ Block
       Identifier
       Block
         ExpressionStmt
-          Operation : FUNCTION_CALL
+          SpecialOperation : FUNCTION_CALL
             Reference
               Identifier : alert
             StringLiteral : 'hello world'
@@ -63,7 +63,7 @@ Block
       Identifier
       Block
         ExpressionStmt
-          Operation : FUNCTION_CALL
+          SpecialOperation : FUNCTION_CALL
             Reference
               Identifier : alert
             StringLiteral : 'hello world'
@@ -73,13 +73,13 @@ Block
       Identifier : f
       Block
         ExpressionStmt
-          Operation : FUNCTION_CALL
+          SpecialOperation : FUNCTION_CALL
             Reference
               Identifier : alert
             StringLiteral : 'hello world'
   ExpressionStmt
-    Operation : FUNCTION_CALL
-      Operation : MEMBER_ACCESS
+    SpecialOperation : FUNCTION_CALL
+      SpecialOperation : MEMBER_ACCESS
         ObjectConstructor
           StringLiteral : 'x'
           IntegerLiteral : 4
@@ -90,18 +90,18 @@ Block
             Identifier
             Block
               ExpressionStmt
-                Operation : FUNCTION_CALL
+                SpecialOperation : FUNCTION_CALL
                   Reference
                     Identifier : doSomething
                   Reference
                     Identifier : this
-                  Operation : ADDITION
-                    Operation : MEMBER_ACCESS
+                  SimpleOperation : ADDITION
+                    SpecialOperation : MEMBER_ACCESS
                       Reference
                         Identifier : this
                       Reference
                         Identifier : x
-                    Operation : MEMBER_ACCESS
+                    SpecialOperation : MEMBER_ACCESS
                       Reference
                         Identifier : this
                       Reference

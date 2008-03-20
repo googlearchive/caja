@@ -233,9 +233,9 @@ public final class OpenTemplateStage implements Pipeline.Stage<Jobs> {
         if (templateParts == null) { return false; }
 
         ((MutableParseTreeNode) chain.parent.node).replaceChild(
-            new Operation(
+            Operation.create(
                 Operator.FUNCTION_CALL,
-                new Operation(
+                Operation.create(
                    Operator.CONSTRUCTOR,
                    new Reference(new Identifier("StringInterpolation"))),
                 new ArrayConstructor(templateParts)),

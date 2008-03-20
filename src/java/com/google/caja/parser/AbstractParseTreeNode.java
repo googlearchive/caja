@@ -16,6 +16,7 @@ package com.google.caja.parser;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Token;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.SyntheticAttributeKey;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.net.URI;
 
 /**
  * An abstract base class for a mutable parse tree node implementations.
@@ -35,6 +37,9 @@ import java.util.NoSuchElementException;
  */
 public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
     implements MutableParseTreeNode {
+  private static final FilePosition NOWHERE = 
+      FilePosition.startOfFile(new InputSource(URI.create("built-in:///nowhere")));
+
   private FilePosition pos;
   private List<Token<?>> comments = Collections.<Token<?>>emptyList();
   private SyntheticAttributes attributes;
@@ -47,6 +52,7 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
   private List<T> childrenExtern = Collections.<T>unmodifiableList(children);
 
   protected AbstractParseTreeNode() {
+    pos = NOWHERE;
     // initialized via mutators
   }
 
@@ -76,7 +82,7 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
     return this.attributes;
   }
   public void setFilePosition(FilePosition pos) {
-    this.pos = pos;
+    this.pos = (pos == null) ? NOWHERE : pos;
   }
   @SuppressWarnings("unchecked")
   public void setComments(List<? extends Token> comments) {
@@ -343,6 +349,7 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
     AbstractParseTreeNode<?> cloned = (AbstractParseTreeNode<?>)
         ParseTreeNodes.newNodeInstance(getClass(), getValue(), clonedChildren);
     cloned.setFilePosition(getFilePosition());
+    cloned.getAttributes().putAll(getAttributes());    
     return cloned;
   }
 
