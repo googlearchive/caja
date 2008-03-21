@@ -109,10 +109,10 @@ public class DefaultCajaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         boolean isDecl;
 
-        if (match("for (var @k in @o) { @ss*; }", node, bindings)) {
+        if (match("for (var @k in @o) @ss;", node, bindings)) {
           isDecl = true;
           bindings.put("k", new Reference((Identifier)bindings.get("k")));
-        } else if (match("for (@k in @o) { @ss*; }", node, bindings)) {
+        } else if (match("for (@k in @o) @ss;", node, bindings)) {
           isDecl = false;
           ExpressionStmt es = (ExpressionStmt)bindings.get("k");
           bindings.put("k", es.getExpression());
@@ -171,7 +171,7 @@ public class DefaultCajaRewriter extends Rewriter {
             "for (@kTempStmt in @oTempRef) {" +
             "  if (___.@canEnum(@oTempRef, @kTempRef)) {" +
             "    @kAssignment;" +
-            "    @ss*;" +
+            "    @ss;" +
             "  }" +
             "}",
             "canEnum", canEnum,

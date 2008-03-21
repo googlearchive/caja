@@ -347,6 +347,24 @@ public class HtmlCompiledPluginTest extends TestCase {
   }
 
   /**
+   * Tests 'foreach' loops.
+   *
+   * @throws Exception
+   */
+  public void testForeach() throws Exception {
+    execGadget(
+        "<script>var z = 0; for (var k = 0; k < 2; k++) z = k;" +
+        "assertEquals(z, 1);</script>",
+        ""
+        );
+    execGadget(
+        "<script>var z = 0; for (var k = 0; k < 2; k++) { z = k; }" +
+        "assertEquals(z, 1);</script>",
+        ""
+        );
+  }
+
+  /**
    * Empty styles should not cause parse failure.
    * <a href="http://code.google.com/p/google-caja/issues/detail?id=56">bug</a>
    */

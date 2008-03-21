@@ -144,7 +144,7 @@ public final class OpenTemplateStageTest extends TestCase {
     assertEquals("" + jobs.getJobs(), 1, jobs.getJobs().size());
 
     StringBuilder out = new StringBuilder();
-    stripBoilerPlate(jobs.getJobs().get(0).getRoot().node)
+    stripBoilerPlate((ParseTreeNode)jobs.getJobs().get(0).getRoot().node)
         .render(new RenderContext(mc, out));
 
     assertEquals(golden, out.toString());
