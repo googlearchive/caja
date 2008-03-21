@@ -240,7 +240,6 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
             hrefUri, href.getAttribValueNode().getFilePosition()),
         "text/css");
     if (cssStream == null) {
-      parent.removeChild(styleTag);
       jobs.getMessageQueue().addMessage(
           PluginMessageType.FAILED_TO_LOAD_EXTERNAL_URL,
           href.getFilePosition(), MessagePart.Factory.valueOf("" + hrefUri));
