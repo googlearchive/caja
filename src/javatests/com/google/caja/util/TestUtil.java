@@ -28,6 +28,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.JsHtmlParser;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
@@ -91,30 +92,8 @@ public final class TestUtil {
     }
   }
 
-  public static TokenQueue<HtmlTokenType> parseXml(
+  public static DomParser parseXml(
       Class<?> requestingClass, String testResource, MessageQueue mq)
-      throws IOException {
-    URI resource = getResource(requestingClass, testResource);
-    if (null == resource) {
-      throw new IOException("Could not resolve resource " + testResource
-                            + " relative to " + requestingClass);
-    }
-    InputSource is = new InputSource(resource);
-    useSourceToDisambiguateLocationsInMessages(is, mq);
-    String content = TestUtil.readResource(requestingClass, testResource);
-    CharProducer cp = CharProducer.Factory.create(
-        new StringReader(content), is);
-
-    HtmlLexer lexer = new HtmlLexer(cp);
-    lexer.setTreatedAsXml(testResource.endsWith(".gxp")
-                          || testResource.endsWith(".xml"));
-    TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
-        lexer, is, Criterion.Factory.<Token<HtmlTokenType>>optimist());
-    return tq;
-  }
-
-  public static Statement parseTree(Class<?> requestingClass,
-      String testResource, MessageQueue mq)
       throws IOException, ParseException {
     URI resource = getResource(requestingClass, testResource);
     if (null == resource) {
@@ -123,9 +102,22 @@ public final class TestUtil {
     }
     InputSource is = new InputSource(resource);
     useSourceToDisambiguateLocationsInMessages(is, mq);
-    String content = TestUtil.readResource(requestingClass, testResource);
-    CharProducer cp = CharProducer.Factory.create(
-        new StringReader(content), is);
+    HtmlLexer lexer = new HtmlLexer(
+        getResourceAsProducer(requestingClass, testResource));
+    return new DomParser(lexer, is, mq);
+  }
+
+  public static Statement parseTree(
+      Class<?> requestingClass, String testResource, MessageQueue mq)
+      throws IOException, ParseException {
+    URI resource = getResource(requestingClass, testResource);
+    if (null == resource) {
+      throw new IOException("Could not resolve resource " + testResource
+                            + " relative to " + requestingClass);
+    }
+    InputSource is = new InputSource(resource);
+    useSourceToDisambiguateLocationsInMessages(is, mq);
+    CharProducer cp = getResourceAsProducer(requestingClass, testResource);
     Block fileContent;
     if (!testResource.endsWith(".html") && !testResource.endsWith(".gxp")) {
       JsLexer lexer = new JsLexer(cp);

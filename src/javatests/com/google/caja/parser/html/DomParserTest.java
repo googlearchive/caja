@@ -49,10 +49,16 @@ import junit.framework.TestCase;
  * @author mikesamuel@gmail.com
  */
 public class DomParserTest extends TestCase {
+  private MessageQueue mq;
+  private MessageContext mc;
+  private InputSource is;
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
+    mq = new SimpleMessageQueue();
+    mc = new MessageContext();
+    is = new InputSource(URI.create("text:///" + getName()));
   }
 
   @Override
@@ -94,8 +100,7 @@ public class DomParserTest extends TestCase {
 
   public void testParseDom() throws Exception {
     TokenQueue<HtmlTokenType> tq = tokenizeTestInput(DOM1_XML, true);
-    DomTree t = DomParser.parseDocument(
-        tq, OpenElementStack.Factory.createXmlElementStack());
+    DomTree t = new DomParser(tq, true, mq).parseDocument();
     StringBuilder actual = new StringBuilder();
     t.format(new MessageContext(), actual);
     assertEquals(DOM1_GOLDEN, actual.toString());
@@ -1527,6 +1532,96 @@ public class DomParserTest extends TestCase {
         );
   }
 
+  public void testNoDoctypeGuessAsHtml() throws Exception {
+    assertParsedMarkup(
+        Arrays.asList(
+            "<xmp><br/></xmp>"
+            ),
+        Arrays.asList(
+            "Tag : html 1+1-1+17",
+            "  Tag : head 1+1-1+1",
+            "  Tag : body 1+1-1+17",
+            "    Tag : xmp 1+1-1+17",
+            "      Text : <br/> 1+6-1+11"
+            ),
+        Arrays.<String>asList(),
+        Arrays.asList(
+            "<html><head></head><body><xmp><br/></xmp></body></html>"
+            ),
+        null, false);
+  }
+
+  public void testDoctypeGuessAsHtml() throws Exception {
+    assertParsedMarkup(
+        Arrays.asList(
+            "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">",
+            "<xmp><br/></xmp>"
+            ),
+        Arrays.asList(
+            "Tag : html 2+1-2+17",
+            "  Tag : head 2+1-2+1",
+            "  Tag : body 2+1-2+17",
+            "    Tag : xmp 2+1-2+17",
+            "      Text : <br/> 2+6-2+11"
+            ),
+        Arrays.<String>asList(),
+        Arrays.asList(
+            "<html><head></head><body><xmp><br/></xmp></body></html>"
+            ),
+        null, false);
+  }
+
+  public void testDoctypeGuessAsXhtml() throws Exception {
+    assertParsedMarkup(
+        Arrays.asList(
+            "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"",
+            "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">",
+            "<xmp><br/></xmp>"
+            ),
+        Arrays.asList(
+            "Tag : xmp 3+1-3+17",
+            "  Tag : br 3+6-3+11"
+            ),
+        Arrays.<String>asList(),
+        Arrays.asList(
+            "<xmp><br /></xmp>"
+            ),
+        null, false);
+  }
+
+  public void testXmlPrologueTreatedAsXml() throws Exception {
+    assertParsedMarkup(
+        Arrays.asList(
+            "<?xml version=\"1.0\"?>",
+            "<xmp><br/></xmp>"
+            ),
+        Arrays.asList(
+            "Tag : xmp 2+1-2+17",
+            "  Tag : br 2+6-2+11"
+            ),
+        Arrays.<String>asList(),
+        Arrays.asList(
+            "<xmp><br /></xmp>"
+            ),
+        null, false);
+  }
+
+  public void testQualifiedNameTreatedAsXml() throws Exception {
+    assertParsedMarkup(
+        Arrays.asList(
+            "<html:xmp><br/></html:xmp>"
+            ),
+        Arrays.asList(
+            "Tag : html:xmp 1+1-1+27",
+            "  Tag : br 1+11-1+16"
+            ),
+        Arrays.<String>asList(),
+        Arrays.asList(
+            "<html:xmp><br /></html:xmp>"
+            ),
+        null, false);
+  }
+
   private void assertParsedHtml(
       List<String> htmlInput,
       List<String> expectedParseTree,
@@ -1552,26 +1647,24 @@ public class DomParserTest extends TestCase {
       List<String> expectedParseTree,
       List<String> expectedMessages,
       List<String> expectedOutputHtml,
-      boolean asXml,
+      Boolean asXml,
       boolean fragment)
       throws IOException, ParseException {
 
     System.err.println("\n\nStarting " + getName() + "\n===================");
+    mq.getMessages().clear();
 
-    MessageQueue mq = new SimpleMessageQueue();
-    MessageContext mc = new MessageContext();
-
-    OpenElementStack elementStack
-        = (asXml
-           ? OpenElementStack.Factory.createXmlElementStack()
-           : OpenElementStack.Factory.createHtml5ElementStack(mq));
-
-    TokenQueue<HtmlTokenType> tq = tokenizeTestInput(
-        Join.join("\n", htmlInput), false);
-
-    DomTree tree = (fragment
-                    ? DomParser.parseFragment(tq, elementStack)
-                    : DomParser.parseDocument(tq, elementStack));
+    DomParser p;
+    if (asXml != null) {  // specified
+      TokenQueue<HtmlTokenType> tq = tokenizeTestInput(
+          Join.join("\n", htmlInput), asXml);
+      p = new DomParser(tq, asXml, mq);
+    } else {
+      CharProducer cp = CharProducer.Factory.create(
+          new StringReader(Join.join("\n", htmlInput)), is);
+      p = new DomParser(new HtmlLexer(cp), is, mq);
+    }
+    DomTree tree = fragment ? p.parseFragment() : p.parseDocument();
 
     List<String> actualParseTree = new ArrayList<String>();
     formatWithLinePositions(tree, mc, 0, new IdentityHashMap<DomTree, Void>(),
@@ -1594,8 +1687,6 @@ public class DomParserTest extends TestCase {
 
   private TokenQueue<HtmlTokenType> tokenizeTestInput(
       String sgmlInput, boolean asXml) {
-    InputSource is = new InputSource(URI.create("test:///" + getName()));
-
     CharProducer cp = CharProducer.Factory.create(
         new StringReader(sgmlInput), is);
     HtmlLexer lexer = new HtmlLexer(cp);

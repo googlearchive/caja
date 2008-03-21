@@ -18,15 +18,13 @@ import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
-import com.google.caja.lexer.HtmlTokenType;
+import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
-import com.google.caja.parser.html.OpenElementStack;
 import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginEnvironment;
@@ -130,13 +128,14 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
 
   private DomTree.Fragment parseHtml(URI uri, String htmlContent)
       throws GadgetRewriteException, ParseException {
-    InputSource is = new InputSource(uri); // TODO(mikesamuel): is this correct?
-    TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(
-        is, new StringReader(htmlContent), false);
-    if (tq.isEmpty()) { return null; }
-    DomTree.Fragment contentTree = DomParser.parseFragment(
-        tq, OpenElementStack.Factory.createHtml5ElementStack(mq));
-
+    InputSource is = new InputSource(uri);
+    DomParser p = new DomParser(new HtmlLexer(
+        CharProducer.Factory.create(new StringReader(htmlContent), is)),
+        is, mq);
+    DomTree.Fragment contentTree = null;
+    if (!p.getTokenQueue().isEmpty()) {
+      contentTree = p.parseFragment();
+    }
     if (contentTree == null) {
       mq.addMessage(OpenSocialMessageType.NO_CONTENT, is);
       throw new GadgetRewriteException("No content");

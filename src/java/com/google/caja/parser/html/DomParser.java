@@ -22,38 +22,82 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
+import com.google.caja.lexer.TokenStream;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
- * Parses a {@link DomTree} from a stream of xml tokens.
+ * Parses a {@link DomTree} from a stream of XML or HTML tokens.
  * This is a non-validating parser, that, will parse tolerantly when created
- * with an
- * {@link OpenElementStack.Factory#createHtml5ElementStack HtmlElementStack}, or
- * will require balanced tags when created with an
- * {@link OpenElementStack.Factory#createXmlElementStack XmlElementStack}.
+ * in HTML mode, or will require balanced tags when created in XML mode.
  * <p>
- * Since it's not validating, we don't bother to parse DTDs, and so do not
+ * Since it's not validating, we don't bother to parse DTDs, and so does not
  * process external entities.  Parsing will not cause URI resolution or
  * fetching.
  *
  * @author mikesamuel@gmail.com
  */
 public final class DomParser {
-  public static DomTree parseDocument(
-      TokenQueue<HtmlTokenType> tokens, OpenElementStack elementStack)
+  private final TokenQueue<HtmlTokenType> tokens;
+  private final boolean asXml;
+  private final MessageQueue mq;
+
+  public DomParser(TokenQueue<HtmlTokenType> tokens, boolean asXml,
+                   MessageQueue mq) {
+    this.tokens = tokens;
+    this.asXml = asXml;
+    this.mq = mq;
+  }
+
+  /**
+   * Guesses the markup type -- HTML vs XML -- by looking at the first token.
+   */
+  public DomParser(HtmlLexer lexer, InputSource src, MessageQueue mq)
       throws ParseException {
+    this.mq = mq;
+    LookaheadLexer la = new LookaheadLexer(lexer);
+    lexer.setTreatedAsXml(this.asXml = guessAsXml(la, src));
+    this.tokens = new TokenQueue<HtmlTokenType>(la, src);
+  }
+
+  public TokenQueue<HtmlTokenType> getTokenQueue() { return tokens; }
+
+  protected OpenElementStack makeElementStack(MessageQueue mq) {
+    return asXml
+        ? OpenElementStack.Factory.createXmlElementStack()
+        : OpenElementStack.Factory.createHtml5ElementStack(mq);
+  }
+
+  /** Parse a document returning the document element. */
+  public DomTree parseDocument() throws ParseException {
+    OpenElementStack elementStack = makeElementStack(mq);
+
     // Make sure the elementStack is empty.
     elementStack.open(false);
 
     do {
-      parseDom(tokens, elementStack);
+      Token<HtmlTokenType> t = tokens.peek();
+      if (HtmlTokenType.TEXT == t.type) {
+        if (!"".equals(t.text.trim())) { break; }
+      } else if (HtmlTokenType.COMMENT != t.type
+                 && HtmlTokenType.DIRECTIVE != t.type) {
+        break;
+      }
+      tokens.advance();
+      continue;
+    } while (!tokens.isEmpty());
+
+    do {
+      parseDom(elementStack);
     } while (!tokens.isEmpty());
 
     FilePosition endPos = FilePosition.endOf(tokens.lastPosition());
@@ -71,12 +115,10 @@ public final class DomParser {
     return root.children().get(0);
   }
 
-  /**
-   * Parses a snippet of markup.
-   */
-  public static DomTree.Fragment parseFragment(
-      TokenQueue<HtmlTokenType> tokens, OpenElementStack elementStack)
-      throws ParseException {
+  /** Parses a snippet of markup. */
+  public DomTree.Fragment parseFragment() throws ParseException {
+    OpenElementStack elementStack = makeElementStack(mq);
+
     // Make sure the elementStack is empty.
     elementStack.open(true);
 
@@ -87,13 +129,12 @@ public final class DomParser {
       // one exception for whitespace preceding the prologue.
       Token<HtmlTokenType> t = tokens.peek();
 
-      if (HtmlTokenType.COMMENT == t.type
-          || HtmlTokenType.IGNORABLE == t.type) {
+      if (HtmlTokenType.COMMENT == t.type) {
         tokens.advance();
         continue;
       }
 
-      parseDom(tokens, elementStack);
+      parseDom(elementStack);
     }
 
     FilePosition endPos = FilePosition.endOf(tokens.lastPosition());
@@ -134,9 +175,7 @@ public final class DomParser {
    *   attributes are missing values, or there is no top level construct to
    *   parse, or if there is a problem parsing the underlying stream.
    */
-  private static void parseDom(TokenQueue<HtmlTokenType> tokens,
-                               OpenElementStack out)
-      throws ParseException {
+  private void parseDom(OpenElementStack out) throws ParseException {
     while (true) {
       Token<HtmlTokenType> t = tokens.pop();
       switch (t.type) {
@@ -153,7 +192,7 @@ public final class DomParser {
               } while (end.type != HtmlTokenType.TAGEND);
             } else {
               attribs = new ArrayList<DomTree.Attrib>();
-              end = parseTagAttributes(tokens, attribs);
+              end = parseTagAttributes(attribs);
 
               for (DomTree.Attrib attrib : attribs) {
                 attrib.setAttribName(
@@ -187,8 +226,7 @@ public final class DomParser {
    * Parses attributes onto children and consumes and returns the end of tag
    * token.
    */
-  private static Token<HtmlTokenType> parseTagAttributes(
-      TokenQueue<HtmlTokenType> tokens,
+  private Token<HtmlTokenType> parseTagAttributes(
       List<? super DomTree.Attrib> children)
       throws ParseException {
     Token<HtmlTokenType> last;
@@ -200,7 +238,7 @@ public final class DomParser {
         tokens.advance();
         break tokloop;
       case ATTRNAME:
-        children.add(parseAttrib(tokens));
+        children.add(parseAttrib());
         break;
       default:
         throw new ParseException(new Message(
@@ -213,10 +251,8 @@ public final class DomParser {
 
   /**
    * Parses an element from a token stream.
-   * @param tokens a token queue whose head is a {HtmlTokenType#ATTRNAME}
    */
-  private static DomTree.Attrib parseAttrib(TokenQueue<HtmlTokenType> tokens)
-      throws ParseException {
+  private DomTree.Attrib parseAttrib() throws ParseException {
     Token<HtmlTokenType> name = tokens.pop();
     Token<HtmlTokenType> value = tokens.pop();
     // TODO(mikesamuel): make sure that the XmlElementStack does not allow
@@ -237,7 +273,82 @@ public final class DomParser {
     return t.text.startsWith("</");
   }
 
-  private DomParser() {
-    // uninstantiable
+  private static boolean guessAsXml(LookaheadLexer la, InputSource is)
+      throws ParseException {
+    Token<HtmlTokenType> first = la.peek();
+    if (first != null && "".equals(first.text.trim())) {
+      Token<HtmlTokenType> space = first;
+      la.next();
+      first = la.peek();
+      la.pushBack(space);
+    }
+    if (first == null) {
+      return false;  // An empty document is not valid XML.
+    }
+    switch (first.type) {
+      case DIRECTIVE:
+        return first.text.startsWith("<?xml")
+            || (first.text.startsWith("<!DOCTYPE")
+                && !isHtmlDoctype(first.text));
+      case TAGBEGIN:
+        if (first.text.indexOf(':') >= 0) { return true; }
+        break;
+    }
+    String path = is.getUri().getPath();
+    if (path != null) {
+      String ext = path.toLowerCase().substring(path.lastIndexOf('.' + 1));
+      if ("html".equals(ext)) { return false; }
+      if ("xml".equals(ext) || ".xhtml".equals(ext)) { return true; }
+    }
+    return false;
+  }
+
+  private static boolean isHtmlDoctype(String s) {
+    // http://htmlhelp.com/tools/validator/doctype.html
+    return Pattern.compile("(?i:^<!DOCTYPE\\s+HTML\\b)").matcher(s).find()
+        && !Pattern.compile("(?i:\\bXHTML\\b)").matcher(s).find();
+  }
+}
+
+
+/**
+ * A TokenStream that wraps another TokenStream to provide an arbitrary
+ * amount of token lookahead.
+ * Used to allow the parser to examine the first non-whitespace & non-comment
+ * token to determine whether to parse subsequent tokens as HTML or XML.
+ */
+final class LookaheadLexer implements TokenStream<HtmlTokenType> {
+  private final TokenStream<HtmlTokenType> lexer;
+  private List<Token<HtmlTokenType>> pending
+      = new LinkedList<Token<HtmlTokenType>>();
+
+  LookaheadLexer(TokenStream<HtmlTokenType> lexer) {
+    this.lexer = lexer;
+  }
+
+  /** True if {@link #next} is safe to call. */
+  public boolean hasNext() throws ParseException {
+    return !pending.isEmpty() || lexer.hasNext();
+  }
+  /** Returns the next token, and moves the stream position forward. */
+  public Token<HtmlTokenType> next() throws ParseException {
+    return pending.isEmpty() ? lexer.next() : pending.remove(0);
+  }
+  /** Returns the next token without consuming it. */
+  Token<HtmlTokenType> peek() throws ParseException {
+    if (pending.isEmpty()) {
+      Token<HtmlTokenType> next = lexer.next();
+      pending.add(next);
+      return next;
+    }
+    return pending.get(pending.size() - 1);
+  }
+
+  /**
+   * Pushed t onto the head of the lookahead queue so that it becomes the
+   * token returned by the next call to {@link #peek} or {@link #next}.
+   */
+  void pushBack(Token<HtmlTokenType> t) {
+    pending.add(0, t);
   }
 }

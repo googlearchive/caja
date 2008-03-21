@@ -172,9 +172,7 @@ final class GxpCompileDirectiveReplacer implements Visitor {
       TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
           lexer, node.getFilePosition().source(),
           Criterion.Factory.<Token<HtmlTokenType>>optimist());
-      DomTree doc = DomParser.parseDocument(
-          tq, OpenElementStack.Factory.createXmlElementStack());
-      tq.expectEmpty();
+      DomTree doc = new DomParser(tq, true, mq).parseDocument();
       if (!(doc instanceof DomTree.Tag)) {
         throw new ParseException(new Message(
             PluginMessageType.CANT_CONVERT_TO_GXP, arg.getFilePosition(), arg));

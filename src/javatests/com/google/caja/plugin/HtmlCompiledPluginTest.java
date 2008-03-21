@@ -20,7 +20,6 @@ import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
-import com.google.caja.parser.html.OpenElementStack;
 import com.google.caja.parser.js.Block;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
@@ -422,7 +421,6 @@ public class HtmlCompiledPluginTest extends TestCase {
     StringReader in = new StringReader(html);
     TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(is, in, false);
     if (tq.isEmpty()) { return null; }
-    return DomParser.parseFragment(
-        tq, OpenElementStack.Factory.createHtml5ElementStack(mq));
+    return new DomParser(tq, false, mq).parseFragment();
   }
 }

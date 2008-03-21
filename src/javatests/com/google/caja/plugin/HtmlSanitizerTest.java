@@ -242,9 +242,7 @@ public class HtmlSanitizerTest extends TestCase {
   private DomTree parse(String markup, boolean asXml) throws ParseException {
     TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(
         is, new StringReader(markup), asXml);
-    DomTree t = DomParser.parseFragment(
-        tq, asXml ? OpenElementStack.Factory.createXmlElementStack()
-                  : OpenElementStack.Factory.createHtml5ElementStack(mq));
+    DomTree t = new DomParser(tq, asXml, mq).parseFragment();
     tq.expectEmpty();
     return t;
   }

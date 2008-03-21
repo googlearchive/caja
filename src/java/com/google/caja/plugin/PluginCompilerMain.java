@@ -33,7 +33,6 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
-import com.google.caja.parser.html.OpenElementStack;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.reporting.Message;
@@ -170,16 +169,12 @@ public final class PluginCompilerMain {
       HtmlLexer lexer = new HtmlLexer(cp);
       lexer.setTreatedAsXml(true);
       TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(lexer, is);
-      input = DomParser.parseDocument(
-          tq, OpenElementStack.Factory.createXmlElementStack());
+      input = new DomParser(tq, true, mq).parseDocument();
       tq.expectEmpty();
-    } else if (path.endsWith(".html")) {
-      HtmlLexer lexer = new HtmlLexer(cp);
-      lexer.setTreatedAsXml(false);
-      TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(lexer, is);
-      input = DomParser.parseFragment(
-          tq, OpenElementStack.Factory.createHtml5ElementStack(mq));
-      tq.expectEmpty();
+    } else if (path.endsWith(".html") || path.endsWith(".xhtml")) {
+      DomParser p = new DomParser(new HtmlLexer(cp), is, mq);
+      input = p.parseFragment();
+      p.getTokenQueue().expectEmpty();
     } else if (path.endsWith(".css")) {
       CssLexer lexer = new CssLexer(cp);
       TokenQueue<CssTokenType> tq = new TokenQueue<CssTokenType>(
