@@ -19,8 +19,8 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.ExpressionStmt;
-import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
@@ -76,8 +76,8 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
       }
     }
 
-    for (FunctionDeclaration handler : htmlc.getEventHandlers()) {
-      // function c_1___() { ... }
+    for (Declaration handler : htmlc.getEventHandlers()) {
+      // var c_1___ = function () { ... };
       // => ___OUTERS___.c_1___ = function c_1___() { ... };
       Statement def = s(new ExpressionStmt(
           s(Operation.create(

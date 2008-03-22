@@ -35,9 +35,9 @@ import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
-import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
@@ -85,8 +85,8 @@ public class HtmlCompiler {
   private final HtmlSchema htmlSchema;
   private final MessageQueue mq;
   private final PluginMeta meta;
-  private Map<String, FunctionDeclaration> eventHandlers =
-      new LinkedHashMap<String, FunctionDeclaration>();
+  private Map<String, Declaration> eventHandlers =
+      new LinkedHashMap<String, Declaration>();
 
   public HtmlCompiler(CssSchema cssSchema, HtmlSchema htmlSchema,
                       MessageQueue mq, PluginMeta meta) {
@@ -115,7 +115,7 @@ public class HtmlCompiler {
     return body;
   }
 
-  public Collection<? extends FunctionDeclaration> getEventHandlers() {
+  public Collection<? extends Declaration> getEventHandlers() {
     return eventHandlers.values();
   }
 
@@ -526,8 +526,8 @@ public class HtmlCompiler {
         String handlerFnName = htmlc.syntheticId();
         htmlc.eventHandlers.put(
             handlerFnName,
-            s(new FunctionDeclaration(
-                  new Identifier(handlerFnName),  // Not synthetic.
+            s(new Declaration(
+                  s(new Identifier(handlerFnName)),
                   s(new FunctionConstructor(
                         new Identifier(null),
                         Arrays.asList(
@@ -547,9 +547,9 @@ public class HtmlCompiler {
                 Operator.FUNCTION_CALL,
                 s(Operation.create(
                     Operator.MEMBER_ACCESS,
-                    s(new Reference(new Identifier("___"))),
-                    s(new Reference(new Identifier("getId"))))),
-                s(new Reference(new Identifier(ReservedNames.OUTERS))))),
+                    s(new Reference(s(new Identifier("___")))),
+                    s(new Reference(s(new Identifier("getId")))))),
+                s(new Reference(s(new Identifier(ReservedNames.OUTERS)))))),
             tgtChain, out);
 
         StringBuilder sb = new StringBuilder(", '");
