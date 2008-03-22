@@ -82,9 +82,10 @@ class InputElementJoiner extends AbstractTokenStream<JsTokenType> {
                       combined = true;
                       break;
                     } else {
+                      Token<JsTokenType> last = t2;
                       t2 = lookaheadTo(n++);
-                      if (null == t2) { break; }
-                      p = punctuation.lookup(t2.text);
+                      if (null == t2 || !areAdjacent(last, t2)) { break; }
+                      p = p.lookup(t2.text);
                     }
                   }
                 }

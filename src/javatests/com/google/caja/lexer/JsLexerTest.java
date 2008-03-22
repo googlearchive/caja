@@ -170,6 +170,36 @@ public class JsLexerTest extends TestCase {
     assertEmpty(lexer);
   }
 
+  public void testDoubleDot() {
+    JsLexer lexer = createLexer("a == = function () {..} ... .. . foo", true);
+    assertNext(lexer, JsTokenType.WORD, "a");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "==");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "=");
+    assertNext(lexer, JsTokenType.KEYWORD, "function");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "(");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ")");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "{");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ".");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ".");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "}");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "...");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ".");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ".");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ".");
+    assertNext(lexer, JsTokenType.WORD, "foo");
+    assertEmpty(lexer);
+  }
+
+  public void testNumberDotWord() {
+    JsLexer lexer = createLexer("0..toString()", false);  // evaluates to "0"
+    assertNext(lexer, JsTokenType.FLOAT, "0.");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ".");
+    assertNext(lexer, JsTokenType.WORD, "toString");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "(");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ")");
+    assertEmpty(lexer);
+  }
+
   private JsLexer createLexer(String src) {
     return createLexer(src, false);
   }
@@ -193,7 +223,8 @@ public class JsLexerTest extends TestCase {
       fail(e.toString());
     }
     assertEquals(type, tok.type);
-    assertEquals(text, tok.text);
+    assertEquals("was '" + tok.text + "', expected '" + text + "'",
+                 text, tok.text);
   }
 
   public void assertEmpty(JsLexer lexer) {
@@ -212,7 +243,7 @@ public class JsLexerTest extends TestCase {
     while (t.hasNext()) {
       Token<JsTokenType> tok = t.next();
       System.out.append(tok.type.toString().substring(0, 4)
-        + " [" + tok.text + "]: " + tok.pos + "\n");
+                        + " [" + tok.text + "]: " + tok.pos + "\n");
     }
   }
 }
