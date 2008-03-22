@@ -33,11 +33,15 @@ public final class CharProducerTest extends TestCase {
   private static final InputSource STRING_SOURCE = new InputSource(
       URI.create("file:///CharProducerTest.java"));
 
-  public void testFromFile() throws Exception {
+  public void testFromReader() throws Exception {
     InputSource src = new InputSource(
         TestUtil.getResource(CharProducerTest.class, "testinput1.txt"));
     testProducer(
-        CharProducer.Factory.create(src),
+        CharProducer.Factory.create(
+            new StringReader(
+                TestUtil.readResource(CharProducerTest.class, "testinput1.txt")
+                ),
+            src),
         "The quick brown fox\njumps over\nthe lazy dog\n",
       // 0         1          2         3         4
       // 01234567890123456789 01234567890 1234567890123 4
@@ -83,8 +87,9 @@ public final class CharProducerTest extends TestCase {
     // 0123456789012345678901234 5 67890123456789012 3 4567890123456789012345
     Reader r = new StringReader(input2);
 
-    CharProducer prod1 = CharProducer.Factory.create(src1),
-                 prod2 = CharProducer.Factory.create(r, src2);
+    CharProducer prod1 = TestUtil.getResourceAsProducer(
+        CharProducerTest.class, "testinput1.txt");
+    CharProducer prod2 = CharProducer.Factory.create(r, src2);
 
     String golden1 = "The quick brown fox\njumps over\nthe lazy dog\n",
            golden2 = input2;

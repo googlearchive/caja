@@ -22,13 +22,14 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.TestUtil;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -185,7 +186,7 @@ public class ParserTest extends TestCase {
     cloneParseTree.format(mc, cloneOutput);
     assertEquals(golden, cloneOutput.toString());    
 
-    Set<String> actualErrors = new LinkedHashSet<String>();
+    List<String> actualErrors = new ArrayList<String>();
     for (Message m : mq.getMessages()) {
       if (MessageLevel.ERROR.compareTo(m.getMessageLevel()) <= 0) {
         String error = m.toString();
@@ -193,8 +194,7 @@ public class ParserTest extends TestCase {
       }
     }
 
-    Set<String> expectedErrors
-        = new LinkedHashSet<String>(Arrays.asList(errors));
-    assertEquals(expectedErrors, actualErrors);
+    List<String> expectedErrors = Arrays.asList(errors);
+    MoreAsserts.assertListsEqual(expectedErrors, actualErrors);
   }
 }

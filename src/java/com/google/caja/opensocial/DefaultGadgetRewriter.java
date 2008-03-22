@@ -19,6 +19,7 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.HtmlLexer;
+import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
@@ -83,7 +84,10 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
       throws GadgetRewriteException, IOException {
     GadgetParser parser = new GadgetParser();
     GadgetSpec spec = parser.parse(gadgetSpec, view);
-    spec.setContent(rewriteContent(baseUri, spec.getContent(), uriCallback));
+    StringBuilder rewritten = new StringBuilder();
+    rewriteContent(
+        baseUri, new StringReader(spec.getContent()), uriCallback, rewritten);
+    spec.setContent(rewritten.toString());
     parser.render(spec, output);
   }
 
@@ -92,17 +96,25 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
                              UriCallback uriCallback,
                              Appendable output)
       throws GadgetRewriteException, IOException {
-    String contentString = readReadable(gadgetSpec);
-    output.append(rewriteContent(baseUri, contentString, uriCallback));
+    CharProducer content = readReadable(gadgetSpec, new InputSource(baseUri));
+    output.append(rewriteContent(baseUri, content, uriCallback));
+  }
+
+  public void rewriteContent(URI baseUri,
+                             CharProducer content,
+                             UriCallback uriCallback,
+                             Appendable output)
+      throws GadgetRewriteException, IOException {
+    output.append(rewriteContent(baseUri, content, uriCallback));
   }
 
   private String rewriteContent(
-      URI baseUri, String content, UriCallback callback)
+      URI baseUri, CharProducer content, UriCallback callback)
       throws GadgetRewriteException {
 
     DomTree.Fragment htmlContent;
     try {
-      htmlContent = parseHtml(baseUri, content);
+      htmlContent = parseHtml(content, new InputSource(baseUri));
     } catch (ParseException ex) {
       ex.toMessageQueue(mq);
       throw new GadgetRewriteException(ex);
@@ -126,21 +138,14 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
     return rewriteContent(style.toString(), script.toString());
   }
 
-  private DomTree.Fragment parseHtml(URI uri, String htmlContent)
+  private DomTree.Fragment parseHtml(CharProducer htmlContent, InputSource src)
       throws GadgetRewriteException, ParseException {
-    InputSource is = new InputSource(uri);
-    DomParser p = new DomParser(new HtmlLexer(
-        CharProducer.Factory.create(new StringReader(htmlContent), is)),
-        is, mq);
-    DomTree.Fragment contentTree = null;
-    if (!p.getTokenQueue().isEmpty()) {
-      contentTree = p.parseFragment();
-    }
-    if (contentTree == null) {
-      mq.addMessage(OpenSocialMessageType.NO_CONTENT, is);
+    DomParser p = new DomParser(new HtmlLexer(htmlContent), src, mq);
+    if (p.getTokenQueue().isEmpty()) {
+      mq.addMessage(OpenSocialMessageType.NO_CONTENT, src);
       throw new GadgetRewriteException("No content");
     }
-    return contentTree;
+    return p.parseFragment();
   }
 
   private PluginCompiler compileGadget(
@@ -206,19 +211,8 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
     return results.toString();
   }
 
-  private String readReadable(Readable input) {
-    StringBuilder sb = new StringBuilder();
-    Reader r = new ReadableReader(input);
-    try {
-      while (true) {
-        int c = r.read();
-        if (c < 0) break;
-        sb.append((char)c);
-      }
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    return sb.toString();
+  private CharProducer readReadable(Readable input, InputSource src) {
+    return CharProducer.Factory.create(new ReadableReader(input), src);
   }
 
   protected RenderContext createRenderContext(

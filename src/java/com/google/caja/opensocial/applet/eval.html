@@ -1,0 +1,116 @@
+<html>
+  <head>
+    <title>Eval</title>
+
+    <style type="text/css">
+.result .type { float: right }
+.result {
+  font-family: monospace;
+  white-space: pre;
+  border-left: 6px solid #888;
+  padding-left: 4px;
+  margin: 2px
+}
+    </style>
+
+    <style type="text/css" id="caja-styles"></style>
+
+    <script type="text/javascript" src="caja.js"></script>
+    <script type="text/javascript" src="unicode.js"></script>
+    <script type="text/javascript" src="html4-defs.js"></script>
+    <script type="text/javascript" src="html-sanitizer.js"></script>
+    <script type="text/javascript" src="domita.js"></script>
+
+<script type="text/javascript">
+var testOuters;
+
+function loadCaja(html) {
+  var m = html.match(
+      /^(?:<style[^>]*>([\s\S]*?)<\/style>\s*)?<script[^>]*>([\s\S]*?)<\/script>/);
+  if (m) {
+    var style = m[1];
+    var script = m[2];
+
+    if (style != null) {
+      document.getElementById('caja-styles').innerHTML = style;
+    }
+
+    testOuters.clearHtml___();
+    eval(script);
+    testOuters.flushHtml___();
+  } else {
+    (typeof console !== 'undefined')
+    && console.warn('Failed to eval cajoled output %s', html);
+  }
+}
+
+(function () {
+  testOuters = ___.copy(___.sharedOuters);
+  testOuters.$ = ___.simpleFunc(function (o) {
+    var type = document.createElement('span');
+    type.className = 'type';
+    type.appendChild(document.createTextNode(typeString(o)));
+
+    var entry = document.createElement('div');
+    entry.className = 'result';
+    entry.appendChild(type);
+    entry.appendChild(document.createTextNode(repr(o)));
+
+    document.getElementById('eval-results').appendChild(entry);
+  });
+
+  function typeString(o) {
+    if (typeof o === 'object') {
+      if (o === null) { return 'null'; }
+      if (o.constructor.name) { return o.constructor.name; }
+    }
+    return typeof o;
+  }
+
+  function repr(o) {
+    if ((typeof 'uneval') != 'undefined') { return uneval(o); }
+    switch (typeof o) {
+      case 'boolean': case 'number': case 'undefined':
+        return String(o);
+      default:
+        return o && o.toSource() ? o.toSource() : String(o);
+    }
+  }
+
+  ___.getNewModuleHandler().setOuters(testOuters);
+  attachDocumentStub(
+       'xyz-',
+       {
+         rewrite:
+             function (uri, mimeType) {
+               if (!/^https?:\/\//i.test(uri)) { return null; }
+               return 'http://gadget-proxy/?url=' + encodeURIComponent(uri)
+                   + '&mimeType=' + encodeURIComponent(mimeType);
+             }
+       },
+       testOuters);
+  var pendingHtml = [];
+  testOuters.clearHtml___ = function () {
+    document.getElementById('caja-html').innerHTML
+        = '<center style="color: gray">eval</center>';
+    pendingHtml = [];
+  };
+  testOuters.emitHtml___ = function (varArgs) {
+    for (var i = 0, n = arguments.length; i < n; ++i) {
+      pendingHtml.push(arguments[i]);
+    }
+  };
+  testOuters.flushHtml___ = function () {
+    document.getElementById('caja-html').innerHTML = pendingHtml.join('');
+    pendingHtml = [];
+  };
+})();
+
+</script>
+  </head>
+  <body onload="testOuters.clearHtml___()">
+    <div id="eval-results"></div>
+    <hr>
+    <div id="caja-html" class="DOM-PREFIX"></div>
+  </body>
+</html>

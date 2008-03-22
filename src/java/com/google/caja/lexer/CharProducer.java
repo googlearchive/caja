@@ -17,10 +17,7 @@ package com.google.caja.lexer;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Reader;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,32 +58,6 @@ public interface CharProducer extends Closeable {
 
     public static CharProducer create(Reader r, InputSource src) {
       return create(r, FilePosition.startOfFile(src));
-    }
-
-    public static CharProducer create(InputSource src) throws IOException {
-      URL url = src.getUri().toURL();
-      // TODO(mikesamuel): this should probably be replaced with something
-      // pluggable that can properly check robots.txt.
-      URLConnection conn = url.openConnection();
-      conn.setDoInput(true);
-      conn.setDoOutput(false);
-      conn.setAllowUserInteraction(false);
-      conn.connect();
-      String encoding = conn.getContentEncoding();
-      // TODO(mikesamuel): Make a better guess at encoding.  We have a few
-      // options.
-      // (1) Look for coding attribute in the -*- emacs prologue -*- per
-      //     http://www.gnu.org/software/emacs/manual/html_mono/emacs.html#Recognize-Coding
-      // (2) Use the system encoding
-      // (3) Guess encoding by looking at char distribution.
-      // (4) Reject responses that don't specify an encoding
-      // (5) Take a default encoding parameter and assume the caller knows more
-      //     than we do.
-      // I'm leaning towards a combination of (1), (3) by looking for a BOM,
-      // and (2).
-      if (null == encoding) { encoding = "UTF-8"; }
-      Reader r = new InputStreamReader(conn.getInputStream(), encoding);
-      return create(r, src);
     }
 
     public static CharProducer fromJsString(CharProducer p) {

@@ -1,0 +1,139 @@
+<!--
+ - Copyright (C) 2008 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+
+<html>
+  <head>
+    <title>Interpreter Oddities</title>
+    <style type="text/css">
+      .printed { white-space: pre }
+      .header { font-size: 125%; font-weight: bold; margin-top: 1ex }
+      .result { white-space: pre }
+      .annotation { background: yellow; font-weight: bold }
+    </style>
+  </head>
+  <body bgcolor=white>
+    <script type="text/javascript">
+      function print(s) {
+        var node = document.createElement('div');
+        node.className = 'printed';
+        node.appendChild(document.createTextNode(String(s)));
+        document.body.appendChild(node);
+        return node;
+      }
+
+      function header(s) {
+        print(s).className = 'header';
+      }
+
+      function result(s, opt_guid) {
+        print(s).className = 'result';
+        if (opt_guid) {
+          document.getElementById(opt_guid).appendChild(
+              document.createTextNode(
+                  '\u21D2 ' // right arrow
+                  + s));
+        }
+      }
+
+      function annotateSource(source, container) {
+        // Display the source code, with results inline.
+        source = source.replace(/\0/g, '').replace(
+            /^(\s*result\([\s\S]*?)\);(?:\r\n?|\n)/gm, "$1\0");
+        var parts = source.split(/\0/g);
+        var annotationCtr = 0;
+        var sourceToEval = [];
+        for (var i = 0; i < parts.length; ++i) {
+          sourceToEval.push(parts[i]);
+          container.appendChild(document.createTextNode(parts[i]));
+          if (i + 1 < parts.length) {
+            container.appendChild(document.createTextNode(');\n'));
+
+            for (var annotationId;
+                 document.getElementById(
+                     annotationId = 'annotation-' + annotationCtr);
+                 ++annotationCtr) {
+            }
+            // Create a placeholder to hold the result of the annotated code,
+            // which the call to result will fill.
+            var annotation = document.createElement('DIV');
+            annotation.className = 'annotation';
+            annotation.id = annotationId;
+            container.appendChild(annotation);
+            // Indent the result text to match the call to result.
+            var whitespace = parts[i].match(/([ \t]*)result\([\s\S]*?$/);
+            var indent = (whitespace && whitespace[1] || '') + '      ';
+            annotation.appendChild(document.createTextNode(indent));
+            // Add the second argument to result.
+            sourceToEval.push(',"', annotationId, '");\n');
+          }
+        }
+        return sourceToEval.join('');
+      }
+    </script>
+
+    <pre id="annotated-src"></pre>
+
+    <script type="text/javascript">
+      function run(source___) { eval(source___); }
+      
+      (function () {
+        var source;
+
+        function runAnnotated() {
+          // Put the tests in a function so that we can get at the source code
+          //  and annotate it.
+          source = annotateSource(
+              source, document.getElementById('annotated-src'));
+          run(source + '\n\noddities()');
+        }
+
+        var req;
+        if ((typeof XMLHttpRequest) !== 'undefined') {
+          req = new XMLHttpRequest();
+        } else {
+          var ieProgIds = [
+              "MSXML2.XMLHTTP.5.0", "MSXML2.XMLHTTP.4.0", "MSXML2.XMLHTTP.3.0",
+              "MSXML2.XMLHTTP", "MICROSOFT.XMLHTTP.1.0", "MICROSOFT.XMLHTTP.1", 
+              "MICROSOFT.XMLHTTP"];
+          for (var i = 0; i < ieProgIds.length; i++) {
+            try {
+              req = new ActiveXObject(ieProgIds[i]);
+              break;
+            } catch (e) {
+              // do nothing; try next choice
+            }
+          }
+        }
+        if (req) {
+          req.onreadystatechange = function () {
+            if (req.readyState === 4) {
+              req.onreadystatechange = null;
+              source = req.responseText;
+              setTimeout(runAnnotated, 0);
+            }
+          };
+          req.open('GET', 'interpreter_oddities.js');
+          req.send([]);
+        } else {
+          var script = document.createElement('SCRIPT');
+          document.body.appendChild(script);
+          script.src = 'interpreter_oddities.js';
+          setTimeout(function () { oddities() }, 0);
+        }
+      })();
+    </script>
+  </body>
+</html>

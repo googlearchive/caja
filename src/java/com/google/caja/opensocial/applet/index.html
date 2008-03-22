@@ -1,0 +1,161 @@
+<html>
+  <head>
+    <title>Caja Test Bed</title>
+
+    <style type="text/css">
+      form { display: inline }
+      div.message                { margin: 2px 2px .5em 2px; padding-left: 4px }
+      .message                   { border-left: 4px solid #000 }
+      .message.WARNING,
+      .message.CRITICAL_WARNING  { border-left: 4px solid #bb0 }
+      .message.ERROR,
+      .message.FATAL_ERROR       { border-left: 4px solid #800 }
+
+      .problem                   { border: 1px dotted #000 }
+      .WARNING          .problem,
+      .CRITICAL_WARNING .problem { border: 1px dotted #880; background: #ffd }
+      .ERROR            .problem,
+      .FATAL_ERROR      .problem { border: 1px dotted #800; background: #fee }
+
+      center.failure             { font-style: italic; font-size: 150% }
+    </style>
+
+    <link href=
+     "http://google-code-prettify.googlecode.com/svn/trunk/src/prettify.css"
+     type="text/css" rel="stylesheet" />
+
+    <script src=
+     "http://google-code-prettify.googlecode.com/svn/trunk/src/prettify.js"
+     type="text/javascript"></script>
+
+    <script type="text/javascript">
+function html(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function getCajoler() {
+  return document.applets.cajoler;
+}
+
+function cajole() {
+  var result = getCajoler().cajole(
+      document.forms.cajolerForm.elements.src.value.replace(/^\s+|\s+$/g, ''),
+      Boolean(document.forms.cajolerForm.elements.embeddable.checked));
+  var cajoledOutput = result[0];
+  var messages = String(result[1]);
+
+  if (cajoledOutput !== null) {
+    cajoledOutput = String(cajoledOutput);
+    document.getElementById('output').innerHTML
+        = prettyPrintOne(html(cajoledOutput));
+
+    window.frames.evalFrame.window.loadCaja(cajoledOutput);
+  } else {
+    document.getElementById('output').innerHTML
+        = '<center class="failure">Failed<\/center>';
+  }
+  document.getElementById('messages').innerHTML = messages || '';
+}
+
+function innerText(node) {
+  var s = [];
+  innerTextHelper(node, s);
+  return s.join();
+}
+
+function innerTextHelper(node, buf) {
+  for (var child = node.firstChild; child; child = child.nextSibling) {
+    if (child.nodeType === 3) {
+      buf.push(child.nodeValue);
+    } else {
+      innerTextHelper(child, buf);
+    }
+  }
+}
+    </script>
+
+  </head>
+  <body bgcolor="white"
+   onload="document.forms.cajolerForm.elements.src.select()">
+
+    <applet code="com.google.caja.opensocial.applet.CajaApplet" name="cajoler"
+     archive="testbed.jar,
+              ../../third_party/java/htmlparser/htmlparser.jar,
+              ../../third_party/java/json_simple/json_simple.jar"
+     codebase="." height="1" width="1" scriptable="true" MAYSCRIPT>
+    </applet>
+
+    <h1>Caja Test Bed <small><script>
+      document.write(' : ' + getCajoler().getVersion());
+    </script></small></h1>
+
+    <p>
+      <a href="http://code.google.com/p/google-caja/issues/entry"
+       target="_blank">File a bug</a>
+      <span id="instrlink">
+        |
+        <a href="javascript:void(
+          document.getElementById('instrs').style.display='',
+          document.getElementById('instrlink').style.display='none')"
+         title="Show Instructions">Instructions</a>
+      </span>
+    </p>
+    <div style="display:none" id="instrs">
+      <p>
+      Enter HTML into the textarea.  Contents of <code>&lt;style&gt;</code> and
+      <code>&lt;script&gt;</code> elements are extracted.  The rest is treated
+      as HTML and emitted normally.
+
+      <p>
+      Any Cajoler warnings are displayed in the top section.
+
+      <p>
+      The script and styles are rewritten and the rewritten gadget is displayed
+      in pretty printed form in the middle section to the right.
+      
+      <p>
+      Any value inside <code>$(...)</code> is logged in the bottom section, and
+      emitted HTML is displayed below that.
+
+      <p>Example:
+      <pre class=prettyprint style="cursor: pointer"
+       onclick="document.forms.cajolerForm.src.value = innerText(this)">
+      &lt;!-- Styles are displayed --&gt;
+      &lt;style&gt; p { color: purple } &lt;/style&gt;
+
+      &lt;!-- Scripts are executed --&gt;
+      &lt;script&gt;
+        $(2 + 2)  // You should see a missing semicolon warning too!
+      &lt;/script&gt;
+
+      &lt;!-- Regular HTML is emitted --&gt;
+      &lt;p&gt;Hello World&lt;/p&gt;</pre>
+    </div>
+
+    <table cols="2"><tr valign="top">
+    <td>
+      <button onclick="cajole()">Cajole</button>
+      <form name="cajolerForm" onsubmit="return false">
+        <input name="embeddable" type="checkbox">
+        <label for=embeddable title="Output can be embedded in HTML/XML"
+         >Embeddable</label>
+        <br>
+        <textarea cols="81" rows="40" name="src"
+>&lt;script type="text/javascript"&gt;
+
+&lt;/script&gt;
+</textarea>
+      </form>
+      <br>
+      <button onclick="cajole()">Cajole</button>
+    <td>
+      <pre id="messages" class="prettyprint"></pre>
+      <hr>
+      <pre id="output"></pre>
+      <hr>
+      <iframe name="evalFrame" frameborder="0" src="eval.html"
+       style="width: 40em"></iframe>
+    </table>
+
+  </body>
+</html>

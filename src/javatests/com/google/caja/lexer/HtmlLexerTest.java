@@ -25,12 +25,9 @@ import junit.framework.TestCase;
 public class HtmlLexerTest extends TestCase {
 
   public void testHtmlLexer() throws Exception {
-    // Read the input.
-    InputSource input = new InputSource(
-        TestUtil.getResource(getClass(), "htmllexerinput1.html"));
-
     // Do the lexing.
-    CharProducer p = CharProducer.Factory.create(input);
+    CharProducer p = TestUtil.getResourceAsProducer(
+        getClass(), "htmllexerinput1.html");
     StringBuilder actual = new StringBuilder();
     try {
       HtmlLexer lexer = new HtmlLexer(p);
@@ -47,12 +44,9 @@ public class HtmlLexerTest extends TestCase {
   }
 
   public void testXmlLexer() throws Exception {
-    // Read the input.
-    InputSource input = new InputSource(
-        TestUtil.getResource(getClass(), "htmllexerinput2.xml"));
-
     // Do the lexing.
-    CharProducer p = CharProducer.Factory.create(input);
+    CharProducer p = TestUtil.getResourceAsProducer(
+        getClass(), "htmllexerinput2.xml");
     StringBuilder actual = new StringBuilder();
     try {
       HtmlLexer lexer = new HtmlLexer(p);

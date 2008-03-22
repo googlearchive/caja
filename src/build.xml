@@ -379,8 +379,7 @@
          value="com.google.caja.plugin.PluginCompilerMain"/>
       </manifest>
     </jar>
-    <jar destfile="${jars}/pluginc-src.jar" basedir="${src}">
-    </jar>
+    <jar destfile="${jars}/pluginc-src.jar" basedir="${src}"/>
   </target>
 
   <target name="TestUtil"
@@ -408,8 +407,11 @@
     </javac>
     <copy todir="${lib}">
       <fileset dir="${src}">
-        <include name="**/caja/plugin/plugin-base.js"/>
+        <include name="**/caja/plugin/domita.js"/>
+        <include name="**/caja/plugin/html4-defs.js"/>
         <include name="**/caja/plugin/html-sanitizer.js"/>
+        <include name="**/caja/plugin/unicode.js"/>
+        <include name="**/caja/plugin/plugin-base.js"/>
       </fileset>
     </copy>
   </target>
@@ -575,7 +577,7 @@
     </javac>
   </target>
 
-  <target name="demos" depends="springgraph,lolcat-search"
+  <target name="demos" depends="springgraph,lolcat-search,testbed"
    description="Puts all the demo files together for easy browsing."/>
 
   <target name="springgraph" depends="dirs,pluginc"
@@ -665,6 +667,46 @@
         <include name="loading.jpg"/>
         <include name="search.html"/>
         <include name="searchengine.js"/>
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="testbed" depends="dirs,opensocial"
+   description=
+     "Produce an Applet and an HTML page that allows playing
+      with the cajoler in the browser.">
+    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+      <src path="${src}"/>
+      <classpath refid="classpath.compile"/>
+      <include name="**/caja/opensocial/applet/*.java"/>
+    </javac>
+
+    <jar destfile="${jars}/testbed.jar" basedir="${lib}">
+      <manifest>
+        <attribute name="Main-Class"
+         value="com.google.caja.opensocial.applet.CajaApplet"/>
+      </manifest>
+    </jar>
+
+    <mkdir dir="${www}/testbed"/>
+    <copy todir="${www}/testbed">
+      <fileset dir="${javascript}/com/google/caja">
+        <include name="caja.js"/>
+      </fileset>
+      <fileset dir="${src}/com/google/caja/plugin">
+        <include name="html-sanitizer.js"/>
+        <include name="domita.js"/>
+        <include name="html4-defs.js"/>
+        <include name="html-sanitizer.js"/>
+        <include name="unicode.js"/>
+      </fileset>
+
+      <fileset dir="${src}/com/google/caja/opensocial/applet">
+        <include name="*.html"/>
+        <include name="*.js"/>
+      </fileset>
+      <fileset dir="${jars}">
+        <include name="testbed.jar"/>
       </fileset>
     </copy>
   </target>
