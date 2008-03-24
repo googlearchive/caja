@@ -16,7 +16,7 @@
 function WeekDayNum(num, wday) { return { num: num, wday: wday }; }
 
 
-function testDayNumToDateInMonth() {
+jsunitRegister('testDayNumToDateInMonth', function testDayNumToDateInMonth() {
   //        March 2006
   // Su Mo Tu We Th Fr Sa
   //           1  2  3  4
@@ -62,9 +62,9 @@ function testDayNumToDateInMonth() {
       7, time_util.dayNumToDate(dow0, nDays, -4, WeekDay.TU, d0, nDays));
   assertEquals(
       0, time_util.dayNumToDate(dow0, nDays, -5, WeekDay.TU, d0, nDays));
-}
+});
 
-function testDayNumToDateInYear() {
+jsunitRegister('testDayNumToDateInYear', function testDayNumToDateInYear() {
   //        January 2006
   //  # Su Mo Tu We Th Fr Sa
   //  1  1  2  3  4  5  6  7
@@ -129,15 +129,15 @@ function testDayNumToDateInYear() {
       7, time_util.dayNumToDate(dow0, nDays, -43, WeekDay.TU, d0, nInMonth));
   assertEquals(
       0, time_util.dayNumToDate(dow0, nDays, -44, WeekDay.TU, d0, nInMonth));
-}
+});
 
-function testUniquify() {
+jsunitRegister('testUniquify', function testUniquify() {
   var ints = [ 1, 4, 4, 2, 7, 3, 8, 0, 0, 3 ];
   ints = time_util.uniquify(ints);
   assertEquals("0,1,2,3,4,7,8", String(ints));
-}
+});
 
-function testNextWeekStart() {
+jsunitRegister('testNextWeekStart', function testNextWeekStart() {
   assertEquals(time.date(2006, 1, 24),
                time_util.nextWeekStart(time.date(2006, 1, 23), WeekDay.TU));
 
@@ -158,9 +158,9 @@ function testNextWeekStart() {
 
   assertEquals(time.date(2006, 2, 6),
                time_util.nextWeekStart(time.date(2006, 1, 31), WeekDay.MO));
-}
+});
 
-function testCountInPeriod() {
+jsunitRegister('testCountInPeriod', function testCountInPeriod() {
   //        January 2006
   //  Su Mo Tu We Th Fr Sa
   //   1  2  3  4  5  6  7
@@ -190,9 +190,9 @@ function testCountInPeriod() {
   assertEquals(4, time_util.countInPeriod(WeekDay.TH, WeekDay.WE, 28));
   assertEquals(4, time_util.countInPeriod(WeekDay.FR, WeekDay.WE, 28));
   assertEquals(4, time_util.countInPeriod(WeekDay.SA, WeekDay.WE, 28));
-}
+});
 
-function testInvertWeekdayNum() {
+jsunitRegister('testInvertWeekdayNum', function testInvertWeekdayNum() {
 
   //        January 2006
   //  # Su Mo Tu We Th Fr Sa
@@ -253,4 +253,4 @@ function testInvertWeekdayNum() {
       3,
       time_util.invertWeekdayNum(
           new WeekDayNum(-2, WeekDay.WE), WeekDay.WE, 28));
-}
+});

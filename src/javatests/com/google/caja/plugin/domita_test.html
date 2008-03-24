@@ -13,7 +13,6 @@
  - See the License for the specific language governing permissions and
  - limitations under the License.
 -->
-
 <html>
   <head>
     <title>Domita</title>
@@ -23,10 +22,17 @@
     </style>
 
     <script src="../caja.js" onerror="console.error(this.src)"></script>
+    <script src="jsunit.js"></script>
+    <script src="asserts.js"></script>
     <script src="unicode.js" onerror="console.error(this.src)"></script>
     <script src="html4-defs.js" onerror="console.error(this.src)"></script>
     <script src="html-sanitizer.js" onerror="console.error(this.src)"></script>
     <script src="domita.js" onerror="console.error(this.src)"></script>
+
+  </head>
+
+  <body onload="jsunitRun()" bgcolor="white">
+    <div id="console-results"></div>
 
     <script type="text/javascript">
       var testOuters = ___.copy(___.sharedOuters);
@@ -43,18 +49,8 @@
            },
            testOuters);
       console.log('attached stubs');
-    </script>
 
-    <script src="domita_test_cajoled.js" onerror="console.error(this.src)"
-     ></script>
-
-    <script type="text/javascript">
-      for (var k in testOuters) {
-        if (/^test/.test(k) && !/___$/.test(k)
-            && 'function' === typeof testOuters[k]) {
-          this[k] = testOuters[k];
-        }
-      }
+      testOuters.jsunitRegister = ___.simpleFunc(jsunitRegister);
       testOuters.console = {
         log: function () { console.log.apply(console, arguments); },
         warn: function () { console.warn.apply(console, arguments); },
@@ -63,6 +59,13 @@
       };
       ___.all2(___.allowCall, testOuters.console,
                ['log', 'warn', 'error', 'trace']);
+    </script>
+
+    <script src="domita_test_cajoled.js" onerror="console.error(this.src)"
+     ></script>
+
+    <script type="text/javascript">
+      window.toString = function () { return '[WINDOW]'; };
 
       // Give unfiltered DOM access so we can check the results of actions.
       testOuters.directAccess = {
@@ -85,11 +88,7 @@
       };
       ___.simpleFunc(testOuters.pass, 'pass');
     </script>
-    <script src="asserts.js"></script>
-    <script src="jsunit.js"></script>
-  </head>
 
-  <body onload="jsunitRun()" bgcolor="white">
     <div id="xyz-test-get-element-by-id" class="testcontainer"></div>
     <div id="xyz-test-get-element-by-id-2" class="testcontainer"></div>
 
@@ -97,7 +96,7 @@
 
     <table id="xyz-test-element-id" class="testcontainer"></table>
 
-    <table id="xyz-test-create-element" class="testcontainer"></table>
+    <span id="xyz-test-create-element" class="testcontainer"></span>
 
     <div id="xyz-test-inner-html" class="testcontainer"
      ><a id="bar" href="http://foo.com?a=b&c=d" class="link" title="<click me!>"
@@ -118,6 +117,6 @@
       <li>Three
         <ol><li>Pi</li><li>sqrt(10)</li>
     </ol>
-    
+
   </body>
 </html>

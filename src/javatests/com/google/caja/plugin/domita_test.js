@@ -12,7 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-function testGetElementById() {
+/**
+ * Canonicalize well formed innerHTML output, by making sure that attributes
+ * are ordered by name, and have quoted values.
+ *
+ * Without this step, it's impossible to compare innerHTML cross-browser.
+ */
+function canonInnerHtml(s) {
+  // Sort attributes.
+  s = s.replace(
+      /(<\w+)\s+([^\s>][^>]*)>/g,
+      function (_, tagStart, tagBody) {
+        var attrs = [];
+        for (var m; (m = tagBody.match(
+                 /^\s*(\w+)(?:\s*=\s*("[^\"]*"|'[^\']*'|[^\'\"\s>]+))?/));) {
+          var value = m[2] && !/^[\"\']/.test(m[2]) ? '"' + m[2] + '"' : m[2];
+          attrs.push(m[1] + (value ? '=' + value : ''));
+          tagBody = tagBody.substring(m[0].length);
+        }
+        attrs.sort();
+        return tagStart + ' ' +attrs.join(' ') + '>';
+      });
+  s = s.replace(
+      /(<\/?)(\w+)([^>]*)>/g,
+      function (_, open, name, body) {
+        return open + name.toLowerCase() + body + '>';
+      });
+  // Remove ignorable whitespace.
+  return s.replace(/^[ \t]*(\r\n?|\n)|\s+$/g, '');
+}
+
+jsunitRegister('testGetElementById',
+               function testGetElementById() {
   assertEquals(null, document.getElementById('foo'));
   assertEquals(null, document.getElementById('bar'));
   assertEquals(null, document.getElementById('no_such_node'));
@@ -21,17 +52,19 @@ function testGetElementById() {
   assertTrue(document.getElementById('test-get-element-by-id-2') != null);
 
   pass('test-get-element-by-id');
-}
+});
 
-function testElementId() {
+jsunitRegister('testElementId',
+               function testElementId() {
   var el = document.getElementById('test-element-id');
   assertEquals('test-element-id', el.id);
   assertEquals('test-element-id', el.getAttribute('id'));
 
   pass('test-element-id');
-}
+});
 
-function testCreateElement() {
+jsunitRegister('testCreateElement',
+               function testCreateElement() {
   var newNode = document.createElement('DIV');
   assertEquals('', newNode.id);
   newNode.id = 'newNodeId';
@@ -61,19 +94,20 @@ function testCreateElement() {
   assertEquals('howdy &lt;there&gt;', newNode.innerHTML);
 
   pass('test-create-element');
-}
+});
 
-function testInnerHtml() {
+jsunitRegister('testInnerHtml',
+               function testInnerHtml() {
   var container = document.getElementById('test-inner-html');
 
   // Strips out non-prefixed id from link, and target=_parent.
   // Leaves id for <em> but strips the prefix.
   // Escapes trailing title, href, and > after </em>.
   assertEquals(
-      '<A HREF="http://foo.com?a=b&amp;c=d" CLASS="link"'
-      + ' TITLE="&lt;click me!&gt;">'
-      + 'Test <EM ID="em">Not</EM>&gt; run yet.</A>\n    ',
-      container.innerHTML);
+      '<a class="link" href="http://foo.com?a=b&amp;c=d"'
+      + ' title="&lt;click me!&gt;">'
+      + 'Test <em id="em">Not</em>&gt; run yet.</a>',
+      canonInnerHtml(container.innerHTML));
 
   // Set innerHTML
   container.innerHTML = (
@@ -82,29 +116,32 @@ function testInnerHtml() {
       + 'A & B &amp; C<</a >');
 
   assertEquals(
-      '<a id="xyz-foo" class="green blue" href="'
-      + 'http://gadget-proxy/?url=http%3A%2F%2Fbar.com%2Fbaz&amp;mimeType=*%2F*'
-      + '" title="A link" target="_blank">A &amp; B &amp; C&lt;</a>',
-      directAccess.getInnerHTML(container));
+      '<a class="green blue" href="http://gadget-proxy/'
+      + '?url=http%3A%2F%2Fbar.com%2Fbaz&amp;mimeType=*%2F*" id="xyz-foo"'
+      + ' target="_blank" title="A link">A &amp; B &amp; C&lt;</a>',
+      canonInnerHtml(directAccess.getInnerHTML(container)));
 
   pass('test-inner-html');
-}
+});
 
-function testForms() {
+jsunitRegister('testForms',
+               function testForms() {
   var form = document.createElement('FORM');
   assertEquals('return false', directAccess.getAttribute(form, 'onsubmit'));
 
   var container = document.getElementById('test-forms');
-  container.innerHTML = '<form onsubmit="foo()"><input type="submit"></form>';
+  container.innerHTML = '<form onsubmit="foo()">'
+      + '<input type="submit" value="Submit"></form>';
 
   assertEquals('<form onsubmit=\''
                + 'try { plugin_dispatchEvent___'
                + '(this, event || window.event, 0, "foo");'
-               + ' } finally { return false; }\'><input type="submit"></form>',
-               directAccess.getInnerHTML(container));
+               + ' } finally { return false; }\'>'
+               + '<input type="submit" value="Submit"></form>',
+               canonInnerHtml(directAccess.getInnerHTML(container)));
 
   pass('test-forms');
-}
+});
 
 function foo() {
   var container = document.getElementById('test-forms');
@@ -113,7 +150,8 @@ function foo() {
   container.appendChild(div);
 }
 
-function testCantLoadScript() {
+jsunitRegister('testCantLoadScript',
+               function testCantLoadScript() {
   try {
     document.createElement('SCRIPT');
     fail('successfully created a script tag');
@@ -142,9 +180,10 @@ function testCantLoadScript() {
     // pass
   }
   pass('test-no-script');
-}
+});
 
-function testAddEventListener() {
+jsunitRegister('testAddEventListener',
+               function testAddEventListener() {
   var container = document.getElementById('test-add-event-listener');
   container.addEventListener(
       'click',
@@ -154,9 +193,10 @@ function testAddEventListener() {
         assertEquals('click', event.type);
         pass('test-add-event-listener');
       });
-}
+});
 
-function testGetElementsByTagName() {
+jsunitRegister('testGetElementsByTagName',
+               function testGetElementsByTagName() {
   var container = document.getElementById('test-get-elements-by-tag-name');
   var items = container.getElementsByTagName('li');
   assertEquals(5, items.length);
@@ -169,4 +209,4 @@ function testGetElementsByTagName() {
   assertEquals('Pi', items[3].innerHTML.replace(/^\s+|\s+$/g, ''));
   assertEquals('sqrt(10)', items[4].innerHTML.replace(/^\s+|\s+$/g, ''));
   pass('test-get-elements-by-tag-name');
-}
+});

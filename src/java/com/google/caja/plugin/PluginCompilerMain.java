@@ -341,50 +341,50 @@ public final class PluginCompilerMain {
 }
 
 final class FileSystemEnvironment implements PluginEnvironment {
- private final File directory;
+  private final File directory;
 
- FileSystemEnvironment(File directory) {
-   this.directory = directory;
- }
+  FileSystemEnvironment(File directory) {
+    this.directory = directory;
+  }
  
- public CharProducer loadExternalResource(
-     ExternalReference ref, String mimeType) {
-   File f = toFileUnderSameDirectory(ref.getUri());
-   if (f == null) { return null; }
-   try {
-     return CharProducer.Factory.create(
-         new InputStreamReader(new FileInputStream(f), "UTF-8"),
-         new InputSource(f.toURI()));
-   } catch (UnsupportedEncodingException ex) {
-     throw new AssertionError(ex);
-   } catch (FileNotFoundException ex) {
-     return null;
-   }
- }
+  public CharProducer loadExternalResource(
+      ExternalReference ref, String mimeType) {
+    File f = toFileUnderSameDirectory(ref.getUri());
+    if (f == null) { return null; }
+    try {
+      return CharProducer.Factory.create(
+          new InputStreamReader(new FileInputStream(f), "UTF-8"),
+          new InputSource(f.toURI()));
+    } catch (UnsupportedEncodingException ex) {
+      throw new AssertionError(ex);
+    } catch (FileNotFoundException ex) {
+      return null;
+    }
+  }
 
- public String rewriteUri(ExternalReference ref, String mimeType) {
-   File f = toFileUnderSameDirectory(ref.getUri());
-   if (f == null) { return null; }
-   return f.toURI().relativize(directory.toURI()).toString();
- }
+  public String rewriteUri(ExternalReference ref, String mimeType) {
+    File f = toFileUnderSameDirectory(ref.getUri());
+    if (f == null) { return null; }
+    return new File(directory, ".").toURI().relativize(f.toURI()).toString();
+  }
 
- private File toFileUnderSameDirectory(URI uri) {
-   if (!uri.isAbsolute()
-       && !uri.isOpaque()
-       && uri.getScheme() == null
-       && uri.getAuthority() == null
-       && uri.getFragment() == null
-       && uri.getPath() != null
-       && uri.getQuery() == null
-       && uri.getFragment() == null) {
-     File f = new File(new File(directory, ".").toURI().resolve(uri));
-     // Check that f is a descendant of directory
-     for (File tmp = f; tmp != null; tmp = tmp.getParentFile()) {
-       if (directory.equals(tmp)) {
-         return f;
-       }
-     }
-   }
-   return null;
- }
+  private File toFileUnderSameDirectory(URI uri) {
+    if (!uri.isAbsolute()
+        && !uri.isOpaque()
+        && uri.getScheme() == null
+        && uri.getAuthority() == null
+        && uri.getFragment() == null
+        && uri.getPath() != null
+        && uri.getQuery() == null
+        && uri.getFragment() == null) {
+      File f = new File(new File(directory, ".").toURI().resolve(uri));
+      // Check that f is a descendant of directory
+      for (File tmp = f; tmp != null; tmp = tmp.getParentFile()) {
+        if (directory.equals(tmp)) {
+          return f;
+        }
+      }
+    }
+    return null;
+  }
 }

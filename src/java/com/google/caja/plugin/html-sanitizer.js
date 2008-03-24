@@ -34,7 +34,7 @@ var html = (function () {
   var decimalEscapeRe = /^#(\d+)$/;
   var hexEscapeRe = /^#x([0-9A-F]+)$/;
   function lookupEntity(name) {
-    name = name.toUpperCase();
+    name = name.toUpperCase();  // TODO: &pi; is different from &Pi;
     if (ENTITIES.hasOwnProperty(name)) { return ENTITIES[name]; }
     var m = name.match(decimalEscapeRe);
     if (m) {
@@ -157,7 +157,8 @@ var html = (function () {
 
         if (inTag) {
           if (m[1]) { // attribute
-            var attribName = m[1].toUpperCase();
+            // setAttribute with uppercase names doesn't work on IE6.
+            var attribName = m[1].toLowerCase();
             var encodedValue = m[2] || m[3] || m[4];
             var decodedValue;
             if (encodedValue != null) {  // Matches null & undefined
@@ -165,7 +166,7 @@ var html = (function () {
             } else {
               // Use name as value for valueless attribs, so
               //   <input type=checkbox checked>
-              // gets attributes ['TYPE', 'checkbox', 'CHECKED', 'CHECKED']
+              // gets attributes ['type', 'checkbox', 'checked', 'checked']
               decodedValue = attribName;
             }
             attribs.push(attribName, decodedValue);
@@ -181,7 +182,7 @@ var html = (function () {
             if (openTag
                 && (eflags & (html4.eflags.CDATA | html4.eflags.RCDATA))) {
               if (htmlUpper === null) {
-                htmlUpper = htmlText.toUpperCase();
+                htmlUpper = htmlText.toLowerCase();
               } else {
                 htmlUpper = htmlUpper.substring(
                     htmlUpper.length - htmlText.length);
@@ -209,7 +210,7 @@ var html = (function () {
           } else if (m[3]) {  // Tag
             openTag = !m[2];
             inTag = true;
-            tagName = m[3].toUpperCase();
+            tagName = m[3].toLowerCase();
             eflags = html4.ELEMENTS.hasOwnProperty(tagName)
                 ? html4.ELEMENTS[tagName] : undefined;
           } else if (m[4]) {  // Text

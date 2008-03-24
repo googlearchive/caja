@@ -297,7 +297,7 @@
         <include name="**/caja/plugin/gxpcompilerinput3.gxp"/>
         <include name="**/caja/plugin/gxpcompilerinput4.gxp"/>
         <include name="**/caja/plugin/html-sanitizer-test.js"/>
-        <include name="**/caja/plugin/test-sanitize.html"/>
+        <include name="**/caja/plugin/html-sanitizer-test.html"/>
         <include name="**/caja/plugin/jsunit.js"/>
         <include name="**/caja/plugin/plugintest-csstest.golden"/>
         <include name="**/caja/plugin/plugintest-csstest.input"/>

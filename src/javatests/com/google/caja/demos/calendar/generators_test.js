@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-function testSerialYearGenerator1() {
+jsunitRegister('testSerialYearGenerator1', function testSerialYearGenerator1() {
   var dtStart = time.date(2008, 6, 15);
   var g = generators.serialYearGenerator(1, dtStart);
   g.reset();
@@ -27,9 +27,9 @@ function testSerialYearGenerator1() {
   assertTrue(g.generate(builder));
   assertEquals('20110616', time.toIcal(builder[0]));
   assertTrue(g.generate(builder));
-}
+});
 
-function testSerialYearGenerator2() {
+jsunitRegister('testSerialYearGenerator2', function testSerialYearGenerator2() {
   var dtStart = time.date(2008, 6, 15);
   var g = generators.serialYearGenerator(4, dtStart);
   g.reset();
@@ -44,9 +44,9 @@ function testSerialYearGenerator2() {
   assertTrue(g.generate(builder));
   assertEquals('20200616', time.toIcal(builder[0]));
   assertTrue(g.generate(builder));
-}
+});
 
-function testSerialYearGeneratorOverflow() {
+jsunitRegister('testSerialYearGeneratorOverflow', function testSerialYearGeneratorOverflow() {
   var dtStart = time.date(2008, 6, 15);
   var g = generators.serialYearGenerator(500, dtStart);
   g.reset();
@@ -63,9 +63,9 @@ function testSerialYearGeneratorOverflow() {
   assertTrue(g.generate(builder));
   assertEquals('40080616', time.toIcal(builder[0]));
   assertFalse(g.generate(builder));
-}
+});
 
-function testYearGeneratorThrottled() {
+jsunitRegister('testYearGeneratorThrottled', function testYearGeneratorThrottled() {
   var dtStart = time.date(2008, 6, 15);
   var g = generators.serialYearGenerator(2, dtStart);
   g.reset();
@@ -94,9 +94,9 @@ function testYearGeneratorThrottled() {
     assertTrue(g.generate(builder));
   }
   assertEquals('22060616', time.toIcal(builder[0]));
-}
+});
 
-function testSerialMonthGenerator1() {
+jsunitRegister('testSerialMonthGenerator1', function testSerialMonthGenerator1() {
   var dtStart = time.date(2008, 6, 15);
   var g = generators.serialMonthGenerator(1, dtStart);
   g.reset();
@@ -128,10 +128,10 @@ function testSerialMonthGenerator1() {
   builder[0] = time.date(2008, 1, 12);  // Start at dtStart month regardless
   assertTrue(g.generate(builder));
   assertEquals('20080612', time.toIcal(builder[0]));
-}
+});
 
 
-function testSerialMonthGenerator2() {
+jsunitRegister('testSerialMonthGenerator2', function testSerialMonthGenerator2() {
   var dtStart = time.date(2008, 6, 15);
   // test an interval coprime with 12
   var g = generators.serialMonthGenerator(5, dtStart);
@@ -155,9 +155,9 @@ function testSerialMonthGenerator2() {
   builder[0] = time.date(2011, 11, 16);
   assertTrue(g.generate(builder));
   assertEquals('20110516', time.toIcal(builder[0]));
-}
+});
 
-function testSerialMonthGenerator3() {
+jsunitRegister('testSerialMonthGenerator3', function testSerialMonthGenerator3() {
   var dtStart = time.date(2008, 6, 15);
   // test an interval over a year
   var g = generators.serialMonthGenerator(17, dtStart);
@@ -180,9 +180,9 @@ function testSerialMonthGenerator3() {
   assertTrue(g.generate(builder));
   assertEquals('20110416', time.toIcal(builder[0]));
   assertFalse(g.generate(builder));
-}
+});
 
-function testByMonthGenerator() {
+jsunitRegister('testByMonthGenerator', function testByMonthGenerator() {
   var dtStart = time.date(2008, 6, 15);
   // test an interval over a year
   var g = generators.byMonthGenerator([3, 2, 7, 7], dtStart);
@@ -214,9 +214,9 @@ function testByMonthGenerator() {
   assertTrue(g.generate(builder));
   assertEquals('20100716', time.toIcal(builder[0]));
   assertFalse(g.generate(builder));
-}
+});
 
-function testSerialDayGenerator() {
+jsunitRegister('testSerialDayGenerator', function testSerialDayGenerator() {
   var dtStart = time.date(2008, 6, 17);
   var g = generators.serialDayGenerator(4, dtStart);
   g.reset();
@@ -236,9 +236,9 @@ function testSerialDayGenerator() {
   assertTrue(g.generate(builder));
   assertEquals('20080703', time.toIcal(builder[0]));
   assertTrue(g.generate(builder));
-}
+});
 
-function testByMonthDayGenerator() {
+jsunitRegister('testByMonthDayGenerator', function testByMonthDayGenerator() {
   var dtStart = time.date(2008, 6, 17);
   var g = generators.byMonthDayGenerator([1, 15, -2, -1, 29, 15], dtStart);
   g.reset();
@@ -266,9 +266,9 @@ function testByMonthDayGenerator() {
   assertTrue(g.generate(builder));
   assertEquals('20080731', time.toIcal(builder[0]));
   assertFalse(g.generate(builder));
-}
+});
 
-function testByDayGeneratorInMonth() {
+jsunitRegister('testByDayGeneratorInMonth', function testByDayGeneratorInMonth() {
   // $ cal 6 2008
   //      June 2008
   // Su Mo Tu We Th Fr Sa
@@ -326,9 +326,9 @@ function testByDayGeneratorInMonth() {
   assertTrue(g.generate(builder));
   assertEquals('20080727', time.toIcal(builder[0]));
   assertFalse(g.generate(builder));
-}
+});
 
-function testByWeekNoGenerator1() {
+jsunitRegister('testByWeekNoGenerator1', function testByWeekNoGenerator1() {
   // $ cal 6 2008
   //      June 2008
   // Su Mo Tu We Th Fr Sa
@@ -363,9 +363,9 @@ function testByWeekNoGenerator1() {
   assertTrue(g.generate(builder));
   assertEquals('20080630', time.toIcal(builder[0]));
   assertFalse(g.generate(builder));
-}
+});
 
-function testByWeekNoGenerator2() {
+jsunitRegister('testByWeekNoGenerator2', function testByWeekNoGenerator2() {
   // $ ncal -w 6 2008
   //     June 2008
   // Mo     2  9 16 23 30
@@ -400,9 +400,9 @@ function testByWeekNoGenerator2() {
   assertTrue(g.generate(builder));
   assertEquals('20080630', time.toIcal(builder[0]));
   assertFalse(g.generate(builder));
-}
+});
 
-function testByYearDayGenerator() {
+jsunitRegister('testByYearDayGenerator', function testByYearDayGenerator() {
   var dtStart = time.date(2008, 6, 17);
   var g = generators.byYearDayGenerator([2, 165, -350, -1, -1, -1], dtStart);
   g.reset();
@@ -423,4 +423,4 @@ function testByYearDayGenerator() {
   assertTrue(g.generate(builder));
   assertEquals('20090116', time.toIcal(builder[0]));  // -350
   assertFalse(g.generate(builder));
-}
+});

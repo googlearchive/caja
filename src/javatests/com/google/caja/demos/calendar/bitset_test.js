@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-function testEmptyBitSet() {
+jsunitRegister('testEmptyBitSet', function testEmptyBitSet() {
   var bs = bitset.makeBitSet(0);
   assertFalse(bitset.getBit(bs, 0));
   assertFalse(bitset.getBit(bs, 1));
@@ -33,9 +33,10 @@ function testEmptyBitSet() {
   assertEquals(32, bitset.nextClearBit(bs, 32));
   assertEquals(33, bitset.nextClearBit(bs, 33));
   assertEquals('[BitSet]', bitset.toString(bs));
-}
+});
 
-function testPreallocedEmptyBitSet() {
+jsunitRegister(
+    'testPreallocedEmptyBitSet', function testPreallocedEmptyBitSet() {
   var bs = bitset.makeBitSet(1);
   assertFalse(bitset.getBit(bs, 0));
   assertFalse(bitset.getBit(bs, 1));
@@ -56,9 +57,9 @@ function testPreallocedEmptyBitSet() {
   assertEquals(32, bitset.nextClearBit(bs, 32));
   assertEquals(33, bitset.nextClearBit(bs, 33));
   assertEquals('[BitSet 00000000]', bitset.toString(bs));
-}
+});
 
-function testSparseBitSet() {
+jsunitRegister('testSparseBitSet', function testSparseBitSet() {
   var bs = bitset.makeBitSet(16);
   // setup bitset
   //          LSB
@@ -156,9 +157,9 @@ function testSparseBitSet() {
   bitset.clearAll(bs);
   assertEquals(-1, bitset.nextSetBit(bs, 0));
   assertEquals('[BitSet 00000000 00000000]', bitset.toString(bs));
-}
+});
 
-function testDenseBitSet() {
+jsunitRegister('testDenseBitSet', function testDenseBitSet() {
   var bs = bitset.makeBitSet(16);
   // setup bitset
   //          LSB
@@ -252,4 +253,4 @@ function testDenseBitSet() {
   bitset.clearAll(bs);
   assertEquals(-1, bitset.nextSetBit(bs, 0));
   assertEquals('[BitSet 00000000 00000000]', bitset.toString(bs));
-}
+});

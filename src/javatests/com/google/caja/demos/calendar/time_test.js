@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-function testParseIcal() {
+jsunitRegister('testParseIcal', function testParseIcal() {
   assertEquals(
       '20061125', time.date(2006, 11, 25), time.parseIcal('20061125'));
   assertEquals(
@@ -47,9 +47,9 @@ function testParseIcal() {
       // pass
     }
   }
-}
+});
 
-function testDate() {
+jsunitRegister('testDate', function testDate() {
   assertEquals(time.date(2006, 1, 1), time.date(2006, 1, 1));
   assertLessThan(time.date(2006, 1, 1), time.date(2006, 1, 2));
   assertLessThan(time.date(2006, 1, 1), time.date(2006, 2, 1));
@@ -61,9 +61,9 @@ function testDate() {
   assertLessThan(time.date(1, 1, 1), time.date(1, 2, 1));
   assertLessThan(time.date(0, 12, 31), time.date(1, 1, 1));
   assertLessThan(time.MIN_DATE_VALUE, time.MAX_DATE_VALUE);
-}
+});
 
-function testDateTime() {
+jsunitRegister('testDateTime', function testDateTime() {
   assertEquals(
       time.dateTime(2006, 1, 1, 0, 0), time.dateTime(2006, 1, 1, 0, 0));
   assertLessThan(
@@ -94,9 +94,9 @@ function testDateTime() {
   // comparing date and date times
   assertLessThan(time.date(2006, 1, 1), time.dateTime(2006, 1, 1, 0, 0));
   assertLessThan(time.dateTime(2006, 1, 1, 12, 59), time.date(2006, 1, 2));
-}
+});
 
-function testNormalizedDate() {
+jsunitRegister('testNormalizedDate', function testNormalizedDate() {
   assertEquals('20060301', time.toIcal(time.normalizedDate(2006,  2, 29)));
   assertEquals('20071001', time.toIcal(time.normalizedDate(2006, 22, 1)));
   assertEquals('20050801', time.toIcal(time.normalizedDate(2006, -4, 1)));
@@ -117,9 +117,9 @@ function testNormalizedDate() {
 
   assertEquals('20330831', time.toIcal(time.normalizedDate(2006, 4, 10015)));
   assertEquals('19781128', time.toIcal(time.normalizedDate(2006, 4, -9985)));
-}
+});
 
-function testNormalizedDateTime() {
+jsunitRegister('testNormalizedDateTime', function testNormalizedDateTime() {
   assertEquals('20060301T120000',
                time.toIcal(time.normalizedDateTime(2006,  2, 29, 12, 0)));
   assertEquals('20060301T000000',
@@ -134,17 +134,17 @@ function testNormalizedDateTime() {
                time.toIcal(time.normalizedDateTime(2006,  3, 1, -1, 30)));
   assertEquals('20051231T233000',
                time.toIcal(time.normalizedDateTime(2006,  1, 1, -1, 30)));
-}
+});
 
-function testYear() {
+jsunitRegister('testYear', function testYear() {
   assertEquals(2006, time.year(time.date(2006, 1, 1)));
   assertEquals(2006, time.year(time.dateTime(2006, 1, 1, 12, 0)));
   assertEquals(1900, time.year(time.date(1900, 1, 1)));
   assertEquals(4000, time.year(time.date(4000, 1, 1)));
   assertEquals(50, time.year(time.date(50, 1, 1)));
-}
+});
 
-function testMonth() {
+jsunitRegister('testMonth', function testMonth() {
   assertEquals(1, time.month(time.date(2006, 1, 1)));
   assertEquals(2, time.month(time.date(2006, 2, 1)));
   assertEquals(3, time.month(time.date(2006, 3, 1)));
@@ -158,17 +158,17 @@ function testMonth() {
   assertEquals(11, time.month(time.date(2006, 11, 1)));
   assertEquals(12, time.month(time.date(2006, 12, 1)));
   assertEquals(6, time.month(time.dateTime(2006, 6, 1, 12, 59)));
-}
+});
 
-function testDay() {
+jsunitRegister('testDay', function testDay() {
   assertEquals(31, time.day(time.date(2006, 1, 31)));
   assertEquals(27, time.day(time.dateTime(2006, 1, 27, 12, 0)));
   assertEquals(12, time.day(time.date(2006, 1, 12)));
   assertEquals(14, time.day(time.date(3000, 9, 14)));
   assertEquals(15, time.day(time.date(-47, 3, 15)));
-}
+});
 
-function testHourMinuteMinuteInDay() {
+jsunitRegister('testHourMinuteMinuteInDay', function testHourMinuteMinuteInDay() {
   // combined tests for 3 accessors into one method to get around
   // 32K bytecode limit for classes
   assertEquals(0, time.hour(time.dateTime(2006, 1, 31, 0, 0)));
@@ -188,9 +188,9 @@ function testHourMinuteMinuteInDay() {
   assertEquals(765, time.minuteInDay(time.dateTime(2006, 1, 12, 12, 45)));
   assertEquals(1110, time.minuteInDay(time.dateTime(3000, 9, 14, 18, 30)));
   assertEquals(1439, time.minuteInDay(time.dateTime(-47, 3, 15, 23, 59)));
-}
+});
 
-function testHasTime() {
+jsunitRegister('testHasTime', function testHasTime() {
   assertTrue(time.isDate(time.date(2006, 1, 1)));
   assertTrue(time.isDate(time.date(2006, 12, 31)));
   assertTrue(time.isDate(time.date(2006, 2, 28)));
@@ -201,9 +201,9 @@ function testHasTime() {
   assertFalse(time.isDate(time.dateTime(2006, 2, 28, 12, 59)));
   assertFalse(time.isDate(time.dateTime(2006, 2, 28, 0, 0)));
   assertFalse(time.isDate(time.dateTime(2006, 2, 29, 6, 30)));
-}
+});
 
-function testPlusDays() {
+jsunitRegister('testPlusDays', function testPlusDays() {
   assertEquals(
       '20080101', time.toIcal(time.plusDays(time.date(2008, 1, 1), 0)));
   assertEquals(
@@ -239,9 +239,9 @@ function testPlusDays() {
   assertEquals(
       '20080131T151500',
       time.toIcal(time.plusDays(time.dateTime(2008, 1, 1, 15, 15), 30)));
-}
+});
 
-function testNextDate() {
+jsunitRegister('testNextDate', function testNextDate() {
   assertEquals('20080101', time.toIcal(time.nextDate(time.date(2007, 12, 31))));
   assertEquals('20080102', time.toIcal(time.nextDate(time.date(2008, 1, 1))));
   assertEquals('20080103', time.toIcal(time.nextDate(time.date(2008, 1, 2))));
@@ -268,9 +268,9 @@ function testNextDate() {
   assertEquals(
       '20080201T123000',
       time.toIcal(time.nextDate(time.dateTime(2008, 1, 31, 12, 30))));
-}
+});
 
-function testDaysBetween() {
+jsunitRegister('testDaysBetween', function testDaysBetween() {
   assertEquals(   0,
       time.daysBetween(time.date(2003, 12, 31), time.date(2003, 12, 31)));
   assertEquals( -60,
@@ -355,9 +355,9 @@ function testDaysBetween() {
       time.daysBetween(time.date(2004, 1, 1), time.date(2005, 1, 1)));
   assertEquals(-365,
       time.daysBetween(time.date(2005, 1, 1), time.date(2006, 1, 1)));
-}
+});
 
-function testDayOfYear() {
+jsunitRegister('testDayOfYear', function testDayOfYear() {
   assertEquals(0, time.dayOfYear(time.date(2005, 1, 1)));
   assertEquals(31, time.dayOfYear(time.date(2006, 2, 1)));
   assertEquals(31 + 28, time.dayOfYear(time.date(2007, 3, 1)));
@@ -406,9 +406,9 @@ function testDayOfYear() {
   assertEquals(31 + 29 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30,
       time.dayOfYear(time.date(2044, 12, 1)));
   assertEquals(365, time.dayOfYear(time.date(2048, 12, 31)));
-}
+});
 
-function testToDateOnOrAfter() {
+jsunitRegister('testToDateOnOrAfter', function testToDateOnOrAfter() {
   assertEquals(
       '20080101',
       time.toIcal(time.toDateOnOrAfter(time.parseIcal('20080101'))));
@@ -438,9 +438,9 @@ function testToDateOnOrAfter() {
   assertEquals(
       '20080616',
       time.toIcal(time.toDateOnOrAfter(time.parseIcal('20080615T235900'))));
-}
+});
 
-function testWithYear() {
+jsunitRegister('testWithYear', function testWithYear() {
   assertEquals(
       '20070101',
       time.toIcal(time.withYear(time.date(2007, 1, 1), 2007)));
@@ -459,9 +459,9 @@ function testWithYear() {
   assertEquals(
       '30000401T124500',
       time.toIcal(time.withYear(time.dateTime(2007, 4, 1, 12, 45), 3000)));
-}
+});
 
-function testWithMonth() {
+jsunitRegister('testWithMonth', function testWithMonth() {
   assertEquals(
       '20070101',
       time.toIcal(time.withMonth(time.date(2007, 1, 1), 1)));
@@ -480,9 +480,9 @@ function testWithMonth() {
   assertEquals(
       '20071201T124500',
       time.toIcal(time.withMonth(time.dateTime(2007, 4, 1, 12, 45), 12)));
-}
+});
 
-function testWithDay() {
+jsunitRegister('testWithDay', function testWithDay() {
   assertEquals(
       '20070101',
       time.toIcal(time.withDay(time.date(2007, 1, 1), 1)));
@@ -501,9 +501,9 @@ function testWithDay() {
   assertEquals(
       '20070412T124500',
       time.toIcal(time.withDay(time.dateTime(2007, 4, 1, 12, 45), 12)));
-}
+});
 
-function testWithHour() {
+jsunitRegister('testWithHour', function testWithHour() {
   assertEquals(
       '20070401T124500',
       time.toIcal(time.withHour(time.dateTime(2007, 4, 1, 12, 45), 12)));
@@ -515,9 +515,9 @@ function testWithHour() {
       time.toIcal(time.withHour(time.dateTime(2007, 12, 31, 12, 45), 23)));
   assertEquals(
       '20071231', time.toIcal(time.withHour(time.date(2007, 12, 31), 23)));
-}
+});
 
-function testWithMinute() {
+jsunitRegister('testWithMinute', function testWithMinute() {
   assertEquals(
       '20070401T124500',
       time.toIcal(time.withMinute(time.dateTime(2007, 4, 1, 12, 45), 45)));
@@ -529,9 +529,9 @@ function testWithMinute() {
       time.toIcal(time.withMinute(time.dateTime(2007, 12, 31, 12, 45), 59)));
   assertEquals(
       '20071231', time.toIcal(time.withMinute(time.date(2007, 12, 31), 23)));
-}
+});
 
-function testWithTime() {
+jsunitRegister('testWithTime', function testWithTime() {
   assertEquals(
       '20070401T124500',
       time.toIcal(time.withTime(time.dateTime(2007, 4, 1, 12, 45), 12, 45)));
@@ -545,4 +545,4 @@ function testWithTime() {
       '20071231T061500',
       time.toIcal(time.withTime(time.date(2007, 12, 31), 6, 15)));
 
-}
+});

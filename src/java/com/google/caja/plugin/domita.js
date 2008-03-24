@@ -167,23 +167,23 @@ attachDocumentStub = (function () {
   // See above for a description of this function.
   function attachDocumentStub(idPrefix, uriCallback, outers) {
     var elementPolicies = {};
-    elementPolicies.FORM = function (attribs) {
+    elementPolicies.form = function (attribs) {
       // Forms must have a gated onsubmit handler or they must have an
       // external target.
       var sawHandler = false;
       for (var i = 0, n = attribs.length; i < n; i += 2) {
-        if (attribs[i] === 'ONSUBMIT') {
+        if (attribs[i] === 'onsubmit') {
           sawHandler = true;
         }
       }
       if (!sawHandler) {
-        attribs.push('ONSUBMIT', 'return false');
+        attribs.push('onsubmit', 'return false');
       }
       return attribs;
     };
-    elementPolicies.A = elementPolicies.AREA = function (attribs) {
+    elementPolicies.a = elementPolicies.area = function (attribs) {
       // Anchor tags must have a target.
-      attribs.push('TARGET', '_blank');
+      attribs.push('target', '_blank');
       return attribs;
     };
 
@@ -234,7 +234,7 @@ attachDocumentStub = (function () {
           out.push('<', tagName);
           for (var i = 0; i < attribs.length; i += 2) {
             var attribName = attribs[i];
-            if (attribName === 'TARGET') { continue; }
+            if (attribName === 'target') { continue; }
             var atype = html4.ATTRIBS[attribName];
             var value = attribs[i + 1];
             if (atype === html4.atype.IDREF) {
@@ -285,7 +285,7 @@ attachDocumentStub = (function () {
           value = (doesReturn ? 'return ' : '') + 'plugin_dispatchEvent___('
               + 'this, event || window.event, ' + pluginId + ', "'
               + fnName + '");';
-          if (attribName === 'ONSUBMIT') {
+          if (attribName === 'onsubmit') {
             value = 'try { ' + value + ' } finally { return false; }';
           }
           return value;
@@ -332,11 +332,11 @@ attachDocumentStub = (function () {
       var tamed;
       switch (node.nodeType) {
         case 1:  // Element
-          switch (node.tagName.toUpperCase()) {
-            case 'FORM':
+          switch (node.tagName.toLowerCase()) {
+            case 'form':
               tamed = new TameFormElement(node, editable);
               break;
-            case 'INPUT':
+            case 'input':
               tamed = new TameInputElement(node, editable);
               break;
             default:
@@ -479,13 +479,13 @@ attachDocumentStub = (function () {
     }
     extend(TameElement, TameNode);
     TameElement.prototype.getId = function () {
-      return this.getAttribute('ID') || '';
+      return this.getAttribute('id') || '';
     };
     TameElement.prototype.setId = function (newId) {
-      return this.setAttribute('ID', newId);
+      return this.setAttribute('id', newId);
     };
     TameElement.prototype.getAttribute = function (name) {
-      name = String(name).toUpperCase();
+      name = String(name).toLowerCase();
       var type = html4.ATTRIBS[name];
       if (type === undefined || !html4.ATTRIBS.hasOwnProperty(name)) {
         return null;
@@ -506,7 +506,7 @@ attachDocumentStub = (function () {
     };
     TameElement.prototype.setAttribute = function (name, value) {
       if (!this.editable___) { throw new Error(); }
-      name = String(name).toUpperCase();
+      name = String(name).toLowerCase();
       var type = html4.ATTRIBS[name];
       if (type === undefined || !html4.ATTRIBS.hasOwnProperty(name)) {
         throw new Error();
@@ -526,7 +526,7 @@ attachDocumentStub = (function () {
     };
     TameElement.prototype.getTagName = TameNode.prototype.getNodeName;
     TameElement.prototype.getInnerHTML = function () {
-      var tagName = this.node___.tagName.toUpperCase();
+      var tagName = this.node___.tagName.toLowerCase();
       if (!html4.ELEMENTS.hasOwnProperty(tagName)) {
         return '';  // unknown node
       }
@@ -548,7 +548,7 @@ attachDocumentStub = (function () {
     };
     TameElement.prototype.setInnerHTML = function (html) {
       if (!this.editable___) { throw new Error(); }
-      var tagName = this.node___.tagName.toUpperCase();
+      var tagName = this.node___.tagName.toLowerCase();
       if (!html4.ELEMENTS.hasOwnProperty(tagName)) { throw new Error(); }
       var flags = html4.ELEMENTS[tagName];
       if (flags & html4.eflags.UNSAFE) { throw new Error(); }
@@ -596,16 +596,21 @@ attachDocumentStub = (function () {
       }
       name = String(name);
       if (this.node___.addEventListener) {
+        var wrappedListener = function (event) {
+          return plugin_dispatchEvent___(
+              this, event || window.event,
+              ___.getId(outers), listener);
+        };
         this.node___.addEventListener(
-            name,
-            function (event) {
-              return plugin_dispatchEvent___(
-                  this, event || window.event, ___.getId(outers),
-                  listener);
-            }, bubble === undefined ? undefined : Boolean(bubble));
+            name, wrappedListener,
+            bubble === undefined ? undefined : Boolean(bubble));
       } else {
-        var thisNode = this;
-        this.node___.attachEvent('on' + name, dispatcher);
+        var thisNode = this.node___;
+        var wrappedListener = function (event) {
+          return plugin_dispatchEvent___(
+              thisNode, event || window.event, ___.getId(outers), listener);
+        };
+        this.node___.attachEvent('on' + name, wrappedListener);
       }
     };
     TameElement.prototype.toString = function () {
@@ -734,7 +739,7 @@ attachDocumentStub = (function () {
     }
     TameDocument.prototype.createElement = function (tagName) {
       if (!this.editable___) { throw new Error(); }
-      tagName = String(tagName).toUpperCase();
+      tagName = String(tagName).toLowerCase();
       if (!html4.ELEMENTS.hasOwnProperty(tagName)) { throw new Error(); }
       var flags = html4.ELEMENTS[tagName];
       if (flags & html4.eflags.UNSAFE) { throw new Error(); }

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-function testWeekIntervalFilter() {
+jsunitRegister('testWeekIntervalFilter', function testWeekIntervalFilter() {
   // *s match those that are in the weeks that should pass the filter
 
   var f1 = filters.weekIntervalFilter(
@@ -73,4 +73,4 @@ function testWeekIntervalFilter() {
   assertTrue(!f2(time.parseIcal("20050924")));
   assertTrue( f2(time.parseIcal("20050925")));
   assertTrue( f2(time.parseIcal("20050926")));
-}
+});

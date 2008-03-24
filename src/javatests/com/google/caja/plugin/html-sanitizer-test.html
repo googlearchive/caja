@@ -12,23 +12,18 @@
  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  - See the License for the specific language governing permissions and
  - limitations under the License.
- -->
-
+-->
 <html>
-<head>
+  <head>
+    <title>HTML Sanitizer Tests</title>
+<script type="text/javascript" src="asserts.js"></script>
+<script type="text/javascript" src="jsunit.js"></script>
+<script type="text/javascript" src="html4-defs.js"></script>
+<script type="text/javascript" src="html-sanitizer.js"></script>
+<script type="text/javascript" src="html-sanitizer-test.js"></script>
+  </head>
 
-  <!-- TODO(mikesamuel): cajole the scripts so that for loops work.  -->
-  <!--script src="../../caja.js"></script-->
-  <script>var caja = { freeze: function (x) { return x; } };</script>
-
-  <script src="../../plugin/asserts.js"></script>
-  <script src="../../plugin/jsunit.js"></script>
-
-  <script src="time-cajita.js"></script>
-  <script src="time_test.js"></script>
-
-</head>
-<body>
-  <script>jsunitRun()</script>
-</body>
+  <body onload="jsunitRun()">
+    <div id="results"></div>
+  </body>
 </html>

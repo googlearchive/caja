@@ -117,6 +117,12 @@ public class RhinoTestBed {
         + StringLiteral.toQuotedValue(TestUtil.makeContentUrl(html.toString()))
         + ";";
     inputs.add(injectHtmlIndex, new Input(domJs, htmlResource));
+    inputs.add(new Input(
+        "(function () {\n"
+        + "   var onload = document.body.getAttribute('onload');\n"
+        + "   onload && eval(onload);\n"
+        + " })();", htmlResource));
+
 
     // Execute for side-effect
     runJs(null, inputs.toArray(new Input[0]));

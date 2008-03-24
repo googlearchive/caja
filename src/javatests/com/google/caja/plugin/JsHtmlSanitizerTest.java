@@ -25,15 +25,6 @@ import junit.framework.TestCase;
  */
 public final class JsHtmlSanitizerTest extends TestCase {
   public void testHtmlSanitizer() throws Exception {
-    RhinoTestBed.runJs(
-        null,
-        new RhinoTestBed.Input(getClass(), "html4-defs.js"),
-        new RhinoTestBed.Input(getClass(), "html-sanitizer.js"),
-        new RhinoTestBed.Input(getClass(), "asserts.js"),
-        new RhinoTestBed.Input(getClass(), "html-sanitizer-test.js"),
-        new RhinoTestBed.Input(getClass(), "console-stubs.js"),
-        new RhinoTestBed.Input(getClass(), "jsunit.js"),
-        new RhinoTestBed.Input(new StringReader("jsunitRun()"), getName())
-        );
+    RhinoTestBed.runJsUnittestFromHtml(getClass(), "html-sanitizer-test.html");
   }
 }

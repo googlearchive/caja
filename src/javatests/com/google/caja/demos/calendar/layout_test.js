@@ -95,7 +95,7 @@ function tearDown() {
   events = null;
 }
 
-function testDayView() {
+jsunitRegister('testDayView', function testDayView() {
   var start = time.date(2006, 1, 5),
         end = time.date(2006, 1, 6);
   var policy = new LayoutPolicy(1, start, 0);
@@ -124,9 +124,9 @@ function testDayView() {
                { eid: 'eid-P', col0: 0, col1: 1, row0: 44, row1: 48,
                  slot: '0+1/1' }
                ], layout.timedChips);
-}
+});
 
-function testWeekView() {
+jsunitRegister('testWeekView', function testWeekView() {
   var start = time.date(2006, 1, 1),
         end = time.date(2006, 1, 8);
   var policy = new LayoutPolicy(7, start, 0);
@@ -170,9 +170,9 @@ function testWeekView() {
                { eid: 'eid-P', col0: 4, col1: 5, row0: 44, row1: 48,
                  slot: '0+1/1' }
                ], layout.timedChips);
-}
+});
 
-function testWeekViewSansWeekends() {
+jsunitRegister('testWeekViewSansWeekends', function testWeekViewSansWeekends() {
   var start = time.date(2006, 1, 2), // advance start to skip Sunday
         end = time.date(2006, 1, 9);
   var policy = new LayoutPolicy(7, start, 2 /* skip 2 cols */);
@@ -215,9 +215,9 @@ function testWeekViewSansWeekends() {
                { eid: 'eid-P', col0: 3, col1: 4, row0: 44, row1: 48,
                  slot: '0+1/1' }
                ], layout.timedChips);
-}
+});
 
-function testMonthView() {
+jsunitRegister('testMonthView', function testMonthView() {
   //     0   1   2   3   4   5   6
   // 0   
   //
@@ -276,9 +276,9 @@ function testMonthView() {
                { col0:0, col1:1, eid:'eid-Q', row0:2, row1:3,
                  slot:'1+1/2' }
                ], layout.untimedChips);
-}
+});
 
-function testMonthViewMoreSlots() {
+jsunitRegister('testMonthViewMoreSlots', function testMonthViewMoreSlots() {
   //     0   1   2   3   4   5   6
   // 0   
   //
@@ -339,9 +339,10 @@ function testMonthViewMoreSlots() {
                { col0:0, col1:1, eid:'eid-Q', row0:2, row1:3,
                  slot:'1+1/2' }
                ], layout.untimedChips);
-}
+});
 
-function testMonthViewSansWeekends() {
+jsunitRegister(
+    'testMonthViewSansWeekends', function testMonthViewSansWeekends() {
   //     0   1   2   3   4
   // 0   
   //         
@@ -398,7 +399,7 @@ function testMonthViewSansWeekends() {
                  slot:'2+1/8' }
                // no second chip for Q since it only covers Sunday
                ], layout.untimedChips);
-}
+});
 
 function eventsIntersecting(start, end) {
   var intersecting = [];
