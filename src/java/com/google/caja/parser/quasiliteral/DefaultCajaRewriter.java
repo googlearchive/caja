@@ -243,7 +243,6 @@ public class DefaultCajaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("try { @s0*; } finally { @s1*; }", node, bindings)) {
-          TryStmt t = (TryStmt)node;
           return substV(
             "try { @s0*; } finally { @s1*; }",
             "s0",  expandAll(bindings.get("s0"), scope, mq),
@@ -316,21 +315,6 @@ public class DefaultCajaRewriter extends Rewriter {
                 node.getFilePosition(), this, node);
             return node;
           }
-        }
-        return NONE;
-      }
-    });
-
-    addRule(new Rule("varBadCtorLeak", this) {
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (match("@x", node, bindings) &&
-            bindings.get("x") instanceof Reference &&
-            scope.isConstructor(getReferenceName(bindings.get("x")))) {
-          mq.addMessage(
-              RewriterMessageType.CONSTRUCTORS_ARE_NOT_FIRST_CLASS,
-              node.getFilePosition(), this, node);
-          return node;
         }
         return NONE;
       }
@@ -1143,7 +1127,7 @@ public class DefaultCajaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         // Named simple function declaration
-        if (node.getClass() == FunctionDeclaration.class &&
+        if (node instanceof FunctionDeclaration &&
             match("function @f(@ps*) { @bs*; }", node.children().get(1), bindings)) {
           Scope s2 = Scope.fromFunctionConstructor(
               scope,
@@ -1173,9 +1157,11 @@ public class DefaultCajaRewriter extends Rewriter {
     addRule(new Rule("funcNamedSimpleValue", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        // Named simple function constructor
-        if (match(getPatternNode("function @f(@ps*) { @bs* }"), node, bindings)) {
-          Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node);
+        // Named simple function expression
+        if (match("function @f(@ps*) { @bs*; }", node, bindings)) {
+          Scope s2 = Scope.fromFunctionConstructor(
+              scope,
+              (FunctionConstructor)node);
           if (!s2.hasFreeThis()) {
             return substV(
                 "___.primFreeze(" +
@@ -1183,11 +1169,11 @@ public class DefaultCajaRewriter extends Rewriter {
                 "    function @f(@ps*) {" +
                 "      @fh*;" +
                 "      @bs*;" +
-                "}));",
+                "  }));",
+                "f", bindings.get("f"),
                 "ps", bindings.get("ps"),
-                "fh", getFunctionHeadDeclarations(this, s2, mq),
                 "bs", expand(bindings.get("bs"), s2, mq),
-                "f",  bindings.get("f"));
+                "fh", getFunctionHeadDeclarations(this, s2, mq));
           }
         }
         return NONE;
@@ -1201,8 +1187,10 @@ public class DefaultCajaRewriter extends Rewriter {
           Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node);
           if (s2.hasFreeThis()) {
             mq.addMessage(
-                RewriterMessageType. METHOD_IN_NON_METHOD_CONTEXT,
-                node.getFilePosition(), this, node);
+                RewriterMessageType.ANONYMOUS_FUNCTION_REFERENCES_THIS,
+                node.getFilePosition(), 
+                this, 
+                node);
             return node;
           }
         }
@@ -1210,89 +1198,79 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     });
 
-    addRule(new Rule("funcBadCtor", this) {
+    addRule(new Rule("funcCtor", this) {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        // This catches a case where a named function is *not* part of a declaration.
-        if (match("function @f(@ps*) { @bs*; }", node, bindings)) {
-          Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node);
+        boolean declaration = node instanceof FunctionDeclaration;
+        ParseTreeNode constructorNode = declaration ? node.children().get(1) : node;
+        if (match("function @f(@ps*) { @b; @bs*; }", constructorNode, bindings)) {
+          Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)constructorNode);
           if (s2.hasFreeThis()) {
-            mq.addMessage(
-                RewriterMessageType.CONSTRUCTOR_CANNOT_ESCAPE,
-                node.getFilePosition(), this, node);
-            return node;
-          }
-        }
-        return NONE;
-      }
-    });
-
-    addRule(new Rule("funcDerivedCtorDecl", this) {
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (node instanceof FunctionDeclaration &&
-            match(
-                "function @f(@ps*) { @sf.Super.call(this, @as*); @bs*; }",
-                node.children().get(1), bindings)) {
-          // The following test checks that Reference "@sf" has the same name as Identifier "@f":
-          Object fName = bindings.get("f").getValue();
-          Object sfName = bindings.get("sf").children().get(0).getValue();
-          if (fName.equals(sfName)) {
-            Scope argsScope = Scope.fromParseTreeNodeContainer(
-                scope,
-            (ParseTreeNodeContainer)bindings.get("as"));
-            if (!argsScope.hasFreeThis()) {
-              Scope s2 = Scope.fromFunctionConstructor(
-                  scope,
-                  (FunctionConstructor)node.children().get(1));
-              return expandDef(
-                  new Reference((Identifier)bindings.get("f")),
-                  substV(
-                      "___.ctor(function @f(@ps*) {" +
-                      "  @fh*;" +
-                      "  @sf.Super.call(@th, @as*);" +
-                      "  @bs*;" +
-                      "});",
-                      "f", bindings.get("f"),
-                      "ps", bindings.get("ps"),
-                      "fh", getFunctionHeadDeclarations(this, s2, mq),
-                      "sf", bindings.get("sf"),
-                      "as", expand(bindings.get("as"), s2, mq),
-                      "bs", expand(bindings.get("bs"), s2, mq),
-                      "th", new Reference(new Identifier(ReservedNames.LOCAL_THIS))),
-                  this,
-                  scope,
-                  mq);
+            ParseTreeNode bNode = bindings.get("b");
+            if (bNode instanceof ExpressionStmt) {
+              // Rebind bNode to the Expression part of the ExpressionStmt.
+              bNode = bNode.children().get(0);
             }
-          }
-        }
-        return NONE;
-      }
-    });
-
-    addRule(new Rule("funcCtorDecl", this) {
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (node instanceof FunctionDeclaration &&
-            match("function @f(@ps*) { @bs*; }", node.children().get(1), bindings)) {
-          Scope s2 = Scope.fromFunctionConstructor(
-              scope,
-              (FunctionConstructor)node.children().get(1));
-          if (s2.hasFreeThis()) {
-            return expandDef(
-                new Reference((Identifier)bindings.get("f")),
-                substV(
-                    "___.ctor(function @f(@ps*) {" +
-                    "  @fh*;" +
-                    "  @bs*;" +
-                    "});",
-                    "f", bindings.get("f"),
-                    "ps", bindings.get("ps"),
-                    "fh", getFunctionHeadDeclarations(this, s2, mq),
-                    "bs", expand(bindings.get("bs"), s2, mq)),
-                this,
-                scope,
-                mq);
+            Map<String, ParseTreeNode> superBindings = new LinkedHashMap<String, ParseTreeNode>();
+            // To subclass, the very first line must be a call to the super constructor,
+            // which must be a reference to a declared function.
+            if (match("@super.call(this, @params*);", bNode, superBindings) &&
+                s2.isDeclaredFunctionReference(superBindings.get("super"))){
+              Scope paramScope = Scope.fromParseTreeNodeContainer(
+                  s2, 
+                  (ParseTreeNodeContainer)superBindings.get("params"));
+              // The rest of the parameters must not contain "this".
+              if (paramScope.hasFreeThis()) {
+                mq.addMessage(
+                    RewriterMessageType.PARAMETERS_TO_SUPER_CONSTRUCTOR_MAY_NOT_CONTAIN_THIS,
+                    node.getFilePosition(), 
+                    this, 
+                    bNode);
+                return node;
+              }
+              // Expand the parameters, but not the call itself. 
+              bNode = new ExpressionStmt((Expression)substV(
+                  "@super.call(this, @params*);",
+                  "super", expandReferenceToOuters((Reference)superBindings.get("super"), s2, mq),
+                  "params", expand(superBindings.get("params"), s2, mq)));
+            } else {
+              // If it's not a call to a constructor, expand the entire node.
+              bNode = expand(bindings.get("b"), s2, mq);
+            }
+            Identifier f = (Identifier)bindings.get("f");
+            Reference fRef = new Reference(f);
+            Identifier f_init___ = new Identifier(f.getName() + "_init___");
+            Reference f_init___Ref = new Reference(f_init___);
+            ParseTreeNode result = substV(
+                "(function () {" +
+                "  ___.splitCtor(@fRef, @f_init___Ref);" +
+                "  function @f(var_args) { return new @fRef.make___(arguments); }" +
+                "  function @f_init(@ps*) {" +
+                "    @fh*;" +
+                "    @b;" +
+                "    @bs*;" +
+                "  }" +
+                "  return @fRef;" +
+                "})()",
+                "f", f,
+                "fRef", fRef,
+                "f_init", f_init___,
+                "f_init___Ref", f_init___Ref,
+                "ps", bindings.get("ps"),
+                "fh", getFunctionHeadDeclarations(this, s2, mq),
+                "b", bNode,
+                "bs", expand(bindings.get("bs"), s2, mq));
+            return declaration ?
+                // If it's a declaration, assign the result to a variable with the same name.
+                expandDef(
+                    new Reference((Identifier)bindings.get("f")),
+                    result,
+                    this,
+                    scope,
+                    mq) :
+                // If used in an expression, it's the first use, so we freeze it.
+                substV("___.primFreeze(@result);",
+                    "result", result);
           }
         }
         return NONE;

@@ -471,6 +471,7 @@ var ___;
    * the virtual <tt>Object.prototype.freeze_()</tt>.
    */
   function primFreeze(obj) {
+    if (undefined === obj) { throw new ReferenceError('The object "undefined" may not be frozen.'); }
     if (null === obj) { return obj; }
     if (isFrozen(obj)) { return obj; }
     var typ = typeof obj;
@@ -510,7 +511,7 @@ var ___;
     obj.___FROZEN___ = true;
     if (typ === 'function') {
       // Do last to avoid possible infinite recursion.
-      primFreeze(obj.prototype);
+      if (obj.prototype) { primFreeze(obj.prototype); }
     }
     return obj;
   }
@@ -549,6 +550,7 @@ var ___;
     return primFreeze(copy(obj));
   }
   
+
   ////////////////////////////////////////////////////////////////////////
   // Accessing property attributes
   ////////////////////////////////////////////////////////////////////////
@@ -616,23 +618,24 @@ var ___;
   ////////////////////////////////////////////////////////////////////////
   // Classifying functions
   ////////////////////////////////////////////////////////////////////////
-  
+
   function isCtor(constr)    { return !!constr.___CONSTRUCTOR___; }
-  function isMethod(meth)    { return '___METHOD_OF___' in meth; }
+  function isMethod(meth)    { return 'METHOD_OF___' in meth; }
   function isSimpleFunc(fun) { return !!fun.___SIMPLE_FUNC___; }
-  
-  /** 
-   * Mark constr as a constructor.
+
+  /**
+   * Mark <tt>constr</tt> as a constructor.
    * <p>
-   * If opt_Sup is provided, set constr.Super = opt_Sup.
+   * If <tt>opt_Sup</tt> is provided, set
+   * <pre>constr.Super = opt_Sup</pre>.
    * <p>
-   * A function is tamed and classified by calling one of ctor(),
-   * method(), or simpleFunc(). Each of these checks that the
-   * function hasn't already been classified by any of the others. A
-   * function which has not been so classified is an <i>untamed
-   * function</i>. 
+   * A function is tamed and classified by calling one of
+   * <tt>ctor()</tt>, <tt>method()</tt>, or <tt>simpleFunc()</tt>. Each
+   * of these checks that the function hasn't already been classified by
+   * any of the others. A function which has not been so classified is an
+   * <i>untamed function</i>.
    * <p>
-   * opt_name, if provided, should be the name of the constructor
+   * <tt>opt_name</tt>, if provided, should be the name of the constructor
    * function. Currently, this is used only to generate friendlier
    * error messages.
    */
@@ -642,7 +645,7 @@ var ___;
       fail("Methods can't be constructors: ", constr);
     }
     if (isSimpleFunc(constr)) {
-      fail("Simple functions can't be constructors: ", constr);
+      fail("Simple-functions can't be constructors: ", constr);
     }
     constr.___CONSTRUCTOR___ = true;
     if (opt_Sup) {
@@ -658,9 +661,61 @@ var ___;
         constr.Super = opt_Sup;
       }
     }
+    if (opt_name) {
+      constr.NAME___ = String(opt_name);
+    }
     return constr;  // translator freezes constructor later
   }
-  
+
+
+
+  /**
+   * Supports the split-translation for first-class constructors.
+   * <p>
+   * The split translation translates a constructor definition (which
+   * must not appear as an expression) like<pre>
+   *   function Point(x, y) {
+   *     this.x_ = x;
+   *     this.y_ = y;
+   * }</pre> into two function definitions and an initialization:<pre>
+   * var Point = (function () {
+   *     ___.splitCtor(Point, Point_init___);
+   *     function Point(var_args) {
+   *       return new Point.make___(arguments);
+   *     }
+   *     function Point_init___(x, y) {
+   *       var t___ = this;
+   *       (function () {
+   *           var x___ = x;
+   *           return t___.x__canSet___ ? (t___.x_ = x___) : ___.setProp(t___, 'x_', x___);
+   *         })();
+   *       (function () {
+   *           var x___ = y;
+   *           return t___.y__canSet___ ? (t___.y_ = x___) : ___.setProp(t___, 'y_', x___);
+   *         })();
+   *     }
+   *     return Point;
+   *   })();
+   * </pre>
+   * The result assigned to a variable of the same name (as above) if translating a 
+   * declaration; the result is frozen instead if the function is in expression context.
+   */
+  function splitCtor(constr, initer, opt_Sup, opt_name) {
+    ctor(constr, opt_Sup, opt_name);
+    constr.init___ = initer;
+    constr.make___ = function(args) {
+      constr.init___.apply(this, args);
+    };
+    // We must preserve this identity, so anywhere that either
+    // <tt>.prototype</tt> property might be assigned to, we must
+    // assign to the other as well.
+    constr.make___.prototype = constr.prototype;
+    constr.call = function(that, var_args) {
+      constr.init___.apply(that, Array.prototype.slice.call(arguments, 1));
+    };
+    return constr;
+  }
+
   /** 
    * Mark meth as a method of instances of constr. 
    * <p>
@@ -1221,15 +1276,17 @@ var ___;
     var sup = opt_Sup || Object;
     var members = opt_members || {};
     var statics = opt_statics || {};
-    if ('Super' in statics) {
-      fail('The static name "Super" is reserved ',
-           'for the super-constructor');
-    }
     
     ctor(sub, sup);
     function PseudoSuper() {}
     PseudoSuper.prototype = sup.prototype;
     sub.prototype = new PseudoSuper();
+    if (sub.make___) {
+      // We must preserve this identity, so anywhere that either
+      // <tt>.prototype</tt> property might be assigned to, we must
+      // assign to the other as well.
+      sub.make___.prototype = sub.prototype;
+    }
     sub.prototype.constructor = sub;
     
     setMemberMap(sub, members);
@@ -1777,6 +1834,7 @@ var ___;
     isSimpleFunc: isSimpleFunc,
     ctor: ctor,                   asCtorOnly: asCtorOnly,
     asCtor: asCtor,
+    splitCtor: splitCtor,
     method: method,               asMethod: asMethod,
     simpleFunc: simpleFunc,       asSimpleFunc: asSimpleFunc,
     setMember: setMember,

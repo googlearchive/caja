@@ -14,11 +14,13 @@
 
 package com.google.caja.parser;
 
+import com.google.caja.parser.quasiliteral.ParseTreeNodeContainer;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.MessageContext;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.io.IOException;
@@ -41,12 +43,15 @@ public class ParseTreeNodes {
    * @param clazz the concrete class of {@code ParseTreeNode} to instantiate.
    * @param value the value for the new node
    *        (see {@link com.google.caja.parser.ParseTreeNode#getValue()}).
-   * @param children the children of the new node
+   * @param children the children of the new node.  The constructor recursively
+   *        traverses the children, replacing all ParseTreeNodeContainers with
+   *        their children.  This flattens containers in containers.
    *        (see {@link com.google.caja.parser.ParseTreeNode#children()})).
    * @return the newly constructed {@code ParseTreeNode}.
    */
   public static <T extends ParseTreeNode> T newNodeInstance(
       Class<T> clazz, Object value, List<? extends ParseTreeNode> children) {
+    children = flattenNodeList(children);
     Constructor<T> ctor = findCloneCtor(clazz);
     try {
       return ctor.newInstance(value, children);
@@ -59,6 +64,19 @@ public class ParseTreeNodes {
     } catch (IllegalArgumentException e) {
       throw new RuntimeException(getCtorErrorMessage(ctor, value, children), e);
     }
+  }
+  
+  // TODO(ihab): Instead of creating a new list each time, pass the list in and append to it.
+  private static List<? extends ParseTreeNode> flattenNodeList(List<? extends ParseTreeNode> nodes) {
+    List<ParseTreeNode> results = new ArrayList<ParseTreeNode>();
+    for (int i = 0; i < nodes.size(); i++) {
+      if (nodes.get(i) instanceof ParseTreeNodeContainer) {
+        results.addAll(flattenNodeList(nodes.get(i).children()));
+      } else {
+        results.add(nodes.get(i));
+      }
+    }
+    return results;
   }
 
   /**

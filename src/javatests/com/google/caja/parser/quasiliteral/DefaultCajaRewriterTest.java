@@ -112,9 +112,9 @@ public class DefaultCajaRewriterTest extends TestCase {
     if (false) {
     // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
     checkSucceeds(
-        "for (var k in x) { k; }",
+        "1; for (var k in x) { k; }",
         // TOOD(ihab.awad): review welds        
-        "{" +
+        "1; {" +
         "  ___OUTERS___.x0___ = " + weldReadOuters("x") + ";" +
         "  ___OUTERS___.x1___ = undefined;" +
         "  ;" +
@@ -129,8 +129,8 @@ public class DefaultCajaRewriterTest extends TestCase {
     if (false) {
     // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
     checkSucceeds(
-        "try { } catch (e) { for (var k in x) { k; } }",
-        "try {" +
+        "2; try { } catch (e) { for (var k in x) { k; } }",
+        "2; try {" +
         "} catch (ex___) {" +
         "  try {" +
         "    throw ___.tameException(ex___);" +
@@ -150,10 +150,10 @@ public class DefaultCajaRewriterTest extends TestCase {
         "}");
     }
     checkSucceeds(
-        "function() {" +
+        "3; function() {" +
         "  for (var k in x) { k; }" +
         "};",
-        "___.primFreeze(___.simpleFunc(function() {" +
+        "3; ___.primFreeze(___.simpleFunc(function() {" +
         "  {" +
         "    var x0___ = " + weldReadOuters("x") + ";" +
         "    var x1___ = undefined;" +
@@ -166,11 +166,11 @@ public class DefaultCajaRewriterTest extends TestCase {
         "    }" +
         "  }" +
         "}));");
-    checkSucceeds(
-        "function() {" +
+   checkSucceeds(
+        "4; function() {" +
         "  for (var k in x) k;" +
         "};",
-        "___.primFreeze(___.simpleFunc(function() {" +
+        "4; ___.primFreeze(___.simpleFunc(function() {" +
         "  {" +
         "    var x0___ = " + weldReadOuters("x") + ";" +
         "    var x1___ = undefined;" +
@@ -186,10 +186,10 @@ public class DefaultCajaRewriterTest extends TestCase {
     if (false) {
     // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
     checkSucceeds(
-        "function() {" +
+        "5; function() {" +
         "  for (z[0] in x) { z; }" +
         "};",
-        "___.primFreeze(___.simpleFunc(function() {" +
+        "5; ___.primFreeze(___.simpleFunc(function() {" +
         "  {" +
         "    var x0___ = " + weldReadOuters("x") + ";" +
         "    var x1___ = undefined;" +
@@ -205,8 +205,8 @@ public class DefaultCajaRewriterTest extends TestCase {
     if (false) {
     // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
     checkSucceeds(
-        "for (k in x) { k; }",
-        "{" +
+        "6; for (k in x) { k; }",
+        "6; {" +
         "  ___OUTERS___.x0___ = " + weldReadOuters("x") + ";" +
         "  ___OUTERS___.x1___ = undefined;" +
         "  for (___OUTERS___.x1 in ___OUTERS___.x0___) {" +
@@ -218,10 +218,10 @@ public class DefaultCajaRewriterTest extends TestCase {
         "}");
     }
     checkSucceeds(
-        "function() {" +
+        "7; function() {" +
         "  for (k in x) { k; }" +
         "};",
-        "___.primFreeze(___.simpleFunc(function() {" +
+        "7; ___.primFreeze(___.simpleFunc(function() {" +
         "  {" +
         "    var x0___ = " + weldReadOuters("x") + ";" +
         "    var x1___ = undefined;" +
@@ -234,11 +234,11 @@ public class DefaultCajaRewriterTest extends TestCase {
         "  }" +
         "}));");
     checkSucceeds(
-        "function() {" +
+        "8; function() {" +
         "  var k;" +
         "  for (k in x) { k; }" +
         "};",
-        "___.primFreeze(___.simpleFunc(function() {" +
+        "8; ___.primFreeze(___.simpleFunc(function() {" +
         "  var k;" +
         "  {" +
         "    var x0___ = " + weldReadOuters("x") + ";" +
@@ -254,8 +254,8 @@ public class DefaultCajaRewriterTest extends TestCase {
     if (false) {
     // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
     checkSucceeds(
-        "for (y.k in x) { y.k; }",
-        "{" +
+        "9; for (y.k in x) { y.k; }",
+        "9; {" +
         "  ___OUTERS___.x0___ = " + weldReadOuters("x") + ";" +
         "  ___OUTERS___.x1___ = undefined;" +
         "  for (___OUTERS___.x1 in ___OUTERS___.x0___) {" +
@@ -269,10 +269,10 @@ public class DefaultCajaRewriterTest extends TestCase {
     if (false) {
     // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
     checkSucceeds(
-        "function() {" +
+        "10; function() {" +
         "  for (y.k in x) { y.k; }" +
         "};",
-        "___.primFreeze(___.simpleFunc(function() {" +
+        "10; ___.primFreeze(___.simpleFunc(function() {" +
         "  {" +
         "    var x0___ = " + weldReadOuters("x") + ";" +
         "    var x1___ = undefined;" +
@@ -286,29 +286,37 @@ public class DefaultCajaRewriterTest extends TestCase {
         "}));");
     }
     checkSucceeds(
-        "function foo() {" +
+        "11; function foo() {" +
         "  for (var k in this) { k; }" +
         "}",
+        "11;" +
         weldSetOuters(
             "foo",
-            "___.ctor(function foo() {" +
-            "  var t___ = this;" +
-            "  {" +
-            "    var x0___ = t___;" +
-            "    var x1___ = undefined;" +
-            "    var k;" +
-            "    for (x1___ in x0___) {" +
-            "      if (___.canEnumProp(x0___, x1___)) {" +
-            "        k = x1___;" +
-            "        { k; }" +
+            "(function () {" +
+            "  ___.splitCtor(foo, foo_init___);" +
+            "  function foo(var_args) {" +
+            "    return new foo.make___(arguments);" +
+            "  }" +
+            "  function foo_init___() {" +
+            "    var t___ = this;" +
+            "    {" +
+            "      var x0___ = t___;" +
+            "      var x1___ = undefined;" +
+            "      var k;" +
+            "      for (x1___ in x0___) {" +
+            "        if (___.canEnumProp(x0___, x1___)) {" +
+            "          k = x1___;" +
+            "          { k }" +
+            "        }" +
             "      }" +
             "    }" +
             "  }" +
-            "})") +
+            "  return foo;" +
+            "})()") +
         ";");
     checkSucceeds(
-        "for (var k in this) { k; }",
-        "{" +
+        "12; for (var k in this) { k; }",
+        "12; {" +
         "  ___OUTERS___.x0___ = ___OUTERS___;" +
         "  ___OUTERS___.x1___ = undefined;" +
         "  " + weldReadOuters("k") + ";" +
@@ -320,54 +328,70 @@ public class DefaultCajaRewriterTest extends TestCase {
         "  }" +
         "}");
     checkSucceeds(
-        "function foo() {" +
+        "13; function foo() {" +
         "  for (k in this) { k; }" +
         "}",
+        "13;" +
         weldSetOuters(
             "foo",
-            "___.ctor(function foo() {" +
-            "  var t___ = this;" +
-            "  {" +
-            "    var x0___ = t___;" +
-            "    var x1___ = undefined;" +
-            "    for (x1___ in x0___) {" +
-            "      if (___.canEnumProp(x0___, x1___)) {" +
-            "        " + weldSetOuters("k", "x1___") + ";" +
-            "        { " + weldReadOuters("k") + "; }" +
+            "(function () {" +
+            "  ___.splitCtor(foo, foo_init___);" +
+            "  function foo(var_args) {" +
+            "    return new foo.make___(arguments);" +
+            "  }" +
+            "  function foo_init___() {" +
+            "    var t___ = this;" +
+            "    {" +
+            "      var x0___ = t___;" +
+            "      var x1___ = undefined;" +
+            "      for (x1___ in x0___) {" +
+            "        if (___.canEnumProp(x0___, x1___)) {" +
+            "          " + weldSetOuters("k", "x1___") + ";" +
+            "          { " + weldReadOuters("k") + "; }" +
+            "        }" +
             "      }" +
             "    }" +
             "  }" +
-           "})") +
+            "  return foo;" +
+           "})()") +
         ";");
     checkSucceeds(
-        "function foo() {" +
+        "14; function foo() {" +
         "  var k;" +
         "  for (k in this) { k; }" +
         "}",
+        "14;" +
         weldSetOuters(
             "foo",
-            "___.ctor(function foo() {" +
-            "  var t___ = this;" +
-            "  var k;" +
-            "  {" +
-            "    var x0___ = t___;" +
-            "    var x1___ = undefined;" +
-            "    for (x1___ in x0___) {" +
-            "      if (___.canEnumProp(x0___, x1___)) {" +
-            "        k = x1___;" +
-            "        { k; }" +
+            "(function () {" +
+            "  ___.splitCtor(foo, foo_init___);" +
+            "  function foo(var_args) {" +
+            "    return new foo.make___(arguments);" +
+            "  }" +
+            "  function foo_init___() {" +
+            "    var t___ = this;" +
+            "    var k;" +
+            "    {" +
+            "      var x0___ = t___;" +
+            "      var x1___ = undefined;" +
+            "      for (x1___ in x0___) {" +
+            "        if (___.canEnumProp(x0___, x1___)) {" +
+            "          k = x1___;" +
+            "          { k; }" +
+            "        }" +
             "      }" +
             "    }" +
             "  }" +
-            "})") +
+            "  return foo;" +
+            "})()") +
         ";");
     if (false) {
     // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
     checkSucceeds(
-        "function foo() {" +
+        "15; function foo() {" +
         "  for (y.k in this) { y.k; }" +
         "}",
-        "___OUTERS___.foo = ___.ctor(function foo() {" +
+        "15; ___OUTERS___.foo = ___.ctor(function foo() {" +
         "  var t___ = this;" +
         "  {" +
         "    var x0___ = t___;" +
@@ -467,10 +491,17 @@ public class DefaultCajaRewriterTest extends TestCase {
         "}",
         weldSetOuters(
             "foo",
-            "___.ctor(function foo() {" +
-            "  var t___ = this;" +
-            "  " + weldSetOuters("p", "t___") + ";" +
-            "})"));
+            "(function () {" +
+            "  ___.splitCtor(foo, foo_init___);" +
+            "  function foo(var_args) {" +
+            "    return new foo.make___(arguments);" +
+            "  }" +
+            "  function foo_init___() {" +
+            "    var t___ = this;" +
+            "    " + weldSetOuters("p", "t___") + ";" +
+            "  }" +
+            "  return foo;" +
+            "})()"));
     checkSucceeds(
         "this;",
         "___OUTERS___;");
@@ -521,12 +552,6 @@ public class DefaultCajaRewriterTest extends TestCase {
     checkFails(
         "foo_;",
         "Globals cannot end in \"_\"");
-  }
-
-  public void testVarBadCtorLeak() throws Exception {
-    checkFails(
-        "function Ctor() { this.x = 1; }; var c = Ctor;",
-        "Constructors are not first class");
   }
 
   public void testVarFuncFreeze() throws Exception {
@@ -613,10 +638,17 @@ public class DefaultCajaRewriterTest extends TestCase {
         "  }" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.ctor(function foo() {" +
-        "    var t___ = this;" +
-        "    " + weldSetOuters("p", "t___.x_canRead___ ? t___.x : ___.readProp(t___, 'x')") +
-        "  });" +
+        "  var foo = (function () {" +
+        "      ___.splitCtor(foo, foo_init___);" +
+        "      function foo(var_args) {" +
+        "        return new foo.make___(arguments);" +
+        "      }" +
+        "      function foo_init___() {" +
+        "        var t___ = this;" +
+        "        " + weldSetOuters("p", "t___.x_canRead___ ? t___.x : ___.readProp(t___, 'x')") +
+        "      }" +
+        "      return foo;" +
+        "    })();" +
         "}));");
   }
 
@@ -658,12 +690,17 @@ public class DefaultCajaRewriterTest extends TestCase {
         "function foo() { p = this[3]; }",
         weldSetOuters(
             "foo",
-            "___.ctor(" +
-            "  function foo() {" +
+            "(function () {" +
+            "  ___.splitCtor(foo, foo_init___);" +
+            "  function foo(var_args) {" +
+            "    return new foo.make___(arguments);" +
+            "  }" +
+            "  function foo_init___() {" +
             "    var t___ = this;" +
             "    " + weldSetOuters("p", "___.readProp(t___, 3)") +
             "  }" +
-            ")"));
+            "  return foo;" +
+            "})()"));
   }
 
   public void testReadIndexPublic() throws Exception {
@@ -723,15 +760,22 @@ public class DefaultCajaRewriterTest extends TestCase {
         "  function foo() { this.p = x; }" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.ctor(function foo() {" +
-        "    var t___ = this;" +
-        "    (function() {" +
-        "      var x___ = " + weldReadOuters("x") + ";" +
-        "      return t___.p_canSet___ ?" +
-        "          (t___.p = x___) : " +
-        "          ___.setProp(t___, 'p', x___);" +
-        "    })();" +
-        "  });" +
+        "  var foo = (function () {" +
+        "      ___.splitCtor(foo, foo_init___);" +
+        "      function foo(var_args) {" +
+        "        return new foo.make___(arguments);" +
+        "      }" +
+        "      function foo_init___() {" +
+        "        var t___ = this;" +
+        "        (function() {" +
+        "          var x___ = " + weldReadOuters("x") + ";" +
+        "          return t___.p_canSet___ ?" +
+        "              (t___.p = x___) : " +
+        "              ___.setProp(t___, 'p', x___);" +
+        "        })();" +
+        "      }" +
+        "      return foo;" +
+        "  })();" +
         "}));");
   }
 
@@ -809,10 +853,17 @@ public class DefaultCajaRewriterTest extends TestCase {
         "  }" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.ctor(function foo() {" +
-        "    var t___ = this;" +
-        "    ___.setProp(t___, " + weldReadOuters("x") + ", " + weldReadOuters("y") + ");" +
-        "  });" +
+        "  var foo = (function () {" +
+        "    ___.splitCtor(foo, foo_init___);" +
+        "    function foo(var_args) {" +
+        "      return new foo.make___(arguments);" +
+        "    }" +
+        "    function foo_init___() {" +
+        "      var t___ = this;" +
+        "      ___.setProp(t___, " + weldReadOuters("x") + ", " + weldReadOuters("y") + ");" +
+        "    }" +
+        "    return foo;" +
+        "  })();" +
         "}));");
   }
 
@@ -930,15 +981,22 @@ public class DefaultCajaRewriterTest extends TestCase {
         "new foo(x, y);",
         weldSetOuters(
             "foo",
-            "___.ctor(function foo() {" +
-            "  var t___ = this;" +
-            "  (function() {" +
-            "    var x___ = 3;" +
-            "    return t___.p_canSet___ ?" +
-            "        (t___.p = x___) : " +
-            "        ___.setProp(t___, 'p', x___);" +
-            "  })();" +
-            "})") + ";" +
+            "(function () {" +
+            "  ___.splitCtor(foo, foo_init___);" +
+            "  function foo(var_args) {" +
+            "    return new foo.make___(arguments);" +
+            "  }" +
+            "  function foo_init___() {" +
+            "    var t___ = this;" +
+            "    (function() {" +
+            "      var x___ = 3;" +
+            "      return t___.p_canSet___ ?" +
+            "          (t___.p = x___) : " +
+            "          ___.setProp(t___, 'p', x___);" +
+            "    })();" +
+            "  }" +
+            "  return foo;" +
+            "})()") + ";" +
         "new (___.asCtor(" + weldReadOuters("foo") + "))" +
         "    (" + weldReadOuters("x") + ", " + weldReadOuters("y") + ");");
     checkSucceeds(
@@ -1019,16 +1077,23 @@ public class DefaultCajaRewriterTest extends TestCase {
         "  }" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.ctor(function foo() {" +
-        "    var t___ = this;" +
-        "    (function() {" +
-        "      var x0___ = " + weldReadOuters("x") + ";" +
-        "      var x1___ = " + weldReadOuters("y") + ";" +
-        "      return t___.f_canCall___ ?" +
-        "          t___.f(x0___, x1___) :" +
-        "          ___.callProp(t___, 'f', [x0___, x1___]);" +
-        "    })();" +
-        "  });" +
+        "  var foo = (function () {" +
+        "    ___.splitCtor(foo, foo_init___);" +
+        "    function foo(var_args) {" +
+        "      return new foo.make___(arguments);" +
+        "    }" +
+        "    function foo_init___() {" +
+        "      var t___ = this;" +
+        "      (function() {" +
+        "        var x0___ = " + weldReadOuters("x") + ";" +
+        "        var x1___ = " + weldReadOuters("y") + ";" +
+        "        return t___.f_canCall___ ?" +
+        "            t___.f(x0___, x1___) :" +
+        "            ___.callProp(t___, 'f', [x0___, x1___]);" +
+        "      })();" +
+        "    }" +
+        "    return foo;" +
+        "  })();" +
         "}));");
   }
 
@@ -1127,7 +1192,7 @@ public class DefaultCajaRewriterTest extends TestCase {
         "  function WigglyPoint() {}" +
         "  caja.def(WigglyPoint, Point, { foo: x }, { bar: function() { this.x = 3; } });" +
         "};",
-        "Method in non-method context");
+        "Anonymous function references \"this\"");
   }
 
   public void testCallCajaDef3PlusBad() throws Exception {
@@ -1178,13 +1243,20 @@ public class DefaultCajaRewriterTest extends TestCase {
         "  }" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.ctor(function foo() {" +
-        "    var t___ = this;" +
-        "    ___.callProp(" +
-        "        t___, " +
-        "        " + weldReadOuters("x") + "," +
-        "        [" + weldReadOuters("y") + ", " + weldReadOuters("z") + "]);" +
-        "  });" +
+        "  var foo = (function () {" +
+        "    ___.splitCtor(foo, foo_init___);" +
+        "    function foo(var_args) {" +
+        "      return new foo.make___(arguments);" +
+        "    }" +
+        "    function foo_init___() {" +
+        "      var t___ = this;" +
+        "      ___.callProp(" +
+        "          t___, " +
+        "          " + weldReadOuters("x") + "," +
+        "          [" + weldReadOuters("y") + ", " + weldReadOuters("z") + "]);" +
+        "    }" +
+        "    return foo;" +
+        "  })();" +
         "}));");
   }
 
@@ -1283,65 +1355,7 @@ public class DefaultCajaRewriterTest extends TestCase {
   public void testFuncBadMethod() throws Exception {
     checkFails(
         "function(x) { x = this; };",
-        "Method in non-method context");
-  }
-
-  public void testFuncBadCtor() throws Exception {
-    checkFails(
-        "var f = function foo(x) { x = this; };",
-        "Constructor cannot escape");
-  }
-
-  public void testFuncDerivedCtorDecl() throws Exception {
-    checkSucceeds(
-        "function() {" +
-        "  function foo(x, y) {" +
-        "    foo.Super.call(this, x + y);" +
-        "    y = z;" +
-        "  }" +
-        "};",
-        "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.ctor(function foo(x, y) {" +
-        "    var t___ = this;" +
-        "    foo.Super.call(t___, x + y);" +
-        "    y = " + weldReadOuters("z") + ";" +
-        "  });" +
-        "}));");
-  }
-
-  public void testFuncCtorDecl() throws Exception {
-    checkSucceeds(
-        "function() {" +
-        "  function foo(x, y) {" +
-        "    x = this;" +
-        "    y = z;" +
-        "  }" +
-        "};",
-        "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.ctor(function foo(x, y) {" +
-        "    var t___ = this;" +
-        "    x = t___;" +
-        "    y = " + weldReadOuters("z") + ";" +
-        "  });" +
-        "}));");
-    checkSucceeds(
-        "function() {" +
-        "  function foo() {" +
-        "    var self = this;" +
-        "    return function() { return self; };" +
-        "  }" +
-        "};",
-        "___.primFreeze(___.simpleFunc(function() {" +
-        "  var foo = ___.ctor(function foo() {" +
-        "    var t___ = this;" +
-        "    var self = t___;" +
-        "    return ___.primFreeze(___.simpleFunc(function() {" +
-        "      return self;" +
-        "    }));" +
-        "  });" +
-        "}));");
-
-
+        "Anonymous function references \"this\"");
   }
 
   public void testMapEmpty() throws Exception {
@@ -1606,6 +1620,92 @@ public class DefaultCajaRewriterTest extends TestCase {
 
   public void testSpecimenListfriends() throws Exception {
     checkSucceeds(readResource("listfriends.js"));
+  }
+
+  public void testFuncCtor() throws Exception {
+    checkSucceeds(
+        "function Foo(x) { this.x_ = x; }",
+        "(function () {" +
+        "    var x___ = (function () {" +
+        "        ___.splitCtor(Foo, Foo_init___);" +
+        "        function Foo(var_args) {" +
+        "          return new Foo.make___(arguments);" +
+        "        }" +
+        "        function Foo_init___(x) {" +
+        "          var t___ = this;" +
+        "          (function () {" +
+        "              var x___ = x;" +
+        "              return t___.x__canSet___ ? (t___.x_ = x___) : ___.setProp(t___, 'x_', x___);" +
+        "            })();" +
+        "        }" +
+        "        return Foo;" +
+        "      })();" +
+        "    return ___OUTERS___.Foo_canSet___ ? (___OUTERS___.Foo = x___) : ___.setPub(___OUTERS___, 'Foo', x___);" +
+        "  })();");
+    checkSucceeds(
+        "(function(){ function Foo(x) { this.x_ = x; } })()",
+        "___.asSimpleFunc(___.primFreeze(___.simpleFunc(function () {" +
+        "    var Foo = (function () {" +
+        "        ___.splitCtor(Foo, Foo_init___);" +
+        "        function Foo(var_args) {" +
+        "          return new Foo.make___(arguments);" +
+        "        }" +
+        "        function Foo_init___(x) {" +
+        "          var t___ = this;" +
+        "          (function () {" +
+        "              var x___ = x;" +
+        "              return t___.x__canSet___ ? (t___.x_ = x___) : ___.setProp(t___, 'x_', x___);" +
+        "            })();" +
+        "        }" +
+        "        return Foo;" +
+        "      })();" +
+        "  })))();");
+    checkSucceeds(
+        "function Foo(x) { this.x_ = x; }" +
+        "function Bar(y) {" +
+        "  Foo.call(this,1);" +
+        "  this.y = y;" +
+        "}" +
+        "bar = new Bar(3);",
+        "(function () {" +
+        "    var x___ = (function () {" +
+        "        ___.splitCtor(Foo, Foo_init___);" +
+        "        function Foo(var_args) {" +
+        "          return new Foo.make___(arguments);" +
+        "        }" +
+        "        function Foo_init___(x) {" +
+        "          var t___ = this;" +
+        "          (function () {" +
+        "              var x___ = x;" +
+        "              return t___.x__canSet___ ? (t___.x_ = x___) : ___.setProp(t___, 'x_', x___);" +
+        "            })();" +
+        "        }" +
+        "        return Foo;" +
+        "      })();" +
+        "    return ___OUTERS___.Foo_canSet___ ? (___OUTERS___.Foo = x___) : ___.setPub(___OUTERS___, 'Foo', x___);" +
+        "  })();" +
+        "(function () {" +
+        "    var x___ = (function () {" +
+        "        ___.splitCtor(Bar, Bar_init___);" +
+        "        function Bar(var_args) {" +
+        "          return new Bar.make___(arguments);" +
+        "        }" +
+        "        function Bar_init___(y) {" +
+        "          var t___ = this;" +
+        "          (___OUTERS___.Foo_canRead___ ? ___OUTERS___.Foo : ___.readPub(___OUTERS___, 'Foo', true)).call(this, 1);" +
+        "          (function () {" +
+        "              var x___ = y;" +
+        "              return t___.y_canSet___ ? (t___.y = x___) : ___.setProp(t___, 'y', x___);" +
+        "            })();" +
+        "        }" +
+        "        return Bar;" +
+        "      })();" +
+        "    return ___OUTERS___.Bar_canSet___ ? (___OUTERS___.Bar = x___) : ___.setPub(___OUTERS___, 'Bar', x___);" +
+        "  })();" +
+        "(function () {" +
+        "    var x___ = new (___.asCtor(___OUTERS___.Bar_canRead___ ? ___OUTERS___.Bar : ___.readPub(___OUTERS___, 'Bar', true)))(3);" +
+        "    return ___OUTERS___.bar_canSet___ ? (___OUTERS___.bar = x___) : ___.setPub(___OUTERS___, 'bar', x___);" +
+        "  })();");
   }
 
   private void setSynthetic(ParseTreeNode n) {

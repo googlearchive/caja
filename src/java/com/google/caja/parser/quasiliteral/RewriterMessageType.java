@@ -30,6 +30,10 @@ import java.io.IOException;
  */
 public enum RewriterMessageType implements MessageTypeInt {
 
+  PARAMETERS_TO_SUPER_CONSTRUCTOR_MAY_NOT_CONTAIN_THIS(
+      "%s: Parameters to super constructor may not contain \"this\": %s, %s",
+      MessageLevel.FATAL_ERROR),
+
   VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE(
       "%s: Variables cannot end in \"__\": %s, %s",
       MessageLevel.FATAL_ERROR),
@@ -54,8 +58,8 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: Public selectors cannot end in \"_\": %s, %s",
       MessageLevel.FATAL_ERROR),
 
-  METHOD_IN_NON_METHOD_CONTEXT(
-      "%s: Method in non-method context: %s, %s",
+  ANONYMOUS_FUNCTION_REFERENCES_THIS(
+      "%s: Anonymous function references \"this\" but isn't part of a class definition: %s, %s",
       MessageLevel.FATAL_ERROR),
 
   CONSTRUCTOR_CANNOT_ESCAPE(

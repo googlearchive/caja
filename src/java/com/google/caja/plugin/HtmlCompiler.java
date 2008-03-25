@@ -153,7 +153,7 @@ public class HtmlCompiler {
           Block extractedScriptBody = el.getAttributes().get(
               RewriteHtmlStage.EXTRACTED_SCRIPT_BODY);
           if (extractedScriptBody != null) {
-            b.createMutation().appendChildren(extractedScriptBody.children())
+            b.createMutation().appendChild(extractedScriptBody)
                 .execute();
             return;
           }

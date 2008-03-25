@@ -48,7 +48,7 @@ if (!console) {
         for (var i = this.indent_; --i >= 0;) {
           indentSpaces += '  ';
         }
-        msg = msg.replace(/^(.)/gm, indentSpaces + 'console: $1');
+        msg = String(msg).replace(/^(.)/gm, indentSpaces + 'console: $1');
 
         stderr.println(msg);
       },
