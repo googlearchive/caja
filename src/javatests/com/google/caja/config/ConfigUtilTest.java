@@ -220,7 +220,7 @@ public class ConfigUtilTest extends TestCase {
     assertEquals("FOO", w.typeDefinitions().get("foo").get("name", null));
     assertMessages();
   }
-  
+
   public void testUnresolvedAmbiguousDefinition() throws Exception {
     WhiteList w = ConfigUtil.loadWhiteListFromJson(
         new StringReader(
@@ -242,9 +242,7 @@ public class ConfigUtilTest extends TestCase {
         makeSrc(), mq);
     assertEquals("Foo", w.typeDefinitions().get("foo").get("name", null));
     assertMessages("FATAL_ERROR: testUnresolvedAmbiguousDefinition:1+1:"
-                   + " ambiguous type definition"
-                   + " {\"name\":\"Foo\",\"key\":\"foo\"}"
-                   + " != {\"name\":\"Foo!!\",\"key\":\"foo\"}");
+                   + " ambiguous type definition {@} != {@}");
   }
 
   public void testConflictsBetweenInheritedTypesResolved() throws Exception {
@@ -282,7 +280,9 @@ public class ConfigUtilTest extends TestCase {
   private void assertMessages(String... golden) {
     List<String> actual = new ArrayList<String>();
     for (Message msg : mq.getMessages()) {
-      actual.add(msg.getMessageLevel() + ": " + msg);
+      // Simple JSON doesn't preserve key ordering.
+      String msgText = msg.toString().replaceAll(JSON_FLAT_OBJECT, "{@}");
+      actual.add(msg.getMessageLevel() + ": " + msgText);
     }
     MoreAsserts.assertListsEqual(Arrays.asList(golden), actual);
   }
@@ -296,4 +296,13 @@ public class ConfigUtilTest extends TestCase {
         "test:///" + getName() + (suffix != null ? "/" + suffix : "")));
     return FilePosition.startOfFile(is);
   }
+
+  private static final String JSON_STRING = "(?:\"(?:[^\"\\\\]|\\\\.)*\")";
+  private static final String JSON_NUMBER = (
+      "(?:[+-]?(?:(?:(?:0|[1-9][0-9]*)(?:\\.[0-9]*)?)|\\.[0-9]+)"
+      + "(?:[eE][+-]?[0-9]+)?)");
+  private static final String JSON_ATOM = (
+      "(?:" + JSON_STRING + "|null|true|false|" + JSON_NUMBER + ")");
+  private static final String JSON_FLAT_OBJECT = (
+      "\\{(?:" + JSON_STRING + ":" + JSON_ATOM + ",?)*\\}");
 }
