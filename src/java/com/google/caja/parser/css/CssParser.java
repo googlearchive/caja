@@ -173,6 +173,9 @@ public final class CssParser {
       } else if (",".equals(t.text)) {
         op = CssTree.Operator.COMMA;
         tq.advance();
+      } else if ("=".equals(t.text)) {
+        op = CssTree.Operator.EQUAL;
+        tq.advance();
       }
     }
     return new CssTree.Operation(pos(m), op);
@@ -384,7 +387,7 @@ public final class CssParser {
     while (!tq.isEmpty()) {
       Token<CssTokenType> t = tq.peek();
       if (CssTokenType.PUNCTUATION == t.type) {
-        if (!("/".equals(t.text) || ",".equals(t.text))) { break; }
+        if (!("=".equals(t.text) || "/".equals(t.text) || ",".equals(t.text))) { break; }
       } else if (CssTokenType.DIRECTIVE == t.type) {
         break;
       }

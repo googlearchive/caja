@@ -905,7 +905,7 @@
     { "key": "<shape>",
       "see": "http://www.w3.org/TR/CSS21/visufx.html#value-def-shape",
       "signature": "rect(<top>, <right>, <bottom>, <left>)" },
-
+      
     { "key": "<top>", "signature": "<length>|auto" },
 
     { "key": "<right>", "as": "top" },

@@ -1,0 +1,17 @@
+{
+  "description": [
+      "Extensions of CSS parsing for common browser specific workarounds.",
+      "These are not used by default unless explicitly requested."
+      ],
+      
+    { "key": "filter",
+      "signature": "<opacity>",
+      "default": null,
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "filter" },
+
+    { "key": "<opacity>",
+      "signature": "alpha(opacity=<percentage:0,100>)" }
+}

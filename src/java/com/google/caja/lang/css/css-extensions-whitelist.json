@@ -1,0 +1,11 @@
+{
+  "description": "Set of extended CSS properties allowed.",
+
+  "allowed": [
+    "filter"
+  ],
+
+  "denied": [
+
+  ]
+}

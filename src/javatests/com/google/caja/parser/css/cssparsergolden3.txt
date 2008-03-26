@@ -14,3 +14,4 @@ StyleSheet
               Operation : EQUAL
               Term
                 QuantityLiteral : 50
+    Declaration

@@ -53,9 +53,9 @@ public final class CssSchema {
 
   public static CssSchema getDefaultCss21Schema(MessageQueue mq) {
     FilePosition propPos = FilePosition.startOfFile(new InputSource(URI.create(
-        "resource:///com/google/caja/lang/css/css21.json")));
+      "resource:///com/google/caja/lang/css/css21.json")));
     FilePosition fnPos = FilePosition.startOfFile(new InputSource(URI.create(
-        "resource:///com/google/caja/lang/css/css21-fns.json")));
+      "resource:///com/google/caja/lang/css/css21-fns.json")));
     WhiteList propDefs, fnDefs;
     try {
       propDefs = ConfigUtil.loadWhiteListFromJson(

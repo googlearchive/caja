@@ -906,6 +906,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
   public static enum Operator {
     DIV("/"),
     COMMA(","),
+    EQUAL("="),
     NONE(null),
     ;
     private final String symbol;

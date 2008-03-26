@@ -351,7 +351,7 @@ public abstract class CssPropertySignature implements ParseTreeNode {
       // multi-character punctuation
       Pattern.compile("^(\\|\\|)"),
       // other single character tokens
-      Pattern.compile("^([\\(\\)\\{\\}\\*\\+\\,\\/\\|\\[\\]\\?])"),
+      Pattern.compile("^([\\(\\)=\\{\\}\\*\\+\\,\\/\\|\\[\\]\\?])"),
     };
     static ListIterator<String> tokenizeSignature(String sig) {
       List<String> toks = new ArrayList<String>();
