@@ -704,8 +704,15 @@ var ___;
     ctor(constr, opt_Sup, opt_name);
     constr.init___ = initer;
     constr.make___ = function(args) {
+      this.underConstruction___ = true;
       constr.init___.apply(this, args);
+      delete this.underConstruction___;
+      if (this.delayedTrademarks___) {
+        this.trademarks___ = this.delayedTrademarks___;
+        delete this.delayedTrademarks___;
+      }
     };
+
     // We must preserve this identity, so anywhere that either
     // <tt>.prototype</tt> property might be assigned to, we must
     // assign to the other as well.
@@ -1726,7 +1733,50 @@ var ___;
       registeredOuters[id] = undefined;
     }
   }
-  
+
+  ////////////////////////////////////////////////////////////////////////
+  // Trademarking
+  ////////////////////////////////////////////////////////////////////////
+
+  // Any object may be used as a trademark.
+
+  /**
+   * Returns true if the object has a list of trademarks
+   * and the given trademark is in the list.
+   */
+  function hasTrademark(trademark, obj) {
+    if (!hasOwnProp(obj, "trademarks___")) { return false; }
+    var list = obj.trademarks___;
+    for (var i=0; i < list.length; ++i) {
+      if (list[i]===trademark) { return true; }
+    }
+    return false;
+  }
+
+  /**
+   * Throws an exception if the object does not have any trademarks or
+   * the given trademark is not in the list of trademarks.
+   */
+  function guard(trademark, obj) {
+    enforce (hasTrademark(trademark, obj),
+        "This object does not have the given trademark" );
+  }
+
+  /**
+   * This function adds the given trademark to the given object's list of trademarks.
+   * If the map doesn't exist yet, this function creates it.
+   * If the object is still being constructed, it delays the trademarking.
+   */
+  function audit(trademark, obj) {
+    enforce (typeof trademark === 'object',
+        'The supplied trademark is not an object.'); 
+    var list = obj.underConstruction___ ?
+        "delayedTrademarks___" : "trademarks___";
+    if (!obj[list]) { obj[list] = []; }
+    obj[list].push(trademark);
+  }
+
+
   ////////////////////////////////////////////////////////////////////////
   // Exports
   ////////////////////////////////////////////////////////////////////////
@@ -1757,6 +1807,11 @@ var ___;
     canCallPub: canCallPub,       callPub: callPub,
     canSetPub: canSetPub,         setPub: setPub,
     canDeletePub: canDeletePub,   deletePub: deletePub,
+    
+    // Trademarking
+    hasTrademark: hasTrademark,
+    guard: guard,
+    audit: audit,
     
     // Other
     def: def
