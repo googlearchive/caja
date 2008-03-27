@@ -466,7 +466,7 @@ public final class CssRewriter {
   }
 
   private static final Pattern SAFE_SELECTOR_PART =
-    Pattern.compile("^[#!\\.]?[a-zA-Z][a-zA-Z0-9\\-]*$");
+    Pattern.compile("^[#!\\.]?[a-zA-Z][_a-zA-Z0-9\\-]*$");
   /**
    * Restrict selectors to ascii characters until we can test browser handling
    * of escape sequences.
@@ -475,7 +475,7 @@ public final class CssRewriter {
     return SAFE_SELECTOR_PART.matcher(s).matches();
   }
   private static final Pattern SAFE_CSS_IDENTIFIER =
-    Pattern.compile("^[_a-zA-Z][_a-zA-Z0-9\\-]*$");
+    Pattern.compile("^[a-zA-Z][_a-zA-Z0-9\\-]*$");
   /**
    * Restrict identifiers to ascii characters until we can test browser handling
    * of escape sequences.

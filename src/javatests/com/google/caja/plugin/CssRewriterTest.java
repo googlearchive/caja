@@ -125,6 +125,16 @@ public class CssRewriterTest extends TestCase {
   public void testUnsafeIdentifiers() throws Exception {
     runTest("a.foo, b#c\\2c d, .e { color:blue }",  // "\\2c " -> ","
             ".test a.test-foo, .test .test-e {\n  color: blue\n}");
+    runTest("a.foo, .b_c {color: blue}",
+    ".test a.test-foo, .test .test-b_c {\n  color: blue\n}");
+    runTest("a.foo, ._c {color: blue}",
+    ".test a.test-foo {\n  color: blue\n}");
+    runTest("a.c {_color: blue; margin:0;}",
+    ".test a.test-c {\n  margin: 0\n}");
+    runTest("a._c {_color: blue; margin:0;}",
+    "");
+    runTest("a#_c {_color: blue; margin:0;}",
+    "");
   }
 
   public void testPseudosWhitelisted() throws Exception {
