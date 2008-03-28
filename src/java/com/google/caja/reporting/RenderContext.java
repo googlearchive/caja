@@ -28,7 +28,7 @@ public class RenderContext {
   public final MessageContext msgContext;
   /** to which output is written. */
   public final Appendable out;
-  /** bias towards less readable output in the interest of security. */
+  /** Produce output that can be safely embedded. */
   public final boolean paranoid;
 
   public RenderContext(MessageContext msgContext, Appendable out) {

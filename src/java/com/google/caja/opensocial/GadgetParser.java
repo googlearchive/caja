@@ -14,205 +14,222 @@
 
 package com.google.caja.opensocial;
 
-import com.google.caja.util.AppendableWriter;
-import com.google.caja.util.ReadableReader;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Text;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.HtmlLexer;
+import com.google.caja.lexer.HtmlTokenType;
+import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.Token;
+import com.google.caja.lexer.TokenQueue;
+import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.Visitor;
+import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.html.MarkupRenderContext;
+import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageQueue;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Safe XML parser for gadget specifications. Rejects invalid markup.
- *
- * <p>TODO(ihab.awad): Sanitize and escape text in attribute values.
- * <p>TODO(mikesamuel): Rename this class because it's not a parser.
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class GadgetParser {
 
   /**
-   * Parse an OpenSocial gadget specification and return the result as an object.
+   * Parse an OpenSocial gadget specification and return the result as a
+   * {@link GadgetSpec}.
    *
-   * @param gadgetSpec a gadget specification, represented as a string of text.
+   * @param gadgetSpec a gadget specification.
+   * @param src the source of gadgetSpec.
    * @param view the view to parse
-   * @return a {@code GadgetSpec}.
-   * @exception GadgetRewriteException if a problem in parsing occurs, or if the gadget
-   * specification is not syntactically valid.
-   * @exception IOException if an I/O problem occurs
+   * @exception ParseException if gadgetSpec is malformed.
+   * @exception GadgetRewriteException if gadgetSpec doesn't validate.
    */
-  public GadgetSpec parse(Readable gadgetSpec, String view) throws GadgetRewriteException, IOException {
-    Document d;
-    try {
-      d = newDocumentBuilder().parse(new InputSource(new ReadableReader(gadgetSpec)));
-    } catch (SAXException e) {
-      throw new GadgetRewriteException(e);
-    }
+  public GadgetSpec parse(
+      CharProducer gadgetSpec, InputSource src, String view, MessageQueue mq)
+      throws GadgetRewriteException, ParseException {
+    HtmlLexer lexer = new HtmlLexer(gadgetSpec);
+    lexer.setTreatedAsXml(true);
+    DomTree d = new DomParser(
+        new TokenQueue<HtmlTokenType>(lexer, src), true, mq).parseDocument();
+
+    //System.err.println(d.toStringDeep());
 
     GadgetSpec spec = new GadgetSpec();
-    getModulePrefs(d, spec);
-    getRequiredFeatures(d, spec);
-    getContent(d, spec, view);
+    readModulePrefs(d, spec);
+    readRequiredFeatures(d, spec);
+    readContent(d, spec, view);
 
     return spec;
   }
 
-  private void getModulePrefs(Document doc, GadgetSpec spec) throws GadgetRewriteException {
-    NodeList list = doc.getElementsByTagName("ModulePrefs");
-    check(list.getLength() == 1, "Must have exactly one <ModulePrefs>");
-    Node modulePrefs = list.item(0);
-    NamedNodeMap m = modulePrefs.getAttributes();
-    for (int i = 0; i < m.getLength(); i++) {
-      spec.getModulePrefs().put(
-          ((Attr)m.item(i)).getName(),
-          ((Attr)m.item(i)).getValue());
+  private void readModulePrefs(DomTree doc, GadgetSpec spec)
+      throws GadgetRewriteException {
+    List<DomTree.Tag> list = getElementsByTagName(doc, "ModulePrefs");
+    check(list.size() == 1, "Must have exactly one <ModulePrefs>");
+    DomTree.Tag modulePrefs = list.get(0);
+    for (DomTree.Attrib attr : modulePrefs.getAttributeNodes()) {
+      spec.getModulePrefs().put(attr.getAttribName(), attr.getAttribValue());
     }
   }
 
-  private void getRequiredFeatures(Document doc, GadgetSpec spec) throws GadgetRewriteException {
-    NodeList list = doc.getElementsByTagName("Require");
-    for (int i = 0; i < list.getLength(); i++) {
-      Node n = list.item(i);
-      check(n.getAttributes().getLength() == 1, "<Require> can only have one attribute");
-      String name = ((Attr)n.getAttributes().item(0)).getName();
-      String value = ((Attr)n.getAttributes().item(0)).getValue();
-      check("feature".equals(name), "<Require> can only have \"feature\" attribute");
-      spec.getRequiredFeatures().add(value);
+  private void readRequiredFeatures(DomTree doc, GadgetSpec spec)
+      throws GadgetRewriteException {
+    for (DomTree.Tag require : getElementsByTagName(doc, "Require")) {
+      List<DomTree.Attrib> attribs = require.getAttributeNodes();
+      check(attribs.size() == 1
+            && "feature".equals(attribs.get(0).getAttribName()),
+            "<Require> can only have a \"feature\" attribute");
+      spec.getRequiredFeatures().add(attribs.get(0).getAttribValue());
     }
   }
 
-  private void getContent(Document doc, GadgetSpec spec, String view)
-  throws GadgetRewriteException {
-    NodeList list = doc.getElementsByTagName("Content");
-    Node contentNode = null;
-    for (int n = 0 ; n < list.getLength() ; ++n) {
-      Node node = list.item(n);
-      NamedNodeMap attr = node.getAttributes();
-      Node viewNode = attr.getNamedItem("view");
-      if (viewNode == null
-          || Arrays.asList(((Attr) viewNode).getValue().split("\\s*,\\s*"))
+  private void readContent(DomTree doc, GadgetSpec spec, String view)
+      throws GadgetRewriteException {
+    for (final DomTree.Tag contentNode : getElementsByTagName(doc, "Content")) {
+      List<DomTree.Attrib> attrs = contentNode.getAttributeNodes();
+      DomTree.Attrib viewAttr = contentNode.getAttribute("view");
+      if (viewAttr == null
+          || Arrays.asList(viewAttr.getAttribValue().trim().split("\\s*,\\s*"))
              .contains(view)) {
-        contentNode = node;
-        break;
-      }
-    }
-    check(contentNode != null, "No content for view '" + view + "'");
-
-    Attr typeAttr = (Attr) contentNode.getAttributes().getNamedItem("type");
-    check(typeAttr != null, "No 'type' attribute for view '" + view + "'");
-    String value = typeAttr.getValue();
+        DomTree.Attrib typeAttr = contentNode.getAttribute("type");
+        check(typeAttr != null, "No 'type' attribute for view '" + view + "'");
+        String value = typeAttr.getAttribValue();
     
-    check(value.equals("html"), "Can't handle Content type '" + value +"'");
+        check(value.equals("html"), "Can't handle Content type '" + value +"'");
 
-    spec.setContentType(value);
+        spec.setContentType(value);
 
-    StringBuilder content = new StringBuilder();
-
-    for (int i = 0; i < contentNode.getChildNodes().getLength(); i++) {
-      if (contentNode.getChildNodes().item(i) instanceof Text) {
-        Text text = (Text)contentNode.getChildNodes().item(i);
-        content.append(text.getNodeValue());
+        spec.setContent(
+            new GadgetSpec.CharProducerFactory() {
+              public CharProducer producer() {
+                List<CharProducer> chunks = new ArrayList<CharProducer>();
+                for (DomTree child : contentNode.children()) {
+                  if (child instanceof DomTree.Text) {
+                    chunks.add(CharProducer.Factory.fromHtmlAttribute(
+                        CharProducer.Factory.create(
+                            new StringReader(
+                                ((DomTree.Text) child).getToken().text),
+                            child.getFilePosition())));
+                  } else if (child instanceof DomTree.CData) {
+                    String cdata = ((DomTree.CData) child).getValue();
+                    FilePosition pos = child.getFilePosition();
+                    // reduce the position to exclude the <![CDATA[ and ]]>
+                    pos = FilePosition.instance(
+                        pos.source(),
+                        pos.startLineNo(), pos.startLogicalLineNo(),
+                        pos.startCharInFile() + 9, pos.startCharInLine() + 9,
+                        pos.endLineNo(), pos.endLogicalLineNo(),
+                        pos.endCharInFile() - 3, pos.endCharInLine() - 3);
+                    chunks.add(CharProducer.Factory.create(
+                        new StringReader(cdata), pos));
+                  }
+                }
+                return CharProducer.Factory.chain(
+                    chunks.toArray(new CharProducer[0]));
+              }
+            });
+        return;
       }
     }
 
-    spec.setContent(content.toString());
+    throw new GadgetRewriteException("No content for view '" + view + "'");
   }
 
   /**
-   * Given a {@code GadgetSpec}, render its contents as a string of XML text.
+   * Render the given gadgetSpec as XML.
    *
-   * @param gadgetSpec a gadget specification object as a {@code GadgetSpec}.
-   * @param output the {@code Appendable} to which the contents will be written.
-   * @exception GadgetRewriteException if there is a problem in rendering.
+   * @param output to which XML is written.
+   * @exception IOException if there is a problem writing to output.
    */
   public void render(GadgetSpec gadgetSpec, Appendable output)
-      throws GadgetRewriteException {
-    try {
-      Document doc = getDocument(gadgetSpec);
-      doc.setXmlStandalone(false);
-      TransformerFactory.newInstance().newTransformer().transform(
-          new DOMSource(doc),
-          new StreamResult(new AppendableWriter(output)));
-    } catch (TransformerConfigurationException e) {
-      throw new GadgetRewriteException(e);
-    } catch (TransformerException e) {
-      throw new GadgetRewriteException(e);
-    }
+      throws IOException {
+    toDocument(gadgetSpec)
+        .render(new MarkupRenderContext(new MessageContext(), output, true));
   }
 
-  private Document getDocument(GadgetSpec gadgetSpec) throws GadgetRewriteException {
-    Document d = newDocumentBuilder().newDocument();
-    Node module = d.createElement("Module");
-    d.appendChild(module);
-
-    Node modulePrefs = d.createElement("ModulePrefs");
-    module.appendChild(modulePrefs);
-
-    for (String key : gadgetSpec.getModulePrefs().keySet()) {
-      Attr attr = d.createAttribute(key);
-      attr.setValue(gadgetSpec.getModulePrefs().get(key));
-      modulePrefs.getAttributes().setNamedItem(attr);
+  private DomTree toDocument(GadgetSpec gadgetSpec) {
+    List<DomTree.Attrib> prefs = new ArrayList<DomTree.Attrib>();
+    for (Map.Entry<String, String> e : gadgetSpec.getModulePrefs().entrySet()) {
+      prefs.add(attrib(e.getKey(), e.getValue()));
     }
 
+    List<DomTree.Tag> features = new ArrayList<DomTree.Tag>();
     for (String feature : gadgetSpec.getRequiredFeatures()) {
-      Node require = d.createElement("Require");
-      Attr attr = d.createAttribute("feature");
-      attr.setValue(feature);
-      require.getAttributes().setNamedItem(attr);
-      modulePrefs.appendChild(require);
+      features.add(el("Require", attrib("feature", feature)));
     }
 
-    Node contentNode = d.createElement("Content");
-    module.appendChild(contentNode);
+    DomTree.Tag modulePrefs = el("ModulePrefs");
+    modulePrefs.createMutation()
+        .appendChildren(prefs)
+        .appendChildren(features)
+        .execute();
 
-    {
-      Attr attr = d.createAttribute("type");
-      attr.setValue(gadgetSpec.getContentType());
-      contentNode.getAttributes().setNamedItem(attr);
-    }
-
-    contentNode.appendChild(d.createCDATASection(gadgetSpec.getContent()));
-
-    return d;
+    DomTree.Tag content = el(
+        "Content", attrib("type", gadgetSpec.getContentType()),
+        cdata(drain(gadgetSpec.getContent())));
+    
+    return el("Module", modulePrefs, content);
+  }
+  
+  private static DomTree.Tag el(String name, DomTree... children) {
+    return new DomTree.Tag(Arrays.asList(children), Token.instance(
+        "<" + name, HtmlTokenType.TAGBEGIN, FilePosition.UNKNOWN),
+        FilePosition.UNKNOWN);
   }
 
-  private DocumentBuilder newDocumentBuilder() throws GadgetRewriteException {
-    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-    DocumentBuilder builder;
-
-    try {
-      builder = factory.newDocumentBuilder();
-    } catch (ParserConfigurationException e) {
-      throw new GadgetRewriteException(e);
-    }
-
-    builder.setEntityResolver(new EntityResolver() {
-      public InputSource resolveEntity(String publicId, String systemId)
-          throws IOException {
-        throw new IOException("Entity resolution not supported");
-      }
-    });
-
-    return builder;
+  private static DomTree.Attrib attrib(String name, String value) {
+    return new DomTree.Attrib(
+        new DomTree.Value(
+            Token.instance(value, HtmlTokenType.ATTRVALUE,
+                           FilePosition.UNKNOWN)),
+        Token.instance(name, HtmlTokenType.ATTRNAME, FilePosition.UNKNOWN),
+        FilePosition.UNKNOWN);
+  }
+  
+  private static DomTree.CData cdata(String text) {
+    return new DomTree.CData(
+        Token.instance("<![CDATA[" + text + "]]>", HtmlTokenType.CDATA,
+                       FilePosition.UNKNOWN));
   }
 
-  private void check(boolean condition, String msg) throws GadgetRewriteException {
+  private void check(boolean condition, String msg)
+      throws GadgetRewriteException {
     if (!condition) throw new GadgetRewriteException(msg);
+  }
+  
+  private String drain(CharProducer cp) {
+    try {
+      StringBuilder sb = new StringBuilder();
+      for (int ch = 0; (ch = cp.read()) >= 0;) { sb.append((char) ch); }
+      return sb.toString();
+    } catch (IOException ex) {
+      throw new RuntimeException();
+    }
+  }
+  
+  private static List<DomTree.Tag> getElementsByTagName(
+      DomTree t, final String name) {
+    final List<DomTree.Tag> els = new ArrayList<DomTree.Tag>();
+    t.acceptPreOrder(
+        new Visitor() {
+          public boolean visit(AncestorChain<?> ac) {
+            if (ac.node instanceof DomTree.Tag) {
+              DomTree.Tag el = (DomTree.Tag) ac.node;
+              if (name.equals(el.getTagName())) { els.add(el); }
+            }
+            return true;
+          }
+        }, null);
+    return els;
   }
 }

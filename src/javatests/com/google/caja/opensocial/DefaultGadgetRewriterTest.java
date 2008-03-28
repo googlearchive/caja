@@ -13,7 +13,9 @@
 
 package com.google.caja.opensocial;
 
+import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -135,8 +137,10 @@ public class DefaultGadgetRewriterTest extends TestCase {
   private void assertRewritePasses(String file, MessageLevel failLevel)
       throws Exception {
     Reader input = new StringReader(TestUtil.readResource(getClass(), file));
-    URI baseUri = TestUtil.getResource(getClass(), file);
-    rewriter.rewrite(baseUri, input, uriCallback, "canvas", System.out);
+    URI gadgetUri = TestUtil.getResource(getClass(), file);
+    CharProducer cp = CharProducer.Factory.create(
+        input, new InputSource(gadgetUri));
+    rewriter.rewrite(gadgetUri, cp, uriCallback, "canvas", System.out);
 
     checkMessages(failLevel);
   }
@@ -145,10 +149,12 @@ public class DefaultGadgetRewriterTest extends TestCase {
       String file, String goldenFile, MessageLevel failLevel)
       throws Exception {
     Reader input = new StringReader(TestUtil.readResource(getClass(), file));
-    URI baseUri = TestUtil.getResource(getClass(), file);
+    URI gadgetUri = TestUtil.getResource(getClass(), file);
+    CharProducer cp = CharProducer.Factory.create(
+        input, new InputSource(gadgetUri));
 
     StringBuilder sb = new StringBuilder();
-    rewriter.rewrite(baseUri, input, uriCallback, "canvas", sb);
+    rewriter.rewrite(gadgetUri, cp, uriCallback, "canvas", sb);
     String actual = normalXml(sb.toString()).trim();
 
     checkMessages(failLevel);
@@ -168,18 +174,21 @@ public class DefaultGadgetRewriterTest extends TestCase {
   private void assertRewriteFailsWithMessage(String htmlContent, String msg)
       throws Exception {
     Reader input = new StringReader(
-       "<?xml version=\"1.0\"?>"
-       + "<Module>"
-       + "<ModulePrefs title=\"Example Gadget\">"
-       + "<Require feature=\"opensocial-0.5\"/>"
-       + "</ModulePrefs>"
-       + "<Content type=\"html\">"
-       + "<![CDATA[" + htmlContent + "]]>"
-       + "</Content>"
-       + "</Module>");
-    URI baseUri = URI.create("http://unittest.google.com/foo/bar/");
+        "<?xml version=\"1.0\"?>"
+        + "<Module>"
+        + "<ModulePrefs title=\"Example Gadget\">"
+        + "<Require feature=\"opensocial-0.5\"/>"
+        + "</ModulePrefs>"
+        + "<Content type=\"html\">"
+        + "<![CDATA[" + htmlContent + "]]>"
+        + "</Content>"
+        + "</Module>");
+    URI gadgetUri = URI.create("http://unittest.google.com/foo/bar/");
+    CharProducer cp = CharProducer.Factory.create(
+        input, new InputSource(gadgetUri));
+
     try {
-      rewriter.rewrite(baseUri, input, uriCallback, "canvas", System.out);
+      rewriter.rewrite(gadgetUri, cp, uriCallback, "canvas", System.out);
       fail("rewrite should have failed with message " + msg);
     } catch (GadgetRewriteException ex) {
       // pass

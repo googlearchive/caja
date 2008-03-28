@@ -19,7 +19,6 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.HtmlLexer;
-import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
@@ -37,7 +36,6 @@ import com.google.caja.util.ReadableReader;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StringReader;
 import java.net.URI;
 
 /**
@@ -69,24 +67,27 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
 
   public void rewrite(ExternalReference gadgetRef, UriCallback uriCallback,
                       String view, Appendable output)
-      throws UriCallbackException, GadgetRewriteException, IOException {
+      throws UriCallbackException, GadgetRewriteException, IOException,
+          ParseException {
     assert gadgetRef.getUri().isAbsolute() : gadgetRef.toString();
     rewrite(
         gadgetRef.getUri(),
-        uriCallback.retrieve(gadgetRef, "text/xml"),
+        CharProducer.Factory.create(
+            uriCallback.retrieve(gadgetRef, "text/xml"),
+            new InputSource(gadgetRef.getUri())),
         uriCallback,
         view,
         output);
   }
 
-  public void rewrite(URI baseUri, Readable gadgetSpec, UriCallback uriCallback,
+  public void rewrite(URI baseUri, CharProducer gadgetSpec, UriCallback uriCallback,
                       String view, Appendable output)
-      throws GadgetRewriteException, IOException {
+      throws GadgetRewriteException, IOException, ParseException {
     GadgetParser parser = new GadgetParser();
-    GadgetSpec spec = parser.parse(gadgetSpec, view);
+    GadgetSpec spec = parser.parse(
+        gadgetSpec, new InputSource(baseUri), view, mq);
     StringBuilder rewritten = new StringBuilder();
-    rewriteContent(
-        baseUri, new StringReader(spec.getContent()), uriCallback, rewritten);
+    rewriteContent(baseUri, spec.getContent(), uriCallback, rewritten);
     spec.setContent(rewritten.toString());
     parser.render(spec, output);
   }

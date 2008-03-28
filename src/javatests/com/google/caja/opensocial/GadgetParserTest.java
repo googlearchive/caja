@@ -13,10 +13,14 @@
 
 package com.google.caja.opensocial;
 
+import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.InputSource;
+import com.google.caja.reporting.MessageContext;
 import com.google.caja.util.TestUtil;
 import junit.framework.TestCase;
 
 import java.io.StringReader;
+import java.net.URI;
 
 /**
  * @author ihab.awad@gmail.com (Ihab Awad)
@@ -57,7 +61,13 @@ public class GadgetParserTest extends TestCase {
   }
 
   private GadgetSpec parseString(String gadgetSpec, String view) throws Exception {
-    return new GadgetParser().parse(new StringReader(gadgetSpec), view);
+    InputSource is = new InputSource(URI.create("test:///" + getName())); 
+    return new GadgetParser().parse(
+        CharProducer.Factory.create(
+            new StringReader(gadgetSpec), is),
+        is,
+        view,
+        TestUtil.createTestMessageQueue(new MessageContext()));
   }
 
   private String render(GadgetSpec spec) throws Exception {

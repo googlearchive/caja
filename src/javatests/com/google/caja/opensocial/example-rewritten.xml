@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5"/></ModulePrefs><Content type="html"><![CDATA[<style type="text/css">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5" /></ModulePrefs><Content type="html"><![CDATA[<style type="text/css">
 .DOM-PREFIX #DOM-PREFIX-p3 {
   color: red
 }

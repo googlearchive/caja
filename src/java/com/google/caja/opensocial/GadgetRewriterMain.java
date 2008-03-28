@@ -13,8 +13,10 @@
 
 package com.google.caja.opensocial;
 
+import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.ParseException;
 import com.google.caja.plugin.Config;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -49,7 +51,8 @@ public class GadgetRewriterMain {
   }
 
   public static void main(String[] argv)
-      throws GadgetRewriteException, IOException, UriCallbackException {
+      throws GadgetRewriteException, IOException, ParseException,
+          UriCallbackException {
     System.exit(new GadgetRewriterMain().run(argv));
   }
 
@@ -102,7 +105,8 @@ public class GadgetRewriterMain {
   }
   
   private int run(String[] argv)
-      throws UriCallbackException, GadgetRewriteException, IOException {
+      throws GadgetRewriteException, IOException, ParseException,
+          UriCallbackException {
     if (!config.processArguments(argv)) {
       return -1;
     }
@@ -118,8 +122,9 @@ public class GadgetRewriterMain {
       URI baseUri = config.getBaseUri();
       for (URI input : config.getInputUris()) {
         Reader r = cb.retrieve(new ExternalReference(input, null), null);
+        CharProducer p = CharProducer.Factory.create(r, new InputSource(input));
         try {
-          rewriter.rewrite(baseUri, r, cb, config.getGadgetView(), w);
+          rewriter.rewrite(baseUri, p, cb, config.getGadgetView(), w);
         } finally {
           SnippetProducer sp = new SnippetProducer(originalSources, mc);
           for (Message msg : mq.getMessages()) {

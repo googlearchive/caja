@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -207,6 +208,28 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
 
     public String getTagName() { return getValue(); }
 
+    public List<Attrib> getAttributeNodes() {
+      List<Attrib> attribs = new ArrayList<Attrib>();
+      for (DomTree child : children()) {
+        if (!(child instanceof Attrib)) { break; }
+        attribs.add((Attrib) child);
+      }
+      return attribs;
+    }
+    
+    /**
+     * Returns the first attribute of this element with the given name or null
+     * if there is none.
+     */
+    public Attrib getAttribute(String name) {
+      for (DomTree child : children()) {
+        if (!(child instanceof Attrib)) { break; }
+        Attrib attrib = (Attrib) child;
+        if (name.equals(attrib.getAttribName())) { return attrib; }
+      }
+      return null;
+    }
+
     public void render(RenderContext r) throws IOException {
       r.out.append('<');
       renderHtmlIdentifier(getTagName(), r);
@@ -220,7 +243,10 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
         child.render(r);
         ++i;
       }
-      if (i == n && HtmlTextEscapingMode.isVoidElement(getTagName())) {
+      if (i == n
+          && ((r instanceof MarkupRenderContext
+               && ((MarkupRenderContext) r).asXml())
+              || HtmlTextEscapingMode.isVoidElement(getTagName()))) {
         // This is safe regardless of whether the output is XML or HTML since
         // we only skip the end tag for HTML elements that don't require one,
         // and the slash will cause XML to treat it as a void tag.
@@ -251,7 +277,7 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
       super(Collections.<DomTree>singletonList(value), start, end);
       assert start.type == HtmlTokenType.ATTRNAME;
     }
-    Attrib(Value value, Token<HtmlTokenType> start, FilePosition pos) {
+    public Attrib(Value value, Token<HtmlTokenType> start, FilePosition pos) {
       super(Collections.<DomTree>singletonList(value), start, pos);
       assert start.type == HtmlTokenType.ATTRNAME;
     }
@@ -281,7 +307,7 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
    * An attribute value.  This nodes value is the attribute value text.
    */
   public static final class Value extends DomTree {
-    Value(Token<HtmlTokenType> tok) {
+    public Value(Token<HtmlTokenType> tok) {
       super(Collections.<DomTree>emptyList(), tok, tok);
       assert tok.type == HtmlTokenType.ATTRVALUE;
     }
@@ -307,8 +333,9 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
     }
 
     public void render(RenderContext r) throws IOException {
-      if (getToken().type == HtmlTokenType.UNESCAPED) {
-        // TODO(mikesamuel): disallow this if the rendercontext specifies XML
+      if (getToken().type == HtmlTokenType.UNESCAPED
+          && !(r instanceof MarkupRenderContext
+               && ((MarkupRenderContext) r).asXml())) {
         r.out.append(getValue());
       } else {
         renderHtml(getValue(), r);
@@ -320,14 +347,16 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
    * A CDATA section.  Its value is textual content.
    */
   public static final class CData extends DomTree {
-    CData(Token<HtmlTokenType> tok) {
+    public CData(Token<HtmlTokenType> tok) {
       super(Collections.<DomTree>emptyList(), tok, tok);
       assert tok.type == HtmlTokenType.CDATA;
     }
 
     public void render(RenderContext r) throws IOException {
       String value = getValue();
-      if (!value.contains("]]>")) {
+      if (!value.contains("]]>")
+          && (r instanceof MarkupRenderContext
+              && ((MarkupRenderContext) r).asXml())) {
         r.out.append("<![CDATA[");
         r.out.append(value);
         r.out.append("]]>");

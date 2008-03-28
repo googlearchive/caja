@@ -73,6 +73,8 @@ public final class FilePosition implements MessagePart {
   /** a special position for predefineds like the <tt>String</tt> function. */
   public static final FilePosition PREDEFINED = instance(
       new InputSource(URI.create("predefined:///predefined")), 0, 0, 0, 0);
+  public static final FilePosition UNKNOWN = instance(
+      new InputSource(URI.create("unknown:///unknown")), 0, 0, 0, 0);
 
   protected FilePosition(
     InputSource source,

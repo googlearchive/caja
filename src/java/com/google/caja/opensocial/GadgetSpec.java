@@ -14,6 +14,10 @@
 
 package com.google.caja.opensocial;
 
+import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.FilePosition;
+
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +37,7 @@ public class GadgetSpec {
   private final Map<String, String> modulePrefs = new HashMap<String, String>();
   private final List<String> requiredFeatures = new ArrayList<String>();
   private String contentType = null;
-  private String content = null;
+  private CharProducerFactory content = null;
 
   public Map<String, String> getModulePrefs() { return modulePrefs; }
 
@@ -43,7 +47,21 @@ public class GadgetSpec {
 
   public void setContentType(String contentType) { this.contentType = contentType; }
 
-  public String getContent() { return content; }
+  public CharProducer getContent() { return content.producer(); }
 
-  public void setContent(String content) { this.content = content; }
+  public void setContent(CharProducerFactory content) { this.content = content; }
+  
+  public void setContent(final String content) {
+    setContent(
+        new CharProducerFactory() {
+          public CharProducer producer() {
+            return CharProducer.Factory.create(
+                new StringReader(content), FilePosition.UNKNOWN);
+          }
+        });
+  }
+
+  public interface CharProducerFactory {
+    CharProducer producer();
+  }
 }
