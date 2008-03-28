@@ -57,10 +57,24 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Extract unsafe bits from HTML for processing by later stages.
+ * Extract some unsafe bits from HTML for processing by later stages.
  * Specifically, extracts {@code onclick} and other handlers, the contents of
  * {@code <script>} elements, and the contents of {@code <style>} elements,
  * and the content referred to by {@code <link rel=stylesheet>} elements.
+ *
+ * <p>
+ * This stage is not responsible for producing a safe tree.  It is only meant to
+ * allow later stages to do special handling of otherwise unsafe bits, by
+ * rerouting pieces that would otherwise trigger alarms in
+ * {@link SanitizeHtmlStage}.
+ *
+ * <p>
+ * This stage runs *before* the HTML sanitizer.  As such, it should not assume
+ * that the tree is normalized.  Specifically, DOM trees may reach this stage
+ * that contain duplicate attributes; and unknown or unsafe elements and
+ * attributes.
+ *
+ * @author mikesamuel@gmail.com
  */
 public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
 
@@ -99,6 +113,8 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
               rewriteStyleTag(tag, parentNode, jobs);
             } else if ("link".equals(name)) {
               rewriteLinkTag(tag, parentNode, jobs);
+            } else if ("body".equals(name)) {
+              moveOnLoadHandlerToEndOfBody(tag);
             }
           }
           return true;
@@ -112,8 +128,10 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       DomTree.Tag scriptTag, MutableParseTreeNode parent, Jobs jobs) {
     PluginEnvironment env = jobs.getPluginMeta().getPluginEnvironment();
 
-    DomTree.Attrib type = lookupAttribute(scriptTag, "type");
-    DomTree.Attrib src = lookupAttribute(scriptTag, "src");
+    DomTree.Attrib type = lookupAttribute(
+        scriptTag, "type", DupePolicy.YIELD_FIRST);
+    DomTree.Attrib src = lookupAttribute(
+        scriptTag, "src", DupePolicy.YIELD_FIRST);
     if (type != null && !isJavaScriptContentType(type.getAttribValue())) {
       jobs.getMessageQueue().addMessage(
           PluginMessageType.UNRECOGNIZED_CONTENT_TYPE,
@@ -205,7 +223,8 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
 
     parent.removeChild(styleTag);
 
-    DomTree.Attrib rel = lookupAttribute(styleTag, "rel");
+    DomTree.Attrib rel = lookupAttribute(styleTag, "rel",
+        DupePolicy.YIELD_NULL);
     if (rel == null
         || !rel.getAttribValue().trim().equalsIgnoreCase("stylesheet")) {
       // If it's not a stylesheet then ignore it.
@@ -213,8 +232,10 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       return;
     }
 
-    DomTree.Attrib href = lookupAttribute(styleTag, "href");
-    DomTree.Attrib media = lookupAttribute(styleTag, "media");
+    DomTree.Attrib href = lookupAttribute(
+        styleTag, "href", DupePolicy.YIELD_NULL);
+    DomTree.Attrib media = lookupAttribute(
+        styleTag, "media", DupePolicy.YIELD_FIRST);
 
     if (href == null) {
       jobs.getMessageQueue().addMessage(
@@ -252,7 +273,8 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
   private void extractStyles(
       DomTree.Tag styleTag, CharProducer cssStream, DomTree.Attrib media,
       Jobs jobs) {
-    DomTree.Attrib type = lookupAttribute(styleTag, "type");
+    DomTree.Attrib type = lookupAttribute(
+        styleTag, "type", DupePolicy.YIELD_FIRST);
 
     if (type != null && !isCssContentType(type.getAttribValue())) {
       jobs.getMessageQueue().addMessage(
@@ -324,6 +346,42 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
   }
 
   /**
+   * Convert a <body> onload handler to a script tag so that it can be
+   * processed correctly in the normal flow of HTML.
+   *
+   * <pre>
+   * &lt;body onload=foo()&gt;      &lt;body&gt;
+   *   Hello World              =>    Hello World
+   * &lt;/body&gt;                    &lt;script&gt;foo()&lt;/script&gt;
+   *                                &lt;/body&gt;
+   * </pre>
+   */
+  private void moveOnLoadHandlerToEndOfBody(DomTree.Tag body) {
+    DomTree.Attrib onload = lookupAttribute(
+        body, "onload", DupePolicy.YIELD_NULL);
+    DomTree.Attrib language = lookupAttribute(
+        body, "language", DupePolicy.YIELD_FIRST);
+    if (language != null && !isJavaScriptLanguage(language.getAttribValue())) {
+      // If the onload handler is vbscript, let the validator complain.
+      return;
+    }
+
+    if (onload == null) { return; }
+    body.removeChild(onload);
+
+    FilePosition pos = onload.getAttribValueNode().getFilePosition();
+    String source = onload.getAttribValue();
+    DomTree.Text sourceText = new DomTree.Text(
+        Token.instance(source, HtmlTokenType.UNESCAPED, pos));
+    DomTree.Tag scriptElement = new DomTree.Tag(
+        Collections.singletonList(sourceText),
+        Token.instance("<script", HtmlTokenType.TAGBEGIN,
+                       FilePosition.startOf(pos)), pos);
+
+    body.appendChild(scriptElement);
+  }
+  
+  /**
    * A CharProducer that produces characters from the concatenation of all
    * the text nodes in the given node list.
    */
@@ -373,21 +431,57 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
             || "type/ecmascript".equals(mimeType));
   }
 
+  /**
+   * Per the language attribute which identifies the programming language for
+   * event handlers.
+   * <p>
+   * <a href=
+   * "http://www.blooberry.com/indexdot/html/tagpages/attributes/language.htm">
+   * Language</a>:
+   *
+   * This attribute is used to specify the current scripting
+   * language in use for an element. 'JScript' and 'javascript' both
+   * refer to Javascript engines. 'Vbs' and 'Vbscript' both refer to
+   * Vbscript engines. 'XML' refers to an embedded XML
+   * document/fragment.
+   * <p>
+   * Values: JScript [DEFAULT] | javascript | vbs | vbscript | XML 
+   */
+  private static boolean isJavaScriptLanguage(String language) {
+    
+    language = language.toLowerCase();
+    return language.startsWith("javascript") || language.startsWith("jscript");
+  }
+
   private static boolean isCssContentType(String contentType) {
     return "text/css".equals(getMimeType(contentType));
   }
 
+  /**
+   * @param attribName a canonicalized attribute name.
+   * @param onDupe what to do if there are multiple attributes with name
+   *     attribName.
+   * @return null if there is no match.
+   */
   private static DomTree.Attrib lookupAttribute(
-      DomTree.Tag el, String attribName) {
+      DomTree.Tag el, String attribName, DupePolicy onDupe) {
+    DomTree.Attrib match = null;
     for (DomTree child : el.children()) {
       if (!(child instanceof DomTree.Attrib)) { break; }
       DomTree.Attrib attrib = (DomTree.Attrib) child;
-      if (attribName.equalsIgnoreCase(attrib.getAttribName())) {
-        return attrib;
+      if (attribName.equals(attrib.getAttribName())) {
+        if (onDupe == DupePolicy.YIELD_NULL) { return attrib; }
+        if (match == null) {
+          match = attrib;
+        } else {
+          // If there are duplicates, it's unclear what to do, so return null.
+          return null;
+        }
       }
     }
-    return null;
+    return match;
   }
+  private static enum DupePolicy { YIELD_NULL, YIELD_FIRST, };
 
 
   public static Block parseJs(

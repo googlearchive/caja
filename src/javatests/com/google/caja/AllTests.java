@@ -52,6 +52,8 @@ import com.google.caja.plugin.HtmlCompiledPluginTest;
 import com.google.caja.plugin.HtmlSanitizerTest;
 import com.google.caja.plugin.JsHtmlSanitizerTest;
 import com.google.caja.plugin.caps.CapabilityRewriterTest;
+import com.google.caja.plugin.stages.OpenTemplateStageTest;
+import com.google.caja.plugin.stages.RewriteHtmlStageTest;
 import com.google.caja.reporting.SnippetProducerTest;
 import com.google.caja.util.JoinTest;
 import com.google.caja.util.SparseBitSetTest;
@@ -104,16 +106,18 @@ public class AllTests {
           LookaheadCharProducerTest.class,
           MatchTest.class,
           NumberLiteralTest.class,
+          OpenTemplateStageTest.class,
           ParseTreeNodeTest.class,
           ParserTest.class,
           PunctuationTrieTest.class,
           QuasiBuilderTest.class,
+          RewriteHtmlStageTest.class,
           RRuleTest.class,
           ScopeTest.class,
           SnippetProducerTest.class,
           SparseBitSetTest.class,
           StringLiteralTest.class,
-        };
+    };
     Pattern testFilter = Pattern.compile(System.getProperty("test.filter", ""));
     for (Class<? extends TestCase> testClass : testClasses) {
       if (testFilter.matcher(testClass.getName()).find()) {
