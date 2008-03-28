@@ -109,25 +109,21 @@ public class DefaultCajaRewriterTest extends TestCase {
   }
 
   public void testForeach() throws Exception {
-    if (false) {
-    // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
     checkSucceeds(
         "1; for (var k in x) { k; }",
-        // TOOD(ihab.awad): review welds        
+        // TOOD(ihab.awad): review welds and move away
+        // from putting temporaries in ___OUTERS___.
         "1; {" +
         "  ___OUTERS___.x0___ = " + weldReadOuters("x") + ";" +
         "  ___OUTERS___.x1___ = undefined;" +
-        "  ;" +
-        "  for (___OUTERS___.x1 in ___OUTERS___.x0___) {" +
+        "  " + weldReadOuters("k") + ";" +
+        "for (___OUTERS___.x1___ in ___OUTERS___.x0___) {" +
         "    if (___.canEnumPub(___OUTERS___.x0___, ___OUTERS___.x1___)) {" +
         "      " + weldSetOuters("k", "___OUTERS___.x1___") + ";" +
         "      { " + weldReadOuters("k") + "; }" +
         "    }" +
         "  }" +
         "}");
-    }
-    if (false) {
-    // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
     checkSucceeds(
         "2; try { } catch (e) { for (var k in x) { k; } }",
         "2; try {" +
@@ -138,8 +134,8 @@ public class DefaultCajaRewriterTest extends TestCase {
         "    {" +
         "      ___OUTERS___.x0___ = " + weldReadOuters("x") + ";" +
         "      ___OUTERS___.x1___ = undefined;" +
-        "      ;" +
-        "      for (___OUTERS___.x1 in ___OUTERS___.x0___) {" +
+        "      " + weldReadOuters("k") + ";" +
+        "      for (___OUTERS___.x1___ in ___OUTERS___.x0___) {" +
         "        if (___.canEnumPub(___OUTERS___.x0___, ___OUTERS___.x1___)) {" +
         "          " + weldSetOuters("k", "___OUTERS___.x1___") + ";" +
         "          { " + weldReadOuters("k") + "; }" +
@@ -148,7 +144,6 @@ public class DefaultCajaRewriterTest extends TestCase {
         "    }" +
         "  }" +
         "}");
-    }
     checkSucceeds(
         "3; function() {" +
         "  for (var k in x) { k; }" +
@@ -183,8 +178,6 @@ public class DefaultCajaRewriterTest extends TestCase {
         "    }" +
         "  }" +
         "}));");
-    if (false) {
-    // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
     checkSucceeds(
         "5; function() {" +
         "  for (z[0] in x) { z; }" +
@@ -195,28 +188,24 @@ public class DefaultCajaRewriterTest extends TestCase {
         "    var x1___ = undefined;" +
         "    for (x1___ in x0___) {" +
         "      if (___.canEnumPub(x0___, x1___)) {" +
-        "        ___.simpleFunc(" + weldReadOuters("z") + ")[0] = x1___;" +
+        "        ___.setPub(" + weldReadOuters("z") + ", 0, x1___);" +
         "        { " + weldReadOuters("z") + "; }" +
         "      }" +
         "    }" +
         "  }" +
         "}));");
-    }
-    if (false) {
-    // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
     checkSucceeds(
         "6; for (k in x) { k; }",
         "6; {" +
         "  ___OUTERS___.x0___ = " + weldReadOuters("x") + ";" +
         "  ___OUTERS___.x1___ = undefined;" +
-        "  for (___OUTERS___.x1 in ___OUTERS___.x0___) {" +
+        "  for (___OUTERS___.x1___ in ___OUTERS___.x0___) {" +
         "    if (___.canEnumPub(___OUTERS___.x0___, ___OUTERS___.x1___)) {" +
         "      " + weldSetOuters("k", "___OUTERS___.x1___") + ";" +
         "      { " + weldReadOuters("k") + "; }" +
         "    }" +
         "  }" +
         "}");
-    }
     checkSucceeds(
         "7; function() {" +
         "  for (k in x) { k; }" +
@@ -251,40 +240,6 @@ public class DefaultCajaRewriterTest extends TestCase {
         "    }" +
         "  }" +
         "}));");
-    if (false) {
-    // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
-    checkSucceeds(
-        "9; for (y.k in x) { y.k; }",
-        "9; {" +
-        "  ___OUTERS___.x0___ = " + weldReadOuters("x") + ";" +
-        "  ___OUTERS___.x1___ = undefined;" +
-        "  for (___OUTERS___.x1 in ___OUTERS___.x0___) {" +
-        "    if (___.canEnumPub(___OUTERS___.x0___, ___OUTERS___.x1___)) {" +
-        "      " + weldReadOuters("y") + ".k = ___OUTERS___.x1___;" +
-        "      { " + weldReadOuters("y") + ".k; }" +
-        "    }" +
-        "  }" +
-        "}");
-    }
-    if (false) {
-    // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
-    checkSucceeds(
-        "10; function() {" +
-        "  for (y.k in x) { y.k; }" +
-        "};",
-        "10; ___.primFreeze(___.simpleFunc(function() {" +
-        "  {" +
-        "    var x0___ = " + weldReadOuters("x") + ";" +
-        "    var x1___ = undefined;" +
-        "    for (x1___ in x0___) {" +
-        "      if (___.canEnumPub(x0___, x1___)) {" +
-        "        " + weldReadOuters("y") + ".k = x1___;" +
-        "        { " + weldReadOuters("y") + ".k; }" +
-        "      }" +
-        "    }" +
-        "  }" +
-        "}));");
-    }
     checkSucceeds(
         "11; function foo() {" +
         "  for (var k in this) { k; }" +
@@ -320,9 +275,9 @@ public class DefaultCajaRewriterTest extends TestCase {
         "  ___OUTERS___.x0___ = ___OUTERS___;" +
         "  ___OUTERS___.x1___ = undefined;" +
         "  " + weldReadOuters("k") + ";" +
-        "  for (x1___ in x0___) {" +
-        "    if (___.canEnumPub(x0___, x1___)) {" +
-        "      " + weldSetOuters("k", "x1___") + ";" +
+        "  for (___OUTERS___.x1___ in ___OUTERS___.x0___) {" +
+        "    if (___.canEnumPub(___OUTERS___.x0___, ___OUTERS___.x1___)) {" +
+        "      " + weldSetOuters("k", "___OUTERS___.x1___") + ";" +
         "      { " + weldReadOuters("k") + "; }" +
         "    }" +
         "  }" +
@@ -385,26 +340,6 @@ public class DefaultCajaRewriterTest extends TestCase {
             "  return foo;" +
             "})()") +
         ";");
-    if (false) {
-    // TODO(ihab.awad): Enable when http://code.google.com/p/google-caja/issues/detail?id=68 fixed
-    checkSucceeds(
-        "15; function foo() {" +
-        "  for (y.k in this) { y.k; }" +
-        "}",
-        "15; ___OUTERS___.foo = ___.ctor(function foo() {" +
-        "  var t___ = this;" +
-        "  {" +
-        "    var x0___ = t___;" +
-        "    var x1___ = undefined;" +
-        "    for (x1___ in x0___) {" +
-        "      if (___.canEnumProp(x0___, x1___)) {" +
-        "        " + weldReadOuters("y") + ".k = x1___;" +
-        "        { " + weldReadOuters("y") + ".k; }" +
-        "      }" +
-        "    }" +
-        "  }" +
-        "});");
-    }
   }
 
   public void testTryCatch() throws Exception {

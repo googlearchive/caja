@@ -255,7 +255,7 @@ public abstract class Rule implements MessagePart {
       Rule rule,
       Scope scope,
       MessageQueue mq) {
-    ParseTreeNode variableDefinition;
+    ParseTreeNode variableDefinition, reference;
 
     if (inOuters) {
       variableDefinition = substV(
@@ -263,15 +263,19 @@ public abstract class Rule implements MessagePart {
           "ref", SyntheticNodes.s(new Reference(new Identifier(variableName))),
           "rhs", rewriter.expand(value, scope, mq));
       variableDefinition = s(new ExpressionStmt((Expression)variableDefinition));
+      reference = substV(
+          "___OUTERS___.@ref",
+          "ref", newReference(variableName));
     } else {
       variableDefinition = substV(
           "var @ref = @rhs;",
           "ref", SyntheticNodes.s(new Identifier(variableName)),
           "rhs", rewriter.expand(value, scope, mq));
+      reference = newReference(variableName);
     }
 
     return new Pair<ParseTreeNode, ParseTreeNode>(
-        newReference(variableName),
+        reference,
         variableDefinition);
   }
 
