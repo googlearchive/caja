@@ -14,6 +14,8 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.lexer.Keyword;
+
 /**
  * Caja reserved names.
  *
@@ -21,7 +23,7 @@ package com.google.caja.plugin;
  */
 public class ReservedNames {
   public static final String LOCAL_THIS = "t___";
-  public static final String THIS = "this";
+  public static final String THIS = Keyword.THIS.toString();
   public static final String SUPER = "Super";
   static final String TEMP = "x___";
   public static final String ARGUMENTS = "arguments";
@@ -42,7 +44,7 @@ public class ReservedNames {
   /** Escapes a string to a HTML PCDATA. */
   public static final String HTML = "html___";
   /**
-   * Applies {@link com.google.caja.opensocial.URICallback#rewrite} at runtime.
+   * Applies {@link com.google.caja.opensocial.UriCallback#rewrite} at runtime.
    */
   public static final String REWRITE_URI = "rewriteUri___";
   /** Applies the id and nmtoken policy at runtime. */

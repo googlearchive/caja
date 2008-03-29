@@ -14,15 +14,22 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.Keyword;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
+import com.google.caja.parser.js.BooleanLiteral;
+import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
+import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.Literal;
+import com.google.caja.parser.js.Operation;
+import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.plugin.ReservedNames;
 import com.google.caja.plugin.SyntheticNodes;
 import static com.google.caja.plugin.SyntheticNodes.s;
@@ -33,6 +40,7 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Pair;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -185,15 +193,15 @@ public abstract class Rule implements MessagePart {
     return result;
   }
 
-  protected final ParseTreeNode substV(Object... args) {
-    if (args.length %2 == 0) throw new RuntimeException("Wrong # of args for subst()");
+  protected final ParseTreeNode substV(String pattern, Object... args) {
+    if (args.length %2 != 0) throw new RuntimeException("Wrong # of args for subst()");
     Map<String, ParseTreeNode> bindings = new HashMap<String, ParseTreeNode>();
-    for (int i = 1; i < args.length; ) {
+    for (int i = 0; i < args.length; ) {
       bindings.put(
           (String)args[i++],
           (ParseTreeNode)args[i++]);
     }
-    return subst((String)args[0], bindings);
+    return subst(pattern, bindings);
   }
 
   protected ParseTreeNode getFunctionHeadDeclarations(
@@ -219,8 +227,7 @@ public abstract class Rule implements MessagePart {
   }
 
   protected Reference newReference(String name) {
-    return
-        SyntheticNodes.s(new Reference(SyntheticNodes.s(new Identifier(name))));
+    return s(new Reference(s(new Identifier(name))));
   }
 
   protected Pair<ParseTreeNode, ParseTreeNode> reuseEmpty(
@@ -236,11 +243,12 @@ public abstract class Rule implements MessagePart {
           new Reference(new Identifier(variableName)),
           scope,
           mq);
-      variableDefinition = s(new ExpressionStmt((Expression)variableDefinition));
+      variableDefinition = s(
+          new ExpressionStmt((Expression)variableDefinition));
     } else {
       variableDefinition = substV(
           "var @ref;",
-          "ref", SyntheticNodes.s(new Identifier(variableName)));
+          "ref", s(new Identifier(variableName)));
     }
 
     return new Pair<ParseTreeNode, ParseTreeNode>(
@@ -260,9 +268,10 @@ public abstract class Rule implements MessagePart {
     if (inOuters) {
       variableDefinition = substV(
           "___OUTERS___.@ref = @rhs;",
-          "ref", SyntheticNodes.s(new Reference(new Identifier(variableName))),
+          "ref", s(new Reference(s(new Identifier(variableName)))),
           "rhs", rewriter.expand(value, scope, mq));
-      variableDefinition = s(new ExpressionStmt((Expression)variableDefinition));
+      variableDefinition = s(
+          new ExpressionStmt((Expression)variableDefinition));
       reference = substV(
           "___OUTERS___.@ref",
           "ref", newReference(variableName));
@@ -325,22 +334,22 @@ public abstract class Rule implements MessagePart {
           "var @ref = @rhs;",
           "ref", new Identifier("x___"),
           "rhs", value);
-        return new ExpressionStmt((Expression)substV(
-            "(function() {" +
-            "  @pvb;" +
-            "  return ___OUTERS___.@sCanSet ? (___OUTERS___.@s = @pva) : " +
-            "                                 ___.setPub(___OUTERS___, @sName, @pva);" +
-            "})();",
-            "s", symbol,
-            "sCanSet", new Reference(new Identifier(sName + "_canSet___")),
-            "sName", new StringLiteral(StringLiteral.toQuotedValue(sName)),
-            "pva", pva,
-            "pvb", pvb));
+      return new ExpressionStmt((Expression)substV(
+          "(function() {" +
+          "  @pvb;" +
+          "  return ___OUTERS___.@sCanSet ? (___OUTERS___.@s = @pva) : " +
+          "                                 ___.setPub(___OUTERS___, @sName, @pva);" +
+          "})();",
+          "s", symbol,
+          "sCanSet", new Reference(new Identifier(sName + "_canSet___")),
+          "sName", toStringLiteral(symbol),
+          "pva", pva,
+          "pvb", pvb));
     } else {
-        return substV(
-            "var @s = @v",
-            "s", symbol.children().get(0),
-            "v", value);
+      return substV(
+          "var @s = @v",
+          "s", symbol.children().get(0),
+          "v", value);
     }
   }
 
@@ -424,14 +433,14 @@ public abstract class Rule implements MessagePart {
       Scope scope,
       MessageQueue mq) {
     String xName = getReferenceName(ref);
-     if (scope.isGlobal(xName)) {
-        return substV(
-            "___OUTERS___.@xCanRead ? ___OUTERS___.@x : ___.readPub(___OUTERS___, @xName, true);",
-            "x", ref,
-            "xCanRead", new Reference(new Identifier(xName + "_canRead___")),
-            "xName", new StringLiteral(StringLiteral.toQuotedValue(xName)));
+    if (scope.isGlobal(xName)) {
+      return substV(
+          "___OUTERS___.@xCanRead ? ___OUTERS___.@x : ___.readPub(___OUTERS___, @xName, true);",
+          "x", ref,
+          "xCanRead", new Reference(new Identifier(xName + "_canRead___")),
+          "xName", new StringLiteral(StringLiteral.toQuotedValue(xName)));
     } else {
-        return ref;
+      return ref;
     }
   }
 
@@ -455,16 +464,40 @@ public abstract class Rule implements MessagePart {
     return true;
   }
 
-  protected boolean isSynthetic(ParseTreeNode node) {
+  protected static boolean isSynthetic(ParseTreeNode node) {
     return node.getAttributes().is(SyntheticNodes.SYNTHETIC);
   }
 
-  protected String getReferenceName(ParseTreeNode ref) {
+  protected static String getReferenceName(ParseTreeNode ref) {
     return ((Reference)ref).getIdentifierName();
   }
 
-  protected String getIdentifierName(ParseTreeNode id) {
+  protected static String getIdentifierName(ParseTreeNode id) {
     return ((Identifier)id).getValue();
+  }
+
+  /**
+   * Produce a StringLiteral from node's identifier.
+   * @param node an identifier or node that contains a single identifier like
+   *   a declaration or reference.
+   * @return a string literal whose unescaped content is identical to the
+   *   identifier's value, and whose file position is that of node.
+   */
+  protected static final StringLiteral toStringLiteral(ParseTreeNode node) {
+    Identifier ident;
+    if (node instanceof Reference) {
+      ident = ((Reference) node).getIdentifier();
+    } else if (node instanceof Declaration) {
+      ident = ((Declaration) node).getIdentifier();
+    } else {
+      ident = (Identifier) node;
+    }
+    StringLiteral sl = new StringLiteral(
+        StringLiteral.toQuotedValue(ident.getName()));
+    if (node.getFilePosition() != null) {
+      sl.setFilePosition(node.getFilePosition());
+    }
+    return sl;
   }
 
   protected boolean literalsEndWith(ParseTreeNode container, String suffix) {
@@ -479,5 +512,182 @@ public abstract class Rule implements MessagePart {
 
   private QuasiNode getPatternNode(String patternText) {
     return rewriter.getPatternNode(patternText);
+  }
+
+  /**
+   * Split the target of a read/set operation into an lvalue, an rvalue, and
+   * an ordered list of temporary variables needed to ensure proper order
+   * of execution.
+   * @param operand uncajoled expression that can be used as both an lvalue and
+   *    an rvalue.
+   * @return null if operand is not a valid lvalue, or its subexpressions do
+   *    not cajole.
+   */
+  ReadAssignOperands deconstructReadAssignOperand(
+      Expression operand, Scope scope, MessageQueue mq) {
+    if (isLocalReference(operand, scope)) {
+      return sideEffectlessReadAssignOperand(
+          (Expression) rewriter.expand(operand, scope, mq));
+    } else if (operand instanceof Reference) {
+      rewriter.expand(operand, scope, mq);
+      Reference outers = s(new Reference(s(new Identifier("___OUTERS___"))));
+      outers.setFilePosition(FilePosition.startOf(operand.getFilePosition()));
+      return sideEffectingReadAssignOperand(
+          outers, toStringLiteral(operand), scope, mq);
+    } else if (operand instanceof Operation) {
+      Operation op = (Operation) operand;
+      switch (op.getOperator()) {
+        case SQUARE_BRACKET:
+          return sideEffectingReadAssignOperand(
+              op.children().get(0), op.children().get(1),
+              scope, mq);
+        case MEMBER_ACCESS:
+          return sideEffectingReadAssignOperand(
+              op.children().get(0), toStringLiteral(op.children().get(1)),
+              scope, mq);
+      }
+    }
+    throw new IllegalArgumentException("Not an lvalue : " + operand);
+  }
+
+  /**
+   * Given a lhs that has no side effect when evaluated as an lvalue, produce
+   * a ReadAssignOperands without using temporaries.
+   */
+  private ReadAssignOperands sideEffectlessReadAssignOperand(
+      final Expression lhs) {
+    assert lhs.isLeftHandSide();
+    return new ReadAssignOperands(Collections.<Declaration>emptyList(), lhs) {
+        @Override
+        public Expression makeAssignment(Expression rvalue) {
+          return Operation.create(Operator.ASSIGN, lhs, rvalue);
+        }
+      };
+  }
+
+  private ReadAssignOperands sideEffectingReadAssignOperand(
+      Expression uncajoledObject, Expression uncajoledKey,
+      Scope scope, MessageQueue mq) {
+    final Reference object;  // The object that contains the field to assign.
+    final Expression key;  // Identifies the field to assign.
+    List<Declaration> temporaries = new ArrayList<Declaration>();
+
+    // Cajole the operands
+    Expression left = (Expression) rewriter.expand(uncajoledObject, scope, mq);
+    Expression right = (Expression) rewriter.expand(uncajoledKey, scope, mq);
+
+    // a[b] += 2
+    //   =>
+    // var x___ = a;
+    // var x0___ = b;
+
+    // If the right is simple then we can assume it does not modify the
+    // left, but otherwise the left has to be put into a temporary so that
+    // it's evaluated before the right can muck with it.
+    boolean isKeySimple = (right instanceof Literal
+                           || isLocalReference(right, scope));
+
+    // If the left is simple and the right does not need a temporary variable
+    // then don't introduce one.
+    if (isKeySimple && (isLocalReference(left, scope)
+                        || isOutersReference(left))) {
+      object = (Reference) left;
+    } else {
+      Identifier tmpVar = s(new Identifier(scope.newTempVariable()));
+      temporaries.add(s(new Declaration(tmpVar, left)));
+      object = s(new Reference(tmpVar));
+    }
+
+    // Don't bother to generate a temporary for a simple value like 'foo'
+    if (isKeySimple) {
+      key = right;
+    } else {
+      Identifier tmpVar = s(new Identifier(scope.newTempVariable()));
+      temporaries.add(s(new Declaration(tmpVar, right)));
+      key = s(new Reference(tmpVar));
+    }
+
+    // Is a property (as opposed to a public) reference.
+    final boolean isProp = uncajoledObject instanceof Reference
+        && Keyword.THIS.toString().equals(getReferenceName(uncajoledObject));
+
+    Expression rvalueCajoled = (Expression) substV(
+        "___.@flavorOfRead(@object, @key, @isGlobal)",
+        "flavorOfRead", newReference(isProp ? "readProp" : "readPub"),
+        "object", object,
+        "key", key,
+        // Make sure exception thrown if global variable not defined.
+        "isGlobal", new BooleanLiteral(isOutersReference(object)));
+
+    return new ReadAssignOperands(temporaries, rvalueCajoled) {
+        @Override
+        public Expression makeAssignment(Expression rvalue) {
+          return (Expression) substV(
+              "___.@flavorOfSet(@object, @key, @rvalue)",
+              "flavorOfSet", newReference(isProp ? "setProp" : "setPub"),
+              "object", object,
+              "key", key,
+              "rvalue", rvalue);
+        }
+      };
+  }
+
+  /**
+   * True iff e is a reference to a local in scope.
+   * We distinguish local references in many places because members of
+   * {@code ___OUTERS___} might be backed by getters/setters, and so
+   * must be evaluated exactly once as an lvalue.
+   */
+  private static boolean isLocalReference(Expression e, Scope scope) {
+    return e instanceof Reference
+        && !scope.isGlobal(((Reference) e).getIdentifierName());
+  }
+
+  /** True iff e is a reference to the global object. */
+  private static boolean isOutersReference(Expression e) {
+    if (!(e instanceof Reference)) { return false; }
+    // TODO(mikesamuel): move ReservedNames into this package and use it here.
+    return "___OUTERS___".equals(((Reference) e).getIdentifierName());
+  }
+
+  /**
+   * The operands in a read/assign operation.
+   * <p>
+   * When we need to express a single read/assign operation such as {@code *=}
+   * or {@code ++} as an operation that separates out the getting from the
+   * setting.
+   * <p>
+   * This encapsulates any temporary variables created to prevent multiple
+   * execution, and the cajoled lvalue and rvalue.
+   */
+  protected static abstract class ReadAssignOperands {
+    private final List<Declaration> temporaries;
+    private final Expression rvalue;
+
+    ReadAssignOperands(
+        List<Declaration> temporaries, Expression rvalue) {
+      this.temporaries = temporaries;
+      this.rvalue = rvalue;
+    }
+
+    /**
+     * The temporaries required by lvalue and rvalue in order of
+     * initialization.
+     */
+    public List<Declaration> getTemporaries() { return temporaries; }
+    public ParseTreeNodeContainer getTemporariesAsContainer() {
+      return new ParseTreeNodeContainer(temporaries);
+    }
+    /** Produce an assignment of the given rvalue to the cajoled lvalue. */
+    public abstract Expression makeAssignment(Expression rvalue);
+    /** The Cajoled RValue. */
+    public Expression getRValue() { return rvalue; }
+    /**
+     * Can the assignment be performed using the rvalue as an lvalue without
+     * the need for temporaries?
+     */
+    public boolean isSimpleLValue() {
+      return temporaries.isEmpty() && rvalue.isLeftHandSide();
+    }
   }
 }

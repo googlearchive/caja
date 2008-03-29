@@ -211,7 +211,7 @@ public final class TestUtil {
     checkFilePositionInvariants(new AncestorChain<ParseTreeNode>(root));
   }
 
-  public static Block parse(String src) throws Exception {
+  public static Block parse(String src) throws ParseException {
     InputSource inputSource
         = new InputSource(URI.create("built-in:///js-test"));
     Parser parser = new Parser(
@@ -229,15 +229,23 @@ public final class TestUtil {
     return (Block)topLevelStatement;
   }
 
-  public static String format(ParseTreeNode n) throws Exception {
+  public static String format(ParseTreeNode n) {
     StringBuilder output = new StringBuilder();
-    n.format(new MessageContext(), output);
+    try {
+      n.format(new MessageContext(), output);
+    } catch (IOException ex) {
+      throw new RuntimeException(ex);  // StringBuilder should not throw.
+    }
     return output.toString();
   }
 
-  public static String render(ParseTreeNode n) throws Exception {
+  public static String render(ParseTreeNode n) {
     StringBuilder output = new StringBuilder();
-    n.render(new RenderContext(new MessageContext(), output));
+    try {
+      n.render(new RenderContext(new MessageContext(), output));
+    } catch (IOException ex) {
+      throw new RuntimeException(ex);  // StringBuilder should not throw.
+    }
     return output.toString();
   }
   

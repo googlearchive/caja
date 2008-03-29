@@ -290,7 +290,7 @@ public class Scope {
    * In this scope or some enclosing scope, is a given name
    * defined as a declared function?
    *
-   * @param name an identifier.
+   * @param node an identifier.
    * @return whether 'name' is defined as a declared function within this
    *   scope. If 'name' is not defined, return false.
    */

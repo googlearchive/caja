@@ -32,4 +32,13 @@ public final class AssignOperation extends Operation {
   public AssignOperation(Operator op, Expression... params) {
     super(op, params);
   }
+
+  @Override
+  protected void childrenChanged() {
+    super.childrenChanged();
+
+    if (!children().get(0).isLeftHandSide()) {
+      throw new IllegalArgumentException(children().get(0) + " not an lvalue");
+    }
+  }
 }

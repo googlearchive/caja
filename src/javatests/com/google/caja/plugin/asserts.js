@@ -19,6 +19,7 @@
  */
 
 
+var console;
 function fail(msg) {
   if (typeof console !== 'undefined') {
     console.trace();
