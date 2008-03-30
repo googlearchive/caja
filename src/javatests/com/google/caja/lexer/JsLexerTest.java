@@ -200,6 +200,26 @@ public class JsLexerTest extends TestCase {
     assertEmpty(lexer);
   }
 
+  public void testByteOrderMarkersAtBeginning() {
+    JsLexer lexer = createLexer("\uFEFFvar foo", false);
+    assertNext(lexer, JsTokenType.KEYWORD, "var");
+    assertNext(lexer, JsTokenType.WORD, "foo");
+    assertEmpty(lexer);
+  }
+
+  public void testByteOrderMarkersBetweenTokens() {
+    JsLexer lexer = createLexer("1.\uFEFF3", false);
+    assertNext(lexer, JsTokenType.FLOAT, "1.");
+    assertNext(lexer, JsTokenType.INTEGER, "3");
+    assertEmpty(lexer);
+  }
+
+  public void testByteOrderMarkersInStrings() {
+    JsLexer lexer = createLexer("'\uFEFF'", false);
+    assertNext(lexer, JsTokenType.STRING, "'\uFEFF'");
+    assertEmpty(lexer);
+  }
+
   private JsLexer createLexer(String src) {
     return createLexer(src, false);
   }
