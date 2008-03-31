@@ -1000,38 +1000,38 @@ public class DefaultCajaRewriterTest extends TestCase {
         "  return x___;" +
         "})();");
     checkSucceeds(
-         "x--",
-         "(function () {"
-         + "  var x___ = ___.readPub(___OUTERS___, 'x', true) - 0;"
-         + "  ___.setPub(___OUTERS___, 'x', x___ - 1);"
-         + "  return x___;"
-         + "})()");
+        "x--",
+        "(function () {" +
+        "  var x___ = ___.readPub(___OUTERS___, 'x', true) - 0;" +
+        "  ___.setPub(___OUTERS___, 'x', x___ - 1);" +
+        "  return x___;" +
+        "})()");
     checkSucceeds(
-         "++x",
-         "___.setPub(___OUTERS___, 'x',"
-         + " ___.readPub(___OUTERS___, 'x', true) - -1);");
+        "++x",
+        "___.setPub(___OUTERS___, 'x'," +
+        " ___.readPub(___OUTERS___, 'x', true) - -1);");
     
     assertConsistent(
-        "var x = 2;\n"
-        + "var arr = [--x, x, x--, x, ++x, x, x++, x];\n"
-        + "assertEquals('1,1,1,0,1,1,1,2', arr.join(','));\n"
-        + "arr.join(',');");
+        "var x = 2;" +
+        "var arr = [--x, x, x--, x, ++x, x, x++, x];" +
+        "assertEquals('1,1,1,0,1,1,1,2', arr.join(','));" +
+        "arr.join(',');");
   }
 
   public void testSetIncrDecrOnLocals() throws Exception {
     checkFails("++x__", "Variables cannot end in \"__\"");
     checkSucceeds(
-         "(function (x, y) { return [x--, --x, y++, ++y]; })",
-         "___.primFreeze(___.simpleFunc("
-         + "  function (x, y) { return [x--, --x, y++, ++y]; }))");
+        "(function (x, y) { return [x--, --x, y++, ++y]; })",
+        "___.primFreeze(___.simpleFunc(" +
+        "  function (x, y) { return [x--, --x, y++, ++y]; }))");
 
     assertConsistent(
-        "(function () {\n"
-        + "  var x = 2;\n"
-        + "  var arr = [--x, x, x--, x, ++x, x, x++, x];\n"
-        + "  assertEquals('1,1,1,0,1,1,1,2', arr.join(','));\n"
-        + "  return arr.join(',');\n"
-        + "})();");
+        "(function () {" +
+        "  var x = 2;" +
+        "  var arr = [--x, x, x--, x, ++x, x, x++, x];" +
+        "  assertEquals('1,1,1,0,1,1,1,2', arr.join(','));" +
+        "  return arr.join(',');" +
+        "})();");
   }
 
   public void testSetIncrDecrOfComplexLValues() throws Exception {
@@ -1040,48 +1040,48 @@ public class DefaultCajaRewriterTest extends TestCase {
 
     checkSucceeds(
         "o.x++",
-        "(function () {"
-        + "  var x0___ = " + weldReadOuters("o") + ";"
-        + "  var x___ = ___.readPub(x0___, 'x', false) - 0;"
-        + "  ___.setPub(x0___, 'x', x___ + 1);"
-        + "  return x___;"
-        + "})()");
+        "(function () {" +
+        "  var x0___ = " + weldReadOuters("o") + ";" +
+        "  var x___ = ___.readPub(x0___, 'x', false) - 0;" +
+        "  ___.setPub(x0___, 'x', x___ + 1);" +
+        "  return x___;" +
+        "})()");
 
     assertConsistent(
-        "(function () {\n"
-        + "  var o = { x: 2 };\n"
-        + "  var arr = [--o.x, o.x, o.x--, o.x, ++o.x, o.x, o.x++, o.x];\n"
-        + "  assertEquals('1,1,1,0,1,1,1,2', arr.join(','));\n"
-        + "  return arr.join(',');\n"
-        + "})();");
+        "(function () {" +
+        "  var o = { x: 2 };" +
+        "  var arr = [--o.x, o.x, o.x--, o.x, ++o.x, o.x, o.x++, o.x];" +
+        "  assertEquals('1,1,1,0,1,1,1,2', arr.join(','));" +
+        "  return arr.join(',');" +
+        "})();");
   }
 
   public void testSetIncrDecrOrderOfAssignment() throws Exception {
     assertConsistent(
-        "(function () {\n"
-        + "  var arrs = [1, 2];\n"
-        + "  var j = 0;\n"
-        + "  arrs[++j] *= ++j;\n"
-        + "  assertEquals(2, j);\n"
-        + "  assertEquals(1, arrs[0]);\n"
-        + "  assertEquals(4, arrs[1]);\n"
-        + "  return arrs.join();\n"
-        + "})()");
+        "(function () {" +
+        "  var arrs = [1, 2];" +
+        "  var j = 0;" +
+        "  arrs[++j] *= ++j;" +
+        "  assertEquals(2, j);" +
+        "  assertEquals(1, arrs[0]);" +
+        "  assertEquals(4, arrs[1]);" +
+        "  return arrs.join();" +
+        "})()");
     assertConsistent(
-        "(function () {\n"
-        + "  var foo = (function () {\n"
-        + "               var k = 0;\n"
-        + "               return function () {\n"
-        + "                 switch (k++) {\n"
-        + "                   case 0: return [10, 20, 30];\n"
-        + "                   case 1: return 1;\n"
-        + "                   case 2: return 2;\n"
-        + "                   default: throw new Error(k);\n"
-        + "                 }\n"
-        + "               };\n"
-        + "             })();\n"
-        + "  foo()[foo()] -= foo();\n"
-        + "})()"
+        "(function () {" +
+        "  var foo = (function () {" +
+        "               var k = 0;" +
+        "               return function () {" +
+        "                 switch (k++) {" +
+        "                   case 0: return [10, 20, 30];" +
+        "                   case 1: return 1;" +
+        "                   case 2: return 2;" +
+        "                   default: throw new Error(k);" +
+        "                 }" +
+        "               };" +
+        "             })();" +
+        "  foo()[foo()] -= foo();" +
+        "})()"
         );
   }
 
@@ -1151,6 +1151,60 @@ public class DefaultCajaRewriterTest extends TestCase {
         "}));");
   }
 
+  public void testDeleteProp() throws Exception {
+    checkFails("delete this.foo___", "");
+    if (false) {  // TODO(mikesamuel): Enable this when classes work.
+      assertConsistent(
+          // Set up a class that can delete one of its members.
+          "function P() { this.x_ = 0; this.y_ = 1; }" +
+          "P.prototype = {" +
+          "  toString : function () {" +
+          "    var s = '(';" +
+          "    for (var k in this) { s += k + ':' + this[k] + ', '; }" +
+          "    return s + ')';" +
+          "  }," +
+          "  mangle: function () {" +
+          "    delete this.x_;" +            // Deleteable
+          "    delete this.z_;" +            // Not present.
+          "  }" +
+          "};" +
+          "var p = new P();" +
+          "var history = [p.toString()];" +  // Record state before deletion.
+          "p.mangle();" +                    // Delete
+          "history.push(p.toString());" +  // Record state after deletion.
+          "history.toString()");
+    }
+  }
+
+  public void testDeletePub() throws Exception {
+    checkFails("delete x.foo___", "");
+    assertConsistent(
+        "(function() {" +
+        "  var o = { x: 3, y: 4 };" +    // A JSON object.
+        "  function ptStr(o) { return '(' + o.x + ',' + o.y + ')'; }" +
+        "  var history = [ptStr(o)];" +  // Record state before deletion.
+        "  delete o.y;" +                // Delete
+        "  delete o.z;" +                // Not present.  Delete a no-op
+        "  history.push(ptStr(o));" +    // Record state after deletion.
+        "  return history.toString();" +
+        "})()");
+  }
+
+  public void testDeleteFails() throws Exception {
+    assertConsistent(
+        "var status;" +
+        "try {" +
+        "  if (delete [].length) {" +
+        "    status = 'FAILED';" +  // Passing is not ok.
+        "  } else {" +
+        "    status = 'PASSED';" +  // Ok to return false
+        "  }" +
+        "} catch (e) {" +
+        "  status = 'PASSED';" +  // Ok to fail with an exception
+        "}" +
+        "status");
+  }
+  
   public void testCallBadSuffix() throws Exception {
     checkFails(
         "x.p__(3, 4);",
@@ -1596,6 +1650,13 @@ public class DefaultCajaRewriterTest extends TestCase {
     checkFails(
         "var x = 3; y instanceof x;",
         "Invoked \"instanceof\" on non-function");
+  }
+
+  public void testOtherSpecialOp() throws Exception {
+    checkSucceeds("void 0", "void 0");
+    checkSucceeds("void foo()",
+                  "void (___.asSimpleFunc)(" + weldReadOuters("foo") + ")()");
+    checkSucceeds("a, b", weldReadOuters("a") + "," + weldReadOuters("b"));
   }
 
   public void testMultiDeclaration() throws Exception {

@@ -1001,6 +1001,63 @@ public class DefaultCajaRewriter extends Rewriter {
     });
 
     ////////////////////////////////////////////////////////////////////////
+    // delete - property deletion
+    ////////////////////////////////////////////////////////////////////////
+
+    addRule(new Rule("deleteProp", this) {
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings
+            = new LinkedHashMap<String, ParseTreeNode>();
+        if (match("delete this[@k]", node, bindings)) {
+          return substV(
+              "___.deleteProp(t___, @k)",
+              "k", bindings.get("k")
+              );
+        } else if (match("delete this.@k", node, bindings)) {
+          Reference k = (Reference) bindings.get("k");
+          if (getReferenceName(k).endsWith("__")) {
+            mq.addMessage(
+                RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+                k.getFilePosition(), this, k);
+          }
+          return substV(
+              "___.deleteProp(t___, @ks)",
+              "ks", toStringLiteral(k)              
+              );
+        }
+        return NONE;
+      }
+    });
+
+    addRule(new Rule("deletePub", this) {
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings
+            = new LinkedHashMap<String, ParseTreeNode>();
+        if (match("delete @o[@k]", node, bindings)) {
+          return substV(
+              "___.deletePub(@o, @k)",
+              "o", bindings.get("o"),
+              "k", bindings.get("k"));
+        } else if (match("delete @o.@k", node, bindings)) {
+          Reference k = (Reference) bindings.get("k");
+          String kName = getReferenceName(k);
+          if (kName.endsWith("__")) {
+            mq.addMessage(
+                RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+                k.getFilePosition(), this, k);
+          }
+          return substV(
+              "___.deletePub(@o, @ks)",
+              "o", bindings.get("o"),
+              "ks", toStringLiteral(k));
+        }
+        return NONE;
+      }
+    });
+    
+    ////////////////////////////////////////////////////////////////////////
     // call - function calls
     ////////////////////////////////////////////////////////////////////////
 
@@ -1512,6 +1569,19 @@ public class DefaultCajaRewriter extends Rewriter {
               "f", expand(bindings.get("f"), scope, mq));
         }
         return NONE;
+      }
+    });
+
+    addRule(new Rule("otherSpecialOp", this) {
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (!(node instanceof SpecialOperation)) { return NONE; }
+        switch (((SpecialOperation) node).getOperator()) {
+          case COMMA: case VOID:
+            return expandAll(node, scope, mq);
+          default:
+            return NONE;
+        }
       }
     });
 
