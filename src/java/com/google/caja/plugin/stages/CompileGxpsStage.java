@@ -27,7 +27,6 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
-import com.google.caja.parser.html.OpenElementStack;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.ExpressionStmt;

@@ -310,7 +310,7 @@ final class Splitter {
    * {@code [StringLiteral('Foo '), Reference("bar"), StringLiteral(' Baz')]}.
    * <p>
    * Note that not all {@link StringLiteral}s are literals.
-   * In {@code eval(Template("Foo ${'bar'} Baz"))}, the sole substitution is a
+   * In <tt>eval(Template("Foo ${'bar'} Baz"))</tt>, the sole substitution is a
    * StringLiteral.
    */
   List<Expression> parts = new ArrayList<Expression>();

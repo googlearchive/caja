@@ -15,7 +15,6 @@
 package com.google.caja.plugin;
 
 import com.google.caja.util.RhinoTestBed;
-import java.io.StringReader;
 import junit.framework.TestCase;
 
 /**

@@ -607,7 +607,7 @@
       <arg value="--css_prefix"/>
       <arg value="plugin"/>
       <arg value="--out"/>
-      <arg file="${www}/contact-spring-graph/plugin-files/"/>
+      <arg file="${www}/contact-spring-graph/plugin-files/plugin"/>
       <arg value="--input"/>
       <arg file="${demos}/contact-spring-graph/spring-graph.gxp"/>
       <arg value="--input"/>

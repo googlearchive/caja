@@ -320,7 +320,7 @@ public final class Config {
         }
         public Map<String, TypeDefinition> typeDefinitions() {
           return Collections.<String, TypeDefinition>emptyMap();
-        };
+        }
       };
   }
 

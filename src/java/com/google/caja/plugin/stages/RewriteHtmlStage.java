@@ -481,7 +481,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     }
     return match;
   }
-  private static enum DupePolicy { YIELD_NULL, YIELD_FIRST, };
+  private static enum DupePolicy { YIELD_NULL, YIELD_FIRST, }
 
 
   public static Block parseJs(
