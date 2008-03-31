@@ -14,13 +14,22 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
+ * Encapsulates a value and the code to execute when the switch block is
+ * reached with that value.
+ * <p>
+ * When multiple cases are seen adjacent as in:{@code
+ *   case FOO:
+ *   case BAR:
+ * }
+ * each is a separate {@code CaseStmt} but the FOO case has a body which is
+ * a {@link Noop}.
  *
  * @author mikesamuel@gmail.com
  */
@@ -31,7 +40,7 @@ public final class CaseStmt extends SwitchCase {
   public CaseStmt(Void value, List<? extends ParseTreeNode> children) {
     this((Expression) children.get(0), (Statement) children.get(1));
   }
-    
+
   public CaseStmt(Expression caseValue, Statement body) {
     createMutation()
         .appendChild(caseValue)
@@ -50,12 +59,13 @@ public final class CaseStmt extends SwitchCase {
   @Override
   public Object getValue() { return null; }
 
-  public void render(RenderContext rc) throws IOException {
-    rc.out.append("case ");
-    rc.indent += 2;
+  public void render(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
+    out.consume("case");
     caseValue.render(rc);
-    rc.out.append(":");
-    rc.indent -= 2;
-    body.renderBlock(rc, true, false, false);
+    out.consume(":");
+    out.consume("\n");
+    body.renderBlock(rc, false);
   }
 }

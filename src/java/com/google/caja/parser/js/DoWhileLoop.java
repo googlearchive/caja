@@ -14,10 +14,11 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -49,18 +50,21 @@ public class DoWhileLoop extends Loop {
   @Override
   public Statement getBody() { return body; }
 
-  public void render(RenderContext rc) throws IOException {
+  public void render(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
     String label = getLabel();
     if (null != label && !"".equals(label)) {
-      rc.out.append(label);
-      rc.out.append(": ");
+      out.consume(label);
+      out.consume(":");
     }
-    rc.out.append("do");
-    body.renderBlock(rc, true, true, true);
-    rc.out.append("while (");
-    rc.indent += 2;
+    out.consume("do");
+    body.renderBlock(rc, true);
+    FilePosition cPos = condition.getFilePosition();
+    FilePosition condStart = FilePosition.startOfOrNull(cPos);
+    out.consume("while");
+    out.consume("(");
     condition.render(rc);
-    rc.indent -= 2;
-    rc.out.append(")");
+    out.consume(")");
   }
 }

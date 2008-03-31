@@ -344,12 +344,11 @@ public class CompiledPluginTest extends TestCase {
     }
 
     StringBuilder buf = new StringBuilder();
-    RenderContext rc = new RenderContext(mc, buf);
     for (ParseTreeNode output : pc.getOutputs()) {
       if (output instanceof CssTree) { continue; }
+      RenderContext rc = new RenderContext(mc, output.makeRenderer(buf, null));
       output.render(rc);
-      rc.newLine();
-      rc.newLine();
+      buf.append("\n\n");
     }
 
     String htmlStubUrl = TestUtil.makeContentUrl("<html><head/><body/></html>");
@@ -391,7 +390,7 @@ public class CompiledPluginTest extends TestCase {
         };
 
     for (Message msg : mq.getMessages()) {
-      rc.newLine();
+      buf.append('\n');
       buf.append(msg.getMessageType().toString()).append(" : ")
          .append(msg.getMessageParts().get(0));
     }

@@ -14,10 +14,10 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -28,7 +28,8 @@ import java.util.List;
 public final class RegexpLiteral extends Literal {
   private RegexpWrapper value;
 
-  public RegexpLiteral(RegexpWrapper value, List<? extends ParseTreeNode> children) {
+  public RegexpLiteral(
+      RegexpWrapper value, List<? extends ParseTreeNode> children) {
     this(value);
   }
 
@@ -46,20 +47,38 @@ public final class RegexpLiteral extends Literal {
   }
 
   @Override
-  public void render(RenderContext rc) throws IOException {
-    if (rc.paranoid) {
+  public void render(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
+    if (rc.isParanoid()) {
       String body = getMatchText();
       String mods = getModifiers();
       if (!"".equals(body)) {
-        rc.out.append('/');
-        Escaping.normalizeRegex(body, true, true, rc.out);
-        rc.out.append('/').append(mods);
+        StringBuilder sb = new StringBuilder();
+        sb.append('/');
+        Escaping.normalizeRegex(body, true, true, sb);
+        sb.append('/');
+        sb.append(mods);
+        out.consume(sb.toString());
       } else {
-        rc.out.append("(new (/./.constructor))('");
-        Escaping.escapeJsString(body, true, true, rc.out);
-        rc.out.append("','");
-        Escaping.escapeJsString(mods, true, true, rc.out);
-        rc.out.append("')");
+        // (new (/./.constructor))('', 'g')
+        out.consume("(");
+        out.consume("new");
+        out.consume("(");
+        out.consume("/./");
+        out.consume(".");
+        out.consume("constructor");
+        out.consume(")");
+        out.consume(")");
+        out.consume("(");
+        out.consume("''");
+        out.consume(",");
+        StringBuilder sb = new StringBuilder();
+        sb.append('\'');
+        Escaping.escapeJsString(mods, true, true, sb);
+        sb.append('\'');
+        out.consume(sb.toString());
+        out.consume(")");
       }
     } else {
       super.render(rc);

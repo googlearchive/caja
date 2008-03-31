@@ -1,5 +1,5 @@
 function aSquareMeal(beer, mayonnaise, cheetos) {
-  var out___ = [];
+  var out___ = [ ];
   out___.push('<div id=\"pre-b\" bgcolor=\"');
   if (isTuesday()) {
     out___.push('red');
@@ -20,9 +20,8 @@ function aSquareMeal(beer, mayonnaise, cheetos) {
         var c2___ = cheetos.cheesyGoodness();
         if (c2___) {
           for (var c3___ in c2___) {
-            if (!___.canEnumPub(c2___, c3___))
-              continue;
-            var cheeto = c2___[c3___];
+            if (!___.canEnumPub(c2___, c3___)) continue;
+            var cheeto = c2___[ c3___ ];
             out___.push('<p>', ___OUTERS___.html___(cheeto.munch()), '</p>');
           }
         }
@@ -32,7 +31,7 @@ function aSquareMeal(beer, mayonnaise, cheetos) {
     }
   }
   out___.push('Empty <p></p>\n\n  <form name=\"pre-hello\" onsubmit=\"return false\">\n    <input type=\"text\" name=\"widgy\">\n    <textarea id=\"pre-hellota\" name=\"howAreYouToday\">\n      How&#39;s it going?\n    </textarea>\n    <input type=\"submit\" value=\"whack\" id=\"');
-  var c5___ = [];
+  var c5___ = [ ];
   if (saidHello) {
     c5___.push('reparte');
   } else {

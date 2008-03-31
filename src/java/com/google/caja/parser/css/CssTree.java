@@ -15,10 +15,13 @@
 package com.google.caja.parser.css;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AbstractParseTreeNode;
+import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Callback;
 
 import java.io.IOException;
 import java.net.URI;
@@ -55,6 +58,12 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     }
     return sb.toString();
   }
+  
+  public final TokenConsumer makeRenderer(
+      Appendable out, Callback<IOException> exHandler) {
+    return new CssPrettyPrinter(out, exHandler);
+  }
+
 
   /**
    * The top level parsetree node.
@@ -70,14 +79,8 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       super(pos, rulesets);
     }
 
-    public void render(RenderContext r) throws IOException {
-      boolean first = true;
+    public void render(RenderContext r) {
       for (CssTree child : children()) {
-        if (!first) {
-          r.newLine();
-        } else {
-          first = false;
-        }
         child.render(r);
       }
     }
@@ -103,12 +106,12 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       }
     }
 
-    public void render(RenderContext r) throws IOException {
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
       boolean first = true;
       for (CssTree t : children()) {
         if (!first) {
-          r.out.append(';');
-          r.newLine();
+          r.getOut().consume(";");
         } else {
           first = false;
         }
@@ -142,17 +145,20 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       super(pos, join(Collections.singletonList(uri), media));
     }
 
-    public void render(RenderContext r) throws IOException {
-      r.out.append("@import ");
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      out.mark(getFilePosition());
+      out.consume("@");
+      out.consume("import");
+      out.consume(" ");
       List<? extends CssTree> children = children();
       children.get(0).render(r); // the uri
       children = children.subList(1, children.size());
 
       if (!children.isEmpty()) {  // the media
-        r.out.append(' ');
         renderCommaGroup(children(), r);
       }
-      r.out.append(";");
+      out.consume(";");
     }
   }
 
@@ -166,21 +172,22 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     public Media(FilePosition pos, List<? extends CssTree> mediaAndRuleset) {
       super(pos, mediaAndRuleset);
     }
-    public void render(RenderContext r) throws IOException {
-      r.out.append("@media ");
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      out.mark(getFilePosition());
+      out.consume("@");
+      out.consume("media");
+      out.consume(" ");
       List<? extends CssTree> children = children();
       int i = 0;
       while (i < children.size() && children.get(i) instanceof Medium) { ++i; }
       renderCommaGroup(children.subList(0, i), r);
-      r.out.append(" {");
-      r.indent += 2;
+      out.consume("{");
       for (CssTree ruleset : children.subList(i, children.size())) {
-        r.newLine();
         ruleset.render(r);
       }
-      r.indent -= 2;
-      r.newLine();
-      r.out.append("}");
+      out.mark(FilePosition.endOfOrNull(getFilePosition()));
+      out.consume("}");
     }
   }
 
@@ -201,8 +208,9 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     @Override
     public String getValue() { return ident; }
 
-    public void render(RenderContext r) throws IOException {
-      Escaping.escapeCssIdent(ident, r.out);
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      renderCssIdent(ident, r);
     }
   }
 
@@ -224,18 +232,22 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     @Override
     public String getValue() { return ident; }
 
-    public void render(RenderContext r) throws IOException {
-      r.out.append("@page");
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      out.mark(getFilePosition());
+      out.consume("@");
+      out.consume("page");
       if (null != ident) {
-        r.out.append(' ');
-        Escaping.escapeCssIdent(ident, r.out);
+        out.consume(" ");
+        renderCssIdent(ident, r);
       }
       List<? extends CssTree> children = children();
       if (children.get(0) instanceof PseudoPage) {
+        out.consume(" ");
         children.get(0).render(r);
         children = children.subList(1, children.size());
       }
-      renderStatements(children, r);
+      renderStatements(children, getFilePosition(), r);
     }
   }
 
@@ -265,9 +277,10 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     @Override
     public String getValue() { return ident; }
 
-    public void render(RenderContext r) throws IOException {
-      r.out.append(':');
-      Escaping.escapeCssIdent(ident, r.out);
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      r.getOut().consume(":");
+      renderCssIdent(ident, r);
     }
   }
 
@@ -283,9 +296,12 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       super(pos, decls);
     }
 
-    public void render(RenderContext r) throws IOException {
-      r.out.append("@font-face");
-      renderStatements(children(), r);
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      r.getOut().consume("@");
+      r.getOut().consume("font-face");
+      r.getOut().consume(" ");
+      renderStatements(children(), getFilePosition(), r);
     }
   }
 
@@ -308,8 +324,9 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
 
     public String getPropertyName() { return ident; }
 
-    public void render(RenderContext r) throws IOException {
-      Escaping.escapeCssIdent(ident, r.out);
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      renderCssIdent(ident, r);
     }
   }
 
@@ -325,14 +342,19 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       super(pos, selectorsAndDecls);
     }
 
-    public void render(RenderContext r) throws IOException {
+    public void render(RenderContext r) {
       List<? extends CssTree> children = children();
       int i = 0;
       while (i < children.size() && !(children.get(i) instanceof Declaration)) {
         ++i;
       }
       renderCommaGroup(children.subList(0, i), r);
-      renderStatements(children.subList(i, children.size()), r);
+      FilePosition selectorEnd = children.get(i - 1).getFilePosition();
+      FilePosition pos = selectorEnd != null && getFilePosition() != null
+          ? FilePosition.span(FilePosition.endOf(selectorEnd),
+                              FilePosition.endOf(getFilePosition()))
+          : null;
+      renderStatements(children.subList(i, children.size()), pos, r);
     }
   }
 
@@ -346,17 +368,8 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     Selector(FilePosition pos, List<? extends CssTree> children) {
       super(pos, children);
     }
-    public void render(RenderContext r) throws IOException {
-
-      boolean needSpace = false;
-      for (CssTree child : children()) {
-        if (!(child instanceof Combination
-              && null == ((Combination) child).getCombinator().symbol)) {
-          if (needSpace) { r.out.append(" "); }
-          child.render(r);
-          needSpace = true;
-        }
-      }
+    public void render(RenderContext r) {
+      renderSpaceGroup(children(), r);
     }
   }
 
@@ -379,7 +392,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       return null;
     }
 
-    public void render(RenderContext r) throws IOException {
+    public void render(RenderContext r) {
       // no spaces between because space is the DESCENDANT operator in Selector
       for (CssTree child : children()) { child.render(r); }
     }
@@ -396,11 +409,14 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       super(pos, Collections.<CssTree>emptyList());
     }
 
-    public void render(RenderContext r) throws IOException {
-      // start with a space to make sure that rendering couldn't introduce a
+    public void render(RenderContext r) {
+      // Start with a space to make sure that rendering couldn't introduce a
       // comment.  I know of no parse tree that would otherwise do this, but
       // comments could be used to introduce security holes.
-      r.out.append(" *");
+      TokenConsumer out = r.getOut();
+      out.mark(getFilePosition());
+      out.consume(" ");
+      out.consume("*");
     }
   }
 
@@ -426,14 +442,18 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     public String getValue() { return ident; }
     public String getIdent() { return ident; }
 
-    public void render(RenderContext r) throws IOException {
-      r.out.append('[');
-      Escaping.escapeCssIdent(ident, r.out);
-      if (!children().isEmpty()) {
-        r.out.append(' ');
-        renderSpaceGroup(children(), r);
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      out.mark(getFilePosition());
+      out.consume("[");
+      renderCssIdent(ident, r);
+      List<? extends CssTree> children = children();
+      if (!children.isEmpty()) {
+        out.consume(" ");
+        renderSpaceGroup(children, r);
       }
-      r.out.append(']');
+      out.mark(FilePosition.endOfOrNull(getFilePosition()));
+      out.consume("]");
     }
   }
 
@@ -460,8 +480,9 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     @Override
     public AttribOperator getValue() { return op; }
 
-    public void render(RenderContext r) throws IOException {
-      r.out.append(op.getToken());
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      r.getOut().consume(op.getToken());
     }
   }
 
@@ -476,8 +497,9 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       super(pos, Collections.singletonList(child));
     }
 
-    public void render(RenderContext r) throws IOException {
-      r.out.append(':');
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      r.getOut().consume(":");
       children().get(0).render(r);
     }
   }
@@ -518,13 +540,15 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     public Expr getExpr() { return expr; }
     public Prio getPrio() { return prio; }
 
-    public void render(RenderContext r) throws IOException {
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
       if (null != prop) {
         prop.render(r);
-        r.out.append(": ");
+        r.getOut().consume(":");
+        r.getOut().consume(" ");
         expr.render(r);
         if (null != prio) {
-          r.out.append(' ');
+          r.getOut().consume(" ");
           prio.render(r);
         }
       }
@@ -547,9 +571,10 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     @Override
     public String getValue() { return value; }
 
-    public void render(RenderContext r) throws IOException {
-      r.out.append('!');
-      Escaping.escapeCssIdent(value.substring(1), r.out);
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      r.getOut().consume("!");
+      renderCssIdent(getValue().substring(1), r);
     }
   }
 
@@ -579,18 +604,8 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       return ((Operation) children().get(1 + n * 2)).getOperator();
     }
 
-    public void render(RenderContext r) throws IOException {
-      boolean needSpace = false;
-      for (CssTree child : children()) {
-        if (!(child instanceof Operation
-              && null == ((Operation) child).getOperator().symbol)) {
-          if (needSpace) {
-            r.out.append(" ");
-          }
-          child.render(r);
-          needSpace = true;
-        }
-      }
+    public void render(RenderContext r) {
+      renderSpaceGroup(children(), r);
     }
   }
 
@@ -616,9 +631,12 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
 
     public CssExprAtom getExprAtom() { return (CssExprAtom) children().get(0); }
 
-    public void render(RenderContext r) throws IOException {
-      if (null != op && null != op.symbol) { r.out.append(op.symbol); }
-      children().get(0).render(r);
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      if (null != op) {
+        r.getOut().consume(op.symbol);
+      }
+      getExprAtom().render(r);
     }
   }
 
@@ -684,9 +702,10 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     protected boolean checkValue(String value) {
       return IDLITERAL.matcher(value).matches();
     }
-    public void render(RenderContext r) throws IOException {
-      r.out.append('#');
-      Escaping.escapeCssIdent(getValue().substring(1), r.out);
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      r.getOut().consume("#");
+      renderCssIdent(getValue().substring(1), r);
     }
   }
 
@@ -699,9 +718,10 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     protected boolean checkValue(String value) {
       return CLASSLITERAL.matcher(value).matches();
     }
-    public void render(RenderContext r) throws IOException {
-      r.out.append('.');
-      Escaping.escapeCssIdent(getValue().substring(1), r.out);
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      r.getOut().consume(".");
+      renderCssIdent(getValue().substring(1), r);
     }
   }
 
@@ -714,10 +734,9 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     protected boolean checkValue(String value) {
       return value != null;
     }
-    public void render(RenderContext r) throws IOException {
-      r.out.append('\'');
-      Escaping.escapeCssString(getValue(), r.paranoid, r.out);
-      r.out.append('\'');
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      renderCssString(getValue(), r);
     }
   }
 
@@ -730,8 +749,9 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     protected boolean checkValue(String value) {
       return HASHLITERAL.matcher(value).matches();
     }
-    public void render(RenderContext r) throws IOException {
-      r.out.append('#').append(getValue().substring(1));
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      r.getOut().consume(getValue());
     }
   }
 
@@ -744,8 +764,9 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     protected boolean checkValue(String value) {
       return QUANTITYLITERAL.matcher(value).matches();
     }
-    public void render(RenderContext r) throws IOException {
-      r.out.append(getValue());
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      r.getOut().consume(getValue());
     }
   }
 
@@ -758,8 +779,9 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     protected boolean checkValue(String value) {
       return UNICODERANGELITERAL.matcher(value).matches();
     }
-    public void render(RenderContext r) throws IOException {
-      r.out.append(getValue());
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      r.getOut().consume(getValue());
     }
   }
 
@@ -777,10 +799,15 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
         return false;
       }
     }
-    public void render(RenderContext r) throws IOException {
-      r.out.append("url('");
-      Escaping.escapeCssString(getValue(), r.paranoid, r.out);
-      r.out.append("')");
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      out.mark(getFilePosition());
+      FilePosition start = FilePosition.startOfOrNull(getFilePosition());
+      out.consume("url");
+      out.consume("(");
+      renderCssString(getValue(), r);
+      out.mark(FilePosition.endOfOrNull(getFilePosition()));
+      out.consume(")");
     }
   }
 
@@ -793,8 +820,9 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     protected boolean checkValue(String value) {
       return IDENTLITERAL.matcher(value).matches();
     }
-    public void render(RenderContext r) throws IOException {
-      Escaping.escapeCssIdent(getValue(), r.out);
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      renderCssIdent(getValue(), r);
     }
   }
 
@@ -820,11 +848,14 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       super.childrenChanged();
       assert 1 == children().size() && (children().get(0) instanceof Expr);
     }
-    public void render(RenderContext r) throws IOException {
-      Escaping.escapeCssIdent(name, r.out);
-      r.out.append('(');
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      out.mark(getFilePosition());
+      renderCssIdent(name, r);
+      out.consume("(");
       children().get(0).render(r);
-      r.out.append(')');
+      out.mark(FilePosition.endOfOrNull(getFilePosition()));
+      out.consume(")");
     }
   }
 
@@ -856,8 +887,9 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       return SUBSTITUTION.matcher(value).matches();
     }
 
-    public void render(RenderContext r) throws IOException {
-      r.out.append(getValue());
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      r.getOut().consume(getValue());
     }
   }
 
@@ -873,8 +905,11 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     @Override
     public Combinator getValue() { return comb; }
     public Combinator getCombinator() { return comb; }
-    public void render(RenderContext r) throws IOException {
-      if (null != comb.symbol) { r.out.append(comb.symbol); }
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      if (null != comb.symbol) {
+        r.getOut().consume(comb.symbol);
+      }
     }
   }
 
@@ -892,8 +927,11 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
 
     public Operator getOperator() { return op; }
 
-    public void render(RenderContext r) throws IOException {
-      if (null != op.symbol) { r.out.append(op.symbol); }
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+      if (null != op.symbol) {
+        r.getOut().consume(op.symbol);
+      }
     }
   }
 
@@ -946,31 +984,28 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
   }
 
   private static void renderStatements(
-      List<? extends CssTree> children, RenderContext r)
-      throws IOException {
-    r.out.append(" {");
-    r.indent += 2;
-    boolean first = true;
+      List<? extends CssTree> children, FilePosition pos, RenderContext r) {
+    TokenConsumer out = r.getOut();
+    out.mark(pos);
+    out.consume("{");
+    CssTree last = null;
     for (CssTree decl : children) {
-      if (!first) {
-        r.out.append(';');
-      } else {
-        first = false;
+      if (last != null) {
+        out.consume(";");
       }
-      r.newLine();
       decl.render(r);
+      last = decl;
     }
-    r.indent -= 2;
-    r.newLine();
-    r.out.append("}");
+    out.mark(FilePosition.endOfOrNull(pos));
+    out.consume("}");
   }
 
   private static void renderCommaGroup(
-      List<? extends CssTree> children, RenderContext r) throws IOException {
+      List<? extends CssTree> children, RenderContext r) {
     boolean first = true;
     for (CssTree child : children) {
       if (!first) {
-        r.out.append(", ");
+        r.getOut().consume(",");
       } else {
         first = false;
       }
@@ -979,15 +1014,29 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
   }
 
   private static void renderSpaceGroup(
-      List<? extends CssTree> children, RenderContext r) throws IOException {
+      List<? extends CssTree> children, RenderContext r) {
     boolean needSpace = false;
     for (CssTree child : children) {
       if (needSpace) {
-        r.out.append(" ");
+        r.getOut().consume(" ");
       } else {
         needSpace = true;
       }
       child.render(r);
     }
+  }
+
+  private static void renderCssIdent(String ident, RenderContext r) {
+    StringBuilder sb = new StringBuilder();
+    Escaping.escapeCssIdent(ident, sb);
+    r.getOut().consume(sb.toString());
+  }
+
+  private static void renderCssString(String s, RenderContext r) {
+    StringBuilder sb = new StringBuilder();
+    sb.append('\'');
+    Escaping.escapeCssString(s, r.isParanoid(), sb);
+    sb.append('\'');
+    r.getOut().consume(sb.toString());
   }
 }

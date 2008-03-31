@@ -14,9 +14,9 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -48,7 +48,9 @@ public final class ExpressionStmt extends AbstractStatement<Expression> {
   @Override
   public Object getValue() { return null; }
 
-  public void render(RenderContext rc) throws IOException {
+  public void render(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
     if (expr instanceof FunctionConstructor
         || expr instanceof ObjectConstructor) {
       // We need to parenthesize Object constructors because otherwise an
@@ -64,10 +66,9 @@ public final class ExpressionStmt extends AbstractStatement<Expression> {
       //   };
       // which is interpreted as two statements -- a declaration and a noop for
       // the semicolon.
-
-      rc.out.append('(');
+      out.consume("(");
       expr.render(rc);
-      rc.out.append(')');
+      out.consume(")");
     } else {
       expr.render(rc);
     }

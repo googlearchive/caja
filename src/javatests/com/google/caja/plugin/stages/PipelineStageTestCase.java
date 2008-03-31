@@ -104,7 +104,8 @@ public abstract class PipelineStageTestCase extends TestCase {
     List<JobStub> actualJobs = new ArrayList<JobStub>();
     for (Job job : jobs.getJobs()) {
       StringBuilder sb = new StringBuilder();
-      job.getRoot().node.render(new RenderContext(mc, sb));
+      job.getRoot().node.render(
+          new RenderContext(mc, job.getRoot().node.makeRenderer(sb, null)));
       actualJobs.add(new JobStub(sb.toString(), job.getType()));
     }
 

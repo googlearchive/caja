@@ -44,6 +44,7 @@ import com.google.caja.parser.quasiliteral.QuasiBuilderTest;
 import com.google.caja.parser.quasiliteral.ScopeTest;
 import com.google.caja.plugin.CompiledPluginTest;
 import com.google.caja.plugin.CssRewriterTest;
+import com.google.caja.plugin.CssTemplateTest;
 import com.google.caja.plugin.CssValidatorTest;
 import com.google.caja.plugin.ExpressionSanitizerTest;
 import com.google.caja.plugin.GxpCompilerTest;
@@ -54,15 +55,18 @@ import com.google.caja.plugin.JsHtmlSanitizerTest;
 import com.google.caja.plugin.caps.CapabilityRewriterTest;
 import com.google.caja.plugin.stages.OpenTemplateStageTest;
 import com.google.caja.plugin.stages.RewriteHtmlStageTest;
+import com.google.caja.render.JsPrettyPrinterTest;
+import com.google.caja.render.SideBySideRendererTest;
+import com.google.caja.reporting.BuildInfoTest;
 import com.google.caja.reporting.SnippetProducerTest;
 import com.google.caja.util.JoinTest;
 import com.google.caja.util.SparseBitSetTest;
-import com.google.caja.reporting.BuildInfoTest;
+
+import java.util.regex.Pattern;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
-import java.util.regex.Pattern;
 
 /**
  * @author mikesamuel@gmail.com
@@ -83,6 +87,7 @@ public class AllTests {
           CssParserTest.class,
           CssRewriterTest.class,
           CssSchemaTest.class,
+          CssTemplateTest.class,
           CssTreeTest.class,
           CssValidatorTest.class,
           DefaultCajaRewriterTest.class,
@@ -102,6 +107,7 @@ public class AllTests {
           JsHtmlParserTest.class,
           JsHtmlSanitizerTest.class,
           JsLexerTest.class,
+          JsPrettyPrinterTest.class,
           LayoutTest.class,
           LookaheadCharProducerTest.class,
           MatchTest.class,
@@ -111,9 +117,10 @@ public class AllTests {
           ParserTest.class,
           PunctuationTrieTest.class,
           QuasiBuilderTest.class,
-          RewriteHtmlStageTest.class,
           RRuleTest.class,
+          RewriteHtmlStageTest.class,
           ScopeTest.class,
+          SideBySideRendererTest.class,
           SnippetProducerTest.class,
           SparseBitSetTest.class,
           StringLiteralTest.class,

@@ -15,9 +15,9 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.reporting.RenderContext;
-import java.io.IOException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,11 +50,15 @@ public final class StringLiteral extends Literal {
   }
 
   @Override
-  public void render(RenderContext rc) throws IOException {
-    if (rc.paranoid) {
-      rc.out.append('\'');
-      Escaping.escapeJsString(getUnquotedValue(), true, true, rc.out);
-      rc.out.append('\'');
+  public void render(RenderContext rc) {
+    if (rc.isParanoid()) {
+      TokenConsumer out = rc.getOut();
+      out.mark(getFilePosition());
+      StringBuilder sb = new StringBuilder();
+      sb.append('\'');
+      Escaping.escapeJsString(getUnquotedValue(), true, true, sb);
+      sb.append('\'');
+      out.consume(sb.toString());
     } else {
       super.render(rc);
     }

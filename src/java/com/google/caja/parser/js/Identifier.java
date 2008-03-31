@@ -14,9 +14,12 @@
 
 package com.google.caja.parser.js;
 
-import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
+import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Callback;
 
 import java.io.IOException;
 import java.util.List;
@@ -54,7 +57,13 @@ public final class Identifier extends AbstractParseTreeNode<ParseTreeNode> {
     name = null;
   }
 
-  public void render(RenderContext r) throws IOException {
-    r.out.append(name);
+  public void render(RenderContext r) {
+    r.getOut().mark(getFilePosition());
+    r.getOut().consume(name);
+  }
+
+  public final TokenConsumer makeRenderer(
+      Appendable out, Callback<IOException> exHandler) {
+    return new JsPrettyPrinter(out, exHandler);
   }
 }

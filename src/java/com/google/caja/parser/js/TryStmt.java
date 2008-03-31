@@ -16,7 +16,6 @@ package com.google.caja.parser.js;
 
 import com.google.caja.reporting.RenderContext;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -70,14 +69,15 @@ public final class TryStmt extends AbstractStatement<Statement> {
   @Override
   public Object getValue() { return null; }
 
-  public void render(RenderContext rc) throws IOException {
-    rc.out.append("try");
-    body.renderBlock(rc, true, true, false);
+  public void render(RenderContext rc) {
+    rc.getOut().mark(getFilePosition());
+    rc.getOut().consume("try");
+    body.renderBlock(rc, false);
     if (null != cat) {
-      cat.renderBlock(rc, false, null != fin, null != fin);
+      cat.renderBlock(rc, null != fin);
     }
     if (null != fin) {
-      fin.renderBlock(rc, false, false, false);
+      fin.renderBlock(rc, false);
     }
   }
 }

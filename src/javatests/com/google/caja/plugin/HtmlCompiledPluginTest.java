@@ -21,6 +21,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
+import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
@@ -520,7 +521,8 @@ public class HtmlCompiledPluginTest extends TestCase {
     } else {
       Block jsTree = compiler.getJavascript();
       StringBuilder js = new StringBuilder();
-      RenderContext rc = new RenderContext(mc, js, false);
+      JsPrettyPrinter pp = new JsPrettyPrinter(js, null);
+      RenderContext rc = new RenderContext(mc, false, pp);
       jsTree.render(rc);
       System.out.println("Compiled gadget: " + js);
 

@@ -1,23 +1,22 @@
 {
   (function () {
-      alert('hello world');
-    })();
+     alert('hello world');
+   })();
   (function a() {
-      alert('hello world');
-    })();
+     alert('hello world');
+   })();
   (function () {
-    alert('hello world');
-  });
+     alert('hello world');
+   });
   (function b() {
-    alert('hello world');
-  });
+     alert('hello world');
+   });
   function c() {
     alert('hello world');
-  }
-  ;
+  };
   (function () {
-    alert('hello world');
-  });
+     alert('hello world');
+   });
   var d = function () {
     alert('hello world');
   };
@@ -25,16 +24,16 @@
     alert('hello world');
   };
   ({
-      'x': 4,
-      'y': 5,
-      'invoke': function () {
-        doSomething(this, this.x + this.y);
-      }
-    }).invoke();
+     'x': 4,
+     'y': 5,
+     'invoke': function () {
+       doSomething(this, this.x + this.y);
+     }
+   }).invoke();
   {
     block: 4;
   }
   ({
-    'objet': 4
-  });
+     'objet': 4
+   });
 }

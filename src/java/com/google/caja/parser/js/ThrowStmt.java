@@ -16,7 +16,6 @@ package com.google.caja.parser.js;
 
 import com.google.caja.reporting.RenderContext;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -43,8 +42,9 @@ public final class ThrowStmt extends AbstractStatement<Expression> {
   @Override
   public Object getValue() { return null; }
 
-  public void render(RenderContext rc) throws IOException {
-    rc.out.append("throw ");
+  public void render(RenderContext rc) {
+    rc.getOut().mark(getFilePosition());
+    rc.getOut().consume("throw");
     exception.render(rc);
   }
 }

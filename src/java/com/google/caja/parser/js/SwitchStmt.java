@@ -14,10 +14,10 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
-
-import java.io.IOException;
 
 import java.util.Iterator;
 import java.util.List;
@@ -68,30 +68,30 @@ public final class SwitchStmt extends LabeledStatement {
     }
   }
 
-  public void render(RenderContext rc) throws IOException {
+  public void render(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
     String label = getLabel();
     if (null != label && !"".equals(label)) {
-      rc.out.append(label);
-      rc.out.append(": ");
+      out.consume(label);
+      out.consume(":");
     }
     Iterator<? extends ParseTreeNode> it = children().iterator();
-    rc.out.append("switch (");
-    rc.indent += 2;
+    out.consume("switch");
+    out.consume("(");
     it.next().render(rc);
-    rc.indent -= 2;
-    rc.out.append(") {");
-    rc.indent += 2;
+    out.consume(")");
+    out.consume("{");
     while (it.hasNext()) {
-      rc.newLine();
       SwitchCase caseStmt = (SwitchCase) it.next();
       caseStmt.render(rc);
       if (!caseStmt.isTerminal()) {
-        rc.out.append(";");
+        out.mark(FilePosition.endOfOrNull(caseStmt.getFilePosition()));
+        out.consume(";");
       }
     }
-    rc.indent -= 2;
-    rc.newLine();
-    rc.out.append("}");
+    out.mark(FilePosition.endOfOrNull(getFilePosition()));
+    out.consume("}");
   }
 
   @Override

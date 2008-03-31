@@ -105,7 +105,7 @@ class InputElementJoiner extends AbstractTokenStream<JsTokenType> {
         case INTEGER:
           // if t ends in e and lookahead is [+-] or an integer, then
           // join.
-          if (EXPONENT_RE.matcher(t.text).find()) {
+          if (!isHex(t.text) && EXPONENT_RE.matcher(t.text).find()) {
             Token<JsTokenType> t2 = peek();
             if (null != t2 && t2.type == JsTokenType.PUNCTUATION
                 && areAdjacent(t, t2) && isSign(t2.text)) {

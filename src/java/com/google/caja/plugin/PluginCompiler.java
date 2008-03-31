@@ -79,6 +79,8 @@ public final class PluginCompiler {
 
   public PluginMeta getPluginMeta() { return jobs.getPluginMeta(); }
 
+  public Jobs getJobs() { return jobs; }
+
   public void setCssSchema(CssSchema cssSchema) {
     this.cssSchema = cssSchema;
     compilationPipeline = null;

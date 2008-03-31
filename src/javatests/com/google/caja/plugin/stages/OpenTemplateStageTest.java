@@ -16,6 +16,7 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
@@ -41,21 +42,21 @@ import junit.framework.TestCase;
 public final class OpenTemplateStageTest extends TestCase {
   public void testSimpleRewrite1() throws Exception {
     assertRewritten(
-        "new StringInterpolation(['foo ', bar, ' baz'])",
+        "new StringInterpolation([ 'foo ', bar, ' baz' ])",
         "eval(Template('foo $bar baz'))",
         true);
   }
 
   public void testSimpleRewrite2() throws Exception {
     assertRewritten(
-        "new StringInterpolation(['foo', bar, 'baz'])",
+        "new StringInterpolation([ 'foo', bar, 'baz' ])",
         "eval(Template('foo${bar}baz'))",
         true);
   }
 
   public void testExpressionSubstitution() throws Exception {
     assertRewritten(
-        "new StringInterpolation(['foo', bar() * 3, 'baz'])",
+        "new StringInterpolation([ 'foo', bar() * 3, 'baz' ])",
         "eval(Template('foo${bar() * 3}baz'))",
         true);
   }
@@ -143,13 +144,14 @@ public final class OpenTemplateStageTest extends TestCase {
         passes, jobs.hasNoErrors());
     assertEquals("" + jobs.getJobs(), 1, jobs.getJobs().size());
 
+    ParseTreeNode bare = stripBoilerPlate(jobs.getJobs().get(0).getRoot().node);
     StringBuilder out = new StringBuilder();
-    stripBoilerPlate(jobs.getJobs().get(0).getRoot().node)
-        .render(new RenderContext(mc, out));
+    TokenConsumer tc = bare.makeRenderer(out, null);
+    bare.render(new RenderContext(mc, tc));
 
     assertEquals(golden, out.toString());
   }
-  
+
   private static ParseTreeNode stripBoilerPlate(ParseTreeNode node) {
     if (!(node instanceof Block && node.children().size() == 1)) {
       return node;

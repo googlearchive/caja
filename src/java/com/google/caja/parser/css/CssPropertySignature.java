@@ -16,13 +16,16 @@ package com.google.caja.parser.css;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Token;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.Visitor;
+import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Callback;
 import com.google.caja.util.Pair;
 import com.google.caja.util.SyntheticAttributeKey;
 import com.google.caja.util.SyntheticAttributes;
@@ -67,6 +70,11 @@ public abstract class CssPropertySignature implements ParseTreeNode {
   public CssPropertySignature clone() {
     return ParseTreeNodes.newNodeInstance(getClass(), getValue(), children());
   }
+  
+  public final TokenConsumer makeRenderer(
+      Appendable out, Callback<IOException> exHandler) {
+    return new JsPrettyPrinter(out, exHandler);
+  }
 
   /** A signature that can be repeated zero or more times. */
   public static final class RepeatedSignature extends CssPropertySignature {
@@ -86,17 +94,18 @@ public abstract class CssPropertySignature implements ParseTreeNode {
       return children().get(0);
     }
 
-    public void render(RenderContext r) throws IOException {
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
       children().get(0).render(r);
-      r.out.append('{');
-      r.out.append(String.valueOf(minCount));
+      out.consume("{");
+      out.consume(String.valueOf(minCount));
       if (minCount != maxCount) {
-        r.out.append(',');
+        out.consume(",");
         if (Integer.MAX_VALUE != maxCount) {
-          r.out.append(String.valueOf(maxCount));
+          out.consume(String.valueOf(maxCount));
         }
       }
-      r.out.append('}');
+      out.consume("}");
     }
   }
 
@@ -108,18 +117,19 @@ public abstract class CssPropertySignature implements ParseTreeNode {
 
     public Object getValue() { return null; }
 
-    public void render(RenderContext r) throws IOException {
-      r.out.append("[ ");
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      out.consume("[");
       boolean first = true;
       for (CssPropertySignature sig : children()) {
         if (!first) {
-          r.out.append(" | ");
+          out.consume("|");
         } else {
           first = false;
         }
         sig.render(r);
       }
-      r.out.append(" ]");
+      out.consume("]");
     }
   }
 
@@ -132,18 +142,19 @@ public abstract class CssPropertySignature implements ParseTreeNode {
     }
 
     @Override
-    public void render(RenderContext r) throws IOException {
-      r.out.append("[ ");
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      out.consume("[");
       boolean first = true;
       for (CssPropertySignature sig : children()) {
         if (!first) {
-          r.out.append(" || ");
+          out.consume("||");
         } else {
           first = false;
         }
         sig.render(r);
       }
-      r.out.append(" ]");
+      out.consume("]");
     }
   }
 
@@ -154,18 +165,19 @@ public abstract class CssPropertySignature implements ParseTreeNode {
     }
     public Object getValue() { return null; }
 
-    public void render(RenderContext r) throws IOException {
-      r.out.append("[ ");
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      out.consume("[");
       boolean first = true;
       for (CssPropertySignature sig : children()) {
         if (!first) {
-          r.out.append(" ");
+          out.consume(" ");
         } else {
           first = false;
         }
         sig.render(r);
       }
-      r.out.append(" ]");
+      out.consume("]");
     }
   }
 
@@ -179,8 +191,8 @@ public abstract class CssPropertySignature implements ParseTreeNode {
 
     public String getValue() { return value; }
 
-    public void render(RenderContext r) throws IOException {
-      r.out.append(value);
+    public void render(RenderContext r) {
+      r.getOut().consume(value);
     }
   }
 
@@ -196,8 +208,8 @@ public abstract class CssPropertySignature implements ParseTreeNode {
 
     public String getPropertyName() { return name; }
 
-    public void render(RenderContext r) throws IOException {
-      r.out.append('\'').append(name).append('\'');
+    public void render(RenderContext r) {
+      r.getOut().consume("\'" + name + "\'");
     }
   }
 
@@ -210,8 +222,11 @@ public abstract class CssPropertySignature implements ParseTreeNode {
     }
     public String getValue() { return symbolName; }
 
-    public void render(RenderContext r) throws IOException {
-      r.out.append('<').append(symbolName).append('>');
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      out.consume("<");
+      out.consume(symbolName);
+      out.consume(">");
     }
   }
 
@@ -222,16 +237,17 @@ public abstract class CssPropertySignature implements ParseTreeNode {
     }
     public Object getValue() { return null; }
 
-    public void render(RenderContext r) throws IOException {
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
       ListIterator<? extends CssPropertySignature> childIt =
-        children().listIterator();
+          children().listIterator();
       childIt.next().render(r);
-      r.out.append("(");
+      out.consume("(");
       while (childIt.hasNext()) {
-        r.out.append(" ");
+        out.consume(" ");
         childIt.next().render(r);
       }
-      r.out.append(" )");
+      out.consume(")");
     }
   }
 

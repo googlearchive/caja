@@ -14,12 +14,15 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Callback;
 
 import java.io.IOException;
-
 import java.util.List;
 import java.util.Map;
 
@@ -70,31 +73,21 @@ public abstract class AbstractStatement<T extends ParseTreeNode>
    * Called to render the statement as part of another statement.
    *
    * @param rc non null.
-   * @param pre is there space needed between this statement
-   *   and the preceding token?
-   * @param post is there space needed between this statement and the following
-   *   token.
    * @param terminate should the statement be terminated -- followed with a
    *   semicolon if not a block.
    */
-  public void renderBlock(RenderContext rc, boolean pre, boolean post,
-                          boolean terminate)
-      throws IOException {
-    rc.indent += 2;
-    if (pre) { rc.newLine(); }
+  public void renderBlock(RenderContext rc, boolean terminate) {
     render(rc);
     // Incorrect, but no need to calculate isTerminal() unless terminate || post
-    boolean terminal = (terminate || post) && isTerminal();
+    boolean terminal = (terminate) && isTerminal();
     if (terminate && !terminal) {
-      rc.out.append(";");
+      rc.getOut().mark(FilePosition.endOfOrNull(getFilePosition()));
+      rc.getOut().consume(";");
     }
-    rc.indent -= 2;
-    if (post) {
-      if (terminal) {
-        rc.out.append(" ");
-      } else {
-        rc.newLine();
-      }
-    }
+  }
+
+  public final TokenConsumer makeRenderer(
+      Appendable out, Callback<IOException> exHandler) {
+    return new JsPrettyPrinter(out, exHandler);
   }
 }

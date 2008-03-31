@@ -21,6 +21,7 @@ import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.Visitor;
@@ -153,8 +154,9 @@ public class GadgetParser {
    */
   public void render(GadgetSpec gadgetSpec, Appendable output)
       throws IOException {
-    toDocument(gadgetSpec)
-        .render(new MarkupRenderContext(new MessageContext(), output, true));
+    DomTree doc = toDocument(gadgetSpec);
+    TokenConsumer tc = doc.makeRenderer(output, null);;
+    doc .render(new MarkupRenderContext(new MessageContext(), tc, true));
   }
 
   private DomTree toDocument(GadgetSpec gadgetSpec) {

@@ -151,6 +151,14 @@ public final class FilePosition implements MessagePart {
         fp.endCharInFile, fp.endCharInLine);
   }
 
+  public static FilePosition startOfOrNull(FilePosition fp) {
+    return fp != null ? startOf(fp) : null;
+  }
+
+  public static FilePosition endOfOrNull(FilePosition fp) {
+    return fp != null ? endOf(fp) : null;
+  }
+
   public InputSource source() { return this.source; }
   public int startLineNo() { return this.startLineNo; }
   public int startLogicalLineNo() { return this.startLogicalLineNo; }

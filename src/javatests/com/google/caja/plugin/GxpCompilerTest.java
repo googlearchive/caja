@@ -23,12 +23,14 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.FunctionDeclaration;
+import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -81,10 +83,10 @@ public class GxpCompilerTest extends TestCase {
     ParseTreeNode compiled = gxpc.compileDocument(sig);
 
     StringBuilder out = new StringBuilder();
-    RenderContext rc = new RenderContext(mc, out);
+    TokenConsumer pp = new JsPrettyPrinter(out, null);
+    RenderContext rc = new RenderContext(mc, pp);
     compiled.render(rc);
     for (FunctionDeclaration handler : gxpc.getEventHandlers()) {
-      rc.newLine();
       handler.render(rc);
     }
     assertEquals(golden.trim(), out.toString().trim());
@@ -104,10 +106,11 @@ public class GxpCompilerTest extends TestCase {
     ParseTreeNode compiled = gxpc.compileDocument(sig);
 
     StringBuilder out = new StringBuilder();
-    RenderContext rc = new RenderContext(mc, out);
+    TokenConsumer pp = new JsPrettyPrinter(out, null);
+    RenderContext rc = new RenderContext(mc, pp);
     compiled.render(rc);
     for (FunctionDeclaration handler : gxpc.getEventHandlers()) {
-      rc.newLine();
+      out.append('\n');
       handler.render(rc);
     }
     assertEquals(golden.trim(), out.toString().trim());
@@ -149,26 +152,25 @@ public class GxpCompilerTest extends TestCase {
                   compiled3 = gxpc.compileDocument(sig3);
 
     StringBuilder out = new StringBuilder();
-    RenderContext rc = new RenderContext(mc, out);
+    TokenConsumer pp = new JsPrettyPrinter(out, null);
+    RenderContext rc = new RenderContext(mc, pp);
 
     // write out the compiled gxps
     compiled2.render(rc);
-    rc.newLine();
-    rc.newLine();
+    out.append('\n');
     compiled3.render(rc);
 
     // write out the handler functions
     for (FunctionDeclaration handler : gxpc.getEventHandlers()) {
-      rc.newLine();
-      rc.newLine();
+      out.append('\n');
       handler.render(rc);
     }
 
     // write out the messages with file positions
     for (Message m : mq.getMessages()) {
-      rc.newLine();
-      rc.out.append(m.getMessageType().toString()).append(" : ")
-        .append(m.getMessageParts().get(0).toString());
+      out.append('\n');
+      out.append(m.getMessageType().toString()).append(" : ")
+          .append(m.getMessageParts().get(0).toString());
     }
 
     // test that they match
@@ -367,8 +369,8 @@ public class GxpCompilerTest extends TestCase {
 
   public void testCssSubstitution() throws Exception {
     assertOutput(
-        "out___.push('<div style=\\\"position: absolute; left: ', "
-        + "___OUTERS___.cssNumber___(x + 10), 'px; right: ', "
+        "out___.push('<div style=\\\"position: absolute;\\nleft: ', "
+        + "___OUTERS___.cssNumber___(x + 10), 'px;\\nright: ', "
         + "___OUTERS___.cssNumber___(x + 50), 'px\\\""
         + " id=\\\"pre-foo\\\">\\n"
         + "Hello\\n</div>');",
@@ -518,17 +520,17 @@ public class GxpCompilerTest extends TestCase {
       }
 
       StringBuilder actualBuf = new StringBuilder();
-      RenderContext rc = new RenderContext(mc, actualBuf);
+      TokenConsumer pp = new JsPrettyPrinter(actualBuf, null);
+      RenderContext rc = new RenderContext(mc, pp);
       for (ParseTreeNode javascript : javascripts) {
-        if (javascript != null) {
-          javascript.render(rc);
-          rc.newLine();
-        }
+        javascript.render(rc);
       }
+      pp.noMoreTokens();
+      actualBuf.append('\n');
 
       String actual = actualBuf.toString().trim();
       // get rid of boilerplate
-      String pre = "function Test() {\n  var out___ = [];\n  ",
+      String pre = "function Test() {\n  var out___ = [ ];\n  ",
           post = ("\n  return ___OUTERS___.blessHtml___"
                   + "(out___.join(''));\n}");
       assertTrue(actual, actual.startsWith(pre));

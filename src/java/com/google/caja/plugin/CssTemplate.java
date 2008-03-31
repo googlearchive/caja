@@ -17,6 +17,7 @@ package com.google.caja.plugin;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
@@ -32,11 +33,13 @@ import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.plugin.GxpCompiler.BadContentException;
+import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Callback;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -126,6 +129,11 @@ public final class CssTemplate extends AbstractParseTreeNode<ParseTreeNode> {
   public void render(RenderContext r) {
     // TODO(mikesamuel): implement me
     throw new UnsupportedOperationException("NOT IMPLEMENTED YET");
+  }
+  
+  public TokenConsumer makeRenderer(
+      Appendable out, Callback<IOException> exHandler) {
+    throw new UnsupportedOperationException();
   }
 
   /**
@@ -252,18 +260,15 @@ public final class CssTemplate extends AbstractParseTreeNode<ParseTreeNode> {
 
         public void property(CssTree.Property p) {
           StringBuilder out = new StringBuilder();
+          TokenConsumer tc = p.makeRenderer(out, null);
           if (first) {
             first = false;
           } else {
-            out.append("; ");
+            tc.consume(";");
           }
-          try {
-            p.render(new RenderContext(new MessageContext(), out, true));
-          } catch (IOException ex) {
-            // StringBuilders shouldn't throw IOException
-            throw new RuntimeException(ex);
-          }
-          out.append(": ");
+          p.render(new RenderContext(new MessageContext(), true, tc));
+          tc.consume(":");
+          out.append(" ");
           rawCss(out.toString());
         }
 
@@ -278,12 +283,8 @@ public final class CssTemplate extends AbstractParseTreeNode<ParseTreeNode> {
         public void priority(CssTree.Prio p) {
           StringBuilder out = new StringBuilder();
           out.append(" ");
-          try {
-            p.render(new RenderContext(new MessageContext(), out, true));
-          } catch (IOException ex) {
-            // StringBuilders shouldn't throw IOException
-            throw new RuntimeException(ex);
-          }
+          TokenConsumer tc = p.makeRenderer(out, null);
+          p.render(new RenderContext(new MessageContext(), true, tc));
           rawCss(out.toString());
         }
 
@@ -347,13 +348,8 @@ public final class CssTemplate extends AbstractParseTreeNode<ParseTreeNode> {
       String css;
       {
         StringBuilder cssBuf = new StringBuilder();
-        RenderContext rc = new RenderContext(new MessageContext(), cssBuf);
-        try {
-          decl.getExpr().render(rc);
-        } catch (IOException ex) {
-          throw (AssertionError) new AssertionError(
-              "IOException writing to StringBuilder").initCause(ex);
-        }
+        TokenConsumer tc = decl.makeRenderer(cssBuf, null);
+        decl.getExpr().render(new RenderContext(new MessageContext(), tc));
 
         // Contains the rendered CSS with ${\0###\0} placeholders.
         // Split around the placeholders, parse the javascript, escape the

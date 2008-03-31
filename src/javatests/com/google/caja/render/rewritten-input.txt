@@ -1,0 +1,141 @@
+# <null>
+___
+.
+loadModule
+(
+function
+(
+___OUTERS___
+)
+{
+# test-input3.css:1+1-3+2
+___
+.
+defineStyles___
+(
+'.prefix p {\n  color: purple\n}'
+)
+;
+# test-input2.html:1+47-4+1
+___
+.
+emitHtml___
+(
+'\n<h1>Hello\n\n'
+)
+;
+# test-input1.js:1+1-17
+___OUTERS___
+.
+sep
+=
+___
+.
+simpleFunc
+(
+function
+sep
+(
+)
+{
+# test-input1.js:2+3-19
+return
+'<hr />'
+;
+# test-input1.js:3+1-3+2
+}
+)
+;
+# test-input1.js:5+1-22
+if
+(
+___
+.
+asSimpleFunc
+(
+___OUTERS___
+.
+foo
+)
+(
+)
+)
+{
+___
+.
+asSimpleFunc
+(
+___OUTERS___
+.
+bar
+)
+(
+)
+;
+}
+# test-input1.js:7+1-16
+if
+(
+___OUTERS___
+.
+document
+)
+{
+# test-input1.js:8+3-11
+var
+tmp___
+=
+___OUTERS___
+.
+document
+;
+# test-input1.js:9+7-22
+var
+tmp0___
+=
+(
+___
+.
+asMethod
+(
+tmp
+,
+'getElementById'
+)
+)
+# test-input1.js:10+7-22
+(
+'x'
+)
+;
+___
+.
+setPub
+(
+tmp0___
+,
+'innerHTML'
+,
+# test-input1.js:11+7-15
+___
+.
+asSimpleFunc
+(
+sep
+)
+(
+)
+)
+;
+# test-input1.js:12+1-2
+}
+# test-input2.html:4+39-7+1
+___
+.
+emitHtml___
+(
+'\n\nWorld</h1>\n'
+)
+;
+# <null>
+}

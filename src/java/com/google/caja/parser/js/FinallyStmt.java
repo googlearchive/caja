@@ -16,7 +16,6 @@ package com.google.caja.parser.js;
 
 import com.google.caja.reporting.RenderContext;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -43,8 +42,9 @@ public final class FinallyStmt extends AbstractStatement<Statement> {
   @Override
   public Object getValue() { return null; }
 
-  public void render(RenderContext rc) throws IOException {
-    rc.out.append("finally");
-    body.renderBlock(rc, true, false, false);
+  public void render(RenderContext rc) {
+    rc.getOut().mark(getFilePosition());
+    rc.getOut().consume("finally");
+    body.renderBlock(rc, false);
   }
 }

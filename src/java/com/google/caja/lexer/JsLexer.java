@@ -192,7 +192,7 @@ public class JsLexer implements TokenStream<JsTokenType> {
 
   public static boolean isJsLineSeparator(char ch) {
     switch (ch) {
-      case '\r': case '\n': case '\u0085': case '\u2028': case '\u2029':
+      case '\r': case '\n': case '\u2028': case '\u2029':
         return true;
       default:
         return false;

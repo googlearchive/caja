@@ -16,8 +16,6 @@ package com.google.caja.parser.js;
 
 import com.google.caja.reporting.RenderContext;
 
-import java.io.IOException;
-
 /**
  * A literal expression whose value does not depend on the environment, and
  * whose evaluation has no side-effect.
@@ -43,7 +41,8 @@ public abstract class Literal extends AbstractExpression<Expression> {
     if (!children().isEmpty()) { throw new IllegalStateException(); }
   }
 
-  public void render(RenderContext rc) throws IOException {
-    rc.out.append(getValue().toString());
+  public void render(RenderContext rc) {
+    rc.getOut().mark(getFilePosition());
+    rc.getOut().consume(getValue().toString());
   }
 }

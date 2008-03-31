@@ -14,13 +14,14 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
+ * An exception handler that is part of a {@link TryStmt}.
  *
  * @author mikesamuel@gmail.com
  */
@@ -53,13 +54,14 @@ public final class CatchStmt extends AbstractStatement<ParseTreeNode> {
   @Override
   public Object getValue() { return null; }
 
-  public void render(RenderContext rc) throws IOException {
-    rc.out.append("catch (");
-    rc.indent += 2;
-    rc.out.append(exception.getIdentifierName());
-    rc.out.append(")");
-    rc.indent -= 4;
-    body.renderBlock(rc, true, false, false);
-    rc.indent += 2;
+  public void render(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
+    out.consume("catch");
+    out.consume("(");
+    out.mark(exception.getFilePosition());
+    out.consume(exception.getIdentifierName());
+    out.consume(")");
+    body.renderBlock(rc, false);
   }
 }

@@ -14,9 +14,9 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -43,8 +43,12 @@ public final class DefaultCaseStmt extends SwitchCase {
   @Override
   public Object getValue() { return null; }
 
-  public void render(RenderContext rc) throws IOException {
-    rc.out.append("default:");
-    body.renderBlock(rc, true, false, false);
+  public void render(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
+    out.consume("default");
+    out.consume(":");
+    out.consume("\n");
+    body.renderBlock(rc, false);
   }
 }

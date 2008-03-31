@@ -16,6 +16,7 @@ package com.google.caja.opensocial;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -83,8 +84,8 @@ public class DefaultGadgetRewriterTest extends TestCase {
             new PrintWriter(System.err), new MessageContext(), false)) {
           @Override
           protected RenderContext createRenderContext(
-              Appendable out, MessageContext mc) {
-            return new RenderContext(mc, out, false);
+              TokenConsumer out, MessageContext mc) {
+            return new RenderContext(mc, false, out);
           }
         };
   }

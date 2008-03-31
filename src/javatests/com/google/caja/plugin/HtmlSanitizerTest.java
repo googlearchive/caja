@@ -18,6 +18,7 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomParser;
@@ -226,7 +227,8 @@ public class HtmlSanitizerTest extends TestCase {
 
     if (golden != null) {
       StringBuilder sb = new StringBuilder();
-      input.render(new RenderContext(mc, sb));
+      TokenConsumer tc = input.makeRenderer(sb, null);
+      input.render(new RenderContext(mc, tc));
       assertEquals(golden, sb.toString());
     }
   }

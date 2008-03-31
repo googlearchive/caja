@@ -23,6 +23,7 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.Token;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.js.FunctionConstructor;
@@ -178,7 +179,8 @@ public final class CssTemplateTest extends TestCase {
 
     FunctionConstructor fc = tmpl.toFunction(cssSchema, mq);
     StringBuilder sb = new StringBuilder();
-    fc.render(new RenderContext(mc, sb));
+    TokenConsumer tc = fc.makeRenderer(sb, null);
+    fc.render(new RenderContext(mc, tc));
     assertEquals(css, golden.trim(), sb.toString().trim());
     assertTrue(css, mq.getMessages().isEmpty());
   }

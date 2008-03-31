@@ -20,10 +20,13 @@ import com.google.caja.lexer.HtmlTextEscapingMode;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.Token;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AbstractParseTreeNode;
+import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Callback;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -72,6 +75,11 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
 
   /** The first token in the node's textual representation. */
   public Token<HtmlTokenType> getToken() { return start; }
+
+  public final TokenConsumer makeRenderer(
+      Appendable out, Callback<IOException> exHandler) {
+    return new Concatenator(out, exHandler);
+  }
 
   /**
    * The node value.  For elements and attributes, the name of that element or
@@ -175,7 +183,8 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
                 children.get(children.size() - 1).getFilePosition()));
     }
 
-    public void render(RenderContext r) throws IOException {
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
       for (DomTree child : children()) {
         child.render(r);
       }
@@ -230,8 +239,10 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
       return null;
     }
 
-    public void render(RenderContext r) throws IOException {
-      r.out.append('<');
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      r.getOut().mark(getFilePosition());
+      out.consume("<");
       renderHtmlIdentifier(getTagName(), r);
       List<? extends DomTree> children = children();
       int n = children.size();
@@ -239,7 +250,7 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
       while (i < n) {
         DomTree child = children.get(i);
         if (!(child instanceof Attrib)) { break; }
-        r.out.append(' ');
+        out.consume(" ");
         child.render(r);
         ++i;
       }
@@ -250,9 +261,9 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
         // This is safe regardless of whether the output is XML or HTML since
         // we only skip the end tag for HTML elements that don't require one,
         // and the slash will cause XML to treat it as a void tag.
-        r.out.append(" />");
+        out.consume(" />");
       } else {
-        r.out.append('>');
+        out.consume(">");
         while (i < n) {
           children.get(i++).render(r);
         }
@@ -260,9 +271,10 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
         // since handling plaintext correctly would require omitting end tags
         // for parent nodes, and so significantly complicate rendering for a
         // node we shouldn't ever render anyway.
-        r.out.append("</");
+        out.mark(FilePosition.endOfOrNull(getFilePosition()));
+        out.consume("</");
         renderHtmlIdentifier(getTagName(), r);
-        r.out.append('>');
+        out.consume(">");
       }
     }
   }
@@ -287,11 +299,13 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
 
     void setAttribName(String canonicalName) { setValue(canonicalName); }
 
-    public void render(RenderContext r) throws IOException {
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      out.mark(getFilePosition());
       renderHtmlIdentifier(getAttribName(), r);
-      r.out.append("=\"");
+      out.consume("=\"");
       getAttribValueNode().render(r);
-      r.out.append('"');
+      out.consume("\"");
     }
 
     @Override
@@ -312,7 +326,8 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
       assert tok.type == HtmlTokenType.ATTRVALUE;
     }
 
-    public void render(RenderContext r) throws IOException {
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
       renderHtmlAttributeValue(getValue(), r);
     }
 
@@ -332,11 +347,12 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
           || tok.type == HtmlTokenType.UNESCAPED;
     }
 
-    public void render(RenderContext r) throws IOException {
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
       if (getToken().type == HtmlTokenType.UNESCAPED
           && !(r instanceof MarkupRenderContext
                && ((MarkupRenderContext) r).asXml())) {
-        r.out.append(getValue());
+        r.getOut().consume(getValue());
       } else {
         renderHtml(getValue(), r);
       }
@@ -352,32 +368,37 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
       assert tok.type == HtmlTokenType.CDATA;
     }
 
-    public void render(RenderContext r) throws IOException {
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      out.mark(getFilePosition());
       String value = getValue();
       if (!value.contains("]]>")
           && (r instanceof MarkupRenderContext
               && ((MarkupRenderContext) r).asXml())) {
-        r.out.append("<![CDATA[");
-        r.out.append(value);
-        r.out.append("]]>");
+        out.consume("<![CDATA[");
+        out.consume(value);
+        out.consume("]]>");
       } else {
         renderHtml(value, r);
       }
     }
   }
 
-  private static void renderHtmlIdentifier(String text, RenderContext r)
-      throws IOException {
-    Escaping.escapeXml(text, true, r.out);
+  private static void renderHtmlIdentifier(String text, RenderContext r) {
+    StringBuilder sb = new StringBuilder();
+    Escaping.escapeXml(text, true, sb);
+    r.getOut().consume(sb.toString());
   }
 
-  private static void renderHtmlAttributeValue(String text, RenderContext r)
-      throws IOException {
-    Escaping.escapeXml(text, true, r.out);
+  private static void renderHtmlAttributeValue(String text, RenderContext r) {
+    StringBuilder sb = new StringBuilder();
+    Escaping.escapeXml(text, true, sb);
+    r.getOut().consume(sb.toString());
   }
 
-  private static void renderHtml(String text, RenderContext r)
-      throws IOException {
-    Escaping.escapeXml(text, true, r.out);
+  private static void renderHtml(String text, RenderContext r) {
+    StringBuilder sb = new StringBuilder();
+    Escaping.escapeXml(text, true, sb);
+    r.getOut().consume(sb.toString());
   }
 }

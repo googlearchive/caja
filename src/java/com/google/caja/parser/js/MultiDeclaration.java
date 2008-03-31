@@ -14,10 +14,9 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
-
-import java.io.IOException;
 
 import java.util.List;
 
@@ -51,18 +50,18 @@ public final class MultiDeclaration extends AbstractStatement<Declaration> {
   @Override
   public Object getValue() { return null; }
 
-  public void render(RenderContext rc) throws IOException {
-    rc.out.append("var ");
-    rc.indent += 2;
+  public void render(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
+    out.consume("var");
     boolean seen = false;
     for (Declaration decl : children()) {
       if (seen) {
-        rc.out.append(", ");
+        out.consume(",");
       } else {
         seen = true;
       }
       decl.renderShort(rc);
     }
-    rc.indent -= 2;
   }
 }

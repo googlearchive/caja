@@ -14,8 +14,13 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
+import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.util.Callback;
+
+import java.io.IOException;
 
 /**
  *
@@ -24,4 +29,9 @@ import com.google.caja.parser.ParseTreeNode;
 public abstract class AbstractExpression<T extends ParseTreeNode>
     extends AbstractParseTreeNode<T> implements Expression {
   public boolean isLeftHandSide() { return false; }
+
+  public final TokenConsumer makeRenderer(
+      Appendable out, Callback<IOException> exHandler) {
+    return new JsPrettyPrinter(out, exHandler);
+  }
 }

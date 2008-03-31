@@ -15,11 +15,14 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
+import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Callback;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -164,12 +167,15 @@ public abstract class Rewriter {
   }
 
   private String format(ParseTreeNode n) {
-    try {
-      StringBuilder output = new StringBuilder();
-      n.render(new RenderContext(new MessageContext(), output));
-      return output.toString();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    Callback<IOException> handler = new Callback<IOException>() {
+      public void handle(IOException ex) {
+        throw new RuntimeException(ex);
+      }
+    };
+    
+    StringBuilder output = new StringBuilder();
+    TokenConsumer renderer = new JsPrettyPrinter(output, handler);
+    n.render(new RenderContext(new MessageContext(), renderer));
+    return output.toString();
   }
 }

@@ -234,6 +234,7 @@
       <include name="**/caja/parser/html/JsHtmlParserTest.java"/>
       <include name="**/caja/parser/js/*Test.java"/>
       <include name="**/caja/parser/quasiliteral/*Test.java"/>
+      <include name="**/caja/render/*Test.java"/>
       <include name="**/caja/plugin/*Test.java"/>
       <include name="**/caja/plugin/caps/CapabilityRewriterTest.java"/>
       <include name="**/caja/plugin/stages/*Test.java"/>
@@ -307,6 +308,10 @@
         <include name="**/caja/plugin/plugintest-references.input"/>
         <include name="**/caja/plugin/sanitizergolden2.txt"/>
         <include name="**/caja/plugin/tmp-caja.js"/>
+        <include name="**/caja/render/*.css"/>
+        <include name="**/caja/render/*.html"/>
+        <include name="**/caja/render/*.js"/>
+        <include name="**/caja/render/*.txt"/>
       </fileset>
       <fileset dir="${src}">
         <include name="**/caja/demos/calendar/*.js"/>
@@ -395,7 +400,8 @@
   </target>
 
   <target name="PluginCompiler"
-   depends="CssParserCore,HtmlParserCore,Schemas,Quasiliterals,dirs">
+   depends="CssParserCore,HtmlParserCore,Schemas,Quasiliterals,Rendering,Config"
+   >
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
@@ -558,6 +564,15 @@
       <exclude name="**/caja/reporting/RenderContext.java"/>
       <exclude name="**/caja/reporting/Renderable.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
+    </javac>
+  </target>
+
+  <target name="Rendering" depends="Lexer,Reporting">
+    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+      <src path="${src}"/>
+      <classpath refid="classpath.compile"/>
+      <include name="**/caja/render/*.java"/>
+      <compilerarg line="-Xlint:unchecked"/>
     </javac>
   </target>
 

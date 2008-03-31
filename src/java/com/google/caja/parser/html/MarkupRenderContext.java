@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.html;
 
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 
@@ -24,7 +25,7 @@ import com.google.caja.reporting.RenderContext;
 public class MarkupRenderContext extends RenderContext {
   private final boolean asXml;
 
-  public MarkupRenderContext(MessageContext msgContext, Appendable out,
+  public MarkupRenderContext(MessageContext msgContext, TokenConsumer out,
                              boolean asXml) {
     super(msgContext, out);
     this.asXml = asXml;

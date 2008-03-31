@@ -14,9 +14,9 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
-
-import java.io.IOException;
 
 import java.util.Arrays;
 
@@ -122,18 +122,18 @@ public abstract class Operation extends AbstractExpression<Expression> {
     }
   }
 
-  public void render(RenderContext rc) throws IOException {
+  public void render(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
     switch (op.getType()) {
       case PREFIX:
-        rc.out.append(op.getSymbol());
-        if (Character.isLetterOrDigit(op.getSymbol().charAt(0))) {
-          rc.out.append(' ');
-        }
+        out.consume(op.getSymbol());
         renderParam(0, rc);
         break;
       case POSTFIX:
         renderParam(0, rc);
-        rc.out.append(op.getSymbol());
+        out.mark(FilePosition.endOfOrNull(getFilePosition()));
+        out.consume(op.getSymbol());
         break;
       case INFIX:
         renderParam(0, rc);
@@ -143,27 +143,24 @@ public abstract class Operation extends AbstractExpression<Expression> {
             // If they are not present, then rendered javascript might include
             // the strings ]]> or </script> which would prevent it from being
             // safely embedded in HTML or XML.
-            rc.out.append(" ")
-                .append(op.getSymbol())
-                .append(" ");
+            out.consume(" ");
+            out.consume(op.getSymbol());
+            out.consume(" ");
             break;
           case MEMBER_ACCESS:
-            rc.out.append(op.getSymbol());
-            break;
           case COMMA:
-            rc.out.append(op.getSymbol()).append(" ");
+            out.consume(op.getSymbol());
             break;
         }
         renderParam(1, rc);
         break;
       case BRACKET:
         renderParam(0, rc);
-        rc.out.append(op.getOpeningSymbol());
+        out.consume(op.getOpeningSymbol());
         boolean seen = false;
-        rc.indent += 2;
         for (Expression e : children().subList(1, children().size())) {
           if (seen) {
-            rc.out.append(", ");
+            out.consume(",");
           } else {
             seen = true;
           }
@@ -171,36 +168,38 @@ public abstract class Operation extends AbstractExpression<Expression> {
           if (!parenthesize(Operator.COMMA, false, e)) {
             e.render(rc);
           } else {
-            rc.out.append("(");
-            rc.indent += 2;
+            out.consume("(");
             e.render(rc);
-            rc.indent -= 2;
-            rc.out.append(")");
+            out.mark(FilePosition.endOfOrNull(e.getFilePosition()));
+            out.consume(")");
           }
         }
-        rc.indent -= 2;
-        rc.out.append(op.getClosingSymbol());
+        out.mark(FilePosition.endOfOrNull(getFilePosition()));
+        out.consume(op.getClosingSymbol());
         break;
       case TERNARY:
         renderParam(0, rc);
-        rc.out.append(" ").append(op.getOpeningSymbol()).append(" ");
+        out.consume(op.getOpeningSymbol());
+        out.consume(" ");
         renderParam(1, rc);
-        rc.out.append(" ").append(op.getClosingSymbol()).append(" ");
+        out.consume(op.getClosingSymbol());
+        out.consume(" ");
         renderParam(2, rc);
         break;
     }
   }
 
-  private void renderParam(int i, RenderContext rc) throws IOException {
+  private void renderParam(int i, RenderContext rc) {
+    TokenConsumer out = rc.getOut();
     Expression e = children().get(i);
+    out.mark(e.getFilePosition());
     if (!parenthesize(op, 0 == i, e)) {
       e.render(rc);
     } else {
-      rc.out.append("(");
-      rc.indent += 2;
+      out.consume("(");
       e.render(rc);
-      rc.indent -= 2;
-      rc.out.append(")");
+      out.mark(FilePosition.endOfOrNull(getFilePosition()));
+      out.consume(")");
     }
   }
 

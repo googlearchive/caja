@@ -14,8 +14,9 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -35,26 +36,28 @@ public final class ArrayConstructor extends AbstractExpression<Expression> {
   @Override
   public Object getValue() { return null; }
 
-  public void render(RenderContext rc) throws IOException {
-    rc.out.append("[");
-    rc.indent += 2;
-    boolean seen = false;
+  public void render(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    FilePosition pos = getFilePosition();
+    out.mark(pos);
+    out.consume("[");
+    Expression last = null;
     for (Expression e : children()) {
-      if (seen) {
-        rc.out.append(", ");
-      } else {
-        seen = true;
+      if (last != null) {
+        out.consume(",");
       }
+      last = e;
       if (!(e instanceof Operation
             && Operator.COMMA == ((Operation) e).getOperator())) {
         e.render(rc);
       } else {
-        rc.out.append("(");
+        FilePosition ePos = e.getFilePosition();
+        out.consume("(");
         e.render(rc);
-        rc.out.append(")");
+        out.consume(")");
       }
     }
-    rc.indent -= 2;
-    rc.out.append("]");
+    out.mark(FilePosition.endOfOrNull(pos));
+    out.consume("]");
   }
 }

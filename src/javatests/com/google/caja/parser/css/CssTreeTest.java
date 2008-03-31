@@ -21,6 +21,7 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
+import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Criterion;
@@ -161,16 +162,16 @@ public class CssTreeTest extends TestCase {
 
   public void testIdentifierEscaping() throws Exception {
     assertRenderedForm(
-        "Le caja .no es #un rect\\E1ngulo {\n  \n}",
+        "Le caja .no es #un rect\\E1ngulo {\n}",
         "Le caja .no es #un rect\u00E1ngulo {}", true);
 
     // '\x34' == '4'
     assertRenderedForm(
-        "\\34is a number and an identifier {\n  \n}",
+        "\\34is a number and an identifier {\n}",
         "\\34is a number and an identifier {}", true);
 
     assertRenderedForm(
-        "\\34 0 is a number and an identifier too {\n  \n}",
+        "\\34 0 is a number and an identifier too {\n}",
         "\\34 0 is a number and an identifier too {}", true);
   }
 
@@ -199,7 +200,8 @@ public class CssTreeTest extends TestCase {
       cp.close();
     }
     StringBuilder sb = new StringBuilder();
-    RenderContext rc = new RenderContext(new MessageContext(), sb, paranoid);
+    CssPrettyPrinter csspp = new CssPrettyPrinter(sb, null);
+    RenderContext rc = new RenderContext(new MessageContext(), paranoid, csspp);
     stylesheet.render(rc);
     assertEquals(golden.trim(), sb.toString().trim());
   }
@@ -216,8 +218,10 @@ public class CssTreeTest extends TestCase {
     cp.close();
 
     StringBuilder sb = new StringBuilder();
-    RenderContext rc = new RenderContext(mc, sb, paranoid);
+    CssPrettyPrinter csspp = new CssPrettyPrinter(sb, null);
+    RenderContext rc = new RenderContext(mc, paranoid, csspp);
     stylesheet.render(rc);
+    csspp.noMoreTokens();
     String actual = sb.toString();
 
     assertEquals(actual, golden, actual);

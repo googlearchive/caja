@@ -14,10 +14,10 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
-
-import java.io.IOException;
 
 import java.util.List;
 
@@ -55,27 +55,24 @@ public final class Block
   public Object getValue() { return null; }
 
   @Override
-  public void renderBlock(RenderContext rc, boolean pre, boolean post,
-                          boolean terminate)
-      throws IOException {
-    if (pre) { rc.out.append(" "); }
-    rc.out.append("{");
-    rc.indent += 2;
+  public void renderBlock(RenderContext rc, boolean terminate) {
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
+    out.consume("{");
     for (Statement stmt : children()) {
-      rc.newLine();
+      out.mark(stmt.getFilePosition());
       stmt.render(rc);
       if (!stmt.isTerminal()) {
-        rc.out.append(";");
+        out.mark(FilePosition.endOfOrNull(stmt.getFilePosition()));
+        out.consume(";");
       }
     }
-    rc.indent -= 2;
-    rc.newLine();
-    rc.out.append("}");
-    if (post) { rc.out.append(" "); }
+    out.mark(FilePosition.endOfOrNull(getFilePosition()));
+    out.consume("}");
   }
 
-  public void render(RenderContext rc) throws IOException {
-    renderBlock(rc, false, false, false);
+  public void render(RenderContext rc) {
+    renderBlock(rc, false);
   }
 
   @Override

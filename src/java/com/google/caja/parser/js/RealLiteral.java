@@ -14,10 +14,10 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -41,13 +41,23 @@ public final class RealLiteral extends NumberLiteral {
   public double doubleValue() { return value; }
 
   @Override
-  public void render(RenderContext rc) throws IOException {
+  public void render(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
     // Render special values in a way that is independent of the current
     // environment.
     if (Double.isNaN(value)) {
-      rc.out.append("(0 / 0)");
+      out.consume("(");
+      out.consume("0");
+      out.consume("/");
+      out.consume("0");
+      out.consume(")");
     } else if (Double.isInfinite(value)) {
-      rc.out.append(value >= 0 ? "(1 / 0)" : "(-1 / 0)");
+      out.consume("(");
+      if (value >= 0) { out.consume("-"); }
+      out.consume("1");
+      out.consume("/");
+      out.consume("0");
+      out.consume(")");
     } else {
       super.render(rc);
     }

@@ -21,6 +21,8 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
@@ -29,9 +31,14 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
+import com.google.caja.render.JsPrettyPrinter;
+import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Callback;
 import com.google.caja.util.ReadableReader;
 
 import java.io.IOException;
@@ -126,14 +133,29 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
     MessageContext mc = compiler.getMessageContext();
     StringBuilder style = new StringBuilder();
     StringBuilder script = new StringBuilder();
-    try {
-      CssTree css = compiler.getCss();
-      if (css != null) { css.render(createRenderContext(style, mc)); }
-      Block js = compiler.getJavascript();
-      if (js != null) { js.render(createRenderContext(script, mc)); }
-    } catch (IOException ex) {
-      // StringBuilders should not throw IOExceptions.
-      throw new RuntimeException(ex);
+
+    Callback<IOException> errorHandler = new Callback<IOException>() {
+      public void handle(IOException ex) {
+        mq.addMessage(MessageType.IO_ERROR,
+                      MessagePart.Factory.valueOf("" + ex));
+      }
+    };
+    
+    CssTree css = compiler.getCss(); 
+    if (css != null) {
+      TokenConsumer tc = new CssPrettyPrinter(style, errorHandler);
+      css.render(createRenderContext(tc, mc));
+      tc.noMoreTokens();
+    }
+    Block js = compiler.getJavascript();
+    if (js != null) {
+      TokenConsumer tc = new JsPrettyPrinter(script, errorHandler);
+      js.render(createRenderContext(tc, mc));
+      tc.noMoreTokens();
+    }
+
+    if (!compiler.getJobs().hasNoErrors()) {
+      throw new GadgetRewriteException();
     }
 
     return rewriteContent(style.toString(), script.toString());
@@ -217,7 +239,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
   }
 
   protected RenderContext createRenderContext(
-      Appendable out, MessageContext mc) {
-    return new RenderContext(mc, out, true);
+      TokenConsumer tc, MessageContext mc) {
+    return new RenderContext(mc, true, tc);
   }
 }

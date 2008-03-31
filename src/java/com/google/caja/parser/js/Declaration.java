@@ -14,10 +14,10 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -64,8 +64,10 @@ public class Declaration extends AbstractStatement<ParseTreeNode> {
   @Override
   public Object getValue() { return null; }
 
-  public void render(RenderContext rc) throws IOException {
-    rc.out.append("var ");
+  public void render(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
+    out.consume("var");
     renderShort(rc);
   }
 
@@ -74,15 +76,17 @@ public class Declaration extends AbstractStatement<ParseTreeNode> {
    * This is used in multi declarations, such as in
    * {@code for (var a = 0, b = 1, ...)}.
    */
-  void renderShort(RenderContext rc) throws IOException {
+  void renderShort(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
     String name = identifier.getName();
     if (name == null) {
       throw new IllegalStateException(
           "null name for declaration at " + getFilePosition());
     }
-    rc.out.append(name);
+    out.consume(name);
     if (null != initializer) {
-      rc.out.append(" = ");
+      out.consume("=");
       initializer.render(rc);
     }
   }

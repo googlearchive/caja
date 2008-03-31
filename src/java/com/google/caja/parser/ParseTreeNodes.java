@@ -23,7 +23,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.io.IOException;
 
 /**
  * A utility class for common operations on {@link ParseTreeNode}s.
@@ -66,8 +65,12 @@ public class ParseTreeNodes {
     }
   }
   
-  // TODO(ihab): Instead of creating a new list each time, pass the list in and append to it.
-  private static List<? extends ParseTreeNode> flattenNodeList(List<? extends ParseTreeNode> nodes) {
+  // TODO(ihab): Instead of creating a new list each time, pass the list in and
+  // append to it.
+  // TODO(mikesamuel): clean up dependency.  This package should not depend on
+  // quasiliterals.
+  private static List<? extends ParseTreeNode> flattenNodeList(
+      List<? extends ParseTreeNode> nodes) {
     List<ParseTreeNode> results = new ArrayList<ParseTreeNode>();
     for (int i = 0; i < nodes.size(); i++) {
       if (nodes.get(i) instanceof ParseTreeNodeContainer) {
@@ -100,22 +103,6 @@ public class ParseTreeNodes {
       }
     }
     return false;
-  }
-
-  /**
-   * Render a {@code ParseTreeNode} into a string in a simple way.
-   *
-   * @param node a {@code ParseTreeNode}.
-   * @return a quick rendering for diagnostic or other simple purposes.
-   */
-  public static String render(ParseTreeNode node) {
-    StringBuilder buf = new StringBuilder();
-    try {
-      node.render(new RenderContext(new MessageContext(), buf));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    return buf.toString();
   }
 
   private static <T extends ParseTreeNode> Constructor<T> findCloneCtor(

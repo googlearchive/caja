@@ -22,6 +22,7 @@ import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
@@ -241,11 +242,9 @@ public final class TestUtil {
 
   public static String render(ParseTreeNode n) {
     StringBuilder output = new StringBuilder();
-    try {
-      n.render(new RenderContext(new MessageContext(), output));
-    } catch (IOException ex) {
-      throw new RuntimeException(ex);  // StringBuilder should not throw.
-    }
+    TokenConsumer tc = n.makeRenderer(output, null);
+    n.render(new RenderContext(new MessageContext(), tc));
+    tc.noMoreTokens();
     return output.toString();
   }
   

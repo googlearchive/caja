@@ -14,9 +14,9 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -58,21 +58,23 @@ public final class FunctionDeclaration extends Declaration {
   }
 
   @Override
-  public void render(RenderContext rc) throws IOException {
+  public void render(RenderContext rc) {
     FunctionConstructor fc = getInitializer();
-    rc.out.append("function ").append(getIdentifierName()).append('(');
-    rc.indent += 2;
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
+    out.consume("function");
+    out.consume(getIdentifierName());
+    out.consume("(");
     boolean seen = false;
     for (FormalParam p : fc.getParams()) {
       if (seen) {
-        rc.out.append(", ");
+        out.consume(",");
       } else {
         seen = true;
       }
       p.render(rc);
     }
-    rc.indent -= 2;
-    rc.out.append(")");
-    fc.getBody().renderBlock(rc, true, false, false);
+    out.consume(")");
+    fc.getBody().renderBlock(rc, false);
   }
 }

@@ -111,7 +111,8 @@ public class Escaping {
   public static void normalizeRegex(
       CharSequence s, boolean asciiOnly, boolean paranoid, Appendable out)
       throws IOException {
-    new Escaper(s, paranoid ? REGEX_PARANOID_ESCAPES : REGEX_MINIMAL_ESCAPES,
+    new Escaper(requireEndUnescaped(rebalance(s, '[', ']')),
+                paranoid ? REGEX_PARANOID_ESCAPES : REGEX_MINIMAL_ESCAPES,
                 asciiOnly ? NO_NON_ASCII : ALLOW_NON_ASCII, JS_ENCODER, out)
         .normalize();
   }
@@ -492,6 +493,77 @@ public class Escaping {
       out[i] = new Escape(chars[i], "\\" + chars[i]);
     }
     return out;
+  }
+
+  /**
+   * Make sure brackets are are balanced, because otherwise malformed regular
+   * expressions can cause bad tokenization.
+   */
+  private static CharSequence rebalance(CharSequence s, char open, char close) {
+    int n = s.length();
+    if (n == 0) { return s; }
+
+    StringBuilder sb = null;
+    int pos = 0;  // position past last character in s written to sb
+    int lOpen = -1;  // index of unclosed open element in s or -1 if none
+    int lOpenInSb = -1;  // index of unclosed open element in sb or -1 if none
+
+    if (s.charAt(0) == '*' || s.charAt(0) == '/') {
+      // Escape any regex string starting with * to avoid /*rest of regex/.
+      sb = new StringBuilder();
+      sb.append('\\');
+    }
+
+    for (int i = 0; i < n; ++i) {
+      char ch = s.charAt(i);
+      if (ch == '\\') {
+        ++i;
+      } else if (ch == open) {
+        if (lOpen == -1) {
+          lOpen = i;
+          lOpenInSb = -1;
+        } else {
+          if (sb == null) { sb = new StringBuilder(); }
+          if (lOpenInSb == -1) {
+            lOpenInSb = lOpen + sb.length() - pos;
+          }
+          sb.append(s, pos, i).append('\\');
+          pos = i;
+        }
+      } else if (ch == close) {
+        lOpen = -1;
+      }
+    }
+    if (lOpen != -1) {
+      if (sb == null) { sb = new StringBuilder(); }
+      if (lOpenInSb != -1) {
+        sb.insert(lOpenInSb, '\\');
+      } else {
+        sb.append(s, pos, lOpen);
+        sb.append('\\');
+        pos = lOpen;
+      }
+    } else if (sb == null) {
+      return s;
+    }
+    sb.append(s, pos, n);
+    return sb.toString();
+  }
+
+  /**
+   * Make sure that s does not end with a backslash that would escape any
+   * delimiter placed after it.
+   */
+  private static CharSequence requireEndUnescaped(CharSequence s) {
+    int n = s.length();
+    int nBackslashes = 0;
+    while (nBackslashes < n && '\\' == s.charAt(n - nBackslashes - 1)) {
+      ++nBackslashes;
+    }
+    if ((nBackslashes & 1) == 1) {
+      return s + "\\";
+    }
+    return s;
   }
 
   private Escaping() { /* non instantiable */ }

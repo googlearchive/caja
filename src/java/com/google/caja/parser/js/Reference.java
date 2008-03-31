@@ -17,7 +17,6 @@ package com.google.caja.parser.js;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -62,12 +61,13 @@ public final class Reference extends AbstractExpression<ParseTreeNode> {
     return true;
   }
 
-  public void render(RenderContext rc) throws IOException {
+  public void render(RenderContext rc) {
     String name = getIdentifierName();
     if (name == null) {
       throw new IllegalStateException(
           "null name for declaration at " + getFilePosition());
     }
-    rc.out.append(name);
+    rc.getOut().mark(getFilePosition());
+    rc.getOut().consume(name);
   }
 }

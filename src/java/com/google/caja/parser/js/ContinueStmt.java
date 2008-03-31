@@ -14,9 +14,8 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
-
-import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,11 +48,12 @@ public final class ContinueStmt extends AbstractStatement<Statement> {
   @Override
   public Object getValue() { return label; }
 
-  public void render(RenderContext rc) throws IOException {
-    rc.out.append("continue");
+  public void render(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
+    out.consume("continue");
     if (null != label && !"".equals(label)) {
-      rc.out.append(" ");
-      rc.out.append(label);
+      out.consume(label);
     }
   }
 }

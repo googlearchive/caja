@@ -14,9 +14,11 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Callback;
 
 import java.io.IOException;
 import java.util.List;
@@ -39,9 +41,15 @@ public class ParseTreeNodeContainer extends AbstractParseTreeNode<ParseTreeNode>
     createMutation().appendChildren(children).execute();
   }
 
+  @Override
   public Object getValue() { return null; }
   
-  public void render(RenderContext rc) throws IOException {
+  public void render(RenderContext rc) {
     for (ParseTreeNode n : children()) { n.render(rc); }
+  }
+
+  public TokenConsumer makeRenderer(
+      Appendable out, Callback<IOException> exHandler) {
+    throw new UnsupportedOperationException();
   }
 }

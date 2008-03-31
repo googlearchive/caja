@@ -14,10 +14,10 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Pair;
-
-import java.io.IOException;
 
 import java.util.Iterator;
 import java.util.List;
@@ -75,33 +75,34 @@ public final class ObjectConstructor extends AbstractExpression<Expression> {
   @Override
   public Object getValue() { return null; }
 
-  public void render(RenderContext rc) throws IOException {
-    rc.out.append("{");
-    rc.indent += 2;
+  public void render(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
+    out.consume("{");
     boolean seen = false;
     Iterator<? extends Expression> els = children().iterator();
     while (els.hasNext()) {
       Expression key = els.next(),
                value = els.next();
       if (seen) {
-        rc.out.append(",");
+        out.consume(",");
+        out.consume("\n");
       } else {
         seen = true;
       }
-      rc.newLine();
       key.render(rc);
-      rc.out.append(": ");
+      out.consume(":");
       if (!(value instanceof Operation
             && Operator.COMMA == ((Operation) value).getOperator())) {
         value.render(rc);
       } else {
-        rc.out.append("(");
+        out.mark(value.getFilePosition());
+        out.consume("(");
         value.render(rc);
-        rc.out.append(")");
+        out.consume(")");
       }
     }
-    rc.indent -= 2;
-    rc.newLine();
-    rc.out.append("}");
+    out.mark(FilePosition.endOfOrNull(getFilePosition()));
+    out.consume("}");
   }
 }

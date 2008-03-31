@@ -14,11 +14,11 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Pair;
-
-import java.io.IOException;
 
 import java.util.List;
 
@@ -54,26 +54,31 @@ public final class Conditional extends AbstractStatement<ParseTreeNode> {
   @Override
   public Object getValue() { return null; }
 
-  public void render(RenderContext rc) throws IOException {
+  public void render(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
     List<? extends ParseTreeNode> children = children();
-    boolean seen = false;
     int i = 0;
     int n = children.size();
-    while (i + 2 <= n) {
-      Expression condition = (Expression) children.get(i++);
-      Statement body = (Statement) children.get(i++);
-      rc.out.append(seen ? "else if (" : "if (");
-      rc.indent += 2;
+    for (; i + 2 <= n; i += 2) {
+      Expression condition = (Expression) children.get(i);
+      Statement body = (Statement) children.get(i + 1);
+
+      FilePosition start = FilePosition.startOfOrNull(
+          condition.getFilePosition());
+      if (i != 0) {
+        out.consume("else");
+      }
+      out.consume("if");
+      out.consume("(");
       condition.render(rc);
-      rc.out.append(")");
-      rc.indent -= 2;
-      body.renderBlock(rc, true, i < n, i < n);
-      seen = true;
+      out.consume(")");
+      body.renderBlock(rc, i + 2 < n);
     }
     if (i < n) {
       Statement body = (Statement) children.get(i);
-      rc.out.append("else");
-      body.renderBlock(rc, true, false, false);
+      out.consume("else");
+      body.renderBlock(rc, false);
     }
   }
 }

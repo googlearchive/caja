@@ -27,6 +27,7 @@ import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
+import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
@@ -179,7 +180,7 @@ public class CssRewriterTest extends TestCase {
    * <a href="http://code.google.com/p/google-caja/issues/detail?id=57">bug</a>
    */
   public void testWildcardSelectors() throws Exception {
-    runTest("div * { margin: 0; }", ".test div  * {\n  margin: 0\n}", false);
+    runTest("div * { margin: 0; }", ".test div * {\n  margin: 0\n}", false);
   }
 
   private void runTest(String css, String golden) throws Exception {
@@ -239,7 +240,8 @@ public class CssRewriterTest extends TestCase {
     }
 
     StringBuilder actual = new StringBuilder();
-    t.render(new RenderContext(new MessageContext(), actual));
+    CssPrettyPrinter pp = new CssPrettyPrinter(actual, null);
+    t.render(new RenderContext(new MessageContext(), pp));
     System.err.println("\n\nactual=[[" + actual + "]]");
     assertEquals(msg, golden, actual.toString());
   }

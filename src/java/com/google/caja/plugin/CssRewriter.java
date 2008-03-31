@@ -16,11 +16,13 @@ package com.google.caja.plugin;
 
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
+import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
@@ -28,7 +30,6 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import static com.google.caja.plugin.SyntheticNodes.s;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -272,12 +273,8 @@ public final class CssRewriter {
               }
             } else {
               StringBuilder rendered = new StringBuilder();
-              try {
-                node.render(new RenderContext(new MessageContext(), rendered));
-              } catch (IOException ex) {
-                throw (AssertionError) new AssertionError(
-                    "IOException writing to StringBuilder").initCause(ex);
-              }
+              TokenConsumer tc = new CssPrettyPrinter(rendered, null);
+              node.render(new RenderContext(new MessageContext(), tc));
               mq.addMessage(PluginMessageType.UNSAFE_CSS_PSEUDO_SELECTOR,
                             node.getFilePosition(),
                             MessagePart.Factory.valueOf(rendered.toString()));

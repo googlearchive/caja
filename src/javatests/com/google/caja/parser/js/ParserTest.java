@@ -16,6 +16,8 @@ package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
+import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
@@ -81,7 +83,6 @@ public class ParserTest extends TestCase {
   public void testParser2() throws Exception {
     runParseTest("parsertest2.js", "parsergolden2.txt");
 
-    // Check warnings on message queue.
     Iterator<Message> msgs = mq.getMessages().iterator();
     assertTrue(msgs.hasNext());
     Message m1 = msgs.next();
@@ -150,12 +151,14 @@ public class ParserTest extends TestCase {
     Statement parseTree = TestUtil.parseTree(getClass(), testFile, mq);
     TestUtil.checkFilePositionInvariants(parseTree);
 
-    RenderContext rc = new RenderContext(mc, new StringBuilder(), paranoid);
+    StringBuilder sb = new StringBuilder();
+    TokenConsumer tc = new JsPrettyPrinter(sb, null);
+    RenderContext rc = new RenderContext(mc, paranoid, tc);
     parseTree.render(rc);
-    rc.newLine();
+    sb.append('\n');
 
     String golden = TestUtil.readResource(getClass(), goldenFile);
-    String actual = rc.out.toString();
+    String actual = sb.toString();
     assertEquals(actual, golden, actual);
   }
 
@@ -180,11 +183,11 @@ public class ParserTest extends TestCase {
     String golden = TestUtil.readResource(getClass(), goldenFile);
     assertEquals(golden, output.toString());
 
-    // Clone the parse tree, and check that it, too, matches.
+    // clone the parse tree, and check that it, too, matches
     Statement cloneParseTree = (Statement)parseTree.clone();
     StringBuilder cloneOutput = new StringBuilder();
     cloneParseTree.format(mc, cloneOutput);
-    assertEquals(golden, cloneOutput.toString());    
+    assertEquals(golden, cloneOutput.toString());
 
     List<String> actualErrors = new ArrayList<String>();
     for (Message m : mq.getMessages()) {

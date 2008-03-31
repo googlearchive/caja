@@ -14,50 +14,32 @@
 
 package com.google.caja.reporting;
 
-import java.io.IOException;
+import com.google.caja.lexer.TokenConsumer;
 
 /**
  * @see Renderable
  * @author mikesamuel@gmail.com
  */
 public class RenderContext {
-  // TODO(mikesamuel): make indent private and add setter&getter
 
-  /** Amount of space to indent on {@link #newLine}. */
-  public int indent;
-  public final MessageContext msgContext;
-  /** to which output is written. */
-  public final Appendable out;
   /** Produce output that can be safely embedded. */
-  public final boolean paranoid;
+  private final boolean paranoid;
+  private final MessageContext msgContext;
+  private final TokenConsumer out;
 
-  public RenderContext(MessageContext msgContext, Appendable out) {
-    this(msgContext, out, false);
+  public RenderContext(MessageContext msgContext, TokenConsumer out) {
+    this(msgContext, false, out);
   }
 
   public RenderContext(
-      MessageContext msgContext, Appendable out, boolean paranoid) {
+      MessageContext msgContext, boolean paranoid, TokenConsumer out) {
     if (null == msgContext || null == out) { throw new NullPointerException(); }
     this.msgContext = msgContext;
-    this.out = out;
     this.paranoid = paranoid;
+    this.out = out;
   }
 
-  /** Write a new line and indent. */
-  public void newLine() throws IOException {
-    out.append("\n");
-    indent(indent);
-  }
-
-  /** Write n spaces to {@link #out}. */
-  public void indent(int n) throws IOException {
-    if (n < 0) return;
-    while (n >= SPACES.length()) {
-      out.append(SPACES);
-      n -= SPACES.length();
-    }
-    out.append(SPACES, 0, n);
-  }
-
-  private static final String SPACES = "                ";
+  public final boolean isParanoid() { return paranoid; }
+  public final MessageContext getMessageContext() { return msgContext; }
+  public final TokenConsumer getOut() { return out; }
 }

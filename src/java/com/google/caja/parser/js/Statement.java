@@ -17,8 +17,6 @@ package com.google.caja.parser.js;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
-import java.io.IOException;
-
 import java.util.List;
 import java.util.Map;
 
@@ -58,14 +56,8 @@ public interface Statement extends ParseTreeNode {
    * Called to render the statement as part of another statement.
    *
    * @param rc non null.
-   * @param pre is there space needed between this statement
-   *   and the preceding token?
-   * @param post is there space needed between this statement and the following
-   *   token.
    * @param terminate should the statement be terminated -- followed with a
    *   semicolon if not a block.
    */
-  void renderBlock(RenderContext rc, boolean pre, boolean post,
-                   boolean terminate)
-      throws IOException;
+  void renderBlock(RenderContext rc, boolean terminate);
 }

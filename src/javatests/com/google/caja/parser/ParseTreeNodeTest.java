@@ -14,11 +14,13 @@
 
 package com.google.caja.parser;
 
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.LabeledStatement;
 import com.google.caja.parser.js.LabeledStmtWrapper;
+import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 
@@ -110,7 +112,8 @@ public class ParseTreeNodeTest extends TestCase {
   public void testRender() throws Exception {
     StringBuilder sb = new StringBuilder();
     MessageContext mc = new MessageContext();
-    root.render(new RenderContext(mc, sb));
+    TokenConsumer tc = new JsPrettyPrinter(sb, null);
+    root.render(new RenderContext(mc, tc));
     assertEquals(
         "$0: {\n"
         + "  $1: {\n"
@@ -196,7 +199,8 @@ public class ParseTreeNodeTest extends TestCase {
     doReplace();
     StringBuilder sb = new StringBuilder();
     MessageContext mc = new MessageContext();
-    root.render(new RenderContext(mc, sb));
+    TokenConsumer tc = new JsPrettyPrinter(sb, null);
+    root.render(new RenderContext(mc, tc));
     assertEquals(
         "$0: {\n"
         + "  $1: {\n"
@@ -294,7 +298,8 @@ public class ParseTreeNodeTest extends TestCase {
     doInsert(5);
     StringBuilder sb = new StringBuilder();
     MessageContext mc = new MessageContext();
-    root.render(new RenderContext(mc, sb));
+    TokenConsumer tc = new JsPrettyPrinter(sb, null);
+    root.render(new RenderContext(mc, tc));
     assertEquals(
         "$0: {\n"
         + "  $1: {\n"
@@ -377,7 +382,8 @@ public class ParseTreeNodeTest extends TestCase {
     doInsert(1);
     StringBuilder sb = new StringBuilder();
     MessageContext mc = new MessageContext();
-    root.render(new RenderContext(mc, sb));
+    TokenConsumer tc = new JsPrettyPrinter(sb, null);
+    root.render(new RenderContext(mc, tc));
     assertEquals(
         "$0: {\n"
         + "  $9: {\n"
@@ -460,7 +466,8 @@ public class ParseTreeNodeTest extends TestCase {
     doInsert(-1);
     StringBuilder sb = new StringBuilder();
     MessageContext mc = new MessageContext();
-    root.render(new RenderContext(mc, sb));
+    TokenConsumer tc = new JsPrettyPrinter(sb, null);
+    root.render(new RenderContext(mc, tc));
     assertEquals(
         "$0: {\n"
         + "  $1: {\n"
@@ -534,7 +541,8 @@ public class ParseTreeNodeTest extends TestCase {
     doRemove(5);
     StringBuilder sb = new StringBuilder();
     MessageContext mc = new MessageContext();
-    root.render(new RenderContext(mc, sb));
+    TokenConsumer tc = new JsPrettyPrinter(sb, null);
+    root.render(new RenderContext(mc, tc));
     assertEquals(
         "$0: {\n"
         + "  $1: {\n"
@@ -595,7 +603,8 @@ public class ParseTreeNodeTest extends TestCase {
     doRemove(1);
     StringBuilder sb = new StringBuilder();
     MessageContext mc = new MessageContext();
-    root.render(new RenderContext(mc, sb));
+    TokenConsumer tc = new JsPrettyPrinter(sb, null);
+    root.render(new RenderContext(mc, tc));
     assertEquals(
         "$0: {\n"
         + "  $5: {\n"

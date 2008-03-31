@@ -16,6 +16,7 @@ package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
@@ -37,6 +38,7 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Callback;
 import com.google.caja.util.Pair;
 
 import java.io.IOException;
@@ -60,6 +62,10 @@ public abstract class Rule implements MessagePart {
       new AbstractParseTreeNode<ParseTreeNode>() {
         @Override public Object getValue() { return null; }
         public void render(RenderContext r) {
+          throw new UnsupportedOperationException();
+        }
+        public TokenConsumer makeRenderer(
+            Appendable out, Callback<IOException> exHandler) {
           throw new UnsupportedOperationException();
         }
       };

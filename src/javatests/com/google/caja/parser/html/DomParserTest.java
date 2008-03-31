@@ -22,6 +22,7 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
+import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
@@ -31,7 +32,6 @@ import com.google.caja.util.Criterion;
 import com.google.caja.util.Join;
 import static com.google.caja.util.MoreAsserts.*;
 
-import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
 import java.util.ArrayList;
@@ -1627,7 +1627,7 @@ public class DomParserTest extends TestCase {
       List<String> expectedParseTree,
       List<String> expectedMessages,
       List<String> expectedOutputHtml)
-      throws IOException, ParseException {
+      throws ParseException {
     assertParsedMarkup(htmlInput, expectedParseTree, expectedMessages,
                        expectedOutputHtml, false, false);
   }
@@ -1637,7 +1637,7 @@ public class DomParserTest extends TestCase {
       List<String> expectedParseTree,
       List<String> expectedMessages,
       List<String> expectedOutputHtml)
-      throws IOException, ParseException {
+      throws ParseException {
     assertParsedMarkup(htmlInput, expectedParseTree, expectedMessages,
                        expectedOutputHtml, false, true);
   }
@@ -1649,7 +1649,7 @@ public class DomParserTest extends TestCase {
       List<String> expectedOutputHtml,
       Boolean asXml,
       boolean fragment)
-      throws IOException, ParseException {
+      throws ParseException {
 
     System.err.println("\n\nStarting " + getName() + "\n===================");
     mq.getMessages().clear();
@@ -1679,9 +1679,10 @@ public class DomParserTest extends TestCase {
     }
     assertListsEqual(expectedMessages, actualMessages, 0);
 
-    RenderContext context = new RenderContext(mc, new StringBuilder());
+    StringBuilder out = new StringBuilder();
+    RenderContext context = new RenderContext(mc, new Concatenator(out, null));
     tree.render(context);
-    List<String> outputHtml = Arrays.asList(context.out.toString().split("\n"));
+    List<String> outputHtml = Arrays.asList(out.toString().split("\n"));
     assertListsEqual(expectedOutputHtml, outputHtml);
   }
 

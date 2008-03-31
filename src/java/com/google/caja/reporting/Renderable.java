@@ -14,6 +14,9 @@
 
 package com.google.caja.reporting;
 
+import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.util.Callback;
+
 import java.io.IOException;
 
 /**
@@ -24,8 +27,17 @@ import java.io.IOException;
 public interface Renderable {
 
   /**
-   * Output the textual form to {@link RenderContext#out <code>r.out</code>}.
+   * Output the textual form to 
+   * {@link RenderContext#getOut <code>r.getOut()</code>}.
    */
-  void render(RenderContext r) throws IOException;
+  void render(RenderContext r);
 
+  /**
+   * Create a renderer capable of rendering this node.
+   * @param out a channel to receive the rendered form.
+   * @param handler receives IOExceptions thrown by out.  May be null if out
+   *   will not throw an IOException on append.
+   * @see com.google.caja.render
+   */
+  TokenConsumer makeRenderer(Appendable out, Callback<IOException> handler);
 }
