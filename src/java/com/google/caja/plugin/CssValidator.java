@@ -402,6 +402,15 @@ final class SignatureResolver {
     return passed;
   }
 
+  /**
+   * Makes sure that a candidate is on the passed list -- all succeeding rules
+   * will add the candidate except an optional rule that is satisfied because
+   * it successfully went through zero repetitions.
+   *
+   * @param passed modified in place.
+   * @return true if candidate is a complete solution to signature -- uses all
+   *    terms.
+   */
   private boolean checkEnd(
       Candidate candidate, CssPropertySignature sig, List<Candidate> passed) {
     if (candidate.exprIdx == expr.children().size()) {
@@ -511,7 +520,10 @@ final class SignatureResolver {
           // Special handling for || groups
           List<Candidate> passedSet  = new ArrayList<Candidate>();
           for (Candidate setCandidate : toApply) {
-            if (setCandidate.exprIdx == expr.children().size()) { continue; }
+            if (setCandidate.exprIdx == expr.children().size()) {
+              passed.add(setCandidate);
+              continue;
+            }
 
             skipBlank(setCandidate);
 
