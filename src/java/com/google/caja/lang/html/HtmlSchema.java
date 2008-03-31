@@ -145,9 +145,6 @@ public final class HtmlSchema {
 
   public boolean isElementAllowed(String elementName) {
     assert elementName.equals(elementName.toLowerCase());
-    if (!allowedElements.contains(elementName)) {
-      System.err.println("Disallowing " + elementName);
-    }
     return allowedElements.contains(elementName);
   }
 
