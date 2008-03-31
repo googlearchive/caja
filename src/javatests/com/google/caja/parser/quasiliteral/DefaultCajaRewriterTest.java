@@ -138,7 +138,10 @@ public class DefaultCajaRewriterTest extends TestCase {
   ////////////////////////////////////////////////////////////////////////
 
   public void testWith() throws Exception {
-    // Our parser does not recognize "with" at all.
+    checkFails("with (dreams || ambiguousScoping) anything.isPossible();",
+               "\"with\" blocks are not allowed");
+    checkFails("with (dreams || ambiguousScoping) { anything.isPossible(); }",
+               "\"with\" blocks are not allowed");
   }
 
   public void testForeach() throws Exception {

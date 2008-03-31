@@ -82,10 +82,6 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: Member key may not end in \"__\": %s, %s",
       MessageLevel.FATAL_ERROR),
 
-  CONSTRUCTORS_ARE_NOT_FIRST_CLASS(
-      "%s: Constructors are not first class: %s, %s",
-      MessageLevel.FATAL_ERROR),
-
   CAJA_DEF_ON_NON_CTOR(
       "%s: caja.def called with non-constructor: %s, %s",
       MessageLevel.FATAL_ERROR),
@@ -101,6 +97,10 @@ public enum RewriterMessageType implements MessageTypeInt {
   CANNOT_ASSIGN_TO_THIS(
       "%s: Cannot assign to \"this\": %s, %s",
       MessageLevel.FATAL_ERROR),
+
+  WITH_BLOCKS_NOT_ALLOWED(
+      "%s: \"with\" blocks are not allowed",
+      MessageLevel.ERROR),
   ;
 
   private final String formatString;

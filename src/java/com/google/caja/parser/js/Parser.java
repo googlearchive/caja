@@ -57,8 +57,6 @@ import java.util.Set;
  * <li>Reports warnings on a queue where an error doesn't prevent any further
  *   errors, so that we can report multiple errors in a single compile pass
  *   instead of forcing developers to play whack-a-mole.
- * <li>Does not parse {@code with} blocks.
- *   TODO(mikesamuel): duplicate the code that handles {@link Keyword#WHILE}.
  * <li>Does not parse Firefox style {@code catch (<Identifier> if <Expression>)}
  *   since those don't work on IE and many other interpreters.
  * <li>Recognizes {@code const} since many interpreters do (not IE) but warns.
@@ -101,6 +99,7 @@ import java.util.Set;
  *                          | <Switch>
  *                          | <Try>
  *                          | <While>
+ *                          | <With>
  *   SimpleStatementAtom   => <Break>
  *                          | <Continue>
  *                          // Do-While loops are simple because, unlike other
@@ -143,6 +142,7 @@ import java.util.Set;
  *   Catch                 => 'catch' '(' <Identifier> ')' <Body>
  *   Finally               => 'finally' <Body>
  * While                   => 'while' '(' <Expression> ')' <Body>
+ * With                    => 'with' '(' <Expression> ')' <Body>
  * Do                      => 'do' <Body> 'while' '(' <Expression> ')'
  * Break                   => 'break' <StatementLabel>?
  * Continue                => 'continue' <StatementLabel>?
@@ -628,6 +628,16 @@ public final class Parser extends ParserBase {
             finallyBlock = null;
           }
           s = new TryStmt(body, handler, finallyBlock);
+          break;
+        }
+        case WITH:
+        {
+          tq.advance();
+          tq.expectToken(Punctuation.LPAREN);
+          Expression scopeObject = parseExpressionInt(true);
+          tq.expectToken(Punctuation.RPAREN);
+          Statement body = parseBody(true);
+          s = new WithStmt(scopeObject, body);
           break;
         }
         default:

@@ -93,8 +93,26 @@ public class DefaultCajaRewriter extends Rewriter {
     ////////////////////////////////////////////////////////////////////////
 
     addRule(new Rule("with", this) {
+      @Override
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        // Our parser does not recognize "with" at all.
+        // `with` violates the assumptions that Scope makes and makes it very
+        // hard to write a Scope that works.
+
+        // http://yuiblog.com/blog/2006/04/11/with-statement-considered-harmful/
+        // briefly touches on why `with` is bad for programmers and more-so
+        // for reviewers -- matching of references with declarations can only
+        // be done at runtime.
+
+        // All other secure JS subsets that I know of (ADSafe Jacaranda & FBJS)
+        // also disallow `with`.
+
+        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        if (match("with (@scope) @body;", node, bindings)) {
+          mq.addMessage(
+              RewriterMessageType.WITH_BLOCKS_NOT_ALLOWED,
+              node.getFilePosition());
+          return node;
+        }
         return NONE;
       }
     });
