@@ -758,10 +758,7 @@ public class DefaultCajaRewriterTest extends TestCase {
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
         "  var foo = ___.simpleFunc(function foo() {});" +
-        "  (function() {" +
-        "    var x___ = " + weldReadOuters("x") + ";" +
-        "    return ___.setMember(foo, 'p', x___);" +
-        "  })();" +
+        "  ___.setMember(foo, 'p', " + weldReadOuters("x") + ");" +
         "}));");
     checkSucceeds(
         "function() {" +
@@ -770,14 +767,30 @@ public class DefaultCajaRewriterTest extends TestCase {
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
         "  var foo = ___.simpleFunc(function foo() {});" +
-        "  (function() {" +
-        "    var x___ = ___.method(foo, function(a, b) {" +
-        "      var t___ = this;" +
-        "      t___;" +
-        "    });" +
-        "    return ___.setMember(foo, 'p', x___);" +
-        "  })();" +
+        "  ___.setMember(" +
+        "      foo, 'p', ___.method(" +
+        // TODO(mikesamuel): Should not reevaluate foo if it is a global.
+        "          foo," +
+        "          function(a, b) {" +
+        "            var t___ = this;" +
+        "            t___;" +
+        "          }));" +
         "}));");
+    checkSucceeds(  // Doesn't trigger setMember but should.
+        "foo.bar.prototype.baz = boo;",
+        "(function () {" +
+        "  var x___ = (" +
+        "      function () {" +
+        "        var x___ = (" +
+        "            function () {" +
+        "              var x___ = " + weldReadOuters("foo") + ";" +
+        "              return x___.bar_canRead___ ? x___.bar : ___.readPub(x___, 'bar');" +
+        "            })();" +
+        "        return x___.prototype_canRead___ ? x___.prototype : ___.readPub(x___, 'prototype');" +
+        "      })();" +
+        "  var x0___ = " + weldReadOuters("boo") + ";" +
+        "  return x___.baz_canSet___ ? (x___.baz = x0___) : ___.setPub(x___, 'baz', x0___);" +
+        "})();");
   }
 
   public void testSetBadInternal() throws Exception {

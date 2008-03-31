@@ -597,21 +597,26 @@ public class DefaultCajaRewriter extends Rewriter {
         // Currently, since we have no such test, the translated expression will
         // safely evaluate to <tt>undefined</tt>, but this behavior is not within
         // a fail-stop subset of JavaScript.
-        if (match("@fname.prototype.@p = @m;", node, bindings)) {
-          String fname = getReferenceName(bindings.get("fname"));
-          if (scope.isDeclaredFunction(fname)) {
-            Reference p = (Reference) bindings.get("p");
-            String propertyName = getReferenceName(p);
-            if (!"constructor".equals(propertyName)) {
-              return substV(
-                  "(function() {" +
-                  "  var x___ = @m;" +
-                  "  return ___.setMember(@fname, @rp, x___);" +
-                  "})();",
-                  "fname", bindings.get("fname"),
-                  "m", expandMember(bindings.get("fname"), bindings.get("m"), this, scope, mq),
-                  "rp", toStringLiteral(p));
+        if (match("@clazz.prototype.@p = @m;", node, bindings)) {
+          ParseTreeNode clazz = bindings.get("clazz");
+          if (clazz instanceof Reference) {
+            String className = getReferenceName(clazz);
+            if (scope.isDeclaredFunction(className)) {
+              Reference p = (Reference) bindings.get("p");
+              if (!"constructor".equals(getReferenceName(p))) {
+                // Make sure @p and @clazz are mentionable.
+                expand(p, scope, mq);
+                expand(clazz, scope, mq);
+                return substV(
+                    "___.setMember(@clazz, @rp, @m);",
+                    "clazz", clazz,  // Don't expand so we don't freeze.
+                    "m", expandMember(clazz, bindings.get("m"), this, scope, mq),
+                    "rp", toStringLiteral(p));
+              }
             }
+          } else {
+            // TODO(mikesamuel): make constructors first class for the purpose
+            // of defining members.
           }
         }
         return NONE;

@@ -18,6 +18,7 @@ import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
@@ -98,8 +99,8 @@ public class CajaApplet extends Applet {
     DefaultGadgetRewriter rw = new DefaultGadgetRewriter(mq) {
         @Override
         protected RenderContext createRenderContext(
-            Appendable out, MessageContext mc) {
-          return new RenderContext(mc, out, embeddable);
+            TokenConsumer out, MessageContext mc) {
+          return new RenderContext(mc, embeddable, out);
         }
       };
 
