@@ -499,8 +499,35 @@ public class HtmlCompiledPluginTest extends TestCase {
       execGadget(
           "<script>" +
           "function Foo() { this.f = function(){ return this; }}" +
-          "</script>", "");
+          "</script>",
+          "");
     }
+  }
+  
+  public void testGlobalThis() throws Exception {
+    execGadget(
+        "<script>" +
+        "var y = this.foo;" +
+        "assertEquals(y, undefined);" +
+        "</script>",
+        "");
+    execGadget(
+        "<script>" +
+        "var passed = false;" +
+        "try {" +
+        "  var y = foo;" +
+        "} catch (e) { passed = true; }" +
+        "if (!passed) fail('Should have thrown a ReferenceError.');" +
+        "</script>",
+        "");
+  }
+  
+  public void testStaticMembers() throws Exception {
+    execGadget("<script>" +
+        "function Foo(){}" +
+        "Foo.prototype.x = 1;" +
+        "</script>",
+        "");
   }
   
   private void execGadget(String gadgetSpec, String tests) throws Exception {

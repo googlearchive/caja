@@ -41,6 +41,7 @@ import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.SimpleOperation;
 import com.google.caja.parser.js.SpecialOperation;
+import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SwitchStmt;
 import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TryStmt;
@@ -396,7 +397,12 @@ public class DefaultCajaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("this.@p", node, bindings) && scope.isGlobal()) {
-          return expandReferenceToOuters(bindings.get("p"), scope, mq);
+          String xName = getReferenceName(bindings.get("p"));
+          return substV(
+              "___OUTERS___.@xCanRead ? ___OUTERS___.@x : ___.readPub(___OUTERS___, @xName);",
+              "x", bindings.get("p"),
+              "xCanRead", new Reference(new Identifier(xName + "_canRead___")),
+              "xName", new StringLiteral(StringLiteral.toQuotedValue(xName)));
         }
         return NONE;
       }
@@ -609,7 +615,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 expand(clazz, scope, mq);
                 return substV(
                     "___.setMember(@clazz, @rp, @m);",
-                    "clazz", clazz,  // Don't expand so we don't freeze.
+                    "clazz", expandReferenceToOuters(clazz, scope, mq),  // Don't expand so we don't freeze.
                     "m", expandMember(clazz, bindings.get("m"), this, scope, mq),
                     "rp", toStringLiteral(p));
               }
