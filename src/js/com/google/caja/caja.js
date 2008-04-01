@@ -856,6 +856,7 @@ var ___;
     }
     if (member.___METHOD_OF___ === constr) {
       allowCall(proto, name);  // grant
+      allowEnum(proto, name); // grant
     } else if (isSimpleFunc(member)) {
       allowCall(proto, name);  // grant
       allowSet(proto, name);  // grant

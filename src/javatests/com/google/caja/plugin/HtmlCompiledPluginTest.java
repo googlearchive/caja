@@ -468,29 +468,26 @@ public class HtmlCompiledPluginTest extends TestCase {
         "assertEquals(" +
         "    ___.getNewModuleHandler().getOuters().test({x_:1, y:2, z:3}).sort().toSource()," +
         "    (['y', 'z']).toSource());");
-    // TODO(metaweta): Put this test back in when issue142 is fixed.
-    if (false) {
-      execGadget(
-          "<script>" +
-          "function Foo() {" +
-          "  this.x_ = 1;" +
-          "  this.y = 2;" +
-          "}" +
-          "caja.def(Foo, Object, {" +
-          "  test: function () {" +
-          "    var y = {};" +
-          "    var result = [];" +
-          "    for (y.k in this) {" +
-          "      result.push(y.k);" +
-          "    }" +
-          "    return result;" +
-          "  }});" +
-          "var obj = new Foo();" +
-          "</script>",
-          "assertEquals(" +
-          "    ___.getNewModuleHandler().getOuters().obj.test().sort().toSource()," +
-          "    (['test', 'x', 'y']).toSource());");
-    }
+    execGadget(
+        "<script>" +
+        "function Foo() {" +
+        "  this.x_ = 1;" +
+        "  this.y = 2;" +
+        "}" +
+        "caja.def(Foo, Object, {" +
+        "  test: function () {" +
+        "    var y = {};" +
+        "    var result = [];" +
+        "    for (y.k in this) {" +
+        "      result.push(y.k);" +
+        "    }" +
+        "    return result;" +
+        "  }});" +
+        "var obj = new Foo();" +
+        "</script>",
+        "assertEquals(" +
+        "    ___.getNewModuleHandler().getOuters().obj.test().sort().toSource()," +
+        "    (['test', 'x_', 'y']).toSource());");
   }
     
   public void testInstanceMethod() throws Exception {
