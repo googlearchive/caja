@@ -110,6 +110,12 @@ public class CssRewriterTest extends TestCase {
             ".test b {\n  font-weight: bolder\n}");
   }
 
+  public void testFontNamesQuoted() throws Exception {
+    runTest("a { font:12pt Times  New Roman, Times,\"Times Old Roman\",serif }",
+            ".test a {\n  font: 12pt 'Times New Roman', 'Times',"
+            + " 'Times Old Roman', serif\n}");
+  }
+
   public void testNamespacing() throws Exception {
     runTest("a.foo { color:blue }", ".test a.test-foo {\n  color: blue\n}");
     runTest("#foo { color: blue }", ".test #test-foo {\n  color: blue\n}");

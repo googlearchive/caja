@@ -127,6 +127,7 @@ public final class CssValidator {
       decl.getAttributes().set(INVALID, Boolean.TRUE);
       return false;
     }
+
     return true;
   }
 
@@ -650,9 +651,6 @@ final class SignatureResolver {
   /** http://www.w3.org/TR/CSS21/syndata.html#percentage-units */
   private static final Pattern PERCENTAGE_RE = Pattern.compile(
       "^" + REAL_NUMBER_RE + "%$");
-  /** http://www.w3.org/TR/CSS21/fonts.html#value-def-family-name */
-  private static final Pattern FAMILY_NAME_RE = Pattern.compile(
-      "^\\s*(?:[\\w\\-]+(?:\\s+[\\w\\-]+)*)\\s*$", Pattern.CASE_INSENSITIVE);
   /** http://www.w3.org/TR/CSS21/aural.html#value-def-specific-voice */
   private static final Pattern SPECIFIC_VOICE_RE = Pattern.compile(
       "^\\s*(?:[\\w\\-]+(?:\\s+[\\w\\-]+)*)\\s*$", Pattern.CASE_INSENSITIVE);
@@ -762,19 +760,16 @@ final class SignatureResolver {
       }
       candidate.match(term, CssPropertyPartType.PERCENTAGE, propertyName);
       ++candidate.exprIdx;
-    } else if ("family-name".equals(symbolName)) {
+    } else if ("unreserved-word".equals(symbolName)) {
       if (null != term.getOperator()) { return false; }
       String name;
       if (atom instanceof CssTree.IdentLiteral) {
         name = ((CssTree.IdentLiteral) atom).getValue();
         if (cssSchema.isKeyword(name)) { return false; }
-      } else if (atom instanceof CssTree.StringLiteral) {
-        name = ((CssTree.StringLiteral) atom).getValue();
       } else {
         return false;
       }
-      if (!FAMILY_NAME_RE.matcher(name).matches()) { return false; }
-      candidate.match(term, CssPropertyPartType.FAMILY_NAME, propertyName);
+      candidate.match(term, CssPropertyPartType.LOOSE_WORD, propertyName);
       ++candidate.exprIdx;
     } else if ("hex-color".equals(symbolName)) {
       if (atom instanceof CssTree.HashLiteral) {

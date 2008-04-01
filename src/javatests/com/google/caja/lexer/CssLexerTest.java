@@ -14,8 +14,11 @@
 
 package com.google.caja.lexer;
 
+import com.google.caja.reporting.MessageContext;;
 import com.google.caja.util.TestUtil;
 
+import java.io.StringReader;
+import java.net.URI;
 import junit.framework.TestCase;
 
 /**
@@ -34,8 +37,54 @@ public class CssLexerTest extends TestCase {
   }
 
   public void testLex() throws Exception {
-    CharProducer cp =
-      TestUtil.getResourceAsProducer(getClass(), "csslexerinput1.css");
+    CharProducer cp = TestUtil.getResourceAsProducer(
+        getClass(), "csslexerinput1.css");
+    runTest(cp, TestUtil.readResource(getClass(), "csslexergolden1.txt"));
+  }
+
+  public void testUnterminatedStrings() throws Exception {
+    assertFails("font-family: 'foo", "1+18: Unclosed string");
+  }
+
+  public void testLinebreakInString() throws Exception {
+    assertFails("font-family: 'foo\nbar'", "1+18: Illegal char in string '\n'");
+  }
+
+  public void testEofInEscape() throws Exception {
+    assertFails("font-family: 'foo\\abc", "1+22: Unclosed string");    
+  }
+
+  public void testUnterminatedComment() throws Exception {
+    assertFails("foo\nb /* bar ", "2+3: Unclosed comment");    
+  }
+
+  public void testUnterminatedFunction() throws Exception {
+    assertFails("url(bar", "1+8: Expected ) not -1");
+  }
+
+  public void testMalformedNumber() throws Exception {
+    assertFails("100.?", "1+5: Malformed number 100.");
+  }
+
+  private void assertFails(String input, String golden) {
+    try {
+      runTest(input, "expected failure: " + golden);
+      fail(input);
+    } catch (ParseException ex) {
+      String actual = ex.getCajaMessage().format(new MessageContext());
+      actual = actual.substring(actual.indexOf(':') + 1);
+      assertEquals(golden, actual);
+    }
+  }
+
+  private void runTest(String input, String golden) throws ParseException {
+    runTest(CharProducer.Factory.create(
+                new StringReader(input),
+                new InputSource(URI.create("test:///" + getName()))),
+            golden);
+  }
+
+  private void runTest(CharProducer cp, String golden) throws ParseException {
     CssLexer lexer = new CssLexer(cp, true);
     StringBuilder sb = new StringBuilder();
     while (lexer.hasNext()) {
@@ -45,9 +94,7 @@ public class CssLexerTest extends TestCase {
       assert t.text.length() == t.pos.endCharInFile() - t.pos.startCharInFile()
            : t.text + ": " + t.pos;
     }
-    assertEquals(TestUtil.readResource(getClass(), "csslexergolden1.txt")
-                 .trim(),
-                 sb.toString().trim());
+    assertEquals(golden.trim(), sb.toString().trim());
   }
 
   private static final String escape(String s) {

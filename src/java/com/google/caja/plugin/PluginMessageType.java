@@ -92,6 +92,7 @@ public enum PluginMessageType implements MessageTypeInt {
       "%s: unrecognized content type %s for %s tag", MessageLevel.WARNING),
   UNRECOGNIZED_MEDIA_TYPE(
       "%s: unrecognized media type %s", MessageLevel.WARNING),
+  QUOTED_CSS_VALUE("%s: quoted unquoted css value %s", MessageLevel.LINT),
   ;
 
   private final String formatString;

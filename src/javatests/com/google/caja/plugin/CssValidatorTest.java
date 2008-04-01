@@ -202,8 +202,9 @@ public final class CssValidatorTest extends TestCase {
                         + " ; cssPropertyPart=font-size\n"
             + "          QuantityLiteral : 12pt\n"
             + "        Operation : NONE\n"
-            + "        Term ; cssPropertyPartType=FAMILY_NAME"
-                        + " ; cssPropertyPart=font-family\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             + "    Declaration");
     warns("p, dl { font: -12pt Arial; }");
@@ -226,8 +227,9 @@ public final class CssValidatorTest extends TestCase {
                         + " ; cssPropertyPart=font-size\n"
             + "          QuantityLiteral : 150%\n"
             + "        Operation : NONE\n"
-            + "        Term ; cssPropertyPartType=FAMILY_NAME"
-                        + " ; cssPropertyPart=font-family\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             + "    Declaration");
     fails("p, dl { font: 150 Arial; }");
@@ -249,8 +251,9 @@ public final class CssValidatorTest extends TestCase {
                         + " ; cssPropertyPart=font-size::absolute-size\n"
             + "          IdentLiteral : medium\n"
             + "        Operation : NONE\n"
-            + "        Term ; cssPropertyPartType=FAMILY_NAME"
-                        + " ; cssPropertyPart=font-family\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             + "    Declaration");
     fails("p, dl { font: medium; }");
@@ -280,15 +283,16 @@ public final class CssValidatorTest extends TestCase {
                         + " ; cssPropertyPart=font-size\n"
             + "          QuantityLiteral : 150%\n"
             + "        Operation : NONE\n"
-            + "        Term ; cssPropertyPartType=FAMILY_NAME"
-                        + " ; cssPropertyPart=font-family\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             + "    Declaration");
     fails("p, dl { font: italic bolderer 150% Arial; }");
     fails("p, dl { font: italix bolder 150% Arial; }");
 
     // font-size also matches by previous terms
-    runTest("p, dl { font: inherit Arial; }",  // special
+    runTest("p, dl { font: inherit \"Arial\"; }",  // special
             "StyleSheet\n"
             + "  RuleSet\n"
             + "    Selector\n"
@@ -304,9 +308,9 @@ public final class CssValidatorTest extends TestCase {
                         + " ; cssPropertyPart=font-size\n"
             + "          IdentLiteral : inherit\n"
             + "        Operation : NONE\n"
-            + "        Term ; cssPropertyPartType=FAMILY_NAME"
-                        + " ; cssPropertyPart=font-family\n"
-            + "          IdentLiteral : Arial\n"
+            + "        Term ; cssPropertyPartType=STRING"
+                        + " ; cssPropertyPart=font-family::family-name\n"
+            + "          StringLiteral : Arial\n"
             + "    Declaration");
     fails("p, dl { font: inherit; }");
 
@@ -331,8 +335,9 @@ public final class CssValidatorTest extends TestCase {
                         + " ; cssPropertyPart=font-size\n"
             + "          QuantityLiteral : 150%\n"
             + "        Operation : NONE\n"
-            + "        Term ; cssPropertyPartType=FAMILY_NAME"
-                        + " ; cssPropertyPart=font-family\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             + "    Declaration");
     fails("p, dl { font: 800; }");
@@ -363,8 +368,9 @@ public final class CssValidatorTest extends TestCase {
                         + " ; cssPropertyPart=font-size\n"
             + "          QuantityLiteral : 150%\n"
             + "        Operation : NONE\n"
-            + "        Term ; cssPropertyPartType=FAMILY_NAME"
-                        + " ; cssPropertyPart=font-family\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             + "    Declaration");
     fails("p, dl { font: normal 800 Arial; }");
@@ -399,8 +405,9 @@ public final class CssValidatorTest extends TestCase {
                         + " ; cssPropertyPart=line-height\n"
             + "          QuantityLiteral : 175%\n"
             + "        Operation : NONE\n"
-            + "        Term ; cssPropertyPartType=FAMILY_NAME"
-                        + " ; cssPropertyPart=font-family\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             + "    Declaration");
     fails("p, dl { font: abnormal 150%/175% Arial; }");
@@ -433,8 +440,9 @@ public final class CssValidatorTest extends TestCase {
                         + " ; cssPropertyPart=line-height\n"
             + "          QuantityLiteral : 17.5\n"
             + "        Operation : NONE\n"
-            + "        Term ; cssPropertyPartType=FAMILY_NAME"
-                        + " ; cssPropertyPart=font-family\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             + "    Declaration");
     warns("p, dl { font: normal 800 150%/-175% Arial; }");
@@ -462,8 +470,9 @@ public final class CssValidatorTest extends TestCase {
                       + " ; cssPropertyPart=font-size\n" +
             "          IdentLiteral : inherit\n" +
             "        Operation : NONE\n" +
-            "        Term ; cssPropertyPartType=FAMILY_NAME"
-                      + " ; cssPropertyPart=font-family\n" +
+            "        Term ; cssPropertyPartType=LOOSE_WORD"
+                      + " ; cssPropertyPart=font-family::family-name"
+                                         + "::loose-quotable-words\n" +
             "          IdentLiteral : Arial\n" +
             "    Declaration");
   }
@@ -893,6 +902,129 @@ public final class CssValidatorTest extends TestCase {
             + "        Term ; cssPropertyPartType=URI"
                         + " ; cssPropertyPart=background-image\n"
             + "          Substitution : ${imageName + '.png'}");
+  }
+
+  public void testFontFamily() throws Exception {
+    runTest("a { font: 12pt Times New Roman, Times, \"Times Old Roman\", serif }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : a\n"
+            + "    Declaration\n"
+            + "      Property : font\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=LENGTH"
+                        + " ; cssPropertyPart=font-size\n"
+            + "          QuantityLiteral : 12pt\n"
+            + "        Operation : NONE\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
+            + "          IdentLiteral : Times\n"
+            + "        Operation : NONE\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
+            + "          IdentLiteral : New\n"
+            + "        Operation : NONE\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
+            + "          IdentLiteral : Roman\n"
+            + "        Operation : COMMA\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
+            + "          IdentLiteral : Times\n"
+            + "        Operation : COMMA\n"
+            + "        Term ; cssPropertyPartType=STRING"
+                        + " ; cssPropertyPart=font-family::family-name\n"
+            + "          StringLiteral : Times Old Roman\n"
+            + "        Operation : COMMA\n"
+            + "        Term ; cssPropertyPartType=IDENT"
+                        + " ; cssPropertyPart=font-family::generic-family\n"
+            + "          IdentLiteral : serif\n"
+            );
+    runTest("p { font-family: Georgia, \"Times New Roman\", Times, serif }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Declaration\n"
+            + "      Property : font-family\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
+            + "          IdentLiteral : Georgia\n"
+            + "        Operation : COMMA\n"
+            + "        Term ; cssPropertyPartType=STRING"
+                        + " ; cssPropertyPart=font-family::family-name\n"
+            + "          StringLiteral : Times New Roman\n"
+            + "        Operation : COMMA\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
+            + "          IdentLiteral : Times\n"
+            + "        Operation : COMMA\n"
+            + "        Term ; cssPropertyPartType=IDENT"
+                        + " ; cssPropertyPart=font-family::generic-family\n"
+            + "          IdentLiteral : serif\n"
+            );
+    runTest("p { font-family: Times New Roman }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Declaration\n"
+            + "      Property : font-family\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
+            + "          IdentLiteral : Times\n"
+            + "        Operation : NONE\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
+            + "          IdentLiteral : New\n"
+            + "        Operation : NONE\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
+            + "          IdentLiteral : Roman\n"
+            );
+    runTest("p { font-family: Heisi  Minco W3, serif }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Declaration\n"
+            + "      Property : font-family\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
+            + "          IdentLiteral : Heisi\n"
+            + "        Operation : NONE\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
+            + "          IdentLiteral : Minco\n"
+            + "        Operation : NONE\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
+            + "          IdentLiteral : W3\n"
+            + "        Operation : COMMA\n"
+            + "        Term ; cssPropertyPartType=IDENT"
+                        + " ; cssPropertyPart=font-family::generic-family\n"
+            + "          IdentLiteral : serif\n"
+            );
   }
 
   private CssTree parseCss(String css) throws Exception {

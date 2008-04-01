@@ -319,7 +319,7 @@
       "dom2property": "cssFloat" },
 
     { "key": "font-family",
-      "signature": "[[ <family-name> | <generic-family> ] [, <family-name>| <generic-family>]* ] | inherit",
+      "signature": "[[ <family-name> | <generic-family> ] [, <family-name> | <generic-family>]* ] | inherit",
       "default": null, "default-comment": "depends on user agent",
       "appliesTo": "*",
       "inherited": true,
@@ -882,6 +882,21 @@
       "see": "http://www.w3.org/TR/CSS21/fonts.html#value-def-family-name",
       "signature": "serif|sans-serif|cursive|fantasy|monospace" },
 
+    { "key": "<family-name>",
+      "see": "http://www.w3.org/TR/CSS21/fonts.html#value-def-family-name",
+      "signature": "<string>|<loose-quotable-words>",
+      "caveat": ["Font names containing any such characters or whitespace",
+                 " should be quoted.",
+                 "If quoting is omitted, any whitespace characters before",
+                 " and after the font name are ignored and any sequence of",
+                 " whitespace characters inside the font name is converted to",
+                 " a single space. Font family names that happen to be the",
+                 " same as a keyword value (e.g. 'initial', 'inherit',",
+                 " 'default', 'serif', 'sans-serif', 'monospace', 'fantasy',",
+                 " and 'cursive') must be quoted to prevent confusion with",
+                 " the keywords with the same names."]
+    },
+
     { "key": "<relative-size>",
       "see": "http://www.w3.org/TR/CSS21/fonts.html#propdef-font-size",
       "signature": "smaller|larger" },
@@ -905,7 +920,7 @@
     { "key": "<shape>",
       "see": "http://www.w3.org/TR/CSS21/visufx.html#value-def-shape",
       "signature": "rect(<top>, <right>, <bottom>, <left>)" },
-      
+
     { "key": "<top>", "signature": "<length>|auto" },
 
     { "key": "<right>", "as": "top" },
@@ -913,11 +928,19 @@
     { "key": "<bottom>", "as": "top" },
 
     { "key": "<left>", "as": "top" },
-      
+
     { "key": "<red>", "signature": "<integer:0,255>|<percentage:0,100>" },
 
     { "key": "<green>", "as": "<red>" },
 
-    { "key": "<blue>", "as": "<red>" }
+    { "key": "<blue>", "as": "<red>" },
+
+    { "key": "<loose-quotable-words>",
+      "description": [
+          "Space separated words that should be quoted.",
+          "The validator contains a separate pass that finds adjacent loose",
+          " words and turns them into a single quoted term"],
+      "signature": "<unreserved-word>+" },
+
     ]
 }

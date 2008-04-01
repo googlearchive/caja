@@ -404,12 +404,13 @@ final class CssSplitter implements TokenStream<CssTokenType> {
                   MessagePart.Factory.valueOf(ch)));
             }
             parseWhitespace(sb);
-            if (')' != cp.read()) {
+            int ch2 = cp.read();
+            if (')' != ch2) {
               throw new ParseException(new Message(
                   MessageType.EXPECTED_TOKEN,
                   cp.getCurrentPosition(),
-                  MessagePart.Factory.valueOf("("),
-                  MessagePart.Factory.valueOf(ch)));
+                  MessagePart.Factory.valueOf(")"),
+                  MessagePart.Factory.valueOf(ch2)));
             }
             sb.append(')');
             type = CssTokenType.URI;

@@ -65,6 +65,7 @@ public final class CssRewriter {
    */
   public boolean rewrite(AncestorChain<? extends CssTree> t) {
     boolean valid = true;
+    quoteLooseWords(t);
     // Once at the beginning, and again at the end.
     valid &= removeUnsafeConstructs(t);
     removeEmptyDeclarations(t);
@@ -81,6 +82,94 @@ public final class CssRewriter {
     return valid;
   }
 
+  /**
+   * Turn a run of unquoted identifiers into a single string, where the property
+   * description says "Names containing space *should* be quoted", but does not
+   * require it.
+   * <p>
+   * This is important for font {@code family-name}s where
+   * {@code font: Times New Roman} should be written as
+   * {@code font: "Times New Roman"} to avoid any possible ambiguity between
+   * the individual terms and special values such as {@code serif}.
+   *
+   * @see CssPropertyPartType#LOOSE_WORD
+   */
+  private void quoteLooseWords(AncestorChain<? extends CssTree> t) {
+    if (t.node instanceof CssTree.Expr) {
+      combineLooseWords(t.cast(CssTree.Expr.class).node);
+    }
+    for (CssTree child : t.node.children()) {
+      quoteLooseWords(new AncestorChain<CssTree>(t, child));
+    }
+  }
+
+  private void combineLooseWords(CssTree.Expr e) {
+    for (int i = 0, n = e.getNTerms(); i < n; ++i) {
+      CssTree.Term t = e.getNthTerm(i);
+      if (!isLooseWord(t)) { continue; }
+
+      String propertyPart = t.getAttributes().get(
+          CssValidator.CSS_PROPERTY_PART);
+      StringBuilder sb = new StringBuilder();
+      sb.append(t.getExprAtom().getValue());
+
+      // Compile a mutation that removes all the extraneous terms and that
+      // replaces t with a string literal.
+      MutableParseTreeNode.Mutation mut = e.createMutation();
+
+      // Compute end, the term index after the last of the run of loose terms
+      // for t's property part.
+      int start = i;
+      int end = i + 1;
+      while (end < n) {
+        CssTree.Operation op = e.getNthOperation(end - 1);
+        CssTree.Term t2 = e.getNthTerm(end);
+        if (!(CssTree.Operator.NONE == op.getOperator() && isLooseWord(t2)
+              && propertyPart.equals(
+                     t2.getAttributes().get(CssValidator.CSS_PROPERTY_PART)))) {
+          break;
+        }
+        mut.removeChild(op);
+        mut.removeChild(t2);
+        sb.append(' ').append(e.getNthTerm(end).getExprAtom().getValue());
+        ++end;
+      }
+
+      // Create a string literal to replace all the terms [start:end-1].
+      // Make sure it has the same synthetic attributes and file position.
+      String text = sb.toString();
+      FilePosition pos = FilePosition.span(
+          t.getFilePosition(), e.getNthTerm(end - 1).getFilePosition());
+      CssTree.StringLiteral quotedWords = new CssTree.StringLiteral(pos, text);
+      CssTree.Term quotedTerm = new CssTree.Term(pos, null, quotedWords);
+      quotedTerm.getAttributes().putAll(t.getAttributes());
+      quotedTerm.getAttributes().set(CssValidator.CSS_PROPERTY_PART_TYPE,
+                                     CssPropertyPartType.STRING);
+
+      mut.replaceChild(quotedTerm, t);
+      mut.execute();
+
+      // If we made a substantive change, combining multiple terms into one,
+      // then issue a line message.  We don't need to issue a warning on all
+      // changes, since we only reach this code if we passed validation.
+      if (end - start > 1) {
+        mq.addMessage(PluginMessageType.QUOTED_CSS_VALUE,
+                      pos, MessagePart.Factory.valueOf(text));
+      }
+
+      n = e.getNTerms();
+    }
+  }
+
+  /** @see CssPropertyPartType#LOOSE_WORD */
+  private static boolean isLooseWord(CssTree.Term t) {
+    return t.getOperator() == null
+        && t.getExprAtom() instanceof CssTree.IdentLiteral
+        && (t.getAttributes().get(CssValidator.CSS_PROPERTY_PART_TYPE)
+            == CssPropertyPartType.LOOSE_WORD);
+  }
+
+  /** Get rid of rules like <code>p { }</code>. */
   private void removeEmptyDeclarations(AncestorChain<? extends CssTree> t) {
     t.node.acceptPreOrder(new Visitor() {
         public boolean visit(AncestorChain<?> ancestors) {
