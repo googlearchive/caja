@@ -14,7 +14,7 @@
 
 package com.google.caja.lexer;
 
-import com.google.caja.reporting.MessageContext;;
+import com.google.caja.reporting.MessageContext;
 import com.google.caja.util.TestUtil;
 
 import java.io.StringReader;
