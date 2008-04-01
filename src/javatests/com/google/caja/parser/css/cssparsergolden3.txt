@@ -15,3 +15,27 @@ StyleSheet
               Term
                 QuantityLiteral : 50
     Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : margin
+      Expr
+        Term : NEGATION
+          QuantityLiteral : 3px
+        Operation : NONE
+        Term : NEGATION
+          QuantityLiteral : 3px
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : margin
+      Expr
+        Term : NEGATION
+          QuantityLiteral : 3px
+        Operation : NONE
+        Term
+          QuantityLiteral : 3px
