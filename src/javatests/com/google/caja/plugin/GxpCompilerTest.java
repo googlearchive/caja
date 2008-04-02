@@ -122,12 +122,9 @@ public class GxpCompilerTest extends TestCase {
     }
     assertEquals(
         "[[DISALLOWED_URI, gxpcompilerinput2.gxp:6+21@84 - 53@116], "
-        + "[REWROTE_STYLE, gxpcompilerinput2.gxp:6+8@71 - 54@117], "
         + "[UNSAFE_CSS_PROPERTY, gxpcompilerinput2.gxp:9+9@139 - 16@146], "
-        + "[REWROTE_STYLE, gxpcompilerinput2.gxp:9+8@138 - 71@201], "
         + "[MALFORMED_CSS_PROPERTY_VALUE, gxpcompilerinput2.gxp:15+71@290"
-          + " - 76@295], "
-        + "[REWROTE_STYLE, gxpcompilerinput2.gxp:15+12@231 - 106@325]]",
+        + " - 76@295]]",
         messages.toString());
   }
 
@@ -203,7 +200,7 @@ public class GxpCompilerTest extends TestCase {
 
   public void testGxpWithInvalidStyle() throws Exception {
     assertRejected(
-        PluginMessageType.REWROTE_STYLE,
+        PluginMessageType.UNKNOWN_CSS_PROPERTY,
         "<gxp:template name=\"Test\">"
         + "<p style=\"bogus: 0\">hello</p>"
         + "</gxp:template>");

@@ -82,5 +82,10 @@ public class EchoingMessageQueue implements MessageQueue {
     getMessages().add(new Message(type, parts));
   }
 
+  public void addMessage(
+      MessageTypeInt type, MessageLevel lvl, MessagePart... parts) {
+    getMessages().add(new Message(type, lvl, parts));
+  }
+
   public MessageContext getMessageContext() { return mc; }
 }

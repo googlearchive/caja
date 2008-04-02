@@ -64,28 +64,25 @@ public enum PluginMessageType implements MessageTypeInt {
   REWROTE_STYLE("%s: rewrote unsafe style attribute %s",
                 MessageLevel.FATAL_ERROR),
   MALFORMED_CSS_PROPERTY_VALUE("%s: css property %s has bad value: %s",
-      MessageLevel.FATAL_ERROR),
+                               MessageLevel.ERROR),
   CANT_CONVERT_TO_GXP(
       "%s: can't convert %s to a gxp", MessageLevel.FATAL_ERROR),
-  UNKNOWN_CSS_PROPERTY("%s: unknown css property %s", MessageLevel.WARNING),
+  UNKNOWN_CSS_PROPERTY("%s: unknown css property %s", MessageLevel.ERROR),
   CSS_VALUE_OUT_OF_RANGE(
       "%s: css property %s with value %s not in range [%s, %s]",
       MessageLevel.WARNING),
   UNSAFE_CSS_IDENTIFIER(
       "%s: css identifier '%s' contains characters that may not work"
       + " on all browsers", MessageLevel.FATAL_ERROR),
-  UNSAFE_CSS_PROPERTY("%s: unsafe css property %s", MessageLevel.FATAL_ERROR),
+  UNSAFE_CSS_PROPERTY("%s: unsafe css property %s", MessageLevel.ERROR),
   UNSAFE_CSS_PSEUDO_SELECTOR(
-      "%s: unsafe css pseudo-selector %s", MessageLevel.FATAL_ERROR),
+      "%s: unsafe css pseudo-selector %s", MessageLevel.ERROR),
   SKIPPING_CSS_PROPERTY(
       "%s: skipping invalid css property %s", MessageLevel.WARNING),
   TAG_NOT_ALLOWED_IN_ATTRIBUTE(
       "%s: tags not allowed inside an attribute: %s", MessageLevel.ERROR),
   CSS_SUBSTITUTION_NOT_ALLOWED_HERE(
       "%s: css substitution not allowed for type %s", MessageLevel.FATAL_ERROR),
-  TOO_MANY_HTML_JOBS(
-      "%s: there should be exactly one html input, instead seeing %s",
-      MessageLevel.FATAL_ERROR),
   FAILED_TO_LOAD_EXTERNAL_URL(
       "%s: failed to load external url %s", MessageLevel.WARNING),
   UNRECOGNIZED_CONTENT_TYPE(

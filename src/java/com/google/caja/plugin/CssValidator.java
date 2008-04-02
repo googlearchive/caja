@@ -25,6 +25,7 @@ import com.google.caja.parser.css.CssTree;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageTypeInt;
@@ -72,6 +73,7 @@ public final class CssValidator {
   private final CssSchema cssSchema;
   private final HtmlSchema htmlSchema;
   private final MessageQueue mq;
+  private MessageLevel invalidNodeMessageLevel = MessageLevel.ERROR;
 
   public CssValidator(
       CssSchema cssSchema, HtmlSchema htmlSchema, MessageQueue mq) {
@@ -83,7 +85,24 @@ public final class CssValidator {
     this.mq = mq;
   }
 
-  /** True iff the given css tree is valid according to the CSS Schema. */
+  /**
+   * Specifies the level of messages issued when nodes are marked
+   * {@link #INVALID}.
+   * If you are dealing with noisy CSS and later remove invalid nodes, then
+   * this can be set to {@link MessageLevel#WARNING}.
+   * @return this
+   */
+  public CssValidator withInvalidNodeMessageLevel(MessageLevel messageLevel) {
+    this.invalidNodeMessageLevel = messageLevel;
+    return this;
+  }
+
+  /**
+   * True iff the given css tree is valid according to the CSS Schema.
+   * If invalid, parts with problems will be marked {@link #INVALID}.
+   * Clients may ignore the return value so long as nodes so marked are removed
+   * from the parse tree.
+   */
   public boolean validateCss(AncestorChain<? extends CssTree> css) {
     if (css.node instanceof CssTree.Declaration) {
       return validateDeclaration((CssTree.Declaration) css.node);
@@ -147,11 +166,13 @@ public final class CssValidator {
           || "body".equals(tagName)) {
         return true;
       }
-      mq.addMessage(PluginMessageType.UNSAFE_TAG, sel.getFilePosition(),
-                    MessagePart.Factory.valueOf(tagName));
+      mq.addMessage(
+          PluginMessageType.UNSAFE_TAG, invalidNodeMessageLevel,
+          sel.getFilePosition(), MessagePart.Factory.valueOf(tagName));
     } else {
       mq.addMessage(
-          PluginMessageType.UNKNOWN_TAG, sel.getFilePosition(),
+          PluginMessageType.UNKNOWN_TAG, invalidNodeMessageLevel,
+          sel.getFilePosition(),
           MessagePart.Factory.valueOf(sel.getElementName()));
     }
     sel.getAttributes().set(INVALID, Boolean.TRUE);
@@ -167,8 +188,8 @@ public final class CssValidator {
       return true;
     } else {
       mq.addMessage(
-          PluginMessageType.UNKNOWN_ATTRIBUTE, attr.getFilePosition(),
-          MessagePart.Factory.valueOf(attr.getIdent()),
+          PluginMessageType.UNKNOWN_ATTRIBUTE, invalidNodeMessageLevel,
+          attr.getFilePosition(), MessagePart.Factory.valueOf(attr.getIdent()),
           MessagePart.Factory.valueOf("{css selector}"));
       attr.getAttributes().set(INVALID, Boolean.TRUE);
       return false;

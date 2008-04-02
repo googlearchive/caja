@@ -866,18 +866,10 @@ public final class GxpCompiler {
     // The validator will check that property values are well-formed,
     // marking those that aren't, and identifies all urls.
     CssValidator cssValidator = new CssValidator(cssSchema, htmlSchema, mq);
-    boolean valid = cssValidator.validateCss(new AncestorChain<CssTree>(decls));
+    cssValidator.validateCss(new AncestorChain<CssTree>(decls));
     // The rewriter will remove any unsafe constructs.
     // and put urls in the proper filename namespace
-    CssRewriter rw = new CssRewriter(meta, mq);
-    valid &= rw.rewrite(new AncestorChain<CssTree>(decls));
-    // Notify the user that the style was changed.
-    if (!valid) {
-      mq.addMessage(
-          PluginMessageType.REWROTE_STYLE,
-          attrib.getAttribValueNode().getFilePosition(),
-          MessagePart.Factory.valueOf(attrib.getAttribValue()));
-    }
+    new CssRewriter(meta, mq).rewrite(new AncestorChain<CssTree>(decls));
 
     JsWriter.appendString(" style=\"", tgtChain, b);
     CssTemplate.declGroupToStyleValue(

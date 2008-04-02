@@ -30,4 +30,7 @@ public interface MessageGroup {
 
   /** Adds a message to this group's message list. */
   void addMessage(MessageTypeInt type, MessagePart... parts);
+
+  /** Adds a message to this group's message list. */
+  void addMessage(MessageTypeInt type, MessageLevel lvl, MessagePart... parts);
 }

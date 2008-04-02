@@ -23,6 +23,7 @@ import com.google.caja.plugin.CssTemplate;
 import com.google.caja.plugin.CssValidator;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.util.Pipeline;
 
 /**
@@ -48,29 +49,32 @@ public final class ValidateCssStage implements Pipeline.Stage<Jobs> {
    */
   public boolean apply(Jobs jobs) {
     // TODO(mikesamuel): build up a list of classes and ids for use in
-    // generating "no such symbol" warnings from the GXPs.
-    boolean valid = true;
+    // generating "no such symbol" warnings from the GXPs/HTML.
     CssValidator v = new CssValidator(
         cssSchema, htmlSchema, jobs.getMessageQueue());
     CssRewriter rw = new CssRewriter(
         jobs.getPluginMeta(), jobs.getMessageQueue());
+
+    v.withInvalidNodeMessageLevel(MessageLevel.WARNING);
+    rw.withInvalidNodeMessageLevel(MessageLevel.WARNING);
     for (Job job : jobs.getJobsByType(Job.JobType.CSS)) {
-      // The parsetree node is a CssTree.StyleSheet
-      AncestorChain<CssTree> cssTree = job.getRoot().cast(CssTree.class);
-      valid &= validate(v, rw, cssTree);
-    }
-    for (Job job : jobs.getJobsByType(Job.JobType.CSS_TEMPLATE)) {
-      // The parsetree node is a CssTree.StyleSheet
-      AncestorChain<CssTemplate> chain = job.getRoot().cast(CssTemplate.class);
-      valid &= validate(
-          v, rw, new AncestorChain<CssTree>(chain, chain.node.getCss()));
+      validate(v, rw, job.getRoot().cast(CssTree.class));
     }
 
-    return valid && jobs.hasNoFatalErrors();
+    v.withInvalidNodeMessageLevel(MessageLevel.ERROR);
+    rw.withInvalidNodeMessageLevel(MessageLevel.ERROR);
+    for (Job job : jobs.getJobsByType(Job.JobType.CSS_TEMPLATE)) {
+      // The parsetree node is a CssTemplate
+      AncestorChain<CssTemplate> chain = job.getRoot().cast(CssTemplate.class);
+      validate(v, rw, new AncestorChain<CssTree>(chain, chain.node.getCss()));
+    }
+
+    return jobs.hasNoFatalErrors();
   }
 
-  private static final boolean validate(
+  private static final void validate(
       CssValidator v, CssRewriter rw, AncestorChain<CssTree> css) {
-    return v.validateCss(css) & rw.rewrite(css);
+    v.validateCss(css);
+    rw.rewrite(css);
   }
 }

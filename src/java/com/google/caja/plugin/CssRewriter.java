@@ -25,6 +25,7 @@ import com.google.caja.parser.css.CssTree;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
@@ -49,6 +50,7 @@ import java.util.regex.Pattern;
 public final class CssRewriter {
   private final PluginMeta meta;
   private final MessageQueue mq;
+  private MessageLevel invalidNodeMessageLevel = MessageLevel.ERROR;
 
   public CssRewriter(PluginMeta meta, MessageQueue mq) {
     assert null != mq;
@@ -58,16 +60,30 @@ public final class CssRewriter {
   }
 
   /**
+   * Specifies the level of messages issued when nodes are marked
+   * {@link CssValidator#INVALID}.
+   * If you are dealing with noisy CSS and later remove invalid nodes, then
+   * this can be set to {@link MessageLevel#WARNING}.
+   * @return this
+   */
+  public CssRewriter withInvalidNodeMessageLevel(MessageLevel messageLevel) {
+    this.invalidNodeMessageLevel = messageLevel;
+    return this;
+  }
+
+  /**
    * Rewrite the given CSS tree to be safer and shorter.
    *
+   * If the tree could not be made safe, then there will be
+   * {@link MessageLevel#ERROR error}s on the {@link MessageQueue} passed
+   * to the constructor.
+   *
    * @param t non null.  modified in place.
-   * @return true if the resulting tree is safe.
    */
-  public boolean rewrite(AncestorChain<? extends CssTree> t) {
-    boolean valid = true;
+  public void rewrite(AncestorChain<? extends CssTree> t) {
     quoteLooseWords(t);
     // Once at the beginning, and again at the end.
-    valid &= removeUnsafeConstructs(t);
+    removeUnsafeConstructs(t);
     removeEmptyDeclarations(t);
     // After we remove declarations, we may have some rulesets without any
     // declarations which is technically illegal, so we remove rulesets without
@@ -75,11 +91,9 @@ public final class CssRewriter {
     removeEmptyRuleSets(t);
     if (null != meta.namespacePrefix) { namespaceIdents(t); }
     // Do this again to make sure no earlier changes introduce unsafe constructs
-    valid &= removeUnsafeConstructs(t);
+    removeUnsafeConstructs(t);
 
     translateUrls(t);
-
-    return valid;
   }
 
   /**
@@ -291,8 +305,7 @@ public final class CssRewriter {
       new HashSet<String>(Arrays.asList(
           "link", "visited", "hover", "active", "first-child", "first-letter"
           ));
-  boolean removeUnsafeConstructs(AncestorChain<? extends CssTree> t) {
-    final Switch rewrote = new Switch();
+  void removeUnsafeConstructs(AncestorChain<? extends CssTree> t) {
 
     // 1) Check that all classes, ids, property names, etc. are valid
     //    css identifiers.
@@ -313,7 +326,6 @@ public final class CssRewriter {
                 // Will be deleted by a later pass after all messages have been
                 // generated
                 node.getAttributes().set(CssValidator.INVALID, Boolean.TRUE);
-                rewrote.set();
                 return false;
               }
             }
@@ -325,7 +337,6 @@ public final class CssRewriter {
                             MessagePart.Factory.valueOf(p.getPropertyName()));
               declarationFor(ancestors).getAttributes().set(
                   CssValidator.INVALID, Boolean.TRUE);
-              rewrote.set();
               return false;
             }
           }
@@ -346,7 +357,6 @@ public final class CssRewriter {
                             MessagePart.Factory.valueOf("content"));
               declarationFor(ancestors).getAttributes().set(
                   CssValidator.INVALID, Boolean.TRUE);
-              rewrote.set();
             }
           } else if (node instanceof CssTree.Pseudo) {
             boolean remove = false;
@@ -357,7 +367,6 @@ public final class CssRewriter {
                 mq.addMessage(PluginMessageType.UNSAFE_CSS_PSEUDO_SELECTOR,
                               node.getFilePosition(),
                               node);
-                rewrote.set();
                 remove = true;
               }
             } else {
@@ -367,7 +376,6 @@ public final class CssRewriter {
               mq.addMessage(PluginMessageType.UNSAFE_CSS_PSEUDO_SELECTOR,
                             node.getFilePosition(),
                             MessagePart.Factory.valueOf(rendered.toString()));
-              rewrote.set();
               remove = true;
             }
             if (remove) {
@@ -385,18 +393,14 @@ public final class CssRewriter {
         public boolean visit(AncestorChain<?> ancestors) {
           ParseTreeNode node = ancestors.node;
           if (node instanceof CssTree.Property) {
-            if (Boolean.TRUE.equals(node.getAttributes().get(
-                                        CssValidator.INVALID))) {
+            if (node.getAttributes().is(CssValidator.INVALID)) {
               declarationFor(ancestors).getAttributes().set(
                   CssValidator.INVALID, Boolean.TRUE);
-              rewrote.set();
             }
           } else if (node instanceof CssTree.Attrib) {
-            if (Boolean.TRUE.equals(node.getAttributes().get(
-                                        CssValidator.INVALID))) {
+            if (node.getAttributes().is(CssValidator.INVALID)) {
               simpleSelectorFor(ancestors).getAttributes().set(
                   CssValidator.INVALID, Boolean.TRUE);
-              rewrote.set();
             }
           } else if (node instanceof CssTree.Term
                      && (CssPropertyPartType.URI ==
@@ -426,14 +430,12 @@ public final class CssRewriter {
                     PluginMessageType.DISALLOWED_URI,
                     node.getFilePosition(),
                     MessagePart.Factory.valueOf(uriStr));
-                rewrote.set();
                 remove = true;
               }
             } catch (URISyntaxException ex) {
               removeMsg = new Message(
                   PluginMessageType.DISALLOWED_URI,
                   node.getFilePosition(), MessagePart.Factory.valueOf(uriStr));
-              rewrote.set();
               remove = true;
             }
 
@@ -482,8 +484,6 @@ public final class CssRewriter {
           return true;
         }
       }, t.parent);
-
-    return !rewrote.get();
   }
 
   private void translateUrls(AncestorChain<? extends CssTree> t) {
@@ -568,12 +568,5 @@ public final class CssRewriter {
    */
   private static boolean isSafeCssIdentifier(String s) {
     return SAFE_CSS_IDENTIFIER.matcher(s).matches();
-  }
-
-  private static final class Switch {
-    private boolean on;
-
-    public boolean get() { return on; }
-    public void set() { this.on = true; }
   }
 }

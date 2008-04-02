@@ -47,6 +47,7 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.plugin.stages.RewriteHtmlStage;
 import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
@@ -316,19 +317,13 @@ public class HtmlCompiler {
 
     // The validator will check that property values are well-formed,
     // marking those that aren't, and identifies all urls.
-    CssValidator v = new CssValidator(cssSchema, htmlSchema, mq);
-    boolean valid = v.validateCss(new AncestorChain<CssTree>(decls));
+    CssValidator v = new CssValidator(cssSchema, htmlSchema, mq)
+        .withInvalidNodeMessageLevel(MessageLevel.WARNING);
+    v.validateCss(new AncestorChain<CssTree>(decls));
     // The rewriter will remove any unsafe constructs.
     // and put urls in the proper filename namespace
-    CssRewriter rw = new CssRewriter(meta, mq);
-    valid &= rw.rewrite(new AncestorChain<CssTree>(decls));
-    // Notify the user that the style was changed.
-    if (!valid) {
-      mq.addMessage(
-          PluginMessageType.REWROTE_STYLE,
-          attrib.getAttribValueNode().getFilePosition(),
-          MessagePart.Factory.valueOf(attrib.getAttribValue()));
-    }
+    new CssRewriter(meta, mq).withInvalidNodeMessageLevel(MessageLevel.WARNING)
+        .rewrite(new AncestorChain<CssTree>(decls));
 
     JsWriter.appendString(" style=\"", tgtChain, b);
     CssTemplate.declGroupToStyleValue(

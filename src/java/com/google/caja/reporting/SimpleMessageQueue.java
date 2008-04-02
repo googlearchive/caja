@@ -32,4 +32,9 @@ public class SimpleMessageQueue implements MessageQueue {
   public void addMessage(MessageTypeInt type, MessagePart... parts) {
     getMessages().add(new Message(type, parts));
   }
+
+  public void addMessage(
+      MessageTypeInt type, MessageLevel lvl, MessagePart... parts) {
+    getMessages().add(new Message(type, lvl, parts));
+  }
 }

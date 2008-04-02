@@ -31,10 +31,12 @@ import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.JsHtmlParser;
-import com.google.caja.reporting.EchoingMessageQueue;
-import com.google.caja.reporting.MessageContext;
-import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.DevNullMessageQueue;
+import com.google.caja.reporting.EchoingMessageQueue;
+import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 
 import java.io.BufferedReader;
@@ -282,6 +284,23 @@ public final class TestUtil {
     } catch (RuntimeException ex) {
       throw new RuntimeException(msg, ex);
     }
+  }
+
+  public static MessageLevel maxMessageLevel(MessageQueue mq) {
+    MessageLevel max = MessageLevel.values()[0];
+    for (Message msg : mq.getMessages()) {
+      MessageLevel lvl = msg.getMessageLevel();
+      if (max.compareTo(lvl) < 0) { max = lvl; }
+    }
+    return max;
+  }
+
+  public static boolean hasErrors(MessageQueue mq) {
+    return MessageLevel.ERROR.compareTo(maxMessageLevel(mq)) <= 0;
+  }
+
+  public static boolean hasErrorsOrWarnings(MessageQueue mq) {
+    return MessageLevel.WARNING.compareTo(maxMessageLevel(mq)) <= 0;
   }
 
   /**

@@ -35,6 +35,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Criterion;
+import com.google.caja.util.TestUtil;
 
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
@@ -165,12 +166,11 @@ public final class CssTemplateTest extends TestCase {
       htmlSchema = HtmlSchema.getDefault(mq);
     }
 
-    CssValidator cssv = new CssValidator(cssSchema, htmlSchema, mq);
-    CssRewriter cssr = new CssRewriter(meta, mq);
-    if (!(cssv.validateCss(
-            new AncestorChain<CssTree.DeclarationGroup>(tmpl.getCss()))
-          && cssr.rewrite(
-              new AncestorChain<CssTree.DeclarationGroup>(tmpl.getCss())))) {
+    AncestorChain<CssTree.DeclarationGroup> declAc
+        = new AncestorChain<CssTree.DeclarationGroup>(tmpl.getCss());
+    new CssValidator(cssSchema, htmlSchema, mq).validateCss(declAc);
+    new CssRewriter(meta, mq).rewrite(declAc);
+    if (TestUtil.hasErrorsOrWarnings(mq)) {
       for (com.google.caja.reporting.Message msg : mq.getMessages()) {
         System.err.println(msg.format(mc));
       }
