@@ -67,7 +67,7 @@ public class SnippetProducer {
       throws IOException {
     InputSource src = pos.source();
     CharSequence sourceCode = originalSource.get(src);
-    if (src == null) { return; }  // Can't write.
+    if (sourceCode == null) { return; }  // Can't write.
 
     // Pick a representative line from pos.
     int lineNo = pos.startLineNo();
