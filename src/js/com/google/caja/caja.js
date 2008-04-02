@@ -1111,12 +1111,12 @@ var ___;
       fail('not callable %o %s', obj, name);
     }
   }
-  
-  /** 
+
+  /**
    * Can a method of a Caja constructed object directly assign to
    * this property of its object?
    * <p>
-   * Iff this object isn't frozen.
+   * Iff this object is not frozen.
    */
   function canSetProp(that, name) {
     name = String(name);
@@ -1124,7 +1124,7 @@ var ___;
     if (canSet(that, name)) { return true; }
     return !isFrozen(that);
   }
-  
+
   /**
    * A Caja method tries to assign to this property of its object.
    */
@@ -1172,72 +1172,75 @@ var ___;
       return obj.handleSet___(name, val);
     }
   }
-  
+ 
   /**
    * Can a Caja constructed object delete the named property?
-   * <p>
-   * BUG TODO(erights): This is not yet supported. The precise
-   * enabling conditions are not yet determined, as is the implied
-   * bookkeeping. 
    */
-  function canDeleteProp(that, name) {
-    fail('TODO(erights): deletion not yet supported');
-    return false;
+  function canDeleteProp(obj, name) {
+    name = String(name);
+    if (isFrozen(obj)) { return false; }
+    if (endsWith(name, '__')) { return false; }
+    if (isJSONContainer(obj)) { return true; }
+    return !!obj[name + '_canDelete__'];
   }
-  
+
   /**
    * A Caja constructed object attempts to delete one of its own
-   * properties. 
-   * <p>
-   * BUG TODO(erights): This is not yet supported. The precise
-   * enabling conditions are not yet determined, as is the implied
-   * bookkeeping.
+   * properties.
    */
-  function deleteProp(that, name) {
+  function deleteProp(obj, name) {
     name = String(name);
-    if (canDeleteProp(that, name)) {
-      fail('TODO(erights): deletion not yet supported');
-      return (delete that[name]) ||
-        fail('not deleted: ', name);
-    } else {
-      return that.handleDelete___(name);
-    }
-  }
-  
-  /**
-   * Can a client of obj delete the named property?
-   * <p>
-   * BUG TODO(erights): This is not yet supported. The precise
-   * enabling conditions are not yet determined, as is the implied
-   * bookkeeping. 
-   */
-  function canDeletePub(obj, name) {
-    fail('TODO(erights): deletion not yet supported');
-    return false;
-  }
-  
-  /**
-   * A client of obj can only delete a property of obj if obj is a
-   * non-frozen JSON container.
-   * <p>
-   * BUG TODO(erights): This is not yet supported. The precise
-   * enabling conditions are not yet determined, as is the implied
-   * bookkeeping. 
-   */
-  function deletePub(obj, name) {
-    name = String(name);
-    if (canDeletePub(obj, name)) {
-      if (!isJSONContainer(obj)) {
-        fail('unable to delete: ', name);
-      }
-      fail('TODO(erights): deletion not yet supported');
-      return (delete obj[name]) ||
-        fail('not deleted: ', name);
+    if (canDeleteProp(obj, name)) {
+      // See deleteFieldEntirely for reasons why we don't cache deletability.
+      deleteFieldEntirely(obj, name);
     } else {
       return obj.handleDelete___(name);
     }
   }
-  
+
+  /**
+   * Can a client of obj delete the named property?
+   */
+  function canDeletePub(obj, name) {
+    name = String(name);
+    if (isFrozen(obj)) { return false; }
+    if (endsWith(name, '__')) { return false; }
+    if (isJSONContainer(obj)) { return true; }
+    return false;
+  }
+
+  /**
+   * A client of obj can only delete a property of obj if obj is a
+   * non-frozen JSON container.
+   */
+  function deletePub(obj, name) {
+    name = String(name);
+    if (canDeletePub(obj, name)) {
+      // See deleteFieldEntirely for reasons why we don't cache deletability.
+      deleteFieldEntirely(obj, name);
+    } else {
+      return obj.handleDelete___(name);
+    }
+  }
+
+  /**
+   * Deletes a field removing any cached permissions.
+   * @param {object} obj
+   * @param {string} name of field in obj to delete.
+   * @return {boolean}
+   * @throws {Error} if field not deletable or name not in field.
+   * @private
+   */
+  function deleteFieldEntirely(obj, name) {
+    // Can't cache allow delete since deleting the field should remove
+    // all privileges for that field.
+    delete obj[name + '_canRead___'];
+    delete obj[name + '_canEnum___'];
+    delete obj[name + '_canCall___'];
+    delete obj[name + '_canSet___'];
+    return (delete obj[name]) || (fail('not deleted: ', name), false);
+  }
+
   ////////////////////////////////////////////////////////////////////////
   // Other
   ////////////////////////////////////////////////////////////////////////

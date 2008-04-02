@@ -1185,18 +1185,16 @@ public class DefaultCajaRewriterTest extends TestCase {
 
   public void testDeletePub() throws Exception {
     checkFails("delete x.foo___", "");
-    if (false) {
-      assertConsistent(
-          "(function() {" +
-          "  var o = { x: 3, y: 4 };" +    // A JSON object.
-          "  function ptStr(o) { return '(' + o.x + ',' + o.y + ')'; }" +
-          "  var history = [ptStr(o)];" +  // Record state before deletion.
-          "  delete o.y;" +                // Delete
-          "  delete o.z;" +                // Not present.  Delete a no-op
-          "  history.push(ptStr(o));" +    // Record state after deletion.
-          "  return history.toString();" +
-          "})()");
-    }
+    assertConsistent(
+        "(function() {" +
+        "  var o = { x: 3, y: 4 };" +    // A JSON object.
+        "  function ptStr(o) { return '(' + o.x + ',' + o.y + ')'; }" +
+        "  var history = [ptStr(o)];" +  // Record state before deletion.
+        "  delete o.y;" +                // Delete
+        "  delete o.z;" +                // Not present.  Delete a no-op
+        "  history.push(ptStr(o));" +    // Record state after deletion.
+        "  return history.toString();" +
+        "})()");
   }
 
   public void testDeleteFails() throws Exception {
