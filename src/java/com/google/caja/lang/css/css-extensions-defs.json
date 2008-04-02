@@ -3,6 +3,10 @@
       "Extensions of CSS parsing for common browser specific workarounds.",
       "These are not used by default unless explicitly requested."
       ],
+
+  "inherits": ["css21-defs.json"],
+
+  "types": [
       
     { "key": "filter",
       "signature": "<opacity>",
@@ -13,5 +17,15 @@
       "dom2property": "filter" },
 
     { "key": "<opacity>",
-      "signature": "alpha(opacity=<percentage:0,100>)" }
+      "signature": "alpha(opacity=[<percentage:0,100> | <number:0,100>])" },
+
+    { "key": "cursor",
+      "signature": "[ [<uri> ,]* [ auto | crosshair | default | pointer | move | e-resize | ne-resize | nw-resize | n-resize | se-resize | sw-resize | s-resize | w-resize | text | wait | help | progress | all-scroll | col-resize | hand | no-drop | not-allowed | row-resize | vertical-text ] ] | inherit",
+      "default": "auto",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual", "interactive"],
+      "dom2property": "cursor",
+      "source": "http://www.quirksmode.org/css/cursor.html" },
+  ]
 }

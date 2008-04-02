@@ -1,6 +1,8 @@
 {
   "description": "Set of extended CSS properties allowed.",
 
+  "inherits": ["css21-whitelist.json"],
+
   "allowed": [
     "filter"
   ],
