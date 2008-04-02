@@ -545,13 +545,21 @@ final class SignatureResolver {
       CssTree.Term term =
         (CssTree.Term) expr.children().get(candidate.exprIdx);
       CssTree.CssExprAtom atom = term.getExprAtom();
-      if (null == term.getOperator()
-          && (atom instanceof CssTree.IdentLiteral
-              || atom instanceof CssTree.QuantityLiteral)
-          && literal.value.equals(atom.getValue())) {
-        candidate.match(term, CssPropertyPartType.IDENT, propertyName);
-        ++candidate.exprIdx;
-        passed.add(candidate);
+      if (null == term.getOperator()) {
+        boolean match;
+        if (atom instanceof CssTree.IdentLiteral) {
+          match = literal.value.equalsIgnoreCase(
+              ((CssTree.IdentLiteral) atom).getValue());
+        } else if (atom instanceof CssTree.QuantityLiteral) {
+          match = literal.value.equals(atom.getValue());
+        } else {
+          match = false;
+        }
+        if (match) {
+          candidate.match(term, CssPropertyPartType.IDENT, propertyName);
+          ++candidate.exprIdx;
+          passed.add(candidate);
+        }
       }
     } else {  // A punctuation mark
       CssTree.Operation op =

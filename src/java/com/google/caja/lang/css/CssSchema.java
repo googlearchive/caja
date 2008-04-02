@@ -80,7 +80,10 @@ public final class CssSchema {
    * @return null if no such property.
    */
   public CssPropertyInfo getCssProperty(String propertyName) {
-    return properties.get(propertyName);
+    // http://www.w3.org/TR/CSS21/syndata.html#characters
+    // All CSS style sheets are case-insensitive, except for parts
+    // that are not under the control of CSS.
+    return properties.get(propertyName.toLowerCase());
   }
 
   /**

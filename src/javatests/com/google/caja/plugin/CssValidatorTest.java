@@ -72,6 +72,18 @@ public final class CssValidatorTest extends TestCase {
             + "        Term ; cssPropertyPartType=IDENT"
                         + " ; cssPropertyPart=color::color\n"
             + "          IdentLiteral : blue");
+    runTest("a { COLOR: Blue }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : a\n"
+            + "    Declaration\n"
+            + "      Property : COLOR\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=IDENT"
+                        + " ; cssPropertyPart=color::color\n"
+            + "          IdentLiteral : Blue");
     runTest("a { color: #00f }",
             "StyleSheet\n"
             + "  RuleSet\n"
