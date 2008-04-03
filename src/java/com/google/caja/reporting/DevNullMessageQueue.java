@@ -105,6 +105,11 @@ public final class DevNullMessageQueue implements MessageQueue {
     // do nothing
   }
 
+  public void addMessage(
+      MessageTypeInt type, MessageLevel level, MessagePart... parts) {
+    // do nothing
+  }
+
   private static class Singleton {
     static MessageQueue singleton = new DevNullMessageQueue();
   }
