@@ -57,6 +57,8 @@ public class StringLiteralTest extends TestCase {
     assertEquals("\"", StringLiteral.getUnquotedValueOf("'\\u0022'"));
     assertEquals("'", StringLiteral.getUnquotedValueOf("\"\\u0027\""));
     assertEquals("\"", StringLiteral.getUnquotedValueOf("\"\\u0022\""));
+    assertEquals("@", StringLiteral.getUnquotedValueOf("'\\x40'"));
+    assertEquals("x4", StringLiteral.getUnquotedValueOf("'\\x4'"));
   }
 
   public void testQuoteValue() throws Exception {
