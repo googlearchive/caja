@@ -759,7 +759,9 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
    * TODO(ihab): Javadoc.
    */
   public static final class QuantityLiteral extends CssLiteral {
-    QuantityLiteral(FilePosition pos, String value) { super(pos, value); }
+    public QuantityLiteral(FilePosition pos, String value) {
+      super(pos, value);
+    }
     @Override
     protected boolean checkValue(String value) {
       return QUANTITYLITERAL.matcher(value).matches();

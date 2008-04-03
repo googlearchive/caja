@@ -221,7 +221,6 @@ public final class CssValidatorTest extends TestCase {
             + "    Declaration");
     warns("p, dl { font: -12pt Arial; }");
     fails("p, dl { font: -12pt url(Arial); }");
-    fails("p, dl { font: 12 Arial; }");
     fails("p, dl { font: twelve Arial; }");
     runTest("p, dl { font: 150% Arial; }",
             "StyleSheet\n"
@@ -244,7 +243,6 @@ public final class CssValidatorTest extends TestCase {
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             + "    Declaration");
-    fails("p, dl { font: 150 Arial; }");
     fails("p, dl { font: 150Arial; }");
     fails("p, dl { font: 150/Arial; }");
     runTest("p, dl { font: medium Arial; }",
@@ -353,7 +351,6 @@ public final class CssValidatorTest extends TestCase {
             + "          IdentLiteral : Arial\n"
             + "    Declaration");
     fails("p, dl { font: 800; }");
-    fails("p, dl { font: 800 Arial; }");
 
     // variant weight family
     runTest("p, dl { font: normal 800 150% Arial; }",
@@ -385,7 +382,6 @@ public final class CssValidatorTest extends TestCase {
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             + "    Declaration");
-    fails("p, dl { font: normal 800 Arial; }");
     fails("p, dl { font: abnormal 150% Arial; }");
 
     // with line-height following /
@@ -917,7 +913,7 @@ public final class CssValidatorTest extends TestCase {
   }
 
   public void testFontFamily() throws Exception {
-    runTest("a { font: 12pt Times New Roman, Times, \"Times Old Roman\", serif }",
+    runTest("a { font: 12pt Times New Roman, Times, 'Times Old Roman', serif }",
             "StyleSheet\n"
             + "  RuleSet\n"
             + "    Selector\n"
@@ -1036,6 +1032,51 @@ public final class CssValidatorTest extends TestCase {
             + "        Term ; cssPropertyPartType=IDENT"
                         + " ; cssPropertyPart=font-family::generic-family\n"
             + "          IdentLiteral : serif\n"
+            );
+  }
+
+  public void testUnitlessLengths() throws Exception {
+    runTest("p { padding: 4 10 0 10 }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Declaration\n"
+            + "      Property : padding\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=LENGTH"
+                        + " ; cssPropertyPart=padding::padding-width\n"
+            + "          QuantityLiteral : 4\n"
+            + "        Operation : NONE\n"
+            + "        Term ; cssPropertyPartType=LENGTH"
+                        + " ; cssPropertyPart=padding::padding-width\n"
+            + "          QuantityLiteral : 10\n"
+            + "        Operation : NONE\n"
+            + "        Term ; cssPropertyPartType=LENGTH"
+                        + " ; cssPropertyPart=padding::padding-width\n"
+            + "          QuantityLiteral : 0\n"
+            + "        Operation : NONE\n"
+            + "        Term ; cssPropertyPartType=LENGTH"
+                        + " ; cssPropertyPart=padding::padding-width\n"
+            + "          QuantityLiteral : 10\n"
+            );
+    runTest("p { border: .125in 6 }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Declaration\n"
+            + "      Property : border\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=LENGTH"
+                        + " ; cssPropertyPart=border::border-width\n"
+            + "          QuantityLiteral : .125in\n"
+            + "        Operation : NONE\n"
+            + "        Term ; cssPropertyPartType=LENGTH"
+                        + " ; cssPropertyPart=border::border-width\n"
+            + "          QuantityLiteral : 6\n"
             );
   }
 

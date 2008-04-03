@@ -910,7 +910,7 @@
       "signature": "<length>|<percentage>|auto" },
 
     { "key": "<padding-width>",
-      "see": "http://www.w3.org/TR/CSS21/box.html#value-def-margin-width",
+      "see": "http://www.w3.org/TR/CSS21/box.html#value-def-padding-width",
       "signature": "<length:0,>|<percentage:0,>" },
 
     { "key": "<counter>",

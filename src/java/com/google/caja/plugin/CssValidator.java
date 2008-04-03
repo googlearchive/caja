@@ -668,9 +668,14 @@ final class SignatureResolver {
    * per the spec.
    */
   private static final String REAL_NUMBER_RE = "(?:\\d+(?:\\.\\d+)?|\\.\\d+)";
-  /** According to http://www.w3.org/TR/CSS21/syndata.html#length-units */
+  /**
+   * According to http://www.w3.org/TR/CSS21/syndata.html#length-units.
+   * Units are frequently left off length values, in which case all existing
+   * browsers assume pixels, so the units below are treated as optional even
+   * though, strictly, units can only be omitted from the value 0.
+   */
   private static final Pattern LENGTH_RE = Pattern.compile(
-      "^(?:" + REAL_NUMBER_RE + "(?:in|cm|mm|pt|pc|em|ex|px)|0+)$",
+      "^(?:" + REAL_NUMBER_RE + "(?:in|cm|mm|pt|pc|em|ex|px)?)$",
       Pattern.CASE_INSENSITIVE);
   /** http://www.w3.org/TR/REC-CSS2/syndata.html#value-def-number */
   private static final Pattern NUMBER_RE = Pattern.compile(

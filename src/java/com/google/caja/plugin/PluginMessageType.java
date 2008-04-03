@@ -90,6 +90,8 @@ public enum PluginMessageType implements MessageTypeInt {
   UNRECOGNIZED_MEDIA_TYPE(
       "%s: unrecognized media type %s", MessageLevel.WARNING),
   QUOTED_CSS_VALUE("%s: quoted unquoted css value %s", MessageLevel.LINT),
+  ASSUMING_PIXELS_FOR_LENGTH(
+      "%s: assuming pixels for length %s", MessageLevel.WARNING),
   ;
 
   private final String formatString;

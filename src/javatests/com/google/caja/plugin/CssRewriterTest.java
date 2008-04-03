@@ -189,6 +189,13 @@ public class CssRewriterTest extends TestCase {
     runTest("div * { margin: 0; }", ".test div * {\n  margin: 0\n}", false);
   }
 
+  public void testUnitlessLengths() throws Exception {
+    runTest("div { padding: 10 0 5.0 4 }",
+            ".test div {\n  padding: 10px 0 5.0px 4px\n}", false);
+    runTest("div { margin: -5 5; z-index: 2 }",
+            ".test div {\n  margin: -5px 5px;\n  z-index: 2\n}", false);
+  }
+
   private void runTest(String css, String golden) throws Exception {
     runTest(css, golden, false);
   }

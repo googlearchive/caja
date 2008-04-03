@@ -82,6 +82,7 @@ public final class CssRewriter {
    */
   public void rewrite(AncestorChain<? extends CssTree> t) {
     quoteLooseWords(t);
+    fixUnitlessLengths(t);
     // Once at the beginning, and again at the end.
     removeUnsafeConstructs(t);
     removeEmptyDeclarations(t);
@@ -181,6 +182,52 @@ public final class CssRewriter {
         && t.getExprAtom() instanceof CssTree.IdentLiteral
         && (t.getAttributes().get(CssValidator.CSS_PROPERTY_PART_TYPE)
             == CssPropertyPartType.LOOSE_WORD);
+  }
+
+  /**
+   * <a href="http://www.w3.org/TR/CSS21/syndata.html#length-units">Lengths</a>
+   * require units unless the value is zero.  All browsers assume px if the
+   * suffix is missing.
+   */
+  private void fixUnitlessLengths(AncestorChain<? extends CssTree> t) {
+    t.node.acceptPreOrder(new Visitor() {
+        public boolean visit(AncestorChain<?> ancestors) {
+          if (!(ancestors.node instanceof CssTree.Term)) {
+            return true;
+          }
+          CssTree.Term term = (CssTree.Term) ancestors.node;
+          if (!(CssPropertyPartType.LENGTH == term.getAttributes().get(
+                    CssValidator.CSS_PROPERTY_PART_TYPE)
+                && term.getExprAtom() instanceof CssTree.QuantityLiteral)) {
+            return true;
+          }
+          CssTree.QuantityLiteral quantity = (CssTree.QuantityLiteral)
+              term.getExprAtom();
+          String value = quantity.getValue();
+          if (!isZeroOrHasUnits(value)) {
+            // Missing units. 
+            CssTree.QuantityLiteral withUnits = new CssTree.QuantityLiteral(
+                quantity.getFilePosition(), value + "px");
+            withUnits.getAttributes().putAll(quantity.getAttributes());
+            term.replaceChild(withUnits, quantity);
+            mq.addMessage(PluginMessageType.ASSUMING_PIXELS_FOR_LENGTH,
+                          quantity.getFilePosition(),
+                          MessagePart.Factory.valueOf(value));
+          }
+          return false;
+        }
+      }, t.parent);
+  }
+  private static boolean isZeroOrHasUnits(String value) {
+    int len = value.length();
+    char ch = value.charAt(len - 1);
+    if (ch == '.' || ('0' <= ch && ch <= '9')) {  // Missing units
+      for (int i = len; --i >= 0;) {
+        ch = value.charAt(i);
+        if ('1' <= ch && ch <= '9') { return false; }
+      }
+    }
+    return true;
   }
 
   /** Get rid of rules like <code>p { }</code>. */
