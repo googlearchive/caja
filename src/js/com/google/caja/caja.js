@@ -620,7 +620,7 @@ var ___;
   ////////////////////////////////////////////////////////////////////////
 
   function isCtor(constr)    { return !!constr.___CONSTRUCTOR___; }
-  function isMethod(meth)    { return 'METHOD_OF___' in meth; }
+  function isMethod(meth)    { return '___METHOD_OF___' in meth; }
   function isSimpleFunc(fun) { return !!fun.___SIMPLE_FUNC___; }
 
   /**
