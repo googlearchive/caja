@@ -231,7 +231,7 @@ public class Escaping {
       new Escape('\b', "\\b"),
       new Escape('\t', "\\t"),
       new Escape('\n', "\\n"),
-      new Escape('\13', "\\v"),
+      // JScript treates \v as the letter v
       new Escape('\f', "\\f"),
       new Escape('\r', "\\r"),
       new Escape('\\', "\\\\"),
@@ -255,7 +255,7 @@ public class Escaping {
       new Escape('\b', "\\b"),
       new Escape('\t', "\\t"),
       new Escape('\n', "\\n"),
-      new Escape('\13', "\\v"),
+      // JScript treates \v as the letter v
       new Escape('\f', "\\f"),
       new Escape('\r', "\\r"),
       new Escape('/', "\\/"),
