@@ -1648,9 +1648,19 @@ public class DefaultCajaRewriterTest extends TestCase {
   }
 
   public void testOtherTypeof() throws Exception {
-    checkSucceeds(
-        "typeof x;",
-        "typeof " + weldReadOuters("x") + ";");
+    checkSucceeds("typeof x;", "typeof ___.readPub(___OUTERS___, 'x');");
+    checkFails("typeof ___", "Variables cannot end in \"__\"");
+    assertConsistent("typeof noSuchGlobal");
+    assertConsistent("typeof 's'");
+    assertConsistent("typeof 4");
+    assertConsistent("typeof null");
+    assertConsistent("typeof (void 0)");
+    assertConsistent("typeof []");
+    assertConsistent("typeof {}");
+    assertConsistent("typeof /./");
+    assertConsistent("typeof (function () {})");
+    assertConsistent("typeof { x: 4.0 }.x");
+    assertConsistent("typeof { 2: NaN }[1 + 1]");
   }
 
   public void testOtherBadInstanceof() throws Exception {

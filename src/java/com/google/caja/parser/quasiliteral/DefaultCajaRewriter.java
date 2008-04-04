@@ -1567,12 +1567,23 @@ public class DefaultCajaRewriter extends Rewriter {
     });
 
     addRule(new Rule("otherTypeof", this) {
+      @Override
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("typeof @f", node, bindings)) {
-          return substV(
-              "typeof @f",
-              "f", expand(bindings.get("f"), scope, mq));
+          ParseTreeNode f = bindings.get("f");
+          if (f instanceof Reference && scope.isGlobal(getReferenceName(f))) {
+            // Lookup of an undefined&undeclared global for typing purposes
+            // should not fail with an exception.
+            expand(f, scope, mq);
+            return substV(
+                "typeof ___.readPub(___OUTERS___, @fname)",
+                "fname", toStringLiteral(f));
+          } else {
+            return substV(
+                "typeof @f",
+                "f", expand(f, scope, mq));
+          }
         }
         return NONE;
       }

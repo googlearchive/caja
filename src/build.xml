@@ -39,6 +39,7 @@
   <!--== inputs ==-->
   <property name="src"         location="java"/>
   <property name="testsrc"     location="javatests"/>
+  <property name="test.filter" value="*Test"/>
   <property name="javascript"  location="js"/>
   <property name="third_party" location="third_party"/>
   <property name="demos"       location="java/com/google/caja/demos"/>
@@ -128,7 +129,8 @@
   </target>
 
   <target name="runtests" depends="AllTests"
-   description="Builds and runs unittests.">
+   description=
+   "Builds and runs unittests.  To filter tests: $ ant -Dtest.filter=My\*Test">
     <!-- Instrument the compiled class files to gather code coverage stats -->
     <emma enabled="${emma.enabled}">
       <instr instrpath="${lib}" destdir="${instr}" mode="fullcopy"
@@ -148,7 +150,7 @@
       <formatter type="xml" usefile="true" unless="emma.enabled"/>
       <batchtest todir="${reports}/tests" unless="emma.enabled">
         <fileset dir="${testsrc}">
-          <include name="**/*Test.java"/>
+          <include name="**/${test.filter}.java"/>
         </fileset>
       </batchtest>
       <sysproperty key="emma.coverage.out.file"
