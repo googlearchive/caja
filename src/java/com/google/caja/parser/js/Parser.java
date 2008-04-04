@@ -994,7 +994,7 @@ public final class Parser extends ParserBase {
           e = new UndefinedLiteral();
         } else {
           Keyword kw = Keyword.fromString(identifier);
-            if (null != kw) {
+          if (null != kw) {
             if (Keyword.THIS != kw) {
               mq.addMessage(MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
                             tq.lastPosition(),
@@ -1005,7 +1005,7 @@ public final class Parser extends ParserBase {
                           tq.lastPosition(),
                           MessagePart.Factory.valueOf(identifier));
           }
-          Identifier idNode = new Identifier(identifier);
+          Identifier idNode = new Identifier(decodeIdentifier(identifier));
           e = new Reference(idNode);
           finish(e, m);
           setFilePositionToEnd(idNode, e);

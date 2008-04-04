@@ -116,3 +116,8 @@ Block
     ObjectConstructor
       StringLiteral : 'objet'
       IntegerLiteral : 4
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      Reference
+        Identifier : eval
+      StringLiteral : 'foo'

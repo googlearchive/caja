@@ -24,6 +24,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -72,46 +73,51 @@ public abstract class ParserBase {
                         MessagePart.Factory.valueOf(s)));
     }
     tq.advance();
-    return s;
+    return decodeIdentifier(s);
   }
 
   /**
    * String form of a regular expression that matches the javascript
    * IdentifierOrKeyword production, with extensions for quasiliteral
    * syntax.
-   * <p>From http://www.mozilla.org/js/language/js20/formal/lexer-grammar.html
+   * <p>From section 7.6 of
+   * http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-262.pdf
    * and based on http://www.erights.org/elang/grammar/quasi-overview.html
    * <pre>
    * <b>QuasiIdentifierOrKeyword</b> ->
    *       IdentifierOrKeyword
    *    |  QuasiliteralBegin IdentifierOrKeyword OptQuasiliteralQuantifier
    * <b>IdentifierOrKeyword</b> ->
-   *       IdentifierName
-   * IdentifierName ->
-   *       InitialIdentifierCharacterOrEscape
-   *    |  NullEscapes InitialIdentifierCharacterOrEscape
-   *    |  IdentifierName ContinuingIdentifierCharacterOrEscape
-   *    |  IdentifierName NullEscape
-   * NullEscapes ->
-   *       NullEscape
-   *    |  NullEscapes NullEscape
-   * NullEscape -> \ _
-   * InitialIdentifierCharacterOrEscape ->
-   *       InitialIdentifierCharacter
-   *    |  \ HexEscape
-   * InitialIdentifierCharacter -> UnicodeInitialAlphabetic | $ | _
-   * ContinuingIdentifierCharacterOrEscape ->
-   *       ContinuingIdentifierCharacter
-   *    |  \ HexEscape
-   * ContinuingIdentifierCharacter -> UnicodeAlphanumeric | $ | _
-   * HexEscape ->
-   *       x 2HexDigit
-   *    |  u 4HexDigit
-   *    |  U 8HexDigit
-   * QuasiliteralBegin ->
+   *       IdentifierName (but not Keyword)
+   * <b>IdentifierName</b> ->
+   *       IdentifierStart
+   *    |  IdentifierName IdentifierPart
+   * <b>IdentifierStart</b> ->
+   *       UnicodeLetter  |  $  |  _  |  \ UnicodeEscapeSequence
+   * <b>IdentifierPart</b> ->
+   *       IdentifierStart  |  UnicodeCombiningMark  |  UnicodeDigit
+   *    |  UnicodeConnectorPunctuation  |  \ UnicodeEscapeSequence
+   * <b>UnicodeLetter</b> ->
+   *       any character in the Unicode categories "Uppercase letter
+   *       (Lu)", "Lowercase letter (Ll)", "Titlecase letter (Lt)",
+   *       "Modifier letter (Lm)", "Other letter (Lo)", or "Letter
+   *       number (Nl)".
+   * <b>UnicodeCombiningMark</b> ->
+   *       any character in the Unicode categories "Non-spacing mark (Mn)"
+   *       or "Combining spacing mark (Mc)"
+   * <b>UnicodeDigit</b> ->
+   *       any character in the Unicode category "Decimal number (Nd)"
+   * <b>UnicodeConnectorPunctuation</b> ->
+   *       any character in the Unicode category "Connector punctuation (Pc)"
+   * <b>UnicodeEscapeSequence</b> ->
+   *       u HexDigit HexDigit HexDigit HexDigiti
+   * <b>HexDigit</b> ->
+   *       0  |  1  |  2  |  3  |  4  |  5  |  6  |  7  |  8  |  9  |  a
+   *    |  b  |  c  |  d  |  e  |  f  |  A  |  B  |  C  |  D  |  E  |  F
+   * <b>QuasiliteralBegin</b> ->
    *       '@'
-   * OptQuasiliteralQuantifier ->
-   *       null
+   * <b>OptQuasiliteralQuantifier</b> ->
+   *       &epsilon;
    *    |  '*'
    *    |  '+'
    *    |  '?'
@@ -119,46 +125,35 @@ public abstract class ParserBase {
    */
   private static final Pattern IDENTIFIER_OR_KEYWORD_RE;
   private static final Pattern QUASI_IDENTIFIER_OR_KEYWORD_RE;
+  private static final Pattern UNICODE_ESCAPE;  // hexDigits captured in group 1
   static {
     String hexDigit = "[0-9a-fA-F]";
-    String hexEscape =
-      "(?:x" + hexDigit + "{2}|u" + hexDigit + "{4}|U" + hexDigit + "{8})";
-    String continuingIdentifierCharacter = "[$_\\p{javaLetterOrDigit}]";
-    String continuingIdentifierCharacterOrEscape =
-      "(?:" + continuingIdentifierCharacter + "|\\\\" + hexEscape + ")";
-    String initialIdentifierCharacter = "[$_\\p{javaLetter}]";
-    String initialIdentifierCharacterOrEscape =
-      "(?:" + initialIdentifierCharacter + "|\\\\" + hexEscape + ")";
-    String nullEscape = "(?:\\\\_)";
+    String unicodeEscape = "(?:\\\\u" + hexDigit + "{4})";
+    String letter = "\\p{javaLetter}";
+    String letterOrDigit = "\\p{javaLetterOrDigit}";
+    String combiner = "\\p{Mn}\\p{Mc}";
+    String connector = "\\p{Pc}";
+    String identifierStart = "(?:[" + letter + "$_]|" + unicodeEscape + ")";
+    String identifierPart = ("(?:[" + letterOrDigit + combiner + connector + "]"
+                             + "|" + unicodeEscape + ")");
     String quasiliteralBegin = "@";
     String optQuasiliteralQuantifier = "[\\+\\*\\?]?";
-    /*
-     * IdentifierName ->
-     *       InitialIdentifierCharacterOrEscape
-     *    |  NullEscapes InitialIdentifierCharacterOrEscape
-     *    |  IdentifierName ContinuingIdentifierCharacterOrEscape
-     *    |  IdentifierName NullEscape
-     * is the same as
-     * IdentifierName ->
-     *       0#NullEscape InitialIdentifierCharacterOrEscape
-     *       0#(NullEscape|ContinuingIdentifierCharacterOrEscape)
-     */
-    String identifierOrKeyword = (
-        "(?:" + nullEscape + "*" + initialIdentifierCharacterOrEscape
-        + "(?:" + nullEscape + "|" + continuingIdentifierCharacterOrEscape
-        + ")*)");
+    String identifierOrKeyword = identifierStart + identifierPart + "*";
     IDENTIFIER_OR_KEYWORD_RE = Pattern.compile("^" + identifierOrKeyword + "$");
-    String quasiIdentifierOrKeyword =
-        "(?:" + identifierOrKeyword + ")" +
-        "|" +
-        "(?:" +
-            quasiliteralBegin +
-            identifierOrKeyword +
-            optQuasiliteralQuantifier +
-         ")";
-    QUASI_IDENTIFIER_OR_KEYWORD_RE
-        = Pattern.compile("^" + quasiIdentifierOrKeyword + "$");
+    String quasiIdentifierOrKeyword = (
+        "(?:" + identifierOrKeyword + ")"
+        + "|"
+        + "(?:" + (
+            quasiliteralBegin
+            + identifierOrKeyword
+            + optQuasiliteralQuantifier)
+        + ")");
+    QUASI_IDENTIFIER_OR_KEYWORD_RE = Pattern.compile(
+        "^" + quasiIdentifierOrKeyword + "$");
+
+    UNICODE_ESCAPE = Pattern.compile("\\\\u(" + hexDigit + "{4})");
   }
+
 
   public static boolean isJavascriptIdentifier(String s) {
     return IDENTIFIER_OR_KEYWORD_RE.matcher(s).matches();
@@ -178,5 +173,26 @@ public abstract class ParserBase {
   public boolean isIdentifierPart(char ch) {
     return Character.isLetterOrDigit(ch) || ch == '$' || ch == '_'
         || (isQuasiliteral && ch == '@');
+  }
+
+  /**
+   * Decodes escapes in an identifier to their literal codepoints so that
+   * identifiers can be compared for equality via string equality of their
+   * values.
+   */
+  public static String decodeIdentifier(String identifier) {
+    // Javascript identifiers use a different escaping scheme from strings.
+    // Specifically, \Uxxxxxxxx escapes handle extended unicode.  There are
+    // 8 hex digits allowed even though extended unicode can't use more than
+    // 6 of those.
+    if (identifier.indexOf('\\') < 0) { return identifier; }
+    StringBuffer sb = new StringBuffer();
+    Matcher m = UNICODE_ESCAPE.matcher(identifier);
+    while (m.find()) {
+      m.appendReplacement(sb, "");
+      sb.append((char) Integer.parseInt(m.group(1), 16));
+    }
+    m.appendTail(sb);
+    return sb.toString();
   }
 }

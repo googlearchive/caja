@@ -26,3 +26,5 @@ var e = function f() { alert('hello world'); };
 
 // an object constructor
 ({ objet: 4 });
+
+ev\u0061l('foo');
