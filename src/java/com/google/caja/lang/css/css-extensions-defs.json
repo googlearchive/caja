@@ -7,17 +7,24 @@
   "inherits": ["css21-defs.json"],
 
   "types": [
-      
-    { "key": "filter",
-      "signature": "<opacity>",
-      "default": null,
+
+    { "key": "border-radius",
+      "signature": "<length> <length>?",
+      "default": "0",
       "appliesTo": "*",
       "inherited": false,
       "mediaGroups": ["visual"],
-      "dom2property": "filter" },
-
-    { "key": "<opacity>",
-      "signature": "alpha(opacity=[<percentage:0,100> | <number:0,100>])" },
+      "source": "http://www.w3.org/TR/2002/WD-css3-border-20021107/#the-border-radius",
+      "dom2property": "borderRadius"
+    },
+    { "key": "-moz-border-radius",
+      "as": "border-radius",
+      "source": "http://www.the-art-of-web.com/css/border-radius/",
+      "TODO": "dom2property" },
+    { "key": "-webkit-border-radius",
+      "as": "border-radius",
+      "source": "http://www.the-art-of-web.com/css/border-radius/",
+      "TODO": "dom2property" },
 
     { "key": "cursor",
       "signature": "[ [<uri> ,]* [ auto | crosshair | default | pointer | move | e-resize | ne-resize | nw-resize | n-resize | se-resize | sw-resize | s-resize | w-resize | text | wait | help | progress | all-scroll | col-resize | hand | no-drop | not-allowed | row-resize | vertical-text ] ] | inherit",
@@ -27,5 +34,60 @@
       "mediaGroups": ["visual", "interactive"],
       "dom2property": "cursor",
       "source": "http://www.quirksmode.org/css/cursor.html" },
+
+    { "key": "filter",
+      "signature": "<ie-filter-opacity>",
+      "default": null,
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "filter",
+      "source":
+          "http://msdn2.microsoft.com/en-us/library/ms532853%28VS.85%29.aspx" },
+    { "key": "<ie-filter-opacity>",
+      "signature": "alpha(opacity=[<percentage:0,100> | <number:0,100>])",
+      "default": "100",
+      "source": "http://msdn2.microsoft.com/en-us/library/ms532910(VS.85).aspx"
+    },
+
+    { "key": "opacity",
+      "signature": "<alphavalue> | inherit",
+      "default": "1",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "opacity",
+      "source": "http://www.w3.org/TR/css3-color/#transparency" },
+    { "key": "<alphavalue>",
+      "signature": "<number:0,1>" },
+
+    { "key": "text-wrap",
+      "signature": "normal | unrestricted | none | suppress",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "textWrap",
+      "source": "http://www.w3.org/TR/css3-text/#text-wrap" },
+
+    { "key": "word-wrap",
+      "signature": "normal | break-word",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "wordWrap",
+      "source": "http://www.w3.org/TR/css3-text/#word-wrap" },
+
+    { "key": "zoom",
+      "signature": "normal | <number:0,> | <percentage:0,>",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": "true",
+      "mediaGroups": ["visual"],
+      "dom2property": "zoom",
+      "source": "http://msdn2.microsoft.com/en-us/library/ms531189(VS.85).aspx"
+    }
+
   ]
 }
