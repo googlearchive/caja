@@ -31,6 +31,7 @@ import com.google.caja.lexer.escaping.EscapingTest;
 import com.google.caja.opensocial.DefaultGadgetRewriterTest;
 import com.google.caja.opensocial.GadgetParserTest;
 import com.google.caja.parser.ParseTreeNodeTest;
+import com.google.caja.parser.ParserBaseTest;
 import com.google.caja.parser.css.CssParserTest;
 import com.google.caja.parser.css.CssTreeTest;
 import com.google.caja.parser.html.DomParserTest;
@@ -114,6 +115,7 @@ public class AllTests {
           NumberLiteralTest.class,
           OpenTemplateStageTest.class,
           ParseTreeNodeTest.class,
+          ParserBaseTest.class,
           ParserTest.class,
           PunctuationTrieTest.class,
           QuasiBuilderTest.class,

@@ -229,7 +229,7 @@
       <include name="**/caja/lexer/escaping/EscapingTest.java"/>
       <include name="**/caja/opensocial/DefaultGadgetRewriterTest.java"/>
       <include name="**/caja/opensocial/GadgetParserTest.java"/>
-      <include name="**/caja/parser/ParseTreeNodeTest.java"/>
+      <include name="**/caja/parser/*Test.java"/>
       <include name="**/caja/parser/css/CssParserTest.java"/>
       <include name="**/caja/parser/css/CssTreeTest.java"/>
       <include name="**/caja/parser/html/DomParserTest.java"/>

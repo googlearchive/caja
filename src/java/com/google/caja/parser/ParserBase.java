@@ -122,20 +122,19 @@ public abstract class ParserBase {
    *    |  '+'
    *    |  '?'
    * </pre>
+   * A <i>UnicodeEscapeSequence</i> cannot be used to put a character
+   * into an identifier that would otherwise be illegal.
    */
   private static final Pattern IDENTIFIER_OR_KEYWORD_RE;
   private static final Pattern QUASI_IDENTIFIER_OR_KEYWORD_RE;
   private static final Pattern UNICODE_ESCAPE;  // hexDigits captured in group 1
   static {
     String hexDigit = "[0-9a-fA-F]";
-    String unicodeEscape = "(?:\\\\u" + hexDigit + "{4})";
     String letter = "\\p{javaLetter}";
     String letterOrDigit = "\\p{javaLetterOrDigit}";
-    String combiner = "\\p{Mn}\\p{Mc}";
-    String connector = "\\p{Pc}";
-    String identifierStart = "(?:[" + letter + "$_]|" + unicodeEscape + ")";
-    String identifierPart = ("(?:[" + letterOrDigit + combiner + connector + "]"
-                             + "|" + unicodeEscape + ")");
+    String combinerOrConnector = "\\p{Mn}\\p{Mc}\\p{Pc}";
+    String identifierStart = "[" + letter + "$_]";
+    String identifierPart = "[" + letterOrDigit + combinerOrConnector + "$_]";
     String quasiliteralBegin = "@";
     String optQuasiliteralQuantifier = "[\\+\\*\\?]?";
     String identifierOrKeyword = identifierStart + identifierPart + "*";
@@ -156,23 +155,13 @@ public abstract class ParserBase {
 
 
   public static boolean isJavascriptIdentifier(String s) {
-    return IDENTIFIER_OR_KEYWORD_RE.matcher(s).matches();
+    return IDENTIFIER_OR_KEYWORD_RE.matcher(decodeIdentifier(s)).matches();
   }
 
   public boolean isIdentifier(String s) {
-    return isQuasiliteral ?
-        QUASI_IDENTIFIER_OR_KEYWORD_RE.matcher(s).matches() :
-        IDENTIFIER_OR_KEYWORD_RE.matcher(s).matches();
-  }
-
-  public boolean isIdentifierStart(char ch) {
-    return Character.isLetter(ch) || ch == '$' || ch == '_'
-        || (isQuasiliteral && ch == '@');
-  }
-
-  public boolean isIdentifierPart(char ch) {
-    return Character.isLetterOrDigit(ch) || ch == '$' || ch == '_'
-        || (isQuasiliteral && ch == '@');
+    return (isQuasiliteral
+            ? QUASI_IDENTIFIER_OR_KEYWORD_RE
+            : IDENTIFIER_OR_KEYWORD_RE).matcher(decodeIdentifier(s)).matches();
   }
 
   /**
