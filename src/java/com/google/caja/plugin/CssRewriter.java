@@ -400,7 +400,7 @@ public final class CssRewriter {
             if ("content".equalsIgnoreCase(
                 ((CssTree.Property) node).getPropertyName())) {
               mq.addMessage(PluginMessageType.UNSAFE_CSS_PROPERTY,
-                            node.getFilePosition(),
+                            invalidNodeMessageLevel, node.getFilePosition(),
                             MessagePart.Factory.valueOf("content"));
               declarationFor(ancestors).getAttributes().set(
                   CssValidator.INVALID, Boolean.TRUE);
@@ -412,7 +412,7 @@ public final class CssRewriter {
               if (!ALLOWED_PSEUDO_SELECTORS.contains(
                   ((CssTree.IdentLiteral) child).getValue().toLowerCase())) {
                 mq.addMessage(PluginMessageType.UNSAFE_CSS_PSEUDO_SELECTOR,
-                              node.getFilePosition(),
+                              invalidNodeMessageLevel, node.getFilePosition(),
                               node);
                 remove = true;
               }
@@ -421,7 +421,7 @@ public final class CssRewriter {
               TokenConsumer tc = new CssPrettyPrinter(rendered, null);
               node.render(new RenderContext(new MessageContext(), tc));
               mq.addMessage(PluginMessageType.UNSAFE_CSS_PSEUDO_SELECTOR,
-                            node.getFilePosition(),
+                            invalidNodeMessageLevel, node.getFilePosition(),
                             MessagePart.Factory.valueOf(rendered.toString()));
               remove = true;
             }
@@ -598,8 +598,8 @@ public final class CssRewriter {
     return null;
   }
 
-  private static final Pattern SAFE_SELECTOR_PART =
-    Pattern.compile("^[#!\\.]?[a-zA-Z][_a-zA-Z0-9\\-]*$");
+  private static final Pattern SAFE_SELECTOR_PART
+      = Pattern.compile("^[#!\\.]?[a-zA-Z][_a-zA-Z0-9\\-]*$");
   /**
    * Restrict selectors to ascii characters until we can test browser handling
    * of escape sequences.
@@ -607,8 +607,17 @@ public final class CssRewriter {
   private static boolean isSafeSelectorPart(String s) {
     return SAFE_SELECTOR_PART.matcher(s).matches();
   }
-  private static final Pattern SAFE_CSS_IDENTIFIER =
-    Pattern.compile("^[a-zA-Z][_a-zA-Z0-9\\-]*$");
+  // Does not allow leading underscores.  From "The Underscore Hack" at
+  // http://www.wellstyled.com/css-underscore-hack.html:
+  // Let's start with three simple facts \u2014 as Petr Pisar found out.
+
+  // 1. The underscore ("_") is allowed in CSS identifiers by the CSS2.1
+  //    Specification
+  // 2. Browsers have to ignore unknown CSS properties
+  // 3. MSIE 5+ for Windows ignores the "_" at the beginning of any CSS property
+  //    name
+  private static final Pattern SAFE_CSS_IDENTIFIER
+      = Pattern.compile("^[a-zA-Z\\-][_a-zA-Z0-9\\-]*$");
   /**
    * Restrict identifiers to ascii characters until we can test browser handling
    * of escape sequences.

@@ -135,7 +135,8 @@ public final class CssValidator {
         prop.getPropertyName());
     if (null == pinfo) {
       mq.addMessage(
-          PluginMessageType.UNKNOWN_CSS_PROPERTY, prop.getFilePosition(),
+          PluginMessageType.UNKNOWN_CSS_PROPERTY, invalidNodeMessageLevel,
+          prop.getFilePosition(),
           MessagePart.Factory.valueOf(prop.getPropertyName()));
       decl.getAttributes().set(INVALID, Boolean.TRUE);
       return false;
@@ -503,10 +504,16 @@ final class SignatureResolver {
       CssPropertySignature.RepeatedSignature rsig,
       Candidate candidate, String propertyName, List<Candidate> passed) {
 
-    // The maximum branching factor for a repetition.  This is the
-    // greatest number of contiguous ambiguous elements we might encounter
-    // as in { font: inherit inherit inherit inherit }
-    final int MAX_BRANCHING_FACTOR = 4;
+    /**
+     * The maximum branching factor for a repetition.  This is the
+     * greatest number of contiguous ambiguous elements we might encounter
+     * as in <code>{ font: inherit inherit inherit inherit }</code>.
+     * <p>
+     * TODO(mikesamuel): this is currently 5 instead of 4 because it also limits
+     * the number of font names that can appear in a comma separated list.
+     * Rework our backtracking so we can handle long font lists.
+     */
+    final int MAX_BRANCHING_FACTOR = 5;
 
     List<Candidate> toApply = Collections.singletonList(candidate);
     int k = 0;
