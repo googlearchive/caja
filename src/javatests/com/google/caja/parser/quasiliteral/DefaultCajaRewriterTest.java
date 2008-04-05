@@ -1160,6 +1160,12 @@ public class DefaultCajaRewriterTest extends TestCase {
 
   public void testDeleteProp() throws Exception {
     checkFails("delete this.foo___", "");
+    checkSucceeds(
+        "delete this[foo()]",
+        "___.deleteProp(" +
+        "    t___, ___.asSimpleFunc(" + weldReadOuters("foo") + ")())");
+    checkSucceeds("delete this.foo_", "___.deleteProp(t___, 'foo_')");
+
     if (false) {  // TODO(mikesamuel): Enable this when classes work.
       assertConsistent(
           // Set up a class that can delete one of its members.
@@ -1185,6 +1191,14 @@ public class DefaultCajaRewriterTest extends TestCase {
 
   public void testDeletePub() throws Exception {
     checkFails("delete x.foo___", "");
+    checkSucceeds(
+        "delete foo()[bar()]",
+        "___.deletePub(___.asSimpleFunc(" + weldReadOuters("foo") + ")()," +
+        "              ___.asSimpleFunc(" + weldReadOuters("bar") + ")())");
+    checkSucceeds(
+        "delete foo().bar",
+        "___.deletePub(___.asSimpleFunc(" + weldReadOuters("foo") + ")()," +
+        "              'bar')");
     assertConsistent(
         "(function() {" +
         "  var o = { x: 3, y: 4 };" +    // A JSON object.
@@ -1195,6 +1209,12 @@ public class DefaultCajaRewriterTest extends TestCase {
         "  history.push(ptStr(o));" +    // Record state after deletion.
         "  return history.toString();" +
         "})()");
+    assertConsistent(
+        "var alert = 'a';" +
+        "var o = { a: 1 };" +
+        "delete o[alert];" +
+        "assertEquals(undefined, o.a);" +
+        "o.a");
   }
 
   public void testDeleteFails() throws Exception {

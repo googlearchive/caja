@@ -1018,7 +1018,7 @@ public class DefaultCajaRewriter extends Rewriter {
         if (match("delete this[@k]", node, bindings)) {
           return substV(
               "___.deleteProp(t___, @k)",
-              "k", bindings.get("k")
+              "k", expand(bindings.get("k"), scope, mq)
               );
         } else if (match("delete this.@k", node, bindings)) {
           Reference k = (Reference) bindings.get("k");
@@ -1044,8 +1044,8 @@ public class DefaultCajaRewriter extends Rewriter {
         if (match("delete @o[@k]", node, bindings)) {
           return substV(
               "___.deletePub(@o, @k)",
-              "o", bindings.get("o"),
-              "k", bindings.get("k"));
+              "o", expand(bindings.get("o"), scope, mq),
+              "k", expand(bindings.get("k"), scope, mq));
         } else if (match("delete @o.@k", node, bindings)) {
           Reference k = (Reference) bindings.get("k");
           String kName = getReferenceName(k);
@@ -1056,7 +1056,7 @@ public class DefaultCajaRewriter extends Rewriter {
           }
           return substV(
               "___.deletePub(@o, @ks)",
-              "o", bindings.get("o"),
+              "o", expand(bindings.get("o"), scope, mq),
               "ks", toStringLiteral(k));
         }
         return NONE;
