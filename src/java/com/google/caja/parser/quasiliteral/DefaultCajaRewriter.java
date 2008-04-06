@@ -951,56 +951,28 @@ public class DefaultCajaRewriter extends Rewriter {
     ////////////////////////////////////////////////////////////////////////
 
     addRule(new Rule("newCalllessCtor", this) {
+      @Override
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (match("new @ctor", node, bindings) &&
-            bindings.get("ctor") instanceof Reference &&
-            scope.isDeclaredFunction(getReferenceName(bindings.get("ctor")))) {
-          return substV(
-              "new (___.asCtor(@ctor))()",
-              "ctor", expandReferenceToOuters(bindings.get("ctor"), scope, mq));
+        if (match("new @ctor", node, bindings)) {
+          return expand(
+              Operation.create(Operator.FUNCTION_CALL, (Expression) node),
+              scope, mq);
         }
         return NONE;
       }
     });
 
     addRule(new Rule("newCtor", this) {
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (match("new @ctor(@as*)", node, bindings) &&
-            bindings.get("ctor") instanceof Reference &&
-            scope.isDeclaredFunction(getReferenceName(bindings.get("ctor")))) {
-          return substV(
-              "new (___.asCtor(@ctor))(@as*)",
-              "ctor", expandReferenceToOuters(bindings.get("ctor"), scope, mq),
-              "as", expandAll(bindings.get("as"), scope, mq));
-        }
-        return NONE;
-      }
-    });
-
-    addRule(new Rule("newFunc", this) {
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (match("new @f(@as*)", node, bindings) &&
-            bindings.get("f") instanceof Reference) {
-          return substV(
-              "new (___.asCtor(@f))(@as*)",
-              "f", expandReferenceToOuters(bindings.get("f"), scope, mq),
-              "as", expandAll(bindings.get("as"), scope, mq));
-        }
-        return NONE;
-      }
-    });
-
-    addRule(new Rule("newBadCtor", this) {
+      @Override
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("new @ctor(@as*)", node, bindings)) {
-          mq.addMessage(
-              RewriterMessageType.NEW_ON_ARBITRARY_EXPRESSION_DISALLOWED,
-              node.getFilePosition(), this, node);
-          return node;
+          ParseTreeNode ctor = bindings.get("ctor");
+          return substV(
+              "new (___.asCtor(@ctor))(@as*)",
+              "ctor", expand(ctor, scope, mq),
+              "as", expandAll(bindings.get("as"), scope, mq));
         }
         return NONE;
       }
@@ -1011,25 +983,30 @@ public class DefaultCajaRewriter extends Rewriter {
     ////////////////////////////////////////////////////////////////////////
 
     addRule(new Rule("deleteProp", this) {
+      @Override
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings
             = new LinkedHashMap<String, ParseTreeNode>();
         if (match("delete this[@k]", node, bindings)) {
+          ParseTreeNode thisNode = node.children().get(0).children().get(0);
           return substV(
-              "___.deleteProp(t___, @k)",
+              "___.deleteProp(@this, @k)",
+              "this", expand(thisNode, scope, mq),
               "k", expand(bindings.get("k"), scope, mq)
               );
         } else if (match("delete this.@k", node, bindings)) {
+          ParseTreeNode thisNode = node.children().get(0).children().get(0);
           Reference k = (Reference) bindings.get("k");
-          if (getReferenceName(k).endsWith("__")) {
+          if (k.getIdentifierName().endsWith("__")) {
             mq.addMessage(
-                RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
-                k.getFilePosition(), this, k);
+                RewriterMessageType.PROPERTIES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+                node.getFilePosition(), this, node);
           }
           return substV(
-              "___.deleteProp(t___, @ks)",
-              "ks", toStringLiteral(k)              
+              "___.deleteProp(@this, @kname)",
+              "this", expand(thisNode, scope, mq),
+              "kname", toStringLiteral(k)
               );
         }
         return NONE;
@@ -1037,6 +1014,7 @@ public class DefaultCajaRewriter extends Rewriter {
     });
 
     addRule(new Rule("deletePub", this) {
+      @Override
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings
@@ -1048,12 +1026,7 @@ public class DefaultCajaRewriter extends Rewriter {
               "k", expand(bindings.get("k"), scope, mq));
         } else if (match("delete @o.@k", node, bindings)) {
           Reference k = (Reference) bindings.get("k");
-          String kName = getReferenceName(k);
-          if (kName.endsWith("__")) {
-            mq.addMessage(
-                RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
-                k.getFilePosition(), this, k);
-          }
+          expand(k, scope, mq);
           return substV(
               "___.deletePub(@o, @ks)",
               "o", expand(bindings.get("o"), scope, mq),
@@ -1062,7 +1035,39 @@ public class DefaultCajaRewriter extends Rewriter {
         return NONE;
       }
     });
-    
+
+    addRule(new Rule("deleteGlobal", this) {
+      @Override
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings
+            = new LinkedHashMap<String, ParseTreeNode>();
+        if (match("delete @v", node, bindings)) {
+          ParseTreeNode v = bindings.get("v");
+          if (v instanceof Reference) {
+            expand(v, scope, mq);  // Make sure v is mentionable
+            return substV(
+                "___.deletePub(___OUTERS___, @vname)",
+                "vname", toStringLiteral(v));
+          }
+        }
+        return NONE;
+      }
+    });
+
+    addRule(new Rule("deleteNonLvalue", this) {
+      @Override
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings
+            = new LinkedHashMap<String, ParseTreeNode>();
+        if (match("delete @v", node, bindings)) {
+          mq.addMessage(
+              RewriterMessageType.NOT_DELETABLE, node.getFilePosition());
+          return node;
+        }
+        return NONE;
+      }
+    });
+
     ////////////////////////////////////////////////////////////////////////
     // call - function calls
     ////////////////////////////////////////////////////////////////////////
@@ -1174,7 +1179,8 @@ public class DefaultCajaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("caja.def(@fname, @base, @mm, @ss?)", node, bindings) &&
             scope.isFunction(getReferenceName(bindings.get("fname"))) &&
-            scope.isFunction(getReferenceName(bindings.get("base")))) {
+            (bindings.get("base") instanceof UndefinedLiteral ||
+             scope.isFunction(getReferenceName(bindings.get("base"))))) {
           if (!checkMapExpression(bindings.get("mm"), this, scope, mq)) {
             return node;
           }
@@ -1552,15 +1558,14 @@ public class DefaultCajaRewriter extends Rewriter {
     ////////////////////////////////////////////////////////////////////////
 
     addRule(new Rule("otherInstanceof", this) {
+      @Override
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@o instanceof @f", node, bindings)) {
-          if (scope.isFunction(getReferenceName(bindings.get("f")))) {
-            return substV(
-                "@o instanceof @f",
-                "o", expand(bindings.get("o"), scope, mq),
-                "f", expand(bindings.get("f"), scope, mq));
-          }
+          return substV(
+              "@o instanceof @f",
+              "o", expand(bindings.get("o"), scope, mq),
+              "f", expand(bindings.get("f"), scope, mq));
         }
         return NONE;
       }
@@ -1599,19 +1604,6 @@ public class DefaultCajaRewriter extends Rewriter {
           default:
             return NONE;
         }
-      }
-    });
-
-    addRule(new Rule("otherBadInstanceof", this) {
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (match("@o instanceof @f", node, bindings)) {
-          mq.addMessage(
-              RewriterMessageType.INVOKED_INSTANCEOF_ON_NON_FUNCTION,
-              node.getFilePosition(), this, node);
-          return node;
-        }
-        return NONE;
       }
     });
 

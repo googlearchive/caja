@@ -611,7 +611,6 @@ var ___;
     if (isFrozen(obj)) {
       fail("Can't delete .", name, ' on frozen (', obj, ')');
     }
-    fail('TODO(erights): allowDelete() not yet implemented');
     obj[name + '_canDelete___'] = true;
   }
   
@@ -1132,8 +1131,10 @@ var ___;
     name = String(name);
     if (canSetProp(that, name)) {
       allowSet(that, name);  // grant
-      that[name] = val;
-      return val;
+      if (!hasOwnProp(that, name)) {
+        allowDelete(that, name);
+      }
+      return that[name] = val;
     } else {
       return that.handleSet___(name, val);
     }
@@ -1160,7 +1161,7 @@ var ___;
     if (canSet(obj, name)) { return true; }
     return !isFrozen(obj) && isJSONContainer(obj);
   }
-  
+
   /** A client of obj attempts to assign to one of its properties. */
   function setPub(obj, name, val) {
     name = String(name);
@@ -1172,7 +1173,7 @@ var ___;
       return obj.handleSet___(name, val);
     }
   }
- 
+
   /**
    * Can a Caja constructed object delete the named property?
    */
@@ -1181,7 +1182,7 @@ var ___;
     if (isFrozen(obj)) { return false; }
     if (endsWith(name, '__')) { return false; }
     if (isJSONContainer(obj)) { return true; }
-    return !!obj[name + '_canDelete__'];
+    return !!obj[name + '_canDelete___'];
   }
 
   /**
@@ -1192,7 +1193,7 @@ var ___;
     name = String(name);
     if (canDeleteProp(obj, name)) {
       // See deleteFieldEntirely for reasons why we don't cache deletability.
-      deleteFieldEntirely(obj, name);
+      return deleteFieldEntirely(obj, name);
     } else {
       return obj.handleDelete___(name);
     }
@@ -1217,7 +1218,7 @@ var ___;
     name = String(name);
     if (canDeletePub(obj, name)) {
       // See deleteFieldEntirely for reasons why we don't cache deletability.
-      deleteFieldEntirely(obj, name);
+      return deleteFieldEntirely(obj, name);
     } else {
       return obj.handleDelete___(name);
     }
@@ -1238,13 +1239,14 @@ var ___;
     delete obj[name + '_canEnum___'];
     delete obj[name + '_canCall___'];
     delete obj[name + '_canSet___'];
+    delete obj[name + '_canDelete___'];
     return (delete obj[name]) || (fail('not deleted: ', name), false);
   }
 
   ////////////////////////////////////////////////////////////////////////
   // Other
   ////////////////////////////////////////////////////////////////////////
-  
+
   /**
    * This returns a frozen array copy of the original array or
    * array-like object.
