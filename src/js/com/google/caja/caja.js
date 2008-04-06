@@ -621,6 +621,9 @@ var ___;
   function isCtor(constr)    { return !!constr.___CONSTRUCTOR___; }
   function isMethod(meth)    { return '___METHOD_OF___' in meth; }
   function isSimpleFunc(fun) { return !!fun.___SIMPLE_FUNC___; }
+  function isUnattachedMethod(meth) {
+    return meth.___METHOD_OF___ === null || isSimpleFunc(meth);
+  }
 
   /**
    * Mark <tt>constr</tt> as a constructor.
@@ -725,9 +728,9 @@ var ___;
   /** 
    * Mark meth as a method of instances of constr. 
    * <p>
-   * opt_name, if provided, should be the message name associated
-   * with the method. Currently, this is used only to generate
-   * friendlier error messages.
+   * @param opt_name if provided, should be the message name associated
+   *   with the method. Currently, this is used only to generate
+   *   friendlier error messages.
    */
   function method(constr, meth, opt_name) {
     enforceType(meth, 'function', opt_name);
@@ -740,7 +743,27 @@ var ___;
     meth.___METHOD_OF___ = asCtorOnly(constr);
     return primFreeze(meth);
   }
-  
+
+  /** 
+   * Mark meth as an unattached method -- a method not attached to any
+   * particular class, so not allowed access to private fields.
+   * <p>
+   * @param opt_name if provided, should be the message name associated
+   *   with the method. Currently, this is used only to generate
+   *   friendlier error messages.
+   */
+  function unattachedMethod(meth, opt_name) {
+    enforceType(meth, 'function', opt_name);
+    if (isCtor(meth)) {
+      fail("constructors can't be methods: ", meth);
+    }
+    if (isSimpleFunc(meth)) {
+      fail("Simple functions can't be methods: ", meth);
+    }
+    meth.___METHOD_OF___ = null;
+    return primFreeze(meth);
+  }
+
   /** 
    * Mark fun as a simple function.
    * <p>
@@ -1091,7 +1114,7 @@ var ___;
     if (canCall(obj, name)) { return true; }
     if (!canReadPub(obj, name)) { return false; }
     var func = obj[name];
-    if (!isSimpleFunc(func)) { return false; }
+    if (!isUnattachedMethod(func)) { return false; }
     allowCall(obj, name);  // memoize
     return true;
   }
@@ -1897,6 +1920,8 @@ var ___;
     asCtor: asCtor,
     splitCtor: splitCtor,
     method: method,               asMethod: asMethod,
+    unattachedMethod: unattachedMethod,
+    isUnattachedMethod: isUnattachedMethod,
     simpleFunc: simpleFunc,       asSimpleFunc: asSimpleFunc,
     setMember: setMember,
     setMemberMap: setMemberMap,

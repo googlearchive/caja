@@ -24,6 +24,7 @@ import com.google.caja.parser.js.BooleanLiteral;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
+import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Literal;
@@ -374,6 +375,7 @@ public abstract class Rule implements MessagePart {
     if (match("function(@ps*) { @bs*; }", member, bindings)) {
       Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)member);
       if (s2.hasFreeThis()) {
+        checkFormals(bindings.get("ps"), mq);
         return substV(
             "___.method(@fname, function(@ps*) {" +
             "  @fh*;" +
@@ -468,6 +470,17 @@ public abstract class Rule implements MessagePart {
       return false;
     }
     return true;
+  }
+
+  protected void checkFormals(ParseTreeNode formals, MessageQueue mq) {
+    for (ParseTreeNode formal : formals.children()) {
+      FormalParam f = (FormalParam) formal;
+      if (!isSynthetic(f) && f.getIdentifierName().endsWith("__")) {
+        mq.addMessage(
+            RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+            f.getFilePosition(), this, f);
+      }
+    }
   }
 
   protected static boolean isSynthetic(ParseTreeNode node) {

@@ -1437,12 +1437,13 @@ public class DefaultCajaRewriterTest extends TestCase {
         "};",
         "Map expression expected");
     checkFails(
-        "function() {" +
-        "  function Point() {}" +
-        "  function WigglyPoint() {}" +
-        "  caja.def(WigglyPoint, Point, { foo: x }, { bar: function() { this.x = 3; } });" +
+        "function() {\n" +
+        "  function Point() {}\n" +
+        "  function WigglyPoint() {}\n" +
+        "  caja.def(WigglyPoint, Point, { foo: x },\n" +
+        "           { bar: function() { this.x_ = 3; } });\n" +
         "};",
-        "Anonymous function references \"this\"");
+        "Public properties cannot end in \"_\"");
   }
 
   public void testCallCajaDef3PlusBad() throws Exception {
@@ -1602,10 +1603,31 @@ public class DefaultCajaRewriterTest extends TestCase {
             "}))"));
   }
 
+  public void testUnattachedMethod() throws Exception {
+    checkSucceeds(
+        "function (x) { this.x = x; };",
+        "___.unattachedMethod(" +
+        "    function (x) {" +
+        "       var t___ = this;" +
+        "       (function () {" +
+        "          var x___ = t___;" +
+        "          var x0___ = " + weldReadOuters("x") + ";" +
+        "          return x___.x_canSet___" +
+        "              ? (x___.x = x0___) : ___.setPub(x___, 'x', x0___);" +
+        "        })();" +
+        "     })"
+        );
+    checkFails(
+        "function (k) { return this[k]; }",
+        "\"this\" in an unattached method only exposes public fields");
+    assertConsistent(
+        "({ f7: function () { return this.x + this.y; }, x: 1, y: 2 }).f7()");
+  }
+
   public void testFuncBadMethod() throws Exception {
     checkFails(
-        "function(x) { x = this; };",
-        "Anonymous function references \"this\"");
+        "function(x) { this.x_ = x; };",
+        "Public properties cannot end in \"_\"");
   }
 
   public void testFuncCtor() throws Exception {
@@ -2092,6 +2114,8 @@ public class DefaultCajaRewriterTest extends TestCase {
 
     Object cajoledResult = RhinoTestBed.runJs(
         null,
+        new RhinoTestBed.Input(
+            getClass(), "/com/google/caja/plugin/console-stubs.js"),
         new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
         new RhinoTestBed.Input(
             // Initialize the output field to something containing a unique

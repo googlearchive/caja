@@ -17,6 +17,8 @@ package com.google.caja.parser.quasiliteral;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.AbstractParseTreeNode;
+import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.AssignOperation;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.BreakStmt;
@@ -1289,6 +1291,7 @@ public class DefaultCajaRewriter extends Rewriter {
         if (match("function(@ps*) { @bs*; }", node, bindings)) {
           Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node);
           if (!s2.hasFreeThis()) {
+            checkFormals(bindings.get("ps"), mq);
             return substV(
                 "___.primFreeze(" +
                 "  ___.simpleFunc(" +
@@ -1315,6 +1318,7 @@ public class DefaultCajaRewriter extends Rewriter {
               scope,
               (FunctionConstructor)node.children().get(1));
           if (!s2.hasFreeThis()) {
+            checkFormals(bindings.get("ps"), mq);
             return expandDef(
                 new Reference((Identifier)bindings.get("f")),
                 substV(
@@ -1345,6 +1349,7 @@ public class DefaultCajaRewriter extends Rewriter {
               scope,
               (FunctionConstructor)node);
           if (!s2.hasFreeThis()) {
+            checkFormals(bindings.get("ps"), mq);
             return substV(
                 "___.primFreeze(" +
                 "  ___.simpleFunc(" +
@@ -1357,6 +1362,65 @@ public class DefaultCajaRewriter extends Rewriter {
                 "bs", expand(bindings.get("bs"), s2, mq),
                 "fh", getFunctionHeadDeclarations(this, s2, mq));
           }
+        }
+        return NONE;
+      }
+    });
+
+    addRule(new Rule("funcUnattachedMethod", this) {
+      @Override
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, final MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        if (match("(function (@formals*) { @body*; })", node, bindings)) {
+          Scope s2 = Scope.fromFunctionConstructor(
+              scope, (FunctionConstructor) node);
+          if (!s2.hasFreeThis()) { return NONE; }
+
+          checkFormals(bindings.get("formals"), mq);
+          // An unattached method is one where this is only used to access the
+          // public API.
+          // We cajole an unattached method by converting all `this` references
+          // in the body to `t___` and then cajole the body.
+          // Attempts to use private APIs, as in (this.foo_) fail statically,
+          // and elsewhere, we will use (___.readPub) instead of (___.readProp).
+          ParseTreeNode rewrittenBody = bindings.get("body").clone();
+          rewrittenBody.acceptPreOrder(new Visitor() {
+                public boolean visit(AncestorChain<?> ac) {
+                  if (ac.node instanceof FunctionConstructor) { return false; }
+                  if (!(ac.node instanceof Reference)) { return true; }
+                  Reference ref = ac.cast(Reference.class).node;
+                  if (!ReservedNames.THIS.equals(ref.getIdentifierName())) {
+                    return true;
+                  }
+                  // If used in a context where this would be ambiguous, warn.
+                  if (ac.parent != null
+                      && ac.parent.node instanceof Operation) {
+                    switch (((Operation) ac.parent.node).getOperator()) {
+                      case SQUARE_BRACKET:
+                      case DELETE:
+                        mq.addMessage(
+                            RewriterMessageType.UNATTACHED_METHOD_AMBIGUITY,
+                            ac.parent.node.getFilePosition());
+                        break;
+                    }
+                  }
+                  // Make a synethetic reference, so the reference will survive
+                  // cajoling but will not trigger the readProp/readPub
+                  // difference.
+                  Identifier syntheticLocalThis = s(
+                      new Identifier(ReservedNames.LOCAL_THIS));
+                  syntheticLocalThis.setFilePosition(ref.getFilePosition());
+                  s(ref).replaceChild(syntheticLocalThis, ref.getIdentifier());
+                  return true;
+                }
+              }, null);
+          return substV(
+              "___.unattachedMethod(" +
+              "    function (@formals*) { var @localThis = this; @body*; })",
+              "formals", bindings.get("formals"),
+              "localThis", s(new Identifier(ReservedNames.LOCAL_THIS)),
+              "body", expand(rewrittenBody, scope, mq));
         }
         return NONE;
       }
@@ -1388,6 +1452,7 @@ public class DefaultCajaRewriter extends Rewriter {
         if (match("function @f(@ps*) { @b; @bs*; }", constructorNode, bindings)) {
           Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)constructorNode);
           if (s2.hasFreeThis()) {
+            checkFormals(bindings.get("ps"), mq);
             ParseTreeNode bNode = bindings.get("b");
             if (bNode instanceof ExpressionStmt) {
               // Rebind bNode to the Expression part of the ExpressionStmt.
