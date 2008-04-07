@@ -83,7 +83,7 @@ public final class CompileGxpsStage implements Pipeline.Stage<Jobs> {
       switch (job.getType()) {
         case JAVASCRIPT:
           GxpCompileDirectiveReplacer r = new GxpCompileDirectiveReplacer(mq);
-          job.getRoot().node.acceptPreOrder(r, job.getRoot().parent);
+          job.getRoot().cast(ParseTreeNode.class).node.acceptPreOrder(r, job.getRoot().parent);
           gxpJobs.addAll(r.getDoms());
           break;
         case GXP:

@@ -144,7 +144,8 @@ public final class OpenTemplateStageTest extends TestCase {
         passes, jobs.hasNoErrors());
     assertEquals("" + jobs.getJobs(), 1, jobs.getJobs().size());
 
-    ParseTreeNode bare = stripBoilerPlate(jobs.getJobs().get(0).getRoot().node);
+    ParseTreeNode bare = stripBoilerPlate(
+        jobs.getJobs().get(0).getRoot().cast(ParseTreeNode.class).node);
     StringBuilder out = new StringBuilder();
     TokenConsumer tc = bare.makeRenderer(out, null);
     bare.render(new RenderContext(mc, tc));

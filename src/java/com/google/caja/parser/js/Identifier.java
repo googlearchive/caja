@@ -58,8 +58,10 @@ public final class Identifier extends AbstractParseTreeNode<ParseTreeNode> {
   }
 
   public void render(RenderContext r) {
-    r.getOut().mark(getFilePosition());
-    r.getOut().consume(name);
+    if (name != null) {
+      r.getOut().mark(getFilePosition());
+      r.getOut().consume(name);
+    }
   }
 
   public final TokenConsumer makeRenderer(

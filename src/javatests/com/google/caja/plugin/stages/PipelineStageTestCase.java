@@ -19,6 +19,7 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.plugin.Job;
@@ -104,8 +105,8 @@ public abstract class PipelineStageTestCase extends TestCase {
     List<JobStub> actualJobs = new ArrayList<JobStub>();
     for (Job job : jobs.getJobs()) {
       StringBuilder sb = new StringBuilder();
-      job.getRoot().node.render(
-          new RenderContext(mc, job.getRoot().node.makeRenderer(sb, null)));
+      ParseTreeNode node = job.getRoot().cast(ParseTreeNode.class).node;
+      node.render(new RenderContext(mc, node.makeRenderer(sb, null)));
       actualJobs.add(new JobStub(sb.toString(), job.getType()));
     }
 
