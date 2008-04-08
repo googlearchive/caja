@@ -57,6 +57,8 @@ public final class ForEachLoop extends LabeledStatement implements NestedScope {
         .execute();
   }
 
+  public Expression getContainer() { return container; }
+
   @Override
   protected void childrenChanged() {
     super.childrenChanged();

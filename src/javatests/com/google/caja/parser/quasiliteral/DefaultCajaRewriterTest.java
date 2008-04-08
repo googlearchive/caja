@@ -88,10 +88,7 @@ public class DefaultCajaRewriterTest extends TestCase {
    * @author erights@gmail.com
    */
   private static String weldReadOuters(String varName) {
-    return
-        "(___OUTERS___." + varName + "_canRead___ ?" +
-        "    ___OUTERS___." + varName + ":" +
-        "    ___.readPub(___OUTERS___, '" + varName + "', true))";
+    return weldReadOuters(varName, true);
   }
 
   private static String weldReadOuters(String varName, boolean flag) {
@@ -1072,7 +1069,7 @@ public class DefaultCajaRewriterTest extends TestCase {
         "  assertEquals(2, j);" +
         "  assertEquals(1, arrs[0]);" +
         "  assertEquals(4, arrs[1]);" +
-        "  return arrs.join();" +
+        "  return arrs.join(',');" +
         "})()");
     assertConsistent(
         "(function () {" +
@@ -1767,6 +1764,27 @@ public class DefaultCajaRewriterTest extends TestCase {
     assertConsistent("typeof { 2: NaN }[1 + 1]");
   }
 
+  public void testLabeledStatement() throws Exception {
+    checkFails("___OUTERS___: 1", "Labels cannot end in \"__\"");
+    checkSucceeds("foo: 1", "foo: 1");
+    assertConsistent(
+        "var k = 0;" +
+        "a: for (var i = 0; i < 10; ++i) {" +
+        "  b: for (var j = 0; j < 10; ++j) {" +
+        "    if (++k > 5) break a;" +
+        "  }" +
+        "}" +
+        "k;");
+    assertConsistent(
+        "var k = 0;" +
+        "a: for (var i = 0; i < 10; ++i) {" +
+        "  b: for (var j = 0; j < 10; ++j) {" +
+        "    if (++k > 5) break b;" +
+        "  }" +
+        "}" +
+        "k;");
+  }
+
   public void testOtherSpecialOp() throws Exception {
     checkSucceeds("void 0", "void 0");
     checkSucceeds("void foo()",
@@ -1845,6 +1863,12 @@ public class DefaultCajaRewriterTest extends TestCase {
         "___.primFreeze(___.simpleFunc(function() {" +
         "  for (var x, y = " + weldReadOuters("bar") + "; ; ) {}" +
         "}));");
+    assertConsistent(
+        "var arr = [1, 2, 3], k = -1;" +
+        "(function () {" +
+        "  var a = arr[++k], b = arr[++k], c = arr[++k];" +
+        "  return [a, b, c].join(',');" +
+        "})()");
   }
 
   public void testRecurseParseTreeNodeContainer() throws Exception {

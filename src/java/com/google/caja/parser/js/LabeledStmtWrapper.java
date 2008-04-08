@@ -35,7 +35,8 @@ public final class LabeledStmtWrapper extends LabeledStatement {
   // LabeledStatement.
   private Statement body;
 
-  public LabeledStmtWrapper(String value, List<? extends ParseTreeNode> children) {
+  public LabeledStmtWrapper(
+      String value, List<? extends ParseTreeNode> children) {
     this(value, (Statement)children.get(0));
   }
 
@@ -43,6 +44,8 @@ public final class LabeledStmtWrapper extends LabeledStatement {
     super(label);
     appendChild(body);
   }
+
+  public Statement getBody() { return body; }
 
   @Override
   protected void childrenChanged() {

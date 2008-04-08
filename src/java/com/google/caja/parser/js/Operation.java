@@ -34,7 +34,7 @@ public abstract class Operation extends AbstractExpression<Expression> {
     createMutation().appendChildren(Arrays.asList(params)).execute();
   }
 
-  static public Operation create(Operator op, Expression... params) {
+  public static Operation create(Operator op, Expression... params) {
     switch (op) {
       case ASSIGN: // =
       case ASSIGN_AND: // &=
