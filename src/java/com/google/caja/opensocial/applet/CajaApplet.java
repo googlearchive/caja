@@ -25,6 +25,7 @@ import com.google.caja.opensocial.GadgetRewriteException;
 import com.google.caja.opensocial.UriCallback;
 import com.google.caja.opensocial.UriCallbackOption;
 import com.google.caja.reporting.BuildInfo;
+import com.google.caja.reporting.HtmlSnippetProducer;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
@@ -149,39 +150,7 @@ public class CajaApplet extends Applet {
       Map<InputSource, ? extends CharSequence> originalSrc, MessageQueue mq) {
     MessageContext mc = new MessageContext();
     mc.inputSources = originalSrc.keySet();
-    SnippetProducer sp = new SnippetProducer(originalSrc, mc) {
-        // Override the default behavior to create messages that link nicely.
-        @Override
-        protected void formatSnippet(
-            FilePosition pos, CharSequence line, int start, int end,
-            Appendable out)
-            throws IOException {
-          formatFilePosition(pos, out);
-          out.append(": ")
-              .append(html(line.subSequence(0, start)))
-              .append("<span class=\"problem\">")
-              .append(html(line.subSequence(start, end)))
-              .append("</span>")
-              .append(html(line.subSequence(end, line.length())));
-        }
-
-        @Override
-        protected void formatFilePosition(FilePosition pos, Appendable out)
-            throws IOException {
-          StringBuilder filename = new StringBuilder();
-          pos.source().format(mc, filename);
-
-          out.append("<a href=# class=\"filepos\" onclick=\"selectLine(")
-              .append(html(js(pos.source().getUri().toString())))
-              .append(",")
-              .append(String.valueOf(pos.startLineNo()))
-              .append(")\">")
-              .append(html(filename))
-              .append(":")
-              .append(String.valueOf(pos.startLineNo()))
-              .append("</a>");
-        }
-      };
+    SnippetProducer sp = new HtmlSnippetProducer(originalSrc, mc);
 
     StringBuilder messageText = new StringBuilder();
     for (Message msg : mq.getMessages()) {
@@ -203,14 +172,6 @@ public class CajaApplet extends Applet {
   private static String html(CharSequence s) {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeXml(s, false, sb);
-    return sb.toString();
-  }
-
-  private static String js(CharSequence s) {
-    StringBuilder sb = new StringBuilder();
-    sb.append('\'');
-    Escaping.escapeJsString(s, false, true, sb);
-    sb.append('\'');
     return sb.toString();
   }
 }

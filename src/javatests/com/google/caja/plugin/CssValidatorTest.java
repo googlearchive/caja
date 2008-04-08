@@ -1125,6 +1125,9 @@ public final class CssValidatorTest extends TestCase {
     CssValidator v = makeCssValidator(smq);
     boolean valid = v.validateCss(ac(cssTree));
     mq.getMessages().addAll(smq.getMessages());
+    if (!valid) {
+      System.err.println(cssTree.toStringDeep());
+    }
     assertTrue(css, valid);
 
     mc.relevantKeys = new LinkedHashSet<SyntheticAttributeKey<?>>(

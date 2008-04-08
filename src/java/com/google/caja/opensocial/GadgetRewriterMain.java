@@ -27,7 +27,6 @@ import com.google.caja.reporting.SnippetProducer;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
@@ -44,73 +43,29 @@ public class GadgetRewriterMain {
   private Map<InputSource, CharSequence> originalSources
       = new HashMap<InputSource, CharSequence>();
 
-  private GadgetRewriterMain() {
+  public GadgetRewriterMain() {
     config = new Config(
         getClass(), System.err, "Cajole an OpenSocial gadget spec's Content");
     mc.inputSources = new ArrayList<InputSource>();
   }
 
-  public static void main(String[] argv)
-      throws GadgetRewriteException, IOException, ParseException,
-          UriCallbackException {
-    System.exit(new GadgetRewriterMain().run(argv));
+   public static void main(String[] argv)
+       throws GadgetRewriteException, IOException, UriCallbackException,
+          ParseException {
+     GadgetRewriterMain grm = new GadgetRewriterMain();
+     if (grm.init(argv)) {
+       System.exit(grm.run());
+     }
+     System.exit(-1);
+   }
+    
+  public boolean init(String[] argv) {
+    return config.processArguments(argv);
   }
-
-  class Callback implements UriCallback {
-    public UriCallbackOption getOption(ExternalReference extref,
-                                       String mimeType) {
-      return UriCallbackOption.RETRIEVE;
-    }
-
-    public Reader retrieve(ExternalReference extref, String mimeType)
-        throws UriCallbackException {
-      System.err.println("Retrieving " + extref);
-      final Reader in;
-      URI uri;
-      try {
-        uri = config.getBaseUri().resolve(extref.getUri());
-        in = new InputStreamReader(uri.toURL().openStream(), "UTF-8");
-      } catch (IOException e) {
-        throw new UriCallbackException(extref, e);
-      }
-      
-      final StringBuilder originalSource = new StringBuilder();
-      InputSource is = new InputSource(uri);
-      originalSources.put(is, originalSource);
-      mc.inputSources.add(is);
-
-      // Tee the content out to a buffer so that we can keep track of the
-      // original content so we can show error message snippets later.
-      return new Reader() {
-          @Override
-          public void close() throws IOException { in.close(); }
-          @Override
-          public int read(char[] cbuf, int off, int len) throws IOException {
-            int n = in.read(cbuf, off, len);
-            if (n > 0) { originalSource.append(cbuf, off, n); }
-            return n;
-          }
-          @Override
-          public int read() throws IOException {
-            int ch = in.read();
-            if (ch >= 0) { originalSource.append((char) ch); }
-            return ch;
-          }
-        };
-    }
-
-    public URI rewrite(ExternalReference extref, String mimeType) {
-      return extref.getUri();
-    }
-  }
-  
-  private int run(String[] argv)
-      throws GadgetRewriteException, IOException, ParseException,
-          UriCallbackException {
-    if (!config.processArguments(argv)) {
-      return -1;
-    }
-
+   
+  public int run()
+      throws GadgetRewriteException, IOException, UriCallbackException,
+          ParseException {
     MessageQueue mq = new SimpleMessageQueue();
     DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(mq);
     rewriter.setCssSchema(config.getCssSchema(mq));
@@ -118,7 +73,7 @@ public class GadgetRewriterMain {
 
     Writer w = new BufferedWriter(new FileWriter(config.getOutputBase()));
     try {
-      Callback cb = new Callback();
+      Callback cb = new Callback(config, mc, originalSources);
       URI baseUri = config.getBaseUri();
       for (URI input : config.getInputUris()) {
         Reader r = cb.retrieve(new ExternalReference(input, null), null);
@@ -141,5 +96,9 @@ public class GadgetRewriterMain {
     }
     
     return 0;
+  }
+  
+  public Config getConfig() {
+    return config;
   }
 }

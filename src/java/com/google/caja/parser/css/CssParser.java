@@ -387,7 +387,10 @@ public final class CssParser {
     while (!tq.isEmpty()) {
       Token<CssTokenType> t = tq.peek();
       if (CssTokenType.PUNCTUATION == t.type) {
-        if (!("=".equals(t.text) || "/".equals(t.text) || ",".equals(t.text) || "-".equals(t.text))) { break; }
+        if (!("=".equals(t.text) || "/".equals(t.text) || ",".equals(t.text)
+              || "-".equals(t.text))) {
+          break;
+        }
       } else if (CssTokenType.DIRECTIVE == t.type) {
         break;
       }

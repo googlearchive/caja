@@ -139,7 +139,7 @@ public final class CssValidator {
           prop.getFilePosition(),
           MessagePart.Factory.valueOf(prop.getPropertyName()));
       decl.getAttributes().set(INVALID, Boolean.TRUE);
-      return false;
+      return true;
     }
     // Apply the signature
     if (!applySignature(pinfo.name, decl.getExpr(), pinfo.sig)) {
