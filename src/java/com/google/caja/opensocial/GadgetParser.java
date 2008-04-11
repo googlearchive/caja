@@ -105,7 +105,7 @@ public class GadgetParser {
         DomTree.Attrib typeAttr = contentNode.getAttribute("type");
         check(typeAttr != null, "No 'type' attribute for view '" + view + "'");
         String value = typeAttr.getAttribValue();
-    
+
         check(value.equals("html"), "Can't handle Content type '" + value +"'");
 
         spec.setContentType(value);
@@ -150,12 +150,10 @@ public class GadgetParser {
    * Render the given gadgetSpec as XML.
    *
    * @param output to which XML is written.
-   * @exception IOException if there is a problem writing to output.
    */
-  public void render(GadgetSpec gadgetSpec, Appendable output)
-      throws IOException {
+  public void render(GadgetSpec gadgetSpec, Appendable output) {
     DomTree doc = toDocument(gadgetSpec);
-    TokenConsumer tc = doc.makeRenderer(output, null);;
+    TokenConsumer tc = doc.makeRenderer(output, null);
     doc .render(new MarkupRenderContext(new MessageContext(), tc, true));
   }
 
@@ -179,10 +177,10 @@ public class GadgetParser {
     DomTree.Tag content = el(
         "Content", attrib("type", gadgetSpec.getContentType()),
         cdata(drain(gadgetSpec.getContent())));
-    
+
     return el("Module", modulePrefs, content);
   }
-  
+
   private static DomTree.Tag el(String name, DomTree... children) {
     return new DomTree.Tag(Arrays.asList(children), Token.instance(
         "<" + name, HtmlTokenType.TAGBEGIN, FilePosition.UNKNOWN),
@@ -197,7 +195,7 @@ public class GadgetParser {
         Token.instance(name, HtmlTokenType.ATTRNAME, FilePosition.UNKNOWN),
         FilePosition.UNKNOWN);
   }
-  
+
   private static DomTree.CData cdata(String text) {
     return new DomTree.CData(
         Token.instance("<![CDATA[" + text + "]]>", HtmlTokenType.CDATA,
@@ -208,7 +206,7 @@ public class GadgetParser {
       throws GadgetRewriteException {
     if (!condition) throw new GadgetRewriteException(msg);
   }
-  
+
   private String drain(CharProducer cp) {
     try {
       StringBuilder sb = new StringBuilder();
@@ -218,7 +216,7 @@ public class GadgetParser {
       throw new RuntimeException();
     }
   }
-  
+
   private static List<DomTree.Tag> getElementsByTagName(
       DomTree t, final String name) {
     final List<DomTree.Tag> els = new ArrayList<DomTree.Tag>();

@@ -33,7 +33,6 @@ import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.plugin.GxpCompiler.BadContentException;
-import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
@@ -130,7 +129,7 @@ public final class CssTemplate extends AbstractParseTreeNode<ParseTreeNode> {
     // TODO(mikesamuel): implement me
     throw new UnsupportedOperationException("NOT IMPLEMENTED YET");
   }
-  
+
   public TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> exHandler) {
     throw new UnsupportedOperationException();

@@ -71,8 +71,7 @@ public class GadgetsTestMain {
     mc.inputSources = new ArrayList<InputSource>();
   }
 
-  public static void main(String[] argv)
-      throws UriCallbackException, URISyntaxException {
+  public static void main(String[] argv) throws UriCallbackException {
     System.exit(new GadgetsTestMain().run(argv));
   }
 
@@ -156,7 +155,7 @@ public class GadgetsTestMain {
 
   private void testGadget(URI gadget, JSONArray testResults,
                           Map<MessageTypeInt, Integer> errorCount)
-      throws IOException, URISyntaxException, UriCallbackException {
+      throws IOException, UriCallbackException {
 
     String[] argv = {
         "-o", "/tmp/xx",
@@ -176,18 +175,15 @@ public class GadgetsTestMain {
     rewriter.setCssSchema(config.getCssSchema(mq));
     rewriter.setHtmlSchema(config.getHtmlSchema(mq));
 
-    JSONObject gadgetElement= new JSONObject();
-    gadgetElement.put("url", gadget.toString());
-    gadgetElement.put("title", "TODO");
-    MessageLevel worstErrorLevel = MessageLevel.LOG;
-    MessageTypeInt worstErrorType = null;
-    testResults.add(gadgetElement);
-
     JSONArray messages = new JSONArray();
-    gadgetElement.put("messages", messages);
+    JSONObject gadgetElement
+        = json("url", gadget.toString(), "title", "TODO", "messages", messages);
+    pushJson(testResults, gadgetElement);
 
     Writer w = new BufferedWriter(new FileWriter(config.getOutputBase()));
 
+    MessageLevel worstErrorLevel = MessageLevel.LOG;
+    MessageTypeInt worstErrorType = null;
     try {
       Callback cb = new Callback(config, mc, originalSources);
       URI baseUri = config.getBaseUri();
@@ -254,31 +250,33 @@ public class GadgetsTestMain {
       }
     });
     for (Map.Entry<MessageTypeInt, Integer> e : entries) {
-      JSONObject entry = new JSONObject();
-      entry.put("type", e.getKey().toString());
-      entry.put("value", "" + e.getValue());
-      entry.put("errorLevel", e.getKey().getLevel().toString());
-      summary.add(entry);
+      pushJson(
+          summary,
+          json("type", e.getKey(),
+               "value", e.getValue(),
+               "errorLevel", e.getKey().getLevel()));
     }
   }
 
-  private int run(String[] argv)
-      throws UriCallbackException, URISyntaxException {
-
+  private int run(String[] argv) throws UriCallbackException {
     if (!processArguments(argv)) {
       return -1;
     }
 
-    JSONArray testResults = new JSONArray ();
     String timestamp = (new Date()).toString();
-    Map<MessageTypeInt, Integer> errorCount = new LinkedHashMap<MessageTypeInt, Integer>();
-    resultDoc.put("buildInfo", JSONObject.escape(BuildInfo.getInstance().getBuildInfo()));
-    resultDoc.put("timestamp", JSONObject.escape(timestamp));
-    System.out.print(timestamp);
-    resultDoc.put("gadgets", testResults);
+    System.out.println(timestamp);
 
+    Map<MessageTypeInt, Integer> errorCount
+        = new LinkedHashMap<MessageTypeInt, Integer>();
+
+    JSONArray testResults = new JSONArray();
     JSONArray summary = new JSONArray();
-    resultDoc.put("summary", summary);
+    putJson(
+        resultDoc,
+        "buildInfo", JSONObject.escape(BuildInfo.getInstance().getBuildInfo()),
+        "timestamp", JSONObject.escape(timestamp),
+        "gadgets", testResults,
+        "summary", summary);
 
     try {
       for (URI gadgetUri : gadgetList) {
@@ -304,29 +302,19 @@ public class GadgetsTestMain {
 
   private void addMessageNode(JSONArray messages, String position,
                               String level, String type, String text) {
-
-    JSONObject message = new JSONObject();
-
-    message.put("position", position);
-    message.put("level", level);
-    message.put("type", type);
-    message.put("text", text);
-
-    messages.add(message);
-
+    pushJson(messages,
+        json("position", position, "level", level, "type", type, "text", text));
   }
 
   private void addWorstErrorNode(JSONObject gadget, MessageLevel mLevel,
                                  MessageTypeInt mType) {
-    JSONObject error = new JSONObject();
     String levelOrdinal = mLevel == null ? "UNKNOWN" : "" + mLevel.ordinal();
     String level = mLevel == null ? "UNKNOWN" : mLevel.toString();
     String type = mType == null ? "UNKNOWN" : mType.toString();
 
-    error.put("type", type);
-    error.put("level", level);
-    error.put("levelOrdinal", levelOrdinal);
-    gadget.put("worstError", error);
+    putJson(gadget,
+        "worstError",
+        json("type", type, "level", level, "levelOrdinal", levelOrdinal));
   }
 
   private void addMessageNode(
@@ -365,4 +353,34 @@ public class GadgetsTestMain {
     System.err.println("usage: GadgetsTestMain listofurls.txt output.json");
   }
 
+  private static JSONObject json(Object... members) {
+    JSONObject o = new JSONObject();
+    putJson(o, members);
+    return o;
+  }
+
+
+  @SuppressWarnings("unchecked")
+  private static void putJson(JSONObject o, Object... members) {
+    for (int i = 0, n = members.length; i < n; i += 2) {
+      String name = (String) members[i];
+      Object value = toJsonValue(members[i + 1]);
+      o.put(name, value);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private static void pushJson(JSONArray a, Object... members) {
+    for (Object member : members) {
+      a.add(toJsonValue(member));
+    }
+  }
+
+  private static Object toJsonValue(Object value) {
+    if (value == null || value instanceof Boolean || value instanceof Number
+        || value instanceof JSONObject || value instanceof JSONArray) {
+      return value;
+    }
+    return value.toString();
+  }
 }

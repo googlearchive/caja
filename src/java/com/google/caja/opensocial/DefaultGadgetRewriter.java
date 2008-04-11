@@ -22,7 +22,6 @@ import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
@@ -140,8 +139,8 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
                       MessagePart.Factory.valueOf("" + ex));
       }
     };
-    
-    CssTree css = compiler.getCss(); 
+
+    CssTree css = compiler.getCss();
     if (css != null) {
       TokenConsumer tc = new CssPrettyPrinter(style, errorHandler);
       css.render(createRenderContext(tc, mc));

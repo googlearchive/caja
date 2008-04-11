@@ -15,8 +15,6 @@
 package com.google.caja.parser;
 
 import com.google.caja.parser.quasiliteral.ParseTreeNodeContainer;
-import com.google.caja.reporting.RenderContext;
-import com.google.caja.reporting.MessageContext;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -64,7 +62,7 @@ public class ParseTreeNodes {
       throw new RuntimeException(getCtorErrorMessage(ctor, value, children), e);
     }
   }
-  
+
   // TODO(ihab): Instead of creating a new list each time, pass the list in and
   // append to it.
   // TODO(mikesamuel): clean up dependency.  This package should not depend on
@@ -88,7 +86,7 @@ public class ParseTreeNodes {
    * @param x a {@code ParseTreeNode}.
    * @param y another {@code ParseTreeNode}.
    * @return whether the trees rooted at {@code this} and {@code n} are equal.
-   */  
+   */
   public static boolean deepEquals(ParseTreeNode x, ParseTreeNode y) {
     if (x.getClass() == y.getClass()) {
       if ((x.getValue() == null && y.getValue() == null) ||

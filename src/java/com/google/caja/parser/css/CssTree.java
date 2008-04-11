@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
@@ -59,7 +58,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     }
     return sb.toString();
   }
-  
+
   public final TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> exHandler) {
     return new CssPrettyPrinter(out, exHandler);

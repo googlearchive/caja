@@ -16,7 +16,6 @@ package com.google.caja.opensocial.applet;
 
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
-import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
@@ -156,7 +155,7 @@ public class CajaApplet extends Applet {
     for (Message msg : mq.getMessages()) {
       if (MessageLevel.LINT.compareTo(msg.getMessageLevel()) > 0) { continue; }
       String snippet = sp.getSnippet(msg);
-      
+
       messageText.append("<div class=\"message ")
           .append(msg.getMessageLevel().name()).append("\">")
           .append(msg.getMessageLevel().name()).append(' ')
