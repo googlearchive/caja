@@ -621,8 +621,8 @@ var ___;
   function isCtor(constr)    { return !!constr.___CONSTRUCTOR___; }
   function isMethod(meth)    { return '___METHOD_OF___' in meth; }
   function isSimpleFunc(fun) { return !!fun.___SIMPLE_FUNC___; }
-  function isUnattachedMethod(meth) {
-    return meth.___METHOD_OF___ === null || isSimpleFunc(meth);
+  function isExophoric(fun) {
+    return fun.___METHOD_OF___ === null || isSimpleFunc(fun);
   }
 
   /**
@@ -745,23 +745,23 @@ var ___;
   }
 
   /** 
-   * Mark meth as an unattached method -- a method not attached to any
-   * particular class, so not allowed access to private fields.
+   * Mark fun as an exophoric function -- a function whose this can safely
+   * be bound to any object -- this is not used to access private fields.
    * <p>
    * @param opt_name if provided, should be the message name associated
    *   with the method. Currently, this is used only to generate
    *   friendlier error messages.
    */
-  function unattachedMethod(meth, opt_name) {
-    enforceType(meth, 'function', opt_name);
-    if (isCtor(meth)) {
-      fail("constructors can't be methods: ", meth);
+  function exophora(fun, opt_name) {
+    enforceType(fun, 'function', opt_name);
+    if (isCtor(fun)) {
+      fail("constructors can't be exophoric: ", fun);
     }
-    if (isSimpleFunc(meth)) {
-      fail("Simple functions can't be methods: ", meth);
+    if (isSimpleFunc(fun)) {
+      fail("Simple functions can't be exophoric: ", fun);
     }
-    meth.___METHOD_OF___ = null;
-    return primFreeze(meth);
+    fun.___METHOD_OF___ = null;
+    return primFreeze(fun);
   }
 
   /** 
@@ -1114,7 +1114,7 @@ var ___;
     if (canCall(obj, name)) { return true; }
     if (!canReadPub(obj, name)) { return false; }
     var func = obj[name];
-    if (!isUnattachedMethod(func)) { return false; }
+    if (!isExophoric(func)) { return false; }
     allowCall(obj, name);  // memoize
     return true;
   }
@@ -1920,8 +1920,8 @@ var ___;
     asCtor: asCtor,
     splitCtor: splitCtor,
     method: method,               asMethod: asMethod,
-    unattachedMethod: unattachedMethod,
-    isUnattachedMethod: isUnattachedMethod,
+    exophora: exophora,
+    isExophoric: isExophoric,
     simpleFunc: simpleFunc,       asSimpleFunc: asSimpleFunc,
     setMember: setMember,
     setMemberMap: setMemberMap,

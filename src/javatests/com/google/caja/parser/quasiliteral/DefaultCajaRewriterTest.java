@@ -1600,23 +1600,44 @@ public class DefaultCajaRewriterTest extends TestCase {
             "}))"));
   }
 
-  public void testUnattachedMethod() throws Exception {
+  public void testFuncExophoricFunction() throws Exception {
     checkSucceeds(
-        "function (x) { this.x = x; };",
-        "___.unattachedMethod(" +
+        "function (x) { return this.x; };",
+        "___.exophora(" +
         "    function (x) {" +
         "       var t___ = this;" +
-        "       (function () {" +
-        "          var x___ = t___;" +
-        "          var x0___ = " + weldReadOuters("x") + ";" +
-        "          return x___.x_canSet___" +
-        "              ? (x___.x = x0___) : ___.setPub(x___, 'x', x0___);" +
-        "        })();" +
+        "       return (function () {" +
+        "         var x___ = t___;" +
+        "         return x___.x_canRead___ ? x___.x : ___.readPub(x___, 'x');" +
+        "       })();" +
         "     })"
         );
     checkFails(
         "function (k) { return this[k]; }",
-        "\"this\" in an unattached method only exposes public fields");
+        "\"this\" in an exophoric function only exposes public fields");
+    checkFails(
+        "function () { delete this.k; }",
+        "\"this\" in an exophoric function only exposes public fields");
+    checkFails(
+        "function () { x in this; }",
+        "\"this\" in an exophoric function only exposes public fields");
+    checkFails(
+        "function () { 'foo_' in this; }",
+        "\"this\" in an exophoric function only exposes public fields");
+    checkSucceeds(
+        "function () { 'foo' in this; }",
+        "___.exophora(" +
+        "    function () {" +
+        "      var t___ = this;" +
+        "      'foo' in t___;" +
+        "    })");
+    checkFails(
+        "function () { for (var k in this); }",
+        "\"this\" in an exophoric function only exposes public fields");
+    checkFails(
+        "function (y) { this.x = y; }",
+        "\"this\" in an exophoric function only exposes public fields");
+
     assertConsistent(
         "({ f7: function () { return this.x + this.y; }, x: 1, y: 2 }).f7()");
   }

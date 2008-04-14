@@ -1,0 +1,38 @@
+<body>
+Quasiliterals for matching and transforming Javascript parse trees.
+
+<h2>Glossary</h2>
+<dl>
+<dt>Exophoric Functions</dt>
+  <dd>A function where {@code this} can be bound to any instance.  Contrast
+  to a method, where {@code this} can only be an instance of the method's
+  class.
+  <p>
+  In javascript, all methods are really exophoric functions, but Caja
+  distinguishes between methods and exophoric functions since methods
+  have access to an instance's private API via {@code this}.
+  An exophoric function references {@code this} but never uses it in a way
+  that would access the private API.
+  <p>
+  See <a href="http://code.google.com/p/google-caja/wiki/FunctionSpecies">
+  FunctionSpecies</a> for types of functions.
+  </dd>
+<dt>Quasiliteral</dt>
+  <dd>
+    Quasiliterals can be used to match patterns in parse trees and
+    produce parse trees as output.<pre>
+match("@clazz.prototype.@methodName = function (@params*) { @body*; }",
+      node, bindings, scope)
+</pre>
+    will check whether node looks like a javascript method assignment,
+    and if successful, will put entries into {@code bindings} that map
+    "quasi-holes" like {@code "clazz"} to the corresponding
+    descendents of node.
+
+    <p>Quasiliterals can also be used to generate parse trees as in<pre>
+substV("caja.def(@clazz, @baseClazz, @methods, @statics)",
+       "clazz", ..., "baseClazz", ..., "methods", ..., "statics", ...);
+</pre>
+  </dd>
+</dl>
+</body>
