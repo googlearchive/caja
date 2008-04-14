@@ -16,49 +16,22 @@ package com.google.caja.plugin;
 
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.CssLexer;
-import com.google.caja.lexer.CssTokenType;
-import com.google.caja.lexer.InputSource;
-import com.google.caja.lexer.Token;
-import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
-import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
-import com.google.caja.util.Criterion;
+import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.SyntheticAttributeKey;
-
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.StringReader;
-import java.net.URI;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 
-import junit.framework.TestCase;
-
 /**
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
-public final class CssValidatorTest extends TestCase {
-  private MessageQueue mq;
-
-  @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    if (null == mq) {
-      mq = new EchoingMessageQueue(
-          new PrintWriter(new OutputStreamWriter(System.err)),
-          new MessageContext(), false);
-    }
-  }
-
+public final class CssValidatorTest extends CajaTestCase {
   public void testValidateColor() throws Exception {
     runTest("a { color: blue }",
             "StyleSheet\n"
@@ -1080,47 +1053,25 @@ public final class CssValidatorTest extends TestCase {
             );
   }
 
-  private CssTree parseCss(String css) throws Exception {
-    InputSource is = new InputSource(new URI("test://" + getClass().getName()));
-    CharProducer cp = CharProducer.Factory.create(new StringReader(css), is);
-    try {
-      CssLexer lexer = new CssLexer(cp, true);
-      TokenQueue<CssTokenType> tq = new TokenQueue<CssTokenType>(
-          lexer, cp.getCurrentPosition().source(),
-          new Criterion<Token<CssTokenType>>() {
-            public boolean accept(Token<CssTokenType> t) {
-              return CssTokenType.SPACE != t.type
-                  && CssTokenType.COMMENT != t.type;
-            }
-          });
-      CssParser p = new CssParser(tq);
-      CssTree t = p.parseStyleSheet();
-      tq.expectEmpty();
-      return t;
-    } finally {
-      cp.close();
-    }
-  }
-
   private void fails(String css) throws Exception {
-    CssTree t = parseCss(css);
+    CssTree t = css(fromString(css), true);
     CssValidator v = makeCssValidator(mq);
     assertTrue(css, !v.validateCss(ac(t)));
   }
 
   private void warns(String css) throws Exception {
-    CssTree t = parseCss(css);
     MessageQueue smq = new SimpleMessageQueue();
+    CssTree t = css(fromString(css), true);
     CssValidator v = makeCssValidator(smq);
     boolean valid = v.validateCss(ac(t));
     mq.getMessages().addAll(smq.getMessages());
     assertTrue(css, valid);
-    assertTrue(css, !smq.getMessages().isEmpty());
+    assertTrue(css, !mq.getMessages().isEmpty());
   }
 
   private void runTest(String css, String golden) throws Exception {
     MessageContext mc = new MessageContext();
-    CssTree cssTree = parseCss(css);
+    CssTree cssTree = css(fromString(css), true);
     MessageQueue smq = new SimpleMessageQueue();
     CssValidator v = makeCssValidator(smq);
     boolean valid = v.validateCss(ac(cssTree));

@@ -4,7 +4,7 @@
 /*   color: purple                                */
 /* }                                              */
 /**************************************************** test-input2.html *****************************************************/
-/* <link rel="stylesheet" href="test-input3.css"> */                  ___.emitHtml___('\n<h1>Hello\n\n');
+/* <link rel="stylesheet" href="test-input3.css"> */                  ___OUTERS___.htmlEmitter___.ih('\n<h1>Hello\n\n');
 /* <h1>Hello                                      */
 /***************************************************** test-input1.js ******************************************************/
 /* function sep() {                               */                  ___OUTERS___.sep = ___.simpleFunc(function sep() {
@@ -21,6 +21,6 @@
 /*       = sep();                                 */                               ___.asSimpleFunc(sep)());
 /* }                                              */                  }
 /**************************************************** test-input2.html *****************************************************/
-/* <script src="test-input1.js"><@script>         */                  ___.emitHtml___('\n\nWorld</h1>\n');
+/* <script src="test-input1.js"><@script>         */                  ___OUTERS___.htmlEmitter___.ih('\n\nWorld</h1>\n');
 /*                                                */                }
 /* World<@h1>                                     */

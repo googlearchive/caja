@@ -29,9 +29,4 @@ outers.assertFalse = assertFalse;
 ___.simpleFunc(assertFalse);
 outers.document = document;
 ___.getNewModuleHandler().setOuters(outers);
-outers.emitHtml___ = function (var_args) {
-  for (var i = 0, n = arguments.length; i < n; ++i) {
-    outers.emitHtml___.htmlBuf_.push(arguments[i]);
-  }
-};
-outers.emitHtml___.htmlBuf_ = [];
+outers.htmlEmitter___ = new HtmlEmitter(document.getElementById("test-test"));

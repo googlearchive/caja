@@ -14,9 +14,13 @@
 
 package com.google.caja.parser.html;
 
+import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.TestUtil;
-import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.HtmlLexer;
+import com.google.caja.lexer.HtmlTokenType;
+import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
@@ -24,19 +28,20 @@ import com.google.caja.parser.js.Statement;
 
 import java.io.IOException;
 
-import junit.framework.TestCase;
-
 /**
  *
  * @author mikesamuel@gmail.com
  */
-public class JsHtmlParserTest extends TestCase {
+public class JsHtmlParserTest extends CajaTestCase {
 
   public void testParser() throws Exception {
     final MessageContext mc = new MessageContext();
-    MessageQueue mq = TestUtil.createTestMessageQueue(mc);
-    Statement parseTree = TestUtil.parseTree(
-        getClass(), "htmlparsertest1.gxp", mq);
+    CharProducer cp = fromResource("htmlparsertest1.gxp");
+    HtmlLexer lexer = new HtmlLexer(cp);
+    lexer.setTreatedAsXml(true);
+    Statement parseTree = new JsHtmlParser(
+        new TokenQueue<HtmlTokenType>(lexer, cp.getCurrentPosition().source()),
+        mq).parse();
 
     StringBuilder output = new StringBuilder();
     parseTree.format(mc, output);

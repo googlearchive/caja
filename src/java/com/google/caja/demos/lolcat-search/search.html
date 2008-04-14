@@ -35,7 +35,11 @@
     <script type="text/javascript">google.load('search', '1');</script>
     <script type="text/javascript" src="searchengine.js"></script>
     <script type="text/javascript" src="chtml.js"></script>
-    <script type="text/javascript" src="container.js"></script>
+    <script type="text/javascript" src="unicode.js"></script>
+    <script type="text/javascript" src="html4-defs.js"></script>
+    <script type="text/javascript" src="html-sanitizer.js"></script>
+    <script type="text/javascript" src="html-emitter.js"></script>
+    <script type="text/javascript" src="domita.js"></script>
   </head>
   <body bgcolor="white">
     <!-- Define some DOM nodes which will be accessible to the gadgets. -->
@@ -56,8 +60,8 @@
     <script type="text/javascript">
       var searchBoxOuters = ___.copy(___.sharedOuters);
       attachDocumentStubs('searchbox-', searchBoxOuters);
-      setGadgetRoot(document.getElementById('searchbox-base'));
-      searchBoxOuters.emitHtml___ = htmlEmitter();
+      searchBoxOuters.htmlEmitter___ = new HtmlEmitter(
+          document.getElementById('searchbox-base'));
       ___.getNewModuleHandler().setOuters(searchBoxOuters);
     </script>
     <script type="text/javascript" src=searchbox-cajoled.js></script>
@@ -66,8 +70,8 @@
     <script type="text/javascript">
       var kittensOuters = ___.copy(___.sharedOuters);
       attachDocumentStubs('kittens-', kittensOuters);
-      setGadgetRoot(document.getElementById('kittens-base'));
-      kittensOuters.emitHtml___ = htmlEmitter();
+      kittensOuters.htmlEmitter___ = new HtmlEmitter(
+          document.getElementById('kitten-base'));
       ___.getNewModuleHandler().setOuters(kittensOuters);
     </script>
     <script type="text/javascript" src="kittens-cajoled.js"></script>

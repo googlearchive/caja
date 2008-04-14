@@ -19,6 +19,7 @@
     <script type="text/javascript" src="unicode.js"></script>
     <script type="text/javascript" src="html4-defs.js"></script>
     <script type="text/javascript" src="html-sanitizer.js"></script>
+    <script type="text/javascript" src="html-emitter.js"></script>
     <script type="text/javascript" src="domita.js"></script>
 
 <script type="text/javascript">
@@ -37,7 +38,6 @@ function loadCaja(html) {
 
     testOuters.clearHtml___();
     eval(script);
-    testOuters.flushHtml___();
   } else {
     (typeof console !== 'undefined')
     && console.warn('Failed to eval cajoled output %s', html);
@@ -79,7 +79,7 @@ function loadCaja(html) {
 
   ___.getNewModuleHandler().setOuters(testOuters);
   attachDocumentStub(
-       'xyz-',
+       'DOM-PREFIX-',
        {
          rewrite:
              function (uri, mimeType) {
@@ -89,20 +89,11 @@ function loadCaja(html) {
              }
        },
        testOuters);
-  var pendingHtml = [];
   testOuters.clearHtml___ = function () {
-    document.getElementById('caja-html').innerHTML
-        = '<center style="color: gray">eval</center>';
-    pendingHtml = [];
-  };
-  testOuters.emitHtml___ = function (varArgs) {
-    for (var i = 0, n = arguments.length; i < n; ++i) {
-      pendingHtml.push(arguments[i]);
-    }
-  };
-  testOuters.flushHtml___ = function () {
-    document.getElementById('caja-html').innerHTML = pendingHtml.join('');
-    pendingHtml = [];
+    document.getElementById('caja-html').innerHTML = (
+        '<center style="color: gray">eval</center>');
+    testOuters.htmlEmitter___ = new HtmlEmitter(
+        document.getElementById('caja-html'));
   };
 })();
 

@@ -16,28 +16,13 @@ package com.google.caja.util;
 
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.InputSource;
-import com.google.caja.lexer.HtmlLexer;
-import com.google.caja.lexer.HtmlTokenType;
-import com.google.caja.lexer.JsLexer;
-import com.google.caja.lexer.JsTokenQueue;
-import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.Token;
-import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.Parser;
-import com.google.caja.parser.js.Statement;
-import com.google.caja.parser.html.DomParser;
-import com.google.caja.parser.html.JsHtmlParser;
-import com.google.caja.reporting.DevNullMessageQueue;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.RenderContext;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -47,7 +32,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -56,7 +40,6 @@ import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -93,52 +76,6 @@ public final class TestUtil {
     } finally {
       ins.close();
     }
-  }
-
-  public static DomParser parseXml(
-      Class<?> requestingClass, String testResource, MessageQueue mq)
-      throws IOException, ParseException {
-    URI resource = getResource(requestingClass, testResource);
-    if (null == resource) {
-      throw new IOException("Could not resolve resource " + testResource
-                            + " relative to " + requestingClass);
-    }
-    InputSource is = new InputSource(resource);
-    useSourceToDisambiguateLocationsInMessages(is, mq);
-    HtmlLexer lexer = new HtmlLexer(
-        getResourceAsProducer(requestingClass, testResource));
-    return new DomParser(lexer, is, mq);
-  }
-
-  public static Statement parseTree(
-      Class<?> requestingClass, String testResource, MessageQueue mq)
-      throws IOException, ParseException {
-    URI resource = getResource(requestingClass, testResource);
-    if (null == resource) {
-      throw new IOException("Could not resolve resource " + testResource
-                            + " relative to " + requestingClass);
-    }
-    InputSource is = new InputSource(resource);
-    useSourceToDisambiguateLocationsInMessages(is, mq);
-    CharProducer cp = getResourceAsProducer(requestingClass, testResource);
-    Block fileContent;
-    if (!testResource.endsWith(".html") && !testResource.endsWith(".gxp")) {
-      JsLexer lexer = new JsLexer(cp);
-      JsTokenQueue tq = new JsTokenQueue(
-          lexer, is, JsTokenQueue.NO_NON_DIRECTIVE_COMMENT);
-      Parser p = new Parser(tq, mq);
-      fileContent = p.parse();
-      p.getTokenQueue().expectEmpty();
-    } else {
-      HtmlLexer lexer = new HtmlLexer(cp);
-      lexer.setTreatedAsXml(testResource.endsWith(".gxp"));
-      TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
-          lexer, is, Criterion.Factory.<Token<HtmlTokenType>>optimist());
-      JsHtmlParser p = new JsHtmlParser(tq, mq);
-      fileContent = p.parse();
-      p.getTokenQueue().expectEmpty();
-    }
-    return fileContent;
   }
 
   public static MessageQueue createTestMessageQueue(MessageContext mc) {
@@ -192,44 +129,8 @@ public final class TestUtil {
         new InputStreamReader(conn.getInputStream()), new InputSource(uri));
   }
 
-  /**
-   * The URLs for inputs loaded from jar files are pretty ugly, so MessageQueues
-   * typically use the short form which is computed by looking at all the inputs
-   * so that we can come up with a short but unambiguous form.
-   * This method adds the given source to that list for the MessageQueue type
-   * most commonly used by unittests.
-   */
-  private static void useSourceToDisambiguateLocationsInMessages(
-      InputSource is, MessageQueue mq) {
-    if (mq instanceof EchoingMessageQueue) {
-      MessageContext mc = ((EchoingMessageQueue) mq).getMessageContext();
-      if (mc.inputSources.isEmpty()) {
-        mc.inputSources = new ArrayList<InputSource>();
-      }
-      mc.inputSources.add(is);
-    }
-  }
-
   public static void checkFilePositionInvariants(ParseTreeNode root) {
     checkFilePositionInvariants(new AncestorChain<ParseTreeNode>(root));
-  }
-
-  public static Block parse(String src) throws ParseException {
-    InputSource inputSource
-        = new InputSource(URI.create("built-in:///js-test"));
-    Parser parser = new Parser(
-        new JsTokenQueue(
-            new JsLexer(
-                CharProducer.Factory.create(
-                    new StringReader(src),
-                    inputSource)),
-            inputSource,
-            JsTokenQueue.NO_NON_DIRECTIVE_COMMENT),
-        DevNullMessageQueue.singleton());
-
-    Statement topLevelStatement = parser.parse();
-    parser.getTokenQueue().expectEmpty();
-    return (Block)topLevelStatement;
   }
 
   public static String format(ParseTreeNode n) {
@@ -242,14 +143,6 @@ public final class TestUtil {
     return output.toString();
   }
 
-  public static String render(ParseTreeNode n) {
-    StringBuilder output = new StringBuilder();
-    TokenConsumer tc = n.makeRenderer(output, null);
-    n.render(new RenderContext(new MessageContext(), tc));
-    tc.noMoreTokens();
-    return output.toString();
-  }
-  
   private static void checkFilePositionInvariants(AncestorChain<?> nChain) {
     ParseTreeNode n = nChain.node;
     String msg = n + " : " + n.getFilePosition();
