@@ -14,7 +14,11 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.JsLexer;
+import com.google.caja.lexer.JsTokenQueue;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
@@ -22,10 +26,14 @@ import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
+import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.util.CajaTestCase;
+import com.google.caja.reporting.DevNullMessageQueue;
+import junit.framework.TestCase;
 
+import java.io.StringReader;
 import java.net.URI;
 import java.util.List;
 
@@ -33,7 +41,7 @@ import java.util.List;
  *
  * @author ihab.awad@gmail.com
  */
-public class MatchTest extends CajaTestCase {
+public class MatchTest extends TestCase {
   public void testExactMatch() throws Exception {
     List<QuasiNode.QuasiMatch> m;
 
@@ -55,7 +63,7 @@ public class MatchTest extends CajaTestCase {
 
     m = match(
         "x; @a;",
-        "x; x;");
+        "x; x;");    
     assertEquals(1, m.size());
     assertEquals(ExpressionStmt.class, m.get(0).getBindings().get("a").getClass());
 
@@ -79,16 +87,16 @@ public class MatchTest extends CajaTestCase {
         "x; x;");
     assertEquals(1, m.size());
     assertEquals(ExpressionStmt.class, m.get(0).getBindings().get("a").getClass());
-
+    
     m = match(
         "x; @a?;",
         "x; x; x");
     assertEquals(0, m.size());
    }
-
+  
   public void testMultipleHole() throws Exception {
     List<QuasiNode.QuasiMatch> m;
-
+    
     m = match(
         "x; @a*;",
         "x;");
@@ -145,7 +153,7 @@ public class MatchTest extends CajaTestCase {
     assertEquals(1, m.size());
     assertEquals(ParseTreeNodeContainer.class, m.get(0).getBindings().get("k").getClass());
     assertEquals(ParseTreeNodeContainer.class, m.get(0).getBindings().get("v").getClass());
-    assertEquals(0, m.get(0).getBindings().get("k").children().size());
+    assertEquals(0, m.get(0).getBindings().get("k").children().size());    
     assertEquals(0, m.get(0).getBindings().get("v").children().size());
 
     m = match(
@@ -155,17 +163,17 @@ public class MatchTest extends CajaTestCase {
     assertEquals(2, m.get(0).getBindings().get("k").children().size());
     assertEquals(2, m.get(0).getBindings().get("v").children().size());
     assertEquals(
-        "a",
+        "a", 
         ((StringLiteral)m.get(0).getBindings().get("k").children().get(0)).getUnquotedValue());
     assertEquals(
         "b",
-        ((StringLiteral)m.get(0).getBindings().get("k").children().get(1)).getUnquotedValue());
+        ((StringLiteral)m.get(0).getBindings().get("k").children().get(1)).getUnquotedValue());        
     assertEquals(
         3,
         ((IntegerLiteral)m.get(0).getBindings().get("v").children().get(0)).getValue().intValue());
     assertEquals(
         4,
-        ((IntegerLiteral)m.get(0).getBindings().get("v").children().get(1)).getValue().intValue());
+        ((IntegerLiteral)m.get(0).getBindings().get("v").children().get(1)).getValue().intValue());        
   }
 
   public void testTrailingUnderscoreIdentifierHole() throws Exception {
@@ -320,14 +328,30 @@ public class MatchTest extends CajaTestCase {
     assertEquals(Reference.class, m0.getBindings().get("b").children().get(0).getClass());
   }
 
-  public List<QuasiNode.QuasiMatch> match(String pattern, String source)
-      throws Exception {
+  public static List<QuasiNode.QuasiMatch> match(String pattern, String source) throws Exception {
     QuasiNode qn = QuasiBuilder.parseQuasiNode(
         new InputSource(URI.create("built-in:///js-quasi-literals")),
         pattern);
     System.out.println(qn.render());
-    List<QuasiNode.QuasiMatch> result = qn.match(quasi(fromString(source)));
+    List<QuasiNode.QuasiMatch> result = qn.match(parse(source));
     System.out.println(result);
     return result;
+  }
+
+  public static ParseTreeNode parse(String src) throws Exception {
+    InputSource inputSource = new InputSource(URI.create("built-in:///js-test"));
+    Parser parser = new Parser(
+        new JsTokenQueue(
+            new JsLexer(
+                CharProducer.Factory.create(
+                    new StringReader(src),
+                    inputSource)),
+            inputSource,
+            JsTokenQueue.NO_NON_DIRECTIVE_COMMENT),
+        DevNullMessageQueue.singleton());
+
+    Statement topLevelStatement = parser.parse();
+    parser.getTokenQueue().expectEmpty();
+    return topLevelStatement;
   }
 }

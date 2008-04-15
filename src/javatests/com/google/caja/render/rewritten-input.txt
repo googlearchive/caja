@@ -17,11 +17,9 @@ defineStyles___
 )
 ;
 # test-input2.html:1+47-4+1
-___OUTERS___
+___
 .
-htmlEmitter___
-.
-ih
+emitHtml___
 (
 '\n<h1>Hello\n\n'
 )
@@ -132,11 +130,9 @@ sep
 # test-input1.js:12+1-2
 }
 # test-input2.html:4+39-7+1
-___OUTERS___
+___
 .
-htmlEmitter___
-.
-ih
+emitHtml___
 (
 '\n\nWorld</h1>\n'
 )

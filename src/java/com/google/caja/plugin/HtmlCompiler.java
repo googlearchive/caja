@@ -36,8 +36,6 @@ import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Declaration;
-import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
@@ -72,8 +70,9 @@ import java.util.regex.Pattern;
 /**
  * Compiles HTML containing CSS and JavaScript to Javascript + safe CSS.
  * This takes in a DOM, and outputs javascript that will render the DOM.
- * The resulting javascript requires "html-emitter.js" which builds the DOM
- * client side.
+ * The content can be rendered by either pushing it onto a buffer as in
+ * {@code tgtChain=['out__', 'push']} or to an emit function such as
+ * {@code tgtChain=['document', 'write']}.
  *
  * <p>
  * TODO(mikesamuel): this shares a lot of code with GxpCompiler and the two
@@ -110,13 +109,10 @@ public class HtmlCompiler {
   public Statement compileDocument(DomTree doc)
       throws GxpCompiler.BadContentException {
 
-    // Produce calls to ___OUTERS___.htmlEmitter___(...)
-    // with interleaved script bodies.
-    DomProcessingEvents cdom = new DomProcessingEvents();
-    compileDom(doc, cdom);
-
+    // Produce callse to ___OUTERS___.emitHtml___(<html>)
+    // with inlined calls to functions extracted from script bodies.
     Block body = s(new Block(Collections.<Statement>emptyList()));
-    cdom.toJavascript(body);
+    compileDom(doc, Arrays.asList("___OUTERS___", "emitHtml___"), body);
     return body;
   }
 
@@ -129,21 +125,26 @@ public class HtmlCompiler {
    * tgtChain with snippets of html that comprise t.
    *
    * @param t the tree to render
+   * @param tgtChain the function to invoke with html chunks, such as
+   *   {@code ['out__', 'push']} to output
+   *   {@code out.push('<html>', foo, '</html>')}.
+   * @param b the block to which statements are added.
    */
-  private void compileDom(DomTree t, DomProcessingEvents out)
+  private void compileDom(DomTree t, List<String> tgtChain, Block b)
       throws GxpCompiler.BadContentException {
     if (t instanceof DomTree.Fragment) {
       for (DomTree child : t.children()) {
-        compileDom(child, out);
+        compileDom(child, tgtChain, b);
       }
       return;
     }
     switch (t.getType()) {
       case TEXT:
-        out.pcdata(((DomTree.Text) t).getValue());
+        JsWriter.appendText(
+            ((DomTree.Text) t).getValue(), JsWriter.Esc.HTML, tgtChain, b);
         break;
       case CDATA:
-        out.cdata(((DomTree.Text) t).getValue());
+        JsWriter.appendText(t.getValue(), JsWriter.Esc.HTML, tgtChain, b);
         break;
       case TAGBEGIN:
         DomTree.Tag el = (DomTree.Tag) t;
@@ -153,7 +154,8 @@ public class HtmlCompiler {
           Block extractedScriptBody = el.getAttributes().get(
               RewriteHtmlStage.EXTRACTED_SCRIPT_BODY);
           if (extractedScriptBody != null) {
-            out.script(extractedScriptBody);
+            b.createMutation().appendChild(extractedScriptBody)
+                .execute();
             return;
           }
         } else if (tagName.equals("style")) {
@@ -168,23 +170,21 @@ public class HtmlCompiler {
             DomAttributeConstraint.Factory.forTag(tagName);
 
         tagName = assertHtmlIdentifier(tagName, el);
-        boolean requiresCloseTag = requiresCloseTag(tagName);
+        JsWriter.appendString("<" + tagName, tgtChain, b);
         constraint.startTag(el);
         List<? extends DomTree> children = el.children();
-
-        out.begin(tagName);
-
         if (children.isEmpty()) {
           for (Pair<String, String> extra : constraint.tagDone(el)) {
-            out.attr(extra.a, extra.b);
+            JsWriter.appendString(
+                " " + extra.a + "=\"" + JsWriter.htmlEscape(extra.b) + "\"",
+                tgtChain, b);
           }
-          out.finishAttrs(!requiresCloseTag);
-          if (requiresCloseTag) {
-            out.end(tagName);
+          if (requiresCloseTag(tagName)) {
+            JsWriter.appendString("></" + tagName + ">", tgtChain, b);
           }
         } else {
           int i;
-          // output attributes
+          // output parameters
           for (i = 0; i < children.size(); ++i) {
             DomTree child = children.get(i);
             if (HtmlTokenType.ATTRNAME != child.getType()) { break; }
@@ -198,28 +198,32 @@ public class HtmlCompiler {
             if (null == wrapper) { continue; }
 
             if ("style".equalsIgnoreCase(name)) {
-              compileStyleAttrib(attrib, out);
+              compileStyleAttrib(attrib, tgtChain, b);
             } else {
               AttributeXform xform = xformForAttribute(tagName, name);
               if (null == xform) {
-                String value = wrapper.a + valueT.getValue() + wrapper.b;
-                out.attr(name, value);
+                JsWriter.appendString(
+                    " " + name + "=\""
+                    + JsWriter.htmlEscape(
+                          wrapper.a + valueT.getValue() + wrapper.b)
+                    + "\"", tgtChain, b);
               } else {
                 xform.apply(
                     new AncestorChain<DomTree.Attrib>(
                         new AncestorChain<DomTree>(el), attrib),
-                    this, out);
+                    this, tgtChain, b);
               }
             }
             constraint.attributeDone(name);
           }
 
           for (Pair<String, String> extra : constraint.tagDone(el)) {
-            out.attr(extra.a, extra.b);
+            JsWriter.appendString(
+                " " + extra.a + "=\"" + JsWriter.htmlEscape(extra.b) + "\"",
+                tgtChain, b);
           }
 
-          boolean tagAllowsContent = tagAllowsContent(tagName);
-          out.finishAttrs(!(requiresCloseTag || tagAllowsContent));
+          JsWriter.appendString(">", tgtChain, b);
 
           List<? extends DomTree> childrenRemaining =
               children.subList(i, children.size());
@@ -227,9 +231,9 @@ public class HtmlCompiler {
           // recurse to contents
           boolean wroteChildElement = false;
 
-          if (tagAllowsContent) {
+          if (tagAllowsContent(tagName)) {
             for (DomTree child : childrenRemaining) {
-              compileDom(child, out);
+              compileDom(child, tgtChain, b);
               wroteChildElement = true;
             }
           } else {
@@ -241,8 +245,8 @@ public class HtmlCompiler {
             }
           }
 
-          if (wroteChildElement || requiresCloseTag) {
-            out.end(tagName);
+          if (wroteChildElement || requiresCloseTag(tagName)) {
+            JsWriter.appendString("</" + tagName + ">", tgtChain, b);
           }
         }
         break;
@@ -296,9 +300,13 @@ public class HtmlCompiler {
   /**
    * Invokes the CSS validator to rewrite style attributes.
    * @param attrib an attribute with name {@code "style"}.
+   * @param tgtChain the function to invoke with html chunks, such as
+   *   {@code ['out__', 'push']} to output
+   *   {@code out.push('<html>', foo, '</html>')}.
+   * @param b the block to which statements are added.
    */
   private void compileStyleAttrib(
-      DomTree.Attrib attrib, DomProcessingEvents out)
+      DomTree.Attrib attrib, List<String> tgtChain, Block b)
       throws GxpCompiler.BadContentException {
     CssTree.DeclarationGroup decls;
     try {
@@ -317,22 +325,10 @@ public class HtmlCompiler {
     new CssRewriter(meta, mq).withInvalidNodeMessageLevel(MessageLevel.WARNING)
         .rewrite(new AncestorChain<CssTree>(decls));
 
-    Block cssBlock = new Block(Collections.<Statement>emptyList());
-    // Produces a call to cat(bits, of, css);
+    JsWriter.appendString(" style=\"", tgtChain, b);
     CssTemplate.declGroupToStyleValue(
-        decls, Arrays.asList("cat"), cssBlock, JsWriter.Esc.NONE, mq);
-    if (cssBlock.children().isEmpty()) { return; }
-    if (cssBlock.children().size() != 1) {
-      throw new IllegalStateException(attrib.getAttribValue());
-    }
-    Expression css = ((ExpressionStmt) cssBlock.children().get(0)).getExpression();
-    // Convert cat(a, b, c) to (a + b) + c
-    List<? extends Expression> operands = ((Operation) css).children();
-    Expression cssOp = operands.get(1);
-    for (Expression e : operands.subList(2, operands.size())) {
-      cssOp = s(Operation.create(Operator.ADDITION, cssOp, e));
-    }
-    out.attr("style", cssOp);
+        decls, tgtChain, b, JsWriter.Esc.HTML_ATTRIB, mq);
+    JsWriter.appendString("\"", tgtChain, b);
   }
 
   /**
@@ -467,13 +463,14 @@ public class HtmlCompiler {
     NMTOKEN {
       @Override
       void apply(AncestorChain<DomTree.Attrib> tChain, HtmlCompiler htmlc,
-                 DomProcessingEvents out) {
+                 List<String> tgtChain, Block out) {
         DomTree.Attrib t = tChain.node;
         String nmTokens = t.getAttribValue();
         StringBuilder sb = new StringBuilder(nmTokens.length() + 16);
         boolean wasSpace = true;
         int pos = 0;
 
+        sb.append(' ').append(t.getAttribName()).append("=\"");
         boolean firstIdent = true;
         for (int i = 0, n = nmTokens.length(); i < n; ++i) {
           char ch = nmTokens.charAt(i);
@@ -485,26 +482,28 @@ public class HtmlCompiler {
               } else {
                 firstIdent = false;
               }
-              sb.append(htmlc.meta.namespacePrefix).append('-');
+              Escaping.escapeXml(htmlc.meta.namespacePrefix, true, sb);
+              sb.append('-');
               pos = i;
             } else {
-              sb.append(nmTokens, pos, i);
+              Escaping.escapeXml(nmTokens.substring(pos, i), true, sb);
             }
             wasSpace = space;
           }
         }
         if (!wasSpace) {
-          sb.append(nmTokens, pos, nmTokens.length());
+          Escaping.escapeXml(nmTokens.substring(pos), true, sb);
         }
+        sb.append('"');
 
-        out.attr(t.getAttribName(), sb.toString());
+        JsWriter.appendString(sb.toString(), tgtChain, out);
       }
     },
     /** Applied to CSS such as {@code style} attributes. */
     STYLE {
       @Override
       void apply(AncestorChain<DomTree.Attrib> tChain, HtmlCompiler htmlc,
-                 DomProcessingEvents out) {
+                 List<String> tgtChain, Block out) {
         // should be handled in compileDOM
         throw new AssertionError();
       }
@@ -513,7 +512,7 @@ public class HtmlCompiler {
     SCRIPT {
       @Override
       void apply(AncestorChain<DomTree.Attrib> tChain, HtmlCompiler htmlc,
-                 DomProcessingEvents out) {
+                 List<String> tgtChain, Block out) {
         DomTree.Attrib t = tChain.node;
         // Extract the handler into a function so that it can be analyzed.
         Block handler = htmlc.asBlock(t.getAttribValueNode());
@@ -533,27 +532,32 @@ public class HtmlCompiler {
                                   s(new Identifier("event"))))),
                         handler)))));
 
-        String handlerFnNameLit = StringLiteral.toQuotedValue(handlerFnName);
+        JsWriter.appendString(
+            " " + t.getAttribName() + "=\""
+            + "return plugin_dispatchEvent___(this, event || window.event, ",
+            tgtChain, out);
 
-        Operation dispatcher = s(Operation.create(
-            Operator.ADDITION,
+        JsWriter.append(
             s(Operation.create(
-                Operator.ADDITION,
-                TreeConstruction.stringLiteral(
-                    "return plugin_dispatchEvent___("
-                    + "this, event || window.event, "),
-                TreeConstruction.call(
-                    TreeConstruction.memberAccess("___", "getId"),
-                    TreeConstruction.ref(ReservedNames.OUTERS)))),
-            TreeConstruction.stringLiteral(", " + handlerFnNameLit + ")")));
-        out.attr(t.getAttribName(), dispatcher);
+                Operator.FUNCTION_CALL,
+                s(Operation.create(
+                    Operator.MEMBER_ACCESS,
+                    s(new Reference(s(new Identifier("___")))),
+                    s(new Reference(s(new Identifier("getId")))))),
+                s(new Reference(s(new Identifier(ReservedNames.OUTERS)))))),
+            tgtChain, out);
+
+        StringBuilder sb = new StringBuilder(", '");
+        StringLiteral.escapeJsString(handlerFnName, sb);
+        sb.append("')\"");
+        JsWriter.appendString(sb.toString(), tgtChain, out);
       }
     },
     /** Applied to URIs such as {@code href} and {@code src} attributes. */
     URI {
       @Override
       void apply(AncestorChain<DomTree.Attrib> tChain, HtmlCompiler htmlc,
-                 DomProcessingEvents out) {
+                 List<String> tgtChain, Block out) {
         DomTree.Attrib t = tChain.node;
         URI uri;
         try {
@@ -572,7 +576,11 @@ public class HtmlCompiler {
                 uri, t.getAttribValueNode().getFilePosition()),
                 mimeType);
         if (rewrittenUri != null) {
-          out.attr(t.getAttribName(), rewrittenUri);
+          StringBuilder html = new StringBuilder();
+          html.append(' ').append(t.getAttribName()).append("=\"");
+          Escaping.escapeXml(rewrittenUri, true, html);
+          html.append('"');
+          JsWriter.appendString(html.toString(), tgtChain, out);
         } else {
           htmlc.mq.addMessage(
               PluginMessageType.DISALLOWED_URI,
@@ -589,7 +597,7 @@ public class HtmlCompiler {
      */
     abstract void apply(
         AncestorChain<DomTree.Attrib> tChain,
-        HtmlCompiler htmlc, DomProcessingEvents out)
+        HtmlCompiler htmlc, List<String> tgtChain, Block b)
         throws GxpCompiler.BadContentException;
   }
 

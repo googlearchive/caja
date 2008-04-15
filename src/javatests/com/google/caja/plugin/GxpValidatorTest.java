@@ -15,14 +15,42 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lang.html.HtmlSchema;
+import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.HtmlLexer;
+import com.google.caja.lexer.HtmlTokenType;
+import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.Token;
+import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
-import com.google.caja.util.CajaTestCase;
+import com.google.caja.reporting.EchoingMessageQueue;
+import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.Criterion;
+
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.net.URI;
+
+import junit.framework.TestCase;
 
 /**
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
-public class GxpValidatorTest extends CajaTestCase {
+public class GxpValidatorTest extends TestCase {
+
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+  }
+
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+  }
+
   public void testValidate() throws Exception {
     validate("<br/>", true);
     validate("<b>Hello</b>", true);
@@ -38,9 +66,18 @@ public class GxpValidatorTest extends CajaTestCase {
     validate("<b><gxp:attr>hi</gxp:attr>Hello</b>", false);
   }
 
-  private void validate(String xhtml, boolean valid) throws Exception {
-    DomTree t = xml(fromString(xhtml));
-    assertEquals(xhtml, valid,
+  private void validate(String html, boolean valid) throws Exception {
+    InputSource is = new InputSource(new URI("test:///"));
+    StringReader sr = new StringReader(html);
+    MessageQueue mq = new EchoingMessageQueue(
+        new PrintWriter(new OutputStreamWriter(System.err)),
+        new MessageContext());
+    HtmlLexer lexer = new HtmlLexer(CharProducer.Factory.create(sr, is));
+    lexer.setTreatedAsXml(true);
+    TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(
+        lexer, is, Criterion.Factory.<Token<HtmlTokenType>>optimist());
+    DomTree t = new DomParser(tq, true, mq).parseDocument();
+    assertEquals(html, valid,
                  new GxpValidator(HtmlSchema.getDefault(mq), mq)
                  .validate(new AncestorChain<DomTree>(t)));
   }

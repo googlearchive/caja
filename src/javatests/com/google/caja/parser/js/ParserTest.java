@@ -21,9 +21,9 @@ import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.TestUtil;
 
@@ -33,13 +33,32 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import junit.framework.TestCase;
+
 /**
  *
  * @author mikesamuel@gmail.com
  */
-public class ParserTest extends CajaTestCase {
+public class ParserTest extends TestCase {
   // TODO(mikesamuel): better comment each of the test input files.
   // What is each one supposed to test.
+
+  private MessageContext mc;
+  private MessageQueue mq;
+
+  @Override
+  public void setUp() throws Exception {
+    super.setUp();
+    mc = new MessageContext();
+    mq = TestUtil.createTestMessageQueue(mc);
+  }
+
+  @Override
+  public void tearDown() throws Exception {
+    super.tearDown();
+    mc = null;
+    mq = null;
+  }
 
   public void testParser() throws Exception {
     runParseTest("parsertest1.js", "parsergolden1.txt",
@@ -129,7 +148,7 @@ public class ParserTest extends CajaTestCase {
   private void runRenderTest(
       String testFile, String goldenFile, boolean paranoid)
       throws Exception {
-    Statement parseTree = js(fromResource(testFile));
+    Statement parseTree = TestUtil.parseTree(getClass(), testFile, mq);
     TestUtil.checkFilePositionInvariants(parseTree);
 
     StringBuilder sb = new StringBuilder();
@@ -154,7 +173,7 @@ public class ParserTest extends CajaTestCase {
   private void runParseTest(
       String testFile, String goldenFile, String ... errors)
       throws Exception {
-    Statement parseTree = js(fromResource(testFile));
+    Statement parseTree = TestUtil.parseTree(getClass(), testFile, mq);
     TestUtil.checkFilePositionInvariants(parseTree);
 
     StringBuilder output = new StringBuilder();

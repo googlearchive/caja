@@ -63,8 +63,11 @@ final class JsWriter {
         if (e instanceof Operation
             && Operator.FUNCTION_CALL == ((Operation) e).getOperator()) {
           Expression fn = ((Operation) e).children().get(0);
-          if (matchesChain(fn, tgtMembers)) {
-            fnCall = (Operation) e;
+          if (fn instanceof Operation) {
+            Operation fnOp = (Operation) fn;
+            if (matchesChain(fnOp, tgtMembers)) {
+              fnCall = (Operation) e;
+            }
           }
         }
       }

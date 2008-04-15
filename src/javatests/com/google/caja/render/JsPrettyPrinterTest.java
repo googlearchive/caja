@@ -14,6 +14,8 @@
 
 package com.google.caja.render;
 
+import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.JsTokenType;
@@ -27,16 +29,44 @@ import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.MoreAsserts;
 
+import junit.framework.TestCase;
+
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class JsPrettyPrinterTest extends CajaTestCase {
+public class JsPrettyPrinterTest extends TestCase {
+  private MessageContext mc;
+  private MessageQueue mq;
+  private InputSource is;
+
+  @Override
+  public void setUp() throws Exception {
+    super.setUp();
+    mc = new MessageContext();
+    mq = new EchoingMessageQueue(
+        new PrintWriter(new OutputStreamWriter(System.err)), mc);
+    is = new InputSource(URI.create("test:///" + getName()));
+  }
+
+  @Override
+  public void tearDown() throws Exception {
+    super.tearDown();
+    mc = null;
+    mq = null;
+    is = null;
+  }
+
   public void testEmptyBlock() throws Exception {
     assertRendered("{\n  {\n  }\n}", "{}");
   }
@@ -170,7 +200,9 @@ public class JsPrettyPrinterTest extends CajaTestCase {
 
         List<String> actualTokens = new ArrayList<String>();
         try {
-          JsLexer lex = new JsLexer(fromString(sb.toString()));
+          CharProducer cp = CharProducer.Factory.create(
+              new StringReader(sb.toString()), is);
+          JsLexer lex = new JsLexer(cp);
           while (lex.hasNext()) {
             actualTokens.add(lex.next().text);
           }
@@ -329,7 +361,8 @@ public class JsPrettyPrinterTest extends CajaTestCase {
   }
 
   private void assertRendered(String golden, String input) throws Exception {
-    JsLexer lex = new JsLexer(fromString(input));
+    CharProducer cp = CharProducer.Factory.create(new StringReader(input), is);
+    JsLexer lex = new JsLexer(cp);
     JsTokenQueue tq = new JsTokenQueue(lex, is);
     ParseTreeNode node = new Parser(tq, mq).parse();
     tq.expectEmpty();
@@ -350,7 +383,8 @@ public class JsPrettyPrinterTest extends CajaTestCase {
     StringBuilder out = new StringBuilder();
     JsPrettyPrinter pp = new JsPrettyPrinter(out, null);
 
-    JsLexer lex = new JsLexer(fromString(input));
+    CharProducer cp = CharProducer.Factory.create(new StringReader(input), is);
+    JsLexer lex = new JsLexer(cp);
     while (lex.hasNext()) {
       Token<JsTokenType> t = lex.next();
       pp.mark(t.pos);

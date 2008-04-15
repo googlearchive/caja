@@ -27,14 +27,19 @@ import com.google.caja.parser.js.Operator;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMeta;
+import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.CajaTestCase;
+import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Pipeline;
+import com.google.caja.util.TestUtil;
+
+import junit.framework.TestCase;
 
 /**
  * @author mikesamuel@gmail.com
  */
-public final class OpenTemplateStageTest extends CajaTestCase {
+public final class OpenTemplateStageTest extends TestCase {
   public void testSimpleRewrite1() throws Exception {
     assertRewritten(
         "new StringInterpolation([ 'foo ', bar, ' baz' ])",
@@ -110,7 +115,8 @@ public final class OpenTemplateStageTest extends CajaTestCase {
   private void assertRewritten(
       String golden, String input, final boolean passes)
       throws Exception {
-    mq.getMessages().clear();
+    MessageContext mc = new MessageContext();
+    MessageQueue mq = new SimpleMessageQueue();
 
     CssSchema cssSchema = CssSchema.getDefaultCss21Schema(mq);
     HtmlSchema htmlSchema = HtmlSchema.getDefault(mq);
@@ -127,7 +133,7 @@ public final class OpenTemplateStageTest extends CajaTestCase {
     pipeline.getStages().add(new CompileCssTemplatesStage(cssSchema));
     pipeline.getStages().add(new ConsolidateCodeStage());
 
-    ParseTreeNode node = js(fromString(input));
+    ParseTreeNode node = TestUtil.parse(input);
     PluginMeta meta = new PluginMeta("pre-");
     Jobs jobs = new Jobs(mc, mq, meta);
     jobs.getJobs().add(new Job(new AncestorChain<ParseTreeNode>(node)));

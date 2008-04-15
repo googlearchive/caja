@@ -34,19 +34,6 @@ public abstract class Operation extends AbstractExpression<Expression> {
     createMutation().appendChildren(Arrays.asList(params)).execute();
   }
 
-  @Override
-  protected void childrenChanged() {
-    super.childrenChanged();
-    int nChildren = children().size();
-    if (nChildren < minArity(op)) {
-      throw new IllegalArgumentException(
-          "Too few of children " + nChildren + " for operator " + op);
-    } else if (nChildren > maxArity(op)) {
-      throw new IllegalArgumentException(
-          "Too many children " + nChildren + " for operator " + op);
-    }
-  }
-
   public static Operation create(Operator op, Expression... params) {
     switch (op) {
       case ASSIGN: // =
@@ -65,7 +52,7 @@ public abstract class Operation extends AbstractExpression<Expression> {
       case POST_INCREMENT: // x++
       case PRE_DECREMENT:  // --x
       case PRE_INCREMENT:  // ++x
-      {
+      { 
         return new AssignOperation(op, params);
       }
       case LOGICAL_AND: // &&
@@ -218,7 +205,7 @@ public abstract class Operation extends AbstractExpression<Expression> {
 
   private static boolean parenthesize(
       Operator op, boolean firstOp, Expression child) {
-    // Parenthesize block-like expressions
+    // Parenthesize blocklike expressions
     if (child instanceof FunctionConstructor
         || child instanceof ObjectConstructor) {
       // Parenthesize constructors if they're the first op.
@@ -245,18 +232,8 @@ public abstract class Operation extends AbstractExpression<Expression> {
 
     if (!(child instanceof Operation)) { return false; }
 
-    Operator childOp = ((Operation) child).getOperator();
-
-    if (firstOp && childOp == Operator.FUNCTION_CALL
-        && op == Operator.MEMBER_ACCESS) {
-      // Don't parenthesize foo().bar since the LHS of the function call must
-      // already be parenthesized if it were ambiguous since function call binds
-      // less tightly than member access, and the actuals are already
-      // parenthesized since the function call operator is "()".
-      return false;
-    }
-
     // Parenthesize based on associativity and precedence
+    Operator childOp = ((Operation) child).getOperator();
     int delta = op.getPrecedence() - childOp.getPrecedence();
     if (delta < 0) {
       // e.g. this is * and child is +
@@ -270,20 +247,10 @@ public abstract class Operation extends AbstractExpression<Expression> {
       // -(-a) is right associative so it is parenthesized
 
       // ?: is right associative, so in a ? b : c, a would be parenthesized were
-      // it a ternary op.
+      // it a trinary op
       return (childOp.getAssociativity() == Associativity.LEFT) != firstOp;
     } else {
       return false;
     }
-  }
-
-  private static int minArity(Operator op) {
-    if (op == Operator.FUNCTION_CALL) { return 1; }
-    return op.getType().getArity();
-  }
-
-  private static int maxArity(Operator op) {
-    if (op == Operator.FUNCTION_CALL) { return Integer.MAX_VALUE; }
-    return op.getType().getArity();
   }
 }

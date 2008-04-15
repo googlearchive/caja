@@ -37,8 +37,6 @@ public final class Block
     createMutation().appendChildren(elements).execute();
   }
 
-  public Block() {}
-
   public void prepend(Statement statement) {
     insertBefore(statement, children().isEmpty() ? null : children().get(0));
   }

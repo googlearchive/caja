@@ -15,18 +15,27 @@
 package com.google.caja.parser.css;
 
 import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.CssLexer;
+import com.google.caja.lexer.CssTokenType;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.Token;
+import com.google.caja.lexer.TokenQueue;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Criterion;
 import com.google.caja.util.TestUtil;
+
+import java.io.StringReader;
+import java.net.URI;
+import junit.framework.TestCase;
 
 /**
  *
  * @author mikesamuel@gmail.com
  */
-public class CssTreeTest extends CajaTestCase {
+public class CssTreeTest extends TestCase {
 
   public void testRender1() throws Exception {
     runRenderTest("cssrendergolden1.txt", "cssparserinput1.css", false);
@@ -184,9 +193,9 @@ public class CssTreeTest extends CajaTestCase {
       throws Exception {
     String golden = TestUtil.readResource(getClass(), goldenFile);
     CssTree.StyleSheet stylesheet;
-    CharProducer cp = fromResource(inputFile);
+    CharProducer cp = TestUtil.getResourceAsProducer(getClass(), inputFile);
     try {
-      stylesheet = css(cp);
+      stylesheet = parseStyleSheet(cp);
     } finally {
       cp.close();
     }
@@ -200,7 +209,13 @@ public class CssTreeTest extends CajaTestCase {
   private void assertRenderedForm(
       String golden, String cssInput, boolean paranoid)
       throws Exception {
-    CssTree.StyleSheet stylesheet = css(fromString(cssInput));
+    InputSource is = new InputSource(new URI("test:///" + getName()));
+
+    MessageContext mc = new MessageContext();
+    CharProducer cp = CharProducer.Factory.create(
+        new StringReader(cssInput), is);
+    CssTree.StyleSheet stylesheet = parseStyleSheet(cp);
+    cp.close();
 
     StringBuilder sb = new StringBuilder();
     CssPrettyPrinter csspp = new CssPrettyPrinter(sb, null);
@@ -210,6 +225,24 @@ public class CssTreeTest extends CajaTestCase {
     String actual = sb.toString();
 
     assertEquals(actual, golden, actual);
+  }
+
+  private static CssTree.StyleSheet parseStyleSheet(CharProducer cp)
+      throws Exception {
+
+    CssLexer lexer = new CssLexer(cp);
+    TokenQueue<CssTokenType> tq = new TokenQueue<CssTokenType>(
+        lexer, cp.getCurrentPosition().source(),
+        new Criterion<Token<CssTokenType>>() {
+          public boolean accept(Token<CssTokenType> t) {
+            return CssTokenType.SPACE != t.type
+            && CssTokenType.COMMENT != t.type;
+          }
+        });
+    CssParser p = new CssParser(tq);
+    CssTree.StyleSheet stylesheet = p.parseStyleSheet();
+    tq.expectEmpty();
+    return stylesheet;
   }
 
   // TODO(mikesamuel): test rendering of @imports, @page, @font-face,

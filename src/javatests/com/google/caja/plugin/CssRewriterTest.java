@@ -17,21 +17,50 @@ package com.google.caja.plugin;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.CssLexer;
+import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.Token;
+import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
-import com.google.caja.util.CajaTestCase;
+import com.google.caja.render.CssPrettyPrinter;
+import com.google.caja.reporting.EchoingMessageQueue;
+import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Criterion;
 
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
+
 import java.util.Collections;
+
+import junit.framework.TestCase;
 
 /**
  *
  * @author mikesamuel@gmail.com
  */
-public class CssRewriterTest extends CajaTestCase {
+public class CssRewriterTest extends TestCase {
+  private MessageQueue mq;
+
+  @Override
+  public void setUp() throws Exception {
+    super.setUp();
+    if (null == mq) {
+      mq = new EchoingMessageQueue(
+          new PrintWriter(new OutputStreamWriter(System.err)),
+          new MessageContext(), false);
+    }
+  }
+
   public void testUnknownTagsRemoved() throws Exception {
     runTest("bogus { display: none }", "");
     runTest("a, bogus, i { display: none }",
@@ -173,11 +202,10 @@ public class CssRewriterTest extends CajaTestCase {
 
   private void runTest(String css, String golden, boolean allowSubstitutions)
       throws Exception {
-    mq.getMessages().clear();
+    MessageContext mc = new MessageContext();
     mc.relevantKeys = Collections.singleton(CssValidator.INVALID);
 
-    CssTree t = css(fromString(css), allowSubstitutions);
-
+    CssTree t = parseCss(css, allowSubstitutions);
     String msg;
     {
       StringBuilder msgBuf = new StringBuilder();
@@ -185,9 +213,6 @@ public class CssRewriterTest extends CajaTestCase {
       msg = msgBuf.toString();
     }
 
-    new CssValidator(CssSchema.getDefaultCss21Schema(mq),
-                     HtmlSchema.getDefault(mq), mq)
-        .validateCss(new AncestorChain<CssTree>(t));
     new CssRewriter(
         new PluginMeta(
             "test",
@@ -227,8 +252,36 @@ public class CssRewriterTest extends CajaTestCase {
       msg += "\n  ->\n" + msgBuf.toString();
     }
 
-    String actual = render(t);
+    StringBuilder actual = new StringBuilder();
+    CssPrettyPrinter pp = new CssPrettyPrinter(actual, null);
+    t.render(new RenderContext(new MessageContext(), pp));
     System.err.println("\n\nactual=[[" + actual + "]]");
-    assertEquals(msg, golden, actual);
+    assertEquals(msg, golden, actual.toString());
+  }
+
+  private CssTree parseCss(String css, boolean allowSubstitutions)
+      throws Exception {
+    InputSource is = new InputSource(new URI("test://" + getClass().getName()));
+    CharProducer cp = CharProducer.Factory.create(new StringReader(css), is);
+    try {
+      CssLexer lexer = new CssLexer(cp, allowSubstitutions);
+      TokenQueue<CssTokenType> tq = new TokenQueue<CssTokenType>(
+          lexer, cp.getCurrentPosition().source(),
+          new Criterion<Token<CssTokenType>>() {
+            public boolean accept(Token<CssTokenType> t) {
+              return CssTokenType.SPACE != t.type
+                  && CssTokenType.COMMENT != t.type;
+            }
+          });
+      CssParser p = new CssParser(tq);
+      CssTree t = p.parseStyleSheet();
+      new CssValidator(CssSchema.getDefaultCss21Schema(mq),
+                       HtmlSchema.getDefault(mq), mq)
+          .validateCss(new AncestorChain<CssTree>(t));
+      tq.expectEmpty();
+      return t;
+    } finally {
+      cp.close();
+    }
   }
 }

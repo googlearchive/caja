@@ -23,8 +23,6 @@ import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
-import com.google.caja.parser.js.StringLiteral;
-
 import static com.google.caja.plugin.SyntheticNodes.s;
 
 import java.util.List;
@@ -56,18 +54,9 @@ public final class TreeConstruction {
     }
     return s(new FunctionConstructor(s(new Identifier(name)), params, body));
   }
-
+  
   public static ExpressionStmt assign(Expression lhs, Expression rhs) {
     return s(new ExpressionStmt(s(Operation.create(Operator.ASSIGN, lhs, rhs))));
-  }
-
-  public static Reference ref(String name) {
-    assert name != null;
-    return s(new Reference(s(new Identifier(name))));
-  }
-
-  public static StringLiteral stringLiteral(String unquoted) {
-    return new StringLiteral(StringLiteral.toQuotedValue(unquoted));
   }
 
   // Can't instantiate

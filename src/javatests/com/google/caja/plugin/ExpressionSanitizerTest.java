@@ -20,15 +20,17 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.TestUtil;
 
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
+import junit.framework.TestCase;
+
 /**
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
-public class ExpressionSanitizerTest extends CajaTestCase {
+public class ExpressionSanitizerTest extends TestCase {
 
   @Override
   protected void setUp() throws Exception {
@@ -53,11 +55,11 @@ public class ExpressionSanitizerTest extends CajaTestCase {
         new PrintWriter(new OutputStreamWriter(System.err)), mc);
     PluginMeta meta = new PluginMeta("pre");
 
-    Block inputNode = js(fromString(input));
+    Block inputNode = TestUtil.parse(input);
     assertTrue(new ExpressionSanitizerCaja(mq, meta).sanitize(ac(inputNode)));
-    String inputCmp = render(inputNode);
+    String inputCmp = TestUtil.render(inputNode);
 
-    String goldenCmp = render(js(fromString(golden)));
+    String goldenCmp = TestUtil.render(TestUtil.parse(golden));
 
     assertEquals(goldenCmp, inputCmp);
   }

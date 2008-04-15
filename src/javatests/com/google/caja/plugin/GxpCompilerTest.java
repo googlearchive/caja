@@ -20,9 +20,14 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.HtmlLexer;
+import com.google.caja.lexer.HtmlTokenType;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.render.JsPrettyPrinter;
@@ -35,22 +40,24 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Pair;
 import com.google.caja.util.TestUtil;
 
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import junit.framework.TestCase;
+
 /**
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
-public class GxpCompilerTest extends CajaTestCase {
+public class GxpCompilerTest extends TestCase {
 
   @Override
   protected void setUp() throws Exception {
@@ -64,8 +71,11 @@ public class GxpCompilerTest extends CajaTestCase {
 
   public void testCompileDocuments() throws Exception {
     String golden = TestUtil.readResource(getClass(), "gxpcompilergolden1.js");
-    DomTree.Tag domTree = (DomTree.Tag)
-        xml(fromResource("gxpcompilerinput1.gxp"));
+    MessageContext mc = new MessageContext();
+    MessageQueue mq = new EchoingMessageQueue(
+        new PrintWriter(new OutputStreamWriter(System.out)), mc);
+    DomParser p = TestUtil.parseXml(getClass(), "gxpcompilerinput1.gxp", mq);
+    DomTree.Tag domTree = (DomTree.Tag) p.parseDocument();
     GxpCompiler gxpc = new GxpCompiler(
         CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
         makeTestPluginMeta(), mq);
@@ -87,8 +97,8 @@ public class GxpCompilerTest extends CajaTestCase {
     MessageContext mc = new MessageContext();
     MessageQueue mq = new EchoingMessageQueue(
         new PrintWriter(new OutputStreamWriter(System.out)), mc);
-    DomTree.Tag domTree = (DomTree.Tag)
-        xml(fromResource("gxpcompilerinput2.gxp"));
+    DomParser p = TestUtil.parseXml(getClass(), "gxpcompilerinput2.gxp", mq);
+    DomTree.Tag domTree = (DomTree.Tag) p.parseDocument();
     GxpCompiler gxpc = new GxpCompiler(
         CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
         makeTestPluginMeta(), mq);
@@ -125,8 +135,10 @@ public class GxpCompilerTest extends CajaTestCase {
     MessageQueue mq = new EchoingMessageQueue(
         new PrintWriter(new OutputStreamWriter(System.out)), mc);
 
-    DomTree.Tag gxp2 = (DomTree.Tag) xml(fromResource("gxpcompilerinput3.gxp"));
-    DomTree.Tag gxp3 = (DomTree.Tag) xml(fromResource("gxpcompilerinput4.gxp"));
+    DomTree.Tag gxp2 = (DomTree.Tag) TestUtil.parseXml(
+        getClass(), "gxpcompilerinput3.gxp", mq).parseDocument();
+    DomTree.Tag gxp3 = (DomTree.Tag) TestUtil.parseXml(
+        getClass(), "gxpcompilerinput4.gxp", mq).parseDocument();
     GxpCompiler gxpc = new GxpCompiler(
         CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
         makeTestPluginMeta(), mq);
@@ -379,7 +391,14 @@ public class GxpCompilerTest extends CajaTestCase {
 
     DomTree.Tag[] doms = new DomTree.Tag[gxps.length];
     for (int i = 0; i < gxps.length; ++i) {
-      doms[i] = (DomTree.Tag) xml(fromString(gxps[i]));
+      String gxp = gxps[i];
+      InputSource is = new InputSource(new URI("test:///" + i));
+      CharProducer cp = CharProducer.Factory.create(new StringReader(gxp), is);
+      HtmlLexer lexer = new HtmlLexer(cp);
+      lexer.setTreatedAsXml(true);
+      TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(lexer, is);
+      doms[i] = (DomTree.Tag) new DomParser(tq, true, mq).parseDocument();
+      tq.expectEmpty();
     }
 
     GxpCompiler.TemplateSignature[] sigs =
@@ -452,7 +471,14 @@ public class GxpCompilerTest extends CajaTestCase {
 
     DomTree.Tag[] doms = new DomTree.Tag[gxps.length];
     for (int i = 0; i < gxps.length; ++i) {
-      doms[i] = (DomTree.Tag) xml(fromString(gxps[i]));
+      String gxp = gxps[i];
+      InputSource is = new InputSource(new URI("test:///" + i));
+      CharProducer cp = CharProducer.Factory.create(new StringReader(gxp), is);
+      HtmlLexer lexer = new HtmlLexer(cp);
+      lexer.setTreatedAsXml(true);
+      TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(lexer, is);
+      doms[i] = (DomTree.Tag) new DomParser(tq, true, mq).parseDocument();
+      tq.expectEmpty();
     }
 
     GxpCompiler.TemplateSignature[] sigs =

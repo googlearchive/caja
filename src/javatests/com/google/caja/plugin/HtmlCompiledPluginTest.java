@@ -365,7 +365,7 @@ public class HtmlCompiledPluginTest extends TestCase {
 
         "assertEquals('<a onclick=\"return plugin_dispatchEvent___(" +
         "this, event || window.event, 0, \\'c_1___\\')\">hi</a>'," +
-        " document.getElementById('test-test').innerHTML)"
+        " outers.emitHtml___.htmlBuf_.join(''))"
         );
   }
 
@@ -435,7 +435,7 @@ public class HtmlCompiledPluginTest extends TestCase {
   public void testECMAScript31Scoping() throws Exception {
     // TODO(stay): Once they decide on scoping & initialization rules, test them here.
   }
-
+  
   public void testForIn() throws Exception {
     execGadget(
         "<script>" +
@@ -489,7 +489,7 @@ public class HtmlCompiledPluginTest extends TestCase {
         "    ___.getNewModuleHandler().getOuters().obj.test().sort().toSource()," +
         "    (['test', 'x_', 'y']).toSource());");
   }
-
+    
   public void testInstanceMethod() throws Exception {
     // TODO(metaweta): Put this test back in when issue143 is fixed.
     if (false) {
@@ -500,7 +500,7 @@ public class HtmlCompiledPluginTest extends TestCase {
           "");
     }
   }
-
+  
   public void testGlobalThis() throws Exception {
     execGadget(
         "<script>" +
@@ -518,7 +518,7 @@ public class HtmlCompiledPluginTest extends TestCase {
         "</script>",
         "");
   }
-
+  
   public void testStaticMembers() throws Exception {
     execGadget("<script>" +
         "function Foo(){}" +
@@ -526,7 +526,7 @@ public class HtmlCompiledPluginTest extends TestCase {
         "</script>",
         "");
   }
-
+  
   private void execGadget(String gadgetSpec, String tests) throws Exception {
     MessageContext mc = new MessageContext();
     MessageQueue mq = new EchoingMessageQueue(
@@ -561,18 +561,17 @@ public class HtmlCompiledPluginTest extends TestCase {
           // Initialize the DOM
           new RhinoTestBed.Input(
               // Document not defined until window.location set.
-              "location = '" + htmlStubUrl + "';\n",
+              new StringReader("location = '" + htmlStubUrl + "';\n"),
               "dom"),
           // Make the assertTrue, etc. functions available to javascript
           new RhinoTestBed.Input(getClass(), "asserts.js"),
           // Plugin Framework
           new RhinoTestBed.Input(getClass(), "../caja.js"),
-          new RhinoTestBed.Input(getClass(), "html-emitter.js"),
           new RhinoTestBed.Input(getClass(), "container.js"),
           // The gadget
-          new RhinoTestBed.Input(js.toString(), "gadget"),
+          new RhinoTestBed.Input(new StringReader(js.toString()), "gadget"),
           // The tests
-          new RhinoTestBed.Input(tests, "tests"),
+          new RhinoTestBed.Input(new StringReader(tests), "tests"),
         };
       RhinoTestBed.runJs(null, inputs);
     }
