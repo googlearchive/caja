@@ -17,38 +17,25 @@ package com.google.caja.plugin;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.CssLexer;
-import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.InputSource;
-import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
-import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
-import com.google.caja.reporting.MessageContext;
-import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.reporting.SimpleMessageQueue;
-import com.google.caja.util.Criterion;
+import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.TestUtil;
 
-import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.net.URLEncoder;
 import java.util.Collections;
-
-import junit.framework.TestCase;
 
 /**
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
-public final class CssTemplateTest extends TestCase {
+public final class CssTemplateTest extends CajaTestCase {
   private CssSchema cssSchema;
   private HtmlSchema htmlSchema;
 
@@ -111,35 +98,13 @@ public final class CssTemplateTest extends TestCase {
             + "}");
   }
 
-  private CssTree.DeclarationGroup parseTemplate(String css) throws Exception {
-    InputSource is = new InputSource(new URI("test://" + getClass().getName()));
-    CharProducer cp = CharProducer.Factory.create(new StringReader(css), is);
-    try {
-      CssLexer lexer = new CssLexer(cp, true);
-      TokenQueue<CssTokenType> tq = new TokenQueue<CssTokenType>(
-          lexer, cp.getCurrentPosition().source(),
-          new Criterion<Token<CssTokenType>>() {
-            public boolean accept(Token<CssTokenType> t) {
-              return CssTokenType.SPACE != t.type
-                  && CssTokenType.COMMENT != t.type;
-            }
-          });
-      CssParser p = new CssParser(tq);
-      CssTree.DeclarationGroup t = p.parseDeclarationGroup();
-      tq.expectEmpty();
-      return t;
-    } finally {
-      cp.close();
-    }
-  }
-
   private void runTest(String css, String golden) throws Exception {
-    InputSource is = new InputSource(URI.create("test:///" + getName()));
     FilePosition pos = FilePosition.startOfFile(is);
     Identifier name = new Identifier(getName());
     name.setFilePosition(pos);
     CssTemplate tmpl = new CssTemplate(
-        pos, name, Collections.<Identifier>emptyList(), parseTemplate(css));
+        pos, name, Collections.<Identifier>emptyList(),
+        cssDecls(fromString(css), true));
 
     PluginMeta meta = new PluginMeta(":", new PluginEnvironment() {
         public CharProducer loadExternalResource(
@@ -159,8 +124,6 @@ public final class CssTemplateTest extends TestCase {
         }
       });
 
-    MessageQueue mq = new SimpleMessageQueue();
-    MessageContext mc = new MessageContext();
     if (cssSchema == null) {
       cssSchema = CssSchema.getDefaultCss21Schema(mq);
       htmlSchema = HtmlSchema.getDefault(mq);
