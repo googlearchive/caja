@@ -164,7 +164,7 @@ into more depth.
  
   \item[Sharp knives removed.] Caja contains no ``\code{with}'' or 
   ``\code{eval}''. Caja includes a safe JSON library to support the most 
-  common use of \code{eval}, and a safe \code{caja.eval} for evaluating code 
+  common use of \code{eval}, and a safe \code{caja.cajitaEval} for evaluating code 
   in the \emph{Cajita} subset of Caja. Cajita is essentially the subset of 
   Caja without ``\code{this}''.
  
@@ -509,14 +509,14 @@ definition in both Cajita and full Caja.
 
 \begin{figure}[t!]
 \begin{alltt}
-function PointMixin(that, x, y)\ \{
-  that.toString = function()\ \{ 
-    return "<" + that.getX() + "," + 
-                 that.getY() + ">"; 
+function PointMixin(self, x, y)\ \{
+  self.toString = function()\ \{ 
+    return "<" + self.getX() + "," + 
+                 self.getY() + ">"; 
   \};
-  that.getX = function()\ \{ return x; \};
-  that.getY = function()\ \{ return y; \};
-  return that;
+  self.getX = function()\ \{ return x; \};
+  self.getY = function()\ \{ return y; \};
+  return self;
 \}
 function Point(x, y)\ \{
   return caja.freeze(PointMixin(\{\}, x, y));
@@ -525,8 +525,8 @@ function Point(x, y)\ \{
 
 \caption[Cajita Inheritance.]{Cajita Inheritance. In the Cajita inheritance 
 pattern, the equivalent of a non-final class is a function ending with 
-``\code{Mixin}'' with \code{that} as its first parameter. The method-like 
-functions can use \code{that} analogously to the use of \code{this} in full 
+``\code{Mixin}'' with \code{self} as its first parameter. The method-like 
+functions can use \code{self} analogously to the use of \code{this} in full 
 Caja, in order to refer to the overall object being defined. This 
 ``\code{*Mixin}'' function should only be called by ``subclasses'' such as 
 WobblyPointMixin in Figure~\ref{fig:cajita-super-wobbly-point}. If the class is non-abstract, it should also have a 
@@ -537,24 +537,24 @@ instances. \\ } \hrule
 
 \begin{figure}[t!]
 \begin{alltt}
-function WobblyPointMixin(that)\ \{
-  var super = caja.snapshot(that);
-  that.getX = function()\ \{ 
+function WobblyPointMixin(self)\ \{
+  var super = caja.snapshot(self);
+  self.getX = function()\ \{ 
     return Math.random() + super.getX(); 
   \};
-  return that;
+  return self;
 \}
 function WobblyPoint(x, y)\ \{
-  var that = PointMixin(\{\}, x, y));
-  that = WobblyPointMixin(that);
-  return caja.freeze(that);
+  var self = PointMixin(\{\}, x, y));
+  self = WobblyPointMixin(self);
+  return caja.freeze(self);
 \}
 \end{alltt}
 
 \caption[Cajita WobblyPointMixin.]{Cajita WobblyPointMixin. The equivalent of 
-a non-final subclass is a ``\code{*Mixin}'' function with \code{that} as its 
+a non-final subclass is a ``\code{*Mixin}'' function with \code{self} as its 
 first parameter, where the body calls \code{caja.snapshot} to make a frozen 
-copy of the partially initialized \code{that} at that moment, to serve as the 
+copy of the partially initialized \code{self} at that moment, to serve as the 
 conventional \code{super} for the other functions defined within this scope. 
 \\ } \hrule
 \label{fig:cajita-super-wobbly-point} 
@@ -679,10 +679,10 @@ The design of Cajita was inspired by Doug Crockford's \emph{ADsafe}.
 %
 }
 
-The Caja runtime will provide a safe \code{caja.eval} operation. For 
-\code{caja.eval} to accept Caja code, the Caja sanitizer would need to be 
+The Caja runtime will provide a safe \emph{eval} operation, \code{caja.cajitaEval}. For 
+this operation to accept Caja code, the Caja sanitizer would need to be 
 written in JavaScript and included in the Caja download. To minimize download 
-size, \code{caja.eval} will instead accept only Cajita code.
+size, \code{caja.cajitaEval} will instead accept only Cajita code.
 
 To explain the restrictions Cajita imposes, we need some definitions.
 
@@ -790,14 +790,12 @@ a fail-stop subset of ES3.
 \begin{figure}[t!]
 \begin{alltt}
 function Brand()\ \{
-  var flag = false;
-  var squirrel = null;
+  var flag = false, squirrel = null;
 
   return caja.freeze(\{
     seal: function(payload)\ \{
       function box()\ \{
-        squirrel = payload;
-        flag = true;
+        flag = true; squirrel = payload;
       \}
       box.toString = function()\ \{
         return "(box)";
@@ -808,7 +806,11 @@ function Brand()\ \{
       flag = false; squirrel = null;
       box();
       if (!flag) \{ throw {\ldots}; \}
-      return squirrel;
+      try \{
+        return squirrel;
+      \} finally \{
+        flag = false; squirrel = null;
+      \}
     \}
   \});
 \}
@@ -825,8 +827,8 @@ technique shown here is due to Marc Stiegler.
 
 
 
-\subsection{Cajita static restrictions}
-\label{subsec:cajita-static}
+\subsection{Common static restrictions}
+\label{subsec:common-static}
 
 Any source code statically accepted by the Caja sanitizer is a \emph{legal 
 Caja program}. A legal Caja program satisfying additional static restrictions 
@@ -887,7 +889,7 @@ function Mint()\ \{
     function decr(amount)\ \{
       caja.enforceNat(amount);
       balance = 
-        caja.enforceNat(balance - amount);
+        caja.enforceNat(balance-amount);
     \}
     return caja.freeze(\{
       getBalance: function()\ \{
@@ -897,11 +899,12 @@ function Mint()\ \{
       getDecr: function()\ \{
         return brand.seal(decr); \},
       deposit: function(amount,src)\ \{
+        var box = src.getDecr();
+        var decr = brand.unseal(box);
         var newBal = 
           caja.enforceNat(balance+amount);
-        var box = src.getDecr();
-        brand.unseal(box)(amount);
-        balance += newBal;
+        decr(amount);
+        balance = newBal;
       \}
     \});
   \}
@@ -917,6 +920,9 @@ currency. \\ } \hrule
 \end{figure}
 
 % XXX fig:rights-amp and fig:mintmaker need more explanation
+
+\subsection{Cajita-only static restrictions}
+\label{subsec:cajita-only-static}
 
 
 
@@ -1024,7 +1030,7 @@ are isolated from each other.}
 \begin{description}
 
     \item[eval] The Caja global environment has no ``\code{eval}'' function. 
-    Instead, ``\code{caja.eval}'' will evaluate Cajita source code (text or 
+    Instead, ``\code{caja.cajitaEval}'' will evaluate Cajita source code (text or 
     AST) with an explicitly provided set of variable bindings to serve as its 
     initial outer environment, as TODO(erights) will be explained somewhere.
     
@@ -1316,7 +1322,7 @@ The following additional dynamic restrictions are relevant to Caja code.
    itself. If a constructed object does create a public own property, its 
    clients can directly assign to it.
    
-   \item[Non-reflective construstors] Any attempt to call a constructor's 
+   \item[Non-reflective constructors] Any attempt to call a constructor's 
    \code{call}, \code{apply}, or \code{bind} methods must fail, except for 
    the statically exempted use of \code{call} mandated in section~\ref{subsec:caja-static} for derived 
    constructors.
@@ -1389,7 +1395,7 @@ for (var k in obj)\ \{
   \code{canEnumOwn} instead will further restrict the enumeration to
   non-inherited properties, as is typically desired. The same effect can still
   be obtained more compactly using Cajita's \code{caja.forEach} construct as
-  explained in section~\ref{subsec:cajita-static}.
+  explained in section~\ref{subsec:cajita-only-static}.
 
   \item[Isolated RegExps.] ES3 specifies that a literal regular expression 
   pattern corresponds directly to a single mutable RegExp object. Caja, as 
@@ -1479,6 +1485,7 @@ Andrea Campi,
 Doug Crockford,
 Jed Donnelley,
 Brendan Eich,
+Ken Kahn,
 Adam Langley,
 Marcel Laverdet,
 Kevin Reid,
@@ -1499,7 +1506,7 @@ for various comments and suggestions.
   \hline
   \code{local\_\_}          & \label{var:bad-suffix}    & \mathrm{/*rejected\ in\ all\ positions*/} \\
   \code{glob\_}             & \label{var:bad-global-suffix} & \mathrm{/*rejected\ in\ all\ positions*/} \\
-  \code{glob}               & \label{var:global}        & \code{\_\_\_OUTERS\_\_\_.glob} \\
+  \code{glob}               & \label{var:global}        & \code{\_\_\_.readPub(\_\_\_OUTERS\_\_\_,"glob",true)} \\
   \hline
   \code{this.p\_\_}         & \label{read:bad-suffix}   & \mathrm{/*rejected\ in\ all\ positions*/} \\
   \code{foo.p\_}            & \label{read:bad-internal} & \mathrm{/*rejected\ in\ all\ positions*/} \\
@@ -1519,15 +1526,15 @@ for various comments and suggestions.
   \code{foo.p = baz}        & \label{set:public}        & \code{\_\_\_.setPub(foo,"p",baz)} \\
   \code{this[bar] = baz}    & \label{set:index-internal} & \code{\_\_\_.setProp(this,bar,baz)} \\
   \code{foo[bar] = baz}     & \label{set:index-public}  & \code{\_\_\_.setPub(foo,bar,baz)} \\
-  \code{glob = baz}         & \label{set:global}        & \code{\_\_\_OUTERS\_\_\_.glob = baz} \\
-  \code{var\ glob = baz}    & \label{set:global-init}   & \code{\_\_\_OUTERS\_\_\_.glob = baz} \\
-  \code{var\ glob}          & \label{set:global-decl}   & \code{\_\_\_OUTERS\_\_\_.glob = undefined} \\
+  \code{glob = baz}         & \label{set:global}        & \code{\_\_\_.setPub(\_\_\_OUTERS\_\_\_,"glob",baz)} \\
+  \code{var\ glob = baz}    & \label{set:global-init}   & \code{\_\_\_.setPub(\_\_\_OUTERS\_\_\_,"glob",baz)} \\
+  \code{var\ glob}          & \label{set:global-decl}   & \code{\_\_\_.setPub(\_\_\_OUTERS\_\_\_,"glob",undefined)}\\
   \hline
   \code{delete\ this.p}     & \label{delete-internal}   & \code{\_\_\_.deleteProp(this,"p")} \\
   \code{delete\ foo.p}      & \label{delete:public}     & \code{\_\_\_.deletePub(foo,"p")} \\
   \code{delete\ this[bar]}  & \label{delete:index-internal} & \code{\_\_\_.deleteProp(this,bar)} \\
  \code{delete\ foo[bar]}    & \label{delete:index-public}   & \code{\_\_\_.deletePub(foo,bar)} \\
-  \code{delete\ glob}       & \label{delete:global}   & \code{\_\_\_.enforce(delete\ \_\_\_OUTERS\_\_\_.glob,\ldots)}
+  \code{delete\ glob}       & \label{delete:global}   & \code{\_\_\_.deletePub(\_\_\_OUTERS\_\_\_,"glob")}
 \end{eqnarray}
 
 \caption[Cajoling Property Access]{Cajoling Property Access. Under the 
@@ -1601,7 +1608,7 @@ confined plugin. The use of a terminal ``\code{;}'' is shorthand for testing
 whether the matching expression is evaluated for effects only, not for its 
 value. For each top level named function or constructor declaration \code{F}, we 
 also emit \\
-``\code{\_\_\_OUTERS\_\_\_.F = \_\_\_.primFreeze(F);}'' at the end of the 
+\code{\_\_\_.setPub(\_\_\_OUTERS\_\_\_,"F",\_\_\_.primFreeze(F));} at the end of the 
 module body. Methods may only appear at the \code{member} positions in 
 Figure~\ref{tab:special-cases}.}
 \label{tab:call-xlate}
@@ -1729,11 +1736,11 @@ environment is transitively read-only to all Caja code.}
 \begin{tabular}{ll}
   Methods of \code{\_\_\_}  & method body \\ 
   \hline 
-  \code{canReadProp(that,name)}
+  \code{canReadProp(self,name)}
        & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
-       & \code{return canRead(that,name);} \\
-  \code{readProp(that,name)}
-       & \code{return canReadProp(that,name) ?\ that[name] :\ undefined;} \\
+       & \code{return canRead(self,name);} \\
+  \code{readProp(self,name)}
+       & \code{return canReadProp(self,name) ?\ self[name] :\ undefined;} \\
   \code{canReadPub(obj,name)}
        & \code{if (endWith(name,"\_"))\ \{ return false; \}} \\
        & \code{if (canRead(obj,name))\ \{ return true; \}} \\
@@ -1744,9 +1751,9 @@ environment is transitively read-only to all Caja code.}
   \code{readPub(obj,name)}
        & \code{return canReadPub(obj,name) ?\ obj[name] :\ undefined;} \\
   \hline
-  \code{canEnumProp(that,name)} 
+  \code{canEnumProp(self,name)} 
        & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
-       & \code{return canEnum(that,name);} \\
+       & \code{return canEnum(self,name);} \\
   \code{canEnumPub(obj,name)}
        & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
        & \code{if (canEnum(obj,name))\ \{ return true; \}} \\
@@ -1755,14 +1762,14 @@ environment is transitively read-only to all Caja code.}
        & \code{allowEnum(obj,name);} /*memoize*/ \\
        & \code{return true;} \\
   \hline
-  \code{canSetProp(that,name)}
+  \code{canSetProp(self,name)}
        & \code{if (endWith(name,"\_\_"))\ \{ return false; \}} \\
-       & \code{if (canSet(that,name))\ \{ return true; \}} \\
-       & \code{return !isFrozen(that);} \\
-  \code{setProp(that,name,val)}
-       & \code{enforce(canSetProp(that,name),\ldots);} \\
-       & \code{allowSet(that,name);} /*grant*/ \\
-       & \code{return that[name] = val;} \\
+       & \code{if (canSet(self,name))\ \{ return true; \}} \\
+       & \code{return !isFrozen(self);} \\
+  \code{setProp(self,name,val)}
+       & \code{enforce(canSetProp(self,name),\ldots);} \\
+       & \code{allowSet(self,name);} /*grant*/ \\
+       & \code{return self[name] = val;} \\
   \code{canSetPub(obj,name)}
        & \code{if (endWith(name,"\_"))\ \{ return false; \}} \\
        & \code{if (canSet(obj,name))\ \{ return true; \}} \\
@@ -1772,10 +1779,10 @@ environment is transitively read-only to all Caja code.}
        & \code{allowSet(obj,name);} /*grant*/ \\
        & \code{return obj[name] = val;} \\
   \hline               
-  \code{deleteProp(that,name)} 
-       & \code{enforce(canDeleteProp(that,name),\ldots);} \\
+  \code{deleteProp(self,name)} 
+       & \code{enforce(canDeleteProp(self,name),\ldots);} \\
        & /*XXX Bookkeeping yet to be determined*/ \\
-       & \code{return enforce(delete that[name],\ldots);} \\
+       & \code{return enforce(delete self[name],\ldots);} \\
   \code{deletePub(obj,name)} 
        & \code{enforce(canDeletePub(obj,name),\ldots);} \\
        & \code{enforce(isJSONContainer(obj),\ldots);} \\
