@@ -26,6 +26,7 @@ import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.plugin.ReservedNames;
 import com.google.caja.plugin.SyntheticNodes;
 import com.google.caja.reporting.Message;
@@ -35,9 +36,14 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Pair;
 
+import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
+import static com.google.caja.plugin.SyntheticNodes.s;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.HashSet;
+import java.util.List;
+import java.util.ArrayList;
 import java.net.URI;
 
 /**
@@ -116,6 +122,64 @@ public class Scope {
     }
   }
 
+  private enum ScopeType {
+    /**
+     * A Scope created from a plain block.
+     * Example: the block containing 'foo' in the following --
+     *
+     * <pre>
+     * if (someCondition) { foo; }
+     * </pre>
+     */
+    PLAIN_BLOCK(false),
+
+    /**
+     * A Scope created from a catch block.
+     * Example: the block containing 'foo' in the following --
+     *
+     * <pre>
+     * try { doSomething(); } catch (e) { foo; }
+     * </pre>
+     */
+    CATCH_BLOCK(false),
+
+    /**
+     * A Scope created from a function body.
+     * Example: the blocks containing 'foo' in the following --
+     *
+     * <pre>
+     * function someFunc() { foo; }
+     * var someFunc = function() { foo; }
+     * </pre>
+     */
+    FUNCTION_BODY(true),
+
+    /**
+     * A Scope created to represent the top level of a JavaScript program.
+     * Example: the scope in which the variable 'foo' is defined in the following --
+     *
+     * <pre>
+     * var foo = 3;
+     * var bar = 4;
+     * </pre>
+     */
+    PROGRAM(true),
+    ;
+
+    private final boolean declarationContainer;
+
+    /**
+     * @return whether this type of Scope can encapsulate unique 'var' declarations.
+     */
+    public boolean isDeclarationContainer() {
+      return declarationContainer;
+    }
+
+    private ScopeType(boolean declarationContainer) {
+      this.declarationContainer = declarationContainer;
+    }
+  }
+
   private static final FilePosition PRIMORDIAL_OBJECTS_FILE_POSITION =
       FilePosition.instance(
           new InputSource(URI.create("built-in:///js-primordial-objects")),
@@ -123,36 +187,35 @@ public class Scope {
 
   private final Scope parent;
   private final MessageQueue mq;
+  private final ScopeType type;
   private boolean containsThis = false;
   private boolean containsArguments = false;
-  private boolean fromCatchStmt = false;
   private int tempVariableCounter = 0;
   private final Map<String, Pair<LocalType, FilePosition>> locals
       = new HashMap<String, Pair<LocalType, FilePosition>>();
+  private final List<Statement> startStatements
+      = new ArrayList<Statement>();
 
-  public static Scope fromRootBlock(Block root, MessageQueue mq) {
-    Scope s = new Scope(mq);
+  public static Scope fromProgram(Block root, MessageQueue mq) {
+    Scope s = new Scope(ScopeType.PROGRAM, mq);
     addPrimordialObjects(s);
     walkBlock(s, root);
     return s;
   }
   
-  public static Scope fromBlock(Scope parent, Block root) {
-    Scope s = new Scope(parent);
-    walkBlock(s, root);
-    return s;
+  public static Scope fromPlainBlock(Scope parent, Block root) {
+    return new Scope(ScopeType.PLAIN_BLOCK, parent);
   }
 
   public static Scope fromCatchStmt(Scope parent, CatchStmt root) {
-    Scope s = new Scope(parent);
+    Scope s = new Scope(ScopeType.CATCH_BLOCK, parent);
     declare(s, root.getException().getIdentifier(),
             LocalType.CAUGHT_EXCEPTION);
-    s.fromCatchStmt = true;
     return s;
   }
 
   public static Scope fromFunctionConstructor(Scope parent, FunctionConstructor root) {
-    Scope s = new Scope(parent);
+    Scope s = new Scope(ScopeType.FUNCTION_BODY, parent);
 
     // A function's name is bound to it in its body. After executing
     //    var g = function f() { return f; };
@@ -172,7 +235,7 @@ public class Scope {
   }
   
   public static Scope fromParseTreeNodeContainer(Scope parent, ParseTreeNodeContainer root) {
-    Scope s = new Scope(parent);
+    Scope s = new Scope(ScopeType.PLAIN_BLOCK, parent);
     walkBlock(s, root);
     return s;
   }
@@ -187,28 +250,64 @@ public class Scope {
   }
 
   /**
-   * Allocate a new, uniquely named temporary variable, which is named in a manner
-   * inaccessible to Caja code.
+   * When a Scope is used for recursively processing a parse tree, steps taken on nodes contained
+   * within the node of this Scope sometimes add statements (e.g., variable declarations) that
+   * need to be rendered in the result before these nodes are rendered. These statements are the
+   * Scope's "start statements". After processing of subordinate nodes, these statements are to
+   * be found by calling this method.
    *
-   * <p>CAUTION: Creating a temporary variable in this way is effectively changing
-   * the Scope's knowledge of the parse tree node from underneath it, so that this
-   * Scope is now no longer an accurate reflection of the parse tree node.
-   *
-   * <p>Say you have user code that refers to global variable 'x'. If we assign a
-   * temporary variable 'x', then subsequent consultations of this Scope would lie
-   * about the fact that the user is using a global ... UNLESS we ALSO add to the
-   * parse tree the corresponding 'var x' statement.
-   *
-   * <p>That said, our temporary variables are underscore terminated so that they
-   * are not mentionable by legal Caja code.
-   *
-   * @return an new variable name.
+   * @return the statements that recursive processing of enclosed nodes has determined should be
+   * rendered at the start of this Scope.
    */
-  public String newTempVariable() {
-    if (fromCatchStmt) return parent.newTempVariable();
-    String name = "x" + (tempVariableCounter++) + "___";
-    declare(this, new Identifier(name), LocalType.DATA);
-    return name;
+  public List<Statement> getStartStatements() {
+    return startStatements;
+  }
+
+  /**
+   * Add a start statement to the closest enclosing true Scope (i.e., a Scope that can contain
+   * unique 'var' declarations).
+   *
+   * @param s a Statement.
+   * @see #getStartStatements()
+   */
+  public void addStartOfScopeStatement(Statement s) {
+    getClosestDeclarationContainer().addStartOfBlockStatement(s);
+  }
+
+  /**
+   * Add a start statement to the block represented by this Scope directly.
+   *
+   * @param s a Statement.
+   * @see #getStartStatements()
+   */
+  public void addStartOfBlockStatement(Statement s) {
+    startStatements.add(s);
+  }
+
+  /**
+   * Add a temporary variable declaration to the start of the closest enclosing true
+   * scope, and return the name of the declared variable.
+   *
+   * @return the identifier for the newly declared variable.
+   * @see #addStartOfScopeStatement(com.google.caja.parser.js.Statement)
+   */
+  public Identifier declareStartOfScopeVariable() {
+    Scope s = getClosestDeclarationContainer();
+    // TODO(ihab.awad): Uses private access to 's' which is of same class but distinct
+    // instance. Violates capability discipline; kittens unduly sacrificed. Refactor.
+    Identifier id = s(new Identifier("x" + (s.tempVariableCounter++) + "___"));
+    s.addStartOfScopeStatement((Statement)substV(
+        "var @id;",
+        "id", id));
+    return id;
+  }
+
+  private Scope getClosestDeclarationContainer() {
+    if (!type.isDeclarationContainer()) {
+      assert(parent != null);
+      return parent.getClosestDeclarationContainer();
+    }
+    return this;
   }
 
   /**
@@ -245,7 +344,7 @@ public class Scope {
    * exception variable.
    */
   public boolean isGlobal() {
-    return fromCatchStmt ? parent.isGlobal() : parent == null;
+    return type.isDeclarationContainer() ? parent == null : parent.isGlobal();
   }
 
   /**
@@ -345,12 +444,14 @@ public class Scope {
     return null;
   }
 
-  private Scope(MessageQueue mq) {    
+  private Scope(ScopeType type, MessageQueue mq) {
+    this.type = type;
     this.parent = null;
     this.mq = mq;
   }
 
-  private Scope(Scope parent) {
+  private Scope(ScopeType type, Scope parent) {
+    this.type = type;
     this.parent = parent;
     this.mq = parent.mq;
   }

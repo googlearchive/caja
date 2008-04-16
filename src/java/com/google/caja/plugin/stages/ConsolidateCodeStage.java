@@ -16,6 +16,7 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Statement;
@@ -51,7 +52,7 @@ public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
       if (job.getTarget() != null) {
         AncestorChain<?> toReplace = job.getTarget();
         ((MutableParseTreeNode) toReplace.parent.node).replaceChild(
-            job.getRoot().node, toReplace.node);
+            job.getRoot().cast(ParseTreeNode.class).node, toReplace.node);
       } else {
         Statement stmt = (Statement) job.getRoot().node;
         if (stmt instanceof Block) {

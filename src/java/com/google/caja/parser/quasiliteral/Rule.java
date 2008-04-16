@@ -32,6 +32,7 @@ import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.plugin.ReservedNames;
 import com.google.caja.plugin.SyntheticNodes;
 import static com.google.caja.plugin.SyntheticNodes.s;
@@ -42,13 +43,15 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 import com.google.caja.util.Pair;
 
+import static com.google.caja.parser.quasiliteral.QuasiBuilder.match;
+import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.LinkedHashMap;
-import java.util.HashMap;
 
 /**
  * A rewriting rule supplied by a subclass.
@@ -110,38 +113,6 @@ public abstract class Rule implements MessagePart {
     out.append("Rule \"" + name + "\"");
   }
   
-  protected final boolean match(
-      QuasiNode pattern,
-      ParseTreeNode node) {
-    return match(pattern, node, new HashMap<String, ParseTreeNode>());
-  }
-
-  protected final boolean match(
-      QuasiNode pattern,
-      ParseTreeNode node,
-      Map<String, ParseTreeNode> bindings) {
-    Map<String, ParseTreeNode> tempBindings = pattern.matchHere(node);
-
-    if (tempBindings != null) {
-      bindings.putAll(tempBindings);
-      return true;
-    }
-    return false;
-  }
-
-  protected final boolean match(
-      String patternText,
-      ParseTreeNode node) {
-    return match(getPatternNode(patternText), node);
-  }
-
-  protected final boolean match(
-      String patternText,
-      ParseTreeNode node,
-      Map<String, ParseTreeNode> bindings) {
-    return match(getPatternNode(patternText), node, bindings);
-  }
-
   protected final void expandEntry(
       Map<String, ParseTreeNode> bindings,
       String key,
@@ -177,38 +148,6 @@ public abstract class Rule implements MessagePart {
         parentNodeClass,
         node.getValue(),
         rewrittenChildren);
-  }
-
-
-  protected final ParseTreeNode subst(
-      String patternText,
-      Map<String, ParseTreeNode> bindings) {
-    return subst(getPatternNode(patternText), bindings);
-  }
-
-  protected final ParseTreeNode subst(
-      QuasiNode pattern,
-      Map<String, ParseTreeNode> bindings) {
-    ParseTreeNode result = pattern.substituteHere(bindings);
-
-    if (result == null) {
-      // Pattern programming error
-      // TODO(ihab.awad): Provide a detailed dump of the bindings in the exception
-      throw new RuntimeException("Failed to substitute into: \"" + pattern + "\"");
-    }
-
-    return result;
-  }
-
-  protected final ParseTreeNode substV(String pattern, Object... args) {
-    if (args.length %2 != 0) throw new RuntimeException("Wrong # of args for subst()");
-    Map<String, ParseTreeNode> bindings = new HashMap<String, ParseTreeNode>();
-    for (int i = 0; i < args.length; ) {
-      bindings.put(
-          (String)args[i++],
-          (ParseTreeNode)args[i++]);
-    }
-    return subst(pattern, bindings);
   }
 
   protected ParseTreeNode getFunctionHeadDeclarations(
@@ -529,10 +468,6 @@ public abstract class Rule implements MessagePart {
     return false;
   }
 
-  private QuasiNode getPatternNode(String patternText) {
-    return rewriter.getPatternNode(patternText);
-  }
-
   /**
    * Split the target of a read/set operation into an lvalue, an rvalue, and
    * an ordered list of temporary variables needed to ensure proper order
@@ -576,7 +511,7 @@ public abstract class Rule implements MessagePart {
   private ReadAssignOperands sideEffectlessReadAssignOperand(
       final Expression lhs) {
     assert lhs.isLeftHandSide();
-    return new ReadAssignOperands(Collections.<Declaration>emptyList(), lhs) {
+    return new ReadAssignOperands(Collections.<Statement>emptyList(), lhs) {
         @Override
         public Expression makeAssignment(Expression rvalue) {
           return Operation.create(Operator.ASSIGN, lhs, rvalue);
@@ -589,7 +524,7 @@ public abstract class Rule implements MessagePart {
       Scope scope, MessageQueue mq) {
     final Reference object;  // The object that contains the field to assign.
     final Expression key;  // Identifies the field to assign.
-    List<Declaration> temporaries = new ArrayList<Declaration>();
+    List<Statement> temporaries = new ArrayList<Statement>();
 
     // Cajole the operands
     Expression left = (Expression) rewriter.expand(uncajoledObject, scope, mq);
@@ -612,8 +547,11 @@ public abstract class Rule implements MessagePart {
                         || isOutersReference(left))) {
       object = (Reference) left;
     } else {
-      Identifier tmpVar = s(new Identifier(scope.newTempVariable()));
-      temporaries.add(s(new Declaration(tmpVar, left)));
+      Identifier tmpVar = scope.declareStartOfScopeVariable();
+      temporaries.add(s(new ExpressionStmt((Expression)substV(
+          "@tmpVar = @left;",
+          "tmpVar", s(new Reference(tmpVar)),
+          "left", left))));
       object = s(new Reference(tmpVar));
     }
 
@@ -621,8 +559,11 @@ public abstract class Rule implements MessagePart {
     if (isKeySimple) {
       key = right;
     } else {
-      Identifier tmpVar = s(new Identifier(scope.newTempVariable()));
-      temporaries.add(s(new Declaration(tmpVar, right)));
+      Identifier tmpVar = scope.declareStartOfScopeVariable();
+      temporaries.add(s(new ExpressionStmt((Expression)substV(
+          "@tmpVar = @right;",
+          "tmpVar", s(new Reference(tmpVar)),
+          "right", right))));
       key = s(new Reference(tmpVar));
     }
 
@@ -680,11 +621,11 @@ public abstract class Rule implements MessagePart {
    * execution, and the cajoled lvalue and rvalue.
    */
   protected static abstract class ReadAssignOperands {
-    private final List<Declaration> temporaries;
+    private final List<Statement> temporaries;
     private final Expression rvalue;
 
     ReadAssignOperands(
-        List<Declaration> temporaries, Expression rvalue) {
+        List<Statement> temporaries, Expression rvalue) {
       this.temporaries = temporaries;
       this.rvalue = rvalue;
     }
@@ -693,7 +634,7 @@ public abstract class Rule implements MessagePart {
      * The temporaries required by lvalue and rvalue in order of
      * initialization.
      */
-    public List<Declaration> getTemporaries() { return temporaries; }
+    public List<Statement> getTemporaries() { return temporaries; }
     public ParseTreeNodeContainer getTemporariesAsContainer() {
       return new ParseTreeNodeContainer(temporaries);
     }

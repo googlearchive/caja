@@ -128,35 +128,36 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
   }
 
   public void testForeach() throws Exception {
+    // TODO(ihab.awad): Refactor some of these tests to be functional, rather than golden.
     checkSucceeds(
         "1; for (var k in x) { k; }",
-        // TOOD(ihab.awad): review welds and move away
-        // from putting temporaries in ___OUTERS___.
-        "1; {" +
-        "  ___OUTERS___.x0___ = " + weldReadOuters("x") + ";" +
-        "  ___OUTERS___.x1___ = undefined;" +
-        "  " + weldReadOuters("k") + ";" +
-        "for (___OUTERS___.x1___ in ___OUTERS___.x0___) {" +
-        "    if (___.canEnumPub(___OUTERS___.x0___, ___OUTERS___.x1___)) {" +
-        "      " + weldSetOuters("k", "___OUTERS___.x1___") + ";" +
+        "var x0___;" +
+        "var x1___;" +
+        "1;" +            
+        "{" +
+        "  x0___ = " + weldReadOuters("x") + ";" +
+        "  for (x1___ in x0___) {" +
+        "    if (___.canEnumPub(x0___, x1___)) {" +
+        "      " + weldSetOuters("k", "x1___") + ";" +
         "      { " + weldReadOuters("k") + "; }" +
         "    }" +
         "  }" +
         "}");
     checkSucceeds(
         "2; try { } catch (e) { for (var k in x) { k; } }",
-        "2; try {" +
+        "var x0___;" +
+        "var x1___;" +
+        "2;" +
+        "try {" +
         "} catch (ex___) {" +
         "  try {" +
         "    throw ___.tameException(ex___);" +
         "  } catch (e) {" +
         "    {" +
-        "      ___OUTERS___.x0___ = " + weldReadOuters("x") + ";" +
-        "      ___OUTERS___.x1___ = undefined;" +
-        "      " + weldReadOuters("k") + ";" +
-        "      for (___OUTERS___.x1___ in ___OUTERS___.x0___) {" +
-        "        if (___.canEnumPub(___OUTERS___.x0___, ___OUTERS___.x1___)) {" +
-        "          " + weldSetOuters("k", "___OUTERS___.x1___") + ";" +
+        "      x0___ = " + weldReadOuters("x") + ";" +
+        "      for (x1___ in x0___) {" +
+        "        if (___.canEnumPub(x0___, x1___)) {" +
+        "          " + weldSetOuters("k", "x1___") + ";" +
         "          { " + weldReadOuters("k") + "; }" +
         "        }" +
         "      }" +
@@ -168,10 +169,11 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "  for (var k in x) { k; }" +
         "};",
         "3; ___.primFreeze(___.simpleFunc(function() {" +
-        "  {" +
-        "    var x0___ = " + weldReadOuters("x") + ";" +
-        "    var x1___ = undefined;" +
+        "  var x0___;" +
+        "  var x1___;" +
         "    var k;" +
+        "  {" +
+        "    x0___ = " + weldReadOuters("x") + ";" +
         "    for (x1___ in x0___) {" +
         "      if (___.canEnumPub(x0___, x1___)) {" +
         "        k = x1___;" +
@@ -185,10 +187,11 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "  for (var k in x) k;" +
         "};",
         "4; ___.primFreeze(___.simpleFunc(function() {" +
+        "  var x0___;" +
+        "  var x1___;" +
+        "  var k;" +
         "  {" +
-        "    var x0___ = " + weldReadOuters("x") + ";" +
-        "    var x1___ = undefined;" +
-        "    var k;" +
+        "    x0___ = " + weldReadOuters("x") + ";" +
         "    for (x1___ in x0___) {" +
         "      if (___.canEnumPub(x0___, x1___)) {" +
         "        k = x1___;" +
@@ -202,9 +205,10 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "  for (z[0] in x) { z; }" +
         "};",
         "5; ___.primFreeze(___.simpleFunc(function() {" +
+        "  var x0___;" +
+        "  var x1___;" +
         "  {" +
-        "    var x0___ = " + weldReadOuters("x") + ";" +
-        "    var x1___ = undefined;" +
+        "    x0___ = " + weldReadOuters("x") + ";" +
         "    for (x1___ in x0___) {" +
         "      if (___.canEnumPub(x0___, x1___)) {" +
         "        ___.setPub(" + weldReadOuters("z") + ", 0, x1___);" +
@@ -215,12 +219,14 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "}));");
     checkSucceeds(
         "6; for (k in x) { k; }",
-        "6; {" +
-        "  ___OUTERS___.x0___ = " + weldReadOuters("x") + ";" +
-        "  ___OUTERS___.x1___ = undefined;" +
-        "  for (___OUTERS___.x1___ in ___OUTERS___.x0___) {" +
-        "    if (___.canEnumPub(___OUTERS___.x0___, ___OUTERS___.x1___)) {" +
-        "      " + weldSetOuters("k", "___OUTERS___.x1___") + ";" +
+        "var x0___;" +
+        "var x1___;" +
+        "6;" +
+        "{" +
+        "  x0___ = " + weldReadOuters("x") + ";" +
+        "  for (x1___ in x0___) {" +
+        "    if (___.canEnumPub(x0___, x1___)) {" +
+        "      " + weldSetOuters("k", "x1___") + ";" +
         "      { " + weldReadOuters("k") + "; }" +
         "    }" +
         "  }" +
@@ -229,10 +235,12 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "7; function() {" +
         "  for (k in x) { k; }" +
         "};",
-        "7; ___.primFreeze(___.simpleFunc(function() {" +
+        "7;" +
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  var x0___;" +
+        "  var x1___;" +
         "  {" +
-        "    var x0___ = " + weldReadOuters("x") + ";" +
-        "    var x1___ = undefined;" +
+        "    x0___ = " + weldReadOuters("x") + ";" +
         "    for (x1___ in x0___) {" +
         "      if (___.canEnumPub(x0___, x1___)) {" +
         "        " + weldSetOuters("k", "x1___") + ";" +
@@ -246,11 +254,13 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "  var k;" +
         "  for (k in x) { k; }" +
         "};",
-        "8; ___.primFreeze(___.simpleFunc(function() {" +
+        "8;" +
+        "___.primFreeze(___.simpleFunc(function() {" +
+        "  var x0___;" +
+        "  var x1___;" +
         "  var k;" +
         "  {" +
-        "    var x0___ = " + weldReadOuters("x") + ";" +
-        "    var x1___ = undefined;" +
+        "    x0___ = " + weldReadOuters("x") + ";" +
         "    for (x1___ in x0___) {" +
         "      if (___.canEnumPub(x0___, x1___)) {" +
         "        k = x1___;" +
@@ -273,10 +283,11 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
             "  }" +
             "  function foo_init___() {" +
             "    var t___ = this;" +
+            "    var x0___;" +
+            "    var x1___;" +
+            "    var k;" +
             "    {" +
-            "      var x0___ = t___;" +
-            "      var x1___ = undefined;" +
-            "      var k;" +
+            "      x0___ = t___;" +
             "      for (x1___ in x0___) {" +
             "        if (___.canEnumProp(x0___, x1___)) {" +
             "          k = x1___;" +
@@ -290,13 +301,14 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         ";");
     checkSucceeds(
         "12; for (var k in this) { k; }",
-        "12; {" +
-        "  ___OUTERS___.x0___ = ___OUTERS___;" +
-        "  ___OUTERS___.x1___ = undefined;" +
-        "  " + weldReadOuters("k") + ";" +
-        "  for (___OUTERS___.x1___ in ___OUTERS___.x0___) {" +
-        "    if (___.canEnumPub(___OUTERS___.x0___, ___OUTERS___.x1___)) {" +
-        "      " + weldSetOuters("k", "___OUTERS___.x1___") + ";" +
+        "var x0___;" +
+        "var x1___;" +
+        "12;" +
+        "{" +
+        "  x0___ = ___OUTERS___;" +
+        "  for (x1___ in x0___) {" +
+        "    if (___.canEnumPub(x0___, x1___)) {" +
+        "      " + weldSetOuters("k", "x1___") + ";" +
         "      { " + weldReadOuters("k") + "; }" +
         "    }" +
         "  }" +
@@ -315,9 +327,10 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
             "  }" +
             "  function foo_init___() {" +
             "    var t___ = this;" +
+            "    var x0___;" +
+            "    var x1___;" +
             "    {" +
-            "      var x0___ = t___;" +
-            "      var x1___ = undefined;" +
+            "      x0___ = t___;" +
             "      for (x1___ in x0___) {" +
             "        if (___.canEnumProp(x0___, x1___)) {" +
             "          " + weldSetOuters("k", "x1___") + ";" +
@@ -344,10 +357,11 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
             "  }" +
             "  function foo_init___() {" +
             "    var t___ = this;" +
+            "    var x0___;" +
+            "    var x1___;" +
             "    var k;" +
             "    {" +
-            "      var x0___ = t___;" +
-            "      var x1___ = undefined;" +
+            "      x0___ = t___;" +
             "      for (x1___ in x0___) {" +
             "        if (___.canEnumProp(x0___, x1___)) {" +
             "          k = x1___;" +
@@ -921,24 +935,28 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "(___.primFreeze(___.simpleFunc(function (x) { x = x + 1; })))");
     checkSucceeds(
         "myArray().key += 1",
-        "(function () {"
-        + "  var x0___ = ___.asSimpleFunc(" + weldReadOuters("myArray") + ")();"
+        "var x0___;"
+        + "(function () {"
+        + "  x0___ = ___.asSimpleFunc(" + weldReadOuters("myArray") + ")();"
         + "  return ___.setPub(x0___, 'key',"
         + "                    ___.readPub(x0___, 'key', false) + 1);"
         + "})()");
     checkSucceeds(
         "myArray()[myKey()] += 1",
-        "(function () {"
-        + "  var x0___ = ___.asSimpleFunc(" + weldReadOuters("myArray") + ")();"
-        + "  var x1___ = ___.asSimpleFunc(" + weldReadOuters("myKey") + ")();"
+        "var x0___;"
+        + "var x1___;"
+        + "(function () {"
+        + "  x0___ = ___.asSimpleFunc(" + weldReadOuters("myArray") + ")();"
+        + "  x1___ = ___.asSimpleFunc(" + weldReadOuters("myKey") + ")();"
         + "  return ___.setPub(x0___, x1___,"
         + "                    ___.readPub(x0___, x1___, false) + 1);"
         + "})()");
     checkSucceeds(  // Local reference need not be assigned to a temp.
         "(function (myKey) { myArray()[myKey] += 1; })",
         "___.primFreeze(___.simpleFunc(function (myKey) {"
+        + "  var x0___;"
         + "  (function () {"
-        + "    var x0___ = ___.asSimpleFunc(" + weldReadOuters("myArray")
+        + "    x0___ = ___.asSimpleFunc(" + weldReadOuters("myArray")
         + ")();"
         + "    return ___.setPub(x0___, myKey,"
         + "                      ___.readPub(x0___, myKey, false) + 1);"
@@ -1023,8 +1041,9 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
 
     checkSucceeds(
         "o.x++",
+        "var x0___;" +
         "(function () {" +
-        "  var x0___ = " + weldReadOuters("o") + ";" +
+        "  x0___ = " + weldReadOuters("o") + ";" +
         "  var x___ = ___.readPub(x0___, 'x', false) - 0;" +
         "  ___.setPub(x0___, 'x', x___ + 1);" +
         "  return x___;" +

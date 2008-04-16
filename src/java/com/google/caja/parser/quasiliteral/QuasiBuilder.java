@@ -36,6 +36,8 @@ import com.google.caja.reporting.DevNullMessageQueue;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.net.URI;
 
 /**
@@ -50,8 +52,79 @@ public class QuasiBuilder {
    * The stub {@code InputSource} associated with quasiliteral strings that appear
    * directly in source code.
    */
-  public static final InputSource NULL_INPUT_SOURCE =
-      new InputSource(URI.create("built-in:///js-quasi-literals"));
+  public static final InputSource NULL_INPUT_SOURCE
+      = new InputSource(URI.create("built-in:///js-quasi-literals"));
+
+  private static final Map<String, QuasiNode> patternCache
+      = new HashMap<String, QuasiNode>();
+
+  /**
+   * Match a quasiliteral pattern against a specimen.
+   *
+   * @param patternText a quasiliteral pattern.
+   * @param specimen a specimen parse tree node.
+   * @return whether the match succeeded.
+   * @see QuasiNode#matchHere(com.google.caja.parser.ParseTreeNode) 
+   */
+  public static boolean match(String patternText, ParseTreeNode specimen) {
+    return match(patternText, specimen, new HashMap<String, ParseTreeNode>());  
+  }
+
+  /**
+   * Match a quasiliteral pattern against a specimen, returning any hole bindings found in
+   * a client supplied map.
+   *
+   * @param patternText a quasiliteral pattern.
+   * @param specimen a specimen parse tree node.
+   * @param bindings a map into which hole bindings resulting from the match will be placed.
+   * @return whether the match succeeded.
+   * @see QuasiNode#matchHere(com.google.caja.parser.ParseTreeNode)
+   */
+  public static boolean match(
+      String patternText,
+      ParseTreeNode specimen,
+      Map<String, ParseTreeNode> bindings) {
+    Map<String, ParseTreeNode> tempBindings = getPatternNode(patternText).matchHere(specimen);
+
+    if (tempBindings != null) {
+      bindings.putAll(tempBindings);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Substitute variables into a quasiliteral pattern, returning a concrete parse tree node.
+   *
+   * @param patternText a quasiliteral pattern.
+   * @param bindings a set of bindings from names to parse tree nodes.
+   * @return a new parse tree node resulting from the substitution.
+   * @see QuasiNode#substituteHere(java.util.Map)
+   */
+  public static ParseTreeNode subst(String patternText, Map<String, ParseTreeNode> bindings) {
+    return getPatternNode(patternText).substituteHere(bindings);
+  }
+
+  /**
+   * Substitute variables into a quasiliteral pattern, returning a concrete parse tree node,
+   * passing the bindings as a variable arguments list.
+   *
+   * @param patternText a quasiliteral pattern.
+   * @param args an even number of values arranged in pairs of
+   * ({@code String}, {@code ParseTreeNode}) representing bindings to substitute into the pattern.
+   * @return a new parse tree node resulting from the substitution.
+   * @see #subst(String, java.util.Map)
+   */
+  public static ParseTreeNode substV(String patternText, Object... args) {
+    if (args.length %2 != 0) throw new RuntimeException("Wrong # of args for subst()");
+    Map<String, ParseTreeNode> bindings = new HashMap<String, ParseTreeNode>();
+    for (int i = 0; i < args.length; ) {
+      bindings.put(
+          (String)args[i++],
+          (ParseTreeNode)args[i++]);
+    }
+    return subst(patternText, bindings);
+  }
 
   /**
    * Given a quasiliteral pattern expressed as text, return a {@code QuasiNode}
@@ -100,6 +173,20 @@ public class QuasiBuilder {
   public static QuasiNode parseQuasiNode(
       String pattern) throws ParseException {
     return parseQuasiNode(NULL_INPUT_SOURCE, pattern);
+  }
+
+  private static QuasiNode getPatternNode(String patternText) {
+    if (!patternCache.containsKey(patternText)) {
+      try {
+        patternCache.put(
+            patternText,
+            QuasiBuilder.parseQuasiNode(patternText));
+      } catch (ParseException e) {
+        // Pattern programming error
+        throw new RuntimeException(e);
+      }
+    }
+    return patternCache.get(patternText);
   }
 
   private static QuasiNode build(ParseTreeNode n) {
