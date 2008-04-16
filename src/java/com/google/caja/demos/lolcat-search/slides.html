@@ -361,11 +361,11 @@
       extracted and sanitized.  HTML rendered by javascript:</p>
 
       <pre>
-___OUTERS___.emitHtml___(<span class=str>'&lt;form onsubmit=\"return false\"&gt;\n'</span>
-     + <span class=str>'    &lt;input type=\"text\" size=\"60\" name=\"q\"&gt;\n'</span>
+___OUTERS___.htmlEmitter___.p(<span class=str>'form'</span>).a(<span class=str>'onsubmit'</span>>, <span class=str>'return false'</span>).ih(</span>
+     <span class=str>'    &lt;input type=\"text\" size=\"60\" name=\"q\"&gt;\n'</span>
      + <span class=str>'    &lt;input type=\"button\" value=\"Search\"'</span>
      + <span class=str>' onclick=\"<b>return plugin_dispatchEvent___(&hellip;)</b>\"&gt;\n'</span>
-     + <span class=str>'  &lt;/form&gt;'</span>);
+     + <span class=str>'  ').e(<span class=str>'form'</span>);
       </pre>
     </li>
 

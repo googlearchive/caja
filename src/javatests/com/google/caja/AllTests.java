@@ -47,6 +47,7 @@ import com.google.caja.plugin.CompiledPluginTest;
 import com.google.caja.plugin.CssRewriterTest;
 import com.google.caja.plugin.CssTemplateTest;
 import com.google.caja.plugin.CssValidatorTest;
+import com.google.caja.plugin.DomProcessingEventsTest;
 import com.google.caja.plugin.ExpressionSanitizerTest;
 import com.google.caja.plugin.GxpCompilerTest;
 import com.google.caja.plugin.GxpValidatorTest;
@@ -94,6 +95,7 @@ public class AllTests {
           DefaultCajaRewriterTest.class,
           DefaultGadgetRewriterTest.class,
           DomParserTest.class,
+          DomProcessingEventsTest.class,
           EscapingTest.class,
           ExpressionSanitizerTest.class,
           GadgetParserTest.class,

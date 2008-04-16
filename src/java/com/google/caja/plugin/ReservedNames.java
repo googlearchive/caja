@@ -44,6 +44,11 @@ public class ReservedNames {
   /** Escapes a string to a HTML PCDATA. */
   public static final String HTML = "html___";
   /**
+   * A property on OUTERS that resolves to an instance of of HtmlEmitter as
+   * defined in html-emitter.js.
+   */
+  public static final String HTML_EMITTER = "htmlEmitter___";
+  /**
    * Applies {@link com.google.caja.opensocial.UriCallback#rewrite} at runtime.
    */
   public static final String REWRITE_URI = "rewriteUri___";
