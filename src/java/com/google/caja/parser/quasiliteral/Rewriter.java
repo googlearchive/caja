@@ -14,10 +14,8 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.js.Block;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
@@ -26,15 +24,13 @@ import com.google.caja.util.Callback;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * Rewrites a JavaScript parse tree.
- *  
+ *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public abstract class Rewriter {
@@ -77,13 +73,13 @@ public abstract class Rewriter {
 
       ParseTreeNode result = null;
       RuntimeException ex = null;
-      
+
       try {
         result = rule.fire(node, scope, mq);
       } catch (RuntimeException e) {
         ex = e;
       }
-      
+
       if (result != Rule.NONE || ex != null) {
         if (logging) logResults(rule, node, result, ex);
         if (ex != null) throw ex;
@@ -149,7 +145,7 @@ public abstract class Rewriter {
         throw new RuntimeException(ex);
       }
     };
-    
+
     StringBuilder output = new StringBuilder();
     TokenConsumer renderer = new JsPrettyPrinter(output, handler);
     n.render(new RenderContext(new MessageContext(), renderer));

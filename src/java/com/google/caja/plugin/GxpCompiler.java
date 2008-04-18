@@ -110,6 +110,8 @@ public final class GxpCompiler {
     this.gxpValidator = new GxpValidator(htmlSchema, mq);
   }
 
+  public MessageQueue getMessageQueue() { return mq; }
+
   /**
    * Compiles the signature for the given gxp.  All the gxp signatures for a
    * group of gxps must be compiled before the bodies can be
@@ -1024,8 +1026,10 @@ public final class GxpCompiler {
         return AttributeXform.SCRIPT;
       case URI:
         return AttributeXform.URI;
-      case CLASSES: case ID: case IDREF: case IDREFS: case GLOBAL_NAME:
-        return AttributeXform.NAMES_IDS_AND_CLASSES;
+      case ID: case IDREF: case IDREFS: case GLOBAL_NAME:
+        return AttributeXform.NAMES_AND_IDS;
+      case CLASSES:
+        return AttributeXform.CLASSES;
       case LOCAL_NAME:
         return null;
       default:
@@ -1041,35 +1045,35 @@ public final class GxpCompiler {
    * performed at runtime.
    */
   private static enum AttributeXform {
-    NAMES_IDS_AND_CLASSES {
+    NAMES_AND_IDS {
       @Override
       void apply(HTML.Attribute typeInfo, DomTree.Attrib t, GxpCompiler gxpc,
                  List<String> tgtChain, Block b) {
-        String nmTokens = t.getAttribValue();
-        StringBuilder sb = new StringBuilder(nmTokens.length() + 16);
-        boolean wasSpace = true;
-        int pos = 0;
-        for (int i = 0, n = nmTokens.length(); i < n; ++i) {
-          char ch = nmTokens.charAt(i);
-          boolean space = Character.isWhitespace(ch);
-          if (space != wasSpace) {
-            if (!space) {
-              if (0 != sb.length()) { sb.append(' '); }
-              sb.append(gxpc.meta.namespacePrefix).append('-');
-              pos = i;
-            } else {
-              sb.append(nmTokens.substring(pos, i));
-            }
-            wasSpace = space;
-          }
-        }
-        if (!wasSpace) { sb.append(nmTokens.substring(pos)); }
-        JsWriter.appendString(JsWriter.htmlEscape(sb.toString()), tgtChain, b);
+        new IdentifierWriter(
+            t.getAttribValueNode().getFilePosition(), gxpc.mq, true)
+            .toJavascript(t.getAttribValue(),
+                          new IdentifierWriter.AttribValueEmitter(tgtChain, b));
+      }
+
+      @Override
+      String runtimeFunction(String tagName, String attribName, DomTree t,
+                             GxpCompiler gxpc) {
+        return ReservedNames.SUFFIX;
+      }
+    },
+    CLASSES {
+      @Override
+      void apply(HTML.Attribute typeInfo, DomTree.Attrib t, GxpCompiler gxpc,
+                 List<String> tgtChain, Block b) {
+        new IdentifierWriter(
+            t.getAttribValueNode().getFilePosition(), gxpc.mq, false)
+            .toJavascript(t.getAttribValue(),
+                          new IdentifierWriter.AttribValueEmitter(tgtChain, b));
       }
       @Override
       String runtimeFunction(String tagName, String attribName, DomTree t,
                              GxpCompiler gxpc) {
-        return ReservedNames.PREFIX;
+        return ReservedNames.IDENT;
       }
     },
     URI {
@@ -1181,7 +1185,7 @@ public final class GxpCompiler {
     /**
      * Given an attribute name, the gxp attribute that specifies it, and the
      * compiler, return the name of a function that will take the attribute
-     * value and the namespace prefix and return the processed version of the
+     * value and the namespace suffix and return the processed version of the
      * value.
      */
     abstract String runtimeFunction(

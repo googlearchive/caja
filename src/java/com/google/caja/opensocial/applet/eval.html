@@ -79,7 +79,7 @@ function loadCaja(html) {
 
   ___.getNewModuleHandler().setOuters(testOuters);
   attachDocumentStub(
-       'DOM-PREFIX-',
+       '-xyz',
        {
          rewrite:
              function (uri, mimeType) {
@@ -102,6 +102,6 @@ function loadCaja(html) {
   <body onload="testOuters.clearHtml___()">
     <div id="eval-results"></div>
     <hr>
-    <div id="caja-html" class="DOM-PREFIX"></div>
+    <div id="caja-html" class="-xyz"></div>
   </body>
 </html>

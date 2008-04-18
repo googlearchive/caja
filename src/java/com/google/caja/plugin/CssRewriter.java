@@ -29,12 +29,10 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
-import static com.google.caja.plugin.SyntheticNodes.s;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -42,8 +40,10 @@ import java.util.regex.Pattern;
 
 /**
  * Rewrites CSS to be safer and shorter.
- * Namespaces css ids and classes, excises disallowed constructs, removes
- * extraneous nodes, and collapses duplicate ruleset selectors.
+ * Excises disallowed constructs, removes extraneous nodes, and collapses
+ * duplicate rule-set selectors.
+ * <p>
+ * Does not separate rules into separate name-spaces.
  *
  * @author mikesamuel@gmail.com
  */
@@ -85,12 +85,13 @@ public final class CssRewriter {
     fixUnitlessLengths(t);
     // Once at the beginning, and again at the end.
     removeUnsafeConstructs(t);
-    removeEmptyDeclarations(t);
+    removeEmptyDeclarationsAndSelectors(t);
     // After we remove declarations, we may have some rulesets without any
     // declarations which is technically illegal, so we remove rulesets without
     // declarations.
     removeEmptyRuleSets(t);
-    if (null != meta.namespacePrefix) { namespaceIdents(t); }
+    // Disallow classes and ids that end in double underscore.
+    removeForbiddenIdents(t);
     // Do this again to make sure no earlier changes introduce unsafe constructs
     removeUnsafeConstructs(t);
 
@@ -205,7 +206,7 @@ public final class CssRewriter {
               term.getExprAtom();
           String value = quantity.getValue();
           if (!isZeroOrHasUnits(value)) {
-            // Missing units. 
+            // Missing units.
             CssTree.QuantityLiteral withUnits = new CssTree.QuantityLiteral(
                 quantity.getFilePosition(), value + "px");
             withUnits.getAttributes().putAll(quantity.getAttributes());
@@ -231,19 +232,33 @@ public final class CssRewriter {
   }
 
   /** Get rid of rules like <code>p { }</code>. */
-  private void removeEmptyDeclarations(AncestorChain<? extends CssTree> t) {
+  private void removeEmptyDeclarationsAndSelectors(
+      AncestorChain<? extends CssTree> t) {
     t.node.acceptPreOrder(new Visitor() {
         public boolean visit(AncestorChain<?> ancestors) {
           ParseTreeNode node = ancestors.node;
-          if (!(node instanceof CssTree.Declaration)) { return true; }
-          CssTree.Declaration decl = (CssTree.Declaration) node;
-          if (null == decl.getProperty()) {
-            ParseTreeNode parent = ancestors.getParentNode();
-            if (parent instanceof MutableParseTreeNode) {
-              ((MutableParseTreeNode) parent).removeChild(decl);
+          if (node instanceof CssTree.Declaration) {
+            CssTree.Declaration decl = (CssTree.Declaration) node;
+            if (null == decl.getProperty()) {
+              ParseTreeNode parent = ancestors.getParentNode();
+              if (parent instanceof MutableParseTreeNode) {
+                ((MutableParseTreeNode) parent).removeChild(decl);
+              }
             }
+            return false;
+          } else if (node instanceof CssTree.Selector) {
+            CssTree.Selector sel = (CssTree.Selector) node;
+            if (sel.children().isEmpty()
+                || !(sel.children().get(0) instanceof CssTree.SimpleSelector)) {
+              // Remove from parent
+              ParseTreeNode parent = ancestors.getParentNode();
+              if (parent instanceof MutableParseTreeNode) {
+                ((MutableParseTreeNode) parent).removeChild(sel);
+              }
+            }
+            return false;
           }
-          return false;
+          return true;
         }
       }, t.parent);
   }
@@ -267,83 +282,26 @@ public final class CssRewriter {
         }
       }, t.parent);
   }
-  private void namespaceIdents(AncestorChain<? extends CssTree> t) {
-    // Namespace classes and ids
+  private void removeForbiddenIdents(AncestorChain<? extends CssTree> t) {
     t.node.acceptPreOrder(new Visitor() {
-        public boolean visit(AncestorChain<?> ancestors) {
-          ParseTreeNode node = ancestors.node;
-          if (!(node instanceof CssTree.SimpleSelector)) { return true; }
-          CssTree.SimpleSelector ss = (CssTree.SimpleSelector) node;
-          List<? extends CssTree> children = ss.children();
-          for (int i = 0, n = children.size(); i < n; ++i) {
-            CssTree child = children.get(i);
-            if (child instanceof CssTree.ClassLiteral) {
-              CssTree.ClassLiteral classLit = (CssTree.ClassLiteral) child;
-              CssTree prevSibling = i > 0 ? children.get(i - 1) : null;
-              if (prevSibling instanceof CssTree.IdentLiteral
-                  && "BODY".equalsIgnoreCase(
-                      ((CssTree.IdentLiteral) prevSibling).getValue())) {
-                // Don't rename a class if it applies to BODY.  See the code
-                // below that allows body.ie6 for browser handling.
-                return true;
-              }
-
-              classLit.setValue("." + meta.namespacePrefix + "-"
-                                + classLit.getValue().substring(1));
-            } else if (child instanceof CssTree.IdLiteral) {
-              CssTree.IdLiteral idLit = (CssTree.IdLiteral) child;
-              idLit.setValue("#" + meta.namespacePrefix + "-"
-                             + idLit.getValue().substring(1));
-            }
-          }
-          return true;
-        }
-      }, t.parent);
-    // Make sure that each selector prefixed by a root rule
-    t.node.acceptPreOrder(new Visitor() {
-        public boolean visit(AncestorChain<?> ancestors) {
-          ParseTreeNode node = ancestors.node;
-          if (!(node instanceof CssTree.Selector)) { return true; }
-          CssTree.Selector sel = (CssTree.Selector) node;
-          if (sel.children().isEmpty()
-              || !(sel.children().get(0) instanceof CssTree.SimpleSelector)) {
-            // Remove from parent
-            ParseTreeNode parent = ancestors.getParentNode();
-            if (parent instanceof MutableParseTreeNode) {
-              ((MutableParseTreeNode) parent).removeChild(sel);
-            }
-          } else {
-            CssTree.SimpleSelector first =
-                (CssTree.SimpleSelector) sel.children().get(0);
-            // If this selector is like body.ie or body.firefox, move over
-            // it so that it remains topmost
-            if ("BODY".equalsIgnoreCase(first.getElementName())) {
-              // The next part had better be a DESCENDANT combinator.
-              ParseTreeNode it = null;
-              if (sel.children().size() > 1) { it = sel.children().get(1); }
-              if (it instanceof CssTree.Combination
-                  && (CssTree.Combinator.DESCENDANT
-                      == ((CssTree.Combination) it).getCombinator())) {
-                first = (CssTree.SimpleSelector) sel.children().get(2);
+        public boolean visit(AncestorChain<?> ac) {
+          if (!(ac.node instanceof CssTree.SimpleSelector)) { return true; }
+          CssTree.SimpleSelector ss = (CssTree.SimpleSelector) ac.node;
+          boolean ok = false;
+          for (CssTree child : ss.children()) {
+            if (child instanceof CssTree.ClassLiteral
+                || child instanceof CssTree.IdLiteral) {
+              String literal = (String) child.getValue();
+              if (literal.endsWith("__")) {
+                mq.addMessage(PluginMessageType.UNSAFE_CSS_IDENTIFIER,
+                    child.getFilePosition(),
+                    MessagePart.Factory.valueOf(literal));
+                ac.parent.node.getAttributes().set(CssValidator.INVALID, true);
+                ok = false;
               }
             }
-
-            // Use the start position of the first item as the position of the
-            // synthetic parts.
-            FilePosition pos = FilePosition.startOf(first.getFilePosition());
-
-            CssTree.Combination op = s(new CssTree.Combination(
-                pos, CssTree.Combinator.DESCENDANT));
-
-            CssTree.ClassLiteral prefixId = s(new CssTree.ClassLiteral(
-                pos, "." + meta.namespacePrefix));
-            CssTree.SimpleSelector prefixSel = s(new CssTree.SimpleSelector(
-                pos, Collections.singletonList(prefixId)));
-
-            sel.insertBefore(op, first);
-            sel.insertBefore(prefixSel, op);
           }
-          return false;
+          return ok;
         }
       }, t.parent);
   }

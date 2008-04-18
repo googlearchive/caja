@@ -23,7 +23,6 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
@@ -31,7 +30,6 @@ import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.render.JsPrettyPrinter;
-import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -50,8 +48,6 @@ import java.net.URI;
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewriter {
-  private static final String DOM_PREFIX = "DOM-PREFIX";
-
   private final MessageQueue mq;
   private CssSchema cssSchema;
   private HtmlSchema htmlSchema;
@@ -140,12 +136,6 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
       }
     };
 
-    CssTree css = compiler.getCss();
-    if (css != null) {
-      TokenConsumer tc = new CssPrettyPrinter(style, errorHandler);
-      css.render(createRenderContext(tc, mc));
-      tc.noMoreTokens();
-    }
     Block js = compiler.getJavascript();
     if (js != null) {
       TokenConsumer tc = new JsPrettyPrinter(script, errorHandler);
@@ -157,7 +147,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
       throw new GadgetRewriteException();
     }
 
-    return rewriteContent(style.toString(), script.toString());
+    return rewriteContent(script.toString());
   }
 
   private DomTree.Fragment parseHtml(CharProducer htmlContent, InputSource src)
@@ -173,7 +163,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
   private PluginCompiler compileGadget(
       DomTree.Fragment content, final URI baseUri, final UriCallback callback)
       throws GadgetRewriteException {
-    PluginMeta meta = new PluginMeta(DOM_PREFIX,
+    PluginMeta meta = new PluginMeta(
         new PluginEnvironment() {
           public CharProducer loadExternalResource(
               ExternalReference ref, String mimeType) {
@@ -216,21 +206,8 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
     return compiler;
   }
 
-  private String rewriteContent(String style, String script) {
-    StringBuilder results = new StringBuilder();
-    if (!"".equals(style)) {
-      results.append("<style type=\"text/css\">\n")
-          .append(style)
-          .append("</style>\n");
-    }
-
-    if (!"".equals(script)) {
-      results.append("<script type=\"text/javascript\">\n")
-          .append(script)
-          .append("</script>\n");
-    }
-
-    return results.toString();
+  private String rewriteContent(String script) {
+    return "<script type=\"text/javascript\">" + script + "</script>";
   }
 
   private CharProducer readReadable(Readable input, InputSource src) {

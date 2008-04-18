@@ -27,7 +27,6 @@ import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
-import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
@@ -38,7 +37,6 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
-import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
@@ -47,6 +45,7 @@ import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.stages.RewriteHtmlStage;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
@@ -125,8 +124,8 @@ public class HtmlCompiler {
   }
 
   /**
-   * Appends to block, statements that will call the function identified by
-   * tgtChain with snippets of html that comprise t.
+   * Appends to block, statements that will send events to out that can be used
+   * to reproduce t on the browser.
    *
    * @param t the tree to render
    */
@@ -325,7 +324,8 @@ public class HtmlCompiler {
     if (cssBlock.children().size() != 1) {
       throw new IllegalStateException(attrib.getAttribValue());
     }
-    Expression css = ((ExpressionStmt) cssBlock.children().get(0)).getExpression();
+    Expression css = ((ExpressionStmt) cssBlock.children().get(0))
+        .getExpression();
     // Convert cat(a, b, c) to (a + b) + c
     List<? extends Expression> operands = ((Operation) css).children();
     Expression cssOp = operands.get(1);
@@ -439,8 +439,9 @@ public class HtmlCompiler {
         case ID:
         case IDREF:
         case GLOBAL_NAME:
-        case CLASSES:  // TODO(mikesamuel): remove classes per DOMando rules
-          return AttributeXform.NMTOKEN;
+          return AttributeXform.NAMES;
+        case CLASSES:
+          return AttributeXform.CLASSES;
         case STYLE:
           return AttributeXform.STYLE;
         case SCRIPT:
@@ -463,41 +464,37 @@ public class HtmlCompiler {
    * Transformations are performed at compile time.
    */
   private static enum AttributeXform {
-    /** Applied to NMTOKENs such as {@code id} and {@code class} attributes. */
-    NMTOKEN {
+    /** Applied to {@code name} and {@code id} attributes. */
+    NAMES {
       @Override
       void apply(AncestorChain<DomTree.Attrib> tChain, HtmlCompiler htmlc,
                  DomProcessingEvents out) {
         DomTree.Attrib t = tChain.node;
-        String nmTokens = t.getAttribValue();
-        StringBuilder sb = new StringBuilder(nmTokens.length() + 16);
-        boolean wasSpace = true;
-        int pos = 0;
-
-        boolean firstIdent = true;
-        for (int i = 0, n = nmTokens.length(); i < n; ++i) {
-          char ch = nmTokens.charAt(i);
-          boolean space = Character.isWhitespace(ch);
-          if (space != wasSpace) {
-            if (!space) {
-              if (!firstIdent) {
-                sb.append(' ');
-              } else {
-                firstIdent = false;
-              }
-              sb.append(htmlc.meta.namespacePrefix).append('-');
-              pos = i;
-            } else {
-              sb.append(nmTokens, pos, i);
-            }
-            wasSpace = space;
-          }
+        IdentifierWriter.ConcatenationEmitter emitter
+            = new IdentifierWriter.ConcatenationEmitter();
+        new IdentifierWriter(
+            t.getAttribValueNode().getFilePosition(), htmlc.mq, true)
+            .toJavascript(t.getAttribValue(), emitter);
+        Expression value = emitter.getExpression();
+        if (value != null) {
+          out.attr(t.getAttribName(), value);
         }
-        if (!wasSpace) {
-          sb.append(nmTokens, pos, nmTokens.length());
+      }
+    },
+    CLASSES {
+      @Override
+      void apply(AncestorChain<DomTree.Attrib> tChain, HtmlCompiler htmlc,
+                 DomProcessingEvents out) {
+        DomTree.Attrib t = tChain.node;
+        IdentifierWriter.ConcatenationEmitter emitter
+            = new IdentifierWriter.ConcatenationEmitter();
+        new IdentifierWriter(
+            t.getAttribValueNode().getFilePosition(), htmlc.mq, false)
+            .toJavascript(t.getAttribValue(), emitter);
+        Expression value = emitter.getExpression();
+        if (value != null) {
+          out.attr(t.getAttribName(), value);
         }
-
-        out.attr(t.getAttribName(), sb.toString());
       }
     },
     /** Applied to CSS such as {@code style} attributes. */
@@ -522,16 +519,13 @@ public class HtmlCompiler {
         String handlerFnName = htmlc.syntheticId();
         htmlc.eventHandlers.put(
             handlerFnName,
-            s(new Declaration(
-                  s(new Identifier(handlerFnName)),
-                  s(new FunctionConstructor(
-                        new Identifier(null),
-                        Arrays.asList(
-                            s(new FormalParam(
-                                  s(new Identifier(ReservedNames.THIS_NODE)))),
-                            s(new FormalParam(
-                                  s(new Identifier("event"))))),
-                        handler)))));
+            (Declaration) QuasiBuilder.substV(
+                "var @handlerFnName = ___.simpleFunc("
+                + "   function (" + ReservedNames.THIS_NODE + ", event) {"
+                + "     @handler*;"
+                + "   });",
+                "handlerFnName", s(new Identifier(handlerFnName)),
+                "handler", handler));
 
         String handlerFnNameLit = StringLiteral.toQuotedValue(handlerFnName);
 

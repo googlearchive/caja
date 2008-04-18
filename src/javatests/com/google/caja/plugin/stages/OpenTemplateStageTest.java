@@ -128,7 +128,7 @@ public final class OpenTemplateStageTest extends CajaTestCase {
     pipeline.getStages().add(new ConsolidateCodeStage());
 
     ParseTreeNode node = js(fromString(input));
-    PluginMeta meta = new PluginMeta("pre-");
+    PluginMeta meta = new PluginMeta();
     Jobs jobs = new Jobs(mc, mq, meta);
     jobs.getJobs().add(new Job(new AncestorChain<ParseTreeNode>(node)));
 

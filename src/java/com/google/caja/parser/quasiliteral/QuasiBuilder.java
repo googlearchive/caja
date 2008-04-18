@@ -64,10 +64,10 @@ public class QuasiBuilder {
    * @param patternText a quasiliteral pattern.
    * @param specimen a specimen parse tree node.
    * @return whether the match succeeded.
-   * @see QuasiNode#matchHere(com.google.caja.parser.ParseTreeNode) 
+   * @see QuasiNode#matchHere(com.google.caja.parser.ParseTreeNode)
    */
   public static boolean match(String patternText, ParseTreeNode specimen) {
-    return match(patternText, specimen, new HashMap<String, ParseTreeNode>());  
+    return match(patternText, specimen, new HashMap<String, ParseTreeNode>());
   }
 
   /**
@@ -123,7 +123,12 @@ public class QuasiBuilder {
           (String)args[i++],
           (ParseTreeNode)args[i++]);
     }
-    return subst(patternText, bindings);
+    ParseTreeNode result = subst(patternText, bindings);
+    if (result == null) {
+      throw new NullPointerException(
+          "'" + patternText + "' > " + bindings.keySet());
+    }
+    return result;
   }
 
   /**
@@ -139,7 +144,7 @@ public class QuasiBuilder {
       InputSource inputSource,
       String pattern) throws ParseException {
     ParseTreeNode topLevelNode = parse(inputSource, pattern);
-    
+
     // The top-level node returned from the parser is always a Block.
     if (!(topLevelNode instanceof Block)) {
       throw new RuntimeException("Panic: top level is not a Block");
@@ -149,7 +154,7 @@ public class QuasiBuilder {
     if (topLevelNode.children().size() == 1) {
       topLevelNode = topLevelNode.children().get(0);
     }
-    
+
     // If the top level is an ExpressionStmt, with one child, then promote its single child to
     // the top level to allow the contained expression to match anywhere.
     if (topLevelNode instanceof ExpressionStmt &&
@@ -208,7 +213,7 @@ public class QuasiBuilder {
         ((FormalParam)n).getIdentifierName().startsWith("@")) {
       return buildMatchNode(FormalParam.class, ((FormalParam)n).getIdentifierName());
     }
-    
+
     if (n instanceof Identifier &&
         ((Identifier)n).getValue() != null &&
         ((Identifier)n).getValue().startsWith("@")) {
@@ -242,7 +247,7 @@ public class QuasiBuilder {
     return new SimpleQuasiNode(
         n.getClass(),
         n.getValue(),
-        buildChildrenOf(n));    
+        buildChildrenOf(n));
   }
 
   private static QuasiNode buildMatchNode(
@@ -282,7 +287,7 @@ public class QuasiBuilder {
 
   private static QuasiNode buildObjectConstructorMatchNode(String keyExpr, String valueExpr) {
     keyExpr = keyExpr.substring(1, keyExpr.length() - 1);
-    valueExpr = valueExpr.substring(1, valueExpr.length() - 1);    
+    valueExpr = valueExpr.substring(1, valueExpr.length() - 1);
     return new ObjectConstructorHole(keyExpr, valueExpr);
   }
 
@@ -300,7 +305,7 @@ public class QuasiBuilder {
             new JsLexer(
                 CharProducer.Factory.create(new StringReader(sourceText),
                 inputSource),
-                true), 
+                true),
             inputSource,
             JsTokenQueue.NO_NON_DIRECTIVE_COMMENT),
         DevNullMessageQueue.singleton(),
@@ -309,5 +314,5 @@ public class QuasiBuilder {
     Statement topLevelStatement = parser.parse();
     parser.getTokenQueue().expectEmpty();
     return topLevelStatement;
-  }  
+  }
 }

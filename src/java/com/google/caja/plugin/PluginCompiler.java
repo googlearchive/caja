@@ -19,9 +19,9 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.stages.CheckForErrorsStage;
+import com.google.caja.plugin.stages.CompileCssStage;
 import com.google.caja.plugin.stages.CompileCssTemplatesStage;
 import com.google.caja.plugin.stages.CompileGxpsStage;
 import com.google.caja.plugin.stages.CompileHtmlStage;
@@ -103,9 +103,7 @@ public final class PluginCompiler {
    */
   public List<? extends ParseTreeNode> getOutputs() {
     List<ParseTreeNode> outputs = new ArrayList<ParseTreeNode>();
-    ParseTreeNode css = getCss(),
-        js = getJavascript();
-    if (css != null) { outputs.add(css); }
+    ParseTreeNode js = getJavascript();
     if (js != null) { outputs.add(js); }
     return outputs;
   }
@@ -129,6 +127,7 @@ public final class PluginCompiler {
     stages.add(new SanitizeHtmlStage(htmlSchema));
     stages.add(new CompileHtmlStage(cssSchema, htmlSchema));
     stages.add(new ValidateCssStage(cssSchema, htmlSchema));
+    stages.add(new CompileCssStage());
     stages.add(new CompileGxpsStage(cssSchema, htmlSchema));
     stages.add(new CompileCssTemplatesStage(cssSchema));
     stages.add(new ConsolidateCodeStage());
@@ -155,15 +154,6 @@ public final class PluginCompiler {
     return soleJsJob != null ? (Block) soleJsJob.getRoot().node : null;
   }
 
-  public CssTree getCss() {
-    Job soleCssJob = getConsolidatedOutput(new Criterion<Job>() {
-          public boolean accept(Job job) {
-            return job.getType() == Job.JobType.CSS;
-          }
-        });
-    return soleCssJob != null ? (CssTree) soleCssJob.getRoot().node : null;
-  }
-
   private Job getConsolidatedOutput(Criterion<Job> filter) {
     Job match = null;
     for (Job job : this.jobs.getJobs()) {
@@ -179,8 +169,7 @@ public final class PluginCompiler {
 
   /**
    * Run the compiler on all parse trees added via {@link #addInput}.
-   * The output parse trees are available via {@link #getJavascript()} and
-   * {@link #getCss}.
+   * The output parse tree is available via {@link #getJavascript()}.
    * @return true on success, false on failure.
    */
   public boolean run() {

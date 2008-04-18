@@ -89,8 +89,7 @@ public final class PluginCompilerMain {
     boolean success = false;
     MessageContext mc = null;
     try {
-      PluginMeta meta = new PluginMeta(
-          config.getCssPrefix(), makeEnvironment(config));
+      PluginMeta meta = new PluginMeta(makeEnvironment(config));
       PluginCompiler compiler = new PluginCompiler(meta, mq);
       mc = compiler.getMessageContext();
       compiler.setCssSchema(config.getCssSchema(mq));
@@ -100,7 +99,6 @@ public final class PluginCompilerMain {
 
       if (success) {
         writeFile(config.getOutputJsFile(), compiler.getJavascript());
-        writeFile(config.getOutputCssFile(), compiler.getCss());
       }
     } finally {
       if (mc == null) { mc = new MessageContext(); }
@@ -354,7 +352,7 @@ final class FileSystemEnvironment implements PluginEnvironment {
   FileSystemEnvironment(File directory) {
     this.directory = directory;
   }
- 
+
   public CharProducer loadExternalResource(
       ExternalReference ref, String mimeType) {
     File f = toFileUnderSameDirectory(ref.getUri());

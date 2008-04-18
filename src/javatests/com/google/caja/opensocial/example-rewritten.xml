@@ -1,28 +1,13 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5" /></ModulePrefs><Content type="html"><![CDATA[<style type="text/css">
-.DOM-PREFIX #DOM-PREFIX-p3 {
-  color: red
-}
-@media print {
-  .DOM-PREFIX #DOM-PREFIX-p3 {
-    font-weight: bold;
-    color: black
-  }
-}
-@media print, screen {
-  .DOM-PREFIX .DOM-PREFIX-p4 {
-    font-weight: bold
-  }
-}
-.DOM-PREFIX .DOM-PREFIX-p1 {
-  color: red
-}</style>
-<script type="text/javascript">
-{
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5" /></ModulePrefs><Content type="html"><![CDATA[<script type="text/javascript">{
   ___.loadModule(function (___OUTERS___) {
-                   ___OUTERS___.c_1___ = function (thisNode___, event) {
-                     ___.asSimpleFunc(___.primFreeze(___OUTERS___.handleClicky_canRead___? ___OUTERS___.handleClicky: ___.readPub(___OUTERS___, 'handleClicky', true)))();
-                   };
-                   ___OUTERS___.htmlEmitter___.pc('\n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    ').b('p').a('class', 'DOM-PREFIX-p1 DOM-PREFIX-p2').f(false).ih('Paragraph 1').e('p').pc('\n\n    ');
+                   ___OUTERS___.emitCss___([ '.', ' #p3-', ' {\n  color: red\n}' ].join(___OUTERS___.getIdClass___()));
+                   ___OUTERS___.emitCss___([ '@media print {\n  .', ' #p3-', ' {\n    font-weight: bold;\n    color: black\n  }\n}' ].join(___OUTERS___.getIdClass___()));
+                   ___OUTERS___.emitCss___([ '@media print, screen {\n  .', ' .p4 {\n    font-weight: bold\n  }\n}' ].join(___OUTERS___.getIdClass___()));
+                   ___OUTERS___.emitCss___([ '.', ' .p1 {\n  color: red\n}' ].join(___OUTERS___.getIdClass___()));
+                   ___OUTERS___.c_1___ = ___.simpleFunc(function (thisNode___, event) {
+                                                          ___.asSimpleFunc(___.primFreeze(___OUTERS___.handleClicky_canRead___? ___OUTERS___.handleClicky: ___.readPub(___OUTERS___, 'handleClicky', true)))();
+                                                        });
+                   ___OUTERS___.htmlEmitter___.pc('\n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    ').b('p').a('class', 'p1 p2').f(false).ih('Paragraph 1').e('p').pc('\n\n    ');
                    {
                      (function () {
                         var x___ = ___.simpleFunc(function externalScript() {
@@ -31,7 +16,7 @@
                         return ___OUTERS___.externalScript_canSet___? (___OUTERS___.externalScript = x___): ___.setPub(___OUTERS___, 'externalScript', x___);
                       })();
                    }
-                   ___OUTERS___.htmlEmitter___.pc('\n\n    \n    ').b('p').a('id', 'DOM-PREFIX-p3').f(false).ih('Paragraph 2').e('p').pc('\n\n    \n    \n\n    \n    ');
+                   ___OUTERS___.htmlEmitter___.pc('\n\n    \n    ').b('p').a('id', 'p3-' + ___OUTERS___.getIdClass___()).f(false).ih('Paragraph 2').e('p').pc('\n\n    \n    \n\n    \n    ');
                    {
                      (function () {
                         var x___ = ___.simpleFunc(function handleClicky() {
@@ -42,5 +27,4 @@
                    }
                    ___OUTERS___.htmlEmitter___.pc('\n\n    ').b('p').f(false).b('a').a('onclick', 'return plugin_dispatchEvent___(this, event || window.event, ' + ___.getId(___OUTERS___) + ', \'c_1___\')').f(false).ih('Paragraph 3').e('a').e('p').pc('\n\n    ').b('a').a('href', 'http://url-proxy.test.google.com/?url=http%3A%2F%2Ffoo.com%2F&mime-type=*%2F*').a('target', '_new').f(false).ih('External URL.  Apply URICallback.rewrite to me.').e('a').pc('\n\n    \n    \n\n    \n    \n    \n\n  ');
                  });
-}</script>
-]]></Content></Module>
+}</script>]]></Content></Module>

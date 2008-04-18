@@ -196,8 +196,6 @@
     <java classname="com.google.caja.plugin.PluginCompilerMain"
      failonerror="yes">
       <classpath refid="classpath.run"/>
-      <arg value="--css_prefix"/>
-      <arg value="plugin"/>
       <arg value="--out"/>
       <arg file="${lib}/com/google/caja/plugin/domita_test_cajoled"/>
       <arg value="--input"/>
@@ -395,9 +393,7 @@
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${testsrc}"/>
       <classpath refid="classpath.tests.compile"/>
-      <include name="**/caja/util/MoreAsserts.java"/>
-      <include name="**/caja/util/RhinoTestBed.java"/>
-      <include name="**/caja/util/TestUtil.java"/>
+      <include name="**/caja/util/*.java"/>
       <!-- compilerarg line="-Xlint:unchecked"/ -->
     </javac>
   </target>
@@ -622,8 +618,6 @@
     <java classname="com.google.caja.plugin.PluginCompilerMain"
      failonerror="yes">
       <classpath refid="classpath.run"/>
-      <arg value="--css_prefix"/>
-      <arg value="plugin"/>
       <arg value="--out"/>
       <arg file="${www}/contact-spring-graph/plugin-files/plugin"/>
       <arg value="--input"/>
@@ -652,10 +646,6 @@
       <arg value="${src}/com/google/caja/demos/lolcat-search/searchbox.html"/>
       <arg value="--output_js"/>
       <arg value="${www}/lolcat-search/searchbox-cajoled.js"/>
-      <arg value="--output_css"/>
-      <arg value="${www}/lolcat-search/searchbox-cajoled.css"/>
-      <arg value="--css_prefix"/>
-      <arg value="searchbox"/>
     </java>
 
     <java classname="com.google.caja.plugin.PluginCompilerMain"
@@ -665,10 +655,6 @@
       <arg value="${src}/com/google/caja/demos/lolcat-search/kittens.html"/>
       <arg value="--output_js"/>
       <arg value="${www}/lolcat-search/kittens-cajoled.js"/>
-      <arg value="--output_css"/>
-      <arg value="${www}/lolcat-search/kittens-cajoled.css"/>
-      <arg value="--css_prefix"/>
-      <arg value="kittens"/>
     </java>
 
     <copy todir="${www}/lolcat-search">

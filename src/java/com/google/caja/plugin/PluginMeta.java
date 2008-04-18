@@ -18,22 +18,17 @@ package com.google.caja.plugin;
  * For a plugin, determines how its external dependencies are translated.
  */
 public final class PluginMeta {
-  /** A CSS&HTML identifier prefix used to namespace ids and classes. */
-  public final String namespacePrefix;
   /** Used to generate names that are unique within the plugin's namespace. */
   private int guidCounter;
   /** Describes how resources external to the plugin definition are resolved. */
   private final PluginEnvironment env;
 
-  public PluginMeta(String namespacePrefix) {
-    this(namespacePrefix, PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
+  public PluginMeta() {
+    this(PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
   }
 
-  public PluginMeta(String namespacePrefix, PluginEnvironment env) {
-    if (null == namespacePrefix || env == null) {
-      throw new NullPointerException();
-    }
-    this.namespacePrefix = namespacePrefix;
+  public PluginMeta(PluginEnvironment env) {
+    if (env == null) { throw new NullPointerException(); }
     this.env = env;
   }
 

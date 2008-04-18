@@ -51,7 +51,7 @@ public class ExpressionSanitizerTest extends CajaTestCase {
     MessageContext mc = new MessageContext();
     MessageQueue mq = new EchoingMessageQueue(
         new PrintWriter(new OutputStreamWriter(System.err)), mc);
-    PluginMeta meta = new PluginMeta("pre");
+    PluginMeta meta = new PluginMeta();
 
     Block inputNode = js(fromString(input));
     assertTrue(new ExpressionSanitizerCaja(mq, meta).sanitize(ac(inputNode)));

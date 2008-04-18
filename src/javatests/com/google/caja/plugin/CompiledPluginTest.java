@@ -79,13 +79,13 @@ public class CompiledPluginTest extends TestCase {
   public void testHelloWorld() throws Exception {
     execPlugin(
         "\n  var div = document.createElement('DIV');" +
-        "\n  div.id = 'pre-hello-base';" +
+        "\n  div.id = 'hello-base-post';" +
         "\n  document.body.appendChild(div);" +
         "\n  testOuters.main();" +
         "\n" +
         "\n  assertEquals(" +
         "\n      '<h1>Hello World</h1>'," +
-        "\n      document.getElementById('pre-hello-base').innerHTML" +
+        "\n      document.getElementById('hello-base-post').innerHTML" +
         "\n      );",
         new PluginFile(
             new StringReader(
@@ -110,19 +110,19 @@ public class CompiledPluginTest extends TestCase {
   public void testConditional() throws Exception {
     execPlugin(
         "\n  var div = document.createElement('DIV');" +
-        "\n  div.id = 'pre-base';" +
+        "\n  div.id = 'base-post';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
         "\n  testOuters.main(1);" +
         "\n  assertEquals(" +
         "\n      'Branch A'," +
-        "\n      document.getElementById('pre-base').innerHTML" +
+        "\n      document.getElementById('base-post').innerHTML" +
         "\n      );" +
         "\n" +
         "\n  testOuters.main(0);" +
         "\n  assertEquals(" +
         "\n      'Branch B'," +
-        "\n      document.getElementById('pre-base').innerHTML" +
+        "\n      document.getElementById('base-post').innerHTML" +
         "\n      );",
         new PluginFile(
             new StringReader(
@@ -147,14 +147,14 @@ public class CompiledPluginTest extends TestCase {
   public void testLoop() throws Exception {
     execPlugin(
         "\n  var div = document.createElement('DIV');" +
-        "\n  div.id = 'pre-base';" +
+        "\n  div.id = 'base-post';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
         "\n  testOuters.main(['foo', 'bar', 'boo & baz']);" +
         "\n  assertEquals(" +
         "\n      '<ul><li>foo</li><li>bar</li>' +" +
         "\n      '<li>boo &amp; baz</li></ul>'," +
-        "\n      document.getElementById('pre-base').innerHTML" +
+        "\n      document.getElementById('base-post').innerHTML" +
         "\n      );",
         new PluginFile(
             new StringReader(
@@ -180,18 +180,18 @@ public class CompiledPluginTest extends TestCase {
   public void testAttr() throws Exception {
     execPlugin(
         "\n  var div = document.createElement('DIV');" +
-        "\n  div.id = 'pre-base';" +
+        "\n  div.id = 'base-post';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
         "\n  testOuters.main();" +
         "\n  assertEquals(" +
-        "\n      '<a class=\"pre-class1 pre-class2\"' +" +
+        "\n      '<a class=\"class1 class2\"' +" +
         "\n      ' href=\"http://proxy/?uri=foo.html%3fa%3db%26c%3dd\"' +" +
-        "\n      ' id=\"pre-id\" target=\"_new\"' +" +
+        "\n      ' id=\"id-post\" target=\"_new\"' +" +
         "\n      ' title=\"&quot;hover text&quot;\"' +" +
         "\n      '>Clicky' +" +
         "\n      '\\n  </a>'," +
-        "\n      document.getElementById('pre-base').innerHTML" +
+        "\n      document.getElementById('base-post').innerHTML" +
         "\n      );",
         new PluginFile(
             new StringReader(
@@ -233,13 +233,13 @@ public class CompiledPluginTest extends TestCase {
   public void testCall() throws Exception {
     execPlugin(
         "\n  var div = document.createElement('DIV');" +
-        "\n  div.id = 'pre-base';" +
+        "\n  div.id = 'base-post';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
         "\n  testOuters.main();" +
         "\n  assertEquals(" +
         "\n      '(1,2)(1,2)'," +
-        "\n      document.getElementById('pre-base').innerHTML" +
+        "\n      document.getElementById('base-post').innerHTML" +
         "\n      );",
         new PluginFile(
             new StringReader(
@@ -270,14 +270,14 @@ public class CompiledPluginTest extends TestCase {
   public void testCss() throws Exception {
     execPlugin(
         "\n  var div = document.createElement('DIV');" +
-        "\n  div.id = 'pre-base';" +
+        "\n  div.id = 'base-post';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
         "\n  testOuters.main();" +
         "\n  assertEquals(" +
         "\n      'left : 25px ; width : 30px ; margin : 5px 5px 5px 5px ; ' +" +
         "\n      'color : #a0b0c0'," +
-        "\n      document.getElementById('pre-base').style.cssText" +
+        "\n      document.getElementById('base-post').style.cssText" +
         "\n      );",
         new PluginFile(
             new StringReader(
@@ -310,8 +310,7 @@ public class CompiledPluginTest extends TestCase {
    */
   private void execPlugin(String tests, PluginFile... pluginFiles)
       throws IOException, ParseException {
-    PluginMeta meta = new PluginMeta(
-        "pre", PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
+    PluginMeta meta = new PluginMeta();
     MessageContext mc = new MessageContext();
     MessageQueue mq = new EchoingMessageQueue(
         new PrintWriter(new OutputStreamWriter(System.err)), mc);
@@ -378,7 +377,7 @@ public class CompiledPluginTest extends TestCase {
             + "  return 'http://proxy/?uri=' + encodeURIComponent(uri);\n"
             + "} };\n"
             + "var testOuters = ___.getNewModuleHandler().getOuters();\n"
-            + "attachDocumentStub('pre-', uriCallback, testOuters);\n"
+            + "attachDocumentStub('-post', uriCallback, testOuters);\n"
             + "testOuters.log = ___.simpleFunc(function(s) {console.log(s)});"),
             "container"),
         // The Plugin

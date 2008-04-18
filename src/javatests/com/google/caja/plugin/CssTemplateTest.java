@@ -106,7 +106,8 @@ public final class CssTemplateTest extends CajaTestCase {
         pos, name, Collections.<Identifier>emptyList(),
         cssDecls(fromString(css), true));
 
-    PluginMeta meta = new PluginMeta(":", new PluginEnvironment() {
+    PluginMeta meta = new PluginMeta(
+      new PluginEnvironment() {
         public CharProducer loadExternalResource(
             ExternalReference ref, String mimeType) {
           return null;

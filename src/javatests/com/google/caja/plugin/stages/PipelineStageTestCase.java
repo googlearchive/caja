@@ -60,7 +60,6 @@ public abstract class PipelineStageTestCase extends TestCase {
     mc = new MessageContext();
     mq = TestUtil.createTestMessageQueue(mc);
     meta = new PluginMeta(
-        "foo",
         new PluginEnvironment() {
           public CharProducer loadExternalResource(
               ExternalReference ref, String mimeType) {

@@ -62,18 +62,10 @@ public final class Config {
       "Output file path for translated JS (defaults to input with \".js\")",
       true);
 
-  private final Option OUTPUT_CSS = defineOption(
-      "c", "output_css",
-      "Output file path for translated CSS (defaults to input with \".css\")",
-      true);
-
   private final Option OUTPUT_BASE = defineOption(
       "o", "out",
       "Path to which the appropriate extension is added to form output files.",
       true);
-
-  private final Option CSS_PREFIX = defineOption(
-      "p", "css_prefix", "Plugin CSS namespace prefix", false);
 
   private final Option CSS_PROPERTY_WHITELIST = defineOption(
       "css_prop_schema",
@@ -97,15 +89,13 @@ public final class Config {
 
   private final Option VIEW = defineOption(
       "v", "view", "Gadget view to render (default is 'canvas')", true);
- 
+
   private final Class<?> mainClass;
   private final PrintWriter stderr;
   private final String usageText;
   private List<URI> inputUris;
   private File outputBase;
   private File outputJsFile;
-  private File outputCssFile;
-  private String cssPrefix;
   private URI cssPropertyWhitelistUri;
   private URI htmlAttributeWhitelistUri;
   private URI htmlElementWhitelistUri;
@@ -122,11 +112,9 @@ public final class Config {
     this.usageText = usageText;
   }
 
-  public Collection<URI> getInputUris() { return inputUris; }  
+  public Collection<URI> getInputUris() { return inputUris; }
   public File getOutputJsFile() { return outputJsFile; }
-  public File getOutputCssFile() { return outputCssFile; }
   public File getOutputBase() { return outputBase; }
-  public String getCssPrefix() { return cssPrefix; }
   public URI getCssPropertyWhitelistUri() {
     return cssPropertyWhitelistUri;
   }
@@ -188,7 +176,7 @@ public final class Config {
             usage("Input \"" + input + "\" is not a valid URI", stderr);
             return false;
           }
-            
+
           inputUris.add(inputUri);
         }
       }
@@ -201,14 +189,9 @@ public final class Config {
         outputBase = new File(cl.getOptionValue(OUTPUT_BASE.getOpt()));
 
         outputJsFile = substituteExtension(outputBase, "js");
-        outputCssFile = substituteExtension(outputBase, "css");
 
         if (cl.getOptionValue(OUTPUT_JS.getOpt()) != null) {
           usage("Can't specify both --out and --output_js", stderr);
-          return false;
-        }
-        if (cl.getOptionValue(OUTPUT_CSS.getOpt()) != null) {
-          usage("Can't specify both --out and --output_css", stderr);
           return false;
         }
       } else {
@@ -218,28 +201,11 @@ public final class Config {
             ? toFileWithExtension(inputUri, "js")
             : new File(cl.getOptionValue(OUTPUT_JS.getOpt()));
 
-        outputCssFile = cl.getOptionValue(OUTPUT_CSS.getOpt()) == null
-            ? toFileWithExtension(inputUri, "css")
-            : new File(cl.getOptionValue(OUTPUT_CSS.getOpt()));
-
         if (outputJsFile == null) {
           usage("Please specify js output via " + OUTPUT_JS.getLongOpt(),
                 stderr);
         }
-
-        if (outputCssFile == null) {
-          usage("Please specify css output via " + OUTPUT_CSS.getLongOpt(),
-                stderr);
-        }
       }
-
-      if (outputJsFile.equals(outputCssFile)) {
-        stderr.println(
-            "Output JS & CSS files must be distinct: " + outputJsFile);
-        return false;
-      }
-
-      cssPrefix = cl.getOptionValue(CSS_PREFIX.getOpt(), "DOM-PREFIX");
 
       try {
         cssPropertyWhitelistUri = new URI(cl.getOptionValue(
@@ -281,8 +247,7 @@ public final class Config {
     new HelpFormatter().printHelp(
         out, HelpFormatter.DEFAULT_WIDTH,
         (mainClass.getSimpleName()
-         + " --input <in.html> --css_prefix <prefix>"
-         + " [[--output_js <out.js> [--output_css <out.css>]] | --out <out>]"),
+         + " --input <in.html> [--output_js <out.js> | --out <out>]"),
         "\n", options,
         HelpFormatter.DEFAULT_LEFT_PAD, HelpFormatter.DEFAULT_DESC_PAD,
         "\n" + usageText, false);

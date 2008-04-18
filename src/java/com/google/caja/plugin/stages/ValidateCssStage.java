@@ -27,8 +27,9 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.util.Pipeline;
 
 /**
- * Make sure the css is well formed and prefix all rules
- * so that they don't affect nodes outside the plugin.
+ * Make sure the css is well formed and obeys the HTML and CSS Schemas.
+ *
+ * @author mikesamuel@gmail.com
  */
 public final class ValidateCssStage implements Pipeline.Stage<Jobs> {
   private final CssSchema cssSchema;

@@ -531,8 +531,7 @@ public class HtmlCompiledPluginTest extends TestCase {
     MessageContext mc = new MessageContext();
     MessageQueue mq = new EchoingMessageQueue(
         new PrintWriter(System.err), mc, true);
-    PluginMeta meta = new PluginMeta(
-        "test", PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
+    PluginMeta meta = new PluginMeta();
     PluginCompiler compiler = new PluginCompiler(meta, mq);
     compiler.setMessageContext(mc);
     DomTree html = parseHtml(gadgetSpec, mq);

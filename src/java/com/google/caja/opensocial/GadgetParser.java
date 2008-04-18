@@ -154,7 +154,7 @@ public class GadgetParser {
   public void render(GadgetSpec gadgetSpec, Appendable output) {
     DomTree doc = toDocument(gadgetSpec);
     TokenConsumer tc = doc.makeRenderer(output, null);
-    doc .render(new MarkupRenderContext(new MessageContext(), tc, true));
+    doc.render(new MarkupRenderContext(new MessageContext(), tc, true));
   }
 
   private DomTree toDocument(GadgetSpec gadgetSpec) {

@@ -29,7 +29,6 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.Message;
 import com.google.caja.util.CajaTestCase;
 
-import java.util.Collections;
 import java.util.ArrayList;
 
 /**

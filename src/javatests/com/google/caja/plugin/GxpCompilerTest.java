@@ -287,7 +287,7 @@ public class GxpCompilerTest extends CajaTestCase {
 
   public void testFormRewritten2() throws Exception {
     assertOutput(
-        "out___.push('<form name=\\\"pre-hi\\\""
+        "out___.push('<form name=\\\"hi-', ___OUTERS___.getIdClass___(), '\\\""
         + " onsubmit=\\\"return false\\\"></form>');",
         true,
         "<gxp:template name=\"Test\">"
@@ -357,7 +357,7 @@ public class GxpCompilerTest extends CajaTestCase {
         "out___.push('<div style=\\\"position: absolute;\\nleft: ', "
         + "___OUTERS___.cssNumber___(x + 10), 'px;\\nright: ', "
         + "___OUTERS___.cssNumber___(x + 50), 'px\\\""
-        + " id=\\\"pre-foo\\\">\\n"
+        + " id=\\\"foo-', ___OUTERS___.getIdClass___(), '\\\">\\n"
         + "Hello\\n</div>');",
         true,
         "<gxp:template name=\"Test\">\n"
@@ -516,7 +516,6 @@ public class GxpCompilerTest extends CajaTestCase {
 
   private PluginMeta makeTestPluginMeta() {
     return new PluginMeta(
-        "pre",
         new PluginEnvironment() {
             public CharProducer loadExternalResource(
                 ExternalReference ref, String mimeType) {
