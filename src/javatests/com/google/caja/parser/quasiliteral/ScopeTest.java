@@ -308,7 +308,7 @@ public class ScopeTest extends CajaTestCase {
     s0.addStartOfScopeStatement(js(fromString("{}")));
     assertEquals(2, s0.getStartStatements().size());
 
-    s0.declareStartOfScopeVariable();
+    s0.declareStartOfScopeTempVariable();
     assertEquals(3, s0.getStartStatements().size());
   }
 
@@ -327,7 +327,7 @@ public class ScopeTest extends CajaTestCase {
     assertEquals(1, s0.getStartStatements().size());
     assertEquals(1, s1.getStartStatements().size());
 
-    s1.declareStartOfScopeVariable();
+    s1.declareStartOfScopeTempVariable();
     assertEquals(2, s0.getStartStatements().size());
     assertEquals(1, s1.getStartStatements().size());
   }
@@ -349,7 +349,7 @@ public class ScopeTest extends CajaTestCase {
     assertEquals(1, s0.getStartStatements().size());
     assertEquals(1, s1.getStartStatements().size());
 
-    s1.declareStartOfScopeVariable();
+    s1.declareStartOfScopeTempVariable();
     assertEquals(2, s0.getStartStatements().size());
     assertEquals(1, s1.getStartStatements().size());
   }
@@ -371,7 +371,7 @@ public class ScopeTest extends CajaTestCase {
     assertEquals(0, s0.getStartStatements().size());
     assertEquals(2, s1.getStartStatements().size());
 
-    s1.declareStartOfScopeVariable();
+    s1.declareStartOfScopeTempVariable();
     assertEquals(0, s0.getStartStatements().size());
     assertEquals(3, s1.getStartStatements().size());
   }
@@ -393,7 +393,7 @@ public class ScopeTest extends CajaTestCase {
     assertEquals(1, s0.getStartStatements().size());
     assertEquals(1, s1.getStartStatements().size());
 
-    s1.declareStartOfScopeVariable();
+    s1.declareStartOfScopeTempVariable();
     assertEquals(2, s0.getStartStatements().size());
     assertEquals(1, s1.getStartStatements().size());
   }

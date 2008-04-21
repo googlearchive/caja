@@ -175,13 +175,13 @@ public class DefaultCajaRewriter extends Rewriter {
 
         List<Statement> declsList = new ArrayList<Statement>();
 
-        Identifier oTemp = scope.declareStartOfScopeVariable();
+        Identifier oTemp = scope.declareStartOfScopeTempVariable();
         declsList.add(s(new ExpressionStmt((Expression)substV(
             "@oTemp = @o;",
             "oTemp", s(new Reference(oTemp)),
             "o", expand(bindings.get("o"), scope, mq)))));
         
-        Identifier kTemp = scope.declareStartOfScopeVariable();
+        Identifier kTemp = scope.declareStartOfScopeTempVariable();
 
         if (isDecl) {
           String kName = ((Reference)bindings.get("k")).getIdentifierName();
@@ -1337,7 +1337,9 @@ public class DefaultCajaRewriter extends Rewriter {
               (FunctionConstructor)node.children().get(1));
           if (!s2.hasFreeThis()) {
             checkFormals(bindings.get("ps"), mq);
-            return expandDef(
+            Identifier f = (Identifier)bindings.get("f");
+            scope.declareStartOfScopeVariable(f);
+            scope.addStartOfBlockStatement((Statement)expandDef(
                 new Reference((Identifier)bindings.get("f")),
                 substV(
                     "___.simpleFunc(" +
@@ -1346,14 +1348,15 @@ public class DefaultCajaRewriter extends Rewriter {
                     "    @stmts*;" +
                     "    @bs*;" +
                     "});",
-                    "f", bindings.get("f"),
+                    "f", f,
                     "ps", bindings.get("ps"),
                     "bs", expand(bindings.get("bs"), s2, mq),
                     "fh", getFunctionHeadDeclarations(this, s2, mq),
                     "stmts", new ParseTreeNodeContainer(s2.getStartStatements())),
                 this,
                 scope,
-                mq);
+                mq));
+            return substV(";");
           }
         }
         return NONE;
@@ -1475,6 +1478,10 @@ public class DefaultCajaRewriter extends Rewriter {
             Reference fRef = new Reference(f);
             Identifier f_init___ = new Identifier(f.getName() + "_init___");
             Reference f_init___Ref = new Reference(f_init___);
+            // Add a declaration to the start of function body
+            if (declaration) {
+              scope.declareStartOfScopeVariable(f);
+            }
             ParseTreeNode result = substV(
                 "(function () {" +
                 "  ___.splitCtor(@fRef, @f_init___Ref);" +
@@ -1496,17 +1503,19 @@ public class DefaultCajaRewriter extends Rewriter {
                 "b", bNode,
                 "bs", expand(bindings.get("bs"), s2, mq),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
-            return declaration ?
-                // If it's a declaration, assign the result to a variable with the same name.
-                expandDef(
-                    new Reference((Identifier)bindings.get("f")),
-                    result,
-                    this,
-                    scope,
-                    mq) :
-                // If used in an expression, it's the first use, so we freeze it.
-                substV("___.primFreeze(@result);",
-                    "result", result);
+            if (declaration) {
+              // Add the initialization to the start of block
+              scope.addStartOfBlockStatement((Statement)expandDef(
+                  new Reference((Identifier)bindings.get("f")),
+                  result,
+                  this,
+                  scope,
+                  mq));
+              return substV(";");
+            } else {
+              // If used in an expression, it's the first use, so we freeze it.
+              return substV("___.primFreeze(@result);", "result", result);
+            }
           }
         }
         return NONE;

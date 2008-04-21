@@ -471,7 +471,18 @@ var ___;
    * the virtual <tt>Object.prototype.freeze_()</tt>.
    */
   function primFreeze(obj) {
-    if (undefined === obj) { throw new ReferenceError('The object "undefined" may not be frozen.'); }
+    // Fail silently on undefined, since
+    //   (function(){
+    //     var f = Foo;
+    //     if (true) { function Foo() {} }
+    //   })();
+    // gets translated to (roughly)
+    //   (function(){
+    //     var Foo;
+    //     var f = ___.primFreeze(Foo);
+    //     if (true) { Foo = function Foo() {}; }
+    //   })();
+    if (undefined === obj) { return obj; }
     if (null === obj) { return obj; }
     if (isFrozen(obj)) { return obj; }
     var typ = typeof obj;

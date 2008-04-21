@@ -23,6 +23,8 @@ import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
+import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Block;
@@ -291,7 +293,7 @@ public class Scope {
    * @return the identifier for the newly declared variable.
    * @see #addStartOfScopeStatement(com.google.caja.parser.js.Statement)
    */
-  public Identifier declareStartOfScopeVariable() {
+  public Identifier declareStartOfScopeTempVariable() {
     Scope s = getClosestDeclarationContainer();
     // TODO(ihab.awad): Uses private access to 's' which is of same class but distinct
     // instance. Violates capability discipline; kittens unduly sacrificed. Refactor.
@@ -300,6 +302,28 @@ public class Scope {
         "var @id;",
         "id", id));
     return id;
+  }
+
+  /**
+   * Add a variable declaration to the start of the closest enclosing true
+   * scope.
+   *
+   * @see #addStartOfScopeStatement(com.google.caja.parser.js.Statement)
+   */
+  public void declareStartOfScopeVariable(Identifier id) {
+    Scope s = getClosestDeclarationContainer();
+    // TODO(ihab.awad): Uses private access to 's' which is of same class but distinct
+    // instance. Violates capability discipline; kittens unduly sacrificed. Refactor.
+    if (s.isGlobal()){
+      s.addStartOfScopeStatement(
+          s(new ExpressionStmt((Expression)substV(
+              "___OUTERS___.@idRef = undefined;",
+              "idRef", new Reference(id)))));
+    } else {
+      s.addStartOfScopeStatement((Statement)substV(
+          "var @id;",
+          "id", id));
+    }
   }
 
   private Scope getClosestDeclarationContainer() {

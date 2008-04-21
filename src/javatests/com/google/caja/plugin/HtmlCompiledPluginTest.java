@@ -527,6 +527,31 @@ public class HtmlCompiledPluginTest extends TestCase {
         "");
   }
 
+  public void testForwardReference() throws Exception {
+    execGadget(
+        "<script>" +
+        "var g = Bar;" +
+        "if (true) { var f = Foo; }" +
+        "function Foo(){}" +
+        "do { h = Bar; function Bar(){this;} } while (0);" +
+        "assertEquals(typeof f, 'function');" +
+        "assertEquals(typeof g, 'undefined');" +
+        "assertEquals(typeof h, 'function');" +
+        "</script>",
+        "");
+    execGadget(
+        "<script>(function(){" +
+        "var g = Bar;" +
+        "if (true) { var f = Foo; }" +
+        "function Foo(){}" +
+        "do { h = Bar; function Bar(){this;} } while (0);" +
+        "assertEquals(typeof f, 'function');" +
+        "assertEquals(typeof g, 'undefined');" +
+        "assertEquals(typeof h, 'function');" +
+        "})();</script>",
+        "");
+  }
+
   private void execGadget(String gadgetSpec, String tests) throws Exception {
     MessageContext mc = new MessageContext();
     MessageQueue mq = new EchoingMessageQueue(

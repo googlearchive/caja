@@ -547,7 +547,7 @@ public abstract class Rule implements MessagePart {
                         || isOutersReference(left))) {
       object = (Reference) left;
     } else {
-      Identifier tmpVar = scope.declareStartOfScopeVariable();
+      Identifier tmpVar = scope.declareStartOfScopeTempVariable();
       temporaries.add(s(new ExpressionStmt((Expression)substV(
           "@tmpVar = @left;",
           "tmpVar", s(new Reference(tmpVar)),
@@ -559,7 +559,7 @@ public abstract class Rule implements MessagePart {
     if (isKeySimple) {
       key = right;
     } else {
-      Identifier tmpVar = scope.declareStartOfScopeVariable();
+      Identifier tmpVar = scope.declareStartOfScopeTempVariable();
       temporaries.add(s(new ExpressionStmt((Expression)substV(
           "@tmpVar = @right;",
           "tmpVar", s(new Reference(tmpVar)),
