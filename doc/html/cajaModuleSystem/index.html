@@ -195,6 +195,14 @@ modules.export('foo', aFunc);
 modules.export('bar', caja.freeze({ baz: 4 }));
 </pre>
 
+<h2>Unresolved issues</h2>
+
+<p>What happens if I call <code>delete</code> on, or assign to, a free
+variable? Does the behavior differ depending on whether or not the
+variable is currently in my imports list?</p>
+
+<p>How do we ensure that a module's URL is valid Caja?</p>
+
 </body>
 
 </html>
