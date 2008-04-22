@@ -1,0 +1,262 @@
+<!--
+  -- Copyright (C) 2007 Google Inc.
+  --
+  -- Licensed under the Apache License, Version 2.0 (the "License");
+  -- you may not use this file except in compliance with the License.
+  -- You may obtain a copy of the License at
+  --
+  -- http://www.apache.org/licenses/LICENSE-2.0
+  --
+  -- Unless required by applicable law or agreed to in writing, software
+  -- distributed under the License is distributed on an "AS IS" BASIS,
+  -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  -- See the License for the specific language governing permissions and
+  -- limitations under the License.
+  -->
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+  <head>
+    <title>Caja Rewriting of OpenSocial Gadgets</title>
+    <link rel="stylesheet" href="../common/documentStyle.css" type="text/css"/></head>
+  <body>
+
+<h1>Caja Rewriting of OpenSocial Gadgets</h1>
+<p class="heading">December 09, 2007</p>
+
+<h2>Introduction</h2>
+
+<p>This document describes how a compatible Caja translator must
+rewrite OpenSocial gadgets, and the interface that the rewritten
+gadgets will present to a gadget container.</p>
+
+<h2>Portions rewritten</h2>
+
+<p>An OpenSocial gadget is an XML document that often looks like the
+following simple example. (See the OpenSocial documentation for a
+normative description of the gadget format.)</p>
+
+<pre>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;Module&gt;
+  &lt;ModulePrefs title="My gadget"&gt;
+    &lt;Require feature="opensocial-1.0"/&gt;
+  &lt;/ModulePrefs&gt;
+  &lt;Content type="html"&gt;
+    &lt;![CDATA[
+      <em>content area</em>
+    ]]&gt;
+  &lt;/Content&gt;
+&lt;/Module&gt;
+</pre>
+
+<p>Caja -- and this specification -- are only concerned with rewriting
+the <em>content area</em>. This is done via an instance of interface <a
+href="../../../src/java/com/google/caja/opensocial/GadgetContentRewriter.java"><code>GadgetContentRewriter</code></a>.</p>
+
+<h2>Content area rewriting</h2>
+
+<p>As provided by the gadget author, the content area is an HTML
+document fragment containing a number of markup, style and script
+tags, in arbitrary order. The rewritten content area will always be of
+the form:</p>
+
+<pre>
+&lt;style&gt;
+  <em>consolidated stylesheet content</em>
+&lt;/style&gt;
+&lt;script&gt;
+  ___.loadModule(function(___OUTERS___) {
+    <em>translated gadget content</em>
+  });
+&lt;/script&gt;
+</pre>
+
+<p>where we define:</p>
+
+<blockquote>
+  
+<p><code>___</code> &mdash; the Caja global scope.</p>
+
+<p><code>loadModule</code> &mdash; the Caja module loading
+function.</p>
+
+<p><code>___OUTERS___</code> &mdash; a variable that will represent
+the sandboxed global scope to the translated JavaScript
+code. Compatible rewriters may use a different name for this variable,
+since it is not used outside the gadget, but the variable must end in
+a triple underscore, “<code>___</code>”.</p>
+
+<p><code><em>consolidated stylesheet content</em></code> &mdash; all
+the material appearing in style tags in the original, consolidated
+into one section and rewritten.</p>
+
+<p><code><em>translated gadget content</em></code> &mdash; the union
+of the JavaScript in the original script tags, interspersed with more
+JavaScript that explicitly writes the literal HTML in the
+original.</p>
+
+</blockquote>
+  
+<p>In subsequent sections, we describe how we handle specific elements
+of the content area. At a highest level, this process is parameterized
+by a single input, a prefix for CSS names.</p>
+
+<h2>Rewriting script tags</h2>
+
+<p>In the case of a script tag containing literal script source, the
+gadget translator will apply the usual Caja translation rules and
+include the results in the translated gadget content section.</p>
+
+<p>For scripts that retrieve their content using a src attribute, the
+translator will, at its option, either (recursively) retrieve and
+inline all the script content, or rewrite the target URL of the src
+attribute so that the retrieved content is passed through a well-known
+Caja JavaScript rewriting proxy. The translator will correctly
+consider the case where the src attribute specifies a relative
+URL. The URL will be retrieved from JavaScript code, so the rewritten
+gadget will still have only one script tag.</p>
+
+<h2>Rewriting styles</h2>
+
+<p>Styles will be rewritten to have a gadget-specific prefix (and
+corresponding HTML tags will be rewritten to match), so they affect
+only the containing gadget. Dangerous features of CSS will be
+rejected. All styles will be consolidated into one style element in
+the gadget, as noted above, which will not be accessible to user
+JavaScript code.</p>
+
+<p>If multiple instances of the same gadget exist in the same
+container page, they will safely load their style elements multiple
+times.</p>
+
+<p class="note">TBD: How do we deal with &lt;link rel=”stylesheet”&gt;? Is
+this allowed in gadgets anyway?</p>
+
+<h2>JavaScript rewriting</h2>
+
+<p>The JavaScript will be rewritten per the Caja rules, specified elsewhere.</p>
+
+<p>The <code>___OUTERS___</code> parameter supplied by the
+<code>loadModule</code> function is an object containing bindings of
+the DOM wrappers and OpenSocial APIs, as follows:</p>
+
+<blockquote>
+
+<p><code>_IG_*</code> &mdash; safely wrapped versions of the
+corresponding iGoogle/OpenSocial functions.</p>
+
+<p><code>opensocial</code> &mdash; safely wrapped version of the root
+object of the OpenSocial APIs.</p>
+
+</blockquote>
+
+<p class="note">TBD: Be more specific.</p>
+
+<h2>JavaScript in HTML tags</h2>
+
+<p>Where we have JavaScript in HTML tags, such as:</p>
+
+<pre>
+&lt;a onmouseover="alert(1)"&gt;Mouse here&lt;/a&gt;
+</pre>
+
+<p>Note first that, naively, we will at least rewrite this to
+JavaScript that inserts explicit HTML, as in:</p>
+
+<pre>
+___OUTERS___.document.innerHTML = "
+  &lt;a onmouseover=\"
+    return ___.asSimpleFunc(___OUTERS___.alert)(1);
+  \"&gt;Mouse here&lt;/a&gt;
+";
+</pre>
+
+<p>However, we wish to confine the emitted code to the
+<code>___OUTERS___</code> of the specific gadget <em>instance</em>. We
+do this using the following function provided by <code>caja.js</code>,
+which returns an integer index:</p>
+
+<pre>
+___.getId(___OUTERS___)
+</pre>
+
+<p>This index is used to gain access to the <code>___OUTERS___</code>
+object via a global function <code>getOuters</code>. In other words,
+for any instance of a gadget:</p>
+
+<pre>
+___.getOuters(___.getId(___OUTERS___)) === ___OUTERS___
+</pre>
+
+<p>The value returned by <code>getId</code> can be used to securely
+retrieve the <code>___OUTERS___</code> object it was created
+with. </p>
+<p>We translate the event handler code by first replacing all its free uses of
+  &quot;<code>this</code>&quot;  by &quot;<code>thisNode</code>&quot;. We then cajole it with &quot;<code>thisNode</code>&quot; and &quot;<code>event</code>&quot; treated
+  as local variables. The cajoled code is then placed after a &quot;<code>return</code>&quot; in the
+  body of a handler function with a generated unique <i><code>handleName___</code></i>.</p>
+<pre>___OUTERS___.<i>handlerName___</i> = function(thisNode, event) {
+  return ___.asSimpleFunc(___OUTERS___.alert)(1);
+};</pre>
+<p class="note">Should we prohibit &quot;<code>thisNode</code>&quot; from appearing in the
+  original event handler code? Probably.</p>
+<p>Thus our final form of the rewritten HTML would be:</p>
+<pre>
+___OUTERS___.document.innerHTML = '
+  &lt;a onmouseover=\"
+    return plugin_dispatchEvent___(this,
+                                   event || window.event,
+                                   ' + ___.getId(___OUTERS___) + ',
+                                   '<i>handlerName</i>___');
+  \"&gt;Mouse here&lt;/a&gt;
+';
+</pre>
+
+<p>The <code>getId</code> function is unreadable to Caja code,
+which therefore cannot use it to sense information about its
+container. The <code>plugin_dispatchEvent___</code> must be provided by the container, in
+  order to express its security / taming policy. We provide the following default:</p>
+<pre>/** 
+ * Default taming is to return obj itself. Depending on
+ * other taming decisions, it may be more appropriate to
+ * return an interposed wrapper.
+ */
+function plugin_tamed(obj) { return obj; }
+ 
+function plugin_dispatchEvent___(thisNode, event, pluginId, handlerName) {
+  return ___.getOuters(pluginId)[handlerName](plugin_tamed(thisNode), 
+                                              plugin_tamed(event));
+}</pre>
+
+<h2>Original source context</h2>
+
+<p>A client of the Caja rewriting can provide annotations specifying
+locations in the original source written by the gadget developer, for
+use by Caja error messages and debugging information. Regardless of
+where they appear (in JS, HTML or CSS), these will be complete lines
+of text, starting from column 0, in the following form:</p>
+
+<pre>
+!@! LINE="<em>line</em>" FILE="<em>file</em>"<em>&lt;NL&gt;</em>
+!@! LINE="<em>line</em>"<em>&lt;NL&gt;</em>
+</pre>
+
+<p>where we define:</p>
+
+<blockquote>
+  
+<p><code><em>line</em></code> &mdash; a line number, expressed as the
+string representation of an integer.</p>
+
+<p><code><em>file</em></code> &mdash; a URL to a file.</p>
+
+<p><code><em>&lt;NL&gt;</em></code> &mdash; a newline character, which
+will be consumed by the Caja translator but will not be considered to
+be part of the original source.</p>
+
+</blockquote>
+
+</body>
+</html>
