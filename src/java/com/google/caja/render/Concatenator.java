@@ -43,12 +43,15 @@ public final class Concatenator implements TokenConsumer {
   }
 
   public void noMoreTokens() {
+    // TODO(mikesamuel): make a base class for this and then other TokenConsumer
+    // implementations that are backed by an Appendable and a
+    // Callback<IOException>.
     if (out instanceof Flushable) {
       try {
         ((Flushable) out).flush();
       } catch (IOException ex) {
-        closed = true;
         if (!closed) {
+          closed = true;
           ioExceptionHandler.handle(ex);
         }
       }

@@ -24,28 +24,20 @@ import java.util.regex.Pattern;
 /**
  * Joins adjacent tokens that were too aggressively split by the
  * {@link InputElementSplitter}.
+ * <p>
+ * Signs are left off numeric literals to avoid conflating the two IEEE
+ * floating point representations of 0, and lint tools that need to distinguish
+ * +0 and +(0) can do that by looking at FilePositions.
  *
  * @author mikesamuel@gmail.com
  */
 class InputElementJoiner extends AbstractTokenStream<JsTokenType> {
   private final TokenStream<JsTokenType> tokens;
-  private final PunctuationTrie punctuation;
   private final LinkedList<Token<JsTokenType>> lookahead
       = new LinkedList<Token<JsTokenType>>();
 
-  /**
-   * Should signs be included with number tokens?
-   * Normally I leave signs off numbers since that makes it easier to for
-   * visitors to avoid conflating the two IEEE floating point representations of
-   * 0, and lint tools that need to distinguish +0 and +(0) can do that
-   * by looking at FilePositions.
-   */
-  private static final boolean SIGNS_WITH_NUMBERS = false;
-
-  public InputElementJoiner(
-      TokenStream<JsTokenType> tokens, PunctuationTrie punctuation) {
+  public InputElementJoiner(TokenStream<JsTokenType> tokens) {
     this.tokens = tokens;
-    this.punctuation = punctuation;
   }
 
   @Override
@@ -61,46 +53,10 @@ class InputElementJoiner extends AbstractTokenStream<JsTokenType> {
     do {
       combined = false;
       switch (t.type) {
-        case PUNCTUATION:
-          // join with the next token if possible
-          {
-            Token<JsTokenType> t2 = peek();
-            if (null != t2) {
-              if (JsTokenType.PUNCTUATION == t2.type) {
-                if (areAdjacent(t, t2)) {
-                  PunctuationTrie p =
-                    punctuation.lookup(t.text).lookup(t2.text);
-                  // the position past the last item in lookahead added to p
-                  int n = 1;
-
-                  while (null != p) {
-                    if (p.isTerminal()) {
-                      while (--n >= 0) {
-                        t = combine(t, peek(), t.type);
-                        lookahead.poll();
-                      }
-                      combined = true;
-                      break;
-                    } else {
-                      Token<JsTokenType> last = t2;
-                      t2 = lookaheadTo(n++);
-                      if (null == t2 || !areAdjacent(last, t2)) { break; }
-                      p = p.lookup(t2.text);
-                    }
-                  }
-                }
-              } else if (
-                  SIGNS_WITH_NUMBERS
-                  && (JsTokenType.INTEGER == t2.type
-                      || JsTokenType.FLOAT == t2.type)
-                      && isSign(t.text) && areAdjacent(t, t2)) {
-                t = combine(t, t2, t2.type);
-                combined = true;
-                lookahead.poll();
-              }
-            }
-          }
-          break;
+        // If we need to join PUNCTUATION strings because there is a punctuation
+        // string s such that there is a prefix of s that is not a punctuation
+        // string, then resurrect the case PUNCTUATION block from r1000.
+        // The ES4 grammar, and Operator enum does not have that property.
         case FLOAT:
         case INTEGER:
           // if t ends in e and lookahead is [+-] or an integer, then
@@ -150,18 +106,6 @@ class InputElementJoiner extends AbstractTokenStream<JsTokenType> {
       return null;
     }
     return lookahead.peek();
-  }
-
-  private Token<JsTokenType> lookaheadTo(int n) throws ParseException {
-    while (lookahead.size() <= n) {
-      if (tokens.hasNext()) {
-        Token<JsTokenType> t = tokens.next();
-        lookahead.addLast(t);
-      } else {
-        return null;
-      }
-    }
-    return lookahead.get(n);
   }
 
   private static final Pattern EXPONENT_RE = Pattern.compile("[eE]$");

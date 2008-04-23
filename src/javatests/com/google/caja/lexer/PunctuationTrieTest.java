@@ -34,6 +34,11 @@ public class PunctuationTrieTest extends TestCase {
   public void setUp() throws Exception {
     List<String> jsPuncStrs = new ArrayList<String>();
     for (Punctuation p : Punctuation.values()) {
+      if (p.toString().equals("..")) {
+        // Check the PunctuationTrie works correctly when there is a
+        // non-terminal that is not a prefix of a terminal.
+        continue;
+      }
       jsPuncStrs.add(p.toString());
     }
     this.jsPunc = new PunctuationTrie(jsPuncStrs.toArray(new String[0]));
@@ -95,8 +100,6 @@ public class PunctuationTrieTest extends TestCase {
         "\t']' terminal\n" +
         "\t'^' terminal\n" +
         "\t\t'=' terminal\n" +
-        "\t\t'^' terminal\n" +
-        "\t\t\t'=' terminal\n" +
         "\t'{' terminal\n" +
         "\t'|' terminal\n" +
         "\t\t'=' terminal\n" +
@@ -128,6 +131,7 @@ public class PunctuationTrieTest extends TestCase {
     // make sure that we can find strings in jsPunc
     Set<PunctuationTrie> uniq = new HashSet<PunctuationTrie>();
     for (Punctuation p : Punctuation.values()) {
+      if (p.toString().equals("..")) { continue; }
       PunctuationTrie t = jsPunc.lookup(p.toString());
       assertTrue(null != t);
       assertTrue(t.isTerminal());

@@ -28,9 +28,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * A formatter that indents code for a C-style language with statement delimited
- * defined by curly brackets, and expression blocks delimited by square brackets
- * and parentheses.
+ * A formatter that indents code for a C-style language with statement
+ * delimited by curly brackets, and expression blocks delimited by
+ * square brackets and parentheses.
  *
  * @author mikesamuel@gmail.com
  */
@@ -76,8 +76,8 @@ public final class JsPrettyPrinter implements TokenConsumer {
       try {
         ((Flushable) out).flush();
       } catch (IOException ex) {
-        closed = true;
         if (!closed) {
+          closed = true;
           ioExceptionHandler.handle(ex);
         }
       }

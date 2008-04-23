@@ -23,6 +23,9 @@ import java.util.Map;
 
 /**
  * The strings that javascript treats as punctuation.
+ * This includes all ES3 punctuation and some ES4 so that we can make sure our
+ * output remains a subset of ES4.
+ * @see <a href="http://www.ecmascript.org/es4/spec/grammar.pdf">ES4 Grammar</a>
  *
  * @author mikesamuel@gmail.com
  */
@@ -48,6 +51,7 @@ public enum Punctuation implements MessagePart {
   MINUS_MINUS("--"),
   MINUS_EQ("-="),
   DOT("."),
+  DOT_DOT(".."),
   ELIPSIS("..."),
   COLON(":"),
   COLON_COLON("::"),
@@ -70,8 +74,6 @@ public enum Punctuation implements MessagePart {
   RSQUARE("]"),
   CARET("^"),
   CARET_EQ("^="),
-  CARET_CARET("^^"),
-  CARET_CARET_EQ("^^="),
   LCURLY("{"),
   PIPE("|"),
   PIPE_EQ("|="),

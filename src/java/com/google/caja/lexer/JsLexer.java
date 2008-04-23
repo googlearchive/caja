@@ -59,8 +59,7 @@ public class JsLexer implements TokenStream<JsTokenType> {
     this.ts = new WordClassifier(
         new InputElementJoiner(
             new InputElementSplitter(producer, JAVASCRIPT_PUNCTUATOR,
-                                     isQuasiliteral),
-            JAVASCRIPT_PUNCTUATOR));
+                                     isQuasiliteral)));
   }
 
   public boolean hasNext() throws ParseException { return ts.hasNext(); }
@@ -197,5 +196,9 @@ public class JsLexer implements TokenStream<JsTokenType> {
       default:
         return false;
     }
+  }
+
+  public static PunctuationTrie getPunctuationTrie() {
+    return JAVASCRIPT_PUNCTUATOR;
   }
 }

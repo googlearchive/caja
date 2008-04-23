@@ -15,6 +15,7 @@
 package com.google.caja.lexer;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.TreeSet;
 
 /**
@@ -24,7 +25,7 @@ import java.util.TreeSet;
  *
  * @author mikesamuel@gmail.com
  */
-final class PunctuationTrie {
+public final class PunctuationTrie {
   private final char[] childMap;
   private final PunctuationTrie[] children;
   private final boolean terminal;
@@ -32,7 +33,7 @@ final class PunctuationTrie {
   /**
    * @param punctuationStrings not empty, non null.
    */
-  PunctuationTrie(String[] punctuationStrings) {
+  public PunctuationTrie(String[] punctuationStrings) {
     this(sortedUniqCopy(punctuationStrings), 0, 0, punctuationStrings.length);
   }
 
@@ -124,6 +125,21 @@ final class PunctuationTrie {
 
   private static final char[] ZERO_CHARS = new char[0];
   private static final PunctuationTrie[] ZERO_TRIES = new PunctuationTrie[0];
+
+  /**
+   * Append all strings s such that {@code this.lookup(s).isTerminal()} to the
+   * given list in lexical order.
+   */
+  public void toStringList(List<String> strings) {
+    toStringList("", strings);
+  }
+
+  private void toStringList(String prefix, List<String> strings) {
+    if (terminal) { strings.add(prefix); }
+    for (int i = 0, n = childMap.length; i < n; ++i) {
+      children[i].toStringList(prefix + childMap[i], strings);
+    }
+  }
 
   @Override
   public String toString() {

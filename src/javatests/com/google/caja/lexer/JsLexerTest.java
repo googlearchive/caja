@@ -171,7 +171,8 @@ public class JsLexerTest extends TestCase {
   }
 
   public void testDoubleDot() {
-    JsLexer lexer = createLexer("a == = function () {..} ... .. . foo", true);
+    JsLexer lexer = createLexer(
+        "a == = function () {..} ... .. . .... foo", true);
     assertNext(lexer, JsTokenType.WORD, "a");
     assertNext(lexer, JsTokenType.PUNCTUATION, "==");
     assertNext(lexer, JsTokenType.PUNCTUATION, "=");
@@ -179,12 +180,12 @@ public class JsLexerTest extends TestCase {
     assertNext(lexer, JsTokenType.PUNCTUATION, "(");
     assertNext(lexer, JsTokenType.PUNCTUATION, ")");
     assertNext(lexer, JsTokenType.PUNCTUATION, "{");
-    assertNext(lexer, JsTokenType.PUNCTUATION, ".");
-    assertNext(lexer, JsTokenType.PUNCTUATION, ".");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "..");
     assertNext(lexer, JsTokenType.PUNCTUATION, "}");
     assertNext(lexer, JsTokenType.PUNCTUATION, "...");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "..");
     assertNext(lexer, JsTokenType.PUNCTUATION, ".");
-    assertNext(lexer, JsTokenType.PUNCTUATION, ".");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "...");
     assertNext(lexer, JsTokenType.PUNCTUATION, ".");
     assertNext(lexer, JsTokenType.WORD, "foo");
     assertEmpty(lexer);
@@ -217,6 +218,22 @@ public class JsLexerTest extends TestCase {
   public void testByteOrderMarkersInStrings() {
     JsLexer lexer = createLexer("'\uFEFF'", false);
     assertNext(lexer, JsTokenType.STRING, "'\uFEFF'");
+    assertEmpty(lexer);
+  }
+
+  public void testEllipsisAndNumber() {
+    JsLexer lexer = createLexer("...0x01", false);
+    assertNext(lexer, JsTokenType.PUNCTUATION, "...");
+    assertNext(lexer, JsTokenType.INTEGER, "0x01");
+    assertEmpty(lexer);
+  }
+
+  public void testEmphaticallyDecremented() {
+    JsLexer lexer = createLexer("i---j", false);
+    assertNext(lexer, JsTokenType.WORD, "i");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "--");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "-");
+    assertNext(lexer, JsTokenType.WORD, "j");
     assertEmpty(lexer);
   }
 

@@ -316,6 +316,7 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
         p.pushback(ch);
         break;
       }
+      t = t2;
       sb.append((char) ch);
     }
   }
