@@ -268,14 +268,9 @@
         <include name="**/caja/lexer/lexertest1.js"/>
         <include name="**/caja/lexer/lexertest2.js"/>
         <include name="**/caja/lexer/testinput1.txt"/>
-        <include name="**/caja/opensocial/example.xml"/>
+        <include name="**/caja/opensocial/*.js"/>
+        <include name="**/caja/opensocial/*.xml"/>
         <include name="**/caja/opensocial/example-gadget-files/*"/>
-        <include name="**/caja/opensocial/example-rewritten.xml"/>
-        <include name="**/caja/opensocial/listfriends-inline.xml"/>
-        <include name="**/caja/opensocial/listfriends.js"/>
-        <include name="**/caja/opensocial/listfriends.xml"/>
-        <include name="**/caja/opensocial/SocialHelloWorld.xml"/>
-        <include name="**/caja/opensocial/test-parsing.xml"/>
         <include name="**/caja/parser/css/cssparsergolden*.txt"/>
         <include name="**/caja/parser/css/cssparserinput*.css"/>
         <include name="**/caja/parser/css/cssrendergolden*.txt"/>

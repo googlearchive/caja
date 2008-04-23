@@ -6,9 +6,13 @@
                    ___OUTERS___.emitCss___([ '@media print {\n  .', ' #p3-', ' {\n    font-weight: bold;\n    color: black\n  }\n}' ].join(___OUTERS___.getIdClass___()));
                    ___OUTERS___.emitCss___([ '@media print, screen {\n  .', ' .p4 {\n    font-weight: bold\n  }\n}' ].join(___OUTERS___.getIdClass___()));
                    ___OUTERS___.emitCss___([ '.', ' .p1 {\n  color: red\n}' ].join(___OUTERS___.getIdClass___()));
-                   ___OUTERS___.c_1___ = ___.simpleFunc(function (thisNode___, event) {
-                                                          ___.asSimpleFunc(___.primFreeze(___OUTERS___.handleClicky_canRead___? ___OUTERS___.handleClicky: ___.readPub(___OUTERS___, 'handleClicky', true)))();
-                                                        });
+                   ___OUTERS___.c_1___ = ___.simpleFunc(
+                       function (thisNode___, event) {
+                         ___.asSimpleFunc(___.primFreeze(
+                             ___OUTERS___.handleClicky_canRead___
+                             ? ___OUTERS___.handleClicky
+                             : ___.readPub(___OUTERS___, 'handleClicky', true)))();
+                       });
                    ___OUTERS___.htmlEmitter___.pc('\n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    ').b('p').a('class', 'p1 p2').f(false).ih('Paragraph 1').e('p').pc('\n\n    ');
                    {
                      (function () {

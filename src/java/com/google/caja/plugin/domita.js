@@ -262,7 +262,6 @@ attachDocumentStub = (function () {
       switch (type) {
         case html4.atype.IDREF:
           value = String(value);
-          value = String(value);
           if (value && !illegalSuffix.test(value) && isXmlName(value)) {
             return value + idSuffix;
           }
@@ -347,6 +346,9 @@ attachDocumentStub = (function () {
               break;
             case 'input':
               tamed = new TameInputElement(node, editable);
+              break;
+            case 'img':
+              tamed = new TameImageElement(node, editable);
               break;
             default:
               tamed = new TameElement(node, editable);
@@ -503,8 +505,8 @@ attachDocumentStub = (function () {
       if ('string' !== typeof value) { return value; }
       switch (type) {
         case html4.atype.IDREF:
-          var n = idSuffix.length;
           if (!value) { return ''; }
+          var n = idSuffix.length;
           var len = value.length;
           var end = len - n;
           if (end > 0 && idSuffix === value.substring(end, len)) {
@@ -577,7 +579,7 @@ attachDocumentStub = (function () {
       this.node___.innerHTML = html;
     };
     TameElement.prototype.setStyle = function (style) {
-      this.setAttribute('STYLE', style);
+      this.setAttribute('style', style);
     };
     TameElement.prototype.getStyle = function () {
       return this.node___.style.cssText;
@@ -597,7 +599,7 @@ attachDocumentStub = (function () {
         // See CssTemplate.toPropertyValueList.
         var semi = propName.indexOf(';');
         if (semi >= 0) { propName = propName.substring(semi + 1); }
-        style[propName] = propValue;
+        styleNode[propName] = propValue;
       }
     };
     TameElement.prototype.addEventListener = function (name, listener, bubble) {
@@ -678,6 +680,22 @@ attachDocumentStub = (function () {
     ___.all2(___.allowMethod, TameInputElement,
              ['getValue', 'setValue', 'focus', 'getForm']);
     exportFields(TameInputElement, ['value', 'form']);
+
+
+    function TameImageElement(node, editable) {
+      TameElement.call(this, node, editable);
+    }
+    extend(TameImageElement, TameElement);
+    TameImageElement.prototype.getSrc = function () {
+      return this.node___.src;
+    };
+    TameImageElement.prototype.setSrc = function (src) {
+      console.log('setting src to ' + src);
+      this.setAttribute('src', src);
+    };
+    ___.ctor(TameImageElement, TameElement, 'TameImageElement');
+    ___.all2(___.allowMethod, TameImageElement, ['getSrc', 'setSrc']);
+    exportFields(TameImageElement, ['src']);
 
 
     function TameEvent(event) {
@@ -872,7 +890,6 @@ attachDocumentStub = (function () {
         style = document.createElement('style');
         style.setAttribute('type', 'text/css');
         style.appendChild(document.createTextNode(stylesheet));
-        document
       } catch (e) {  // Above fails on IE 6
         var container = document.createElement('div');
         container.innerHTML = ('<style type="text/css">/*<![CDATA[[<!--*/'

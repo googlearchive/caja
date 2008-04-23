@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module>
+  <ModulePrefs title="Example Gadget">
+    <Require feature="opensocial-0.7"/>
+  </ModulePrefs>
+  <Content type="html"><![CDATA[
+    <p onclick="this.updateStyle(eval(Template('color: blue', 'text/css')))"
+    >Foo</p>
+
+    <script type="text/javascript">
+      var color = 0xff0000;
+      document.getElementById('foo').updateStyle(eval(Template(
+          'color: ${color}; font-weight: bold', 'text/css')));
+    </script>
+  ]]></Content>
+</Module>

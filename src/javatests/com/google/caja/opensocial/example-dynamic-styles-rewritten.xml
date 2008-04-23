@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.7" /></ModulePrefs><Content type="html"><![CDATA[<script type="text/javascript">{
+  ___.loadModule(
+      function (___OUTERS___) {
+        ___OUTERS___.c_1___ = ___.simpleFunc(
+            function (thisNode___, event) {
+              (function () {
+                 var x___ = thisNode___;
+                 var x0___ = ___OUTERS___.blessCss___('color', 'blue');
+                 return x___.updateStyle_canCall___
+                     ? x___.updateStyle(x0___)
+                     : ___.callPub(x___, 'updateStyle', [ x0___ ]);
+               })();
+            });
+        ___OUTERS___.htmlEmitter___
+            .b('p')
+            .a('onclick', 'return plugin_dispatchEvent___(this, event || window.event, ' + ___.getId(___OUTERS___) + ', \'c_1___\')')
+            .f(false)
+            .ih('Foo')
+            .e('p')
+            .pc('\n\n    ');
+        {
+          (function () {
+             var x___ = 16711680;
+             return ___OUTERS___.color_canSet___
+                 ? (___OUTERS___.color = x___)
+                 : ___.setPub(___OUTERS___, 'color', x___);
+           })();
+          (function () {
+             var x___ = (function () {
+                   var x___ = ___OUTERS___.document_canRead___
+                       ? ___OUTERS___.document
+                       : ___.readPub(___OUTERS___, 'document', true);
+                   var x0___ = 'foo';
+                   return x___.getElementById_canCall___
+                       ? x___.getElementById(x0___)
+                       : ___.callPub(x___, 'getElementById', [ x0___ ]);
+                 })();
+             var x0___ = ___OUTERS___.blessCss___(
+                 'color',
+                 ___OUTERS___.cssColor___(
+                     ___OUTERS___.color_canRead___
+                     ? ___OUTERS___.color
+                     : ___.readPub(___OUTERS___, 'color', true)),
+                 'font-weight;fontWeight', 'bold');
+             return x___.updateStyle_canCall___
+                 ? x___.updateStyle(x0___)
+                 : ___.callPub(x___, 'updateStyle', [ x0___ ]);
+           })();
+        }
+        ___OUTERS___.htmlEmitter___.pc('\n  ');
+      });
+}</script>]]></Content></Module>

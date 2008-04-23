@@ -26,7 +26,7 @@ import com.google.caja.plugin.stages.CompileCssTemplatesStage;
 import com.google.caja.plugin.stages.CompileGxpsStage;
 import com.google.caja.plugin.stages.CompileHtmlStage;
 import com.google.caja.plugin.stages.ConsolidateCodeStage;
-import com.google.caja.plugin.stages.ConsolidateCssStage;
+import com.google.caja.plugin.stages.OpenTemplateStage;
 import com.google.caja.plugin.stages.RewriteHtmlStage;
 import com.google.caja.plugin.stages.SanitizeHtmlStage;
 import com.google.caja.plugin.stages.ValidateCssStage;
@@ -126,13 +126,13 @@ public final class PluginCompiler {
     stages.add(new RewriteHtmlStage());
     stages.add(new SanitizeHtmlStage(htmlSchema));
     stages.add(new CompileHtmlStage(cssSchema, htmlSchema));
+    stages.add(new OpenTemplateStage());
     stages.add(new ValidateCssStage(cssSchema, htmlSchema));
     stages.add(new CompileCssStage());
     stages.add(new CompileGxpsStage(cssSchema, htmlSchema));
     stages.add(new CompileCssTemplatesStage(cssSchema));
     stages.add(new ConsolidateCodeStage());
     stages.add(new ValidateJavascriptStage());
-    stages.add(new ConsolidateCssStage());
     stages.add(new CheckForErrorsStage());
   }
 

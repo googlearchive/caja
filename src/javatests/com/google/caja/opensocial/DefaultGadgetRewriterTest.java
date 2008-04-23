@@ -135,6 +135,14 @@ public class DefaultGadgetRewriterTest extends TestCase {
         "css property color has bad value: ==>expression(foo)<==");
   }
 
+  public void testStylesInScript() throws Exception {
+    // CSS template expansion works on style templates in extracted event
+    // handlers and script tags.
+    assertRewriteMatches("example-dynamic-styles.xml",
+                         "example-dynamic-styles-rewritten.xml",
+                         MessageLevel.WARNING);
+  }
+
   private void assertRewritePasses(String file, MessageLevel failLevel)
       throws Exception {
     Reader input = new StringReader(TestUtil.readResource(getClass(), file));
@@ -163,8 +171,9 @@ public class DefaultGadgetRewriterTest extends TestCase {
     String expected
         = normalXml(TestUtil.readResource(getClass(), goldenFile)).trim();
     if (!expected.equals(actual)) {
-      System.err.println(actual);
-      assertEquals(expected, actual);
+      assertEquals(actual,
+                   normalizeIndentation(expected),
+                   normalizeIndentation(actual));
     }
   }
 
@@ -228,5 +237,11 @@ public class DefaultGadgetRewriterTest extends TestCase {
       }
       fail(sb.toString().trim());
     }
+  }
+
+  private static final String normalizeIndentation(String xml) {
+    return xml.replaceAll("\n +([?:.])", "$1")
+        .replaceAll("\\(\n +", "(")
+        .replaceAll("\n +", " ");
   }
 }

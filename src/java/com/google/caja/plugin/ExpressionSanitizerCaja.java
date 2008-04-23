@@ -14,8 +14,9 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.MutableParseTreeNode;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.quasiliteral.DefaultCajaRewriter;
 import com.google.caja.reporting.MessageQueue;
 
@@ -31,22 +32,19 @@ public class ExpressionSanitizerCaja {
     this.meta = meta;
   }
 
-  @SuppressWarnings("unchecked")
   public boolean sanitize(AncestorChain<?> toSanitize) {
-    AbstractParseTreeNode<? extends AbstractParseTreeNode> input =
-        (AbstractParseTreeNode<? extends AbstractParseTreeNode>)
-        toSanitize.node;
-    AbstractParseTreeNode<? extends AbstractParseTreeNode> result =
-        (AbstractParseTreeNode<? extends AbstractParseTreeNode>)
-        new DefaultCajaRewriter(false).expand(input, this.mq);
+    MutableParseTreeNode input = (MutableParseTreeNode) toSanitize.node;
+    ParseTreeNode result = new DefaultCajaRewriter(false)
+        .expand(input, this.mq);
 
-    for (AbstractParseTreeNode<?> child : input.children()) {
-      input.removeChild(child);
+    MutableParseTreeNode.Mutation mut = input.createMutation();
+    for (ParseTreeNode child : input.children()) {
+      mut.removeChild(child);
     }
-
-    for (AbstractParseTreeNode<?> child : result.children()) {
-      input.appendChild(child);
+    for (ParseTreeNode child : result.children()) {
+      mut.appendChild(child);
     }
+    mut.execute();
 
     return true;
   }

@@ -25,7 +25,7 @@ import com.google.caja.util.Pipeline;
 
 /**
  * Rewrite the javascript to prevent runtime sandbox violations.
- * 
+ *
  * @author mikesamuel@gmail.com
  */
 public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
@@ -36,6 +36,7 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
       // the Caja rules correctly identify global function declarations.
       AncestorChain<?> nonSyntheticScopeRoot
           = nonSyntheticScopeRoot(job.getRoot());
+
       valid &= new ExpressionSanitizerCaja(
           jobs.getMessageQueue(), jobs.getPluginMeta())
           .sanitize(nonSyntheticScopeRoot);
@@ -61,12 +62,17 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
     }
 
     // If any children are non-synthetic
+    AncestorChain<?> nonSyntheticChild = null;
     for (ParseTreeNode child : node.children()) {
       AncestorChain<?> result = nonSyntheticRoot(
           new AncestorChain<ParseTreeNode>(js, child));
-      if (result != null) { return result; }
+      if (result != null) {
+        // Two children at least, so return js as the LCD
+        if (nonSyntheticChild != null) { return js; }
+        nonSyntheticChild = result;
+      }
     }
 
-    return null;
+    return nonSyntheticChild;
   }
 }
