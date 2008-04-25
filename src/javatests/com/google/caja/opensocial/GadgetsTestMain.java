@@ -159,7 +159,6 @@ public class GadgetsTestMain {
 
     String[] argv = {
         "-o", "/tmp/xx",
-        "-p", "xx",
         "--css_prop_schema",
         "resource:///com/google/caja/lang/css/css-extensions.json",
         "-i", gadget.toASCIIString()
