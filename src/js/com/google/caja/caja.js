@@ -31,10 +31,10 @@
 //                detecting a conflict.
 ////////////////////////////////////////////////////////////////////////
 
-if (Array.prototype.indexOf === undefined) {
-  /** 
+if (Array.prototype.indexOf === (void 0)) {
+  /**
    * Returns the first index at which the specimen is found (by
-   * "===") or -1 if none.  
+   * "===") or -1 if none.
    */
   Array.prototype.indexOf = function(specimen) {
     var len = this.length;
@@ -47,10 +47,10 @@ if (Array.prototype.indexOf === undefined) {
   };
 }
 
-if (Array.prototype.lastIndexOf === undefined) {
-  /** 
+if (Array.prototype.lastIndexOf === (void 0)) {
+  /**
    * Returns the last index at which the specimen is found (by
-   * "===") or -1 if none.  
+   * "===") or -1 if none.
    */
   Array.prototype.lastIndexOf = function(specimen) {
     for (var i = this.length; --i >= 0; ) {
@@ -62,7 +62,7 @@ if (Array.prototype.lastIndexOf === undefined) {
   };
 }
 
-if (Date.prototype.toISOString === undefined) {
+if (Date.prototype.toISOString === (void 0)) {
   /**
    * Like the date.toJSONString() method defined in json.js, but
    * without the surrounding quotes.
@@ -234,18 +234,18 @@ var ___;
     toString: function() { return '<Logging Keeper>'; },
 
     /**
-     * 
+     *
      */
     handleRead: function(obj, name, opt_shouldThrow) {
       log('Not readable: (' + obj + ').' + name);
-      if (opt_shouldThrow) { 
+      if (opt_shouldThrow) {
         throw new ReferenceError('' + name + ' is not defined');
       }
-      return undefined; 
+      return (void 0);
     },
 
     /**
-     * 
+     *
      */
     handleCall: function(obj, name, args) {
       fail('Not callable: (', obj, ').', name);
@@ -383,7 +383,7 @@ var ___;
     return strLen >= sufLen && 
       (str.substring(strLen-sufLen, strLen) === suffix);
   }
-  
+
   /**
    * Returns the 'constructor' property of obj's prototype.
    * <p>
@@ -397,25 +397,25 @@ var ___;
    * If obj is a function or not an object, return undefined.
    */
   function directConstructor(obj) {
-    if (obj === null) { return undefined; }
+    if (obj === null) { return (void 0); }
     try {
       if (typeof obj !== 'object') {
         // Note that functions thereby return undefined,
         // so directConstructor() doesn't provide access to the
         // forbidden Function constructor.
-        return undefined;
+        return (void 0);
       }
       // The following test will initially return false in IE
-      if (hasOwnProp(obj, '__proto__')) { 
-        if (obj.__proto__ === null) { return undefined; }
-        return obj.__proto__.constructor; 
+      if (hasOwnProp(obj, '__proto__')) {
+        if (obj.__proto__ === null) { return (void 0); }
+        return obj.__proto__.constructor;
       }
       var result;
-      if (!hasOwnProp(obj, 'constructor')) { 
+      if (!hasOwnProp(obj, 'constructor')) {
         result = obj.constructor;
       } else {
         var oldConstr = obj.constructor;
-        if (!(delete obj.constructor)) { return undefined; }
+        if (!(delete obj.constructor)) { return (void 0); }
         result = obj.constructor;
         obj.constructor = oldConstr;
       }
@@ -428,7 +428,7 @@ var ___;
       return null;
     }
   }
-  
+
   /**
    * A JSON container is an object whose direct constructor is
    * Object or Array.
@@ -482,7 +482,7 @@ var ___;
     //     var f = ___.primFreeze(Foo);
     //     if (true) { Foo = function Foo() {}; }
     //   })();
-    if (undefined === obj) { return obj; }
+    if ((void 0) === obj) { return obj; }
     if (null === obj) { return obj; }
     if (isFrozen(obj)) { return obj; }
     var typ = typeof obj;
@@ -491,9 +491,9 @@ var ___;
     // badFlags are names of properties we need to turn off.
     // We accumulate these first, so that we're not in the midst of a
     // for/in loop on obj while we're deleting properties from obj.
-    var badFlags = []; 
+    var badFlags = [];
     for (var k in obj) {
-      if (endsWith(k, '_canSet___') || endsWith(k, '_canDelete___')) { 
+      if (endsWith(k, '_canSet___') || endsWith(k, '_canDelete___')) {
         if (obj[k]) {
           badFlags.push(k);
         }
@@ -515,7 +515,7 @@ var ___;
         // for a future optimization, where the
         // prototype can record as canSet those
         // properties that appear in instances that
-        // inherit from this prototype. 
+        // inherit from this prototype.
         obj[flag] = false;
       }
     }
@@ -526,7 +526,7 @@ var ___;
     }
     return obj;
   }
-  
+
   /**
    * Like primFreeze(obj), but applicable only to JSON containers.
    */
@@ -1496,9 +1496,9 @@ var ___;
     'abs', 'acos', 'asin', 'atan', 'atan2', 'ceil', 'cos', 'exp', 'floor',
     'log', 'max', 'min', 'pow', 'random', 'round', 'sin', 'sqrt', 'tan'
   ]);
-  
-  
-  ctor(Object, undefined, 'Object');
+
+
+  ctor(Object, (void 0), 'Object');
   all2(allowMethod, Object, [
     'toString', 'toLocaleString', 'valueOf', 'isPrototypeOf'
   ]);
@@ -1547,10 +1547,15 @@ var ___;
     'concat', 'join', 'slice', 'indexOf', 'lastIndexOf'
   ]);
   all2(allowMutator, Array, [
-    'pop', 'push', 'reverse', 'shift', 'sort', 'splice', 'unshift'
+    'pop', 'push', 'reverse', 'shift', 'splice', 'unshift'
   ]);
-  
-  
+
+  useCallHandler(Array.prototype, 'sort', function (comparator) {
+    if (isFrozen(this)) { fail("Can't sort a frozen array"); }
+    return Array.prototype.sort.call(
+        this, comparator ? ___.asSimpleFunc(comparator) : (void 0));
+  });
+
   ctor(String, Object, 'String');
   allowSimpleFunc(String, 'fromCharCode');
   all2(allowMethod, String, [
@@ -1562,10 +1567,14 @@ var ___;
     enforceMatchable(regexp);
     return this.match(regexp);
   });
-  useCallHandler(String.prototype, 'replace', function(searchValue, 
+  useCallHandler(String.prototype, 'replace', function(searchValue,
                                                        replaceValue) {
     enforceMatchable(searchValue);
-    return this.replace(searchValue, replaceValue);
+    return this.replace(
+        searchValue,
+        (typeof replaceValue === 'function'
+         ? ___.asSimpleFunc(replaceValue)
+         : '' + replaceValue));
   });
   useCallHandler(String.prototype, 'search', function(regexp) {
     enforceMatchable(regexp);
@@ -1751,7 +1760,7 @@ var ___;
    */
   function getOuters(id) {
     var result = registeredOuters[enforceType(id, 'number', 'id')];
-    if (result === undefined) {
+    if (result === (void 0)) {
       fail('outers#', id, ' unregistered');
     }
     return result;
@@ -1767,10 +1776,10 @@ var ___;
    * reregisters itself at its old id.
    */
   function unregister(outers) {
-    enforceType(outers, 'object', 'outers');      
+    enforceType(outers, 'object', 'outers');
     if ('id___' in outers) {
       var id = enforceType(outers.id___, 'number', 'id');
-      registeredOuters[id] = undefined;
+      registeredOuters[id] = (void 0);
     }
   }
 
@@ -1856,16 +1865,16 @@ var ___;
     // Other
     def: def
   };
-  
+
   sharedOuters = {
     caja: caja,
-    
+
     'null': null,
     'false': false,
     'true': true,
     'NaN': NaN,
     'Infinity': Infinity,
-    'undefined': undefined,
+    'undefined': (void 0),
     parseInt: parseInt,
     parseFloat: parseFloat,
     isNaN: isNaN,
@@ -1875,7 +1884,7 @@ var ___;
     encodeURI: encodeURI,
     encodeURIComponent: encodeURIComponent,
     Math: Math,
-    
+
     Object: Object,
     Array: Array,
     String: String,
@@ -1883,7 +1892,7 @@ var ___;
     Number: Number,
     Date: Date,
     RegExp: RegExp,
-    
+
     Error: Error,
     EvalError: EvalError,
     RangeError: RangeError,
@@ -1892,7 +1901,7 @@ var ___;
     TypeError: TypeError,
     URIError: URIError
   };
-  
+
   each(sharedOuters, simpleFunc(function(k, v) {
     switch (typeof v) {
     case 'object':
