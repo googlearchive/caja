@@ -60,7 +60,6 @@ import static com.google.caja.parser.quasiliteral.QuasiBuilder.match;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.subst;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
-import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.List;
@@ -77,7 +76,7 @@ import java.util.Arrays;
     synopsis="Default set of transformations used by Caja"
   )
 public class DefaultCajaRewriter extends Rewriter {
-  final public Rule[] cajaRules = {        
+  final public Rule[] cajaRules = {
     new Rule () {
       @Override
       @RuleDescription(
@@ -193,7 +192,7 @@ public class DefaultCajaRewriter extends Rewriter {
             "@oTemp = @o;",
             "oTemp", s(new Reference(oTemp)),
             "o", expand(bindings.get("o"), scope, mq)))));
-        
+
         Identifier kTemp = scope.declareStartOfScopeTempVariable();
 
         if (isDecl) {
@@ -1118,7 +1117,7 @@ public class DefaultCajaRewriter extends Rewriter {
             if (ops.isSimpleLValue()) {
               return substV("++@v", "v", ops.getRValue());
             } else if (ops.getTemporaries().isEmpty()) {
-              return ops.makeAssignment((Expression) 
+              return ops.makeAssignment((Expression)
                   substV("@rvalue - -1", "rvalue", ops.getRValue()));
             } else {
               return substV(
@@ -1127,7 +1126,7 @@ public class DefaultCajaRewriter extends Rewriter {
                   "  return @assign;" +
                   "})()",
                   "tmp", ops.getTemporariesAsContainer(),
-                  "assign", ops.makeAssignment((Expression) 
+                  "assign", ops.makeAssignment((Expression)
                       substV("@rvalue - -1", "rvalue", ops.getRValue())));
             }
           case POST_DECREMENT:
@@ -1150,7 +1149,7 @@ public class DefaultCajaRewriter extends Rewriter {
             if (ops.isSimpleLValue()) {
               return substV("--@v", "v", ops.getRValue());
             } else if (ops.getTemporaries().isEmpty()) {
-              return ops.makeAssignment((Expression) 
+              return ops.makeAssignment((Expression)
                   substV("@rvalue - 1", "rvalue", ops.getRValue()));
             } else {
               return substV(
@@ -1159,7 +1158,7 @@ public class DefaultCajaRewriter extends Rewriter {
                   "  return @assign;" +
                   "})()",
                   "tmp", ops.getTemporariesAsContainer(),
-                  "assign", ops.makeAssignment((Expression) 
+                  "assign", ops.makeAssignment((Expression)
                       substV("@rvalue - 1", "rvalue", ops.getRValue())));
             }
           default:
@@ -1679,7 +1678,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 "  ___.simpleFunc(" +
                 "    function @f(@ps*) {" +
                 "      @fh*;" +
-                "      @stmts*;" +                    
+                "      @stmts*;" +
                 "      @bs*;" +
                 "  }));",
                 "f", bindings.get("f"),
@@ -1734,8 +1733,8 @@ public class DefaultCajaRewriter extends Rewriter {
           if (s2.hasFreeThis()) {
             mq.addMessage(
                 RewriterMessageType.ANONYMOUS_FUNCTION_REFERENCES_THIS,
-                node.getFilePosition(), 
-                this, 
+                node.getFilePosition(),
+                this,
                 node);
             return node;
           }
@@ -1769,18 +1768,18 @@ public class DefaultCajaRewriter extends Rewriter {
             if (match("@super.call(this, @params*);", bNode, superBindings) &&
                 s2.isDeclaredFunctionReference(superBindings.get("super"))){
               Scope paramScope = Scope.fromParseTreeNodeContainer(
-                  s2, 
+                  s2,
                   (ParseTreeNodeContainer)superBindings.get("params"));
               // The rest of the parameters must not contain "this".
               if (paramScope.hasFreeThis()) {
                 mq.addMessage(
                     RewriterMessageType.PARAMETERS_TO_SUPER_CONSTRUCTOR_MAY_NOT_CONTAIN_THIS,
-                    node.getFilePosition(), 
-                    this, 
+                    node.getFilePosition(),
+                    this,
                     bNode);
                 return node;
               }
-              // Expand the parameters, but not the call itself. 
+              // Expand the parameters, but not the call itself.
               bNode = new ExpressionStmt((Expression)substV(
                   "@super.call(this, @params*);",
                   "super", expandReferenceToOuters(superBindings.get("super"), s2, mq),
@@ -2092,11 +2091,11 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     }
   };
-      
+
   public DefaultCajaRewriter() {
     this(true);
   }
-  
+
   public DefaultCajaRewriter(boolean logging) {
     super(logging);
     addRules(cajaRules);

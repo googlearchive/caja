@@ -18,11 +18,10 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 
 /**
  * Describes each a set of transformation rules
- * 
+ *
  * @author jasvir@google.com (Jasvir Nagra)
  *
  */
