@@ -74,9 +74,11 @@ public abstract class Rule implements MessagePart {
         }
       };
 
-  private final String name;
-  private final Rewriter rewriter;
-
+  private String name;
+  private Rewriter rewriter;
+  
+  public Rule() {}
+  
   /**
    * Create a new {@code Rule}.
    * 
@@ -91,6 +93,21 @@ public abstract class Rule implements MessagePart {
    * @return the name of this {@code Rule}.
    */
   public String getName() { return name; }
+
+  /**
+   * Set the name of this {@code Rule}.
+   */
+  public void setName(String name) {
+    this.name = name;
+  }
+  
+  /**
+   * Set the rewriter this{@code Rule} uses.
+   */  
+  public void setRewriter(Rewriter rewriter) {
+    this.rewriter = rewriter;
+  }
+  
 
   /**
    * Process the given input, returning a rewritten node.

@@ -23,6 +23,7 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -46,6 +47,18 @@ public abstract class Rewriter {
    */
   public Rewriter(boolean logging) {
     this.logging = logging;
+  }
+
+  /**
+   * Creates a new Rewriter.
+   *
+   * @param logging whether this Rewriter should log the details of rule firings to
+   * standard error.
+   * @throws NoSuchMethodException 
+   */
+  public Rewriter(boolean logging, Rule[] rules) {
+    this.logging = logging;
+    addRules(rules);
   }
 
   /**
@@ -105,6 +118,32 @@ public abstract class Rewriter {
       throw new IllegalArgumentException("Duplicate rule name: " + rule.getName());
     rules.add(rule);
     ruleNames.add(rule.getName());
+  }
+
+  /**
+   * Adds a list of rules in order to this rewriter.
+   * 
+   * @param rules list of rewriting rules
+   * @throws NoSuchMethodException if {@code Rule} is missing {@code fire} method 
+   * @throws IllegalArgumentException if a rule with a duplicate name is added.
+   */
+  public void addRules(Rule[] rules) {
+    for (Rule r : rules) {
+      Class<Rule> c = (Class<Rule>) r.getClass();
+      Method m = null;
+      Class[] args = {ParseTreeNode.class, Scope.class, MessageQueue.class};
+      try {
+        m = c.getMethod("fire", args);
+      } catch (NoSuchMethodException e) {
+        throw new IllegalArgumentException("Method \"fire\" not found in Rule");
+      }
+      RuleDescription rDesc = m.getAnnotation(RuleDescription.class);
+      if (rDesc == null)
+        throw new IllegalArgumentException("RuleDescription not found");
+      r.setName(rDesc.name());
+      r.setRewriter(this);
+      addRule(r);
+    }
   }
 
   private void logResults(

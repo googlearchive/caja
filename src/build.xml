@@ -23,6 +23,7 @@
   -   clean     :  wipes generated files
   -   demos     :  demo files
   -   docs      :  javadoc
+  -   ruledoclet:  javadoc of caja rules
   -   pluginc   :  the plugin compiler
   -   runtests  :  runs the tests
   -
@@ -48,6 +49,7 @@
   <property name="instr"       location="ant-instr"/>  <!-- instrumented src -->
   <property name="lib"         location="ant-lib"/>
   <property name="docs"        location="ant-docs"/>
+  <property name="ruledoclet"  location="ant-ruledoclet"/>
   <property name="jars"        location="ant-jars"/>
   <property name="www"         location="ant-www"/>  <!-- demo files dir -->
 
@@ -59,6 +61,11 @@
     <pathelement path="${third_party}/java/htmlparser/htmlparser.jar"/>
     <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
+  </path>
+
+  <path id="classpath.ruledoclet">
+    <pathelement path="${lib}"/>
+    <pathelement path="${java.home}/../lib/tools.jar"/>
   </path>
 
   <path id="classpath.run">
@@ -106,13 +113,14 @@
     classpathref="classpath.extensions" />
 
   <!--== rules ==-->
-  <target name="default" depends="pluginc,opensocial,docs"
+  <target name="default" depends="pluginc,opensocial,docs,ruledoclet"
    description="Builds the plugin compiler, and documentation."/>
 
   <target name="clean"
    description="deletes all generated files leaving only sources">
     <delete dir="${reports}"/>
     <delete dir="${docs}"/>
+    <delete dir="${ruledoclet}"/>
     <delete dir="${instr}"/>
     <delete dir="${jars}"/>
     <delete dir="${lib}"/>
@@ -122,6 +130,7 @@
   <target name="dirs">
     <mkdir dir="${reports}"/>
     <mkdir dir="${docs}"/>
+    <mkdir dir="${ruledoclet}"/>
     <mkdir dir="${instr}"/>
     <mkdir dir="${jars}"/>
     <mkdir dir="${lib}"/>
@@ -189,6 +198,18 @@
      classpathref="classpath.compile"
      linksource="yes"/>
      <!-- overview="${src}/overview.html" -->
+  </target>
+
+  <!-- Extracts and builds documentation on caja rules. -->
+  <target name="ruledoclet" description="Builds caja rules documentation." depends="Quasiliterals">
+    <mkdir dir="${ruledoclet}"/>
+    <javadoc sourcepath="${src}" destdir="${ruledoclet}" access="private"
+       author="true"
+       packagenames="com/google/caja/parser/quasiliteral/*"
+       classpathref="classpath.ruledoclet"
+       linksource="yes">
+      <doclet name="com.google.caja.parser.quasiliteral.RuleDoclet" path="${lib}"/>
+    </javadoc>
   </target>
 
   <!-- Cajoles test resources that contain cajita to javascript. -->
