@@ -2042,6 +2042,35 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "  var a = arr[++k], b = arr[++k], c = arr[++k];" +
         "  return [a, b, c].join(',');" +
         "})()");
+    // Check exceptions on read of uninitialized variables.
+    assertConsistent(
+        "var x, history;" +
+        "history = '';" +
+        "try { history += '(x=' + x + ')'; }" +
+        "catch (ex) { history += '(threw x)'; }" +
+        "try { history += '(y=' + y + ')'; }" +
+        "catch (ex) { history += '(threw y)'; }" +
+        "history;");
+    assertConsistent(
+        "(function () {" +
+        "   var x, history;" +
+        "   history = '';" +
+        "   try { history += '(x=' + x + ')'; }" +
+        "   catch (ex) { history += '(threw x)'; }" +
+        "   try { history += '(y=' + y + ')'; }" +
+        "   catch (ex) { history += '(threw y)'; }" +
+        "   return history;" +
+        " })()");
+    assertConsistent(
+        "(function () {" +
+        "  var a = [];" +
+        "  for (var i = 0, j = 10; i < j; ++i) { a.push(i); }" +
+        "  return a.join(',');" +
+        "})()");
+    assertConsistent(
+        "var a = [];" +
+        "for (var i = 0, j = 10; i < j; ++i) { a.push(i); }" +
+        "a.join(',')");
   }
 
   public void testRecurseParseTreeNodeContainer() throws Exception {

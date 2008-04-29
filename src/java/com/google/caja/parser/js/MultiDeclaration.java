@@ -40,6 +40,7 @@ public final class MultiDeclaration extends AbstractStatement<Declaration> {
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
+    if (children().isEmpty()) { throw new IllegalStateException(); }
     for (ParseTreeNode child : children()) {
       if (!(child instanceof Declaration)) {
         throw new IllegalArgumentException("Child must be a declaration");
@@ -53,6 +54,9 @@ public final class MultiDeclaration extends AbstractStatement<Declaration> {
   public void render(RenderContext rc) {
     TokenConsumer out = rc.getOut();
     out.mark(getFilePosition());
+    if (children().isEmpty()) {
+      throw new RuntimeException("Empty MultiDeclaration");
+    }
     out.consume("var");
     boolean seen = false;
     for (Declaration decl : children()) {

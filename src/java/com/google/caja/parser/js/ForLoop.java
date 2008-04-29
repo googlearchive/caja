@@ -54,6 +54,12 @@ public final class ForLoop extends Loop implements NestedScope {
     super.childrenChanged();
     List<? extends ParseTreeNode> children = children();
     this.initializer = (Statement) children.get(0);
+    if (!(this.initializer instanceof Declaration
+          || this.initializer instanceof ExpressionStmt
+          || this.initializer instanceof MultiDeclaration
+          || this.initializer instanceof Noop)) {
+      throw new IllegalArgumentException("" + this.initializer);
+    }
     this.condition = (Expression) children.get(1);
     this.increment = (Statement) children.get(2);
     this.body = (Statement) children.get(3);

@@ -1919,17 +1919,13 @@ public class DefaultCajaRewriter extends Rewriter {
                 initializers.add((Expression) n);
               }
             }
-            Expression[] initOperands = initializers.toArray(new Expression[0]);
-            Expression init = (initOperands.length > 1
-                               ? Operation.create(Operator.COMMA, initOperands)
-                               : initOperands[0]);
             if (declarations.isEmpty()) {
-              return new ExpressionStmt(init);
+              return s(new ExpressionStmt(newCommaOperation(initializers)));
             } else {
               return substV(
                   "{ @decl; @init; }",
                   "decl", new MultiDeclaration(declarations),
-                  "init", new ExpressionStmt(init));
+                  "init", new ExpressionStmt(newCommaOperation(initializers)));
             }
           } else {
             return ParseTreeNodes.newNodeInstance(
@@ -2054,7 +2050,6 @@ public class DefaultCajaRewriter extends Rewriter {
             node instanceof Identifier ||
             node instanceof Literal ||
             node instanceof Loop ||
-            node instanceof MultiDeclaration ||
             node instanceof Noop ||
             node instanceof SimpleOperation ||
             node instanceof ControlOperation ||
