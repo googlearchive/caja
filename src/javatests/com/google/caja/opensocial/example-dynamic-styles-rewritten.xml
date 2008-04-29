@@ -2,15 +2,20 @@
 <Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.7" /></ModulePrefs><Content type="html"><![CDATA[<script type="text/javascript">{
   ___.loadModule(
       function (___OUTERS___) {
+        var x0___;
+        var x1___;
+        var x2___;
+        var x3___;
+        var x4___;
+        var x5___;
+        var x6___;
         ___OUTERS___.c_1___ = ___.simpleFunc(
             function (thisNode___, event) {
-              (function () {
-                 var x___ = thisNode___;
-                 var x0___ = ___OUTERS___.blessCss___('color', 'blue');
-                 return x___.updateStyle_canCall___
-                     ? x___.updateStyle(x0___)
-                     : ___.callPub(x___, 'updateStyle', [ x0___ ]);
-               })();
+               x1___ = thisNode___,
+               x0___ = ___OUTERS___.blessCss___('color', 'blue'),
+               x1___.updateStyle_canCall___
+                   ? x1___.updateStyle(x0___)
+                   : ___.callPub(x1___, 'updateStyle', [ x0___ ]);
             });
         ___OUTERS___.htmlEmitter___
             .b('p')
@@ -20,33 +25,28 @@
             .e('p')
             .pc('\n\n    ');
         {
-          (function () {
-             var x___ = 16711680;
-             return ___OUTERS___.color_canSet___
-                 ? (___OUTERS___.color = x___)
-                 : ___.setPub(___OUTERS___, 'color', x___);
-           })();
-          (function () {
-             var x___ = (function () {
-                   var x___ = ___OUTERS___.document_canRead___
-                       ? ___OUTERS___.document
-                       : ___.readPub(___OUTERS___, 'document', true);
-                   var x0___ = 'foo';
-                   return x___.getElementById_canCall___
-                       ? x___.getElementById(x0___)
-                       : ___.callPub(x___, 'getElementById', [ x0___ ]);
-                 })();
-             var x0___ = ___OUTERS___.blessCss___(
-                 'color',
-                 ___OUTERS___.cssColor___(
-                     ___OUTERS___.color_canRead___
-                     ? ___OUTERS___.color
-                     : ___.readPub(___OUTERS___, 'color', true)),
-                 'font-weight;fontWeight', 'bold');
-             return x___.updateStyle_canCall___
-                 ? x___.updateStyle(x0___)
-                 : ___.callPub(x___, 'updateStyle', [ x0___ ]);
-           })();
+           x2___ = 16711680,
+           ___OUTERS___.color_canSet___
+               ? (___OUTERS___.color = x2___)
+               : ___.setPub(___OUTERS___, 'color', x2___);
+           x4___ = (
+               x6___ = ___OUTERS___.document_canRead___
+                   ? ___OUTERS___.document
+                   : ___.readPub(___OUTERS___, 'document', true),
+               x5___ = 'foo',
+               x6___.getElementById_canCall___
+                   ? x6___.getElementById(x5___)
+                   : ___.callPub(x6___, 'getElementById', [ x5___ ])),
+           x3___ = ___OUTERS___.blessCss___(
+               'color',
+               ___OUTERS___.cssColor___(
+                   ___OUTERS___.color_canRead___
+                   ? ___OUTERS___.color
+                   : ___.readPub(___OUTERS___, 'color', true)),
+               'font-weight;fontWeight', 'bold'),
+           x4___.updateStyle_canCall___
+               ? x4___.updateStyle(x3___)
+               : ___.callPub(x4___, 'updateStyle', [ x3___ ]);
         }
         ___OUTERS___.htmlEmitter___.pc('\n  ');
       });

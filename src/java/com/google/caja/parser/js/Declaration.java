@@ -87,7 +87,11 @@ public class Declaration extends AbstractStatement<ParseTreeNode> {
     out.consume(name);
     if (null != initializer) {
       out.consume("=");
+      boolean isComma = initializer instanceof Operation
+          && Operator.COMMA == ((Operation) initializer).getOperator();
+      if (isComma) out.consume("(");
       initializer.render(rc);
+      if (isComma) out.consume(")");
     }
   }
 }

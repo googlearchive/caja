@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?><Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5" /></ModulePrefs><Content type="html"><![CDATA[<script type="text/javascript">{
   ___.loadModule(function (___OUTERS___) {
                    ___OUTERS___.externalScript = undefined;
+                   var x0___;
                    ___OUTERS___.handleClicky = undefined;
+                   var x1___;
                    ___OUTERS___.emitCss___([ '.', ' #p3-', ' {\n  color: red\n}' ].join(___OUTERS___.getIdClass___()));
                    ___OUTERS___.emitCss___([ '@media print {\n  .', ' #p3-', ' {\n    font-weight: bold;\n    color: black\n  }\n}' ].join(___OUTERS___.getIdClass___()));
                    ___OUTERS___.emitCss___([ '@media print, screen {\n  .', ' .p4 {\n    font-weight: bold\n  }\n}' ].join(___OUTERS___.getIdClass___()));
@@ -15,22 +17,18 @@
                        });
                    ___OUTERS___.htmlEmitter___.pc('\n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    ').b('p').a('class', 'p1 p2').f(false).ih('Paragraph 1').e('p').pc('\n\n    ');
                    {
-                     (function () {
-                        var x___ = ___.simpleFunc(function externalScript() {
+                        x0___ = ___.simpleFunc(function externalScript() {
                                                     ___.asSimpleFunc(___OUTERS___.alert_canRead___? ___OUTERS___.alert: ___.readPub(___OUTERS___, 'alert', true))('external script');
-                                                  });
-                        return ___OUTERS___.externalScript_canSet___? (___OUTERS___.externalScript = x___): ___.setPub(___OUTERS___, 'externalScript', x___);
-                      })();
+                                                  }),
+                        ___OUTERS___.externalScript_canSet___? (___OUTERS___.externalScript = x0___): ___.setPub(___OUTERS___, 'externalScript', x0___);
                      ;
                    }
                    ___OUTERS___.htmlEmitter___.pc('\n\n    \n    ').b('p').a('id', 'p3-' + ___OUTERS___.getIdClass___()).f(false).ih('Paragraph 2').e('p').pc('\n\n    \n    \n\n    \n    ');
                    {
-                     (function () {
-                        var x___ = ___.simpleFunc(function handleClicky() {
+                        x1___ = ___.simpleFunc(function handleClicky() {
                                                     ___.asSimpleFunc(___OUTERS___.alert_canRead___? ___OUTERS___.alert: ___.readPub(___OUTERS___, 'alert', true))('You clicked something!!!');
-                                                  });
-                        return ___OUTERS___.handleClicky_canSet___? (___OUTERS___.handleClicky = x___): ___.setPub(___OUTERS___, 'handleClicky', x___);
-                      })();
+                                                  }),
+                        ___OUTERS___.handleClicky_canSet___? (___OUTERS___.handleClicky = x1___): ___.setPub(___OUTERS___, 'handleClicky', x1___);
                      ;
                    }
                    ___OUTERS___.htmlEmitter___.pc('\n\n    ').b('p').f(false).b('a').a('onclick', 'return plugin_dispatchEvent___(this, event || window.event, ' + ___.getId(___OUTERS___) + ', \'c_1___\')').f(false).ih('Paragraph 3').e('a').e('p').pc('\n\n    ').b('a').a('href', 'http://url-proxy.test.google.com/?url=http%3A%2F%2Ffoo.com%2F&mime-type=*%2F*').a('target', '_new').f(false).ih('External URL.  Apply URICallback.rewrite to me.').e('a').pc('\n\n    \n    \n\n    \n    \n    \n\n  ');
