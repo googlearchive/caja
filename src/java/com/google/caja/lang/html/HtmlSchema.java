@@ -19,14 +19,18 @@ import com.google.caja.config.WhiteList;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Criterion;
+import com.google.caja.util.Pair;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -46,29 +50,40 @@ public final class HtmlSchema {
   private final Map<String, HTML.Attribute> attributeDetails;
   private final Map<String, Criterion<String>> attributeCriteria;
 
+  private static Pair<HtmlSchema, List<Message>> defaultSchema;
   /**
    * The default HTML4 whitelist.  See the JSON files in this directory for
    * the actual definitions.
    */
   public static HtmlSchema getDefault(MessageQueue mq) {
-    try {
+    if (defaultSchema == null) {
+      SimpleMessageQueue cacheMq = new SimpleMessageQueue();
       FilePosition elPos = FilePosition.startOfFile(
           new InputSource(URI.create(
               "resource:///com/google/caja/lang/html/html4-elements.json")));
       FilePosition attrPos = FilePosition.startOfFile(
           new InputSource(URI.create(
               "resource:///com/google/caja/lang/html/html4-attributes.json")));
-      return new HtmlSchema(
-          ConfigUtil.loadWhiteListFromJson(ConfigUtil.openConfigResource(
-              elPos.source().getUri(), null), elPos, mq),
-          ConfigUtil.loadWhiteListFromJson(ConfigUtil.openConfigResource(
-              attrPos.source().getUri(), null), attrPos, mq));
-    // If the default schema is borked, there's not much we can do.
-    } catch (IOException ex) {
-      throw new RuntimeException(ex);
-    } catch (ParseException ex) {
-      throw new RuntimeException(ex);
+      try {
+        defaultSchema = Pair.pair(
+            new HtmlSchema(
+                ConfigUtil.loadWhiteListFromJson(ConfigUtil.openConfigResource(
+                    elPos.source().getUri(), null), elPos, cacheMq),
+                ConfigUtil.loadWhiteListFromJson(ConfigUtil.openConfigResource(
+                   attrPos.source().getUri(), null), attrPos, cacheMq)),
+            cacheMq.getMessages());
+      // If the default schema is borked, there's not much we can do.
+      } catch (IOException ex) {
+        mq.getMessages().addAll(cacheMq.getMessages());
+        throw new RuntimeException(ex);
+      } catch (ParseException ex) {
+        cacheMq.getMessages().add(ex.getCajaMessage());
+        mq.getMessages().addAll(cacheMq.getMessages());
+        throw new RuntimeException(ex);
+      }
     }
+    mq.getMessages().addAll(defaultSchema.b);
+    return defaultSchema.a;
   }
 
   public HtmlSchema(WhiteList tagList, WhiteList attribList) {

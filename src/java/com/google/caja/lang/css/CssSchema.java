@@ -23,8 +23,11 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssPropertySignature;
+import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Criterion;
+import com.google.caja.util.Pair;
 
 import java.io.IOException;
 import java.net.URI;
@@ -51,27 +54,36 @@ public final class CssSchema {
   private final Set<String> functionsAllowed;
   private final Set<String> propertiesAllowed;
 
+  private static Pair<CssSchema, List<Message>> defaultSchema;
   public static CssSchema getDefaultCss21Schema(MessageQueue mq) {
-    FilePosition propPos = FilePosition.startOfFile(new InputSource(URI.create(
-      "resource:///com/google/caja/lang/css/css21.json")));
-    FilePosition fnPos = FilePosition.startOfFile(new InputSource(URI.create(
-      "resource:///com/google/caja/lang/css/css21-fns.json")));
-    WhiteList propDefs, fnDefs;
-    try {
-      propDefs = ConfigUtil.loadWhiteListFromJson(
-          ConfigUtil.openConfigResource(propPos.source().getUri(), null),
-          propPos, mq);
-      fnDefs = ConfigUtil.loadWhiteListFromJson(
-          ConfigUtil.openConfigResource(fnPos.source().getUri(), null),
-          fnPos, mq);
-    // If the default schema is borked, there's not much we can do.
-    } catch (IOException ex) {
-      throw new RuntimeException(ex);
-    } catch (ParseException ex) {
-      ex.toMessageQueue(mq);
-      throw new RuntimeException(ex);
+    if (defaultSchema == null) {
+      SimpleMessageQueue cacheMq = new SimpleMessageQueue();
+      FilePosition fnPos = FilePosition.startOfFile(new InputSource(URI.create(
+          "resource:///com/google/caja/lang/css/css21-fns.json"))),
+          propPos = FilePosition.startOfFile(new InputSource(URI.create(
+          "resource:///com/google/caja/lang/css/css21.json")));
+      WhiteList propDefs, fnDefs;
+      try {
+        propDefs = ConfigUtil.loadWhiteListFromJson(
+            ConfigUtil.openConfigResource(propPos.source().getUri(), null),
+            propPos, cacheMq);
+        fnDefs = ConfigUtil.loadWhiteListFromJson(
+            ConfigUtil.openConfigResource(fnPos.source().getUri(), null),
+            fnPos, cacheMq);
+      // If the default schema is borked, there's not much we can do.
+      } catch (IOException ex) {
+        mq.getMessages().addAll(cacheMq.getMessages());
+        throw new RuntimeException(ex);
+      } catch (ParseException ex) {
+        ex.toMessageQueue(cacheMq);
+        mq.getMessages().addAll(cacheMq.getMessages());
+        throw new RuntimeException(ex);
+      }
+      defaultSchema = Pair.pair(
+          new CssSchema(propDefs, fnDefs), cacheMq.getMessages());
     }
-    return new CssSchema(propDefs, fnDefs);
+    mq.getMessages().addAll(defaultSchema.b);
+    return defaultSchema.a;
   }
 
   /**
