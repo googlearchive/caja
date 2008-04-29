@@ -205,6 +205,21 @@
     </java>
   </target>
 
+  <target name="MinifiedJs" depends="JsParserCore,dirs">
+    <mkdir dir="${lib}/com/google/caja/plugin"/>
+    <java classname="com.google.caja.parser.js.Minify" failonerror="yes"
+     output="${lib}/com/google/caja/plugin/domita-minified.js"
+     logError="yes">
+      <classpath refid="classpath.run"/>
+      <arg file="${javascript}/com/google/caja/caja.js"/>
+      <arg file="${src}/com/google/caja/plugin/unicode.js"/>
+      <arg file="${src}/com/google/caja/plugin/html4-defs.js"/>
+      <arg file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <arg file="${src}/com/google/caja/plugin/html-emitter.js"/>
+      <arg file="${src}/com/google/caja/plugin/domita.js"/>
+    </java>
+  </target>
+
   <target name="AllTests"
    depends="opensocial,TestUtil,CajoledTests,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
@@ -215,7 +230,6 @@
       <include name="**/caja/demos/calendar/*Test.java"/>
       <include name="**/caja/lang/*/*Test.java"/>
       <include name="**/caja/demos/calendar/RRuleTest.java"/>
-      <include name="**/caja/lang/css/CssSchemaTest.java"/>
       <include name="**/caja/demos/calendar/LayoutTest.java"/>
       <include name="**/caja/lexer/CharProducerTest.java"/>
       <include name="**/caja/lexer/CommentLexerTest.java"/>
@@ -321,7 +335,7 @@
     </copy>
   </target>
 
-  <target name="opensocial" depends="PluginCompiler,dirs">
+  <target name="opensocial" depends="PluginCompiler,MinifiedJs,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
