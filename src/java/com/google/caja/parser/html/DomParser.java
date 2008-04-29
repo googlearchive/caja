@@ -137,7 +137,12 @@ public final class DomParser {
       parseDom(elementStack);
     }
 
-    FilePosition endPos = FilePosition.endOf(tokens.lastPosition());
+    FilePosition endPos = tokens.lastPosition();
+    if (endPos != null) {
+      endPos = FilePosition.endOf(endPos);
+    } else {  // No lastPosition if the queue was empty.
+      endPos = FilePosition.startOfFile(tokens.getInputSource());
+    }
     try {
       elementStack.finish(endPos);
     } catch (IllegalDocumentStateException ex) {
@@ -276,29 +281,36 @@ public final class DomParser {
   private static boolean guessAsXml(LookaheadLexer la, InputSource is)
       throws ParseException {
     Token<HtmlTokenType> first = la.peek();
-    if (first != null && "".equals(first.text.trim())) {
-      Token<HtmlTokenType> space = first;
+    Token<HtmlTokenType> firstNonSpace = first;
+    if (firstNonSpace != null && "".equals(firstNonSpace.text.trim())) {
+      Token<HtmlTokenType> space = firstNonSpace;
       la.next();
-      first = la.peek();
+      firstNonSpace = la.peek();
       la.pushBack(space);
     }
-    if (first == null) {
+    if (firstNonSpace == null) {
       return false;  // An empty document is not valid XML.
     }
-    switch (first.type) {
+    switch (firstNonSpace.type) {
       case DIRECTIVE:
-        return first.text.startsWith("<?xml")
-            || (first.text.startsWith("<!DOCTYPE")
-                && !isHtmlDoctype(first.text));
-      case TAGBEGIN:
-        if (first.text.indexOf(':') >= 0) { return true; }
+        return firstNonSpace.text.startsWith("<?xml")
+            || (firstNonSpace.text.startsWith("<!DOCTYPE")
+                && !isHtmlDoctype(firstNonSpace.text));
+      case TAGBEGIN:  // A namespaced tag name.
+        if (firstNonSpace.text.indexOf(':') >= 0) { return true; }
         break;
     }
-    String path = is.getUri().getPath();
-    if (path != null) {
-      String ext = path.toLowerCase().substring(path.lastIndexOf('.' + 1));
-      if ("html".equals(ext)) { return false; }
-      if ("xml".equals(ext) || ".xhtml".equals(ext)) { return true; }
+    // If we have a file extension, and this XML starts the file, instead
+    // of being parsed from a CDATA section inside a larger document, then
+    // guess based on the file extension.
+    if (FilePosition.startOf(first.pos).equals(
+            FilePosition.startOfFile(first.pos.source()))) {
+      String path = is.getUri().getPath();
+      if (path != null) {
+        String ext = path.toLowerCase().substring(path.lastIndexOf('.') + 1);
+        if ("html".equals(ext)) { return false; }
+        if ("xml".equals(ext) || "xhtml".equals(ext)) { return true; }
+      }
     }
     return false;
   }
@@ -334,9 +346,10 @@ final class LookaheadLexer implements TokenStream<HtmlTokenType> {
   public Token<HtmlTokenType> next() throws ParseException {
     return pending.isEmpty() ? lexer.next() : pending.remove(0);
   }
-  /** Returns the next token without consuming it. */
+  /** Returns the next token without consuming it, or null if no such token. */
   Token<HtmlTokenType> peek() throws ParseException {
     if (pending.isEmpty()) {
+      if (!lexer.hasNext()) { return null; }
       Token<HtmlTokenType> next = lexer.next();
       pending.add(next);
       return next;

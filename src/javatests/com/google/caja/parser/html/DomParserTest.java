@@ -17,6 +17,7 @@ package com.google.caja.parser.html;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.HtmlTokenType;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
@@ -29,6 +30,7 @@ import com.google.caja.util.Criterion;
 import com.google.caja.util.Join;
 import static com.google.caja.util.MoreAsserts.*;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.IdentityHashMap;
@@ -54,25 +56,26 @@ public class DomParserTest extends CajaTestCase {
       + "\n"
       );
 
-  static final String DOM1_GOLDEN = "Tag : foo\n"
-        + "  Attrib : a\n"
-        + "    Value : b\n"
-        + "  Attrib : c\n"
-        + "    Value : d\n"
-        + "  Attrib : e\n"
-        + "    Value : <\"f\"&amp;\n"
-        + "  Text : \n"
-        + "\n"
-        + "  Tag : bar\n"
-        + "  Text :  \n"
-        + "  Tag : bar\n"
-        + "  Text :  before  after \n"
-        + "Hello <there>\n"
-        + "\n"
-        + "  Tag : baz\n"
-        + "    CData : Hello <there>\n"
-        + "  Text : \n"
-        + "";
+  static final String DOM1_GOLDEN = (
+      "Tag : foo\n"
+      + "  Attrib : a\n"
+      + "    Value : b\n"
+      + "  Attrib : c\n"
+      + "    Value : d\n"
+      + "  Attrib : e\n"
+      + "    Value : <\"f\"&amp;\n"
+      + "  Text : \n"
+      + "\n"
+      + "  Tag : bar\n"
+      + "  Text :  \n"
+      + "  Tag : bar\n"
+      + "  Text :  before  after \n"
+      + "Hello <there>\n"
+      + "\n"
+      + "  Tag : baz\n"
+      + "    CData : Hello <there>\n"
+      + "  Text : \n"
+      );
 
   public void testParseDom() throws Exception {
     TokenQueue<HtmlTokenType> tq = tokenizeTestInput(DOM1_XML, true);
@@ -80,6 +83,21 @@ public class DomParserTest extends CajaTestCase {
     StringBuilder actual = new StringBuilder();
     t.format(new MessageContext(), actual);
     assertEquals(DOM1_GOLDEN, actual.toString());
+  }
+
+  public void testEmptyFragment() throws Exception {
+    assertParsedMarkup(Arrays.<String>asList(),
+                       Arrays.asList("Fragment 1+1-1+1"),
+                       Arrays.<String>asList(),
+                       Arrays.asList(""),
+                       null,
+                       true);
+    assertParsedMarkup(Arrays.asList(" "),
+                       Arrays.asList("Fragment 1+1-1+2"),
+                       Arrays.<String>asList(),
+                       Arrays.asList(""),
+                       null,
+                       true);
   }
 
   public void testHtml1() throws Exception {
@@ -1580,6 +1598,58 @@ public class DomParserTest extends CajaTestCase {
             "<xmp><br /></xmp>"
             ),
         null, false);
+  }
+
+  public void testFileExtensionsBasedContentTypeGuessing() throws Exception {
+    // Override input sources, so that DomParser has a file extension available
+    // when deciding whether to treat the input as HTML or XML.
+    this.is = new InputSource(URI.create("test:///" + getName() + ".html"));
+    assertParsedMarkup(
+        Arrays.asList(
+            "<xmp><br/></xmp>"
+            ),
+        Arrays.asList(
+            "Fragment 1+1-1+17",
+            "  Tag : xmp 1+1-1+17",
+            "    Text : <br/> 1+6-1+11"
+            ),
+        Arrays.<String>asList(),
+        Arrays.asList(
+            "<xmp><br/></xmp>"
+            ),
+        null, true);
+
+    this.is = new InputSource(URI.create("test:///" + getName() + ".xml"));
+    assertParsedMarkup(
+        Arrays.asList(
+            "<xmp><br/></xmp>"
+            ),
+        Arrays.asList(
+            "Fragment 1+1-1+17",
+            "  Tag : xmp 1+1-1+17",
+            "    Tag : br 1+6-1+11"
+            ),
+        Arrays.<String>asList(),
+        Arrays.asList(
+            "<xmp><br /></xmp>"
+            ),
+        null, true);
+
+    this.is = new InputSource(URI.create("test:///" + getName() + ".xhtml"));
+    assertParsedMarkup(
+        Arrays.asList(
+            "<xmp><br/></xmp>"
+            ),
+        Arrays.asList(
+            "Fragment 1+1-1+17",
+            "  Tag : xmp 1+1-1+17",
+            "    Tag : br 1+6-1+11"
+            ),
+        Arrays.<String>asList(),
+        Arrays.asList(
+            "<xmp><br /></xmp>"
+            ),
+        null, true);
   }
 
   public void testQualifiedNameTreatedAsXml() throws Exception {

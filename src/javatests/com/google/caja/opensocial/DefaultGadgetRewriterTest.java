@@ -22,24 +22,23 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.TestUtil;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
-import junit.framework.TestCase;
 
 /**
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
-public class DefaultGadgetRewriterTest extends TestCase {
+public class DefaultGadgetRewriterTest extends CajaTestCase {
 
   private static final UriCallback uriCallback = new UriCallback() {
     public UriCallbackOption getOption(
@@ -78,7 +77,8 @@ public class DefaultGadgetRewriterTest extends TestCase {
   private DefaultGadgetRewriter rewriter;
 
   @Override
-  public void setUp() {
+  public void setUp() throws Exception {
+    super.setUp();
     rewriter = new DefaultGadgetRewriter(
         new EchoingMessageQueue(
             new PrintWriter(System.err), new MessageContext(), false)) {
@@ -91,7 +91,10 @@ public class DefaultGadgetRewriterTest extends TestCase {
   }
 
   @Override
-  public void tearDown() { rewriter = null; }
+  public void tearDown() throws Exception {
+    super.tearDown();
+    rewriter = null;
+  }
 
   // Test Gadget parsing
   public void testInlineGadget() throws Exception {
@@ -145,22 +148,18 @@ public class DefaultGadgetRewriterTest extends TestCase {
 
   private void assertRewritePasses(String file, MessageLevel failLevel)
       throws Exception {
-    Reader input = new StringReader(TestUtil.readResource(getClass(), file));
     URI gadgetUri = TestUtil.getResource(getClass(), file);
-    CharProducer cp = CharProducer.Factory.create(
-        input, new InputSource(gadgetUri));
-    rewriter.rewrite(gadgetUri, cp, uriCallback, "canvas", System.out);
-
+    CharProducer cp = fromResource(file);
+    rewriter.rewrite(gadgetUri, fromResource(file), uriCallback, "canvas",
+                     System.out);
     checkMessages(failLevel);
   }
 
   private void assertRewriteMatches(
       String file, String goldenFile, MessageLevel failLevel)
       throws Exception {
-    Reader input = new StringReader(TestUtil.readResource(getClass(), file));
     URI gadgetUri = TestUtil.getResource(getClass(), file);
-    CharProducer cp = CharProducer.Factory.create(
-        input, new InputSource(gadgetUri));
+    CharProducer cp = fromResource(file);
 
     StringBuilder sb = new StringBuilder();
     rewriter.rewrite(gadgetUri, cp, uriCallback, "canvas", sb);
@@ -183,7 +182,7 @@ public class DefaultGadgetRewriterTest extends TestCase {
 
   private void assertRewriteFailsWithMessage(String htmlContent, String msg)
       throws Exception {
-    Reader input = new StringReader(
+    String input = (
         "<?xml version=\"1.0\"?>"
         + "<Module>"
         + "<ModulePrefs title=\"Example Gadget\">"
@@ -194,8 +193,7 @@ public class DefaultGadgetRewriterTest extends TestCase {
         + "</Content>"
         + "</Module>");
     URI gadgetUri = URI.create("http://unittest.google.com/foo/bar/");
-    CharProducer cp = CharProducer.Factory.create(
-        input, new InputSource(gadgetUri));
+    CharProducer cp = fromString(input, new InputSource(gadgetUri));
 
     try {
       rewriter.rewrite(gadgetUri, cp, uriCallback, "canvas", System.out);
