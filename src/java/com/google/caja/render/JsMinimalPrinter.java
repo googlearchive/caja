@@ -43,6 +43,12 @@ public final class JsMinimalPrinter implements TokenConsumer {
   private boolean closed;
   /** Keeps track of our position in a run of punctuation tokens. */
   private PunctuationTrie trie;
+  /**
+   * Line length below which the printer will not wrap lines.
+   * At or above this limit, the printer will try to replace a space with
+   * a line-break.
+   */
+  private int lineLengthLimit = 500;
 
   /**
    * @param out receives the rendered text.
@@ -69,6 +75,11 @@ public final class JsMinimalPrinter implements TokenConsumer {
   }
 
   public void mark(FilePosition pos) {}
+
+  /** Visible for testing.  Should not be used by clients. */
+  void setLineLengthLimit(int lineLengthLimit) {
+    this.lineLengthLimit = lineLengthLimit;
+  }
 
   /**
    * @throws NullPointerException if out raises an IOException
@@ -155,7 +166,7 @@ public final class JsMinimalPrinter implements TokenConsumer {
       if (spaceBefore) {
         // Some security tools/proxies/firewalls break on really long javascript
         // lines.
-        if (charInLine >= 500) {
+        if (charInLine >= lineLengthLimit && canBreakBetween(lastToken, text)) {
           newLine();
         } else {
           space();
@@ -186,6 +197,39 @@ public final class JsMinimalPrinter implements TokenConsumer {
     }
   }
 
+  private static boolean canBreakBetween(String before, String after) {
+    // According to semicolon insertion rules in ES262 Section 7.9.1
+    //     When, as the program is parsed from left to right, a token
+    //     is encountered that is allowed by some production of the
+    //     grammar, but the production is a restricted production and
+    //     the token would be the first token for a terminal or
+    //     nonterminal immediately following the annotation "[no
+    //     LineTerminator here]" within the restricted production (and
+    //     therefore such a token is called a restricted token), and
+    //     the restricted token is separated from the previous token
+    //     by at least one LineTerminator, then a semicolon is
+    //     automatically inserted before the restricted token.
+
+    //     These are the only restricted productions in the grammar:
+    //     PostfixExpression :
+    //         LeftHandSideExpression [no LineTerminator here] ++
+    //         LeftHandSideExpression [no LineTerminator here] --
+    //     ContinueStatement :
+    //         continue [no LineTerminator here] Identifieropt ;
+    //     BreakStatement :
+    //         break [no LineTerminator here] Identifieropt ;
+    //     ReturnStatement :
+    //         return [no LineTerminator here] Expressionopt ;
+    //     ThrowStatement :
+    //         throw [no LineTerminator here] Expression ;
+    return !("++".equals(after)
+             || "--".equals(after)
+             || "continue".equals(before)
+             || "break".equals(before)
+             || "return".equals(before)
+             || "throw".equals(before));
+  }
+
   private void emit(CharSequence s) throws IOException {
     out.append(s);
     charInLine += s.length();  // Comments skipped, so no multiline tokens.
@@ -196,10 +240,13 @@ public final class JsMinimalPrinter implements TokenConsumer {
     List<String> punctuationStrings = new ArrayList<String>();
     JsLexer.getPunctuationTrie().toStringList(punctuationStrings);
     // Make sure the output can be embedded in HTML and XML.
-    punctuationStrings.add("<![");
-    punctuationStrings.add("<!--");
+    // All non-empty prefixes of these strings must be valid punctuation
+    // sequences.  If we added <!--, then since <!- is not a valid sequence,
+    // we would have to keep multiple tries above, one for every space we didn't
+    // insert.
+    punctuationStrings.add("<!");  // Prefix for <!-- and <![CDATA[
     punctuationStrings.add("-->");
-    punctuationStrings.add("]]>");
+    punctuationStrings.add("]>");  // Suffix of ]]>
     punctuationStrings.add("//");
     punctuationStrings.add("/*");
     START_TRIE = new PunctuationTrie(punctuationStrings.toArray(new String[0]));

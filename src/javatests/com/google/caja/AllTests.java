@@ -57,6 +57,7 @@ import com.google.caja.plugin.JsHtmlSanitizerTest;
 import com.google.caja.plugin.caps.CapabilityRewriterTest;
 import com.google.caja.plugin.stages.OpenTemplateStageTest;
 import com.google.caja.plugin.stages.RewriteHtmlStageTest;
+import com.google.caja.render.JsMinimalPrinterTest;
 import com.google.caja.render.JsPrettyPrinterTest;
 import com.google.caja.render.SideBySideRendererTest;
 import com.google.caja.reporting.BuildInfoTest;
@@ -110,6 +111,7 @@ public class AllTests {
           JsHtmlParserTest.class,
           JsHtmlSanitizerTest.class,
           JsLexerTest.class,
+          JsMinimalPrinterTest.class,
           JsPrettyPrinterTest.class,
           LayoutTest.class,
           LookaheadCharProducerTest.class,
