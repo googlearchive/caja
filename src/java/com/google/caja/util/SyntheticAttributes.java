@@ -28,9 +28,21 @@ import java.util.Set;
  */
 public final class SyntheticAttributes
     extends AbstractMap<SyntheticAttributeKey<?>, Object> {
+  /**
+   * True iff this has its own copy without clobbering another maps attributes.
+   * The copy constructor below does copy-on-write of the underlying map.
+   */
+  private boolean hasOwnCopy;
+  private Map<SyntheticAttributeKey<?>, Object> attributes;
 
-  private Map<SyntheticAttributeKey<?>, Object> attributes =
-      new HashMap<SyntheticAttributeKey<?>, Object>();
+  public SyntheticAttributes() {
+    attributes = Collections.emptyMap();
+  }
+
+  public SyntheticAttributes(SyntheticAttributes sa) {
+    attributes = sa.attributes;
+    sa.hasOwnCopy = false;
+  }
 
   @SuppressWarnings("unchecked")
   public <T> T get(SyntheticAttributeKey<T> k) {
@@ -53,6 +65,7 @@ public final class SyntheticAttributes
     if (!(null == v || k.getType().isInstance(v))) {
       throw new ClassCastException(v + " to " + k.getType());
     }
+    requireOwnCopy();
     return (T) attributes.put(k, v);
   }
 
@@ -62,6 +75,7 @@ public final class SyntheticAttributes
     if (!(null == v || k.getType().isInstance(v))) {
       throw new ClassCastException(v + " to " + k.getType());
     }
+    requireOwnCopy();
     return attributes.put(k, v);
   }
 
@@ -82,8 +96,21 @@ public final class SyntheticAttributes
   }
 
   @Override
-  public Object remove(Object k) { return attributes.remove(k); }
+  public Object remove(Object k) {
+    if (!hasOwnCopy) {
+      if (attributes.isEmpty()) { return null; }
+      requireOwnCopy();
+    }
+    return attributes.remove(k);
+  }
 
+  private void requireOwnCopy() {
+    if (!hasOwnCopy) {
+      attributes = new HashMap<SyntheticAttributeKey<?>, Object>(attributes);
+      hasOwnCopy = true;
+    }
+  }
+  
   @Override
   public int size() { return attributes.size(); }
 
