@@ -577,8 +577,12 @@ public class Scope {
       if (maskedDefinition == null) { continue; }
 
       LocalType maskedType = maskedDefinition.a;
+      // Do not generate a LINT error in the case where a function masks
+      // itself.  We recognize a self-mask when we come across a "new" 
+      // function in the same scope as a declared function or constructor.
       if (maskedType != type
-          && !(maskedType == LocalType.DECLARED_FUNCTION
+          && !((maskedType == LocalType.DECLARED_FUNCTION || 
+                  maskedType == LocalType.CONSTRUCTOR)
                && type == LocalType.FUNCTION)) {
         // Since different interpreters disagree about how exception
         // declarations affect local variable declarations, we need to

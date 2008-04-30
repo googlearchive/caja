@@ -14,6 +14,8 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
@@ -29,7 +31,10 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.plugin.SyntheticNodes;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.util.RhinoTestBed;
 import com.google.caja.util.TestUtil;
 
@@ -1793,6 +1798,20 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "Public properties cannot end in \"_\"");
   }
 
+  public void testMaskingFunction () throws Exception {
+    assertAddsMessage(
+        "function Goo() { function Goo() {} }",
+        MessageType.SYMBOL_REDEFINED, 
+        MessageLevel.ERROR );
+    assertAddsMessage(
+        "function Goo() { var Goo = 1}",
+        MessageType.MASKING_SYMBOL, 
+        MessageLevel.LINT );
+    assertMessageNotPresent(
+        "function Goo() { this.x = 1; }",
+        MessageType.MASKING_SYMBOL );
+  }
+  
   public void testFuncCtor() throws Exception {
     checkSucceeds(
         "function Foo(x) { this.x_ = x; }",
@@ -2269,14 +2288,21 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         messageText.toString().contains(error));
   }
 
+  private void checkSucceeds(ParseTreeNode inputNode, 
+                             ParseTreeNode expectedResultNode)
+      throws Exception {
+    checkSucceeds(inputNode,expectedResultNode,MessageLevel.WARNING);
+  }
+  
   private void checkSucceeds(
       ParseTreeNode inputNode,
-      ParseTreeNode expectedResultNode)
+      ParseTreeNode expectedResultNode,
+      MessageLevel highest)
       throws Exception {
     mq.getMessages().clear();
     ParseTreeNode actualResultNode = new DefaultCajaRewriter().expand(inputNode, mq);
     for (Message m : mq.getMessages()) {
-      if (m.getMessageLevel().compareTo(MessageLevel.WARNING) >= 0) {
+      if (m.getMessageLevel().compareTo(highest) >= 0) {
         fail(m.toString());
       }
     }
@@ -2293,6 +2319,70 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
     }
   }
 
+  private void assertMessageNotPresent( String src, MessageType type, MessageLevel level) throws Exception {
+    checkDoesNotAddMessage(js(fromString(src)), type, level);
+  }
+
+  private void assertMessageNotPresent( String src, MessageType type) throws Exception {
+    checkDoesNotAddMessage(js(fromString(src)), type);
+  }
+
+  private void checkDoesNotAddMessage( 
+      ParseTreeNode inputNode, 
+      MessageType type)  {
+    mq.getMessages().clear();
+    ParseTreeNode actualResultNode = new DefaultCajaRewriter().expand(inputNode, mq);
+    if ( containsConsistentMessage(mq.getMessages(),type)) {
+      fail("Unexpected add message of type " + type);
+    }
+  }
+
+  private void checkDoesNotAddMessage( 
+        ParseTreeNode inputNode, 
+        MessageType type,
+        MessageLevel level)  {
+    mq.getMessages().clear();
+    ParseTreeNode actualResultNode = new DefaultCajaRewriter().expand(inputNode, mq);
+    if ( containsConsistentMessage(mq.getMessages(),type, level)) {
+      fail("Unexpected add message of type " + type + " and level " + level);
+    }
+  }
+
+  private void assertAddsMessage( String src, MessageType type, MessageLevel level) throws Exception {
+    checkAddsMessage(js(fromString(src)), type, level);
+  }
+    
+  private void checkAddsMessage( 
+        ParseTreeNode inputNode, 
+        MessageType type,
+        MessageLevel level)  {
+    mq.getMessages().clear();
+    ParseTreeNode actualResultNode = new DefaultCajaRewriter().expand(inputNode, mq);
+    if ( !containsConsistentMessage(mq.getMessages(),type, level)) {
+      fail("Failed to add message of type " + type + " and level " + level);
+    }
+  }
+
+  private boolean containsConsistentMessage(List<Message> list, MessageType type) {
+    for (Message m : list) {
+      System.out.println("**"+m.getMessageType() + "|" + m.getMessageLevel());
+      if (m.getMessageType().equals(type)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean containsConsistentMessage(List<Message> list, MessageType type, MessageLevel level) {
+    for (Message m : list) {
+      System.out.println("**"+m.getMessageType() + "|" + m.getMessageLevel());
+      if ( m.getMessageType().equals(type) && m.getMessageLevel().equals(level) ) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
   private void checkSucceeds(String input, String expectedResult) throws Exception {
     checkSucceeds(js(fromString(input)), js(fromString(expectedResult)));
   }
