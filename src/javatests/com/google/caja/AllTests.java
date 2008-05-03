@@ -15,6 +15,7 @@
 package com.google.caja;
 
 import com.google.caja.config.ConfigUtilTest;
+import com.google.caja.demos.calendar.EventStoreTest;
 import com.google.caja.demos.calendar.HcalTest;
 import com.google.caja.demos.calendar.LayoutTest;
 import com.google.caja.demos.calendar.RRuleTest;
@@ -98,6 +99,7 @@ public class AllTests {
           DomParserTest.class,
           DomProcessingEventsTest.class,
           EscapingTest.class,
+          EventStoreTest.class,
           ExpressionSanitizerTest.class,
           GadgetParserTest.class,
           GxpCompilerTest.class,

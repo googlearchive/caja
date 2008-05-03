@@ -750,7 +750,6 @@ attachDocumentStub = (function () {
       return kc && Number(kc);
     };
     TameEvent.prototype.toString = function () { return 'Not a real event'; };
-    TameEvent.prototype.current
     ___.ctor(TameEvent, undefined, 'TameEvent');
     ___.all2(___.allowMethod, TameEvent,
              ['getType', 'getTarget', 'getPageX', 'getPageY', 'stopPropagation',
@@ -807,7 +806,7 @@ attachDocumentStub = (function () {
         arr[i] = arguments[i];
       }
       return cssSealerUnsealerPair.seal(arr);
-    }
+    };
     outers.htmlAttr___ = function (s) {
       return html.escapeAttrib(String(s || ''));
     };

@@ -220,6 +220,48 @@
     </java>
   </target>
 
+  <target name="MinifiedJsDemos" depends="JsParserCore,dirs">
+    <mkdir dir="${lib}/com/google/caja/demos/calendar"/>
+    <java classname="com.google.caja.parser.js.Minify" failonerror="yes"
+     output="${lib}/com/google/caja/demos/calendar/html-interp-minified.js"
+     logError="yes">
+      <classpath refid="classpath.run"/>
+      <arg file="${src}/com/google/caja/demos/calendar/string-interpolation.js"
+       />
+      <arg file="${src}/com/google/caja/demos/calendar/html-interp.js"/>
+    </java>
+    <java classname="com.google.caja.parser.js.Minify" failonerror="yes"
+     output="${lib}/com/google/caja/demos/calendar/calendar-minified.js"
+     logError="yes">
+      <classpath refid="classpath.run"/>
+      <arg file="${src}/com/google/caja/demos/calendar/util.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/bitset.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/html.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/uformat.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/time-cajita.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/weekday-cajita.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/timezone-cajita.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/time_util-cajita.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/hcalendar.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/generators-cajita.js"/>
+      <arg file=
+       "${src}/com/google/caja/demos/calendar/instanceGenerators-cajita.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/conditions-cajita.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/predicates-cajita.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/filters-cajita.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/rrule-cajita.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/event.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/chip.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/calendar.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/event_store.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/axis.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/layout_policy.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/layout.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/overlap.js"/>
+      <arg file="${src}/com/google/caja/demos/calendar/widget.js"/>
+    </java>
+  </target>
+
   <target name="AllTests"
    depends="opensocial,TestUtil,CajoledTests,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
@@ -229,8 +271,6 @@
       <include name="**/caja/config/ConfigUtilTest.java"/>
       <include name="**/caja/demos/calendar/*Test.java"/>
       <include name="**/caja/lang/*/*Test.java"/>
-      <include name="**/caja/demos/calendar/RRuleTest.java"/>
-      <include name="**/caja/demos/calendar/LayoutTest.java"/>
       <include name="**/caja/lexer/CharProducerTest.java"/>
       <include name="**/caja/lexer/CommentLexerTest.java"/>
       <include name="**/caja/lexer/CssLexerTest.java"/>
@@ -596,11 +636,11 @@
       <include name="**/caja/reporting/RenderContext.java"/>
       <include name="**/caja/reporting/Renderable.java"/>
       <include name="**/caja/util/*.java"/>
-      <!-- compilerarg line="-Xlint:unchecked"/ -->
+      <compilerarg line="-Xlint:unchecked"/>
     </javac>
   </target>
 
-  <target name="demos" depends="springgraph,lolcat-search,testbed"
+  <target name="demos" depends="springgraph,lolcat-search,testbed,calendar"
    description="Puts all the demo files together for easy browsing."/>
 
   <target name="springgraph" depends="dirs,pluginc"
@@ -730,6 +770,24 @@
     </copy>
   </target>
 
+  <target name="calendar" depends="dirs,pluginc,MinifiedJsDemos,MinifiedJs"
+   description="A calendar that can mine data from a read only DOM.">
+   <mkdir dir="${www}/calendar"/>
+   <copy todir="${www}/calendar">
+    <fileset dir="${javascript}/com/google/caja">
+      <include name="caja.js"/>
+    </fileset>
+    <fileset dir="${lib}/com/google/caja/demos/calendar">
+      <include name="*-minified.js"/>
+    </fileset>
+    <fileset dir="${src}/com/google/caja/demos/calendar">
+      <include name="demo.html"/>
+    </fileset>
+    <fileset dir="${lib}/com/google/caja/plugin">
+      <include name="domita-minified.js"/>
+    </fileset>
+   </copy>
+  </target>
 
   <!--
     - Enable Emma

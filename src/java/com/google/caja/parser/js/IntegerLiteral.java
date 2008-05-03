@@ -15,6 +15,7 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.reporting.RenderContext;
 
 import java.util.List;
 
@@ -62,4 +63,31 @@ public final class IntegerLiteral extends NumberLiteral {
 
   @Override
   public double doubleValue() { return value; }
+
+  @Override
+  public void render(RenderContext rc) {
+    long n = getValue().longValue();
+    // Use hex if it would be shorter.
+    // The hex form requires a "0x" at the front so will be shorter at the
+    // inequality:
+    //   log(n) / log(10)             = 2 + log(n) / log(16)
+    //   log(n) * log(16)             = 2 * log(10) * log(16) + log(n) * log(10)
+    //   log(n) * (log(16) - log(10)) = 2 * log(10) * log(16)
+    //   log(n) * log(1.6)            = 2 * log(10) * log(16)
+    //   log(n)                       = 2 * log(10) * log(16) / log(1.6)
+    //   n                            = e ** (2 * log(10) * log(16) / log(1.6))
+    //   9 < n < 10
+    String str;
+    if ((-1L << 36) > n && n < (1L << 36)) {
+      str = Long.toString(n, 16);
+      if (str.charAt(0) == '-') {
+        str = "-0x" + str.substring(1);
+      } else {
+        str = "0x" + str;
+      }
+    } else {
+      str = Long.toString(n, 10);
+    }
+    rc.getOut().consume(str);
+  }
 }

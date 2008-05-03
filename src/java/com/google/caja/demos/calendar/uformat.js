@@ -79,7 +79,7 @@ var NO_CONTENT;
 
 (function () {
 
-function ContentLine(opt_name, opt_value) {
+function ContentLine(opt_name, opt_value, opt_attributes) {
   /** 'RDATE' in the example above. @type {string} */
   this.name_ = null;
   /**
@@ -87,7 +87,7 @@ function ContentLine(opt_name, opt_value) {
    * above.
    * @type {Array.<string>}
    */
-  this.attributes_ = [];
+  this.attributes_ = opt_attributes ? opt_attributes.slice() : [];
   /**
    * an array of values, the dates int the example above.
    * @type {Array.<string>}
@@ -99,6 +99,7 @@ function ContentLine(opt_name, opt_value) {
   if (opt_value !== undefined) {
     this.values_.push(opt_value);
   }
+
   /**
    * true iff commas in the values do not separate values from others.
    * Some content lines, such as RRULEs and EXRULEs have structured values
@@ -108,6 +109,10 @@ function ContentLine(opt_name, opt_value) {
    * @type {Boolean}
    */
   this.noEscape_ = false;
+
+  if (typeof caja !== 'undefined') {
+    caja.freeze(this.values_);
+  }
 }
 
 /** outputs the content line as ICAL. */
@@ -144,6 +149,22 @@ ContentLine.prototype.getAttribute_ = function (name) {
     if (attributes[i] === name) { return attributes[i + 1]; }
   }
   return null;
+};
+
+/**
+ * Gets the name of this content line.
+ * @return {string}
+ */
+ContentLine.prototype.getName = function () {
+  return this.name_;
+};
+
+/**
+ * Gets this content line's values.
+ * @return {Array.<string>}
+ */
+ContentLine.prototype.getValues = function () {
+  return this.values_;
 };
 
 var NO_CONTENT = new ContentLine('');
@@ -209,9 +230,9 @@ function group(contentLines, groupings) {
     }
   }
 }
- 
+
 this.ContentLine = ContentLine;
 this.parseMicroFormat = parseMicroFormat;
 this.group = group;
-this.NO_CONTENT = NO_CONTENT; 
-})(); 
+this.NO_CONTENT = NO_CONTENT;
+})();

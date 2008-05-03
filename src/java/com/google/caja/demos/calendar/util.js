@@ -16,7 +16,7 @@
  * @fileoverview
  * Misc utility functions for dealing with DOM nodes and other structured data.
  *
- * @author msamuel@google.com
+ * @author mikesamuel@gmail.com
  */
 
 /**

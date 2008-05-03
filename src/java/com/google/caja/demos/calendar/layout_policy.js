@@ -155,6 +155,10 @@ LayoutPolicy.prototype.getYExtent = function () {
   return this.nRows_;
 };
 
+LayoutPolicy.prototype.getGradationsPerHour = function () {
+  return this.gradationsPerHour_;
+};
+
 LayoutPolicy.prototype.dateToColumn = function (dateOrDateTime) {
   // equivalent to dateToCell(dateOrDateTime).col
   var daysBetween = time.daysBetween(dateOrDateTime, this.baseDate_);
@@ -250,9 +254,9 @@ LayoutPolicy.prototype.cellToDate = function (col, row, refDateTime) {
   var hour, minute;
   if (this.isSpatial()) {
     hour = Math.floor(row / this.gradationsPerHour_);
-    minute = Math.round(CG_DROPPOINTS_PER_HOUR *
+    minute = Math.round(this.CG_DROPPOINTS_PER_HOUR *
                         ((row / this.gradationsPerHour_) | 0)) *
-        (60 / CG_DROPPOINTS_PER_HOUR);
+        (60 / this.CG_DROPPOINTS_PER_HOUR);
   } else if (refDateTime) {
     hour = time.hour(refDateTime);
     minute = time.minute(refDateTime);
@@ -345,5 +349,6 @@ LayoutPolicy.prototype.eventToCells
 };
 
 LayoutPolicy.prototype.toString = function () {
-  return '[LayoutPolicy ' + nDays_ + ' day(s) @ ' + baseDate_ + ']';
+  return '[LayoutPolicy ' + this.nDays_ + ' day(s) @ '
+      + time.toIcal(this.baseDate_) + ']';
 };

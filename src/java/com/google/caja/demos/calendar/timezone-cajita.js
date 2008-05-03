@@ -61,14 +61,14 @@ timezone.local = function (dateValue, isUtc) {
   if (isUtc) {
     var jsDate = new Date(Date.UTC(
         time.year(dateValue), time.month(dateValue) - 1, time.day(dateValue),
-        time.hour(dateValue), time.minute(dateValue), time.second(dateValue)));
+        time.hour(dateValue), time.minute(dateValue), 0));
     return time.dateTime(
         jsDate.getFullYear(), jsDate.getMonth() + 1, jsDate.getDate(),
         jsDate.getHours(), jsDate.getMinutes(), jsDate.getSeconds());
   } else {
     var jsDate = new Date(
         time.year(dateValue), time.month(dateValue) - 1, time.day(dateValue),
-        time.hour(dateValue), time.minute(dateValue), time.second(dateValue));
+        time.hour(dateValue), time.minute(dateValue), 0);
     return time.dateTime(
         jsDate.getUTCFullYear(), jsDate.getUTCMonth() + 1, jsDate.getUTCDate(),
         jsDate.getUTCHours(), jsDate.getUTCMinutes(), jsDate.getUTCSeconds());

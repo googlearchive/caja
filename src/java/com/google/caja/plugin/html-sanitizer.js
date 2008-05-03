@@ -223,7 +223,7 @@ var html = (function () {
       }
 
       handler.endDoc && handler.endDoc(param);
-    }
+    };
   }
 
   return {
@@ -312,7 +312,7 @@ html.makeHtmlSanitizer = function (sanitizeAttributes) {
           stack.length = 0;
         }
       });
-}
+};
 
 
 /**

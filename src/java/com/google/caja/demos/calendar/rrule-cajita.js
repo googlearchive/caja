@@ -87,11 +87,13 @@ function WeekDayNum(ical) {
 
 /**
  * create a recurrence iterator from an RRULE or EXRULE.
- * @param {ContentLine} rule the recurrence rule to iterate.
+ * @param {Object} rule the recurrence rule to iterate with a getAttribute
+ *     method that returns the string value corresponding to the given key.
  * @param {number} dtStart the start of the series, in timezone.
- * @param {Function} timezone the timezone to iterate in.
+ * @param {function} timezone the timezone to iterate in.
  *   A function from times in one timezone to times in another.
- *   Takes a date or date-time and 
+ *   Takes a date or date-time and
+ * @return {Object} with methods reset, next, hasNext, and advanceTo.
  */
 function createRecurrenceIterator(rule, dtStart, timezone) {
   console.assert('function' === typeof timezone);

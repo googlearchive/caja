@@ -22,7 +22,7 @@
  * @see http://microformats.org/wiki/microformats
  * @see http://microformats.org/wiki/hcalendar
  *
- * @author msamuel@google.com
+ * @author mikesamuel@gmail.com
  */
 
 
@@ -40,7 +40,7 @@ function extractHcal(node) {
     title: '$TITLE$',
     url: '$SOURCE$',
     language: null,
-    method: 'PUBLISH',
+    method: 'PUBLISH'
   };
 
   if (node.ownerDocument) {
@@ -155,7 +155,7 @@ var MAILTO_RE_ = new RegExp('^mailto:', 'i');
 /** defines vcalendar level properties. */
 var VCALENDAR_SCHEMA_ = {
   'method': [handleTextContent_],
-  'vevent': [handleNoDescentContent_],
+  'vevent': [handleNoDescentContent_]
 };
 
 /** @see http://microformats.org/wiki/hcalendar */

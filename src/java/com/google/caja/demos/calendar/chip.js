@@ -78,27 +78,6 @@ function Chip(e) {
   this.row1 = null;
 
   /**
-   * left pixel-space x-coordinate.
-   * @type {number}
-   */
-  this.x = null;
-  /**
-   * top pixel-space x-coordinate.
-   * @type {number}
-   */
-  this.y = null;
-  /**
-   * pixel-space x-extent.
-   * @type {number}
-   */
-  this.width = null;
-  /**
-   * pixel-space y-extent.
-   * @type {number}
-   */
-  this.height = null;
-
-  /**
    * true iff this chip can't be displayed due to space constraints.
    * @type {boolean}
    */

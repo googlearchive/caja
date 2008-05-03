@@ -14,32 +14,22 @@
 
 
 /**
- * An event.
- * @param {number} start a date value.
- * @param {number} end a date value >= start.
- * @param {string} summary human readable html.
- * @param {string} eid opaque unique identifier.
+ * A collection of events covering a range of dates.
  * @param {string} calendarId opaque unique identifier.
+ * @param {string} summary human readable html.
+ * @param {Array.<VEvent>} eid opaque unique identifier.
  * @constructor
  * @author mikesamuel@gmail.com
  */
-function VEvent(eid, calendarId, summary, start, end) {
-  console.assert('string' === typeof summary);
-  console.assert('number' === typeof start);
-  console.assert('number' === typeof end);
-  this.eid = eid;
+function VCalendar(calendarId, summary, events) {
   this.calendarId = calendarId;
   this.summary = summary;
-  this.start = start;
-  this.end = end;
+  this.events = events.slice(0);
+  if ((typeof caja) !== 'undefined') {
+    caja.freeze(this.events);
+  }
 }
 
-VEvent.prototype.isOvernightEvent = function () {
-  return time.isDate(this.start) ||
-      time.nextDate(time.toDate(this.start)) < time.toDateOnOrAfter(this.end);
-};
-
-VEvent.prototype.toString = function () {
-  return '[Event ' + this.eid + '@' + time.toIcal(this.start)
-      + '/' + time.toIcal(this.end) + ']';
+VCalendar.prototype.toString = function () {
+  return '[Calendar ' + this.calendarId + ']';
 };

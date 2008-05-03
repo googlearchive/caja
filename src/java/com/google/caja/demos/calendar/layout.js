@@ -39,6 +39,15 @@ function Layout(policy) {
   this.nAllDayRows = null;
 }
 
+Layout.prototype.getPolicy = function () { return this.policy_; };
+Layout.prototype.getTimedChips = function () {
+  return this.timedChips.slice(0);
+};
+Layout.prototype.getUntimedChips = function () {
+  return this.untimedChips.slice(0);
+};
+Layout.prototype.getNAllDayRows = function () { return this.nAllDayRows; };
+
 /**
  * Fills the lists of chips of events present in the given date range.
  * The start date is inclusive, while the end date is exclusive.
@@ -52,6 +61,7 @@ Layout.prototype.layout = function (startDate, endDate, events) {
     var timedEvents = [];
     for (var i = 0; i < events.length; ++i) {
       var event = events[i];
+      if (event.end <= startDate || event.start >= endDate) { continue; }
       (event.isOvernightEvent() ? dayEvents : timedEvents).push(event);
     }
     var dayChips = [],
@@ -119,8 +129,8 @@ Layout.prototype.generateChipList = function (
 Layout.prototype.generateChipsForEvent = function (
     e, pos, chips, startsBeforeRange, endsAfterRange) {
   // There are this.nRows * this.nCols blocks and each bloack is
-  // this.nRowsPerDay
-  // rows high.  See the comments in DateToCell regarding the end row.
+  // this.nRowsPerDay rows high.
+  // See the comments in DateToCell regarding the end row.
   var col0 = pos.col0, col1 = pos.col1;
   var row0 = pos.row0, row1;
   var firstChip = true;

@@ -61,7 +61,7 @@ var time = {};
  * @param {string} ical
  * @return {number} a date value.
  */
-time.parseIcal = function(ical) {
+time.parseIcal = function (ical) {
   var dateEnd = ical.length;
   if (dateEnd < 8) { throw new Error('bad ical ' + ical); }
   var hasTime = 'T' === ical.charAt(dateEnd - 7);
@@ -80,6 +80,22 @@ time.parseIcal = function(ical) {
   } else {
     return time.normalizedDate(year, month, day);
   }
+};
+
+/**
+ * parses a duration from an ical string.
+ * @return {number} of seconds assuming all days are 24 hours and all minutes
+ *      have 60 seconds.
+ */
+time.parseDuration = function (ical) {
+  var match = ical.match(
+      /^P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/);
+  var weeks = Number(match[1] || 0);
+  var days = Number(match[2] || 0);
+  var hours = Number(match[3] || 0);
+  var minutes = Number(match[4] || 0);
+  var seconds = Number(match[5] || 0);
+  return time.duration(weeks * 7 + days, hours, minutes, seconds);
 };
 
 /**
@@ -227,6 +243,18 @@ time.normalizedDateTime = function (year, month, day, hour, minute) {
     day += nDays;
   }
   return time.normalizedDate(year, month, day) | (minutes + 1);
+};
+
+/**
+ * produces a duration from a number of units.
+ * @param {number} days
+ * @param {number} hours
+ * @param {number} minutes
+ * @param {number} seconds
+ * @return {number} a duration.  Not a dateValue.
+ */
+time.duration = function (days, hours, minutes, seconds) {
+  return seconds + 60 * (minutes + 60 * (hours + 24 * (days)));
 };
 
 /**
@@ -473,7 +501,7 @@ time.dayOfYear = (function () {
 })();
 
 /**
- * the number of days between two dates, which will be >= 0 if the first is
+ * the number of days between two dates, which will be > 0 if the first is
  * later.  This ignores any time-of-day portion.
  * @param {number} dateValue1
  * @param {number} dateValue2
@@ -489,6 +517,13 @@ time.daysBetween = function (dateValue1, dateValue2) {
   }
   return time.fixedFromGregorian(dateValue1)
       - time.fixedFromGregorian(dateValue2);
+};
+
+time.durationBetween = function (dateValue1, dateValue2) {
+  var m1 = time.isDate(dateValue1) ? time.minuteInDay(dateValue1) : 0;
+  var m2 = time.isDate(dateValue2) ? time.minuteInDay(dateValue2) : 0;
+
+  return time.daysBetween(dateValue1, dateValue2) * 86400 + (m1 - m2) * 60;
 };
 
 /**
@@ -525,6 +560,20 @@ time.plusSeconds = function (dateTime, nSeconds) {
   return time.normalizedDateTime(
         time.year(dateTime), time.month(dateTime), time.day(dateTime),
         time.hour(dateTime), time.minute(dateTime) + ((nSeconds / 60) | 0));
+};
+
+/**
+ * Adds a duration as parsed by {@code time.parseDuration}.
+ * @param {number} dateValue
+ * @param {number} duration
+ * @return {number} a date iff dateValue is a date.
+ */
+time.plusDuration = function (dateValue, duration) {
+  if (time.isDate(dateValue)) {
+    return time.plusDays(dateValue, (duration / 86400) | 0);
+  } else {
+    return time.plusSeconds(dateValue, duration);
+  }
 };
 
 /**
