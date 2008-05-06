@@ -475,6 +475,89 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "    " + weldReadOuters("y") + ";" +
         "  }" +
         "}");
+    assertConsistent(
+        "var handled = false;" +
+        "try {" +
+        "  throw null;" +
+        "} catch (ex) {" +
+        "  assertEquals(null, ex);" +  // Right value in ex.
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");  // Control reached and left the catch block.
+    assertConsistent(
+        "var handled = false;" +
+        "try {" +
+        "  throw undefined;" +
+        "} catch (ex) {" +
+        "  assertEquals(undefined, ex);" +
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");
+    assertConsistent(
+        "var handled = false;" +
+        "try {" +
+        "  throw true;" +
+        "} catch (ex) {" +
+        "  assertEquals(true, ex);" +
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");
+    assertConsistent(
+        "var handled = false;" +
+        "try {" +
+        "  throw 37639105;" +
+        "} catch (ex) {" +
+        "  assertEquals(37639105, ex);" +
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");
+    assertConsistent(
+        "var handled = false;" +
+        "try {" +
+        "  throw 'panic';" +
+        "} catch (ex) {" +
+        "  assertEquals('panic', ex);" +
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");
+    assertConsistent(
+        "var handled = false;" +
+        "try {" +
+        "  throw new Error('hello');" +
+        "} catch (ex) {" +
+        "  assertEquals('hello', ex.message);" +
+        "  assertEquals('Error', ex.name);" +
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");
+    assertCajoled(
+        "var handled = false;" +
+        "try {" +
+        "  throw function () { throw 'should not be called'; };" +
+        "} catch (ex) {" +
+        "  assertEquals(undefined, ex);" +
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");
+    assertCajoled(
+        "var handled = false;" +
+        "try {" +
+        "  throw { toString: function () { return 'hiya'; }, y: 4 };" +
+        "} catch (ex) {" +
+        "  assertEquals('string', typeof ex);" +
+        "  assertEquals('hiya', ex);" +
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");
+    assertCajoled(
+        "var handled = false;" +
+        "try {" +
+        "  throw { toString: function () { throw new Error(); } };" +
+        "} catch (ex) {" +
+        "  assertEquals(undefined, ex);" +
+        "  handled = true;" +
+        "}" +
+        "assertTrue(handled);");
   }
 
   public void testTryCatchFinally() throws Exception {
@@ -2425,13 +2508,36 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
     String cajoledJs = render(
         cajole(js(fromResource("../../plugin/asserts.js")), cajaTree));
 
+    assertNoErrors();
+    assertEquals(message, uncajoledResult, runCajoled(cajoledJs));
+  }
+
+  /**
+   * Run cajoled code with jsunit predicates.  Passes if the code
+   * cajoles without erros and executes in Rhino without raising an
+   * exception.
+   */
+  private void assertCajoled(String caja) throws IOException, ParseException {
+    mq.getMessages().clear();
+
+    Statement cajaTree = js(fromString(caja));
+    Statement asserts = js(fromResource("../../plugin/asserts.js"));
+    String cajoledJs = render(cajole(asserts, cajaTree));
+
+    assertNoErrors();
+    runCajoled(cajoledJs);
+  }
+
+  private void assertNoErrors() {
     for (Message msg : mq.getMessages()) {
       if (MessageLevel.ERROR.compareTo(msg.getMessageLevel()) <= 0) {
         fail(msg.format(mc));
       }
     }
+  }
 
-    Object cajoledResult = RhinoTestBed.runJs(
+  private Object runCajoled(String cajoledJs) throws IOException {
+    return RhinoTestBed.runJs(
         null,
         new RhinoTestBed.Input(
             getClass(), "/com/google/caja/plugin/console-stubs.js"),
@@ -2451,9 +2557,6 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
             getName() + "-cajoled"),
         // Return the output field as the value of the run.
         new RhinoTestBed.Input("unittestResult___", getName()));
-
-    System.err.println("Result: " + cajoledResult + " for " + getName());
-    assertEquals(message, uncajoledResult, cajoledResult);
   }
 
   private <T extends ParseTreeNode> T replaceLastStatementWithEmit(

@@ -1296,7 +1296,70 @@ var ___;
   function args(original) {
     return primFreeze(Array.prototype.slice.call(original, 0));
   }
-  
+
+  /** Sealer for call stacks as from {@code (new Error).stack}. */
+  var callStackSealer = makeSealerUnsealerPair();
+
+  /**
+   * Receives the exception caught by a user defined catch block.
+   * @param ex a value caught in a try block.
+   * @return a tamed exception.
+   */
+  function tameException(ex) {
+    try {
+      switch (typeof ex) {
+        case 'object':
+          if (ex === null) { return null; }
+          if (ex instanceof Error) {  // TODO: or the cross frame equivalent
+            // See Ecma-262 S15.11 for the definitions of these properties.
+            var message = ex.message || ex.desc;
+            var stack = ex.stack;
+            var name = ex.constructor && ex.constructor.name;  // S15.11.7.9
+            // Convert to undefined if null or undefined, or a string otherwise.
+            message = message == null ? void 0 : '' + message;
+            stack = stack == null ? void 0 : callStackSealer.seal('' + stack);
+            name = name == null ? void 0 : '' + name;
+            return primFreeze({ message: message, name: name, stack: stack });
+          }
+          return '' + ex;
+        case 'string':
+        case 'number':
+        case 'boolean':
+        case 'undefined':
+          // Immutable.
+          return ex;
+        case 'function':
+          // According to Pratap Lakhsman's "JScript Deviations" S2.11
+          // If the caught object is a function, calling it within the catch
+          // supplies the head of the scope chain as the "this value".  The
+          // called function can add properties to this object.  This implies
+          // that for code of this shape:
+          //     var x;
+          //     try {
+          //       // ...
+          //     } catch (E) {
+          //       E();
+          //       return s;
+          //     }
+          // The reference to 'x' within the catch is not necessarily to the
+          // local declaration of 'x'; this gives Catch the same performance
+          // problems as with.
+
+          // We return undefined to make sure that caught functions cannot be
+          // evaluated within the catch block.
+          return void 0;
+        default:
+          log('Unrecognized exception type ' + (typeof ex));
+          return void 0;
+      }
+    } catch (_) {
+      // Can occur if coercion to string fails, or if ex has getters that fail.
+      // This function must never throw an exception because doing so would
+      // cause control to leave a catch block before the handler fires.
+      return void 0;
+    }
+  }
+
   /**
    *
    */
@@ -1305,7 +1368,7 @@ var ___;
       setMember(sub, mname, member);
     }));
   }
-  
+
   /**
    * Provides a shorthand for a class-like declaration of a fresh
    * Caja constructor.
@@ -1317,7 +1380,7 @@ var ___;
    * opt_statics added as members to sub.
    * <p>
    * TODO(erights): return a builder object that allows further
-   * initialization. 
+   * initialization.
    */
   function def(sub, opt_Sup, opt_members, opt_statics) {
     var sup = opt_Sup || Object;
@@ -1549,11 +1612,13 @@ var ___;
   all2(allowMutator, Array, [
     'pop', 'push', 'reverse', 'shift', 'splice', 'unshift'
   ]);
-
   useCallHandler(Array.prototype, 'sort', function (comparator) {
     if (isFrozen(this)) { fail("Can't sort a frozen array"); }
-    return Array.prototype.sort.call(
-        this, comparator ? ___.asSimpleFunc(comparator) : (void 0));
+    if (comparator) {
+      return Array.prototype.sort.call(this, ___.asSimpleFunc(comparator));
+    } else {
+      return Array.prototype.sort.call(this);
+    }
   });
 
   ctor(String, Object, 'String');
@@ -1827,6 +1892,45 @@ var ___;
 
 
   ////////////////////////////////////////////////////////////////////////
+  // Sealing and Unsealing
+  ////////////////////////////////////////////////////////////////////////
+  /**
+   * Returns a pair of functions such that the seal(x) wraps x in an object
+   * so that only unseal can get x back from the object.
+   *
+   * @return {object} of the form
+   *     { seal: function (x) { return {}; },
+   *       unseal: function (obj) { return x; } }.
+   */
+  function makeSealerUnsealerPair() {
+    var flag = false;  // Was a box successfully unsealed
+    var squirrel = null;  // Receives the payload from an unsealed box.
+    function seal(payload) {
+      function box() {
+        flag = true, squirrel = payload;
+      }
+      box.toString = primFreeze(simpleFunc(function () { return '(box)'; }));
+      return primFreeze(simpleFunc(box));
+    }
+    function unseal(box) {
+      // Start off in a known good state.
+      flag = false;
+      squirrel = null;
+      try {  // Don't do anything outside try to foil forwarding functions.
+        asSimpleFunc(box)();
+        if (!flag) { throw new Error('Sealer/Unsealer mismatch'); }
+        return squirrel;
+      } finally {
+        // Restore to a known good state.
+        flag = false;
+        squirrel = null;
+      }
+    }
+    return freeze({ seal: seal, unseal: unseal });
+  }
+
+
+  ////////////////////////////////////////////////////////////////////////
   // Exports
   ////////////////////////////////////////////////////////////////////////
   
@@ -1861,7 +1965,10 @@ var ___;
     hasTrademark: hasTrademark,
     guard: guard,
     audit: audit,
-    
+
+    // Sealing & Unsealing
+    makeSealerUnsealerPair: makeSealerUnsealerPair,
+
     // Other
     def: def
   };
@@ -1913,7 +2020,7 @@ var ___;
     }
   }));
   primFreeze(sharedOuters);
-  
+
   ___ = {
 
     // Privileged fault handlers
@@ -1924,14 +2031,14 @@ var ___;
     directConstructor: directConstructor,
     isFrozen: isFrozen,
     primFreeze: primFreeze,
-    
+
     // Accessing property attributes
     canRead: canRead,             allowRead: allowRead,
     canEnum: canEnum,             allowEnum: allowEnum,
     canCall: canCall,             allowCall: allowCall,
     canSet: canSet,               allowSet: allowSet,
     canDelete: canDelete,         allowDelete: allowDelete,
-    
+
     // Classifying functions
     isCtor: isCtor,
     isMethod: isMethod,
@@ -1945,7 +2052,7 @@ var ___;
     simpleFunc: simpleFunc,       asSimpleFunc: asSimpleFunc,
     setMember: setMember,
     setMemberMap: setMemberMap,
-    
+
     // Accessing properties
     canReadProp: canReadProp,     readProp: readProp,
     canInnocentEnum: canInnocentEnum,
@@ -1953,13 +2060,15 @@ var ___;
     canCallProp: canCallProp,     callProp: callProp,
     canSetProp: canSetProp,       setProp: setProp,
     canDeleteProp: canDeleteProp, deleteProp: deleteProp,
-    
+
     // Other
     hasOwnProp: hasOwnProp,
     args: args,
-    
+    tameException: tameException,
+    callStackUnsealer: callStackSealer.unseal,
+
     // Taming mechanism
-    useGetHandler: useGetHandler, 
+    useGetHandler: useGetHandler,
     useApplyHandler: useApplyHandler,
     useCallHandler: useCallHandler,
     useSetHandler: useSetHandler,
@@ -1970,10 +2079,10 @@ var ___;
     allowMutator: allowMutator,
     enforceMatchable: enforceMatchable,
     all2: all2,
-    
+
     // Taming decisions
     sharedOuters: sharedOuters,
-    
+
     // Module loading
     getNewModuleHandler: getNewModuleHandler,
     setNewModuleHandler: setNewModuleHandler,
@@ -1985,7 +2094,7 @@ var ___;
     getOuters: getOuters,
     unregister: unregister
   };
-  
+
   each(caja, simpleFunc(function(k, v) {
     if (k in ___) {
       fail('internal: initialization conflict: ', k);
@@ -1997,7 +2106,7 @@ var ___;
     ___[k] = v;
   }));
   primFreeze(caja);
-  
+
   setNewModuleHandler(makeNormalNewModuleHandler());
-  
+
 })(this);

@@ -117,7 +117,7 @@ jsunitRegister('testInnerHtml',
 
   assertEquals(
       '<a class="green blue" href="http://gadget-proxy/'
-      + '?url=http%3A%2F%2Fbar.com%2Fbaz&amp;mimeType=*%2F*" id="xyz-foo"'
+      + '?url=http%3A%2F%2Fbar.com%2Fbaz&amp;mimeType=*%2F*" id="foo-xyz___"'
       + ' target="_blank" title="A link">A &amp; B &amp; C&lt;</a>',
       canonInnerHtml(directAccess.getInnerHTML(container)));
 

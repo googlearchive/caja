@@ -45,7 +45,24 @@
  * @param {Object} outers the gadget's global scope.
  */
 attachDocumentStub = (function () {
-  var tameNodeSecret = {};
+  var tameNodeTrademark = {};
+
+  // Define a wrapper type for known safe HTML, and a trademarker.
+  // This does not actually use the trademarking functions since trademarks
+  // cannot be applied to strings.
+  function Html(htmlFragment) { this.html___ = String(htmlFragment || ''); }
+  Html.prototype.valueOf = Html.prototype.toString
+      = function () { return this.html___; };
+  function safeHtml(htmlFragment) {
+    return ('object' === typeof htmlFragment && htmlFragment instanceof Html)
+        ? htmlFragment.html___
+        : html.escapeAttrib(String(htmlFragment || ''));
+  }
+  function blessHtml(htmlFragment) {
+    return (htmlFragment instanceof Html)
+        ? htmlFragment
+        : new Html(htmlFragment);
+  }
 
   var XML_SPACE = '\t\n\r ';
 
@@ -136,33 +153,7 @@ attachDocumentStub = (function () {
     subClass.prototype.constructor = subClass;
   }
 
-  // TODO(mikesamuel): replace with Mike Stay's trademarking.
-  function makeSealerUnsealerPair(exposeAsPrimitive) {
-    var cache;
-    function seal(x) {
-      var o = { test___: function () { cache = x; } };
-      if (exposeAsPrimitive) {
-        o.valueOf = function (typeHint) { return x; };
-        o.toString = function () { return String(x); };
-      }
-      return o;
-    }
-    function unseal(sealed) {
-      var x;
-      try {
-        cache = null;
-        sealed && sealed.test___ && sealed.test___();
-        x = cache;
-      } finally {
-        cache = null;
-      }
-      return x;
-    }
-    return { seal: seal, unseal: unseal };
-  }
-
-  var htmlSealerUnsealerPair = makeSealerUnsealerPair(true);
-  var cssSealerUnsealerPair = makeSealerUnsealerPair(false);
+  var cssSealerUnsealerPair = caja.makeSealerUnsealerPair();
 
   // See above for a description of this function.
   function attachDocumentStub(idSuffix, uriCallback, outers) {
@@ -397,8 +388,8 @@ attachDocumentStub = (function () {
     function TameNode(node, editable) {
       this.node___ = node;
       this.editable___ = editable;
+      caja.audit(tameNodeTrademark, this);
     }
-    TameNode.prototype.secret___ = tameNodeSecret;
     TameNode.prototype.getNodeType = function () {
       return this.node___.nodeType;
     };
@@ -410,30 +401,21 @@ attachDocumentStub = (function () {
     };
     TameNode.prototype.appendChild = function (child) {
       // Child must be editable since appendChild can remove it from its parent.
-      if (child.secret___ !== tameNodeSecret
-          || !this.editable___ || !child.editable___) {
-        throw new Error();
-      }
+      caja.guard(tameNodeTrademark, child);
       this.node___.appendChild(child.node___);
     };
     TameNode.prototype.insertBefore = function (child) {
-      if (child.secret___ !== tameNodeSecret
-          || !this.editable___ || !child.editable___) {
-        throw new Error();
-      }
+      caja.guard(tameNodeTrademark, child);
       this.node___.insertBefore(child.node___);
     };
     TameNode.prototype.removeChild = function (child) {
-      if (child.secret___ !== tameNodeSecret || !this.editable___) {
-        throw new Error();
-      }
+      caja.guard(tameNodeTrademark, child);
       this.node___.removeChild(child.node___);
     };
     TameNode.prototype.replaceChild = function (child, replacement) {
-      if (child.secret___ !== tameNodeSecret
-          || replacement.secret___ !== tameNodeSecret
-          || !this.editable___
-          || !replacement.editable___) {
+      caja.guard(tameNodeTrademark, child);
+      caja.guard(tameNodeTrademark, replacement);
+      if (!this.editable___ || !replacement.editable___) {
         throw new Error();
       }
       this.node___.replaceChild(child.node___, replacement.node___);
@@ -553,30 +535,24 @@ attachDocumentStub = (function () {
         // part of an entity.
         innerHtml = html.normalizeRCData(innerHtml);
       } else {
-        // TODO(mikesamuel): seal this?
         innerHtml = tameInnerHtml(innerHtml);
       }
-      // TODO(mikesamuel): rewrite ids
       return innerHtml;
     };
-    TameElement.prototype.setInnerHTML = function (html) {
+    TameElement.prototype.setInnerHTML = function (htmlFragment) {
       if (!this.editable___) { throw new Error(); }
       var tagName = this.node___.tagName.toLowerCase();
       if (!html4.ELEMENTS.hasOwnProperty(tagName)) { throw new Error(); }
       var flags = html4.ELEMENTS[tagName];
       if (flags & html4.eflags.UNSAFE) { throw new Error(); }
       if (flags & html4.eflags.RCDATA) {
-        html = String(html || '');
-        html = html.normalizeRCData(html);
+        htmlFragment = html.normalizeRCData(String(htmlFragment || ''));
       } else {
-        var unsealed = htmlSealerUnsealerPair.unseal(html);
-        if (unsealed) {
-          html = unsealed;
-        } else {
-          html = sanitizeHtml(String(html || ''));
-        }
+        htmlFragment = (html instanceof Html
+			? safeHtml(htmlFragment)
+			: sanitizeHtml(String(htmlFragment || '')));
       }
-      this.node___.innerHTML = html;
+      this.node___.innerHTML = htmlFragment;
     };
     TameElement.prototype.setStyle = function (style) {
       this.setAttribute('style', style);
@@ -690,7 +666,6 @@ attachDocumentStub = (function () {
       return this.node___.src;
     };
     TameImageElement.prototype.setSrc = function (src) {
-      console.log('setting src to ' + src);
       this.setAttribute('src', src);
     };
     ___.ctor(TameImageElement, TameElement, 'TameImageElement');
@@ -799,7 +774,7 @@ attachDocumentStub = (function () {
 
     outers.tameNode___ = tameNode;
     outers.tameEvent___ = function (event) { return new TameEvent(event); };
-    outers.blessHtml___ = htmlSealerUnsealerPair.seal;
+    outers.blessHtml___ = blessHtml;
     outers.blessCss___ = function (var_args) {
       var arr = [];
       for (var i = 0, n = arguments.length; i < n; ++i) {
@@ -810,11 +785,7 @@ attachDocumentStub = (function () {
     outers.htmlAttr___ = function (s) {
       return html.escapeAttrib(String(s || ''));
     };
-    outers.html___ = function (s) {
-      var unsealed = htmlSealerUnsealerPair.unseal(s);
-      if (unsealed) { return unsealed; }
-      return html.escapeAttrib(String(s || ''));
-    };
+    outers.html___ = safeHtml;
     outers.rewriteUri___ = function (uri, mimeType) {
       var s = rewriteAttribute(null, null, html4.atype.URI, uri);
       if (!s) { throw new Error(); }
