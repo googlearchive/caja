@@ -31,6 +31,7 @@ import com.google.caja.lexer.PunctuationTrieTest;
 import com.google.caja.lexer.escaping.EscapingTest;
 import com.google.caja.opensocial.DefaultGadgetRewriterTest;
 import com.google.caja.opensocial.GadgetParserTest;
+import com.google.caja.opensocial.applet.ExpressionLanguageStageTest;
 import com.google.caja.parser.ParseTreeNodeTest;
 import com.google.caja.parser.ParserBaseTest;
 import com.google.caja.parser.css.CssParserTest;
@@ -100,6 +101,7 @@ public class AllTests {
           DomProcessingEventsTest.class,
           EscapingTest.class,
           EventStoreTest.class,
+          ExpressionLanguageStageTest.class,
           ExpressionSanitizerTest.class,
           GadgetParserTest.class,
           GxpCompilerTest.class,

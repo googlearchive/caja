@@ -114,7 +114,7 @@ function innerTextHelper(node, buf) {
       in pretty printed form in the middle section to the right.
       
       <p>
-      Any value inside <code>$(...)</code> is logged in the bottom section, and
+      The last expression in the program is logged in the bottom section, and
       emitted HTML is displayed below that.
 
       <p>Example:
@@ -125,7 +125,7 @@ function innerTextHelper(node, buf) {
 
       &lt;!-- Scripts are executed --&gt;
       &lt;script&gt;
-        $(2 + 2)  // You should see a missing semicolon warning too!
+        2 + 2  // You should see a missing semicolon warning too!
       &lt;/script&gt;
 
       &lt;!-- Regular HTML is emitted --&gt;

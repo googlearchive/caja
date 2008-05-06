@@ -54,7 +54,7 @@ attachDocumentStub = (function () {
   Html.prototype.valueOf = Html.prototype.toString
       = function () { return this.html___; };
   function safeHtml(htmlFragment) {
-    return ('object' === typeof htmlFragment && htmlFragment instanceof Html)
+    return (htmlFragment instanceof Html)
         ? htmlFragment.html___
         : html.escapeAttrib(String(htmlFragment || ''));
   }
@@ -548,9 +548,9 @@ attachDocumentStub = (function () {
       if (flags & html4.eflags.RCDATA) {
         htmlFragment = html.normalizeRCData(String(htmlFragment || ''));
       } else {
-        htmlFragment = (html instanceof Html
-			? safeHtml(htmlFragment)
-			: sanitizeHtml(String(htmlFragment || '')));
+        htmlFragment = (htmlFragment instanceof Html
+                        ? safeHtml(htmlFragment)
+                        : sanitizeHtml(String(htmlFragment || '')));
       }
       this.node___.innerHTML = htmlFragment;
     };

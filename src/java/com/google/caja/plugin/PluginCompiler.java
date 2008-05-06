@@ -136,7 +136,7 @@ public final class PluginCompiler {
     stages.add(new CheckForErrorsStage());
   }
 
-  protected Pipeline<Jobs> getCompilationPipeline() {
+  public Pipeline<Jobs> getCompilationPipeline() {
     if (compilationPipeline == null) { setupCompilationPipeline(); }
     return compilationPipeline;
   }

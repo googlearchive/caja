@@ -23,6 +23,15 @@ public final class AncestorChain<T extends ParseTreeNode> {
     this.node = node;
   }
 
+  public static <T extends ParseTreeNode> AncestorChain<T> instance(T node) {
+    return new AncestorChain<T>(node);
+  }
+
+  public static <T extends ParseTreeNode> AncestorChain<T> instance(
+       AncestorChain<? extends ParseTreeNode> parent, T node) {
+    return new AncestorChain<T>(parent, node);
+  }
+
   /** True if node is the first in its parent's child list, or is the root. */
   public boolean isFirstSibling() {
     return parent == null || parent.node.children().get(0) == node;
@@ -56,7 +65,7 @@ public final class AncestorChain<T extends ParseTreeNode> {
   public ParseTreeNode getParentNode() {
     return parent != null ? parent.node : null;
   }
-  
+
   @SuppressWarnings("unchecked")
   public <T extends ParseTreeNode> AncestorChain<T> cast(Class<T> clazz) {
     if (!clazz.isInstance(node)) { throw new ClassCastException(); }

@@ -281,6 +281,7 @@
       <include name="**/caja/lexer/escaping/EscapingTest.java"/>
       <include name="**/caja/opensocial/DefaultGadgetRewriterTest.java"/>
       <include name="**/caja/opensocial/GadgetParserTest.java"/>
+      <include name="**/caja/opensocial/applet/*Test.java"/>
       <include name="**/caja/parser/*Test.java"/>
       <include name="**/caja/parser/css/CssParserTest.java"/>
       <include name="**/caja/parser/css/CssTreeTest.java"/>
@@ -380,6 +381,7 @@
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
       <include name="**/caja/opensocial/*.java"/>
+      <include name="**/caja/opensocial/applet/ExpressionLanguageStage.java"/>
       <include name="**/caja/plugin/PluginCompilerMain.java"/>
     </javac>
   </target>
@@ -738,6 +740,7 @@
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
       <include name="**/caja/opensocial/applet/*.java"/>
+      <compilerarg line="-Xlint:unchecked"/>
     </javac>
 
     <jar destfile="${jars}/testbed.jar" basedir="${lib}">

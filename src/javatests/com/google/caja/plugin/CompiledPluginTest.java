@@ -152,8 +152,7 @@ public class CompiledPluginTest extends TestCase {
         "\n" +
         "\n  testOuters.main(['foo', 'bar', 'boo & baz']);" +
         "\n  assertEquals(" +
-        "\n      '<ul><li>foo</li><li>bar</li>' +" +
-        "\n      '<li>boo &amp; baz</li></ul>'," +
+        "\n      '<ul><li>foo</li><li>bar</li><li>boo &amp; baz</li></ul>'," +
         "\n      document.getElementById('base-post').innerHTML" +
         "\n      );",
         new PluginFile(

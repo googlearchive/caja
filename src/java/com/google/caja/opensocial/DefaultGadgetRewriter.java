@@ -193,9 +193,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
           }
         });
 
-    PluginCompiler compiler = new PluginCompiler(meta, mq);
-    if (cssSchema != null) { compiler.setCssSchema(cssSchema); }
-    if (htmlSchema != null) { compiler.setHtmlSchema(htmlSchema); }
+    PluginCompiler compiler = createPluginCompiler(meta, mq);
 
     compiler.addInput(new AncestorChain<DomTree.Fragment>(content));
 
@@ -217,5 +215,13 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
   protected RenderContext createRenderContext(
       TokenConsumer tc, MessageContext mc) {
     return new RenderContext(mc, true, tc);
+  }
+
+  protected PluginCompiler createPluginCompiler(
+      PluginMeta meta, MessageQueue mq) {
+    PluginCompiler compiler = new PluginCompiler(meta, mq);
+    if (cssSchema != null) { compiler.setCssSchema(cssSchema); }
+    if (htmlSchema != null) { compiler.setHtmlSchema(htmlSchema); }
+    return compiler;
   }
 }

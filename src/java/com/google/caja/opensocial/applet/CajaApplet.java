@@ -19,6 +19,10 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
+import com.google.caja.plugin.Jobs;
+import com.google.caja.plugin.PluginCompiler;
+import com.google.caja.plugin.PluginMeta;
+import com.google.caja.plugin.stages.ConsolidateCodeStage;
 import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
 import com.google.caja.opensocial.UriCallback;
@@ -32,6 +36,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
+import com.google.caja.util.Pipeline;
 
 import java.applet.Applet;
 import java.io.IOException;
@@ -43,6 +48,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.util.Collections;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 /**
@@ -101,6 +108,24 @@ public class CajaApplet extends Applet {
         protected RenderContext createRenderContext(
             TokenConsumer out, MessageContext mc) {
           return new RenderContext(mc, embeddable, out);
+        }
+        @Override
+        protected PluginCompiler createPluginCompiler(
+            PluginMeta meta, MessageQueue mq) {
+          PluginCompiler pc = super.createPluginCompiler(meta, mq);
+          List<Pipeline.Stage<Jobs>> stages
+              = pc.getCompilationPipeline().getStages();
+          for (ListIterator<Pipeline.Stage<Jobs>> it = stages.listIterator();
+               it.hasNext();) {
+            // Add statements to print results from script blocks just before
+            // all the script blocks are combined into one JS tree.
+            if (it.next() instanceof ConsolidateCodeStage) {
+              it.previous();
+              it.add(new ExpressionLanguageStage());
+              break;
+            }
+          }
+          return pc;
         }
       };
 
