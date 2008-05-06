@@ -31,6 +31,10 @@
 //                detecting a conflict.
 ////////////////////////////////////////////////////////////////////////
 
+// Add a tag to builtin types so we can check the class cross-frame.
+Array.typeTag___ = 'Array';
+Object.typeTag___ = 'Object';
+
 if (Array.prototype.indexOf === (void 0)) {
   /**
    * Returns the first index at which the specimen is found (by
@@ -172,8 +176,7 @@ var ___;
    * </pre>
    */
   function enforce(test, var_args) {
-    return test || fail.apply({}, 
-                              Array.prototype.slice.call(arguments, 1));
+    return test || fail.apply({}, Array.prototype.slice.call(arguments, 1));
   }
   
   /**
@@ -222,9 +225,19 @@ var ___;
   ////////////////////////////////////////////////////////////////////////
   // Privileged fault handlers
   ////////////////////////////////////////////////////////////////////////
-  
+
+  function debugReference(obj) {
+    switch (typeof obj) {
+      case 'object':
+        if (obj === null) { return '<null>'; }
+        return '[' + (obj.constructor.name || 'Object') + ']';
+      default:
+        return '(' + obj + ':' + (typeof obj) + ')';
+    }
+  }
+
   /**
-   * 
+   *
    */
   var myKeeper_ = {
 
@@ -237,10 +250,10 @@ var ___;
      *
      */
     handleRead: function(obj, name, opt_shouldThrow) {
-      log('Not readable: (' + obj + ').' + name);
       if (opt_shouldThrow) {
-        throw new ReferenceError('' + name + ' is not defined');
+        fail('Not readable: (', debugReference(obj), ').', name);
       }
+      log('Not readable: (' + debugReference(obj) + ').' + name);
       return (void 0);
     },
 
@@ -248,21 +261,21 @@ var ___;
      *
      */
     handleCall: function(obj, name, args) {
-      fail('Not callable: (', obj, ').', name);
+      fail('Not callable: (', debugReference(obj), ').', name);
     },
 
     /**
      * 
      */
     handleSet: function(obj, name, val) {
-      fail('Not settable: (', obj, ').', name);
+      fail('Not settable: (', debugReference(obj), ').', name);
     },
 
     /**
      * 
      */
     handleDelete: function(obj, name) {
-      fail('Not deletable: (', obj, ').', name);
+      fail('Not deletable: (', debugReference(obj), ').', name);
     }
   };
 
@@ -425,7 +438,7 @@ var ___;
       }
       return result;
     } catch (ex) {
-      return null;
+      return (void 0);
     }
   }
 
@@ -437,8 +450,10 @@ var ___;
    * expressed in the JSON language.
    */
   function isJSONContainer(obj) {
+    if (obj == null) { return false; }  // Match null and undefined
     var constr = directConstructor(obj);
-    return constr === Object || constr === Array;
+    var typeTag = constr && constr.typeTag___
+    return typeTag === 'Object' || typeTag === 'Array';
   }
   
   /**
@@ -503,7 +518,7 @@ var ___;
       var flag = badFlags[i];
       if (hasOwnProp(obj, flag)) {
         if (!(delete obj[flag])) {
-          fail('internal: failed delete: ', obj, '.', flag);
+          fail('internal: failed delete: ', debugReference(obj), '.', flag);
         }
       }
       if (obj[flag]) {
@@ -532,7 +547,8 @@ var ___;
    */
   function freeze(obj) {
     if (!isJSONContainer(obj)) {
-      fail('caja.freeze(obj) applies only to JSON Containers: ', obj);
+      fail('caja.freeze(obj) applies only to JSON Containers: ',
+           debugReference(obj));
     }
     return primFreeze(obj);
   }
@@ -544,9 +560,10 @@ var ___;
    */
   function copy(obj) {
     if (!isJSONContainer(obj)) {
-      fail('caja.copy(obj) applies only to JSON Containers: ', obj);
+      fail('caja.copy(obj) applies only to JSON Containers: ',
+           debugReference(obj));
     }
-    var result = (obj instanceof Array) ? [] : {};
+    var result = (obj.constructor.typeTag___ === 'Array') ? [] : {};
     each(obj, simpleFunc(function(k, v) {
       result[k] = v;
     }));
@@ -585,12 +602,14 @@ var ___;
    * they are called internally to memoize decisions arrived at by
    * other means. 
    */
-  function allowRead(obj, name) { 
+  function allowRead(obj, name) {
+    enforce(obj != null, 'Cannot grant read of ', name, ' on null');
     obj[name + '_canRead___'] = true; 
   }
   
   /** allowEnum implies allowRead */
-  function allowEnum(obj, name) { 
+  function allowEnum(obj, name) {
+    enforce(obj != null, 'Cannot grant enum of ', name, ' on null');
     allowRead(obj, name);
     obj[name + '_canEnum___'] = true;
   }
@@ -599,7 +618,8 @@ var ___;
    * Simple functions should callable and readable, but methods
    * should only be callable.
    */
-  function allowCall(obj, name) { 
+  function allowCall(obj, name) {
+    enforce(obj != null, 'Cannot grant call of ', name, ' on null');
     obj[name + '_canCall___'] = true; 
   }
   
@@ -607,8 +627,9 @@ var ___;
    * allowSet implies allowEnum and allowRead.
    */
   function allowSet(obj, name) {
+    enforce(obj != null, 'Cannot allow set of member ', name, ' on null');
     if (isFrozen(obj)) {
-      fail("Can't set .", name, ' on frozen (', obj, ')');
+      fail("Can't set .", name, ' on frozen (', debugReference(obj), ')');
     }
     allowEnum(obj, name);
     obj[name + '_canSet___'] = true;
@@ -619,8 +640,9 @@ var ___;
    * implemented. 
    */
   function allowDelete(obj, name) {
+    enforce(obj != null, 'Cannot allow delete of member ', name, ' on null');
     if (isFrozen(obj)) {
-      fail("Can't delete .", name, ' on frozen (', obj, ')');
+      fail("Can't delete .", name, ' on frozen (', debugReference(obj), ')');
     }
     obj[name + '_canDelete___'] = true;
   }
@@ -1043,7 +1065,7 @@ var ___;
    */
   function each(obj, fn) {
     fn = asSimpleFunc(fn);
-    if (obj instanceof Array) {
+    if (obj && obj.constructor.typeTag___ === 'Array') {
       var len = obj.length;
       for (var i = 0; i < len; i++) {
         if (fn(i, readPub(obj, i)) === BREAK) {
@@ -1141,7 +1163,7 @@ var ___;
     } else if (obj.handleCall___) {
       return obj.handleCall___(name, args);
     } else {
-      fail('not callable %o %s', obj, name);
+      fail('not callable %o %s', debugReference(obj), name);
     }
   }
 
@@ -1982,14 +2004,14 @@ var ___;
     'NaN': NaN,
     'Infinity': Infinity,
     'undefined': (void 0),
-    parseInt: parseInt,
-    parseFloat: parseFloat,
-    isNaN: isNaN,
-    isFinite: isFinite,
-    decodeURI: decodeURI,
-    decodeURIComponent: decodeURIComponent,
-    encodeURI: encodeURI,
-    encodeURIComponent: encodeURIComponent,
+    parseInt: simpleFunc(parseInt),
+    parseFloat: simpleFunc(parseFloat),
+    isNaN: simpleFunc(isNaN),
+    isFinite: simpleFunc(isFinite),
+    decodeURI: simpleFunc(decodeURI),
+    decodeURIComponent: simpleFunc(decodeURIComponent),
+    encodeURI: simpleFunc(encodeURI),
+    encodeURIComponent: simpleFunc(encodeURIComponent),
     Math: Math,
 
     Object: Object,
