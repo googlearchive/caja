@@ -55,7 +55,7 @@ public final class Config {
   private final Options options = new Options();
 
   private final Option INPUT = defineOption(
-      "i", "input", "Input URI containing HTML, JS, or CSS.", false);
+      "i", "input", "Input URI containing HTML, JS, or CSS.", true);
 
   private final Option OUTPUT_JS = defineOption(
       "j", "output_js",
@@ -87,6 +87,11 @@ public final class Config {
       "The URI relative to which URIs in the inputs are resolved.",
       true);
 
+  private final Option SERVICE_PORT = defineOption(
+      "port",
+      "The port on which cajoling service is run.",
+      true);
+
   private final Option VIEW = defineOption(
       "v", "view", "Gadget view to render (default is 'canvas')", true);
 
@@ -101,6 +106,7 @@ public final class Config {
   private URI htmlElementWhitelistUri;
   private URI baseUri;
   private String gadgetView;
+  private int servicePort;
 
   public Config(Class<?> mainClass, PrintStream stderr, String usageText) {
     this(mainClass, new PrintWriter(stderr), usageText);
@@ -115,6 +121,7 @@ public final class Config {
   public Collection<URI> getInputUris() { return inputUris; }
   public File getOutputJsFile() { return outputJsFile; }
   public File getOutputBase() { return outputBase; }
+  public int getServicePort() { return servicePort; }
   public URI getCssPropertyWhitelistUri() {
     return cssPropertyWhitelistUri;
   }
@@ -230,6 +237,16 @@ public final class Config {
       }
 
       gadgetView = cl.getOptionValue(VIEW.getOpt(), "canvas");
+
+      String servicePortString;
+      try {
+        servicePortString = cl.getOptionValue(SERVICE_PORT.getOpt(), "8887");
+        servicePort = Integer.parseInt(servicePortString);
+      } catch ( NumberFormatException e ) {
+        stderr.println("Invalid service port: " + SERVICE_PORT.getOpt() + "\n    "
+            + e.getMessage());
+        return false;
+      }
 
       return true;
     } finally {

@@ -100,6 +100,48 @@ public class DomParserTest extends CajaTestCase {
                        true);
   }
 
+  public void testParseDirective() throws Exception {
+    assertParsedHtml(
+        Arrays.asList(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+            "<!DOCTYPE html",
+            "PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN",
+            "DTD/xhtml1-strict.dtd\">",
+            "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">",
+            "<head>",
+            "</head>",
+            "<body>",
+            "</body>",
+            "</html>"
+        ),
+        Arrays.asList(
+            "Tag : html 5+1-10+8",
+            "  Attrib : xmlns 5+7-5+12",
+            "    Value : http://www.w3.org/1999/xhtml 5+13-5+43",
+            "  Attrib : xml:lang 5+44-5+52",
+            "    Value : en 5+53-5+57",
+            "  Attrib : lang 5+58-5+62",
+            "    Value : en 5+63-5+67",
+            "  Text : \n 5+68-6+1",
+            "  Tag : head 6+1-7+8",
+            "    Text : \n 6+7-7+1",
+            "  Text : \n 7+8-8+1",
+            "  Tag : body 8+1-9+8",
+            "    Text : \n\n 8+7-10+1"
+            ),
+        Arrays.<String>asList(
+            ),
+        Arrays.asList(
+            "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">",
+            "<head>",
+            "</head>",
+            "<body>",
+            "",
+            "</body></html>"
+            )
+        );  
+  }
+  
   public void testTextOnlyFragment() throws Exception {
     for (int i = 0; i < 2; ++i) {
       boolean isXml = i == 0;

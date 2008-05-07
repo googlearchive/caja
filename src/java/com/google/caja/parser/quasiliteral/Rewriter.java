@@ -177,7 +177,7 @@ public abstract class Rewriter {
     System.err.println(s.toString());
   }
 
-  private String format(ParseTreeNode n) {
+  public String format(ParseTreeNode n) {
     Callback<IOException> handler = new Callback<IOException>() {
       public void handle(IOException ex) {
         throw new RuntimeException(ex);
