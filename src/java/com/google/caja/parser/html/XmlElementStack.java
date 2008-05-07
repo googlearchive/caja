@@ -117,8 +117,17 @@ class XmlElementStack extends AbstractElementStack {
       throws IllegalDocumentStateException {
     stripIgnorableText();
     DomTree root = getRootElement();
+
+    FilePosition rootStart = root.getFilePosition();
+    if (FilePosition.UNKNOWN.equals(rootStart)) {
+      if (root.children().isEmpty()) {
+        rootStart = endOfDocument;
+      } else {
+        rootStart = root.children().get(0).getFilePosition();
+      }
+    }
     root.setFilePosition(
-        FilePosition.span(root.getFilePosition(), endOfDocument));
+        FilePosition.span(rootStart, endOfDocument));
 
     int nOpen = getNOpenElements();
     if (nOpen != 1) {

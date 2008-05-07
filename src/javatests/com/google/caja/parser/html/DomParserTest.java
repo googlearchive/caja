@@ -100,6 +100,21 @@ public class DomParserTest extends CajaTestCase {
                        true);
   }
 
+  public void testTextOnlyFragment() throws Exception {
+    for (int i = 0; i < 2; ++i) {
+      boolean isXml = i == 0;
+      assertParsedMarkup(
+          Arrays.asList("Hello, world!"),
+          Arrays.asList(
+              "Fragment 1+1-1+14",
+              "  Text : Hello, world! 1+1-1+14"),
+          Arrays.<String>asList(),
+          Arrays.asList("Hello, world!"),
+          isXml,
+          true);
+    }
+  }
+
   public void testHtml1() throws Exception {
     assertParsedHtml(
         Arrays.asList(

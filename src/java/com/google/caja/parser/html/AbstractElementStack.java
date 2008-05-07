@@ -76,9 +76,6 @@ abstract class AbstractElementStack implements OpenElementStack {
     el.setTagName(canonicalTagName);
     DomTree parent = getBottomElement();
     openElements.add(el);
-    if (rootElement.getFilePosition() == null) {
-      rootElement.setFilePosition(el.getFilePosition());
-    }
     doAppend(el, parent);
   }
 
