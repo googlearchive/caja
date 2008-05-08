@@ -275,15 +275,10 @@ public abstract class Rule implements MessagePart {
   }
 
   protected ParseTreeNode expandMember(
-      ParseTreeNode fname,
       ParseTreeNode member,
       Rule rule,
       Scope scope,
       MessageQueue mq) {
-    if (!scope.isDeclaredFunction(getReferenceName(fname))) {
-      throw new RuntimeException("Internal: not statically a function name: " + fname);
-    }
-
     Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
 
     if (match("function(@ps*) { @bs*; }", member, bindings)) {
@@ -291,13 +286,13 @@ public abstract class Rule implements MessagePart {
       if (s2.hasFreeThis()) {
         checkFormals(bindings.get("ps"), mq);
         return substV(
-            "___.method(@fname, function(@ps*) {" +
+            "___.method(function(@ps*) {" +
             "  @fh*;" +
             "  @stmts*;" +
             "  @bs*;" +
             "});",
-            "fname", expandReferenceToOuters(fname, scope, mq),
             "ps",    bindings.get("ps"),
+            // It's important to expand bs before computing fh and stmts.
             "bs",    rewriter.expand(bindings.get("bs"), s2, mq),
             "fh",    getFunctionHeadDeclarations(rule, s2, mq),
             "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
@@ -308,28 +303,22 @@ public abstract class Rule implements MessagePart {
   }
 
   protected ParseTreeNode expandAllMembers(
-      ParseTreeNode fname,
       ParseTreeNode members,
       Rule rule,
       Scope scope,
       MessageQueue mq) {
     List<ParseTreeNode> results = new ArrayList<ParseTreeNode>();
     for (ParseTreeNode member : members.children()) {
-      results.add(expandMember(fname, member, rule, scope, mq));
+      results.add(expandMember(member, rule, scope, mq));
     }
     return new ParseTreeNodeContainer(results);
   }
 
   protected ParseTreeNode expandMemberMap(
-      ParseTreeNode fname,
       ParseTreeNode memberMap,
       Rule rule,
       Scope scope,
       MessageQueue mq) {
-    if (!scope.isDeclaredFunction(getReferenceName(fname))) {
-      throw new RuntimeException("Internal: not statically a function name: " + fname);
-    }
-
     Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
 
     if (match("({@keys*: @vals*})", memberMap, bindings)) {
@@ -343,7 +332,7 @@ public abstract class Rule implements MessagePart {
       return substV(
           "({@keys*: @vals*})",
           "keys", bindings.get("keys"),
-          "vals", expandAllMembers(fname, bindings.get("vals"), rule, scope, mq));
+          "vals", expandAllMembers(bindings.get("vals"), rule, scope, mq));
     }
 
     mq.addMessage(RewriterMessageType.MAP_EXPRESSION_EXPECTED,

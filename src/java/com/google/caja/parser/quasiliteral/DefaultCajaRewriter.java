@@ -758,7 +758,6 @@ public class DefaultCajaRewriter extends Rewriter {
           reason="")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-
         // BUG TODO(erights,ihab): We must only recognize (and thus allow) this
         // expression when it is evaluated for effects only, not for value.
         // Currently, since we have no such test, the translated expression will
@@ -774,10 +773,11 @@ public class DefaultCajaRewriter extends Rewriter {
                 // Make sure @p and @clazz are mentionable.
                 expand(p, scope, mq);
                 expand(clazz, scope, mq);
+                Scope methodScope = Scope.fromMethodContext(scope);
                 return substV(
                     "___.setMember(@clazz, @rp, @m);",
                     "clazz", expandReferenceToOuters(clazz, scope, mq),  // Don't expand so we don't freeze.
-                    "m", expandMember(clazz, bindings.get("m"), this, scope, mq),
+                    "m", expandMember(bindings.get("m"), this, methodScope, mq),
                     "rp", toStringLiteral(p));
               }
             }
@@ -1440,11 +1440,12 @@ public class DefaultCajaRewriter extends Rewriter {
           }
           ParseTreeNode ss = bindings.get("ss") == null ? null :
               expandAll(bindings.get("ss"), scope, mq);
+          Scope s2 = Scope.fromMethodContext(scope);
           return substV(
               "caja.def(@fname, @base, @mm, @ss?)",
               "fname", expandReferenceToOuters(bindings.get("fname"), scope, mq),
               "base", expandReferenceToOuters(bindings.get("base"), scope, mq),
-              "mm", expandMemberMap(bindings.get("fname"), bindings.get("mm"), this, scope, mq),
+              "mm", expandMemberMap(bindings.get("mm"), this, s2, mq),
               "ss", ss);
         }
         return NONE;
@@ -1578,6 +1579,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 "      @bs*;" +
                 "}))",
                 "ps", bindings.get("ps"),
+                // It's important to expand bs before computing fh and stmts.
                 "bs", expand(bindings.get("bs"), s2, mq),
                 "fh", getFunctionHeadDeclarations(this, s2, mq),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
@@ -1616,6 +1618,7 @@ public class DefaultCajaRewriter extends Rewriter {
                     "});",
                     "f", f,
                     "ps", bindings.get("ps"),
+                    // It's important to expand bs before computing fh and stmts.
                     "bs", expand(bindings.get("bs"), s2, mq),
                     "fh", getFunctionHeadDeclarations(this, s2, mq),
                     "stmts", new ParseTreeNodeContainer(s2.getStartStatements())),
@@ -1654,6 +1657,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 "  }));",
                 "f", bindings.get("f"),
                 "ps", bindings.get("ps"),
+                // It's important to expand bs before computing fh and stmts.
                 "bs", expand(bindings.get("bs"), s2, mq),
                 "fh", getFunctionHeadDeclarations(this, s2, mq),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
@@ -1663,12 +1667,19 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
+    /**
+     * Rewrites an 
+     * - anonymous function 
+     * - mentioning this 
+     * - whose earliest function scope ancestor is a constructor or method
+     * into an attached method.
+     */
     new Rule () {
       @Override
       @RuleDescription(
-          name="funcExophoricFunction",
-          synopsis="",
-          reason="")
+          name = "funcMethod",
+          synopsis = "",
+          reason = "")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, final MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
@@ -1676,44 +1687,59 @@ public class DefaultCajaRewriter extends Rewriter {
           Scope s2 = Scope.fromFunctionConstructor(
               scope, (FunctionConstructor) node);
           if (!s2.hasFreeThis()) { return NONE; }
-
-          checkFormals(bindings.get("formals"), mq);
-          ParseTreeNode rewrittenBody = bindings.get("body").clone();
-          rewrittenBody.acceptPreOrder(new ExophoricFunctionRewriter(mq), null);
-          return substV(
-              "___.exophora(" +
-              "    function (@formals*) {" +
-              "      var @localThis = this;" +
-              "      @stmts*;" +
-              "      @body*;" +
-              "})",
-              "formals", bindings.get("formals"),
-              "localThis", s(new Identifier(ReservedNames.LOCAL_THIS)),
-              "body", expand(rewrittenBody, s2, mq),
-              "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
+          // If we're in a constructor or a method, attach the method.
+          if (s2.inMethodContext()) {
+            return substV(
+                "___.attach(t___, ___.method(function(@formals*) { @fh*; @stmts*; @body*; }))", 
+                "formals", bindings.get("formals"),
+                // It's important that body is expanded before computing fh and stmts. 
+                "body", expand(bindings.get("body"), s2, mq),
+                "fh", getFunctionHeadDeclarations(this, s2, mq),
+                "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
+          }
         }
         return NONE;
       }
     },
 
-    new Rule () {
+    /**
+     * Rewrites an 
+     * - anonymous function
+     * - mentioning this
+     * - whose earliest function scope ancestor is NOT a constructor or method
+     * into an exophoric function.
+     */
+    new Rule() {
       @Override
       @RuleDescription(
-          name="funcBadMethod",
-          synopsis="",
-          reason="")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+          name = "funcXo4a",
+          synopsis = "",
+          reason = "")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, final MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (match("function(@ps*) { @bs*; }", node, bindings)) {
-          Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node);
-          if (s2.hasFreeThis()) {
-            mq.addMessage(
-                RewriterMessageType.ANONYMOUS_FUNCTION_REFERENCES_THIS,
-                node.getFilePosition(),
-                this,
-                node);
-            return node;
-          }
+        if (match("(function (@formals*) { @body*; })", node, bindings)) {
+          Scope s2 = Scope.fromFunctionConstructor(
+              scope, (FunctionConstructor) node);
+          if (!s2.hasFreeThis()) { return NONE; }
+          checkFormals(bindings.get("formals"), mq);
+          // An exophoric function is one where this is only used to access the
+          // public API.
+          // We cajole an exophoric function by converting all `this` references
+          // in the body to `t___` and then cajole the body.
+          // Attempts to use private APIs, as in (this.foo_) fail statically,
+          // and elsewhere, we will use (___.readPub) instead of (___.readProp).
+          ParseTreeNode rewrittenBody = bindings.get("body").clone();
+          rewrittenBody.acceptPreOrder(new ExophoricFunctionRewriter(mq), null);
+          return substV(
+              "___.xo4a(" +
+              "    function (@formals*) { var @localThis = this; @fh*; @stmts*; @body*; })",
+              "formals", bindings.get("formals"),
+              "localThis", s(new Identifier(ReservedNames.LOCAL_THIS)),
+              // It's important that body is expanded before computing fh and stmts.
+              "body", expand(rewrittenBody, scope, mq),
+              "fh", getFunctionHeadDeclarations(this, s2, mq),
+              "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
         }
         return NONE;
       }
@@ -1789,9 +1815,10 @@ public class DefaultCajaRewriter extends Rewriter {
                 "f_init", f_init___,
                 "f_init___Ref", f_init___Ref,
                 "ps", bindings.get("ps"),
+                // It's important to expand bs before computing fh and stmts.
+                "bs", expand(bindings.get("bs"), s2, mq),
                 "fh", getFunctionHeadDeclarations(this, s2, mq),
                 "b", bNode,
-                "bs", expand(bindings.get("bs"), s2, mq),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
             if (declaration) {
               // Add the initialization to the start of block

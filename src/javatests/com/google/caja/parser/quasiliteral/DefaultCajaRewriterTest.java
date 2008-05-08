@@ -105,6 +105,109 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "    ___.readPub(___OUTERS___, '" + varName + "'" + (flag ? ", true" : "") + "))";
   }
 
+  public void testConstructorProperty() throws Exception {
+    assertConsistent(
+        "pkg = {};" +
+        "(function (){" +
+        "  function Foo(x) {" +
+        "    this.x_ = x;" +
+        "  };" +
+        "  Foo.prototype.getX = function(){ return this.x_; };" +
+        "  pkg.Foo = Foo;" +
+        "})();" +
+        "foo = new pkg.Foo(2);" +
+        "foo.getX();");
+  }
+  
+  public void testAttachedMethod() throws Exception {
+    // See also <tt>testAttachedMethod()</tt> in <tt>HtmlCompiledPluginTest</tt>
+    // to check cases where calling the attached method should fail.
+    assertConsistent(
+        "function Foo(){" +
+        "  this.f = function (){this.x_ = 1;};" +
+        "  this.getX = function (){return this.x_;};" +
+        "}" +
+        "foo = new Foo();" +
+        "foo.f();" +
+        "foo.getX();");
+    assertConsistent(
+        "function Foo(){}" +
+        "Foo.prototype.setX = function(x) { this.x_ = x; };" +
+        "Foo.prototype.getX = function() { return this.x_; };" +
+        "Foo.prototype.y = 1;" +
+        "foo=new Foo;" +
+        "foo.setX(5);" +
+        "''+foo.y+foo.getX();");
+    assertConsistent(
+        "function Foo(){}" +
+        "caja.def(Foo, Object, {" +
+        "  setX: function(x) { this.x_ = x; }," +
+        "  getX: function() { return this.x_; }," +
+        "  y: 1" +
+        "});" +
+        "foo=new Foo;" +
+        "foo.setX(5);" +
+        "''+foo.y+foo.getX();");
+    assertConsistent(
+        "function Foo(){ this.gogo(); }" +
+        "Foo.prototype.gogo = function() { this.setX = function(x) { this.x_ = x; }; };" +
+        "Foo.prototype.getX = function() { return this.x_; };" +
+        "Foo.prototype.y = 1;" +
+        "foo=new Foo;" +
+        "foo.setX(5);" +
+        "''+foo.y+foo.getX();");
+    assertConsistent(
+        "function Foo(){ this.gogo(); }" +
+        "caja.def(Foo, Object, {" +
+        "  gogo: function() { this.setX = function(x) { this.x_ = x; }; }," +
+        "  getX: function() { return this.x_; }," +
+        "  y: 1" +
+        "});" +
+        "foo=new Foo;" +
+        "foo.setX(5);" +
+        "''+foo.y+foo.getX();");
+    assertConsistent(
+        "function Foo() { this.gogo(); }" +
+        "Foo.prototype.gogo = function () { " +
+        "  this.Bar = function Bar(x){ " +
+        "    this.x_ = x; " +
+        "    this.getX = function() { return this.x_; };" +
+        "  }; " +
+        "};" +
+        "foo = new Foo;" +
+        "Bar = foo.Bar;" +
+        "bar = new Bar(5);" +
+        "bar.getX();");
+    assertConsistent(
+        "function Foo() { this.gogo(); }" +
+        "Foo.prototype.gogo = function () { " +
+        "  function Bar(x){ " +
+        "    this.x_ = x; " +
+        "  }" +
+        "  Bar.prototype.getX = function () { return this.x_; };" +
+        "  this.Bar = Bar;" +
+        "};" +
+        "foo = new Foo;" +
+        "Bar = foo.Bar;" +
+        "bar = new Bar(5);" +
+        "bar.getX();");
+    checkFails(
+        "function (){" +
+        "  this.x_ = 1;" +
+        "}",
+        "Public properties cannot end in \"_\"");
+    checkFails(
+        "function Foo(){}" +
+        "Foo.prototype.m = function () {" +
+        "  var y = function() {" +
+        "    var z = function() {" +
+        "      this.x_ = 1;" +
+        "    }" +
+        "  }" +
+        "}",
+        "Public properties cannot end in \"_\"");
+  }
+
   private static String weldReadPub(String obj, String varName, String tempObj) {
     return weldReadPub(obj, varName, tempObj, false);
   }
@@ -966,8 +1069,6 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "  ;" +
         "  ___.setMember(" +
         "      foo, 'p', ___.method(" +
-        // TODO(mikesamuel): Should not reevaluate foo if it is a global.
-        "          foo," +
         "          function(a, b) {" +
         "            var t___ = this;" +
         "            t___;" +
@@ -1608,7 +1709,7 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         ";" +
         "caja.def(" + weldReadOuters("WigglyPoint") + ", " + weldReadOuters("Point") + ", {" +
         "    m0: " + weldReadOuters("x") + "," +
-        "    m1: ___.method(" + weldReadOuters("WigglyPoint") + ", function() {" +
+        "    m1: ___.method(function() {" +
         "      var t___ = this;" +
         "      var x0___;" +
         "      " + weldSetProp("p", "3", "x0___") + ";" +
@@ -1630,7 +1731,7 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         ";" +
         "caja.def(" + weldReadOuters("WigglyPoint") + ", " + weldReadOuters("Point") + ", {" +
         "    m0: " + weldReadOuters("x") + "," +
-        "    m1: ___.method(" + weldReadOuters("WigglyPoint") + ", function() {" +
+        "    m1: ___.method(function() {" +
         "      var t___ = this;" +
         "      var x0___;" +
         "      " + weldSetProp("p", "3", "x0___") +
@@ -1836,10 +1937,11 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
   public void testFuncExophoricFunction() throws Exception {
     checkSucceeds(
         "function (x) { return this.x; };",
-        "___.exophora(" +
+        "var x0___;" +
+        "___.xo4a(" +
         "    function (x) {" +
         "       var t___ = this;" +
-        "       var x0___;" +
+        "       var t___ = this;" +
         "       return " + weldReadPub(
                                "t___",
                                "x",
@@ -1847,30 +1949,30 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "});");
     checkFails(
         "function (k) { return this[k]; }",
-        "\"this\" in an exophoric function only exposes public fields");
+        "\"this\" in an exophoric function exposes only public fields");
     checkFails(
         "function () { delete this.k; }",
-        "\"this\" in an exophoric function only exposes public fields");
+        "\"this\" in an exophoric function exposes only public fields");
     checkFails(
         "function () { x in this; }",
-        "\"this\" in an exophoric function only exposes public fields");
+        "\"this\" in an exophoric function exposes only public fields");
     checkFails(
         "function () { 'foo_' in this; }",
-        "\"this\" in an exophoric function only exposes public fields");
+        "\"this\" in an exophoric function exposes only public fields");
     checkSucceeds(
         "function () { 'foo' in this; }",
-        "___.exophora(" +
+        "___.xo4a(" +
         "    function () {" +
+        "      var t___ = this;" +
         "      var t___ = this;" +
         "      'foo' in t___;" +
         "    })");
     checkFails(
         "function () { for (var k in this); }",
-        "\"this\" in an exophoric function only exposes public fields");
+        "\"this\" in an exophoric function exposes only public fields");
     checkFails(
         "function (y) { this.x = y; }",
-        "\"this\" in an exophoric function only exposes public fields");
-
+        "\"this\" in an exophoric function exposes only public fields");
     assertConsistent(
         "({ f7: function () { return this.x + this.y; }, x: 1, y: 2 }).f7()");
   }
