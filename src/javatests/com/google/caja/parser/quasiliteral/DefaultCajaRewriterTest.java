@@ -14,9 +14,6 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.InputSource;
-import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
@@ -31,17 +28,10 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.plugin.SyntheticNodes;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
-import com.google.caja.reporting.MessagePart;
-import com.google.caja.reporting.MessageQueue;
-import com.google.caja.util.CajaTestCase;
 import com.google.caja.reporting.MessageType;
-import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.util.RhinoTestBed;
-import com.google.caja.util.TestUtil;
 
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
-
-import junit.framework.AssertionFailedError;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -52,7 +42,7 @@ import java.util.List;
 /**
  * @author ihab.awad@gmail.com
  */
-public class DefaultCajaRewriterTest extends CajaTestCase {
+public class DefaultCajaRewriterTest extends RewriterTestCase {
 
   /**
    * Welds together a string representing the repeated pattern of expected test output for
@@ -119,7 +109,7 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "foo = new pkg.Foo(2);" +
         "foo.getX();");
   }
-  
+
   public void testAttachedMethod() throws Exception {
     // See also <tt>testAttachedMethod()</tt> in <tt>HtmlCompiledPluginTest</tt>
     // to check cases where calling the attached method should fail.
@@ -638,7 +628,7 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "  handled = true;" +
         "}" +
         "assertTrue(handled);");
-    assertCajoled(
+    rewriteAndExecute(
         "var handled = false;" +
         "try {" +
         "  throw function () { throw 'should not be called'; };" +
@@ -647,7 +637,7 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "  handled = true;" +
         "}" +
         "assertTrue(handled);");
-    assertCajoled(
+    rewriteAndExecute(
         "var handled = false;" +
         "try {" +
         "  throw { toString: function () { return 'hiya'; }, y: 4 };" +
@@ -657,7 +647,7 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         "  handled = true;" +
         "}" +
         "assertTrue(handled);");
-    assertCajoled(
+    rewriteAndExecute(
         "var handled = false;" +
         "try {" +
         "  throw { toString: function () { throw new Error(); } };" +
@@ -2440,163 +2430,11 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
     checkSucceeds(fromResource("listfriends.js"));
   }
 
-  public void testAssertConsistent() throws Exception {
-    try {
-      // A value that cannot be consistent across invocations.
-      assertConsistent("({})");
-      fail("assertConsistent not working");
-    } catch (AssertionFailedError e) {
-      // Pass
-    }
-  }
-
-  private void setSynthetic(ParseTreeNode n) {
-    SyntheticNodes.s(n);
-  }
-
-  private void setTreeSynthetic(ParseTreeNode n) {
-    setSynthetic(n);
-    for (ParseTreeNode child : n.children()) {
-      setTreeSynthetic(child);
-    }
-  }
-
-  private void checkFails(String input, String error) throws Exception {
-    mq.getMessages().clear();
-    ParseTreeNode expanded = new DefaultCajaRewriter(true)
-        .expand(js(fromString(input)), mq);
-
-    assertFalse(render(expanded), mq.getMessages().isEmpty());
-
-    StringBuilder messageText = new StringBuilder();
-    for (Message m : mq.getMessages()) {
-      m.format(mc, messageText);
-      messageText.append("\n");
-    }
-    assertTrue(
-        "Messages do not contain \"" + error + "\": " + messageText.toString(),
-        messageText.toString().contains(error));
-  }
-
-  private void checkSucceeds(ParseTreeNode inputNode,
-                             ParseTreeNode expectedResultNode)
-      throws Exception {
-    checkSucceeds(inputNode,expectedResultNode,MessageLevel.WARNING);
-  }
-
-  private void checkSucceeds(
-      ParseTreeNode inputNode,
-      ParseTreeNode expectedResultNode,
-      MessageLevel highest)
-      throws Exception {
-    mq.getMessages().clear();
-    ParseTreeNode actualResultNode = new DefaultCajaRewriter().expand(inputNode, mq);
-    for (Message m : mq.getMessages()) {
-      if (m.getMessageLevel().compareTo(highest) >= 0) {
-        fail(m.toString());
-      }
-    }
-    if (expectedResultNode != null) {
-      // Test that the source code-like renderings are identical. This will catch any
-      // obvious differences between expected and actual.
-      assertEquals(render(expectedResultNode), render(actualResultNode));
-      // Then, for good measure, test that the S-expression-like formatted representations
-      // are also identical. This will catch any differences in tree topology that somehow
-      // do not appear in the source code representation (usually due to programming errors).
-      assertEquals(
-          TestUtil.format(expectedResultNode),
-          TestUtil.format(actualResultNode));
-    }
-  }
-
-  private void assertMessageNotPresent( String src, MessageType type, MessageLevel level) throws Exception {
-    checkDoesNotAddMessage(js(fromString(src)), type, level);
-  }
-
-  private void assertMessageNotPresent( String src, MessageType type) throws Exception {
-    checkDoesNotAddMessage(js(fromString(src)), type);
-  }
-
-  private void checkDoesNotAddMessage(
-      ParseTreeNode inputNode,
-      MessageType type)  {
-    mq.getMessages().clear();
-    ParseTreeNode actualResultNode = new DefaultCajaRewriter().expand(inputNode, mq);
-    if ( containsConsistentMessage(mq.getMessages(),type)) {
-      fail("Unexpected add message of type " + type);
-    }
-  }
-
-  private void checkDoesNotAddMessage(
-        ParseTreeNode inputNode,
-        MessageType type,
-        MessageLevel level)  {
-    mq.getMessages().clear();
-    ParseTreeNode actualResultNode = new DefaultCajaRewriter().expand(inputNode, mq);
-    if ( containsConsistentMessage(mq.getMessages(),type, level)) {
-      fail("Unexpected add message of type " + type + " and level " + level);
-    }
-  }
-
-  private void assertAddsMessage(String src, MessageTypeInt type, MessageLevel level)      
-      throws Exception {
-    checkAddsMessage(js(fromString(src)), type, level);
-  }
-
-  private void checkAddsMessage(
-        ParseTreeNode inputNode,
-        MessageTypeInt type,
-        MessageLevel level)  {
-    mq.getMessages().clear();
-    ParseTreeNode actualResultNode = new DefaultCajaRewriter().expand(inputNode, mq);
-    if ( !containsConsistentMessage(mq.getMessages(),type, level)) {
-      fail("Failed to add message of type " + type + " and level " + level);
-    }
-  }
-
-  private boolean containsConsistentMessage(List<Message> list, MessageType type) {
-    for (Message m : list) {
-      System.out.println("**"+m.getMessageType() + "|" + m.getMessageLevel());
-      if (m.getMessageType().equals(type)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private boolean containsConsistentMessage(List<Message> list, MessageTypeInt type, MessageLevel level) {
-    for (Message m : list) {
-      System.out.println("**"+m.getMessageType() + "|" + m.getMessageLevel());
-      if ( m.getMessageType().equals(type) && m.getMessageLevel().equals(level) ) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private void checkSucceeds(String input, String expectedResult) throws Exception {
-    checkSucceeds(js(fromString(input)), js(fromString(expectedResult)));
-  }
-
-  private void checkSucceeds(CharProducer cp) throws Exception {
-    checkSucceeds(js(cp), null);
-  }
-
-  /**
-   * Asserts that the given caja code produces the same value both cajoled and
-   * uncajoled.
-   *
-   * @param caja executed in the context of asserts.js for its value.  The
-   *    value is computed from the last statement in caja.
-   */
-  private void assertConsistent(String caja)
+  protected Object executePlain(String caja)
       throws IOException, ParseException {
-    assertConsistent(null, caja);
-  }
-  private void assertConsistent(String message, String caja)
-      throws IOException, ParseException {
+    mq.getMessages().clear();
     // Make sure the tree assigns the result to the unittestResult___ var.
-    Object uncajoledResult = RhinoTestBed.runJs(
+    return RhinoTestBed.runJs(
         null,
         new RhinoTestBed.Input(
             "var caja = { def: function (clazz, sup, props, statics) {" +
@@ -2608,7 +2446,10 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
             "caja-stub"),
         new RhinoTestBed.Input(getClass(), "../../plugin/asserts.js"),
         new RhinoTestBed.Input(caja, getName() + "-uncajoled"));
+  }
 
+  protected Object rewriteAndExecute(String caja)
+      throws IOException, ParseException {
     mq.getMessages().clear();
 
     Statement cajaTree = replaceLastStatementWithEmit(
@@ -2616,36 +2457,7 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
     String cajoledJs = render(
         cajole(js(fromResource("../../plugin/asserts.js")), cajaTree));
 
-    assertNoErrors();
-    assertEquals(message, uncajoledResult, runCajoled(cajoledJs));
-  }
-
-  /**
-   * Run cajoled code with jsunit predicates.  Passes if the code
-   * cajoles without erros and executes in Rhino without raising an
-   * exception.
-   */
-  private void assertCajoled(String caja) throws IOException, ParseException {
-    mq.getMessages().clear();
-
-    Statement cajaTree = js(fromString(caja));
-    Statement asserts = js(fromResource("../../plugin/asserts.js"));
-    String cajoledJs = render(cajole(asserts, cajaTree));
-
-    assertNoErrors();
-    runCajoled(cajoledJs);
-  }
-
-  private void assertNoErrors() {
-    for (Message msg : mq.getMessages()) {
-      if (MessageLevel.ERROR.compareTo(msg.getMessageLevel()) <= 0) {
-        fail(msg.format(mc));
-      }
-    }
-  }
-
-  private Object runCajoled(String cajoledJs) throws IOException {
-    return RhinoTestBed.runJs(
+    Object result = RhinoTestBed.runJs(
         null,
         new RhinoTestBed.Input(
             getClass(), "/com/google/caja/plugin/console-stubs.js"),
@@ -2665,6 +2477,17 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
             getName() + "-cajoled"),
         // Return the output field as the value of the run.
         new RhinoTestBed.Input("unittestResult___", getName()));
+
+    assertNoErrors();
+    return result;
+  }
+
+  private void assertNoErrors() {
+    for (Message msg : mq.getMessages()) {
+      if (MessageLevel.ERROR.compareTo(msg.getMessageLevel()) <= 0) {
+        fail(msg.format(mc));
+      }
+    }
   }
 
   private <T extends ParseTreeNode> T replaceLastStatementWithEmit(
@@ -2691,5 +2514,9 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
   private ParseTreeNode cajole(Statement... nodes) {
     return new DefaultCajaRewriter(false).expand(
         new Block(Arrays.asList(nodes)), mq);
+  }
+
+  protected Rewriter newRewriter() {
+    return new DefaultCajaRewriter(true);
   }
 }

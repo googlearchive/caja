@@ -220,7 +220,7 @@ public final class GxpCompiler {
     Block body = s(new Block(Collections.<Statement>emptyList()));
     body.insertBefore(
         s(new Declaration(
-              new Identifier(ReservedNames.OUTPUT_BUFFER),
+              s(new Identifier(ReservedNames.OUTPUT_BUFFER)),
               s(new ArrayConstructor(
                     Collections.<Expression>emptyList())))), null);
 
@@ -450,7 +450,7 @@ public final class GxpCompiler {
                 // var <synthId> = [];
                 b.insertBefore(
                     s(new Declaration(
-                          new Identifier(synthId),
+                          s(new Identifier(synthId)),
                           s(new ArrayConstructor(
                                 Collections.<Expression>emptyList())))), null);
                 for (DomTree attr : attrTrimmed) {

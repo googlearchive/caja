@@ -69,7 +69,10 @@ public abstract class Rewriter {
    * @return the expanded parse tree node.
    */
   public final ParseTreeNode expand(ParseTreeNode node, MessageQueue mq) {
-    return expand(node, null, mq);
+    flagTainted(node, mq);
+    ParseTreeNode result = expand(node, null, mq); 
+    checkTainted(result, mq);
+    return result;
   }
 
   /**
@@ -80,7 +83,7 @@ public abstract class Rewriter {
    * @param mq a message queue for compiler messages.
    * @return the expanded parse tree node.
    */
-  public final ParseTreeNode expand(ParseTreeNode node, Scope scope, MessageQueue mq) {
+  protected final ParseTreeNode expand(ParseTreeNode node, Scope scope, MessageQueue mq) {
     for (Rule rule : rules) {
 
       ParseTreeNode result = null;
@@ -95,6 +98,7 @@ public abstract class Rewriter {
       if (result != Rule.NONE || ex != null) {
         if (logging) logResults(rule, node, result, ex);
         if (ex != null) throw ex;
+        result.getAttributes().remove(ParseTreeNode.TAINTED);
         return result;
       }
     }
@@ -113,6 +117,20 @@ public abstract class Rewriter {
    */
   public void addRule(Rule rule) {
     // We keep 'ruleNames' as a guard against programming errors
+    Class<? extends Rule> c = rule.getClass();
+    Method m = null;
+    Class<?>[] args = {ParseTreeNode.class, Scope.class, MessageQueue.class};
+    try {
+      m = c.getMethod("fire", args);
+    } catch (NoSuchMethodException e) {
+      throw new IllegalArgumentException("Method \"fire\" not found in Rule");
+    }
+    RuleDescription rDesc = m.getAnnotation(RuleDescription.class);
+    if (rDesc == null) {
+      throw new IllegalArgumentException("RuleDescription not found");
+    }
+    rule.setName(rDesc.name());
+    rule.setRewriter(this);
     if (ruleNames.contains(rule.getName()))
       throw new IllegalArgumentException("Duplicate rule name: " + rule.getName());
     rules.add(rule);
@@ -126,23 +144,7 @@ public abstract class Rewriter {
    * @throws IllegalArgumentException if a rule with a duplicate name is added.
    */
   public void addRules(Rule[] rules) {
-    for (Rule r : rules) {
-      Class<? extends Rule> c = r.getClass();
-      Method m = null;
-      Class<?>[] args = {ParseTreeNode.class, Scope.class, MessageQueue.class};
-      try {
-        m = c.getMethod("fire", args);
-      } catch (NoSuchMethodException e) {
-        throw new IllegalArgumentException("Method \"fire\" not found in Rule");
-      }
-      RuleDescription rDesc = m.getAnnotation(RuleDescription.class);
-      if (rDesc == null) {
-        throw new IllegalArgumentException("RuleDescription not found");
-      }
-      r.setName(rDesc.name());
-      r.setRewriter(this);
-      addRule(r);
-    }
+    for (Rule r : rules) { addRule(r); }
   }
 
   private void logResults(
@@ -188,5 +190,21 @@ public abstract class Rewriter {
     TokenConsumer renderer = new JsPrettyPrinter(output, handler);
     n.render(new RenderContext(new MessageContext(), renderer));
     return output.toString();
+  }
+
+  private void flagTainted(ParseTreeNode node, MessageQueue mq) {
+    node.getAttributes().set(ParseTreeNode.TAINTED, true);
+    for (ParseTreeNode n : node.children()) {
+      flagTainted(n, mq);
+    }
+  }
+  
+  private void checkTainted(ParseTreeNode node, MessageQueue mq) {
+    if (node.getAttributes().is(ParseTreeNode.TAINTED)) {
+      mq.addMessage(RewriterMessageType.UNSEEN_NODE_LEFT_OVER, node.getFilePosition());
+    }
+    for (ParseTreeNode n : node.children()) {
+      checkTainted(n, mq);
+    }
   }
 }

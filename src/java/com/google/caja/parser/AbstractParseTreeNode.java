@@ -346,6 +346,7 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
     cloned.setFilePosition(getFilePosition());
     if (attributes != null) {
       cloned.attributes = new SyntheticAttributes(attributes);
+      cloned.attributes.remove(TAINTED);
     }
     return cloned;
   }

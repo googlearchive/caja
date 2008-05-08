@@ -45,6 +45,8 @@ import com.google.caja.parser.quasiliteral.DefaultCajaRewriterTest;
 import com.google.caja.parser.quasiliteral.MatchTest;
 import com.google.caja.parser.quasiliteral.QuasiBuilderTest;
 import com.google.caja.parser.quasiliteral.ScopeTest;
+import com.google.caja.parser.quasiliteral.IllegalReferenceCheckRewriterTest;
+import com.google.caja.parser.quasiliteral.RewriterTest;
 import com.google.caja.plugin.CompiledPluginTest;
 import com.google.caja.plugin.CssRewriterTest;
 import com.google.caja.plugin.CssTemplateTest;
@@ -111,6 +113,7 @@ public class AllTests {
           HtmlLexerTest.class,
           HtmlSanitizerTest.class,
           HtmlSchemaTest.class,
+          IllegalReferenceCheckRewriterTest.class,
           JoinTest.class,
           JsHtmlParserTest.class,
           JsHtmlSanitizerTest.class,
@@ -129,6 +132,7 @@ public class AllTests {
           QuasiBuilderTest.class,
           RRuleTest.class,
           RewriteHtmlStageTest.class,
+          RewriterTest.class,
           ScopeTest.class,
           SideBySideRendererTest.class,
           SnippetProducerTest.class,

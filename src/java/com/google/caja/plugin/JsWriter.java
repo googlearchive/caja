@@ -71,10 +71,10 @@ final class JsWriter {
     }
     // Make one
     if (null == fnCall) {
-      Expression target = s(new Reference(new Identifier(tgtMembers.get(0))));
+      Expression target = s(new Reference(s(new Identifier(tgtMembers.get(0)))));
       for (int i = 1; i < tgtMembers.size(); ++i) {
         target = s(Operation.create(Operator.MEMBER_ACCESS,
-                                 target, s(new Reference(new Identifier(tgtMembers.get(i))))));
+                                 target, s(new Reference(s(new Identifier(tgtMembers.get(i)))))));
       }
 
       fnCall = s(Operation.create(Operator.FUNCTION_CALL,

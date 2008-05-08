@@ -32,7 +32,6 @@ import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.UndefinedLiteral;
 import com.google.caja.plugin.ReservedNames;
 import com.google.caja.plugin.SyntheticNodes;
@@ -103,7 +102,12 @@ public abstract class Rule implements MessagePart {
   }
 
   /**
-   * Set the rewriter this{@code Rule} uses.
+   * @return the rewriter this {@code Rule} uses.
+   */
+  public Rewriter getRewriter() { return rewriter; }
+  
+  /**
+   * Set the rewriter this {@code Rule} uses.
    */
   public void setRewriter(Rewriter rewriter) {
     this.rewriter = rewriter;
@@ -162,10 +166,14 @@ public abstract class Rule implements MessagePart {
       rewrittenChildren.add(rewriter.expand(child, scope, mq));
     }
 
-    return ParseTreeNodes.newNodeInstance(
+    ParseTreeNode result = ParseTreeNodes.newNodeInstance(
         parentNodeClass,
         node.getValue(),
         rewrittenChildren);
+    result.getAttributes().putAll(node.getAttributes());
+    result.getAttributes().remove(ParseTreeNode.TAINTED);
+
+    return result;
   }
 
   protected ParseTreeNode getFunctionHeadDeclarations(
@@ -177,14 +185,14 @@ public abstract class Rule implements MessagePart {
     if (scope.hasFreeArguments()) {
       stmts.add(substV(
           "var @la = ___.args(@ga);",
-          "la", new Identifier(ReservedNames.LOCAL_ARGUMENTS),
-          "ga", new Reference(new Identifier(ReservedNames.ARGUMENTS))));
+          "la", s(new Identifier(ReservedNames.LOCAL_ARGUMENTS)),
+          "ga", newReference(ReservedNames.ARGUMENTS)));
     }
     if (scope.hasFreeThis()) {
       stmts.add(substV(
           "var @lt = @gt;",
-          "lt", new Identifier(ReservedNames.LOCAL_THIS),
-          "gt", new Reference(new Identifier(ReservedNames.THIS))));
+          "lt", s(new Identifier(ReservedNames.LOCAL_THIS)),
+          "gt", newReference(ReservedNames.THIS)));
     }
 
     return new ParseTreeNodeContainer(stmts);
@@ -262,7 +270,7 @@ public abstract class Rule implements MessagePart {
           "  (___OUTERS___.@s = @temp) :" +
           "  ___.setPub(___OUTERS___, @sName, @temp);",
           "s", symbol,
-          "sCanSet", new Reference(new Identifier(sName + "_canSet___")),
+          "sCanSet", newReference(sName + "_canSet___"),
           "sName", toStringLiteral(symbol),
           "temp", s(new Reference(scope.declareStartOfScopeTempVariable())),
           "value", value)));
@@ -350,7 +358,7 @@ public abstract class Rule implements MessagePart {
       return substV(
           "___OUTERS___.@xCanRead ? ___OUTERS___.@x : ___.readPub(___OUTERS___, @xName, true);",
           "x", ref,
-          "xCanRead", new Reference(new Identifier(xName + "_canRead___")),
+          "xCanRead", newReference(xName + "_canRead___"),
           "xName", new StringLiteral(StringLiteral.toQuotedValue(xName)));
     } else {
       return ref;

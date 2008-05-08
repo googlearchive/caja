@@ -18,6 +18,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.quasiliteral.DefaultCajaRewriter;
+import com.google.caja.parser.quasiliteral.IllegalReferenceCheckRewriter;
 import com.google.caja.reporting.MessageQueue;
 
 /**
@@ -36,6 +37,8 @@ public class ExpressionSanitizerCaja {
     MutableParseTreeNode input = (MutableParseTreeNode) toSanitize.node;
     ParseTreeNode result = new DefaultCajaRewriter(false)
         .expand(input, this.mq);
+    result = new IllegalReferenceCheckRewriter(false)
+        .expand(result, this.mq);
 
     MutableParseTreeNode.Mutation mut = input.createMutation();
     for (ParseTreeNode child : input.children()) {

@@ -20,6 +20,7 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.Renderable;
 import com.google.caja.util.SyntheticAttributes;
+import com.google.caja.util.SyntheticAttributeKey;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,6 +31,18 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public interface ParseTreeNode extends MessagePart, Renderable, Cloneable {
+
+  /**
+   * Attribute key that marks a node as being "tainted" in some way.
+   *
+   * This is used to ensure that all nodes have been "seen" by a security checking
+   * or other critical process. The input is first marked "tainted", and the code is
+   * written such that any concrete step that recognizes a node un-taints it (or
+   * produces an un-tainted result as the output). The process can then check to make
+   * sure that all its output is not tainted.
+   */
+  SyntheticAttributeKey<Boolean> TAINTED
+      = new SyntheticAttributeKey<Boolean>(Boolean.class, "tainted");
 
   FilePosition getFilePosition();
   List<Token<?>> getComments();

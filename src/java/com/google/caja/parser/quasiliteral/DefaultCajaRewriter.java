@@ -503,7 +503,7 @@ public class DefaultCajaRewriter extends Rewriter {
           return substV(
               "___OUTERS___.@xCanRead ? ___OUTERS___.@x : ___.readPub(___OUTERS___, @xName);",
               "x", bindings.get("p"),
-              "xCanRead", new Reference(new Identifier(xName + "_canRead___")),
+              "xCanRead", newReference(xName + "_canRead___"),
               "xName", new StringLiteral(StringLiteral.toQuotedValue(xName)));
         }
         return NONE;
@@ -524,7 +524,7 @@ public class DefaultCajaRewriter extends Rewriter {
           return substV(
             "t___.@fp ? t___.@p : ___.readProp(t___, @rp)",
             "p",  p,
-            "fp", new Reference(new Identifier(propertyName + "_canRead___")),
+            "fp", newReference(propertyName + "_canRead___"),
             "rp", toStringLiteral(p));
         }
         return NONE;
@@ -568,7 +568,7 @@ public class DefaultCajaRewriter extends Rewriter {
               "ref", s(new Reference(scope.declareStartOfScopeTempVariable())),
               "o", expand(bindings.get("o"), scope, mq),
               "p",  p,
-              "fp", new Reference(new Identifier(propertyName + "_canRead___")),
+              "fp", newReference(propertyName + "_canRead___"),
               "rp", toStringLiteral(p));
         }
         return NONE;
@@ -652,7 +652,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 "ref", s(new Reference(scope.declareStartOfScopeTempVariable())),
                 "r",  expand(bindings.get("r"), scope, mq),
                 "p",  p,
-                "fp", new Reference(new Identifier(propertyName + "_canSet___")),
+                "fp", newReference(propertyName + "_canSet___"),
                 "rp", toStringLiteral(p));
           }
         }
@@ -732,8 +732,8 @@ public class DefaultCajaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("this.@p = @r", node, bindings)) {
           String propertyName = ((Reference)bindings.get("p")).getIdentifierName();
-          Reference target = new Reference(new Identifier(
-              scope.isGlobal() ? ReservedNames.OUTERS : ReservedNames.LOCAL_THIS));
+          Reference target = newReference(
+              scope.isGlobal() ? ReservedNames.OUTERS : ReservedNames.LOCAL_THIS);
           return substV(
               "@ref = @r," +
               "@target.@fp ?" +
@@ -742,7 +742,7 @@ public class DefaultCajaRewriter extends Rewriter {
               "ref", s(new Reference(scope.declareStartOfScopeTempVariable())),
               "r",  expand(bindings.get("r"), scope, mq),
               "p",  bindings.get("p"),
-              "fp", new Reference(new Identifier(propertyName + "_canSet___")),
+              "fp", newReference(propertyName + "_canSet___"),
               "rp", toStringLiteral(bindings.get("p")),
               "target", target);
         }
@@ -853,7 +853,7 @@ public class DefaultCajaRewriter extends Rewriter {
               "tmpR", s(new Reference(scope.declareStartOfScopeTempVariable())),
               "expandO", expand(bindings.get("o"), scope, mq),
               "expandR", expand(bindings.get("r"), scope, mq),
-              "pCanSet", new Reference(new Identifier(propertyName + "_canSet___")),
+              "pCanSet", newReference(propertyName + "_canSet___"),
               "p", bindings.get("p"),
               "pName", toStringLiteral(bindings.get("p")));
         }
@@ -1336,7 +1336,7 @@ public class DefaultCajaRewriter extends Rewriter {
               "as", newCommaOperation(aliases.b.children()),
               "vs", aliases.a,
               "m",  m,
-              "fm", new Reference(new Identifier(methodName + "_canCall___")),
+              "fm", newReference(methodName + "_canCall___"),
               "rm", toStringLiteral(m));
         }
         return NONE;
@@ -1362,7 +1362,7 @@ public class DefaultCajaRewriter extends Rewriter {
               "as", newCommaOperation(aliases.b.children()),
               "vs", aliases.a,
               "m",  bindings.get("m"),
-              "fm", new Reference(new Identifier(methodName + "_canCall___")),
+              "fm", newReference(methodName + "_canCall___"),
               "rm", toStringLiteral(m));
         }
         return NONE;
@@ -1498,7 +1498,7 @@ public class DefaultCajaRewriter extends Rewriter {
               "as", newCommaOperation(aliases.b.children()),
               "vs", aliases.a,
               "m",  m,
-              "fm", new Reference(new Identifier(methodName + "_canCall___")),
+              "fm", newReference(methodName + "_canCall___"),
               "rm", toStringLiteral(m));
         }
         return NONE;
@@ -1798,8 +1798,8 @@ public class DefaultCajaRewriter extends Rewriter {
             }
             Identifier f = (Identifier)bindings.get("f");
             Reference fRef = new Reference(f);
-            Identifier f_init___ = new Identifier(f.getName() + "_init___");
-            Reference f_init___Ref = new Reference(f_init___);
+            Identifier f_init___ = s(new Identifier(f.getName() + "_init___"));
+            Reference f_init___Ref = s(new Reference(f_init___));
             // Add a declaration to the start of function body
             if (declaration) {
               scope.declareStartOfScopeVariable(f);
