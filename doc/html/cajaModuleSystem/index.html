@@ -203,6 +203,46 @@ variable is currently in my imports list?</p>
 
 <p>How do we ensure that a module's URL is valid Caja?</p>
 
+<h2>Rationale</h2>
+
+<p>Caja works by adding run-time checks to a language that is not
+intrinsically capability safe. Hence, to maintain the invariants
+relied upon by Caja, the cajoled output must be run in a very specific
+fashion. This is why we need <em>at least</em> the module function
+structure:</p>
+
+<pre>
+___.loadModule(function(___IMPORTS___) {
+  <em>... translated code ...</em>
+});
+</pre>
+
+<p>Symbols that a module requires -- the free variables of the
+untranslated code -- must be provided by the container as fields of
+<code>___IMPORTS___</code>. If the container does not provide these
+fields, the result is a <code>ReferenceError</code> at run-time. Hence
+our interface so far mimics function calls in a dynamically typed
+language.</p>
+
+<p>Since JavaScript (&le; 3.<em>x</em> at any rate) is dynamically
+typed, there is no distinction between "importing" code ("classes" and
+functions) and binding to run-time objects supplied by the caller. Our
+mechanism of passing material in <code>___IMPORTS___</code> is all we
+need.</p>
+
+<p>A module should be able to export objects to its container (which
+may in turn make these symbols available to other modules). To achieve
+this, the container must provide an object in
+<code>___IMPORTS___</code> into which modules can put things they want
+to share. At some point during or after the module function is
+executed, the module will call back to that object to provide the
+container with the data. For example:</p>
+
+<pre>
+___IMPORTS___.exportedSymbols.add("foo", myFooObject);
+</pre>
+
+
 </body>
 
 </html>

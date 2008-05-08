@@ -715,7 +715,7 @@ public class DefaultCajaRewriter extends Rewriter {
               "ref", s(new Reference(scope.declareStartOfScopeTempVariable())),
               "r",  expand(bindings.get("r"), scope, mq),
               "p",  p,
-              "fp", new Reference(new Identifier(propertyName + "_canSet___")),
+              "fp", newReference(propertyName + "_canSet___"),
               "rp", toStringLiteral(p));
         }
         return NONE;
