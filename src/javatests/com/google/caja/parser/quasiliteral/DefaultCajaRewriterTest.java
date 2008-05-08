@@ -35,6 +35,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.util.RhinoTestBed;
 import com.google.caja.util.TestUtil;
 
@@ -556,6 +557,10 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
             "  return foo;" +
             "})()") +
         ";14;;");
+    assertAddsMessage(
+        "function f() { for (var x__ in a) {} }",
+        RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+        MessageLevel.FATAL_ERROR);
   }
 
   public void testTryCatch() throws Exception {
@@ -1986,17 +1991,17 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
   public void testMaskingFunction () throws Exception {
     assertAddsMessage(
         "function Goo() { function Goo() {} }",
-        MessageType.SYMBOL_REDEFINED, 
+        MessageType.SYMBOL_REDEFINED,
         MessageLevel.ERROR );
     assertAddsMessage(
         "function Goo() { var Goo = 1}",
-        MessageType.MASKING_SYMBOL, 
+        MessageType.MASKING_SYMBOL,
         MessageLevel.LINT );
     assertMessageNotPresent(
         "function Goo() { this.x = 1; }",
         MessageType.MASKING_SYMBOL );
   }
-  
+
   public void testFuncCtor() throws Exception {
     checkSucceeds(
         "function Foo(x) { this.x_ = x; }",
@@ -2473,12 +2478,12 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
         messageText.toString().contains(error));
   }
 
-  private void checkSucceeds(ParseTreeNode inputNode, 
+  private void checkSucceeds(ParseTreeNode inputNode,
                              ParseTreeNode expectedResultNode)
       throws Exception {
     checkSucceeds(inputNode,expectedResultNode,MessageLevel.WARNING);
   }
-  
+
   private void checkSucceeds(
       ParseTreeNode inputNode,
       ParseTreeNode expectedResultNode,
@@ -2512,8 +2517,8 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
     checkDoesNotAddMessage(js(fromString(src)), type);
   }
 
-  private void checkDoesNotAddMessage( 
-      ParseTreeNode inputNode, 
+  private void checkDoesNotAddMessage(
+      ParseTreeNode inputNode,
       MessageType type)  {
     mq.getMessages().clear();
     ParseTreeNode actualResultNode = new DefaultCajaRewriter().expand(inputNode, mq);
@@ -2522,8 +2527,8 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
     }
   }
 
-  private void checkDoesNotAddMessage( 
-        ParseTreeNode inputNode, 
+  private void checkDoesNotAddMessage(
+        ParseTreeNode inputNode,
         MessageType type,
         MessageLevel level)  {
     mq.getMessages().clear();
@@ -2533,13 +2538,14 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
     }
   }
 
-  private void assertAddsMessage( String src, MessageType type, MessageLevel level) throws Exception {
+  private void assertAddsMessage(String src, MessageTypeInt type, MessageLevel level)      
+      throws Exception {
     checkAddsMessage(js(fromString(src)), type, level);
   }
-    
-  private void checkAddsMessage( 
-        ParseTreeNode inputNode, 
-        MessageType type,
+
+  private void checkAddsMessage(
+        ParseTreeNode inputNode,
+        MessageTypeInt type,
         MessageLevel level)  {
     mq.getMessages().clear();
     ParseTreeNode actualResultNode = new DefaultCajaRewriter().expand(inputNode, mq);
@@ -2558,7 +2564,7 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
     return false;
   }
 
-  private boolean containsConsistentMessage(List<Message> list, MessageType type, MessageLevel level) {
+  private boolean containsConsistentMessage(List<Message> list, MessageTypeInt type, MessageLevel level) {
     for (Message m : list) {
       System.out.println("**"+m.getMessageType() + "|" + m.getMessageLevel());
       if ( m.getMessageType().equals(type) && m.getMessageLevel().equals(level) ) {
@@ -2567,7 +2573,7 @@ public class DefaultCajaRewriterTest extends CajaTestCase {
     }
     return false;
   }
-  
+
   private void checkSucceeds(String input, String expectedResult) throws Exception {
     checkSucceeds(js(fromString(input)), js(fromString(expectedResult)));
   }

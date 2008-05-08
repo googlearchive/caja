@@ -995,6 +995,12 @@ public class DefaultCajaRewriter extends Rewriter {
         if (match("@v = @r", node, bindings)) {
           if (bindings.get("v") instanceof Reference) {
             String vName = getReferenceName(bindings.get("v"));
+            if (vName.endsWith("__")) {
+              mq.addMessage(
+                  RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+                  node.getFilePosition(), this, node);
+              return node;
+            }
             if (!scope.isFunction(vName)) {
               return substV(
                   "@v = @r",
