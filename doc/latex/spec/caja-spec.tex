@@ -1506,7 +1506,7 @@ for various comments and suggestions.
   \hline
   \code{local\_\_}          & \label{var:bad-suffix}    & \mathrm{/*rejected\ in\ all\ positions*/} \\
   \code{glob\_}             & \label{var:bad-global-suffix} & \mathrm{/*rejected\ in\ all\ positions*/} \\
-  \code{glob}               & \label{var:global}        & \code{\_\_\_.readPub(\_\_\_OUTERS\_\_\_,"glob",true)} \\
+  \code{glob}               & \label{var:global}        & \code{\_\_\_.readPub(IMPORTS\_\_\_,"glob",true)} \\
   \hline
   \code{this.p\_\_}         & \label{read:bad-suffix}   & \mathrm{/*rejected\ in\ all\ positions*/} \\
   \code{foo.p\_}            & \label{read:bad-internal} & \mathrm{/*rejected\ in\ all\ positions*/} \\
@@ -1526,15 +1526,15 @@ for various comments and suggestions.
   \code{foo.p = baz}        & \label{set:public}        & \code{\_\_\_.setPub(foo,"p",baz)} \\
   \code{this[bar] = baz}    & \label{set:index-internal} & \code{\_\_\_.setProp(this,bar,baz)} \\
   \code{foo[bar] = baz}     & \label{set:index-public}  & \code{\_\_\_.setPub(foo,bar,baz)} \\
-  \code{glob = baz}         & \label{set:global}        & \code{\_\_\_.setPub(\_\_\_OUTERS\_\_\_,"glob",baz)} \\
-  \code{var\ glob = baz}    & \label{set:global-init}   & \code{\_\_\_.setPub(\_\_\_OUTERS\_\_\_,"glob",baz)} \\
-  \code{var\ glob}          & \label{set:global-decl}   & \code{\_\_\_.setPub(\_\_\_OUTERS\_\_\_,"glob",undefined)}\\
+  \code{glob = baz}         & \label{set:global}        & \code{\_\_\_.setPub(IMPORTS\_\_\_,"glob",baz)} \\
+  \code{var\ glob = baz}    & \label{set:global-init}   & \code{\_\_\_.setPub(IMPORTS\_\_\_,"glob",baz)} \\
+  \code{var\ glob}          & \label{set:global-decl}   & \code{\_\_\_.setPub(IMPORTS\_\_\_,"glob",undefined)}\\
   \hline
   \code{delete\ this.p}     & \label{delete-internal}   & \code{\_\_\_.deleteProp(this,"p")} \\
   \code{delete\ foo.p}      & \label{delete:public}     & \code{\_\_\_.deletePub(foo,"p")} \\
   \code{delete\ this[bar]}  & \label{delete:index-internal} & \code{\_\_\_.deleteProp(this,bar)} \\
  \code{delete\ foo[bar]}    & \label{delete:index-public}   & \code{\_\_\_.deletePub(foo,bar)} \\
-  \code{delete\ glob}       & \label{delete:global}   & \code{\_\_\_.deletePub(\_\_\_OUTERS\_\_\_,"glob")}
+  \code{delete\ glob}       & \label{delete:global}   & \code{\_\_\_.deletePub(IMPORTS\_\_\_,"glob")}
 \end{eqnarray}
 
 \caption[Cajoling Property Access]{Cajoling Property Access. Under the 
@@ -1555,7 +1555,7 @@ same order as in the original.}
 \begin{eqnarray}
   \mathrm{Caja\ expression} & \nonumber                & \mathrm{cajoles\ to\ ES3\ code\ equivalent\ to} \\ 
   \hline
-                            & \label{module}           & \code{\_\_\_.loadModule(function(\_\_\_OUTERS\_\_\_)\ \{} \\
+                            & \label{module}           & \code{\_\_\_.loadModule(function(IMPORTS\_\_\_)\ \{} \\
   /*caja\ module\ body*/    & \nonumber                & \code{\ \ } /*cajoled\ module\ body*/ \\
                             & \nonumber                & \code{\});} \\
   \hline
@@ -1608,7 +1608,7 @@ confined plugin. The use of a terminal ``\code{;}'' is shorthand for testing
 whether the matching expression is evaluated for effects only, not for its 
 value. For each top level named function or constructor declaration \code{F}, we 
 also emit \\
-\code{\_\_\_.setPub(\_\_\_OUTERS\_\_\_,"F",\_\_\_.primFreeze(F));} at the end of the 
+\code{\_\_\_.setPub(IMPORTS\_\_\_,"F",\_\_\_.primFreeze(F));} at the end of the 
 module body. Methods may only appear at the \code{member} positions in 
 Figure~\ref{tab:special-cases}.}
 \label{tab:call-xlate}

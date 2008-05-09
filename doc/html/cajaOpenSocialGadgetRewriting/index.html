@@ -67,7 +67,7 @@ the form:</p>
   <em>consolidated stylesheet content</em>
 &lt;/style&gt;
 &lt;script&gt;
-  ___.loadModule(function(___OUTERS___) {
+  ___.loadModule(function(___, IMPORTS___) {
     <em>translated gadget content</em>
   });
 &lt;/script&gt;
@@ -82,7 +82,7 @@ the form:</p>
 <p><code>loadModule</code> &mdash; the Caja module loading
 function.</p>
 
-<p><code>___OUTERS___</code> &mdash; a variable that will represent
+<p><code>IMPORTS___</code> &mdash; a variable that will represent
 the sandboxed global scope to the translated JavaScript
 code. Compatible rewriters may use a different name for this variable,
 since it is not used outside the gadget, but the variable must end in
@@ -138,7 +138,7 @@ this allowed in gadgets anyway?</p>
 
 <p>The JavaScript will be rewritten per the Caja rules, specified elsewhere.</p>
 
-<p>The <code>___OUTERS___</code> parameter supplied by the
+<p>The <code>IMPORTS___</code> parameter supplied by the
 <code>loadModule</code> function is an object containing bindings of
 the DOM wrappers and OpenSocial APIs, as follows:</p>
 
@@ -166,49 +166,49 @@ object of the OpenSocial APIs.</p>
 JavaScript that inserts explicit HTML, as in:</p>
 
 <pre>
-___OUTERS___.document.innerHTML = "
+IMPORTS___.document.innerHTML = "
   &lt;a onmouseover=\"
-    return ___.asSimpleFunc(___OUTERS___.alert)(1);
+    return ___.asSimpleFunc(IMPORTS___.alert)(1);
   \"&gt;Mouse here&lt;/a&gt;
 ";
 </pre>
 
 <p>However, we wish to confine the emitted code to the
-<code>___OUTERS___</code> of the specific gadget <em>instance</em>. We
+<code>IMPORTS___</code> of the specific gadget <em>instance</em>. We
 do this using the following function provided by <code>caja.js</code>,
 which returns an integer index:</p>
 
 <pre>
-___.getId(___OUTERS___)
+___.getId(IMPORTS___)
 </pre>
 
-<p>This index is used to gain access to the <code>___OUTERS___</code>
-object via a global function <code>getOuters</code>. In other words,
+<p>This index is used to gain access to the <code>IMPORTS___</code>
+object via a global function <code>getImports</code>. In other words,
 for any instance of a gadget:</p>
 
 <pre>
-___.getOuters(___.getId(___OUTERS___)) === ___OUTERS___
+___.getImports(___.getId(IMPORTS___)) === IMPORTS___
 </pre>
 
 <p>The value returned by <code>getId</code> can be used to securely
-retrieve the <code>___OUTERS___</code> object it was created
+retrieve the <code>IMPORTS___</code> object it was created
 with. </p>
 <p>We translate the event handler code by first replacing all its free uses of
   &quot;<code>this</code>&quot;  by &quot;<code>thisNode</code>&quot;. We then cajole it with &quot;<code>thisNode</code>&quot; and &quot;<code>event</code>&quot; treated
   as local variables. The cajoled code is then placed after a &quot;<code>return</code>&quot; in the
   body of a handler function with a generated unique <i><code>handleName___</code></i>.</p>
-<pre>___OUTERS___.<i>handlerName___</i> = function(thisNode, event) {
-  return ___.asSimpleFunc(___OUTERS___.alert)(1);
+<pre>IMPORTS___.<i>handlerName___</i> = function(thisNode, event) {
+  return ___.asSimpleFunc(IMPORTS___.alert)(1);
 };</pre>
 <p class="note">Should we prohibit &quot;<code>thisNode</code>&quot; from appearing in the
   original event handler code? Probably.</p>
 <p>Thus our final form of the rewritten HTML would be:</p>
 <pre>
-___OUTERS___.document.innerHTML = '
+IMPORTS___.document.innerHTML = '
   &lt;a onmouseover=\"
     return plugin_dispatchEvent___(this,
                                    event || window.event,
-                                   ' + ___.getId(___OUTERS___) + ',
+                                   ' + ___.getId(IMPORTS___) + ',
                                    '<i>handlerName</i>___');
   \"&gt;Mouse here&lt;/a&gt;
 ';
@@ -226,8 +226,8 @@ container. The <code>plugin_dispatchEvent___</code> must be provided by the cont
 function plugin_tamed(obj) { return obj; }
  
 function plugin_dispatchEvent___(thisNode, event, pluginId, handlerName) {
-  return ___.getOuters(pluginId)[handlerName](plugin_tamed(thisNode), 
-                                              plugin_tamed(event));
+  return ___.getImports(pluginId)[handlerName](plugin_tamed(thisNode), 
+                                               plugin_tamed(event));
 }</pre>
 
 <h2>Original source context</h2>

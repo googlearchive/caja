@@ -1,4 +1,3 @@
-
 <html><head><title>JavaScript Client Side API Taming for Caja</title></head>
 <body>
 <h2><center>JavaScript Client Side API Taming for Caja</center></h2>
@@ -110,7 +109,7 @@ Authorizations for communication access to specific domains and urls is granted 
 
 <p>The loadModule() function associates each module with an unmentionable name for a style rules class. The style rules extracted for the module during cajoling are included into the page prefixed with the module's (unmentionable) class. For example, a module with unmentionable name un1___ and a style rule for div would be included in the page as "un1___ div" rather than "div". There is a special case: if there is a mentionable name class on the body (which means it was written by the container, the modules do not in general have access to the body node), this class is put as a prefix to the module's class. For example, if the container has created a class body.ie_6, and the module defines a style rule for body.ie_6 div, the style marking for the element would be body.ie_6 un1___ div.
 </p>
-<p>Meanwhile, loadModule() also creates a function useMyStyles(el:HTMLElement), that encapsulates the module's class, and places it in the module's Outers. When invoked, this function marks the element with the module's style rule class. Nodes in the subtree beneath the element with this style rule class will inherit that class's rules. 
+<p>Meanwhile, loadModule() also creates a function useMyStyles(el:HTMLElement), that encapsulates the module's class, and places it in the module's Imports. When invoked, this function marks the element with the module's style rule class. Nodes in the subtree beneath the element with this style rule class will inherit that class's rules. 
 
 </p>
 
