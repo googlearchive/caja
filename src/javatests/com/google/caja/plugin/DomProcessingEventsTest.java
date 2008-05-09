@@ -35,7 +35,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
     DomProcessingEvents dpe = new DomProcessingEvents();
     dpe.pcdata("hello world");
     assertEmittingCode(
-        "___OUTERS___.htmlEmitter___.pc('hello world');", "hello world", dpe);
+        "IMPORTS___.htmlEmitter___.pc('hello world');", "hello world", dpe);
   }
 
   public void testSimpleElement() {
@@ -45,7 +45,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
     dpe.pcdata("HELLO WORLD");
     dpe.end("b");
     assertEmittingCode(
-        "___OUTERS___.htmlEmitter___.b('b').f(false).ih('HELLO WORLD').e('b');",
+        "IMPORTS___.htmlEmitter___.b('b').f(false).ih('HELLO WORLD').e('b');",
         "<b>HELLO WORLD</b>",
         dpe);
   }
@@ -57,7 +57,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
     dpe.pcdata("1 < 2 && 3 > 2");
     dpe.end("b");
     assertEmittingCode(
-        "___OUTERS___.htmlEmitter___.b('b').f(false)"
+        "IMPORTS___.htmlEmitter___.b('b').f(false)"
         + ".ih('1 &lt; 2 &amp;&amp; 3 &gt; 2').e('b');",
         "<b>1 &lt; 2 &amp;&amp; 3 &gt; 2</b>",
         dpe);
@@ -77,7 +77,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
     dpe.pcdata(" ]");
     dpe.end("b");
     assertEmittingCode(
-        "___OUTERS___.htmlEmitter___.b('b').a('style', 'color: blue').f(false)"
+        "IMPORTS___.htmlEmitter___.b('b').a('style', 'color: blue').f(false)"
         + ".ih('[ <a href=\\\"#\\\">1 &lt; 2 &amp;&amp; 3 &gt; 2</a> ]')"
         + ".e('b');",
         "<b style=\"color: blue\">"
@@ -103,12 +103,12 @@ public class DomProcessingEventsTest extends CajaTestCase {
     dpe.pcdata("world");
     dpe.end("p");
     assertEmittingCode(
-        "___OUTERS___.htmlEmitter___.b('p').a('id', 'foo').f(false)"
+        "IMPORTS___.htmlEmitter___.b('p').a('id', 'foo').f(false)"
         + ".ih('hello')"
         + ".e('p')"
         + ".b('p').f(false);"
         + "{ bar(); }"
-        + "___OUTERS___.htmlEmitter___.e('p')"
+        + "IMPORTS___.htmlEmitter___.e('p')"
         + ".b('p').a('id', 'baz').f(false)"
         + ".ih('world')"
         + ".e('p');",
@@ -139,7 +139,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
     dpe.end("div");
 
     assertEmittingCode(
-        "___OUTERS___.htmlEmitter___.b('div').f(false).ih('"
+        "IMPORTS___.htmlEmitter___.b('div').f(false).ih('"
         + "<p>...On the Night&#39;s Plutonian shore!"
         + "<br title=\\\"Quoth the &lt;raven&gt;, &quot;Nevermore.&quot;\\\" />"
         + "Much I marvelled this ungainly fowl...</p>"
@@ -166,7 +166,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
     dpe.end("foo");
 
     assertEmittingCode(
-        "___OUTERS___.htmlEmitter___.b('foo').f(false)"
+        "IMPORTS___.htmlEmitter___.b('foo').f(false)"
         + ".b('bar').a('baz', 1 + 1).f(true).e('foo');",
         "<foo><bar baz=\"2\"/></foo>",
         dpe);
@@ -317,7 +317,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
           new RhinoTestBed.Input(
               "this.location = " + StringLiteral.toQuotedValue(contentUrl) + ";"
               // Set up the HTML emitter.
-              + "var ___OUTERS___ = {"
+              + "var IMPORTS___ = {"
               + "  htmlEmitter___: new HtmlEmitter("
               + "      document.getElementById('base'))"
               + "};"

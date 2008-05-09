@@ -42,7 +42,7 @@
  *     }</pre>.
  *     The rewrite function should be idempotent to allow rewritten HTML
  *     to be reinjected.
- * @param {Object} outers the gadget's global scope.
+ * @param {Object} imports the gadget's global scope.
  */
 attachDocumentStub = (function () {
   var tameNodeTrademark = {};
@@ -193,7 +193,7 @@ attachDocumentStub = (function () {
   ___.simpleFunc(tameClearInterval);
 
   // See above for a description of this function.
-  function attachDocumentStub(idSuffix, uriCallback, outers) {
+  function attachDocumentStub(idSuffix, uriCallback, imports) {
     var elementPolicies = {};
     elementPolicies.form = function (attribs) {
       // Forms must have a gated onsubmit handler or they must have an
@@ -317,7 +317,7 @@ attachDocumentStub = (function () {
           if (!match) { return null; }
           var doesReturn = match[1];
           var fnName = match[2];
-          var pluginId = ___.getId(outers);
+          var pluginId = ___.getId(imports);
           value = (doesReturn ? 'return ' : '') + 'plugin_dispatchEvent___('
               + 'this, event || window.event, ' + pluginId + ', "'
               + fnName + '");';
@@ -627,7 +627,7 @@ attachDocumentStub = (function () {
         var wrappedListener = function (event) {
           return plugin_dispatchEvent___(
               this, event || window.event,
-              ___.getId(outers), listener);
+              ___.getId(imports), listener);
         };
         this.node___.addEventListener(
             name, wrappedListener,
@@ -636,7 +636,7 @@ attachDocumentStub = (function () {
         var thisNode = this.node___;
         var wrappedListener = function (event) {
           return plugin_dispatchEvent___(
-              thisNode, event || window.event, ___.getId(outers), listener);
+              thisNode, event || window.event, ___.getId(imports), listener);
         };
         this.node___.attachEvent('on' + name, wrappedListener);
       }
@@ -824,26 +824,26 @@ attachDocumentStub = (function () {
     ___.all2(___.allowMethod, TameDocument,
              ['createElement', 'createTextNode', 'getElementById']);
 
-    outers.tameNode___ = tameNode;
-    outers.tameEvent___ = function (event) { return new TameEvent(event); };
-    outers.blessHtml___ = blessHtml;
-    outers.blessCss___ = function (var_args) {
+    imports.tameNode___ = tameNode;
+    imports.tameEvent___ = function (event) { return new TameEvent(event); };
+    imports.blessHtml___ = blessHtml;
+    imports.blessCss___ = function (var_args) {
       var arr = [];
       for (var i = 0, n = arguments.length; i < n; ++i) {
         arr[i] = arguments[i];
       }
       return cssSealerUnsealerPair.seal(arr);
     };
-    outers.htmlAttr___ = function (s) {
+    imports.htmlAttr___ = function (s) {
       return html.escapeAttrib(String(s || ''));
     };
-    outers.html___ = safeHtml;
-    outers.rewriteUri___ = function (uri, mimeType) {
+    imports.html___ = safeHtml;
+    imports.rewriteUri___ = function (uri, mimeType) {
       var s = rewriteAttribute(null, null, html4.atype.URI, uri);
       if (!s) { throw new Error(); }
       return s;
     };
-    outers.suffix___ = function (nmtokens) {
+    imports.suffix___ = function (nmtokens) {
       var p = String(nmtokens).replace(/^\s+|\s+$/g, '').split(/\s+/g);
       var out = [];
       for (var i = 0; i < p.length; ++i) {
@@ -853,7 +853,7 @@ attachDocumentStub = (function () {
       }
       return out.join(' ');
     };
-    outers.ident___ = function (nmtokens) {
+    imports.ident___ = function (nmtokens) {
       var p = String(nmtokens).replace(/^\s+|\s+$/g, '').split(/\s+/g);
       var out = [];
       for (var i = 0; i < p.length; ++i) {
@@ -870,7 +870,7 @@ attachDocumentStub = (function () {
      * @return {string} an CSS representation of a number suitable for both html
      *    attribs and plain text.
      */
-    outers.cssNumber___ = function (num) {
+    imports.cssNumber___ = function (num) {
       if ('number' === typeof num && isFinite(num) && !isNaN(num)) {
         return '' + num;
       }
@@ -883,7 +883,7 @@ attachDocumentStub = (function () {
      * @return {String} an CSS representation of num suitable for both html
      *    attribs and plain text.
      */
-    outers.cssColor___ = function (color) {
+    imports.cssColor___ = function (color) {
       // TODO: maybe whitelist the color names defined for CSS if the arg is a
       // string.
       if ('number' !== typeof color || (color != (color | 0))) {
@@ -897,7 +897,7 @@ attachDocumentStub = (function () {
           + hex.charAt((color >> 4) & 0xf)
           + hex.charAt(color & 0xf);
     };
-    outers.cssUri___ = function (uri, mimeType) {
+    imports.cssUri___ = function (uri, mimeType) {
       var s = rewriteAttribute(null, null, html4.atype.URI, uri);
       if (!s) { throw new Error(); }
       return s;
@@ -906,7 +906,7 @@ attachDocumentStub = (function () {
     /**
      * Create a CSS stylesheet with the given text and append it to the DOM.
      */
-    outers.emitCss___ = function (stylesheet) {
+    imports.emitCss___ = function (stylesheet) {
       var style;
       try {
         style = document.createElement('style');
@@ -923,16 +923,16 @@ attachDocumentStub = (function () {
     };
 
     /** A per-gadget class used to separate style rules. */
-    outers.getIdClass___ = function () {
+    imports.getIdClass___ = function () {
       return idSuffix.replace(/^-/, '');
     };
 
-    outers.setTimeout = tameSetTimeout;
-    outers.setInterval = tameSetInterval;
-    outers.clearTimeout = tameClearTimeout;
-    outers.clearInterval = tameClearInterval;
+    imports.setTimeout = tameSetTimeout;
+    imports.setInterval = tameSetInterval;
+    imports.clearTimeout = tameClearTimeout;
+    imports.clearInterval = tameClearInterval;
 
-    outers.document = new TameDocument(document, true);
+    imports.document = new TameDocument(document, true);
   }
 
   return attachDocumentStub;
@@ -946,10 +946,10 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   console.log(
       'Dispatch %s event thisNode=%o, event=%o, pluginId=%o, handler=%o',
       event.type, thisNode, event, pluginId, handler);
-  var outers = ___.getOuters(pluginId);
+  var imports = ___.getImports(pluginId);
   switch (typeof handler) {
     case 'string':
-      handler = outers[handler];
+      handler = imports[handler];
       break;
     case 'function':
       break;
@@ -958,5 +958,5 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
           'Expected function as event handler, not ' + typeof handler);
   }
   return (___.asSimpleFunc(handler))(
-      outers.tameNode___(thisNode, true), outers.tameEvent___(event));
+      imports.tameNode___(thisNode, true), imports.tameEvent___(event));
 }

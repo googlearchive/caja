@@ -27,8 +27,8 @@ import java.util.Map;
  * Renderers rewritten source code interleaved with the original.  E.g.
  * {@code
  *   // Rewritten by cajoler.
- *   muckWith(                    ___OUTERS___.muckWith(
- *       document.forms[0])           ___OUTERS___.document.forms[0]);
+ *   muckWith(                    IMPORTS___.muckWith(
+ *       document.forms[0])           IMPORTS___.document.forms[0]);
  * }
  *
  * @author mikesamuel@gmail.com

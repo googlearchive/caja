@@ -50,12 +50,13 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
    *
    * @author erights@gmail.com
    */
-  private static String weldSetOuters(String varName, String tempValue, String value) {
+  private static String weldSetImports(
+      String varName, String tempValue, String value) {
     return
         tempValue + " = " + value + "," +
-        "    ___OUTERS___." + varName + "_canSet___ ?" +
-        "    ___OUTERS___." + varName + " = " + tempValue + ":" +
-        "    ___.setPub(___OUTERS___, '" + varName + "', " + tempValue + ")";
+        "    IMPORTS___." + varName + "_canSet___ ?" +
+        "    IMPORTS___." + varName + " = " + tempValue + ":" +
+        "    ___.setPub(IMPORTS___, '" + varName + "', " + tempValue + ")";
   }
 
   private static String weldSetPub(String obj, String varName, String value, String tempObj, String tempValue) {
@@ -85,15 +86,16 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
    *
    * @author erights@gmail.com
    */
-  private static String weldReadOuters(String varName) {
-    return weldReadOuters(varName, true);
+  private static String weldReadImports(String varName) {
+    return weldReadImports(varName, true);
   }
 
-  private static String weldReadOuters(String varName, boolean flag) {
+  private static String weldReadImports(String varName, boolean flag) {
     return
-        "(___OUTERS___." + varName + "_canRead___ ?" +
-        "    ___OUTERS___." + varName + ":" +
-        "    ___.readPub(___OUTERS___, '" + varName + "'" + (flag ? ", true" : "") + "))";
+        "(IMPORTS___." + varName + "_canRead___ ?" +
+        "    IMPORTS___." + varName + ":" +
+        "    ___.readPub(" +
+        "        IMPORTS___, '" + varName + "'" + (flag ? ", true" : "") + "))";
   }
 
   public void testConstructorProperty() throws Exception {
@@ -231,9 +233,11 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         Collections.singletonList(innerInput));
     setSynthetic(input);
     ParseTreeNode expectedResult = js(fromString(
-        "___OUTERS___.foo = undefined;" +
+        "IMPORTS___.foo = undefined;" +
         "var x0___;" +
-        "{" + weldSetOuters("foo", "x0___", "___.simpleFunc(function foo() {})") + ";;}"));
+        "{" +
+        weldSetImports("foo", "x0___", "___.simpleFunc(function foo() {})") +
+        ";;}"));
     checkSucceeds(input, expectedResult);
   }
 
@@ -254,7 +258,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  var x0___;"  // Temporary is declared up here ...
         + "function f() {"
         + "  "  // ... not down here!
-        + "  " + weldSetOuters("foo", "x0___", "3") + ";"
+        + "  " + weldSetImports("foo", "x0___", "3") + ";"
         + "}"));
     checkSucceeds(input, expectedResult);
   }
@@ -266,16 +270,18 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   public void testNestedBlockWithFunction() throws Exception {
     checkSucceeds(
         "{ function foo() {} }",
-        "___OUTERS___.foo  = undefined;" +
+        "IMPORTS___.foo  = undefined;" +
         "var x0___;" +
-        "{" + weldSetOuters("foo", "x0___", "___.simpleFunc(function foo() {})") + ";;}");
+        "{" +
+        weldSetImports("foo", "x0___", "___.simpleFunc(function foo() {})") +
+        ";;}");
   }
 
   public void testNestedBlockWithVariable() throws Exception {
     checkSucceeds(
         "{ var x = y; }",
         "var x0___;" +
-        "{" + weldSetOuters("x", "x0___", weldReadOuters("y")) + "}");
+        "{" + weldSetImports("x", "x0___", weldReadImports("y")) + "}");
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -298,11 +304,11 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "var x2___;" +
         "1;" +
         "{" +
-        "  x0___ = " + weldReadOuters("x") + ";" +
+        "  x0___ = " + weldReadImports("x") + ";" +
         "  for (x1___ in x0___) {" +
         "    if (___.canEnumPub(x0___, x1___)) {" +
-        "      " + weldSetOuters("k", "x2___", "x1___") + ";" +
-        "      { " + weldReadOuters("k") + "; }" +
+        "      " + weldSetImports("k", "x2___", "x1___") + ";" +
+        "      { " + weldReadImports("k") + "; }" +
         "    }" +
         "  }" +
         "}");
@@ -318,11 +324,11 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "    throw ___.tameException(ex___);" +
         "  } catch (e) {" +
         "    {" +
-        "      x0___ = " + weldReadOuters("x") + ";" +
+        "      x0___ = " + weldReadImports("x") + ";" +
         "      for (x1___ in x0___) {" +
         "        if (___.canEnumPub(x0___, x1___)) {" +
-        "          " + weldSetOuters("k", "x2___", "x1___") + ";" +
-        "          { " + weldReadOuters("k") + "; }" +
+        "          " + weldSetImports("k", "x2___", "x1___") + ";" +
+        "          { " + weldReadImports("k") + "; }" +
         "        }" +
         "      }" +
         "    }" +
@@ -337,7 +343,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  var x1___;" +
         "    var k;" +
         "  {" +
-        "    x0___ = " + weldReadOuters("x") + ";" +
+        "    x0___ = " + weldReadImports("x") + ";" +
         "    for (x1___ in x0___) {" +
         "      if (___.canEnumPub(x0___, x1___)) {" +
         "        k = x1___;" +
@@ -355,7 +361,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  var x1___;" +
         "  var k;" +
         "  {" +
-        "    x0___ = " + weldReadOuters("x") + ";" +
+        "    x0___ = " + weldReadImports("x") + ";" +
         "    for (x1___ in x0___) {" +
         "      if (___.canEnumPub(x0___, x1___)) {" +
         "        k = x1___;" +
@@ -372,11 +378,11 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  var x0___;" +
         "  var x1___;" +
         "  {" +
-        "    x0___ = " + weldReadOuters("x") + ";" +
+        "    x0___ = " + weldReadImports("x") + ";" +
         "    for (x1___ in x0___) {" +
         "      if (___.canEnumPub(x0___, x1___)) {" +
-        "        ___.setPub(" + weldReadOuters("z") + ", 0, x1___);" +
-        "        { " + weldReadOuters("z") + "; }" +
+        "        ___.setPub(" + weldReadImports("z") + ", 0, x1___);" +
+        "        { " + weldReadImports("z") + "; }" +
         "      }" +
         "    }" +
         "  }" +
@@ -388,11 +394,11 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "var x2___;" +
         "6;" +
         "{" +
-        "  x0___ = " + weldReadOuters("x") + ";" +
+        "  x0___ = " + weldReadImports("x") + ";" +
         "  for (x1___ in x0___) {" +
         "    if (___.canEnumPub(x0___, x1___)) {" +
-        "      " + weldSetOuters("k", "x2___", "x1___") + ";" +
-        "      { " + weldReadOuters("k") + "; }" +
+        "      " + weldSetImports("k", "x2___", "x1___") + ";" +
+        "      { " + weldReadImports("k") + "; }" +
         "    }" +
         "  }" +
         "}");
@@ -406,11 +412,11 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  var x1___;" +
         "  var x2___;" +
         "  {" +
-        "    x0___ = " + weldReadOuters("x") + ";" +
+        "    x0___ = " + weldReadImports("x") + ";" +
         "    for (x1___ in x0___) {" +
         "      if (___.canEnumPub(x0___, x1___)) {" +
-        "        " + weldSetOuters("k", "x2___", "x1___") + ";" +
-        "        { " + weldReadOuters("k") + "; }" +
+        "        " + weldSetImports("k", "x2___", "x1___") + ";" +
+        "        { " + weldReadImports("k") + "; }" +
         "      }" +
         "    }" +
         "  }" +
@@ -426,7 +432,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  var x1___;" +
         "  var k;" +
         "  {" +
-        "    x0___ = " + weldReadOuters("x") + ";" +
+        "    x0___ = " + weldReadImports("x") + ";" +
         "    for (x1___ in x0___) {" +
         "      if (___.canEnumPub(x0___, x1___)) {" +
         "        k = x1___;" +
@@ -439,9 +445,9 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "11; function foo() {" +
         "  for (var k in this) { k; }" +
         "}",
-        "___OUTERS___.foo = undefined;" +
+        "IMPORTS___.foo = undefined;" +
         "var x0___;" +
-        weldSetOuters(
+        weldSetImports(
             "foo",
             "x0___",
             "(function () {" +
@@ -474,11 +480,11 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "var x2___;" +
         "12;" +
         "{" +
-        "  x0___ = ___OUTERS___;" +
+        "  x0___ = IMPORTS___;" +
         "  for (x1___ in x0___) {" +
         "    if (___.canEnumPub(x0___, x1___)) {" +
-        "      " + weldSetOuters("k", "x2___", "x1___") + ";" +
-        "      { " + weldReadOuters("k") + "; }" +
+        "      " + weldSetImports("k", "x2___", "x1___") + ";" +
+        "      { " + weldReadImports("k") + "; }" +
         "    }" +
         "  }" +
         "}");
@@ -486,9 +492,9 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "13; function foo() {" +
         "  for (k in this) { k; }" +
         "}",
-        "___OUTERS___.foo = undefined;" +
+        "IMPORTS___.foo = undefined;" +
         "var x0___;" +
-        weldSetOuters(
+        weldSetImports(
             "foo",
             "x0___",
             "(function () {" +
@@ -505,8 +511,8 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
             "      x0___ = t___;" +
             "      for (x1___ in x0___) {" +
             "        if (___.canEnumProp(x0___, x1___)) {" +
-            "          " + weldSetOuters("k", "x2___", "x1___") + ";" +
-            "          { " + weldReadOuters("k") + "; }" +
+            "          " + weldSetImports("k", "x2___", "x1___") + ";" +
+            "          { " + weldReadImports("k") + "; }" +
             "        }" +
             "      }" +
             "    }" +
@@ -519,9 +525,9 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  var k;" +
         "  for (k in this) { k; }" +
         "}",
-        "___OUTERS___.foo = undefined;" +
+        "IMPORTS___.foo = undefined;" +
         "var x0___;" +
-        weldSetOuters(
+        weldSetImports(
             "foo",
             "x0___",
             "(function () {" +
@@ -563,14 +569,14 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  y;" +
         "}",
         "try {" +
-        "  " + weldReadOuters("e") + ";" +
-        "  " + weldReadOuters("x") + ";" +
+        "  " + weldReadImports("e") + ";" +
+        "  " + weldReadImports("x") + ";" +
         "} catch (ex___) {" +
         "  try {" +
         "    throw ___.tameException(ex___);" +
         "  } catch (e) {" +
         "    e;" +
-        "    " + weldReadOuters("y") + ";" +
+        "    " + weldReadImports("y") + ";" +
         "  }" +
         "}");
     assertConsistent(
@@ -671,18 +677,18 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  z;" +
         "}",
         "try {" +
-        "  " + weldReadOuters("e") + ";" +
-        "  " + weldReadOuters("x") + ";" +
+        "  " + weldReadImports("e") + ";" +
+        "  " + weldReadImports("x") + ";" +
         "} catch (ex___) {" +
         "  try {" +
         "    throw ___.tameException(ex___);" +
         "  } catch (e) {" +
         "    e;" +
-        "    " + weldReadOuters("y") + ";" +
+        "    " + weldReadImports("y") + ";" +
         "  }" +
         "} finally {" +
-        "  " + weldReadOuters("e") + ";" +
-        "  " + weldReadOuters("z") + ";" +
+        "  " + weldReadImports("e") + ";" +
+        "  " + weldReadImports("z") + ";" +
         "}");
   }
 
@@ -694,9 +700,9 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  z;" +
         "}",
         "try {" +
-        "  " + weldReadOuters("x") + ";" +
+        "  " + weldReadImports("x") + ";" +
         "} finally {" +
-        "  " + weldReadOuters("z") + ";" +
+        "  " + weldReadImports("z") + ";" +
         "}");
   }
 
@@ -706,13 +712,13 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  p = arguments;" +
         "};",
         "var x0___;" +
-        weldSetOuters(
+        weldSetImports(
             "foo",
             "x0___",
             "___.primFreeze(___.simpleFunc(function() {" +
             "  var a___ = ___.args(arguments);" +
             "  var x0___;" +
-               weldSetOuters("p", "x0___", "a___") +
+               weldSetImports("p", "x0___", "a___") +
             "}))"));
   }
 
@@ -721,9 +727,9 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "function foo() {" +
         "  p = this;" +
         "}",
-        "___OUTERS___.foo = undefined;" +
+        "IMPORTS___.foo = undefined;" +
         "var x0___;" +
-        weldSetOuters(
+        weldSetImports(
             "foo",
             "x0___",
             "(function () {" +
@@ -734,14 +740,14 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
             "  function foo_init___() {" +
             "    var t___ = this;" +
             "    var x0___;" +
-            "    " + weldSetOuters("p", "x0___", "t___") + ";" +
+            "    " + weldSetImports("p", "x0___", "t___") + ";" +
             "  }" +
             "  return foo;" +
             "})()") +
         ";;");
     checkSucceeds(
         "this;",
-        "___OUTERS___;");
+        "IMPORTS___;");
     checkSucceeds(
         "try { } catch (e) { this; }",
         "try {" +
@@ -749,7 +755,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  try {" +
         "    throw ___.tameException(ex___);" +
         "  } catch (e) {" +
-        "    ___OUTERS___;" +
+        "    IMPORTS___;" +
         "  }" +
         "}");
   }
@@ -806,24 +812,27 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     checkSucceeds(
         "function foo() {}" +
         "var f = foo;",
-        "___OUTERS___.foo = undefined;" +
+        "IMPORTS___.foo = undefined;" +
         "var x0___;" +
-        weldSetOuters("foo", "x0___", "___.simpleFunc(function foo() {})") + ";" +
+        weldSetImports("foo", "x0___", "___.simpleFunc(function foo() {})") +
+        ";" +
         "var x1___;" +
         ";" +
-        weldSetOuters("f", "x1___", "___.primFreeze(" + weldReadOuters("foo") + ")") + ";");
+        weldSetImports(
+            "f", "x1___", "___.primFreeze(" + weldReadImports("foo") + ")") +
+        ";");
   }
 
   public void testVarGlobal() throws Exception {
     checkSucceeds(
         "foo;",
-        weldReadOuters("foo"));
+        weldReadImports("foo"));
     checkSucceeds(
         "function() {" +
         "  foo;" +
         "}",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  " + weldReadOuters("foo") + ";" +
+        "  " + weldReadImports("foo") + ";" +
         "}));");
     checkSucceeds(
         "function() {" +
@@ -860,7 +869,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   public void testReadGlobalViaThis() throws Exception {
     checkSucceeds(
         "this.x;",
-        weldReadOuters("x", false) + ";");
+        weldReadImports("x", false) + ";");
     checkSucceeds(
         "try { } catch (e) { this.x; }",
         "try {" +
@@ -868,7 +877,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  try {" +
         "    throw ___.tameException(ex___);" +
         "  } catch (e) {" +
-        "    " + weldReadOuters("x", false) + ";" +
+        "    " + weldReadImports("x", false) + ";" +
         "  }" +
         "}");
   }
@@ -890,7 +899,10 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "      function foo_init___() {" +
         "        var t___ = this;" +
         "        var x0___;" +
-        "        " + weldSetOuters("p", "x0___", "t___.x_canRead___ ? t___.x : ___.readProp(t___, 'x')") + ";" +
+        "        " + weldSetImports("p", "x0___",
+                                    ("t___.x_canRead___" +
+                                     " ? t___.x" +
+                                     " : ___.readProp(t___, 'x')")) + ";" +
         "      }" +
         "      return foo;" +
         "    })();" +
@@ -909,17 +921,17 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "p = foo.p;",
         "var x0___;" +
         "var x1___;" +
-        weldSetOuters(
+        weldSetImports(
             "p",
             "x0___",
-            "(x1___ = " + weldReadOuters("foo") + "," +
+            "(x1___ = " + weldReadImports("foo") + "," +
             "  x1___.p_canRead___ ? x1___.p : ___.readPub(x1___, 'p'))"));
   }
 
   public void testReadIndexGlobal() throws Exception {
     checkSucceeds(
         "this[3];",
-        "___.readPub(___OUTERS___, 3);");
+        "___.readPub(IMPORTS___, 3);");
     checkSucceeds(
         "try { } catch (e) { this[3]; }",
         "try {" +
@@ -927,7 +939,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  try {" +
         "    throw ___.tameException(ex___);" +
         "  } catch (e) {" +
-        "    ___.readPub(___OUTERS___, 3);" +
+        "    ___.readPub(IMPORTS___, 3);" +
         "  }" +
         "}");
   }
@@ -935,9 +947,9 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   public void testReadIndexInternal() throws Exception {
     checkSucceeds(
         "function foo() { p = this[3]; }",
-        "___OUTERS___.foo = undefined;" +
+        "IMPORTS___.foo = undefined;" +
         "var x0___;" +
-        weldSetOuters(
+        weldSetImports(
             "foo",
             "x0___",
             "(function () {" +
@@ -948,7 +960,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
             "  function foo_init___() {" +
             "    var t___ = this;" +
             "    var x0___;" +
-            "    " + weldSetOuters("p", "x0___", "___.readProp(t___, 3)") +
+            "    " + weldSetImports("p", "x0___", "___.readProp(t___, 3)") +
             "  }" +
             "  return foo;" +
             "})()") +
@@ -962,7 +974,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  function() {" +
         "    var x0___;" +
         "    var foo;" +
-        "    " + weldSetOuters("p", "x0___", "___.readPub(foo, 3)") +
+        "    " + weldSetImports("p", "x0___", "___.readPub(foo, 3)") +
         "  }" +
         "));");
   }
@@ -971,7 +983,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     checkSucceeds(
         "x = 3;",
         "var x0___;" +
-        weldSetOuters("x", "x0___", "3") + ";");
+        weldSetImports("x", "x0___", "3") + ";");
     assertConsistent(
         "  var getCount = (function() {"
         + "  var count = 0;"
@@ -1001,7 +1013,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     checkSucceeds(
         "this.p = x;",
         "var x0___;" +
-        weldSetOuters("p", "x0___", weldReadOuters("x")) + ";");
+        weldSetImports("p", "x0___", weldReadImports("x")) + ";");
     checkSucceeds(
         "try { } catch (e) { this.p = x; }",
         "var x0___;" +
@@ -1010,7 +1022,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  try {" +
         "    throw ___.tameException(ex___);" +
         "  } catch (e) {" +
-        "    " + weldSetOuters("p", "x0___", weldReadOuters("x")) + ";" +
+        "    " + weldSetImports("p", "x0___", weldReadImports("x")) + ";" +
         "  }" +
         "}");
   }
@@ -1032,7 +1044,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "        var x0___;" +
         "        " + weldSetProp(
                          "p",
-                         weldReadOuters("x"),
+                         weldReadImports("x"),
                          "x0___") +
         "      }" +
         "      return foo;" +
@@ -1051,7 +1063,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  var foo;" +
         "  var foo = ___.simpleFunc(function foo() {});" +
         "  ;" +
-        "  ___.setMember(foo, 'p', " + weldReadOuters("x") + ");" +
+        "  ___.setMember(foo, 'p', " + weldReadImports("x") + ");" +
         "}));");
     checkSucceeds(
         "function() {" +
@@ -1078,13 +1090,13 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         weldSetPub(
             weldReadPub(
                 weldReadPub(
-                    weldReadOuters("foo"),
+                    weldReadImports("foo"),
                     "bar",
                     "x3___"),
                 "prototype",
                 "x2___"),
             "baz",
-            weldReadOuters("boo"),
+            weldReadImports("boo"),
             "x0___",
             "x1___") + ";");
   }
@@ -1105,7 +1117,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  var foo;" +
         "  var foo = ___.simpleFunc(function foo() {});" +
         "  ;" +
-        "  ___.setPub(foo, 'p', " + weldReadOuters("x") + ");" +
+        "  ___.setPub(foo, 'p', " + weldReadImports("x") + ");" +
         "}));");
   }
 
@@ -1122,7 +1134,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  " + weldSetPub(
                    "x",
                    "p",
-                   weldReadOuters("y"),
+                   weldReadImports("y"),
                    "x0___",
                    "x1___") +
         "}));");
@@ -1144,7 +1156,8 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "    }" +
         "    function foo_init___() {" +
         "      var t___ = this;" +
-        "      ___.setProp(t___, " + weldReadOuters("x") + ", " + weldReadOuters("y") + ");" +
+        "      ___.setProp(t___, " + weldReadImports("x") + ", " +
+                           weldReadImports("y") + ");" +
         "    }" +
         "    return foo;" +
         "  })();" +
@@ -1160,7 +1173,8 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
         "  var o = undefined;" +
-        "  ___.setPub(o, " + weldReadOuters("x") + ", " + weldReadOuters("y") + ");" +
+        "  ___.setPub(o, " + weldReadImports("x") + ", " +
+                      weldReadImports("y") + ");" +
         "}));");
   }
 
@@ -1176,12 +1190,12 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  var v = x;" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var v = " + weldReadOuters("x") + ";" +
+        "  var v = " + weldReadImports("x") + ";" +
         "}));");
     checkSucceeds(
         "var v = x",
         "var x0___;" +
-        weldSetOuters("v", "x0___", weldReadOuters("x")));
+        weldSetImports("v", "x0___", weldReadImports("x")));
   }
 
   public void testSetBadDeclare() throws Exception {
@@ -1200,7 +1214,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "}));");
     checkSucceeds(
         "var v;",
-        "___.setPub(___OUTERS___, 'v', ___.readPub(___OUTERS___, 'v'));");
+        "___.setPub(IMPORTS___, 'v', ___.readPub(IMPORTS___, 'v'));");
     checkSucceeds(
         "try { } catch (e) { var v; }",
         "try {" +
@@ -1208,7 +1222,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  try {" +
         "    throw ___.tameException(ex___);" +
         "  } catch (e) {" +
-        "    ___.setPub(___OUTERS___, 'v', ___.readPub(___OUTERS___, 'v'));" +
+        "    ___.setPub(IMPORTS___, 'v', ___.readPub(IMPORTS___, 'v'));" +
         "  }" +
         "}");
   }
@@ -1217,7 +1231,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     checkSucceeds(
         "x = y;",
         "var x0___;" +
-        weldSetOuters("x", "x0___", weldReadOuters("y")));
+        weldSetImports("x", "x0___", weldReadImports("y")));
     checkSucceeds(
         "function() {" +
         "  var x;" +
@@ -1225,7 +1239,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
         "  var x;" +
-        "  x = " + weldReadOuters("y") + ";" +
+        "  x = " + weldReadImports("y") + ";" +
         "}));");
   }
 
@@ -1234,30 +1248,30 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
 
     checkSucceeds(
         "x += 1",
-        "___.setPub(___OUTERS___, 'x',"
-        + "  ___.readPub(___OUTERS___, 'x', true) + 1)");
+        "___.setPub(IMPORTS___, 'x',"
+        + "  ___.readPub(IMPORTS___, 'x', true) + 1)");
     checkSucceeds(
         "(function (x) { x += 1; })",
         "(___.primFreeze(___.simpleFunc(function (x) { x = x + 1; })))");
     checkSucceeds(
         "myArray().key += 1",
         "  var x0___;"
-        + "x0___ = ___.asSimpleFunc(" + weldReadOuters("myArray") + ")(),"
+        + "x0___ = ___.asSimpleFunc(" + weldReadImports("myArray") + ")(),"
         + "___.setPub(x0___, 'key',"
         + "           ___.readPub(x0___, 'key', false) + 1);");
     checkSucceeds(
         "myArray()[myKey()] += 1",
         "  var x0___;"
         + "var x1___;"
-        + "x0___ = ___.asSimpleFunc(" + weldReadOuters("myArray") + ")(),"
-        + "x1___ = ___.asSimpleFunc(" + weldReadOuters("myKey") + ")(),"
+        + "x0___ = ___.asSimpleFunc(" + weldReadImports("myArray") + ")(),"
+        + "x1___ = ___.asSimpleFunc(" + weldReadImports("myKey") + ")(),"
         + "___.setPub(x0___, x1___,"
         + "           ___.readPub(x0___, x1___, false) + 1);");
     checkSucceeds(  // Local reference need not be assigned to a temp.
         "(function (myKey) { myArray()[myKey] += 1; })",
         "  ___.primFreeze(___.simpleFunc(function (myKey) {"
         + "  var x0___;"
-        + "  x0___ = ___.asSimpleFunc(" + weldReadOuters("myArray") + ")(),"
+        + "  x0___ = ___.asSimpleFunc(" + weldReadImports("myArray") + ")(),"
         + "  ___.setPub(x0___, myKey,"
         + "             ___.readPub(x0___, myKey, false) + 1);"
         + "}))");
@@ -1284,7 +1298,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
           "function() { var x; x " + op.getSymbol() + " y; };",
           "___.primFreeze(___.simpleFunc(function() {" +
           "  var x; x = x " + op.getAssignmentDelegate().getSymbol() + " " +
-          weldReadOuters("y") + ";" +
+          weldReadImports("y") + ";" +
           "}));");
     }
   }
@@ -1296,20 +1310,20 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "x++;",
         "var x0___;" +
         "undefined," +
-        "x0___ = ___.readPub(___OUTERS___, 'x', true) - 0," +
-        "___.setPub(___OUTERS___, 'x', x0___ + 1)," +
+        "x0___ = ___.readPub(IMPORTS___, 'x', true) - 0," +
+        "___.setPub(IMPORTS___, 'x', x0___ + 1)," +
         "x0___;");
     checkSucceeds(
         "x--",
         "var x0___;" +
         "undefined," +
-        "x0___ = ___.readPub(___OUTERS___, 'x', true) - 0," +
-        "___.setPub(___OUTERS___, 'x', x0___ - 1)," +
+        "x0___ = ___.readPub(IMPORTS___, 'x', true) - 0," +
+        "___.setPub(IMPORTS___, 'x', x0___ - 1)," +
         "x0___;");
     checkSucceeds(
         "++x",
-        "___.setPub(___OUTERS___, 'x'," +
-        " ___.readPub(___OUTERS___, 'x', true) - -1);");
+        "___.setPub(IMPORTS___, 'x'," +
+        " ___.readPub(IMPORTS___, 'x', true) - -1);");
 
     assertConsistent(
         "var x = 2;" +
@@ -1342,7 +1356,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "o.x++",
         "var x0___;" +
         "var x1___;" +
-        "x0___ = " + weldReadOuters("o") + "," +
+        "x0___ = " + weldReadImports("o") + "," +
         "x1___ = ___.readPub(x0___, 'x', false) - 0," +
         "___.setPub(x0___, 'x', x1___ + 1)," +
         "x1___;");
@@ -1388,16 +1402,16 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   public void testNewCalllessCtor() throws Exception {
     checkSucceeds(
         "(new Date);",
-        "new (___.asCtor(___.primFreeze(" + weldReadOuters("Date") + ")))()");
+        "new (___.asCtor(___.primFreeze(" + weldReadImports("Date") + ")))()");
   }
 
   public void testNewCtor() throws Exception {
     checkSucceeds(
         "function foo() { this.p = 3; }" +
         "new foo(x, y);",
-        "___OUTERS___.foo = undefined;" +
+        "IMPORTS___.foo = undefined;" +
         "var x0___;" +
-        weldSetOuters(
+        weldSetImports(
             "foo",
             "x0___",
             "(function () {" +
@@ -1413,29 +1427,31 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
             "  return foo;" +
             "})()") +
         ";;" +
-        "new (___.asCtor(___.primFreeze(" + weldReadOuters("foo") + ")))" +
-        "    (" + weldReadOuters("x") + ", " + weldReadOuters("y") + ");");
+        "new (___.asCtor(___.primFreeze(" + weldReadImports("foo") + ")))" +
+        "    (" + weldReadImports("x") + ", " + weldReadImports("y") + ");");
     checkSucceeds(
         "function foo() {}" +
         "new foo(x, y);",
-        "___OUTERS___.foo = undefined;" +
+        "IMPORTS___.foo = undefined;" +
         "var x0___;" +
-        weldSetOuters("foo", "x0___", "___.simpleFunc(function foo() {})") + ";;" +
-        "new (___.asCtor(___.primFreeze(" + weldReadOuters("foo") + ")))" +
-        "    (" + weldReadOuters("x") + ", " + weldReadOuters("y") + ");");
+        weldSetImports("foo", "x0___", "___.simpleFunc(function foo() {})") +
+        ";;" +
+        "new (___.asCtor(___.primFreeze(" + weldReadImports("foo") + ")))" +
+        "    (" + weldReadImports("x") + ", " + weldReadImports("y") + ");");
     checkSucceeds(
         "function foo() {}" +
         "new foo();",
-        "___OUTERS___.foo = undefined;" +
+        "IMPORTS___.foo = undefined;" +
         "var x0___;" +
-        weldSetOuters("foo", "x0___", "___.simpleFunc(function foo() {})") + ";;" +
-        "new (___.asCtor(___.primFreeze(" + weldReadOuters("foo") + ")))();");
+        weldSetImports("foo", "x0___", "___.simpleFunc(function foo() {})") +
+        ";;" +
+        "new (___.asCtor(___.primFreeze(" + weldReadImports("foo") + ")))();");
     checkSucceeds(
         "new foo.bar(0);",
         "var x0___;" +
         "new (___.asCtor(" +
         "    " + weldReadPub(
-                     weldReadOuters("foo"),
+                     weldReadImports("foo"),
                      "bar",
                      "x0___") +
         "))(0);");
@@ -1447,8 +1463,8 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  new x(y, z);" +
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  new (___.asCtor(" + weldReadOuters("x") + "))" +
-        "      (" + weldReadOuters("y") + ", " + weldReadOuters("z") + ");" +
+        "  new (___.asCtor(" + weldReadImports("x") + "))" +
+        "      (" + weldReadImports("y") + ", " + weldReadImports("z") + ");" +
         "}));");
   }
 
@@ -1457,10 +1473,10 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     checkSucceeds(
         "delete this[foo()];",
         "___.deleteProp(" +
-        "    ___OUTERS___, ___.asSimpleFunc(" + weldReadOuters("foo") + ")());");
-    checkSucceeds("delete this.foo_;", "___.deleteProp(___OUTERS___, 'foo_');");
+        "    IMPORTS___, ___.asSimpleFunc(" + weldReadImports("foo") + ")());");
+    checkSucceeds("delete this.foo_;", "___.deleteProp(IMPORTS___, 'foo_');");
     checkSucceeds("function Ctor() { D.call(this); delete this.foo_; }",
-                  "___OUTERS___.Ctor = undefined;" +
+                  "IMPORTS___.Ctor = undefined;" +
                   "var x0___;" +
                   "x0___ = (function () {" +
                   "    ___.splitCtor(Ctor, Ctor_init___);" +
@@ -1471,9 +1487,9 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
                   "      var t___ = this;" +
                   "      var x0___;" +
                   "      var x1___;" +
-                  "      x1___ = ___OUTERS___.D_canRead___" +
-                  "          ? ___OUTERS___.D" +
-                  "          : ___.readPub(___OUTERS___, 'D', true)," +
+                  "      x1___ = IMPORTS___.D_canRead___" +
+                  "          ? IMPORTS___.D" +
+                  "          : ___.readPub(IMPORTS___, 'D', true)," +
                   "      x0___ = t___," +
                   "      x1___.call_canCall___" +
                   "          ? x1___.call(x0___)" +
@@ -1483,9 +1499,9 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
                   "    }" +
                   "    return Ctor;" +
                   "  })()," +
-                  "  ___OUTERS___.Ctor_canSet___" +
-                  "      ? (___OUTERS___.Ctor = x0___)" +
-                  "      : ___.setPub(___OUTERS___, 'Ctor', x0___);" +
+                  "  IMPORTS___.Ctor_canSet___" +
+                  "      ? (IMPORTS___.Ctor = x0___)" +
+                  "      : ___.setPub(IMPORTS___, 'Ctor', x0___);" +
                   ";");
     assertConsistent(
         // Set up a class that can delete one of its members.
@@ -1533,11 +1549,11 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     checkFails("delete x.foo___", "Variables cannot end in \"__\"");
     checkSucceeds(
         "delete foo()[bar()]",
-        "___.deletePub(___.asSimpleFunc(" + weldReadOuters("foo") + ")()," +
-        "              ___.asSimpleFunc(" + weldReadOuters("bar") + ")())");
+        "___.deletePub(___.asSimpleFunc(" + weldReadImports("foo") + ")()," +
+        "              ___.asSimpleFunc(" + weldReadImports("bar") + ")())");
     checkSucceeds(
         "delete foo().bar",
-        "___.deletePub(___.asSimpleFunc(" + weldReadOuters("foo") + ")()," +
+        "___.deletePub(___.asSimpleFunc(" + weldReadImports("foo") + ")()," +
         "              'bar')");
     assertConsistent(
         "(function() {" +
@@ -1573,10 +1589,10 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   }
 
   public void testDeleteGlobal() throws Exception {
-    checkFails("delete ___OUTERS___", "Variables cannot end in \"__\"");
+    checkFails("delete IMPORTS___", "Variables cannot end in \"__\"");
     checkSucceeds(
         "delete foo",
-        "___.deletePub(___OUTERS___, 'foo')"
+        "___.deletePub(IMPORTS___, 'foo')"
         );
     assertConsistent(
         "var foo = 0;" +
@@ -1597,11 +1613,11 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "this.f(x, y)",
         "var x0___;" +
         "var x1___;" +
-        "x0___ = " + weldReadOuters("x") + "," +
-        "x1___ = " + weldReadOuters("y") + "," +
-        "___OUTERS___.f_canCall___ ?" +
-        "    ___OUTERS___.f(x0___, x1___) :" +
-        "    ___.callPub(___OUTERS___, 'f', [x0___, x1___]);");
+        "x0___ = " + weldReadImports("x") + "," +
+        "x1___ = " + weldReadImports("y") + "," +
+        "IMPORTS___.f_canCall___ ?" +
+        "    IMPORTS___.f(x0___, x1___) :" +
+        "    ___.callPub(IMPORTS___, 'f', [x0___, x1___]);");
     checkSucceeds(
         "try { } catch (e) { this.f(x, y); }",
         "var x0___;" +
@@ -1611,11 +1627,11 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  try {" +
         "    throw ___.tameException(ex___);" +
         "  } catch (e) {" +
-        "    x0___ = " + weldReadOuters("x") + "," +
-        "    x1___ = " + weldReadOuters("y") + "," +
-        "    ___OUTERS___.f_canCall___ ?" +
-        "        ___OUTERS___.f(x0___, x1___) :" +
-        "        ___.callPub(___OUTERS___, 'f', [x0___, x1___]);" +
+        "    x0___ = " + weldReadImports("x") + "," +
+        "    x1___ = " + weldReadImports("y") + "," +
+        "    IMPORTS___.f_canCall___ ?" +
+        "        IMPORTS___.f(x0___, x1___) :" +
+        "        ___.callPub(IMPORTS___, 'f', [x0___, x1___]);" +
         "  }" +
         "}");
   }
@@ -1638,8 +1654,8 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "      var t___ = this;" +
         "      var x0___;" +
         "      var x1___;" +
-        "      x0___ = " + weldReadOuters("x") + "," +
-        "      x1___ = " + weldReadOuters("y") + "," +
+        "      x0___ = " + weldReadImports("x") + "," +
+        "      x1___ = " + weldReadImports("y") + "," +
         "      t___.f_canCall___ ?" +
         "          t___.f(x0___, x1___) :" +
         "          ___.callProp(t___, 'f', [x0___, x1___]);" +
@@ -1662,16 +1678,21 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "caja.def(Point, Object);" +
         "function WigglyPoint() {}" +
         "caja.def(WigglyPoint, Point);",
-        "___OUTERS___.Point = undefined;" +
+        "IMPORTS___.Point = undefined;" +
         "var x0___;" +
-        weldSetOuters("Point", "x0___", "___.simpleFunc(function Point() {})") + ";" +
-        "___OUTERS___.WigglyPoint = undefined;" +
+        weldSetImports(
+            "Point", "x0___", "___.simpleFunc(function Point() {})") + ";" +
+        "IMPORTS___.WigglyPoint = undefined;" +
         "var x1___;" +
-        weldSetOuters("WigglyPoint", "x1___", "___.simpleFunc(function WigglyPoint() {})") + ";" +
+        weldSetImports(
+            "WigglyPoint", "x1___", "___.simpleFunc(function WigglyPoint() {})"
+            ) + ";" +
         ";" +
-        "caja.def(" + weldReadOuters("Point") + ", " + weldReadOuters("Object") + ");" +
+        "caja.def(" + weldReadImports("Point") + ", " +
+                  weldReadImports("Object") + ");" +
         ";" +
-        "caja.def(" + weldReadOuters("WigglyPoint") + ", " + weldReadOuters("Point") + ");");
+        "caja.def(" + weldReadImports("WigglyPoint") + ", " +
+                  weldReadImports("Point") + ");");
   }
 
   public void testCallCajaDef2Bad() throws Exception {
@@ -1694,21 +1715,25 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "function Point() {}" +
         "function WigglyPoint() {}" +
         "caja.def(WigglyPoint, Point, { m0: x, m1: function() { this.p = 3; } });",
-        "___OUTERS___.Point = undefined;" +
+        "IMPORTS___.Point = undefined;" +
         "var x0___;" +
-        weldSetOuters("Point", "x0___", "___.simpleFunc(function Point() {})") + ";" +
-        "___OUTERS___.WigglyPoint = undefined;" +
+        weldSetImports(
+            "Point", "x0___", "___.simpleFunc(function Point() {})") + ";" +
+        "IMPORTS___.WigglyPoint = undefined;" +
         "var x1___;" +
-        weldSetOuters("WigglyPoint", "x1___", "___.simpleFunc(function WigglyPoint() {})") + ";" +
+        weldSetImports(
+            "WigglyPoint", "x1___", "___.simpleFunc(function WigglyPoint() {})"
+            ) + ";" +
         ";" +
         ";" +
-        "caja.def(" + weldReadOuters("WigglyPoint") + ", " + weldReadOuters("Point") + ", {" +
-        "    m0: " + weldReadOuters("x") + "," +
+        "caja.def(" + weldReadImports("WigglyPoint") + ", " +
+                  weldReadImports("Point") + ", {" +
+        "    m0: " + weldReadImports("x") + "," +
         "    m1: ___.method(function() {" +
-        "      var t___ = this;" +
-        "      var x0___;" +
-        "      " + weldSetProp("p", "3", "x0___") + ";" +
-        "    })" +
+        "                     var t___ = this;" +
+        "                     var x0___;" +
+        "                     " + weldSetProp("p", "3", "x0___") + ";" +
+        "                   })" +
         "});");
     checkSucceeds(
         "function Point() {}" +
@@ -1716,23 +1741,27 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "caja.def(WigglyPoint, Point," +
         "    { m0: x, m1: function() { this.p = 3; } }," +
         "    { s0: y, s1: function() { return 3; } });",
-        "___OUTERS___.Point = undefined;" +
+        "IMPORTS___.Point = undefined;" +
         "var x0___;" +
-        weldSetOuters("Point", "x0___", "___.simpleFunc(function Point() {})") + ";" +
-        "___OUTERS___.WigglyPoint = undefined;" +
+        weldSetImports(
+            "Point", "x0___", "___.simpleFunc(function Point() {})") + ";" +
+        "IMPORTS___.WigglyPoint = undefined;" +
         "var x1___;" +
-        weldSetOuters("WigglyPoint", "x1___", "___.simpleFunc(function WigglyPoint() {})") + ";" +
+        weldSetImports(
+            "WigglyPoint", "x1___", "___.simpleFunc(function WigglyPoint() {})"
+            ) + ";" +
         ";" +
         ";" +
-        "caja.def(" + weldReadOuters("WigglyPoint") + ", " + weldReadOuters("Point") + ", {" +
-        "    m0: " + weldReadOuters("x") + "," +
+        "caja.def(" + weldReadImports("WigglyPoint") + ", " +
+                  weldReadImports("Point") + ", {" +
+        "    m0: " + weldReadImports("x") + "," +
         "    m1: ___.method(function() {" +
-        "      var t___ = this;" +
-        "      var x0___;" +
-        "      " + weldSetProp("p", "3", "x0___") +
-        "    })" +
+        "                     var t___ = this;" +
+        "                     var x0___;" +
+        "                     " + weldSetProp("p", "3", "x0___") +
+        "                   })" +
         "}, {" +
-        "    s0: " + weldReadOuters("y") + "," +
+        "    s0: " + weldReadImports("y") + "," +
         "    s1: ___.primFreeze(___.simpleFunc(function() { return 3; }))" +
         "});");
     checkFails(
@@ -1792,10 +1821,10 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "var x0___;" +
         "var x1___;" +
         "var x2___;" +
-        "x2___ = " + weldReadOuters("o") + "," +
+        "x2___ = " + weldReadImports("o") + "," +
         "(" +
-            "x0___ = " + weldReadOuters("x") + "," +
-            "x1___ = " + weldReadOuters("y") +
+            "x0___ = " + weldReadImports("x") + "," +
+            "x1___ = " + weldReadImports("y") +
         ")," +
         "x2___.m_canCall___ ?" +
         "  x2___.m(x0___, x1___) :" +
@@ -1820,8 +1849,9 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "      var t___ = this;" +
         "      ___.callProp(" +
         "          t___, " +
-        "          " + weldReadOuters("x") + "," +
-        "          [" + weldReadOuters("y") + ", " + weldReadOuters("z") + "]);" +
+        "          " + weldReadImports("x") + "," +
+        "          [" + weldReadImports("y") + ", " +
+                    weldReadImports("z") + "]);" +
         "    }" +
         "    return foo;" +
         "  })();" +
@@ -1833,9 +1863,9 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     checkSucceeds(
         "x[y](z, t);",
         "___.callPub(" +
-        "    " + weldReadOuters("x") + ", " +
-        "    " + weldReadOuters("y") + ", " +
-        "    [" + weldReadOuters("z") + ", " + weldReadOuters("t") + "]);");
+        "    " + weldReadImports("x") + ", " +
+        "    " + weldReadImports("y") + ", " +
+        "    [" + weldReadImports("z") + ", " + weldReadImports("t") + "]);");
   }
 
   public void testCallFunc() throws Exception {
@@ -1843,14 +1873,14 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "function() { var f; f(x, y); }",
         "___.primFreeze(___.simpleFunc(function() {" +
         "    var f;" +
-        "    ___.asSimpleFunc(f)" +
-        "        (" + weldReadOuters("x") + ", " + weldReadOuters("y") + ");" +
+        "    ___.asSimpleFunc(f)(" +
+        "        " + weldReadImports("x") + ", " + weldReadImports("y") + ");" +
         "}));");
     checkSucceeds(
         "foo(x, y);",
-        "___.asSimpleFunc(" + weldReadOuters("foo") + ")(" +
-        "    " + weldReadOuters("x") + "," +
-        "    " + weldReadOuters("y") +
+        "___.asSimpleFunc(" + weldReadImports("foo") + ")(" +
+        "    " + weldReadImports("x") + "," +
+        "    " + weldReadImports("y") +
         ");");
   }
 
@@ -1860,7 +1890,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "___.primFreeze(___.simpleFunc(function(x, y) {" +
         "  var a___ = ___.args(arguments);" +
         "  x = a___;" +
-        "  y = " + weldReadOuters("z") + ";" +
+        "  y = " + weldReadImports("z") + ";" +
         "}));");
   }
 
@@ -1878,7 +1908,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  var foo = ___.simpleFunc(function foo(x, y) {" +
         "      var a___ = ___.args(arguments);" +
         "      x = a___;" +
-        "      y = " + weldReadOuters("z") + ";" +
+        "      y = " + weldReadImports("z") + ";" +
         "      return ___.asSimpleFunc(___.primFreeze(foo))(x - 1, y - 1);" +
         "  });" +
         "  ;"+
@@ -1887,9 +1917,9 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "function foo(x, y ) {" +
         "  return foo(x - 1, y - 1);" +
         "}",
-        "___OUTERS___.foo = undefined;" +
+        "IMPORTS___.foo = undefined;" +
         "var x0___;" +
-        weldSetOuters(
+        weldSetImports(
             "foo",
             "x0___",
             "___.simpleFunc(function foo(x, y) {" +
@@ -1912,7 +1942,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "    function foo(x, y) {" +
         "      var a___ = ___.args(arguments);" +
         "      x = a___;" +
-        "      y = " + weldReadOuters("z") + ";" +
+        "      y = " + weldReadImports("z") + ";" +
         "      return ___.asSimpleFunc(___.primFreeze(foo))(x - 1, y - 1);" +
         "  }));"+
         "}));");
@@ -1921,7 +1951,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  return foo(x - 1, y - 1);" +
         "};",
         "var x0___;" +
-        weldSetOuters(
+        weldSetImports(
             "foo",
             "x0___",
             "___.primFreeze(___.simpleFunc(function foo(x, y) {" +
@@ -1995,7 +2025,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   public void testFuncCtor() throws Exception {
     checkSucceeds(
         "function Foo(x) { this.x_ = x; }",
-        "___OUTERS___.Foo = undefined;" +
+        "IMPORTS___.Foo = undefined;" +
         "var x0___;" +
         "x0___ = (function () {" +
         "      ___.splitCtor(Foo, Foo_init___);" +
@@ -2009,7 +2039,9 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "      }" +
         "      return Foo;" +
         "    })()," +
-        "    ___OUTERS___.Foo_canSet___ ? (___OUTERS___.Foo = x0___) : ___.setPub(___OUTERS___, 'Foo', x0___);" +
+        "    IMPORTS___.Foo_canSet___" +
+        "        ? (IMPORTS___.Foo = x0___)" +
+        "        : ___.setPub(IMPORTS___, 'Foo', x0___);" +
         ";");
     checkSucceeds(
         "(function(){ function Foo(x) { this.x_ = x; } })()",
@@ -2036,7 +2068,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  this.y = y;" +
         "}" +
         "bar = new Bar(3);",
-        "___OUTERS___.Foo = undefined;" +
+        "IMPORTS___.Foo = undefined;" +
         "var x0___;" +
         "x0___ = (function () {" +
         "        ___.splitCtor(Foo, Foo_init___);" +
@@ -2050,8 +2082,10 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "        }" +
         "        return Foo;" +
         "    })()," +
-        "    ___OUTERS___.Foo_canSet___ ? (___OUTERS___.Foo = x0___) : ___.setPub(___OUTERS___, 'Foo', x0___);" +
-        "___OUTERS___.Bar = undefined;" +
+        "    IMPORTS___.Foo_canSet___" +
+        "        ? (IMPORTS___.Foo = x0___)" +
+        "        : ___.setPub(IMPORTS___, 'Foo', x0___);" +
+        "IMPORTS___.Bar = undefined;" +
         "var x1___;" +
         "x1___ = (function () {" +
         "        ___.splitCtor(Bar, Bar_init___);" +
@@ -2061,24 +2095,31 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "        function Bar_init___(y) {" +
         "          var t___ = this;" +
         "          var x0___;" +
-        "          (___OUTERS___.Foo_canRead___ ? ___OUTERS___.Foo : ___.readPub(___OUTERS___, 'Foo', true)).call(this, 1);" +
+        "          (IMPORTS___.Foo_canRead___" +
+        "           ? IMPORTS___.Foo" +
+        "           : ___.readPub(IMPORTS___, 'Foo', true)).call(this, 1);" +
         "          " + weldSetProp("y", "y", "x0___") + ";" +
         "        }" +
         "        return Bar;" +
         "      })()," +
-        "      ___OUTERS___.Bar_canSet___ ? (___OUTERS___.Bar = x1___) : ___.setPub(___OUTERS___, 'Bar', x1___);" +
+        "      IMPORTS___.Bar_canSet___" +
+        "          ? (IMPORTS___.Bar = x1___)" +
+        "          : ___.setPub(IMPORTS___, 'Bar', x1___);" +
         "var x2___;" +
         ";" +
         ";" +
-        "x2___ = new (___.asCtor(___.primFreeze(" + weldReadOuters("Bar", true) + ")))(3)," +
-        "    ___OUTERS___.bar_canSet___ ? (___OUTERS___.bar = x2___) : ___.setPub(___OUTERS___, 'bar', x2___);");
+        "x2___ = new (___.asCtor(___.primFreeze(" +
+             weldReadImports("Bar", true) + ")))(3)," +
+        "    IMPORTS___.bar_canSet___" +
+        "        ? (IMPORTS___.bar = x2___)" +
+        "        : ___.setPub(IMPORTS___, 'bar', x2___);");
   }
 
   public void testMapEmpty() throws Exception {
     checkSucceeds(
         "f = {};",
         "var x0___;" +
-        weldSetOuters("f", "x0___", "{}"));
+        weldSetImports("f", "x0___", "{}"));
   }
 
   public void testMapBadKeySuffix() throws Exception {
@@ -2091,21 +2132,24 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     checkSucceeds(
         "var o = { k0: x, k1: y };",
         "var x0___;" +
-        weldSetOuters("o", "x0___", "{ k0: " + weldReadOuters("x") + ", k1: " + weldReadOuters("y") + " }"));
+        weldSetImports("o", "x0___", "{ k0: " + weldReadImports("x") + ", " +
+                       "                k1: " + weldReadImports("y") + " }"));
   }
 
   public void testOtherInstanceof() throws Exception {
     checkSucceeds(
         "function foo() {}" +
         "x instanceof foo;",
-        "___OUTERS___.foo = undefined;" +
+        "IMPORTS___.foo = undefined;" +
         "var x0___;" +
-        weldSetOuters("foo", "x0___", "___.simpleFunc(function foo() {})") + ";" +
-        ";" +
-        weldReadOuters("x") + " instanceof ___.primFreeze(" + weldReadOuters("foo") + ");");
+        weldSetImports("foo", "x0___", "___.simpleFunc(function foo() {})") +
+        ";;" +
+        weldReadImports("x") + " instanceof ___.primFreeze(" +
+            weldReadImports("foo") + ");");
     checkSucceeds(
         "x instanceof Object",
-        weldReadOuters("x") + " instanceof ___.primFreeze(" + weldReadOuters("Object") + ");");
+        weldReadImports("x") + " instanceof ___.primFreeze(" +
+            weldReadImports("Object") + ");");
 
     assertConsistent("({}) instanceof Object");
     assertConsistent("(new Date) instanceof Date");
@@ -2115,7 +2159,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   }
 
   public void testOtherTypeof() throws Exception {
-    checkSucceeds("typeof x;", "typeof ___.readPub(___OUTERS___, 'x');");
+    checkSucceeds("typeof x;", "typeof ___.readPub(IMPORTS___, 'x');");
     checkFails("typeof ___", "Variables cannot end in \"__\"");
     assertConsistent("typeof noSuchGlobal");
     assertConsistent("typeof 's'");
@@ -2131,7 +2175,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   }
 
   public void testLabeledStatement() throws Exception {
-    checkFails("___OUTERS___: 1", "Labels cannot end in \"__\"");
+    checkFails("IMPORTS___: 1", "Labels cannot end in \"__\"");
     checkSucceeds("foo: 1", "foo: 1");
     assertConsistent(
         "var k = 0;" +
@@ -2154,43 +2198,46 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   public void testOtherSpecialOp() throws Exception {
     checkSucceeds("void 0", "void 0");
     checkSucceeds("void foo()",
-                  "void (___.asSimpleFunc)(" + weldReadOuters("foo") + ")()");
-    checkSucceeds("a, b", weldReadOuters("a") + "," + weldReadOuters("b"));
+                  "void (___.asSimpleFunc)(" + weldReadImports("foo") + ")()");
+    checkSucceeds("a, b", weldReadImports("a") + "," + weldReadImports("b"));
   }
 
   public void testMultiDeclaration() throws Exception {
     // 'var' in global scope, part of a block
     checkSucceeds(
         "var x, y;",
-        "___.setPub(___OUTERS___, 'x', ___.readPub(___OUTERS___, 'x')), " +
-        "___.setPub(___OUTERS___, 'y', ___.readPub(___OUTERS___, 'y'));");
+        "___.setPub(IMPORTS___, 'x', ___.readPub(IMPORTS___, 'x')), " +
+        "___.setPub(IMPORTS___, 'y', ___.readPub(IMPORTS___, 'y'));");
     checkSucceeds(
         "var x = foo, y = bar;",
         "var x0___;" +
         "var x1___;" +
-        weldSetOuters("x", "x0___", weldReadOuters("foo")) + ", " +
-        "(" + weldSetOuters("y", "x1___", weldReadOuters("bar")) + ");");
+        weldSetImports("x", "x0___", weldReadImports("foo")) + ", " +
+        "(" + weldSetImports("y", "x1___", weldReadImports("bar")) + ");");
     checkSucceeds(
         "var x, y = bar;",
         "var x0___;" +
-        "___.setPub(___OUTERS___, 'x', ___.readPub(___OUTERS___, 'x')), " +
-        "(" + weldSetOuters("y", "x0___", weldReadOuters("bar")) + ");");
+        "___.setPub(IMPORTS___, 'x', ___.readPub(IMPORTS___, 'x')), " +
+        "(" + weldSetImports("y", "x0___", weldReadImports("bar")) + ");");
     // 'var' in global scope, 'for' statement
     checkSucceeds(
         "for (var x, y; ; ) {}",
-        "for (___.setPub(___OUTERS___, 'x', ___.readPub(___OUTERS___, 'x')), " +
-        "___.setPub(___OUTERS___, 'y', ___.readPub(___OUTERS___, 'y')); ; ) {}");
+        "for (___.setPub(IMPORTS___, 'x', ___.readPub(IMPORTS___, 'x')), " +
+        "___.setPub(IMPORTS___, 'y', ___.readPub(IMPORTS___, 'y')); ; ) {}");
     checkSucceeds(
         "for (var x = foo, y = bar; ; ) {}",
         "var x0___;" +
         "var x1___;" +
-        "for (" + weldSetOuters("x", "x0___", weldReadOuters("foo")) + ", " +
-        "    (" + weldSetOuters("y", "x1___", weldReadOuters("bar")) + "); ; ) {}");
+        "for (" + weldSetImports("x", "x0___", weldReadImports("foo")) + ", " +
+        "     (" + weldSetImports("y", "x1___", weldReadImports("bar")) + ")" +
+        "     ; ; ) {}");
     checkSucceeds(
         "for (var x, y = bar; ; ) {}",
         "var x0___;" +
-        "for (___.setPub(___OUTERS___, 'x', ___.readPub(___OUTERS___, 'x')), " +
-        "(" + weldSetOuters("y", "x0___", "(" + weldReadOuters("bar") + ")") + "); ; ) {}");
+        "for (___.setPub(IMPORTS___, 'x', ___.readPub(IMPORTS___, 'x')), " +
+        "     (" + weldSetImports(
+                       "y", "x0___", "(" + weldReadImports("bar") + ")") + ")" +
+        "     ; ; ) {}");
     // 'var' in global scope, part of a block
     checkSucceeds(
         "function() {" +
@@ -2204,14 +2251,15 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  var x = foo, y = bar;" +
         "}",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var x = " + weldReadOuters("foo") + ", y = " + weldReadOuters("bar") + ";" +
+        "  var x = " + weldReadImports("foo") + ", " +
+        "      y = " + weldReadImports("bar") + ";" +
         "}));");
     checkSucceeds(
         "function() {" +
         "  var x, y = bar;" +
         "}",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  var x, y = " + weldReadOuters("bar") + ";" +
+        "  var x, y = " + weldReadImports("bar") + ";" +
         "}));");
     // 'var' in global scope, 'for' statement
     checkSucceeds(
@@ -2226,14 +2274,15 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  for (var x = foo, y = bar; ; ) {}" +
         "}",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  for (var x = " + weldReadOuters("foo") + ", y = " + weldReadOuters("bar") + "; ; ) {}" +
+        "  for (var x = " + weldReadImports("foo") + ", " +
+        "           y = " + weldReadImports("bar") + "; ; ) {}" +
         "}));");
     checkSucceeds(
         "function() {" +
         "  for (var x, y = bar; ; ) {}" +
         "}",
         "___.primFreeze(___.simpleFunc(function() {" +
-        "  for (var x, y = " + weldReadOuters("bar") + "; ; ) {}" +
+        "  for (var x, y = " + weldReadImports("bar") + "; ; ) {}" +
         "}));");
     assertConsistent(
         "var arr = [1, 2, 3], k = -1;" +
@@ -2280,10 +2329,11 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     checkSucceeds(
         "foo = [ bar, baz ];",
         "var x0___;" +
-        weldSetOuters(
+        weldSetImports(
             "foo",
             "x0___",
-            "[" + weldReadOuters("bar") + ", " + weldReadOuters("baz") + "]") +
+            "[" + weldReadImports("bar") + ", " +
+                  weldReadImports("baz") + "]") +
         ";");
   }
 
@@ -2300,7 +2350,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   public void testRecurseCaseStmt() throws Exception {
     checkSucceeds(
         "switch (x) { case 1: break; }",
-        "switch (" + weldReadOuters("x") + ") { case 1: break; }");
+        "switch (" + weldReadImports("x") + ") { case 1: break; }");
   }
 
   public void testRecurseConditional() throws Exception {
@@ -2312,12 +2362,13 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "} else {" +
         "  y;" +
         "}",
-        "if (" + weldReadOuters("x") + " === " + weldReadOuters("y") + ") {" +
-        "  " + weldReadOuters("z") + ";" +
-        "} else if (" + weldReadOuters("z") + " === " + weldReadOuters("y") + ") {" +
-        "  " + weldReadOuters("x") + ";" +
+        "if (" + weldReadImports("x") + " === " + weldReadImports("y") + ") {" +
+        "  " + weldReadImports("z") + ";" +
+        "} else if (" + weldReadImports("z") + " === " + weldReadImports("y") +
+        "           ) {" +
+        "  " + weldReadImports("x") + ";" +
         "} else {" +
-        "  " + weldReadOuters("y") + ";" +
+        "  " + weldReadImports("y") + ";" +
         "}");
   }
 
@@ -2330,7 +2381,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   public void testRecurseDefaultCaseStmt() throws Exception {
     checkSucceeds(
         "switch (x) { default: break; }",
-        "switch(" + weldReadOuters("x") + ") { default: break; }");
+        "switch(" + weldReadImports("x") + ") { default: break; }");
   }
 
   public void testRecurseExpressionStmt() throws Exception {
@@ -2354,13 +2405,13 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "}",
         "var x0___;" +
         "var x1___;" +
-        "for (" + weldSetOuters("k", "x0___", "0") + "; " +
-        "     " + weldReadOuters("k") + " < 3;" +
+        "for (" + weldSetImports("k", "x0___", "0") + "; " +
+        "     " + weldReadImports("k") + " < 3;" +
         "     undefined," +
-        "     x1___ = ___.readPub(___OUTERS___, 'k', true) - 0," +
-        "     ___.setPub(___OUTERS___, 'k', x1___ + 1)," +
+        "     x1___ = ___.readPub(IMPORTS___, 'k', true) - 0," +
+        "     ___.setPub(IMPORTS___, 'k', x1___ + 1)," +
         "     x1___) {" +
-        "  " + weldReadOuters("x") + ";" +
+        "  " + weldReadImports("x") + ";" +
         "}");
     checkSucceeds(
         "function() {" +
@@ -2370,7 +2421,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "};",
         "___.primFreeze(___.simpleFunc(function() {" +
         "  for (var k = 0; k < 3; k++) {" +
-        "    " + weldReadOuters("x") + ";" +
+        "    " + weldReadImports("x") + ";" +
         "  }" +
         "}));");
   }
@@ -2384,7 +2435,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   public void testRecurseOperation() throws Exception {
     checkSucceeds(
         "x + y;",
-        weldReadOuters("x") + " + " + weldReadOuters("y") + ";");
+        weldReadImports("x") + " + " + weldReadImports("y") + ";");
     checkSucceeds(
         "1 + 2 * 3 / 4 - -5;",
         "1 + 2 * 3 / 4 - -5;");
@@ -2392,25 +2443,26 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "x  = y = 3;",
         "var x0___;" +
         "var x1___;" +
-        weldSetOuters("x", "x0___", "(" + weldSetOuters("y", "x1___", "3") + ")") + ";");
+        weldSetImports(
+            "x", "x0___", "(" + weldSetImports("y", "x1___", "3") + ")") + ";");
   }
 
   public void testRecurseReturnStmt() throws Exception {
     checkSucceeds(
         "return x;",
-        "return " + weldReadOuters("x") + ";");
+        "return " + weldReadImports("x") + ";");
   }
 
   public void testRecurseSwitchStmt() throws Exception {
     checkSucceeds(
         "switch (x) { }",
-        "switch (" + weldReadOuters("x") + ") { }");
+        "switch (" + weldReadImports("x") + ") { }");
   }
 
   public void testRecurseThrowStmt() throws Exception {
     checkSucceeds(
         "throw x;",
-        "throw " + weldReadOuters("x") + ";");
+        "throw " + weldReadImports("x") + ";");
     checkSucceeds(
         "function() {" +
         "  var x;" +
@@ -2468,13 +2520,13 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
             // object value that will not compare identically across runs.
             "var unittestResult___ = { toString:\n" +
             "    function () { return '--NO-RESULT--'; }}\n" +
-            // Set up the outers environment.
-            "var testOuters = ___.copy(___.sharedOuters);\n" +
-            "___.getNewModuleHandler().setOuters(testOuters);",
+            // Set up the imports environment.
+            "var testImports = ___.copy(___.sharedImports);\n" +
+            "___.getNewModuleHandler().setImports(testImports);",
             getName() + "-test-fixture"),
         // Load the cajoled code.
         new RhinoTestBed.Input(
-            "___.loadModule(function (___OUTERS___) {" + cajoledJs + "\n});",
+            "___.loadModule(function (___, IMPORTS___) {" + cajoledJs + "\n});",
             getName() + "-cajoled"),
         // Return the output field as the value of the run.
         new RhinoTestBed.Input("unittestResult___", getName()));

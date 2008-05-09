@@ -18,16 +18,13 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.quasiliteral.ParseTreeNodeContainer;
+import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
-import com.google.caja.plugin.ReservedNames;
-import com.google.caja.plugin.TreeConstruction;
 import com.google.caja.util.Pipeline;
-import static com.google.caja.plugin.SyntheticNodes.s;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.ListIterator;
 
@@ -40,7 +37,8 @@ import java.util.ListIterator;
 public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
     // create an initializer function
-    Block initFunctionBody = s(new Block(Collections.<Statement>emptyList()));
+    ParseTreeNodeContainer initFunctionBody = new ParseTreeNodeContainer(
+        Collections.<Statement>emptyList());
 
     MutableParseTreeNode.Mutation mut = initFunctionBody.createMutation();
 
@@ -71,15 +69,11 @@ public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
       it.remove();
     }
     mut.execute();
-    // Now initFunctionBody contains all the top level statements.
 
-    // ___.loadModule(function (<namespace>) { <compiled code> })
-    Block jsTree = s(new Block(Arrays.asList(
-        s(new ExpressionStmt(TreeConstruction.call(
-            TreeConstruction.memberAccess("___", "loadModule"),
-            TreeConstruction.function(  // function (___OUTERS___)
-                null, initFunctionBody,
-                ReservedNames.OUTERS)))))));
+    // Now initFunctionBody contains all the top level statements.
+    Block jsTree = (Block) QuasiBuilder.substV(
+        "{ ___.loadModule(function (___, IMPORTS___) { @body*; }); }",
+        "body", initFunctionBody);
 
     jobs.getJobs().add(new Job(new AncestorChain<Block>(jsTree)));
 

@@ -1,5 +1,5 @@
 // Copyright (C) 2007 Google Inc.
-//      
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -11,17 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-// .............................................................................
 
-// This module is the Caja runtime library. It is written in
-// Javascript, not Caja, and would be rejected by the Caja
-// translator. This module exports two globals: 
-// * "___" for use by the output of the Caja translator and by some
-//   other untranslated Javascript code.
-// * "caja" providing some common services to the Caja programmer.
+/**
+ * @fileoverview the Caja runtime library.
+ * It is written in Javascript, not Caja, and would be rejected by the Caja
+ * translator. This module exports two globals:<ol>
+ * <li>"___" for use by the output of the Caja translator and by some
+ *     other untranslated Javascript code.
+ * <li>"caja" providing some common services to the Caja programmer.
+ * </ol>
+ * @author erights@gmail.com
+ */
 
 // TODO(erights): All code text in comments should be enclosed in
-// &lt;tt&gt;code&lt;/tt&gt;.
+// {@code ...}.
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -452,7 +455,7 @@ var ___;
   function isJSONContainer(obj) {
     if (obj == null) { return false; }  // Match null and undefined
     var constr = directConstructor(obj);
-    var typeTag = constr && constr.typeTag___
+    var typeTag = constr && constr.typeTag___;
     return typeTag === 'Object' || typeTag === 'Array';
   }
   
@@ -1783,7 +1786,7 @@ var ___;
   ctor(URIError, Error, 'URIError');
   
   
-  var sharedOuters;
+  var sharedImports;
   
   ////////////////////////////////////////////////////////////////////////
   // Module loading
@@ -1820,22 +1823,20 @@ var ___;
   });
   
   /**
-   * Makes and returns a fresh "normal" module handler whose outers
-   * are initialized to a copy of the sharedOuters.
+   * Makes and returns a fresh "normal" module handler whose imports
+   * are initialized to a copy of the sharedImports.
    * <p>
-   * This handles a new module by calling it, passing it the outers
+   * This handles a new module by calling it, passing it the imports
    * object held in this handler. Successive modules handled by the
    * same "normal" handler thereby see a simulation of successive
    * updates to a shared global scope.
    */
   function makeNormalNewModuleHandler() {
-    var outers = copy(sharedOuters);
+    var imports = copy(sharedImports);
     return freeze({
-      getOuters: simpleFunc(function() { return outers; }),
-      setOuters: simpleFunc(function(newOuters) { outers = newOuters; }),
-      handle: simpleFunc(function(newModule) {
-        newModule(outers);
-      })
+      getImports: simpleFunc(function() { return imports; }),
+      setImports: simpleFunc(function(newImports) { imports = newImports; }),
+      handle: simpleFunc(function(newModule) { newModule(___, imports); })
     });
   }
   
@@ -1847,80 +1848,79 @@ var ___;
    * notifying the handler), and returns the new module.  
    */
   function loadModule(module) {
-    callPub(myNewModuleHandler, 'handle',
-            [primFreeze(simpleFunc(module))]);
+    callPub(myNewModuleHandler, 'handle', [primFreeze(simpleFunc(module))]);
     return module;
   }
 
-  var registeredOuters = [];
+  var registeredImports = [];
 
   /**
    * Gets or assigns the id associated with this (assumed to be)
-   * outers object, registering it so that 
-   * <tt>getOuters(getId(outers)) ==== outers</tt>.
+   * imports object, registering it so that 
+   * <tt>getImports(getId(imports)) ==== imports</tt>.
    * <p>
    * This system of registration and identification allows us to
    * cajole html such as
    * <pre>&lt;a onmouseover="alert(1)"&gt;Mouse here&lt;/a&gt;</pre>
    * into html-writing JavaScript such as<pre>
-   * ___OUTERS___.document.innerHTML = "
+   * ___IMPORTS___.document.innerHTML = "
    *  &lt;a onmouseover=\"
-   *    (function(___OUTERS___) {
-   *      ___OUTERS___.alert(1);
-   *    })(___.getOuters(" + ___.getId(___OUTERS___) + "))
+   *    (function(___IMPORTS___) {
+   *      ___IMPORTS___.alert(1);
+   *    })(___.getImports(" + ___.getId(___IMPORTS___) + "))
    *  \"&gt;Mouse here&lt;/a&gt;
    * ";
    * </pre>
-   * If this is executed by a plugin whose outers is assigned id 42,
+   * If this is executed by a plugin whose imports is assigned id 42,
    * it generates html with the same meaning as<pre>
-   * &lt;a onmouseover="___.getOuters(42).alert(1)"&gt;Mouse here&lt;/a&gt;
+   * &lt;a onmouseover="___.getImports(42).alert(1)"&gt;Mouse here&lt;/a&gt;
    * </pre>
    * <p>
-   * An outers is not registered and no id is assigned to it until the
-   * first call to <tt>getId</tt>. This way, an outers that is never
+   * An imports is not registered and no id is assigned to it until the
+   * first call to <tt>getId</tt>. This way, an imports that is never
    * registered, or that has been <tt>unregister</tt>ed since the last
    * time it was registered, will still be garbage collectable.
    */
-  function getId(outers) {
-    enforceType(outers, 'object', 'outers');
+  function getId(imports) {
+    enforceType(imports, 'object', 'imports');
     var id;
-    if ('id___' in outers) {
-      id = enforceType(outers.id___, 'number', 'id');
+    if ('id___' in imports) {
+      id = enforceType(imports.id___, 'number', 'id');
     } else {
-      id = outers.id___ = registeredOuters.length;
+      id = imports.id___ = registeredImports.length;
     }
-    registeredOuters[id] = outers;
+    registeredImports[id] = imports;
     return id;
   }
 
   /**
-   * Gets the outers object registered under this id.
+   * Gets the imports object registered under this id.
    * <p>
    * If it has been <tt>unregistered</tt> since the last
-   * <tt>getId</tt> on it, then <tt>getOuters</tt> will fail.
+   * <tt>getId</tt> on it, then <tt>getImports</tt> will fail.
    */
-  function getOuters(id) {
-    var result = registeredOuters[enforceType(id, 'number', 'id')];
+  function getImports(id) {
+    var result = registeredImports[enforceType(id, 'number', 'id')];
     if (result === (void 0)) {
-      fail('outers#', id, ' unregistered');
+      fail('imports#', id, ' unregistered');
     }
     return result;
   }
 
   /**
-   * If you know that this <tt>outers</tt> no longers needs to be
-   * accessed by <tt>getOuters</tt>, then you should
+   * If you know that this <tt>imports</tt> no longers needs to be
+   * accessed by <tt>getImports</tt>, then you should
    * <tt>unregister</tt> it so it can be garbage collected.
    * <p>
-   * After unregister()ing, the id is not reassigned, and the outers
+   * After unregister()ing, the id is not reassigned, and the imports
    * remembers its id. If asked for another <tt>getId</tt>, it
    * reregisters itself at its old id.
    */
-  function unregister(outers) {
-    enforceType(outers, 'object', 'outers');
-    if ('id___' in outers) {
-      var id = enforceType(outers.id___, 'number', 'id');
-      registeredOuters[id] = (void 0);
+  function unregister(imports) {
+    enforceType(imports, 'object', 'imports');
+    if ('id___' in imports) {
+      var id = enforceType(imports.id___, 'number', 'id');
+      registeredImports[id] = (void 0);
     }
   }
 
@@ -1953,7 +1953,8 @@ var ___;
   }
 
   /**
-   * This function adds the given trademark to the given object's list of trademarks.
+   * This function adds the given trademark to the given object's list of
+   * trademarks.
    * If the map doesn't exist yet, this function creates it.
    * If the object is still being constructed, it delays the trademarking.
    */
@@ -2049,7 +2050,7 @@ var ___;
     def: def
   };
 
-  sharedOuters = {
+  sharedImports = {
     caja: caja,
 
     'null': null,
@@ -2085,7 +2086,7 @@ var ___;
     URIError: URIError
   };
 
-  each(sharedOuters, simpleFunc(function(k, v) {
+  each(sharedImports, simpleFunc(function(k, v) {
     switch (typeof v) {
     case 'object':
       if (v !== null) { primFreeze(v); }
@@ -2095,7 +2096,7 @@ var ___;
       break;
     }
   }));
-  primFreeze(sharedOuters);
+  primFreeze(sharedImports);
 
   ___ = {
 
@@ -2158,7 +2159,7 @@ var ___;
     all2: all2,
 
     // Taming decisions
-    sharedOuters: sharedOuters,
+    sharedImports: sharedImports,
 
     // Module loading
     getNewModuleHandler: getNewModuleHandler,
@@ -2168,7 +2169,7 @@ var ___;
     loadModule: loadModule,
 
     getId: getId,
-    getOuters: getOuters,
+    getImports: getImports,
     unregister: unregister
   };
 

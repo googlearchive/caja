@@ -24,29 +24,29 @@
   <script type=text/javascript src="event-list.js"></script>
   <script type=text/javascript>
   (function () {
-    var outers = ___.copy(___.sharedOuters);
-    outers.console = {};
+    var imports = ___.copy(___.sharedImports);
+    imports.console = {};
     for (var k in { log: 0, warn: 0, info: 0, error: 0, trace: 0,
                     group: 0, groupEnd: 0, time: 0, timeEnd: 0, dir: 0,
                     assert: 0, dirxml: 0, profile: 0, profileEnd: 0 }) {
-      outers.console[k] = (function (k, f) {
+      imports.console[k] = (function (k, f) {
         return ___.simpleFunc(
             function () { f.apply(console, arguments); });
       })(k, console[k]);
     }
-    ___.getNewModuleHandler().setOuters(outers);
+    ___.getNewModuleHandler().setImports(imports);
     attachDocumentStub(
         '-p___', { rewrite: function (uri, mimeType) { return null; } },
-        outers);
+        imports);
 
-    outers.getCalendar = ___.simpleFunc(function getCalendar() {
+    imports.getCalendar = ___.simpleFunc(function getCalendar() {
       return MY_CALENDAR;
     });
-    outers.setSelectedUser = ___.simpleFunc(function setSelectedUser(name) {
+    imports.setSelectedUser = ___.simpleFunc(function setSelectedUser(name) {
       document.getElementById('currentUser').innerHTML = html.escapeAttrib(
           'The plugin has selected ' + name);
     });
-    outers.ME = ME;
+    imports.ME = ME;
   })();
   </script>
 

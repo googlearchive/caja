@@ -166,11 +166,11 @@ public class Scope {
      * </pre>
      */
     PROGRAM(true),
-    
+
     /**
      * A Scope created for the purpose of delimiting method context in
      * an expression like
-     * 
+     *
      * <pre>
      * Foo.prototype.setX = function(x) { this.x_ = x; };
      * </pre>
@@ -216,32 +216,32 @@ public class Scope {
     Scope s = new Scope (ScopeType.METHOD, parent);
     return s;
   }
-  
+
   public boolean inMethodContext() {
     Scope ancestor = this;
     while (true) {
-      if (null == ancestor) { 
-        return false; 
+      if (null == ancestor) {
+        return false;
       }
-      if ((ScopeType.METHOD == ancestor.type) || 
-          (null != ancestor.functionName)) { 
-        return true; 
+      if ((ScopeType.METHOD == ancestor.type) ||
+          (null != ancestor.functionName)) {
+        return true;
       }
-      if (ScopeType.FUNCTION_BODY == ancestor.type && 
-          !ancestor.containsThis ) { 
-        return false; 
+      if (ScopeType.FUNCTION_BODY == ancestor.type &&
+          !ancestor.containsThis ) {
+        return false;
       }
       ancestor = ancestor.parent;
     }
   }
-  
+
   public static Scope fromProgram(Block root, MessageQueue mq) {
     Scope s = new Scope(ScopeType.PROGRAM, mq);
     addPrimordialObjects(s);
     walkBlock(s, root);
     return s;
   }
-  
+
   public static Scope fromPlainBlock(Scope parent, Block root) {
     return new Scope(ScopeType.PLAIN_BLOCK, parent);
   }
@@ -268,12 +268,12 @@ public class Scope {
     for (ParseTreeNode n : root.getParams()) {
       walkBlock(s, n);
     }
-    
+
     walkBlock(s, root.getBody());
 
     return s;
   }
-  
+
   public static Scope fromParseTreeNodeContainer(Scope parent, ParseTreeNodeContainer root) {
     Scope s = new Scope(ScopeType.PLAIN_BLOCK, parent);
     walkBlock(s, root);
@@ -355,7 +355,7 @@ public class Scope {
     if (s.isGlobal()){
       s.addStartOfScopeStatement(
           s(new ExpressionStmt((Expression)substV(
-              "___OUTERS___.@idRef = undefined;",
+              "IMPORTS___.@idRef = undefined;",
               "idRef", new Reference(id)))));
     } else {
       s.addStartOfScopeStatement((Statement)substV(
@@ -519,10 +519,10 @@ public class Scope {
   }
 
   /**
-   * Add the primordial objects to a top-level scope. By marking some of these as
-   * CONSTRUCTORs, we allow them to be used as constructors at compile time. A
-   * container writer makes the separate decision whether to make them members of
-   *  ___OUTERS___ or not.
+   * Add the primordial objects to a top-level scope. By marking some
+   * of these as CONSTRUCTORs, we allow them to be used as
+   * constructors at compile time. A container writer makes the
+   * separate decision whether to make them members of IMPORTS___ or not.
    */
   private static void addPrimordialObjects(Scope s) {
     addLocal(s, "Global", LocalType.DATA);
@@ -543,7 +543,7 @@ public class Scope {
     addLocal(s, "TypeError", LocalType.CONSTRUCTOR);
     addLocal(s, "URIError", LocalType.CONSTRUCTOR);
   }
-  
+
   private static void addLocal(Scope s, String name, LocalType type) {
     s.locals.put(
         name,
@@ -616,10 +616,10 @@ public class Scope {
 
       LocalType maskedType = maskedDefinition.a;
       // Do not generate a LINT error in the case where a function masks
-      // itself.  We recognize a self-mask when we come across a "new" 
+      // itself.  We recognize a self-mask when we come across a "new"
       // function in the same scope as a declared function or constructor.
       if (maskedType != type
-          && !((maskedType == LocalType.DECLARED_FUNCTION || 
+          && !((maskedType == LocalType.DECLARED_FUNCTION ||
                   maskedType == LocalType.CONSTRUCTOR)
                && type == LocalType.FUNCTION)) {
         // Since different interpreters disagree about how exception

@@ -378,7 +378,7 @@ final class DomProcessingEvents {
     Expression getEmitter() {
       if (emitter == null) {
         emitter = TreeConstruction.memberAccess(
-            ReservedNames.OUTERS, ReservedNames.HTML_EMITTER);
+            ReservedNames.IMPORTS, ReservedNames.HTML_EMITTER);
       }
       return emitter;
     }

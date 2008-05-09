@@ -39,11 +39,11 @@
     <script type="text/javascript" src="domita-minified.js"></script>
 
     <script type="text/javascript">(function () {
-      ___.sharedOuters.console = {};
+      ___.sharedImports.console = {};
       for (var k in { log: 0, warn: 0, info: 0, error: 0, trace: 0,
                       group: 0, groupEnd: 0, time: 0, timeEnd: 0, dir: 0,
                       assert: 0, dirxml: 0, profile: 0, profileEnd: 0 }) {
-        ___.sharedOuters.console[k] = (function (k, f) {
+        ___.sharedImports.console[k] = (function (k, f) {
           return ___.simpleFunc(function () { f.apply(console, arguments); });
         })(k, console[k]);
       }
@@ -61,9 +61,9 @@
     <script type="text/javascript" src="searchengine.js"></script>
     <script type="text/javascript" src="chtml.js"></script>
     <script type="text/javascript">
-      ___.sharedOuters.StringInterpolation
+      ___.sharedImports.StringInterpolation
          = ___.ctor(StringInterpolation, Object);
-      ___.allowRead(___.sharedOuters, 'StringInterpolation');
+      ___.allowRead(___.sharedImports, 'StringInterpolation');
     </script>
   </head>
   <body bgcolor="white">
@@ -83,29 +83,29 @@
       - http://code.google.com/p/google-caja/wiki/CajaHostingModules
      -->
     <script type="text/javascript">
-      var searchBoxOuters = ___.copy(___.sharedOuters);
+      var searchBoxImports = ___.copy(___.sharedImports);
       attachDocumentStub(
           '-searchbox', { rewrite: function () { return null; } },
-          searchBoxOuters);
-      searchBoxOuters.htmlEmitter___ = new HtmlEmitter(
+          searchBoxImports);
+      searchBoxImports.htmlEmitter___ = new HtmlEmitter(
           document.getElementById('base-searchbox'));
     </script>
     <script type="text/javascript">
-      var kittensOuters = ___.copy(___.sharedOuters);
+      var kittensImports = ___.copy(___.sharedImports);
       attachDocumentStub(
           '-kittens', { rewrite: function (url, mimeType) {
                           return /^image\//.test(mimeType) ? url : null;
-                        } }, kittensOuters);
-      kittensOuters.htmlEmitter___ = new HtmlEmitter(
+                        } }, kittensImports);
+      kittensImports.htmlEmitter___ = new HtmlEmitter(
           document.getElementById('base-kittens'));
     </script>
 
     <script type="text/javascript">
-      ___.getNewModuleHandler().setOuters(searchBoxOuters);
+      ___.getNewModuleHandler().setImports(searchBoxImports);
     </script>
     <script type="text/javascript" src=searchbox-cajoled.js></script>
     <script type="text/javascript">
-      ___.getNewModuleHandler().setOuters(kittensOuters);
+      ___.getNewModuleHandler().setImports(kittensImports);
     </script>
     <script type="text/javascript" src="kittens-cajoled.js"></script>
 
@@ -117,14 +117,14 @@
         var searchEngine = new SearchEngine();
 
         // Provide both modules an interface to Google search.
-        searchBoxOuters.searchEngine = kittensOuters.searchEngine
+        searchBoxImports.searchEngine = kittensImports.searchEngine
             = searchEngine;
-        ___.allowRead(searchBoxOuters, 'searchEngine');
-        ___.allowRead(kittensOuters, 'searchEngine');
+        ___.allowRead(searchBoxImports, 'searchEngine');
+        ___.allowRead(kittensImports, 'searchEngine');
 
-        // Allow searchBoxOuters to talk to kittens.
-        searchBoxOuters.resultConsumer = kittensOuters.showKitten;
-        ___.allowRead(searchBoxOuters, 'resultConsumer');
+        // Allow searchBoxImports to talk to kittens.
+        searchBoxImports.resultConsumer = kittensImports.showKitten;
+        ___.allowRead(searchBoxImports, 'resultConsumer');
       })();
     </script>
 

@@ -108,7 +108,7 @@ public class HtmlCompiler {
   public Statement compileDocument(DomTree doc)
       throws GxpCompiler.BadContentException {
 
-    // Produce calls to ___OUTERS___.htmlEmitter___(...)
+    // Produce calls to IMPORTS___.htmlEmitter___(...)
     // with interleaved script bodies.
     DomProcessingEvents cdom = new DomProcessingEvents();
     compileDom(doc, cdom);
@@ -519,7 +519,7 @@ public class HtmlCompiler {
         htmlc.eventHandlers.put(
             handlerFnName,
             new ExpressionStmt((Expression) QuasiBuilder.substV(
-                "___OUTERS___.@handlerFnName = ___.simpleFunc("
+                "IMPORTS___.@handlerFnName = ___.simpleFunc("
                 + "   function (" + ReservedNames.THIS_NODE + ", event) {"
                 + "     @handler*;"
                 + "   });",
@@ -538,7 +538,7 @@ public class HtmlCompiler {
                     + "this, event || window.event, "),
                 TreeConstruction.call(
                     TreeConstruction.memberAccess("___", "getId"),
-                    TreeConstruction.ref(ReservedNames.OUTERS)))),
+                    TreeConstruction.ref(ReservedNames.IMPORTS)))),
             TreeConstruction.stringLiteral(", " + handlerFnNameLit + ")")));
         out.attr(t.getAttribName(), dispatcher);
       }

@@ -32,7 +32,7 @@ import java.util.List;
  * is true, adds the gadget's id suffix.
  *
  * <p>{@code <p id="foo">}  =>  {@code <p id="foo-suffix__">}  where suffix
- * is determined at runtime via {@code ___OUTERS___.getIdClass()}.
+ * is determined at runtime via {@code IMPORTS___.getIdClass()}.
  *
  * @author mikesamuel@gmail.com
  */
@@ -144,7 +144,7 @@ final class IdentifierWriter {
     if (suffix) {
       out.emit(TreeConstruction.call(
           TreeConstruction.memberAccess(
-              ReservedNames.OUTERS, "getIdClass___")));
+              ReservedNames.IMPORTS, "getIdClass___")));
     }
     return false;
   }

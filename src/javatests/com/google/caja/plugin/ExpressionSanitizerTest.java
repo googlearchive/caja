@@ -43,7 +43,9 @@ public class ExpressionSanitizerTest extends CajaTestCase {
   public void testFoo() throws Exception {
     runTest(
         "x",
-        "___OUTERS___.x_canRead___ ? ___OUTERS___.x : ___.readPub(___OUTERS___, 'x', true);");
+        "IMPORTS___.x_canRead___"
+        + "    ? IMPORTS___.x"
+        + "    : ___.readPub(IMPORTS___, 'x', true);");
   }
 
   private void runTest(String input, String golden)

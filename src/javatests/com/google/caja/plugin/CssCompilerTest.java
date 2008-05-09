@@ -84,8 +84,8 @@ public class CssCompilerTest extends CajaTestCase {
   }
 
   private String stripBoilerPlate(String s) {
-    String pre = "___OUTERS___.emitCss___(";
-    String post = ".join(___OUTERS___.getIdClass___()))";
+    String pre = "IMPORTS___.emitCss___(";
+    String post = ".join(IMPORTS___.getIdClass___()))";
     if (s.startsWith(pre) && s.endsWith(post)) {
       return s.substring(pre.length(), s.length() - post.length());
     }

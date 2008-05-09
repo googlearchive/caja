@@ -266,9 +266,9 @@ public abstract class Rule implements MessagePart {
     if (scope.isGlobal(sName)) {
       return s(new ExpressionStmt((Expression)substV(
           "@temp = @value," +
-          "___OUTERS___.@sCanSet ?" +
-          "  (___OUTERS___.@s = @temp) :" +
-          "  ___.setPub(___OUTERS___, @sName, @temp);",
+          ReservedNames.IMPORTS + ".@sCanSet ?" +
+          "  (" + ReservedNames.IMPORTS + ".@s = @temp) :" +
+          "  ___.setPub(" + ReservedNames.IMPORTS + ", @sName, @temp);",
           "s", symbol,
           "sCanSet", newReference(sName + "_canSet___"),
           "sName", toStringLiteral(symbol),
@@ -349,14 +349,16 @@ public abstract class Rule implements MessagePart {
   }
 
   // TODO(erights): Remove this when first class constructors are checked in.
-  protected ParseTreeNode expandReferenceToOuters(
+  protected ParseTreeNode expandReferenceToImports(
       ParseTreeNode ref,
       Scope scope,
       MessageQueue mq) {
     String xName = getReferenceName(ref);
     if (scope.isGlobal(xName)) {
       return substV(
-          "___OUTERS___.@xCanRead ? ___OUTERS___.@x : ___.readPub(___OUTERS___, @xName, true);",
+          ("IMPORTS___.@xCanRead"
+           + "    ? IMPORTS___.@x"
+           + "    : ___.readPub(IMPORTS___, @xName, true);"),
           "x", ref,
           "xCanRead", newReference(xName + "_canRead___"),
           "xName", new StringLiteral(StringLiteral.toQuotedValue(xName)));
@@ -458,10 +460,10 @@ public abstract class Rule implements MessagePart {
           (Expression) rewriter.expand(operand, scope, mq));
     } else if (operand instanceof Reference) {
       rewriter.expand(operand, scope, mq);
-      Reference outers = s(new Reference(s(new Identifier("___OUTERS___"))));
-      outers.setFilePosition(FilePosition.startOf(operand.getFilePosition()));
+      Reference imports = newReference(ReservedNames.IMPORTS);
+      imports.setFilePosition(FilePosition.startOf(operand.getFilePosition()));
       return sideEffectingReadAssignOperand(
-          outers, toStringLiteral(operand), scope, mq);
+          imports, toStringLiteral(operand), scope, mq);
     } else if (operand instanceof Operation) {
       Operation op = (Operation) operand;
       switch (op.getOperator()) {
@@ -518,7 +520,7 @@ public abstract class Rule implements MessagePart {
     // If the left is simple and the right does not need a temporary variable
     // then don't introduce one.
     if (isKeySimple && (isLocalReference(left, scope)
-                        || isOutersReference(left))) {
+                        || isImportsReference(left))) {
       object = (Reference) left;
     } else {
       Identifier tmpVar = scope.declareStartOfScopeTempVariable();
@@ -551,7 +553,7 @@ public abstract class Rule implements MessagePart {
         "object", object,
         "key", key,
         // Make sure exception thrown if global variable not defined.
-        "isGlobal", new BooleanLiteral(isOutersReference(object)));
+        "isGlobal", new BooleanLiteral(isImportsReference(object)));
 
     return new ReadAssignOperands(temporaries, rvalueCajoled) {
         @Override
@@ -569,7 +571,7 @@ public abstract class Rule implements MessagePart {
   /**
    * True iff e is a reference to a local in scope.
    * We distinguish local references in many places because members of
-   * {@code ___OUTERS___} might be backed by getters/setters, and so
+   * {@code IMPORTS___} might be backed by getters/setters, and so
    * must be evaluated exactly once as an lvalue.
    */
   private static boolean isLocalReference(Expression e, Scope scope) {
@@ -578,10 +580,10 @@ public abstract class Rule implements MessagePart {
   }
 
   /** True iff e is a reference to the global object. */
-  private static boolean isOutersReference(Expression e) {
+  private static boolean isImportsReference(Expression e) {
     if (!(e instanceof Reference)) { return false; }
     // TODO(mikesamuel): move ReservedNames into this package and use it here.
-    return "___OUTERS___".equals(((Reference) e).getIdentifierName());
+    return ReservedNames.IMPORTS.equals(((Reference) e).getIdentifierName());
   }
 
   /**

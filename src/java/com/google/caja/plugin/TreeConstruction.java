@@ -39,9 +39,7 @@ import java.util.Vector;
 public final class TreeConstruction {
   /** {@code thing.member } */
   public static Operation memberAccess(String thing, String member) {
-    return s(Operation.create(Operator.MEMBER_ACCESS,
-        s(new Reference(s(new Identifier(thing)))),
-        s(new Reference(s(new Identifier(member))))));
+    return s(Operation.create(Operator.MEMBER_ACCESS, ref(thing), ref(member)));
   }
   /** {@code nodes[0](nodes[1...]) } */
   public static Operation call(Expression... nodes) {
@@ -58,7 +56,8 @@ public final class TreeConstruction {
   }
 
   public static ExpressionStmt assign(Expression lhs, Expression rhs) {
-    return s(new ExpressionStmt(s(Operation.create(Operator.ASSIGN, lhs, rhs))));
+    return s(new ExpressionStmt(
+        s(Operation.create(Operator.ASSIGN, lhs, rhs))));
   }
 
   public static Reference ref(String name) {

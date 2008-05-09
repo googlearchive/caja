@@ -32,9 +32,10 @@ public class ReservedNames {
   public static final String THIS_NODE = "thisNode___";
   /**
    * The name of a plugin's global object in the scope in the outermost scope
-   * in which that plugin's code is defined.
+   * in which that plugin's code is defined, which holds "global" properties
+   * not declared within the module.
    */
-  public static final String OUTERS = "___OUTERS___";
+  public static final String IMPORTS = "IMPORTS___";
   /** Trademarks a string as HTML PCDATA. */
   public static final String BLESS_HTML = "blessHtml___";
   /** Trademarks a string as CSS properties. */
@@ -44,8 +45,8 @@ public class ReservedNames {
   /** Escapes a string to a HTML PCDATA. */
   public static final String HTML = "html___";
   /**
-   * A property on OUTERS that resolves to an instance of of HtmlEmitter as
-   * defined in html-emitter.js.
+   * A property on {@link #IMPORTS} that resolves to an instance of HtmlEmitter
+   * as defined in html-emitter.js.
    */
   public static final String HTML_EMITTER = "htmlEmitter___";
   /**

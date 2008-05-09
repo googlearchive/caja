@@ -151,7 +151,7 @@ public final class CssTemplate extends AbstractParseTreeNode<ParseTreeNode> {
     result.setFilePosition(getCss().getFilePosition());
 
     // function (<formals>) {
-    //   return ___OUTERS___.blessCss___(...);
+    //   return IMPORTS___.blessCss___(...);
     // }
     FunctionConstructor fn = new FunctionConstructor(
          getTemplateNameIdentifier(), params,
@@ -161,7 +161,7 @@ public final class CssTemplate extends AbstractParseTreeNode<ParseTreeNode> {
   }
 
   /**
-   * Returns a call to {@code ___OUTERS___.blessCss__} with alternating
+   * Returns a call to {@code IMPORTS___.blessCss__} with alternating
    * property names and expressions.
    *
    * Since the DOM2 Style object uses different names than the CSS2 standard,
@@ -174,14 +174,14 @@ public final class CssTemplate extends AbstractParseTreeNode<ParseTreeNode> {
 
     declGroupToDeltaArray(getCss(), cssSchema, parts, mq);
 
-    // ___OUTERS___.blessCss___('property-name', <propertyValue>, ...);
+    // IMPORTS___.blessCss___('property-name', <propertyValue>, ...);
     List<Expression> blessCallOperands = new ArrayList<Expression>();
     blessCallOperands.add(
         TreeConstruction.memberAccess(
-            ReservedNames.OUTERS, ReservedNames.BLESS_CSS));
+            ReservedNames.IMPORTS, ReservedNames.BLESS_CSS));
     blessCallOperands.addAll(parts);
 
-    // return ___OUTERS___.blessCss___(...);
+    // return IMPORTS___.blessCss___(...);
     Operation blessCall = TreeConstruction.call(
         blessCallOperands.toArray(new Expression[0]));
     blessCall.setFilePosition(getCss().getFilePosition());
@@ -382,32 +382,32 @@ public final class CssTemplate extends AbstractParseTreeNode<ParseTreeNode> {
           case NUMBER:
           case PERCENTAGE:
           case TIME:
-            // ___OUTERS___.cssNumber___(...)
+            // IMPORTS___.cssNumber___(...)
             e = TreeConstruction.call(
                 TreeConstruction.memberAccess(
-                    ReservedNames.OUTERS, ReservedNames.CSS_NUMBER),
+                    ReservedNames.IMPORTS, ReservedNames.CSS_NUMBER),
                 e);
             suffix = sub.getSuffix();
             break;
           case URI:
-            // ___OUTERS___.cssUri___(...)
+            // IMPORTS___.cssUri___(...)
             e = TreeConstruction.call(
                 TreeConstruction.memberAccess(
-                    ReservedNames.OUTERS, ReservedNames.CSS_URI),
+                    ReservedNames.IMPORTS, ReservedNames.CSS_URI),
                 e);
             if (esc == JsWriter.Esc.HTML_ATTRIB) {
               e = TreeConstruction.call(
                   TreeConstruction.memberAccess(
-                      ReservedNames.OUTERS, ReservedNames.HTML_ATTR),
+                      ReservedNames.IMPORTS, ReservedNames.HTML_ATTR),
                   e);
             }
             suffix = "";
             break;
           case COLOR:
-            // ___OUTERS___.cssColor___(...)
+            // IMPORTS___.cssColor___(...)
             e = TreeConstruction.call(
                 TreeConstruction.memberAccess(
-                    ReservedNames.OUTERS, ReservedNames.CSS_COLOR),
+                    ReservedNames.IMPORTS, ReservedNames.CSS_COLOR),
                 e);
             suffix = "";
             break;

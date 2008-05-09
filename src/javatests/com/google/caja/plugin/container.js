@@ -18,15 +18,15 @@
  * Requires that caja.js, asserts.js and browser-stubs.js be loaded first.
  */
 
-var outers = ___.copy(___.sharedOuters);
-outers.fail = fail;
+var imports = ___.copy(___.sharedImports);
+imports.fail = fail;
 ___.simpleFunc(fail);
-outers.assertEquals = assertEquals;
+imports.assertEquals = assertEquals;
 ___.simpleFunc(assertEquals);
-outers.assertTrue = assertTrue;
+imports.assertTrue = assertTrue;
 ___.simpleFunc(assertTrue);
-outers.assertFalse = assertFalse;
+imports.assertFalse = assertFalse;
 ___.simpleFunc(assertFalse);
-outers.document = document;
-___.getNewModuleHandler().setOuters(outers);
-outers.htmlEmitter___ = new HtmlEmitter(document.getElementById("test-test"));
+imports.document = document;
+___.getNewModuleHandler().setImports(imports);
+imports.htmlEmitter___ = new HtmlEmitter(document.getElementById("test-test"));

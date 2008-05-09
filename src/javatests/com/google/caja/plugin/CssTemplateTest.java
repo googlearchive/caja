@@ -42,14 +42,14 @@ public final class CssTemplateTest extends CajaTestCase {
   public void testEmptyDeclaration() throws Exception {
     runTest(";",
             "function testEmptyDeclaration() {\n"
-            + "  return ___OUTERS___.blessCss___();\n"
+            + "  return IMPORTS___.blessCss___();\n"
             + "}");
   }
 
   public void testOneDecl() throws Exception {
     runTest("background-color: blue",
             "function testOneDecl() {\n"
-            + "  return ___OUTERS___.blessCss___("
+            + "  return IMPORTS___.blessCss___("
             + "'background-color;backgroundColor', 'blue');\n"
             + "}");
   }
@@ -57,32 +57,32 @@ public final class CssTemplateTest extends CajaTestCase {
   public void testAmbiguousDecl() throws Exception {
     runTest("float: left",
             "function testAmbiguousDecl() {\n"
-            + "  return ___OUTERS___.blessCss___('float;cssFloat', 'left');\n"
+            + "  return IMPORTS___.blessCss___('float;cssFloat', 'left');\n"
             + "}");
   }
 
   public void testDynamicLengthStyle() throws Exception {
     runTest("left: ${x}px",
             "function testDynamicLengthStyle() {\n"
-            + "  return ___OUTERS___.blessCss___("
-            + "'left', ___OUTERS___.cssNumber___(x) + 'px');\n"
+            + "  return IMPORTS___.blessCss___("
+            + "'left', IMPORTS___.cssNumber___(x) + 'px');\n"
             + "}");
   }
 
   public void testColorRewriting() throws Exception {
     runTest("color: ${x}",
             "function testColorRewriting() {\n"
-            + "  return ___OUTERS___.blessCss___("
-            + "'color', ___OUTERS___.cssColor___(x));\n"
+            + "  return IMPORTS___.blessCss___("
+            + "'color', IMPORTS___.cssColor___(x));\n"
             + "}");
   }
 
   public void testUriRewriting() throws Exception {
     runTest("list-style-image: ${x}; background: 'foo.png';",
             "function testUriRewriting() {\n"
-            + "  return ___OUTERS___.blessCss___("
+            + "  return IMPORTS___.blessCss___("
             + "'list-style-image;listStyleImage',"
-            + " ___OUTERS___.cssUri___(x),"
+            + " IMPORTS___.cssUri___(x),"
             + " 'background',"
             + " '\\'http://proxy/?url=foo.png"
             + "&base=http%3A%2F%2Fgadget.com%2Ffoo&mt=image%2F*\\'');\n"
@@ -92,9 +92,9 @@ public final class CssTemplateTest extends CajaTestCase {
   public void testNumericValues() throws Exception {
     runTest("line-height: ${n}; width: ${p}%",
             "function testNumericValues() {\n"
-            + "  return ___OUTERS___.blessCss___("
-            + "'line-height;lineHeight', ___OUTERS___.cssNumber___(n),"
-            + " 'width', ___OUTERS___.cssNumber___(p) + '%');\n"
+            + "  return IMPORTS___.blessCss___("
+            + "'line-height;lineHeight', IMPORTS___.cssNumber___(n),"
+            + " 'width', IMPORTS___.cssNumber___(p) + '%');\n"
             + "}");
   }
 

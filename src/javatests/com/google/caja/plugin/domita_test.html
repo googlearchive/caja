@@ -35,8 +35,8 @@
     <div id="console-results"></div>
 
     <script type="text/javascript">
-      var testOuters = ___.copy(___.sharedOuters);
-      ___.getNewModuleHandler().setOuters(testOuters);
+      var testImports = ___.copy(___.sharedImports);
+      ___.getNewModuleHandler().setImports(testImports);
       attachDocumentStub(
            '-xyz___',
            {
@@ -47,17 +47,17 @@
                        + '&mimeType=' + encodeURIComponent(mimeType);
                  }
            },
-           testOuters);
+           testImports);
       console.log('attached stubs');
 
-      testOuters.jsunitRegister = ___.simpleFunc(jsunitRegister);
-      testOuters.console = {
+      testImports.jsunitRegister = ___.simpleFunc(jsunitRegister);
+      testImports.console = {
         log: function () { console.log.apply(console, arguments); },
         warn: function () { console.warn.apply(console, arguments); },
         error: function () { console.error.apply(console, arguments); },
         trace: function () { console.trace(); }
       };
-      ___.all2(___.allowCall, testOuters.console,
+      ___.all2(___.allowCall, testImports.console,
                ['log', 'warn', 'error', 'trace']);
     </script>
 
@@ -68,7 +68,7 @@
       window.toString = function () { return '[WINDOW]'; };
 
       // Give unfiltered DOM access so we can check the results of actions.
-      testOuters.directAccess = {
+      testImports.directAccess = {
         getInnerHTML: function (tameNode) {
           return tameNode.node___.innerHTML;
         },
@@ -76,17 +76,17 @@
           return tameNode.node___.getAttribute(name);
         }
       };
-      ___.all2(___.allowCall, testOuters.directAccess,
+      ___.all2(___.allowCall, testImports.directAccess,
                ['getInnerHTML', 'getAttribute']);
 
-      testOuters.pass = function (id) {
-        var node = testOuters.document.getElementById(id);
+      testImports.pass = function (id) {
+        var node = testImports.document.getElementById(id);
         if (!node) { console.trace(); }
         node = node.node___;
         node.appendChild(document.createTextNode('Passed ' + id));
         node.className = (node.className || '') + ' passed';
       };
-      ___.simpleFunc(testOuters.pass, 'pass');
+      ___.simpleFunc(testImports.pass, 'pass');
     </script>
 
     <div id="test-get-element-by-id-xyz___" class="testcontainer"></div>

@@ -5,7 +5,7 @@ loadModule
 (
 function
 (
-___OUTERS___
+IMPORTS___
 )
 {
 # test-input3.css:1+1-3+2
@@ -17,7 +17,7 @@ defineStyles___
 )
 ;
 # test-input2.html:1+47-4+1
-___OUTERS___
+IMPORTS___
 .
 htmlEmitter___
 .
@@ -27,7 +27,7 @@ ih
 )
 ;
 # test-input1.js:1+1-17
-___OUTERS___
+IMPORTS___
 .
 sep
 =
@@ -55,7 +55,7 @@ ___
 .
 asSimpleFunc
 (
-___OUTERS___
+IMPORTS___
 .
 foo
 )
@@ -67,7 +67,7 @@ ___
 .
 asSimpleFunc
 (
-___OUTERS___
+IMPORTS___
 .
 bar
 )
@@ -78,7 +78,7 @@ bar
 # test-input1.js:7+1-16
 if
 (
-___OUTERS___
+IMPORTS___
 .
 document
 )
@@ -87,7 +87,7 @@ document
 var
 tmp___
 =
-___OUTERS___
+IMPORTS___
 .
 document
 ;
@@ -132,7 +132,7 @@ sep
 # test-input1.js:12+1-2
 }
 # test-input2.html:4+39-7+1
-___OUTERS___
+IMPORTS___
 .
 htmlEmitter___
 .

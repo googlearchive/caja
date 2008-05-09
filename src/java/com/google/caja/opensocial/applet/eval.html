@@ -23,7 +23,7 @@
     <script type="text/javascript" src="domita.js"></script>
 
 <script type="text/javascript">
-var testOuters;
+var testImports;
 
 function loadCaja(html) {
   var m = html.match(
@@ -36,7 +36,7 @@ function loadCaja(html) {
       document.getElementById('caja-styles').innerHTML = style;
     }
 
-    testOuters.clearHtml___();
+    testImports.clearHtml___();
     eval(script);
   } else {
     (typeof console !== 'undefined')
@@ -45,7 +45,7 @@ function loadCaja(html) {
 }
 
 (function () {
-  testOuters = ___.copy(___.sharedOuters);
+  testImports = ___.copy(___.sharedImports);
   caja.result = ___.simpleFunc(function (o) {
     var type = document.createElement('span');
     type.className = 'type';
@@ -77,7 +77,7 @@ function loadCaja(html) {
     }
   }
 
-  ___.getNewModuleHandler().setOuters(testOuters);
+  ___.getNewModuleHandler().setImports(testImports);
   attachDocumentStub(
        '-xyz',
        {
@@ -88,18 +88,18 @@ function loadCaja(html) {
                    + '&mimeType=' + encodeURIComponent(mimeType);
              }
        },
-       testOuters);
-  testOuters.clearHtml___ = function () {
+       testImports);
+  testImports.clearHtml___ = function () {
     document.getElementById('caja-html').innerHTML = (
         '<center style="color: gray">eval</center>');
-    testOuters.htmlEmitter___ = new HtmlEmitter(
+    testImports.htmlEmitter___ = new HtmlEmitter(
         document.getElementById('caja-html'));
   };
 })();
 
 </script>
   </head>
-  <body onload="testOuters.clearHtml___()">
+  <body onload="testImports.clearHtml___()">
     <div id="eval-results"></div>
     <hr>
     <div id="caja-html" class="-xyz"></div>

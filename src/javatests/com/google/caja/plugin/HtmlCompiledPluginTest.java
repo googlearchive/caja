@@ -69,7 +69,7 @@ public class HtmlCompiledPluginTest extends TestCase {
   public void testWrapperAccess() throws Exception {
     execGadget(
         "<script>x='test';</script>",
-        "if (___.getNewModuleHandler().getOuters().x != 'test') {" +
+        "if (___.getNewModuleHandler().getImports().x != 'test') {" +
           "fail('Cannot see inside the wrapper');" +
         "}"
         );
@@ -268,9 +268,9 @@ public class HtmlCompiledPluginTest extends TestCase {
     execGadget(
         "<script>x=this;</script>",
 
-        "if (___.getNewModuleHandler().getOuters().x"
-        + "!== ___.getNewModuleHandler().getOuters())"
-        + "  fail('this not rewritten to outers in global scope');"
+        "if (___.getNewModuleHandler().getImports().x"
+        + "!== ___.getNewModuleHandler().getImports())"
+        + "  fail('this not rewritten to imports in global scope');"
         );
   }
 
@@ -282,7 +282,7 @@ public class HtmlCompiledPluginTest extends TestCase {
   public void testThisIsGlobalScope() throws Exception {
     execGadget(
         "<script>try{x=this;}catch(e){}</script>",
-        "if (___.getNewModuleHandler().getOuters().x === this)" +
+        "if (___.getNewModuleHandler().getImports().x === this)" +
           "fail('Global scope is accessible');"
         );
   }
@@ -298,7 +298,7 @@ public class HtmlCompiledPluginTest extends TestCase {
     if (false) {
     execGadget(
         "<script>var x = 1; x = this.prototype; x = 2;</script>",
-        "if (___.getNewModuleHandler().getOuters().x === 2)" +
+        "if (___.getNewModuleHandler().getImports().x === 2)" +
           "fail('Global scope prototype is accessible');"
         );
     }
@@ -452,7 +452,7 @@ public class HtmlCompiledPluginTest extends TestCase {
         "}" +
         "</script>",
         "assertEquals(" +
-        "    ___.getNewModuleHandler().getOuters().result.toSource()," +
+        "    ___.getNewModuleHandler().getImports().result.toSource()," +
         "    (['y', 'z']).toSource());");
     execGadget(
         "<script>" +
@@ -466,7 +466,8 @@ public class HtmlCompiledPluginTest extends TestCase {
         "}" +
         "</script>",
         "assertEquals(" +
-        "    ___.getNewModuleHandler().getOuters().test({x_:1, y:2, z:3}).sort().toSource()," +
+        "    ___.getNewModuleHandler().getImports().test({x_:1, y:2, z:3})" +
+        "        .sort().toSource()," +
         "    (['y', 'z']).toSource());");
     execGadget(
         "<script>" +
@@ -486,7 +487,8 @@ public class HtmlCompiledPluginTest extends TestCase {
         "var obj = new Foo();" +
         "</script>",
         "assertEquals(" +
-        "    ___.getNewModuleHandler().getOuters().obj.test().sort().toSource()," +
+        "    ___.getNewModuleHandler().getImports().obj.test()" +
+        "        .sort().toSource()," +
         "    (['test', 'x_', 'y']).toSource());");
   }
 
@@ -559,7 +561,7 @@ public class HtmlCompiledPluginTest extends TestCase {
         "  fail('Unattached methods are not being attached properly.');" +
         "}" +
         "</script>",
-        ""); 
+        "");
     execGadget(
         "<script>" +
         "function Foo() { this.gogo(); }" +

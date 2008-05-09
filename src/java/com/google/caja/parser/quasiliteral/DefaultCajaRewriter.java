@@ -349,7 +349,7 @@ public class DefaultCajaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match(ReservedNames.THIS, node, bindings)) {
           return scope.isGlobal() ?
-              subst("___OUTERS___", bindings) :
+              subst(ReservedNames.IMPORTS, bindings) :
               subst(ReservedNames.LOCAL_THIS, bindings);
         }
         return NONE;
@@ -429,7 +429,7 @@ public class DefaultCajaRewriter extends Rewriter {
           if (scope.isFunction(name)) {
             return substV(
                 "___.primFreeze(@x)",
-                "x", expandReferenceToOuters(bindings.get("x"), scope, mq));
+                "x", expandReferenceToImports(bindings.get("x"), scope, mq));
           }
         }
         return NONE;
@@ -446,7 +446,7 @@ public class DefaultCajaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("@x", node, bindings) &&
             bindings.get("x") instanceof Reference) {
-          return expandReferenceToOuters(bindings.get("x"), scope, mq);
+          return expandReferenceToImports(bindings.get("x"), scope, mq);
         }
         return NONE;
       }
@@ -501,7 +501,7 @@ public class DefaultCajaRewriter extends Rewriter {
         if (match("this.@p", node, bindings) && scope.isGlobal()) {
           String xName = getReferenceName(bindings.get("p"));
           return substV(
-              "___OUTERS___.@xCanRead ? ___OUTERS___.@x : ___.readPub(___OUTERS___, @xName);",
+              "IMPORTS___.@xCanRead ? IMPORTS___.@x : ___.readPub(IMPORTS___, @xName);",
               "x", bindings.get("p"),
               "xCanRead", newReference(xName + "_canRead___"),
               "xName", new StringLiteral(StringLiteral.toQuotedValue(xName)));
@@ -585,7 +585,7 @@ public class DefaultCajaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (match("this[@s]", node, bindings) && scope.isGlobal()) {
           return substV(
-              "___.readPub(___OUTERS___, @s)",
+              "___.readPub(IMPORTS___, @s)",
               "s", expand(bindings.get("s"), scope, mq));
         }
         return NONE;
@@ -646,9 +646,9 @@ public class DefaultCajaRewriter extends Rewriter {
           if (scope.isGlobal(propertyName) && !ReservedNames.THIS.equals(propertyName)) {
             return substV(
                 "@ref = @r," +
-                "___OUTERS___.@fp ?" +
-                "  (___OUTERS___.@p = @ref) :" +
-                "  ___.setPub(___OUTERS___, @rp, @ref);",
+                "IMPORTS___.@fp ?" +
+                "  (IMPORTS___.@p = @ref) :" +
+                "  ___.setPub(IMPORTS___, @rp, @ref);",
                 "ref", s(new Reference(scope.declareStartOfScopeTempVariable())),
                 "r",  expand(bindings.get("r"), scope, mq),
                 "p",  p,
@@ -709,9 +709,9 @@ public class DefaultCajaRewriter extends Rewriter {
           String propertyName = p.getIdentifierName();
           return substV(
               "@ref = @r," +
-              "___OUTERS___.@fp ?" +
-              "  (___OUTERS___.@p = @ref) :" +
-              "  ___.setPub(___OUTERS___, @rp, @ref);",
+              "IMPORTS___.@fp ?" +
+              "  (IMPORTS___.@p = @ref) :" +
+              "  ___.setPub(IMPORTS___, @rp, @ref);",
               "ref", s(new Reference(scope.declareStartOfScopeTempVariable())),
               "r",  expand(bindings.get("r"), scope, mq),
               "p",  p,
@@ -733,7 +733,9 @@ public class DefaultCajaRewriter extends Rewriter {
         if (match("this.@p = @r", node, bindings)) {
           String propertyName = ((Reference)bindings.get("p")).getIdentifierName();
           Reference target = newReference(
-              scope.isGlobal() ? ReservedNames.OUTERS : ReservedNames.LOCAL_THIS);
+              scope.isGlobal()
+              ? ReservedNames.IMPORTS
+              : ReservedNames.LOCAL_THIS);
           return substV(
               "@ref = @r," +
               "@target.@fp ?" +
@@ -776,7 +778,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 Scope methodScope = Scope.fromMethodContext(scope);
                 return substV(
                     "___.setMember(@clazz, @rp, @m);",
-                    "clazz", expandReferenceToOuters(clazz, scope, mq),  // Don't expand so we don't freeze.
+                    "clazz", expandReferenceToImports(clazz, scope, mq),  // Don't expand so we don't freeze.
                     "m", expandMember(bindings.get("m"), this, methodScope, mq),
                     "rp", toStringLiteral(p));
               }
@@ -969,7 +971,7 @@ public class DefaultCajaRewriter extends Rewriter {
             return node;
           } else {
             ParseTreeNode expr = substV(
-                "___.setPub(___OUTERS___, @vName, ___.readPub(___OUTERS___, @vName));",
+                "___.setPub(IMPORTS___, @vName, ___.readPub(IMPORTS___, @vName));",
                 "vName", toStringLiteral(bindings.get("v")));
             // Must now wrap the Expression in something Statement-like since
             // that is what the enclosing context expects:
@@ -1267,7 +1269,7 @@ public class DefaultCajaRewriter extends Rewriter {
           if (v instanceof Reference) {
             expand(v, scope, mq);  // Make sure v is mentionable
             return substV(
-                "___.deletePub(___OUTERS___, @vname)",
+                "___.deletePub(IMPORTS___, @vname)",
                 "vname", toStringLiteral(v));
           }
         }
@@ -1330,9 +1332,9 @@ public class DefaultCajaRewriter extends Rewriter {
           String methodName = m.getIdentifierName();
           return substV(
               "@as," +
-              "___OUTERS___.@fm ?" +
-              "    ___OUTERS___.@m(@vs*) :" +
-              "    ___.callPub(___OUTERS___, @rm, [@vs*])",
+              "IMPORTS___.@fm ?" +
+              "    IMPORTS___.@m(@vs*) :" +
+              "    ___.callPub(IMPORTS___, @rm, [@vs*])",
               "as", newCommaOperation(aliases.b.children()),
               "vs", aliases.a,
               "m",  m,
@@ -1400,8 +1402,8 @@ public class DefaultCajaRewriter extends Rewriter {
             scope.isFunction(getReferenceName(bindings.get("base")))) {
           return substV(
               "caja.def(@fname, @base)",
-              "fname", expandReferenceToOuters(bindings.get("fname"), scope, mq),
-              "base", expandReferenceToOuters(bindings.get("base"), scope, mq));
+              "fname", expandReferenceToImports(bindings.get("fname"), scope, mq),
+              "base", expandReferenceToImports(bindings.get("base"), scope, mq));
         }
         return NONE;
       }
@@ -1449,8 +1451,8 @@ public class DefaultCajaRewriter extends Rewriter {
           Scope s2 = Scope.fromMethodContext(scope);
           return substV(
               "caja.def(@fname, @base, @mm, @ss?)",
-              "fname", expandReferenceToOuters(bindings.get("fname"), scope, mq),
-              "base", expandReferenceToOuters(bindings.get("base"), scope, mq),
+              "fname", expandReferenceToImports(bindings.get("fname"), scope, mq),
+              "base", expandReferenceToImports(bindings.get("base"), scope, mq),
               "mm", expandMemberMap(bindings.get("mm"), this, s2, mq),
               "ss", ss);
         }
@@ -1790,7 +1792,7 @@ public class DefaultCajaRewriter extends Rewriter {
               // Expand the parameters, but not the call itself.
               bNode = new ExpressionStmt((Expression)substV(
                   "@super.call(this, @params*);",
-                  "super", expandReferenceToOuters(superBindings.get("super"), s2, mq),
+                  "super", expandReferenceToImports(superBindings.get("super"), s2, mq),
                   "params", expand(superBindings.get("params"), s2, mq)));
             } else {
               // If it's not a call to a constructor, expand the entire node.
@@ -2006,7 +2008,7 @@ public class DefaultCajaRewriter extends Rewriter {
             // should not fail with an exception.
             expand(f, scope, mq);
             return substV(
-                "typeof ___.readPub(___OUTERS___, @fname)",
+                "typeof ___.readPub(IMPORTS___, @fname)",
                 "fname", toStringLiteral(f));
           } else {
             return substV(

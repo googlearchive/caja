@@ -55,19 +55,19 @@ public final class CssCompiler {
    */
   public Statement compileCss(CssTree.StyleSheet ss) {
     //     '#foo {}'                                        ; The original rule
-    // =>  '#foo-'+___OUTERS___.getIdClass___()+' {}'       ; Cajoled rule
+    // =>  '#foo-' + IMPORTS___.getIdClass___() + ' {}'     ; Cajoled rule
     // =>  '#foo-gadget123___ {}'                           ; In the browser
     rewriteIds(ss);
     // Make sure that each selector only applies to nodes under a node
     // controlled by the gadget.
     //     'p { }'                                          ; The original rule
-    // =>  '.'+___OUTERS___.getIdClass___()+'___ p { }'     ; Cajoled rule
+    // =>  '.' + IMPORTS___.getIdClass___() + '___ p { }'   ; Cajoled rule
     // =>  '.gadget123___ p { }'                            ; In the browser
     restrictRulesToSubtreeWithGadgetClass(ss);
     // Convert the CSS to JavaScript which emits the same styles.
     //     'p { }'
-    // =>  '___OUTERS___.emitCss___(
-    //         ['.',' p { }'].join(___OUTERS___.getIdClass___()))
+    // =>  'IMPORTS___.emitCss___(
+    //         ['.',' p { }'].join(IMPORTS___.getIdClass___()))
     return cssToJs(ss);
   }
 
@@ -182,17 +182,17 @@ public final class CssCompiler {
     // The CSS rule
     //     p { color: purple }
     // is converted to the JavaScript
-    //     ___OUTERS___.emitCss___(
+    //     IMPORTS___.emitCss___(
     //         ['.', ' p { color: purple }']
-    //         .join(___OUTERS___.getIdClass___()));
+    //         .join(IMPORTS___.getIdClass___()));
     //
-    // If ___OUTERS___.getIdClass() returns "g123___", then the resulting
+    // If IMPORTS___.getIdClass() returns "g123___", then the resulting
     //     .g123___ p { color: purple }
     // will only make purple paragraphs that are under a node with class g123__.
     ExpressionStmt emitStmt = new ExpressionStmt(
         (Expression) QuasiBuilder.substV(
-            ReservedNames.OUTERS + ".emitCss___(@cssParts.join("
-            + ReservedNames.OUTERS + ".getIdClass___()))",
+            ReservedNames.IMPORTS + ".emitCss___(@cssParts.join("
+            + ReservedNames.IMPORTS + ".getIdClass___()))",
             "cssParts", cssPartsArray));
     emitStmt.setFilePosition(ss.getFilePosition());
     return emitStmt;

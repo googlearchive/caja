@@ -88,8 +88,8 @@ public final class OpenTemplateStageTest extends CajaTestCase {
 
   public void testCssRewriting() throws Exception {
     assertRewritten(
-        "___OUTERS___.blessCss___('color', ___OUTERS___.cssColor___(c),"
-        + " 'margin-left;marginLeft', ___OUTERS___.cssNumber___(x) + 'px')",
+        "IMPORTS___.blessCss___('color', IMPORTS___.cssColor___(c),"
+        + " 'margin-left;marginLeft', IMPORTS___.cssNumber___(x) + 'px')",
 
         "eval(Template('color: ${c};'\n"
         + "            + ' margin-left: ${x}px',\n"
@@ -100,7 +100,7 @@ public final class OpenTemplateStageTest extends CajaTestCase {
   public void testInvalidCss() throws Exception {
     assertRewritten(
         // Unsafe function expression stripped out
-        "___OUTERS___.blessCss___()",
+        "IMPORTS___.blessCss___()",
 
         "eval(Template('color: expression(x)', 'text/css'))",
         // Fails to cajole.

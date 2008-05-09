@@ -230,11 +230,11 @@ public final class GxpCompiler {
     }
 
     // Join the html via out___.join('') and mark it as safe html
-    //   return ___OUTERS___.blessHtml___(out.join(''));
+    //   return IMPORTS___.blessHtml___(out.join(''));
     ReturnStmt result = s(new ReturnStmt(
         TreeConstruction.call(
             TreeConstruction.memberAccess(
-                ReservedNames.OUTERS, ReservedNames.BLESS_HTML),
+                ReservedNames.IMPORTS, ReservedNames.BLESS_HTML),
             TreeConstruction.call(
                 TreeConstruction.memberAccess(
                     ReservedNames.OUTPUT_BUFFER, "join"),
@@ -384,7 +384,7 @@ public final class GxpCompiler {
                 // Wrap the expression in a wrapper function
                 Operation e = TreeConstruction.call(
                     TreeConstruction.memberAccess(
-                        ReservedNames.OUTERS, wrapperFn),
+                        ReservedNames.IMPORTS, wrapperFn),
                     asExpression(valueT));
                 JsWriter.append(e, tgtChain, b);
               }
@@ -463,10 +463,10 @@ public final class GxpCompiler {
                 JsWriter.append(
                     TreeConstruction.call(
                         TreeConstruction.memberAccess(
-                            ReservedNames.OUTERS, ReservedNames.HTML_ATTR),
+                            ReservedNames.IMPORTS, ReservedNames.HTML_ATTR),
                         TreeConstruction.call(
                             TreeConstruction.memberAccess(
-                                ReservedNames.OUTERS, wrapperFn),
+                                ReservedNames.IMPORTS, wrapperFn),
                             TreeConstruction.call(
                                 TreeConstruction.memberAccess(synthId, "join"),
                                 s(new StringLiteral("''"))))),
@@ -790,7 +790,7 @@ public final class GxpCompiler {
     }
     if (fnName != null) {
       e = TreeConstruction.call(
-              TreeConstruction.memberAccess(ReservedNames.OUTERS, fnName), e);
+              TreeConstruction.memberAccess(ReservedNames.IMPORTS, fnName), e);
     }
     JsWriter.append(e, tgtChain, b);
   }
@@ -845,13 +845,14 @@ public final class GxpCompiler {
 
     if (bad) { return; }
 
-    // Append ___OUTERS___.html___(
-    //     <assignedName>.call(___OUTERS___, <param 0>, ...));
+    // Append IMPORTS___.html___(
+    //     <assignedName>.call(IMPORTS___, <param 0>, ...));
     operands[0] = TreeConstruction.memberAccess(sig.assignedName, "call");
-    operands[1] = s(new Reference(s(new Identifier(ReservedNames.OUTERS))));
+    operands[1] = s(new Reference(s(new Identifier(ReservedNames.IMPORTS))));
 
     Operation call = TreeConstruction.call(
-        TreeConstruction.memberAccess(ReservedNames.OUTERS, ReservedNames.HTML),
+        TreeConstruction.memberAccess(
+            ReservedNames.IMPORTS, ReservedNames.HTML),
         s(Operation.create(Operator.FUNCTION_CALL, operands)));
     JsWriter.append(call, tgtChain, b);
   }
@@ -1140,12 +1141,11 @@ public final class GxpCompiler {
         gxpc.eventHandlers.put(
             handlerFnName,
             new ExpressionStmt((Expression) QuasiBuilder.substV(
-                "___OUTERS___.@handlerFnName = ___.simpleFunc("
+                "IMPORTS___.@handlerFnName = ___.simpleFunc("
                 + "   function (" + ReservedNames.THIS_NODE + ", event) {"
                 + "     @handler*;"
                 + "   });",
-                "handlerFnName",
-                    s(new Reference(s(new Identifier(handlerFnName)))),
+                "handlerFnName", TreeConstruction.ref(handlerFnName),
                 "handler", handler)));
 
         String handlerFnNameLit = StringLiteral.toQuotedValue(handlerFnName);
@@ -1159,7 +1159,7 @@ public final class GxpCompiler {
                     + "this, event || window.event, "),
                 TreeConstruction.call(
                     TreeConstruction.memberAccess("___", "getId"),
-                    TreeConstruction.ref(ReservedNames.OUTERS)))),
+                    TreeConstruction.ref(ReservedNames.IMPORTS)))),
             TreeConstruction.stringLiteral(", " + handlerFnNameLit + ")")));
         JsWriter.append(dispatcher, tgtChain, b);
       }

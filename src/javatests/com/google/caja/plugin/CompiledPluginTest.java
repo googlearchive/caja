@@ -81,7 +81,7 @@ public class CompiledPluginTest extends TestCase {
         "\n  var div = document.createElement('DIV');" +
         "\n  div.id = 'hello-base-post';" +
         "\n  document.body.appendChild(div);" +
-        "\n  testOuters.main();" +
+        "\n  testImports.main();" +
         "\n" +
         "\n  assertEquals(" +
         "\n      '<h1>Hello World</h1>'," +
@@ -113,13 +113,13 @@ public class CompiledPluginTest extends TestCase {
         "\n  div.id = 'base-post';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
-        "\n  testOuters.main(1);" +
+        "\n  testImports.main(1);" +
         "\n  assertEquals(" +
         "\n      'Branch A'," +
         "\n      document.getElementById('base-post').innerHTML" +
         "\n      );" +
         "\n" +
-        "\n  testOuters.main(0);" +
+        "\n  testImports.main(0);" +
         "\n  assertEquals(" +
         "\n      'Branch B'," +
         "\n      document.getElementById('base-post').innerHTML" +
@@ -150,7 +150,7 @@ public class CompiledPluginTest extends TestCase {
         "\n  div.id = 'base-post';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
-        "\n  testOuters.main(['foo', 'bar', 'boo & baz']);" +
+        "\n  testImports.main(['foo', 'bar', 'boo & baz']);" +
         "\n  assertEquals(" +
         "\n      '<ul><li>foo</li><li>bar</li><li>boo &amp; baz</li></ul>'," +
         "\n      document.getElementById('base-post').innerHTML" +
@@ -182,7 +182,7 @@ public class CompiledPluginTest extends TestCase {
         "\n  div.id = 'base-post';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
-        "\n  testOuters.main();" +
+        "\n  testImports.main();" +
         "\n  assertEquals(" +
         "\n      '<a class=\"class1 class2\"' +" +
         "\n      ' href=\"http://proxy/?uri=foo.html%3fa%3db%26c%3dd\"' +" +
@@ -235,7 +235,7 @@ public class CompiledPluginTest extends TestCase {
         "\n  div.id = 'base-post';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
-        "\n  testOuters.main();" +
+        "\n  testImports.main();" +
         "\n  assertEquals(" +
         "\n      '(1,2)(1,2)'," +
         "\n      document.getElementById('base-post').innerHTML" +
@@ -272,7 +272,7 @@ public class CompiledPluginTest extends TestCase {
         "\n  div.id = 'base-post';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
-        "\n  testOuters.main();" +
+        "\n  testImports.main();" +
         "\n  assertEquals(" +
         "\n      'left : 25px ; width : 30px ; margin : 5px 5px 5px 5px ; ' +" +
         "\n      'color : #a0b0c0'," +
@@ -375,9 +375,11 @@ public class CompiledPluginTest extends TestCase {
             "var uriCallback = { rewrite: function (uri, mimeType) {\n"
             + "  return 'http://proxy/?uri=' + encodeURIComponent(uri);\n"
             + "} };\n"
-            + "var testOuters = ___.getNewModuleHandler().getOuters();\n"
-            + "attachDocumentStub('-post', uriCallback, testOuters);\n"
-            + "testOuters.log = ___.simpleFunc(function(s) {console.log(s)});"),
+            + "var testImports = ___.getNewModuleHandler().getImports();\n"
+            + "attachDocumentStub('-post', uriCallback, testImports);\n"
+            + "testImports.log = ___.simpleFunc(function(s) {\n"
+            + "  console.log(s);\n"
+            + "});"),
             "container"),
         // The Plugin
         new RhinoTestBed.Input(

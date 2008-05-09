@@ -287,7 +287,7 @@ public class GxpCompilerTest extends CajaTestCase {
 
   public void testFormRewritten2() throws Exception {
     assertOutput(
-        "out___.push('<form name=\\\"hi-', ___OUTERS___.getIdClass___(), '\\\""
+        "out___.push('<form name=\\\"hi-', IMPORTS___.getIdClass___(), '\\\""
         + " onsubmit=\\\"return false\\\"></form>');",
         true,
         "<gxp:template name=\"Test\">"
@@ -316,7 +316,7 @@ public class GxpCompilerTest extends CajaTestCase {
   public void testUnrewrittenAttrAttrib() throws Exception {
     assertOutput(
         "out___.push('<img src=\\\"/testplugin/blank.gif\\\" width=\\\"', "
-        + "___OUTERS___.htmlAttr___(screenWidth() / 2), '\\\">');",
+        + "IMPORTS___.htmlAttr___(screenWidth() / 2), '\\\">');",
         true,
         "<gxp:template name=\"Test\">"
         + "<img src=\"blank.gif\">"
@@ -355,9 +355,9 @@ public class GxpCompilerTest extends CajaTestCase {
   public void testCssSubstitution() throws Exception {
     assertOutput(
         "out___.push('<div style=\\\"position: absolute;\\nleft: ', "
-        + "___OUTERS___.cssNumber___(x + 10), 'px;\\nright: ', "
-        + "___OUTERS___.cssNumber___(x + 50), 'px\\\""
-        + " id=\\\"foo-', ___OUTERS___.getIdClass___(), '\\\">\\n"
+        + "IMPORTS___.cssNumber___(x + 10), 'px;\\nright: ', "
+        + "IMPORTS___.cssNumber___(x + 50), 'px\\\""
+        + " id=\\\"foo-', IMPORTS___.getIdClass___(), '\\\">\\n"
         + "Hello\\n</div>');",
         true,
         "<gxp:template name=\"Test\">\n"
@@ -502,7 +502,7 @@ public class GxpCompilerTest extends CajaTestCase {
       String actual = actualBuf.toString().trim();
       // get rid of boilerplate
       String pre = "function Test() {\n  var out___ = [ ];\n  ",
-          post = ("\n  return ___OUTERS___.blessHtml___"
+          post = ("\n  return IMPORTS___.blessHtml___"
                   + "(out___.join(''));\n}");
       assertTrue(actual, actual.startsWith(pre));
       assertTrue(actual, actual.endsWith(post));
