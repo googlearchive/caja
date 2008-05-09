@@ -27,7 +27,7 @@ var searchEngine;
  * @param {string} query a search query.
  * @param {string} snippet a search result snippet.
  */
-function showKitten(result) {
+this.showKitten = function showKitten(result) {
   var title = result.titleHtml.replace(/<\/?\w[^>]*>/g, '')
   var snippet = result.snippetHtml.replace(/<\/?\w[^>]*>/g, '');
 
@@ -39,7 +39,7 @@ function showKitten(result) {
 
   // Search for cat pictures.
   searchEngine.imageSearch(
-      'cute (kitten OR cat) ' + title,
+      'cute +(kitten OR cat) ' + title,
       function (imageResults) {
         var n = imageResults.length;
         if (!n) {
@@ -49,16 +49,16 @@ function showKitten(result) {
 
         // Pick one at random.
         var k = 0;  // (Math.random() * n) | 0;  FAKE FOR DEMO
-        log('chose ' + k + ' from ' + imageResults.length);
+        console.log('chose ' + k + ' from ' + imageResults.length);
 
         // Display it.
         renderKittenTable(imageResults[k].url, snippet);
       });
-}
+};
 
 function renderKittenTable(imageUrl, snippet) {
-  document.getElementById('base').setInnerHTML(eval(Template(
+  document.getElementById('base').innerHTML = eval(Template(
       '<table><tr><td align=center><img src="${imageUrl}"></tr>'
-      + '<tr><td style=width:30em align=center>${katTranzlator(snippet || "")}'
-      + '</table>')));
+      + '<tr><td class=snippet align=center>${katTranzlator(snippet || "")}'
+      + '</table>'));
 }

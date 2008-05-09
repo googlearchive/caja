@@ -121,8 +121,8 @@ Graph.prototype.step = function (nSteps, scale, threshold) {
   for (var i = nNodes; --i >= 0;) {
     var graphNode = nodes[i];
     var domNode = graphNode.domNode;
-    graphNode.x = domNode.getOffsetLeft() + (domNode.getOffsetWidth() >>> 1);
-    graphNode.y = domNode.getOffsetTop() + (domNode.getOffsetHeight() >>> 1);
+    graphNode.x = domNode.offsetLeft + (domNode.offsetWidth >>> 1);
+    graphNode.y = domNode.offsetTop + (domNode.offsetHeight >>> 1);
   }
 
   var naturalSpringLength = scale;
@@ -165,8 +165,8 @@ Graph.prototype.step = function (nSteps, scale, threshold) {
       } else {
         ay = force * (sy < 0 ? -1 : 1);
       }
-//    log('s=' + s + ', force=' + force + ', ax=' + ax + ', ay=' + ay +
-//        ', weight=' + weight);
+//    console.log('s=' + s + ', force=' + force + ', ax=' + ax + ', ay=' + ay +
+//                ', weight=' + weight);
 
       nodeI.dx += ax;
       nodeI.dy += ay;
@@ -187,22 +187,22 @@ Graph.prototype.step = function (nSteps, scale, threshold) {
   for (var i = nNodes; --i >= 1;) {
     var graphNode = nodes[i];
     var domNode = graphNode.domNode;
-    var width = domNode.getOffsetWidth(),
-        height = domNode.getOffsetHeight();
+    var width = domNode.offsetWidth,
+        height = domNode.offsetHeight;
     var newStyle = position(
       graphNode.x + graphNode.dx * nSteps - width / 2,
       graphNode.y + graphNode.dy * nSteps - height / 2,
       width,
       height);
-//  log('i=' + i + ' : id=' + domNode.getId() + ', x=' + graphNode.x + ', y=' +
-//      graphNode.y +
-//      ', dx=' + graphNode.dx + ', dy=' + graphNode.dy +
-//      '\n\tnewStyle=' + newStyle.toString().replace(/\n/g, ' ') +
-//      '\n\toldStyle=' + domNode.getStyle().toString().replace(/\n/g, ' '));
+//  console.log('i=' + i + ' : id=' + domNode.getId() + ', x=' + graphNode.x +
+//              ', y=' +graphNode.y + ', dx=' + graphNode.dx +
+//              ', dy=' + graphNode.dy + '\n\tnewStyle=' +
+//              newStyle.toString().replace(/\n/g, ' ') + '\n\toldStyle=' +
+//              domNode.getStyle().toString().replace(/\n/g, ' '));
     domNode.setStyle(newStyle);
   }
 
-  log('totVelSqr=' + totVelSqr + ' for ' + nSteps + ' steps');
+  //console.log('totVelSqr=' + totVelSqr + ' for ' + nSteps + ' steps');
   // return true to indicate we've reached equilibrium
   return !(totVelSqr >= threshold);
 };
@@ -216,8 +216,8 @@ Graph.prototype.initLayout = function () {
 
   // assume node 0 is anchored and arrange other nodes around it.
   var anchor = nodes[0].domNode;
-  var x0 = anchor.getOffsetLeft() + (anchor.getOffsetWidth() / 2),
-      y0 = anchor.getOffsetTop() + (anchor.getOffsetHeight() / 2);
+  var x0 = anchor.offsetLeft + (anchor.offsetWidth / 2),
+      y0 = anchor.offsetTop + (anchor.offsetHeight / 2);
   var xExtent = x0 * .8, yExtent = y0 * .8;
 
   // arrange in an ellipse around anchor
@@ -230,8 +230,8 @@ Graph.prototype.initLayout = function () {
         position(
             x0 + Math.cos(theta) * xExtent,
             y0 - Math.sin(theta) * yExtent,
-            domNode.getOffsetWidth(),
-            domNode.getOffsetHeight()));
+            domNode.offsetWidth,
+            domNode.offsetHeight));
   }
 
 };
@@ -239,10 +239,10 @@ Graph.prototype.initLayout = function () {
 var selectedNode = null;
 function selectNode(domNode) {
   if (selectedNode) {
-    selectedNode.setClass('node');
+    selectedNode.className = 'node';
   }
   if (domNode) {
-    domNode.setClass('node selected');
+    domNode.className = 'node selected';
     setSelectedUser(domNode.getFirstChild().getInnerHTML());
   }
   selectedNode = domNode;

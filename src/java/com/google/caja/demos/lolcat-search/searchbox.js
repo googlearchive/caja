@@ -56,16 +56,13 @@ function doSearch(button) {
         resultsOfLastSearch = results.slice(0);
 
         var resultList = document.getElementById('results');
-        log('resultList=' + resultList);
         for (var child; (child = resultList.getFirstChild());) {
           resultList.removeChild(child);
         }
-        log('removed children');
         // For each link, create an <li> tag containing a link.
         var n = results.length;
         if (!n) {
-          resultList.setInnerHTML(
-              eval(Template('<center>No results</center>')));
+          resultList.innerHTML = eval(Template('<center>No results</center>'));
           return;
         }
         for (var i = 0; i < n; ++i) {
@@ -74,11 +71,13 @@ function doSearch(button) {
           var snippetText = result.snippetHtml.replace(
               /<\/?[A-Za-z][^>]*>/g, ' ');
           var titleText = result.titleHtml.replace(/<\/?[A-Za-z][^>]*>/g, ' ');
-          li.setInnerHTML(eval(Template(
+          li.innerHTML = eval(Template(
               '<b>$titleText</b> &mdash; '
-              + '<tt><a href="#">${result.url}</a></tt>'))
-              );
-          li.addEventListener('click', curry(showResult, [i]));
+              + '<tt><a href="#">${result.url}</a></tt>'));
+          li.addEventListener(
+              'click', (function (i) {
+                          return function () { return showResult(i); };
+                        })(i));
           resultList.appendChild(li);
         }
       });
@@ -94,10 +93,6 @@ function showResult(index) {
     resultConsumer(clone(result));
   }
   return false;
-}
-
-function curry(fn, args) {
-  return function () { return fn.apply({}, args); };
 }
 
 /**

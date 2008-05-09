@@ -18,11 +18,36 @@
   <head>
     <title>Search</title>
 
+    <script type=text/javascript>
+    window.onerror = function (msg, url, line) {
+      url = String(url);
+      try {
+        console.log(
+            url.substring(url.lastIndexOf('/') + 1) + ':' + line + ' ' + msg);
+        console.trace();
+      } catch (ex) {
+        alert(url.substring(url.lastIndexOf('/') + 1) + ':' + line + ' ' + msg);
+      }
+    };
+    </script>
+
     <!-- Stub out firefox. -->
     <script type="text/javascript" src="firebugx.js"></script>
 
-    <!-- Caja framework. -->
-    <script type="text/javascript" src="caja.js"></script>
+    <!-- load the runtime environment -->
+    <script type="text/javascript" src="log-to-console.js"></script>
+    <script type="text/javascript" src="domita-minified.js"></script>
+
+    <script type="text/javascript">(function () {
+      ___.sharedOuters.console = {};
+      for (var k in { log: 0, warn: 0, info: 0, error: 0, trace: 0,
+                      group: 0, groupEnd: 0, time: 0, timeEnd: 0, dir: 0,
+                      assert: 0, dirxml: 0, profile: 0, profileEnd: 0 }) {
+        ___.sharedOuters.console[k] = (function (k, f) {
+          return ___.simpleFunc(function () { f.apply(console, arguments); });
+        })(k, console[k]);
+      }
+    })();</script>
 
     <!-- Google Search API as documented at
       - http://code.google.com/apis/ajaxsearch/documentation/reference.html -->
@@ -35,23 +60,23 @@
     <script type="text/javascript">google.load('search', '1');</script>
     <script type="text/javascript" src="searchengine.js"></script>
     <script type="text/javascript" src="chtml.js"></script>
-    <script type="text/javascript" src="unicode.js"></script>
-    <script type="text/javascript" src="html4-defs.js"></script>
-    <script type="text/javascript" src="html-sanitizer.js"></script>
-    <script type="text/javascript" src="html-emitter.js"></script>
-    <script type="text/javascript" src="domita.js"></script>
+    <script type="text/javascript">
+      ___.sharedOuters.StringInterpolation
+         = ___.ctor(StringInterpolation, Object);
+      ___.allowRead(___.sharedOuters, 'StringInterpolation');
+    </script>
   </head>
   <body bgcolor="white">
     <!-- Define some DOM nodes which will be accessible to the gadgets. -->
     <!-- One for the searchbox gadget -->
-    <div id="searchbox-base" class="searchbox"></div>
+    <div id="base-searchbox" class="searchbox"></div>
 
     <hr>
 
     <!-- One for the kittens gadget. -->
-    <div id="kittens-base" class="kittens" style="float: right"></div>
+    <div id="base-kittens" class="kittens" style="float: right"></div>
     <!-- And another for the searchbox gadget. -->
-    <div class=searchbox><ul id="searchbox-results"></ul></div>
+    <div class=searchbox><ul id="results-searchbox"></ul></div>
 
     <!--
       - Initialize separate global namespaces for each plugin as specified at
@@ -59,24 +84,30 @@
      -->
     <script type="text/javascript">
       var searchBoxOuters = ___.copy(___.sharedOuters);
-      attachDocumentStubs('searchbox-', searchBoxOuters);
+      attachDocumentStub(
+          '-searchbox', { rewrite: function () { return null; } },
+          searchBoxOuters);
       searchBoxOuters.htmlEmitter___ = new HtmlEmitter(
-          document.getElementById('searchbox-base'));
+          document.getElementById('base-searchbox'));
+    </script>
+    <script type="text/javascript">
+      var kittensOuters = ___.copy(___.sharedOuters);
+      attachDocumentStub(
+          '-kittens', { rewrite: function (url, mimeType) {
+                          return /^image\//.test(mimeType) ? url : null;
+                        } }, kittensOuters);
+      kittensOuters.htmlEmitter___ = new HtmlEmitter(
+          document.getElementById('base-kittens'));
+    </script>
+
+    <script type="text/javascript">
       ___.getNewModuleHandler().setOuters(searchBoxOuters);
     </script>
     <script type="text/javascript" src=searchbox-cajoled.js></script>
-    <script type="text/javascript">closeGadgetRoot();</script>
-    <link rel="stylesheet" type="text/css" href="searchbox-cajoled.css" />
     <script type="text/javascript">
-      var kittensOuters = ___.copy(___.sharedOuters);
-      attachDocumentStubs('kittens-', kittensOuters);
-      kittensOuters.htmlEmitter___ = new HtmlEmitter(
-          document.getElementById('kitten-base'));
       ___.getNewModuleHandler().setOuters(kittensOuters);
     </script>
     <script type="text/javascript" src="kittens-cajoled.js"></script>
-    <script type="text/javascript">closeGadgetRoot();</script>
-    <link rel="stylesheet" type="text/css" href="kittens-cajoled.css" />
 
     <!-- Inject some capabilities into the 2 plugins. -->
     <script type="text/javascript">
@@ -88,10 +119,14 @@
         // Provide both modules an interface to Google search.
         searchBoxOuters.searchEngine = kittensOuters.searchEngine
             = searchEngine;
+        ___.allowRead(searchBoxOuters, 'searchEngine');
+        ___.allowRead(kittensOuters, 'searchEngine');
 
         // Allow searchBoxOuters to talk to kittens.
         searchBoxOuters.resultConsumer = kittensOuters.showKitten;
+        ___.allowRead(searchBoxOuters, 'resultConsumer');
       })();
     </script>
+
   </body>
 </html>

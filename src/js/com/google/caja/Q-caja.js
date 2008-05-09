@@ -6,7 +6,7 @@
 
 // This module is written in the Caja subset of Javascript. It should
 // work whether run translated or untranslated. Either way, it depends
-// on caja.js and JSON.js (the Caja-friendly safe JSON library). It
+// on caja.js and json2.js (the Caja-friendly safe JSON library). It
 // also depends on a global "xmlHttp" object as would be defined by the
 // following untranslated JavaScript code:
 // <pre>
@@ -276,7 +276,7 @@ var Q = function() {
       } else {
         xmlHttp.setRequestHeader('Content-Type',
                                  'application/jsonrequest');
-        xmlHttp.send(JSON.serialize(m.argv));
+        xmlHttp.send(JSON.stringify(m.argv));
       }
     };
     

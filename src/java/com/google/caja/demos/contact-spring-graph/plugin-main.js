@@ -24,7 +24,7 @@
  * and, like this file, is untrusted code.
  * <p><tt>plugin-api.js</tt> contains the methods that the embedding Calendar
  * application exports to this plugin.
- * 
+ *
  * @author mikesamuel@gmail.com
  */
 
@@ -47,7 +47,7 @@
     name = name.charAt(0).toUpperCase() + name.substring(1);
     contacts.push({ description: email, name: name });
   }
-  log('got ' + contacts.length + ' contacts');
+  console.log('got ' + contacts.length + ' contacts');
   // The comparator function is called with "this" as the window, but since this
   // implementation doesn't reference "this", the compiler doesn't insert a
   // runtime check that "this" is not the global scope.
@@ -67,10 +67,10 @@
   // contactSet now maps email addresses to index in the node list
 
   // create the DOM representation of the graph
-  getElementById('base').setInnerHTML(graph(contacts));
+  document.getElementById('base').setInnerHTML(graph(contacts));
 
   var domNodes = [];
-  var graphContainer = getElementById('graph');
+  var graphContainer = document.getElementById('graph');
   for (var domNode = graphContainer.getFirstChild();
        domNode; domNode = domNode.getNextSibling()) {
     if (domNode.getNodeType() === /* DOM_NODE_ELEMENT */ 1) {
@@ -83,7 +83,7 @@
   var springGraph = new Graph(domNodes);
 
   // build the edges
-  log('computing edge weights');
+  console.log('computing edge weights');
   var edgeWeights = {};
   // . . For each event
   for (var i = events.length; --i >= 0;) {
@@ -125,13 +125,13 @@
   springGraph.initLayout();
 
   // set up a timeout to update the layout periodically
-  var scale = graphContainer.getOffsetWidth() / 6;
+  var scale = graphContainer.offsetWidth / 6;
   var count = 0;
   var t = (new Date()).getTime();
   var MAX_STEPS = 70, PERIOD = 100;
   function step() {
     var t1 = (new Date()).getTime();
-    //log('t1=' + t1 + ', t=' + t);
+    //console.log('t1=' + t1 + ', t=' + t);
     var nSteps = ((t1 - t) / PERIOD) | 0;
     var done = springGraph.step(nSteps, scale, 3.0);
     t += nSteps * PERIOD;

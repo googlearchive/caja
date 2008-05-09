@@ -41,10 +41,10 @@ import com.google.caja.parser.js.Conditional;
 import com.google.caja.parser.js.ContinueStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.ForEachLoop;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
-import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
@@ -53,6 +53,7 @@ import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -92,10 +93,10 @@ public final class GxpCompiler {
   private final MessageQueue mq;
   private final PluginMeta meta;
   private final GxpValidator gxpValidator;
-  private Map<String, TemplateSignature> sigs =
-    new LinkedHashMap<String, TemplateSignature>();
-  private Map<String, FunctionDeclaration> eventHandlers =
-    new LinkedHashMap<String, FunctionDeclaration>();
+  private Map<String, TemplateSignature> sigs
+      = new LinkedHashMap<String, TemplateSignature>();
+  private Map<String, Statement> eventHandlers
+      = new LinkedHashMap<String, Statement>();
   private int syntheticIdCounter;
 
   public GxpCompiler(CssSchema cssSchema, HtmlSchema htmlSchema,
@@ -247,7 +248,7 @@ public final class GxpCompiler {
     return sigs.values();
   }
 
-  public Collection<? extends FunctionDeclaration> getEventHandlers() {
+  public Collection<? extends Statement> getEventHandlers() {
     return eventHandlers.values();
   }
 
@@ -1133,35 +1134,34 @@ public final class GxpCompiler {
                  List<String> tgtChain, Block b) {
         // Extract the handler into a function so that it can be analyzed.
         Block handler = gxpc.asBlock(t.getAttribValueNode());
+        HtmlCompiler.rewriteEventHandlerReferences(handler);
 
         String handlerFnName = gxpc.syntheticId();
         gxpc.eventHandlers.put(
             handlerFnName,
-            s(new FunctionDeclaration(
-                s(new Identifier(handlerFnName)),
-                s(new FunctionConstructor(
-                      s(new Identifier(handlerFnName)),
-                      Arrays.asList(
-                          s(new FormalParam(
-                                s(new Identifier(ReservedNames.THIS_NODE)))),
-                          s(new FormalParam(s(new Identifier("event"))))),
-                      // TODO(mikesamuel): replace instances of this in handler
-                      // with synthetic references to ReservedNames.THIS_NODE
-                      handler)))));
+            new ExpressionStmt((Expression) QuasiBuilder.substV(
+                "___OUTERS___.@handlerFnName = ___.simpleFunc("
+                + "   function (" + ReservedNames.THIS_NODE + ", event) {"
+                + "     @handler*;"
+                + "   });",
+                "handlerFnName",
+                    s(new Reference(s(new Identifier(handlerFnName)))),
+                "handler", handler)));
 
-        // ' foo="return plugin_dispatchevent___(this, event || window.event, ',
-        // ___.getId(___OUTERS___), ', \'myHandlerFn\');"'
-        JsWriter.appendString(
-            "return plugin_dispatchEvent___(this, event || window.event, ",
-            tgtChain, b);
-        JsWriter.append(
-            TreeConstruction.call(
-                TreeConstruction.memberAccess("___", "getId"),
-                s(new Reference(s(new Identifier(ReservedNames.OUTERS))))),
-            tgtChain, b);
-        JsWriter.appendString(
-            ", " + StringLiteral.toQuotedValue(handlerFnName) + ");",
-            tgtChain, b);
+        String handlerFnNameLit = StringLiteral.toQuotedValue(handlerFnName);
+
+        Operation dispatcher = s(Operation.create(
+            Operator.ADDITION,
+            s(Operation.create(
+                Operator.ADDITION,
+                TreeConstruction.stringLiteral(
+                    "return plugin_dispatchEvent___("
+                    + "this, event || window.event, "),
+                TreeConstruction.call(
+                    TreeConstruction.memberAccess("___", "getId"),
+                    TreeConstruction.ref(ReservedNames.OUTERS)))),
+            TreeConstruction.stringLiteral(", " + handlerFnNameLit + ")")));
+        JsWriter.append(dispatcher, tgtChain, b);
       }
       @Override
       String runtimeFunction(String tagName, String attribName, DomTree t,

@@ -6,9 +6,6 @@ both cases, <ident> should be the main name the module exports.
 caja.js             The Caja runtime library
                     caja.js also exports the global "___".
 
-JSON.js             A Caja-friendly JSON library
-                    Will probably be replaced with a JSON-cajita.js
-
 Brand-cajita.js     Makes sealer/unsealer pairs for rights amplification
 
 Mint-cajita.js      A simple money example

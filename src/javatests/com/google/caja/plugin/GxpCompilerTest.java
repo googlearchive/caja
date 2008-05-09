@@ -24,7 +24,7 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomTree;
-import com.google.caja.parser.js.FunctionDeclaration;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
@@ -76,7 +76,7 @@ public class GxpCompilerTest extends CajaTestCase {
     TokenConsumer pp = new JsPrettyPrinter(out, null);
     RenderContext rc = new RenderContext(mc, pp);
     compiled.render(rc);
-    for (FunctionDeclaration handler : gxpc.getEventHandlers()) {
+    for (Statement handler : gxpc.getEventHandlers()) {
       handler.render(rc);
     }
     assertEquals(golden.trim(), out.toString().trim());
@@ -99,7 +99,7 @@ public class GxpCompilerTest extends CajaTestCase {
     TokenConsumer pp = new JsPrettyPrinter(out, null);
     RenderContext rc = new RenderContext(mc, pp);
     compiled.render(rc);
-    for (FunctionDeclaration handler : gxpc.getEventHandlers()) {
+    for (Statement handler : gxpc.getEventHandlers()) {
       out.append('\n');
       handler.render(rc);
     }
@@ -146,7 +146,7 @@ public class GxpCompilerTest extends CajaTestCase {
     compiled3.render(rc);
 
     // write out the handler functions
-    for (FunctionDeclaration handler : gxpc.getEventHandlers()) {
+    for (Statement handler : gxpc.getEventHandlers()) {
       out.append('\n');
       handler.render(rc);
     }

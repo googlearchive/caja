@@ -109,6 +109,11 @@ attachDocumentStub = (function () {
     return XML_NMTOKENS_PATTERN.test(s);
   }
 
+  function mimeTypeForAttr(tagName, attribName) {
+    if (tagName === 'img' && attribName === 'src') { return 'image/*'; }
+    return '*/*';
+  }
+
   function assert(cond) {
     if (!cond) {
       console && (console.log('domita assertion failed'), console.trace());
@@ -154,6 +159,38 @@ attachDocumentStub = (function () {
   }
 
   var cssSealerUnsealerPair = caja.makeSealerUnsealerPair();
+
+  // Implementations of setTimeout, setInterval, clearTimeout, and
+  // clearInterval that only allow simple functions as timeouts and
+  // that treat timeout ids as capabilities.
+  // This is safe even if accessed across frame since the same
+  // trademark value is never used with more than one version of
+  // setTimeout.
+
+  var timeoutIdTrademark = {};
+  function tameSetTimeout(timeout, delayMillis) {
+    var timeoutId = setTimeout(___.asSimpleFunc(timeout), delayMillis | 0);
+    return ___.audit(timeoutIdTrademark,
+                     ___.freeze({ timeoutId___: timeoutId }));
+  }
+  ___.simpleFunc(tameSetTimeout);
+  function tameClearTimeout(timeoutId) {
+    ___.guard(timeoutIdTrademark, timeoutId);
+    clearTimeout(timeoutId.timeoutId___);
+  }
+  ___.simpleFunc(tameClearTimeout);
+  var intervalIdTrademark = {};
+  function tameSetInterval(interval, delayMillis) {
+    var intervalId = setInterval(___.asSimpleFunc(interval), delayMillis | 0);
+    return ___.audit(intervalIdTrademark,
+                     ___.freeze({ intervalId___: intervalId }));
+  }
+  ___.simpleFunc(tameSetInterval);
+  function tameClearInterval(intervalId) {
+    ___.guard(intervalIdTrademark, intervalId);
+    clearInterval(intervalId.intervalId___);
+  }
+  ___.simpleFunc(tameClearInterval);
 
   // See above for a description of this function.
   function attachDocumentStub(idSuffix, uriCallback, outers) {
@@ -292,8 +329,10 @@ attachDocumentStub = (function () {
           value = String(value);
           if (!uriCallback) { return null; }
           // TODO(mikesamuel): determine mime type properly.
-          return uriCallback.rewrite(value, '*/*') || null;
+          return uriCallback.rewrite(
+              value, mimeTypeForAttr(tagName, attribName)) || null;
         case html4.atype.STYLE:
+          if ('function' !== typeof value) { return null; }
           var cssPropertiesAndValues = cssSealerUnsealerPair.unseal(value);
           if (!cssPropertiesAndValues) { return null; }
 
@@ -421,16 +460,16 @@ attachDocumentStub = (function () {
       this.node___.replaceChild(child.node___, replacement.node___);
     };
     TameNode.prototype.getFirstChild = function () {
-      return tameNode(this.node___.firstChild);
+      return tameNode(this.node___.firstChild, this.editable___);
     };
     TameNode.prototype.getLastChild = function () {
-      return tameNode(this.node___.lastChild);
+      return tameNode(this.node___.lastChild, this.editable___);
     };
     TameNode.prototype.getNextSibling = function () {
-      return tameNode(this.node___.nextSibling);
+      return tameNode(this.node___.nextSibling, this.editable___);
     };
     TameNode.prototype.getPrevSibling = function () {
-      return tameNode(this.node___.prevSibling);
+      return tameNode(this.node___.prevSibling, this.editable___);
     };
     TameNode.prototype.getElementsByTagName = function (tagName) {
       return tameNodeList(
@@ -517,7 +556,7 @@ attachDocumentStub = (function () {
     };
     TameElement.prototype.setClassName = function (classes) {
       if (!this.editable___) { throw new Error(); }
-      return this.getAttribute('class', String(classes));
+      return this.setAttribute('class', String(classes));
     };
     TameElement.prototype.getTagName = TameNode.prototype.getNodeName;
     TameElement.prototype.getInnerHTML = function () {
@@ -602,6 +641,18 @@ attachDocumentStub = (function () {
         this.node___.attachEvent('on' + name, wrappedListener);
       }
     };
+    TameElement.prototype.getOffsetLeft = function () {
+      return this.node___.offsetLeft;
+    };
+    TameElement.prototype.getOffsetTop = function () {
+      return this.node___.offsetTop;
+    };
+    TameElement.prototype.getOffsetWidth = function () {
+      return this.node___.offsetWidth;
+    };
+    TameElement.prototype.getOffsetHeight = function () {
+      return this.node___.offsetHeight;
+    };
     TameElement.prototype.toString = function () {
       return '<' + this.node___.tagName + '>';
     };
@@ -611,10 +662,11 @@ attachDocumentStub = (function () {
        ['addEventListener', 'getAttribute', 'setAttribute',
         'getClassName', 'setClassName', 'getId', 'setId',
         'getInnerHTML', 'setInnerHTML', 'updateStyle', 'getStyle', 'setStyle',
-        'getTagName']);
+        'getTagName', 'getOffsetLeft', 'getOffsetTop', 'getOffsetWidth',
+        'getOffsetHeight']);
     exportFields(TameElement,
-                 ['className', 'id', 'innerHTML', 'tagName', 'style']);
-
+                 ['className', 'id', 'innerHTML', 'tagName', 'style',
+                  'offsetLeft', 'offsetTop', 'offsetWidth', 'offsetHeight']);
 
     function TameFormElement(node, editable) {
       TameElement.call(this, node, editable);
@@ -650,7 +702,7 @@ attachDocumentStub = (function () {
       this.node___.blur();
     };
     TameInputElement.prototype.getForm = function () {
-      return tameNode(this.node___.form);
+      return tameNode(this.node___.form, this.editable___);
     };
     ___.ctor(TameInputElement, TameElement, 'TameInputElement');
     ___.all2(___.allowMethod, TameInputElement,
@@ -872,8 +924,13 @@ attachDocumentStub = (function () {
 
     /** A per-gadget class used to separate style rules. */
     outers.getIdClass___ = function () {
-      return idSuffix;
+      return idSuffix.replace(/^-/, '');
     };
+
+    outers.setTimeout = tameSetTimeout;
+    outers.setInterval = tameSetInterval;
+    outers.clearTimeout = tameClearTimeout;
+    outers.clearInterval = tameClearInterval;
 
     outers.document = new TameDocument(document, true);
   }
@@ -901,5 +958,5 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
           'Expected function as event handler, not ' + typeof handler);
   }
   return (___.asSimpleFunc(handler))(
-      outers.tameNode___(thisNode), outers.tameEvent___(event));
+      outers.tameNode___(thisNode, true), outers.tameEvent___(event));
 }

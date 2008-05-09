@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Writer;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,50 +61,9 @@ import java.util.List;
 public class Minify {
   public static void main(String[] jsFilePaths) throws IOException {
     List<Pair<InputSource, File>> inputs = checkInputs(jsFilePaths);
-    MessageContext mc = new MessageContext();
-    mc.inputSources = new ArrayList<InputSource>();
-    for (Pair<InputSource, File> input : inputs) {
-      mc.inputSources.add(input.a);
-    }
-    final MessageQueue errs = new EchoingMessageQueue(
-        new PrintWriter(System.err), mc, false);
-    RenderContext out = new RenderContext(
-        mc,
-        false,
-        new JsMinimalPrinter(System.out, new Callback<IOException>() {
-          public void handle(IOException ex) {
-            errs.addMessage(
-                MessageType.IO_ERROR,
-                MessagePart.Factory.valueOf(ex.getMessage()));
-          }
-        }));
-    for (Pair<InputSource, File> input : inputs) {
-      CharProducer cp = CharProducer.Factory.create(
-          new InputStreamReader(new FileInputStream(input.b), "UTF-8"),
-          input.a);
-      JsLexer lexer = new JsLexer(cp);
-      JsTokenQueue tq = new JsTokenQueue(lexer, input.a);
-      Parser p = new Parser(tq, errs);
-      try {
-        while (!tq.isEmpty()) {
-          Block b = p.parse();
-          for (Statement topLevelStmt : b.children()) {
-            topLevelStmt.render(out);
-            if (!topLevelStmt.isTerminal()) { out.getOut().consume(";"); }
-          }
-        }
-      } catch (ParseException ex) {
-        ex.toMessageQueue(errs);
-      }
-    }
-    MessageLevel maxMessageLevel = MessageLevel.values()[0];
-    for (Message msg : errs.getMessages()) {
-      if (msg.getMessageLevel().compareTo(maxMessageLevel) >= 0) {
-        maxMessageLevel = msg.getMessageLevel();
-      }
-    }
-    System.out.flush();
-    System.exit(maxMessageLevel.compareTo(MessageLevel.ERROR) >= 0 ? -1 : 0);
+    boolean passed = minify(inputs, new PrintWriter(System.out),
+                            new PrintWriter(System.err));
+    System.exit(passed ? 0 : -1);
   }
 
   /** Called before opening files to checks that all input are readable. */
@@ -118,5 +78,57 @@ public class Minify {
       inputs.add(Pair.pair(is, f));
     }
     return inputs;
+  }
+
+  public static boolean minify(Iterable<Pair<InputSource, File>> inputs,
+                               Writer out, PrintWriter err)
+      throws IOException {
+    MessageContext mc = new MessageContext();
+    mc.inputSources = new ArrayList<InputSource>();
+    for (Pair<InputSource, File> input : inputs) {
+      mc.inputSources.add(input.a);
+    }
+    final MessageQueue errs = new EchoingMessageQueue(
+        err, mc, false);
+    RenderContext rc = new RenderContext(
+        mc,
+        false,
+        new JsMinimalPrinter(out, new Callback<IOException>() {
+          public void handle(IOException ex) {
+            errs.addMessage(
+                MessageType.IO_ERROR,
+                MessagePart.Factory.valueOf(ex.getMessage()));
+          }
+        }));
+
+    for (Pair<InputSource, File> input : inputs) {
+      CharProducer cp = CharProducer.Factory.create(
+          new InputStreamReader(new FileInputStream(input.b), "UTF-8"),
+          input.a);
+      JsLexer lexer = new JsLexer(cp);
+      JsTokenQueue tq = new JsTokenQueue(lexer, input.a);
+      Parser p = new Parser(tq, errs);
+      try {
+        while (!tq.isEmpty()) {
+          Block b = p.parse();
+          for (Statement topLevelStmt : b.children()) {
+            topLevelStmt.render(rc);
+            if (!topLevelStmt.isTerminal()) { rc.getOut().consume(";"); }
+          }
+        }
+      } catch (ParseException ex) {
+        ex.toMessageQueue(errs);
+      }
+    }
+    rc.getOut().noMoreTokens();
+    out.flush();
+
+    MessageLevel maxMessageLevel = MessageLevel.values()[0];
+    for (Message msg : errs.getMessages()) {
+      if (msg.getMessageLevel().compareTo(maxMessageLevel) >= 0) {
+        maxMessageLevel = msg.getMessageLevel();
+      }
+    }
+    return maxMessageLevel.compareTo(MessageLevel.ERROR) < 0;
   }
 }

@@ -14,12 +14,9 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.lexer.ParseException;
 import com.google.caja.reporting.MessageLevel;
 
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
-
-import java.io.IOException;
 
 /**
  * @author ihab.awad@gmail.com
@@ -52,15 +49,18 @@ public class IllegalReferenceCheckRewriterTest extends RewriterTestCase {
     checkSucceeds(js(fromString(code)), null);
   }
 
+  @Override
   protected Rewriter newRewriter() {
     return new IllegalReferenceCheckRewriter(true);
   }
 
-  protected Object executePlain(String program) throws IOException, ParseException {
+  @Override
+  protected Object executePlain(String program) {
     return new Object();  // Placeholder to allow assertConsistent() to work
   }
 
-  protected Object rewriteAndExecute(String program) throws IOException, ParseException {
-    return new Object();  // Placeholder to allow assertConsistent() to work    
+  @Override
+  protected Object rewriteAndExecute(String program) {
+    return new Object();  // Placeholder to allow assertConsistent() to work
   }
 }

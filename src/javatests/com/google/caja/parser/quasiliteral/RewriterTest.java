@@ -14,12 +14,9 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.lexer.ParseException;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.parser.ParseTreeNode;
-
-import java.io.IOException;
 
 /**
  * @author ihab.awad@gmail.com
@@ -39,6 +36,7 @@ public class RewriterTest extends RewriterTestCase {
         null);
   }
 
+  @Override
   protected Rewriter newRewriter() {
     return new Rewriter(true) {{
       addRule(new Rule () {
@@ -59,11 +57,13 @@ public class RewriterTest extends RewriterTestCase {
     }};
   }
 
-  protected Object executePlain(String program) throws IOException, ParseException {
+  @Override
+  protected Object executePlain(String program) {
     return new Object();  // Placeholder to allow assertConsistent() to work
   }
 
-  protected Object rewriteAndExecute(String program) throws IOException, ParseException {
+  @Override
+  protected Object rewriteAndExecute(String program) {
     return new Object();  // Placeholder to allow assertConsistent() to work
   }
 }

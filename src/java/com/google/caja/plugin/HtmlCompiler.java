@@ -34,7 +34,6 @@ import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FunctionConstructor;
@@ -86,8 +85,8 @@ public class HtmlCompiler {
   private final HtmlSchema htmlSchema;
   private final MessageQueue mq;
   private final PluginMeta meta;
-  private Map<String, Declaration> eventHandlers =
-      new LinkedHashMap<String, Declaration>();
+  private Map<String, Statement> eventHandlers =
+      new LinkedHashMap<String, Statement>();
 
   public HtmlCompiler(CssSchema cssSchema, HtmlSchema htmlSchema,
                       MessageQueue mq, PluginMeta meta) {
@@ -119,7 +118,7 @@ public class HtmlCompiler {
     return body;
   }
 
-  public Collection<? extends Declaration> getEventHandlers() {
+  public Collection<? extends Statement> getEventHandlers() {
     return eventHandlers.values();
   }
 
@@ -519,13 +518,14 @@ public class HtmlCompiler {
         String handlerFnName = htmlc.syntheticId();
         htmlc.eventHandlers.put(
             handlerFnName,
-            (Declaration) QuasiBuilder.substV(
-                "var @handlerFnName = ___.simpleFunc("
+            new ExpressionStmt((Expression) QuasiBuilder.substV(
+                "___OUTERS___.@handlerFnName = ___.simpleFunc("
                 + "   function (" + ReservedNames.THIS_NODE + ", event) {"
                 + "     @handler*;"
                 + "   });",
-                "handlerFnName", s(new Identifier(handlerFnName)),
-                "handler", handler));
+                "handlerFnName",
+                    s(new Reference(s(new Identifier(handlerFnName)))),
+                "handler", handler)));
 
         String handlerFnNameLit = StringLiteral.toQuotedValue(handlerFnName);
 

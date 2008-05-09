@@ -1674,9 +1674,9 @@ public class DefaultCajaRewriter extends Rewriter {
     },
 
     /**
-     * Rewrites an 
-     * - anonymous function 
-     * - mentioning this 
+     * Rewrites an
+     * - anonymous function
+     * - mentioning this
      * - whose earliest function scope ancestor is a constructor or method
      * into an attached method.
      */
@@ -1696,9 +1696,9 @@ public class DefaultCajaRewriter extends Rewriter {
           // If we're in a constructor or a method, attach the method.
           if (s2.inMethodContext()) {
             return substV(
-                "___.attach(t___, ___.method(function(@formals*) { @fh*; @stmts*; @body*; }))", 
+                "___.attach(t___, ___.method(function(@formals*) { @fh*; @stmts*; @body*; }))",
                 "formals", bindings.get("formals"),
-                // It's important that body is expanded before computing fh and stmts. 
+                // It's important that body is expanded before computing fh and stmts.
                 "body", expand(bindings.get("body"), s2, mq),
                 "fh", getFunctionHeadDeclarations(this, s2, mq),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
@@ -1709,7 +1709,7 @@ public class DefaultCajaRewriter extends Rewriter {
     },
 
     /**
-     * Rewrites an 
+     * Rewrites an
      * - anonymous function
      * - mentioning this
      * - whose earliest function scope ancestor is NOT a constructor or method

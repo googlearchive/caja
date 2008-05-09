@@ -2430,8 +2430,8 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     checkSucceeds(fromResource("listfriends.js"));
   }
 
-  protected Object executePlain(String caja)
-      throws IOException, ParseException {
+  @Override
+  protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();
     // Make sure the tree assigns the result to the unittestResult___ var.
     return RhinoTestBed.runJs(
@@ -2448,6 +2448,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         new RhinoTestBed.Input(caja, getName() + "-uncajoled"));
   }
 
+  @Override
   protected Object rewriteAndExecute(String caja)
       throws IOException, ParseException {
     mq.getMessages().clear();
@@ -2516,6 +2517,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         new Block(Arrays.asList(nodes)), mq);
   }
 
+  @Override
   protected Rewriter newRewriter() {
     return new DefaultCajaRewriter(true);
   }

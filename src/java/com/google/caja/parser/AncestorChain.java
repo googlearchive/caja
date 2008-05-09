@@ -68,7 +68,9 @@ public final class AncestorChain<T extends ParseTreeNode> {
 
   @SuppressWarnings("unchecked")
   public <T extends ParseTreeNode> AncestorChain<T> cast(Class<T> clazz) {
-    if (!clazz.isInstance(node)) { throw new ClassCastException(); }
+    if (!clazz.isInstance(node)) {
+      throw new ClassCastException(node.getClass().getSimpleName());
+    }
     return (AncestorChain<T>) this;
   }
 

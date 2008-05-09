@@ -58,7 +58,6 @@ import com.google.caja.plugin.GxpValidatorTest;
 import com.google.caja.plugin.HtmlCompiledPluginTest;
 import com.google.caja.plugin.HtmlSanitizerTest;
 import com.google.caja.plugin.JsHtmlSanitizerTest;
-import com.google.caja.plugin.caps.CapabilityRewriterTest;
 import com.google.caja.plugin.stages.OpenTemplateStageTest;
 import com.google.caja.plugin.stages.RewriteHtmlStageTest;
 import com.google.caja.render.JsMinimalPrinterTest;
@@ -85,7 +84,6 @@ public class AllTests {
     TestSuite suite = new TestSuite("Caja Tests");
     Class<? extends TestCase>[] testClasses = new Class[] {
           BuildInfoTest.class,
-          CapabilityRewriterTest.class,
           CharProducerTest.class,
           CommentLexerTest.class,
           CompiledPluginTest.class,

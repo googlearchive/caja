@@ -57,7 +57,7 @@ import java.util.LinkedHashMap;
  * A rewriting rule supplied by a subclass.
  */
 public abstract class Rule implements MessagePart {
-  
+
   /**
    * The special return value from a rule that indicates the rule
    * does not apply to the supplied input.
@@ -81,7 +81,7 @@ public abstract class Rule implements MessagePart {
 
   /**
    * Create a new {@code Rule}.
-   * 
+   *
    * @param name the unique name of this rule.
    */
   public Rule(String name, Rewriter rewriter) {
@@ -105,7 +105,7 @@ public abstract class Rule implements MessagePart {
    * @return the rewriter this {@code Rule} uses.
    */
   public Rewriter getRewriter() { return rewriter; }
-  
+
   /**
    * Set the rewriter this {@code Rule} uses.
    */
@@ -134,7 +134,7 @@ public abstract class Rule implements MessagePart {
   public void format(MessageContext mc, Appendable out) throws IOException {
     out.append("Rule \"" + name + "\"");
   }
-  
+
   protected final void expandEntry(
       Map<String, ParseTreeNode> bindings,
       String key,

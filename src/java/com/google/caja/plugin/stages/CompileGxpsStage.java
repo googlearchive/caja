@@ -37,6 +37,7 @@ import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
@@ -129,9 +130,8 @@ public final class CompileGxpsStage implements Pipeline.Stage<Jobs> {
       jobs.getJobs().add(new Job(new AncestorChain<Block>(templateDecls)));
     }
 
-    for (FunctionDeclaration handler : gxpc.getEventHandlers()) {
-      jobs.getJobs().add(
-          new Job(new AncestorChain<FunctionDeclaration>(handler)));
+    for (Statement handler : gxpc.getEventHandlers()) {
+      jobs.getJobs().add(new Job(new AncestorChain<Statement>(handler)));
     }
 
     return jobs.hasNoFatalErrors();

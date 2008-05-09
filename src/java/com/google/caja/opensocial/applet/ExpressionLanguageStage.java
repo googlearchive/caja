@@ -50,19 +50,21 @@ import java.util.List;
 final class ExpressionLanguageStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
     for (Job job : jobs.getJobsByType(Job.JobType.JAVASCRIPT)) {
-      apply(job.getRoot().cast(Block.class));
+      apply(job.getRoot().cast(Statement.class));
     }
     return true;
   }
 
-  public static void apply(AncestorChain<Block> root) {
-    Block b = root.node;
-    for (Statement s : b.children()) {
-      // Rewrite each extracted block of javascript independently.
-      // We skip synthetic nodes such as extracted event handlers, and
-      // compiled CSS and HTML.
-      if (!s.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
-        rewrite(new AncestorChain<Statement>(root, s));
+  public static void apply(AncestorChain<? extends Statement> root) {
+    Statement rootNode = root.node;
+    if (rootNode instanceof Block) {
+      for (Statement s : ((Block) rootNode).children()) {
+        // Rewrite each extracted block of javascript independently.
+        // We skip synthetic nodes such as extracted event handlers, and
+        // compiled CSS and HTML.
+        if (!s.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
+          rewrite(AncestorChain.instance(root, s));
+        }
       }
     }
   }

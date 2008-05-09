@@ -27,19 +27,34 @@
  */
 function CalEvent(id, attendees) {
   this.id_ = id;
-  this.attendees_ = attendees.slice(0);
+  this.attendees_ = caja.freeze(attendees.slice(0));
 }
-CalEvent.prototype.toString = function () {
+___.ctor(CalEvent, Object, 'CalEvent');
+CalEvent.prototype.toString = ___.method(function () {
   return '[CalEvent ' + this.id_ + ' : ' + this.attendees_ + ']';
-};
+}, 'toString');
+CalEvent.prototype.getAttendees = ___.method(function () {
+  return this.attendees_;
+}, 'getAttendees');
+CalEvent.prototype.getId = ___.method(function () {
+  return this.id_;
+}, 'getId');
+___.allowCall(CalEvent.prototype, 'getAttendees');
+___.allowCall(CalEvent.prototype, 'getId');
 
 /**
  * a calendar is a group of events.
  * @param {Array.<CalEvent>} events
  */
 function Calendar(events) {
-  this.events_ = events.slice(0);
+  this.events_ = caja.freeze(events.slice(0));
 }
+___.ctor(Calendar, Object, 'Calendar');
+Calendar.prototype.getEvents = ___.method(
+    function () { return this.events_; }, 'getEvents');
+Calendar.prototype.toString = ___.method(
+    function () { return '[Calendar]'; }, 'toString');
+___.allowCall(Calendar.prototype, 'getEvents');
 
 
 // for demo purposes, hard-code a list of contacts and events

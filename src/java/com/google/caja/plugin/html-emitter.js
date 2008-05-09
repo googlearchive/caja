@@ -21,6 +21,7 @@
 
 
 function HtmlEmitter(base) {
+  if (!base) { throw new Error(); }
   this.cursor_ = [base];
 }
 HtmlEmitter.prototype = {
