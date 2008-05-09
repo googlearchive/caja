@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Caja Builder Plug-in
+Bundle-SymbolicName: com.google.caja.ecajalipse;singleton:=true
+Bundle-Version: 0.0.1
+Bundle-Activator: com.google.caja.ecajalipse.Activator
+Bundle-Vendor: Google Inc.
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.core.resources
+Eclipse-LazyStart: true
+Bundle-RequiredExecutionEnvironment: J2SE-1.5,
+ JavaSE-1.6
+Bundle-ClassPath: lib/caja.jar,
+ .
