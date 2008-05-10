@@ -36,7 +36,7 @@ import org.apache.tools.ant.Task;
  *
  * @author mikesamuel@gmail.com
  */
-abstract class AbstractCajaAntTask extends Task {
+public abstract class AbstractCajaAntTask extends Task {
   /** A set of {@code <job>} tasks. */
   private final List<Job> jobs = new ArrayList<Job>();
 
