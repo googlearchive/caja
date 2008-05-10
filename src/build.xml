@@ -58,6 +58,8 @@
     <pathelement path="${third_party}/java/htmlparser/htmlparser.jar"/>
     <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
+    <pathelement path="${third_party}/java/glassfish/mail.jar"/>
+    <pathelement path="${java.home}/lib/rt.jar"/>
   </path>
   <path id="classpath.run">
     <pathelement path="${lib}"/>
@@ -67,6 +69,8 @@
     <pathelement path="${third_party}/java/junit/junit.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/rhino/js.jar"/>
+    <pathelement path="${third_party}/java/glassfish/mail.jar"/>
+    <pathelement path="${java.home}/jre/lib/rt.jar"/>
   </path>
   <path id="classpath.tests.run">
     <pathelement path="${third_party}/java/emma/emma.jar"/>
