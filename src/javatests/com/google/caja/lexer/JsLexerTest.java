@@ -237,6 +237,25 @@ public class JsLexerTest extends TestCase {
     assertEmpty(lexer);
   }
 
+  public void testIsRegexpFollowingWord() {
+    {
+      JsLexer lexer = createLexer("min / max /*/**/", false);
+      assertNext(lexer, JsTokenType.WORD, "min");
+      assertNext(lexer, JsTokenType.PUNCTUATION, "/");
+      assertNext(lexer, JsTokenType.WORD, "max");
+      assertNext(lexer, JsTokenType.COMMENT, "/*/**/");
+      assertEmpty(lexer);
+    }
+    {
+      JsLexer lexer = createLexer("in / max /*/**/", false);
+      assertNext(lexer, JsTokenType.KEYWORD, "in");
+      assertNext(lexer, JsTokenType.REGEXP, "/ max /");
+      assertNext(lexer, JsTokenType.PUNCTUATION, "*");
+      assertNext(lexer, JsTokenType.COMMENT, "/**/");
+      assertEmpty(lexer);
+    }
+  }
+
   private JsLexer createLexer(String src) {
     return createLexer(src, false);
   }

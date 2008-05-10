@@ -95,7 +95,7 @@ public class JsLexer implements TokenStream<JsTokenType> {
         "switch", "synchronized", "throw", "throws", "transient", "try",
         "typeof", "use", "var", "volatile", "while", "with",
     };
-    sb.append("(?:");
+    sb.append("^(?:");
     for (int i = 0; i < validPreceders.length; i++) {
       if (i != 0) { sb.append('|'); }
       sb.append("(?:");
