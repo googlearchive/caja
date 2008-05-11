@@ -32,8 +32,9 @@ public class ImageHandler implements ContentHandler {
     return checker.check("image/*", contentType);    
   }
   
-  public Pair<String, String> apply(URI uri, String contentType, 
-            String contentEncoding, InputStream stream, OutputStream response) 
+  public Pair<String, String> apply(URI uri, 
+      String contentType, String contentEncoding, String charSet,
+      InputStream stream, OutputStream response) 
     throws UnsupportedContentTypeException {
     try {
       int next;

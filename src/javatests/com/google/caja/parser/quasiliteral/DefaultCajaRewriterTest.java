@@ -14,6 +14,8 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
+import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
@@ -29,9 +31,8 @@ import com.google.caja.plugin.SyntheticNodes;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.RhinoTestBed;
-
-import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -50,7 +51,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
    *
    * @author erights@gmail.com
    */
-  private static String weldSetImports(
+  public static String weldSetImports(
       String varName, String tempValue, String value) {
     return
         tempValue + " = " + value + "," +
@@ -86,7 +87,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
    *
    * @author erights@gmail.com
    */
-  private static String weldReadImports(String varName) {
+  public static String weldReadImports(String varName) {
     return weldReadImports(varName, true);
   }
 

@@ -31,9 +31,17 @@ public class JsHandler implements ContentHandler {
     return checker.check("text/javascript",contentType);
   }
   
-  public Pair<String,String> apply(URI uri, String contentType, String contentEncoding,
-      InputStream stream, OutputStream response) throws UnsupportedContentTypeException {
-    cajoleJs(uri, new InputStreamReader(stream), new OutputStreamWriter(response));
+  public Pair<String,String> apply(URI uri, 
+      String contentType, String contentEncoding, String contentCharset, 
+      InputStream stream, OutputStream response) 
+      throws UnsupportedContentTypeException {
+    try {
+      OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
+      cajoleJs(uri, new InputStreamReader(stream, contentCharset), writer);
+      writer.flush();
+    } catch (IOException e) {
+      throw new UnsupportedContentTypeException();
+    }
     return new Pair<String, String>("text/javascript", "UTF-8");  
   }  
       

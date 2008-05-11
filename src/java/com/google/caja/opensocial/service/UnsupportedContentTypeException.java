@@ -13,7 +13,6 @@
 // limitations under the License.
 
 package com.google.caja.opensocial.service;
-
 /**
  * Thrown by cajoling service when it is requested to retrieve content
  * for which there is no associated checker.

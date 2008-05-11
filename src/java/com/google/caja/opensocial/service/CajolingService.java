@@ -39,6 +39,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import javax.mail.internet.ContentType;
+import javax.mail.internet.ParseException;
+
 /**
  * A cajoling service which proxies connections:
  *      - cajole any javascript
@@ -116,8 +119,11 @@ public class CajolingService implements HttpHandler {
         URLConnection urlConnect = gadgetUrl.openConnection();
         urlConnect.connect();
         InputStream stream = urlConnect.getInputStream();
-        String contentEncoding = urlConnect.getContentEncoding();
         
+        String contentEncoding = urlConnect.getContentEncoding();
+        ContentType contentType = new ContentType(urlConnect.getContentType());
+        String contentCharSet = contentType.getParameter("charset");
+
         Headers responseHeaders = ex.getResponseHeaders();
         
         if (!typeCheck.check(expectedMimeType, urlConnect.getContentType())) {
@@ -129,7 +135,7 @@ public class CajolingService implements HttpHandler {
           ByteArrayOutputStream intermediateResponse = new ByteArrayOutputStream();
           Pair<String,String> contentInfo = 
             applyHandler(gadgetUrl.toURI(), urlConnect.getContentType(), 
-              contentEncoding, stream, intermediateResponse);
+                contentEncoding, contentCharSet, stream, intermediateResponse);
 
           responseHeaders.set("Content-Type", contentInfo.a);
           responseHeaders.set("Content-Encoding", contentInfo.b);
@@ -148,6 +154,9 @@ public class CajolingService implements HttpHandler {
     } catch (URISyntaxException e) {
       closeBadRequest(ex);
       e.printStackTrace();
+    } catch (ParseException e) {
+      closeBadRequest(ex);
+      e.printStackTrace();
     }
   }
    
@@ -157,12 +166,13 @@ public class CajolingService implements HttpHandler {
     handlers.add(new GadgetHandler());    
   }
   
-  private Pair<String, String> applyHandler(URI uri, String contentType, 
-      String contentEncoding, InputStream stream, OutputStream response) 
+  private Pair<String, String> applyHandler(URI uri, 
+      String contentType, String contentEncoding, String charSet,
+      InputStream stream, OutputStream response) 
       throws UnsupportedContentTypeException {
     for (ContentHandler handler : handlers) {
       if ( handler.canHandle(uri, contentType, typeCheck) ) {
-        return handler.apply(uri, contentType, contentEncoding, stream, response);
+        return handler.apply(uri, contentType, contentEncoding, charSet, stream, response);
       }
     }
     throw new UnsupportedContentTypeException();

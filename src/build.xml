@@ -64,6 +64,7 @@
   <path id="classpath.run">
     <pathelement path="${lib}"/>
     <path refid="classpath.compile"/>
+    <pathelement path="${third_party}/java/glassfish/mail.jar"/>
   </path>
   <path id="classpath.tests.compile">
     <pathelement path="${third_party}/java/junit/junit.jar"/>

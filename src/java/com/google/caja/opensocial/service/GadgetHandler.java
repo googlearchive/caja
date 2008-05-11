@@ -42,10 +42,13 @@ public class GadgetHandler implements ContentHandler {
    return checker.check("application/xml",contentType);
   }
 
-  public Pair<String, String> apply(URI uri, String contentType, String contentEncoding,
+  public Pair<String, String> apply(URI uri, 
+      String contentType, String contentEncoding, String charSet,
       InputStream stream, OutputStream response) throws UnsupportedContentTypeException {
     try {
-      cajoleGadget(uri, new InputStreamReader(stream), new OutputStreamWriter(response));
+      OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
+      cajoleGadget(uri, new InputStreamReader(stream, charSet), writer);
+      writer.flush();      
       return new Pair<String, String>("text/javascript", "UTF-8");  
     } catch (ParseException e) {
       e.printStackTrace();

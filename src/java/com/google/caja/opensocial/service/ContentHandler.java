@@ -50,6 +50,8 @@ public interface ContentHandler {
    * @param response writes modified content to user
    * @return the content-type and content-encoding of the resulting output
    */
-  public Pair<String, String> apply(URI uri, String contentType, String contentEncoding, InputStream stream, OutputStream response)
+  public Pair<String, String> apply(URI uri, String contentType, 
+      String contentEncoding, String charSet, 
+      InputStream stream, OutputStream response)
     throws UnsupportedContentTypeException;
 }
