@@ -20,6 +20,9 @@ import com.google.caja.plugin.SyntheticNodes;
 import com.google.caja.reporting.MessageQueue;
 
 /**
+ * Checks for non-{@link SyntheticNodes#SYNTHETIC synthetic} identifiers in the
+ * reserved namespace.
+ *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 @RulesetDescription(
@@ -36,7 +39,7 @@ public class IllegalReferenceCheckRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof Identifier && !node.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
           String name = ((Identifier)node).getValue();
-          if (name.endsWith("__")) {
+          if (name != null && name.endsWith("__")) {
             mq.addMessage(
                 RewriterMessageType.ILLEGAL_IDENTIFIER_LEFT_OVER,
                 node.getFilePosition(), node);
@@ -58,7 +61,7 @@ public class IllegalReferenceCheckRewriter extends Rewriter {
       }
     },
   };
-  
+
   public IllegalReferenceCheckRewriter() {
     this(true);
   }

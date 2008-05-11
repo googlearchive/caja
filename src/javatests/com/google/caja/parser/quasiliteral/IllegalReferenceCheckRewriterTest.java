@@ -36,6 +36,10 @@ public class IllegalReferenceCheckRewriterTest extends RewriterTestCase {
     testLegal("x = 3;");
   }
 
+  public void testNullIdentifiers() throws Exception {
+    testLegal("function () {}");
+  }
+
   private void testIllegal(String code) throws Exception {
     checkAddsMessage(
         js(fromString(code)),
