@@ -203,4 +203,9 @@ TAGEND     [>]  :  htmllexerinput1.html:81+8@1899 - 9@1900
 UNESCAPED  [a<b]  :  htmllexerinput1.html:81+9@1900 - 12@1903
 TAGBEGIN   [</script]  :  htmllexerinput1.html:81+12@1903 - 20@1911
 TAGEND     [>]  :  htmllexerinput1.html:81+20@1911 - 21@1912
-TEXT       [\n]  :  htmllexerinput1.html:81+21@1912 - 82+1@1913
+TEXT       [\n\n]  :  htmllexerinput1.html:81+21@1912 - 83+1@1914
+TAGBEGIN   [<img]  :  htmllexerinput1.html:83+1@1914 - 5@1918
+ATTRNAME   [src]  :  htmllexerinput1.html:83+6@1919 - 9@1922
+ATTRVALUE  [foo.gif]  :  htmllexerinput1.html:83+10@1923 - 17@1930
+TAGEND     [/>]  :  htmllexerinput1.html:83+17@1930 - 19@1932
+TEXT       [\n]  :  htmllexerinput1.html:83+19@1932 - 84+1@1933

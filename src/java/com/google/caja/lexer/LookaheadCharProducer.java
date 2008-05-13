@@ -80,9 +80,8 @@ class LookaheadCharProducer implements CharProducer {
   }
 
   public int read() throws IOException {
-    return (lookaheadPos == lookaheadLimit)
-        ? p.read()
-        : lookahead[lookaheadPos++];
+    if (lookaheadPos == lookaheadLimit) { fetch(1); }
+    return lookahead[lookaheadPos++];
   }
 
   /** Returns the i-th character after the current without consuming it. */

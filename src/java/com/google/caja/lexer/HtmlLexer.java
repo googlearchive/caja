@@ -176,7 +176,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
   private boolean asXml = false;
 
   /** The source of html character data. */
-  private final CharProducer p;
+  private final LookaheadCharProducer p;
   /** True iff the current character is inside a tag. */
   private boolean inTag;
   /**
@@ -184,10 +184,6 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
    * not follow the normal escaping rules.
    */
   private boolean inEscapeExemptBlock;
-  /** One character of lookahead */
-  private int lookahead = -1;
-  private CharProducer.MutableFilePosition lookaheadStart =
-      new CharProducer.MutableFilePosition();
 
   /**
    * Null or the name of the close tag required to end the current escape exempt
@@ -199,7 +195,9 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
 
   private HtmlTextEscapingMode textEscapingMode;
 
-  public HtmlInputSplitter(CharProducer p) { this.p = p; }
+  public HtmlInputSplitter(CharProducer p) {
+    this.p = new LookaheadCharProducer(p, 2);
+  }
 
   /**
    * True iff this is treated as xml.  Xml-ness affects the treatment of
@@ -319,11 +317,6 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
     ;
   }
 
-  private int read() throws IOException {
-    p.getCurrentPosition(lookaheadStart);
-    return p.read();
-  }
-
   /**
    * Breaks the character stream into tokens.
    * This method returns a stream of tokens such that each token starts where
@@ -337,17 +330,9 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
   private Token<HtmlTokenType> parseToken() throws ParseException {
     // TODO(mikesamuel): rewrite with a transition table or just use ANTLR
     try {
-      int ch;
-      FilePosition start;
-      if (lookahead >= 0) {
-        start = lookaheadStart.toFilePosition();
-        ch = lookahead;
-        lookahead = -1;
-      } else {
-        start = p.getCurrentPosition();
-        ch = p.read();
-        if (ch < 0) { return null; }
-      }
+      FilePosition start = p.getCurrentPosition();
+      int ch = p.read();
+      if (ch < 0) { return null; }
 
       HtmlTokenType type;
       StringBuilder text = new StringBuilder(128);
@@ -357,13 +342,13 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
           type = HtmlTokenType.TAGEND;
           inTag = false;
         } else if ('/' == ch) {
-          ch = read();
+          ch = p.read();
           if ('>' == ch) {
             type = HtmlTokenType.TAGEND;
             text.append((char) ch);
             inTag = false;
           } else {
-            lookahead = ch;
+            p.pushback();
             type = HtmlTokenType.TEXT;
           }
         } else if ('=' == ch) {
@@ -371,16 +356,25 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
         } else if ('"' == ch || '\'' == ch) {
           type = HtmlTokenType.QSTRING;
           int delim = ch;
-          while ((ch = read()) >= 0) {
+          while ((ch = p.read()) >= 0) {
             text.append((char) ch);
             if (delim == ch) { break; }
           }
         } else if (!Character.isWhitespace((char) ch)) {
           type = HtmlTokenType.TEXT;
-          while ((ch = read()) >= 0) {
-            if ('>' == ch || '=' == ch || '"' == ch || '\'' == ch
-                || Character.isWhitespace((char) ch)) {
-              lookahead = ch;
+          while ((ch = p.read()) >= 0) {
+            // End a text chunk before />
+            if ('/' == ch) {
+              p.pushback();
+              p.fetch(2);  // Make sure we have space for 2 lookahead.
+              if ('>' == p.peek(1)) {
+                break;
+              } else {
+                p.read();  // re-consume '/'
+              }
+            } else if ('>' == ch || '=' == ch || '"' == ch || '\'' == ch
+                       || Character.isWhitespace((char) ch)) {
+              p.pushback();
               break;
             }
             text.append((char) ch);
@@ -388,9 +382,9 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
         } else {
           // We skip whitespace tokens inside tag bodies.
           type = HtmlTokenType.IGNORABLE;
-          while ((ch = read()) >= 0) {
+          while ((ch = p.read()) >= 0) {
             if (!Character.isWhitespace((char) ch)) {
-              lookahead = ch;
+              p.pushback();
               break;
             }
             text.append((char) ch);
@@ -398,7 +392,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
         }
       } else {
         if (ch == '<') {
-          ch = read();
+          ch = p.read();
           if (ch < 0) {
             type = HtmlTokenType.TEXT;
           } else {
@@ -439,7 +433,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                 if (Character.isLetter(ch) && !this.inEscapeExemptBlock) {
                   state = State.TAGNAME;
                 } else if ('<' == ch) {
-                  lookahead = ch;
+                  p.pushback();
                   type = HtmlTokenType.TEXT;
                 } else {
                   text.append((char) ch);
@@ -449,12 +443,12 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
             if (null != state) {
               text.append((char) ch);
               charloop:
-              while ((ch = read()) >= 0) {
+              while ((ch = p.read()) >= 0) {
                 switch (state) {
                   case TAGNAME:
                     if (Character.isWhitespace((char) ch)
                         || '>' == ch || '/' == ch) {
-                      lookahead = ch;
+                      p.pushback();
                       type = HtmlTokenType.TAGBEGIN;
                       inTag = true;
                       state = State.DONE;
@@ -466,7 +460,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                       state = State.TAGNAME;
                     } else {
                       if ('<' == ch) {
-                        lookahead = ch;
+                        p.pushback();
                         type = HtmlTokenType.TEXT;
                       } else {
                         text.append((char) ch);
@@ -640,16 +634,14 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
         }
       }
       if (null == type) {
-        while ((ch = read()) >= 0 && '<' != ch) {
+        while ((ch = p.read()) >= 0 && '<' != ch) {
           text.append((char) ch);
         }
-        lookahead = ch;
+        p.pushback();
         type = HtmlTokenType.TEXT;
       }
 
-      FilePosition end = lookahead < 0
-          ? p.getCurrentPosition()
-          : this.lookaheadStart.toFilePosition();
+      FilePosition end = p.getCurrentPosition();
       return Token.instance(
           text.toString(), type, FilePosition.span(start, end));
     } catch (IOException ex) {
