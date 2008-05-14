@@ -229,7 +229,7 @@
    ><a id=controls></a> (<span id=counter>&nbsp;</span>)</div>
 
   <ul>
-    <li class=slide>
+    <li class="slide">
       <h1>Caja &mdash; Securing WebApps</h1>
 
       <tt><a href="http://code.google.com/p/google-caja/"
@@ -243,6 +243,21 @@
       <p>Rewrites JavaScript/HTML/CSS</p>
       <p>Enforces Object-Capabilities</p>
       <p>Gadget writers use familiar tools</p>
+
+      <br>
+
+      <p>Similar approaches: ADSafe, FBJS, Jacaranda</p>
+    </li>
+
+    <li class="slide">
+      <h1>Interactive Documents</h1>
+
+      <p>Visual Basic for Apps &mdash; Documents can do anything</p>
+      <p>The web &mdash; Web pages can interact in the same-origin</p>
+      <p>Social Networking &mdash; Web apps using proxies to work
+      around the same-origin model.
+      <p>Caja &mdash; Replaces same-origin model with a
+      capabilities model.
     </li>
 
     <li class=slide id=goals>
@@ -269,10 +284,10 @@
 
       <img src=sandboxes-to-playgrounds.png style="float: right">
       <div style="width: 50%">
-        <p><b>Old</b>: untrusted code in separate domains.
+        <p><b>Old</b>: untrusted code from a different origin.
         Collaboration is hard.
 
-        <p><b>New</b>: different pieces of code in same domain.  Don't
+        <p><b>New</b>: different pieces of code from same origin.  Don't
         trust each other.  Collaborate via normal object passing and
         method calls.
       </div>
@@ -300,7 +315,7 @@
       <center><table style=font-size:100%>
         <tr><td>Separation of Duties<td>&rarr;<td>Separation of Authority</tr>
         <tr><td>Information hiding<td>&rarr;<td>Encapsulation</tr>
-        <tr><td>Object orientation<td>&rarr;<td>Capabilities</tr>
+        <tr><td>Message Passing<td>&rarr;<td>Authorization</tr>
         <tr><td>Dependency Injection<td>&rarr;<td>Authority Injection</tr>
         <tr><td><td><td><center>&darr;<br>POLA<br>(Principle of Least Authority)</center></tr>
       </table></center>
@@ -309,7 +324,7 @@
     <li class=slide id=flexible-security>
       <h1>O.C. Provides Flexible Security</h1>
 
-      <p>Static policies require blanket rules.  O.C. allows exceptions by
+      <p>Static policies require blanket rules.  O.C. allows exemption by
       granting references.</p>
           <blockquote>
           A policy, safe HTML, can be enforced by a sanitizer function that
@@ -361,11 +376,12 @@
       extracted and sanitized.  HTML rendered by javascript:</p>
 
       <pre>
-IMPORTS___.htmlEmitter___.p(<span class=str>'form'</span>).a(<span class=str>'onsubmit'</span>>, <span class=str>'return false'</span>).ih(</span>
-     <span class=str>'    &lt;input type=\"text\" size=\"60\" name=\"q\"&gt;\n'</span>
-     + <span class=str>'    &lt;input type=\"button\" value=\"Search\"'</span>
-     + <span class=str>' onclick=\"<b>return plugin_dispatchEvent___(&hellip;)</b>\"&gt;\n'</span>
-     + <span class=str>'  ').e(<span class=str>'form'</span>);
+IMPORTS___.htmlEmitter___.p(<span class=str>'form'</span>)
+    .a(<span class=str>'onsubmit'</span>, <span class=str>'return false'</span>)
+    .ih(</span><span class=str>'  &lt;input type=\"text\" size=\"60\" name=\"q\"&gt;\n'</span>
+      + <span class=str>'  &lt;input type=\"button\" value=\"Search\"'</span>
+      + <span class=str>' onclick=\"<b>return plugin_dispatchEvent___(&hellip;)</b>\"&gt;\n'</span>)
+    .e(<span class=str>'form'</span>);
       </pre>
     </li>
 
@@ -373,21 +389,23 @@ IMPORTS___.htmlEmitter___.p(<span class=str>'form'</span>).a(<span class=str>'on
       <h1>Style Rules &amp; IDs rewritten</h1>
 
       <p>To prevent CSS styles interfering, <tt>class</tt>es, <tt>id</tt>s, and
-      CSS rules are rewritten, and styles are sanitized:</p>
+      CSS rules are rewritten, and styles are rewritten:</p>
 
       <pre>
 <span class=cmt>/* searchbox.css */</span>
-<b>#results</b> li { list-style-type: none; margin-top: .5em;
+<b>.results</b> li { list-style-type: none; margin-top: .5em;
               border-bottom: 1px dotted #888 }</pre>
       &darr;
       <pre>
 <span class=cmt>/* searchbox-cajoled.css */</span>
-<b>.searchbox #:results</b> li {
+<b>.searchbox .results</b> li {
   list-style-type: none;
   margin-top: .5em;
   border-bottom: 1px dotted #888
 }
 </pre>
+      <p>Now the rule only affect DOM sub-trees with class
+      <code>.searchbox</code>.<p>
 
     <li class=slide>
       <h1>Caja Rewrites Javascript</h1>
@@ -400,33 +418,32 @@ IMPORTS___.htmlEmitter___.p(<span class=str>'form'</span>).a(<span class=str>'on
       &darr;
       <pre>
 <span class=cmt>// Cajoled Javascript</span>
-IMPORTS___.<b>document</b>&hellip;</pre>
+___.loadModule(function (IMPORTS___) {
+      IMPORTS___.<b>document</b>&hellip;
+    })
+</pre>
 
       <p>When the gadget asks for the node with id <code>foo</code> we
-      substitute a "tamed" version of the DOM node with id
-      <tt>searchbox-foo</tt>.</p>
+      substitute a "tamed" version of the DOM element with id
+      <tt>foo-searchbox___</tt>.</p>
     </li>
 
     <li class=slide>
       <h1>Container Loads Gadgets</h1>
 
       <pre>
-<span class=cmt>&lt;!-- Container HTML --&gt;</span>
-&lt;div id="<b>searchbox-</b>base" class="<b>searchbox</b>"&gt;&lt;/div&gt;
+<span class=cmt>&lt;!-- Cajoled HTML from the searchbox gadget will end up here --&gt;</span>
+&lt;div id="base-searchbox___" class="<b>searchbox___</b>"&gt;&lt;/div&gt;
 &hellip;
-&lt;div class="<b>searchbox</b>"&gt;&lt;ul id="<b>searchbox-</b>results"&gt;&lt;/ul&gt;&lt;/div&gt;
-
 &lt;script type="text/javascript"&gt;
   <span class=cmt>// Create a fake "Global" object for the gadget</span>
   var searchBoxImports = ___.copy(___.sharedImports);
   <span class=cmt>// Create the fake document object.</span>
-  attachDocumentStubs(<span class=str>'<b>searchbox-</b>'</span>, searchBoxImports);
-  setGadgetRoot(document.getElementById(<span class=str>'<b>searchbox-</b>base'</span>));
-  &hellip;
+  attachDocumentStubs(
+       <span class=str>'<b>-searchbox___</b>'</span>, urlRewriter, searchBoxImports);
 &lt;/script&gt;
-<span class=cmt>&lt;!-- Load the gadget JS &amp; CSS --&gt;</span>
+<span class=cmt>&lt;!-- Load the gadget JS --&gt;</span>
 &lt;script type="text/javascript" src=<b>searchbox-cajoled.js</b>&gt;&lt;/script&gt;
-&lt;link rel="stylesheet" type="text/css" href="<b>searchbox-cajoled.css</b>"&gt;
 </pre>
     </li>
 
@@ -436,7 +453,7 @@ IMPORTS___.<b>document</b>&hellip;</pre>
 <pre>
 var searchEngine = new SearchEngine();
 
-<span class=cmt>// Provide both modules an interface to Google's AJAX Search APIs.</span>
+<span class=cmt>// Provide both modules an interface to AJAX Search APIs.</span>
 searchBoxImports.searchEngine = kittensImports.searchEngine
     = searchEngine;
 
@@ -452,18 +469,21 @@ searchBoxImports.resultConsumer = kittensImports.showKitten;</pre>
     </li>
 
     <li class=slide id=status>
-      <h1>Status as of 23 Feb 2008</h1>
+      <h1>Status as of 12 May 2008</h1>
 
-      <p>Language Specification Solid</p>
-      <p>Prototype Cajoler Implemented</p>
+      <p>Language Specification Mostly Stable</p>
+      <p>Cajoler Implemented</p>
       <p>Prototype Tamed DOM</p>
-      <p>Integrated w/ Shindig</p>
-      <p>MySpace developer launch imminent</p>
-      <p>Only Minimal Penetration Testing</p>
+      <p>Integrated w/ Shindig and successfully Cajoled and run gadgets</p>
+      <p>Prototype Debugging (Firebug) and IDE (Eclipse) support</p>
+      <p>Started Penetration Testing</p>
     </li>
 
     <li class=slide id=links>
       <h1>Caja &mdash; Links</h1>
+
+      <div>mikesamuel @ gmail.com</div>
+      <br>
 
       <div>Open Sourced under Apache license:
         <a href="http://code.google.com/p/google-caja/"
@@ -474,10 +494,10 @@ searchBoxImports.resultConsumer = kittensImports.showKitten;</pre>
          >http://groups.google.com/group/google-caja-discuss</a>
 
       <div>Demo App:
-        <a href="http://tinyurl.com/2toxmm">http://tinyurl.com/2toxmm</a>
+        <a href="http://cajadores.com/demos/lolcat-search/">http://cajadores.com/demos/lolcat-search/</a>
 
       <div>Demo App Source:
-        <a href="http://tinyurl.com/22us8t">http://tinyurl.com/22us8t</a>
+        <a href="http://tinyurl.com/3tbjph">http://tinyurl.com/3tbjph</a>
     </li>
   </ul>
 
