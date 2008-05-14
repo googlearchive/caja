@@ -252,12 +252,13 @@
     <li class="slide">
       <h1>Interactive Documents</h1>
 
-      <p>Visual Basic for Apps &mdash; Documents can do anything</p>
-      <p>The web &mdash; Web pages can interact in the same-origin</p>
-      <p>Social Networking &mdash; Web apps using proxies to work
-      around the same-origin model.
-      <p>Caja &mdash; Replaces same-origin model with a
-      capabilities model.
+      <p>Visual Basic for Apps &mdash; documents can do anything the viewer can
+         do.</p>
+      <p>The web &mdash; pages from the same-origin can interact.</p>
+      <p>Social Networks &mdash; use proxies and x-site <tt>&lt;script&gt;</tt>s
+         to duck the same-origin policy.
+      <p>Caja &mdash; Replaces same-origin policy with an
+      object-capabilities model.
     </li>
 
     <li class=slide id=goals>
@@ -277,6 +278,26 @@
       <p>Familiar with web technologies
       <p>Comfortable with acronyms: JS, HTML, CSS, PHP
       <p>Have specific domain knowledge that C.S. graduates lack
+    </li>
+
+    <li class=slide id=code-rewriting>
+      <h1>Source Code Rewriting</h1>
+
+      <blockquote><code>location = <span class=str>'//evil.com/';</span></code>
+        <br>&rarr; <code>IMPORTS___.location = <span class=str>'//evil.com/';</span></code>
+      </blockquote>
+
+      <p>Globals rewritten to point to a per-gadget object.
+      Authority not "ambiently" available.</td>
+
+      <hr>
+
+      <blockquote><code>document.createElement(<span class=str>'script'</span>);</code>
+        <br>&rarr; <code>IMPORTS___.document.createElement(<span class=str>'script'</span>);</code>
+      </blockquote>
+
+      <p>"Tamed" document object looks, smells, and tastes like the
+      real DOM, but can whitelist elements and rewrite attributes.
     </li>
 
     <li class=slide id=playgrounds>
