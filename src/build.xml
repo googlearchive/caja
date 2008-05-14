@@ -306,7 +306,7 @@
     </minify>
   </target>
 
-  <target name="AllTests" depends="pluginc,CajoledTests,dirs">
+  <target name="AllTests" depends="pluginc,CajolingService,CajoledTests,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${testsrc}"/>
       <classpath refid="classpath.tests.compile"/>
@@ -388,6 +388,18 @@
       </fileset>
     </copy>
   </target>
+
+  <!-- Builds the cajoling service. -->
+  <target name="CajolingService" 
+	 depends="CssParser,HtmlParser,Quasiliterals,Rendering,Schemas">
+    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+          <src path="${src}"/>
+      <classpath refid="classpath.compile"/>
+      <include name="**/caja/opensocial/service/*.java"/>
+      <compilerarg line="-Xlint:unchecked"/>
+    </javac>
+  </target>
+
 
   <target name="Config" depends="Reporting">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
