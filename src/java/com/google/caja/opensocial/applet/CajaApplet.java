@@ -68,12 +68,16 @@ public class CajaApplet extends Applet {
    * Invoked by javascript in the embedding page.
    * @param cajaInput as an HTML gadget.
    * @param embeddable true to render the output as embeddable.
+   * @param debugMode true to build with
+   *   {@link com.google.caja.plugin.stages.DebuggingSymbolsStage debugging}
+   *   symbols.
    * @return a tuple of {@code [ cajoledHtml, messageHtml ]}.
    *     If the cajoledHtml is non-null then cajoling succeeded.
    */
-  public Object[] cajole(String cajaInput, boolean embeddable) {
+  public Object[] cajole(String cajaInput, boolean embeddable,
+                         boolean debugMode) {
     try {
-      return runCajoler(cajaInput, embeddable);
+      return runCajoler(cajaInput, embeddable, debugMode);
     } catch (RuntimeException ex) {
       StringWriter sw = new StringWriter();
       PrintWriter pw = new PrintWriter(sw);
@@ -87,7 +91,8 @@ public class CajaApplet extends Applet {
     return BuildInfo.getInstance().getBuildInfo();
   }
 
-  private Object[] runCajoler(String cajaInput, final boolean embeddable) {
+  private Object[] runCajoler(
+      String cajaInput, final boolean embeddable, boolean debugMode) {
     // TODO(mikesamuel): If the text starts with a <base> tag, maybe use that
     // and white it out to preserve file positions.
     URI src = URI.create(getDocumentBase().toString());
@@ -128,6 +133,7 @@ public class CajaApplet extends Applet {
           return pc;
         }
       };
+    rw.setDebugMode(debugMode);
 
     StringBuilder cajoledOutput = new StringBuilder();
     UriCallback uriCallback = new UriCallback() {

@@ -1836,7 +1836,7 @@ var ___;
     return freeze({
       getImports: simpleFunc(function() { return imports; }),
       setImports: simpleFunc(function(newImports) { imports = newImports; }),
-      handle: simpleFunc(function(newModule) { newModule(___, imports); })
+      handle: simpleFunc(function(newModule) { newModule(copy(___), imports); })
     });
   }
   

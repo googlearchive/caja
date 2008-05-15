@@ -91,6 +91,8 @@ public enum PluginMessageType implements MessageTypeInt {
   QUOTED_CSS_VALUE("%s: quoted unquoted css value %s", MessageLevel.LINT),
   ASSUMING_PIXELS_FOR_LENGTH(
       "%s: assuming pixels for length %s", MessageLevel.WARNING),
+  MALFORMED_ENVELOPE(
+      "%s: malformed envelope around cajoled code", MessageLevel.ERROR),
   ;
 
   private final String formatString;

@@ -238,7 +238,7 @@ public final class CssTemplate extends AbstractParseTreeNode<ParseTreeNode> {
               Expression e = valueParts.get(0);
               for (int i = 1, n = valueParts.size(); i < n; ++i) {
                 e = Operation.create(
-                    Operator.ADDITION, new Expression[] { e, valueParts.get(i) });
+                    Operator.ADDITION, e, valueParts.get(i));
               }
               valueParts = null;
               out.add(e);

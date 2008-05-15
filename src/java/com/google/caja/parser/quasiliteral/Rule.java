@@ -43,15 +43,13 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 import com.google.caja.util.Pair;
 
-import static com.google.caja.parser.quasiliteral.QuasiBuilder.match;
-import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
-
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A rewriting rule supplied by a subclass.
@@ -76,8 +74,15 @@ public abstract class Rule implements MessagePart {
 
   private String name;
   private Rewriter rewriter;
+  private RuleDescription description;
 
-  public Rule() {}
+  /**
+   * Creates a new Rule, inferring name and other state from the {@link #fire}
+   * method's {@link RuleDescription}.
+   */
+  public Rule() {
+    setName(getRuleDescription().name());
+  }
 
   /**
    * Create a new {@code Rule}.
@@ -92,12 +97,16 @@ public abstract class Rule implements MessagePart {
   /**
    * @return the name of this {@code Rule}.
    */
-  public String getName() { return name; }
+  public String getName() {
+    assert this.name != null;
+    return name;
+  }
 
   /**
    * Set the name of this {@code Rule}.
    */
   public void setName(String name) {
+    assert this.name == null;
     this.name = name;
   }
 
@@ -113,6 +122,30 @@ public abstract class Rule implements MessagePart {
     this.rewriter = rewriter;
   }
 
+  /**
+   * Gets the {@link RuleDescription} annotation on the {@link #fire} method.
+   * @throws IllegalStateException if there is no such annotation.
+   */
+  public RuleDescription getRuleDescription() {
+    if (description == null) {
+      Class<? extends Rule> c = getClass();
+      Method fire;
+      try {
+        fire = c.getMethod("fire", new Class<?>[] {
+              ParseTreeNode.class, Scope.class, MessageQueue.class
+            });
+      } catch (NoSuchMethodException e) {
+        NoSuchMethodError error = new NoSuchMethodError();
+        error.initCause(e);
+        throw error;
+      }
+      description = fire.getAnnotation(RuleDescription.class);
+      if (description == null) {
+        throw new IllegalStateException("RuleDescription not found");
+      }
+    }
+    return description;
+  }
 
   /**
    * Process the given input, returning a rewritten node.
@@ -183,13 +216,13 @@ public abstract class Rule implements MessagePart {
     List<ParseTreeNode> stmts = new ArrayList<ParseTreeNode>();
 
     if (scope.hasFreeArguments()) {
-      stmts.add(substV(
+      stmts.add(QuasiBuilder.substV(
           "var @la = ___.args(@ga);",
           "la", s(new Identifier(ReservedNames.LOCAL_ARGUMENTS)),
           "ga", newReference(ReservedNames.ARGUMENTS)));
     }
     if (scope.hasFreeThis()) {
-      stmts.add(substV(
+      stmts.add(QuasiBuilder.substV(
           "var @lt = @gt;",
           "lt", s(new Identifier(ReservedNames.LOCAL_THIS)),
           "gt", newReference(ReservedNames.THIS)));
@@ -217,7 +250,7 @@ public abstract class Rule implements MessagePart {
       Scope scope,
       MessageQueue mq) {
     ParseTreeNode reference = s(new Reference(scope.declareStartOfScopeTempVariable()));
-    ParseTreeNode variableDefinition = substV(
+    ParseTreeNode variableDefinition = QuasiBuilder.substV(
         "@ref = @rhs;",
         "ref", reference,
         "rhs", rewriter.expand(value, scope, mq));
@@ -264,7 +297,7 @@ public abstract class Rule implements MessagePart {
     }
     String sName = getReferenceName(symbol);
     if (scope.isGlobal(sName)) {
-      return s(new ExpressionStmt((Expression)substV(
+      return s(new ExpressionStmt((Expression) QuasiBuilder.substV(
           "@temp = @value," +
           ReservedNames.IMPORTS + ".@sCanSet ?" +
           "  (" + ReservedNames.IMPORTS + ".@s = @temp) :" +
@@ -275,7 +308,7 @@ public abstract class Rule implements MessagePart {
           "temp", s(new Reference(scope.declareStartOfScopeTempVariable())),
           "value", value)));
     } else {
-      return substV(
+      return QuasiBuilder.substV(
           "var @s = @v",
           "s", symbol.children().get(0),
           "v", value);
@@ -289,11 +322,11 @@ public abstract class Rule implements MessagePart {
       MessageQueue mq) {
     Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
 
-    if (match("function(@ps*) { @bs*; }", member, bindings)) {
+    if (QuasiBuilder.match("function(@ps*) { @bs*; }", member, bindings)) {
       Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)member);
       if (s2.hasFreeThis()) {
         checkFormals(bindings.get("ps"), mq);
-        return substV(
+        return QuasiBuilder.substV(
             "___.method(function(@ps*) {" +
             "  @fh*;" +
             "  @stmts*;" +
@@ -329,7 +362,7 @@ public abstract class Rule implements MessagePart {
       MessageQueue mq) {
     Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
 
-    if (match("({@keys*: @vals*})", memberMap, bindings)) {
+    if (QuasiBuilder.match("({@keys*: @vals*})", memberMap, bindings)) {
       if (literalsEndWith(bindings.get("keys"), "__")) {
         mq.addMessage(
             RewriterMessageType.MEMBER_KEY_MAY_NOT_END_IN_DOUBLE_UNDERSCORE,
@@ -337,7 +370,7 @@ public abstract class Rule implements MessagePart {
         return memberMap;
       }
 
-      return substV(
+      return QuasiBuilder.substV(
           "({@keys*: @vals*})",
           "keys", bindings.get("keys"),
           "vals", expandAllMembers(bindings.get("vals"), rule, scope, mq));
@@ -355,13 +388,13 @@ public abstract class Rule implements MessagePart {
       MessageQueue mq) {
     String xName = getReferenceName(ref);
     if (scope.isGlobal(xName)) {
-      return substV(
+      return QuasiBuilder.substV(
           ("IMPORTS___.@xCanRead"
            + "    ? IMPORTS___.@x"
            + "    : ___.readPub(IMPORTS___, @xName, true);"),
           "x", ref,
           "xCanRead", newReference(xName + "_canRead___"),
-          "xName", new StringLiteral(StringLiteral.toQuotedValue(xName)));
+          "xName", toStringLiteral(ref));
     } else {
       return ref;
     }
@@ -373,7 +406,7 @@ public abstract class Rule implements MessagePart {
       Scope scope,
       MessageQueue mq) {
     Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-    if (!match("({@keys*: @vals*})", node, bindings)) {
+    if (!QuasiBuilder.match("({@keys*: @vals*})", node, bindings)) {
       mq.addMessage(
           RewriterMessageType.MAP_EXPRESSION_EXPECTED,
           node.getFilePosition(), rule, node);
@@ -428,9 +461,7 @@ public abstract class Rule implements MessagePart {
     }
     StringLiteral sl = new StringLiteral(
         StringLiteral.toQuotedValue(ident.getName()));
-    if (node.getFilePosition() != null) {
-      sl.setFilePosition(node.getFilePosition());
-    }
+    sl.setFilePosition(ident.getFilePosition());
     return sl;
   }
 
@@ -442,6 +473,28 @@ public abstract class Rule implements MessagePart {
       }
     }
     return false;
+  }
+
+  /**
+   * Matches using the Quasi-pattern from {@link RuleDescription#matches} and
+   * returns the bindings if the match succeeded, or null otherwise.
+   * @return null iff node was not matched.
+   */
+  protected Map<String, ParseTreeNode> match(ParseTreeNode node) {
+    Map<String, ParseTreeNode> bindings
+        = new LinkedHashMap<String, ParseTreeNode>();
+    if (QuasiBuilder.match(getRuleDescription().matches(), node, bindings)) {
+      return bindings;
+    }
+    return null;
+  }
+
+  /**
+   * Substitutes bindings into the Quasi-pattern from
+   * {@link RuleDescription#substitutes}.
+   */
+  protected ParseTreeNode subst(Map<String, ParseTreeNode> bindings) {
+    return QuasiBuilder.subst(getRuleDescription().substitutes(), bindings);
   }
 
   /**
@@ -524,7 +577,7 @@ public abstract class Rule implements MessagePart {
       object = (Reference) left;
     } else {
       Identifier tmpVar = scope.declareStartOfScopeTempVariable();
-      temporaries.add((Expression)substV(
+      temporaries.add((Expression) QuasiBuilder.substV(
           "@tmpVar = @left;",
           "tmpVar", s(new Reference(tmpVar)),
           "left", left));
@@ -536,7 +589,7 @@ public abstract class Rule implements MessagePart {
       key = right;
     } else {
       Identifier tmpVar = scope.declareStartOfScopeTempVariable();
-      temporaries.add((Expression)substV(
+      temporaries.add((Expression) QuasiBuilder.substV(
           "@tmpVar = @right;",
           "tmpVar", s(new Reference(tmpVar)),
           "right", right));
@@ -547,7 +600,7 @@ public abstract class Rule implements MessagePart {
     final boolean isProp = uncajoledObject instanceof Reference
         && Keyword.THIS.toString().equals(getReferenceName(uncajoledObject));
 
-    Expression rvalueCajoled = (Expression) substV(
+    Expression rvalueCajoled = (Expression) QuasiBuilder.substV(
         "___.@flavorOfRead(@object, @key, @isGlobal)",
         "flavorOfRead", newReference(isProp ? "readProp" : "readPub"),
         "object", object,
@@ -558,7 +611,7 @@ public abstract class Rule implements MessagePart {
     return new ReadAssignOperands(temporaries, rvalueCajoled) {
         @Override
         public Expression makeAssignment(Expression rvalue) {
-          return (Expression) substV(
+          return (Expression) QuasiBuilder.substV(
               "___.@flavorOfSet(@object, @key, @rvalue)",
               "flavorOfSet", newReference(isProp ? "setProp" : "setPub"),
               "object", object,

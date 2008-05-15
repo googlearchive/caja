@@ -339,6 +339,7 @@
       </fileset>
       <fileset dir="${javascript}">
         <include name="**/caja/caja.js"/>
+        <include name="**/caja/caja-debugmode.js"/>
       </fileset>
       <fileset dir="${third_party}">
         <include name="js/jqueryjs/runtest/env.js"/>
@@ -620,6 +621,7 @@
     <copy todir="${www}/testbed">
       <fileset dir="${javascript}/com/google/caja">
         <include name="caja.js"/>
+        <include name="caja-debugmode.js"/>
       </fileset>
       <fileset dir="${src}/com/google/caja/plugin">
         <include name="domita.js"/>

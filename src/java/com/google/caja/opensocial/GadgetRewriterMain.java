@@ -58,11 +58,11 @@ public class GadgetRewriterMain {
      }
      System.exit(-1);
    }
-    
+
   public boolean init(String[] argv) {
     return config.processArguments(argv);
   }
-   
+
   public int run()
       throws GadgetRewriteException, IOException, UriCallbackException,
           ParseException {
@@ -70,6 +70,7 @@ public class GadgetRewriterMain {
     DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(mq);
     rewriter.setCssSchema(config.getCssSchema(mq));
     rewriter.setHtmlSchema(config.getHtmlSchema(mq));
+    rewriter.setDebugMode(config.debugMode());
 
     Writer w = new BufferedWriter(new FileWriter(config.getOutputBase()));
     try {
@@ -94,10 +95,10 @@ public class GadgetRewriterMain {
     } finally {
       w.close();
     }
-    
+
     return 0;
   }
-  
+
   public Config getConfig() {
     return config;
   }

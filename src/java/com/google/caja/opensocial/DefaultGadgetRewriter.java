@@ -51,6 +51,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
   private final MessageQueue mq;
   private CssSchema cssSchema;
   private HtmlSchema htmlSchema;
+  private boolean debugMode;
 
   public DefaultGadgetRewriter(MessageQueue mq) {
     this.mq = mq;
@@ -66,6 +67,10 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
   public void setHtmlSchema(HtmlSchema htmlSchema) {
     this.htmlSchema = htmlSchema;
   }
+  /**
+   * @param debugMode whether to include debugging info in cajoled output.
+   */
+  public void setDebugMode(boolean debugMode) { this.debugMode = debugMode; }
 
   public void rewrite(ExternalReference gadgetRef, UriCallback uriCallback,
                       String view, Appendable output)
@@ -192,6 +197,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
             }
           }
         });
+    meta.setDebugMode(debugMode);
 
     PluginCompiler compiler = createPluginCompiler(meta, mq);
 

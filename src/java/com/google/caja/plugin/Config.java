@@ -95,6 +95,9 @@ public final class Config {
   private final Option VIEW = defineOption(
       "v", "view", "Gadget view to render (default is 'canvas')", true);
 
+  private final Option DEBUG_MODE = defineBooleanOption(
+      "g", "debug", "Set to add debugging info to cajoled output.");
+
   private final Class<?> mainClass;
   private final PrintWriter stderr;
   private final String usageText;
@@ -106,6 +109,7 @@ public final class Config {
   private URI htmlElementWhitelistUri;
   private URI baseUri;
   private String gadgetView;
+  private boolean debugMode;
   private int servicePort;
 
   public Config(Class<?> mainClass, PrintStream stderr, String usageText) {
@@ -147,6 +151,8 @@ public final class Config {
   }
 
   public String getGadgetView() { return gadgetView; }
+
+  public boolean debugMode() { return debugMode; }
 
   public boolean processArguments(String[] argv) {
     try {
@@ -237,6 +243,7 @@ public final class Config {
       }
 
       gadgetView = cl.getOptionValue(VIEW.getOpt(), "canvas");
+      debugMode = cl.hasOption(DEBUG_MODE.getOpt());
 
       String servicePortString;
       try {
@@ -310,6 +317,14 @@ public final class Config {
       String shortFlag, String longFlag, String help, boolean optional) {
     Option opt = new Option(shortFlag, longFlag, /* hasArg: */ true, help);
     opt.setOptionalArg(optional);
+    options.addOption(opt);
+    return opt;
+  }
+
+  private Option defineBooleanOption(
+      String shortFlag, String longFlag, String help) {
+    Option opt = new Option(shortFlag, longFlag, false, help);
+    opt.setOptionalArg(true);
     options.addOption(opt);
     return opt;
   }

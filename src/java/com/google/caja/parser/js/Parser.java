@@ -515,9 +515,7 @@ public final class Parser extends ParserBase {
             return associateTypeComment(
                 parseExpressionStmt(false), typeComment);
           } else {  // a function declaration
-            String identifier = parseIdentifier();
-            Identifier fcIdNode = new Identifier(identifier);
-            Identifier fdIdNode = new Identifier(identifier);
+            Identifier identifier = parseIdentifierNode();
             tq.expectToken(Punctuation.LPAREN);
             FormalParamList params = parseFormalParams();
             tq.expectToken(Punctuation.RPAREN);
@@ -526,16 +524,10 @@ public final class Parser extends ParserBase {
             }
             Statement body = parseStatementWithoutLabel();
             FunctionConstructor fc = new FunctionConstructor(
-                fcIdNode, params.params, (Block) body);
+                identifier, params.params, (Block) body);
             finish(fc, m);
-            setFilePositionToStart(
-                fcIdNode,
-                (params.params.isEmpty()
-                 ? (AbstractParseTreeNode<?>) body
-                 : params.params.get(0)));
-            s = new FunctionDeclaration(fdIdNode, fc);
+            s = new FunctionDeclaration(identifier, fc);
             finish(s, m);
-            setFilePositionToStart(fdIdNode, fc);
           }
           break;
         }
@@ -608,15 +600,13 @@ public final class Parser extends ParserBase {
           } else {
             tq.expectToken(Keyword.CATCH);
             tq.expectToken(Punctuation.LPAREN);
-            Reference ex = parseReference();
-            Identifier idNode = new Identifier(ex.getIdentifierName());
+            Identifier idNode = parseIdentifierNode();
             Declaration exvar = new Declaration(idNode, (Expression)null);
-            exvar.setFilePosition(ex.getFilePosition());
-            exvar.setComments(ex.getComments());
+            exvar.setFilePosition(idNode.getFilePosition());
+            exvar.setComments(idNode.getComments());
             tq.expectToken(Punctuation.RPAREN);
             handler = new CatchStmt(exvar, parseBody(true));
             finish(handler, m2);
-            setFilePositionToEnd(idNode, exvar);
             m2 = tq.mark();
             sawFinally = tq.checkToken(Keyword.FINALLY);
           }
@@ -956,11 +946,13 @@ public final class Parser extends ParserBase {
               break typeswitch;
             case FUNCTION:
             {
-              Token<JsTokenType> t2 = tq.peek();
-              String identifier = null;
-              if (JsTokenType.WORD == t2.type) {
-                identifier = t2.text;
-                tq.advance();
+              Identifier identifier = null;
+              if (!tq.isEmpty() && JsTokenType.WORD == tq.peek().type) {
+                identifier = parseIdentifierNode();
+              } else {
+                identifier = new Identifier(null);
+                identifier.setFilePosition(
+                    FilePosition.endOf(tq.lastPosition()));
               }
               tq.expectToken(Punctuation.LPAREN);
               FormalParamList params = parseFormalParams();
@@ -969,14 +961,8 @@ public final class Parser extends ParserBase {
                 tq.expectToken(Punctuation.LCURLY);
               }
               Statement body = parseStatementWithoutLabel();
-              Identifier idNode = new Identifier(identifier);
               e = new FunctionConstructor(
-                  idNode, params.params, (Block) body);
-              setFilePositionToStart(
-                  idNode,
-                  (params.params.isEmpty()
-                   ? (AbstractParseTreeNode<?>) body
-                   : params.params.get(0)));
+                  identifier, params.params, (Block) body);
               break typeswitch;
             }
             default:
@@ -1006,9 +992,9 @@ public final class Parser extends ParserBase {
                           MessagePart.Factory.valueOf(identifier));
           }
           Identifier idNode = new Identifier(decodeIdentifier(identifier));
+          finish(idNode, m);
           e = new Reference(idNode);
-          finish(e, m);
-          setFilePositionToEnd(idNode, e);
+          e.setFilePosition(idNode.getFilePosition());
         }
         break;
       }
@@ -1124,9 +1110,9 @@ public final class Parser extends ParserBase {
             tq.lastPosition(), tq.currentPosition());
         mq.addMessage(MessageType.PLACEHOLDER_INSERTED, pos);
         Identifier idNode = new Identifier("_");
+        finish(idNode, pos, Collections.<Token<JsTokenType>>emptyList());
         e = new Reference(idNode);
-        finish(e, pos, Collections.<Token<JsTokenType>>emptyList());
-        setFilePositionToEnd(idNode, e);
+        e.setFilePosition(idNode.getFilePosition());
       } else {
         throw new ParseException(
             new Message(
@@ -1141,11 +1127,18 @@ public final class Parser extends ParserBase {
 
   private Reference parseReference() throws ParseException {
     Mark m = tq.mark();
-    Identifier idNode = new Identifier(parseIdentifier());
+    Identifier idNode = parseIdentifierNode();
     Reference r = new Reference(idNode);
     finish(r, m);
-    setFilePositionToEnd(idNode, r);
     return r;
+  }
+
+  private Identifier parseIdentifierNode() throws ParseException {
+    Mark m = tq.mark();
+    String identifierName = parseIdentifier();
+    Identifier ident = new Identifier(identifierName);
+    finish(ident, m);
+    return ident;
   }
 
   private ExpressionStmt parseExpressionStmt(boolean insertionProtected)
@@ -1232,39 +1225,26 @@ public final class Parser extends ParserBase {
       AbstractStatement<?> s;
       Declaration d;
       {
-        Identifier idNode = new Identifier(parseIdentifier());
+        Identifier idNode = parseIdentifierNode();
         Expression initializer = null;
         if (tq.checkToken(Punctuation.EQ)) {
           initializer = parseExpressionPart(insertionProtected);
         }
         d = new Declaration(idNode, initializer);
         finish(d, m);
-        if (initializer == null) {
-          setFilePositionToEnd(idNode, d);
-        } else {
-          setFilePositionToStart(
-              idNode, (AbstractParseTreeNode<?>) initializer);
-        }
       }
       if (tq.checkToken(Punctuation.COMMA)) {
         List<Declaration> decls = new ArrayList<Declaration>();
         decls.add(d);
         do {
           Mark m2 = tq.mark();
-          String ident = parseIdentifier();
+          Identifier idNode = parseIdentifierNode();
           Expression initializer = null;
           if (tq.checkToken(Punctuation.EQ)) {
             initializer = parseExpressionPart(insertionProtected);
           }
-          Identifier idNode = new Identifier(ident);
           Declaration d2 = new Declaration(idNode, initializer);
           finish(d2, m2);
-          if (initializer == null) {
-            setFilePositionToEnd(idNode, d2);
-          } else {
-            setFilePositionToStart(
-                idNode, (AbstractParseTreeNode<?>) initializer);
-          }
           decls.add(d2);
         } while (tq.checkToken(Punctuation.COMMA));
         MultiDeclaration md = new MultiDeclaration(decls);
@@ -1313,16 +1293,6 @@ public final class Parser extends ParserBase {
     n.setFilePosition(fp);
     n.setComments(Collections.<Token<?>>emptyList());
     return n;
-  }
-
-  private static void setFilePositionToStart(
-      AbstractParseTreeNode<?> n, AbstractParseTreeNode<?> next) {
-    n.setFilePosition(FilePosition.startOf(next.getFilePosition()));
-  }
-
-  private static void setFilePositionToEnd(
-      AbstractParseTreeNode<?> n, AbstractParseTreeNode<?> next) {
-    n.setFilePosition(FilePosition.endOf(next.getFilePosition()));
   }
 
   private void finish(AbstractParseTreeNode<?> n, Mark startMark)

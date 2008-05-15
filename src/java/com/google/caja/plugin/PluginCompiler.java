@@ -26,6 +26,8 @@ import com.google.caja.plugin.stages.CompileCssTemplatesStage;
 import com.google.caja.plugin.stages.CompileGxpsStage;
 import com.google.caja.plugin.stages.CompileHtmlStage;
 import com.google.caja.plugin.stages.ConsolidateCodeStage;
+import com.google.caja.plugin.stages.DebuggingSymbolsStage;
+import com.google.caja.plugin.stages.InferFilePositionsStage;
 import com.google.caja.plugin.stages.OpenTemplateStage;
 import com.google.caja.plugin.stages.RewriteHtmlStage;
 import com.google.caja.plugin.stages.SanitizeHtmlStage;
@@ -133,6 +135,8 @@ public final class PluginCompiler {
     stages.add(new CompileCssTemplatesStage(cssSchema));
     stages.add(new ConsolidateCodeStage());
     stages.add(new ValidateJavascriptStage());
+    stages.add(new InferFilePositionsStage());
+    stages.add(new DebuggingSymbolsStage());
     stages.add(new CheckForErrorsStage());
   }
 

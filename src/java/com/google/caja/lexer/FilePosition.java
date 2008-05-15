@@ -33,7 +33,6 @@ import java.util.Collections;
  */
 public final class FilePosition implements MessagePart {
   // TODO(mikesamuel): need unittests
-  // TODO(mikesamuel): undo CL 5667265 changes.
   private InputSource source;
   /**
    * 1 greater than the number of newlines between the start of the token and
@@ -126,15 +125,16 @@ public final class FilePosition implements MessagePart {
   }
 
   public static FilePosition span(FilePosition start, FilePosition end) {
+    if (start == end) { return start; }
     if (!start.source.equals(end.source)
         || start.startCharInFile > end.endCharInFile) {
       throw new IllegalArgumentException(start + ", " + end);
     }
     return new FilePosition(
-      start.source, start.startLineNo, start.startLogicalLineNo,
-      start.startCharInFile, start.startCharInLine,
-      end.endLineNo, end.endLogicalLineNo, end.endCharInFile,
-      end.endCharInLine);
+        start.source, start.startLineNo, start.startLogicalLineNo,
+        start.startCharInFile, start.startCharInLine,
+        end.endLineNo, end.endLogicalLineNo, end.endCharInFile,
+        end.endCharInLine);
   }
 
   public static FilePosition startOf(FilePosition fp) {
@@ -245,5 +245,4 @@ public final class FilePosition implements MessagePart {
         ^ (this.endCharInFile - this.startCharInFile)
         );
   }
-
 }

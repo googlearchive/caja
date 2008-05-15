@@ -17,6 +17,8 @@ package com.google.caja.parser.js;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -130,7 +132,7 @@ public class ParserTest extends CajaTestCase {
       String testFile, String goldenFile, boolean paranoid)
       throws Exception {
     Statement parseTree = js(fromResource(testFile));
-    TestUtil.checkFilePositionInvariants(parseTree);
+    checkFilePositionInvariants(parseTree);
 
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = new JsPrettyPrinter(sb, null);
@@ -155,7 +157,7 @@ public class ParserTest extends CajaTestCase {
       String testFile, String goldenFile, String ... errors)
       throws Exception {
     Statement parseTree = js(fromResource(testFile));
-    TestUtil.checkFilePositionInvariants(parseTree);
+    checkFilePositionInvariants(parseTree);
 
     StringBuilder output = new StringBuilder();
     parseTree.format(mc, output);
@@ -180,5 +182,54 @@ public class ParserTest extends CajaTestCase {
 
     List<String> expectedErrors = Arrays.asList(errors);
     MoreAsserts.assertListsEqual(expectedErrors, actualErrors);
+  }
+
+  public static void checkFilePositionInvariants(ParseTreeNode root) {
+    checkFilePositionInvariants(AncestorChain.instance(root));
+  }
+
+  private static void checkFilePositionInvariants(AncestorChain<?> nChain) {
+    ParseTreeNode n = nChain.node;
+    String msg = n + " : " + n.getFilePosition();
+    try {
+      // require that n start on or after its previous sibling
+      ParseTreeNode prev = nChain.getPrevSibling();
+      if (prev != null) {
+        if (prev instanceof Identifier && n instanceof FunctionConstructor
+            && nChain.parent != null
+            && nChain.parent.node instanceof FunctionDeclaration) {
+          // Special case for FunctionDeclarations which look like this
+          // FunctionDeclaration
+          //   Identifier
+          //   FunctionConstructor
+          //     Identifier
+          // with the FunctionConstructor having the same position as the
+          // declaration which makes the identifier overlap with its sibling.
+          assertEquals(msg, prev.getFilePosition(),
+                       nChain.parent.cast(FunctionDeclaration.class).node
+                       .getIdentifier().getFilePosition());
+        } else {
+          assertTrue(msg, (prev.getFilePosition().endCharInFile()
+                           <= n.getFilePosition().startCharInFile()));
+        }
+      }
+      // require that n encompass its children
+      List<? extends ParseTreeNode> children = n.children();
+      if (!children.isEmpty()) {
+        ParseTreeNode first = children.get(0),
+                       last = children.get(children.size() - 1);
+        assertTrue(msg, (first.getFilePosition().startCharInFile()
+                         >= n.getFilePosition().startCharInFile()));
+        assertTrue(msg, (last.getFilePosition().endCharInFile()
+                         <= n.getFilePosition().endCharInFile()));
+      }
+
+      for (ParseTreeNode c : children) {
+        checkFilePositionInvariants(
+            new AncestorChain<ParseTreeNode>(nChain, c));
+      }
+    } catch (RuntimeException ex) {
+      throw new RuntimeException(msg, ex);
+    }
   }
 }

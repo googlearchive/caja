@@ -90,6 +90,7 @@ public final class PluginCompilerMain {
     MessageContext mc = null;
     try {
       PluginMeta meta = new PluginMeta(makeEnvironment(config));
+      meta.setDebugMode(config.debugMode());
       PluginCompiler compiler = new PluginCompiler(meta, mq);
       mc = compiler.getMessageContext();
       compiler.setCssSchema(config.getCssSchema(mq));

@@ -14,7 +14,9 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
@@ -23,7 +25,6 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -70,7 +71,7 @@ public abstract class Rewriter {
    */
   public final ParseTreeNode expand(ParseTreeNode node, MessageQueue mq) {
     flagTainted(node, mq);
-    ParseTreeNode result = expand(node, null, mq); 
+    ParseTreeNode result = expand(node, null, mq);
     checkTainted(result, mq);
     return result;
   }
@@ -85,21 +86,22 @@ public abstract class Rewriter {
    */
   protected final ParseTreeNode expand(ParseTreeNode node, Scope scope, MessageQueue mq) {
     for (Rule rule : rules) {
-
-      ParseTreeNode result = null;
-      RuntimeException ex = null;
-
       try {
-        result = rule.fire(node, scope, mq);
-      } catch (RuntimeException e) {
-        ex = e;
-      }
-
-      if (result != Rule.NONE || ex != null) {
-        if (logging) logResults(rule, node, result, ex);
-        if (ex != null) throw ex;
-        result.getAttributes().remove(ParseTreeNode.TAINTED);
-        return result;
+        ParseTreeNode result = rule.fire(node, scope, mq);
+        if (result != Rule.NONE) {
+          FilePosition resultPos = result.getFilePosition();
+          if (result instanceof AbstractParseTreeNode
+              && (QuasiBuilder.NULL_INPUT_SOURCE.equals(resultPos.source())
+                  || FilePosition.UNKNOWN.equals(resultPos))) {
+            ((AbstractParseTreeNode<?>) result)
+                .setFilePosition(node.getFilePosition());
+          }
+          if (logging) { logResults(rule, node, result, null); }
+          return result;
+        }
+      } catch (RuntimeException ex) {
+        if (logging) { logResults(rule, node, null, ex); }
+        throw ex;
       }
     }
 
@@ -117,24 +119,12 @@ public abstract class Rewriter {
    */
   public void addRule(Rule rule) {
     // We keep 'ruleNames' as a guard against programming errors
-    Class<? extends Rule> c = rule.getClass();
-    Method m = null;
-    Class<?>[] args = {ParseTreeNode.class, Scope.class, MessageQueue.class};
-    try {
-      m = c.getMethod("fire", args);
-    } catch (NoSuchMethodException e) {
-      throw new IllegalArgumentException("Method \"fire\" not found in Rule");
+    if (!ruleNames.add(rule.getName())) {
+      throw new IllegalArgumentException(
+          "Duplicate rule name: " + rule.getName());
     }
-    RuleDescription rDesc = m.getAnnotation(RuleDescription.class);
-    if (rDesc == null) {
-      throw new IllegalArgumentException("RuleDescription not found");
-    }
-    rule.setName(rDesc.name());
-    rule.setRewriter(this);
-    if (ruleNames.contains(rule.getName()))
-      throw new IllegalArgumentException("Duplicate rule name: " + rule.getName());
     rules.add(rule);
-    ruleNames.add(rule.getName());
+    rule.setRewriter(this);
   }
 
   /**
@@ -198,7 +188,7 @@ public abstract class Rewriter {
       flagTainted(n, mq);
     }
   }
-  
+
   private void checkTainted(ParseTreeNode node, MessageQueue mq) {
     if (node.getAttributes().is(ParseTreeNode.TAINTED)) {
       mq.addMessage(RewriterMessageType.UNSEEN_NODE_LEFT_OVER, node.getFilePosition());

@@ -22,6 +22,8 @@ public final class PluginMeta {
   private int guidCounter;
   /** Describes how resources external to the plugin definition are resolved. */
   private final PluginEnvironment env;
+  /** True if the output should include debugging info. */
+  private boolean debugMode;
 
   public PluginMeta() {
     this(PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
@@ -41,5 +43,11 @@ public final class PluginMeta {
     return prefix + "_" + (++guidCounter) + "___";
   }
 
+  /** Describes how resources external to the plugin definition are resolved. */
   public PluginEnvironment getPluginEnvironment() { return env; }
+
+  /** True iff the output should include debugging info. */
+  public boolean debugMode() { return debugMode; }
+
+  public void setDebugMode(boolean debugMode) { this.debugMode = debugMode; }
 }

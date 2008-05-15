@@ -16,7 +16,6 @@ package com.google.caja.util;
 
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.InputSource;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
@@ -41,11 +40,8 @@ import java.net.URLEncoder;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import junit.framework.Assert;
 
 /**
  * Utilities for junit test cases.
@@ -129,10 +125,6 @@ public final class TestUtil {
         new InputStreamReader(conn.getInputStream()), new InputSource(uri));
   }
 
-  public static void checkFilePositionInvariants(ParseTreeNode root) {
-    checkFilePositionInvariants(new AncestorChain<ParseTreeNode>(root));
-  }
-
   public static String format(ParseTreeNode n) {
     StringBuilder output = new StringBuilder();
     try {
@@ -141,42 +133,6 @@ public final class TestUtil {
       throw new RuntimeException(ex);  // StringBuilder should not throw.
     }
     return output.toString();
-  }
-
-  private static void checkFilePositionInvariants(AncestorChain<?> nChain) {
-    ParseTreeNode n = nChain.node;
-    String msg = n + " : " + n.getFilePosition();
-    try {
-      // require that n start on or after its previous sibling
-      ParseTreeNode prev = nChain.getPrevSibling();
-      Assert.assertTrue(msg, null == prev
-                        || (prev.getFilePosition().endCharInFile()
-                            <= n.getFilePosition().startCharInFile()));
-
-      // require that n end on or before its next sibling
-      ParseTreeNode next = nChain.getNextSibling();
-      Assert.assertTrue(msg, null == next
-                        || (next.getFilePosition().startCharInFile()
-                            >= n.getFilePosition().endCharInFile()));
-
-      // require that n encompass its children
-      List<? extends ParseTreeNode> children = n.children();
-      if (!children.isEmpty()) {
-        ParseTreeNode first = children.get(0),
-                       last = children.get(children.size() - 1);
-        Assert.assertTrue(msg, first.getFilePosition().startCharInFile()
-                          >= n.getFilePosition().startCharInFile());
-        Assert.assertTrue(msg, last.getFilePosition().endCharInFile()
-                          <= n.getFilePosition().endCharInFile());
-      }
-
-      for (ParseTreeNode c : children) {
-        checkFilePositionInvariants(
-            new AncestorChain<ParseTreeNode>(nChain, c));
-      }
-    } catch (RuntimeException ex) {
-      throw new RuntimeException(msg, ex);
-    }
   }
 
   public static MessageLevel maxMessageLevel(MessageQueue mq) {

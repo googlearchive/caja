@@ -38,9 +38,10 @@ function getCajoler() {
 }
 
 function cajole() {
+  var inputs = document.forms.cajolerForm.elements;
   var result = getCajoler().cajole(
-      document.forms.cajolerForm.elements.src.value.replace(/^\s+|\s+$/g, ''),
-      Boolean(document.forms.cajolerForm.elements.embeddable.checked));
+      inputs.src.value.replace(/^\s+|\s+$/g, ''),
+      Boolean(inputs.embeddable.checked), Boolean(inputs.debugSymbols.checked));
   var cajoledOutput = result[0];
   var messages = String(result[1]);
 
@@ -112,7 +113,7 @@ function innerTextHelper(node, buf) {
       <p>
       The script and styles are rewritten and the rewritten gadget is displayed
       in pretty printed form in the middle section to the right.
-      
+
       <p>
       The last expression in the program is logged in the bottom section, and
       emitted HTML is displayed below that.
@@ -136,9 +137,14 @@ function innerTextHelper(node, buf) {
     <td>
       <button onclick="cajole()">Cajole</button>
       <form name="cajolerForm" onsubmit="return false">
+        &nbsp;
         <input name="embeddable" type="checkbox">
-        <label for=embeddable title="Output can be embedded in HTML/XML"
+        <label for="embeddable" title="Output can be embedded in HTML/XML"
          >Embeddable</label>
+        &nbsp;
+        <input name="debugSymbols" type="checkbox">
+        <label for="debugSymbols" title="Build with debugging symbols"
+         >Debug Symbols</label>
         <br>
         <textarea cols="81" rows="40" name="src"
 >&lt;script type="text/javascript"&gt;

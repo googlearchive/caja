@@ -14,7 +14,6 @@
 
 package com.google.caja.opensocial.service;
 
-import com.google.caja.lexer.InputSource;
 import com.google.caja.util.Pair;
 
 import com.sun.net.httpserver.Headers;
@@ -46,21 +45,19 @@ import javax.mail.internet.ParseException;
  * A cajoling service which proxies connections:
  *      - cajole any javascript
  *      - cajoles any gadgets
- *      - checks requested and retrieved mime-types  
- *      
+ *      - checks requested and retrieved mime-types
+ *
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
 public class CajolingService implements HttpHandler {
-  private Map<InputSource, CharSequence> originalSources
-    = new HashMap<InputSource, CharSequence>();
   private List<ContentHandler> handlers = new Vector<ContentHandler>();
   private ContentTypeCheck typeCheck = new LooseContentTypeCheck();
   private HttpServer server;
-  
+
   public CajolingService() {
     registerHandlers();
   }
-  
+
   public void start() {
     try{
       // TODO(jas): Use Config to config port
@@ -72,7 +69,7 @@ public class CajolingService implements HttpHandler {
       e.printStackTrace();
     }
   }
-  
+
   public void stop() {
     server.stop(0);
   }
@@ -80,7 +77,7 @@ public class CajolingService implements HttpHandler {
   private Map<String, String> parseQuery(String query) throws UnsupportedEncodingException {
     String[] params = query.split("&");
     Map<String, String> map = new HashMap<String, String>();
-    
+
     for (String param : params) {
       String[] result = param.split("=");
       String name = result[0];
@@ -89,18 +86,18 @@ public class CajolingService implements HttpHandler {
     }
     return map;
   }
-  
+
   /**
    * Read the remainder of the input request, send a BAD_REQUEST http status
    * to browser and close the connection
    * @param ex
-   * @throws IOException 
+   * @throws IOException
    */
   private void closeBadRequest(HttpExchange ex) throws IOException {
     ex.sendResponseHeaders(HttpStatus.INTERNAL_SERVER_ERROR.value(),0);
-    ex.getResponseBody().close();    
+    ex.getResponseBody().close();
   }
-  
+
   public void handle(HttpExchange ex) throws IOException {
     try {
       String requestMethod = ex.getRequestMethod();
@@ -111,11 +108,11 @@ public class CajolingService implements HttpHandler {
         if (gadgetUrlString == null)
           throw new URISyntaxException(ex.getRequestURI().toString(), "Missing parameter \"url\" is required");
         URL gadgetUrl = new URL(gadgetUrlString);
-        
+
         String expectedMimeType = urlMap.get("mime-type");
         if (expectedMimeType == null)
           throw new URISyntaxException(ex.getRequestURI().toString(), "Missing parameter \"mime-type\" is required");
-        
+
         URLConnection urlConnect = gadgetUrl.openConnection();
         urlConnect.connect();
         InputStream stream = urlConnect.getInputStream();
@@ -125,7 +122,7 @@ public class CajolingService implements HttpHandler {
         String contentCharSet = contentType.getParameter("charset");
 
         Headers responseHeaders = ex.getResponseHeaders();
-        
+
         if (!typeCheck.check(expectedMimeType, urlConnect.getContentType())) {
           closeBadRequest(ex);
           return;
@@ -133,16 +130,16 @@ public class CajolingService implements HttpHandler {
 
         try {
           ByteArrayOutputStream intermediateResponse = new ByteArrayOutputStream();
-          Pair<String,String> contentInfo = 
-            applyHandler(gadgetUrl.toURI(), urlConnect.getContentType(), 
+          Pair<String,String> contentInfo =
+            applyHandler(gadgetUrl.toURI(), urlConnect.getContentType(),
                 contentEncoding, contentCharSet, stream, intermediateResponse);
 
           responseHeaders.set("Content-Type", contentInfo.a);
           responseHeaders.set("Content-Encoding", contentInfo.b);
-          
+
           byte[] response = intermediateResponse.toByteArray();
           int responseLength = response.length;
-          
+
           ex.sendResponseHeaders(HttpStatus.ACCEPTED.value(), responseLength);
           ex.getResponseBody().write(response);
           ex.close();
@@ -159,16 +156,16 @@ public class CajolingService implements HttpHandler {
       e.printStackTrace();
     }
   }
-   
+
   public void registerHandlers() {
     handlers.add(new JsHandler());
     handlers.add(new ImageHandler());
-    handlers.add(new GadgetHandler());    
+    handlers.add(new GadgetHandler());
   }
   
-  private Pair<String, String> applyHandler(URI uri, 
+  private Pair<String, String> applyHandler(URI uri,
       String contentType, String contentEncoding, String charSet,
-      InputStream stream, OutputStream response) 
+      InputStream stream, OutputStream response)
       throws UnsupportedContentTypeException {
     for (ContentHandler handler : handlers) {
       if ( handler.canHandle(uri, contentType, typeCheck) ) {

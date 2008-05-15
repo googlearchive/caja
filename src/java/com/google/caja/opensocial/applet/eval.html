@@ -11,11 +11,13 @@
   padding-left: 4px;
   margin: 2px
 }
+#caja-stack { white-space: pre; font-family: monospace }
     </style>
 
     <style type="text/css" id="caja-styles"></style>
 
     <script type="text/javascript" src="caja.js"></script>
+    <script type="text/javascript" src="caja-debugmode.js"></script>
     <script type="text/javascript" src="unicode.js"></script>
     <script type="text/javascript" src="html4-defs.js"></script>
     <script type="text/javascript" src="html-sanitizer.js"></script>
@@ -26,18 +28,23 @@
 var testImports;
 
 function loadCaja(html) {
-  var m = html.match(
-      /^(?:<style[^>]*>([\s\S]*?)<\/style>\s*)?<script[^>]*>([\s\S]*?)<\/script>/);
+  var m = html.match(/^\s*<script[^\076]*>([\s\S]*?)<\/script[^\076]*>/i);
   if (m) {
-    var style = m[1];
-    var script = m[2];
-
-    if (style != null) {
-      document.getElementById('caja-styles').innerHTML = style;
-    }
+    var script = m[1];
 
     testImports.clearHtml___();
-    eval(script);
+    document.getElementById('caja-stacks').style.display = 'none';
+    try {
+      eval(script);
+    } catch (ex) {
+      var cajaStack = ex.cajaStack___ && ___.unsealCallerStack(ex.cajaStack___);
+      if (cajaStack) {
+        document.getElementById('caja-stacks').style.display = '';
+        document.getElementById('caja-stack').appendChild(
+            document.createTextNode(cajaStack.join('\n')));
+      }
+      throw ex;
+    }
   } else {
     (typeof console !== 'undefined')
     && console.warn('Failed to eval cajoled output %s', html);
@@ -101,6 +108,11 @@ function loadCaja(html) {
   </head>
   <body onload="testImports.clearHtml___()">
     <div id="eval-results"></div>
+    <div id="caja-stacks" style="display:none">
+      <hr>
+      Errors
+      <div id="caja-stack"></div>
+    </div>
     <hr>
     <div id="caja-html" class="-xyz"></div>
   </body>
