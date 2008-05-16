@@ -36,6 +36,11 @@ import java.util.Set;
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public abstract class Rewriter {
+  
+  /**
+   * Annotations on {@code rules} in subclasses of {@code Rewriter} are 
+   * are collated and documented by {@code RulesDoclet}
+   */
   private final List<Rule> rules = new ArrayList<Rule>();
   private final Set<String> ruleNames = new HashSet<String>();
   private final boolean logging;
@@ -61,6 +66,13 @@ public abstract class Rewriter {
     addRules(rules);
   }
 
+  /**
+   * Returns the rules of this rewriter
+   */
+  public List<Rule> getRules() {
+    return rules;
+  }  
+  
   /**
    * Expands a parse tree node according to the rules of this rewriter, returning
    * the expanded result.
