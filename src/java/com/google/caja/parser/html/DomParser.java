@@ -112,6 +112,20 @@ public final class DomParser {
       throw new ParseException(new Message(
           DomParserMessageType.MISSING_DOCUMENT_ELEMENT, endPos));
     }
+
+    // Check that there isn't any extraneous content after the root element.
+    for (DomTree child : root.children().subList(1, root.children().size())) {
+      switch (child.getType()) {
+        case COMMENT:
+        case DIRECTIVE:
+          continue;
+        case TEXT:
+          if ("".equals(child.getValue().trim())) { continue; }
+      }
+      throw new ParseException(new Message(
+          DomParserMessageType.MISPLACED_CONTENT, child.getFilePosition()));
+    }
+
     return root.children().get(0);
   }
 

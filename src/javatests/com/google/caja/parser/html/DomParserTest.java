@@ -85,6 +85,19 @@ public class DomParserTest extends CajaTestCase {
     assertEquals(DOM1_GOLDEN, actual.toString());
   }
 
+  public void testOneRootXmlElement() throws Exception {
+    TokenQueue<HtmlTokenType> tq = tokenizeTestInput("<foo/><bar/>", true);
+    try {
+      new DomParser(tq, true, mq).parseDocument();
+    } catch (ParseException ex) {
+      assertEquals(DomParserMessageType.MISPLACED_CONTENT,
+                   ex.getCajaMessage().getMessageType());
+      // Passed.  Expect to fail with a message about <bar/>
+      return;
+    }
+    fail("Parsing of an XML document with multiple roots did not fail");
+  }
+
   public void testEmptyFragment() throws Exception {
     assertParsedMarkup(Arrays.<String>asList(),
                        Arrays.asList("Fragment 1+1-1+1"),

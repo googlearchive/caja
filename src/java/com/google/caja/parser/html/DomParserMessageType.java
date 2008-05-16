@@ -30,7 +30,7 @@ import java.io.IOException;
 public enum DomParserMessageType implements MessageTypeInt {
   UNMATCHED_END("%s: end tag %s does not match open tag %s",
                 MessageLevel.FATAL_ERROR),
-  MISPLACED_TAG("%s: tag %s should appear in %s", MessageLevel.WARNING),
+  MISPLACED_CONTENT("%s: markup outside document", MessageLevel.ERROR),
   MISSING_END("%s: element %s at %s is not closed",
               MessageLevel.WARNING),
   IGNORING_TOKEN("%s: ignoring token %s", MessageLevel.WARNING),
