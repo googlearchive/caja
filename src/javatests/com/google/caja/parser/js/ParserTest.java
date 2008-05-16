@@ -17,6 +17,7 @@ package com.google.caja.parser.js;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.render.JsPrettyPrinter;
@@ -82,13 +83,7 @@ public class ParserTest extends CajaTestCase {
     runParseTest("parsertest5.js", "parsergolden5.txt");
   }
   public void testParser7() throws Exception {
-    runParseTest("parsertest7.js", "parsergolden7.txt",
-                 "Reserved word null used as an identifier",
-                 "Reserved word false used as an identifier",
-                 "Reserved word if used as an identifier",
-                 "Reserved word function used as an identifier",
-                 "Reserved word with used as an identifier",
-                 "Reserved word debugger used as an identifier");
+    runParseTest("parsertest7.js", "parsergolden7.txt");
   }
   public void testParser8() throws Exception {
     runParseTest("parsertest8.js", "parsergolden8.txt");
@@ -126,6 +121,145 @@ public class ParserTest extends CajaTestCase {
   }
   public void testParseTreeRendering8() throws Exception {
     runRenderTest("parsertest8.js", "rendergolden8.txt", true);
+  }
+
+  public void testRenderKeywordsAsIdentifiers() throws Exception {
+    for (Keyword k : Keyword.values()) {
+      assertRenderKeywordAsIdentifier(k);
+    }
+  }
+
+  public void testParseKeywordsAsIdentifiers() throws Exception {
+    for (Keyword k : Keyword.values()) {
+      assertParseKeywordAsIdentifier(k);
+    }
+  }
+
+  private void assertParseKeywordAsIdentifier(Keyword k) throws Exception {
+    assertAllowKeywordPropertyAccessor(k);
+    assertAllowKeywordPropertyDeclaration(k);
+    assertRejectKeywordAsExpr(k);
+    assertRejectKeywordInVarDecl(k);
+  }
+
+  private void assertAllowKeywordPropertyAccessor(Keyword k)
+      throws Exception {
+    assertParseSucceeds(asLvalue("foo." + k));
+    assertParseSucceeds(asRvalue("foo." + k));
+    assertParseSucceeds(asLvalue("foo." + k + ".bar"));
+    assertParseSucceeds("foo." + k + ".bar");
+  }
+
+  private void assertAllowKeywordPropertyDeclaration(Keyword k)
+      throws Exception {
+    assertParseSucceeds("({ " + k + " : 42 });");
+  }
+
+  private void assertRejectKeywordAsExpr(Keyword k)
+      throws Exception {
+    assertParse(asLvalue(k.toString()), isValidLvalue(k));
+    assertParse(asRvalue(k.toString()), isValidRvalue(k));
+    assertParse(asLvalue(k + ".foo"), isValidRvalue(k));
+    assertParse(asRvalue(k + ".foo"), isValidRvalue(k));
+  }
+
+  private void assertRejectKeywordInVarDecl(Keyword k)
+      throws Exception {
+    assertParseFails("var " + k + ";");
+    assertParseFails("var foo, " + k + ", bar;");
+  }
+
+  private void assertParse(String code, boolean shouldSucceed)
+      throws Exception {
+    if (shouldSucceed) assertParseSucceeds(code);
+    else assertParseFails(code);
+  }
+
+  private void assertParseSucceeds(String code) throws Exception {
+    log("assertParseSucceeds", code);
+    mq.getMessages().clear();
+    js(fromString(code));
+    assertNoErrors();
+  }
+
+  private void assertParseFails(String code) throws Exception {
+    log("assertParseFails", code);
+    mq.getMessages().clear();
+    try {
+      js(fromString(code));
+      assertMessage(
+          MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
+          MessageLevel.ERROR);
+    } catch (ParseException e) {
+      // Some reserved word usages confuse the parser and cause an exception,
+      // not just a message queue error. We consider this a successful failure
+      // to parse erroneous code.
+      e.printStackTrace(System.err);
+    }
+  }
+
+  private boolean isValidLvalue(Keyword k) {
+    return Keyword.THIS == k;
+  }
+
+  private boolean isValidRvalue(Keyword k) {
+    return Keyword.THIS == k
+        || Keyword.TRUE == k
+        || Keyword.FALSE == k
+        || Keyword.NULL == k;
+  }
+
+  private String asLvalue(String expr) {
+    return expr + " = 42;";
+  }
+
+  private String asRvalue(String expr) {
+    return "x = " + expr + ";";
+  }
+
+  private void assertRenderKeywordAsIdentifier(Keyword k) throws Exception {
+    assertRenderKeywordPropertyAccessor(k);
+    assertRenderKeywordPropertyDeclaration(k);
+  }
+
+  private void assertRenderKeywordPropertyAccessor(Keyword k)
+      throws Exception {
+    assertRender(
+        "x." + k + " = 42;",
+        "x[ '" + k + "' ] = 42");
+    assertRender(
+        "y = x." + k + ";",
+        "y = x[ '" + k + "' ]");
+    assertRender(
+        "x." + k + ".z = 42;",
+        "x[ '" + k + "' ].z = 42");
+    assertRender(
+        "y = x." + k + ".z;",
+        "y = x[ '" + k + "' ].z");
+  }
+
+  private void assertRenderKeywordPropertyDeclaration(Keyword k)
+      throws Exception {
+    assertRender(
+        "({" + k + ": 42});",
+        "({\n"
+         + "   '" + k + "': 42\n"
+         + " })");
+  }
+
+  private void assertRender(String code, String expectedRendering)
+      throws Exception {
+    log("assertRender", code);
+    StringBuilder sb = new StringBuilder();
+    TokenConsumer tc = new JsPrettyPrinter(sb, null);
+    RenderContext rc = new RenderContext(mc, true, tc);
+    js(fromString(code)).children().get(0).render(rc);
+    assertEquals(expectedRendering, sb.toString());
+  }
+
+  private void log(String testName, String code) {
+    System.err.println();
+    System.err.println("*** " + testName + ": " + code);
   }
 
   private void runRenderTest(

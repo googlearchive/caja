@@ -16,6 +16,7 @@ package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.lexer.Keyword;
 import com.google.caja.reporting.RenderContext;
 
 import java.util.Arrays;
@@ -48,74 +49,17 @@ public abstract class Operation extends AbstractExpression<Expression> {
   }
 
   public static Operation create(Operator op, Expression... params) {
-    switch (op) {
-      case ASSIGN: // =
-      case ASSIGN_AND: // &=
-      case ASSIGN_DIV: // /=
-      case ASSIGN_LSH: // <<=
-      case ASSIGN_MOD: // %=
-      case ASSIGN_MUL: // *=
-      case ASSIGN_OR:  // &=
-      case ASSIGN_RSH: // >>=
-      case ASSIGN_SUB: // -=
-      case ASSIGN_SUM: // +=
-      case ASSIGN_USH: // >>>=
-      case ASSIGN_XOR: // ^=
-      case POST_DECREMENT: // x--
-      case POST_INCREMENT: // x++
-      case PRE_DECREMENT:  // --x
-      case PRE_INCREMENT:  // ++x
-      {
+    switch (op.getCategory()) {
+      case ASSIGNMENT:
         return new AssignOperation(op, params);
-      }
-      case LOGICAL_AND: // &&
-      case LOGICAL_OR:  // ||
-      case TERNARY:     // ?:
-      {
+      case CONTROL:
         return new ControlOperation(op, params);
-      }
-      case COMMA:          // ,
-      case CONSTRUCTOR:    // new
-      case DELETE:         // delete
-      case FUNCTION_CALL:  // ()
-      case MEMBER_ACCESS:  // .
-      case SQUARE_BRACKET: // []
-      case TYPEOF:         // typeof
-      case VOID:           // void
-      {
+      case SPECIAL:
         return new SpecialOperation(op, params);
-      }
-      case ADDITION:             // +
-      case BITWISE_AND:          // &
-      case BITWISE_OR:           // |
-      case BITWISE_XOR:          // ^
-      case DIVISION:             // /
-      case EQUAL:                // ==
-      case GREATER_EQUALS:       // >=
-      case GREATER_THAN:         // >
-      case IDENTITY:             // unary +
-      case IN:                   // in
-      case INSTANCE_OF:          // instanceof
-      case INVERSE:              // ~
-      case LESS_EQUALS:          // <=
-      case LESS_THAN:            // <
-      case LSHIFT:               // <
-      case MODULUS:              // %
-      case MULTIPLICATION:       // *
-      case NEGATION:             // unary -
-      case NOT:                  // !
-      case NOT_EQUAL:            // !=
-      case RSHIFT:               // >>
-      case RUSHIFT:              // >>>
-      case STRICTLY_EQUAL:       // ===
-      case STRICTLY_NOT_EQUAL:   // !==
-      case SUBTRACTION:          // -
-      {
+      case SIMPLE:
         return new SimpleOperation(op, params);
-      }
-      default: {
+      default:
         throw new RuntimeException("unexpected: " + op);
-      }
     }
   }
 
@@ -159,15 +103,20 @@ public abstract class Operation extends AbstractExpression<Expression> {
             out.consume(" ");
             out.consume(op.getSymbol());
             out.consume(" ");
+            renderParam(1, rc);
             break;
           case MEMBER_ACCESS:
+            renderMemberAccess(rc);
+            break;
           case COMMA:
             out.consume(op.getSymbol());
+            renderParam(1, rc);
             break;
         }
-        renderParam(1, rc);
         break;
       case BRACKET:
+        // Note that FUNCTION_CALL is a BRACKET operator; this is why we can
+        // have any number of child expressions, not just two.
         renderParam(0, rc);
         out.consume(op.getOpeningSymbol());
         boolean seen = false;
@@ -214,6 +163,34 @@ public abstract class Operation extends AbstractExpression<Expression> {
       out.mark(FilePosition.endOfOrNull(getFilePosition()));
       out.consume(")");
     }
+  }
+
+  private void renderMemberAccess(RenderContext rc) {
+    TokenConsumer out = rc.getOut();
+    if (isKeywordAccess()) {
+      String name = ((Reference) children().get(1)).getIdentifierName();
+      out.consume(Operator.SQUARE_BRACKET.getOpeningSymbol());
+      out.consume(StringLiteral.toQuotedValue(getMemberName()));
+      out.consume(Operator.SQUARE_BRACKET.getClosingSymbol());
+    } else {
+      out.consume(op.getSymbol());
+      renderParam(1, rc);
+    }
+  }
+
+  private boolean isKeywordAccess() {
+    return
+        getOperator() == Operator.MEMBER_ACCESS &&
+        children().get(1) instanceof Reference &&
+        isKeyword(getMemberName());
+  }
+
+  private String getMemberName() {
+    return ((Reference) children().get(1)).getIdentifierName();
+  }
+
+  private boolean isKeyword(String name) {
+    return Keyword.fromString(name) != null;
   }
 
   private static boolean parenthesize(

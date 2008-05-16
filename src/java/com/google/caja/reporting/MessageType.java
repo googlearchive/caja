@@ -123,6 +123,8 @@ public enum MessageType implements MessageTypeInt {
       "Break statement at %s outside loop", MessageLevel.ERROR),
   CONTINUE_OUTSIDE_LOOP(
       "Continue statement at %s outside loop", MessageLevel.ERROR),
+  ASSIGN_TO_NON_LVALUE(
+      "%s: Assignment to non lvalue: %s", MessageLevel.ERROR),
 
   // caught to decide whether to treat a directive comment as a declaration or
   // a type for a variable declaration

@@ -2534,14 +2534,6 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     return result;
   }
 
-  private void assertNoErrors() {
-    for (Message msg : mq.getMessages()) {
-      if (MessageLevel.ERROR.compareTo(msg.getMessageLevel()) <= 0) {
-        fail(msg.format(mc));
-      }
-    }
-  }
-
   private <T extends ParseTreeNode> T replaceLastStatementWithEmit(
       T node, String varName) {
     if (node instanceof ExpressionStmt) {

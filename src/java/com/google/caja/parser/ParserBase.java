@@ -52,7 +52,8 @@ public abstract class ParserBase {
   public JsTokenQueue getTokenQueue() { return tq; }
   public MessageQueue getMessageQueue() { return mq; }
 
-  public String parseIdentifier() throws ParseException {
+  public String parseIdentifier(boolean allowReservedWords)
+      throws ParseException {
     Token<JsTokenType> t = tq.peek();
     String s = t.text;
     switch (t.type) {
@@ -63,8 +64,10 @@ public abstract class ParserBase {
         }
         break;
       case KEYWORD:
-        mq.addMessage(MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
-                      tq.currentPosition(), Keyword.fromString(s));
+        if (!allowReservedWords) {
+          mq.addMessage(MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
+                        tq.currentPosition(), Keyword.fromString(s));
+        }
         break;
       default:
         throw new ParseException(

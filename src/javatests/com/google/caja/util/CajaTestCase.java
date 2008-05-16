@@ -38,6 +38,9 @@ import com.google.caja.parser.js.Parser;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessageTypeInt;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -210,6 +213,29 @@ public abstract class CajaTestCase extends TestCase {
     node.render(new RenderContext(mc, tc));
     tc.noMoreTokens();
     return sb.toString();
+  }
+
+  protected void assertMessagesLessSevereThan(MessageLevel level) {
+    for (Message msg : mq.getMessages()) {
+      if (level.compareTo(msg.getMessageLevel()) <= 0) {
+        fail(msg.format(mc));
+      }
+    }    
+  }
+
+  protected void assertNoErrors() {
+    assertMessagesLessSevereThan(MessageLevel.ERROR);
+  }
+
+  protected void assertMessage(
+      MessageTypeInt type,
+      MessageLevel level) {
+    for (Message msg : mq.getMessages()) {
+      if (msg.getMessageType() == type && msg.getMessageLevel() == level) {
+        return;
+      }
+    }
+    fail("No message found of type " + type + " and level " + level);
   }
 
   private InputSource sourceOf(CharProducer cp) {

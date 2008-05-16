@@ -287,7 +287,7 @@ public final class Parser extends ParserBase {
     Mark m = tq.mark();
     Token<JsTokenType> t = tq.peek();
     if (JsTokenType.WORD == t.type) {
-      String label = parseIdentifier();
+      String label = parseIdentifier(false);
       if (tq.checkToken(Punctuation.COLON)) {
         t = tq.peek();
         AbstractStatement<?> s = null;
@@ -515,7 +515,7 @@ public final class Parser extends ParserBase {
             return associateTypeComment(
                 parseExpressionStmt(false), typeComment);
           } else {  // a function declaration
-            Identifier identifier = parseIdentifierNode();
+            Identifier identifier = parseIdentifierNode(false);
             tq.expectToken(Punctuation.LPAREN);
             FormalParamList params = parseFormalParams();
             tq.expectToken(Punctuation.RPAREN);
@@ -566,7 +566,7 @@ public final class Parser extends ParserBase {
           tq.advance();
           String targetLabel = "";
           if (!tq.isEmpty() && JsTokenType.WORD == tq.peek().type) {
-            targetLabel = parseIdentifier();
+            targetLabel = parseIdentifier(false);
           }
           s = new BreakStmt(targetLabel);
           break;
@@ -576,7 +576,7 @@ public final class Parser extends ParserBase {
           tq.advance();
           String targetLabel = "";
           if (!tq.isEmpty() && JsTokenType.WORD == tq.peek().type) {
-            targetLabel = parseIdentifier();
+            targetLabel = parseIdentifier(false);
           }
           s = new ContinueStmt(targetLabel);
           break;
@@ -600,7 +600,7 @@ public final class Parser extends ParserBase {
           } else {
             tq.expectToken(Keyword.CATCH);
             tq.expectToken(Punctuation.LPAREN);
-            Identifier idNode = parseIdentifierNode();
+            Identifier idNode = parseIdentifierNode(false);
             Declaration exvar = new Declaration(idNode, (Expression)null);
             exvar.setFilePosition(idNode.getFilePosition());
             exvar.setComments(idNode.getComments());
@@ -786,7 +786,7 @@ public final class Parser extends ParserBase {
         } else {
           // The . operator only accepts a reference on the right.
           // No a.b.4 or a.b.(c.d)
-          right = parseReference();
+          right = parseReference(true);
         }
       } catch (ParseException ex) {
         // According to
@@ -848,6 +848,12 @@ public final class Parser extends ParserBase {
             }
             break;
           case INFIX:
+            if (op.getCategory() == OperatorCategory.ASSIGNMENT
+                && !left.isLeftHandSide()) {
+              throw new ParseException(
+                  new Message(MessageType.ASSIGN_TO_NON_LVALUE,
+                              t.pos, MessagePart.Factory.valueOf(t.text)));
+            }
             left = Operation.create(op, left, right);
             break;
           case POSTFIX:
@@ -948,7 +954,7 @@ public final class Parser extends ParserBase {
             {
               Identifier identifier = null;
               if (!tq.isEmpty() && JsTokenType.WORD == tq.peek().type) {
-                identifier = parseIdentifierNode();
+                identifier = parseIdentifierNode(false);
               } else {
                 identifier = new Identifier(null);
                 identifier.setFilePosition(
@@ -1066,11 +1072,8 @@ public final class Parser extends ParserBase {
                     tq.advance();
                     break;
                   default:
-                    // Some keywords can't be used here, but the set of keywords
-                    // depends on the javascript version, so we rely on
-                    // parseIdentifier to warn.
                     key = new StringLiteral(
-                        StringLiteral.toQuotedValue(parseIdentifier()));
+                        StringLiteral.toQuotedValue(parseIdentifier(true)));
                     break;
                 }
                 finish(key, km);
@@ -1125,17 +1128,19 @@ public final class Parser extends ParserBase {
     return e;
   }
 
-  private Reference parseReference() throws ParseException {
+  private Reference parseReference(boolean allowReservedWords)
+      throws ParseException {
     Mark m = tq.mark();
-    Identifier idNode = parseIdentifierNode();
+    Identifier idNode = parseIdentifierNode(allowReservedWords);
     Reference r = new Reference(idNode);
     finish(r, m);
     return r;
   }
 
-  private Identifier parseIdentifierNode() throws ParseException {
+  private Identifier parseIdentifierNode(boolean allowReservedWords)
+      throws ParseException {
     Mark m = tq.mark();
-    String identifierName = parseIdentifier();
+    String identifierName = parseIdentifier(allowReservedWords);
     Identifier ident = new Identifier(identifierName);
     finish(ident, m);
     return ident;
@@ -1225,7 +1230,7 @@ public final class Parser extends ParserBase {
       AbstractStatement<?> s;
       Declaration d;
       {
-        Identifier idNode = parseIdentifierNode();
+        Identifier idNode = parseIdentifierNode(false);
         Expression initializer = null;
         if (tq.checkToken(Punctuation.EQ)) {
           initializer = parseExpressionPart(insertionProtected);
@@ -1238,7 +1243,7 @@ public final class Parser extends ParserBase {
         decls.add(d);
         do {
           Mark m2 = tq.mark();
-          Identifier idNode = parseIdentifierNode();
+          Identifier idNode = parseIdentifierNode(false);
           Expression initializer = null;
           if (tq.checkToken(Punctuation.EQ)) {
             initializer = parseExpressionPart(insertionProtected);
@@ -1276,7 +1281,7 @@ public final class Parser extends ParserBase {
       do {
         Mark m = tq.mark();
         Token<JsTokenType> typeComment = popTypeComment();
-        Identifier idNode = new Identifier(parseIdentifier());
+        Identifier idNode = new Identifier(parseIdentifier(false));
         finish(idNode, m);
         FormalParam param = new FormalParam(idNode);
         finish(param, m);
