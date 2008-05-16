@@ -25,7 +25,7 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public class EchoingMessageQueue implements MessageQueue {
+public class EchoingMessageQueue extends AbstractMessageQueue {
   private List<Message> messages;
   private MessageContext mc;
 
@@ -76,15 +76,6 @@ public class EchoingMessageQueue implements MessageQueue {
 
   public List<Message> getMessages() {
     return messages;
-  }
-
-  public void addMessage(MessageTypeInt type, MessagePart... parts) {
-    getMessages().add(new Message(type, parts));
-  }
-
-  public void addMessage(
-      MessageTypeInt type, MessageLevel lvl, MessagePart... parts) {
-    getMessages().add(new Message(type, lvl, parts));
   }
 
   public MessageContext getMessageContext() { return mc; }

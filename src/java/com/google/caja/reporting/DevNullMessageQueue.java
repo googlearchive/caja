@@ -110,6 +110,10 @@ public final class DevNullMessageQueue implements MessageQueue {
     // do nothing
   }
 
+  public boolean hasMessageAtLevel(MessageLevel lvl) {
+    return false;
+  }
+
   private static class Singleton {
     static MessageQueue singleton = new DevNullMessageQueue();
   }

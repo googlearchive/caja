@@ -33,4 +33,9 @@ public interface MessageGroup {
 
   /** Adds a message to this group's message list. */
   void addMessage(MessageTypeInt type, MessageLevel lvl, MessagePart... parts);
+
+  /** Queries whether this group contains a message of at least the specified
+   * mesage level.
+   */
+  boolean hasMessageAtLevel(MessageLevel lvl);
 }

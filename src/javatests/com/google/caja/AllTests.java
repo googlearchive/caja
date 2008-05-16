@@ -66,6 +66,7 @@ import com.google.caja.render.JsPrettyPrinterTest;
 import com.google.caja.render.SideBySideRendererTest;
 import com.google.caja.reporting.BuildInfoTest;
 import com.google.caja.reporting.SnippetProducerTest;
+import com.google.caja.reporting.AbstractMessageQueueTest;
 import com.google.caja.util.JoinTest;
 import com.google.caja.util.SparseBitSetTest;
 
@@ -84,6 +85,7 @@ public class AllTests {
   public static Test suite() {
     TestSuite suite = new TestSuite("Caja Tests");
     Class<? extends TestCase>[] testClasses = new Class[] {
+          AbstractMessageQueueTest.class,
           BuildInfoTest.class,
           CharProducerTest.class,
           CommentLexerTest.class,

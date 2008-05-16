@@ -16,45 +16,74 @@ package com.google.caja.plugin;
 
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.quasiliteral.Rewriter;
+import com.google.caja.parser.quasiliteral.Rule;
+import com.google.caja.parser.quasiliteral.Scope;
+import com.google.caja.parser.quasiliteral.RuleDescription;
 import com.google.caja.parser.js.Block;
-import com.google.caja.reporting.EchoingMessageQueue;
-import com.google.caja.reporting.MessageContext;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.util.CajaTestCase;
-
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 
 /**
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
 public class ExpressionSanitizerTest extends CajaTestCase {
+  private PluginMeta meta;
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
+    meta = new PluginMeta();
   }
 
   @Override
   protected void tearDown() throws Exception {
     super.tearDown();
+    meta = null;
   }
 
-  public void testFoo() throws Exception {
-    runTest(
+  public void testBasicRewriting() throws Exception {
+    assertSanitize(
         "x",
         "IMPORTS___.x_canRead___"
         + "    ? IMPORTS___.x"
         + "    : ___.readPub(IMPORTS___, 'x', true);");
   }
 
-  private void runTest(String input, String golden)
-      throws Exception {
-    MessageContext mc = new MessageContext();
-    MessageQueue mq = new EchoingMessageQueue(
-        new PrintWriter(new OutputStreamWriter(System.err)), mc);
-    PluginMeta meta = new PluginMeta();
+  public void testNoSpuriousRewriteErrorFound() throws Exception {
+    newPassThruSanitizer().sanitize(ac(new Identifier("x")));
+    assertFalse(mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR));
+  }
 
+  public void testRewriteErrorIsDetected() throws Exception {
+    newPassThruSanitizer().sanitize(ac(new Identifier("x__")));  
+    assertTrue(mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR));
+  }
+
+  private ExpressionSanitizerCaja newPassThruSanitizer() throws Exception {
+    return new ExpressionSanitizerCaja(mq, meta) {
+      protected Rewriter newRewriter() {
+        return new Rewriter(true) {{
+          addRule(new Rule() {
+            @Override
+            @RuleDescription(
+                name="passthru",
+                synopsis="Pass through input unchanged",
+                reason="Dummy rule for testing")
+            public ParseTreeNode fire(
+                ParseTreeNode node, Scope scope, MessageQueue mq) {
+              return node.clone();
+            }
+          });
+        }};
+      }
+    };
+  }
+
+  private void assertSanitize(String input, String golden)
+      throws Exception {
     Block inputNode = js(fromString(input));
     assertTrue(new ExpressionSanitizerCaja(mq, meta).sanitize(ac(inputNode)));
     String inputCmp = render(inputNode);
@@ -62,6 +91,7 @@ public class ExpressionSanitizerTest extends CajaTestCase {
     String goldenCmp = render(js(fromString(golden)));
 
     assertEquals(goldenCmp, inputCmp);
+    assertFalse(mq.hasMessageAtLevel(MessageLevel.WARNING));
   }
 
   private static <T extends ParseTreeNode> AncestorChain<T> ac(T node) {

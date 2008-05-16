@@ -22,19 +22,10 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public class SimpleMessageQueue implements MessageQueue {
+public class SimpleMessageQueue extends AbstractMessageQueue {
   private List<Message> messages = new ArrayList<Message>();
 
   public List<Message> getMessages() {
     return messages;
-  }
-
-  public void addMessage(MessageTypeInt type, MessagePart... parts) {
-    getMessages().add(new Message(type, parts));
-  }
-
-  public void addMessage(
-      MessageTypeInt type, MessageLevel lvl, MessagePart... parts) {
-    getMessages().add(new Message(type, lvl, parts));
   }
 }
