@@ -59,6 +59,7 @@
     <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/glassfish/mail.jar"/>
+    <pathelement path="${third_party}/java/jdom/jdom.jar"/>
     <pathelement path="${java.home}/lib/rt.jar"/>
   </path>
   <path id="classpath.run">
@@ -71,6 +72,7 @@
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/rhino/js.jar"/>
     <pathelement path="${third_party}/java/glassfish/mail.jar"/>
+    <pathelement path="${third_party}/java/jdom/jdom.jar"/>
     <pathelement path="${java.home}/jre/lib/rt.jar"/>
   </path>
   <path id="classpath.tests.run">
@@ -392,7 +394,7 @@
 
   <!-- Builds the cajoling service. -->
   <target name="CajolingService" 
-	 depends="CssParser,HtmlParser,Quasiliterals,Rendering,Schemas">
+   depends="CssParser,HtmlParser,Quasiliterals,Rendering,Schemas">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
           <src path="${src}"/>
       <classpath refid="classpath.compile"/>
