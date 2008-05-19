@@ -56,6 +56,7 @@ import com.google.caja.plugin.ExpressionSanitizerTest;
 import com.google.caja.plugin.GxpCompilerTest;
 import com.google.caja.plugin.GxpValidatorTest;
 import com.google.caja.plugin.HtmlCompiledPluginTest;
+import com.google.caja.plugin.HtmlCompilerTest;
 import com.google.caja.plugin.HtmlSanitizerTest;
 import com.google.caja.plugin.JsHtmlSanitizerTest;
 import com.google.caja.plugin.stages.DebuggingSymbolsStageTest;
@@ -112,6 +113,7 @@ public class AllTests {
           GxpValidatorTest.class,
           HcalTest.class,
           HtmlCompiledPluginTest.class,
+          HtmlCompilerTest.class,
           HtmlLexerTest.class,
           HtmlSanitizerTest.class,
           HtmlSchemaTest.class,

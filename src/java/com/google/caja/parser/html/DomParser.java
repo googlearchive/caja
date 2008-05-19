@@ -273,13 +273,23 @@ public final class DomParser {
    */
   private DomTree.Attrib parseAttrib() throws ParseException {
     Token<HtmlTokenType> name = tokens.pop();
-    Token<HtmlTokenType> value = tokens.pop();
+    Token<HtmlTokenType> value = tokens.peek();
     // TODO(mikesamuel): make sure that the XmlElementStack does not allow
     // valueless attributes, and allow them here.
-    if (value.type != HtmlTokenType.ATTRVALUE) {
+    if (value.type == HtmlTokenType.ATTRVALUE) {
+      tokens.advance();
+      if (isAmbiguousAttributeValue(value.text)) {
+        mq.addMessage(MessageType.AMBIGUOUS_ATTRIBUTE_VALUE,
+                      FilePosition.span(name.pos, value.pos),
+                      MessagePart.Factory.valueOf(name.text),
+                      MessagePart.Factory.valueOf(value.text));
+      }
+    } else if (asXml) {
       throw new ParseException(
-          new Message(MessageType.MALFORMED_XHTML,
+          new Message(MessageType.MISSING_ATTRIBUTE_VALUE,
                       value.pos, MessagePart.Factory.valueOf(value.text)));
+    } else {
+      value = Token.instance(name.text, HtmlTokenType.ATTRVALUE, name.pos);
     }
     return new DomTree.Attrib(new DomTree.Value(value), name, name);
   }
@@ -333,6 +343,18 @@ public final class DomParser {
     // http://htmlhelp.com/tools/validator/doctype.html
     return Pattern.compile("(?i:^<!DOCTYPE\\s+HTML\\b)").matcher(s).find()
         && !Pattern.compile("(?i:\\bXHTML\\b)").matcher(s).find();
+  }
+
+  private static final Pattern AMBIGUOUS_VALUE = Pattern.compile(
+      "^\\w+\\s*=");
+  /**
+   * True for the attribute value 'bar=baz' in {@code <a foo= bar=baz>}
+   * which a naive reader might interpret as {@code <a foo="" bar="baz">}.
+   */
+  private static boolean isAmbiguousAttributeValue(String attributeText) {
+    if (attributeText.length() == 0) { return false; }
+    char ch0 = attributeText.charAt(0);
+    return AMBIGUOUS_VALUE.matcher(attributeText).find();
   }
 }
 

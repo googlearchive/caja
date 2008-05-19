@@ -84,6 +84,16 @@ public final class HtmlLexer extends AbstractTokenStream<HtmlTokenType> {
         state = State.IN_TAG;
         break;
       case TAGEND:
+        if (state == State.SAW_EQ && HtmlTokenType.TAGEND == token.type
+            && !getTreatedAsXml()) {
+          // Distinguish <input type=checkbox checked=> from
+          // <input type=checkbox checked>
+          lookahead = token;
+          state = State.IN_TAG;
+          return Token.instance("", HtmlTokenType.ATTRVALUE,
+                                FilePosition.startOf(token.pos));
+        }
+
         state = State.OUTSIDE_TAG;
         break;
 
@@ -286,7 +296,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
     SERVER_CODE_PCT,
 
     // From HTML 5 section 8.1.2.6
-    
+
     // The text in CDATA and RCDATA elements must not contain any
     // occurences of the string "</" followed by characters that
     // case-insensitively match the tag name of the element followed
@@ -308,7 +318,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
     // the three character sequence "-->".
 
     // An escaping text span start may share its U+002D HYPHEN-MINUS characters
-    // with its corresponding escaping text span end. 
+    // with its corresponding escaping text span end.
     UNESCAPED_LT_BANG,             // <!
     UNESCAPED_LT_BANG_DASH,        // <!-
     ESCAPING_TEXT_SPAN,            // Inside an escaping text span
@@ -563,7 +573,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                   case UNESCAPED_LT_BANG_DASH:
                     if ('-' == ch) {
                       // According to HTML 5 section 8.1.2.6
-                      
+
                       // An escaping text span start may share its
                       // U+002D HYPHEN-MINUS characters with its
                       // corresponding escaping text span end.

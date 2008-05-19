@@ -301,6 +301,7 @@ public class HtmlCompiler {
     CssTree.DeclarationGroup decls;
     try {
       decls = parseStyleAttrib(attrib);
+      if (decls == null) { return; }
     } catch (ParseException ex) {
       throw new GxpCompiler.BadContentException(ex.getCajaMessage(), ex);
     }
@@ -343,7 +344,7 @@ public class HtmlCompiler {
     DomTree.Value value = t.getAttribValueNode();
     // use the raw value so that the file positions come out right in
     // CssValidator error messages.
-    String cssAsHtml = HtmlCompiler.deQuote(value.getToken().text);
+    String cssAsHtml = deQuote(value.getToken().text);
     // the raw value is html so we wrap it in an html unescaper
     CharProducer cp = CharProducer.Factory.fromHtmlAttribute(
         CharProducer.Factory.create(
@@ -358,6 +359,7 @@ public class HtmlCompiler {
               && CssTokenType.COMMENT != t.type;
           }
         });
+    if (tq.isEmpty()) { return null; }
     CssParser p = new CssParser(tq);
     CssTree.DeclarationGroup decls = p.parseDeclarationGroup();
     tq.expectEmpty();

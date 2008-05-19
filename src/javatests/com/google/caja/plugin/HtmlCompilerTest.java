@@ -1,0 +1,153 @@
+// Copyright (C) 2008 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package com.google.caja.plugin;
+
+import com.google.caja.CajaException;
+import com.google.caja.lang.css.CssSchema;
+import com.google.caja.lang.html.HtmlSchema;
+import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.js.Statement;
+import com.google.caja.render.JsPrettyPrinter;
+import com.google.caja.reporting.EchoingMessageQueue;
+import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
+import com.google.caja.reporting.MessageTypeInt;
+import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Pair;
+import com.google.caja.util.TestUtil;
+
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * @author mikesamuel@gmail.com (Mike Samuel)
+ */
+public class HtmlCompilerTest extends CajaTestCase {
+
+  public void testTargetsRewritten() throws Exception {
+    assertOutput(
+        "IMPORTS___.htmlEmitter___.b('a').a('href', '/testplugin/foo')"
+        + ".a('target', '_new').f(false).ih('hello').e('a');",
+
+        "<a href=\"foo\" target=\"_self\">hello</a>");
+  }
+
+  public void testFormRewritten() throws Exception {
+    assertOutput(
+        "IMPORTS___.htmlEmitter___.b('form').a('onsubmit', 'return false')"
+        + ".f(false).e('form');",
+        "<form/>");
+  }
+
+  public void testFormName() throws Exception {
+    assertOutput(
+        "IMPORTS___.htmlEmitter___.b('form')"
+        + ".a('name', 'hi-' + IMPORTS___.getIdClass___())"
+        + ".a('onsubmit', 'return false').f(false).e('form');",
+
+        "<form name=\"hi\"/>");
+  }
+
+  public void testImageSrc() throws Exception {
+    assertOutput(
+        "IMPORTS___.htmlEmitter___.b('img')"
+        + ".a('src', '/testplugin/blank.gif')"
+        + ".a('width', '20').f(true);",
+        "<img src=\"blank.gif\" width=\"20\"/>");
+  }
+
+  public void testStyleRewriting() throws Exception {
+    assertOutput(
+        "IMPORTS___.htmlEmitter___.b('div')"
+        + ".a('style', 'position: absolute;"
+        + "\\nbackground: url(\\'/testplugin/bg-image\\')')"
+        + ".f(false)"
+        + ".ih('\\nHello\\n').e('div').pc('\\n');",
+
+        "<div style=\"position: absolute; background: url('bg-image')\">\n"
+        + "Hello\n"
+        + "</div>\n");
+  }
+
+  public void testEmptyStyleRewriting() throws Exception {
+    assertOutput(
+        "IMPORTS___.htmlEmitter___.b('div').f(false)"
+        + ".ih('\\nHello\\n').e('div').pc('\\n');",
+
+        "<div style=>\nHello\n</div>\n");
+    assertOutput(
+        "IMPORTS___.htmlEmitter___.b('div').f(false)"
+        + ".ih('\\nHello\\n').e('div').pc('\\n');",
+
+        "<div style=\"\">\nHello\n</div>\n");
+  }
+
+  private void assertOutput(String golden, String htmlText) throws Exception {
+    HtmlCompiler htmlc = new HtmlCompiler(
+        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
+        mq, makeTestPluginMeta());
+    String actual = render(
+       htmlc.compileDocument(htmlFragment(fromString(htmlText))));
+    actual = actual.replaceAll("^\\{\n  |\n\\}$", "");
+    assertEquals(actual, golden, actual);
+  }
+
+  private PluginMeta makeTestPluginMeta() {
+    return new PluginMeta(
+        new PluginEnvironment() {
+            public CharProducer loadExternalResource(
+                ExternalReference ref, String mimeType) {
+              return null;
+            }
+            public String rewriteUri(ExternalReference ref, String mimeType) {
+              URI uri = ref.getUri();
+
+              if (uri.getScheme() == null
+                  && uri.getHost() == null
+                  && uri.getPath() != null) {
+                try {
+                  String path = uri.getPath();
+                  path = (path.startsWith("/") ? "/testplugin" : "/testplugin/")
+                      + path;
+                  return new URI(
+                      null, null, path, uri.getQuery(), uri.getFragment())
+                      .toString();
+                } catch (URISyntaxException ex) {
+                  ex.printStackTrace();
+                  return null;
+                }
+              } else {
+                return null;
+              }
+            }
+        });
+  }
+}

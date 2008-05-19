@@ -152,9 +152,9 @@ public class DomParserTest extends CajaTestCase {
             "",
             "</body></html>"
             )
-        );  
+        );
   }
-  
+
   public void testTextOnlyFragment() throws Exception {
     for (int i = 0; i < 2; ++i) {
       boolean isXml = i == 0;
@@ -453,6 +453,24 @@ public class DomParserTest extends CajaTestCase {
             ),
         Arrays.asList(
             "<p>&lt;Bar&gt;</p><p>Baz</p>"
+            )
+        );
+  }
+
+  public void testFragmentThatEndsWithAComment() throws Exception {
+    assertParsedHtmlFragment(
+        Arrays.asList(
+            "<p>Hello</p>  <!-- Zoicks -->   "),
+        Arrays.asList(
+            "Fragment 1+1-1+33",
+            "  Tag : p 1+1-1+13",
+            "    Text : Hello 1+4-1+9",
+            "  Text :       1+13-1+33"
+            ),
+        Arrays.<String>asList(
+            ),
+        Arrays.asList(
+            "<p>Hello</p>     "
             )
         );
   }
@@ -1596,6 +1614,27 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
+  public void testValuelessAttributes() throws Exception {
+    assertParsedHtmlFragment(
+        Arrays.asList(
+            "<input type=checkbox checked>"
+            ),
+        Arrays.asList(
+            "Fragment 1+1-1+30",
+            "  Tag : input 1+1-1+30",
+            "    Attrib : type 1+8-1+12",
+            "      Value : checkbox 1+13-1+21",
+            "    Attrib : checked 1+22-1+29",
+            "      Value : checked 1+22-1+29"
+            ),
+        Arrays.<String>asList(
+            ),
+        Arrays.asList(
+            "<input type=\"checkbox\" checked=\"checked\" />"
+            )
+        );
+  }
+
   public void testNoDoctypeGuessAsHtml() throws Exception {
     assertParsedMarkup(
         Arrays.asList(
@@ -1736,6 +1775,43 @@ public class DomParserTest extends CajaTestCase {
             "<html:xmp><br /></html:xmp>"
             ),
         null, false);
+  }
+
+  public void testAmbiguousAttributes() throws Exception {
+    assertParsedHtmlFragment(
+        Arrays.asList(
+            "<a href= title=foo>bar</a>"
+            ),
+        Arrays.asList(
+            "Fragment 1+1-1+27",
+            "  Tag : a 1+1-1+27",
+            "    Attrib : href 1+4-1+8",
+            "      Value : title=foo 1+10-1+19",
+            "    Text : bar 1+20-1+23"
+            ),
+        Arrays.asList(
+            "WARNING testAmbiguousAttributes:1+4 - 19:"
+            + " attribute href has ambiguous value \"title=foo\""),
+        Arrays.asList(
+            "<a href=\"title=foo\">bar</a>"
+            )
+        );
+    assertParsedHtmlFragment(
+        Arrays.asList(
+            "<a href= \"title=foo\">bar</a>"
+            ),
+        Arrays.asList(
+            "Fragment 1+1-1+29",
+            "  Tag : a 1+1-1+29",
+            "    Attrib : href 1+4-1+8",
+            "      Value : title=foo 1+10-1+21",
+            "    Text : bar 1+22-1+25"
+            ),
+        Arrays.<String>asList(),  // No warning since not ambiguous
+        Arrays.asList(
+            "<a href=\"title=foo\">bar</a>"
+            )
+        );
   }
 
   private void assertParsedHtml(
