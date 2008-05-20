@@ -97,6 +97,43 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "        IMPORTS___, '" + varName + "'" + (flag ? ", true" : "") + "))";
   }
 
+  private static String weldReadPub(String obj, String varName, String tempObj) {
+    return weldReadPub(obj, varName, tempObj, false);
+  }
+
+  private static String weldReadPub(String obj, String varName, String tempObj, boolean flag) {
+    return
+        "(" +
+        "(" + tempObj + " = " + obj + ")," +
+        "(" + tempObj + "." + varName + "_canRead___ ?" +
+        "    " + tempObj + "." + varName + ":" +
+        "    ___.readPub(" + tempObj + ", '" + varName + "'" + (flag ? ", true" : "") + "))"+
+        ")";
+  }
+
+  public void testPrimordialObjectExtension() throws Exception {
+    assertConsistent(
+        "caja.extend(Object, {x:1});" +
+        "({}).x;");
+    assertConsistent(
+        "caja.extend(Number, {inc: function(){return this.valueOf() + 1;}});" +
+        "(2).inc();");
+    assertConsistent(
+        "caja.extend(Array, {size: function(){return this.length + 1;}});" +
+        "([5, 6]).size();");
+    assertConsistent(
+        "caja.extend(Boolean, {not: function(){return !this.valueOf();}});" +
+        "(true).not();");
+    assertConsistent(
+        "function foo() {this;}" +
+        "caja.def(foo, Object);" +
+        "function bar() {this;}" +
+        "caja.def(bar, foo);" +
+        "b=new bar;" +
+        "caja.extend(Object, {x:1});" +
+        "b.x;");
+  }
+
   public void testConstructorProperty() throws Exception {
     assertConsistent(
         "pkg = {};" +
@@ -199,21 +236,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "}",
         "Public properties cannot end in \"_\"");
   }
-
-  private static String weldReadPub(String obj, String varName, String tempObj) {
-    return weldReadPub(obj, varName, tempObj, false);
-  }
-
-  private static String weldReadPub(String obj, String varName, String tempObj, boolean flag) {
-    return
-        "(" +
-        "(" + tempObj + " = " + obj + ")," +
-        "(" + tempObj + "." + varName + "_canRead___ ?" +
-        "    " + tempObj + "." + varName + ":" +
-        "    ___.readPub(" + tempObj + ", '" + varName + "'" + (flag ? ", true" : "") + "))"+
-        ")";
-  }
-
+  
   ////////////////////////////////////////////////////////////////////////
   // Handling of synthetic nodes
   ////////////////////////////////////////////////////////////////////////
@@ -1509,7 +1532,8 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  toString : function () {" +
         "    var pairs = [];" +
         "    for (var k in this) {" +
-        "      if (typeof this[k] !== 'function') {" +
+        // TODO(metaweta): come up with a better way to be the same cajoled and plain
+        "      if (typeof this[k] !== 'function' && caja.canInnocentEnum(this, k)) {" +
         "        pairs.push(k + ':' + this[k]);" +
         "      }" +
         "    }" +
@@ -2487,14 +2511,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     // Make sure the tree assigns the result to the unittestResult___ var.
     return RhinoTestBed.runJs(
         null,
-        new RhinoTestBed.Input(
-            "var caja = { def: function (clazz, sup, props, statics) {" +
-            "  function t() {}" +
-            "  sup && (t.prototype = sup.prototype, clazz.prototype = new t);" +
-            "  for (var k in props) { clazz.prototype[k] = props[k]; }" +
-            "  for (var k in (statics || {})) { clazz[k] = statics[k]; }" +
-            "} };",
-            "caja-stub"),
+        new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
         new RhinoTestBed.Input(getClass(), "../../plugin/asserts.js"),
         new RhinoTestBed.Input(caja, getName() + "-uncajoled"));
   }

@@ -60,6 +60,22 @@ public class HtmlCompiledPluginTest extends TestCase {
     execGadget("", "");
   }
 
+  public void testPrimordialObjectExtension() throws Exception {
+    execGadget(
+        "var passed = false;" +
+        "try{ caja.extend(Array, {length: 1}); }" +
+        "catch(e) { passed = true; }" +
+        "if (!passed) { fail('Able to mask existing methods with extensions.'); }",
+        "");
+    execGadget(
+        "var passed = false;" +
+        "function foo() {this;}" +
+        "try{ caja.extend(foo, {x: 1}); }" +
+        "catch(e) { passed = true; }" +
+        "if (!passed) { fail('Able to extend arbitrary classes.'); }",
+        "");
+  }
+  
   /**
    * Tests that the container can get access to
    * "virtual globals" defined in cajoled code.
