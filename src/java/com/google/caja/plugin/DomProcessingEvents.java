@@ -171,12 +171,7 @@ final class DomProcessingEvents {
     final String name;
     BeginElementEvent(String name) { this.name = name; }
     @Override void toJavascript(BlockAndEmitter out) {
-      out.setEmitter(
-          TreeConstruction.call(
-              s(Operation.create(
-                  Operator.MEMBER_ACCESS,
-                  out.getEmitter(), TreeConstruction.ref("b"))),
-              TreeConstruction.stringLiteral(name)));
+      out.emitCall("b", TreeConstruction.stringLiteral(name));
     }
     @Override boolean canOptimizeToInnerHtml() { return true; }
     @Override void toInnerHtml(StringBuilder out) {
@@ -196,12 +191,7 @@ final class DomProcessingEvents {
       this.value = value;
     }
     @Override void toJavascript(BlockAndEmitter out) {
-      out.setEmitter(
-          TreeConstruction.call(
-              s(Operation.create(
-                  Operator.MEMBER_ACCESS,
-                  out.getEmitter(), TreeConstruction.ref("a"))),
-              TreeConstruction.stringLiteral(name), value));
+      out.emitCall("a", TreeConstruction.stringLiteral(name), value);
     }
     @Override boolean canOptimizeToInnerHtml() {
       return value instanceof StringLiteral;
@@ -225,12 +215,7 @@ final class DomProcessingEvents {
     final boolean unary;
     FinishAttrsEvent(boolean unary) { this.unary = unary; }
     @Override void toJavascript(BlockAndEmitter out) {
-      out.setEmitter(
-          TreeConstruction.call(
-              s(Operation.create(
-                  Operator.MEMBER_ACCESS,
-                  out.getEmitter(), TreeConstruction.ref("f"))),
-              new BooleanLiteral(unary)));
+      out.emitCall("f", new BooleanLiteral(unary));
     }
     @Override boolean canOptimizeToInnerHtml() { return true; }
     @Override void toInnerHtml(StringBuilder out) {
@@ -246,12 +231,7 @@ final class DomProcessingEvents {
     final String name;
     EndElementEvent(String name) { this.name = name; }
     @Override void toJavascript(BlockAndEmitter out) {
-      out.setEmitter(
-          TreeConstruction.call(
-              s(Operation.create(
-                  Operator.MEMBER_ACCESS,
-                  out.getEmitter(), TreeConstruction.ref("e"))),
-              TreeConstruction.stringLiteral(name)));
+      out.emitCall("e", TreeConstruction.stringLiteral(name));
     }
     @Override boolean canOptimizeToInnerHtml() { return true; }
     @Override void toInnerHtml(StringBuilder out) {
@@ -267,13 +247,8 @@ final class DomProcessingEvents {
     final String text;
     CharDataEvent(String text) { this.text = text; }
     final @Override void toJavascript(BlockAndEmitter out) {
-      out.setEmitter(
-          TreeConstruction.call(
-              s(Operation.create(
-                  Operator.MEMBER_ACCESS,
-                  out.getEmitter(),
-                  TreeConstruction.ref(getEmitterMethodName()))),
-              TreeConstruction.stringLiteral(text)));
+      out.emitCall(getEmitterMethodName(),
+                   TreeConstruction.stringLiteral(text));
     }
     @Override boolean canOptimizeToInnerHtml() { return true; }
     protected abstract String getEmitterMethodName();
@@ -360,6 +335,8 @@ final class DomProcessingEvents {
     private Expression emitter;
     /** The block that code that simulates HTML processing is built onto. */
     private final Block block;
+    /** Depth of function calls in emitter. */
+    private int emitterChainDepth = 0;
 
     BlockAndEmitter(Block block) { this.block = block; }
 
@@ -372,10 +349,16 @@ final class DomProcessingEvents {
       if (emitter != null) {
         block.appendChild(s(new ExpressionStmt(emitter)));
         emitter = null;
+        emitterChainDepth = 0;
       }
     }
 
     Expression getEmitter() {
+      // If the compiled html tree is too deep, then some JS interpreters will
+      // give up parsing it.
+      // SpiderMonkey issues a "Too much recursion" error when the parse tree
+      // is too deep, possibly because the parser stack is blowing out.
+      if (emitterChainDepth >= 100) { interruptEmitter(); }
       if (emitter == null) {
         emitter = TreeConstruction.memberAccess(
             ReservedNames.IMPORTS, ReservedNames.HTML_EMITTER);
@@ -384,5 +367,18 @@ final class DomProcessingEvents {
     }
 
     void setEmitter(Expression e) { this.emitter = e; }
+
+    void incrementEmitterChainDepth() { ++emitterChainDepth; }
+
+    void emitCall(String emitterMethodName, Expression... methodActuals) {
+      Expression[] operands = new Expression[methodActuals.length + 1];
+      operands[0] = s(
+          Operation.create(
+               Operator.MEMBER_ACCESS,
+               getEmitter(), TreeConstruction.ref(emitterMethodName)));
+      System.arraycopy(methodActuals, 0, operands, 1, methodActuals.length);
+      setEmitter(TreeConstruction.call(operands));
+      incrementEmitterChainDepth();
+    }
   }
 }

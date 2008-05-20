@@ -16,6 +16,7 @@ package com.google.caja.plugin;
 
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.MoreAsserts;
@@ -289,6 +290,36 @@ public class DomProcessingEventsTest extends CajaTestCase {
     } catch (IllegalStateException ex) {
       // pass
     }
+  }
+
+  public void testTooMuchRecursionFix() throws Exception {
+    Expression x = jsExpr(fromString("x"));
+    DomProcessingEvents dpe = new DomProcessingEvents();
+    for (int i = 0; i < 30; ++i) {
+      dpe.begin("p");
+      dpe.attr("id", x);  // defeat optimization
+      dpe.finishAttrs(false);
+    }
+    for (int i = 0; i < 30; ++i) { dpe.end("p"); }
+
+    Block block = new Block();
+    dpe.toJavascript(block);
+
+    String prefix = "\n  IMPORTS___.htmlEmitter___";
+    String startOne = ".b('p').a('id', x).f(false)";
+    String startTen = (startOne + startOne + startOne + startOne + startOne
+                       + startOne + startOne + startOne + startOne + startOne);
+    String endOne = ".e('p')";
+    String endTen = (endOne + endOne + endOne + endOne + endOne
+                     + endOne + endOne + endOne + endOne + endOne);
+
+    assertEquals(
+        "{"
+        + prefix + startTen + startTen + startTen + endTen + ";"
+        // Split across two lines
+        + prefix + endTen + endTen + ";"
+        + "\n}",
+        render(block));
   }
 
   private void assertEmittingCode(
