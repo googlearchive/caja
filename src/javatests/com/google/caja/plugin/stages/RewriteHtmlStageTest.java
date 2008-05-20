@@ -15,8 +15,8 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.Visitor;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
@@ -46,6 +46,11 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         job("foo<span></span>baz", Job.JobType.HTML),
         job("{\n  extracted();\n}", Job.JobType.JAVASCRIPT)
         );
+
+    assertPipeline(
+        job("foo<script></script>baz", Job.JobType.HTML),
+        job("foobaz", Job.JobType.HTML)
+        );
   }
 
   public void testStyleExtraction() throws Exception {
@@ -59,6 +64,10 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
             Job.JobType.HTML),
         job("Foo<p>Bar</p>", Job.JobType.HTML),
         job("p {\n  color: blue\n}", Job.JobType.CSS));
+
+    assertPipeline(
+        job("Foo<style></style><p>Bar", Job.JobType.HTML),
+        job("Foo<p>Bar</p>", Job.JobType.HTML));
   }
 
   public void testOnLoadHandlers() throws Exception {
@@ -74,7 +83,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     boolean result = new RewriteHtmlStage().apply(jobs);
     // Dump the extracted script bits on the queue.
     for (Job job : new ArrayList<Job>(jobs.getJobs())) {
-      job.getRoot().cast(ParseTreeNode.class).node.acceptPreOrder(new Visitor() {
+      job.getRoot().node.acceptPreOrder(new Visitor() {
           public boolean visit(AncestorChain<?> ac) {
             Block extracted = ac.node.getAttributes()
                 .get(RewriteHtmlStage.EXTRACTED_SCRIPT_BODY);

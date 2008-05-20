@@ -127,6 +127,7 @@ final class JsWriter {
     // Parse as a javascript expression.
     JsLexer lexer = new JsLexer(cp);
     JsTokenQueue tq = new JsTokenQueue(lexer, pos.source());
+    tq.setInputRange(pos);
     Parser p = new Parser(tq, mq);
     Expression e;
     try {

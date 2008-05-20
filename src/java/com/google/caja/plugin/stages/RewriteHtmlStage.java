@@ -183,6 +183,10 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
                                  jsStream, jobs.getMessageQueue());
     } catch (ParseException ex) {
       ex.toMessageQueue(jobs.getMessageQueue());
+      parsedScriptBody = null;
+    }
+
+    if (parsedScriptBody == null) {
       parent.removeChild(scriptTag);
       return;
     }
@@ -483,12 +487,12 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
   }
   private static enum DupePolicy { YIELD_NULL, YIELD_FIRST, }
 
-
   public static Block parseJs(
       InputSource is, CharProducer cp, MessageQueue localMessageQueue)
       throws ParseException {
     JsLexer lexer = new JsLexer(cp);
     JsTokenQueue tq = new JsTokenQueue(lexer, is);
+    if (tq.isEmpty()) { return null; }
     Parser p = new Parser(tq, localMessageQueue);
     Block body = p.parse();
     tq.expectEmpty();

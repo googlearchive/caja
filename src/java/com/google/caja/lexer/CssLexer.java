@@ -714,8 +714,10 @@ final class CssSplitter implements TokenStream<CssTokenType> {
     int chi = cp.read();
     if (chi < 0) {
       throw new ParseException(
-          new Message(MessageType.END_OF_FILE,
-                      cp.getCurrentPosition().source()));
+          new Message(MessageType.EXPECTED_TOKEN,
+                      cp.getCurrentPosition(),
+                      MessagePart.Factory.valueOf("<hex-digit>"),
+                      MessagePart.Factory.valueOf("<end-of-input>")));
     }
     char ch = (char) chi;
     if (CssLexer.isHexChar(ch)) {
@@ -781,17 +783,14 @@ final class CssSplitter implements TokenStream<CssTokenType> {
     }
     if (!isRange) {
       chi = cp.read();
-      if (chi < 0) {
-        throw new ParseException(
-            new Message(MessageType.END_OF_FILE,
-                        cp.getCurrentPosition().source()));
-      } else if ('-' != chi) {
+      if ('-' != chi) {
         throw new ParseException(
             new Message(
                 MessageType.EXPECTED_TOKEN,
                 cp.getCurrentPosition(),
                 MessagePart.Factory.valueOf("-"),
-                MessagePart.Factory.valueOf((char) chi)));
+                chi < 0 ? MessagePart.Factory.valueOf((char) chi)
+                        : MessagePart.Factory.valueOf("<end-of-input>")));
       }
       sb.append('-');
 

@@ -14,38 +14,15 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.CajaException;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
-import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Statement;
-import com.google.caja.render.JsPrettyPrinter;
-import com.google.caja.reporting.EchoingMessageQueue;
-import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageContext;
-import com.google.caja.reporting.MessageLevel;
-import com.google.caja.reporting.MessagePart;
-import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.MessageType;
-import com.google.caja.reporting.MessageTypeInt;
-import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
-import com.google.caja.util.Pair;
-import com.google.caja.util.TestUtil;
 
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author mikesamuel@gmail.com (Mike Samuel)
@@ -108,14 +85,33 @@ public class HtmlCompilerTest extends CajaTestCase {
         + ".ih('\\nHello\\n').e('div').pc('\\n');",
 
         "<div style=\"\">\nHello\n</div>\n");
+    assertOutput(
+        "IMPORTS___.htmlEmitter___.pc('Hello, World!');",
+
+        "<style type=text/css></style>Hello, World!");
+    assertOutput(
+        "IMPORTS___.htmlEmitter___.pc('Hello, World!');",
+
+        "<style type=text/css>/* Noone here */</style>Hello, World!");
   }
 
+  public void testEmptyScriptRewriting() throws Exception {
+    assertOutput(
+        "IMPORTS___.htmlEmitter___.b('div').f(false)"
+        + ".ih('\\nHello\\n').e('div').pc('\\n');",
+
+        "<div onclick=\"\">\nHello\n</div>\n");
+  }
+  
   private void assertOutput(String golden, String htmlText) throws Exception {
     HtmlCompiler htmlc = new HtmlCompiler(
         CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
         mq, makeTestPluginMeta());
     String actual = render(
        htmlc.compileDocument(htmlFragment(fromString(htmlText))));
+    for (Statement handler : htmlc.getEventHandlers()) {
+      actual += "\n" + render(handler);
+    }
     actual = actual.replaceAll("^\\{\n  |\n\\}$", "");
     assertEquals(actual, golden, actual);
   }

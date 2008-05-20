@@ -902,6 +902,7 @@ public final class GxpCompiler {
               && CssTokenType.COMMENT != t.type;
           }
         });
+    tq.setInputRange(value.getFilePosition());
     CssParser p = new CssParser(tq);
     CssTree.DeclarationGroup decls = p.parseDeclarationGroup();
     tq.expectEmpty();
@@ -930,11 +931,12 @@ public final class GxpCompiler {
   private Block asBlock(DomTree stmt) {
     // Parse as a javascript expression.
     String src = deQuote(stmt.getToken().text);
-    CharProducer cp =
-      CharProducer.Factory.fromHtmlAttribute(CharProducer.Factory.create(
-          new StringReader(src), stmt.getFilePosition()));
+    FilePosition pos = stmt.getToken().pos;
+    CharProducer cp = CharProducer.Factory.fromHtmlAttribute(
+        CharProducer.Factory.create(new StringReader(src), pos));
     JsLexer lexer = new JsLexer(cp);
-    JsTokenQueue tq = new JsTokenQueue(lexer, stmt.getFilePosition().source());
+    JsTokenQueue tq = new JsTokenQueue(lexer, pos.source());
+    tq.setInputRange(pos);
     Parser p = new Parser(tq, mq);
     List<Statement> statements = new ArrayList<Statement>();
     try {

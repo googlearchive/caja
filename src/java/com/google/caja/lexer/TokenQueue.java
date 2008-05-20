@@ -59,23 +59,8 @@ public class TokenQueue<T extends TokenType> {
 
   /** True iff there are no more tokens on the queue. */
   public boolean isEmpty() throws ParseException {
-    boolean empty = false;
-    if (null == current) {
-      if (!eof) {
-        // Still end of file if all remaining tokens are comments.
-        try {
-          fetch();
-        } catch (ParseException ex) {
-          if (MessageType.END_OF_FILE
-              != ex.getCajaMessage().getMessageType()) {
-            throw ex;
-          }
-        }
-      }
-
-      empty = eof;
-    }
-    return empty;
+    fetch(false);
+    return eof;
   }
 
   /** Throws a ParseException if the queue is not empty. */
@@ -94,48 +79,50 @@ public class TokenQueue<T extends TokenType> {
    *   end of file has been reached.
    * @see MessageType#END_OF_FILE
    */
-  private void fetch() throws ParseException {
-    if (null == current) {
-      List<Token<T>> filtered = null;
-      Token<T> t = null;
+  private void fetch(boolean failOnEof) throws ParseException {
+    if (null != current) { return; }
 
-      if (!eof) {
-        while (tstream.hasNext()) {
-          t = tstream.next();
-          if (tokenFilter.accept(t)) { break; }
-          if (null == filtered) { filtered = new ArrayList<Token<T>>(); }
-          filtered.add(t);
-          t = null;
-        }
+    List<Token<T>> filtered = null;
+    Token<T> t = null;
+
+    if (!eof) {
+      while (tstream.hasNext()) {
+        t = tstream.next();
+        if (tokenFilter.accept(t)) { break; }
+        if (null == filtered) { filtered = new ArrayList<Token<T>>(); }
+        filtered.add(t);
+        t = null;
       }
+    }
 
-      if (null == t) {
-        eof = true;
+    if (null == t) {
+      eof = true;
+      if (failOnEof) {
         throw new ParseException(
             new Message(MessageType.END_OF_FILE,
-                (null != inputRange ? this.inputRange : this.file)));
+                        (null != inputRange ? this.inputRange : this.file)));
       }
-
-      TokenList<T> tl = new TokenList<T>();
-      tl.t = t;
-      tl.filteredTokens = null != filtered
-          ? Collections.<Token<T>>unmodifiableList(filtered)
-          : Collections.<Token<T>>emptyList();
-      current = tl;
-      if (null != prev) { prev.next = tl; }
     }
+
+    TokenList<T> tl = new TokenList<T>();
+    tl.t = t;
+    tl.filteredTokens = null != filtered
+        ? Collections.<Token<T>>unmodifiableList(filtered)
+        : Collections.<Token<T>>emptyList();
+    current = tl;
+    if (null != prev) { prev.next = tl; }
   }
 
   /** Advance to the next token. */
   public void advance() throws ParseException {
-    fetch();
+    fetch(true);
     prev = current;
     current = current.next;
   }
 
   /** Fetch the current token. */
   public Token<T> peek() throws ParseException {
-    fetch();
+    fetch(true);
     return current.t;
   }
 
@@ -154,7 +141,7 @@ public class TokenQueue<T extends TokenType> {
    * {@link JsTokenType#COMMENT comment tokens}.
    */
   public List<Token<T>> filteredTokens() throws ParseException {
-    fetch();
+    fetch(true);
     return current.filteredTokens;
   }
 
@@ -164,7 +151,7 @@ public class TokenQueue<T extends TokenType> {
    */
   public Mark mark() throws ParseException {
     if (null == this.current && null == this.prev) {
-      fetch();
+      fetch(true);
     }
     // tokens from prev on will not be garbage collectible until the Mark
     // object is garbage collectible.
