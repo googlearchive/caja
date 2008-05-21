@@ -24,6 +24,25 @@
   </head>
 
   <body onload="jsunitRun()">
+    <script>
+      function interactiveTest(html) {
+        try {
+          var sanitized = html_sanitize(html);
+          var results = document.getElementById('results');
+          while (results.firstChild) {
+            results.removeChild(results.firstChild);
+          }
+          results.appendChild(document.createTextNode(sanitized));
+        } catch (ex) {
+          console.error('%s', ex);
+        }
+      }
+    </script>
+    <form onsubmit="interactiveTest(this.elements.html.value); return false">
+      <textarea cols="80" rows="20" name="html"></textarea>
+      <input type="submit" />
+    </form>
+
     <div id="results"></div>
   </body>
 </html>

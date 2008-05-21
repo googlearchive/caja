@@ -243,7 +243,6 @@ var html = (function () {
  * @return {Function} from html to sanitized html
  */
 html.makeHtmlSanitizer = function (sanitizeAttributes) {
-  var out = [];
   var stack = [];
   var ignoring = false;
   return html.makeSaxParser({
@@ -261,7 +260,7 @@ html.makeHtmlSanitizer = function (sanitizeAttributes) {
           }
           attribs = sanitizeAttributes(tagName, attribs);
           if (attribs) {
-            if (!(eflags & (html4.eflags.OPTIONAL_ENDTAG|html4.eflags.EMPTY))) {
+            if (!(eflags & html4.eflags.EMPTY)) {
               stack.push(tagName);
             }
 
@@ -283,14 +282,28 @@ html.makeHtmlSanitizer = function (sanitizeAttributes) {
           }
           if (!html4.ELEMENTS.hasOwnProperty(tagName)) { return; }
           var eflags = html4.ELEMENTS[tagName];
-          if (!(eflags & (html4.eflags.UNSAFE|html4.eflags.EMPTY))) {
+          if (!(eflags & (html4.eflags.UNSAFE | html4.eflags.EMPTY))) {
             var index;
-            for (index = stack.length; --index >= 0;) {
-              if (stack[index] === tagName) { break; }
+            if (eflags & html4.eflags.OPTIONAL_ENDTAG) {
+              for (index = stack.length; --index >= 0;) {
+                var stackEl = stack[index];
+                if (stackEl === tagName) { break; }
+                if (!(html4.ELEMENTS[stackEl] & html4.eflags.OPTIONAL_ENDTAG)) {
+                  // Don't pop non optional end tags looking for a match.
+                  return;
+                }
+              }
+            } else {
+              for (index = stack.length; --index >= 0;) {
+                if (stack[index] === tagName) { break; }
+              }
             }
             if (index < 0) { return; }  // Not opened.
-            for (var i = index; --i > index;) {
-              out.push('</', stack[i], '>');
+            for (var i = stack.length; --i > index;) {
+              var stackEl = stack[i];
+              if (!(html4.ELEMENTS[stackEl] & html4.eflags.OPTIONAL_ENDTAG)) {
+                out.push('</', stackEl, '>');
+              }
             }
             stack.length = index;
             out.push('</', tagName, '>');

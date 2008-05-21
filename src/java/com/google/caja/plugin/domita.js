@@ -388,6 +388,10 @@ attachDocumentStub = (function () {
         case 3:  // Text
           tamed = new TameTextNode(node, editable);
           break;
+        case 8:  // Comment
+          // Tame it or it will otherwise break firstChild/nextSibling iteration
+          tamed = new TameCommentNode(node, editable);
+          break;
         default:
           return null;
       }
@@ -493,6 +497,7 @@ attachDocumentStub = (function () {
     TameTextNode.prototype.setNodeValue = function (value) {
       if (!this.editable___) { throw new Error(); }
       this.node___.nodeValue = String(value || '');
+      return value;
     };
     TameTextNode.prototype.getData = TameTextNode.prototype.getNodeValue;
     TameTextNode.prototype.setData = TameTextNode.prototype.setNodeValue;
@@ -504,6 +509,15 @@ attachDocumentStub = (function () {
              ['setNodeValue', 'getData', 'setData']);
     exportFields(TameTextNode, ['nodeValue', 'data']);
 
+    function TameCommentNode(node, editable) {
+      assert(node.nodeType === 8);
+      TameNode.call(this, node, editable);
+    }
+    extend(TameCommentNode, TameNode);
+    TameCommentNode.prototype.toString = function () {
+      return '#comment';
+    };
+    ___.ctor(TameCommentNode, undefined, 'TameNode');
 
     function TameElement(node, editable) {
       assert(node.nodeType === 1);
@@ -550,9 +564,10 @@ attachDocumentStub = (function () {
       if (sanitizedValue !== null) {
         this.node___.setAttribute(name, sanitizedValue);
       }
+      return value;
     };
     TameElement.prototype.getClassName = function () {
-      return getAttribute('class');
+      return this.getAttribute('class') || '';
     };
     TameElement.prototype.setClassName = function (classes) {
       if (!this.editable___) { throw new Error(); }
@@ -584,17 +599,20 @@ attachDocumentStub = (function () {
       if (!html4.ELEMENTS.hasOwnProperty(tagName)) { throw new Error(); }
       var flags = html4.ELEMENTS[tagName];
       if (flags & html4.eflags.UNSAFE) { throw new Error(); }
+      var sanitizedHtml;
       if (flags & html4.eflags.RCDATA) {
-        htmlFragment = html.normalizeRCData(String(htmlFragment || ''));
+        sanitizedHtml = html.normalizeRCData(String(htmlFragment || ''));
       } else {
-        htmlFragment = (htmlFragment instanceof Html
+        sanitizedHtml = (htmlFragment instanceof Html
                         ? safeHtml(htmlFragment)
                         : sanitizeHtml(String(htmlFragment || '')));
       }
-      this.node___.innerHTML = htmlFragment;
+      this.node___.innerHTML = sanitizedHtml;
+      return htmlFragment;
     };
     TameElement.prototype.setStyle = function (style) {
       this.setAttribute('style', style);
+      return style;
     };
     TameElement.prototype.getStyle = function () {
       return this.node___.style.cssText;
@@ -617,27 +635,25 @@ attachDocumentStub = (function () {
         styleNode[propName] = propValue;
       }
     };
+
+    function makeEventHandlerWrapper(thisNode, listener) {
+      if ('function' !== typeof listener) {
+        throw new Error('Expected function not ' + typeof listener);
+      }
+      return function (event) {
+        return plugin_dispatchEvent___(
+            thisNode, event || window.event, ___.getId(imports), listener);
+      };
+    }
     TameElement.prototype.addEventListener = function (name, listener, bubble) {
       if (!this.editable___) { throw new Error(); }
-      if ('function' !== typeof listener) {
-        throw new Error();
-      }
       name = String(name);
+      var wrappedListener = makeEventHandlerWrapper(this.node___, listener);
       if (this.node___.addEventListener) {
-        var wrappedListener = function (event) {
-          return plugin_dispatchEvent___(
-              this, event || window.event,
-              ___.getId(imports), listener);
-        };
         this.node___.addEventListener(
             name, wrappedListener,
             bubble === undefined ? undefined : Boolean(bubble));
       } else {
-        var thisNode = this.node___;
-        var wrappedListener = function (event) {
-          return plugin_dispatchEvent___(
-              thisNode, event || window.event, ___.getId(imports), listener);
-        };
         this.node___.attachEvent('on' + name, wrappedListener);
       }
     };
@@ -668,6 +684,31 @@ attachDocumentStub = (function () {
                  ['className', 'id', 'innerHTML', 'tagName', 'style',
                   'offsetLeft', 'offsetTop', 'offsetWidth', 'offsetHeight']);
 
+    // Register set handlers for onclick, onmouseover, etc.
+    (function () {
+      for (var html4Attrib in html4.ATTRIBS) {
+        if (html4.atype.SCRIPT === html4.ATTRIBS[html4Attrib]) {
+          ___.useSetHandler(
+              TameElement.prototype,
+              html4Attrib,
+              (function (attribName) {
+                 return function eventHandlerSetter(listener) {
+                   if (!this.editable___) { throw new Error(); }
+                   if (!listener) {  // Clear the current handler
+                     this.node___[attribName] = null;
+                   } else {
+                     // This handler cannot be copied from one node to another
+                     // which is why getters are not yet supported.
+                     this.node___[attribName] = makeEventHandlerWrapper(
+                         this.node___, listener);
+                     return listener;
+                   }
+                 };
+               })(html4Attrib));
+        }
+      }
+    })();
+
     function TameFormElement(node, editable) {
       TameElement.call(this, node, editable);
     }
@@ -692,6 +733,7 @@ attachDocumentStub = (function () {
       if (!this.editable___) { throw new Error(); }
       // == matches undefined
       this.node___.value = (newValue == null ? '' : '' + value);
+      return newValue;
     };
     TameInputElement.prototype.focus = function () {
       if (!this.editable___) { throw new Error(); }
@@ -719,6 +761,7 @@ attachDocumentStub = (function () {
     };
     TameImageElement.prototype.setSrc = function (src) {
       this.setAttribute('src', src);
+      return src;
     };
     ___.ctor(TameImageElement, TameElement, 'TameImageElement');
     ___.all2(___.allowMethod, TameImageElement, ['getSrc', 'setSrc']);

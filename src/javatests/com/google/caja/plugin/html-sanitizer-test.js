@@ -138,6 +138,15 @@ jsunitRegister('testOnLoadStripped',
 jsunitRegister('testClosingTagParameters',
                function testClosingTagParameters() {
   assertEquals(
-      '<p>Hello world',
+      '<p>Hello world</p>',
       html_sanitize('<p>Hello world</b style="width:expression(alert(1))">'));
+});
+
+jsunitRegister('testOptionalEndTags',
+               function testOptionalEndTags() {
+  // The difference is significant because in the first, the item contains no
+  // space after 'A', but in the third, the item contains 'C' and a space.
+  assertEquals(
+      '<ol> <li>A</li> <li>B<li>C </ol>',
+      html_sanitize('<ol> <li>A</li> <li>B<li>C </ol>'));
 });
