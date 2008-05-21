@@ -1997,8 +1997,8 @@ var ___;
         if (!POE[m]) { POE[m] = []; }
         POE[m].push({clazz:clazz, value:value});
       }));
+    };
     }
-  }
   
   function unsafeExtend(clazz, members) {
     validatePOE({}, clazz, members);
@@ -2007,25 +2007,26 @@ var ___;
     }));
   }
   
-  // Return a zero- or one-element array with the result. 
-  // [To distinguish between (exists and undefined) and (doesn't exist).]
-  
-  // "constructor" GIVES AN ERROR!@&
-  function getExtension(obj, name) {
+  /**
+   * Return a zero- or one-element array with the result.
+   * [To distinguish between (exists and undefined) and (doesn't exist).]
+   *
+   * "constructor" GIVES AN ERROR!@&
+   */
+  function getExtension(value, name) {
     // If it already has one of these and made it here, it shouldn't
     // be reading it. Like "constructor" or "prototype".
-    if (obj[name]) { return []; }
-    var POE = this.POE;
-    console.log(POE.toSource()+"name: "+name)
-    var classes = POE[name];
-    if (!classes) return [];
-    var type = typeof obj;
-    if (type === "boolean") { obj = new Boolean(obj); }
-    else if (type === "number") { obj = new Number(obj); }
-    else if (type === "string") { obj = new String(obj); }
-    for (i=0;i<classes.length; ++i) {
+    if (value[name]) { return []; }
+    var classes = this.POE[name];
+    if (!classes) { return []; }
+    switch (typeof value) {
+      case 'boolean': value = new Boolean(value); break;
+      case 'number':  value = new Number(value); break;
+      case 'string':  value = new String(value); break;
+    }
+    for (var i = 0; i < classes.length; ++i) {
       var entry = classes[i];
-      if (obj instanceof entry.clazz) {
+      if (value instanceof entry.clazz) {
         return [entry.value];
       }
     }
@@ -2300,6 +2301,6 @@ var ___;
 
   function begetCajaObjects() {
     function beget(obj) { function F(){} F.prototype=obj; return new F; }
-    return {caja: beget(caja), ___: beget(___)};
+    return { caja: beget(caja), ___: copy(___) };
   }
 })(this);

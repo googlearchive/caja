@@ -40,15 +40,15 @@ public abstract class RuleDoclet {
    * This method is called before any documentation generation occurs
    * and overriden to initialize variables or open files  
    */
-  public void initialize(Writer output) throws IOException {}
+  public void initialize(Writer output) {}
 
   /**
    * Initializes the RuleDoclet
    * 
    * This method is called before any documentation generation occurs
    * and overriden to initialize variables or open files  
-   * @throws IOException 
    */
+  @SuppressWarnings("unused")
   public void finish(Writer output) throws IOException {}
 
   
@@ -83,7 +83,7 @@ public abstract class RuleDoclet {
     initialize(output);
     generateHeader(output, ruleSetDescription);
     for (Object oc : rewriter.getRules()) {
-      Class c = oc.getClass();
+      Class<?> c = oc.getClass();
       boolean annotated = false;
       for (Method mm : c.getMethods()) {
         RuleDescription anno = mm.getAnnotation(RuleDescription.class);

@@ -62,6 +62,7 @@ public class AbstractMessageQueueTest extends TestCase {
   private MessageContext mc;
   private MessageQueue mq;
 
+  @Override
   public void setUp() {
     mc = new MessageContext();
     mq = new AbstractMessageQueue() {
@@ -72,6 +73,7 @@ public class AbstractMessageQueueTest extends TestCase {
     };
   }
 
+  @Override
   public void tearDown() {
     mc = null;
     mq = null;

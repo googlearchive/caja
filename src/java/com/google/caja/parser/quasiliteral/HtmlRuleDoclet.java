@@ -63,8 +63,7 @@ public class HtmlRuleDoclet extends RuleDoclet {
   }
   
   @Override
-  public void generateHeader(Writer output, RulesetDescription ruleSet) 
-    throws IOException {
+  public void generateHeader(Writer output, RulesetDescription ruleSet) {
     Element head = new Element("head");
     head.addContent(new Element("title").setText(ruleSet.name()));
     Element meta = new Element("meta");
@@ -92,8 +91,7 @@ public class HtmlRuleDoclet extends RuleDoclet {
   }
   
   @Override
-  public void generateFooter(Writer output, RulesetDescription ruleSet)
-      throws IOException {}
+  public void generateFooter(Writer output, RulesetDescription ruleSet) {}
   
   @Override
   public void finish(Writer output) throws IOException {
@@ -102,10 +100,11 @@ public class HtmlRuleDoclet extends RuleDoclet {
   }
 
   @Override
-  public void generateRuleDocumentation(Writer output, RuleDescription anno) throws IOException {
+  public void generateRuleDocumentation(Writer output, RuleDescription anno) {
     if (0 == countRules) {
       table = new Element("table");
-      table.addContent(headerRow("", "Rule", "Synopsis", "Reason", "Matches", "Substitutes"));
+      table.addContent(headerRow("", "Rule", "Synopsis", "Reason", "Matches",
+                                 "Substitutes"));
       body.addContent(table);
     }
     table.addContent(row("" + countRules++, anno.name(), anno.synopsis(), 

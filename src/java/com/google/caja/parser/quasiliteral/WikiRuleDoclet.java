@@ -34,10 +34,6 @@ public class WikiRuleDoclet extends RuleDoclet {
     return "==" + name + "==\n";
   }
   
-  private String heading3(String name) {
-    return "===" + name + "===\n";
-  }
-  
   private String row(String... cells) {
     StringBuilder result = new StringBuilder();
     boolean hasContent = false;
@@ -66,8 +62,7 @@ public class WikiRuleDoclet extends RuleDoclet {
   }
 
   @Override
-  public void generateFooter(Writer output, RulesetDescription ruleSet) 
-    throws IOException {}
+  public void generateFooter(Writer output, RulesetDescription ruleSet) {}
 
   @Override
   public void generateRuleDocumentation(Writer output, RuleDescription anno) throws IOException {

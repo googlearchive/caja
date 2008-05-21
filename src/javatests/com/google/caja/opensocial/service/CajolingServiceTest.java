@@ -29,7 +29,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -56,12 +55,10 @@ public class CajolingServiceTest extends CajaTestCase {
   private class TestingHttpHandler implements HttpHandler {
   private String testInstance;
   private String contentType;
-  private String charSet;
   
   public void setTest(String test, String contentType, String charSet) {
     this.testInstance = test;
     this.contentType = contentType;
-    this.charSet = charSet;
   }
 
    public void handle(HttpExchange ex) throws IOException {

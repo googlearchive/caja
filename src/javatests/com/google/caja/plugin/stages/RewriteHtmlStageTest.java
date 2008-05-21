@@ -15,7 +15,6 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.Job;
