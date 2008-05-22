@@ -436,7 +436,13 @@ public final class CssParser {
               new Message(MessageType.UNEXPECTED_TOKEN, t.pos,
                           MessagePart.Factory.valueOf(t.text)));
         }
-        expr = new CssTree.HashLiteral(pos(m2), color);
+        try {
+          expr = new CssTree.HashLiteral(pos(m2), color);
+        } catch (IllegalArgumentException e) {
+          throw new ParseException(
+              new Message(MessageType.UNEXPECTED_TOKEN, t.pos,
+                          MessagePart.Factory.valueOf(t.text)));          
+        }
         break;
       case UNICODE_RANGE:
         expr = new CssTree.UnicodeRangeLiteral(pos(m2), unescape(t));
