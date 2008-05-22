@@ -716,7 +716,13 @@ public final class Parser extends ParserBase {
               new Message(MessageType.UNEXPECTED_TOKEN, t.pos,
                           MessagePart.Factory.valueOf(t.text)));
         }
-        left = Operation.create(op, left);
+        try {
+          left = Operation.create(op, left);
+        } catch (IllegalArgumentException e) {
+          throw new ParseException(
+              new Message(MessageType.ASSIGN_TO_NON_LVALUE, t.pos,
+                          MessagePart.Factory.valueOf(t.text)));          
+        }
         finish(left, m);
         // Not pulling multiple operators off the stack means that
         // some prefix operator nestings are impossible.  This is intended.
@@ -857,6 +863,12 @@ public final class Parser extends ParserBase {
             left = Operation.create(op, left, right);
             break;
           case POSTFIX:
+            if (op.getCategory() == OperatorCategory.ASSIGNMENT
+                && !left.isLeftHandSide()) {
+              throw new ParseException(
+                  new Message(MessageType.ASSIGN_TO_NON_LVALUE,
+                              t.pos, MessagePart.Factory.valueOf(t.text)));
+            }
             left = Operation.create(op, left);
             break;
           default:

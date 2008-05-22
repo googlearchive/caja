@@ -38,6 +38,7 @@ import com.google.caja.parser.css.CssParserTest;
 import com.google.caja.parser.css.CssTreeTest;
 import com.google.caja.parser.html.DomParserTest;
 import com.google.caja.parser.html.JsHtmlParserTest;
+import com.google.caja.parser.js.FuzzedParserTest;
 import com.google.caja.parser.js.NumberLiteralTest;
 import com.google.caja.parser.js.ParserTest;
 import com.google.caja.parser.js.StringLiteralTest;
@@ -132,6 +133,7 @@ public class AllTests {
           ParseTreeNodeTest.class,
           ParserBaseTest.class,
           ParserTest.class,
+          FuzzedParserTest.class,
           PunctuationTrieTest.class,
           QuasiBuilderTest.class,
           RRuleTest.class,
