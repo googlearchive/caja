@@ -19,7 +19,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.tools.ant.BuildException;
@@ -51,16 +51,22 @@ public abstract class AbstractCajaAntTask extends Task {
     if (jobs.isEmpty()) {
       throw new BuildException("caja task must have one or more <job>s");
     }
-    for (Job job : jobs) { job.requireExecutable(); }
-
-    BuildService buildService = getBuildService();
-    PrintWriter logger = getLogger();
     try {
-      for (Job job : jobs) {
-        job.execute(buildService, logger);
+
+      for (Job job : jobs) { job.requireExecutable(); }
+
+      BuildService buildService = getBuildService();
+      PrintWriter logger = getLogger();
+      try {
+        for (Job job : jobs) {
+          job.execute(buildService, logger);
+        }
+      } finally {
+        logger.flush();
       }
-    } finally {
-      logger.flush();
+    } catch (RuntimeException ex) {
+      ex.printStackTrace();
+      throw new BuildException(ex);
     }
   }
 
@@ -172,7 +178,7 @@ public abstract class AbstractCajaAntTask extends Task {
       if (modified) {
         logger.println("compiling " + inputs.size() + " files to " + output);
         if (!run(buildService, logger, dependees, inputs, output,
-                 Collections.<String, Object>emptyMap())) {
+                 new HashMap<String, Object>())) {
           if (output.exists()) { output.delete(); }
           throw new BuildException("Failed to build " + output);
         }

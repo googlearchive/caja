@@ -120,6 +120,7 @@ public class BuildServiceImplementation implements BuildService {
 
     // Set up the cajoler
     PluginMeta meta = new PluginMeta(env);
+    meta.setDebugMode(Boolean.TRUE.equals(options.get("debug")));
     PluginCompiler compiler = new PluginCompiler(meta, mq);
 
     boolean passed = true;

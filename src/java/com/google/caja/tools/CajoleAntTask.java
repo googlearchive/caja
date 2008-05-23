@@ -24,7 +24,7 @@ import org.apache.tools.ant.BuildException;
  * An ANT task that Cajoles a set of files.
  *
  * Given an ANT task like {@code
- * <cajole>
+ * <cajole debug="false">
  *   <job output="foo/bar.js">
  *     <include file="baz/input1.js"/>
  *     <include file="baz/input2.css"/>
@@ -43,11 +43,17 @@ import org.apache.tools.ant.BuildException;
  * @author mikesamuel@gmail.com
  */
 public class CajoleAntTask extends AbstractCajaAntTask {
+  private boolean debug;
+  
   @Override
   protected boolean run(BuildService buildService, PrintWriter logger,
                         List<File> depends, List<File> inputs, File output,
                         Map<String, Object> options)
        throws BuildException {
+    options.put("debug", debug);
     return buildService.cajole(logger, depends, inputs, output, options);
   }
+
+  /** Invoked reflectively by ANT. */
+  public void setDebug(boolean debug) { this.debug = debug; }
 }
