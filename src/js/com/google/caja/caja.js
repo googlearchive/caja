@@ -1020,28 +1020,29 @@ var ___;
     allowRead(obj, name);  // memoize
     return true;
   }
-  
+
   /**
    * Caja code attempting to read a property on something besides
    * <tt>this</tt>.
    * <p>
    * If it can't and <tt>opt_shouldThrow</tt> is absent or 
-   * false-ish, then <ttreadPub</tt> returns <tt>undefined</tt> 
-   * instead. But if <tt>opt_shouldThrow</tt> is true-ish, then 
+   * false-ish, then <ttreadPub</tt> returns <tt>undefined</tt>
+   * instead. But if <tt>opt_shouldThrow</tt> is true-ish, then
    * <tt>readPub</tt> throws <tt>ReferenceError</tt>, in order to
    * simulate an attempt to read a non-existent global variable.
    */
   function readPub(obj, name, opt_shouldThrow) {
+    if ((typeof name) === 'number') { return obj[name]; }
     name = String(name);
     if (canReadPub(obj, name)) { return obj[name]; }
     // "this" is bound to the local ___
     if (canCall(obj, name)) { return this.attach(obj, obj[name]); }
     var ext = this.getExtension(obj, name);
     if (!ext) { fail("Internal: getExtension returned falsey"); }
-    if (ext.length) { return ext[0]; } 
+    if (ext.length) { return ext[0]; }
     return obj.handleRead___(name, opt_shouldThrow);
   }
-  
+
   /**
    * Can "innocent" code enumerate the named property on this object?
    * <p>
