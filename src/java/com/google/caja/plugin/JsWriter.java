@@ -23,7 +23,6 @@ import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
-import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Parser;
@@ -71,14 +70,8 @@ final class JsWriter {
     }
     // Make one
     if (null == fnCall) {
-      Expression target = s(new Reference(s(new Identifier(tgtMembers.get(0)))));
-      for (int i = 1; i < tgtMembers.size(); ++i) {
-        target = s(Operation.create(Operator.MEMBER_ACCESS,
-                                 target, s(new Reference(s(new Identifier(tgtMembers.get(i)))))));
-      }
-
-      fnCall = s(Operation.create(Operator.FUNCTION_CALL,
-                               target));
+      Expression target = makeTargetReference(tgtMembers);
+      fnCall = s(Operation.create(Operator.FUNCTION_CALL, target));
       b.insertBefore(s(new ExpressionStmt(fnCall)), null);
     }
     if (toAppend instanceof StringLiteral) {
@@ -153,6 +146,15 @@ final class JsWriter {
     e = stmt.getExpression();  // Refetch e in case it was rewritten
     stmt.replaceChild(new UndefinedLiteral(), e);  // Make e not a child of stmt
     return e;
+  }
+
+  static Expression makeTargetReference(List<String> tgtMembers) {
+    Expression target = TreeConstruction.ref(tgtMembers.get(0));
+    for (int i = 1; i < tgtMembers.size(); ++i) {
+      target = s(Operation.create(Operator.MEMBER_ACCESS,
+                     target, TreeConstruction.ref(tgtMembers.get(i))));
+    }
+    return target;
   }
 
   private static boolean matchesChain(Expression e, List<String> refChain) {

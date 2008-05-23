@@ -20,27 +20,21 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.FunctionConstructor;
+import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Statement;
-import com.google.caja.render.JsPrettyPrinter;
-import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
-import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.MessageTypeInt;
-import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Pair;
 import com.google.caja.util.TestUtil;
 
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -66,46 +60,20 @@ public class GxpCompilerTest extends CajaTestCase {
     String golden = TestUtil.readResource(getClass(), "gxpcompilergolden1.js");
     DomTree.Tag domTree = (DomTree.Tag)
         xml(fromResource("gxpcompilerinput1.gxp"));
-    GxpCompiler gxpc = new GxpCompiler(
-        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
-        makeTestPluginMeta(), mq);
-    GxpCompiler.TemplateSignature sig = gxpc.compileTemplateSignature(domTree);
-    ParseTreeNode compiled = gxpc.compileDocument(sig);
-
-    StringBuilder out = new StringBuilder();
-    TokenConsumer pp = new JsPrettyPrinter(out, null);
-    RenderContext rc = new RenderContext(mc, pp);
-    compiled.render(rc);
-    for (Statement handler : gxpc.getEventHandlers()) {
-      handler.render(rc);
-    }
-    assertEquals(golden.trim(), out.toString().trim());
+    StringBuilder actual = new StringBuilder();
+    assertTrue(compileAll(new DomTree.Tag[] { domTree }, false, actual));
+    assertEquals(golden.trim(), actual.toString().trim());
   }
 
   public void testStyles() throws Exception {
     String golden = TestUtil.readResource(getClass(), "gxpcompilergolden2.js");
-    MessageContext mc = new MessageContext();
-    MessageQueue mq = new EchoingMessageQueue(
-        new PrintWriter(new OutputStreamWriter(System.out)), mc);
     DomTree.Tag domTree = (DomTree.Tag)
         xml(fromResource("gxpcompilerinput2.gxp"));
-    GxpCompiler gxpc = new GxpCompiler(
-        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
-        makeTestPluginMeta(), mq);
-    GxpCompiler.TemplateSignature sig = gxpc.compileTemplateSignature(domTree);
-    ParseTreeNode compiled = gxpc.compileDocument(sig);
-
-    StringBuilder out = new StringBuilder();
-    TokenConsumer pp = new JsPrettyPrinter(out, null);
-    RenderContext rc = new RenderContext(mc, pp);
-    compiled.render(rc);
-    for (Statement handler : gxpc.getEventHandlers()) {
-      out.append('\n');
-      handler.render(rc);
-    }
-    assertEquals(golden.trim(), out.toString().trim());
+    StringBuilder actual = new StringBuilder();
+    assertTrue(compileAll(new DomTree.Tag[] { domTree }, true, actual));
+    assertEquals(golden.trim(), actual.toString().trim());
     List<Pair<MessageTypeInt, FilePosition>> messages =
-      new ArrayList<Pair<MessageTypeInt, FilePosition>>();
+        new ArrayList<Pair<MessageTypeInt, FilePosition>>();
     for (Message m : mq.getMessages()) {
       List<MessagePart> parts = m.getMessageParts();
       messages.add(Pair.pair(m.getMessageType(), (FilePosition) parts.get(0)));
@@ -118,47 +86,22 @@ public class GxpCompilerTest extends CajaTestCase {
         messages.toString());
   }
 
-  /** Test the <call:templateName param0="expr"/> construct */
+  // Test the <call:templateName param0="expr"/> construct
   public void testTemplateCalls() throws Exception {
     String golden = TestUtil.readResource(getClass(), "gxpcompilergolden3.txt");
-    MessageContext mc = new MessageContext();
-    MessageQueue mq = new EchoingMessageQueue(
-        new PrintWriter(new OutputStreamWriter(System.out)), mc);
-
-    DomTree.Tag gxp2 = (DomTree.Tag) xml(fromResource("gxpcompilerinput3.gxp"));
-    DomTree.Tag gxp3 = (DomTree.Tag) xml(fromResource("gxpcompilerinput4.gxp"));
-    GxpCompiler gxpc = new GxpCompiler(
-        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
-        makeTestPluginMeta(), mq);
-    GxpCompiler.TemplateSignature sig2 = gxpc.compileTemplateSignature(gxp2),
-                                  sig3 = gxpc.compileTemplateSignature(gxp3);
-
-    ParseTreeNode compiled2 = gxpc.compileDocument(sig2),
-                  compiled3 = gxpc.compileDocument(sig3);
+    DomTree.Tag gxp3 = (DomTree.Tag) xml(fromResource("gxpcompilerinput3.gxp"));
+    DomTree.Tag gxp4 = (DomTree.Tag) xml(fromResource("gxpcompilerinput4.gxp"));
 
     StringBuilder out = new StringBuilder();
-    TokenConsumer pp = new JsPrettyPrinter(out, null);
-    RenderContext rc = new RenderContext(mc, pp);
+    assertTrue(compileAll(new DomTree.Tag[] { gxp3, gxp4 }, true, out));
 
-    // write out the compiled gxps
-    compiled2.render(rc);
-    out.append('\n');
-    compiled3.render(rc);
-
-    // write out the handler functions
-    for (Statement handler : gxpc.getEventHandlers()) {
-      out.append('\n');
-      handler.render(rc);
-    }
-
-    // write out the messages with file positions
+    // Write out the messages with file positions
     for (Message m : mq.getMessages()) {
       out.append('\n');
       out.append(m.getMessageType().toString()).append(" : ")
           .append(m.getMessageParts().get(0).toString());
     }
 
-    // test that they match
     assertEquals(golden.trim(), out.toString().trim());
   }
 
@@ -372,65 +315,14 @@ public class GxpCompilerTest extends CajaTestCase {
 
   private void assertRejected(MessageTypeInt typ, String... gxps)
       throws Exception {
-    MessageContext mc = new MessageContext();
-    MessageQueue mq = new EchoingMessageQueue(
-        new PrintWriter(new OutputStreamWriter(System.err)), mc);
-    PluginMeta meta = makeTestPluginMeta();
-
     DomTree.Tag[] doms = new DomTree.Tag[gxps.length];
     for (int i = 0; i < gxps.length; ++i) {
       doms[i] = (DomTree.Tag) xml(fromString(gxps[i]));
     }
 
-    GxpCompiler.TemplateSignature[] sigs =
-        new GxpCompiler.TemplateSignature[doms.length];
-    GxpCompiler gxpc = new GxpCompiler(
-        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
-        meta, mq);
-    boolean valid = true;
-    for (int i = 0; i < doms.length; ++i) {
-      DomTree.Tag dom = doms[i];
-      if (!new GxpValidator(HtmlSchema.getDefault(mq), mq)
-          .validate(new AncestorChain<DomTree>(dom))) {
-        valid = false;
-        break;
-      }
-      try {
-        sigs[i] = gxpc.compileTemplateSignature(dom);
-      } catch (CajaException ex) {
-        ex.toMessageQueue(mq);
-        valid = false;
-        break;
-      }
-    }
-    if (valid) {
-      ParseTreeNode[] javascripts = new ParseTreeNode[sigs.length];
-      for (int i = 0; i < sigs.length; ++i) {
-        GxpCompiler.TemplateSignature sig = sigs[i];
-        try {
-          javascripts[i] = gxpc.compileDocument(sig);
-        } catch (CajaException ex) {
-          ex.toMessageQueue(mq);
-        ex.printStackTrace();
-          valid = false;
-          break;
-        }
-      }
-      if (valid) {
-        MessageLevel max = null;
-        for (Message msg : mq.getMessages()) {
-          if (null == max || msg.getMessageLevel().compareTo(max) > 0) {
-            max = msg.getMessageLevel();
-          }
-        }
-        if (null == max || MessageLevel.ERROR.compareTo(max) > 0) {
-          for (ParseTreeNode javascript : javascripts) {
-            javascript.formatTree(mc, 0, System.err);
-          }
-          fail("did not reject " + gxps[0]);
-        }
-      }
-    }
+    StringBuilder actualBuf = new StringBuilder();
+    boolean valid = compileAll(doms, true, actualBuf);
+    String actual = actualBuf.toString();
     Message actmsg = null;
     MessageTypeInt act = null;
     for (Message msg : mq.getMessages()) {
@@ -445,65 +337,26 @@ public class GxpCompilerTest extends CajaTestCase {
 
   private void assertOutput(String golden, boolean expectValid, String... gxps)
       throws Exception {
-    MessageContext mc = new MessageContext();
-    MessageQueue mq = new EchoingMessageQueue(
-        new PrintWriter(new OutputStreamWriter(System.err)), mc);
-    PluginMeta meta = makeTestPluginMeta();
-
     DomTree.Tag[] doms = new DomTree.Tag[gxps.length];
     for (int i = 0; i < gxps.length; ++i) {
       doms[i] = (DomTree.Tag) xml(fromString(gxps[i]));
     }
 
-    GxpCompiler.TemplateSignature[] sigs =
-      new GxpCompiler.TemplateSignature[doms.length];
-    GxpCompiler gxpc = new GxpCompiler(
-        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
-        meta, mq);
-    boolean valid = true;
-    for (int i = 0; i < doms.length; ++i) {
-      DomTree.Tag dom = doms[i];
-      if (!new GxpValidator(HtmlSchema.getDefault(mq), mq)
-          .validate(new AncestorChain<DomTree>(dom))) {
-        valid = false;
-        break;
-      }
-      try {
-        sigs[i] = gxpc.compileTemplateSignature(dom);
-      } catch (CajaException ex) {
-        ex.toMessageQueue(mq);
-        valid = false;
-        break;
-      }
-    }
+    StringBuilder actualBuf = new StringBuilder();
+    boolean valid = compileAll(doms, true, actualBuf);
+    String actual = actualBuf.toString();
     if (valid) {
-      ParseTreeNode[] javascripts = new ParseTreeNode[sigs.length];
-      for (int i = 0; i < sigs.length; ++i) {
-        GxpCompiler.TemplateSignature sig = sigs[i];
-        try {
-          javascripts[i] = gxpc.compileDocument(sig);
-        } catch (CajaException ex) {
-          ex.toMessageQueue(mq);
-          ex.printStackTrace();
-          valid = false;
-          break;
-        }
-      }
-
-      StringBuilder actualBuf = new StringBuilder();
-      TokenConsumer pp = new JsPrettyPrinter(actualBuf, null);
-      RenderContext rc = new RenderContext(mc, pp);
-      for (ParseTreeNode javascript : javascripts) {
-        javascript.render(rc);
-      }
-      pp.noMoreTokens();
-      actualBuf.append('\n');
-
-      String actual = actualBuf.toString().trim();
       // get rid of boilerplate
-      String pre = "function Test() {\n  var out___ = [ ];\n  ",
-          post = ("\n  return IMPORTS___.blessHtml___"
-                  + "(out___.join(''));\n}");
+      String pre = (
+          "{\n"
+          + "  function Test() {\n"
+          + "    var out___ = [ ];\n"
+          + "    c1___.call(IMPORTS___, out___);\n"
+          + "    return IMPORTS___.blessHtml___(out___.join(''));\n"
+          + "  }\n"
+          + "  function c1___(out___) {\n"
+          + "    ");
+      String post = "\n  }\n}";
       assertTrue(actual, actual.startsWith(pre));
       assertTrue(actual, actual.endsWith(post));
       actual = actual.substring(pre.length(), actual.length() - post.length())
@@ -512,6 +365,56 @@ public class GxpCompilerTest extends CajaTestCase {
       assertEquals(actual, golden, actual);
     }
     assertEquals(expectValid, valid);
+  }
+
+  private boolean compileAll(
+      DomTree.Tag[] doms, boolean validate, StringBuilder jsOut)
+      throws Exception {
+    PluginMeta meta = makeTestPluginMeta();
+    GxpCompiler gxpc = new GxpCompiler(
+        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
+        meta, mq);
+
+    boolean valid = true;
+
+    List<GxpCompiler.TemplateSignature> sigs
+        = new ArrayList<GxpCompiler.TemplateSignature>();
+    for (DomTree.Tag dom : doms) {
+      if (validate
+          && !(new GxpValidator(HtmlSchema.getDefault(mq), mq)
+               .validate(new AncestorChain<DomTree>(dom)))) {
+        valid = false;
+        break;
+      }
+      try {
+        sigs.add(gxpc.compileTemplateSignature(dom));
+      } catch (CajaException ex) {
+        ex.toMessageQueue(mq);
+        valid = false;
+        break;
+      }
+    }
+
+    List<Statement> stmts = new ArrayList<Statement>();
+    for (GxpCompiler.TemplateSignature sig : sigs) {
+      try {
+        Pair<FunctionConstructor, FunctionConstructor> compiled
+            = gxpc.compileDocument(sig);
+        System.err.println("compiled=" + compiled);
+        stmts.add(new FunctionDeclaration(
+            compiled.a.getIdentifier(), compiled.a));
+        stmts.add(new FunctionDeclaration(
+            compiled.b.getIdentifier(), compiled.b));
+      } catch (CajaException ex) {
+        ex.toMessageQueue(mq);
+        valid = false;
+        break;
+      }
+    }
+    stmts.addAll(gxpc.getEventHandlers());
+
+    jsOut.append(render(new Block(stmts)));
+    return valid;
   }
 
   private PluginMeta makeTestPluginMeta() {

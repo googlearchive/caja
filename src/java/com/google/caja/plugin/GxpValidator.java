@@ -43,7 +43,7 @@ public final class GxpValidator {
     this.schema = schema;
   }
 
-  public boolean validate(AncestorChain<DomTree> tChain) {
+  public boolean validate(AncestorChain<? extends DomTree> tChain) {
     DomTree t = tChain.node;
     boolean valid = true;
     switch (t.getType()) {

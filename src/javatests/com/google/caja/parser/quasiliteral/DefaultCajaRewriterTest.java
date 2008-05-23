@@ -27,7 +27,6 @@ import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.plugin.SyntheticNodes;
-import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.RhinoTestBed;
@@ -236,7 +235,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "}",
         "Public properties cannot end in \"_\"");
   }
-  
+
   ////////////////////////////////////////////////////////////////////////
   // Handling of synthetic nodes
   ////////////////////////////////////////////////////////////////////////

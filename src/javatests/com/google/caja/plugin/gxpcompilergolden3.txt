@@ -1,15 +1,24 @@
-function Foo(baz, boo) {
-  var out___ = [ ];
-  out___.push(IMPORTS___.html___(c2___.call(IMPORTS___, baz * boo, baz)), IMPORTS___.html___(c2___.call(IMPORTS___, baz * boo, baz)));
-  return IMPORTS___.blessHtml___(out___.join(''));
-}
-
-function Bar(boo, faz) {
-  var out___ = [ ];
-  if (boo >= 0 && faz >= 0) {
-    out___.push('<p>.</p>', IMPORTS___.html___(c1___.call(IMPORTS___, faz, boo - 1)));
+{
+  function Foo(baz, boo) {
+    var out___ = [ ];
+    c1___.call(IMPORTS___, out___, baz, boo);
+    return IMPORTS___.blessHtml___(out___.join(''));
   }
-  return IMPORTS___.blessHtml___(out___.join(''));
+  function c1___(out___, baz, boo) {
+    c2___.call(IMPORTS___, out___, baz * boo, baz);
+    c2___.call(IMPORTS___, out___, baz * boo, baz);
+  }
+  function Bar(boo, faz) {
+    var out___ = [ ];
+    c2___.call(IMPORTS___, out___, boo, faz);
+    return IMPORTS___.blessHtml___(out___.join(''));
+  }
+  function c2___(out___, boo, faz) {
+    if (boo >= 0 && faz >= 0) {
+      out___.push('<p>.</p>');
+      c1___.call(IMPORTS___, out___, faz, boo - 1);
+    }
+  }
 }
 MISSING_TEMPLATE_PARAM : gxpcompilerinput3.gxp:7+1@148 - 12@159
 MISSING_TEMPLATE_PARAM : gxpcompilerinput3.gxp:7+1@148 - 12@159

@@ -50,9 +50,9 @@ import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
-import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.quasiliteral.ParseTreeNodeContainer;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
@@ -201,17 +201,39 @@ public final class GxpCompiler {
    *
    * <p>This method extracts embedded javascript but performs no validation on
    * it.</p>
+   *
+   * @return a pair of functions.  For a template with name "myTemplate",
+   *     reserved name "c0___", and formal parameters "a", and "b," the two
+   *     functions look like<pre>
+   *     // Callable by Caja code
+   *     function myTemplate(a, b) {
+   *       var out___ = [];
+   *       c0___(out___, a, b);
+   *       return plugin_blessHtml___(out.join(''));
+   *     }
+   *     // Allows the call:templateName tag to reliably reach the template
+   *     function c0___(out___, a, b) {
+   *       // output of compileDom
+   *     }
    */
-  public FunctionConstructor compileDocument(TemplateSignature sig)
+  public Pair<FunctionConstructor, FunctionConstructor>
+      compileDocument(TemplateSignature sig)
       throws BadContentException {
-    List<FormalParam> params = new ArrayList<FormalParam>();
+    List<Reference> actuals = new ArrayList<Reference>();
+    List<FormalParam> formals = new ArrayList<FormalParam>();
 
-    for (DomTree paramName : sig.parameterNames) {
-      FormalParam param = s(new FormalParam(
-          s(new Identifier(
-                assertSafeJsIdentifier(paramName.getValue(), paramName)))));
-      param.setFilePosition(paramName.getFilePosition());
-      params.add(param);
+    for (DomTree paramName : sig.getParameterNames()) {
+      Identifier ident = s(new Identifier(
+          assertSafeJsIdentifier(paramName.getValue(), paramName)));
+      ident.setFilePosition(paramName.getFilePosition());
+
+      Reference actual = s(new Reference(ident));
+      actual.setFilePosition(paramName.getFilePosition());
+      actuals.add(actual);
+
+      FormalParam formal = s(new FormalParam(ident));
+      formal.setFilePosition(paramName.getFilePosition());
+      formals.add(formal);
     }
 
     // Chunks of html should be pushed onto an array called out___
@@ -219,29 +241,42 @@ public final class GxpCompiler {
 
     // var out___ = [];
     Block body = s(new Block(Collections.<Statement>emptyList()));
-    body.insertBefore(
-        s(new Declaration(
-              s(new Identifier(ReservedNames.OUTPUT_BUFFER)),
-              s(new ArrayConstructor(
-                    Collections.<Expression>emptyList())))), null);
-
     for (AncestorChain<? extends DomTree> treeChain : sig.content) {
       compileDom(treeChain, tgtChain, false, JsWriter.Esc.HTML, body);
     }
 
-    // Join the html via out___.join('') and mark it as safe html
-    //   return IMPORTS___.blessHtml___(out.join(''));
-    ReturnStmt result = s(new ReturnStmt(
-        TreeConstruction.call(
-            TreeConstruction.memberAccess(
-                ReservedNames.IMPORTS, ReservedNames.BLESS_HTML),
-            TreeConstruction.call(
-                TreeConstruction.memberAccess(
-                    ReservedNames.OUTPUT_BUFFER, "join"),
-                s(new StringLiteral("''"))))));
-    body.insertBefore(result, null);
-    return s(new FunctionConstructor(s(new Identifier(sig.templateName)),
-                                     params, body));
+    Identifier assignedName = s(new Identifier(sig.assignedName));
+    Identifier bufferName = s(new Identifier(ReservedNames.OUTPUT_BUFFER));
+    Map<String, ParseTreeNode> bindings = new HashMap<String, ParseTreeNode>();
+    bindings.put("actuals", new ParseTreeNodeContainer(actuals));
+    bindings.put("assignedName", assignedName);
+    bindings.put("assignedNameRef", s(new Reference(assignedName)));
+    bindings.put("blessHtml", TreeConstruction.ref(ReservedNames.BLESS_HTML));
+    bindings.put("body", new ParseTreeNodeContainer(body.children()));
+    bindings.put("bufferName", bufferName);
+    bindings.put("bufferNameFormal", s(new FormalParam(bufferName)));
+    bindings.put("bufferNameRef", s(new Reference(bufferName)));
+    bindings.put("formals", new ParseTreeNodeContainer(formals));
+    bindings.put("imports", TreeConstruction.ref(ReservedNames.IMPORTS));
+    bindings.put("templateName", new Identifier(sig.templateName));
+
+    FunctionConstructor publicFn = (FunctionConstructor) QuasiBuilder.subst(
+        ""
+        + "function @templateName(@formals*) {"
+        + "  var @bufferName = [];"
+        + "  @assignedNameRef.call(@imports, @bufferNameRef, @actuals*);"
+        + "  return @imports.@blessHtml(@bufferNameRef.join(''));"
+        + "}",
+        bindings);
+    FunctionConstructor reservedFn = (FunctionConstructor) QuasiBuilder.subst(
+        ""
+        + "function @assignedName(@bufferNameFormal, @formals) {"
+        + "  @body*;"
+        + "}",
+        bindings);
+    publicFn.getAttributes().remove(SyntheticNodes.SYNTHETIC);
+    reservedFn.getAttributes().remove(SyntheticNodes.SYNTHETIC);
+    return Pair.pair(publicFn, reservedFn);
   }
 
   public Collection<? extends TemplateSignature> getSignatures() {
@@ -277,6 +312,8 @@ public final class GxpCompiler {
         } else if ("gxp:loop".equals(tagName)) {
           handleLoop(
               tChain.cast(DomTree.Tag.class), tgtChain, inAttrib, escaping, b);
+        } else if ("gxp:abbr".equals(tagName)) {
+          handleAbbr(tChain.cast(DomTree.Tag.class), b);
         } else if (tagName.startsWith("call:")) {
           if (inAttrib) {
             throw new BadContentException(
@@ -564,6 +601,8 @@ public final class GxpCompiler {
       Collections.singleton("cond");
   private static final Set<String> ALLOWED_LOOP_PARAMS = new HashSet<String>(
       Arrays.asList("var", "iterator"));
+  private static final Set<String> ALLOWED_ABBR_PARAMS = new HashSet<String>(
+      Arrays.asList("name", "expr"));
   private static final Set<String> ALLOWED_EVAL_PARAMS =
       Collections.singleton("expr");
   private static final Set<String> ALLOWED_PARAM_PARAMS =
@@ -752,6 +791,40 @@ public final class GxpCompiler {
     }
   }
 
+  private void handleAbbr(AncestorChain<DomTree.Tag> tChain, Block b)
+      throws BadContentException {
+    DomTree.Tag t = tChain.node;
+    // Should have two parameters -- the variable and an initializer
+    Map<String, DomTree.Value> attribMap = new HashMap<String, DomTree.Value>();
+    int attribEnd = gxpValidator.attribsAsMap(
+        t, attribMap, ALLOWED_ABBR_PARAMS);
+    DomTree.Value variable = attribMap.get("name"),
+                  initializer = attribMap.get("expr");
+
+    if (null == variable || null == initializer) {
+      if (null == variable) {
+        mq.addMessage(
+            PluginMessageType.MISSING_ATTRIBUTE,
+            t.getFilePosition(), MessagePart.Factory.valueOf("name"), t);
+      }
+      if (null == initializer) {
+        mq.addMessage(
+            PluginMessageType.MISSING_ATTRIBUTE,
+            t.getFilePosition(), MessagePart.Factory.valueOf("expr"), t);
+      }
+      return;
+    }
+
+    assertSafeJsIdentifier(variable.getValue(), variable);
+
+    // None of this is synthetic.
+    Identifier abbrName = new Identifier(variable.getValue());
+    abbrName.setFilePosition(variable.getFilePosition());
+    Declaration decl = new Declaration(abbrName, asExpression(initializer));
+    decl.setFilePosition(t.getFilePosition());
+    b.appendChild(decl);
+  }
+
   private void handleEval(
       AncestorChain<DomTree.Tag> tChain, List<String> tgtChain,
       JsWriter.Esc escaping, Block b) {
@@ -809,7 +882,15 @@ public final class GxpCompiler {
     Map<String, DomTree.Value> attribMap = new HashMap<String, DomTree.Value>();
     gxpValidator.attribsAsMap(t, attribMap, null);
     int nParams = sig.parameterNames.size();
-    Expression[] operands = new Expression[nParams + 2];
+    Expression[] operands = new Expression[nParams + 3];  // to Function.call
+    // Append IMPORTS___.html___(
+    //     <assignedName>.call(IMPORTS___, <param 0>, ...));
+    int operandIdx = 0;
+    operands[0] = TreeConstruction.memberAccess(sig.assignedName, "call");
+    operands[1] = TreeConstruction.ref(ReservedNames.IMPORTS);
+    operands[2] = JsWriter.makeTargetReference(
+        tgtChain.subList(0, tgtChain.size() - 1));
+
     for (String paramName : attribMap.keySet()) {
       DomTree.Value actual = attribMap.get(paramName);
       int paramIndex = -1;
@@ -826,12 +907,12 @@ public final class GxpCompiler {
                       MessagePart.Factory.valueOf(paramName));
         bad = true;
       } else {
-        operands[paramIndex + 2] = asExpression(actual);
+        operands[paramIndex + 3] = asExpression(actual);
       }
     }
 
     for (int i = 0; i < nParams; ++i) {
-      if (null == operands[i + 2]) {
+      if (null == operands[i + 3]) {
         DomTree.Value formal = sig.parameterNames.get(i);
         String paramName = sig.parameterNames.get(i).getValue();
         mq.addMessage(PluginMessageType.MISSING_TEMPLATE_PARAM,
@@ -845,16 +926,8 @@ public final class GxpCompiler {
 
     if (bad) { return; }
 
-    // Append IMPORTS___.html___(
-    //     <assignedName>.call(IMPORTS___, <param 0>, ...));
-    operands[0] = TreeConstruction.memberAccess(sig.assignedName, "call");
-    operands[1] = s(new Reference(s(new Identifier(ReservedNames.IMPORTS))));
-
-    Operation call = TreeConstruction.call(
-        TreeConstruction.memberAccess(
-            ReservedNames.IMPORTS, ReservedNames.HTML),
-        s(Operation.create(Operator.FUNCTION_CALL, operands)));
-    JsWriter.append(call, tgtChain, b);
+    Operation call = s(Operation.create(Operator.FUNCTION_CALL, operands));
+    b.appendChild(new ExpressionStmt(call));
   }
 
   private void compileStyleAttrib(
