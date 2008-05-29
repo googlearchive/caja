@@ -114,6 +114,10 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: invalid operand to delete",
       MessageLevel.ERROR),
 
+  NONASCII_IDENTIFIER(
+      "%s: identifier contains non-ASCII characters: %s",
+      MessageLevel.FATAL_ERROR),
+
   ILLEGAL_IDENTIFIER_LEFT_OVER(
       "%s: INTERNAL COMPILER ERROR. "
           + "Illegal identifier passed through from rewriter: %s. "

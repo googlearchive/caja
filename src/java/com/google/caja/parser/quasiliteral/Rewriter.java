@@ -20,6 +20,7 @@ import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
@@ -202,6 +203,10 @@ public abstract class Rewriter {
   }
 
   private void checkTainted(ParseTreeNode node, MessageQueue mq) {
+    // If we've already got errors, then issuing new ones on the same nodes won't help.
+    if (mq.hasMessageAtLevel(MessageLevel.ERROR)) {
+      return;
+    }
     if (node.getAttributes().is(ParseTreeNode.TAINTED)) {
       mq.addMessage(RewriterMessageType.UNSEEN_NODE_LEFT_OVER, node.getFilePosition());
     }
