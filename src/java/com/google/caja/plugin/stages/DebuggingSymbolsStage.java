@@ -62,7 +62,7 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
   private static final boolean DEBUG = false;
 
   public boolean apply(Jobs jobs) {
-    if (jobs.getPluginMeta().debugMode()) {
+    if (jobs.getPluginMeta().isDebugMode()) {
       MessageQueue mq = jobs.getMessageQueue();
       for (ListIterator<Job> it = jobs.getJobs().listIterator();
            it.hasNext();) {

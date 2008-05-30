@@ -15,20 +15,17 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.InputSource;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
-import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.Operation;
+import com.google.caja.parser.js.Operator;
 import com.google.caja.plugin.ReservedNames;
 import com.google.caja.plugin.SyntheticNodes;
 import com.google.caja.reporting.Message;
@@ -46,7 +43,9 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
-import java.net.URI;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * A scope analysis of a {@link com.google.caja.parser.ParseTreeNode}.
@@ -166,16 +165,6 @@ public class Scope {
      * </pre>
      */
     PROGRAM(true),
-
-    /**
-     * A Scope created for the purpose of delimiting method context in
-     * an expression like
-     *
-     * <pre>
-     * Foo.prototype.setX = function(x) { this.x_ = x; };
-     * </pre>
-     */
-    METHOD(false),
     ;
 
     private final boolean declarationContainer;
@@ -192,11 +181,6 @@ public class Scope {
     }
   }
 
-  private static final FilePosition PRIMORDIAL_OBJECTS_FILE_POSITION =
-      FilePosition.instance(
-          new InputSource(URI.create("built-in:///js-primordial-objects")),
-          0, 0, 0, 0, 0, 0, 0, 0);
-
   private final Scope parent;
   private final MessageQueue mq;
   private final ScopeType type;
@@ -209,35 +193,14 @@ public class Scope {
   private int tempVariableCounter = 0;
   private final Map<String, Pair<LocalType, FilePosition>> locals
       = new HashMap<String, Pair<LocalType, FilePosition>>();
-  private final List<Statement> startStatements
-      = new ArrayList<Statement>();
-
-  public static Scope fromMethodContext(Scope parent) {
-    Scope s = new Scope (ScopeType.METHOD, parent);
-    return s;
-  }
-
-  public boolean inMethodContext() {
-    Scope ancestor = this;
-    while (true) {
-      if (null == ancestor) {
-        return false;
-      }
-      if ((ScopeType.METHOD == ancestor.type) ||
-          (null != ancestor.functionName)) {
-        return true;
-      }
-      if (ScopeType.FUNCTION_BODY == ancestor.type &&
-          !ancestor.containsThis ) {
-        return false;
-      }
-      ancestor = ancestor.parent;
-    }
-  }
+  private final List<Statement> startStatements = new ArrayList<Statement>();
+  // TODO(ihab.awad): importedVariables is only used by the root-most scope; it is
+  // empty everywhere else. Define subclasses of Scope so that this confusing
+  // overlapping of instance variables does not occur.
+  private final Set<String> importedVariables = new HashSet<String>();
 
   public static Scope fromProgram(Block root, MessageQueue mq) {
     Scope s = new Scope(ScopeType.PROGRAM, mq);
-    addPrimordialObjects(s);
     walkBlock(s, root);
     return s;
   }
@@ -352,16 +315,9 @@ public class Scope {
     Scope s = getClosestDeclarationContainer();
     // TODO(ihab.awad): Uses private access to 's' which is of same class but distinct
     // instance. Violates capability discipline; kittens unduly sacrificed. Refactor.
-    if (s.isGlobal()){
-      s.addStartOfScopeStatement(
-          s(new ExpressionStmt((Expression)substV(
-              "IMPORTS___.@idRef = undefined;",
-              "idRef", new Reference(id)))));
-    } else {
-      s.addStartOfScopeStatement((Statement)substV(
-          "var @id;",
-          "id", id));
-    }
+    s.addStartOfScopeStatement((Statement)substV(
+        "var @id;",
+        "id", id));
   }
 
   private Scope getClosestDeclarationContainer() {
@@ -485,15 +441,15 @@ public class Scope {
   }
 
   /**
-   * Is a given symbol global?
+   * Is a given symbol imported by this module?
    *
    * @param name an identifier.
-   * @return whether 'name' is a defined global variable.
+   * @return whether 'name' is a free variable of the enclosing module.
    */
-  public boolean isGlobal(String name) {
-    return
-        parent == null ||
-        (!locals.containsKey(name) && parent.isGlobal(name));
+  public boolean isImported(String name) {
+    if (locals.containsKey(name)) return false;
+    if (parent == null) { return importedVariables.contains(name); }
+    return parent.isImported(name);
   }
 
   private LocalType getType(String name) {
@@ -518,38 +474,19 @@ public class Scope {
     this.mq = parent.mq;
   }
 
-  /**
-   * Add the primordial objects to a top-level scope. By marking some
-   * of these as CONSTRUCTORs, we allow them to be used as
-   * constructors at compile time. A container writer makes the
-   * separate decision whether to make them members of IMPORTS___ or not.
-   */
-  private static void addPrimordialObjects(Scope s) {
-    addLocal(s, "Global", LocalType.DATA);
-    addLocal(s, "Object", LocalType.CONSTRUCTOR);
-    addLocal(s, "Function", LocalType.DATA);
-    addLocal(s, "Array", LocalType.DATA);
-    addLocal(s, "String", LocalType.DATA);
-    addLocal(s, "Boolean", LocalType.DATA);
-    addLocal(s, "Number", LocalType.DATA);
-    addLocal(s, "Math", LocalType.DATA);
-    addLocal(s, "Date", LocalType.CONSTRUCTOR);
-    addLocal(s, "RegExp", LocalType.DATA);
-    addLocal(s, "Error", LocalType.CONSTRUCTOR);
-    addLocal(s, "EvalError", LocalType.CONSTRUCTOR);
-    addLocal(s, "RangeError", LocalType.CONSTRUCTOR);
-    addLocal(s, "ReferenceError", LocalType.CONSTRUCTOR);
-    addLocal(s, "SyntaxError", LocalType.CONSTRUCTOR);
-    addLocal(s, "TypeError", LocalType.CONSTRUCTOR);
-    addLocal(s, "URIError", LocalType.CONSTRUCTOR);
-  }
-
-  private static void addLocal(Scope s, String name, LocalType type) {
-    s.locals.put(
-        name,
-        new Pair<LocalType, FilePosition>(
-            type,
-            PRIMORDIAL_OBJECTS_FILE_POSITION));
+  private static void addImportedVariable(Scope s, String name) {
+    Scope target = s;
+    while (target.getParent() != null) { target = target.getParent(); }
+    // TODO(ihab.awad): Imported variables are remembered in 2 places: in the
+    // 'importedVariables' member and by adding start of block statements.
+    // This should be done more cleanly. 
+    if (target.importedVariables.contains(name)) { return; }
+    target.importedVariables.add(name);
+    Identifier identifier = s(new Identifier(name));
+    target.addStartOfBlockStatement((Statement)QuasiBuilder.substV(
+        "var @vIdent = ___.readImports(IMPORTS___, @vName);",
+        "vIdent", identifier,
+        "vName", Rule.toStringLiteral(identifier)));
   }
 
   private static LocalType computeDeclarationType(Scope s, Declaration decl) {
@@ -561,30 +498,114 @@ public class Scope {
   }
 
   private static void walkBlock(final Scope s, ParseTreeNode root) {
-    root.acceptPreOrder(new Visitor() {
-      public boolean visit(AncestorChain<?> chain) {
-        if (chain.node instanceof FunctionConstructor) {
-          return false;
-        } else if (chain.node instanceof CatchStmt) {
-          // We skip the CatchStmt's exception variable -- that is only defined within the
-          // CatchStmt's body -- but we dig into the body itself to grab all the declarations
-          // within it, which *are* hoisted into the parent scope.
-          ((CatchStmt)chain.node).getBody().acceptPreOrder(this, null);
-          return false;
-        } else if (chain.node instanceof Declaration) {
-          Declaration decl = (Declaration) chain.node;
-          declare(s, decl.getIdentifier(), computeDeclarationType(s, decl));
-        } else if (chain.node instanceof Reference) {
-          String name = ((Reference)chain.node).getIdentifierName();
-          if (ReservedNames.ARGUMENTS.equals(name)) {
-            s.containsArguments = true;
-          }
-          if (ReservedNames.THIS.equals(name)) { s.containsThis = true; }
-        }
-        return true;
+    SymbolHarvestVisitor v = new SymbolHarvestVisitor();
+    v.visit(root);
+
+    // Record in this scope all the declarations that have been harvested
+    // by the visitor.
+    for (Declaration decl : v.getDeclarations()) {
+      declare(s, decl.getIdentifier(), computeDeclarationType(s, decl));      
+    }
+
+    // Now resolve all the references harvested by the visitor. If they have
+    // not been defined in the scope chain (including the declarations we just
+    // harvested), then they must be free variables, so record them as such. 
+    for (String name : v.getReferences()) {
+      if (ReservedNames.ARGUMENTS.equals(name)) {
+        s.containsArguments = true;
+      } else if (ReservedNames.THIS.equals(name)) {
+        s.containsThis = true;
+      } else if (!s.isDefined(name)) {
+        addImportedVariable(s, name);
       }
-    },
-    null);
+    }
+  }
+
+  // A SymbolHarvestVisitor traverses a parse tree node tree and harvests
+  // declarations and references for scope analysis. It stops the traversal
+  // at the right places according to JavaScript scoping rules.
+  //
+  // TODO(ihab.awad): Refactor to use standard Caja Visitor. Currently not
+  // using it because, due to the MEMBER_ACCESS case, we need more control
+  // over when to stop traversing the children of a node.
+  private static class SymbolHarvestVisitor {
+    private final SortedSet<String> references = new TreeSet<String>();
+    private final List<Declaration> declarations = new ArrayList<Declaration>();
+    private final List<String> exceptionVariables = new ArrayList<String>();
+    
+    public SortedSet<String> getReferences() { return references; }
+
+    public List<Declaration> getDeclarations() { return declarations; }    
+
+    public void visit(ParseTreeNode node) {
+      // Dispatch to methods for specific node types of interest
+      if (node instanceof FunctionConstructor) {
+        visitFunctionConstructor((FunctionConstructor)node);
+      } else if (node instanceof CatchStmt) {
+        visitCatchStmt((CatchStmt)node);
+      } else if (node instanceof Declaration) {
+        visitDeclaration((Declaration)node);
+      } else if (node instanceof Operation) {
+        visitOperation((Operation)node);
+      } else  if (node instanceof Reference) {
+        visitReference((Reference)node);
+      } else {
+        visitChildren(node);
+      }
+    }
+
+    private void visitChildren(ParseTreeNode node) {
+      for (ParseTreeNode c : node.children()) { visit(c); }
+    }
+
+    private void visitFunctionConstructor(FunctionConstructor node) {
+      if (node.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
+        // Synthetic function definitions are treated as "transparent"; our
+        // scope analysis should "see through" them as though they were just
+        // part of the surrounding code.
+        visitChildren(node);
+      } else {
+        // Stuff inside a nested function is not part of this scope,
+        // so stop the traversal.
+      }
+    }
+
+    private void visitCatchStmt(CatchStmt node) {
+      // Skip the CatchStmt's exception variable -- that is only defined
+      // within the CatchStmt's body -- but dig into the body itself to grab
+      // all the declarations within it, which *are* hoisted into this scope.
+      exceptionVariables.add(node.getException().getIdentifierName());
+      visit(node.getBody());
+      exceptionVariables.remove(exceptionVariables.size() - 1);
+    }
+
+    private void visitDeclaration(Declaration node) {
+      if (!node.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
+        declarations.add(node);
+      }
+      if (node.getInitializer() != null) {
+        visit(node.getInitializer());
+      }
+    }
+
+    // TODO(ihab.awad): Change the ParseTreeNode type for the right hand sides
+    // of a member access to be a StringLiteral, so we can eliminate the special
+    // case here. Also collapse MEMBER_ACCESS and SQUARE_BRACKET and make the
+    // form of the output a rendering decision.
+    private void visitOperation(Operation node) {
+      if (node.getOperator() == Operator.MEMBER_ACCESS) {
+        visit(node.children().get(0));
+      } else {
+        visitChildren(node);
+      }
+    }
+
+    private void visitReference(Reference node) {
+      if (!node.getAttributes().is(SyntheticNodes.SYNTHETIC) &&
+          !exceptionVariables.contains(node.getIdentifierName())) {
+        references.add(node.getIdentifierName());
+      }
+    }
   }
 
   /**
@@ -594,6 +615,13 @@ public class Scope {
    */
   private static void declare(Scope s, Identifier ident, LocalType type) {
     String name = ident.getName();
+
+    if ("caja".equals(name)) {
+      s.mq.getMessages().add(new Message(
+          RewriterMessageType.CANNOT_REDECLARE_CAJA,
+          ident.getFilePosition()));
+    }
+
     Pair<LocalType, FilePosition> oldDefinition = s.locals.get(name);
     if (oldDefinition != null) {
       LocalType oldType = oldDefinition.a;

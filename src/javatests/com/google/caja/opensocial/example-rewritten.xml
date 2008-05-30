@@ -1,34 +1,28 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?><Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5" /></ModulePrefs><Content type="html"><![CDATA[<script type="text/javascript">{
   ___.loadModule(function (___, IMPORTS___) {
-                   IMPORTS___.externalScript = undefined;
-                   var x0___;
-                   IMPORTS___.handleClicky = undefined;
-                   var x1___;
+                   var alert = ___.readImports(IMPORTS___, 'alert');
+                   var externalScript;
+                   var handleClicky;
                    IMPORTS___.emitCss___([ '.', ' #p3-', ' {\n  color: red\n}' ].join(IMPORTS___.getIdClass___()));
                    IMPORTS___.emitCss___([ '@media print {\n  .', ' #p3-', ' {\n    font-weight: bold;\n    color: black\n  }\n}' ].join(IMPORTS___.getIdClass___()));
                    IMPORTS___.emitCss___([ '@media print, screen {\n  .', ' .p4 {\n    font-weight: bold\n  }\n}' ].join(IMPORTS___.getIdClass___()));
                    IMPORTS___.emitCss___([ '.', ' .p1 {\n  color: red\n}' ].join(IMPORTS___.getIdClass___()));
                    IMPORTS___.c_1___ = ___.simpleFunc(
                        function (thisNode___, event) {
-                         ___.asSimpleFunc(___.primFreeze(
-                             IMPORTS___.handleClicky_canRead___
-                             ? IMPORTS___.handleClicky
-                             : ___.readPub(IMPORTS___, 'handleClicky', true)))();
+                         ___.asSimpleFunc(___.primFreeze(handleClicky))();
                        });
                    IMPORTS___.htmlEmitter___.pc('\n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    ').b('p').a('class', 'p1 p2').f(false).ih('Paragraph 1').e('p').pc('\n\n    ');
                    {
-                        x0___ = ___.simpleFunc(function externalScript() {
-                                                    ___.asSimpleFunc(IMPORTS___.alert_canRead___? IMPORTS___.alert: ___.readPub(IMPORTS___, 'alert', true))('external script');
-                                                  }),
-                        IMPORTS___.externalScript_canSet___? (IMPORTS___.externalScript = x0___): ___.setPub(IMPORTS___, 'externalScript', x0___);
+                        externalScript = ___.simpleFunc(function externalScript() {
+                                                    ___.asSimpleFunc(alert)('external script');
+                                                  });
                      ;
                    }
                    IMPORTS___.htmlEmitter___.pc('\n\n    \n    ').b('p').a('id', 'p3-' + IMPORTS___.getIdClass___()).f(false).ih('Paragraph 2').e('p').pc('\n\n    \n    \n\n    \n    ');
                    {
-                        x1___ = ___.simpleFunc(function handleClicky() {
-                                                    ___.asSimpleFunc(IMPORTS___.alert_canRead___? IMPORTS___.alert: ___.readPub(IMPORTS___, 'alert', true))('You clicked something!!!');
-                                                  }),
-                        IMPORTS___.handleClicky_canSet___? (IMPORTS___.handleClicky = x1___): ___.setPub(IMPORTS___, 'handleClicky', x1___);
+                        handleClicky = ___.simpleFunc(function handleClicky() {
+                                                    ___.asSimpleFunc(alert)('You clicked something!!!');
+                                                  });
                      ;
                    }
                    IMPORTS___.htmlEmitter___.pc('\n\n    ').b('p').f(false).b('a').a('onclick', 'return plugin_dispatchEvent___(this, event || window.event, ' + ___.getId(IMPORTS___) + ', \'c_1___\')').f(false).ih('Paragraph 3').e('a').e('p').pc('\n\n    ').b('a').a('href', 'http://url-proxy.test.google.com/?url=http%3A%2F%2Ffoo.com%2F&mime-type=*%2F*').a('target', '_new').f(false).ih('External URL.  Apply URICallback.rewrite to me.').e('a').pc('\n\n    \n    \n\n    \n    \n    \n\n  ');

@@ -47,52 +47,151 @@ public class ScopeTest extends CajaTestCase {
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, "foo"));
 
     assertTrue(s0.isDefined("x"));
-    assertTrue(s0.isGlobal("x"));
+    assertFalse(s0.isImported("x"));
     assertFalse(s0.isFunction("x"));
     assertFalse(s0.isDeclaredFunction("x"));
     assertFalse(s0.isConstructor("x"));
 
     assertTrue(s0.isDefined("foo"));
-    assertTrue(s0.isGlobal("foo"));
+    assertFalse(s0.isImported("foo"));
     assertTrue(s0.isFunction("foo"));
     assertTrue(s0.isDeclaredFunction("foo"));
     assertFalse(s0.isConstructor("foo"));
 
     assertFalse(s0.isDefined("y"));
-    assertTrue(s0.isGlobal("y"));
+    assertFalse(s0.isImported("y"));
     assertFalse(s0.isFunction("y"));
     assertFalse(s0.isDeclaredFunction("y"));
     assertFalse(s0.isConstructor("y"));
 
     assertFalse(s0.isDefined("z"));
-    assertTrue(s0.isGlobal("z"));
+    assertTrue(s0.isImported("z"));
     assertFalse(s0.isFunction("z"));
     assertFalse(s0.isDeclaredFunction("z"));
     assertFalse(s0.isConstructor("z"));
 
     assertTrue(s1.isDefined("x"));
-    assertTrue(s1.isGlobal("x"));
+    assertFalse(s1.isImported("x"));
     assertFalse(s1.isFunction("x"));
     assertFalse(s1.isDeclaredFunction("x"));
     assertFalse(s1.isConstructor("x"));
 
     assertTrue(s1.isDefined("foo"));
-    assertFalse(s1.isGlobal("foo"));
+    assertFalse(s1.isImported("foo"));
     assertTrue(s1.isFunction("foo"));
     assertFalse(s1.isDeclaredFunction("foo"));
     assertFalse(s1.isConstructor("foo"));
 
     assertTrue(s1.isDefined("y"));
-    assertFalse(s1.isGlobal("y"));
+    assertFalse(s1.isImported("y"));
     assertFalse(s1.isFunction("y"));
     assertFalse(s1.isDeclaredFunction("y"));
     assertFalse(s1.isConstructor("y"));
 
     assertFalse(s1.isDefined("z"));
-    assertTrue(s1.isGlobal("z"));
+    assertTrue(s1.isImported("z"));
     assertFalse(s1.isFunction("z"));
     assertFalse(s1.isDeclaredFunction("z"));
     assertFalse(s1.isConstructor("z"));
+  }
+
+  public void testFreeVariablesDotted() throws Exception {
+    assertFreeVariables("a;", "a", "");
+    assertFreeVariables("a.b;", "a", "b");
+    assertFreeVariables("a.b.c;", "a", "b,c");
+    assertFreeVariables("a.b.c.d;", "a", "b,c,d");
+  }
+
+  public void testFreeVariablesIndexedChained() throws Exception {
+    assertFreeVariables("a;", "a", "");
+    assertFreeVariables("a[b];", "a,b", "");
+    assertFreeVariables("a[b][c];", "a,b,c", "");
+    assertFreeVariables("a[b][c][d];", "a,b,c,d", "");
+  }
+
+  public void testFreeVariablesIndexedRecursive() throws Exception {
+    assertFreeVariables("a;", "a", "");
+    assertFreeVariables("a[b];", "a,b", "");
+    assertFreeVariables("a[b[c]];", "a,b,c", "");
+    assertFreeVariables("a[b[c[d]]];", "a,b,c,d", "");
+  }
+
+  public void testFreeVariableFunction() throws Exception {
+    assertFreeVariables("a();", "a", "");
+  }
+
+  public void testFreeVariableFunctionWithMember() throws Exception {
+    assertFreeVariables("a();", "a", "");
+    assertFreeVariables("a().b;", "a", "b");
+    assertFreeVariables("a().b.c;", "a", "b,c");
+    assertFreeVariables("a().b.c.d;", "a", "b,c,d");
+  }
+
+  public void testFreeVariableFunctionParams() throws Exception {
+    assertFreeVariables("a(b, c, d);", "a,b,c,d", "");
+  }
+
+  public void testFreeVariableDeclaration() throws Exception {
+    assertFreeVariables("var a = b, c = d;", "b,d", "a,c");  
+  }
+
+  public void testFreeVariableCatchStmt() throws Exception {
+    assertFreeVariables(
+        "   try {"
+        + "   a;"
+        + " } catch (e) {"
+        + "   b;"
+        + "   e;"
+        + " }",
+        "a,b",
+        "e");
+    assertFreeVariables(
+        "   try {"
+        + "   a;"
+        + " } catch (e0) {"
+        + "   b;"
+        + "   try {"
+        + "     c;"
+        + "   } catch (e1) {"
+        + "     d;"
+        + "     e0;"
+        + "   }"
+        + " }",
+        "a,b,c,d",
+        "e0,e1");
+    assertFreeVariables(
+        "   try {"
+        + "   a;"
+        + " } catch (e0) {"
+        + "   b;"
+        + "   try {"
+        + "     c;"
+        + "   } catch (e1) {"
+        + "     d;"
+        + "     e0;"
+        + "   }"
+        + "   e1;"
+        + " }",
+        "a,b,c,d,e1",
+        "e0");
+  }
+
+  private void assertFreeVariables(String code,
+                                   String freeVariables,
+                                   String notFreeVariables)
+      throws Exception {
+    Block n = js(fromString(code));
+    Scope s = Scope.fromProgram(n, mq);
+    for (String v : freeVariables.split(",")) {
+      assertTrue(
+          "<" + v + "> should be a free variable in <" + code + ">",
+          s.isImported(v));
+    }
+    for (String v : notFreeVariables.split(",")) {
+      assertFalse(
+          "<" + v + "> should not be a free variable in <" + code + ">",
+          s.isImported(v));
+    }
   }
 
   public void testAnonymousFunction() throws Exception {
@@ -101,12 +200,12 @@ public class ScopeTest extends CajaTestCase {
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, null));
 
     assertTrue(s0.isDefined("x"));
-    assertTrue(s0.isGlobal("x"));
+    assertFalse(s0.isImported("x"));
     assertFalse(s0.isFunction("x"));
     assertFalse(s0.isDeclaredFunction("x"));
 
     assertTrue(s1.isDefined("x"));
-    assertTrue(s1.isGlobal("x"));
+    assertFalse(s1.isImported("x"));
     assertFalse(s1.isFunction("x"));
     assertFalse(s1.isDeclaredFunction("x"));
   }
@@ -117,22 +216,22 @@ public class ScopeTest extends CajaTestCase {
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, "foo"));
 
     assertTrue(s0.isDefined("x"));
-    assertTrue(s0.isGlobal("x"));
+    assertFalse(s0.isImported("x"));
     assertFalse(s0.isFunction("x"));
     assertFalse(s0.isDeclaredFunction("x"));
 
     assertFalse(s0.isDefined("foo"));
-    assertTrue(s0.isGlobal("foo"));
+    assertFalse(s0.isImported("foo"));
     assertFalse(s0.isFunction("foo"));
     assertFalse(s0.isDeclaredFunction("foo"));
 
     assertTrue(s1.isDefined("x"));
-    assertTrue(s1.isGlobal("x"));
+    assertFalse(s1.isImported("x"));
     assertFalse(s1.isFunction("x"));
     assertFalse(s1.isDeclaredFunction("x"));
 
     assertTrue(s1.isDefined("foo"));
-    assertFalse(s1.isGlobal("foo"));
+    assertFalse(s1.isImported("foo"));
     assertTrue(s1.isFunction("foo"));
     assertFalse(s1.isDeclaredFunction("foo"));
   }
@@ -143,12 +242,12 @@ public class ScopeTest extends CajaTestCase {
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, "x"));
 
     assertTrue(s0.isDefined("x"));
-    assertTrue(s0.isGlobal("x"));
+    assertFalse(s0.isImported("x"));
     assertFalse(s0.isFunction("x"));
     assertFalse(s0.isDeclaredFunction("x"));
 
     assertTrue(s1.isDefined("x"));
-    assertFalse(s1.isGlobal("x"));
+    assertFalse(s1.isImported("x"));
     assertTrue(s1.isFunction("x"));
     assertFalse(s1.isDeclaredFunction("x"));
   }
@@ -272,29 +371,6 @@ public class ScopeTest extends CajaTestCase {
     assertFalse(s.isConstructor("notctor"));
     assertTrue(s.isDeclaredFunction("notctor"));
     assertTrue(s.isFunction("notctor"));
-  }
-
-  public void testPrimordialObjects() throws Exception {
-    Scope s = Scope.fromProgram(js(fromString("{}")), mq);
-
-    assertDefinedGlobalValue(s, "Global");
-    assertDefinedGlobalValue(s, "Function");
-    assertDefinedGlobalValue(s, "Array");
-    assertDefinedGlobalValue(s, "String");
-    assertDefinedGlobalValue(s, "Boolean");
-    assertDefinedGlobalValue(s, "Number");
-    assertDefinedGlobalValue(s, "Math");
-    assertDefinedGlobalValue(s, "RegExp");
-
-    assertDefinedGlobalCtor(s, "Object");
-    assertDefinedGlobalCtor(s, "Date");
-    assertDefinedGlobalCtor(s, "Error");
-    assertDefinedGlobalCtor(s, "EvalError");
-    assertDefinedGlobalCtor(s, "RangeError");
-    assertDefinedGlobalCtor(s, "ReferenceError");
-    assertDefinedGlobalCtor(s, "SyntaxError");
-    assertDefinedGlobalCtor(s, "TypeError");
-    assertDefinedGlobalCtor(s, "URIError");
   }
 
   public void testStartStatementsForProgram() throws Exception {
@@ -434,7 +510,7 @@ public class ScopeTest extends CajaTestCase {
 
   private void assertDefinedGlobalValue(Scope s, String name) {
     assertTrue(s.isDefined(name));
-    assertTrue(s.isGlobal(name));
+    assertTrue(s.isImported(name));
     assertFalse(s.isConstructor(name));
     assertFalse(s.isDeclaredFunction(name));
     assertFalse(s.isFunction(name));
@@ -442,7 +518,7 @@ public class ScopeTest extends CajaTestCase {
 
   private void assertDefinedGlobalCtor(Scope s, String name) {
     assertTrue(s.isDefined(name));
-    assertTrue(s.isGlobal(name));
+    assertTrue(s.isImported(name));
     assertTrue(s.isConstructor(name));
     assertTrue(s.isDeclaredFunction(name));
     assertTrue(s.isFunction(name));

@@ -57,7 +57,7 @@ public class JsHandler implements ContentHandler {
       input = p.parse();
       tq.expectEmpty();
 
-      DefaultCajaRewriter dcr = new DefaultCajaRewriter();
+      DefaultCajaRewriter dcr = new DefaultCajaRewriter(true, false);
       output.append(dcr.format(dcr.expand(input, mq)));
     } catch (ParseException e) {
       throw new UnsupportedContentTypeException();

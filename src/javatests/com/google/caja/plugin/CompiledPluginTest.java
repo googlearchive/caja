@@ -72,7 +72,7 @@ public class CompiledPluginTest extends TestCase {
     } catch (AssertionFailedError e) {
       // pass
     } catch (Exception e) {
-      fail("javascript asserts are borked");
+      fail("javascript asserts are borked: " + e.toString());
     }
   }
 
@@ -81,7 +81,7 @@ public class CompiledPluginTest extends TestCase {
         "\n  var div = document.createElement('DIV');" +
         "\n  div.id = 'hello-base-post';" +
         "\n  document.body.appendChild(div);" +
-        "\n  testImports.main();" +
+        "\n  testImports.exports.main();" +
         "\n" +
         "\n  assertEquals(" +
         "\n      '<h1>Hello World</h1>'," +
@@ -99,7 +99,7 @@ public class CompiledPluginTest extends TestCase {
             "file:///hello-world.css"),
         new PluginFile(
             new StringReader(
-                "function main() {\n" +
+                "exports.main = function() {\n" +
                 "  document.getElementById('hello-base')\n" +
                 "      .innerHTML = sayHello();\n" +
                 "}"),
@@ -113,13 +113,13 @@ public class CompiledPluginTest extends TestCase {
         "\n  div.id = 'base-post';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
-        "\n  testImports.main(1);" +
+        "\n  testImports.exports.main(1);" +
         "\n  assertEquals(" +
         "\n      'Branch A'," +
         "\n      document.getElementById('base-post').innerHTML" +
         "\n      );" +
         "\n" +
-        "\n  testImports.main(0);" +
+        "\n  testImports.exports.main(0);" +
         "\n  assertEquals(" +
         "\n      'Branch B'," +
         "\n      document.getElementById('base-post').innerHTML" +
@@ -137,7 +137,7 @@ public class CompiledPluginTest extends TestCase {
             "file:///conditional-test.gxp"),
         new PluginFile(
             new StringReader(
-                "function main(c) {\n" +
+                "exports.main = function(c) {\n" +
                 "  document.getElementById('base').setInnerHTML(test(c));\n" +
                 "}"),
             "file:///conditional-test.js")
@@ -150,7 +150,7 @@ public class CompiledPluginTest extends TestCase {
         "\n  div.id = 'base-post';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
-        "\n  testImports.main(['foo', 'bar', 'boo & baz']);" +
+        "\n  testImports.exports.main(['foo', 'bar', 'boo & baz']);" +
         "\n  assertEquals(" +
         "\n      '<ul><li>foo</li><li>bar</li><li>boo &amp; baz</li></ul>'," +
         "\n      document.getElementById('base-post').innerHTML" +
@@ -168,7 +168,7 @@ public class CompiledPluginTest extends TestCase {
             "file:///loop-test.gxp"),
         new PluginFile(
             new StringReader(
-                "function main(items) {\n" +
+                "exports.main = function(items) {\n" +
                 "  document.getElementById('base')\n" +
                 "      .setInnerHTML(test(items));\n" +
                 "}"),
@@ -182,7 +182,7 @@ public class CompiledPluginTest extends TestCase {
         "\n  div.id = 'base-post';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
-        "\n  testImports.main();" +
+        "\n  testImports.exports.main();" +
         "\n  assertEquals(" +
         "\n      '<a class=\"class1 class2\"' +" +
         "\n      ' href=\"http://proxy/?uri=foo.html%3fa%3db%26c%3dd\"' +" +
@@ -220,7 +220,7 @@ public class CompiledPluginTest extends TestCase {
             "file:///attr-test.gxp"),
         new PluginFile(
             new StringReader(
-                "function main() {\n" +
+                "exports.main = function() {\n" +
                 "  document.getElementById('base').setInnerHTML(\n" +
                 "       test('foo.html?a=b&c=d', '\"hover text\"',\n" +
                 "            ['class1', 'class2']));\n" +
@@ -235,7 +235,7 @@ public class CompiledPluginTest extends TestCase {
         "\n  div.id = 'base-post';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
-        "\n  testImports.main();" +
+        "\n  testImports.exports.main();" +
         "\n  assertEquals(" +
         "\n      '(1,2)(1,2)'," +
         "\n      document.getElementById('base-post').innerHTML" +
@@ -258,7 +258,7 @@ public class CompiledPluginTest extends TestCase {
             "file:///call-test-2.gxp"),
         new PluginFile(
             new StringReader(
-                "function main() {\n" +
+                "exports.main = function() {\n" +
                 "  document.getElementById('base')\n" +
                 "      .setInnerHTML(callerTemplate());\n" +
                 "}"),
@@ -272,7 +272,7 @@ public class CompiledPluginTest extends TestCase {
         "\n  div.id = 'base-post';" +
         "\n  document.body.appendChild(div);" +
         "\n" +
-        "\n  testImports.main();" +
+        "\n  testImports.exports.main();" +
         "\n  assertEquals(" +
         "\n      'left : 25px ; width : 30px ; margin : 5px 5px 5px 5px ; ' +" +
         "\n      'color : #a0b0c0'," +
@@ -295,7 +295,7 @@ public class CompiledPluginTest extends TestCase {
             "file:///css-test-1.css"),
         new PluginFile(
             new StringReader(
-                "function main() {\n" +
+                "exports.main = function() {\n" +
                 "  document.getElementById('base').setStyle(\n" +
                 "      styles(20, 60, 5, 0x8090a0, 0xc0d0e0));\n" +
                 "}"),
@@ -376,6 +376,7 @@ public class CompiledPluginTest extends TestCase {
             + "  return 'http://proxy/?uri=' + encodeURIComponent(uri);\n"
             + "} };\n"
             + "var testImports = ___.getNewModuleHandler().getImports();\n"
+            + "testImports.exports = {};\n"
             + "attachDocumentStub('-post', uriCallback, testImports);\n"
             + "testImports.log = ___.simpleFunc(function(s) {\n"
             + "  console.log(s);\n"

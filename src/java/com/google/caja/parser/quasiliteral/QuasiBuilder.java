@@ -64,7 +64,7 @@ public class QuasiBuilder {
    * @param patternText a quasiliteral pattern.
    * @param specimen a specimen parse tree node.
    * @return whether the match succeeded.
-   * @see QuasiNode#matchHere(com.google.caja.parser.ParseTreeNode)
+   * @see QuasiNode#match(com.google.caja.parser.ParseTreeNode)
    */
   public static boolean match(String patternText, ParseTreeNode specimen) {
     return match(patternText, specimen, new HashMap<String, ParseTreeNode>());
@@ -78,13 +78,13 @@ public class QuasiBuilder {
    * @param specimen a specimen parse tree node.
    * @param bindings a map into which hole bindings resulting from the match will be placed.
    * @return whether the match succeeded.
-   * @see QuasiNode#matchHere(com.google.caja.parser.ParseTreeNode)
+   * @see QuasiNode#match(com.google.caja.parser.ParseTreeNode)
    */
   public static boolean match(
       String patternText,
       ParseTreeNode specimen,
       Map<String, ParseTreeNode> bindings) {
-    Map<String, ParseTreeNode> tempBindings = getPatternNode(patternText).matchHere(specimen);
+    Map<String, ParseTreeNode> tempBindings = getPatternNode(patternText).match(specimen);
 
     if (tempBindings != null) {
       bindings.putAll(tempBindings);
@@ -99,10 +99,10 @@ public class QuasiBuilder {
    * @param patternText a quasiliteral pattern.
    * @param bindings a set of bindings from names to parse tree nodes.
    * @return a new parse tree node resulting from the substitution.
-   * @see QuasiNode#substituteHere(java.util.Map)
+   * @see QuasiNode#substitute(java.util.Map)
    */
   public static ParseTreeNode subst(String patternText, Map<String, ParseTreeNode> bindings) {
-    return getPatternNode(patternText).substituteHere(bindings);
+    return getPatternNode(patternText).substitute(bindings);
   }
 
   /**

@@ -17,317 +17,286 @@ package com.google.caja.parser.quasiliteral;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
-import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.util.CajaTestCase;
 
 import java.net.URI;
-import java.util.List;
+import java.util.Map;
 
 /**
  *
  * @author ihab.awad@gmail.com
  */
 public class MatchTest extends CajaTestCase {
+  private Map<String, ParseTreeNode> m;
+
   public void testExactMatch() throws Exception {
-    List<QuasiNode.QuasiMatch> m;
-
     String code = "function foo() { var a = b; }";
-    m = match(code, code);
-    assertEquals(1, m.size());
+    match(code, code);
+    assertNotNull(m);
 
-    m = match(code, "function bar() { var c = d; }");
-    assertEquals(0, m.size());
+    match(code, "function bar() { var c = d; }");
+    assertNull(m);
   }
 
   public void testSingleHole() throws Exception {
-    List<QuasiNode.QuasiMatch> m;
-
-    m = match(
+    match(
         "x; @a;",
         "x;");
-    assertEquals(0, m.size());
+    assertNull(m);
 
-    m = match(
+    match(
         "x; @a;",
         "x; x;");
-    assertEquals(1, m.size());
-    assertEquals(ExpressionStmt.class, m.get(0).getBindings().get("a").getClass());
+    assertNotNull(m);
+    assertEquals(ExpressionStmt.class, m.get("a").getClass());
 
-    m = match(
+    match(
         "x; @a;",
         "x; x; x;");
-    assertEquals(0, m.size());
+    assertNull(m);
   }
 
   public void testSingleOptionalHole() throws Exception {
-    List<QuasiNode.QuasiMatch> m;
-
-    m = match(
+    match(
         "x; @a?;",
         "x;");
-    assertEquals(1, m.size());
-    assertNull(m.get(0).getBindings().get("a"));
+    assertNotNull(m);
+    assertNull(m.get("a"));
 
-    m = match(
+    match(
         "x; @a?;",
         "x; x;");
-    assertEquals(1, m.size());
-    assertEquals(ExpressionStmt.class, m.get(0).getBindings().get("a").getClass());
+    assertNotNull(m);
+    assertEquals(ExpressionStmt.class, m.get("a").getClass());
 
-    m = match(
+    match(
         "x; @a?;",
         "x; x; x");
-    assertEquals(0, m.size());
+    assertNull(m);
    }
 
   public void testMultipleHole() throws Exception {
-    List<QuasiNode.QuasiMatch> m;
-
-    m = match(
+    match(
         "x; @a*;",
         "x;");
-    assertEquals(1, m.size());
-    assertEquals(ParseTreeNodeContainer.class, m.get(0).getBindings().get("a").getClass());
-    assertEquals(0, m.get(0).getBindings().get("a").children().size());
+    assertNotNull(m);
+    assertEquals(ParseTreeNodeContainer.class, m.get("a").getClass());
+    assertEquals(0, m.get("a").children().size());
 
-    m = match(
+    match(
         "x; @a*;",
         "x; x;");
-    assertEquals(1, m.size());
-    assertEquals(ParseTreeNodeContainer.class, m.get(0).getBindings().get("a").getClass());
-    assertEquals(1, m.get(0).getBindings().get("a").children().size());
-    assertEquals(
-        ExpressionStmt.class,
-        m.get(0).getBindings().get("a").children().get(0).getClass());
+    assertNotNull(m);
+    assertEquals(ParseTreeNodeContainer.class, m.get("a").getClass());
+    assertEquals(1, m.get("a").children().size());
+    assertEquals(ExpressionStmt.class, m.get("a").children().get(0).getClass());
 
-    m = match(
+    match(
         "x; @a*;",
         "x; x; x;");
-    assertEquals(2, m.get(0).getBindings().get("a").children().size());
+    assertNotNull(m);
+    assertEquals(2, m.get("a").children().size());
    }
 
   public void testMultipleNonemptyHole() throws Exception {
-    List<QuasiNode.QuasiMatch> m;
-
-    m = match(
+    match(
         "x; @a+;",
         "x;");
-    assertEquals(0, m.size());
+    assertNull(m);
 
-    m = match(
+    match(
         "x; @a+;",
         "x; x;");
-    assertEquals(1, m.size());
-    assertEquals(ParseTreeNodeContainer.class, m.get(0).getBindings().get("a").getClass());
-    assertEquals(1, m.get(0).getBindings().get("a").children().size());
-    assertEquals(
-        ExpressionStmt.class,
-        m.get(0).getBindings().get("a").children().get(0).getClass());
+    assertNotNull(m);
+    assertEquals(ParseTreeNodeContainer.class, m.get("a").getClass());
+    assertEquals(1, m.get("a").children().size());
+    assertEquals(ExpressionStmt.class, m.get("a").children().get(0).getClass());
 
-    m = match(
+    match(
         "x; @a+;",
         "x; x; x;");
-    assertEquals(2, m.get(0).getBindings().get("a").children().size());
+    assertNotNull(m);
+    assertEquals(2, m.get("a").children().size());
   }
 
   public void testObjectConstructorHole() throws Exception {
-    List<QuasiNode.QuasiMatch> m;
-
-    m = match(
+    match(
         "({ @k*: @v* });",
         "({ })");
-    assertEquals(1, m.size());
-    assertEquals(ParseTreeNodeContainer.class, m.get(0).getBindings().get("k").getClass());
-    assertEquals(ParseTreeNodeContainer.class, m.get(0).getBindings().get("v").getClass());
-    assertEquals(0, m.get(0).getBindings().get("k").children().size());
-    assertEquals(0, m.get(0).getBindings().get("v").children().size());
+    assertNotNull(m);
+    assertEquals(ParseTreeNodeContainer.class, m.get("k").getClass());
+    assertEquals(ParseTreeNodeContainer.class, m.get("v").getClass());
+    assertEquals(0, m.get("k").children().size());
+    assertEquals(0, m.get("v").children().size());
 
-    m = match(
+    match(
         "({ @k* : @v* });",
         "({ a: 3, b: 4 })");
-    assertEquals(1, m.size());
-    assertEquals(2, m.get(0).getBindings().get("k").children().size());
-    assertEquals(2, m.get(0).getBindings().get("v").children().size());
+    assertNotNull(m);
+    assertEquals(2, m.get("k").children().size());
+    assertEquals(2, m.get("v").children().size());
     assertEquals(
         "a",
-        ((StringLiteral)m.get(0).getBindings().get("k").children().get(0)).getUnquotedValue());
+        ((StringLiteral)m.get("k").children().get(0)).getUnquotedValue());
     assertEquals(
         "b",
-        ((StringLiteral)m.get(0).getBindings().get("k").children().get(1)).getUnquotedValue());
+        ((StringLiteral)m.get("k").children().get(1)).getUnquotedValue());
     assertEquals(
         3,
-        ((IntegerLiteral)m.get(0).getBindings().get("v").children().get(0)).getValue().intValue());
+        ((IntegerLiteral)m.get("v").children().get(0)).getValue().intValue());
     assertEquals(
         4,
-        ((IntegerLiteral)m.get(0).getBindings().get("v").children().get(1)).getValue().intValue());
+        ((IntegerLiteral)m.get("v").children().get(1)).getValue().intValue());
   }
 
   public void testTrailingUnderscoreIdentifierHole() throws Exception {
-    List<QuasiNode.QuasiMatch> m = match(
+    match(
         "@a___ = 5;",
         "foo___ = 5;");
-    assertEquals(1, m.size());
-    QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals("foo", ((Identifier)m0.getBindings().get("a")).getValue());
+    assertNotNull(m);
+    assertEquals("foo", ((Identifier)m.get("a")).getValue());
   }
 
   public void testLiteral() throws Exception {
-    List<QuasiNode.QuasiMatch> m = match(
+    match(
         "x = @a;",
         "x = 3;");
-    assertEquals(1, m.size());
-    QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals(Operator.ASSIGN, ((Operation)m0.getRoot()).getOperator());
-    assertEquals(3, ((IntegerLiteral)m0.getBindings().get("a")).getValue().intValue());
-    m = match(
+    assertNotNull(m);
+    assertEquals(3, ((IntegerLiteral)m.get("a")).getValue().intValue());
+
+    match(
         "x = @a;",
         "y = 3;");
-    assertEquals(0, m.size());
+    assertNull(m);
   }
 
   public void testReference() throws Exception {
-    List<QuasiNode.QuasiMatch> m = match(
+    match(
         "x = @a;",
         "x = y;");
-    assertEquals(1, m.size());
-    QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals(Operator.ASSIGN, ((Operation)m0.getRoot()).getOperator());
-    assertEquals("y", ((Reference)m0.getBindings().get("a")).getIdentifierName());
-    m = match(
+    assertNotNull(m);
+    assertEquals("y", ((Reference)m.get("a")).getIdentifierName());
+
+    match(
         "x = @a;",
         "y = y;");
-    assertEquals(0, m.size());
+    assertNull(m);
   }
 
   public void testExpression() throws Exception {
-    List<QuasiNode.QuasiMatch> m = match(
+    match(
         "x = @a;",
         "x = pi() * (r * r);");
-    assertEquals(1, m.size());
-    QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals(Operator.ASSIGN, ((Operation)m0.getRoot()).getOperator());
-    assertEquals(Operator.MULTIPLICATION, ((Operation)m0.getBindings().get("a")).getOperator());
-  }
-
-  public void testAnyExpression() throws Exception {
-    List<QuasiNode.QuasiMatch> m = match(
-        "@a;",
-        "x = 3;");
-
-    assertEquals(3, m.size());
-
-    assertEquals(Operator.ASSIGN, ((Operation)m.get(0).getRoot()).getOperator());
-    assertEquals(Reference.class, m.get(1).getRoot().getClass());
-    assertEquals("x", m.get(1).getRoot().children().get(0).getValue());
-
-    assertEquals(3, ((IntegerLiteral)m.get(2).getRoot()).getValue().intValue());
+    assertNotNull(m);
+    assertEquals(Operator.MULTIPLICATION, ((Operation)m.get("a")).getOperator());
   }
 
   public void testFunctionIdentifier() throws Exception {
-    List<QuasiNode.QuasiMatch> m = match(
+    match(
         "function @a() { }",
         "function x() { }");
-    assertEquals(1, m.size());
-    QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals(FunctionConstructor.class, m0.getRoot().getClass());
-    assertEquals("x", ((Identifier)m0.getBindings().get("a")).getValue());
+    assertNotNull(m);
+    assertEquals("x", ((Identifier)m.get("a")).getValue());
   }
 
   public void testFunctionWithBody() throws Exception {
-    List<QuasiNode.QuasiMatch> m = match(
+    match(
         "function @a() { x = 3; y = 4; }",
         "function x() { x = 3; y = 4; }");
-    assertEquals(1, m.size());
-    QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals("x", ((Identifier)m0.getBindings().get("a")).getValue());
-    m = match(
+    assertNotNull(m);
+    assertEquals("x", ((Identifier)m.get("a")).getValue());
+    
+    match(
         "function @a() { x = 3; y = 4; }",
         "function x() { x = 3; y = 3; }");
-    assertEquals(0, m.size());
+    assertNull(m);
   }
 
   public void testFormalParams() throws Exception {
-    List<QuasiNode.QuasiMatch> m = match(
+    match(
         "function(@ps*) { @b*; }",
         "function(x, y) { x = 3; y = 4; }");
-    assertEquals(1, m.size());
-    QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals(FunctionConstructor.class, m0.getRoot().getClass());
-    assertEquals(2, m0.getBindings().get("ps").children().size());
-    assertEquals(FormalParam.class, m0.getBindings().get("ps").children().get(0).getClass());
+    assertNotNull(m);
+    assertEquals(2, m.get("ps").children().size());
+    assertEquals(FormalParam.class, m.get("ps").children().get(0).getClass());
     assertEquals(
         "x",
-        ((FormalParam)m0.getBindings().get("ps").children().get(0)).getIdentifierName());
-    assertEquals(2, m0.getBindings().get("b").children().size());
-    assertEquals(ExpressionStmt.class, m0.getBindings().get("b").children().get(0).getClass());
+        ((FormalParam)m.get("ps").children().get(0)).getIdentifierName());
+    assertEquals(2, m.get("b").children().size());
+    assertEquals(ExpressionStmt.class, m.get("b").children().get(0).getClass());
   }
 
   public void testDotAccessorReference() throws Exception {
-    List<QuasiNode.QuasiMatch> m = match(
+    match(
         "@a.@b;",
         "foo.bar;");
-    assertEquals(1, m.size());
-    QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals("foo", ((Reference)m0.getBindings().get("a")).getIdentifierName());
-    assertEquals("bar", ((Reference)m0.getBindings().get("b")).getIdentifierName());
+    assertNotNull(m);
+    assertEquals("foo", ((Reference)m.get("a")).getIdentifierName());
+    assertEquals("bar", ((Reference)m.get("b")).getIdentifierName());
   }
 
   public void testBracketAccessorReference() throws Exception {
-    List<QuasiNode.QuasiMatch> m = match(
+    match(
         "@a[@b];",
         "foo[bar];");
-    assertEquals(1, m.size());
-    QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals("foo", ((Reference)m0.getBindings().get("a")).getIdentifierName());
-    assertEquals("bar", ((Reference)m0.getBindings().get("b")).getIdentifierName());
+    assertNotNull(m);
+    assertEquals("foo", ((Reference)m.get("a")).getIdentifierName());
+    assertEquals("bar", ((Reference)m.get("b")).getIdentifierName());
   }
 
   public void testBracketAccessorStringLiteral() throws Exception {
-    List<QuasiNode.QuasiMatch> m = match(
+    match(
         "@a[@b];",
         "foo[\"bar\"];");
-    assertEquals(1, m.size());
-    QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals("foo", ((Reference)m0.getBindings().get("a")).getIdentifierName());
-    assertEquals("bar", ((StringLiteral)m0.getBindings().get("b")).getUnquotedValue());
+    assertNotNull(m);
+    assertEquals("foo", ((Reference)m.get("a")).getIdentifierName());
+    assertEquals("bar", ((StringLiteral)m.get("b")).getUnquotedValue());
   }
 
   public void testBracketAccessorIntegerLiteral() throws Exception {
-    List<QuasiNode.QuasiMatch> m = match(
+    match(
         "@a[@b];",
         "foo[3];");
-    assertEquals(1, m.size());
-    QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals("foo", ((Reference)m0.getBindings().get("a")).getIdentifierName());
-    assertEquals(3, ((IntegerLiteral)m0.getBindings().get("b")).getValue().intValue());
+    assertNotNull(m);
+    assertEquals("foo", ((Reference)m.get("a")).getIdentifierName());
+    assertEquals(3, ((IntegerLiteral)m.get("b")).getValue().intValue());
   }
 
   public void testNew() throws Exception {
-    List<QuasiNode.QuasiMatch> m = match(
+    match(
         "new @a(@b*);",
         "new foo(x, y, z);");
-    assertEquals(1, m.size());
-    QuasiNode.QuasiMatch m0 = m.get(0);
-    assertEquals("foo", ((Reference)m0.getBindings().get("a")).getIdentifierName());
-    assertEquals(Reference.class, m0.getBindings().get("a").getClass());
-    assertEquals(3, m0.getBindings().get("b").children().size());
-    assertEquals(Reference.class, m0.getBindings().get("b").children().get(0).getClass());
+    assertNotNull(m);
+    assertEquals("foo", ((Reference)m.get("a")).getIdentifierName());
+    assertEquals(Reference.class, m.get("a").getClass());
+    assertEquals(3, m.get("b").children().size());
+    assertEquals(Reference.class, m.get("b").children().get(0).getClass());
   }
 
-  public List<QuasiNode.QuasiMatch> match(String pattern, String source)
+  private void match(String pattern, String source)
       throws Exception {
     QuasiNode qn = QuasiBuilder.parseQuasiNode(
         new InputSource(URI.create("built-in:///js-quasi-literals")),
         pattern);
     System.out.println(qn.render());
-    List<QuasiNode.QuasiMatch> result = qn.match(quasi(fromString(source)));
-    System.out.println(result);
-    return result;
+    m = null;
+    findMatch(qn, quasi(fromString(source)));
+    if (m != null) System.out.println(m);
+  }
+
+  private void findMatch(QuasiNode qn, ParseTreeNode n) {
+    m = qn.match(n);
+    if (m != null) return;
+    for (ParseTreeNode c : n.children()) {
+      findMatch(qn, c);
+      if (m != null) return;
+    }
   }
 }

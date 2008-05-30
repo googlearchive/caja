@@ -67,7 +67,9 @@ public abstract class RewriterTestCase extends CajaTestCase {
     mq.getMessages().clear();
     ParseTreeNode expanded = newRewriter().expand(js(fromString(input)), mq);
 
-    assertFalse(render(expanded), mq.getMessages().isEmpty());
+    assertFalse(
+        "Expected error, found none: " + error,
+        mq.getMessages().isEmpty());
 
     StringBuilder messageText = new StringBuilder();
     for (Message m : mq.getMessages()) {
@@ -144,6 +146,12 @@ public abstract class RewriterTestCase extends CajaTestCase {
   protected void assertAddsMessage(String src, MessageTypeInt type, MessageLevel level)
       throws Exception {
     checkAddsMessage(js(fromString(src)), type, level);
+  }
+
+  protected void checkAddsMessage(
+        ParseTreeNode inputNode,
+        MessageTypeInt type)  {
+    checkAddsMessage(inputNode, type, type.getLevel());
   }
 
   protected void checkAddsMessage(

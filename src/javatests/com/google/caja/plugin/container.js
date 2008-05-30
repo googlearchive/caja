@@ -28,5 +28,7 @@ ___.simpleFunc(assertTrue);
 imports.assertFalse = assertFalse;
 ___.simpleFunc(assertFalse);
 imports.document = document;
+imports.console = console;
+___.simpleFunc(console.log);
 ___.getNewModuleHandler().setImports(imports);
 imports.htmlEmitter___ = new HtmlEmitter(document.getElementById("test-test"));

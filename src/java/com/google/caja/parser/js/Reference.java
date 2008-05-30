@@ -40,7 +40,8 @@ public final class Reference extends AbstractExpression<ParseTreeNode> {
     List<? extends ParseTreeNode> children = children();
     this.identifier = (Identifier) children.get(0);
     if (identifier.getName() == null) {
-      throw new NullPointerException();
+      throw new NullPointerException(
+          "Cannot build Reference with null identifier");
     }
     if (children.size() > 1) {
       throw new IllegalArgumentException(

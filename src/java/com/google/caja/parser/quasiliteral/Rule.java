@@ -14,16 +14,13 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
-import com.google.caja.parser.js.BooleanLiteral;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
@@ -282,39 +279,6 @@ public abstract class Rule implements MessagePart {
         new ParseTreeNodeContainer(rhss));
   }
 
-  // TODO(ihab.awad): Refactor so the global case of this is not redundant with the
-  // rewriting we do for assignment in the global scope. Part of the problem is that
-  // the helper functions here "pretend" not to know about the rewriting rules, when
-  // in fact they are pretty closely coupled with them.
-  protected ParseTreeNode expandDef(
-      ParseTreeNode symbol,
-      ParseTreeNode value,
-      Rule rule,
-      Scope scope,
-      MessageQueue mq) {
-    if (!(symbol instanceof Reference)) {
-      throw new RuntimeException("expandDef on non-Reference: " + symbol);
-    }
-    String sName = getReferenceName(symbol);
-    if (scope.isGlobal(sName)) {
-      return s(new ExpressionStmt((Expression) QuasiBuilder.substV(
-          "@temp = @value," +
-          ReservedNames.IMPORTS + ".@sCanSet ?" +
-          "  (" + ReservedNames.IMPORTS + ".@s = @temp) :" +
-          "  ___.setPub(" + ReservedNames.IMPORTS + ", @sName, @temp);",
-          "s", symbol,
-          "sCanSet", newReference(sName + "_canSet___"),
-          "sName", toStringLiteral(symbol),
-          "temp", s(new Reference(scope.declareStartOfScopeTempVariable())),
-          "value", value)));
-    } else {
-      return QuasiBuilder.substV(
-          "var @s = @v",
-          "s", symbol.children().get(0),
-          "v", value);
-    }
-  }
-
   protected ParseTreeNode expandMember(
       ParseTreeNode member,
       Rule rule,
@@ -379,25 +343,6 @@ public abstract class Rule implements MessagePart {
     mq.addMessage(RewriterMessageType.MAP_EXPRESSION_EXPECTED,
         memberMap.getFilePosition(), rule, memberMap);
     return memberMap;
-  }
-
-  // TODO(erights): Remove this when first class constructors are checked in.
-  protected ParseTreeNode expandReferenceToImports(
-      ParseTreeNode ref,
-      Scope scope,
-      MessageQueue mq) {
-    String xName = getReferenceName(ref);
-    if (scope.isGlobal(xName)) {
-      return QuasiBuilder.substV(
-          ("IMPORTS___.@xCanRead"
-           + "    ? IMPORTS___.@x"
-           + "    : ___.readPub(IMPORTS___, @xName, true);"),
-          "x", ref,
-          "xCanRead", newReference(xName + "_canRead___"),
-          "xName", toStringLiteral(ref));
-    } else {
-      return ref;
-    }
   }
 
   protected boolean checkMapExpression(
@@ -508,15 +453,15 @@ public abstract class Rule implements MessagePart {
    */
   ReadAssignOperands deconstructReadAssignOperand(
       Expression operand, Scope scope, MessageQueue mq) {
-    if (isLocalReference(operand, scope)) {
+    if (operand instanceof Reference) {
+      if (scope.isImported(((Reference) operand).getIdentifierName())) {
+        mq.addMessage(
+            RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE,
+            operand.getFilePosition(), this, operand);
+        return null;
+      }
       return sideEffectlessReadAssignOperand(
           (Expression) rewriter.expand(operand, scope, mq));
-    } else if (operand instanceof Reference) {
-      rewriter.expand(operand, scope, mq);
-      Reference imports = newReference(ReservedNames.IMPORTS);
-      imports.setFilePosition(FilePosition.startOf(operand.getFilePosition()));
-      return sideEffectingReadAssignOperand(
-          imports, toStringLiteral(operand), scope, mq);
     } else if (operand instanceof Operation) {
       Operation op = (Operation) operand;
       switch (op.getOperator()) {
@@ -601,12 +546,10 @@ public abstract class Rule implements MessagePart {
         && Keyword.THIS.toString().equals(getReferenceName(uncajoledObject));
 
     Expression rvalueCajoled = (Expression) QuasiBuilder.substV(
-        "___.@flavorOfRead(@object, @key, @isGlobal)",
+        "___.@flavorOfRead(@object, @key)",
         "flavorOfRead", newReference(isProp ? "readProp" : "readPub"),
         "object", object,
-        "key", key,
-        // Make sure exception thrown if global variable not defined.
-        "isGlobal", new BooleanLiteral(isImportsReference(object)));
+        "key", key);
 
     return new ReadAssignOperands(temporaries, rvalueCajoled) {
         @Override
@@ -629,7 +572,7 @@ public abstract class Rule implements MessagePart {
    */
   private static boolean isLocalReference(Expression e, Scope scope) {
     return e instanceof Reference
-        && !scope.isGlobal(((Reference) e).getIdentifierName());
+        && !scope.isImported(((Reference) e).getIdentifierName());
   }
 
   /** True iff e is a reference to the global object. */

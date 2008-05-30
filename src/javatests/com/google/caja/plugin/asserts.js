@@ -144,3 +144,28 @@ function assertNull() {
          + 'Expected null, not ' + '<<' + a + '>>: ' + (typeof a));
   }
 }
+
+function assertThrows() {
+  var func, msg;
+  switch (arguments.length) {
+  case 1:
+    func = arguments[0];
+    break;
+  case 2:
+    func = arguments[0];
+    msg = arguments[1];
+    break;
+  default: throw 'missing arguments ' + argumetns;
+  }
+  var thrown = undefined;
+  try {
+    func();
+  } catch (ex) {
+    thrown = ex;
+  }
+  if (thrown) {
+    if (msg) { assertEquals(msg, thrown); }
+  } else {
+    fail('Did not throw ' + (msg ? msg : 'an exception'));
+  }
+}
