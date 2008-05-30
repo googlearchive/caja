@@ -1763,11 +1763,11 @@ public class DefaultCajaRewriter extends Rewriter {
           rewrittenBody.acceptPreOrder(new ExophoricFunctionRewriter(mq), null);
           return substV(
               "___.xo4a(" +
-              "    function (@formals*) { var @localThis = this; @fh*; @stmts*; @body*; })",
+              "    function (@formals*) { @fh*; @stmts*; @body*; })",
               "formals", bindings.get("formals"),
               "localThis", s(new Identifier(ReservedNames.LOCAL_THIS)),
               // It's important that body is expanded before computing fh and stmts.
-              "body", expand(rewrittenBody, scope, mq),
+              "body", expand(rewrittenBody, s2, mq),
               "fh", getFunctionHeadDeclarations(this, s2, mq),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
         }

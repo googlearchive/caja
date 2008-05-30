@@ -55,7 +55,7 @@ public class HtmlCompiledPluginTest extends TestCase {
   }
 
   // TODO(metaweta): Move as many of these as possible to DefaultCajaRewriterTest
-  // using assertConsistent
+  // using assertConsistent and the rest to DebuggingSymbolsStageTest
   public void testEmptyGadget() throws Exception {
     execGadget("", "");
   }

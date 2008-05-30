@@ -807,7 +807,7 @@ var ___;
     if (that === null) {
       fail('Internal: may not attach to null: ', meth);
     }
-    if (!isMethod(meth)) {
+    if (!isMethod(meth)  && !isSimpleFunc(meth)) {
       fail('Internal: attach should not see non-methods: ', meth);
     }
     if (meth.___ATTACHMENT___ === that) {
@@ -836,7 +836,7 @@ var ___;
   function xo4a(func, opt_name) {
     enforceType(func, 'function', opt_name);
     func.___XO4A___ = true;
-    return func;
+    return primFreeze(func);
   }
 
   /** 
@@ -951,9 +951,24 @@ var ___;
       fail("Constructors can't be called as simple functions: ", fun);
     }
     if (isMethod(fun)) {
+      // If it's an attached method, it can't be called on the wrong object.
+      if (fun.___ATTACHMENT___) {
+        return fun;
+      }
       fail("Methods can't be called as simple functions: ", fun);
     }
+    if (isXo4aFunc(fun)) {
+      fail("Exophoric functions can't be called as simple functions: ", fun);
+    }
     fail("Untamed functions can't be called as simple functions: ", fun);
+  }
+  
+  /** Only simple and exophoric functions can be called as exophoric functions */
+  function asXo4aFunc(fun) {
+    if (isXo4aFunc(fun)) { 
+      return fun; 
+    }
+    return asSimpleFunc(fun);
   }
   
   /** 
@@ -1642,6 +1657,11 @@ var ___;
     allowCall(constr.prototype, name);
   }
   
+  function useGetAndCallHandlers(constr, name, func) {
+    useGetHandler(constr, name, function() { return func; });
+    useCallHandler(constr, name, func);
+  }
+  
   /**
    * Virtually replace constr.prototype[name] with a fault-handler
    * wrapper that first verifies that <tt>this</tt> isn't frozen.
@@ -1655,12 +1675,12 @@ var ___;
    */
   function allowMutator(constr, name) {
     var original = constr.prototype[name];
-    useApplyHandler(constr.prototype, name, function(args) {
+    useGetAndCallHandlers(constr.prototype, name, xo4a(function(var_args) {
       if (isFrozen(this)) {
         fail("Can't .", name, ' a frozen object');
       }
-      return original.apply(this, args);
-    });
+      return original.apply(this, arguments);
+    }));
   }
   
   /**
@@ -1709,16 +1729,18 @@ var ___;
     'toString', 'toLocaleString', 'valueOf', 'isPrototypeOf'
   ]);
   allowRead(Object.prototype, 'length');
-  useCallHandler(Object.prototype, 'hasOwnProperty',  function(name) {
+  useGetAndCallHandlers(Object.prototype, 'hasOwnProperty', xo4a(function(name){
     name = String(name);
     return canReadPub(this, name) && hasOwnProp(this, name);
-  });
-  var pie_ = Object.prototype.propertyIsEnumerable;
-  useCallHandler(Object.prototype, 'propertyIsEnumerable', function(name) {
-    name = String(name);
-    return canReadPub(this, name) && pie_.call(this, name);
-  });
-
+  }));
+  useGetAndCallHandlers(
+      Object.prototype, 
+      'propertyIsEnumerable', 
+      xo4a(function(name) {
+        name = String(name);
+        return canReadPub(this, name) && 
+            Object.prototype.propertyIsEnumerable.call(this, name);
+  }));
 
   /**
    * A method of a constructed object can freeze its object by saying
@@ -1728,10 +1750,9 @@ var ___;
    * of a constructed object (a non-JSON container) cannot freeze it
    * without its cooperation.
    */
-  useCallHandler(Object.prototype, 'freeze_', function() {
+  useGetAndCallHandlers(Object.prototype, 'freeze_', method(function() {
     return primFreeze(this);
-  });
-  
+  }));
   
   // SECURITY HAZARD TODO(erights): Seems dangerous, but doesn't add
   // risk. Or does it? 
@@ -1739,15 +1760,13 @@ var ___;
   // SECURITY HAZARD TODO(erights): Seems dangerous, but doesn't add
   // risk. Or does it? 
   allowRead(Function.prototype, 'prototype');
+  useGetAndCallHandlers(Object.prototype, 'apply', xo4a(function(that, realArgs) {
+    return asXo4aFunc(this).apply(that, realArgs);
+  }));
+  useGetAndCallHandlers(Object.prototype, 'call', xo4a(function(that, realArgs) {
+    return asXo4aFunc(this).apply(that, Array.prototype.slice.call(arguments, 1));
+  }));
 
-  useCallHandler(Function.prototype, 'apply', function(that, realArgs) {
-    return asSimpleFunc(this).apply(that, realArgs[0]);
-  });
-  useCallHandler(Function.prototype, 'call', function(that, realArgs) {
-    return asSimpleFunc(this).apply(that, realArgs);
-  });
-  
-  
   ctor(Array, Object, 'Array');
   all2(allowMethod, Array, [
     'concat', 'join', 'slice', 'indexOf', 'lastIndexOf'
@@ -1755,14 +1774,16 @@ var ___;
   all2(allowMutator, Array, [
     'pop', 'push', 'reverse', 'shift', 'splice', 'unshift'
   ]);
-  useCallHandler(Array.prototype, 'sort', function (comparator) {
-    if (isFrozen(this)) { fail("Can't sort a frozen array"); }
+  useGetAndCallHandlers(Array.prototype, 'sort', xo4a(function(comparator) {
+    if (isFrozen(this)) {
+      fail("Can't sort a frozen array.");
+    }
     if (comparator) {
       return Array.prototype.sort.call(this, ___.asSimpleFunc(comparator));
     } else {
       return Array.prototype.sort.call(this);
     }
-  });
+  }));
 
   ctor(String, Object, 'String');
   allowSimpleFunc(String, 'fromCharCode');
@@ -1771,27 +1792,30 @@ var ___;
     'localeCompare', 'slice', 'substr', 'substring',
     'toLowerCase', 'toLocaleLowerCase', 'toUpperCase', 'toLocaleUpperCase'
   ]);
-  useCallHandler(String.prototype, 'match', function(regexp) {
+  
+  useGetAndCallHandlers(String.prototype, 'match', xo4a(function(regexp) {
     enforceMatchable(regexp);
     return this.match(regexp);
-  });
-  useCallHandler(String.prototype, 'replace', function(searchValue,
-                                                       replaceValue) {
-    enforceMatchable(searchValue);
-    return this.replace(
-        searchValue,
-        (typeof replaceValue === 'function'
-         ? ___.asSimpleFunc(replaceValue)
-         : '' + replaceValue));
-  });
-  useCallHandler(String.prototype, 'search', function(regexp) {
+  }));
+  useGetAndCallHandlers(
+      String.prototype, 
+      'replace', 
+      xo4a(function(searchValue, replaceValue) {
+        enforceMatchable(searchValue);
+        return this.replace(
+            searchValue,
+            (typeof replaceValue === 'function'
+             ? ___.asSimpleFunc(replaceValue)
+             : '' + replaceValue));
+  }));
+  useGetAndCallHandlers(String.prototype, 'search', xo4a(function(regexp) {
     enforceMatchable(regexp);
     return this.search(regexp);
-  });
-  useCallHandler(String.prototype, 'split', function(separator, limit) {
+  }));
+  useGetAndCallHandlers(String.prototype, 'split', xo4a(function(separator, limit) {
     enforceMatchable(separator);
     return this.split(separator, limit);
-  });
+  }));
   
   
   ctor(Boolean, Object, 'Boolean');

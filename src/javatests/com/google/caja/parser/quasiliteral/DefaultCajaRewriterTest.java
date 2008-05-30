@@ -149,6 +149,30 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "}));");
   }
 
+  public void testReflectiveMethodInvocation() throws Exception {
+    wartsMode = true;
+    assertConsistent(
+        "(function (first, second){this; return 'a'+first+'b'+second;}).call([],8,9);");
+    assertConsistent(
+        "var a=[]; [].push.call(a, 5, 6); a.join(',');");
+    assertConsistent(
+        "(function (a,b){this;return 'a'+a+'b'+b;}).apply([],[8,9]);");
+    assertConsistent(
+        "var a=[]; [].push.apply(a, [5, 6]); a.join(',');");
+    assertConsistent(
+        "[].sort.apply([6,5]).join('');");
+    assertConsistent(
+        "function Point() {}" +
+        "Point.prototype.add3 = function(x){return x+3;};" +
+        "var p = new Point();" +
+        "p.add3.call(p, 4);");
+    assertConsistent(
+        "function Point() {}" +
+        "Point.prototype.add3 = function(x){return x+3;};" +
+        "var p = new Point();" +
+        "p.add3.apply(p, [4]);");
+  }
+  
   public void testPrimordialObjectExtension() throws Exception {
     wartsMode = true;
     assertConsistent(
@@ -1748,15 +1772,14 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     wartsMode = true;
     checkSucceeds(
         "function (x) { return this.x; };",
-        "var x0___;" +
         "___.xo4a(" +
         "    function (x) {" +
-        "       var t___ = this;" +
-        "       var t___ = this;" +
-        "       return " + weldReadPub(
-                               "t___",
-                               "x",
-                               "x0___") + ";" +
+        "      var t___ = this;" +
+        "      var x0___;" +
+        "      return " + weldReadPub(
+                              "t___",
+                              "x",
+                              "x0___") + ";" +
         "});");
     checkFails(
         "function (k) { return this[k]; }",
@@ -1774,7 +1797,6 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "function () { 'foo' in this; }",
         "___.xo4a(" +
         "    function () {" +
-        "      var t___ = this;" +
         "      var t___ = this;" +
         "      'foo' in t___;" +
         "    })");
