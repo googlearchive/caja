@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -96,6 +98,11 @@ public final class CssSchema {
     // All CSS style sheets are case-insensitive, except for parts
     // that are not under the control of CSS.
     return properties.get(propertyName.toLowerCase());
+  }
+
+  /** All defined properties including disallowed ones. */
+  public Collection<CssPropertyInfo> getCssProperties() {
+    return Collections.unmodifiableCollection(properties.values());
   }
 
   /**

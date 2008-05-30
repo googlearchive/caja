@@ -319,7 +319,7 @@
       "dom2property": "cssFloat" },
 
     { "key": "font-family",
-      "signature": "[[ <family-name> | <generic-family> ] [, <family-name> | <generic-family>]* ] | inherit",
+      "signature": "[[ <family-name> | <generic-family> ] [, [ <family-name> | <generic-family> ]]* ] | inherit",
       "default": null, "default-comment": "depends on user agent",
       "appliesTo": "*",
       "inherited": true,

@@ -20,16 +20,9 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.parser.css.CssTree.StyleSheet;
-import com.google.caja.parser.js.Statement;
-import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
-import com.google.caja.reporting.MessageLevel;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.TestUtil;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  *
@@ -40,7 +33,7 @@ public class CssParserTest extends CajaTestCase {
   public void testBadHashValue() throws Exception {
     throwsParseException("h1 { color: #OOOOOO}");
   }
-  
+
   public void testUnescape() throws Exception {
     FilePosition pos = FilePosition.instance(is, 1, 1, 1, 1);
     assertEquals("", CssParser.unescape(
@@ -99,7 +92,7 @@ public class CssParserTest extends CajaTestCase {
     stylesheet.format(new MessageContext(), sb);
     assertEquals(golden.trim(), sb.toString().trim());
   }
-  
+
   private void throwsParseException(String fuzzString) {
     try {
       parseString(fuzzString);
@@ -112,7 +105,7 @@ public class CssParserTest extends CajaTestCase {
       fail();
     }
   }
-  
+
   private StyleSheet parseString(String fuzzString) throws Exception {
     return css(fromString(fuzzString));
   }

@@ -32,6 +32,7 @@ import com.google.caja.lexer.escaping.EscapingTest;
 import com.google.caja.opensocial.DefaultGadgetRewriterTest;
 import com.google.caja.opensocial.GadgetParserTest;
 import com.google.caja.opensocial.applet.ExpressionLanguageStageTest;
+import com.google.caja.opensocial.service.CajolingServiceTest;
 import com.google.caja.parser.ParseTreeNodeTest;
 import com.google.caja.parser.ParserBaseTest;
 import com.google.caja.parser.css.CssParserTest;
@@ -49,6 +50,8 @@ import com.google.caja.parser.quasiliteral.ScopeTest;
 import com.google.caja.parser.quasiliteral.IllegalReferenceCheckRewriterTest;
 import com.google.caja.parser.quasiliteral.RewriterTest;
 import com.google.caja.plugin.CompiledPluginTest;
+import com.google.caja.plugin.CssCompilerTest;
+import com.google.caja.plugin.CssPropertyPatternsTest;
 import com.google.caja.plugin.CssRewriterTest;
 import com.google.caja.plugin.CssTemplateTest;
 import com.google.caja.plugin.CssValidatorTest;
@@ -89,12 +92,15 @@ public class AllTests {
     Class<? extends TestCase>[] testClasses = new Class[] {
           AbstractMessageQueueTest.class,
           BuildInfoTest.class,
+          CajolingServiceTest.class,
           CharProducerTest.class,
           CommentLexerTest.class,
           CompiledPluginTest.class,
           ConfigUtilTest.class,
+          CssCompilerTest.class,
           CssLexerTest.class,
           CssParserTest.class,
+          CssPropertyPatternsTest.class,
           CssRewriterTest.class,
           CssSchemaTest.class,
           CssTemplateTest.class,
@@ -109,6 +115,7 @@ public class AllTests {
           EventStoreTest.class,
           ExpressionLanguageStageTest.class,
           ExpressionSanitizerTest.class,
+          FuzzedParserTest.class,
           GadgetParserTest.class,
           GxpCompilerTest.class,
           GxpValidatorTest.class,
@@ -133,7 +140,6 @@ public class AllTests {
           ParseTreeNodeTest.class,
           ParserBaseTest.class,
           ParserTest.class,
-          FuzzedParserTest.class,
           PunctuationTrieTest.class,
           QuasiBuilderTest.class,
           RRuleTest.class,
