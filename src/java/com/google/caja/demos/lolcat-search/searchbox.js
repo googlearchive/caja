@@ -25,13 +25,13 @@
  * Injected by the container.
  * @type {SearchEngine}
  */
-var searchEngine;
+searchEngine;
 /**
  * Takes a search result and does something with it.
  * This is injected by the container.
  * @type {Function}.
  */
-var resultConsumer;
+resultConsumer;
 /**
  * Search results as from {@code SearchEngine.webSearch}.
  * @type {Array.<Object>}

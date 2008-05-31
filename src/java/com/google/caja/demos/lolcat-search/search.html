@@ -114,6 +114,7 @@
             = searchEngine;
         ___.allowRead(searchBoxImports, 'searchEngine');
         ___.allowRead(kittensImports, 'searchEngine');
+      })();
     </script>
 
     <script type="text/javascript">
@@ -124,9 +125,8 @@
 
     <!-- Allow searchBoxImports to talk to kittens. -->
     <script type="text/javascript">
-        searchBoxImports.resultConsumer = kittensImports.exports.showKitten;
-        ___.allowRead(searchBoxImports, 'resultConsumer');
-      })();
+      searchBoxImports.resultConsumer = kittensImports.exports.showKitten;
+      ___.allowRead(searchBoxImports, 'resultConsumer');
     </script>
 
     <script type="text/javascript">

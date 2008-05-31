@@ -21,7 +21,7 @@
 
 
 /** @type {SearchEngine} */
-var searchEngine;
+searchEngine;
 
 /**
  * @param {string} query a search query.
@@ -39,7 +39,7 @@ exports.showKitten = function showKitten(result) {
 
   // Search for cat pictures.
   searchEngine.imageSearch(
-      'cute +(kitten OR cat) ' + title,
+      '(+kitten OR +cat) ' + title,
       function (imageResults) {
         var n = imageResults.length;
         if (!n) {
