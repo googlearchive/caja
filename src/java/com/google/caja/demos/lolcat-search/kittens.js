@@ -27,7 +27,7 @@ var searchEngine;
  * @param {string} query a search query.
  * @param {string} snippet a search result snippet.
  */
-this.showKitten = function showKitten(result) {
+exports.showKitten = function showKitten(result) {
   var title = result.titleHtml.replace(/<\/?\w[^>]*>/g, '')
   var snippet = result.snippetHtml.replace(/<\/?\w[^>]*>/g, '');
 

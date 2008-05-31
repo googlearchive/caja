@@ -92,6 +92,8 @@
     </script>
     <script type="text/javascript">
       var kittensImports = ___.copy(___.sharedImports);
+      kittensImports.exports = {};
+      ___.allowRead(searchBoxImports, 'exports');
       attachDocumentStub(
           '-kittens', { rewrite: function (url, mimeType) {
                           return /^image\//.test(mimeType) ? url : null;
@@ -99,15 +101,6 @@
       kittensImports.htmlEmitter___ = new HtmlEmitter(
           document.getElementById('base-kittens'));
     </script>
-
-    <script type="text/javascript">
-      ___.getNewModuleHandler().setImports(searchBoxImports);
-    </script>
-    <script type="text/javascript" src=searchbox-cajoled.js></script>
-    <script type="text/javascript">
-      ___.getNewModuleHandler().setImports(kittensImports);
-    </script>
-    <script type="text/javascript" src="kittens-cajoled.js"></script>
 
     <!-- Inject some capabilities into the 2 plugins. -->
     <script type="text/javascript">
@@ -121,12 +114,25 @@
             = searchEngine;
         ___.allowRead(searchBoxImports, 'searchEngine');
         ___.allowRead(kittensImports, 'searchEngine');
+    </script>
 
-        // Allow searchBoxImports to talk to kittens.
-        searchBoxImports.resultConsumer = kittensImports.showKitten;
+    <script type="text/javascript">
+      ___.getNewModuleHandler().setImports(kittensImports);
+    </script>
+    <script type="text/javascript" src="kittens-cajoled.js"></script>
+
+
+    <!-- Allow searchBoxImports to talk to kittens. -->
+    <script type="text/javascript">
+        searchBoxImports.resultConsumer = kittensImports.exports.showKitten;
         ___.allowRead(searchBoxImports, 'resultConsumer');
       })();
     </script>
+
+    <script type="text/javascript">
+      ___.getNewModuleHandler().setImports(searchBoxImports);
+    </script>
+    <script type="text/javascript" src=searchbox-cajoled.js></script>
 
   </body>
 </html>
