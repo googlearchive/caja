@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 # multi_timed_run.py by jesse ruderman
 # based on timed_run.py by coop and bob clary

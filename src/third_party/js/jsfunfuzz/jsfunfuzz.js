@@ -50,7 +50,13 @@ var ENGINE_JAVASCRIPTCORE = 2;
 
 var engine = ENGINE_UNKNOWN;
 var jsshell = (typeof window == "undefined");
-if (jsshell) {
+var isRhinoTestBed = ('stderr' in this );
+if (isRhinoTestBed) {
+  dump = function() {};
+  dumpln = dump;
+  printImportant = dump;
+  quit = function() {};  
+} else if (jsshell) {
   dump = print;
   dumpln = print;
   printImportant = function(s) { dumpln("***"); dumpln(s); }
@@ -2185,7 +2191,7 @@ init();
  **************************************/
 
 // 1. Comment "start();" out.
-start();
+//start();
 
 // 2. Paste the "tryItOut" lines from the run's output in here.
 //         grep tryIt LOGFILE | grep -v "function tryIt"
@@ -2196,3 +2202,4 @@ start();
 
 
 // 3. Run it.
+makeStatement(8);
