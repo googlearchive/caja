@@ -16,10 +16,8 @@ package com.google.caja.render;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
-import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.util.Callback;
 
-import java.io.Flushable;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -34,9 +32,7 @@ import java.util.Set;
  *
  * @author mikesamuel@gmail.com
  */
-public final class JsPrettyPrinter implements TokenConsumer {
-  private final Appendable out;
-  private final Callback<IOException> ioExceptionHandler;
+public final class JsPrettyPrinter extends AbstractRenderer {
   /**
    * Stack of indentation positions.
    * Curly brackets indent to two past the last stack position and
@@ -57,8 +53,6 @@ public final class JsPrettyPrinter implements TokenConsumer {
   private String lastToken;
   /** True if the last token needs a following space. */
   private char pendingSpace = '\0';
-  /** True if an IOException has been raised. */
-  private boolean closed;
 
   /**
    * @param out receives the rendered text.
@@ -66,22 +60,7 @@ public final class JsPrettyPrinter implements TokenConsumer {
    */
   public JsPrettyPrinter(
       Appendable out, Callback<IOException> ioExceptionHandler) {
-    this.out = out;
-    this.ioExceptionHandler = ioExceptionHandler;
-  }
-
-  /** Flushes the underlying appendable. */
-  public void noMoreTokens() {
-    if (out instanceof Flushable) {
-      try {
-        ((Flushable) out).flush();
-      } catch (IOException ex) {
-        if (!closed) {
-          closed = true;
-          ioExceptionHandler.handle(ex);
-        }
-      }
-    }
+    super(out, ioExceptionHandler);
   }
 
   public void mark(FilePosition pos) {
@@ -90,218 +69,209 @@ public final class JsPrettyPrinter implements TokenConsumer {
     }
   }
 
-  /**
-   * @throws NullPointerException if out raises an IOException
-   *     and ioExceptionHandler is null.
-   */
-  public void consume(String text) {
-    if (closed) { return; }
-    try {
-      TokenClassification tClass = TokenClassification.classify(text);
-      if (tClass == null) { return; }
-      switch (tClass) {
-        case LINEBREAK:
-          deindentRecentlyOpenedParens();
-          pendingSpace = '\0';
+  @Override
+  protected void append(String text) throws IOException {
+    TokenClassification tClass = TokenClassification.classify(text);
+    if (tClass == null) { return; }
+    switch (tClass) {
+      case LINEBREAK:
+        deindentRecentlyOpenedParens();
+        pendingSpace = '\0';
 
-          // Allow external code to force linebreaks.
-          // This allows us to create a composite-renderer that renders
-          // original source code next to translated source code.
-          emit("\n");
-          return;
-        case SPACE:
-          pendingSpace = ' ';
-          return;
-        case COMMENT:
-          if (mark != null && lastLine != mark.startLineNo()
-              && charInLine != 0) {
-            newLine();
-            lastLine = mark.startLineNo();
-          } else if ("/".equals(lastToken) || pendingSpace != '\0') {
-            space();
-          }
-          indent(0);
-          emit(text);
-          if (text.startsWith("//")) {
-            newLine();
-          } else {
-            pendingSpace = '\n';
-          }
-          return;
-      }
-
-      boolean spaceBefore = false, breakBefore = false;
-      char spaceAfter = '\0';
-
-      switch (pendingSpace) {
-        case ' ': spaceBefore = true; break;
-        case '\n': breakBefore = true; break;
-      }
-      pendingSpace = '\0';
-
-      // Determine which pairs of tokens cannot be adjacent and put a space
-      // between them.
-      if (tClass == lastClass) {
-        // Adjacent punctuation, strings, and words require space.
-        // Numbers and words are both of type OTHER.
-        // This decision may be revisited in the following to prevent
-        // excessive space inside parentheses.
-        spaceBefore = !"(".equals(lastToken);
-      } else if (lastClass == TokenClassification.REGEX) {
-        if (tClass == TokenClassification.OTHER || "/".equals(text)) {
-          // Make sure words don't run into regex flags, and that / operator
-          // does not combine with end of regex to make a line comment.
-          spaceBefore = true;
+        // Allow external code to force linebreaks.
+        // This allows us to create a composite-renderer that renders
+        // original source code next to translated source code.
+        emit("\n");
+        return;
+      case SPACE:
+        pendingSpace = ' ';
+        return;
+      case COMMENT:
+        if (mark != null && lastLine != mark.startLineNo()
+            && charInLine != 0) {
+          newLine();
+          lastLine = mark.startLineNo();
+        } else if ("/".equals(lastToken) || pendingSpace != '\0') {
+          space();
         }
-      } else if (tClass == TokenClassification.REGEX && "/".equals(lastToken)) {
-        // Allowing these two tokens to run together could introduce a line
-        // comment.
-        spaceBefore = true;
-      } else if (tClass == TokenClassification.OTHER
-                 && Character.isDigit(text.charAt(0))
-                 && ".".equals(lastToken)) {
-        // Following a dot operator with a number is illegal syntactically, but
-        // this renderer should not allow any lexical confusion.
-        spaceBefore = true;
-      }
-
-      int indentOffset = 0;
-      if (tClass == TokenClassification.OTHER) {
-        if ("}".equals(lastToken)
-            && ("else".equals(text) || "while".equals(text)
-                || "catch".equals(text) || "finally".equals(text))) {
-          // handle "{ } if" and "{ } label: { }" and "} else {"
-          spaceBefore = true;
-          breakBefore = false;
+        indent(0);
+        emit(text);
+        if (text.startsWith("//")) {
+          newLine();
+        } else {
+          pendingSpace = '\n';
         }
-        if (isKeyword(text.toString())) {
-          // Put a space between if and other keywords and the parenthesis.
-          spaceAfter = ' ';
-          if ("default".equals(text) || "case".equals(text)) {
-            indentOffset = -2;
-          }
-        }
-      }
-
-      // If this token is an open bracket, we want to indent, but not before
-      // writing the token to avoid over-indenting the open bracket.
-      if (text.length() == 1) {
-        char ch0 = text.charAt(0);
-        switch (ch0) {
-          case '{':
-            if (lastClass == TokenClassification.PUNCTUATION) {
-              if (":".equals(lastToken)) {  // See JSON test.
-                spaceBefore = true;
-                breakBefore = false;
-              } else if (!(")".equals(lastToken) || "=".equals(lastToken))) {
-                // If starting a block following a parenthesized condition, or
-                // an object literal assigned.
-                spaceBefore = false;
-              }
-            }
-            spaceAfter = '\n';
-            break;
-          case '[':
-            if (")".equals(lastToken)) {
-              spaceBefore = false;
-            }
-            spaceAfter = ' ';
-            break;
-          case '(':
-            if (")".equals(lastToken)) {  // Calling a parenthesized value.
-              spaceBefore = false;
-            }
-            break;
-          case '}':
-            breakBefore = true;
-            spaceAfter = '\n';
-            popIndentStack();
-            setInStatement(false);
-            break;
-          case ')':
-            spaceBefore = breakBefore = false;
-            spaceAfter = ' ';
-            popIndentStack();
-            break;
-          case ']':
-            breakBefore = false;
-            spaceBefore = !"}".equals(lastToken);
-            spaceAfter = ' ';
-            popIndentStack();
-            break;
-          case ',':
-            spaceBefore = breakBefore = false;
-            spaceAfter = ' ';
-            break;
-          case ';':
-            spaceBefore = false;
-            if (!";".equals(lastToken)) {
-              breakBefore = false;
-            }
-            spaceAfter = indentStack.get(0).parenthetical ? ' ' : '\n';
-            break;
-          case ':':
-            spaceBefore = ":".equals(lastToken);  // Since :: is a token in ES4
-            spaceAfter = ' ';
-            break;
-          case '=':
-            spaceBefore = true;
-            spaceAfter = ' ';
-            break;
-          case '.':
-            spaceBefore = lastToken != null
-                && (TokenClassification.isNumber(lastToken)
-                    || ".".equals(lastToken));
-            spaceAfter = '\0';
-            break;
-        }
-      }
-
-      // Write any whitespace before the token.
-      if (breakBefore) {
-        newLine();
-      } else if (spaceBefore) {
-        space();
-      }
-      indent(indentOffset);
-
-      // Apply any indentation from an open bracket.
-      if (text.length() == 1) {
-        char ch0 = text.charAt(0);
-        switch (ch0) {
-          case '(': case '[':
-            pushIndent(new Indent(charInLine + 1, true));
-            break;
-          case '{':
-            pushIndent(new Indent(getIndentation() + 2, false));
-            break;
-        }
-      }
-
-      // Actually write the token.
-      emit(text);
-
-      pendingSpace = spaceAfter;
-
-      if (text.length() == 1) {
-        switch (text.charAt(0)) {
-          case '{': case '}': case ':': case ';': case ',':
-            setInStatement(false);
-            break;
-          default:
-            setInStatement(true);
-        }
-      } else {
-        setInStatement(true);
-      }
-
-      lastClass = tClass;
-      lastToken = text;
-      if (mark != null) { lastLine = mark.startLineNo(); }
-    } catch (IOException ex) {
-      closed = true;
-      ioExceptionHandler.handle(ex);
+        return;
     }
+
+    boolean spaceBefore = false, breakBefore = false;
+    char spaceAfter = '\0';
+
+    switch (pendingSpace) {
+      case ' ': spaceBefore = true; break;
+      case '\n': breakBefore = true; break;
+    }
+    pendingSpace = '\0';
+
+    // Determine which pairs of tokens cannot be adjacent and put a space
+    // between them.
+    if (tClass == lastClass) {
+      // Adjacent punctuation, strings, and words require space.
+      // Numbers and words are both of type OTHER.
+      // This decision may be revisited in the following to prevent
+      // excessive space inside parentheses.
+      spaceBefore = !"(".equals(lastToken);
+    } else if (lastClass == TokenClassification.REGEX) {
+      if (tClass == TokenClassification.OTHER || "/".equals(text)) {
+        // Make sure words don't run into regex flags, and that / operator
+        // does not combine with end of regex to make a line comment.
+        spaceBefore = true;
+      }
+    } else if (tClass == TokenClassification.REGEX && "/".equals(lastToken)) {
+      // Allowing these two tokens to run together could introduce a line
+      // comment.
+      spaceBefore = true;
+    } else if (tClass == TokenClassification.OTHER
+               && Character.isDigit(text.charAt(0))
+               && ".".equals(lastToken)) {
+      // Following a dot operator with a number is illegal syntactically, but
+      // this renderer should not allow any lexical confusion.
+      spaceBefore = true;
+    }
+
+    int indentOffset = 0;
+    if (tClass == TokenClassification.OTHER) {
+      if ("}".equals(lastToken)
+          && ("else".equals(text) || "while".equals(text)
+              || "catch".equals(text) || "finally".equals(text))) {
+        // handle "{ } if" and "{ } label: { }" and "} else {"
+        spaceBefore = true;
+        breakBefore = false;
+      }
+      if (isKeyword(text.toString())) {
+        // Put a space between if and other keywords and the parenthesis.
+        spaceAfter = ' ';
+        if ("default".equals(text) || "case".equals(text)) {
+          indentOffset = -2;
+        }
+      }
+    }
+
+    // If this token is an open bracket, we want to indent, but not before
+    // writing the token to avoid over-indenting the open bracket.
+    if (text.length() == 1) {
+      char ch0 = text.charAt(0);
+      switch (ch0) {
+        case '{':
+          if (lastClass == TokenClassification.PUNCTUATION) {
+            if (":".equals(lastToken)) {  // See JSON test.
+              spaceBefore = true;
+              breakBefore = false;
+            } else if (!(")".equals(lastToken) || "=".equals(lastToken))) {
+              // If starting a block following a parenthesized condition, or
+              // an object literal assigned.
+              spaceBefore = false;
+            }
+          }
+          spaceAfter = '\n';
+          break;
+        case '[':
+          if (")".equals(lastToken)) {
+            spaceBefore = false;
+          }
+          spaceAfter = ' ';
+          break;
+        case '(':
+          if (")".equals(lastToken)) {  // Calling a parenthesized value.
+            spaceBefore = false;
+          }
+          break;
+        case '}':
+          breakBefore = true;
+          spaceAfter = '\n';
+          popIndentStack();
+          setInStatement(false);
+          break;
+        case ')':
+          spaceBefore = breakBefore = false;
+          spaceAfter = ' ';
+          popIndentStack();
+          break;
+        case ']':
+          breakBefore = false;
+          spaceBefore = !"}".equals(lastToken);
+          spaceAfter = ' ';
+          popIndentStack();
+          break;
+        case ',':
+          spaceBefore = breakBefore = false;
+          spaceAfter = ' ';
+          break;
+        case ';':
+          spaceBefore = false;
+          if (!";".equals(lastToken)) {
+            breakBefore = false;
+          }
+          spaceAfter = indentStack.get(0).parenthetical ? ' ' : '\n';
+          break;
+        case ':':
+          spaceBefore = ":".equals(lastToken);  // Since :: is a token in ES4
+          spaceAfter = ' ';
+          break;
+        case '=':
+          spaceBefore = true;
+          spaceAfter = ' ';
+          break;
+        case '.':
+          spaceBefore = lastToken != null
+              && (TokenClassification.isNumber(lastToken)
+                  || ".".equals(lastToken));
+          spaceAfter = '\0';
+          break;
+      }
+    }
+
+    // Write any whitespace before the token.
+    if (breakBefore) {
+      newLine();
+    } else if (spaceBefore) {
+      space();
+    }
+    indent(indentOffset);
+
+    // Apply any indentation from an open bracket.
+    if (text.length() == 1) {
+      char ch0 = text.charAt(0);
+      switch (ch0) {
+        case '(': case '[':
+          pushIndent(new Indent(charInLine + 1, true));
+          break;
+        case '{':
+          pushIndent(new Indent(getIndentation() + 2, false));
+          break;
+      }
+    }
+
+    // Actually write the token.
+    emit(text);
+
+    pendingSpace = spaceAfter;
+
+    if (text.length() == 1) {
+      switch (text.charAt(0)) {
+        case '{': case '}': case ':': case ';': case ',':
+          setInStatement(false);
+          break;
+        default:
+          setInStatement(true);
+      }
+    } else {
+      setInStatement(true);
+    }
+
+    lastClass = tClass;
+    lastToken = text;
+    if (mark != null) { lastLine = mark.startLineNo(); }
   }
 
   private int getIndentation() {

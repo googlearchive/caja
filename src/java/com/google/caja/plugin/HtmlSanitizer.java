@@ -64,9 +64,6 @@ public final class HtmlSanitizer {
     boolean valid = true;
     switch (t.getType()) {
     case TAGBEGIN:
-      // TODO(mikesamuel): make sure that there is only one instance of an
-      // attribute with a given name.  Otherwise, passes that only inspect the
-      // first occurrence of an attribute could be spoofed.
       {
         String tagName = t.getValue();
         if (!schema.isElementAllowed(tagName)) {
@@ -103,6 +100,9 @@ public final class HtmlSanitizer {
           }
 
         }
+        // Make sure that there is only one instance of an attribute
+        // with a given name.  Otherwise, passes that only inspect the
+        // first occurrence of an attribute could be spoofed.
         valid &= removeDuplicateAttributes((DomTree.Tag) t);
       }
       break;

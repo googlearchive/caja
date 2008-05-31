@@ -84,6 +84,41 @@ public final class CssLexer implements TokenStream<CssTokenType> {
   }
 
   /**
+   * Decodes escapes in an identifier
+   */
+  public static String decodeCssIdentifier(CharSequence ident) {
+    StringBuilder sb = null;
+    int pos = 0;
+    for (int i = 0, n = ident.length(); i < n;) {
+      if (ident.charAt(i) == '\\') {
+        if (sb == null) { sb = new StringBuilder(); }
+        sb.append(ident, pos, i);
+        int codepoint = 0;
+        while (++i < n && isHexChar(ident.charAt(i))) {
+          char ch = ident.charAt(i);
+          codepoint <<= 4;
+          if (ch >= '0' && ch <= '9') {
+            codepoint |= ch - '0';
+          } else if (ch >= 'a' && ch <= 'f') {
+            codepoint |= ch + 10 - 'a';
+          } else {
+            codepoint |= ch + 10 - 'A';
+          }
+        }
+        sb.appendCodePoint(codepoint < Character.MAX_CODE_POINT
+                           ? codepoint
+                           : 0xfffd);
+        if (i < n && isSpaceChar(ident.charAt(i))) { ++i; }
+        pos = i;
+      } else {
+        ++i;
+      }
+    }
+    if (sb == null) { return ident.toString(); }
+    return sb.append(ident, pos, ident.length()).toString();
+  }
+
+  /**
    * If the character producer has not been exhausted, ensures that there is a
    * token on pending on pending.
    */
@@ -102,12 +137,12 @@ public final class CssLexer implements TokenStream<CssTokenType> {
           pending.add(t2);
           t2 = splitter.hasNext() ? splitter.next() : null;
         }
-        // TODO(mikesamuel): The !important is supposed to be significant
-        // regardless of case and whether or not a letter is hex escaped.
+        // The !important is significant regardless of case and whether or not a
+        // letter is hex escaped.
         if (null != t2) {
           pending.add(t2);
           if (t2.type == CssTokenType.IDENT
-              && "important".equalsIgnoreCase(t2.text)) {
+              && "important".equalsIgnoreCase(decodeCssIdentifier(t2.text))) {
             reduce(CssTokenType.DIRECTIVE);
           }
         }

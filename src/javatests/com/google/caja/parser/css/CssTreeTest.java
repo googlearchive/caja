@@ -37,8 +37,6 @@ public class CssTreeTest extends CajaTestCase {
     runRenderTest("cssrendergolden4.txt", "cssparserinput4.css", true);
   }
 
-  // TODO(msamuel): Test rendering of !important and combinators in selectors.
-
   public void testStringRendering() throws Exception {
     assertRenderedForm(
         "a {\n  background: ''\n}",
@@ -177,6 +175,15 @@ public class CssTreeTest extends CajaTestCase {
     assertRenderedForm(
         "hi {\n  x: f(-3);\n  y: +g(2)\n}",
         "hi { x: f(-3); y: +g( 2 ) }", true);
+  }
+
+  public void testCombinatorRules() throws Exception {
+    assertRenderedForm(
+        "hello > world {\n  color: blue\n}",
+        "hello>world { color: blue }", false);
+    assertRenderedForm(
+        "hello + world {\n  color: blue\n}",
+        "hello+world { color: blue }", false);
   }
 
   private void runRenderTest(

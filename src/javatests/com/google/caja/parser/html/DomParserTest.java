@@ -1814,6 +1814,42 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
+  public void testEndTagCruft() throws Exception {
+    assertParsedHtmlFragment(
+        Arrays.asList(
+            "<a href=foo>bar</a href>"
+            ),
+        Arrays.asList(
+            "Fragment 1+1-1+25",
+            "  Tag : a 1+1-1+25",
+            "    Attrib : href 1+4-1+8",
+            "      Value : foo 1+9-1+12",
+            "    Text : bar 1+13-1+16"
+            ),
+        Arrays.asList(
+            "WARNING testEndTagCruft:1+20 - 24: ignoring token href"),
+        Arrays.asList(
+            "<a href=\"foo\">bar</a>"
+            )
+        );
+    assertParsedHtmlFragment(
+        Arrays.asList(
+            "<a href=foo>bar</a \n \t\r\n >"
+            ),
+        Arrays.asList(
+            "Fragment 1+1-3+3",
+            "  Tag : a 1+1-3+3",
+            "    Attrib : href 1+4-1+8",
+            "      Value : foo 1+9-1+12",
+            "    Text : bar 1+13-1+16"
+            ),
+        Arrays.<String>asList(),
+        Arrays.asList(
+            "<a href=\"foo\">bar</a>"
+            )
+        );
+  }
+
   private void assertParsedHtml(
       List<String> htmlInput,
       List<String> expectedParseTree,

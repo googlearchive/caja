@@ -28,6 +28,7 @@ final class NumberRecognizer {
     DOT,
     INTEGER,
     INTEGER_DOT,
+    OCTAL,
     HEX_PRE,
     HEX,
     FRACTION,
@@ -57,11 +58,13 @@ final class NumberRecognizer {
         }
         break;
       case ZERO:
-        if (ch >= '0' && ch <= '9') {
-          state = State.INTEGER;
+        if (ch >= '1' && ch <= '9') {
+          state = State.OCTAL;
         } else if (ch == '.') {
           state = State.INTEGER_DOT;
           isDecimal = true;
+        } else if (ch == '0') {
+          // pass
         } else if (ch >= 'a' && ch <= 'z' || ch >= 'A' && ch <= 'Z') {
           if (ch == 'x' || ch == 'X') {
             state = State.HEX_PRE;
@@ -101,6 +104,13 @@ final class NumberRecognizer {
           state = State.FRACTION;
         } else if (ch == 'e' || ch == 'E') {
           state = State.EXP_PRE;
+        } else {
+          state = State.WORD;
+        }
+        break;
+      case OCTAL:
+        if (ch >= '0' && ch <= '7') {
+          // pass
         } else {
           state = State.WORD;
         }
@@ -157,11 +167,12 @@ final class NumberRecognizer {
   boolean isNumber() { return State.WORD != state; }
   boolean isDecimal() { return State.WORD != state && this.isDecimal; }
   boolean isHex() { return State.WORD != state && this.isHex; }
+  boolean isOctal() { return State.OCTAL == state; }
   boolean hasExponent() { return State.WORD != state && this.hasExponent; }
 
   JsTokenType getTokenType() {
     switch (state) {
-      case ZERO: case INTEGER: case HEX:
+      case ZERO: case INTEGER: case HEX: case OCTAL:
         return JsTokenType.INTEGER;
       case INTEGER_DOT: case FRACTION: case EXPONENT:
       case EXP_PRE:

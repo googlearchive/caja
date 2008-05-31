@@ -25,9 +25,10 @@
           var c2___ = cheetos.cheesyGoodness();
           if (c2___) {
             for (var c3___ in c2___) {
-              if (!___.canEnumPub(c2___, c3___)) continue;
-              var cheeto = c2___[ c3___ ];
-              out___.push('<p>', IMPORTS___.html___(cheeto.munch()), '</p>');
+              if (___.canEnumPub(c2___, c3___)) {
+                var cheeto = c2___[ c3___ ];
+                out___.push('<p>', IMPORTS___.html___(cheeto.munch()), '</p>');
+              }
             }
           }
         } else {

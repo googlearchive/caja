@@ -1,0 +1,151 @@
+<html>
+<head><title>Code points allowed in JS strings.</title></head>
+<body>
+<script>
+function makeBlockString(block) {
+  var s = '';
+  for (var j = 0; j <= 0xff; ++j) {
+    var cu = (block << 8) | j;
+    switch (cu) {
+      case 0:
+      case 0xA: case 0xD: case 0x27: case 0x5C:
+      case 0x2028: case 0x2029:
+        continue;
+    }
+    s += String.fromCharCode(cu);
+  }
+  return s;
+}
+function sortChars(str) {
+  var chars = str.split('');
+  chars.sort();
+  return chars.join('');
+}
+function check(actual, block) {
+  var expected = makeBlockString(block);
+  if (actual === expected) { return; }
+  document.write(
+      '<p>block ' + block.toString(16) + ', |actual|=' + actual.length
+      + ', |expected|=' + expected.length);
+  actual = sortChars(actual);
+  expected = sortChars(expected);
+  var i = 0, m = actual.length, j = 0, n = expected.length;
+  while (i < m && j < n) {
+    var diff = actual.charCodeAt(i) - expected.charCodeAt(j);
+    if (!diff) { ++i; ++j; continue; }
+    if (diff < 0) {
+      document.write(
+          '<br>expected missing ' + actual.charCodeAt(i++).toString(16));
+    } else {
+      document.write(
+          '<br>actual missing ' + expected.charCodeAt(j++).toString(16));
+    }
+  }
+  while (i < m) {
+    document.write(
+        '<br>expected missing ' + actual.charCodeAt(i++).toString(16));
+  }
+  while (j < n) {
+    document.write(
+        '<br>actual missing ' + expected.charCodeAt(j++).toString(16));
+  }
+}
+for (var i = 0; i <= 0xff; ++i) {
+  try {
+    document.writeln(
+        '<script>check(\'' + makeBlockString(i) + '\', ' + i + ');<\/script>');
+  } catch (ex) {
+    document.write(
+        '<p>Illegal char in block ' + i.toString(16) + ': ' + ex + '<\/p>');
+  }
+}
+document.writeln('<script>document.write("<p>done<\/p>");<\/script>');
+</script>
+</body>
+</html>
+
+
+<!--
+Firefox 2 on Linux and MacOSX:
+==============================
+block 20, |actual|=239, |expected|=254
+actual missing 200c
+actual missing 200d
+actual missing 200e
+actual missing 200f
+actual missing 202a
+actual missing 202b
+actual missing 202c
+actual missing 202d
+actual missing 202e
+actual missing 206a
+actual missing 206b
+actual missing 206c
+actual missing 206d
+actual missing 206e
+actual missing 206f
+
+block fe, |actual|=255, |expected|=256
+actual missing feff
+
+done
+
+
+
+IE 6 under Citrix client and under IEs4Linux:
+=============================================
+block fd, |actual|=224, |expected|=256
+actual missing fdd0
+actual missing fdd1
+actual missing fdd2
+actual missing fdd3
+actual missing fdd4
+actual missing fdd5
+actual missing fdd6
+actual missing fdd7
+actual missing fdd8
+actual missing fdd9
+actual missing fdda
+actual missing fddb
+actual missing fddc
+actual missing fddd
+actual missing fdde
+actual missing fddf
+actual missing fde0
+actual missing fde1
+actual missing fde2
+actual missing fde3
+actual missing fde4
+actual missing fde5
+actual missing fde6
+actual missing fde7
+actual missing fde8
+actual missing fde9
+actual missing fdea
+actual missing fdeb
+actual missing fdec
+actual missing fded
+actual missing fdee
+actual missing fdef 
+
+block ff, |actual|=245, |expected|=256
+actual missing fff0
+actual missing fff1
+actual missing fff2
+actual missing fff3
+actual missing fff4
+actual missing fff5
+actual missing fff6
+actual missing fff7
+actual missing fff8
+actual missing fffe
+actual missing ffff
+
+done
+
+
+
+Safari 3.1:
+===========
+done
+-->

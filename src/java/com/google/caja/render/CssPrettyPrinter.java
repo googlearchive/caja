@@ -15,10 +15,8 @@
 package com.google.caja.render;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.util.Callback;
 
-import java.io.Flushable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,9 +27,7 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class CssPrettyPrinter implements TokenConsumer {
-  private final Appendable out;
-  private final Callback<IOException> ioExceptionHandler;
+public final class CssPrettyPrinter extends AbstractRenderer {
   /**
    * Stack of indentation positions.
    * Curly brackets indent to two past the last stack position and
@@ -46,7 +42,6 @@ public final class CssPrettyPrinter implements TokenConsumer {
 
   /** True if the last token needs a following space. */
   private char pendingSpace = '\0';
-  private boolean closed;
 
   /**
    * @param out receives the rendered text.
@@ -54,99 +49,76 @@ public final class CssPrettyPrinter implements TokenConsumer {
    */
   public CssPrettyPrinter(
       Appendable out, Callback<IOException> ioExceptionHandler) {
-    this.out = out;
-    this.ioExceptionHandler = ioExceptionHandler;
-  }
-
-  public void noMoreTokens() {
-    if (out instanceof Flushable) {
-      try {
-        ((Flushable) out).flush();
-      } catch (IOException ex) {
-        if (!closed) {
-          closed = true;
-          ioExceptionHandler.handle(ex);
-        }
-      }
-    }
+    super(out, ioExceptionHandler);
   }
 
   public void mark(FilePosition pos) {}
 
-  /**
-   * @throws NullPointerException if out raises an IOException
-   *     and ioExceptionHandler is null.
-   */
-  public void consume(String text) {
-    if (closed) { return; }
-    try {
-      TokenClassification tClass = TokenClassification.classify(text);
-      if (tClass == null) { return; }
-      switch (tClass) {
-        case LINEBREAK:
-          // Allow external code to force linebreaks.
-          // This allows us to create a composite-renderer that renders
-          // original source code next to translated source code.
-          newLine();
-          return;
-        case SPACE:
-          if (pendingSpace != '\n') { pendingSpace = ' '; }
-          return;
-        case COMMENT:
-          emit(text);
-          return;
-      }
-
-      char spaceBefore = pendingSpace;
-      pendingSpace = '\0';
-      char spaceAfter = '\0';
-
-      Integer nextIndent = null;
-      if (text.length() == 1) {
-        char ch0 = text.charAt(0);
-        switch (ch0) {
-          case '{':
-            if (spaceBefore != '\n') {
-              spaceBefore = ' ';
-            }
-            nextIndent = getIndentation() + 2;
-            spaceAfter = '\n';
-            break;
-          case '}':
-            spaceAfter = spaceBefore = '\n';
-            popIndentStack();
-            break;
-          case ',':
-            spaceBefore = '\0';
-            spaceAfter = ' ';
-            break;
-          case ';':
-            spaceBefore = '\0';
-            spaceAfter = '\n';
-            break;
-        }
-      }
-
-      switch (spaceBefore) {
-        case '\n':
-          newLine();
-          break;
-        case ' ':
-          space();
-          break;
-      }
-
-      indent();
-      emit(text);
-      if (nextIndent != null) {
-        pushIndent(nextIndent);
-      }
-
-      pendingSpace = spaceAfter;
-    } catch (IOException ex) {
-      closed = true;
-      ioExceptionHandler.handle(ex);
+  @Override
+  protected void append(String text) throws IOException {
+    TokenClassification tClass = TokenClassification.classify(text);
+    if (tClass == null) { return; }
+    switch (tClass) {
+      case LINEBREAK:
+        // Allow external code to force linebreaks.
+        // This allows us to create a composite-renderer that renders
+        // original source code next to translated source code.
+        newLine();
+        return;
+      case SPACE:
+        if (pendingSpace != '\n') { pendingSpace = ' '; }
+        return;
+      case COMMENT:
+        emit(text);
+        return;
     }
+
+    char spaceBefore = pendingSpace;
+    pendingSpace = '\0';
+    char spaceAfter = '\0';
+
+    Integer nextIndent = null;
+    if (text.length() == 1) {
+      char ch0 = text.charAt(0);
+      switch (ch0) {
+        case '{':
+          if (spaceBefore != '\n') {
+            spaceBefore = ' ';
+          }
+          nextIndent = getIndentation() + 2;
+          spaceAfter = '\n';
+          break;
+        case '}':
+          spaceAfter = spaceBefore = '\n';
+          popIndentStack();
+          break;
+        case ',':
+          spaceBefore = '\0';
+          spaceAfter = ' ';
+          break;
+        case ';':
+          spaceBefore = '\0';
+          spaceAfter = '\n';
+          break;
+      }
+    }
+
+    switch (spaceBefore) {
+      case '\n':
+        newLine();
+        break;
+      case ' ':
+        space();
+        break;
+    }
+
+    indent();
+    emit(text);
+    if (nextIndent != null) {
+      pushIndent(nextIndent);
+    }
+
+    pendingSpace = spaceAfter;
   }
 
   private int getIndentation() {

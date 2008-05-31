@@ -163,7 +163,6 @@ public final class CssValidator {
           // Make an exception for BODY which is handled specially by the
           // rewriter and which can be used as the basis for browser specific
           // rules, e.g.  body.ie6 p { ... }
-          // TODO(mikesamuel): parameterize the whitelist
           || "body".equals(tagName)) {
         return true;
       }
@@ -906,9 +905,8 @@ final class SignatureResolver {
     }
 
     if (null != constraints
-        // TODO(msamuel): Could try to enforce these constraints at runtime or
-        // just log them in debugging mode.  Violations of these constraints are
-        // not security problems though
+        // Violations of these constraints are not security problems though,
+        // so we do not try to enforce them on the client for dynamic content.
         && !(atom instanceof CssTree.Substitution)) {
       int comma = constraints.indexOf(",");
       double min = Double.parseDouble(constraints.substring(0, comma)),
@@ -937,7 +935,7 @@ final class SignatureResolver {
                        MessagePart.Factory.valueOf(min),
                        MessagePart.Factory.valueOf(max));
         // If this were a validation failure, it might cause us to improperly
-        // match another rule later, so issue a warning instead
+        // match another rule later, so issue a warning instead.
       }
     }
 

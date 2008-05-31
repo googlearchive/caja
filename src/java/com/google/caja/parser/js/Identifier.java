@@ -48,15 +48,6 @@ public final class Identifier extends AbstractParseTreeNode<ParseTreeNode> {
 
   public String getName() { return name; }
 
-  public void setName(String name) {
-    // TODO(mikesamuel): check that name is a valid identifier
-    this.name = name;
-  }
-
-  public void clearName() {
-    name = null;
-  }
-
   public void render(RenderContext r) {
     if (name != null) {
       r.getOut().mark(getFilePosition());

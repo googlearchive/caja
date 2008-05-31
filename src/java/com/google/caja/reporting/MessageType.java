@@ -70,7 +70,7 @@ public enum MessageType implements MessageTypeInt {
       "%s: attribute %s has ambiguous value \"%s\"", MessageLevel.WARNING),
   MISSING_ATTRIBUTE_VALUE(
       "%s: missing value for attribute %s", MessageLevel.FATAL_ERROR),
-
+  OCTAL_LITERAL("%s: octal literal %s", MessageLevel.LINT),
 
   // platform context
   NOT_IE("%s: Will not work in IE", MessageLevel.WARNING),

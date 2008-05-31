@@ -335,13 +335,15 @@ public class Escaping {
        0x7F, Character.MAX_CODE_POINT + 1,  // Exclude non-ascii codepoints
      });
 
-  // TODO(mikesamuel): we can't use UnicodeSet [:Cf:] since IE 6 and other
-  // older browsers disagree on what format control characters are.
-  // We need to come up with a character set empirically.
+  // We can't use UnicodeSet [:Cf:] since IE 6 and other older
+  // browsers disagree on what characters are allowed in strings.
+  // The below excludes [:Cf:] codepoints, unicode newlines, and
+  // codepoints that empirically can't be embedded in a string.
   private static final SparseBitSet ALLOW_NON_ASCII = SparseBitSet.withRanges(
       new int[] { 0xad, 0xae, 0x600, 0x604, 0x70f, 0x710,
                   0x17b4, 0x17b6, 0x200c, 0x2010, 0x2028, 0x202f,
-                  0x2060, 0x2070, 0xfeff, 0xff00, 0xfff9, 0xfffc,
+                  0x2060, 0x2070, 0xfdd0, 0xfdf0, 0xfeff, 0xff00,
+                  0xfff0, 0xfffc, 0xfffe, 0x10000,
                   0x1d173, 0x1d17b, 0xe0001, 0xe0002, 0xe0020, 0xe0080 });
 
   private static final SparseBitSet NO_NON_ASCII = SparseBitSet.withRanges(

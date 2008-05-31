@@ -66,6 +66,17 @@ public class CssLexerTest extends TestCase {
     assertFails("100.?", "1+5: Malformed number 100.");
   }
 
+  public void testDecodeCssIdentifier() throws Exception {
+    assertEquals("foo", CssLexer.decodeCssIdentifier("foo"));
+    assertEquals("foo", CssLexer.decodeCssIdentifier("f\\6fo"));
+    assertEquals("foo", CssLexer.decodeCssIdentifier("f\\6f o"));
+    assertEquals("foo", CssLexer.decodeCssIdentifier("fo\\6f"));
+    assertEquals("foo", CssLexer.decodeCssIdentifier("f\\6f\\6f"));
+    assertEquals("ofo", CssLexer.decodeCssIdentifier("\\6f f\\6f"));
+    assertEquals("foo", CssLexer.decodeCssIdentifier("\\66\\6f\\6f"));
+    assertEquals("foo", CssLexer.decodeCssIdentifier("\\66 \\6f \\6f "));
+  }
+
   private void assertFails(String input, String golden) {
     try {
       runTest(input, "expected failure: " + golden);

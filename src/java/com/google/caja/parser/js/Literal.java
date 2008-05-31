@@ -23,11 +23,6 @@ import com.google.caja.reporting.RenderContext;
  * @author mikesamuel@gmail.com
  */
 public abstract class Literal extends AbstractExpression<Expression> {
-  // TODO(mikesamuel): rendering of numeric literals should not depend on the
-  // default locale.
-  // TODO(mikesamuel): find some way of rendering NaN and Infinity in a way
-  // that doesn't allow reference masking.
-
   protected Literal() {}
 
   @Override

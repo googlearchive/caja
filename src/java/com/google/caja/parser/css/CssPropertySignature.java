@@ -401,11 +401,10 @@ public abstract class CssPropertySignature implements ParseTreeNode {
       if (toks.hasNext()) {
         String s = toks.next();
 
-        // TODO(msamuel): || is supposed to match multiple of its elements but
-        // each only once.  These semantics are currently broken.
+        // || matches multiple of its elements but each only once.
         if ("||".equals(s) || "|".equals(s)) {
           List<CssPropertySignature> children =
-            new ArrayList<CssPropertySignature>();
+              new ArrayList<CssPropertySignature>();
           children.add(child);
           do {
             children.add(parseSeries(toks));
@@ -416,10 +415,9 @@ public abstract class CssPropertySignature implements ParseTreeNode {
             }
           } while (true);
 
-
           if ("||".equals(s)) {
             child = new ExclusiveSetSignature(children);
-            child = new RepeatedSignature(child, 1, Integer.MAX_VALUE);
+            child = new RepeatedSignature(child, 1, children.size());
           } else {
             child = new SetSignature(children);
           }

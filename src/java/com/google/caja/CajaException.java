@@ -31,7 +31,6 @@ public class CajaException extends Exception {
   }
 
   public void toMessageQueue(MessageQueue q) {
-    // TODO(msamuel): use a culprit message group here?
     Throwable cause = getCause();
     if (cause instanceof CajaException) {
       ((CajaException) cause).toMessageQueue(q);

@@ -15,10 +15,8 @@
 package com.google.caja.render;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.util.Callback;
 
-import java.io.Flushable;
 import java.io.IOException;
 
 /**
@@ -27,50 +25,20 @@ import java.io.IOException;
  *
  * @author mikesamuel@gmail.com
  */
-public final class Concatenator implements TokenConsumer {
-  private final Appendable out;
-  private final Callback<IOException> ioExceptionHandler;
-  private boolean closed;
-
+public final class Concatenator extends AbstractRenderer {
   /**
    * @param out receives the rendered text.
    * @param ioExceptionHandler receives exceptions thrown by out.
    */
   public Concatenator(
       Appendable out, Callback<IOException> ioExceptionHandler) {
-    this.out = out;
-    this.ioExceptionHandler = ioExceptionHandler;
-  }
-
-  public void noMoreTokens() {
-    // TODO(mikesamuel): make a base class for this and then other TokenConsumer
-    // implementations that are backed by an Appendable and a
-    // Callback<IOException>.
-    if (out instanceof Flushable) {
-      try {
-        ((Flushable) out).flush();
-      } catch (IOException ex) {
-        if (!closed) {
-          closed = true;
-          ioExceptionHandler.handle(ex);
-        }
-      }
-    }
+    super(out, ioExceptionHandler);
   }
 
   public void mark(FilePosition pos) {}
 
-  /**
-   * @throws NullPointerException if out raises an IOException
-   *     and ioExceptionHandler is null.
-   */
-  public void consume(String text) {
-    if (closed) { return; }
-    try {
-      out.append(text);
-    } catch (IOException ex) {
-      closed = true;
-      ioExceptionHandler.handle(ex);
-    }
+  @Override
+  protected void append(String text) throws IOException {
+    out.append(text);
   }
 }

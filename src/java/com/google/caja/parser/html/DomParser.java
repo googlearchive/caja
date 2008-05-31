@@ -204,11 +204,17 @@ public final class DomParser {
             Token<HtmlTokenType> end;
             if (isClose(t)) {
               attribs = Collections.<DomTree.Attrib>emptyList();
-              do {
-                // TODO(mikesamuel): if this is not a tagend, then we should
-                // require ignorable whitespace when we're parsing strictly.
+              while (true) {
                 end = tokens.pop();
-              } while (end.type != HtmlTokenType.TAGEND);
+                if (end.type == HtmlTokenType.TAGEND) { break; }
+                // If this is not a tagend, then we should require
+                // ignorable whitespace when we're parsing strictly.
+                if (end.type != HtmlTokenType.IGNORABLE) {
+                  mq.addMessage(
+                      DomParserMessageType.IGNORING_TOKEN,
+                      end.pos, MessagePart.Factory.valueOf(end.text));
+                }
+              }
             } else {
               attribs = new ArrayList<DomTree.Attrib>();
               end = parseTagAttributes(attribs);
@@ -274,8 +280,6 @@ public final class DomParser {
   private DomTree.Attrib parseAttrib() throws ParseException {
     Token<HtmlTokenType> name = tokens.pop();
     Token<HtmlTokenType> value = tokens.peek();
-    // TODO(mikesamuel): make sure that the XmlElementStack does not allow
-    // valueless attributes, and allow them here.
     if (value.type == HtmlTokenType.ATTRVALUE) {
       tokens.advance();
       if (isAmbiguousAttributeValue(value.text)) {
@@ -285,6 +289,7 @@ public final class DomParser {
                       MessagePart.Factory.valueOf(value.text));
       }
     } else if (asXml) {
+      // XML does not allow valueless attributes.
       throw new ParseException(
           new Message(MessageType.MISSING_ATTRIBUTE_VALUE,
                       value.pos, MessagePart.Factory.valueOf(value.text)));

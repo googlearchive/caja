@@ -230,9 +230,6 @@ import java.util.Set;
  * @author mikesamuel@gmail.com
  */
 public final class Parser extends ParserBase {
-  // TODO(mikesamuel): make sure we warn on DecimalLiterals that have leading
-  // zeroes.  Those are disallowed under EcmaScript.  Make sure that RealLiteral
-  // always renders without leading zeroes.
   private boolean recoverFromFailure;
 
   public Parser(JsTokenQueue tq, MessageQueue mq) {
@@ -931,9 +928,19 @@ public final class Parser extends ParserBase {
         e = new StringLiteral(t.text);
         break;
       case INTEGER:
+        if (integerPartIsOctal(t.text)) {
+          mq.addMessage(
+              MessageType.OCTAL_LITERAL, MessageLevel.LINT,
+              t.pos, MessagePart.Factory.valueOf(t.text));
+        }
         e = toIntegerLiteral(t);
         break;
       case FLOAT:
+        if (integerPartIsOctal(t.text)) {
+          mq.addMessage(
+              MessageType.OCTAL_LITERAL, MessageLevel.ERROR,
+              t.pos, MessagePart.Factory.valueOf(t.text));
+        }
         e = toNumberLiteral(t);
         break;
       case REGEXP:
@@ -1217,6 +1224,16 @@ public final class Parser extends ParserBase {
       return true;
     }
     return tq.lookaheadToken(Punctuation.RCURLY);
+  }
+
+  // Visible for testing.
+  static boolean integerPartIsOctal(String numberLiteral) {
+    for (int i = 0, n = numberLiteral.length(); i < n; ++i) {
+      char ch = numberLiteral.charAt(i);
+      if (ch == '.') { return false; }
+      if (ch != '0') { return i != 0 && ch >= '1' && ch <= '9'; }
+    }
+    return false;
   }
 
   private AbstractStatement<?> parseDeclarationsOrExpression(

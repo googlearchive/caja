@@ -45,8 +45,6 @@ public class CssSchemaTest extends TestCase {
   public void testGetCssProperty() {
     assertNull(cssSchema.getCssProperty("bogus"));
     assertNotNull(cssSchema.getCssProperty("font-style"));
-
-    // TODO(mikesamuel): test signature parse trees
   }
 
   // TODO(mikesamuel): test getSymbol

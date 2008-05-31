@@ -65,6 +65,36 @@ public class EscapingTest extends TestCase {
          + "\\ud834\\udd77"
          ),
         sb.toString());
+    // Disallowed in strings in Firefox2
+    assertJsEscaped("\\u200c\\u200d\\u200e\\u200f", "\u200C\u200D\u200E\u200F");
+    assertJsEscaped(
+        "\\u202a\\u202b\\u202c\\u202d\\u202e",
+        "\u202A\u202B\u202C\u202D\u202E");
+    assertJsEscaped(
+        "\\u206b\\u206c\\u206d\\u206e\\u206f",
+        "\u206B\u206C\u206D\u206E\u206F");
+    assertJsEscaped("\\ufeff", "\uFEFF");
+    // Disallowed in strings in IE6
+    assertJsEscaped(
+        "\\ufdd0\\ufdd1\\ufdd2\\ufdd3\\ufdd4\\ufdd5\\ufdd6\\ufdd7"
+        + "\\ufdd8\\ufdd9\\ufdda\\ufddb\\ufddc\\ufddd\\ufdde\\ufddf",
+        "\uFDD0\uFDD1\uFDD2\uFDD3\uFDD4\uFDD5\uFDD6\uFDD7"
+        + "\uFDD8\uFDD9\uFDDA\uFDDB\uFDDC\uFDDD\uFDDE\uFDDF");
+    assertJsEscaped(
+        "\\ufde0\\ufde1\\ufde2\\ufde3\\ufde4\\ufde5\\ufde6\\ufde7"
+        + "\\ufde8\\ufde9\\ufdea\\ufdeb\\ufdec\\ufded\\ufdee\\ufdef",
+        "\uFDE0\uFDE1\uFDE2\uFDE3\uFDE4\uFDE5\uFDE6\uFDE7"
+        + "\uFDE8\uFDE9\uFDEA\uFDEB\uFDEC\uFDED\uFDEE\uFDEF");
+    assertJsEscaped(
+        "\\ufff0\\ufff1\\ufff2\\ufff3\\ufff4\\ufff5\\ufff6\\ufff7"
+        + "\\ufff8\\ufffe\\uffff",
+        "\uFFF0\uFFF1\uFFF2\uFFF3\uFFF4\uFFF5\uFFF6\uFFF7"
+        + "\uFFF8\uFFFE\uFFFF");
+  }
+  private static void assertJsEscaped(String golden, String raw) {
+    StringBuilder sb = new StringBuilder();
+    Escaping.escapeJsString(raw, false, false, sb);
+    assertStringsEqual(golden, sb.toString());
   }
 
   public void testParanoidEscapeJsString() throws Exception {

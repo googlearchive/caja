@@ -45,6 +45,9 @@ public class Declaration extends AbstractStatement<ParseTreeNode> {
     super.childrenChanged();
     List<? extends ParseTreeNode> children = children();
     this.identifier = (Identifier) children.get(0);
+    if (this.identifier.getName() == null) {
+      throw new NullPointerException();
+    }
     this.initializer = (children.size() > 1
                         ? (Expression) children.get(1)
                         : null);
