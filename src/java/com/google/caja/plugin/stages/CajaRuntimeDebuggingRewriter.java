@@ -16,13 +16,13 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.SyntheticNodes;
 import com.google.caja.parser.js.BooleanLiteral;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.parser.quasiliteral.Rule;
 import com.google.caja.parser.quasiliteral.RuleDescription;
 import com.google.caja.parser.quasiliteral.Scope;
-import com.google.caja.plugin.SyntheticNodes;
 import com.google.caja.reporting.MessageQueue;
 
 import java.util.Map;

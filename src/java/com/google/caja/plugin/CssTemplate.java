@@ -32,6 +32,7 @@ import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.plugin.GxpCompiler.BadContentException;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;

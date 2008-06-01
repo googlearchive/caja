@@ -15,6 +15,7 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.lexer.InputSource;
+import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.Identifier;
@@ -212,7 +213,7 @@ public class MatchTest extends CajaTestCase {
         "function x() { x = 3; y = 4; }");
     assertNotNull(m);
     assertEquals("x", ((Identifier)m.get("a")).getValue());
-    
+
     match(
         "function @a() { x = 3; y = 4; }",
         "function x() { x = 3; y = 3; }");

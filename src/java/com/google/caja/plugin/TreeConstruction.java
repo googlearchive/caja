@@ -25,7 +25,7 @@ import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.StringLiteral;
 
-import static com.google.caja.plugin.SyntheticNodes.s;
+import static com.google.caja.parser.SyntheticNodes.s;
 
 import java.util.List;
 import java.util.Vector;

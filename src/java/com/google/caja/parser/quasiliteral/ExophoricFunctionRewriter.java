@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.lexer.Keyword;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Expression;
@@ -25,12 +26,11 @@ import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.plugin.ReservedNames;
 import com.google.caja.reporting.MessageQueue;
-import static com.google.caja.plugin.SyntheticNodes.s;
+import static com.google.caja.parser.SyntheticNodes.s;
 
 /**
- * An exophoric function is one where {@code this} is only used to access the 
+ * An exophoric function is one where {@code this} is only used to access the
  * public API, so that it can safely be applied to any object.
  * We cajole an exophoric function by converting all {@code this} references
  * in the body to {@code t___} and then cajole the body.
@@ -60,7 +60,9 @@ final class ExophoricFunctionRewriter implements Visitor {
     // End early if we're not looking at a "this" reference.
     if (!(ac.node instanceof Reference)) { return true; }
     Reference ref = ac.cast(Reference.class).node;
-    if (!ReservedNames.THIS.equals(ref.getIdentifierName())) { return true; }
+    if (!Keyword.THIS.toString().equals(ref.getIdentifierName())) {
+      return true;
+    }
 
     // If used in a context where this would be ambiguous, warn.
     if (mightAccessPrivateApi(ac)) {

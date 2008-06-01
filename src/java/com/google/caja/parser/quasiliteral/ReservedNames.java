@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.plugin;
-
-import com.google.caja.lexer.Keyword;
+package com.google.caja.parser.quasiliteral;
 
 /**
  * Caja reserved names.
@@ -23,7 +21,6 @@ import com.google.caja.lexer.Keyword;
  */
 public class ReservedNames {
   public static final String LOCAL_THIS = "t___";
-  public static final String THIS = Keyword.THIS.toString();
   public static final String SUPER = "Super";
   static final String TEMP = "x___";
   public static final String ARGUMENTS = "arguments";

@@ -15,7 +15,10 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.Keyword;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParseTreeNodeContainer;
+import com.google.caja.parser.SyntheticNodes;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.FunctionConstructor;
@@ -26,8 +29,6 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
-import com.google.caja.plugin.ReservedNames;
-import com.google.caja.plugin.SyntheticNodes;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
@@ -35,8 +36,8 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Pair;
 
+import static com.google.caja.parser.SyntheticNodes.s;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
-import static com.google.caja.plugin.SyntheticNodes.s;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -508,7 +509,7 @@ public class Scope {
     for (String name : v.getReferences()) {
       if (ReservedNames.ARGUMENTS.equals(name)) {
         s.containsArguments = true;
-      } else if (ReservedNames.THIS.equals(name)) {
+      } else if (Keyword.THIS.toString().equals(name)) {
         s.containsThis = true;
       } else if (!s.isDefined(name)) {
         addImportedVariable(s, name);

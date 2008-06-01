@@ -20,6 +20,7 @@ import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 

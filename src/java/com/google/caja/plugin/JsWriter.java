@@ -31,7 +31,7 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UndefinedLiteral;
 import com.google.caja.reporting.MessageQueue;
-import static com.google.caja.plugin.SyntheticNodes.s;
+import static com.google.caja.parser.SyntheticNodes.s;
 
 import java.util.List;
 

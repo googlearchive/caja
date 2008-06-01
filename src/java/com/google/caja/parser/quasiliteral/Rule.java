@@ -18,7 +18,9 @@ import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.ParseTreeNodes;
+import com.google.caja.parser.SyntheticNodes;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FormalParam;
@@ -30,15 +32,13 @@ import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UndefinedLiteral;
-import com.google.caja.plugin.ReservedNames;
-import com.google.caja.plugin.SyntheticNodes;
-import static com.google.caja.plugin.SyntheticNodes.s;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 import com.google.caja.util.Pair;
+import static com.google.caja.parser.SyntheticNodes.s;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -222,7 +222,7 @@ public abstract class Rule implements MessagePart {
       stmts.add(QuasiBuilder.substV(
           "var @lt = @gt;",
           "lt", s(new Identifier(ReservedNames.LOCAL_THIS)),
-          "gt", newReference(ReservedNames.THIS)));
+          "gt", newReference(Keyword.THIS.toString())));
     }
 
     return new ParseTreeNodeContainer(stmts);
@@ -578,7 +578,6 @@ public abstract class Rule implements MessagePart {
   /** True iff e is a reference to the global object. */
   private static boolean isImportsReference(Expression e) {
     if (!(e instanceof Reference)) { return false; }
-    // TODO(mikesamuel): move ReservedNames into this package and use it here.
     return ReservedNames.IMPORTS.equals(((Reference) e).getIdentifierName());
   }
 

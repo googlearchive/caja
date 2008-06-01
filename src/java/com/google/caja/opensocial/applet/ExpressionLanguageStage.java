@@ -16,6 +16,7 @@ package com.google.caja.opensocial.applet;
 
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.SyntheticNodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Conditional;
 import com.google.caja.parser.js.ExpressionStmt;
@@ -24,7 +25,6 @@ import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
-import com.google.caja.plugin.SyntheticNodes;
 import com.google.caja.util.Pipeline;
 import java.util.List;
 

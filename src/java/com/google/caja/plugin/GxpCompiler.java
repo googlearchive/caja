@@ -32,6 +32,8 @@ import com.google.caja.lexer.TokenQueue;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParseTreeNodeContainer;
+import com.google.caja.parser.SyntheticNodes;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomTree;
@@ -50,8 +52,8 @@ import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.quasiliteral.ParseTreeNodeContainer;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
+import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -73,7 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import static com.google.caja.plugin.SyntheticNodes.s;
+import static com.google.caja.parser.SyntheticNodes.s;
 
 /**
  * Compiles a subset of gxp to javascript.

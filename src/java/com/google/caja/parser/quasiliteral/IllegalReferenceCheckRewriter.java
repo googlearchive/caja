@@ -15,8 +15,8 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.SyntheticNodes;
 import com.google.caja.parser.js.Identifier;
-import com.google.caja.plugin.SyntheticNodes;
 import com.google.caja.reporting.MessageQueue;
 
 /**

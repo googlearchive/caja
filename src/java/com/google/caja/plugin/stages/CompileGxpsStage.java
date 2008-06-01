@@ -32,7 +32,7 @@ import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Pipeline;
-import static com.google.caja.plugin.SyntheticNodes.s;
+import static com.google.caja.parser.SyntheticNodes.s;
 
 import java.util.ArrayList;
 import java.util.Arrays;

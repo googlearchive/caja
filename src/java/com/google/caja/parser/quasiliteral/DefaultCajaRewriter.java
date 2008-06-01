@@ -14,9 +14,12 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.ParseTreeNodes;
+import com.google.caja.lexer.Keyword;
 import com.google.caja.parser.AbstractParseTreeNode;
+import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParseTreeNodeContainer;
+import com.google.caja.parser.ParseTreeNodes;
+import com.google.caja.parser.SyntheticNodes;
 import com.google.caja.parser.js.AssignOperation;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.BreakStmt;
@@ -47,9 +50,7 @@ import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.ArrayConstructor;
-import com.google.caja.plugin.ReservedNames;
-import com.google.caja.plugin.SyntheticNodes;
-import static com.google.caja.plugin.SyntheticNodes.s;
+import static com.google.caja.parser.SyntheticNodes.s;
 import com.google.caja.util.Pair;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -142,7 +143,7 @@ public class DefaultCajaRewriter extends Rewriter {
         return NONE;
       }
     },
-      
+
     ////////////////////////////////////////////////////////////////////////
     // with - disallow the 'with' construct
     ////////////////////////////////////////////////////////////////////////
@@ -375,7 +376,7 @@ public class DefaultCajaRewriter extends Rewriter {
           reason="")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match(ReservedNames.THIS, node, bindings)) {
+        if (QuasiBuilder.match(Keyword.THIS.toString(), node, bindings)) {
           return newReference(ReservedNames.LOCAL_THIS);
         }
         return NONE;
@@ -1793,7 +1794,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 node.getFilePosition(),
                 this,
                 node);
-            return node;            
+            return node;
           }
           Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)constructorNode);
           if (s2.hasFreeThis()) {

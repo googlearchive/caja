@@ -15,6 +15,7 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.ObjectConstructor;
 
@@ -44,6 +45,7 @@ public class ObjectConstructorHole extends QuasiNode {
     this.valueIdentifier = valueIdentifier;
   }
 
+  @Override
   protected boolean consumeSpecimens(
       List<ParseTreeNode> specimens,
       Map<String, ParseTreeNode> bindings) {
@@ -62,6 +64,7 @@ public class ObjectConstructorHole extends QuasiNode {
         putIfDeepEquals(bindings, valueIdentifier, new ParseTreeNodeContainer(valueList));
   }
 
+  @Override
   protected boolean createSubstitutes(
       List<ParseTreeNode> substitutes,
       Map<String, ParseTreeNode> bindings) {
@@ -73,7 +76,7 @@ public class ObjectConstructorHole extends QuasiNode {
       List<ParseTreeNode> children = new ArrayList<ParseTreeNode>();
       for (int i = 0; i < keyNode.children().size(); i++) {
         children.add(keyNode.children().get(i));
-        children.add(valueNode.children().get(i));    
+        children.add(valueNode.children().get(i));
       }
       substitutes.add(ParseTreeNodes.newNodeInstance(
           ObjectConstructor.class,

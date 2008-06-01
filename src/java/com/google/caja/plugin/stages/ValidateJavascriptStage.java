@@ -16,11 +16,11 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.SyntheticNodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.ExpressionSanitizerCaja;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
-import com.google.caja.plugin.SyntheticNodes;
 import com.google.caja.util.Pipeline;
 
 /**

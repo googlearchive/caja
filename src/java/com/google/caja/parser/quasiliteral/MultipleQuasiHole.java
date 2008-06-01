@@ -15,6 +15,7 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParseTreeNodeContainer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +32,7 @@ public class MultipleQuasiHole extends SimpleQuasiHole {
     super(matchedClass, identifier);
   }
 
+  @Override
   protected boolean consumeSpecimens(
       List<ParseTreeNode> specimens,
       Map<String, ParseTreeNode> bindings) {
@@ -41,6 +43,7 @@ public class MultipleQuasiHole extends SimpleQuasiHole {
     return putIfDeepEquals(bindings, getIdentifier(), new ParseTreeNodeContainer(matches));
   }
 
+  @Override
   protected boolean createSubstitutes(
       List<ParseTreeNode> substitutes,
       Map<String, ParseTreeNode> bindings) {
@@ -53,5 +56,6 @@ public class MultipleQuasiHole extends SimpleQuasiHole {
     return false;
   }
 
+  @Override
   protected String getQuantifierSuffix() { return "*"; }
 }

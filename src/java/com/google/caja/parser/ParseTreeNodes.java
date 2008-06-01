@@ -14,8 +14,6 @@
 
 package com.google.caja.parser;
 
-import com.google.caja.parser.quasiliteral.ParseTreeNodeContainer;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -68,8 +66,6 @@ public class ParseTreeNodes {
 
   // TODO(ihab): Instead of creating a new list each time, pass the list in and
   // append to it.
-  // TODO(mikesamuel): clean up dependency.  This package should not depend on
-  // quasiliterals.
   private static List<? extends ParseTreeNode> flattenNodeList(
       List<? extends ParseTreeNode> nodes) {
     List<ParseTreeNode> results = null;

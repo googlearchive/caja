@@ -25,6 +25,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
+import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
@@ -46,6 +47,7 @@ import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
+import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.plugin.stages.RewriteHtmlStage;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
@@ -54,7 +56,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Pair;
-import static com.google.caja.plugin.SyntheticNodes.s;
+import static com.google.caja.parser.SyntheticNodes.s;
 
 import java.io.StringReader;
 import java.net.URI;
@@ -620,7 +622,7 @@ public class HtmlCompiler {
             if (node instanceof FunctionConstructor) { return false; }
             if (node instanceof Reference) {
               Reference r = (Reference) node;
-              if (ReservedNames.THIS.equals(r.getIdentifierName())) {
+              if (Keyword.THIS.toString().equals(r.getIdentifierName())) {
                 Identifier oldRef = r.getIdentifier();
                 Identifier thisNode = new Identifier(ReservedNames.THIS_NODE);
                 thisNode.setFilePosition(oldRef.getFilePosition());

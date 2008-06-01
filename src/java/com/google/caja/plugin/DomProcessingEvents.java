@@ -22,8 +22,9 @@ import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.util.Pair;
-import static com.google.caja.plugin.SyntheticNodes.s;
+import static com.google.caja.parser.SyntheticNodes.s;
 
 import java.util.ArrayList;
 import java.util.List;

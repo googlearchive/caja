@@ -38,7 +38,6 @@ import com.google.caja.parser.ParserBaseTest;
 import com.google.caja.parser.css.CssParserTest;
 import com.google.caja.parser.css.CssTreeTest;
 import com.google.caja.parser.html.DomParserTest;
-import com.google.caja.parser.html.JsHtmlParserTest;
 import com.google.caja.parser.js.FuzzedParserTest;
 import com.google.caja.parser.js.NumberLiteralTest;
 import com.google.caja.parser.js.ParserTest;
@@ -127,7 +126,6 @@ public class AllTests {
           HtmlSchemaTest.class,
           IllegalReferenceCheckRewriterTest.class,
           JoinTest.class,
-          JsHtmlParserTest.class,
           JsHtmlSanitizerTest.class,
           JsLexerTest.class,
           JsMinimalPrinterTest.class,

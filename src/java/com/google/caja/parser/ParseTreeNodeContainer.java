@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.parser.quasiliteral;
+package com.google.caja.parser;
 
 import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.parser.AbstractParseTreeNode;
-import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 
@@ -43,8 +41,10 @@ public class ParseTreeNodeContainer extends AbstractParseTreeNode<ParseTreeNode>
 
   @Override
   public Object getValue() { return null; }
-  
+
   public void render(RenderContext rc) {
+    // TODO(mikesamuel): this should never be rendered since rendering a group
+    // of statements with it will not output semicolons.
     for (ParseTreeNode n : children()) { n.render(rc); }
   }
 

@@ -18,13 +18,13 @@ import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
+import com.google.caja.parser.SyntheticNodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Statement;
-import com.google.caja.plugin.SyntheticNodes;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.RhinoTestBed;
@@ -44,6 +44,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
 
   private boolean wartsMode = false;
 
+  @Override
   public void setUp() throws Exception {
     super.setUp();
     wartsMode = false;
@@ -172,7 +173,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "var p = new Point();" +
         "p.add3.apply(p, [4]);");
   }
-  
+
   public void testPrimordialObjectExtension() throws Exception {
     wartsMode = true;
     assertConsistent(
@@ -908,7 +909,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "      return foo;" +
         "    })();" +
         "  var p;" +
-        "  ;" +            
+        "  ;" +
         "}));");
   }
 
@@ -1922,7 +1923,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "var o = { k0: g.x, k1: g.y };",
         weldPrelude("g") +
         "var x0___;" +
-        "var x1___;" +            
+        "var x1___;" +
         "var o = { k0: " + weldReadPub("g", "x", "x0___") + ", " +
         "          k1: " + weldReadPub("g", "y", "x1___") + " };");
   }

@@ -17,7 +17,7 @@ package com.google.caja.parser.quasiliteral;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.plugin.SyntheticNodes;
+import com.google.caja.parser.SyntheticNodes;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.TestUtil;
 import com.google.caja.reporting.MessageLevel;
@@ -48,8 +48,8 @@ public abstract class RewriterTestCase extends CajaTestCase {
   /**
    * Given some code, rewrite it, then execute it in the proper context for the rewritten
    * version and return the value of the last expression in the original code.
-   */  
-  protected abstract Object rewriteAndExecute(String program) throws IOException, ParseException;  
+   */
+  protected abstract Object rewriteAndExecute(String program) throws IOException, ParseException;
 
   protected void setSynthetic(ParseTreeNode n) {
     SyntheticNodes.s(n);
@@ -142,7 +142,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
     }
   }
 
-  // TODO(ihab.awad): Change dependents to use checkAddsMessage and just call js(fromString("...")) 
+  // TODO(ihab.awad): Change dependents to use checkAddsMessage and just call js(fromString("..."))
   protected void assertAddsMessage(String src, MessageTypeInt type, MessageLevel level)
       throws Exception {
     checkAddsMessage(js(fromString(src)), type, level);
