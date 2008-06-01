@@ -61,6 +61,6 @@ public class ExpressionSanitizerCaja {
 
   // Test point
   protected Rewriter newRewriter() {
-    return new DefaultCajaRewriter(false);
+    return new DefaultCajaRewriter(false, false);
   }
 }
