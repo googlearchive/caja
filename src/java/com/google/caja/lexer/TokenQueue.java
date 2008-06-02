@@ -102,6 +102,7 @@ public class TokenQueue<T extends TokenType> {
             new Message(MessageType.END_OF_FILE,
                         (null != inputRange ? this.inputRange : this.file)));
       }
+      return;
     }
 
     TokenList<T> tl = new TokenList<T>();
