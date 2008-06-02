@@ -135,6 +135,17 @@ public class ParserTest extends CajaTestCase {
     }
   }
 
+  public void testDebuggerKeyword() throws Exception {
+    // The debugger keyword can appear in a statement context
+    assertParseSucceeds("{ debugger; }");
+    // but not in an expression context
+    assertParseFails("(debugger);");
+    assertParseFails("debugger();");
+    // or as an identifier.
+    assertParseFails("var debugger;");
+    assertParseFails("debugger: foo();");
+  }
+
   public void testOctalLiterals() throws Exception {
     assertEquals("10", render(jsExpr(fromString("012"))));
     assertMessage(MessageType.OCTAL_LITERAL, MessageLevel.LINT);
@@ -220,8 +231,11 @@ public class ParserTest extends CajaTestCase {
 
   private void assertParse(String code, boolean shouldSucceed)
       throws Exception {
-    if (shouldSucceed) assertParseSucceeds(code);
-    else assertParseFails(code);
+    if (shouldSucceed) {
+      assertParseSucceeds(code);
+    } else {
+      assertParseFails(code);
+    }
   }
 
   private void assertParseSucceeds(String code) throws Exception {
@@ -247,22 +261,22 @@ public class ParserTest extends CajaTestCase {
     }
   }
 
-  private boolean isValidLvalue(Keyword k) {
+  private static boolean isValidLvalue(Keyword k) {
     return Keyword.THIS == k;
   }
 
-  private boolean isValidRvalue(Keyword k) {
+  private static boolean isValidRvalue(Keyword k) {
     return Keyword.THIS == k
         || Keyword.TRUE == k
         || Keyword.FALSE == k
         || Keyword.NULL == k;
   }
 
-  private String asLvalue(String expr) {
+  private static String asLvalue(String expr) {
     return expr + " = 42;";
   }
 
-  private String asRvalue(String expr) {
+  private static String asRvalue(String expr) {
     return "x = " + expr + ";";
   }
 

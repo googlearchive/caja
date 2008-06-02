@@ -27,6 +27,7 @@ import com.google.caja.parser.js.CaseStmt;
 import com.google.caja.parser.js.Conditional;
 import com.google.caja.parser.js.ContinueStmt;
 import com.google.caja.parser.js.ControlOperation;
+import com.google.caja.parser.js.DebuggerStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.DefaultCaseStmt;
 import com.google.caja.parser.js.Expression;
@@ -50,17 +51,17 @@ import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.ArrayConstructor;
-import static com.google.caja.parser.SyntheticNodes.s;
 import com.google.caja.util.Pair;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 
+import static com.google.caja.parser.SyntheticNodes.s;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Rewrites a JavaScript parse tree to comply with default Caja rules.
@@ -2128,6 +2129,7 @@ public class DefaultCajaRewriter extends Rewriter {
             node instanceof CaseStmt ||
             node instanceof Conditional ||
             node instanceof ContinueStmt ||
+            node instanceof DebuggerStmt ||
             node instanceof DefaultCaseStmt ||
             node instanceof ExpressionStmt ||
             node instanceof Identifier ||

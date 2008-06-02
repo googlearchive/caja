@@ -2146,6 +2146,10 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "while (true) { continue; }");
   }
 
+  public void testRecurseDebuggerStmt() throws Exception {
+    checkSucceeds("debugger;", "debugger;");
+  }
+  
   public void testRecurseDefaultCaseStmt() throws Exception {
     checkSucceeds(
         "switch (g[0]) { default: break; }",

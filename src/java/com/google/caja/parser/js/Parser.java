@@ -102,6 +102,7 @@ import java.util.Set;
  *                          | <With>
  *   SimpleStatementAtom   => <Break>
  *                          | <Continue>
+ *                          | <Debugger>
  *                          // Do-While loops are simple because, unlike other
  *                          // loops their body isn't last, so they aren't
  *                          // guaranteed to end with a right-curly or semi.
@@ -146,6 +147,7 @@ import java.util.Set;
  * Do                      => 'do' <Body> 'while' '(' <Expression> ')'
  * Break                   => 'break' <StatementLabel>?
  * Continue                => 'continue' <StatementLabel>?
+ * Debugger                => 'debugger'
  * Return                  => 'return' <Expression>?
  * Throw                   => 'throw' <Expression>
  * ExprStatement           => <Expression>
@@ -576,6 +578,12 @@ public final class Parser extends ParserBase {
             targetLabel = parseIdentifier(false);
           }
           s = new ContinueStmt(targetLabel);
+          break;
+        }
+        case DEBUGGER:
+        {
+          tq.advance();
+          s = new DebuggerStmt();
           break;
         }
         case THROW:
