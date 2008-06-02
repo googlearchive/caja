@@ -1809,6 +1809,8 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "\"this\" in an exophoric function exposes only public fields");
     assertConsistent(
         "({ f7: function () { return this.x + this.y; }, x: 1, y: 2 }).f7()");
+    assertConsistent(
+        "({ f: function (y) { return this.x * y; }, x: 4 }).f(2)");
   }
 
   public void testFuncBadMethod() throws Exception {
