@@ -1055,6 +1055,48 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "foo = ___.simpleFunc(function foo() {});" +
         ";" +
         "___.setStatic(foo, 'p', x);");
+    assertConsistent(
+        "function C() { this; }" +
+        "caja.def(C, Object, {}, { f: function () { return 4; } });" +
+        "C.f();");
+    assertConsistent(
+        "function C() { this; }" +
+        "C.f = function () { return 4; };" +
+        "C.f();");
+    checkFails(
+        "function C() { this; }" +
+        "caja.def(C, Object, {}, { f_: function () {} });",
+        "Key may not end in \"_\"");
+    rewriteAndExecute(
+        "(function () {" +
+        "  try {" +
+        "    function C() { this; }" +
+        "    caja.def(C, Object, {}, { call: function () {} });" +
+        "  } catch (e) {" +
+        "    return true;" +
+        "  }" +
+        "  fail('Static member overrides call');" +
+        "})();");
+    rewriteAndExecute(
+        "(function () {" +
+        "  try {" +
+        "    function C() { this; }" +
+        "    caja.def(C, Object, {}, { prototype: {} });" +
+        "  } catch (e) {" +
+        "    return true;" +
+        "  }" +
+        "  fail('Static member overrides prototype');" +
+        "})();");
+    rewriteAndExecute(
+        "(function () {" +
+        "  try {" +
+        "    function C() { this; }" +
+        "    C['f_'] = function () { return 4; };" +
+        "  } catch (e) {" +
+        "    return true;" +
+        "  }" +
+        "  fail('Bad static member name');" +
+        "})();");
   }
 
   public void testSetPublic() throws Exception {

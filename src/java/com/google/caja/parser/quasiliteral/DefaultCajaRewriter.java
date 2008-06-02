@@ -771,15 +771,15 @@ public class DefaultCajaRewriter extends Rewriter {
           reason="")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@fname.@p = @r", node, bindings) &&
-            bindings.get("fname") instanceof Reference &&
-            scope.isFunction(getReferenceName(bindings.get("fname")))) {
+        if (QuasiBuilder.match("@f.@p = @r", node, bindings) &&
+            bindings.get("f") instanceof Reference) {
+          Reference f = (Reference) bindings.get("f");
           Reference p = (Reference) bindings.get("p");
-          String propertyName = p.getIdentifierName();
-          if (!"Super".equals(propertyName)) {
+          if (scope.isFunction(getReferenceName(f))
+              && !"Super".equals(p.getIdentifierName())) {
             return substV(
-                "___.setStatic(@fname, @rp, @r)",
-                "fname", bindings.get("fname"),
+                "___.setStatic(@f, @rp, @r)",
+                "f", f,
                 "rp", toStringLiteral(p),
                 "r", expand(bindings.get("r"), scope, mq));
           }
