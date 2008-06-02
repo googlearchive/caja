@@ -18,7 +18,25 @@
       .FATAL_ERROR      .problem { border: 1px dotted #800; background: #fee }
 
       center.failure             { font-style: italic; font-size: 150% }
+
+      .result .type { float: right }
+      .result {
+        font-family: monospace;
+        white-space: pre;
+        border-left: 6px solid #888;
+        padding-left: 4px;
+        margin: 2px
+      }
+      #caja-stack { white-space: pre; font-family: monospace }
     </style>
+
+    <script type="text/javascript" src="caja.js"></script>
+    <script type="text/javascript" src="caja-debugmode.js"></script>
+    <script type="text/javascript" src="unicode.js"></script>
+    <script type="text/javascript" src="html4-defs.js"></script>
+    <script type="text/javascript" src="html-sanitizer.js"></script>
+    <script type="text/javascript" src="html-emitter.js"></script>
+    <script type="text/javascript" src="domita.js"></script>
 
     <link href=
      "http://google-code-prettify.googlecode.com/svn/trunk/src/prettify.css"
@@ -29,56 +47,198 @@
      type="text/javascript"></script>
 
     <script type="text/javascript">
-function html(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function getCajoler() {
-  return document.applets.cajoler;
-}
-
-function cajole() {
-  var inputs = document.forms.cajolerForm.elements;
-  var result = getCajoler().cajole(
-      inputs.src.value.replace(/^\s+|\s+$/g, ''),
-      Boolean(inputs.embeddable.checked), Boolean(inputs.debugSymbols.checked));
-  var cajoledOutput = result[0];
-  var messages = String(result[1]);
-
-  if (cajoledOutput !== null) {
-    cajoledOutput = String(cajoledOutput);
-    document.getElementById('output').innerHTML
-        = prettyPrintOne(html(cajoledOutput));
-
-    window.frames.evalFrame.window.loadCaja(cajoledOutput);
-  } else {
-    document.getElementById('output').innerHTML
-        = '<center class="failure">Failed<\/center>';
-  }
-  document.getElementById('messages').innerHTML = messages || '';
-}
-
-function innerText(node) {
-  var s = [];
-  innerTextHelper(node, s);
-  return s.join();
-}
-
-function innerTextHelper(node, buf) {
-  for (var child = node.firstChild; child; child = child.nextSibling) {
-    if (child.nodeType === 3) {
-      buf.push(child.nodeValue);
-    } else {
-      innerTextHelper(child, buf);
+    function escapeHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;').replace(/\042/g, '&quot;');
     }
-  }
-}
+    
+    function getCajoler() {
+      return document.applets.cajoler;
+    }
+    
+    function cajole() {
+      var inputs = document.forms.cajolerForm.elements;
+      var result = getCajoler().cajole(
+          inputs.src.value.replace(/^\s+|\s+$/g, ''),
+          Boolean(inputs.embeddable.checked),
+          Boolean(inputs.debugSymbols.checked));
+      var cajoledOutput = result[0];
+      var messages = String(result[1]);
+    
+      if (cajoledOutput !== null) {
+        cajoledOutput = String(cajoledOutput);
+        document.getElementById('output').innerHTML
+            = prettyPrintOne(escapeHtml(cajoledOutput));
+    
+        loadCaja(cajoledOutput);
+      } else {
+        document.getElementById('output').innerHTML
+            = '<center class="failure">Failed<\/center>';
+      }
+      document.getElementById('messages').innerHTML = messages || '';
+    }
+    
+    function innerText(node) {
+      var s = [];
+      innerTextHelper(node, s);
+      return s.join();
+    }
+    
+    function innerTextHelper(node, buf) {
+      for (var child = node.firstChild; child; child = child.nextSibling) {
+        if (child.nodeType === 3) {
+          buf.push(child.nodeValue);
+        } else {
+          innerTextHelper(child, buf);
+        }
+      }
+    }
+
+    var testImports;
+
+    function loadCaja(htmlText) {
+      var m = htmlText.match(
+          /^\s*<script[^\076]*>([\s\S]*?)<\/script[^\076]*>/i);
+      if (m) {
+        var script = m[1];
+
+        testImports.clearHtml___();
+        document.getElementById('caja-stacks').style.display = 'none';
+        try {
+          eval(script);
+        } catch (ex) {
+          var cajaStack = ex.cajaStack___
+              && ___.unsealCallerStack(ex.cajaStack___);
+          if (cajaStack) {
+            document.getElementById('caja-stacks').style.display = '';
+            document.getElementById('caja-stack').appendChild(
+                document.createTextNode(cajaStack.join('\n')));
+          }
+          throw ex;
+        }
+      } else {
+        (typeof console !== 'undefined')
+        && console.warn('Failed to eval cajoled output %s', html);
+      }
+    }
+
+    (function () {
+      testImports = ___.copy(___.sharedImports);
+      testImports.caja.result = ___.primFreeze(___.simpleFunc(function (o) {
+        var type = document.createElement('span');
+        type.className = 'type';
+        type.appendChild(document.createTextNode(typeString(o)));
+
+        var entry = document.createElement('div');
+        entry.className = 'result';
+        entry.appendChild(type);
+        entry.appendChild(document.createTextNode(repr(o)));
+
+        document.getElementById('eval-results').appendChild(entry);
+      }));
+
+      function typeString(o) {
+        if (typeof o === 'object') {
+          if (o === null) { return 'null'; }
+          var ctor = ___.directConstructor(o);
+          var name;
+          if (ctor) {
+            name = ctor.NAME___;
+            if (!name && ('name' in ctor) && !___.hasOwnProp(ctor, 'name')) {
+              name = ctor.name;
+            }
+            if (name) { return String(name); }
+          }
+        }
+        return typeof o;
+      }
+
+      // Escape one character by javascript string literal rules
+      function escapeOne(ch) {
+        var i = ch.charCodeAt(0);
+        if (i < 0x80) {
+          switch (i) {
+            case 9: return '\t';
+            case 0x0a: return '\\n';
+            case 0x0d: return '\\r';
+            case 0x22: return '\\"';
+            case 0x5c: return '\\\\';
+            default: return (i < 0x10 ? '\\x0' : '\\x') + i.toString(16);
+          }
+        }
+        var hex = i.toString(16);
+        while (hex.length < 4) { hex = '0' + hex; }
+        return '\\u' + hex;
+      }
+
+      // Builds part of the repr of a JSON map.
+      function reprKeyValuePair(els) {
+        return ___.simpleFunc(function (k, v) {
+          els.push(repr(k) + ': ' + repr(v));
+        });
+      }
+
+      // Like the python function, but produces a debugging string instead of
+      // one that can be evaled.
+      function repr(o) {
+        switch (typeof o) {
+          case 'string':
+            return ('"'
+                    + o.replace(/[^\x20\x21\x23-\x5b\x5d-\x7f]/g, escapeOne)
+                    + '"');
+          case 'object': case 'function':
+            if (o === null) { break; }
+            if (caja.isJSONContainer(o)) {
+              var els = [];
+              if ('length' in o
+                  && !(Object.prototype.propertyIsEnumerable.call(o, 'length'))
+                  ) {
+                for (var i = 0; i < o.length; ++i) {
+                  els.push(repr(o[i]));
+                }
+                return '[' + els.join(', ') + ']';
+              } else {
+                caja.each(o, reprKeyValuePair(els));
+                return els.length ? '{ ' + els.join(', ') + ' }' : '{}';
+              }
+            }
+            return '\u00ab' + o + '\u00bb';
+        }
+        return String(o);
+      }
+
+      ___.getNewModuleHandler().setImports(testImports);
+      attachDocumentStub(
+           '-xyz___',
+           {
+             rewrite:
+                 function (uri, mimeType) {
+                   if (!/^https?:\/\//i.test(uri)) { return null; }
+                   return 'http://gadget-proxy/?url=' + encodeURIComponent(uri)
+                       + '&mimeType=' + encodeURIComponent(mimeType);
+                 }
+           },
+           testImports);
+      testImports.clearHtml___ = function () {
+        document.getElementById('caja-html').innerHTML = (
+            '<center style="color: gray">eval<\/center>');
+        testImports.htmlEmitter___ = new HtmlEmitter(
+            document.getElementById('caja-html'));
+      };
+      /**
+       * Put styles inside a node that is cleared for each gadget so that
+       * styles don't persist across invocations of cajole.
+       */
+      testImports.getCssContainer___ = function () {
+        return document.getElementById('caja-html');
+      };
+    })();
     </script>
-
   </head>
-  <body bgcolor="white"
-   onload="document.forms.cajolerForm.elements.src.select()">
 
+  <body bgcolor="white"
+   onload="document.forms.cajolerForm.elements.src.select();
+           testImports.clearHtml___()">
     <applet code="com.google.caja.opensocial.applet.CajaApplet" name="cajoler"
      archive="testbed.jar,
               ../../third_party/java/htmlparser/htmlparser.jar,
@@ -159,8 +319,16 @@ function innerTextHelper(node, buf) {
       <hr>
       <pre id="output"></pre>
       <hr>
-      <iframe name="evalFrame" frameborder="0" src="eval.html"
-       style="width: 40em"></iframe>
+
+      <div id="eval-results"></div>
+      <div id="caja-stacks" style="display:none">
+        <hr>
+        Errors
+        <div id="caja-stack"></div>
+      </div>
+      <hr>
+      <div id="caja-html" class="xyz___"></div>
+
     </table>
 
   </body>

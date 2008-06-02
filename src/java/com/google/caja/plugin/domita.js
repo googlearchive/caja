@@ -962,7 +962,11 @@ attachDocumentStub = (function () {
                                + '/*-->]]>*/</style>');
         style = container.firstChild;
       }
-      document.body.appendChild(style);
+      this.getCssContainer___().appendChild(style);
+    };
+    /** The node to which gadget stylesheets should be added. */
+    imports.getCssContainer___ = function () {
+      return document.body;
     };
 
     /** A per-gadget class used to separate style rules. */
