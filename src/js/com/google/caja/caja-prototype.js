@@ -240,7 +240,7 @@ var ___;
     }
     return specimen;
   }
-
+  
   ////////////////////////////////////////////////////////////////////////
   // Privileged fault handlers
   ////////////////////////////////////////////////////////////////////////
@@ -734,7 +734,7 @@ var ___;
         }
         constr['super'] = function(thisObj, var_args) {
           opt_Sup.init___.apply(thisObj, Array.prototype.slice.call(arguments, 1));
-        };
+        }
       }
     }
     if (opt_name) {
@@ -1029,7 +1029,8 @@ var ___;
   function readProp(that, name) {
     name = String(name);
     if (canReadProp(that, name)) { return that[name]; }
-    if (canCall(that, name)) { return attach(that, that[name]); }
+    // "this" is bound to the local ___
+    if (canCall(that, name)) { return this.attach(that, that[name]); }
     return that.handleRead___(name, false);
   }
 
@@ -1065,7 +1066,11 @@ var ___;
     if ((typeof name) === 'number') { return obj[name]; }
     name = String(name);
     if (canReadPub(obj, name)) { return obj[name]; }
-    if (canCall(obj, name)) { return attach(obj, obj[name]); }
+    // "this" is bound to the local ___
+    if (canCall(obj, name)) { return this.attach(obj, obj[name]); }
+    var ext = this.getExtension(obj, name);
+    if (!ext) { fail("Internal: getExtension returned falsey"); }
+    if (ext.length) { return ext[0]; }
     return obj.handleRead___(name, opt_shouldThrow);
   }
 
@@ -1145,25 +1150,14 @@ var ___;
     name = String(name);
     return hasOwnProp(obj, name) && canEnumPub(obj, name);
   }
-
-  /**
-   * Returns a new object whose only utility is its identity and (for
-   * diagnostic purposes only) its name.
-   */
-  function Token(name) {
-    return primFreeze({
-          toString: primFreeze(simpleFunc(function() { return name; }))
-        });
-  }
-  primFreeze(simpleFunc(Token));
-
+  
   /**
    * Inside a <tt>caja.each()</tt>, the body function can terminate
    * early, as if with a conventional <tt>break;</tt>, by doing a
    * <pre>return caja.BREAK;</pre>
    */
-  var BREAK = Token('BREAK');
-
+  var BREAK = {};
+  
   /**
    * For each sensible key/value pair in obj, call fn with that
    * pair.
@@ -1269,6 +1263,10 @@ var ___;
       var meth = obj[name];
       return meth.apply(obj, args);
     }
+    // "this" is bound to the local ___
+    var ext = this.getExtension(obj, name);
+    if (!ext) { fail("Internal: getExtension returned falsey"); }
+    if (ext.length) { return ext[0].apply(obj, args); } 
     if (obj.handleCall___) { return obj.handleCall___(name, args); }
     fail('not callable %o %s', debugReference(obj), name);
   }
@@ -1331,56 +1329,40 @@ var ___;
       allowSet(obj, name);  // grant
       obj[name] = val;
       return val;
-    } else if (isCtor(obj) && !isFrozen(obj)) {
-      // Handles
-      //    ctor.staticMemberName = val;
-      setStatic(obj, name, val);
     } else {
       return obj.handleSet___(name, val);
     }
   }
 
   /**
-   * Can the given constructor have the given static method attached to it.
-   * @param {Function} ctor
-   * @param {string} staticMemberName an identifier in the public namespace.
+   * Can a client of func directly assign to its name property?
+   * <p>
+   * Enforce that func is a function.
+   * If this property is Internal (i.e., ends with a '_') or if this
+   * function is frozen, then no.
+   * If this property was already defined, then no.
+   * Otherwise, allow.
+   * <p>
+   * The non-obvious implication of this rule is that the Function members call,
+   * bind and apply may not be overridden by Caja code.
    */
-  function canSetStatic(ctor, staticMemberName) {
-    staticMemberName = '' + staticMemberName;
-    if (typeof ctor !== 'function') {
-      log('Cannot set static member of non function', ctor);
-      return false;
-    }
-    if (isFrozen(ctor)) {
-      log('Cannot set static member of frozen function', ctor);
-      return false;
-    }
-    if (staticMemberName in ctor) {  // disallows prototype, call, apply, bind
-      log('Cannot override static member ', staticMemberName);
-      return false;
-    }
-    if (endsWith(staticMemberName, '_')) {  // statics are public
-      log('Illegal static member name ', staticMemberName);
-      return false;
-    }
-    return true;
+  function canSetStatic(func, name) {
+    name = String(name);
+    enforceType(func, 'function', 'canSetStatic');
+    if (endsWith(name, '_')) { return false; }
+    if (name in func) { return false; }
+    return !isFrozen(func);
   }
 
-  /**
-   * Sets a static member of a ctor, making sure that it cannot be used to
-   * override call/apply/bind and other builtin members of function.
-   * @param {Function} ctor
-   * @param {string} staticMemberName an identifier in the public namespace.
-   * @param staticMemberValue the value of the static member.
-   */
-  function setStatic(ctor, staticMemberName, staticMemberValue) {
-    staticMemberName = '' + staticMemberName;
-    if (canSetStatic(ctor, staticMemberName)) {
-      ctor[staticMemberName] = staticMemberValue;
-      allowRead(ctor, staticMemberName);
+  /** A client of func attempts to assign to one of its properties. */
+  function setStatic(func, name, val) {
+    name = String(name);
+    if (canSetStatic(func, name)) {
+      allowEnum(func, name);  // grant
+      func[name] = val;
+      return val;
     } else {
-      fail('cannot set static member %o %s',
-           debugReference(obj), staticMemberName);
+      return func.handleSet___(name, val);
     }
   }
 
@@ -1473,12 +1455,6 @@ var ___;
     return primFreeze(Array.prototype.slice.call(original, 0));
   }
 
-  /**
-   * When a <tt>this</tt> value must be provided but nothing is
-   * suitable, provide this useless object instead.
-   */
-  var USELESS = Token('USELESS');
-
   /** Sealer for call stacks as from {@code (new Error).stack}. */
   var callStackSealer = makeSealerUnsealerPair();
 
@@ -1568,7 +1544,7 @@ var ___;
     var sup = opt_Sup || Object;
     var members = opt_members || {};
     var statics = opt_statics || {};
-
+    
     ctor(sub, sup);
     function PseudoSuper() {}
     PseudoSuper.prototype = sup.prototype;
@@ -1580,15 +1556,15 @@ var ___;
       sub.make___.prototype = sub.prototype;
     }
     sub.prototype.constructor = sub;
-
+    
     setMemberMap(sub, members);
     each(statics, simpleFunc(function(sname, staticMember) {
       setStatic(sub, sname, staticMember);
     }));
-
+    
     // translator freezes sub and sub.prototype later.
   }
-
+  
   ////////////////////////////////////////////////////////////////////////
   // Taming mechanism
   ////////////////////////////////////////////////////////////////////////
@@ -1950,8 +1926,13 @@ var ___;
       getImports: simpleFunc(function() { return imports; }),
       setImports: simpleFunc(function(newImports) { imports = newImports; }),
       handle: simpleFunc(function(newModule) {
-        imports.caja = caja;
-        newModule(___, imports);
+        var map = begetCajaObjects();
+        map.___.POE = {};
+        map.caja.extend = safeExtend(map.___.POE);
+        simpleFunc(map.caja.extend);
+        allowCall(map.caja, "extend");
+        imports.caja = map.caja;
+        newModule(map.___, imports);
       })
     });
   }
@@ -2040,6 +2021,106 @@ var ___;
     }
   }
 
+  ////////////////////////////////////////////////////////////////////////
+  // Primordial object extension
+  ////////////////////////////////////////////////////////////////////////
+
+  // The POE table is a map of entries indexed by property name.
+  // An entry is a map with two fields, 'clazz' and 'value'.
+  // The code
+  //   caja.extend{Boolean, {x:1, y:2});
+  //   caja.extend{Array, {x:3});
+  // results in a POE table that looks like
+  //   { x:[ { clazz: Boolean, value: 1 },
+  //         { clazz: Array, value: 3} ],
+  //     y:[ { clazz: Boolean, value: 2 } ] }
+
+  function validatePOE(POE, clazz, properties) {
+    if (directConstructor(properties) !== Object) {
+      throw new Error("The property map must be an object literal.");
+    }
+
+    // We'll want to add the tamed DOMado classes to this list.
+    var primordials = [Array, Boolean, Date, Number, String, Object];
+    
+    // Check whether the given class is in the list.
+    var extensible = false;
+    each(primordials, simpleFunc(function (i, value) {
+      if (value === clazz) { extensible = true; return BREAK; }
+    }));
+    if (!extensible) { 
+      throw new Error("The class " + clazz +
+          " is not extensible."); 
+    }
+    
+    // Check whether some super- or subclass has already been extended
+    // with the same name.
+    each(properties, simpleFunc(function (name, value){
+      var entry = POE[name];
+      if (entry) {
+        for (var i=0; i<entry.length; ++i) {
+          if (entry.clazz instanceof clazz) {
+            throw new Error("The subclass " + entry.clazz +
+                ' of the class ' + clazz + ' has already been extended' +
+                ' with the property ' + name);
+          }
+          if (clazz instanceof entry.clazz) {
+            throw new Error("The superclass " + entry.clazz +
+                ' of the class ' + clazz + ' has already been extended' +
+                ' with the property ' + name);
+          }
+        }
+      }
+    }));
+  }
+  
+  /*
+   * Creates a closure with the given primordial object extension table (POE).
+   * The resulting closure allows to extend primordial objects with
+   * the given map of members.
+   */
+  function safeExtend(POE) {
+    return function(clazz, members) {
+      validatePOE(POE, clazz, members);
+      each(members, simpleFunc(function (m, value){
+        if (!POE[m]) { POE[m] = []; }
+        POE[m].push({clazz:clazz, value:value});
+      }));
+    };
+    }
+  
+  function unsafeExtend(clazz, members) {
+    validatePOE({}, clazz, members);
+    each(members, simpleFunc(function (m, value){
+      clazz.prototype[m] = value;
+    }));
+  }
+  
+  /**
+   * Return a zero- or one-element array with the result.
+   * [To distinguish between (exists and undefined) and (doesn't exist).]
+   *
+   * "constructor" GIVES AN ERROR!@&
+   */
+  function getExtension(value, name) {
+    // If it already has one of these and made it here, it shouldn't
+    // be reading it. Like "constructor" or "prototype".
+    if (value[name]) { return []; }
+    var classes = this.POE[name];
+    if (!classes) { return []; }
+    switch (typeof value) {
+      case 'boolean': value = new Boolean(value); break;
+      case 'number':  value = new Number(value); break;
+      case 'string':  value = new String(value); break;
+    }
+    for (var i = 0; i < classes.length; ++i) {
+      var entry = classes[i];
+      if (value instanceof entry.clazz) {
+        return [entry.value];
+      }
+    }
+    return [];
+  }
   
   ////////////////////////////////////////////////////////////////////////
   // Trademarking
@@ -2164,8 +2245,7 @@ var ___;
     makeSealerUnsealerPair: makeSealerUnsealerPair,
 
     // Other
-    def: def,
-    USELESS: USELESS
+    def: def
   };
 
   sharedImports = {
@@ -2217,6 +2297,9 @@ var ___;
   primFreeze(sharedImports);
 
   ___ = {
+    // POE
+    getExtension: getExtension,
+
     // Privileged fault handlers
     getKeeper: getKeeper,
     setKeeper: setKeeper,
@@ -2264,7 +2347,6 @@ var ___;
     args: args,
     tameException: tameException,
     callStackUnsealer: callStackSealer.unseal,
-    RegExp: RegExp,  // Available to rewrite rule w/o risk of masking
 
     // Taming mechanism
     useGetHandler: useGetHandler,
@@ -2304,5 +2386,14 @@ var ___;
     }
     ___[k] = v;
   }));
+  
+  // DO NOT WHITELIST--for uncajoled code's use only.
+  caja.extend = unsafeExtend;
+  primFreeze(caja);
   setNewModuleHandler(makeNormalNewModuleHandler());
+
+  function begetCajaObjects() {
+    function beget(obj) { function F(){} F.prototype=obj; return new F; }
+    return { caja: beget(caja), ___: copy(___) };
+  }
 })(this);
