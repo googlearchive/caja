@@ -197,7 +197,14 @@ public final class JsMinimalPrinter extends AbstractRenderer {
              || "continue".equals(before)
              || "break".equals(before)
              || "return".equals(before)
-             || "throw".equals(before));
+             || "throw".equals(before)
+             // Though allowed by the spec, we also don't break before
+             // division operators to prevent semicolon insertion from
+             // causing the division operator from being interpreted
+             // as the start of a regexp.
+             || "/".equals(after)
+             || "/=".equals(after)
+             );
   }
 
   private void emit(CharSequence s) throws IOException {

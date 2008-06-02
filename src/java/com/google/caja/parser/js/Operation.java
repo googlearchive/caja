@@ -220,17 +220,40 @@ public abstract class Operation extends AbstractExpression<Expression> {
       }
     }
 
+    boolean isDividend = firstOp && (op == Operator.DIVISION
+                                     || op == Operator.ASSIGN_DIV);
+    if (isDividend) {
+      if (!(child instanceof Reference || child instanceof NumberLiteral
+            || child instanceof Operation)) {
+        // Parenthesize the left operand to division operators to reduce the
+        // chance of the left being mis-parsed as a statement or something
+        // else that can precede a regular expression.
+        return true;
+      }
+    }
+
     if (!(child instanceof Operation)) { return false; }
 
     Operator childOp = ((Operation) child).getOperator();
 
-    if (firstOp && childOp == Operator.FUNCTION_CALL
-        && op == Operator.MEMBER_ACCESS) {
-      // Don't parenthesize foo().bar since the LHS of the function call must
-      // already be parenthesized if it were ambiguous since function call binds
-      // less tightly than member access, and the actuals are already
-      // parenthesized since the function call operator is "()".
-      return false;
+    if (firstOp) {
+      if (childOp == Operator.FUNCTION_CALL && op == Operator.MEMBER_ACCESS) {
+        // Don't parenthesize foo().bar since the LHS of the function call must
+        // already be parenthesized if it were ambiguous since function call
+        // binds less tightly than member access, and the actuals are already
+        // parenthesized since the function call operator is "()".
+        return false;
+      }
+      if (isDividend) {
+        // By inspection of the grammar, a slash after a function call
+        // or a member access is a division op, so no chance of
+        // lexical ambiguity here.  These are also common enough that
+        // unecessarily parenthesizing them things less readable. 
+        if (childOp != Operator.FUNCTION_CALL
+            && childOp != Operator.MEMBER_ACCESS) {
+          return true;
+        }
+      }
     }
 
     // Parenthesize based on associativity and precedence

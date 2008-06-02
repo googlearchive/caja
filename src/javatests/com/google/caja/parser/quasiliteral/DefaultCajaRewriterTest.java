@@ -2034,6 +2034,20 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "k;");
   }
 
+  public void testRegexLiteral() throws Exception {
+    // Regex literals create a new instance each time expression is evaluated.
+    // Some browsers pool literals, but ES3.1&ES4 mandates separate instances
+    // since regexs are mutable and share state across matches.
+    rewriteAndExecute(
+        "var regexs = [];" +
+        "for (var i = 2; --i >= 0;) { regexs[i] = /x/; }" +
+        "assertTrue(regexs[0] !== regexs[1]);");
+    assertConsistent("/x/.test('x')");
+    assertConsistent("/x/.test('X')");
+    assertConsistent("/x/i.test('X')");
+    assertConsistent("var RegExp = null; /x/.test('x')");
+  }
+
   public void testOtherSpecialOp() throws Exception {
     checkSucceeds("void 0;", "void 0;");
     checkSucceeds("void g();",

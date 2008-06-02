@@ -2381,6 +2381,7 @@ var ___;
     args: args,
     tameException: tameException,
     callStackUnsealer: callStackSealer.unseal,
+    RegExp: RegExp,  // Available to rewrite rule w/o risk of masking
 
     // Taming mechanism
     useGetHandler: useGetHandler,

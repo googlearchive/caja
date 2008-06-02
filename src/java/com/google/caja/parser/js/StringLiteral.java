@@ -100,6 +100,10 @@ public final class StringLiteral extends Literal {
     return sb.toString();
   }
 
+  public static StringLiteral valueOf(CharSequence unquotedValue) {
+    return new StringLiteral(toQuotedValue(unquotedValue));
+  }
+
   // TODO(msamuel): move unescaping to Escaping.java -- nobody will look there
   private static final Pattern UNESCAPE_PATTERN = Pattern.compile(
       "\\\\(?:u([0-9A-Fa-f]{4})"

@@ -43,9 +43,11 @@ import com.google.caja.parser.js.Noop;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.js.RegexpLiteral;
 import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.SimpleOperation;
 import com.google.caja.parser.js.SpecialOperation;
+import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SwitchStmt;
 import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TryStmt;
@@ -2108,6 +2110,31 @@ public class DefaultCajaRewriter extends Rewriter {
               lsw.getLabel(), (Statement) expand(lsw.getBody(), scope, mq));
           expanded.setFilePosition(lsw.getFilePosition());
           return expanded;
+        }
+        return NONE;
+      }
+    },
+
+    new Rule () {
+      @Override
+      @RuleDescription(
+          name="regexLiteral",
+          synopsis="Use the regular expression constructor",
+          reason="So that every use of a regex literal creates a new instance"
+               + " to prevent state from leaking via interned literals.  This"
+               + " is consistent with the way ES4 treates regex literals.")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof RegexpLiteral) {
+          RegexpLiteral re = (RegexpLiteral) node;
+          StringLiteral pattern = StringLiteral.valueOf(re.getMatchText());
+          StringLiteral modifiers = !"".equals(re.getModifiers())
+              ? StringLiteral.valueOf(re.getModifiers())
+              : null;
+          return QuasiBuilder.substV(
+              "new ___.RegExp(@pattern, @modifiers?)",
+              "pattern", pattern,
+              "modifiers", modifiers);
         }
         return NONE;
       }
