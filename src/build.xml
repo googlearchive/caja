@@ -342,6 +342,7 @@
       <fileset dir="${javascript}">
         <include name="**/caja/caja.js"/>
         <include name="**/caja/caja-debugmode.js"/>
+        <include name="**/caja/log-to-console.js"/>
       </fileset>
       <fileset dir="${third_party}">
         <include name="js/jqueryjs/runtest/env.js"/>

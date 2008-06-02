@@ -205,8 +205,43 @@
     return makeWrapper(fun, 'asSimpleFunc', this.debugSymbols_[callerIdx]);
   }
   function asCtor(fun, callerIdx) {
-    var wrapper = makeWrapper(fun, 'asCtor', this.debugSymbols_[callerIdx]);
-    wrapper.prototype = fun.prototype;
+    var ctor = fun;
+    if (ctor.___CONSTRUCTOR___) {
+      // Make sure that the object returned really is of the right class, not
+      // of the type of the wrapper function.
+      // This works around problems with (new Array()) and (new Date()) where
+      // the returned object is not really a Date or Array on SpiderMonkey and
+      // other interpreters.
+      ctor = function (a, b, c, d, e, f, g, h, i, j, k, l) {
+        switch (arguments.length) {
+          case 0: return new fun();
+          case 1: return new fun(a);
+          case 2: return new fun(a, b);
+          case 3: return new fun(a, b, c);
+          case 4: return new fun(a, b, c, d);
+          case 5: return new fun(a, b, c, d, e);
+          case 6: return new fun(a, b, c, d, e, f);
+          case 7: return new fun(a, b, c, d, e, f, g);
+          case 8: return new fun(a, b, c, d, e, f, g, h);
+          case 9: return new fun(a, b, c, d, e, f, g, h, i);
+          case 10: return new fun(a, b, c, d, e, f, g, h, i, j);
+          case 11: return new fun(a, b, c, d, e, f, g, h, i, j, k);
+          case 12: return new fun(a, b, c, d, e, f, g, h, i, j, k, l);
+          default:
+            if (fun.typeTag___ === 'Array') {
+              return fun.apply(orig.USELESS, arguments);
+            }
+            var tmp = function (args) {
+              return fun.apply(this, args);
+            };
+            tmp.prototype = fun.prototype;
+            return new tmp(arguments);
+        }
+      };
+      ctor.___CONSTRUCTOR___ = true;
+      ctor.length = fun.length;
+    }
+    var wrapper = makeWrapper(ctor, 'asCtor', this.debugSymbols_[callerIdx]);
     return wrapper;
   }
   /**
@@ -250,8 +285,10 @@
       wrapper.___METHOD___ = true;
     } else if (fun.___CONSTRUCTOR___) {
       wrapper.___CONSTRUCTOR___ = true;
+    } else if (fun.___XO4A___) {
+      wrapper.___XO4A___ = true;
     }
-    
+
     return orig.primFreeze(wrapper);
   }
 
@@ -268,6 +305,14 @@
     return ex;
   }
 
+  // Extend to output the source file position with the message.
+  var origLog = caja.log;
+  function log(msg) {
+    if (!stackInvalid && stack.length > 0) {
+      msg = stack[stack.length - 1] + ': ' + msg;
+    }
+    return origLog(msg);
+  }
 
   /**
    * Receive debugSymbols during module initialization, and set up the debugging
@@ -344,6 +389,9 @@
        'unsealCallerStack', unsealCallerStack,
        'useDebugSymbols', useDebugSymbols
       ]);
+
+  // Include the top stack frame in log messages.
+  override(caja, ['log', log], 0);
 
   startCallerStack();
 })();

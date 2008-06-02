@@ -59,8 +59,8 @@ public class ExpressionSanitizerCaja {
     return true;
   }
 
-  // Test point
+  /** Visible for testing. */
   protected Rewriter newRewriter() {
-    return new DefaultCajaRewriter(false, false);
+    return new DefaultCajaRewriter(false, meta.isWartsMode());
   }
 }

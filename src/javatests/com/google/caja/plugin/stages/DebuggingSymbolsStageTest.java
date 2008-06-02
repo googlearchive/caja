@@ -29,16 +29,6 @@ import com.google.caja.util.RhinoTestBed;
  */
 public class DebuggingSymbolsStageTest extends CajaTestCase {
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-  }
-
   public void testAttachedMethodReflection() throws Exception {
     assertStackTrace(
           "function Point() {}\n"
@@ -55,18 +45,18 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         //        ^^^^^ 4+8 - 13
         "testAttachedMethodReflection:4+8 - 13");
     assertStackTrace(
-          "function Point() {}\n"
-        + "Point.prototype.freeze = function(){this.freeze_();};\n"
+          "function Point() { this; }\n"
+        + "Point.prototype.freezeMe = function(){this.freeze_();};\n"
         + "Point.prototype.addXProperty = function(x){this.x = 1;};\n"
-        //                                                ^^ 3+49 - 50
+        //                                                 ^ 3+49 - 50
         + "var p = new Point();\n"
-        + "p.freeze();\n"
+        + "p.freezeMe();\n"
         + "p.addXProperty(1);\n",
         //   ^^^^^^^^^^^^ 6+3 - 15
           "testAttachedMethodReflection:6+3 - 15\n"
         + "testAttachedMethodReflection:3+49 - 50");
     assertStackTrace(
-          "function Point() {}\n"
+          "function Point() { this; }\n"
         + "Point.prototype.freeze = function(){this.freeze_.call();};\n"
         //                                                 ^^^^^ 2+50 - 54
         + "var p = new Point();\n"
@@ -210,12 +200,97 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "testIllegalAccessInsideHoistedFunction:6+10 - 16");
   }
 
+  public void testWrappedConstructors() throws Exception {
+    // Normally, trying to subclass a Date results in an object whose
+    // methods fail with 'Method "<name>" called on incompatible object.'
+    // in both Rhino and SpiderMonkey.
+
+    // Make sure that the way we wrap constructors to catch errors does not
+    // cause (new Date()) to produce an unusable value.
+    assertConsistent("new Date(0).toString()");
+    assertConsistent("new Array(4).length");
+    assertConsistent("new Array('4.1').length");
+    assertConsistent("new Array(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15).length");
+    assertConsistent("(new RegExp('foo', 'i')).test('foobar')");
+    assertConsistent(
+        ""
+        + "(function () {\n"
+        + "  function sum(nums) {\n"
+        + "    var n = 0;\n"
+        + "    for (var i = nums.length; --i >= 0;) { n += nums[i]; }\n"
+        + "    return n;\n"
+        + "  }\n"
+        + "  function Clazz() { this.x = sum(arguments); }\n"
+        + "  caja.def(Clazz, Object, {get: function () { return this.x; }});\n"
+        + "  var c = new Clazz(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16);\n"
+        + "  return c.get() + ',' + (c instanceof Clazz);\n"
+        + "})()");
+    assertConsistent(
+        ""
+        + "(function () {\n"
+        + "  function sum(nums) {\n"
+        + "    var n = 0;\n"
+        + "    for (var i = nums.length; --i >= 0;) { n += nums[i]; }\n"
+        + "    return n;\n"
+        + "  }\n"
+        + "  function Clazz() { this.x = sum(arguments); }\n"
+        + "  caja.def(Clazz, Object, {get: function () { return this.x; }});\n"
+        + "  function Factory (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q) {\n"
+        + "    return new Clazz(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q);\n"
+        + "  }\n"
+        + "  var c = new Factory(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16);\n"
+        + "  return c.get() + ',' + (c instanceof Clazz);\n"
+        + "})()");
+  }
+
+  public void testExophora() throws Exception {
+    System.err.println("\n\n\ntestExophora");
+    assertConsistent("({ f: function (y) { return this.x * y; }, x: 4 }).f(2)");
+    assertStackTrace(
+        "({ f: function (y) { return this[y](); }, x: 4 }).f('foo___')",
+        //                                ^ 1+34-35        ^ 1+51-52
+
+        "testExophora:1+51 - 52\n"
+        + "testExophora:1+34 - 35");
+  }
+
   private void assertStackTrace(String js, String golden) throws Exception {
+    runCajoled(js, golden,
+               "var stack = '<no-stack>';                              "
+               + "try {                                                "
+               + "  %s                                                 "
+               + "} catch (e) {                                        "
+               + "  stack = e.cajaStack___;                            "
+               + "  if (!stack) { throw e; }                           "
+               + "  stack = ___.unsealCallerStack(stack).join('\\n');  "
+               + "}                                                    "
+               + "stack                                               ");
+  }
+
+  private void assertConsistent(String js) throws Exception {
+    // Execute js in the presence of caja so it can use caja.def.
+    Object golden = RhinoTestBed.runJs(
+        null,
+        new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
+        new RhinoTestBed.Input(js, getName()));
+    // Use the caja.result function so that we can sneak the result of
+    // evaluating js out of the ___.loadModule envelope.
+    runCajoled("caja.result(" + js + ");", golden,
+               "var output = '<no-output>';"
+               + "caja.result = function (x) { output = x; };"
+               + "___.allowCall(caja, 'result');"
+               + "%s;"
+               + "output");
+  }
+
+  private void runCajoled(String js, Object golden, String context)
+      throws Exception {
     Block block = js(fromString(js));
     System.err.println("\n\nblock\n=====\n" + block.toStringDeep(1));
 
     PluginMeta meta = new PluginMeta();
     meta.setDebugMode(true);
+    meta.setWartsMode(true);
 
     Jobs jobs = new Jobs(mc, mq, meta);
     jobs.getJobs().add(new Job(AncestorChain.instance(block)));
@@ -238,24 +313,17 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
     block = jobs.getJobs().get(0).getRoot().cast(Block.class).node;
 
     try {
-      Object stack = RhinoTestBed.runJs(
+      String cajoled = String.format(context, render(block));
+      Object actual = RhinoTestBed.runJs(
           null,
+          new RhinoTestBed.Input(getClass(), "../console-stubs.js"),
           new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
           new RhinoTestBed.Input(
-              getClass(), "/com/google/caja/caja-debugmode.js"),
-          new RhinoTestBed.Input(getClass(), "../console-stubs.js"),
+              getClass(), "/com/google/caja/log-to-console.js"),
           new RhinoTestBed.Input(
-              "var stack = '<no-stack>';                              "
-              + "try {                                                "
-              +    render(block)
-              + "} catch (e) {                                        "
-              + "  stack = e.cajaStack___;                            "
-              + "  if (!stack) { throw e; }                           "
-              + "  stack = ___.unsealCallerStack(stack).join('\\n');  "
-              + "}                                                    "
-              + "stack                                                ",
-              getName()));
-      assertEquals(golden, stack);
+              getClass(), "/com/google/caja/caja-debugmode.js"),
+          new RhinoTestBed.Input(cajoled, getName()));
+      assertEquals(golden, actual);
     } catch (Exception ex) {
       System.err.println(render(block));
       throw ex;
