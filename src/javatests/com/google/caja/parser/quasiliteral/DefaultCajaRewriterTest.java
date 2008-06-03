@@ -2298,6 +2298,14 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  throw x;" +
         "}));");
   }
+  
+  public void testCantReadProto() throws Exception {
+    rewriteAndExecute(
+        "function foo(){}" +
+        "foo.prototype.getX = function(){};" +
+        "assertTrue(foo.prototype === undefined);" +
+        "assertThrows(function(){foo.prototype.getX;});");
+  }
 
   public void testSpecimenClickme() throws Exception {
     checkSucceeds(fromResource("clickme.js"));

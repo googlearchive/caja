@@ -983,7 +983,7 @@ var ___;
     if (endsWith(name, '__')) {
       fail('Reserved name: ', name);
     }
-    var proto = readPub(asCtorOnly(constr), 'prototype');
+    var proto = asCtorOnly(constr).prototype;
     // We allow prototype members to end in a single "_".
     if (!canSetProp(proto, name)) {
       fail('not settable: ', name);
@@ -1778,12 +1778,7 @@ var ___;
     return primFreeze(this);
   }));
   
-  // SECURITY HAZARD TODO(erights): Seems dangerous, but doesn't add
-  // risk. Or does it? 
-  ctor(Function, Object, 'Function');
-  // SECURITY HAZARD TODO(erights): Seems dangerous, but doesn't add
-  // risk. Or does it? 
-  allowRead(Function.prototype, 'prototype');
+
   useGetAndCallHandlers(Object.prototype, 'apply', xo4a(function(that, realArgs) {
     return asXo4aFunc(this).apply(that, realArgs);
   }));
