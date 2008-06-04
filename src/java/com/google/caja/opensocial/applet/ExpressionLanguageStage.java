@@ -37,7 +37,7 @@ import java.util.List;
  * <p>This stage analyzes the program using the following rules:
  * <ul>
  *   <li>If it is a {@link Block}, recurse on the last non-synthetic statement.
- *   <li>If it is an {@link ExpressionStmt} e, rewrite to {@code caja.yield(e)}.
+ *   <li>If it is an {@link ExpressionStmt} e, rewrite to {@code ___.yield(e)}.
  *   <li>If it is a {@link Conditional}, recurse to each branch.
  *   <li>If it is a {@link TryStmt}, recurse to the body but not the
  *       catch/finally.
@@ -74,7 +74,7 @@ final class ExpressionLanguageStage implements Pipeline.Stage<Jobs> {
     if (node instanceof ExpressionStmt) {
       ExpressionStmt es = (ExpressionStmt) node;
       es.replaceChild(
-          QuasiBuilder.substV("caja.result(@e)", "e", es.getExpression()),
+          QuasiBuilder.substV("IMPORTS___.yield(@e)", "e", es.getExpression()),
           es.getExpression());
     } else if (node instanceof Block) {
       Block b = (Block) node;

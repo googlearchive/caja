@@ -43,7 +43,7 @@
         padding-left: 4px;
         margin: 2px
       }
-      #caja-stack { white-space: pre; font-family: monospace }
+      .caja-stack { white-space: pre; font-family: monospace }
     </style>
 
     <script type="text/javascript" src="caja.js"></script>
@@ -65,9 +65,50 @@
     <script type="text/javascript" src="testbed.js"></script>
   </head>
 
-  <body bgcolor="white"
-   onload="document.forms.cajolerForm.elements.src.select();
-           testImports.clearHtml___()">
+
+  <div style="display:none">
+    <!-- a template for a set of testbed controls and output UI -->
+    <table cols="2" id="testbed-ui"><tr valign="top">
+    <td>
+      <form id="cajolerForm" onsubmit="return false">
+        <button type="button" onclick="cajole(this.form)">Cajole</button>
+        &nbsp;
+        <input name="embeddable" type="checkbox">
+        <label for="embeddable" title="Output can be embedded in HTML/XML"
+         >Embeddable</label>
+        &nbsp;
+        <input name="debugSymbols" type="checkbox">
+        <label for="debugSymbols" title="Build with debugging symbols"
+         >Debug Symbols</label>
+        <br>
+        <textarea cols="81" rows="40" name="src"
+>&lt;script type="text/javascript"&gt;
+
+&lt;/script&gt;
+</textarea>
+        <br>
+        <button type="button" onclick="cajole(this.form)">Cajole</button>
+      </form>
+    <td>
+      <pre id="messages" class="prettyprint"></pre>
+      <hr>
+      <pre id="output"></pre>
+      <hr>
+
+      <div id="eval-results"></div>
+      <div id="caja-stacks" style="display:none">
+        <hr>
+        Errors
+        <div id="caja-stack" class="caja-stack"></div>
+      </div>
+      <hr>
+      <div id="caja-html" class="xyz___"></div>
+
+    </table>
+  </div>
+
+
+  <body bgcolor="white" onload="prettyPrint()">
     <applet code="com.google.caja.opensocial.applet.CajaApplet" name="cajoler"
      archive="testbed.jar,
               ../../third_party/java/htmlparser/htmlparser.jar,
@@ -109,56 +150,33 @@
 
       <p>Example:
       <pre class=prettyprint style="cursor: pointer"
-       onclick="document.forms.cajolerForm.src.value = innerText(this)">
-      &lt;!-- Styles are displayed --&gt;
-      &lt;style&gt; p { color: purple } &lt;/style&gt;
+       onclick="document.forms['cajolerForm.1'].src.value = innerText(this)">
+&lt;!-- Styles are displayed --&gt;
+&lt;style&gt; p { color: purple } &lt;/style&gt;
 
-      &lt;!-- Scripts are executed --&gt;
-      &lt;script&gt;
-        2 + 2  // You should see a missing semicolon warning too!
-      &lt;/script&gt;
+&lt;!-- Scripts are executed --&gt;
+&lt;script&gt;
+  2 + 2  // You should see a missing semicolon warning too!
+&lt;/script&gt;
 
-      &lt;!-- Regular HTML is emitted --&gt;
-      &lt;p&gt;Hello World&lt;/p&gt;</pre>
+&lt;!-- Regular HTML is emitted --&gt;
+&lt;p&gt;Hello World&lt;/p&gt;</pre>
     </div>
 
-    <table cols="2"><tr valign="top">
-    <td>
-      <button onclick="cajole()">Cajole</button>
-      <form name="cajolerForm" onsubmit="return false">
-        &nbsp;
-        <input name="embeddable" type="checkbox">
-        <label for="embeddable" title="Output can be embedded in HTML/XML"
-         >Embeddable</label>
-        &nbsp;
-        <input name="debugSymbols" type="checkbox">
-        <label for="debugSymbols" title="Build with debugging symbols"
-         >Debug Symbols</label>
-        <br>
-        <textarea cols="81" rows="40" name="src"
->&lt;script type="text/javascript"&gt;
-
-&lt;/script&gt;
-</textarea>
-      </form>
-      <br>
-      <button onclick="cajole()">Cajole</button>
-    <td>
-      <pre id="messages" class="prettyprint"></pre>
-      <hr>
-      <pre id="output"></pre>
-      <hr>
-
-      <div id="eval-results"></div>
-      <div id="caja-stacks" style="display:none">
-        <hr>
-        Errors
-        <div id="caja-stack"></div>
-      </div>
-      <hr>
-      <div id="caja-html" class="xyz___"></div>
-
-    </table>
-
   </body>
+
+  <script type="text/javascript">(function () {
+    function makeTestbed(uiSuffix) {
+      document.body.appendChild(
+          renderTemplate(document.getElementById('testbed-ui'), uiSuffix));
+      registerTestbed(uiSuffix);
+    }
+    makeTestbed('.1');
+    makeTestbed('.2');
+
+    document.forms.cajolerForm.elements.src.select();
+    initTestbeds();
+  })();
+  </script>
+
 </html>

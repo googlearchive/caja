@@ -24,11 +24,11 @@ public class ExpressionLanguageStageTest extends CajaTestCase {
   }
 
   public void testExpressionStmt() throws Exception {
-    assertRewritten("{ caja.result(2 + 2); }", "{ 2 + 2; }");
+    assertRewritten("{ IMPORTS___.yield(2 + 2); }", "{ 2 + 2; }");
   }
 
   public void testMultipleStatementsInBlock() throws Exception {
-    assertRewritten("{ 3 * 3; caja.result(2 + 2); }", "{ 3 * 3; 2 + 2; }");
+    assertRewritten("{ 3 * 3; IMPORTS___.yield(2 + 2); }", "{ 3 * 3; 2 + 2; }");
   }
 
   public void testReturnUnchanged() throws Exception {
@@ -36,17 +36,21 @@ public class ExpressionLanguageStageTest extends CajaTestCase {
   }
 
   public void testConditions() throws Exception {
-    assertRewritten("{ if (rnd()) { caja.result(1); } else caja.result(2); }",
-                    "{ if (rnd()) { 1; } else 2; }");
-    assertRewritten("{ if (rnd()) { caja.result(1); } }",
+    assertRewritten(
+        "{ if (rnd()) { IMPORTS___.yield(1); } else IMPORTS___.yield(2); }",
+        "{ if (rnd()) { 1; } else 2; }");
+    assertRewritten("{ if (rnd()) { IMPORTS___.yield(1); } }",
                     "{ if (rnd()) { 1; } }");
     assertRewritten(
-        "{ if (rnd()) caja.result(1); else if (rnd()) caja.result(2); }",
+        "{"
+        + "if (rnd()) IMPORTS___.yield(1);"
+        + "else if (rnd()) IMPORTS___.yield(2);"
+        + "}",
         "{ if (rnd()) 1; else if (rnd()) 2; }");
   }
 
   public void testTryBlock() throws Exception {
-    assertRewritten("{ try { caja.result(foo()); } catch (e) { bar(); } }",
+    assertRewritten("{ try { IMPORTS___.yield(foo()); } catch (e) { bar(); } }",
                     "{ try { foo(); } catch (e) { bar(); } }");
   }
 
@@ -56,7 +60,7 @@ public class ExpressionLanguageStageTest extends CajaTestCase {
   }
 
   public void testMultipleBlocks() throws Exception {
-    assertRewritten("{ caja.result(1); } { caja.result(2); }",
+    assertRewritten("{ IMPORTS___.yield(1); } { IMPORTS___.yield(2); }",
                     "{ 1; } { 2; }");
   }
 
