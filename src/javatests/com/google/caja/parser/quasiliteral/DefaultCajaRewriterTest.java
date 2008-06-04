@@ -136,6 +136,21 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     }
     fail("Assertions do not work in cajoled mode");
   }
+  
+  public void testCallAndSet() throws Exception {
+      rewriteAndExecute("function Point(x){ this.x_ = x; }"
+          + "caja.def(Point,Object,{"
+          + "  toString: function(){ return \"<\"+this.x_+\">\"; },"
+          + "  getX: function(){ return this.x_; },"
+          + "  setGetX: function(newGetX) { this.getX = newGetX; }"
+          + "});"
+          + "var pt = new Point(3);"
+          + "pt.getX();"
+          + "pt.setGetX(4);"
+          + "pt.setGetX(Date);"
+          + "assertThrows(function() { pt.getX(); });"
+          );
+  }
 
   public void testFreeVariables() throws Exception {
     checkSucceeds(

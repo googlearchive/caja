@@ -606,35 +606,43 @@ var ___;
   function canRead(obj, name)   { return !!obj[name + '_canRead___']; }
   /** Tests whether the fast-path canEnum flag is set. */
   function canEnum(obj, name)   { return !!obj[name + '_canEnum___']; }
-  /** Tests whether the fast-path canCall flag is set. */
-  function canCall(obj, name)   { return !!obj[name + '_canCall___']; }
-  /** Tests whether the fast-path canSet flag is set. */
-  function canSet(obj, name)    { return !!obj[name + '_canSet___']; }
+  /**
+   * Tests whether the fast-path canCall flag is set, or grantCall() has been
+   * called.
+   */
+  function canCall(obj, name)   {
+    return !!(obj[name + '_canCall___'] || obj[name + '_grantCall___']);
+  }
+  /**
+   * Tests whether the fast-path canSet flag is set, or grantSet() has been
+   * called.
+   */
+  function canSet(obj, name) {
+    return !!(obj[name + '_canSet___'] || obj[name + '_grantSet___']);
+  }
   /** Tests whether the fast-path canDelete flag is set. */
   function canDelete(obj, name) { return !!obj[name + '_canDelete___']; }
   
   /** 
    * Sets the fast-path canRead flag.
    * <p>
-   * The various <tt>allow*</tt> functions are called externally by
-   * Javascript code to express whitelisting taming decisions. And
-   * they are called internally to memoize decisions arrived at by
+   * These are called internally to memoize decisions arrived at by
    * other means. 
    */
-  function allowRead(obj, name) {
+  function fastpathRead(obj, name) {
     enforce(obj != null, 'Cannot grant read of ', name, ' on null');
     obj[name + '_canRead___'] = true; 
   }
   
   /** allowEnum implies allowRead */
-  function allowEnum(obj, name) {
+  function fastpathEnum(obj, name) {
     enforce(obj != null, 'Cannot grant enum of ', name, ' on null');
-    allowRead(obj, name);
+    fastpathRead(obj, name);
     obj[name + '_canEnum___'] = true;
   }
   
   /** allowEnum for members */
-  function allowEnumOnly(obj, name) { 
+  function fastpathEnumOnly(obj, name) { 
     obj[name + '_canEnum___'] = true;
   }
   
@@ -642,33 +650,76 @@ var ___;
    * Simple functions should callable and readable, but methods
    * should only be callable.
    */
-  function allowCall(obj, name) {
+  function fastpathCall(obj, name) {
     enforce(obj != null, 'Cannot grant call of ', name, ' on null');
     obj[name + '_canCall___'] = true; 
+    if (obj[name + '_canSet___']) {
+      obj[name + '_canSet___'] = false;
+    }
+    if (obj[name + '_grantSet___']) {
+      obj[name + '_grantSet___'] = false;
+    }
   }
-  
+
   /**
-   * allowSet implies allowEnum and allowRead.
+   * allowSet implies allowEnum and allowRead. It also disables the ability
+   * to call.
    */
-  function allowSet(obj, name) {
+  function fastpathSet(obj, name) {
     enforce(obj != null, 'Cannot allow set of member ', name, ' on null');
     if (isFrozen(obj)) {
       fail("Can't set .", name, ' on frozen (', debugReference(obj), ')');
     }
-    allowEnum(obj, name);
+    fastpathEnum(obj, name);
     obj[name + '_canSet___'] = true;
+    if (obj[name + '_canCall___']) {
+      obj[name + '_canCall___'] = false;
+    }
+    if (obj[name + '_grantCall___']) {
+      obj[name + '_grantCall___'] = false;
+    }
   }
   
   /**
    * BUG TODO(erights): allowDelete is not yet specified or
    * implemented. 
    */
-  function allowDelete(obj, name) {
+  function fastpathDelete(obj, name) {
     enforce(obj != null, 'Cannot allow delete of member ', name, ' on null');
     if (isFrozen(obj)) {
       fail("Can't delete .", name, ' on frozen (', debugReference(obj), ')');
     }
     obj[name + '_canDelete___'] = true;
+  }
+  
+  /**
+   * The various <tt>grant*</tt> functions are called externally by
+   * Javascript code to express whitelisting taming decisions. 
+   */
+  function grantRead(obj, name) {
+    fastpathRead(obj, name);
+  }
+  
+  function grantEnum(obj, name) {
+    fastpathEnum(obj, name);
+  }
+  
+  function grantEnumOnly(obj, name) {
+    fastpathEnumOnly(obj, name);
+  }
+  
+  function grantCall(obj, name) {
+//    fastpathCall(obj, name);
+    obj[name + '_grantCall___'] = true;
+  }
+  
+  function grantSet(obj, name) {
+//    fastpathSet(obj, name);
+    obj[name + '_grantSet___'] = true;
+  }
+  
+  function grantDelete(obj, name) {
+    fastpathDelete(obj, name);
   }
   
   ////////////////////////////////////////////////////////////////////////
@@ -989,13 +1040,15 @@ var ___;
       fail('not settable: ', name);
     }
     if (isMethod(member) || isXo4aFunc(member)) {
-      allowCall(proto, name);  // grant
-      allowEnumOnly(proto, name); // grant
+      fastpathCall(proto, name);
+      fastpathEnumOnly(proto, name);
     } else if (isSimpleFunc(member)) {
-      allowCall(proto, name);  // grant
-      allowSet(proto, name);  // grant
+      fastpathCall(proto, name);
+      fastpathRead(proto, name);
+      fastpathEnum(proto, name);
     } else {
-      allowSet(proto, name);  // grant
+      fastpathRead(proto, name);
+      fastpathEnum(proto, name);
     }
     proto[name] = member;
   }
@@ -1047,7 +1100,7 @@ var ___;
     if (canRead(obj, name)) { return true; }
     if (!isJSONContainer(obj)) { return false; }
     if (!hasOwnProp(obj, name)) { return false; }
-    allowRead(obj, name);  // memoize
+    fastpathRead(obj, name);
     return true;
   }
 
@@ -1134,7 +1187,7 @@ var ___;
     if (canEnum(obj, name)) { return true; }
     if (!isJSONContainer(obj)) { return false; }
     if (!hasOwnProp(obj, name)) { return false; }
-    allowEnum(obj, name);  // memoize
+    fastpathEnum(obj, name);
     return true;
   }
   
@@ -1228,7 +1281,7 @@ var ___;
     if (!canReadProp(that, name)) { return false; }
     var func = that[name];
     if (!isSimpleFunc(func)) { return false; }
-    allowCall(that, name);  // memoize
+    fastpathCall(that, name);
     return true;
   }
   
@@ -1256,7 +1309,7 @@ var ___;
     if (!canReadPub(obj, name)) { return false; }
     var func = obj[name];
     if (!isXo4aFunc(func) && !isMethod(func)) { return false; }
-    allowCall(obj, name);  // memoize
+    fastpathCall(obj, name);
     return true;
   }
   
@@ -1292,9 +1345,9 @@ var ___;
   function setProp(that, name, val) {
     name = String(name);
     if (canSetProp(that, name)) {
-      allowSet(that, name);  // grant
+      fastpathSet(that, name);
       if (!hasOwnProp(that, name)) {
-        allowDelete(that, name);
+        fastpathDelete(that, name);
       }
       return that[name] = val;
     } else {
@@ -1328,7 +1381,7 @@ var ___;
   function setPub(obj, name, val) {
     name = String(name);
     if (canSetPub(obj, name)) {
-      allowSet(obj, name);  // grant
+      fastpathSet(obj, name);
       obj[name] = val;
       return val;
     } else if (isCtor(obj) && !isFrozen(obj)) {
@@ -1377,7 +1430,7 @@ var ___;
     staticMemberName = '' + staticMemberName;
     if (canSetStatic(ctor, staticMemberName)) {
       ctor[staticMemberName] = staticMemberValue;
-      allowRead(ctor, staticMemberName);
+      fastpathRead(ctor, staticMemberName);
     } else {
       fail('cannot set static member %o %s',
            debugReference(obj), staticMemberName);
@@ -1666,19 +1719,19 @@ var ___;
    * Whilelist obj[name] as a simple function that can be either
    * called or read.
    */
-  function allowSimpleFunc(obj, name) {
+  function grantSimpleFunc(obj, name) {
     simpleFunc(obj[name], name);
-    allowCall(obj, name);
-    allowRead(obj, name);
+    grantCall(obj, name);
+    grantRead(obj, name);
   }
   
   /**
    * Whitelist constr.prototype[name] as a method that can be called
    * on instances of constr.
    */
-  function allowMethod(constr, name) {
+  function grantMethod(constr, name) {
     method(constr.prototype[name], name);
-    allowCall(constr.prototype, name);
+    grantCall(constr.prototype, name);
   }
   
   function useGetAndCallHandlers(constr, name, func) {
@@ -1697,7 +1750,7 @@ var ___;
    * allowCall(), allowSimpleFunc(), or allowMethod() on the
    * original method. 
    */
-  function allowMutator(constr, name) {
+  function grantMutator(constr, name) {
     var original = constr.prototype[name];
     useGetAndCallHandlers(constr.prototype, name, xo4a(function(var_args) {
       if (isFrozen(this)) {
@@ -1738,21 +1791,20 @@ var ___;
   // Taming decisions
   ////////////////////////////////////////////////////////////////////////
 
-
-  all2(allowRead, Math, [
+  all2(grantRead, Math, [
     'E', 'LN10', 'LN2', 'LOG2E', 'LOG10E', 'PI', 'SQRT1_2', 'SQRT2'
   ]);
-  all2(allowSimpleFunc, Math, [
+  all2(grantSimpleFunc, Math, [
     'abs', 'acos', 'asin', 'atan', 'atan2', 'ceil', 'cos', 'exp', 'floor',
     'log', 'max', 'min', 'pow', 'random', 'round', 'sin', 'sqrt', 'tan'
   ]);
 
 
   ctor(Object, (void 0), 'Object');
-  all2(allowMethod, Object, [
+  all2(grantMethod, Object, [
     'toString', 'toLocaleString', 'valueOf', 'isPrototypeOf'
   ]);
-  allowRead(Object.prototype, 'length');
+  grantRead(Object.prototype, 'length');
   useGetAndCallHandlers(Object.prototype, 'hasOwnProperty', xo4a(function(name){
     name = String(name);
     return canReadPub(this, name) && hasOwnProp(this, name);
@@ -1778,7 +1830,6 @@ var ___;
     return primFreeze(this);
   }));
   
-
   useGetAndCallHandlers(Object.prototype, 'apply', xo4a(function(that, realArgs) {
     return asXo4aFunc(this).apply(that, realArgs);
   }));
@@ -1787,10 +1838,10 @@ var ___;
   }));
 
   ctor(Array, Object, 'Array');
-  all2(allowMethod, Array, [
+  all2(grantMethod, Array, [
     'concat', 'join', 'slice', 'indexOf', 'lastIndexOf'
   ]);
-  all2(allowMutator, Array, [
+  all2(grantMutator, Array, [
     'pop', 'push', 'reverse', 'shift', 'splice', 'unshift'
   ]);
   useGetAndCallHandlers(Array.prototype, 'sort', xo4a(function(comparator) {
@@ -1805,8 +1856,8 @@ var ___;
   }));
 
   ctor(String, Object, 'String');
-  allowSimpleFunc(String, 'fromCharCode');
-  all2(allowMethod, String, [
+  grantSimpleFunc(String, 'fromCharCode');
+  all2(grantMethod, String, [
     'charAt', 'charCodeAt', 'concat', 'indexOf', 'lastIndexOf',
     'localeCompare', 'slice', 'substr', 'substring',
     'toLowerCase', 'toLocaleLowerCase', 'toUpperCase', 'toLocaleUpperCase'
@@ -1841,20 +1892,20 @@ var ___;
   
   
   ctor(Number, Object, 'Number');
-  all2(allowRead, Number, [
+  all2(grantRead, Number, [
     'MAX_VALUE', 'MIN_VALUE', 'NaN',
     'NEGATIVE_INFINITY', 'POSITIVE_INFINITY'
   ]);
-  all2(allowMethod, Number, [
+  all2(grantMethod, Number, [
     'toFixed', 'toExponential', 'toPrecision'
   ]);
   
   
   ctor(Date, Object, 'Date');
-  allowSimpleFunc(Date, 'parse');
-  allowSimpleFunc(Date, 'UTC');
+  grantSimpleFunc(Date, 'parse');
+  grantSimpleFunc(Date, 'UTC');
   
-  all2(allowMethod, Date, [
+  all2(grantMethod, Date, [
     'toDateString', 'toTimeString', 'toUTCString',
     'toLocaleString', 'toLocaleDateString', 'toLocaleTimeString',
     'toISOString',
@@ -1865,7 +1916,7 @@ var ___;
     'getMinutes', 'getUTCMinutes', 'getSeconds', 'getUTCSeconds',
     'getMilliseconds', 'getUTCMilliseconds'
   ]);
-  all2(allowMutator, Date, [
+  all2(grantMutator, Date, [
     'setTime', 'setFullYear', 'setUTCFullYear', 'setMonth', 'setUTCMonth',
     'setDate', 'setUTCDate', 'setHours', 'setUTCHours',
     'setMinutes', 'setUTCMinutes', 'setSeconds', 'setUTCSeconds',
@@ -1874,18 +1925,18 @@ var ___;
   
   
   ctor(RegExp, Object, 'RegExp');
-  allowMutator(RegExp, 'exec');
-  allowMutator(RegExp, 'test');
+  grantMutator(RegExp, 'exec');
+  grantMutator(RegExp, 'test');
   
-  all2(allowRead, RegExp, [
+  all2(grantRead, RegExp, [
     'source', 'global', 'ignoreCase', 'multiline', 'lastIndex'
   ]);
 
-  allowMethod(Function, 'bind');  
+  grantMethod(Function, 'bind');  
   
   ctor(Error, Object, 'Error');
-  allowRead(Error, 'name');
-  allowRead(Error, 'message');
+  grantRead(Error, 'name');
+  grantRead(Error, 'message');
   ctor(EvalError, Error, 'EvalError');
   ctor(RangeError, Error, 'RangeError');
   ctor(ReferenceError, Error, 'ReferenceError');
@@ -2221,12 +2272,12 @@ var ___;
     isFrozen: isFrozen,
     primFreeze: primFreeze,
 
-    // Accessing property attributes
-    canRead: canRead,             allowRead: allowRead,
-    canEnum: canEnum,             allowEnum: allowEnum,
-    canCall: canCall,             allowCall: allowCall,
-    canSet: canSet,               allowSet: allowSet,
-    canDelete: canDelete,         allowDelete: allowDelete,
+    // Accessing property attributes. allow* temporary for back compatibility
+    canRead: canRead,        allowRead: grantRead,     grantRead: grantRead,
+    canEnum: canEnum,        allowEnum: grantEnum,     grantEnum: grantEnum,
+    canCall: canCall,        allowCall: grantCall,     grantCall: grantCall,
+    canSet: canSet,          allowSet: grantSet,       grantSet: grantSet,
+    canDelete: canDelete,    allowDelete: grantDelete, grantDelete: grantDelete,
 
     // Module linkage
     readImports: readImports,
@@ -2268,9 +2319,13 @@ var ___;
     useSetHandler: useSetHandler,
     useDeleteHandler: useDeleteHandler,
 
-    allowSimpleFunc: allowSimpleFunc,
-    allowMethod: allowMethod,
-    allowMutator: allowMutator,
+    allowSimpleFunc: grantSimpleFunc,
+    allowMethod: grantMethod,
+    allowMutator: grantMutator,
+    grantSimpleFunc: grantSimpleFunc,
+    grantMethod: grantMethod,
+    grantMutator: grantMutator,
+    
     enforceMatchable: enforceMatchable,
     all2: all2,
 
@@ -2295,7 +2350,7 @@ var ___;
     }
     if (typeof v === 'function') {
       simpleFunc(v);
-      allowCall(caja, k);
+      grantCall(caja, k);
     }
     ___[k] = v;
   }));
