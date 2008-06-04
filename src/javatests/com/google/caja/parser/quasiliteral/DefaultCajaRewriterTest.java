@@ -1631,6 +1631,17 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "caja.def(Point, Object);" +
         ";" +
         "caja.def(WigglyPoint, ___.primFreeze(Point));");
+    checkAddsMessage(
+        js(fromString("(function (caja) {" +
+                      "  function C() { this; }" +
+                      "  return caja.def(C, Object);" +
+                      "})({ def: function () { return 123; } });")),
+        RewriterMessageType.CANNOT_REDECLARE_CAJA);
+    checkAddsMessage(
+        js(fromString("var caja = { def: function () { return 123; } };" +
+                      "function C() {}" +
+                      "caja.def(C, Object, {}, {});")),
+        RewriterMessageType.CANNOT_REDECLARE_CAJA);
   }
 
   public void testCallCajaDef3Plus() throws Exception {
@@ -1702,6 +1713,29 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "           { bar: function() { this.x_ = 3; } });\n" +
         "};",
         "Public properties cannot end in \"_\"");
+    checkAddsMessage(
+        js(fromString("(function (caja) {" +
+                      "})({ def: function () { return 123; } })")),
+        RewriterMessageType.CANNOT_REDECLARE_CAJA);
+    checkAddsMessage(
+        js(fromString("try {" +
+                      "  throw { def: function () { return 123; } };" +
+                      "} catch (caja) {" +
+                      "}" +
+                      "result;")),
+        RewriterMessageType.CANNOT_REDECLARE_CAJA);
+    checkAddsMessage(
+        js(fromString("function caja() { this; }" +
+                      "caja.def = function () { return 123; };")),
+        RewriterMessageType.CANNOT_REDECLARE_CAJA);
+    checkAddsMessage(
+        js(fromString("for (var caja = { def: function () { return 123; } }" +
+                      "     ; caja; caja = null) {" +
+                      "}")),
+        RewriterMessageType.CANNOT_REDECLARE_CAJA);
+    checkAddsMessage(
+        js(fromString("for (var caja in { x: 0 }) {}")),
+        RewriterMessageType.CANNOT_REDECLARE_CAJA);
   }
 
   public void testCallPublic() throws Exception {
@@ -2225,7 +2259,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   public void testRecurseDebuggerStmt() throws Exception {
     checkSucceeds("debugger;", "debugger;");
   }
-  
+
   public void testRecurseDefaultCaseStmt() throws Exception {
     checkSucceeds(
         "switch (g[0]) { default: break; }",

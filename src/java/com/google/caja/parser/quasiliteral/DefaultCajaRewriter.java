@@ -1389,7 +1389,8 @@ public class DefaultCajaRewriter extends Rewriter {
           reason="")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("caja.def(@fname, @base, @mm, @ss?)", node, bindings)
+        if (QuasiBuilder.match(
+                "caja.def(@fname, @base, @mm, @ss?)", node, bindings)
             && bindings.get("fname") instanceof Reference
             && scope.isFunction(getReferenceName(bindings.get("fname")))) {
           if (!checkMapExpression(bindings.get("mm"), this, scope, mq)) {
