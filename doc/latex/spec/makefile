@@ -1,7 +1,7 @@
 # makefile -- 
 # Author          : Jasvir Nagra <jas@cs.auckland.ac.nz>
 # Created On      : Wed May  1 02:49:53 1996
-# Last Modified   : <08/06/02 15:28:13 jasvir>
+# Last Modified   : <08/06/03 14:09:25 jasvir>
 # Description     : Document Caja
 # Keywords        : caja specification
 # Purpose         : Research
@@ -10,7 +10,7 @@
 MAIN=caja-spec.tex  
 
 # Sections
-SRCS= 
+SRCS= misc.tex
 
 # Figures
 INKSCAPE_FIGS=1.svg  2.svg  3.svg  4.svg  5.svg  6.svg  dialog.svg  seesaw-pola.svg
@@ -27,6 +27,9 @@ view:	$(MAIN_PDF)
 	xpdf $< &
 
 caja-spec.pdf: $(MAIN) $(SRC)
+	pdflatex $(MAIN)		# Find all references
+	bibtex $(MAIN:.tex=)	# Generate bib
+	pdflatex $(MAIN)		# 
 	pdflatex $(MAIN)
 
 clean:
@@ -42,6 +45,7 @@ clean:
                           $(MAIN:.tex=.out) \
                           $(MAIN:.tex=.pdf) \
                           $(MAIN:.tex=.toc) \
+                          $(MAIN:.tex=.todolist) \
                           $(FIGS)
 
 # Common generators

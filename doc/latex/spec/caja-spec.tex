@@ -29,6 +29,9 @@
 \newcommand{\q}[1]{{\includegraphics{#1}}}
 \newcommand{\qq}[2]{{\includegraphics{#1}}$\rightarrow${\includegraphics{#2}}}
 
+% Add functionality for TODOs
+\input{misc}
+
 %% Literal code-like strings in normal text.
 \newcommand{\code}[1]{{\tt {#1}}}              % code
 
@@ -52,6 +55,8 @@ Safe active content in sanitized JavaScript}
 
 
 \begin{document}
+
+\listoftodos
 
 \maketitle
 
@@ -121,6 +126,8 @@ overview of the differences between Caja and JavaScript suitable for the
 casual JavaScript programmer. The rest of this document then accurately goes 
 into more depth.
 
+\TODO{all}{Rewrite this section to be driven by an example attack and corresponding fix}
+
 \begin{description}
 
   \item[Forbidden names.] Caja rejects all names ending with ``\_\_'' (double 
@@ -155,6 +162,7 @@ into more depth.
   ``\code{this}''.
   
 % TODO(erights): ``stereotyped'' is the wrong word
+  \TODO{erights}{Replace ``stereotyped'' with the right word}
   Caja supports stereotyped class-like usage of constructors and methods, but 
   prohibits certain other dangerous usage patterns. A constructor can only be 
   called \emph{as a constructor} using \code{new}, or by a directly derived 
@@ -1033,6 +1041,7 @@ are isolated from each other.}
     Instead, ``\code{caja.cajitaEval}'' will evaluate Cajita source code (text or 
     AST) with an explicitly provided set of variable bindings to serve as its 
     initial outer environment, as TODO(erights) will be explained somewhere.
+    \TODO{erights}{Explain elsewhere}
     
     \item[Function] The JavaScript \code{Function} constructor is absent from 
     the default Caja outer environment, and must not be available in Caja.
@@ -1465,15 +1474,15 @@ creating context's \code{this}, as the above \code{bind} call ensures.\\ }
 
 \subsection{Browser Shield}
 
-TODO To be written
+\TODO{all}{Write this section}
 
 \subsection{ADsafe}
 
-TODO To be written
+\TODO{all}{Write this section}
 
 \section{Conclusions}
 
-TODO To be written
+\TODO{all}{Write this section}
 
 \section{Acknowledgements}
 
