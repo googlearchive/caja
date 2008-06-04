@@ -48,9 +48,11 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * An Applet that can be embedded in a webpage to cajole output in browser.
@@ -67,17 +69,17 @@ public class CajaApplet extends Applet {
   /**
    * Invoked by javascript in the embedding page.
    * @param cajaInput as an HTML gadget.
-   * @param embeddable true to render the output as embeddable.
-   * @param debugMode true to build with
-   *   {@link com.google.caja.plugin.stages.DebuggingSymbolsStage debugging}
-   *   symbols.
+   * @param featureNames names of {@link Feature} values.
    * @return a tuple of {@code [ cajoledHtml, messageHtml ]}.
    *     If the cajoledHtml is non-null then cajoling succeeded.
    */
-  public Object[] cajole(String cajaInput, boolean embeddable,
-                         boolean debugMode) {
+  public Object[] cajole(String cajaInput, String[] featureNames) {
     try {
-      return runCajoler(cajaInput, embeddable, debugMode);
+      Set<Feature> features = EnumSet.noneOf(Feature.class);
+      for (String featureName : featureNames) {
+        features.add(Feature.valueOf(featureName));
+      }
+      return runCajoler(cajaInput, features);
     } catch (RuntimeException ex) {
       StringWriter sw = new StringWriter();
       PrintWriter pw = new PrintWriter(sw);
@@ -91,8 +93,7 @@ public class CajaApplet extends Applet {
     return BuildInfo.getInstance().getBuildInfo();
   }
 
-  private Object[] runCajoler(
-      String cajaInput, final boolean embeddable, boolean debugMode) {
+  private Object[] runCajoler(String cajaInput, final Set<Feature> features) {
     // TODO(mikesamuel): If the text starts with a <base> tag, maybe use that
     // and white it out to preserve file positions.
     URI src = URI.create(getDocumentBase().toString());
@@ -112,7 +113,8 @@ public class CajaApplet extends Applet {
         @Override
         protected RenderContext createRenderContext(
             TokenConsumer out, MessageContext mc) {
-          return new RenderContext(mc, embeddable, out);
+          return new RenderContext(
+              mc, features.contains(Feature.EMBEDDABLE), out);
         }
         @Override
         protected PluginCompiler createPluginCompiler(
@@ -133,7 +135,7 @@ public class CajaApplet extends Applet {
           return pc;
         }
       };
-    rw.setDebugMode(debugMode);
+    rw.setDebugMode(features.contains(Feature.DEBUG_SYMBOLS));
 
     StringBuilder cajoledOutput = new StringBuilder();
     UriCallback uriCallback = new UriCallback() {
@@ -203,5 +205,11 @@ public class CajaApplet extends Applet {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeXml(s, false, sb);
     return sb.toString();
+  }
+
+  private static enum Feature {
+    EMBEDDABLE,
+    DEBUG_SYMBOLS,
+    ;
   }
 }

@@ -1131,7 +1131,6 @@ var ___;
    * more informative, rather than just whatever readPub throws.
    */
   function readImports(module_imports, name) {
-    java.lang.System.err.println('readImports(' + module_imports + ',' + name + ')');
     // TODO(ihab.awad): using readPub here throws an error; fix!!
     // return readPub(module_imports, name);
     return module_imports[name];

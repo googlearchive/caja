@@ -625,6 +625,7 @@
       <fileset dir="${javascript}/com/google/caja">
         <include name="caja.js"/>
         <include name="caja-debugmode.js"/>
+        <include name="log-to-console.js"/>
       </fileset>
       <fileset dir="${src}/com/google/caja/plugin">
         <include name="domita.js"/>

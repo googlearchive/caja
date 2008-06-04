@@ -40,8 +40,25 @@
  * </dl>
  * All UI suffixes start with a '.' which is allowed in XML IDs and CLASSes.
  *
+ * <p>
+ * Gadgets can exports their public API by attaching methods and fields to
+ * the <code>exports</code> object.  E.g. the 'module.1' module could do<pre>
+ *   exports.doSomething = function () { ... };
+ * </pre>
+ * which makes the <code>doSomething</code> function available to other modules
+ * via<pre>
+ *   loadModule('gadget.1').doSomething();
+ * </pre>
+ *
  * @author mikesamuel@gmail.com
  */
+
+
+/** UI suffixes of all registered testbeds. */
+var testbeds = [];
+
+/** A registry of the public APIs of each of the testbed applets. */
+var gadgetPublicApis = {};
 
 if ('undefined' === typeof prettyPrintOne) {
   // So it works without prettyprinting when disconnected from the network.
@@ -52,7 +69,7 @@ if ('undefined' === typeof prettyPrintOne) {
  * Returns an instance of CajaApplet that exposes public methods as javascript
  * methods.
  * @see CajaApplet.java
- * @return {CajaApplet}
+ * @return {com.google.caja.opensocial.applet.CajaApplet}
  */
 function getCajoler() {
   return document.applets.cajoler;
@@ -61,6 +78,7 @@ function getCajoler() {
 /**
  * Reads caja code and configuration from the testbed form, cajoles it, and
  * displays the output in the current HTML page.
+ * @param {HTMLFormElement} form
  */
 var cajole = (function () {
   /**
@@ -94,10 +112,13 @@ var cajole = (function () {
 
       // Set up the module handler
       ___.getNewModuleHandler().setImports(imports);
+      // Provide an object into which the module can export its public API.
+      imports.exports = {};
 
       // Load the script
       try {
         eval(script);
+        gadgetPublicApis['gadget' + uiSuffix] = ___.primFreeze(imports.exports);
       } catch (ex) {
         var cajaStack = ex.cajaStack___
             && ___.unsealCallerStack(ex.cajaStack___);
@@ -115,15 +136,23 @@ var cajole = (function () {
   }
 
   function cajole(form) {
+    var uiSuffix = form.id.replace(/^[^\.]+/, '');
+
     var inputs = form.elements;
+    var features = [];
+    // See CajaApplet.Feature
+    caja.each({ EMBEDDABLE: true, DEBUG_SYMBOLS: true },
+              ___.simpleFunc(function (featureName) {
+                if (inputs[featureName + uiSuffix].checked) {
+                  features.push(featureName);
+                }
+              }));
+
     var result = getCajoler().cajole(
-        inputs.src.value.replace(/^\s+|\s+$/g, ''),
-        Boolean(inputs.embeddable.checked),
-        Boolean(inputs.debugSymbols.checked));
+        inputs.src.value.replace(/^\s+|\s+$/g, ''), features);
     var cajoledOutput = result[0];
     var messages = String(result[1]);
 
-    var uiSuffix = form.id.replace(/^[^\.]+/, '');
     if (cajoledOutput !== null) {
       cajoledOutput = String(cajoledOutput);
       document.getElementById('output' + uiSuffix).innerHTML
@@ -143,6 +172,8 @@ var cajole = (function () {
 /**
  * Concatenates all text node leaves of the given DOM subtree to produce the
  * equivalent of IE's innerText attribute.
+ * @param {Node} node
+ * @return {string}
  */
 var innerText = (function () {
   function innerText(node) {
@@ -175,6 +206,8 @@ var innerText = (function () {
 
 /**
  * Gets the fake global scope for the testbed gadget with the given ui suffix.
+ * @param {string} uiSuffix
+ * @return {Object} imports object for the given uiSuffix.
  */
 var getImports = (function () {
   var importsByUiSuffix = {};
@@ -302,22 +335,35 @@ var getImports = (function () {
     testImports.getCssContainer___ = function () {
       return document.getElementById('caja-html' + uiSuffix);
     };
+    /** Provide a way to load another gadget's public API. */
+    testImports.loadModule = ___.primFreeze(___.simpleFunc(
+        function (moduleName) {
+          moduleName = String(moduleName);
+          return ___.canEnumPub(gadgetPublicApis, moduleName)
+              ? gadgetPublicApis[moduleName]
+              : void 0;
+        }));
     return importsByUiSuffix[uiSuffix] = testImports;
   }
 
   return getImports;
 })();
 
-
 /**
  * Copies the given DOM node and rewrites IDs to be unique as a poor man's
  * Maps templates.
+ * @param {Node} domTree
+ * @param {string} domSuffix
+ * @return {Node}
  */
 function renderTemplate(domTree, domSuffix) {
   function fixNamesAndIds(node, inForm) {
     if (node.nodeType === 1) {
       if (node.hasAttribute('id')) {
         node.setAttribute('id', node.getAttribute('id') + domSuffix);
+      }
+      if (node.hasAttribute('for')) {
+        node.setAttribute('for', node.getAttribute('for') + domSuffix);
       }
       if (!inForm) {
         if (node.hasAttribute('name')) {
@@ -335,9 +381,10 @@ function renderTemplate(domTree, domSuffix) {
   return domTree;
 }
 
-
-/** UI suffixes of all registered testbeds. */
-var testbeds = [];
+/**
+ * Add to the list of registered testbeds.
+ * @param {string} uiSuffix
+ */
 function registerTestbed(uiSuffix) {
   testbeds.push(uiSuffix);
 }

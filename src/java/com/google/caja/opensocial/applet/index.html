@@ -47,6 +47,7 @@
     </style>
 
     <script type="text/javascript" src="caja.js"></script>
+    <script type="text/javascript" src="log-to-console.js"></script>
     <script type="text/javascript" src="caja-debugmode.js"></script>
     <script type="text/javascript" src="unicode.js"></script>
     <script type="text/javascript" src="html4-defs.js"></script>
@@ -73,12 +74,12 @@
       <form id="cajolerForm" onsubmit="return false">
         <button type="button" onclick="cajole(this.form)">Cajole</button>
         &nbsp;
-        <input name="embeddable" type="checkbox">
-        <label for="embeddable" title="Output can be embedded in HTML/XML"
+        <input id="EMBEDDABLE" type="checkbox">
+        <label for="EMBEDDABLE" title="Output can be embedded in HTML/XML"
          >Embeddable</label>
         &nbsp;
-        <input name="debugSymbols" type="checkbox">
-        <label for="debugSymbols" title="Build with debugging symbols"
+        <input id="DEBUG_SYMBOLS" type="checkbox">
+        <label for="DEBUG_SYMBOLS" title="Build with debugging symbols"
          >Debug Symbols</label>
         <br>
         <textarea cols="81" rows="40" name="src"
@@ -161,6 +162,37 @@
 
 &lt;!-- Regular HTML is emitted --&gt;
 &lt;p&gt;Hello World&lt;/p&gt;</pre>
+
+      <p>
+      A module can export a public API by attaching fields to the
+      <code>exports</code> object.
+
+      <pre class=prettyprint style="cursor: pointer"
+       onclick="document.forms['cajolerForm.1'].src.value = innerText(this)">
+&lt;p id=message&gt;Hello World&lt;/p&gt;
+
+&lt;script&gt;
+exports.sayBye = function () {
+  document.getElementById('message').innerHTML = 'Bye';
+};
+&lt;/script&gt;
+</pre>
+
+      <p>
+      So that other modules can load and call them.
+      <pre class=prettyprint style="cursor: pointer"
+       onclick="document.forms['cajolerForm.2'].src.value = innerText(this)">
+&lt;script&gt;loadModule('gadget.1').sayBye();&lt;/script&gt;
+</pre>
+
+      <p>
+      You can log messages to the Firebug console by using
+      <code>caja.log</code>:
+      <pre class=prettyprint style="cursor: pointer"
+       onclick="document.forms['cajolerForm.1'].src.value = innerText(this)">
+&lt;script&gt;caja.log('Hello World');&lt;/script&gt;
+</pre>
+
     </div>
 
   </body>
