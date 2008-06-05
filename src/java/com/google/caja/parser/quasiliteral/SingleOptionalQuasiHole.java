@@ -24,7 +24,7 @@ import java.util.Map;
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
-public class SingleOptionalQuasiHole extends SimpleQuasiHole {
+public class SingleOptionalQuasiHole extends AbstractQuasiHole {
   public SingleOptionalQuasiHole(Class<? extends ParseTreeNode> matchedClass, String identifier) {
     super(matchedClass, identifier);
   }

@@ -27,7 +27,7 @@ import java.util.Map;
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
-public class TrailingUnderscoresHole extends SimpleQuasiHole {
+public class TrailingUnderscoresHole extends AbstractQuasiHole {
   private final String trailing;
 
   public TrailingUnderscoresHole(String identifier, int numberOfUnderscores) {

@@ -281,6 +281,23 @@ public class MatchTest extends CajaTestCase {
     assertEquals(Reference.class, m.get("b").children().get(0).getClass());
   }
 
+  public void testFunctionWithNulIdentifier() throws Exception {
+    match(
+        "function @f() {}",
+        "var foo = function() {};");
+    assertNull(m);
+    match(
+        "function() {}",
+        "var foo = function() {};");
+    assertNotNull(m);
+    assertEquals(0, m.size());
+    match(
+        "function @f() {}",
+        "function foo() {}");
+    assertNotNull(m);
+    assertEquals("foo", ((Identifier) m.get("f")).getName());
+  }
+
   private void match(String pattern, String source)
       throws Exception {
     QuasiNode qn = QuasiBuilder.parseQuasiNode(

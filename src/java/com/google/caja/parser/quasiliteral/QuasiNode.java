@@ -16,6 +16,7 @@ package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
+import com.google.caja.parser.js.Identifier;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -82,6 +83,10 @@ public abstract class QuasiNode {
       String key,
       ParseTreeNode value) {
     if (bindings.containsKey(key)) return ParseTreeNodes.deepEquals(value, bindings.get(key));
+    // TODO(ihab.awad): As a special case, an Identifier with a null value is
+    // considered to not match anything, so we reject it. See the following:
+    // http://code.google.com/p/google-caja/issues/detail?id=397
+    if (value instanceof Identifier && value.getValue() == null) return false;    
     bindings.put(key, value);
     return true;
   }
