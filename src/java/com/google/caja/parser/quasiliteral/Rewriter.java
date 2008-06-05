@@ -21,6 +21,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
@@ -120,7 +121,7 @@ public abstract class Rewriter {
 
     mq.addMessage(
         RewriterMessageType.UNMATCHED_NODE_LEFT_OVER,
-        node.getFilePosition());
+        node.getFilePosition(), node);
     return node;
   }
 
