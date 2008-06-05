@@ -75,6 +75,14 @@ import java.util.Map;
     synopsis="Default set of transformations used by Caja"
   )
 public class DefaultCajaRewriter extends Rewriter {
+
+  // A NOTE ABOUT MATCHING MEMBER ACCESS EXPRESSIONS
+  // When we match the pattern like '@x.@y' or '@x.@y()' against a specimen,
+  // the result is that 'y' is bound to the rightmost component, and 'x' is
+  // the remaining sub-expression on the left. Thus the result of matching
+  //     @x.@y, @x.@y(), @x.@y(arg), @x.@y(args*), ...
+  // is that 'y' is always bound to a Reference.
+
   final public Rule[] cajaRules = {
     new Rule () {
       @Override
@@ -436,7 +444,7 @@ public class DefaultCajaRewriter extends Rewriter {
           String symbol = ((Identifier)bindings.get("x")).getValue() + "_";
           if (scope.isImported(symbol)) {
             mq.addMessage(
-                RewriterMessageType.GLOBALS_CANNOT_END_IN_UNDERSCORE,
+                RewriterMessageType.IMPORTED_SYMBOLS_CANNOT_END_IN_UNDERSCORE,
                 node.getFilePosition(), this, node);
             return node;
           }
@@ -461,22 +469,6 @@ public class DefaultCajaRewriter extends Rewriter {
                 "___.primFreeze(@x)",
                 "x", bindings.get("x"));
           }
-        }
-        return NONE;
-      }
-    },
-
-    new Rule () {
-      @Override
-      @RuleDescription(
-          name="varGlobal",
-          synopsis="",
-          reason="")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@x", node, bindings) &&
-            bindings.get("x") instanceof Reference) {
-          return bindings.get("x");
         }
         return NONE;
       }
@@ -623,6 +615,26 @@ public class DefaultCajaRewriter extends Rewriter {
     ////////////////////////////////////////////////////////////////////////
     // set - assignments
     ////////////////////////////////////////////////////////////////////////
+
+    new Rule () {
+      @Override
+      @RuleDescription(
+          name="setBadAssignToFunctionName",
+          synopsis="Statically reject if an assignment expression"
+              + " assigns to a function name",
+          reason="")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof AssignOperation
+            && node.children().get(0) instanceof Reference
+            && scope.isFunction(getReferenceName(node.children().get(0)))) {
+          mq.addMessage(
+              RewriterMessageType.CANNOT_ASSIGN_TO_FUNCTION_NAME,
+              node.getFilePosition(), this, node);
+          return node;
+        }
+        return NONE;
+      }
+    },
 
     new Rule () {
       @Override
@@ -1353,11 +1365,31 @@ public class DefaultCajaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (QuasiBuilder.match("caja.def(@fname, @base)", node, bindings)
             && bindings.get("fname") instanceof Reference
-            && scope.isFunction(getReferenceName(bindings.get("fname")))) {
+            && scope.isDeclaredFunction(getReferenceName(bindings.get("fname")))) {
           return substV(
               "caja.def(@fname, @base)",
               "fname", bindings.get("fname"),
               "base", expand(bindings.get("base"), scope, mq));
+        }
+        return NONE;
+      }
+    },
+
+    new Rule () {
+      @Override
+      @RuleDescription(
+          name="callCajaDef2BadFunction",
+          synopsis="",
+          reason="")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        if (QuasiBuilder.match("caja.def(@fname, @base)", node, bindings)
+            && bindings.get("fname") instanceof Reference
+            && scope.isFunction(getReferenceName(bindings.get("fname")))) {
+          mq.addMessage(
+              RewriterMessageType.CAJA_DEF_ON_FROZEN_FUNCTION,
+              node.getFilePosition(), this, node);
+          return node;
         }
         return NONE;
       }
@@ -1392,7 +1424,7 @@ public class DefaultCajaRewriter extends Rewriter {
         if (QuasiBuilder.match(
                 "caja.def(@fname, @base, @mm, @ss?)", node, bindings)
             && bindings.get("fname") instanceof Reference
-            && scope.isFunction(getReferenceName(bindings.get("fname")))) {
+            && scope.isDeclaredFunction(getReferenceName(bindings.get("fname")))) {
           if (!checkMapExpression(bindings.get("mm"), this, scope, mq)) {
             return node;
           }
@@ -1408,6 +1440,25 @@ public class DefaultCajaRewriter extends Rewriter {
               "base", expand(bindings.get("base"), scope, mq),
               "mm", expandMemberMap(bindings.get("mm"), this, scope, mq),
               "ss", ss);
+        }
+        return NONE;
+      }
+    },
+
+    new Rule () {
+      @Override
+      @RuleDescription(
+          name="callCajaDef3PlusBadFunction",
+          synopsis="",
+          reason="")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        if (QuasiBuilder.match("caja.def(@fname, @base, @mm, @ss?)", node, bindings)
+            && bindings.get("fname") instanceof Reference
+            && scope.isFunction(getReferenceName(bindings.get("fname")))) {
+          mq.addMessage(
+              RewriterMessageType.CAJA_DEF_ON_FROZEN_FUNCTION,
+              node.getFilePosition(), this, node);
         }
         return NONE;
       }
