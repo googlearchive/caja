@@ -1179,6 +1179,14 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  fail('Bad static member name');" +
         "})();");
     rewriteAndExecute(
+        "(function() {" +
+        "  function Ctor() { this; }" +
+        "  function foo() {}" +
+        "  Ctor.prototype.f = foo;" +  // foo should be frozen now
+        "  try { foo.x = 3; } catch (e) { return true; }" +
+        "  fail('Static member was not frozen');" +
+        "})();");
+    rewriteAndExecute(
         "  (function() {"
         + "  function foo() {}"
         + "  var x = foo;"
@@ -1740,6 +1748,10 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
                       "function C() {}" +
                       "caja.def(C, Object, {}, {});")),
         RewriterMessageType.CANNOT_REDECLARE_CAJA);
+    assertConsistent(
+        "function foo() {}" +
+        "caja.def(foo, Object, { f: function () { return 3; }});" +
+        "(new foo).f()");
   }
 
   public void testCallCajaDef2BadFunction() throws Exception {
@@ -1970,6 +1982,23 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  x = a___;" +
         "  y = ___.readPub(g, 0);" +
         "}));");
+    rewriteAndExecute(
+        "(function () {" +
+        "  var foo = function () {};" +
+        "  foo();" +
+        "  try {" +
+        "    foo.x = 3;" +
+        "  } catch (e) { return; }" +
+        "  fail('mutate frozen function');" +
+        "})();");
+    assertConsistent(
+        "var foo = (function () {" +
+        "             function foo() {};" +
+        "             foo.x = 3;" +
+        "             return foo;" +
+        "           })();" +
+        "foo();" +
+        "foo.x");
   }
 
   public void testFuncNamedSimpleDecl() throws Exception {
@@ -2002,6 +2031,20 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
          "});" +
         ";");
     rewriteAndExecute(
+        "(function () {" +
+        "  function foo() {}" +
+        "  foo();" +
+        "  try {" +
+        "    foo.x = 3;" +
+        "  } catch (e) { return; }" +
+        "  fail('mutated frozen function');" +
+        "})();");
+    assertConsistent(
+        "function foo() {}" +
+        "foo.x = 3;" +
+        "foo();" +
+        "foo.x;");
+    rewriteAndExecute(
         "  function f_() { return 31415; }"
         + "var x = f_();"
         + "assertEquals(x, 31415);");
@@ -2021,14 +2064,14 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "      x = a___;" +
         "      y = z;" +
         "      return ___.asSimpleFunc(___.primFreeze(foo))(x - 1, y - 1);" +
-        "  }));");
+        "    }));");
     checkSucceeds(
         "var bar = function foo_(x, y ) {" +
         "  return foo_(x - 1, y - 1);" +
         "};",
-         "var bar = ___.primFreeze(___.simpleFunc(function foo_(x, y) {" +
-         "  return ___.asSimpleFunc(___.primFreeze(foo_))(x - 1, y - 1);" +
-         "}));");
+        "var bar = ___.primFreeze(___.simpleFunc(function foo_(x, y) {" +
+        "  return ___.asSimpleFunc(___.primFreeze(foo_))(x - 1, y - 1);" +
+        "}));");
   }
 
   public void testFuncExophoricFunction() throws Exception {

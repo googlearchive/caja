@@ -46,6 +46,10 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: Selectors cannot end in \"__\": %s, %s",
       MessageLevel.FATAL_ERROR),
 
+  GLOBALS_CANNOT_END_IN_UNDERSCORE(
+      "%s: Globals cannot end in \"_\": %s, %s",
+      MessageLevel.FATAL_ERROR),
+
   IMPORTED_SYMBOLS_CANNOT_END_IN_UNDERSCORE(
       "%s: Imported symbols cannot end in \"_\": %s, %s",
       MessageLevel.FATAL_ERROR),

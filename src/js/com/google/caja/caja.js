@@ -681,8 +681,8 @@ var ___;
   }
 
   /**
-   * BUG TODO(erights): allowDelete is not yet specified or
-   * implemented.
+   * allowDelete allows delete of a member on a constructed object via
+   * the private API.
    */
   function fastpathDelete(obj, name) {
     enforce(obj != null, 'Cannot allow delete of member ', name, ' on null');
@@ -727,24 +727,17 @@ var ___;
   ////////////////////////////////////////////////////////////////////////
 
   function isCtor(constr)    {
-    return (typeof(constr) === 'function') ?
-        !!constr.___CONSTRUCTOR___ :
-        false;
+    return (typeof(constr) === 'function') && !!constr.___CONSTRUCTOR___;
   }
   function isMethod(meth)    {
-    return (typeof meth === 'function') ?
-        !!meth.___METHOD___ :
-        false;
+    return (typeof meth === 'function') && !!meth.___METHOD___;
   }
   function isSimpleFunc(fun) {
-    return (typeof fun === 'function') ?
-        !!fun.___SIMPLE_FUNC___ :
-        false;
+    return (typeof fun === 'function')  && !!fun.___SIMPLE_FUNC___;
   }
   function isXo4aFunc(func) {
-    return (typeof func === 'function') ?
-        (!!func.___XO4A___ || isSimpleFunc(func)) :
-        false;
+    return (typeof func === 'function')
+        && !!(func.___XO4A___ || func.___SIMPLE_FUNC___);
   }
 
   /**
@@ -768,13 +761,21 @@ var ___;
     if (isMethod(constr)) {
       fail("Methods can't be constructors: ", constr);
     }
-    // TODO(erights): We shouldn't be able to mark simple functions
-    // as constructors, but we should be able to use simple functions
-    // in caja.def().
-    /* if (isSimpleFunc(constr)) {
-      fail("Simple functions can't be constructors:", constr);
-    } */
+    if (isSimpleFunc(constr)) {
+      fail("Simple functions can't be constructors: ", constr);
+    }
+    if (isXo4aFunc(constr)) {
+      fail("Exophoric functions can't be constructors: ", constr);
+    }
     constr.___CONSTRUCTOR___ = true;
+    derive(constr, opt_Sup);
+    if (opt_name) {
+      constr.NAME___ = String(opt_name);
+    }
+    return constr;  // translator freezes constructor later
+  }
+
+  function derive(constr, opt_Sup) {
     if (opt_Sup) {
       opt_Sup = asCtor(opt_Sup);
       if (hasOwnProp(constr, 'super')) {
@@ -784,14 +785,11 @@ var ___;
           fail('Derived constructor already frozen: ', constr);
         }
         constr['super'] = function(thisObj, var_args) {
-          return opt_Sup.apply(thisObj, Array.prototype.slice.call(arguments, 1));
+          return opt_Sup.apply(
+              thisObj, Array.prototype.slice.call(arguments, 1));
         };
       }
     }
-    if (opt_name) {
-      constr.NAME___ = String(opt_name);
-    }
-    return constr;  // translator freezes constructor later
   }
 
   /**
@@ -1381,10 +1379,6 @@ var ___;
       fastpathSet(obj, name);
       obj[name] = val;
       return val;
-    } else if (isCtor(obj) && !isFrozen(obj)) {
-      // Handles
-      //    ctor.staticMemberName = val;
-      setStatic(obj, name, val);
     } else {
       return obj.handleSet___(name, val);
     }
@@ -1417,7 +1411,7 @@ var ___;
   }
 
   /**
-   * Sets a static member of a ctor, making sure that it cannot be used to
+   * Sets a static members of a ctor, making sure that it can't be used to
    * override call/apply/bind and other builtin members of function.
    * @param {Function} ctor
    * @param {string} staticMemberName an identifier in the public namespace.
@@ -1429,8 +1423,7 @@ var ___;
       ctor[staticMemberName] = staticMemberValue;
       fastpathRead(ctor, staticMemberName);
     } else {
-      fail('cannot set static member %o %s',
-           debugReference(ctor), staticMemberName);
+      ctor.handleSet___(staticMemberName, staticMemberValue);
     }
   }
 
@@ -1619,7 +1612,11 @@ var ___;
     var members = opt_members || {};
     var statics = opt_statics || {};
 
-    ctor(sub, sup);
+    if (isSimpleFunc(sub)) {
+      derive(sub, sup);
+    } else {
+      ctor(sub, sup);
+    }
     function PseudoSuper() {}
     PseudoSuper.prototype = sup.prototype;
     sub.prototype = new PseudoSuper();

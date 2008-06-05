@@ -19,10 +19,9 @@ import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.RhinoTestBed;
 
 import java.io.IOException;
-import java.util.Date;
 
 /**
- * Fuzzer for testing JS parsing using jsfunfuzz 
+ * Fuzzer for testing JS parsing using jsfunfuzz
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class JsFunFuzz extends CajaTestCase {
@@ -30,20 +29,15 @@ public class JsFunFuzz extends CajaTestCase {
   /**
    * Number of fuzzed cases to generate
    */
-  private final long seed = System.currentTimeMillis();
-
-  /**
-   * Number of fuzzed cases to generate
-   */
   private final int MAX_NUMBER_OF_TESTS = 10;
-  
+
   /**
    * Generate and return a new javascript string
    * @return snippet of fuzzed javascript
    */
   private String fudgeroonify() {
     try {
-      return (String)RhinoTestBed.runJs(null,
+      return (String) RhinoTestBed.runJs(null,
           new RhinoTestBed.Input(getClass(), "/js/jsfunfuzz/jsfunfuzz.js"));
     } catch (IOException e) {
       fail("JS Fuzzer jsfunfuzz.js not found");
@@ -53,21 +47,23 @@ public class JsFunFuzz extends CajaTestCase {
 
   /**
    * Linewraps test cases at the 60 character boundary
-   * 
-   * Useful for generating java test cases for pasting 
-   * into a JUnit test which meet the style guide 
+   *
+   * Useful for generating java test cases for pasting
+   * into a JUnit test which meet the style guide
    */
   private String quoteAndWrap(String testCase) {
     StringBuilder testBlock = new StringBuilder( "      \"\"\n");
-    for (int start=0; start < testCase.length(); start+=60) {
-      int end= (start + 60 > testCase.length()) ? testCase.length() : start + 60;  
+    for (int start = 0; start < testCase.length(); start += 60) {
+      int end = (start + 60 > testCase.length())
+          ? testCase.length()
+          : start + 60;
       String piece = testCase.substring(start, end);
       testBlock.append("     + ");
       testBlock.append("\"" + piece + "\"\n");
     }
     return testBlock.toString();
   }
-  
+
   /**
    * Generates a snippet of Java code suitable for pasting into a JUnit test
    */
@@ -81,20 +77,19 @@ public class JsFunFuzz extends CajaTestCase {
       test.append(")}\n\n");
       return test.toString();
   }
-  
+
   /**
    * Test parser against a snippet of fuzzed javascript
-   * 
+   *
    * Fail if the parser throws anything other than a ParseException.
-   * Formats and prints the failing case to stderr for pasting in to JUnit tests 
+   * Formats and prints the failing case to stderr for pasting in to JUnit tests
    */
   public void testParsesFuzz() {
-    //FileWriter testCases = new FileWriter("TestCases.java", true);
     StringBuilder testCases = new StringBuilder();
     String randomJs = "";
     boolean failed = false;
-    int testCaseCount =0;
-    for (testCaseCount=0; testCaseCount < MAX_NUMBER_OF_TESTS; testCaseCount++) {
+    for (int testCaseCount = 0; testCaseCount < MAX_NUMBER_OF_TESTS;
+         testCaseCount++) {
       try {
         randomJs = fudgeroonify();
         js(fromString(randomJs));
@@ -102,7 +97,8 @@ public class JsFunFuzz extends CajaTestCase {
         // Only ParseExceptions are ok
       } catch (Throwable e) {
         failed = true;
-        testCases.append(generateTestCase(randomJs, testCaseCount, e.getMessage()));
+        testCases.append(
+            generateTestCase(randomJs, testCaseCount, e.getMessage()));
       }
     }
     System.err.print(testCases.toString());
