@@ -118,7 +118,10 @@ public abstract class Rewriter {
       }
     }
 
-    throw new RuntimeException("Unimplemented case involving: " + node);
+    mq.addMessage(
+        RewriterMessageType.UNMATCHED_NODE_LEFT_OVER,
+        node.getFilePosition());
+    return node;
   }
 
   /**

@@ -47,6 +47,8 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.Collection;
+import java.util.Comparator;
 
 /**
  * A scope analysis of a {@link com.google.caja.parser.ParseTreeNode}.
@@ -185,6 +187,7 @@ public class Scope {
   private final Scope parent;
   private final MessageQueue mq;
   private final ScopeType type;
+  private final boolean sideEffecting;
   private boolean containsThis = false;
   private boolean containsArguments = false;
   private int tempVariableCounter = 0;
@@ -197,24 +200,34 @@ public class Scope {
   private final Set<String> importedVariables = new HashSet<String>();
 
   public static Scope fromProgram(Block root, MessageQueue mq) {
-    Scope s = new Scope(ScopeType.PROGRAM, mq);
+    Scope s = new Scope(ScopeType.PROGRAM, mq, true);
     walkBlock(s, root);
     return s;
   }
 
   public static Scope fromPlainBlock(Scope parent, Block root) {
-    return new Scope(ScopeType.PLAIN_BLOCK, parent);
+    return new Scope(ScopeType.PLAIN_BLOCK, parent, true);
   }
 
   public static Scope fromCatchStmt(Scope parent, CatchStmt root) {
-    Scope s = new Scope(ScopeType.CATCH_BLOCK, parent);
+    Scope s = new Scope(ScopeType.CATCH_BLOCK, parent, true);
     declare(s, root.getException().getIdentifier(),
             LocalType.CAUGHT_EXCEPTION);
     return s;
   }
 
   public static Scope fromFunctionConstructor(Scope parent, FunctionConstructor root) {
-    Scope s = new Scope(ScopeType.FUNCTION_BODY, parent);
+    return fromFunctionConstructor(parent, root, true);
+  }
+
+  public static Scope fromParseTreeNodeContainer(Scope parent, ParseTreeNodeContainer root) {
+    Scope s = new Scope(ScopeType.PLAIN_BLOCK, parent, true);
+    walkBlock(s, root);
+    return s;
+  }
+
+  private static Scope fromFunctionConstructor(Scope parent, FunctionConstructor root, boolean sideEffecting) {
+    Scope s = new Scope(ScopeType.FUNCTION_BODY, parent, sideEffecting);
 
     // A function's name is bound to it in its body. After executing
     //    var g = function f() { return f; };
@@ -233,10 +246,18 @@ public class Scope {
     return s;
   }
 
-  public static Scope fromParseTreeNodeContainer(Scope parent, ParseTreeNodeContainer root) {
-    Scope s = new Scope(ScopeType.PLAIN_BLOCK, parent);
-    walkBlock(s, root);
-    return s;
+  private Scope(ScopeType type, MessageQueue mq, boolean sideEffecting) {
+    this.type = type;
+    this.parent = null;
+    this.mq = mq;
+    this.sideEffecting = sideEffecting;
+  }
+
+  private Scope(ScopeType type, Scope parent, boolean sideEffecting) {
+    this.type = type;
+    this.parent = parent;
+    this.mq = parent.mq;
+    this.sideEffecting = sideEffecting;
   }
 
   /**
@@ -447,18 +468,6 @@ public class Scope {
     return null;
   }
 
-  private Scope(ScopeType type, MessageQueue mq) {
-    this.type = type;
-    this.parent = null;
-    this.mq = mq;
-  }
-
-  private Scope(ScopeType type, Scope parent) {
-    this.type = type;
-    this.parent = parent;
-    this.mq = parent.mq;
-  }
-
   private static void addImportedVariable(Scope s, String name) {
     Scope target = s;
     while (target.getParent() != null) { target = target.getParent(); }
@@ -469,14 +478,14 @@ public class Scope {
     target.importedVariables.add(name);
     Identifier identifier = s(new Identifier(name));
     target.addStartOfBlockStatement((Statement)QuasiBuilder.substV(
-        "var @vIdent = ___.readImports(IMPORTS___, @vName);",
+        "var @vIdent = ___.readImport(IMPORTS___, @vName);",
         "vIdent", identifier,
         "vName", Rule.toStringLiteral(identifier)));
   }
 
   private static LocalType computeDeclarationType(Scope s, Declaration decl) {
     if (decl instanceof FunctionDeclaration) {
-      Scope s2 = fromFunctionConstructor(s, ((FunctionDeclaration)decl).getInitializer());
+      Scope s2 = fromFunctionConstructor(s, ((FunctionDeclaration)decl).getInitializer(), false);
       return s2.hasFreeThis() ? LocalType.CONSTRUCTOR : LocalType.DECLARED_FUNCTION;
     }
     return LocalType.DATA;
@@ -488,8 +497,10 @@ public class Scope {
 
     // Record in this scope all the declarations that have been harvested
     // by the visitor.
-    for (Declaration decl : v.getDeclarations()) {
-      declare(s, decl.getIdentifier(), computeDeclarationType(s, decl));
+    if (s.sideEffecting) {
+      for (Declaration decl : v.getDeclarations()) {
+        declare(s, decl.getIdentifier(), computeDeclarationType(s, decl));
+      }
     }
 
     // Now resolve all the references harvested by the visitor. If they have
@@ -500,7 +511,7 @@ public class Scope {
         s.containsArguments = true;
       } else if (Keyword.THIS.toString().equals(name)) {
         s.containsThis = true;
-      } else if (!s.isDefined(name)) {
+      } else if (!s.isDefined(name) && s.sideEffecting) {
         addImportedVariable(s, name);
       }
     }
@@ -610,7 +621,9 @@ public class Scope {
     Pair<LocalType, FilePosition> oldDefinition = s.locals.get(name);
     if (oldDefinition != null) {
       LocalType oldType = oldDefinition.a;
-      if (oldType != type) {
+      if (oldType != type
+          || oldType.implies(LocalType.FUNCTION)
+          || type.implies(LocalType.FUNCTION)) {
         // This is an error because redeclaring a function declaration as a
         // var makes analysis hard.
         s.mq.getMessages().add(new Message(

@@ -98,6 +98,9 @@ public final class Config {
   private final Option DEBUG_MODE = defineBooleanOption(
       "g", "debug", "Set to add debugging info to cajoled output.");
 
+  private final Option WARTS_MODE = defineBooleanOption(
+      "w", "warts", "Enables more lenient cajoling via 'warts' features.");
+
   private final Class<?> mainClass;
   private final PrintWriter stderr;
   private final String usageText;
@@ -110,6 +113,7 @@ public final class Config {
   private URI baseUri;
   private String gadgetView;
   private boolean debugMode;
+  private boolean wartsMode;
   private int servicePort;
 
   public Config(Class<?> mainClass, PrintStream stderr, String usageText) {
@@ -153,6 +157,8 @@ public final class Config {
   public String getGadgetView() { return gadgetView; }
 
   public boolean debugMode() { return debugMode; }
+
+  public boolean wartsMode() { return wartsMode; }
 
   public boolean processArguments(String[] argv) {
     try {
@@ -244,6 +250,7 @@ public final class Config {
 
       gadgetView = cl.getOptionValue(VIEW.getOpt(), "canvas");
       debugMode = cl.hasOption(DEBUG_MODE.getOpt());
+      wartsMode = cl.hasOption(WARTS_MODE.getOpt());
 
       String servicePortString;
       try {

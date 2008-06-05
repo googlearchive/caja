@@ -474,6 +474,15 @@ public class ScopeTest extends CajaTestCase {
     assertEquals(1, s1.getStartStatements().size());
   }
 
+  public void testMultipleFunctionDeclaration() throws Exception {
+    Scope.fromProgram(
+        js(fromString(
+            "  function foo() {}"
+            + "function foo() {}")),
+        mq);
+    assertMessage(MessageType.SYMBOL_REDEFINED, MessageLevel.ERROR);
+  }
+
   private FunctionConstructor findFunctionConstructor(ParseTreeNode root, String name) {
     return findNodeWithIdentifier(root, FunctionConstructor.class, name);
   }

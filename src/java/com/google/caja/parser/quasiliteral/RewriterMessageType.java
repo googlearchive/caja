@@ -46,8 +46,8 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: Selectors cannot end in \"__\": %s, %s",
       MessageLevel.FATAL_ERROR),
 
-  GLOBALS_CANNOT_END_IN_UNDERSCORE(
-      "%s: Globals cannot end in \"_\": %s, %s",
+  IMPORTED_SYMBOLS_CANNOT_END_IN_UNDERSCORE(
+      "%s: Imported symbols cannot end in \"_\": %s, %s",
       MessageLevel.FATAL_ERROR),
 
   LABELS_CANNOT_END_IN_DOUBLE_UNDERSCORE(
@@ -90,6 +90,10 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: caja.def called with non-function: %s, %s",
       MessageLevel.FATAL_ERROR),
 
+  CAJA_DEF_ON_FROZEN_FUNCTION(
+      "%s: caja.def called on an already-frozen function: %s, %s",
+      MessageLevel.FATAL_ERROR),
+
   DUPLICATE_DEFINITION_OF_LOCAL_VARIABLE(
       "%s: Duplicate definition of local variable: %s",
       MessageLevel.FATAL_ERROR),
@@ -121,13 +125,19 @@ public enum RewriterMessageType implements MessageTypeInt {
   ILLEGAL_IDENTIFIER_LEFT_OVER(
       "%s: INTERNAL COMPILER ERROR. "
           + "Illegal identifier passed through from rewriter: %s. "
-          + "Please report this error at: http://code.google.com/p/google-caja/",
+          + "Please report this error at: http://code.google.com/p/google-caja/issues/",
       MessageLevel.FATAL_ERROR),
 
   UNSEEN_NODE_LEFT_OVER(
       "%s: INTERNAL COMPILER ERROR. "
           + "Unseen node left over from rewriter. "
-          + "Please report this error at: http://code.google.com/p/google-caja/",
+          + "Please report this error at: http://code.google.com/p/google-caja/issues/",
+      MessageLevel.FATAL_ERROR),
+
+  UNMATCHED_NODE_LEFT_OVER(
+      "%s: INTERNAL COMPILER ERROR. "
+          + "Node did not match any rules at: %s. "
+          + "Please report this error at: http://code.google.com/p/google-caja/issues/",
       MessageLevel.FATAL_ERROR),
 
   THIS_IN_GLOBAL_CONTEXT(
@@ -152,6 +162,10 @@ public enum RewriterMessageType implements MessageTypeInt {
 
   SUPER_CALL_ON_NON_REFERENCE(
       "%s: Can only call \"super\" on a function reference: %s, %s",
+      MessageLevel.FATAL_ERROR),
+
+  CANNOT_ASSIGN_TO_FUNCTION_NAME(
+      "%s: Cannot assign to a function name: %s, %s",
       MessageLevel.FATAL_ERROR),
   ;
 
