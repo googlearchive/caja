@@ -81,8 +81,10 @@ public class CajaApplet extends Applet {
   public Object[] cajole(String cajaInput, String featureNames) {
     try {
       Set<Feature> features = EnumSet.noneOf(Feature.class);
-      for (String featureName : featureNames.split(",")) {
-        features.add(Feature.valueOf(featureName));
+      if (!"".equals(featureNames)) {
+        for (String featureName : featureNames.split(",")) {
+          features.add(Feature.valueOf(featureName));
+        }
       }
       return runCajoler(cajaInput, features);
     } catch (RuntimeException ex) {

@@ -58,7 +58,16 @@
 var testbeds = [];
 
 /** A registry of the public APIs of each of the testbed applets. */
-var gadgetPublicApis = {};
+var gadgetPublicApis = {
+  // Predefine a honeypot so we can try to exploit confused deputies
+  'keystoneKop': ___.primFreeze({
+        // Not marked simple.  It is a breach if a gadget can get the container
+        // to call this on their behalf.
+        f: function() {
+          alert('You get a cookie ' + [].join.call(arguments, ', '));
+        }
+      })
+};
 
 if ('undefined' === typeof prettyPrintOne) {
   // So it works without prettyprinting when disconnected from the network.
