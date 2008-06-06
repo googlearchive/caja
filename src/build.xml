@@ -627,7 +627,7 @@
     </copy>
   </target>
 
-  <target name="testbed" depends="dirs,pluginc"
+  <target name="testbed" depends="dirs,jars"
    description="Produce an Applet that interactively cajoles in the browser.">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
@@ -663,6 +663,8 @@
       </fileset>
       <fileset dir="${jars}">
         <include name="testbed.jar"/>
+        <include name="htmlparser.jar"/>
+        <include name="json_simple.jar"/>
       </fileset>
     </copy>
   </target>

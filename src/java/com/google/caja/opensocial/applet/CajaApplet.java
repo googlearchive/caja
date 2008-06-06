@@ -69,14 +69,19 @@ public class CajaApplet extends Applet {
   /**
    * Invoked by javascript in the embedding page.
    * @param cajaInput as an HTML gadget.
-   * @param featureNames names of {@link Feature} values.
+   * @param featureNames {@link Feature} values as a comma separated list.
+   *   We use a comma separated string instead of an array since IE 6's
+   *   version of liveconnect does not convert javascript Arrays to java
+   *   arrays.
+   *   See discussion of IE applet/JS communication at
+   *   http://www.rohitab.com/discuss/index.php?showtopic=28868&st=0&p=10029410
    * @return a tuple of {@code [ cajoledHtml, messageHtml ]}.
-   *     If the cajoledHtml is non-null then cajoling succeeded.
+   *   If the cajoledHtml is non-null then cajoling succeeded.
    */
-  public Object[] cajole(String cajaInput, String[] featureNames) {
+  public Object[] cajole(String cajaInput, String featureNames) {
     try {
       Set<Feature> features = EnumSet.noneOf(Feature.class);
-      for (String featureName : featureNames) {
+      for (String featureName : featureNames.split(",")) {
         features.add(Feature.valueOf(featureName));
       }
       return runCajoler(cajaInput, features);

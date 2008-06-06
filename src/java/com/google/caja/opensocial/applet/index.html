@@ -111,9 +111,7 @@
 
   <body bgcolor="white" onload="prettyPrint()">
     <applet code="com.google.caja.opensocial.applet.CajaApplet" name="cajoler"
-     archive="testbed.jar,
-              ../../third_party/java/htmlparser/htmlparser.jar,
-              ../../third_party/java/json_simple/json_simple.jar"
+     archive="testbed.jar,htmlparser.jar,json_simple.jar"
      codebase="." height="1" width="1" scriptable="true" MAYSCRIPT>
     </applet>
 
@@ -151,7 +149,7 @@
 
       <p>Example:
       <pre class=prettyprint style="cursor: pointer"
-       onclick="document.forms['cajolerForm.1'].src.value = innerText(this)">
+       onclick="loadExampleInto(this, document.forms['cajolerForm.1'])">
 &lt;!-- Styles are displayed --&gt;
 &lt;style&gt; p { color: purple } &lt;/style&gt;
 
@@ -168,7 +166,7 @@
       <code>exports</code> object.
 
       <pre class=prettyprint style="cursor: pointer"
-       onclick="document.forms['cajolerForm.1'].src.value = innerText(this)">
+       onclick="loadExampleInto(this, document.forms['cajolerForm.1'])">
 &lt;p id=message&gt;Hello World&lt;/p&gt;
 
 &lt;script&gt;
@@ -181,7 +179,7 @@ exports.sayBye = function () {
       <p>
       So that other modules can load and call them.
       <pre class=prettyprint style="cursor: pointer"
-       onclick="document.forms['cajolerForm.2'].src.value = innerText(this)">
+       onclick="loadExampleInto(this, document.forms['cajolerForm.2'])">
 &lt;script&gt;loadModule('gadget.1').sayBye();&lt;/script&gt;
 </pre>
 
@@ -189,7 +187,7 @@ exports.sayBye = function () {
       You can log messages to the Firebug console by using
       <code>caja.log</code>:
       <pre class=prettyprint style="cursor: pointer"
-       onclick="document.forms['cajolerForm.1'].src.value = innerText(this)">
+       onclick="loadExampleInto(this, document.forms['cajolerForm.1'])">
 &lt;script&gt;caja.log('Hello World');&lt;/script&gt;
 </pre>
 
@@ -206,7 +204,7 @@ exports.sayBye = function () {
     makeTestbed('.1');
     makeTestbed('.2');
 
-    document.forms.cajolerForm.elements.src.select();
+    document.forms['cajolerForm.1'].elements.src.select();
     initTestbeds();
   })();
   </script>

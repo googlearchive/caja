@@ -149,7 +149,7 @@ var cajole = (function () {
               }));
 
     var result = getCajoler().cajole(
-        inputs.src.value.replace(/^\s+|\s+$/g, ''), features);
+        inputs.src.value.replace(/^\s+|\s+$/g, ''), features.join(','));
     var cajoledOutput = result[0];
     var messages = String(result[1]);
 
@@ -357,20 +357,22 @@ var getImports = (function () {
  * @return {Node}
  */
 function renderTemplate(domTree, domSuffix) {
+  function suffixAttrib(node, attribName) {
+    // IE is flaky around hasAttribute and setAttribute.  Using the attributes
+    // NodeList directly works reliably.
+    if (node.attributes[attribName] && node.attributes[attribName].value) {
+      node.attributes[attribName].value += domSuffix;
+    }
+  }
+
   function fixNamesAndIds(node, inForm) {
     if (node.nodeType === 1) {
-      if (node.hasAttribute('id')) {
-        node.setAttribute('id', node.getAttribute('id') + domSuffix);
-      }
-      if (node.hasAttribute('for')) {
-        node.setAttribute('for', node.getAttribute('for') + domSuffix);
-      }
+      suffixAttrib(node, 'id');
+      suffixAttrib(node, 'for');
       if (!inForm) {
-        if (node.hasAttribute('name')) {
-          node.setAttribute('name', node.getAttribute('name') + domSuffix);
-        }
+        suffixAttrib(node, 'name');
+        inForm = 'FORM' === node.nodeName;
       }
-      inForm = 'FORM' === node.nodeName;
     }
     for (var child = node.firstChild; child; child = child.nextSibling) {
       fixNamesAndIds(child, inForm);
@@ -393,4 +395,8 @@ function initTestbeds() {
   for (var i = 0; i < testbeds.length; ++i) {
     getImports(testbeds[i]).clearHtml___();
   }
+}
+
+function loadExampleInto(containerNode, form) {
+  form.elements.src.value = innerText(containerNode);
 }
