@@ -26,6 +26,7 @@
   -   clean     :  wipes generated files
   -   demos     :  demo files
   -   docs      :  javadoc
+  -   jsdocs    :  jsdoc
   -   pluginc   :  the plugin compiler
   -   runtests  :  runs the tests
   -
@@ -50,6 +51,8 @@
   <property name="instr"       location="ant-instr"/>  <!-- instrumented src -->
   <property name="lib"         location="ant-lib"/>
   <property name="docs"        location="ant-docs"/>
+  <property name="javadocs"    location="${docs}/java"/>
+  <property name="jsdocs"      location="${docs}/js"/>
   <property name="jars"        location="ant-jars"/>
   <property name="www"         location="ant-www"/>  <!-- demo files dir -->
 
@@ -92,9 +95,13 @@
   <path id="classpath.ant">
     <pathelement path="${ant.home}/lib/ant.jar"/>
   </path>
-  <path id="classpath.docs">
+  <path id="classpath.javadocs">
     <path refid="classpath.compile"/>
     <path refid="classpath.ant"/>
+  </path>
+  <path id="classpath.jsdocs">
+    <pathelement path="${third_party}/java/jsdoctoolkit_ant/jsdoctoolkit-0.3.jar"/>
+    <pathelement path="${third_party}/java/rhino/js.jar"/>
   </path>
 
   <!--== Tasks Used Below ==-->
@@ -104,6 +111,10 @@
   <taskdef name="junit"
     classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
     classpathref="classpath.extensions" />
+
+  <taskdef name="jsdoctoolkit" 
+    classname="uk.co.darrenhurley.ant.tasks.JsDocToolkit"
+    classpathref="classpath.jsdocs" />
 
   <!--== rules.  Lowercase are public.  Uppercase are used internally. ==-->
   <target name="default" depends="docs,jars"
@@ -176,20 +187,32 @@
     </junitreport>
   </target>
 
-  <target name="docs" description="Builds javadoc documentation.">
-    <mkdir dir="${docs}"/>
-    <javadoc sourcepath="${src}" destdir="${docs}" access="private"
+  <target name="docs" description="Builds all Caja documentation."
+   depends="javadocs,jsdocs">
+  </target>
+  
+  <target name="javadocs" description="Builds javadoc documentation.">
+    <mkdir dir="${javadocs}"/>
+    <javadoc sourcepath="${src}" destdir="${javadocs}" access="private"
      author="true"
      bottom="Copyright (C) 2008 Google Inc.&lt;br&gt;
              &lt;a href=&#34;http://www.apache.org/licenses/LICENSE-2.0&#34;&gt;
              Licensed under the Apache License, Version 2.0&lt;/a&gt;"
      docencoding="utf-8"
      packagenames="com/google/caja/*"
-     classpathref="classpath.docs"
+     classpathref="classpath.javadocs"
      linksource="yes"/>
      <!-- overview="${src}/overview.html" -->
   </target>
 
+  <target name="jsdocs" description="Builds jsdoc documentation.">
+    <mkdir dir="${jsdocs}"/>
+    <jsdoctoolkit jsdochome="${third_party}/java/jsdoctoolkit/" 
+     encoding="utf-8" template="jsdoc" 
+     includeundocumented="true" includeprivate="true" includeunderscored="true"
+     outputdir="${jsdocs}" inputdir="${javascript}"/>
+  </target>
+  
   <target name="pluginc" depends="dirs,PluginCompiler,build.info"
    description="Build the plugin compiler and other main classes">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
