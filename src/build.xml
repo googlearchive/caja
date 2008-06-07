@@ -210,7 +210,24 @@
     <jsdoctoolkit jsdochome="${third_party}/java/jsdoctoolkit/" 
      encoding="utf-8" template="jsdoc" 
      includeundocumented="true" includeprivate="true" includeunderscored="true"
-     outputdir="${jsdocs}" inputdir="${javascript}"/>
+     outputdir="${jsdocs}">
+      <source file="${src}/com/google/caja/plugin/html4-defs.js"/>
+      <source file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <source file="${src}/com/google/caja/plugin/html-emitter.js"/>
+      <source file="${src}/com/google/caja/plugin/domita.js"/>
+      <source file="${src}/com/google/caja/plugin/unicode.js"/>
+      
+      <source file="${javascript}/com/google/caja/permissive.js"/>
+      <source file="${javascript}/com/google/caja/caja-debugmode.js"/>
+      <source file="${javascript}/com/google/caja/JSON.js"/>
+      <source file="${javascript}/com/google/caja/Q-caja.js"/>
+      <source file="${javascript}/com/google/caja/caja.js"/>
+      <source file="${javascript}/com/google/caja/Brand-cajita.js"/>
+      <source file="${javascript}/com/google/caja/Mint-cajita.js"/>
+      <source file="${javascript}/com/google/caja/log-to-console.js"/>
+      <source file="${javascript}/com/google/caja/triv-logger.js"/>
+      <source file="${javascript}/com/google/caja/caja-prototype.js"/>
+    </jsdoctoolkit>
   </target>
   
   <target name="pluginc" depends="dirs,PluginCompiler,build.info"
