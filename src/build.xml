@@ -209,7 +209,7 @@
   <target name="ruledocs" description="Builds Caja rule documentation."
    depends="RuleDoclet">
     <mkdir dir="${ruledocs}"/>
-    <ruledoclet output="dojo" outputdir="${ruledocs}"
+    <ruledoclet output="html" outputdir="${ruledocs}"
      rewriter="com.google.caja.parser.quasiliteral.DefaultCajaRewriter"/>
   </target>
 
