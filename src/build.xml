@@ -51,6 +51,7 @@
   <property name="instr"       location="ant-instr"/>  <!-- instrumented src -->
   <property name="lib"         location="ant-lib"/>
   <property name="docs"        location="ant-docs"/>
+  <property name="ruledocs"    location="${docs}/rules"/>
   <property name="javadocs"    location="${docs}/java"/>
   <property name="jsdocs"      location="${docs}/js"/>
   <property name="jars"        location="ant-jars"/>
@@ -188,7 +189,7 @@
   </target>
 
   <target name="docs" description="Builds all Caja documentation."
-   depends="javadocs,jsdocs">
+   depends="javadocs,jsdocs,ruledocs">
   </target>
   
   <target name="javadocs" description="Builds javadoc documentation.">
@@ -203,6 +204,13 @@
      classpathref="classpath.javadocs"
      linksource="yes"/>
      <!-- overview="${src}/overview.html" -->
+  </target>
+
+  <target name="ruledocs" description="Builds Caja rule documentation."
+   depends="RuleDoclet">
+    <mkdir dir="${ruledocs}"/>
+    <ruledoclet output="dojo" outputdir="${ruledocs}"
+     rewriter="com.google.caja.parser.quasiliteral.DefaultCajaRewriter"/>
   </target>
 
   <target name="jsdocs" description="Builds jsdoc documentation.">
@@ -408,6 +416,19 @@
     <echo append="true"
      file="${lib}/com/google/caja/reporting/buildInfo.properties"
      message="timestamp: ${build.timestamp}${line.separator}"/>
+  </target>
+
+  <target name="RuleDoclet" depends="Quasiliterals">
+    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+      <src path="${src}"/>
+      <classpath refid="classpath.compile"/>
+      <include name="**/caja/quasiliteral/*Doclet.java"/>
+      <include name="**/caja/tools/DocletAntTask.java"/>
+
+      <compilerarg line="-Xlint:unchecked"/>
+    </javac>
+    <taskdef name="ruledoclet" classname="com.google.caja.tools.DocletAntTask"
+     classpathref="classpath.run" onerror="ignore"/>
   </target>
 
   <target name="PluginCompiler"

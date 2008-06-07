@@ -37,6 +37,11 @@ public class HtmlRuleDoclet extends RuleDoclet {
   private int countRules;
 
   @Override
+  public String getDefaultExtension() {
+    return "html";
+  }
+  
+  @Override
   public void initialize(Writer output) {
     htmlDocument = new Document();
     DocType type = new DocType("html", "-//W3C//DTD XHTML 1.0 Transitional//EN", 
@@ -75,7 +80,8 @@ public class HtmlRuleDoclet extends RuleDoclet {
     style.setAttribute(new Attribute("type", "text/css"));
     style.setText("h1 { text-align: center; } " +
                   "div.centered {text-align: center;} " +
-                  "div.centered table {margin: 0 auto; text-align: left;}"); 
+                  "div.centered table {margin: 0 auto; text-align: left;}" +
+                  "}"); 
     head.addContent(style);
     htmlDocument.getRootElement().addContent(head);
 

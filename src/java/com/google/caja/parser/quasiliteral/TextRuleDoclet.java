@@ -15,6 +15,7 @@
 package com.google.caja.parser.quasiliteral;
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.Date;
 
@@ -25,7 +26,11 @@ import java.util.Date;
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class TextRuleDoclet extends RuleDoclet {
-  
+  @Override
+  public String getDefaultExtension() {
+    return "txt";
+  }
+
   @Override
   public void generateHeader(Writer output, RulesetDescription ruleSet) 
     throws IOException {
@@ -47,5 +52,11 @@ public class TextRuleDoclet extends RuleDoclet {
     output.write("\n  Matches: " + anno.reason()); 
     output.write("\n  Substitutes: " + anno.reason()); 
     output.append("\n\n");
+  }
+  
+  public static void main(String[] args) throws IOException {
+    TextRuleDoclet trd = new TextRuleDoclet();
+    trd.setRewriter(new DefaultCajaRewriter(false));
+    trd.generateDocumentation(new OutputStreamWriter(System.out));
   }
 }

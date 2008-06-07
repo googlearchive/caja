@@ -51,6 +51,11 @@ public abstract class RuleDoclet {
   @SuppressWarnings("unused")
   public void finish(Writer output) throws IOException {}
 
+  /**
+   * Returns the default file extension for the format output by this doclet
+   */
+  public abstract String getDefaultExtension(); 
+
   
   /**
    * Emits a documentation about {@code ruleSet} into the header
@@ -76,7 +81,7 @@ public abstract class RuleDoclet {
    * Emits documentation for a set of rules 
    * @throws IOException 
    */
-  protected void generateDocumentation(Writer output) 
+  public void generateDocumentation(Writer output) 
     throws IOException {
     RulesetDescription ruleSetDescription = 
       rewriter.getClass().getAnnotation(RulesetDescription.class);

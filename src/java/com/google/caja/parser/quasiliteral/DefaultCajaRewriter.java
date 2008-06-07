@@ -2230,6 +2230,13 @@ public class DefaultCajaRewriter extends Rewriter {
 
   private final boolean wartsMode;
 
+  /**
+   * Creates a default caja rewriter with wartsMode off
+   */
+  public DefaultCajaRewriter() {
+    this(false);
+  }
+
   public DefaultCajaRewriter(boolean wartsMode) {
     this(true, wartsMode);
   }

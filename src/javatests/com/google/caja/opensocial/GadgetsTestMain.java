@@ -29,6 +29,7 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
+import com.google.caja.util.Json;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -176,8 +177,8 @@ public class GadgetsTestMain {
 
     JSONArray messages = new JSONArray();
     JSONObject gadgetElement
-        = json("url", gadget.toString(), "title", "TODO", "messages", messages);
-    pushJson(testResults, gadgetElement);
+        = Json.formatAsJson("url", gadget.toString(), "title", "TODO", "messages", messages);
+    Json.pushJson(testResults, gadgetElement);
 
     Writer w = new BufferedWriter(new FileWriter(config.getOutputBase()));
 
@@ -249,9 +250,9 @@ public class GadgetsTestMain {
       }
     });
     for (Map.Entry<MessageTypeInt, Integer> e : entries) {
-      pushJson(
+      Json.pushJson(
           summary,
-          json("type", e.getKey(),
+          Json.formatAsJson("type", e.getKey(),
                "value", e.getValue(),
                "errorLevel", e.getKey().getLevel()));
     }
@@ -270,7 +271,7 @@ public class GadgetsTestMain {
 
     JSONArray testResults = new JSONArray();
     JSONArray summary = new JSONArray();
-    putJson(
+    Json.putJson(
         resultDoc,
         "buildInfo", JSONObject.escape(BuildInfo.getInstance().getBuildInfo()),
         "timestamp", JSONObject.escape(timestamp),
@@ -301,8 +302,8 @@ public class GadgetsTestMain {
 
   private void addMessageNode(JSONArray messages, String position,
                               String level, String type, String text) {
-    pushJson(messages,
-        json("position", position, "level", level, "type", type, "text", text));
+    Json.pushJson(messages,
+        Json.formatAsJson("position", position, "level", level, "type", type, "text", text));
   }
 
   private void addWorstErrorNode(JSONObject gadget, MessageLevel mLevel,
@@ -311,9 +312,9 @@ public class GadgetsTestMain {
     String level = mLevel == null ? "UNKNOWN" : mLevel.toString();
     String type = mType == null ? "UNKNOWN" : mType.toString();
 
-    putJson(gadget,
+    Json.putJson(gadget,
         "worstError",
-        json("type", type, "level", level, "levelOrdinal", levelOrdinal));
+        Json.formatAsJson("type", type, "level", level, "levelOrdinal", levelOrdinal));
   }
 
   private void addMessageNode(
@@ -350,36 +351,5 @@ public class GadgetsTestMain {
       System.err.println();
     }
     System.err.println("usage: GadgetsTestMain listofurls.txt output.json");
-  }
-
-  private static JSONObject json(Object... members) {
-    JSONObject o = new JSONObject();
-    putJson(o, members);
-    return o;
-  }
-
-
-  @SuppressWarnings("unchecked")
-  private static void putJson(JSONObject o, Object... members) {
-    for (int i = 0, n = members.length; i < n; i += 2) {
-      String name = (String) members[i];
-      Object value = toJsonValue(members[i + 1]);
-      o.put(name, value);
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  private static void pushJson(JSONArray a, Object... members) {
-    for (Object member : members) {
-      a.add(toJsonValue(member));
-    }
-  }
-
-  private static Object toJsonValue(Object value) {
-    if (value == null || value instanceof Boolean || value instanceof Number
-        || value instanceof JSONObject || value instanceof JSONArray) {
-      return value;
-    }
-    return value.toString();
   }
 }

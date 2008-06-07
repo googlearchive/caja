@@ -26,6 +26,11 @@ import java.io.Writer;
 public class WikiRuleDoclet extends RuleDoclet {
   private int countRules = 0;
   
+  @Override
+  public String getDefaultExtension() {
+    return "wiki";
+  }  
+
   private String heading1(String name) {
     return "=" + name + "=\n";
   }
