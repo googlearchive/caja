@@ -71,7 +71,9 @@ public class CajolingService implements HttpHandler {
   }
 
   public void stop() {
-    server.stop(0);
+    if (server != null) {
+      server.stop(0);
+    }
   }
 
   private Map<String, String> parseQuery(String query) throws UnsupportedEncodingException {

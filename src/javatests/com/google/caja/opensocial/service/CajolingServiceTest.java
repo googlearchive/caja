@@ -101,7 +101,7 @@ public class CajolingServiceTest extends CajaTestCase {
   public void testSimpleJs() throws Exception {
     // TODO(jasvir): Issue 330 
     if (false) {
-    checkJs(
+      checkJs(
         "{ var x = y; }",
         DefaultCajaRewriterTest.weldPrelude("y") +
         "{ var x = y; }");
