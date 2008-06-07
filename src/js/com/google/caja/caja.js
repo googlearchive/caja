@@ -355,31 +355,9 @@ var ___;
   ////////////////////////////////////////////////////////////////////////
   // Overriding some very basic primordial methods
   ////////////////////////////////////////////////////////////////////////
-  
-  /**
-   * Returns true only if we can call
-   * Object.prototype.hasOwnProperty on this object without
-   * exploding. 
-   * <p>
-   * On Firefox, it seems that calling hasOwnProperty on an
-   * HTMLDivElement sometimes causes an
-   * "Illegal operation on WrappedNative prototype object".
-   * <p>
-   * SECURITY BUG STOPGAP TODO(erights)
-   */
-  var canCallHasOwnProperty = function(obj) { return true; };
-  
-  // When we're in a non-browser environment, such that there isn't
-  // a global HTMLDivElement, then we don't need to worry about
-  // this bug.
-  if (typeof global.HTMLDivElement === 'function') {
-    canCallHasOwnProperty = function(obj) {
-      return !(obj instanceof global.HTMLDivElement);
-    };
-  }
-  
+
   var originalHOP_ = Object.prototype.hasOwnProperty;
-  
+
   /**
    * <tt>hasOwnProp(obj.prop)</tt> means what
    * <tt>obj.hasOwnProperty(prop)</tt> would normally mean in an
@@ -390,14 +368,7 @@ var ___;
     if (t !== 'object' && t !== 'function') { 
       return false; 
     }
-    if (canCallHasOwnProperty(obj)) {
-      // Fails in Firefox for some DOM objects intermittently(?!) 
-      // with "Illegal operation on WrappedNative prototype object".
-      // For these, canCallHasOwnProperty must say false.
-      return originalHOP_.call(obj, name); 
-    } else {
-      return false;
-    }
+    return originalHOP_.call(obj, name);
   }
   
   ////////////////////////////////////////////////////////////////////////
@@ -1246,28 +1217,6 @@ var ___;
    * attribute is set. Otherwise, if this property is readable and
    * holds a simple function, then it's also callable as a function,
    * which we can memoize.
-   * <p>
-   * SECURITY HAZARD TODO(erights): If a settable property is
-   * first set to a
-   * simple function, which is then called, memoizing canCall, and
-   * then set to some other kind of function which leaked (such as
-   * an untamed function), then that other function can be
-   * inappropriately called as a method on that. We currently
-   * classify this as a hazard and not a bug per se, since no such
-   * function value should ever leak into value space. If one does,
-   * there's a bug either in Caja or in the embedding app's taming
-   * decisions.
-   * <p>
-   * In any case, the not-yet-implemented plan to fix this hazard is
-   * to have two canSet flags: one that records the grant of
-   * settability, and one to be tested in the fast-path. The
-   * fast-path canCall and fast-path canSet flags will be exclusive,
-   * to be faulted in by the last successful use. This way, repeated
-   * calls are fast, and repeated sets are fast, but the first call
-   * after a set will re-check the value to be called.
-   * <p>
-   * This plan will need to be thought through again when we
-   * implement property deletion.
    */
   function canCallProp(that, name) {
     name = String(name);

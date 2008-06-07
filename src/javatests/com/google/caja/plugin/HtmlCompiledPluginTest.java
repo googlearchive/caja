@@ -292,23 +292,6 @@ public class HtmlCompiledPluginTest extends TestCase {
   }
 
   /**
-   * Tests that the 'prototype' property of the virtual global scope
-   * is not visible.
-   *
-   * @throws Exception
-   */
-  public void testGlobalScopePrototypeInvisible() throws Exception {
-    // TODO(ihab.awad): Disabled for now, but see issue145
-    if (false) {
-    execGadget(
-        "<script>var x = 1; x = this.prototype; x = 2;</script>",
-        "if (___.getNewModuleHandler().getImports().x === 2)" +
-          "fail('Global scope prototype is accessible');"
-        );
-    }
-  }
-
-  /**
    * Tests that setTimeout is uncallable.
    *
    * @throws Exception

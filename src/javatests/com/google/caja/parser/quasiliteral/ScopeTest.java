@@ -332,11 +332,6 @@ public class ScopeTest extends CajaTestCase {
     Scope.fromFunctionConstructor(s1, fc);
 
     assertEquals(1, mq.getMessages().size());
-
-    // TODO(ihab.awad): This spurious LINT message is because 'foo' is
-    // declared in the outer scope, as DECLARED_FUNCTION, and within
-    // the function body, as FUNCTION. Fix the impl so this spurious
-    // message is not emitted.
     assertMsgType(MessageType.MASKING_SYMBOL, mq.getMessages().get(0));
     assertMsgLevel(MessageLevel.ERROR, mq.getMessages().get(0));
   }

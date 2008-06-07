@@ -114,8 +114,6 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         + "var x;");
   }
 
-
-
   public void testAssertEqualsCajoled() throws Exception {
     try {
       rewriteAndExecute("assertEquals(1, 2);");
@@ -412,9 +410,6 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   ////////////////////////////////////////////////////////////////////////
   // Specific rules
   ////////////////////////////////////////////////////////////////////////
-
-  // TODO(ihab.awad): SECURITY: Ensure we disallow references to free variables
-  // that end in a single underscore.
 
   public void testWith() throws Exception {
     checkFails("with (dreams || ambiguousScoping) anything.isPossible();",
@@ -855,15 +850,12 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "var foo = {};" +
         "foo.x = 3;" +
         "assertEquals(foo.x, 3);");
-    // TODO(ihab.awad): SECURITY: Issue 336
-    if (false) {
     // We cannot assign to a function variable
     rewriteAndExecute(
         "function foo() {};" +
         "assertThrows(function() {" +
-        "  foo.x = 3;" +
+        "  foo = 3;" +
         "});");
-    }
     // We cannot assign to an aliased function
     rewriteAndExecute(
         "function foo() {};" +
