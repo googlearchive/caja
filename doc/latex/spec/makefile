@@ -45,8 +45,7 @@ clean:
                           $(MAIN:.tex=.out) \
                           $(MAIN:.tex=.pdf) \
                           $(MAIN:.tex=.toc) \
-                          $(MAIN:.tex=.todolist) \
-                          $(FIGS)
+                          $(MAIN:.tex=.todolist) 
 
 # Common generators
 $(INKSCAPE_FIGS:.svg=.pdf): $(INKSCAPE_FIGS)
