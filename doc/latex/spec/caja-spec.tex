@@ -1001,6 +1001,9 @@ function foo() {}
 foo = 3;
 \end{alltt}
     
+  \item[No deleting variables.]  Allowing variables to be deleted prevents
+  static scope analysis, so Cajita and Caja both prohibit it.  Properties 
+  of objects, however, may still be deleted.
         
 \end{description}
 
@@ -1272,10 +1275,7 @@ the Cajita subset of Caja.
   of the global object.  In Caja, even though free variables are rewritten 
   to properties of imports, declaring a variable with \code{var} does not 
   add a property to the \code{IMPORTS\_\_\_} object.
-    
-  \item[No deleting variables.]  Allowing variables to be deleted prevents
-  static scope analysis, so Cajita and Caja both prohibit it.  Properties 
-  of objects, however, may still be deleted.
+
 \end{description}
 
 \section{Caja Specification}
@@ -1340,19 +1340,24 @@ Foo.prototype.add3 = function\ (x)\{
   return x + 2;
 \};
 \end{alltt}
-  In both these cases, the function is marked with the \code{METHOD\_\_\_} flag and is added as a property of the
-  constructor's \code{prototype} property.  Such a function is called an \emph{unattached method}, in contrast
-  to an \emph{attached method}, explained below. Direct references to unattached methods should never be accessible to Caja code.
+
+  In both these cases, the function is marked as a method and is added as a
+  property of object bound to the constructor's \code{prototype} property. Such
+  a function is called an \emph{unattached method}, in contrast to an
+  \emph{attached method}, explained below. Direct references to unattached
+  methods should never be accessible to Caja code.
   
-  When a method like \code{getX} is referenced as a property of an object \code{o}, 
-  it is rewritten to \code{\_\_\_.readPub(o, 'getX')}.  When \code{readPub} finds that \code{getX} is an unattached method,
-  it returns instead an \emph{attached method}, a wrapper around the unattached method that stores \code{o}; when it is 
-  invoked as a method on some object \code{o2}, the wrapper first verifies that \code{o === o2}.  If the two are not equal, 
-  then the wrapper throws an exception.
+  When a method like \code{getX} is read as a property of an object \code{o}, it
+  returns instead an \emph{attached method}, a wrapper around the unattached
+  method that stores \code{o}; when it is invoked as a method on some object
+  \code{o2}, the wrapper first verifies that \code{o === o2}.  If the two are
+  not equal, then the wrapper throws an exception.
   
-  An \emph{inline method} is an anonymous function mentioning ``\code{this}'' that is immediately invoked using \code{call}, \code{apply},
-  or \code{bind} with ``\code{this}'' as the first parameter.  Inline methods are a means of achieving true block scoping in Caja.  
-  See section \ref{subsec:caja-reg} for more details.
+  An \emph{inline method} is an anonymous function mentioning ``\code{this}''
+  that is immediately invoked using \code{call}, \code{apply}, or \code{bind}
+  with ``\code{this}'' as the first parameter.  Inline methods are a means of
+  achieving true block scoping in Caja. See section \ref{subsec:caja-reg} for
+  more details.
 \end{description}
 
 
@@ -1566,20 +1571,20 @@ function WobblyPoint(x, y)\ \{
 caja.def(WobblyPoint, Point,\ \{
   getX: function()\ \{ 
     return Math.random() +
-      WobblyPoint.super.prototype.getX.call(this); 
+      WobblyPoint.super.prototype.
+        getX.call(this); 
   \}
 \});
 \end{alltt}
 
-\caption[A Caja Subclass.]{A Caja Subclass. \code{caja.def} supports 
-classical inheritance. The second argument serves as a ``superclass''. The 
-third argument provides instance members including methods. A fourth optional 
-argument (unshown) provides static members. When the superclass argument is a 
-function name, it can be used as shown for \emph{super} construction.
-Method calls on a superclass have not yet been implemented; above is one proposal we are 
-considering; the syntax has not yet been finalized. 
-These occurrences of \code{call} are exempt from the normal 
-cajoling rules. \\ } \hrule
+\caption[A Caja Subclass.]{A Caja Subclass. \code{caja.def} supports classical
+inheritance. The second argument serves as a ``superclass''. The third argument
+provides instance members including methods. A fourth optional argument
+(unshown) provides static members. The \code{super} call within the
+\code{WobblyPoint} constructor asks the ``superclass'' constructor to do its
+part in initializing the new instance. We have not yet decided on the form of
+``\code{super}" method calls; the \code{{\ldots}super.prototype{\ldots}} syntax
+above is one proposal we are considering. \\ } \hrule
 \label{fig:caja-subclass}
 \end{figure}
 
@@ -1587,11 +1592,11 @@ cajoling rules. \\ } \hrule
 \subsection{Caja gotchas}
 \label{subsec:caja-gotchas}
 
-Caja seeks to define a fail-stop subset of ES3, as explained in section~\ref{subsec:fail-stop}. However, 
-it falls short of this goal in several minor ways. To write a correct program 
-that executes correctly whether run cajoled or uncajoled, it should 
-avoid these gotchas. In this section, we enumerate those remaining gotchas
-relevant specifically to Caja.
+Caja seeks to define a fail-stop subset of ES3, as explained in
+section~\ref{subsec:fail-stop}. However, it falls short of this goal in several
+minor ways. To write a correct program that executes correctly whether run
+cajoled or uncajoled, it should avoid these gotchas. In this section, we
+enumerate those remaining gotchas relevant specifically to Caja.
 
 \begin{description}
 
@@ -1672,8 +1677,13 @@ Shadow.prototype.getState = function()\ \{
 \};
 \end{alltt}
 
-\caption[A Caja Inline Method.]{\\ } 
-\hrule
+\caption[A Caja Inline Method.]{A Caja Inline Method. The anonymous function
+above mentions ``\code{this}'', and so is a form of method, but it is not used
+to initialize a property of a shared prototype. Such an \emph{inline method} may
+appear only as the receiver of a \code{call}, \code{apply}, or \code{bind} call
+whose first argument is ``\code{this}''. The above listener, when invoked, runs
+in the lexical scope in which it was created, including the binding of
+``\code{this}''. \\ } \hrule
 \label{fig:caja-attached-method}
 \end{figure}
 
