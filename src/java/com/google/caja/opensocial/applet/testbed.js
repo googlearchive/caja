@@ -110,7 +110,10 @@ var getTestbedServer = (function () {
   var testbedServer;
   return function getTestbedServer() {
     if (testbedServer === undefined) {
-      testbedServer = getCgiParams().backend || 'http://bogus-proxy.google.com';
+      var backend = getCgiParams().backend;
+      testbedServer = (backend && backend.length === 1)
+          ? backend[0]
+          : 'http://bogus-proxy.google.com';
     }
     return testbedServer;
   }

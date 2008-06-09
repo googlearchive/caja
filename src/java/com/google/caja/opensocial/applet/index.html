@@ -196,6 +196,19 @@ exports.sayBye = function () {
 &lt;script&gt;caja.log('Hello World');&lt;/script&gt;
 </pre>
 
+      <p>
+      You can have all URLs passed through a proxy server if you like.
+      This is necessary for images in HTML to work.  Start the <a
+      href="http://code.google.com/p/google-caja/source/browse/trunk/bin/testbed-proxy.py">proxy
+      server</a> running, and load this page with
+      <code>?backend=http://&lt;your-machine&gt;:&lt;port&gt;</code>
+      appended to the URL.
+      <pre class=prettyprint style="cursor: pointer"
+       onclick="loadExampleInto(this, document.forms['cajolerForm.1'])">
+&lt;img src="http://www.google.com/intl/en_ALL/images/logo.gif"&gt;
+</pre>
+
+
     </div>
 
   </body>
