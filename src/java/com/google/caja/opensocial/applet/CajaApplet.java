@@ -143,6 +143,7 @@ public class CajaApplet extends Applet {
         }
       };
     rw.setDebugMode(features.contains(Feature.DEBUG_SYMBOLS));
+    rw.setWartsMode(features.contains(Feature.WARTS_MODE));
 
     StringBuilder cajoledOutput = new StringBuilder();
     UriCallback uriCallback = new UriCallback() {
@@ -217,6 +218,7 @@ public class CajaApplet extends Applet {
   private static enum Feature {
     EMBEDDABLE,
     DEBUG_SYMBOLS,
+    WARTS_MODE,
     ;
   }
 }

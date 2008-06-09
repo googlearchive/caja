@@ -150,7 +150,7 @@ var cajole = (function () {
     var inputs = form.elements;
     var features = [];
     // See CajaApplet.Feature
-    caja.each({ EMBEDDABLE: true, DEBUG_SYMBOLS: true },
+    caja.each({ EMBEDDABLE: true, DEBUG_SYMBOLS: true, WARTS_MODE: true },
               ___.simpleFunc(function (featureName) {
                 if (inputs[featureName + uiSuffix].checked) {
                   features.push(featureName);
