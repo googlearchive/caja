@@ -279,7 +279,7 @@ function rewriteCodeElements() {
     </li>
 
     <li class="slide">
-      <h1>&#x2160;. Code Organization <small><a href="http://code.google.com/p/google-caja/source/browse/trunk/"
+      <h1>I. Code Organization <small><a href="http://code.google.com/p/google-caja/source/browse/trunk/"
        >[Browsable]</a></small></h1>
       
       <a href=packages.png target=_blank
@@ -288,7 +288,8 @@ function rewriteCodeElements() {
 
     <li class="slide">
       <h1>Gadget Spec parsing</h1>
-      <p><code>com.google.caja.opensocial.DefaultCajaRewriter</code></p>
+      <p><code>com.google.caja.opensocial.*</code></p>
+      <p><code>com.google.caja.opensocial.DefaultGadgetRewriter</code></p>
       <p>Finds a "Content" section containing HTML in a CDATA section.</p>
       <p>Rewrites HTML to Javascript.</p>
       <p>Outputs a new "Content" section, JS in an HTML
@@ -369,7 +370,7 @@ function rewriteCodeElements() {
     </li>
 
     <li class="slide">
-      <h1>&#x2161;. Issue Tracking and Docs</h1>
+      <h1>II. Issue Tracking and Docs</h1>
       <a href="http://code.google.com/p/google-caja/issues/list">Issues List</a>.  Can <a href="http://code.google.com/p/google-caja/issues/list?q=-Priority-Low">filter by priority</a> and see <a href="http://code.google.com/p/google-caja/issues/list?q=label%3ASecurity&can=1">Security bugs incl. closed ones</a>
       <p>List of TODOs by file: <a href="http://cajadores.com/tasks.html"
        >http://cajadores.com/tasks.html</a>
@@ -384,7 +385,7 @@ function rewriteCodeElements() {
     </li>
 
     <li class="slide">
-      <h1>&#x2162;. Using the Breach Testbed</h1>
+      <h1>III. Using the Breach Testbed</h1>
       <p><code>com.google.caja.opensocial.applet.*</code>
       <p><a href="http://cajadores.com/demos/testbed?backend=http%3A%2F%2Fsuper-cake.corp.google.com">http://cajadores.com/demos/testbed<wbr>?backend=http%3A%2F%2Fsuper-cake.corp.google.com</a>
       <p>Let's you enter HTML fragments, cajole them and see the output
@@ -415,7 +416,7 @@ function rewriteCodeElements() {
     </li>
 
     <li class="slide">
-      <h1>&#x2163;. What constitutes a breach?</h1>
+      <h1>IV. What constitutes a breach?</h1>
       <p>Any violation of caja rules incl. but not limited to</p>
       <ul>
         <li>Modifying a frozen object</li>
@@ -449,7 +450,7 @@ function rewriteCodeElements() {
     </li>
 
     <li class="slide">
-      <h1>&#x2164;. Departures from HTML</h1>
+      <h1>V. Departures from HTML</h1>
       <p>We whitelist tags and attributes
       <p>No <code>HTML</code>, <code>HEAD</code>, <code>BODY</code> tags
       <p>No frames, objects, embeds
