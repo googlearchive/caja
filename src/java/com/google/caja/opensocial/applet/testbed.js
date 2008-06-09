@@ -84,6 +84,39 @@ function getCajoler() {
   return document.applets.cajoler;
 }
 
+
+/** Get the protocol, host, and port of a <tt>bin/testbed-proxy.py</tt>. */
+var getTestbedServer = (function () {
+  /** Parses the URL to pick out CGI parameters. */
+  function getCgiParams() {
+    var parts = (location.search || '').split(/[\?&]/g);
+    var params = {};
+    for (var i = parts.length; --i >= 0;) {
+      var part = parts[i];
+      var eq = part.indexOf('=');
+      var key, val;
+      if (eq < 0) {
+        key = decodeURIComponent(part);
+        val = '';
+      } else {
+        key = decodeURIComponent(part.substring(0, eq));
+        val = decodeURIComponent(part.substring(eq + 1));
+      }
+      (params[key] || (params[key] = [])).push(val);
+    }
+    return params;
+  }
+
+  var testbedServer;
+  return function getTestbedServer() {
+    if (testbedServer === undefined) {
+      testbedServer = getCgiParams().backend || 'http://bogus-proxy.google.com';
+    }
+    return testbedServer;
+  }
+})();
+
+
 /**
  * Reads caja code and configuration from the testbed form, cajoles it, and
  * displays the output in the current HTML page.
@@ -144,11 +177,37 @@ var cajole = (function () {
     }
   }
 
+  /** Log to a logging service running on localhost. See bin/testbed-proxy.py */
+  function logToServer(msg) {
+    var logForm = document.getElementById('logForm');
+    if (!logForm) {
+      var testbedServer = getTestbedServer();
+      logForm = document.createElement('FORM');
+      logForm.id = 'logForm';
+      logForm.method = 'POST';
+      logForm.action = testbedServer + '/log';
+      var msgInput = document.createElement('INPUT');
+      msgInput.type = 'hidden';
+      msgInput.name = 'msg';
+      logForm.target = 'logFrame';
+
+      var logFrame = document.createElement('IFRAME');
+      logFrame.name = logForm.target;
+      logFrame.style.visibility = 'hidden';
+      logFrame.width = logFrame.height = '1';
+      document.body.appendChild(logFrame);
+      document.body.appendChild(logForm);
+      logForm.appendChild(msgInput);
+    }
+    logForm.elements.msg.value = msg;
+    logForm.submit();
+  }
+
   function cajole(form) {
     var uiSuffix = form.id.replace(/^[^\.]+/, '');
 
     var inputs = form.elements;
-    var features = [];
+    var features = ['testbedServer=' + getTestbedServer().replace(/,/g, '%2C')];
     // See CajaApplet.Feature
     caja.each({ EMBEDDABLE: true, DEBUG_SYMBOLS: true, WARTS_MODE: true },
               ___.simpleFunc(function (featureName) {
@@ -156,9 +215,13 @@ var cajole = (function () {
                   features.push(featureName);
                 }
               }));
+    features = features.join(',');
 
-    var result = getCajoler().cajole(
-        inputs.src.value.replace(/^\s+|\s+$/g, ''), features.join(','));
+    var src = inputs.src.value.replace(/^\s+|\s+$/g, '');
+
+    logToServer('features:' + features + '\nsrc:' + src);
+
+    var result = getCajoler().cajole(src, features);
     var cajoledOutput = result[0];
     var messages = String(result[1]);
 
@@ -327,8 +390,10 @@ var getImports = (function () {
            rewrite:
                function (uri, mimeType) {
                  if (!/^https?:\/\//i.test(uri)) { return null; }
-                 return 'http://gadget-proxy/?url=' + encodeURIComponent(uri)
-                     + '&mimeType=' + encodeURIComponent(mimeType);
+                 var testbedServer = getTestbedServer();
+                 return (testbedServer + '/proxy?url='
+                         + encodeURIComponent(uri)
+                         + '&mimeType=' + encodeURIComponent(mimeType));
                }
          },
          testImports);
