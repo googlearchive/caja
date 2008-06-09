@@ -851,16 +851,16 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "foo.x = 3;" +
         "assertEquals(foo.x, 3);");
     // We cannot assign to a function variable
+    assertAddsMessage(
+        "function foo() {}" +
+        "foo = 3;",
+        RewriterMessageType.CANNOT_ASSIGN_TO_FUNCTION_NAME,
+        MessageLevel.FATAL_ERROR);
+    // We cannot assign to a member of an aliased simple function.
     rewriteAndExecute(
-        "function foo() {};" +
         "assertThrows(function() {" +
-        "  foo = 3;" +
-        "});");
-    // We cannot assign to an aliased function
-    rewriteAndExecute(
-        "function foo() {};" +
-        "var bar = foo;" +
-        "assertThrows(function() {" +
+        "  function foo() {};" +
+        "  var bar = foo;" +
         "  bar.x = 3;" +
         "});");
   }
