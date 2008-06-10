@@ -19,6 +19,10 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
+import com.google.caja.parser.js.ArrayConstructor;
+import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.NullLiteral;
+import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginMeta;
@@ -27,6 +31,7 @@ import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
 import com.google.caja.opensocial.UriCallback;
 import com.google.caja.opensocial.UriCallbackOption;
+import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.HtmlSnippetProducer;
 import com.google.caja.reporting.Message;
@@ -47,6 +52,7 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -69,17 +75,19 @@ public class CajaApplet extends Applet {
   /**
    * Invoked by javascript in the embedding page.
    * @param cajaInput as an HTML gadget.
-   * @param features {@link Feature} values and other configuration parameters
-   *   as a comma separated list.
+   * @param featureNames {@link Feature} values and other configuration
+   *   parameters as a comma separated list.
    *   We use a comma separated string instead of an array since IE 6's
    *   version of liveconnect does not convert javascript Arrays to java
    *   arrays.
    *   See discussion of IE applet/JS communication at
    *   http://www.rohitab.com/discuss/index.php?showtopic=28868&st=0&p=10029410
-   * @return a tuple of {@code [ cajoledHtml, messageHtml ]}.
+   * @return a javascript tuple of {@code [ cajoledHtml, messageHtml ]}.
    *   If the cajoledHtml is non-null then cajoling succeeded.
+   *   We return a string instead of an Array or a Pair since IE's JS/java
+   *   bridge deals poorly with values that can't be converted to JS primitives.
    */
-  public Object[] cajole(String cajaInput, String featureNames) {
+  public String cajole(String cajaInput, String featureNames) {
     try {
       Set<Feature> features = EnumSet.noneOf(Feature.class);
       String testbedServer = null;
@@ -119,13 +127,13 @@ public class CajaApplet extends Applet {
           }
         };
 
-      return runCajoler(cajaInput, uriCallback, features);
+      return serializeJsArray(runCajoler(cajaInput, uriCallback, features));
     } catch (RuntimeException ex) {
       StringWriter sw = new StringWriter();
       PrintWriter pw = new PrintWriter(sw);
       ex.printStackTrace(pw);
       pw.flush();
-      return new Object[] { null, "<pre>" + html(sw.toString()) + "</pre>" };
+      return serializeJsArray(null, "<pre>" + html(sw.toString()) + "</pre>");
     }
   }
 
@@ -223,6 +231,23 @@ public class CajaApplet extends Applet {
   private static String html(CharSequence s) {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeXml(s, false, sb);
+    return sb.toString();
+  }
+
+  private static String serializeJsArray(Object... values) {
+    List<Expression> valueExprs = new ArrayList<Expression>();
+    for (Object value : values) {
+      if (value == null) {
+        valueExprs.add(new NullLiteral());
+      } else {
+        valueExprs.add(StringLiteral.valueOf((String) value));
+      }
+    }
+    StringBuilder sb = new StringBuilder();
+    JsMinimalPrinter pp = new JsMinimalPrinter(sb, null);
+    (new ArrayConstructor(valueExprs)).render(
+        new RenderContext(new MessageContext(), false, pp));
+    pp.noMoreTokens();
     return sb.toString();
   }
 

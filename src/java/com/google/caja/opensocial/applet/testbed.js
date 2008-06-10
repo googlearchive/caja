@@ -72,6 +72,7 @@ var gadgetPublicApis = {
 if ('undefined' === typeof prettyPrintOne) {
   // So it works without prettyprinting when disconnected from the network.
   prettyPrintOne = function (html) { return html; };
+  prettyPrint = function () {};
 }
 
 /**
@@ -192,6 +193,7 @@ var cajole = (function () {
       var msgInput = document.createElement('INPUT');
       msgInput.type = 'hidden';
       msgInput.name = 'msg';
+      msgInput.id = 'logFormMsg';
       logForm.target = 'logFrame';
 
       var logFrame = document.createElement('IFRAME');
@@ -202,7 +204,7 @@ var cajole = (function () {
       document.body.appendChild(logForm);
       logForm.appendChild(msgInput);
     }
-    logForm.elements.msg.value = msg;
+    document.getElementById('logFormMsg').value = msg;
     logForm.submit();
   }
 
@@ -224,7 +226,7 @@ var cajole = (function () {
 
     logToServer('features:' + features + '\nsrc:' + src);
 
-    var result = getCajoler().cajole(src, features);
+    var result = eval(String(getCajoler().cajole(src, features)));
     var cajoledOutput = result[0];
     var messages = String(result[1]);
 
@@ -387,8 +389,9 @@ var getImports = (function () {
 
     var testImports = ___.copy(___.sharedImports);
     testImports.yield = ___.primFreeze(___.simpleFunc(yielder(uiSuffix)));
+    var idClass = 'xyz' + ___.getId(testImports) + '___';
     attachDocumentStub(
-         '-xyz___',
+         '-' + idClass,
          {
            rewrite:
                function (uri, mimeType) {
@@ -402,6 +405,7 @@ var getImports = (function () {
          testImports);
     testImports.clearHtml___ = function () {
       var htmlContainer = document.getElementById('caja-html' + uiSuffix);
+      htmlContainer.className = idClass;
       htmlContainer.innerHTML = '<center style="color: gray">eval<\/center>';
       testImports.htmlEmitter___ = new HtmlEmitter(htmlContainer);
     };
