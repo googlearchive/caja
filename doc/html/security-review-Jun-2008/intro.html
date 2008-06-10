@@ -271,11 +271,12 @@ function rewriteCodeElements() {
 
       <code>http://tinyurl.com/56z78o</code>
       
-      <p>Code organization?</p>
+      <p>Code organization</p>
       <p>Issue tracking & docs</p>
       <p>Using the Breach Testbed</p>
       <p>What constitutes a breach?</p>
       <p>Departures from HTML</p>
+      <p>TODO Unittesting Strategies
     </li>
 
     <li class="slide">
@@ -425,7 +426,7 @@ function rewriteCodeElements() {
         <li>Arbitrary code execution
         <li>CSS rules applying outside the gadget's DOM sandbox
         <li>Rendering outside the gadget's DOM sandbox
-        <li>Browser loads un-proxied URL.
+        <li>Browser cannot load a URL except as determined by container policy.
       </ul>
     </li>
 
@@ -443,7 +444,7 @@ function rewriteCodeElements() {
       <h1>Breaches part 3?</h1>
       <p>Leak of container info</p>
       <ul>
-        <li>Information about caller when called by container.
+        <li>Information about caller is leaked
         <li>Communication between gadget's except via <code>loadModule</code>
         <li>Communication with any server other not mediated by the proxy.
       </ul>
