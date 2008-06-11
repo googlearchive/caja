@@ -601,18 +601,18 @@ var ___;
    * other means.
    */
   function fastpathRead(obj, name) {
-    enforce(obj != null, 'Cannot grant read of ', name, ' on null');
+    enforce(obj != null, 'Cannot fastpath read of ', name, ' on null');
     obj[name + '_canRead___'] = true;
   }
 
-  /** allowEnum implies allowRead */
+  /** fastpathEnum implies fastpathRead */
   function fastpathEnum(obj, name) {
-    enforce(obj != null, 'Cannot grant enum of ', name, ' on null');
+    enforce(obj != null, 'Cannot fastpath enum of ', name, ' on null');
     fastpathRead(obj, name);
     obj[name + '_canEnum___'] = true;
   }
 
-  /** allowEnum for members */
+  /** fastpathEnum for members */
   function fastpathEnumOnly(obj, name) {
     obj[name + '_canEnum___'] = true;
   }
@@ -622,7 +622,7 @@ var ___;
    * should only be callable.
    */
   function fastpathCall(obj, name) {
-    enforce(obj != null, 'Cannot grant call of ', name, ' on null');
+    enforce(obj != null, 'Cannot fastpath call of ', name, ' on null');
     obj[name + '_canCall___'] = true;
     if (obj[name + '_canSet___']) {
       obj[name + '_canSet___'] = false;
@@ -633,11 +633,11 @@ var ___;
   }
 
   /**
-   * allowSet implies allowEnum and allowRead. It also disables the ability
-   * to call.
+   * fastpathSet implies fastpathEnum and fastpathRead. It also
+   * disables the ability to call.
    */
   function fastpathSet(obj, name) {
-    enforce(obj != null, 'Cannot allow set of member ', name, ' on null');
+    enforce(obj != null, 'Cannot fastpath set of member ', name, ' on null');
     if (isFrozen(obj)) {
       fail("Can't set .", name, ' on frozen (', debugReference(obj), ')');
     }
@@ -652,11 +652,12 @@ var ___;
   }
 
   /**
-   * allowDelete allows delete of a member on a constructed object via
+   * fastpathDelete allows delete of a member on a constructed object via
    * the private API.
    */
   function fastpathDelete(obj, name) {
-    enforce(obj != null, 'Cannot allow delete of member ', name, ' on null');
+    enforce(obj != null, 'Cannot fastpath delete of member ', name,
+	    ' on null');
     if (isFrozen(obj)) {
       fail("Can't delete .", name, ' on frozen (', debugReference(obj), ')');
     }
@@ -1435,7 +1436,7 @@ var ___;
    * @private
    */
   function deleteFieldEntirely(obj, name) {
-    // Can't cache allow delete since deleting the field should remove
+    // Can't cache fastpath delete since deleting the field should remove
     // all privileges for that field.
     delete obj[name + '_canRead___'];
     delete obj[name + '_canEnum___'];
@@ -1595,7 +1596,8 @@ var ___;
    * the faulted object.
    * <p>
    * In order for this fault-handler to get control, it's important
-   * that no one does a conflicting <tt>allowRead()</tt>.
+   * that no one does a conflicting <tt>grantRead()</tt>.
+   * FIXME(ben): and fastpathRead()?
    */
   function useGetHandler(obj, name, getHandler) {
     obj[name + '_getter___'] = getHandler;
@@ -1610,8 +1612,9 @@ var ___;
    * which is the list of arguments in the original call.
    * <p>
    * In order for this fault-handler to get control, it's important
-   * that no one does a conflicting allowCall(), allowSimpleFunc(), or
-   * allowMethod().
+   * that no one does a conflicting grantCall(), grantSimpleFunc(), or
+   * grantMethod().
+   * FIXME(ben): also fastpath?
    */
   function useApplyHandler(obj, name, applyHandler) {
     obj[name + '_handler___'] = applyHandler;
@@ -1626,8 +1629,9 @@ var ___;
    * as the original call.
    * <p>
    * In order for this fault-handler to get control, it's important
-   * that no one does a conflicting allowCall(), allowSimpleFunc(), or
-   * allowMethod().
+   * that no one does a conflicting grantCall(), grantSimpleFunc(), or
+   * grantMethod().
+   * FIXME(ben): also fastpath?
    */
   function useCallHandler(obj, name, callHandler) {
     useApplyHandler(obj, name, function(args) {
@@ -1641,7 +1645,8 @@ var ___;
    * object.
    * <p>
    * In order for this fault-handler to get control, it's important
-   * that no one does a conflicting allowSet().
+   * that no one does a conflicting grantSet().
+   * FIXME(ben): also fastpath?
    */
   function useSetHandler(obj, name, setHandler) {
     obj[name + '_setter___'] = setHandler;
@@ -1652,7 +1657,8 @@ var ___;
    * calling <tt>deleteHandler()</tt> as a method on the faulted object.
    * <p>
    * In order for this fault-handler to get control, it's important
-   * that no one does a conflicting allowDelete().
+   * that no one does a conflicting grantDelete().
+   * FIXME(ben): also fastpath?
    */
   function useDeleteHandler(obj, name, deleteHandler) {
     obj[name + '_deleter___'] = deleteHandler;
@@ -1690,8 +1696,9 @@ var ___;
    * we need to provide a fault handler instead to prevent such
    * mutation from violating Caja semantics. In order for this fault
    * handler to get control, it's important that no one does an
-   * allowCall(), allowSimpleFunc(), or allowMethod() on the
+   * grantCall(), grantSimpleFunc(), or grantMethod() on the
    * original method.
+   * FIXME(ben): also fastpath?
    */
   function grantMutator(constr, name) {
     var original = constr.prototype[name];
