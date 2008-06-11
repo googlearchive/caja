@@ -2232,11 +2232,11 @@ public class DefaultCajaRewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="({})",
-          substitutes="({})")
+          substitutes="___.initializeMap({})")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (QuasiBuilder.match("({})", node, bindings)) {
-          return node.clone();
+          return substV("___.initializeMap({})");
         }
         return NONE;
       }
@@ -2275,7 +2275,7 @@ public class DefaultCajaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (QuasiBuilder.match("({@keys*: @vals*})", node, bindings)) {
           return substV(
-              "({ @keys*: @vals* })",
+              "___.initializeMap({ @keys*: @vals* })",
               "keys", bindings.get("keys"),
               "vals", expand(bindings.get("vals"), scope, mq));
         }

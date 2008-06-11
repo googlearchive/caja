@@ -48,8 +48,16 @@ public abstract class RewriterTestCase extends CajaTestCase {
   /**
    * Given some code, rewrite it, then execute it in the proper context for the rewritten
    * version and return the value of the last expression in the original code.
+   *
+   * @param pre a prefix program fragment to be executed plain.
+   * @param program a program fragment to be rewritten.
+   * @param post a postfix program fragment to be executed plain.
    */
-  protected abstract Object rewriteAndExecute(String program) throws IOException, ParseException;
+  protected abstract Object rewriteAndExecute(String pre, String program, String post) throws IOException, ParseException;
+
+  protected Object rewriteAndExecute(String program) throws IOException, ParseException {
+    return rewriteAndExecute(";", program, ";");
+  }
 
   protected void setSynthetic(ParseTreeNode n) {
     SyntheticNodes.s(n);

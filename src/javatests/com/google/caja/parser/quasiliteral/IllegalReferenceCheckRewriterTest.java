@@ -64,7 +64,7 @@ public class IllegalReferenceCheckRewriterTest extends RewriterTestCase {
   }
 
   @Override
-  protected Object rewriteAndExecute(String program) {
+  protected Object rewriteAndExecute(String pre, String program, String post) {
     return new Object();  // Placeholder to allow assertConsistent() to work
   }
 }

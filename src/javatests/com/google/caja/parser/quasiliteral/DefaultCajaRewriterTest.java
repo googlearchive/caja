@@ -1196,7 +1196,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         weldPrelude("g") +
         "var x0___;" +
         "var x1___;" +
-        "var x = {};" +
+        "var x = ___.initializeMap({});" +
         weldSetPub("x", "p", "___.readPub(g, 0)", "x0___", "x1___") + ";");
   }
 
@@ -1643,7 +1643,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "} catch (e) {" +
         "  status = 'PASSED';" +  // Ok to fail with an exception
         "}" +
-        "status");
+        "status;");
   }
 
   public void testDeleteNonLvalue() throws Exception {
@@ -2208,7 +2208,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   public void testMapEmpty() throws Exception {
     checkSucceeds(
         "var f = {};",
-        "var f = {};");
+        "var f = ___.initializeMap({});");
   }
 
   public void testMapBadKeySuffix() throws Exception {
@@ -2223,8 +2223,27 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         weldPrelude("g") +
         "var x0___;" +
         "var x1___;" +
-        "var o = { k0: " + weldReadPub("g", "x", "x0___") + ", " +
-        "          k1: " + weldReadPub("g", "y", "x1___") + " };");
+        "var o = ___.initializeMap(" +
+        "    { k0: " + weldReadPub("g", "x", "x0___") + ", " +
+        "      k1: " + weldReadPub("g", "y", "x1___") + " });");
+    // Ensure that calling an untamed function throws
+    rewriteAndExecute(
+        "testImports.f = function() {};",
+        "assertThrows(function() { f(); });",
+        ";");
+    // Ensure that calling a tamed function in an object literal works
+    rewriteAndExecute(
+        "  var f = function() {};"
+        + "var m = { f : f };"
+        + "m.f();");
+    // Ensure that putting an untamed function into an object literal
+    // with a key that is whitelisted on Object.prototype does not make
+    // it callable
+    rewriteAndExecute(
+        "testImports.f = function() {};",
+        "  var m = { isPrototypeOf : f };"
+        + "assertThrows(function() { m.isPrototypeOf(); });",
+        ";");
   }
 
   public void testOtherInstanceof() throws Exception {
@@ -2579,7 +2598,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   }
 
   @Override
-  protected Object rewriteAndExecute(String caja)
+  protected Object rewriteAndExecute(String pre, String caja, String post)
       throws IOException, ParseException {
     mq.getMessages().clear();
 
@@ -2607,10 +2626,12 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
             "};\n" +
             "___.getNewModuleHandler().setImports(testImports);",
             getName() + "-test-fixture"),
+        new RhinoTestBed.Input(pre, getName()),
         // Load the cajoled code.
         new RhinoTestBed.Input(
             "___.loadModule(function (___, IMPORTS___) {" + cajoledJs + "\n});",
             getName() + "-cajoled"),
+        new RhinoTestBed.Input(post, getName()),
         // Return the output field as the value of the run.
         new RhinoTestBed.Input("unittestResult___;", getName()));
 

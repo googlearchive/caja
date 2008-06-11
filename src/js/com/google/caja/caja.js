@@ -2073,6 +2073,11 @@ var ___;
     obj[list].push(trademark);
   }
 
+  function initializeMap(mapObj) {
+    var result = {};
+    each(mapObj, simpleFunc(function(k, v) { setPub(result, k, v); }));
+    return result;
+  }
 
   ////////////////////////////////////////////////////////////////////////
   // Sealing and Unsealing
@@ -2238,6 +2243,7 @@ var ___;
     xo4a: xo4a,
     setMember: setMember,
     setMemberMap: setMemberMap,
+    initializeMap: initializeMap,
     attach: attach,
 
     // Accessing properties
