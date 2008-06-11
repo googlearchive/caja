@@ -948,21 +948,19 @@ attachDocumentStub = (function () {
 
     /**
      * Create a CSS stylesheet with the given text and append it to the DOM.
+     * @param {string} cssText a well-formed stylesheet production.
      */
-    imports.emitCss___ = function (stylesheet) {
-      var style;
-      try {
-        style = document.createElement('style');
-        style.setAttribute('type', 'text/css');
-        style.appendChild(document.createTextNode(stylesheet));
-      } catch (e) {  // Above fails on IE 6
-        var container = document.createElement('div');
-        container.innerHTML = ('<style type="text/css">/*<![CDATA[[<!--*/'
-                               + stylesheet
-                               + '/*-->]]>*/</style>');
-        style = container.firstChild;
+    imports.emitCss___ = function (cssText) {
+      // Courtesy Stoyan Stefanov who documents the derivation of this at
+      // http://www.phpied.com/dynamic-script-and-style-elements-in-ie/
+      var styleSheet = document.createElement('style');
+      styleSheet.setAttribute('type', 'text/css');
+      if (styleSheet.styleSheet) {   // IE
+	styleSheet.styleSheet.cssText = cssText;
+      } else {                // the world
+	styleSheet.appendChild(document.createTextNode(cssText));
       }
-      this.getCssContainer___().appendChild(style);
+      this.getCssContainer___().appendChild(styleSheet);
     };
     /** The node to which gadget stylesheets should be added. */
     imports.getCssContainer___ = function () {
