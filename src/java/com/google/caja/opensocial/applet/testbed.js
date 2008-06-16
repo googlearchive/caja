@@ -128,17 +128,6 @@ var getTestbedServer = (function () {
  */
 var cajole = (function () {
   /**
-   * Converts a plain text string to an HTML encoded string suitable for
-   * inclusion in PCDATA or an HTML attribute value.
-   * @param {string} s
-   * @return {string}
-   */
-  function escapeHtml(s) {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;').replace(/\042/g, '&quot;');
-  }
-
-  /**
    * Extract cajoled ecmascript from DefaultGadgetRewriter's output.
    * This removes the envelope created by
    * DefaultGadgetRewriter.rewriteContent(String).
@@ -226,21 +215,23 @@ var cajole = (function () {
 
     logToServer('features:' + features + '\nsrc:' + src);
 
+    var messages = '';
+    document.getElementById('output' + uiSuffix).innerHTML = '';
+
     var result = eval(String(getCajoler().cajole(src, features)));
     var cajoledOutput = result[0];
-    var messages = String(result[1]);
+    messages = String(result[1]);
+
+    document.getElementById('messages' + uiSuffix).innerHTML = (
+        messages || '<center><i>No Messages</i></center>');
 
     if (cajoledOutput !== null) {
       cajoledOutput = String(cajoledOutput);
-      document.getElementById('output' + uiSuffix).innerHTML
-          = prettyPrintOne(escapeHtml(cajoledOutput));
+      document.getElementById('output' + uiSuffix).innerHTML = prettyPrintOne(
+          indentAndWrapCode(cajoledOutput));
 
       loadCaja(cajoledOutput, uiSuffix);
-    } else {
-      document.getElementById('output' + uiSuffix).innerHTML
-          = '<center class="failure">Failed<\/center>';
     }
-    document.getElementById('messages' + uiSuffix).innerHTML = messages || '';
   }
 
   return cajole;
@@ -406,7 +397,7 @@ var getImports = (function () {
     testImports.clearHtml___ = function () {
       var htmlContainer = document.getElementById('caja-html' + uiSuffix);
       htmlContainer.className = idClass;
-      htmlContainer.innerHTML = '<center style="color: gray">eval<\/center>';
+      htmlContainer.innerHTML = '';
       testImports.htmlEmitter___ = new HtmlEmitter(htmlContainer);
     };
     /**
@@ -480,4 +471,91 @@ function initTestbeds() {
 
 function loadExampleInto(containerNode, form) {
   form.elements.src.value = innerText(containerNode);
+}
+
+/**
+ * Given generated source code, identify indented blocks, and wrap them
+ * in divs with left margins so that code wraps nicely, but maintains
+ * indentation for subsequent lines.
+ * @param {string} code a plain text string.
+ * @return {string} html.
+ */
+function indentAndWrapCode(code) {
+  /**
+   * Converts a plain text string to an HTML encoded string suitable for
+   * inclusion in PCDATA or an HTML attribute value.
+   * @param {string} s
+   * @return {string} html
+   */
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/\042/g, '&quot;')
+        .replace(' ', '\xA0');
+  }
+
+  /** Accumulates chunks of HTML. */
+  var htmlOut = [];
+  /**
+   * Stack of number of spaces before open blocks in reverse order.
+   * The current block, which has the highest indent level, is always in
+   * position 0.
+   */
+  var indentStack = [0];
+
+  /** Append chunks of html to htmlOut for a single line of code. */
+  function processLine(line) {
+    var len = line.length;
+    var pos = 0;  // Length of the prefix of line processed so far.
+
+    // Count the number of spaces at the beginning so we can construct nested
+    // <blockquote> chunks around indentation changes.
+    while (pos < len && line.charAt(pos) == ' ') { ++pos; }
+    if (pos === len) {
+      htmlOut.push('<br>');
+      return;
+    }
+    if (pos !== indentStack[0]) {
+      if (pos < indentStack[0]) {
+        do {
+          indentStack.shift();
+          htmlOut.push('</div>');
+        } while (pos < indentStack[0]);
+      } else if (pos > indentStack[0]) {
+        indentStack.unshift(pos);
+        htmlOut.push('<div class="indentedblock">');
+      }
+    }
+
+    // Walk over the code and introduce <wbr>s at commas and brackets
+    htmlOut.push('<div class=line-of-code>');
+    var strDelim = null;
+    for (var i = pos; i < len; ++i) {
+      var ch = line.charAt(i);
+      switch (ch) {
+      case '"': case "'":
+        if (strDelim === null) {
+          strDelim = ch;
+        } else if (strDelim === ch) {
+          strDelim = null;
+        }
+        break;
+      case '\\':
+        if (strDelim !== null) { ++i; }
+        break;
+      // Since we replace spaces with non-breaking spaces, explicitly insert
+      // <WBR>s around puncutation to allow breaking outside literals.
+      case ',': case '(': case ')': case '{': case '}': case '[': case ']':
+        if (strDelim === null) {
+          htmlOut.push(escapeHtml(line.substring(pos, i + 1)), '<wbr>');
+          pos = i + 1;
+        }
+        break;
+      }
+    }
+    htmlOut.push(escapeHtml(line.substring(pos)), '</div>');
+  }
+
+  var lines = code.split(/\r\n?|\n/g);
+  for (var i = 0, n = lines.length; i < n; ++i) { processLine(lines[i]); }
+  return htmlOut.join('');
 }

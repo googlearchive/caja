@@ -43,6 +43,19 @@
         padding-left: 4px;
         margin: 2px
       }
+
+      .output {
+        font-family: monospace;
+        margin-left: 2em;
+      }
+
+      div.indentedblock {
+        margin-left: 1em;
+      }
+      div.line-of-code {
+        text-indent: -2em;
+      }
+
       .caja-stack { white-space: pre; font-family: monospace }
     </style>
 
@@ -69,7 +82,7 @@
 
   <div style="display:none">
     <!-- a template for a set of testbed controls and output UI -->
-    <table cols="2" id="testbed-ui"><tr valign="top">
+    <table id="testbed-ui"><tr valign="top">
     <td>
       <form id="cajolerForm" onsubmit="return false">
         <button type="button" onclick="cajole(this.form)">Cajole</button>
@@ -87,7 +100,7 @@
          title="Enable complicated features required for backwards feature"
          >Warty</label>
         <br>
-        <textarea cols="81" rows="40" name="src"
+        <textarea cols="81" rows="20" name="src"
 >&lt;script type="text/javascript"&gt;
 
 &lt;/script&gt;
@@ -98,7 +111,7 @@
     <td>
       <pre id="messages" class="prettyprint"></pre>
       <hr>
-      <pre id="output"></pre>
+      <div id="output" class="output"></div>
       <hr>
 
       <div id="eval-results"></div>
@@ -108,7 +121,13 @@
         <div id="caja-stack" class="caja-stack"></div>
       </div>
       <hr>
-      <div id="caja-html"></div>
+      <div>
+        <center style="color: gray">HTML</center>
+        <div style="position: relative; clip: 0 0 0 0;
+                    overflow: auto; border: 2px dotted red">
+          <div id="caja-html"></div>
+        </div>
+      </div>
 
     </table>
   </div>
