@@ -213,6 +213,31 @@ public class DefaultCajaRewriter extends Rewriter {
     new Rule () {
       @Override
       @RuleDescription(
+          name="foreachBadFreeVariable",
+          synopsis="Do not allow a for-in to assign to an imported variable.",
+          reason="We do not allow assignments to imports anywhere.",
+          matches="for (@k in @o) @ss;",
+          substitutes="")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        if (QuasiBuilder.match("for (@k in @o) @ss;", node, bindings)
+            && bindings.get("k") instanceof ExpressionStmt) {
+          ExpressionStmt es = (ExpressionStmt) bindings.get("k");
+          if (es.getExpression() instanceof Reference
+              && scope.isImported(getReferenceName(es.getExpression()))) {
+            mq.addMessage(
+                RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE,
+                node.getFilePosition(), this, node);
+            return node;
+          }
+        }
+        return NONE;
+      }
+    },
+      
+    new Rule () {
+      @Override
+      @RuleDescription(
           name="foreach",
           synopsis="Only enumerate Caja-visible and enumerable property names. A for-in on " +
             "\"this\" will see pubic and protected property names. Otherwise, only " +

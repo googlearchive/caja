@@ -418,6 +418,18 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
                "\"with\" blocks are not allowed");
   }
 
+  public void testForeachBadFreeVariable() throws Exception {
+    checkAddsMessage(
+        js(fromString("for (k in x) y;")),
+        RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE);
+    checkAddsMessage(
+        js(fromString("for (k in x) { y; }")),
+        RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE);
+    checkAddsMessage(
+        js(fromString("for (k in x) ;")),
+        RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE);    
+  }
+
   public void testForeach() throws Exception {
     // TODO(ihab.awad): Refactor some of these tests to be functional, rather than golden.
     checkSucceeds(
