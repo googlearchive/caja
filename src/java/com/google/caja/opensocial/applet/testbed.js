@@ -490,7 +490,7 @@ function indentAndWrapCode(code) {
   function escapeHtml(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
         .replace(/>/g, '&gt;').replace(/\042/g, '&quot;')
-        .replace(' ', '\xA0');
+        .replace(/ /g, '\xA0');
   }
 
   /** Accumulates chunks of HTML. */
@@ -527,7 +527,7 @@ function indentAndWrapCode(code) {
     }
 
     // Walk over the code and introduce <wbr>s at commas and brackets
-    htmlOut.push('<div class=line-of-code>');
+    htmlOut.push('<div class="line-of-code">');
     var strDelim = null;
     for (var i = pos; i < len; ++i) {
       var ch = line.charAt(i);
@@ -557,5 +557,6 @@ function indentAndWrapCode(code) {
 
   var lines = code.split(/\r\n?|\n/g);
   for (var i = 0, n = lines.length; i < n; ++i) { processLine(lines[i]); }
+  for (var i = indentStack.length; --i >= 1;) { htmlOut.push('</div>'); }
   return htmlOut.join('');
 }
