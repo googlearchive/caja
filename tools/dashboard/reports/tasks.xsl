@@ -133,17 +133,17 @@
   <xsl:template match="task">
     <div>
       <a>
-        <xsl:if test="contains(@file, '.java') and contains(@file, 'src/')">
-          <xsl:attribute name="href">
-            <xsl:text>docs/src-html/</xsl:text>
-            <xsl:value-of
-             select="substring-after(
-                         substring-after(
-                             substring-before(@file, '.java'), 'src/'), '/')"/>
-            <xsl:text>.html#line.</xsl:text>
-            <xsl:value-of select="@line"/>
-          </xsl:attribute>
-        </xsl:if>
+        <xsl:attribute name="href">
+          <xsl:text
+           >http://code.google.com/p/google-caja/source/browse/trunk/</xsl:text>
+          <xsl:value-of select="@file"/>
+          <xsl:text>?r=</xsl:text>
+          <xsl:value-of select="../@rev"/>
+          <xsl:text>#sl_svn</xsl:text>
+          <xsl:value-of select="../@rev"/>
+          <xsl:text>_</xsl:text>
+          <xsl:value-of select="@line"/>
+        </xsl:attribute>
         <tt>
           <abbr title="{@file}">
             <xsl:call-template name="basename">
