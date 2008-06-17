@@ -1,0 +1,245 @@
+#!/bin/bash
+
+# A gvn wrapper that fills in the blanks.
+# If you keep your pending changelists in a directory tree like
+# svn-changes
+#     |
+#     +----my-change-1
+#     |        |
+#     |        +----google-caja
+#     |                 |
+#     |                 +----src
+#     |
+#     +----my-change-2
+#              |
+#              +----google-caja
+#                       |
+#                       +----src
+# then this script will provide the changelist name for you for common commands.
+#
+# $(myvn change) will behave like $(gvn change -c my-change-1) if run under
+# svn-changes/my-change-1 as will other gvn commands like
+# (mail, describe, snapshot) unless a changelist name is explicitly provided.
+#
+# ====================
+# Life of a Changelist
+# ====================
+# (1) Create a client directory
+#       $ mkdir -p svn-changes/my-change-name
+# (2) Checkout the src
+#       $ cd svn-changes/my-change-name
+#       $ myvn checkout
+# (3) Muck around with some source files
+# (4) Prepare a changelist
+#       $ myvn change
+#     Should pop up an editor.  Check the EDITOR, or SVNEDITOR environment
+#     variables if it doesn't
+# (5) Send it off for review
+#       $ myvn mail --reviewers your-friendly-neighborhood-cajador@gmail.com
+#     This will automatically CC google-caja-discuss
+# (6) File a bug to track the review
+#       $ myvn bug
+#     and copy and paste it into your browser.
+# (7) Update your changes based on feedback and snapshot
+#       $ myvn snapshot
+# (8) Maybe add or remove files
+#       $ myvn change
+# (9) Commit the change
+#       $ myvn describe
+#     shows you your CL description
+#       $ myvn commit
+# (10) Delete the change branch
+#       $ myvn change --delete
+#
+#
+# ====================
+#       Eclipse
+# ====================
+# (1) Generate the project
+#       $ cd google-caja/src
+#       $ myvn eclipse
+# (2) Open Eclipse
+# (3) Choose New Java Project  (NOT new google3 project)
+# (4) From Existing Source
+# (5) Enter the .../svn-changes/my-change-1/google-caja/src path
+# (6) Finish
+#
+#
+# ====================
+#    Other Commands
+# ====================
+# changed      -  files changed in the snapshotted CL.  Pipeable to xargs
+# diffstats    -  number of lines added/changed/removed
+# files        -  files changed in svn.  Pipeable to xargs 
+# filetypes    -  sets svn:mime-type of modified files based on file suffix
+
+function myvn() {
+  local verb="$1"
+  local current_cl="$(perl -e 'print $1 if $ENV{PWD}=~m|/svn-changes/([^/]+)|')"
+  local gvn=/opt/googlesvn/bin/gvn
+  local svn=/opt/googlesvn/bin/svn
+  local username="$(
+      perl -ne 'print $1 if m/^username\s*=\s*(\S.*)$/' "$HOME"/.gvn/config)"
+  if [ -z "$username" ]; then
+    echo "Cannot determine username.  Check $HOME/.gvn/config."
+    exit -1
+  fi
+
+  shift
+  case "$verb" in
+    files )
+      "$svn" stat "$@" \
+          | perl -ne 'print "$1\n" if m/^\s*[AMD_]?[AMD]\s+(?:\+\s+)?(\S+)/'
+      ;;
+    changed )
+      "$gvn" describe "$current_cl" "$@" \
+          | perl -e 'while (<>) { last if m/^Affected Paths:/; }
+                     while(<>) { print "$1\n" if m|^   [AMD]\s+//trunk/(.*)|; }'
+      ;;
+    diffstats )
+      "$svn" diff -x-uw --notice-ancestry "$@" | perl -e '
+          my ($add, $sub, $chg, $ladd, $lsub) = (0, 0, 0, 0, 0);
+          while (<STDIN>) {
+            next if m@^[+-]@ && m@^.\s*(/[/\*]|\*)@;
+            if (m@^\+[^+]@) { ++$ladd; }
+            elsif (m@^-[^\-]@) { ++$lsub; }
+            else {
+              my $lchg = $ladd < $lsub ? $ladd : $lsub;
+              $chg += $lchg;
+              $add += $ladd - $lchg;
+              $sub += $lsub - $lchg;
+              $ladd = $lsub = 0;
+            }
+          }
+          print "$add added, $sub removed, $chg changed\n";
+          '
+      ;;
+    describe )
+      if [ 0 = $# ] && [ -n "$current_cl" ]; then
+        "$gvn" "$verb" "$username/$current_cl"
+      else
+        "$gvn" "$verb" "$@"
+      fi
+      ;;
+    checkout )
+      "$svn" checkout https://google-caja.googlecode.com/svn/trunk/ google-caja
+      ;;
+    bug )
+      myvn describe | ~/bin/submit-caja-bug.py -s "$(myvn diffstats)" "$@"
+      ;;
+    change|snapshot )
+      if [ -n "$current_cl" ] && ! grep -q ' -c ' <(echo -- $*); then
+        "$gvn" "$verb" -c "$username/$current_cl" "$@"
+      else
+        "$gvn" "$verb" "$@"
+      fi
+      ;;
+    mail )
+      local implied=""
+      if [ -n "$current_cl" ] && ! grep -q ' -c ' <(echo -- $*); then
+        implied="$implied -c $username/$current_cl"
+      fi
+      if ! grep -q ' --cc ' <(echo -- $*); then
+        implied="$implied --cc google-caja-discuss@googlegroups.com"
+      fi
+      "$gvn" "$verb" $implied "$@"
+      ;;
+    filetypes )
+      local files=$(myvn files)
+      if [ -n "$1" ]; then  # If they supplied a list of files use that.
+        files="$@"
+      fi
+      for f in $files; do
+        if [ -z "$("$svn" propget svn:mime-type "$f")" ]; then
+          local type="$(typeForFile $f)"
+          if [ -n "$type" ]; then
+            "$svn" propset svn:mime-type "$type" $f
+          fi
+        fi
+      done
+      ;;
+    eclipse )
+      makeEclipseProject "$current_cl" > .project
+      makeEclipseClasspath > .classpath
+      mkdir -p ant-eclipse-lib
+      ;;
+    *)
+      "$svn" "$verb" "$@"
+      ;;
+  esac
+}
+
+function typeForFile() {
+  local f="$1"
+  case "$(echo -n $f | perl -pe 's/^.*\.//')" in
+    css )
+      echo -n "text/css;charset=UTF-8"
+      ;;
+    html )
+      echo -n "text/html;charset=UTF-8"
+      ;;
+    jpg )
+      echo -n "image/jpeg"
+      ;;
+    js )
+      echo -n "text/javascript;charset=UTF-8"
+      ;;
+    pdf )
+      echo -n "application/pdf"
+      ;;
+    png )
+      echo -n "image/png"
+      ;;
+    svg )
+      echo -n "image/svg+xml;charset=UTF-8"
+      ;;
+    tex )
+      echo -n "text/x-tex;charset=UTF-8"
+      ;;
+    txt )
+      echo -n "text/plain;charset=UTF-8"
+      ;;
+    xml )
+      echo -n "text/xml;charset=UTF-8"
+      ;;
+  esac
+}
+
+function makeEclipseClasspath() {
+  echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+  echo "<classpath>"
+  echo "	<classpathentry excluding=\"**/*~|**/.svn/**\" kind=\"src\" path=\"java\"/>"
+  echo "	<classpathentry excluding=\"**/*~|**/.svn/**\" kind=\"src\" path=\"javatests\"/>"
+  for jar in $(find third_party -name \*.jar | sort); do
+    echo "	<classpathentry kind=\"lib\" path=\"$jar\"/>"
+  done
+  echo "	<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER\"/>"
+  echo "	<classpathentry kind=\"lib\" path=\"$ANT_HOME/lib/ant.jar\"/>"
+  echo "	<classpathentry kind=\"lib\" path=\"$JAVA_HOME/jre/lib/rt.jar\"/>"
+  echo "	<classpathentry kind=\"output\" path=\"ant-eclipse-lib\"/>"
+  echo "</classpath>"
+}
+
+function makeEclipseProject() {
+  local projectName="$1"
+  echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+  echo "<projectDescription>"
+  echo "	<name>$projectName</name>"
+  echo "	<comment></comment>"
+  echo "	<projects>"
+  echo "	</projects>"
+  echo "	<buildSpec>"
+  echo "		<buildCommand>"
+  echo "			<name>org.eclipse.jdt.core.javabuilder</name>"
+  echo "			<arguments>"
+  echo "			</arguments>"
+  echo "		</buildCommand>"
+  echo "	</buildSpec>"
+  echo "	<natures>"
+  echo "		<nature>org.eclipse.jdt.core.javanature</nature>"
+  echo "	</natures>"
+  echo "</projectDescription>"
+}
+
+
+myvn "$@"
