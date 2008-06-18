@@ -1,0 +1,147 @@
+<html>
+  <head>
+    <title>Calendar Gadget Demo Cajoled</title>
+    <script src="firebugx.js"></script>
+    <script src="html-interp-minified.js"></script>
+    <script src="domita-minified.js"></script>
+    <script src="caja-debugmode.js"></script>
+  </head>
+  <body bgcolor=white>
+    <p>A calendar in
+      <a href="http://microformats.org/wiki/hcalendar">hcalendar</a>
+    format mined by an embeddable gadget that is allowed only
+    read only access to the DOM, and write access to one node, and which
+    cannot phone home with user data.</p>
+    <table width=100%><tr valign=top>
+    <td>
+      <!-- A calendar in hcalendar micro-format form -->
+      <div class="vcalendar">
+        <div class="vevent">
+          <h2 class="summary">2xWeekly mtg.</h2>
+          <abbr class="dtstart" title="20080429T140000">29 Apr @ 2pm</abbr>
+          for <abbr class="duration" title="PT1H">1 hour</abbr>
+          <div class="rrule">
+            <span class="freq">Weekly</span>
+            on
+            <abbr class="byday" title="TU">Tuesday</abbr>
+            and
+            <abbr class="byday" title="TH">Thursday</abbr>,
+            <span class="count">10</span> times
+          </div>
+        </div>
+        <div class="vevent">
+          <h2 class="summary">Buy Dog</h2>
+          <abbr class="dtstart" title="20080430T111500">30 Apr @ 11:15am</abbr>
+          for <abbr class="duration" title="PT45M">45 min</abbr>
+        </div>
+        <div class="vevent">
+          <h2 class="summary">Walk Dog</h2>
+          <abbr class="dtstart" title="20080430T120000">30 Apr @ noon</abbr>
+          for <abbr class="duration" title="PT3H">3 hours</abbr>
+        </div>
+        <div class="vevent">
+          <h2 class="summary">Long Lunch</h2>
+          <abbr class="dtstart" title="20080429T123000">29 Apr @ 12:30</abbr>
+          for <abbr class="duration" title="PT3H">3 hours</abbr>
+        </div>
+        <div class="vevent">
+          <h2 class="summary">In CA</h2>
+          <abbr class="dtstart" title="20080428">28 Apr</abbr>
+        </div>
+        <div class="vevent">
+          <h2 class="summary">In AK</h2>
+          <abbr class="dtstart" title="20080430">30 Apr</abbr> -
+          <abbr class="dtend" title="20080506">6 May</abbr>
+        </div>
+      </div>
+    <td class=pre___>
+      <!-- Populated by main.js -->
+      <div id=controls-pre___>
+        <span class=control id=prev-button-pre___>&laquo;</span>
+        <span class=control id=next-button-pre___>&raquo;</span>
+      </div>
+      <div id=container-pre___></div>
+    </table>
+  </body>
+
+  <script type="text/javascript">(function () {
+    // TODO: kludge pending bug 267
+    ___.allowCall(Array, 'push');
+    var realPush = Array.prototype.push;
+    Array.prototype.push = ___.method(function (var_args) {
+      if (___.isFrozen(this)) { throw new Error('frozen array'); };
+      return realPush.apply(this, arguments);
+    });
+    ___.allowRead(Array.prototype, 'push');
+    ___.allowCall(Array.prototype, 'push');
+    delete Array.prototype.push_handler___;
+    Array.prototype.push.apply_handler___ = undefined;
+    ___.allowCall(Array.prototype.push, 'apply');
+    // END: kludge
+
+    var uriCallback = { rewrite: function () { return null; } };
+
+    var origModuleHandler = ___.getNewModuleHandler();
+    var debugModuleHandler = {
+      getImports: ___.simpleFunc(function () {
+        return origModuleHandler.getImports.apply(origModuleHandler, arguments);
+      }),
+      setImports: ___.simpleFunc(function () {
+        return origModuleHandler.setImports.apply(origModuleHandler, arguments);
+      }),
+      handle: ___.simpleFunc(function () {
+        try {
+          return origModuleHandler.handle.apply(origModuleHandler, arguments);
+        } catch (e) {
+          if (e.cajaStack___) {
+            console.error(___.unsealCallerStack(e.cajaStack___).join('\n'));
+          }
+          throw e;
+        }
+      })
+    };
+    ___.setNewModuleHandler(debugModuleHandler);
+
+    function makeReadOnlyNode(node) {
+      var stub = {};
+      // Use a blank suffix to give the gadget access to raw class names.
+      attachDocumentStub('', uriCallback, stub);
+      return stub.tameNode___(node, false);
+    }
+
+    var imports = ___.copy(___.sharedImports);
+    ___.getNewModuleHandler().setImports(imports);
+    attachDocumentStub('-pre___', uriCallback, imports);
+    // Grant readonly access to a portion of the DOM
+    imports.document.body = makeReadOnlyNode(document.body);
+    imports.document.title = String(document.title);
+    ___.all2(___.allowRead, imports.document, ['body', 'title']);
+
+    imports.console = { log: ___.simpleFunc(function (var_args) {
+                          console.log.apply(console, arguments);
+                        }),
+                        assert: ___.simpleFunc(function (var_args) {
+                          console.assert.apply(console, arguments);
+                        }),
+                        time: ___.simpleFunc(function (var_args) {
+                          console.time.apply(console, arguments);
+                        }),
+                        timeEnd: ___.simpleFunc(function (var_args) {
+                          console.timeEnd.apply(console, arguments);
+                        })
+                      };
+
+    imports.window = imports;
+    imports.htmlInterp = htmlInterp;
+    imports.StringInterpolation = StringInterpolation;
+    ___.all2(___.allowRead, imports,
+             ['window', 'htmlInterp', 'StringInterpolation']);
+    ___.allowCall(htmlInterp, 'safeHtml');
+    ___.ctor(StringInterpolation);
+
+    ___.allowCall(StringInterpolation.prototype, 'append');
+
+    window.imports = imports;
+  })();</script>
+  <script src="calendar-cajoled.js"></script>
+</html>

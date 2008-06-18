@@ -1,0 +1,100 @@
+/*
+ * Copyright (C) 2008 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* supporting styles for widget.js */
+
+.calendar { border: 1px solid #888; position: relative }
+.y-axis {
+  border-width: 0 1px 0 0;
+  border-style: solid;
+  border-color: #888;
+  z-index: 2;
+  position: relative;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 3em
+}
+.y-axis span {
+  border-width: 1px 0 0 0;
+  margin:      -1px 0 0 0;
+  border-style: solid;
+  border-color: #888;
+  display: block;
+  height: 2em;
+  text-align: center
+}
+.x-axis {
+  margin-left: 3em;
+  height: 1.5em;
+  border-width: 0 0 1px 0;
+  border-style: solid;
+  border-color: #888;
+  z-index: 2
+}
+.x-axis span {
+  width: 20%; text-align: center; display: block; float: left; height: 1.5em
+}
+.view-port { position: relative }
+.main-grid {
+  position: absolute;
+  bottom: 1px;
+  top: 0px;
+  right: 0px;
+  left: 3em;
+  background-color: #eef;
+  z-index: 1
+}
+.all-day-grid {
+  position: relative;
+  background-color: #eef;
+  display: block;
+  top: 0px;
+  right: 0px;
+  left: 0px;
+  margin-left: 3em
+}
+.chip {
+  position: absolute;
+  overflow: hidden
+}
+.chip .body {
+  border-width: 2px;
+  border-style: solid;
+  border-color: #aaf;
+  -moz-border-radius: 8px; -webkit-border-radius: 8px; border-radius: 8px;
+  background: white;
+  position: absolute;
+  top: 0px; bottom: 0px;
+  left: 0px; right: 0px
+}
+.all-day-grid .chip { margin-top: -1px }
+
+#controls { height: 2em; margin: 2px }
+
+.control {
+  display: block;
+  background: #eee;
+  border: 2px outset #aaa;
+  -moz-border-radius: 8px; -webkit-border-radius: 8px; border-radius: 8px;
+  width: 2em;
+  text-align: center;
+  color: blue;
+  cursor: pointer
+}
+
+#prev-button { float: left }
+#next-button { float: right }

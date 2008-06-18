@@ -310,52 +310,6 @@
     </minify>
   </target>
 
-  <target name="MinifiedJsDemos" depends="pluginc">
-    <minify>
-      <job
-       output="${lib}/com/google/caja/demos/calendar/html-interp-minified.js">
-        <include
-         file="${src}/com/google/caja/demos/calendar/string-interpolation.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/html-interp.js"/>
-      </job>
-      <job output="${lib}/com/google/caja/demos/calendar/calendar-minified.js">
-        <include file="${src}/com/google/caja/demos/calendar/util.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/bitset.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/html.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/uformat.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/time-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/weekday-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/timezone-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/time_util-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/hcalendar.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/generators-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/instanceGenerators-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/conditions-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/predicates-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/filters-cajita.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/rrule-cajita.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/event.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/chip.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/calendar.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/event_store.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/axis.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/layout_policy.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/layout.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/overlap.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/widget.js"/>
-      </job>
-    </minify>
-  </target>
-
   <target name="AllTests" depends="pluginc,CajolingService,CajoledTests,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${testsrc}"/>
@@ -708,18 +662,112 @@
     </copy>
   </target>
 
-  <target name="calendar" depends="dirs,pluginc,MinifiedJsDemos,MinifiedJs"
+  <target name="calendar" depends="dirs,pluginc,MinifiedJs"
    description="A calendar that can mine data from a read only DOM.">
     <mkdir dir="${www}/calendar"/>
+
+    <minify>
+      <job
+       output="${lib}/com/google/caja/demos/calendar/html-interp-minified.js">
+        <include
+         file="${src}/com/google/caja/demos/calendar/string-interpolation.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/html-interp.js"/>
+      </job>
+      <job output="${lib}/com/google/caja/demos/calendar/calendar-minified.js">
+        <include file="${src}/com/google/caja/demos/calendar/util.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/bitset.js"/>
+        <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
+        <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/uformat.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/time-cajita.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/weekday-cajita.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/timezone-cajita.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/time_util-cajita.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/hcalendar.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/generators-cajita.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/instanceGenerators-cajita.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/conditions-cajita.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/predicates-cajita.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/filters-cajita.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/rrule-cajita.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/event.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/chip.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/calendar.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/event_store.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/axis.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/layout_policy.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/layout.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/overlap.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/widget.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/widget-html.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/main.js"/>
+      </job>
+    </minify>
+    <cajole debug="false">
+      <job output="${lib}/com/google/caja/demos/calendar/calendar-cajoled.js">
+        <include file="${src}/com/google/caja/demos/calendar/util.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/bitset.js"/>
+        <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
+        <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/uformat.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/time-cajita.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/weekday-cajita.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/timezone-cajita.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/time_util-cajita.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/hcalendar.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/generators-cajita.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/instanceGenerators-cajita.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/conditions-cajita.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/predicates-cajita.js"/>
+        <include file=
+         "${src}/com/google/caja/demos/calendar/filters-cajita.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/rrule-cajita.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/event.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/chip.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/calendar.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/event_store.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/axis.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/layout_policy.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/layout.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/overlap.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/widget.css"/>
+        <include file="${src}/com/google/caja/demos/calendar/widget.gxp"/>
+        <include file="${src}/com/google/caja/demos/calendar/widget-chips.gxp"/>
+        <include file="${src}/com/google/caja/demos/calendar/widget.js"/>
+        <include file="${src}/com/google/caja/demos/calendar/main.js"/>
+      </job>
+    </cajole>
+
     <copy todir="${www}/calendar">
       <fileset dir="${javascript}/com/google/caja">
         <include name="caja.js"/>
+        <include name="caja-debugmode.js"/>
       </fileset>
       <fileset dir="${lib}/com/google/caja/demos/calendar">
         <include name="*-minified.js"/>
+        <include name="*-cajoled.js"/>
       </fileset>
       <fileset dir="${src}/com/google/caja/demos/calendar">
         <include name="demo.html"/>
+        <include name="demo-cajoled.html"/>
+        <include name="widget.css"/>
       </fileset>
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="domita-minified.js"/>

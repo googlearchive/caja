@@ -21,12 +21,9 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
-import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.Callback;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -38,9 +35,9 @@ import java.util.Set;
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public abstract class Rewriter {
-  
+
   /**
-   * Annotations on {@code rules} in subclasses of {@code Rewriter} are 
+   * Annotations on {@code rules} in subclasses of {@code Rewriter} are
    * are collated and documented by {@code RulesDoclet}
    */
   private final List<Rule> rules = new ArrayList<Rule>();
@@ -73,8 +70,8 @@ public abstract class Rewriter {
    */
   public List<Rule> getRules() {
     return rules;
-  }  
-  
+  }
+
   /**
    * Expands a parse tree node according to the rules of this rewriter, returning
    * the expanded result.
@@ -186,27 +183,21 @@ public abstract class Rewriter {
     System.err.println(s.toString());
   }
 
-  public String format(ParseTreeNode n) {
-    Callback<IOException> handler = new Callback<IOException>() {
-      public void handle(IOException ex) {
-        throw new RuntimeException(ex);
-      }
-    };
-
+  public static String format(ParseTreeNode n) {
     StringBuilder output = new StringBuilder();
-    TokenConsumer renderer = new JsPrettyPrinter(output, handler);
+    TokenConsumer renderer = new JsPrettyPrinter(output, null);
     n.render(new RenderContext(new MessageContext(), renderer));
     return output.toString();
   }
 
-  private void flagTainted(ParseTreeNode node, MessageQueue mq) {
+  private static void flagTainted(ParseTreeNode node, MessageQueue mq) {
     node.getAttributes().set(ParseTreeNode.TAINTED, true);
     for (ParseTreeNode n : node.children()) {
       flagTainted(n, mq);
     }
   }
 
-  private void checkTainted(ParseTreeNode node, MessageQueue mq) {
+  private static void checkTainted(ParseTreeNode node, MessageQueue mq) {
     // If we've already got errors, then issuing new ones on the same nodes won't help.
     if (mq.hasMessageAtLevel(MessageLevel.ERROR)) {
       return;

@@ -1,0 +1,66 @@
+<!--
+  - Copyright (C) 2008 Google Inc.
+  -
+  - Licensed under the Apache License, Version 2.0 (the "License");
+  - you may not use this file except in compliance with the License.
+  - You may obtain a copy of the License at
+  -
+  -      http://www.apache.org/licenses/LICENSE-2.0
+  -
+  - Unless required by applicable law or agreed to in writing, software
+  - distributed under the License is distributed on an "AS IS" BASIS,
+  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  - See the License for the specific language governing permissions and
+  - limitations under the License.
+ -->
+
+<gxp:template name="renderCalendar">
+  <gxp:param name="layout"/>
+  <gxp:param name="viewPort"/>
+  <gxp:abbr name="layoutPolicy" expr="layout.getPolicy()"/>
+  <div class="calendar">
+    <div class="x-axis">
+      <gxp:abbr name="includeDates" expr="layoutPolicy.getYExtent() > 1"/>
+      <gxp:loop var="i" iterator="range(0, layoutPolicy.getXExtent())">
+        <gxp:abbr name="date" expr="layoutPolicy.cellToDate(i, 0)"/>
+        <gxp:abbr name="dow"
+         expr="widget.dayOfWeekAbbreviation[time.weekDayOf(date)]"/>
+
+        <gxp:if cond="includeDates">
+          <span><gxp:eval expr="dow + ' ' + widget.formatDate(date)"/></span>
+        <gxp:else/>
+          <span><gxp:eval expr="dow"/></span>
+        </gxp:if>
+      </gxp:loop>
+    </div>
+    <div style="height:${2 * layout.getNAllDayRows()}em" class="all-day-grid">
+      <gxp:if cond="layout.getNAllDayRows()">
+        <call:renderChips chips="layout.getUntimedChips()"
+         xMajor="false" xExtent="layout.getPolicy().getXExtent()"
+         viewPortRow0="0" viewPortRow1="layout.getNAllDayRows()"/>
+      </gxp:if>
+    </div>
+    <div class="view-port">
+      <div class="y-axis">
+        <gxp:if cond="layoutPolicy.isSpatial()">
+          <gxp:abbr name="minHour"
+           expr="viewPort.row0 / layoutPolicy.getGradationsPerHour()"/>
+          <gxp:abbr name="maxHour"
+           expr="viewPort.row1 / layoutPolicy.getGradationsPerHour()"/>
+          <gxp:loop var="hour" iterator="range(minHour, maxHour)">
+            <span>
+              <gxp:eval expr="(hour % 12) || 12"/>
+              <gxp:eval expr="hour < 12 ? 'am' : 'pm'"/>
+            </span>
+          </gxp:loop>
+        </gxp:if>
+      </div>
+      <div class="main-grid">
+        <call:renderChips chips="layout.getTimedChips()"
+         xMajor="layout.getPolicy().isSpatial()"
+         xExtent="layout.getPolicy().getXExtent()"
+         viewPortRow0="viewPort.row0" viewPortRow1="viewPort.row1"/>
+      </div>
+    </div>
+  </div>
+</gxp:template>

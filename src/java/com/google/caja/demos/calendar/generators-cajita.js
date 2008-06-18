@@ -107,7 +107,7 @@ generators.serialYearGenerator = function (interval, dtStart) {
   }
 
   return caja.freeze({ generate: generate, workDone: workDone, reset: reset });
-}
+};
 
 /**
  * constructs a generator that generates months in the given builder's year
@@ -153,7 +153,7 @@ generators.serialMonthGenerator = function (interval, dtStart) {
   }
 
   return caja.freeze({ generate: generate, reset: reset });
-}
+};
 
 /**
  * constructs a generator that generates every day in the current month that
@@ -211,7 +211,7 @@ generators.serialDayGenerator = function (interval, dtStart) {
   }
 
   return caja.freeze({ generate: generate, reset: reset });
-}
+};
 
 /**
  * constructs a generator that yields the specified months in increasing order
@@ -241,7 +241,7 @@ generators.byMonthGenerator = function (months, dtStart) {
   }
 
   return caja.freeze({ generate: generate, reset: reset });
-}
+};
 
 /**
  * constructs a function that yields the specified dates
@@ -273,7 +273,7 @@ generators.byMonthDayGenerator = function (dates, dtStart) {
   }
 
   function convertDatesToAbsolute() {
-    var dateSet = {};
+    var absDates = [];
     var nDays = time.daysInMonth(year, month);
     for (var j = dates.length; -- j >= 0;) {
       var date = dates[j];
@@ -281,12 +281,10 @@ generators.byMonthDayGenerator = function (dates, dtStart) {
         date += nDays + 1;
       }
       if (date >= 1 && date <= nDays) {
-        dateSet[date] = true;
+        absDates.push(date);
       }
     }
-    posDates = [];
-    for (var k in dateSet) { posDates.push(Number(k)); }
-    posDates.sort(time_util.numericComparator);
+    posDates = time_util.uniquify(absDates);
   }
 
   function generate(builder) {
@@ -304,7 +302,7 @@ generators.byMonthDayGenerator = function (dates, dtStart) {
   }
 
   return caja.freeze({ generate: generate, reset: reset });
-}
+};
 
 /**
  * constructs a day generator based on a BYDAY rule.
@@ -391,7 +389,7 @@ generators.byDayGenerator = function (days, weeksInYear, dtStart) {
   }
 
   return caja.freeze({ generate: generate, reset: reset });
-}
+};
 
 /**
  * constructs a generator that yields each day in the current month that falls
@@ -501,7 +499,7 @@ generators.byWeekNoGenerator = function (weekNos, wkst, dtStart) {
   }
 
   return caja.freeze({ generate: generate, reset: reset });
-}
+};
 
 /**
  * constructs a day generator that generates dates in the current month that
@@ -555,6 +553,6 @@ generators.byYearDayGenerator = function (yearDays, dtStart) {
   }
 
   return caja.freeze({ generate: generate, reset: reset });
-}
+};
 
 caja.freeze(generators);

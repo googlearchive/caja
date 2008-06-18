@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
+/*
 jsunitRegister('testEmptyEventStore', function testEmptyEventStore() {
   assertEvents(
       [],
@@ -69,7 +69,7 @@ function testEventStoreWithSingleEvents() {
        new ContentLine('END', 'VCALENDAR')
        ]);
 });
-
+*/
 jsunitRegister('testEventStoreWithRecurringEvents',
 function testEventStoreWithRecurringEvents() {
   assertEvents(
@@ -87,7 +87,7 @@ function testEventStoreWithRecurringEvents() {
        new ContentLine('END', 'VCALENDAR')
        ]);
 });
-
+/*
 jsunitRegister('testEventWithDuration', function testEventWithDuration() {
   assertEvents(
       ['(Event eid="eid-1" summary="Far" 20080303T140000/20080304T170000)'],
@@ -102,7 +102,7 @@ jsunitRegister('testEventWithDuration', function testEventWithDuration() {
        new ContentLine('END', 'VCALENDAR')
        ]);
 });
-
+*/
 
 function assertEvents(golden, contentLines) {
   var actual = event_store.toCalendar(

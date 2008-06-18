@@ -482,7 +482,7 @@ time.daysInYear = function (year) {
 time.dayOfYear = (function () {
   // OPT-NOTE: see if we can optimize this out when time.dayOfYear isn't used.
   var daysBeforeFirstOfMonth;  // In a non leap-year.
-  daysBeforeFirstOfMonth = [undefined]
+  daysBeforeFirstOfMonth = [undefined];
   var count = 0;
   for (var month = 0; ++month <= 12;) {
     daysBeforeFirstOfMonth[month] = count;

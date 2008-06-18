@@ -302,12 +302,11 @@ var overlap = (function () {
    */
   function CHIP_COMPARATOR_X(a, b) {
     // Order by column, then by position within the column, then by extent.
-    var delta = (a.col0 - b.col0) ||
-                (a.row0 - b.row0) ||
-                (b.row1 - a.row1) ||
-                // Finally, to make the ordering total, order by eid.
-                EVENT_COMPARATOR(a.event, b.event);
-    if (delta) { return delta; }
+    return (a.col0 - b.col0) ||
+           (a.row0 - b.row0) ||
+           (b.row1 - a.row1) ||
+           // Finally, to make the ordering total, order by eid.
+           EVENT_COMPARATOR(a.event, b.event);
   }
 
   /**

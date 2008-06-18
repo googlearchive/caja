@@ -35,7 +35,7 @@
  *
  * @see http://microformats.org/wiki/microformats
  *
- * @author msamuel@google.com
+ * @author mikesamuel@gmail.com
  */
 
 
@@ -79,7 +79,7 @@ var NO_CONTENT;
 
 (function () {
 
-function ContentLine(opt_name, opt_value, opt_attributes) {
+function ContentLineCtor(opt_name, opt_value, opt_attributes) {
   /** 'RDATE' in the example above. @type {string} */
   this.name_ = null;
   /**
@@ -106,80 +106,112 @@ function ContentLine(opt_name, opt_value, opt_attributes) {
    * composed of semicolon separated values with values that are themselves
    * comma separated lists.  These mini-syntaxes are uncommon enough, and
    * special purpose enough that we don't bother complicating this interface.
-   * @type {Boolean}
+   * @type {boolean}
    */
   this.noEscape_ = false;
 
-  if (typeof caja !== 'undefined') {
-    caja.freeze(this.values_);
-  }
+  this.values_;
 }
+caja.def(
+    ContentLineCtor,
+    Object,
+    {
+      /** outputs the content line as ICAL. */
+      toString: function () {
+        var out = [this.name_];
+        for (var i = 0, n = this.attributes_.length; i < n; i += 2) {
+          var paramValue = this.attributes_[i + 1];
+          if (/[:;]/.test(paramValue)) {
+            paramValue = '"' + paramValue + '"';
+          }
+          out.push(';', this.attributes_[i], '=', paramValue);
+        }
+        out.push(':');
+        for (var i = 0, n = this.values_.length; i < n; ++i) {
+          if (i) { out.push(','); }
+          if (!this.noEscape_) {
+            out.push(this.values_[i].replace(/([;,\\])/g, '\\$1')
+                     .replace(/\r\n?|\n/g, '\\n'));
+          } else {
+            out.push(this.values_[i]);
+          }
+        }
+        return out.join('').replace(/(.{75})(.)/g, '$1\r\n $2');
+      },
 
-/** outputs the content line as ICAL. */
-ContentLine.prototype.toString = function () {
-  var out = [this.name_];
-  for (var i = 0, n = this.attributes_.length; i < n; i += 2) {
-    var paramValue = this.attributes_[i + 1];
-    if (/[:;]/.test(paramValue)) {
-      paramValue = '"' + paramValue + '"';
-    }
-    out.push(';', this.attributes_[i], '=', paramValue);
-  }
-  out.push(':');
-  for (var i = 0, n = this.values_.length; i < n; ++i) {
-    if (i) { out.push(','); }
-    if (!this.noEscape_) {
-      out.push(this.values_[i].replace(/([;,\\])/g, '\\$1')
-               .replace(/\r\n?|\n/g, '\\n'));
-    } else {
-      out.push(this.values_[i]);
-    }
-  }
-  return out.join('').replace(/(.{75})(.)/g, '$1\r\n $2');
-};
+      /**
+       * gets the value of the corresponding attribute or null if none.
+       * @param {string} name
+       * @return {string|null}
+       */
+      getAttribute: function (name) {
+        var attributes = this.attributes_;
+        for (var i = attributes.length - 2; i >= 0; i -= 2) {
+          if (attributes[i] === name) { return attributes[i + 1]; }
+        }
+        return null;
+      },
 
-/**
- * gets the value of the corresponding attribute or null if none.
- * @param {string} name
- * @return {string|null}
- */
-ContentLine.prototype.getAttribute_ = function (name) {
-  var attributes = this.attributes_;
-  for (var i = attributes.length - 2; i >= 0; i -= 2) {
-    if (attributes[i] === name) { return attributes[i + 1]; }
-  }
-  return null;
-};
+      pushAttributes: function (var_args) {
+        this.attributes_.push.apply(this.attributes_, arguments);
+      },
 
-/**
- * Gets the name of this content line.
- * @return {string}
- */
-ContentLine.prototype.getName = function () {
-  return this.name_;
-};
+      setAttributes: function (attributes) {
+        this.attributes_ = attributes.slice(0);
+      },
 
-/**
- * Gets this content line's values.
- * @return {Array.<string>}
- */
-ContentLine.prototype.getValues = function () {
-  return this.values_;
-};
+      /**
+       * Gets the name of this content line.
+       * @return {string}
+       */
+      getName: function () { return this.name_; },
 
-var NO_CONTENT = new ContentLine('');
+      /** @param {string} name */
+      setName: function (name) { this.name_ = name; },
+
+      /**
+       * Gets this content line's values.
+       * @return {Array.<string>}
+       */
+      getValues: function () { return this.values_; },
+
+      pushValues: function (var_args) {
+        this.values_.push.apply(this.values_, arguments);
+      },
+
+      setValue: function (i, value) {
+        this.values_[i] = value;
+      },
+
+      /**
+       * Some content lines, such as RRULEs and EXRULEs have structured values
+       * composed of semicolon separated values with values that are themselves
+       * comma separated lists.  These mini-syntaxes are uncommon enough, and
+       * special purpose enough that we don't bother complicating this
+       * interface.
+       *
+       * @param {boolean} noEscape true iff commas in the values do not separate
+       * values from others.
+       */
+      setNoEscape: function (noEscape) {
+        this.noEscape_ = noEscape;
+      }
+    });
+
+
+NO_CONTENT = new ContentLineCtor('');
 
 
 // Schema Processing
 
-function parseMicroFormat(node, schema, globalProps, contentLines) {
+parseMicroFormat = function (node, schema, globalProps, contentLines) {
   if (node.nodeType !== 1/*ELEMENT_NODE*/) { return; }
   if (!('#keyPattern#' in schema)) {
     var keys = [];
     for (var k in schema) {
       keys.push(k);
     }
-    schema['#keyPattern#'] = classMatcher_(keys);
+    schema['#keyPattern#'] = classMatcher(keys);
   }
 
   var matches = schema['#keyPattern#'](node);
@@ -190,14 +222,14 @@ function parseMicroFormat(node, schema, globalProps, contentLines) {
 
       for (var i = 0; i < handlers.length; ++i) {
         var handler = handlers[i];
-        var contentLine = handler(node, globalProps);
+        var contentLine = handler.handle(node, globalProps);
 
         if (contentLine) {
           if (contentLine !== NO_CONTENT) {
-            contentLine.name_ = fieldName.toUpperCase();
+            contentLine.setName(fieldName.toUpperCase());
             contentLines.push(contentLine);
           }
-          if (handler.noDescend_) {
+          if (handler.noDescend) {
             // don't look for further properties if e.g. the handler parses a
             // nested component
             return;
@@ -211,28 +243,26 @@ function parseMicroFormat(node, schema, globalProps, contentLines) {
   for (var child = node.firstChild; child; child = child.nextSibling) {
     parseMicroFormat(child, schema, globalProps, contentLines);
   }
-}
+};
 
-function group(contentLines, groupings) {
+group = function (contentLines, groupings) {
   var groups = null;
   for (var i = 0; i < contentLines.length; ++i) {
     var cl = contentLines[i];
-    var name = cl.name_;
+    var name = cl.getName();
     if (name in groupings) {
       if (!groups) { groups = {}; }
       if (groups[name]) {
-        groups[name].values_.push.apply(groups[name].values_, cl.values_);
+        var values = cl.getValues();
+        groups[name].pushValues.apply(groups[name], values);
         contentLines.splice(i--, 1);
       } else {
         groups[name] = cl;
-        cl.name_ = groupings[name];
+        cl.setName(groupings[name]);
       }
     }
   }
-}
+};
 
-this.ContentLine = ContentLine;
-this.parseMicroFormat = parseMicroFormat;
-this.group = group;
-this.NO_CONTENT = NO_CONTENT;
+ContentLine = ContentLineCtor; 
 })();

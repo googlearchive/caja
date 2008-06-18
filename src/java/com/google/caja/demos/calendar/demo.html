@@ -4,92 +4,7 @@
     <script src="firebugx.js"></script>
     <script src="caja.js"></script>
     <script src="html-interp-minified.js"></script>
-    <script src="domita-minified.js"></script>
-    <script src="calendar-minified.js"></script>
-    <style type=text/css>
-    .calendar { border: 1px solid #888; position: relative }
-    .y-axis {
-      border-width: 0 1px 0 0;
-      border-style: solid;
-      border-color: #888;
-      z-index: 2;
-      position: relative;
-      top: 0px;
-      bottom: 0px;
-      left: 0px;
-      width: 3em
-    }
-    .y-axis span {
-      border-width: 1px 0 0 0;
-      margin:      -1px 0 0 0;
-      border-style: solid;
-      border-color: #888;
-      display: block;
-      height: 2em;
-      text-align: center
-    }
-    .x-axis {
-      margin-left: 3em;
-      height: 1.5em;
-      border-width: 0 0 1px 0;
-      border-style: solid;
-      border-color: #888;
-      z-index: 2
-    }
-    .x-axis span {
-      width: 20%; text-align: center; display: block; float: left; height: 1.5em
-    }
-    .view-port { position: relative; border }
-    .main-grid {
-      position: absolute;
-      bottom: 1px;
-      top: 0px;
-      right: 0px;
-      left: 3em;
-      background-color: #eef;
-      z-index: 1
-    }
-    .all-day-grid {
-      position: relative;
-      background-color: #eef;
-      display: block;
-      top: 0px;
-      right: 0px;
-      left: 0px;
-      margin-left: 3em
-    }
-    .chip {
-      position: absolute;
-      overflow: hidden
-    }
-    .chip .body {
-      border-width: 2px;
-      border-style: solid;
-      border-color: #aaf;
-      -moz-border-radius: 8px; -webkit-border-radius: 8px; border-radius: 8px;
-      background: white;
-      position: absolute;
-      top: 0px; bottom: 0px;
-      left: 0px; right: 0px
-    }
-    .all-day-grid .chip { margin-top: -1px }
-
-    #controls { height: 2em; margin: 2px }
-
-    .control {
-      display: block;
-      background: #eee;
-      border: 2px outset #aaa;
-      -moz-border-radius: 8px; -webkit-border-radius: 8px; border-radius: 8px;
-      width: 2em;
-      text-align: center;
-      color: blue;
-      cursor: pointer
-    }
-
-    #prev-button { float: left }
-    #next-button { float: right }
-    </style>
+    <link rel=stylesheet type=text/css href=widget.css>
   </head>
   <body bgcolor=white>
     <p>A calendar in
@@ -99,9 +14,10 @@
     cannot phone home with user data.</p>
     <table width=100%><tr valign=top>
     <td>
+      <!-- A calendar in hcalendar micro-format form -->
       <div class="vcalendar">
         <div class="vevent">
-          <h2 class="summary">Weekly mtg.</h2>
+          <h2 class="summary">2xWeekly mtg.</h2>
           <abbr class="dtstart" title="20080429T140000">29 Apr @ 2pm</abbr>
           for <abbr class="duration" title="PT1H">1 hour</abbr>
           <div class="rrule">
@@ -139,40 +55,14 @@
         </div>
       </div>
     <td>
+      <!-- Populated by main.js -->
       <div id=controls>
         <span class=control id=prev-button>&laquo;</span>
         <span class=control id=next-button>&raquo;</span>
       </div>
       <div id=container></div>
-      <script>(function () {
-        var baseDate = time.date(2008, 4, 28);
-        var displayPeriod = time.duration(5, 0, 0, 0); // 5 days
-        var incrementPeriod = time.duration(7, 0, 0, 0); // 1 week
-
-        function updateCalendar() {
-          var endDate = time.plusDuration(baseDate, displayPeriod);
-          var vcalendar = event_store.toCalendar(
-              extractHcal(document.body), baseDate, endDate);
-          var layoutPolicy = new LayoutPolicy(7, baseDate, 2);
-          var layout = new Layout(layoutPolicy);
-          layout.layout(baseDate, endDate, vcalendar.events);
-
-          var container = document.getElementById('container');
-          container.innerHTML = htmlInterp.safeHtml(widget.render(layout));
-        }
-
-        updateCalendar();
-
-        document.getElementById('prev-button').onclick = function () {
-          baseDate = time.plusDuration(baseDate, -incrementPeriod);
-          updateCalendar();
-        };
-
-        document.getElementById('next-button').onclick = function () {
-          baseDate = time.plusDuration(baseDate, incrementPeriod);
-          updateCalendar();
-        };
-      })();</script>
     </table>
   </body>
+
+  <script src="calendar-minified.js"></script>
 </html>

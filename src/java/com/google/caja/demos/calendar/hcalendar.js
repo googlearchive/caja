@@ -27,15 +27,16 @@
 
 
 var ICAL_PROD_ID = '-//hcalendar.js v1.0//EN';
-var extractHcal;
 
-(function () {
 /**
  * given a DOM node, finds all hcalendar objects underneath it.
  * @return {Array.<Array.<ContentLine>>} a list of lists of content lines.
  *   Each list of content lines is one VEVENT.
  */
-function extractHcal(node) {
+var extractHcal;
+
+(function () {
+extractHcal = function (node) {
   var globalProps = {
     title: '$TITLE$',
     url: '$SOURCE$',
@@ -63,7 +64,7 @@ function extractHcal(node) {
   }
 
   var events = [];
-  doExtract_(node, globalProps, events);
+  doExtract(node, globalProps, events);
   for (var i = 0; i < events.length; ++i) {
     group(events[i], { CATEGORY: 'CATEGORIES' });
   }
@@ -77,7 +78,7 @@ function extractHcal(node) {
   if (globalProps.title) {
     var titleLine = new ContentLine('X-WR-CALNAME', globalProps.title);
     if (globalProps.language) {
-      titleLine.attributes_.push('LANGUAGE', globalProps.language);
+      titleLine.pushAttributes('LANGUAGE', globalProps.language);
     }
     calendar.push(titleLine);
   }
@@ -91,7 +92,7 @@ function extractHcal(node) {
   }
   calendar.push(new ContentLine('END', 'VCALENDAR'));
   return calendar;
-}
+};
 
 /**
  * finds and processes top level entities.  This handles both VEVENTs and
@@ -101,179 +102,57 @@ function extractHcal(node) {
  * @param {Object} globalProps calendar properties.  may be modified
  * @param {Array.<Array.<ContentLine>>} output array of events to append to.
  */
-function doExtract_(node, globalProps, events) {
+function doExtract(node, globalProps, events) {
   if (node.nodeType !== 1/*ELEMENT_NODE*/) { return; }
-  if (VEVENT_CLASS_(node)) {
+  if (VEVENT_CLASS(node)) {
     var contentLines = [];
-    parseMicroFormat(node, VEVENT_SCHEMA_, globalProps, contentLines);
+    parseMicroFormat(node, VEVENT_SCHEMA, globalProps, contentLines);
     events.push(contentLines);
   } else {
-    if (VCALENDAR_CLASS_(node)) {
+    if (VCALENDAR_CLASS(node)) {
       // if we see a vcalendar class, then we should fill globalProps
       var calLines = [];
-      parseMicroFormat(node, VCALENDAR_SCHEMA_, globalProps, calLines);
+      parseMicroFormat(node, VCALENDAR_SCHEMA, globalProps, calLines);
       for (var i = calLines.length; --i >= 0;) {
         var line = calLines[i];
-        var name = line.name_.toLowerCase();
+        var name = line.getName().toLowerCase();
         if (name in globalProps) {
-          globalProps[name] = line.values_[0];
+          globalProps[name] = line.getValues()[0];
         }
       }
     }
     for (var child = node.firstChild; child; child = child.nextSibling) {
-      doExtract_(child, globalProps, events);
+      doExtract(child, globalProps, events);
     }
   }
 }
 
 
 // Schema Predicates
-var VEVENT_CLASS_ = classMatcher_(['vevent']);
-var VCALENDAR_CLASS_ = classMatcher_(['vcalendar']);
-var DUR_TIME_ = '(T(\\d+H(\\d+M(\\d+S)?)?|\\d+M(\\d+S)?|\\d+S))';
-var PERIOD_RE_ = new RegExp(
-    '^[+-]?P(\\d+[WD]' + DUR_TIME_ + '?|' + DUR_TIME_ + ')$');
-var RRULE_RE_ = new RegExp(
+var VEVENT_CLASS = classMatcher(['vevent']);
+var VCALENDAR_CLASS = classMatcher(['vcalendar']);
+var DUR_TIME = '(T(\\d+H(\\d+M(\\d+S)?)?|\\d+M(\\d+S)?|\\d+S))';
+var PERIOD_RE = new RegExp(
+    '^[+-]?P(\\d+[WD]' + DUR_TIME + '?|' + DUR_TIME + ')$');
+var RRULE_RE = new RegExp(
     '^FREQ=(YEAR|MONTH|DAI|WEEK|HOUR|MINUTE|SECOND)LY(;[A-Z0-9;,]+)?$', 'i');
-var NON_NEG_INT_RE_ = new RegExp('^\\\d+$');
-var POS_INT_RE_ = new RegExp('^(0+|0*[1-9]\\d+)$');
-var INT_RE_ = new RegExp('^[+-]?(0+|0*[1-9]\\d+)$');
-var NON_ZERO_INT_RE_ = new RegExp('^[+-]?0*[1-9]\\d+$');
-var WDAY_RE_ = new RegExp('^(MO|TU|WE|TH|FR|SA|SU)$', 'i');
-var BYDAY_RE_ = new RegExp('^([+-]0*[1-9]\\d+)?(MO|TU|WE|TH|FR|SA|SU)$', 'i');
-var STATUS_RE_ = new RegExp('^(?:TENTATIVE|CONFIRMED|CANCELLED)$', 'i');
-var CLASS_RE_ = new RegExp('^(?:PUBLIC|PRIVATE|CONFIDENTIAL)$', 'i');
-var TRANSP_RE_ = new RegExp('^(?:TRANSPARENT|OPAQUE)$', 'i');
-var ROLE_RE_ = new RegExp('^(?:CHAIR|(?:REQ|OPT|NON)-PARTICIPANT)$', 'i');
-var RSVP_RE_ = new RegExp('^(?:TRUE|FALSE)$', 'i');
-var PSTAT_RE_ = new RegExp(
+var NON_NEG_INT_RE = new RegExp('^\\\d+$');
+var POS_INT_RE = new RegExp('^(0+|0*[1-9]\\d+)$');
+var INT_RE = new RegExp('^[+-]?(0+|0*[1-9]\\d+)$');
+var NON_ZERO_INT_RE = new RegExp('^[+-]?0*[1-9]\\d+$');
+var WDAY_RE = new RegExp('^(MO|TU|WE|TH|FR|SA|SU)$', 'i');
+var BYDAY_RE = new RegExp('^([+-]0*[1-9]\\d+)?(MO|TU|WE|TH|FR|SA|SU)$', 'i');
+var STATUS_RE = new RegExp('^(?:TENTATIVE|CONFIRMED|CANCELLED)$', 'i');
+var CLASS_RE = new RegExp('^(?:PUBLIC|PRIVATE|CONFIDENTIAL)$', 'i');
+var TRANSP_RE = new RegExp('^(?:TRANSPARENT|OPAQUE)$', 'i');
+var ROLE_RE = new RegExp('^(?:CHAIR|(?:REQ|OPT|NON)-PARTICIPANT)$', 'i');
+var RSVP_RE = new RegExp('^(?:TRUE|FALSE)$', 'i');
+var PSTAT_RE = new RegExp(
     '^(?:NEEDS-ACTION|ACCEPTED|DECLINED|TENTATIVE|DELEGATED)$', 'i');
-var CUTYPE_RE_ = new RegExp(
+var CUTYPE_RE = new RegExp(
     '^(?:INDIVIDUAL|GROUP|RESOURCE|ROOM|UNKNOWN)$', 'i');
-var MAILTO_RE_ = new RegExp('^mailto:', 'i');
+var MAILTO_RE = new RegExp('^mailto:', 'i');
 
-/** defines vcalendar level properties. */
-var VCALENDAR_SCHEMA_ = {
-  'method': [handleTextContent_],
-  'vevent': [handleNoDescentContent_]
-};
-
-/** @see http://microformats.org/wiki/hcalendar */
-var VEVENT_SCHEMA_ = {
-  'uid': [handleUrlContent_,
-          handleTextContent_],
-  'url': [handleUrlContent_],
-  'attach': [handleUrlContent_],
-  'description': [handleHtmlContent_],
-  'summary': [handleHtmlContent_],
-  'class': [handleValidatingtextContent_(CLASS_RE_, toUpper)],
-  'dtstart': [handleDateContent_],
-  'dtend': [handleDateContent_],
-  'dtstamp': [handleDateContent_],
-  'duration': [handleValidatingtextContent_(PERIOD_RE_)],
-  'rrule': [handleValidatingtextContent_(RRULE_RE_, toUpper),
-            handleRruleContent_],
-  'exrule': [handleValidatingtextContent_(RRULE_RE_, toUpper),
-             handleRruleContent_],
-  'rdate': [handleRdateContent_],
-  'exdate': [handleRdateContent_],
-  'location': [handleHcardContent_,
-               handleAdrContent_,
-               handleTextContent_],
-  'attendee': [handleHcardContent_,
-               handleParticipantContent_,
-               handleTextEmailContent_],
-  'contact': [handleHcardContent_,
-              handleParticipantContent_,
-              handleTextEmailContent_],
-  'organizer': [handleHcardContent_,
-                handleParticipantContent_,
-                handleTextEmailContent_],
-  'category': [handleTextContent_],
-  'sequence': [handleValidatingtextContent_(NON_NEG_INT_RE_)],
-  'status': [handleValidatingtextContent_(STATUS_RE_, toUpper)],
-  'transp': [handleValidatingtextContent_(TRANSP_RE_, toUpper)],
-  'del': [handleNoDescentContent_]  // indicates deleted content
-};
-
-/** see RFC 2445 section 4.6.4 for the meaning of these. */
-var RRULE_SCHEMA_ = {
-  'freq': [handleValidatingtextContent_(
-              /^(?:YEAR|MONTH|DAI|WEEK|HOUR|MINUTE|SECOND)LY$/i, toUpper)],
-  'until': [handleDateContent_],
-  'interval': [handleValidatingtextContent_(POS_INT_RE_)],
-  'count': [handleValidatingtextContent_(NON_NEG_INT_RE_)],
-  'bysecond': [handleValidatingtextContent_(NON_NEG_INT_RE_)],
-  'byminute': [handleValidatingtextContent_(NON_NEG_INT_RE_)],
-  'byhour': [handleValidatingtextContent_(NON_NEG_INT_RE_)],
-  'byday': [handleValidatingtextContent_(BYDAY_RE_, toUpper)],
-  'bymonth': [handleValidatingtextContent_(INT_RE_)],
-  'bymonthday': [handleValidatingtextContent_(NON_ZERO_INT_RE_)],
-  'byyearday': [handleValidatingtextContent_(NON_ZERO_INT_RE_)],
-  'byweekno': [handleValidatingtextContent_(NON_ZERO_INT_RE_)],
-  'bysetpos': [handleValidatingtextContent_(NON_ZERO_INT_RE_)],
-  'wkst': [handleValidatingtextContent_(WDAY_RE_, toUpper)]
-};
-
-/** @see http://microformats.org/wiki/hcard */
-var HCARD_SCHEMA_ = {
-  'url': [handleUrlContent_],
-  'email': [handleUrlContent_,
-            handleTextEmailContent_],
-  'photo': [handleAttribContent_('img', 'src')],
-  'uid': [handleUrlContent_,
-          handleTextContent_],
-  'location': [handleGeoContent_],
-  'bday': [handleDateContent_],
-  'tel': [handleTelContent_],
-  'fn': [handleTextContent_],
-  'n': [handleTextContent_],
-  'org': [handleTextContent_],
-  'adr': [handleAdrContent_],
-  'title': [handleTextContent_],
-  'role': [handleTextContent_],
-  'org': [handleTextContent_]
-};
-
-/** this schema is not in the documentation, but appears in the testcases */
-var PARTICIPANT_SCHEMA_ = {
-  'value': [handleUrlContent_],
-  'cn': [handleTextContent_],
-  'cutype': [handleValidatingtextContent_(CUTYPE_RE_, toUpper)],
-  'delegated-from': [handleUrlContent_,
-                     handleValidatingtextContent_(MAILTO_RE_)],
-  'delegated-to': [handleUrlContent_,
-                   handleValidatingtextContent_(MAILTO_RE_)],
-  'dir': [handleUrlContent_],
-  'member': [handleUrlContent_],
-  'partstat': [handleValidatingtextContent_(PSTAT_RE_, toUpper)],
-  'role': [handleValidatingtextContent_(ROLE_RE_, toUpper)],
-  'rsvp': [handleValidatingtextContent_(RSVP_RE_, toUpper)],
-  'sent-by': [handleUrlContent_]
-};
-
-/** a telephone number */
-var TEL_SCHEMA_ = {
-  'type': [handleTextContent_],
-  'value': [handleTextContent_]
-};
-
-/** a geograhic location.  @see http://microformats.org/wiki/geo */
-GEO_SCHEMA_ = {
-  'latitude': [handleTextContent_],
-  'longitude': [handleTextContent_]
-};
-
-/** a physical address.  @see http://microformats.org/wiki/adr */
-ADR_SCHEMA_ = {
-  'street-address': [handleTextContent_],
-  'extended-address': [handleTextContent_],
-  'post-office-box': [handleTextContent_],
-  'locality': [handleTextContent_],
-  'region': [handleTextContent_],
-  'postal-code': [handleTextContent_],
-  'country-name': [handleTextContent_]
-};
 
 
 // Schema content handlers
@@ -284,24 +163,25 @@ ADR_SCHEMA_ = {
  * @param {Object} globalProps
  * @return {ContentLine|null}
  */
-function handleTextContent_(node, globalProps) {
-  var content = checkAttributesForText_(node, globalProps);
+function handleTextContent(node, globalProps) {
+  var content = checkAttributesForText(node, globalProps);
   if (content) { return content; }
 
   // Otherwise, concatenate all the text nodes.
   var text = [];
-  handleTextContentHelper_(node, globalProps, text);
+  handleTextContentHelper(node, globalProps, text);
   if (!text.length) { return null; }
   text = text.join('').replace(/ $/gm, '');
   if (!text) { return null; }
   content = new ContentLine();
-  content.values_.push(text);
+  content.pushValues(text);
   var language = node.getAttribute('xml:lang') || globalProps.language;
   if (language) {
-    content.attributes_.push('LANGUAGE', language);
+    content.pushAttributes('LANGUAGE', language);
   }
   return content;
 }
+var textContentHandler = { handle: handleTextContent };
 
 /**
  * handles tags that store their textual content in attributes.
@@ -309,7 +189,7 @@ function handleTextContent_(node, globalProps) {
  * @param {Object} globalProps
  * @return {ContentLine}
  */
-function checkAttributesForText_(node, globalProps) {
+function checkAttributesForText(node, globalProps) {
   var attribValue = null;
   switch (node.nodeName.toLowerCase()) {
     case 'abbr':
@@ -326,10 +206,10 @@ function checkAttributesForText_(node, globalProps) {
   if (!attribValue) { return null; }
   // no normalization since attributes are assumed to be preformatted
   var content = new ContentLine();
-  content.values_.push(attribValue);
+  content.pushValues(attribValue);
   var language = node.getAttribute('xml:lang') || globalProps.language;
   if (language) {
-    content.attributes_.push('LANGUAGE', language);
+    content.pushAttributes('LANGUAGE', language);
   }
   return content;
 }
@@ -338,7 +218,7 @@ function checkAttributesForText_(node, globalProps) {
  * set of HTML 4.0 tag names that contain cdata do not contain human readable
  * content.
  */
-var HTML_TAGS_WITH_NON_HUMAN_READABLE_CONTENT_ = {
+var HTML_TAGS_WITH_NON_HUMAN_READABLE_CONTENT = {
   script: true,
   style: true
 };
@@ -349,17 +229,17 @@ var HTML_TAGS_WITH_NON_HUMAN_READABLE_CONTENT_ = {
  * appear to an xml reader.
  * @private
  */
-function handleTextContentHelper_(node, globalProps, out) {
+function handleTextContentHelper(node, globalProps, out) {
   if (node.nodeType === 3/*TEXT_NODE*/ ||
       node.nodeType === 4/*CDATA_SECTION_NODE*/) {
     var text = node.nodeValue;
     // if this is not preformatted, then collapse runs of whitespace.
-    if (!isPreformatted(node.parentNode)) {
+    if (node.parentNode && !isPreformatted(node.parentNode)) {
       text = text
-        // flatten runs of whitespace without affecting &nbsp;
-        .replace(/[ \t\r\n]+/g, ' ')
-        // convert &nbsp;s, which match \s but not [ \t\r\n], to space
-        .replace(/\s/g, ' ');
+          // flatten runs of whitespace without affecting &nbsp;
+          .replace(/[ \t\r\n]+/g, ' ')
+          // convert &nbsp;s, which match \s but not [ \t\r\n], to space
+          .replace(/\s/g, ' ');
       if (text.length && /\s$/.test(text[text.length - 1])) {
         // trim leading space
         text = text.replace(/^ /, '');
@@ -371,12 +251,12 @@ function handleTextContentHelper_(node, globalProps, out) {
     if (value) { out.push(value); }
   } else if (node.nodeType === 1/*ELEMENT*/) {
     var nodeName = node.nodeName.toLowerCase();
-    if (nodeName in HTML_TAGS_WITH_NON_HUMAN_READABLE_CONTENT_) { return; }
+    if (nodeName in HTML_TAGS_WITH_NON_HUMAN_READABLE_CONTENT) { return; }
     if (nodeName == 'br') {
       out.push('\n');
     } else {
       for (var child = node.firstChild; child; child = child.nextSibling) {
-        handleTextContentHelper_(child, globalProps, out);
+        handleTextContentHelper(child, globalProps, out);
       }
     }
   }
@@ -389,11 +269,11 @@ function handleTextContentHelper_(node, globalProps, out) {
  * @param {Node} node.
  * @return {ContentLine|null}
  */
-function handleTextEmailContent_(node, globalProps) {
-  var cl = handleTextContent_(node, globalProps);
+function handleTextEmailContent(node, globalProps) {
+  var cl = handleTextContent(node, globalProps);
   if (!cl) { return null; }
 
-  var value = cl.values_[0];
+  var value = cl.getValues()[0];
   value = value.replace(/^\s+|\s+$/g, '');
   if (!/.@\w+(\.\w+)+?$/.test(value)) { return null; }
 
@@ -402,35 +282,38 @@ function handleTextEmailContent_(node, globalProps) {
   if (protocol) {
     if (protocol[1].toLowerCase() !== 'mailto') { return null; }
   } else {
-    cl.values_[0] = 'MAILTO:' + encodeURI(value);
+    cl.setValue(0, 'MAILTO:' + encodeURI(value));
   }
-  cl.attributes_ = [];
+  cl.setAttributes([]);
   return cl;
 }
+var textEmailContentHandler = { handle: handleTextEmailContent };
 
 /**
  * returns a content handler that finds the first instance of the named node
  * that has the named attribute, and yields the attributes value.
  * @param {string} nodeName an HTML4 or XHTML node name
  * @param {string} attribName an HTML4 or XHTML attribute name
- * @return {Function} a function that maps dom nodes to ContentLines.
+ * @return {Object} a content handler that maps dom nodes to ContentLines.
  */
-function handleAttribContent_(nodeName, attribName) {
-  return function (node, globalProps) {
-    var els = node.getElementsByTagName(nodeName);
-    var values = [];
-    for (var i = 0; i < els.length; ++i) {
-      var attrib = node.getAttribute(attribName);
-      if (attrib != null) {
-        values.push(attrib);
-      }
-    }
-    if (values.length) {
-      var content = new ContentLine();
-      content.values_ = out;
-      return content;
-    }
-  };
+function makeAttribContentHandler(nodeName, attribName) {
+  return {
+        handle: function (node, globalProps) {
+          var els = node.getElementsByTagName(nodeName);
+          var values = [];
+          for (var i = 0; i < els.length; ++i) {
+            var attrib = node.getAttribute(attribName);
+            if (attrib != null) {
+              values.push(attrib);
+            }
+          }
+          if (values.length) {
+            var content = new ContentLine();
+            content.pushValues.apply(content, values);
+            return content;
+          }
+        }
+      };
 }
 
 /**
@@ -438,7 +321,7 @@ function handleAttribContent_(nodeName, attribName) {
  * @param {DOMElement} node.
  * @return {ContentLine|null}
  */
-function handleUrlContent_(node, globalProps) {
+function handleUrlContent(node, globalProps) {
   var attrValue = null;
   switch (node.nodeName.toLowerCase()) {
     case 'a': case 'area':
@@ -459,27 +342,54 @@ function handleUrlContent_(node, globalProps) {
   }
   if (!attrValue) { return null; }
   var content = new ContentLine();
-  content.values_.push(attrValue);
+  content.pushValues(attrValue);
 
   var type = node.getAttribute('type');
   if (type) {
-    content.attributes_.push('FMTTYPE', type);
+    content.pushAttributes('FMTTYPE', type);
   }
   return content;
 }
+var urlContentHandler = { handle: handleUrlContent };
 
 /**
- * like {@link #handleTextContent_ the text html handler}, but
+ * A simple html sanitizer that only preserves a few formatting elements
+ * in event summaries and descriptions.
+ */
+var sanitizeHtml = (function () {
+  var allowedTags = { 'p': true, 'b': true, 'i': true, 'u': true, 'br': true,
+                      'blockquote': true, 'address': true, 'ul': true,
+                      'ol': true, 'li': true, 'sub': true, 'sup': true };
+  var sanitize = html.makeHtmlSanitizer(
+      function (tagName, attribs) {
+        if (tagName in allowedTags) {
+          attribs.length = 0;
+          return attribs;
+        } else {
+          return null;
+        }
+      });
+  return function (html) {
+    var out = [];
+    sanitize(html, out);
+    return out.join('');
+  };
+})();
+
+/**
+ * like {@link #handleTextContent the text html handler}, but
  * returns html with questionable tags stripped.
  * @param {DOMElement} node.
  * @return {ContentLine|null}
  */
-function handleHtmlContent_(node, globalProps) {
-  var content = checkAttributesForText_(node, globalProps);
+function handleHtmlContent(node, globalProps) {
+  var content = checkAttributesForText(node, globalProps);
   if (content) {
-    content.values_[0] = content.values_[0]
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/\"/g, '&quot;');
+    content.setValue(
+        0,
+        (content.getValues()[0]
+         .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+         .replace(/>/g, '&gt;').replace(/\"/g, '&quot;')));
     return content;
   }
 
@@ -487,28 +397,30 @@ function handleHtmlContent_(node, globalProps) {
       .replace(/[ \t\r\n]+/g, ' ').replace(/^\s+|\s+$/g, '');
   if (!html) { return null; }
   content = new ContentLine();
-  content.values_.push(html);
+  content.pushValues(html);
   var language = node.getAttribute('xml:lang') || globalProps.language;
   if (language) {
-    content.attributes_.push('LANGUAGE', language);
+    content.pushAttributes('LANGUAGE', language);
   }
   return content;
 }
+var htmlContentHandler = { handle: handleHtmlContent };
 
-function handleDateContent_(node, globalProps) {
-  var value = handleTextContent_(node, globalProps);
+function handleDateContent(node, globalProps) {
+  var value = handleTextContent(node, globalProps);
   if (!value) { return null; }
-  return convertDate_(value.values_[0]);
+  return convertDate(value.getValues()[0]);
 }
+var dateContentHandler = { handle: handleDateContent };
 
 /**
  * parse RDATE values -- a comma separated list of dates, date-times, or
  * periods.
  */
-function handleRdateContent_(node, globalProps) {
-  var line = handleTextContent_(node, globalProps);
+function handleRdateContent(node, globalProps) {
+  var line = handleTextContent(node, globalProps);
   if (!line) { return null; }
-  var parts = line.values_[0].split(/,/g);
+  var parts = line.getValues()[0].split(/,/g);
   var resultType = null;
   var results = [];
   for (var i = 0; i < parts.length; ++i) {
@@ -517,15 +429,15 @@ function handleRdateContent_(node, globalProps) {
     var type = null;
     var slash = text.indexOf('/');
     if (slash < 0) {
-      var line = convertDate_(text);
-      type = line.getAttribute_('VALUE');
-      value = line.values_[0];
+      var line = convertDate(text);
+      type = line.getAttribute('VALUE');
+      value = line.getValues()[0];
     } else {
-      var start = convertDate_(text.substring(0, slash));
-      var end = convertDate_(text.substring(slash + 1));
+      var start = convertDate(text.substring(0, slash));
+      var end = convertDate(text.substring(slash + 1));
       if (start && end &&
-          start.getAttribute_('VALUE') === end.getAttribute_('VALUE')) {
-        value = start.values_[0] + '/' + end.values_[0];
+          start.getAttribute('VALUE') === end.getAttribute('VALUE')) {
+        value = start.getValues()[0] + '/' + end.getValues()[0];
         type = 'PERIOD';
       }
     }
@@ -538,29 +450,33 @@ function handleRdateContent_(node, globalProps) {
   }
   if (!results.length) { return null; }
   var cl = new ContentLine();
-  cl.values_ = results;
-  cl.attributes_.push('VALUE', resultType);
+  cl.pushValues.apply(cl, results);
+  cl.pushAttributes('VALUE', resultType);
   return cl;
 }
+var rDateContentHandler = { handle: handleRdateContent };
 
 /**
  * returns a content handler that yields the title of the given node iff
  * it matches the given pattern.
  * @param {RegExp} pattern a regular expression
- * @return {Function} a function that maps dom nodes to ContentLines.
+ * @return {Object} a handler that maps dom nodes to ContentLines.
  */
-function handleValidatingtextContent_(pattern, xform) {
-  return function (node, globalProps) {
-    var contentLine = handleTextContent_(node, globalProps);
-    if (!(contentLine && pattern.test(contentLine.values_[0]))) {
-      return null;
-    }
-    contentLine.attributes_ = [];
-    if (xform) {
-      contentLine.values_[0] = xform(contentLine.values_[0]);
-    }
-    return contentLine;
-  };
+function makeValidatingTextContentHandler(pattern, xform) {
+  return {
+        handle: function (node, globalProps) {
+          var contentLine = handleTextContent(node, globalProps);
+          if (!contentLine) { return null; }
+          var values = contentLine.getValues();
+          if (!pattern.test(values[0])) { return null; }
+          contentLine.setAttributes([]);
+          if (xform) {
+            contentLine.setValue(0, xform(values[0]));
+          }
+          return contentLine;
+        },
+        noDescend: false
+      };
 }
 
 /**
@@ -568,9 +484,9 @@ function handleValidatingtextContent_(pattern, xform) {
  * @param {DOMElement} node.
  * @return {ContentLine|null}
  */
-function handleHcardContent_(node, globalProps) {
+function handleHcardContent(node, globalProps) {
   var contentLines = [];
-  parseMicroFormat(node, HCARD_SCHEMA_, globalProps, contentLines);
+  parseMicroFormat(node, HCARD_SCHEMA, globalProps, contentLines);
   if (!contentLines.length) {
     return null;
   }
@@ -579,40 +495,39 @@ function handleHcardContent_(node, globalProps) {
   var other = [];
   for (var i = 0; i < contentLines.length; ++i) {
     var cl = contentLines[i];
-    if (!cl.values_.length || !cl.name_) { continue; }
-    switch (cl.name_) {
+    var clName = cl.getName(), values = cl.getValues();
+    if (!values.length || !clName) { continue; }
+    switch (clName) {
       case 'FN': case 'N':
-        name = cl.values_[0];
+        name = values[0];
         break;
       case 'EMAIL':
-        if (!email) { email = cl.values_[0]; }
+        if (!email) { email = values[0]; }
         break;
       default:
-        for (var j = 0; j < cl.values_.length; ++j) {
-          var attribName = cl.name_;
+        for (var j = 0; j < values.length; ++j) {
+          var attribName = clName;
           if (attribName !== 'ROLE') {
             attribName = 'X-HCARD-' + attribName;
           }
-          other.push(attribName, cl.values_[j]);
+          other.push(attribName, values[j]);
         }
         break;
     }
   }
   if (!email) { return null; }
   var outputContentLine = new ContentLine();
-  outputContentLine.values_.push(email);
+  outputContentLine.pushValues(email);
   if (name) {
-    outputContentLine.attributes_.push('CN', name);
+    outputContentLine.pushAttributes('CN', name);
   }
-  outputContentLine.attributes_.push.apply(
-      outputContentLine.attributes_, other);
+  outputContentLine.pushAttributes.apply(outputContentLine, other);
   return outputContentLine;
 }
-
 /**
  * do not allow the containing instance to infer elements from the hcard.
  */
-handleHcardContent_.noDescend_ = true;
+var hcardContentHandler = { handle: handleHcardContent, noDescend: true };
 
 /**
  * parses a participant using an undocumented format that appears in the
@@ -620,9 +535,9 @@ handleHcardContent_.noDescend_ = true;
  * @param {DOMElement} node.
  * @return {ContentLine|null}
  */
-function handleParticipantContent_(node, globalProps) {
+function handleParticipantContent(node, globalProps) {
   var contentLines = [];
-  parseMicroFormat(node, PARTICIPANT_SCHEMA_, globalProps, contentLines);
+  parseMicroFormat(node, PARTICIPANT_SCHEMA, globalProps, contentLines);
   if (!contentLines.length) { return null; }
   var groupings = { 'DELEGATED-FROM': 'DELEGATED-FROM',
                     'DELEGATED-TO': 'DELEGATED-TO' };
@@ -631,32 +546,34 @@ function handleParticipantContent_(node, globalProps) {
   var attribs = [];
   for (var i = 0; i < contentLines.length; ++i) {
     var cl = contentLines[i];
-    if (!cl.values_.length || !cl.name_) { continue; }
-    if (cl.name_ == 'VALUE') {
-      value = cl.values_[0];
+    var name = cl.getName(), values = cl.getValues();
+    if (!values.length || !name) { continue; }
+    if (name === 'VALUE') {
+      value = values[0];
     } else {
-      attribs.push(cl.name_, cl.values_[0]);
+      attribs.push(name, values[0]);
     }
   }
   if (!value) { return null; }
   var contentLine = new ContentLine();
-  contentLine.values_.push(value);
-  contentLine.attributes_ = attribs;
+  contentLine.pushValues(value);
+  contentLine.setAttributes(attribs);
   return contentLine;
 }
 /**
  * do not allow the containing instance to infer elements from the hcard.
  */
-handleParticipantContent_.noDescend_ = true;
+var participantContentHandler = {
+    handle: handleParticipantContent, noDescend: true };
 
 /**
  * a content handler that parses a nested telephone number.
  * @param {DOMElement} node.
  * @return {ContentLine|null}
  */
-function handleTelContent_(node, globalProps) {
+function handleTelContent(node, globalProps) {
   var contentLines = [];
-  parseMicroFormat(node, TEL_SCHEMA_, globalProps, contentLines);
+  parseMicroFormat(node, TEL_SCHEMA, globalProps, contentLines);
   if (!contentLines.length) {
     return null;
   }
@@ -664,32 +581,33 @@ function handleTelContent_(node, globalProps) {
   var value = null;
   for (var i = 0; i < contentLines.length; ++i) {
     var cl = contentLines[i];
-    if (!cl.values_.length || !cl.name_) { continue; }
-    switch (cl.name_) {
+    var values = cl.getValues(), name = cl.getName();
+    if (!values.length || !name) { continue; }
+    switch (name) {
       case 'TYPE':
-        type = cl.values_[0];
+        type = values[0];
         break;
       case 'VALUE':
-        value = cl.values_[0];
+        value = values[0];
         break;
     }
   }
   if (!(type && value)) { return null; }
   var outputContentLine = new ContentLine();
-  outputContentLine.name.attributes_.push('TYPE', type);
-  outputContentLine.name.values_.push(value);
+  outputContentLine.name.pushAttributes('TYPE', type);
+  outputContentLine.name.pushValues(value);
   return outputContentLine;
 }
-handleTelContent_.noDescend_ = true;
+var telContentHandler = { handle: handleTelContent, noDescend: true };
 
 /**
  * a content handler that parses a nested geographic-location.
  * @param {DOMElement} node.
  * @return {ContentLine|null}
  */
-function handleGeoContent_(node, globalProps) {
+function handleGeoContent(node, globalProps) {
   var contentLines = [];
-  parseMicroFormat(node, GEO_SCHEMA_, globalProps, contentLines);
+  parseMicroFormat(node, GEO_SCHEMA, globalProps, contentLines);
   if (!contentLines.length) {
     return null;
   }
@@ -697,39 +615,43 @@ function handleGeoContent_(node, globalProps) {
   var longitude = null;
   for (var i = 0; i < contentLines.length; ++i) {
     var cl = contentLines[i];
-    if (!cl.values_.length || !cl.name_) { continue; }
-    switch (cl.name_) {
+    var name = cl.getName(), values = cl.getValues();
+    if (!values.length || !name) { continue; }
+    switch (name) {
       case 'LATITUDE':
-        latitude = cl.values_[0];
+        latitude = values[0];
         break;
       case 'LONGITUDE':
-        longitude = cl.values_[0];
+        longitude = values[0];
         break;
     }
   }
   if (!(latitude && longitude)) { return null; }
   var outputContentLine = new ContentLine();
-  outputContentLine.name.values_.push(latitude, longitude);
+  outputContentLine.name.pushValues(latitude, longitude);
   return outputContentLine;
 }
-handleGeoContent_.noDescend_ = true;
+var geoContentHandler = { handle: handleGeoContent, noDescend: true };
 
 /**
  * a content handler that parses a nested physical address.
  * @param {DOMElement} node.
  * @return {ContentLine|null}
  */
-function handleAdrContent_(node, globalProps) {
+function handleAdrContent(node, globalProps) {
   var contentLines = [];
-  parseMicroFormat(node, ADR_SCHEMA_, globalProps, contentLines);
+  parseMicroFormat(node, ADR_SCHEMA, globalProps, contentLines);
   if (!contentLines.length) {
     return null;
   }
   var parts = {};
   for (var i = 0; i < contentLines.length; ++i) {
     var cl = contentLines[i];
-    if (!cl.values_.length || !cl.name_) { continue; }
-    parts[cl.name_.toLowerCase()] = cl.values_[0];
+    var name = cl.getName();
+    if (!name) { continue; }
+    var values = cl.getValues();
+    if (!values.length) { continue; }
+    parts[name.toLowerCase()] = values[0];
   }
   var formatted = [];
   var partsInOrder = [ 'street-address', 'extended-address',
@@ -744,23 +666,23 @@ function handleAdrContent_(node, globalProps) {
   if (!formatted.length) { return null; }
 
   var outputContentLine = new ContentLine();
-  outputContentLine.values_.push(formatted.join('\n'));
+  outputContentLine.pushValues(formatted.join('\n'));
   return outputContentLine;
 }
-handleAdrContent_.noDescend_ = true;
+var adrContentHandler = { handle: handleAdrContent, noDescend: true };
 
 /**
  * a content handler that parses a nested rrule.
  * @param {DOMElement} node.
  * @return {ContentLine|null}
  */
-function handleRruleContent_(node, globalProps) {
+function handleRruleContent(node, globalProps) {
   var contentLines = [];
-  parseMicroFormat(node, RRULE_SCHEMA_, globalProps, contentLines);
+  parseMicroFormat(node, RRULE_SCHEMA, globalProps, contentLines);
 
   var freq = null;
   for (var i = contentLines.length; --i >= 0;) {
-    if ('FREQ' === contentLines[i].name_) {
+    if ('FREQ' === contentLines[i].getName()) {
       freq = contentLines[i];
       contentLines.splice(i, 1);
       break;
@@ -776,28 +698,153 @@ function handleRruleContent_(node, globalProps) {
                         BYWEEKNO: 'BYWEEKNO',
                         BYMONTH: 'BYMONTH',
                         BYSETPOS: 'BYSETPOS' });
-  var values = ['FREQ=' + freq.values_[0]];
+  var values = ['FREQ=' + freq.getValues()[0]];
   for (var i = 0; i < contentLines.length; ++i) {
     var contentLine = contentLines[i];
-    values.push(contentLine.name_ + '=' + contentLine.values_.join(','));
+    values.push(
+        contentLine.getName() + '=' + contentLine.getValues().join(','));
   }
   var contentLine = new ContentLine();
-  contentLine.values_.push(values.join(';'));
-  contentLine.noEscape_ = true;
+  contentLine.pushValues(values.join(';'));
+  contentLine.setNoEscape(true);
   return contentLine;
 }
-handleRruleContent_.noDescend_ = true;
+var rruleContentHandler = { handle: handleRruleContent, noDescend: true };
 
 /** blocks descent */
-function handleNoDescentContent_(node, globalProps) {
+function handleNoDescentContent(node, globalProps) {
   return NO_CONTENT;
 }
-handleNoDescentContent_.noDescend_ = true;
+var noDescentContentHandler = {
+    handle: handleNoDescentContent, noDescend: true };
 
 
 function toUpper(s) { return s.toUpperCase(); }
 
 
-// Export the public API
-this.extractHcal = extractHcal;
+
+// Microformat Schemas
+/** defines vcalendar level properties. */
+var VCALENDAR_SCHEMA = {
+  'method': [textContentHandler],
+  'vevent': [noDescentContentHandler]
+};
+
+/** @see http://microformats.org/wiki/hcalendar */
+var VEVENT_SCHEMA = {
+  'uid': [urlContentHandler,
+          textContentHandler],
+  'url': [urlContentHandler],
+  'attach': [urlContentHandler],
+  'description': [htmlContentHandler],
+  'summary': [htmlContentHandler],
+  'class': [makeValidatingTextContentHandler(CLASS_RE, toUpper)],
+  'dtstart': [dateContentHandler],
+  'dtend': [dateContentHandler],
+  'dtstamp': [dateContentHandler],
+  'duration': [makeValidatingTextContentHandler(PERIOD_RE)],
+  'rrule': [makeValidatingTextContentHandler(RRULE_RE, toUpper),
+            rruleContentHandler],
+  'exrule': [makeValidatingTextContentHandler(RRULE_RE, toUpper),
+             rruleContentHandler],
+  'rdate': [rDateContentHandler],
+  'exdate': [rDateContentHandler],
+  'location': [hcardContentHandler,
+               adrContentHandler,
+               textContentHandler],
+  'attendee': [hcardContentHandler,
+               participantContentHandler,
+               textEmailContentHandler],
+  'contact': [hcardContentHandler,
+              participantContentHandler,
+              textEmailContentHandler],
+  'organizer': [hcardContentHandler,
+                participantContentHandler,
+                textEmailContentHandler],
+  'category': [textContentHandler],
+  'sequence': [makeValidatingTextContentHandler(NON_NEG_INT_RE)],
+  'status': [makeValidatingTextContentHandler(STATUS_RE, toUpper)],
+  'transp': [makeValidatingTextContentHandler(TRANSP_RE, toUpper)],
+  'del': [noDescentContentHandler]  // indicates deleted content
+};
+
+/** see RFC 2445 section 4.6.4 for the meaning of these. */
+var RRULE_SCHEMA = {
+  'freq': [makeValidatingTextContentHandler(
+              /^(?:YEAR|MONTH|DAI|WEEK|HOUR|MINUTE|SECOND)LY$/i, toUpper)],
+  'until': [dateContentHandler],
+  'interval': [makeValidatingTextContentHandler(POS_INT_RE)],
+  'count': [makeValidatingTextContentHandler(NON_NEG_INT_RE)],
+  'bysecond': [makeValidatingTextContentHandler(NON_NEG_INT_RE)],
+  'byminute': [makeValidatingTextContentHandler(NON_NEG_INT_RE)],
+  'byhour': [makeValidatingTextContentHandler(NON_NEG_INT_RE)],
+  'byday': [makeValidatingTextContentHandler(BYDAY_RE, toUpper)],
+  'bymonth': [makeValidatingTextContentHandler(INT_RE)],
+  'bymonthday': [makeValidatingTextContentHandler(NON_ZERO_INT_RE)],
+  'byyearday': [makeValidatingTextContentHandler(NON_ZERO_INT_RE)],
+  'byweekno': [makeValidatingTextContentHandler(NON_ZERO_INT_RE)],
+  'bysetpos': [makeValidatingTextContentHandler(NON_ZERO_INT_RE)],
+  'wkst': [makeValidatingTextContentHandler(WDAY_RE, toUpper)]
+};
+
+/** @see http://microformats.org/wiki/hcard */
+var HCARD_SCHEMA = {
+  'url': [urlContentHandler],
+  'email': [urlContentHandler,
+            textEmailContentHandler],
+  'photo': [makeAttribContentHandler('img', 'src')],
+  'uid': [urlContentHandler,
+          textContentHandler],
+  'location': [geoContentHandler],
+  'bday': [dateContentHandler],
+  'tel': [telContentHandler],
+  'fn': [textContentHandler],
+  'n': [textContentHandler],
+  'org': [textContentHandler],
+  'adr': [adrContentHandler],
+  'title': [textContentHandler],
+  'role': [textContentHandler],
+  'org': [textContentHandler]
+};
+
+/** this schema is not in the documentation, but appears in the testcases */
+var PARTICIPANT_SCHEMA = {
+  'value': [urlContentHandler],
+  'cn': [textContentHandler],
+  'cutype': [makeValidatingTextContentHandler(CUTYPE_RE, toUpper)],
+  'delegated-from': [urlContentHandler,
+                     makeValidatingTextContentHandler(MAILTO_RE)],
+  'delegated-to': [urlContentHandler,
+                   makeValidatingTextContentHandler(MAILTO_RE)],
+  'dir': [urlContentHandler],
+  'member': [urlContentHandler],
+  'partstat': [makeValidatingTextContentHandler(PSTAT_RE, toUpper)],
+  'role': [makeValidatingTextContentHandler(ROLE_RE, toUpper)],
+  'rsvp': [makeValidatingTextContentHandler(RSVP_RE, toUpper)],
+  'sent-by': [urlContentHandler]
+};
+
+/** a telephone number */
+var TEL_SCHEMA = {
+  'type': [textContentHandler],
+  'value': [textContentHandler]
+};
+
+/** a geograhic location.  @see http://microformats.org/wiki/geo */
+var GEO_SCHEMA = {
+  'latitude': [textContentHandler],
+  'longitude': [textContentHandler]
+};
+
+/** a physical address.  @see http://microformats.org/wiki/adr */
+var ADR_SCHEMA = {
+  'street-address': [textContentHandler],
+  'extended-address': [textContentHandler],
+  'post-office-box': [textContentHandler],
+  'locality': [textContentHandler],
+  'region': [textContentHandler],
+  'postal-code': [textContentHandler],
+  'country-name': [textContentHandler]
+};
+                             
 })();

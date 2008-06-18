@@ -191,9 +191,8 @@ var html = (function () {
               if (dataEnd < 0) { dataEnd = htmlText.length; }
               if (eflags & html4.eflags.CDATA) {
                 handler.cdata
-                  && handler.cdata(htmlText.substring(0, dataEnd), param);
+                    && handler.cdata(htmlText.substring(0, dataEnd), param);
               } else if (handler.rcdata) {
-                var rcdata = htmlText.substring(0, dataEnd);
                 handler.rcdata(
                     normalizeRCData(htmlText.substring(0, dataEnd)), param);
               }
@@ -216,8 +215,8 @@ var html = (function () {
           } else if (m[4]) {  // Text
             handler.pcdata && handler.pcdata(m[4], param);
           } else if (m[5]) {  // Cruft
-            text = m[5] === '&' ? '&amp;' : '&lt;';
-            handler.pcdata && handler.pcdata(text, param);
+            handler.pcdata
+                && handler.pcdata(m[5] === '&' ? '&amp;' : '&lt;', param);
           }
         }
       }

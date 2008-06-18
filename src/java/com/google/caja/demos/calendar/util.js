@@ -24,7 +24,7 @@
  * nmTokens that appears in it's class attribute, or null if none.
  * @return {string|null}
  */
-function classMatcher_(nmTokens) {
+function classMatcher(nmTokens) {
   var regex = [' (?:'];
   for (var i = 0; i < nmTokens.length; ++i) {
     if (i) { regex.push('|'); }
@@ -72,7 +72,7 @@ function isPreformatted(element) {
  * @param {string} structuredDate
  * @return {string|null} null if unrecognizable.
  */
-function convertDate_(structuredDate) {
+function convertDate(structuredDate) {
   structuredDate = structuredDate.replace(/^\s+|\s+$/g, '');
   // don't assume too much about the date format
   // match dates like
@@ -169,13 +169,13 @@ function convertDate_(structuredDate) {
       second = d.getUTCSeconds();
     }
 
-    content.attributes_.push('VALUE', 'DATE-TIME');
-    content.values_.push(pad_(year, 4) + pad_(month, 2) + pad_(day, 2) +
-                         'T' + pad_(hour, 2) + pad_(minute, 2) +
-                         pad_(second, 2) + (isUtc ? 'Z' : ''));
+    content.pushAttributes('VALUE', 'DATE-TIME');
+    content.pushValues(pad(year, 4) + pad(month, 2) + pad(day, 2) +
+                       'T' + pad(hour, 2) + pad(minute, 2) +
+                       pad(second, 2) + (isUtc ? 'Z' : ''));
   } else {
-    content.attributes_.push('VALUE', 'DATE');
-    content.values_.push(pad_(year, 4) + pad_(month, 2) + pad_(day, 2));
+    content.pushAttributes('VALUE', 'DATE');
+    content.pushValues(pad(year, 4) + pad(month, 2) + pad(day, 2));
   }
   return content;
 }
@@ -184,7 +184,7 @@ function convertDate_(structuredDate) {
  * format a number to contain at least a certain number of digits by padding
  * with zeros.
  */
-function pad_(n, digits) {
+function pad(n, digits) {
   var s = String(n);
   var delta = digits - s.length;
   while (delta > 0) {
@@ -194,4 +194,10 @@ function pad_(n, digits) {
     delta -= ceil;
   }
   return s;
+}
+
+function range(start, end) {
+  var arr = new Array(end);
+  for (var i = start; i < end; ++i) { arr[i] = i; }
+  return arr;
 }

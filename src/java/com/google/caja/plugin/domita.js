@@ -956,9 +956,9 @@ attachDocumentStub = (function () {
       var styleSheet = document.createElement('style');
       styleSheet.setAttribute('type', 'text/css');
       if (styleSheet.styleSheet) {   // IE
-	styleSheet.styleSheet.cssText = cssText;
+        styleSheet.styleSheet.cssText = cssText;
       } else {                // the world
-	styleSheet.appendChild(document.createTextNode(cssText));
+        styleSheet.appendChild(document.createTextNode(cssText));
       }
       this.getCssContainer___().appendChild(styleSheet);
     };

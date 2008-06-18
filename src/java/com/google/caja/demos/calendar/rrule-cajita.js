@@ -488,9 +488,9 @@ function rruleIteratorImpl(
 
   function next() {
     if (pendingUtc === null) { fetchNext(); }
-    var next = pendingUtc;
+    var nextUtc = pendingUtc;
     pendingUtc = null;
-    return next;
+    return nextUtc;
   }
 
   /**
