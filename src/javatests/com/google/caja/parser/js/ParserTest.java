@@ -88,6 +88,9 @@ public class ParserTest extends CajaTestCase {
   public void testParser8() throws Exception {
     runParseTest("parsertest8.js", "parsergolden8.txt");
   }
+  public void testParser9() throws Exception {
+    runParseTest("parsertest9.js", "parsergolden9.txt");
+  }
 
   public void testParseTreeRendering1() throws Exception {
     runRenderTest("parsertest1.js", "rendergolden1.txt", false);
@@ -121,6 +124,20 @@ public class ParserTest extends CajaTestCase {
   }
   public void testParseTreeRendering8() throws Exception {
     runRenderTest("parsertest8.js", "rendergolden8.txt", true);
+  }
+  public void testParseTreeRendering9() throws Exception {
+    runRenderTest("parsertest9.js", "rendergolden9.txt", true);
+  }
+  public void testThrowAsRestrictedProduction() throws Exception {
+    try {
+      js(fromString("throw \n new Error()"));
+      fail("throw followed by newline should fail");
+    } catch (ParseException ex) {
+      assertEquals(MessageType.EXPECTED_TOKEN,
+                   ex.getCajaMessage().getMessageType());
+    }
+    // But it should pass if there is a line-continuation
+    js(fromString("throw \\\n new Error()"));
   }
 
   public void testRenderKeywordsAsIdentifiers() throws Exception {
@@ -364,7 +381,7 @@ public class ParserTest extends CajaTestCase {
     assertEquals(golden, output.toString());
 
     // clone the parse tree, and check that it, too, matches
-    Statement cloneParseTree = (Statement)parseTree.clone();
+    Statement cloneParseTree = (Statement) parseTree.clone();
     StringBuilder cloneOutput = new StringBuilder();
     cloneParseTree.format(mc, cloneOutput);
     assertEquals(golden, cloneOutput.toString());

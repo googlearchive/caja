@@ -145,11 +145,11 @@ import java.util.Set;
  * While                   => 'while' '(' <Expression> ')' <Body>
  * With                    => 'with' '(' <Expression> ')' <Body>
  * Do                      => 'do' <Body> 'while' '(' <Expression> ')'
- * Break                   => 'break' <StatementLabel>?
- * Continue                => 'continue' <StatementLabel>?
+ * Break                   => 'break' [no LineTerminator] <StatementLabel>?
+ * Continue                => 'continue' [no LineTerminator] <StatementLabel>?
  * Debugger                => 'debugger'
- * Return                  => 'return' <Expression>?
- * Throw                   => 'throw' <Expression>
+ * Return                  => 'return' [no LineTerminator] <Expression>?
+ * Throw                   => 'throw' [no LineTerminator] <Expression>
  * ExprStatement           => <Expression>
  *
  * ExpressionOrNoop        => <Expression>?
@@ -180,7 +180,7 @@ import java.util.Set;
  * Operator(prec)          => <OperatorHead(prec)> <OperatorTail(prec)>
  *   OperatorHead(prec)    => <PrefixOperator(p < prec)> <Operator(p + 1)>
  *                          | <ExpressionAtom>
- *   OperatorTail(prec)    => <PostfixOperator(p < prec)>
+ *   OperatorTail(prec)    => [no LineTerminator] <PostfixOperator(p < prec)>
  *                          | <RightAssocInfixOperator(p <= prec)> <Operator(p)>
  *                          | <LeftAssocInfixOperator(p < prec)> <Operator(p)>
  *                         // below only match if p < prec
@@ -533,29 +533,14 @@ public final class Parser extends ParserBase {
         case RETURN:
         {
           tq.advance();
-          Mark mv = tq.mark();
           AbstractExpression<?> value;
-          if (tq.isEmpty() || tq.lookaheadToken(Punctuation.SEMI)) {
+          // Check for semicolon insertion without lookahead since return is a
+          // restricted production.  See the grammar above and ES262 S7.9.1
+          if (semicolonInserted() || tq.lookaheadToken(Punctuation.SEMI)) {
             value = new UndefinedLiteral();
+            value.setFilePosition(FilePosition.endOf(tq.lastPosition()));
           } else {
-            // Parse speculatively
-            try {
-              value = parseExpressionInt(false);
-              finish(value, mv);
-            } catch (ParseException ex) {
-              int nMessages = mq.getMessages().size();
-              Mark failurePoint = tq.mark();
-              tq.rewind(mv);
-              if (allowSemicolonInsertion()) {
-                mq.getMessages().subList(
-                    nMessages, mq.getMessages().size()).clear();
-                value = new UndefinedLiteral();
-                finish(value, mv);
-              } else {
-                tq.rewind(failurePoint);
-                throw ex;
-              }
-            }
+            value = parseExpressionInt(false);
           }
           s = new ReturnStmt(value);
           break;
@@ -564,7 +549,7 @@ public final class Parser extends ParserBase {
         {
           tq.advance();
           String targetLabel = "";
-          if (!tq.isEmpty() && JsTokenType.WORD == tq.peek().type) {
+          if (!semicolonInserted() && JsTokenType.WORD == tq.peek().type) {
             targetLabel = parseIdentifier(false);
           }
           s = new BreakStmt(targetLabel);
@@ -574,7 +559,7 @@ public final class Parser extends ParserBase {
         {
           tq.advance();
           String targetLabel = "";
-          if (!tq.isEmpty() && JsTokenType.WORD == tq.peek().type) {
+          if (!semicolonInserted() && JsTokenType.WORD == tq.peek().type) {
             targetLabel = parseIdentifier(false);
           }
           s = new ContinueStmt(targetLabel);
@@ -589,6 +574,13 @@ public final class Parser extends ParserBase {
         case THROW:
         {
           tq.advance();
+          if (semicolonInserted()) {
+            throw new ParseException(new Message(
+                MessageType.EXPECTED_TOKEN,
+                FilePosition.endOf(tq.lastPosition()),
+                MessagePart.Factory.valueOf("<expression>"),
+                MessagePart.Factory.valueOf("<newline>")));
+          }
           s = new ThrowStmt(parseExpressionInt(false));
           break;
         }
@@ -749,8 +741,12 @@ public final class Parser extends ParserBase {
         op = Operator.lookupOperation(t.text, OperatorType.BRACKET);
         if (null == op) {
           op = Operator.lookupOperation(t.text, OperatorType.TERNARY);
+          // Check for semicolon insertion since postfix operators are
+          // "restricted productions" according to ES262 S7.9.1.
           if (null == op) {
-            op = Operator.lookupOperation(t.text, OperatorType.POSTFIX);
+            if (!semicolonInserted()) {
+              op = Operator.lookupOperation(t.text, OperatorType.POSTFIX);
+            }
             if (null == op) { break; }
           }
         }
@@ -1226,12 +1222,7 @@ public final class Parser extends ParserBase {
   }
 
   private boolean allowSemicolonInsertion() throws ParseException {
-    if (tq.isEmpty()
-        || (tq.currentPosition().startLogicalLineNo()
-            > tq.lastPosition().endLogicalLineNo())) {
-      return true;
-    }
-    return tq.lookaheadToken(Punctuation.RCURLY);
+    return semicolonInserted() || tq.lookaheadToken(Punctuation.RCURLY);
   }
 
   // Visible for testing.

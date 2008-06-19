@@ -1,0 +1,33 @@
+Block
+  ExpressionStmt
+    Reference
+      Identifier : a
+  ExpressionStmt
+    AssignOperation : PRE_INCREMENT
+      Reference
+        Identifier : b
+  ExpressionStmt
+    Reference
+      Identifier : a
+  ExpressionStmt
+    AssignOperation : PRE_DECREMENT
+      Reference
+        Identifier : b
+  ReturnStmt
+    Reference
+      Identifier : c
+  ReturnStmt
+    UndefinedLiteral : undefined
+  ExpressionStmt
+    Reference
+      Identifier : c
+  BreakStmt : d
+  BreakStmt : 
+  ExpressionStmt
+    Reference
+      Identifier : d
+  ContinueStmt : e
+  ContinueStmt : 
+  ExpressionStmt
+    Reference
+      Identifier : e

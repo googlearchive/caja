@@ -1,0 +1,15 @@
+{
+  a;
+  ++b;
+  a;
+  --b;
+  return c;
+  return undefined;
+  c;
+  break d;
+  break;
+  d;
+  continue e;
+  continue;
+  e;
+}
