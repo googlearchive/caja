@@ -63,12 +63,11 @@ public final class Reference extends AbstractExpression<ParseTreeNode> {
   }
 
   public void render(RenderContext rc) {
-    String name = getIdentifierName();
-    if (name == null) {
+    Identifier ident = getIdentifier();
+    if (ident.getName() == null) {
       throw new IllegalStateException(
           "null name for declaration at " + getFilePosition());
     }
-    rc.getOut().mark(getFilePosition());
-    rc.getOut().consume(name);
+    ident.render(rc);
   }
 }

@@ -28,3 +28,6 @@ var e = function f() { alert('hello world'); };
 ({ objet: 4 });
 
 ev\u0061l('foo');
+
+// e-accent v full-width-a l.  Should not be rendered with hex escapes.
+\u00e9v\uff41l('foo');

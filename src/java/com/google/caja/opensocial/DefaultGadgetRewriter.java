@@ -227,7 +227,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
 
   protected RenderContext createRenderContext(
       TokenConsumer tc, MessageContext mc) {
-    return new RenderContext(mc, true, tc);
+    return new RenderContext(mc, true, true, tc);
   }
 
   protected PluginCompiler createPluginCompiler(

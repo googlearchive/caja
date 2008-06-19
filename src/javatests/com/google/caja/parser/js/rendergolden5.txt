@@ -37,4 +37,5 @@
      'objet': 4
    });
   eval('foo');
+  \u00e9v\uff41l('foo');
 }

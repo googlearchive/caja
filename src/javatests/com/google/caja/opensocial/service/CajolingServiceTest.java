@@ -63,7 +63,7 @@ public class CajolingServiceTest extends CajaTestCase {
   }
 
    public void handle(HttpExchange ex) throws IOException {
-     Reader request = new InputStreamReader(ex.getRequestBody());
+     Reader request = new InputStreamReader(ex.getRequestBody(), "UTF-8");
      while(request.read() != -1) {}
      ex.getResponseHeaders().set("Content-Type", contentType);
      ex.sendResponseHeaders(HttpStatus.OK.value(), 0);

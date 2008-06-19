@@ -92,7 +92,6 @@ public class Minify {
         err, mc, false);
     RenderContext rc = new RenderContext(
         mc,
-        false,
         new JsMinimalPrinter(out, new Callback<IOException>() {
           public void handle(IOException ex) {
             errs.addMessage(

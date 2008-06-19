@@ -50,36 +50,35 @@ public final class RegexpLiteral extends Literal {
   public void render(RenderContext rc) {
     TokenConsumer out = rc.getOut();
     out.mark(getFilePosition());
-    if (rc.isParanoid()) {
-      String body = getMatchText();
-      String mods = getModifiers();
-      if (!"".equals(body)) {
-        StringBuilder sb = new StringBuilder();
-        sb.append('/');
-        Escaping.normalizeRegex(body, true, true, sb);
-        sb.append('/');
-        sb.append(mods);
-        out.consume(sb.toString());
-      } else {
-        // (new (/./.constructor))('', 'g')
-        out.consume("(");
-        out.consume("new");
-        out.consume("(");
-        out.consume("/./");
-        out.consume(".");
-        out.consume("constructor");
-        out.consume(")");
-        out.consume(")");
-        out.consume("(");
-        out.consume("''");
-        out.consume(",");
-        StringBuilder sb = new StringBuilder();
-        sb.append('\'');
-        Escaping.escapeJsString(mods, true, true, sb);
-        sb.append('\'');
-        out.consume(sb.toString());
-        out.consume(")");
-      }
+
+    String body = getMatchText();
+    String mods = getModifiers();
+    if ("".equals(body)) {
+      // (new (/./.constructor))('', 'g')
+      out.consume("(");
+      out.consume("new");
+      out.consume("(");
+      out.consume("/./");
+      out.consume(".");
+      out.consume("constructor");
+      out.consume(")");
+      out.consume(")");
+      out.consume("(");
+      out.consume("''");
+      out.consume(",");
+      StringBuilder sb = new StringBuilder();
+      sb.append('\'');
+      Escaping.escapeJsString(mods, rc.isAsciiOnly(), rc.isParanoid(), sb);
+      sb.append('\'');
+      out.consume(sb.toString());
+      out.consume(")");
+    } else if (rc.isParanoid() || rc.isAsciiOnly()) {
+      StringBuilder sb = new StringBuilder();
+      sb.append('/');
+      Escaping.normalizeRegex(body, rc.isAsciiOnly(), rc.isParanoid(), sb);
+      sb.append('/');
+      sb.append(mods);
+      out.consume(sb.toString());
     } else {
       super.render(rc);
     }

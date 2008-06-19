@@ -14,7 +14,9 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.reporting.RenderContext;
 
 import java.util.List;
 import java.util.Map;
@@ -26,6 +28,9 @@ import java.util.Map;
  * <p>Javascript bizarrely allows labels on any statements, but the labels are
  * only useful when applied to loops or switches.</p>
  *
+ * <p>The empty string is the default label, so <code>break;</code> breaks with
+ * label <code>""</code>.</p>
+ *
  * @author mikesamuel@gmail.com
  */
 public abstract class LabeledStatement
@@ -33,6 +38,7 @@ public abstract class LabeledStatement
   private String label;
 
   protected LabeledStatement(String label) {
+    assert label != null;
     this.label = label;
   }
 
@@ -52,4 +58,12 @@ public abstract class LabeledStatement
 
   @Override
   public final Object getValue() { return this.label; }
+
+  /** @return null if no label to render. */
+  protected final String getRenderedLabel(RenderContext rc) {
+    if (label == null || "".equals(label)) { return null; }
+    StringBuilder escapedLabel = new StringBuilder();
+    Escaping.escapeJsIdentifier(label, rc.isAsciiOnly(), escapedLabel);
+    return escapedLabel.toString();
+  }
 }

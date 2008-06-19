@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
@@ -50,8 +51,10 @@ public final class Identifier extends AbstractParseTreeNode<ParseTreeNode> {
 
   public void render(RenderContext r) {
     if (name != null) {
+      StringBuilder escapedName = new StringBuilder();
+      Escaping.escapeJsIdentifier(name, r.isAsciiOnly(), escapedName);
       r.getOut().mark(getFilePosition());
-      r.getOut().consume(name);
+      r.getOut().consume(escapedName.toString());
     }
   }
 

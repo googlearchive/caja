@@ -29,12 +29,12 @@ public final class FormalParam extends Declaration {
   }
   
   public FormalParam(Identifier identifier) {
-    super(identifier, (Expression)null);
+    super(identifier, (Expression) null);
   }
 
   @Override
   public void render(RenderContext rc) {
     rc.getOut().mark(getFilePosition());
-    rc.getOut().consume(getIdentifierName());
+    getIdentifier().render(rc);
   }
 }

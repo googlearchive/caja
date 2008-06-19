@@ -168,9 +168,8 @@ public abstract class Operation extends AbstractExpression<Expression> {
   private void renderMemberAccess(RenderContext rc) {
     TokenConsumer out = rc.getOut();
     if (isKeywordAccess()) {
-      String name = ((Reference) children().get(1)).getIdentifierName();
       out.consume(Operator.SQUARE_BRACKET.getOpeningSymbol());
-      out.consume(StringLiteral.toQuotedValue(getMemberName()));
+      StringLiteral.valueOf(getMemberName()).render(rc);
       out.consume(Operator.SQUARE_BRACKET.getClosingSymbol());
     } else {
       out.consume(op.getSymbol());
@@ -179,10 +178,9 @@ public abstract class Operation extends AbstractExpression<Expression> {
   }
 
   private boolean isKeywordAccess() {
-    return
-        getOperator() == Operator.MEMBER_ACCESS &&
-        children().get(1) instanceof Reference &&
-        isKeyword(getMemberName());
+    return getOperator() == Operator.MEMBER_ACCESS
+        && children().get(1) instanceof Reference
+        && isKeyword(getMemberName());
   }
 
   private String getMemberName() {
@@ -248,7 +246,7 @@ public abstract class Operation extends AbstractExpression<Expression> {
         // By inspection of the grammar, a slash after a function call
         // or a member access is a division op, so no chance of
         // lexical ambiguity here.  These are also common enough that
-        // unecessarily parenthesizing them things less readable. 
+        // unecessarily parenthesizing them things less readable.
         if (childOp != Operator.FUNCTION_CALL
             && childOp != Operator.MEMBER_ACCESS) {
           return true;

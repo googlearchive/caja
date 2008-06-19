@@ -14,6 +14,8 @@
 
 package com.google.caja.lexer.escaping;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import junit.framework.TestCase;
 
 /**
@@ -35,6 +37,24 @@ public class EscapingTest extends TestCase {
         .appendCodePoint(0x1D120)  // Regular supplemental
         .appendCodePoint(0x1D177);  // [:Cf:]
     CHARS = sb.toString();
+  }
+  private static final String WORD_CHARS;
+  static {
+    StringBuilder firstAndLastCodepage = new StringBuilder();
+    for (int i = 0; i < 256; ++i) {
+      firstAndLastCodepage.append((char) i);
+    }
+    for (int i = 0xff00; i < 0xffff; ++i) {
+      firstAndLastCodepage.append((char) i);
+    }
+
+    StringBuilder sb = new StringBuilder();
+    Matcher m = Pattern.compile("[\\p{javaLetterOrDigit}_$]+")
+        .matcher(firstAndLastCodepage);
+    while (m.find()) {
+      sb.append(m.group());
+    }
+    WORD_CHARS = sb.toString();
   }
 
   @Override
@@ -162,6 +182,54 @@ public class EscapingTest extends TestCase {
         sb.toString());
   }
 
+  public void testIdentifierEscaping() throws Exception {
+    StringBuilder sb = new StringBuilder();
+    Escaping.escapeJsIdentifier(WORD_CHARS, true, sb);
+    assertStringsEqual(
+        (// all ctrl chars escaped
+         "$0123456789"
+         + "ABCDEFGHIJKLMNOPQRSTUVWXYZ_"
+         + "abcdefghijklmnopqrstuvwxyz"
+         + "\\u00aa\\u00b5\\u00ba"
+         + "\\u00c0\\u00c1\\u00c2\\u00c3\\u00c4\\u00c5\\u00c6\\u00c7"
+         + "\\u00c8\\u00c9\\u00ca\\u00cb\\u00cc\\u00cd\\u00ce\\u00cf"
+         + "\\u00d0\\u00d1\\u00d2\\u00d3\\u00d4\\u00d5\\u00d6"
+         + "\\u00d8\\u00d9\\u00da\\u00db\\u00dc\\u00dd\\u00de\\u00df"
+         + "\\u00e0\\u00e1\\u00e2\\u00e3\\u00e4\\u00e5\\u00e6\\u00e7"
+         + "\\u00e8\\u00e9\\u00ea\\u00eb\\u00ec\\u00ed\\u00ee\\u00ef"
+         + "\\u00f0\\u00f1\\u00f2\\u00f3\\u00f4\\u00f5\\u00f6"
+         + "\\u00f8\\u00f9\\u00fa\\u00fb\\u00fc\\u00fd\\u00fe\\u00ff"
+         + "\\uff10\\uff11\\uff12\\uff13\\uff14\\uff15\\uff16\\uff17"
+         + "\\uff18\\uff19"
+         + "\\uff21\\uff22\\uff23\\uff24\\uff25\\uff26\\uff27"
+         + "\\uff28\\uff29\\uff2a\\uff2b\\uff2c\\uff2d\\uff2e\\uff2f"
+         + "\\uff30\\uff31\\uff32\\uff33\\uff34\\uff35\\uff36\\uff37"
+         + "\\uff38\\uff39\\uff3a"
+         + "\\uff41\\uff42\\uff43\\uff44\\uff45\\uff46\\uff47"
+         + "\\uff48\\uff49\\uff4a\\uff4b\\uff4c\\uff4d\\uff4e\\uff4f"
+         + "\\uff50\\uff51\\uff52\\uff53\\uff54\\uff55\\uff56\\uff57"
+         + "\\uff58\\uff59\\uff5a"
+         + "\\uff66\\uff67"
+         + "\\uff68\\uff69\\uff6a\\uff6b\\uff6c\\uff6d\\uff6e\\uff6f"
+         + "\\uff70\\uff71\\uff72\\uff73\\uff74\\uff75\\uff76\\uff77"
+         + "\\uff78\\uff79\\uff7a\\uff7b\\uff7c\\uff7d\\uff7e\\uff7f"
+         + "\\uff80\\uff81\\uff82\\uff83\\uff84\\uff85\\uff86\\uff87"
+         + "\\uff88\\uff89\\uff8a\\uff8b\\uff8c\\uff8d\\uff8e\\uff8f"
+         + "\\uff90\\uff91\\uff92\\uff93\\uff94\\uff95\\uff96\\uff97"
+         + "\\uff98\\uff99\\uff9a\\uff9b\\uff9c\\uff9d\\uff9e\\uff9f"
+         + "\\uffa0\\uffa1\\uffa2\\uffa3\\uffa4\\uffa5\\uffa6\\uffa7"
+         + "\\uffa8\\uffa9\\uffaa\\uffab\\uffac\\uffad\\uffae\\uffaf"
+         + "\\uffb0\\uffb1\\uffb2\\uffb3\\uffb4\\uffb5\\uffb6\\uffb7"
+         + "\\uffb8\\uffb9\\uffba\\uffbb\\uffbc\\uffbd\\uffbe"
+         + "\\uffc2\\uffc3\\uffc4\\uffc5\\uffc6\\uffc7"
+         + "\\uffca\\uffcb\\uffcc\\uffcd\\uffce\\uffcf"
+         + "\\uffd2\\uffd3\\uffd4\\uffd5\\uffd6\\uffd7"
+         + "\\uffda\\uffdb\\uffdc"
+         ),
+        sb.toString());
+  }
+
+
   public void testMinimalEscapeRegex() throws Exception {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeRegex(CHARS, false, false, sb);
@@ -248,7 +316,7 @@ public class EscapingTest extends TestCase {
       assertStringsEqual("[a-z]\\[\\[foo\\[", sb.toString());
     }
   }
-  
+
   public void testEscapeXml() throws Exception {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeXml(CHARS, false, sb);

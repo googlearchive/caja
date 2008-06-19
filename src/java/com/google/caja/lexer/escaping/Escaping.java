@@ -58,6 +58,36 @@ public class Escaping {
   }
 
   /**
+   * Given a normalized JS identifier writes a javascript identifier.
+   *
+   * @param s a string containing only letters, digits, and the characters
+   *     '_' and '$'.
+   * @param asciiOnly Makes sure that only ASCII characters are written to out.
+   *     This is a good idea if you don't have control over the charset that
+   *     the javascript will be served with.
+   * @param out written to.
+   */
+  public static void escapeJsIdentifier(
+      CharSequence s, boolean asciiOnly, Appendable out)
+      throws IOException {
+    new Escaper(s, STRING_MINIMAL_ESCAPES,
+                asciiOnly ? NO_NON_ASCII : ALLOW_NON_ASCII, HEX4_ENCODER,
+                out)
+        .escape();
+  }
+
+  /** @see #escapeJsIdentifier(CharSequence, boolean, Appendable) */
+  public static void escapeJsIdentifier(
+      CharSequence s, boolean asciiOnly, StringBuilder out) {
+    try {
+      escapeJsIdentifier(s, asciiOnly, (Appendable) out);
+    } catch (IOException ex) {
+      // StringBuilders don't throw IOException
+      throw new RuntimeException(ex);
+    }
+  }
+
+  /**
    * Given a plain text string, write to out unquoted regular expression text
    * that would match that substring and only that substring.
    *
@@ -393,6 +423,19 @@ public class Escaping {
           } else {
             unicodeEscape((char) codepoint, out);
           }
+        } else {
+          for (char surrogate : Character.toChars(codepoint)) {
+            unicodeEscape(surrogate, out);
+          }
+        }
+      }
+    };
+
+  static final Encoder HEX4_ENCODER = new Encoder() {
+      public void encode(int codepoint, int nextCodepoint, Appendable out)
+          throws IOException {
+        if (!Character.isSupplementaryCodePoint(codepoint)) {
+          unicodeEscape((char) codepoint, out);
         } else {
           for (char surrogate : Character.toChars(codepoint)) {
             unicodeEscape(surrogate, out);

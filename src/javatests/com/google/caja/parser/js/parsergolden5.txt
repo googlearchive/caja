@@ -121,3 +121,8 @@ Block
       Reference
         Identifier : eval
       StringLiteral : 'foo'
+  ExpressionStmt
+    SpecialOperation : FUNCTION_CALL
+      Reference
+        Identifier : évａl
+      StringLiteral : 'foo'

@@ -163,7 +163,8 @@ public class CajaApplet extends Applet {
         protected RenderContext createRenderContext(
             TokenConsumer out, MessageContext mc) {
           return new RenderContext(
-              mc, features.contains(Feature.EMBEDDABLE), out);
+              mc, features.contains(Feature.ASCII_ONLY),
+              features.contains(Feature.EMBEDDABLE), out);
         }
         @Override
         protected PluginCompiler createPluginCompiler(
@@ -246,14 +247,19 @@ public class CajaApplet extends Applet {
     StringBuilder sb = new StringBuilder();
     JsMinimalPrinter pp = new JsMinimalPrinter(sb, null);
     (new ArrayConstructor(valueExprs)).render(
-        new RenderContext(new MessageContext(), false, pp));
+        new RenderContext(new MessageContext(), true, true, pp));
     pp.noMoreTokens();
     return sb.toString();
   }
 
   private static enum Feature {
-    EMBEDDABLE,
+    /** Present if rendered output should only contain ASCII characters. */
+    ASCII_ONLY,
+    /** Present to output debug symbols for use with caja-debugmode.js. */
     DEBUG_SYMBOLS,
+    /** Present if the output should be embeddable in HTML or XML. */
+    EMBEDDABLE,
+    /** Present to enable warts in the JS rewriter. */
     WARTS_MODE,
     ;
   }

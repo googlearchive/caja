@@ -626,7 +626,7 @@ public class HtmlCompiledPluginTest extends TestCase {
       Block jsTree = compiler.getJavascript();
       StringBuilder js = new StringBuilder();
       JsPrettyPrinter pp = new JsPrettyPrinter(js, null);
-      RenderContext rc = new RenderContext(mc, false, pp);
+      RenderContext rc = new RenderContext(mc, pp);
       jsTree.render(rc);
       System.out.println("Compiled gadget: " + js);
 

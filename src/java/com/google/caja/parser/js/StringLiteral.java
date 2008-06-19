@@ -51,12 +51,13 @@ public final class StringLiteral extends Literal {
 
   @Override
   public void render(RenderContext rc) {
-    if (rc.isParanoid()) {
+    if (rc.isParanoid() || rc.isAsciiOnly()) {
       TokenConsumer out = rc.getOut();
       out.mark(getFilePosition());
       StringBuilder sb = new StringBuilder();
       sb.append('\'');
-      Escaping.escapeJsString(getUnquotedValue(), true, true, sb);
+      Escaping.escapeJsString(
+          getUnquotedValue(), rc.isAsciiOnly(), rc.isParanoid(), sb);
       sb.append('\'');
       out.consume(sb.toString());
     } else {
@@ -95,7 +96,7 @@ public final class StringLiteral extends Literal {
   public static String toQuotedValue(CharSequence unquotedValue) {
     StringBuilder sb = new StringBuilder(unquotedValue.length() + 16);
     sb.append('\'');
-    escapeJsString(unquotedValue, sb);
+    Escaping.escapeJsString(unquotedValue, true, false, sb);
     sb.append('\'');
     return sb.toString();
   }
@@ -141,21 +142,5 @@ public final class StringLiteral extends Literal {
     } while (m.find());
     m.appendTail(sb);
     return sb.toString();
-  }
-
-  /** Append the escaped version of s, without quotes, onto the given buffer. */
-  public static void escapeJsString(CharSequence s, StringBuilder sb) {
-    escapeJsString(s, '\'', sb);
-  }
-
-  /**
-   * Append the escaped version of s, without quotes, onto the given buffer.
-   * @param s the string to escape
-   * @param delim a delimiter character to quote
-   * @param sb the buffer to receive the output
-   */
-  public static void escapeJsString(
-      CharSequence s, char delim, StringBuilder sb) {
-    Escaping.escapeJsString(s, true, false, sb);
   }
 }

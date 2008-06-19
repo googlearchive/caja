@@ -386,19 +386,19 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
 
   private static void renderHtmlIdentifier(String text, RenderContext r) {
     StringBuilder sb = new StringBuilder();
-    Escaping.escapeXml(text, true, sb);
+    Escaping.escapeXml(text, r.isAsciiOnly(), sb);
     r.getOut().consume(sb.toString());
   }
 
   private static void renderHtmlAttributeValue(String text, RenderContext r) {
     StringBuilder sb = new StringBuilder();
-    Escaping.escapeXml(text, true, sb);
+    Escaping.escapeXml(text, r.isAsciiOnly(), sb);
     r.getOut().consume(sb.toString());
   }
 
   private static void renderHtml(String text, RenderContext r) {
     StringBuilder sb = new StringBuilder();
-    Escaping.escapeXml(text, true, sb);
+    Escaping.escapeXml(text, r.isAsciiOnly(), sb);
     r.getOut().consume(sb.toString());
   }
 }

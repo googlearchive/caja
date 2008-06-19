@@ -37,7 +37,7 @@ public class JsLexerTest extends TestCase {
 
     BufferedReader in = new BufferedReader(
         new InputStreamReader(TestUtil.getResourceAsStream(
-                                  getClass(), "lexertest1.js")));
+                                  getClass(), "lexertest1.js"), "UTF-8"));
     JsLexer t = new JsLexer(in, input);
     try {
       while (t.hasNext()) {
@@ -52,7 +52,7 @@ public class JsLexerTest extends TestCase {
     String golden;
     BufferedReader goldenIn = new BufferedReader(
         new InputStreamReader(TestUtil.getResourceAsStream(
-                                  getClass(), "lexergolden1.txt")));
+                                  getClass(), "lexergolden1.txt"), "UTF-8"));
     try {
       StringBuilder sb = new StringBuilder();
       char[] buf = new char[1024];
@@ -74,7 +74,7 @@ public class JsLexerTest extends TestCase {
 
     BufferedReader in = new BufferedReader(
         new InputStreamReader(TestUtil.getResourceAsStream(
-                                  getClass(), "lexertest2.js")));
+                                  getClass(), "lexertest2.js"), "UTF-8"));
     JsLexer t = new JsLexer(in, input);
     try {
       while (t.hasNext()) {
@@ -91,7 +91,7 @@ public class JsLexerTest extends TestCase {
     String golden;
     BufferedReader goldenIn = new BufferedReader(
         new InputStreamReader(TestUtil.getResourceAsStream(
-                                  getClass(), "lexergolden2.txt")));
+                                  getClass(), "lexergolden2.txt"), "UTF-8"));
     try {
       StringBuilder sb = new StringBuilder();
       char[] buf = new char[1024];
@@ -294,7 +294,8 @@ public class JsLexerTest extends TestCase {
   public static void main(String[] args) throws Exception {
     InputSource input = new InputSource(URI.create("file:///proc/self/fd/0"));
 
-    BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+    BufferedReader in = new BufferedReader(
+        new InputStreamReader(System.in, "UTF-8"));
     JsLexer t = new JsLexer(in, input);
     while (t.hasNext()) {
       Token<JsTokenType> tok = t.next();

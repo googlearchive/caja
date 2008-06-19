@@ -63,7 +63,7 @@ public final class FunctionDeclaration extends Declaration {
     TokenConsumer out = rc.getOut();
     out.mark(getFilePosition());
     out.consume("function");
-    out.consume(getIdentifierName());
+    getIdentifier().render(rc);
     out.consume("(");
     boolean seen = false;
     for (FormalParam p : fc.getParams()) {

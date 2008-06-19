@@ -60,7 +60,7 @@ public final class CatchStmt extends AbstractStatement<ParseTreeNode> {
     out.consume("catch");
     out.consume("(");
     out.mark(exception.getFilePosition());
-    out.consume(exception.getIdentifierName());
+    exception.getIdentifier().render(rc);
     out.consume(")");
     body.renderBlock(rc, false);
   }

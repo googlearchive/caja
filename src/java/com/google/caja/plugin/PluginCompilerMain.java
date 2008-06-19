@@ -275,7 +275,7 @@ public final class PluginCompilerMain {
       Writer out = new OutputStreamWriter(new FileOutputStream(f), "UTF-8");
       try {
         TokenConsumer tc = output.makeRenderer(out, ioHandler);
-        RenderContext rc = new RenderContext(mc, true, tc);
+        RenderContext rc = new RenderContext(mc, true, true, tc);
         output.render(rc);
         tc.noMoreTokens();
         out.append('\n');

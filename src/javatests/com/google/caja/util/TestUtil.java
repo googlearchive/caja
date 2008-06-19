@@ -62,7 +62,8 @@ public final class TestUtil {
         "Failed to read " + filename + " relative to " + requestingClass);
     }
     try {
-      BufferedReader in = new BufferedReader(new InputStreamReader(ins));
+      BufferedReader in = new BufferedReader(
+          new InputStreamReader(ins, "UTF-8"));
       StringBuilder sb = new StringBuilder();
       char[] buf = new char[1024];
       for (int n; (n = in.read(buf)) > 0;) {
@@ -122,7 +123,8 @@ public final class TestUtil {
     URLConnection conn = uri.toURL().openConnection();
     conn.connect();
     return CharProducer.Factory.create(
-        new InputStreamReader(conn.getInputStream()), new InputSource(uri));
+        new InputStreamReader(conn.getInputStream(), "UTF-8"),
+        new InputSource(uri));
   }
 
   public static String format(ParseTreeNode n) {

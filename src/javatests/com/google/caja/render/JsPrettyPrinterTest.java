@@ -341,7 +341,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
       throws Exception {
     StringBuilder out = new StringBuilder();
     JsPrettyPrinter pp = new JsPrettyPrinter(out, null);
-    node.render(new RenderContext(new MessageContext(), false, pp));
+    node.render(new RenderContext(new MessageContext(), pp));
 
     assertEquals(golden, out.toString());
   }

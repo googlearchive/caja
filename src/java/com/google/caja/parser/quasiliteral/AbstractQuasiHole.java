@@ -18,7 +18,7 @@ import com.google.caja.parser.ParseTreeNode;
 
 /**
  * Superclass of all quasiliteral "hole" nodes that bind one identifier to some value.
- * 
+ *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public abstract class AbstractQuasiHole extends QuasiNode {
@@ -41,6 +41,7 @@ public abstract class AbstractQuasiHole extends QuasiNode {
 
   protected abstract String getQuantifierSuffix();
 
+  @Override
   public String toString() {
     return
         "(" + (matchedClass == null ? "<any>" : matchedClass.getSimpleName()) + ")" +

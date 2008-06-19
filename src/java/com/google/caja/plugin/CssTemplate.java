@@ -266,7 +266,7 @@ public final class CssTemplate extends AbstractParseTreeNode<ParseTreeNode> {
           } else {
             tc.consume(";");
           }
-          p.render(new RenderContext(new MessageContext(), true, tc));
+          p.render(new RenderContext(new MessageContext(), tc));
           tc.consume(":");
           out.append(" ");
           rawCss(out.toString());
@@ -284,7 +284,7 @@ public final class CssTemplate extends AbstractParseTreeNode<ParseTreeNode> {
           StringBuilder out = new StringBuilder();
           out.append(" ");
           TokenConsumer tc = p.makeRenderer(out, null);
-          p.render(new RenderContext(new MessageContext(), true, tc));
+          p.render(new RenderContext(new MessageContext(), tc));
           rawCss(out.toString());
         }
 

@@ -202,7 +202,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
     StringBuilder out = new StringBuilder();
     JsMinimalPrinter pp = new JsMinimalPrinter(out, null);
     pp.setLineLengthLimit(10);
-    node.render(new RenderContext(new MessageContext(), false, pp));
+    node.render(new RenderContext(new MessageContext(), pp));
     pp.noMoreTokens();
     assertEquals(
         "{var x=abcd+"
@@ -323,7 +323,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
       throws Exception {
     StringBuilder out = new StringBuilder();
     JsMinimalPrinter pp = new JsMinimalPrinter(out, null);
-    node.render(new RenderContext(new MessageContext(), false, pp));
+    node.render(new RenderContext(new MessageContext(), pp));
     pp.noMoreTokens();
 
     assertEquals(golden, out.toString());

@@ -30,11 +30,12 @@ enum TokenClassification {
   OTHER,
   ;
 
+  @SuppressWarnings("fallthrough")
   static TokenClassification classify(CharSequence text) {
     if ("".equals(text)) { return null; }
 
     char ch0 = text.charAt(0);
-    if (ch0 == '\n') { return LINEBREAK; }
+    if (ch0 == '\n' || ch0 == '\r') { return LINEBREAK; }
     if (ch0 == ' ') { return SPACE; }
 
     int n = text.length();
@@ -59,7 +60,10 @@ enum TokenClassification {
             return REGEX;
           }
           break;
-        case '.': case '-': case '+':
+        case '-': case '+':
+          if (ch1 == '.') { ch1 = n >= 3 ? text.charAt(2) : 0; }
+          // fall through
+        case '.':
           if (Character.isLetterOrDigit(ch1)) {
             return OTHER;
           }
@@ -68,7 +72,9 @@ enum TokenClassification {
           return STRING;
       }
     }
-    if (Character.isLetterOrDigit(ch0) || ch0 == '$' || ch0 == '_') {
+    if (Character.isLetterOrDigit(ch0) || ch0 == '$' || ch0 == '_'
+        // Starts with a unicode escape
+        || (ch0 == '\\' && n >= 6 && 'u' == text.charAt(1))) {
       return OTHER;
     }
     return PUNCTUATION;

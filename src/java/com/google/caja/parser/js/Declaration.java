@@ -82,12 +82,11 @@ public class Declaration extends AbstractStatement<ParseTreeNode> {
   void renderShort(RenderContext rc) {
     TokenConsumer out = rc.getOut();
     out.mark(getFilePosition());
-    String name = identifier.getName();
-    if (name == null) {
+    if (identifier.getName() == null) {
       throw new IllegalStateException(
           "null name for declaration at " + getFilePosition());
     }
-    out.consume(name);
+    identifier.render(rc);
     if (null != initializer) {
       out.consume("=");
       boolean isComma = initializer instanceof Operation

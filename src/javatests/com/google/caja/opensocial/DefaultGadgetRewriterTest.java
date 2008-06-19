@@ -85,7 +85,7 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
           @Override
           protected RenderContext createRenderContext(
               TokenConsumer out, MessageContext mc) {
-            return new RenderContext(mc, false, out);
+            return new RenderContext(mc, out);
           }
         };
   }
