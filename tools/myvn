@@ -202,14 +202,17 @@ function typeForFile() {
     xml )
       echo -n "text/xml;charset=UTF-8"
       ;;
+    xsl )
+      echo -n "text/xml;charset=UTF-8"
+      ;;
   esac
 }
 
 function makeEclipseClasspath() {
   echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
   echo "<classpath>"
-  echo "	<classpathentry excluding=\"**/*~|**/.svn/**\" kind=\"src\" path=\"java\"/>"
-  echo "	<classpathentry excluding=\"**/*~|**/.svn/**\" kind=\"src\" path=\"javatests\"/>"
+  echo "	<classpathentry excluding=\"**/*~|**/.svn/**\" kind=\"src\" path=\"src\"/>"
+  echo "	<classpathentry excluding=\"**/*~|**/.svn/**\" kind=\"src\" path=\"tests\"/>"
   for jar in $(find third_party -name \*.jar | sort); do
     echo "	<classpathentry kind=\"lib\" path=\"$jar\"/>"
   done
