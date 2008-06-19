@@ -15,43 +15,41 @@ package com.google.caja.opensocial.service;
 
 import com.google.caja.util.Pair;
 
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 
 /**
  * Loads content from streams it can handle
  * possibly modifying them as it does so
- * 
+ *
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public interface ContentHandler {
   /**
-   * Returns if this content handler can check the given {@code uri} and ensure it has 
+   * Returns if this content handler can check the given {@code uri} and ensure it has
    * the correct {@code contentType}.  Testing {@code contentType} equality is done using
    * {@code checker}
-   *  
+   *
    * @param uri URI of content
    * @param contentType Expected content-type
    * @param checker Used to check whether two content-types are compatible
    * @return true if this content-handler is appropriate for this URL and content-type
    */
   public boolean canHandle(URI uri, String contentType, ContentTypeCheck checker);
-  
+
   /**
    * Reads content from {@code stream} and writes it to {@code response}.
    * Checks to ensure that content has type compatible with {@code contentType}
-   * if fetched from {@code uri} 
-   * 
+   * if fetched from {@code uri}
+   *
    * @param uri URI of content
    * @param contentType Expected content-type
-   * @param contentEncoding TODO
-   * @param stream reads content from uri
+   * @param content content from uri
    * @param response writes modified content to user
    * @return the content-type and content-encoding of the resulting output
    */
-  public Pair<String, String> apply(URI uri, String contentType, 
-      String contentEncoding, String charSet, 
-      InputStream stream, OutputStream response)
-    throws UnsupportedContentTypeException;
+  public Pair<String, String> apply(
+      URI uri, String contentType, String charSet, byte[] content,
+      OutputStream response)
+      throws UnsupportedContentTypeException;
 }

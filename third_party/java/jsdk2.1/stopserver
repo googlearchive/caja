@@ -1,0 +1,47 @@
+#!/bin/ksh
+#
+# $Id: shutdown.ksh,v 1.6 1999/04/09 19:50:33 duncan Exp $
+
+# Shell script to shutdown the server
+
+# This script is known to work with the standard Korn Shell under
+# Solaris and the MKS Korn shell under Windows.
+
+# There are other, simpler commands to shutdown the runner. The two
+# commented commands good replacements. The first works well with
+# Java Platform 1.1 based runtimes. The second works well with
+# Java2 Platform based runtimes.
+
+#jre -cp runner.jar:servlet.jar:classes com.sun.tomcat.shell.Shutdown $*
+#java -cp runner.jar:servlet.jar:classes com.sun.tomcat.shell.Shutdown $*
+
+
+BASEDIR=`dirname $0`
+
+if [[ -d "C:\\" ]]; then
+  PATHSEP=";"
+  SLASH="\\"
+else
+  PATHSEP=":"
+  SLASH="/"
+fi
+
+ADDL_CLASSPATH=${BASEDIR}${SLASH}server.jar${PATHSEP}${BASEDIR}${SLASH}servlet.jar
+
+# Backdoor for development purposes
+
+if [[ -d ${BASEDIR}${SLASH}classes ]]; then
+  ADDL_CLASSPATH=${ADDL_CLASSPATH}${PATHSEP}${BASEDIR}${SLASH}classes
+fi
+
+if [[ -n $CLASSPATH ]]; then
+  export CLASSPATH=${ADDL_CLASSPATH}${PATHSEP}${CLASSPATH}
+else
+  export CLASSPATH=${ADDL_CLASSPATH}
+fi
+
+echo Using classpath: ${CLASSPATH}
+java com.sun.web.shell.Shutdown $*
+
+
+

@@ -16,32 +16,28 @@ package com.google.caja.opensocial.service;
 import com.google.caja.util.Pair;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 
 /**
  * Retrieves image objects and returns them unchecked
  * to the requester
- * 
+ *
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class ImageHandler implements ContentHandler {
 
   public boolean canHandle(URI uri, String contentType, ContentTypeCheck checker) {
-    return checker.check("image/*", contentType);    
+    return checker.check("image/*", contentType);
   }
-  
-  public Pair<String, String> apply(URI uri, 
-      String contentType, String contentEncoding, String charSet,
-      InputStream stream, OutputStream response) 
+
+  public Pair<String, String> apply(URI uri,
+      String contentType, String charSet,
+      byte[] content, OutputStream response)
     throws UnsupportedContentTypeException {
     try {
-      int next;
-      while ((next = stream.read()) != -1) {
-        response.write(next);
-      } 
-      return new Pair<String,String>(contentType, contentEncoding);
+      response.write(content);
+      return new Pair<String,String>(contentType, "");
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
     }

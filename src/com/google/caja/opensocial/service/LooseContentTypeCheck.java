@@ -16,50 +16,46 @@ package com.google.caja.opensocial.service;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.mail.internet.ContentType;
-import javax.mail.internet.ParseException;
-
 /**
  * Tests if two content-types denoted the same type of content.
- * 
- * A "loose" content-type check is for javascript because while 
- * "text/javascript" is recognized by all major browsers it is not a 
- * <a href="http://www.iana.org/assignments/media-types/">registered</a> MIME 
- * type.  
- * 
- * Different server return other MIME types for javascript and xml files. This 
+ *
+ * A "loose" content-type check is for javascript because while
+ * "text/javascript" is recognized by all major browsers it is not a
+ * <a href="http://www.iana.org/assignments/media-types/">registered</a> MIME
+ * type.
+ *
+ * Different server return other MIME types for javascript and xml files. This
  * checker maps other variants of content-type to the canonical one.
- * 
+ *
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class LooseContentTypeCheck extends ContentTypeCheck {
-  
-  final private Map<String,String> canonicalMimeType = new HashMap<String,String>();
-  
+
+  private final Map<String, String> canonicalMimeType = new HashMap<String,String>();
+
   public LooseContentTypeCheck () {
     canonicalMimeType.put("application/x-javascript", "text/javascript");
     canonicalMimeType.put("text/xml", "application/xml");
   }
-    
+
   /**
-   * Checks if the {@code candidate} is consistent with {@code spec}
-   * @return true {@code candidate} is consistent with {@code spec}
+   * @return true iff {@code candidate} is consistent with {@code spec}
    */
   @Override
   public boolean check(String spec, String candidate) {
-    boolean result = false;
-    ContentType ctSpec;
-    ContentType ctCandidate;
-    try {
-      ctSpec = new ContentType(spec);
-      ctCandidate = new ContentType(candidate);
-      result = ctSpec.match(ctCandidate) 
-          || ctSpec.match(canonicalMimeType.get(ctCandidate.getBaseType()));
-    } catch (ParseException e) {
-      e.printStackTrace();
-      result = false;
-    }
-    return result;
-  }
+    if ("*/*".equals(spec)) { return true; }
 
+    int semi = candidate.indexOf(';');
+    if (semi >= 0) { candidate = candidate.substring(0, semi).trim(); }
+    String canon = canonicalMimeType.get(candidate);
+    if (canon != null) { candidate = canon; }
+
+    if (spec.endsWith("*")) {
+      spec = spec.substring(0, spec.length() - 1);
+      int slash = candidate.lastIndexOf('/');
+      if (slash < 0) { return false; }
+      candidate = candidate.substring(0, slash + 1);
+    }
+    return spec.equals(candidate);
+  }
 }

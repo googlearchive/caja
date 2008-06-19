@@ -61,9 +61,8 @@
     <pathelement path="${third_party}/java/htmlparser/htmlparser.jar"/>
     <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
-    <pathelement path="${third_party}/java/glassfish/mail.jar"/>
-    <pathelement path="${third_party}/java/jdom/jdom.jar"/>
-    <pathelement path="${java.home}/lib/rt.jar"/>
+    <pathelement path="${third_party}/java/jsdk2.1/servlet.jar"/>
+    <pathelement path="${third_party}/java/jsdk2.1/server.jar"/>
   </path>
   <path id="classpath.run">
     <pathelement path="${lib}"/>
@@ -74,9 +73,7 @@
     <pathelement path="${third_party}/java/junit/junit.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/rhino/js.jar"/>
-    <pathelement path="${third_party}/java/glassfish/mail.jar"/>
-    <pathelement path="${third_party}/java/jdom/jdom.jar"/>
-    <pathelement path="${java.home}/jre/lib/rt.jar"/>
+    <pathelement path="${third_party}/java/jsdk2.1/servlet.jar"/>
   </path>
   <path id="classpath.tests.run">
     <pathelement path="${third_party}/java/emma/emma.jar"/>
@@ -272,6 +269,10 @@
       </fileset>
       <fileset dir="${third_party}/java/json_simple">
         <include name="json_simple.jar"/>
+      </fileset>
+      <fileset dir="${third_party}/java/jsdk2.1">
+        <include name="server.jar"/>
+        <include name="servlet.jar"/>
       </fileset>
     </copy>
     <jar destfile="${jars}/pluginc.jar" basedir="${lib}">

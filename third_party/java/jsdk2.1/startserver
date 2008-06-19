@@ -1,0 +1,50 @@
+#!/bin/ksh
+#
+# $Id: startup.ksh,v 1.9 1999/04/09 19:50:35 duncan Exp $
+
+# Shell script to startup the server
+
+# This script is known to work with the standard Korn Shell under
+# Solaris
+
+# There are other, simpler commands to startup the runner. The two
+# commented commands good replacements. The first works well with
+# Java Platform 1.1 based runtimes. The second works well with
+# Java2 Platform based runtimes.
+
+#jre -cp runner.jar:servlet.jar:classes com.sun.tomcat.shell.Startup $*
+#java -cp runner.jar:servlet.jar:classes com.sun.tomcat.shell.Startup $*
+
+
+BASEDIR=`dirname $0`
+
+if [[ -d "C:\\" ]]; then
+  PATHSEP=";"
+  SLASH="\\"
+else
+  PATHSEP=":"
+  SLASH="/"
+fi
+
+ADDL_CLASSPATH=${BASEDIR}${SLASH}server.jar${PATHSEP}${BASEDIR}${SLASH}servlet.jar
+
+# Backdoor classpath setting for development purposes when all classes are
+# compiled into a /classes dir and are not yet jarred.
+
+if [ -d ${BASEDIR}${SLASH}classes ]; then
+  ADDL_CLASSPATH=${ADDL_CLASSPATH}${PATHSEP}${BASEDIR}${SLASH}classes
+fi
+
+if [[ -n $CLASSPATH ]]; then
+  export CLASSPATH=${ADDL_CLASSPATH}${PATHSEP}${CLASSPATH}
+else
+  export CLASSPATH=${ADDL_CLASSPATH}
+fi
+
+echo Using classpath: ${CLASSPATH}
+
+# We start the server up in the background for a couple of reasons:
+#   1) It frees up your command window
+#   2) You should use `stopserver` instead of ^C to bring down the server
+
+java com.sun.web.shell.Startup $* &

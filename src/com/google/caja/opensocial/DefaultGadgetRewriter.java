@@ -183,6 +183,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
             Reader content;
             try {
               content = callback.retrieve(absRef, mimeType);
+              if (content == null) { return null; }
             } catch (UriCallbackException ex) {
               ex.toMessageQueue(getMessageQueue());
               return null;

@@ -13,13 +13,10 @@
 
 package com.google.caja.opensocial.service;
 
-import javax.mail.internet.ContentType;
-import javax.mail.internet.ParseException;
-
 /**
  * Strict content-type check checks if the requested content-type
- * is exactly the same as the received content-type 
- * 
+ * is exactly the same as the received content-type
+ *
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class StrictContentTypeCheck extends ContentTypeCheck {
@@ -31,15 +28,16 @@ public class StrictContentTypeCheck extends ContentTypeCheck {
    */
   @Override
   public boolean check(String spec, String candidate) {
-    ContentType ct_spec;
-    ContentType ct_candidate;
-    try {
-      ct_spec = new ContentType(spec);
-      ct_candidate = new ContentType(candidate);
-      return ct_spec.match(ct_candidate);
-    } catch (ParseException e) {
-      return false;
-    }
-  }
+    if ("*/*".equals(spec)) { return true; }
 
+    int semi = candidate.indexOf(';');
+    if (semi >= 0) { candidate = candidate.substring(0, semi).trim(); }
+    if (spec.endsWith("*")) {
+      spec = spec.substring(0, spec.length() - 1);
+      int slash = candidate.lastIndexOf('/');
+      if (slash < 0) { return false; }
+      candidate = candidate.substring(0, slash + 1);
+    }
+    return spec.equals(candidate);
+  }
 }

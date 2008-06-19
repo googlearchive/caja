@@ -26,11 +26,10 @@ import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Pair;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -38,16 +37,16 @@ import java.net.URLEncoder;
 public class GadgetHandler implements ContentHandler {
 
   public boolean canHandle(URI uri, String contentType, ContentTypeCheck checker) {
-   return checker.check("application/xml",contentType);
+    return checker.check("application/xml", contentType);
   }
 
-  public Pair<String, String> apply(URI uri, 
-      String contentType, String contentEncoding, String charSet,
-      InputStream stream, OutputStream response) throws UnsupportedContentTypeException {
+  public Pair<String, String> apply(URI uri, String contentType, String charSet,
+                                    byte[] content, OutputStream response)
+      throws UnsupportedContentTypeException {
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
-      cajoleGadget(uri, new InputStreamReader(stream, charSet), writer);
-      writer.flush();      
+      cajoleGadget(uri, new String(content, charSet), writer);
+      writer.flush();
       return new Pair<String, String>("text/javascript", "UTF-8");
     } catch (ParseException e) {
       e.printStackTrace();
@@ -64,9 +63,8 @@ public class GadgetHandler implements ContentHandler {
     }
   }
 
-  private void cajoleGadget(URI inputUri, Reader cajaInput, Appendable output)
-    throws ParseException,
-           GadgetRewriteException, IOException {
+  private void cajoleGadget(URI inputUri, String cajaInput, Appendable output)
+      throws ParseException, GadgetRewriteException, IOException {
     MessageQueue mq = new SimpleMessageQueue();
     DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(mq);
 
@@ -91,7 +89,8 @@ public class GadgetHandler implements ContentHandler {
       }
     };
 
-    CharProducer p = CharProducer.Factory.create(cajaInput, new InputSource(inputUri));
-    rewriter.rewrite(inputUri, p, uriCallback, "view", output);
+    CharProducer p = CharProducer.Factory.create(
+        new StringReader(cajaInput), new InputSource(inputUri));
+    rewriter.rewrite(inputUri, p, uriCallback, "canvas", output);
   }
 }

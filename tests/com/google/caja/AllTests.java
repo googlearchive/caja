@@ -33,6 +33,7 @@ import com.google.caja.opensocial.DefaultGadgetRewriterTest;
 import com.google.caja.opensocial.GadgetParserTest;
 import com.google.caja.opensocial.applet.ExpressionLanguageStageTest;
 import com.google.caja.opensocial.service.CajolingServiceTest;
+import com.google.caja.opensocial.service.ContentTypeCheckTest;
 import com.google.caja.parser.ParseTreeNodeTest;
 import com.google.caja.parser.ParserBaseTest;
 import com.google.caja.parser.css.CssParserTest;
@@ -96,6 +97,7 @@ public class AllTests {
           CommentLexerTest.class,
           CompiledPluginTest.class,
           ConfigUtilTest.class,
+          ContentTypeCheckTest.class,
           CssCompilerTest.class,
           CssLexerTest.class,
           CssParserTest.class,

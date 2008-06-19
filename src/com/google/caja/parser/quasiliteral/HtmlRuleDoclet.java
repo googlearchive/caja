@@ -14,20 +14,20 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import org.jdom.Attribute;
-import org.jdom.DocType;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.output.Format;
-import org.jdom.output.XMLOutputter;
-
-import java.io.IOException;
 import java.io.Writer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 
 /**
- * Extracts and formats the rules of Caja from DefaultCajaRewriter 
+ * Extracts and formats the rules of Caja from DefaultCajaRewriter
  * as a html page output to the given file
- * 
+ *
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class HtmlRuleDoclet extends RuleDoclet {
@@ -40,80 +40,94 @@ public class HtmlRuleDoclet extends RuleDoclet {
   public String getDefaultExtension() {
     return "html";
   }
-  
+
   @Override
   public void initialize(Writer output) {
-    htmlDocument = new Document();
-    DocType type = new DocType("html", "-//W3C//DTD XHTML 1.0 Transitional//EN", 
-                               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd");
-    htmlDocument.setDocType(type);
-    Element root = new Element("html");
-    htmlDocument.setRootElement(root);
+    DOMImplementation impl;
+    try {
+      impl = DOMImplementationRegistry.newInstance().getDOMImplementation(null);
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+    String qname = "html";
+    String systemId = "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd";
+    String publicId = "-//W3C//DTD XHTML 1.0 Transitional//EN";
+    htmlDocument = impl.createDocument(
+        systemId, qname, impl.createDocumentType(qname, publicId, systemId));
+    Element root = htmlDocument.createElement("html");
+    htmlDocument.appendChild(root);
   }
 
   private Element headerRow(String... cells) {
-    Element thead = new Element("thead");
-    thead.addContent(row(cells));
+    Element thead = htmlDocument.createElement("thead");
+    thead.appendChild(row(cells));
     return thead;
   }
-  
+
   private Element row(String... cells) {
-    Element tr = new Element("tr");    
+    Element tr = htmlDocument.createElement("tr");
     for (String cell : cells) {
-      Element td = new Element("td");
-      td.setText(cell);
-      tr.addContent(td);
+      Element td = htmlDocument.createElement("td");
+      td.appendChild(htmlDocument.createTextNode(cell));
+      tr.appendChild(td);
     }
     return tr;
   }
-  
+
   @Override
   public void generateHeader(Writer output, RulesetDescription ruleSet) {
-    Element head = new Element("head");
-    head.addContent(new Element("title").setText(ruleSet.name()));
-    Element meta = new Element("meta");
-    meta.setAttribute(new Attribute("http-equiv", "Content-Type"));
-    meta.setAttribute(new Attribute("content", "text/html; charset=utf-8"));
-    head.addContent(meta);
-    
-    Element style = new Element("style");
-    style.setAttribute(new Attribute("type", "text/css"));
-    style.setText("h1 { text-align: center; } " +
-                  "div.centered {text-align: center;} " +
-                  "div.centered table {margin: 0 auto; text-align: left;}" +
-                  "}"); 
-    head.addContent(style);
-    htmlDocument.getRootElement().addContent(head);
+    Element head = htmlDocument.createElement("head");
+    Element title = htmlDocument.createElement("title");
+    title.appendChild(htmlDocument.createTextNode(ruleSet.name()));
+    head.appendChild(title);
+    Element meta = htmlDocument.createElement("meta");
+    meta.setAttribute("http-equiv", "Content-Type");
+    meta.setAttribute("content", "text/html; charset=utf-8");
+    head.appendChild(meta);
 
-    body = new Element("body");
-    Element h1 = new Element("h1");
-    h1.setText(ruleSet.name());
-    body.addContent(h1);
-    
-    Element h2 = new Element("h2");
-    h2.setText(ruleSet.synopsis());
-    body.addContent(h2);
-    htmlDocument.getRootElement().addContent(body);
+    Element style = htmlDocument.createElement("style");
+    style.setAttribute("type", "text/css");
+    style.appendChild(htmlDocument.createTextNode(
+        "h1 { text-align: center }\n"
+        + "div.centered { text-align: center }\n"
+        + "div.centered table { margin: 0 auto; text-align: left }\n"));
+    head.appendChild(style);
+    htmlDocument.getDocumentElement().appendChild(head);
+
+    body = htmlDocument.createElement("body");
+    Element h1 = htmlDocument.createElement("h1");
+    h1.appendChild(htmlDocument.createTextNode(ruleSet.name()));
+    body.appendChild(h1);
+
+    Element h2 = htmlDocument.createElement("h2");
+    h2.appendChild(htmlDocument.createTextNode(ruleSet.synopsis()));
+    body.appendChild(h2);
+    htmlDocument.getDocumentElement().appendChild(body);
   }
-  
+
   @Override
   public void generateFooter(Writer output, RulesetDescription ruleSet) {}
-  
+
   @Override
-  public void finish(Writer output) throws IOException {
-    XMLOutputter prettyHtml = new XMLOutputter(Format.getPrettyFormat());
-    prettyHtml.output(htmlDocument, output);
+  public void finish(Writer output) {
+    DOMSource src = new DOMSource(htmlDocument);
+    StreamResult result = new StreamResult(output);
+    try {
+      TransformerFactory.newInstance().newTransformer().transform(src, result);
+    } catch (TransformerException ex) {
+      throw new RuntimeException(ex);
+    }
   }
 
   @Override
   public void generateRuleDocumentation(Writer output, RuleDescription anno) {
     if (0 == countRules) {
-      table = new Element("table");
-      table.addContent(headerRow("", "Rule", "Synopsis", "Reason", "Matches",
-                                 "Substitutes"));
-      body.addContent(table);
+      table = htmlDocument.createElement("table");
+      table.appendChild(headerRow("", "Rule", "Synopsis", "Reason", "Matches",
+                                  "Substitutes"));
+      body.appendChild(table);
     }
-    table.addContent(row("" + countRules++, anno.name(), anno.synopsis(), 
+    table.appendChild(row("" + countRules++, anno.name(), anno.synopsis(),
                           anno.reason(), anno.matches(), anno.substitutes()));
   }
 }

@@ -14,17 +14,27 @@
 
 package com.google.caja.opensocial.service;
 
+import com.sun.web.core.Context;
+import com.sun.web.server.HttpServer;
+import java.net.InetAddress;
+import java.net.URL;
+
 /**
- * A executable that starts a cajoling service which proxies connections:
- *      - cajole any javascript
- *      - cajoles any gadgets
- *      - checks requested and retrieved mime-types
+ * A executable that starts a cajoling service which proxies connections:<ul>
+ *   <li>cajole any javascript
+ *   <li>cajoles any gadgets
+ *   <li>checks requested and retrieved mime-types
+ * </ul>
  *
  * @author jasvir@gmail.com (Jasvir Nagra)
  */
 public class CajolingServiceMain {
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
     CajolingService service = new CajolingService();
-    service.start();
+    HttpServer server = new HttpServer(8887, InetAddress.getLocalHost(), null);
+    Context context = server.getContext("default");
+    context.setDocumentBase(new URL("http://localhost/"));
+    context.getContainer().addServlet("/", CajolingService.class);
+    server.start();
   }
 }
