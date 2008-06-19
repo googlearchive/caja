@@ -40,12 +40,11 @@
   </description>
 
   <!--== inputs ==-->
-  <property name="src"         location="java"/>
-  <property name="testsrc"     location="javatests"/>
+  <property name="src"         location="src"/>
+  <property name="tests"       location="tests"/>
   <property name="test.filter" value="*Test"/>
-  <property name="javascript"  location="js"/>
   <property name="third_party" location="third_party"/>
-  <property name="demos"       location="java/com/google/caja/demos"/>
+  <property name="demos"       location="src/com/google/caja/demos"/>
   <!--== outputs ==-->
   <property name="reports"     location="ant-reports"/>  <!-- emma reports -->
   <property name="instr"       location="ant-instr"/>  <!-- instrumented src -->
@@ -101,7 +100,8 @@
     <path refid="classpath.ant"/>
   </path>
   <path id="classpath.jsdocs">
-    <pathelement path="${third_party}/java/jsdoctoolkit_ant/jsdoctoolkit-0.3.jar"/>
+    <pathelement
+     path="${third_party}/java/jsdoctoolkit_ant/jsdoctoolkit-0.3.jar"/>
     <pathelement path="${third_party}/java/rhino/js.jar"/>
   </path>
 
@@ -113,7 +113,7 @@
     classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
     classpathref="classpath.extensions" />
 
-  <taskdef name="jsdoctoolkit" 
+  <taskdef name="jsdoctoolkit"
     classname="uk.co.darrenhurley.ant.tasks.JsDocToolkit"
     classpathref="classpath.jsdocs" />
 
@@ -160,7 +160,7 @@
       <classpath refid="classpath.tests.run"/>
       <formatter type="xml" usefile="true" unless="emma.enabled"/>
       <batchtest todir="${reports}/tests" unless="emma.enabled">
-        <fileset dir="${testsrc}">
+        <fileset dir="${tests}">
           <include name="**/${test.filter}.java"/>
         </fileset>
       </batchtest>
@@ -171,7 +171,7 @@
     </junit>
     <!-- Generate the code coverage report. -->
     <emma enabled="${emma.enabled}">
-      <report sourcepath="${src}:${testsrc}" sort="+name"
+      <report sourcepath="${src}:${tests}" sort="+name"
        metrics="method:70,block:80,line:80,class:100">
         <fileset dir="${reports}/coverage">
           <include name="*.em" />
@@ -191,7 +191,7 @@
   <target name="docs" description="Builds all Caja documentation."
    depends="javadocs,jsdocs,ruledocs">
   </target>
-  
+
   <target name="javadocs" description="Builds javadoc documentation.">
     <mkdir dir="${javadocs}"/>
     <javadoc sourcepath="${src}" destdir="${javadocs}" access="private"
@@ -215,29 +215,28 @@
 
   <target name="jsdocs" description="Builds jsdoc documentation.">
     <mkdir dir="${jsdocs}"/>
-    <jsdoctoolkit jsdochome="${third_party}/java/jsdoctoolkit/" 
-     encoding="utf-8" template="jsdoc" 
+    <jsdoctoolkit jsdochome="${third_party}/java/jsdoctoolkit/"
+     encoding="utf-8" template="jsdoc"
      includeundocumented="true" includeprivate="true" includeunderscored="true"
      outputdir="${jsdocs}">
+      <source file="${src}/com/google/caja/JSON.js"/>
+      <source file="${src}/com/google/caja/Brand-cajita.js"/>
+      <source file="${src}/com/google/caja/Mint-cajita.js"/>
+      <source file="${src}/com/google/caja/Q-caja.js"/>
+      <source file="${src}/com/google/caja/caja.js"/>
+      <source file="${src}/com/google/caja/caja-debugmode.js"/>
+      <source file="${src}/com/google/caja/caja-prototype.js"/>
+      <source file="${src}/com/google/caja/log-to-console.js"/>
+      <source file="${src}/com/google/caja/permissive.js"/>
+      <source file="${src}/com/google/caja/triv-logger.js"/>
       <source file="${src}/com/google/caja/plugin/html4-defs.js"/>
       <source file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <source file="${src}/com/google/caja/plugin/html-emitter.js"/>
       <source file="${src}/com/google/caja/plugin/domita.js"/>
       <source file="${src}/com/google/caja/plugin/unicode.js"/>
-      
-      <source file="${javascript}/com/google/caja/permissive.js"/>
-      <source file="${javascript}/com/google/caja/caja-debugmode.js"/>
-      <source file="${javascript}/com/google/caja/JSON.js"/>
-      <source file="${javascript}/com/google/caja/Q-caja.js"/>
-      <source file="${javascript}/com/google/caja/caja.js"/>
-      <source file="${javascript}/com/google/caja/Brand-cajita.js"/>
-      <source file="${javascript}/com/google/caja/Mint-cajita.js"/>
-      <source file="${javascript}/com/google/caja/log-to-console.js"/>
-      <source file="${javascript}/com/google/caja/triv-logger.js"/>
-      <source file="${javascript}/com/google/caja/caja-prototype.js"/>
     </jsdoctoolkit>
   </target>
-  
+
   <target name="pluginc" depends="dirs,PluginCompiler,build.info"
    description="Build the plugin compiler and other main classes">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
@@ -291,8 +290,8 @@
   <target name="CajoledTests" depends="pluginc,dirs">
     <cajole>
       <job output="${lib}/com/google/caja/plugin/domita_test_cajoled.js">
-        <include file="${testsrc}/com/google/caja/plugin/domita_test.js"/>
-        <include file="${testsrc}/com/google/caja/plugin/asserts.js"/>
+        <include file="${tests}/com/google/caja/plugin/domita_test.js"/>
+        <include file="${tests}/com/google/caja/plugin/asserts.js"/>
       </job>
     </cajole>
   </target>
@@ -300,7 +299,7 @@
   <target name="MinifiedJs" depends="pluginc">
     <minify>
       <job output="${lib}/com/google/caja/plugin/domita-minified.js">
-        <include file="${javascript}/com/google/caja/caja.js"/>
+        <include file="${src}/com/google/caja/caja.js"/>
         <include file="${src}/com/google/caja/plugin/unicode.js"/>
         <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
         <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
@@ -312,7 +311,7 @@
 
   <target name="AllTests" depends="pluginc,CajolingService,CajoledTests,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
-      <src path="${testsrc}"/>
+      <src path="${tests}"/>
       <classpath refid="classpath.tests.compile"/>
       <include name="**/caja/AllTests.java"/>
       <include name="**/caja/util/*.java"/>
@@ -332,7 +331,7 @@
         <include name="**/caja/plugin/unicode.js"/>
         <include name="**/caja/demos/calendar/*.js"/>
       </fileset>
-      <fileset dir="${testsrc}">
+      <fileset dir="${tests}">
         <include name="**/caja/**/*.css"/>
         <include name="**/caja/**/*.golden"/>
         <include name="**/caja/**/*.gxp"/>
@@ -342,7 +341,7 @@
         <include name="**/caja/**/*.txt"/>
         <include name="**/caja/**/*.xml"/>
       </fileset>
-      <fileset dir="${javascript}">
+      <fileset dir="${src}">
         <include name="**/caja/caja.js"/>
         <include name="**/caja/caja-debugmode.js"/>
         <include name="**/caja/log-to-console.js"/>
@@ -410,10 +409,10 @@
   </target>
 
   <!-- Builds the cajoling service. -->
-  <target name="CajolingService" 
+  <target name="CajolingService"
    depends="CssParser,HtmlParser,Quasiliterals,Rendering,Schemas">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
-          <src path="${src}"/>
+      <src path="${src}"/>
       <classpath refid="classpath.compile"/>
       <include name="**/caja/opensocial/service/*.java"/>
       <compilerarg line="-Xlint:unchecked"/>
@@ -568,7 +567,7 @@
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="domita-minified.js"/>
       </fileset>
-      <fileset dir="${javascript}/com/google/caja">
+      <fileset dir="${src}/com/google/caja">
         <include name="log-to-console.js"/>
       </fileset>
       <fileset dir="${third_party}/js/firebug">
@@ -582,26 +581,26 @@
     <cajole>
       <job output="${www}/lolcat-search/searchbox-cajoled.js">
         <include
-         file="${src}/com/google/caja/demos/lolcat-search/searchbox.html"/>
+         file="${demos}/lolcat-search/searchbox.html"/>
         <depend
-         file="${src}/com/google/caja/demos/lolcat-search/searchbox.css"/>
+         file="${demos}/lolcat-search/searchbox.css"/>
         <depend
-         file="${src}/com/google/caja/demos/lolcat-search/searchbox.js"/>
+         file="${demos}/lolcat-search/searchbox.js"/>
       </job>
       <job output="${www}/lolcat-search/kittens-cajoled.js">
         <include
-         file="${src}/com/google/caja/demos/lolcat-search/kittens.html"/>
+         file="${demos}/lolcat-search/kittens.html"/>
         <depend
-         file="${src}/com/google/caja/demos/lolcat-search/katTranzlator.js"/>
+         file="${demos}/lolcat-search/katTranzlator.js"/>
         <depend
-         file="${src}/com/google/caja/demos/lolcat-search/kittens.css"/>
+         file="${demos}/lolcat-search/kittens.css"/>
         <depend
-         file="${src}/com/google/caja/demos/lolcat-search/kittens.js"/>
+         file="${demos}/lolcat-search/kittens.js"/>
       </job>
     </cajole>
 
     <copy todir="${www}/lolcat-search">
-      <fileset dir="${src}/com/google/caja/demos/lolcat-search">
+      <fileset dir="${demos}/lolcat-search">
         <include name="chtml.js"/>
         <include name="error.jpg"/>
         <include name="loading.jpg"/>
@@ -611,7 +610,7 @@
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="domita-minified.js"/>
       </fileset>
-      <fileset dir="${javascript}/com/google/caja">
+      <fileset dir="${src}/com/google/caja">
         <include name="log-to-console.js"/>
       </fileset>
       <fileset dir="${third_party}/js/firebug">
@@ -638,7 +637,7 @@
 
     <mkdir dir="${www}/testbed"/>
     <copy todir="${www}/testbed">
-      <fileset dir="${javascript}/com/google/caja">
+      <fileset dir="${src}/com/google/caja">
         <include name="caja.js"/>
         <include name="caja-debugmode.js"/>
         <include name="log-to-console.js"/>
@@ -670,93 +669,75 @@
       <job
        output="${lib}/com/google/caja/demos/calendar/html-interp-minified.js">
         <include
-         file="${src}/com/google/caja/demos/calendar/string-interpolation.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/html-interp.js"/>
+         file="${demos}/calendar/string-interpolation.js"/>
+        <include file="${demos}/calendar/html-interp.js"/>
       </job>
       <job output="${lib}/com/google/caja/demos/calendar/calendar-minified.js">
-        <include file="${src}/com/google/caja/demos/calendar/util.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/bitset.js"/>
+        <include file="${demos}/calendar/util.js"/>
+        <include file="${demos}/calendar/bitset.js"/>
         <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
         <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/uformat.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/time-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/weekday-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/timezone-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/time_util-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/hcalendar.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/generators-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/instanceGenerators-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/conditions-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/predicates-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/filters-cajita.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/rrule-cajita.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/event.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/chip.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/calendar.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/event_store.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/axis.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/layout_policy.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/layout.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/overlap.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/widget.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/widget-html.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/main.js"/>
+        <include file="${demos}/calendar/uformat.js"/>
+        <include file="${demos}/calendar/time-cajita.js"/>
+        <include file="${demos}/calendar/weekday-cajita.js"/>
+        <include file="${demos}/calendar/timezone-cajita.js"/>
+        <include file="${demos}/calendar/time_util-cajita.js"/>
+        <include file="${demos}/calendar/hcalendar.js"/>
+        <include file="${demos}/calendar/generators-cajita.js"/>
+        <include file="${demos}/calendar/instanceGenerators-cajita.js"/>
+        <include file="${demos}/calendar/conditions-cajita.js"/>
+        <include file="${demos}/calendar/predicates-cajita.js"/>
+        <include file="${demos}/calendar/filters-cajita.js"/>
+        <include file="${demos}/calendar/rrule-cajita.js"/>
+        <include file="${demos}/calendar/event.js"/>
+        <include file="${demos}/calendar/chip.js"/>
+        <include file="${demos}/calendar/calendar.js"/>
+        <include file="${demos}/calendar/event_store.js"/>
+        <include file="${demos}/calendar/axis.js"/>
+        <include file="${demos}/calendar/layout_policy.js"/>
+        <include file="${demos}/calendar/layout.js"/>
+        <include file="${demos}/calendar/overlap.js"/>
+        <include file="${demos}/calendar/widget.js"/>
+        <include file="${demos}/calendar/widget-html.js"/>
+        <include file="${demos}/calendar/main.js"/>
       </job>
     </minify>
     <cajole debug="false">
       <job output="${lib}/com/google/caja/demos/calendar/calendar-cajoled.js">
-        <include file="${src}/com/google/caja/demos/calendar/util.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/bitset.js"/>
+        <include file="${demos}/calendar/util.js"/>
+        <include file="${demos}/calendar/bitset.js"/>
         <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
         <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/uformat.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/time-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/weekday-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/timezone-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/time_util-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/hcalendar.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/generators-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/instanceGenerators-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/conditions-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/predicates-cajita.js"/>
-        <include file=
-         "${src}/com/google/caja/demos/calendar/filters-cajita.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/rrule-cajita.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/event.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/chip.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/calendar.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/event_store.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/axis.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/layout_policy.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/layout.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/overlap.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/widget.css"/>
-        <include file="${src}/com/google/caja/demos/calendar/widget.gxp"/>
-        <include file="${src}/com/google/caja/demos/calendar/widget-chips.gxp"/>
-        <include file="${src}/com/google/caja/demos/calendar/widget.js"/>
-        <include file="${src}/com/google/caja/demos/calendar/main.js"/>
+        <include file="${demos}/calendar/uformat.js"/>
+        <include file="${demos}/calendar/time-cajita.js"/>
+        <include file="${demos}/calendar/weekday-cajita.js"/>
+        <include file="${demos}/calendar/timezone-cajita.js"/>
+        <include file="${demos}/calendar/time_util-cajita.js"/>
+        <include file="${demos}/calendar/hcalendar.js"/>
+        <include file="${demos}/calendar/generators-cajita.js"/>
+        <include file="${demos}/calendar/instanceGenerators-cajita.js"/>
+        <include file="${demos}/calendar/conditions-cajita.js"/>
+        <include file="${demos}/calendar/predicates-cajita.js"/>
+        <include file="${demos}/calendar/filters-cajita.js"/>
+        <include file="${demos}/calendar/rrule-cajita.js"/>
+        <include file="${demos}/calendar/event.js"/>
+        <include file="${demos}/calendar/chip.js"/>
+        <include file="${demos}/calendar/calendar.js"/>
+        <include file="${demos}/calendar/event_store.js"/>
+        <include file="${demos}/calendar/axis.js"/>
+        <include file="${demos}/calendar/layout_policy.js"/>
+        <include file="${demos}/calendar/layout.js"/>
+        <include file="${demos}/calendar/overlap.js"/>
+        <include file="${demos}/calendar/widget.css"/>
+        <include file="${demos}/calendar/widget.gxp"/>
+        <include file="${demos}/calendar/widget-chips.gxp"/>
+        <include file="${demos}/calendar/widget.js"/>
+        <include file="${demos}/calendar/main.js"/>
       </job>
     </cajole>
 
     <copy todir="${www}/calendar">
-      <fileset dir="${javascript}/com/google/caja">
+      <fileset dir="${src}/com/google/caja">
         <include name="caja.js"/>
         <include name="caja-debugmode.js"/>
       </fileset>
@@ -764,7 +745,7 @@
         <include name="*-minified.js"/>
         <include name="*-cajoled.js"/>
       </fileset>
-      <fileset dir="${src}/com/google/caja/demos/calendar">
+      <fileset dir="${demos}/calendar">
         <include name="demo.html"/>
         <include name="demo-cajoled.html"/>
         <include name="widget.css"/>

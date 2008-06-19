@@ -92,6 +92,7 @@ our $TOOLS_DIR = dirname($DASHBOARD_DIR);    requireDir $TOOLS_DIR;
 $MASTER_CLIENT ||= dirname($TOOLS_DIR);      requireDir $MASTER_CLIENT;
 $BUILD_CLIENT ||= $MASTER_CLIENT;            requireDir $BUILD_CLIENT;
 our $SRC_DIR = "$BUILD_CLIENT/src";          requireDir $SRC_DIR;
+our $TESTS_DIR = "$BUILD_CLIENT/tests";      requireDir $TESTS_DIR;
 
 # Caja build output directories
 our $REPORTS_DIR = "ant-reports";
@@ -105,11 +106,7 @@ our $HISTORY_DIR = "$MASTER_CLIENT/history"; requireDir $HISTORY_DIR;
 # Executables required
 our $ANT_HOME = "/usr/local/ant";            requireDir $ANT_HOME;
 our $ANT = "$ANT_HOME/bin/ant";              requireExe $ANT;
-our $JAVA_HOME = "/usr/lib/jvm/java-6-sun/";
-if (! -e $JAVA_HOME) {
-  our $BUILDTOOLS = "/home/build/buildtools";
-  $JAVA_HOME = "$BUILDTOOLS/java/latest";
-}
+our $JAVA_HOME = $ENV{JAVA_HOME} or "/usr/lib/jvm/java-6-sun/";
                                              requireDir $JAVA_HOME;
 our $JAVA = "$JAVA_HOME/bin/java";           requireExe $JAVA;
 our $SVN = "/usr/bin/svn";                   requireExe $SVN;
@@ -135,8 +132,7 @@ sub collectCodeStats() {
   track(\&build, ['clean'], 'clean', \@status_log);
 
   print STDERR "extracting tasks\n";
-  extractTasks(["$SRC_DIR/java", "$SRC_DIR/javatests", "$SRC_DIR/js"], $rev,
-               \@status_log);
+  extractTasks(["$SRC_DIR", "$TESTS_DIR"], $rev, \@status_log);
 
   print STDERR "building jars\n";
   track(\&build, ['jars'], 'build', \@status_log);
@@ -230,7 +226,7 @@ sub svnversion() {
 
 # Run ant.
 sub build(@) {
-  return exec_log($SRC_DIR, $ANT, @_);
+  return exec_log($BUILD_CLIENT, $ANT, @_);
 }
 
 # Extract TODOs from code.

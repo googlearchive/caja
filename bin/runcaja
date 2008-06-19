@@ -16,8 +16,8 @@
 
 export IFS=" \t\n"
 
-scriptdir=$(dirname "$0")
-jardir="${scriptdir}/../src/ant-jars"
-classpath=$(find "$jardir" -name '*.jar' -print0 | tr '\0' ':')
+scriptdir="$(dirname "$0")"
+jardir="${scriptdir}/../ant-jars"
+classpath="$(find "$jardir" -name '*.jar' -print0 | tr '\0' ':')"
 
 java -Xmx512m -cp "${classpath}" "$@"
