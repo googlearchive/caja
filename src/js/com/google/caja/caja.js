@@ -1001,7 +1001,7 @@ var ___;
    */
   function setMember(constr, name, member) {
     name = String(name);
-    if (endsWith(name, '__')) {
+    if (endsWith(name, '__') || name === 'valueOf') {
       fail('Reserved name: ', name);
     }
     var proto = asCtorOnly(constr).prototype;
@@ -1280,6 +1280,7 @@ var ___;
   function canSetProp(that, name) {
     name = String(name);
     if (endsWith(name, '__')) { return false; }
+    if (name === 'valueOf') { return false; }
     if (canSet(that, name)) { return true; }
     return !isFrozen(that);
   }
@@ -1318,6 +1319,7 @@ var ___;
   function canSetPub(obj, name) {
     name = String(name);
     if (endsWith(name, '_')) { return false; }
+    if (name === 'valueOf') { return false; }
     if (canSet(obj, name)) { return true; }
     return !isFrozen(obj) && isJSONContainer(obj);
   }
@@ -1349,11 +1351,13 @@ var ___;
       log('Cannot set static member of frozen function', ctor);
       return false;
     }
-    if (staticMemberName in ctor) {  // disallows prototype, call, apply, bind
+    // disallows prototype, call, apply, bind
+    if (staticMemberName in ctor) {
       log('Cannot override static member ', staticMemberName);
       return false;
     }
-    if (endsWith(staticMemberName, '_')) {  // statics are public
+    // statics are public
+    if (endsWith(staticMemberName, '_') || staticMemberName === 'valueOf') {
       log('Illegal static member name ', staticMemberName);
       return false;
     }
@@ -1384,6 +1388,7 @@ var ___;
     name = String(name);
     if (isFrozen(obj)) { return false; }
     if (endsWith(name, '__')) { return false; }
+    if (name === 'valueOf') { return false; }
     if (isJSONContainer(obj)) { return true; }
     return !!obj[name + '_canDelete___'];
   }
@@ -1409,6 +1414,7 @@ var ___;
     name = String(name);
     if (isFrozen(obj)) { return false; }
     if (endsWith(name, '__')) { return false; }
+    if (name === 'valueOf') { return false; }
     if (isJSONContainer(obj)) { return true; }
     return false;
   }

@@ -361,6 +361,11 @@ public abstract class Rule implements MessagePart {
           RewriterMessageType.KEY_MAY_NOT_END_IN_UNDERSCORE,
           node.getFilePosition(), rule, node);
       return false;
+    } else if (literalsContain(bindings.get("keys"), "valueOf")) {
+      mq.addMessage(
+          RewriterMessageType.VALUEOF_PROPERTY_MUST_NOT_BE_SET,
+          node.getFilePosition(), rule, node);
+      return false;
     }
     return true;
   }
@@ -420,6 +425,16 @@ public abstract class Rule implements MessagePart {
     return false;
   }
 
+  protected boolean literalsContain(ParseTreeNode container, String key) {
+    for (ParseTreeNode n : container.children()) {
+      assert(n instanceof StringLiteral);
+      if (((StringLiteral)n).getUnquotedValue().equals(key)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
   /**
    * Matches using the Quasi-pattern from {@link RuleDescription#matches} and
    * returns the bindings if the match succeeded, or null otherwise.

@@ -101,6 +101,26 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     return "var " + name + " = ___.readImport(IMPORTS___, '" + name + "');";
   }
 
+  public void testValueOf() throws Exception {
+    checkFails("var a = {valueOf:1};", "The valueOf property must not be set");
+    checkFails("var a={}; a.valueOf=1;", "The valueOf property must not be set");
+    checkFails(
+        "  function f(){this;}"
+        + "f.prototype.valueOf=1;", 
+        "The valueOf property must not be set");
+    checkFails(
+        "  function f(){this;}"
+        + "caja.def(f, Object, {valueOf:1});", 
+        "The valueOf property must not be set");
+    checkFails(
+        "  function f(){this;}"
+        + "caja.def(f, Object, {}, {valueOf:1});", 
+        "The valueOf property must not be set");
+    checkFails("var a={}; delete a.valueOf;", "The valueOf property must not be deleted");
+    rewriteAndExecute("var a={}; assertThrows(function(){a['valueOf']=1});");
+    rewriteAndExecute("var a={}; assertThrows(function(){delete a['valueOf'];");
+  }
+
   public void testFunctionDoesNotMaskVariable() throws Exception {
     // Regress http://code.google.com/p/google-caja/issues/detail?id=370
     // TODO(ihab.awad): Enhance test framework to allow "before" and "after"
@@ -159,7 +179,6 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
           + "});"
           + "var pt = new Point(3);"
           + "pt.getX();"
-          + "pt.setGetX(4);"
           + "pt.setGetX(Date);"
           + "assertThrows(function() { pt.getX(); });"
           );

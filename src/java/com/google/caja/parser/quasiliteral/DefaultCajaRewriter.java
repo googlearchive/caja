@@ -820,6 +820,26 @@ public class DefaultCajaRewriter extends Rewriter {
     new Rule () {
       @Override
       @RuleDescription(
+          name="setBadValueOf",
+          synopsis="Statically reject if assigning to valueOf.",
+          reason="We depend on valueOf returning consistent results.",
+          matches="@x.valueOf = @z",
+          substitutes="<reject>")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        if (QuasiBuilder.match("@x.valueOf = @z", node, bindings)) {
+          mq.addMessage(
+              RewriterMessageType.VALUEOF_PROPERTY_MUST_NOT_BE_SET,
+              node.getFilePosition(), this, node);
+          return node;
+        }
+        return NONE;
+      }
+    },
+
+    new Rule () {
+      @Override
+      @RuleDescription(
           name="setBadSuffix",
           synopsis="Statically reject if a property with `__` suffix is found.",
           reason="Caja reserves the `__` suffix for internal use.",
@@ -1344,6 +1364,30 @@ public class DefaultCajaRewriter extends Rewriter {
     ////////////////////////////////////////////////////////////////////////
     // delete - property deletion
     ////////////////////////////////////////////////////////////////////////
+
+    new Rule () {
+      @Override
+      @RuleDescription(
+          name="deleteBadValueOf",
+          synopsis="Prohibit deletion of valueOf.",
+          reason="Although a non-existent valueOf should behave the same way as"
+               + "the default one as regards [[DefaultValue]], for simplicity we"
+               + "only want to have to consider one of those cases.",
+          matches="delete @o.valueOf",
+          substitutes="<reject>")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings
+            = new LinkedHashMap<String, ParseTreeNode>();
+        if (QuasiBuilder.match("delete @o.valueOf", node, bindings)) {
+          mq.addMessage(
+              RewriterMessageType.VALUEOF_PROPERTY_MUST_NOT_BE_DELETED,
+              node.getFilePosition(), this, node);
+          return node;
+        }
+        return NONE;
+      }
+    },
 
     new Rule () {
       @Override
@@ -2262,6 +2306,27 @@ public class DefaultCajaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (QuasiBuilder.match("({})", node, bindings)) {
           return substV("___.initializeMap({})");
+        }
+        return NONE;
+      }
+    },
+
+    new Rule () {
+      @Override
+      @RuleDescription(
+          name="mapBadKeyValueOf",
+          synopsis="Statically reject 'valueOf' as a key",
+          reason="We depend on valueOf returning consistent results.",
+          matches="<approx> ({valueOf: @val})",
+          substitutes="<reject>")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        if (QuasiBuilder.match("({@keys*: @vals*})", node, bindings) &&
+            literalsContain(bindings.get("keys"), "valueOf")) {
+          mq.addMessage(
+              RewriterMessageType.VALUEOF_PROPERTY_MUST_NOT_BE_SET,
+              node.getFilePosition(), this, node);
+          return node;
         }
         return NONE;
       }
