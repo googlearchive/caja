@@ -814,7 +814,7 @@ public final class Parser extends ParserBase {
             && !insertionProtected) {
           Mark m3 = tq.mark();
           tq.rewind(opStart);
-          if (allowSemicolonInsertion()) {
+          if (semicolonInserted()) {
             List<Message> messages = mq.getMessages();
             if (nMessages < messages.size()) {
               messages.subList(nMessages, messages.size()).clear();
@@ -881,7 +881,7 @@ public final class Parser extends ParserBase {
   }
 
   private boolean semicolonInserted() throws ParseException {
-    if (tq.isEmpty()) { return true; }
+    if (tq.isEmpty() || tq.lookaheadToken(Punctuation.RCURLY)) { return true; }
     FilePosition last = tq.lastPosition(),
               current = tq.currentPosition();
     return null == last
@@ -1212,17 +1212,13 @@ public final class Parser extends ParserBase {
     // Look for a semicolon
     if (!tq.checkToken(Punctuation.SEMI)) {
       // none found, so maybe do insertion
-      if (allowSemicolonInsertion()) {
+      if (semicolonInserted()) {
         FilePosition semiPoint = FilePosition.endOf(tq.lastPosition());
         mq.addMessage(MessageType.SEMICOLON_INSERTED, semiPoint);
         return;
       }
       tq.expectToken(Punctuation.SEMI);  // Just used to throw an exception
     }
-  }
-
-  private boolean allowSemicolonInsertion() throws ParseException {
-    return semicolonInserted() || tq.lookaheadToken(Punctuation.RCURLY);
   }
 
   // Visible for testing.

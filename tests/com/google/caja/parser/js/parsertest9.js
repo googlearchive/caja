@@ -9,6 +9,7 @@ b
 return c
 return
 c
+{ return }
 
 break d
 break

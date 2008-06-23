@@ -6,6 +6,9 @@
   return c;
   return undefined;
   c;
+  {
+    return undefined;
+  }
   break d;
   break;
   d;

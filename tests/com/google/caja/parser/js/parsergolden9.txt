@@ -21,6 +21,9 @@ Block
   ExpressionStmt
     Reference
       Identifier : c
+  Block
+    ReturnStmt
+      UndefinedLiteral : undefined
   BreakStmt : d
   BreakStmt : 
   ExpressionStmt
