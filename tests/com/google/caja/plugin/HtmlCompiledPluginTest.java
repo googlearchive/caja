@@ -54,8 +54,9 @@ public class HtmlCompiledPluginTest extends TestCase {
     super.tearDown();
   }
 
-  // TODO(metaweta): Move as many of these as possible to DefaultCajaRewriterTest
-  // using assertConsistent and the rest to DebuggingSymbolsStageTest
+  // TODO(metaweta): Move as many of these as possible to
+  // DefaultCajaRewriterTest using assertConsistent and the rest to
+  // DebuggingSymbolsStageTest
   public void testEmptyGadget() throws Exception {
     execGadget("", "");
   }

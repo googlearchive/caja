@@ -1,3 +1,4 @@
 {
-  "inherits": ["css21-defs.json", "css21-whitelist.json"],
+  "inherits": ["resource:///com/google/caja/lang/css/css21-defs.json",
+               "resource:///com/google/caja/lang/css/css21-whitelist.json"]
 }

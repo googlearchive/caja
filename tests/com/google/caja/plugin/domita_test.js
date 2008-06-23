@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+var setUp, tearDown;
+
 /**
  * Canonicalize well formed innerHTML output, by making sure that attributes
  * are ordered by name, and have quoted values.
@@ -209,4 +211,20 @@ jsunitRegister('testGetElementsByTagName',
   assertEquals('Pi', items[3].innerHTML.replace(/^\s+|\s+$/g, ''));
   assertEquals('sqrt(10)', items[4].innerHTML.replace(/^\s+|\s+$/g, ''));
   pass('test-get-elements-by-tag-name');
+});
+
+jsunitRegister('testDynamicStyle',
+               function testDynamicStyle() {
+  function $(id) { return document.getElementById(id); }
+  $('test-dynamic-styles1').style.fontWeight = 'bold';
+  $('test-dynamic-styles2').style.fontWeight = '';  // Can unset a style.
+  var failed;
+  try {
+    $('test-dynamic-styles3').style.fontWeight = 'super-bold';
+    failed = false;
+  } catch (e) {
+    failed = true;
+  }
+  if (!failed) { throw new Error('set to super-bold'); }
+  pass('test-dynamic-styles');
 });

@@ -26,6 +26,7 @@
     <script src="asserts.js"></script>
     <script src="unicode.js" onerror="console.error(this.src)"></script>
     <script src="html4-defs.js" onerror="console.error(this.src)"></script>
+    <script src="css-defs.js" onerror="console.error(this.src)"></script>
     <script src="html-sanitizer.js" onerror="console.error(this.src)"></script>
     <script src="domita.js" onerror="console.error(this.src)"></script>
 
@@ -51,43 +52,39 @@
       console.log('attached stubs');
 
       testImports.jsunitRegister = ___.simpleFunc(jsunitRegister);
-      testImports.console = {
+      testImports.console = ___.primFreeze({
         log: function () { console.log.apply(console, arguments); },
         warn: function () { console.warn.apply(console, arguments); },
         error: function () { console.error.apply(console, arguments); },
         trace: function () { console.trace(); }
-      };
+      });
       ___.all2(___.allowCall, testImports.console,
                ['log', 'warn', 'error', 'trace']);
-    </script>
-
-    <script src="domita_test_cajoled.js" onerror="console.error(this.src)"
-     ></script>
-
-    <script type="text/javascript">
-      window.toString = function () { return '[WINDOW]'; };
 
       // Give unfiltered DOM access so we can check the results of actions.
-      testImports.directAccess = {
-        getInnerHTML: function (tameNode) {
+      testImports.directAccess = ___.primFreeze({
+        getInnerHTML: ___.simpleFunc(function (tameNode) {
           return tameNode.node___.innerHTML;
-        },
-        getAttribute: function (tameNode, name) {
+        }),
+        getAttribute: ___.simpleFunc(function (tameNode, name) {
           return tameNode.node___.getAttribute(name);
-        }
-      };
-      ___.all2(___.allowCall, testImports.directAccess,
-               ['getInnerHTML', 'getAttribute']);
+        })
+      });
 
-      testImports.pass = function (id) {
+      // Marks a container green to indicate that test passed
+      testImports.pass = ___.simpleFunc(function (id) {
         var node = testImports.document.getElementById(id);
         if (!node) { console.trace(); }
         node = node.node___;
         node.appendChild(document.createTextNode('Passed ' + id));
         node.className = (node.className || '') + ' passed';
-      };
-      ___.simpleFunc(testImports.pass, 'pass');
+      }, 'pass');
+
+      window.toString = function () { return '[WINDOW]'; };
     </script>
+
+    <script src="domita_test_cajoled.js" onerror="console.error(this.src)"
+     ></script>
 
     <div id="test-get-element-by-id-xyz___" class="testcontainer"></div>
     <div id="test-get-element-by-id-2-xyz___" class="testcontainer"></div>
@@ -115,8 +112,16 @@
       <li>One
       <li>Two
       <li>Three
-        <ol><li>Pi</li><li>sqrt(10)</li>
+        <ol><li>Pi</li><li>sqrt(10)</li></ol>
     </ol>
+
+    <div class="testcontainer" id="test-dynamic-styles-xyz___">
+      <span id="test-dynamic-styles1-xyz___">I should be bold</span><br>
+      <span id="test-dynamic-styles2-xyz___" style="font-weight: bold"
+       >I should not be bold</span><br>
+      <span id="test-dynamic-styles3-xyz___"
+       >There's no such thing as super-bold</span><br>
+    </div>
 
   </body>
 </html>

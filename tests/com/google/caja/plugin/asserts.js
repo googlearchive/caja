@@ -19,7 +19,6 @@
  */
 
 
-var console;
 function fail(msg) {
   if (typeof console !== 'undefined') {
     console.trace();
@@ -117,7 +116,7 @@ function assertLessThan() {
       a = arguments[1];
       b = arguments[2];
       break;
-    default: throw 'missing arguments ' + argumetns;
+    default: throw 'missing arguments ' + arguments;
   }
   if (!(a < b)) {
     fail((msg ? msg + ' :: ' : '')
@@ -137,7 +136,7 @@ function assertNull() {
       msg = arguments[0];
       a = arguments[1];
       break;
-    default: throw 'missing arguments ' + argumetns;
+    default: throw 'missing arguments ' + arguments;
   }
   if (a !== null) {
     fail((msg ? msg + ' :: ' : '')
@@ -155,7 +154,7 @@ function assertThrows() {
     func = arguments[0];
     msg = arguments[1];
     break;
-  default: throw 'missing arguments ' + argumetns;
+  default: throw 'missing arguments ' + arguments;
   }
   var thrown = undefined;
   try {

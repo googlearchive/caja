@@ -366,11 +366,15 @@ attachDocumentStub = (function () {
      *       >DOM Level 2</a>
      */
     function tameNode(node, editable) {
-      if (node == null) { return null; }  // Returns null for undefined.
+      if (node === null || node === void 0) { return null; }
+      // TODO(mikesamuel): make sure it really is a DOM node
       var tamed;
       switch (node.nodeType) {
         case 1:  // Element
           switch (node.tagName.toLowerCase()) {
+            case 'a':
+              tamed = new TameAElement(node, editable);
+              break;
             case 'form':
               tamed = new TameFormElement(node, editable);
               break;
@@ -381,6 +385,9 @@ attachDocumentStub = (function () {
               tamed = new TameImageElement(node, editable);
               break;
             default:
+              // TODO(mikesamuel): If an unrecognized node, return a
+	      // placeholder that doesn't prevent tree navigation, but
+	      // that doesn't allow mutation or inspection.
               tamed = new TameElement(node, editable);
               break;
           }
@@ -470,10 +477,24 @@ attachDocumentStub = (function () {
       return tameNode(this.node___.lastChild, this.editable___);
     };
     TameNode.prototype.getNextSibling = function () {
+      // TODO(mikesamuel): replace with cursors so that subtrees are delegable
       return tameNode(this.node___.nextSibling, this.editable___);
     };
-    TameNode.prototype.getPrevSibling = function () {
-      return tameNode(this.node___.prevSibling, this.editable___);
+    TameNode.prototype.getPreviousSibling = function () {
+      // TODO(mikesamuel): replace with cursors so that subtrees are delegable
+      return tameNode(this.node___.previousSibling, this.editable___);
+    };
+    TameNode.prototype.getParentNode = function () {
+      var parent = this.node___.parentNode;
+      for (var ancestor = parent; ancestor; ancestor = ancestor.parentNode) {
+        // TODO(mikesamuel): replace with cursors so that subtrees are delegable
+        if (idClass === ancestor.className) {  // TODO: handle multiple classes.
+          console.log('found parent ' + parent);
+          return tameNode(parent, this.editable___);
+        }
+      }
+      console.log('missing classname ' + idClass);
+      return null;
     };
     TameNode.prototype.getElementsByTagName = function (tagName) {
       return tameNodeList(
@@ -484,10 +505,11 @@ attachDocumentStub = (function () {
        ___.allowMethod, TameNode,
        ['getNodeType', 'getNodeValue', 'getNodeName',
         'appendChild', 'insertBefore', 'removeChild', 'replaceChild',
-        'getFirstChild', 'getLastChild', 'getNextSibling', 'getPrevSibling',
+        'getFirstChild', 'getLastChild', 'getNextSibling', 'getPreviousSibling',
         'getElementsByTagName']);
-    exportFields(TameNode, ['nodeType', 'nodeValue', 'nodeName', 'firstChild',
-                            'lastChild', 'nextSibling', 'prevSibling']);
+    exportFields(TameNode,
+                 ['nodeType', 'nodeValue', 'nodeName', 'firstChild',
+                  'lastChild', 'nextSibling', 'previousSibling', 'parentNode']);
 
     function TameTextNode(node, editable) {
       assert(node.nodeType === 3);
@@ -612,10 +634,10 @@ attachDocumentStub = (function () {
     };
     TameElement.prototype.setStyle = function (style) {
       this.setAttribute('style', style);
-      return style;
+      return this.getStyle();
     };
     TameElement.prototype.getStyle = function () {
-      return this.node___.style.cssText;
+      return new TameStyle(this.node___.style, this.editable___);
     };
     TameElement.prototype.updateStyle = function (style) {
       if (!this.editable___) { throw new Error(); }
@@ -708,6 +730,21 @@ attachDocumentStub = (function () {
         }
       }
     })();
+
+    function TameAElement(node, editable) {
+      TameElement.call(this, node, editable);
+    }
+    extend(TameAElement, TameElement);
+    TameAElement.prototype.getHref = function () {
+      return this.node___.href;
+    };
+    TameAElement.prototype.setHref = function (href) {
+      this.setAttribute('href', href);
+      return href;
+    };
+    ___.ctor(TameAElement, TameElement, 'TameAElement');
+    ___.all2(___.allowMethod, TameAElement, ['getHref', 'setHref']);
+    exportFields(TameAElement, ['href']);
 
     function TameFormElement(node, editable) {
       TameElement.call(this, node, editable);
@@ -907,6 +944,41 @@ attachDocumentStub = (function () {
       return out.join(' ');
     };
 
+    function TameStyle(style, editable) {
+      this.style___ = style;
+      this.editable___ = editable;
+    }
+    for (var styleProperty in css.properties) {
+      if (!caja.canEnumOwn(css.properties, styleProperty)) { continue; }
+      (function (propertyName) {
+         ___.useGetHandler(
+             TameStyle.prototype, propertyName,
+             function (opt_shouldThrow) {
+               return String(this.style___[propertyName] || '');
+             });
+         var pattern = css.properties[propertyName];
+         ___.useSetHandler(
+             TameStyle.prototype, propertyName,
+             function (val) {
+               if (!this.editable___) { throw new Error('style not editable'); }
+               val = '' + (val || '');
+               if (val && !pattern.test(val + ' ')) {
+                 throw new Error('bad value `' + val + '` for CSS property '
+                                 + propertyName);
+               }
+               // CssPropertyPatterns.java only allows styles of the form
+               // url("...").  See the BUILTINS definition for the "uri" symbol.
+               val = val.replace(/\burl\s*\(\s*\"([^\"]*)\"\s*\)/gi,
+                                 function (_, url) {
+                 // TODO(mikesamuel): recognize and rewrite URLs.
+                 throw new Error('url in style ' + url);
+               });
+               this.style___[propertyName] = val;
+             });
+       })(styleProperty);
+    }
+    TameStyle.prototype.toString = function () { return '[Fake Style]'; };
+
     /**
      * given a number, outputs the equivalent css text.
      * @param {number} num
@@ -967,9 +1039,10 @@ attachDocumentStub = (function () {
       return document.body;
     };
 
+    var idClass = idSuffix.replace(/^-/, '');
     /** A per-gadget class used to separate style rules. */
     imports.getIdClass___ = function () {
-      return idSuffix.replace(/^-/, '');
+      return idClass;
     };
 
     imports.setTimeout = tameSetTimeout;
@@ -1002,6 +1075,15 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
       throw new Error(
           'Expected function as event handler, not ' + typeof handler);
   }
-  return (___.asSimpleFunc(handler))(
-      imports.tameNode___(thisNode, true), imports.tameEvent___(event));
+  ___.startCallerStack && ___.startCallerStack();
+  try {
+    return (___.asSimpleFunc(handler))(
+        imports.tameNode___(thisNode, true), imports.tameEvent___(event));
+  } catch (ex) {
+    if (ex && ex.cajaStack___ && 'undefined' !== (typeof console)) {
+      console.error('Event dispatch %s: %s',
+                    handler, ___.unsealCallerStack(ex.cajaStack___).join('\n'));
+    }
+    throw ex;
+  }
 }

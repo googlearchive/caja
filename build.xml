@@ -253,9 +253,29 @@
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
     <taskdef name="cajole" classname="com.google.caja.tools.CajoleAntTask"
-     classpathref="classpath.run" onerror="ignore"/>
+     classpathref="classpath.run"/>
     <taskdef name="minify" classname="com.google.caja.tools.MinifyAntTask"
-     classpathref="classpath.run" onerror="ignore"/>
+     classpathref="classpath.run"/>
+    <taskdef name="genrule" classname="com.google.caja.tools.GenRuleAntTask"
+     classpathref="classpath.run"/>
+    <!-- Generate a schema of CSS properties for client side CSS validation. -->
+    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+      <src path="${src}"/>
+      <classpath refid="classpath.compile"/>
+      <include name="**/caja/plugin/CssPropertyPatterns.java"/>
+    </javac>
+    <genrule class="com.google.caja.plugin.CssPropertyPatterns$Builder">
+      <job output="${lib}/com/google/caja/plugin/css-defs.js">
+        <include file="${src}/com/google/caja/lang/css/css21.json"/>
+        <depend file="${src}/com/google/caja/lang/css/css21-defs.json"/>
+        <depend file="${src}/com/google/caja/lang/css/css21-whitelist.json"/>
+        <include file="${src}/com/google/caja/lang/css/css21-fns.json"/>
+        <depend file="${src}/com/google/caja/lang/css/css21-fns-defs.json"/>
+        <depend file="${src}/com/google/caja/lang/css/css21-fns-whitelist.json"
+         />
+        <depend file="${src}/com/google/caja/plugin/CssPropertyPatterns"/>
+      </job>
+    </genrule>
   </target>
 
   <target name="jars" depends="pluginc,MinifiedJs"
@@ -303,6 +323,7 @@
         <include file="${src}/com/google/caja/caja.js"/>
         <include file="${src}/com/google/caja/plugin/unicode.js"/>
         <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
+        <include file="${lib}/com/google/caja/plugin/css-defs.js"/>
         <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
         <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
         <include file="${src}/com/google/caja/plugin/domita.js"/>

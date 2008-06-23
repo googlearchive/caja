@@ -362,6 +362,7 @@ public class CompiledPluginTest extends TestCase {
         new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
         new RhinoTestBed.Input(getClass(), "unicode.js"),
         new RhinoTestBed.Input(getClass(), "html4-defs.js"),
+        new RhinoTestBed.Input(getClass(), "css-defs.js"),
         new RhinoTestBed.Input(getClass(), "html-sanitizer.js"),
         new RhinoTestBed.Input(getClass(), "domita.js"),
         // Initialize the DOM

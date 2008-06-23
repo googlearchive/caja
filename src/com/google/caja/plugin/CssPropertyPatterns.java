@@ -14,7 +14,11 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.config.ConfigUtil;
 import com.google.caja.lang.css.CssSchema;
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.ParseTreeNode;
@@ -28,15 +32,28 @@ import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.RegexpLiteral;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
+import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.tools.BuildCommand;
 import com.google.caja.util.Pair;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -422,9 +439,8 @@ public class CssPropertyPatterns {
     return a.substring(m - i, m);
   }
 
-  public static void main(String[] args) {
-    CssSchema schema = CssSchema.getDefaultCss21Schema(
-        new SimpleMessageQueue());
+  public static void generatePatterns(CssSchema schema, Appendable out)
+      throws IOException {
     CssPropertyPatterns pp = new CssPropertyPatterns(schema);
     List<CssSchema.CssPropertyInfo> props
         = new ArrayList<CssSchema.CssPropertyInfo>(schema.getCssProperties());
@@ -432,7 +448,7 @@ public class CssPropertyPatterns {
         props, new Comparator<CssSchema.CssPropertyInfo>() {
           public int compare(CssSchema.CssPropertyInfo a,
                              CssSchema.CssPropertyInfo b) {
-            return a.name.compareTo(b.name);
+            return a.dom2property.compareTo(b.dom2property);
           }
         });
     Map<String, int[]> constantPoolMap = new HashMap<String, int[]>();
@@ -466,7 +482,7 @@ public class CssPropertyPatterns {
     List<Pair<Literal, Expression>> members
         = new ArrayList<Pair<Literal, Expression>>();
     for (Pair<CssSchema.CssPropertyInfo, String> p : patterns) {
-      Literal name = new StringLiteral(StringLiteral.toQuotedValue(p.a.name));
+      Literal name = StringLiteral.valueOf(p.a.dom2property);
       int poolIndex = constantPoolMap.get(p.b)[0];
       Expression re = poolIndex < 0
           ? new RegexpLiteral(p.b)
@@ -477,16 +493,94 @@ public class CssPropertyPatterns {
     ObjectConstructor cssPropConstructor = new ObjectConstructor(members);
 
     ParseTreeNode js = QuasiBuilder.substV(
-        "var css = (function () {"
+        "var css = { properties: (function () {"
         + "  @constantPoolDecl?;"
         + "  return @cssPropConstructor;"
-        + "})();",
+        + "})() };",
         "constantPoolDecl", constantPoolDecl,
         "cssPropConstructor", cssPropConstructor);
-    TokenConsumer tc = js.makeRenderer(System.out, null);
+    TokenConsumer tc = js.makeRenderer(out, null);
     js.render(new RenderContext(new MessageContext(), tc));
     tc.consume(";");
     tc.noMoreTokens();
-    System.out.println();
+    out.append("\n");
+  }
+
+  public static class Builder implements BuildCommand {
+    public void build(List<File> inputs, List<File> deps, File output)
+        throws IOException {
+      File symbolsAndPropertiesFile = null;
+      File functionsFile = null;
+      for (File input : inputs) {
+        if (input.getName().endsWith(".json")) {
+          if (symbolsAndPropertiesFile == null) {
+            symbolsAndPropertiesFile = input;
+          } else if (functionsFile == null) {
+            functionsFile = input;
+          } else {
+            throw new IOException("Unused input " + input);
+          }
+        }
+      }
+      if (symbolsAndPropertiesFile == null) {
+        throw new IOException("No JSON whitelist for CSS Symbols + Properties");
+      }
+      if (functionsFile == null) {
+        throw new IOException("No JSON whitelist for CSS Functions");
+      }
+
+      FilePosition sps = FilePosition.startOfFile(new InputSource(
+          symbolsAndPropertiesFile.getAbsoluteFile().toURI()));
+      FilePosition fns = FilePosition.startOfFile(new InputSource(
+          functionsFile.getAbsoluteFile().toURI()));
+
+      MessageContext mc = new MessageContext();
+      mc.inputSources = Arrays.asList(sps.source(), fns.source());
+      MessageQueue mq = new EchoingMessageQueue(
+          new PrintWriter(new OutputStreamWriter(System.err), true), mc, false);
+
+      CssSchema schema;
+      try {
+        Reader spsIn = new InputStreamReader(
+            new FileInputStream(symbolsAndPropertiesFile), "UTF-8");
+        try {
+          Reader fnsIn = new InputStreamReader(
+              new FileInputStream(functionsFile), "UTF-8");
+          try {
+            schema = new CssSchema(
+                ConfigUtil.loadWhiteListFromJson(spsIn, sps, mq),
+                ConfigUtil.loadWhiteListFromJson(fnsIn, fns, mq));
+          } finally {
+            fnsIn.close();
+          }
+        } finally {
+          spsIn.close();
+        }
+      } catch (ParseException ex) {
+        ex.toMessageQueue(mq);
+        throw (IOException) new IOException("Failed to parse schema")
+            .initCause(ex);
+      }
+
+      Writer out = new OutputStreamWriter(
+          new FileOutputStream(output), "UTF-8");
+      String currentDate = "" + new Date();
+      if (currentDate.indexOf("*/") >= 0) { throw new RuntimeException(); }
+      out.write("/* Copyright Google Inc.\n");
+      out.write(" * Licensed under the Apache Licence Version 2.0\n");
+      out.write(" * Autogenerated at " + currentDate + "\n");
+      out.write(" */\n");
+      try {
+        generatePatterns(schema, out);
+      } finally {
+        out.close();
+      }
+    }
+  }
+
+  public static void main(String[] args) throws IOException {
+    CssSchema schema = CssSchema.getDefaultCss21Schema(
+        new SimpleMessageQueue());
+    generatePatterns(schema, System.out);
   }
 }

@@ -241,8 +241,7 @@
       ctor.___CONSTRUCTOR___ = true;
       ctor.length = fun.length;
     }
-    var wrapper = makeWrapper(ctor, 'asCtor', this.debugSymbols_[callerIdx]);
-    return wrapper;
+    return makeWrapper(ctor, 'asCtor', this.debugSymbols_[callerIdx]);
   }
   /**
    * Return a function of the same kind (simple/method/ctor) as fun, but

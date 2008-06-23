@@ -38,6 +38,7 @@ import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
+import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
@@ -523,17 +524,22 @@ public class HtmlCompiler {
         if (handler.children().isEmpty()) { return; }
         rewriteEventHandlerReferences(handler);
 
+        // This function must not be synthetic.  If it were, the rewriter would
+        // not treat its formals as affecting scope.
+        FunctionConstructor handlerFn = new FunctionConstructor(
+            new Identifier(null),
+            Arrays.asList(
+                s(new FormalParam(s(new Identifier(ReservedNames.THIS_NODE)))),
+                s(new FormalParam(s(new Identifier("event"))))),
+            handler);
+
         String handlerFnName = htmlc.syntheticId();
         htmlc.eventHandlers.put(
             handlerFnName,
             new ExpressionStmt((Expression) QuasiBuilder.substV(
-                "IMPORTS___.@handlerFnName = ___.simpleFunc("
-                + "   function (" + ReservedNames.THIS_NODE + ", event) {"
-                + "     @handler*;"
-                + "   });",
-                "handlerFnName",
-                    s(new Reference(s(new Identifier(handlerFnName)))),
-                "handler", handler)));
+                "IMPORTS___.@handlerFnName = @handlerFn;",
+                "handlerFnName", TreeConstruction.ref(handlerFnName),
+                "handlerFn", handlerFn)));
 
         String handlerFnNameLit = StringLiteral.toQuotedValue(handlerFnName);
 

@@ -1,3 +1,4 @@
 {
-  "inherits": ["css21-fns-defs.json", "css21-fns-whitelist.json"]
+  "inherits": ["resource:///com/google/caja/lang/css/css21-fns-defs.json",
+               "resource:///com/google/caja/lang/css/css21-fns-whitelist.json"]
 }

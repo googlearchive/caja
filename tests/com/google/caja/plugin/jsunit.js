@@ -54,7 +54,8 @@ function jsunitRun() {
     } catch (e) {
       firstFailure = firstFailure || e;
       nFailures++;
-      (typeof console !== 'undefined') && (console.error(e.message || '' + e));
+      (typeof console !== 'undefined')
+          && (console.error((e.message || '' + e) + '\n' + e.stack));
     } finally {
       (typeof console !== 'undefined') && (console.timeEnd(testName),
                                            console.groupEnd());
