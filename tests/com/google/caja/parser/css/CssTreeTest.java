@@ -32,6 +32,10 @@ public class CssTreeTest extends CajaTestCase {
     runRenderTest("cssrendergolden1.txt", "cssparserinput1.css", false);
   }
 
+  public void testRender2() throws Exception {
+    runRenderTest("cssrendergolden2.txt", "cssparserinput2.css", false);
+  }
+
   public void testRender4() throws Exception {
     // Make sure we don't have <!-- or --> in output in paranoid mode.
     runRenderTest("cssrendergolden4.txt", "cssparserinput4.css", true);

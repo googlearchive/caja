@@ -112,13 +112,40 @@ public final class CssValidator {
       if (!validateSimpleSelector((CssTree.SimpleSelector) css.node)) {
         return false;
       }
+      // recurse below
+    } else if (css.node instanceof CssTree.Import) {
+      return validateImport((CssTree.Import) css.node);
+    } else if (css.node instanceof CssTree.FontFace) {
+      return validateFontFace((CssTree.FontFace) css.node);
     }
 
-    boolean valid = true;
-    for (CssTree child : css.node.children()) {
-      valid &= validateCss(new AncestorChain<CssTree>(css, child));
+    // Whitelist the set of allowed nodes.
+    if (css.node instanceof CssTree.Combination
+        || css.node instanceof CssTree.CssExprAtom
+        || css.node instanceof CssTree.DeclarationGroup
+        || css.node instanceof CssTree.Expr
+        || css.node instanceof CssTree.FontFace
+        || css.node instanceof CssTree.Media
+        || css.node instanceof CssTree.Medium
+        || css.node instanceof CssTree.Page
+        || css.node instanceof CssTree.Property
+        || css.node instanceof CssTree.Pseudo
+        || css.node instanceof CssTree.PseudoPage
+        || css.node instanceof CssTree.RuleSet
+        || css.node instanceof CssTree.SimpleSelector
+        || css.node instanceof CssTree.Selector
+        || css.node instanceof CssTree.StyleSheet
+        || css.node instanceof CssTree.Term
+        || css.node instanceof CssTree.WildcardElement) {
+      boolean valid = true;
+      for (CssTree child : css.node.children()) {
+        valid &= validateCss(new AncestorChain<CssTree>(css, child));
+      }
+      return valid;
     }
-    return valid;
+
+    // unrecognized node type
+    throw new IllegalStateException(css.node.getClass().getName());
   }
 
   /**
@@ -194,6 +221,32 @@ public final class CssValidator {
       attr.getAttributes().set(INVALID, Boolean.TRUE);
       return false;
     }
+  }
+
+  /**
+   * Imports are disallowed since they loads external URLs.
+   * It should have been handled by
+   * {@link com.google.caja.plugin.stages.InlineCssImportsStage}
+   * unless it's not allowed in the current context.
+   */
+  private boolean validateImport(CssTree.Import importNode) {
+    mq.addMessage(
+        PluginMessageType.IMPORTS_NOT_ALLOWED_HERE, invalidNodeMessageLevel,
+        importNode.getFilePosition());
+    importNode.getAttributes().set(INVALID, Boolean.TRUE);
+    return false;
+  }
+
+  /**
+   * Disallowed since it loads external URLs, and we don't understand
+   * exploits around malformed font-data.
+   */
+  private boolean validateFontFace(CssTree.FontFace ff) {
+    mq.addMessage(
+        PluginMessageType.FONT_FACE_NOT_ALLOWED, invalidNodeMessageLevel,
+        ff.getFilePosition());
+    ff.getAttributes().set(INVALID, Boolean.TRUE);
+    return false;
   }
 
   /**

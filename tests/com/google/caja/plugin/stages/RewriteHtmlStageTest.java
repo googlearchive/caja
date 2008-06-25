@@ -77,6 +77,15 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         job("{\n  init();\n}", Job.JobType.JAVASCRIPT));
   }
 
+  public void testImportedStyles() throws Exception {
+    assertPipeline(
+        job("<style>@import 'styles.css';</style>", Job.JobType.HTML),
+        job("", Job.JobType.HTML),
+        job("@import url('styles.css');", Job.JobType.CSS)
+        );
+    assertNoErrors();
+  }
+
   @Override
   protected boolean runPipeline(final Jobs jobs) throws Exception {
     boolean result = new RewriteHtmlStage().apply(jobs);

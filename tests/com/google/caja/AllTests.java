@@ -64,6 +64,7 @@ import com.google.caja.plugin.HtmlCompilerTest;
 import com.google.caja.plugin.HtmlSanitizerTest;
 import com.google.caja.plugin.JsHtmlSanitizerTest;
 import com.google.caja.plugin.stages.DebuggingSymbolsStageTest;
+import com.google.caja.plugin.stages.InlineCssImportsStageTest;
 import com.google.caja.plugin.stages.OpenTemplateStageTest;
 import com.google.caja.plugin.stages.RewriteHtmlStageTest;
 import com.google.caja.render.JsMinimalPrinterTest;
@@ -127,6 +128,7 @@ public class AllTests {
           HtmlSanitizerTest.class,
           HtmlSchemaTest.class,
           IllegalReferenceCheckRewriterTest.class,
+          InlineCssImportsStageTest.class,
           JoinTest.class,
           JsHtmlSanitizerTest.class,
           JsLexerTest.class,

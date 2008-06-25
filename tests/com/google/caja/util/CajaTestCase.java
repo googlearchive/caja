@@ -108,7 +108,8 @@ public abstract class CajaTestCase extends TestCase {
     return b;
   }
 
-  protected Expression jsExpr(CharProducer cp, boolean quasi) throws ParseException {
+  protected Expression jsExpr(CharProducer cp, boolean quasi)
+      throws ParseException {
     JsLexer lexer = new JsLexer(cp);
     JsTokenQueue tq = new JsTokenQueue(lexer, sourceOf(cp), noJsComments());
     Parser p = new Parser(tq, mq, quasi);

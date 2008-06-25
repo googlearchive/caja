@@ -145,18 +145,27 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       super(pos, join(Collections.singletonList(uri), media));
     }
 
+    public UriLiteral getUri() { return (UriLiteral) children().get(0); }
+    public List<Medium> getMedia() {
+      List<Medium> media = new ArrayList<Medium>();
+      for (CssTree t : children().subList(1, children().size())) {
+        media.add((Medium) t);
+      }
+      return media;
+    }
+
     public void render(RenderContext r) {
       TokenConsumer out = r.getOut();
       out.mark(getFilePosition());
       out.consume("@");
       out.consume("import");
       out.consume(" ");
-      List<? extends CssTree> children = children();
-      children.get(0).render(r); // the uri
-      children = children.subList(1, children.size());
+      getUri().render(r);
 
-      if (!children.isEmpty()) {  // the media
-        renderCommaGroup(children(), r);
+      List<? extends CssTree> media = getMedia();
+      if (!media.isEmpty()) {
+        out.consume(" ");
+        renderCommaGroup(media, r);
       }
       out.consume(";");
     }
@@ -172,6 +181,16 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     public Media(FilePosition pos, List<? extends CssTree> mediaAndRuleset) {
       super(pos, mediaAndRuleset);
     }
+
+    public List<Medium> getMedia() {
+      List<Medium> media = new ArrayList<Medium>();
+      for (CssTree t : children()) {
+        if (!(t instanceof Medium)) { break; }
+        media.add((Medium) t);
+      }
+      return media;
+    }
+
     public void render(RenderContext r) {
       TokenConsumer out = r.getOut();
       out.mark(getFilePosition());
@@ -243,7 +262,6 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       }
       List<? extends CssTree> children = children();
       if (children.get(0) instanceof PseudoPage) {
-        out.consume(" ");
         children.get(0).render(r);
         children = children.subList(1, children.size());
       }

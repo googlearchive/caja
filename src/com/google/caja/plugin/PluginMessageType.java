@@ -82,6 +82,9 @@ public enum PluginMessageType implements MessageTypeInt {
       "%s: tags not allowed inside an attribute: %s", MessageLevel.ERROR),
   CSS_SUBSTITUTION_NOT_ALLOWED_HERE(
       "%s: css substitution not allowed for type %s", MessageLevel.FATAL_ERROR),
+  IMPORTS_NOT_ALLOWED_HERE("%s: @import not allowed here", MessageLevel.ERROR),
+  CYCLIC_INCLUDE("%s: cyclic include of %s", MessageLevel.ERROR),
+  FONT_FACE_NOT_ALLOWED("%s: @font-face not allowed", MessageLevel.ERROR),
   FAILED_TO_LOAD_EXTERNAL_URL(
       "%s: failed to load external url %s", MessageLevel.WARNING),
   UNRECOGNIZED_CONTENT_TYPE(

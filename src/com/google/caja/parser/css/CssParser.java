@@ -118,7 +118,7 @@ public final class CssParser {
     List<CssTree> children = new ArrayList<CssTree>();
     do {
       children.add(parseMedium());
-    } while (tq.lookaheadToken(","));
+    } while (tq.checkToken(","));
     tq.expectToken("{");
     while (!tq.checkToken("}")) {
       children.add(parseRuleSet());
@@ -441,7 +441,7 @@ public final class CssParser {
         } catch (IllegalArgumentException e) {
           throw new ParseException(
               new Message(MessageType.UNEXPECTED_TOKEN, t.pos,
-                          MessagePart.Factory.valueOf(t.text)));          
+                          MessagePart.Factory.valueOf(t.text)));
         }
         break;
       case UNICODE_RANGE:
@@ -520,6 +520,9 @@ public final class CssParser {
 
 
   private FilePosition pos(Mark m) throws ParseException {
+    // TODO(mikesamuel): fix this so it doesn't throw a parse exception at end
+    // of file.
+    // Example input "import 'foo.css'" without a semicolon.
     FilePosition start = m.getFilePosition(),
                    end = tq.lastPosition();
     return !(start.startCharInFile() > end.endCharInFile() &&
@@ -640,7 +643,7 @@ public final class CssParser {
    * "<!--"              {return CDO;}
    * "-->"               {return CDC;}
    * </pre>
-   * 
+   *
    * From the parser grammer:<pre>
    * stylesheet
    *   : [ CHARSET_SYM STRING ';' ]?

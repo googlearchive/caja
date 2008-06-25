@@ -16,24 +16,20 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
-import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.html.DomParser;
-import com.google.caja.parser.html.DomTree;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
-import com.google.caja.reporting.MessageContext;
-import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.MoreAsserts;
-import com.google.caja.util.TestUtil;
+import com.google.caja.util.Pair;
 
-import junit.framework.TestCase;
-
+import java.io.IOException;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -41,6 +37,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -48,36 +45,23 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public abstract class PipelineStageTestCase extends TestCase {
-  protected MessageContext mc;
-  protected MessageQueue mq;
-  protected PluginMeta meta;
-  protected InputSource is;
+public abstract class PipelineStageTestCase extends CajaTestCase {
+  private PluginMeta meta;
+  private TestPluginEnvironment pluginEnv;
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    mc = new MessageContext();
-    mq = TestUtil.createTestMessageQueue(mc);
-    meta = new PluginMeta(
-        new PluginEnvironment() {
-          public CharProducer loadExternalResource(
-              ExternalReference ref, String mimeType) {
-            URI uri = ref.getUri();
-            if (!"content".equals(uri.getScheme())) {
-              return null;
-            }
-            return CharProducer.Factory.create(
-                new StringReader(decode(uri.getRawSchemeSpecificPart())),
-                new InputSource(uri));
-          }
+    pluginEnv = new TestPluginEnvironment();
+    meta = new PluginMeta(pluginEnv);
+  }
 
-          public String rewriteUri(ExternalReference uri, String mimeType) {
-            return "http://proxy/?uri=" + encode(uri.getUri().toString())
-                + "&mimeType=" + encode(mimeType);
-          }
-        });
-    is = new InputSource(URI.create("test:///" + getName()));
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+    meta = null;
+    pluginEnv.closeAll();
+    pluginEnv = null;
   }
 
   /**
@@ -91,16 +75,20 @@ public abstract class PipelineStageTestCase extends TestCase {
   protected void assertPipeline(JobStub inputJob, JobStub... outputJobs)
       throws Exception {
     Jobs jobs = new Jobs(mc, mq, meta);
-    assertEquals(Job.JobType.HTML, inputJob.type);
-
-    HtmlLexer lexer = new HtmlLexer(
-        CharProducer.Factory.create(new StringReader(inputJob.content), is));
-    DomTree fragment = new DomParser(lexer, is, mq).parseFragment();
-
-    jobs.getJobs().add(new Job(new AncestorChain<DomTree>(fragment)));
-
+    parseJob(inputJob, jobs);
     assertTrue(runPipeline(jobs));
+    assertOutputJobs(outputJobs, jobs);
+  }
 
+  protected void assertPipelineFails(JobStub inputJob, JobStub... outputJobs)
+      throws Exception {
+    Jobs jobs = new Jobs(mc, mq, meta);
+    parseJob(inputJob, jobs);
+    assertFalse(runPipeline(jobs));
+    assertOutputJobs(outputJobs, jobs);
+  }
+
+  private void assertOutputJobs(JobStub[] outputJobs, Jobs jobs) {
     List<JobStub> actualJobs = new ArrayList<JobStub>();
     for (Job job : jobs.getJobs()) {
       StringBuilder sb = new StringBuilder();
@@ -108,8 +96,41 @@ public abstract class PipelineStageTestCase extends TestCase {
       node.render(new RenderContext(mc, node.makeRenderer(sb, null)));
       actualJobs.add(new JobStub(sb.toString(), job.getType()));
     }
-
     MoreAsserts.assertListsEqual(Arrays.asList(outputJobs), actualJobs);
+  }
+
+  private void parseJob(JobStub inputJob, Jobs outputJobs)
+      throws ParseException {
+    switch (inputJob.type) {
+      case HTML:
+        outputJobs.getJobs().add(
+            new Job(AncestorChain.instance(
+                htmlFragment(fromString(inputJob.content, is)))));
+        break;
+      case CSS:
+        outputJobs.getJobs().add(
+            new Job(AncestorChain.instance(
+                css(fromString(inputJob.content, is)))));
+        break;
+      case JAVASCRIPT:
+        outputJobs.getJobs().add(
+            new Job(AncestorChain.instance(
+                js(fromString(inputJob.content, is)))));
+        break;
+      default:
+        throw new IllegalArgumentException(inputJob.type.name());
+    }
+  }
+
+  protected void addUrlToPluginEnvironment(String uri, String content) {
+    URI absUrl = is.getUri().resolve(uri);
+    addUrlToPluginEnvironment(
+        absUrl, fromString(content, new InputSource(absUrl)));
+  }
+
+  protected void addUrlToPluginEnvironment(URI uri, CharProducer cp) {
+    URI absUrl = is.getUri().resolve(uri);
+    pluginEnv.filesToLoad.add(Pair.pair(absUrl, cp));
   }
 
   protected abstract boolean runPipeline(Jobs jobs) throws Exception;
@@ -160,6 +181,43 @@ public abstract class PipelineStageTestCase extends TestCase {
       return URLDecoder.decode(s, "UTF-8");
     } catch (UnsupportedEncodingException ex) {
       throw new RuntimeException(ex);
+    }
+  }
+
+  private static class TestPluginEnvironment implements PluginEnvironment {
+    private List<Pair<URI, CharProducer>> filesToLoad
+        = new ArrayList<Pair<URI, CharProducer>>();
+
+    public CharProducer loadExternalResource(
+        ExternalReference ref, String mimeType) {
+      URI uri = ref.getUri();
+      for (Iterator<Pair<URI, CharProducer>> it = filesToLoad.iterator();
+           it.hasNext();) {
+        Pair<URI, CharProducer> entry = it.next();
+        if (ref.getUri().equals(entry.a)) {
+          it.remove();
+          return entry.b;
+        }
+      }
+      if (!"content".equals(uri.getScheme())) {
+        return null;
+      }
+      return CharProducer.Factory.create(
+          new StringReader(decode(uri.getRawSchemeSpecificPart())),
+          new InputSource(uri));
+    }
+
+    public String rewriteUri(ExternalReference uri, String mimeType) {
+      return "http://proxy/?uri=" + encode(uri.getUri().toString())
+          + "&mimeType=" + encode(mimeType);
+    }
+
+    private void closeAll() {
+      for (Pair<URI, CharProducer> e : filesToLoad) {
+        try {
+          e.b.close();
+        } catch (IOException ex) {}
+      }
     }
   }
 }
