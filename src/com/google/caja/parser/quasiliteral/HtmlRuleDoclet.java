@@ -45,7 +45,8 @@ public class HtmlRuleDoclet extends RuleDoclet {
   public void initialize(Writer output) {
     DOMImplementation impl;
     try {
-      impl = DOMImplementationRegistry.newInstance().getDOMImplementation(null);
+      impl = DOMImplementationRegistry.newInstance()
+          .getDOMImplementation("XML 1.0");
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     }
@@ -54,8 +55,7 @@ public class HtmlRuleDoclet extends RuleDoclet {
     String publicId = "-//W3C//DTD XHTML 1.0 Transitional//EN";
     htmlDocument = impl.createDocument(
         systemId, qname, impl.createDocumentType(qname, publicId, systemId));
-    Element root = htmlDocument.createElement("html");
-    htmlDocument.appendChild(root);
+    assert qname.equals(htmlDocument.getDocumentElement().getLocalName());
   }
 
   private Element headerRow(String... cells) {

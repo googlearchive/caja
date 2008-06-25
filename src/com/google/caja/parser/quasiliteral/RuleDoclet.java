@@ -83,29 +83,38 @@ public abstract class RuleDoclet {
    */
   public void generateDocumentation(Writer output) 
     throws IOException {
-    RulesetDescription ruleSetDescription = 
-      rewriter.getClass().getAnnotation(RulesetDescription.class);
-    initialize(output);
-    generateHeader(output, ruleSetDescription);
-    for (Object oc : rewriter.getRules()) {
-      Class<?> c = oc.getClass();
-      boolean annotated = false;
-      for (Method mm : c.getMethods()) {
-        RuleDescription anno = mm.getAnnotation(RuleDescription.class);
-        if (anno != null) {
-          if (!mm.getName().equals("fire")) {
-            throw new RuntimeException("RuleDescription should only be used to annotate the \"fire\" method, not " + mm.getName());
+    try {
+      RulesetDescription ruleSetDescription = 
+          rewriter.getClass().getAnnotation(RulesetDescription.class);
+      initialize(output);
+      generateHeader(output, ruleSetDescription);
+      for (Object oc : rewriter.getRules()) {
+        Class<?> c = oc.getClass();
+        boolean annotated = false;
+        for (Method mm : c.getMethods()) {
+          RuleDescription anno = mm.getAnnotation(RuleDescription.class);
+          if (anno != null) {
+            if (!mm.getName().equals("fire")) {
+              throw new RuntimeException(
+                  "RuleDescription should only be used to annotate the"
+                  + " \"fire\" method, not " + mm.getName());
+            }
+            if (!annotated) {
+              generateRuleDocumentation(output, anno);
+              annotated = true;
+            } else {
+              throw new RuntimeException(
+                  "RuleDescription annotation used more than once in the"
+                  + " same rule");            
+            }     
           }
-          if (!annotated) {
-            generateRuleDocumentation(output, anno);
-            annotated = true;
-          } else {
-            throw new RuntimeException("RuleDescription annotation used more than once in the same rule");            
-          }     
         }
       }
+      generateFooter(output, ruleSetDescription);
+      finish(output);
+    } catch (RuntimeException ex) {
+      ex.printStackTrace();  // ANT hides exceptions otherwise
+      throw ex;
     }
-    generateFooter(output, ruleSetDescription);
-    finish(output);
   }
 }
