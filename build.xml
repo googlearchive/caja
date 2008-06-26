@@ -345,13 +345,16 @@
       - that builds a symlink tree? -->
     <copy todir="${lib}">
       <fileset dir="${src}">
+        <include name="**/caja/caja.js"/>
+        <include name="**/caja/caja-debugmode.js"/>
+        <include name="**/caja/log-to-console.js"/>
+        <include name="**/caja/demos/calendar/*.js"/>
         <include name="**/caja/opensocial/applet/testbed.js"/>
         <include name="**/caja/plugin/domita.js"/>
         <include name="**/caja/plugin/html4-defs.js"/>
         <include name="**/caja/plugin/html-emitter.js"/>
         <include name="**/caja/plugin/html-sanitizer.js"/>
         <include name="**/caja/plugin/unicode.js"/>
-        <include name="**/caja/demos/calendar/*.js"/>
       </fileset>
       <fileset dir="${tests}">
         <include name="**/caja/**/*.css"/>
@@ -362,11 +365,6 @@
         <include name="**/caja/**/*.js"/>
         <include name="**/caja/**/*.txt"/>
         <include name="**/caja/**/*.xml"/>
-      </fileset>
-      <fileset dir="${src}">
-        <include name="**/caja/caja.js"/>
-        <include name="**/caja/caja-debugmode.js"/>
-        <include name="**/caja/log-to-console.js"/>
       </fileset>
       <fileset dir="${third_party}">
         <include name="js/jqueryjs/runtest/env.js"/>
@@ -670,6 +668,9 @@
         <include name="html-emitter.js"/>
         <include name="html-sanitizer.js"/>
         <include name="unicode.js"/>
+      </fileset>
+      <fileset dir="${lib}/com/google/caja/plugin">
+        <include name="css-defs.js"/>
       </fileset>
       <fileset dir="${src}/com/google/caja/opensocial/applet">
         <include name="*.html"/>
