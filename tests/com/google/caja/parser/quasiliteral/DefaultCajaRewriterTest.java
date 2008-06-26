@@ -18,11 +18,7 @@ import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
-import com.google.caja.parser.SyntheticNodes;
 import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.ExpressionStmt;
-import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.reporting.MessageLevel;
@@ -30,10 +26,8 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.util.RhinoTestBed;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.List;
 
 import junit.framework.AssertionFailedError;
 
@@ -106,15 +100,15 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     checkFails("var a={}; a.valueOf=1;", "The valueOf property must not be set");
     checkFails(
         "  function f(){this;}"
-        + "f.prototype.valueOf=1;", 
+        + "f.prototype.valueOf=1;",
         "The valueOf property must not be set");
     checkFails(
         "  function f(){this;}"
-        + "caja.def(f, Object, {valueOf:1});", 
+        + "caja.def(f, Object, {valueOf:1});",
         "The valueOf property must not be set");
     checkFails(
         "  function f(){this;}"
-        + "caja.def(f, Object, {}, {valueOf:1});", 
+        + "caja.def(f, Object, {}, {valueOf:1});",
         "The valueOf property must not be set");
     checkFails("var a={}; delete a.valueOf;", "The valueOf property must not be deleted");
     rewriteAndExecute("var a={}; assertThrows(function(){a['valueOf']=1});");
@@ -446,7 +440,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE);
     checkAddsMessage(
         js(fromString("for (k in x) ;")),
-        RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE);    
+        RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE);
   }
 
   public void testForeach() throws Exception {
@@ -2636,7 +2630,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     Statement cajaTree = replaceLastStatementWithEmit(
         js(fromString(caja, is)), "unittestResult___;");
     String cajoledJs = render(
-        cajole(js(fromResource("../../plugin/asserts.js")), cajaTree));
+        rewriteStatements(js(fromResource("../../plugin/asserts.js")), cajaTree));
 
     assertNoErrors();
 
@@ -2668,39 +2662,6 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
 
     assertNoErrors();
     return result;
-  }
-
-  private <T extends ParseTreeNode> T replaceLastStatementWithEmit(
-      T node, String lValueExprString) throws ParseException {
-    if (node instanceof ExpressionStmt) {
-      ParseTreeNode lValueExpr =
-          js(fromString(lValueExprString))  // a Block
-          .children().get(0)                // an ExpressionStmt
-          .children().get(0);               // an Expression
-      ExpressionStmt es = (ExpressionStmt) node;
-      Expression e = es.getExpression();
-      Operation emitter = (Operation)substV(
-          "@lValueExpr = @e;",
-          "lValueExpr", syntheticTree(lValueExpr),
-          "e", e);
-      es.replaceChild(emitter, e);
-    } else {
-      List<? extends ParseTreeNode> children = node.children();
-      if (!children.isEmpty()) {
-        replaceLastStatementWithEmit(
-            children.get(children.size() - 1), lValueExprString);
-      }
-    }
-    return node;
-  }
-
-  private <T extends ParseTreeNode> T syntheticTree(T node) {
-    for (ParseTreeNode c : node.children()) { setTreeSynthetic(c); }
-    return SyntheticNodes.s(node);
-  }
-
-  private ParseTreeNode cajole(Statement... nodes) {
-    return newRewriter().expand(new Block(Arrays.asList(nodes)), mq);
   }
 
   @Override

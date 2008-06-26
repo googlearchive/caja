@@ -47,6 +47,8 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.Collection;
+import java.util.Comparator;
 
 /**
  * A scope analysis of a {@link com.google.caja.parser.ParseTreeNode}.
@@ -195,7 +197,7 @@ public class Scope {
   // TODO(ihab.awad): importedVariables is only used by the root-most scope; it is
   // empty everywhere else. Define subclasses of Scope so that this confusing
   // overlapping of instance variables does not occur.
-  private final Set<String> importedVariables = new HashSet<String>();
+  private final Set<String> importedVariables = new TreeSet<String>();
 
   public static Scope fromProgram(Block root, MessageQueue mq) {
     Scope s = new Scope(ScopeType.PROGRAM, mq, true);
@@ -279,6 +281,10 @@ public class Scope {
    */
   public List<Statement> getStartStatements() {
     return startStatements;
+  }
+
+  public Set<String> getImportedVariables() {
+    return importedVariables;
   }
 
   /**
@@ -469,16 +475,8 @@ public class Scope {
   private static void addImportedVariable(Scope s, String name) {
     Scope target = s;
     while (target.getParent() != null) { target = target.getParent(); }
-    // TODO(ihab.awad): Imported variables are remembered in 2 places: in the
-    // 'importedVariables' member and by adding start of block statements.
-    // This should be done more cleanly.
     if (target.importedVariables.contains(name)) { return; }
     target.importedVariables.add(name);
-    Identifier identifier = s(new Identifier(name));
-    target.addStartOfBlockStatement((Statement)QuasiBuilder.substV(
-        "var @vIdent = ___.readImport(IMPORTS___, @vName);",
-        "vIdent", identifier,
-        "vName", Rule.toStringLiteral(identifier)));
   }
 
   private static LocalType computeDeclarationType(Scope s, Declaration decl) {

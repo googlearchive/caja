@@ -18,6 +18,8 @@ import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.SyntheticNodes;
+import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
+import com.google.caja.parser.js.*;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.TestUtil;
 import com.google.caja.reporting.MessageLevel;
@@ -28,6 +30,7 @@ import junit.framework.AssertionFailedError;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Arrays;
 
 /**
  * @author ihab.awad@gmail.com
@@ -233,5 +236,38 @@ public abstract class RewriterTestCase extends CajaTestCase {
         + "rewritten=<" + rewrittenResult + "> "
         + "for " + getName());
     assertEquals(message, plainResult, rewrittenResult);
+  }
+
+  protected <T extends ParseTreeNode> T replaceLastStatementWithEmit(
+      T node, String lValueExprString) throws ParseException {
+    if (node instanceof ExpressionStmt) {
+      ParseTreeNode lValueExpr =
+          js(fromString(lValueExprString))  // a Block
+          .children().get(0)                // an ExpressionStmt
+          .children().get(0);               // an Expression
+      ExpressionStmt es = (ExpressionStmt) node;
+      Expression e = es.getExpression();
+      Operation emitter = (Operation)substV(
+          "@lValueExpr = @e;",
+          "lValueExpr", syntheticTree(lValueExpr),
+          "e", e);
+      es.replaceChild(emitter, e);
+    } else {
+      List<? extends ParseTreeNode> children = node.children();
+      if (!children.isEmpty()) {
+        replaceLastStatementWithEmit(
+            children.get(children.size() - 1), lValueExprString);
+      }
+    }
+    return node;
+  }
+
+  private <T extends ParseTreeNode> T syntheticTree(T node) {
+    for (ParseTreeNode c : node.children()) { setTreeSynthetic(c); }
+    return SyntheticNodes.s(node);
+  }
+
+  protected ParseTreeNode rewriteStatements(Statement... nodes) {
+    return newRewriter().expand(new Block(Arrays.asList(nodes)), mq);
   }
 }

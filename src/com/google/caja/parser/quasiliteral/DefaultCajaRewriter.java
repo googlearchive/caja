@@ -108,10 +108,21 @@ public class DefaultCajaRewriter extends Rewriter {
           for (ParseTreeNode c : node.children()) {
             expanded.add(expand(c, s2, mq));
           }
+          List<ParseTreeNode> importedVars = new ArrayList<ParseTreeNode>();
+          for (String k : s2.getImportedVariables()) {
+            importedVars.add(
+                QuasiBuilder.substV(
+                    "var @vIdent = ___.readImport(IMPORTS___, @vName);",
+                    "vIdent", s(new Identifier(k)),
+                    "vName", toStringLiteral(new Identifier(k)))
+            );
+          }
+
           return substV(
-              "@startStmts*; @ss*;",
+              "@importedvars*; @startStmts*; @expanded*;",
+              "importedvars", new ParseTreeNodeContainer(importedVars),
               "startStmts", new ParseTreeNodeContainer(s2.getStartStatements()),
-              "ss", new ParseTreeNodeContainer(expanded));
+              "expanded", new ParseTreeNodeContainer(expanded));
         }
         return NONE;
       }
@@ -234,7 +245,7 @@ public class DefaultCajaRewriter extends Rewriter {
         return NONE;
       }
     },
-      
+
     new Rule () {
       @Override
       @RuleDescription(
