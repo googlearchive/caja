@@ -4,13 +4,23 @@
 
 .note {
   font-family: sans-serif;
-  font-size: 10pt;
-  font-style: italic;
-  border: 1px dotted gray;
+  font-size: 9pt;
+  border: 1px solid #d0d0d0;
   margin-left: 48pt;
   margin-right: 24pt;
   padding: 6pt;
   background-color: #efffef;
+  -moz-border-radius: 5px;
+}
+
+.title {
+  color: blue;
+  font-family: sans-serif;
+  font-size: 24pt;
+  font-weight: bold;
+  text-align: center;
+  margin-left: -0.75in;
+  margin-bottom: 0.5in;
 }
 
 body {
@@ -23,18 +33,22 @@ h1,h2,h3,h4,h5,h6 {
 }
 
 h1 {
-  margin-left: -0.75in;
+  margin-left: -0.625in;
   font-weight: bold;
-  text-align: center;
+  font-size: 22pt;
 }
 
 h2 {
-  margin-left: -0.625in;
+  margin-left: -0.5in;
+  font-weight: bold;
+  font-size: 18pt;
 }
 
 h3 {
-  margin-left: -0.5in;
+  margin-left: -0.25in;
+  font-weight: bold;
   font-style: italic;
+  font-size: 12pt;
 }
 
 code, tt {
@@ -43,9 +57,9 @@ code, tt {
 
 pre {
   color: darkblue;
-  border: solid 1px brown;
-  padding: 5px;
+  border: solid 1px #d0d0d0;
+  padding: 10px;
   margin-left: 0.25in;
   margin-right: 0.25in;
-  background: cornsilk;    
+  background: #f0f0f0;
 }

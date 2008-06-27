@@ -21,187 +21,282 @@
 <head>
   <title>Caja Module System</title>
   <link type="text/css" rel="stylesheet" href="../common/documentStyle.css"/>
+  <script type="text/javascript" src="../common/headingNumbers.js"></script>
 </head>
 
-<body>
+<body onload="numberDocument();">
 
-<h1>Caja Module System</h1>
+<div class="title">Caja Module System</div>
 
-<h2>Introduction</h2>
+<h1>Problem statement</h1>
 
-<p>This document describes the manner in which Caja code is composed
-at run-time.</p>
+<p>We need to design a mechanism for secure code sharing in Caja. Caja
+as currently specified allows any third party to implement such a
+mechanism but, in order to guide container developers and ensure that
+common mistakes are avoided, we at least need to build an example of a
+good solution.</p>
 
-<h2>Overview of Cajoling</h2>
+<h1>Background</h1>
 
-<p>Caja code is JavaScript code that conforms to the fail-stop subset
-of JavaScript defined by the Caja specification. A conforming Caja
-system <em>cajoles</em> a Caja input program, producing as output a
-Caja <em>module</em>. A Caja module is a unit of JavaScript code with
-the following well-known top-level structure:</p>
+<h2>Current JavaScript practice</h2>
+
+<p>Current JavaScript code (as embedded in HTML pages) composes code
+by loading scripts, in either of two ways.</p>
+
+<h3>Direct inclusion</h3>
+
+<p>Web pages include code from external URIs via
+<code>&lt;script&gt;</code> tags with a <code>src</code>
+attribute:</p>
 
 <pre>
-___.loadModule(function(___IMPORTS___) {
-  <em>... translated code here ...</em>
+&lt;script
+    type="text/javascript"
+    src="http://example.com/foo.js"&gt;
+&lt;/script&gt;
+
+&lt;script type="text/javascript"&gt;
+  <em>At this point, definitions from "foo.js" are in the global
+  namespace and can be used directly.</em>
+&lt;/script&gt;</pre>
+
+<h3>Run-time loading</h3>
+
+<p>A number of JavaScript libraries provide a layer on top of this by
+providing a module loader:</p>
+
+<pre>
+&lt;script
+    type="text/javascript"
+    src="http://www.google.com/jsapi?key=ABCDEFG"&gt;
+&lt;/script&gt;
+
+&lt;script type="text/javascript"&gt;
+  <em>At this point, the object "google" is in the global namespace.</em>
+
+  google.load("maps", "2");    
+  <em>At this point, "maps" is in the global namespace.</em>
+&lt;/script&gt;
+</pre>
+
+<p>Such libraries take advantage of the fact that, in JavaScript, the
+properties of the global symbol <code>this</code> are the bindings in
+the global lexical scope, and manipulating the global
+<code>this</code> is immediately reflected in the global lexical
+scope.</p>
+
+<h2>Current Caja practice</h2>
+
+<p>If <code>&lt;script src="..."&gt;</code> tags are found in Caja
+code, the contents at the <code>src</code> URI are fetched and
+transcluded into the Caja input, roughly as though the
+<code>&lt;script&gt;</code> tag contained the code in-line and had no
+<code>src</code> attribute. The result is then Cajoled as a unit. A
+module is therefore "statically linked" with all its external
+dependencies. This practice fails to scale for a number of
+reasons:</p>
+
+<ol>
+
+  <li><p>Each external script has access to the global lexical scope
+  of the including module, yet the author of the including module may
+  not have strict control over the external script. This essentially
+  breaks intra-module isolation.</p></li>
+
+  <li><p>Consider two modules that share instances of, say,
+  <code>Widget</code> objects created by a presumably common widget
+  library. If the modules, when cajoled, transcluded different
+  versions of the widget library, they may uknowingly violate each
+  others' integrity (e.g., since the <code>Widget</code> interface may
+  have changed between versions).</p></li>
+  
+  <li><p>JavaScript is a dynamic language. We lose expressive power if
+  we fail to allow JavaScript programmers to load code on demand.</p></li>
+  
+  <li><p>For commonly used code, the "static linking" creates
+  code bloat we would like to avoid.</p></li>
+
+</ol>
+
+<h1>Definitions</h1>
+
+<p>A <strong>module</strong> is a unit of cajoled Caja code
+represented as a module function. <strong>Instantiation</strong> is
+the process of calling a module function, resulting in some set of
+objects that collectively represent a <strong>module instance</strong>
+(or just <strong>instance</strong>). The entity that instantiates a
+module is called that module's <strong>parent</strong>, and the
+instantiated module is called the <strong>child</strong> of the
+instantiating entity.</p>
+
+<h1>Requirements</h1>
+
+<h2>Mandatory items</h2>
+
+<h3>Caja module is smallest unit</h3>
+
+<p>The unit of code distribution and sharing must be no smaller than
+one Caja module. We understand the security and isolation properties
+of a Caja module, and would like to re-use our understanding.</p>
+
+<h3>Larger units composed from Caja modules</h3>
+
+<p>If the module system introduces a larger abstraction than an
+individual Caja module, it must be understandable in terms of the
+collective behavior of isolated Caja modules.</p>
+
+<p>Specifically, it is not allowable to create compositions from parts
+of the internals of existing modules.</p>
+
+<h3>Module privacy is respected</h3>
+
+<p>Under no circumstances may any component, including the module
+system or container, rely on introspecting on the internal code or
+state within a Caja module's isolation boundary.</p>
+
+<h3>System may instantiate modules</h3>
+
+<p>Privileged code belonging to the TCB &mdash; i.e., the container or
+module system &mdash; may instantiate modules.</p>
+
+<h3>Instances may instantiate modules</h3>
+
+<p>An instance may instantiate other modules. (This ability may be
+attenuated, but it must not be systemically impossible.)</p>
+
+<h3>Instances are isolated</h3>
+
+<p>Instances, including multiple instantiations of the same module
+code, must be isolated from one another. By design, Caja allows two
+modules to share an imported capability, but the module system itself
+should open no other conduits of causality, or explicit communication
+channels, between any two module instances.</p>
+
+<h3>Imports and module instantiation under parent control</h3>
+
+<p>The parent of a module must exert full positive control over:</p>
+
+<ul>
+
+  <li><p>The contents of the <code>IMPORTS___</code> of the
+  child.</p></li>
+
+  <li><p>The set of modules that the child is itself permitted to
+  instantiate.</p></li>
+
+</ul>
+
+<h3>Exported value(s) are possible</h3>
+
+<p>A module may export object references to its parent.</p>
+
+<h3>Export under module control</h3>
+
+<p>A module must exert full positive control over the set of
+capabilities it exports to its parent.</p>
+
+<h3>Module loading does not break isolation</h3>
+
+<p>The ability to load modules must not open a conduit of causality to
+the outside world. For example, a module instance must not be able to
+mount a wall-banging attack by loading certain modules in a given
+order.</p>
+
+<div class="note">Perhaps this item should be reworded to say that it
+should be merely <em>possible</em> for the invoking entity to enforce
+this isolation.</div>
+
+<h2>Desiderata</h2>
+
+<h3>&mu;kernel architecture</h3>
+
+<p>It should be possible to build a &mu;kernel implementation using
+the module system. We envision this would entail a small bootloader
+JavaScript fragment that loads the TCB (e.g., <code>caja.js</code>)
+then loads some primordial modules, supplying them with powerful
+capabilities that they attenuate and distribute to their children.</p>
+
+<h3>Module identity</h3>
+
+<p>Our solution should support a usage pattern where, within some
+well-defined realm, loading a module using the same request criteria
+should result in the identical cajoled code being instantiated.
+For example, within some realm, calling:</p>
+
+<pre>
+loadModule('goog.maps', '3.17', 'ABCDEFGH');
+</pre>
+
+<p>would result in the same module code being instantiated.</p>
+
+<div class="note">Do we want to explicitly fix, as a matter of spec
+compliance, what constitutes a "realm" in this criterion? A page? A
+frame? A Gears Worker?</div>
+
+<div class="note">Should the Caja framework <em>impose</em> this
+requirement on any user-supplied implementation parts of the module
+system, or is that merely a recommendation to whomever chooses to
+implement parts of the module system? This depends, among other
+things, on the semantics of the module loading API "request criteria".
+Do we standardize on some format for these so we can enforce
+identity?</div>
+
+<h1>Strawman proposal</h1>
+
+<p>The following is a fragmentary strawman proposal to serve as a
+starting point for discussion. The material discussed in this section
+is definitely <em>not</em> normative.</p>
+
+<h2>Module API</h2>
+
+<p>By convention, the <code>IMPORTS___</code> of any module contains a
+reserved name <code>loader</code> that allows the module to interact
+with the module system.</p>
+
+<h3><code>loader.load</code></h3>
+
+<pre>
+loader.load(criteria, importsOpt);
+</pre>
+
+<p>Instantiates the module identified by <code>criteria</code>. The
+<code>criteria</code> are a JSON container of arbitrary structure
+describing the module to be loaded. The <code>importsOpt</code> is an
+optional parameter containing an object literal the public properties
+of which will be used as entries in the <code>IMPORTS___</code> of the
+child module. The return value of this function is the return value of
+the child module (see below). For example:</p>
+
+<pre>
+var myCanvas = /* ... */;
+var myWidget = loader.load({
+  name: 'widget',
+  version: { range: ['3.7', '3.9'] },
+}, {
+  canvas: myCanvas
 });
 </pre>
 
-<p>The anonymous function defined by this stereotypical structure is
-called the <em>module function</em>.</p>
+<div class="note">What about boilerplate <code>IMPORTS___</code> like
+<code>Object</code> and <code>Date</code>? We certainly don't want the
+parent module to supply these explicitly, <em>every</em> time, now do
+we? That would be very verbose.</div>
 
-<h2>Module instantiation</h2>
-
-<p>Caja modules run within a <em>container</em> which acts as an OS
-kernel. Part or all of the container is written in native JavaScript
-and runs with full authority.</p>
-
-<p>A Caja container <em>instantiates</em> a module by calling its
-module function. By design, the module function cannot save state
-between invocations, so that each instance of a module is an isolate.
-Module instances may only communicate with the outside world as
-arranged by their container.</p>
-
-<p>A Caja container instantiates modules as part of a boot-up process,
-as a result of some configuration, or at the behest of other
-modules.</p>
-
-<h2>Free variables</h2>
-
-<p>The <em>free variables</em> of a block of Caja code are the
-variables which are not explicitly declared in the scope chain
-enclosing their point of use. For example, in the following:</p>
+<h3><code>loader.return</code></h3>
 
 <pre>
-var x = 0;
-y.foo = 3;
-function() {
-  z.bar = 4;
-}
+loader.return(aValue);
 </pre>
 
-<p>The variables <code>y</code> and <code>z</code>, but not
-<code>x</code>, are free variables.</p>
-
-<h2>Imports lists</h2>
-
-<p>The <code>___IMPORTS___</code> parameter to the module function is
-called the module's <em>imports list</em>. It is an object the
-properties of which are the capabilities provided to the module by the
-container.</p>
-
-<p>The free variables of a Caja block are rewritten to be references
-to its imports list. For example, the reference to <code>y</code> in
-the previous example would be rewritten as follows (highly simplified
-for clarity):</p>
+<p>Returns <code>aValue</code> as the return value of this module
+instance. In the case of multiple calls to <code>return</code>, the
+value supplied to the last call is used. For example:</p>
 
 <pre>
-___IMPORTS___.y.foo = 3;
+var theWidget = constructWidget(canvas, defaultResolution);
+theWidget.initialize();
+loader.return(theWidget);
 </pre>
-
-<p>Caja code is rewritten such that referring to a non-existent member
-of the imports list throws a <code>ReferenceError</code>. This mimics
-the behavior of references to undefined variables in the global scope
-of a JavaScript program.</p>
-
-<h2>Pre-defined imports</h2>
-
-<p>Some members of the imports list of a module are present without
-the module's code having to make any special effort.</p>
-
-<h3>Built-in objects</h3>
-
-<p>The JavaScript built-in objects such as <code>Object</code> and
-<code>Array</code> must be provided to each module, as listed in
-Section 4.2 of Ecma-262 and restricted in semantics and availability
-by the Caja specification.</p>
-
-<h3>Caja entry points</h3>
-
-<p>Two Caja entry points are provided for each module.
-<code>caja</code> refers to a powerless helper object implementing
-that part of the Caja microkernel that is directly visible to the
-programmer. <code>modules</code> is an object allowing the program to
-modify its imports list and provide objects for the imports lists of
-other modules.</p>
-
-<h3>Application specific objects</h3>
-
-<p>Container implementations may choose to add more default objects to
-the imports lists of modules they host. For example, a container used
-for Web content may define a <code>document</code> serving as a secure
-alternative to the eponymous object provided by Web browsers.</p>
-
-<h2>The <code>modules</code> object</h2>
-
-<p>The <code>modules</code> object is the visible entry point into the
-module system.</p>
-
-<h3><code>modules.import(url)</code></h3>
-
-<p>Instantiates the named module and loads its exported symbols into
-this module's imports list.</p>
-
-<p><code>url</code> &mdash; the URL of a module.</p>
-
-<p><strong>returns</strong> a truthy value on success, or a falsy
-value on failure.</p>
-
-<pre>
-try {
-  foo.doSomething(3, 4);
-} catch (e) {
-  // ReferenceError since 'foo' not defined
-}
-
-// The following module exports 'foo'
-modules.import('http://example.com/aModule.js');
-
-// Now the following will succeed
-foo.doSomething(3, 4);
-</pre>
-
-<h3><code>modules.importValue(url)</code></h3>
-
-<p>Similar to <code>modules.import</code>, but returns the module's
-symbols as the properties of an object.</p>
-
-<p><code>url</code> &mdash; the URL of a module.</p>
-
-<p><strong>returns</strong> an object the properties of which are the
-symbols exported by the module being loaded.</p>
-
-<pre>
-var exm = modules.importValue('http://example.com/aModule.js');
-exm.foo.doSomething(3, 4);
-</pre>
-
-<h3><code>modules.export(name, value)</code></h3>
-
-<p>Export a symbol to the container or to a module that is
-instantiating this module.</p>
-
-<p><code>name</code> &mdash; the name under which to export an
-object.</p>
-
-<p><code>value</code> &mdash; an object being exported.</p>
-
-<p><strong>returns</strong> a truthy value on success, or a falsy
-value on failure.</p>
-
-<pre>
-function aFunc(x, y) { return x + y; }
-
-modules.export('foo', aFunc);
-modules.export('bar', caja.freeze({ baz: 4 }));
-</pre>
-
-<h2>Unresolved issues</h2>
-
-<p>What happens if I call <code>delete</code> on, or assign to, a free
-variable? Does the behavior differ depending on whether or not the
-variable is currently in my imports list?</p>
-
-<p>How do we ensure that a module's URL is valid Caja?</p>
 
 </body>
 
