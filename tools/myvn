@@ -56,12 +56,12 @@
 #       Eclipse
 # ====================
 # (1) Generate the project
-#       $ cd google-caja/src
+#       $ cd google-caja/
 #       $ myvn eclipse
 # (2) Open Eclipse
 # (3) Choose New Java Project  (NOT new google3 project)
 # (4) From Existing Source
-# (5) Enter the .../svn-changes/my-change-1/google-caja/src path
+# (5) Enter the .../svn-changes/my-change-1/google-caja/ path
 # (6) Finish
 #
 #
@@ -159,6 +159,10 @@ function myvn() {
       done
       ;;
     eclipse )
+      if [ -z "$ANT_HOME" ]; then
+        echo Please set up the following environment variables:
+        test -z "$ANT_HOME" && echo ANT_HOME \(eg. export ANT_HOME=/usr/share/ant\)
+      fi
       makeEclipseProject "$current_cl" > .project
       makeEclipseClasspath > .classpath
       mkdir -p ant-eclipse-lib
@@ -213,12 +217,15 @@ function makeEclipseClasspath() {
   echo "<classpath>"
   echo "	<classpathentry excluding=\"**/*~|**/.svn/**\" kind=\"src\" path=\"src\"/>"
   echo "	<classpathentry excluding=\"**/*~|**/.svn/**\" kind=\"src\" path=\"tests\"/>"
+  # Needed so JUnit test works in Eclipse
+  echo "	<classpathentry excluding=\"**/*~|**/.svn/**|**/*.java\" kind=\"src\" path=\"third_party\"/>"
+  # Needed so JUnit test works in Eclipse
+  echo "	<classpathentry kind=\"lib\" path=\"ant-lib\"/>"
   for jar in $(find third_party -name \*.jar | sort); do
     echo "	<classpathentry kind=\"lib\" path=\"$jar\"/>"
   done
   echo "	<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER\"/>"
   echo "	<classpathentry kind=\"lib\" path=\"$ANT_HOME/lib/ant.jar\"/>"
-  echo "	<classpathentry kind=\"lib\" path=\"$JAVA_HOME/jre/lib/rt.jar\"/>"
   echo "	<classpathentry kind=\"output\" path=\"ant-eclipse-lib\"/>"
   echo "</classpath>"
 }
