@@ -80,6 +80,17 @@ public class HtmlCompiledPluginTest extends TestCase {
         );
     execGadget(
         "<script>" +
+        "function Foo(){this;}" +
+        "var foo = new Foo;" +
+        "try { stamp({}, foo, true); }" +
+        "catch (e) {" +
+        "  fail(e.message);" +
+        "}" +
+        "</script>",
+        ""
+        );
+    execGadget(
+        "<script>" +
         "var foo = {};" +
         "var tm = {};" +
         "stamp(tm, foo);" +

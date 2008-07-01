@@ -2076,16 +2076,17 @@ var ___;
    * trademarks.
    * If the trademark list doesn't exist yet, this function creates it.
    * JSON containers and functions may be stamped at any time; constructed
-   * objects may only be stamped during construction.
+   * objects may only be stamped during construction unless the third
+   * parameter is truthy.
    */
-  function stamp(trademark, obj) {
-  console.log(obj.toSource());
+  function stamp(trademark, obj, opt_allow_constructed) {
     enforce (typeof trademark === 'object',
         'The supplied trademark is not an object.');
     enforce (!isFrozen(obj), 'The supplied object ' + obj + ' is frozen.');
     if (!isJSONContainer(obj) && 
         (typeof obj !== 'function') &&
-        !obj.underConstruction___) {
+        !obj.underConstruction___ &&
+        !opt_allow_constructed) {
       fail('The supplied object '
           + obj + ' has already been constructed and may not be stamped.');
     }

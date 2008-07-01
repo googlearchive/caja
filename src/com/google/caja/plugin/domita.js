@@ -386,8 +386,8 @@ attachDocumentStub = (function () {
               break;
             default:
               // TODO(mikesamuel): If an unrecognized node, return a
-	      // placeholder that doesn't prevent tree navigation, but
-	      // that doesn't allow mutation or inspection.
+              // placeholder that doesn't prevent tree navigation, but
+              // that doesn't allow mutation or inspection.
               tamed = new TameElement(node, editable);
               break;
           }
@@ -438,7 +438,7 @@ attachDocumentStub = (function () {
     function TameNode(node, editable) {
       this.node___ = node;
       this.editable___ = editable;
-      ___.stamp(tameNodeTrademark, this);
+      ___.stamp(tameNodeTrademark, this, true);
     }
     TameNode.prototype.getNodeType = function () {
       return this.node___.nodeType;
