@@ -2074,16 +2074,26 @@ var ___;
   /**
    * This function adds the given trademark to the given object's list of
    * trademarks.
-   * If the map doesn't exist yet, this function creates it.
-   * If the object is still being constructed, it delays the trademarking.
+   * If the trademark list doesn't exist yet, this function creates it.
+   * JSON containers and functions may be stamped at any time; constructed
+   * objects may only be stamped during construction.
    */
-  function audit(trademark, obj) {
+  function stamp(trademark, obj) {
+  console.log(obj.toSource());
     enforce (typeof trademark === 'object',
         'The supplied trademark is not an object.');
+    enforce (!isFrozen(obj), 'The supplied object ' + obj + ' is frozen.');
+    if (!isJSONContainer(obj) && 
+        (typeof obj !== 'function') &&
+        !obj.underConstruction___) {
+      fail('The supplied object '
+          + obj + ' has already been constructed and may not be stamped.');
+    }
     var list = obj.underConstruction___ ?
         "delayedTrademarks___" : "trademarks___";
     if (!obj[list]) { obj[list] = []; }
     obj[list].push(trademark);
+    return obj;
   }
 
   function initializeMap(mapObj) {
@@ -2165,7 +2175,6 @@ var ___;
     // Trademarking
     hasTrademark: hasTrademark,
     guard: guard,
-    audit: audit,
 
     // Sealing & Unsealing
     makeSealerUnsealerPair: makeSealerUnsealerPair,
@@ -2273,6 +2282,7 @@ var ___;
     tameException: tameException,
     callStackUnsealer: callStackSealer.unseal,
     RegExp: RegExp,  // Available to rewrite rule w/o risk of masking
+    stamp: stamp,
 
     // Taming mechanism
     useGetHandler: useGetHandler,

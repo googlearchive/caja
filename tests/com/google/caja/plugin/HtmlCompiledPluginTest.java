@@ -61,21 +61,102 @@ public class HtmlCompiledPluginTest extends TestCase {
     execGadget("", "");
   }
 
+  public void testStamp() throws Exception {
+    execGadget(
+        "<script>" +
+        "function Foo(){this;}" +
+        "var foo = new Foo;" +
+        "var passed = false;" +
+        "try { stamp({}, foo); }" +
+        "catch (e) {" +
+        "  if (!e.message.match('may not be stamped')) {" +
+        "    fail(e.message);" +
+        "  }" +
+        "  passed = true;" +
+        "}" +
+        "if (!passed) { fail ('Able to stamp constructed objects.'); }" +
+        "</script>",
+        ""
+        );
+    execGadget(
+        "<script>" +
+        "var foo = {};" +
+        "var tm = {};" +
+        "stamp(tm, foo);" +
+        "caja.guard(tm, foo);" +
+        "</script>",
+        ""
+        );
+    execGadget(
+        "<script>" +
+        "var foo = {};" +
+        "var tm = {};" +
+        "var passed = false;" +
+        "try { caja.guard(tm, foo); }" +
+        "catch (e) {" +
+        "  if (!e.message.match('This object does not have the given trademark')) {" +
+        "    fail(e.message);" +
+        "  }" +
+        "  passed = true;" +
+        "}" +
+        "if (!passed) { fail ('Able to forge trademarks.'); }" +
+        "</script>",
+        ""
+        );
+    execGadget(
+        "<script>" +
+        "var foo = {};" +
+        "var tm = {};" +
+        "var tm2 = {};" +
+        "var passed = false;" +
+        "try { stamp(tm, foo); caja.guard(tm2, foo); }" +
+        "catch (e) {" +
+        "  if (!e.message.match('This object does not have the given trademark')) {" +
+        "    fail(e.message);" +
+        "  }" +
+        "  passed = true;" +
+        "}" +
+        "if (!passed) { fail ('Able to forge trademarks.'); }" +
+        "</script>",
+        ""
+        );
+    execGadget(
+        "<script>" +
+        "function foo(){};" +
+        "var tm = {};" +
+        "var passed = false;" +
+        "try { stamp(tm, foo); }" +
+        "catch (e) {" +
+        "  if (!e.message.match('is frozen')) {" +
+        "    fail(e.message);" +
+        "  }" +
+        "  passed = true;" +
+        "}" +
+        "if (!passed) { fail ('Able to stamp frozen objects.'); }" +
+        "</script>",
+        ""
+        );
+  }
+  
   public void testPrimordialObjectExtension() throws Exception {
     // TODO(metaweta): Reenable once POE is part of warts mode.
     if (false) {
       execGadget(
+          "<script>" +
           "var passed = false;" +
           "try{ caja.extend(Array, {length: 1}); }" +
           "catch(e) { passed = true; }" +
-          "if (!passed) { fail('Able to mask existing methods with extensions.'); }",
+          "if (!passed) { fail('Able to mask existing methods with extensions.'); }" +
+          "</script>",
           "");
       execGadget(
+          "<script>" +
           "var passed = false;" +
           "function foo() {this;}" +
           "try{ caja.extend(foo, {x: 1}); }" +
           "catch(e) { passed = true; }" +
-          "if (!passed) { fail('Able to extend arbitrary classes.'); }",
+          "if (!passed) { fail('Able to extend arbitrary classes.'); }" +
+          "</script>",
           "");
     }
   }
