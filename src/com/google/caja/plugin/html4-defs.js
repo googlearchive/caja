@@ -174,7 +174,6 @@ html4.ATTRIBS = {
   'abbr'          : 0,
   'accept'        : 0,
   'accept-charset': 0,
-  'accesskey'     : 0,
   'action'        : html4.atype.URI,
   'align'         : 0,
   'alink'         : 0,
