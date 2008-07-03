@@ -95,6 +95,60 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     return "var " + name + " = ___.readImport(IMPORTS___, '" + name + "');";
   }
 
+  public void testToString() throws Exception {
+    assertConsistent("var z={toString:function(){return 'blah';}}; ''+z;");
+    assertConsistent(
+        "  function foo(){this.x_ = 1;}"
+        + "caja.def(foo, Object, {"
+        + "    toString: function (){"
+        + "      return this.x_;"
+        + "    }"
+        + "});"
+        + "'' + (new foo);");
+    rewriteAndExecute(
+        "testImports.exports = {};",
+        "function Foo(){this.toString=function(){return '1';};}" +
+        "exports.foo = new Foo;",
+        "if (testImports.exports.foo.toString_canSet___) {" +
+        "  fail('toString fastpath gets set.');" +
+        "}"
+        );
+    rewriteAndExecute(
+        "testImports.exports = {};",
+        "exports.obj = {toString:function(){return '1';}};",
+        "if (testImports.exports.obj.toString_canSet___) {" +
+        "  fail('toString fastpath gets set.');" +
+        "}"
+        );
+    rewriteAndExecute(
+        "testImports.exports = {};",
+        "function Foo(f){this.toString=f;}" +
+        "function FooMaker(f) {return new Foo(f);}" +
+        "exports.FooMaker = FooMaker;",
+        "try{testImports.exports.FooMaker(function(){return '1';});}" +
+        "catch (e) {" +
+        "  if (!e.message.match('toxic function')) {" +
+        "    fail(e.message);" +
+        "  }" +
+        "}"
+        );
+    rewriteAndExecute(
+        "testImports.exports = {};",
+        "function objMaker(f) {return {toString:f};}" +
+        "exports.objMaker = objMaker;",
+        "try{testImports.exports.objMaker(function(){return '1';});}" +
+        "catch (e) {" +
+        "  if (!e.message.match('toxic function')) {" +
+        "    fail(e.message);" +
+        "  }" +
+        "}"
+        );
+  }
+  
+  public void testInitializeMap() throws Exception {
+    assertConsistent("var zerubabel={bobble:2, apple:1}; zerubabel.apple;");
+  }
+  
   public void testValueOf() throws Exception {
     checkFails("var a = {valueOf:1};", "The valueOf property must not be set");
     checkFails("var a={}; a.valueOf=1;", "The valueOf property must not be set");
@@ -1221,7 +1275,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         weldPrelude("g") +
         "var x0___;" +
         "var x1___;" +
-        "var x = ___.initializeMap({});" +
+        "var x = ___.initializeMap([]);" +
         weldSetPub("x", "p", "___.readPub(g, 0)", "x0___", "x1___") + ";");
   }
 
@@ -2233,7 +2287,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   public void testMapEmpty() throws Exception {
     checkSucceeds(
         "var f = {};",
-        "var f = ___.initializeMap({});");
+        "var f = ___.initializeMap([]);");
   }
 
   public void testMapBadKeySuffix() throws Exception {
@@ -2249,8 +2303,8 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "var x0___;" +
         "var x1___;" +
         "var o = ___.initializeMap(" +
-        "    { k0: " + weldReadPub("g", "x", "x0___") + ", " +
-        "      k1: " + weldReadPub("g", "y", "x1___") + " });");
+        "    [ 'k0', " + weldReadPub("g", "x", "x0___") + ", " +
+        "      'k1', " + weldReadPub("g", "y", "x1___") + " ]);");
     // Ensure that calling an untamed function throws
     rewriteAndExecute(
         "testImports.f = function() {};",
@@ -2262,12 +2316,10 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         + "var m = { f : f };"
         + "m.f();");
     // Ensure that putting an untamed function into an object literal
-    // with a key that is whitelisted on Object.prototype does not make
-    // it callable
+    // causes an exception.
     rewriteAndExecute(
         "testImports.f = function() {};",
-        "  var m = { isPrototypeOf : f };"
-        + "assertThrows(function() { m.isPrototypeOf(); });",
+        "assertThrows(function(){({ isPrototypeOf : f });});",
         ";");
   }
 

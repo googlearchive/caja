@@ -273,12 +273,10 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         null,
         new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
         new RhinoTestBed.Input(js, getName()));
-    // Use the caja.result function so that we can sneak the result of
-    // evaluating js out of the ___.loadModule envelope.
-    runCajoled("caja.result(" + js + ");", golden,
+    runCajoled("result(" + js + ");", golden,
                "var output = '<no-output>';"
-               + "caja.result = function (x) { output = x; };"
-               + "___.allowCall(caja, 'result');"
+               + "___.getNewModuleHandler().getImports().result = "
+               + "    ___.simpleFunc(function (x) { output = x; });"
                + "%s;"
                + "output");
   }

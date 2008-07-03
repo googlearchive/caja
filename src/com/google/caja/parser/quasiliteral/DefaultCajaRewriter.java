@@ -2304,24 +2304,6 @@ public class DefaultCajaRewriter extends Rewriter {
     // map - object literals
     ////////////////////////////////////////////////////////////////////////
 
-    // TODO(erights): Is this rule needed?
-    new Rule () {
-      @Override
-      @RuleDescription(
-          name="mapEmpty",
-          synopsis="",
-          reason="",
-          matches="({})",
-          substitutes="___.initializeMap({})")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("({})", node, bindings)) {
-          return substV("___.initializeMap({})");
-        }
-        return NONE;
-      }
-    },
-
     new Rule () {
       @Override
       @RuleDescription(
@@ -2371,14 +2353,20 @@ public class DefaultCajaRewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="({@keys*: @vals*})",
-          substitutes="({@keys*: @vals*})")
+          substitutes="___.initializeMap([@items*]) where items are interleaved keys and vals")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (QuasiBuilder.match("({@keys*: @vals*})", node, bindings)) {
+          List<ParseTreeNode> items = new ArrayList<ParseTreeNode>();
+          List<? extends ParseTreeNode> keys = bindings.get("keys").children();
+          List<? extends ParseTreeNode> vals = expand(bindings.get("vals"), scope, mq).children();
+          for (int i=0; i < keys.size(); ++i) {
+            items.add(keys.get(i));
+            items.add(vals.get(i));
+          }
           return substV(
-              "___.initializeMap({ @keys*: @vals* })",
-              "keys", bindings.get("keys"),
-              "vals", expand(bindings.get("vals"), scope, mq));
+              "___.initializeMap([ @items* ])",
+              "items", new ParseTreeNodeContainer(items));
         }
         return NONE;
       }
