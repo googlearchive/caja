@@ -15,6 +15,7 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.Job;
@@ -86,12 +87,14 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertNoErrors();
   }
 
+  @SuppressWarnings("cast")
   @Override
   protected boolean runPipeline(final Jobs jobs) throws Exception {
     boolean result = new RewriteHtmlStage().apply(jobs);
     // Dump the extracted script bits on the queue.
     for (Job job : new ArrayList<Job>(jobs.getJobs())) {
-      job.getRoot().node.acceptPreOrder(new Visitor() {
+      ParseTreeNode node = (ParseTreeNode)(job.getRoot().node);
+      node.acceptPreOrder(new Visitor() {
           public boolean visit(AncestorChain<?> ac) {
             Block extracted = ac.node.getAttributes()
                 .get(RewriteHtmlStage.EXTRACTED_SCRIPT_BODY);

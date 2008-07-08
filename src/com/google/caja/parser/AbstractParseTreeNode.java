@@ -24,6 +24,7 @@ import com.google.caja.util.SyntheticAttributes;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -370,8 +371,10 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
       return insertBefore(toAppend, null);
     }
 
+    @SuppressWarnings("unchecked")
     public Mutation appendChildren(Iterable<? extends ParseTreeNode> nodes) {
-      for (ParseTreeNode node : nodes) {
+      for (Iterator it=nodes.iterator(); it.hasNext(); ) {
+        ParseTreeNode node = (ParseTreeNode)it.next();
         changes.add(new Insertion(node, null));
       }
       return this;

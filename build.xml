@@ -115,7 +115,10 @@
     classpathref="classpath.jsdocs" />
 
   <!--== rules.  Lowercase are public.  Uppercase are used internally. ==-->
-  <target name="default" depends="docs,jars"
+  <target name="default" depends="jars"
+   description="Builds the plugin compiler."/>
+
+  <target name="all" depends="docs,jars,demos,runtests"
    description="Builds the plugin compiler, and documentation."/>
 
   <target name="clean"
@@ -393,7 +396,8 @@
   </target>
 
   <target name="RuleDoclet" depends="Quasiliterals">
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+    <!-- HtmlRuleDoclet requires DOMImplementation from java 1.6 --> 
+    <javac destdir="${lib}" debug="true" target="1.5" source="1.6">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
       <include name="**/caja/quasiliteral/*Doclet.java"/>
