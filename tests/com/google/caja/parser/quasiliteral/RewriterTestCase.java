@@ -56,7 +56,8 @@ public abstract class RewriterTestCase extends CajaTestCase {
    * @param program a program fragment to be rewritten.
    * @param post a postfix program fragment to be executed plain.
    */
-  protected abstract Object rewriteAndExecute(String pre, String program, String post) throws IOException, ParseException;
+  protected abstract Object rewriteAndExecute(String pre, String program, String post) 
+      throws IOException, ParseException;
 
   protected Object rewriteAndExecute(String program) throws IOException, ParseException {
     return rewriteAndExecute(";", program, ";");

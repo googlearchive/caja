@@ -924,16 +924,11 @@ public class DefaultCajaRewriter extends Rewriter {
             String className = getReferenceName(clazz);
             if (scope.isDeclaredFunction(className)) {
               Reference p = (Reference) bindings.get("p");
-              if (!"constructor".equals(getReferenceName(p))) {
-                // Make sure @p and @clazz are mentionable.
-                expand(p, scope, mq);
-                expand(clazz, scope, mq);
-                return substV(
-                    "___.setMember(@df, @rp, @m);",
-                    "df", clazz,
-                    "m", expandMember(bindings.get("m"), this, scope, mq),
-                    "rp", toStringLiteral(p));
-              }
+              return substV(
+                  "___.setMember(@df, @rp, @m);",
+                  "df", clazz,
+                  "m", expandMember(bindings.get("m"), this, scope, mq),
+                  "rp", toStringLiteral(p));
             }
           } else {
             // TODO(mikesamuel): make constructors first class for the purpose
@@ -1479,7 +1474,6 @@ public class DefaultCajaRewriter extends Rewriter {
             = new LinkedHashMap<String, ParseTreeNode>();
         if (QuasiBuilder.match("delete @o.@p", node, bindings)) {
           Reference p = (Reference) bindings.get("p");
-          expand(p, scope, mq);
           return substV(
               "___.deletePub(@o, @pname)",
               "o", expand(bindings.get("o"), scope, mq),
@@ -1850,8 +1844,9 @@ public class DefaultCajaRewriter extends Rewriter {
           synopsis = "",
           reason = "",
           matches="(function (@formals*) { @body*; }).bind(this, @args*);",
-          substitutes="(function (@formals*) { @fh*; @stmts*; @body*; })"
-            + ".bind(t___, @args*);")
+          substitutes=""
+            + "___.simpleFrozenFunc(function (@formals*) {"
+            + "  @fh*; @stmts*; @body*; }.bind(t___, @args*));")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, final MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
@@ -1861,9 +1856,9 @@ public class DefaultCajaRewriter extends Rewriter {
           FunctionConstructor fc = (FunctionConstructor)node.children().get(0).children().get(0);
           Scope s2 = Scope.fromFunctionConstructor(scope, fc);
           if (s2.hasFreeThis()) {
-            return substV(
-                "  (function (@formals*) { @fh*; @stmts*; @body*; })"
-                + ".bind(t___, @args*);",
+            return substV(""
+                + "___.simpleFrozenFunc(function (@formals*) {"
+                + "  @fh*; @stmts*; @body*; }.bind(t___, @args*));",
                 "formals", bindings.get("formals"),
                 // It's important that body is expanded before computing fh and stmts.
                 "body", expand(bindings.get("body"), s2, mq),
@@ -1978,13 +1973,13 @@ public class DefaultCajaRewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="function (@ps*) { @bs*; }",
-          substitutes="___.primFreeze(" +
-          "  ___.simpleFunc(" +
-          "    function (@ps*) {" +
-          "      @fh*;" +
-          "      @stmts*;" +
-          "      @bs*;" +
-          "}))")
+          substitutes=
+          "___.simpleFrozenFunc(" +
+          "  function (@ps*) {" +
+          "    @fh*;" +
+          "    @stmts*;" +
+          "    @bs*;" +
+          "})")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         // Anonymous simple function constructor
@@ -1993,13 +1988,12 @@ public class DefaultCajaRewriter extends Rewriter {
           if (!s2.hasFreeThis()) {
             checkFormals(bindings.get("ps"), mq);
             return substV(
-                "___.primFreeze(" +
-                "  ___.simpleFunc(" +
-                "    function (@ps*) {" +
-                "      @fh*;" +
-                "      @stmts*;" +
-                "      @bs*;" +
-                "}))",
+                "___.simpleFrozenFunc(" +
+                "  function (@ps*) {" +
+                "    @fh*;" +
+                "    @stmts*;" +
+                "    @bs*;" +
+                "})",
                 "ps", bindings.get("ps"),
                 // It's important to expand bs before computing fh and stmts.
                 "bs", expand(bindings.get("bs"), s2, mq),
@@ -2018,12 +2012,13 @@ public class DefaultCajaRewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="function @fname(@ps*) { @bs*; }",
-          substitutes="@fr = ___.simpleFunc(" +
-          "  function @fname(@ps*) {" +
+          substitutes=
+          "@fname = ___.simpleFunc(" +
+          "  function(@ps*) {" +
           "    @fh*;" +
           "    @stmts*;" +
           "    @bs*;" +
-          "});")
+          "}, @'fname');")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         // Named simple function declaration
@@ -2039,14 +2034,14 @@ public class DefaultCajaRewriter extends Rewriter {
             Identifier fname = (Identifier)bindings.get("fname");
             scope.declareStartOfScopeVariable(fname);
             Expression expr = (Expression)substV(
-                "@fr = ___.simpleFunc(" +
-                "  function @fname(@ps*) {" +
+                "@fname = ___.simpleFunc(" +
+                "  function(@ps*) {" +
                 "    @fh*;" +
                 "    @stmts*;" +
                 "    @bs*;" +
-                "});",
-                "fr", s(new Reference(fname)),
-                "fname", fname,
+                "}, @rf);",
+                "fname", s(new Reference(fname)),
+                "rf", toStringLiteral(fname),
                 "ps", bindings.get("ps"),
                 // It's important to expand bs before computing fh and stmts.
                 "bs", expand(bindings.get("bs"), s2, mq),
@@ -2067,13 +2062,15 @@ public class DefaultCajaRewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="function @fname(@ps*) { @bs*; }",
-          substitutes="___.primFreeze(" +
-          "  ___.simpleFunc(" +
-          "    function @fname(@ps*) {" +
-          "      @fh*;" +
-          "      @stmts*;" +
-          "      @bs*;" +
-          "  }));")
+          substitutes=
+            "(function() {" +
+            "  function @fname(@ps*) {" +
+            "    @fh*;" +
+            "    @stmts*;" +
+            "    @bs*;" +
+            "  }" +
+            "  return ___.simpleFrozenFunc(@fname, @'fname');" +
+            "})();")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         // Named simple function expression
@@ -2083,15 +2080,20 @@ public class DefaultCajaRewriter extends Rewriter {
               (FunctionConstructor)node);
           if (!s2.hasFreeThis()) {
             checkFormals(bindings.get("ps"), mq);
+            Identifier fname = (Identifier)bindings.get("fname");
+            Reference fRef = new Reference(fname);
             return substV(
-                "___.primFreeze(" +
-                "  ___.simpleFunc(" +
-                "    function @fname(@ps*) {" +
-                "      @fh*;" +
-                "      @stmts*;" +
-                "      @bs*;" +
-                "  }));",
-                "fname", bindings.get("fname"),
+                "(function() {" +
+                "  function @fname(@ps*) {" +
+                "    @fh*;" +
+                "    @stmts*;" +
+                "    @bs*;" +
+                "  }" +
+                "  return ___.simpleFrozenFunc(@fRef, @rf);" +
+                "})();",
+                "fname", fname,
+                "fRef", fRef,
+                "rf", toStringLiteral(fname),
                 "ps", bindings.get("ps"),
                 // It's important to expand bs before computing fh and stmts.
                 "bs", expand(bindings.get("bs"), s2, mq),
@@ -2444,52 +2446,62 @@ public class DefaultCajaRewriter extends Rewriter {
     // other - things not otherwise covered
     ////////////////////////////////////////////////////////////////////////
 
-    // TODO(erights): Can't we just let this fall through to the catchall at the end?
     new Rule () {
       @Override
       @RuleDescription(
-          name="otherInstanceof",
-          synopsis="",
-          reason="",
-          matches="@o instanceof @f",
-          substitutes="@o instanceof @f")
+          name="otherTypeof",
+          synopsis="Typeof translates simply",
+          reason="One of Caja's deviations from JavaScript is that reading a non-existent " +
+          		"imported variable returns 'undefined' rather than throwing a " +
+          		"ReferenceError. Therefore, in Caja, 'typeof' can always evaluate its " +
+          		"argument.",
+          matches="typeof @f",
+          substitutes="typeof @f)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@o instanceof @f", node, bindings)) {
+        if (QuasiBuilder.match("typeof @f", node, bindings)) {
           return substV(
-              "@o instanceof @f",
-              "o", expand(bindings.get("o"), scope, mq),
+              "typeof @f",
               "f", expand(bindings.get("f"), scope, mq));
         }
         return NONE;
       }
     },
 
-    // Now that bare imports no longer causes a ReferenceError, can't we just let this fall thru?
     new Rule () {
       @Override
       @RuleDescription(
-          name="otherTypeof",
-          synopsis="",
+          name="inInternal",
+          synopsis="Is a public or protected property present on 'this'?",
           reason="",
-          matches="typeof @f",
-          substitutes="<approx> typeof ___.readPub(IMPORTS___, @'f')")
+          matches="@i in this",
+          substitutes="___.canReadProp(t___, @i)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("typeof @f", node, bindings)) {
-          ParseTreeNode f = bindings.get("f");
-          if (f instanceof Reference && scope.isImported(getReferenceName(f))) {
-            // Lookup of an undefined&undeclared global for typing purposes
-            // should not fail with an exception.
-            expand(f, scope, mq);
-            return substV(
-                "typeof ___.readPub(IMPORTS___, @f)",
-                "f", toStringLiteral(f));
-          } else {
-            return substV(
-                "typeof @f",
-                "f", expand(f, scope, mq));
-          }
+        if (QuasiBuilder.match("@i in this", node, bindings)) {
+          return substV(
+              "___.canReadProp(t___, @i)",
+              "i", expand(bindings.get("i"), scope, mq));
+        }
+        return NONE;
+      }
+    },
+
+    new Rule () {
+      @Override
+      @RuleDescription(
+          name="inPublic",
+          synopsis="Is a public property present on the object?",
+          reason="",
+          matches="@i in @o",
+          substitutes="___.canReadPubRev(@i, @o)")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        if (QuasiBuilder.match("@i in @o", node, bindings)) {
+          return substV(
+              "___.canReadPubRev(@i, @o)",
+              "i", expand(bindings.get("i"), scope, mq),
+              "o", expand(bindings.get("o"), scope, mq));
         }
         return NONE;
       }

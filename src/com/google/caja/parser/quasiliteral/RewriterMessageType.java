@@ -42,6 +42,10 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: The valueOf property must not be deleted: %s, %s",
       MessageLevel.FATAL_ERROR),
 
+  CANT_INIT_PROTOS_CONSTRUCTOR(
+      "%s: Can't initialize a prototypical object's 'constructor' property: %s, %s",
+      MessageLevel.FATAL_ERROR),
+
   VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE(
       "%s: Variables cannot end in \"__\": %s, %s",
       MessageLevel.FATAL_ERROR),

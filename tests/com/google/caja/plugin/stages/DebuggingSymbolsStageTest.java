@@ -175,11 +175,11 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
     assertStackTrace(
         "(function (x) {\n"
         + "  return 'k' in x;\n"
-        //                 ^ 2+17-18
+        //          ^^^^^^^^ 2+10-18
         + "})(null);",
 
         "testPropertyInNull:1+12 - 2+18\n"
-        + "testPropertyInNull:2+17 - 18");
+        + "testPropertyInNull:2+10 - 18");
   }
 
   public void testIllegalAccessInsideHoistedFunction() throws Exception {
