@@ -47,8 +47,6 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.Collection;
-import java.util.Comparator;
 
 /**
  * A scope analysis of a {@link com.google.caja.parser.ParseTreeNode}.

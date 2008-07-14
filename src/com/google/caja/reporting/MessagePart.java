@@ -36,40 +36,24 @@ public interface MessagePart {
       // namespace for static methods
     }
 
-    public static MessagePart valueOf(final String s) {
-      if (null == s) { throw new NullPointerException(); }
-      return new MessagePart() {
-        public void format(MessageContext context, Appendable out)
-        throws IOException {
-          out.append(s);
-        }
-        @Override
-        public String toString() { return s; }
-      };
+    public static MessagePart valueOf(String s) {
+      return new MessagePartWrapper(s);
     }
 
     public static MessagePart valueOf(final Number n) {
-      if (null == n) { throw new NullPointerException(); }
-      return new MessagePart() {
-        public void format(MessageContext context, Appendable out)
-        throws IOException {
-          out.append(n.toString());
-        }
-        @Override
-        public String toString() { return n.toString(); }
-      };
+      return new MessagePartWrapper(n);
     }
 
     public static MessagePart valueOf(int n) {
-      return valueOf(Integer.valueOf(n));
+      return new MessagePartWrapper(n);
     }
 
     public static MessagePart valueOf(long n) {
-      return valueOf(Long.valueOf(n));
+      return new MessagePartWrapper(n);
     }
 
     public static MessagePart valueOf(double n) {
-      return valueOf(Double.valueOf(n));
+      return new MessagePartWrapper(n);
     }
 
     public static MessagePart valueOf(Collection<?> parts) {
@@ -88,8 +72,31 @@ public interface MessagePart {
       return new ArrayPart(partArr);
     }
 
+    private static class MessagePartWrapper implements MessagePart {
+      private final Object wrapped;
+      MessagePartWrapper(Object wrapped) {
+        if (wrapped == null) { throw new NullPointerException(); }
+        this.wrapped = wrapped;
+      }
+      public void format(MessageContext context, Appendable out)
+          throws IOException {
+        out.append(wrapped.toString());
+      }
+      @Override
+      public boolean equals(Object o) {
+        if (!(o instanceof MessagePartWrapper)) { return false; }
+        return this.wrapped.equals(((MessagePartWrapper) o).wrapped);
+      }
+      @Override
+      public int hashCode() {
+        return wrapped.hashCode() ^ 0x2ed53af2;
+      }
+      @Override
+      public String toString() { return wrapped.toString(); }
+    }
+
     private static class ArrayPart implements MessagePart {
-      private MessagePart[] partArr;
+      private final MessagePart[] partArr;
 
       ArrayPart(MessagePart[] partArr) { this.partArr = partArr; }
 
@@ -102,7 +109,22 @@ public interface MessagePart {
       }
       @Override
       public String toString() { return Arrays.asList(partArr).toString(); }
-    }
 
+      @Override
+      public int hashCode() {
+        return Arrays.hashCode(partArr) ^ 0x78abcd35;
+      }
+
+      @Override
+      public boolean equals(Object o) {
+        if (!(o instanceof ArrayPart)) { return false; }
+        ArrayPart that = (ArrayPart) o;
+        if (that.partArr.length != this.partArr.length) { return false; }
+        for (int i = partArr.length; --i >= 0;) {
+          if (!this.partArr[i].equals(that.partArr.length)) { return false; }
+        }
+        return true;
+      }
+    }
   }
 }

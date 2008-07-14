@@ -32,11 +32,13 @@ import com.google.caja.lexer.escaping.EscapingTest;
 import com.google.caja.opensocial.DefaultGadgetRewriterTest;
 import com.google.caja.opensocial.GadgetParserTest;
 import com.google.caja.opensocial.applet.ExpressionLanguageStageTest;
+import com.google.caja.opensocial.applet.TestBedTest;
 import com.google.caja.opensocial.service.CajolingServiceTest;
 import com.google.caja.opensocial.service.ContentTypeCheckTest;
 import com.google.caja.parser.ParseTreeNodeTest;
 import com.google.caja.parser.ParserBaseTest;
 import com.google.caja.parser.css.CssParserTest;
+import com.google.caja.parser.css.CssPropertySignatureTest;
 import com.google.caja.parser.css.CssTreeTest;
 import com.google.caja.parser.html.DomParserTest;
 import com.google.caja.parser.js.FuzzedParserTest;
@@ -44,11 +46,11 @@ import com.google.caja.parser.js.NumberLiteralTest;
 import com.google.caja.parser.js.ParserTest;
 import com.google.caja.parser.js.StringLiteralTest;
 import com.google.caja.parser.quasiliteral.DefaultCajaRewriterTest;
+import com.google.caja.parser.quasiliteral.IllegalReferenceCheckRewriterTest;
 import com.google.caja.parser.quasiliteral.MatchTest;
 import com.google.caja.parser.quasiliteral.QuasiBuilderTest;
-import com.google.caja.parser.quasiliteral.ScopeTest;
-import com.google.caja.parser.quasiliteral.IllegalReferenceCheckRewriterTest;
 import com.google.caja.parser.quasiliteral.RewriterTest;
+import com.google.caja.parser.quasiliteral.ScopeTest;
 import com.google.caja.plugin.CompiledPluginTest;
 import com.google.caja.plugin.CssCompilerTest;
 import com.google.caja.plugin.CssPropertyPatternsTest;
@@ -70,9 +72,10 @@ import com.google.caja.plugin.stages.RewriteHtmlStageTest;
 import com.google.caja.render.JsMinimalPrinterTest;
 import com.google.caja.render.JsPrettyPrinterTest;
 import com.google.caja.render.SideBySideRendererTest;
+import com.google.caja.render.TokenClassificationTest;
+import com.google.caja.reporting.AbstractMessageQueueTest;
 import com.google.caja.reporting.BuildInfoTest;
 import com.google.caja.reporting.SnippetProducerTest;
-import com.google.caja.reporting.AbstractMessageQueueTest;
 import com.google.caja.util.JoinTest;
 import com.google.caja.util.SparseBitSetTest;
 
@@ -103,6 +106,7 @@ public class AllTests {
           CssLexerTest.class,
           CssParserTest.class,
           CssPropertyPatternsTest.class,
+          CssPropertySignatureTest.class,
           CssRewriterTest.class,
           CssSchemaTest.class,
           CssTemplateTest.class,
@@ -152,6 +156,8 @@ public class AllTests {
           SnippetProducerTest.class,
           SparseBitSetTest.class,
           StringLiteralTest.class,
+          TestBedTest.class,
+          TokenClassificationTest.class,
     };
     Pattern testFilter = Pattern.compile(System.getProperty("test.filter", ""));
     for (Class<? extends TestCase> testClass : testClasses) {

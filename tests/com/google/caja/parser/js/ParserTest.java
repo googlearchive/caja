@@ -24,11 +24,14 @@ import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.TestUtil;
+
+import junit.framework.AssertionFailedError;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -157,10 +160,26 @@ public class ParserTest extends CajaTestCase {
     assertParseSucceeds("{ debugger; }");
     // but not in an expression context
     assertParseFails("(debugger);");
+    assertMessage(
+        MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
+        MessageLevel.ERROR);
     assertParseFails("debugger();");
+    assertMessage(
+        MessageType.EXPECTED_TOKEN,
+        MessageLevel.ERROR,
+        MessagePart.Factory.valueOf(";"),
+        MessagePart.Factory.valueOf("("));
     // or as an identifier.
     assertParseFails("var debugger;");
+    assertMessage(
+        MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
+        MessageLevel.ERROR);
     assertParseFails("debugger: foo();");
+    assertMessage(
+        MessageType.EXPECTED_TOKEN,
+        MessageLevel.ERROR,
+        MessagePart.Factory.valueOf(";"),
+        MessagePart.Factory.valueOf(":"));
   }
 
   public void testOctalLiterals() throws Exception {
@@ -212,6 +231,13 @@ public class ParserTest extends CajaTestCase {
     assertFalse(Parser.integerPartIsOctal("0.12"));
   }
 
+  public void assertExpectedSemi() {
+    assertParseFails("foo(function () {return;");
+    assertMessage(MessageType.EXPECTED_TOKEN, MessageLevel.ERROR,
+                  FilePosition.instance(is, 1, 1, 24, 24),
+                  MessagePart.Factory.valueOf("}"));
+  }
+
   private void assertParseKeywordAsIdentifier(Keyword k) throws Exception {
     assertAllowKeywordPropertyAccessor(k);
     assertAllowKeywordPropertyDeclaration(k);
@@ -227,27 +253,30 @@ public class ParserTest extends CajaTestCase {
     assertParseSucceeds("foo." + k + ".bar");
   }
 
-  private void assertAllowKeywordPropertyDeclaration(Keyword k)
-      throws Exception {
+  private void assertAllowKeywordPropertyDeclaration(Keyword k) {
     assertParseSucceeds("({ " + k + " : 42 });");
   }
 
-  private void assertRejectKeywordAsExpr(Keyword k)
-      throws Exception {
-    assertParse(asLvalue(k.toString()), isValidLvalue(k));
-    assertParse(asRvalue(k.toString()), isValidRvalue(k));
-    assertParse(asLvalue(k + ".foo"), isValidRvalue(k));
-    assertParse(asRvalue(k + ".foo"), isValidRvalue(k));
+  private void assertRejectKeywordAsExpr(Keyword k) {
+    assertParseKeyword(asLvalue(k.toString()), isValidLvalue(k));
+    assertParseKeyword(asRvalue(k.toString()), isValidRvalue(k));
+    assertParseKeyword(asLvalue(k + ".foo"), isValidRvalue(k));
+    assertParseKeyword(asRvalue(k + ".foo"), isValidRvalue(k));
   }
 
   private void assertRejectKeywordInVarDecl(Keyword k)
       throws Exception {
     assertParseFails("var " + k + ";");
+    assertMessage(
+        MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
+        MessageLevel.ERROR);
     assertParseFails("var foo, " + k + ", bar;");
+    assertMessage(
+        MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
+        MessageLevel.ERROR);
   }
 
-  private void assertParse(String code, boolean shouldSucceed)
-      throws Exception {
+  private void assertParseKeyword(String code, boolean shouldSucceed) {
     if (shouldSucceed) {
       assertParseSucceeds(code);
     } else {
@@ -255,27 +284,31 @@ public class ParserTest extends CajaTestCase {
     }
   }
 
-  private void assertParseSucceeds(String code) throws Exception {
+  private void assertParseSucceeds(String code) {
     log("assertParseSucceeds", code);
     mq.getMessages().clear();
-    js(fromString(code));
+    try {
+      js(fromString(code));
+    } catch (ParseException ex) {
+      AssertionFailedError afe = new AssertionFailedError(code);
+      afe.initCause(ex);
+      throw afe;
+    }
     assertNoErrors();
   }
 
-  private void assertParseFails(String code) throws Exception {
+  private void assertParseFails(String code) {
     log("assertParseFails", code);
     mq.getMessages().clear();
     try {
       js(fromString(code));
-      assertMessage(
-          MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
-          MessageLevel.ERROR);
     } catch (ParseException e) {
-      // Some reserved word usages confuse the parser and cause an exception,
-      // not just a message queue error. We consider this a successful failure
-      // to parse erroneous code.
-      e.printStackTrace(System.err);
+      e.toMessageQueue(mq);
     }
+    for (Message msg : mq.getMessages()) {
+      if (msg.getMessageLevel().compareTo(MessageLevel.ERROR) >= 0) { return; }
+    }
+    fail("expected failure");
   }
 
   private static boolean isValidLvalue(Keyword k) {

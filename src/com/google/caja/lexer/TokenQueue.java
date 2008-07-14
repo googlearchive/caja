@@ -60,7 +60,7 @@ public class TokenQueue<T extends TokenType> {
   /** True iff there are no more tokens on the queue. */
   public boolean isEmpty() throws ParseException {
     fetch(false);
-    return eof;
+    return null == current;
   }
 
   /** Throws a ParseException if the queue is not empty. */

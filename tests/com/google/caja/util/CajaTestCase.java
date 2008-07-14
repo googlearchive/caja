@@ -36,6 +36,7 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.Message;
@@ -221,7 +222,7 @@ public abstract class CajaTestCase extends TestCase {
       if (level.compareTo(msg.getMessageLevel()) <= 0) {
         fail(msg.format(mc));
       }
-    }    
+    }
   }
 
   protected void assertNoErrors() {
@@ -229,14 +230,25 @@ public abstract class CajaTestCase extends TestCase {
   }
 
   protected void assertMessage(
-      MessageTypeInt type,
-      MessageLevel level) {
+      MessageTypeInt type, MessageLevel level, MessagePart... expectedParts) {
     for (Message msg : mq.getMessages()) {
-      if (msg.getMessageType() == type && msg.getMessageLevel() == level) {
+      if (msg.getMessageType() == type && msg.getMessageLevel() == level
+          && messageHasParts(msg, expectedParts)) {
         return;
       }
     }
     fail("No message found of type " + type + " and level " + level);
+  }
+
+  private static boolean messageHasParts(Message msg, MessagePart... parts) {
+    outerLoop:
+    for (MessagePart expectedPart : parts) {
+      for (MessagePart candidate : msg.getMessageParts()) {
+        if (candidate.equals(expectedPart)) { continue outerLoop; }
+      }
+      return false;
+    }
+    return true;
   }
 
   private InputSource sourceOf(CharProducer cp) {

@@ -165,9 +165,12 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "  function f(){this;}"
         + "caja.def(f, Object, {}, {valueOf:1});",
         "The valueOf property must not be set");
-    checkFails("var a={}; delete a.valueOf;", "The valueOf property must not be deleted");
+    checkFails(
+        "var a={}; delete a.valueOf;",
+        "The valueOf property must not be deleted");
     rewriteAndExecute("var a={}; assertThrows(function(){a['valueOf']=1});");
-    rewriteAndExecute("var a={}; assertThrows(function(){delete a['valueOf'];");
+    rewriteAndExecute(
+        "var a={}; assertThrows(function(){delete a['valueOf'];})");
   }
 
   public void testFunctionDoesNotMaskVariable() throws Exception {
@@ -395,8 +398,10 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   public void testStringIndexing() throws Exception {
     rewriteAndExecute("assertEquals('b', 'abc'[1]);");
 
-//    TODO(erights): This test isn't green because we haven't yet fixed the bug.
-//    rewriteAndExecute("assertEquals('b', 'abc'['1']);");
+    // TODO(erights): This test isn't green because we haven't yet fixed the bug.
+    if (false) {
+      rewriteAndExecute("assertEquals('b', 'abc'['1']);");
+    }
   }
 
   /**
@@ -2500,9 +2505,10 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         weldPrelude("g") +
         "___.readPub(g, 0) instanceof Object;");
 
-    assertConsistent("({}) instanceof Object");
-    assertConsistent("(new Date) instanceof Date");
-    assertConsistent("({}) instanceof Date");
+    assertConsistent("[ (({}) instanceof Object)," +
+                     "  ((new Date) instanceof Date)," +
+                     "  (({}) instanceof Date)," +
+                     "].toString()");
     assertConsistent("function foo() {}; (new foo) instanceof foo");
     assertConsistent("function foo() {}; !(({}) instanceof foo)");
   }
@@ -2513,17 +2519,17 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         weldPrelude("g") +
         "typeof ___.readPub(g, 0);");
     checkFails("typeof ___", "Variables cannot end in \"__\"");
-    assertConsistent("typeof noSuchGlobal");
-    assertConsistent("typeof 's'");
-    assertConsistent("typeof 4");
-    assertConsistent("typeof null");
-    assertConsistent("typeof (void 0)");
-    assertConsistent("typeof []");
-    assertConsistent("typeof {}");
-    assertConsistent("typeof /./");
-    assertConsistent("typeof (function () {})");
-    assertConsistent("typeof { x: 4.0 }.x");
-    assertConsistent("typeof { 2: NaN }[1 + 1]");
+    assertConsistent("[ (typeof noSuchGlobal), (typeof 's')," +
+                     "  (typeof 4)," +
+                     "  (typeof null)," +
+                     "  (typeof (void 0))," +
+                     "  (typeof [])," +
+                     "  (typeof {})," +
+                     "  (typeof /./)," +
+                     "  (typeof (function () {}))," +
+                     "  (typeof { x: 4.0 }.x)," +
+                     "  (typeof { 2: NaN }[1 + 1])" +
+                     "].toString()");
   }
 
   public void testLabeledStatement() throws Exception {
@@ -2881,6 +2887,6 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
 
   @Override
   protected Rewriter newRewriter() {
-    return new DefaultCajaRewriter(true, wartsMode);
+    return new DefaultCajaRewriter(false, wartsMode);
   }
 }
