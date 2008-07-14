@@ -344,38 +344,18 @@ public class EscapingTest extends TestCase {
     StringBuilder sb;
 
     sb = new StringBuilder();
-    Escaping.escapeCssString(CHARS, false, sb);
-    assertStringsEqual(
-        ("\\0\\1\\2\\3\\4\\5\\6\\7"
-         + "\\8 \t\\A\\B \\C \\D\\E\\F"
-         + "\\10\\11\\12\\13\\14\\15\\16\\17"
-         + "\\18\\19\\1A\\1B\\1C\\1D\\1E\\1F "
-         + " !\\22#$%&\\27()*+,-./"
-         + "0123456789:;<=>?"
-         + "@ABCDEFGHIJKLMNO"
-         + "PQRSTUVWXYZ[\\5C]^_"
-         + "`abcdefghijklmno"
-         + "pqrstuvwxyz{|}~\\7F"
-         + "\\80\\81\\82\\83\\84"
-         + "\\200E\\200F\\2010\\2028\\2029"
-         + "\\D834\\DD20"
-         + "\\D834\\DD77 "
-         ),
-        sb.toString());
-
-    sb = new StringBuilder();
-    Escaping.escapeCssString(CHARS, true, sb);
+    Escaping.escapeCssString(CHARS, sb);
     assertStringsEqual(
         ("\\0\\1\\2\\3\\4\\5\\6\\7"
          + "\\8 \\9 \\A\\B \\C \\D\\E\\F"
          + "\\10\\11\\12\\13\\14\\15\\16\\17"
          + "\\18\\19\\1A\\1B\\1C\\1D\\1E\\1F "
-         + " !\\22#$%&\\27()\\2A+,-./"
-         + "0123456789:;\\3C=\\3E?"
-         + "@ABCDEFGHIJKLMNO"
-         + "PQRSTUVWXYZ[\\5C]^_"
+         + " !\\22#$%\\26\\27\\28\\29\\2A\\2B\\2C-./"
+         + "0123456789\\3A\\3B\\3C\\3D\\3E?"
+         + "\\40 ABCDEFGHIJKLMNO"
+         + "PQRSTUVWXYZ\\5B\\5C\\5D^_"
          + "`abcdefghijklmno"
-         + "pqrstuvwxyz{|}~\\7F"
+         + "pqrstuvwxyz\\7B\\7C\\7D~\\7F"
          + "\\80\\81\\82\\83\\84"
          + "\\200E\\200F\\2010\\2028\\2029"
          + "\\D834\\DD20"
@@ -384,15 +364,15 @@ public class EscapingTest extends TestCase {
         sb.toString());
 
     sb = new StringBuilder();
-    Escaping.escapeCssString("<foo>", true, sb);
+    Escaping.escapeCssString("<foo>", sb);
     assertStringsEqual("\\3C foo\\3E ", sb.toString());
 
     sb = new StringBuilder();
-    Escaping.escapeCssString("<Bar>", true, sb);
+    Escaping.escapeCssString("<Bar>", sb);
     assertStringsEqual("\\3C Bar\\3E ", sb.toString());
 
     sb = new StringBuilder();
-    Escaping.escapeCssString("<ZZZ>", true, sb);
+    Escaping.escapeCssString("<ZZZ>", sb);
     assertStringsEqual("\\3CZZZ\\3E ", sb.toString());
   }
 

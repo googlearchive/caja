@@ -44,70 +44,43 @@ public class CssTreeTest extends CajaTestCase {
   public void testStringRendering() throws Exception {
     assertRenderedForm(
         "a {\n  background: ''\n}",
-        "a { background: '' }", false);
-    assertRenderedForm(
-        "a {\n  background: ''\n}",
-        "a { background: '' }", true);
+        "a { background: '' }");
 
     assertRenderedForm(
         "a {\n  background: 'foo\\5C bar\\27 Baz\\22zoicks\\A '\n}",
-        "a { background: 'foo\\\\bar\\'Baz\\\"zoicks\\0A' }", false);
-    assertRenderedForm(
-        "a {\n  background: 'foo\\5C bar\\27 Baz\\22zoicks\\A '\n}",
-        "a { background: 'foo\\\\bar\\'Baz\\\"zoicks\\0A ' }", true);
+        "a { background: 'foo\\\\bar\\'Baz\\\"zoicks\\0A ' }");
 
-    assertRenderedForm(
-        "a {\n  background: '</script><b>'\n}",
-        "a { background: '</script><b>' }", false);
     assertRenderedForm(
         "a {\n  background: '\\3C/script\\3E\\3C b\\3E '\n}",
-        "a { background: \"</script><b>\" }", true);
+        "a { background: \"</script><b>\" }");
 
     assertRenderedForm(
-        "a {\n  background: ']]>'\n}",
-        "a { background: ']]>' }", false);
+        "a {\n  background: '\\5D\\5D\\3E '\n}",
+        "a { background: ']]>' }");
     assertRenderedForm(
-        "a {\n  background: ']]>'\n}",
-        "a { background: ']]\\3E ' }", false);
-    assertRenderedForm(
-        "a {\n  background: ']]\\3E '\n}",
-        "a { background: ']]\\3E' }", true);
-    assertRenderedForm(
-        "a {\n  background: ']]\\3E '\n}",
-        "a { background: ']]\\3E ' }", true);
-    assertRenderedForm(
-        "a {\n  background: ']]\\3E '\n}",
-        "a { background: ']]>' }", true);
+        "a {\n  background: '\\5D\\5D\\3E '\n}",
+        "a { background: ']]\\3E ' }");
   }
 
   public void testUrlRendering() throws Exception {
     assertRenderedForm(
         "a {\n  background: url('')\n}",
-        "a { background: url('') }", false);
-    assertRenderedForm(
-        "a {\n  background: url('')\n}",
-        "a { background: url('') }", true);
+        "a { background: url('') }");
 
     assertRenderedForm(
         "a {\n  background: url('foo')\n}",
-        "a { background: url(foo) }", false);
-    assertRenderedForm(
-        "a {\n  background: url('foo')\n}",
-        "a { background: url(foo) }", true);
+        "a { background: url(foo) }");
 
     assertRenderedForm(
         "a {\n  background: url('foo')\n}",
-        "a { background: url('foo') }", false);
-    assertRenderedForm(
-        "a {\n  background: url('foo')\n}",
-        "a { background: url('foo') }", true);
+        "a { background: url('foo') }");
   }
 
   public void testParanoidUrlRendering() throws Exception {
     try {
       assertRenderedForm(
           "a {\n  background: url('\\3C/script')\n}",
-          "a { background: url('</script') }", true);
+          "a { background: url('</script') }");
     } catch (ParseException ex) {
       // pass
     }
@@ -115,39 +88,39 @@ public class CssTreeTest extends CajaTestCase {
     try {
       assertRenderedForm(
           "a {\n  background: url('\\3C/script')\n}",
-          "a { background: url(</script) }", true);
+          "a { background: url(</script) }");
     } catch (ParseException ex) {
       // pass
     }
 
     try {
       assertRenderedForm(
-          "a {\n  background: url(']]\\3E ')\n}",
-          "a { background: url(]]>) }", true);
+          "a {\n  background: url('\\5D\\5D\\3E ')\n}",
+          "a { background: url(]]>) }");
     } catch (ParseException ex) {
       // pass
     }
 
     try {
       assertRenderedForm(
-          "a {\n  background: url(']]\\3E ')\n}",
-          "a { background: url(']]>') }", true);
+          "a {\n  background: url('\\5D\\5D\\3E ')\n}",
+          "a { background: url(']]>') }");
     } catch (ParseException ex) {
       // pass
     }
 
     try {
       assertRenderedForm(
-          "a {\n  background: url('\\3C!DOCTYPE')\n}",
-          "a { background: url(/<!DOCTYPE) }", true);
+          "a {\n  background: url('\\3C\\21DOCTYPE')\n}",
+          "a { background: url(/<!DOCTYPE) }");
     } catch (ParseException ex) {
       // pass
     }
 
     try {
       assertRenderedForm(
-          "a {\n  background: url('\\3C!DOCTYPE')\n}",
-          "a { background: url('/<!DOCTYPE') }", true);
+          "a {\n  background: url('\\3C\\21DOCTYPE')\n}",
+          "a { background: url('/<!DOCTYPE') }");
     } catch (ParseException ex) {
       // pass
     }
@@ -156,38 +129,37 @@ public class CssTreeTest extends CajaTestCase {
   public void testIdentifierEscaping() throws Exception {
     assertRenderedForm(
         "Le caja .no es #un rect\\E1ngulo {\n}",
-        "Le caja .no es #un rect\u00E1ngulo {}", true);
+        "Le caja .no es #un rect\u00E1ngulo {}");
 
     // '\x34' == '4'
     assertRenderedForm(
         "\\34is a number and an identifier {\n}",
-        "\\34is a number and an identifier {}", true);
+        "\\34is a number and an identifier {}");
 
     assertRenderedForm(
         "\\34 0 is a number and an identifier too {\n}",
-        "\\34 0 is a number and an identifier too {}", true);
+        "\\34 0 is a number and an identifier too {}");
   }
 
   public void testPrio() throws Exception {
     assertRenderedForm(
         "sky {\n  color: #0000ff !important\n}",
-        "sky { color: #0000ff !important }",
-        false);
+        "sky { color: #0000ff !important }");
   }
 
   public void testOperators() throws Exception {
     assertRenderedForm(
         "hi {\n  x: f(-3);\n  y: +g(2)\n}",
-        "hi { x: f(-3); y: +g( 2 ) }", true);
+        "hi { x: f(-3); y: +g( 2 ) }");
   }
 
   public void testCombinatorRules() throws Exception {
     assertRenderedForm(
         "hello > world {\n  color: blue\n}",
-        "hello>world { color: blue }", false);
+        "hello>world { color: blue }");
     assertRenderedForm(
         "hello + world {\n  color: blue\n}",
-        "hello+world { color: blue }", false);
+        "hello+world { color: blue }");
   }
 
   private void runRenderTest(
@@ -209,14 +181,13 @@ public class CssTreeTest extends CajaTestCase {
     assertEquals(golden.trim(), sb.toString().trim());
   }
 
-  private void assertRenderedForm(
-      String golden, String cssInput, boolean paranoid)
+  private void assertRenderedForm(String golden, String cssInput)
       throws Exception {
     CssTree.StyleSheet stylesheet = css(fromString(cssInput));
 
     StringBuilder sb = new StringBuilder();
     CssPrettyPrinter csspp = new CssPrettyPrinter(sb, null);
-    RenderContext rc = new RenderContext(mc, true, paranoid, csspp);
+    RenderContext rc = new RenderContext(mc, true, false, csspp);
     stylesheet.render(rc);
     csspp.noMoreTokens();
     String actual = sb.toString();

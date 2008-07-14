@@ -188,28 +188,20 @@ public class Escaping {
 
   /**
    * Escape the body of a CSS string.
+   * The result is safe to embed in a style tag or CDATA section.
    *
    * @param s the plain text string to escape.
-   * @param paranoid True to make sure that nothing is written to out that could
-   *     interfere with embedding inside a script tag or CDATA section, or
-   *     other tag that typically contains markup.
-   *     This does not make it safe to embed in an HTML attribute without
-   *     further escaping.
    * @param out written to.
    */
-  public static void escapeCssString(
-      CharSequence s, boolean paranoid, Appendable out)
+  public static void escapeCssString(CharSequence s, Appendable out)
       throws IOException {
-    new Escaper(s, EMPTY_ESCAPES,
-                paranoid ? CSS_PARANOID_STR_ESCAPES : CSS_STR_ESCAPES,
-                CSS_ENCODER, out).escape();
+    new Escaper(s, EMPTY_ESCAPES, CSS_STR_ESCAPES, CSS_ENCODER, out).escape();
   }
 
-  /** @see #escapeCssString(CharSequence, boolean, Appendable) */
-  public static void escapeCssString(
-      CharSequence s, boolean paranoid, StringBuilder out) {
+  /** @see #escapeCssString(CharSequence, Appendable) */
+  public static void escapeCssString(CharSequence s, StringBuilder out) {
     try {
-      escapeCssString(s, paranoid, (Appendable) out);
+      escapeCssString(s, (Appendable) out);
     } catch (IOException ex) {
       // StringBuilders don't throw IOException
       throw new RuntimeException(ex);
@@ -340,28 +332,24 @@ public class Escaping {
        0x7B, Character.MAX_CODE_POINT + 1,
      });
 
+  // The below includes all CSS special characters.
+  // When a CSS parser sees a token it does not recognize, it skips tokens
+  // until it sees something that signals the start of a new construct, such as
+  // a '}' or '@'.  If a parser becomes particularly confused, it could jump
+  // into the middle of a string.  Escaping all CSS special characters prevents
+  // code from being hidden in strings.
   private static final SparseBitSet CSS_STR_ESCAPES = SparseBitSet.withRanges(
      new int[] {
-       0, 0x09,  // control characters
-       0x0A, 0x20,
-       0x22, 0x23,  // double quotes
-       0x27, 0x28,  // single quotes
-       0x5C, 0x5D,  // back slash
-       0x7F, Character.MAX_CODE_POINT + 1,  // Exclude non-ascii codepoints
-     });
-
-  private static final SparseBitSet CSS_PARANOID_STR_ESCAPES
-       = SparseBitSet.withRanges(new int[] {
        0, 0x20,  // control characters
        0x22, 0x23,  // double quotes
-       0x27, 0x28,  // single quotes
        // Escape asterisks to make sure that IE 5's nested comment lexer
        // can't be confused by string literals, so no:
        //  /* /* */ content: '  */ expression(...) /* ' /* */
-       0x2A, 0x2B,  // asterisk
-       0x3C, 0x3D,  // <
-       0x3E, 0x3F,  // >
-       0x5C, 0x5D,  // back slash
+       0x26, 0x2D,  // amp, single quotes, parentheses, asterisk, plus, comma
+       0x3A, 0x3F,  // colon, semicolon, angle brackets, and equals
+       0x40, 0x41,  // @ symbol.
+       0x5B, 0x5E,  // square brackets and back slash
+       0x7B, 0x7E,  // curly brackets and pipe.
        0x7F, Character.MAX_CODE_POINT + 1,  // Exclude non-ascii codepoints
      });
 

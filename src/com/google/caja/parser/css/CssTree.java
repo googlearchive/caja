@@ -1057,7 +1057,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
   private static void renderCssString(String s, RenderContext r) {
     StringBuilder sb = new StringBuilder();
     sb.append('\'');
-    Escaping.escapeCssString(s, r.isParanoid(), sb);
+    Escaping.escapeCssString(s, sb);
     sb.append('\'');
     r.getOut().consume(sb.toString());
   }

@@ -84,8 +84,9 @@ public final class CssTemplateTest extends CajaTestCase {
             + "'list-style-image;listStyleImage',"
             + " IMPORTS___.cssUri___(x),"
             + " 'background',"
-            + " '\\'http://proxy/?url=foo.png"
-            + "&base=http%3A%2F%2Fgadget.com%2Ffoo&mt=image%2F*\\'');\n"
+            + " '\\'http\\\\3A//proxy/?url\\\\3D foo.png"
+            + "\\\\26 base\\\\3Dhttp%3A%2F%2Fgadget.com"
+            + "%2Ffoo\\\\26mt\\\\3Dimage%2F\\\\2A \\'');\n"
             + "}");
   }
 

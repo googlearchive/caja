@@ -15,7 +15,7 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.lexer.ParseException;
-import com.google.caja.parser.js.*;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.util.RhinoTestBed;
 
 import java.io.IOException;
@@ -120,14 +120,8 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
         "assertEquals(q,1);");
   }
 
-  // Checks calls to THIS
+  // Checks calls, sets, and reads of members of THIS
   public void testThis() throws Exception {
-
-    rewriteAndExecute(
-        ";",
-        "assertThrows(this.fun()",
-        ";");
-
     rewriteAndExecute(
         ";",
         "assertThrows(function a() {" +
@@ -173,7 +167,8 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
     Statement cajaTree = replaceLastStatementWithEmit(
         js(fromString(trans, is)), "unittestResult___;");
     String transJs = render(
-        rewriteStatements(js(fromResource("../../plugin/asserts.js")), cajaTree));
+        rewriteStatements(js(fromResource("../../plugin/asserts.js")),
+                          cajaTree));
 
     assertNoErrors();
 

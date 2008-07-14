@@ -130,7 +130,7 @@ public class CssRewriterTest extends CajaTestCase {
             "#foo {\n  background: '/foo/bar.png'\n}");
     runTest(
         "#foo { background: 'http://whitelisted-host.com/blinky.gif' }",
-        "#foo {\n  background: 'http://whitelisted-host.com/blinky.gif'\n}");
+        "#foo {\n  background: 'http\\3A//whitelisted-host.com/blinky.gif'\n}");
 
     // disallowed
     runTest("#foo { background: url('http://cnn.com/bar.png') }",
