@@ -92,7 +92,7 @@ if (Date.prototype.toJSON === (void 0)) {
 if (Array.slice === (void 0)) {
   /** In anticipation of ES4, and because it's useful. */
   Array.slice = function(self, start, end) {
-    return Array.prototype.slice.call(self, start, end);
+    return Array.prototype.slice.call(self, start || 0, end || self.length);
   };
 }
 
