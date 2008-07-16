@@ -206,7 +206,7 @@
   }
   function asCtor(fun, callerIdx) {
     var ctor = fun;
-    if (ctor.___CONSTRUCTOR___) {
+    if (('function' === typeof ctor) && ctor.___CONSTRUCTOR___) {
       // Make sure that the object returned really is of the right class, not
       // of the type of the wrapper function.
       // This works around problems with (new Array()) and (new Date()) where
@@ -313,11 +313,37 @@
     return origLog(msg);
   }
 
+  // Dump stack traces during loading to the console.
+  function loadModule(module) {
+    caja.log('starting loadModule');
+    try {
+      orig.loadModule(module);
+      caja.log('done loadModule');
+    } catch (ex) {
+      if ('undefined' !== typeof console) {
+        if (ex && ex.cajaStack___) {
+          var stack = unsealCallerStack(ex.cajaStack___);
+          if (stack) {
+            console.group(
+                ex.message + ' @ ' + ex.fileName + ':' + ex.lineNumber);
+            console.error(stack.join('\n'));
+            console.groupEnd();
+          }
+        } else {
+          console.log(ex.stack.match(/@\S*:\d+(?:\n|$)/g).join('\n\n'));
+        }
+      }
+      throw ex;
+    }
+  }
+
   /**
    * Receive debugSymbols during module initialization, and set up the debugging
    * hooks for this module's version of ___.
    */
-  function useDebugSymbols(newDebugSymbols) {
+  function useDebugSymbols(var_args) {
+    var newDebugSymbols = arguments;
+    caja.log('using debug symbols');
     if (!caja.isJSONContainer(this)) { caja.fail('called on bad ___'); }
     if (this.debugSymbols_ !== undefined) {
       caja.fail('___ reused with different debug symbols');
@@ -393,6 +419,8 @@
 
   // Include the top stack frame in log messages.
   override(caja, ['log', log], 0);
+  // Dump stack traces during loading to the console.
+  override(___, ['loadModule', loadModule], 0);
 
   startCallerStack();
 })();

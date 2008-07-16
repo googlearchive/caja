@@ -16,7 +16,7 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
-import com.google.caja.parser.js.ArrayConstructor;
+import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.StringLiteral;
@@ -50,10 +50,10 @@ final class DebuggingSymbols {
   }
 
   /**
-   * Produces a javascript array that can be consumed by
+   * Produces a set of actuals that can be consumed by
    * {@code ___.useDebugSymbols} from caja-debugmode.js.
    */
-  public ArrayConstructor toJavascriptSideTable() {
+  public ParseTreeNodeContainer toJavascriptSideTable() {
     MessageContext mc = new MessageContext();
     mc.inputSources = allInputSources();
     List<Expression> debugTable = new ArrayList<Expression>(
@@ -70,7 +70,7 @@ final class DebuggingSymbols {
           StringLiteral.toQuotedValue(posStr.substring(prefixLen))));
       last = posStr;
     }
-    return new ArrayConstructor(debugTable);
+    return new ParseTreeNodeContainer(debugTable);
   }
 
   public boolean isEmpty() { return positions.isEmpty(); }

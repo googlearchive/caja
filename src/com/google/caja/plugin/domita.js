@@ -116,7 +116,8 @@ attachDocumentStub = (function () {
 
   function assert(cond) {
     if (!cond) {
-      console && (console.log('domita assertion failed'), console.trace());
+      (typeof console !== 'undefined')
+      && (console.log('domita assertion failed'), console.trace());
       throw new Error();
     }
   }
@@ -489,11 +490,9 @@ attachDocumentStub = (function () {
       for (var ancestor = parent; ancestor; ancestor = ancestor.parentNode) {
         // TODO(mikesamuel): replace with cursors so that subtrees are delegable
         if (idClass === ancestor.className) {  // TODO: handle multiple classes.
-          console.log('found parent ' + parent);
           return tameNode(parent, this.editable___);
         }
       }
-      console.log('missing classname ' + idClass);
       return null;
     };
     TameNode.prototype.getElementsByTagName = function (tagName) {

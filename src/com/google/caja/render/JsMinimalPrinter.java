@@ -42,7 +42,7 @@ public final class JsMinimalPrinter extends AbstractRenderer {
    * At or above this limit, the printer will try to replace a space with
    * a line-break.
    */
-  private int lineLengthLimit = 500;
+  private int lineLengthLimit = 80;
 
   /**
    * @param out receives the rendered text.

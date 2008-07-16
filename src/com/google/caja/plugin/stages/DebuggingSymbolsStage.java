@@ -43,7 +43,7 @@ import java.util.Map;
  * <pre>
  * ___.loadModule(
  *     function (___, IMPORTS___) {
- *       <b>___.useDebugSymbols(['foo.js:1+12-15',7,'2+4-18']);</b>
+ *       <b>___.useDebugSymbols('foo.js:1+12-15',7,'2+4-18');</b>
  *       ...
  *     })
  * </pre>
@@ -120,7 +120,9 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
         "{"
         + "___.loadModule("
         + "    function (___, IMPORTS___) {"
-        + "      ___.useDebugSymbols(@symbols);"
+        // Pass in varargs to avoid referencing the Array or Object symbol
+        // before those are pulled from IMPORTS___ in @body.
+        + "      ___.useDebugSymbols(@symbols*);"
         + "      @body*"
         + "    });"
         + "}",
