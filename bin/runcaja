@@ -14,10 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-export IFS=" \t\n"
+if [ -z "$JAVA" ]; then
+  if [ -n "$JAVA_HOME" ] ; then
+    export JAVA="$JAVA_HOME/bin/java"
+  elif [ -n "$JDK_HOME" ] ; then
+    export JAVA="$JDK_HOME/bin/java"
+  else
+    export JAVA=java
+  fi
+fi
 
 scriptdir="$(dirname "$0")"
 jardir="${scriptdir}/../ant-jars"
 classpath="$(find "$jardir" -name '*.jar' -print0 | tr '\0' ':')"
 
-java -Xmx512m -cp "${classpath}" "$@"
+"$JAVA" -Xmx512m -cp "${classpath}" "$@"
