@@ -212,7 +212,14 @@ public final class CssValidator {
   private boolean validateAttrib(CssTree.Attrib attr) {
     String attribName = attr.getIdent().toLowerCase();
     if (null != htmlSchema.lookupAttribute("*", attribName)) {
-      return true;
+      // Attribs don't parse in IE 6, and allowing them without being able
+      // allowing them could leak information about how we're rewriting
+      // attribute values.
+      mq.addMessage(
+          PluginMessageType.CSS_ATTRIBUTE_SELECTOR_NOT_ALLOWED,
+          invalidNodeMessageLevel, attr.getFilePosition());
+      attr.getAttributes().set(INVALID, Boolean.TRUE);
+      return false;
     } else {
       mq.addMessage(
           PluginMessageType.UNKNOWN_ATTRIBUTE, invalidNodeMessageLevel,

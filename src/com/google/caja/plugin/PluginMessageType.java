@@ -76,6 +76,8 @@ public enum PluginMessageType implements MessageTypeInt {
   UNSAFE_CSS_PROPERTY("%s: unsafe css property %s", MessageLevel.ERROR),
   UNSAFE_CSS_PSEUDO_SELECTOR(
       "%s: unsafe css pseudo-selector %s", MessageLevel.ERROR),
+  CSS_ATTRIBUTE_SELECTOR_NOT_ALLOWED(
+      "%s: css attribute-selectors not allowed", MessageLevel.ERROR),
   SKIPPING_CSS_PROPERTY(
       "%s: skipping invalid css property %s", MessageLevel.WARNING),
   TAG_NOT_ALLOWED_IN_ATTRIBUTE(

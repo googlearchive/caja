@@ -396,7 +396,7 @@
   </target>
 
   <target name="RuleDoclet" depends="Quasiliterals">
-    <!-- HtmlRuleDoclet requires DOMImplementation from java 1.6 --> 
+    <!-- HtmlRuleDoclet requires DOMImplementation from java 1.6 -->
     <javac destdir="${lib}" debug="true" target="1.5" source="1.6">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
