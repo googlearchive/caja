@@ -276,7 +276,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
     runCajoled("result(" + js + ");", golden,
                "var output = '<no-output>';"
                + "___.getNewModuleHandler().getImports().result = "
-               + "    ___.simpleFunc(function (x) { output = x; });"
+               + "    ___.simpleFrozenFunc(function (x) { output = x; });"
                + "%s;"
                + "output");
   }

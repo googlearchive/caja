@@ -1,0 +1,721 @@
+<html>
+  <head>
+    <title>Cajita Transformation Rules</title>
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+    <style type="text/css">
+    h1 { text-align: center }
+      div.centered { text-align: center }
+      div.centered table { margin: 0 auto; text-align: left }
+    .style1 {color: #FF0000}
+    .style2 {
+  color: #0000FF;
+  font-style: italic;
+}
+    </style>
+  </head>
+<body>
+    <h1>Cajita Transformation Rules</h1>
+    <h2>Default set of transformations used by Cajita </h2>
+    <table border="1" cellpadding="2" cellspacing="2">
+      
+      <tr>
+        <th colspan="2" bgcolor="#FFFFFF" scope="col">Legend</th>
+      </tr>
+      <tr>
+        <td bgcolor="#FFFFFF">Identical to corresponding Caja rule</td>
+        <td bgcolor="#FFFFFF">&nbsp;</td>
+      </tr>
+      <tr>
+        <td bgcolor="#FFFFFF"><b>A rule change from Caja</b></td>
+        <td bgcolor="#FFFFFF">Cajita prohibits all uses of &quot;this&quot;</td>
+      </tr>
+      <tr>
+        <td bgcolor="#FF0000">Caja rule not needed by Cajita</td>
+        <td bgcolor="#FFFFFF">Without &quot;this&quot;, Cajita doesn't need rules for protected property access</td>
+      </tr>
+      <tr>
+        <td bgcolor="#CCCCCC">A rejection rule in both Caja and Cajita</td>
+        <td bgcolor="#FFFFFF">So the eye can easily skim past it</td>
+      </tr>
+      <tr>
+        <td bgcolor="#FFFF00">A Cajita rule not output by the Valija translator</td>
+        <td bgcolor="#FFFFFF">The output of the Valija -&gt; Cajita translation does not include these cases.</td>
+      </tr>
+      <tr>
+        <td bgcolor="#00FF00">Previously Caja only, but now in Cajita too.</td>
+        <td bgcolor="#FFFFFF"><p>The reason the last row is colored green is that Cajita now allows </p>
+          <ul>
+            <li>==, !=, instanceof</li>
+            <li>block-breaking scopes</li>
+          </ul>
+        <p>in addition to for/in loops. We had been execting to allow these only in Caja. We now allow these in Cajita as well, to make Cajita a better target for the Valija embedding.</p></td>
+      </tr>
+    </table>
+<p>&nbsp;</p>
+  <table cellpadding="2" cellspacing="2">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Rule</th>
+        <th>Synopsis</th>
+        <th>Matches</th>
+        <th>Substitutes</th>
+      </tr>
+    </thead>
+    <tr>
+      <td><b>0</b></td>
+      <td><b>module</b></td>
+      <td bgcolor="#E3E3E3"><b>Disallow <span class="style1"><s>top-level</s></span> <span class="style2">any</span> "this". Import free variables.</b></td>
+      <td><pre><b>@ss*;</b></pre></td>
+      <td><pre><b>@startStmts*; @ss*;</b></pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FFFF00">1</td>
+      <td bgcolor="#FFFF00">synthetic</td>
+      <td bgcolor="#FFFF00">Pass through synthetic nodes.</td>
+      <td bgcolor="#FFFF00"><pre>&lt;@synthetic&gt;</pre></td>
+      <td bgcolor="#FFFF00"><pre>&lt;@synthetic&gt;</pre></td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>block</td>
+      <td>Initialize named functions at the beginning of their enclosing block.</td>
+      <td><pre>{@ss*;}</pre></td>
+      <td><pre><b>{@startStmts*; @ss*;}</b></pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">3</td>
+      <td bgcolor="#CCCCCC">with</td>
+      <td bgcolor="#CCCCCC">Statically reject if a `with` block is found.</td>
+      <td bgcolor="#CCCCCC"><pre>with (@scope) @body;</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">4</td>
+      <td bgcolor="#CCCCCC">foreachBadFreeVariable</td>
+      <td bgcolor="#CCCCCC">Do not allow a for-in to assign to an imported variable.</td>
+      <td bgcolor="#CCCCCC"><pre>for (@k in @o) @ss;</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#00FF00">5</td>
+      <td bgcolor="#00FF00">foreach</td>
+      <td bgcolor="#00FF00">Only enumerate Caja-visible and enumerable property names. A for-in on "this" will see pubic and protected property names. Otherwise, only public property names.</td>
+      <td bgcolor="#00FF00"><pre>for (@k in @o) @ss;</pre></td>
+      <td bgcolor="#00FF00"><pre>&lt;approx&gt; <br>for (@k in @o) {
+  if (___.@canEnum(@o,@k)) @ss;<br>}</pre></td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>tryCatch</td>
+      <td>Ensure that only immutable data is thrown, and repair scope confusion in existing JavaScript implementations of try/catch.</td>
+      <td><pre>try { 
+  @s0*; 
+} catch (@x) {
+  @s1*; 
+}</pre></td>
+      <td><pre>try {
+  @s0*;
+} catch (ex___) {
+  try {
+    throw ___.tameException(ex___);
+  } catch (@x) {
+    @s1*;
+  }
+}</pre></td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>tryCatchFinally</td>
+      <td>Finally adds no special issues beyond those explained in try/catch.</td>
+      <td><pre>try {
+  @s0*;
+} catch (@x) {
+  @s1*; 
+} finally { 
+  @s2*; 
+}</pre></td>
+      <td><pre>try {
+  @s0*;
+} catch (ex___) {
+  try {
+    throw ___.tameException(ex___);
+  } catch (@x) {
+    @s1*;  
+  }
+} finally {
+  @s2*;
+}</pre></td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>tryFinally</td>
+      <td>See bug 383. Otherwise, it's just the trivial translation.</td>
+      <td><pre>try {@s0*;} finally {@s1*;}</pre></td>
+      <td><pre>try {@s0*;} finally {@s1*;}</pre></td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>varArgs</td>
+      <td>Make all references to the magic "arguments" variable into references to a frozen array containing a snapshot of the actual arguments taken when the function was first entered.</td>
+      <td><pre>arguments</pre></td>
+      <td><pre>a___</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">10</td>
+      <td bgcolor="#FF0000">varThis</td>
+      <td bgcolor="#FF0000">Translates all occurrences of "this" to "t___".</td>
+      <td bgcolor="#FF0000"><pre>this</pre></td>
+      <td bgcolor="#FF0000"><pre>t___</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">11</td>
+      <td bgcolor="#CCCCCC">varBadSuffix</td>
+      <td bgcolor="#CCCCCC">Statically reject if a variable with `__` suffix is found.</td>
+      <td bgcolor="#CCCCCC"><pre>@v__</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">12</td>
+      <td bgcolor="#CCCCCC">varBadSuffixDeclaration</td>
+      <td bgcolor="#CCCCCC">Statically reject if a variable with `__` suffix is found.</td>
+      <td bgcolor="#CCCCCC"><pre>&lt;approx&gt;(var|function) @v__ ...</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">13</td>
+      <td bgcolor="#CCCCCC">varBadImportSuffix</td>
+      <td bgcolor="#CCCCCC">Statically reject if an imported variable with `_` suffix is found</td>
+      <td bgcolor="#CCCCCC"><pre>@import_</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FFFF00">14</td>
+      <td bgcolor="#FFFF00">varFuncFreeze</td>
+      <td bgcolor="#FFFF00">An escaping occurence of a function name freezes the function.</td>
+      <td bgcolor="#FFFF00"><pre>@fname</pre></td>
+      <td bgcolor="#FFFF00"><pre>___.primFreeze(@fname)</pre></td>
+    </tr>
+    <tr>
+      <td>15</td>
+      <td>varDefault</td>
+      <td>Any remaining uses of a variable name are preserved.</td>
+      <td><pre>@v</pre></td>
+      <td><pre>@v</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">16</td>
+      <td bgcolor="#FF0000">readBadSuffix</td>
+      <td bgcolor="#FF0000">Statically reject if a property has `__` suffix is found.</td>
+      <td bgcolor="#FF0000"><pre>@x.@p__</pre></td>
+      <td bgcolor="#FF0000"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">17</td>
+      <td bgcolor="#FF0000">readInternal</td>
+      <td bgcolor="#FF0000">Read a public or protected property.</td>
+      <td bgcolor="#FF0000"><pre>this.@p</pre></td>
+      <td bgcolor="#FF0000"><pre>&lt;approx&gt; 
+___.readProp(t___, @'p')</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">18</td>
+      <td bgcolor="#CCCCCC">readBadInternal</td>
+      <td bgcolor="#CCCCCC">Statically reject public reading of a property ending with '_'.</td>
+      <td bgcolor="#CCCCCC"><pre>@x.@p_</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td>19</td>
+      <td>readPublic</td>
+      <td></td>
+      <td><pre>@o.@p</pre></td>
+      <td><pre>&lt;approx&gt; 
+___.readPub(@o, @'p')</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">20</td>
+      <td bgcolor="#FF0000">readIndexInternal</td>
+      <td bgcolor="#FF0000"></td>
+      <td bgcolor="#FF0000"><pre>this[@s]</pre></td>
+      <td bgcolor="#FF0000"><pre>___.readProp(t___, @s)</pre></td>
+    </tr>
+    <tr>
+      <td>21</td>
+      <td>readIndexPublic</td>
+      <td></td>
+      <td><pre>@o[@s]</pre></td>
+      <td><pre>___.readPub(@o, @s)</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">22</td>
+      <td bgcolor="#CCCCCC">setBadAssignToFunctionName</td>
+      <td bgcolor="#CCCCCC">Statically reject if an assignment expression assigns to a function name.</td>
+      <td bgcolor="#CCCCCC"><pre>&lt;approx&gt; @fname @op?= @x</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">23</td>
+      <td bgcolor="#CCCCCC">setBadThis</td>
+      <td bgcolor="#CCCCCC">Statically reject if an expression assigns to `this`.</td>
+      <td bgcolor="#CCCCCC"><pre>this = @z</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">24</td>
+      <td bgcolor="#CCCCCC">setBadFreeVariable</td>
+      <td bgcolor="#CCCCCC">Statically reject if an expression assigns to a free variable.</td>
+      <td bgcolor="#CCCCCC"><pre>@import = @y</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">25</td>
+      <td bgcolor="#CCCCCC">setBadValueOf</td>
+      <td bgcolor="#CCCCCC">Statically reject if assigning to valueOf.</td>
+      <td bgcolor="#CCCCCC"><pre>@x.valueOf = @z</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">26</td>
+      <td bgcolor="#FF0000">setBadSuffix</td>
+      <td bgcolor="#FF0000">Statically reject if a property with `__` suffix is found.</td>
+      <td bgcolor="#FF0000"><pre>@x.@p__ = @z</pre></td>
+      <td bgcolor="#FF0000"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">27</td>
+      <td bgcolor="#FF0000">setInternal</td>
+      <td bgcolor="#FF0000">Set or create a public or protected property.</td>
+      <td bgcolor="#FF0000"><pre>this.@p = @r</pre></td>
+      <td bgcolor="#FF0000"><pre>&lt;approx&gt; 
+___.setProp(t___, @'p', @r)</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">28</td>
+      <td bgcolor="#FF0000">setMember</td>
+      <td bgcolor="#FF0000">Initialize a member of the prototypical object associated with a constructor or named function, to be inherited by the instances of that function.</td>
+      <td bgcolor="#FF0000"><pre>@df.prototype.@p = @m</pre></td>
+      <td bgcolor="#FF0000"><pre>___.setMember(@df, @'p', @m)</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">29</td>
+      <td bgcolor="#CCCCCC">setBadInternal</td>
+      <td bgcolor="#CCCCCC">Cannot publicly access a property ending with '_'.</td>
+      <td bgcolor="#CCCCCC"><pre>@x.@y_ = @z</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FFFF00">30</td>
+      <td bgcolor="#FFFF00">setStatic</td>
+      <td bgcolor="#FFFF00">Initialize the direct properties (static members) of a potentially-mutable constructor or named function.</td>
+      <td bgcolor="#FFFF00"><pre>@fname.@p = @r</pre></td>
+      <td bgcolor="#FFFF00"><pre>___.setStatic(@fname, @'p', @r)</pre></td>
+    </tr>
+    <tr>
+      <td>31</td>
+      <td>setPublic</td>
+      <td>Set a public property.</td>
+      <td><pre>@o.@p = @r</pre></td>
+      <td><pre>&lt;approx&gt; 
+___.setPub(@o, @'p', @r);</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">32</td>
+      <td bgcolor="#FF0000">setIndexInternal</td>
+      <td bgcolor="#FF0000"></td>
+      <td bgcolor="#FF0000"><pre>this[@s] = @r</pre></td>
+      <td bgcolor="#FF0000"><pre>___.setProp(t___, @s, @r)</pre></td>
+    </tr>
+    <tr>
+      <td>33</td>
+      <td>setIndexPublic</td>
+      <td></td>
+      <td><pre>@o[@s] = @r</pre></td>
+      <td><pre>___.setPub(@o, @s, @r)</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">34</td>
+      <td bgcolor="#CCCCCC">setBadInitialize</td>
+      <td bgcolor="#CCCCCC">Statically reject if a variable with `__` suffix is found.</td>
+      <td bgcolor="#CCCCCC"><pre>var @v__ = @r</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td>35</td>
+      <td>setInitialize</td>
+      <td>Ensure v is not a function name. Expand the right side.</td>
+      <td><pre>var @v = @r</pre></td>
+      <td><pre>var @v = @r</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">36</td>
+      <td bgcolor="#CCCCCC">setBadDeclare</td>
+      <td bgcolor="#CCCCCC">Statically reject if a variable with `__` suffix is found.</td>
+      <td bgcolor="#CCCCCC"><pre>var @v__</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td>37</td>
+      <td>setDeclare</td>
+      <td>Ensure that v isn't a function name.</td>
+      <td><pre>var @v</pre></td>
+      <td><pre>var @v</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">38</td>
+      <td bgcolor="#CCCCCC">setBadVar</td>
+      <td bgcolor="#CCCCCC">Statically reject if a variable with `__` suffix is found.</td>
+      <td bgcolor="#CCCCCC"><pre>@v__ = @r</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td>39</td>
+      <td>setVar</td>
+      <td>Only if v isn't a function name.</td>
+      <td><pre>@v = @r</pre></td>
+      <td><pre>@v = @r</pre></td>
+    </tr>
+    <tr>
+      <td>40</td>
+      <td>setReadModifyWriteLocalVar</td>
+      <td></td>
+      <td><pre>@x @op= @y</pre></td>
+      <td><pre>&lt;approx&gt; 
+@x = @x @op @y</pre></td>
+    </tr>
+    <tr>
+      <td>41</td>
+      <td>setIncrDecr</td>
+      <td>Handle pre and post ++ and --.</td>
+      <td><pre>UNKNOWN</pre></td>
+      <td><pre>UNKNOWN</pre></td>
+    </tr>
+    <tr>
+      <td>42</td>
+      <td>newCalllessCtor</td>
+      <td>Add missing empty argument list.</td>
+      <td><pre>new @ctor</pre></td>
+      <td><pre><b>___.construct(@ctor, [])</b></pre></td>
+    </tr>
+    <tr>
+      <td>43</td>
+      <td>newCtor</td>
+      <td></td>
+      <td><pre>new @ctor(@as*)</pre></td>
+      <td><pre><b>___.construct(@ctor, [@as*])</b></pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">44</td>
+      <td bgcolor="#CCCCCC">deleteBadValueOf</td>
+      <td bgcolor="#CCCCCC">Prohibit deletion of valueOf.</td>
+      <td bgcolor="#CCCCCC"><pre>delete @o.valueOf</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">45</td>
+      <td bgcolor="#FF0000">deleteBadSuffix</td>
+      <td bgcolor="#FF0000"></td>
+      <td bgcolor="#FF0000"><pre>delete @o.@p__</pre></td>
+      <td bgcolor="#FF0000"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">46</td>
+      <td bgcolor="#FF0000">deleteInternal</td>
+      <td bgcolor="#FF0000"></td>
+      <td bgcolor="#FF0000"><pre>delete this.@p</pre></td>
+      <td bgcolor="#FF0000"><pre>___.deleteProp(t___, @'p')</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">47</td>
+      <td bgcolor="#CCCCCC">deleteBadInternal</td>
+      <td bgcolor="#CCCCCC"></td>
+      <td bgcolor="#CCCCCC"><pre>delete @o.@p_</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td>48</td>
+      <td>deletePublic</td>
+      <td></td>
+      <td><pre>delete @o.@p</pre></td>
+      <td><pre>___.deletePub(@o, @'p')</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">49</td>
+      <td bgcolor="#FF0000">deleteIndexInternal</td>
+      <td bgcolor="#FF0000"></td>
+      <td bgcolor="#FF0000"><pre>delete this[@s]</pre></td>
+      <td bgcolor="#FF0000"><pre>___.deleteProp(t___, @s)</pre></td>
+    </tr>
+    <tr>
+      <td>50</td>
+      <td>deleteIndexPublic</td>
+      <td></td>
+      <td><pre>delete @o[@s]</pre></td>
+      <td><pre>___.deletePub(@o, @s)</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">51</td>
+      <td bgcolor="#CCCCCC">deleteNonProperty</td>
+      <td bgcolor="#CCCCCC"></td>
+      <td bgcolor="#CCCCCC"><pre>delete @v</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">52</td>
+      <td bgcolor="#FF0000">callBadSuffix</td>
+      <td bgcolor="#FF0000">Statically reject if a selector with `__` suffix is found.</td>
+      <td bgcolor="#FF0000"><pre>@o.@p__(@as*)</pre></td>
+      <td bgcolor="#FF0000"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">53</td>
+      <td bgcolor="#FF0000">callInternal</td>
+      <td bgcolor="#FF0000"></td>
+      <td bgcolor="#FF0000"><pre>this.@p(@as*)</pre></td>
+      <td bgcolor="#FF0000"><pre>&lt;approx&gt; 
+___.callProp(t___, @'p', [@as*]</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">54</td>
+      <td bgcolor="#CCCCCC">callBadInternal</td>
+      <td bgcolor="#CCCCCC">Statically reject if a public selector with `_` suffix is found.</td>
+      <td bgcolor="#CCCCCC"><pre>@o.@s_(@as*)</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">55</td>
+      <td bgcolor="#FF0000">callCajaDef2</td>
+      <td bgcolor="#FF0000">Declares that the first argument acts as a derived constructor inheriting from the second.</td>
+      <td bgcolor="#FF0000"><pre>caja.def(@fname, @base)</pre></td>
+      <td bgcolor="#FF0000"><pre>caja.def(@fname, @base)</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">56</td>
+      <td bgcolor="#FF0000">callCajaDef2BadFunction</td>
+      <td bgcolor="#FF0000">Reject calls to caja.def() on names of functions statically known to be frozen.</td>
+      <td bgcolor="#FF0000"><pre>caja.def(@fname, @base)</pre></td>
+      <td bgcolor="#FF0000"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">57</td>
+      <td bgcolor="#FF0000">callCajaDef2Bad</td>
+      <td bgcolor="#FF0000">Reject other calls to caja.def().</td>
+      <td bgcolor="#FF0000"><pre>caja.def(@x, @base)</pre></td>
+      <td bgcolor="#FF0000"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">58</td>
+      <td bgcolor="#FF0000">callCajaDef3Plus</td>
+      <td bgcolor="#FF0000">Declare an inheritance relationship, and initialize methods and statics.</td>
+      <td bgcolor="#FF0000"><pre>caja.def(@fname, @base, @mm, @ss?)</pre></td>
+      <td bgcolor="#FF0000"><pre>caja.def(@fname, @base, @mm, @ss?)</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">59</td>
+      <td bgcolor="#FF0000">callCajaDef3PlusBadFunction</td>
+      <td bgcolor="#FF0000">Reject initialization of a name of a function statically known to be frozen.</td>
+      <td bgcolor="#FF0000"><pre>caja.def(@fname, @base, @mm, @ss?)</pre></td>
+      <td bgcolor="#FF0000"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">60</td>
+      <td bgcolor="#FF0000">callCajaDef3PlusBad</td>
+      <td bgcolor="#FF0000">Reject other calls to caja.def().</td>
+      <td bgcolor="#FF0000"><pre>caja.def(@x, @base, @mm, @ss?)</pre></td>
+      <td bgcolor="#FF0000"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">61</td>
+      <td bgcolor="#FF0000">callFuncInlineMethodCall</td>
+      <td bgcolor="#FF0000"></td>
+      <td bgcolor="#FF0000"><pre>(function (@formals*) {@body*;}).call(
+    this, @args*);</pre></td>
+      <td bgcolor="#FF0000"><pre>(function (@formals*) {@fh*; @stmts*; @body*;}).call(
+    <b>t___</b>, @args*);</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">62</td>
+      <td bgcolor="#FF0000">callFuncInlineMethodApply</td>
+      <td bgcolor="#FF0000"></td>
+      <td bgcolor="#FF0000"><pre>(function (@formals*) {@body*;}).apply(
+    this, @arg);</pre></td>
+      <td bgcolor="#FF0000"><pre>(function (@formals*) {@fh*; @stmts*; @body*;}).apply(
+    <b>t___</b>, @arg);</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">63</td>
+      <td bgcolor="#FF0000">callFuncInlineMethodBind</td>
+      <td bgcolor="#FF0000"></td>
+      <td bgcolor="#FF0000"><pre>(function (@formals*) {@body*;}).bind(
+    this, @args*);</pre></td>
+      <td bgcolor="#FF0000"><pre>___.simpleFrozenFunc(
+    function (@formals*) {@fh*; @stmts*; @body*;}.bind(
+        t___, @args*));</pre></td>
+    </tr>
+    <tr>
+      <td>64</td>
+      <td>callPublic</td>
+      <td></td>
+      <td><pre>@o.@p(@as*)</pre></td>
+      <td><pre>&lt;approx&gt; ___.callPub(@o, @'p', [@as*])</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">65</td>
+      <td bgcolor="#FF0000">callIndexInternal</td>
+      <td bgcolor="#FF0000"></td>
+      <td bgcolor="#FF0000"><pre>this[@s](@as*)</pre></td>
+      <td bgcolor="#FF0000"><pre>___.callProp(t___, @s, [@as*])</pre></td>
+    </tr>
+    <tr>
+      <td>66</td>
+      <td>callIndexPublic</td>
+      <td></td>
+      <td><pre>@o[@s](@as*)</pre></td>
+      <td><pre>___.callPub(@o, @s, [@as*])</pre></td>
+    </tr>
+    <tr>
+      <td>67</td>
+      <td>callFunc</td>
+      <td></td>
+      <td><pre>@f(@as*)</pre></td>
+      <td><pre>___.asSimpleFunc(@f)(@as*)</pre></td>
+    </tr>
+    <tr>
+      <td>68</td>
+      <td>funcAnonSimple</td>
+      <td></td>
+      <td><pre>function (@ps*) {@bs*;}</pre></td>
+      <td><pre>___.simpleFrozenFunc(
+    function (@ps*) {@fh*; @stmts*; @bs*;})</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FFFF00">69</td>
+      <td bgcolor="#FFFF00">funcNamedSimpleDecl</td>
+      <td bgcolor="#FFFF00"></td>
+      <td bgcolor="#FFFF00"><pre>function @fname(@ps*) {@bs*;}</pre></td>
+      <td bgcolor="#FFFF00"><pre>var @fname = ___.simpleFunc(
+    function(@ps*) {@fh*; @stmts*; @bs*;}, 
+    @'fname');</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FFFF00">70</td>
+      <td bgcolor="#FFFF00">funcNamedSimpleValue</td>
+      <td bgcolor="#FFFF00"></td>
+      <td bgcolor="#FFFF00"><pre>function @fname(@ps*) {@bs*;}</pre></td>
+      <td bgcolor="#FFFF00"><pre>(function() {
+  var @fname = function(@ps*) {@fh*; @stmts*; @bs*;}
+  return ___.simpleFrozenFunc(@fname, @'fname');
+})();</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">71</td>
+      <td bgcolor="#FF0000">funcXo4a</td>
+      <td bgcolor="#FF0000">Rewrites an 1) anonymous function 2) mentioning this 3) whose earliest function scope ancestor is NOT a constructor or method into an exophoric function.</td>
+      <td bgcolor="#FF0000"><pre>(function (@formals*) {@body*;})</pre></td>
+      <td bgcolor="#FF0000"><pre>&lt;approx&gt; 
+___.xo4a(
+    function (@formals*) {@fh*; @stmts*; @body*;})</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">72</td>
+      <td bgcolor="#FF0000">funcCtor</td>
+      <td bgcolor="#FF0000"></td>
+      <td bgcolor="#FF0000"><pre>function @fname(@ps*) {@b; @bs*;}</pre></td>
+      <td bgcolor="#FF0000"><pre>&lt;approx&gt;
+var @fname = (function () {  
+  ___.splitCtor(@fRef, @f_init___Ref);  
+  function @fname(var_args) { 
+    return new @fRef.make___(arguments); 
+  }  
+  function @f_init(@ps*) {@fh*; @stmts*; @b; @bs*;}
+  return @fRef;
+})()</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">73</td>
+      <td bgcolor="#CCCCCC">mapBadKeyValueOf</td>
+      <td bgcolor="#CCCCCC">Statically reject 'valueOf' as a key</td>
+      <td bgcolor="#CCCCCC"><pre>&lt;approx&gt; ({valueOf: @val})</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC">74</td>
+      <td bgcolor="#CCCCCC">mapBadKeySuffix</td>
+      <td bgcolor="#CCCCCC">Statically reject if a key with `_` suffix is found</td>
+      <td bgcolor="#CCCCCC"><pre>&lt;approx&gt; ({@keys_*: @vals*})</pre></td>
+      <td bgcolor="#CCCCCC"><pre>&lt;reject&gt;</pre></td>
+    </tr>
+    <tr>
+      <td>75</td>
+      <td>mapNonEmpty</td>
+      <td></td>
+      <td><pre>({@keys*: @vals*})</pre></td>
+      <td><pre>___.initializeMap([@items*]) </pre>
+      <p>      where items are interleaved keys and vals</p></td>
+    </tr>
+    <tr>
+      <td>76</td>
+      <td>multiDeclaration</td>
+      <td></td>
+      <td><pre>UNKNOWN</pre></td>
+      <td><pre>UNKNOWN</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FFFF00">77</td>
+      <td bgcolor="#FFFF00">otherTypeof</td>
+      <td bgcolor="#FFFF00">Typeof translates simply</td>
+      <td bgcolor="#FFFF00"><pre>typeof @f</pre></td>
+      <td bgcolor="#FFFF00"><pre>typeof @f</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FFFF00">&nbsp;</td>
+      <td bgcolor="#FFFF00"><b>otherInstanceof</b></td>
+      <td bgcolor="#FFFF00"><b>Instanceof translates simply</b></td>
+      <td bgcolor="#FFFF00"><pre><b>@o instanceof @f</b></pre></td>
+      <td bgcolor="#FFFF00"><pre><b>@o instanceof @f</b></pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">78</td>
+      <td bgcolor="#FF0000">inInternal</td>
+      <td bgcolor="#FF0000">Is a public or protected property present on 'this'?</td>
+      <td bgcolor="#FF0000"><pre>@i in this</pre></td>
+      <td bgcolor="#FF0000"><pre>___.canReadProp(t___, @i)</pre></td>
+    </tr>
+    <tr>
+      <td>79</td>
+      <td>inPublic</td>
+      <td>Is a public property present on the object?</td>
+      <td><pre>@i in @o</pre></td>
+      <td><pre>___.canReadPubRev(@i, @o)</pre></td>
+    </tr>
+    <tr>
+      <td>80</td>
+      <td>otherSpecialOp</td>
+      <td></td>
+      <td><pre>UNKNOWN</pre></td>
+      <td><pre>UNKNOWN</pre></td>
+    </tr>
+    <tr>
+      <td>81</td>
+      <td>labeledStatement</td>
+      <td>Statically reject if a label with `__` suffix is found</td>
+      <td><pre>UNKNOWN</pre></td>
+      <td><pre>UNKNOWN</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FF0000">82</td>
+      <td bgcolor="#FF0000">regexLiteral</td>
+      <td bgcolor="#FF0000">Use the regular expression constructor</td>
+      <td bgcolor="#FF0000"><pre>UNKNOWN</pre></td>
+      <td bgcolor="#FF0000"><pre>new ___.RegExp(@pattern, @modifiers?)</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#00FF00">83</td>
+      <td bgcolor="#00FF00">recurse</td>
+      <td bgcolor="#00FF00">Automatically recurse into some structures</td>
+      <td bgcolor="#00FF00"><pre>UNKNOWN</pre></td>
+      <td bgcolor="#00FF00"><pre>UNKNOWN</pre></td>
+    </tr>
+  </table>
+</body>
+</html>

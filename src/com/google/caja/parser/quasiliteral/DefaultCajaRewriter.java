@@ -975,8 +975,7 @@ public class DefaultCajaRewriter extends Rewriter {
           Reference fname = (Reference) bindings.get("fname");
           Reference p = (Reference) bindings.get("p");
           // TODO(erights) Does this only need to check isDeclaredFunction?
-          if (scope.isFunction(getReferenceName(fname))
-              && !"Super".equals(p.getIdentifierName())) {
+          if (scope.isFunction(getReferenceName(fname))) {
             return substV(
                 "___.setStatic(@fname, @rp, @r)",
                 "fname", fname,

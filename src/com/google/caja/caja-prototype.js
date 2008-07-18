@@ -95,9 +95,9 @@ if (Date.prototype.toISOString === (void 0)) {
 Function.prototype.bind = function(thisObject, var_args) {
   var self = this;
   var args = Array.prototype.slice.call(arguments, 1);
-  return ___.primFreeze(___.simpleFunc(function(var_args) {
+  return ___.simpleFrozenFunc(function(var_args) {
     self.apply(thisObject, args.concat(___.args(arguments)));
-  }));
+  });
 };
 
 Function.prototype['super'] = function() {
@@ -583,7 +583,7 @@ var ___;
            debugReference(obj));
     }
     var result = (obj.constructor.typeTag___ === 'Array') ? [] : {};
-    each(obj, simpleFunc(function(k, v) {
+    each(obj, simpleFrozenFunc(function(k, v) {
       result[k] = v;
     }));
     return result;
@@ -1522,7 +1522,7 @@ var ___;
    *
    */
   function setMemberMap(sub, members) {
-    each(members, simpleFunc(function(mname, member) {
+    each(members, simpleFrozenFunc(function(mname, member) {
       setMember(sub, mname, member);
     }));
   }
@@ -1558,7 +1558,7 @@ var ___;
     sub.prototype.constructor = sub;
     
     setMemberMap(sub, members);
-    each(statics, simpleFunc(function(sname, staticMember) {
+    each(statics, simpleFrozenFunc(function(sname, staticMember) {
       setStatic(sub, sname, staticMember);
     }));
     
@@ -1643,7 +1643,7 @@ var ___;
    * called or read.
    */
   function allowSimpleFunc(obj, name) {
-    simpleFunc(obj[name], name);
+    simpleFrozenFunc(obj[name], name);
     allowCall(obj, name);
     allowRead(obj, name);
   }
@@ -1908,7 +1908,7 @@ var ___;
    * A new-module-handler which does nothing.
    */
   var ignoreNewModule = freeze({
-    handle: simpleFunc(function(newModule){})
+    handle: simpleFrozenFunc(function(newModule){})
   });
   
   /**
@@ -1945,7 +1945,7 @@ var ___;
    * notifying the handler), and returns the new module.  
    */
   function loadModule(module) {
-    callPub(myNewModuleHandler, 'handle', [primFreeze(simpleFunc(module))]);
+    callPub(myNewModuleHandler, 'handle', [simpleFrozenFunc(module)]);
     return module;
   }
 
@@ -2184,7 +2184,7 @@ var ___;
       function box() {
         flag = true, squirrel = payload;
       }
-      box.toString = primFreeze(simpleFunc(function () { return '(box)'; }));
+      box.toString = simpleFrozenFunc(function () { return '(box)'; });
       return primFreeze(simpleFunc(box));
     }
     function unseal(box) {

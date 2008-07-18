@@ -21,20 +21,20 @@
 var imports = ___.copy(___.sharedImports);
 var exports = {};
 imports.fail = fail;
-___.simpleFunc(fail);
+___.simpleFrozenFunc(fail);
 imports.assertEquals = assertEquals;
-___.simpleFunc(assertEquals);
+___.simpleFrozenFunc(assertEquals);
 imports.assertTrue = assertTrue;
-___.simpleFunc(assertTrue);
+___.simpleFrozenFunc(assertTrue);
 imports.assertFalse = assertFalse;
-___.simpleFunc(assertFalse);
+___.simpleFrozenFunc(assertFalse);
 imports.document = document;
 imports.console = console;
-___.simpleFunc(console.log);
+___.simpleFrozenFunc(console.log);
 // Included in order to test this function; 
 // stamp should never be made avaliable to real caja code.W
 imports.stamp = ___.stamp;
-___.simpleFunc(___.stamp);
+___.simpleFrozenFunc(___.stamp);
 imports.exports = exports;
 ___.getNewModuleHandler().setImports(imports);
 imports.htmlEmitter___ = new HtmlEmitter(document.getElementById("test-test"));

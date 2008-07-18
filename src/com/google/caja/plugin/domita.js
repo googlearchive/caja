@@ -174,24 +174,24 @@ attachDocumentStub = (function () {
     return ___.freeze(___.stamp(timeoutIdTrademark,
                           { timeoutId___: timeoutId }));
   }
-  ___.simpleFunc(tameSetTimeout);
+  ___.simpleFrozenFunc(tameSetTimeout);
   function tameClearTimeout(timeoutId) {
     ___.guard(timeoutIdTrademark, timeoutId);
     clearTimeout(timeoutId.timeoutId___);
   }
-  ___.simpleFunc(tameClearTimeout);
+  ___.simpleFrozenFunc(tameClearTimeout);
   var intervalIdTrademark = {};
   function tameSetInterval(interval, delayMillis) {
     var intervalId = setInterval(___.asSimpleFunc(interval), delayMillis | 0);
     return ___.freeze(___.stamp(intervalIdTrademark,
                           { intervalId___: intervalId }));
   }
-  ___.simpleFunc(tameSetInterval);
+  ___.simpleFrozenFunc(tameSetInterval);
   function tameClearInterval(intervalId) {
     ___.guard(intervalIdTrademark, intervalId);
     clearInterval(intervalId.intervalId___);
   }
-  ___.simpleFunc(tameClearInterval);
+  ___.simpleFrozenFunc(tameClearInterval);
 
   // See above for a description of this function.
   function attachDocumentStub(idSuffix, uriCallback, imports) {

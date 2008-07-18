@@ -204,7 +204,7 @@ var cajole = (function () {
     var features = ['testbedServer=' + getTestbedServer().replace(/,/g, '%2C')];
     // See CajaApplet.Feature
     caja.each({ EMBEDDABLE: true, DEBUG_SYMBOLS: true, WARTS_MODE: true },
-              ___.simpleFunc(function (featureName) {
+              ___.simpleFrozenFunc(function (featureName) {
                 if (inputs[featureName + uiSuffix].checked) {
                   features.push(featureName);
                 }
@@ -321,7 +321,7 @@ var getImports = (function () {
 
   /** Builds part of the repr of a JSON map. */
   function reprKeyValuePair(els) {
-    return ___.simpleFunc(function (k, v) {
+    return ___.simpleFrozenFunc(function (k, v) {
       els.push(repr(k) + ': ' + repr(v));
     });
   }
@@ -379,7 +379,7 @@ var getImports = (function () {
     }
 
     var testImports = ___.copy(___.sharedImports);
-    testImports.yield = ___.primFreeze(___.simpleFunc(yielder(uiSuffix)));
+    testImports.yield = ___.simpleFrozenFunc(yielder(uiSuffix));
     var idClass = 'xyz' + ___.getId(testImports) + '___';
     attachDocumentStub(
          '-' + idClass,
@@ -408,13 +408,13 @@ var getImports = (function () {
       return document.getElementById('caja-html' + uiSuffix);
     };
     /** Provide a way to load another gadget's public API. */
-    testImports.loadModule = ___.primFreeze(___.simpleFunc(
+    testImports.loadModule = ___.simpleFrozenFunc(
         function (moduleName) {
           moduleName = String(moduleName);
           return ___.canEnumPub(gadgetPublicApis, moduleName)
               ? gadgetPublicApis[moduleName]
               : void 0;
-        }));
+        });
     return importsByUiSuffix[uiSuffix] = testImports;
   }
 

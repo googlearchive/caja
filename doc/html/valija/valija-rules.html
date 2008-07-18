@@ -1,0 +1,220 @@
+<html>
+  <head>
+    <title>Valija Transformation Rules</title>
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+    <style type="text/css">
+    h1 { text-align: center }
+      div.centered { text-align: center }
+      div.centered table { margin: 0 auto; text-align: left }
+    </style>
+  </head>
+<body>
+    <h1>Valija Transformation Rules</h1>
+    <h2>Default set of transformations used by Valija </h2>
+  <table cellpadding="2" cellspacing="2">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Rule</th>
+        <th>Synopsis</th>
+        <th>Matches</th>
+        <th>Substitutes</th>
+      </tr>
+    </thead>
+    <tr>
+      <td>0</td>
+      <td>module</td>
+      <td>Assume an imported &quot;valija&quot; that knows our shared outers. Name it $dis so top level uses of &quot;this&quot; in Valija work.</td>
+      <td><pre>@ss*;</pre></td>
+      <td><pre>var $dis = valija.getOuters();
+@startStmts*;
+@ss*;</pre>      </td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>block</td>
+      <td>Initialize named functions at the beginning of their enclosing block.</td>
+      <td><pre>{@ss*;}</pre></td>
+      <td><pre>{@startStmts*; @ss*;}</pre></td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>foreach</td>
+      <td>Checks both real and pseudo prototype chains</td>
+      <td><pre>for (@k in @o) @ss;</pre></td>
+      <td><pre>var @t1 = valija.keys(@o);
+
+for (var @t2 = 0; @t2 &lt; @t1.length; @t2++) {
+  @k = @t1[@t2];
+  @ss;
+}</pre></td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>varThis</td>
+      <td>Translates all occurrences of "this" to "$dis".</td>
+      <td><pre>this</pre></td>
+      <td><pre>$dis</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FFFFFF">&nbsp;</td>
+      <td bgcolor="#FFFFFF">initFreeVar</td>
+      <td bgcolor="#FFFFFF">&nbsp;</td>
+      <td bgcolor="#FFFFFF"><pre>var @import = @r</pre></td>
+      <td bgcolor="#FFFFFF"><pre>valija.setOuter(@'import', @r)</pre></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>setFreeVar</td>
+      <td>&nbsp;</td>
+      <td><pre>@import = @r</pre></td>
+      <td><pre>valija.setOuter(@'import', @r)</pre></td>
+    </tr>
+    <tr>
+      <td bgcolor="#FFFFFF">&nbsp;</td>
+      <td bgcolor="#FFFFFF">declFreeVar</td>
+      <td bgcolor="#FFFFFF">&nbsp;</td>
+      <td bgcolor="#FFFFFF"><pre>var @import</pre></td>
+      <td bgcolor="#FFFFFF"><pre>valija.initOuter(@'import')</pre></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>readFreeVar</td>
+      <td>&nbsp;</td>
+      <td><pre>@import</pre></td>
+      <td><pre>valija.readOuter(@'import')</pre></td>
+    </tr>
+    
+    <tr>
+      <td>19</td>
+      <td>readPublic</td>
+      <td>Read @'p' from @o or @o's POE table</td>
+      <td><pre>@o.@p</pre></td>
+      <td><pre>valija.read(@o, @'p')</pre></td>
+    </tr>
+    <tr>
+      <td>21</td>
+      <td>readIndexPublic</td>
+      <td>Read @s from @o or @o's POE table</td>
+      <td><pre>@o[@s]</pre></td>
+      <td><pre>valija.read(@o, @s)</pre></td>
+    </tr>
+    
+    <tr>
+      <td>31</td>
+      <td>setPublic</td>
+      <td>&nbsp;</td>
+      <td><pre>@o.@p = @r</pre></td>
+      <td><pre>
+valija.set(@o, @'p', @r);</pre></td>
+    </tr>
+    <tr>
+      <td>33</td>
+      <td>setIndexPublic</td>
+      <td></td>
+      <td><pre>@o[@s] = @r</pre></td>
+      <td><pre>valija.set(@o, @s, @r)</pre></td>
+    </tr>
+    
+    <tr>
+      <td>42</td>
+      <td>constructNoArgs</td>
+      <td>Add missing empty argument list.</td>
+      <td><pre>new @ctor</pre></td>
+      <td><pre>valija.construct(@ctor, [])</pre></td>
+    </tr>
+    <tr>
+      <td>43</td>
+      <td>construct</td>
+      <td></td>
+      <td><pre>new @ctor(@as*)</pre></td>
+      <td><pre>valija.construct(@ctor, [@as*])</pre></td>
+    </tr>
+    
+    <tr>
+      <td>64</td>
+      <td>callNamed</td>
+      <td>Like @o.@p.apply(@o, [@as*])</td>
+      <td><pre>@o.@p(@as*)</pre></td>
+      <td><pre>valija.callMethod(@o, @'p', [@as*])</pre></td>
+    </tr>
+    <tr>
+      <td>66</td>
+      <td>callMethod</td>
+      <td>Like @o[@s].apply(@o, [@as*])</td>
+      <td><pre>@o[@s](@as*)</pre></td>
+      <td><pre>valija.callMethod(@o, @s, [@as*])</pre></td>
+    </tr>
+    <tr>
+      <td>67</td>
+      <td>callFunc</td>
+      <td>Like @f.apply(null, [@as*])</td>
+      <td><pre>@f(@as*)</pre></td>
+      <td><pre>valija.callFunc(@f, @as*)</pre></td>
+    </tr>
+    <tr>
+      <td>68</td>
+      <td>disfuncAnon</td>
+      <td>Transmutes functions into disfunctions</td>
+      <td><pre>function (@ps*) {@bs*;}</pre></td>
+      <td><pre>valija.dis(
+    function ($dis, @ps*) {@fh*; @stmts*; @bs*;})</pre></td>
+    </tr>
+    <tr>
+      <td>69</td>
+      <td>disfuncNamedDecl</td>
+      <td>Transmutes functions into disfunctions</td>
+      <td><pre>function @fname(@ps*) {@bs*;}</pre></td>
+      <td><pre>var @fname = valija.dis(
+    function($dis, @ps*) {@fh*; @stmts*; @bs*;},
+    @'fname');</pre>      </td>
+    </tr>
+    <tr>
+      <td>70</td>
+      <td>disfuncNamedValue</td>
+      <td>Transmutes functions into disfunctions</td>
+      <td><pre>function @fname(@ps*) {@bs*;}</pre></td>
+      <td><pre>(function() {
+  var @fname = valija.dis(
+      function($dis, @ps*) {@fh*; @stmts*; @bs*;},
+      @'fname');  
+  return @fname;})()</pre></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>metaDisfunc</td>
+      <td>Simulates the Function constructor</td>
+      <td><pre>Function</pre></td>
+      <td><pre>valija.Disfunction</pre></td>
+    </tr>
+    <tr>
+      <td>77</td>
+      <td>otherTypeof</td>
+      <td>The typeof both functions and disfunctions is 'function'.</td>
+      <td><pre>typeof @f</pre></td>
+      <td><pre>valija.typeOf(@f)</pre></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>otherInstanceof</td>
+      <td>Does @o inherit from @f.prototype, even if @f isn't a function?</td>
+      <td><pre>@o instanceof @f</pre></td>
+      <td><pre>valija.instanceOf(@o, @f)</pre></td>
+    </tr>
+    <tr>
+      <td>82</td>
+      <td>regexLiteral</td>
+      <td>Use the regular expression constructor</td>
+      <td><pre>UNKNOWN</pre></td>
+      <td><pre>new RegExp(@pattern, @modifiers?)</pre></td>
+    </tr>
+    <tr>
+      <td>83</td>
+      <td>recurse</td>
+      <td>Automatically recurse into some structures</td>
+      <td><pre>UNKNOWN</pre></td>
+      <td><pre>UNKNOWN</pre></td>
+    </tr>
+  </table>
+</body>
+</html>

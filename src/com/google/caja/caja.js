@@ -34,9 +34,25 @@
 //                detecting a conflict.
 ////////////////////////////////////////////////////////////////////////
 
-// Add a tag to builtin types so we can check the class cross-frame.
+// Add a tag to whitelisted builtin constructors so we can check the class
+// cross-frame. Note that Function is not on the list.
+
 Array.typeTag___ = 'Array';
 Object.typeTag___ = 'Object';
+String.typeTag___ = 'String';
+Boolean.typeTag___ = 'Boolean';
+Number.typeTag___ = 'Number';
+Date.typeTag___ = 'Date';
+RegExp.typeTag___ = 'RegExp';
+Error.typeTag___ = 'Error';
+EvalError.typeTag___ = 'EvalError';
+RangeError.typeTag___ = 'RangeError';
+ReferenceError.typeTag___ = 'ReferenceError';
+SyntaxError.typeTag___ = 'SyntaxError';
+TypeError.typeTag___ = 'TypeError';
+URIError.typeTag___ = 'URIError';
+
+
 
 if (Array.prototype.indexOf === (void 0)) {
   /**
@@ -152,6 +168,25 @@ var ___;
 (function(global) {
 
   ////////////////////////////////////////////////////////////////////////
+  // Some very basic primordial methods
+  ////////////////////////////////////////////////////////////////////////
+
+  var myOriginalHOP = Object.prototype.hasOwnProperty;
+
+  /**
+   * <tt>hasOwnProp(obj, name)</tt> means what
+   * <tt>obj.hasOwnProperty(name)</tt> would normally mean in an
+   * unmodified Javascript system.
+   */
+  function hasOwnProp(obj, name) { 
+    var t = typeof obj;
+    if (t !== 'object' && t !== 'function') { 
+      return false; 
+    }
+    return myOriginalHOP.call(obj, name);
+  }
+  
+  ////////////////////////////////////////////////////////////////////////
   // Diagnostics and condition enforcement
   ////////////////////////////////////////////////////////////////////////
 
@@ -161,12 +196,12 @@ var ___;
    * Note: JavaScript has no macros, so even in the "does nothing"
    * case, remember that the arguments are still evaluated.
    */
-  var myLogFunc_ = function(str, opt_stop) {};
+  var myLogFunc = simpleFrozenFunc(function(str, opt_stop) {});
 
   /**
    * Gets the currently registered logging function.
    */
-  function getLogFunc() { return myLogFunc_; }
+  function getLogFunc() { return myLogFunc; }
 
   /**
    * Register newLogFunc as the current logging function, to be called
@@ -183,12 +218,12 @@ var ___;
    *     stacktrace.
    * </ul>
    */
-  function setLogFunc(newLogFunc) { myLogFunc_ = newLogFunc; }
+  function setLogFunc(newLogFunc) { myLogFunc = newLogFunc; }
 
   /**
    * Calls the currently registered logging function.
    */
-  function log(str) { myLogFunc_(String(str)); }
+  function log(str) { myLogFunc(String(str)); }
 
 
   /**
@@ -203,7 +238,7 @@ var ___;
     // TODO(metaweta): Ask mike samuel about this vs. log-to-console.js
     (typeof console !== 'undefined') && console.trace();
     var message = Array.slice(arguments, 0).join('');
-    myLogFunc_(message, true);
+    myLogFunc(message, true);
     throw new Error(message);
   }
 
@@ -274,18 +309,20 @@ var ___;
 
   function debugReference(obj) {
     switch (typeof obj) {
-      case 'object':
+      case 'object': {
         if (obj === null) { return '<null>'; }
-        return '[' + (obj.constructor.name || 'Object') + ']';
-      default:
-        return '(' + obj + ':' + (typeof obj) + ')';
+        return '[' + (directConstructor(obj).name || 'Object') + ']';
+      }
+      default: { 
+        return '(' + obj + ':' + (typeof obj) + ')'; 
+      }
     }
   }
 
   /**
    *
    */
-  var myKeeper_ = {
+  var myKeeper = {
 
     /**
      *
@@ -325,22 +362,12 @@ var ___;
   /**
    *
    */
-  function getKeeper() { return myKeeper_; }
-
-  /**
-   *
-   */
-  function setKeeper(newKeeper) { myKeeper_ = newKeeper; }
-
-  /**
-   *
-   */
   Object.prototype.handleRead___ = function(name) {
     var handlerName = name + '_getter___';
     if (this[handlerName]) {
       return this[handlerName]();
     }
-    return myKeeper_.handleRead(this, name);
+    return myKeeper.handleRead(this, name);
   };
 
   /**
@@ -351,7 +378,7 @@ var ___;
     if (this[handlerName]) {
       return this[handlerName].call(this, args);
     }
-    return myKeeper_.handleCall(this, name, args);
+    return myKeeper.handleCall(this, name, args);
   };
 
   /**
@@ -362,7 +389,7 @@ var ___;
     if (this[handlerName]) {
       return this[handlerName](val);
     }
-    return myKeeper_.handleSet(this, name, val);
+    return myKeeper.handleSet(this, name, val);
   };
 
   /**
@@ -373,27 +400,8 @@ var ___;
     if (this[handlerName]) {
       return this[handlerName]();
     }
-    return myKeeper_.handleDelete(this, name);
+    return myKeeper.handleDelete(this, name);
   };
-
-  ////////////////////////////////////////////////////////////////////////
-  // Overriding some very basic primordial methods
-  ////////////////////////////////////////////////////////////////////////
-
-  var originalHOP_ = Object.prototype.hasOwnProperty;
-
-  /**
-   * <tt>hasOwnProp(obj.prop)</tt> means what
-   * <tt>obj.hasOwnProperty(prop)</tt> would normally mean in an
-   * unmodified Javascript system.
-   */
-  function hasOwnProp(obj, name) {
-    var t = typeof obj;
-    if (t !== 'object' && t !== 'function') {
-      return false;
-    }
-    return originalHOP_.call(obj, name);
-  }
 
   ////////////////////////////////////////////////////////////////////////
   // walking prototype chain, checking JSON containers
@@ -414,6 +422,11 @@ var ___;
   /**
    * Returns the 'constructor' property of obj's prototype.
    * <p>
+   * BUG TODO(erights): This following code and comments predates
+   * record inheritance, and will not work when inheriting from parent
+   * records that happen to define a property named
+   * 'constructor'. Valija won't actually work until this is fixed. 
+   * <p>
    * By "obj's prototype", we mean the object that obj directly
    * inherits from, not the value of its 'prototype' property. If
    * obj has a '__proto__' property, then we assume we're on a
@@ -425,35 +438,91 @@ var ___;
    */
   function directConstructor(obj) {
     if (obj === null) { return (void 0); }
-    try {
-      if (typeof obj !== 'object') {
-        // Note that functions thereby return undefined,
-        // so directConstructor() doesn't provide access to the
-        // forbidden Function constructor.
-        return (void 0);
-      }
-      // The following test will initially return false in IE
-      if (hasOwnProp(obj, '__proto__')) {
-        if (obj.__proto__ === null) { return (void 0); }
-        return obj.__proto__.constructor;
-      }
-      var result;
-      if (!hasOwnProp(obj, 'constructor')) {
-        result = obj.constructor;
-      } else {
-        var oldConstr = obj.constructor;
-        if (!(delete obj.constructor)) { return (void 0); }
-        result = obj.constructor;
-        obj.constructor = oldConstr;
-      }
-      if (result.prototype.constructor === result) {
-        // Memoize, so it'll be faster next time.
-        obj.__proto__ = result.prototype;
-      }
-      return result;
-    } catch (ex) {
+    // TODO(erights): This won't work for a cross-frame RegExp,
+    // but we can't use isInstanceOf(), because it depends on 
+    // directConstructor().
+    if (typeof obj !== 'object' && !(obj instanceof RegExp)) {
+      // Note that functions thereby return undefined,
+      // so directConstructor() doesn't provide access to the
+      // forbidden Function constructor.
       return (void 0);
     }
+    // The following test will initially return false in IE
+    var result;
+    if (hasOwnProp(obj, '__proto__')) {
+      if (obj.__proto__ === null) { return (void 0); }
+      result = obj.__proto__.constructor;
+    } else {
+      if (!hasOwnProp(obj, 'constructor')) {
+	result = obj.constructor;
+      } else {
+	var oldConstr = obj.constructor;
+	if (!(delete obj.constructor)) { return (void 0); }
+	result = obj.constructor;
+	obj.constructor = oldConstr;
+      }
+      if (result.prototype.constructor === result) {
+	// Memoize, so it'll be faster next time.
+	obj.__proto__ = result.prototype;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * The function category of the whitelisted global constructors
+   * defined in ES is the string name of the constructor, allowing
+   * isInstanceOf() to work cross-frame. Otherwise, the function
+   * category of a function is just the function itself.  
+   */
+  function getFuncCategory(fun) {
+    enforceType(fun, 'function');
+    if (fun.typeTag___) { 
+      return fun.typeTag___; 
+    } else {
+      return fun;
+    }
+  }
+
+  /**
+   * Is <tt>obj</tt> a direct instance of a function whose category is
+   * the same as the category of <tt>ctor</tt>? 
+   */
+  function isDirectInstanceOf(obj, ctor) {
+    var constr = directConstructor(obj);
+    if (constr === (void 0)) { return false; }
+    return getFuncCategory(constr) === getFuncCategory(ctor);
+  }
+
+  /**
+   */
+  function isInstanceOf(obj, ctor) {
+    if (obj instanceof ctor) { return true; }
+    if (isDirectInstanceOf(obj, ctor)) { return true; }
+    // BUG TODO(erights): walk prototype chain.
+    // In the meantime, this will fail should it encounter a
+    // cross-frame instance of a "subclass" of ctor.
+    return false;
+  }
+  
+  /**
+   * A Record is an object whose direct constructor is Object.
+   * <p>
+   * These are the kinds of objects that can be expressed as 
+   * an object literal ("<tt>{...}</tt>") in the JSON language.
+   */
+  function isRecord(obj) {
+    return isDirectInstanceOf(obj, Object);
+  }
+  
+  /**
+   * An Array is an object whose direct constructor is Array.
+   * <p>
+   * These are the kinds of objects that can be expressed as 
+   * an array literal ("<tt>[...]</tt>") in the JSON language.
+   */
+  function isArray(obj) {
+    return isDirectInstanceOf(obj, Array);
   }
 
   /**
@@ -464,10 +533,9 @@ var ___;
    * expressed in the JSON language.
    */
   function isJSONContainer(obj) {
-    if (obj === null) { return false; }
-    if (obj === (void 0)) { return false; }
     var constr = directConstructor(obj);
-    var typeTag = constr && constr.typeTag___;
+    if (constr === (void 0)) { return false; }
+    var typeTag = constr.typeTag___;
     return typeTag === 'Object' || typeTag === 'Array';
   }
 
@@ -558,10 +626,15 @@ var ___;
   }
 
   /**
-   * Like primFreeze(obj), but applicable only to JSON containers.
+   * Like primFreeze(obj), but applicable only to JSON containers and
+   * (pointlessly but harmlessly) to functions.
    */
   function freeze(obj) {
     if (!isJSONContainer(obj)) {
+      if (typeof obj === 'function' && !isInstanceOf(obj, RegExp)) {
+	enforce(isFrozen(obj), 'Internal: non-frozen function: ' + obj);
+	return obj;
+      }
       fail('caja.freeze(obj) applies only to JSON Containers: ',
            debugReference(obj));
     }
@@ -578,8 +651,8 @@ var ___;
       fail('caja.copy(obj) applies only to JSON Containers: ',
            debugReference(obj));
     }
-    var result = (obj.constructor.typeTag___ === 'Array') ? [] : {};
-    each(obj, simpleFunc(function(k, v) {
+    var result = isArray(obj) ? [] : {};
+    each(obj, simpleFrozenFunc(function(k, v) {
       result[k] = v;
     }));
     return result;
@@ -847,13 +920,13 @@ var ___;
     if (meth.___ATTACHMENT___ === self) {
       return meth;
     }
-    if (meth.___ATTACHMENT___ !== undefined) {
+    if (meth.___ATTACHMENT___ !== (void 0)) {
       fail('Method ', meth, ' cannot be reattached to: ', self);
     }
     function result(var_args) {
       if (this !== self) {
           fail('Method ', meth, ' is already attached.\nthis: ',
-               this, '\nthat: ', self);
+               this, '\nself: ', self);
       }
       return meth.apply(self, arguments);
     }
@@ -1056,27 +1129,30 @@ var ___;
    */
   function asFirstClass(value) {
     switch(typeof value) {
-      case 'function':
+      case 'function': {
         if (((isMethod(value) ||
               isSimpleFunc(value) ||
               isXo4aFunc(value) ||
               isCtor(value)) &&
              isFrozen(value)) ||
-            (value instanceof RegExp)) {
+            isInstanceOf(value, RegExp)) {
           return value;
         } else {
           // TODO(metaweta): make this a caja-uncatchable exception
           fail("Internal: toxic function encountered: ", value);
         }
         break;
-      case 'object':
+      }
+      case 'object': {
         if (value !== null && isPrototypical(value)) {
           // TODO(metaweta): make this a caja-uncatchable exception
           fail("Internal: prototypical object encountered: ", value);
         }
         return value;
-      default:
+      }
+      default: {
         return value;
+      }
     }
   }
 
@@ -1174,11 +1250,22 @@ var ___;
    * Caja code attempting to read a property on something besides
    * <tt>this</tt>.
    * <p>
-   * If it can't then <ttreadPub</tt> returns <tt>undefined</tt>
+   * If it can't then <tt>readPub</tt> returns <tt>undefined</tt>
    * instead.
    */
   function readPub(obj, name) {
-    if ((typeof name) === 'number') { return obj[name]; }
+    if ((typeof name) === 'number') {
+      if (typeof obj === 'string') {
+        // In partial anticipation of ES3.1. 
+        // TODO(erights): Once ES3.1 settles, revisit this and 
+        // correctly implement the agreed semantics.
+        // Mike Samuel suggests also making it conditional on
+        //  (+name) === (name & 0x7fffffff)
+        return obj.charAt(name);
+      } else {
+        return obj[name]; 
+      }
+    }
     name = String(name);
     if (canReadPub(obj, name)) { return obj[name]; }
     if (canCall(obj, name)) { return attach(obj, obj[name]); }
@@ -1266,10 +1353,10 @@ var ___;
    */
   function Token(name) {
     return primFreeze({
-          toString: primFreeze(simpleFunc(function() { return name; }))
+          toString: simpleFrozenFunc(function() { return name; })
         });
   }
-  primFreeze(simpleFunc(Token));
+  simpleFrozenFunc(Token);
 
   /**
    * Inside a <tt>caja.each()</tt>, the body function can terminate
@@ -1282,12 +1369,12 @@ var ___;
    * For each sensible key/value pair in obj, call fn with that
    * pair.
    * <p>
-   * If <tt>obj instanceof Array</tt>, then enumerate
-   * indexes. Otherwise, enumerate the canEnumOwn() property names.
+   * If obj is an array, then enumerate indexes. Otherwise, enumerate
+   * the canEnumOwn() property names. 
    */
   function each(obj, fn) {
     fn = asSimpleFunc(fn);
-    if (obj && obj.constructor.typeTag___ === 'Array') {
+    if (isArray(obj)) {
       var len = obj.length;
       for (var i = 0; i < len; i++) {
         if (fn(i, readPub(obj, i)) === BREAK) {
@@ -1584,9 +1671,9 @@ var ___;
   function tameException(ex) {
     try {
       switch (typeof ex) {
-        case 'object':
+        case 'object': {
           if (ex === null) { return null; }
-          if (ex instanceof Error) {  // TODO: or the cross frame equivalent
+          if (isInstanceOf(ex, Error)) {
             // See Ecma-262 S15.11 for the definitions of these properties.
             var message = ex.message || ex.desc;
             var stack = ex.stack;
@@ -1598,13 +1685,15 @@ var ___;
             return primFreeze({ message: message, name: name, stack: stack });
           }
           return '' + ex;
+        }
         case 'string':
         case 'number':
         case 'boolean':
-        case 'undefined':
+        case 'undefined': {
           // Immutable.
           return ex;
-        case 'function':
+        }
+        case 'function': {
           // According to Pratap Lakhsman's "JScript Deviations" S2.11
           // If the caught object is a function, calling it within the catch
           // supplies the head of the scope chain as the "this value".  The
@@ -1624,9 +1713,11 @@ var ___;
           // We return undefined to make sure that caught functions cannot be
           // evaluated within the catch block.
           return void 0;
-        default:
+        }
+        default: {
           log('Unrecognized exception type ' + (typeof ex));
           return void 0;
+        }
       }
     } catch (_) {
       // Can occur if coercion to string fails, or if ex has getters
@@ -1641,9 +1732,18 @@ var ___;
    *
    */
   function setMemberMap(sub, members) {
-    each(members, simpleFunc(function(mname, member) {
+    each(members, simpleFrozenFunc(function(mname, member) {
       setMember(sub, mname, member);
     }));
+  }
+
+  /**
+   * Makes a new empty object that directly inherits from parent.
+   */
+  function primBeget(parent) {
+    function F() {}
+    F.prototype = parent;
+    return new F();
   }
 
   /**
@@ -1674,9 +1774,7 @@ var ___;
       } else {
         ctor(sub, sup);
       }
-      function PseudoSuper() {}
-      PseudoSuper.prototype = sup.prototype;
-      sub.prototype = new PseudoSuper();
+      sub.prototype = primBeget(sup.prototype);
       if (sub.make___) {
         // We must preserve this identity, so anywhere that either
         // <tt>.prototype</tt> property might be assigned to, we must
@@ -1685,7 +1783,7 @@ var ___;
       }
       sub.prototype.constructor = sub;
       init(sub, members);
-      each(statics, simpleFunc(function(sname, staticMember) {
+      each(statics, simpleFrozenFunc(function(sname, staticMember) {
         setStatic(sub, sname, staticMember);
       }));
       // translator freezes sub and sub.prototype later.
@@ -1703,7 +1801,7 @@ var ___;
    */
   var unsafeDef = commonDef(
       function (sub, members) {
-        each(members, simpleFunc(function(key, val){
+        each(members, simpleFrozenFunc(function(key, val){
           sub.prototype[key] = val;
         }));
       });
@@ -1787,11 +1885,11 @@ var ___;
   }
 
   /**
-   * Whilelist obj[name] as a simple function that can be either
+   * Whilelist obj[name] as a simple frozen function that can be either
    * called or read.
    */
   function grantSimpleFunc(obj, name) {
-    simpleFunc(obj[name], name);
+    simpleFrozenFunc(obj[name], name);
     grantCall(obj, name);
     grantRead(obj, name);
   }
@@ -1839,13 +1937,15 @@ var ___;
    * parameter to a Javascript method that would use it in a match.
    * <p>
    * If it is a RegExp, then this match might mutate it, which must
-   * not be allowed if regexp is frozen.
+   * not be allowed if regexp is frozen. Otherwise it must be a string.
    */
   function enforceMatchable(regexp) {
-    if (regexp instanceof RegExp) {
+    if (isInstanceOf(regexp, RegExp)) {
       if (isFrozen(regexp)) {
         fail("Can't match with frozen RegExp: ", regexp);
       }
+    } else {
+      enforceType(regexp, 'string');
     }
   }
 
@@ -1865,6 +1965,8 @@ var ___;
   // Taming decisions
   ////////////////////////////////////////////////////////////////////////
 
+  /// Math
+
   all2(grantRead, Math, [
     'E', 'LN10', 'LN2', 'LOG2E', 'LOG10E', 'PI', 'SQRT1_2', 'SQRT2'
   ]);
@@ -1873,6 +1975,7 @@ var ___;
     'log', 'max', 'min', 'pow', 'random', 'round', 'sin', 'sqrt', 'tan'
   ]);
 
+  /// Object
 
   ctor(Object, (void 0), 'Object');
   all2(grantMethod, Object, [
@@ -1907,8 +2010,10 @@ var ___;
     return primFreeze(this);
   }));
 
-  useGetAndCallHandlers(Function.prototype,
-                        'apply',
+  /// Function
+
+  useGetAndCallHandlers(Function.prototype, 
+                        'apply', 
                         xo4a(function(self, realArgs) {
     return asXo4aFunc(this).apply(self, realArgs);
   }));
@@ -1922,13 +2027,16 @@ var ___;
                         xo4a(function(self, var_args) {
     var thisFunc = this;
     var leftArgs = Array.slice(arguments, 1);
-    return primFreeze(simpleFunc(function(var_args) {
+    return simpleFrozenFunc(function(var_args) {
       var args = leftArgs.concat(Array.slice(arguments, 0));
       return callPub(thisFunc, 'apply', [self, args]);
-    }));
+    });
   }));
 
+  /// Array
+
   ctor(Array, Object, 'Array');
+  grantSimpleFunc(Array, 'slice');
   all2(grantMethod, Array, [
     'concat', 'join', 'slice', 'indexOf', 'lastIndexOf'
   ]);
@@ -1947,6 +2055,8 @@ var ___;
       return Array.prototype.sort.call(this);
     }
   }));
+
+  /// String
 
   ctor(String, Object, 'String');
   grantSimpleFunc(String, 'fromCharCode');
@@ -1985,9 +2095,11 @@ var ___;
     return this.split(separator, limit);
   }));
 
+  /// Boolean
 
   ctor(Boolean, Object, 'Boolean');
 
+  /// Number
 
   ctor(Number, Object, 'Number');
   all2(grantRead, Number, [
@@ -1998,6 +2110,7 @@ var ___;
     'toFixed', 'toExponential', 'toPrecision'
   ]);
 
+  /// Date
 
   ctor(Date, Object, 'Date');
   grantSimpleFunc(Date, 'parse');
@@ -2021,17 +2134,21 @@ var ___;
     'setMilliseconds', 'setUTCMilliseconds'
   ]);
 
+  /// RegExp
 
   ctor(RegExp, Object, 'RegExp');
-
-  // Security TODO(erights): Bug#528 says RegExp#exec() and RegExp#test() should
-  // not be whitelisted. However, to kill these, 28 tests will need repair.
+  
+  // Security TODO(erights): Bug#528 says RegExp#exec() and
+  // RegExp#test() should not be whitelisted. However, to kill these,
+  // 28 tests will need repair. 
   grantMutator(RegExp, 'exec');
   grantMutator(RegExp, 'test');
 
   all2(grantRead, RegExp.prototype, [
     'source', 'global', 'ignoreCase', 'multiline', 'lastIndex'
   ]);
+
+  /// errors
 
   ctor(Error, Object, 'Error');
   grantRead(Error.prototype, 'name');
@@ -2077,7 +2194,7 @@ var ___;
    * A new-module-handler which does nothing.
    */
   var ignoreNewModule = freeze({
-    handle: simpleFunc(function(newModule){})
+    handle: simpleFrozenFunc(function(newModule){})
   });
 
   /**
@@ -2092,9 +2209,11 @@ var ___;
   function makeNormalNewModuleHandler() {
     var imports = copy(sharedImports);
     return freeze({
-      getImports: simpleFunc(function() { return imports; }),
-      setImports: simpleFunc(function(newImports) { imports = newImports; }),
-      handle: simpleFunc(function(newModule) {
+      getImports: simpleFrozenFunc(function() { return imports; }),
+      setImports: simpleFrozenFunc(function(newImports) { 
+        imports = newImports; 
+      }),
+      handle: simpleFrozenFunc(function(newModule) {
         newModule(___, imports);
       })
     });
@@ -2108,7 +2227,7 @@ var ___;
    * notifying the handler), and returns the new module.
    */
   function loadModule(module) {
-    callPub(myNewModuleHandler, 'handle', [primFreeze(simpleFunc(module))]);
+    callPub(myNewModuleHandler, 'handle', [simpleFrozenFunc(module)]);
     return module;
   }
 
@@ -2265,8 +2384,8 @@ var ___;
       function box() {
         flag = true, squirrel = payload;
       }
-      box.toString = primFreeze(simpleFunc(function () { return '(box)'; }));
-      return primFreeze(simpleFunc(box));
+      box.toString = simpleFrozenFunc(function () { return '(box)'; });
+      return simpleFrozenFunc(box);
     }
     function unseal(box) {
       // Start off in a known good state.
@@ -2286,22 +2405,174 @@ var ___;
   }
 
   ////////////////////////////////////////////////////////////////////////
+  // Needed for Valija
+  // TODO(erights): nothing in this section is tested yet
+  ////////////////////////////////////////////////////////////////////////
+
+  /**
+   * <tt>___.construct(ctor, [args...])</tt> is equivalent to <tt>new
+   * asCtor(ctor)(args...)</tt>. 
+   * <p>
+   * TODO(erights): Cajole to tt>construct()</tt> instead of
+   * <tt>asCtor()</tt>. Remember to make the corresponding change to
+   * caja-debugmode.js.
+   * <p>
+   * BUG TODO(erights): To cope correctly with Date, we need to move
+   * the logic from caja-debugmode.js to here.
+   */
+  function construct(ctor, args) {
+    ctor = asCtor(ctor);
+    if (ctor.make___) {
+      return new ctor.make___(args);
+    }
+    var result = primBeget(ctor.prototype);
+    var altResult = ctor.apply(result, args);
+    switch (typeof altResult) {
+      case 'object': {
+        if (null !== altResult) { return altResult; }
+      }
+      case 'function': {
+        return altResult;
+      }
+    }
+    return result;
+  }
+
+  var magicCount = 0;
+
+  /**
+   * Creates a new mutable associative table mapping from the <tt>===</tt> 
+   * identity of arbitrary keys to arbitrary values (with the caveat
+   * that NaN is a valid key even though it isn't <tt>===</tt> to itself).
+   * <p>
+   * JavaScript has no such construct, and I had thought it impossible
+   * to implement both correctly and with the right complexity measure
+   * using the standard elements of JavaScript. However, the following
+   * <ul>
+   * <li>should work across frames, 
+   * <li>should have the right garbage collection behavior, 
+   * <li>should have O(1) complexity measure within a frame where
+   *     collision is impossible, 
+   * <li>and should have O(1) complexity measure between frames with
+   *     high probability. 
+   * </ul>
+   * Is this technique well known?
+   */
+  function newTable() {
+    var myMagicIndexName = '_' + Math.random() + '_' + 
+                           magicCount++ + '_index___';
+    var myKeys = [];
+    var myValues = [];
+
+    function set(key, value) {
+      switch (typeof key) {
+        case 'object':
+        case 'function': {
+          if (null === key) { myValues.prim_null = value; return; } 
+          var index = myKeys.length;
+          key[myMagicIndexName] = index;
+          myKeys[index] = key;
+          myValues[index] = value;
+          return;
+        }
+        case 'string': { myValues['str_' + key] = value; return; }
+        default: { myValues['prim_' + key] = value; return; }
+      }
+    }
+
+    /** 
+     * If the key is absent, returns <tt>undefined</tt>.
+     * <p>
+     * Users of this table cannot distinguish an <tt>undefined</tt>
+     * value from an absent key.
+     */
+    function get(key) {
+      var index;
+      switch (typeof key) {
+        case 'object':
+        case 'function': {
+          if (null === key) { return myValues.prim_null; } 
+          var index = key[myMagicIndexName];
+          if ((void 0) === index) { return (void 0); }
+          if (myKeys[index] !== key) {
+            // In case of collision
+            for (index = 0; index < myKeys.length; index++) {
+              if (myKeys[index] === key) { break; }
+            }
+            if (index === myKeys.length) { return (void 0); }
+            // predictive MRU cache
+            key[myMagicIndexName] = index;
+          }
+          return myValues[index];
+        }
+        case 'string': { return myValues['str_' + key];   }
+        default: { return myValues['prim_' + key]; }
+      }
+    }
+
+    return primFreeze({
+      get: simpleFrozenFunc(get),
+      set: simpleFrozenFunc(set)
+    });
+  }
+
+
+  /**
+   * Is <tt>allegedParent</tt> on <obj>'s prototype chain?
+   */
+  function inheritsFrom(obj, allegedParent) {
+    if (typeof obj !== 'object') { return false; }
+    if (null === obj) { return false; }
+    if (typeof allegedParent !== 'object') { return false; }
+    if (null === allegedParent) { return false; }
+    function F() {}
+    F.prototype = allegedParent;
+    return obj instanceof F;
+  }
+
+  /**
+   * 
+   */
+  function getSuperCtor(func) {
+    enforceType(func, 'function');
+    if (isCtor(func) || isSimpleFunc(func)) {
+      var result = directConstructor(func.prototype);
+      if (isCtor(result) || isSimpleFunc(result)) {
+        return result;
+      }
+    }
+    return (void 0);
+  }
+
+  /**
+   * Like primBeget(), but applicable only to records.
+   */
+  function beget(parent) {
+    if (!isRecord(parent)) {
+      fail("Can only beget() records: ", parent);
+    }
+    return primBeget(parent);
+  }
+
+  ////////////////////////////////////////////////////////////////////////
   // Exports
   ////////////////////////////////////////////////////////////////////////
   safeCaja = {
     // Diagnostics and condition enforcement
     log: log,
-
     fail: fail,
     enforce: enforce,
     enforceType: enforceType,
     enforceNat: enforceNat,
 
     // walking prototype chain, checking JSON containers
+    getFuncCategory: getFuncCategory,
+    isDirectInstanceOf: isDirectInstanceOf,
+    isInstanceOf: isInstanceOf,
+    isRecord: isRecord,           isArray: isArray,
     isJSONContainer: isJSONContainer,
     freeze: freeze,
-    copy: copy,
-    snapshot: snapshot,
+    copy: copy,                   snapshot: snapshot,
 
     // Accessing properties
     canReadPub: canReadPub,       readPub: readPub,
@@ -2322,17 +2593,26 @@ var ___;
 
     // Other
     def: def,
-    USELESS: USELESS
+    USELESS: USELESS,
+
+    // Needed for Valija
+    construct: construct,
+    newTable: newTable,
+    inheritsFrom: inheritsFrom,
+    getSuperCtor: getSuperCtor,
+    beget: beget
   };
 
-  each(safeCaja, simpleFunc(function(k, v) {
+  each(safeCaja, simpleFrozenFunc(function(k, v) {
     switch (typeof v) {
-    case 'object':
-      if (v !== null) { primFreeze(v); }
-      break;
-    case 'function':
-      primFreeze(simpleFunc(v));
-      break;
+      case 'object': {
+        if (v !== null) { primFreeze(v); }
+        break;
+      }
+      case 'function': {
+        simpleFrozenFunc(v);
+        break;
+      }
     }
   }));
 
@@ -2348,14 +2628,14 @@ var ___;
     'NaN': NaN,
     'Infinity': Infinity,
     'undefined': (void 0),
-    parseInt: simpleFunc(parseInt),
-    parseFloat: simpleFunc(parseFloat),
-    isNaN: simpleFunc(isNaN),
-    isFinite: simpleFunc(isFinite),
-    decodeURI: simpleFunc(decodeURI),
-    decodeURIComponent: simpleFunc(decodeURIComponent),
-    encodeURI: simpleFunc(encodeURI),
-    encodeURIComponent: simpleFunc(encodeURIComponent),
+    parseInt: simpleFrozenFunc(parseInt),
+    parseFloat: simpleFrozenFunc(parseFloat),
+    isNaN: simpleFrozenFunc(isNaN),
+    isFinite: simpleFrozenFunc(isFinite),
+    decodeURI: simpleFrozenFunc(decodeURI),
+    decodeURIComponent: simpleFrozenFunc(decodeURIComponent),
+    encodeURI: simpleFrozenFunc(encodeURI),
+    encodeURIComponent: simpleFrozenFunc(encodeURIComponent),
     Math: Math,
 
     Object: Object,
@@ -2375,14 +2655,16 @@ var ___;
     URIError: URIError
   };
 
-  each(sharedImports, simpleFunc(function(k, v) {
+  each(sharedImports, simpleFrozenFunc(function(k, v) {
     switch (typeof v) {
-    case 'object':
-      if (v !== null) { primFreeze(v); }
-      break;
-    case 'function':
-      primFreeze(v);
-      break;
+      case 'object': {
+        if (v !== null) { primFreeze(v); }
+        break;
+      }
+      case 'function': {
+        primFreeze(v);
+        break;
+      }
     }
   }));
   primFreeze(sharedImports);
@@ -2391,10 +2673,6 @@ var ___;
     // Diagnostics and condition enforcement
     getLogFunc: getLogFunc,
     setLogFunc: setLogFunc,
-
-    // Privileged fault handlers
-    getKeeper: getKeeper,
-    setKeeper: setKeeper,
 
     // walking prototype chain, checking JSON containers
     directConstructor: directConstructor,
@@ -2441,6 +2719,7 @@ var ___;
     hasOwnProp: hasOwnProp,
     args: args,
     tameException: tameException,
+    primBeget: primBeget,
     callStackUnsealer: callStackSealer.unseal,
     RegExp: RegExp,  // Available to rewrite rule w/o risk of masking
     stamp: stamp,
@@ -2478,12 +2757,12 @@ var ___;
     unregister: unregister
   };
 
-  each(caja, simpleFunc(function(k, v) {
+  each(caja, simpleFrozenFunc(function(k, v) {
     if (k in ___) {
       fail('internal: initialization conflict: ', k);
     }
     if (typeof v === 'function') {
-      simpleFunc(v);
+      simpleFrozenFunc(v);
       grantCall(caja, k);
     }
     ___[k] = v;
