@@ -26,8 +26,6 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageTypeInt;
 
-import junit.framework.AssertionFailedError;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Arrays;
@@ -56,7 +54,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
    * @param program a program fragment to be rewritten.
    * @param post a postfix program fragment to be executed plain.
    */
-  protected abstract Object rewriteAndExecute(String pre, String program, String post) 
+  protected abstract Object rewriteAndExecute(String pre, String program, String post)
       throws IOException, ParseException;
 
   protected Object rewriteAndExecute(String program) throws IOException, ParseException {
@@ -77,7 +75,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
   // TODO(ihab.awad): Refactor tests to use checkAddsMessage(...) instead
   protected void checkFails(String input, String error) throws Exception {
     mq.getMessages().clear();
-    ParseTreeNode expanded = newRewriter().expand(js(fromString(input)), mq);
+    newRewriter().expand(js(fromString(input)), mq);
 
     assertFalse(
         "Expected error, found none: " + error,
@@ -137,7 +135,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
       ParseTreeNode inputNode,
       MessageTypeInt type)  {
     mq.getMessages().clear();
-    ParseTreeNode actualResultNode = newRewriter().expand(inputNode, mq);
+    newRewriter().expand(inputNode, mq);
     if (containsConsistentMessage(mq.getMessages(),type)) {
       fail("Unexpected add message of type " + type);
     }
@@ -148,7 +146,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
         MessageTypeInt type,
         MessageLevel level)  {
     mq.getMessages().clear();
-    ParseTreeNode actualResultNode = newRewriter().expand(inputNode, mq);
+    newRewriter().expand(inputNode, mq);
     if (containsConsistentMessage(mq.getMessages(),type, level)) {
       fail("Unexpected add message of type " + type + " and level " + level);
     }
@@ -171,7 +169,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
         MessageTypeInt type,
         MessageLevel level)  {
     mq.getMessages().clear();
-    ParseTreeNode actualResultNode = newRewriter().expand(inputNode, mq);
+    newRewriter().expand(inputNode, mq);
     if (!containsConsistentMessage(mq.getMessages(), type, level)) {
       fail("Failed to add message of type " + type + " and level " + level);
     }
@@ -203,16 +201,6 @@ public abstract class RewriterTestCase extends CajaTestCase {
 
   protected void checkSucceeds(CharProducer cp) throws Exception {
     checkSucceeds(js(cp), null);
-  }
-
-  public void testAssertConsistent() throws Exception {
-    try {
-      // A value that cannot be consistent across invocations.
-      assertConsistent("({})");
-      fail("assertConsistent not working");
-    } catch (AssertionFailedError e) {
-      // Pass
-    }
   }
 
   /**
@@ -248,7 +236,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
           .children().get(0);               // an Expression
       ExpressionStmt es = (ExpressionStmt) node;
       Expression e = es.getExpression();
-      Operation emitter = (Operation)substV(
+      Operation emitter = (Operation) substV(
           "@lValueExpr = @e;",
           "lValueExpr", syntheticTree(lValueExpr),
           "e", e);

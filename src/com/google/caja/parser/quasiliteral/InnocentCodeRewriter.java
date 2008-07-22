@@ -20,7 +20,6 @@ import com.google.caja.parser.js.*;
 import com.google.caja.reporting.MessageQueue;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
@@ -47,12 +46,12 @@ public class InnocentCodeRewriter extends Rewriter {
       @RuleDescription(
           name="module",
           synopsis="",
-          reason="")
+          reason="",
+          matches="{@ss*;}")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof Block && scope == null) {
-
-          Scope s2 = Scope.fromProgram((Block)node, mq);
+          Scope s2 = Scope.fromProgram((Block) node, mq);
           List<ParseTreeNode> expanded = new ArrayList<ParseTreeNode>();
           for (ParseTreeNode c : node.children()) {
             expanded.add(expand(c, s2, mq));
@@ -85,9 +84,10 @@ public class InnocentCodeRewriter extends Rewriter {
           matches="function @f? (@ps*) { @bs* }")
       public ParseTreeNode fire(
         ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("function @f? (@ps*) { @bs* }", node, bindings)) {
-          Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor) node);
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          Scope s2 = Scope.fromFunctionConstructor(
+              scope, (FunctionConstructor) node);
           ParseTreeNode params = expandAll(bindings.get("ps"), s2, mq);
           ParseTreeNode body = expandAll(bindings.get("bs"), s2, mq);
 
@@ -123,15 +123,15 @@ public class InnocentCodeRewriter extends Rewriter {
           matches="for (@k in @o) @ss;",
           substitutes="")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        Map<String, ParseTreeNode> bindings = makeBindings();
 
         if (QuasiBuilder.match("for (var @k in @o) @ss;", node, bindings)) {
-          bindings.put("k", new Reference((Identifier)bindings.get("k")));
+          bindings.put("k", new Reference((Identifier) bindings.get("k")));
         } else if (QuasiBuilder.match("for (@k in @o) @ss;", node, bindings)) {
-          ExpressionStmt es = (ExpressionStmt)bindings.get("k");
+          ExpressionStmt es = (ExpressionStmt) bindings.get("k");
           bindings.put("k", es.getExpression());
         } else {
-            return NONE;
+          return NONE;
         }
 
         Identifier kTemp = scope.declareStartOfScopeTempVariable();
@@ -140,7 +140,7 @@ public class InnocentCodeRewriter extends Rewriter {
             "k", bindings.get("k"),
             "kTempRef", new Reference(kTemp));
         kAssignment = expandAll(kAssignment, scope, mq);
-        kAssignment = new ExpressionStmt((Expression)kAssignment);
+        kAssignment = new ExpressionStmt((Expression) kAssignment);
 
         return substV(
             "for (@kTempStmt in @o) { " +

@@ -45,8 +45,8 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   }
 
   /**
-   * Welds together a string representing the repeated pattern of expected test output for
-   * assigning to an outer variable.
+   * Welds together a string representing the repeated pattern of
+   * expected test output for assigning to an outer variable.
    *
    * @author erights@gmail.com
    */
@@ -83,8 +83,8 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   }
 
   /**
-   * Welds together a string representing the repeated pattern of expected test output for
-   * reading an outer variable.
+   * Welds together a string representing the repeated pattern of
+   * expected test output for reading an outer variable.
    *
    * @author erights@gmail.com
    */
@@ -2850,7 +2850,8 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     Statement cajaTree = replaceLastStatementWithEmit(
         js(fromString(caja, is)), "unittestResult___;");
     String cajoledJs = render(
-        rewriteStatements(js(fromResource("../../plugin/asserts.js")), cajaTree));
+        rewriteStatements(js(fromResource("../../plugin/asserts.js")),
+                          cajaTree));
 
     assertNoErrors();
 
@@ -2860,7 +2861,8 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
             getClass(), "/com/google/caja/plugin/console-stubs.js"),
         new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
         new RhinoTestBed.Input(getClass(), "../../plugin/asserts.js"),
-        new RhinoTestBed.Input(getClass(), "/com/google/caja/log-to-console.js"),
+        new RhinoTestBed.Input(
+            getClass(), "/com/google/caja/log-to-console.js"),
         new RhinoTestBed.Input(
             // Initialize the output field to something containing a unique
             // object value that will not compare identically across runs.

@@ -41,6 +41,7 @@ public final class ExpressionStmt extends AbstractStatement<Expression> {
   protected void childrenChanged() {
     super.childrenChanged();
     this.expr = children().get(0);
+    if (1 != children().size()) { throw new IllegalStateException(); }
   }
 
   public Expression getExpression() { return expr; }

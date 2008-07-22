@@ -35,9 +35,12 @@ public class IllegalReferenceCheckRewriter extends Rewriter {
       @RuleDescription(
           name="identifierUnderscores",
           synopsis="Check that any identifier ending with '__' is synthetic",
-          reason="Double underscore identifiers may not be mentioned by Caja code")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        if (node instanceof Identifier && !node.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
+          reason="Double underscore identifiers may not be mentioned by Caja "
+              + "code")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof Identifier
+            && !node.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
           String name = ((Identifier)node).getValue();
           if (name != null && name.endsWith("__")) {
             mq.addMessage(
@@ -56,7 +59,8 @@ public class IllegalReferenceCheckRewriter extends Rewriter {
           name="recurse",
           synopsis="Recurse into children",
           reason="")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
         return expandAll(node, scope, mq);
       }
     },

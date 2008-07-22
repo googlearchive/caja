@@ -145,16 +145,16 @@ public class MatchTest extends CajaTestCase {
     assertEquals(2, m.get("v").children().size());
     assertEquals(
         "a",
-        ((StringLiteral)m.get("k").children().get(0)).getUnquotedValue());
+        ((StringLiteral) m.get("k").children().get(0)).getUnquotedValue());
     assertEquals(
         "b",
-        ((StringLiteral)m.get("k").children().get(1)).getUnquotedValue());
+        ((StringLiteral) m.get("k").children().get(1)).getUnquotedValue());
     assertEquals(
         3,
-        ((IntegerLiteral)m.get("v").children().get(0)).getValue().intValue());
+        ((IntegerLiteral) m.get("v").children().get(0)).getValue().intValue());
     assertEquals(
         4,
-        ((IntegerLiteral)m.get("v").children().get(1)).getValue().intValue());
+        ((IntegerLiteral) m.get("v").children().get(1)).getValue().intValue());
   }
 
   public void testTrailingUnderscoreIdentifierHole() throws Exception {
@@ -162,7 +162,7 @@ public class MatchTest extends CajaTestCase {
         "@a___ = 5;",
         "foo___ = 5;");
     assertNotNull(m);
-    assertEquals("foo", ((Identifier)m.get("a")).getValue());
+    assertEquals("foo", ((Identifier) m.get("a")).getValue());
   }
 
   public void testLiteral() throws Exception {
@@ -170,7 +170,7 @@ public class MatchTest extends CajaTestCase {
         "x = @a;",
         "x = 3;");
     assertNotNull(m);
-    assertEquals(3, ((IntegerLiteral)m.get("a")).getValue().intValue());
+    assertEquals(3, ((IntegerLiteral) m.get("a")).getValue().intValue());
 
     match(
         "x = @a;",
@@ -183,7 +183,7 @@ public class MatchTest extends CajaTestCase {
         "x = @a;",
         "x = y;");
     assertNotNull(m);
-    assertEquals("y", ((Reference)m.get("a")).getIdentifierName());
+    assertEquals("y", ((Reference) m.get("a")).getIdentifierName());
 
     match(
         "x = @a;",
@@ -196,7 +196,7 @@ public class MatchTest extends CajaTestCase {
         "x = @a;",
         "x = pi() * (r * r);");
     assertNotNull(m);
-    assertEquals(Operator.MULTIPLICATION, ((Operation)m.get("a")).getOperator());
+    assertEquals(Operator.MULTIPLICATION, ((Operation) m.get("a")).getOperator());
   }
 
   public void testFunctionIdentifier() throws Exception {
@@ -204,7 +204,7 @@ public class MatchTest extends CajaTestCase {
         "function @a() { }",
         "function x() { }");
     assertNotNull(m);
-    assertEquals("x", ((Identifier)m.get("a")).getValue());
+    assertEquals("x", ((Identifier) m.get("a")).getValue());
   }
 
   public void testFunctionWithBody() throws Exception {
@@ -212,7 +212,7 @@ public class MatchTest extends CajaTestCase {
         "function @a() { x = 3; y = 4; }",
         "function x() { x = 3; y = 4; }");
     assertNotNull(m);
-    assertEquals("x", ((Identifier)m.get("a")).getValue());
+    assertEquals("x", ((Identifier) m.get("a")).getValue());
 
     match(
         "function @a() { x = 3; y = 4; }",
@@ -229,7 +229,7 @@ public class MatchTest extends CajaTestCase {
     assertEquals(FormalParam.class, m.get("ps").children().get(0).getClass());
     assertEquals(
         "x",
-        ((FormalParam)m.get("ps").children().get(0)).getIdentifierName());
+        ((FormalParam) m.get("ps").children().get(0)).getIdentifierName());
     assertEquals(2, m.get("b").children().size());
     assertEquals(ExpressionStmt.class, m.get("b").children().get(0).getClass());
   }
@@ -239,8 +239,8 @@ public class MatchTest extends CajaTestCase {
         "@a.@b;",
         "foo.bar;");
     assertNotNull(m);
-    assertEquals("foo", ((Reference)m.get("a")).getIdentifierName());
-    assertEquals("bar", ((Reference)m.get("b")).getIdentifierName());
+    assertEquals("foo", ((Reference) m.get("a")).getIdentifierName());
+    assertEquals("bar", ((Reference) m.get("b")).getIdentifierName());
   }
 
   public void testBracketAccessorReference() throws Exception {
@@ -248,8 +248,8 @@ public class MatchTest extends CajaTestCase {
         "@a[@b];",
         "foo[bar];");
     assertNotNull(m);
-    assertEquals("foo", ((Reference)m.get("a")).getIdentifierName());
-    assertEquals("bar", ((Reference)m.get("b")).getIdentifierName());
+    assertEquals("foo", ((Reference) m.get("a")).getIdentifierName());
+    assertEquals("bar", ((Reference) m.get("b")).getIdentifierName());
   }
 
   public void testBracketAccessorStringLiteral() throws Exception {
@@ -257,8 +257,8 @@ public class MatchTest extends CajaTestCase {
         "@a[@b];",
         "foo[\"bar\"];");
     assertNotNull(m);
-    assertEquals("foo", ((Reference)m.get("a")).getIdentifierName());
-    assertEquals("bar", ((StringLiteral)m.get("b")).getUnquotedValue());
+    assertEquals("foo", ((Reference) m.get("a")).getIdentifierName());
+    assertEquals("bar", ((StringLiteral) m.get("b")).getUnquotedValue());
   }
 
   public void testBracketAccessorIntegerLiteral() throws Exception {
@@ -266,8 +266,8 @@ public class MatchTest extends CajaTestCase {
         "@a[@b];",
         "foo[3];");
     assertNotNull(m);
-    assertEquals("foo", ((Reference)m.get("a")).getIdentifierName());
-    assertEquals(3, ((IntegerLiteral)m.get("b")).getValue().intValue());
+    assertEquals("foo", ((Reference) m.get("a")).getIdentifierName());
+    assertEquals(3, ((IntegerLiteral) m.get("b")).getValue().intValue());
   }
 
   public void testNew() throws Exception {
@@ -275,7 +275,7 @@ public class MatchTest extends CajaTestCase {
         "new @a(@b*);",
         "new foo(x, y, z);");
     assertNotNull(m);
-    assertEquals("foo", ((Reference)m.get("a")).getIdentifierName());
+    assertEquals("foo", ((Reference) m.get("a")).getIdentifierName());
     assertEquals(Reference.class, m.get("a").getClass());
     assertEquals(3, m.get("b").children().size());
     assertEquals(Reference.class, m.get("b").children().get(0).getClass());

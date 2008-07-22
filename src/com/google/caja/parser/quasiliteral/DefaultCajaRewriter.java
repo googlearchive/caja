@@ -14,7 +14,6 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.lexer.Keyword;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
@@ -46,7 +45,6 @@ import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.RegexpLiteral;
 import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.SimpleOperation;
-import com.google.caja.parser.js.SpecialOperation;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SwitchStmt;
 import com.google.caja.parser.js.ThrowStmt;
@@ -61,7 +59,6 @@ import static com.google.caja.parser.SyntheticNodes.s;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -84,21 +81,21 @@ public class DefaultCajaRewriter extends Rewriter {
   // is that 'y' is always bound to a Reference.
 
   final public Rule[] cajaRules = {
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="module",
           synopsis="Disallow top-level \"this\". Import free variables.",
-          reason="In Caja, \"this\" may only be bound to an object when within the object's " +
-            "encapsulation boundary. At top-level level, \"this\" would be bound " +
-            "to the provided imports object, but the module is outside that object's " +
-            "encapsulation boundary.",
-          matches="@ss*;",
-          substitutes="@startStmts*; @ss*;")
+          reason="In Caja, \"this\" may only be bound to an object when within "
+              + "the object's encapsulation boundary. At top-level level, "
+              + "\"this\" would be bound to the provided imports object, but "
+              + "the module is outside that object's encapsulation boundary.",
+          matches="{@ss*;}",
+          substitutes="@importedvars*; @startStmts*; @expanded*;")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof Block && scope == null) {
-          Scope s2 = Scope.fromProgram((Block)node, mq);
+          Scope s2 = Scope.fromProgram((Block) node, mq);
           if (s2.hasFreeThis()) {
             mq.addMessage(
                 RewriterMessageType.THIS_IN_GLOBAL_CONTEXT,
@@ -132,13 +129,14 @@ public class DefaultCajaRewriter extends Rewriter {
     // Do nothing if the node is already the result of some translation
     ////////////////////////////////////////////////////////////////////////
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="synthetic",
           synopsis="Pass through synthetic nodes.",
-          reason="Allow a relied-upon (trusted) translator to supply JavaScript code to be " +
-            "included in the output with no further translation.",
+          reason="Allow a relied-upon (trusted) translator to supply JavaScript "
+              + "code to be included in the output with no further "
+              + "translation.",
           matches="<@synthetic>",
           substitutes="<@synthetic>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
@@ -149,31 +147,32 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="block",
-          synopsis="Initialize named functions at the beginning of their enclosing block.",
-          reason="Nested named function declarations are illegal in ES3 but are universally " +
-            "supported by all JavaScript implementations, though in different ways. " +
-            "The compromise semantics currently supported by Caja is to hoist the " +
-            "declaration of a variable with the function's name to the beginning of " +
-            "the enclosing function body or module top level, and to initialize " +
-            "this variable to a new anonymous function every time control re-enters " +
-            "the enclosing block." +
-            "\n" +
-            "Note that ES3.1 and ES4 specify a better and safer semantics -- block " +
-            "level lexical scoping -- that we'd like to adopt into Caja eventually. " +
-            "However, it so challenging to implement this semantics by " +
-            "translation to currently-implemented JavaScript that we provide " +
-            "something quicker and dirtier for now.",
+          synopsis="Initialize named functions at the beginning of their "
+              + "enclosing block.",
+          reason="Nested named function declarations are illegal in ES3 but are "
+              + "universally supported by all JavaScript implementations, "
+              + "though in different ways. The compromise semantics currently "
+              + "supported by Caja is to hoist the declaration of a variable "
+              + "with the function's name to the beginning of the enclosing "
+              + "function body or module top level, and to initialize this "
+              + "variable to a new anonymous function every time control "
+              + "re-enters the enclosing block.\n"
+              + "Note that ES3.1 and ES4 specify a better and safer semantics "
+              + "-- block level lexical scoping -- that we'd like to adopt into "
+              + "Caja eventually. However, it so challenging to implement this "
+              + "semantics by translation to currently-implemented JavaScript "
+              + "that we provide something quicker and dirtier for now.",
           matches="{@ss*;}",
           substitutes="@startStmts*; @ss*;")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof Block) {
           List<ParseTreeNode> expanded = new ArrayList<ParseTreeNode>();
-          Scope s2 = Scope.fromPlainBlock(scope, (Block)node);
+          Scope s2 = Scope.fromPlainBlock(scope, (Block) node);
           for (ParseTreeNode c : node.children()) {
             expanded.add(expand(c, s2, mq));
           }
@@ -190,24 +189,23 @@ public class DefaultCajaRewriter extends Rewriter {
     // with - disallow the 'with' construct
     ////////////////////////////////////////////////////////////////////////
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="with",
           synopsis="Statically reject if a `with` block is found.",
-          reason="`with` violates the assumptions made by Scope, and makes it very "
-            + "hard to write a Scope that works. "
-            + "http://yuiblog.com/blog/2006/04/11/with-statement-considered-harmful/ "
-            + "briefly touches on why `with` is bad for programmers. "
-            + "For reviewers -- matching of references with declarations can only "
-            + "be done at runtime. "
-            + "All other secure JS subsets that we know of (ADSafe, Jacaranda, & FBJS) "
-            + "also disallow `with`.",
+          reason="`with` violates the assumptions made by Scope, and makes it "
+              + "very hard to write a Scope that works. "
+              + "http://yuiblog.com/blog/2006/04/11/with-statement-considered-harmful/ "
+              + "briefly touches on why `with` is bad for programmers. For "
+              + "reviewers -- matching of references with declarations can only "
+              + "be done at runtime. All other secure JS subsets that we know "
+              + "of (ADSafe, Jacaranda, & FBJS) also disallow `with`.",
           matches="with (@scope) @body;",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("with (@scope) @body;", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = this.match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.WITH_BLOCKS_NOT_ALLOWED,
               node.getFilePosition());
@@ -221,7 +219,7 @@ public class DefaultCajaRewriter extends Rewriter {
     // foreach - "for ... in" loops
     ////////////////////////////////////////////////////////////////////////
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="foreachBadFreeVariable",
@@ -230,9 +228,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="for (@k in @o) @ss;",
           substitutes="")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("for (@k in @o) @ss;", node, bindings)
-            && bindings.get("k") instanceof ExpressionStmt) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null && bindings.get("k") instanceof ExpressionStmt) {
           ExpressionStmt es = (ExpressionStmt) bindings.get("k");
           if (es.getExpression() instanceof Reference
               && scope.isImported(getReferenceName(es.getExpression()))) {
@@ -246,37 +243,41 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="foreach",
-          synopsis="Only enumerate Caja-visible and enumerable property names. A for-in on " +
-            "\"this\" will see pubic and protected property names. Otherwise, only " +
-            "public property names.",
-          reason="To enumerate any other property names would be to violate the object's " +
-            "encapsulation, leak internals of the Caja implementation, or violate " +
-            "taming decisions of what should be visible.",
-          matches="for (@k in @o) @ss;",
+          synopsis="Only enumerate Caja-visible and enumerable property names. "
+              + "A for-in on \"this\" will see pubic and protected property "
+              + "names. Otherwise, only public property names.",
+          reason="To enumerate any other property names would be to violate the "
+              + "object's encapsulation, leak internals of the Caja "
+              + "implementation, or violate taming decisions of what should be "
+              + "visible.",
+          matches="for (var @k in @o) @ss;",
           substitutes="<approx> for (@k in @o) { if (___.@canEnum(@o,@k)) @ss")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        Map<String, ParseTreeNode> bindings = match(node);
 
-        if (QuasiBuilder.match("for (var @k in @o) @ss;", node, bindings)) {
+        if (bindings != null) {
           scope.addStartOfScopeStatement((Statement) substV(
               "var @k;",
               "k", bindings.get("k")));
-          bindings.put("k", new Reference((Identifier)bindings.get("k")));
-        } else if (QuasiBuilder.match("for (@k in @o) @ss;", node, bindings)) {
-          ExpressionStmt es = (ExpressionStmt)bindings.get("k");
-          bindings.put("k", es.getExpression());
+          bindings.put("k", new Reference((Identifier) bindings.get("k")));
         } else {
-          return NONE;
+          bindings = makeBindings();
+          if (QuasiBuilder.match("for (@k in @o) @ss;", node, bindings)) {
+            ExpressionStmt es = (ExpressionStmt) bindings.get("k");
+            bindings.put("k", es.getExpression());
+          } else {
+            return NONE;
+          }
         }
 
         List<Statement> declsList = new ArrayList<Statement>();
 
         Identifier oTemp = scope.declareStartOfScopeTempVariable();
-        declsList.add(s(new ExpressionStmt((Expression)substV(
+        declsList.add(s(new ExpressionStmt((Expression) substV(
             "@oTemp = @o;",
             "oTemp", s(new Reference(oTemp)),
             "o", expand(bindings.get("o"), scope, mq)))));
@@ -289,7 +290,7 @@ public class DefaultCajaRewriter extends Rewriter {
             "kTempRef", s(new Reference(kTemp)));
         kAssignment.getAttributes().remove(SyntheticNodes.SYNTHETIC);
         kAssignment = expand(kAssignment, scope, mq);
-        kAssignment = s(new ExpressionStmt((Expression)kAssignment));
+        kAssignment = s(new ExpressionStmt((Expression) kAssignment));
 
         String canEnumName = QuasiBuilder.match("this", bindings.get("o")) ?
             "canEnumProp" : "canEnumPub";
@@ -317,42 +318,43 @@ public class DefaultCajaRewriter extends Rewriter {
     // try - try/catch/finally constructs
     ////////////////////////////////////////////////////////////////////////
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="tryCatch",
-          synopsis="Ensure that only immutable data is thrown, and repair scope confusion in " +
-            "existing JavaScript implementations of try/catch.",
-          reason="When manually reviewing code for vulnerability, experience shows that " +
-            "reviewers cannot pay adequate attention to the pervasive possibility " +
-            "of thrown exceptions. These lead to four dangers: 1) leaking an " +
-            "authority-bearing object, endangering integrity, 2) leaking a secret, " +
-            "endangering secrecy, and 3) aborting a partially completed state " +
-            "update, leaving the state malformed, endangering integrity, and " +
-            "4) preventing an operation that was needed, endangering availability. " +
-            "Caja only seeks to make strong claims about integrity. By ensuring that " +
-            "only immutable (transitively frozen) data is thrown, we prevent " +
-            "problem #1. For the others, programmer vigilance is still needed. " +
-            "\n" +
-            "Current JavaScript implementations fail, in different ways, to " +
-            "implement the scoping of the catch variable specified in ES3. We " +
-            "translate Caja to JavaScript so as to implement the ES3 specified " +
-            "scoping on current JavaScript implementations.",
+          synopsis="Ensure that only immutable data is thrown, and repair scope "
+              + "confusion in existing JavaScript implementations of "
+              + "try/catch.",
+          reason="When manually reviewing code for vulnerability, experience "
+              + "shows that reviewers cannot pay adequate attention to the "
+              + "pervasive possibility of thrown exceptions. These lead to four "
+              + "dangers: 1) leaking an authority-bearing object, endangering "
+              + "integrity, 2) leaking a secret, endangering secrecy, and 3) "
+              + "aborting a partially completed state update, leaving the state "
+              + "malformed, endangering integrity, and 4) preventing an "
+              + "operation that was needed, endangering availability. Caja only "
+              + "seeks to make strong claims about integrity. By ensuring that "
+              + "only immutable (transitively frozen) data is thrown, we "
+              + "prevent problem #1. For the others, programmer vigilance is "
+              + "still needed. \n"
+              + "Current JavaScript implementations fail, in different ways, to "
+              + "implement the scoping of the catch variable specified in ES3. "
+              + "We translate Caja to JavaScript so as to implement the ES3 "
+              + "specified scoping on current JavaScript implementations.",
           matches="try { @s0*; } catch (@x) { @s1*; }",
-          substitutes="try {" +
-          "  @s0*;" +
-          "} catch (ex___) {" +
-          "  try {" +
-          "    throw ___.tameException(ex___); " +
-          "  } catch (@x) {" +
-          "    @s1*;" +
-           "  }" +
-          "}")
+          substitutes="try {\n"
+              + "  @s0*;\n"
+              + "} catch (ex___) {\n"
+              + "  try {\n"
+              + "    throw ___.tameException(ex___); \n"
+              + "  } catch (@x) {\n"
+              + "    @s1*;\n"
+              + "  }\n"
+              + "}")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match(
-                "try { @s0*; } catch (@x) { @s1*; }", node, bindings)) {
-          TryStmt t = (TryStmt)node;
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          TryStmt t = (TryStmt) node;
           if (t.getCatchClause().getException().getIdentifier()
               .getName().endsWith("__")) {
             mq.addMessage(
@@ -379,31 +381,30 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="tryCatchFinally",
-          synopsis="Finally adds no special issues beyond those explained in try/catch.",
-          reason="Caja is not attempting to impose determinism, so the reasons for Joe-E to " +
-            "avoid finally do not apply.",
+          synopsis="Finally adds no special issues beyond those explained in "
+              + "try/catch.",
+          reason="Caja is not attempting to impose determinism, so the reasons "
+              + "for Joe-E to avoid finally do not apply.",
           matches="try { @s0*; } catch (@x) { @s1*; } finally { @s2*; }",
-          substitutes="try {" +
-          "  @s0*;" +
-          "} catch (ex___) {" +
-          "  try {" +
-          "    throw ___.tameException(ex___);" +
-          "  } catch (@x) {" +
-          "    @s1*;" +
-          "  }" +
-          "} finally {" +
-          "  @s2*;" +
-          "}")
+          substitutes="try {\n"
+              + "  @s0*;\n"
+              + "} catch (ex___) {\n"
+              + "  try {\n"
+              + "    throw ___.tameException(ex___);\n"
+              + "  } catch (@x) {\n"
+              + "    @s1*;\n"
+              + "  }\n"
+              + "} finally {\n"
+              + "  @s2*;\n"
+              + "}")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match(
-                "try { @s0*; } catch (@x) { @s1*; } finally { @s2*; }",
-                node, bindings)) {
-          TryStmt t = (TryStmt)node;
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          TryStmt t = (TryStmt) node;
           if (t.getCatchClause().getException().getIdentifier()
               .getName().endsWith("__")) {
             mq.addMessage(
@@ -433,19 +434,18 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="tryFinally",
           synopsis="See bug 383. Otherwise, it's just the trivial translation.",
-          reason="try/finally actually seems to work as needed by current JavaScript " +
-            "implementations.",
+          reason="try/finally actually seems to work as needed by current "
+              + "JavaScript implementations.",
           matches="try { @s0*; } finally { @s1*; }",
           substitutes="try { @s0*; } finally { @s1*; }")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match(
-                "try { @s0*; } finally { @s1*; }", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           return substV(
             "try { @s0*; } finally { @s1*; }",
             "s0",  expandAll(bindings.get("s0"), scope, mq),
@@ -459,57 +459,56 @@ public class DefaultCajaRewriter extends Rewriter {
     // variable - variable name handling
     ////////////////////////////////////////////////////////////////////////
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="varArgs",
-          synopsis="Make all references to the magic \"arguments\" variable into references to " +
-            "a frozen array containing a snapshot of the actual arguments taken when " +
-            "the function was first entered.",
-          reason="ES3 specifies that the magic \"arguments\" variable is a dynamic (\"joined\") " +
-            "mutable array-like reflection of the values of the parameter variables. " +
-            "However, te typical usage is to pass it to provide access to one's " +
-            "original arguments -- without the intention of providing the ability " +
-            "to mutate the caller's parameter variables. By making a frozen array " +
-            "snapshot with no \"callee\" property, we provide the least authority " +
-            "assumed by this typical use. " +
-            "\n" +
-            "The snapshot is made with a " +
-            "\"var a___ = ___.args(arguments);\" generated at the beginning of the " +
-            "function body.",
+          synopsis="Make all references to the magic \"arguments\" variable "
+              + "into references to a frozen array containing a snapshot of the "
+              + "actual arguments taken when the function was first entered.",
+          reason="ES3 specifies that the magic \"arguments\" variable is a "
+              + "dynamic (\"joined\") mutable array-like reflection of the "
+              + "values of the parameter variables. However, te typical usage "
+              + "is to pass it to provide access to one's original arguments -- "
+              + "without the intention of providing the ability to mutate the "
+              + "caller's parameter variables. By making a frozen array "
+              + "snapshot with no \"callee\" property, we provide the least "
+              + "authority assumed by this typical use.\n"
+              + "The snapshot is made with a \"var a___ = "
+              + "___.args(arguments);\" generated at the beginning of the "
+              + "function body.",
           matches="arguments",
           substitutes="a___")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match(ReservedNames.ARGUMENTS, node, bindings)) {
-          return QuasiBuilder.subst(ReservedNames.LOCAL_ARGUMENTS, bindings);
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          return subst(bindings);
         }
         return NONE;
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="varThis",
           synopsis="Translates all occurrences of \"this\" to \"t___\".",
-          reason="The translation is able to worry less about the complex scoping rules of " +
-            "\"this\"." +
-            "\n" +
-            "In a function mentioning \"this\", a \"var t___ = this;\" is generated " +
-            "at the beginning of the function body.",
+          reason="The translation is able to worry less about the complex "
+              + "scoping rules of \"this\".\n"
+              + "In a function mentioning \"this\", a \"var t___ = this;\" is "
+              + "generated at the beginning of the function body.",
           matches="this",
           substitutes="t___")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match(Keyword.THIS.toString(), node, bindings)) {
-          return newReference(ReservedNames.LOCAL_THIS);
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          return subst(bindings);
         }
         return NONE;
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="varBadSuffix",
@@ -518,8 +517,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="@v__",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@v__", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
               node.getFilePosition(), this, node);
@@ -529,17 +528,17 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="varBadSuffixDeclaration",
           synopsis="Statically reject if a variable with `__` suffix is found.",
           reason="Caja reserves the `__` suffix for internal use.",
-          matches="<approx>(var|function) @v__ ...",
+          matches="<approx>(var|function) @v__ ...",  // TODO(mikesamuel): limit
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof Declaration &&
-            ((Declaration)node).getIdentifier().getValue().endsWith("__")) {
+            ((Declaration) node).getIdentifier().getValue().endsWith("__")) {
           mq.addMessage(
               RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
               node.getFilePosition(), this, node);
@@ -549,19 +548,21 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="varBadImportSuffix",
-          synopsis="Statically reject if an imported variable with `_` suffix is found",
-          reason="A module is outside the encapsulation boundary of its imports object, and so " +
-            "cannot address any of that object's protected properties.",
+          synopsis="Statically reject if an imported variable with `_` suffix "
+              + "is found",
+          reason="A module is outside the encapsulation boundary of its imports "
+              + "object, and so cannot address any of that object's protected "
+              + "properties.",
           matches="@import_",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@import_", node, bindings)) {
-          String symbol = ((Identifier)bindings.get("import")).getValue() + "_";
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          String symbol = ((Identifier) bindings.get("import")).getValue() + "_";
           if (scope.isImported(symbol)) {
             mq.addMessage(
                 RewriterMessageType.IMPORTED_SYMBOLS_CANNOT_END_IN_UNDERSCORE,
@@ -573,20 +574,20 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="varFuncFreeze",
-          synopsis="An escaping occurence of a function name freezes the function.",
-          reason="By adopting this static rule, we only need to generate freezes for names that " +
-            "are statically known to be function names, rather than freezing at " +
-            "every potential point of use.",
-          matches="@fname",
+          synopsis="An escaping occurence of a function name freezes the "
+              + "function.",
+          reason="By adopting this static rule, we only need to generate "
+              + "freezes for names that are statically known to be function "
+              + "names, rather than freezing at every potential point of use.",
+          matches="@fname",  // TODO(mikesamuel): limit further
           substitutes="___.primFreeze(@fname)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@fname", node, bindings) &&
-            bindings.get("fname") instanceof Reference) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null && bindings.get("fname") instanceof Reference) {
           String name = getReferenceName(bindings.get("fname"));
           // TODO(erights) Does this only need to check for isDeclaredFunction?
           if (scope.isFunction(name)) {
@@ -599,18 +600,17 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="varDefault",
           synopsis="Any remaining uses of a variable name are preserved.",
           reason="",
-          matches="@v",
+          matches="@v",  // TODO(mikesamuel): limit further
           substitutes="@v")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@v", node, bindings) &&
-            bindings.get("v") instanceof Reference) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null && bindings.get("v") instanceof Reference) {
           return bindings.get("v");
         }
         return NONE;
@@ -621,7 +621,7 @@ public class DefaultCajaRewriter extends Rewriter {
     // read - reading properties
     ////////////////////////////////////////////////////////////////////////
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="readBadSuffix",
@@ -630,8 +630,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="@x.@p__",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@x.@p__", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.PROPERTIES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
               node.getFilePosition(), this, node);
@@ -641,19 +641,20 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="readInternal",
           synopsis="Read a public or protected property.",
-          reason="Since it is addressed from \"this.\", Caja assumes we are inside the " +
-            "encapsulation boundary of the object bound to \"this\", and so its " +
-            "protected properties should be accessible.",
+          reason="Since it is addressed from \"this.\", Caja assumes we are "
+              + "inside the encapsulation boundary of the object bound to "
+              + "\"this\", and so its protected properties should be "
+              + "accessible.",
           matches="this.@p",
           substitutes="<approx> ___.readProp(t___, @'p')")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("this.@p", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           Reference p = (Reference) bindings.get("p");
           String propertyName = p.getIdentifierName();
           return substV(
@@ -666,17 +667,18 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="readBadInternal",
-          synopsis="Statically reject public reading of a property ending with '_'.",
+          synopsis="Statically reject public reading of a property ending with "
+              + "'_'.",
           reason="Caja defines variable with a `_` suffix as protected.",
           matches="@x.@p_",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@x.@p_", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.PUBLIC_PROPERTIES_CANNOT_END_IN_UNDERSCORE,
               node.getFilePosition(), this, node);
@@ -686,7 +688,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="readPublic",
@@ -695,15 +697,15 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="@o.@p",
           substitutes="<approx> ___.readPub(@o, @'p')")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@o.@p", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           Reference p = (Reference) bindings.get("p");
           String propertyName = p.getIdentifierName();
           return substV(
-              "@ref = @o," +
-              "  @ref.@fp ?" +
-              "  @ref.@p :" +
-              "  ___.readPub(@ref, @rp)",
+              "@ref = @o, ("
+              + "    @ref.@fp"
+              + "    ? @ref.@p"
+              + "    : ___.readPub(@ref, @rp))",
               "ref", s(new Reference(scope.declareStartOfScopeTempVariable())),
               "o", expand(bindings.get("o"), scope, mq),
               "p",  p,
@@ -714,7 +716,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="readIndexInternal",
@@ -723,8 +725,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="this[@s]",
           substitutes="___.readProp(t___, @s)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("this[@s]", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           return substV(
               "___.readProp(t___, @s)",
               "s", expand(bindings.get("s"), scope, mq));
@@ -733,7 +735,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="readIndexPublic",
@@ -742,8 +744,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="@o[@s]",
           substitutes="___.readPub(@o, @s)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@o[@s]", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           return substV(
               "___.readPub(@o, @s)",
               "o", expand(bindings.get("o"), scope, mq),
@@ -757,14 +759,14 @@ public class DefaultCajaRewriter extends Rewriter {
     // set - assignments
     ////////////////////////////////////////////////////////////////////////
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setBadAssignToFunctionName",
-          synopsis="Statically reject if an assignment expression"
-              + " assigns to a function name.",
+          synopsis="Statically reject if an assignment expression assigns to a "
+              + "function name.",
           reason="",
-          matches="<approx> @fname @op?= @x",
+          matches="<approx> @fname @op?= @x", // TODO(mikesamuel): Limit further
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof AssignOperation
@@ -779,7 +781,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setBadThis",
@@ -788,8 +790,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="this = @z",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("this = @z", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.CANNOT_ASSIGN_TO_THIS,
               node.getFilePosition(), this, node);
@@ -799,23 +801,24 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setBadFreeVariable",
-          synopsis="Statically reject if an expression assigns to a free variable.",
-          reason="This is still controversial (see bug 375). However, the rationale is to " +
-            "prevent code that's nested lexically within a module to from " +
-            "introducing mutable state outside its local function-body scope. " +
-            "Without this rule, two nested blocks within the same module could " +
-            "communicate via a pseudo-imported variable that is not declared or used " +
-            "at the outer scope of the module body.",
+          synopsis="Statically reject if an expression assigns to a free "
+              + "variable.",
+          reason="This is still controversial (see bug 375). However, the "
+              + "rationale is to prevent code that's nested lexically within a "
+              + "module to from introducing mutable state outside its local "
+              + "function-body scope. Without this rule, two nested blocks "
+              + "within the same module could communicate via a pseudo-imported "
+              + "variable that is not declared or used at the outer scope of "
+              + "the module body.",
           matches="@import = @y",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@import = @y", node, bindings)
-            && bindings.get("import") instanceof Reference) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null && bindings.get("import") instanceof Reference) {
           String name = ((Reference) bindings.get("import")).getIdentifierName();
           if (scope.isImported(name)) {
             mq.addMessage(
@@ -828,7 +831,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setBadValueOf",
@@ -837,8 +840,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="@x.valueOf = @z",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@x.valueOf = @z", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.VALUEOF_PROPERTY_MUST_NOT_BE_SET,
               node.getFilePosition(), this, node);
@@ -848,7 +851,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setBadSuffix",
@@ -857,8 +860,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="@x.@p__ = @z",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@x.@p__ = @z", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.PROPERTIES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
               node.getFilePosition(), this, node);
@@ -868,19 +871,19 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setInternal",
           synopsis="Set or create a public or protected property.",
-          reason="We allow methods and constructors within a constructed object to create new " +
-            "properties on itself directly by assignment.",
+          reason="We allow methods and constructors within a constructed object "
+              + "to create new properties on itself directly by assignment.",
           matches="this.@p = @r",
           substitutes="<approx> ___.setProp(t___, @'p', @r)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("this.@p = @r", node, bindings)) {
-          String propertyName = ((Reference)bindings.get("p")).getIdentifierName();
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          String propertyName = ((Reference) bindings.get("p")).getIdentifierName();
           return substV(
               "@ref = @r," +
               "@target.@fp ?" +
@@ -897,28 +900,29 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setMember",
-          synopsis="Initialize a member of the prototypical object associated with a constructor " +
-            "or named function, to be inherited by the instances of that " +
-            "function.",
-          reason="The right hand side of this rule is a \"method context\" -- a position in " +
-            "which Caja methods can appear. This allows unattached methods to be " +
-            "stored in the prototypical object, which is necessary for allowing " +
-            "instances to share these. However, any attempt to obtain access to " +
-            "a method as a value will obtain at most an attached method.",
+          synopsis="Initialize a member of the prototypical object associated "
+              + "with a constructor or named function, to be inherited by the "
+              + "instances of that function.",
+          reason="The right hand side of this rule is a \"method context\" -- a "
+              + "position in which Caja methods can appear. This allows "
+              + "unattached methods to be stored in the prototypical object, "
+              + "which is necessary for allowing instances to share these. "
+              + "However, any attempt to obtain access to a method as a value "
+              + "will obtain at most an attached method.",
           matches="@df.prototype.@p = @m",
           substitutes="___.setMember(@df, @'p', @m)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        Map<String, ParseTreeNode> bindings = match(node);
         // BUG TODO(erights,ihab): We must only recognize (and thus allow) this
         // expression when it is evaluated for effects only, not for value.
         // Currently, since we have no such test, the translated expression will
         // safely evaluate to <tt>undefined</tt>, but this behavior is not within
         // a fail-stop subset of JavaScript.
-        if (QuasiBuilder.match("@df.prototype.@p = @m;", node, bindings)) {
+        if (bindings != null) {
           ParseTreeNode clazz = bindings.get("df");
           if (clazz instanceof Reference) {
             String className = getReferenceName(clazz);
@@ -939,7 +943,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setBadInternal",
@@ -948,8 +952,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="@x.@y_ = @z",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@x.@y_ = @z", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.PUBLIC_PROPERTIES_CANNOT_END_IN_UNDERSCORE,
               node.getFilePosition(), this, node);
@@ -959,19 +963,18 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setStatic",
-          synopsis="Initialize the direct properties (static members) of a potentially-mutable " +
-            "constructor or named function.",
+          synopsis="Initialize the direct properties (static members) of a "
+              + "potentially-mutable constructor or named function.",
           reason="",
           matches="@fname.@p = @r",
           substitutes="___.setStatic(@fname, @'p', @r)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@fname.@p = @r", node, bindings) &&
-            bindings.get("fname") instanceof Reference) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null && bindings.get("fname") instanceof Reference) {
           Reference fname = (Reference) bindings.get("fname");
           Reference p = (Reference) bindings.get("p");
           // TODO(erights) Does this only need to check isDeclaredFunction?
@@ -987,21 +990,23 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setPublic",
           synopsis="Set a public property.",
-          reason="If the object is an unfrozen JSONContainer (a record or array), then this will " +
-            "create the own property if needed. If it is an unfrozen constructed " +
-            "object, then clients can assign to existing public own properties, but " +
-            "cannot directly create such properties.",
+          reason="If the object is an unfrozen JSONContainer (a record or "
+              + "array), then this will create the own property if needed. If "
+              + "it is an unfrozen constructed object, then clients can assign "
+              + "to existing public own properties, but cannot directly create "
+              + "such properties.",
           matches="@o.@p = @r",
           substitutes="<approx> ___.setPub(@o, @'p', @r);")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@o.@p = @r", node, bindings)) {
-          String propertyName = ((Reference)bindings.get("p")).getIdentifierName();
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          Reference p = (Reference) bindings.get("p");
+          String propertyName = p.getIdentifierName();
           return substV(
               "@tmpO = @expandO," +
               "@tmpR = @expandR," +
@@ -1013,14 +1018,14 @@ public class DefaultCajaRewriter extends Rewriter {
               "expandO", expand(bindings.get("o"), scope, mq),
               "expandR", expand(bindings.get("r"), scope, mq),
               "pCanSet", newReference(propertyName + "_canSet___"),
-              "p", bindings.get("p"),
-              "pName", toStringLiteral(bindings.get("p")));
+              "p", p,
+              "pName", toStringLiteral(p));
         }
         return NONE;
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setIndexInternal",
@@ -1029,8 +1034,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="this[@s] = @r",
           substitutes="___.setProp(t___, @s, @r)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("this[@s] = @r", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           return substV(
               "___.setProp(t___, @s, @r)",
               "s", expand(bindings.get("s"), scope, mq),
@@ -1040,7 +1045,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setIndexPublic",
@@ -1049,8 +1054,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="@o[@s] = @r",
           substitutes="___.setPub(@o, @s, @r)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@o[@s] = @r", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           return substV(
               "___.setPub(@o, @s, @r)",
               "o", expand(bindings.get("o"), scope, mq),
@@ -1061,7 +1066,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setBadInitialize",
@@ -1070,8 +1075,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="var @v__ = @r",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("var @v__ = @r", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
               node.getFilePosition(), this, node);
@@ -1081,7 +1086,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setInitialize",
@@ -1090,9 +1095,9 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="var @v = @r",
           substitutes="var @v = @r")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("var @v = @r", node, bindings) &&
-            !scope.isFunction(getIdentifierName(bindings.get("v")))) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null
+            && !scope.isFunction(getIdentifierName(bindings.get("v")))) {
           return substV(
               "var @v = @r",
               "v", bindings.get("v"),
@@ -1102,7 +1107,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setBadDeclare",
@@ -1111,8 +1116,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="var @v__",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("var @v__", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
               node.getFilePosition(), this, node);
@@ -1122,7 +1127,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setDeclare",
@@ -1131,9 +1136,9 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="var @v",
           substitutes="var @v")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("var @v", node, bindings) &&
-            !scope.isFunction(getIdentifierName(bindings.get("v")))) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null
+            && !scope.isFunction(getIdentifierName(bindings.get("v")))) {
           return node;
         }
         return NONE;
@@ -1141,7 +1146,7 @@ public class DefaultCajaRewriter extends Rewriter {
     },
 
     // TODO(erights): Need a general way to expand lValues
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setBadVar",
@@ -1150,8 +1155,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="@v__ = @r",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@v__ = @r", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
               node.getFilePosition(), this, node);
@@ -1162,7 +1167,7 @@ public class DefaultCajaRewriter extends Rewriter {
     },
 
     // TODO(erights): Need a general way to expand lValues
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setVar",
@@ -1171,14 +1176,14 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="@v = @r",
           substitutes="@v = @r")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@v = @r", node, bindings)) {
-          if (bindings.get("v") instanceof Reference) {
-            String vName = getReferenceName(bindings.get("v"));
-            if (!scope.isFunction(vName)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          ParseTreeNode v = bindings.get("v");
+          if (v instanceof Reference) {
+            if (!scope.isFunction(getReferenceName(v))) {
               return substV(
                   "@v = @r",
-                  "v", bindings.get("v"),
+                  "v", v,
                   "r", expand(bindings.get("r"), scope, mq));
             }
           }
@@ -1191,20 +1196,20 @@ public class DefaultCajaRewriter extends Rewriter {
     // For now, we're just picking off a few common special cases as they
     // come up.
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setReadModifyWriteLocalVar",
           synopsis="",
           reason="",
-          matches="@x @op= @y",
+          matches="@x @op= @y",  // TODO(mikesamuel): better lower limit
           substitutes="<approx> @x = @x @op @y")
       // Handle x += 3 and similar ops by rewriting them using the assignment
       // delegate, "x += y" => "x = x + y", with deconstructReadAssignOperand
       // assuring that x is evaluated at most once where that matters.
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof AssignOperation) {
-          AssignOperation aNode = (AssignOperation)node;
+          AssignOperation aNode = (AssignOperation) node;
           Operator op = aNode.getOperator();
           if (op.getAssignmentDelegate() == null) { return NONE; }
 
@@ -1233,11 +1238,13 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="setIncrDecr",
           synopsis="Handle pre and post ++ and --.",
+          // TODO(mikesamuel): better lower bound
+          matches="<approx> ++@x but any {pre,post}{in,de}crement will do",
           reason="")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (!(node instanceof AssignOperation)) { return NONE; }
@@ -1255,7 +1262,7 @@ public class DefaultCajaRewriter extends Rewriter {
               return substV("@v ++", "v", ops.getRValue());
             } else {
               Reference tmpVal = s(new Reference(scope.declareStartOfScopeTempVariable()));
-              Expression assign = ops.makeAssignment((Expression)substV(
+              Expression assign = ops.makeAssignment((Expression) substV(
                   "@tmpVal + 1",
                   "tmpVal", tmpVal));
               return substV(
@@ -1289,7 +1296,7 @@ public class DefaultCajaRewriter extends Rewriter {
               return substV("@v--", "v", ops.getRValue());
             } else {
               Reference tmpVal = s(new Reference(scope.declareStartOfScopeTempVariable()));
-              Expression assign = ops.makeAssignment((Expression)substV(
+              Expression assign = ops.makeAssignment((Expression) substV(
                   "@tmpVal - 1",
                   "tmpVal", tmpVal));
               return substV(
@@ -1326,17 +1333,17 @@ public class DefaultCajaRewriter extends Rewriter {
     // new - new object creation
     ////////////////////////////////////////////////////////////////////////
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="newCalllessCtor",
           synopsis="Add missing empty argument list.",
           reason="JavaScript syntax allows constructor calls without \"()\".",
           matches="new @ctor",
-          substitutes="<expand> new @ctor()")
+          substitutes="new @ctor()")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("new @ctor", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           return expand(
               Operation.create(Operator.FUNCTION_CALL, (Expression) node),
               scope, mq);
@@ -1345,7 +1352,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="newCtor",
@@ -1354,8 +1361,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="new @ctor(@as*)",
           substitutes="new (___.asCtor(@ctor))(@as*)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("new @ctor(@as*)", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           ParseTreeNode ctor = bindings.get("ctor");
           return substV(
               "new (___.asCtor(@ctor))(@as*)",
@@ -1370,21 +1377,20 @@ public class DefaultCajaRewriter extends Rewriter {
     // delete - property deletion
     ////////////////////////////////////////////////////////////////////////
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="deleteBadValueOf",
           synopsis="Prohibit deletion of valueOf.",
-          reason="Although a non-existent valueOf should behave the same way as"
-               + "the default one as regards [[DefaultValue]], for simplicity we"
-               + "only want to have to consider one of those cases.",
+          reason="Although a non-existent valueOf should behave the same way "
+              + "asthe default one as regards [[DefaultValue]], for simplicity "
+              + "weonly want to have to consider one of those cases.",
           matches="delete @o.valueOf",
           substitutes="<reject>")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings
-            = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("delete @o.valueOf", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.VALUEOF_PROPERTY_MUST_NOT_BE_DELETED,
               node.getFilePosition(), this, node);
@@ -1394,7 +1400,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="deleteBadSuffix",
@@ -1404,9 +1410,8 @@ public class DefaultCajaRewriter extends Rewriter {
           substitutes="<reject>")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings
-            = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("delete @o.@p__", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.PROPERTIES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
               node.getFilePosition(), this, node);
@@ -1416,7 +1421,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="deleteInternal",
@@ -1426,9 +1431,8 @@ public class DefaultCajaRewriter extends Rewriter {
           substitutes="___.deleteProp(t___, @'p')")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings
-            = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("delete this.@p", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           return substV(
               "___.deleteProp(t___, @pname)",
               "pname", toStringLiteral(bindings.get("p")));
@@ -1437,7 +1441,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="deleteBadInternal",
@@ -1447,9 +1451,8 @@ public class DefaultCajaRewriter extends Rewriter {
           substitutes="<reject>")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings
-            = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("delete @o.@p_", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.PUBLIC_PROPERTIES_CANNOT_END_IN_UNDERSCORE,
               node.getFilePosition(), this, node);
@@ -1459,7 +1462,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="deletePublic",
@@ -1469,9 +1472,8 @@ public class DefaultCajaRewriter extends Rewriter {
           substitutes="___.deletePub(@o, @'p')")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings
-            = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("delete @o.@p", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           Reference p = (Reference) bindings.get("p");
           return substV(
               "___.deletePub(@o, @pname)",
@@ -1482,7 +1484,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="deleteIndexInternal",
@@ -1492,9 +1494,8 @@ public class DefaultCajaRewriter extends Rewriter {
           substitutes="___.deleteProp(t___, @s)")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings
-            = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("delete this[@s]", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           return substV(
               "___.deleteProp(t___, @s)",
               "s", expand(bindings.get("s"), scope, mq)
@@ -1504,7 +1505,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="deleteIndexPublic",
@@ -1514,9 +1515,8 @@ public class DefaultCajaRewriter extends Rewriter {
           substitutes="___.deletePub(@o, @s)")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings
-            = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("delete @o[@s]", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           return substV(
               "___.deletePub(@o, @s)",
               "o", expand(bindings.get("o"), scope, mq),
@@ -1526,7 +1526,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="deleteNonProperty",
@@ -1535,9 +1535,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="delete @v",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings
-            = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("delete @v", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.NOT_DELETABLE, node.getFilePosition());
           return node;
@@ -1550,7 +1549,7 @@ public class DefaultCajaRewriter extends Rewriter {
     // call - function calls
     ////////////////////////////////////////////////////////////////////////
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="callBadSuffix",
@@ -1559,8 +1558,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="@o.@p__(@as*)",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@o.@p__(@as*)", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.SELECTORS_CANNOT_END_IN_DOUBLE_UNDERSCORE,
               node.getFilePosition(), this, node);
@@ -1570,7 +1569,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="callInternal",
@@ -1579,8 +1578,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="this.@p(@as*)",
           substitutes="<approx> ___.callProp(t___, @'p', [@as*]")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("this.@p(@as*)", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           Pair<ParseTreeNode, ParseTreeNode> aliases =
               reuseAll(bindings.get("as"), this, scope, mq);
           Reference p = (Reference) bindings.get("p");
@@ -1598,17 +1597,18 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="callBadInternal",
-          synopsis="Statically reject if a public selector with `_` suffix is found.",
+          synopsis="Statically reject if a public selector with `_` suffix is "
+              + "found.",
           reason="Caja defines selectors with a `_` as private.",
           matches="@o.@s_(@as*)",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@o.@s_(@as*)", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.PUBLIC_SELECTORS_CANNOT_END_IN_UNDERSCORE,
               node.getFilePosition(), this, node);
@@ -1618,67 +1618,71 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="callCajaDef2",
-          synopsis="Declares that the first argument acts as a derived constructor inheriting " +
-            "from the second.",
-          reason="Sets up a well formed prototype inheritance chain between these two functions. " +
-            "The first argument must be a declared function name. Calling " +
-            "caja.def() on it does not freeze it.",
+          synopsis="Declares that the first argument acts as a derived "
+              + "constructor inheriting from the second.",
+          reason="Sets up a well formed prototype inheritance chain between "
+              + "these two functions. The first argument must be a declared "
+              + "function name. Calling caja.def() on it does not freeze it.",
           matches="caja.def(@fname, @base)",
           substitutes="caja.def(@fname, @base)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("caja.def(@fname, @base)", node, bindings)
-            && bindings.get("fname") instanceof Reference
-            && scope.isDeclaredFunction(getReferenceName(bindings.get("fname")))) {
-          return substV(
-              "caja.def(@fname, @base)",
-              "fname", bindings.get("fname"),
-              "base", expand(bindings.get("base"), scope, mq));
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          ParseTreeNode fname = bindings.get("fname");
+          if (fname instanceof Reference
+              && scope.isDeclaredFunction(getReferenceName(fname))) {
+            return substV(
+                "caja.def(@fname, @base)",
+                "fname", fname,
+                "base", expand(bindings.get("base"), scope, mq));
+          }
         }
         return NONE;
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="callCajaDef2BadFunction",
-          synopsis="Reject calls to caja.def() on names of functions statically known to be " +
-            "frozen.",
-          reason="Within a function foo(), foo must already be frozen, so it is too late to " +
-            "initialize it.",
+          synopsis="Reject calls to caja.def() on names of functions statically "
+              + "known to be frozen.",
+          reason="Within a function foo(), foo must already be frozen, so it is "
+              + "too late to initialize it.",
           matches="caja.def(@fname, @base)",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("caja.def(@fname, @base)", node, bindings)
-            && bindings.get("fname") instanceof Reference
-            && scope.isFunction(getReferenceName(bindings.get("fname")))) {
-          mq.addMessage(
-              RewriterMessageType.CAJA_DEF_ON_FROZEN_FUNCTION,
-              node.getFilePosition(), this, node);
-          return node;
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          ParseTreeNode fname = bindings.get("fname");
+          if (fname instanceof Reference
+              && scope.isFunction(getReferenceName(fname))) {
+            mq.addMessage(
+                RewriterMessageType.CAJA_DEF_ON_FROZEN_FUNCTION,
+                node.getFilePosition(), this, node);
+            return node;
+          }
         }
         return NONE;
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="callCajaDef2Bad",
           synopsis="Reject other calls to caja.def().",
-          reason="If the first argument is not a declared function name, then it cannot be " +
-            "an unfrozen function.",
+          reason="If the first argument is not a declared function name, then "
+              + "it cannot be an unfrozen function.",
           matches="caja.def(@x, @base)",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("caja.def(@x, @base)", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.CAJA_DEF_ON_NON_FUNCTION,
               node.getFilePosition(), this, node);
@@ -1688,22 +1692,23 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="callCajaDef3Plus",
-          synopsis="Declare an inheritance relationship, and initialize methods and statics.",
-          reason="The enumerable own properties of the third and fourth arguments, if present " +
-            "are used to initialize @fname.prototype and @fname, respectively. " +
-            "The third argument must statically be an object-literal expression. " +
-            "The value positions of this expression is a method context -- a " +
-            "position in which methods are allowed.",
+          synopsis="Declare an inheritance relationship, and initialize methods "
+              + "and statics.",
+          reason="The enumerable own properties of the third and fourth "
+              + "arguments, if present are used to initialize @fname.prototype "
+              + "and @fname, respectively. The third argument must statically "
+              + "be an object-literal expression. The value positions of this "
+              + "expression is a method context -- a position in which methods "
+              + "are allowed.",
           matches="caja.def(@fname, @base, @mm, @ss?)",
           substitutes="caja.def(@fname, @base, @mm, @ss?)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match(
-                "caja.def(@fname, @base, @mm, @ss?)", node, bindings)
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null
             && bindings.get("fname") instanceof Reference
             && scope.isDeclaredFunction(getReferenceName(bindings.get("fname")))) {
           if (!checkMapExpression(bindings.get("mm"), this, scope, mq)) {
@@ -1726,17 +1731,18 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="callCajaDef3PlusBadFunction",
-          synopsis="Reject initialization of a name of a function statically known to be frozen.",
+          synopsis="Reject initialization of a name of a function statically "
+              + "known to be frozen.",
           reason="",
           matches="caja.def(@fname, @base, @mm, @ss?)",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("caja.def(@fname, @base, @mm, @ss?)", node, bindings)
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null
             && bindings.get("fname") instanceof Reference
             && scope.isFunction(getReferenceName(bindings.get("fname")))) {
           mq.addMessage(
@@ -1747,7 +1753,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="callCajaDef3PlusBad",
@@ -1756,9 +1762,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="caja.def(@x, @base, @mm, @ss?)",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match(
-                "caja.def(@x, @base, @mm, @ss?)", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           mq.addMessage(
               RewriterMessageType.CAJA_DEF_ON_NON_FUNCTION,
               node.getFilePosition(), this, node);
@@ -1768,28 +1773,25 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
-          name = "callFuncInlineMethodCall",
-          synopsis = "",
-          reason = "",
+          name="callFuncInlineMethodCall",
+          synopsis="",
+          reason="",
           matches="(function (@formals*) { @body*; }).call(this, @args*);",
-          substitutes="(function (@formals*) { @fh*; @stmts*; @body*; })"
-            + ".call(this, @args*);")
+          substitutes="(function (@formals*) { @fh*; @stmts*; @body*; })\n"
+              + "    .call(this, @args*);")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, final MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings =
-            new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match(
-                "(function (@formals*) { @body*; }).call(this, @args*);",
-                node, bindings)) {
-          FunctionConstructor fc = (FunctionConstructor)node.children().get(0).children().get(0);
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          FunctionConstructor fc = (FunctionConstructor) node.children().get(0).children().get(0);
           Scope s2 = Scope.fromFunctionConstructor(scope, fc);
           if (s2.hasFreeThis()) {
             return substV(
                 "(function (@formals*) { @fh*; @stmts*; @body*; })"
-                + ".call(this, @args*);",
+                + "    .call(this, @args*);",
                 "formals", bindings.get("formals"),
                 // It's important that body is expanded before computing fh and stmts.
                 "body", expand(bindings.get("body"), s2, mq),
@@ -1802,23 +1804,20 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
-          name = "callFuncInlineMethodApply",
-          synopsis = "",
-          reason = "",
+          name="callFuncInlineMethodApply",
+          synopsis="",
+          reason="",
           matches="(function (@formals*) { @body*; }).apply(this, @arg);",
-          substitutes="(function (@formals*) { @fh*; @stmts*; @body*; })"
-            + ".apply(this, @arg);")
+          substitutes="(function (@formals*) { @fh*; @stmts*; @body*; })\n"
+              + "    .apply(this, @arg);")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, final MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings =
-            new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match(
-                "(function (@formals*) { @body*; }).apply(this, @arg);",
-                node, bindings)) {
-          FunctionConstructor fc = (FunctionConstructor)node.children().get(0).children().get(0);
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          FunctionConstructor fc = (FunctionConstructor) node.children().get(0).children().get(0);
           Scope s2 = Scope.fromFunctionConstructor(scope, fc);
           if (s2.hasFreeThis()) {
             return substV(
@@ -1836,23 +1835,21 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
-          name = "callFuncInlineMethodBind",
-          synopsis = "",
-          reason = "",
+          name="callFuncInlineMethodBind",
+          synopsis="",
+          reason="",
           matches="(function (@formals*) { @body*; }).bind(this, @args*);",
-          substitutes=""
-            + "___.simpleFrozenFunc(function (@formals*) {"
-            + "  @fh*; @stmts*; @body*; }.bind(t___, @args*));")
+          substitutes="___.simpleFrozenFunc(function (@formals*) {\n"
+              + "      @fh*; @stmts*; @body*;\n"
+              + "    }.bind(t___, @args*));")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, final MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match(
-               "(function (@formals*) { @body*; }).bind(this, @args*);",
-                node, bindings)) {
-          FunctionConstructor fc = (FunctionConstructor)node.children().get(0).children().get(0);
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          FunctionConstructor fc = (FunctionConstructor) node.children().get(0).children().get(0);
           Scope s2 = Scope.fromFunctionConstructor(scope, fc);
           if (s2.hasFreeThis()) {
             return substV(""
@@ -1870,17 +1867,17 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="callPublic",
           synopsis="",
           reason="",
-          matches="@o.@p(@as*)",
-          substitutes="<approx> ___.callPub(@o, @'p', [@as*])")
+          matches="@o.@m(@as*)",
+          substitutes="<approx> ___.callPub(@o, @'m', [@as*])")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@o.@m(@as*)", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           Pair<ParseTreeNode, ParseTreeNode> aliases =
               reuseAll(bindings.get("as"), this, scope, mq);
           Reference m = (Reference) bindings.get("m");
@@ -1901,7 +1898,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="callIndexInternal",
@@ -1910,8 +1907,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="this[@s](@as*)",
           substitutes="___.callProp(t___, @s, [@as*])")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("this[@s](@as*)", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           expandEntries(bindings, scope, mq);
           return QuasiBuilder.subst(
               "___.callProp(t___, @s, [@as*])", bindings
@@ -1921,7 +1918,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="callIndexPublic",
@@ -1930,8 +1927,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="@o[@s](@as*)",
           substitutes="___.callPub(@o, @s, [@as*])")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@o[@s](@as*)", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           expandEntries(bindings, scope, mq);
           return QuasiBuilder.subst(
               "___.callPub(@o, @s, [@as*])", bindings
@@ -1941,7 +1938,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="callFunc",
@@ -1950,8 +1947,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="@f(@as*)",
           substitutes="___.asSimpleFunc(@f)(@as*)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@f(@as*)", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           return substV(
               "___.asSimpleFunc(@f)(@as*)",
               "f", expand(bindings.get("f"), scope, mq),
@@ -1965,25 +1962,24 @@ public class DefaultCajaRewriter extends Rewriter {
     // function - function definitions
     ////////////////////////////////////////////////////////////////////////
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="funcAnonSimple",
           synopsis="",
           reason="",
           matches="function (@ps*) { @bs*; }",
-          substitutes=
-          "___.simpleFrozenFunc(" +
-          "  function (@ps*) {" +
-          "    @fh*;" +
-          "    @stmts*;" +
-          "    @bs*;" +
-          "})")
+          substitutes="___.simpleFrozenFunc(\n"
+              + "  function (@ps*) {\n"
+              + "    @fh*;\n"
+              + "    @stmts*;\n"
+              + "    @bs*;\n"
+              + "})")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        Map<String, ParseTreeNode> bindings = match(node);
         // Anonymous simple function constructor
-        if (QuasiBuilder.match("function (@ps*) { @bs*; }", node, bindings)) {
-          Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node);
+        if (bindings != null) {
+          Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor) node);
           if (!s2.hasFreeThis()) {
             checkFormals(bindings.get("ps"), mq);
             return substV(
@@ -2004,35 +2000,34 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="funcNamedSimpleDecl",
           synopsis="",
           reason="",
           matches="function @fname(@ps*) { @bs*; }",
-          substitutes=
-          "@fname = ___.simpleFunc(" +
-          "  function(@ps*) {" +
-          "    @fh*;" +
-          "    @stmts*;" +
-          "    @bs*;" +
-          "}, @'fname');")
+          substitutes="@fname = ___.simpleFunc(\n"
+              + "  function(@ps*) {\n"
+              + "    @fh*;\n"
+              + "    @stmts*;\n"
+              + "    @bs*;\n"
+              + "}, @'fname');")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        Map<String, ParseTreeNode> bindings = (
+            node instanceof FunctionDeclaration)
+            ? match(((FunctionDeclaration) node).getInitializer())
+            : null;
         // Named simple function declaration
-        if (node instanceof FunctionDeclaration &&
-            QuasiBuilder.match(
-                "function @fname(@ps*) { @bs*; }",
-                node.children().get(1), bindings)) {
+        if (bindings != null) {
           Scope s2 = Scope.fromFunctionConstructor(
               scope,
-              (FunctionConstructor)node.children().get(1));
+              ((FunctionDeclaration) node).getInitializer());
           if (!s2.hasFreeThis()) {
             checkFormals(bindings.get("ps"), mq);
-            Identifier fname = (Identifier)bindings.get("fname");
+            Identifier fname = (Identifier) bindings.get("fname");
             scope.declareStartOfScopeVariable(fname);
-            Expression expr = (Expression)substV(
+            Expression expr = (Expression) substV(
                 "@fname = ___.simpleFunc(" +
                 "  function(@ps*) {" +
                 "    @fh*;" +
@@ -2054,32 +2049,31 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="funcNamedSimpleValue",
           synopsis="",
           reason="",
           matches="function @fname(@ps*) { @bs*; }",
-          substitutes=
-            "(function() {" +
-            "  function @fname(@ps*) {" +
-            "    @fh*;" +
-            "    @stmts*;" +
-            "    @bs*;" +
-            "  }" +
-            "  return ___.simpleFrozenFunc(@fname, @'fname');" +
-            "})();")
+          substitutes="(function() {\n"
+              + "  function @fname(@ps*) {\n"
+              + "    @fh*;\n"
+              + "    @stmts*;\n"
+              + "    @bs*;\n"
+              + "  }\n"
+              + "  return ___.simpleFrozenFunc(@fname, @'fname');\n"
+              + "})();")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        Map<String, ParseTreeNode> bindings = match(node);
         // Named simple function expression
-        if (QuasiBuilder.match("function @fname(@ps*) { @bs*; }", node, bindings)) {
+        if (bindings != null) {
           Scope s2 = Scope.fromFunctionConstructor(
               scope,
-              (FunctionConstructor)node);
+              (FunctionConstructor) node);
           if (!s2.hasFreeThis()) {
             checkFormals(bindings.get("ps"), mq);
-            Identifier fname = (Identifier)bindings.get("fname");
+            Identifier fname = (Identifier) bindings.get("fname");
             Reference fRef = new Reference(fname);
             return substV(
                 "(function() {" +
@@ -2114,20 +2108,20 @@ public class DefaultCajaRewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name = "funcXo4a",
-          synopsis = "Rewrites an 1) anonymous function 2) mentioning this 3) whose earliest " +
-            "function scope ancestor is NOT a constructor or method into an " +
-            "exophoric function.",
+          name="funcXo4a",
+          synopsis="Rewrites an 1) anonymous function 2) mentioning this 3) "
+              + "whose earliest function scope ancestor is NOT a constructor or "
+              + "method into an exophoric function.",
           wart="Prefer pseudo-xo4a declaration",
-          reason = "A moderately risky stepping stone to ease the conversion of old code.",
+          reason="A moderately risky stepping stone to ease the conversion of "
+              + "old code.",
           matches="(function (@formals*) { @body*; })",
-          substitutes="<approx> ___.xo4a(" +
-          "function (@formals*) { @fh*; @stmts*; @body*; })")
+          substitutes="<approx> ___.xo4a(function (@formals*) { @fh*; @stmts*; "
+              + "@body*; })")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, final MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("(function (@formals*) { @body*; })",
-                               node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           Scope s2 = Scope.fromFunctionConstructor(
               scope, (FunctionConstructor) node);
           if (!s2.hasFreeThis()) { return NONE; }
@@ -2170,30 +2164,34 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="funcCtor",
           synopsis="",
           reason="",
           matches="function @fname(@ps*) { @b; @bs*; }",
-          substitutes="<approx> @fname = (function () {" +
-          "  ___.splitCtor(@fRef, @f_init___Ref);" +
-          "  function @fname(var_args) { return new @fRef.make___(arguments); }" +
-          "  function @f_init(@ps*) {" +
-          "    @fh*;" +
-          "    @stmts*;" +
-          "    @b;" +
-          "    @bs*;" +
-          "  }" +
-          "  return @fRef;" +
-          "})()")
+          substitutes="<approx> @fname = (function () {\n"
+              + "  ___.splitCtor(@fRef, @f_init___Ref);\n"
+              + "  function @fname(var_args) {\n"
+              + "    return new @fRef.make___(arguments);\n"
+              + "  }\n"
+              + "  function @f_init(@ps*) {\n"
+              + "    @fh*;\n"
+              + "    @stmts*;\n"
+              + "    @b;\n"
+              + "    @bs*;\n"
+              + "  }\n"
+              + "  return @fRef;\n"
+              + "})()")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         boolean declaration = node instanceof FunctionDeclaration;
-        ParseTreeNode constructorNode = declaration ? node.children().get(1) : node;
-        if (QuasiBuilder.match(
-                "function @fname(@ps*) { @b; @bs*; }", constructorNode, bindings)) {
+        ParseTreeNode matchNode = declaration
+            ? ((FunctionDeclaration) node).getInitializer()
+            : node;
+        Map<String, ParseTreeNode> bindings = match(matchNode);
+        if (bindings != null) {
+          FunctionConstructor constructorNode = (FunctionConstructor) matchNode;
           if (bindings.get("fname").getValue() == null) {
             mq.addMessage(
                 RewriterMessageType.ANONYMOUS_FUNCTION_REFERENCES_THIS,
@@ -2202,7 +2200,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 node);
             return node;
           }
-          Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)constructorNode);
+          Scope s2 = Scope.fromFunctionConstructor(scope, constructorNode);
           if (s2.hasFreeThis()) {
             checkFormals(bindings.get("ps"), mq);
             ParseTreeNode bNode = bindings.get("b");
@@ -2210,9 +2208,9 @@ public class DefaultCajaRewriter extends Rewriter {
               // Rebind bNode to the Expression part of the ExpressionStmt.
               bNode = bNode.children().get(0);
             }
-            Map<String, ParseTreeNode> superBindings = new LinkedHashMap<String, ParseTreeNode>();
-            // To subclass, the very first line must be a call to the super constructor,
-            // which must be a reference to a declared function.
+            Map<String, ParseTreeNode> superBindings = makeBindings();
+            // To subclass, the very first line must be a call to the super
+            // constructor, which must be a reference to a declared function.
             if (QuasiBuilder.match(
                     "@fname.super(this, @params*);", bNode, superBindings)) {
               if (!(superBindings.get("fname") instanceof Reference)) {
@@ -2234,7 +2232,7 @@ public class DefaultCajaRewriter extends Rewriter {
               }
               Scope paramScope = Scope.fromParseTreeNodeContainer(
                   s2,
-                  (ParseTreeNodeContainer)superBindings.get("params"));
+                  (ParseTreeNodeContainer) superBindings.get("params"));
               // The rest of the parameters must not contain "this".
               if (paramScope.hasFreeThis()) {
                 mq.addMessage(
@@ -2245,7 +2243,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 return node;
               }
               // Expand the parameters, but not the call itself.
-              bNode = new ExpressionStmt((Expression)substV(
+              bNode = new ExpressionStmt((Expression) substV(
                   "@fname.super(this, @params*);",
                   "fname", superBindings.get("fname"),
                   "params", expand(superBindings.get("params"), s2, mq)));
@@ -2253,7 +2251,7 @@ public class DefaultCajaRewriter extends Rewriter {
               // If it's not a call to a constructor, expand the entire node.
               bNode = expand(bindings.get("b"), s2, mq);
             }
-            Identifier fname = (Identifier)bindings.get("fname");
+            Identifier fname = (Identifier) bindings.get("fname");
             Reference fRef = new Reference(fname);
             Identifier f_init___ = s(new Identifier(fname.getName() + "_init___"));
             Reference f_init___Ref = s(new Reference(f_init___));
@@ -2285,9 +2283,9 @@ public class DefaultCajaRewriter extends Rewriter {
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
             if (declaration) {
               // Add the initialization to the start of block
-              Expression expr = (Expression)substV(
+              Expression expr = (Expression) substV(
                   "@fname = @r;",
-                  "fname", s(new Reference((Identifier)bindings.get("fname"))),
+                  "fname", s(new Reference((Identifier) bindings.get("fname"))),
                   "r", result);
               scope.addStartOfBlockStatement(new ExpressionStmt(expr));
               return substV(";");
@@ -2305,18 +2303,18 @@ public class DefaultCajaRewriter extends Rewriter {
     // map - object literals
     ////////////////////////////////////////////////////////////////////////
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="mapBadKeyValueOf",
           synopsis="Statically reject 'valueOf' as a key",
           reason="We depend on valueOf returning consistent results.",
-          matches="<approx> ({valueOf: @val})",
+          matches="({@keys*: @vals*})",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("({@keys*: @vals*})", node, bindings) &&
-            literalsContain(bindings.get("keys"), "valueOf")) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null
+            && literalsContain(bindings.get("keys"), "valueOf")) {
           mq.addMessage(
               RewriterMessageType.VALUEOF_PROPERTY_MUST_NOT_BE_SET,
               node.getFilePosition(), this, node);
@@ -2326,18 +2324,17 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="mapBadKeySuffix",
           synopsis="Statically reject if a key with `_` suffix is found",
           reason="",
-          matches="<approx> ({@keys_*: @vals*})",
+          matches="({@keys*: @vals*})",
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("({@keys*: @vals*})", node, bindings) &&
-            literalsEndWith(bindings.get("keys"), "_")) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null && literalsEndWith(bindings.get("keys"), "_")) {
           mq.addMessage(
               RewriterMessageType.KEY_MAY_NOT_END_IN_UNDERSCORE,
               node.getFilePosition(), this, node);
@@ -2347,21 +2344,22 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="mapNonEmpty",
           synopsis="",
           reason="",
           matches="({@keys*: @vals*})",
-          substitutes="___.initializeMap([@items*]) where items are interleaved keys and vals")
+          substitutes="___.initializeMap([@items*]) where items are interleaved "
+              + "keys and vals")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("({@keys*: @vals*})", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           List<ParseTreeNode> items = new ArrayList<ParseTreeNode>();
           List<? extends ParseTreeNode> keys = bindings.get("keys").children();
           List<? extends ParseTreeNode> vals = expand(bindings.get("vals"), scope, mq).children();
-          for (int i=0; i < keys.size(); ++i) {
+          for (int i = 0, n = keys.size(); i < n; ++i) {
             items.add(keys.get(i));
             items.add(vals.get(i));
           }
@@ -2379,12 +2377,14 @@ public class DefaultCajaRewriter extends Rewriter {
 
     // TODO(ihab.awad): The 'multiDeclaration' implementation is hard
     // to follow or maintain. Refactor asap.
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="multiDeclaration",
-          synopsis="",
-          reason="")
+          synopsis="Consider declarations separately from initializers",
+          reason="",
+          matches="var @a=@b?, @c=@d*",
+          substitutes="{ @decl; @init; }")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof MultiDeclaration) {
           boolean allDeclarations = true;
@@ -2445,20 +2445,20 @@ public class DefaultCajaRewriter extends Rewriter {
     // other - things not otherwise covered
     ////////////////////////////////////////////////////////////////////////
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="otherTypeof",
           synopsis="Typeof translates simply",
-          reason="One of Caja's deviations from JavaScript is that reading a non-existent " +
-          		"imported variable returns 'undefined' rather than throwing a " +
-          		"ReferenceError. Therefore, in Caja, 'typeof' can always evaluate its " +
-          		"argument.",
+          reason="One of Caja's deviations from JavaScript is that reading a "
+              + "non-existent imported variable returns 'undefined' rather than "
+              + "throwing a ReferenceError. Therefore, in Caja, 'typeof' can "
+              + "always evaluate its argument.",
           matches="typeof @f",
           substitutes="typeof @f)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("typeof @f", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           return substV(
               "typeof @f",
               "f", expand(bindings.get("f"), scope, mq));
@@ -2467,7 +2467,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="inInternal",
@@ -2476,8 +2476,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="@i in this",
           substitutes="___.canReadProp(t___, @i)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@i in this", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           return substV(
               "___.canReadProp(t___, @i)",
               "i", expand(bindings.get("i"), scope, mq));
@@ -2486,7 +2486,7 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="inPublic",
@@ -2495,8 +2495,8 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="@i in @o",
           substitutes="___.canReadPubRev(@i, @o)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-        if (QuasiBuilder.match("@i in @o", node, bindings)) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
           return substV(
               "___.canReadPubRev(@i, @o)",
               "i", expand(bindings.get("i"), scope, mq),
@@ -2506,30 +2506,46 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
-          name="otherSpecialOp",
+          name="voidOp",
           synopsis="",
-          reason="")
+          reason="",
+          matches="void @x",
+          substitutes="void @x")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
-        if (!(node instanceof SpecialOperation)) { return NONE; }
-        switch (((SpecialOperation) node).getOperator()) {
-          case COMMA: case VOID:
-            return expandAll(node, scope, mq);
-          default:
-            return NONE;
-        }
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) { return expandAll(node, scope, mq); }
+        return NONE;
       }
     },
 
-    new Rule () {
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="commaOp",
+          synopsis="",
+          reason="",
+          matches="(@a, @b)",
+          substitutes="(@a, @b)")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) { return expandAll(node, scope, mq); }
+        return NONE;
+      }
+    },
+
+    new Rule() {
       @Override
       @RuleDescription(
           name="labeledStatement",
           synopsis="Statically reject if a label with `__` suffix is found",
-          reason="Caja reserves the `__` suffix for internal use")
+          reason="Caja reserves the `__` suffix for internal use",
+          matches="@lbl: @stmt;",
+          substitutes="@lbl: @stmt;")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof LabeledStmtWrapper) {
@@ -2549,14 +2565,15 @@ public class DefaultCajaRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="regexLiteral",
           synopsis="Use the regular expression constructor",
-          reason="So that every use of a regex literal creates a new instance"
-               + " to prevent state from leaking via interned literals.  This"
-               + " is consistent with the way ES4 treates regex literals.",
+          reason="So that every use of a regex literal creates a new instance "
+              + "to prevent state from leaking via interned literals.  This is "
+              + "consistent with the way ES4 treates regex literals.",
+          matches="/foo/",
           substitutes="new ___.RegExp(@pattern, @modifiers?)")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
@@ -2579,15 +2596,17 @@ public class DefaultCajaRewriter extends Rewriter {
     // recurse - automatically recurse into some structures
     ////////////////////////////////////////////////////////////////////////
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="recurse",
           synopsis="Automatically recurse into some structures",
-          reason="")
+          reason="",
+          matches="<many>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof ParseTreeNodeContainer ||
             node instanceof ArrayConstructor ||
+            // TODO(mikesamuel): break/continue with unmentionable label
             node instanceof BreakStmt ||
             node instanceof CaseStmt ||
             node instanceof Conditional ||

@@ -24,9 +24,7 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -40,15 +38,15 @@ public abstract class Rewriter {
    * Annotations on {@code rules} in subclasses of {@code Rewriter} are
    * are collated and documented by {@code RulesDoclet}
    */
-  private final List<Rule> rules = new ArrayList<Rule>();
+  private final RuleChain rules = new RuleChain();
   private final Set<String> ruleNames = new HashSet<String>();
   private final boolean logging;
 
   /**
    * Creates a new Rewriter.
    *
-   * @param logging whether this Rewriter should log the details of rule firings to
-   * standard error.
+   * @param logging whether this Rewriter should log the details of
+   *     rule firings to standard error.
    */
   public Rewriter(boolean logging) {
     this.logging = logging;
@@ -57,8 +55,8 @@ public abstract class Rewriter {
   /**
    * Creates a new Rewriter.
    *
-   * @param logging whether this Rewriter should log the details of rule firings to
-   * standard error.
+   * @param logging whether this Rewriter should log the details of
+   *     rule firings to standard error.
    */
   public Rewriter(boolean logging, Rule[] rules) {
     this.logging = logging;
@@ -68,13 +66,13 @@ public abstract class Rewriter {
   /**
    * Returns the rules of this rewriter
    */
-  public List<Rule> getRules() {
-    return rules;
+  public Iterable<? extends Rule> getRules() {
+    return rules.getAllRules();
   }
 
   /**
-   * Expands a parse tree node according to the rules of this rewriter, returning
-   * the expanded result.
+   * Expands a parse tree node according to the rules of this
+   * rewriter, returning the expanded result.
    *
    * @param node a top-level parse tree node to expand.
    * @param mq a message queue for compiler messages.
@@ -95,11 +93,18 @@ public abstract class Rewriter {
    * @param mq a message queue for compiler messages.
    * @return the expanded parse tree node.
    */
-  protected final ParseTreeNode expand(ParseTreeNode node, Scope scope, MessageQueue mq) {
-    for (Rule rule : rules) {
+  protected final ParseTreeNode expand(
+      ParseTreeNode node, Scope scope, MessageQueue mq) {
+    boolean debug = false;
+    Iterable<Rule> run = debug ? rules.getAllRules() : rules.applicableTo(node);
+    for (Rule rule : run) {
       try {
         ParseTreeNode result = rule.fire(node, scope, mq);
         if (result != Rule.NONE) {
+          if (debug && !rules.applicableTo(node).contains(rule)) {
+            throw new AssertionError(
+                rule.getName() + " should be applicable to " + node);
+          }
           FilePosition resultPos = result.getFilePosition();
           if (result instanceof AbstractParseTreeNode
               && (QuasiBuilder.NULL_INPUT_SOURCE.equals(resultPos.source())
@@ -123,13 +128,14 @@ public abstract class Rewriter {
   }
 
   /**
-   * Adds a rule to this rewriter. Rules are evaluated in the order in which they have
-   * been added to the rewriter via this method. Rules may not be removed from the rewriter.
-   * No two rules added to the rewriter may have the same
-   * {@link com.google.caja.parser.quasiliteral.Rule#getName() name}.
+   * Adds a rule to this rewriter. Rules are evaluated in the order in
+   * which they have been added to the rewriter via this method. Rules
+   * may not be removed from the rewriter.  No two rules added to the
+   * rewriter may have the same {@link Rule#getName() name}.
    *
    * @param rule a rewriting rule.
-   * @exception IllegalArgumentException if a rule with a duplicate name is added.
+   * @exception IllegalArgumentException if a rule with a duplicate name is
+   *     added.
    */
   public void addRule(Rule rule) {
     // We keep 'ruleNames' as a guard against programming errors
@@ -198,12 +204,14 @@ public abstract class Rewriter {
   }
 
   private static void checkTainted(ParseTreeNode node, MessageQueue mq) {
-    // If we've already got errors, then issuing new ones on the same nodes won't help.
+    // If we've already got errors, then issuing new ones on the same
+    // nodes won't help.
     if (mq.hasMessageAtLevel(MessageLevel.ERROR)) {
       return;
     }
     if (node.getAttributes().is(ParseTreeNode.TAINTED)) {
-      mq.addMessage(RewriterMessageType.UNSEEN_NODE_LEFT_OVER, node.getFilePosition());
+      mq.addMessage(
+          RewriterMessageType.UNSEEN_NODE_LEFT_OVER, node.getFilePosition());
     }
     for (ParseTreeNode n : node.children()) {
       checkTainted(n, mq);

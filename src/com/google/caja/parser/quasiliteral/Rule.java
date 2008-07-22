@@ -125,10 +125,9 @@ public abstract class Rule implements MessagePart {
    */
   public RuleDescription getRuleDescription() {
     if (description == null) {
-      Class<? extends Rule> c = getClass();
       Method fire;
       try {
-        fire = c.getMethod("fire", new Class<?>[] {
+        fire = getClass().getMethod("fire", new Class<?>[] {
               ParseTreeNode.class, Scope.class, MessageQueue.class
             });
       } catch (NoSuchMethodException e) {
@@ -434,19 +433,22 @@ public abstract class Rule implements MessagePart {
     }
     return false;
   }
-  
+
   /**
    * Matches using the Quasi-pattern from {@link RuleDescription#matches} and
    * returns the bindings if the match succeeded, or null otherwise.
    * @return null iff node was not matched.
    */
   protected Map<String, ParseTreeNode> match(ParseTreeNode node) {
-    Map<String, ParseTreeNode> bindings
-        = new LinkedHashMap<String, ParseTreeNode>();
+    Map<String, ParseTreeNode> bindings = makeBindings();
     if (QuasiBuilder.match(getRuleDescription().matches(), node, bindings)) {
       return bindings;
     }
     return null;
+  }
+
+  protected static Map<String, ParseTreeNode> makeBindings() {
+    return new LinkedHashMap<String, ParseTreeNode>();
   }
 
   /**

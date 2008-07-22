@@ -49,8 +49,8 @@ import java.net.URI;
 public class QuasiBuilder {
 
   /**
-   * The stub {@code InputSource} associated with quasiliteral strings that appear
-   * directly in source code.
+   * The stub {@code InputSource} associated with quasiliteral strings
+   * that appear directly in source code.
    */
   public static final InputSource NULL_INPUT_SOURCE
       = new InputSource(URI.create("built-in:///js-quasi-literals"));
@@ -71,12 +71,13 @@ public class QuasiBuilder {
   }
 
   /**
-   * Match a quasiliteral pattern against a specimen, returning any hole bindings found in
-   * a client supplied map.
+   * Match a quasiliteral pattern against a specimen, returning any
+   * hole bindings found in a client supplied map.
    *
    * @param patternText a quasiliteral pattern.
    * @param specimen a specimen parse tree node.
-   * @param bindings a map into which hole bindings resulting from the match will be placed.
+   * @param bindings a map into which hole bindings resulting from the match
+   *     will be placed.
    * @return whether the match succeeded.
    * @see QuasiNode#match(com.google.caja.parser.ParseTreeNode)
    */
@@ -84,7 +85,8 @@ public class QuasiBuilder {
       String patternText,
       ParseTreeNode specimen,
       Map<String, ParseTreeNode> bindings) {
-    Map<String, ParseTreeNode> tempBindings = getPatternNode(patternText).match(specimen);
+    Map<String, ParseTreeNode> tempBindings = getPatternNode(patternText)
+        .match(specimen);
 
     if (tempBindings != null) {
       bindings.putAll(tempBindings);
@@ -94,34 +96,39 @@ public class QuasiBuilder {
   }
 
   /**
-   * Substitute variables into a quasiliteral pattern, returning a concrete parse tree node.
+   * Substitute variables into a quasiliteral pattern, returning a
+   * concrete parse tree node.
    *
    * @param patternText a quasiliteral pattern.
    * @param bindings a set of bindings from names to parse tree nodes.
    * @return a new parse tree node resulting from the substitution.
    * @see QuasiNode#substitute(java.util.Map)
    */
-  public static ParseTreeNode subst(String patternText, Map<String, ParseTreeNode> bindings) {
+  public static ParseTreeNode subst(
+      String patternText, Map<String, ParseTreeNode> bindings) {
     return getPatternNode(patternText).substitute(bindings);
   }
 
   /**
-   * Substitute variables into a quasiliteral pattern, returning a concrete parse tree node,
-   * passing the bindings as a variable arguments list.
+   * Substitute variables into a quasiliteral pattern, returning a concrete
+   * parse tree node, passing the bindings as a variable arguments list.
    *
    * @param patternText a quasiliteral pattern.
    * @param args an even number of values arranged in pairs of
-   * ({@code String}, {@code ParseTreeNode}) representing bindings to substitute into the pattern.
+   *     ({@code String}, {@code ParseTreeNode}) representing bindings to
+   *     substitute into the pattern.
    * @return a new parse tree node resulting from the substitution.
    * @see #subst(String, java.util.Map)
    */
   public static ParseTreeNode substV(String patternText, Object... args) {
-    if (args.length %2 != 0) throw new RuntimeException("Wrong # of args for subst()");
+    if (args.length % 2 != 0) {
+      throw new RuntimeException("Wrong # of args for subst()");
+    }
     Map<String, ParseTreeNode> bindings = new HashMap<String, ParseTreeNode>();
     for (int i = 0; i < args.length; ) {
       bindings.put(
-          (String)args[i++],
-          (ParseTreeNode)args[i++]);
+          (String) args[i++],
+          (ParseTreeNode) args[i++]);
     }
     ParseTreeNode result = subst(patternText, bindings);
     if (result == null) {
@@ -141,31 +148,30 @@ public class QuasiBuilder {
    * @exception ParseException if there is a parsing problem.
    */
   public static QuasiNode parseQuasiNode(
-      InputSource inputSource,
-      String pattern) throws ParseException {
-    ParseTreeNode topLevelNode = parse(inputSource, pattern);
-
+      InputSource inputSource, String pattern)
+      throws ParseException {
     // The top-level node returned from the parser is always a Block.
-    if (!(topLevelNode instanceof Block)) {
-      throw new RuntimeException("Panic: top level is not a Block");
-    }
+    Block topLevelBlock = (Block) parse(inputSource, pattern);
+    ParseTreeNode topLevelNode = topLevelBlock;
 
-    // If the top-level Block contains a single child, promote it to allow it to match anywhere.
+    // If the top-level Block contains a single child, promote it to allow it to
+    // match anywhere.
     if (topLevelNode.children().size() == 1) {
       topLevelNode = topLevelNode.children().get(0);
     }
 
-    // If the top level is an ExpressionStmt, with one child, then promote its single child to
-    // the top level to allow the contained expression to match anywhere.
-    if (topLevelNode instanceof ExpressionStmt &&
-        topLevelNode.children().size() == 1) {
+    // If the top level is an ExpressionStmt, with one child, then promote its
+    // single child to the top level to allow the contained expression to match
+    // anywhere.
+    if (topLevelNode instanceof ExpressionStmt) {
       topLevelNode = topLevelNode.children().get(0);
     }
 
-    // If the top level is a FunctionDeclaration, promote its single child to the top level
-    // to allow the contained FunctionConstructor to match in any context.
+    // If the top level is a FunctionDeclaration, promote its single child to
+    // the top level to allow the contained FunctionConstructor to match in any
+    // context.
     if (topLevelNode instanceof FunctionDeclaration) {
-      topLevelNode = ((FunctionDeclaration)topLevelNode).getInitializer();
+      topLevelNode = ((FunctionDeclaration) topLevelNode).getInitializer();
     }
 
     return build(topLevelNode);
@@ -175,8 +181,7 @@ public class QuasiBuilder {
    * @see #parseQuasiNode(InputSource,String)
    * @see #NULL_INPUT_SOURCE
    */
-  public static QuasiNode parseQuasiNode(
-      String pattern) throws ParseException {
+  public static QuasiNode parseQuasiNode(String pattern) throws ParseException {
     return parseQuasiNode(NULL_INPUT_SOURCE, pattern);
   }
 
@@ -196,47 +201,47 @@ public class QuasiBuilder {
 
   private static QuasiNode build(ParseTreeNode n) {
     if (n instanceof ExpressionStmt &&
-        n.children().size() == 1 &&
-        n.children().get(0) instanceof Reference &&
-        ((Reference)n.children().get(0)).getIdentifierName().startsWith("@") &&
-        !((Reference)n.children().get(0)).getIdentifierName().endsWith("_")) {
-      return buildMatchNode(Statement.class, ((Reference)n.children().get(0)).getIdentifierName());
-    }
-
-    if (n instanceof Reference &&
-        ((Reference)n).getIdentifierName().startsWith("@") &&
-        !((Reference)n).getIdentifierName().endsWith("_")) {
-      return buildMatchNode(Expression.class, ((Reference)n).getIdentifierName());
-    }
-
-    if (n instanceof FormalParam &&
-        ((FormalParam)n).getIdentifierName().startsWith("@")) {
-      return buildMatchNode(FormalParam.class, ((FormalParam)n).getIdentifierName());
-    }
-
-    if (n instanceof Identifier &&
-        ((Identifier)n).getValue() != null &&
-        ((Identifier)n).getValue().startsWith("@")) {
-      if (((Identifier)n).getValue().endsWith("_")) {
-        return buildTrailingUnderscoreMatchNode(((Identifier)n).getValue());
-      } else {
-        return buildMatchNode(Identifier.class, ((Identifier)n).getValue());
+        ((ExpressionStmt) n).getExpression() instanceof Reference) {
+      String name = ((Reference) n.children().get(0)).getIdentifierName();
+      if (name.startsWith("@") && !name.endsWith("_")) {
+        return buildMatchNode(Statement.class, name);
       }
     }
 
-    if (n instanceof ObjectConstructor) {
-      if (n.children().size() == 2) {
-        if (n.children().get(0) instanceof StringLiteral) {
-          String key = ((StringLiteral)n.children().get(0)).getUnquotedValue();
-          if (key.startsWith("@") && key.endsWith("*")) {
-            if (n.children().get(1) instanceof Reference) {
-              String val = ((Reference)n.children().get(1)).getIdentifierName();
-              if (val.startsWith("@") && val.endsWith("*")) {
-                return buildObjectConstructorMatchNode(key, val);
-              }
-            }
-          }
+    if (n instanceof Reference) {
+      String name = ((Reference) n).getIdentifierName();
+      if (name.startsWith("@") && !name.endsWith("_")) {
+        return buildMatchNode(Expression.class, name);
+      }
+    }
+
+    if (n instanceof FormalParam) {
+      String name = ((FormalParam) n).getIdentifierName();
+      if (name.startsWith("@")) {
+        return buildMatchNode(FormalParam.class, name);
+      }
+    }
+
+    if (n instanceof Identifier) {
+      String name = ((Identifier) n).getName();
+      if (name != null && name.startsWith("@")) {
+        if (name.endsWith("_")) {
+          return buildTrailingUnderscoreMatchNode(name);
+        } else {
+          return buildMatchNode(Identifier.class, name);
         }
+      }
+    }
+
+    if (n instanceof ObjectConstructor
+        && n.children().size() == 2
+        && n.children().get(0) instanceof StringLiteral
+        && n.children().get(1) instanceof Reference) {
+      String key = ((StringLiteral) n.children().get(0)).getUnquotedValue();
+      String val = ((Reference) n.children().get(1)).getIdentifierName();
+      if (key.startsWith("@") && key.endsWith("*")
+          && val.startsWith("@") && val.endsWith("*")) {
+        return buildObjectConstructorMatchNode(key, val);
       }
     }
 
