@@ -21,12 +21,59 @@
 <head>
   <title>Cajita Optimization</title>
   <link type="text/css" rel="stylesheet" href="../common/documentStyle.css"/>
+  <link type="text/css" rel="stylesheet" href="../common/prettify.css"/>
+  <script type="text/javascript" src="../common/prettify.js"></script>
   <script type="text/javascript" src="../common/headingNumbers.js"></script>
+  <script type="text/javascript">
+    function createDiv(html) {
+      var div = document.createElement('div');
+      div.innerHTML = html;
+      return div;
+    }
+
+    function getRewriteContent(r) {
+      return createDiv(
+        '<table border="0">' +
+	  '<tr>' +
+            '<td valign="top">' +
+              '<pre class="prettyprint">' +
+	        r.getElementsByTagName('in')[0].innerHTML +
+              '</pre>' +
+            '</td>' +
+            '<td valign="top">&rarr;</td>' +
+            '<td valign="top">' +
+              '<pre class="prettyprint">' +
+                r.getElementsByTagName('out')[0].innerHTML +
+              '</pre>' +
+            '</td>' +
+	  '</tr>' +
+        '</table>');
+    }
+
+    function processRewrite(r) {
+      r.parentNode.replaceChild(getRewriteContent(r), r);
+    }
+
+    function processRewrites() {
+      var rewrites = document.getElementsByTagName('rewrite');
+      while (rewrites.length > 0) {
+	processRewrite(rewrites[0]);
+      }
+    }
+
+    function doOnload() {
+      processRewrites();
+      numberDocument();
+      prettyPrint();
+    }
+  </script>
 </head>
 
-<body onload="numberDocument();">
+<body onload="doOnload();">
 
 <div class="title">Cajita Optimization</div>
+
+<!-- ############################################################ -->
 
 <h1>Problem statement</h1>
 
@@ -35,6 +82,8 @@ is roughly that subset of JavaScript without any use of the
 <code>this</code> keyword. Expected programming patterns in this
 language will create extra allocation overhead.</p>
 
+<!-- ############################################################ -->
+
 <h1>Background</h1>
 
 <p>Programming in Cajita, without <code>this</code>, encourages the
@@ -42,7 +91,7 @@ use of object literals containing closures to represent object state.
 For example, the following is a factory function that creates
 representations of a point in Cartesian coordinates:</p>
 
-<pre>
+<pre class="prettyprint">
 function makePointCajita(x, y) {
   return {
     getX: function () { return x; },
@@ -58,401 +107,411 @@ creates 5 allocations for each invocation: one object literal and 4
 closures for the functions assigned to <code>getX</code>,
 <code>setX</code>, <code>getY</code> and <code>setY</code>
 respectively. In general, for an object with <em>N</em> methods, we
-incur <em>O(N)</em> allocations.<p>
+incur <em>N + 1</em> allocations.<p>
 
-<h1>Proposal</h1>
+<!-- ############################################################ -->
+
+<h1>Summary</h1>
 
 <p>To solve this problem, we will first rewrite to a semantically
-equivalent representation, which has the same allocation overhead. Our
+equivalent representation which has the same allocation overhead. Our
 rewriting reifies <em>into</em> the language the scope chains that are
-automatically created and referred to by closures, and rewrite the
+automatically created and referred to by closures, and rewrites the
 code so as to suppress the automatic creation of scopes.</p>
 
 <p>Having thus given ourselves a place to stand from which we can make
 some observations about control flow, we can perform the necessary
 optimizations.</p>
 
-<h2>A simple strategy</h2>
+<!-- ############################################################ -->
 
-<p>Our first attack is based on the observation that, if a developer
-were to write <code>makePointCajita</code> to use <code>this</code>,
-the resulting allocations would be <em>O(1)</em>. Of course, the code
-is no longer in Cajita:</p>
+<h1>Reifying lexical scopes</h1>
 
-<pre>
-function makePointNonCajita(x, y) {
-  return {
-    x: x, y: y,
-    getX: function () { return this.x; },
-    setX: function (_x) { this.x = _x; },
-    getY: function () { return this.y; },
-    setY: function (_y) { this.y = _y; }
+<p>In order to make lexical scopes in the language accessible to
+optimization, we rewrite user code such that they are reified and thus
+directly addressable. Our approach is to directly model "stack frames"
+created by function calls. We perform the following steps (not
+necessarily in this exact order):</p>
+
+<ol>
+
+  <li><p>Transform all function declaration statements (<em>e.g.</em>,
+  <code>function f() {}</code>) into variable assignments with
+  function expressions (<code>var f = function f()
+  {};</code>).</p></li>
+  
+  <li><p>Synthesize a function called <code>main</code> into the
+  global scope containing the top-level code in the module. The
+  arguments to <code>main</code> are the free variables in the
+  top-level code.</p></li>
+
+  <li><p>At the end of the module, synthesize a single call to
+  <code>main</code> binding corresponding values from
+  <code>IMPORTS___</code> to the arguments of
+  <code>main</code>.</p></li>
+  
+  <li><p>Rewrite each function such that it receives from its caller
+  an array that acts as a stack frame containing all its parameters.
+  The function uses further slots in this array for its local
+  variables. All parameter and variable names are thus translated into
+  indices into the stack frame; functions no longer contain
+  <code>var</code> declarations. The first position in this array is
+  always a pointer to the relevant capture of the lexically enclosing
+  stack frame.</p></li>
+
+  <li><p>Rewrite all function call sites to pass an array of function
+  parameters, where the first element is always
+  <code>undefined</code>.</p></li>
+
+  <li><p>For each function literal, hoist the function itself to the
+  global scope (giving it a unique name and fixing up any references
+  to the name) and insert a call to <code>bindToScope</code> taking
+  that function and the current call stack.</p></li>
+  
+</ol>
+
+<p>Given the following definition of <code>bindToScope</code>:</p>
+
+<pre class="prettyprint">
+function bindToScope(aFunction, aScope) {
+  var f = function(argsArray) {
+    argsArray[0] = aScope;
+    return aFunction(argsArray);
   };
+  f.genFcn___ = true;
+  return f;
 }
 </pre>
 
-<p>However, we can build an automated rewriting strategy based on the
-same intuition, which works for <em>some</em> cases. Our trick is to
-use <code>this</code> as a reference to the reified scope chain within
-which a closure was instantiated, and take advantage of the automatic
-<code>this</code> binding to supply that reference to the function
-whenever it is called. We recognize as special the expression:</p>
+<p>The following is a concrete example of the rewriting:</p>
 
-<pre>
+<rewrite>
+
+<in>function foo(a) {
+  var b = a + 1;
+  return function bar(c) {
+    var d = c + 1;
+    return function baz(e) {
+      var f = e + 1;
+      return a + b + c + d + e + f;
+    };
+  };
+}
+
+result.z =
+    foo(1)(2)(3)
+    + input.x;</in>
+
+<out>function(___, IMPORTS___) {
+
+  function f0(s) /*foo */ {
+    s[2] /*b*/ = s[1] /*a*/ + 1;
+    return bindToScope(f1, s);
+  }
+
+  function f1(s) /*bar*/ {
+    s[2] /*d*/ = s[1] /*c*/ + 1;
+    return bindToScope(f2, s);
+  }
+
+  function f2(s) /*baz*/ {
+    s[2] /*f*/ = s[1] /*e*/ + 1;
+    return
+          s[0][0][1] // a (grandparent scope)
+        + s[0][0][2] // b  ,,
+        + s[0][1]    // c (parent scope)
+        + s[0][2]    // d  ,,
+        + s[1]       // e (own scope)
+        + s[2];      // f  ,,
+  }
+
+  function main(s) {
+    s[1].z /*result.z*/ =
+        f0([undefined, 1])([undefined, 2])([undefined, 3])
+        + s[2] /*input.x*/;
+  }
+
+  main([undefined, IMPORTS___.result, IMPORTS___.input]);
+}</out>
+
+</rewrite>
+
+<p>Note that uniquely, in <code>main</code>, the parent scope pointer,
+<code>s[0]</code>, is always <code>undefined</code>. And
+<code>main</code> is only called once per module instantiation, so
+there is only ever one instance of <code>main</code>'s stack per
+module instance. Yet we reify <code>main</code>'s stack anyway to
+allow us to perform our optimizations uniformly, even on the top-level
+code that ends up in <code>main</code>.</p>
+
+<p>The remaining problem is that we are never sure, at the call site
+to a function, whether the target function is one of the "rewritten"
+ones, which use our array pushing calling convention, or a regular
+JavaScript function (<em>e.g.</em>, passed in by the container via
+<code>IMPORTS___</code>) that expects its arguments to be passed the
+usual way. We can fix this by adding some well-known unmentionable
+flag to generated functions, like:</p>
+
+<pre class="prettyprint">
+function f0(s) { ... }
+f0.genFcn___ = true;
+</pre>
+
+<p>and delegate to a function-call stub we refer to as
+<code>call</code>:</p>
+
+<pre class="prettyprint">
+function call(aFunction, argsArray) {
+  return aFunction.genFcn___ ?
+    aFunction(argsArray) :
+    aFunction.apply(undefined, argsArray.slice(1));
+}
+</pre>
+
+<p>so that we can now write the relevant part of our example as:</p>
+
+<pre class="prettyprint">
+function main(s) {
+  s[1].z /*result.z*/ =
+      <span style="background-color: yellow;">call(call(call(f0, [undefined, 1]), [undefined, 2]), [undefined, 3])</span>
+      + s[2] /*input.x*/;
+}
+</pre>
+
+<p>We can consider inlining the contents of <code>call</code> if this
+would further improve performance.</p>
+
+<p>A side benefit of this rewriting is that the target code can model
+any lexical scoping rules desired by the source. We would need to
+extend our scheme in order to implement correct scoping within loops
+(currently unsupported by ES3). To do so, we would create a new call
+stack within each iteration, for example:</p>
+
+<rewrite>
+<in>function foo(results) {
+  for (var i = 0; i < 3; i++) {
+    var j = i * 5;
+    results.append(function bar() { return j; });
+  }
+}</in>
+<out>function f0(s) /*bar*/ {
+  return s[0][1]; // j from parent scope
+}
+
+function f1(s) /*foo*/ {
+  // results -> s[1], i -> s[2]
+  for (s[2] = 0; s[2] < 3; s[2]++) {
+    s[3] = [s]; // push scope; s[3] is a temp
+    s[3][1] = s[2] * 5;
+    s[1].append(bindToScope(f0, s[3]));
+  }
+}</out>
+</rewrite>
+
+<p>Note that, in this example, we have not rewritten the expression
+<code>s[1].append(...)</code>. We will deal with such constructs in
+the next section.</p>
+
+<!-- ############################################################ -->
+
+<h1>Optimizing usage of scopes</h1>
+
+<p>Given that our lexical scopes are now reified in this manner, we
+can take advantage of cases where several functions close on the same
+lexical scope by having these functions share the same scope object.
+In so doing, we face the following challenges:</p>
+
+<ol>
+
+  <li><p>We still have to find to find <em>somewhere</em> to put the
+  reference to the scope so that the closures can get to it;</p></li>
+
+  <li><p>Whatever scheme we invent must ensure that an escaping bare
+  reference to an independent closure causes a call to
+  <code>bindToScope</code> so that it may be called as a plain
+  function; and</p></li>
+
+  <li><p>The result of each automatic <code>bindToScope</code> call
+  must be memoized somewhere and re-used. Otherwise, we would cause
+  equality of closure objects to be broken in a manner visible to the
+  application programmer.</p></li>
+
+</ol>
+
+<p>Recall that the specific case we are solving is that of the
+assignment of several closures to an object. We recognize two main
+patterns. The first is where a number of closures are assigned as
+properties of an object literal:</p>
+
+<pre class="prettyprint">
 {
-  <em>name<sub>1</sub></em>: <em>function<sub>1</sub></em>,
-  <em>name<sub>2</sub></em>: <em>function<sub>2</sub></em>,
-  <em>...</em>,
-  <em>name<sub>n</sub></em>: <em>function<sub>n</sub></em>,
+  prop<sub>1</sub>: function f<sub>1</sub>(...) { ... },
+  prop<sub>2</sub>: function f<sub>2</sub>(...) { ... },
+  ...
+  prop<sub>k</sub>: function f<sub>k</sub>(...) { ... }
 }
 </pre>
 
-<p>and rewrite it as per the following example, where we create
-1-dimensional points for simplicity:</p>
+<p>In this case, we know that closures <code>f<sub>1</sub></code>
+through <code>f<sub>k</sub></code> share the same scope. We append a
+reference to this scope on the object literal that they share and
+arrange for the functions to have access to it. The other case is one
+where, <em>within the same conditional branch</em>, some closures are
+assigned to the same object:</p>
 
-<table border="0"><tr>
+<pre class="prettyprint">
+function addProps(o, condition) {
+  if (condition) {
+    o.prop<sub>1</sub> = function f<sub>1</sub>(...) { ... };
+    o.prop<sub>2</sub> = function f<sub>2</sub>(...) { ... };
+    ...
+    o.prop<sub>k</sub> = function f<sub>k</sub>(...) { ... };
+  } else {
+    o.prop<sub>k+1</sub> = function f<sub>k+1</sub>(...) { ... };
+    o.prop<sub>k+2</sub> = function f<sub>k+2</sub>(...) { ... };
+    ...
+    o.prop<sub>m</sub> = function f<sub>m</sub>(...) { ... };
+  }
+}
+</pre>
 
-<td valign="top"><pre>
-function make1DPointCajita(x) {
-  var b = Math.random();
-  return {
-    getX: function () { return x + b; },
-    setX: function (_x) { x = _x - b; }
-  };
+<p>The function <code>addProps</code> can be called more than once on
+a given object <code>o</code> and will assign different groups of
+functions {<code>f<sub>1</sub></code>, <code>f<sub>2</sub></code>,
+..., <code>f<sub>k</sub></code>} and {<code>f<sub>k+1</sub></code>,
+<code>f<sub>k+2</sub></code>, ..., <code>f<sub>m</sub></code>}
+depending on <code>condition</code>. Each function
+<code>f<sub>i</sub></code> must be assigned the correct instantiation
+of the scope of <code>addProps</code>. However, we know statically
+that each group is always assigned <em>together</em> during any one
+invocation of <code>addProps</code>, and that any object
+<code>o</code>, has at most one value of any one function
+<code>f<sub>i</sub></code>.</p>
+
+<p>In both cases, our approach is to store on the target object a
+pointer to the appropriate scope for use by a member function; and
+instrument member function call sites, of the form
+<code>obj.prop(...)</code>, to hand off the appropriate scope to the
+invoked function. The rewriting procedure is roughly as follows:</p>
+
+<ol>
+
+  <li><p>Recognize all cases where several closures are being assigned
+  to the same object within the same conditional branch.</p></li>
+
+  <li><p>Add code to each hoisted function that represents this
+  closure that applies a unique GUID to that function.</p></li>
+ 
+  <li><p>Where the closures are assigned to the target object, add an
+  attribute to the target object, the key of which is the GUID of the
+  function, and the value of which is the lexical scope bound to which
+  the function is to be bound.</p></li>
+
+  <li><p>Instrument call sites of the form <code>obj.prop(...)</code>
+  to assign the lexical scope properly.</p></li>
+
+  <li><p>Instrument reads of the form <code>obj.prop</code> to call
+  <code>bindToScope</code> and memoize the result.</p></li>
+
+</ol>
+
+<p>Given the following definitions:</p>
+
+<pre class="prettyprint">
+function callProperty(o, name, argsArray) {
+  if (o[name].genFcn___) {
+    argsArray[0] =  o[o[name].guid___];
+    o[name].apply(undefined, argsArray);
+  } else {
+    return o[name].apply(USELESS, argsArray);
+  }
 }
 
-var p = make1DPointCajita(3);
-p.getX();
-</pre></td>
-
-<td valign="top"><font size="+5">&rarr;</font></td>
-
-<td valign="top"><pre>
-<font color="green">// Rewritten "getX" function, hoisted and this-ed</font>
-function fn_getX___() { return this.x + this.b; }
-
-<font color="green">// Rewritten "setX" function, hoisted and this-ed</font>
-function fn_setX___(_x) { this.x = _x - this.b; }
-
-<font color="green">// Original function, not hoisted</font>
-function make1DPointCajita(x) {
-
-  <font color="green">// Create reification of local scope</font>
-  var s0___ = ___.newScope();
-
-  <font color="green">// Explicitly push args onto local scope</font>
-  s0___.x = x;
-
-  <font color="green">// Push local "b" onto local scope</font>
-  s0___.b = Math.random();
-
-  <font color="green">// Create return result</font>
-  var tmp0___ = s0___.beget();
-
-  <font color="green">// Assign functions to return result</font>
-  tmp0___.getX = fn_getX___;
-  tmp0___.setX = fn_setX___;
-
-  return tmp0___;
-}
-
-var p = make1DPointCajita(3);
-
-<font color="green">// Calling supplies "p" as "this"</font>
-p.getX();
-</pre></td>
-
-</tr></table>
-
-<p>Note that we are using JavaScript <a
-href="http://javascript.crockford.com/prototypal.html">prototypal
-inheritance</a> to allow the reified scopes and objects to inherit
-from one another in a simulation of the language's native lexical
-scoping. This works for any level of nesting of functions.</p>
-
-<p>There is one detail: when a Cajita developer gets the value of a
-property of an object, they expect a closure rather than a function
-requiring <code>this</code>. <em>Our optimization relies on this
-pattern of access being relatively rare.</em> Since all property reads
-in Cajita go through <code>readPub</code>, we can add logic there to
-bind the function when necessary. We already do the following
-rewriting (approximately -- many details omitted):</p>
-
-<table border="0"><tr>
-
-<td valign="top"><pre>
-var f = o.getX;
-f();
-</pre></td>
-
-<td valign="top"><font size="+5">&rarr;</font></td>
-
-<td valign="top"><pre>
-var f = ___.readPub(o, 'foo');
-f();
-</pre></td>
-</tr></table>
-
-<p>and the corresponding <code>readPub</code> implementation is
-something like:</p>
-
-<pre>
-function readPub(o, name) {
-  if (typeof o[name] === 'function') {
-    if (!o[name + '_boundFunction___']) {   
-      <font color="green">// Memoize result</font>
-      o[name + '_boundFunction___'] = o[name].bind(o);
+function readProperty(o, name) {
+  if (o[name].genFcn___) {
+    var fcn = o[name];
+    var boundFcnName = 'bound-' + fcn.guid___;
+    if (!o[boundFcnName]) {
+      o[boundFcnName] = bindToScope(value, o[fcn.guid___]);
     }
-    return o[name + '_boundFunction___'];
+    return o[boundFcnName];
   } else {
-    <font color="green">// Other cases here </font>
+    return o[name];
   }
 }
 </pre>
 
-<p>And with this, our optimization is invisible to the Cajita
-programmer.
+<p>We do the following example rewriting:</p>
 
-<h2>Problems with the simple approach</h2>
-
-<p>The main practical problem with this approach is that Cajita
-inheritance using a "mixin" style cannot take advantage of it.
-Consider the following mixin that adds <code>hello</code> and
-<code>goodbye</code> methods to a point:</p>
-
-<pre>
-function mixSmartPoint(aPoint, name) {
-  aPoint.hello = function() { return 'Hello from ' + name); };
-  aPoint.goodbye = function() { return 'Goodbye from ' + name; };
-}
-</pre>
-
-<p>Clearly, this does not fit the object literal matching pattern. Yet
-there is a more fundamental issue that prevents us from combining the
-scope chains of <code>hello</code> and <code>goodbye</code>; for this,
-we need a different example that forces the general case:</p>
-
-<pre>
-function mixWeirdPoint(aPoint, name, isHello) {
-  if (isHello) {
-    aPoint.hello = function() { return 'Hello from ' + name); };
+<rewrite>
+<in>function addProps(o, x) {
+  if (x < 0) {
+    o.a = function aplus(x) { return x + 1; };
+    o.b = function bplus(x) { return x + 2; };
   } else {
-    aPoint.goodbye = function() { return 'Goodbye from ' + name; };
+    o.a = function aminus(x) { return x - 1; };
+    o.b = function bminus(x) { return x - 2; };
   }
 }
 
-var p = make1DPointCajita(3);
-mixWeirdPoint(p, 'pat', true);
-mixWeirdPoint(p, 'tom', false);
+result.f = addProps;</in>
+<out>function(___, IMPORTS___) {
 
-assertEquals('Hello from pat', p.hello());
-assertEquals('Goodbye from tom', p.goodbye());
-</pre>
+  function f0(s) /*aplus*/ { return s[0][2] + 1; }
+  f0.genFcn___ = true;
+  f0.guid___ = ___.nextGuid();
 
-<p>Note that <code>mixWeirdPoint</code> is called multiple times on
-the same object. We want each of the functions <code>hello</code> and
-<code>goodbye</code> to get the correct instantiation of the lexical
-scope of <code>mixWeirdPoint</code>. Yet there is no "second place" on
-the input parameter <code>aPoint</code> in which to store the extra
-scopes; its prototypal inheritance reference already points to the
-scope of the <code>make1DPointCajita</code> function where it was
-created. Any simple attempt to wire up a solution ends up wrapping
-each of <code>hello</code> and <code>goodbye</code> in a closure,
-which defeats our purpose.</p>
+  function f1(s) /*bplus*/ { return s[0][2] + 2; }
+  f1.genFcn___ = true;
+  f1.guid___ = ___.nextGuid();
 
-<h2>A better alternative</h2>
+  function f2(s) /*aminus*/ { return s[0][2] - 1; }
+  f2.genFcn___ = true;
+  f2.guid___ = ___.nextGuid();
 
-<p>We now have enough background to define our actual, proposed
-rewriting, which <em>for the moment</em> brings us back to
-<em>O(N)</em> allocations for <em>N</em> methods on an object but, as
-we hinted earlier, gives us a place to stand for optimizations. And,
-we claim, this new strategy <em>does</em> work for the general
-pathological case of <code>mixWeirdPoint</code>.</p>
+  function f3(s) /*bminus*/ { return s[0][2] - 2; }
+  f3.genFcn___ = true;
+  f3.guid___ = ___.nextGuid();
 
-<p>The key is to store on each hoisted function a GUID (guaranteed
-unique in any execution context) that identifies the scope on the
-owning object for that specific function. Thus each function may now
-have its own reified scope, stored not in a closure but in the owning
-object. Each function now has an extra first parameter,
-<code>s___</code>, allowing its caller to pass in its scope:</p>
-
-<table border="0"><tr>
-
-<td valign="top"><pre>
-function make1DPointCajita(x) {
-  var b = Math.random();
-  return {
-    getX: function () { return x + b; },
-    setX: function (_x) { x = _x - b; }
-  };
-}
-</pre></td>
-
-<td valign="top"><font size="+5">&rarr;</font></td>
-
-<td valign="top"><pre>
-<font color="green">// Rewritten "getX" function, hoisted</font>
-function fn_getX___(s___) { return s___.x + s___.b; }
-fn_getX___.guid___ = ___.newGuid();
-
-<font color="green">// Rewritten "setX" function, hoisted</font>
-function fn_setX___(s___, _x) { s___.x = _x - s___.b; }
-fn_setX___.guid___ = ___.newGuid();
-
-<font color="green">// Original function, not hoisted</font>
-function make1DPointCajita(x) {
-
-  <font color="green">// Create reification of local scope</font>
-  var s0___ = ___.newScope();
-
-  <font color="green">// Explicitly push args onto local scope</font>
-  s0___.x = x;
-
-  <font color="green">// Push local "b" onto local scope</font>
-  s0___.b = Math.random();
-
-  <font color="green">// Beget scope for "getX" and assign</font>
-  var s1___ = s0___.beget();
-  o.getX = fn_getX___;
-  o[fn_getX___.guid___] = s1___;
-
-  <font color="green">// Beget scope for "setX" and assign</font>
-  var s2___ = s0___.beget();
-  o.setX = fn_setX___;
-  o[fn_setX___.guid___] = s2___;
-
-  return o;
-}
-</pre></td>
-
-</tr></table>
-
-<p>Now, even in the simple case of calling <code>o.getX()</code>, we
-need some extra magic. Luckily, all such calls get translated:</p>
-
-<table border="0"><tr>
-
-<td valign="top"><pre>
-o.getX();
-</pre></td>
-
-<td valign="top"><font size="+5">&rarr;</font></td>
-
-<td valign="top"><pre>
-___.callPub(o, 'getX');
-</pre></td>
-
-</tr></table>
-
-<p>and our implementation of <code>callPub</code> is:</p>
-
-<pre>
-function callPub(o, name, args) {
-  var f = o[name];
-  if (f.guid___) {
-    f.apply(USELESS, [o[f.guid___]].concat(args));
-  } else {
-    <font color="green">// Other cases</font>
-  }
-}
-</pre>
-
-<p>As before, we need a <code>readPub</code> that binds the function
-value to its owning object should the value escape:</p>
-
-<pre>
-function readPub(o, name) {
-  if (typeof o[name] === 'function') {
-    if (!o[name + '_boundFunction___']) {
-      <font color="green">// Memoize result</font>
-      o[name + '_boundFunction___'] = o[name].bind(<span style="background-color: yellow">o[o[name].guid___]</span>);
+  function f4(s) { // addProps
+    // s[1] -> o, s[2] -> x 
+    if (s[2] < 0) {
+      s[1].a = f0; s[1][f0.guid___] = s;
+      s[1].b = f1; s[1][f1.guid___] = s;
+    } else {
+      s[1].a = f2; s[1][f2.guid___] = s;
+      s[1].b = f3; s[1][f3.guid___] = s;
     }
-    return o[name + '_boundFunction___'];
-  } else {
-    <font color="green">// Other cases here </font>
   }
-}
-</pre>
+  f4.genFcn___ = true;
+  f4.guid___ = ___.nextGuid();
 
-<p>Finally, note carefully why we have to <code>beget</code> a new
-scope object for each function assigned to the target object.
-Functions like <code>mixWeirdPoint</code> will assign different scopes
-to different functions, and we want these to be indexable by the GUID
-of the function. By assigning a new scope object to each function, we
-can be sure that, regardless of the control flow, each function will
-be given the correct scope object.</p>
+  function main(s) {
+    s[1].f /*result.f*/ = bindToScope(f4, s);
+  }
 
-<h2>Optimizations</h2>
+  main([undefined, IMPORTS___.result]);
+}</out>
+</rewrite>
 
-<p>With the scheme we just described in hand, we can observe cases in
-which we are being more conservative than necessary and reduce our
-allocation overhead. Our key technique is to do a simple control flow
-analysis on a function such as <code>make1DPointCajita</code>. If some
-set of functions always gets assigned to an object <em>together</em>,
-then they can share the same scope object. Hence the functions
-<code>getX</code> and <code>setX</code> in
-<code>make1DPointCajita</code> can share the same scope object:</p>
+<p>As a final detail, we must implement code around setting and
+deleting the property of an object to unhook the lexical scope
+pointers so as not to create memory leaks.</p>
 
-<table border="0"><tr>
+<!-- ########################################################## -->
 
-<td valign="top"><pre>
-function make1DPointCajita(x) {
-  var b = Math.random();
-  return {
-    getX: function () { return x + b; },
-    setX: function (_x) { x = _x - b; }
-  };
-}
-</pre></td>
+<h1>Unresolved issues</h1>
 
-<td valign="top"><font size="+5">&rarr;</font></td>
+<h2>Calling convention</h2>
 
-<td valign="top"><pre>
-<font color="green">// Rewritten "getX" function, hoisted</font>
-function fn_getX___(s___) { return s___.x + s___.b; }
-fn_getX___.guid___ = ___.newGuid();
+<p>This scheme assumes that everyone uses the definition of
+<code>call</code> and <code>callProperty</code> we provide here to
+call functions. That is okay for Cajita code calling Cajita code, and
+Cajita code calling functions provided by the container. It is less
+convenient for non-Cajita code that is trying to call objects provided
+by Cajita. What are the implications of this?</p>
 
-<font color="green">// Rewritten "setX" function, hoisted</font>
-function fn_setX___(s___, _x) { s___.x = _x - s___.b; }
-fn_setX___.guid___ = fn_getX___.guid___; <font color="green">// Same GUID!</font>
-
-<font color="green">// Original function, not hoisted</font>
-function make1DPointCajita(x) {
-
-  <font color="green">// Create reification of local scope</font>
-  var s0___ = ___.newScope();
-
-  <font color="green">// Explicitly push args onto local scope</font>
-  s0___.x = x;
-
-  <font color="green">// Push local "b" onto local scope</font>
-  s0___.b = Math.random();
-
-  <font color="green">// Beget scope for "getX" and "setX" and assign</font>
-  var s1___ = s0___.beget();
-  o.getX = fn_getX___;
-  o[fn_getX___.guid___] = s1___;
-  o.setX = fn_setX___;
-
-  return o;
-}
-</pre></td>
-
-</tr></table>
-
-<p>The key optimization is that we managed to get away with one
-<code>beget</code> rather than two.</p>
-
-<h2>Garbage collection</h2>
-
-<p>As a final problem, if the function properties on an object are
-overwritten or <code>delete</code>d, we should also clear the
-reference to its scope. Since these are shared, we need to maintain a
-reference count on an object to remember how many of its remaining
-functions still require a particular scope, and clear the scope
-reference when the count goes to zero. We can add logic to
-<code>setPub</code> and <code>deletePub</code> to implement these
-cases.</p>
+<!-- ########################################################## -->
 
 </body>
 
