@@ -339,70 +339,19 @@ In so doing, we face the following challenges:</p>
 </ol>
 
 <p>Recall that the specific case we are solving is that of the
-assignment of several closures to an object. We recognize two main
-patterns. The first is where a number of closures are assigned as
-properties of an object literal:</p>
-
-<pre class="prettyprint">
-{
-  prop<sub>1</sub>: function f<sub>1</sub>(...) { ... },
-  prop<sub>2</sub>: function f<sub>2</sub>(...) { ... },
-  ...
-  prop<sub>k</sub>: function f<sub>k</sub>(...) { ... }
-}
-</pre>
-
-<p>In this case, we know that closures <code>f<sub>1</sub></code>
-through <code>f<sub>k</sub></code> share the same scope. We append a
-reference to this scope on the object literal that they share and
-arrange for the functions to have access to it. The other case is one
-where, <em>within the same conditional branch</em>, some closures are
-assigned to the same object:</p>
-
-<pre class="prettyprint">
-function addProps(o, condition) {
-  if (condition) {
-    o.prop<sub>1</sub> = function f<sub>1</sub>(...) { ... };
-    o.prop<sub>2</sub> = function f<sub>2</sub>(...) { ... };
-    ...
-    o.prop<sub>k</sub> = function f<sub>k</sub>(...) { ... };
-  } else {
-    o.prop<sub>k+1</sub> = function f<sub>k+1</sub>(...) { ... };
-    o.prop<sub>k+2</sub> = function f<sub>k+2</sub>(...) { ... };
-    ...
-    o.prop<sub>m</sub> = function f<sub>m</sub>(...) { ... };
-  }
-}
-</pre>
-
-<p>The function <code>addProps</code> can be called more than once on
-a given object <code>o</code> and will assign different groups of
-functions {<code>f<sub>1</sub></code>, <code>f<sub>2</sub></code>,
-..., <code>f<sub>k</sub></code>} and {<code>f<sub>k+1</sub></code>,
-<code>f<sub>k+2</sub></code>, ..., <code>f<sub>m</sub></code>}
-depending on <code>condition</code>. Each function
-<code>f<sub>i</sub></code> must be assigned the correct instantiation
-of the scope of <code>addProps</code>. However, we know statically
-that each group is always assigned <em>together</em> during any one
-invocation of <code>addProps</code>, and that any object
-<code>o</code>, has at most one value of any one function
-<code>f<sub>i</sub></code>.</p>
-
-<p>In both cases, our approach is to store on the target object a
-pointer to the appropriate scope for use by a member function; and
-instrument member function call sites, of the form
-<code>obj.prop(...)</code>, to hand off the appropriate scope to the
-invoked function. The rewriting procedure is roughly as follows:</p>
+assignment of several closures to an object. Our approach is to store
+on the target object a pointer to the appropriate scope for use by a
+member function; and instrument member function call sites, of the
+form <code>obj.prop(...)</code>, to hand off the appropriate scope to
+the invoked function. The rewriting procedure is roughly as
+follows:</p>
 
 <ol>
 
-  <li><p>Recognize all cases where several closures are being assigned
-  to the same object within the same conditional branch.</p></li>
-
-  <li><p>Add code to each hoisted function that represents this
-  closure that applies a unique GUID to that function.</p></li>
+  <li><p>Add code to each hoisted function that applies a unique GUID
+  to that function.</p></li>
  
-  <li><p>Where the closures are assigned to the target object, add an
+  <li><p>Where a closure is assigned to a target object, add an
   attribute to the target object, the key of which is the GUID of the
   function, and the value of which is the lexical scope bound to which
   the function is to be bound.</p></li>
@@ -510,6 +459,14 @@ call functions. That is okay for Cajita code calling Cajita code, and
 Cajita code calling functions provided by the container. It is less
 convenient for non-Cajita code that is trying to call objects provided
 by Cajita. What are the implications of this?</p>
+
+<h2>Pruning unnecessary cases</h2>
+
+<p>We should investigate whether we can be more sophisticated by
+pruning away some of these optimizations where they don't add value.
+Whether that would be of benefit is unclear, because we would still
+have to funnel all function calls through our <code>call</code>
+function.</p>
 
 <!-- ########################################################## -->
 
