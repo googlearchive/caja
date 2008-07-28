@@ -372,7 +372,7 @@ function callProperty(o, name, argsArray) {
     argsArray[0] =  o[o[name].guid___];
     o[name].apply(undefined, argsArray);
   } else {
-    return o[name].apply(USELESS, argsArray);
+    return o[name].apply(o, argsArray);
   }
 }
 
