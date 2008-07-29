@@ -312,6 +312,16 @@ function f1(s) /*foo*/ {
 <code>s[1].append(...)</code>. We will deal with such constructs in
 the next section.</p>
 
+<p>We chose to use numeric indices to represent slots in the stack
+frames rather than symbols, although the latter would be more
+debuggable, in order to improve performance. Our experience with
+various JavaScript interpreters is that reading a numeric slot is 2X
+faster than reading a symbolic slot (WebKit nightly/Squirrelfish);
+creating a numeric array slot is 2.8X faster than creating a slot in
+an object literal (Firefox 3/Spidermonkey); and creating a new
+3-element array literal is 1.5X faster than creating a 3-member object
+literal (Firefox 3/Spidermonkey).</p>
+
 <!-- ############################################################ -->
 
 <h1>Optimizing usage of scopes</h1>
