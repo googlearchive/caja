@@ -198,7 +198,6 @@ final class DomProcessingEvents {
       return value instanceof StringLiteral;
     }
     @Override void toInnerHtml(StringBuilder out) {
-      String valueStr = ((StringLiteral) value).getUnquotedValue();
       out.append(' ').append(name).append("=\"");
       Escaping.escapeXml(((StringLiteral) value).getUnquotedValue(), true, out);
       out.append('"');

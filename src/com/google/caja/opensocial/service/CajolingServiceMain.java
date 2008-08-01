@@ -30,7 +30,6 @@ import java.net.URL;
  */
 public class CajolingServiceMain {
   public static void main(String[] args) throws Exception {
-    CajolingService service = new CajolingService();
     HttpServer server = new HttpServer(8887, InetAddress.getLocalHost(), null);
     Context context = server.getContext("default");
     context.setDocumentBase(new URL("http://localhost/"));

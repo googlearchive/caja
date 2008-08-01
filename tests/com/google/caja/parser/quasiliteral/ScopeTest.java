@@ -282,12 +282,8 @@ public class ScopeTest extends CajaTestCase {
   public void testBodyOfNamedFunction() throws Exception {
     Block n = js(fromString("function foo() { var x; }"));
 
-    Declaration fd = findNodeWithIdentifier(n, Declaration.class, "foo");
-    FunctionConstructor fc = (FunctionConstructor)fd.getInitializer();
-    Block body = fc.getBody();
-
     Scope s0 = Scope.fromProgram(n, mq);
-    Scope s1 = Scope.fromPlainBlock(s0, body);
+    Scope s1 = Scope.fromPlainBlock(s0);
 
     assertEquals(0, mq.getMessages().size());
     assertTrue(s0.isFunction("foo"));
@@ -312,7 +308,7 @@ public class ScopeTest extends CajaTestCase {
     CatchStmt c = (CatchStmt) t.children().get(1);
 
     Scope s0 = Scope.fromProgram(n, mq);
-    Scope s1 = Scope.fromCatchStmt(s0, c);
+    Scope.fromCatchStmt(s0, c);
 
     assertMsgType(MessageType.MASKING_SYMBOL, mq.getMessages().get(0));
     assertMsgLevel(MessageLevel.ERROR, mq.getMessages().get(0));
@@ -385,7 +381,7 @@ public class ScopeTest extends CajaTestCase {
 
   public void testStartStatementsForPlainBlock() throws Exception {
     Scope s0 = Scope.fromProgram(js(fromString("{}")), mq);
-    Scope s1 = Scope.fromPlainBlock(s0, js(fromString("{}")));
+    Scope s1 = Scope.fromPlainBlock(s0);
 
     assertEquals(0, s0.getStartStatements().size());
     assertEquals(0, s1.getStartStatements().size());

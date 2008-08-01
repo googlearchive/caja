@@ -34,6 +34,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class ObjectConstructor extends AbstractExpression<Expression> {
+  /** @param value unused.  This ctor is provided for reflection. */
   public ObjectConstructor(Void value, List<? extends Expression> children) {
     createMutation().appendChildren(children).execute();
   }

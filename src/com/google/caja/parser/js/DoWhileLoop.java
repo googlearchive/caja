@@ -14,7 +14,6 @@
 
 package com.google.caja.parser.js;
 
-import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
@@ -60,8 +59,6 @@ public class DoWhileLoop extends Loop {
     }
     out.consume("do");
     body.renderBlock(rc, true);
-    FilePosition cPos = condition.getFilePosition();
-    FilePosition condStart = FilePosition.startOfOrNull(cPos);
     out.consume("while");
     out.consume("(");
     condition.render(rc);

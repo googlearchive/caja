@@ -117,7 +117,6 @@ public class CssPropertyPatternsTest extends CajaTestCase {
 
   private void assertMatches(String sig, String... candidates)
       throws Exception {
-    String regex = "";
     RhinoTestBed.runJs(
         null,
         new RhinoTestBed.Input(
@@ -134,7 +133,6 @@ public class CssPropertyPatternsTest extends CajaTestCase {
 
   private void assertDoesNotMatch(String sig, String... candidates)
       throws Exception {
-    String regex = "";
     RhinoTestBed.runJs(
         null,
         new RhinoTestBed.Input(

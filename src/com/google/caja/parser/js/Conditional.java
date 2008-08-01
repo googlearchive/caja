@@ -14,7 +14,6 @@
 
 package com.google.caja.parser.js;
 
-import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
@@ -28,9 +27,10 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class Conditional extends AbstractStatement<ParseTreeNode> {
+  /** @param value unused.  This ctor is provided for reflection. */
   public Conditional(Void value, List<? extends ParseTreeNode> children) {
     createMutation().appendChildren(children).execute();
-  }  
+  }
 
   public Conditional(
       List<Pair<Expression, Statement>> ifClauses, Statement elseClause) {
@@ -64,8 +64,6 @@ public final class Conditional extends AbstractStatement<ParseTreeNode> {
       Expression condition = (Expression) children.get(i);
       Statement body = (Statement) children.get(i + 1);
 
-      FilePosition start = FilePosition.startOfOrNull(
-          condition.getFilePosition());
       if (i != 0) {
         out.consume("else");
       }

@@ -25,6 +25,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class ArrayConstructor extends AbstractExpression<Expression> {
+  /** @param value unused.  This ctor is provided for reflection. */
   public ArrayConstructor(Void value, List<? extends Expression> children) {
     this(children);
   }
@@ -51,7 +52,6 @@ public final class ArrayConstructor extends AbstractExpression<Expression> {
             && Operator.COMMA == ((Operation) e).getOperator())) {
         e.render(rc);
       } else {
-        FilePosition ePos = e.getFilePosition();
         out.consume("(");
         e.render(rc);
         out.consume(")");

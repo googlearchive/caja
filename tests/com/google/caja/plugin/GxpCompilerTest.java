@@ -320,9 +320,7 @@ public class GxpCompilerTest extends CajaTestCase {
       doms[i] = (DomTree.Tag) xml(fromString(gxps[i]));
     }
 
-    StringBuilder actualBuf = new StringBuilder();
-    boolean valid = compileAll(doms, true, actualBuf);
-    String actual = actualBuf.toString();
+    compileAll(doms, true, new StringBuilder());
     Message actmsg = null;
     MessageTypeInt act = null;
     for (Message msg : mq.getMessages()) {

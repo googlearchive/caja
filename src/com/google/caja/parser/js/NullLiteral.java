@@ -22,6 +22,12 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class NullLiteral extends Literal {
+
+  /**
+   * This ctor is provided for reflection.
+   * @param value unused.
+   * @param children unused.
+   */
   public NullLiteral(NullPlaceholder value,
                      List<? extends ParseTreeNode> children) {
     this();

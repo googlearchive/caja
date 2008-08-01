@@ -312,7 +312,7 @@ public class QuasiBuilder {
                 inputSource),
                 true),
             inputSource,
-            JsTokenQueue.NO_NON_DIRECTIVE_COMMENT),
+            JsTokenQueue.NO_COMMENT),
         DevNullMessageQueue.singleton(),
         true);
 

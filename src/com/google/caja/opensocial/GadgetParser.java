@@ -97,7 +97,6 @@ public class GadgetParser {
   private void readContent(DomTree doc, GadgetSpec spec, String view)
       throws GadgetRewriteException {
     for (final DomTree.Tag contentNode : getElementsByTagName(doc, "Content")) {
-      List<DomTree.Attrib> attrs = contentNode.getAttributeNodes();
       DomTree.Attrib viewAttr = contentNode.getAttribute("view");
       if (viewAttr == null
           || Arrays.asList(viewAttr.getAttribValue().trim().split("\\s*,\\s*"))

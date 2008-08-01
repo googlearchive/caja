@@ -86,8 +86,8 @@ public class FuzzedParserTest extends CajaTestCase {
     throwsParseException(
         "/* HOISTY1 */M:for(var x = ({y:5, valueOf: eval(\"x\", null--)}) in <y><z/></y>.x ? ([11,12,13,14].filter) : NaN+=\"\" ) 1e-81; const window;"
     );
-  }  
-  
+  }
+
   // Should not throw null
   public void testParse477 () {
     throwsParseException(
@@ -115,7 +115,7 @@ public class FuzzedParserTest extends CajaTestCase {
     }
   }
 
-  private void parseString(String fuzzString) throws Exception {
-    Statement parseTree = js(fromString(fuzzString));
+  private void parseString(String fuzzString) throws ParseException {
+    js(fromString(fuzzString));
   }
 }

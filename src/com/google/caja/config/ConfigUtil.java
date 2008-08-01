@@ -379,7 +379,6 @@ class JSONWhiteListLoader {
       if (defs.size() == 1) { continue; }
       JSONObject definition = defs.get(0);
       List<JSONObject> rest = defs.subList(1, defs.size());
-      boolean isAmbiguous = false;
       for (Iterator<JSONObject> otherIt = rest.iterator(); otherIt.hasNext();) {
         JSONObject other = otherIt.next();
         if (other.equals(definition)) {

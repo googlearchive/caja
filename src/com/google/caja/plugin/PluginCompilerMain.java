@@ -28,7 +28,6 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.TokenQueue;
-import com.google.caja.lexer.TokenQueue.Mark;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssParser;
@@ -190,18 +189,16 @@ public final class PluginCompilerMain {
       //   @template('myTemplateName');
       // followed by parameter declarations like
       //   @param('myParam');
-      Mark m = tq.mark();
       Identifier name = null;
       List<Identifier> params = null;
       if (tq.checkToken("@template")) {
         lexer.allowSubstitutions(true);
-        name = requireSingleStringLiteralCall(m, tq);
+        name = requireSingleStringLiteralCall(tq);
 
         params = new ArrayList<Identifier>();
         while (!tq.isEmpty()) {
-          m = tq.mark();
           if (!tq.checkToken("@param")) { break; }
-          params.add(requireSingleStringLiteralCall(m, tq));
+          params.add(requireSingleStringLiteralCall(tq));
         }
       }
 
@@ -227,21 +224,11 @@ public final class PluginCompilerMain {
    * template directive.
    */
   private static Identifier requireSingleStringLiteralCall(
-      Mark startMark, TokenQueue<CssTokenType> tq) throws ParseException {
+      TokenQueue<CssTokenType> tq) throws ParseException {
     tq.expectToken("(");
     Token<CssTokenType> t = tq.expectTokenOfType(CssTokenType.STRING);
     tq.expectToken(")");
     tq.expectToken(";");
-
-    Mark endMark = tq.mark();
-
-    tq.rewind(startMark);
-    String name = tq.peek().text;
-    FilePosition start = tq.currentPosition();
-
-    tq.rewind(endMark);
-
-    FilePosition pos = FilePosition.span(start, tq.lastPosition());
 
     // The value must be a javascript identifier.
     // Do some simple sanity checks

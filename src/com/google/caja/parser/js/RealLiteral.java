@@ -28,10 +28,11 @@ import java.util.List;
 public final class RealLiteral extends NumberLiteral {
   public final double value;
 
+  /** @param children unused.  This ctor is provided for reflection. */
   public RealLiteral(Number value, List<? extends ParseTreeNode> children) {
     this(value.doubleValue());
   }
-  
+
   public RealLiteral(double value) { this.value = value; }
 
   @Override

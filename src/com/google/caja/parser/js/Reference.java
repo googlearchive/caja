@@ -26,6 +26,7 @@ import java.util.List;
 public final class Reference extends AbstractExpression<ParseTreeNode> {
   private Identifier identifier;
 
+  /** @param value unused.  This ctor is provided for reflection. */
   public Reference(Void value, List<ParseTreeNode> children) {
     this((Identifier) children.get(0));
   }

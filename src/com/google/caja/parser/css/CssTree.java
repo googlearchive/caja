@@ -824,7 +824,6 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     public void render(RenderContext r) {
       TokenConsumer out = r.getOut();
       out.mark(getFilePosition());
-      FilePosition start = FilePosition.startOfOrNull(getFilePosition());
       out.consume("url");
       out.consume("(");
       renderCssString(getValue(), r);

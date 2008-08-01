@@ -83,7 +83,6 @@ public class TabularSideBySideRenderer extends SideBySideRenderer {
 
     try {
       int[] widths = layoutRows(rows);
-      StringBuilder actual = new StringBuilder();
       for (TableRow row : rows) {
         out.append(row.toString(widths)).append('\n');
       }
@@ -160,6 +159,7 @@ public class TabularSideBySideRenderer extends SideBySideRenderer {
       return sb.toString();
     }
 
+    /** @param minWidth unused since it's in the last column */
     String renderedString(int minWidth) {
       return rendered;
     }

@@ -47,10 +47,11 @@ public final class IntegerLiteral extends NumberLiteral {
    */
   public final long value;
 
+  /** @param children unused.  This ctor is provided for reflection. */
   public IntegerLiteral(Number value, List<? extends ParseTreeNode> children) {
     this(value.longValue());
   }
-  
+
   public IntegerLiteral(long value) {
     if (MIN_VALUE > value || value > MAX_VALUE) {
       throw new IllegalArgumentException("" + value);

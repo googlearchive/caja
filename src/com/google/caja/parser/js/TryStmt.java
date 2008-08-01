@@ -28,6 +28,7 @@ public final class TryStmt extends AbstractStatement<Statement> {
   private CatchStmt cat;
   private FinallyStmt fin;
 
+  /** @param value unused.  This ctor is provided for reflection. */
   public TryStmt(Void value, List<? extends Statement> children) {
     createMutation().appendChildren(children).execute();
   }

@@ -29,6 +29,7 @@ public final class CatchStmt extends AbstractStatement<ParseTreeNode> {
   private Declaration exception;
   private Statement body;
 
+  /** @param value unused.  This ctor is provided for reflection. */
   public CatchStmt(Void value, List<? extends ParseTreeNode> children) {
     this((Declaration) children.get(0), (Statement) children.get(1));
   }

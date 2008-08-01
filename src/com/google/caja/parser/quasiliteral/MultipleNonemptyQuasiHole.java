@@ -30,6 +30,7 @@ public class MultipleNonemptyQuasiHole extends MultipleQuasiHole {
     super(matchedClass, identifier);
   }
 
+  @Override
   protected boolean consumeSpecimens(
       List<ParseTreeNode> specimens,
       Map<String, ParseTreeNode> bindings) {
@@ -39,6 +40,7 @@ public class MultipleNonemptyQuasiHole extends MultipleQuasiHole {
         specimens.size() < previousSize;
   }
 
+  @Override
   protected boolean createSubstitutes(
       List<ParseTreeNode> substitutes,
       Map<String, ParseTreeNode> bindings) {
@@ -48,5 +50,6 @@ public class MultipleNonemptyQuasiHole extends MultipleQuasiHole {
         super.createSubstitutes(substitutes, bindings);
   }
 
+  @Override
   protected String getQuantifierSuffix() { return "+"; }
 }

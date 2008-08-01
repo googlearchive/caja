@@ -26,6 +26,7 @@ import java.util.List;
 public final class BooleanLiteral extends Literal {
   public final boolean value;
 
+  /** @param children unused.  This ctor is provided for reflection. */
   public BooleanLiteral(Boolean value, List<? extends ParseTreeNode> children) {
     this(value);
   }

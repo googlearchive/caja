@@ -31,6 +31,7 @@ import java.util.List;
 public final class WithStmt extends AbstractStatement<ParseTreeNode>
     implements NestedScope {
 
+  /** @param value unused.  This ctor is provided for reflection. */
   public WithStmt(Void value, List<? extends Statement> children) {
     createMutation().appendChildren(children).execute();
   }

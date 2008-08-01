@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 public final class StringLiteral extends Literal {
   private String value;
 
+  /** @param children unused.  This ctor is provided for reflection. */
   public StringLiteral(String value, List<? extends ParseTreeNode> children) {
     this(value);
   }

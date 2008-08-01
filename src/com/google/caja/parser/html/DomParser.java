@@ -357,8 +357,6 @@ public final class DomParser {
    * which a naive reader might interpret as {@code <a foo="" bar="baz">}.
    */
   private static boolean isAmbiguousAttributeValue(String attributeText) {
-    if (attributeText.length() == 0) { return false; }
-    char ch0 = attributeText.charAt(0);
     return AMBIGUOUS_VALUE.matcher(attributeText).find();
   }
 }

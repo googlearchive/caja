@@ -172,7 +172,7 @@ public class DefaultCajaRewriter extends Rewriter {
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof Block) {
           List<ParseTreeNode> expanded = new ArrayList<ParseTreeNode>();
-          Scope s2 = Scope.fromPlainBlock(scope, (Block) node);
+          Scope s2 = Scope.fromPlainBlock(scope);
           for (ParseTreeNode c : node.children()) {
             expanded.add(expand(c, s2, mq));
           }
@@ -931,7 +931,7 @@ public class DefaultCajaRewriter extends Rewriter {
               return substV(
                   "___.setMember(@df, @rp, @m);",
                   "df", clazz,
-                  "m", expandMember(bindings.get("m"), this, scope, mq),
+                  "m", expandMember(bindings.get("m"), scope, mq),
                   "rp", toStringLiteral(p));
             }
           } else {
@@ -1581,7 +1581,7 @@ public class DefaultCajaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
           Pair<ParseTreeNode, ParseTreeNode> aliases =
-              reuseAll(bindings.get("as"), this, scope, mq);
+              reuseAll(bindings.get("as"), scope, mq);
           Reference p = (Reference) bindings.get("p");
           String methodName = p.getIdentifierName();
           return substV(
@@ -1711,11 +1711,11 @@ public class DefaultCajaRewriter extends Rewriter {
         if (bindings != null
             && bindings.get("fname") instanceof Reference
             && scope.isDeclaredFunction(getReferenceName(bindings.get("fname")))) {
-          if (!checkMapExpression(bindings.get("mm"), this, scope, mq)) {
+          if (!checkMapExpression(bindings.get("mm"), mq)) {
             return node;
           }
           if (bindings.get("ss") != null &&
-              !checkMapExpression(bindings.get("ss"), this, scope, mq)) {
+              !checkMapExpression(bindings.get("ss"), mq)) {
             return node;
           }
           ParseTreeNode ss = bindings.get("ss") == null ? null :
@@ -1724,7 +1724,7 @@ public class DefaultCajaRewriter extends Rewriter {
               "caja.def(@fname, @base, @mm, @ss?)",
               "fname", bindings.get("fname"),
               "base", expand(bindings.get("base"), scope, mq),
-              "mm", expandMemberMap(bindings.get("mm"), this, scope, mq),
+              "mm", expandMemberMap(bindings.get("mm"), scope, mq),
               "ss", ss);
         }
         return NONE;
@@ -1795,7 +1795,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 "formals", bindings.get("formals"),
                 // It's important that body is expanded before computing fh and stmts.
                 "body", expand(bindings.get("body"), s2, mq),
-                "fh", getFunctionHeadDeclarations(this, s2, mq),
+                "fh", getFunctionHeadDeclarations(s2),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()),
                 "args", expandAll(bindings.get("args"), scope, mq));
           }
@@ -1826,7 +1826,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 "formals", bindings.get("formals"),
                 // It's important that body is expanded before computing fh and stmts.
                 "body", expand(bindings.get("body"), s2, mq),
-                "fh", getFunctionHeadDeclarations(this, s2, mq),
+                "fh", getFunctionHeadDeclarations(s2),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()),
                 "arg", expand(bindings.get("arg"), scope, mq));
           }
@@ -1858,7 +1858,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 "formals", bindings.get("formals"),
                 // It's important that body is expanded before computing fh and stmts.
                 "body", expand(bindings.get("body"), s2, mq),
-                "fh", getFunctionHeadDeclarations(this, s2, mq),
+                "fh", getFunctionHeadDeclarations(s2),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()),
                 "args", expand(bindings.get("args"), scope, mq));
           }
@@ -1879,7 +1879,7 @@ public class DefaultCajaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
           Pair<ParseTreeNode, ParseTreeNode> aliases =
-              reuseAll(bindings.get("as"), this, scope, mq);
+              reuseAll(bindings.get("as"), scope, mq);
           Reference m = (Reference) bindings.get("m");
           String methodName = m.getIdentifierName();
           return substV(
@@ -1992,7 +1992,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 "ps", bindings.get("ps"),
                 // It's important to expand bs before computing fh and stmts.
                 "bs", expand(bindings.get("bs"), s2, mq),
-                "fh", getFunctionHeadDeclarations(this, s2, mq),
+                "fh", getFunctionHeadDeclarations(s2),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
           }
         }
@@ -2039,7 +2039,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 "ps", bindings.get("ps"),
                 // It's important to expand bs before computing fh and stmts.
                 "bs", expand(bindings.get("bs"), s2, mq),
-                "fh", getFunctionHeadDeclarations(this, s2, mq),
+                "fh", getFunctionHeadDeclarations(s2),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
             scope.addStartOfBlockStatement(new ExpressionStmt(expr));
             return substV(";");
@@ -2090,7 +2090,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 "ps", bindings.get("ps"),
                 // It's important to expand bs before computing fh and stmts.
                 "bs", expand(bindings.get("bs"), s2, mq),
-                "fh", getFunctionHeadDeclarations(this, s2, mq),
+                "fh", getFunctionHeadDeclarations(s2),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
           }
         }
@@ -2157,7 +2157,7 @@ public class DefaultCajaRewriter extends Rewriter {
               // fh and stmts.
               "body", expand(rewrittenBody, s2, mq),
               // fh will contain a declaration for ReservedNames.LOCAL_THIS
-              "fh", getFunctionHeadDeclarations(this, s2, mq),
+              "fh", getFunctionHeadDeclarations(s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
         }
         return NONE;
@@ -2278,7 +2278,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 "ps", bindings.get("ps"),
                 // It's important to expand bs before computing fh and stmts.
                 "bs", expand(bindings.get("bs"), s2, mq),
-                "fh", getFunctionHeadDeclarations(this, s2, mq),
+                "fh", getFunctionHeadDeclarations(s2),
                 "b", bNode,
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
             if (declaration) {

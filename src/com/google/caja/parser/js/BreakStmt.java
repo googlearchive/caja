@@ -29,6 +29,7 @@ import java.util.Map;
 public final class BreakStmt extends AbstractStatement<Statement> {
   private String label;
 
+  /** @param children unused.  This ctor is provided for reflection. */
   public BreakStmt(String value, List<? extends ParseTreeNode> children) {
     this(value);
   }

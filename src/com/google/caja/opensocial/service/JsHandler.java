@@ -21,6 +21,7 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.quasiliteral.DefaultCajaRewriter;
+import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Pair;
@@ -71,7 +72,7 @@ public class JsHandler implements ContentHandler {
       tq.expectEmpty();
 
       DefaultCajaRewriter dcr = new DefaultCajaRewriter(true, false);
-      output.append(DefaultCajaRewriter.format(dcr.expand(input, mq)));
+      output.append(Rewriter.format(dcr.expand(input, mq)));
     } catch (ParseException e) {
       throw new UnsupportedContentTypeException();
     } catch (IllegalArgumentException e) {

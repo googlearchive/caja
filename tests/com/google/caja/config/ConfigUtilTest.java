@@ -82,7 +82,7 @@ public class ConfigUtilTest extends TestCase {
   }
 
   public void testMisspelledDenied() throws Exception {
-    WhiteList w = ConfigUtil.loadWhiteListFromJson(
+    ConfigUtil.loadWhiteListFromJson(
         new StringReader(
             "{"
             + " \"denies\": [ \"foo\", { \"key\" : \"bar\" } ],"
@@ -156,7 +156,7 @@ public class ConfigUtilTest extends TestCase {
 
   public void testMissingUrl() throws Exception {
     try {
-      WhiteList w = ConfigUtil.loadWhiteListFromJson(
+      ConfigUtil.loadWhiteListFromJson(
           new StringReader(
               "{"
               + " \"inherits\": [ {} ]"

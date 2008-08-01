@@ -137,7 +137,6 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
     PluginCompiler compiler = compileGadget(htmlContent, baseUri, callback);
 
     MessageContext mc = compiler.getMessageContext();
-    StringBuilder style = new StringBuilder();
     StringBuilder script = new StringBuilder();
 
     Callback<IOException> errorHandler = new Callback<IOException>() {

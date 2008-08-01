@@ -6,7 +6,7 @@ package com.google.caja.parser;
  * A lightweight stack that helps us keep track of ancestors as we traverse a
  * parse tree.
  *
- * @author msamuel@google.com (Mike Samuel)
+ * @author mikesamuel@gmail.com (Mike Samuel)
  */
 public final class AncestorChain<T extends ParseTreeNode> {
   public final AncestorChain<? extends ParseTreeNode> parent;
@@ -67,11 +67,11 @@ public final class AncestorChain<T extends ParseTreeNode> {
   }
 
   @SuppressWarnings("unchecked")
-  public <T extends ParseTreeNode> AncestorChain<T> cast(Class<T> clazz) {
+  public <C extends ParseTreeNode> AncestorChain<C> cast(Class<C> clazz) {
     if (!clazz.isInstance(node)) {
       throw new ClassCastException(node.getClass().getSimpleName());
     }
-    return (AncestorChain<T>) this;
+    return (AncestorChain<C>) this;
   }
 
   @Override

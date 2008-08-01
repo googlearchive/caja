@@ -767,8 +767,7 @@ public final class GxpCompiler {
     DomTree.Tag t = tChain.node;
     // Should have two parameters -- the variable and an initializer
     Map<String, DomTree.Value> attribMap = new HashMap<String, DomTree.Value>();
-    int attribEnd = gxpValidator.attribsAsMap(
-        t, attribMap, ALLOWED_ABBR_PARAMS);
+    gxpValidator.attribsAsMap(t, attribMap, ALLOWED_ABBR_PARAMS);
     DomTree.Value variable = attribMap.get("name"),
                   initializer = attribMap.get("expr");
 
@@ -856,7 +855,6 @@ public final class GxpCompiler {
     Expression[] operands = new Expression[nParams + 3];  // to Function.call
     // Append IMPORTS___.html___(
     //     <assignedName>.call(IMPORTS___, <param 0>, ...));
-    int operandIdx = 0;
     operands[0] = TreeConstruction.memberAccess(sig.assignedName, "call");
     operands[1] = TreeConstruction.ref(ReservedNames.IMPORTS);
     operands[2] = JsWriter.makeTargetReference(

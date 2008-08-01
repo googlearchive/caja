@@ -203,7 +203,7 @@ public class Scope {
     return s;
   }
 
-  public static Scope fromPlainBlock(Scope parent, Block root) {
+  public static Scope fromPlainBlock(Scope parent) {
     return new Scope(ScopeType.PLAIN_BLOCK, parent, true);
   }
 

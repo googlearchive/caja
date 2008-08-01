@@ -68,6 +68,10 @@ public abstract class SideBySideRenderer implements TokenConsumer {
 
   /**
    * Called when we render a token from a different source than previously.
+   * This method does nothing, but may be overridden.
+   * @param previous the token from which the last rendered token came.
+   * @param next the token from which the next rendered token will come,
+   *   unless switchSource is called again before {@link #consume}.
    */
   protected void switchSource(FilePosition previous, FilePosition next) {}
 

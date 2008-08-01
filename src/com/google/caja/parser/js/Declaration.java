@@ -29,6 +29,7 @@ public class Declaration extends AbstractStatement<ParseTreeNode> {
   private Identifier identifier;
   private Expression initializer;
 
+  /** @param value unused.  This ctor is provided for reflection. */
   public Declaration(Void value, List<? extends ParseTreeNode> children) {
     createMutation().appendChildren(children).execute();
   }

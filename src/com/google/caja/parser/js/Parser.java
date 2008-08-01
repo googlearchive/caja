@@ -14,7 +14,6 @@
 
 package com.google.caja.parser.js;
 
-import com.google.caja.lexer.CommentLexer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.JsTokenType;
@@ -270,16 +269,6 @@ public final class Parser extends ParserBase {
     return b;
   }
 
-  private Token<JsTokenType> popTypeComment() throws ParseException {
-    if (tq.isEmpty()) { return null; }
-    Token<JsTokenType> t = tq.peek();
-    if (JsTokenType.COMMENT == t.type && CommentLexer.isDirective(t.text)) {
-      tq.advance();
-      return t;
-    }
-    return null;
-  }
-
   /** Parses and returns a Statement. */
   public Statement parseStatement() throws ParseException {
     // look for any labels preceding statement
@@ -470,7 +459,6 @@ public final class Parser extends ParserBase {
       throws ParseException {
     Mark m = tq.mark();
 
-    Token<JsTokenType> typeComment = popTypeComment();
     Token<JsTokenType> t = tq.peek();
 
     if (JsTokenType.KEYWORD == t.type) {
@@ -502,8 +490,7 @@ public final class Parser extends ParserBase {
         }
         case VAR:
         case CONST:
-          return associateTypeComment(
-              parseDeclarationsOrExpression(false), typeComment);
+          return parseDeclarationsOrExpression(false);
         case FUNCTION:
         {
           Mark fs = tq.mark();
@@ -511,8 +498,7 @@ public final class Parser extends ParserBase {
           if (tq.lookaheadToken(Punctuation.LPAREN)) {
             // If no name, then treat it as an expression
             tq.rewind(fs);
-            return associateTypeComment(
-                parseExpressionStmt(false), typeComment);
+            return parseExpressionStmt(false);
           } else {  // a function declaration
             Identifier identifier = parseIdentifierNode(false);
             tq.expectToken(Punctuation.LPAREN);
@@ -628,10 +614,10 @@ public final class Parser extends ParserBase {
           break;
         }
         default:
-          return associateTypeComment(parseExpressionStmt(false), typeComment);
+          return parseExpressionStmt(false);
       }
       finish(s, m);
-      return associateTypeComment(s, typeComment);
+      return s;
     } else if (tq.checkToken(Punctuation.LCURLY)) {
       // In a statement a curly block opens a block.
       // Blocks don't have a scope associated, so are effectively useless,
@@ -642,11 +628,11 @@ public final class Parser extends ParserBase {
       }
       Block b = new Block(blockParts);
       finish(b, m);
-      return associateTypeComment(b, typeComment);
+      return b;
     } else if (tq.checkToken(Punctuation.SEMI)) {
-      return associateTypeComment(noop(tq.lastPosition()), typeComment);
+      return noop(tq.lastPosition());
     } else {
-      return associateTypeComment(parseExpressionStmt(false), typeComment);
+      return parseExpressionStmt(false);
     }
   }
 
@@ -718,7 +704,7 @@ public final class Parser extends ParserBase {
         } catch (IllegalArgumentException e) {
           throw new ParseException(
               new Message(MessageType.ASSIGN_TO_NON_LVALUE, t.pos,
-                          MessagePart.Factory.valueOf(t.text)));          
+                          MessagePart.Factory.valueOf(t.text)));
         }
         finish(left, m);
         // Not pulling multiple operators off the stack means that
@@ -1235,7 +1221,6 @@ public final class Parser extends ParserBase {
       boolean insertionProtected)
       throws ParseException {
     Mark m = tq.mark();
-    Token<JsTokenType> typeComment = popTypeComment();
 
     boolean isDeclaration;
 
@@ -1282,10 +1267,9 @@ public final class Parser extends ParserBase {
       } else {
         s = d;
       }
-      return associateTypeComment(s, typeComment);
+      return s;
     } else {
-      return associateTypeComment(
-          parseExpressionStmt(insertionProtected), typeComment);
+      return parseExpressionStmt(insertionProtected);
     }
   }
 
@@ -1304,12 +1288,10 @@ public final class Parser extends ParserBase {
     if (!tq.lookaheadToken(Punctuation.RPAREN)) {
       do {
         Mark m = tq.mark();
-        Token<JsTokenType> typeComment = popTypeComment();
         Identifier idNode = new Identifier(parseIdentifier(false));
         finish(idNode, m);
         FormalParam param = new FormalParam(idNode);
         finish(param, m);
-        associateTypeComment(param, typeComment);
         params.add(param);
       } while (tq.checkToken(Punctuation.COMMA));
     }
@@ -1354,11 +1336,6 @@ public final class Parser extends ParserBase {
       // switch (a) { case A: case B: break; }
       n.setFilePosition(FilePosition.startOf(start));
     }
-  }
-
-  private AbstractStatement<?> associateTypeComment(
-      AbstractStatement<?> astmt, Token<JsTokenType> typeComment) {
-    return astmt;
   }
 
   private static class FormalParamList {

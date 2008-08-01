@@ -23,6 +23,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class Noop extends AbstractStatement<Statement> {
+  /** @param value unused.  This ctor is provided for reflection. */
   public Noop(Void value, List<? extends Statement> children) {
     assert children.isEmpty();
   }

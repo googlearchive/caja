@@ -30,6 +30,11 @@ public final class UndefinedLiteral extends Literal {
   public static final String VALUE_NAME = "undefined";
   public static final UndefinedPlaceholder VALUE = new UndefinedPlaceholder();
 
+  /**
+   * This ctor is provided for reflection.
+   * @param value unused.
+   * @param children unused.
+   */
   public UndefinedLiteral(UndefinedPlaceholder value,
                           List<? extends ParseTreeNode> children) {
     this();
@@ -37,7 +42,7 @@ public final class UndefinedLiteral extends Literal {
 
   public UndefinedLiteral() {
   }
-  
+
   @Override
   public UndefinedPlaceholder getValue() {
     return VALUE;

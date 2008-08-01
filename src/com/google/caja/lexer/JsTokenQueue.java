@@ -24,7 +24,7 @@ import com.google.caja.util.Criterion;
 public final class JsTokenQueue extends TokenQueue<JsTokenType> {
 
   public JsTokenQueue(TokenStream<JsTokenType> lexer, InputSource file) {
-    this(lexer, file, NO_NON_DIRECTIVE_COMMENT);
+    this(lexer, file, NO_COMMENT);
   }
 
   public JsTokenQueue(
@@ -41,19 +41,6 @@ public final class JsTokenQueue extends TokenQueue<JsTokenType> {
     new Criterion<Token<JsTokenType>>() {
       public boolean accept(Token<JsTokenType> t) {
         return JsTokenType.COMMENT != t.type;
-      }
-    };
-
-  /**
-   * Like {@link #NO_COMMENT} but allows directives: comments of the form
-   * <code>/<span>*! <i>[Directive]</i> *</span>/</code> and
-   * <code>//! <i>[Directive]</i></code>
-   */
-  public static final Criterion<Token<JsTokenType>> NO_NON_DIRECTIVE_COMMENT =
-    new Criterion<Token<JsTokenType>>() {
-      public boolean accept(Token<JsTokenType> t) {
-        if (JsTokenType.COMMENT != t.type) { return true; }
-        return CommentLexer.isDirective(t.text);
       }
     };
 

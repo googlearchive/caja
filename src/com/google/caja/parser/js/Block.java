@@ -29,6 +29,7 @@ import java.util.List;
  */
 public final class Block
     extends AbstractStatement<Statement> implements NestedScope {
+  /** @param value unused.  This ctor is provided for reflection. */
   public Block(Void value, List<? extends Statement> children) {
     this(children);
   }

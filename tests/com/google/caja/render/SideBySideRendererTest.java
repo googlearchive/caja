@@ -40,9 +40,6 @@ public class SideBySideRendererTest extends TestCase {
                        String... originalSourceFiles) throws Exception {
     final MessageContext mc = new MessageContext();
 
-    InputSource goldenSrc = new InputSource(TestUtil.getResource(
-        getClass(), goldenFile));
-
     Map<InputSource, String> originalSrcs = new HashMap<InputSource, String>();
     for (String originalSourceFile : originalSourceFiles) {
       InputSource is = new InputSource(

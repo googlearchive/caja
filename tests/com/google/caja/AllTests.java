@@ -22,7 +22,6 @@ import com.google.caja.demos.calendar.RRuleTest;
 import com.google.caja.lang.css.CssSchemaTest;
 import com.google.caja.lang.html.HtmlSchemaTest;
 import com.google.caja.lexer.CharProducerTest;
-import com.google.caja.lexer.CommentLexerTest;
 import com.google.caja.lexer.CssLexerTest;
 import com.google.caja.lexer.HtmlLexerTest;
 import com.google.caja.lexer.JsLexerTest;
@@ -47,6 +46,7 @@ import com.google.caja.parser.js.ParserTest;
 import com.google.caja.parser.js.StringLiteralTest;
 import com.google.caja.parser.quasiliteral.DefaultCajaRewriterTest;
 import com.google.caja.parser.quasiliteral.IllegalReferenceCheckRewriterTest;
+import com.google.caja.parser.quasiliteral.InnocentCodeRewriterTest;
 import com.google.caja.parser.quasiliteral.MatchTest;
 import com.google.caja.parser.quasiliteral.QuasiBuilderTest;
 import com.google.caja.parser.quasiliteral.RewriterTest;
@@ -98,7 +98,6 @@ public class AllTests {
           BuildInfoTest.class,
           CajolingServiceTest.class,
           CharProducerTest.class,
-          CommentLexerTest.class,
           CompiledPluginTest.class,
           ConfigUtilTest.class,
           ContentTypeCheckTest.class,
@@ -133,6 +132,7 @@ public class AllTests {
           HtmlSchemaTest.class,
           IllegalReferenceCheckRewriterTest.class,
           InlineCssImportsStageTest.class,
+          InnocentCodeRewriterTest.class,
           JoinTest.class,
           JsHtmlSanitizerTest.class,
           JsLexerTest.class,

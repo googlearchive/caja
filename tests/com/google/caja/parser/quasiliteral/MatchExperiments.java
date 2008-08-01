@@ -65,7 +65,7 @@ public class MatchExperiments {
 
     if (specimen.children().size() != 1)
       throw new Exception("Top level of specimen does not have exactly 1 child");
-    
+
     Map<String, ParseTreeNode> matchResult = matchPattern.match(specimen.children().get(0));
 
     System.out.println(
@@ -74,7 +74,7 @@ public class MatchExperiments {
         "matchResult = " + format(matchResult));
 
     if (matchResult == null) return;
-    
+
     ParseTreeNode substResult = substPattern.substitute(matchResult);
 
     System.out.println(
@@ -111,10 +111,10 @@ public class MatchExperiments {
     InputSource is = new InputSource(new URI("file:///no/input/source"));
     CharProducer cp = CharProducer.Factory.create(new StringReader(src), is);
     JsLexer lexer = new JsLexer(cp);
-    JsTokenQueue tq = new JsTokenQueue(lexer, is, JsTokenQueue.NO_NON_DIRECTIVE_COMMENT);
+    JsTokenQueue tq = new JsTokenQueue(lexer, is, JsTokenQueue.NO_COMMENT);
     Parser p = new Parser(tq, mq);
     Statement stmt = p.parse();
     p.getTokenQueue().expectEmpty();
     return stmt;
-  }  
+  }
 }

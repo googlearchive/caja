@@ -25,6 +25,7 @@ import java.util.List;
 public final class ThrowStmt extends AbstractStatement<Expression> {
   private Expression exception;
 
+  /** @param value unused.  This ctor is provided for reflection. */
   public ThrowStmt(Void value, List<? extends Expression> children) {
     this(children.get(0));
   }

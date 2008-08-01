@@ -36,12 +36,13 @@ public final class FunctionConstructor
   private List<FormalParam> params;
   private Block body;
 
+  /** @param value unused.  This ctor is provided for reflection. */
   public FunctionConstructor(
       Void value, List<? extends ParseTreeNode> children) {
     createMutation().appendChildren(children).execute();
   }
 
-  
+
   public FunctionConstructor(
       Identifier identifier, List<FormalParam> params, Block body) {
     createMutation()
@@ -59,7 +60,11 @@ public final class FunctionConstructor
     this.identifier = (Identifier) children.get(0);
     this.params = Collections.<FormalParam>unmodifiableList(
         childrenPart(1, n - 1, FormalParam.class));
-    for (FormalParam p : params) { }  // Implicit cast will check type
+    for (ParseTreeNode p : params) {
+      if (!(p instanceof FormalParam)) {
+        throw new ClassCastException(p.getClass().getName());
+      }
+    }
     this.body = (Block) children().get(n - 1);
   }
 

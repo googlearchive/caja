@@ -152,7 +152,6 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
   private void assertRewritePasses(String file, MessageLevel failLevel)
       throws Exception {
     URI gadgetUri = TestUtil.getResource(getClass(), file);
-    CharProducer cp = fromResource(file);
     rewriter.rewrite(gadgetUri, fromResource(file), uriCallback, "canvas",
                      System.out);
     checkMessages(failLevel);

@@ -29,6 +29,7 @@ public class SingleQuasiHole extends AbstractQuasiHole {
     super(matchedClass, identifier);
   }
 
+  @Override
   protected boolean consumeSpecimens(
       List<ParseTreeNode> specimens,
       Map<String, ParseTreeNode> bindings) {
@@ -38,6 +39,7 @@ public class SingleQuasiHole extends AbstractQuasiHole {
         putIfDeepEquals(bindings, getIdentifier(), specimens.remove(0));
   }
 
+  @Override
   protected boolean createSubstitutes(
       List<ParseTreeNode> substitutes,
       Map<String, ParseTreeNode> bindings) {
@@ -48,5 +50,6 @@ public class SingleQuasiHole extends AbstractQuasiHole {
     return false;
   }
 
+  @Override
   protected String getQuantifierSuffix() { return ""; }
 }

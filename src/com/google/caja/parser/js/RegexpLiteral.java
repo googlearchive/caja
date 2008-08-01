@@ -28,6 +28,7 @@ import java.util.List;
 public final class RegexpLiteral extends Literal {
   private RegexpWrapper value;
 
+  /** @param children unused.  This ctor is provided for reflection. */
   public RegexpLiteral(
       RegexpWrapper value, List<? extends ParseTreeNode> children) {
     this(value);

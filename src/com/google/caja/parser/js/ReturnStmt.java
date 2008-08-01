@@ -25,6 +25,7 @@ import java.util.List;
 public final class ReturnStmt extends AbstractStatement<Expression> {
   private Expression returnValue;
 
+  /** @param value unused.  This ctor is provided for reflection. */
   public ReturnStmt(Void value, List<? extends Expression> children) {
     this(children.get(0));
   }

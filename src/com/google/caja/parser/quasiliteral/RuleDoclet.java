@@ -37,7 +37,9 @@ public abstract class RuleDoclet {
    * Initializes the RuleDoclet
    *
    * This method is called before any documentation generation occurs
-   * and overriden to initialize variables or open files
+   * and may be overridden to initialize variables or open files
+   *
+   * @param output a stream to which documentation can be written.
    */
   public void initialize(Writer output) {}
 
@@ -45,7 +47,10 @@ public abstract class RuleDoclet {
    * Initializes the RuleDoclet
    *
    * This method is called before any documentation generation occurs
-   * and overriden to initialize variables or open files
+   * and may be overridden to initialize variables or open files
+   *
+   * @param output a stream to which documentation can be written.
+   * @throws IOException if any operation on output raises an IOException.
    */
   @SuppressWarnings("unused")
   public void finish(Writer output) throws IOException {}

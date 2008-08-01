@@ -25,6 +25,7 @@ import java.util.List;
 public final class FinallyStmt extends AbstractStatement<Statement> {
   private Statement body;
 
+  /** @param value unused.  This ctor is provided for reflection. */
   public FinallyStmt(Void value, List<? extends Statement> children) {
     this(children.get(0));
   }

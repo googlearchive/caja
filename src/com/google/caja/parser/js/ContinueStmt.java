@@ -28,6 +28,7 @@ import java.util.Map;
 public final class ContinueStmt extends AbstractStatement<Statement> {
   private String label;
 
+  /** @param children unused.  This ctor is provided for reflection. */
   public ContinueStmt(String value, List<? extends Statement> children) {
     this(value);
   }

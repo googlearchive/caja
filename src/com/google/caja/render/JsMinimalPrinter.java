@@ -85,7 +85,6 @@ public final class JsMinimalPrinter extends AbstractRenderer {
         } else {
           // Otherwise, the last token might combine with this one to form
           // a larger one, such as '<' and '=' forming '<='.
-          boolean ambiguous = false;
           for (int i = 0, n = text.length(); i < n; ++i) {
             trie = trie.lookup(text.charAt(i));
             if (trie == null) { break; }

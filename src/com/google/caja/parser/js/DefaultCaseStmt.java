@@ -26,6 +26,7 @@ import java.util.List;
 public final class DefaultCaseStmt extends SwitchCase {
   private Statement body;
 
+  /** @param value unused.  This ctor is provided for reflection. */
   public DefaultCaseStmt(Void value, List<? extends Statement> children) {
     this(children.get(0));
   }
