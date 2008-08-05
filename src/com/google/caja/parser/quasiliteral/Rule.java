@@ -20,7 +20,6 @@ import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.ParseTreeNodes;
-import com.google.caja.parser.SyntheticNodes;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FormalParam;
@@ -31,6 +30,8 @@ import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.SyntheticNodes;
+import static com.google.caja.parser.js.SyntheticNodes.s;
 import com.google.caja.parser.js.UndefinedLiteral;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
@@ -38,7 +39,6 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 import com.google.caja.util.Pair;
-import static com.google.caja.parser.SyntheticNodes.s;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -225,7 +225,7 @@ public abstract class Rule implements MessagePart {
   }
 
   protected Reference newReference(String name) {
-    return s(new Reference(s(new Identifier(name))));
+    return new Reference(s(new Identifier(name)));
   }
 
   protected Expression newCommaOperation(List<? extends ParseTreeNode> operands) {
@@ -241,7 +241,8 @@ public abstract class Rule implements MessagePart {
       ParseTreeNode value,
       Scope scope,
       MessageQueue mq) {
-    ParseTreeNode reference = s(new Reference(scope.declareStartOfScopeTempVariable()));
+    ParseTreeNode reference = new Reference(
+        scope.declareStartOfScopeTempVariable());
     ParseTreeNode variableDefinition = QuasiBuilder.substV(
         "@ref = @rhs;",
         "ref", reference,
@@ -361,7 +362,8 @@ public abstract class Rule implements MessagePart {
   protected void checkFormals(ParseTreeNode formals, MessageQueue mq) {
     for (ParseTreeNode formal : formals.children()) {
       FormalParam f = (FormalParam) formal;
-      if (!isSynthetic(f) && f.getIdentifierName().endsWith("__")) {
+      if (!isSynthetic(f.getIdentifier())
+          && f.getIdentifierName().endsWith("__")) {
         mq.addMessage(
             RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
             f.getFilePosition(), this, f);
@@ -369,7 +371,15 @@ public abstract class Rule implements MessagePart {
     }
   }
 
-  protected static boolean isSynthetic(ParseTreeNode node) {
+  protected static boolean isSynthetic(Identifier node) {
+    return node.getAttributes().is(SyntheticNodes.SYNTHETIC);
+  }
+
+  protected static boolean isSynthetic(Reference node) {
+    return isSynthetic(node.getIdentifier());
+  }
+
+  protected static boolean isSynthetic(FunctionConstructor node) {
     return node.getAttributes().is(SyntheticNodes.SYNTHETIC);
   }
 
@@ -530,9 +540,9 @@ public abstract class Rule implements MessagePart {
       Identifier tmpVar = scope.declareStartOfScopeTempVariable();
       temporaries.add((Expression) QuasiBuilder.substV(
           "@tmpVar = @left;",
-          "tmpVar", s(new Reference(tmpVar)),
+          "tmpVar", new Reference(tmpVar),
           "left", left));
-      object = s(new Reference(tmpVar));
+      object = new Reference(tmpVar);
     }
 
     // Don't bother to generate a temporary for a simple value like 'foo'
@@ -542,9 +552,9 @@ public abstract class Rule implements MessagePart {
       Identifier tmpVar = scope.declareStartOfScopeTempVariable();
       temporaries.add((Expression) QuasiBuilder.substV(
           "@tmpVar = @right;",
-          "tmpVar", s(new Reference(tmpVar)),
+          "tmpVar", new Reference(tmpVar),
           "right", right));
-      key = s(new Reference(tmpVar));
+      key = new Reference(tmpVar);
     }
 
     // Is a property (as opposed to a public) reference.
@@ -626,5 +636,10 @@ public abstract class Rule implements MessagePart {
     public boolean isSimpleLValue() {
       return temporaries.isEmpty() && rvalue.isLeftHandSide();
     }
+  }
+
+  @Override
+  public String toString() {
+    return "<Rule " + getName() + ">";
   }
 }

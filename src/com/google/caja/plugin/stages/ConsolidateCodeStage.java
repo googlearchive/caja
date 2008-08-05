@@ -72,7 +72,11 @@ public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
 
     // Now initFunctionBody contains all the top level statements.
     Block jsTree = (Block) QuasiBuilder.substV(
-        "{ ___.loadModule(function (___, IMPORTS___) { @body*; }); }",
+        ""
+        + "{"
+        + "  ___./*@synthetic*/loadModule("
+        + "      /*@synthetic*/function (___, IMPORTS___) { @body*; });"
+        + "}",
         "body", initFunctionBody);
 
     jobs.getJobs().add(new Job(new AncestorChain<Block>(jsTree)));

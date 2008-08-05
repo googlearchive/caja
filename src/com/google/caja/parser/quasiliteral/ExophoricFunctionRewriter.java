@@ -27,7 +27,7 @@ import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.reporting.MessageQueue;
-import static com.google.caja.parser.SyntheticNodes.s;
+import static com.google.caja.parser.js.SyntheticNodes.s;
 
 /**
  * An exophoric function is one where {@code this} is only used to access the
@@ -75,7 +75,7 @@ final class ExophoricFunctionRewriter implements Visitor {
     // difference.
     Identifier syntheticLocalThis = s(new Identifier(ReservedNames.LOCAL_THIS));
     syntheticLocalThis.setFilePosition(ref.getFilePosition());
-    s(ref).replaceChild(syntheticLocalThis, ref.getIdentifier());
+    ref.replaceChild(syntheticLocalThis, ref.getIdentifier());
     return true;
   }
 

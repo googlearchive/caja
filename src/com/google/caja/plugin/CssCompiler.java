@@ -30,7 +30,6 @@ import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
-import static com.google.caja.parser.SyntheticNodes.s;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -117,13 +116,13 @@ public final class CssCompiler {
             FilePosition pos = FilePosition.startOf(
                 baseSelector.getFilePosition());
 
-            CssTree.Combination op = s(new CssTree.Combination(
-                pos, CssTree.Combinator.DESCENDANT));
+            CssTree.Combination op = new CssTree.Combination(
+                pos, CssTree.Combinator.DESCENDANT);
 
-            CssTree.ClassLiteral restrictClass = s(new CssTree.ClassLiteral(
-                pos, "." + GADGET_ID_PLACEHOLDER));
-            CssTree.SimpleSelector restrictSel = s(new CssTree.SimpleSelector(
-                pos, Collections.singletonList(restrictClass)));
+            CssTree.ClassLiteral restrictClass = new CssTree.ClassLiteral(
+                pos, "." + GADGET_ID_PLACEHOLDER);
+            CssTree.SimpleSelector restrictSel = new CssTree.SimpleSelector(
+                pos, Collections.singletonList(restrictClass));
 
             sel.insertBefore(op, baseSelector);
             sel.insertBefore(restrictSel, op);
@@ -178,7 +177,7 @@ public final class CssCompiler {
     ss.render(new RenderContext(new MessageContext(), cssCompiler));
     cssCompiler.noMoreTokens();
 
-    ArrayConstructor cssPartsArray = s(new ArrayConstructor(cssParts));
+    ArrayConstructor cssPartsArray = new ArrayConstructor(cssParts);
     cssPartsArray.setFilePosition(ss.getFilePosition());
     // The CSS rule
     //     p { color: purple }
@@ -192,7 +191,7 @@ public final class CssCompiler {
     // will only make purple paragraphs that are under a node with class g123__.
     ExpressionStmt emitStmt = new ExpressionStmt(
         (Expression) QuasiBuilder.substV(
-            ReservedNames.IMPORTS + ".emitCss___(@cssParts.join("
+            ReservedNames.IMPORTS + ".emitCss___(@cssParts./*@synthetic*/join("
             + ReservedNames.IMPORTS + ".getIdClass___()))",
             "cssParts", cssPartsArray));
     emitStmt.setFilePosition(ss.getFilePosition());

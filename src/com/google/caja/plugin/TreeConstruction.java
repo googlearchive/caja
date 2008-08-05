@@ -25,7 +25,7 @@ import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.StringLiteral;
 
-import static com.google.caja.parser.SyntheticNodes.s;
+import static com.google.caja.parser.js.SyntheticNodes.s;
 
 import java.util.List;
 import java.util.Vector;
@@ -39,30 +39,30 @@ import java.util.Vector;
 public final class TreeConstruction {
   /** {@code thing.member } */
   public static Operation memberAccess(String thing, String member) {
-    return s(Operation.create(Operator.MEMBER_ACCESS, ref(thing), ref(member)));
+    return Operation.create(Operator.MEMBER_ACCESS, ref(thing), ref(member));
   }
   /** {@code nodes[0](nodes[1...]) } */
   public static Operation call(Expression... nodes) {
-    return s(Operation.create(Operator.FUNCTION_CALL, nodes));
+    return Operation.create(Operator.FUNCTION_CALL, nodes);
   }
   /** {@code function name(args) <body>} */
   public static FunctionConstructor function(
       String name, Block body, String... args) {
     List<FormalParam> params = new Vector<FormalParam>();
     for (String arg : args) {
-      params.add(s(new FormalParam(s(new Identifier(arg)))));
+      params.add(new FormalParam(s(new Identifier(arg))));
     }
-    return s(new FunctionConstructor(s(new Identifier(name)), params, body));
+    return new FunctionConstructor(s(new Identifier(name)), params, body);
   }
 
   public static ExpressionStmt assign(Expression lhs, Expression rhs) {
-    return s(new ExpressionStmt(
-        s(Operation.create(Operator.ASSIGN, lhs, rhs))));
+    return new ExpressionStmt(
+        Operation.create(Operator.ASSIGN, lhs, rhs));
   }
 
   public static Reference ref(String name) {
     assert name != null;
-    return s(new Reference(s(new Identifier(name))));
+    return new Reference(s(new Identifier(name)));
   }
 
   public static StringLiteral stringLiteral(String unquoted) {

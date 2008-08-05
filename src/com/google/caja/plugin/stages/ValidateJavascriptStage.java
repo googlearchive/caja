@@ -16,7 +16,7 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.SyntheticNodes;
+import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.ExpressionSanitizerCaja;
 import com.google.caja.plugin.Job;
@@ -37,9 +37,11 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
       AncestorChain<?> nonSyntheticScopeRoot
           = nonSyntheticScopeRoot(job.getRoot());
 
-      valid &= new ExpressionSanitizerCaja(
-          jobs.getMessageQueue(), jobs.getPluginMeta())
-          .sanitize(nonSyntheticScopeRoot);
+      if (nonSyntheticScopeRoot != null) {  // False for empty programs
+        valid &= new ExpressionSanitizerCaja(
+            jobs.getMessageQueue(), jobs.getPluginMeta())
+            .sanitize(nonSyntheticScopeRoot);
+      }
     }
 
     return valid && jobs.hasNoFatalErrors();
@@ -47,7 +49,7 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
 
   public AncestorChain<?> nonSyntheticScopeRoot(AncestorChain<?> js) {
     AncestorChain<?> scopeRoot = nonSyntheticRoot(js);
-    if (scopeRoot == null) { scopeRoot = js; }
+    if (scopeRoot == null) { return null; }
     while (scopeRoot.parent != null && !(scopeRoot.node instanceof Block)) {
       scopeRoot = scopeRoot.parent;
     }
@@ -57,7 +59,8 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
   public AncestorChain<?> nonSyntheticRoot(AncestorChain<?> js) {
     ParseTreeNode node = js.node;
 
-    if (!node.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
+    if (SyntheticNodes.isSynthesizable(node)
+        && !node.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
       return js;
     }
 

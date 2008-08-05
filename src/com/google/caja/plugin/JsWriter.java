@@ -31,7 +31,6 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UndefinedLiteral;
 import com.google.caja.reporting.MessageQueue;
-import static com.google.caja.parser.SyntheticNodes.s;
 
 import java.util.List;
 
@@ -71,8 +70,8 @@ final class JsWriter {
     // Make one
     if (null == fnCall) {
       Expression target = makeTargetReference(tgtMembers);
-      fnCall = s(Operation.create(Operator.FUNCTION_CALL, target));
-      b.insertBefore(s(new ExpressionStmt(fnCall)), null);
+      fnCall = Operation.create(Operator.FUNCTION_CALL, target);
+      b.insertBefore(new ExpressionStmt(fnCall), null);
     }
     if (toAppend instanceof StringLiteral) {
       // If toAppend and last child are both string literals, combine them
@@ -80,12 +79,11 @@ final class JsWriter {
       if (fnCallOperands.size() > 1) {
         Expression last = fnCallOperands.get(fnCallOperands.size() - 1);
         if (last instanceof StringLiteral) {
-          StringLiteral concatenation =
-            s(new StringLiteral(
-                  StringLiteral.toQuotedValue(
-                      ((StringLiteral) last).getUnquotedValue()
-                      + ((StringLiteral) toAppend).getUnquotedValue()
-                      )));
+          StringLiteral concatenation = new StringLiteral(
+              StringLiteral.toQuotedValue(
+                  ((StringLiteral) last).getUnquotedValue()
+                  + ((StringLiteral) toAppend).getUnquotedValue()
+                  ));
           fnCall.replaceChild(concatenation, last);
           return;
         }
@@ -96,17 +94,16 @@ final class JsWriter {
 
   static void appendString(String string, List<String> tgtChain, Block b) {
     JsWriter.append(
-        s(new StringLiteral(StringLiteral.toQuotedValue(string))), tgtChain, b);
+        new StringLiteral(StringLiteral.toQuotedValue(string)), tgtChain, b);
   }
 
   static void appendText(
       String text, Esc escaping, List<String> tgtChain, Block b) {
     if ("".equals(text)) { return; }
-    JsWriter.append(
-        s(new StringLiteral(
-              StringLiteral.toQuotedValue(
-                  escaping != JsWriter.Esc.NONE ? htmlEscape(text) : text))),
-                  tgtChain, b);
+    JsWriter.append(new StringLiteral(
+        StringLiteral.toQuotedValue(
+            escaping != JsWriter.Esc.NONE ? htmlEscape(text) : text)),
+            tgtChain, b);
   }
 
   static String htmlEscape(String text) {
@@ -151,8 +148,8 @@ final class JsWriter {
   static Expression makeTargetReference(List<String> tgtMembers) {
     Expression target = TreeConstruction.ref(tgtMembers.get(0));
     for (int i = 1; i < tgtMembers.size(); ++i) {
-      target = s(Operation.create(Operator.MEMBER_ACCESS,
-                     target, TreeConstruction.ref(tgtMembers.get(i))));
+      target = Operation.create(Operator.MEMBER_ACCESS,
+          target, TreeConstruction.ref(tgtMembers.get(i)));
     }
     return target;
   }

@@ -15,9 +15,9 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.SyntheticNodes;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.reporting.MessageQueue;
 
 /**
@@ -37,9 +37,11 @@ public final class NonAsciiCheckVisitor implements Visitor {
    * Add an error to the queue if an identifier contains non-ASCII characters.
    */
   public boolean visit(AncestorChain<?> ac) {
-    if (ac.node instanceof Identifier &&
-        !ac.node.getAttributes().is(SyntheticNodes.SYNTHETIC) &&
-        !((Identifier)ac.node).getName().matches("^[a-zA-Z_$][a-zA-Z0-9_$]*$")) {
+    if (!(ac.node instanceof Identifier)) { return true; }
+    Identifier ident = (Identifier) ac.node;
+    String name = ident.getName();
+    if (!ident.getAttributes().is(SyntheticNodes.SYNTHETIC)
+        && name != null && !name.matches("^[a-zA-Z_$][a-zA-Z0-9_$]*$")) {
       mq.addMessage(
           RewriterMessageType.NONASCII_IDENTIFIER,
           ac.node.getFilePosition(), ac.node);

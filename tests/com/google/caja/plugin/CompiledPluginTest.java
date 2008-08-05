@@ -102,7 +102,7 @@ public class CompiledPluginTest extends TestCase {
                 "exports.main = function() {\n" +
                 "  document.getElementById('hello-base')\n" +
                 "      .innerHTML = sayHello();\n" +
-                "}"),
+                "};"),
             "file:///hello-world.js")
         );
   }
@@ -171,7 +171,7 @@ public class CompiledPluginTest extends TestCase {
                 "exports.main = function(items) {\n" +
                 "  document.getElementById('base')\n" +
                 "      .setInnerHTML(test(items));\n" +
-                "}"),
+                "};"),
             "file:///loop-test.js")
         );
   }

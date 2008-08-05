@@ -57,7 +57,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Pair;
-import static com.google.caja.parser.SyntheticNodes.s;
+import static com.google.caja.parser.js.SyntheticNodes.s;
 
 import java.io.StringReader;
 import java.net.URI;
@@ -117,7 +117,7 @@ public class HtmlCompiler {
     DomProcessingEvents cdom = new DomProcessingEvents();
     compileDom(doc, cdom);
 
-    Block body = s(new Block(Collections.<Statement>emptyList()));
+    Block body = new Block(Collections.<Statement>emptyList());
     cdom.toJavascript(body);
     return body;
   }
@@ -334,7 +334,7 @@ public class HtmlCompiler {
     List<? extends Expression> operands = ((Operation) css).children();
     Expression cssOp = operands.get(1);
     for (Expression e : operands.subList(2, operands.size())) {
-      cssOp = s(Operation.create(Operator.ADDITION, cssOp, e));
+      cssOp = Operation.create(Operator.ADDITION, cssOp, e);
     }
     out.attr("style", cssOp);
   }
@@ -529,8 +529,8 @@ public class HtmlCompiler {
         FunctionConstructor handlerFn = new FunctionConstructor(
             new Identifier(null),
             Arrays.asList(
-                s(new FormalParam(s(new Identifier(ReservedNames.THIS_NODE)))),
-                s(new FormalParam(s(new Identifier("event"))))),
+                new FormalParam(s(new Identifier(ReservedNames.THIS_NODE))),
+                new FormalParam(s(new Identifier("event")))),
             handler);
 
         String handlerFnName = htmlc.syntheticId();
@@ -543,17 +543,17 @@ public class HtmlCompiler {
 
         String handlerFnNameLit = StringLiteral.toQuotedValue(handlerFnName);
 
-        Operation dispatcher = s(Operation.create(
+        Operation dispatcher = Operation.create(
             Operator.ADDITION,
-            s(Operation.create(
+            Operation.create(
                 Operator.ADDITION,
                 TreeConstruction.stringLiteral(
                     "return plugin_dispatchEvent___("
                     + "this, event || window.event, "),
                 TreeConstruction.call(
                     TreeConstruction.memberAccess("___", "getId"),
-                    TreeConstruction.ref(ReservedNames.IMPORTS)))),
-            TreeConstruction.stringLiteral(", " + handlerFnNameLit + ")")));
+                    TreeConstruction.ref(ReservedNames.IMPORTS))),
+            TreeConstruction.stringLiteral(", " + handlerFnNameLit + ")"));
         out.attr(t.getAttribName(), dispatcher);
       }
     },
@@ -632,7 +632,6 @@ public class HtmlCompiler {
                 Identifier oldRef = r.getIdentifier();
                 Identifier thisNode = new Identifier(ReservedNames.THIS_NODE);
                 thisNode.setFilePosition(oldRef.getFilePosition());
-                s(r);
                 r.replaceChild(s(thisNode), oldRef);
               }
               return false;

@@ -248,7 +248,7 @@ public class HtmlCompiledPluginTest extends TestCase {
   public void testEval() throws Exception {
     execGadget(
         "<script>var success=false;" +
-          "try{eval('1')}catch(e){success=true;}" +
+          "try{eval('1');}catch(e){success=true;}" +
           "if (!success)fail('Outer eval is accessible.')</script>",
         ""
         );
@@ -262,7 +262,7 @@ public class HtmlCompiledPluginTest extends TestCase {
   public void testFunction() throws Exception {
     execGadget(
         "<script>var success=false;" +
-          "try{var f=new Function('1')}catch(e){success=true;}" +
+          "try{var f=new Function('1');}catch(e){success=true;}" +
           "if (!success)fail('Function constructor is accessible.')</script>",
         ""
         );

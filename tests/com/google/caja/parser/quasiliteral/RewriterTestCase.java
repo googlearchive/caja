@@ -17,9 +17,14 @@ package com.google.caja.parser.quasiliteral;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.SyntheticNodes;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
-import com.google.caja.parser.js.*;
+
+import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.ExpressionStmt;
+import com.google.caja.parser.js.Operation;
+import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.TestUtil;
 import com.google.caja.reporting.MessageLevel;
@@ -59,17 +64,6 @@ public abstract class RewriterTestCase extends CajaTestCase {
 
   protected Object rewriteAndExecute(String program) throws IOException, ParseException {
     return rewriteAndExecute(";", program, ";");
-  }
-
-  protected void setSynthetic(ParseTreeNode n) {
-    SyntheticNodes.s(n);
-  }
-
-  protected void setTreeSynthetic(ParseTreeNode n) {
-    setSynthetic(n);
-    for (ParseTreeNode child : n.children()) {
-      setTreeSynthetic(child);
-    }
   }
 
   // TODO(ihab.awad): Refactor tests to use checkAddsMessage(...) instead
@@ -251,9 +245,14 @@ public abstract class RewriterTestCase extends CajaTestCase {
     return node;
   }
 
-  private <T extends ParseTreeNode> T syntheticTree(T node) {
-    for (ParseTreeNode c : node.children()) { setTreeSynthetic(c); }
-    return SyntheticNodes.s(node);
+  protected final <T extends ParseTreeNode> T syntheticTree(T node) {
+    for (ParseTreeNode c : node.children()) { syntheticTree(c); }
+    return makeSynthetic(node);
+  }
+
+  protected final <T extends ParseTreeNode> T makeSynthetic(T node) {
+    SyntheticNodes.s(node);
+    return node;
   }
 
   protected ParseTreeNode rewriteStatements(Statement... nodes) {

@@ -18,7 +18,6 @@ import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.ParseTreeNodes;
-import com.google.caja.parser.SyntheticNodes;
 import com.google.caja.parser.js.AssignOperation;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.BreakStmt;
@@ -31,6 +30,7 @@ import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.DefaultCaseStmt;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
+import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
@@ -47,6 +47,7 @@ import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.SimpleOperation;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SwitchStmt;
+import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.Statement;
@@ -55,7 +56,7 @@ import com.google.caja.util.Pair;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 
-import static com.google.caja.parser.SyntheticNodes.s;
+import static com.google.caja.parser.js.SyntheticNodes.s;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
 import java.util.ArrayList;
@@ -132,21 +133,202 @@ public class DefaultCajaRewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="synthetic",
-          synopsis="Pass through synthetic nodes.",
-          reason="Allow a relied-upon (trusted) translator to supply JavaScript "
-              + "code to be included in the output with no further "
-              + "translation.",
-          matches="<@synthetic>",
-          substitutes="<@synthetic>")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        if (isSynthetic(node)) {
+          name="syntheticReferemce",
+          synopsis="Pass through calls where the method name is synthetic.",
+          reason="A synthetic method may not be marked callable.",
+          matches="/* synthetic */ @ref",
+          substitutes="<expanded>")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof Reference) {
+          Reference ref = (Reference) node;
+          if (isSynthetic(ref.getIdentifier())) {
+            return node;
+          }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="syntheticCalls",
+          synopsis="Pass through calls where the method name is synthetic.",
+          reason="A synthetic method may not be marked callable.",
+          matches="/* synthetic */ @o.@m(@as*)",
+          substitutes="<expanded>")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = this.match(node);
+        if (bindings != null && isSynthetic((Reference) bindings.get("m"))) {
           return expandAll(node, scope, mq);
         }
         return NONE;
       }
     },
 
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="syntheticDeletes",
+          synopsis="Pass through reads of synthetic members.",
+          reason="A synthetic member may not be marked deletable.",
+          matches="/* synthetic */ delete @o.@m",
+          substitutes="<expanded>")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = this.match(node);
+        if (bindings != null && isSynthetic((Reference) bindings.get("m"))) {
+          return expandAll(node, scope, mq);
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="syntheticReads",
+          synopsis="Pass through reads of synthetic members.",
+          reason="A synthetic member may not be marked readable.",
+          matches="/* synthetic */ @o.@m",
+          substitutes="<expanded>")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = this.match(node);
+        if (bindings != null && isSynthetic((Reference) bindings.get("m"))) {
+          return expandAll(node, scope, mq);
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="syntheticSetMember",
+          synopsis="Pass through sets of synthetic members.",
+          reason="A synthetic member may not be marked writable.",
+          matches="/* synthetic */ @o.@m = @v",
+          substitutes="<expanded>")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = this.match(node);
+        if (bindings != null && isSynthetic((Reference) bindings.get("m"))) {
+          return expandAll(node, scope, mq);
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="syntheticSetVar",
+          synopsis="Pass through set of synthetic vars.",
+          reason="A local variable might not be mentionable otherwise.",
+          matches="/* synthetic */ @lhs___ = @rhs",
+          substitutes="<expanded>")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = this.match(node);
+        if (bindings != null) {
+          if (isSynthetic((Identifier) bindings.get("lhs"))) {
+            return expandAll(node, scope, mq);
+          }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="syntheticDeclaration",
+          synopsis="Pass through synthetic variables which are unmentionable.",
+          reason="Synthetic code might need local variables for safe-keeping.",
+          matches="/* synthetic */ var @v___ = @initial?;",
+          substitutes="<expanded>")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = this.match(node);
+        if (bindings != null && isSynthetic((Identifier) bindings.get("v"))) {
+          return expandAll(node, scope, mq);
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="syntheticFnDeclaration",
+          synopsis="Allow declaration of synthetic functions.",
+          reason="Synthetic functions allow generated code to avoid introducing"
+              + " unnecessary scopes.",
+          matches="/* synthetic */ function @i?(@actuals*) { @body* }",
+          substitutes="<expanded>")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        FunctionConstructor ctor = node instanceof FunctionDeclaration
+            ? ((FunctionDeclaration) node).getInitializer()
+            : (FunctionConstructor) node;
+        if (isSynthetic(ctor)) {
+          return expandAll(node, scope, mq);
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="syntheticCatches1",
+          synopsis="Pass through synthetic variables which are unmentionable.",
+          reason="Catching unmentionable exceptions helps maintain invariants.",
+          matches=(
+              "try { @body* } catch (/* synthetic */ @ex___) { @handler*; }"),
+          substitutes="<expanded>")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = this.match(node);
+        if (bindings != null) {
+          Declaration ex = (Declaration) bindings.get("ex");
+          if (isSynthetic(ex.getIdentifier())) {
+            return expandAll(node, scope, mq);
+          }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="syntheticCatches2",
+          synopsis="Pass through synthetic variables which are unmentionable.",
+          reason="Catching unmentionable exceptions helps maintain invariants.",
+          matches=(
+               "try { @body* } catch (/* synthetic */ @ex___) { @handler*; }"
+               + " finally { @cleanup* }"),
+          substitutes="<expanded>")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = this.match(node);
+        if (bindings != null) {
+          Declaration ex = (Declaration) bindings.get("ex");
+          if (isSynthetic(ex.getIdentifier())) {
+            return expandAll(node, scope, mq);
+          }
+        }
+        return NONE;
+      }
+    },
+
+    ////////////////////////////////////////////////////////////////////////
+    // Support hoisting of functions to the top of their containing block
+    ////////////////////////////////////////////////////////////////////////
     new Rule() {
       @Override
       @RuleDescription(
@@ -277,20 +459,20 @@ public class DefaultCajaRewriter extends Rewriter {
         List<Statement> declsList = new ArrayList<Statement>();
 
         Identifier oTemp = scope.declareStartOfScopeTempVariable();
-        declsList.add(s(new ExpressionStmt((Expression) substV(
+        declsList.add(new ExpressionStmt((Expression) substV(
             "@oTemp = @o;",
-            "oTemp", s(new Reference(oTemp)),
-            "o", expand(bindings.get("o"), scope, mq)))));
+            "oTemp", new Reference(oTemp),
+            "o", expand(bindings.get("o"), scope, mq))));
 
         Identifier kTemp = scope.declareStartOfScopeTempVariable();
 
         ParseTreeNode kAssignment = substV(
             "@k = @kTempRef;",
             "k", bindings.get("k"),
-            "kTempRef", s(new Reference(kTemp)));
+            "kTempRef", new Reference(kTemp));
         kAssignment.getAttributes().remove(SyntheticNodes.SYNTHETIC);
         kAssignment = expand(kAssignment, scope, mq);
-        kAssignment = s(new ExpressionStmt((Expression) kAssignment));
+        kAssignment = new ExpressionStmt((Expression) kAssignment);
 
         String canEnumName = QuasiBuilder.match("this", bindings.get("o")) ?
             "canEnumProp" : "canEnumPub";
@@ -306,9 +488,9 @@ public class DefaultCajaRewriter extends Rewriter {
             "}",
             "canEnum", canEnum,
             "decls", new ParseTreeNodeContainer(declsList),
-            "oTempRef", s(new Reference(oTemp)),
-            "kTempRef", s(new Reference(kTemp)),
-            "kTempStmt", s(new ExpressionStmt(s(new Reference(kTemp)))),
+            "oTempRef", new Reference(oTemp),
+            "kTempRef", new Reference(kTemp),
+            "kTempStmt", new ExpressionStmt(new Reference(kTemp)),
             "kAssignment", kAssignment,
             "ss", expand(bindings.get("ss"), scope, mq));
       }
@@ -355,8 +537,9 @@ public class DefaultCajaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
           TryStmt t = (TryStmt) node;
-          if (t.getCatchClause().getException().getIdentifier()
-              .getName().endsWith("__")) {
+          Identifier exceptionName = t.getCatchClause().getException()
+              .getIdentifier();
+          if (exceptionName.getName().endsWith("__")) {
             mq.addMessage(
                 RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
                 node.getFilePosition(), this, node);
@@ -405,8 +588,9 @@ public class DefaultCajaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
           TryStmt t = (TryStmt) node;
-          if (t.getCatchClause().getException().getIdentifier()
-              .getName().endsWith("__")) {
+          Identifier exceptionName = t.getCatchClause().getException()
+              .getIdentifier();
+          if (exceptionName.getName().endsWith("__")) {
             mq.addMessage(
                 RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
                 node.getFilePosition(), this, node);
@@ -537,12 +721,14 @@ public class DefaultCajaRewriter extends Rewriter {
           matches="<approx>(var|function) @v__ ...",  // TODO(mikesamuel): limit
           substitutes="<reject>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        if (node instanceof Declaration &&
-            ((Declaration) node).getIdentifier().getValue().endsWith("__")) {
-          mq.addMessage(
-              RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
-              node.getFilePosition(), this, node);
-          return node;
+        if (node instanceof Declaration) {
+          Identifier name = ((Declaration) node).getIdentifier();
+          if (name.getValue().endsWith("__")) {
+            mq.addMessage(
+                RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+                node.getFilePosition(), this, node);
+            return node;
+          }
         }
         return NONE;
       }
@@ -706,7 +892,7 @@ public class DefaultCajaRewriter extends Rewriter {
               + "    @ref.@fp"
               + "    ? @ref.@p"
               + "    : ___.readPub(@ref, @rp))",
-              "ref", s(new Reference(scope.declareStartOfScopeTempVariable())),
+              "ref", new Reference(scope.declareStartOfScopeTempVariable()),
               "o", expand(bindings.get("o"), scope, mq),
               "p",  p,
               "fp", newReference(propertyName + "_canRead___"),
@@ -889,7 +1075,7 @@ public class DefaultCajaRewriter extends Rewriter {
               "@target.@fp ?" +
               "  (@target.@p = @ref) :" +
               "  ___.setProp(@target, @rp, @ref);",
-              "ref", s(new Reference(scope.declareStartOfScopeTempVariable())),
+              "ref", new Reference(scope.declareStartOfScopeTempVariable()),
               "r",  expand(bindings.get("r"), scope, mq),
               "p",  bindings.get("p"),
               "fp", newReference(propertyName + "_canSet___"),
@@ -1013,8 +1199,8 @@ public class DefaultCajaRewriter extends Rewriter {
               "@tmpO.@pCanSet ?" +
               "    (@tmpO.@p = @tmpR) :" +
               "    ___.setPub(@tmpO, @pName, @tmpR);",
-              "tmpO", s(new Reference(scope.declareStartOfScopeTempVariable())),
-              "tmpR", s(new Reference(scope.declareStartOfScopeTempVariable())),
+              "tmpO", new Reference(scope.declareStartOfScopeTempVariable()),
+              "tmpR", new Reference(scope.declareStartOfScopeTempVariable()),
               "expandO", expand(bindings.get("o"), scope, mq),
               "expandR", expand(bindings.get("r"), scope, mq),
               "pCanSet", newReference(propertyName + "_canSet___"),
@@ -1261,7 +1447,8 @@ public class DefaultCajaRewriter extends Rewriter {
             if (ops.isSimpleLValue()) {
               return substV("@v ++", "v", ops.getRValue());
             } else {
-              Reference tmpVal = s(new Reference(scope.declareStartOfScopeTempVariable()));
+              Reference tmpVal = new Reference(
+                  scope.declareStartOfScopeTempVariable());
               Expression assign = ops.makeAssignment((Expression) substV(
                   "@tmpVal + 1",
                   "tmpVal", tmpVal));
@@ -1295,7 +1482,8 @@ public class DefaultCajaRewriter extends Rewriter {
             if (ops.isSimpleLValue()) {
               return substV("@v--", "v", ops.getRValue());
             } else {
-              Reference tmpVal = s(new Reference(scope.declareStartOfScopeTempVariable()));
+              Reference tmpVal = new Reference(
+                  scope.declareStartOfScopeTempVariable());
               Expression assign = ops.makeAssignment((Expression) substV(
                   "@tmpVal - 1",
                   "tmpVal", tmpVal));
@@ -1886,7 +2074,7 @@ public class DefaultCajaRewriter extends Rewriter {
               "@oTmp = @o," +
               "@as," +
               "@oTmp.@fm ? @oTmp.@m(@vs*) : ___.callPub(@oTmp, @rm, [@vs*]);",
-              "oTmp", s(new Reference(scope.declareStartOfScopeTempVariable())),
+              "oTmp", new Reference(scope.declareStartOfScopeTempVariable()),
               "o",  expand(bindings.get("o"), scope, mq),
               "as", newCommaOperation(aliases.b.children()),
               "vs", aliases.a,
@@ -2034,7 +2222,7 @@ public class DefaultCajaRewriter extends Rewriter {
                 "    @stmts*;" +
                 "    @bs*;" +
                 "}, @rf);",
-                "fname", s(new Reference(fname)),
+                "fname", new Reference(fname),
                 "rf", toStringLiteral(fname),
                 "ps", bindings.get("ps"),
                 // It's important to expand bs before computing fh and stmts.
@@ -2110,8 +2298,8 @@ public class DefaultCajaRewriter extends Rewriter {
       @RuleDescription(
           name="funcXo4a",
           synopsis="Rewrites an 1) anonymous function 2) mentioning this 3) "
-              + "whose earliest function scope ancestor is NOT a constructor or "
-              + "method into an exophoric function.",
+              + "whose earliest function scope ancestor is NOT a constructor "
+              + "or method into an exophoric function.",
           wart="Prefer pseudo-xo4a declaration",
           reason="A moderately risky stepping stone to ease the conversion of "
               + "old code.",
@@ -2254,7 +2442,7 @@ public class DefaultCajaRewriter extends Rewriter {
             Identifier fname = (Identifier) bindings.get("fname");
             Reference fRef = new Reference(fname);
             Identifier f_init___ = s(new Identifier(fname.getName() + "_init___"));
-            Reference f_init___Ref = s(new Reference(f_init___));
+            Reference f_init___Ref = new Reference(f_init___);
             // Add a declaration to the start of function body
             if (declaration) {
               scope.declareStartOfScopeVariable(fname);
@@ -2285,7 +2473,7 @@ public class DefaultCajaRewriter extends Rewriter {
               // Add the initialization to the start of block
               Expression expr = (Expression) substV(
                   "@fname = @r;",
-                  "fname", s(new Reference((Identifier) bindings.get("fname"))),
+                  "fname", new Reference((Identifier) bindings.get("fname")),
                   "r", result);
               scope.addStartOfBlockStatement(new ExpressionStmt(expr));
               return substV(";");
@@ -2425,7 +2613,7 @@ public class DefaultCajaRewriter extends Rewriter {
               }
             }
             if (declarations.isEmpty()) {
-              return s(new ExpressionStmt(newCommaOperation(initializers)));
+              return new ExpressionStmt(newCommaOperation(initializers));
             } else {
               return substV(
                   "{ @decl; @init; }",
@@ -2614,6 +2802,7 @@ public class DefaultCajaRewriter extends Rewriter {
             node instanceof DebuggerStmt ||
             node instanceof DefaultCaseStmt ||
             node instanceof ExpressionStmt ||
+            node instanceof FormalParam ||
             node instanceof Identifier ||
             node instanceof Literal ||
             node instanceof Loop ||

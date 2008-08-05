@@ -25,7 +25,7 @@ import com.google.caja.util.Pipeline;
 import com.google.caja.util.RhinoTestBed;
 
 /**
- * @author msamuel@google.com (Mike Samuel)
+ * @author mikesamuel@gmail.com (Mike Samuel)
  */
 public class DebuggingSymbolsStageTest extends CajaTestCase {
 
@@ -131,9 +131,9 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
 
   public void testDeleteOfNullObject() throws Exception {
     assertStackTrace(
-        "delete (null).x;",
-        //       ^^^^^^^ 1+9-16
-        "testDeleteOfNullObject:1+9 - 16");
+        "{ delete (null).x; }",
+        // ^^^^^^^^^^^^^^^ 1+3-18
+        "testDeleteOfNullObject:1+3 - 18");
   }
 
   public void testMethodCalling() throws Exception {
@@ -159,26 +159,34 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
 
   public void testEnumerateOfNull() throws Exception {
     assertStackTrace(
-        "(function () {\n"
-        + "  var myObj = null;\n"
-        + "  for (var k in myObj) {\n"
-        //                 ^^^^^ 3+17-22
-        + "    ;\n"
-        + "  }\n"
-        + "})();",
+        ""
+        + "{\n"
+        + "  (function () {\n"
+        //    ^ 2+4
+        + "    var myObj = null;\n"
+        + "    for (var k in myObj) {\n"
+        //                   ^^^^^ 4+19-24
+        + "      ;\n"
+        + "    }\n"
+        + "  })();\n"
+        //   ^ 7+4
+        + "}",
 
-        "testEnumerateOfNull:2+7 - 4+6\n"
-        + "testEnumerateOfNull:3+17 - 22");
+        "testEnumerateOfNull:2+4 - 7+4\n"
+        + "testEnumerateOfNull:4+19 - 24");
   }
 
   public void testPropertyInNull() throws Exception {
     assertStackTrace(
-        "(function (x) {\n"
+        ""
+        + "(function (x) {\n"
+        //  ^ 1+2
         + "  return 'k' in x;\n"
         //          ^^^^^^^^ 2+10-18
         + "})(null);",
+        //  ^ 3+2
 
-        "testPropertyInNull:1+12 - 2+18\n"
+        "testPropertyInNull:1+2 - 3+2\n"
         + "testPropertyInNull:2+10 - 18");
   }
 
@@ -190,14 +198,14 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "  function f() {\n"
         + "    var x = 'y___';\n"
         + "    this[x] = 1;\n"
-        //          ^^^^^^
+        //     ^^^^^^^^^^^
         + "  }\n"
         + "}\n"
         + "new f();",
         //     ^
 
         "testIllegalAccessInsideHoistedFunction:9+5 - 6\n"
-        + "testIllegalAccessInsideHoistedFunction:6+10 - 16");
+        + "testIllegalAccessInsideHoistedFunction:6+5 - 16");
   }
 
   public void testWrappedConstructors() throws Exception {
@@ -248,10 +256,10 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
     assertConsistent("({ f: function (y) { return this.x * y; }, x: 4 }).f(2)");
     assertStackTrace(
         "({ f: function (y) { return this[y](); }, x: 4 }).f('foo___')",
-        //                                ^ 1+34-35        ^ 1+51-52
+        //                           ^^^^^^^^^ 1+29-38     ^ 1+51-52
 
         "testExophora:1+51 - 52\n"
-        + "testExophora:1+34 - 35");
+        + "testExophora:1+29 - 38");
   }
 
   private void assertStackTrace(String js, String golden) throws Exception {

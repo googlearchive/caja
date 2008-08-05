@@ -18,7 +18,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
-import com.google.caja.parser.SyntheticNodes;
+import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.FunctionConstructor;
@@ -36,7 +36,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Pair;
 
-import static com.google.caja.parser.SyntheticNodes.s;
+import static com.google.caja.parser.js.SyntheticNodes.s;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
 import java.util.HashMap;
@@ -348,7 +348,7 @@ public class Scope {
   }
 
   /**
-   * Does this scope mention "this" freely?
+   * Does this scope mention non-synthetic "this" freely?
    *
    * <p>If "this" is only mentioned within a function definition within
    * this scope, then the result is <tt>false</tt>, since that "this"
@@ -537,8 +537,8 @@ public class Scope {
         visitDeclaration((Declaration)node);
       } else if (node instanceof Operation) {
         visitOperation((Operation)node);
-      } else  if (node instanceof Reference) {
-        visitReference((Reference)node);
+      } else if (node instanceof Reference) {
+        visitReference((Reference) node);
       } else {
         visitChildren(node);
       }
@@ -570,9 +570,7 @@ public class Scope {
     }
 
     private void visitDeclaration(Declaration node) {
-      if (!node.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
-        declarations.add(node);
-      }
+      declarations.add(node);
       if (node.getInitializer() != null) {
         visit(node.getInitializer());
       }
@@ -591,7 +589,7 @@ public class Scope {
     }
 
     private void visitReference(Reference node) {
-      if (!node.getAttributes().is(SyntheticNodes.SYNTHETIC) &&
+      if (!node.getIdentifier().getAttributes().is(SyntheticNodes.SYNTHETIC) &&
           !exceptionVariables.contains(node.getIdentifierName())) {
         references.add(node.getIdentifierName());
       }
@@ -640,7 +638,7 @@ public class Scope {
       // function in the same scope as a declared function or constructor.
       if (maskedType != type
           && !((maskedType == LocalType.DECLARED_FUNCTION ||
-                  maskedType == LocalType.CONSTRUCTOR)
+                maskedType == LocalType.CONSTRUCTOR)
                && type == LocalType.FUNCTION)) {
         // Since different interpreters disagree about how exception
         // declarations affect local variable declarations, we need to

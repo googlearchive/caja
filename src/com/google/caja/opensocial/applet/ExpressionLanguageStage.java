@@ -16,11 +16,11 @@ package com.google.caja.opensocial.applet;
 
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.SyntheticNodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Conditional;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.Job;

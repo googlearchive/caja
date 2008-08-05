@@ -24,7 +24,6 @@ import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.util.Pair;
-import static com.google.caja.parser.SyntheticNodes.s;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -347,7 +346,7 @@ final class DomProcessingEvents {
 
     void interruptEmitter() {
       if (emitter != null) {
-        block.appendChild(s(new ExpressionStmt(emitter)));
+        block.appendChild(new ExpressionStmt(emitter));
         emitter = null;
         emitterChainDepth = 0;
       }
@@ -372,10 +371,9 @@ final class DomProcessingEvents {
 
     void emitCall(String emitterMethodName, Expression... methodActuals) {
       Expression[] operands = new Expression[methodActuals.length + 1];
-      operands[0] = s(
-          Operation.create(
-               Operator.MEMBER_ACCESS,
-               getEmitter(), TreeConstruction.ref(emitterMethodName)));
+      operands[0] = Operation.create(
+           Operator.MEMBER_ACCESS,
+           getEmitter(), TreeConstruction.ref(emitterMethodName));
       System.arraycopy(methodActuals, 0, operands, 1, methodActuals.length);
       setEmitter(TreeConstruction.call(operands));
       incrementEmitterChainDepth();

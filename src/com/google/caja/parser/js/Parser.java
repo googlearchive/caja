@@ -1182,7 +1182,7 @@ public final class Parser extends ParserBase {
             || s instanceof Conditional || s instanceof FunctionDeclaration
             || s instanceof Block || s instanceof TryStmt
             || s instanceof ForEachLoop || s instanceof SwitchStmt)
-            || s instanceof Noop;
+            || s instanceof Noop || s instanceof WithStmt;
   }
 
   private AbstractStatement<?> parseTerminatedStatement()
