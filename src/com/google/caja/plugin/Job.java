@@ -27,8 +27,6 @@ import com.google.caja.parser.js.Statement;
 public final class Job {
   public static enum JobType {
     CSS,
-    CSS_TEMPLATE,
-    GXP,
     JAVASCRIPT,
     HTML
     ;
@@ -52,16 +50,11 @@ public final class Job {
     ParseTreeNode rootNode = root.node;
     if (rootNode instanceof Statement || rootNode instanceof Expression) {
       this.type = Job.JobType.JAVASCRIPT;
-    } else if (rootNode instanceof DomTree.Tag
-               && ((DomTree.Tag) rootNode).getTagName().startsWith("gxp:")) {
-      this.type = Job.JobType.GXP;
     } else if (rootNode instanceof DomTree.Fragment
                || rootNode instanceof DomTree.Tag) {
       this.type = Job.JobType.HTML;
     } else if (rootNode instanceof CssTree.StyleSheet) {
       this.type = Job.JobType.CSS;
-    } else if (rootNode instanceof CssTemplate) {
-      this.type = Job.JobType.CSS_TEMPLATE;
     } else {
       throw new RuntimeException("Unknown input type " + rootNode);
     }

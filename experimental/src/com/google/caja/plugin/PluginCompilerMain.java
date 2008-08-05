@@ -18,7 +18,9 @@ import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
+import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
@@ -26,10 +28,13 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.TokenQueue;
+import com.google.caja.lexer.TokenQueue.Mark;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssParser;
+import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -55,6 +60,9 @@ import java.io.Writer;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * An executable that invokes the {@link PluginCompiler}.
@@ -158,6 +166,12 @@ public final class PluginCompilerMain {
       Parser p = new Parser(tq, mq);
       input = p.parse();
       tq.expectEmpty();
+    } else if (path.endsWith(".gxp")) {
+      HtmlLexer lexer = new HtmlLexer(cp);
+      lexer.setTreatedAsXml(true);
+      TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(lexer, is);
+      input = new DomParser(tq, true, mq).parseDocument();
+      tq.expectEmpty();
     } else if (path.endsWith(".html") || path.endsWith(".xhtml")) {
       DomParser p = new DomParser(new HtmlLexer(cp), is, mq);
       input = p.parseFragment();
@@ -172,14 +186,81 @@ public final class PluginCompilerMain {
             }
           });
 
+      // if this is a template, then there will be a call like
+      //   @template('myTemplateName');
+      // followed by parameter declarations like
+      //   @param('myParam');
+      Mark m = tq.mark();
+      Identifier name = null;
+      List<Identifier> params = null;
+      if (tq.checkToken("@template")) {
+        lexer.allowSubstitutions(true);
+        name = requireSingleStringLiteralCall(m, tq);
+
+        params = new ArrayList<Identifier>();
+        while (!tq.isEmpty()) {
+          m = tq.mark();
+          if (!tq.checkToken("@param")) { break; }
+          params.add(requireSingleStringLiteralCall(m, tq));
+        }
+      }
+
       CssParser p = new CssParser(tq);
-      input = p.parseStyleSheet();
+
+      if (name != null) {
+        CssTree.DeclarationGroup decs = p.parseDeclarationGroup();
+        input = new CssTemplate(
+            FilePosition.span(name.getFilePosition(), decs.getFilePosition()),
+            name, params, decs);
+      } else {
+        input = p.parseStyleSheet();
+      }
       tq.expectEmpty();
     } else {
       throw new AssertionError("Can't classify input " + is);
     }
     return input;
   }
+
+  /**
+   * Look for a construct like @foo('bar'); in CSS which serves as a CSS
+   * template directive.
+   */
+  private static Identifier requireSingleStringLiteralCall(
+      Mark startMark, TokenQueue<CssTokenType> tq) throws ParseException {
+    tq.expectToken("(");
+    Token<CssTokenType> t = tq.expectTokenOfType(CssTokenType.STRING);
+    tq.expectToken(")");
+    tq.expectToken(";");
+
+    Mark endMark = tq.mark();
+
+    tq.rewind(startMark);
+    String name = tq.peek().text;
+    FilePosition start = tq.currentPosition();
+
+    tq.rewind(endMark);
+
+    FilePosition pos = FilePosition.span(start, tq.lastPosition());
+
+    // The value must be a javascript identifier.
+    // Do some simple sanity checks
+    Matcher m = CSS_TEMPLATE_OR_PARAM_NAME.matcher(t.text);
+    if (!m.matches()) {
+      throw new ParseException(
+          new Message(PluginMessageType.BAD_IDENTIFIER, t.pos,
+                      MessagePart.Factory.valueOf(t.text)));
+    }
+
+    Identifier ident = new Identifier(m.group(1));
+    ident.setFilePosition(t.pos);
+
+    return ident;
+  }
+
+  /** Valid name for a css template or one of its parameters. */
+  private static final Pattern CSS_TEMPLATE_OR_PARAM_NAME =
+      Pattern.compile("[\"\'](_?[a-z][a-z0-9_]*)[\"\']");
 
   /** Write the given parse tree to the given file. */
   private void writeFile(File f, ParseTreeNode output) {

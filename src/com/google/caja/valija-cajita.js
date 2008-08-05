@@ -174,7 +174,6 @@ var valija = function() {
 	return shadow[name];
       } else {
 	return obj[name];
-      }
     }
     // BUG TODO(erights): Should check in order 1) obj's own
     // properties, 2) getPrototypeOf(ctor)'s properties, 3) obj's
@@ -261,7 +260,7 @@ var valija = function() {
     };
     result.prototype = caja.beget(ObjectPrototype);
     result.prototype.constructor = result;
-    result.length = callFn.length - 1;
+    result.length = callFn.length -1
     if (opt_name !== undefined) {
       result.name = opt_name;
     }
@@ -270,7 +269,7 @@ var valija = function() {
 
   return caja.freeze({
     getPrototypeOf: getPrototypeOf,
-    //setPrototypeOf: setPrototypeOf,  // TODO(erights): undefined
+    setPrototypeOf: setPrototypeOf,
     typeOf: typeOf,
     instanceOf: instanceOf,
 

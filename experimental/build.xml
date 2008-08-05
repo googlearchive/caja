@@ -1,0 +1,35 @@
+<target name="springgraph" depends="dirs,pluginc,MinifiedJs"
+ description="A spring graph demo gadget">
+  <cajole>
+    <job output="${www}/contact-spring-graph/plugin-files/plugin.js">
+      <include file="${demos}/contact-spring-graph/spring-graph.gxp"/>
+      <include file="${demos}/contact-spring-graph/spring-graph.css"/>
+      <include file="${demos}/contact-spring-graph/position.css"/>
+      <include file="${demos}/contact-spring-graph/spring-graph.js"/>
+      <include file="${demos}/contact-spring-graph/plugin-main.js"/>
+    </job>
+  </cajole>
+
+  <copy todir="${www}/contact-spring-graph">
+    <fileset dir="${demos}/contact-spring-graph">
+      <include name="demo.html"/>
+      <include name="event-list.js"/>
+      <include name="plugin-api.js"/>
+    </fileset>
+    <fileset dir="${demos}/contact-spring-graph">
+      <include name="demo.html"/>
+      <include name="event-list.js"/>
+      <include name="plugin-api.js"/>
+    </fileset>
+    <fileset dir="${lib}/com/google/caja/plugin">
+      <include name="domita-minified.js"/>
+    </fileset>
+    <fileset dir="${src}/com/google/caja">
+      <include name="log-to-console.js"/>
+    </fileset>
+    <fileset dir="${third_party}/js/firebug">
+      <include name="firebugx.js"/>
+    </fileset>
+  </copy>
+</target>
+

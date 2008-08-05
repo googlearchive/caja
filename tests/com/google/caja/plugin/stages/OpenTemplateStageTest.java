@@ -86,27 +86,6 @@ public final class OpenTemplateStageTest extends CajaTestCase {
         true);
   }
 
-  public void testCssRewriting() throws Exception {
-    assertRewritten(
-        "IMPORTS___.blessCss___('color', IMPORTS___.cssColor___(c),"
-        + " 'margin-left;marginLeft', IMPORTS___.cssNumber___(x) + 'px')",
-
-        "eval(Template('color: ${c};'\n"
-        + "            + ' margin-left: ${x}px',\n"
-        + "            'text/css;version=2.1'))",
-        true);
-  }
-
-  public void testInvalidCss() throws Exception {
-    assertRewritten(
-        // Unsafe function expression stripped out
-        "IMPORTS___.blessCss___()",
-
-        "eval(Template('color: expression(x)', 'text/css'))",
-        // Fails to cajole.
-        false);
-  }
-
   private void assertRewritten(
       String golden, String input, final boolean passes)
       throws Exception {
@@ -124,7 +103,6 @@ public final class OpenTemplateStageTest extends CajaTestCase {
     };
     pipeline.getStages().add(new OpenTemplateStage());
     pipeline.getStages().add(new ValidateCssStage(cssSchema, htmlSchema));
-    pipeline.getStages().add(new CompileCssTemplatesStage(cssSchema));
     pipeline.getStages().add(new ConsolidateCodeStage());
 
     ParseTreeNode node = js(fromString(input));

@@ -22,6 +22,8 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.stages.CheckForErrorsStage;
 import com.google.caja.plugin.stages.CompileCssStage;
+import com.google.caja.plugin.stages.CompileCssTemplatesStage;
+import com.google.caja.plugin.stages.CompileGxpsStage;
 import com.google.caja.plugin.stages.CompileHtmlStage;
 import com.google.caja.plugin.stages.ConsolidateCodeStage;
 import com.google.caja.plugin.stages.DebuggingSymbolsStage;
@@ -129,6 +131,8 @@ public final class PluginCompiler {
     stages.add(new OpenTemplateStage());
     stages.add(new ValidateCssStage(cssSchema, htmlSchema));
     stages.add(new CompileCssStage());
+    stages.add(new CompileGxpsStage(cssSchema, htmlSchema));
+    stages.add(new CompileCssTemplatesStage(cssSchema));
     stages.add(new ConsolidateCodeStage());
     stages.add(new ValidateJavascriptStage());
     stages.add(new InferFilePositionsStage());

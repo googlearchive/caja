@@ -109,6 +109,37 @@ attachDocumentStub = (function () {
     return XML_NMTOKENS_PATTERN.test(s);
   }
 
+  // Trim whitespace from the beginning and end of a CSS string.
+
+  function trimCssSpaces(input) {
+    return input.replace(/^[ \t\r\n\f]+|[ \t\r\n\f]+$/g, '');
+  }
+
+  /**
+   * Sanitize the 'style' attribute value of an HTML element.
+   *
+   * @param styleAttrValue the value of a 'style' attribute, which we
+   * assume has already been checked by the caller to be a plain String.
+   *
+   * @return a sanitized version of the attribute value.
+   */
+  function sanitizeStyleAttrValue(styleAttrValue) {
+    var sanitizedDeclarations = [];
+    var declarations = styleAttrValue.split(/;/g);
+
+    for (var i = 0; declarations && i < declarations.length; i++) {
+      var propertyAndValue = declarations[i].split(':');
+      var property = trimCssSpaces(propertyAndValue[0]);
+      var value = trimCssSpaces(propertyAndValue[1]);
+      if (css.properties.hasOwnProperty(property)
+          && css.properties[property].test(value + ' ')) {
+        sanitizedDeclarations.push(property + ': ' + value);
+      }
+    }
+
+    return sanitizedDeclarations.join(' ; ');
+  }
+  
   function mimeTypeForAttr(tagName, attribName) {
     if (tagName === 'img' && attribName === 'src') { return 'image/*'; }
     return '*/*';
@@ -248,7 +279,6 @@ attachDocumentStub = (function () {
           return attribs;
         });
 
-
     /**
      * Undoes some of the changes made by sanitizeHtml, e.g. stripping ID
      * prefixes.
@@ -333,7 +363,9 @@ attachDocumentStub = (function () {
           return uriCallback.rewrite(
               value, mimeTypeForAttr(tagName, attribName)) || null;
         case html4.atype.STYLE:
-          if ('function' !== typeof value) { return null; }
+          if ('function' !== typeof value) {
+            return sanitizeStyleAttrValue(String(value));
+          }
           var cssPropertiesAndValues = cssSealerUnsealerPair.unseal(value);
           if (!cssPropertiesAndValues) { return null; }
 

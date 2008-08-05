@@ -26,7 +26,7 @@ var renderCalendar = (function () {
     return htmlInterp.safeHtml(eval(Template(
         '<div class="calendar">'
         + '<div class="x-axis">${renderXAxis(policy)}</div>'
-        + '<div style="height:${2 * layout.getNAllDayRows()}em"'
+        + '<div style="height:+${2 * layout.getNAllDayRows()}em"'
         + ' class="all-day-grid">${renderAllDayGrid(layout)}</div>'
         + '<div class="view-port">'
           + '<div class="y-axis">${renderYAxis(viewPort, policy)}</div>'
@@ -101,7 +101,7 @@ var renderCalendar = (function () {
       var y = rowHeight * (row0 - viewPortRow0);
       html.append(eval(Template(
           '<span class=chip style="'
-          + 'left: ${x}%; width:  ${w}%;'
+          + 'left: ${x}%; width:  +${w}%;'
           + 'top:  ${y}%; height: ${h}%'
           + '"><span class=body>${c.event.summary}</span></span>')));
     }

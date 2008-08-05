@@ -211,7 +211,10 @@ public final class CssTemplate extends AbstractParseTreeNode<ParseTreeNode> {
               // which uses (htmlElement.style.foo = ...) and the style attrib
               // replacer which uses (htmlElement.setAttribute('style', ...)
               // can choose appropriate property names.
-              if (!pn.equals(propInfo.dom2property)) {
+              String key;
+              if (pn.equals(propInfo.dom2property)) {
+                key = pn;
+              } else {
                 pn = pn + ";" + propInfo.dom2property;
               }
               StringLiteral nameLit = new StringLiteral(

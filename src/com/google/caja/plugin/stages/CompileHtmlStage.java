@@ -20,7 +20,6 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Statement;
-import com.google.caja.plugin.GxpCompiler;
 import com.google.caja.plugin.HtmlCompiler;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
@@ -62,7 +61,7 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
       try {
         renderedHtmlStatements.add(
             htmlc.compileDocument((DomTree) job.getRoot().node));
-      } catch (GxpCompiler.BadContentException ex) {
+      } catch (HtmlCompiler.BadContentException ex) {
         ex.toMessageQueue(jobs.getMessageQueue());
       }
     }

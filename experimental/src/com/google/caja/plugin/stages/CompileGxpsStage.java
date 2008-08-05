@@ -32,6 +32,7 @@ import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Pipeline;
+import static com.google.caja.parser.SyntheticNodes.s;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -120,6 +121,6 @@ public final class CompileGxpsStage implements Pipeline.Stage<Jobs> {
   private static Declaration varDeclaration(FunctionConstructor fn) {
     Identifier ident = fn.getIdentifier( );
     fn.replaceChild(new Identifier(null), ident);
-    return new Declaration(ident, fn);
+    return s(new Declaration(ident, fn));
   }
 }

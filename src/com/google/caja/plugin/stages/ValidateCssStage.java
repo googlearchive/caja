@@ -19,7 +19,6 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.plugin.CssRewriter;
-import com.google.caja.plugin.CssTemplate;
 import com.google.caja.plugin.CssValidator;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
@@ -64,11 +63,6 @@ public final class ValidateCssStage implements Pipeline.Stage<Jobs> {
 
     v.withInvalidNodeMessageLevel(MessageLevel.ERROR);
     rw.withInvalidNodeMessageLevel(MessageLevel.ERROR);
-    for (Job job : jobs.getJobsByType(Job.JobType.CSS_TEMPLATE)) {
-      // The parsetree node is a CssTemplate
-      AncestorChain<CssTemplate> chain = job.getRoot().cast(CssTemplate.class);
-      validate(v, rw, new AncestorChain<CssTree>(chain, chain.node.getCss()));
-    }
 
     return jobs.hasNoFatalErrors();
   }

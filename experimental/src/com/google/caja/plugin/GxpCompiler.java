@@ -33,6 +33,7 @@ import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
+import com.google.caja.parser.SyntheticNodes;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomTree;
@@ -51,7 +52,6 @@ import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.reporting.Message;
@@ -75,7 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import static com.google.caja.parser.js.SyntheticNodes.s;
+import static com.google.caja.parser.SyntheticNodes.s;
 
 /**
  * Compiles a subset of gxp to javascript.
@@ -227,11 +227,11 @@ public final class GxpCompiler {
           assertSafeJsIdentifier(paramName.getValue(), paramName)));
       ident.setFilePosition(paramName.getFilePosition());
 
-      Reference actual = new Reference(ident);
+      Reference actual = s(new Reference(ident));
       actual.setFilePosition(paramName.getFilePosition());
       actuals.add(actual);
 
-      FormalParam formal = new FormalParam(ident);
+      FormalParam formal = s(new FormalParam(ident));
       formal.setFilePosition(paramName.getFilePosition());
       formals.add(formal);
     }
@@ -240,7 +240,7 @@ public final class GxpCompiler {
     List<String> tgtChain = Arrays.asList(ReservedNames.OUTPUT_BUFFER, "push");
 
     // var out___ = [];
-    Block body = new Block();
+    Block body = s(new Block(Collections.<Statement>emptyList()));
     for (AncestorChain<? extends DomTree> treeChain : sig.content) {
       compileDom(treeChain, tgtChain, false, JsWriter.Esc.HTML, body);
     }
@@ -250,12 +250,12 @@ public final class GxpCompiler {
     Map<String, ParseTreeNode> bindings = new HashMap<String, ParseTreeNode>();
     bindings.put("actuals", new ParseTreeNodeContainer(actuals));
     bindings.put("assignedName", assignedName);
-    bindings.put("assignedNameRef", new Reference(assignedName));
+    bindings.put("assignedNameRef", s(new Reference(assignedName)));
     bindings.put("blessHtml", TreeConstruction.ref(ReservedNames.BLESS_HTML));
     bindings.put("body", new ParseTreeNodeContainer(body.children()));
     bindings.put("bufferName", bufferName);
-    bindings.put("bufferNameFormal", new FormalParam(bufferName));
-    bindings.put("bufferNameRef", new Reference(bufferName));
+    bindings.put("bufferNameFormal", s(new FormalParam(bufferName)));
+    bindings.put("bufferNameRef", s(new Reference(bufferName)));
     bindings.put("formals", new ParseTreeNodeContainer(formals));
     bindings.put("imports", TreeConstruction.ref(ReservedNames.IMPORTS));
     bindings.put("templateName", new Identifier(sig.templateName));
@@ -487,10 +487,10 @@ public final class GxpCompiler {
                 String synthId = syntheticId();
                 // var <synthId> = [];
                 b.insertBefore(
-                    new Declaration(
-                        s(new Identifier(synthId)),
-                        new ArrayConstructor(
-                              Collections.<Expression>emptyList())), null);
+                    s(new Declaration(
+                          s(new Identifier(synthId)),
+                          s(new ArrayConstructor(
+                                Collections.<Expression>emptyList())))), null);
                 for (DomTree attr : attrTrimmed) {
                   compileDom(new AncestorChain<DomTree>(attrElChain, attr),
                              Arrays.asList(synthId, "push"), true,
@@ -506,7 +506,7 @@ public final class GxpCompiler {
                                 ReservedNames.IMPORTS, wrapperFn),
                             TreeConstruction.call(
                                 TreeConstruction.memberAccess(synthId, "join"),
-                                new StringLiteral("''")))),
+                                s(new StringLiteral("''"))))),
                     tgtChain, b);
               }
               JsWriter.appendString(
@@ -677,16 +677,17 @@ public final class GxpCompiler {
       if (HtmlTokenType.TAGBEGIN == child.getType()
           && "gxp:else".equals(child.getValue())) {
         alternativeStart = i;
-        alternative = new Block();
+        alternative = s(new Block(Collections.<Statement>emptyList()));
         break;
       }
     }
 
-    Block body = new Block();
-    Conditional c = new Conditional(
-        Collections.singletonList(
-            new Pair<Expression, Statement>(asExpression(cond), body)),
-        alternative);
+    Block body = s(new Block(Collections.<Statement>emptyList()));
+    Conditional c =
+      s(new Conditional(
+            Collections.singletonList(
+                new Pair<Expression, Statement>(asExpression(cond), body)),
+            alternative));
     b.insertBefore(c, null);
     for (DomTree child : children.subList(attribEnd, alternativeStart)) {
       compileDom(new AncestorChain<DomTree>(tChain, child),
@@ -752,9 +753,9 @@ public final class GxpCompiler {
 
             "iterator", asExpression(iterator),
             "tmp0", s(new Identifier(iteratorId)),
-            "tmp0Ref", new Reference(s(new Identifier(iteratorId))),
+            "tmp0Ref", s(new Reference(s(new Identifier(iteratorId)))),
             "tmp1", s(new Identifier(keyName)),
-            "tmp1Ref", new Reference(s(new Identifier(keyName))),
+            "tmp1Ref", s(new Reference(s(new Identifier(keyName)))),
             "var", new Identifier(variableName),
             "body", forEachBody)
         .children())
@@ -766,7 +767,8 @@ public final class GxpCompiler {
     DomTree.Tag t = tChain.node;
     // Should have two parameters -- the variable and an initializer
     Map<String, DomTree.Value> attribMap = new HashMap<String, DomTree.Value>();
-    gxpValidator.attribsAsMap(t, attribMap, ALLOWED_ABBR_PARAMS);
+    int attribEnd = gxpValidator.attribsAsMap(
+        t, attribMap, ALLOWED_ABBR_PARAMS);
     DomTree.Value variable = attribMap.get("name"),
                   initializer = attribMap.get("expr");
 
@@ -854,6 +856,7 @@ public final class GxpCompiler {
     Expression[] operands = new Expression[nParams + 3];  // to Function.call
     // Append IMPORTS___.html___(
     //     <assignedName>.call(IMPORTS___, <param 0>, ...));
+    int operandIdx = 0;
     operands[0] = TreeConstruction.memberAccess(sig.assignedName, "call");
     operands[1] = TreeConstruction.ref(ReservedNames.IMPORTS);
     operands[2] = JsWriter.makeTargetReference(
@@ -894,7 +897,7 @@ public final class GxpCompiler {
 
     if (bad) { return; }
 
-    Operation call = Operation.create(Operator.FUNCTION_CALL, operands);
+    Operation call = s(Operation.create(Operator.FUNCTION_CALL, operands));
     b.appendChild(new ExpressionStmt(call));
   }
 
@@ -1193,17 +1196,17 @@ public final class GxpCompiler {
 
         String handlerFnNameLit = StringLiteral.toQuotedValue(handlerFnName);
 
-        Operation dispatcher = Operation.create(
+        Operation dispatcher = s(Operation.create(
             Operator.ADDITION,
-            Operation.create(
+            s(Operation.create(
                 Operator.ADDITION,
                 TreeConstruction.stringLiteral(
                     "return plugin_dispatchEvent___("
                     + "this, event || window.event, "),
                 TreeConstruction.call(
                     TreeConstruction.memberAccess("___", "getId"),
-                    TreeConstruction.ref(ReservedNames.IMPORTS))),
-            TreeConstruction.stringLiteral(", " + handlerFnNameLit + ")"));
+                    TreeConstruction.ref(ReservedNames.IMPORTS)))),
+            TreeConstruction.stringLiteral(", " + handlerFnNameLit + ")")));
         JsWriter.append(dispatcher, tgtChain, b);
       }
       @Override

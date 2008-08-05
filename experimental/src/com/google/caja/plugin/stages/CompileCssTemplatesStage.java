@@ -20,9 +20,9 @@ import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.plugin.CssTemplate;
-import com.google.caja.plugin.GxpCompiler.BadContentException;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
+import com.google.caja.plugin.GxpCompiler.BadContentException;
 import com.google.caja.util.Pipeline;
 
 import java.util.ListIterator;
@@ -34,14 +34,14 @@ import java.util.ListIterator;
  */
 public final class CompileCssTemplatesStage implements Pipeline.Stage<Jobs> {
   private final CssSchema cssSchema;
-
+  
   public CompileCssTemplatesStage(CssSchema cssSchema) {
     if (cssSchema == null) { throw new NullPointerException(); }
     this.cssSchema = cssSchema;
   }
 
   public boolean apply(Jobs jobs) {
-    ListIterator<Job> it = jobs.getJobs().listIterator();
+    ListIterator<Job> it = jobs.getJobs().listIterator(); 
     while (it.hasNext()) {
       Job job = it.next();
       if (job.getType() != Job.JobType.CSS_TEMPLATE) { continue; }
@@ -70,7 +70,7 @@ public final class CompileCssTemplatesStage implements Pipeline.Stage<Jobs> {
           ex.toMessageQueue(jobs.getMessageQueue());
           continue;
         }
-
+        
         replacement = new Job(
             new AncestorChain<Expression>(expr), job.getTarget());
       }

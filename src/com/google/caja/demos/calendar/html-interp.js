@@ -1001,7 +1001,7 @@ function isValidEndState(currentState) {
     case 59:
       return true;
     default:
-      return false
+      return false;
   }
 }
 /**
