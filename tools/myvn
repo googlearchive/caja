@@ -18,7 +18,7 @@
 # then this script will provide the changelist name for you for common commands.
 #
 # $(myvn change) will behave like $(gvn change -c my-change-1) if run under
-# svn-changes/my-change-1 as will other gvn commands like
+# svn-changes/my-change-1/google-caja as will other gvn commands like
 # (mail, describe, snapshot) unless a changelist name is explicitly provided.
 #
 # ====================
@@ -29,7 +29,9 @@
 # (2) Checkout the src
 #       $ cd svn-changes/my-change-name
 #       $ myvn checkout
+#       $ cd google-caja/
 # (3) Muck around with some source files
+#       See Eclipse steps below
 # (4) Prepare a changelist
 #       $ myvn change
 #     Should pop up an editor.  Check the EDITOR, or SVNEDITOR environment
@@ -56,13 +58,17 @@
 #       Eclipse
 # ====================
 # (1) Generate the project
-#       $ cd google-caja/
 #       $ myvn eclipse
 # (2) Open Eclipse
 # (3) Choose New Java Project  (NOT new google3 project)
 # (4) From Existing Source
 # (5) Enter the .../svn-changes/my-change-1/google-caja/ path
 # (6) Finish
+# (7) Build some stuff
+#       $ ant
+# (8) Test stuff
+#       Right click on project and select "Run As" > "JUnit Test"
+#       $ ant runtests
 #
 #
 # ====================
@@ -73,13 +79,25 @@
 # files        -  files changed in svn.  Pipeable to xargs 
 # filetypes    -  sets svn:mime-type of modified files based on file suffix
 
+
+default_gvn_path=/opt/googlesvn/bin/gvn
+default_svn_path=/opt/googlesvn/bin/svn
+
 function myvn() {
   local verb="$1"
   local current_cl="$(perl -e 'print $1 if $ENV{PWD}=~m|/svn-changes/([^/]+)|')"
-  local gvn=/opt/googlesvn/bin/gvn
-  local svn=/opt/googlesvn/bin/svn
+  local svn=${SVN_BIN:-default_svn_path}
+  local gvn=${GVN_BIN:-default_gvn_path}
   local username="$(
-      perl -ne 'print $1 if m/^username\s*=\s*(\S.*)$/' "$HOME"/.gvn/config)"
+      perl -ne 'print $1 if m/^username\s*=\s*(\S+)$/' "$HOME"/.gvn/config)"
+  if [ ! -x "$gvn" ]; then
+    echo "Cannot find gvn.  Please set GVN_BIN (eg. export GVN_BIN=/opt/googlesvn/bin/gvn)"
+    exit -1
+  fi
+  if [ ! -x "$svn" ]; then
+    echo "Cannot find svn.  Please set SVN_BIN (eg. export SVN_BIN=/opt/googlesvn/bin/svn)"
+    exit -1
+  fi
   if [ -z "$username" ]; then
     echo "Cannot determine username.  Check $HOME/.gvn/config."
     exit -1
@@ -121,7 +139,7 @@ function myvn() {
         "$gvn" "$verb" "$@"
       fi
       ;;
-    checkout )
+    checkout|co )
       "$svn" checkout https://google-caja.googlecode.com/svn/trunk/ google-caja
       ;;
     bug )
@@ -134,6 +152,13 @@ function myvn() {
         "$gvn" "$verb" "$@"
       fi
       ;;
+    submit )
+      if [ -n "$current_cl" ] && ! grep -q ' -c ' <(echo -- $*); then
+        "$gvn" "$verb" -c "$current_cl" "$@"
+      else
+        echo No changelist found
+      fi
+      ;;      
     mail )
       local implied=""
       if [ -n "$current_cl" ] && ! grep -q ' -c ' <(echo -- $*); then
