@@ -216,4 +216,19 @@ TAGBEGIN   [<a]  :  htmllexerinput1.html:83+28@1941 - 30@1943
 ATTRNAME   [href]  :  htmllexerinput1.html:83+31@1944 - 35@1948
 ATTRVALUE  []  :  htmllexerinput1.html:83+36@1949
 TAGEND     [/>]  :  htmllexerinput1.html:83+36@1949 - 38@1951
-TEXT       [\n]  :  htmllexerinput1.html:83+38@1951 - 84+1@1952
+TEXT       [\n\n]  :  htmllexerinput1.html:83+38@1951 - 85+1@1953
+TAGBEGIN   [<span]  :  htmllexerinput1.html:85+1@1953 - 6@1958
+ATTRNAME   [title]  :  htmllexerinput1.html:85+7@1959 - 12@1964
+ATTRVALUE  [malformed attribs']  :  htmllexerinput1.html:85+13@1965 - 31@1983
+ATTRNAME   [do]  :  htmllexerinput1.html:85+32@1984 - 34@1986
+ATTRVALUE  [don't]  :  htmllexerinput1.html:85+35@1987 - 40@1992
+ATTRNAME   [id]  :  htmllexerinput1.html:85+41@1993 - 43@1995
+ATTRVALUE  [foo]  :  htmllexerinput1.html:85+44@1996 - 47@1999
+ATTRNAME   [checked]  :  htmllexerinput1.html:85+48@2000 - 55@2007
+ATTRNAME   [onclick]  :  htmllexerinput1.html:85+56@2008 - 63@2015
+ATTRVALUE  ["a<b"]  :  htmllexerinput1.html:85+64@2016 - 69@2021
+TAGEND     [>]  :  htmllexerinput1.html:85+69@2021 - 70@2022
+TEXT       [Bar]  :  htmllexerinput1.html:85+70@2022 - 73@2025
+TAGBEGIN   [</span]  :  htmllexerinput1.html:85+73@2025 - 79@2031
+TAGEND     [>]  :  htmllexerinput1.html:85+79@2031 - 80@2032
+TEXT       [\n]  :  htmllexerinput1.html:85+80@2032 - 86+1@2033

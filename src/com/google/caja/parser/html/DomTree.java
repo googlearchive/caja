@@ -107,10 +107,9 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
         String s = start.text;
         int n = s.length();
         if (n >= 2) {
-          char ch0 = s.charAt(0);
-          if (s.charAt(n - 1) == ch0
-              && ('"' == ch0 || '\'' == ch0 || ch0 == '`')) {
-            s = s.substring(1, n - 1);
+          char lastChar = s.charAt(n - 1);
+          if ('"' == lastChar || '\'' == lastChar) {
+            s = s.substring(s.charAt(0) == lastChar ? 1 : 0, n - 1);
           }
         }
         return xmlDecode(s);
@@ -225,7 +224,7 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
       }
       return attribs;
     }
-    
+
     /**
      * Returns the first attribute of this element with the given name or null
      * if there is none.

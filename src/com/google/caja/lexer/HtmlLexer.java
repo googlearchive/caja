@@ -18,7 +18,11 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageType;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * A flexible lexer for html, gxp, and related document types.
@@ -27,7 +31,6 @@ import java.util.Locale;
  */
 public final class HtmlLexer extends AbstractTokenStream<HtmlTokenType> {
   private final HtmlInputSplitter splitter;
-  private Token<HtmlTokenType> lookahead;
   private State state = State.OUTSIDE_TAG;
 
   public HtmlLexer(CharProducer p) {
@@ -67,15 +70,8 @@ public final class HtmlLexer extends AbstractTokenStream<HtmlTokenType> {
    */
   @Override
   protected Token<HtmlTokenType> produce() throws ParseException {
-    Token<HtmlTokenType> token;
-    if (null != lookahead) {
-      token = lookahead;
-      lookahead = null;
-    } else if (splitter.hasNext()) {
-      token = splitter.next();
-    } else {
-      return null;
-    }
+    Token<HtmlTokenType> token = readToken();
+    if (token == null) { return null; }
 
     switch (token.type) {
 
@@ -88,7 +84,7 @@ public final class HtmlLexer extends AbstractTokenStream<HtmlTokenType> {
             && !getTreatedAsXml()) {
           // Distinguish <input type=checkbox checked=> from
           // <input type=checkbox checked>
-          lookahead = token;
+          pushbackToken(token);
           state = State.IN_TAG;
           return Token.instance("", HtmlTokenType.ATTRVALUE,
                                 FilePosition.startOf(token.pos));
@@ -140,7 +136,8 @@ public final class HtmlLexer extends AbstractTokenStream<HtmlTokenType> {
               if (HtmlTokenType.TEXT == token.type) {
                 // Collapse adjacent text nodes to properly handle
                 //   <a onclick=this.clicked=true>
-                token = collapseSubsequent(token);
+                //   <a title=foo bar>
+                token = collapseAttributeName(token);
               }
               // Reclassify as value
               token = HtmlInputSplitter.reclassify(
@@ -157,23 +154,97 @@ public final class HtmlLexer extends AbstractTokenStream<HtmlTokenType> {
 
   /**
    * Collapses all the following tokens of the same type into this.token.
-   * The lookahead is left in this.lookahead, so that it will be used on next
-   * fetch.
    */
   private Token<HtmlTokenType> collapseSubsequent(Token<HtmlTokenType> token)
       throws ParseException {
-    if (null != lookahead) { throw new IllegalStateException(); }
     Token<HtmlTokenType> collapsed = token;
-    while (splitter.hasNext()
-           && collapsed.type == (lookahead = splitter.next()).type) {
-      // collapse adjacent text nodes
-      collapsed = Token.instance(
-          collapsed.text + lookahead.text, collapsed.type,
-          FilePosition.span(collapsed.pos, lookahead.pos));
-      lookahead = null;
+    for (Token<HtmlTokenType> next;
+         (next= peekToken(0)) != null && next.type == token.type;
+         readToken()) {
+      collapsed = join(collapsed, next);
     }
     return collapsed;
   }
+
+  private Token<HtmlTokenType> collapseAttributeName(Token<HtmlTokenType> token)
+      throws ParseException {
+    if (getTreatedAsXml()) { return token; }
+    // We want to collapse tokens into the value that are not parts of an
+    // attribute value.  We should include any space or text adjacent to the
+    // value, but should stop at any of the following constructions:
+    //   space end-of-file              e.g. name=foo_
+    //   space valueless-attrib-name    e.g. name=foo checked
+    //   space tag-end                  e.g. name=foo />
+    //   space text space? '='          e.g. name=foo bar=
+    int nToMerge = 0;
+    for (Token<HtmlTokenType> t; (t = peekToken(nToMerge)) != null;) {
+      if (t.type == HtmlTokenType.IGNORABLE) {
+        Token<HtmlTokenType> text = peekToken(nToMerge + 1);
+        if (text == null) { break; }
+        if (text.type != HtmlTokenType.TEXT) { break; }
+        if (isValuelessAttribute(text.text)) { break; }
+        Token<HtmlTokenType> eq = peekToken(nToMerge + 2);
+        if (eq != null && eq.type == HtmlTokenType.IGNORABLE) {
+          eq = peekToken(nToMerge + 3);
+        }
+        if (eq == null || "=".equals(eq.text)) { break; }
+      } else if (t.type != HtmlTokenType.TEXT) {
+        break;
+      }
+      ++nToMerge;
+    }
+    if (nToMerge == 0) { return token; }
+    StringBuilder sb = new StringBuilder(token.text);
+    Token<HtmlTokenType> t;
+    do {
+      t = readToken();
+      sb.append(t.text);
+    } while (--nToMerge > 0);
+    return Token.instance(
+        sb.toString(), HtmlTokenType.TEXT, FilePosition.span(token.pos, t.pos));
+  }
+
+  private static Token<HtmlTokenType> join(
+      Token<HtmlTokenType> a, Token<HtmlTokenType> b) {
+    return Token.instance(
+        a.text + b.text, a.type, FilePosition.span(a.pos, b.pos));
+  }
+
+  private final LinkedList<Token<HtmlTokenType>> lookahead
+      = new LinkedList<Token<HtmlTokenType>>();
+  private Token<HtmlTokenType> readToken() throws ParseException {
+    if (!lookahead.isEmpty()) {
+      return lookahead.remove();
+    } else if (splitter.hasNext()) {
+      return splitter.next();
+    } else {
+      return null;
+    }
+  }
+
+  private Token<HtmlTokenType> peekToken(int i) throws ParseException {
+    while (lookahead.size() <= i && splitter.hasNext()) {
+      lookahead.add(splitter.next());
+    }
+    return lookahead.size() > i ? lookahead.get(i) : null;
+  }
+
+  private void pushbackToken(Token<HtmlTokenType> token) {
+    lookahead.addFirst(token);
+  }
+
+  /** Can the attribute appear in HTML without a value. */
+  private static boolean isValuelessAttribute(String attribName) {
+    boolean valueless = VALUELESS_ATTRIB_NAMES.contains(
+        attribName.toLowerCase(Locale.ENGLISH));
+    return valueless;
+  }
+
+  // From http://issues.apache.org/jira/browse/XALANC-519
+  private static final Set<String> VALUELESS_ATTRIB_NAMES = new HashSet<String>(
+      Arrays.asList("checked", "compact", "declare", "defer", "disabled",
+                    "ismap", "multiple", "nohref", "noresize", "noshade",
+                    "nowrap", "readonly", "selected"));
 }
 
 /**
@@ -382,10 +453,21 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
               } else {
                 p.read();  // re-consume '/'
               }
-            } else if ('>' == ch || '=' == ch || '"' == ch || '\'' == ch
+            } else if ('>' == ch || '=' == ch
                        || Character.isWhitespace((char) ch)) {
               p.pushback();
               break;
+            } else if ('"' == ch || '\'' == ch) {
+              p.pushback();
+              p.fetch(2);
+              int ch2 = p.peek(1);
+              if (ch2 >= 0 && Character.isWhitespace((char) ch2)
+                  || ch2 == '>' || ch2 == '/') {
+                text.append((char) ch);
+                p.consume(1);
+                break;
+              }
+              p.consume(1);
             }
             text.append((char) ch);
           }

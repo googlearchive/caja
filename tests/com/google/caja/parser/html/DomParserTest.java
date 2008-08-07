@@ -1850,6 +1850,35 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
+  public void testMisplacedQuotes() throws Exception {
+    assertParsedHtmlFragment(
+        Arrays.asList(
+            "<span title=malformed attribs' do=don't id=foo checked",
+            "onclick=\"a<b\">Bar</span>"
+            ),
+        Arrays.asList(
+            "Fragment 1+1-2+25",
+            "  Tag : span 1+1-2+25",
+            "    Attrib : title 1+7-1+12",
+            "      Value : malformed attribs 1+13-1+31",
+            "    Attrib : do 1+32-1+34",
+            "      Value : don't 1+35-1+40",
+            "    Attrib : id 1+41-1+43",
+            "      Value : foo 1+44-1+47",
+            "    Attrib : checked 1+48-1+55",
+            "      Value : checked 1+48-1+55",
+            "    Attrib : onclick 2+1-2+8",
+            "      Value : a<b 2+9-2+14",
+            "    Text : Bar 2+15-2+18"
+            ),
+        Arrays.<String>asList(),
+        Arrays.asList(
+            "<span title=\"malformed attribs\" do=\"don&#39;t\" id=\"foo\""
+            + " checked=\"checked\" onclick=\"a&lt;b\">Bar</span>"
+            )
+        );
+  }
+
   private void assertParsedHtml(
       List<String> htmlInput,
       List<String> expectedParseTree,
