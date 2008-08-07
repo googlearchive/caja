@@ -26,7 +26,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class RegexpLiteral extends Literal {
-  private RegexpWrapper value;
+  private final RegexpWrapper value;
 
   /** @param children unused.  This ctor is provided for reflection. */
   public RegexpLiteral(
@@ -54,7 +54,7 @@ public final class RegexpLiteral extends Literal {
 
     String body = getMatchText();
     String mods = getModifiers();
-    if ("".equals(body)) {
+    if ("".equals(body) || !areRegexpModifiersValid(mods)) {
       // (new (/./.constructor))('', 'g')
       out.consume("(");
       out.consume("new");
@@ -63,30 +63,24 @@ public final class RegexpLiteral extends Literal {
       out.consume(".");
       out.consume("constructor");
       out.consume(")");
-      out.consume(")");
       out.consume("(");
-      out.consume("''");
+      StringLiteral.valueOf(body).render(rc);
       out.consume(",");
-      StringBuilder sb = new StringBuilder();
-      sb.append('\'');
-      Escaping.escapeJsString(mods, rc.isAsciiOnly(), rc.isParanoid(), sb);
-      sb.append('\'');
-      out.consume(sb.toString());
+      StringLiteral.valueOf(mods).render(rc);
       out.consume(")");
-    } else if (rc.isParanoid() || rc.isAsciiOnly()) {
+      out.consume(")");
+    } else {
       StringBuilder sb = new StringBuilder();
       sb.append('/');
       Escaping.normalizeRegex(body, rc.isAsciiOnly(), rc.isParanoid(), sb);
       sb.append('/');
       sb.append(mods);
       out.consume(sb.toString());
-    } else {
-      super.render(rc);
     }
   }
 
   public static class RegexpWrapper {
-    String regexpText;
+    private final String regexpText;
 
     public RegexpWrapper(String s) {
       if (null == s) { throw new NullPointerException(); }

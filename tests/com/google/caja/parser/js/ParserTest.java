@@ -231,6 +231,22 @@ public class ParserTest extends CajaTestCase {
     assertFalse(Parser.integerPartIsOctal("0.12"));
   }
 
+  public void testNUL() throws Exception {
+    assertEquals("'\\x00'", render(jsExpr(fromString("'\0'"))));
+  }
+
+  public void testRenderingOfMalformedRegexSafe() throws Exception {
+    assertEquals(
+        "(new (/./.constructor)('foo', 'iii'))",
+        render(new RegexpLiteral("/foo/iii")));
+    assertEquals(
+        "(new (/./.constructor)('', ''))",
+        render(new RegexpLiteral("//")));
+    assertEquals(
+        "(new (/./.constructor)('x', '\\''))",
+        render(new RegexpLiteral("/x/'")));
+  }
+
   public void assertExpectedSemi() {
     assertParseFails("foo(function () {return;");
     assertMessage(MessageType.EXPECTED_TOKEN, MessageLevel.ERROR,
@@ -250,7 +266,7 @@ public class ParserTest extends CajaTestCase {
     assertParseSucceeds(asLvalue("foo." + k));
     assertParseSucceeds(asRvalue("foo." + k));
     assertParseSucceeds(asLvalue("foo." + k + ".bar"));
-    assertParseSucceeds("foo." + k + ".bar");
+    assertParseSucceeds("foo." + k + ".bar;");
   }
 
   private void assertAllowKeywordPropertyDeclaration(Keyword k) {

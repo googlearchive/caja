@@ -45,7 +45,7 @@ public final class IntegerLiteral extends NumberLiteral {
    * @see #MIN_VALUE
    * @see #MAX_VALUE
    */
-  public final long value;
+  private final long value;
 
   /** @param children unused.  This ctor is provided for reflection. */
   public IntegerLiteral(Number value, List<? extends ParseTreeNode> children) {

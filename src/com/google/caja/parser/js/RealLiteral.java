@@ -26,7 +26,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class RealLiteral extends NumberLiteral {
-  public final double value;
+  private final double value;
 
   /** @param children unused.  This ctor is provided for reflection. */
   public RealLiteral(Number value, List<? extends ParseTreeNode> children) {

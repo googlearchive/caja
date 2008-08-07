@@ -1,11 +1,11 @@
 {
   ({
      '1': 'the loneliest number',
-     '0': 'Yields a key "0".  WTF?',
+     '0': 'Yields a key \"0\".  WTF?',
      '42': 'is the answer',
      '1.23456789012345678901e+29': '8 digits stripped from key',
      'NaN': 'Strange but true',
-     'Infinity': "and beyond!",
+     'Infinity': 'and beyond!',
      'null': null,
      'undefined': !defined,
      'false': false,

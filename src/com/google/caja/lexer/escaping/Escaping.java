@@ -239,7 +239,7 @@ public class Escaping {
 
   // Escape only the characters in string that must be escaped.
   private static final EscapeMap STRING_MINIMAL_ESCAPES = new EscapeMap(
-      new Escape('\0', "\\000"),
+      new Escape('\0', "\\x00"),
       new Escape('\b', "\\b"),
       new Escape('\r', "\\r"),
       new Escape('\n', "\\n"),
@@ -253,20 +253,21 @@ public class Escaping {
       new Escape('\b', "\\b"),
       new Escape('\t', "\\t"),
       new Escape('\n', "\\n"),
-      // JScript treates \v as the letter v
+      // JScript treats \v as the letter v
       new Escape('\f', "\\f"),
       new Escape('\r', "\\r"),
       new Escape('\\', "\\\\"),
       new Escape('\'', "\\'"),
       new Escape('\"', "\\\""),
-      new Escape('<', "\\074"),
-      new Escape('>', "\\076")
-      ).plus(octalEscapes('\0', '\u001f'));
+      new Escape('&', "\\x26"),
+      new Escape('<', "\\x3c"),
+      new Escape('>', "\\x3e")
+      ).plus(hex2Escapes('\0', '\u001f'));
   // Escape minimal characters in a regular expression that guarantee it will
   // parse properly, without escaping regular expression specials.
   private static final EscapeMap REGEX_MINIMAL_ESCAPES = new EscapeMap(
-      new Escape('\0', "\\000"),
-            new Escape('\b', "\\b"),
+      new Escape('\0', "\\x00"),
+      new Escape('\b', "\\b"),
       new Escape('\r', "\\r"),
       new Escape('\n', "\\n"),
       new Escape('/', "\\/"));
@@ -280,10 +281,11 @@ public class Escaping {
       // JScript treates \v as the letter v
       new Escape('\f', "\\f"),
       new Escape('\r', "\\r"),
+      new Escape('&', "\\x26"),
       new Escape('/', "\\/"),
-      new Escape('<', "\\074"),
-      new Escape('>', "\\076")
-      ).plus(octalEscapes('\0', '\u001f'));
+      new Escape('<', "\\x3c"),
+      new Escape('>', "\\x3e")
+      ).plus(hex2Escapes('\0', '\u001f'));
 
   // Used when there are no non-precomputed escapes.
   private static final EscapeMap EMPTY_ESCAPES = new EscapeMap();
@@ -407,7 +409,7 @@ public class Escaping {
           throws IOException {
         if (!Character.isSupplementaryCodePoint(codepoint)) {
           if (codepoint < 0x100) {
-            octalEscape((char) codepoint, out);
+            hex2Escape((char) codepoint, out);
           } else {
             unicodeEscape((char) codepoint, out);
           }
@@ -469,10 +471,9 @@ public class Escaping {
       }
     };
 
-  static void octalEscape(char ch, Appendable out) throws IOException {
-    out.append('\\').append((char) ('0' + ((ch & 0x1c0) >> 6)))
-        .append((char) ('0' + ((ch & 0x38) >> 3)))
-        .append((char) ('0' + (ch & 0x7)));
+  static void hex2Escape(char ch, Appendable out) throws IOException {
+    out.append("\\x").append("0123456789abcdef".charAt((ch >> 4) & 0xf))
+        .append("0123456789abcdef".charAt(ch & 0xf));
   }
 
   static void unicodeEscape(char ch, Appendable out) throws IOException {
@@ -499,14 +500,14 @@ public class Escaping {
     }
   }
 
-  /** Produces octal escapes for all characters in the given inclusive range. */
-  private static Escape[] octalEscapes(char min, char max) {
+  /** Produces hex escape for all characters in the given inclusive range. */
+  private static Escape[] hex2Escapes(char min, char max) {
     Escape[] out = new Escape[max - min + 1];
     for (int i = 0; i < out.length; ++i) {
       StringBuilder sb = new StringBuilder(4);
       char ch = (char) (min + i);
       try {
-        octalEscape(ch, sb);
+        hex2Escape(ch, sb);
       } catch (IOException ex) {
         // StringBuilders do not throw IOException
         throw new RuntimeException(ex);

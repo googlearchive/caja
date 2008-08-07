@@ -28,7 +28,8 @@ import java.util.regex.Pattern;
  * @author mikesamuel@gmail.com
  */
 public final class StringLiteral extends Literal {
-  private String value;
+  /** Undecoded value. */
+  private final String value;
 
   /** @param children unused.  This ctor is provided for reflection. */
   public StringLiteral(String value, List<? extends ParseTreeNode> children) {
@@ -52,18 +53,26 @@ public final class StringLiteral extends Literal {
 
   @Override
   public void render(RenderContext rc) {
-    if (rc.isParanoid() || rc.isAsciiOnly()) {
-      TokenConsumer out = rc.getOut();
-      out.mark(getFilePosition());
-      StringBuilder sb = new StringBuilder();
-      sb.append('\'');
-      Escaping.escapeJsString(
-          getUnquotedValue(), rc.isAsciiOnly(), rc.isParanoid(), sb);
-      sb.append('\'');
-      out.consume(sb.toString());
-    } else {
-      super.render(rc);
-    }
+    TokenConsumer out = rc.getOut();
+    out.mark(getFilePosition());
+    StringBuilder sb = new StringBuilder(value.length() + 18);
+    // in paranoid mode we need to produce output that can be safely embedded in
+    // HTML or XML.  We make no guarantees for attribute values, and cajoled
+    // output should not be included in an attribute value, but to be on the
+    // safe side, we use single quotes since when naive HTML authors use quotes
+    // at all for attribute values, they tend to use double quotes, and putting
+    // single quotes around strings allows us to produce output that contains no
+    // double quotes.
+
+    // JSON requires double quotes, but this is a javascript parse tree.
+    // If we need to output JSON we can add a RenderContext mode for that which
+    // would set delim to '"' below.
+    char delim = '\'';
+    sb.append(delim);
+    Escaping.escapeJsString(
+        getUnquotedValue(), rc.isAsciiOnly(), rc.isParanoid(), sb);
+    sb.append(delim);
+    out.consume(sb.toString());
   }
 
   /**
@@ -112,6 +121,12 @@ public final class StringLiteral extends Literal {
       + "|([0-3][0-7]{0,2}|[4-7][0-7]?)"
       + "|(?:x([0-9A-Fa-f]{2}))"
       + "|([^u0-7]))");
+  /**
+   * Replaces javascript escape sequences with the code units they specify.
+   * @param s the raw content of a javascript string literal excluding any quote
+   *   delimiters.
+   * @return a series of code units.  Surrogates may not form valid pairs.
+   */
   public static String unescapeJsString(CharSequence s) {
     Matcher m = UNESCAPE_PATTERN.matcher(s);
     if (!m.find()) { return s.toString(); }

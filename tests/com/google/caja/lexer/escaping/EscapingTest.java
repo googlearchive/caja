@@ -71,7 +71,7 @@ public class EscapingTest extends TestCase {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeJsString(CHARS, false, false, sb);
     assertStringsEqual(
-        ("\\000\001\002\003\004\005\006\007\\b\t\\n\013\014\\r\016\017"
+        ("\\x00\001\002\003\004\005\006\007\\b\t\\n\013\014\\r\016\017"
          + "\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037"
          + " !\\\"#$%&\\'()*+,-./"
          + "0123456789:;<=>?"
@@ -122,12 +122,12 @@ public class EscapingTest extends TestCase {
     Escaping.escapeJsString(CHARS, false, true, sb);
     assertStringsEqual(
         (// all ctrl chars escaped
-         "\\000\\001\\002\\003\\004\\005\\006\\007"
-         + "\\b\\t\\n\\013\\f\\r\\016\\017"
-         + "\\020\\021\\022\\023\\024\\025\\026\\027"
-         + "\\030\\031\\032\\033\\034\\035\\036\\037"
-         + " !\\\"#$%&\\'()*+,-./"
-         + "0123456789:;\\074=\\076?"  // < and > escaped
+         "\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07"
+         + "\\b\\t\\n\\x0b\\f\\r\\x0e\\x0f"
+         + "\\x10\\x11\\x12\\x13\\x14\\x15\\x16\\x17"
+         + "\\x18\\x19\\x1a\\x1b\\x1c\\x1d\\x1e\\x1f"
+         + " !\\\"#$%\\x26\\'()*+,-./"  // & escaped
+         + "0123456789:;\\x3c=\\x3e?"  // < and > escaped
          + "@ABCDEFGHIJKLMNO"
          + "PQRSTUVWXYZ[\\\\]^_"
          + "`abcdefghijklmno"
@@ -144,15 +144,15 @@ public class EscapingTest extends TestCase {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeJsString(CHARS, true, false, sb);
     assertStringsEqual(
-        ("\\000\001\002\003\004\005\006\007\\b\t\\n\013\014\\r\016\017"
+        ("\\x00\001\002\003\004\005\006\007\\b\t\\n\013\014\\r\016\017"
          + "\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037"
          + " !\\\"#$%&\\'()*+,-./"
          + "0123456789:;<=>?"
          + "@ABCDEFGHIJKLMNO"
          + "PQRSTUVWXYZ[\\\\]^_"
          + "`abcdefghijklmno"
-         + "pqrstuvwxyz{|}~\\177"  // All chars >= 0x7f escaped
-         + "\\200\\201\\202\\203\\204"
+         + "pqrstuvwxyz{|}~\\x7f"  // All chars >= 0x7f escaped
+         + "\\x80\\x81\\x82\\x83\\x84"
          + "\\u200e\\u200f\\u2010\\u2028\\u2029"
          + "\\ud834\\udd20"
          + "\\ud834\\udd77"
@@ -164,17 +164,17 @@ public class EscapingTest extends TestCase {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeJsString(CHARS, true, true, sb);
     assertStringsEqual(
-        ("\\000\\001\\002\\003\\004\\005\\006\\007"
-         + "\\b\\t\\n\\013\\f\\r\\016\\017"
-         + "\\020\\021\\022\\023\\024\\025\\026\\027"
-         + "\\030\\031\\032\\033\\034\\035\\036\\037"
-         + " !\\\"#$%&\\'()*+,-./"
-         + "0123456789:;\\074=\\076?"
+        ("\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07"
+         + "\\b\\t\\n\\x0b\\f\\r\\x0e\\x0f"
+         + "\\x10\\x11\\x12\\x13\\x14\\x15\\x16\\x17"
+         + "\\x18\\x19\\x1a\\x1b\\x1c\\x1d\\x1e\\x1f"
+         + " !\\\"#$%\\x26\\'()*+,-./"
+         + "0123456789:;\\x3c=\\x3e?"
          + "@ABCDEFGHIJKLMNO"
          + "PQRSTUVWXYZ[\\\\]^_"
          + "`abcdefghijklmno"
-         + "pqrstuvwxyz{|}~\\177"
-         + "\\200\\201\\202\\203\\204"
+         + "pqrstuvwxyz{|}~\\x7f"
+         + "\\x80\\x81\\x82\\x83\\x84"
          + "\\u200e\\u200f\\u2010\\u2028\\u2029"
          + "\\ud834\\udd20"
          + "\\ud834\\udd77"
@@ -234,7 +234,7 @@ public class EscapingTest extends TestCase {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeRegex(CHARS, false, false, sb);
     assertStringsEqual(
-        ("\\000\001\002\003\004\005\006\007\\b\t\\n\013\014\\r\016\017"
+        ("\\x00\001\002\003\004\005\006\007\\b\t\\n\013\014\\r\016\017"
          + "\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037"
          // quotes unescaped.  regex specials escaped
          + " !\"#\\$%&'\\(\\)\\*\\+,-\\.\\/"
@@ -256,12 +256,12 @@ public class EscapingTest extends TestCase {
     Escaping.escapeRegex(CHARS, false, true, sb);
     assertStringsEqual(
         (// all ctrl chars escaped
-         "\\000\\001\\002\\003\\004\\005\\006\\007"
-         + "\\b\\t\\n\\013\\f\\r\\016\\017"
-         + "\\020\\021\\022\\023\\024\\025\\026\\027"
-         + "\\030\\031\\032\\033\\034\\035\\036\\037"
-         + " !\"#\\$%&'\\(\\)\\*\\+,-\\.\\/"
-         + "0123456789:;\\074=\\076\\?"
+         "\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07"
+         + "\\b\\t\\n\\x0b\\f\\r\\x0e\\x0f"
+         + "\\x10\\x11\\x12\\x13\\x14\\x15\\x16\\x17"
+         + "\\x18\\x19\\x1a\\x1b\\x1c\\x1d\\x1e\\x1f"
+         + " !\"#\\$%\\x26'\\(\\)\\*\\+,-\\.\\/"
+         + "0123456789:;\\x3c=\\x3e\\?"
          + "@ABCDEFGHIJKLMNO"
          + "PQRSTUVWXYZ\\[\\\\\\]\\^_"
          + "`abcdefghijklmno"
@@ -280,7 +280,7 @@ public class EscapingTest extends TestCase {
     Escaping.normalizeRegex(
         "<Foo+\\> \u2028 \\\\Ba*r \r Baz\\+\\+", false, true, sb);
     assertStringsEqual(
-        "\\074Foo+\\076 \\u2028 \\\\Ba*r \\r Baz\\+\\+", sb.toString());
+        "\\x3cFoo+\\x3e \\u2028 \\\\Ba*r \\r Baz\\+\\+", sb.toString());
   }
 
   public void testRegexNormalizationBalancesCharGroups() throws Exception {

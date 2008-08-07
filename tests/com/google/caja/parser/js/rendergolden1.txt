@@ -22,7 +22,7 @@
   };
   switch (foo()) {
   case 1:
-    return "panic";
+    return 'panic';
   case 2:
     if (a === 4) {
       break;

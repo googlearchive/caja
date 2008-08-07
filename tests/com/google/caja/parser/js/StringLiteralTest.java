@@ -69,8 +69,8 @@ public class StringLiteralTest extends TestCase {
     assertEquals(
         "'foo\\\\bar\\\\baz'", StringLiteral.toQuotedValue("foo\\bar\\baz"));
     assertEquals("'foo bar'", StringLiteral.toQuotedValue("foo bar"));
-    assertEquals("'foo\\000bar'", StringLiteral.toQuotedValue("foo\0bar"));
-    assertEquals("'foo\\177bar'", StringLiteral.toQuotedValue("foo\u007fbar"));
+    assertEquals("'foo\\x00bar'", StringLiteral.toQuotedValue("foo\0bar"));
+    assertEquals("'foo\\x7fbar'", StringLiteral.toQuotedValue("foo\u007fbar"));
     assertEquals(
         "'foo\\uabcdbar'", StringLiteral.toQuotedValue("foo\uabcdbar"));
     assertEquals("'\\'foo\\''", StringLiteral.toQuotedValue("'foo'"));
