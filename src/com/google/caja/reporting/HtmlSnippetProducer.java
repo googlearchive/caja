@@ -58,7 +58,7 @@ public class HtmlSnippetProducer extends SnippetProducer {
     StringBuilder filename = new StringBuilder();
     pos.source().format(mc, filename);
 
-    out.append("<a href=# class=\"filepos\" onclick=\"selectLine(")
+    out.append("<a href=\"#\" class=\"filepos\" onclick=\"selectLine(")
       .append(html(js(pos.source().getUri().toString())))
       .append(",")
       .append(String.valueOf(pos.startLineNo()))

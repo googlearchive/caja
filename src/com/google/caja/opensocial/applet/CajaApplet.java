@@ -220,7 +220,7 @@ public class CajaApplet extends Applet {
       messageText.append("<div class=\"message ")
           .append(msg.getMessageLevel().name()).append("\">")
           .append(msg.getMessageLevel().name()).append(' ')
-          .append(msg.format(mc));
+          .append(html(msg.format(mc)));
       if (!"".equals(snippet)) {
         messageText.append("<br />").append(snippet);
       }
