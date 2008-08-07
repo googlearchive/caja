@@ -32,7 +32,7 @@ public class HtmlCompilerTest extends CajaTestCase {
   public void testTargetsRewritten() throws Exception {
     assertOutput(
         "IMPORTS___.htmlEmitter___.b('a').a('href', '/testplugin/foo')"
-        + ".a('target', '_new').f(false).ih('hello').e('a');",
+        + ".a('target', '_blank').f(false).ih('hello').e('a');",
 
         "<a href=\"foo\" target=\"_self\">hello</a>");
   }

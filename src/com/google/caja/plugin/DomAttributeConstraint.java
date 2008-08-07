@@ -93,7 +93,7 @@ interface DomAttributeConstraint {
           }
           public Collection<Pair<String, String>> tagDone(DomTree.Tag tag) {
             if (sawHref) {
-              return Collections.singleton(Pair.pair("target", "_new"));
+              return Collections.singleton(Pair.pair("target", "_blank"));
             }
             return Collections.<Pair<String, String>>emptyList();
           }
