@@ -17,8 +17,8 @@
   <head>
     <title>Domita</title>
     <style type="text/css">
-      .testcontainer { background: yellow }
-      .testcontainer.passed { background: #c0ffc0 }
+      .testcontainer { background: yellow; border: 2px solid yellow }
+      .testcontainer.passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
     </style>
 
     <script src="../caja.js" onerror="console.error(this.src)"></script>
@@ -80,6 +80,11 @@
         node.className = (node.className || '') + ' passed';
       }, 'pass');
 
+      // Create a readonly mirror of document so that we can test that mutations
+      // fail when they should.
+      testImports.documentRO = new testImports.document.constructor(
+          document, false);
+
       window.toString = function () { return '[WINDOW]'; };
     </script>
 
@@ -91,9 +96,9 @@
 
     <div id="foo"></div>
 
-    <table id="test-element-id-xyz___" class="testcontainer"></table>
+    <p id="test-element-id-xyz___" class="testcontainer"></p>
 
-    <span id="test-create-element-xyz___" class="testcontainer"></span>
+    <p id="test-create-element-xyz___" class="testcontainer"></p>
 
     <div id="test-inner-html-xyz___" class="testcontainer"
      ><a id="bar" href="http://foo.com?a=b&c=d" class="link" title="<click me!>"
@@ -122,6 +127,13 @@
       <span id="test-dynamic-styles3-xyz___"
        >There's no such thing as super-bold</span><br>
     </div>
+
+    <p class="testcontainer" id="test-read-only-xyz___">
+      <span id="indelible-xyz___">I am indelible</span>
+    </p>
+
+    <ul class="testcontainer" id="test-node-lists-xyz___"
+     ><li>One<li><b>Two</b><li>Three</ul>
 
   </body>
 </html>

@@ -14,6 +14,26 @@
 
 var setUp, tearDown;
 
+/** Aim high and you might miss the moon! */
+function expectFailure(shouldFail, opt_msg, opt_failFilter) {
+  try {
+    shouldFail();
+  } catch (e) {
+    if (opt_failFilter && !opt_failFilter(e)) { throw e; }
+    return;
+  }
+  fail(opt_msg || 'Expected failure');
+}
+
+function assertFailsSafe(canFail, assertionsIfPasses) {
+  try {
+    canFail();
+  } catch (e) {
+    return;
+  }
+  assertionsIfPasses();
+}
+
 /**
  * Canonicalize well formed innerHTML output, by making sure that attributes
  * are ordered by name, and have quoted values.
@@ -54,6 +74,7 @@ jsunitRegister('testGetElementById',
   assertTrue(document.getElementById('test-get-element-by-id-2') != null);
 
   pass('test-get-element-by-id');
+  pass('test-get-element-by-id-2');
 });
 
 jsunitRegister('testElementId',
@@ -154,33 +175,34 @@ function foo() {
 
 jsunitRegister('testCantLoadScript',
                function testCantLoadScript() {
-  try {
-    document.createElement('SCRIPT');
-    fail('successfully created a script tag');
-  } catch (e) {
-    // pass
-  }
-  try {
-    document.createElement('script');
-    fail('successfully created a script tag');
-  } catch (e) {
-    // pass
-  }
-  try {
-    document.createElement('scRipt');
-    fail('successfully created a script tag');
-  } catch (e) {
-    // pass
-  }
-  try {
-    var i = 0;
-    var node = document.createElement({
-      toString: function () { return (++i & 1) ? 'DIV' : 'SCRIPT'; }
-    });
-    assertEquals('DIV', node.tagName);
-  } catch (e) {
-    // pass
-  }
+  expectFailure(
+      function () {
+        document.createElement('SCRIPT');
+      },
+      'successfully created a script tag via SCRIPT');
+  expectFailure(
+      function () {
+        document.createElement('script');
+      },
+      'successfully created a script tag via script');
+  expectFailure(
+      function () {
+        document.createElement('scRipt');
+      },
+      'successfully created a script tag via scRipt');
+
+  var node;
+  assertFailsSafe(
+      function () {
+        var i = 0;
+        node = document.createElement({
+          toString: function () { return (++i & 1) ? 'DIV' : 'SCRIPT'; }
+        });
+      },
+      function () {
+        assertEquals('DIV', node.tagName);
+      });
+
   pass('test-no-script');
 });
 
@@ -218,13 +240,68 @@ jsunitRegister('testDynamicStyle',
   function $(id) { return document.getElementById(id); }
   $('test-dynamic-styles1').style.fontWeight = 'bold';
   $('test-dynamic-styles2').style.fontWeight = '';  // Can unset a style.
-  var failed;
-  try {
-    $('test-dynamic-styles3').style.fontWeight = 'super-bold';
-    failed = false;
-  } catch (e) {
-    failed = true;
-  }
-  if (!failed) { throw new Error('set to super-bold'); }
+  expectFailure(
+      function () {
+        $('test-dynamic-styles3').style.fontWeight = 'super-bold';
+      },
+      'set to super-bold');
   pass('test-dynamic-styles');
+});
+
+jsunitRegister('testReadOnlyNotEditable',
+               function testReadOnlyNotEditable() {
+  function $(id) { return documentRO.getElementById(id); }
+  expectFailure(
+      function () {
+        documentRO.createElement('SPAN');
+      },
+      'successfully created element');
+  expectFailure(
+      function () {
+        var el = document.createElement('SPAN');
+        el.id = 'test-read-only-1';
+        $('test-read-only').appendChild(el);
+        assertEquals(null, $('test-read-only-1'));
+      },
+      'successfully appended element');
+  expectFailure(
+      function () {
+        assertTrue($('indelible') != null);
+        $('test-read-only').removeChild($('indelible'));
+        assertEquals(null, $('test-read-only-1'));
+      },
+      'successfully removed element');
+  expectFailure(
+      function () {
+        var el = document.createElement('SPAN');
+        el.id = 'test-read-only-2';
+        $('test-read-only').replaceChild($('indelible'), el);
+        assertEquals(null, $('test-read-only-2'));
+        assertTrue($('indelible') != null);
+      },
+      'successfully replaced element');
+  pass('test-read-only');
+});
+
+jsunitRegister('testNodeLists',
+               function testNodeLists() {
+  function $(id) { return document.getElementById(id); }
+  var descendants = $('test-node-lists').getElementsByTagName('*');
+  assertEquals(4, descendants.length);
+
+  assertEquals('LI', descendants[0].tagName);
+  assertEquals('LI', descendants[1].tagName);
+  assertEquals('B', descendants[2].tagName);
+  assertEquals('LI', descendants[3].tagName);
+
+  assertEquals('LI', descendants.item(0).tagName);
+  assertEquals('LI', descendants.item(1).tagName);
+  assertEquals('B', descendants.item(2).tagName);
+  assertEquals('LI', descendants.item(3).tagName);
+
+  var item = descendants.item;
+  // Check does not access properties of global.
+  assertEquals('LI', item(0).tagName);
+
+  pass('test-node-lists');
 });

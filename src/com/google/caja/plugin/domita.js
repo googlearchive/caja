@@ -454,13 +454,15 @@ attachDocumentStub = (function () {
           tamed[key] = node;
         }
       }
-      tamed.item = function (k) {
+      node = nodeList = null;
+
+      tamed.item = ___.simpleFrozenFunc(function (k) {
         k &= 0x7fffffff;
         if (isNaN(k)) { throw new Error(); }
-        return this[k] || null;
-      };
+        return tamed[k] || null;
+      });
       // TODO(mikesamuel): if opt_keyAttrib, could implement getNamedItem
-      return tamed;
+      return caja.freeze(tamed);
     }
 
     /**
@@ -485,14 +487,23 @@ attachDocumentStub = (function () {
     TameNode.prototype.appendChild = function (child) {
       // Child must be editable since appendChild can remove it from its parent.
       caja.guard(tameNodeTrademark, child);
+      if (!this.editable___ || !child.editable___) {
+        throw new Error();
+      }
       this.node___.appendChild(child.node___);
     };
     TameNode.prototype.insertBefore = function (child) {
       caja.guard(tameNodeTrademark, child);
+      if (!this.editable___ || !child.editable___) {
+        throw new Error();
+      }
       this.node___.insertBefore(child.node___);
     };
     TameNode.prototype.removeChild = function (child) {
       caja.guard(tameNodeTrademark, child);
+      if (!this.editable___ || !child.editable___) {
+        throw new Error();
+      }
       this.node___.removeChild(child.node___);
     };
     TameNode.prototype.replaceChild = function (child, replacement) {
