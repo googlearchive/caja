@@ -257,7 +257,7 @@ public class CssPropertyPatterns {
   static {
     // http://www.w3.org/TR/REC-CSS2/syndata.html
     String unsignedNum = "(?:\\d+(?:\\.\\d+)?)";
-    String signedNum = "(?:[+-]\\d+(?:\\.\\d+)?)";
+    String signedNum = "[+-]?\\d+(?:\\.\\d+)?";
     String angleUnits = "(?:deg|g?rad)";
     String freqUnits = "k?Hz";
     String lengthUnits = "(?:em|ex|px|in|cm|mm|pt|pc)";
