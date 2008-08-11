@@ -44,6 +44,15 @@ public class HtmlCompilerTest extends CajaTestCase {
         "<form/>");
   }
 
+  public void testNamesRewritten() throws Exception {
+    assertOutput(
+        "IMPORTS___.htmlEmitter___.b('p')"
+        + ".a('name', 'hi-' + IMPORTS___.getIdClass___())"
+        + ".f(false).e('p');",        
+
+        "<p name=\"hi\"/>");
+  }
+
   public void testFormName() throws Exception {
     assertOutput(
         "IMPORTS___.htmlEmitter___.b('form')"

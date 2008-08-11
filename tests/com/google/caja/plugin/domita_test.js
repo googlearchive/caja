@@ -227,11 +227,11 @@ jsunitRegister('testGetElementsByTagName',
   for (var i = 0; i < items.length; ++i) {
     assertEquals('LI', items[i].tagName);
   }
-  assertEquals('One', items[0].innerHTML.replace(/^\s+|\s+$/g, ''));
-  assertEquals('Two', items[1].innerHTML.replace(/^\s+|\s+$/g, ''));
-  assertEquals('Three', items[2].firstChild.data.replace(/^\s+|\s+$/g, ''));
-  assertEquals('Pi', items[3].innerHTML.replace(/^\s+|\s+$/g, ''));
-  assertEquals('sqrt(10)', items[4].innerHTML.replace(/^\s+|\s+$/g, ''));
+  assertEquals('One', canonInnerHtml(items[0].innerHTML));
+  assertEquals('Two', canonInnerHtml(items[1].innerHTML));
+  assertEquals('Three', canonInnerHtml(items[2].firstChild.data));
+  assertEquals('Pi', canonInnerHtml(items[3].innerHTML));
+  assertEquals('sqrt(10)', canonInnerHtml(items[4].innerHTML));
   pass('test-get-elements-by-tag-name');
 });
 
@@ -304,4 +304,24 @@ jsunitRegister('testNodeLists',
   assertEquals('LI', item(0).tagName);
 
   pass('test-node-lists');
+});
+
+jsunitRegister('testNameAttr',
+               function testNameAttr() {
+  var testDiv = document.getElementById('test-name-attr');
+  testDiv.innerHTML = '<span name="test-span">text</span>';
+  var nameAttr = directAccess.getAttribute(testDiv.firstChild, 'name');
+  assertFalse('test-span' === nameAttr); // Should have been renamed
+  pass('test-name-attr');
+});
+
+jsunitRegister('testTargetAttr',
+               function testTargetAttr() {
+  var testDiv = document.getElementById('test-target-attr');
+  testDiv.innerHTML = '<a target="foo">text1</a><a>text2</a>';
+  var node = testDiv.firstChild;
+  assertEquals('_blank', directAccess.getAttribute(node, 'target'));
+  node = node.nextSibling;
+  assertEquals('_blank', directAccess.getAttribute(node, 'target'));
+  pass('test-target-attr');
 });

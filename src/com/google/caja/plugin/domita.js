@@ -328,7 +328,7 @@ attachDocumentStub = (function () {
         case html4.atype.NAME:
           value = String(value);
           if (value && !illegalSuffix.test(value) && isXmlName(value)) {
-            return value;
+            return value + idSuffix;
           }
           return null;
         case html4.atype.NMTOKENS:
@@ -383,7 +383,6 @@ attachDocumentStub = (function () {
           }
           return css.join(' ; ');
         case html4.atype.FRAME:
-          value = String(value);
           // Frames are ambient, so disallow reference.
           return null;
         default:

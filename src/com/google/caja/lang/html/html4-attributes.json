@@ -1,7 +1,7 @@
 {
   "description": "See http://code.google.com/p/google-caja/wiki/CajaWhitelists",
   "inherits": [
-      "html4-attributes-defs.json",
+      "html4-attributes-extensions-defs.json",
       "html4-attributes-whitelist.json"
       ]
 

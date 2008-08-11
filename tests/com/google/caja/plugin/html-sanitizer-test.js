@@ -16,6 +16,45 @@ function nmTokenPrefixer(prefix) {
       };
 }
 
+/**
+ * Strips unsafe tags and attributes from html.
+ * @param {string} html to sanitize
+ * @param {Function} opt_urlXform : string -> string? -- a transform to apply to
+ *     url attribute values.
+ * @param {Function} opt_nmTokenXform : string -> string? -- a transform to
+ *     apply to names, ids, and classes.
+ * @return {string} html
+ */
+function html_sanitize(htmlText, opt_urlPolicy, opt_nmTokenPolicy) {
+  var out = [];
+  html.makeHtmlSanitizer(
+      function sanitizeAttribs(tagName, attribs) {
+        for (var i = 0; i < attribs.length; i += 2) {
+          var attribName = attribs[i];
+          var value = attribs[i + 1];
+          if (html4.ATTRIBS.hasOwnProperty(attribName)) {
+            switch (html4.ATTRIBS[attribName]) {
+              case html4.atype.SCRIPT:
+              case html4.atype.STYLE:
+                value = null;
+              case html4.atype.IDREF:
+              case html4.atype.NAME:
+              case html4.atype.NMTOKENS:
+                value = opt_nmTokenPolicy ? opt_nmTokenPolicy(value) : value;
+                break;
+              case html4.atype.URI:
+                value = opt_urlPolicy && opt_urlPolicy(value);
+                break;
+            }
+          } else {
+            value = null;
+          }
+          attribs[i + 1] = value;
+        }
+        return attribs;
+      })(htmlText, out);
+  return out.join('');
+}
 
 jsunitRegister('testEmpty',
                function testEmpty() { assertEquals('', html_sanitize('')); });

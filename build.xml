@@ -318,6 +318,10 @@
         <include file="${tests}/com/google/caja/plugin/asserts.js"/>
       </job>
     </cajole>
+    <copy todir="${lib}">
+      <fileset dir="${src}" includes="**/*.html"/>
+      <fileset dir="${tests}" includes="**/*.html"/>
+    </copy>
   </target>
 
   <target name="MinifiedJs" depends="pluginc">
