@@ -17,18 +17,26 @@ package com.google.caja.parser.quasiliteral;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParseTreeNodeContainer;
+
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
+import com.google.caja.parser.js.FunctionConstructor;
+import com.google.caja.parser.js.FunctionDeclaration;
+import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
+import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.TestUtil;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageTypeInt;
 
 import java.io.IOException;
@@ -257,5 +265,110 @@ public abstract class RewriterTestCase extends CajaTestCase {
 
   protected ParseTreeNode rewriteStatements(Statement... nodes) {
     return newRewriter().expand(new Block(Arrays.asList(nodes)), mq);
+  }
+
+  protected ParseTreeNode emulateIE6FunctionConstructors(ParseTreeNode node) {
+    Rewriter w = new Rewriter(false) {};
+    w.addRule(new Rule() {
+      @Override
+      @RuleDescription(
+          name="blockScope",
+          reason="Set up the root scope and handle block scope statements",
+          synopsis="")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof Block) {
+          Scope s2;
+          if (scope == null) {
+            s2 = Scope.fromProgram((Block) node, mq);
+          } else {
+            s2 = Scope.fromPlainBlock(scope);
+          }
+          return QuasiBuilder.substV(
+              "@startStmts*; @body*;",
+              "startStmts", new ParseTreeNodeContainer(s2.getStartStatements()),
+              "body", expandAll(
+                  new ParseTreeNodeContainer(node.children()), s2, mq));
+        }
+        return NONE;
+      }
+    });
+    w.addRule(new Rule() {
+      @Override
+      @RuleDescription(
+          name="fnDeclarations",
+          reason="function declarations contain function constructors but don't"
+              + " have the same discrepencies on IE 6 as function constructors",
+          synopsis="")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof FunctionDeclaration) {
+          FunctionDeclaration decl = ((FunctionDeclaration) node);
+          FunctionConstructor ctor = decl.getInitializer();
+
+          Scope s2 = Scope.fromFunctionConstructor(scope, ctor);
+          FunctionConstructor rewritten
+              = (FunctionConstructor) QuasiBuilder.substV(
+                  "function @ident(@formals*) { @fh*; @stmts*; @body*; }",
+                  "ident", ctor.getIdentifier(),
+                  "formals", expandAll(
+                      new ParseTreeNodeContainer(ctor.getParams()), s2, mq),
+                  "fh", getFunctionHeadDeclarations(s2),
+                  "stmts", new ParseTreeNodeContainer(s2.getStartStatements()),
+                  "body", expandAll(
+                      new ParseTreeNodeContainer(ctor.getBody().children()),
+                      s2, mq)
+                  );
+          return new FunctionDeclaration(rewritten.getIdentifier(), rewritten);
+        }
+        return NONE;
+      }
+    });
+    w.addRule(new Rule() {
+      @Override
+      @RuleDescription(
+          name="ie6functions",
+          reason="simulate IE 6's broken scoping of function constructors as "
+              + "described in JScript Deviations Section 2.3",
+          synopsis="")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof FunctionConstructor) {
+          FunctionConstructor ctor = (FunctionConstructor) node;
+          Scope s2 = Scope.fromFunctionConstructor(scope, ctor);
+          if (ctor.getIdentifierName() == null) {
+            return expandAll(node, s2, mq);
+          }
+          Identifier ident = ctor.getIdentifier();
+          Reference identRef = new Reference(ident);
+          identRef.setFilePosition(ident.getFilePosition());
+          scope.addStartOfBlockStatement(new Declaration(ident, identRef));
+          return QuasiBuilder.substV(
+              "(@var = function @ident(@formals*) { @fh*; @stmts*; @body*; })",
+              "var", identRef,
+              "ident", ident,
+              "formals", new ParseTreeNodeContainer(ctor.getParams()),
+              "fh", getFunctionHeadDeclarations(s2),
+              "stmts", new ParseTreeNodeContainer(s2.getStartStatements()),
+              "body", expandAll(
+                  new ParseTreeNodeContainer(ctor.getBody().children()),
+                  s2, mq)
+              );
+        }
+        return NONE;
+      }
+    });
+    w.addRule(new Rule() {
+      @Override
+      @RuleDescription(
+          name="catchAll",
+          reason="Handles non function constructors.",
+          synopsis="")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        return expandAll(node, scope, mq);
+      }
+    });
+    return w.expand(node, mq);
   }
 }

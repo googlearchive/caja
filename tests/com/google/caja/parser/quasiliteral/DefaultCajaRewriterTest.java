@@ -2844,6 +2844,48 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     checkSucceeds(fromResource("listfriends.js"));
   }
 
+  public void testRecursionOnIE() throws Exception {
+    ParseTreeNode input = js(fromString(
+        ""
+        + "var x = 1;\n"
+        + "var f = function x(b) { return b ? 1 : x(true); };\n"
+        + "assertEquals(2, x + f());"));
+    ParseTreeNode cajoled = newRewriter().expand(input, mq);
+    assertNoErrors();
+    ParseTreeNode emulated = emulateIE6FunctionConstructors(cajoled);
+    executePlain(
+        ""
+        + "___.getNewModuleHandler().getImports().assertEquals\n"
+        + "    = ___.simpleFrozenFunc(assertEquals);\n"
+        + "___.loadModule(function (___, IMPORTS___) {\n"
+        + render(emulated)
+        + "});").toString();
+  }
+
+  public void testAssertConsistent() throws Exception {
+    try {
+      // A value that cannot be consistent across invocations.
+      assertConsistent("({})");
+    } catch (AssertionFailedError e) {
+      // Pass
+      return;
+    }
+    fail("assertConsistent not working");
+  }
+
+  public void testIE_Emulation() throws Exception {
+    ParseTreeNode input = js(fromString(
+        ""
+        + "void (function x() {});\n"
+        + "assertEquals('function', typeof x);\n"));
+    assertNoErrors();
+    ParseTreeNode emulated = emulateIE6FunctionConstructors(input);
+    executePlain(
+        "___.loadModule(function (___, IMPORTS___) {"
+        + render(emulated)
+        + "});");
+  }
+
   @Override
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();
