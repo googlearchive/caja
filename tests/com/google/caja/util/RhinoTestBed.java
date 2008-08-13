@@ -52,6 +52,9 @@ public class RhinoTestBed {
    */
   public static Object runJs(Input... inputs) throws IOException {
     Context context = ContextFactory.getGlobal().enterContext();
+    // Don't bother to compile tests to a class file.  Removing this causes
+    // a 5x slow-down in Rhino-heavy tests.
+    context.setOptimizationLevel(-1);
     try {
       ScriptableObject globalScope = context.initStandardObjects();
       Object stderr = Context.javaToJS(System.err, globalScope);
