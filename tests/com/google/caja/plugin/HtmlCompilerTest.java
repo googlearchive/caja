@@ -111,11 +111,11 @@ public class HtmlCompilerTest extends CajaTestCase {
 
         "<div onclick=\"\">\nHello\n</div>\n");
   }
-  
+
   private void assertOutput(String golden, String htmlText) throws Exception {
     HtmlCompiler htmlc = new HtmlCompiler(
         CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
-        mq, makeTestPluginMeta());
+        mc, mq, makeTestPluginMeta());
     String actual = render(
        htmlc.compileDocument(htmlFragment(fromString(htmlText))));
     for (Statement handler : htmlc.getEventHandlers()) {

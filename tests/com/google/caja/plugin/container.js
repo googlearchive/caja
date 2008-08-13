@@ -20,21 +20,30 @@
 
 var imports = ___.copy(___.sharedImports);
 var exports = {};
-imports.fail = fail;
-___.simpleFrozenFunc(fail);
-imports.assertEquals = assertEquals;
-___.simpleFrozenFunc(assertEquals);
-imports.assertTrue = assertTrue;
-___.simpleFrozenFunc(assertTrue);
-imports.assertFalse = assertFalse;
-___.simpleFrozenFunc(assertFalse);
+imports.fail = ___.simpleFrozenFunc(fail);
+imports.assertEquals = ___.simpleFrozenFunc(assertEquals);
+imports.assertTrue = ___.simpleFrozenFunc(assertTrue);
+imports.assertFalse = ___.simpleFrozenFunc(assertFalse);
 imports.document = document;
 imports.console = console;
 ___.simpleFrozenFunc(console.log);
-// Included in order to test this function; 
-// stamp should never be made avaliable to real caja code.W
-imports.stamp = ___.stamp;
-___.simpleFrozenFunc(___.stamp);
+// Included in order to test this function;
+// stamp should never be made available to real caja code.
+imports.stamp = ___.simpleFrozenFunc(___.stamp);
 imports.exports = exports;
 ___.getNewModuleHandler().setImports(imports);
+if ('undefined' !== typeof Packages) {
+  // Propagate test failures upwards.
+  ___.getNewModuleHandler().handleUncaughtException = (function (orig) {
+        return function (exception, onerror, source, lineNum) {
+          // Propagate test failures outside script blocks.
+          // See fail() in asserts.js.
+          if (exception
+              instanceof Packages.junit.framework.AssertionFailedError) {
+            throw exception;
+          }
+          return orig.call(caja.USELESS, exception, onerror, source, lineNum);
+        };
+      })(___.getNewModuleHandler().handleUncaughtException);
+}
 imports.htmlEmitter___ = new HtmlEmitter(document.getElementById("test-test"));

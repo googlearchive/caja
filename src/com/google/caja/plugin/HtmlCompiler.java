@@ -49,6 +49,7 @@ import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.plugin.stages.RewriteHtmlStage;
@@ -92,18 +93,20 @@ public class HtmlCompiler {
 
   private final CssSchema cssSchema;
   private final HtmlSchema htmlSchema;
+  private final MessageContext mc;
   private final MessageQueue mq;
   private final PluginMeta meta;
   private Map<String, Statement> eventHandlers =
       new LinkedHashMap<String, Statement>();
 
   public HtmlCompiler(CssSchema cssSchema, HtmlSchema htmlSchema,
-                      MessageQueue mq, PluginMeta meta) {
+                      MessageContext mc, MessageQueue mq, PluginMeta meta) {
     if (null == cssSchema || null == htmlSchema || null == mq || null == meta) {
       throw new NullPointerException();
     }
     this.cssSchema = cssSchema;
     this.htmlSchema = htmlSchema;
+    this.mc = mc;
     this.mq = mq;
     this.meta = meta;
   }
@@ -160,7 +163,7 @@ public class HtmlCompiler {
           Block extractedScriptBody = el.getAttributes().get(
               RewriteHtmlStage.EXTRACTED_SCRIPT_BODY);
           if (extractedScriptBody != null) {
-            out.script(extractedScriptBody);
+            out.script(scriptBodyEnvelope(extractedScriptBody));
             return;
           }
         } else if (tagName.equals("style")) {
@@ -417,6 +420,34 @@ public class HtmlCompiler {
 
     // expression will be sanitized in a later pass
     return b;
+  }
+
+  /**
+   * Wrap the extracted script block in an exception handler so that
+   * exceptions thrown in script blocks do not interfere with subsequent
+   * execution.
+   * @see <a href=
+   *     "http://code.google.com/p/google-caja/wiki/UncaughtExceptionHandling"
+   *     >UncaughtExceptionHandling</a>
+   */
+  private Statement scriptBodyEnvelope(Block scriptBody) {
+    FilePosition pos = scriptBody.getFilePosition();
+    String sourcePath = pos.source().getShortName(mc.inputSources);
+    TryStmt envelope = (TryStmt) QuasiBuilder.substV(
+        ""
+        + "try {"
+        + "  @scriptBody"
+        + "} catch (ex___) {"
+        + "  ___./*@synthetic*/ getNewModuleHandler()"
+        + "      ./*@synthetic*/ handleUncaughtException("
+        + "      ex___, onerror, @sourceFile, @line);"
+        + "}",
+
+        "scriptBody", scriptBody,
+        "sourceFile", StringLiteral.valueOf(sourcePath),
+        "line", StringLiteral.valueOf(String.valueOf(pos.startLineNo())));
+    envelope.setFilePosition(pos);
+    return envelope;
   }
 
   /**

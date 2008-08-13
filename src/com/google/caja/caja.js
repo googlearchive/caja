@@ -228,7 +228,7 @@ var ___;
 
   /**
    * Throw, and optionally log, an error whose message is the
-   * concatentation of the arguments.
+   * concatenation of the arguments.
    * <p>
    * The arguments are converted to strings (presumably by an
    * implicit call to ".toString()") and appended together to make
@@ -2215,7 +2215,46 @@ var ___;
       }),
       handle: simpleFrozenFunc(function(newModule) {
         newModule(___, imports);
-      })
+      }),
+      /**
+       * This emulates HTML5 exception handling for scripts as discussed at
+       * http://code.google.com/p/google-caja/wiki/UncaughtExceptionHandling
+       * and see HtmlCompiler.java for the code that calls this.
+       * @param exception a raw exception.  Since {@code throw} can raise any
+       *   value, exception could be any value accessible to cajoled code, or
+       *   any value thrown by an API imported by cajoled code.
+       * @param onerror the value of the raw reference "onerror" in top level
+       *   cajoled code.  This will likely be undefined much of the time, but
+       *   could be anything.  If it is a simpleFunc, it can be called with
+       *   three strings (message, source, lineNum) as the
+       *   {@code window.onerror} event handler.
+       * @param {string} source a URI describing the source file from which the
+       *   error originated.
+       * @param {string} lineNum the approximate line number in source at which
+       *   the error originated.
+       */
+      handleUncaughtException: function (exception, onerror, source, lineNum) {
+
+        // Cause exception to be rethrown if it is uncatchable.
+        ___.tameException(exception);
+
+        var message = 'unknown';
+        if ('object' === typeof exception && exception !== null) {
+          message = String(exception.message || exception.desc || message);
+        }
+
+        // If we wanted to provide a hook for containers to get uncaught
+        // exceptions, it would go here before onerror is invoked.
+
+        // See the HTML5 discussion for the reasons behind this rule.
+        var shouldReport = (
+            isSimpleFunc(onerror)
+            ? ___.simpleFunc(onerror)(message, String(source), String(lineNum))
+            : onerror !== null);
+        if (shouldReport !== false) {
+          caja.log(source + ':' + lineNum + ': ' + message);
+        }
+      }
     });
   }
 

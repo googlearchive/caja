@@ -61,6 +61,21 @@ public class HtmlCompiledPluginTest extends TestCase {
     execGadget("", "");
   }
 
+  public void testTestingFramework() throws Exception {
+    try {
+      // Make sure our JSUnit failures escape the try blocks that allow
+      // execution to continue into subsequent script blocks.
+      execGadget("<script>fail('hiya');</script>", "");
+    } catch (AssertionFailedError ex) {
+      String message = ex.getMessage();
+      String shortMessage = message.substring(
+          message.indexOf(": ") + 2, message.indexOf("\n"));
+      assertEquals("hiya", shortMessage);
+      return;
+    }
+    fail("Expected failure");
+  }
+
   public void testStamp() throws Exception {
     execGadget(
         "<script>" +
@@ -148,7 +163,7 @@ public class HtmlCompiledPluginTest extends TestCase {
         ""
         );
   }
-  
+
   public void testPrimordialObjectExtension() throws Exception {
     // TODO(metaweta): Reenable once POE is part of warts mode.
     if (false) {
@@ -698,6 +713,39 @@ public class HtmlCompiledPluginTest extends TestCase {
         "assertEquals(typeof g, 'undefined');" +
         "assertEquals(typeof h, 'function');" +
         "})();</script>",
+        "");
+  }
+
+  public void testExceptionsInScriptBlocks() throws Exception {
+    execGadget(
+        "<script>var a = 0, b = 0;</script>" +
+        "<script>throw new Error(); a = 1;</script>" +
+        "<script>b = 1;</script>\n" +
+        "<script>\n" +
+        "  assertEquals(0, a);" +
+        "  assertEquals(1, b);" +
+        "</script>",
+
+        "");
+  }
+
+  public void testCustomOnErrorHandler() throws Exception {
+    execGadget(
+        "<script>\n" +
+        "  var a = 0, b = 0, messages = [];\n" +
+        "  function onerror(message, source, lineNumber) {\n" +
+        "    messages.push(source + ':' + lineNumber + ': ' + message);\n" +
+        "  }\n" +
+        "</script>\n" +
+        "<script>throw new Error('panic'); a = 1;</script>\n" +        // line 7
+        "<script>b = 1;</script>\n" +
+        "<script>\n" +
+        "  assertEquals(0, a);\n" +
+        "  assertEquals(1, b);\n" +
+        "  assertEquals(1, messages.length);\n" +
+        "  assertEquals('testCustomOnErrorHandler:7: panic', messages[0]);\n" +
+        "</script>",
+
         "");
   }
 

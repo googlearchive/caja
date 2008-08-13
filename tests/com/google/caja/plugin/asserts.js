@@ -20,11 +20,19 @@
 
 
 function fail(msg) {
+  msg = String(msg || '');
   if (typeof console !== 'undefined') {
     console.trace();
     console.log(msg);
   }
-  throw new Error(msg);
+  if ('undefined' !== typeof Packages
+      && 'function' === typeof Packages.junit.framework.AssertionFailedError) {
+    // If run inside Rhino in the presence of junit, throw an error which will
+    // escape any exception trapping around the Rhino embedding.
+    throw new Packages.junit.framework.AssertionFailedError(msg);
+  } else {
+    throw new Error(msg);
+  }
 }
 
 function assertEquals() {
@@ -59,7 +67,7 @@ function assertEquals() {
       a = arguments[1];
       b = arguments[2];
       break;
-    default: throw 'missing arguments ' + arguments;
+    default: fail('missing arguments ' + arguments);
   }
   if (a !== b) {
     if (typeof a === 'string' && typeof b === 'string') {
@@ -87,7 +95,7 @@ function assertTrue() {
     case 2:
       assertEquals(arguments[0], true, arguments[1]);
       break;
-    default: throw 'missing arguments ' + arguments;
+    default: fail('missing arguments ' + arguments);
   }
 }
 
@@ -99,7 +107,7 @@ function assertFalse() {
     case 2:
       assertEquals(arguments[0], false, arguments[1]);
       break;
-    default: throw 'missing arguments ' + arguments;
+    default: fail('missing arguments ' + arguments);
   }
 }
 
@@ -116,7 +124,7 @@ function assertLessThan() {
       a = arguments[1];
       b = arguments[2];
       break;
-    default: throw 'missing arguments ' + arguments;
+    default: fail('missing arguments ' + arguments);
   }
   if (!(a < b)) {
     fail((msg ? msg + ' :: ' : '')
@@ -136,7 +144,7 @@ function assertNull() {
       msg = arguments[0];
       a = arguments[1];
       break;
-    default: throw 'missing arguments ' + arguments;
+    default: fail('missing arguments ' + arguments);
   }
   if (a !== null) {
     fail((msg ? msg + ' :: ' : '')
@@ -154,15 +162,16 @@ function assertThrows() {
     func = arguments[0];
     msg = arguments[1];
     break;
-  default: throw 'missing arguments ' + arguments;
+  default: fail('missing arguments ' + arguments);
   }
-  var thrown = undefined;
+  var nil = {};
+  var thrown = nil;
   try {
     func();
   } catch (ex) {
     thrown = ex;
   }
-  if (thrown) {
+  if (thrown !== nil) {
     if (msg) { assertEquals(msg, thrown); }
   } else {
     fail('Did not throw ' + (msg ? msg : 'an exception'));

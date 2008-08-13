@@ -48,7 +48,8 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
 
   public boolean apply(Jobs jobs) {
     HtmlCompiler htmlc = new HtmlCompiler(
-        cssSchema, htmlSchema, jobs.getMessageQueue(), jobs.getPluginMeta());
+        cssSchema, htmlSchema, jobs.getMessageContext(), jobs.getMessageQueue(),
+        jobs.getPluginMeta());
 
     List<Statement> renderedHtmlStatements = new ArrayList<Statement>();
 

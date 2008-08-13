@@ -15,10 +15,8 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.Identifier;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +31,7 @@ public class TrailingUnderscoresHole extends AbstractQuasiHole {
   public TrailingUnderscoresHole(String identifier, int numberOfUnderscores) {
     super(Identifier.class, identifier);
     StringBuffer b = new StringBuffer();
-    for (int i = 0; i < numberOfUnderscores; i++) b.append("_");
+    for (int i = 0; i < numberOfUnderscores; ++i) { b.append("_"); }
     trailing = b.toString();
   }
 
@@ -47,6 +45,7 @@ public class TrailingUnderscoresHole extends AbstractQuasiHole {
         specimens.remove(0);
         Identifier shortIdentifier = new Identifier(
             value.substring(0, value.length() - trailing.length()));
+        shortIdentifier.setFilePosition(specimen.getFilePosition());
         shortIdentifier.getAttributes().putAll(specimen.getAttributes());
 
         return putIfDeepEquals(
@@ -62,17 +61,20 @@ public class TrailingUnderscoresHole extends AbstractQuasiHole {
   protected boolean createSubstitutes(
       List<ParseTreeNode> substitutes, Map<String, ParseTreeNode> bindings) {
     ParseTreeNode n = bindings.get(getIdentifier());
-    if (n == null || !(n instanceof Identifier)) return false;
-    substitutes.add(
-        ParseTreeNodes.newNodeInstance(
-            Identifier.class,
-            ((Identifier)n).getValue() + trailing,
-            Collections.<ParseTreeNode>emptyList()));
+    if (n == null || !(n instanceof Identifier)) { return false; }
+    Identifier withoutSuffix = (Identifier) n;
+    Identifier withSuffix = new Identifier(n.getValue() + trailing);
+    withSuffix.setFilePosition(withoutSuffix.getFilePosition());
+    withSuffix.getAttributes().putAll(withoutSuffix.getAttributes());
+    substitutes.add(withSuffix);
     return true;
   }
 
+  // TODO(mikesamuel): can this move from the superclass into a sibling class?
   @Override
-  protected String getQuantifierSuffix() { throw new UnsupportedOperationException(); }
+  protected String getQuantifierSuffix() {
+    throw new UnsupportedOperationException();
+  }
 
   @Override
   public String toString() {

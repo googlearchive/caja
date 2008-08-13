@@ -33,8 +33,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import junit.framework.Assert;
+import junit.framework.AssertionFailedError;
 
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.ScriptableObject;
 
 /**
@@ -52,32 +55,37 @@ public class RhinoTestBed {
    */
   public static Object runJs(final String dumpJsFile, Input... inputs)
       throws IOException {
-    Context context = Context.enter();
+    Context context = ContextFactory.getGlobal().enterContext();
     try {
       ScriptableObject globalScope = context.initStandardObjects();
-      Object stderr = Context.javaToJS(System.err, globalScope);
-      ScriptableObject.putProperty(globalScope, "stderr", stderr);
-      Object result = null;
+      try {
+        Object stderr = Context.javaToJS(System.err, globalScope);
+        ScriptableObject.putProperty(globalScope, "stderr", stderr);
+        Object result = null;
 
-      if (dumpJsFile != null) {
-        String allInputs = "";
-        for (Input input : inputs) {
-          allInputs += readReader(input.input);
-        }
-        writeFile(new File(dumpJsFile), allInputs);
-        Input input = new Input(new StringReader(allInputs), "all");
-        result = context.evaluateReader(
-            globalScope, input.input, input.source, 1, null);
-      } else {
-        for (Input input : inputs) {
+        if (dumpJsFile != null) {
+          String allInputs = "";
+          for (Input input : inputs) {
+            allInputs += readReader(input.input);
+          }
+          writeFile(new File(dumpJsFile), allInputs);
+          Input input = new Input(new StringReader(allInputs), "all");
           result = context.evaluateReader(
               globalScope, input.input, input.source, 1, null);
+        } else {
+          for (Input input : inputs) {
+            result = context.evaluateReader(
+                globalScope, input.input, input.source, 1, null);
+          }
         }
+        return result;
+      } catch (JavaScriptException e) {
+        if (e.getCause() instanceof AssertionFailedError) {
+          throw (AssertionFailedError) e.getCause();
+        }
+        Assert.fail(e.details() + "\n" + e.getScriptStackTrace());
+        return null;
       }
-      return result;
-    } catch (org.mozilla.javascript.JavaScriptException e) {
-      Assert.fail(e.details() + "\n" + e.getScriptStackTrace());
-      return null;
     } finally {
       Context.exit();
     }

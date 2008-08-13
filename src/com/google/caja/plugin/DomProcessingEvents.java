@@ -21,6 +21,7 @@ import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.util.Pair;
@@ -274,10 +275,10 @@ final class DomProcessingEvents {
   }
 
   static final class ScriptBlockEvent extends DomProcessingEvent {
-    final Block block;
-    ScriptBlockEvent(Block block) { this.block = block; }
+    final Statement stmt;
+    ScriptBlockEvent(Statement stmt) { this.stmt = stmt; }
     @Override void toJavascript(BlockAndEmitter out) {
-      out.getBlock().appendChild(block);
+      out.getBlock().appendChild(stmt);
     }
     @Override boolean canOptimizeToInnerHtml() { return false; }
     @Override void toInnerHtml(StringBuilder out) {
@@ -327,7 +328,7 @@ final class DomProcessingEvents {
   /** Ends an element when an end tag {@code </foo>} is seen. */
   void end(String name) { addEvent(new EndElementEvent(name)); }
   /** An interleaved script block. */
-  void script(Block b) { addEvent(new ScriptBlockEvent(b)); }
+  void script(Statement s) { addEvent(new ScriptBlockEvent(s)); }
 
   private final class BlockAndEmitter {
     /** An expression that will return an HTML emitter. */

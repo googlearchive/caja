@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?><Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5" /></ModulePrefs><Content type="html"><![CDATA[<script type="text/javascript">{
   ___.loadModule(function (___, IMPORTS___) {
                    var alert = ___.readImport(IMPORTS___, 'alert');
+                   var onerror = ___.readImport(IMPORTS___, 'onerror');
                    var externalScript;
                    var handleClicky;
                    IMPORTS___.emitCss___([ '.', ' #p3-', ' {\n  color: red\n}' ].join(IMPORTS___.getIdClass___()));
@@ -12,20 +13,30 @@
                          ___.asSimpleFunc(___.primFreeze(handleClicky))();
                        });
                    IMPORTS___.htmlEmitter___.pc('\n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    ').b('p').a('class', 'p1 p2').f(false).ih('Paragraph 1').e('p').pc('\n\n    ');
-                   {
-                     externalScript = ___.simpleFunc(
-                         function () {
-                           ___.asSimpleFunc(alert)('external script');
-                         }, 'externalScript');
-                     ;
+                   try {
+                     {
+                       externalScript = ___.simpleFunc(
+                           function () {
+                             ___.asSimpleFunc(alert)('external script');
+                           }, 'externalScript');
+                       ;
+                     }
+                   } catch (ex___) {
+                     ___.getNewModuleHandler().handleUncaughtException(
+                         ex___, onerror, 'example-gadget-files/external-script.js', '2');
                    }
                    IMPORTS___.htmlEmitter___.pc('\n\n    \n    ').b('p').a('id', 'p3-' + IMPORTS___.getIdClass___()).f(false).ih('Paragraph 2').e('p').pc('\n\n    \n    \n\n    \n    ');
-                   {
-                     handleClicky = ___.simpleFunc(
-                         function () {
-                           ___.asSimpleFunc(alert)('You clicked something!!!');
-                         }, 'handleClicky');
-                     ;
+                   try {
+                     {
+                       handleClicky = ___.simpleFunc(
+                           function () {
+                             ___.asSimpleFunc(alert)('You clicked something!!!');
+                           }, 'handleClicky');
+                         ;
+                     }
+                   } catch (ex___) {
+                     ___.getNewModuleHandler().handleUncaughtException(
+                         ex___, onerror, 'example.xml', '32');
                    }
                    IMPORTS___.htmlEmitter___.pc('\n\n    ').b('p').f(false).b('a').a('onclick', 'return plugin_dispatchEvent___(this, event || window.event, ' + ___.getId(IMPORTS___) + ', \'c_1___\')').f(false).ih('Paragraph 3').e('a').e('p').pc('\n\n    ').b('a').a('href', 'http://url-proxy.test.google.com/?url=http%3A%2F%2Ffoo.com%2F&mime-type=*%2F*').a('target', '_blank').f(false).ih('External URL.  Apply URICallback.rewrite to me.').e('a').pc('\n\n    \n    \n\n    \n    \n    \n\n  ');
                  });

@@ -288,15 +288,16 @@ public class DefaultCajaRewriter extends Rewriter {
           synopsis="Pass through synthetic variables which are unmentionable.",
           reason="Catching unmentionable exceptions helps maintain invariants.",
           matches=(
-              "try { @body* } catch (/* synthetic */ @ex___) { @handler*; }"),
-          substitutes="<expanded>")
+              "try { @body*; } catch (/* synthetic */ @ex___) { @handler*; }"),
+          substitutes="try { @body*; } catch (@ex___) { @handler*; }")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
-          Declaration ex = (Declaration) bindings.get("ex");
-          if (isSynthetic(ex.getIdentifier())) {
-            return expandAll(node, scope, mq);
+          Identifier ex = (Identifier) bindings.get("ex");
+          if (isSynthetic(ex)) {
+            expandEntries(bindings, scope, mq);
+            return subst(bindings);
           }
         }
         return NONE;
@@ -310,16 +311,19 @@ public class DefaultCajaRewriter extends Rewriter {
           synopsis="Pass through synthetic variables which are unmentionable.",
           reason="Catching unmentionable exceptions helps maintain invariants.",
           matches=(
-               "try { @body* } catch (/* synthetic */ @ex___) { @handler*; }"
-               + " finally { @cleanup* }"),
-          substitutes="<expanded>")
+               "try { @body*; } catch (/* synthetic */ @ex___) { @handler*; }"
+               + " finally { @cleanup*; }"),
+          substitutes=(
+               "try { @body*; } catch (/* synthetic */ @ex___) { @handler*; }"
+               + " finally { @cleanup*; }"))
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
-          Declaration ex = (Declaration) bindings.get("ex");
-          if (isSynthetic(ex.getIdentifier())) {
-            return expandAll(node, scope, mq);
+          Identifier ex = (Identifier) bindings.get("ex");
+          if (isSynthetic(ex)) {
+            expandEntries(bindings, scope, mq);
+            return subst(bindings);
           }
         }
         return NONE;
