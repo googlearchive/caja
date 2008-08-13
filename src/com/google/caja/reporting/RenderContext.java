@@ -30,7 +30,7 @@ public class RenderContext {
   private final TokenConsumer out;
 
   public RenderContext(MessageContext msgContext, TokenConsumer out) {
-    this(msgContext, false, false, out);
+    this(msgContext, true, false, out);
   }
 
   public RenderContext(
