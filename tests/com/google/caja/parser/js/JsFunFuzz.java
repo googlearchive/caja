@@ -37,7 +37,7 @@ public class JsFunFuzz extends CajaTestCase {
    */
   private String fudgeroonify() {
     try {
-      return (String) RhinoTestBed.runJs(null,
+      return (String) RhinoTestBed.runJs(
           new RhinoTestBed.Input(getClass(), "/js/jsfunfuzz/jsfunfuzz.js"));
     } catch (IOException e) {
       fail("JS Fuzzer jsfunfuzz.js not found");

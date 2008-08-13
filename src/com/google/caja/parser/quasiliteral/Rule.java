@@ -459,12 +459,12 @@ public abstract class Rule implements MessagePart {
   }
 
   /**
-   * Split the target of a read/set operation into an lvalue, an rvalue, and
+   * Split the target of a read/set operation into an LHS, an RHS, and
    * an ordered list of temporary variables needed to ensure proper order
    * of execution.
-   * @param operand uncajoled expression that can be used as both an lvalue and
-   *    an rvalue.
-   * @return null if operand is not a valid lvalue, or its subexpressions do
+   * @param operand uncajoled expression that can be used as both an LHS and
+   *    an RHS.
+   * @return null if operand is not a valid LHS, or its subexpressions do
    *    not cajole.
    */
   ReadAssignOperands deconstructReadAssignOperand(
@@ -476,15 +476,13 @@ public abstract class Rule implements MessagePart {
             operand.getFilePosition(), this, operand);
         return null;
       }
-      return sideEffectlessReadAssignOperand(
-          (Expression) rewriter.expand(operand, scope, mq));
+      return sideEffectlessReadAssignOperand(operand, scope, mq);
     } else if (operand instanceof Operation) {
       Operation op = (Operation) operand;
       switch (op.getOperator()) {
         case SQUARE_BRACKET:
           return sideEffectingReadAssignOperand(
-              op.children().get(0), op.children().get(1),
-              scope, mq);
+              op.children().get(0), op.children().get(1), scope, mq);
         case MEMBER_ACCESS:
           return sideEffectingReadAssignOperand(
               op.children().get(0), toStringLiteral(op.children().get(1)),
@@ -495,30 +493,26 @@ public abstract class Rule implements MessagePart {
   }
 
   /**
-   * Given a lhs that has no side effect when evaluated as an lvalue, produce
+   * Given a LHS that has no side effect when evaluated as an LHS, produce
    * a ReadAssignOperands without using temporaries.
    */
   private ReadAssignOperands sideEffectlessReadAssignOperand(
-      final Expression lhs) {
-    assert lhs.isLeftHandSide();
-    return new ReadAssignOperands(Collections.<Expression>emptyList(), lhs) {
-        @Override
-        public Expression makeAssignment(Expression rvalue) {
-          return Operation.create(Operator.ASSIGN, lhs, rvalue);
-        }
-      };
+      final Expression lhs, Scope scope, MessageQueue mq) {
+    return new ReadAssignOperands(
+        Collections.<Expression>emptyList(),
+        lhs, (Expression) rewriter.expand(lhs, scope, mq));
   }
 
   private ReadAssignOperands sideEffectingReadAssignOperand(
-      Expression uncajoledObject, Expression uncajoledKey,
-      Scope scope, MessageQueue mq) {
+      Expression uncajoledObject, Expression uncajoledKey, Scope scope,
+      MessageQueue mq) {
     final Reference object;  // The object that contains the field to assign.
     final Expression key;  // Identifies the field to assign.
     List<Expression> temporaries = new ArrayList<Expression>();
 
-    // Cajole the operands
-    Expression left = (Expression) rewriter.expand(uncajoledObject, scope, mq);
-    Expression right = (Expression) rewriter.expand(uncajoledKey, scope, mq);
+    // Don't cajole the operands.  We return a simple assignment operator that
+    // can then itself be cajoled, so that a rewriter can use context to treat
+    // the LHS differently from the RHS.
 
     // a[b] += 2
     //   =>
@@ -528,56 +522,40 @@ public abstract class Rule implements MessagePart {
     // If the right is simple then we can assume it does not modify the
     // left, but otherwise the left has to be put into a temporary so that
     // it's evaluated before the right can muck with it.
-    boolean isKeySimple = (right instanceof Literal
-                           || isLocalReference(right, scope));
+    boolean isKeySimple = (uncajoledKey instanceof Literal
+                           || isLocalReference(uncajoledKey, scope));
 
     // If the left is simple and the right does not need a temporary variable
     // then don't introduce one.
-    if (isKeySimple && (isLocalReference(left, scope)
-                        || isImportsReference(left))) {
-      object = (Reference) left;
+    if (isKeySimple && (isLocalReference(uncajoledObject, scope)
+                        || isImportsReference(uncajoledObject))) {
+      object = (Reference) uncajoledObject;
     } else {
       Identifier tmpVar = scope.declareStartOfScopeTempVariable();
       temporaries.add((Expression) QuasiBuilder.substV(
           "@tmpVar = @left;",
           "tmpVar", new Reference(tmpVar),
-          "left", left));
+          "left", rewriter.expand(uncajoledObject, scope, mq)));
       object = new Reference(tmpVar);
     }
 
     // Don't bother to generate a temporary for a simple value like 'foo'
     if (isKeySimple) {
-      key = right;
+      key = uncajoledKey;
     } else {
       Identifier tmpVar = scope.declareStartOfScopeTempVariable();
       temporaries.add((Expression) QuasiBuilder.substV(
           "@tmpVar = @right;",
           "tmpVar", new Reference(tmpVar),
-          "right", right));
+          "right", rewriter.expand(uncajoledKey, scope, mq)));
       key = new Reference(tmpVar);
     }
 
-    // Is a property (as opposed to a public) reference.
-    final boolean isProp = uncajoledObject instanceof Reference
-        && Keyword.THIS.toString().equals(getReferenceName(uncajoledObject));
-
-    Expression rvalueCajoled = (Expression) QuasiBuilder.substV(
-        "___.@flavorOfRead(@object, @key)",
-        "flavorOfRead", newReference(isProp ? "readProp" : "readPub"),
-        "object", object,
-        "key", key);
-
-    return new ReadAssignOperands(temporaries, rvalueCajoled) {
-        @Override
-        public Expression makeAssignment(Expression rvalue) {
-          return (Expression) QuasiBuilder.substV(
-              "___.@flavorOfSet(@object, @key, @rvalue)",
-              "flavorOfSet", newReference(isProp ? "setProp" : "setPub"),
-              "object", object,
-              "key", key,
-              "rvalue", rvalue);
-        }
-      };
+    Operation propertyAccess = Operation.create(
+        Operator.SQUARE_BRACKET, object, key);
+    return new ReadAssignOperands(
+        temporaries, propertyAccess,
+        (Expression) rewriter.expand(propertyAccess, scope, mq));
   }
 
   /**
@@ -605,36 +583,43 @@ public abstract class Rule implements MessagePart {
    * setting.
    * <p>
    * This encapsulates any temporary variables created to prevent multiple
-   * execution, and the cajoled lvalue and rvalue.
+   * execution, and the cajoled LHS and RHS.
    */
-  protected static abstract class ReadAssignOperands {
+  protected static final class ReadAssignOperands {
     private final List<Expression> temporaries;
-    private final Expression rvalue;
+    private final Expression uncajoled, cajoled;
 
     ReadAssignOperands(
-        List<Expression> temporaries, Expression rvalue) {
+        List<Expression> temporaries, Expression lhs, Expression rhs) {
+      assert lhs.isLeftHandSide();
       this.temporaries = temporaries;
-      this.rvalue = rvalue;
+      this.uncajoled = lhs;
+      this.cajoled = rhs;
     }
 
     /**
-     * The temporaries required by lvalue and rvalue in order of
-     * initialization.
+     * The temporaries required by LHS and RHS in order of initialization.
      */
     public List<Expression> getTemporaries() { return temporaries; }
     public ParseTreeNodeContainer getTemporariesAsContainer() {
       return new ParseTreeNodeContainer(temporaries);
     }
-    /** Produce an assignment of the given rvalue to the cajoled lvalue. */
-    public abstract Expression makeAssignment(Expression rvalue);
-    /** The Cajoled RValue. */
-    public Expression getRValue() { return rvalue; }
+    /** The uncajoled LHS. */
+    public Expression getUncajoledLValue() { return uncajoled; }
+    /** The cajoled left hand side expression usable as an rvalue. */
+    public Expression getCajoledLValue() { return cajoled; }
     /**
-     * Can the assignment be performed using the rvalue as an lvalue without
+     * Can the assignment be performed using the RHS as an LHS without
      * the need for temporaries?
      */
     public boolean isSimpleLValue() {
-      return temporaries.isEmpty() && rvalue.isLeftHandSide();
+      return temporaries.isEmpty() && cajoled.isLeftHandSide();
+    }
+
+    public Operation makeAssignment(Expression rhs) {
+      Operation e = Operation.create(Operator.ASSIGN, this.uncajoled, rhs);
+      e.getAttributes().set(ParseTreeNode.TAINTED, true);
+      return e;
     }
   }
 

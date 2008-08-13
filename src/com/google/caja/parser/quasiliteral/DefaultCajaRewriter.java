@@ -14,7 +14,6 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.ParseTreeNodes;
@@ -1409,19 +1408,18 @@ public class DefaultCajaRewriter extends Rewriter {
 
           // For x += 3, rhs is (x + 3)
           Operation rhs = Operation.create(
-              op.getAssignmentDelegate(), ops.getRValue(),
-              (Expression) expand(aNode.children().get(1), scope, mq));
-          rhs.setFilePosition(aNode.getFilePosition());
-          Expression assignment = ops.makeAssignment(rhs);
-          ((AbstractParseTreeNode<?>) assignment)
-              .setFilePosition(aNode.getFilePosition());
+              op.getAssignmentDelegate(),
+              ops.getUncajoledLValue(), aNode.children().get(1));
+          rhs.setFilePosition(aNode.children().get(0).getFilePosition());
+          Operation assignment = ops.makeAssignment(rhs);
+          assignment.setFilePosition(aNode.getFilePosition());
           if (ops.getTemporaries().isEmpty()) {
-            return assignment;
+            return expand(assignment, scope, mq);
           } else {
             return substV(
-                "@tmps, @assign",
+                "@tmps, @assignment",
                 "tmps", newCommaOperation(ops.getTemporaries()),
-                "assign", assignment);
+                "assignment", expand(assignment, scope, mq));
           }
         }
         return NONE;
@@ -1449,71 +1447,86 @@ public class DefaultCajaRewriter extends Rewriter {
         switch (op.getOperator()) {
           case POST_INCREMENT:
             if (ops.isSimpleLValue()) {
-              return substV("@v ++", "v", ops.getRValue());
+              return substV("@v ++", "v", ops.getCajoledLValue());
             } else {
               Reference tmpVal = new Reference(
                   scope.declareStartOfScopeTempVariable());
-              Expression assign = ops.makeAssignment((Expression) substV(
-                  "@tmpVal + 1",
-                  "tmpVal", tmpVal));
+              Expression assign = (Expression) expand(
+                  ops.makeAssignment(
+                      (Expression) substV("@tmpVal + 1", "tmpVal", tmpVal)),
+                  scope, mq);
               return substV(
                   "  @tmps,"
-                  + "@tmpVal = @rvalue - 0,"  // Coerce to a number.
+                  + "@tmpVal = +@rvalue,"  // Coerce to a number.
                   + "@assign,"  // Assign value.
                   + "@tmpVal",
                   "tmps", newCommaOperation(ops.getTemporaries()),
                   "tmpVal", tmpVal,
-                  "rvalue", ops.getRValue(),
+                  "rvalue", ops.getCajoledLValue(),
                   "assign", assign);
             }
           case PRE_INCREMENT:
             // We subtract -1 instead of adding 1 since the - operator coerces
             // to a number in the same way the ++ operator does.
             if (ops.isSimpleLValue()) {
-              return substV("++@v", "v", ops.getRValue());
+              return substV("++@v", "v", ops.getCajoledLValue());
             } else if (ops.getTemporaries().isEmpty()) {
-              return ops.makeAssignment((Expression)
-                  substV("@rvalue - -1", "rvalue", ops.getRValue()));
+              return expand(
+                  ops.makeAssignment(
+                      (Expression) substV("@rvalue - -1",
+                         "rvalue", ops.getUncajoledLValue())),
+                  scope, mq);
             } else {
               return substV(
                   "  @tmps,"
                   + "@assign",
                   "tmps", newCommaOperation(ops.getTemporaries()),
-                  "assign", ops.makeAssignment((Expression)
-                      substV("@rvalue - -1", "rvalue", ops.getRValue())));
+                  "assign", expand(
+                      ops.makeAssignment((Expression)
+                          substV("@rvalue - -1",
+                                 "rvalue", ops.getUncajoledLValue())),
+                      scope, mq));
             }
           case POST_DECREMENT:
             if (ops.isSimpleLValue()) {
-              return substV("@v--", "v", ops.getRValue());
+              return substV("@v--", "v", ops.getCajoledLValue());
             } else {
               Reference tmpVal = new Reference(
                   scope.declareStartOfScopeTempVariable());
-              Expression assign = ops.makeAssignment((Expression) substV(
-                  "@tmpVal - 1",
-                  "tmpVal", tmpVal));
+              Expression assign = (Expression) expand(
+                  ops.makeAssignment(
+                      (Expression) substV("@tmpVal - 1", "tmpVal", tmpVal)),
+                  scope, mq);
               return substV(
                   "  @tmps,"
-                  + "@tmpVal = @rvalue - 0,"  // Coerce to a number.
+                  + "@tmpVal = +@rvalue,"  // Coerce to a number.
                   + "@assign,"  // Assign value.
                   + "@tmpVal;",
                   "tmps", newCommaOperation(ops.getTemporaries()),
                   "tmpVal", tmpVal,
-                  "rvalue", ops.getRValue(),
+                  "rvalue", ops.getCajoledLValue(),
                   "assign", assign);
             }
           case PRE_DECREMENT:
             if (ops.isSimpleLValue()) {
-              return substV("--@v", "v", ops.getRValue());
+              return substV("--@v", "v", ops.getCajoledLValue());
             } else if (ops.getTemporaries().isEmpty()) {
-              return ops.makeAssignment((Expression)
-                  substV("@rvalue - 1", "rvalue", ops.getRValue()));
+              return expand(
+                  ops.makeAssignment(
+                      (Expression) substV(
+                          "@rvalue - 1", "rvalue",
+                          ops.getUncajoledLValue())),
+                  scope, mq);
             } else {
               return substV(
                   "  @tmps,"
                   + "@assign",
                   "tmps", newCommaOperation(ops.getTemporaries()),
-                  "assign", ops.makeAssignment((Expression)
-                      substV("@rvalue - 1", "rvalue", ops.getRValue())));
+                  "assign", expand(
+                      ops.makeAssignment((Expression)
+                          substV("@rvalue - 1",
+                                 "rvalue", ops.getUncajoledLValue())),
+                      scope, mq));
             }
           default:
             return NONE;

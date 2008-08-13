@@ -278,7 +278,6 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
   private void assertConsistent(String js) throws Exception {
     // Execute js in the presence of caja so it can use caja.def.
     Object golden = RhinoTestBed.runJs(
-        null,
         new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
         new RhinoTestBed.Input(js, getName()));
     runCajoled("result(" + js + ");", golden,
@@ -321,7 +320,6 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
     try {
       String cajoled = String.format(context, render(block));
       Object actual = RhinoTestBed.runJs(
-          null,
           new RhinoTestBed.Input(getClass(), "../console-stubs.js"),
           new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
           new RhinoTestBed.Input(

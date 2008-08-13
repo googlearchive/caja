@@ -341,7 +341,6 @@ public class DomProcessingEventsTest extends CajaTestCase {
       String contentUrl = TestUtil.makeContentUrl(
           "<html><head/><body><div id=\"base\"/></body></html>");
       String actualHtml = (String) RhinoTestBed.runJs(
-          null,
           new RhinoTestBed.Input(getClass(), "console-stubs.js"),
           new RhinoTestBed.Input(getClass(), "/js/jqueryjs/runtest/env.js"),
           new RhinoTestBed.Input(getClass(), "html-emitter.js"),
