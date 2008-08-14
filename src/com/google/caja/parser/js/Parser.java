@@ -887,24 +887,32 @@ public final class Parser extends ParserBase {
     return new RealLiteral(toNumber(t));
   }
 
-  private long toInteger(Token<JsTokenType> t) {
+  private strictfp long toInteger(Token<JsTokenType> t) {
     Long longValue = Long.decode(t.text);
 
     // Make sure that the number fits in a 51 bit mantissa
     long lv = longValue.longValue();
-    if (lv < 0) { lv = ~lv; }
-    if (0 != (lv & ~((1L << 51) - 1))) {
-      // Could cast to double and back to long and see if precision lost
-      // inside a strict fp block?
+    if (0 != ((lv < 0 ? ~lv : lv) & ~((1L << 51) - 1))) {
       mq.addMessage(MessageType.UNREPRESENTABLE_INTEGER_LITERAL,
                     t.pos, MessagePart.Factory.valueOf(t.text));
+      double dv = lv;  // strictfp affects this.
+      return (long) dv;
     }
-
-    return longValue.longValue();
+    return lv;
   }
 
-  private IntegerLiteral toIntegerLiteral(Token<JsTokenType> t) {
-    return new IntegerLiteral(toInteger(t));
+  private NumberLiteral toIntegerLiteral(Token<JsTokenType> t) {
+    Long longValue = Long.decode(t.text);
+
+    // Make sure that the number fits in a 51 bit mantissa
+    long lv = longValue.longValue();
+    if (0 != ((lv < 0 ? ~lv : lv) & ~((1L << 51) - 1))) {
+      mq.addMessage(MessageType.UNREPRESENTABLE_INTEGER_LITERAL,
+                    t.pos, MessagePart.Factory.valueOf(t.text));
+      return new RealLiteral(lv);
+    }
+
+    return new IntegerLiteral(lv);
   }
 
   @SuppressWarnings("fallthrough")

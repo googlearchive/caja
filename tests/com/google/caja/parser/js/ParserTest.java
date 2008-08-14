@@ -247,6 +247,13 @@ public class ParserTest extends CajaTestCase {
         render(new RegexpLiteral("/x/'")));
   }
 
+  public void testOutOfRangeLiterals() throws Exception {
+    NumberLiteral l = (NumberLiteral) jsExpr(fromString("0x7fffffffffffffff"));
+    assertMessage(
+        MessageType.UNREPRESENTABLE_INTEGER_LITERAL, MessageLevel.WARNING);
+    assertEquals(new Double(9223372036854776000d), l.getValue());
+  }
+
   public void assertExpectedSemi() {
     assertParseFails("foo(function () {return;");
     assertMessage(MessageType.EXPECTED_TOKEN, MessageLevel.ERROR,
@@ -405,9 +412,6 @@ public class ParserTest extends CajaTestCase {
 
     String golden = TestUtil.readResource(getClass(), goldenFile);
     String actual = sb.toString();
-    if (!actual.equals(golden)) {
-      System.err.println("asciiOnly=" + asciiOnly);
-    }
     assertEquals(actual, golden, actual);
   }
 
