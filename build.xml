@@ -326,12 +326,16 @@
 
   <target name="MinifiedJs" depends="pluginc">
     <minify>
-      <job output="${lib}/com/google/caja/plugin/domita-minified.js">
-        <include file="${src}/com/google/caja/caja.js"/>
-        <include file="${src}/com/google/caja/plugin/unicode.js"/>
+      <job output="${lib}/com/google/caja/plugin/html-sanitizer-minified.js">
         <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
         <include file="${lib}/com/google/caja/plugin/css-defs.js"/>
         <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      </job>
+    </minify>
+    <minify>
+      <job output="${lib}/com/google/caja/plugin/domita-minified.js">
+        <include file="${src}/com/google/caja/caja.js"/>
+        <include file="${src}/com/google/caja/plugin/unicode.js"/>
         <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
         <include file="${src}/com/google/caja/plugin/domita.js"/>
       </job>
@@ -602,6 +606,7 @@
       </fileset>
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="domita-minified.js"/>
+        <include name="html-sanitizer-minified.js"/>
       </fileset>
       <fileset dir="${src}/com/google/caja">
         <include name="log-to-console.js"/>
@@ -747,6 +752,7 @@
       </fileset>
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="domita-minified.js"/>
+        <include name="html-sanitizer-minified.js"/>
       </fileset>
       <fileset dir="${third_party}/js/firebug">
         <include name="firebugx.js"/>
