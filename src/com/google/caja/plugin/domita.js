@@ -317,6 +317,20 @@ attachDocumentStub = (function () {
       });
 
     var illegalSuffix = /__(?:\s|$)/;
+    /**
+     * Returns a normalized attribute value, or null if the attribute should
+     * be omitted.
+     * <p>This function satisfies the attribute rewriter interface defined in
+     * {@link html-sanitizer.js}.  As such, the parameters are keys into
+     * data structures defined in {@link html4-defs.js}.
+     *
+     * @param {string} tagName a canonical tag name.
+     * @param {string} attribName a canonical tag name.
+     * @param type as defined in html4-defs.js.
+     *
+     * @return {string|null} null to indicate that the attribute should not
+     *   be set.
+     */
     function rewriteAttribute(tagName, attribName, type, value) {
       switch (type) {
         case html4.atype.IDREF:
@@ -625,6 +639,16 @@ attachDocumentStub = (function () {
       var sanitizedValue = rewriteAttribute(
           this.node___.tagName, name, type, value);
       if (sanitizedValue !== null) {
+        switch (name) {
+          case 'style':
+            if (typeof this.node___.style.cssText === 'string') {
+              // Setting the 'style' attribute does not work for IE, but
+              // setting cssText works on IE 6, Firefox, and IE 7.
+              this.node___.style.cssText = sanitizedValue;
+              return value;
+            }
+            break;
+        }
         this.node___.setAttribute(name, sanitizedValue);
       }
       return value;
