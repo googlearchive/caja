@@ -886,12 +886,17 @@ var ___;
     constr.init___ = initer;
     constr.make___ = function(args) {
       this.underConstruction___ = true;
-      constr.init___.apply(this, args);
+      var result = constr.init___.apply(this, args);
       delete this.underConstruction___;
       if (this.delayedTrademarks___) {
         this.trademarks___ = this.delayedTrademarks___;
         delete this.delayedTrademarks___;
       }
+      // The init___ method is the body of the constructor, so if it returns a
+      // result s.t. (typeof result === 'object' && result !== null) then we
+      // should return that so that it is used as the result of the "new"
+      // operator.
+      return result;
     };
 
     // We must preserve this identity, so anywhere that either

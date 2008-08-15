@@ -1761,6 +1761,11 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "___.simpleFrozenFunc(function() {" +
         "  new (___.asCtor(___.readPub(g, 0)))(___.readPub(g, 1), ___.readPub(g, 2));" +
         "});");
+    assertConsistent(
+        "var a = { y: 1 };" +
+        "function Foo(a) { this.x = 1; return a; }" +
+        "var inst = new Foo(a);" +
+        "('x=' + inst.x + ', y=' + inst.y);");
   }
 
   public void testDeleteProp() throws Exception {
