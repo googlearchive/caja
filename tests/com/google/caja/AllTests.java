@@ -65,6 +65,7 @@ import com.google.caja.plugin.stages.DebuggingSymbolsStageTest;
 import com.google.caja.plugin.stages.InlineCssImportsStageTest;
 import com.google.caja.plugin.stages.OpenTemplateStageTest;
 import com.google.caja.plugin.stages.RewriteHtmlStageTest;
+import com.google.caja.render.JsLinePreservingPrinterTest;
 import com.google.caja.render.JsMinimalPrinterTest;
 import com.google.caja.render.JsPrettyPrinterTest;
 import com.google.caja.render.SideBySideRendererTest;
@@ -130,6 +131,7 @@ public class AllTests {
           JoinTest.class,
           JsHtmlSanitizerTest.class,
           JsLexerTest.class,
+          JsLinePreservingPrinterTest.class,
           JsMinimalPrinterTest.class,
           JsPrettyPrinterTest.class,
           LayoutTest.class,
