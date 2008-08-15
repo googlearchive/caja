@@ -69,31 +69,54 @@ public class JsLexer implements TokenStream<JsTokenType> {
   /**
    * According to
    * <tt>http://www.mozilla.org/js/language/js20/rationale/syntax.html</tt>
-   * <p>"To support error recovery, JavaScript 2.0's lexical grammar must be
+   * <blockquote>
+   *   "To support error recovery, JavaScript 2.0's lexical grammar must be
    *   made independent of its syntactic grammar. To make the lexical grammar
    *   independent of the syntactic grammar, JavaScript 2.0 determines whether
    *   a / starts a regular expression or is a division (or /=) operator solely
-   *   based on the previous token."</p>
-   * That page then lists the tokens that can precede a Regex literal, and
+   *   based on the previous token."</blockquote>
+   * <p>That page then lists the tokens that can precede a RegExp literal, and
    * says:
-   * <p>"Regardless of the previous token, // is interpreted as the beginning
-   *   of a comment."</p>
+   * <blockquote>
+   *   "Regardless of the previous token, // is interpreted as the beginning
+   *   of a comment."</blockquote>
+   *
+   * <p>This scheme is inconsistent with EcmaScript 3 and planned successors
+   * which do not have a context-free lexical grammar.  This approximation works
+   * well in practice, but will fail in some cases, such as after a ++/--
+   * operator that turns out to be a prefix operator.
+   *
+   * <p>Since that document was written, the set of proposed reserved keywords
+   * for EcmaScript 4 has changed.  David-Sarah Hopwood suggested changing the
+   * preceder set in a mail titled "JavaScript lexing" on google-caja-discuss
+   * which concluded:
+   * <blockquote>
+   *   "I think you should:
+   *   <ol type="a">
+   *   <li>remove 'field', 'is', 'namespace', 'use', '->', '..', '@', '^^',
+   *       and '^^=' from validPreceders, and add 'void';
+   *   <li>document that [Caja] does not allow '++' or '--' just before a
+   *       regexp literal;
+   *   <li>c) document that [Caja] does not allow a regexp literal as the first
+   *       token of an expression statement.
+   *   </ol>
+   * </blockquote>
    */
   private static final Pattern TOKEN_BEFORE_REGEXP_LITERAL_RE;
   static {
     StringBuilder sb = new StringBuilder();
     String[] validPreceders = new String[] {
         "!", "!=", "!==", "#", "%", "%=", "&", "&&", "&&=", "&=", "(", "*",
-        "*=", "+", "+=", ",", "-", "-=", "->", ".", "..", "...", "/", "/=", ":",
-        "::", ";", "<", "<<", "<<=", "<=", "=", "==", "===", ">", ">=", ">>",
-        ">>=", ">>>", ">>>=", "?", "@", "[", "^", "^=", "^^", "^^=", "{", "|",
-        "|=", "||", "||=", "~", "abstract", "break", "case", "catch", "class",
-        "const", "continue", "debugger", "default", "delete", "do", "else",
-        "enum", "export", "extends", "field", "final", "finally", "for",
-        "function", "goto", "if", "implements", "import", "in", "instanceof",
-        "is", "namespace", "native", "new", "package", "return", "static",
-        "switch", "synchronized", "throw", "throws", "transient", "try",
-        "typeof", "use", "var", "volatile", "while", "with",
+        "*=", "+", "+=", ",", "-", "-=", ".", "...", "/", "/=", ":", "::", ";",
+        "<", "<<", "<<=", "<=", "=", "==", "===", ">", ">=", ">>", ">>=", ">>>",
+        ">>>=", "?", "[", "^", "^=", "{", "|", "|=", "||", "||=", "~",
+        "abstract", "break", "case", "catch", "class", "const", "continue",
+        "debugger", "default", "delete", "do", "else", "enum", "export",
+        "extends", "final", "finally", "for", "function", "goto", "if",
+        "implements", "import", "in", "instanceof", "native", "new", "package",
+        "return", "static", "switch", "synchronized", "throw", "throws",
+        "transient", "try", "typeof", "var", "void", "volatile", "while",
+        "with",
     };
     sb.append("^(?:");
     for (int i = 0; i < validPreceders.length; i++) {

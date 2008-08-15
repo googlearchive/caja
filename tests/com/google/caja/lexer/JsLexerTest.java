@@ -256,6 +256,36 @@ public class JsLexerTest extends TestCase {
     }
   }
 
+  public void testRegexpFollowingVoid() {
+    JsLexer lexer = createLexer("void /./", false);
+    assertNext(lexer, JsTokenType.KEYWORD, "void");
+    assertNext(lexer, JsTokenType.REGEXP, "/./");
+    assertEmpty(lexer);
+  }
+
+  public void testRegexpFollowingPreincrement() {
+    // KNOWN FAILURE
+    if (false) {
+      JsLexer lexer = createLexer("x = ++/x/m", false);
+      assertNext(lexer, JsTokenType.WORD, "x");
+      assertNext(lexer, JsTokenType.PUNCTUATION, "=");
+      assertNext(lexer, JsTokenType.PUNCTUATION, "++");
+      assertNext(lexer, JsTokenType.REGEXP, "/x/m");
+      assertEmpty(lexer);
+    }
+  }
+
+  public void testRegexpFollowingPostincrement() {
+    JsLexer lexer = createLexer("x++/y/m", false);
+    assertNext(lexer, JsTokenType.WORD, "x");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "++");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "/");
+    assertNext(lexer, JsTokenType.WORD, "y");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "/");
+    assertNext(lexer, JsTokenType.WORD, "m");
+    assertEmpty(lexer);
+  }
+
   private JsLexer createLexer(String src) {
     return createLexer(src, false);
   }
