@@ -44,6 +44,12 @@ import sys
 
 class TestBedProxy(BaseHTTPServer.BaseHTTPRequestHandler):
 
+  def address_string(self):
+    """
+    Overridden to return a hostname for logging without doing a DNS lookup.
+    """
+    return str(self.client_address[0])
+
   def do_GET(self):
     if re.match(r'/proxy(?:[?#]|$)', self.path):
       i = self.path.find('?')
@@ -78,6 +84,7 @@ class TestBedProxy(BaseHTTPServer.BaseHTTPRequestHandler):
       if ctype == 'application/x-www-form-urlencoded':
         qs = self.rfile.read(int(self.headers.getheader('Content-Length')))
         print '%r' % cgi.parse_qs(qs)
+        sys.stdout.flush()  # flush so that stdout/stderr interleave properly
         self.send_response(204)
         self.end_headers()
         return
