@@ -359,9 +359,11 @@ public class Escaping {
   // browsers disagree on what characters are allowed in strings.
   // The below excludes [:Cf:] codepoints, unicode newlines, and
   // codepoints that empirically can't be embedded in a string.
+  // See http://unicode.org/cldr/utility/list-unicodeset.jsp?a=%5B:Cf:%5D for
+  // the set of [:Cf:] codepoints.
   private static final SparseBitSet ALLOW_NON_ASCII = SparseBitSet.withRanges(
-      new int[] { 0xad, 0xae, 0x600, 0x604, 0x70f, 0x710,
-                  0x17b4, 0x17b6, 0x200c, 0x2010, 0x2028, 0x202f,
+      new int[] { 0xad, 0xae, 0x600, 0x604, 0x6dd, 0x6de, 0x70f, 0x710,
+                  0x17b4, 0x17b6, 0x200b, 0x2010, 0x2028, 0x202f,
                   0x2060, 0x2070, 0xfdd0, 0xfdf0, 0xfeff, 0xff00,
                   0xfff0, 0xfffc, 0xfffe, 0x10000,
                   0x1d173, 0x1d17b, 0xe0001, 0xe0002, 0xe0020, 0xe0080 });
