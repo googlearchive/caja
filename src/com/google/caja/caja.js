@@ -1634,6 +1634,8 @@ var ___;
     delete obj[name + '_canRead___'];
     delete obj[name + '_canEnum___'];
     delete obj[name + '_canCall___'];
+    delete obj[name + '_grantCall___'];
+    delete obj[name + '_grantSet___'];
     delete obj[name + '_canSet___'];
     delete obj[name + '_canDelete___'];
     return (delete obj[name]) || (fail('not deleted: ', name), false);
