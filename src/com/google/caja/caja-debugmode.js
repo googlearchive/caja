@@ -109,7 +109,7 @@
    * changes.
    */
   function getCallerStack() {
-    return stackInvalid ? undefined : stackSealer(caja.freeze(stack.slice(0)));
+    return stackInvalid ? void 0 : stackSealer(caja.freeze(stack.slice(0)));
   }
 
   function pushFrame(stackFrame) {
@@ -345,7 +345,7 @@
     var newDebugSymbols = arguments;
     caja.log('using debug symbols');
     if (!caja.isJSONContainer(this)) { caja.fail('called on bad ___'); }
-    if (this.debugSymbols_ !== undefined) {
+    if (this.debugSymbols_ !== void 0) {
       caja.fail('___ reused with different debug symbols');
     }
     // Unpack the debugging symbols.

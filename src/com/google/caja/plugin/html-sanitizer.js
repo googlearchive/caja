@@ -161,7 +161,7 @@ var html = (function () {
             var attribName = m[1].toLowerCase();
             var encodedValue = m[2] || m[3] || m[4];
             var decodedValue;
-            if (encodedValue != null) {  // Matches null & undefined
+            if (encodedValue !== null && encodedValue !== void 0) {
               decodedValue = unescapeEntities(encodedValue);
             } else {
               // Use name as value for valueless attribs, so
@@ -171,7 +171,7 @@ var html = (function () {
             }
             attribs.push(attribName, decodedValue);
           } else if (m[5]) {
-            if (eflags !== undefined) {  // False if not in whitelist.
+            if (eflags !== void 0) {  // False if not in whitelist.
               if (openTag) {
                 handler.startTag && handler.startTag(tagName, attribs, param);
               } else {
@@ -199,7 +199,7 @@ var html = (function () {
               htmlText = htmlText.substring(dataEnd);
             }
 
-            tagName = eflags = openTag = undefined;
+            tagName = eflags = openTag = void 0;
             attribs.length = 0;
             inTag = false;
           }
@@ -211,7 +211,7 @@ var html = (function () {
             inTag = true;
             tagName = m[3].toLowerCase();
             eflags = html4.ELEMENTS.hasOwnProperty(tagName)
-                ? html4.ELEMENTS[tagName] : undefined;
+                ? html4.ELEMENTS[tagName] : void 0;
           } else if (m[4]) {  // Text
             handler.pcdata && handler.pcdata(m[4], param);
           } else if (m[5]) {  // Cruft
@@ -267,7 +267,7 @@ html.makeHtmlSanitizer = function (sanitizeAttributes) {
             for (var i = 0, n = attribs.length; i < n; i += 2) {
               var attribName = attribs[i],
                   value = attribs[i + 1];
-              if (value != null) {  // Skip null or undefined
+              if (value !== null && value !== void 0) {
                 out.push(' ', attribName, '="', html.escapeAttrib(value), '"');
               }
             }

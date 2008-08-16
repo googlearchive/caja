@@ -101,14 +101,14 @@ var valija = function() {
     caja.enforceType(func, 'function');
     var cat = caja.getFuncCategory(func);
     var result = myPOE.get(cat);
-    if (undefined === result) {
+    if (void 0 === result) {
       result = caja.beget(DisfunctionPrototype);
       var parentFunc = caja.getSuperCtor(func);
       var parentShadow;
       if (typeof parentFunc === 'function') {
         parentShadow = getShadow(parentFunc);
       } else {
-	parentShadow = caja.beget(DisfunctionPrototype);
+        parentShadow = caja.beget(DisfunctionPrototype);
       }
       result.prototype = caja.beget(parentShadow.prototype);
       result.prototype.constructor = func;
@@ -165,15 +165,15 @@ var valija = function() {
 
   /**
    * Handle Valija <tt><i>obj</i>[<i>name</i>]</tt>.
-   * <p>
    */
   function read(obj, name) {
     if (typeof obj === 'function') {
       var shadow = getShadow(name);
       if (name in shadow) {
-	return shadow[name];
+        return shadow[name];
       } else {
-	return obj[name];
+        return obj[name];
+      }
     }
     // BUG TODO(erights): Should check in order 1) obj's own
     // properties, 2) getPrototypeOf(ctor)'s properties, 3) obj's
@@ -190,7 +190,6 @@ var valija = function() {
 
   /** 
    * Handle Valija <tt><i>obj</i>[<i>name</i>] = <i>newValue</i></tt>.
-   * <p>
    */
   function set(obj, name, newValue) {
     if (typeof obj === 'function') {
@@ -203,7 +202,6 @@ var valija = function() {
 
   /** 
    * Handle Valija <tt><i>func</i>(<i>args...</i>)</tt>.
-   * <p>
    */
   function callFunc(func, args) {
     return func.apply(caja.USELESS, args);
@@ -211,7 +209,6 @@ var valija = function() {
 
   /** 
    * Handle Valija <tt><i>obj</i>[<i>name</i>](<i>args...</i>)</tt>.
-   * <p>
    */
   function callMethod(obj, name, args) {
     return read(obj, name).apply(obj, args);
@@ -219,7 +216,6 @@ var valija = function() {
 
   /** 
    * Handle Valija <tt>new <i>ctor</i>(<i>args...</i>)</tt>.
-   * <p>
    */
   function construct(ctor, args) {
     if (typeof ctor === 'function') {
@@ -229,11 +225,11 @@ var valija = function() {
     var altResult = ctor.apply(result, args);
     switch (typeof altResult) {
       case 'object': {
-	if (null !== altResult) { return altResult; }
-	break;
+        if (null !== altResult) { return altResult; }
+        break;
       }
       case 'function': {
-	return altResult;
+        return altResult;
       }
     }
     return result;
@@ -241,7 +237,6 @@ var valija = function() {
   
   /** 
    * Handle Valija <tt>function <i>opt_name</i>(...){...}</tt>.
-   * <p>
    */
   function dis(callFn, opt_name) {
     caja.enforceType(callFn, 'function');
@@ -255,13 +250,13 @@ var valija = function() {
       var leftArgs = Array.slice(arguments, 0);
       return function(var_args) {
         return callFn.apply(caja.USELESS, 
-			    leftArgs.concat(Array.slice(arguments, 0)));
+                            leftArgs.concat(Array.slice(arguments, 0)));
       };
     };
     result.prototype = caja.beget(ObjectPrototype);
     result.prototype.constructor = result;
     result.length = callFn.length -1
-    if (opt_name !== undefined) {
+    if (opt_name !== void 0) {
       result.name = opt_name;
     }
     return result;
@@ -269,7 +264,7 @@ var valija = function() {
 
   return caja.freeze({
     getPrototypeOf: getPrototypeOf,
-    setPrototypeOf: setPrototypeOf,
+    //setPrototypeOf: setPrototypeOf,
     typeOf: typeOf,
     instanceOf: instanceOf,
 

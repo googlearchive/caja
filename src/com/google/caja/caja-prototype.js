@@ -469,7 +469,7 @@ var ___;
    * expressed in the JSON language.
    */
   function isJSONContainer(obj) {
-    if (obj == null) { return false; }  // Match null and undefined
+    if (obj === || obj === void 0) { return false; }
     var constr = directConstructor(obj);
     var typeTag = constr && constr.typeTag___;
     return typeTag === 'Object' || typeTag === 'Array';
@@ -813,7 +813,7 @@ var ___;
     if (meth.___ATTACHMENT___ === that) {
       return meth;
     }
-    if (meth.___ATTACHMENT___ !== undefined) {
+    if (meth.___ATTACHMENT___ !== void 0) {
       fail('Method ', meth, ' cannot be reattached to: ', that);
     }
     function result(var_args) {

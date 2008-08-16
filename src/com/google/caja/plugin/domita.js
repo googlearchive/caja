@@ -265,7 +265,7 @@ attachDocumentStub = (function () {
             } else {
               value = null;
             }
-            if (value != null) {  // intentionally matches undefined
+            if (value !== null && value !== void 0) {
               attribs[i + 1] = value;
             } else {
               attribs.splice(i, 2);
@@ -555,7 +555,7 @@ attachDocumentStub = (function () {
       return tameNodeList(
           this.node___.getElementsByTagName(String(tagName)), this.editable___);
     };
-    ___.ctor(TameNode, undefined, 'TameNode');
+    ___.ctor(TameNode, void 0, 'TameNode');
     ___.all2(
        ___.allowMethod, TameNode,
        ['getNodeType', 'getNodeValue', 'getNodeName',
@@ -581,7 +581,7 @@ attachDocumentStub = (function () {
     TameTextNode.prototype.toString = function () {
       return '#text';
     };
-    ___.ctor(TameTextNode, undefined, 'TameNode');
+    ___.ctor(TameTextNode, void 0, 'TameNode');
     ___.all2(___.allowMethod, TameTextNode,
              ['setNodeValue', 'getData', 'setData']);
     exportFields(TameTextNode, ['nodeValue', 'data']);
@@ -594,7 +594,7 @@ attachDocumentStub = (function () {
     TameCommentNode.prototype.toString = function () {
       return '#comment';
     };
-    ___.ctor(TameCommentNode, undefined, 'TameNode');
+    ___.ctor(TameCommentNode, void 0, 'TameNode');
 
     function TameElement(node, editable) {
       assert(node.nodeType === 1);
@@ -610,7 +610,7 @@ attachDocumentStub = (function () {
     TameElement.prototype.getAttribute = function (name) {
       name = String(name).toLowerCase();
       var type = html4.ATTRIBS[name];
-      if (type === undefined || !html4.ATTRIBS.hasOwnProperty(name)) {
+      if (type === void 0 || !html4.ATTRIBS.hasOwnProperty(name)) {
         return null;
       }
       var value = this.node___.getAttribute(name);
@@ -633,7 +633,7 @@ attachDocumentStub = (function () {
       if (!this.editable___) { throw new Error(); }
       name = String(name).toLowerCase();
       var type = html4.ATTRIBS[name];
-      if (type === undefined || !html4.ATTRIBS.hasOwnProperty(name)) {
+      if (type === void 0 || !html4.ATTRIBS.hasOwnProperty(name)) {
         throw new Error();
       }
       var sanitizedValue = rewriteAttribute(
@@ -739,7 +739,7 @@ attachDocumentStub = (function () {
       if (this.node___.addEventListener) {
         this.node___.addEventListener(
             name, wrappedListener,
-            bubble === undefined ? undefined : Boolean(bubble));
+            bubble === void 0 ? void 0 : Boolean(bubble));
       } else {
         this.node___.attachEvent('on' + name, wrappedListener);
       }
@@ -829,12 +829,12 @@ attachDocumentStub = (function () {
     extend(TameInputElement, TameElement);
     TameInputElement.prototype.getValue = function () {
       var value = this.node___.value;
-      return value == null ? null : String(value); // Return null for undefined.
+      return value === null || value === void 0 ? null : String(value);
     };
     TameInputElement.prototype.setValue = function (newValue) {
       if (!this.editable___) { throw new Error(); }
-      // == matches undefined
-      this.node___.value = (newValue == null ? '' : '' + value);
+      this.node___.value = (
+          newValue === null || newValue === void 0 ? '' : '' + value);
       return newValue;
     };
     TameInputElement.prototype.focus = function () {
@@ -922,7 +922,7 @@ attachDocumentStub = (function () {
       return kc && Number(kc);
     };
     TameEvent.prototype.toString = function () { return 'Not a real event'; };
-    ___.ctor(TameEvent, undefined, 'TameEvent');
+    ___.ctor(TameEvent, void 0, 'TameEvent');
     ___.all2(___.allowMethod, TameEvent,
              ['getType', 'getTarget', 'getPageX', 'getPageY', 'stopPropagation',
               'getAltKey', 'getCtrlKey', 'getMetaKey', 'getShiftKey',
@@ -956,8 +956,8 @@ attachDocumentStub = (function () {
     };
     TameDocument.prototype.createTextNode = function (text) {
       if (!this.editable___) { throw new Error(); }
-      return tameNode(  // == matches undefined
-          this.doc___.createTextNode(text != null ? '' + text : ''), true);
+      return tameNode(this.doc___.createTextNode(
+          text !== null && text !== void 0 ? '' + text : ''), true);
     };
     TameDocument.prototype.getElementById = function (id) {
       id += idSuffix;
@@ -965,7 +965,7 @@ attachDocumentStub = (function () {
       return tameNode(node, this.editable___);
     };
     TameDocument.prototype.toString = function () { return '[Fake Document]'; };
-    ___.ctor(TameDocument, undefined, 'TameDocument');
+    ___.ctor(TameDocument, void 0, 'TameDocument');
     ___.all2(___.allowMethod, TameDocument,
              ['createElement', 'createTextNode', 'getElementById']);
 
