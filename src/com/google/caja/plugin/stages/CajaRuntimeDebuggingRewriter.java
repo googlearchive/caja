@@ -177,11 +177,11 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
     addRule(new AddPositionParamRule() {
           @Override
           @RuleDescription(
-              name="canReadPubRev",
-              synopsis="adds debug info to ___.canReadPubRev calls",
+              name="inPub",
+              synopsis="adds debug info to ___.inPub calls",
               reason="",
-              matches="___.canReadPubRev(@obj, @name)",
-              substitutes="___.canReadPubRev(@obj, @name, @debug)")
+              matches="___.inPub(@obj, @name)",
+              substitutes="___.inPub(@obj, @name, @debug)")
           public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
             return super.fire(n, s, mq);
           }

@@ -53,6 +53,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
   private HtmlSchema htmlSchema;
   private boolean debugMode;
   private boolean wartsMode;
+  private boolean valijaMode;
 
   public DefaultGadgetRewriter(MessageQueue mq) {
     this.mq = mq;
@@ -77,6 +78,11 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
    * @param wartsMode whether to cajole in more lenient, 'warts' mode.
    */
   public void setWartsMode(boolean wartsMode) { this.wartsMode = wartsMode; }
+
+  /**
+   * @param valijaMode whether to treat the source as valija.
+   */
+  public void setValijaMode(boolean valijaMode) { this.valijaMode = valijaMode; }
 
   public void rewrite(ExternalReference gadgetRef, UriCallback uriCallback,
                       String view, Appendable output)
@@ -205,6 +211,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
         });
     meta.setDebugMode(debugMode);
     meta.setWartsMode(wartsMode);
+    meta.setValijaMode(valijaMode);
 
     PluginCompiler compiler = createPluginCompiler(meta, mq);
 

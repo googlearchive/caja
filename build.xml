@@ -278,7 +278,7 @@
     </genrule>
   </target>
 
-  <target name="jars" depends="pluginc,MinifiedJs"
+  <target name="jars" depends="pluginc,CajoledValija,MinifiedJs"
    description="Place all jars needed to run the cajoler under ${jars}">
     <copy todir="${jars}">
       <fileset dir="${third_party}/java/jakarta_commons">
@@ -319,6 +319,14 @@
       <fileset dir="${src}" includes="**/*.html"/>
       <fileset dir="${tests}" includes="**/*.html"/>
     </copy>
+  </target>
+
+  <target name="CajoledValija" depends="pluginc">
+    <cajole>
+      <job output="${lib}/com/google/caja/plugin/valija-cajoled.js">
+        <include file="${src}/com/google/caja/valija-cajita.js" />
+      </job>
+    </cajole>
   </target>
 
   <target name="MinifiedJs" depends="pluginc">
@@ -645,6 +653,7 @@
       </fileset>
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="css-defs.js"/>
+        <include name="valija-cajoled.js"/>
       </fileset>
       <fileset dir="${src}/com/google/caja/opensocial/applet">
         <include name="*.html"/>

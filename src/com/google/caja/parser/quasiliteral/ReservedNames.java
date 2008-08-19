@@ -20,6 +20,7 @@ package com.google.caja.parser.quasiliteral;
  * @author benl@google.com (Ben Laurie)
  */
 public class ReservedNames {
+  public static final String DIS = "$dis";
   public static final String LOCAL_THIS = "t___";
   static final String TEMP = "x___";
   public static final String ARGUMENTS = "arguments";

@@ -396,7 +396,7 @@
          'readPub', errorDecorator(orig.readPub),
          'readProp', errorDecorator(orig.readProp),
          'canReadProp', errorDecorator(orig.canReadProp),
-         'canReadPubRev', errorDecorator(orig.canReadPubRev),
+         'inPub', errorDecorator(orig.inPub),
          'setPub', errorDecorator(orig.setPub),
          'setProp', errorDecorator(orig.setProp)
         ], null);

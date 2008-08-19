@@ -17,28 +17,17 @@ package com.google.caja.parser.quasiliteral;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.parser.ParseTreeNode;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author ihab.awad@gmail.com
  */
 public class RewriterTest extends RewriterTestCase {
-  private boolean taintMode;
-
-  public void testTainting() throws Exception {
-    taintMode = true;
-    checkAddsMessage(
-        js(fromString("3;")),
-        RewriterMessageType.UNSEEN_NODE_LEFT_OVER,
-        MessageLevel.FATAL_ERROR);
-    taintMode = false;
-    checkSucceeds(
-        js(fromString("3;")),
-        null);
-  }
-
   @Override
-  protected Rewriter newRewriter() {
-    return new Rewriter(true) {{
+  public void setUp() throws Exception {
+    super.setUp();
+    setRewriter(new Rewriter(true) {{
       addRule(new Rule () {
         @Override
         @RuleDescription(
@@ -52,9 +41,22 @@ public class RewriterTest extends RewriterTestCase {
             getRewriter().expand(c, scope, mq);
           }
           return node;
-        }
-      });
-    }};
+      }});
+    }});
+  }
+
+  private boolean taintMode;
+
+  public void testTainting() throws Exception {
+    taintMode = true;
+    checkAddsMessage(
+        js(fromString("3;")),
+        RewriterMessageType.UNSEEN_NODE_LEFT_OVER,
+        MessageLevel.FATAL_ERROR);
+    taintMode = false;
+    checkSucceeds(
+        js(fromString("3;")),
+        null);
   }
 
   @Override

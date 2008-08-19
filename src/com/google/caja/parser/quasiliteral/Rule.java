@@ -469,8 +469,16 @@ public abstract class Rule implements MessagePart {
    */
   ReadAssignOperands deconstructReadAssignOperand(
       Expression operand, Scope scope, MessageQueue mq) {
+    return deconstructReadAssignOperand(operand, scope, mq, true);
+  }
+  
+  ReadAssignOperands deconstructReadAssignOperand(
+    Expression operand, Scope scope, MessageQueue mq, boolean checkImported) {
     if (operand instanceof Reference) {
-      if (scope.isImported(((Reference) operand).getIdentifierName())) {
+      // TODO(erights): These rules should be independent of whether we're writing
+      // new-caja or cajita.  The check for whether it's imported only applies in the
+      // cajita case.
+      if (checkImported && scope.isImported(((Reference) operand).getIdentifierName())) {
         mq.addMessage(
             RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE,
             operand.getFilePosition(), this, operand);

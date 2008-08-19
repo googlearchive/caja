@@ -101,6 +101,12 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
     assertRewritePasses("listfriends-inline.xml", MessageLevel.WARNING);
   }
 
+  public void testValijaGadget() throws Exception {
+    rewriter.setValijaMode(true);
+    assertRewritePasses("SocialHelloWorld.xml", MessageLevel.WARNING);
+    rewriter.setValijaMode(false);
+  }
+  
   public void testSocialHelloWorld() throws Exception {
     assertRewritePasses("SocialHelloWorld.xml", MessageLevel.WARNING);
   }

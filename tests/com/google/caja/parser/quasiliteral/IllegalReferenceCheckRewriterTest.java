@@ -14,14 +14,20 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.reporting.MessageLevel;
-
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
+
+import com.google.caja.reporting.MessageLevel;
 
 /**
  * @author ihab.awad@gmail.com
  */
 public class IllegalReferenceCheckRewriterTest extends RewriterTestCase {
+  @Override
+  public void setUp() throws Exception {
+    super.setUp();
+    setRewriter(new IllegalReferenceCheckRewriter(true));
+  }
+
   public void testIllegalRefs() throws Exception {
     testIllegal("var x__;");
     testIllegal("function f__() { }");
@@ -51,11 +57,6 @@ public class IllegalReferenceCheckRewriterTest extends RewriterTestCase {
 
   private void testLegal(String code) throws Exception {
     checkSucceeds(js(fromString(code)), null);
-  }
-
-  @Override
-  protected Rewriter newRewriter() {
-    return new IllegalReferenceCheckRewriter(true);
   }
 
   @Override

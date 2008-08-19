@@ -57,6 +57,7 @@
 /** UI suffixes of all registered testbeds. */
 var testbeds = [];
 
+/** URL to use when no proxy URL is provided */
 var BOGUS_PROXY_URL = 'http://bogus-proxy.google.com';
 
 /** A registry of the public APIs of each of the testbed applets. */
@@ -147,10 +148,13 @@ var cajole = (function () {
       var stackTrace = document.getElementById('caja-stacks' + uiSuffix)
       stackTrace.style.display = 'none';
 
-      // Set up the module handler
-      ___.getNewModuleHandler().setImports(imports);
       // Provide an object into which the module can export its public API.
       imports.exports = {};
+      if (document.getElementById("VALIJA_MODE" + uiSuffix).checked) {
+        imports.valija = valijaMaker(imports);
+      }
+     // Set up the module handler
+      ___.getNewModuleHandler().setImports(imports);
 
       // Load the script
       try {
@@ -206,7 +210,7 @@ var cajole = (function () {
     var inputs = form.elements;
     var features = ['testbedServer=' + getTestbedServer().replace(/,/g, '%2C')];
     // See CajaApplet.Feature
-    caja.each({ EMBEDDABLE: true, DEBUG_SYMBOLS: true, WARTS_MODE: true },
+    caja.each({ EMBEDDABLE: true, DEBUG_SYMBOLS: true, WARTS_MODE: true, VALIJA_MODE: true },
               ___.simpleFrozenFunc(function (featureName) {
                 if (inputs[featureName + uiSuffix].checked) {
                   features.push(featureName);

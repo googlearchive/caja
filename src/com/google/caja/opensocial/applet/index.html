@@ -79,6 +79,14 @@
      type="text/javascript"></script>
 
     <script type="text/javascript" src="testbed.js"></script>
+    <script type="text/javascript">
+    (function(){
+      var imports = ___.getNewModuleHandler().getImports();
+      imports.loader = {provide:___.simpleFunc(function(v){valijaMaker = v;})};
+      imports.outers = imports;
+    })();
+    </script>
+    <script type="text/javascript" src="valija-cajoled.js"></script>
   </head>
 
 
@@ -101,6 +109,11 @@
         <label for="WARTS_MODE"
          title="Enable complicated features required for backwards feature"
          >Warty</label>
+        &nbsp;
+        <input id="VALIJA_MODE" type="checkbox" checked>
+        <label for="VALIJA_MODE"
+         title="Enable valija mode."
+         >Valija</label>
         <br>
         <textarea cols="81" rows="20" name="src"
 >&lt;script type="text/javascript"&gt;
