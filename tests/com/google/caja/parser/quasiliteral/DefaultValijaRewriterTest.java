@@ -66,6 +66,7 @@ public class DefaultValijaRewriterTest extends RewriterTestCase {
     assertConsistent("({x:1,y:2}).toString();");
   }
   public void testFor() throws Exception {
+    assertConsistent("for (i=0; i<10; i++) {} i;");
     assertConsistent("for (var i=0; i<10; i++) {} i;");
   }
   public void testUnderscore() throws Exception {
@@ -82,6 +83,7 @@ public class DefaultValijaRewriterTest extends RewriterTestCase {
     assertConsistent("var a={x:1}; ''+ ('x' in a) + ('y' in a);");
   }
   public void testForIn() throws Exception {
+    assertConsistent("str=''; for (i in {x:1, y:true}) {str+=i;} str;");
     assertConsistent("str=''; for (var i in {x:1, y:true}) {str+=i;} str;");
   }
 

@@ -654,7 +654,7 @@ public class DefaultValijaRewriter extends Rewriter {
         if (!(node instanceof AssignOperation)) { return NONE; }
         AssignOperation op = (AssignOperation) node;
         Expression v = op.children().get(0);
-        ReadAssignOperands ops = deconstructReadAssignOperand(v, scope, mq);
+        ReadAssignOperands ops = deconstructReadAssignOperand(v, scope, mq, false);
         if (ops == null) { return node; }
 
         // TODO(mikesamuel): Figure out when post increments are being
