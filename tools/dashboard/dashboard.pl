@@ -5,8 +5,8 @@ use strict;
 use Cwd qw ( abs_path );
 use Date::Format qw ( time2str );
 use Encode qw ( decode_utf8 );
-use File::Basename qw( dirname );
-use File::Path qw( rmtree );
+use File::Basename qw ( dirname );
+use File::Path qw ( rmtree );
 
 
 sub usage() {
@@ -158,6 +158,8 @@ sub collectCodeStats() {
 
   print STDERR "copying docs\n";
   outputTree($DOCS_DIR, 'docs', 'java/index.html', \@status_log);
+  linkOutput('jsdocs', 'docs/js/index.html', \@status_log);
+  linkOutput('ruledocs', 'docs/rules/DefaultCajaRewriter.html', \@status_log);
 
   print STDERR "copying test reports\n";
   outputTree("$REPORTS_DIR/tests", 'tests', 'index.html', \@status_log);
@@ -199,6 +201,13 @@ sub track($$$$) {
 }
 
 # Copy a directory tree to the output directory, e.g. the javadoc tree.
+# $src_dir        -- the directory to copy
+# $name           -- name of the output directory.
+#                    The output will be copied to a directory with this name.
+#                    This is also used as the name of the output as it appears
+#                    in the dashboard.
+# $index          -- path to an $HTML file relative to $OUTPUT_DIR/$name
+# $status_log_ref -- ARRAY reference to which outputs are added.
 sub outputTree($$$$) {
   my ($src_dir, $name, $index, $status_log_ref) = @_;
 
@@ -207,9 +216,20 @@ sub outputTree($$$$) {
 
   system('cp', '-r', $src_dir, $out_dir);
 
-  die "$out_dir/$index does not exist" unless -e "$out_dir/$index";
+  linkOutput($name, "$name/$index", $status_log_ref);
+}
 
-  push(@{$status_log_ref}, qq'<output name="$name" href="$name/$index"/>');
+# Create a link to the given output directory
+# $name           -- name of the output as it appears in the dashboard
+# $output_branch  -- path relative to the dashboard root/$OUTPUT_DIR
+# $status_log_ref -- ARRAY reference to which outputs are added.
+sub linkOutput($$$) {
+  my ($name, $output_branch, $status_log_ref) = @_;
+
+  my $out_file = "$OUTPUT_DIR/$output_branch";
+  die "$out_file does not exist" unless -e "$out_file";
+
+  push(@{$status_log_ref}, qq'<output name="$name" href="$output_branch"/>');
 }
 
 # Run svn to pull down the latest version.

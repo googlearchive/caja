@@ -219,10 +219,7 @@
      encoding="utf-8" template="jsdoc"
      includeundocumented="true" includeprivate="true" includeunderscored="true"
      outputdir="${jsdocs}">
-      <source file="${src}/com/google/caja/JSON.js"/>
       <source file="${src}/com/google/caja/Brand-cajita.js"/>
-      <source file="${src}/com/google/caja/Mint-cajita.js"/>
-      <source file="${src}/com/google/caja/Q-caja.js"/>
       <source file="${src}/com/google/caja/caja.js"/>
       <source file="${src}/com/google/caja/caja-debugmode.js"/>
       <source file="${src}/com/google/caja/caja-prototype.js"/>
@@ -404,8 +401,7 @@
   </target>
 
   <target name="RuleDoclet" depends="Quasiliterals">
-    <!-- HtmlRuleDoclet requires DOMImplementation from java 1.6 -->
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.6">
+    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
       <include name="**/caja/quasiliteral/*Doclet.java"/>
