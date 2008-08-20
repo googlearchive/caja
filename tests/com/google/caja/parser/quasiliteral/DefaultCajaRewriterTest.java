@@ -675,6 +675,9 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     checkAddsMessage(
         js(fromString("for (k in x) ;")),
         RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE);
+    checkAddsMessage(
+        js(fromString("for (Array in x) ;")),
+        RewriterMessageType.CANNOT_MASK_IDENTIFIER);
   }
 
   public void testForeach() throws Exception {
@@ -1277,6 +1280,15 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     checkFails(
         "function f() { this = 3; }",
         "Cannot assign to \"this\"");
+  }
+
+  public void testSetBadFreeVariable() throws Exception {
+    checkAddsMessage(
+        js(fromString("Array = function () { return [] };")),
+        RewriterMessageType.CANNOT_MASK_IDENTIFIER);
+    checkAddsMessage(
+        js(fromString("x = 1;")),
+        RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE);
   }
 
   // TODO(ihab.awad): Move this to the proper order of rules
@@ -2013,12 +2025,12 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
                       "  function C() { this; }" +
                       "  return caja.def(C, Object);" +
                       "})({ def: function () { return 123; } });")),
-        RewriterMessageType.CANNOT_REDECLARE_CAJA);
+        RewriterMessageType.CANNOT_MASK_IDENTIFIER);
     checkAddsMessage(
         js(fromString("var caja = { def: function () { return 123; } };" +
                       "function C() {}" +
                       "caja.def(C, Object, {}, {});")),
-        RewriterMessageType.CANNOT_REDECLARE_CAJA);
+        RewriterMessageType.CANNOT_MASK_IDENTIFIER);
     assertConsistent(
         "function foo() {}" +
         "caja.def(foo, Object, { f: function () { return 3; }});" +
@@ -2135,26 +2147,26 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
     checkAddsMessage(
         js(fromString("(function (caja) {" +
                       "})({ def: function () { return 123; } });")),
-        RewriterMessageType.CANNOT_REDECLARE_CAJA);
+        RewriterMessageType.CANNOT_MASK_IDENTIFIER);
     checkAddsMessage(
         js(fromString("try {" +
                       "  throw { def: function () { return 123; } };" +
                       "} catch (caja) {" +
                       "}" +
                       "result;")),
-        RewriterMessageType.CANNOT_REDECLARE_CAJA);
+        RewriterMessageType.CANNOT_MASK_IDENTIFIER);
     checkAddsMessage(
         js(fromString("function caja() { this; }" +
                       "caja.def = function () { return 123; };")),
-        RewriterMessageType.CANNOT_REDECLARE_CAJA);
+        RewriterMessageType.CANNOT_MASK_IDENTIFIER);
     checkAddsMessage(
         js(fromString("for (var caja = { def: function () { return 123; } }" +
                       "     ; caja; caja = null) {" +
                       "}")),
-        RewriterMessageType.CANNOT_REDECLARE_CAJA);
+        RewriterMessageType.CANNOT_MASK_IDENTIFIER);
     checkAddsMessage(
         js(fromString("for (var caja in { x: 0 }) {}")),
-        RewriterMessageType.CANNOT_REDECLARE_CAJA);
+        RewriterMessageType.CANNOT_MASK_IDENTIFIER);
     setRewriter(defaultCajaRewriter);
   }
 

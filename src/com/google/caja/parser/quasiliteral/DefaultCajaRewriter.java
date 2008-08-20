@@ -416,12 +416,20 @@ public class DefaultCajaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null && bindings.get("k") instanceof ExpressionStmt) {
           ExpressionStmt es = (ExpressionStmt) bindings.get("k");
-          if (es.getExpression() instanceof Reference
-              && scope.isImported(getReferenceName(es.getExpression()))) {
-            mq.addMessage(
-                RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE,
-                node.getFilePosition(), this, node);
-            return node;
+          if (es.getExpression() instanceof Reference) {
+            Reference k = (Reference) es.getExpression();
+            String kName = k.getIdentifierName();
+            if (Scope.UNMASKABLE_IDENTIFIERS.contains(kName)) {
+              mq.addMessage(
+                  RewriterMessageType.CANNOT_MASK_IDENTIFIER,
+                  node.getFilePosition(), MessagePart.Factory.valueOf(kName));
+              return node;
+            } else if (scope.isImported(kName)) {
+              mq.addMessage(
+                  RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE,
+                  node.getFilePosition(), this, node);
+              return node;
+            }
           }
         }
         return NONE;
@@ -1009,7 +1017,11 @@ public class DefaultCajaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null && bindings.get("import") instanceof Reference) {
           String name = ((Reference) bindings.get("import")).getIdentifierName();
-          if (scope.isImported(name)) {
+          if (Scope.UNMASKABLE_IDENTIFIERS.contains(name)) {
+            mq.addMessage(
+                RewriterMessageType.CANNOT_MASK_IDENTIFIER,
+                node.getFilePosition(), MessagePart.Factory.valueOf(name));
+          } else if (scope.isImported(name)) {
             mq.addMessage(
                 RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE,
                 node.getFilePosition(), this, node);

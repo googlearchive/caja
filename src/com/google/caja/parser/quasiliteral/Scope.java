@@ -39,6 +39,7 @@ import com.google.caja.util.Pair;
 import static com.google.caja.parser.js.SyntheticNodes.s;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -603,6 +604,21 @@ public class Scope {
   }
 
   /**
+   * JavaScript identifiers where masking may change the behavior of synthetic
+   * code or cause lots of confusion.
+   */
+  public static final Set<String> UNMASKABLE_IDENTIFIERS = new HashSet<String>(
+      Arrays.asList(
+          "Array",      // Masking Array can change the behavior of [0, 1, ...]
+          "Infinity",
+          "NaN",
+          "Object",     // Masking Object can change the behavior of { k: v }
+          "arguments",  // Can muck with arguments to synthetic values.
+          "caja",       // Used for caja extensions.
+          "undefined"
+          ));
+
+  /**
    * Add a symbol to the symbol table for this scope with the given type.
    * If this symbol redefines another symbol with a different type, or masks
    * an exception, then an error will be added to this Scope's MessageQueue.
@@ -610,10 +626,10 @@ public class Scope {
   private static void declare(Scope s, Identifier ident, LocalType type) {
     String name = ident.getName();
 
-    if ("caja".equals(name)) {
-      s.mq.getMessages().add(new Message(
-          RewriterMessageType.CANNOT_REDECLARE_CAJA,
-          ident.getFilePosition()));
+    if (UNMASKABLE_IDENTIFIERS.contains(name)) {
+      s.mq.addMessage(
+          RewriterMessageType.CANNOT_MASK_IDENTIFIER,
+          ident.getFilePosition(), MessagePart.Factory.valueOf(name));
     }
 
     Pair<LocalType, FilePosition> oldDefinition = s.locals.get(name);

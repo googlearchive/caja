@@ -160,10 +160,6 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: Cannot assign to a free module variable: %s, %s",
       MessageLevel.FATAL_ERROR),
 
-  CANNOT_REDECLARE_CAJA(
-      "%s: Cannot re-declare the \"caja\" variable name",
-      MessageLevel.FATAL_ERROR),
-
   IMPLICIT_XO4A_ONLY_ALLOWED_IN_WARTS_MODE(
       "%s: Implicit xo4a only allowed in warts mode: %s, %s",
       MessageLevel.FATAL_ERROR),
@@ -179,6 +175,9 @@ public enum RewriterMessageType implements MessageTypeInt {
   CANNOT_ASSIGN_TO_FUNCTION_NAME(
       "%s: Cannot assign to a function name: %s, %s",
       MessageLevel.FATAL_ERROR),
+
+  CANNOT_MASK_IDENTIFIER(
+      "%s: Cannot mask identifier \"%s\"", MessageLevel.FATAL_ERROR),
   ;
 
   private final String formatString;

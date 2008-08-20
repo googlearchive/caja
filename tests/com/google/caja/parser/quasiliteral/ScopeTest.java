@@ -21,10 +21,12 @@ import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.FunctionConstructor;
+import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.Message;
 import com.google.caja.util.CajaTestCase;
@@ -472,6 +474,43 @@ public class ScopeTest extends CajaTestCase {
             + "function foo() {}")),
         mq);
     assertMessage(MessageType.SYMBOL_REDEFINED, MessageLevel.ERROR);
+  }
+
+  public void testUnmaskableIdentifiersInCatch() throws Exception {
+    Block b = js(fromString("try {} catch (Object) {}"));
+    TryStmt tryStmt = (TryStmt) b.children().get(0);
+    Scope top = Scope.fromProgram(b, mq);
+    Scope.fromCatchStmt(top, tryStmt.getCatchClause());
+    assertMessage(
+        RewriterMessageType.CANNOT_MASK_IDENTIFIER, MessageLevel.FATAL_ERROR,
+        MessagePart.Factory.valueOf("Object"));
+  }
+
+  public void testUnmaskableIdentifiersInDeclarations() throws Exception {
+    Block b = js(fromString("var Array, undefined;"));
+    Scope.fromProgram(b, mq);
+    assertMessage(
+        RewriterMessageType.CANNOT_MASK_IDENTIFIER, MessageLevel.FATAL_ERROR,
+        MessagePart.Factory.valueOf("Array"));
+    assertMessage(
+        RewriterMessageType.CANNOT_MASK_IDENTIFIER, MessageLevel.FATAL_ERROR,
+        MessagePart.Factory.valueOf("undefined"));
+  }
+
+  public void testUnmaskableFormals() throws Exception {
+    Block b = js(fromString("function NaN(Infinity, arguments) {}"));
+    Scope top = Scope.fromProgram(b, mq);
+    FunctionDeclaration fn = ((FunctionDeclaration) b.children().get(0));
+    Scope.fromFunctionConstructor(top, fn.getInitializer());
+    assertMessage(
+        RewriterMessageType.CANNOT_MASK_IDENTIFIER, MessageLevel.FATAL_ERROR,
+        MessagePart.Factory.valueOf("NaN"));
+    assertMessage(
+        RewriterMessageType.CANNOT_MASK_IDENTIFIER, MessageLevel.FATAL_ERROR,
+        MessagePart.Factory.valueOf("Infinity"));
+    assertMessage(
+        RewriterMessageType.CANNOT_MASK_IDENTIFIER, MessageLevel.FATAL_ERROR,
+        MessagePart.Factory.valueOf("arguments"));
   }
 
   private FunctionConstructor findFunctionConstructor(ParseTreeNode root, String name) {
