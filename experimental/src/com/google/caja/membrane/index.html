@@ -1,0 +1,52 @@
+<html>
+  <head>
+	<title>Test Container</title>
+    <style>span.comment { color: #333388; }</style>
+  </head>
+  <body style="font-family:verdana,tahoma;color: #333388;font-size: 11px;">
+	<h1>Test Container</h1>
+
+	<script type="text/javascript" src="caja.js"></script>
+  <script type="text/javascript" src="objects.js"></script>
+  <script type="text/javascript" src="membrane.js"></script>
+	<script type="text/javascript" src="taming/MyAPI.js"></script>
+	
+	<!-- Membrane layer setup -->
+	<script>    
+    var alice_control = makeMembrane(Alice);
+		var wrapmap = ___.copy(___.sharedImports);
+        wrapmap.Alice = alice_control.shadow;
+    ___.getNewModuleHandler().setImports(wrapmap);
+	</script>
+    
+	<b>Basic Test.  Gate is ENABLED.</b><br /><br />
+	
+	<!-- Basic tester module: with gate ENABLED -->
+	<font color="#990022">
+	<script type="text/javascript" src="basic_test.js"></script>
+	</font>
+	
+	<script>
+			alice_control.gate.disable();
+	</script>
+	
+	<br /><br />------------------<br /><br />
+	<b>Basic Test.  Gate is DISABLED.</b><br /><br />
+	
+	<!-- Basic tester module: with gate DISABLED -->
+	<font color="#990022">
+	<script type="text/javascript" src="basic_test.js"></script>
+	</font>
+	
+	<br /><br />------------------<br /><br />
+	<b>Policy testing.</b><br /><br />
+	
+	<!-- Policy testing module -->
+	<font color="#990022">
+	<script type="text/javascript" src="policy_test.js"></script>
+	</font>
+	
+	<br /><br /><br />
+    
+  </body>
+</html>
