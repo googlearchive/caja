@@ -364,6 +364,7 @@
         <include name="**/caja/caja.js"/>
         <include name="**/caja/caja-debugmode.js"/>
         <include name="**/caja/log-to-console.js"/>
+        <include name="**/caja/valija-cajita.js"/>
         <include name="**/caja/demos/calendar/*.js"/>
         <include name="**/caja/opensocial/applet/testbed.js"/>
         <include name="**/caja/plugin/domita.js"/>

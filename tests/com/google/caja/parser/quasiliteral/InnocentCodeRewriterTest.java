@@ -19,8 +19,6 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.util.RhinoTestBed;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author adrienne.felt@gmail.com
@@ -32,7 +30,7 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
     super.setUp();
     setRewriter(new InnocentCodeRewriter(true));
   }
-    
+
   // Tests block-level forEach statements
   public void testForEachPlain() throws Exception {
     checkSucceeds(

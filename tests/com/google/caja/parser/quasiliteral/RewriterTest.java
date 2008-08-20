@@ -17,8 +17,6 @@ package com.google.caja.parser.quasiliteral;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.parser.ParseTreeNode;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author ihab.awad@gmail.com
