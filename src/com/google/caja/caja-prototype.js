@@ -900,22 +900,6 @@ var ___;
     return primFreeze(asCtorOnly(constr)); 
   }
   
-  /** Only methods and simple functions can be called as methods */
-  function asMethod(meth) {
-    if (isSimpleFunc(meth) || isMethod(meth)) { 
-      if (!isFrozen(meth)) {
-        fail('internal: non-frozen func stored as method: ', meth);
-      }
-      return meth; 
-    }
-    
-    enforceType(meth, 'function');
-    if (isCtor(meth)) {
-      fail("Constructors can't be called as methods: ", meth);
-    }
-    fail("Untamed functions can't be called as methods: ", meth);
-  }
-  
   /** Only simple functions can be called as simple functions */
   function asSimpleFunc(fun) {
     if (isSimpleFunc(fun)) { 
@@ -2327,7 +2311,7 @@ var ___;
     ctor: ctor,                   asCtorOnly: asCtorOnly,
     asCtor: asCtor,
     splitCtor: splitCtor,
-    method: method,               asMethod: asMethod,
+    method: method,
     simpleFunc: simpleFunc,       asSimpleFunc: asSimpleFunc,
     xo4a: xo4a,
     setMember: setMember,
