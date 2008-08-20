@@ -123,6 +123,86 @@ var getTestbedServer = (function () {
   }
 })();
 
+/** Fills out the form with a "Conway's Game of Life" gadget. */
+function lifecode(form) {
+  form.elements.src.value = 
+      "<!-- Cellular automaton gadget. This code is in the public domain. -->\n" +
+      "<textarea id=\"area\">It's alive!</textarea>\n<script>\n" +
+      "// Size of the grid\nvar size = 40;\n" +
+      "// Text area for displaying the CA\n" +
+      "var ta = document.getElementById('area');\n" +
+      "ta.setAttribute('rows', size);\n" +
+      "ta.setAttribute('cols', size*2);\n\n" +
+      "// Set up the internal version of the grid\n" +
+      "// ca[t][x][y]\n" +
+      "// t alternates between 0 and 1\n" +
+      "var ca = [];\n" +
+      "var t, x, y;\n" +
+      "for (t = 0; t < 2; ++t) {\n" +
+      "  ca[t] = [];\n" +
+      "  for (x = 0; x < size; ++x) {\n" +
+      "    ca[t][x] = new Array(size);\n" +
+      "  }\n" +
+      "}\n\n" +
+      "// Start with a pi heptomino\n" +
+      "var s = Math.floor(size / 2);\n" +
+      "ca[0][s][s] = 1;\n" +
+      "ca[0][s+1][s] = 1;\n" +
+      "ca[0][s+2][s] = 1;\n" +
+      "ca[0][s][s+1] = 1;\n" +
+      "ca[0][s+2][s+1] = 1;\n" +
+      "ca[0][s][s+2] = 1;\n" +
+      "ca[0][s+2][s+2] = 1;\n\n\n" +
+      "// Compute number of neighbors (on a torus)\n" +
+      "function count(ca, t, x, y) {\n" +
+      "  var sum = 0, i, j;\n" +
+      "  for (i = -1; i < 2; ++i) {\n" +
+      "    for (j = -1; j < 2; ++j) {\n" +
+      "      if (!i && !j) continue;\n" +
+      "\n" +
+      "      var k = x + i;\n" +
+      "      if (k < 0) { k += size; }\n" +
+      "      else if (k >= size) { k -= size; }\n" +
+      "\n" +
+      "      var m = y + j;\n" +
+      "      if (m < 0) { m += size; }\n" +
+      "      else if (m >= size) { m -= size; }\n" +
+      "\n" +
+      "      sum += !!(ca[t][k][m]);\n" +
+      "    }\n" +
+      "  }\n" +
+      "  return sum;\n" +
+      "}\n\n" +
+      "// Display loop\n" +
+      "function display(ca, t) {\n" +
+      "  var x, y, str = \"\";\n" +
+      "  for (y = 0; y < size; ++y) {\n" +
+      "    for (x = 0; x < size; ++x) {\n" +
+      "      str += ca[t][x][y] ? \"()\" : \"  \";\n" +
+      "    }\n" +
+      "    str += \"\\n\";\n" +
+      "  }\n" +
+      "  ta.innerHTML = str;\n" +
+      "}\n\n" +
+      "// Update loop\n" +
+      "function update() {\n" +
+      "  for (x = 0; x < size; ++x) {\n" +
+      "    for (y = 0; y < size; ++y) {\n" +
+      "      var c = count(ca, t, x, y);\n" +
+      "      // Conway's rules\n" +
+      "      if (c === 2) { ca[1-t][x][y] = ca[t][x][y]; }\n" +
+      "      else if (c === 3) { ca[1-t][x][y] = 1; }\n" +
+      "      else { ca[1-t][x][y] = 0; }\n" +
+      "    }\n" +
+      "  }\n" +
+      "  t = 1 - t;\n" +
+      "  display(ca, t);\n" +
+      "}\n" +
+      "t=0;\n" +
+      "setInterval(update, 1000);\n" +
+      "</script>";
+}
+
 
 /**
  * Reads caja code and configuration from the testbed form, cajoles it, and
