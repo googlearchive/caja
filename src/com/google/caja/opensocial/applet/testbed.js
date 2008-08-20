@@ -338,30 +338,35 @@ var getImports = (function () {
    * one that can be evaled.
    */
   function repr(o) {
-    switch (typeof o) {
-      case 'string':
-        return ('"'
-                + o.replace(/[^\x20\x21\x23-\x5b\x5d-\x7f]/g, escapeOne)
-                + '"');
-      case 'object': case 'function':
-        if (o === null) { break; }
-        if (caja.isJSONContainer(o)) {
-          var els = [];
-          if ('length' in o
-              && !(Object.prototype.propertyIsEnumerable.call(o, 'length'))
-              ) {
-            for (var i = 0; i < o.length; ++i) {
-              els.push(repr(o[i]));
+    if (Object.prototype.toSource) { return Object.prototype.toSource.call(o); }
+    try {
+      switch (typeof o) {
+        case 'string':
+          return ('"'
+                  + o.replace(/[^\x20\x21\x23-\x5b\x5d-\x7f]/g, escapeOne)
+                  + '"');
+        case 'object': case 'function':
+          if (o === null) { break; }
+          if (caja.isJSONContainer(o)) {
+            var els = [];
+            if ('length' in o
+                && !(Object.prototype.propertyIsEnumerable.call(o, 'length'))
+                ) {
+              for (var i = 0; i < o.length; ++i) {
+                els.push(repr(o[i]));
+              }
+              return '[' + els.join(', ') + ']';
+            } else {
+              caja.each(o, reprKeyValuePair(els));
+              return els.length ? '{ ' + els.join(', ') + ' }' : '{}';
             }
-            return '[' + els.join(', ') + ']';
-          } else {
-            caja.each(o, reprKeyValuePair(els));
-            return els.length ? '{ ' + els.join(', ') + ' }' : '{}';
           }
-        }
-        return '\u00ab' + o + '\u00bb';
+          return '\u00ab' + o + '\u00bb';
+      }
+      return String(o);
+    } catch (e) {
+      return "This object is recursive, so we're not going to try to print it." 
     }
-    return String(o);
   }
 
   /** Javascript support for ExpressionLanguageStage.java */

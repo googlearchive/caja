@@ -198,10 +198,9 @@ attachDocumentStub = (function () {
   // This is safe even if accessed across frame since the same
   // trademark value is never used with more than one version of
   // setTimeout.
-
   var timeoutIdTrademark = {};
   function tameSetTimeout(timeout, delayMillis) {
-    var timeoutId = setTimeout(___.asSimpleFunc(timeout), delayMillis | 0);
+    var timeoutId = setTimeout(___.readPub(timeout, 'call'), delayMillis | 0);
     return ___.freeze(___.stamp(timeoutIdTrademark,
                           { timeoutId___: timeoutId }));
   }
@@ -213,7 +212,7 @@ attachDocumentStub = (function () {
   ___.simpleFrozenFunc(tameClearTimeout);
   var intervalIdTrademark = {};
   function tameSetInterval(interval, delayMillis) {
-    var intervalId = setInterval(___.asSimpleFunc(interval), delayMillis | 0);
+    var intervalId = setInterval(___.readPub(interval, 'call'), delayMillis | 0);
     return ___.freeze(___.stamp(intervalIdTrademark,
                           { intervalId___: intervalId }));
   }
@@ -1142,12 +1141,12 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   }
   ___.startCallerStack && ___.startCallerStack();
   try {
-    return (___.asSimpleFunc(handler))(
-        imports.tameNode___(thisNode, true), imports.tameEvent___(event));
+    return ___.callPub(handler, 'call', [handler,
+        imports.tameNode___(thisNode, true), imports.tameEvent___(event)]);
   } catch (ex) {
     if (ex && ex.cajaStack___ && 'undefined' !== (typeof console)) {
       console.error('Event dispatch %s: %s',
-                    handler, ___.unsealCallerStack(ex.cajaStack___).join('\n'));
+          handler, ___.unsealCallerStack(ex.cajaStack___).join('\n'));
     }
     throw ex;
   }
