@@ -17,13 +17,11 @@ Block
     Reference
       Identifier : c
   ReturnStmt
-    UndefinedLiteral : undefined
   ExpressionStmt
     Reference
       Identifier : c
   Block
     ReturnStmt
-      UndefinedLiteral : undefined
   BreakStmt : d
   BreakStmt : 
   ExpressionStmt

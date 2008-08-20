@@ -63,6 +63,10 @@ public abstract class Operation extends AbstractExpression<Expression> {
     }
   }
 
+  public static Operation undefined() {
+    return create(Operator.VOID, new IntegerLiteral(0));
+  }
+
   @Override
   public Object getValue() { return op; }
 

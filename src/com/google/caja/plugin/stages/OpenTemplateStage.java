@@ -33,7 +33,6 @@ import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.js.UndefinedLiteral;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.reporting.MessageQueue;
@@ -452,7 +451,7 @@ final class Splitter {
       tq.expectEmpty();
     } catch (ParseException ex) {
       ex.toMessageQueue(mq);
-      UndefinedLiteral placeholder = new UndefinedLiteral();
+      Operation placeholder = Operation.undefined();
       placeholder.setFilePosition(FilePosition.span(start, end));
       result = placeholder;
     }

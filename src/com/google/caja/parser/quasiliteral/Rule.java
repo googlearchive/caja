@@ -32,7 +32,6 @@ import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
 import static com.google.caja.parser.js.SyntheticNodes.s;
-import com.google.caja.parser.js.UndefinedLiteral;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -229,7 +228,7 @@ public abstract class Rule implements MessagePart {
   }
 
   protected Expression newCommaOperation(List<? extends ParseTreeNode> operands) {
-    if (operands.size() == 0) return new UndefinedLiteral();
+    if (operands.isEmpty()) { return Operation.undefined(); }
     Expression result = (Expression)operands.get(0);
     for (int i = 1; i < operands.size(); i++) {
       result = Operation.create(Operator.COMMA, result, (Expression)operands.get(i));

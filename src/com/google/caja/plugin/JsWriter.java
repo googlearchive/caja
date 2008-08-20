@@ -29,7 +29,6 @@ import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.js.UndefinedLiteral;
 import com.google.caja.reporting.MessageQueue;
 
 import java.util.List;
@@ -129,9 +128,9 @@ final class JsWriter {
     }
 
     if (null == e) {
-      UndefinedLiteral ul = new UndefinedLiteral();
-      ul.setFilePosition(pos);
-      return ul;
+      Operation voidOp = Operation.undefined();
+      voidOp.setFilePosition(pos);
+      return voidOp;
     }
 
     // Wrap in an ExpressionStmt so the expression is guaranteed to have a
@@ -141,7 +140,7 @@ final class JsWriter {
     // Expression will be sanitized in a later pass
 
     e = stmt.getExpression();  // Refetch e in case it was rewritten
-    stmt.replaceChild(new UndefinedLiteral(), e);  // Make e not a child of stmt
+    stmt.replaceChild(Operation.undefined(), e);  // Make e not a child of stmt
     return e;
   }
 

@@ -27,7 +27,7 @@ public final class ReturnStmt extends AbstractStatement<Expression> {
 
   /** @param value unused.  This ctor is provided for reflection. */
   public ReturnStmt(Void value, List<? extends Expression> children) {
-    this(children.get(0));
+    createMutation().appendChildren(children).execute();
   }
 
   public ReturnStmt(Expression returnValue) {
@@ -39,9 +39,13 @@ public final class ReturnStmt extends AbstractStatement<Expression> {
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
+    if (children().size() >= 2) { throw new IllegalArgumentException(); }
     this.returnValue = children().isEmpty() ? null : children().get(0);
   }
 
+  /**
+   * Null if nothing is returned, which implicitly returns the undefined value.
+   */
   public Expression getReturnValue() { return returnValue; }
 
   @Override

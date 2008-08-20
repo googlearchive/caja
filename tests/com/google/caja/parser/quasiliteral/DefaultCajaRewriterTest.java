@@ -1157,6 +1157,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         "function() {" +
         "  " + unchanged +
         "};",
+        "var undefined = ___.readImport(IMPORTS___, 'undefined');" +
         "___.simpleFrozenFunc(function() {" +
         "  " + unchanged +
         "});");

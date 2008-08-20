@@ -523,8 +523,7 @@ public final class Parser extends ParserBase {
           // Check for semicolon insertion without lookahead since return is a
           // restricted production.  See the grammar above and ES262 S7.9.1
           if (semicolonInserted() || tq.lookaheadToken(Punctuation.SEMI)) {
-            value = new UndefinedLiteral();
-            value.setFilePosition(FilePosition.endOf(tq.lastPosition()));
+            value = null;
           } else {
             value = parseExpressionInt(false);
           }
@@ -997,28 +996,22 @@ public final class Parser extends ParserBase {
       case WORD:
       {
         String identifier = t.text;
-        if (UndefinedLiteral.VALUE_NAME.equals(identifier)) {
-          // Can't leave this as a reference or we'd have to allow references
-          // to have declared types that are not signature types
-          e = new UndefinedLiteral();
-        } else {
-          Keyword kw = Keyword.fromString(identifier);
-          if (null != kw) {
-            if (Keyword.THIS != kw) {
-              mq.addMessage(MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
-                            tq.lastPosition(),
-                            Keyword.fromString(identifier));
-            }
-          } else if (!isIdentifier(identifier)) {
-            mq.addMessage(MessageType.INVALID_IDENTIFIER,
+        Keyword kw = Keyword.fromString(identifier);
+        if (null != kw) {
+          if (Keyword.THIS != kw) {
+            mq.addMessage(MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
                           tq.lastPosition(),
-                          MessagePart.Factory.valueOf(identifier));
+                          Keyword.fromString(identifier));
           }
-          Identifier idNode = new Identifier(decodeIdentifier(identifier));
-          finish(idNode, m);
-          e = new Reference(idNode);
-          e.setFilePosition(idNode.getFilePosition());
+        } else if (!isIdentifier(identifier)) {
+          mq.addMessage(MessageType.INVALID_IDENTIFIER,
+                        tq.lastPosition(),
+                        MessagePart.Factory.valueOf(identifier));
         }
+        Identifier idNode = new Identifier(decodeIdentifier(identifier));
+        finish(idNode, m);
+        e = new Reference(idNode);
+        e.setFilePosition(idNode.getFilePosition());
         break;
       }
       case PUNCTUATION:
@@ -1038,8 +1031,10 @@ public final class Parser extends ParserBase {
               Mark cm = tq.mark();  // If lastComma, mark of the last comma.
               while (tq.checkToken(Punctuation.COMMA)) {
                 if (empty) {
-                  UndefinedLiteral vl = new UndefinedLiteral();
+                  Operation vl = Operation.undefined();
                   finish(vl, cm);
+                  ((IntegerLiteral) vl.children().get(0))
+                    .setFilePosition(vl.getFilePosition());
                   elements.add(vl);
                 } else {
                   empty = true;

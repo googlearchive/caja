@@ -4,10 +4,10 @@
   a;
   --b;
   return c;
-  return undefined;
+  return;
   c;
   {
-    return undefined;
+    return;
   }
   break d;
   break;

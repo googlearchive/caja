@@ -117,7 +117,8 @@ Block
         IntegerLiteral : 9
         IntegerLiteral : 10
         IntegerLiteral : 11
-        UndefinedLiteral : undefined
+        SpecialOperation : VOID
+          IntegerLiteral : 0
         IntegerLiteral : 13
   ForLoop : 
     Declaration
