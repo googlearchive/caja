@@ -231,13 +231,22 @@ public abstract class CajaTestCase extends TestCase {
 
   protected void assertMessage(
       MessageTypeInt type, MessageLevel level, MessagePart... expectedParts) {
+    Message closest = null;
     for (Message msg : mq.getMessages()) {
-      if (msg.getMessageType() == type && msg.getMessageLevel() == level
-          && messageHasParts(msg, expectedParts)) {
-        return;
+      if (msg.getMessageType() == type) {
+        if (msg.getMessageLevel() == level) {
+          if (messageHasParts(msg, expectedParts)) { return; }
+          closest = msg;
+        } else if (closest == null || closest.getMessageLevel() != level) {
+          closest = msg;
+        }
       }
     }
-    fail("No message found of type " + type + " and level " + level);
+    if (closest == null) {
+      fail("No message found of type " + type + " and level " + level);
+    } else {
+      fail("Failed to find message.  Closest match was " + closest.format(mc));
+    }
   }
 
   private static boolean messageHasParts(Message msg, MessagePart... parts) {

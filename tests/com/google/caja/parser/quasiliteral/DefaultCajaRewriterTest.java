@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
@@ -1279,13 +1280,20 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
   }
 
   // TODO(ihab.awad): Move this to the proper order of rules
-  public void testBadGlobalThis() throws Exception {
+  public void testAssignmentToThis() throws Exception {
     checkAddsMessage(js(fromString(
         "this = 3;")),
         RewriterMessageType.CANNOT_ASSIGN_TO_THIS);
-    checkAddsMessage(js(fromString(
-        "var x = this;")),
-        RewriterMessageType.THIS_IN_GLOBAL_CONTEXT);
+  }
+
+  public void testBadGlobalThis() throws Exception {
+    checkFails(
+        "var x = 1;\n" +
+        "(this);",
+        "\"this\" cannot be used in the global context");
+    assertMessage(
+        RewriterMessageType.THIS_IN_GLOBAL_CONTEXT, MessageLevel.FATAL_ERROR,
+        FilePosition.instance(is, 2, 2, 13, 2, 2, 2, 17, 6));
   }
 
   public void testSetBadSuffix() throws Exception {

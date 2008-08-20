@@ -17,6 +17,7 @@ package com.google.caja.parser.quasiliteral;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.ParseTreeNodes;
+import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.AssignOperation;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.BreakStmt;
@@ -44,13 +45,12 @@ import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.RegexpLiteral;
 import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.SimpleOperation;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SwitchStmt;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TryStmt;
-import com.google.caja.parser.js.Statement;
-import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.util.Pair;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -99,7 +99,7 @@ public class DefaultCajaRewriter extends Rewriter {
           if (s2.hasFreeThis()) {
             mq.addMessage(
                 RewriterMessageType.THIS_IN_GLOBAL_CONTEXT,
-                node.getFilePosition());
+                s2.getFreeThis().get(0).getFilePosition());
           }
           List<ParseTreeNode> expanded = new ArrayList<ParseTreeNode>();
           for (ParseTreeNode c : node.children()) {
