@@ -14,20 +14,23 @@
 
 package com.google.caja.lexer;
 
+import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.TestUtil;
 
-import junit.framework.TestCase;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  *
  * @author mikesamuel@gmail.com
  */
-public class HtmlLexerTest extends TestCase {
+public class HtmlLexerTest extends CajaTestCase {
 
   public void testHtmlLexer() throws Exception {
     // Do the lexing.
-    CharProducer p = TestUtil.getResourceAsProducer(
-        getClass(), "htmllexerinput1.html");
+    CharProducer p = fromResource("htmllexerinput1.html");
     StringBuilder actual = new StringBuilder();
     try {
       HtmlLexer lexer = new HtmlLexer(p);
@@ -45,8 +48,7 @@ public class HtmlLexerTest extends TestCase {
 
   public void testXmlLexer() throws Exception {
     // Do the lexing.
-    CharProducer p = TestUtil.getResourceAsProducer(
-        getClass(), "htmllexerinput2.xml");
+    CharProducer p = fromResource("htmllexerinput2.xml");
     StringBuilder actual = new StringBuilder();
     try {
       HtmlLexer lexer = new HtmlLexer(p);
@@ -63,6 +65,16 @@ public class HtmlLexerTest extends TestCase {
     assertEquals(golden, actual.toString());
   }
 
+  public void testEofInTag() throws Exception {
+    assertTokens("<div", true, "TAGBEGIN: <div");
+    assertTokens("</div", true, "TAGBEGIN: </div");
+    assertTokens("<div\n", true, "TAGBEGIN: <div");
+    assertTokens("</div\n", true, "TAGBEGIN: </div");
+    assertTokens("<div", false, "TAGBEGIN: <div");
+    assertTokens("</div", false, "TAGBEGIN: </div");
+    assertTokens("<div\n", false, "TAGBEGIN: <div");
+    assertTokens("</div\n", false, "TAGBEGIN: </div");
+  }
 
   private void lex(HtmlLexer lexer, Appendable out) throws Exception {
     int maxTypeLength = 0;
@@ -80,5 +92,17 @@ public class HtmlLexerTest extends TestCase {
       out.append(type).append(" [").append(escaped).append("]  :  ")
          .append(t.pos.toString()).append("\n");
     }
+  }
+
+  private void assertTokens(String markup, boolean asXml, String... golden)
+      throws ParseException {
+    HtmlLexer lexer = new HtmlLexer(fromString(markup));
+    lexer.setTreatedAsXml(asXml);
+    List<String> actual = new ArrayList<String>();
+    while (lexer.hasNext()) {
+      Token<HtmlTokenType> t = lexer.next();
+      actual.add(t.type + ": " + t.text);
+    }
+    MoreAsserts.assertListsEqual(Arrays.asList(golden), actual);
   }
 }

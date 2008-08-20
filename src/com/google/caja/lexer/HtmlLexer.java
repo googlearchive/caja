@@ -714,6 +714,9 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                   case SERVER_CODE_PCT:
                     type = HtmlTokenType.SERVERCODE;
                     break;
+                  case TAGNAME:
+                    type = HtmlTokenType.TAGBEGIN;
+                    break;
                   default:
                     type = HtmlTokenType.TEXT;
                     break;
