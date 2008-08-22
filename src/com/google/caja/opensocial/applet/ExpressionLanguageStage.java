@@ -18,7 +18,10 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Conditional;
+import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
+import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.TryStmt;
@@ -26,7 +29,10 @@ import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.Pipeline;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A pipeline stage that adds expression language semantics to a caja program.
@@ -62,7 +68,7 @@ final class ExpressionLanguageStage implements Pipeline.Stage<Jobs> {
         // Rewrite each extracted block of javascript independently.
         // We skip synthetic nodes such as extracted event handlers, and
         // compiled CSS and HTML.
-        if (!s.getAttributes().is(SyntheticNodes.SYNTHETIC)) {
+        if (mayYieldValue(s)) {
           rewrite(AncestorChain.instance(root, s));
         }
       }
@@ -94,5 +100,28 @@ final class ExpressionLanguageStage implements Pipeline.Stage<Jobs> {
     } else if (node instanceof TryStmt) {
       rewrite(new AncestorChain<Statement>(ac, ((TryStmt) node).getBody()));
     }
+  }
+
+  private static boolean mayYieldValue(Statement s) {
+    // TODO: once we have replaced synthetic nodes with special nodes, we should
+    // replace this with a white-list.
+    Identifier ident = null;
+    Map<String, ParseTreeNode> bindings = new HashMap<String, ParseTreeNode>();
+    if (s instanceof ExpressionStmt) {
+      Expression e = ((ExpressionStmt) s).getExpression();
+      if (QuasiBuilder.match("@obj.@fn(@actuals*)", e, bindings)) {
+        Reference fn = (Reference) bindings.get("fn");
+        ident = fn.getIdentifier();
+      } else {
+        bindings.clear();
+        if (QuasiBuilder.match("@fn(@actuals*)", e, bindings)) {
+          Expression fn = (Expression) bindings.get("fn");
+          if (fn instanceof Reference) {
+            ident = ((Reference) fn).getIdentifier();
+          }
+        }
+      }
+    }
+    return ident == null || !ident.getAttributes().is(SyntheticNodes.SYNTHETIC);
   }
 }
