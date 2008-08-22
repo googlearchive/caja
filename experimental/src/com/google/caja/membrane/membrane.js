@@ -19,7 +19,7 @@
  * All of the shadow's children and methods will be recursively wrapped, as will
  * their return values.
  *
- * @author: Adrienne Felt (adriennefelt@gmail.com)
+ * @author Adrienne Felt (adriennefelt@gmail.com)
  */
 
 var PERM_DENIED = false;
@@ -191,9 +191,11 @@ function checkRead(obj, prop) {
   } else if (perms.functions[prop] && perms.functions[prop].perm === "allow") {
 		return true;
   } else if (perms.properties[prop]) {
-		caja.fail("Read of ",class,".",prop," fails: ",perms.properties[prop].comment);
+		caja.fail("Read of ",class,".",prop," fails: ",
+        perms.properties[prop].comment);
   } else if (perms.functions[prop]) {
-		caja.fail("Read of ",class,".",prop," fails: ",perms.functions[prop].comment);
+		caja.fail("Read of ",class,".",prop," fails: ",
+        perms.functions[prop].comment);
   } else {
 		caja.fail("Read of ",class,".",prop," fails: ","not included in API.");
   }
@@ -286,6 +288,7 @@ function checkCall(obj, prop, args) {
   return false;
 }
 
+
 /* Checks the policy of the class associated with the object for SETTING.
  * Functions may never be set.  Properties may be set; each property in the
  * "properties" list has a "rw" field that is either "write" or "read-only."
@@ -315,7 +318,8 @@ function checkSet(obj, prop, rhs) {
 			for (var i in perms.properties[prop].RHS_arr) {
 				if (rhs === perms.properties[prop].RHS_arr[i]) { return true; }
 			}
-			caja.fail("Setting of ",class,".",prop," fails: RHS ",rhs.toString()," is not a valid value.");
+			caja.fail("Setting of ",class,".",prop," fails: RHS ",rhs.toString(),
+          " is not a valid value.");
 			return false;
 		} else if (perms.properties[prop].RHS_func) {
 			var filterfunc = eval("("+perms.functions[prop][i]+")");
@@ -323,13 +327,16 @@ function checkSet(obj, prop, rhs) {
 			if (testfunc === false) {
 				caja.fail("Calling ",class,".",prop," fails: arg ",rhs.toString(),
 						" is not a valid value.");
+			}
 			return false;
 		} 
 		return true;
   } else if (perms.properties[prop]) {
-		caja.fail("Setting of ",class,".",prop," is read-only: ",perms.properties[prop].comment);
+		caja.fail("Setting of ",class,".",prop," is read-only: ",
+        perms.properties[prop].comment);
   } else if (perms.functions[prop]) {
-		caja.fail("Setting ",class,".",prop," fails: API functions are not settable.");
+		caja.fail("Setting ",class,".",prop,
+        " fails: API functions are not settable.");
   } else {
 		caja.fail("Setting ",class,".",prop," fails: not included in API.");
   }
