@@ -30,6 +30,7 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
+import com.google.caja.render.Innocent;
 import com.google.caja.tools.BuildService;
 import com.google.caja.util.Pair;
 import java.io.File;
@@ -237,6 +238,34 @@ public class BuildServiceImplementation implements BuildService {
       }
     } catch (IOException ex) {
       logger.println("Minifying failed: " + ex);
+      return false;
+    }
+  }
+  
+  /**
+   * Applies the innocent code transformer to inputs.  Writes
+   * any messages to logger and returns true iff the task passes.
+   */
+  public boolean transfInnocent(
+      PrintWriter logger, List<File> dependees, List<File> inputs, File output,
+      Map<String, Object> options) {
+    try {
+      boolean ret;
+      Writer outputWriter = new OutputStreamWriter(
+          new FileOutputStream(output), "UTF-8");
+      for (File f : inputs) {
+        Pair<InputSource, File> inputSource = 
+          Pair.pair(new InputSource(f.getAbsoluteFile().toURI()), f);
+        ret = Innocent.transfInnocent(inputSource, outputWriter, logger);
+        if (!ret) {
+          outputWriter.close();
+          return false;
+        }
+      }
+      outputWriter.close();
+      return true;
+    } catch (IOException ex) {
+      logger.println("Innocent transform failed: " + ex);
       return false;
     }
   }
