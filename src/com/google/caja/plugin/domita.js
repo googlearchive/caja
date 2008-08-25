@@ -201,7 +201,7 @@ attachDocumentStub = (function () {
   var timeoutIdTrademark = {};
   function tameSetTimeout(timeout, delayMillis) {
     var timeoutId = setTimeout(
-        function(){ ___.callPub(timeout, 'call', [timeout]); }, 
+        function(){ ___.callPub(timeout, 'call', [___.USELESS]); }, 
         delayMillis | 0);
     return ___.freeze(___.stamp(timeoutIdTrademark,
                           { timeoutId___: timeoutId }));
@@ -215,7 +215,7 @@ attachDocumentStub = (function () {
   var intervalIdTrademark = {};
   function tameSetInterval(interval, delayMillis) {
     var intervalId = setInterval(
-        function(){ ___.callPub(interval, 'call', [interval]); }, 
+        function(){ ___.callPub(interval, 'call', [___.USELESS]); }, 
         delayMillis | 0);
     return ___.freeze(___.stamp(intervalIdTrademark,
                           { intervalId___: intervalId }));
@@ -1145,7 +1145,7 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   }
   ___.startCallerStack && ___.startCallerStack();
   try {
-    return ___.callPub(handler, 'call', [handler,
+    return ___.callPub(handler, 'call', [___.USELESS,
         imports.tameNode___(thisNode, true), imports.tameEvent___(event)]);
   } catch (ex) {
     if (ex && ex.cajaStack___ && 'undefined' !== (typeof console)) {
