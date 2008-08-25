@@ -155,7 +155,7 @@
       - forking, check your JAVA and JAVA_HOME environment variables and make
       - sure ant is using jdk1.6.
      -->
-    <junit printsummary="yes" fork="yes">
+    <junit printsummary="yes" fork="yes" maxmemory="512m">
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
       <classpath refid="classpath.tests.run"/>
       <formatter type="xml" usefile="true" unless="emma.enabled"/>
@@ -219,10 +219,7 @@
      encoding="utf-8" template="jsdoc"
      includeundocumented="true" includeprivate="true" includeunderscored="true"
      outputdir="${jsdocs}">
-      <source file="${src}/com/google/caja/JSON.js"/>
       <source file="${src}/com/google/caja/Brand-cajita.js"/>
-      <source file="${src}/com/google/caja/Mint-cajita.js"/>
-      <source file="${src}/com/google/caja/Q-caja.js"/>
       <source file="${src}/com/google/caja/caja.js"/>
       <source file="${src}/com/google/caja/caja-debugmode.js"/>
       <source file="${src}/com/google/caja/caja-prototype.js"/>
@@ -283,7 +280,7 @@
     </genrule>
   </target>
 
-  <target name="jars" depends="pluginc,MinifiedJs"
+  <target name="jars" depends="pluginc,CajoledValija,MinifiedJs"
    description="Place all jars needed to run the cajoler under ${jars}">
     <copy todir="${jars}">
       <fileset dir="${third_party}/java/jakarta_commons">
@@ -309,7 +306,7 @@
     <jar destfile="${jars}/pluginc-src.jar" basedir="${src}"/>
   </target>
 
-  <target name="demos" depends="calendar,lolcat-search,springgraph,testbed"
+  <target name="demos" depends="calendar,lolcat-search,testbed"
    description="Puts all the demo files together for easy browsing."/>
 
   <!-- Cajoles test resources that contain cajita to javascript. -->
@@ -320,16 +317,32 @@
         <include file="${tests}/com/google/caja/plugin/asserts.js"/>
       </job>
     </cajole>
+    <copy todir="${lib}">
+      <fileset dir="${src}" includes="**/*.html"/>
+      <fileset dir="${tests}" includes="**/*.html"/>
+    </copy>
+  </target>
+
+  <target name="CajoledValija" depends="pluginc">
+    <cajole>
+      <job output="${lib}/com/google/caja/plugin/valija-cajoled.js">
+        <include file="${src}/com/google/caja/valija-cajita.js" />
+      </job>
+    </cajole>
   </target>
 
   <target name="MinifiedJs" depends="pluginc">
     <minify>
-      <job output="${lib}/com/google/caja/plugin/domita-minified.js">
-        <include file="${src}/com/google/caja/caja.js"/>
-        <include file="${src}/com/google/caja/plugin/unicode.js"/>
+      <job output="${lib}/com/google/caja/plugin/html-sanitizer-minified.js">
         <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
         <include file="${lib}/com/google/caja/plugin/css-defs.js"/>
         <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      </job>
+    </minify>
+    <minify>
+      <job output="${lib}/com/google/caja/plugin/domita-minified.js">
+        <include file="${src}/com/google/caja/caja.js"/>
+        <include file="${src}/com/google/caja/plugin/unicode.js"/>
         <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
         <include file="${src}/com/google/caja/plugin/domita.js"/>
       </job>
@@ -353,6 +366,7 @@
         <include name="**/caja/caja.js"/>
         <include name="**/caja/caja-debugmode.js"/>
         <include name="**/caja/log-to-console.js"/>
+        <include name="**/caja/valija-cajita.js"/>
         <include name="**/caja/demos/calendar/*.js"/>
         <include name="**/caja/opensocial/applet/testbed.js"/>
         <include name="**/caja/plugin/domita.js"/>
@@ -398,8 +412,7 @@
   </target>
 
   <target name="RuleDoclet" depends="Quasiliterals">
-    <!-- HtmlRuleDoclet requires DOMImplementation from java 1.6 -->
-    <javac destdir="${lib}" debug="true" target="1.5" source="1.6">
+    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
       <include name="**/caja/quasiliteral/*Doclet.java"/>
@@ -567,41 +580,6 @@
     </javac>
   </target>
 
-  <target name="springgraph" depends="dirs,pluginc,MinifiedJs"
-   description="A spring graph demo gadget">
-    <cajole>
-      <job output="${www}/contact-spring-graph/plugin-files/plugin.js">
-        <include file="${demos}/contact-spring-graph/spring-graph.gxp"/>
-        <include file="${demos}/contact-spring-graph/spring-graph.css"/>
-        <include file="${demos}/contact-spring-graph/position.css"/>
-        <include file="${demos}/contact-spring-graph/spring-graph.js"/>
-        <include file="${demos}/contact-spring-graph/plugin-main.js"/>
-      </job>
-    </cajole>
-
-    <copy todir="${www}/contact-spring-graph">
-      <fileset dir="${demos}/contact-spring-graph">
-        <include name="demo.html"/>
-        <include name="event-list.js"/>
-        <include name="plugin-api.js"/>
-      </fileset>
-      <fileset dir="${demos}/contact-spring-graph">
-        <include name="demo.html"/>
-        <include name="event-list.js"/>
-        <include name="plugin-api.js"/>
-      </fileset>
-      <fileset dir="${lib}/com/google/caja/plugin">
-        <include name="domita-minified.js"/>
-      </fileset>
-      <fileset dir="${src}/com/google/caja">
-        <include name="log-to-console.js"/>
-      </fileset>
-      <fileset dir="${third_party}/js/firebug">
-        <include name="firebugx.js"/>
-      </fileset>
-    </copy>
-  </target>
-
   <target name="lolcat-search" depends="dirs,pluginc,MinifiedJs"
    description="IM IN UR BUILD DEMOING UR GADGETZ">
     <cajole>
@@ -635,6 +613,7 @@
       </fileset>
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="domita-minified.js"/>
+        <include name="html-sanitizer-minified.js"/>
       </fileset>
       <fileset dir="${src}/com/google/caja">
         <include name="log-to-console.js"/>
@@ -677,6 +656,7 @@
       </fileset>
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="css-defs.js"/>
+        <include name="valija-cajoled.js"/>
       </fileset>
       <fileset dir="${src}/com/google/caja/opensocial/applet">
         <include name="*.html"/>
@@ -758,9 +738,8 @@
         <include file="${demos}/calendar/layout.js"/>
         <include file="${demos}/calendar/overlap.js"/>
         <include file="${demos}/calendar/widget.css"/>
-        <include file="${demos}/calendar/widget.gxp"/>
-        <include file="${demos}/calendar/widget-chips.gxp"/>
         <include file="${demos}/calendar/widget.js"/>
+        <include file="${demos}/calendar/widget-html.js"/>
         <include file="${demos}/calendar/main.js"/>
       </job>
     </cajole>
@@ -781,6 +760,7 @@
       </fileset>
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="domita-minified.js"/>
+        <include name="html-sanitizer-minified.js"/>
       </fileset>
       <fileset dir="${third_party}/js/firebug">
         <include name="firebugx.js"/>
