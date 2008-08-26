@@ -455,7 +455,7 @@ public class Scope {
   }
 
   /**
-   * Is a given symbol imported by this module?
+   * Is a given symbol imported by this Cajita module?
    *
    * @param name an identifier.
    * @return whether 'name' is a free variable of the enclosing module.
@@ -465,6 +465,20 @@ public class Scope {
     if (parent == null) { return importedVariables.contains(name); }
     return parent.isImported(name);
   }
+
+  
+  /**
+   * Is a given symbol an outer in this Valija code?
+   *
+   * @param name an identifier.
+   * @return whether 'name' is (a free variable or declared at the top level scope) or not.
+   */
+  public boolean isOuter(String name) {
+    if (parent == null) { return true;} 
+    if (locals.containsKey(name)) return false;
+    return parent.isOuter(name);
+  }
+
 
   private LocalType getType(String name) {
     Scope current = this;

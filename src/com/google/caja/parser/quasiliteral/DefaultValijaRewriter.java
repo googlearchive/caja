@@ -33,6 +33,7 @@ import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
+import com.google.caja.parser.js.QuotedExpression;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.RegexpLiteral;
 import com.google.caja.parser.js.StringLiteral;
@@ -50,8 +51,15 @@ import com.google.caja.reporting.MessageQueue;
   )
 
 public class DefaultValijaRewriter extends Rewriter {
-  private int tempVarCount = 0;
+
+  private int tempVarCount = 1;
   private final String tempVarPrefix = "$caja$";
+
+  Reference newTempVar(Scope scope) {
+    Identifier t = new Identifier(tempVarPrefix + tempVarCount++);
+    scope.declareStartOfScopeVariable(t);
+    return new Reference(t); 
+  }
 
   final public Rule[] valijaRules = {
     new Rule() {
@@ -322,11 +330,14 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Get the keys, then iterate over them.",
           reason="",
           matches="for (@k in @o) @ss;",
-          substitutes="<approx>var @t1 = valija.keys(@o);" +
-                      "for (var @t2 = 0; @t2 < @t1.length; @t2++) {" +
-                      "  @k = @t1[@t2];" +
-                      "  @ss;" +
-                      "}")
+          substitutes="<approx>\n" +
+                      "var @t1 = valija.keys(@o);\n" +
+                      "for (var @t2 = 0; @t2 < @t1.length; @t2++) {\n" +
+                      "  @assign;\n" +
+                      "  @ss;\n" +
+                      "}\n" +
+                      "where @assign is the expansion of\n" +
+                      "@k = QuotedExpression( @t1[@t2] );")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null &&
@@ -334,35 +345,27 @@ public class DefaultValijaRewriter extends Rewriter {
           ExpressionStmt es = (ExpressionStmt)bindings.get("k");
           bindings.put("k", es.getExpression());
 
-          Identifier t1 = new Identifier(tempVarPrefix + tempVarCount++);
-          scope.declareStartOfScopeVariable(t1);
-          Reference rt1 = new Reference(t1);
-
-          Identifier t2 = new Identifier(tempVarPrefix + tempVarCount++);
-          scope.declareStartOfScopeVariable(t2);
-          Reference rt2 = new Reference(t2);
-
-          Identifier t3 = new Identifier(tempVarPrefix + tempVarCount++);
-          scope.declareStartOfScopeVariable(t3);
-          Reference rt3 = new Reference(t3);
+          Reference rt1 = newTempVar(scope);
+          Reference rt2 = newTempVar(scope);
 
           ParseTreeNode assignment = substV(
               "@k = @t3;",
               "k", bindings.get("k"),
-              "t3", rt3);
+              "t3", new QuotedExpression((Expression) substV(
+                  "@t1[@t2]",
+                  "t1", rt1,
+                  "t2", rt2)));
           assignment.getAttributes().set(ParseTreeNode.TAINTED, true);
 
           return substV(
               "@t1 = valija.keys(@o);" +
               "for (@t2 = 0; @t2 < @t1.length; ++@t2) {" +
-              "  @t3 = @t1[@t2];" +
               "  @assign;" +
               "  @ss;" +
               "}",
               "t1", rt1,
               "o", expand(bindings.get("o"), scope, mq),
               "t2", rt2,
-              "t3", rt3,
               "assign", SyntheticNodes.s(
                   new ExpressionStmt((Expression) expand(assignment, scope, mq))),
               "ss", expand(bindings.get("ss"), scope, mq));
@@ -379,31 +382,41 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Get the keys, then iterate over them.",
           reason="",
           matches="for (var @k in @o) @ss;",
-          substitutes="<approx>var t1, t2;" +
-                      "@t1 = valija.keys(@o);" +
-                      "for (@t2 = 0; @t2 < @t1.length; @t2++) {" +
-                      "  var @k = @t1[@t2];" +
-                      "  @ss;" +
-                      "}")
+          substitutes="<approx>\n" +
+                      "var t1, t2;\n" +
+                      "@t1 = valija.keys(@o);\n" +
+                      "for (@t2 = 0; @t2 < @t1.length; @t2++) {\n" +
+                      "  @assign\n" +
+                      "  @ss;\n" +
+                      "}\n" +
+                      "where @assign is the expansion of\n" +
+                      "var @k = QuotedExpression( @t1[@t2] );")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
-          Identifier t1 = scope.declareStartOfScopeTempVariable();
-          Identifier t2 = scope.declareStartOfScopeTempVariable();
+          Reference rt1 = newTempVar(scope);
+          Reference rt2 = newTempVar(scope);
           
-          Reference rt1 = new Reference(t1);
-          Reference rt2 = new Reference(t2);
+          ParseTreeNode assignment = substV(
+              "var @k = @t3;",
+              "k", bindings.get("k"),
+              "t3", new QuotedExpression((Expression) substV(
+                  "@t1[@t2]",
+                  "t1", rt1,
+                  "t2", rt2)));
+
+          assignment.getAttributes().set(ParseTreeNode.TAINTED, true);
+          
           return substV(
               "@t1 = valija.keys(@o);" +
               "for (@t2 = 0; @t2 < @t1.length; ++@t2) {" +
-              "  var @k = @t1[@t2];" +
-              "  valija;" +
+              "  @assign;" +
               "  @ss;" +
               "}",
               "t1", rt1,
               "o", expand(bindings.get("o"), scope, mq),
               "t2", rt2,
-              "k", bindings.get("k"),
+              "assign", SyntheticNodes.s(expand(assignment, scope, mq)),
               "ss", expand(bindings.get("ss"), scope, mq));
         } else {
           return NONE;
@@ -439,11 +452,11 @@ public class DefaultValijaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (QuasiBuilder.match("var @v = @r", node, bindings) &&
-            scope.getParent() == null) {
-          return substV(
+            scope.isOuter(((Identifier) bindings.get("v")).getName())) {
+          return new ExpressionStmt((Expression) substV(
               "valija.setOuter(@rv, @r)",
               "rv", toStringLiteral(bindings.get("v")),
-              "r", expand(bindings.get("r"), scope, mq));
+              "r", expand(bindings.get("r"), scope, mq)));
         }
         return NONE;
       }
@@ -461,7 +474,7 @@ public class DefaultValijaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (QuasiBuilder.match("@v = @r", node, bindings) &&
             bindings.get("v") instanceof Reference &&
-            scope.isImported(getReferenceName(bindings.get("v")))) {
+            scope.isOuter(((Reference) bindings.get("v")).getIdentifierName())) {
           return substV(
               "valija.setOuter(@rv, @r)",
               "rv", toStringLiteral(bindings.get("v")),
@@ -483,7 +496,7 @@ public class DefaultValijaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (QuasiBuilder.match("var @v", node, bindings) &&
             bindings.get("v") instanceof Reference &&
-            scope.isImported(getReferenceName(bindings.get("v")))) {
+            scope.isOuter(((Identifier) bindings.get("v")).getName())) {
           return substV(
               "valija.initOuter(@rv)",
               "rv", toStringLiteral(bindings.get("v")));
@@ -504,7 +517,7 @@ public class DefaultValijaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (QuasiBuilder.match("@v", node, bindings) &&
             bindings.get("v") instanceof Reference &&
-            scope.isImported(getReferenceName(bindings.get("v")))) {
+            scope.isOuter(((Reference) bindings.get("v")).getIdentifierName())) {
           return substV(
               "valija.readOuter(@rv)",
               "rv", toStringLiteral(bindings.get("v")));
@@ -936,6 +949,54 @@ public class DefaultValijaRewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
+          name="disfuncNamedGlobalDecl",
+          synopsis="Transmutes functions into disfunctions.",
+          reason="",
+          matches="<at top level>function @fname(@ps*) {@bs*;}",
+          substitutes="<approx>var @fname = valija.dis(" +
+                                   "function($dis, @ps*) {" +
+                                   "  @fh*;" +
+                                   "  @stmts*;" +
+                                   "  @bs*;" +
+                                   "}, " +
+                                   "@'fname');")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
+        // Named simple function declaration
+        if (node instanceof FunctionDeclaration &&
+            QuasiBuilder.match(
+                "function @fname(@ps*) { @bs*; }",
+                node.children().get(1), bindings) &&
+            scope.isOuter(((Identifier)bindings.get("fname")).getName())) {
+          Scope s2 = Scope.fromFunctionConstructor(
+              scope,
+              (FunctionConstructor)node.children().get(1));
+          checkFormals(bindings.get("ps"), mq);
+          Identifier fname = (Identifier)bindings.get("fname");
+          scope.declareStartOfScopeVariable(fname);
+          Expression expr = (Expression)substV(
+              "valija.setOuter(@rf, valija.dis(" +
+              "  function($dis, @ps*) {" +
+              "    @fh*;" +
+              "    @stmts*;" +
+              "    @bs*;" +
+              "}, @rf));",
+              "rf", toStringLiteral(fname),
+              "ps", bindings.get("ps"),
+              // It's important to expand bs before computing fh and stmts.
+              "bs", expand(bindings.get("bs"), s2, mq),
+              "fh", getFunctionHeadDeclarations(s2),
+              "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
+          scope.addStartOfBlockStatement(new ExpressionStmt(expr));
+          return substV(";");
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
           name="disfuncNamedDecl",
           synopsis="Transmutes functions into disfunctions.",
           reason="",
@@ -1098,12 +1159,11 @@ public class DefaultValijaRewriter extends Rewriter {
           substitutes="valija.canReadRev(@i, @o)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
-        if (bindings != null &&
-            scope.getParent() == null) {
+        if (bindings != null) {
           return substV(
               "valija.canReadRev(@i, @o)",
               "i", expand(bindings.get("i"), scope, mq),
-              "r", expand(bindings.get("o"), scope, mq));
+              "o", expand(bindings.get("o"), scope, mq));
         }
         return NONE;
       }
@@ -1132,6 +1192,20 @@ public class DefaultValijaRewriter extends Rewriter {
               "modifiers", modifiers);
         }
         return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="unquote",
+          synopsis="Removes a QuotedExpression wrapper.",
+          reason="")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+         if (node instanceof QuotedExpression) {
+           return ((QuotedExpression) node).unquote();
+         }
+         return NONE;
       }
     },
 

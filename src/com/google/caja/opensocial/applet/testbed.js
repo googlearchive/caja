@@ -127,7 +127,11 @@ var getTestbedServer = (function () {
 function lifecode(form) {
   form.elements.src.value = 
       "<!-- Cellular automaton gadget. This code is in the public domain. -->\n" +
-      "<textarea id=\"area\">It's alive!</textarea>\n<script>\n" +
+      "<script>var handle = null;</script>\n" +
+      "<textarea id=\"area\">It's alive!</textarea>\n" +
+      "<input type=\"button\" value=\"stop\"\n" +
+      "       onclick=\"if (handle !== null) { clearInterval(handle); handle = null; }\">\n" +
+      "<script>\n" +
       "// Size of the grid\nvar size = 40;\n" +
       "// Text area for displaying the CA\n" +
       "var ta = document.getElementById('area');\n" +
@@ -199,10 +203,9 @@ function lifecode(form) {
       "  display(ca, t);\n" +
       "}\n" +
       "t=0;\n" +
-      "setInterval(update, 1000);\n" +
+      "handle = setInterval(update, 1000);\n" +
       "</script>";
 }
-
 
 /**
  * Reads caja code and configuration from the testbed form, cajoles it, and

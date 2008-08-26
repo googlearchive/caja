@@ -338,6 +338,7 @@ var valijaMaker = (function(outers) {
     setOuter: setOuter,
     remove: remove,
     keys: keys,
+    canReadRev: canReadRev,
 
     dis: dis,
     Disfunction: Disfunction
