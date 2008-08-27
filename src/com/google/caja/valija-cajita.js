@@ -278,7 +278,7 @@ var valijaMaker = (function(outers) {
     return outers[name] = val;
   }
 
-  function initOuters(name) {
+  function initOuter(name) {
     if (canReadRev(name, outers)) { return; }
     set(outers, name, undefined);
   }
@@ -336,6 +336,7 @@ var valijaMaker = (function(outers) {
     getOuters: getOuters,
     readOuter: readOuter,
     setOuter: setOuter,
+    initOuter: initOuter,    
     remove: remove,
     keys: keys,
     canReadRev: canReadRev,
