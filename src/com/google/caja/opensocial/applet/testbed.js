@@ -129,6 +129,8 @@ function lifecode(form) {
       "<!-- Cellular automaton gadget. This code is in the public domain. -->\n" +
       "<script>var handle = null;</script>\n" +
       "<textarea id=\"area\">It's alive!</textarea>\n" +
+      "<input type=\"button\" value=\"go\"\n" +
+      "       onclick=\"if (handle === null) { handle = setInterval(update, 1000); }\">\n" +
       "<input type=\"button\" value=\"stop\"\n" +
       "       onclick=\"if (handle !== null) { clearInterval(handle); handle = null; }\">\n" +
       "<script>\n" +
@@ -203,7 +205,6 @@ function lifecode(form) {
       "  display(ca, t);\n" +
       "}\n" +
       "t=0;\n" +
-      "handle = setInterval(update, 1000);\n" +
       "</script>";
 }
 
@@ -421,7 +422,9 @@ var getImports = (function () {
    * one that can be evaled.
    */
   function repr(o) {
-    if (Object.prototype.toSource) { return Object.prototype.toSource.call(o); }
+    if (Object.prototype.toSource && typeof o === 'object' && o !== null) { 
+      return Object.prototype.toSource.call(o); 
+    }
     try {
       switch (typeof o) {
         case 'string':
