@@ -39,7 +39,7 @@ import junit.framework.AssertionFailedError;
 /**
  * @author ihab.awad@gmail.com
  */
-public class DefaultCajaRewriterTest extends RewriterTestCase {
+public class DefaultCajaRewriterTest extends CommonJsRewriterTest {
 
   protected Rewriter defaultCajaRewriter = new DefaultCajaRewriter(false, false);
   protected Rewriter wartyCajaRewriter = new DefaultCajaRewriter(false, true);
@@ -2926,6 +2926,193 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
         + "});");
   }
 
+  /**
+   * Tests that the container can get access to
+   * "virtual globals" defined in cajoled code.
+   *
+   * @throws Exception
+   */
+  public void testWrapperAccess() throws Exception {
+    // TODO(ihab.awad): SECURITY: Re-enable by reading (say) x.foo, and
+    // defining the property IMPORTS___.foo.
+    if (false) {
+    rewriteAndExecute(
+        "",
+        "x='test';",
+        "if (___.getNewModuleHandler().getImports().x != 'test') {" +
+          "fail('Cannot see inside the wrapper');" +
+        "}");
+    }
+  }
+  
+  /**
+   * Tests that Array.prototype cannot be modified.
+   *
+   * @throws Exception
+   */
+  public void testFrozenArray() throws Exception {
+    rewriteAndExecute(
+        "var success = false;" +
+        "try {" +
+          "Array.prototype[4] = 'four';" +
+        "} catch (e){" +
+          "success = true;" +
+        "}" +
+        "if (!success) fail('Array not frozen.');");
+  }
+
+  /**
+   * Tests that Object.prototype cannot be modified.
+   *
+   * @throws Exception
+   */
+  public void testFrozenObject() throws Exception {
+    rewriteAndExecute(
+        "var success = false;" +
+        "try {" +
+          "Object.prototype.x = 'X';" +
+        "} catch (e){" +
+          "success = true;" +
+        "}" +
+        "if (!success) fail('Object not frozen.');");
+  }
+
+  /**
+   * Tests that cajoled code can't construct new Function objects.
+   *
+   * @throws Exception
+   */
+  public void testFunction() throws Exception {
+    rewriteAndExecute(
+        "var success=false;" +
+          "try{var f=new Function('1');}catch(e){success=true;}" +
+          "if (!success)fail('Function constructor is accessible.')");
+  }
+
+  /**
+   * Tests that constructors are inaccessible.
+   *
+   * @throws Exception
+   */
+  public void testConstructor() throws Exception {
+    try {
+      rewriteAndExecute(
+          "function x(){}; var F = x.constructor;");
+    } catch (junit.framework.AssertionFailedError e) {
+      // pass
+    }
+  }
+
+  public void testStamp() throws Exception {
+    rewriteAndExecute(
+        "___.getNewModuleHandler().getImports().stamp =" +
+        "    ___.simpleFrozenFunc(___.stamp);" +
+        "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
+        "function Foo(){this;}" +
+        "var foo = new Foo;" +
+        "var passed = false;" +
+        "caja.log('### stamp = ' + stamp);" +
+        "try { stamp({}, foo); }" +
+        "catch (e) {" +
+        "  if (!e.message.match('may not be stamped')) {" +
+        "    fail(e.message);" +
+        "  }" +
+        "  passed = true;" +
+        "}" +
+        "if (!passed) { fail ('Able to stamp constructed objects.'); }",
+        "");
+    rewriteAndExecute(
+        "___.getNewModuleHandler().getImports().stamp =" +
+        "    ___.simpleFrozenFunc(___.stamp);" +
+        "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
+        "function Foo(){this;}" +
+        "var foo = new Foo;" +
+        "try { stamp({}, foo, true); }" +
+        "catch (e) {" +
+        "  fail(e.message);" +
+        "}",
+        "");
+    rewriteAndExecute(
+        "___.getNewModuleHandler().getImports().stamp =" +
+        "    ___.simpleFrozenFunc(___.stamp);" +
+        "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
+        "var foo = {};" +
+        "var tm = {};" +
+        "stamp(tm, foo);" +
+        "caja.guard(tm, foo);",
+        "");
+    rewriteAndExecute(
+        "___.getNewModuleHandler().getImports().stamp =" +
+        "    ___.simpleFrozenFunc(___.stamp);" +
+        "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
+        "var foo = {};" +
+        "var tm = {};" +
+        "var passed = false;" +
+        "try { caja.guard(tm, foo); }" +
+        "catch (e) {" +
+        "  if (!e.message.match('This object does not have the given trademark')) {" +
+        "    fail(e.message);" +
+        "  }" +
+        "  passed = true;" +
+        "}" +
+        "if (!passed) { fail ('Able to forge trademarks.'); }",
+        "");
+    rewriteAndExecute(
+        "___.getNewModuleHandler().getImports().stamp =" +
+        "    ___.simpleFrozenFunc(___.stamp);" +
+        "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
+        "var foo = {};" +
+        "var tm = {};" +
+        "var tm2 = {};" +
+        "var passed = false;" +
+        "try { stamp(tm, foo); caja.guard(tm2, foo); }" +
+        "catch (e) {" +
+        "  if (!e.message.match('This object does not have the given trademark')) {" +
+        "    fail(e.message);" +
+        "  }" +
+        "  passed = true;" +
+        "}" +
+        "if (!passed) { fail ('Able to forge trademarks.'); }",
+        "");
+    rewriteAndExecute(
+        "___.getNewModuleHandler().getImports().stamp =" +
+        "    ___.simpleFrozenFunc(___.stamp);" +
+        "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
+        "function foo(){};" +
+        "var tm = {};" +
+        "var passed = false;" +
+        "try { stamp(tm, foo); }" +
+        "catch (e) {" +
+        "  if (!e.message.match('is frozen')) {" +
+        "    fail(e.message);" +
+        "  }" +
+        "  passed = true;" +
+        "}" +
+        "if (!passed) { fail ('Able to stamp frozen objects.'); }",
+        "");
+  }
+
+  public void testForwardReference() throws Exception {
+    rewriteAndExecute(
+        "var g = Bar;" +
+        "if (true) { var f = Foo; }" +
+        "function Foo(){}" +
+        "do { var h = Bar; function Bar(){this;} } while (0);" +
+        "assertEquals(typeof f, 'function');" +
+        "assertEquals(typeof g, 'undefined');" +
+        "assertEquals(typeof h, 'function');");
+    rewriteAndExecute(
+        "(function(){" +
+        "var g = Bar;" +
+        "if (true) { var f = Foo; }" +
+        "function Foo(){}" +
+        "do { var h = Bar; function Bar(){this;} } while (0);" +
+        "assertEquals(typeof f, 'function');" +
+        "assertEquals(typeof g, 'undefined');" +
+        "assertEquals(typeof h, 'function');" +
+        "})();"); 
+  }
+
   @Override
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();
@@ -2961,7 +3148,7 @@ public class DefaultCajaRewriterTest extends RewriterTestCase {
             // object value that will not compare identically across runs.
             // Set up the imports environment.
             "var testImports = ___.copy(___.sharedImports);\n" +
-            "testImports.unittestResult___ = {\n" +
+            "var unittestResult___ = {\n" +
             "    toString: function () { return '' + this.value; },\n" +
             "    value: '--NO-RESULT--'\n" +
             "};\n" +

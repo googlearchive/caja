@@ -38,6 +38,8 @@ import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.RegexpLiteral;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
+import com.google.caja.parser.js.MultiDeclaration;
+import com.google.caja.parser.js.TryStmt;
 import com.google.caja.reporting.MessageQueue;
 
 /**
@@ -58,7 +60,7 @@ public class DefaultValijaRewriter extends Rewriter {
   Reference newTempVar(Scope scope) {
     Identifier t = new Identifier(tempVarPrefix + tempVarCount++);
     scope.declareStartOfScopeVariable(t);
-    return new Reference(t); 
+    return new Reference(t);
   }
 
   final public Rule[] valijaRules = {
@@ -279,7 +281,12 @@ public class DefaultValijaRewriter extends Rewriter {
             expanded.add(expand(c, s2, mq));
           }
           return substV(
-              "var $dis = valija.getOuters(); @startStmts*; @expanded*;",
+              "  var $dis = valija.getOuters();"
+              + "if (!valija.onerror) {"
+              + "  valija.setOuter('onerror', undefined);"
+              + "}"
+              + "@startStmts*;"
+              + "@expanded*;",
               "startStmts", new ParseTreeNodeContainer(s2.getStartStatements()),
               "expanded", new ParseTreeNodeContainer(expanded));
         }
@@ -396,7 +403,7 @@ public class DefaultValijaRewriter extends Rewriter {
         if (bindings != null) {
           Reference rt1 = newTempVar(scope);
           Reference rt2 = newTempVar(scope);
-          
+
           ParseTreeNode assignment = substV(
               "var @k = @t3;",
               "k", bindings.get("k"),
@@ -406,7 +413,7 @@ public class DefaultValijaRewriter extends Rewriter {
                   "t2", rt2)));
 
           assignment.getAttributes().set(ParseTreeNode.TAINTED, true);
-          
+
           return substV(
               "@t1 = valija.keys(@o);" +
               "for (@t2 = 0; @t2 < @t1.length; ++@t2) {" +
@@ -495,11 +502,28 @@ public class DefaultValijaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (QuasiBuilder.match("var @v", node, bindings) &&
-            bindings.get("v") instanceof Reference &&
+            bindings.get("v") instanceof Identifier &&
             scope.isOuter(((Identifier) bindings.get("v")).getName())) {
-          return substV(
+          return new ExpressionStmt((Expression) substV(
               "valija.initOuter(@rv)",
-              "rv", toStringLiteral(bindings.get("v")));
+              "rv", toStringLiteral(bindings.get("v"))));
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="readArguments",
+          synopsis="Translate reference to 'arguments' unmodified",
+          reason="",
+          matches="arguments",
+          substitutes="arguments")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          return subst(bindings);
         }
         return NONE;
       }
@@ -895,7 +919,7 @@ public class DefaultValijaRewriter extends Rewriter {
         return NONE;
       }
     },
-  
+
     new Rule() {
       @Override
       @RuleDescription(
@@ -920,7 +944,7 @@ public class DefaultValijaRewriter extends Rewriter {
         return NONE;
       }
     },
-  
+
     new Rule() {
       @Override
       @RuleDescription(
@@ -928,24 +952,23 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Transmutes functions into disfunctions.",
           reason="",
           matches="function (@ps*) {@bs*;}",
-          substitutes="valija.dis(function ($dis, @ps*) {@fh*; @stmts*; @bs*;})")
+          substitutes="valija.dis(function ($dis, @ps*) {@stmts*; @bs*;})")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node);
           return substV(
-              "valija.dis(function ($dis, @ps*) {@fh*; @stmts*; @bs*;})",
+              "valija.dis(function ($dis, @ps*) {@stmts*; @bs*;})",
               "ps", bindings.get("ps"),
-              // It's important to expand bs before computing fh and stmts.
+              // It's important to expand bs before computing stmts.
               "bs", expand(bindings.get("bs"), s2, mq),
-              "fh", getFunctionHeadDeclarations(s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
         }
         return NONE;
       }
     },
-  
+
     new Rule() {
       @Override
       @RuleDescription(
@@ -977,15 +1000,13 @@ public class DefaultValijaRewriter extends Rewriter {
           Expression expr = (Expression)substV(
               "valija.setOuter(@rf, valija.dis(" +
               "  function($dis, @ps*) {" +
-              "    @fh*;" +
               "    @stmts*;" +
               "    @bs*;" +
               "}, @rf));",
               "rf", toStringLiteral(fname),
               "ps", bindings.get("ps"),
-              // It's important to expand bs before computing fh and stmts.
+              // It's important to expand bs before computing stmts.
               "bs", expand(bindings.get("bs"), s2, mq),
-              "fh", getFunctionHeadDeclarations(s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
           scope.addStartOfBlockStatement(new ExpressionStmt(expr));
           return substV(";");
@@ -1003,7 +1024,6 @@ public class DefaultValijaRewriter extends Rewriter {
           matches="function @fname(@ps*) {@bs*;}",
           substitutes="<approx>var @fname = valija.dis(" +
                                    "function($dis, @ps*) {" +
-                                   "  @fh*;" +
                                    "  @stmts*;" +
                                    "  @bs*;" +
                                    "}, " +
@@ -1024,16 +1044,14 @@ public class DefaultValijaRewriter extends Rewriter {
           Expression expr = (Expression)substV(
               "@fname = valija.dis(" +
               "  function($dis, @ps*) {" +
-              "    @fh*;" +
               "    @stmts*;" +
               "    @bs*;" +
               "}, @rf);",
               "fname", new Reference(fname),
               "rf", toStringLiteral(fname),
               "ps", bindings.get("ps"),
-              // It's important to expand bs before computing fh and stmts.
+              // It's important to expand bs before computing stmts.
               "bs", expand(bindings.get("bs"), s2, mq),
-              "fh", getFunctionHeadDeclarations(s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
           scope.addStartOfBlockStatement(new ExpressionStmt(expr));
           return substV(";");
@@ -1041,7 +1059,7 @@ public class DefaultValijaRewriter extends Rewriter {
         return NONE;
       }
     },
-  
+
     new Rule() {
       @Override
       @RuleDescription(
@@ -1053,7 +1071,6 @@ public class DefaultValijaRewriter extends Rewriter {
             "<approx>" +
             "(function() {" +
             "  var @fname = valija.dis(function ($dis, @ps*) {" +
-            "    @fh*;" +
             "    @stmts*;" +
             "    @bs*;" +
             "  }," +
@@ -1072,8 +1089,7 @@ public class DefaultValijaRewriter extends Rewriter {
           Reference fRef = new Reference(fname);
           return substV(
               "(function() {" +
-              "  var @fRef = valija.dis(function ($dis, @ps*) {" +
-              "    @fh*;" +
+              "  var @fname = valija.dis(function ($dis, @ps*) {" +
               "    @stmts*;" +
               "    @bs*;" +
               "  }," +
@@ -1084,15 +1100,14 @@ public class DefaultValijaRewriter extends Rewriter {
               "fRef", fRef,
               "rf", toStringLiteral(fname),
               "ps", bindings.get("ps"),
-              // It's important to expand bs before computing fh and stmts.
+              // It's important to expand bs before computing stmts.
               "bs", expand(bindings.get("bs"), s2, mq),
-              "fh", getFunctionHeadDeclarations(s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
         }
         return NONE;
       }
     },
-  
+
     new Rule() {
       @Override
       @RuleDescription(
@@ -1109,7 +1124,7 @@ public class DefaultValijaRewriter extends Rewriter {
         return NONE;
       }
     },
-  
+
     new Rule() {
       @Override
       @RuleDescription(
@@ -1128,7 +1143,7 @@ public class DefaultValijaRewriter extends Rewriter {
         return NONE;
       }
     },
-    
+
     new Rule() {
       @Override
       @RuleDescription(
@@ -1148,7 +1163,7 @@ public class DefaultValijaRewriter extends Rewriter {
         return NONE;
       }
     },
-  
+
     new Rule() {
       @Override
       @RuleDescription(
@@ -1206,6 +1221,89 @@ public class DefaultValijaRewriter extends Rewriter {
            return ((QuotedExpression) node).unquote();
          }
          return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="multiDeclaration",
+          synopsis="Convert a MultiDeclaration into a Block of initializer exprs",
+          reason="")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof MultiDeclaration) {
+          ParseTreeNodeContainer children =
+              new ParseTreeNodeContainer(node.children());
+          return substV(
+              "{ @init*; }",
+              "init", expandAll(children, scope, mq));
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="tryCatch",
+          synopsis="",
+          reason="",
+          matches="try { @s0*; } catch (@x) { @s1*; }",
+          substitutes="try { @s0*; } catch (@x) { @s1*; }")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          TryStmt t = (TryStmt) node;
+          bindings.put("s0", expandAll(bindings.get("s0"), scope, mq));
+          bindings.put("s1",
+              expandAll(bindings.get("s1"),
+                  Scope.fromCatchStmt(scope, t.getCatchClause()), mq));
+          return subst(bindings);
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="tryCatchFinally",
+          synopsis="",
+          reason="",
+          matches="try { @s0*; } catch (@x) { @s1*; } finally { @s2*; }",
+          substitutes="try { @s0*; } catch (@x) { @s1*; } finally { @s2*; }")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          TryStmt t = (TryStmt) node;
+          bindings.put("s0", expandAll(bindings.get("s0"), scope, mq));
+          bindings.put("s1",
+              expandAll(bindings.get("s1"),
+                  Scope.fromCatchStmt(scope, t.getCatchClause()), mq));
+          bindings.put("s2", expandAll(bindings.get("s2"), scope, mq));
+          return subst(bindings);
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="tryFinally",
+          synopsis="",
+          reason="",
+          matches="try { @s0*; } finally { @s1*; }",
+          substitutes="try { @s0*; } finally { @s1*; }")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          return substV(
+            "try { @s0*; } finally { @s1*; }",
+            "s0",  expandAll(bindings.get("s0"), scope, mq),
+            "s1",  expandAll(bindings.get("s1"), scope, mq));
+        }
+        return NONE;
       }
     },
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Google Inc.
+// Copyright (C) 2008 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.google.caja.util.RhinoTestBed;
 /**
  * @author metaweta@gmail.com
  */
-public class DefaultValijaRewriterTest extends RewriterTestCase {
+public class DefaultValijaRewriterTest extends CommonJsRewriterTest {
 
   protected Rewriter defaultValijaRewriter = new DefaultValijaRewriter(true);
   protected Rewriter defaultCajaRewriter = new DefaultCajaRewriter(false, false);
@@ -98,6 +98,64 @@ public class DefaultValijaRewriterTest extends RewriterTestCase {
     assertConsistent("str=''; for (var i in {x:1, y:true}) {str+=i;} str;");
   }
 
+  public void testMultiDeclaration() throws Exception {
+    assertConsistent("var a = 3, b = 4; a + b;");
+    assertConsistent("var a, b; a = 3; b = 4; a + b;");    
+  }
+
+  /**
+   * Tests that the container can get access to
+   * "virtual globals" defined in cajoled code.
+   *
+   * @throws Exception
+   */
+  public void testWrapperAccess() throws Exception {
+    // TODO(ihab.awad): SECURITY: Re-enable by reading (say) x.foo, and
+    // defining the property IMPORTS___.foo.
+    if (false) {
+    rewriteAndExecute(
+        "",
+        "x='test';",
+        "if (___.getNewModuleHandler().getImports().x != 'test') {" +
+          "fail('Cannot see inside the wrapper');" +
+        "}");
+    }
+  }
+
+  /**
+   * Try to construct some class instances.
+   */
+  public void testFuncCtor() throws Exception {
+    rewriteAndExecute(
+        "function Foo(x){ this.x = x; }" +
+        "var foo = new Foo(2);" +
+        "if (!foo) fail('Failed to construct a global object.');" +
+        "assertEquals(foo.x, 2);");
+    rewriteAndExecute(
+        "(function(){" +
+        "function Foo(x){ this.x = x; }" +
+        "var foo = new Foo(2);" +
+        "if (!foo) fail('Failed to construct a local object.');" +
+        "assertEquals(foo.x, 2);" +
+        "})();");
+    rewriteAndExecute(
+        "function Foo(){ }" +
+        "var foo = new Foo();" +
+        "if (!foo) fail('Failed to use a simple named function as a constructor.');");
+  }
+
+  public void testFuncArgs() throws Exception {
+    rewriteAndExecute(
+        "  var x = 0;"
+        + "function f() { x = arguments[1]; }"
+        + "f(3);"
+        + "assertEquals(3, x);");
+  }
+
+  public void testTestToSource() throws Exception {
+    testToSource();
+  }
+
   @Override
   protected Object executePlain(String caja) throws IOException, ParseException {
     mq.getMessages().clear();
@@ -118,12 +176,14 @@ public class DefaultValijaRewriterTest extends RewriterTestCase {
     setRewriter(defaultValijaRewriter);
     Statement valijaTree = replaceLastStatementWithEmit(
         js(fromString(caja, is)), "unittestResult___;");
-    Statement cajitaTree = (Statement)rewriteStatements(valijaTree);
-    setRewriter(defaultCajaRewriter);    
+    Statement cajitaTree = (Statement)rewriteStatements(
+        valijaTree);
+    setRewriter(defaultCajaRewriter);
     String cajoledJs = "___.loadModule(function (___, IMPORTS___) {\n" + 
         render(rewriteStatements(cajitaTree)) + 
         "\n});";
-    String valijaCajoled = render(rewriteStatements(js(fromResource("../../valija-cajita.js"))));
+    String valijaCajoled = render(
+        rewriteStatements(js(fromResource("../../valija-cajita.js"))));
     assertNoErrors();
 
     Object result = RhinoTestBed.runJs(
@@ -147,10 +207,17 @@ public class DefaultValijaRewriterTest extends RewriterTestCase {
             // object value that will not compare identically across runs.
             // Set up the imports environment.
             "testImports = ___.copy(___.sharedImports);\n" +
-            "testImports.unittestResult___ = {\n" +
+            "var unittestResult___ = {\n" +
             "    toString: function () { return '' + this.value; },\n" +
             "    value: '--NO-RESULT--'\n" +
             "};\n" +
+            "testImports.console = console;" +
+            "testImports.assertEquals = ___.simpleFunc(assertEquals);" +
+            "___.grantCall(testImports, 'assertEquals');" +
+            "testImports.assertTrue = ___.simpleFunc(assertTrue);" +
+            "___.grantCall(testImports, 'assertTrue');" +
+            "testImports.assertFalse = ___.simpleFunc(assertFalse);" +
+            "___.grantCall(testImports, 'assertFalse');" +
             "testImports.valija = valijaMaker(testImports);\n" +
             "___.getNewModuleHandler().setImports(testImports);",
             getName() + "-test-fixture"),

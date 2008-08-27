@@ -26,6 +26,8 @@ imports.assertTrue = ___.simpleFrozenFunc(assertTrue);
 imports.assertFalse = ___.simpleFrozenFunc(assertFalse);
 imports.document = document;
 imports.console = console;
+imports.valija = valijaMaker(imports);
+___.grantRead(imports, 'valija');
 ___.simpleFrozenFunc(console.log);
 // Included in order to test this function;
 // stamp should never be made available to real caja code.

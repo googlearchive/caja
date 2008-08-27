@@ -236,7 +236,7 @@ var ___;
    */
   function fail(var_args) {
     // TODO(metaweta): Ask mike samuel about this vs. log-to-console.js
-    (typeof console !== 'undefined') && console.trace();
+    (typeof console !== 'undefined') && (typeof console.trace === 'function') && console.trace();
     var message = Array.slice(arguments, 0).join('');
     myLogFunc(message, true);
     throw new Error(message);
