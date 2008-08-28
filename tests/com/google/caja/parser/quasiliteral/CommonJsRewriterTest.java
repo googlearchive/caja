@@ -220,4 +220,11 @@ public abstract class CommonJsRewriterTest extends RewriterTestCase {
         "    (['test', 'x_', 'y']).toSource());");
     }
   }
+
+  public void testFor() throws Exception{
+    assertConsistent("var i; for (i = 0; i < 10; i++) {} i;");
+    assertConsistent("for (var i = 0; i < 10; i++) {} i;");
+    assertConsistent("for (var i = 0, j = 0; i < 10; i++) { j += 10; } j;");
+    assertConsistent("for (var i = 0, j = 0; i < 10; i++, j += 10) { } j;");
+  }
 }

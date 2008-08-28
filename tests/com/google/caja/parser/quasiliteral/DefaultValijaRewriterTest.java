@@ -65,10 +65,6 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTest {
   public void testObject() throws Exception {
     assertConsistent("({x:1,y:2}).toString();");
   }
-  public void testFor() throws Exception {
-    assertConsistent("for (i=0; i<10; i++) {} i;");
-    assertConsistent("for (var i=0; i<10; i++) {} i;");
-  }
   public void testUnderscore() throws Exception {
     // TODO: enable this behavior
     // assertConsistent("var x_=1; x_;");
@@ -150,10 +146,6 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTest {
         + "function f() { x = arguments[1]; }"
         + "f(3);"
         + "assertEquals(3, x);");
-  }
-
-  public void testTestToSource() throws Exception {
-    testToSource();
   }
 
   @Override

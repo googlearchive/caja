@@ -1228,15 +1228,18 @@ public class DefaultValijaRewriter extends Rewriter {
       @Override
       @RuleDescription(
           name="multiDeclaration",
-          synopsis="Convert a MultiDeclaration into a Block of initializer exprs",
+          synopsis="Convert a MultiDeclaration into a comma expression",
           reason="")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof MultiDeclaration) {
-          ParseTreeNodeContainer children =
-              new ParseTreeNodeContainer(node.children());
-          return substV(
-              "{ @init*; }",
-              "init", expandAll(children, scope, mq));
+          Expression[] newChildren = new Expression[node.children().size()];
+          for (int i = 0; i < newChildren.length; i++) {
+            ExpressionStmt result = (ExpressionStmt)
+                expand(node.children().get(i), scope, mq);
+            newChildren[i] = result.getExpression();
+          }
+          return new ExpressionStmt(
+              Operation.create(Operator.COMMA, newChildren));
         }
         return NONE;
       }
