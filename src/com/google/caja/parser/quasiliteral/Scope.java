@@ -270,6 +270,17 @@ public class Scope {
   }
 
   /**
+   * Determines whether this is an outer scope. A scope is outer if it is not
+   * (transitively) contained in any function scopes. Any declarations in this
+   * scope are therefore visible throughout the program.
+   */
+  public boolean isOuter() {
+    if (type == ScopeType.FUNCTION_BODY) { return false; }
+    if (parent == null) return true;
+    return parent.isOuter();
+  }
+
+  /**
    * When a Scope is used for recursively processing a parse tree, steps taken on nodes contained
    * within the node of this Scope sometimes add statements (e.g., variable declarations) that
    * need to be rendered in the result before these nodes are rendered. These statements are the

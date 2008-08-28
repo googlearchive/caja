@@ -227,4 +227,15 @@ public abstract class CommonJsRewriterTest extends RewriterTestCase {
     assertConsistent("for (var i = 0, j = 0; i < 10; i++) { j += 10; } j;");
     assertConsistent("for (var i = 0, j = 0; i < 10; i++, j += 10) { } j;");
   }
+
+  public void testMultiDeclaration() throws Exception {
+    assertConsistent("var a = 3, b = 4; a + b;");
+    assertConsistent("var a, b; a = 3; b = 4; a + b;");
+    assertConsistent(
+        "  function f() {"
+        + "  var a = 3, b = 4;"
+        + "  return a + b;"
+        + " }"
+        + "f();");
+  }
 }

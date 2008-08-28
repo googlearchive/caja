@@ -1231,7 +1231,8 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Convert a MultiDeclaration into a comma expression",
           reason="")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        if (node instanceof MultiDeclaration) {
+        if (node instanceof MultiDeclaration
+            && scope.isOuter()) {
           Expression[] newChildren = new Expression[node.children().size()];
           for (int i = 0; i < newChildren.length; i++) {
             ExpressionStmt result = (ExpressionStmt)

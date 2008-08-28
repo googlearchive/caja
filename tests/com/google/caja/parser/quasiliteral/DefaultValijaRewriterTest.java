@@ -94,11 +94,6 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTest {
     assertConsistent("str=''; for (var i in {x:1, y:true}) {str+=i;} str;");
   }
 
-  public void testMultiDeclaration() throws Exception {
-    assertConsistent("var a = 3, b = 4; a + b;");
-    assertConsistent("var a, b; a = 3; b = 4; a + b;");    
-  }
-
   /**
    * Tests that the container can get access to
    * "virtual globals" defined in cajoled code.
