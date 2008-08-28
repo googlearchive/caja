@@ -19,10 +19,12 @@
 
     img { margin: 4px }
 
+    ul#slides { padding-left: 0 }
+
     li.slide {
       list-style: none;
       border: 1px solid black;
-      margin: 4px
+      margin: 4px;
     }
 
     .slide {
@@ -230,7 +232,7 @@
   <div class=noprint id=dynamic
    ><a id=controls></a> (<span id=counter>&nbsp;</span>)</div>
 
-  <ul>
+  <ul id="slides">
     <li class="slide">
       <h1>Caja &mdash; Securing WebApps</h1>
 
@@ -248,7 +250,7 @@
 
       <br>
 
-      <p>Similar approaches: ADSafe, FBJS, Jacaranda</p>
+      <p>Other approaches: ADSafe, FBJS, Jacaranda, SES</p>
     </li>
 
     <li class="slide">
@@ -279,7 +281,7 @@
       <p>Not security experts
       <p>Familiar with web technologies
       <p>Comfortable with acronyms: JS, HTML, CSS, PHP
-      <p>Have specific domain knowledge that C.S. graduates lack
+      <p>Have specific domain knowledge that C.S. generalists lack
     </li>
 
     <li class=slide id=code-rewriting>
@@ -356,14 +358,15 @@ IMPORTS___.htmlEmitter___.p(<span class=str>'form'</span>)
       &darr;
       <pre>
 <span class=cmt>/* searchbox-cajoled.css */</span>
-<b>.searchbox .results</b> li {
+<b>.searchbox___ .results</b> li {
   list-style-type: none;
   margin-top: .5em;
   border-bottom: 1px dotted #888
 }
 </pre>
       <p>Now the rule only affect DOM sub-trees with class
-      <code>.searchbox</code>.<p>
+      <code>.searchbox___</code>.  The real class-name is generated at
+      runtime so that a compiled gadget can be cached.<p>
 
     <li class=slide>
       <h1>Caja Rewrites Javascript</h1>
@@ -489,21 +492,68 @@ searchBoxImports.resultConsumer = kittensImports.showKitten;</pre>
          href="http://code.google.com/p/google-caja/wiki/PipelineConfiguration"
        >http://tinyurl.com/2xr5t8</a>)</code></small></h1>
 
-      <img src="../../../../../../../doc/images/Cajoler-Arch.png"
+      <img src="../../../../../../doc/images/Cajoler-Arch.png"
        style="margin-top: -1em"
-       onclick=
-       "this.src='../../../../../../../doc/images/Cajoler-Arch-Tweaked.png'">
+       onclick="this.src=/-Tweaked\.png$/.test(this.src)
+              ? this.src.replace(/-Tweaked\.png$/, '.png')
+              : this.src.replace(/\.png$/, '-Tweaked.png');">
+    </li>
+
+    <li class=slide id=testing1>
+      <h1>Testing Security Infrastructure</h1>
+
+      <h2>Make Testing Easy</h2>
+      <ul>
+        <li>Know Strategies &amp; Tools : Fuzzing, Unittests,
+        End-to-end tests</li>
+        <li>Know Your Enemies : Catalog attack vectors</li>
+        <li>Prioritize Failure Modes : Encapsulation <b>&gt;</b> Correctness
+        <li>Decompose by Failure Mode</li>
+          <img src="DecomposeByFailureMode.png">
+        <li><b>White-listing</b> &rarr; you have to test the <b>known</b>,<br>
+          <b>Black-lists</b> &rarr; you have to test the <b>unknown</b>.</li>
+      </ul>
+    </li>
+
+    <li class=slide id=testing2>
+      <h1>Testing &mdash; Make your system easy to Attack</h1>
+      <p>Make sure that bugs come to you <b>before</b> they become exploits</p>
+      <p>Provide a sandbox for attackers to play in, and watch it.</p>
+      <p>If someone thinks of an attack they should be able to quickly
+        try it where noone is hurt</p>
+      <p>Understand attackers' incentives; Publishing Rights,
+        Recognition, Swag, Money; and play to them.</p>
+    </li>
+
+    <li class=slide id=testing3>
+      <h1>Testing &mdash; Continuously Attack &amp; Invite Others to Attack</h1>
+      <p>Testing is an Adversarial Process</p>
+      <p>Developing in the open makes it easy to consult security academics.</p>
+      <p>Involve standards bodies and well known developers &mdash;
+      Brendan Eich, John Resign, etc.</p>
+      <p>Invite attack from as many as possible.</p>
+    </li>
+
+    <li class=slide id=testing4>
+      <h1>Testing &mdash; Stage your Deployment</h1>
+      <h2>First, do no harm</h2>
+      <p>Start off using existing methods so you're no worse off than before.
+      <p>As people gain confidence, they will knock out unnecessary crutches.
     </li>
 
     <li class=slide id=status>
-      <h1>Status as of 12 May 2008</h1>
+      <h1>Status as of 26 Aug 2008</h1>
 
       <p>Language Specification Mostly Stable</p>
       <p>Cajoler Implemented</p>
       <p>Prototype Tamed DOM</p>
-      <p>Integrated w/ Shindig and successfully Cajoled and run gadgets</p>
+      <p>Integrated w/ Shindig (soon w/ iGoogle &amp; Orkut) and successfully
+      Cajoled and run third-party gadgets</p>
       <p>Prototype Debugging (Firebug) and IDE (Eclipse) support</p>
       <p>Started Penetration Testing</p>
+      <p>Started Runtime Optimizations &mdash; removing unnecessary runtime
+      checks</p>
+      <p>1 Team Member on the EcmaScript committee, 2 on Secure EcmaScript</p>
     </li>
 
     <li class=slide id=links>
