@@ -1113,12 +1113,98 @@ attachDocumentStub = (function () {
       return idClass;
     };
 
+    // TODO(mikesamuel): remove these, and only expose them via window once
+    // Valija works
     imports.setTimeout = tameSetTimeout;
     imports.setInterval = tameSetInterval;
     imports.clearTimeout = tameClearTimeout;
     imports.clearInterval = tameClearInterval;
 
     imports.document = new TameDocument(document, true);
+
+    // TODO(mikesamuel): figure out a mechanism by which the container can
+    // specify the gadget's apparent URL.
+    // See http://www.whatwg.org/specs/web-apps/current-work/multipage/history.html#location0
+    var tameLocation = ___.primFreeze({
+      toString: function () { return tameLocation.href; },
+      href: 'http://nosuchhost,fake/',
+      hash: '',
+      host: 'nosuchhost,fake',
+      hostname: 'nosuchhost,fake',
+      pathname: '/',
+      port: '',
+      protocol: 'http:',
+      search: ''
+      });
+
+    // See spec at http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#navigator
+    var tameNavigator = ___.primFreeze({
+      appCodeName: 'Caja',
+      appName: 'Sandbox',
+      appVersion: '1.0',  // Should we expose the user's Locale here?
+      language: '',  // Should we expose the user's Locale here?
+      platform: 'Caja',
+      oscpu: 'Caja',
+      vendor: '',
+      vendorSub: '',
+      product: 'Caja',
+      productSub: '',
+      userAgent: 'Caja/1.0'
+      });
+
+    // See http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#window for the full API.
+    // TODO(mikesamuel): This implements only the parts needed by prototype.
+    // The rest can be added on an as-needed basis as long as DOMado rules are
+    // obeyed.
+    var tameWindow = {
+      document: imports.document,
+      top: tameWindow,
+      self: tameWindow,
+      opener: tameWindow,
+      parent: tameWindow,
+      window: tameWindow,
+      location: tameLocation,
+      navigator: tameNavigator,
+      setTimeout: tameSetTimeout,
+      setInterval: tameSetInterval,
+      clearTimeout: tameClearTimeout,
+      clearInterval: tameClearInterval,
+      scrollTo: ___.simpleFrozenFunc(
+          function (x, y) {
+            // Per DOMado rules, the window can only be scrolled in response to
+            // a user action.  Hence the isProcessingEvent___ check.
+            if ('number' === typeof x
+                && 'number' === typeof y
+                && !isNaN(x - y)
+                && imports.isProcessingEvent___) {
+              window.scrollTo(x, y);
+            }
+          })
+
+      // NOT PROVIDED
+      // attachEvent: defined on IE.  Typically used for browser detection, and
+      //              to register onUnload handlers.
+      // event: a global on IE.  We always define it in scopes that can handle
+      //        events.
+      // opera: defined only on Opera.
+      // pageXOffset, pageYOffset: used if document.body.scroll{Left,Top}
+      //        unavailable
+    };
+
+    var outers = imports.outers;
+    if (___.isJSONContainer(outers)) {
+      // For Caja, attach window object members to outers instead so that the
+      // the members of window show up as global variables as well.
+      for (var k in tameWindow) {
+        if (!___.hasOwnProp(outers, k) && ___.canEnumPub(tameWindow, k)) {
+          var v = tameWindow[k];
+          outers[k] = v === tameWindow ? outers : v;
+        }
+      }
+    } else {
+      caja.freeze(tameWindow);
+      imports.window = tameWindow;
+    }
   }
 
   return attachDocumentStub;
@@ -1144,6 +1230,7 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
           'Expected function as event handler, not ' + typeof handler);
   }
   ___.startCallerStack && ___.startCallerStack();
+  imports.isProcessingEvent___ = true;
   try {
     return ___.callPub(handler, 'call', [___.USELESS,
         imports.tameNode___(thisNode, true), imports.tameEvent___(event)]);
@@ -1153,5 +1240,7 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
           handler, ___.unsealCallerStack(ex.cajaStack___).join('\n'));
     }
     throw ex;
+  } finally {
+    imports.isProcessingEvent___ = false;
   }
 }

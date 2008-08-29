@@ -325,3 +325,20 @@ jsunitRegister('testTargetAttr',
   assertEquals('_blank', directAccess.getAttribute(node, 'target'));
   pass('test-target-attr');
 });
+
+jsunitRegister('testLocation',
+               function testLocation() {
+  assertEquals(
+      window.location.href, window.location.protocol + '//'
+      + window.location.host + window.location.port + window.location.pathname
+      + window.location.search + window.location.hash);
+  pass('test-location');
+});
+
+jsunitRegister('testNavigator',
+               function testNavigator() {
+  assertEquals(
+      window.navigator.userAgent,
+      window.navigator.appCodeName + '/' + window.navigator.appVersion);
+  pass('test-navigator');
+});
