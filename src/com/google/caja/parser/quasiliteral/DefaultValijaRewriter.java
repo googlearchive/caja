@@ -523,7 +523,7 @@ public class DefaultValijaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
-          return subst(bindings);
+          return substV("valija.args(arguments");
         }
         return NONE;
       }
@@ -1111,23 +1111,6 @@ public class DefaultValijaRewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="metaDisfunc",
-          synopsis="Shadow the constructor Function().",
-          reason="",
-          matches="Function",
-          substitutes="valija.Disfunction")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = this.match(node);
-        if (bindings != null) {
-          return substV("valija.Disfunction");
-        }
-        return NONE;
-      }
-    },
-
-    new Rule() {
-      @Override
-      @RuleDescription(
           name="otherTypeof",
           synopsis="Rewrites typeof.",
           reason="Both typeof function and typeof disfunction need to return \"function\".",
@@ -1192,7 +1175,7 @@ public class DefaultValijaRewriter extends Rewriter {
           reason="So that every use of a regex literal creates a new instance"
                + " to prevent state from leaking via interned literals.  This"
                + " is consistent with the way ES4 treates regex literals.",
-          substitutes="new ___.RegExp(@pattern, @modifiers?)")
+          substitutes="new RegExp(@pattern, @modifiers?)")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof RegexpLiteral) {
@@ -1202,7 +1185,7 @@ public class DefaultValijaRewriter extends Rewriter {
               ? StringLiteral.valueOf(re.getModifiers())
               : null;
           return QuasiBuilder.substV(
-              "new RegExp(@pattern, @modifiers?)",
+              "valija.construct(RegExp, [@pattern, @modifiers?])",
               "pattern", pattern,
               "modifiers", modifiers);
         }

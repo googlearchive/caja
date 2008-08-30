@@ -39,12 +39,15 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTest {
   public void testConstant() throws Exception {
     assertConsistent("1;");
   }
+  
   public void testInit() throws Exception {
     assertConsistent("var a=0; a;");
   }
+  
   public void testNew() throws Exception {
     assertConsistent("function f(){ this.x = 1; } f; var g = new f(); g.x;");
   }
+  
   public void testClosure() throws Exception {
     assertConsistent(
         "function f(){" +
@@ -59,24 +62,30 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTest {
         "h.y = g.x;" +
         "h.x() + h.y();");
   }
+  
   public void testArray() throws Exception {
     assertConsistent("[3,2,1].sort().toString();");
   }
+  
   public void testObject() throws Exception {
     assertConsistent("({x:1,y:2}).toString();");
   }
+  
   public void testUnderscore() throws Exception {
     // TODO: enable this behavior
     // assertConsistent("var x_=1; x_;");
     // checkFails("var o={p_:1}; o.p_;", "Key may not end in \"_\"");
   }
+  
   public void testDate() throws Exception {
     //assertConsistent("''+new Date;");
   }
+  
   public void testDelete() throws Exception {
     assertConsistent("(function () { var a={x:1}; delete a.x; a.x; })();");
     assertConsistent("var a={x:1}; delete a.x; a.x;");
   }
+  
   public void testIn() throws Exception {
     assertConsistent(
         "(function () {" +
@@ -87,13 +96,19 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTest {
         "var a={x:1};\n" +
         "'' + ('x' in a) + ('y' in a);");
   }
-  public void testForIn() throws Exception {
+  
+  public void testForIn2() throws Exception {
     assertConsistent("(function(){ str=''; for (i in {x:1, y:true}) {str+=i;} str; })();");
     assertConsistent("(function(){ str=''; for (var i in {x:1, y:true}) {str+=i;} str;})();");
     assertConsistent("str=''; for (i in {x:1, y:true}) {str+=i;} str;");
     assertConsistent("str=''; for (var i in {x:1, y:true}) {str+=i;} str;");
   }
-
+  
+  public void testValueOf() throws Exception {
+    //TODO: is setting valueOf possible in valija? 
+    //assertConsistent("var x={valueOf:function(hint){return 2;}}; x+1;");
+  }
+  
   /**
    * Tests that the container can get access to
    * "virtual globals" defined in cajoled code.
@@ -138,7 +153,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTest {
   public void testFuncArgs() throws Exception {
     rewriteAndExecute(
         "  var x = 0;"
-        + "function f() { x = arguments[1]; }"
+        + "function f() { x = arguments[0]; }"
         + "f(3);"
         + "assertEquals(3, x);");
   }
