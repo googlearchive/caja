@@ -42,7 +42,7 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
         "    continue;" +
         "  }" +
         "  k = x0___;" +
-        "  { k; }" +
+        "  k;" +
         "}");
 
     // Checks that test.number is only incremented once when
@@ -104,7 +104,7 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
         "      continue;" +
         "    }" +
         "    k = x0___;" +
-        "    { k; }" +
+        "    k;" +
         "  }" +
         "}");
 

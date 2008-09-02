@@ -39,7 +39,7 @@ import junit.framework.AssertionFailedError;
 /**
  * @author ihab.awad@gmail.com
  */
-public class DefaultCajaRewriterTest extends CommonJsRewriterTest {
+public class DefaultCajaRewriterTest extends CommonJsRewriterTestCase {
 
   protected Rewriter defaultCajaRewriter = new DefaultCajaRewriter(false, false);
   protected Rewriter wartyCajaRewriter = new DefaultCajaRewriter(false, true);
@@ -2630,7 +2630,7 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTest {
                   "___.readPub(g, 0), ___.readPub(g, 1);");
   }
 
-  public void testMultiDeclaration() throws Exception {
+  public void testMultiDeclaration2() throws Exception {
     // 'var' in global scope, part of a block
     checkSucceeds(
         "var x, y;",
@@ -2929,8 +2929,6 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTest {
   /**
    * Tests that the container can get access to
    * "virtual globals" defined in cajoled code.
-   *
-   * @throws Exception
    */
   public void testWrapperAccess() throws Exception {
     // TODO(ihab.awad): SECURITY: Re-enable by reading (say) x.foo, and
@@ -2944,11 +2942,9 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTest {
         "}");
     }
   }
-  
+
   /**
    * Tests that Array.prototype cannot be modified.
-   *
-   * @throws Exception
    */
   public void testFrozenArray() throws Exception {
     rewriteAndExecute(
@@ -2963,8 +2959,6 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTest {
 
   /**
    * Tests that Object.prototype cannot be modified.
-   *
-   * @throws Exception
    */
   public void testFrozenObject() throws Exception {
     rewriteAndExecute(
@@ -2979,8 +2973,6 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTest {
 
   /**
    * Tests that cajoled code can't construct new Function objects.
-   *
-   * @throws Exception
    */
   public void testFunction() throws Exception {
     rewriteAndExecute(
@@ -2991,8 +2983,6 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTest {
 
   /**
    * Tests that constructors are inaccessible.
-   *
-   * @throws Exception
    */
   public void testConstructor() throws Exception {
     try {
@@ -3110,7 +3100,7 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTest {
         "assertEquals(typeof f, 'function');" +
         "assertEquals(typeof g, 'undefined');" +
         "assertEquals(typeof h, 'function');" +
-        "})();"); 
+        "})();");
   }
 
   @Override

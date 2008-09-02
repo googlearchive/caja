@@ -64,7 +64,7 @@ var valijaMaker = (function(outers) {
    * Simulates a monkey-patchable <tt>Object.prototype</tt>.
    */
   var ObjectPrototype = {constructor: Object};
-  
+
   /**
    * Simulates a monkey-patchable <tt>Function.prototype</tt>.
    * <p>
@@ -80,11 +80,6 @@ var valijaMaker = (function(outers) {
   Disfunction.prototype = DisfunctionPrototype,
   Disfunction.length = 1;
   DisfunctionPrototype.constructor = Disfunction;
-
-  /**
-   * Simulates a monkey-patchable <tt>Function</tt> object.
-   */
-  outers.Function = Disfunction;
 
   var ObjectShadow = caja.beget(DisfunctionPrototype);
   ObjectShadow.prototype = ObjectPrototype;
@@ -175,7 +170,7 @@ var valijaMaker = (function(outers) {
    */
   function read(obj, name) {
     if (typeof obj === 'function') {
-      var shadow = getShadow(obj);
+      var shadow = getShadow(name);
       if (name in shadow) {
         return shadow[name];
       } else {
@@ -328,15 +323,6 @@ var valijaMaker = (function(outers) {
       return getPrototypeOf(ctor);
     }
   }
-  
-  function args(a) {
-    if (!a.length) { return []; }
-    //TODO(metaweta): use slice once it becomes available off of Array.prototype
-    for (var i = 1, r = []; i < a.length; ++i) {
-      r.push(a[i]);
-    }
-    return r;
-  }
 
   return caja.freeze({
     typeOf: typeOf,
@@ -354,9 +340,9 @@ var valijaMaker = (function(outers) {
     remove: remove,
     keys: keys,
     canReadRev: canReadRev,
-    args: args,
 
-    dis: dis
+    dis: dis,
+    Disfunction: Disfunction
   });
 });
 
