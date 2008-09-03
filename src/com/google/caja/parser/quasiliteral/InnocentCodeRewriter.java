@@ -148,7 +148,7 @@ public class InnocentCodeRewriter extends Rewriter {
             "    continue; " +
             "  } " +
             "  @kAssignment;" +
-            "  @ss*;" +
+            "  @ss;" +
             "}",
             "kTempStmt", new ExpressionStmt(new Reference(kTemp)),
             "kTempRef", new Reference(kTemp),

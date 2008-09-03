@@ -81,6 +81,11 @@ var valijaMaker = (function(outers) {
   Disfunction.length = 1;
   DisfunctionPrototype.constructor = Disfunction;
 
+  /**
+   * Simulates a monkey-patchable <tt>Function</tt> object
+   */
+   outers.Function = Disfunction;
+
   var ObjectShadow = caja.beget(DisfunctionPrototype);
   ObjectShadow.prototype = ObjectPrototype;
 
@@ -170,7 +175,7 @@ var valijaMaker = (function(outers) {
    */
   function read(obj, name) {
     if (typeof obj === 'function') {
-      var shadow = getShadow(name);
+      var shadow = getShadow(obj);
       if (name in shadow) {
         return shadow[name];
       } else {
@@ -342,7 +347,6 @@ var valijaMaker = (function(outers) {
     canReadRev: canReadRev,
 
     dis: dis,
-    Disfunction: Disfunction
   });
 });
 
