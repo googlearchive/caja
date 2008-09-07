@@ -342,11 +342,3 @@ jsunitRegister('testNavigator',
       window.navigator.appCodeName + '/' + window.navigator.appVersion);
   pass('test-navigator');
 });
-
-jsunitRegister('testNavigator',
-               function testNavigator() {
-  assertEquals(
-      window.navigator.userAgent,
-      window.navigator.appCodeName + '/' + window.navigator.appVersion);
-  pass('test-navigator');
-});
