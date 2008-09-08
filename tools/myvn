@@ -145,11 +145,21 @@ function myvn() {
     bug )
       myvn describe | ~/bin/submit-caja-bug.py -s "$(myvn diffstats)" "$@"
       ;;
-    change|snapshot )
+    snapshot)
+      echo "myvn snapshot" is deprecated to avoid overlooking snapshotting changes
+      echo Please use myvn change
+      ;;
+    change)
       if [ -n "$current_cl" ] && ! grep -q ' -c ' <(echo -- $*); then
         "$gvn" "$verb" -c "$username/$current_cl" "$@"
       else
         "$gvn" "$verb" "$@"
+      fi
+      MISSING=`$gvn nothave | grep -v '^ant-'`
+      if [ -n "$MISSING" ]; then
+        echo WARNING: The following files are not part of the current changelist:
+       # Ignore ant-* directories which are created during the build
+        gvn nothave | grep -v "^ant-"
       fi
       ;;
     submit )
