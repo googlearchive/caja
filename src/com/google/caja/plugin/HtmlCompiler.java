@@ -211,13 +211,24 @@ public class HtmlCompiler {
               compileStyleAttrib(attrib, out);
             } else {
               AttributeXform xform = xformForAttribute(tagName, name);
+
+              DomTree.Attrib temp = (wrapper == null) ?
+                  attrib :
+                  new DomTree.Attrib(
+                    new DomTree.Value(
+                      Token.<HtmlTokenType>instance(
+                        wrapper.a + attrib.getAttribValue() + wrapper.b,
+                        HtmlTokenType.ATTRVALUE,
+                        attrib.getFilePosition())),
+                    attrib.getToken(),
+                    attrib.getFilePosition());
+              
               if (null == xform) {
-                String value = wrapper.a + valueT.getValue() + wrapper.b;
-                out.attr(name, value);
+                out.attr(name, temp.getAttribValue());
               } else {
                 xform.apply(
                     new AncestorChain<DomTree.Attrib>(
-                        new AncestorChain<DomTree>(el), attrib),
+                        new AncestorChain<DomTree>(el), temp),
                     this, out);
               }
             }

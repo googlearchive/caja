@@ -62,6 +62,39 @@ public class HtmlCompilerTest extends CajaTestCase {
         "<form name=\"hi\"/>");
   }
 
+  // See bug 722
+  public void testFormOnSubmitTrue() throws Exception {
+    assertOutput(
+        "IMPORTS___.htmlEmitter___.b('form')"
+        + ".a('onsubmit', 'return plugin_dispatchEvent___(this, event || "
+        + "window.event, ' + ___.getId(IMPORTS___) + ', \\\'c_1___\\\')')"
+        + ".f(false).e('form');\n"
+        + "}\n"
+        + "IMPORTS___.c_1___ = function (thisNode___, event) {\n"
+        + "  try {\n"
+        + "    return true;\n"
+        + "  } finally {\n"
+        + "    return false;\n"
+        + "  }",
+    "<form onsubmit=\"return true\"/>");
+  }
+
+  // See bug 722
+  public void testFormOnSubmitEmpty() throws Exception {
+    assertOutput(
+        "IMPORTS___.htmlEmitter___.b('form')"
+        + ".a('onsubmit', 'return plugin_dispatchEvent___(this, event || "
+        + "window.event, ' + ___.getId(IMPORTS___) + ', \\\'c_1___\\\')')"
+        + ".f(false).e('form');\n"
+        + "}\n"
+        + "IMPORTS___.c_1___ = function (thisNode___, event) {\n"
+        + "  try {\n"
+        + "  } finally {\n"
+        + "    return false;\n"
+        + "  }",
+        "<form onsubmit=\"\"/>");
+  }
+
   public void testImageSrc() throws Exception {
     assertOutput(
         "IMPORTS___.htmlEmitter___.b('img')"
