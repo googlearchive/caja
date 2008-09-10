@@ -47,10 +47,10 @@
 # (8) Maybe add or remove files
 #       $ myvn change
 # (9) Commit the change
+#       $ myvn submit
+# (10) Show the change description
 #       $ myvn describe
-#     shows you your CL description
-#       $ myvn commit
-# (10) Delete the change branch
+# (11) Delete the change branch
 #       $ myvn change --delete
 #
 #
@@ -155,7 +155,7 @@ function myvn() {
       else
         "$gvn" "$verb" "$@"
       fi
-      MISSING=`$gvn nothave | grep -v '^ant-'`
+      MISSING=$($gvn nothave | grep -v '^ant-')
       if [ -n "$MISSING" ]; then
         echo WARNING: The following files are not part of the current changelist:
        # Ignore ant-* directories which are created during the build
@@ -164,7 +164,11 @@ function myvn() {
       ;;
     submit )
       if [ -n "$current_cl" ] && ! grep -q ' -c ' <(echo -- $*); then
-        "$gvn" "$verb" -c "$current_cl" "$@"
+        if [ runAntTests ]; then
+          echo "$gvn" "$verb" -c "$current_cl" "$@"
+        else
+          echo No change submitted
+        fi
       else
         echo No changelist found
       fi
@@ -286,5 +290,9 @@ function makeEclipseProject() {
   echo "</projectDescription>"
 }
 
+function runAntTests() {
+  echo Running tests before submission
+  ant runtests
+}
 
 myvn "$@"

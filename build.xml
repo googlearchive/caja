@@ -155,7 +155,8 @@
       - forking, check your JAVA and JAVA_HOME environment variables and make
       - sure ant is using jdk1.6.
      -->
-    <junit printsummary="yes" fork="yes" maxmemory="512m">
+    <junit printsummary="yes" fork="yes" maxmemory="512m"
+     errorProperty="runtests.error" failureProperty="runtests.failure">
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
       <classpath refid="classpath.tests.run"/>
       <formatter type="xml" usefile="true" unless="emma.enabled"/>
@@ -186,6 +187,10 @@
       <report format="frames" todir="${reports}/tests"
        styledir="${third_party}/ant/etc"/>
     </junitreport>
+    <fail message="One or more tests failed. For details, see ${reports}/tests/index.html"
+      if="runtests.error"/>
+    <fail message="One or more tests failed to compile. For details, see ${reports}/tests/index.html"
+      if="runtests.failure"/>
   </target>
 
   <target name="docs" description="Builds all Caja documentation."
