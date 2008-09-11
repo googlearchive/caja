@@ -227,9 +227,15 @@ public class HtmlCompiler {
               if (null == xform) {
                 out.attr(name, temp.getAttribValue());
               } else {
+                List<DomTree> newchildren = new ArrayList<DomTree>(el.children());
+                newchildren.remove(attrib);
+                newchildren.add(temp);
+                DomTree parent = new DomTree.Tag(newchildren, el.getToken(),el.getFilePosition());
+                
                 xform.apply(
                     new AncestorChain<DomTree.Attrib>(
-                        new AncestorChain<DomTree>(el), temp),
+                        new AncestorChain<DomTree>(
+                          parent), temp),
                     this, out);
               }
             }
