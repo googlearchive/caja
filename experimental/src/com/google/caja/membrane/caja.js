@@ -556,7 +556,7 @@ var ___;
     if (t !== 'object' && t !== 'function') {
       return true;
     }
-    return hasOwnProp(obj, '___FROZEN___');
+    return hasOwnProp(obj, 'FROZEN___');
   }
 
   /**
@@ -617,7 +617,7 @@ var ___;
         obj[flag] = false;
       }
     }
-    obj.___FROZEN___ = true;
+    obj.FROZEN___ = true;
     if (typ === 'function') {
       // Do last to avoid possible infinite recursion.
       if (obj.prototype) { primFreeze(obj.prototype); }
@@ -791,16 +791,16 @@ var ___;
   ////////////////////////////////////////////////////////////////////////
 
   function isCtor(constr)    {
-    return (typeof(constr) === 'function') && !!constr.___CONSTRUCTOR___;
+    return (typeof(constr) === 'function') && !!constr.CONSTRUCTOR___;
   }
   function isMethod(meth)    {
-    return (typeof meth === 'function') && !!meth.___METHOD___;
+    return (typeof meth === 'function') && !!meth.METHOD___;
   }
   function isSimpleFunc(fun) {
-    return (typeof fun === 'function')  && !!fun.___SIMPLE_FUNC___;
+    return (typeof fun === 'function')  && !!fun.SIMPLEFUNC___;
   }
   function isXo4aFunc(func) {
-    return (typeof func === 'function') && !!func.___XO4A___;
+    return (typeof func === 'function') && !!func.XO4A___;
   }
 
   /**
@@ -830,7 +830,7 @@ var ___;
     if (isXo4aFunc(constr)) {
       fail("Exophoric functions can't be constructors: ", constr);
     }
-    constr.___CONSTRUCTOR___ = true;
+    constr.CONSTRUCTOR___ = true;
     derive(constr, opt_Sup);
     if (opt_name) {
       constr.NAME___ = String(opt_name);
@@ -917,10 +917,10 @@ var ___;
     if (!isMethod(meth)  && !isSimpleFunc(meth)) {
       fail('Internal: attach should not see non-methods: ', meth);
     }
-    if (meth.___ATTACHMENT___ === self) {
+    if (meth.ATTACHMENT___ === self) {
       return meth;
     }
-    if (meth.___ATTACHMENT___ !== (void 0)) {
+    if (meth.ATTACHMENT___ !== (void 0)) {
       fail('Method ', meth, ' cannot be reattached to: ', self);
     }
     function result(var_args) {
@@ -930,9 +930,9 @@ var ___;
       }
       return meth.apply(self, arguments);
     }
-    var result = method(result, meth.___NAME___);
-    result.___ATTACHMENT___ = self;
-    result.___ORIGINAL___ = meth;
+    var result = method(result, meth.NAME___);
+    result.ATTACHMENT___ = self;
+    result.ORIGINAL___ = meth;
     return result;
   }
 
@@ -956,7 +956,7 @@ var ___;
     if (isMethod(func)) {
       fail("Internal: Methods functions can't be exophora: ", func);
     }
-    func.___XO4A___ = true;
+    func.XO4A___ = true;
     return primFreeze(func);
   }
 
@@ -978,7 +978,7 @@ var ___;
     if (isXo4aFunc(meth)) {
       fail("Internal: exophoric functions can't be methods: ", meth);
     }
-    meth.___METHOD___ = true;
+    meth.METHOD___ = true;
     return primFreeze(meth);
   }
 
@@ -1000,7 +1000,7 @@ var ___;
     if (isXo4aFunc(fun)) {
       fail("Exophoric functions can't be simple function: ", fun);
     }
-    fun.___SIMPLE_FUNC___ = true;
+    fun.SIMPLEFUNC___ = true;
     if (opt_name) {
       fun.NAME___ = String(opt_name);
     }
@@ -1084,7 +1084,7 @@ var ___;
     }
     if (isMethod(fun)) {
       // If it's an attached method, it can't be called on the wrong object.
-      if (fun.___ATTACHMENT___) {
+      if (fun.ATTACHMENT___) {
         return fun;
       }
       fail("Methods can't be called as simple functions: ", fun);

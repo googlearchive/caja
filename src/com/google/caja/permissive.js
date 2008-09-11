@@ -104,7 +104,7 @@
           var constr = proto.constructor;
           ___.log('Allowing read of ".' + name + '" for: ' + constr);
         }
-        ___.allowRead(proto, name);
+        ___.grantRead(proto, name);
         return obj[name];
       }
       return oldKeeper.handleRead(obj, name);
@@ -122,7 +122,7 @@
           var constr = proto.constructor;
           ___.log('Allowing call of ".' + name + '()" for: ' + constr);
         }
-        ___.allowCall(proto, name);
+        ___.grantCall(proto, name);
         return obj[name].apply(obj, args);
       }
       return oldKeeper.handleCall(obj, name, args);
@@ -134,7 +134,7 @@
     handleSet: function(obj, name, val) {
       if (enabled) {
         ___.log('Allowing (' + obj + ').' + name + ' = ...');
-        ___.allowSet(obj, name);
+        ___.grantSet(obj, name);
         obj[name] = val;
         if (obj[name] === val) {
           return val;
@@ -149,7 +149,7 @@
     handleDelete: function(obj, name) {
       if (enabled && ___.hasOwnProp(obj, name)) {
         ___.log('Allowing delete (' + obj + ').' + name);
-        ___.allowDelete(obj, name);
+        ___.grantDelete(obj, name);
         if (delete obj[name]) {
           return true;
         }

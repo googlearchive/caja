@@ -560,7 +560,7 @@ attachDocumentStub = (function () {
     };
     ___.ctor(TameNode, void 0, 'TameNode');
     ___.all2(
-       ___.allowMethod, TameNode,
+       ___.grantMethod, TameNode.prototype,
        ['getNodeType', 'getNodeValue', 'getNodeName',
         'appendChild', 'insertBefore', 'removeChild', 'replaceChild',
         'getFirstChild', 'getLastChild', 'getNextSibling', 'getPreviousSibling',
@@ -585,7 +585,7 @@ attachDocumentStub = (function () {
       return '#text';
     };
     ___.ctor(TameTextNode, void 0, 'TameNode');
-    ___.all2(___.allowMethod, TameTextNode,
+    ___.all2(___.grantMethod, TameTextNode.prototype,
              ['setNodeValue', 'getData', 'setData']);
     exportFields(TameTextNode, ['nodeValue', 'data']);
 
@@ -764,7 +764,7 @@ attachDocumentStub = (function () {
     };
     ___.ctor(TameElement, TameNode, 'TameElement');
     ___.all2(
-       ___.allowMethod, TameElement,
+       ___.grantMethod, TameElement.prototype,
        ['addEventListener', 'getAttribute', 'setAttribute',
         'getClassName', 'setClassName', 'getId', 'setId',
         'getInnerHTML', 'setInnerHTML', 'updateStyle', 'getStyle', 'setStyle',
@@ -811,7 +811,7 @@ attachDocumentStub = (function () {
       return href;
     };
     ___.ctor(TameAElement, TameElement, 'TameAElement');
-    ___.all2(___.allowMethod, TameAElement, ['getHref', 'setHref']);
+    ___.all2(___.grantMethod, TameAElement.prototype, ['getHref', 'setHref']);
     exportFields(TameAElement, ['href']);
 
     function TameFormElement(node, editable) {
@@ -822,7 +822,7 @@ attachDocumentStub = (function () {
       return tameNodeList(this.node___.elements, this.editable___, 'name');
     };
     ___.ctor(TameFormElement, TameElement, 'TameFormElement');
-    ___.all2(___.allowMethod, TameFormElement, ['getElements']);
+    ___.all2(___.grantMethod, TameFormElement.prototype, ['getElements']);
     exportFields(TameFormElement, ['elements']);
 
 
@@ -852,7 +852,7 @@ attachDocumentStub = (function () {
       return tameNode(this.node___.form, this.editable___);
     };
     ___.ctor(TameInputElement, TameElement, 'TameInputElement');
-    ___.all2(___.allowMethod, TameInputElement,
+    ___.all2(___.grantMethod, TameInputElement.prototype,
              ['getValue', 'setValue', 'focus', 'getForm']);
     exportFields(TameInputElement, ['value', 'form']);
 
@@ -869,7 +869,8 @@ attachDocumentStub = (function () {
       return src;
     };
     ___.ctor(TameImageElement, TameElement, 'TameImageElement');
-    ___.all2(___.allowMethod, TameImageElement, ['getSrc', 'setSrc']);
+    ___.all2(___.grantMethod, TameImageElement.prototype, 
+             ['getSrc', 'setSrc']);
     exportFields(TameImageElement, ['src']);
 
 
@@ -926,7 +927,7 @@ attachDocumentStub = (function () {
     };
     TameEvent.prototype.toString = function () { return 'Not a real event'; };
     ___.ctor(TameEvent, void 0, 'TameEvent');
-    ___.all2(___.allowMethod, TameEvent,
+    ___.all2(___.grantMethod, TameEvent.prototype,
              ['getType', 'getTarget', 'getPageX', 'getPageY', 'stopPropagation',
               'getAltKey', 'getCtrlKey', 'getMetaKey', 'getShiftKey',
               'getButton', 'getClientX', 'getClientY',
@@ -969,7 +970,7 @@ attachDocumentStub = (function () {
     };
     TameDocument.prototype.toString = function () { return '[Fake Document]'; };
     ___.ctor(TameDocument, void 0, 'TameDocument');
-    ___.all2(___.allowMethod, TameDocument,
+    ___.all2(___.grantMethod, TameDocument.prototype,
              ['createElement', 'createTextNode', 'getElementById']);
 
     imports.tameNode___ = tameNode;

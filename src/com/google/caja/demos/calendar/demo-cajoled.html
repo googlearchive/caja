@@ -67,17 +67,18 @@
 
   <script type="text/javascript">(function () {
     // TODO: kludge pending bug 267
-    ___.allowCall(Array, 'push');
+    // TODO: bug 267 is fixed. How should this now be cleaned up?
+    ___.grantCall(Array, 'push');
     var realPush = Array.prototype.push;
     Array.prototype.push = ___.method(function (var_args) {
       if (___.isFrozen(this)) { throw new Error('frozen array'); };
       return realPush.apply(this, arguments);
     });
-    ___.allowRead(Array.prototype, 'push');
-    ___.allowCall(Array.prototype, 'push');
+    ___.grantRead(Array.prototype, 'push');
+    ___.grantCall(Array.prototype, 'push');
     delete Array.prototype.push_handler___;
     Array.prototype.push.apply_handler___ = undefined;
-    ___.allowCall(Array.prototype.push, 'apply');
+    ___.grantCall(Array.prototype.push, 'apply');
     // END: kludge
 
     var uriCallback = { rewrite: function () { return null; } };
@@ -116,7 +117,7 @@
     // Grant readonly access to a portion of the DOM
     imports.document.body = makeReadOnlyNode(document.body);
     imports.document.title = String(document.title);
-    ___.all2(___.allowRead, imports.document, ['body', 'title']);
+    ___.all2(___.grantRead, imports.document, ['body', 'title']);
 
     imports.console = { log: ___.simpleFunc(function (var_args) {
                           console.log.apply(console, arguments);
@@ -135,12 +136,12 @@
     imports.window = imports;
     imports.htmlInterp = htmlInterp;
     imports.StringInterpolation = StringInterpolation;
-    ___.all2(___.allowRead, imports,
+    ___.all2(___.grantRead, imports,
              ['window', 'htmlInterp', 'StringInterpolation']);
-    ___.allowCall(htmlInterp, 'safeHtml');
+    ___.grantCall(htmlInterp, 'safeHtml');
     ___.ctor(StringInterpolation);
 
-    ___.allowCall(StringInterpolation.prototype, 'append');
+    ___.grantCall(StringInterpolation.prototype, 'append');
 
     window.imports = imports;
   })();</script>

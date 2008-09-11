@@ -17,7 +17,7 @@
  * Supporting scripts for the cajoling testbed.
  *
  * <p>
- * This supports an input forms that can be instantiated multiple times to
+ * This supports input forms that can be instantiated multiple times to
  * simulate multiple gadgets in the same frame.
  * Different forms are distinguished by a unique suffix, and use the following
  * identifiers:
@@ -113,7 +113,7 @@ var getTestbedServer = (function () {
 
   var testbedServer;
   return function getTestbedServer() {
-    if (testbedServer === undefined) {
+    if (testbedServer === void 0) {
       var backend = getCgiParams().backend;
       testbedServer = (backend && backend.length === 1)
           ? backend[0]
@@ -209,8 +209,8 @@ function lifecode(form) {
 }
 
 /**
- * Reads caja code and configuration from the testbed form, cajoles it, and
- * displays the output in the current HTML page.
+ * Reads caja code and configuration from the testbed form, cajoles
+ * it, runs it, and displays the output in the current HTML page.
  * @param {HTMLFormElement} form
  */
 var cajole = (function () {
@@ -237,8 +237,8 @@ var cajole = (function () {
       if (document.getElementById("VALIJA_MODE" + uiSuffix).checked) {
         imports.valija = valijaMaker(imports);
       }
-     // Set up the module handler
-      ___.getNewModuleHandler().setImports(imports);
+      // Set up the outer new module handler
+      ___.setNewModuleHandler(imports.outerNewModuleHandler___);
 
       // Load the script
       try {
@@ -455,20 +455,39 @@ var getImports = (function () {
     }
   }
 
-  /** Javascript support for ExpressionLanguageStage.java */
-  function yielder(uiSuffix) {
-    return function yield(o) {
-      var type = document.createElement('span');
-      type.className = 'type';
-      type.appendChild(document.createTextNode(typeString(o)));
+  function makeOuterNewModuleHandler(imports, uiSuffix) {
+    var superHandler = ___.makeNormalNewModuleHandler();
+    superHandler.setImports(imports);
+    var inner = ___.beget(superHandler);
+    inner.handle = ___.simpleFrozenFunc(function(newModule) {
+      try {
+	return ___.callPub(superHandler, 'handle', 
+			   [___.simpleFrozenFunc(newModule)]);
+      } finally {
+	var outcome = superHandler.getLastOutcome();
+	var type = document.createElement('span');
+	type.className = 'type';
+	type.appendChild(document.createTextNode(typeString(outcome[1])));
 
-      var entry = document.createElement('div');
-      entry.className = 'result';
-      entry.appendChild(type);
-      entry.appendChild(document.createTextNode(repr(o)));
-
-      document.getElementById('eval-results' + uiSuffix).appendChild(entry);
-    };
+	var entry = document.createElement('div');
+	entry.className = 'result';
+	entry.appendChild(type);
+	entry.appendChild(document.createTextNode(repr(outcome[1])));
+	if (!outcome[0]) {
+	  // TODO(erights): color something red
+	}
+	document.getElementById('eval-results' +
+				uiSuffix).appendChild(entry);
+      }
+    });
+    ___.freeze(inner);
+    var outer = ___.beget(superHandler);
+    outer.handle = ___.simpleFrozenFunc(function(newModule) {
+      ___.setNewModuleHandler(inner);
+      return ___.callPub(superHandler, 'handle', 
+			 [___.simpleFrozenFunc(newModule)]);
+    });
+    return ___.freeze(outer);
   }
 
   function getImports(uiSuffix) {
@@ -476,8 +495,7 @@ var getImports = (function () {
       return importsByUiSuffix[uiSuffix];
     }
 
-    var testImports = ___.copy(___.sharedImports);
-    testImports.yield = ___.simpleFrozenFunc(yielder(uiSuffix));
+    var testImports = ___.copy(___.sharedImports);    
     var idClass = 'xyz' + ___.getId(testImports) + '___';
     attachDocumentStub(
          '-' + idClass,
@@ -496,7 +514,7 @@ var getImports = (function () {
       var htmlContainer = document.getElementById('caja-html' + uiSuffix);
       htmlContainer.className = idClass;
       htmlContainer.innerHTML = '';
-      testImports.htmlEmitter___ = new HtmlEmitter(htmlContainer);
+      testImports.htmlEmitter___ = new HtmlEmitter(htmlContainer);      
     };
     /**
      * Put styles inside a node that is cleared for each gadget so that
@@ -513,6 +531,10 @@ var getImports = (function () {
               ? gadgetPublicApis[moduleName]
               : void 0;
         });
+
+    testImports.outerNewModuleHandler___ = 
+      makeOuterNewModuleHandler(testImports, uiSuffix);
+
     return importsByUiSuffix[uiSuffix] = testImports;
   }
 

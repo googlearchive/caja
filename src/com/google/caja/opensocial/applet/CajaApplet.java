@@ -23,10 +23,6 @@ import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.NullLiteral;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.plugin.Jobs;
-import com.google.caja.plugin.PluginCompiler;
-import com.google.caja.plugin.PluginMeta;
-import com.google.caja.plugin.stages.ConsolidateCodeStage;
 import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
 import com.google.caja.opensocial.UriCallback;
@@ -41,7 +37,6 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
-import com.google.caja.util.Pipeline;
 
 import java.applet.Applet;
 import java.io.IOException;
@@ -56,7 +51,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -67,6 +61,16 @@ import java.util.Set;
  * @author mikesamuel@gmail.com
  */
 public class CajaApplet extends Applet {
+  private final boolean standAlone;
+
+  public CajaApplet() {
+    standAlone = false;
+  }
+
+  public CajaApplet(boolean standalone) {
+    this.standAlone = standalone;
+  }
+
   @Override
   public String getAppletInfo() {
     return "Interactively cajoles an HTML gadget entered in a text box.";
@@ -145,8 +149,8 @@ public class CajaApplet extends Applet {
                               final Set<Feature> features) {
     // TODO(mikesamuel): If the text starts with a <base> tag, maybe use that
     // and white it out to preserve file positions.
-    URI src = URI.create(getDocumentBase().toString());
-
+    String url = standAlone ? "http://www.example.com/" : getDocumentBase().toString();
+    URI src = URI.create(url);
     InputSource is = new InputSource(src);
 
     // Maps InputSource to the source code so we can generate snippets for
@@ -166,29 +170,11 @@ public class CajaApplet extends Applet {
               mc, features.contains(Feature.ASCII_ONLY),
               features.contains(Feature.EMBEDDABLE), out);
         }
-        @Override
-        protected PluginCompiler createPluginCompiler(
-            PluginMeta meta, MessageQueue mq) {
-          PluginCompiler pc = super.createPluginCompiler(meta, mq);
-          List<Pipeline.Stage<Jobs>> stages
-              = pc.getCompilationPipeline().getStages();
-          for (ListIterator<Pipeline.Stage<Jobs>> it = stages.listIterator();
-               it.hasNext();) {
-            // Add statements to print results from script blocks just before
-            // all the script blocks are combined into one JS tree.
-            if (it.next() instanceof ConsolidateCodeStage) {
-              it.previous();
-              it.add(new ExpressionLanguageStage());
-              break;
-            }
-          }
-          return pc;
-        }
       };
     rw.setDebugMode(features.contains(Feature.DEBUG_SYMBOLS));
     rw.setWartsMode(features.contains(Feature.WARTS_MODE));
     rw.setValijaMode(features.contains(Feature.VALIJA_MODE));
-    
+
     StringBuilder cajoledOutput = new StringBuilder();
 
     try {

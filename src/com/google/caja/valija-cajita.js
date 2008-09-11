@@ -84,10 +84,42 @@ var valijaMaker = (function(outers) {
   /**
    * Simulates a monkey-patchable <tt>Function</tt> object
    */
-   outers.Function = Disfunction;
+  outers.Function = Disfunction;
 
   var ObjectShadow = caja.beget(DisfunctionPrototype);
   ObjectShadow.prototype = ObjectPrototype;
+
+  var FuncHeader = new RegExp(
+    // Capture the function name if present.
+    // Use absence of spaces or open parens, rather than presence of
+    // identifier chars, so we don't need to worry about charset
+    // issues (beyond the definition of \s). 
+    '^\\s*function\\s*([^\\s\\(]*)\\s*\\(' +
+      // Skip a first '$dis' parameter if present.
+      '(?:\\$dis,?\\s*)?' + 
+      // Capture any remaining arguments until the matching close paren. 
+      // TODO(erights): Once EcmaScript and Valija allow patterns in parameter 
+      // position, a close paren will no longer be a reliable indication of 
+      // the end of the parameter list, so we'll need to revisit this.
+      '([^\\)]*)\\)'); // don't care what's after the close paren
+
+  DisfunctionPrototype.toString = dis(function($dis) { 
+    var callFn = $dis.call;
+    if (callFn) {
+      var printRep = callFn.toString();    
+      var match = FuncHeader.exec(printRep);
+      if (null !== match) {
+        var name = $dis.name;
+        if (name === void 0) { name = match[1]; }
+        return 'function ' + name + '(' + match[2] + 
+          ') {\n  [cajoled code]\n}';
+      }
+      return printRep;
+    }
+    return 'disfunction(var_args){\n   [cajoled code]\n}';
+  });
+
+  outers.Function = Disfunction;
 
   /**
    * A table mapping from <i>function categories</i> to the
@@ -97,6 +129,12 @@ var valijaMaker = (function(outers) {
   var myPOE = caja.newTable();
 
   myPOE.set(caja.getFuncCategory(Object), ObjectShadow);
+
+  function makeDefaultMethod(name) {
+    return dis(function($dis, var_args) {
+      return $dis[name].apply($dis, Array.slice(arguments, 1));
+    });
+  }
 
   /**
    * Returns the monkey-patchable POE shadow of <tt>func</tt>'s
@@ -113,15 +151,34 @@ var valijaMaker = (function(outers) {
       if (typeof parentFunc === 'function') {
         parentShadow = getShadow(parentFunc);
       } else {
-        parentShadow = caja.beget(DisfunctionPrototype);
+        parentShadow = ObjectShadow;
       }
-      result.prototype = caja.beget(parentShadow.prototype);
-      result.prototype.constructor = func;
+      var proto = caja.beget(parentShadow.prototype);
+      result.prototype = proto;
+      proto.constructor = func;
+      
+      var statics = caja.getOwnPropertyNames(func);
+      for (var i = 0; i < statics.length; i++) {
+        var k = statics[i];
+        if (k !== 'valueOf') {
+          result[k] = func[k];
+        }
+      }
+      
+      var meths = caja.getMethodNames(func);
+      for (var i = 0; i < meths.length; i++) {
+        var k = meths[i];
+        if (k !== 'valueOf') {
+          proto[k] = makeDefaultMethod(k);
+        }
+      }
+            
       myPOE.set(cat, result);
     }
     return result;
   }
   
+
   /** 
    * Handle Valija <tt><i>func</i>.prototype</tt>.
    * <p>
@@ -129,14 +186,14 @@ var valijaMaker = (function(outers) {
    * pseudo-prototype, creating it (and its parent pseudo-prototypes)
    * if needed. Otherwise as normal.
    */
-  function getPrototypeOf(func) {
+  function getFakeProtoOf(func) {
     if (typeof func === 'function') {
       var shadow = getShadow(func);
       return shadow.prototype;
     } else if (typeof func === 'object' && func !== null) {
-        return func.prototype;
+      return func.prototype;
     } else {
-      return (void 0);
+      return void 0;
     }
   }
   
@@ -150,7 +207,7 @@ var valijaMaker = (function(outers) {
     var result = typeof obj;
     if (result !== 'object') { return result; }
     if (null === obj) { return result; }
-    if (caja.inheritsFrom(DisfunctionPrototype)) { return 'function'; }
+    if (caja.inheritsFrom(obj, DisfunctionPrototype)) { return 'function'; }
     return result;
   }
   
@@ -166,30 +223,36 @@ var valijaMaker = (function(outers) {
     if (typeof func === 'function' && obj instanceof func) {
       return true;
     } else {
-      return caja.inheritsFrom(obj, getPrototypeOf(func));
+      return caja.inheritsFrom(obj, getFakeProtoOf(func));
     }
   }
+  
+  function hasOwnProp(obj, name) {
+    return {}.hasOwnProperty.call(obj, name);
+  } 
 
   /**
    * Handle Valija <tt><i>obj</i>[<i>name</i>]</tt>.
    */
   function read(obj, name) {
     if (typeof obj === 'function') {
-      var shadow = getShadow(obj);
-      if (name in shadow) {
-        return shadow[name];
-      } else {
-        return obj[name];
-      }
+      return getShadow(obj)[name];
     }
-    // BUG TODO(erights): Should check in order 1) obj's own
-    // properties, 2) getPrototypeOf(ctor)'s properties, 3) obj's
-    // inherited properties.
-    if (name in obj) {
+    if (hasOwnProp(obj, name)) {
       return obj[name];
     }
-    var ctor = caja.directConstructor(obj);
-    return getPrototypeOf(ctor)[name];
+
+    // BUG TODO(erights): figure out why things break when the
+    // following line (which really shouldn't be there) is deleted.
+    if (name in obj) { return obj[name];}
+
+    var stepParent = getFakeProtoOf(caja.directConstructor(obj));
+    if (stepParent !== (void 0) && 
+        name in stepParent &&
+        name !== 'valueOf') {
+      return stepParent[name];
+    }
+    return obj[name];
   }
 
   /** 
@@ -257,17 +320,19 @@ var valijaMaker = (function(outers) {
                             leftArgs.concat(Array.slice(arguments, 0)));
       };
     };
+
     result.prototype = caja.beget(ObjectPrototype);
     result.prototype.constructor = result;
     result.length = callFn.length -1;
-    if (opt_name !== void 0) {
+    // TODO(erights): Why are we testing for the empty string here?
+    if (opt_name !== void 0 && opt_name !== '') {
       result.name = opt_name;
     }
     return result;
   }
 
   function getOuters() {
-    caja.enforceType(outers, "object");
+    caja.enforceType(outers, 'object');
     return outers;
   }
 
@@ -285,7 +350,7 @@ var valijaMaker = (function(outers) {
 
   function initOuter(name) {
     if (canReadRev(name, outers)) { return; }
-    set(outers, name, undefined);
+    set(outers, name, void 0);
   }
 
   function remove(obj, name) {
@@ -303,7 +368,8 @@ var valijaMaker = (function(outers) {
       result.push(name);
     }
     for (name in getSupplement(obj)) {
-      // TODO(erights): fix this once DONTENUM properties are better settled in ES-Harmony.
+      // TODO(erights): fix this once DONTENUM properties are better 
+      // settled in ES-Harmony.
       if (!(name in obj) && name !== 'constructor') {
         result.push(name);
       }
@@ -325,7 +391,7 @@ var valijaMaker = (function(outers) {
       return getShadow(obj);
     } else {
       var ctor = caja.directConstructor(obj);
-      return getPrototypeOf(ctor);
+      return getFakeProtoOf(ctor);
     }
   }
 
@@ -346,7 +412,7 @@ var valijaMaker = (function(outers) {
     keys: keys,
     canReadRev: canReadRev,
 
-    dis: dis,
+    dis: dis
   });
 });
 

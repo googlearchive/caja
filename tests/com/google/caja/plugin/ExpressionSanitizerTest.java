@@ -57,12 +57,12 @@ public class ExpressionSanitizerTest extends CajaTestCase {
   }
 
   public void testRewriteErrorIsDetected() throws Exception {
-    newPassThruSanitizer().sanitize(ac(new Identifier("x__")));  
+    newPassThruSanitizer().sanitize(ac(new Identifier("x__")));
     assertTrue(mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR));
   }
 
   public void testNonAsciiIsDetected() throws Exception {
-    newPassThruSanitizer().sanitize(ac(new Identifier("\u00e6")));  
+    newPassThruSanitizer().sanitize(ac(new Identifier("\u00e6")));
     assertTrue(mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR));
   }
 

@@ -79,4 +79,5 @@ SearchEngine.prototype.imageSearch = function (query, callback) {
 
 // Define what gadgets can access.
 ___.ctor(SearchEngine, undefined, 'SearchEngine');
-___.all2(___.allowMethod, SearchEngine, ['webSearch', 'imageSearch']);
+___.all2(___.grantMethod, SearchEngine.prototype, 
+         ['webSearch', 'imageSearch']);

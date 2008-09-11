@@ -17,6 +17,8 @@ package com.google.caja.parser.quasiliteral;
 import java.io.IOException;
 
 import com.google.caja.lexer.ParseException;
+import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.util.RhinoTestBed;
 
@@ -39,15 +41,42 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
   public void testConstant() throws Exception {
     assertConsistent("1;");
   }
-  
+
   public void testInit() throws Exception {
     assertConsistent("var a=0; a;");
   }
-  
+
   public void testNew() throws Exception {
     assertConsistent("function f(){ this.x = 1; } f; var g = new f(); g.x;");
   }
-  
+
+  public void testProtoCall() throws Exception {
+    assertConsistent("''+Array.prototype.sort.call([3,1,2]);");
+    assertConsistent("''+[3,1,2].sort();");
+    assertConsistent("''+[3,1,2].sort.call([4,2,7]);");
+
+    assertConsistent("String.prototype.indexOf.call('foo','o');");
+    assertConsistent("'foo'.indexOf('o');");
+
+    assertConsistent("'foo'.indexOf.call('bar','o');");
+    assertConsistent("'foo'.indexOf.call('bar','a');");
+  }
+
+  public void testInherit() throws Exception {
+    assertConsistent(
+        "function Point(x){this.x=x;}\n" +
+        "Point.prototype.toString = function(){return \'<\'+this.x+\'>\';};\n" +
+        "function WP(x){Point.call(this,x);}\n" +
+        "WP.prototype = caja.beget(Point.prototype);\n" +
+        "var pt = new WP(3);\n" +
+        "pt.toString();");
+  }
+
+  /** See bug 528 */
+  public void testRegExpLeak() throws Exception {
+    rewriteAndExecute("assertEquals(''+(/(.*)/).exec(), 'undefined,undefined');");
+  }
+
   public void testClosure() throws Exception {
     assertConsistent(
         "function f(){" +
@@ -62,30 +91,50 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "h.y = g.x;" +
         "h.x() + h.y();");
   }
-  
+
   public void testArray() throws Exception {
     assertConsistent("[3,2,1].sort().toString();");
+    assertConsistent("[3,2,1].sort.call([4,2,7]).toString();");
   }
-  
+
   public void testObject() throws Exception {
     assertConsistent("({x:1,y:2}).toString();");
   }
-  
+
+  public void testIndexOf() throws Exception {
+    assertConsistent("'foo'.indexOf('o');");
+  }
+
+  public void testFunctionToStringCall() throws Exception {
+    rewriteAndExecute("function foo() {}\n"
+        + "assertEquals(foo.toString()," +
+        		"'function foo() {\\n  [cajoled code]\\n}');");
+    rewriteAndExecute("function foo (a, b) {xx;}\n"
+        + "assertEquals(foo.toString()," +
+        		"'function foo(a, b) {\\n  [cajoled code]\\n}');");
+    rewriteAndExecute("function foo() {}\n"
+        + "assertEquals(Function.prototype.toString.call(foo), " +
+                        "'function foo() {\\n  [cajoled code]\\n}');");
+    rewriteAndExecute("var foo = function  ( x$x,y_y) {}\n"
+        + "assertEquals(Function.prototype.toString.call(foo), " +
+                        "'function (x$x, y_y) {\\n  [cajoled code]\\n}');");
+  }
+
   public void testUnderscore() throws Exception {
     // TODO: enable this behavior
     // assertConsistent("var x_=1; x_;");
     // checkFails("var o={p_:1}; o.p_;", "Key may not end in \"_\"");
   }
-  
+
   public void testDate() throws Exception {
     //assertConsistent("''+new Date;");
   }
-  
+
   public void testDelete() throws Exception {
     assertConsistent("(function () { var a={x:1}; delete a.x; a.x; })();");
     assertConsistent("var a={x:1}; delete a.x; a.x;");
   }
-  
+
   public void testIn() throws Exception {
     assertConsistent(
         "(function () {" +
@@ -97,7 +146,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "'' + ('x' in a) + ('y' in a);");
   }
 
-  public void testForInLoop() throws Exception {
+  public void testForIn2() throws Exception {
     assertConsistent("(function(){ str=''; for (i in {x:1, y:true}) {str+=i;} str; })();");
     assertConsistent("(function(){ str=''; for (var i in {x:1, y:true}) {str+=i;} str;})();");
     assertConsistent("str=''; for (i in {x:1, y:true}) {str+=i;} str;");
@@ -156,12 +205,15 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         + "assertEquals(3, x);");
   }
 
+  public void testStatic() throws Exception {
+    assertConsistent("''+Array.slice([3,4,5,6], 1);");
+  }
+
   @Override
   protected Object executePlain(String caja) throws IOException, ParseException {
     mq.getMessages().clear();
     setRewriter(innocentCodeRewriter);
     Statement innocentTree = (Statement)rewriteStatements(js(fromString(caja, is)));
-    // Make sure the tree assigns the result to the unittestResult___ var.
     return RhinoTestBed.runJs(
         new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
         new RhinoTestBed.Input(getClass(), "../../plugin/asserts.js"),
@@ -174,16 +226,14 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     mq.getMessages().clear();
 
     setRewriter(defaultValijaRewriter);
-    Statement valijaTree = replaceLastStatementWithEmit(
-        js(fromString(caja, is)), "unittestResult___;");
-    Statement cajitaTree = (Statement)rewriteStatements(
-        valijaTree);
+    Block valijaTree = js(fromString(caja, is));
+    Block cajitaTree = (Block)rewriteStatements(valijaTree);
     setRewriter(defaultCajaRewriter);
-    String cajoledJs = "___.loadModule(function (___, IMPORTS___) {\n" +
-        render(rewriteStatements(cajitaTree)) +
-        "\n});";
-    String valijaCajoled = render(
-        rewriteStatements(js(fromResource("../../valija-cajita.js"))));
+    Block body = (Block)rewriteStatements(new ModuleEnvelope(cajitaTree));
+    String cajoledJs = render(body);
+    Block valijaBody = (Block)rewriteStatements(new ModuleEnvelope(
+        js(fromResource("../../valija-cajita.js"))));
+    String valijaCajoled = render(valijaBody);
     assertNoErrors();
 
     Object result = RhinoTestBed.runJs(
@@ -199,18 +249,10 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
             "testImports.outers = ___.copy(___.sharedImports);\n" +
             "___.getNewModuleHandler().setImports(testImports);",
             getName() + "valija-setup"),
+        new RhinoTestBed.Input(valijaCajoled, "valija-cajoled"),
         new RhinoTestBed.Input(
-            "___.loadModule(function (___, IMPORTS___) {" + valijaCajoled + "\n});",
-            "valija-cajoled"),
-        new RhinoTestBed.Input(
-            // Initialize the output field to something containing a unique
-            // object value that will not compare identically across runs.
             // Set up the imports environment.
             "testImports = ___.copy(___.sharedImports);\n" +
-            "var unittestResult___ = {\n" +
-            "    toString: function () { return '' + this.value; },\n" +
-            "    value: '--NO-RESULT--'\n" +
-            "};\n" +
             "testImports.console = console;" +
             "testImports.assertEquals = ___.simpleFunc(assertEquals);" +
             "___.grantCall(testImports, 'assertEquals');" +
@@ -226,7 +268,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         new RhinoTestBed.Input(cajoledJs, getName() + "-cajoled"),
         new RhinoTestBed.Input(post, getName() + "-post"),
         // Return the output field as the value of the run.
-        new RhinoTestBed.Input("unittestResult___;", getName()));
+        new RhinoTestBed.Input("___.getNewModuleHandler().getLastValue();", getName()));
 
     assertNoErrors();
     return result;

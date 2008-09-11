@@ -39,8 +39,8 @@ CalEvent.prototype.getAttendees = ___.method(function () {
 CalEvent.prototype.getId = ___.method(function () {
   return this.id_;
 }, 'getId');
-___.allowCall(CalEvent.prototype, 'getAttendees');
-___.allowCall(CalEvent.prototype, 'getId');
+___.grantCall(CalEvent.prototype, 'getAttendees');
+___.grantCall(CalEvent.prototype, 'getId');
 
 /**
  * a calendar is a group of events.
@@ -54,7 +54,7 @@ Calendar.prototype.getEvents = ___.method(
     function () { return this.events_; }, 'getEvents');
 Calendar.prototype.toString = ___.method(
     function () { return '[Calendar]'; }, 'toString');
-___.allowCall(Calendar.prototype, 'getEvents');
+___.grantCall(Calendar.prototype, 'getEvents');
 
 
 // for demo purposes, hard-code a list of contacts and events

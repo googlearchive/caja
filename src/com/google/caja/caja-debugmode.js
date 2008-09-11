@@ -206,7 +206,7 @@
   }
   function asCtor(fun, callerIdx) {
     var ctor = fun;
-    if (('function' === typeof ctor) && ctor.___CONSTRUCTOR___) {
+    if (('function' === typeof ctor) && ctor.CONSTRUCTOR___) {
       // Make sure that the object returned really is of the right class, not
       // of the type of the wrapper function.
       // This works around problems with (new Array()) and (new Date()) where
@@ -238,7 +238,7 @@
             return new tmp(arguments);
         }
       };
-      ctor.___CONSTRUCTOR___ = true;
+      ctor.CONSTRUCTOR___ = true;
       ctor.length = fun.length;
     }
     return makeWrapper(ctor, 'asCtor', this.debugSymbols_[callerIdx]);
@@ -278,14 +278,14 @@
 
     // fun might pass asCtor because it is simple.  Copy only the bits onto
     // wrapper that allow it to survive similar checks.
-    if (fun.___SIMPLE_FUNC___) {
-      wrapper.___SIMPLE_FUNC___ = true;
-    } else if (fun.___METHOD___) {
-      wrapper.___METHOD___ = true;
-    } else if (fun.___CONSTRUCTOR___) {
-      wrapper.___CONSTRUCTOR___ = true;
-    } else if (fun.___XO4A___) {
-      wrapper.___XO4A___ = true;
+    if (fun.SIMPLEFUNC___) {
+      wrapper.SIMPLEFUNC___ = true;
+    } else if (fun.METHOD___) {
+      wrapper.METHOD___ = true;
+    } else if (fun.CONSTRUCTOR___) {
+      wrapper.CONSTRUCTOR___ = true;
+    } else if (fun.XO4A___) {
+      wrapper.XO4A___ = true;
     }
 
     return orig.primFreeze(wrapper);
@@ -371,11 +371,11 @@
     override(
         this,
         [
-         'allowRead', noop,
-         'allowEnum', noop,
-         'allowCall', noop,
-         'allowSet', requireNotFrozen,
-         'allowDelete', requireNotFrozen
+         'grantRead', noop,
+         'grantEnumOnly', noop,
+         'grantCall', noop,
+         'grantSet', requireNotFrozen,
+         'grantDelete', requireNotFrozen
         ], 0);
 
     // Maintain stack through calls, and attach a stack when an operation fails.

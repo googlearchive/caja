@@ -31,6 +31,7 @@ import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.QuotedExpression;
@@ -267,12 +268,31 @@ public class DefaultValijaRewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
+          name="moduleEnvelope",
+          synopsis="Expand to a Caja module using an isolated scope.",
+          reason="The 'module' rule should fire on the body of the module.",
+          matches="<a Valija ModuleEnvelope>",
+          substitutes="<a Caja ModuleEnvelope>")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof ModuleEnvelope) {
+          return expandAll(node, null, mq);
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
           name="module",
           synopsis="Assume an imported \"valija\" that knows our shared outers. " +
             "Name it $dis so top level uses of \"this\" in Valija work.",
           reason="",
           matches="@ss*;",
-          substitutes="var $dis = valija.getOuters(); @startStmts*; @ss*;")
+          substitutes="var $dis = valija.getOuters();"
+            + "valija.initOuter('onerror');"
+            + "@startStmts*;"
+            + "@ss*;")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof Block && scope == null) {
           Scope s2 = Scope.fromProgram((Block)node, mq);
@@ -282,9 +302,7 @@ public class DefaultValijaRewriter extends Rewriter {
           }
           return substV(
               "  var $dis = valija.getOuters();"
-              + "if (!valija.onerror) {"
-              + "  valija.setOuter('onerror', undefined);"
-              + "}"
+              + "valija.initOuter('onerror');"
               + "@startStmts*;"
               + "@expanded*;",
               "startStmts", new ParseTreeNodeContainer(s2.getStartStatements()),

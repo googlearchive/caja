@@ -156,7 +156,6 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
   @Override
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();
-    // Make sure the tree assigns the result to the unittestResult___ var.
     return RhinoTestBed.runJs(
         new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
         new RhinoTestBed.Input(getClass(), "../../plugin/asserts.js"),
@@ -168,8 +167,7 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
       throws IOException, ParseException {
     mq.getMessages().clear();
 
-    Statement cajaTree = replaceLastStatementWithEmit(
-        js(fromString(trans, is)), "unittestResult___;");
+    Statement cajaTree = js(fromString(trans, is));
     String transJs = render(
         rewriteStatements(js(fromResource("../../plugin/asserts.js")),
                           cajaTree));

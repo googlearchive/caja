@@ -28,8 +28,13 @@
     <script src="example-gadget-files/no-such-file.js"></script>
 
     <!-- Should execute before paragraph 3. -->
+    <!-- In order for the handleClicky exported as outers.handleClicky
+         below to be visible as 'clicky' by other scipts on this page
+         (such as event handlers) the container must have done an
+             'imports.outers = imports' 
+      -->
     <script type="text/javascript"><!--
-      function handleClicky() {
+      outers.handleClicky = function handleClicky() {
         alert('You clicked something!!!');
       }
     --></script>

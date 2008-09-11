@@ -18,6 +18,8 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
+import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
@@ -198,6 +200,7 @@ public class Scope {
   // empty everywhere else. Define subclasses of Scope so that this confusing
   // overlapping of instance variables does not occur.
   private final SortedSet<String> importedVariables = new TreeSet<String>();
+  private final Permit permitsUsed;
 
   public static Scope fromProgram(Block root, MessageQueue mq) {
     Scope s = new Scope(ScopeType.PROGRAM, mq, true);
@@ -226,7 +229,9 @@ public class Scope {
     return s;
   }
 
-  private static Scope fromFunctionConstructor(Scope parent, FunctionConstructor root, boolean sideEffecting) {
+  private static Scope fromFunctionConstructor(Scope parent,
+                                               FunctionConstructor root,
+                                               boolean sideEffecting) {
     Scope s = new Scope(ScopeType.FUNCTION_BODY, parent, sideEffecting);
 
     // A function's name is bound to it in its body. After executing
@@ -251,6 +256,7 @@ public class Scope {
     this.parent = null;
     this.mq = mq;
     this.sideEffecting = sideEffecting;
+    this.permitsUsed = new Permit();
   }
 
   private Scope(ScopeType type, Scope parent, boolean sideEffecting) {
@@ -258,6 +264,7 @@ public class Scope {
     this.parent = parent;
     this.mq = parent.mq;
     this.sideEffecting = sideEffecting;
+    this.permitsUsed = parent.permitsUsed;
   }
 
   /**
@@ -477,7 +484,6 @@ public class Scope {
     return parent.isImported(name);
   }
 
-  
   /**
    * Is a given symbol an outer in this Valija code?
    *
@@ -485,11 +491,10 @@ public class Scope {
    * @return whether 'name' is (a free variable or declared at the top level scope) or not.
    */
   public boolean isOuter(String name) {
-    if (parent == null) { return true;} 
+    if (parent == null) { return true;}
     if (locals.containsKey(name)) return false;
     return parent.isOuter(name);
   }
-
 
   private LocalType getType(String name) {
     Scope current = this;
@@ -571,6 +576,8 @@ public class Scope {
         visitOperation((Operation)node);
       } else if (node instanceof Reference) {
         visitReference((Reference) node);
+      } else if (node instanceof ModuleEnvelope) {
+        visitModuleEnvelope((ModuleEnvelope) node);
       } else {
         visitChildren(node);
       }
@@ -625,6 +632,10 @@ public class Scope {
           !exceptionVariables.contains(node.getIdentifierName())) {
         references.add(node);
       }
+    }
+
+    private void visitModuleEnvelope(ModuleEnvelope node) {
+      // don't look inside a module envelope
     }
   }
 
@@ -709,5 +720,26 @@ public class Scope {
     }
 
     s.locals.put(name, Pair.pair(type, ident.getFilePosition()));
+  }
+
+  /**
+   * If varName is not a statically permitted base name, return null;
+   * otherwise return a JSON description of all the statically
+   * permitted paths rooted in varName which this module's compilation
+   * assumed were safe.
+   */
+  Expression getPermitsUsed(Identifier varName) {
+    // TODO(erights): Permit should generate a JSON AST directly,
+    // rather than generating a string which we then parse.
+    Permit subPermit = permitsUsed.canRead(varName);
+    if (null == subPermit) { return null; }
+    return (Expression)substV(
+        "(" + subPermit.getPermitsUsedAsJSONString() + ")");
+  }
+
+  // SECURITY HOLE TODO(erights): Don't permit o if it's base
+  // is defined by non-imported variable.
+  public Permit permitRead(ParseTreeNode o) {
+    return permitsUsed.canRead(o);
   }
 }

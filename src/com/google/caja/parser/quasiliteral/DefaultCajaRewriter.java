@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.ParseTreeNodes;
@@ -37,6 +38,7 @@ import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.LabeledStmtWrapper;
 import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Loop;
+import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.parser.js.MultiDeclaration;
 import com.google.caja.parser.js.Noop;
 import com.google.caja.parser.js.Operation;
@@ -59,6 +61,7 @@ import static com.google.caja.parser.js.SyntheticNodes.s;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -73,6 +76,44 @@ import java.util.Map;
   )
 public class DefaultCajaRewriter extends Rewriter {
 
+  @SuppressWarnings("unchecked")
+  static public Statement returnLast(Statement node) {
+    Statement result = null;
+    if (node instanceof ExpressionStmt) {
+      result = new ReturnStmt(((ExpressionStmt) node).getExpression());
+    } else if (node instanceof Block) {
+      List<Statement> stats = new ArrayList<Statement>();
+      stats.addAll((Collection<? extends Statement>) node.children());
+      int lasti = stats.size() - 1;
+      if (lasti >= 0) {
+        stats.set(lasti, returnLast(stats.get(lasti)));
+        result = new Block(stats);
+      }
+    } else if (node instanceof Conditional) {
+      List<ParseTreeNode> nodes = new ArrayList<ParseTreeNode>();
+      nodes.addAll(node.children());
+      int lasti = nodes.size() - 1;
+      for (int i = 1; i <= lasti; i += 2) {  // Even are conditions.
+        nodes.set(i, returnLast((Statement)nodes.get(i)));
+      }
+      if ((lasti & 1) == 0) {  // else clause
+        nodes.set(lasti, returnLast((Statement)nodes.get(lasti)));
+      }
+      result = new Conditional(null, nodes);
+    } else if (node instanceof TryStmt) {
+      TryStmt tryer = (TryStmt) node;
+      result = new TryStmt(returnLast(tryer.getBody()),
+          tryer.getCatchClause(),
+          tryer.getFinallyClause());
+    }
+    if (null == result) { return node; }
+    result.getAttributes().putAll(node.getAttributes());
+    if (result instanceof AbstractParseTreeNode) {
+      ((AbstractParseTreeNode<?>) result).setFilePosition(node.getFilePosition());
+    }
+    return result;
+  }
+
   // A NOTE ABOUT MATCHING MEMBER ACCESS EXPRESSIONS
   // When we match the pattern like '@x.@y' or '@x.@y()' against a specimen,
   // the result is that 'y' is bound to the rightmost component, and 'x' is
@@ -84,8 +125,32 @@ public class DefaultCajaRewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
+          name="moduleEnvelope",
+          synopsis="Cajole a ModuleEnvelope into a call to load a module description.",
+          reason="Each script tag defines a separately loadable program unit.",
+          matches="<a ModuleEnvelope>",
+          substitutes="___.loadModule(function(___, IMPORTS___) {" +
+          "  @body*;" +
+          "});")
+      public ParseTreeNode fire(
+              ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof ModuleEnvelope) {
+          // TODO(erights): Pull manifest up into module record.
+          return new ExpressionStmt((Expression) substV(
+              "___.loadModule(function(___, IMPORTS___) {" +
+              "  @body*;" +
+              "});",
+              "body", expand(returnLast((Statement)node.children().get(0)), null, mq)));
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
           name="module",
-          synopsis="Disallow top-level \"this\". Import free variables.",
+          synopsis="Disallow top-level \"this\". Import free vars. Return last expr-statement",
           reason="In Caja, \"this\" may only be bound to an object when within "
               + "the object's encapsulation boundary. At top-level level, "
               + "\"this\" would be bound to the provided imports object, but "
@@ -107,16 +172,27 @@ public class DefaultCajaRewriter extends Rewriter {
           }
           List<ParseTreeNode> importedVars = new ArrayList<ParseTreeNode>();
           for (String k : s2.getImportedVariables()) {
-            importedVars.add(
-                QuasiBuilder.substV(
-                    "var @vIdent = ___.readImport(IMPORTS___, @vName);",
-                    "vIdent", s(new Identifier(k)),
-                    "vName", toStringLiteral(new Identifier(k)))
-            );
+            Identifier kid = new Identifier(k);
+            Expression permitsUsed = s2.getPermitsUsed(kid);
+            if (null == permitsUsed) {
+              importedVars.add(
+                  substV(
+                      "var @vIdent = ___.readImport(IMPORTS___, @vName);",
+                      "vIdent", s(kid),
+                      "vName", toStringLiteral(kid)));
+            } else {
+              importedVars.add(
+                  substV(
+                      "var @vIdent = ___.readImport(IMPORTS___, @vName, @permits);",
+                      "vIdent", s(kid),
+                      "vName", toStringLiteral(kid),
+                      "permits", permitsUsed));
+            }
           }
 
           return substV(
-              "@importedvars*; @startStmts*; @expanded*;",
+              "@importedvars*; @startStmts*;" +
+              "@expanded*;",
               "importedvars", new ParseTreeNodeContainer(importedVars),
               "startStmts", new ParseTreeNodeContainer(s2.getStartStatements()),
               "expanded", new ParseTreeNodeContainer(expanded));
@@ -2087,6 +2163,34 @@ public class DefaultCajaRewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
+          name="permittedCall",
+          synopsis="",
+          reason="",
+          matches="@o.@m(@as*)",
+          substitutes="<approx> @o.@m(@as*)")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          ParseTreeNode o = bindings.get("o");
+          Permit oPermit = scope.permitRead(o);
+          if (null != oPermit) {
+            ParseTreeNode m = bindings.get("m");
+            if (null != oPermit.canCall(m)) {
+              return substV(
+                  "@o.@m(@as*)",
+                  "o",  expand(o, scope, mq),
+                  "m",  m,
+                  "as", expandAll(bindings.get("as"), scope, mq));
+            }
+          }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
           name="callPublic",
           synopsis="",
           reason="",
@@ -2800,7 +2904,7 @@ public class DefaultCajaRewriter extends Rewriter {
           StringLiteral modifiers = !"".equals(re.getModifiers())
               ? StringLiteral.valueOf(re.getModifiers())
               : null;
-          return QuasiBuilder.substV(
+          return substV(
               "new ___.RegExp(@pattern, @modifiers?)",
               "pattern", pattern,
               "modifiers", modifiers);

@@ -44,26 +44,28 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "p.add3.apply({}, [4]);\n",
         //        ^^^^^ 4+8 - 13
         "testAttachedMethodReflection:4+8 - 13");
-    assertStackTrace(
-          "function Point() { this; }\n"
-        + "Point.prototype.freezeMe = function(){this.freeze_();};\n"
-        + "Point.prototype.addXProperty = function(x){this.x = 1;};\n"
-        //                                                 ^ 3+49 - 50
-        + "var p = new Point();\n"
-        + "p.freezeMe();\n"
-        + "p.addXProperty(1);\n",
-        //   ^^^^^^^^^^^^ 6+3 - 15
-          "testAttachedMethodReflection:6+3 - 15\n"
-        + "testAttachedMethodReflection:3+49 - 50");
-    assertStackTrace(
-          "function Point() { this; }\n"
-        + "Point.prototype.freeze = function(){this.freeze_.call();};\n"
-        //                                                 ^^^^^ 2+50 - 54
-        + "var p = new Point();\n"
-        + "p.freeze();\n",
-        //   ^^^^^^ 4+3 - 9
-          "testAttachedMethodReflection:4+3 - 9\n"
-        + "testAttachedMethodReflection:2+50 - 54");
+
+        // freeze_() has been retired
+//    assertStackTrace(
+//          "function Point() { this; }\n"
+//        + "Point.prototype.freezeMe = function(){this.freeze_();};\n"
+//        + "Point.prototype.addXProperty = function(x){this.x = 1;};\n"
+//        //                                                 ^ 3+49 - 50
+//        + "var p = new Point();\n"
+//        + "p.freezeMe();\n"
+//        + "p.addXProperty(1);\n",
+//        //   ^^^^^^^^^^^^ 6+3 - 15
+//          "testAttachedMethodReflection:6+3 - 15\n"
+//        + "testAttachedMethodReflection:3+49 - 50");
+//    assertStackTrace(
+//          "function Point() { this; }\n"
+//        + "Point.prototype.freeze = function(){this.freeze_.call();};\n"
+//        //                                                 ^^^^^ 2+50 - 54
+//        + "var p = new Point();\n"
+//        + "p.freeze();\n",
+//        //   ^^^^^^ 4+3 - 9
+//          "testAttachedMethodReflection:4+3 - 9\n"
+//        + "testAttachedMethodReflection:2+50 - 54");
   }
 
   public void testDereferenceNull() throws Exception {

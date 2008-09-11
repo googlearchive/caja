@@ -58,7 +58,7 @@
         error: function () { console.error.apply(console, arguments); },
         trace: function () { console.trace(); }
       });
-      ___.all2(___.allowCall, testImports.console,
+      ___.all2(___.grantCall, testImports.console,
                ['log', 'warn', 'error', 'trace']);
 
       // Give unfiltered DOM access so we can check the results of actions.

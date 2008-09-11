@@ -23,6 +23,7 @@ import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.SyntheticNodes;
@@ -31,8 +32,10 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.util.RhinoTestBed;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 
 import junit.framework.AssertionFailedError;
 
@@ -112,8 +115,19 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTestCase {
     return "var " + name + " = ___.readImport(IMPORTS___, '" + name + "');";
   }
 
+  public static String weldPrelude(String name, String permitsUsed) {
+    return "var " + name + " = ___.readImport(IMPORTS___, '" + name +
+           "', " + permitsUsed + ");";
+  }
+
   public void testToString() throws Exception {
-    assertConsistent("var z={toString:function(){return 'blah';}}; ''+z;");
+    assertConsistent(
+        "var z={toString:function(){return 'blah';}};" +
+        "try {" +
+        "  ''+z;" +
+        "} catch (e) {" +
+        "  throw new Error('PlusPlus error: ' + e);" +
+        "}");
     assertConsistent(
         "  function foo(){this.x_ = 1;}"
         + "caja.def(foo, Object, {"
@@ -435,7 +449,7 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTestCase {
    */
   public void testInVeil() throws Exception {
     rewriteAndExecute(
-        "assertFalse('___FROZEN___' in Object);");
+        "assertFalse('FROZEN___' in Object);");
   }
 
   public void testPrimordialObjectExtension() throws Exception {
@@ -1161,7 +1175,7 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTestCase {
         "function() {" +
         "  " + unchanged +
         "};",
-        "var undefined = ___.readImport(IMPORTS___, 'undefined');" +
+        "var undefined = ___.readImport(IMPORTS___, 'undefined', {});" +
         "___.simpleFrozenFunc(function() {" +
         "  " + unchanged +
         "});");
@@ -1476,7 +1490,7 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTestCase {
         "var x0___;" +
         "var x1___;" +
         "var x = ___.initializeMap([]);" +
-        weldSetPub("x", "p", "___.readPub(g, 0)", "x0___", "x1___") + ";");
+        "" + weldSetPub("x", "p", "___.readPub(g, 0)", "x0___", "x1___") + ";");
   }
 
   public void testSetIndexInternal() throws Exception {
@@ -1726,7 +1740,7 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTestCase {
   public void testNewCalllessCtor() throws Exception {
     checkSucceeds(
         "(new Date);",
-        weldPrelude("Date")
+        weldPrelude("Date", "{}")
         + "new (___.asCtor(Date))();");
   }
 
@@ -1984,8 +1998,8 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTestCase {
         "caja.def(Point, Object);" +
         "function WigglyPoint() {}" +
         "caja.def(WigglyPoint, Point);",
-        weldPrelude("Object") +
-        weldPrelude("caja") +
+        weldPrelude("Object", "{}") +
+        weldPrelude("caja", "{}") +
         "var Point;" +
         "Point = ___.simpleFunc(function() {}, 'Point');" +
         "var WigglyPoint;" +
@@ -2059,7 +2073,7 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTestCase {
         "function Point() {}" +
         "function WigglyPoint() {}" +
         "caja.def(WigglyPoint, Point, { m0: g[0], m1: function() { this.p = 3; } });",
-        weldPrelude("caja") +
+        weldPrelude("caja", "{}") +
         weldPrelude("g") +
         "var Point;" +
         "Point = ___.simpleFunc(function() {}, 'Point');" +
@@ -2081,7 +2095,7 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTestCase {
         "caja.def(WigglyPoint, Point," +
         "    { m0: g[0], m1: function() { this.p = 3; } }," +
         "    { s0: g[1], s1: function() { return 3; } });",
-        weldPrelude("caja") +
+        weldPrelude("caja", "{}") +
         weldPrelude("g") +
         "var Point;" +
         "Point = ___.simpleFunc(function() {}, 'Point');" +
@@ -2554,7 +2568,7 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTestCase {
         "___.readPub(g, 0) instanceof ___.primFreeze(foo);");
     checkSucceeds(
         "g[0] instanceof Object;",
-        weldPrelude("Object") +
+        weldPrelude("Object", "{}") +
         weldPrelude("g") +
         "___.readPub(g, 0) instanceof Object;");
 
@@ -3106,7 +3120,6 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTestCase {
   @Override
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();
-    // Make sure the tree assigns the result to the unittestResult___ var.
     return RhinoTestBed.runJs(
         new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
         new RhinoTestBed.Input(getClass(), "../../plugin/asserts.js"),
@@ -3118,11 +3131,10 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTestCase {
       throws IOException, ParseException {
     mq.getMessages().clear();
 
-    Statement cajaTree = replaceLastStatementWithEmit(
-        js(fromString(caja, is)), "unittestResult___;");
-    String cajoledJs = render(
-        rewriteStatements(js(fromResource("../../plugin/asserts.js")),
-                          cajaTree));
+    List<Statement> children = new ArrayList<Statement>();
+    children.add(js(fromResource("../../plugin/asserts.js")));
+    children.add(js(fromString(caja, is)));
+    String cajoledJs = render(rewriteStatements(new ModuleEnvelope(new Block(children))));
 
     assertNoErrors();
 
@@ -3134,24 +3146,16 @@ public class DefaultCajaRewriterTest extends CommonJsRewriterTestCase {
         new RhinoTestBed.Input(
             getClass(), "/com/google/caja/log-to-console.js"),
         new RhinoTestBed.Input(
-            // Initialize the output field to something containing a unique
-            // object value that will not compare identically across runs.
             // Set up the imports environment.
             "var testImports = ___.copy(___.sharedImports);\n" +
-            "var unittestResult___ = {\n" +
-            "    toString: function () { return '' + this.value; },\n" +
-            "    value: '--NO-RESULT--'\n" +
-            "};\n" +
             "___.getNewModuleHandler().setImports(testImports);",
             getName() + "-test-fixture"),
         new RhinoTestBed.Input(pre, getName()),
         // Load the cajoled code.
-        new RhinoTestBed.Input(
-            "___.loadModule(function (___, IMPORTS___) {" + cajoledJs + "\n});",
-            getName() + "-cajoled"),
+        new RhinoTestBed.Input(cajoledJs, getName() + "-cajoled"),
         new RhinoTestBed.Input(post, getName()),
         // Return the output field as the value of the run.
-        new RhinoTestBed.Input("unittestResult___;", getName()));
+        new RhinoTestBed.Input("___.getNewModuleHandler().getLastValue();", getName()));
 
     assertNoErrors();
     return result;

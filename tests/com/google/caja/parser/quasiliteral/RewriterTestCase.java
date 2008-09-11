@@ -228,30 +228,6 @@ public abstract class RewriterTestCase extends CajaTestCase {
     assertEquals(message, plainResult, rewrittenResult);
   }
 
-  protected <T extends ParseTreeNode> T replaceLastStatementWithEmit(
-      T node, String lValueExprString) throws ParseException {
-    if (node instanceof ExpressionStmt) {
-      ParseTreeNode lValueExpr =
-          js(fromString(lValueExprString))  // a Block
-          .children().get(0)                // an ExpressionStmt
-          .children().get(0);               // an Expression
-      ExpressionStmt es = (ExpressionStmt) node;
-      Expression e = es.getExpression();
-      Operation emitter = (Operation) substV(
-          "@lValueExpr = @e;",
-          "lValueExpr", syntheticTree(lValueExpr),
-          "e", e);
-      es.replaceChild(emitter, e);
-    } else {
-      List<? extends ParseTreeNode> children = node.children();
-      if (!children.isEmpty()) {
-        replaceLastStatementWithEmit(
-            children.get(children.size() - 1), lValueExprString);
-      }
-    }
-    return node;
-  }
-
   protected final <T extends ParseTreeNode> T syntheticTree(T node) {
     for (ParseTreeNode c : node.children()) { syntheticTree(c); }
     return makeSynthetic(node);
@@ -265,11 +241,11 @@ public abstract class RewriterTestCase extends CajaTestCase {
   protected ParseTreeNode rewriteStatements(Statement... nodes) {
     return getRewriter().expand(new Block(Arrays.asList(nodes)), mq);
   }
-  
+
   protected Rewriter getRewriter() {
     return rewriter;
   }
-  
+
   protected void setRewriter(Rewriter r) {
     rewriter = r;
   }

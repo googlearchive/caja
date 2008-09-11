@@ -63,7 +63,7 @@
     <script type="text/javascript">
       ___.sharedImports.StringInterpolation
          = ___.ctor(StringInterpolation, Object);
-      ___.allowRead(___.sharedImports, 'StringInterpolation');
+      ___.grantRead(___.sharedImports, 'StringInterpolation');
     </script>
   </head>
   <body bgcolor="white">
@@ -93,7 +93,7 @@
     <script type="text/javascript">
       var kittensImports = ___.copy(___.sharedImports);
       kittensImports.exports = {};
-      ___.allowRead(searchBoxImports, 'exports');
+      ___.grantRead(searchBoxImports, 'exports');
       attachDocumentStub(
           '-kittens', { rewrite: function (url, mimeType) {
                           return /^image\//.test(mimeType) ? url : null;
@@ -112,8 +112,8 @@
         // Provide both modules an interface to Google search.
         searchBoxImports.searchEngine = kittensImports.searchEngine
             = searchEngine;
-        ___.allowRead(searchBoxImports, 'searchEngine');
-        ___.allowRead(kittensImports, 'searchEngine');
+        ___.grantRead(searchBoxImports, 'searchEngine');
+        ___.grantRead(kittensImports, 'searchEngine');
       })();
     </script>
 
@@ -126,7 +126,7 @@
     <!-- Allow searchBoxImports to talk to kittens. -->
     <script type="text/javascript">
       searchBoxImports.resultConsumer = kittensImports.exports.showKitten;
-      ___.allowRead(searchBoxImports, 'resultConsumer');
+      ___.grantRead(searchBoxImports, 'resultConsumer');
     </script>
 
     <script type="text/javascript">

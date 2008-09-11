@@ -43,6 +43,7 @@ import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Parser;
@@ -447,14 +448,14 @@ public class HtmlCompiler {
     TryStmt envelope = (TryStmt) QuasiBuilder.substV(
         ""
         + "try {"
-        + "  @scriptBody"
+        + "  @moduleEnv;"
         + "} catch (ex___) {"
         + "  ___./*@synthetic*/ getNewModuleHandler()"
         + "      ./*@synthetic*/ handleUncaughtException("
         + "      ex___, onerror, @sourceFile, @line);"
         + "}",
 
-        "scriptBody", scriptBody,
+        "moduleEnv", new ModuleEnvelope(scriptBody),
         "sourceFile", StringLiteral.valueOf(sourcePath),
         "line", StringLiteral.valueOf(String.valueOf(pos.startLineNo())));
     envelope.setFilePosition(pos);

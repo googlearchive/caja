@@ -36,7 +36,10 @@
     ___.setLogFunc(function(str, opt_stop) {
       global.console.log(str);
       if (opt_stop) {
-        ({})['\nError: ' + str](str);
+        // breakpoint here by uncommenting out the following line:
+        debugger;
+        // or by setting a breakpoint on this useless line:
+        return;
       }
     });
   }
