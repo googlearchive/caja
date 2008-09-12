@@ -211,7 +211,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
   }
 
   public void testMultiDeclaration() throws Exception {
-    assertConsistent("var a = 3, b = 4; a + b;");
+    assertConsistent("var a = 3, b = 4, c = 5; a + b + c;");
     assertConsistent("var a, b; a = 3; b = 4; a + b;");
     assertConsistent(
         "  function f() {"

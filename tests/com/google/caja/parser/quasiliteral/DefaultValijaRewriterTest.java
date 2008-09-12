@@ -92,6 +92,12 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "h.x() + h.y();");
   }
 
+  public void testNamedFunctionShadow() throws Exception {
+    // TODO(erights): enable this once the scoping bug is fixed.
+    // assertConsistent("function f() { return f; } f === f();");
+    assertConsistent("(function(){function f() { return f; } return f === f();})();");
+  }
+
   public void testArray() throws Exception {
     assertConsistent("[3,2,1].sort().toString();");
     assertConsistent("[3,2,1].sort.call([4,2,7]).toString();");
@@ -260,7 +266,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
             "___.grantCall(testImports, 'assertTrue');" +
             "testImports.assertFalse = ___.simpleFunc(assertFalse);" +
             "___.grantCall(testImports, 'assertFalse');" +
-            "testImports.valija = valijaMaker(testImports);\n" +
+            "testImports.$v = valijaMaker(testImports);\n" +
             "___.getNewModuleHandler().setImports(testImports);",
             getName() + "-test-fixture"),
         new RhinoTestBed.Input(pre, getName() + "-pre"),

@@ -285,12 +285,12 @@ public class DefaultValijaRewriter extends Rewriter {
       @Override
       @RuleDescription(
           name="module",
-          synopsis="Assume an imported \"valija\" that knows our shared outers. " +
+          synopsis="Assume an imported \"$v\" that knows our shared outers. " +
             "Name it $dis so top level uses of \"this\" in Valija work.",
           reason="",
           matches="@ss*;",
-          substitutes="var $dis = valija.getOuters();"
-            + "valija.initOuter('onerror');"
+          substitutes="var $dis = $v.getOuters();"
+            + "$v.initOuter('onerror');"
             + "@startStmts*;"
             + "@ss*;")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
@@ -301,8 +301,8 @@ public class DefaultValijaRewriter extends Rewriter {
             expanded.add(expand(c, s2, mq));
           }
           return substV(
-              "  var $dis = valija.getOuters();"
-              + "valija.initOuter('onerror');"
+              "  var $dis = $v.getOuters();"
+              + "$v.initOuter('onerror');"
               + "@startStmts*;"
               + "@expanded*;",
               "startStmts", new ParseTreeNodeContainer(s2.getStartStatements()),
@@ -356,7 +356,7 @@ public class DefaultValijaRewriter extends Rewriter {
           reason="",
           matches="for (@k in @o) @ss;",
           substitutes="<approx>\n" +
-                      "var @t1 = valija.keys(@o);\n" +
+                      "var @t1 = $v.keys(@o);\n" +
                       "for (var @t2 = 0; @t2 < @t1.length; @t2++) {\n" +
                       "  @assign;\n" +
                       "  @ss;\n" +
@@ -383,7 +383,7 @@ public class DefaultValijaRewriter extends Rewriter {
           assignment.getAttributes().set(ParseTreeNode.TAINTED, true);
 
           return substV(
-              "@t1 = valija.keys(@o);" +
+              "@t1 = $v.keys(@o);" +
               "for (@t2 = 0; @t2 < @t1.length; ++@t2) {" +
               "  @assign;" +
               "  @ss;" +
@@ -409,7 +409,7 @@ public class DefaultValijaRewriter extends Rewriter {
           matches="for (var @k in @o) @ss;",
           substitutes="<approx>\n" +
                       "var t1, t2;\n" +
-                      "@t1 = valija.keys(@o);\n" +
+                      "@t1 = $v.keys(@o);\n" +
                       "for (@t2 = 0; @t2 < @t1.length; @t2++) {\n" +
                       "  @assign\n" +
                       "  @ss;\n" +
@@ -433,7 +433,7 @@ public class DefaultValijaRewriter extends Rewriter {
           assignment.getAttributes().set(ParseTreeNode.TAINTED, true);
 
           return substV(
-              "@t1 = valija.keys(@o);" +
+              "@t1 = $v.keys(@o);" +
               "for (@t2 = 0; @t2 < @t1.length; ++@t2) {" +
               "  @assign;" +
               "  @ss;" +
@@ -473,13 +473,13 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="<in outer scope>var @v = @r",
-          substitutes="<approx>valija.setOuter(@'v', @r)")
+          substitutes="<approx>$v.so(@'v', @r)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (QuasiBuilder.match("var @v = @r", node, bindings) &&
             scope.isOuter(((Identifier) bindings.get("v")).getName())) {
           return new ExpressionStmt((Expression) substV(
-              "valija.setOuter(@rv, @r)",
+              "$v.so(@rv, @r)",
               "rv", toStringLiteral(bindings.get("v")),
               "r", expand(bindings.get("r"), scope, mq)));
         }
@@ -494,14 +494,14 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="<declared in outer scope>@v = @r",
-          substitutes="<approx>valija.setOuter(@'v', @r)")
+          substitutes="<approx>$v.so(@'v', @r)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (QuasiBuilder.match("@v = @r", node, bindings) &&
             bindings.get("v") instanceof Reference &&
             scope.isOuter(((Reference) bindings.get("v")).getIdentifierName())) {
           return substV(
-              "valija.setOuter(@rv, @r)",
+              "$v.so(@rv, @r)",
               "rv", toStringLiteral(bindings.get("v")),
               "r", expand(bindings.get("r"), scope, mq));
         }
@@ -516,14 +516,14 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="<in outer scope>var @v",
-          substitutes="<approx>valija.initOuter(@'v')")
+          substitutes="<approx>$v.initOuter(@'v')")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (QuasiBuilder.match("var @v", node, bindings) &&
             bindings.get("v") instanceof Identifier &&
             scope.isOuter(((Identifier) bindings.get("v")).getName())) {
           return new ExpressionStmt((Expression) substV(
-              "valija.initOuter(@rv)",
+              "$v.initOuter(@rv)",
               "rv", toStringLiteral(bindings.get("v"))));
         }
         return NONE;
@@ -554,14 +554,14 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="<declared in outer scope>@v",
-          substitutes="<approx>valija.readOuter(@'v')")
+          substitutes="<approx>$v.ro(@'v')")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         if (QuasiBuilder.match("@v", node, bindings) &&
             bindings.get("v") instanceof Reference &&
             scope.isOuter(((Reference) bindings.get("v")).getIdentifierName())) {
           return substV(
-              "valija.readOuter(@rv)",
+              "$v.ro(@rv)",
               "rv", toStringLiteral(bindings.get("v")));
         }
         return NONE;
@@ -575,13 +575,13 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Read @'p' from @o or @o's POE table",
           reason="",
           matches="@o.@p",
-          substitutes="<approx> valija.read(@o, @'p')")
+          substitutes="<approx> $v.r(@o, @'p')")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           Reference p = (Reference) bindings.get("p");
           return substV(
-              "valija.read(@o, @rp)",
+              "$v.r(@o, @rp)",
               "o", expand(bindings.get("o"), scope, mq),
               "rp", toStringLiteral(p));
         }
@@ -596,12 +596,12 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Read @p from @o or @o's POE table",
           reason="",
           matches="@o[@p]",
-          substitutes="valija.read(@o, @p)")
+          substitutes="$v.r(@o, @p)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           return substV(
-              "valija.read(@o, @p)",
+              "$v.r(@o, @p)",
               "o", expand(bindings.get("o"), scope, mq),
               "p", expand(bindings.get("p"), scope, mq));
         }
@@ -616,13 +616,13 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Set @'p' on @o or @o's POE table",
           reason="",
           matches="@o.@p = @r",
-          substitutes="<approx> valija.set(@o, @'p', @r)")
+          substitutes="<approx> $v.s(@o, @'p', @r)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           Reference p = (Reference) bindings.get("p");
           return substV(
-              "valija.set(@o, @rp, @r)",
+              "$v.s(@o, @rp, @r)",
               "o", expand(bindings.get("o"), scope, mq),
               "rp", toStringLiteral(p),
               "r", expand(bindings.get("r"), scope, mq));
@@ -638,12 +638,12 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Set @p on @o or @o's POE table",
           reason="",
           matches="@o[@p] = @r",
-          substitutes="valija.set(@o, @p, @r)")
+          substitutes="$v.s(@o, @p, @r)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           return substV(
-              "valija.set(@o, @p, @r)",
+              "$v.s(@o, @p, @r)",
               "o", expand(bindings.get("o"), scope, mq),
               "p", expand(bindings.get("p"), scope, mq),
               "r", expand(bindings.get("r"), scope, mq));
@@ -812,12 +812,12 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Construct a new object and supply the missing empty argument list.",
           reason="",
           matches="new @c",
-          substitutes="valija.construct(@c, [])")
+          substitutes="$v.construct(@c, [])")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           return substV(
-              "valija.construct(@c, [])",
+              "$v.construct(@c, [])",
               "c", expand(bindings.get("c"), scope, mq));
         }
         return NONE;
@@ -831,13 +831,13 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Construct a new object.",
           reason="",
           matches="new @c(@as*)",
-          substitutes="valija.construct(@c, [@as*])")
+          substitutes="$v.construct(@c, [@as*])")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           expandEntries(bindings, scope, mq);
           return QuasiBuilder.subst(
-              "valija.construct(@c, [@as*])",
+              "$v.construct(@c, [@as*])",
               bindings);
         }
         return NONE;
@@ -851,13 +851,13 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Delete a statically known property of an object.",
           reason="",
           matches="delete @o.@p",
-          substitutes="<approx>valija.remove(@o, @'p')")
+          substitutes="<approx>$v.remove(@o, @'p')")
           public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           Reference p = (Reference) bindings.get("p");
           return substV(
-              "valija.remove(@o, @rp)",
+              "$v.remove(@o, @rp)",
               "o", expand(bindings.get("o"), scope, mq),
               "rp", toStringLiteral(p));
         }
@@ -872,12 +872,12 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Delete a dynamically chosen property of an object.",
           reason="",
           matches="delete @o[@p]",
-          substitutes="valija.remove(@o, @p)")
+          substitutes="$v.remove(@o, @p)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           return substV(
-              "valija.remove(@o, @p)",
+              "$v.remove(@o, @p)",
               "o", expand(bindings.get("o"), scope, mq),
               "p", expand(bindings.get("p"), scope, mq));
         }
@@ -892,7 +892,7 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Call a property with a statically known name.",
           reason="",
           matches="@o.@p(@as*)",
-          substitutes="<approx> valija.callMethod(@o, @'p', [@as*])")
+          substitutes="<approx> $v.cm(@o, @'p', [@as*])")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
@@ -903,7 +903,7 @@ public class DefaultValijaRewriter extends Rewriter {
             expanded.add(expand(c, scope, mq));
           }
           return substV(
-              "valija.callMethod(@o, @rp, [@as*])",
+              "$v.cm(@o, @rp, [@as*])",
               "o", expand(bindings.get("o"), scope, mq),
               "rp", toStringLiteral(p),
               "as", new ParseTreeNodeContainer(expanded));
@@ -919,7 +919,7 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Call a property with a computed name.",
           reason="",
           matches="@o[@p](@as*)",
-          substitutes="valija.callMethod(@o, @p, [@as*])")
+          substitutes="$v.cm(@o, @p, [@as*])")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
@@ -929,7 +929,7 @@ public class DefaultValijaRewriter extends Rewriter {
             expanded.add(expand(c, scope, mq));
           }
           return substV(
-              "valija.callMethod(@o, @p, [@as*])",
+              "$v.cm(@o, @p, [@as*])",
               "o", expand(bindings.get("o"), scope, mq),
               "p", expand(bindings.get("p"), scope, mq),
               "as", new ParseTreeNodeContainer(expanded));
@@ -945,7 +945,7 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Call a function.",
           reason="",
           matches="@f(@as*)",
-          substitutes="valija.callFunc(@f, [@as*])")
+          substitutes="$v.cf(@f, [@as*])")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
@@ -955,7 +955,7 @@ public class DefaultValijaRewriter extends Rewriter {
             expanded.add(expand(c, scope, mq));
           }
           return substV(
-              "valija.callFunc(@f, [@as*])",
+              "$v.cf(@f, [@as*])",
               "f", expand(bindings.get("f"), scope, mq),
               "as", new ParseTreeNodeContainer(expanded));
         }
@@ -970,14 +970,14 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Transmutes functions into disfunctions.",
           reason="",
           matches="function (@ps*) {@bs*;}",
-          substitutes="valija.dis(function ($dis, @ps*) {@stmts*; @bs*;})")
+          substitutes="$v.dis(function ($dis, @ps*) {@stmts*; @bs*;})")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)node);
           return substV(
-              "valija.dis(function ($dis, @ps*) {@stmts*; @bs*;})",
+              "$v.dis(function ($dis, @ps*) {@stmts*; @bs*;})",
               "ps", bindings.get("ps"),
               // It's important to expand bs before computing stmts.
               "bs", expand(bindings.get("bs"), s2, mq),
@@ -994,13 +994,13 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Transmutes functions into disfunctions.",
           reason="",
           matches="<at top level>function @fname(@ps*) {@bs*;}",
-          substitutes="<approx>var @fname = valija.dis(" +
+          substitutes="<approx>$v.so('@fname', $v.dis(" +
                                    "function($dis, @ps*) {" +
                                    "  @fh*;" +
                                    "  @stmts*;" +
                                    "  @bs*;" +
                                    "}, " +
-                                   "@'fname');")
+                                   "@'fname'));")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         // Named simple function declaration
@@ -1016,7 +1016,7 @@ public class DefaultValijaRewriter extends Rewriter {
           Identifier fname = (Identifier)bindings.get("fname");
           scope.declareStartOfScopeVariable(fname);
           Expression expr = (Expression)substV(
-              "valija.setOuter(@rf, valija.dis(" +
+              "$v.so(@rf, $v.dis(" +
               "  function($dis, @ps*) {" +
               "    @stmts*;" +
               "    @bs*;" +
@@ -1040,7 +1040,7 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Transmutes functions into disfunctions.",
           reason="",
           matches="function @fname(@ps*) {@bs*;}",
-          substitutes="<approx>var @fname = valija.dis(" +
+          substitutes="<approx>var @fname = $v.dis(" +
                                    "function($dis, @ps*) {" +
                                    "  @stmts*;" +
                                    "  @bs*;" +
@@ -1060,7 +1060,7 @@ public class DefaultValijaRewriter extends Rewriter {
           Identifier fname = (Identifier)bindings.get("fname");
           scope.declareStartOfScopeVariable(fname);
           Expression expr = (Expression)substV(
-              "@fname = valija.dis(" +
+              "@fname = $v.dis(" +
               "  function($dis, @ps*) {" +
               "    @stmts*;" +
               "    @bs*;" +
@@ -1088,7 +1088,7 @@ public class DefaultValijaRewriter extends Rewriter {
           substitutes=
             "<approx>" +
             "(function() {" +
-            "  var @fname = valija.dis(function ($dis, @ps*) {" +
+            "  var @fname = $v.dis(function ($dis, @ps*) {" +
             "    @stmts*;" +
             "    @bs*;" +
             "  }," +
@@ -1107,7 +1107,7 @@ public class DefaultValijaRewriter extends Rewriter {
           Reference fRef = new Reference(fname);
           return substV(
               "(function() {" +
-              "  var @fname = valija.dis(function ($dis, @ps*) {" +
+              "  var @fname = $v.dis(function ($dis, @ps*) {" +
               "    @stmts*;" +
               "    @bs*;" +
               "  }," +
@@ -1133,12 +1133,12 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Rewrites typeof.",
           reason="Both typeof function and typeof disfunction need to return \"function\".",
           matches="typeof @f",
-          substitutes="valija.typeOf(@f)")
+          substitutes="$v.typeOf(@f)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           return substV(
-              "valija.typeOf(@f)",
+              "$v.typeOf(@f)",
               "f", expand(bindings.get("f"), scope, mq));
         }
         return NONE;
@@ -1152,12 +1152,12 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="Rewrites instanceof.",
           reason="Need to check both the shadow prototype chain and the real one.",
           matches="@o instanceof @f",
-          substitutes="valija.instanceOf(@o, @f)")
+          substitutes="$v.instanceOf(@o, @f)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           return substV(
-              "valija.instanceOf(@o, @f)",
+              "$v.instanceOf(@o, @f)",
               "o", expand(bindings.get("o"), scope, mq),
               "f", expand(bindings.get("f"), scope, mq));
         }
@@ -1172,12 +1172,12 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="@i in @o",
-          substitutes="valija.canReadRev(@i, @o)")
+          substitutes="$v.canReadRev(@i, @o)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           return substV(
-              "valija.canReadRev(@i, @o)",
+              "$v.canReadRev(@i, @o)",
               "i", expand(bindings.get("i"), scope, mq),
               "o", expand(bindings.get("o"), scope, mq));
         }
@@ -1193,7 +1193,7 @@ public class DefaultValijaRewriter extends Rewriter {
           reason="So that every use of a regex literal creates a new instance"
                + " to prevent state from leaking via interned literals.  This"
                + " is consistent with the way ES4 treates regex literals.",
-          substitutes="valija.construct(RegExp, [@pattern, @modifiers?])")
+          substitutes="$v.construct(RegExp, [@pattern, @modifiers?])")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof RegexpLiteral) {
@@ -1203,7 +1203,7 @@ public class DefaultValijaRewriter extends Rewriter {
               ? StringLiteral.valueOf(re.getModifiers())
               : null;
           return QuasiBuilder.substV(
-              "valija.construct(RegExp, [@pattern, @modifiers?])",
+              "$v.construct(RegExp, [@pattern, @modifiers?])",
               "pattern", pattern,
               "modifiers", modifiers);
         }
@@ -1234,14 +1234,14 @@ public class DefaultValijaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof MultiDeclaration
             && scope.isOuter()) {
-          Expression[] newChildren = new Expression[node.children().size()];
-          for (int i = 0; i < newChildren.length; i++) {
+          List <Expression> newChildren = new ArrayList<Expression>();
+          for (int i = 0, len = node.children().size(); i < len; i++) {
             ExpressionStmt result = (ExpressionStmt)
                 expand(node.children().get(i), scope, mq);
-            newChildren[i] = result.getExpression();
+            newChildren.add(i, result.getExpression());
           }
           return new ExpressionStmt(
-              Operation.create(Operator.COMMA, newChildren));
+              newCommaOperation(newChildren));
         }
         return NONE;
       }

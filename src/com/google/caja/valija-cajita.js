@@ -399,14 +399,14 @@ var valijaMaker = (function(outers) {
     typeOf: typeOf,
     instanceOf: instanceOf,
 
-    read: read,
-    set: set,
-    callFunc: callFunc,
-    callMethod: callMethod,
+    r: read,
+    s: set,
+    cf: callFunc,
+    cm: callMethod,
     construct: construct,
     getOuters: getOuters,
-    readOuter: readOuter,
-    setOuter: setOuter,
+    ro: readOuter,
+    so: setOuter,
     initOuter: initOuter,    
     remove: remove,
     keys: keys,
@@ -417,8 +417,8 @@ var valijaMaker = (function(outers) {
 });
 
 // This conditional allows this code to work uncajoled without a
-// loader, in which case the top level "var valija = ..." will export
-// 'valija' globally.
+// loader, in which case the top level "var valijaMaker = ..." will export
+// 'valijaMaker' globally.
 if (typeof loader !== 'undefined') {
   loader.provide(valijaMaker);
 }
