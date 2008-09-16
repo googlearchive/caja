@@ -43,17 +43,17 @@ final class PermitTemplate {
 
   // TODO(erights): to be read in from a JSON config
   static PermitTemplate DefaultTemplate = new PermitTemplate(
-      "valija", new PermitTemplate(
+      "$v", new PermitTemplate(
           "typeOf", CanCall,
           "instanceOf", CanCall,
-          "read", CanCall,
-          "set", CanCall,
-          "callFunc", CanCall,
-          "callMethod", CanCall,
+          "r", CanCall,
+          "s", CanCall,
+          "cf", CanCall,
+          "cm", CanCall,
           "construct", CanCall,
           "getOuters", CanCall,
-          "readOuter", CanCall,
-          "setOuter", CanCall,
+          "ro", CanCall,
+          "so", CanCall,
           "initOuter", CanCall,
           "remove", CanCall,
           "keys", CanCall,

@@ -395,6 +395,7 @@ var valijaMaker = (function(outers) {
     }
   }
 
+  // If you change these names, also change them in PermitTemplate.java
   return caja.freeze({
     typeOf: typeOf,
     instanceOf: instanceOf,
