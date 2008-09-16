@@ -160,6 +160,17 @@ var ___;
 (function(global) {
 
   ////////////////////////////////////////////////////////////////////////
+  // Some regular expressions checking for specific suffixes.
+  ////////////////////////////////////////////////////////////////////////
+
+  var endsWith_canDelete___ = /_canDelete___$/;
+  var endsWith_canRead___ = /_canRead___$/;
+  var endsWith_canSet___ = /_canSet___$/;
+  var endsWith___ = /___$/;
+  var endsWith__ = /__$/;
+  var endsWith_ = /_$/;
+  
+  ////////////////////////////////////////////////////////////////////////
   // Some very basic primordial methods
   ////////////////////////////////////////////////////////////////////////
 
@@ -434,10 +445,8 @@ var ___;
   function endsWith(str, suffix) {
     enforceType(str, 'string');
     enforceType(suffix, 'string');
-    var strLen = str.length;
-    var sufLen = suffix.length;
-    return strLen >= sufLen &&
-      (str.substring(strLen-sufLen, strLen) === suffix);
+    var d = str.length - suffix.length;
+    return d >= 0 && str.lastIndexOf(suffix) === d;
   }
 
   /**
@@ -634,7 +643,7 @@ var ___;
     // for/in loop on obj while we're deleting properties from obj.
     var badFlags = [];
     for (var k in obj) {
-      if (endsWith(k, '_canSet___') || endsWith(k, '_canDelete___')) {
+      if (endsWith_canSet___.test(k) || endsWith_canDelete___.test(k)) {
         if (obj[k]) {
           badFlags.push(k);
         }
@@ -1200,7 +1209,7 @@ var ___;
    */
   function setMember(constr, name, member) {
     name = String(name);
-    if (endsWith(name, '__') || name === 'valueOf' || name === 'constructor') {
+    if (endsWith__.test(name) || name === 'valueOf' || name === 'constructor') {
       fail('Reserved name: ', name);
     }
     var proto = asCtorOnly(constr).prototype;
@@ -1242,7 +1251,7 @@ var ___;
    */
   function canReadProp(self, name) {
     name = String(name);
-    if (endsWith(name, '__')) { return false; }
+    if (endsWith__.test(name)) { return false; }
     return canRead(self, name);
   }
 
@@ -1270,7 +1279,7 @@ var ___;
    */
   function canReadPub(obj, name) {
     name = String(name);
-    if (endsWith(name, '_')) { return false; }
+    if (endsWith_.test(name)) { return false; }
     if (obj === null) { return false; }
     if (obj === void 0) { return false; }
     if (canRead(obj, name)) { return true; }
@@ -1401,7 +1410,7 @@ var ___;
    */
   function canInnocentEnum(obj, name) {
     name = String(name);
-    if (endsWith(name, '___')) { return false; }
+    if (endsWith___.test(name)) { return false; }
     return true;
   }
 
@@ -1413,7 +1422,7 @@ var ___;
    */
   function canEnumProp(self, name) {
     name = String(name);
-    if (endsWith(name, '__')) { return false; }
+    if (endsWith__.test(name)) { return false; }
     return canEnum(self, name);
   }
 
@@ -1425,7 +1434,7 @@ var ___;
    */
   function canEnumPub(obj, name) {
     name = String(name);
-    if (endsWith(name, '_')) { return false; }
+    if (endsWith_.test(name)) { return false; }
     if (canEnum(obj, name)) { return true; }
     if (!isJSONContainer(obj)) { return false; }
     if (!hasOwnProp(obj, name)) { return false; }
@@ -1499,7 +1508,7 @@ var ___;
    */
   function canCallProp(self, name) {
     name = String(name);
-    if (endsWith(name, '__')) { return false; }
+    if (endsWith__.test(name)) { return false; }
     if (canCall(self, name)) { return true; }
     if (!canReadProp(self, name)) { return false; }
     if (name === 'toString') { return false; }
@@ -1528,7 +1537,7 @@ var ___;
    */
   function canCallPub(obj, name) {
     name = String(name);
-    if (endsWith(name, '_')) { return false; }
+    if (endsWith_.test(name)) { return false; }
     if (obj === null) { return false; }
     if (obj === void 0) { return false; }
     if (canCall(obj, name)) { return true; }
@@ -1563,7 +1572,7 @@ var ___;
    */
   function canSetProp(self, name) {
     name = String(name);
-    if (endsWith(name, '__')) { return false; }
+    if (endsWith__.test(name)) { return false; }
     if (canSet(self, name)) { return true; }
     if (name === 'valueOf') { return false; }
     if (name === 'toString') { return false; }
@@ -1603,7 +1612,7 @@ var ___;
    */
   function canSetPub(obj, name) {
     name = String(name);
-    if (endsWith(name, '_')) { return false; }
+    if (endsWith_.test(name)) { return false; }
     if (canSet(obj, name)) { return true; }
     if (name === 'valueOf') { return false; }
     if (name === 'toString') { return false; }
@@ -1642,7 +1651,7 @@ var ___;
       return false;
     }
     // statics are public
-    if (endsWith(staticMemberName, '_') || staticMemberName === 'valueOf') {
+    if (endsWith_.test(staticMemberName) || staticMemberName === 'valueOf') {
       log('Illegal static member name ', staticMemberName);
       return false;
     }
@@ -1677,7 +1686,7 @@ var ___;
   function canDeleteProp(obj, name) {
     name = String(name);
     if (isFrozen(obj)) { return false; }
-    if (endsWith(name, '__')) { return false; }
+    if (endsWith__.test(name)) { return false; }
     if (name === 'valueOf') { return false; }
     if (name === 'toString') { return false; }
     if (isJSONContainer(obj)) { return true; }
@@ -1704,7 +1713,7 @@ var ___;
   function canDeletePub(obj, name) {
     name = String(name);
     if (isFrozen(obj)) { return false; }
-    if (endsWith(name, '_')) { return false; }
+    if (endsWith_.test(name)) { return false; }
     if (name === 'valueOf') { return false; }
     if (name === 'toString') { return false; }
     if (isJSONContainer(obj)) { return true; }
