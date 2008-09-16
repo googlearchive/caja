@@ -93,8 +93,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
   }
 
   public void testNamedFunctionShadow() throws Exception {
-    // TODO(erights): enable this once the scoping bug is fixed.
-    // assertConsistent("function f() { return f; } f === f();");
+    assertConsistent("function f() { return f; } f === f();");
     assertConsistent("(function(){function f() { return f; } return f === f();})();");
   }
 

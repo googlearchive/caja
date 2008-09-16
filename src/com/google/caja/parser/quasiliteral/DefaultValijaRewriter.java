@@ -993,35 +993,40 @@ public class DefaultValijaRewriter extends Rewriter {
           name="disfuncNamedGlobalDecl",
           synopsis="Transmutes functions into disfunctions.",
           reason="",
-          matches="<at top level>function @fname(@ps*) {@bs*;}",
-          substitutes="<approx>$v.so('@fname', $v.dis(" +
-                                   "function($dis, @ps*) {" +
-                                   "  @fh*;" +
-                                   "  @stmts*;" +
-                                   "  @bs*;" +
-                                   "}, " +
-                                   "@'fname'));")
+          matches="<at top level>function @f(@ps*) {@bs*;}",
+          substitutes="<approx>$v.so('@f', (function(){" +
+              "  var @f = $v.dis(function($dis, @ps*) {" +
+              "    @stmts*;" +
+              "    @bs*;" +
+              "  }, '@f');" +
+              "  return @f;" +
+              "})());")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         // Named simple function declaration
         if (node instanceof FunctionDeclaration &&
             QuasiBuilder.match(
-                "function @fname(@ps*) { @bs*; }",
+                "function @f(@ps*) { @bs*; }",
                 node.children().get(1), bindings) &&
-            scope.isOuter(((Identifier)bindings.get("fname")).getName())) {
+            scope.isOuter(((Identifier)bindings.get("f")).getName())) {
           Scope s2 = Scope.fromFunctionConstructor(
               scope,
               (FunctionConstructor)node.children().get(1));
           checkFormals(bindings.get("ps"), mq);
-          Identifier fname = (Identifier)bindings.get("fname");
-          scope.declareStartOfScopeVariable(fname);
+          Identifier f = (Identifier)bindings.get("f");
+          Reference rf = new Reference(f);
+          scope.declareStartOfScopeVariable(f);
           Expression expr = (Expression)substV(
-              "$v.so(@rf, $v.dis(" +
-              "  function($dis, @ps*) {" +
+              "$v.so(@fname, (function(){" +
+              "  var @f = $v.dis(function($dis, @ps*) {" +
               "    @stmts*;" +
               "    @bs*;" +
-              "}, @rf));",
-              "rf", toStringLiteral(fname),
+              "  }, @fname);" +
+              "  return @rf;" +
+              "})());",
+              "f", f,
+              "rf", rf,
+              "fname", toStringLiteral(f),
               "ps", bindings.get("ps"),
               // It's important to expand bs before computing stmts.
               "bs", expand(bindings.get("bs"), s2, mq),
