@@ -1015,7 +1015,6 @@ public class DefaultValijaRewriter extends Rewriter {
           checkFormals(bindings.get("ps"), mq);
           Identifier f = (Identifier)bindings.get("f");
           Reference rf = new Reference(f);
-          scope.declareStartOfScopeVariable(f);
           Expression expr = (Expression)substV(
               "$v.so(@fname, (function(){" +
               "  var @f = $v.dis(function($dis, @ps*) {" +
