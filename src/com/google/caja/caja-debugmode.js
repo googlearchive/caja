@@ -58,7 +58,7 @@
     }
   }
 
-  function override(obj, members, extraOptionalParams) {
+  function override_members(obj, members, extraOptionalParams) {
     for (var i = 0, n = members.length; i < n; i += 2) {
       var k = members[i], v = members[i + 1];
       if (!(k in obj)) { throw new Error('can\'t override ' + k + ' in ' + v); }
@@ -368,7 +368,7 @@
     this.debugSymbols_ = debugSymbols;
 
     // Disable fast-tracking
-    override(
+    override_members(
         this,
         [
          'grantRead', noop,
@@ -379,7 +379,7 @@
         ], 0);
 
     // Maintain stack through calls, and attach a stack when an operation fails.
-    override(
+    override_members(
         this,
         [
          'callPub', callPub,
@@ -387,7 +387,7 @@
          'asCtor', asCtor,
          'asSimpleFunc', asSimpleFunc
         ], 1);
-    override(
+    override_members(
         this,
         [
          'canEnum', errorDecorator(orig.canEnum),
@@ -401,7 +401,7 @@
          'setProp', errorDecorator(orig.setProp)
         ], null);
     // Make sure that tamed exceptions propagate stacktraces
-    override(this, ['tameException', tameException], 0);
+    override_members(this, ['tameException', tameException], 0);
   }
 
   // Export useDebugSymbols and the rest of the debug API so that modules
@@ -418,9 +418,9 @@
       ]);
 
   // Include the top stack frame in log messages.
-  override(caja, ['log', log], 0);
+  override_members(caja, ['log', log], 0);
   // Dump stack traces during loading to the console.
-  override(___, ['loadModule', loadModule], 0);
+  override_members(___, ['loadModule', loadModule], 0);
 
   startCallerStack();
 })();

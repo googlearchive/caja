@@ -120,7 +120,7 @@ var getTestbedServer = (function () {
           : BOGUS_PROXY_URL;
     }
     return testbedServer;
-  }
+  };
 })();
 
 /** Fills out the form with a "Conway's Game of Life" gadget. */
@@ -229,7 +229,7 @@ var cajole = (function () {
       var imports = getImports(uiSuffix);
 
       imports.clearHtml___();
-      var stackTrace = document.getElementById('caja-stacks' + uiSuffix)
+      var stackTrace = document.getElementById('caja-stacks' + uiSuffix);
       stackTrace.style.display = 'none';
 
       // Provide an object into which the module can export its public API.
@@ -451,7 +451,7 @@ var getImports = (function () {
       }
       return String(o);
     } catch (e) {
-      return "This object is recursive, so we're not going to try to print it." 
+      return "This object is recursive, so we're not going to try to print it.";
     }
   }
 

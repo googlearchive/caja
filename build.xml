@@ -311,7 +311,7 @@
     <jar destfile="${jars}/pluginc-src.jar" basedir="${src}"/>
   </target>
 
-  <target name="demos" depends="calendar,lolcat-search,testbed"
+  <target name="demos" depends="calendar,lolcat-search,testbed,MinifiedTestbed"
    description="Puts all the demo files together for easy browsing."/>
 
   <!-- Cajoles test resources that contain cajita to javascript. -->
@@ -374,6 +374,7 @@
         <include name="**/caja/valija-cajita.js"/>
         <include name="**/caja/demos/calendar/*.js"/>
         <include name="**/caja/opensocial/applet/testbed.js"/>
+        <include name="**/caja/opensocial/applet/setup-valija.js"/>
         <include name="**/caja/plugin/domita.js"/>
         <include name="**/caja/plugin/html4-defs.js"/>
         <include name="**/caja/plugin/html-emitter.js"/>
@@ -673,6 +674,26 @@
         <include name="json_simple.jar"/>
       </fileset>
     </copy>
+  </target>
+
+  <target name="MinifiedTestbed" depends="dirs,pluginc,testbed">
+    <minify>
+      <job output="${www}/caja-combined-min.js">
+        <include file="${src}/com/google/caja/caja.js"/>
+        <include file="${src}/com/google/caja/log-to-console.js"/>
+        <include file="${src}/com/google/caja/caja-debugmode.js"/>
+        <include file="${src}/com/google/caja/plugin/unicode.js"/>
+        <include file="${lib}/com/google/caja/plugin/css-defs.js"/>
+        <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
+        <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+        <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
+        <include file="${src}/com/google/caja/plugin/domita.js"/>
+        <include file="${third_party}/js/prettify/prettify.js"/>
+        <include file="${src}/com/google/caja/opensocial/applet/testbed.js"/>
+        <include file="${src}/com/google/caja/opensocial/applet/setup-valija.js"/>
+	<include file="${lib}/com/google/caja/plugin/valija-cajoled.js"/>
+      </job>
+    </minify>
   </target>
 
   <target name="calendar" depends="dirs,pluginc,MinifiedJs"

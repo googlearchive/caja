@@ -19,6 +19,8 @@
     <title>Caja Test Bed</title>
 
     <style type="text/css">
+      body { font-family: arial,helvetica }
+      p,td,span,input,label { font-family: arial,helvetica;font-size:12px }
       form { display: inline }
       div.message                { margin: 2px 2px .5em 2px; padding-left: 4px }
       .message                   { border-left: 4px solid #000 }
@@ -58,35 +60,50 @@
 
       .caja-stack { white-space: pre; font-family: monospace }
     </style>
-
-    <!-- TODO(mikesamuel): use domita-minified.js instead of many scripts -->
-    <script type="text/javascript" src="caja.js"></script>
-    <script type="text/javascript" src="log-to-console.js"></script>
-    <script type="text/javascript" src="caja-debugmode.js"></script>
-    <script type="text/javascript" src="unicode.js"></script>
-    <script type="text/javascript" src="css-defs.js"></script>
-    <script type="text/javascript" src="html4-defs.js"></script>
-    <script type="text/javascript" src="html-sanitizer.js"></script>
-    <script type="text/javascript" src="html-emitter.js"></script>
-    <script type="text/javascript" src="domita.js"></script>
-
-    <link href=
-     "http://google-code-prettify.googlecode.com/svn/trunk/src/prettify.css"
-     type="text/css" rel="stylesheet" />
-
-    <script src=
-     "http://google-code-prettify.googlecode.com/svn/trunk/src/prettify.js"
-     type="text/javascript"></script>
-
-    <script type="text/javascript" src="testbed.js"></script>
-    <script type="text/javascript">
-    (function(){
-      var imports = ___.getNewModuleHandler().getImports();
-      imports.loader = {provide:___.simpleFunc(function(v){valijaMaker = v;})};
-      imports.outers = imports;
-    })();
-    </script>
-    <script type="text/javascript" src="valija-cajoled.js"></script>
+  <script src="caja-combined-min.js"></script>
+  <script>
+    function asyncLoadScript(url) {
+       var e = document.createElement("script");
+       e.src = url;
+       e.type="text/javascript";
+       document.getElementsByTagName("head")[0].appendChild(e);
+    }
+    var loadurl_cb = null;
+    function loadurl(form) {
+      if (loadurl_cb != null) {
+        setTimeout(function(){loadurl(form);}, 1000);
+        return;
+      }
+      loadurl_cb = function(resp) {
+        form.elements.src.value = resp;
+        loadurl_cb = null;
+      };
+      var url = form.elements.urlval.value;
+      // fetch the content at the URL, and then callback to load_and_cajole()
+      asyncLoadScript("http://suprfetch.appspot.com/?output=json&callback=loadurl_cb&url="+encodeURIComponent(url));
+    }
+    function process_urlparams() {
+      var searchString = document.location.search;
+      // strip off the leading '?'
+      searchString = searchString.substring(1);
+      var nvPairs = searchString.split("&");
+      var args = new Array;
+      for (i = 0; i < nvPairs.length; i++) {
+        var nvPair = nvPairs[i].split("=");
+        args[decodeURIComponent(nvPair[0])] = decodeURIComponent(nvPair[1]);
+      }
+      if (args['url1'] != null) {
+        var form1 = document.forms['cajolerForm.1'];
+        form1.elements.urlval.value = args['url1'];
+        loadurl(form1);
+      }
+      if (args['url2'] != null) {
+        var form2 = document.forms['cajolerForm.2'];
+        form2.elements.urlval.value = args['url2'];
+        loadurl(form2);
+      }
+    }
+  </script>
   </head>
 
 
@@ -95,8 +112,8 @@
     <table id="testbed-ui"><tr valign="top">
     <td>
       <form id="cajolerForm" onsubmit="return false">
-        <button type="button" onclick="cajole(this.form)">Cajole</button>
-        <!--button type="button" onclick="lifecode(this.form)">Life gadget</button-->
+       URL: <input name="urlval" type="text" size="80" value="">
+       <button id="loadurl" type="button" onclick="loadurl(this.form)">Load URL</button><br/>
         &nbsp;
         <input id="EMBEDDABLE" type="checkbox">
         <label for="EMBEDDABLE" title="Output can be embedded in HTML/XML"
@@ -115,6 +132,8 @@
         <label for="VALIJA_MODE"
          title="Enable valija mode."
          >Valija</label>
+        &nbsp;
+        <button type="button" onclick="cajole(this.form)">Cajole</button>
         <br>
         <textarea cols="81" rows="20" name="src"
 >&lt;script type="text/javascript"&gt;
@@ -122,7 +141,6 @@
 &lt;/script&gt;
 </textarea>
         <br>
-        <button type="button" onclick="cajole(this.form)">Cajole</button>
       </form>
     <td>
       <pre id="messages" class="prettyprint"></pre>
@@ -150,15 +168,13 @@
 
 
   <body bgcolor="white" onload="prettyPrint()">
-    <applet code="com.google.caja.opensocial.applet.CajaApplet" name="cajoler"
-     archive="testbed.jar,htmlparser.jar,json_simple.jar"
-     codebase="." height="1" width="1" scriptable="true" MAYSCRIPT>
-    </applet>
-
-    <h1>Caja Test Bed <small><script>
-      document.write(' : ' + getCajoler().getVersion());
-    </script></small></h1>
-
+    <span style="font-size:24px;font-weight:bold">Caja Test Bed
+      <applet code="com.google.caja.opensocial.applet.CajaApplet" name="cajoler" 
+       archive="testbed.jar,htmlparser.jar,json_simple.jar"
+       codebase="." height="1" width="1" scriptable="true" MAYSCRIPT>
+      </applet>
+    </span><br/>
+    <span style="font-size:12px" id="cajolerVersion"></span>
     <p>
       <a href="http://code.google.com/p/google-caja/issues/entry"
        target="_blank">File a bug</a>
@@ -259,6 +275,8 @@ exports.sayBye = function () {
 
     document.forms['cajolerForm.1'].elements.src.select();
     initTestbeds();
+    document.getElementById("cajolerVersion").innerHTML = getCajoler().getVersion();
+    process_urlparams();
   })();
   </script>
 
