@@ -678,7 +678,7 @@
 
   <target name="MinifiedTestbed" depends="dirs,pluginc,testbed">
     <minify>
-      <job output="${www}/caja-combined-min.js">
+      <job output="${www}/testbed/caja-combined-min.js">
         <include file="${src}/com/google/caja/caja.js"/>
         <include file="${src}/com/google/caja/log-to-console.js"/>
         <include file="${src}/com/google/caja/caja-debugmode.js"/>
