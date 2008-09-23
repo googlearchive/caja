@@ -227,7 +227,6 @@
       <source file="${src}/com/google/caja/Brand-cajita.js"/>
       <source file="${src}/com/google/caja/caja.js"/>
       <source file="${src}/com/google/caja/caja-debugmode.js"/>
-      <source file="${src}/com/google/caja/caja-prototype.js"/>
       <source file="${src}/com/google/caja/log-to-console.js"/>
       <source file="${src}/com/google/caja/permissive.js"/>
       <source file="${src}/com/google/caja/triv-logger.js"/>
@@ -311,7 +310,7 @@
     <jar destfile="${jars}/pluginc-src.jar" basedir="${src}"/>
   </target>
 
-  <target name="demos" depends="calendar,lolcat-search,testbed,MinifiedTestbed"
+  <target name="demos" depends="calendar,lolcat-search,testbed"
    description="Puts all the demo files together for easy browsing."/>
 
   <!-- Cajoles test resources that contain cajita to javascript. -->
@@ -664,6 +663,10 @@
         <include name="css-defs.js"/>
         <include name="valija-cajoled.js"/>
       </fileset>
+      <fileset dir="${third_party}/js/prettify">
+        <include name="prettify.js"/>
+        <include name="prettify.css"/>
+      </fileset>
       <fileset dir="${src}/com/google/caja/opensocial/applet">
         <include name="*.html"/>
         <include name="*.js"/>
@@ -674,9 +677,28 @@
         <include name="json_simple.jar"/>
       </fileset>
     </copy>
-  </target>
 
-  <target name="MinifiedTestbed" depends="dirs,pluginc,testbed">
+    <copy file="${src}/com/google/caja/opensocial/applet/index.html" tofile="${www}/testbed/debug.html"/>
+    <replace file="${www}/testbed/debug.html">
+     <replacetoken><![CDATA[<script type="text/javascript" src="caja-combined-min.js"></script>]]></replacetoken>
+     <replacevalue><![CDATA[
+       <script type="text/javascript" src="caja.js"></script>
+       <script type="text/javascript" src="log-to-console.js"></script>
+       <script type="text/javascript" src="caja-debugmode.js"></script>
+       <script type="text/javascript" src="unicode.js"></script>
+       <script type="text/javascript" src="css-defs.js"></script>
+       <script type="text/javascript" src="html4-defs.js"></script>
+       <script type="text/javascript" src="html-sanitizer.js"></script>
+       <script type="text/javascript" src="html-emitter.js"></script>
+       <script type="text/javascript" src="domita.js"></script>
+       <script type="text/javascript" src="testbed.js"></script>
+       <script type="text/javascript" src="prettify.js"></script>
+       <script type="text/javascript" src="testbed.js"></script>
+       <script type="text/javascript" src="setup-valija.js"></script>
+       <script type="text/javascript" src="valija-cajoled.js"></script>
+       ]]>
+     </replacevalue>
+    </replace>
     <minify>
       <job output="${www}/testbed/caja-combined-min.js">
         <include file="${src}/com/google/caja/caja.js"/>
