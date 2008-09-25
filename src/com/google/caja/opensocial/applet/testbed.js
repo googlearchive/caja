@@ -229,7 +229,7 @@ var cajole = (function () {
       var imports = getImports(uiSuffix);
 
       imports.clearHtml___();
-      var stackTrace = document.getElementById('cajita-stacks' + uiSuffix)
+      var stackTrace = document.getElementById('cajita-stacks' + uiSuffix);
       stackTrace.style.display = 'none';
 
       // Provide an object into which the module can export its public API.
