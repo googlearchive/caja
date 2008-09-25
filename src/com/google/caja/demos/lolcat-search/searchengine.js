@@ -22,6 +22,8 @@
  * @author mikesamuel@gmail.com
  */
 
+// TODO(ihab.awad): In un-cajoled code, use ___ instead of _ to indicate
+// private attributes. ==> SINGLE underbar no longer protects!!!
 
 function SearchEngine() {
   this.webSearch_ = new GwebSearch();
@@ -78,6 +80,6 @@ SearchEngine.prototype.imageSearch = function (query, callback) {
 };
 
 // Define what gadgets can access.
-___.ctor(SearchEngine, undefined, 'SearchEngine');
-___.all2(___.grantMethod, SearchEngine.prototype, 
+___.simpleFunc(SearchEngine);
+___.all2(___.grantTypedGeneric, SearchEngine.prototype, 
          ['webSearch', 'imageSearch']);

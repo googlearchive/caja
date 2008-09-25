@@ -93,4 +93,4 @@ timezone.fromOffset = function (offsetSeconds) {
   };
 };
 
-caja.freeze(timezone);
+cajita.freeze(timezone);

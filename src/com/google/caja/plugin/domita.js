@@ -20,7 +20,7 @@
  * <a href="http://www.w3.org/TR/DOM-Level-2-HTML/ecma-script-binding.html"
  * >ECMAScript Language Bindings</a>.
  *
- * Requires caja.js, html-defs.js, html-sanitizer.js, unicode.js.
+ * Requires cajita.js, html-defs.js, html-sanitizer.js, unicode.js.
  *
  * Caveats:
  * - This is not a full implementation.
@@ -190,7 +190,7 @@ attachDocumentStub = (function () {
     subClass.prototype.constructor = subClass;
   }
 
-  var cssSealerUnsealerPair = caja.makeSealerUnsealerPair();
+  var cssSealerUnsealerPair = cajita.makeSealerUnsealerPair();
 
   // Implementations of setTimeout, setInterval, clearTimeout, and
   // clearInterval that only allow simple functions as timeouts and
@@ -478,7 +478,7 @@ attachDocumentStub = (function () {
         return tamed[k] || null;
       });
       // TODO(mikesamuel): if opt_keyAttrib, could implement getNamedItem
-      return caja.freeze(tamed);
+      return cajita.freeze(tamed);
     }
 
     /**
@@ -502,29 +502,29 @@ attachDocumentStub = (function () {
     };
     TameNode.prototype.appendChild = function (child) {
       // Child must be editable since appendChild can remove it from its parent.
-      caja.guard(tameNodeTrademark, child);
+      cajita.guard(tameNodeTrademark, child);
       if (!this.editable___ || !child.editable___) {
         throw new Error();
       }
       this.node___.appendChild(child.node___);
     };
     TameNode.prototype.insertBefore = function (child) {
-      caja.guard(tameNodeTrademark, child);
+      cajita.guard(tameNodeTrademark, child);
       if (!this.editable___ || !child.editable___) {
         throw new Error();
       }
       this.node___.insertBefore(child.node___);
     };
     TameNode.prototype.removeChild = function (child) {
-      caja.guard(tameNodeTrademark, child);
+      cajita.guard(tameNodeTrademark, child);
       if (!this.editable___ || !child.editable___) {
         throw new Error();
       }
       this.node___.removeChild(child.node___);
     };
     TameNode.prototype.replaceChild = function (child, replacement) {
-      caja.guard(tameNodeTrademark, child);
-      caja.guard(tameNodeTrademark, replacement);
+      cajita.guard(tameNodeTrademark, child);
+      cajita.guard(tameNodeTrademark, replacement);
       if (!this.editable___ || !replacement.editable___) {
         throw new Error();
       }
@@ -560,7 +560,7 @@ attachDocumentStub = (function () {
     };
     ___.ctor(TameNode, void 0, 'TameNode');
     ___.all2(
-       ___.grantMethod, TameNode.prototype,
+       ___.grantTypedGeneric, TameNode.prototype,
        ['getNodeType', 'getNodeValue', 'getNodeName',
         'appendChild', 'insertBefore', 'removeChild', 'replaceChild',
         'getFirstChild', 'getLastChild', 'getNextSibling', 'getPreviousSibling',
@@ -585,7 +585,7 @@ attachDocumentStub = (function () {
       return '#text';
     };
     ___.ctor(TameTextNode, void 0, 'TameNode');
-    ___.all2(___.grantMethod, TameTextNode.prototype,
+    ___.all2(___.grantTypedGeneric, TameTextNode.prototype,
              ['setNodeValue', 'getData', 'setData']);
     exportFields(TameTextNode, ['nodeValue', 'data']);
 
@@ -764,7 +764,7 @@ attachDocumentStub = (function () {
     };
     ___.ctor(TameElement, TameNode, 'TameElement');
     ___.all2(
-       ___.grantMethod, TameElement.prototype,
+       ___.grantTypedGeneric, TameElement.prototype,
        ['addEventListener', 'getAttribute', 'setAttribute',
         'getClassName', 'setClassName', 'getId', 'setId',
         'getInnerHTML', 'setInnerHTML', 'updateStyle', 'getStyle', 'setStyle',
@@ -811,7 +811,7 @@ attachDocumentStub = (function () {
       return href;
     };
     ___.ctor(TameAElement, TameElement, 'TameAElement');
-    ___.all2(___.grantMethod, TameAElement.prototype, ['getHref', 'setHref']);
+    ___.all2(___.grantTypedGeneric, TameAElement.prototype, ['getHref', 'setHref']);
     exportFields(TameAElement, ['href']);
 
     function TameFormElement(node, editable) {
@@ -822,7 +822,7 @@ attachDocumentStub = (function () {
       return tameNodeList(this.node___.elements, this.editable___, 'name');
     };
     ___.ctor(TameFormElement, TameElement, 'TameFormElement');
-    ___.all2(___.grantMethod, TameFormElement.prototype, ['getElements']);
+    ___.all2(___.grantTypedGeneric, TameFormElement.prototype, ['getElements']);
     exportFields(TameFormElement, ['elements']);
 
 
@@ -852,7 +852,7 @@ attachDocumentStub = (function () {
       return tameNode(this.node___.form, this.editable___);
     };
     ___.ctor(TameInputElement, TameElement, 'TameInputElement');
-    ___.all2(___.grantMethod, TameInputElement.prototype,
+    ___.all2(___.grantTypedGeneric, TameInputElement.prototype,
              ['getValue', 'setValue', 'focus', 'getForm']);
     exportFields(TameInputElement, ['value', 'form']);
 
@@ -869,7 +869,7 @@ attachDocumentStub = (function () {
       return src;
     };
     ___.ctor(TameImageElement, TameElement, 'TameImageElement');
-    ___.all2(___.grantMethod, TameImageElement.prototype, 
+    ___.all2(___.grantTypedGeneric, TameImageElement.prototype,
              ['getSrc', 'setSrc']);
     exportFields(TameImageElement, ['src']);
 
@@ -927,7 +927,7 @@ attachDocumentStub = (function () {
     };
     TameEvent.prototype.toString = function () { return 'Not a real event'; };
     ___.ctor(TameEvent, void 0, 'TameEvent');
-    ___.all2(___.grantMethod, TameEvent.prototype,
+    ___.all2(___.grantTypedGeneric, TameEvent.prototype,
              ['getType', 'getTarget', 'getPageX', 'getPageY', 'stopPropagation',
               'getAltKey', 'getCtrlKey', 'getMetaKey', 'getShiftKey',
               'getButton', 'getClientX', 'getClientY',
@@ -970,7 +970,7 @@ attachDocumentStub = (function () {
     };
     TameDocument.prototype.toString = function () { return '[Fake Document]'; };
     ___.ctor(TameDocument, void 0, 'TameDocument');
-    ___.all2(___.grantMethod, TameDocument.prototype,
+    ___.all2(___.grantTypedGeneric, TameDocument.prototype,
              ['createElement', 'createTextNode', 'getElementById']);
 
     imports.tameNode___ = tameNode;
@@ -1018,7 +1018,7 @@ attachDocumentStub = (function () {
       this.editable___ = editable;
     }
     for (var styleProperty in css.properties) {
-      if (!caja.canEnumOwn(css.properties, styleProperty)) { continue; }
+      if (!cajita.canEnumOwn(css.properties, styleProperty)) { continue; }
       (function (propertyName) {
          ___.useGetHandler(
              TameStyle.prototype, propertyName,
@@ -1203,7 +1203,7 @@ attachDocumentStub = (function () {
         }
       }
     } else {
-      caja.freeze(tameWindow);
+      cajita.freeze(tameWindow);
       imports.window = tameWindow;
     }
   }
@@ -1236,9 +1236,9 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
     return ___.callPub(handler, 'call', [___.USELESS,
         imports.tameNode___(thisNode, true), imports.tameEvent___(event)]);
   } catch (ex) {
-    if (ex && ex.cajaStack___ && 'undefined' !== (typeof console)) {
+    if (ex && ex.cajitaStack___ && 'undefined' !== (typeof console)) {
       console.error('Event dispatch %s: %s',
-          handler, ___.unsealCallerStack(ex.cajaStack___).join('\n'));
+          handler, ___.unsealCallerStack(ex.cajitaStack___).join('\n'));
     }
     throw ex;
   } finally {

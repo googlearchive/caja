@@ -51,7 +51,7 @@ final class DebuggingSymbols {
 
   /**
    * Produces a set of actuals that can be consumed by
-   * {@code ___.useDebugSymbols} from caja-debugmode.js.
+   * {@code ___.useDebugSymbols} from cajita-debugmode.js.
    */
   public ParseTreeNodeContainer toJavascriptSideTable() {
     MessageContext mc = new MessageContext();

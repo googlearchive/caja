@@ -44,7 +44,7 @@ var resultsOfLastSearch = [];
  */
 function doSearch(button) {
   var form = button.getForm();
-  var query = form.getElements().q.getValue().replace(/^\s+|\s+$/g, '');
+  var query = form.getElements().q.getValue().replace(new RegExp('^\s+|\s+$', 'g'), '');
   if (!query) {
     form.getElements().q.focus();
     return;
@@ -69,8 +69,8 @@ function doSearch(button) {
           var result = results[i];
           var li = document.createElement('LI');
           var snippetText = result.snippetHtml.replace(
-              /<\/?[A-Za-z][^>]*>/g, ' ');
-          var titleText = result.titleHtml.replace(/<\/?[A-Za-z][^>]*>/g, ' ');
+              new RegExp('<\/?[A-Za-z][^>]*>', 'g'), ' ');
+          var titleText = result.titleHtml.replace(new RegExp('<\/?[A-Za-z][^>]*>', 'g'), ' ');
           li.innerHTML = eval(Template(
               '<b>$titleText</b> &mdash; '
               + '<tt><a href="#">${result.url}</a></tt>'));
@@ -102,8 +102,8 @@ function showResult(index) {
  */
 function clone(original) {
   var cloned = {};
-  for (var k in original) {
+  caja.forOwnKeys(original, function(k) {
     cloned[k] = original[k];
-  }
+  });
   return cloned;
 }

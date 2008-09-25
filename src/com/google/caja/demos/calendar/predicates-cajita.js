@@ -52,4 +52,4 @@ predicates.not = function (predicate) {
   return function (v) { return !predicate(v); };
 };
 
-caja.freeze(predicates);
+cajita.freeze(predicates);

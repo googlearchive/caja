@@ -15,7 +15,7 @@
 /**
  * @fileoverview
  * Sets up a caja container for hosting the cajoled tests.
- * Requires that caja.js, asserts.js and browser-stubs.js be loaded first.
+ * Requires that cajita.js, asserts.js and browser-stubs.js be loaded first.
  */
 
 var imports = ___.copy(___.sharedImports);
@@ -43,7 +43,7 @@ if ('undefined' !== typeof Packages) {
               instanceof Packages.junit.framework.AssertionFailedError) {
             throw exception;
           }
-          return orig.call(caja.USELESS, exception, onerror, source, lineNum);
+          return orig.call(cajita.USELESS, exception, onerror, source, lineNum);
         };
       })(___.getNewModuleHandler().handleUncaughtException);
 }

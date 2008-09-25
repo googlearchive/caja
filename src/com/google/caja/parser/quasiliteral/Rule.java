@@ -213,12 +213,6 @@ public abstract class Rule implements MessagePart {
           "la", s(new Identifier(ReservedNames.LOCAL_ARGUMENTS)),
           "ga", newReference(ReservedNames.ARGUMENTS)));
     }
-    if (scope.hasFreeThis()) {
-      stmts.add(QuasiBuilder.substV(
-          "var @lt = @gt;",
-          "lt", s(new Identifier(ReservedNames.LOCAL_THIS)),
-          "gt", newReference(Keyword.THIS.toString())));
-    }
 
     return new ParseTreeNodeContainer(stmts);
   }
@@ -270,92 +264,6 @@ public abstract class Rule implements MessagePart {
     return new Pair<ParseTreeNode, ParseTreeNode>(
         new ParseTreeNodeContainer(refs),
         new ParseTreeNodeContainer(rhss));
-  }
-
-  protected ParseTreeNode expandMember(
-      ParseTreeNode member,
-      Scope scope,
-      MessageQueue mq) {
-    Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-
-    if (QuasiBuilder.match("function(@ps*) { @bs*; }", member, bindings)) {
-      Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor)member);
-      if (s2.hasFreeThis()) {
-        checkFormals(bindings.get("ps"), mq);
-        return QuasiBuilder.substV(
-            "___.method(function(@ps*) {" +
-            "  @fh*;" +
-            "  @stmts*;" +
-            "  @bs*;" +
-            "});",
-            "ps",    bindings.get("ps"),
-            // It's important to expand bs before computing fh and stmts.
-            "bs",    rewriter.expand(bindings.get("bs"), s2, mq),
-            "fh",    getFunctionHeadDeclarations(s2),
-            "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
-      }
-    }
-
-    return rewriter.expand(member, scope, mq);
-  }
-
-  protected ParseTreeNode expandAllMembers(
-      ParseTreeNode members,
-      Scope scope,
-      MessageQueue mq) {
-    List<ParseTreeNode> results = new ArrayList<ParseTreeNode>();
-    for (ParseTreeNode member : members.children()) {
-      results.add(expandMember(member, scope, mq));
-    }
-    return new ParseTreeNodeContainer(results);
-  }
-
-  protected ParseTreeNode expandMemberMap(
-      ParseTreeNode memberMap,
-      Scope scope,
-      MessageQueue mq) {
-    Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-
-    if (QuasiBuilder.match("({@keys*: @vals*})", memberMap, bindings)) {
-      if (literalsEndWith(bindings.get("keys"), "__")) {
-        mq.addMessage(
-            RewriterMessageType.MEMBER_KEY_MAY_NOT_END_IN_DOUBLE_UNDERSCORE,
-            memberMap.getFilePosition(), this, memberMap);
-        return memberMap;
-      }
-
-      return QuasiBuilder.substV(
-          "({@keys*: @vals*})",
-          "keys", bindings.get("keys"),
-          "vals", expandAllMembers(bindings.get("vals"), scope, mq));
-    }
-
-    mq.addMessage(RewriterMessageType.MAP_EXPRESSION_EXPECTED,
-        memberMap.getFilePosition(), this, memberMap);
-    return memberMap;
-  }
-
-  protected boolean checkMapExpression(
-      ParseTreeNode node,
-      MessageQueue mq) {
-    Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
-    if (!QuasiBuilder.match("({@keys*: @vals*})", node, bindings)) {
-      mq.addMessage(
-          RewriterMessageType.MAP_EXPRESSION_EXPECTED,
-          node.getFilePosition(), this, node);
-      return false;
-    } else if (literalsEndWith(bindings.get("keys"), "_")) {
-      mq.addMessage(
-          RewriterMessageType.KEY_MAY_NOT_END_IN_UNDERSCORE,
-          node.getFilePosition(), this, node);
-      return false;
-    } else if (literalsContain(bindings.get("keys"), "valueOf")) {
-      mq.addMessage(
-          RewriterMessageType.VALUEOF_PROPERTY_MUST_NOT_BE_SET,
-          node.getFilePosition(), this, node);
-      return false;
-    }
-    return true;
   }
 
   protected void checkFormals(ParseTreeNode formals, MessageQueue mq) {

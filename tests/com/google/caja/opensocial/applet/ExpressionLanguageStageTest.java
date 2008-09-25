@@ -15,7 +15,7 @@
 package com.google.caja.opensocial.applet;
 
 import com.google.caja.parser.js.Statement;
-import com.google.caja.parser.quasiliteral.DefaultCajaRewriter;
+import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.util.CajaTestCase;
 
 public class ExpressionLanguageStageTest extends CajaTestCase {
@@ -65,7 +65,7 @@ public class ExpressionLanguageStageTest extends CajaTestCase {
   }
 
   private void assertRewritten(String golden, String input) throws Exception {
-    Statement actual = DefaultCajaRewriter.returnLast(js(fromString(input)));
+    Statement actual = CajitaRewriter.returnLast(js(fromString(input)));
 //    ExpressionLanguageStage.apply(AncestorChain.instance(actual));
     assertEquals(render(js(fromString(golden))), render(actual));
   }

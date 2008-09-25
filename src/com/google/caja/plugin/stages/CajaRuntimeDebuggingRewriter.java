@@ -93,35 +93,11 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
     addRule(new AddPositionParamRule() {
           @Override
           @RuleDescription(
-              name="callProp",
-              synopsis="adds debug info to ___.callProp calls",
-              reason="",
-              matches="___.callProp(@obj, @name, @args)",
-              substitutes="___.callProp(@obj, @name, @args, @debug)")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
-          }
-        });
-    addRule(new AddPositionParamRule() {
-          @Override
-          @RuleDescription(
               name="callPub",
               synopsis="adds debug info to ___.callPub calls",
               reason="",
               matches="___.callPub(@obj, @name, @args)",
               substitutes="___.callPub(@obj, @name, @args, @debug)")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
-          }
-        });
-    addRule(new AddPositionParamRule() {
-          @Override
-          @RuleDescription(
-              name="deleteProp",
-              synopsis="adds debug info to ___.deleteProp calls",
-              reason="",
-              matches="___.deleteProp(@obj, @name)",
-              substitutes="___.deleteProp(@obj, @name, @debug)")
           public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
             return super.fire(n, s, mq);
           }
@@ -141,18 +117,6 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
     addRule(new AddPositionParamRule() {
           @Override
           @RuleDescription(
-              name="readProp",
-              synopsis="adds debug info to ___.readProp calls",
-              reason="",
-              matches="___.readProp(@obj, @name)",
-              substitutes="___.readProp(@obj, @name,@debug)")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
-          }
-        });
-    addRule(new AddPositionParamRule() {
-          @Override
-          @RuleDescription(
               name="readPub",
               synopsis="adds debug info to ___.readPub calls",
               reason="",
@@ -165,35 +129,11 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
     addRule(new AddPositionParamRule() {
           @Override
           @RuleDescription(
-              name="canReadProp",
-              synopsis="adds debug info to ___.canReadProp calls",
-              reason="",
-              matches="___.canReadProp(t___, @name)",
-              substitutes="___.canReadProp(t___, @name, @debug)")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
-          }
-        });
-    addRule(new AddPositionParamRule() {
-          @Override
-          @RuleDescription(
               name="inPub",
               synopsis="adds debug info to ___.inPub calls",
               reason="",
               matches="___.inPub(@obj, @name)",
               substitutes="___.inPub(@obj, @name, @debug)")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
-          }
-        });
-    addRule(new AddPositionParamRule() {
-          @Override
-          @RuleDescription(
-              name="setProp",
-              synopsis="adds debug info to ___.setProp calls",
-              reason="",
-              matches="___.setProp(@obj, @name, @val)",
-              substitutes="___.setProp(@obj, @name, @val, @debug)")
           public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
             return super.fire(n, s, mq);
           }
@@ -223,13 +163,49 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
           }
         });
     addRule(new AddPositionParamRule() {
+          @Override
+          @RuleDescription(
+              name="simpleFunc",
+              synopsis="adds debug info to ___.simpleFunc calls",
+              reason="",
+              matches="___.simpleFunc(@fun, @name)",
+              substitutes="___.simpleFunc(@fun, @name, @debug)")
+          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
+            return super.fire(n, s, mq);
+          }
+        });
+    addRule(new AddPositionParamRule() {
+          @Override
+          @RuleDescription(
+              name="simpleFrozenFuncAnon",
+              synopsis="adds debug info to ___.simpleFrozenFunc calls",
+              reason="",
+              matches="___.simpleFrozenFunc(@fun)",
+              substitutes="___.simpleFrozenFunc(@fun, undefined, @debug)")
+          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
+            return super.fire(n, s, mq);
+          }
+        });
+    addRule(new AddPositionParamRule() {
+          @Override
+          @RuleDescription(
+              name="simpleFrozenFuncNamed",
+              synopsis="adds debug info to ___.simpleFrozenFunc calls",
+              reason="",
+              matches="___.simpleFrozenFunc(@fun, @name)",
+              substitutes="___.simpleFrozenFunc(@fun, @name, @debug)")
+          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
+            return super.fire(n, s, mq);
+          }
+        });
+    addRule(new AddPositionParamRule() {
       @Override
       @RuleDescription(
-          name="asCtor",
-          synopsis="adds debug info to ___.asCtor calls",
+          name="construct",
+          synopsis="adds debug info to ___.construct calls",
           reason="",
-          matches="___.asCtor(@fun)",
-          substitutes="___.asCtor(@fun, @debug)")
+          matches="___.construct(@fun, @args)",
+          substitutes="___.construct(@fun, @args, @debug)")
       public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
         return super.fire(n, s, mq);
       }
@@ -276,13 +252,11 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
     addRule(new AddPositionParamRule() {
           @Override
           @RuleDescription(
-              name="forInLoop",
-              synopsis="Add null check to forInLoop",
+              name="inOperator",
+              synopsis="Add null check to rhs of 'in' operator",
               reason="to identify the source of null pointer exceptions",
-              matches=("{ @tmp___ = @posNode;"
-                       + "for (@k___ in @tmp___) @body; }"),
-              substitutes=("{ @tmp___ = ___.requireObject(@posNode, @debug);"
-                           + "for (@k___ in @tmp___) @body; }"))
+              matches=("(@key in @posNode)"),
+              substitutes=("(@key in ___.requireObject(@posNode, @debug))"))
           public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
             return super.fire(n, s, mq);
           }
@@ -290,11 +264,11 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
     addRule(new AddPositionParamRule() {
           @Override
           @RuleDescription(
-              name="inOperator",
+              name="userException",
               synopsis="Add null check to rhs of 'in' operator",
-              reason="to identify the source of null pointer exceptions",
-              matches=("(@key in @posNode)"),
-              substitutes=("(@key in ___.requireObject(@posNode, @debug))"))
+              reason="identify the location where user errors are thrown",
+              matches="throw @ex",
+              substitutes="throw ___.userException(@ex, @debug)")
           public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
             return super.fire(n, s, mq);
           }

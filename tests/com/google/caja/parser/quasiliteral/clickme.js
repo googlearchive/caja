@@ -29,7 +29,6 @@ var personAppData = null;
 
 function foo() {
   alert(arguments);
-  alert(this);
 }
 
 var init = function() {

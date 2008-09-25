@@ -56,7 +56,7 @@ public class TextRuleDoclet extends RuleDoclet {
   
   public static void main(String[] args) throws IOException {
     TextRuleDoclet trd = new TextRuleDoclet();
-    trd.setRewriter(new DefaultCajaRewriter(false));
+    trd.setRewriter(new CajitaRewriter(false));
     trd.generateDocumentation(new OutputStreamWriter(System.out));
   }
 }

@@ -28,8 +28,8 @@ searchEngine;
  * @param {string} snippet a search result snippet.
  */
 exports.showKitten = function showKitten(result) {
-  var title = result.titleHtml.replace(/<\/?\w[^>]*>/g, '')
-  var snippet = result.snippetHtml.replace(/<\/?\w[^>]*>/g, '');
+  var title = result.titleHtml.replace(new RegExp('<\/?\w[^>]*>', 'g'), '');
+  var snippet = result.snippetHtml.replace(new RegExp('<\/?\w[^>]*>', 'g'), '');
 
   // Make sure that the kittens table shows a loading image until the kitty is
   // loaded.

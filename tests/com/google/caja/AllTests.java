@@ -44,7 +44,7 @@ import com.google.caja.parser.js.FuzzedParserTest;
 import com.google.caja.parser.js.NumberLiteralTest;
 import com.google.caja.parser.js.ParserTest;
 import com.google.caja.parser.js.StringLiteralTest;
-import com.google.caja.parser.quasiliteral.DefaultCajaRewriterTest;
+import com.google.caja.parser.quasiliteral.CajitaRewriterTest;
 import com.google.caja.parser.quasiliteral.DefaultValijaRewriterTest;
 import com.google.caja.parser.quasiliteral.IllegalReferenceCheckRewriterTest;
 import com.google.caja.parser.quasiliteral.InnocentCodeRewriterTest;
@@ -109,7 +109,7 @@ public class AllTests {
           CssTreeTest.class,
           CssValidatorTest.class,
           DebuggingSymbolsStageTest.class,
-          DefaultCajaRewriterTest.class,
+          CajitaRewriterTest.class,
           DefaultGadgetRewriterTest.class,
           DefaultValijaRewriterTest.class,
           DomParserTest.class,

@@ -172,7 +172,6 @@ public class CajaApplet extends Applet {
         }
       };
     rw.setDebugMode(features.contains(Feature.DEBUG_SYMBOLS));
-    rw.setWartsMode(features.contains(Feature.WARTS_MODE));
     rw.setValijaMode(features.contains(Feature.VALIJA_MODE));
 
     StringBuilder cajoledOutput = new StringBuilder();
@@ -242,12 +241,10 @@ public class CajaApplet extends Applet {
   private static enum Feature {
     /** Present if rendered output should only contain ASCII characters. */
     ASCII_ONLY,
-    /** Present to output debug symbols for use with caja-debugmode.js. */
+    /** Present to output debug symbols for use with cajita-debugmode.js. */
     DEBUG_SYMBOLS,
     /** Present if the output should be embeddable in HTML or XML. */
     EMBEDDABLE,
-    /** Present to enable warts in the JS rewriter. */
-    WARTS_MODE,
     /** Present to enable valija mode. */
     VALIJA_MODE,
     ;

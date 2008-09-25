@@ -60,7 +60,7 @@ var rrule = {};
 (function (module) {
 
 /** @enum {number} */
-var Frequency = caja.freeze({
+var Frequency = cajita.freeze({
   SECONDLY: 0,
   MINUTELY: 1,
   HOURLY: 2,
@@ -79,7 +79,7 @@ var Frequency = caja.freeze({
 function WeekDayNum(ical) {
   var m = ical.match(/^(-?\d+)?(MO|TU|WE|TH|FR|SA|SU)$/i);
   if (!m) { throw new Error('Invalid weekday number: ' + ical); }
-  return caja.freeze({
+  return cajita.freeze({
     wday: WeekDay[m[2].toUpperCase()],
     num: Number(m[1]) || 0
   });
@@ -614,7 +614,7 @@ function rruleIteratorImpl(
 
   reset();
 
-  return caja.freeze({
+  return cajita.freeze({
     reset: reset,
     next: next,
     hasNext: hasNext,
@@ -627,4 +627,4 @@ module.Frequency = Frequency;
  
 })(rrule); 
 
-caja.freeze(rrule);
+cajita.freeze(rrule);

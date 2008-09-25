@@ -15,7 +15,7 @@
 
 // This module is written in the Cajita subset of Javascript. It should
 // work whether run translated or untranslated. Either way, it depends
-// on caja.js, but not on anything else.
+// on cajita.js, but not on anything else.
 
 /**
  * Returns a matched sealer/unsealer pair, where the boxes produced by
@@ -24,11 +24,11 @@
  * @author Mark S. Miller, based on a pattern invented by Marc Stiegler.
  */
 function Brand(name) {
-  caja.enforceType(name,'string');
+  cajita.enforceType(name,'string');
   var flag = false;
   var squirrel = null;
   
-  var sealer = caja.freeze({
+  var sealer = cajita.freeze({
     toString: function() { return '<'+name+' sealer>'; },
     
     /** Returns a sealed box containing the payload. */
@@ -38,7 +38,7 @@ function Brand(name) {
        * Encapsulates the payload, but makes it available to its
        * unsealer when provoked.
        */
-      return caja.freeze({
+      return cajita.freeze({
         toString: function() { return '<'+name+' box>'; },
         provoke: function() {
           squirrel = payload;
@@ -48,7 +48,7 @@ function Brand(name) {
     }
   });
   
-  var unsealer = caja.freeze({
+  var unsealer = cajita.freeze({
     toString: function() { return '<'+name+' unsealer>'; },
     
     /**
@@ -58,7 +58,7 @@ function Brand(name) {
       flag = false; 
       squirrel = null;
       box.provoke();
-      if (!flag) { caja.fail('not my box: ',box); }
+      if (!flag) { cajita.fail('not my box: ',box); }
       var result = squirrel;
       // next two lines are probably unneeded, but just in case
       flag = false; 
@@ -66,7 +66,7 @@ function Brand(name) {
       return result;
     }
   });
-  return caja.freeze({
+  return cajita.freeze({
     toString: function() { return '<'+name+' brand>'; },
     sealer: sealer,
     unsealer: unsealer

@@ -83,7 +83,6 @@ public final class PluginCompilerMain {
     try {
       PluginMeta meta = new PluginMeta(makeEnvironment(config));
       meta.setDebugMode(config.debugMode());
-      meta.setWartsMode(false);
       meta.setValijaMode(config.cajaMode());
       PluginCompiler compiler = new PluginCompiler(meta, mq);
       mc = compiler.getMessageContext();

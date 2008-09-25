@@ -30,10 +30,10 @@
  *   <dd>Container for cajoled output.</dd>
  *   <dt><code>'eval-results' + uiSuffix</code></dt>
  *   <dd>Container for result of last expression in source code.</dd>
- *   <dt><code>'caja-stacks' + uiSuffix</code></dt>
+ *   <dt><code>'cajita-stacks' + uiSuffix</code></dt>
  *   <dd>Parent of container for debug mode stack traces a la
- *     <tt>caja-debugmode.js</tt>.</dd>
- *   <dt><code>'caja-stack' + uiSuffix</code></dt>
+ *     <tt>cajita-debugmode.js</tt>.</dd>
+ *   <dt><code>'cajita-stack' + uiSuffix</code></dt>
  *   <dd>Container for debug mode stack traces.</dd>
  *   <dt><code>'caja-html' + uiSuffix</code></dt>
  *   <dd>Container for HTML rendered by cajoled code.</dd>
@@ -125,7 +125,7 @@ var getTestbedServer = (function () {
 
 /** Fills out the form with a "Conway's Game of Life" gadget. */
 function lifecode(form) {
-  form.elements.src.value = 
+  form.elements.src.value =
       "<!-- Cellular automaton gadget. This code is in the public domain. -->\n" +
       "<script>var handle = null;</script>\n" +
       "<textarea id=\"area\">It's alive!</textarea>\n" +
@@ -229,7 +229,7 @@ var cajole = (function () {
       var imports = getImports(uiSuffix);
 
       imports.clearHtml___();
-      var stackTrace = document.getElementById('caja-stacks' + uiSuffix);
+      var stackTrace = document.getElementById('cajita-stacks' + uiSuffix)
       stackTrace.style.display = 'none';
 
       // Provide an object into which the module can export its public API.
@@ -245,12 +245,12 @@ var cajole = (function () {
         eval(script);
         gadgetPublicApis['gadget' + uiSuffix] = ___.primFreeze(imports.exports);
       } catch (ex) {
-        var cajaStack = ex.cajaStack___
-            && ___.unsealCallerStack(ex.cajaStack___);
-        if (cajaStack) {
+        var cajitaStack = ex.cajitaStack___
+            && ___.unsealCallerStack(ex.cajitaStack___);
+        if (cajitaStack) {
           stackTrace.style.display = '';
-          document.getElementById('caja-stack' + uiSuffix).appendChild(
-              document.createTextNode(cajaStack.join('\n')));
+          document.getElementById('cajita-stack' + uiSuffix).appendChild(
+              document.createTextNode(cajitaStack.join('\n')));
         }
         throw ex;
       }
@@ -294,12 +294,13 @@ var cajole = (function () {
     var inputs = form.elements;
     var features = ['testbedServer=' + getTestbedServer().replace(/,/g, '%2C')];
     // See CajaApplet.Feature
-    caja.each({ EMBEDDABLE: true, DEBUG_SYMBOLS: true, WARTS_MODE: true, VALIJA_MODE: true },
-              ___.simpleFrozenFunc(function (featureName) {
-                if (inputs[featureName + uiSuffix].checked) {
-                  features.push(featureName);
-                }
-              }));
+    cajita.forOwnKeys(
+        { EMBEDDABLE: true, DEBUG_SYMBOLS: true, VALIJA_MODE: true },
+        ___.simpleFrozenFunc(function (featureName) {
+          if (inputs[featureName + uiSuffix].checked) {
+          features.push(featureName);
+          }
+        }));
     features = features.join(',');
 
     var src = inputs.src.value.replace(/^\s+|\s+$/g, '');
@@ -422,8 +423,8 @@ var getImports = (function () {
    * one that can be evaled.
    */
   function repr(o) {
-    if (Object.prototype.toSource && typeof o === 'object' && o !== null) { 
-      return Object.prototype.toSource.call(o); 
+    if (Object.prototype.toSource && typeof o === 'object' && o !== null) {
+      return Object.prototype.toSource.call(o);
     }
     try {
       switch (typeof o) {
@@ -433,7 +434,7 @@ var getImports = (function () {
                   + '"');
         case 'object': case 'function':
           if (o === null) { break; }
-          if (caja.isJSONContainer(o)) {
+          if (cajita.isJSONContainer(o)) {
             var els = [];
             if ('length' in o
                 && !(Object.prototype.propertyIsEnumerable.call(o, 'length'))
@@ -443,7 +444,7 @@ var getImports = (function () {
               }
               return '[' + els.join(', ') + ']';
             } else {
-              caja.each(o, reprKeyValuePair(els));
+              cajita.forOwnKeys(o, reprKeyValuePair(els));
               return els.length ? '{ ' + els.join(', ') + ' }' : '{}';
             }
           }

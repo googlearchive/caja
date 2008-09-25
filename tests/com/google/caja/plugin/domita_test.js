@@ -43,12 +43,15 @@ function assertFailsSafe(canFail, assertionsIfPasses) {
 function canonInnerHtml(s) {
   // Sort attributes.
   s = s.replace(
-      /(<\w+)\s+([^\s>][^>]*)>/g,
+      new RegExp('(<\\w+)\\s+([^\\s>][^>]*)>', 'g'),
       function (_, tagStart, tagBody) {
         var attrs = [];
         for (var m; (m = tagBody.match(
-                 /^\s*(\w+)(?:\s*=\s*("[^\"]*"|'[^\']*'|[^\'\"\s>]+))?/));) {
-          var value = m[2] && !/^[\"\']/.test(m[2]) ? '"' + m[2] + '"' : m[2];
+                 new RegExp('^\\s*(\\w+)(?:\\s*=\\s*("[^\\"]*"'
+                            + '|\'[^\\\']*\'|[^\\\'\\"\\s>]+))?')));) {
+          var value = m[2] && !(new RegExp('^["\']')).test(m[2])
+              ? '"' + m[2] + '"'
+              : m[2];
           attrs.push(m[1] + (value ? '=' + value : ''));
           tagBody = tagBody.substring(m[0].length);
         }
@@ -56,12 +59,12 @@ function canonInnerHtml(s) {
         return tagStart + ' ' +attrs.join(' ') + '>';
       });
   s = s.replace(
-      /(<\/?)(\w+)([^>]*)>/g,
+      new RegExp('(<\/?)(\\w+)([^>]*)>', 'g'),
       function (_, open, name, body) {
         return open + name.toLowerCase() + body + '>';
       });
   // Remove ignorable whitespace.
-  return s.replace(/^[ \t]*(\r\n?|\n)|\s+$/g, '');
+  return s.replace(new RegExp('^[ \\t]*(\\r\\n?|\\n)|\\s+$', 'g'), '');
 }
 
 jsunitRegister('testGetElementById',

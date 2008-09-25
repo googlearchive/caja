@@ -60,7 +60,7 @@ instanceGenerators.serialInstanceGenerator = function (
 
   function reset(builder) {}
 
-  return caja.freeze({ generate: generate, reset: reset });
+  return cajita.freeze({ generate: generate, reset: reset });
 };
 
 /**
@@ -257,7 +257,7 @@ instanceGenerators.bySetPosInstanceGenerator = function (
     return true;
   }
 
-  return caja.freeze({ generate: generate, reset: reset });
+  return cajita.freeze({ generate: generate, reset: reset });
 };
 
-caja.freeze(instanceGenerators);
+cajita.freeze(instanceGenerators);

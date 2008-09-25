@@ -26,7 +26,7 @@ function VCalendar(calendarId, summary, events) {
   this.summary = summary;
   this.events = events.slice(0);
   if ((typeof caja) !== 'undefined') {
-    caja.freeze(this.events);
+    cajita.freeze(this.events);
   }
 }
 

@@ -13,16 +13,16 @@
 // limitations under the License.
 
 /**
- * @fileoverview decorates definitions from <tt>caja.js</tt> to collect
+ * @fileoverview decorates definitions from <tt>cajita.js</tt> to collect
  * debugging information at runtime.
  *
  * <h3>Usage</h3>
- * Currently a container loads caja.js {@script <script src="caja.js"/>}
+ * Currently a container loads cajita.js {@script <script src="cajita.js"/>}
  * to provide library support for cajoled code.
  * Containers will likely provide a sandbox to let developers to test their
- * gadgets.  This container can include both caja.js and this file:<pre>
- *   <script src="caja.js"/>
- *   <script src="caja-debugmode.js"/>
+ * gadgets.  This container can include both cajita.js and this file:<pre>
+ *   <script src="cajita.js"/>
+ *   <script src="cajita-debugmode.js"/>
  * </pre>.
  * TODO(mikesamuel): how to collect logging.
  *
@@ -48,7 +48,7 @@
  */
 
 (function () {
-  var orig = caja.copy(___);
+  var orig = cajita.copy(___);
 
   function mixin(obj, members) {
     for (var i = 0, n = members.length; i < n; i += 2) {
@@ -75,7 +75,7 @@
   function noop(obj, name) {}
   function requireNotFrozen(obj, name) {
     if (orig.isFrozen(obj)) {
-      caja.fail("Can't set .", name, ' on frozen (', obj, ')');
+      cajita.fail("Can't set .", name, ' on frozen (', obj, ')');
     }
   }
 
@@ -97,7 +97,7 @@
     stackInvalid = false;
   }
 
-  var stackSealer = caja.makeSealerUnsealerPair();
+  var stackSealer = cajita.makeSealerUnsealerPair();
   /**
    * Unseals a sealed call stack.  Not available to cajoled code.
    */
@@ -109,7 +109,7 @@
    * changes.
    */
   function getCallerStack() {
-    return stackInvalid ? void 0 : stackSealer(caja.freeze(stack.slice(0)));
+    return stackInvalid ? void 0 : stackSealer(cajita.freeze(stack.slice(0)));
   }
 
   function pushFrame(stackFrame) {
@@ -152,13 +152,13 @@
   // that can fail if obj is undefined or name is denied.
 
   /**
-   * Associate the caja call stack with an Error object if there is none there
+   * Associate the cajita call stack with an Error object if there is none there
    * already.
    */
   function attachCajaStack(error) {
     // Associate the current stack with ex if it is an Error.
-    if (error instanceof Error && !error.cajaStack___) {
-      error.cajaStack___ = getCallerStack();
+    if (error instanceof Error && !error.cajitaStack___) {
+      error.cajitaStack___ = getCallerStack();
     }
   }
 
@@ -171,20 +171,6 @@
         rethrowWith(ex, this.debugSymbols_[arguments[arity]]);
       }
     };
-  }
-
-  function callProp(obj, name, args, callerIdx) {
-    var stackFrame = pushFrame(this.debugSymbols_[callerIdx]);
-    try {
-      try {
-        return orig.callProp.apply(this, arguments);
-      } catch (ex) {
-        attachCajaStack(ex);
-        throw ex;
-      }
-    } finally {
-      popFrame(stackFrame);
-    }
   }
 
   function callPub(obj, name, args, callerIdx) {
@@ -202,47 +188,24 @@
   }
 
   function asSimpleFunc(fun, callerIdx) {
-    return makeWrapper(fun, 'asSimpleFunc', this.debugSymbols_[callerIdx]);
+    return makeWrapper(
+        fun, 'asSimpleFunc', this.debugSymbols_[callerIdx]);
   }
-  function asCtor(fun, callerIdx) {
-    var ctor = fun;
-    if (('function' === typeof ctor) && ctor.CONSTRUCTOR___) {
-      // Make sure that the object returned really is of the right class, not
-      // of the type of the wrapper function.
-      // This works around problems with (new Array()) and (new Date()) where
-      // the returned object is not really a Date or Array on SpiderMonkey and
-      // other interpreters.
-      ctor = function (a, b, c, d, e, f, g, h, i, j, k, l) {
-        switch (arguments.length) {
-          case 0: return new fun();
-          case 1: return new fun(a);
-          case 2: return new fun(a, b);
-          case 3: return new fun(a, b, c);
-          case 4: return new fun(a, b, c, d);
-          case 5: return new fun(a, b, c, d, e);
-          case 6: return new fun(a, b, c, d, e, f);
-          case 7: return new fun(a, b, c, d, e, f, g);
-          case 8: return new fun(a, b, c, d, e, f, g, h);
-          case 9: return new fun(a, b, c, d, e, f, g, h, i);
-          case 10: return new fun(a, b, c, d, e, f, g, h, i, j);
-          case 11: return new fun(a, b, c, d, e, f, g, h, i, j, k);
-          case 12: return new fun(a, b, c, d, e, f, g, h, i, j, k, l);
-          default:
-            if (fun.typeTag___ === 'Array') {
-              return fun.apply(orig.USELESS, arguments);
-            }
-            var tmp = function (args) {
-              return fun.apply(this, args);
-            };
-            tmp.prototype = fun.prototype;
-            return new tmp(arguments);
-        }
-      };
-      ctor.CONSTRUCTOR___ = true;
-      ctor.length = fun.length;
+
+  function construct(fun, args, callerIdx) {
+    var stackFrame = pushFrame(this.debugSymbols_[callerIdx]);
+    try {
+      try {
+        return orig.construct(fun.callFn || fun, args);
+      } catch (ex) {
+        attachCajaStack(ex);
+        throw ex;
+      }
+    } finally {
+      popFrame(stackFrame);
     }
-    return makeWrapper(ctor, 'asCtor', this.debugSymbols_[callerIdx]);
   }
+
   /**
    * Return a function of the same kind (simple/method/ctor) as fun, but
    * making sure that any Error thrown because fun is not of the required kind
@@ -252,7 +215,7 @@
    * @param {string} conditionName name of the condition that checks
    *     that fun is of the right kind.  E.g. 'asSimpleFunc'
    * @param stackFrame of the call of fun in original source code.
-   * @return {Function} applies fun, but attaches a caja stack trace to any
+   * @return {Function} applies fun, but attaches a cajita stack trace to any
    *     Error raised by fun.
    */
   function makeWrapper(fun, conditionName, stackFrame) {
@@ -280,10 +243,6 @@
     // wrapper that allow it to survive similar checks.
     if (fun.SIMPLEFUNC___) {
       wrapper.SIMPLEFUNC___ = true;
-    } else if (fun.METHOD___) {
-      wrapper.METHOD___ = true;
-    } else if (fun.CONSTRUCTOR___) {
-      wrapper.CONSTRUCTOR___ = true;
     } else if (fun.XO4A___) {
       wrapper.XO4A___ = true;
     }
@@ -293,19 +252,19 @@
 
   function tameException(ex) {
     var ex = orig.tameException(ex);
-    // Make sure that tamed Errors propogate the cajaStack___,
+    // Make sure that tamed Errors propogate the cajitaStack___,
     // so that an exception can be rethrown.
     // We need to make sure tameException has the property that
     //     try { f(); } catch (ex) { throw ex; }
     // doesn't make ex unavailable to code with access to the unsealer.
-    if (ex && (typeof ex) === 'object' && !ex.cajaStack___) {
-      ex.cajaStack___ = getCallerStack();
+    if (ex && (typeof ex) === 'object' && !ex.cajitaStack___) {
+      ex.cajitaStack___ = getCallerStack();
     }
     return ex;
   }
 
   // Extend to output the source file position with the message.
-  var origLog = caja.log;
+  var origLog = cajita.log;
   function log(msg) {
     if (!stackInvalid && stack.length > 0) {
       msg = stack[stack.length - 1] + ': ' + msg;
@@ -315,26 +274,47 @@
 
   // Dump stack traces during loading to the console.
   function loadModule(module) {
-    caja.log('starting loadModule');
+    cajita.log('starting loadModule');
     try {
       orig.loadModule(module);
-      caja.log('done loadModule');
+      cajita.log('done loadModule');
     } catch (ex) {
       if ('undefined' !== typeof console) {
-        if (ex && ex.cajaStack___) {
-          var stack = unsealCallerStack(ex.cajaStack___);
+        if (ex && ex.cajitaStack___) {
+          var stack = unsealCallerStack(ex.cajitaStack___);
           if (stack) {
             console.group(
                 ex.message + ' @ ' + ex.fileName + ':' + ex.lineNumber);
             console.error(stack.join('\n'));
             console.groupEnd();
           }
-        } else {
+        } else if ('string' === typeof ex.stack) {
           console.log(ex.stack.match(/@\S*:\d+(?:\n|$)/g).join('\n\n'));
+        } else {
+          console.log('' + ex);
         }
       }
       throw ex;
     }
+  }
+
+  /**
+   * Attach the stack to an exception before it is thrown from cajita code.
+   * @param ex a value that cajita code is allowed to throw.
+   */
+  function userException(ex, callerIdx) {
+    var stackFrame = pushFrame(this.debugSymbols_[callerIdx]);
+    try {
+      // TODO(mikesamuel): should userException be defined as identity in
+      // cajita.js?  If so we should do ex = orig.userException(ex) inside this
+      // try.
+      // This would let us use userException to prevent user code from raising
+      // InternalErrors.
+      attachCajaStack(ex);
+    } finally {
+      popFrame(stackFrame);
+    }
+    return ex;
   }
 
   /**
@@ -343,10 +323,10 @@
    */
   function useDebugSymbols(var_args) {
     var newDebugSymbols = arguments;
-    caja.log('using debug symbols');
-    if (!caja.isJSONContainer(this)) { caja.fail('called on bad ___'); }
+    cajita.log('using debug symbols');
+    if (!cajita.isJSONContainer(this)) { cajita.fail('called on bad ___'); }
     if (this.debugSymbols_ !== void 0) {
-      caja.fail('___ reused with different debug symbols');
+      cajita.fail('___ reused with different debug symbols');
     }
     // Unpack the debugging symbols.
 
@@ -382,23 +362,18 @@
     override_members(
         this,
         [
+         'asSimpleFunc', asSimpleFunc,
          'callPub', callPub,
-         'callProp', callProp,
-         'asCtor', asCtor,
-         'asSimpleFunc', asSimpleFunc
+         'construct', construct
         ], 1);
     override_members(
         this,
         [
          'canEnum', errorDecorator(orig.canEnum),
          'deletePub', errorDecorator(orig.deletePub),
-         'deleteProp', errorDecorator(orig.deleteProp),
-         'readPub', errorDecorator(orig.readPub),
-         'readProp', errorDecorator(orig.readProp),
-         'canReadProp', errorDecorator(orig.canReadProp),
          'inPub', errorDecorator(orig.inPub),
-         'setPub', errorDecorator(orig.setPub),
-         'setProp', errorDecorator(orig.setProp)
+         'readPub', errorDecorator(orig.readPub),
+         'setPub', errorDecorator(orig.setPub)
         ], null);
     // Make sure that tamed exceptions propagate stacktraces
     override_members(this, ['tameException', tameException], 0);
@@ -414,11 +389,12 @@
        'requireObject', requireObject,
        'startCallerStack', startCallerStack,
        'unsealCallerStack', unsealCallerStack,
-       'useDebugSymbols', useDebugSymbols
+       'useDebugSymbols', useDebugSymbols,
+       'userException', userException
       ]);
 
   // Include the top stack frame in log messages.
-  override_members(caja, ['log', log], 0);
+  override_members(cajita, ['log', log], 0);
   // Dump stack traces during loading to the console.
   override_members(___, ['loadModule', loadModule], 0);
 

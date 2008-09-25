@@ -40,7 +40,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
    */
   public void testMutableArguments() throws Exception {
     rewriteAndExecute(
-        "caja.log('___.args = ' + ___.args);",
+        "cajita.log('___.args = ' + ___.args);",
         "function f(a) {" +
           "try{" +
             "arguments[0] = 1;" +
@@ -186,7 +186,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
         "  this.x_ = 1;" +
         "  this.y = 2;" +
         "}" +
-        "caja.def(Foo, Object, {" +
+        "cajita.def(Foo, Object, {" +
         "  test: function () {" +
         "    var y = {};" +
         "    var result = [];" +

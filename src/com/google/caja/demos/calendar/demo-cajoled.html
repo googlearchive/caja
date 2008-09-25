@@ -5,7 +5,7 @@
     <script src="html-interp-minified.js"></script>
     <script src="domita-minified.js"></script>
     <script src="html-sanitizer-minified.js"></script>
-    <script src="caja-debugmode.js"></script>
+    <script src="cajita-debugmode.js"></script>
   </head>
   <body bgcolor=white>
     <p>A calendar in
@@ -65,22 +65,28 @@
     </table>
   </body>
 
-  <script type="text/javascript">(function () {
-    // TODO: kludge pending bug 267
-    // TODO: bug 267 is fixed. How should this now be cleaned up?
-    ___.grantCall(Array, 'push');
-    var realPush = Array.prototype.push;
-    Array.prototype.push = ___.method(function (var_args) {
-      if (___.isFrozen(this)) { throw new Error('frozen array'); };
-      return realPush.apply(this, arguments);
-    });
-    ___.grantRead(Array.prototype, 'push');
-    ___.grantCall(Array.prototype, 'push');
-    delete Array.prototype.push_handler___;
-    Array.prototype.push.apply_handler___ = undefined;
-    ___.grantCall(Array.prototype.push, 'apply');
-    // END: kludge
+  <!-- Create a module loader to capture the Valija module. -->
+  <script type="text/javascript">
+    var valijaMaker = undefined;
 
+    (function(){
+      var imports = ___.copy(___.sharedImports);
+      imports.loader = {
+        provide: ___.simpleFunc(function(v) {
+          valijaMaker = v;
+        })
+      };
+      ___.grantRead(imports, 'loader');
+      ___.grantCall(imports.loader, 'provide');
+      ___.getNewModuleHandler().setImports(imports);
+    })();
+  </script>
+
+  <!-- Load the Valija module. That module calls laoder.provide() defined
+       above, which sets the variable 'valijaMaker'. -->
+  <script type="text/javascript" src="valija-cajoled.js"></script>
+
+  <script type="text/javascript">(function () {
     var uriCallback = { rewrite: function () { return null; } };
 
     var origModuleHandler = ___.getNewModuleHandler();
@@ -95,8 +101,8 @@
         try {
           return origModuleHandler.handle.apply(origModuleHandler, arguments);
         } catch (e) {
-          if (e.cajaStack___) {
-            console.error(___.unsealCallerStack(e.cajaStack___).join('\n'));
+          if (e.cajitaStack___) {
+            console.error(___.unsealCallerStack(e.cajitaStack___).join('\n'));
           }
           throw e;
         }
@@ -113,6 +119,7 @@
 
     var imports = ___.copy(___.sharedImports);
     ___.getNewModuleHandler().setImports(imports);
+    imports.$v = valijaMaker(imports);
     attachDocumentStub('-pre___', uriCallback, imports);
     // Grant readonly access to a portion of the DOM
     imports.document.body = makeReadOnlyNode(document.body);
@@ -139,7 +146,7 @@
     ___.all2(___.grantRead, imports,
              ['window', 'htmlInterp', 'StringInterpolation']);
     ___.grantCall(htmlInterp, 'safeHtml');
-    ___.ctor(StringInterpolation);
+    ___.simpleFunc(StringInterpolation);
 
     ___.grantCall(StringInterpolation.prototype, 'append');
 

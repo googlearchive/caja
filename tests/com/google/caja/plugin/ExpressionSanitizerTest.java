@@ -69,7 +69,7 @@ public class ExpressionSanitizerTest extends CajaTestCase {
   private ExpressionSanitizerCaja newPassThruSanitizer() throws Exception {
     return new ExpressionSanitizerCaja(mq, meta) {
       @Override
-      protected Rewriter newCajaRewriter() {
+      protected Rewriter newCajitaRewriter() {
         return new Rewriter(true) {{
           addRule(new Rule() {
             @Override

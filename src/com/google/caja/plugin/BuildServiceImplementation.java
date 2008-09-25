@@ -122,7 +122,14 @@ public class BuildServiceImplementation implements BuildService {
     // Set up the cajoler
     PluginMeta meta = new PluginMeta(env);
     meta.setDebugMode(Boolean.TRUE.equals(options.get("debug")));
-    meta.setWartsMode(Boolean.TRUE.equals(options.get("warts")));    
+    if ("valija".equals(options.get("languageMode"))) {
+      meta.setValijaMode(true);
+    } else if ("cajita".equals(options.get("languageMode"))) {
+      meta.setValijaMode(false);
+    } else if (options.get("languageMode") != null) {
+      throw new RuntimeException(
+          "Unrecognized option languageMode = " + options.get("languageMode"));
+    }
     PluginCompiler compiler = new PluginCompiler(meta, mq);
 
     boolean passed = true;

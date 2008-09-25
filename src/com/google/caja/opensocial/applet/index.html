@@ -58,9 +58,9 @@
         text-indent: -2em;
       }
 
-      .caja-stack { white-space: pre; font-family: monospace }
+      .cajita-stack { white-space: pre; font-family: monospace }
     </style>
-  <script type="text/javascript" src="caja-combined-min.js"></script>
+  <script type="text/javascript" src="cajita-combined-min.js"></script>
   <script>
     function asyncLoadScript(url) {
        var e = document.createElement("script");
@@ -123,11 +123,6 @@
         <label for="DEBUG_SYMBOLS" title="Build with debugging symbols"
          >Debug Symbols</label>
         &nbsp;
-        <input id="WARTS_MODE" type="checkbox">
-        <label for="WARTS_MODE"
-         title="Enable complicated features required for backwards feature"
-         >Warty</label>
-        &nbsp;
         <input id="VALIJA_MODE" type="checkbox" checked>
         <label for="VALIJA_MODE"
          title="Enable valija mode."
@@ -149,10 +144,10 @@
       <hr>
 
       <div id="eval-results"></div>
-      <div id="caja-stacks" style="display:none">
+      <div id="cajita-stacks" style="display:none">
         <hr>
         Errors
-        <div id="caja-stack" class="caja-stack"></div>
+        <div id="cajita-stack" class="cajita-stack"></div>
       </div>
       <hr>
       <div>
@@ -169,7 +164,7 @@
 
   <body bgcolor="white" onload="prettyPrint()">
     <span style="font-size:24px;font-weight:bold">Caja Test Bed
-      <applet code="com.google.caja.opensocial.applet.CajaApplet" name="cajoler" 
+      <applet code="com.google.caja.opensocial.applet.CajaApplet" name="cajoler"
        archive="testbed.jar,htmlparser.jar,json_simple.jar"
        codebase="." height="1" width="1" scriptable="true" MAYSCRIPT>
       </applet>
@@ -241,10 +236,10 @@ exports.sayBye = function () {
 
       <p>
       You can log messages to the Firebug console by using
-      <code>caja.log</code>:
+      <code>cajita.log</code>:
       <pre class=prettyprint style="cursor: pointer"
        onclick="loadExampleInto(this, document.forms['cajolerForm.1'])">
-&lt;script&gt;caja.log('Hello World');&lt;/script&gt;
+&lt;script&gt;cajita.log('Hello World');&lt;/script&gt;
 </pre>
 
       <p>

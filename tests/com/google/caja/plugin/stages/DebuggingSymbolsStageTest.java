@@ -29,45 +29,6 @@ import com.google.caja.util.RhinoTestBed;
  */
 public class DebuggingSymbolsStageTest extends CajaTestCase {
 
-  public void testAttachedMethodReflection() throws Exception {
-    assertStackTrace(
-          "function Point() {}\n"
-        + "Point.prototype.add3 = function(x){return x+3;};\n"
-        + "var p = new Point();\n"
-        + "p.add3.call({}, 4);\n",
-        //        ^^^^ 4+8 - 12
-        "testAttachedMethodReflection:4+8 - 12");
-    assertStackTrace(
-          "function Point() {}\n"
-        + "Point.prototype.add3 = function(x){return x+3;};\n"
-        + "var p = new Point();\n"
-        + "p.add3.apply({}, [4]);\n",
-        //        ^^^^^ 4+8 - 13
-        "testAttachedMethodReflection:4+8 - 13");
-
-        // freeze_() has been retired
-//    assertStackTrace(
-//          "function Point() { this; }\n"
-//        + "Point.prototype.freezeMe = function(){this.freeze_();};\n"
-//        + "Point.prototype.addXProperty = function(x){this.x = 1;};\n"
-//        //                                                 ^ 3+49 - 50
-//        + "var p = new Point();\n"
-//        + "p.freezeMe();\n"
-//        + "p.addXProperty(1);\n",
-//        //   ^^^^^^^^^^^^ 6+3 - 15
-//          "testAttachedMethodReflection:6+3 - 15\n"
-//        + "testAttachedMethodReflection:3+49 - 50");
-//    assertStackTrace(
-//          "function Point() { this; }\n"
-//        + "Point.prototype.freeze = function(){this.freeze_.call();};\n"
-//        //                                                 ^^^^^ 2+50 - 54
-//        + "var p = new Point();\n"
-//        + "p.freeze();\n",
-//        //   ^^^^^^ 4+3 - 9
-//          "testAttachedMethodReflection:4+3 - 9\n"
-//        + "testAttachedMethodReflection:2+50 - 54");
-  }
-
   public void testDereferenceNull() throws Exception {
     assertStackTrace(
         "var x = null;\n"
@@ -111,6 +72,18 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "testCallUndefinedMethod:2+28 - 40");
   }
 
+  public void testReflectiveInvocation() throws Exception {
+    // Constructors cannot be called or applied unless they are also simple fns.
+    assertStackTrace(
+        "Date.call({}, 4);\n",
+        //    ^^^^ 1+6 - 10
+        "testReflectiveInvocation:1+6 - 10");
+    assertStackTrace(
+        "Date.apply({}, 4);\n",
+        //    ^^^^^ 1+6 - 11
+        "testReflectiveInvocation:1+6 - 11");
+  }
+
   public void testInaccessibleProperty() throws Exception {
     assertStackTrace(
         "{\n"
@@ -138,44 +111,43 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         "testDeleteOfNullObject:1+3 - 18");
   }
 
-  public void testMethodCalling() throws Exception {
+  public void testSetOfFrozenObject() throws Exception {
     assertStackTrace(
-        "{\n"
-        + "function f(x) { return x.foo; }\n"
-        //                          ^^^ 2+26-29
-        + "\n"
-        + "function Clazz() { this; }\n"
-        + "caja.def(\n"
-        + "    Clazz, Object,\n"
-        + "    { method: function () { return f(this.foo_); } });\n"
-        //                                    ^ 7+36-37
-        + "\n"
-        + "(new Clazz).method(null);\n"
-        //             ^^^^^^ 9+13-19
-        + "}",
+        ""
+        + "var o = cajita.freeze({ x: 1 });\n"
+        + "(null).x = 0;",
+        //        ^ 2+8-9
+        "testSetOfFrozenObject:2+8 - 9");
+  }
 
-        "testMethodCalling:9+13 - 19\n"
-        + "testMethodCalling:7+36 - 37\n"
-        + "testMethodCalling:2+26 - 29");
+  public void testDeleteOfFrozenObject() throws Exception {
+    assertStackTrace(
+        ""
+        + "var o = cajita.freeze({ x: 1 });\n"
+        + "delete (null).x;",
+        // ^^^^^^^^^^^^^^^ 2+1-16
+        "testDeleteOfFrozenObject:2+1 - 16");
   }
 
   public void testEnumerateOfNull() throws Exception {
-    assertStackTrace(
-        ""
-        + "{\n"
-        + "  (function () {\n"
-        //    ^ 2+4
-        + "    var myObj = null;\n"
-        + "    for (var k in myObj) {\n"
-        //                   ^^^^^ 4+19-24
-        + "      ;\n"
-        + "    }\n"
-        + "  })();\n"
-        //   ^ 7+4
-        + "}",
+    if (false) {  // TODO: enable under Valija
+      assertStackTrace(
+          ""
+          + "{\n"
+          + "  (function () {\n"
+          //    ^ 2+4
+          + "    var myObj = null;\n"
+          + "    for (var k in myObj) {\n"
+          //                   ^^^^^ 4+19-24
+          + "      ;\n"
+          + "    }\n"
+          + "  })();\n"
+          //   ^ 7+4
+          + "}",
 
-        "testEnumerateOfNull:2+4 - 7+4\n"
-        + "testEnumerateOfNull:4+19 - 24");
+          "testEnumerateOfNull:2+4 - 7+4\n"
+          + "testEnumerateOfNull:4+19 - 24");
+    }
   }
 
   public void testPropertyInNull() throws Exception {
@@ -192,22 +164,36 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "testPropertyInNull:2+10 - 18");
   }
 
+  public void testConstruction() throws Exception {
+    assertStackTrace(
+        ""
+        + "var foo = function () { throw new Error('hi'); };\n"
+        //                         ^^^^^^^^^^^^^^^^^^^^^ 1+25-46
+        + "new foo();",
+        // ^^^^^^^^^ 2+1-10
+
+        "testConstruction:2+1 - 10\n"
+        + "testConstruction:1+25 - 46"
+        );
+  }
+
   public void testIllegalAccessInsideHoistedFunction() throws Exception {
     assertStackTrace(
         "var x = true;\n"
+        + "var foo = {};\n"
         + "if (x) {\n"
         + "  var y = 5;\n"
         + "  function f() {\n"
         + "    var x = 'y___';\n"
-        + "    this[x] = 1;\n"
-        //     ^^^^^^^^^^^
+        + "    foo[x] = 1;\n"
+        //     ^^^^^^^^^^ 7+5 - 15
         + "  }\n"
         + "}\n"
         + "new f();",
-        //     ^
+        // ^^^^^^^ 10+1 - 8
 
-        "testIllegalAccessInsideHoistedFunction:9+5 - 6\n"
-        + "testIllegalAccessInsideHoistedFunction:6+5 - 16");
+        "testIllegalAccessInsideHoistedFunction:10+1 - 8\n"
+        + "testIllegalAccessInsideHoistedFunction:7+5 - 15");
   }
 
   public void testWrappedConstructors() throws Exception {
@@ -230,8 +216,10 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "    for (var i = nums.length; --i >= 0;) { n += nums[i]; }\n"
         + "    return n;\n"
         + "  }\n"
-        + "  function Clazz() { this.x = sum(arguments); }\n"
-        + "  caja.def(Clazz, Object, {get: function () { return this.x; }});\n"
+        + "  function Clazz() {\n"
+        + "    var x = sum(arguments);\n"
+        + "    return { get: function() { return x; } };\n"
+        + "  }\n"
         + "  var c = new Clazz(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16);\n"
         + "  return c.get() + ',' + (c instanceof Clazz);\n"
         + "})()");
@@ -243,8 +231,10 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "    for (var i = nums.length; --i >= 0;) { n += nums[i]; }\n"
         + "    return n;\n"
         + "  }\n"
-        + "  function Clazz() { this.x = sum(arguments); }\n"
-        + "  caja.def(Clazz, Object, {get: function () { return this.x; }});\n"
+        + "  function Clazz() {\n"
+        + "    var x = sum(arguments);\n"
+        + "    return { get: function() { return x; } };\n"
+        + "  }\n"
         + "  function Factory (a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q) {\n"
         + "    return new Clazz(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q);\n"
         + "  }\n"
@@ -253,24 +243,13 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "})()");
   }
 
-  public void testExophora() throws Exception {
-    System.err.println("\n\n\ntestExophora");
-    assertConsistent("({ f: function (y) { return this.x * y; }, x: 4 }).f(2)");
-    assertStackTrace(
-        "({ f: function (y) { return this[y](); }, x: 4 }).f('foo___')",
-        //                           ^^^^^^^^^ 1+29-38     ^ 1+51-52
-
-        "testExophora:1+51 - 52\n"
-        + "testExophora:1+29 - 38");
-  }
-
   private void assertStackTrace(String js, String golden) throws Exception {
     runCajoled(js, golden,
                "var stack = '<no-stack>';                              "
                + "try {                                                "
                + "  %s                                                 "
                + "} catch (e) {                                        "
-               + "  stack = e.cajaStack___;                            "
+               + "  stack = e.cajitaStack___;                          "
                + "  if (!stack) { throw e; }                           "
                + "  stack = ___.unsealCallerStack(stack).join('\\n');  "
                + "}                                                    "
@@ -278,9 +257,9 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
   }
 
   private void assertConsistent(String js) throws Exception {
-    // Execute js in the presence of caja so it can use caja.def.
+    // Execute js in the presence of cajita so it can use Caja symbols.
     Object golden = RhinoTestBed.runJs(
-        new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
+        new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
         new RhinoTestBed.Input(js, getName()));
     runCajoled("result(" + js + ");", golden,
                "var output = '<no-output>';"
@@ -297,7 +276,6 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
 
     PluginMeta meta = new PluginMeta();
     meta.setDebugMode(true);
-    meta.setWartsMode(true);
 
     Jobs jobs = new Jobs(mc, mq, meta);
     jobs.getJobs().add(new Job(AncestorChain.instance(block)));
@@ -323,11 +301,11 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
       String cajoled = String.format(context, render(block));
       Object actual = RhinoTestBed.runJs(
           new RhinoTestBed.Input(getClass(), "../console-stubs.js"),
-          new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
+          new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
           new RhinoTestBed.Input(
               getClass(), "/com/google/caja/log-to-console.js"),
           new RhinoTestBed.Input(
-              getClass(), "/com/google/caja/caja-debugmode.js"),
+              getClass(), "/com/google/caja/cajita-debugmode.js"),
           new RhinoTestBed.Input(cajoled, getName()));
       assertEquals(golden, actual);
     } catch (Exception ex) {

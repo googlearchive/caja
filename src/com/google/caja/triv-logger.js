@@ -16,8 +16,8 @@
 // This module adds a trivial "logger" object to the global scope
 // whose "log" method simply accumulates logged strings (with an extra
 // newline added) into a recording, returned by getRecording(). If
-// loaded after caja.js is loaded, then this script registers its
-// logger with ___.setLogFunc() so caja.js will log its diagnostics to
+// loaded after cajita.js is loaded, then this script registers its
+// logger with ___.setLogFunc() so cajita.js will log its diagnostics to
 // this logger.
 
 // If you load triv-logger.js and log-to-console.js into the same

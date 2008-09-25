@@ -30,20 +30,12 @@ import java.io.IOException;
  */
 public enum RewriterMessageType implements MessageTypeInt {
 
-  PARAMETERS_TO_SUPER_CONSTRUCTOR_MAY_NOT_CONTAIN_THIS(
-      "%s: Parameters to super constructor may not contain \"this\": %s, %s",
-      MessageLevel.FATAL_ERROR),
-
   VALUEOF_PROPERTY_MUST_NOT_BE_SET(
       "%s: The valueOf property must not be set: %s, %s",
       MessageLevel.FATAL_ERROR),
 
   VALUEOF_PROPERTY_MUST_NOT_BE_DELETED(
       "%s: The valueOf property must not be deleted: %s, %s",
-      MessageLevel.FATAL_ERROR),
-
-  CANT_INIT_PROTOS_CONSTRUCTOR(
-      "%s: Can't initialize a prototypical object's 'constructor' property: %s, %s",
       MessageLevel.FATAL_ERROR),
 
   VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE(
@@ -58,52 +50,16 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: Selectors cannot end in \"__\": %s, %s",
       MessageLevel.FATAL_ERROR),
 
-  IMPORTED_SYMBOLS_CANNOT_END_IN_UNDERSCORE(
-      "%s: Imported symbols cannot end in \"_\": %s, %s",
-      MessageLevel.FATAL_ERROR),
-
   LABELS_CANNOT_END_IN_DOUBLE_UNDERSCORE(
       "%s: Labels cannot end in \"__\": %s",
       MessageLevel.ERROR),
-
-  PUBLIC_PROPERTIES_CANNOT_END_IN_UNDERSCORE(
-      "%s: Public properties cannot end in \"_\": %s, %s",
-      MessageLevel.FATAL_ERROR),
-
-  PUBLIC_SELECTORS_CANNOT_END_IN_UNDERSCORE(
-      "%s: Public selectors cannot end in \"_\": %s, %s",
-      MessageLevel.FATAL_ERROR),
-
-  ANONYMOUS_FUNCTION_REFERENCES_THIS(
-      "%s: Anonymous function references \"this\" but is not part of a class definition: %s, %s",
-      MessageLevel.FATAL_ERROR),
-
-  CONSTRUCTOR_CANNOT_ESCAPE(
-      "%s: Constructor cannot escape: %s, %s",
-      MessageLevel.FATAL_ERROR),
 
   INVOKED_INSTANCEOF_ON_NON_FUNCTION(
       "%s: Invoked \"instanceof\" on non-function: %s, %s",
       MessageLevel.FATAL_ERROR),
 
-  MAP_EXPRESSION_EXPECTED(
-      "%s: Map expression expected: %s, %s",
-      MessageLevel.FATAL_ERROR),
-
-  KEY_MAY_NOT_END_IN_UNDERSCORE(
-      "%s: Key may not end in \"_\": %s, %s",
-      MessageLevel.FATAL_ERROR),
-
   MEMBER_KEY_MAY_NOT_END_IN_DOUBLE_UNDERSCORE(
       "%s: Member key may not end in \"__\": %s, %s",
-      MessageLevel.FATAL_ERROR),
-
-  CAJA_DEF_ON_NON_FUNCTION(
-      "%s: caja.def called with non-function: %s, %s",
-      MessageLevel.FATAL_ERROR),
-
-  CAJA_DEF_ON_FROZEN_FUNCTION(
-      "%s: caja.def called on an already-frozen function: %s, %s",
       MessageLevel.FATAL_ERROR),
 
   DUPLICATE_DEFINITION_OF_LOCAL_VARIABLE(
@@ -121,10 +77,6 @@ public enum RewriterMessageType implements MessageTypeInt {
   WITH_BLOCKS_NOT_ALLOWED(
       "%s: \"with\" blocks are not allowed",
       MessageLevel.ERROR),
-
-  EXOPHORIC_FUNCTION_AMBIGUITY(
-      "%s: \"this\" in an exophoric function exposes only public fields",
-      MessageLevel.CRITICAL_WARNING),
 
   NOT_DELETABLE(
       "%s: Invalid operand to delete",
@@ -160,25 +112,35 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: Cannot assign to a free module variable: %s, %s",
       MessageLevel.FATAL_ERROR),
 
-  IMPLICIT_XO4A_ONLY_ALLOWED_IN_WARTS_MODE(
-      "%s: Implicit xo4a only allowed in warts mode: %s, %s",
+  CANNOT_MASK_IDENTIFIER(
+      "%s: Cannot mask identifier \"%s\"", MessageLevel.FATAL_ERROR),
+
+  FOR_IN_NOT_IN_CAJITA(
+      "%s: for-in construct not allowed in Cajita: %s, %s",
       MessageLevel.FATAL_ERROR),
 
-  SUPER_CALL_OUT_OF_CONTEXT(
-      "%s: Can only call \"super\" on the enclosing constructor: %s, %s",
+  THIS_NOT_IN_CAJITA(
+      "%s: 'this' variable not allowed in Cajita: %s, %s",
       MessageLevel.FATAL_ERROR),
 
-  SUPER_CALL_ON_NON_REFERENCE(
-      "%s: Can only call \"super\" on a function reference: %s, %s",
+  REGEX_LITERALS_NOT_IN_CAJITA(
+      "%s: regex literals not allowed in Cajita. "
+      + "Call new RegeExp() instead: %s, %s",
       MessageLevel.FATAL_ERROR),
 
   CANNOT_ASSIGN_TO_FUNCTION_NAME(
       "%s: Cannot assign to a function name: %s, %s",
       MessageLevel.FATAL_ERROR),
 
-  CANNOT_MASK_IDENTIFIER(
-      "%s: Cannot mask identifier \"%s\"", MessageLevel.FATAL_ERROR),
-  ;
+  CANNOT_REDECLARE_FUNCTION_NAME(
+      "%s: Cannot redeclare a function name: %s, %s",
+      MessageLevel.FATAL_ERROR),
+
+  PROTOTYPICAL_INHERITANCE_NOT_IN_CAJITA(
+      "%s: Prototypical inheritance is not supported in Cajita. "
+      + "The \"prototype\" property of a function is always "
+      + "\"undefined\": %s, %s",
+      MessageLevel.LINT);
 
   private final String formatString;
   private final MessageLevel level;

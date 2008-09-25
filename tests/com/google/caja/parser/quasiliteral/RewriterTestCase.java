@@ -80,12 +80,9 @@ public abstract class RewriterTestCase extends CajaTestCase {
         mq.getMessages().isEmpty());
 
     StringBuilder messageText = new StringBuilder();
-    for (Message m : mq.getMessages()) {
-      m.format(mc, messageText);
-      messageText.append("\n");
-    }
+    mq.getMessages().get(0).format(mc, messageText);
     assertTrue(
-        "Messages do not contain \"" + error + "\": " + messageText.toString(),
+        "First error is not \"" + error + "\": " + messageText.toString(),
         messageText.toString().contains(error));
   }
 
@@ -151,6 +148,10 @@ public abstract class RewriterTestCase extends CajaTestCase {
   }
 
   // TODO(ihab.awad): Change dependents to use checkAddsMessage and just call js(fromString("..."))
+
+  // TODO(ihab.awad): Change checkAddsMessage and similar functions to check
+  // only the first message added to the message queue
+
   protected void assertAddsMessage(String src, MessageTypeInt type, MessageLevel level)
       throws Exception {
     checkAddsMessage(js(fromString(src)), type, level);
@@ -209,7 +210,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
    * uncajoled.
    *
    * @param caja executed in the context of asserts.js for its value.  The
-   *    value is computed from the last statement in caja.
+   *    value is computed from the last statement in cajita.
    */
   protected void assertConsistent(String caja)
       throws IOException, ParseException {

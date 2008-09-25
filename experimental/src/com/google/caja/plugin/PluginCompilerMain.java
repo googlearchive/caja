@@ -91,7 +91,6 @@ public final class PluginCompilerMain {
     try {
       PluginMeta meta = new PluginMeta(makeEnvironment(config));
       meta.setDebugMode(config.debugMode());
-      meta.setWartsMode(config.wartsMode());
       PluginCompiler compiler = new PluginCompiler(meta, mq);
       mc = compiler.getMessageContext();
       compiler.setCssSchema(config.getCssSchema(mq));

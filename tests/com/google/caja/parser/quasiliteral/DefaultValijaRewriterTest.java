@@ -28,13 +28,13 @@ import com.google.caja.util.RhinoTestBed;
 public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
 
   protected Rewriter defaultValijaRewriter = new DefaultValijaRewriter(true);
-  protected Rewriter defaultCajaRewriter = new DefaultCajaRewriter(false, false);
+  protected Rewriter defaultCajaRewriter = new CajitaRewriter(false);
   protected Rewriter innocentCodeRewriter = new InnocentCodeRewriter(false);
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    // Start with this one, then switch later to DefaultCajaRewriter for the second pass.
+    // Start with this one, then switch later to CajitaRewriter for the second pass.
     setRewriter(defaultValijaRewriter);
   }
 
@@ -67,7 +67,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "function Point(x){this.x=x;}\n" +
         "Point.prototype.toString = function(){return \'<\'+this.x+\'>\';};\n" +
         "function WP(x){Point.call(this,x);}\n" +
-        "WP.prototype = caja.beget(Point.prototype);\n" +
+        "WP.prototype = cajita.beget(Point.prototype);\n" +
         "var pt = new WP(3);\n" +
         "pt.toString();");
   }
@@ -220,7 +220,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     setRewriter(innocentCodeRewriter);
     Statement innocentTree = (Statement)rewriteStatements(js(fromString(caja, is)));
     return RhinoTestBed.runJs(
-        new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
+        new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
         new RhinoTestBed.Input(getClass(), "../../plugin/asserts.js"),
         new RhinoTestBed.Input(render(innocentTree), getName() + "-uncajoled"));
   }
@@ -244,7 +244,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     Object result = RhinoTestBed.runJs(
         new RhinoTestBed.Input(
             getClass(), "/com/google/caja/plugin/console-stubs.js"),
-        new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
+        new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
         new RhinoTestBed.Input(getClass(), "../../plugin/asserts.js"),
         new RhinoTestBed.Input(getClass(), "/com/google/caja/log-to-console.js"),
         new RhinoTestBed.Input(

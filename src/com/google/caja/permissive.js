@@ -24,8 +24,8 @@
 // giving us a realistic measure of the slowdown as well.
 
 // This module is written in Javascript, not Caja, and would be
-// rejected by the Caja translator. It depends on caja.js, and should
-// only be loaded after caja.js.
+// rejected by the Caja translator. It depends on cajita.js, and should
+// only be loaded after cajita.js.
 
 
 (function() {

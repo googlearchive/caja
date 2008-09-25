@@ -157,7 +157,7 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();
     return RhinoTestBed.runJs(
-        new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
+        new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
         new RhinoTestBed.Input(getClass(), "../../plugin/asserts.js"),
         new RhinoTestBed.Input(caja, getName() + "-uncajoled"));
   }
@@ -177,7 +177,7 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
     Object result = RhinoTestBed.runJs(
         new RhinoTestBed.Input(
             getClass(), "/com/google/caja/plugin/console-stubs.js"),
-        new RhinoTestBed.Input(getClass(), "/com/google/caja/caja.js"),
+        new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
         new RhinoTestBed.Input(pre, getName()),
         new RhinoTestBed.Input(transJs, getName()),
         new RhinoTestBed.Input(post, getName()));

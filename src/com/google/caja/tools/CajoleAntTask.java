@@ -44,6 +44,7 @@ import org.apache.tools.ant.BuildException;
  */
 public class CajoleAntTask extends AbstractCajaAntTask {
   private boolean debug;
+  private String languageMode;
   
   @Override
   protected boolean run(BuildService buildService, PrintWriter logger,
@@ -51,9 +52,15 @@ public class CajoleAntTask extends AbstractCajaAntTask {
                         Map<String, Object> options)
        throws BuildException {
     options.put("debug", debug);
+    options.put("languageMode", languageMode);
     return buildService.cajole(logger, depends, inputs, output, options);
   }
 
   /** Invoked reflectively by ANT. */
   public void setDebug(boolean debug) { this.debug = debug; }
+
+  /** Invoked reflectively by ANT. */
+  public void setLanguageMode(String languageMode) {
+    this.languageMode = languageMode;
+  }
 }

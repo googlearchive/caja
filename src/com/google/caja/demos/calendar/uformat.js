@@ -79,7 +79,7 @@ var NO_CONTENT;
 
 (function () {
 
-function ContentLineCtor(opt_name, opt_value, opt_attributes) {
+ContentLine = function(opt_name, opt_value, opt_attributes) {
   /** 'RDATE' in the example above. @type {string} */
   this.name_ = null;
   /**
@@ -110,94 +110,89 @@ function ContentLineCtor(opt_name, opt_value, opt_attributes) {
    */
   this.noEscape_ = false;
 }
-caja.def(
-    ContentLineCtor,
-    Object,
-    {
-      /** outputs the content line as ICAL. */
-      toString: function () {
-        var out = [this.name_];
-        for (var i = 0, n = this.attributes_.length; i < n; i += 2) {
-          var paramValue = this.attributes_[i + 1];
-          if (/[:;]/.test(paramValue)) {
-            paramValue = '"' + paramValue + '"';
-          }
-          out.push(';', this.attributes_[i], '=', paramValue);
-        }
-        out.push(':');
-        for (var i = 0, n = this.values_.length; i < n; ++i) {
-          if (i) { out.push(','); }
-          if (!this.noEscape_) {
-            out.push(this.values_[i].replace(/([;,\\])/g, '\\$1')
-                     .replace(/\r\n?|\n/g, '\\n'));
-          } else {
-            out.push(this.values_[i]);
-          }
-        }
-        return out.join('').replace(/(.{75})(.)/g, '$1\r\n $2');
-      },
-
-      /**
-       * gets the value of the corresponding attribute or null if none.
-       * @param {string} name
-       * @return {string|null}
-       */
-      getAttribute: function (name) {
-        var attributes = this.attributes_;
-        for (var i = attributes.length - 2; i >= 0; i -= 2) {
-          if (attributes[i] === name) { return attributes[i + 1]; }
-        }
-        return null;
-      },
-
-      pushAttributes: function (var_args) {
-        this.attributes_.push.apply(this.attributes_, arguments);
-      },
-
-      setAttributes: function (attributes) {
-        this.attributes_ = attributes.slice(0);
-      },
-
-      /**
-       * Gets the name of this content line.
-       * @return {string}
-       */
-      getName: function () { return this.name_; },
-
-      /** @param {string} name */
-      setName: function (name) { this.name_ = name; },
-
-      /**
-       * Gets this content line's values.
-       * @return {Array.<string>}
-       */
-      getValues: function () { return this.values_; },
-
-      pushValues: function (var_args) {
-        this.values_.push.apply(this.values_, arguments);
-      },
-
-      setValue: function (i, value) {
-        this.values_[i] = value;
-      },
-
-      /**
-       * Some content lines, such as RRULEs and EXRULEs have structured values
-       * composed of semicolon separated values with values that are themselves
-       * comma separated lists.  These mini-syntaxes are uncommon enough, and
-       * special purpose enough that we don't bother complicating this
-       * interface.
-       *
-       * @param {boolean} noEscape true iff commas in the values do not separate
-       * values from others.
-       */
-      setNoEscape: function (noEscape) {
-        this.noEscape_ = noEscape;
+/** outputs the content line as ICAL. */
+ContentLine.prototype.toString = function () {
+    var out = [this.name_];
+    for (var i = 0, n = this.attributes_.length; i < n; i += 2) {
+      var paramValue = this.attributes_[i + 1];
+      if (/[:;]/.test(paramValue)) {
+        paramValue = '"' + paramValue + '"';
       }
-    });
+      out.push(';', this.attributes_[i], '=', paramValue);
+    }
+    out.push(':');
+    for (var i = 0, n = this.values_.length; i < n; ++i) {
+      if (i) { out.push(','); }
+      if (!this.noEscape_) {
+        out.push(this.values_[i].replace(/([;,\\])/g, '\\$1')
+                 .replace(/\r\n?|\n/g, '\\n'));
+      } else {
+        out.push(this.values_[i]);
+      }
+    }
+    return out.join('').replace(/(.{75})(.)/g, '$1\r\n $2');
+  };
+
+/**
+ * gets the value of the corresponding attribute or null if none.
+ * @param {string} name
+ * @return {string|null}
+ */
+ContentLine.prototype.getAttribute = function (name) {
+    var attributes = this.attributes_;
+    for (var i = attributes.length - 2; i >= 0; i -= 2) {
+      if (attributes[i] === name) { return attributes[i + 1]; }
+    }
+    return null;
+  };
+
+ContentLine.prototype.pushAttributes = function (var_args) {
+    this.attributes_.push.apply(this.attributes_, arguments);
+  };
+
+ContentLine.prototype.setAttributes = function (attributes) {
+    this.attributes_ = attributes.slice(0);
+  };
+
+/**
+ * Gets the name of this content line.
+ * @return {string}
+ */
+ContentLine.prototype.getName = function () { return this.name_; };
+
+/** @param {string} name */
+ContentLine.prototype.setName = function (name) { this.name_ = name; };
+
+/**
+ * Gets this content line's values.
+ * @return {Array.<string>}
+ */
+ContentLine.prototype.getValues = function () { return this.values_; };
+
+ContentLine.prototype.pushValues = function (var_args) {
+    this.values_.push.apply(this.values_, arguments);
+  };
+
+ContentLine.prototype.setValue = function (i, value) {
+    this.values_[i] = value;
+  };
+
+/**
+ * Some content lines, such as RRULEs and EXRULEs have structured values
+ * composed of semicolon separated values with values that are themselves
+ * comma separated lists.  These mini-syntaxes are uncommon enough, and
+ * special purpose enough that we don't bother complicating this
+ * interface.
+ *
+ * @param {boolean} noEscape true iff commas in the values do not separate
+ * values from others.
+ */
+ContentLine.prototype.setNoEscape = function (noEscape) {
+    this.noEscape_ = noEscape;
+  };
 
 
-NO_CONTENT = new ContentLineCtor('');
+NO_CONTENT = new ContentLine('');
 
 
 // Schema Processing
@@ -261,6 +256,4 @@ group = function (contentLines, groupings) {
     }
   }
 };
-
-ContentLine = ContentLineCtor; 
 })();

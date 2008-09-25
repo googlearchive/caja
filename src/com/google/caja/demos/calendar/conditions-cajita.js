@@ -38,14 +38,14 @@
 var conditions = {
   countCondition: function (count) {
     var i = count;
-    return caja.freeze({
+    return cajita.freeze({
       test: function (dateValueUtc) { return --i >= 0; },
       reset: function () { i = count; }
     });
   },
 
   untilCondition: function (untilDateValueUtc) {
-    return caja.freeze({
+    return cajita.freeze({
       test: function (dateValueUtc) {
         return dateValueUtc <= untilDateValueUtc;
       },
@@ -54,11 +54,11 @@ var conditions = {
   },
 
   unboundedCondition: function () {
-    return caja.freeze({
+    return cajita.freeze({
       test: function () { return true; },
       reset: function () {}
     });
   }
 };
 
-caja.freeze(conditions);
+cajita.freeze(conditions);

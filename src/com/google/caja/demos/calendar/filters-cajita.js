@@ -149,4 +149,4 @@ var filters = {
   }
 };
 
-caja.freeze(filters);
+cajita.freeze(filters);

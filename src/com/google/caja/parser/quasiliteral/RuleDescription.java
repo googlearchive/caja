@@ -46,13 +46,6 @@ public @interface RuleDescription {
   String reason();
 
   /**
-   * @return Description of why {@code Rule} is a wart.
-   */
-  // TODO(ihab.awad): Use wart metadata explicitly in Rewriter to fire or not
-  // fire rules depending on warts mode.
-  String wart() default "None";
-  
-  /**
    * @return Quasiliteral pattern matched by {@code Rule}
    */  
   String matches() default "<UNKNOWN>";

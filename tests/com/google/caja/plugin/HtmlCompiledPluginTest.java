@@ -19,7 +19,7 @@ import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.quasiliteral.DefaultCajaRewriter;
+import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
@@ -36,7 +36,6 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.URI;
 import junit.framework.AssertionFailedError;
-import junit.framework.TestCase;
 
 /**
  * End-to-end tests that compile a gadget to javascript and run the
@@ -58,7 +57,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
   }
 
   // TODO(metaweta): Move as many of these as possible to
-  // DefaultCajaRewriterTest using assertConsistent and the rest to
+  // CajitaRewriterTest using assertConsistent and the rest to
   // DebuggingSymbolsStageTest
   public void testEmptyGadget() throws Exception {
     execGadget("", "");
@@ -176,7 +175,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
       ParseTreeNode valijaOrigNode =
           js(fromResource("/com/google/caja/valija-cajita.js"));
       ParseTreeNode valijaCajoledNode =
-          new DefaultCajaRewriter(false, false).expand(valijaOrigNode, mq);
+          new CajitaRewriter(false).expand(valijaOrigNode, mq);
       String valijaCajoled = render(valijaCajoledNode);
 
       String htmlStubUrl = TestUtil.makeContentUrl(
@@ -195,7 +194,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
           // Make the assertTrue, etc. functions available to javascript
           new RhinoTestBed.Input(getClass(), "asserts.js"),
           // Plugin Framework
-          new RhinoTestBed.Input(getClass(), "../caja.js"),
+          new RhinoTestBed.Input(getClass(), "../cajita.js"),
           new RhinoTestBed.Input(
               "___.setLogFunc(function(str, opt_stop) { console.log(str); });",
               "setLogFunc-setup"),

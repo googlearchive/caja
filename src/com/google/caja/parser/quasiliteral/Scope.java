@@ -42,7 +42,6 @@ import static com.google.caja.parser.js.SyntheticNodes.s;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.HashSet;
@@ -81,16 +80,6 @@ public class Scope {
     DECLARED_FUNCTION(FUNCTION),
 
     /**
-     * A constructor declaration, i.e., one which mentions 'this' in its body.
-     * Example: "foo" in the following --
-     *
-     * <pre>
-     * function foo() { this.x = 3; }
-     * </pre>
-     */
-    CONSTRUCTOR(DECLARED_FUNCTION),
-
-    /**
      * A variable containing arbitrary data (including functions).
      * Examples: "x", "y", "z" and "t" in the following --
      *
@@ -101,7 +90,7 @@ public class Scope {
      * var t = function foo() { };
      * </pre>
      */
-    DATA(),
+    DATA,
 
     /**
      * A variable defined in a catch block.
@@ -189,8 +178,7 @@ public class Scope {
   private final Scope parent;
   private final MessageQueue mq;
   private final ScopeType type;
-  private final boolean sideEffecting;
-  private final List<Reference> freeThis = new ArrayList<Reference>();
+  private boolean hasFreeThis = false;
   private boolean containsArguments = false;
   private int tempVariableCounter = 0;
   private final Map<String, Pair<LocalType, FilePosition>> locals
@@ -255,7 +243,6 @@ public class Scope {
     this.type = type;
     this.parent = null;
     this.mq = mq;
-    this.sideEffecting = sideEffecting;
     this.permitsUsed = new Permit();
   }
 
@@ -263,7 +250,6 @@ public class Scope {
     this.type = type;
     this.parent = parent;
     this.mq = parent.mq;
-    this.sideEffecting = sideEffecting;
     this.permitsUsed = parent.permitsUsed;
   }
 
@@ -377,11 +363,7 @@ public class Scope {
    * @return whether this block has a free "this".
    */
   public boolean hasFreeThis() {
-    return !freeThis.isEmpty();
-  }
-
-  public List<Reference> getFreeThis() {
-    return Collections.unmodifiableList(freeThis);
+    return hasFreeThis;
   }
 
   /**
@@ -461,18 +443,6 @@ public class Scope {
   }
 
   /**
-   * In this scope or some enclosing scope, is a given name defined
-   * as a constructor?
-   *
-   * @param name an identifier.
-   * @return whether 'name' is defined as a constructor within this
-   *   scope. If 'name' is not defined, return false.
-   */
-  public boolean isConstructor(String name) {
-    return isDefinedAs(name, LocalType.CONSTRUCTOR);
-  }
-
-  /**
    * Is a given symbol imported by this Cajita module?
    *
    * @param name an identifier.
@@ -514,11 +484,8 @@ public class Scope {
   }
 
   private static LocalType computeDeclarationType(Scope s, Declaration decl) {
-    if (decl instanceof FunctionDeclaration) {
-      Scope s2 = fromFunctionConstructor(s, ((FunctionDeclaration)decl).getInitializer(), false);
-      return s2.hasFreeThis() ? LocalType.CONSTRUCTOR : LocalType.DECLARED_FUNCTION;
-    }
-    return LocalType.DATA;
+    return decl instanceof FunctionDeclaration ?
+          LocalType.DECLARED_FUNCTION : LocalType.DATA;
   }
 
   private static void walkBlock(final Scope s, ParseTreeNode root) {
@@ -527,10 +494,8 @@ public class Scope {
 
     // Record in this scope all the declarations that have been harvested
     // by the visitor.
-    if (s.sideEffecting) {
-      for (Declaration decl : v.getDeclarations()) {
+    for (Declaration decl : v.getDeclarations()) {
         declare(s, decl.getIdentifier(), computeDeclarationType(s, decl));
-      }
     }
 
     // Now resolve all the references harvested by the visitor. If they have
@@ -541,8 +506,8 @@ public class Scope {
       if (ReservedNames.ARGUMENTS.equals(name)) {
         s.containsArguments = true;
       } else if (Keyword.THIS.toString().equals(name)) {
-        s.freeThis.add(ref);
-      } else if (!s.isDefined(name) && s.sideEffecting) {
+        s.hasFreeThis = true;
+      } else if (!s.isDefined(name)) {
         addImportedVariable(s, name);
       }
     }
@@ -695,8 +660,7 @@ public class Scope {
       // itself.  We recognize a self-mask when we come across a "new"
       // function in the same scope as a declared function or constructor.
       if (maskedType != type
-          && !((maskedType == LocalType.DECLARED_FUNCTION ||
-                maskedType == LocalType.CONSTRUCTOR)
+          && !(maskedType == LocalType.DECLARED_FUNCTION
                && type == LocalType.FUNCTION)) {
         // Since different interpreters disagree about how exception
         // declarations affect local variable declarations, we need to
@@ -728,7 +692,7 @@ public class Scope {
    * permitted paths rooted in varName which this module's compilation
    * assumed were safe.
    */
-  Expression getPermitsUsed(Identifier varName) {
+  public Expression getPermitsUsed(Identifier varName) {
     // TODO(erights): Permit should generate a JSON AST directly,
     // rather than generating a string which we then parse.
     Permit subPermit = permitsUsed.canRead(varName);
@@ -737,9 +701,13 @@ public class Scope {
         "(" + subPermit.getPermitsUsedAsJSONString() + ")");
   }
 
-  // SECURITY HOLE TODO(erights): Don't permit o if it's base
-  // is defined by non-imported variable.
   public Permit permitRead(ParseTreeNode o) {
-    return permitsUsed.canRead(o);
+    if (o instanceof Reference) {
+      Reference r = (Reference) o;
+      if (isImported(r.getIdentifierName())) {
+        return permitsUsed.canRead(o);
+      }
+    }
+    return null;
   }
 }

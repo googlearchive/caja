@@ -54,7 +54,8 @@ import java.util.Map;
  * by prepending them with the first prefixLength characters of the preceding
  * {@code FilePosition}.
  * <p>
- * See also <tt>caja-debugmode.js</tt> for javascript which supports this stage.
+ * See also <tt>cajita-debugmode.js</tt> for javascript which supports this
+ * stage.
  *
  * @author mikesamuel@gmail.com
  */

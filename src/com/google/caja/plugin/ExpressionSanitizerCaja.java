@@ -17,7 +17,7 @@ package com.google.caja.plugin;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.quasiliteral.DefaultCajaRewriter;
+import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
 import com.google.caja.parser.quasiliteral.IllegalReferenceCheckRewriter;
 import com.google.caja.parser.quasiliteral.NonAsciiCheckVisitor;
@@ -43,10 +43,10 @@ public class ExpressionSanitizerCaja {
     if (this.meta.isValijaMode()) {
       result = newValijaRewriter().expand(input, this.mq);
       if (!this.mq.hasMessageAtLevel(MessageLevel.ERROR)) {
-        result = newCajaRewriter().expand(result, this.mq);
+        result = newCajitaRewriter().expand(result, this.mq);
       }
     } else {
-      result = newCajaRewriter().expand(input, this.mq);
+      result = newCajitaRewriter().expand(input, this.mq);
     }
     if (!this.mq.hasMessageAtLevel(MessageLevel.ERROR)) {
       result = new IllegalReferenceCheckRewriter(false)
@@ -69,8 +69,8 @@ public class ExpressionSanitizerCaja {
   }
 
   /** Visible for testing. */
-  protected Rewriter newCajaRewriter() {
-    return new DefaultCajaRewriter(false, meta.isWartsMode());
+  protected Rewriter newCajitaRewriter() {
+    return new CajitaRewriter(false);
   }
 
   protected Rewriter newValijaRewriter() {

@@ -1,4 +1,4 @@
-// Copyright (C) 2005 Google Inc.
+// Copyright (C) 2008 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,13 +20,16 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
-/** 
+/**
+ * FIXME(metaweta): document me
  * 
  * @author metaweta@gmail.com (Mike Stay)
- *
  */
 public final class QuotedExpression extends AbstractExpression<ParseTreeNode>{
-  /** Create a parse tree node that expands to the given expression in a rewriter. */
+  /**
+   * Create a parse tree node that expands to the given expression in a
+   * rewriter.
+   */
   public QuotedExpression(Expression e) {
     createMutation().appendChild(e).execute();
   }
@@ -35,15 +38,19 @@ public final class QuotedExpression extends AbstractExpression<ParseTreeNode>{
   public QuotedExpression(Void value, List<? extends Expression> children) {
     this(children.get(0));
   }
+  
   @Override
   public Object getValue() { return null; }
+
   /** This should only be called by logging code. */
   public void render(RenderContext r) {
     TokenConsumer out = r.getOut();
     out.mark(getFilePosition());
-    out.consume("QuotedExpression (");
+    out.consume("QuotedExpression");
+    out.consume("(");
     children().get(0).render(r);
     out.consume(")");
   }
-  public Expression unquote() { return (Expression)children().get(0); }
+
+  public Expression unquote() { return (Expression) children().get(0); }
 }

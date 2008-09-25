@@ -20,14 +20,14 @@
  * @fileoverview the Valija runtime library.
  * <p>
  * This file is written in Cajita and requires the portions of
- * caja.js relevant to Cajita. It additionally depends on one
+ * cajita.js relevant to Cajita. It additionally depends on one
  * container-provided import, "<tt>loader</tt>", which this file calls
  * as <tt>loader.provide(valija);</tt>. Since this file has the
- * relative path 
+ * relative path
  * <tt>com/google/caja/valija-cajita.js</tt>, we assume a POLA loader
  * will associate the provided value
  * <tt>'com.google.caja.valija'</tt>. <tt>loader.provide()</tt> is the
- * strawman <tt>loader.return()</tt> proposed at the bottom of <a href= 
+ * strawman <tt>loader.return()</tt> proposed at the bottom of <a href=
  * "http://google-caja.googlecode.com/svn/trunk/doc/html/cajaModuleSystem/"
  * >Caja Module System</a> but renamed to avoid conflicting with a
  * keyword.
@@ -47,14 +47,14 @@
  * can communicate with each other. Such module instances jointly form
  * a single plugin. This enables all the modules instances in a single
  * Valija plugin to share the same mutable POE-table state. For Valija,
- * the plugin is thus the only defensible unit of isolation. 
+ * the plugin is thus the only defensible unit of isolation.
  * <p>
  * Although <tt>valija-cajita.js</tt> is written with the expectation
  * that it and the output by the Valija->Cajita translator will be
  * cajoled, safety aside, this file uncajoled should work with the
  * output of the Valija->Cajita translator, when that output is also
- * not cajoled. 
- * 
+ * not cajoled.
+ *
  * @author erights@gmail.com
  */
 
@@ -72,11 +72,11 @@ var valijaMaker = (function(outers) {
    * genuine functions on each Disfunction instance, rather being
    * disfunctions inherited from DisfunctionPrototype. This is needed
    * for call() and apply(), but bind() could probably become an
-   * inherited disfunction. 
+   * inherited disfunction.
    */
-  var DisfunctionPrototype = caja.beget(ObjectPrototype);
+  var DisfunctionPrototype = cajita.beget(ObjectPrototype);
 
-  var Disfunction = caja.beget(DisfunctionPrototype);
+  var Disfunction = cajita.beget(DisfunctionPrototype);
   Disfunction.prototype = DisfunctionPrototype,
   Disfunction.length = 1;
   DisfunctionPrototype.constructor = Disfunction;
@@ -86,32 +86,32 @@ var valijaMaker = (function(outers) {
    */
   outers.Function = Disfunction;
 
-  var ObjectShadow = caja.beget(DisfunctionPrototype);
+  var ObjectShadow = cajita.beget(DisfunctionPrototype);
   ObjectShadow.prototype = ObjectPrototype;
 
   var FuncHeader = new RegExp(
     // Capture the function name if present.
     // Use absence of spaces or open parens, rather than presence of
     // identifier chars, so we don't need to worry about charset
-    // issues (beyond the definition of \s). 
+    // issues (beyond the definition of \s).
     '^\\s*function\\s*([^\\s\\(]*)\\s*\\(' +
       // Skip a first '$dis' parameter if present.
-      '(?:\\$dis,?\\s*)?' + 
-      // Capture any remaining arguments until the matching close paren. 
-      // TODO(erights): Once EcmaScript and Valija allow patterns in parameter 
-      // position, a close paren will no longer be a reliable indication of 
+      '(?:\\$dis,?\\s*)?' +
+      // Capture any remaining arguments until the matching close paren.
+      // TODO(erights): Once EcmaScript and Valija allow patterns in parameter
+      // position, a close paren will no longer be a reliable indication of
       // the end of the parameter list, so we'll need to revisit this.
       '([^\\)]*)\\)'); // don't care what's after the close paren
 
-  DisfunctionPrototype.toString = dis(function($dis) { 
+  DisfunctionPrototype.toString = dis(function($dis) {
     var callFn = $dis.call;
     if (callFn) {
-      var printRep = callFn.toString();    
+      var printRep = callFn.toString();
       var match = FuncHeader.exec(printRep);
       if (null !== match) {
         var name = $dis.name;
         if (name === void 0) { name = match[1]; }
-        return 'function ' + name + '(' + match[2] + 
+        return 'function ' + name + '(' + match[2] +
           ') {\n  [cajoled code]\n}';
       }
       return printRep;
@@ -124,11 +124,11 @@ var valijaMaker = (function(outers) {
   /**
    * A table mapping from <i>function categories</i> to the
    * monkey-patchable shadow object that POE associates with that
-   * function category. 
+   * function category.
    */
-  var myPOE = caja.newTable();
+  var myPOE = cajita.newTable();
 
-  myPOE.set(caja.getFuncCategory(Object), ObjectShadow);
+  myPOE.set(cajita.getFuncCategory(Object), ObjectShadow);
 
   function makeDefaultMethod(name) {
     return dis(function($dis, var_args) {
@@ -141,45 +141,45 @@ var valijaMaker = (function(outers) {
    * category, creating it and its parents as needed.
    */
   function getShadow(func) {
-    caja.enforceType(func, 'function');
-    var cat = caja.getFuncCategory(func);
+    cajita.enforceType(func, 'function');
+    var cat = cajita.getFuncCategory(func);
     var result = myPOE.get(cat);
     if (void 0 === result) {
-      result = caja.beget(DisfunctionPrototype);
-      var parentFunc = caja.getSuperCtor(func);
+      result = cajita.beget(DisfunctionPrototype);
+      var parentFunc = cajita.getSuperCtor(func);
       var parentShadow;
       if (typeof parentFunc === 'function') {
         parentShadow = getShadow(parentFunc);
       } else {
         parentShadow = ObjectShadow;
       }
-      var proto = caja.beget(parentShadow.prototype);
+      var proto = cajita.beget(parentShadow.prototype);
       result.prototype = proto;
       proto.constructor = func;
-      
-      var statics = caja.getOwnPropertyNames(func);
+
+      var statics = cajita.getOwnPropertyNames(func);
       for (var i = 0; i < statics.length; i++) {
         var k = statics[i];
         if (k !== 'valueOf') {
           result[k] = func[k];
         }
       }
-      
-      var meths = caja.getMethodNames(func);
+
+      var meths = cajita.getMethodNames(func);
       for (var i = 0; i < meths.length; i++) {
         var k = meths[i];
         if (k !== 'valueOf') {
           proto[k] = makeDefaultMethod(k);
         }
       }
-            
+
       myPOE.set(cat, result);
     }
     return result;
   }
-  
 
-  /** 
+
+  /**
    * Handle Valija <tt><i>func</i>.prototype</tt>.
    * <p>
    * If <tt>func</tt> is a genuine function, return its shadow's
@@ -196,8 +196,8 @@ var valijaMaker = (function(outers) {
       return void 0;
     }
   }
-  
-  /** 
+
+  /**
    * Handle Valija <tt>typeof <i>obj</i></tt>.
    * <p>
    * If <tt>obj</tt> inherits from DisfunctionPrototype, then return
@@ -207,11 +207,11 @@ var valijaMaker = (function(outers) {
     var result = typeof obj;
     if (result !== 'object') { return result; }
     if (null === obj) { return result; }
-    if (caja.inheritsFrom(obj, DisfunctionPrototype)) { return 'function'; }
+    if (cajita.inheritsFrom(obj, DisfunctionPrototype)) { return 'function'; }
     return result;
   }
-  
-  /** 
+
+  /**
    * Handle Valija <tt><i>obj</i> instanceof <i>func</i></tt>.
    * <p>
    * If <tt>func</tt> is a genuine function, then test whether
@@ -223,13 +223,13 @@ var valijaMaker = (function(outers) {
     if (typeof func === 'function' && obj instanceof func) {
       return true;
     } else {
-      return caja.inheritsFrom(obj, getFakeProtoOf(func));
+      return cajita.inheritsFrom(obj, getFakeProtoOf(func));
     }
   }
-  
+
   function hasOwnProp(obj, name) {
     return {}.hasOwnProperty.call(obj, name);
-  } 
+  }
 
   /**
    * Handle Valija <tt><i>obj</i>[<i>name</i>]</tt>.
@@ -246,8 +246,8 @@ var valijaMaker = (function(outers) {
     // following line (which really shouldn't be there) is deleted.
     if (name in obj) { return obj[name];}
 
-    var stepParent = getFakeProtoOf(caja.directConstructor(obj));
-    if (stepParent !== (void 0) && 
+    var stepParent = getFakeProtoOf(cajita.directConstructor(obj));
+    if (stepParent !== (void 0) &&
         name in stepParent &&
         name !== 'valueOf') {
       return stepParent[name];
@@ -255,7 +255,7 @@ var valijaMaker = (function(outers) {
     return obj[name];
   }
 
-  /** 
+  /**
    * Handle Valija <tt><i>obj</i>[<i>name</i>] = <i>newValue</i></tt>.
    */
   function set(obj, name, newValue) {
@@ -267,28 +267,28 @@ var valijaMaker = (function(outers) {
     return newValue;
   }
 
-  /** 
+  /**
    * Handle Valija <tt><i>func</i>(<i>args...</i>)</tt>.
    */
   function callFunc(func, args) {
-    return func.apply(caja.USELESS, args);
+    return func.apply(cajita.USELESS, args);
   }
 
-  /** 
+  /**
    * Handle Valija <tt><i>obj</i>[<i>name</i>](<i>args...</i>)</tt>.
    */
   function callMethod(obj, name, args) {
     return read(obj, name).apply(obj, args);
   }
 
-  /** 
+  /**
    * Handle Valija <tt>new <i>ctor</i>(<i>args...</i>)</tt>.
    */
   function construct(ctor, args) {
     if (typeof ctor === 'function') {
-      return caja.construct(ctor, args);
+      return cajita.construct(ctor, args);
     }
-    var result = caja.beget(ctor.prototype);
+    var result = cajita.beget(ctor.prototype);
     var altResult = ctor.apply(result, args);
     switch (typeof altResult) {
       case 'object': {
@@ -301,27 +301,27 @@ var valijaMaker = (function(outers) {
     }
     return result;
   }
-  
-  /** 
+
+  /**
    * Handle Valija <tt>function <i>opt_name</i>(...){...}</tt>.
    */
   function dis(callFn, opt_name) {
-    caja.enforceType(callFn, 'function');
+    cajita.enforceType(callFn, 'function');
 
-    var result = caja.beget(DisfunctionPrototype);
+    var result = cajita.beget(DisfunctionPrototype);
     result.call = callFn;
     result.apply = function(self, args) {
-      return callFn.apply(caja.USELESS, [self].concat(args));
+      return callFn.apply(cajita.USELESS, [self].concat(args));
     };
     result.bind = function(self, var_args) {
       var leftArgs = Array.slice(arguments, 0);
       return function(var_args) {
-        return callFn.apply(caja.USELESS, 
+        return callFn.apply(cajita.USELESS,
                             leftArgs.concat(Array.slice(arguments, 0)));
       };
     };
 
-    result.prototype = caja.beget(ObjectPrototype);
+    result.prototype = cajita.beget(ObjectPrototype);
     result.prototype.constructor = result;
     result.length = callFn.length -1;
     // TODO(erights): Why are we testing for the empty string here?
@@ -332,7 +332,7 @@ var valijaMaker = (function(outers) {
   }
 
   function getOuters() {
-    caja.enforceType(outers, 'object');
+    cajita.enforceType(outers, 'object');
     return outers;
   }
 
@@ -364,16 +364,16 @@ var valijaMaker = (function(outers) {
 
   function keys(obj) {
     var result = [];
-    for (var name in obj) {
+    cajita.forAllKeys(obj, function(name) {
       result.push(name);
-    }
-    for (name in getSupplement(obj)) {
-      // TODO(erights): fix this once DONTENUM properties are better 
+    });
+    cajita.forAllKeys(getSupplement(obj), function(name) {
+      // TODO(erights): fix this once DONTENUM properties are better
       // settled in ES-Harmony.
       if (!(name in obj) && name !== 'constructor') {
         result.push(name);
       }
-    }
+    });
     return result;
   }
 
@@ -390,13 +390,13 @@ var valijaMaker = (function(outers) {
     if (typeof obj === 'function') {
       return getShadow(obj);
     } else {
-      var ctor = caja.directConstructor(obj);
+      var ctor = cajita.directConstructor(obj);
       return getFakeProtoOf(ctor);
     }
   }
 
   // If you change these names, also change them in PermitTemplate.java
-  return caja.freeze({
+  return cajita.freeze({
     typeOf: typeOf,
     instanceOf: instanceOf,
 
@@ -408,7 +408,7 @@ var valijaMaker = (function(outers) {
     getOuters: getOuters,
     ro: readOuter,
     so: setOuter,
-    initOuter: initOuter,    
+    initOuter: initOuter,
     remove: remove,
     keys: keys,
     canReadRev: canReadRev,

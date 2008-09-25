@@ -52,49 +52,41 @@ public class ScopeTest extends CajaTestCase {
     assertFalse(s0.isImported("x"));
     assertFalse(s0.isFunction("x"));
     assertFalse(s0.isDeclaredFunction("x"));
-    assertFalse(s0.isConstructor("x"));
 
     assertTrue(s0.isDefined("foo"));
     assertFalse(s0.isImported("foo"));
     assertTrue(s0.isFunction("foo"));
     assertTrue(s0.isDeclaredFunction("foo"));
-    assertFalse(s0.isConstructor("foo"));
 
     assertFalse(s0.isDefined("y"));
     assertFalse(s0.isImported("y"));
     assertFalse(s0.isFunction("y"));
     assertFalse(s0.isDeclaredFunction("y"));
-    assertFalse(s0.isConstructor("y"));
 
     assertFalse(s0.isDefined("z"));
     assertTrue(s0.isImported("z"));
     assertFalse(s0.isFunction("z"));
     assertFalse(s0.isDeclaredFunction("z"));
-    assertFalse(s0.isConstructor("z"));
 
     assertTrue(s1.isDefined("x"));
     assertFalse(s1.isImported("x"));
     assertFalse(s1.isFunction("x"));
     assertFalse(s1.isDeclaredFunction("x"));
-    assertFalse(s1.isConstructor("x"));
 
     assertTrue(s1.isDefined("foo"));
     assertFalse(s1.isImported("foo"));
     assertTrue(s1.isFunction("foo"));
     assertFalse(s1.isDeclaredFunction("foo"));
-    assertFalse(s1.isConstructor("foo"));
 
     assertTrue(s1.isDefined("y"));
     assertFalse(s1.isImported("y"));
     assertFalse(s1.isFunction("y"));
     assertFalse(s1.isDeclaredFunction("y"));
-    assertFalse(s1.isConstructor("y"));
 
     assertFalse(s1.isDefined("z"));
     assertTrue(s1.isImported("z"));
     assertFalse(s1.isFunction("z"));
     assertFalse(s1.isDeclaredFunction("z"));
-    assertFalse(s1.isConstructor("z"));
   }
 
   public void testFreeVariablesDotted() throws Exception {
@@ -203,13 +195,9 @@ public class ScopeTest extends CajaTestCase {
 
     assertTrue(s0.isDefined("x"));
     assertFalse(s0.isImported("x"));
-    assertFalse(s0.isFunction("x"));
-    assertFalse(s0.isDeclaredFunction("x"));
 
     assertTrue(s1.isDefined("x"));
     assertFalse(s1.isImported("x"));
-    assertFalse(s1.isFunction("x"));
-    assertFalse(s1.isDeclaredFunction("x"));
   }
 
   public void testNamedFunction() throws Exception {
@@ -219,23 +207,15 @@ public class ScopeTest extends CajaTestCase {
 
     assertTrue(s0.isDefined("x"));
     assertFalse(s0.isImported("x"));
-    assertFalse(s0.isFunction("x"));
-    assertFalse(s0.isDeclaredFunction("x"));
 
     assertFalse(s0.isDefined("foo"));
     assertFalse(s0.isImported("foo"));
-    assertFalse(s0.isFunction("foo"));
-    assertFalse(s0.isDeclaredFunction("foo"));
 
     assertTrue(s1.isDefined("x"));
     assertFalse(s1.isImported("x"));
-    assertFalse(s1.isFunction("x"));
-    assertFalse(s1.isDeclaredFunction("x"));
 
     assertTrue(s1.isDefined("foo"));
     assertFalse(s1.isImported("foo"));
-    assertTrue(s1.isFunction("foo"));
-    assertFalse(s1.isDeclaredFunction("foo"));
   }
 
   public void testNamedFunctionSameName() throws Exception {
@@ -245,13 +225,9 @@ public class ScopeTest extends CajaTestCase {
 
     assertTrue(s0.isDefined("x"));
     assertFalse(s0.isImported("x"));
-    assertFalse(s0.isFunction("x"));
-    assertFalse(s0.isDeclaredFunction("x"));
 
     assertTrue(s1.isDefined("x"));
     assertFalse(s1.isImported("x"));
-    assertTrue(s1.isFunction("x"));
-    assertFalse(s1.isDeclaredFunction("x"));
   }
 
   public void testFormalParams() throws Exception {
@@ -288,19 +264,7 @@ public class ScopeTest extends CajaTestCase {
     Scope s1 = Scope.fromPlainBlock(s0);
 
     assertEquals(0, mq.getMessages().size());
-    assertTrue(s0.isFunction("foo"));
-    assertTrue(s0.isDeclaredFunction("foo"));
-    assertTrue(s1.isFunction("foo"));
-    assertTrue(s1.isDeclaredFunction("foo"));
-  }
-
-  public void testSymbolRedefinedError() throws Exception {
-    Block n = js(fromString("function foo() {} var foo;"));
-
-    Scope.fromProgram(n, mq);
-
-    assertMsgType(MessageType.SYMBOL_REDEFINED, mq.getMessages().get(0));
-    assertMsgLevel(MessageLevel.ERROR, mq.getMessages().get(0));
+    assertTrue(s0.isDefined("foo"));
   }
 
   public void testMaskedExceptionVariablesErrorA() throws Exception {
@@ -351,19 +315,79 @@ public class ScopeTest extends CajaTestCase {
     assertEquals(0, mq.getMessages().size());
   }
 
-  public void testConstructor() throws Exception {
-    Block n = js(fromString(
-        "function ctor() { this.x = 3; }" +
-        "function notctor() { x = 3; }"));
-    Scope s = Scope.fromProgram(n, mq);
+  private void assertFunctionRedefined(
+      String code,
+      boolean recurseIntoFunction,
+      MessageType type,
+      MessageLevel level)
+      throws Exception {
+    Block b = js(fromString(code));
+    Scope s0 = Scope.fromProgram(b, mq);
+    if (recurseIntoFunction) {
+      Scope.fromFunctionConstructor(
+          s0, findFunctionConstructor(b, "foo"));
+    }
 
-    assertTrue(s.isConstructor("ctor"));
-    assertTrue(s.isDeclaredFunction("ctor"));
-    assertTrue(s.isFunction("ctor"));
+    assertFalse(mq.getMessages().size() == 0);
+    assertMsgType(type, mq.getMessages().get(0));
+    assertMsgLevel(level, mq.getMessages().get(0));
+  }
 
-    assertFalse(s.isConstructor("notctor"));
-    assertTrue(s.isDeclaredFunction("notctor"));
-    assertTrue(s.isFunction("notctor"));
+  public void testFunctionsRedefined() throws Exception {
+    assertFunctionRedefined(
+        "function foo() {} var foo;",
+        false,
+        MessageType.SYMBOL_REDEFINED,
+        MessageLevel.ERROR);
+    assertFunctionRedefined(
+        "function foo() {} var foo = 3;",
+        false,
+        MessageType.SYMBOL_REDEFINED,
+        MessageLevel.ERROR);
+
+    assertFunctionRedefined(
+        "function foo() { var foo; }",
+        true,
+        MessageType.SYMBOL_REDEFINED,
+        MessageLevel.ERROR);
+    assertFunctionRedefined(
+        "function foo() { var foo = 3; }",
+        true,
+        MessageType.SYMBOL_REDEFINED,
+        MessageLevel.ERROR);
+
+    assertFunctionRedefined(
+        "var f = function foo() {}; var foo;",
+        false,
+        MessageType.SYMBOL_REDEFINED,
+        MessageLevel.LINT);
+    assertFunctionRedefined(
+        "var f = function foo() {}; var foo = 3;",
+        false,
+        MessageType.SYMBOL_REDEFINED,
+        MessageLevel.LINT);
+
+    assertFunctionRedefined(
+        "var f = function foo() { var foo; };",
+        true,
+        MessageType.SYMBOL_REDEFINED,
+        MessageLevel.ERROR);
+    assertFunctionRedefined(
+        "var f = function foo() { var foo = 3; };",
+        true,
+        MessageType.SYMBOL_REDEFINED,
+        MessageLevel.ERROR);
+
+    assertFunctionRedefined(
+        "function foo(){ (function() { var foo; })(); }",
+        true,
+        MessageType.SYMBOL_REDEFINED,
+        MessageLevel.ERROR);
+    assertFunctionRedefined(
+        "function foo(){ (function() { var foo = 3; })(); }",
+        true,
+        MessageType.SYMBOL_REDEFINED,
+        MessageLevel.ERROR);
   }
 
   public void testStartStatementsForProgram() throws Exception {
@@ -465,15 +489,6 @@ public class ScopeTest extends CajaTestCase {
     s1.declareStartOfScopeTempVariable();
     assertEquals(2, s0.getStartStatements().size());
     assertEquals(1, s1.getStartStatements().size());
-  }
-
-  public void testMultipleFunctionDeclaration() throws Exception {
-    Scope.fromProgram(
-        js(fromString(
-            "  function foo() {}"
-            + "function foo() {}")),
-        mq);
-    assertMessage(MessageType.SYMBOL_REDEFINED, MessageLevel.ERROR);
   }
 
   public void testUnmaskableIdentifiersInCatch() throws Exception {

@@ -168,4 +168,4 @@ var time_util = {
 
 };
 
-caja.freeze(time_util);
+cajita.freeze(time_util);
