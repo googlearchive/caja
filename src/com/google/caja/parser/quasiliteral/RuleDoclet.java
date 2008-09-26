@@ -52,7 +52,6 @@ public abstract class RuleDoclet {
    * @param output a stream to which documentation can be written.
    * @throws IOException if any operation on output raises an IOException.
    */
-  @SuppressWarnings("unused")
   public void finish(Writer output) throws IOException {}
 
   /**
@@ -84,10 +83,10 @@ public abstract class RuleDoclet {
 
   /**
    * Emits documentation for a set of rules
-   * @throws IOException
+   * @throws IOException if writing to output fails.
    */
   public void generateDocumentation(Writer output)
-    throws IOException {
+      throws IOException {
     try {
       RulesetDescription ruleSetDescription =
           rewriter.getClass().getAnnotation(RulesetDescription.class);

@@ -46,7 +46,7 @@ import java.util.Set;
  * The grammar below is a context-free representation of the grammar this
  * parser parses.  It disagrees with EcmaScript 262 where implementations
  * disagree with EcmaScript 262.  The rules for semicolon insertion and
- * the possible backtracing in expressions needed to properly handle
+ * the possible backtracking in expressions needed to properly handle
  * backtracking are commented thoroughly in code, since semicolon insertion
  * requires information from both the lexer and parser and is not determinable
  * with finite lookahead.

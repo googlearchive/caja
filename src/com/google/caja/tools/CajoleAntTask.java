@@ -45,7 +45,7 @@ import org.apache.tools.ant.BuildException;
 public class CajoleAntTask extends AbstractCajaAntTask {
   private boolean debug;
   private String languageMode;
-  
+
   @Override
   protected boolean run(BuildService buildService, PrintWriter logger,
                         List<File> depends, List<File> inputs, File output,

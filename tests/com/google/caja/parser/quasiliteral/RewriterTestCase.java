@@ -19,16 +19,11 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 
-import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
-
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Declaration;
-import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
-import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.SyntheticNodes;

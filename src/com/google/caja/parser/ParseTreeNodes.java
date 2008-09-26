@@ -16,7 +16,6 @@ package com.google.caja.parser;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -104,7 +103,7 @@ public class ParseTreeNodes {
     throw new RuntimeException("Cannot find clone ctor for node " + clazz);
   }
 
-  @SuppressWarnings({"unchecked", "cast"})
+  @SuppressWarnings("unchecked")
   private static <T extends ParseTreeNode>
   Constructor<T> fromCtorCache(Class<T> clazz) {
     return (Constructor<T>) cloneCtorCache.get(clazz);

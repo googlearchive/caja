@@ -248,7 +248,7 @@ public class BuildServiceImplementation implements BuildService {
       return false;
     }
   }
-  
+
   /**
    * Applies the innocent code transformer to inputs.  Writes
    * any messages to logger and returns true iff the task passes.
@@ -261,7 +261,7 @@ public class BuildServiceImplementation implements BuildService {
       Writer outputWriter = new OutputStreamWriter(
           new FileOutputStream(output), "UTF-8");
       for (File f : inputs) {
-        Pair<InputSource, File> inputSource = 
+        Pair<InputSource, File> inputSource =
           Pair.pair(new InputSource(f.getAbsoluteFile().toURI()), f);
         ret = Innocent.transfInnocent(inputSource, outputWriter, logger);
         if (!ret) {

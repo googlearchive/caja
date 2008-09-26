@@ -20,7 +20,7 @@ import java.util.Map;
 /**
  * Represent which static access paths are presumed safe.
  * <p>
- * Only {@class Permit} should access PermitTemplate directly. All other
+ * Only {@link Permit} should access PermitTemplate directly. All other
  * inquiries should go through Permit.
  *
  * @author erights

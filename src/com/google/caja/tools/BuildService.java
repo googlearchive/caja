@@ -58,7 +58,7 @@ public interface BuildService {
    */
   boolean minify(PrintWriter logger, List<File> dependees, List<File> inputs,
                  File output, Map<String, Object> options);
-  
+
   /**
    * Innocent code transforms files writing any messages to logger, returning
    * true iff the task passes.  Despite taking a list, should only take ONE
@@ -66,13 +66,13 @@ public interface BuildService {
    *
    * @param logger receives messages that should be included in the build log.
    * @param depends files which may be referenced from inputs.
-   * @param inputs innocent code to transform 
+   * @param inputs innocent code to transform
    * @param output files to write transformed output to.
    * @param options a key/value map supplying optional parameters that may
    *   differ depending on the version of the client.  Unrecognized options
    *   should be ignored.
-   * @link com.google.caja.parser.quasiliteral.InnocentCodeRewriter
    * @return true iff output contains the successfully transformed inputs.
+   * @see com.google.caja.parser.quasiliteral.InnocentCodeRewriter
    */
   boolean transfInnocent(PrintWriter logger, List<File> depends, List<File> inputs,
       File output, Map<String, Object> options);

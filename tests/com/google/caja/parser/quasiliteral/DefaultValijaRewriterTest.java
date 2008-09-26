@@ -318,11 +318,11 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         new RhinoTestBed.Input(getClass(), "../../plugin/asserts.js"),
         new RhinoTestBed.Input(getClass(), "/com/google/caja/log-to-console.js"),
         new RhinoTestBed.Input(
-            "var valija = {};\n" +
             "var testImports = ___.copy(___.sharedImports);\n" +
-            "testImports.loader = {\n" +
-            "  provide: ___.simpleFunc(function (v) { valijaMaker=v; })\n" +
-            "};\n" +
+            "testImports.loader = ___.freeze({\n" +
+            "        provide: ___.simpleFrozenFunc(\n" +
+            "            function(v){ valijaMaker = v; })\n" +
+            "    });\n" +
             "testImports.outers = ___.copy(___.sharedImports);\n" +
             "___.getNewModuleHandler().setImports(testImports);",
             getName() + "valija-setup"),
@@ -337,7 +337,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
             "___.grantCall(testImports, 'assertTrue');" +
             "testImports.assertFalse = ___.simpleFunc(assertFalse);" +
             "___.grantCall(testImports, 'assertFalse');" +
-            "testImports.$v = valijaMaker(testImports);\n" +
+            "testImports.$v = ___.asSimpleFunc(valijaMaker)(testImports);\n" +
             "___.getNewModuleHandler().setImports(testImports);",
             getName() + "-test-fixture"),
         new RhinoTestBed.Input(pre, getName() + "-pre"),

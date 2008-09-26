@@ -201,7 +201,6 @@ public class HtmlCompiler {
             if (HtmlTokenType.ATTRNAME != child.getType()) { break; }
             DomTree.Attrib attrib = (DomTree.Attrib) child;
             String name = attrib.getAttribName();
-            DomTree.Value valueT = attrib.getAttribValueNode();
 
             name = assertHtmlIdentifier(name, attrib);
 
@@ -223,7 +222,7 @@ public class HtmlCompiler {
                         attrib.getFilePosition())),
                     attrib.getToken(),
                     attrib.getFilePosition());
-              
+
               if (null == xform) {
                 out.attr(name, temp.getAttribValue());
               } else {
@@ -231,7 +230,7 @@ public class HtmlCompiler {
                 newchildren.remove(attrib);
                 newchildren.add(temp);
                 DomTree parent = new DomTree.Tag(newchildren, el.getToken(),el.getFilePosition());
-                
+
                 xform.apply(
                     new AncestorChain<DomTree.Attrib>(
                         new AncestorChain<DomTree>(

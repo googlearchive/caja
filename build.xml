@@ -104,15 +104,15 @@
 
   <!--== Tasks Used Below ==-->
   <taskdef resource="emma_ant.properties"
-    classpathref="classpath.extensions" />
+   classpathref="classpath.extensions" />
 
   <taskdef name="junit"
-    classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
-    classpathref="classpath.extensions" />
+   classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
+   classpathref="classpath.extensions" />
 
   <taskdef name="jsdoctoolkit"
-    classname="uk.co.darrenhurley.ant.tasks.JsDocToolkit"
-    classpathref="classpath.jsdocs" />
+   classname="uk.co.darrenhurley.ant.tasks.JsDocToolkit"
+   classpathref="classpath.jsdocs" />
 
   <!--== rules.  Lowercase are public.  Uppercase are used internally. ==-->
   <target name="default" depends="jars"
@@ -230,6 +230,7 @@
       <source file="${src}/com/google/caja/log-to-console.js"/>
       <source file="${src}/com/google/caja/permissive.js"/>
       <source file="${src}/com/google/caja/triv-logger.js"/>
+      <source file="${src}/com/google/caja/valija-cajita.js"/>
       <source file="${src}/com/google/caja/plugin/html4-defs.js"/>
       <source file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <source file="${src}/com/google/caja/plugin/html-emitter.js"/>
@@ -314,11 +315,17 @@
    description="Puts all the demo files together for easy browsing."/>
 
   <!-- Cajoles test resources that contain cajita to javascript. -->
-  <target name="CajoledTests" depends="pluginc,dirs">
-    <cajole languageMode="valija">
+  <target name="CajoledTests" depends="pluginc,dirs,CajoledValija">
+    <cajole languageMode="cajita">
       <job output="${lib}/com/google/caja/plugin/domita_test_cajoled.js">
-        <include file="${tests}/com/google/caja/plugin/domita_test.js"/>
         <include file="${tests}/com/google/caja/plugin/asserts.js"/>
+        <include file="${tests}/com/google/caja/plugin/domita_test.js"/>
+      </job>
+    </cajole>
+    <cajole languageMode="valija">
+      <job output="${lib}/com/google/caja/plugin/domita_test_valijad.js">
+        <include file="${tests}/com/google/caja/plugin/asserts.js"/>
+        <include file="${tests}/com/google/caja/plugin/domita_test.js"/>
       </job>
     </cajole>
     <copy todir="${lib}">
@@ -713,7 +720,7 @@
         <include file="${third_party}/js/prettify/prettify.js"/>
         <include file="${src}/com/google/caja/opensocial/applet/testbed.js"/>
         <include file="${src}/com/google/caja/opensocial/applet/setup-valija.js"/>
-	<include file="${lib}/com/google/caja/plugin/valija-cajoled.js"/>
+        <include file="${lib}/com/google/caja/plugin/valija-cajoled.js"/>
       </job>
     </minify>
   </target>

@@ -1928,7 +1928,7 @@ var ___;
     'toLocaleString', 'indexOf', 'lastIndexOf'
   ]);
   all2(grantGeneric, String.prototype, [
-    'charAt', 'charCodeAt', 'concat', 
+    'charAt', 'charCodeAt', 'concat',
     'localeCompare', 'slice', 'substr', 'substring',
     'toLowerCase', 'toLocaleLowerCase', 'toUpperCase', 'toLocaleUpperCase'
   ]);
@@ -1937,13 +1937,17 @@ var ___;
     enforceMatchable(regexp);
     return this.match(regexp);
   });
-  handleGeneric(String.prototype, 'replace', function(searcher, replacer) {
+  handleGeneric(String.prototype, 'replace', function(searcher, replacement) {
     enforceMatchable(searcher);
+    if ('object' === typeof replacement && replacement !== null
+        && canCallPub(replacement, 'bind')) {
+      replacement = ___.callPub(replacement, 'bind', [USELESS]);
+    }
     return this.replace(
             searcher,
-            (typeof replacer === 'function'
-             ? ___.asSimpleFunc(replacer)
-             : '' + replacer));
+            (typeof replacement === 'function'
+             ? ___.asSimpleFunc(replacement)
+             : '' + replacement));
   });
   handleGeneric(String.prototype, 'search', function(regexp) {
     enforceMatchable(regexp);

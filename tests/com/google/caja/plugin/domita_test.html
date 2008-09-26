@@ -36,7 +36,32 @@
     <div id="console-results"></div>
 
     <script type="text/javascript">
+      function loadScript(src) {
+        document.write(
+            '<script src="' + html.escapeAttrib(src) + '"'
+            + ' onerror="console.error(this.src)"><\/script>');
+      }
+
+      var isValija = /[&?]valija([=&]|$)/.test(location.search);
+    </script>
+
+    <script type="text/javascript">
+    var valijaMaker;
+    (function () {
+      if (isValija) {
+        var testImports = ___.copy(___.sharedImports);
+        testImports.loader = ___.freeze({
+              provide: ___.simpleFunc(function (v) { valijaMaker = v; })
+            });
+        ___.getNewModuleHandler().setImports(testImports);
+        loadScript('valija-cajoled.js');
+      }
+    })();</script>
+
+    <script type="text/javascript">(function () {
       var testImports = ___.copy(___.sharedImports);
+      if (valijaMaker) { testImports.$v = valijaMaker(testImports); }
+
       ___.getNewModuleHandler().setImports(testImports);
       attachDocumentStub(
            '-xyz___',
@@ -53,13 +78,14 @@
 
       testImports.jsunitRegister = ___.simpleFunc(jsunitRegister);
       testImports.console = ___.primFreeze({
-        log: function () { console.log.apply(console, arguments); },
-        warn: function () { console.warn.apply(console, arguments); },
-        error: function () { console.error.apply(console, arguments); },
-        trace: function () { console.trace(); }
+        log: ___.simpleFrozenFunc(
+            function () { console.log.apply(console, arguments); }),
+        warn: ___.simpleFrozenFunc(
+            function () { console.warn.apply(console, arguments); }),
+        error: ___.simpleFrozenFunc(
+            function () { console.error.apply(console, arguments); }),
+        trace: ___.simpleFrozenFunc(function () { console.trace(); })
       });
-      ___.all2(___.grantCall, testImports.console,
-               ['log', 'warn', 'error', 'trace']);
 
       // Give unfiltered DOM access so we can check the results of actions.
       testImports.directAccess = ___.primFreeze({
@@ -86,10 +112,11 @@
           document, false);
 
       window.toString = function () { return '[WINDOW]'; };
-    </script>
+    })();</script>
 
-    <script src="domita_test_cajoled.js" onerror="console.error(this.src)"
-     ></script>
+    <script type="text/javascript">
+    loadScript(isValija ? 'domita_test_valijad.js' : 'domita_test_cajoled.js');
+    </script>
 
     <div id="test-get-element-by-id-xyz___" class="testcontainer"></div>
     <div id="test-get-element-by-id-2-xyz___" class="testcontainer"></div>

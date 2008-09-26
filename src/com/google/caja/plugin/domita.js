@@ -139,7 +139,7 @@ attachDocumentStub = (function () {
 
     return sanitizedDeclarations.join(' ; ');
   }
-  
+
   function mimeTypeForAttr(tagName, attribName) {
     if (tagName === 'img' && attribName === 'src') { return 'image/*'; }
     return '*/*';
@@ -201,7 +201,7 @@ attachDocumentStub = (function () {
   var timeoutIdTrademark = {};
   function tameSetTimeout(timeout, delayMillis) {
     var timeoutId = setTimeout(
-        function(){ ___.callPub(timeout, 'call', [___.USELESS]); }, 
+        function () { ___.callPub(timeout, 'call', [___.USELESS]); },
         delayMillis | 0);
     return ___.freeze(___.stamp(timeoutIdTrademark,
                           { timeoutId___: timeoutId }));
@@ -215,7 +215,7 @@ attachDocumentStub = (function () {
   var intervalIdTrademark = {};
   function tameSetInterval(interval, delayMillis) {
     var intervalId = setInterval(
-        function(){ ___.callPub(interval, 'call', [___.USELESS]); }, 
+        function () { ___.callPub(interval, 'call', [___.USELESS]); },
         delayMillis | 0);
     return ___.freeze(___.stamp(intervalIdTrademark,
                           { intervalId___: intervalId }));
@@ -727,7 +727,10 @@ attachDocumentStub = (function () {
     };
 
     function makeEventHandlerWrapper(thisNode, listener) {
-      if ('function' !== typeof listener) {
+      if ('function' !== typeof listener
+          // Allow disfunctions
+          && !('object' === (typeof listener) && listener !== null
+               && ___.canCallPub(listener, 'call'))) {
         throw new Error('Expected function not ' + typeof listener);
       }
       return function (event) {
@@ -1224,7 +1227,7 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
     case 'string':
       handler = imports[handler];
       break;
-    case 'function':
+    case 'function': case 'object':
       break;
     default:
       throw new Error(
@@ -1233,8 +1236,11 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   ___.startCallerStack && ___.startCallerStack();
   imports.isProcessingEvent___ = true;
   try {
-    return ___.callPub(handler, 'call', [___.USELESS,
-        imports.tameNode___(thisNode, true), imports.tameEvent___(event)]);
+    return ___.callPub(
+        handler, 'call',
+        [___.USELESS,
+         imports.tameNode___(thisNode, true),
+         imports.tameEvent___(event)]);
   } catch (ex) {
     if (ex && ex.cajitaStack___ && 'undefined' !== (typeof console)) {
       console.error('Event dispatch %s: %s',

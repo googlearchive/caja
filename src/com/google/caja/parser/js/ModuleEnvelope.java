@@ -14,12 +14,15 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 import java.util.List;
 
 /**
- * Translates to a module envelope: <tt>___.loadModule...</tt>
+ * Translates to a module envelope: <tt>___.loadModule...</tt>.
+ * This is not a core JavaScript parse tree node &mdash; it is never produced by
+ * {@link Parser}.
  *
  * @author erights@gmail.com
  * @author ihab.awad@gmail.com
@@ -28,13 +31,12 @@ public final class ModuleEnvelope extends AbstractStatement<Block> {
   /** @param value unused.  This ctor is provided for reflection. */
   public ModuleEnvelope(Void value, List<? extends Block> children) {
     this(children.get(0));
+    assert children.size() == 1;
   }
 
   public ModuleEnvelope(Block body) {
     createMutation().appendChild(body).execute();
   }
-
-  public ModuleEnvelope() {}
 
   @Override
   protected void childrenChanged() {
@@ -43,9 +45,9 @@ public final class ModuleEnvelope extends AbstractStatement<Block> {
       throw new IllegalStateException(
           "A ModuleEnvelope may only have one child");
     }
-    if (!(children().get(0) instanceof Block)) {
-      throw new ClassCastException(
-          "Expected block, not " + children().get(0));
+    ParseTreeNode module = children().get(0);
+    if (!(module instanceof Block)) {
+      throw new ClassCastException("Expected block, not " + module);
     }
   }
 
@@ -53,6 +55,7 @@ public final class ModuleEnvelope extends AbstractStatement<Block> {
   public Object getValue() { return null; }
 
   public void render(RenderContext rc) {
+    // FIXME(erights): must emit valid javascript or throw an exception
     rc.getOut().consume("<<<<");
     children().get(0).render(rc);
     rc.getOut().consume(">>>>");
@@ -60,6 +63,6 @@ public final class ModuleEnvelope extends AbstractStatement<Block> {
 
   @Override
   public boolean isTerminal() {
-    return false;
+    return true;
   }
 }

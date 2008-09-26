@@ -599,6 +599,7 @@ public class Scope {
       }
     }
 
+    /** @param node unused */
     private void visitModuleEnvelope(ModuleEnvelope node) {
       // don't look inside a module envelope
     }
