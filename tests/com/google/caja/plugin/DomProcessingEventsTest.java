@@ -87,6 +87,67 @@ public class DomProcessingEventsTest extends CajaTestCase {
         dpe);
   }
 
+  public void testDeOptimization() throws Exception {
+    // Some elements can't be created at the top level by innerHTML.  So
+    //    var select = document.createElement('SELECT');
+    //    select.innerHTML = '<option>1</option>;
+    // doesn't work on some browsers.
+    // But the below does work, so another test below allows <OPTION>s to be
+    // optimized properly:
+    //    var div = document.createElement('DIV');
+    //    div.innerHTML = '<select><option>1</option></select>';
+    // See bug 730 for more details.
+    DomProcessingEvents dpe = new DomProcessingEvents();
+    dpe.begin("select");
+    dpe.finishAttrs(false);
+    dpe.begin("option");
+    dpe.finishAttrs(false);
+    dpe.pcdata("1");
+    dpe.end("option");
+    dpe.begin("option");
+    dpe.finishAttrs(false);
+    dpe.pcdata("2");
+    dpe.end("option");
+    dpe.end("select");
+    assertEmittingCode(
+        "IMPORTS___.htmlEmitter___.b('select').f(false)"
+        + ".b('option')"
+        + ".f(false)"
+        + ".ih('1')"
+        + ".e('option')"
+        + ".b('option')"
+        + ".f(false)"
+        + ".ih('2')"
+        + ".e('option')"
+        + ".e('select');",
+        "<select><option>1</option><option>2</option></select>",
+        dpe);
+  }
+
+  public void testReDeOptimization() throws Exception {
+    DomProcessingEvents dpe = new DomProcessingEvents();
+    dpe.begin("div");
+    dpe.finishAttrs(false);
+    dpe.begin("select");
+    dpe.finishAttrs(false);
+    dpe.begin("option");
+    dpe.finishAttrs(false);
+    dpe.pcdata("1");
+    dpe.end("option");
+    dpe.begin("option");
+    dpe.finishAttrs(false);
+    dpe.pcdata("2");
+    dpe.end("option");
+    dpe.end("select");
+    dpe.end("div");
+    assertEmittingCode(
+        "IMPORTS___.htmlEmitter___.b('div').f(false)"
+        + ".ih('<select><option>1</option><option>2</option></select>')"
+        + ".e('div');",
+        "<div><select><option>1</option><option>2</option></select></div>",
+        dpe);
+  }
+
   public void testInterleaving() throws Exception {
     DomProcessingEvents dpe = new DomProcessingEvents();
     dpe.begin("p");
