@@ -143,12 +143,17 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     }
     // The script contents.
     CharProducer jsStream;
+    FilePosition scriptPos;
     if (src == null) {  // Parse the script tag body.
-      jsStream = textNodesToCharProducer(scriptTag.children(), true);
+      List<? extends DomTree> textNodes = scriptTag.children();
+      jsStream = textNodesToCharProducer(textNodes, true);
       if (jsStream == null) {
         parent.removeChild(scriptTag);
         return;
       }
+      scriptPos = FilePosition.span(
+          textNodes.get(0).getFilePosition(),
+          textNodes.get(textNodes.size() - 1).getFilePosition());
     } else {  // Load the src attribute
       URI srcUri;
       try {
@@ -173,6 +178,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
             src.getFilePosition(), MessagePart.Factory.valueOf("" + srcUri));
         return;
       }
+      scriptPos = null;
     }
 
     // Parse the body and create a block that will be placed inline in
@@ -180,7 +186,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     Block parsedScriptBody;
     try {
       parsedScriptBody = parseJs(jsStream.getCurrentPosition().source(),
-                                 jsStream, jobs.getMessageQueue());
+                                 jsStream, scriptPos, jobs.getMessageQueue());
     } catch (ParseException ex) {
       ex.toMessageQueue(jobs.getMessageQueue());
       parsedScriptBody = null;
@@ -488,10 +494,12 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
   private static enum DupePolicy { YIELD_NULL, YIELD_FIRST, }
 
   public static Block parseJs(
-      InputSource is, CharProducer cp, MessageQueue localMessageQueue)
+      InputSource is, CharProducer cp, FilePosition scriptPos,
+      MessageQueue localMessageQueue)
       throws ParseException {
     JsLexer lexer = new JsLexer(cp);
     JsTokenQueue tq = new JsTokenQueue(lexer, is);
+    tq.setInputRange(scriptPos);
     if (tq.isEmpty()) { return null; }
     Parser p = new Parser(tq, localMessageQueue);
     Block body = p.parse();

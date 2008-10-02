@@ -14,8 +14,9 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlTokenType;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
@@ -26,7 +27,10 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.RhinoTestBed;
 import com.google.caja.util.TestUtil;
@@ -109,7 +113,8 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
   }
 
   public void testECMAScript31Scoping() throws Exception {
-    // TODO(stay): Once they decide on scoping & initialization rules, test them here.
+    // TODO(stay): Once they decide on scoping & initialization rules, test
+    // them here.
   }
 
   public void testExceptionsInScriptBlocks() throws Exception {
@@ -149,15 +154,27 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
     }
   }
 
+  public void testPartialScript() throws Exception {
+    PluginMeta meta = new PluginMeta();
+    PluginCompiler compiler = new PluginCompiler(meta, mq);
+    compiler.setMessageContext(mc);
+    DomTree html = htmlFragment(fromString("<script>{</script>"));
+    compiler.addInput(new AncestorChain<DomTree>(html));
+
+    boolean passed = compiler.run();
+    assertFalse(passed);
+
+    assertMessage(
+        MessageType.END_OF_FILE, MessageLevel.ERROR,
+        FilePosition.instance(is, 1, 1, 9, 9, 1, 1, 10, 10));
+  }
+
   private void execGadget(String gadgetSpec, String tests) throws Exception {
-    MessageContext mc = new MessageContext();
-    MessageQueue mq = new EchoingMessageQueue(
-        new PrintWriter(System.err), mc, true);
     PluginMeta meta = new PluginMeta();
     meta.setValijaMode(true);
     PluginCompiler compiler = new PluginCompiler(meta, mq);
     compiler.setMessageContext(mc);
-    DomTree html = parseHtml(gadgetSpec, mq);
+    DomTree html = htmlFragment(fromString(gadgetSpec));
     if (html != null) { compiler.addInput(new AncestorChain<DomTree>(html)); }
 
     boolean failed = !compiler.run();
@@ -217,13 +234,5 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
         };
       RhinoTestBed.runJs(inputs);
     }
-  }
-
-  DomTree parseHtml(String html, MessageQueue mq) throws Exception {
-    InputSource is = new InputSource(new URI("test://" + getName()));
-    StringReader in = new StringReader(html);
-    TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(is, in, false);
-    if (tq.isEmpty()) { return null; }
-    return new DomParser(tq, false, mq).parseFragment();
   }
 }
