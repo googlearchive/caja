@@ -307,14 +307,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
     // here we detect the beginning and ends of escape exempt blocks, and
     // reclassify as UNESCAPED, any tokens that appear in the middle.
     if (inEscapeExemptBlock) {
-      if (token.type == HtmlTokenType.TAGBEGIN && '/' == token.text.charAt(1)
-          && textEscapingMode != HtmlTextEscapingMode.PLAIN_TEXT
-          && canonTagName(token.text.substring(2)).equals(escapeExemptTagName)
-          ) {
-        this.inEscapeExemptBlock = false;
-        this.escapeExemptTagName = null;
-        this.textEscapingMode = null;
-      } else if (token.type != HtmlTokenType.SERVERCODE) {
+      if (token.type != HtmlTokenType.SERVERCODE) {
         // classify RCDATA as text since it can contain entities
         token = reclassify(
             token, (this.textEscapingMode == HtmlTextEscapingMode.RCDATA
@@ -539,10 +532,22 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                 switch (state) {
                   case TAGNAME:
                     if (Character.isWhitespace((char) ch)
-                        || '>' == ch || '/' == ch) {
+                        || '>' == ch || '/' == ch || '<' == ch) {
+                      // End processing of an escape exempt block when we see
+                      // a corresponding end tag.
                       p.pushback();
+                      if (this.inEscapeExemptBlock && '/' == text.charAt(1)
+                          && textEscapingMode != HtmlTextEscapingMode.PLAIN_TEXT
+                          && canonTagName(text.substring(2))
+                              .equals(escapeExemptTagName)) {
+                        this.inEscapeExemptBlock = false;
+                        this.escapeExemptTagName = null;
+                        this.textEscapingMode = null;
+                      }
                       type = HtmlTokenType.TAGBEGIN;
-                      inTag = true;
+                      // Don't process content as attributes if we're inside
+                      // an escape exempt block.
+                      inTag = !this.inEscapeExemptBlock;
                       state = State.DONE;
                       break charloop;
                     }

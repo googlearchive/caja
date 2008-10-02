@@ -28,7 +28,7 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Join;
-import static com.google.caja.util.MoreAsserts.*;
+import com.google.caja.util.MoreAsserts;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -1652,6 +1652,24 @@ public class DomParserTest extends CajaTestCase {
             "<html><head></head><body><xmp><br/></xmp></body></html>"
             ),
         null, false);
+    // From Issue 556
+    assertParsedMarkup(
+        Arrays.asList(
+            "<script>document.write('</b');</script>"
+            ),
+        Arrays.asList(
+            "Tag : html 1+1-1+40",
+            "  Tag : head 1+1-1+40",
+            "    Tag : script 1+1-1+40",
+            "      Text : document.write('</b'); 1+9-1+31",
+            "  Tag : body 1+40-1+40"
+            ),
+        Arrays.<String>asList(),
+        Arrays.asList(
+            "<html><head><script>document.write('</b');</script></head>"
+            + "<body></body></html>"
+            ),
+        null, false);
   }
 
   public void testDoctypeGuessAsHtml() throws Exception {
@@ -1925,7 +1943,7 @@ public class DomParserTest extends CajaTestCase {
     List<String> actualParseTree = new ArrayList<String>();
     formatWithLinePositions(tree, mc, 0, new IdentityHashMap<DomTree, Void>(),
                             actualParseTree);
-    assertListsEqual(expectedParseTree, actualParseTree);
+    MoreAsserts.assertListsEqual(expectedParseTree, actualParseTree);
 
     List<String> actualMessages = new ArrayList<String>();
     for (Message message : mq.getMessages()) {
@@ -1933,13 +1951,13 @@ public class DomParserTest extends CajaTestCase {
                             + message.format(mc));
       actualMessages.add(messageText);
     }
-    assertListsEqual(expectedMessages, actualMessages, 0);
+    MoreAsserts.assertListsEqual(expectedMessages, actualMessages, 0);
 
     StringBuilder out = new StringBuilder();
     RenderContext context = new RenderContext(mc, new Concatenator(out, null));
     tree.render(context);
     List<String> outputHtml = Arrays.asList(out.toString().split("\n"));
-    assertListsEqual(expectedOutputHtml, outputHtml);
+    MoreAsserts.assertListsEqual(expectedOutputHtml, outputHtml);
   }
 
   private TokenQueue<HtmlTokenType> tokenizeTestInput(

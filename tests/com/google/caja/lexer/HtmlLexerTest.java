@@ -76,6 +76,16 @@ public class HtmlLexerTest extends CajaTestCase {
     assertTokens("</div\n", false, "TAGBEGIN: </div");
   }
 
+  public void testPartialTagInCData() throws Exception {
+    assertTokens(
+        "<script>w('</b')</script>", false,
+        "TAGBEGIN: <script",
+        "TAGEND: >",
+        "UNESCAPED: w('</b')",
+        "TAGBEGIN: </script",
+        "TAGEND: >");
+  }
+
   private void lex(HtmlLexer lexer, Appendable out) throws Exception {
     int maxTypeLength = 0;
     for (HtmlTokenType t : HtmlTokenType.values()) {
