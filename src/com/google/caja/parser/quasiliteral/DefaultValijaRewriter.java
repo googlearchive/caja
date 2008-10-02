@@ -1133,6 +1133,30 @@ public class DefaultValijaRewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
+          name="outerTypeof",
+          synopsis="typeof of a global reference.",
+          reason="Typeof should not throw an error for undefined outers",
+          matches="typeof /* global reference */ @f",
+          substitutes="$v.typeOf($v.ros(@fname))")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = this.match(node);
+        if (bindings != null) {
+          ParseTreeNode f = bindings.get("f");
+          if (f instanceof Reference) {
+            Reference fRef = (Reference) f;
+            if (scope.isOuter(fRef.getIdentifierName())) {
+              bindings.put("fname", toStringLiteral(fRef));
+              return subst(bindings);
+            }
+          }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
           name="otherTypeof",
           synopsis="Rewrites typeof.",
           reason="Both typeof function and typeof disfunction need to return \"function\".",

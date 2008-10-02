@@ -203,7 +203,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
     }
   }
 
-  public void testFor() throws Exception{
+  public void testFor() throws Exception {
     assertConsistent("var i; for (i = 0; i < 10; i++) {} i;");
     assertConsistent("for (var i = 0; i < 10; i++) {} i;");
     assertConsistent("for (var i = 0, j = 0; i < 10; i++) { j += 10; } j;");
@@ -219,5 +219,19 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
         + "  return a + b;"
         + " }"
         + "f();");
+  }
+
+  public void testTypeofConsistent() throws Exception {
+    assertConsistent("[ (typeof noSuchGlobal), (typeof 's')," +
+                     "  (typeof 4)," +
+                     "  (typeof null)," +
+                     "  (typeof (void 0))," +
+                     "  (typeof [])," +
+                     "  (typeof {})," +
+                     "  (typeof new RegExp('.*'))," +
+                     "  (typeof (function () {}))," +
+                     "  (typeof { x: 4.0 }.x)," +
+                     "  (typeof { 2: NaN }[1 + 1])" +
+                     "].toString();");
   }
 }

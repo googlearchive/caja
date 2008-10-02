@@ -1495,17 +1495,6 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         weldPrelude("g") +
         "typeof ___.readPub(g, 0);");
     checkFails("typeof ___;", "Variables cannot end in \"__\"");
-    assertConsistent("[ (typeof noSuchGlobal), (typeof 's')," +
-                     "  (typeof 4)," +
-                     "  (typeof null)," +
-                     "  (typeof (void 0))," +
-                     "  (typeof [])," +
-                     "  (typeof {})," +
-                     "  (typeof new RegExp('.*'))," +
-                     "  (typeof (function () {}))," +
-                     "  (typeof { x: 4.0 }.x)," +
-                     "  (typeof { 2: NaN }[1 + 1])" +
-                     "].toString();");
   }
 
   public void testLabeledStatement() throws Exception {

@@ -344,6 +344,14 @@ var valijaMaker = (function(outers) {
     }
   }
 
+  function readOuterSilent(name) {
+    if (canReadRev(name, outers)) {
+      return read(outers, name);
+    } else {
+      return void 0;
+    }
+  }
+
   function setOuter(name, val) {
     return outers[name] = val;
   }
@@ -407,6 +415,7 @@ var valijaMaker = (function(outers) {
     construct: construct,
     getOuters: getOuters,
     ro: readOuter,
+    ros: readOuterSilent,
     so: setOuter,
     initOuter: initOuter,
     remove: remove,

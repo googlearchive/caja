@@ -53,6 +53,7 @@ final class PermitTemplate {
           "construct", CanCall,
           "getOuters", CanCall,
           "ro", CanCall,
+          "ros", CanCall,
           "so", CanCall,
           "initOuter", CanCall,
           "remove", CanCall,
