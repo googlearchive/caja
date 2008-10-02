@@ -286,6 +286,37 @@ jsunitRegister('testReadOnlyNotEditable',
   pass('test-read-only');
 });
 
+jsunitRegister('testInsertBefore',
+               function testInsertBefore() {
+  var el = document.getElementById('test-insert-before');
+  function assertChildren(var_args) {
+    var children = [];
+    for (var child = el.firstChild; child; child = child.nextSibling) {
+      children.push(child.nodeValue);
+    }
+    assertEquals([].join.call(arguments, ','), children.join(','));
+  }
+  var one = document.createTextNode('one');
+  var two = document.createTextNode('two');
+  var three = document.createTextNode('three');
+  var four = document.createTextNode('four');
+  el.insertBefore(three, null);
+  assertChildren('zero', 'three');
+  el.insertBefore(one, three);
+  assertChildren('zero', 'one', 'three');
+  el.insertBefore(two, null);
+  assertChildren('zero', 'one', 'three', 'two');
+  el.insertBefore(four, two);
+  assertChildren('zero', 'one', 'three', 'four', 'two');
+  el.insertBefore(two, one);
+  assertChildren('zero', 'two', 'one', 'three', 'four');
+  el.insertBefore(one, two);
+  assertChildren('zero', 'one', 'two', 'three', 'four');
+  el.insertBefore(four, void 0);
+  assertChildren('zero', 'one', 'two', 'three', 'four');
+  pass('test-insert-before');
+});
+
 jsunitRegister('testNodeLists',
                function testNodeLists() {
   function $(id) { return document.getElementById(id); }

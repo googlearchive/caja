@@ -508,12 +508,15 @@ attachDocumentStub = (function () {
       }
       this.node___.appendChild(child.node___);
     };
-    TameNode.prototype.insertBefore = function (child) {
-      cajita.guard(tameNodeTrademark, child);
-      if (!this.editable___ || !child.editable___) {
+    TameNode.prototype.insertBefore = function (toInsert, child) {
+      cajita.guard(tameNodeTrademark, toInsert);
+      if (child === void 0) { child = null; }
+      if (child !== null) { cajita.guard(tameNodeTrademark, child); }
+      if (!this.editable___ || !toInsert.editable___) {
         throw new Error();
       }
-      this.node___.insertBefore(child.node___);
+      this.node___.insertBefore(
+          toInsert.node___, child !== null ? child.node___ : null);
     };
     TameNode.prototype.removeChild = function (child) {
       cajita.guard(tameNodeTrademark, child);
