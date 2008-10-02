@@ -89,11 +89,24 @@
 
       // Give unfiltered DOM access so we can check the results of actions.
       testImports.directAccess = ___.primFreeze({
+        // Allow testing of emitHtml by exposing it for testing
+        emitCssHook: ___.simpleFrozenFunc(function (css) {
+          testImports.emitCss___(css.join('xyz___'));
+        }),
         getInnerHTML: ___.simpleFunc(function (tameNode) {
           return tameNode.node___.innerHTML;
         }),
         getAttribute: ___.simpleFunc(function (tameNode, name) {
           return tameNode.node___.getAttribute(name);
+        }),
+        getComputedStyle: ___.simpleFunc(function (tameNode, styleProp) {
+          var node = tameNode.node___;
+          if (node.currentStyle) {
+            return node.currentStyle[styleProp];
+          } else if (window.getComputedStyle) {
+            return document.defaultView.getComputedStyle(node, null)
+                .getPropertyValue(styleProp);
+          }
         })
       });
 
@@ -171,6 +184,12 @@
     <div class="testcontainer" id="test-location-xyz___"></div>
 
     <div class="testcontainer" id="test-navigator-xyz___"></div>
+
+    <div class="xyz___">
+      <div class="testcontainer" id="test-emit-css-xyz___">
+        <a id="not-blue-xyz___" href="#">I am not blue</a>
+      </div>
+    </div>
 
   </body>
 </html>

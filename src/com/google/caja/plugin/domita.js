@@ -1099,7 +1099,8 @@ attachDocumentStub = (function () {
      */
     imports.emitCss___ = function (cssText) {
       // Courtesy Stoyan Stefanov who documents the derivation of this at
-      // http://www.phpied.com/dynamic-script-and-style-elements-in-ie/
+      // http://www.phpied.com/dynamic-script-and-style-elements-in-ie/ and
+      // http://yuiblog.com/blog/2007/06/07/style/
       var styleSheet = document.createElement('style');
       styleSheet.setAttribute('type', 'text/css');
       if (styleSheet.styleSheet) {   // IE
@@ -1111,7 +1112,7 @@ attachDocumentStub = (function () {
     };
     /** The node to which gadget stylesheets should be added. */
     imports.getCssContainer___ = function () {
-      return document.body;
+      return document.getElementsByTagName('head')[0];
     };
 
     var idClass = idSuffix.replace(/^-/, '');
