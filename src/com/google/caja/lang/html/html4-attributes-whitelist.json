@@ -6,7 +6,6 @@
       "TH:ABBR",
       "FORM:ACCEPT",
       "INPUT:ACCEPT",
-      "FORM:ACCEPT-CHARSET",
       "FORM:ACTION",
       "CAPTION:ALIGN",
       "APPLET:ALIGN",
@@ -69,9 +68,6 @@
       "TH:CHAROFF",
       "THEAD:CHAROFF",
       "TR:CHAROFF",
-      "A:CHARSET",
-      "LINK:CHARSET",
-      "SCRIPT:CHARSET",
       "INPUT:CHECKED",
       "BLOCKQUOTE:CITE",
       "Q:CITE",
@@ -306,5 +302,24 @@
       "COL:WIDTH",
       "COLGROUP:WIDTH",
       "PRE:WIDTH",
+    ],
+  "denied": [
+      { "key": "FORM:ACCEPT-CHARSET",
+        "reason": [
+            "Per bug 585, this is an infrequently used and poorly",
+            "understood attribute that could lead to mismatched encoding",
+            "attacks.  Could be used to sneak content through a proxy in a",
+            "wrong encoding?"
+          ] },
+      { "key": "A:CHARSET",
+        "reason": [
+            "Per bug 585:  Charset is disallowed since it allows overriding",
+            "of Content-typeheaders.  A server might specify UTF-8 via the",
+            "header Content-type:text/javascript;charset=UTF-8, but an",
+            "embedding page might cause that file to be interpreted as UTF-7."
+          ] }
+      "A:CHARSET",
+      "LINK:CHARSET",
+      "SCRIPT:CHARSET"
     ]
 }
