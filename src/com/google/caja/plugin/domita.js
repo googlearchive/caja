@@ -20,7 +20,8 @@
  * <a href="http://www.w3.org/TR/DOM-Level-2-HTML/ecma-script-binding.html"
  * >ECMAScript Language Bindings</a>.
  *
- * Requires cajita.js, html-defs.js, html-sanitizer.js, unicode.js.
+ * Requires cajita.js, css-defs.js, html4-defs.js, html-emitter.js,
+ * html-sanitizer.js, unicode.js.
  *
  * Caveats:
  * - This is not a full implementation.
@@ -417,41 +418,35 @@ attachDocumentStub = (function () {
     function tameNode(node, editable) {
       if (node === null || node === void 0) { return null; }
       // TODO(mikesamuel): make sure it really is a DOM node
-      var tamed;
       switch (node.nodeType) {
         case 1:  // Element
-          switch (node.tagName.toLowerCase()) {
-            case 'a':
-              tamed = new TameAElement(node, editable);
-              break;
-            case 'form':
-              tamed = new TameFormElement(node, editable);
-              break;
-            case 'input':
-              tamed = new TameInputElement(node, editable);
-              break;
-            case 'img':
-              tamed = new TameImageElement(node, editable);
-              break;
-            default:
-              // TODO(mikesamuel): If an unrecognized node, return a
-              // placeholder that doesn't prevent tree navigation, but
-              // that doesn't allow mutation or inspection.
-              tamed = new TameElement(node, editable);
-              break;
+          var tagName = node.tagName.toLowerCase();
+          if (!html4.ELEMENTS.hasOwnProperty(tagName)
+              || (html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)) {
+            // If an unrecognized node, return a placeholder that
+            // doesn't prevent tree navigation, but that doesn't allow
+            // mutation or inspection.
+            return new TameOpaqueNode(node, editable);
           }
-          break;
+          switch (tagName) {
+            case 'a':
+              return new TameAElement(node, editable);
+            case 'form':
+              return new TameFormElement(node, editable);
+            case 'input':
+              return new TameInputElement(node, editable);
+            case 'img':
+              return new TameImageElement(node, editable);
+            default:
+              return new TameElement(node, editable);
+          }
         case 3:  // Text
-          tamed = new TameTextNode(node, editable);
-          break;
+          return new TameTextNode(node, editable);
         case 8:  // Comment
-          // Tame it or it will otherwise break firstChild/nextSibling iteration
-          tamed = new TameCommentNode(node, editable);
-          break;
+          return new TameCommentNode(node, editable);
         default:
-          return null;
+          return new TameOpaqueNode(node, editable);
       }
-      return tamed;
     }
 
     /**
@@ -562,15 +557,38 @@ attachDocumentStub = (function () {
           this.node___.getElementsByTagName(String(tagName)), this.editable___);
     };
     ___.ctor(TameNode, void 0, 'TameNode');
-    ___.all2(
-       ___.grantTypedGeneric, TameNode.prototype,
-       ['getNodeType', 'getNodeValue', 'getNodeName',
+    var tameNodeMembers = [
+        'getNodeType', 'getNodeValue', 'getNodeName',
         'appendChild', 'insertBefore', 'removeChild', 'replaceChild',
         'getFirstChild', 'getLastChild', 'getNextSibling', 'getPreviousSibling',
-        'getElementsByTagName']);
-    exportFields(TameNode,
-                 ['nodeType', 'nodeValue', 'nodeName', 'firstChild',
-                  'lastChild', 'nextSibling', 'previousSibling', 'parentNode']);
+        'getElementsByTagName'];
+    var tameNodeFields = [
+        'nodeType', 'nodeValue', 'nodeName', 'firstChild',
+        'lastChild', 'nextSibling', 'previousSibling', 'parentNode'];
+    ___.all2(___.grantTypedGeneric, TameNode.prototype, tameNodeMembers);
+    exportFields(TameNode, tameNodeFields);
+
+    function TameOpaqueNode(node, editable) {
+      TameNode.call(this, node, editable);
+    }
+    extend(TameOpaqueNode, TameNode);
+    TameOpaqueNode.prototype.getNodeValue = function () { return ''; };
+    TameOpaqueNode.prototype.getNodeType = function () { return -1; };
+    TameOpaqueNode.prototype.getNodeName = function () { return '#'; };
+    TameOpaqueNode.prototype.getNextSibling = TameNode.prototype.getNextSibling;
+    TameOpaqueNode.prototype.getPreviousSibling
+        = TameNode.prototype.getPreviousSibling;
+    TameOpaqueNode.prototype.getParentNode = TameNode.prototype.getParentNode;
+    for (var i = tameNodeMembers.length; --i >= 0;) {
+      var k = tameNodeMembers[i];
+      if (!TameOpaqueNode.prototype.hasOwnProperty(k)) {
+        TameOpaqueNode.prototype[k] = ___.simpleFrozenFunc(function () {
+          throw new Error('Node is opaque');
+        });
+      }
+    }
+    ___.all2(___.grantTypedGeneric, TameOpaqueNode.prototype, tameNodeMembers);
+    exportFields(TameOpaqueNode, tameNodeFields);
 
     function TameTextNode(node, editable) {
       assert(node.nodeType === 3);

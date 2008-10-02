@@ -399,6 +399,56 @@ jsunitRegister('testNavigator',
   pass('test-navigator');
 });
 
+jsunitRegister('testOpaqueNodes',
+               function testOpaqueNodes() {
+  var noText = document.createTextNode('');
+  // See bug 589.  We need to keep unsafe nodes in the DOM so that DOM
+  // navigation works, but we can't allow inspection or editing of such nodes.
+  var container = document.getElementById('test-opaque-nodes');
+
+  var child = container.firstChild;
+  assertEquals(8, child.nodeType);
+  assertEquals('#comment', child.nodeName);
+  assertEquals(' Comment ', child.nodeValue);
+
+  child = child.nextSibling;
+  assertEquals(3, child.nodeType);
+  assertEquals('#text', child.nodeName);
+  assertEquals('a', child.nodeValue);
+  child.nodeValue = 'Foo';
+  assertEquals('Foo', child.nodeValue);
+
+  child = child.nextSibling;
+  assertEquals(-1, child.nodeType);
+  assertEquals('#', child.nodeName);
+  assertEquals('', child.nodeValue);
+  expectFailure(function () { child.appendChild(noText); },
+                'opaque node was editable');
+
+  child = child.nextSibling;
+  assertEquals(3, child.nodeType);
+  assertEquals('#text', child.nodeName);
+  assertEquals('b', child.nodeValue);
+  child.nodeValue = 'Foo';
+  assertEquals('Foo', child.nodeValue);
+
+  child = child.nextSibling;
+  assertEquals(-1, child.nodeType);
+  assertEquals('#', child.nodeName);
+  assertEquals('', child.nodeValue);
+  expectFailure(function () { child.appendChild(noText); },
+                'opaque node was editable');
+
+  child = child.nextSibling;
+  assertEquals(3, child.nodeType);
+  assertEquals('#text', child.nodeName);
+  assertEquals('c', child.nodeValue);
+  child.nodeValue = 'Foo';
+  assertEquals('Foo', child.nodeValue);
+
+  pass('test-opaque-nodes');
+});
+
 jsunitRegister('testEmitCss',
                function testCss() {
   directAccess.emitCssHook(['.', ' a { color: #00ff00 }']);
