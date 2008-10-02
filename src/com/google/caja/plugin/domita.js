@@ -1227,6 +1227,7 @@ attachDocumentStub = (function () {
           outers[k] = v === tameWindow ? outers : v;
         }
       }
+      outers.window = outers;
     } else {
       cajita.freeze(tameWindow);
       imports.window = tameWindow;

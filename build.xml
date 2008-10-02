@@ -697,11 +697,11 @@
        <script type="text/javascript" src="html4-defs.js"></script>
        <script type="text/javascript" src="html-sanitizer.js"></script>
        <script type="text/javascript" src="html-emitter.js"></script>
+       <script type="text/javascript" src="setup-valija.js"></script>
        <script type="text/javascript" src="domita.js"></script>
        <script type="text/javascript" src="testbed.js"></script>
        <script type="text/javascript" src="prettify.js"></script>
        <script type="text/javascript" src="testbed.js"></script>
-       <script type="text/javascript" src="setup-valija.js"></script>
        <script type="text/javascript" src="valija-cajoled.js"></script>
        ]]>
      </replacevalue>
@@ -716,10 +716,10 @@
         <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
         <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
         <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
+        <include file="${src}/com/google/caja/opensocial/applet/setup-valija.js"/>
         <include file="${src}/com/google/caja/plugin/domita.js"/>
         <include file="${third_party}/js/prettify/prettify.js"/>
         <include file="${src}/com/google/caja/opensocial/applet/testbed.js"/>
-        <include file="${src}/com/google/caja/opensocial/applet/setup-valija.js"/>
         <include file="${lib}/com/google/caja/plugin/valija-cajoled.js"/>
       </job>
     </minify>
