@@ -342,7 +342,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
         List<CssTree> mediaChildren = new ArrayList<CssTree>();
         for (String mediaType : mediaTypes) {
           mediaChildren.add(
-              new CssTree.Medium(type.getFilePosition(), mediaType));
+              new CssTree.Medium(media.getFilePosition(), mediaType));
         }
         mediaChildren.addAll(rules);
         CssTree.Media mediaBlock = new CssTree.Media(
@@ -390,7 +390,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
 
     body.appendChild(scriptElement);
   }
-  
+
   /**
    * A CharProducer that produces characters from the concatenation of all
    * the text nodes in the given node list.
@@ -455,10 +455,10 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
    * Vbscript engines. 'XML' refers to an embedded XML
    * document/fragment.
    * <p>
-   * Values: JScript [DEFAULT] | javascript | vbs | vbscript | XML 
+   * Values: JScript [DEFAULT] | javascript | vbs | vbscript | XML
    */
   private static boolean isJavaScriptLanguage(String language) {
-    
+
     language = language.toLowerCase();
     return language.startsWith("javascript") || language.startsWith("jscript");
   }

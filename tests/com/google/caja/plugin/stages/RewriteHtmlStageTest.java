@@ -87,6 +87,31 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertNoErrors();
   }
 
+  public void testTypeAndMediaAttributes() throws Exception {
+    assertPipeline(
+        job("<link rel=stylesheet media=screen href=content:p+%7B%7D>",
+            Job.JobType.HTML),
+        job("", Job.JobType.HTML),
+        job("@media screen {\n  p {\n  }\n}", Job.JobType.CSS));
+    assertPipeline(
+        job("<link rel=stylesheet type=text/css href=content:p+%7B%7D>",
+            Job.JobType.HTML),
+        job("", Job.JobType.HTML),
+        job("p {\n}", Job.JobType.CSS));
+    assertPipeline(
+        job("<link rel=stylesheet media=all href=content:p+%7B%7D>",
+            Job.JobType.HTML),
+        job("", Job.JobType.HTML),
+        job("p {\n}", Job.JobType.CSS));
+    assertPipeline(
+        job("<link rel=stylesheet media=braille,tty type=text/css"
+            + " href=content:p+%7B%7D>",
+            Job.JobType.HTML),
+        job("", Job.JobType.HTML),
+        job("@media braille, tty {\n  p {\n  }\n}", Job.JobType.CSS));
+    assertNoErrors();
+  }
+
   @SuppressWarnings("cast")
   @Override
   protected boolean runPipeline(final Jobs jobs) throws Exception {
