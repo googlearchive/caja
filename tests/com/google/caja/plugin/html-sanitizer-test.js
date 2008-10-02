@@ -189,3 +189,29 @@ jsunitRegister('testOptionalEndTags',
       '<ol> <li>A</li> <li>B<li>C </ol>',
       html_sanitize('<ol> <li>A</li> <li>B<li>C </ol>'));
 });
+
+jsunitRegister('testFoldingOfHtmlAndBodyTags',
+               function testOptionalEndTags() {
+  assertEquals(
+      '<p>P 1</p>',
+      html_sanitize('<html><head><title>Foo</title></head>'
+                    + '<body><p>P 1</p></body></html>'));
+  assertEquals(
+      'Hello',
+      html_sanitize('<body bgcolor="blue">Hello</body>'));
+  assertEquals(
+      '<p>Foo</p><p>One</p><p>Two</p>Three<p>Four</p>',
+      html_sanitize(
+          '<html>'
+          + '<head>'
+          + '<title>Blah</title>'
+          + '<p>Foo</p>'
+          + '</head>'
+          + '<body>'
+          + '<p>One</p>'
+          + '<p>Two</p>'
+          + 'Three'
+          + '<p>Four</p>'
+          + '</body>'
+          + '</html>'));
+});

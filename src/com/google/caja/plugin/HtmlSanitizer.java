@@ -168,6 +168,9 @@ public final class HtmlSanitizer {
   /**
    * Elements that can be removed from the DOM without changing behavior as long
    * as their children are folded into the element's parent.
+   * <p>
+   * This list must be kept in sync with the foldable list in
+   * <code>html4-defs.js</code>.
    */
   private static boolean isElementFoldable(String tagName) {
     return "head".equals(tagName) || "body".equals(tagName)

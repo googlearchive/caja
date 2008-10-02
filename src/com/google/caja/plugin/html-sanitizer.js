@@ -253,7 +253,9 @@ html.makeHtmlSanitizer = function (sanitizeAttributes) {
           if (ignoring) { return; }
           if (!html4.ELEMENTS.hasOwnProperty(tagName)) { return; }
           var eflags = html4.ELEMENTS[tagName];
-          if (eflags & html4.eflags.UNSAFE) {
+          if (eflags & html4.eflags.FOLDABLE) {
+            return;
+          } else if (eflags & html4.eflags.UNSAFE) {
             ignoring = !(eflags & html4.eflags.EMPTY);
             return;
           }
@@ -281,7 +283,8 @@ html.makeHtmlSanitizer = function (sanitizeAttributes) {
           }
           if (!html4.ELEMENTS.hasOwnProperty(tagName)) { return; }
           var eflags = html4.ELEMENTS[tagName];
-          if (!(eflags & (html4.eflags.UNSAFE | html4.eflags.EMPTY))) {
+          if (!(eflags & (html4.eflags.UNSAFE | html4.eflags.EMPTY
+                          | html4.eflags.FOLDABLE))) {
             var index;
             if (eflags & html4.eflags.OPTIONAL_ENDTAG) {
               for (index = stack.length; --index >= 0;) {

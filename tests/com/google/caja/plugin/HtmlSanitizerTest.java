@@ -81,8 +81,8 @@ public class HtmlSanitizerTest extends TestCase {
   }
   public void testUnknownAttribute() throws Exception {
     assertValid(html("<b unknown=\"bogus\">Hello</b>"),
-                  "<b>Hello</b>",
-                  "WARNING: unknown attribute unknown on b");
+                "<b>Hello</b>",
+                "WARNING: unknown attribute unknown on b");
   }
   public void testKnownAttribute() throws Exception {
     assertValid(html("<b id=\"bold\">Hello</b>"), "<b id=\"bold\">Hello</b>");
