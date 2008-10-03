@@ -29,6 +29,9 @@
  * - <code>===</code> and <code>!==</code> on tamed DOM nodes will not behave
  *   the same as with untamed nodes.  Specifically, it is not always true that
  *   {@code document.getElementById('foo') === document.getElementById('foo')}.
+ * - Properties backed by setters/getters like {@code HTMLElement.innerHTML}
+ *   will not appear to uncajoled code as DOM nodes do, since they are
+ *   implemented using cajita property handlers.
  *
  * @author mikesamuel@gmail.com
  */
