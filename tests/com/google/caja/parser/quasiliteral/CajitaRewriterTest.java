@@ -295,9 +295,11 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
    */
   public void testBadDelete() throws Exception {
     rewriteAndExecute(
-        "testImports.badContainer = {secret_: 3469};",
-        "assertThrows(function() {delete badContainer['secret_'];});",
-        "assertEquals(testImports.badContainer.secret_, 3469);");
+        "testImports.badContainer = {secret__: 3469};",
+        "assertThrows(function() {delete badContainer['secret__'];});",
+        "assertEquals(testImports.badContainer.secret__, 3469);");
+    rewriteAndExecute(
+        "assertThrows(function() {delete ({})['proto___'];});");
   }
 
   /**
