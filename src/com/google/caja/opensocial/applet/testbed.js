@@ -349,6 +349,8 @@ var getImports = (function () {
                   + '"');
         case 'object': case 'function':
           if (o === null) { break; }
+          // Approximate test for disfunction
+          if (o.call && o.apply && o.bind) { return cajita.callPub(o, "toString"); }
           if (cajita.isJSONContainer(o)) {
             var els = [];
             if ('length' in o
@@ -367,7 +369,7 @@ var getImports = (function () {
       }
       return String(o);
     } catch (e) {
-      return "This object is recursive, so we're not going to try to print it.";
+      return "This object is recursive, so we can't print it correctly.";
     }
   }
 
