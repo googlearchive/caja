@@ -349,7 +349,11 @@ var getImports = (function () {
                   + '"');
         case 'object': case 'function':
           if (o === null) { break; }
-          // Approximate test for disfunction
+          // Approximate test for disfunction:
+          // repr() doesn't know which vat is calling it, so it can't
+          // get access to the appropriate Disfunction object for an
+          // instanceof test.  At worst, an object will print out as
+          // [Object object].
           if (o.call && o.apply && o.bind) { return cajita.callPub(o, "toString"); }
           if (cajita.isJSONContainer(o)) {
             var els = [];
