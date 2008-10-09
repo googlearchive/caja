@@ -1,0 +1,914 @@
+<report id="20081009T001401">
+<varz name="time" value="1223511241"/>
+<target name="update">
+  <log>At revision 2518.
+</log>
+</target>
+<varz name="target.update.status" value="1"/>
+<varz name="target.update.time" value="3"/>
+<varz name="svnversion" value="2518"/>
+<target name="clean">
+  <log>Buildfile: build.xml
+
+clean:
+   [delete] Deleting directory /opt/svn/google-caja/ant-reports
+   [delete] Deleting directory /opt/svn/google-caja/ant-docs
+   [delete] Deleting directory /opt/svn/google-caja/ant-instr
+   [delete] Deleting directory /opt/svn/google-caja/ant-jars
+   [delete] Deleting directory /opt/svn/google-caja/ant-lib
+   [delete] Deleting directory /opt/svn/google-caja/ant-www
+
+BUILD SUCCESSFUL
+Total time: 1 second
+</log>
+</target>
+<varz name="target.clean.status" value="1"/>
+<varz name="target.clean.time" value="3"/>
+<tasks rev="2518">
+<task file="src/com/google/caja/lexer/FilePosition.java" line="35" owner="mikesamuel">need unittests</task>
+<task file="src/com/google/caja/lexer/HtmlLexer.java" line="405" owner="mikesamuel">rewrite with a transition table or just use ANTLR</task>
+<task file="src/com/google/caja/lexer/CharProducer.java" line="50" owner="mikesamuel">separate this into two factories in separate files,</task>
+<task file="src/com/google/caja/lexer/CssLexer.java" line="32" owner="mikesamuel">CSS2.1 has changed lexical conventions to effectively</task>
+<task file="src/com/google/caja/render/Innocent.java" line="129" owner="ihab.awad">Move this functionality to a common place. </task>
+<task file="src/com/google/caja/lang/html/HtmlSchema.java" line="42" owner="mikesamuel">respect required attributes for tags.</task>
+<task file="src/com/google/caja/lang/html/HtmlSchema.java" line="118" owner="mikesamuel">divert IllegalArgumentExceptions to MessageQueue</task>
+<task file="src/com/google/caja/lang/css/CssSchema.java" line="189" owner="mikesamuel">Is there any value in enumerating elements?</task>
+<task file="src/com/google/caja/lang/css/css-extensions-defs.json" line="23" owner="unknown">&quot;: &quot;dom2property&quot; },</task>
+<task file="src/com/google/caja/lang/css/css-extensions-defs.json" line="27" owner="unknown">&quot;: &quot;dom2property&quot; },</task>
+<task file="src/com/google/caja/parser/quasiliteral/Permit.java" line="64" owner="erights">Add case for dotted path expression.</task>
+<task file="src/com/google/caja/parser/quasiliteral/Permit.java" line="87" owner="erights">encode (or at least sanitize) key</task>
+<task file="src/com/google/caja/parser/quasiliteral/QuasiNode.java" line="86" owner="ihab.awad">As a special case, an Identifier with a null value is</task>
+<task file="src/com/google/caja/parser/quasiliteral/Rule.java" line="385" owner="erights">These rules should be independent of whether we're writing</task>
+<task file="src/com/google/caja/parser/quasiliteral/PermitTemplate.java" line="44" owner="erights">to be read in from a JSON config</task>
+<task file="src/com/google/caja/parser/quasiliteral/TrailingUnderscoresHole.java" line="73" owner="mikesamuel">can this move from the superclass into a sibling class?</task>
+<task file="src/com/google/caja/parser/quasiliteral/DefaultValijaRewriter.java" line="655" owner="erights">Need a general way to expand readModifyWrite lValues.</task>
+<task file="src/com/google/caja/parser/quasiliteral/DefaultValijaRewriter.java" line="665" owner="mikesamuel">better lower limit</task>
+<task file="src/com/google/caja/parser/quasiliteral/DefaultValijaRewriter.java" line="705" owner="mikesamuel">better lower bound</task>
+<task file="src/com/google/caja/parser/quasiliteral/DefaultValijaRewriter.java" line="715" owner="mikesamuel">Figure out when post increments are being</task>
+<task file="src/com/google/caja/parser/quasiliteral/SimpleQuasiNode.java" line="95" owner="ihab.awad">Absorb setting the FilePosition into newNodeInstance and remove the</task>
+<task file="src/com/google/caja/parser/quasiliteral/Scope.java" line="187" owner="ihab.awad">importedVariables is only used by the root-most scope; it is</task>
+<task file="src/com/google/caja/parser/quasiliteral/Scope.java" line="324" owner="ihab.awad">Uses private access to 's' which is of same class but distinct</task>
+<task file="src/com/google/caja/parser/quasiliteral/Scope.java" line="341" owner="ihab.awad">Uses private access to 's' which is of same class but distinct</task>
+<task file="src/com/google/caja/parser/quasiliteral/Scope.java" line="520" owner="ihab.awad">Refactor to use standard Caja Visitor. Currently not</task>
+<task file="src/com/google/caja/parser/quasiliteral/Scope.java" line="583" owner="ihab.awad">Change the ParseTreeNode type for the right hand sides</task>
+<task file="src/com/google/caja/parser/quasiliteral/Scope.java" line="697" owner="erights">Permit should generate a JSON AST directly,</task>
+<task file="src/com/google/caja/parser/quasiliteral/RuleDescription.java" line="58" owner="ihab.awad">Add metadata for a rule indicating that it always fails,</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="136" owner="erights">Pull manifest up into module record.</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="715" owner="mikesamuel">limit</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="756" owner="mikesamuel">limit further</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="874" owner="mikesamuel">Limit further</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="1168" owner="erights">Need a general way to expand lValues</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="1189" owner="erights">Need a general way to expand lValues</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="1215" owner="erights">Need a general way to expand readModifyWrite lValues.</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="1225" owner="mikesamuel">better lower limit</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="1265" owner="mikesamuel">better lower bound</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="1275" owner="mikesamuel">Figure out when post increments are being</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="1849" owner="ihab.awad">The 'multiDeclaration' implementation is hard</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="2055" owner="mikesamuel">break/continue with unmentionable label</task>
+<task file="src/com/google/caja/parser/html/AbstractElementStack.java" line="138" owner="mikesamuel">check against XML&amp;HTML definitions of whitespace.</task>
+<task file="src/com/google/caja/parser/css/CssParser.java" line="523" owner="mikesamuel">fix this so it doesn't throw a parse exception at end</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="689" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="717" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="733" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="749" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="764" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="779" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="796" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="811" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="836" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="906" owner="msamuel">maybe enforce the convention that there are matched</task>
+<task file="src/com/google/caja/parser/js/SyntheticNodes.java" line="20" owner="erights,ihab">Remove the concept of &quot;synthetic&quot; entirely.</task>
+<task file="src/com/google/caja/parser/js/Statement.java" line="30" owner="mikesamuel">breaksReaching should probably take a paremeter of type</task>
+<task file="src/com/google/caja/parser/js/Statement.java" line="32" owner="mikesamuel">rename breaks and continues to collectBreakTargets and</task>
+<task file="src/com/google/caja/parser/js/LabeledStmtWrapper.java" line="30" owner="mikesamuel">Investigate whether use of continue to a non loop</task>
+<task file="src/com/google/caja/parser/js/LabeledStmtWrapper.java" line="32" owner="mikesamuel">Do we want to remove labelling of non-loop statements</task>
+<task file="src/com/google/caja/parser/js/LabeledStmtWrapper.java" line="34" owner="mikesamuel">Erase the distinction between LabeledStmtWrapper and</task>
+<task file="src/com/google/caja/parser/js/StringLiteral.java" line="118" owner="msamuel">move unescaping to Escaping.java -- nobody will look there</task>
+<task file="src/com/google/caja/parser/ParseTreeNodeContainer.java" line="48" owner="mikesamuel">this should never be rendered since rendering a group</task>
+<task file="src/com/google/caja/parser/AbstractParseTreeNode.java" line="135" owner="mikesamuel">maybe reliably throw an exception type, that includes</task>
+<task file="src/com/google/caja/opensocial/service/HttpStatus.java" line="20" owner="jasvir">Use a standard class or move to appropriate package</task>
+<task file="src/com/google/caja/opensocial/applet/CajaApplet.java" line="150" owner="mikesamuel">If the text starts with a &lt;base&gt; tag, maybe use that</task>
+<task file="src/com/google/caja/opensocial/applet/testbed.js" line="399" owner="erights">color something red</task>
+<task file="src/com/google/caja/opensocial/GadgetSpec.java" line="31" owner="ihab.awad">Consider a more generic representation that still guards against</task>
+<task file="src/com/google/caja/plugin/stages/OpenTemplateStage.java" line="50" owner="mikesamuel">this could probably be more simply done as a</task>
+<task file="src/com/google/caja/plugin/stages/OpenTemplateStage.java" line="371" owner="unknown">output to a message queue</task>
+<task file="src/com/google/caja/plugin/stages/ValidateCssStage.java" line="51" owner="mikesamuel">build up a list of classes and ids for use in</task>
+<task file="src/com/google/caja/plugin/html-sanitizer.js" line="37" owner="unknown">&amp;pi; is different from &amp;Pi;</task>
+<task file="src/com/google/caja/plugin/Config.java" line="49" owner="mikesamuel">make this subclassable so opensocial specific flags can be</task>
+<task file="src/com/google/caja/plugin/domita.js" line="366" owner="mikesamuel">integrate cajita compiler to allow arbitrary</task>
+<task file="src/com/google/caja/plugin/domita.js" line="383" owner="mikesamuel">determine mime type properly.</task>
+<task file="src/com/google/caja/plugin/domita.js" line="423" owner="mikesamuel">make sure it really is a DOM node</task>
+<task file="src/com/google/caja/plugin/domita.js" line="478" owner="mikesamuel">if opt_keyAttrib, could implement getNamedItem</task>
+<task file="src/com/google/caja/plugin/domita.js" line="541" owner="mikesamuel">replace with cursors so that subtrees are delegable</task>
+<task file="src/com/google/caja/plugin/domita.js" line="545" owner="mikesamuel">replace with cursors so that subtrees are delegable</task>
+<task file="src/com/google/caja/plugin/domita.js" line="551" owner="mikesamuel">replace with cursors so that subtrees are delegable</task>
+<task file="src/com/google/caja/plugin/domita.js" line="552" owner="unknown">handle multiple classes.</task>
+<task file="src/com/google/caja/plugin/domita.js" line="702" owner="mikesamuel">for RCDATA we only need to escape &amp; if they're not</task>
+<task file="src/com/google/caja/plugin/domita.js" line="920" owner="mikesamuel">make sure event doesn't propagate to dispatched</task>
+<task file="src/com/google/caja/plugin/domita.js" line="1069" owner="mikesamuel">recognize and rewrite URLs.</task>
+<task file="src/com/google/caja/plugin/domita.js" line="1098" owner="unknown">maybe whitelist the color names defined for CSS if the arg is a</task>
+<task file="src/com/google/caja/plugin/domita.js" line="1145" owner="mikesamuel">remove these, and only expose them via window once</task>
+<task file="src/com/google/caja/plugin/domita.js" line="1154" owner="mikesamuel">figure out a mechanism by which the container can</task>
+<task file="src/com/google/caja/plugin/domita.js" line="1185" owner="mikesamuel">This implements only the parts needed by prototype.</task>
+<task file="src/com/google/caja/plugin/DomAttributeConstraint.java" line="53" owner="ihab">rdub disabled this condition. Am leaving it in.</task>
+<task file="src/com/google/caja/plugin/DomAttributeConstraint.java" line="104" owner="ihab">Handle using HTML4, which does not allow 'id' here.</task>
+<task file="src/com/google/caja/plugin/DomAttributeConstraint.java" line="105" owner="ihab">Review other ways SCRIPT.innerHTML may be modified.</task>
+<task file="src/com/google/caja/plugin/DomAttributeConstraint.java" line="136" owner="ihab">Handle using HTML4, which does not allow 'id' here.</task>
+<task file="src/com/google/caja/plugin/CssRewriter.java" line="324" owner="mikesamuel">check argument if child now a FunctionCall</task>
+<task file="src/com/google/caja/plugin/CssRewriter.java" line="514" owner="mikesamuel">for content: and other uri types, use</task>
+<task file="src/com/google/caja/plugin/PluginCompilerMain.java" line="134" owner="mikesamuel">capture the input as bytes, guess encoding, and</task>
+<task file="src/com/google/caja/plugin/CssValidator.java" line="571" owner="mikesamuel">this is currently 5 instead of 4 because it also limits</task>
+<task file="src/com/google/caja/demos/lolcat-search/searchengine.js" line="25" owner="ihab.awad">In un-cajoled code, use ___ instead of _ to indicate</task>
+<task file="src/com/google/caja/demos/calendar/rrule-cajita.js" line="194" owner="mikesamuel">don't need a list here</task>
+<task file="src/com/google/caja/demos/calendar/rrule-cajita.js" line="206" owner="mikesamuel">the spec is not clear on this.  Treat the week</task>
+<task file="src/com/google/caja/demos/calendar/rrule-cajita.js" line="242" owner="mikesamuel">filter byWeekNo and write unit tests</task>
+<task file="src/com/google/caja/demos/calendar/rrule-cajita.js" line="256" owner="mikesamuel">filter byWeekNo and write unit tests</task>
+<task file="src/com/google/caja/demos/calendar/rrule-cajita.js" line="306" owner="mikesamuel">if count is large, we might try predicting the end</task>
+<task file="src/com/google/caja/demos/calendar/rrule-cajita.js" line="311" owner="mikesamuel">warn</task>
+<task file="src/com/google/caja/demos/calendar/rrule-cajita.js" line="348" owner="mikesamuel">if we allow iteration more frequently than daily</task>
+<task file="src/com/google/caja/demos/calendar/rrule-cajita.js" line="602" owner="mikesamuel">apply byhour, byminute, bysecond rules here</task>
+<task file="src/com/google/caja/demos/calendar/string-interpolation.js" line="273" owner="unknown">This implementation does not correctly handle [:Cf:] characters.</task>
+<task file="src/com/google/caja/demos/calendar/event_store.js" line="108" owner="mikesamuel">look at tzid</task>
+<task file="src/com/google/caja/demos/calendar/event_store.js" line="116" owner="mikesamuel">translate to start tzid</task>
+<task file="src/com/google/caja/demos/calendar/event_store.js" line="125" owner="mikesamuel">handle multiple RRULES, EXRULES, RDATES, EXDATES</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="290" owner="unknown">This implementation does not correctly handle [:Cf:] characters.</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="368" owner="unknown">check for apparent end tag</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="533" owner="unknown">escape format control characters</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="1398" owner="mikesamuel">if there's an easy way to interleave bits when</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="3504" owner="mikesamuel">resolve the href attrib relative to globalProps.url?</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="3509" owner="mikesamuel">resolve the href attrib relative to globalProps.url?</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="3517" owner="mikesamuel">other url node/attrib pairs?</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="4758" owner="mikesamuel">this may be premature.  If needed, We could</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="5052" owner="mikesamuel">according to section 4.3.10</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="5318" owner="mikesamuel">don't need a list here</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="5330" owner="mikesamuel">the spec is not clear on this.  Treat the week</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="5366" owner="mikesamuel">filter byWeekNo and write unit tests</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="5380" owner="mikesamuel">filter byWeekNo and write unit tests</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="5430" owner="mikesamuel">if count is large, we might try predicting the end</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="5435" owner="mikesamuel">warn</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="5472" owner="mikesamuel">if we allow iteration more frequently than daily</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="5726" owner="mikesamuel">apply byhour, byminute, bysecond rules here</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="6052" owner="mikesamuel">look at tzid</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="6060" owner="mikesamuel">translate to start tzid</task>
+<task file="src/com/google/caja/demos/calendar/calendar.xml" line="6069" owner="mikesamuel">handle multiple RRULES, EXRULES, RDATES, EXDATES</task>
+<task file="src/com/google/caja/demos/calendar/html-interp.js" line="72" owner="unknown">check for apparent end tag</task>
+<task file="src/com/google/caja/demos/calendar/html-interp.js" line="237" owner="unknown">escape format control characters</task>
+<task file="src/com/google/caja/demos/calendar/html-interp.js" line="1102" owner="mikesamuel">if there's an easy way to interleave bits when</task>
+<task file="src/com/google/caja/demos/calendar/hcalendar.js" line="328" owner="mikesamuel">resolve the href attrib relative to globalProps.url?</task>
+<task file="src/com/google/caja/demos/calendar/hcalendar.js" line="333" owner="mikesamuel">resolve the href attrib relative to globalProps.url?</task>
+<task file="src/com/google/caja/demos/calendar/hcalendar.js" line="341" owner="mikesamuel">other url node/attrib pairs?</task>
+<task file="src/com/google/caja/demos/calendar/package.html" line="34" owner="mikesamuel">write me</task>
+<task file="src/com/google/caja/demos/calendar/package.html" line="73" owner="mikesamuel">write me</task>
+<task file="src/com/google/caja/demos/calendar/filters-cajita.js" line="81" owner="mikesamuel">according to section 4.3.10</task>
+<task file="src/com/google/caja/demos/calendar/instanceGenerators-cajita.js" line="172" owner="mikesamuel">this may be premature.  If needed, We could</task>
+<task file="src/com/google/caja/reporting/MessageType.java" line="26" owner="mikesamuel">rename this to CommonMessageType and rename</task>
+<task file="src/com/google/caja/reporting/MessageContext.java" line="30" owner="mikesamuel">replace these public fields with getters &amp; setters to</task>
+<task file="src/com/google/caja/util/Criterion.java" line="23" owner="mikesamuel">replace &quot;may be null&quot; and &quot;not null&quot; shorthands with</task>
+<task file="src/com/google/caja/util/Criterion.java" line="25" owner="mikesamuel">replace with com.google.common.Predicate and the</task>
+<task file="src/com/google/caja/cajita-debugmode.js" line="27" owner="mikesamuel">how to collect logging.</task>
+<task file="src/com/google/caja/cajita-debugmode.js" line="308" owner="mikesamuel">should userException be defined as identity in</task>
+<task file="src/com/google/caja/valija-cajita.js" line="16" owner="erights">nothing in this file is tested yet</task>
+<task file="src/com/google/caja/valija-cajita.js" line="101" owner="erights">Once EcmaScript and Valija allow patterns in parameter</task>
+<task file="src/com/google/caja/valija-cajita.js" line="245" owner="erights">figure out why things break when the</task>
+<task file="src/com/google/caja/valija-cajita.js" line="327" owner="erights">Why are we testing for the empty string here?</task>
+<task file="src/com/google/caja/valija-cajita.js" line="379" owner="erights">fix this once DONTENUM properties are better</task>
+<task file="src/com/google/caja/cajita.js" line="26" owner="erights">All code text in comments should be enclosed in</task>
+<task file="src/com/google/caja/cajita.js" line="29" owner="ihab.awad">Missing tests in CajitaTest.java for the functionality</task>
+<task file="src/com/google/caja/cajita.js" line="34" owner="erights">Move such extensions to a separate extensions.js,</task>
+<task file="src/com/google/caja/cajita.js" line="262" owner="metaweta">Ask mike samuel about this vs. log-to-console.js</task>
+<task file="src/com/google/caja/cajita.js" line="280" owner="erights">We may deprecate this in favor of &lt;pre&gt;</task>
+<task file="src/com/google/caja/cajita.js" line="450" owner="erights">Analyze the security implications</task>
+<task file="src/com/google/caja/cajita.js" line="463" owner="erights">This won't work for a cross-frame RegExp,</task>
+<task file="src/com/google/caja/cajita.js" line="484" owner="erights">Detect whether this is a valid constructor</task>
+<task file="src/com/google/caja/cajita.js" line="550" owner="erights">walk prototype chain.</task>
+<task file="src/com/google/caja/cajita.js" line="608" owner="erights">Object(&lt;primitive&gt;) wrappers should also be</task>
+<task file="src/com/google/caja/cajita.js" line="797" owner="erights">Having a fastpath flag for this probably doesn't</task>
+<task file="src/com/google/caja/cajita.js" line="975" owner="erights">To avoid accidents, &lt;tt&gt;method&lt;/tt&gt;,</task>
+<task file="src/com/google/caja/cajita.js" line="1044" owner="metaweta">make this a cajita-uncatchable exception</task>
+<task file="src/com/google/caja/cajita.js" line="1051" owner="metaweta">make this a cajita-uncatchable exception</task>
+<task file="src/com/google/caja/cajita.js" line="1123" owner="erights">Once ES3.1 settles, revisit this and </task>
+<task file="src/com/google/caja/cajita.js" line="1146" owner="erights">Once we have ES3.1ish attribute control, it</task>
+<task file="src/com/google/caja/cajita.js" line="1151" owner="erights">Revisit this case</task>
+<task file="src/com/google/caja/cajita.js" line="1169" owner="ihab.awad">Make this throw a &quot;module linkage error&quot; so as to be</task>
+<task file="src/com/google/caja/cajita.js" line="1707" owner="erights">Once we retire Original-Caja, the result of</task>
+<task file="src/com/google/caja/cajita.js" line="1722" owner="erights">Once we retire Original-Caja, the result of</task>
+<task file="src/com/google/caja/cajita.js" line="1835" owner="erights">This case is a different kludge that needs to</task>
+<task file="src/com/google/caja/cajita.js" line="2116" owner="erights">I hope that this outcome reporting can be</task>
+<task file="src/com/google/caja/cajita.js" line="2351" owner="erights">nothing in this section is tested yet</task>
+<task file="src/com/google/caja/cajita.js" line="2510" owner="ihab.awad">Fix so matches newlines too! See bug 762.</task>
+<task file="tests/com/google/caja/lang/css/CssSchemaTest.java" line="50" owner="mikesamuel">test getSymbol</task>
+<task file="tests/com/google/caja/config/ConfigUtilTest.java" line="49" owner="mikesamuel">better file positions for error messages.</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="657" owner="unknown">- do we need a special test for this? is x2v working&quot;</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="889" owner="unknown">- wait on MarkM to figure out what\'s up with this test.&quot;</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="919" owner="unknown">not sure about this test</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="955" owner="unknown">- not sure about this one --&gt;&quot;,</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="1237" owner="unknown">- I don\'t think attendee stuff is implemented in X2V&quot;</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="1254" owner="unknown">- should \'REQ-PARTICIPANT be lc\'ed?   --&gt;&quot;,</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="1260" owner="unknown">- should mailto: be here?    --&gt;&quot;,</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="1391" owner="unknown">- ask MarkM about this. Did he mean to use &lt;del&gt;? --&gt;&quot;,</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="1439" owner="unknown">- review the x2v formatting stuff for DESCRIPTION&quot;</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="1506" owner="unknown">--&gt;&quot;,</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="1557" owner="unknown">- eh?  --&gt;&quot;,</task>
+<task file="tests/com/google/caja/demos/calendar/rrule_test.html" line="20" owner="mikesamuel">cajole the scripts so that for loops work.  --&gt;</task>
+<task file="tests/com/google/caja/demos/calendar/bitset_test.html" line="20" owner="mikesamuel">cajole the scripts so that for loops work.  --&gt;</task>
+<task file="tests/com/google/caja/demos/calendar/time_util_test.html" line="20" owner="mikesamuel">cajole the scripts so that for loops work.  --&gt;</task>
+<task file="tests/com/google/caja/demos/calendar/time_util_test.js" line="97" owner="mikesamuel">check that these answers are right</task>
+<task file="tests/com/google/caja/demos/calendar/time_test.html" line="20" owner="mikesamuel">cajole the scripts so that for loops work.  --&gt;</task>
+<task file="tests/com/google/caja/demos/calendar/rrule_test.js" line="534" owner="msamuel">implement hourly iteration</task>
+<task file="tests/com/google/caja/demos/calendar/rrule_test.js" line="546" owner="msamuel">implement minutely iteration</task>
+<task file="tests/com/google/caja/demos/calendar/rrule_test.js" line="559" owner="msamuel">implement minutely iteration</task>
+<task file="tests/com/google/caja/demos/calendar/rrule_test.js" line="763" owner="msamuel">is this right?</task>
+<task file="tests/com/google/caja/demos/calendar/rrule_test.js" line="960" owner="msamuel">check advancement of more examples</task>
+<task file="tests/com/google/caja/demos/calendar/filters_test.html" line="20" owner="mikesamuel">cajole the scripts so that for loops work.  --&gt;</task>
+<task file="tests/com/google/caja/demos/calendar/generators_test.html" line="20" owner="mikesamuel">cajole the scripts so that for loops work.  --&gt;</task>
+<task file="tests/com/google/caja/parser/quasiliteral/RewriterTestCase.java" line="68" owner="ihab.awad">Refactor tests to use checkAddsMessage(...) instead</task>
+<task file="tests/com/google/caja/parser/quasiliteral/RewriterTestCase.java" line="145" owner="ihab.awad">Change dependents to use checkAddsMessage and just call js(fromString(&quot;...&quot;))</task>
+<task file="tests/com/google/caja/parser/quasiliteral/RewriterTestCase.java" line="147" owner="ihab.awad">Change checkAddsMessage and similar functions to check</task>
+<task file="tests/com/google/caja/parser/quasiliteral/DefaultValijaRewriterTest.java" line="229" owner="ihab.awad">SECURITY: Re-enable by reading (say) x.foo, and</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CajitaRewriterTest.java" line="180" owner="ihab.awad">Enhance test framework to allow &quot;before&quot; and &quot;after&quot;</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CajitaRewriterTest.java" line="362" owner="erights">This test isn't green because we haven't yet fixed the bug.</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CajitaRewriterTest.java" line="380" owner="erights">Need more tests.</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CajitaRewriterTest.java" line="509" owner="ihab.awad">The below should throw MessageType.MASKING_SYMBOL at</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CajitaRewriterTest.java" line="1265" owner="ihab.awad">Once permit templates can be loaded dynamically, create</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CajitaRewriterTest.java" line="1294" owner="ihab.awad">The below test is not as complete as it should be</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CajitaRewriterTest.java" line="1841" owner="ihab.awad">SECURITY: Re-enable by reading (say) x.foo, and</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CommonJsRewriterTestCase.java" line="150" owner="ihab.awad">Disabled until we figure out how to get a test fixture</task>
+<task file="tests/com/google/caja/parser/html/DomParserTest.java" line="716" owner="mikesamuel">this error message seems to be a bug.</task>
+<task file="tests/com/google/caja/parser/css/CssTreeTest.java" line="198" owner="mikesamuel">test rendering of @imports, @page, @font-face,</task>
+<task file="tests/com/google/caja/parser/css/CssTreeTest.java" line="200" owner="mikesamuel">test rendering of unicode range literals.</task>
+<task file="tests/com/google/caja/parser/js/FuzzedParserTest.java" line="24" owner="jasvir">These tests were generated by the fuzzer - distill them to</task>
+<task file="tests/com/google/caja/parser/js/ParserTest.java" line="47" owner="mikesamuel">better comment each of the test input files.</task>
+<task file="tests/com/google/caja/opensocial/service/CajolingServiceTest.java" line="156" owner="mikesamuel">why are scripts not fetched?</task>
+<task file="tests/com/google/caja/opensocial/GadgetsTestMain.java" line="180" owner="unknown">&quot;, &quot;messages&quot;, messages);</task>
+<task file="tests/com/google/caja/opensocial/test-parsing.xml" line="80" owner="ihab.awad">Check on proper format for 'location' UserPrefs --&gt;</task>
+<task file="tests/com/google/caja/opensocial/DefaultGadgetRewriterTest.java" line="150" owner="ihab.awad">Rewrite &quot;golden&quot; or turn into a functional test</task>
+<task file="tests/com/google/caja/util/RhinoTestBed.java" line="42" owner="mikesamuel">maybe replace this with the JSR 223 stuff.</task>
+<task file="tests/com/google/caja/util/RhinoTestBed.java" line="178" owner="mikesamuel">do this properly</task>
+<task file="tests/com/google/caja/util/MoreAsserts.java" line="36" owner="mikesamuel">maybe actually diff using</task>
+<task file="tests/com/google/caja/util/MoreAsserts.java" line="49" owner="mikesamuel">maybe actually diff using</task>
+<task file="tests/com/google/caja/plugin/stages/DebuggingSymbolsStageTest.java" line="133" owner="unknown">enable under Valija</task>
+<task file="tests/com/google/caja/plugin/HtmlCompiledPluginTest.java" line="63" owner="metaweta">Move as many of these as possible to</task>
+<task file="tests/com/google/caja/plugin/HtmlCompiledPluginTest.java" line="116" owner="stay">Once they decide on scoping &amp; initialization rules, test</task>
+<task file="tests/com/google/caja/plugin/HtmlCompiledPluginTest.java" line="134" owner="ihab.awad">onerror handling is broken. The exception handling code</task>
+<task file="tests/com/google/caja/plugin/CssRewriterTest.java" line="41" owner="ihab">Make final decision whether to keep or remove. This test was</task>
+<task file="tests/com/google/caja/plugin/CssValidatorTest.java" line="766" owner="mikesamuel">We could break the position rule into multiple</task>
+</tasks>
+<target name="build">
+  <log>Buildfile: build.xml
+
+dirs:
+    [mkdir] Created dir: /opt/svn/google-caja/ant-reports
+    [mkdir] Created dir: /opt/svn/google-caja/ant-docs
+    [mkdir] Created dir: /opt/svn/google-caja/ant-instr
+    [mkdir] Created dir: /opt/svn/google-caja/ant-jars
+    [mkdir] Created dir: /opt/svn/google-caja/ant-lib
+    [mkdir] Created dir: /opt/svn/google-caja/ant-www
+
+Primitives:
+    [javac] Compiling 19 source files to /opt/svn/google-caja/ant-lib
+
+Reporting:
+    [javac] Compiling 14 source files to /opt/svn/google-caja/ant-lib
+
+Lexer:
+    [javac] Compiling 24 source files to /opt/svn/google-caja/ant-lib
+
+ParserCore:
+    [javac] Compiling 7 source files to /opt/svn/google-caja/ant-lib
+
+CssParser:
+    [javac] Compiling 3 source files to /opt/svn/google-caja/ant-lib
+
+HtmlParser:
+    [javac] Compiling 10 source files to /opt/svn/google-caja/ant-lib
+
+JsParser:
+    [javac] Compiling 61 source files to /opt/svn/google-caja/ant-lib
+
+Quasiliterals:
+    [javac] Compiling 32 source files to /opt/svn/google-caja/ant-lib
+
+Rendering:
+    [javac] Compiling 4 source files to /opt/svn/google-caja/ant-lib
+
+Config:
+    [javac] Compiling 3 source files to /opt/svn/google-caja/ant-lib
+
+Schemas:
+    [javac] Compiling 3 source files to /opt/svn/google-caja/ant-lib
+     [copy] Copying 16 files to /opt/svn/google-caja/ant-lib
+
+PluginCompiler:
+    [javac] Compiling 34 source files to /opt/svn/google-caja/ant-lib
+     [copy] Copying 4 files to /opt/svn/google-caja/ant-lib
+
+build.info:
+     [exec] Result: 1
+
+pluginc:
+    [javac] Compiling 13 source files to /opt/svn/google-caja/ant-lib
+    [javac] Compiling 8 source files to /opt/svn/google-caja/ant-lib
+  [genrule] compiling 2 files to /opt/svn/google-caja/ant-lib/com/google/caja/plugin/css-defs.js
+
+CajoledValija:
+   [cajole] compiling 1 files to /opt/svn/google-caja/ant-lib/com/google/caja/plugin/valija-cajoled.js
+
+MinifiedJs:
+   [minify] compiling 3 files to /opt/svn/google-caja/ant-lib/com/google/caja/plugin/html-sanitizer-minified.js
+   [minify] compiling 4 files to /opt/svn/google-caja/ant-lib/com/google/caja/plugin/domita-minified.js
+
+jars:
+     [copy] Copying 5 files to /opt/svn/google-caja/ant-jars
+      [jar] Building jar: /opt/svn/google-caja/ant-jars/pluginc.jar
+      [jar] Building jar: /opt/svn/google-caja/ant-jars/pluginc-src.jar
+
+BUILD SUCCESSFUL
+Total time: 14 seconds
+</log>
+</target>
+<varz name="target.build.status" value="1"/>
+<varz name="target.build.time" value="16"/>
+<target name="coverage">
+  <log>Buildfile: build.xml
+
+dirs:
+
+emma:
+
+dirs:
+
+Primitives:
+
+Reporting:
+
+Lexer:
+
+ParserCore:
+
+CssParser:
+
+HtmlParser:
+
+JsParser:
+
+Quasiliterals:
+
+Rendering:
+
+Config:
+
+Schemas:
+
+PluginCompiler:
+
+build.info:
+     [exec] Result: 1
+
+pluginc:
+
+CajolingService:
+    [javac] Compiling 11 source files to /opt/svn/google-caja/ant-lib
+
+CajoledValija:
+
+CajoledTests:
+   [cajole] compiling 2 files to /opt/svn/google-caja/ant-lib/com/google/caja/plugin/domita_test_cajoled.js
+   [cajole] compiling 2 files to /opt/svn/google-caja/ant-lib/com/google/caja/plugin/domita_test_valijad.js
+     [copy] Copying 31 files to /opt/svn/google-caja/ant-lib
+
+AllTests:
+    [javac] Compiling 69 source files to /opt/svn/google-caja/ant-lib
+     [copy] Copying 120 files to /opt/svn/google-caja/ant-lib
+
+runtests:
+    [instr] processing instrumentation path ...
+    [instr] instrumentation path processed in 2468 ms
+    [instr] [733 class(es) instrumented, 217 resource(s) copied]
+    [instr] metadata merged into [/opt/svn/google-caja/ant-reports/coverage/metadata.em] {in 366 ms}
+    [mkdir] Created dir: /opt/svn/google-caja/ant-reports/tests
+    [junit] Running com.google.caja.AllTests
+    [junit] Tests run: 677, Failures: 0, Errors: 0, Time elapsed: 61.733 sec
+   [report] processing input files ...
+   [report] 2 file(s) read and merged in 131 ms
+   [report] writing [html] report to [/opt/svn/google-caja/ant-reports/coverage/index.html] ...
+[junitreport] Processing /opt/svn/google-caja/ant-reports/tests/TESTS-TestSuites.xml to /tmp/null993572434
+[junitreport] Loading stylesheet /opt/svn/google-caja/third_party/ant/etc/junit-frames.xsl
+[junitreport] Transform time: 613ms
+[junitreport] Deleting: /tmp/null993572434
+
+BUILD SUCCESSFUL
+Total time: 1 minute 18 seconds
+</log>
+</target>
+<varz name="target.coverage.status" value="1"/>
+<varz name="target.coverage.time" value="79"/>
+<varz name="emma.pct" value="84"/>
+<varz name="emma.covered" value="15951"/>
+<varz name="emma.total" value="19084"/>
+<target name="tests">
+  <log>Buildfile: build.xml
+
+dirs:
+
+Primitives:
+
+Reporting:
+
+Lexer:
+
+ParserCore:
+
+CssParser:
+
+HtmlParser:
+
+JsParser:
+
+Quasiliterals:
+
+Rendering:
+
+Config:
+
+Schemas:
+
+PluginCompiler:
+
+build.info:
+     [exec] Result: 1
+
+pluginc:
+
+CajolingService:
+
+CajoledValija:
+
+CajoledTests:
+
+AllTests:
+
+runtests:
+    [junit] Running com.google.caja.CajitaTest
+    [junit] Tests run: 2, Failures: 0, Errors: 0, Time elapsed: 1.584 sec
+    [junit] Running com.google.caja.config.ConfigUtilTest
+    [junit] Tests run: 12, Failures: 0, Errors: 0, Time elapsed: 0.197 sec
+    [junit] Running com.google.caja.demos.calendar.EventStoreTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 1.607 sec
+    [junit] Running com.google.caja.demos.calendar.HcalTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 3.871 sec
+    [junit] Running com.google.caja.demos.calendar.LayoutTest
+    [junit] Tests run: 2, Failures: 0, Errors: 0, Time elapsed: 2.46 sec
+    [junit] Running com.google.caja.demos.calendar.RRuleTest
+    [junit] Tests run: 5, Failures: 0, Errors: 0, Time elapsed: 4.442 sec
+    [junit] Running com.google.caja.lang.css.CssSchemaTest
+    [junit] Tests run: 5, Failures: 0, Errors: 0, Time elapsed: 0.323 sec
+    [junit] Running com.google.caja.lang.html.HtmlSchemaTest
+    [junit] Tests run: 4, Failures: 0, Errors: 0, Time elapsed: 0.286 sec
+    [junit] Running com.google.caja.lexer.CharProducerTest
+    [junit] Tests run: 6, Failures: 0, Errors: 0, Time elapsed: 0.138 sec
+    [junit] Running com.google.caja.lexer.CssLexerTest
+    [junit] Tests run: 8, Failures: 0, Errors: 0, Time elapsed: 0.271 sec
+    [junit] Running com.google.caja.lexer.HtmlLexerTest
+    [junit] Tests run: 4, Failures: 0, Errors: 0, Time elapsed: 0.179 sec
+    [junit] Running com.google.caja.lexer.JsLexerTest
+    [junit] Tests run: 20, Failures: 0, Errors: 0, Time elapsed: 0.172 sec
+    [junit] Running com.google.caja.lexer.LookaheadCharProducerTest
+    [junit] Tests run: 3, Failures: 0, Errors: 0, Time elapsed: 0.093 sec
+    [junit] Running com.google.caja.lexer.PunctuationTrieTest
+    [junit] Tests run: 3, Failures: 0, Errors: 0, Time elapsed: 0.09 sec
+    [junit] Running com.google.caja.lexer.escaping.EscapingTest
+    [junit] Tests run: 12, Failures: 0, Errors: 0, Time elapsed: 0.108 sec
+    [junit] Running com.google.caja.opensocial.DefaultGadgetRewriterTest
+    [junit] Tests run: 10, Failures: 0, Errors: 0, Time elapsed: 2.837 sec
+    [junit] Running com.google.caja.opensocial.GadgetParserTest
+    [junit] Tests run: 2, Failures: 0, Errors: 0, Time elapsed: 0.269 sec
+    [junit] Running com.google.caja.opensocial.applet.ExpressionLanguageStageTest
+    [junit] Tests run: 8, Failures: 0, Errors: 0, Time elapsed: 0.225 sec
+    [junit] Running com.google.caja.opensocial.applet.TestBedTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 1.341 sec
+    [junit] Running com.google.caja.opensocial.service.CajolingServiceTest
+    [junit] Tests run: 6, Failures: 0, Errors: 0, Time elapsed: 1.084 sec
+    [junit] Running com.google.caja.opensocial.service.ContentTypeCheckTest
+    [junit] Tests run: 2, Failures: 0, Errors: 0, Time elapsed: 0.068 sec
+    [junit] Running com.google.caja.parser.ParseTreeNodeTest
+    [junit] Tests run: 38, Failures: 0, Errors: 0, Time elapsed: 0.179 sec
+    [junit] Running com.google.caja.parser.ParserBaseTest
+    [junit] Tests run: 2, Failures: 0, Errors: 0, Time elapsed: 0.087 sec
+    [junit] Running com.google.caja.parser.css.CssParserTest
+    [junit] Tests run: 6, Failures: 0, Errors: 0, Time elapsed: 0.332 sec
+    [junit] Running com.google.caja.parser.css.CssPropertySignatureTest
+    [junit] Tests run: 6, Failures: 0, Errors: 0, Time elapsed: 0.131 sec
+    [junit] Running com.google.caja.parser.css.CssTreeTest
+    [junit] Tests run: 10, Failures: 0, Errors: 0, Time elapsed: 0.344 sec
+    [junit] Running com.google.caja.parser.html.DomParserTest
+    [junit] Tests run: 55, Failures: 0, Errors: 0, Time elapsed: 0.505 sec
+    [junit] Running com.google.caja.parser.js.FuzzedParserTest
+    [junit] Tests run: 10, Failures: 0, Errors: 0, Time elapsed: 0.217 sec
+    [junit] Running com.google.caja.parser.js.NumberLiteralTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0.079 sec
+    [junit] Running com.google.caja.parser.js.ParserTest
+    [junit] Tests run: 25, Failures: 0, Errors: 0, Time elapsed: 1.513 sec
+    [junit] Running com.google.caja.parser.js.StringLiteralTest
+    [junit] Tests run: 4, Failures: 0, Errors: 0, Time elapsed: 1.034 sec
+    [junit] Running com.google.caja.parser.quasiliteral.CajitaRewriterTest
+    [junit] Tests run: 123, Failures: 0, Errors: 0, Time elapsed: 28.433 sec
+    [junit] Running com.google.caja.parser.quasiliteral.DefaultValijaRewriterTest
+    [junit] Tests run: 35, Failures: 0, Errors: 0, Time elapsed: 26.478 sec
+    [junit] Running com.google.caja.parser.quasiliteral.IllegalReferenceCheckRewriterTest
+    [junit] Tests run: 3, Failures: 0, Errors: 0, Time elapsed: 0.283 sec
+    [junit] Running com.google.caja.parser.quasiliteral.InnocentCodeRewriterTest
+    [junit] Tests run: 3, Failures: 0, Errors: 0, Time elapsed: 5.232 sec
+    [junit] Running com.google.caja.parser.quasiliteral.MatchTest
+    [junit] Tests run: 19, Failures: 0, Errors: 0, Time elapsed: 0.28 sec
+    [junit] Running com.google.caja.parser.quasiliteral.QuasiBuilderTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0.216 sec
+    [junit] Running com.google.caja.parser.quasiliteral.RewriterTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0.27 sec
+    [junit] Running com.google.caja.parser.quasiliteral.ScopeTest
+    [junit] Tests run: 27, Failures: 0, Errors: 0, Time elapsed: 0.341 sec
+    [junit] Running com.google.caja.plugin.CssCompilerTest
+    [junit] Tests run: 7, Failures: 0, Errors: 0, Time elapsed: 0.326 sec
+    [junit] Running com.google.caja.plugin.CssPropertyPatternsTest
+    [junit] Tests run: 10, Failures: 0, Errors: 0, Time elapsed: 0.905 sec
+    [junit] Running com.google.caja.plugin.CssRewriterTest
+    [junit] Tests run: 14, Failures: 0, Errors: 0, Time elapsed: 0.893 sec
+    [junit] Running com.google.caja.plugin.CssValidatorTest
+    [junit] Tests run: 12, Failures: 0, Errors: 0, Time elapsed: 0.785 sec
+    [junit] Running com.google.caja.plugin.DomProcessingEventsTest
+    [junit] Tests run: 13, Failures: 0, Errors: 0, Time elapsed: 1.571 sec
+    [junit] Running com.google.caja.plugin.ExpressionSanitizerTest
+    [junit] Tests run: 4, Failures: 0, Errors: 0, Time elapsed: 0.405 sec
+    [junit] Running com.google.caja.plugin.HtmlCompiledPluginTest
+    [junit] Tests run: 9, Failures: 0, Errors: 0, Time elapsed: 7.406 sec
+    [junit] Running com.google.caja.plugin.HtmlCompilerTest
+    [junit] Tests run: 10, Failures: 0, Errors: 0, Time elapsed: 0.757 sec
+    [junit] Running com.google.caja.plugin.HtmlSanitizerTest
+    [junit] Tests run: 20, Failures: 0, Errors: 0, Time elapsed: 0.485 sec
+    [junit] Running com.google.caja.plugin.JsHtmlSanitizerTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0.876 sec
+    [junit] Running com.google.caja.plugin.stages.DebuggingSymbolsStageTest
+    [junit] Tests run: 14, Failures: 0, Errors: 0, Time elapsed: 9.037 sec
+    [junit] Running com.google.caja.plugin.stages.InlineCssImportsStageTest
+    [junit] Tests run: 8, Failures: 0, Errors: 0, Time elapsed: 0.214 sec
+    [junit] Running com.google.caja.plugin.stages.OpenTemplateStageTest
+    [junit] Tests run: 5, Failures: 0, Errors: 0, Time elapsed: 0.79 sec
+    [junit] Running com.google.caja.plugin.stages.RewriteHtmlStageTest
+    [junit] Tests run: 5, Failures: 0, Errors: 0, Time elapsed: 0.339 sec
+    [junit] Running com.google.caja.render.JsLinePreservingPrinterTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0.186 sec
+    [junit] Running com.google.caja.render.JsMinimalPrinterTest
+    [junit] Tests run: 21, Failures: 0, Errors: 0, Time elapsed: 1.424 sec
+    [junit] Running com.google.caja.render.JsPrettyPrinterTest
+    [junit] Tests run: 18, Failures: 0, Errors: 0, Time elapsed: 0.859 sec
+    [junit] Running com.google.caja.render.SideBySideRendererTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0.124 sec
+    [junit] Running com.google.caja.render.TokenClassificationTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0.079 sec
+    [junit] Running com.google.caja.reporting.AbstractMessageQueueTest
+    [junit] Tests run: 3, Failures: 0, Errors: 0, Time elapsed: 0.084 sec
+    [junit] Running com.google.caja.reporting.BuildInfoTest
+    [junit] Tests run: 2, Failures: 0, Errors: 0, Time elapsed: 0.132 sec
+    [junit] Running com.google.caja.reporting.HtmlSnippetProducerTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0.113 sec
+    [junit] Running com.google.caja.reporting.SnippetProducerTest
+    [junit] Tests run: 7, Failures: 0, Errors: 0, Time elapsed: 0.099 sec
+    [junit] Running com.google.caja.util.JoinTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0.182 sec
+    [junit] Running com.google.caja.util.SparseBitSetTest
+    [junit] Tests run: 5, Failures: 0, Errors: 0, Time elapsed: 0.186 sec
+[junitreport] Processing /opt/svn/google-caja/ant-reports/tests/TESTS-TestSuites.xml to /tmp/null1342151044
+[junitreport] Loading stylesheet /opt/svn/google-caja/third_party/ant/etc/junit-frames.xsl
+[junitreport] Transform time: 2216ms
+[junitreport] Deleting: /tmp/null1342151044
+
+BUILD SUCCESSFUL
+Total time: 2 minutes 41 seconds
+</log>
+</target>
+<varz name="target.tests.status" value="1"/>
+<varz name="target.tests.time" value="162"/>
+<varz name="junit.total" value="679"/>
+<varz name="junit.errors" value="0"/>
+<varz name="junit.failures" value="0"/>
+<varz name="junit.pct" value="0.0"/>
+<target name="docs">
+  <log>Buildfile: build.xml
+
+javadocs:
+    [mkdir] Created dir: /opt/svn/google-caja/ant-docs/java
+  [javadoc] Generating Javadoc
+  [javadoc] Javadoc execution
+  [javadoc] Loading source files for package com.google.caja...
+  [javadoc] Loading source files for package com.google.caja.config...
+  [javadoc] Loading source files for package com.google.caja.lang.css...
+  [javadoc] Loading source files for package com.google.caja.lang.html...
+  [javadoc] Loading source files for package com.google.caja.lexer...
+  [javadoc] Loading source files for package com.google.caja.lexer.escaping...
+  [javadoc] Loading source files for package com.google.caja.opensocial...
+  [javadoc] Loading source files for package com.google.caja.opensocial.applet...
+  [javadoc] Loading source files for package com.google.caja.opensocial.service...
+  [javadoc] Loading source files for package com.google.caja.parser...
+  [javadoc] Loading source files for package com.google.caja.parser.css...
+  [javadoc] Loading source files for package com.google.caja.parser.html...
+  [javadoc] Loading source files for package com.google.caja.parser.js...
+  [javadoc] Loading source files for package com.google.caja.parser.quasiliteral...
+  [javadoc] Loading source files for package com.google.caja.plugin...
+  [javadoc] Loading source files for package com.google.caja.plugin.stages...
+  [javadoc] Loading source files for package com.google.caja.render...
+  [javadoc] Loading source files for package com.google.caja.reporting...
+  [javadoc] Loading source files for package com.google.caja.tools...
+  [javadoc] Loading source files for package com.google.caja.util...
+  [javadoc] Constructing Javadoc information...
+  [javadoc] Standard Doclet version 1.5.0_13
+  [javadoc] Building tree for all the packages and classes...
+  [javadoc] Building index for all the packages and classes...
+  [javadoc] Building index for all classes...
+
+jsdocs:
+    [mkdir] Created dir: /opt/svn/google-caja/ant-docs/js
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameTextNode#setNodeValue without first documenting TameTextNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameElement#setAttribute without first documenting TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameElement#setInnerHTML without first documenting TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setValue without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getCtrlKey as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document bind as a member of undocumented symbol result.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getKeyCode as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document removeChild as a member of undocumented symbol TameNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document createElement as a member of undocumented symbol TameDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNodeValue as a member of undocumented symbol TameOpaqueNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setNodeValue as a member of undocumented symbol TameTextNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document area as a member of undocumented symbol elementPolicies.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document Function as a member of undocumented symbol outers.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getStyle as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNodeName as a member of undocumented symbol TameOpaqueNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getClientX as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getClientY as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setId as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getButton as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document tameEvent___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol Html.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNodeType as a member of undocumented symbol TameOpaqueNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getHref as a member of undocumented symbol TameAElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document cssUri___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document replaceChild as a member of undocumented symbol TameNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getClassName as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getInnerHTML as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getLastChild as a member of undocumented symbol TameNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getElementsByTagName as a member of undocumented symbol TameNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document blur as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setInnerHTML as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document apply as a member of undocumented symbol result.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setHref as a member of undocumented symbol TameAElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getAttribute as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getWhich as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getOffsetHeight as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setClassName as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getPageX as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getPageY as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TameDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNextSibling as a member of undocumented symbol TameNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getParentNode as a member of undocumented symbol TameNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getValue as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNodeName as a member of undocumented symbol TameNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document stopPropagation as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document cssNumber___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document updateStyle as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setStyle as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getElementById as a member of undocumented symbol TameDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TameStyle.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNodeType as a member of undocumented symbol TameNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setAttribute as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document focus as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document htmlAttr___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getOffsetLeft as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol this.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document createTextNode as a member of undocumented symbol TameDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getOffsetTop as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TameTextNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document addEventListener as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document insertBefore as a member of undocumented symbol TameNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getPreviousSibling as a member of undocumented symbol TameNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getFirstChild as a member of undocumented symbol TameNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getTarget as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document suffix___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getAltKey as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNodeValue as a member of undocumented symbol TameNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getElements as a member of undocumented symbol TameFormElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getType as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getCssContainer___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getIdClass___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getSrc as a member of undocumented symbol TameImageElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getMetaKey as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document emitCss___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TameCommentNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getOffsetWidth as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setValue as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getId as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getShiftKey as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document rewriteUri___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document cssColor___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setSrc as a member of undocumented symbol TameImageElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getForm as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document blessCss___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document ident___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document appendChild as a member of undocumented symbol TameNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document form as a member of undocumented symbol elementPolicies.
+[jsdoctoolkit] 89 warnings.
+
+dirs:
+
+Primitives:
+
+Reporting:
+
+Lexer:
+
+ParserCore:
+
+JsParser:
+
+Quasiliterals:
+
+RuleDoclet:
+
+ruledocs:
+    [mkdir] Created dir: /opt/svn/google-caja/ant-docs/rules
+
+docs:
+
+BUILD SUCCESSFUL
+Total time: 38 seconds
+</log>
+</target>
+<varz name="target.docs.status" value="1"/>
+<varz name="target.docs.time" value="39"/>
+<target name="demos">
+  <log>Buildfile: build.xml
+
+dirs:
+
+Primitives:
+
+Reporting:
+
+Lexer:
+
+ParserCore:
+
+CssParser:
+
+HtmlParser:
+
+JsParser:
+
+Quasiliterals:
+
+Rendering:
+
+Config:
+
+Schemas:
+
+PluginCompiler:
+
+build.info:
+     [exec] Result: 1
+
+pluginc:
+
+CajolingService:
+
+CajoledValija:
+
+CajoledTests:
+
+AllTests:
+
+dirs:
+
+Primitives:
+
+Reporting:
+
+Lexer:
+
+ParserCore:
+
+CssParser:
+
+HtmlParser:
+
+JsParser:
+
+Quasiliterals:
+
+Rendering:
+
+Config:
+
+Schemas:
+
+PluginCompiler:
+
+build.info:
+     [exec] Result: 1
+
+pluginc:
+
+MinifiedJs:
+
+CajoledValija:
+
+jars:
+      [jar] Building jar: /opt/svn/google-caja/ant-jars/pluginc.jar
+
+calendar:
+    [mkdir] Created dir: /opt/svn/google-caja/ant-www/calendar
+   [minify] compiling 2 files to /opt/svn/google-caja/ant-lib/com/google/caja/demos/calendar/html-interp-minified.js
+   [minify] compiling 27 files to /opt/svn/google-caja/ant-lib/com/google/caja/demos/calendar/calendar-minified.js
+   [minify] LINT:demos/calendar/uformat.js:112+2: Semicolon inserted
+   [cajole] compiling 28 files to /opt/svn/google-caja/ant-lib/com/google/caja/demos/calendar/calendar-cajoled.js
+   [cajole] LINT : demos/calendar/uformat.js:112+2: Semicolon inserted
+   [cajole] demos/calendar/uformat.js:112: }
+   [cajole]                                 ^
+   [cajole] LINT : demos/calendar/widget-html.js:24+12 - 26: Declaration of renderCalendar masks declaration at demos/calendar/widget-html.js:23+5 - 19
+   [cajole] demos/calendar/widget-html.js:24:   function renderCalendar(layout, viewPort) {
+   [cajole]                                              ^^^^^^^^^^^^^^
+   [cajole] demos/calendar/widget-html.js:23: var renderCalendar = (function () {
+   [cajole]                                       ^^^^^^^^^^^^^^
+     [copy] Copying 12 files to /opt/svn/google-caja/ant-www/calendar
+
+lolcat-search:
+   [cajole] mkdir /opt/svn/google-caja/ant-www/lolcat-search
+   [cajole] compiling 1 files to /opt/svn/google-caja/ant-www/lolcat-search/searchbox-cajoled.js
+   [cajole] compiling 1 files to /opt/svn/google-caja/ant-www/lolcat-search/kittens-cajoled.js
+     [copy] Copying 9 files to /opt/svn/google-caja/ant-www/lolcat-search
+
+testbed:
+    [javac] Compiling 1 source file to /opt/svn/google-caja/ant-lib
+      [jar] Building jar: /opt/svn/google-caja/ant-jars/testbed.jar
+    [mkdir] Created dir: /opt/svn/google-caja/ant-www/testbed
+     [copy] Copying 18 files to /opt/svn/google-caja/ant-www/testbed
+     [copy] Copying 1 file to /opt/svn/google-caja/ant-www/testbed
+   [minify] compiling 13 files to /opt/svn/google-caja/ant-www/testbed/cajita-combined-min.js
+
+demos:
+
+dirs:
+
+Primitives:
+
+Reporting:
+
+Lexer:
+
+ParserCore:
+
+CssParser:
+
+HtmlParser:
+
+JsParser:
+
+Quasiliterals:
+
+Rendering:
+
+Config:
+
+Schemas:
+
+PluginCompiler:
+
+build.info:
+     [exec] Result: 1
+
+pluginc:
+
+CajoledValija:
+
+MinifiedJs:
+
+jars:
+      [jar] Building jar: /opt/svn/google-caja/ant-jars/pluginc.jar
+
+testbed:
+      [jar] Building jar: /opt/svn/google-caja/ant-jars/testbed.jar
+     [copy] Copying 1 file to /opt/svn/google-caja/ant-www/testbed
+
+BUILD SUCCESSFUL
+Total time: 22 seconds
+</log>
+</target>
+<varz name="target.demos.status" value="1"/>
+<varz name="target.demos.time" value="23"/>
+<output name="docs" href="docs/java/index.html"/>
+<output name="jsdocs" href="docs/js/index.html"/>
+<output name="ruledocs" href="docs/rules/CajitaRewriter.html"/>
+<output name="tests" href="tests/index.html"/>
+<output name="coverage" href="coverage/index.html"/>
+<output name="demos" href="demos/"/>
+<output name="snapshot" href="snapshot/"/>
+</report>
