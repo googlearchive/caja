@@ -28,6 +28,7 @@
     <script src="html4-defs.js" onerror="console.error(this.src)"></script>
     <script src="css-defs.js" onerror="console.error(this.src)"></script>
     <script src="html-sanitizer.js" onerror="console.error(this.src)"></script>
+    <script src="html-emitter.js" onerror="console.error(this.src)"></script>
     <script src="domita.js" onerror="console.error(this.src)"></script>
 
   </head>
@@ -93,13 +94,13 @@
         emitCssHook: ___.simpleFrozenFunc(function (css) {
           testImports.emitCss___(css.join('xyz___'));
         }),
-        getInnerHTML: ___.simpleFunc(function (tameNode) {
+        getInnerHTML: ___.simpleFrozenFunc(function (tameNode) {
           return tameNode.node___.innerHTML;
         }),
-        getAttribute: ___.simpleFunc(function (tameNode, name) {
+        getAttribute: ___.simpleFrozenFunc(function (tameNode, name) {
           return tameNode.node___.getAttribute(name);
         }),
-        getComputedStyle: ___.simpleFunc(function (tameNode, styleProp) {
+        getComputedStyle: ___.simpleFrozenFunc(function (tameNode, styleProp) {
           var node = tameNode.node___;
           if (node.currentStyle) {
             return node.currentStyle[styleProp];
@@ -107,6 +108,22 @@
             return document.defaultView.getComputedStyle(node, null)
                 .getPropertyValue(styleProp);
           }
+        }),
+        // TODO(mikesamuel): remove once HTML in this class is cajoled properly
+        getHtmlEmitter: ___.simpleFrozenFunc(function (tameBaseNode) {
+          var tameEmitter = {};
+          var emitter = new HtmlEmitter(tameBaseNode.node___);
+          for (var k in emitter) {
+            if (!/_$/.test(k) && 'function' === typeof emitter[k]) {
+              tameEmitter[k] = (function (k) {
+                    return ___.simpleFrozenFunc(function (var_args) {
+                      emitter[k].apply(emitter, arguments);
+                      return tameEmitter;
+                    });
+                  })(k);
+            }
+          }
+          return tameEmitter;
         })
       });
 
@@ -193,6 +210,9 @@
         <a id="not-blue-xyz___" href="#">I am not blue</a>
       </div>
     </div>
+
+    <p class="testcontainer" id="test-bug-731-xyz___"
+     >The input should be a radio button: </p>
 
   </body>
 </html>

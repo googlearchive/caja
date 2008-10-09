@@ -878,10 +878,13 @@ attachDocumentStub = (function () {
     TameInputElement.prototype.getForm = function () {
       return tameNode(this.node___.form, this.editable___);
     };
+    TameInputElement.prototype.getType = function () {
+      return this.getAttribute('type');
+    };
     ___.ctor(TameInputElement, TameElement, 'TameInputElement');
     ___.all2(___.grantTypedGeneric, TameInputElement.prototype,
-             ['getValue', 'setValue', 'focus', 'getForm']);
-    exportFields(TameInputElement, ['value', 'form']);
+             ['getValue', 'setValue', 'focus', 'getForm', 'getType']);
+    exportFields(TameInputElement, ['form', 'value', 'type']);
 
 
     function TameImageElement(node, editable) {

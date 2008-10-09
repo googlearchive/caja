@@ -29,9 +29,11 @@ HtmlEmitter.prototype = {
   doc_: function () { return this.cursor_[0].ownerDocument || document; },
   /** emits a start tag: {@code <foo}. */
   b: function (tagName, unary) {
-    var el = this.doc_().createElement(tagName);
-    this.top_().appendChild(el);
-    this.cursor_.push(el);
+    this.cursor_.push(this.doc_().createElement(tagName));
+    // We delay appending the child until after attributes have been set
+    // to avoid problems with side-effects caused by attribute values.
+    // See bug 731 for details, and see HtmlEmitter.prototype.f for the
+    // implementation.
     return this;
   },
   /** emits an end tag: {@code </foo>}. */
@@ -39,14 +41,33 @@ HtmlEmitter.prototype = {
     --this.cursor_.length;
     return this;
   },
-  /** emits an end to a start tag: {@code >} or {@code />}. */
+  /**
+   * emits an end to a start tag: {@code >} or {@code />}.
+   * @param {boolean} unary true if there will be no end tag, i.e. no
+   *   corresponding {@code e()} call for the closest preceding {@code b()}
+   *   call.  In XML, a tag is unary if it ends with "/>", and in HTML, if the
+   *   schema says so.
+   */
   f: function (unary) {
-    if (unary) { --this.cursor_.length; }
+    if (unary) {
+      var child = this.cursor_.pop();
+      this.top_().appendChild(child);
+    } else {
+      // This branch could be implemented in e() except for the fact that
+      // everything on the stack must be reachable from base before an
+      // interleaved script tag is executed.
+      // Interleaved script tags can't be executed while a begin tag is open
+      // so we do it on the end of the attribute list.
+      var topIdx = this.cursor_.length - 1;
+      this.cursor_[topIdx - 1].appendChild(this.cursor_[topIdx]);
+    }
     return this;
   },
   /** emits an attribute: {@code key="value"}. */
   a: function (name, value) {
-    this.top_().setAttribute(name, value);
+    // The third parameter causes IE to not treat name as case-sensitive.
+    // See bug 781 for details.
+    this.top_().setAttribute(name, value, 0);
     return this;
   },
   /** emits PCDATA text. */

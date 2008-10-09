@@ -462,3 +462,24 @@ jsunitRegister('testEmitCss',
     pass('test-emit-css');
   }
 });
+
+jsunitRegister('testBug731',
+               function testBug731() {
+  // Tests that attributes set before node added to DOM so that side-effects
+  // such as network requests happen all at once.  This is especially important
+  // on IE.
+
+  // TODO(mikesamuel): rewrite in cajoled HTML once test HTML in
+  // domita_test.html is cajoled.
+  directAccess.getHtmlEmitter(document.getElementById('test-bug-731'))
+      .b('form')
+      .f(false)
+      .b('input')
+      .a('id', 'bug-731-xyz___')
+      .a('type', 'radio')
+      .f(true)
+      .e('form');
+  var bug_731_input = document.getElementById('bug-731');
+  assertEquals('radio', bug_731_input.type);
+  pass('test-bug-731');
+});
