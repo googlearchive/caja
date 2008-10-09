@@ -6,7 +6,7 @@
                    IMPORTS___.emitCss___([ '@media print {\n  .', ' #p3-', ' {\n    font-weight: bold;\n    color: black\n  }\n}' ].join(IMPORTS___.getIdClass___()));
                    IMPORTS___.emitCss___([ '@media print, screen {\n  .', ' .p4 {\n    font-weight: bold\n  }\n}' ].join(IMPORTS___.getIdClass___()));
                    IMPORTS___.emitCss___([ '.', ' .p1 {\n  color: red\n}' ].join(IMPORTS___.getIdClass___()));
-                   IMPORTS___.c_1___ = ___.simpleFrozenFunc(function (thisNode___, event) {
+                   IMPORTS___.c_1___ = ___.simpleFrozenFunc(function (event, thisNode___) {
                                                               ___.asSimpleFunc(handleClicky)();
                                                             });
                    IMPORTS___.htmlEmitter___.pc('\n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    ').b('p').a('class', 'p1 p2').f(false).ih('Paragraph 1').e('p').pc('\n\n    ');

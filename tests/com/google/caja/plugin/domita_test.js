@@ -236,9 +236,9 @@ jsunitRegister('testAddEventListener',
   var container = document.getElementById('test-add-event-listener');
   container.addEventListener(
       'click',
-      function (node, event) {
+      function (event) {
         console.log('received event');
-        assertEquals('P', node.tagName);
+        assertEquals('P', event.target.tagName);
         assertEquals('click', event.type);
         pass('test-add-event-listener');
       });

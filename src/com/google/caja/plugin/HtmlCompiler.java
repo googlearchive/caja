@@ -582,8 +582,8 @@ public class HtmlCompiler {
         FunctionConstructor handlerFn = new FunctionConstructor(
             new Identifier(null),
             Arrays.asList(
-                new FormalParam(s(new Identifier(ReservedNames.THIS_NODE))),
-                new FormalParam(s(new Identifier("event")))),
+                new FormalParam(s(new Identifier("event"))),
+                new FormalParam(s(new Identifier(ReservedNames.THIS_NODE)))),
             handler);
 
         String handlerFnName = htmlc.syntheticId();
