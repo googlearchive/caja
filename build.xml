@@ -234,6 +234,7 @@
       <source file="${src}/com/google/caja/plugin/html4-defs.js"/>
       <source file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <source file="${src}/com/google/caja/plugin/html-emitter.js"/>
+      <source file="${src}/com/google/caja/plugin/bridal.js"/>
       <source file="${src}/com/google/caja/plugin/domita.js"/>
       <source file="${src}/com/google/caja/plugin/unicode.js"/>
     </jsdoctoolkit>
@@ -355,6 +356,7 @@
         <include file="${src}/com/google/caja/cajita.js"/>
         <include file="${src}/com/google/caja/plugin/unicode.js"/>
         <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
+        <include file="${src}/com/google/caja/plugin/bridal.js"/>
         <include file="${src}/com/google/caja/plugin/domita.js"/>
       </job>
     </minify>
@@ -381,6 +383,7 @@
         <include name="**/caja/demos/calendar/*.js"/>
         <include name="**/caja/opensocial/applet/testbed.js"/>
         <include name="**/caja/opensocial/applet/setup-valija.js"/>
+        <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/domita.js"/>
         <include name="**/caja/plugin/html4-defs.js"/>
         <include name="**/caja/plugin/html-emitter.js"/>
@@ -450,6 +453,7 @@
     </javac>
     <copy todir="${lib}">
       <fileset dir="${src}">
+        <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/domita.js"/>
         <include name="**/caja/plugin/html4-defs.js"/>
         <include name="**/caja/plugin/html-sanitizer.js"/>
@@ -660,6 +664,7 @@
         <include name="log-to-console.js"/>
       </fileset>
       <fileset dir="${src}/com/google/caja/plugin">
+        <include name="bridal.js"/>
         <include name="domita.js"/>
         <include name="html4-defs.js"/>
         <include name="html-emitter.js"/>
@@ -698,6 +703,7 @@
        <script type="text/javascript" src="html-sanitizer.js"></script>
        <script type="text/javascript" src="html-emitter.js"></script>
        <script type="text/javascript" src="setup-valija.js"></script>
+       <script type="text/javascript" src="bridal.js"></script>
        <script type="text/javascript" src="domita.js"></script>
        <script type="text/javascript" src="prettify.js"></script>
        <script type="text/javascript" src="testbed.js"></script>
@@ -716,6 +722,7 @@
         <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
         <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
         <include file="${src}/com/google/caja/opensocial/applet/setup-valija.js"/>
+        <include file="${src}/com/google/caja/plugin/bridal.js"/>
         <include file="${src}/com/google/caja/plugin/domita.js"/>
         <include file="${third_party}/js/prettify/prettify.js"/>
         <include file="${src}/com/google/caja/opensocial/applet/testbed.js"/>

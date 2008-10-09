@@ -28,6 +28,7 @@
     <script src="html4-defs.js" onerror="console.error(this.src)"></script>
     <script src="css-defs.js" onerror="console.error(this.src)"></script>
     <script src="html-sanitizer.js" onerror="console.error(this.src)"></script>
+    <script src="bridal.js" onerror="console.error(this.src)"></script>
     <script src="html-emitter.js" onerror="console.error(this.src)"></script>
     <script src="domita.js" onerror="console.error(this.src)"></script>
 
@@ -85,7 +86,11 @@
             function () { console.warn.apply(console, arguments); }),
         error: ___.simpleFrozenFunc(
             function () { console.error.apply(console, arguments); }),
-        trace: ___.simpleFrozenFunc(function () { console.trace(); })
+        trace: ___.simpleFrozenFunc(
+            function () {
+              console.trace ? console.trace()
+                  : console.error.apply(console, arguments);
+            })
       });
 
       // Give unfiltered DOM access so we can check the results of actions.
@@ -170,6 +175,10 @@
       <b>click me</b>
     </p>
 
+    <p class="testcontainer" id="test-remove-event-listener-xyz___">
+      <b>click me</b>
+    </p>
+
     <ol class="testcontainer" id="test-get-elements-by-tag-name-xyz___">
       <li>One
       <li>Two
@@ -213,6 +222,18 @@
 
     <p class="testcontainer" id="test-bug-731-xyz___"
      >The input should be a radio button: </p>
+
+    <p class="testcontainer" id="test-dom-class-hierarchy-xyz___">
+      <b>Click me</b>
+    </p>
+
+    <div class="testcontainer" id="test-case-insensitive-attrs-xyz___">
+      <table id="is-red-xyz___">
+        <tr>
+          <td><strong>Click me if this is red</strong></td>
+        </tr>
+      </table>
+    </div>
 
   </body>
 </html>

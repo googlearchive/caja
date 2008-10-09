@@ -238,10 +238,40 @@ jsunitRegister('testAddEventListener',
       'click',
       function (event) {
         console.log('received event');
-        assertEquals('P', event.target.tagName);
+        assertEquals('B', event.target.tagName);
         assertEquals('click', event.type);
         pass('test-add-event-listener');
       });
+});
+
+jsunitRegister('testRemoveEventListener',
+               function testRemoveEventListener() {
+  var container = document.getElementById('test-remove-event-listener');
+  var firstFired = false;
+  var failed = false;
+  function second(event) {
+    console.log('received event');
+    if (failed) { return; }
+    assertEquals('B', event.target.tagName);
+    assertEquals('click', event.type);
+    event.target.innerHTML = 'All done!';
+    pass('test-remove-event-listener');
+  }
+  function first(event) {
+    if (firstFired) {
+      event.target.innerHTML = '<b>FAILED - event handler was not removed!</b>';
+      failed = true;
+      return;
+    }
+    firstFired = true;
+    console.log('received event');
+    assertEquals('B', event.target.tagName);
+    assertEquals('click', event.type);
+    event.target.innerHTML = 'Thank you, click me again please';
+    container.removeEventListener('click', first);
+    container.addEventListener('click', second);
+  }
+  container.addEventListener('click', first);
 });
 
 jsunitRegister('testGetElementsByTagName',
@@ -482,4 +512,49 @@ jsunitRegister('testBug731',
   var bug_731_input = document.getElementById('bug-731');
   assertEquals('radio', bug_731_input.type);
   pass('test-bug-731');
+});
+
+jsunitRegister('testDomClassHierarchy',
+               function testDomClassHierarchy() {
+  assertTrue(document instanceof window.Node);
+  assertTrue(document instanceof window.HTMLDocument);
+
+  assertTrue(document.createElement('div') instanceof window.Node);
+  assertTrue(document.createElement('div') instanceof window.Element);
+  assertTrue(document.createElement('div') instanceof window.HTMLDivElement);
+
+  assertTrue(document.createElement('input') instanceof window.Node);
+  assertTrue(document.createElement('input') instanceof window.Element);
+  assertTrue(
+      document.createElement('input') instanceof window.HTMLInputElement);
+
+  assertTrue(document.createElement('a') instanceof window.Node);
+  assertTrue(document.createElement('a') instanceof window.Element);
+  assertTrue(document.createElement('a') instanceof window.HTMLAnchorElement);
+
+  assertTrue(document.createElement('img') instanceof window.Node);
+  assertTrue(document.createElement('img') instanceof window.Element);
+  assertTrue(document.createElement('img') instanceof window.HTMLImageElement);
+
+  // TODO(ihab.awad): Add negative tests when virtual hierarchy is improved:
+  // assertFalse(
+  //     document.createElement('img') instanceof window.HTMLDivElement);
+
+  document.getElementById('test-dom-class-hierarchy').addEventListener(
+      'click',
+      function(event) {
+        assertTrue(event instanceof window.Event);
+        pass('test-dom-class-hierarchy');
+      });
+});
+
+jsunitRegister('testCaseInsensitiveAttrs',
+               function testCaseInsensitiveAttrs() {
+//  var container = document.getElementById('test-case-insensitive-attrs');
+  var tableNode = document.getElementById('is-red');
+  console.log('tableNode = ' + tableNode);
+  tableNode.setAttribute('bgColor', 'red');
+  tableNode.addEventListener('click', function(event) {
+    pass('test-case-insensitive-attrs');
+  });
 });
