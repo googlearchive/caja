@@ -191,7 +191,7 @@ jsunitRegister('testOptionalEndTags',
 });
 
 jsunitRegister('testFoldingOfHtmlAndBodyTags',
-               function testOptionalEndTags() {
+               function testFoldingOfHtmlAndBodyTags() {
   assertEquals(
       '<p>P 1</p>',
       html_sanitize('<html><head><title>Foo</title></head>'
@@ -214,4 +214,17 @@ jsunitRegister('testFoldingOfHtmlAndBodyTags',
           + '<p>Four</p>'
           + '</body>'
           + '</html>'));
+});
+
+jsunitRegister('testEmptyAndValuelessAttributes',
+               function testEmptyAndValuelessAttributes() {
+  assertEquals(
+      '<input checked="checked" type="checkbox" id="" class="">',
+      html_sanitize('<input checked type=checkbox id="" class=>'));
+  assertEquals(
+      '<input checked="checked" type="checkbox" id="" class="">',
+      html_sanitize('<input checked type=checkbox id= class="">'));
+  assertEquals(
+      '<input checked="checked" type="checkbox" id="" class="">',
+      html_sanitize('<input checked type=checkbox id= class = "">'));
 });
