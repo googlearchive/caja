@@ -60,7 +60,7 @@ final class PermitTemplate {
           "keys", CanCall,
           "canReadRev", CanCall,
           "dis", CanCall),
-      "caja", new PermitTemplate(
+      "cajita", new PermitTemplate(
           "log", CanCall,
           "fail", CanCall,
           "enforce", CanCall,
@@ -82,7 +82,10 @@ final class PermitTemplate {
           "canEnumOwn", CanCall,
           "canInnocentEnum", CanCall,
           "BREAK", CanCall,
-          "each", CanCall,
+          "allKeys", CanCall,
+          "forAllKeys", CanCall,
+          "ownKeys", CanCall,
+          "forOwnKeys", CanCall,
           "canCallPub", CanCall,
           "callPub", CanCall,
           "canSetPub", CanCall,
@@ -92,7 +95,6 @@ final class PermitTemplate {
           "hasTrademark", CanCall,
           "guard", CanCall,
           "makeSealerUnsealerPair", CanCall,
-          "def", CanCall,
           "USELESS", CanCall,
           "manifest", CanCall,
           "construct", CanCall,
