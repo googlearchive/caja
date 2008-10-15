@@ -62,31 +62,12 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
                                    String value,
                                    String tempObj,
                                    String tempValue) {
-    return weldSet(obj, varName, value, "Pub", tempObj, tempValue);
-  }
-
-  private static String weldSetProp(String varName,
-                                    String value,
-                                    String tempValue) {
-    return
-        tempValue + " = " + value + "," +
-        "    t___." + varName + "_canSet___ ?" +
-        "    t___." + varName + " = " + tempValue + ":" +
-        "    ___.setProp(t___, '" + varName + "', " + tempValue + ")";
-  }
-
-  private static String weldSet(String obj,
-                                String varName,
-                                String value,
-                                String pubOrProp,
-                                String tempObj,
-                                String tempValue) {
     return
         tempObj + " = " + obj + "," +
         tempValue + " = " + value + "," +
         "    " + tempObj + "." + varName + "_canSet___ ?" +
         "    " + tempObj + "." + varName + " = " + tempValue + ":" +
-        "    ___.set" + pubOrProp + "(" + tempObj + ", '" + varName + "', " + tempValue + ")";
+        "    ___.setPub(" + tempObj + ", '" + varName + "', " + tempValue + ")";
   }
 
   /**
@@ -1495,7 +1476,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     checkSucceeds(
         "typeof g[0];",
         weldPrelude("g") +
-        "typeof ___.readPub(g, 0);");
+        "___.typeOf(___.readPub(g, 0));");
     checkFails("typeof ___;", "Variables cannot end in \"__\"");
   }
 
@@ -2008,6 +1989,17 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "assertEquals(typeof g, 'undefined');" +
         "assertEquals(typeof h, 'function');" +
         "})();");
+  }
+
+  public void testReformedGenerics() throws Exception {
+    rewriteAndExecute(
+        "var x = [33];" +
+        "x.foo = [].push;" +
+        "assertThrows(function(){x.foo(44)});");
+    rewriteAndExecute(
+        "var x = {blue:'green'};" +
+        "x.foo = [].push;" +
+        "assertThrows(function(){x.foo(44)});");
   }
 
   @Override

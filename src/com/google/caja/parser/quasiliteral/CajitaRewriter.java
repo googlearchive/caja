@@ -1945,12 +1945,12 @@ public class CajitaRewriter extends Rewriter {
               + "throwing a ReferenceError. Therefore, in Caja, 'typeof' can "
               + "always evaluate its argument.",
           matches="typeof @f",
-          substitutes="typeof @f)")
+          substitutes="___.typeOf(@f)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
           return substV(
-              "typeof @f",
+              "___.typeOf(@f)",
               "f", expand(bindings.get("f"), scope, mq));
         }
         return NONE;
