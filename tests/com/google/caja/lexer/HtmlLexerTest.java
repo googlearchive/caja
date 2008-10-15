@@ -86,6 +86,30 @@ public class HtmlLexerTest extends CajaTestCase {
         "TAGEND: >");
   }
 
+  public void testShortTags() throws Exception {
+    // See comments in html-sanitizer-test.js as to why we don't bother with
+    // short tags.  In short, they are not in HTML5 and not implemented properly
+    // in existing HTML4 clients.
+    assertTokens(
+        "<p<a href=\"/\">first part of the text</> second part", false,
+        "TAGBEGIN: <p",
+        "ATTRNAME: <a",
+        "ATTRNAME: href",
+        "ATTRVALUE: \"/\"",
+        "TAGEND: >",
+        "TEXT: first part of the text</> second part");
+    assertTokens(
+        "<p/b/", false,
+        "TAGBEGIN: <p",
+        "ATTRNAME: /",
+        "ATTRNAME: b/");
+    assertTokens(
+        "<p<b>", false,
+        "TAGBEGIN: <p",
+        "ATTRNAME: <b",
+        "TAGEND: >");
+  }
+
   private void lex(HtmlLexer lexer, Appendable out) throws Exception {
     int maxTypeLength = 0;
     for (HtmlTokenType t : HtmlTokenType.values()) {

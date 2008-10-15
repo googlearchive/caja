@@ -49,6 +49,11 @@ var html = (function () {
     return lookupEntity(name);
   }
 
+  var nulRe = /\0/g;
+  function stripNULs(s) {
+	return s.replace(nulRe, '');
+  }
+
   var entityRe = /&(#\d+|#x[\da-f]+|\w+);/g;
   function unescapeEntities(s) {
     return s.replace(entityRe, decodeOneEntity);
@@ -59,10 +64,13 @@ var html = (function () {
   var ltRe = /</g;
   var gtRe = />/g;
   var quotRe = /\"/g;
+  var eqRe = /=/g;
 
+  /** Escapes HTML special characters in attribute values as HTML entities. */
   function escapeAttrib(s) {
+	// Escaping '=' defangs many UTF-7 and SGML short-tag attacks.
     return s.replace(ampRe, '&amp;').replace(ltRe, '&lt;').replace(gtRe, '&gt;')
-        .replace(quotRe, '&quot;');
+        .replace(quotRe, '&quot;').replace(eqRe, '&#61;');
   }
 
   /**
@@ -75,6 +83,12 @@ var html = (function () {
         .replace(gtRe, '&gt;');
   }
 
+
+  // TODO(mikesamuel): validate sanitizer regexs against the HTML5 grammar at
+  // http://www.whatwg.org/specs/web-apps/current-work/multipage/syntax.html
+  // http://www.whatwg.org/specs/web-apps/current-work/multipage/parsing.html
+  // http://www.whatwg.org/specs/web-apps/current-work/multipage/tokenization.html
+  // http://www.whatwg.org/specs/web-apps/current-work/multipage/tree-construction.html
 
   /** token definitions. */
   var INSIDE_TAG_TOKEN = new RegExp(
@@ -118,9 +132,9 @@ var html = (function () {
       // '/' captured in group 2 for close tags, and name captured in group 3.
       + '|<(/)?([a-z][a-z0-9]*)'
       // Text captured in group 4.
-      + '|([^<&]+)'
+      + '|([^<&>]+)'
       // Cruft captured in group 5.
-      + '|([<&]))',
+      + '|([<&>]))',
       'i');
 
   /**
@@ -176,7 +190,7 @@ var html = (function () {
                       1, encodedValue.length - 1);
                   break;
               }
-              decodedValue = unescapeEntities(encodedValue);
+              decodedValue = unescapeEntities(stripNULs(encodedValue));
             } else {
               // Use name as value for valueless attribs, so
               //   <input type=checkbox checked>
@@ -229,8 +243,13 @@ var html = (function () {
           } else if (m[4]) {  // Text
             handler.pcdata && handler.pcdata(m[4], param);
           } else if (m[5]) {  // Cruft
-            handler.pcdata
-                && handler.pcdata(m[5] === '&' ? '&amp;' : '&lt;', param);
+            if (handler.pcdata) {
+              switch (m[5]) {
+                case '<': handler.pcdata('&lt;', param); break;
+                case '>': handler.pcdata('&gt;', param); break;
+                default: handler.pcdata('&amp;', param); break;
+              }
+            }
           }
         }
       }

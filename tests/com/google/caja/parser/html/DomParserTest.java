@@ -24,6 +24,7 @@ import com.google.caja.lexer.TokenQueue;
 import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Criterion;
@@ -1895,6 +1896,38 @@ public class DomParserTest extends CajaTestCase {
             + " checked=\"checked\" onclick=\"a&lt;b\">Bar</span>"
             )
         );
+  }
+
+  public void testShortTags() throws Exception {
+    // See comments in html-sanitizer-test.js as to why we don't bother with
+    // short tags.  In short, they are not in HTML5 and not implemented properly
+    // in existing HTML4 clients.
+    assertParsedHtmlFragment(
+        Arrays.asList(
+            "<p<a href=\"/\">first part of the text</> second part"
+            ),
+        Arrays.asList(
+            "Fragment 1+1-1+52",
+            "  Tag : p 1+1-1+52",
+            "    Attrib : <a 1+3-1+5",
+            "      Value : <a 1+3-1+5",
+            "    Attrib : href 1+6-1+10",
+            "      Value : / 1+11-1+14",
+            "    Text : first part of the text</> second part 1+15-1+52"
+            ),
+        Arrays.<String>asList(),
+        Arrays.asList(
+            "<p &lt;a=\"&lt;a\" href=\"/\">"
+            + "first part of the text&lt;/&gt; second part</p>"
+            )
+        );
+    try {
+      htmlFragment(fromString("<p/b/"));
+      fail("Expected parse exception");
+    } catch (ParseException ex) {
+      assertEquals(
+          MessageType.END_OF_FILE, ex.getCajaMessage().getMessageType());
+    }
   }
 
   private void assertParsedHtml(

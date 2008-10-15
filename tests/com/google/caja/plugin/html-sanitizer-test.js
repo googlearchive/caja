@@ -228,3 +228,37 @@ jsunitRegister('testEmptyAndValuelessAttributes',
       '<input checked="checked" type="checkbox" id="" class="">',
       html_sanitize('<input checked type=checkbox id= class = "">'));
 });
+
+jsunitRegister('testSgmlShortTags',
+               function testSgmlShortTags() {
+  // We make no attempt to correctly handle SGML short tags since they are
+  // not implemented consistently across browsers, and have been removed from
+  // HTML 5.
+  //
+  // According to http://www.w3.org/QA/2007/10/shorttags.html
+  //      Shorttags - the odd side of HTML 4.01
+  //      ...
+  //      It uses an ill-known feature of SGML called shorthand markup, which
+  //      was authorized in HTML up to HTML 4.01. But what used to be a "cool"
+  //      feature for SGML experts becomes a liability in HTML, where the
+  //      construct is more likely to appear as a typo than as a conscious
+  //      choice.
+  //
+  //      All could be fine if this form typo-that-happens-to-be-legal was
+  //      properly implemented in contemporary HTML user-agents. It is not.
+  assertEquals('', html_sanitize('<p/b/'));  // Short-tag discarded.
+  assertEquals('<p></p>', html_sanitize('<p<b>'));  // Discard <b attribute
+  assertEquals(
+      '<p>first part of the text&lt;/&gt; second part</p>',
+      html_sanitize('<p<a href="/">first part of the text</> second part'));
+});
+
+jsunitRegister('testNul',
+               function testNul() {
+  // See bug 614 for details.
+  assertEquals(
+      '<a alt="harmless  SCRIPT&#61;javascript:alert(1) ignored&#61;ignored">'
+      + '</a>',
+      html_sanitize(
+          '<A ALT="harmless\0  SCRIPT=javascript:alert(1) ignored=ignored">'));
+});
