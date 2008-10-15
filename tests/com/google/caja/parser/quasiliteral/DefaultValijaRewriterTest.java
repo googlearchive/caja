@@ -273,6 +273,13 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     assertConsistent("'' + Array.slice([3, 4, 5, 6], 1);");
   }
 
+  public void testConcatArgs() throws Exception {
+    rewriteAndExecute("", "(function(x, y){ return [x, y]; })",
+        "var f = ___.getNewModuleHandler().getLastValue();"
+        + "function g(var_args) { return f.apply(___.USELESS, arguments); }"
+        + "assertEquals(g(3, 4).toString(), [3, 4].toString());");
+  }
+
   public void testReformedGenerics() throws Exception {
     assertConsistent(
         "var x = [33];" +

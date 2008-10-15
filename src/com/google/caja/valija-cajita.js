@@ -311,7 +311,7 @@ var valijaMaker = (function(outers) {
     var result = cajita.beget(DisfunctionPrototype);
     result.call = callFn;
     result.apply = function(self, args) {
-      return callFn.apply(cajita.USELESS, [self].concat(args));
+      return callFn.apply(cajita.USELESS, [self].concat(Array.slice(args, 0)));
     };
     result.bind = function(self, var_args) {
       var leftArgs = Array.slice(arguments, 0);
