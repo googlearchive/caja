@@ -254,6 +254,31 @@ public class ParserTest extends CajaTestCase {
     assertEquals(new Double(9223372036854776000d), l.getValue());
   }
 
+  public void testRedundantEscapeSequences() throws Exception {
+    // Should issue a warning if there is an escape sequence in a string where
+    // the escaped character is not interpreted differently, and the escaped
+    // character has a special meaning in a regular expression.
+
+    jsExpr(fromString(" new RegExp('foo\\s+bar') "));
+    assertMessage(
+        MessageType.REDUNDANT_ESCAPE_SEQUENCE, MessageLevel.LINT,
+        FilePosition.instance(is, 1, 1, 13, 13, 1, 1, 24, 24),
+        MessagePart.Factory.valueOf("\\s"));
+    mq.getMessages().clear();
+
+    jsExpr(fromString(" new RegExp('foo\\\\s+bar') "));
+    assertMessagesLessSevereThan(MessageLevel.LINT);
+    mq.getMessages().clear();
+
+    jsExpr(fromString(" '<\\/script>' "));
+    assertMessagesLessSevereThan(MessageLevel.LINT);
+    mq.getMessages().clear();
+
+    jsExpr(fromString(" '\\v' "));
+    assertMessage(MessageType.AMBIGUOUS_ESCAPE_SEQUENCE, MessageLevel.WARNING);
+    mq.getMessages().clear();
+  }
+
   public void assertExpectedSemi() {
     assertParseFails("foo(function () {return;");
     assertMessage(MessageType.EXPECTED_TOKEN, MessageLevel.ERROR,

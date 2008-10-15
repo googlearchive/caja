@@ -49,6 +49,11 @@ public enum MessageType implements MessageTypeInt {
   MALFORMED_XHTML("%s: malformed xhtml: %s", MessageLevel.FATAL_ERROR),
   MISSING_ENDTAG(
       "%s: missing end tag %s, saw %s instead", MessageLevel.FATAL_ERROR),
+  REDUNDANT_ESCAPE_SEQUENCE(
+      "%s: escape %s is redundant in a quoted string", MessageLevel.LINT),
+  AMBIGUOUS_ESCAPE_SEQUENCE(
+      "%s: escape sequence %s does not work in all interpreters",
+      MessageLevel.WARNING),
 
   // parsing
   END_OF_FILE("Unexpected end of input in %s", MessageLevel.ERROR),
@@ -158,7 +163,7 @@ public enum MessageType implements MessageTypeInt {
   // logging
   CHECKPOINT("Checkpoint: %s at T+%s seconds", MessageLevel.LOG),
   BUILD_INFO("Google Caja. Copyright (C) 2008, Google Inc. Rev %s built on %s.",
-             MessageLevel.LOG),    
+             MessageLevel.LOG),
   ;
 
   private final String formatString;

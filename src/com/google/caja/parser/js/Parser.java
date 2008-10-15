@@ -922,6 +922,7 @@ public final class Parser extends ParserBase {
     Token<JsTokenType> t = tq.pop();
     typeswitch: switch (t.type) {
       case STRING:
+        issueLintWarningsForProblematicEscapes(t, mq);
         e = new StringLiteral(t.text);
         break;
       case INTEGER:
@@ -1374,6 +1375,43 @@ public final class Parser extends ParserBase {
 
     public void render(RenderContext rc) {
       throw new UnsupportedOperationException();
+    }
+  }
+
+  private static void issueLintWarningsForProblematicEscapes(
+      Token<JsTokenType> t, MessageQueue mq) {
+    String body = t.text.substring(1, t.text.length() - 1);
+    for (int i = -1; (i = body.indexOf('\\', i + 1)) >= 0; ++i) {
+      char next = body.charAt(i + 1);
+      switch (next) {
+        // control character escapes
+        // \b is problematic since it has a different meaning in a regexp than
+        // in a string literal.
+        case 'b': case 'f': case 'n': case 'r': case 't':
+        // numeric escape prefixes
+        case 'u': case 'x': case 'X':
+        case '0': case '1': case '2': case '3':
+        case '4': case '5': case '6': case '7':
+        // special characters that can appear in strings.
+        // The / is used since it is often escaped to prevent close tags
+        // in strings from appearing to end a script block.
+        case '\\': case '/': case '\'': case '"':
+          break;
+        // specified in ES3 but not implemented consistently.
+        case 'v':
+          mq.addMessage(
+              MessageType.AMBIGUOUS_ESCAPE_SEQUENCE,
+              t.pos, MessagePart.Factory.valueOf("\\" + next));
+          break;
+        case 's': case 'w': case 'S': case 'W':
+        case '+': case '?': case '*': case '.': case '-': case '|':
+        case '^': case '$':
+        case '[': case ']': case '(': case ')': case '{': case '}':
+          mq.addMessage(
+              MessageType.REDUNDANT_ESCAPE_SEQUENCE,
+              t.pos, MessagePart.Factory.valueOf("\\" + next));
+          break;
+      }
     }
   }
 }
