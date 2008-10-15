@@ -479,6 +479,20 @@ jsunitRegister('testOpaqueNodes',
   pass('test-opaque-nodes');
 });
 
+jsunitRegister('testChildNodes',
+               function testChildNodes() {
+  var container = document.getElementById('test-child-nodes');
+  container.innerHTML = '<b>foo</b> <i>bar</i> <u>baz</u>';
+  var childNodes = container.childNodes;
+  assertEquals(5, childNodes.length);
+  assertEquals('B', childNodes[0].nodeName);
+  assertEquals('#text', childNodes[1].nodeName);
+  assertEquals('I', childNodes[2].nodeName);
+  assertEquals('#text', childNodes[3].nodeName);
+  assertEquals('U', childNodes[4].nodeName);
+  pass('test-child-nodes');
+});
+
 jsunitRegister('testEmitCss',
                function testCss() {
   directAccess.emitCssHook(['.', ' a { color: #00ff00 }']);

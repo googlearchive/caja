@@ -1479,7 +1479,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "___.readPub(g, 0) instanceof ___.primFreeze(foo);");
     checkSucceeds(
         "g[0] instanceof Object;",
-        weldPrelude("Object", "{}") +
+        weldPrelude("Object") +
         weldPrelude("g") +
         "___.readPub(g, 0) instanceof Object;");
 

@@ -1192,7 +1192,10 @@ attachDocumentStub = (function () {
       return document.getElementsByTagName('head')[0];
     };
 
-    var idClass = idSuffix.replace(/^-/, '');
+    if (!/^-/.test(idSuffix)) {
+      throw new Error('id suffix "' + idSuffix + '" must start with "-"');
+    }
+    var idClass = idSuffix.substring(1);
     /** A per-gadget class used to separate style rules. */
     imports.getIdClass___ = function () {
       return idClass;
