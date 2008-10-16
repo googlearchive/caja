@@ -164,11 +164,7 @@ function myvn() {
       ;;
     submit )
       if [ -n "$current_cl" ] && ! grep -q ' -c ' <(echo -- $*); then
-        if [ runAntTests ]; then
-          echo "$gvn" "$verb" -c "$current_cl" "$@"
-        else
-          echo No change submitted
-        fi
+        runAntTests && "$gvn" "$verb" -c "$current_cl" "$@"
       else
         echo No changelist found
       fi
