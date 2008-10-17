@@ -14,7 +14,7 @@
 
 package com.google.caja.opensocial.applet;
 
-import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.util.CajaTestCase;
 
@@ -24,11 +24,11 @@ public class ExpressionLanguageStageTest extends CajaTestCase {
   }
 
   public void testExpressionStmt() throws Exception {
-    assertRewritten("{ return 2 + 2; }", "{ 2 + 2; }");
+    assertRewritten("{ moduleResult___ = 2 + 2; }", "{ 2 + 2; }");
   }
 
   public void testMultipleStatementsInBlock() throws Exception {
-    assertRewritten("{ 3 * 3; return 2 + 2; }", "{ 3 * 3; 2 + 2; }");
+    assertRewritten("{ 3 * 3; moduleResult___ = 2 + 2; }", "{ 3 * 3; 2 + 2; }");
   }
 
   public void testReturnUnchanged() throws Exception {
@@ -37,20 +37,20 @@ public class ExpressionLanguageStageTest extends CajaTestCase {
 
   public void testConditions() throws Exception {
     assertRewritten(
-        "{ if (rnd()) { return 1; } else return 2; }",
+        "{ if (rnd()) { moduleResult___ = 1; } else moduleResult___ = 2; }",
         "{ if (rnd()) { 1; } else 2; }");
-    assertRewritten("{ if (rnd()) { return 1; } }",
+    assertRewritten("{ if (rnd()) { moduleResult___ = 1; } }",
                     "{ if (rnd()) { 1; } }");
     assertRewritten(
         "{"
-        + "if (rnd()) return 1;"
-        + "else if (rnd()) return 2;"
+        + "if (rnd()) moduleResult___ = 1;"
+        + "else if (rnd()) moduleResult___ = 2;"
         + "}",
         "{ if (rnd()) 1; else if (rnd()) 2; }");
   }
 
   public void testTryBlock() throws Exception {
-    assertRewritten("{ try { return foo(); } catch (e) { bar(); } }",
+    assertRewritten("{ try { moduleResult___ = foo(); } catch (e) { bar(); } }",
                     "{ try { foo(); } catch (e) { bar(); } }");
   }
 
@@ -60,13 +60,12 @@ public class ExpressionLanguageStageTest extends CajaTestCase {
   }
 
   public void testMultipleBlocks() throws Exception {
-    assertRewritten("{ 1; } { return 2; }",
+    assertRewritten("{ 1; } { moduleResult___ = 2; }",
                     "{ 1; } { 2; }");
   }
 
   private void assertRewritten(String golden, String input) throws Exception {
-    Statement actual = CajitaRewriter.returnLast(js(fromString(input)));
-//    ExpressionLanguageStage.apply(AncestorChain.instance(actual));
+    ParseTreeNode actual = CajitaRewriter.returnLast(js(fromString(input)));
     assertEquals(render(js(fromString(golden))), render(actual));
   }
 }

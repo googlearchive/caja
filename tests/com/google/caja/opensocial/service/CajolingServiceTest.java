@@ -159,8 +159,10 @@ public class CajolingServiceTest extends TestCase {
             moduleEnvelope,
             "<script type=\"text/javascript\">{\n"
             + "  ___.loadModule(function (___, IMPORTS___) {\n"
+            + "                   var moduleResult___;\n"
             + "                   IMPORTS___.htmlEmitter___"
             + ".b('p').f(false).ih('Hello, World!').e('p');\n"
+            + "                   return moduleResult___;\n"
             + "                 });\n"
             + "}</script>"),
         request("?url=http://foo/bar.xml&mime-type=*/*"));

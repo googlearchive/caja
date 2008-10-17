@@ -17,8 +17,8 @@ package com.google.caja.plugin.stages;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.Job;
@@ -37,8 +37,7 @@ import java.util.ListIterator;
 public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
     // create an initializer function
-    ParseTreeNodeContainer initFunctionBody = new ParseTreeNodeContainer(
-        Collections.<Statement>emptyList());
+    Block initFunctionBody = new Block(Collections.<Statement>emptyList());
 
     MutableParseTreeNode.Mutation mut = initFunctionBody.createMutation();
 
@@ -71,15 +70,9 @@ public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
     mut.execute();
 
     // Now initFunctionBody contains all the top level statements.
-    Block jsTree = (Block) QuasiBuilder.substV(
-        ""
-        + "{"
-        + "  ___./*@synthetic*/loadModule("
-        + "      /*@synthetic*/function (___, IMPORTS___) { @body*; });"
-        + "}",
-        "body", initFunctionBody);
 
-    jobs.getJobs().add(new Job(new AncestorChain<Block>(jsTree)));
+    ModuleEnvelope envelope = new ModuleEnvelope(initFunctionBody);
+    jobs.getJobs().add(new Job(new AncestorChain<ModuleEnvelope>(envelope)));
 
     return jobs.hasNoFatalErrors();
   }

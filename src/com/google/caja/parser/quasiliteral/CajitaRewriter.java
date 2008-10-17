@@ -50,13 +50,14 @@ import com.google.caja.parser.js.SimpleOperation;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.SwitchStmt;
 import com.google.caja.parser.js.ThrowStmt;
+import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.util.Pair;
+import com.google.caja.util.SyntheticAttributeKey;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 
 import static com.google.caja.parser.js.SyntheticNodes.s;
-import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -75,18 +76,56 @@ import java.util.Set;
     synopsis="Default set of transformations used by Caja"
   )
 public class CajitaRewriter extends Rewriter {
+  private static final SyntheticAttributeKey<Boolean> TRANSLATED
+      = new SyntheticAttributeKey<Boolean>(Boolean.class, "translatedCode");
 
+  /** Mark a tree as having been translated from another language. */
+  private static void markTranslated(ParseTreeNode node) {
+    if (node instanceof Statement) {
+      node.getAttributes().put(TRANSLATED, true);
+      for (ParseTreeNode child : node.children()) {
+        markTranslated(child);
+      }
+    }
+  }
+  /** Index of the last node that wasn't translated from another language. */
+  private static int lastRealJavascriptChild(
+      List<? extends ParseTreeNode> nodes) {
+    int lasti = nodes.size();
+    while (--lasti >= 0) {
+      if (!nodes.get(lasti).getAttributes().is(TRANSLATED)) { break; }
+    }
+    return lasti;
+  }
+
+  /**
+   * Find the last expression statetement executed in a block of code and
+   * emit it's value to a variable "moduleResult___" so that it can used as
+   * the result of module loading.
+   */
   @SuppressWarnings("unchecked")
-  static public Statement returnLast(Statement node) {
-    Statement result = null;
+  public static ParseTreeNode returnLast(ParseTreeNode node) {
+    ParseTreeNode result = null;
+    // Code translated from another language should not be used as the module
+    // result.
+    if (node.getAttributes().is(TRANSLATED)) { return node; }
     if (node instanceof ExpressionStmt) {
-      result = new ReturnStmt(((ExpressionStmt) node).getExpression());
+      result = new ExpressionStmt((Expression) QuasiBuilder.substV(
+          "moduleResult___ = @result;",
+          "result", ((ExpressionStmt) node).getExpression()));
+    } else if (node instanceof ParseTreeNodeContainer) {
+      List<ParseTreeNode> nodes = new ArrayList<ParseTreeNode>(node.children());
+      int lasti = lastRealJavascriptChild(nodes);
+      if (lasti >= 0) {
+        nodes.set(lasti, returnLast(nodes.get(lasti)));
+        result = new ParseTreeNodeContainer(nodes);
+      }
     } else if (node instanceof Block) {
       List<Statement> stats = new ArrayList<Statement>();
       stats.addAll((Collection<? extends Statement>) node.children());
-      int lasti = stats.size() - 1;
+      int lasti = lastRealJavascriptChild(stats);
       if (lasti >= 0) {
-        stats.set(lasti, returnLast(stats.get(lasti)));
+        stats.set(lasti, (Statement) returnLast(stats.get(lasti)));
         result = new Block(stats);
       }
     } else if (node instanceof Conditional) {
@@ -94,22 +133,23 @@ public class CajitaRewriter extends Rewriter {
       nodes.addAll(node.children());
       int lasti = nodes.size() - 1;
       for (int i = 1; i <= lasti; i += 2) {  // Even are conditions.
-        nodes.set(i, returnLast((Statement)nodes.get(i)));
+        nodes.set(i, returnLast((Statement) nodes.get(i)));
       }
       if ((lasti & 1) == 0) {  // else clause
-        nodes.set(lasti, returnLast((Statement)nodes.get(lasti)));
+        nodes.set(lasti, returnLast((Statement) nodes.get(lasti)));
       }
       result = new Conditional(null, nodes);
     } else if (node instanceof TryStmt) {
       TryStmt tryer = (TryStmt) node;
-      result = new TryStmt(returnLast(tryer.getBody()),
+      result = new TryStmt((Statement) returnLast(tryer.getBody()),
           tryer.getCatchClause(),
           tryer.getFinallyClause());
     }
     if (null == result) { return node; }
     result.getAttributes().putAll(node.getAttributes());
     if (result instanceof AbstractParseTreeNode) {
-      ((AbstractParseTreeNode<?>) result).setFilePosition(node.getFilePosition());
+      ((AbstractParseTreeNode<?>) result)
+          .setFilePosition(node.getFilePosition());
     }
     return result;
   }
@@ -126,21 +166,45 @@ public class CajitaRewriter extends Rewriter {
       @Override
       @RuleDescription(
           name="moduleEnvelope",
-          synopsis="Cajole a ModuleEnvelope into a call to load a module description.",
-          reason="Each script tag defines a separately loadable program unit.",
+          synopsis="Cajole a ModuleEnvelope into a call to ___.loadModule.",
+          reason="So that the module loader can be invoked to load a module.",
           matches="<a ModuleEnvelope>",
-          substitutes="___.loadModule(function(___, IMPORTS___) {" +
-          "  @body*;" +
-          "});")
+          substitutes=(
+              "{"
+              + "  ___./*@synthetic*/loadModule("
+              + "      /*@synthetic*/function (___, IMPORTS___) {"
+              + "        var moduleResult___;"
+              + "        @body*;"
+              + "        return moduleResult___;"
+              + "      });"
+              + "}"))
       public ParseTreeNode fire(
-              ParseTreeNode node, Scope scope, MessageQueue mq) {
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof ModuleEnvelope) {
           // TODO(erights): Pull manifest up into module record.
-          return new ExpressionStmt((Expression) substV(
-              "___.loadModule(function(___, IMPORTS___) {" +
-              "  @body*;" +
-              "});",
-              "body", expand(returnLast((Statement)node.children().get(0)), null, mq)));
+          ModuleEnvelope rewritten = (ModuleEnvelope) expandAll(node, null, mq);
+          ParseTreeNodeContainer moduleStmts = new ParseTreeNodeContainer(
+              rewritten.getModuleBody().children());
+          return (Block) substV("body", returnLast(moduleStmts));
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="translatedCode",
+          synopsis="Allow code received from a *->JS translator",
+          reason="Translated code should not be treated as user supplied JS.",
+          matches="<TranslatedCode>")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof TranslatedCode) {
+          Statement rewritten
+              = ((TranslatedCode) expandAll(node, scope, mq)).getTranslation();
+          markTranslated(rewritten);
+          return rewritten;
         }
         return NONE;
       }
@@ -170,7 +234,9 @@ public class CajitaRewriter extends Rewriter {
           // they appear before any use of the [] and {} shorthand syntaxes
           // since those are specified in ES262 by looking up the identifiers
           // "Array" and "Object" in the local scope.
-          // SpiderMonkey actually implements this behavior.
+          // SpiderMonkey actually implements this behavior, though it is fixed
+	  // in FF3, and ES3.1 is specifying the behavior of [] and {} in terms
+	  // of the original Array and Object constructors for that context.
           Set<String> orderedImportNames = new LinkedHashSet<String>();
           if (importNames.contains("Array")) {
             orderedImportNames.add("Array");
@@ -186,13 +252,13 @@ public class CajitaRewriter extends Rewriter {
             if (null == permitsUsed
                 || "Array".equals(k) || "Object".equals(k)) {
               importedVars.add(
-                  substV(
+                  QuasiBuilder.substV(
                       "var @vIdent = ___.readImport(IMPORTS___, @vName);",
                       "vIdent", s(kid),
                       "vName", toStringLiteral(kid)));
             } else {
               importedVars.add(
-                  substV(
+                  QuasiBuilder.substV(
                       "var @vIdent = ___.readImport(IMPORTS___, @vName, @permits);",
                       "vIdent", s(kid),
                       "vName", toStringLiteral(kid),
@@ -201,8 +267,6 @@ public class CajitaRewriter extends Rewriter {
           }
 
           return substV(
-              "@importedvars*; @startStmts*;" +
-              "@expanded*;",
               "importedvars", new ParseTreeNodeContainer(importedVars),
               "startStmts", new ParseTreeNodeContainer(s2.getStartStatements()),
               "expanded", new ParseTreeNodeContainer(expanded));
@@ -448,7 +512,6 @@ public class CajitaRewriter extends Rewriter {
             expanded.add(expand(c, s2, mq));
           }
           return substV(
-              "@startStmts*; @ss*;",
               "startStmts", new ParseTreeNodeContainer(s2.getStartStatements()),
               "ss", new ParseTreeNodeContainer(expanded));
         }
@@ -558,7 +621,7 @@ public class CajitaRewriter extends Rewriter {
                 node.getFilePosition(), this, node);
             return node;
           }
-          return substV(
+          return QuasiBuilder.substV(
             "try {" +
             "  @s0*;" +
             "} catch (ex___) {" +
@@ -609,7 +672,7 @@ public class CajitaRewriter extends Rewriter {
                 node.getFilePosition(), this, node);
             return node;
           }
-          return substV(
+          return QuasiBuilder.substV(
             "try {" +
             "  @s0*;" +
             "} catch (ex___) {" +
@@ -643,7 +706,7 @@ public class CajitaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
-          return substV(
+          return QuasiBuilder.substV(
             "try { @s0*; } finally { @s1*; }",
             "s0",  expandAll(bindings.get("s0"), scope, mq),
             "s1",  expandAll(bindings.get("s1"), scope, mq));
@@ -844,7 +907,7 @@ public class CajitaRewriter extends Rewriter {
         if (bindings != null) {
           Reference p = (Reference) bindings.get("p");
           String propertyName = p.getIdentifierName();
-          return substV(
+          return QuasiBuilder.substV(
               "@ref = @o, ("
               + "    @ref.@fp"
               + "    ? @ref.@p"
@@ -870,7 +933,7 @@ public class CajitaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
-          return substV(
+          return QuasiBuilder.substV(
               "___.readPub(@o, @s)",
               "o", expand(bindings.get("o"), scope, mq),
               "s", expand(bindings.get("s"), scope, mq));
@@ -1038,7 +1101,7 @@ public class CajitaRewriter extends Rewriter {
           Reference fname = (Reference) bindings.get("fname");
           Reference p = (Reference) bindings.get("p");
           if (scope.isDeclaredFunction(getReferenceName(fname))) {
-            return substV(
+            return QuasiBuilder.substV(
                 "___.setStatic(@fname, @rp, @r)",
                 "fname", fname,
                 "rp", toStringLiteral(p),
@@ -1066,7 +1129,7 @@ public class CajitaRewriter extends Rewriter {
         if (bindings != null) {
           Reference p = (Reference) bindings.get("p");
           String propertyName = p.getIdentifierName();
-          return substV(
+          return QuasiBuilder.substV(
               "@tmpO = @expandO," +
               "@tmpR = @expandR," +
               "@tmpO.@pCanSet ?" +
@@ -1095,7 +1158,7 @@ public class CajitaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
-          return substV(
+          return QuasiBuilder.substV(
               "___.setPub(@o, @s, @r)",
               "o", expand(bindings.get("o"), scope, mq),
               "s", expand(bindings.get("s"), scope, mq),
@@ -1138,7 +1201,6 @@ public class CajitaRewriter extends Rewriter {
         if (bindings != null
             && !scope.isFunction(getIdentifierName(bindings.get("v")))) {
           return substV(
-              "var @v = @r",
               "v", bindings.get("v"),
               "r", expand(bindings.get("r"), scope, mq));
         }
@@ -1221,7 +1283,6 @@ public class CajitaRewriter extends Rewriter {
           if (v instanceof Reference) {
             if (!scope.isFunction(getReferenceName(v))) {
               return substV(
-                  "@v = @r",
                   "v", v,
                   "r", expand(bindings.get("r"), scope, mq));
             }
@@ -1266,7 +1327,7 @@ public class CajitaRewriter extends Rewriter {
           if (ops.getTemporaries().isEmpty()) {
             return expand(assignment, scope, mq);
           } else {
-            return substV(
+            return QuasiBuilder.substV(
                 "@tmps, @assignment",
                 "tmps", newCommaOperation(ops.getTemporaries()),
                 "assignment", expand(assignment, scope, mq));
@@ -1297,15 +1358,15 @@ public class CajitaRewriter extends Rewriter {
         switch (op.getOperator()) {
           case POST_INCREMENT:
             if (ops.isSimpleLValue()) {
-              return substV("@v ++", "v", ops.getCajoledLValue());
+              return QuasiBuilder.substV("@v ++", "v", ops.getCajoledLValue());
             } else {
               Reference tmpVal = new Reference(
                   scope.declareStartOfScopeTempVariable());
               Expression assign = (Expression) expand(
-                  ops.makeAssignment(
-                      (Expression) substV("@tmpVal + 1", "tmpVal", tmpVal)),
+                  ops.makeAssignment((Expression) QuasiBuilder.substV(
+                      "@tmpVal + 1", "tmpVal", tmpVal)),
                   scope, mq);
-              return substV(
+              return QuasiBuilder.substV(
                   "  @tmps,"
                   + "@tmpVal = +@rvalue,"  // Coerce to a number.
                   + "@assign,"  // Assign value.
@@ -1319,35 +1380,34 @@ public class CajitaRewriter extends Rewriter {
             // We subtract -1 instead of adding 1 since the - operator coerces
             // to a number in the same way the ++ operator does.
             if (ops.isSimpleLValue()) {
-              return substV("++@v", "v", ops.getCajoledLValue());
+              return QuasiBuilder.substV("++@v", "v", ops.getCajoledLValue());
             } else if (ops.getTemporaries().isEmpty()) {
               return expand(
-                  ops.makeAssignment(
-                      (Expression) substV("@rvalue - -1",
-                         "rvalue", ops.getUncajoledLValue())),
+                  ops.makeAssignment((Expression) QuasiBuilder.substV(
+                      "@rvalue - -1",
+                      "rvalue", ops.getUncajoledLValue())),
                   scope, mq);
             } else {
-              return substV(
+              return QuasiBuilder.substV(
                   "  @tmps,"
                   + "@assign",
                   "tmps", newCommaOperation(ops.getTemporaries()),
                   "assign", expand(
-                      ops.makeAssignment((Expression)
-                          substV("@rvalue - -1",
-                                 "rvalue", ops.getUncajoledLValue())),
+                      ops.makeAssignment((Expression) QuasiBuilder.substV(
+                          "@rvalue - -1", "rvalue", ops.getUncajoledLValue())),
                       scope, mq));
             }
           case POST_DECREMENT:
             if (ops.isSimpleLValue()) {
-              return substV("@v--", "v", ops.getCajoledLValue());
+              return QuasiBuilder.substV("@v--", "v", ops.getCajoledLValue());
             } else {
               Reference tmpVal = new Reference(
                   scope.declareStartOfScopeTempVariable());
               Expression assign = (Expression) expand(
-                  ops.makeAssignment(
-                      (Expression) substV("@tmpVal - 1", "tmpVal", tmpVal)),
+                  ops.makeAssignment((Expression) QuasiBuilder.substV(
+                      "@tmpVal - 1", "tmpVal", tmpVal)),
                   scope, mq);
-              return substV(
+              return QuasiBuilder.substV(
                   "  @tmps,"
                   + "@tmpVal = +@rvalue,"  // Coerce to a number.
                   + "@assign,"  // Assign value.
@@ -1359,23 +1419,22 @@ public class CajitaRewriter extends Rewriter {
             }
           case PRE_DECREMENT:
             if (ops.isSimpleLValue()) {
-              return substV("--@v", "v", ops.getCajoledLValue());
+              return QuasiBuilder.substV("--@v", "v", ops.getCajoledLValue());
             } else if (ops.getTemporaries().isEmpty()) {
               return expand(
                   ops.makeAssignment(
-                      (Expression) substV(
+                      (Expression) QuasiBuilder.substV(
                           "@rvalue - 1", "rvalue",
                           ops.getUncajoledLValue())),
                   scope, mq);
             } else {
-              return substV(
+              return QuasiBuilder.substV(
                   "  @tmps,"
                   + "@assign",
                   "tmps", newCommaOperation(ops.getTemporaries()),
                   "assign", expand(
-                      ops.makeAssignment((Expression)
-                          substV("@rvalue - 1",
-                                 "rvalue", ops.getUncajoledLValue())),
+                      ops.makeAssignment((Expression) QuasiBuilder.substV(
+                          "@rvalue - 1", "rvalue", ops.getUncajoledLValue())),
                       scope, mq));
             }
           default:
@@ -1483,7 +1542,7 @@ public class CajitaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
           Reference p = (Reference) bindings.get("p");
-          return substV(
+          return QuasiBuilder.substV(
               "___.deletePub(@o, @pname)",
               "o", expand(bindings.get("o"), scope, mq),
               "pname", toStringLiteral(p));
@@ -1504,7 +1563,7 @@ public class CajitaRewriter extends Rewriter {
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
-          return substV(
+          return QuasiBuilder.substV(
               "___.deletePub(@o, @s)",
               "o", expand(bindings.get("o"), scope, mq),
               "s", expand(bindings.get("s"), scope, mq));
@@ -1572,7 +1631,7 @@ public class CajitaRewriter extends Rewriter {
           if (null != oPermit) {
             ParseTreeNode m = bindings.get("m");
             if (null != oPermit.canCall(m)) {
-              return substV(
+              return QuasiBuilder.substV(
                   "@o.@m(@as*)",
                   "o",  expand(o, scope, mq),
                   "m",  m,
@@ -1599,7 +1658,7 @@ public class CajitaRewriter extends Rewriter {
               reuseAll(bindings.get("as"), scope, mq);
           Reference m = (Reference) bindings.get("m");
           String methodName = m.getIdentifierName();
-          return substV(
+          return QuasiBuilder.substV(
               "@oTmp = @o," +
               "@as," +
               "@oTmp.@fm ? @oTmp.@m(@vs*) : ___.callPub(@oTmp, @rm, [@vs*]);",
@@ -1646,7 +1705,7 @@ public class CajitaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
-          return substV(
+          return QuasiBuilder.substV(
               "___.asSimpleFunc(@f)(@as*)",
               "f", expand(bindings.get("f"), scope, mq),
               "as", expandAll(bindings.get("as"), scope, mq));
@@ -1678,7 +1737,7 @@ public class CajitaRewriter extends Rewriter {
         if (bindings != null) {
           Scope s2 = Scope.fromFunctionConstructor(scope, (FunctionConstructor) node);
           checkFormals(bindings.get("ps"), mq);
-          return substV(
+          return QuasiBuilder.substV(
               "___.simpleFrozenFunc(" +
               "  function (@ps*) {" +
               "    @fh*;" +
@@ -1721,7 +1780,7 @@ public class CajitaRewriter extends Rewriter {
           checkFormals(bindings.get("ps"), mq);
           Identifier fname = (Identifier) bindings.get("fname");
           scope.declareStartOfScopeVariable(fname);
-          Expression expr = (Expression) substV(
+          Expression expr = (Expression) QuasiBuilder.substV(
               "@fname = ___.simpleFunc(" +
               "  function(@ps*) {" +
               "    @fh*;" +
@@ -1736,7 +1795,7 @@ public class CajitaRewriter extends Rewriter {
               "fh", getFunctionHeadDeclarations(s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
           scope.addStartOfBlockStatement(new ExpressionStmt(expr));
-          return substV(";");
+          return QuasiBuilder.substV(";");
         }
         return NONE;
       }
@@ -1767,7 +1826,7 @@ public class CajitaRewriter extends Rewriter {
           checkFormals(bindings.get("ps"), mq);
           Identifier fname = (Identifier) bindings.get("fname");
           Reference fRef = new Reference(fname);
-          return substV(
+          return QuasiBuilder.substV(
               "(function() {" +
               "  function @fname(@ps*) {" +
               "    @fh*;" +
@@ -1853,7 +1912,7 @@ public class CajitaRewriter extends Rewriter {
             items.add(keys.get(i));
             items.add(vals.get(i));
           }
-          return substV(
+          return QuasiBuilder.substV(
               "___.initializeMap([ @items* ])",
               "items", new ParseTreeNodeContainer(items));
         }
@@ -1917,7 +1976,7 @@ public class CajitaRewriter extends Rewriter {
             if (declarations.isEmpty()) {
               return new ExpressionStmt(newCommaOperation(initializers));
             } else {
-              return substV(
+              return QuasiBuilder.substV(
                   "{ @decl; @init; }",
                   "decl", new MultiDeclaration(declarations),
                   "init", new ExpressionStmt(newCommaOperation(initializers)));
@@ -1949,7 +2008,7 @@ public class CajitaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
-          return substV(
+          return QuasiBuilder.substV(
               "___.typeOf(@f)",
               "f", expand(bindings.get("f"), scope, mq));
         }
@@ -1968,7 +2027,7 @@ public class CajitaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
-          return substV(
+          return QuasiBuilder.substV(
               "___.inPub(@i, @o)",
               "i", expand(bindings.get("i"), scope, mq),
               "o", expand(bindings.get("o"), scope, mq));

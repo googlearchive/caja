@@ -101,16 +101,16 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
   public void testToString() throws Exception {
     assertConsistent(
-        "var z={toString:function(){return 'blah';}};" +
+        "var z = { toString: function () { return 'blah'; } };" +
         "try {" +
-        "  ''+z;" +
+        "  '' + z;" +
         "} catch (e) {" +
         "  throw new Error('PlusPlus error: ' + e);" +
         "}");
     assertConsistent(
         "  function foo() {"
-        +  "  var x = 1;"
-        +  "  return {"
+        + "  var x = 1;"
+        + "  return {"
         + "    toString: function () {"
         + "      return x;"
         + "    }"
@@ -1865,8 +1865,8 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   public void testFunction() throws Exception {
     rewriteAndExecute(
         "var success=false;" +
-          "try{var f=new Function('1');}catch(e){success=true;}" +
-          "if (!success)fail('Function constructor is accessible.')");
+        "try{var f=new Function('1');}catch(e){success=true;}" +
+        "if (!success)fail('Function constructor is accessible.')");
   }
 
   /**
@@ -2018,7 +2018,8 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
     List<Statement> children = new ArrayList<Statement>();
     children.add(js(fromString(caja, is)));
-    String cajoledJs = render(rewriteStatements(new ModuleEnvelope(new Block(children))));
+    String cajoledJs = render(rewriteStatements(
+        new ModuleEnvelope(new Block(children))));
 
     assertNoErrors();
 

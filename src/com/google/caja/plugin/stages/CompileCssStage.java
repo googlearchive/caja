@@ -17,6 +17,7 @@ package com.google.caja.plugin.stages;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.plugin.CssCompiler;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
@@ -39,7 +40,7 @@ public final class CompileCssStage implements Pipeline.Stage<Jobs> {
       it.remove();
       Statement js = new CssCompiler().compileCss(
           job.getRoot().cast(CssTree.StyleSheet.class).node);
-      it.add(new Job(new AncestorChain<Statement>(js)));
+      it.add(new Job(new AncestorChain<Statement>(new TranslatedCode(js))));
     }
     return jobs.hasNoFatalErrors();
   }

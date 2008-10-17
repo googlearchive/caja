@@ -15,9 +15,14 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lexer.ParseException;
+import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.MutableParseTreeNode;
+import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.RhinoTestBed;
@@ -365,6 +370,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
 
     Block block = new Block();
     dpe.toJavascript(block);
+    removePseudoNodes(block);
 
     String prefix = "\n  IMPORTS___.htmlEmitter___";
     String startOne = ".b('p').a('id', x).f(false)";
@@ -387,6 +393,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
       String goldenJs, String goldenHtml, DomProcessingEvents dpe) {
     Block actual = new Block();
     dpe.toJavascript(actual);
+    removePseudoNodes(actual);
     try {
       Block golden = ("".equals(goldenJs)
                       ? new Block()
@@ -428,6 +435,19 @@ public class DomProcessingEventsTest extends CajaTestCase {
     } catch (IOException ex) {
       fail(ex.toString());
     }
+  }
+
+  static void removePseudoNodes(ParseTreeNode node) {
+    assert !(node instanceof TranslatedCode);
+    node.acceptPostOrder(new Visitor() {
+        public boolean visit(AncestorChain<?> ac) {
+          if (ac.node instanceof TranslatedCode) {
+            ((MutableParseTreeNode) ac.parent.node).replaceChild(
+                ((TranslatedCode) ac.node).getTranslation(), ac.node);
+          }
+          return true;
+        }
+      }, null);
   }
 
   static { TestUtil.enableContentUrls(); }

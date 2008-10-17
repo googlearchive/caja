@@ -16,10 +16,6 @@
 <html>
   <head>
     <title>Domita</title>
-    <style type="text/css">
-      .testcontainer { background: yellow; border: 2px solid yellow }
-      .testcontainer.passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
-    </style>
 
     <script src="../cajita.js" onerror="console.error(this.src)"></script>
     <script src="jsunit.js"></script>
@@ -36,6 +32,21 @@
 
   <body onload="jsunitRun()" bgcolor="white">
     <div id="console-results"></div>
+
+    <div id="untrusted_content" class="xyz___">
+      <!-- inaccessible to document.getElementById -->
+      <div id="foo"></div>
+
+      <!-- accessible, but with certain inaccessible attributes -->
+      <div id="test-inner-html-xyz___" class="testcontainer"
+       ><a id="bar" href="http://foo.com?a=b&c=d" class="link"
+         title="<click me!>" target="_parent"
+         >Test <em id="em-xyz___">Not</em>> run yet.</a>
+      </div>
+
+      <div class="testcontainer" id="test-opaque-nodes-xyz___"
+       ><!-- Comment -->a<script></script>b<object></object>c</div>
+    </div>
 
     <script type="text/javascript">
       function loadScript(src) {
@@ -146,96 +157,15 @@
       testImports.documentRO = new testImports.document.constructor(
           document, false);
 
+      var testDomContainer = document.getElementById('untrusted_content');
+      testImports.htmlEmitter___ = new HtmlEmitter(testDomContainer);
+
       window.toString = function () { return '[WINDOW]'; };
     })();</script>
 
     <script type="text/javascript">
     loadScript(isValija ? 'domita_test_valijad.js' : 'domita_test_cajoled.js');
     </script>
-
-    <div id="test-get-element-by-id-xyz___" class="testcontainer"></div>
-    <div id="test-get-element-by-id-2-xyz___" class="testcontainer"></div>
-
-    <div id="foo"></div>
-
-    <p id="test-element-id-xyz___" class="testcontainer"></p>
-
-    <p id="test-create-element-xyz___" class="testcontainer"></p>
-
-    <div id="test-inner-html-xyz___" class="testcontainer"
-     ><a id="bar" href="http://foo.com?a=b&c=d" class="link" title="<click me!>"
-       target="_parent">Test <em id="em-xyz___">Not</em>> run yet.</a>
-    </div>
-
-    <div class="testcontainer" id="test-forms-xyz___"></div>
-
-    <div class="testcontainer" id="test-no-script-xyz___"></div>
-
-    <p class="testcontainer" id="test-add-event-listener-xyz___">
-      <b>click me</b>
-    </p>
-
-    <p class="testcontainer" id="test-remove-event-listener-xyz___">
-      <b>click me</b>
-    </p>
-
-    <ol class="testcontainer" id="test-get-elements-by-tag-name-xyz___">
-      <li>One
-      <li>Two
-      <li>Three
-        <ol><li>Pi</li><li>sqrt(10)</li></ol>
-    </ol>
-
-    <div class="testcontainer" id="test-dynamic-styles-xyz___">
-      <span id="test-dynamic-styles1-xyz___">I should be bold</span><br>
-      <span id="test-dynamic-styles2-xyz___" style="font-weight: bold"
-       >I should not be bold</span><br>
-      <span id="test-dynamic-styles3-xyz___"
-       >There's no such thing as super-bold</span><br>
-    </div>
-
-    <p class="testcontainer" id="test-read-only-xyz___">
-      <span id="indelible-xyz___">I am indelible</span>
-    </p>
-
-    <p class="testcontainer" id="test-insert-before-xyz___">zero</p>
-
-    <ul class="testcontainer" id="test-node-lists-xyz___"
-     ><li>One<li><b>Two</b><li>Three</ul>
-
-    <div class="testcontainer" id="test-name-attr-xyz___"></div>
-
-    <div class="testcontainer" id="test-target-attr-xyz___"></div>
-
-    <div class="testcontainer" id="test-location-xyz___"></div>
-
-    <div class="testcontainer" id="test-navigator-xyz___"></div>
-
-    <div class="testcontainer" id="test-opaque-nodes-xyz___"
-     ><!-- Comment -->a<script></script>b<object></object>c</div>
-
-    <p class="testcontainer" id="test-child-nodes-xyz___"></p>
-
-    <div class="xyz___">
-      <div class="testcontainer" id="test-emit-css-xyz___">
-        <a id="not-blue-xyz___" href="#">I am not blue</a>
-      </div>
-    </div>
-
-    <p class="testcontainer" id="test-bug-731-xyz___"
-     >The input should be a radio button: </p>
-
-    <p class="testcontainer" id="test-dom-class-hierarchy-xyz___">
-      <b>Click me</b>
-    </p>
-
-    <div class="testcontainer" id="test-case-insensitive-attrs-xyz___">
-      <table id="is-red-xyz___">
-        <tr>
-          <td><strong>Click me if this is red</strong></td>
-        </tr>
-      </table>
-    </div>
 
   </body>
 </html>

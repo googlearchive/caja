@@ -23,6 +23,7 @@ import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.util.Pair;
 
@@ -361,7 +362,7 @@ final class DomProcessingEvents {
 
     void interruptEmitter() {
       if (emitter != null) {
-        block.appendChild(new ExpressionStmt(emitter));
+        block.appendChild(new TranslatedCode(new ExpressionStmt(emitter)));
         emitter = null;
         emitterChainDepth = 0;
       }

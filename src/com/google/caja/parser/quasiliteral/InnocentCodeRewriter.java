@@ -16,13 +16,18 @@ package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
-import com.google.caja.parser.js.*;
+import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.ExpressionStmt;
+import com.google.caja.parser.js.FunctionConstructor;
+import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.reporting.MessageQueue;
-import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Rewrites a JavaScript parse tree for trusted code that needs to
@@ -32,7 +37,6 @@ import java.util.ArrayList;
  * use the THIS keyword.
  *
  * @author adriennefelt@gmail.com (Adrienne Felt)
- *
  */
 @RulesetDescription(
     name="Innocent Code Transformer",
@@ -47,7 +51,11 @@ public class InnocentCodeRewriter extends Rewriter {
           name="module",
           synopsis="",
           reason="",
-          matches="{@ss*;}")
+          matches="{@ss*;}",
+          substitutes=(
+              "@startStmts*;" +
+              "@refError?;" +
+              "@expanded*;"))
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof Block && scope == null) {
@@ -60,13 +68,11 @@ public class InnocentCodeRewriter extends Rewriter {
           // Checks to see if the block contains a free THIS
           ParseTreeNode refError = null;
           if (s2.hasFreeThis()) {
-            refError = substV("if (this.___) { throw ReferenceError; }");
+            refError = QuasiBuilder.substV(
+                "if (this.___) { throw ReferenceError; }");
           }
 
           return substV(
-              "@startStmts*;" +
-              "@refError?;" +
-              "@expanded*;",
               "startStmts", new ParseTreeNodeContainer(s2.getStartStatements()),
               "refError", refError,
               "expanded", new ParseTreeNodeContainer(expanded));
@@ -81,7 +87,13 @@ public class InnocentCodeRewriter extends Rewriter {
           name="functions",
           synopsis="",
           reason="",
-          matches="function @f? (@ps*) { @bs* }")
+          matches="function @f? (@ps*) { @bs* }",
+          substitutes=(
+              "function @f? (@params*) {" +
+              "  @startStmts*;" +
+              "  @refError?;" +
+              "  @body*" +
+              "}"))
       public ParseTreeNode fire(
         ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = match(node);
@@ -94,15 +106,11 @@ public class InnocentCodeRewriter extends Rewriter {
           // If the function has a free THIS, check what it binds to at runtime
           ParseTreeNode refError = null;
           if (s2.hasFreeThis()) {
-            refError = substV("if (this.___) { throw ReferenceError; }");
+            refError = QuasiBuilder.substV(
+                "if (this.___) { throw ReferenceError; }");
           }
 
           return substV(
-              "function @f? (@params*) {" +
-              "  @startStmts*;" +
-              "  @refError?;" +
-              "  @body*" +
-              "}",
               "refError", refError,
               "f", bindings.get("f"),
               "ps", bindings.get("params"),
@@ -121,7 +129,14 @@ public class InnocentCodeRewriter extends Rewriter {
           synopsis="",
           reason="Filters out hidden properties ending in ___ in for loops",
           matches="for (@k in @o) @ss;",
-          substitutes="")
+          substitutes=(
+            "for (@kTempStmt in @o) { " +
+            "  if (@kTempRef.match(/___$/)) { " +
+            "    continue; " +
+            "  } " +
+            "  @kAssignment;" +
+            "  @ss;" +
+            "}"))
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = makeBindings();
 
@@ -135,7 +150,7 @@ public class InnocentCodeRewriter extends Rewriter {
         }
 
         Identifier kTemp = scope.declareStartOfScopeTempVariable();
-        ParseTreeNode kAssignment = substV(
+        ParseTreeNode kAssignment = QuasiBuilder.substV(
             "@k = @kTempRef;",
             "k", bindings.get("k"),
             "kTempRef", new Reference(kTemp));
@@ -143,13 +158,6 @@ public class InnocentCodeRewriter extends Rewriter {
         kAssignment = new ExpressionStmt((Expression) kAssignment);
 
         return substV(
-            "for (@kTempStmt in @o) { " +
-            "  if (@kTempRef.match(/___$/)) { " +
-            "    continue; " +
-            "  } " +
-            "  @kAssignment;" +
-            "  @ss;" +
-            "}",
             "kTempStmt", new ExpressionStmt(new Reference(kTemp)),
             "kTempRef", new Reference(kTemp),
             "o", bindings.get("o"),

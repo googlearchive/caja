@@ -20,6 +20,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.plugin.HtmlCompiler;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
@@ -68,8 +69,9 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
     }
 
     if (!htmlc.getEventHandlers().isEmpty()) {
-      jobs.getJobs().add(new Job(new AncestorChain<Block>(new Block(
-          new ArrayList<Statement>(htmlc.getEventHandlers())))));
+      TranslatedCode compiledHtml = new TranslatedCode(new Block(
+          new ArrayList<Statement>(htmlc.getEventHandlers())));
+      jobs.getJobs().add(new Job(new AncestorChain<Statement>(compiledHtml)));
     }
 
     if (!renderedHtmlStatements.isEmpty()) {

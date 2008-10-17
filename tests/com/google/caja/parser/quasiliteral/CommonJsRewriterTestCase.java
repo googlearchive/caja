@@ -42,7 +42,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
     rewriteAndExecute(
         "cajita.log('___.args = ' + ___.args);",
         "function f(a) {" +
-          "try{" +
+          "try {" +
             "arguments[0] = 1;" +
             "if (a) fail('Mutable arguments');" +
           "} catch (e) {" +

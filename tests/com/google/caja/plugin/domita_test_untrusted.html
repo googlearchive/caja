@@ -1,17 +1,97 @@
-// Copyright (C) 2008 Google Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+<!--
+  - Copyright (C) 2008 Google Inc.
+  -
+  - Licensed under the Apache License, Version 2.0 (the "License");
+  - you may not use this file except in compliance with the License.
+  - You may obtain a copy of the License at
+  -
+  -      http://www.apache.org/licenses/LICENSE-2.0
+  -
+  - Unless required by applicable law or agreed to in writing, software
+  - distributed under the License is distributed on an "AS IS" BASIS,
+  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  - See the License for the specific language governing permissions and
+  - limitations under the License.
+ -->
 
+<style type="text/css">
+  .testcontainer { background: yellow; border: 2px solid yellow }
+  .testcontainer.passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
+</style>
+
+<div id="test-get-element-by-id" class="testcontainer"></div>
+<div id="test-get-element-by-id-2" class="testcontainer"></div>
+
+<p id="test-element-id" class="testcontainer"></p>
+
+<p id="test-create-element" class="testcontainer"></p>
+
+<div class="testcontainer" id="test-forms"></div>
+
+<div class="testcontainer" id="test-no-script"></div>
+
+<p class="testcontainer" id="test-add-event-listener">
+  <b id="test-add-event-listener-label">click me</b>
+</p>
+
+<p class="testcontainer" id="test-remove-event-listener">
+  <b id="test-remove-event-listener-label">click me</b>
+</p>
+
+<ol class="testcontainer" id="test-get-elements-by-tag-name">
+  <li>One
+  <li>Two
+  <li>Three
+    <ol><li>Pi</li><li>sqrt(10)</li></ol>
+</ol>
+
+<div class="testcontainer" id="test-dynamic-styles">
+  <span id="test-dynamic-styles1">I should be bold</span><br>
+  <span id="test-dynamic-styles2" style="font-weight: bold"
+   >I should not be bold</span><br>
+  <span id="test-dynamic-styles3"
+   >There&apos;s no such thing as super-bold</span><br>
+</div>
+
+<p class="testcontainer" id="test-read-only">
+  <span id="indelible">I am indelible</span>
+</p>
+
+<p class="testcontainer" id="test-insert-before">zero</p>
+
+<ul class="testcontainer" id="test-node-lists"
+ ><li>One<li><b>Two</b><li>Three</ul>
+
+<div class="testcontainer" id="test-name-attr"></div>
+
+<div class="testcontainer" id="test-target-attr"></div>
+
+<div class="testcontainer" id="test-location"></div>
+
+<div class="testcontainer" id="test-navigator"></div>
+
+<p class="testcontainer" id="test-child-nodes"></p>
+
+<div class="testcontainer" id="test-emit-css">
+  <a id="not-blue" href="#">I am not blue</a>
+</div>
+
+<p class="testcontainer" id="test-bug-731"
+ >The input should be a radio button: </p>
+
+<p class="testcontainer" id="test-dom-class-hierarchy">
+  <b>Click me</b>
+</p>
+
+<div class="testcontainer" id="test-case-insensitive-attrs">
+  <table id="is-red">
+    <tr>
+      <td><strong>Click me if this is red</strong></td>
+    </tr>
+  </table>
+</div>
+
+<script type="text/javascript">
 var setUp, tearDown;
 
 /** Aim high and you might miss the moon! */
@@ -233,7 +313,7 @@ jsunitRegister('testCantLoadScript',
 
 jsunitRegister('testAddEventListener',
                function testAddEventListener() {
-  var container = document.getElementById('test-add-event-listener');
+  var container = document.getElementById('test-add-event-listener-label');
   container.addEventListener(
       'click',
       function (event) {
@@ -246,7 +326,7 @@ jsunitRegister('testAddEventListener',
 
 jsunitRegister('testRemoveEventListener',
                function testRemoveEventListener() {
-  var container = document.getElementById('test-remove-event-listener');
+  var container = document.getElementById('test-remove-event-listener-label');
   var firstFired = false;
   var failed = false;
   function second(event) {
@@ -321,7 +401,7 @@ jsunitRegister('testReadOnlyNotEditable',
       'successfully appended element');
   expectFailure(
       function () {
-        assertTrue($('indelible') != null);
+        assertTrue($('indelible') !== null);
         $('test-read-only').removeChild($('indelible'));
         assertEquals(null, $('test-read-only-1'));
       },
@@ -332,7 +412,7 @@ jsunitRegister('testReadOnlyNotEditable',
         el.id = 'test-read-only-2';
         $('test-read-only').replaceChild($('indelible'), el);
         assertEquals(null, $('test-read-only-2'));
-        assertTrue($('indelible') != null);
+        assertTrue($('indelible') !== null);
       },
       'successfully replaced element');
   pass('test-read-only');
@@ -479,20 +559,6 @@ jsunitRegister('testOpaqueNodes',
   pass('test-opaque-nodes');
 });
 
-jsunitRegister('testChildNodes',
-               function testChildNodes() {
-  var container = document.getElementById('test-child-nodes');
-  container.innerHTML = '<b>foo</b> <i>bar</i> <u>baz</u>';
-  var childNodes = container.childNodes;
-  assertEquals(5, childNodes.length);
-  assertEquals('B', childNodes[0].nodeName);
-  assertEquals('#text', childNodes[1].nodeName);
-  assertEquals('I', childNodes[2].nodeName);
-  assertEquals('#text', childNodes[3].nodeName);
-  assertEquals('U', childNodes[4].nodeName);
-  pass('test-child-nodes');
-});
-
 jsunitRegister('testEmitCss',
                function testCss() {
   directAccess.emitCssHook(['.', ' a { color: #00ff00 }']);
@@ -572,3 +638,4 @@ jsunitRegister('testCaseInsensitiveAttrs',
     pass('test-case-insensitive-attrs');
   });
 });
+</script>

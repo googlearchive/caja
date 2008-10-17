@@ -37,7 +37,7 @@ public class ExpressionSanitizerCaja {
     this.meta = meta;
   }
 
-  public boolean sanitize(AncestorChain<?> toSanitize) {
+  public ParseTreeNode sanitize(AncestorChain<?> toSanitize) {
     MutableParseTreeNode input = (MutableParseTreeNode) toSanitize.node;
     ParseTreeNode result;
     if (this.meta.isValijaMode()) {
@@ -50,22 +50,12 @@ public class ExpressionSanitizerCaja {
     }
     if (!this.mq.hasMessageAtLevel(MessageLevel.ERROR)) {
       result = new IllegalReferenceCheckRewriter(false)
-        .expand(result, this.mq);
+          .expand(result, this.mq);
       if (!this.mq.hasMessageAtLevel(MessageLevel.ERROR)) {
         result.acceptPreOrder(new NonAsciiCheckVisitor(mq), null);
       }
     }
-
-    MutableParseTreeNode.Mutation mut = input.createMutation();
-    for (ParseTreeNode child : input.children()) {
-      mut.removeChild(child);
-    }
-    for (ParseTreeNode child : result.children()) {
-      mut.appendChild(child);
-    }
-    mut.execute();
-
-    return true;
+    return result;
   }
 
   /** Visible for testing. */

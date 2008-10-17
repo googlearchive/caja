@@ -15,6 +15,7 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.Block;
@@ -22,6 +23,7 @@ import com.google.caja.plugin.ExpressionSanitizerCaja;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.Pipeline;
+import java.util.ListIterator;
 
 /**
  * Rewrite the javascript to prevent runtime sandbox violations.
@@ -30,21 +32,28 @@ import com.google.caja.util.Pipeline;
  */
 public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
-    boolean valid = true;
-    for (Job job : jobs.getJobsByType(Job.JobType.JAVASCRIPT)) {
+    for (ListIterator<Job> it = jobs.getJobs().listIterator(); it.hasNext();) {
+      Job job = it.next();
+      if (job.getType() != Job.JobType.JAVASCRIPT) { continue; }
       // Pass in the rootmost scope that has non-synthetic children, so that
       // the Caja rules correctly identify global function declarations.
       AncestorChain<?> nonSyntheticScopeRoot
           = nonSyntheticScopeRoot(job.getRoot());
 
       if (nonSyntheticScopeRoot != null) {  // False for empty programs
-        valid &= new ExpressionSanitizerCaja(
+        ParseTreeNode validated = new ExpressionSanitizerCaja(
             jobs.getMessageQueue(), jobs.getPluginMeta())
             .sanitize(nonSyntheticScopeRoot);
+        if (nonSyntheticScopeRoot.parent == null) {
+          it.set(new Job(AncestorChain.instance(validated)));
+        } else {
+          ((MutableParseTreeNode) nonSyntheticScopeRoot.parent.node)
+              .replaceChild(validated, nonSyntheticScopeRoot.node);
+        }
       }
     }
 
-    return valid && jobs.hasNoFatalErrors();
+    return jobs.hasNoFatalErrors();
   }
 
   public AncestorChain<?> nonSyntheticScopeRoot(AncestorChain<?> js) {

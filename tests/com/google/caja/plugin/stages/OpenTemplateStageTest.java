@@ -21,9 +21,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ExpressionStmt;
-import com.google.caja.parser.js.FunctionConstructor;
-import com.google.caja.parser.js.Operation;
-import com.google.caja.parser.js.Operator;
+import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMeta;
@@ -126,24 +124,13 @@ public final class OpenTemplateStageTest extends CajaTestCase {
   }
 
   private static ParseTreeNode stripBoilerPlate(ParseTreeNode node) {
+    if (!(node instanceof ModuleEnvelope)) { return node; }
+    node = node.children().get(0);
     if (!(node instanceof Block && node.children().size() == 1)) {
       return node;
     }
     node = node.children().get(0);
     if (!(node instanceof ExpressionStmt)) { return node; }
-    node = node.children().get(0);
-    // Strip the loadModule call.
-    if (!(node instanceof Operation
-          && Operator.FUNCTION_CALL == ((Operation) node).getOperator())) {
-      return node;
-    }
-    node = node.children().get(1);
-    if (!(node instanceof FunctionConstructor)) { return node; }
-    node = ((FunctionConstructor) node).getBody();
-
-    if (!(node instanceof Block && node.children().size() == 1)) {
-      return node;
-    }
     node = node.children().get(0);
     return node;
   }

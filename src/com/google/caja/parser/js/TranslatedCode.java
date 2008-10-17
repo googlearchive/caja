@@ -20,21 +20,20 @@ import com.google.caja.reporting.RenderContext;
 import java.util.List;
 
 /**
- * Translates to a module envelope: <tt>___.loadModule...</tt>.
- * This is not a core JavaScript parse tree node &mdash; it is never produced by
- * {@link Parser}.
+ * The result of a code translation step, such as an HTML to JS compiler.
+ * This is not a real javascript parse tree node since it will never be created
+ * by the JS parser.
  *
- * @author erights@gmail.com
- * @author ihab.awad@gmail.com
+ * @author mikesamuel@gmail.com
  */
-public final class ModuleEnvelope extends AbstractStatement<Block> {
+public final class TranslatedCode extends AbstractStatement<Statement> {
   /** @param value unused.  This ctor is provided for reflection. */
-  public ModuleEnvelope(Void value, List<? extends Block> children) {
+  public TranslatedCode(Void value, List<? extends Statement> children) {
     this(children.get(0));
     assert children.size() == 1;
   }
 
-  public ModuleEnvelope(Block body) {
+  public TranslatedCode(Statement body) {
     createMutation().appendChild(body).execute();
   }
 
@@ -42,11 +41,10 @@ public final class ModuleEnvelope extends AbstractStatement<Block> {
   protected void childrenChanged() {
     super.childrenChanged();
     if (children().size() != 1) {
-      throw new IllegalStateException(
-          "A ModuleEnvelope may only have one child");
+      throw new IllegalStateException("TranslatedCode may only have one child");
     }
     ParseTreeNode module = children().get(0);
-    if (!(module instanceof Block)) {
+    if (!(module instanceof Statement)) {
       throw new ClassCastException("Expected block, not " + module);
     }
   }
@@ -54,7 +52,7 @@ public final class ModuleEnvelope extends AbstractStatement<Block> {
   @Override
   public Object getValue() { return null; }
 
-  public Block getModuleBody() { return children().get(0); }
+  public Statement getTranslation() { return children().get(0); }
 
   public void render(RenderContext rc) {
     // FIXME(erights): must emit valid javascript or throw an exception

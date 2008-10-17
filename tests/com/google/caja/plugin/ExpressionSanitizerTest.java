@@ -90,8 +90,9 @@ public class ExpressionSanitizerTest extends CajaTestCase {
   private void assertSanitize(String input, String golden)
       throws Exception {
     Block inputNode = js(fromString(input));
-    assertTrue(new ExpressionSanitizerCaja(mq, meta).sanitize(ac(inputNode)));
-    String inputCmp = render(inputNode);
+    ParseTreeNode sanitized = new ExpressionSanitizerCaja(mq, meta)
+        .sanitize(ac(inputNode));
+    String inputCmp = render(sanitized);
 
     String goldenCmp = render(js(fromString(golden)));
 

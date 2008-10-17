@@ -18,6 +18,7 @@ import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.util.CajaTestCase;
 
@@ -149,8 +150,11 @@ public class HtmlCompilerTest extends CajaTestCase {
     HtmlCompiler htmlc = new HtmlCompiler(
         CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
         mc, mq, makeTestPluginMeta());
-    String actual = render(
-       htmlc.compileDocument(htmlFragment(fromString(htmlText))));
+    ParseTreeNode compiled = htmlc.compileDocument(
+        htmlFragment(fromString(htmlText)));
+    // TODO(mikesamuel): find a common place for removePseudoNodes.
+    DomProcessingEventsTest.removePseudoNodes(compiled);
+    String actual = render(compiled);
     for (Statement handler : htmlc.getEventHandlers()) {
       actual += "\n" + render(handler);
     }
