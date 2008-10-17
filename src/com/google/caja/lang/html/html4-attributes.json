@@ -38,5 +38,11 @@
         "description": "content type of a style language",
         "optional": true, "pattern": "text/css(;.*)?"
       },
-      ],
+      {
+        "key": "INPUT:TYPE",
+        "description": "what kind of widget is needed -- disallows FILE and PASSWORD",
+        "pattern": "TEXT|CHECKBOX|RADIO|SUBMIT|RESET|HIDDEN|IMAGE|BUTTON",
+        "optional": true
+      }
+      ]
 }

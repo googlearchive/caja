@@ -84,5 +84,11 @@ public class HtmlSchemaTest extends TestCase {
                .accept("text/javascript"));
     assertTrue(schema.getAttributeCriteria("script", "type")
                .accept("text/javascript;charset=UTF-8"));
+    assertTrue(schema.getAttributeCriteria("input", "type").accept("text"));
+    assertTrue(schema.getAttributeCriteria("input", "type").accept("TEXT"));
+    assertTrue(schema.getAttributeCriteria("input", "type").accept("button"));
+    assertFalse(schema.getAttributeCriteria("input", "type").accept("file"));
+    assertFalse(schema.getAttributeCriteria("input", "type").accept("FILE"));
+    assertFalse(schema.getAttributeCriteria("input", "type").accept("bogus"));
   }
 }
