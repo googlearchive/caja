@@ -24,6 +24,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Pair;
+import com.google.caja.util.Strings;
 
 import java.io.IOException;
 import java.net.URI;
@@ -89,11 +90,11 @@ public final class HtmlSchema {
   public HtmlSchema(WhiteList tagList, WhiteList attribList) {
     this.allowedElements = new HashSet<String>();
     for (String name : tagList.allowedItems()) {
-      allowedElements.add(name.toLowerCase());
+      allowedElements.add(Strings.toLowerCase(name));
     }
     this.elementDetails = new HashMap<String, HTML.Element>();
     for (WhiteList.TypeDefinition def : tagList.typeDefinitions().values()) {
-      String name = ((String) def.get("key", null)).toLowerCase();
+      String name = Strings.toLowerCase((String) def.get("key", null));
       elementDetails.put(
           name,
           new HTML.Element(
@@ -103,12 +104,12 @@ public final class HtmlSchema {
     }
     this.allowedAttributes = new HashSet<String>();
     for (String name : attribList.allowedItems()) {
-      allowedAttributes.add(name.toLowerCase());
+      allowedAttributes.add(Strings.toLowerCase(name));
     }
     this.attributeDetails = new HashMap<String, HTML.Attribute>();
     this.attributeCriteria = new HashMap<String, Criterion<String>>();
     for (WhiteList.TypeDefinition def : attribList.typeDefinitions().values()) {
-      String key = ((String) def.get("key", null)).toLowerCase();
+      String key = Strings.toLowerCase((String) def.get("key", null));
       int colon = key.indexOf(':');
       String element = key.substring(0, colon),
           attrib = key.substring(colon + 1);
@@ -126,9 +127,9 @@ public final class HtmlSchema {
       if (values != null) {
         criterion = new Criterion<String>() {
           final Set<String> valueSet = new HashSet<String>(
-             Arrays.asList(values.toLowerCase().split(",")));
+             Arrays.asList(Strings.toLowerCase(values).split(",")));
           public boolean accept(String s) {
-            return valueSet.contains(s.toLowerCase());
+            return valueSet.contains(Strings.toLowerCase(s));
           }
 
           @Override
@@ -159,25 +160,23 @@ public final class HtmlSchema {
   }
 
   public boolean isElementAllowed(String elementName) {
-    assert elementName.equals(elementName.toLowerCase());
+    assert Strings.isLowerCase(elementName);
     return allowedElements.contains(elementName);
   }
 
   public HTML.Element lookupElement(String elementName) {
-    assert elementName.equals(elementName.toLowerCase());
+    assert Strings.isLowerCase(elementName);
     return elementDetails.get(elementName);
   }
 
   public boolean isAttributeAllowed(String elementName, String attribName) {
-    assert attribName.equals(attribName.toLowerCase())
-        && elementName.equals(elementName.toLowerCase());
+    assert Strings.isLowerCase(elementName) && Strings.isLowerCase(attribName);
     return allowedAttributes.contains(elementName + ":" + attribName)
         || allowedAttributes.contains("*:" + attribName);
   }
 
   public HTML.Attribute lookupAttribute(String elementName, String attribName) {
-    assert attribName.equals(attribName.toLowerCase())
-        && elementName.equals(elementName.toLowerCase());
+    assert Strings.isLowerCase(elementName) && Strings.isLowerCase(attribName);
     HTML.Attribute attr = attributeDetails.get(elementName + ":" + attribName);
     if (attr == null) {
       attr = attributeDetails.get("*:" + attribName);
@@ -188,7 +187,7 @@ public final class HtmlSchema {
   /** Criteria that attribute values must satisfy. */
   public Criterion<? super String> getAttributeCriteria(
       String tagName, String attribName) {
-    assert attribName.equals(attribName.toLowerCase());
+    assert Strings.isLowerCase(tagName) && Strings.isLowerCase(attribName);
     Criterion<String> specific
         = attributeCriteria.get(tagName + ":" + attribName);
     Criterion<String> general = attributeCriteria.get("*:" + attribName);

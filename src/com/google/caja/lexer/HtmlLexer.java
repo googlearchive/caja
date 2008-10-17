@@ -16,12 +16,12 @@ package com.google.caja.lexer;
 
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.util.Strings;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -236,7 +236,7 @@ public final class HtmlLexer extends AbstractTokenStream<HtmlTokenType> {
   /** Can the attribute appear in HTML without a value. */
   private static boolean isValuelessAttribute(String attribName) {
     boolean valueless = VALUELESS_ATTRIB_NAMES.contains(
-        attribName.toLowerCase(Locale.ENGLISH));
+        Strings.toLowerCase(attribName));
     return valueless;
   }
 
@@ -751,7 +751,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
   }
 
   protected String canonTagName(String tagName) {
-    return asXml ? tagName : tagName.toLowerCase(Locale.ENGLISH);
+    return asXml ? tagName : Strings.toLowerCase(tagName);
   }
 
   static <T extends TokenType>

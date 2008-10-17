@@ -30,6 +30,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Strings;
 import com.google.caja.util.SyntheticAttributeKey;
 import com.google.caja.util.SyntheticAttributes;
 
@@ -184,7 +185,7 @@ public final class CssValidator {
   private boolean validateSimpleSelector(CssTree.SimpleSelector sel) {
     String tagName = sel.getElementName();
     if (null == tagName) { return true; }
-    tagName = tagName.toLowerCase();
+    tagName = Strings.toLowerCase(tagName);
     if (null != htmlSchema.lookupElement(tagName)) {
       if (htmlSchema.isElementAllowed(tagName)
           // Make an exception for BODY which is handled specially by the
@@ -210,7 +211,7 @@ public final class CssValidator {
    * Attrib must exist in html 4 whitelist.
    */
   private boolean validateAttrib(CssTree.Attrib attr) {
-    String attribName = attr.getIdent().toLowerCase();
+    String attribName = Strings.toLowerCase(attr.getIdent());
     if (null != htmlSchema.lookupAttribute("*", attribName)) {
       // Attribs don't parse in IE 6, and allowing them without being able
       // allowing them could leak information about how we're rewriting
@@ -635,8 +636,8 @@ final class SignatureResolver {
       if (null == term.getOperator()) {
         boolean match;
         if (atom instanceof CssTree.IdentLiteral) {
-          match = literal.value.equalsIgnoreCase(
-              ((CssTree.IdentLiteral) atom).getValue());
+          match = Strings.equalsIgnoreCase(
+              literal.value, ((CssTree.IdentLiteral) atom).getValue());
         } else if (atom instanceof CssTree.QuantityLiteral) {
           match = literal.value.equals(atom.getValue());
         } else {
@@ -663,7 +664,7 @@ final class SignatureResolver {
       Candidate candidate, String propertyName, List<Candidate> passed) {
 
     CssSchema.SymbolInfo symbolInfo = cssSchema.getSymbol(
-        ssig.symbolName.toLowerCase());
+        Strings.toLowerCase(ssig.symbolName));
     if (null != symbolInfo) {
       if (false) {
         System.err.println(
@@ -684,7 +685,7 @@ final class SignatureResolver {
       Candidate candidate, String propertyName, List<Candidate> passed) {
 
     CssSchema.CssPropertyInfo info = cssSchema.getCssProperty(
-        ssig.getPropertyName().toLowerCase());
+        Strings.toLowerCase(ssig.getPropertyName()));
     if (null == info) {
       throw new AssertionError(
           "Unknown property in css property signature: " + propertyName);

@@ -22,9 +22,9 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.Strings;
 
 import java.util.List;
-import java.util.Locale;
 
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
@@ -114,13 +114,13 @@ public class Html5ElementStack implements OpenElementStack {
   }
 
   public static String canonicalElementName(String elementName) {
-    // Locale.ENGLISH forces LANG=C like behavior.
-    return elementName.toLowerCase(Locale.ENGLISH);
+    // forces LANG=C like behavior.
+    return Strings.toLowerCase(elementName);
   }
 
   public static String canonicalAttributeName(String attributeName) {
-    // Locale.ENGLISH forces LANG=C like behavior.
-    return attributeName.toLowerCase(Locale.ENGLISH);
+    // forces LANG=C like behavior.
+    return Strings.toLowerCase(attributeName);
   }
 
   /** @inheritDoc */

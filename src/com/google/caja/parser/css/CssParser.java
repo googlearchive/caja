@@ -24,6 +24,7 @@ import com.google.caja.lexer.TokenQueue.Mark;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.util.Strings;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -367,7 +368,7 @@ public final class CssParser {
   private CssTree.Prio parsePrio() throws ParseException {
     Token<CssTokenType> t = tq.peek();
     if (CssTokenType.DIRECTIVE == t.type) {
-      String s = unescape(t).toLowerCase();
+      String s = Strings.toLowerCase(unescape(t));
       if ("!important".equals(s)) {
         tq.advance();
         return new CssTree.Prio(t.pos, s);
@@ -607,13 +608,13 @@ public final class CssParser {
     if (tq.isEmpty()) { return false; }
     Token<CssTokenType> t = tq.peek();
     return t.type == CssTokenType.SYMBOL
-        && symbol.equalsIgnoreCase(unescape(t));
+        && Strings.equalsIgnoreCase(symbol, unescape(t));
   }
 
   private void expectSymbol(String symbol) throws ParseException {
     Token<CssTokenType> t = tq.pop();
     if (t.type == CssTokenType.SYMBOL
-        && symbol.equalsIgnoreCase(unescape(t))) {
+        && Strings.equalsIgnoreCase(symbol, unescape(t))) {
       return;
     }
     throw new ParseException(

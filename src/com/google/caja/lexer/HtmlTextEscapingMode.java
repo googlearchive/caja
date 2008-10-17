@@ -14,8 +14,9 @@
 
 package com.google.caja.lexer;
 
+import com.google.caja.util.Strings;
+
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -111,7 +112,7 @@ public enum HtmlTextEscapingMode {
    * The mode used for content following a start tag with the given name.
    */
   public static HtmlTextEscapingMode getModeForTag(String canonTagName) {
-    assert canonTagName.toLowerCase(Locale.ENGLISH).equals(canonTagName);
+    assert Strings.isLowerCase(canonTagName);
     HtmlTextEscapingMode mode = ESCAPING_MODES.get(canonTagName);
     return mode != null ? mode : PCDATA;
   }

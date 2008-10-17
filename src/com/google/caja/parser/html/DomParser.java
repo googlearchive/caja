@@ -27,6 +27,7 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.util.Strings;
 
 import java.io.Reader;
 import java.util.ArrayList;
@@ -336,7 +337,8 @@ public final class DomParser {
             FilePosition.startOfFile(first.pos.source()))) {
       String path = is.getUri().getPath();
       if (path != null) {
-        String ext = path.toLowerCase().substring(path.lastIndexOf('.') + 1);
+        String ext = Strings.toLowerCase(
+            path.substring(path.lastIndexOf('.') + 1));
         if ("html".equals(ext)) { return false; }
         if ("xml".equals(ext) || "xhtml".equals(ext)) { return true; }
       }

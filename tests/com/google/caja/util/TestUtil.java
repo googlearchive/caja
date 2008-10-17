@@ -40,7 +40,6 @@ import java.net.URLEncoder;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -191,7 +190,7 @@ class SetupUrlHandlers {
         // /Tricks-of-the-Java-Programming-Gurus/ch17.htm
 
         public URLStreamHandler createURLStreamHandler(String protocol) {
-          protocol = protocol.toLowerCase(Locale.ENGLISH);
+          protocol = Strings.toLowerCase(protocol);
 
           URLStreamHandler handler;
           synchronized (handlers) {
@@ -204,7 +203,7 @@ class SetupUrlHandlers {
         }
 
         private URLStreamHandler createHandler(String protocol) {
-          if ("content".equalsIgnoreCase(protocol)) {
+          if (Strings.equalsIgnoreCase("content", protocol)) {
             return new ContentUrlHandler();
           } else if ("http".equals(protocol) || "https".equals(protocol)) {
             // We could allow tests to stub out the internet, but

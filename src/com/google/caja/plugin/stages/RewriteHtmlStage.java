@@ -45,6 +45,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Pipeline;
+import com.google.caja.util.Strings;
 import com.google.caja.util.SyntheticAttributeKey;
 
 import java.io.StringReader;
@@ -106,7 +107,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
             MutableParseTreeNode parentNode
                 = (MutableParseTreeNode) ancestors.getParentNode();
             DomTree.Tag tag = (DomTree.Tag) n;
-            String name = tag.getTagName().toLowerCase();
+            String name = Strings.toLowerCase(tag.getTagName());
             if ("script".equals(name)) {
               rewriteScriptTag(tag, parentNode, jobs);
             } else if ("style".equals(name)) {
@@ -235,8 +236,8 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
 
     DomTree.Attrib rel = lookupAttribute(styleTag, "rel",
         DupePolicy.YIELD_NULL);
-    if (rel == null
-        || !rel.getAttribValue().trim().equalsIgnoreCase("stylesheet")) {
+    if (rel == null || !Strings.equalsIgnoreCase(
+            rel.getAttribValue().trim(), "stylesheet")) {
       // If it's not a stylesheet then ignore it.
       // The HtmlValidator should complain but that's not our problem.
       return;
@@ -431,7 +432,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
   private static String getMimeType(String contentType) {
     int typeEnd = contentType.indexOf(';');
     if (typeEnd < 0) { typeEnd = contentType.length(); }
-    return contentType.substring(0, typeEnd).toLowerCase();
+    return Strings.toLowerCase(contentType.substring(0, typeEnd));
   }
 
   private static boolean isJavaScriptContentType(String contentType) {
@@ -459,7 +460,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
    */
   private static boolean isJavaScriptLanguage(String language) {
 
-    language = language.toLowerCase();
+    language = Strings.toLowerCase(language);
     return language.startsWith("javascript") || language.startsWith("jscript");
   }
 

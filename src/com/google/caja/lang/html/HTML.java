@@ -14,6 +14,8 @@
 
 package com.google.caja.lang.html;
 
+import com.google.caja.util.Strings;
+
 /**
  * HTML class defines Element and Attribute classes.
  *
@@ -32,7 +34,7 @@ public final class HTML {
 
     /** Construct an Element */
     public Element(String name, boolean empty, boolean optionalEndTag) {
-      assert name.equals(name.toLowerCase());
+      assert Strings.isLowerCase(name);
       this.name_ = name;
       this.empty_ = empty;
       this.optionalEndTag_ = optionalEndTag;
@@ -162,8 +164,8 @@ public final class HTML {
     /** Construct an Attribute */
     public Attribute(String elementName, String attributeName, Type type,
                      String mimeTypes) {
-      assert elementName.toLowerCase().equals(elementName);
-      assert attributeName.toLowerCase().equals(attributeName);
+      assert Strings.isLowerCase(elementName);
+      assert Strings.isLowerCase(attributeName);
       assert type != null;
       this.elementName_ = elementName;
       this.attributeName_ = attributeName;

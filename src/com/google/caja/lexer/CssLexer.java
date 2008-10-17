@@ -18,6 +18,7 @@ import com.google.caja.lexer.CharProducer.MutableFilePosition;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.util.Strings;
 
 import java.io.IOException;
 
@@ -142,7 +143,8 @@ public final class CssLexer implements TokenStream<CssTokenType> {
         if (null != t2) {
           pending.add(t2);
           if (t2.type == CssTokenType.IDENT
-              && "important".equalsIgnoreCase(decodeCssIdentifier(t2.text))) {
+              && Strings.equalsIgnoreCase(
+                  "important", decodeCssIdentifier(t2.text))) {
             reduce(CssTokenType.DIRECTIVE);
           }
         }

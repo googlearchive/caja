@@ -28,6 +28,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Pair;
+import com.google.caja.util.Strings;
 
 import java.io.IOException;
 import java.net.URI;
@@ -97,7 +98,7 @@ public final class CssSchema {
     // http://www.w3.org/TR/CSS21/syndata.html#characters
     // All CSS style sheets are case-insensitive, except for parts
     // that are not under the control of CSS.
-    return properties.get(propertyName.toLowerCase());
+    return properties.get(Strings.toLowerCase(propertyName));
   }
 
   /** All defined properties including disallowed ones. */
@@ -118,17 +119,17 @@ public final class CssSchema {
 
   /** Is the given word a css keyword? */
   public boolean isKeyword(String name) {
-    return keywords.contains(name.toLowerCase());
+    return keywords.contains(Strings.toLowerCase(name));
   }
 
   /** Is the given word the name of a CSS function? */
   public boolean isFunctionAllowed(String name) {
-    return functionsAllowed.contains(name.toLowerCase());
+    return functionsAllowed.contains(Strings.toLowerCase(name));
   }
 
   /** Is the given word the name of an allowed CSS property? */
   public boolean isPropertyAllowed(String name) {
-    return propertiesAllowed.contains(name.toLowerCase());
+    return propertiesAllowed.contains(Strings.toLowerCase(name));
   }
 
   public static boolean isMediaType(String mediaType) {
@@ -316,7 +317,7 @@ public final class CssSchema {
           ParseTreeNode n = ancestors.node;
           if (n instanceof CssPropertySignature.LiteralSignature) {
             String kw = ((CssPropertySignature.LiteralSignature) n).value;
-            keywords.add(kw.toLowerCase());
+            keywords.add(Strings.toLowerCase(kw));
           }
           return true;
         }
@@ -328,7 +329,7 @@ public final class CssSchema {
           ParseTreeNode n = ancestors.node;
           if (n instanceof CssPropertySignature.LiteralSignature) {
             String kw = ((CssPropertySignature.LiteralSignature) n).value;
-            keywords.add(kw.toLowerCase());
+            keywords.add(Strings.toLowerCase(kw));
           }
           return true;
         }

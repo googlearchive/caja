@@ -14,6 +14,8 @@
 
 package com.google.caja.opensocial.service;
 
+import com.google.caja.util.Strings;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,7 +33,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -304,7 +305,7 @@ final class TestHttpServletResponse implements HttpServletResponse {
   }
   public void setHeader(String k, String v) {
     if (output != null) { throw new IllegalStateException(); }
-    headers.put(k.toLowerCase(Locale.ENGLISH), v);
+    headers.put(Strings.toLowerCase(k), v);
   }
   public void setIntHeader(String arg0, int arg1) {
     throw new UnsupportedOperationException();

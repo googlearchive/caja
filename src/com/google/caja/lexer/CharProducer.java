@@ -14,6 +14,8 @@
 
 package com.google.caja.lexer;
 
+import com.google.caja.util.Strings;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -261,7 +263,7 @@ public interface CharProducer extends Closeable {
           }
           Character c = ENTITY_TABLE.get(sb.toString());
           if (null == c) {
-            c = ENTITY_TABLE.get(sb.toString().toLowerCase());
+            c = ENTITY_TABLE.get(Strings.toLowerCase(sb.toString()));
           }
           if (null == c) { return ch; }
           consume(end + 1);

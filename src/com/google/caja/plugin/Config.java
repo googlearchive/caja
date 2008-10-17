@@ -24,6 +24,7 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.Strings;
 
 import java.io.File;
 import java.io.IOException;
@@ -285,8 +286,9 @@ public final class Config {
   }
 
   private static File toFileWithExtension(URI uri, String extension) {
-    if (!"file".equalsIgnoreCase(uri.getScheme())) { return null; }
-
+    if (!Strings.equalsIgnoreCase("file", uri.getScheme())) {
+      return null;
+    }
     return substituteExtension(new File(uri.getPath()), extension);
   }
 

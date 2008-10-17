@@ -168,6 +168,8 @@
       <sysproperty key="emma.coverage.out.file"
        value="${reports}/coverage/coverage.ec"/>
       <sysproperty key="emma.coverage.out.merge" value="false"/>
+      <sysproperty key="user.language" value="tr"/>
+      <sysproperty key="user.region" value="TR"/>
       <test name="com.google.caja.AllTests" if="emma.enabled"/>
     </junit>
     <!-- Generate the code coverage report. -->

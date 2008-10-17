@@ -14,6 +14,7 @@
 
 package com.google.caja;
 
+import com.google.caja.CajitaTest;
 import com.google.caja.config.ConfigUtilTest;
 import com.google.caja.demos.calendar.EventStoreTest;
 import com.google.caja.demos.calendar.HcalTest;
@@ -77,6 +78,7 @@ import com.google.caja.reporting.HtmlSnippetProducerTest;
 import com.google.caja.reporting.SnippetProducerTest;
 import com.google.caja.util.JoinTest;
 import com.google.caja.util.SparseBitSetTest;
+import com.google.caja.util.StringsTest;
 
 import java.util.regex.Pattern;
 
@@ -95,6 +97,8 @@ public class AllTests {
     Class<? extends TestCase>[] testClasses = new Class[] {
           AbstractMessageQueueTest.class,
           BuildInfoTest.class,
+          CajitaRewriterTest.class,
+          CajitaTest.class,
           CajolingServiceTest.class,
           CharProducerTest.class,
           ConfigUtilTest.class,
@@ -109,7 +113,6 @@ public class AllTests {
           CssTreeTest.class,
           CssValidatorTest.class,
           DebuggingSymbolsStageTest.class,
-          CajitaRewriterTest.class,
           DefaultGadgetRewriterTest.class,
           DefaultValijaRewriterTest.class,
           DomParserTest.class,
@@ -154,6 +157,7 @@ public class AllTests {
           SnippetProducerTest.class,
           SparseBitSetTest.class,
           StringLiteralTest.class,
+          StringsTest.class,
           TestBedTest.class,
           TokenClassificationTest.class,
     };

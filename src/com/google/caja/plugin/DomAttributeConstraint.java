@@ -16,6 +16,7 @@ package com.google.caja.plugin;
 
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.util.Pair;
+import com.google.caja.util.Strings;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -49,7 +50,7 @@ interface DomAttributeConstraint {
   static final class Factory {
 
     static DomAttributeConstraint forTag(String tagName) {
-      tagName = tagName.toUpperCase();
+      tagName = Strings.toUpperCase(tagName);
       // TODO(ihab): rdub disabled this condition. Am leaving it in.
       if ("FORM".equals(tagName)) {
         // We need an onsubmit handler
@@ -58,13 +59,13 @@ interface DomAttributeConstraint {
 
           public void startTag(DomTree.Tag tag) { /* noop */ }
           public Pair<String, String> attributeValueHtml(String attribName) {
-            if ("ONSUBMIT".equalsIgnoreCase(attribName)) {
+            if (Strings.equalsIgnoreCase("ONSUBMIT", attribName)) {
               return Pair.pair("try { ", " } finally { return false; }");
             }
             return Pair.pair("", "");
           }
           public void attributeDone(String attribName) {
-            if ("ONSUBMIT".equalsIgnoreCase(attribName)) {
+            if (Strings.equalsIgnoreCase("ONSUBMIT", attribName)) {
               sawOnSubmit = true;
             }
           }
@@ -83,11 +84,13 @@ interface DomAttributeConstraint {
 
           public void startTag(DomTree.Tag tag) { /* noop */ }
           public Pair<String, String> attributeValueHtml(String attribName) {
-            if ("TARGET".equalsIgnoreCase(attribName)) { return null; }
+            if (Strings.equalsIgnoreCase("TARGET", attribName)) {
+              return null;
+            }
             return Pair.pair("", "");
           }
           public void attributeDone(String attribName) {
-            if ("HREF".equalsIgnoreCase(attribName)) {
+            if (Strings.equalsIgnoreCase("HREF", attribName)) {
               sawHref = true;
             }
           }
@@ -109,14 +112,18 @@ interface DomAttributeConstraint {
 
             public void startTag(DomTree.Tag tag) { /* noop */ }
             public Pair<String, String> attributeValueHtml(String attribName) {
-              if ("SRC".equalsIgnoreCase(attribName)) { return null; }
-              if ("ID".equalsIgnoreCase(attribName)) { return null; }
+              if (Strings.equalsIgnoreCase("SRC", attribName)) {
+                return null;
+              }
+              if (Strings.equalsIgnoreCase("ID", attribName)) {
+                return null;
+              }
               return Pair.pair("", "");
             }
             public void attributeDone(String attribName) {
-              if ("SRC".equalsIgnoreCase(attribName)) {
+              if (Strings.equalsIgnoreCase("SRC", attribName)) {
                 sawSrc = true;
-              } else if ("ID".equalsIgnoreCase(attribName)) {
+              } else if (Strings.equalsIgnoreCase("ID", attribName)) {
                 sawId = true;
               }
             }
@@ -139,11 +146,13 @@ interface DomAttributeConstraint {
 
           public void startTag(DomTree.Tag tag) { /* noop */ }
           public Pair<String, String> attributeValueHtml(String attribName) {
-            if ("ID".equalsIgnoreCase(attribName)) { return null; }
+            if (Strings.equalsIgnoreCase("ID", attribName)) {
+              return null;
+            }
             return Pair.pair("", "");
           }
           public void attributeDone(String attribName) {
-            if ("ID".equalsIgnoreCase(attribName)) {
+            if (Strings.equalsIgnoreCase("ID", attribName)) {
               sawId = true;
             }
           }

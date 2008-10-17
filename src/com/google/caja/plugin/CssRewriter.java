@@ -29,6 +29,7 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Strings;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -355,8 +356,8 @@ public final class CssRewriter {
         public boolean visit(AncestorChain<?> ancestors) {
           ParseTreeNode node = ancestors.node;
           if (node instanceof CssTree.Property) {
-            if ("content".equalsIgnoreCase(
-                ((CssTree.Property) node).getPropertyName())) {
+            if (Strings.equalsIgnoreCase(
+                    "content", ((CssTree.Property) node).getPropertyName())) {
               mq.addMessage(PluginMessageType.UNSAFE_CSS_PROPERTY,
                             invalidNodeMessageLevel, node.getFilePosition(),
                             MessagePart.Factory.valueOf("content"));
@@ -367,8 +368,8 @@ public final class CssRewriter {
             boolean remove = false;
             CssTree child = ((CssTree.Pseudo) node).children().get(0);
             if (child instanceof CssTree.IdentLiteral) {
-              if (!ALLOWED_PSEUDO_SELECTORS.contains(
-                  ((CssTree.IdentLiteral) child).getValue().toLowerCase())) {
+              if (!ALLOWED_PSEUDO_SELECTORS.contains(Strings.toLowerCase(
+                      ((CssTree.IdentLiteral) child).getValue()))) {
                 mq.addMessage(PluginMessageType.UNSAFE_CSS_PSEUDO_SELECTOR,
                               invalidNodeMessageLevel, node.getFilePosition(),
                               node);

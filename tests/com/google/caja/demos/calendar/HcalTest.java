@@ -15,6 +15,7 @@
 package com.google.caja.demos.calendar;
 
 import com.google.caja.util.RhinoTestBed;
+import java.util.Locale;
 import junit.framework.TestCase;
 
 /**
@@ -22,6 +23,12 @@ import junit.framework.TestCase;
  */
 public class HcalTest extends TestCase {
   public void testInRhino() throws Exception {
-    RhinoTestBed.runJsUnittestFromHtml(getClass(), "hcalendar_test.html");
+    Locale defaultLocale = Locale.getDefault();
+    Locale.setDefault(Locale.ENGLISH);
+    try {
+      RhinoTestBed.runJsUnittestFromHtml(getClass(), "hcalendar_test.html");
+    } finally {
+      Locale.setDefault(defaultLocale);
+    }
   }
 }

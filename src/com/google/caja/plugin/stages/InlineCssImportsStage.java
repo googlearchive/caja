@@ -35,6 +35,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Pipeline;
+import com.google.caja.util.Strings;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -210,7 +211,7 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
           }
         } else {
           for (CssTree.Medium medium : mediaNodes) {
-            if (!mediaTypes.contains(medium.getValue().toLowerCase())) {
+            if (!mediaTypes.contains(Strings.toLowerCase(medium.getValue()))) {
               mediaMut.removeChild(medium);
             } else {
               oneAllowed = true;
@@ -265,7 +266,7 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
   private static Set<String> toMediaTypeSet(List<CssTree.Medium> media) {
     Set<String> mediaTypes = new LinkedHashSet<String>();
     for (CssTree.Medium medium : media) {
-      mediaTypes.add(medium.getValue().toLowerCase());
+      mediaTypes.add(Strings.toLowerCase(medium.getValue()));
     }
     return mediaTypes;
   }

@@ -62,6 +62,7 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Pair;
+import com.google.caja.util.Strings;
 import static com.google.caja.parser.js.SyntheticNodes.s;
 
 import java.io.StringReader;
@@ -157,7 +158,7 @@ public class HtmlCompiler {
         break;
       case TAGBEGIN:
         DomTree.Tag el = (DomTree.Tag) t;
-        String tagName = el.getValue().toLowerCase();
+        String tagName = Strings.toLowerCase(el.getValue());
 
         if (tagName.equals("span")) {
           Block extractedScriptBody = el.getAttributes().get(
@@ -206,7 +207,7 @@ public class HtmlCompiler {
             Pair<String, String> wrapper = constraint.attributeValueHtml(name);
             if (null == wrapper) { continue; }
 
-            if ("style".equalsIgnoreCase(name)) {
+            if (Strings.equalsIgnoreCase("style", name)) {
               compileStyleAttrib(attrib, out);
             } else {
               AttributeXform xform = xformForAttribute(tagName, name);
@@ -291,7 +292,7 @@ public class HtmlCompiler {
 
   private void assertNotBlacklistedTag(DomTree node)
       throws BadContentException {
-    String tagName = node.getValue().toLowerCase();
+    String tagName = Strings.toLowerCase(node.getValue());
     if (!htmlSchema.isElementAllowed(tagName)) {
       throw new BadContentException(
           new Message(PluginMessageType.UNSAFE_TAG, node.getFilePosition(),
@@ -305,7 +306,7 @@ public class HtmlCompiler {
    * @param tag a tag name, such as {@code P} for {@code <p>} tags.
    */
   private boolean requiresCloseTag(String tag) {
-    HTML.Element e = htmlSchema.lookupElement(tag.toLowerCase());
+    HTML.Element e = htmlSchema.lookupElement(Strings.toLowerCase(tag));
     return null == e || !e.isEmpty();
   }
 
@@ -315,7 +316,7 @@ public class HtmlCompiler {
    * @param tag a tag name, such as {@code P} for {@code <p>} tags.
    */
   private boolean tagAllowsContent(String tag) {
-    HTML.Element e = htmlSchema.lookupElement(tag.toLowerCase());
+    HTML.Element e = htmlSchema.lookupElement(Strings.toLowerCase(tag));
     return null == e || !e.isEmpty();
   }
 
@@ -490,8 +491,8 @@ public class HtmlCompiler {
    */
   private AttributeXform xformForAttribute(
       String tagName, String attribute) {
-    tagName = tagName.toLowerCase();
-    attribute = attribute.toLowerCase();
+    tagName = Strings.toLowerCase(tagName);
+    attribute = Strings.toLowerCase(attribute);
     HTML.Attribute a = htmlSchema.lookupAttribute(tagName, attribute);
     if (null != a) {
       switch (a.getType()) {

@@ -30,6 +30,7 @@ import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Strings;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -201,7 +202,7 @@ public final class CssCompiler {
 
   private static boolean selectorMatchesElement(
       CssTree.SimpleSelector t, String elementName) {
-    return elementName.equalsIgnoreCase(t.getElementName());
+    return Strings.equalsIgnoreCase(elementName, t.getElementName());
   }
 
   private static boolean isDescendant(CssTree t) {

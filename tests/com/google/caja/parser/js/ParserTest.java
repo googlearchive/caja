@@ -29,15 +29,16 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.MoreAsserts;
+import com.google.caja.util.Strings;
 import com.google.caja.util.TestUtil;
-
-import junit.framework.AssertionFailedError;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+
+import junit.framework.AssertionFailedError;
 
 /**
  *
@@ -115,8 +116,8 @@ public class ParserTest extends CajaTestCase {
 
     // Since we're doing these checks for security, double check that someone
     // hasn't adjusted the golden file.
-    String golden = TestUtil.readResource(getClass(), "rendergolden6.txt")
-        .toLowerCase();
+    String golden = Strings.toLowerCase(
+         TestUtil.readResource(getClass(), "rendergolden6.txt"));
     assertFalse(golden.contains("]]>"));
     assertFalse(golden.contains("<!"));
     assertFalse(golden.contains("<script"));
