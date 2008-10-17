@@ -232,7 +232,7 @@ jsunitRegister('testInnerHtml',
   // Leaves id for <em> but strips the prefix.
   // Escapes trailing title, href, and > after </em>.
   assertEquals(
-      '<a class="link" href="http://foo.com?a=b&amp;c=d"'
+      '<a class="link" href="http://foo.com?a&#61;b&amp;c&#61;d"'
       + ' title="&lt;click me!&gt;">'
       + 'Test <em id="em">Not</em>&gt; run yet.</a>',
       canonInnerHtml(container.innerHTML));
@@ -557,6 +557,20 @@ jsunitRegister('testOpaqueNodes',
   assertEquals('Foo', child.nodeValue);
 
   pass('test-opaque-nodes');
+});
+
+jsunitRegister('testChildNodes',
+               function testChildNodes() {
+  var container = document.getElementById('test-child-nodes');
+  container.innerHTML = '<b>foo</b> <i>bar</i> <u>baz</u>';
+  var childNodes = container.childNodes;
+  assertEquals(5, childNodes.length);
+  assertEquals('B', childNodes[0].nodeName);
+  assertEquals('#text', childNodes[1].nodeName);
+  assertEquals('I', childNodes[2].nodeName);
+  assertEquals('#text', childNodes[3].nodeName);
+  assertEquals('U', childNodes[4].nodeName);
+  pass('test-child-nodes');
 });
 
 jsunitRegister('testEmitCss',

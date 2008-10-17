@@ -38,6 +38,9 @@
       <div id="foo"></div>
 
       <!-- accessible, but with certain inaccessible attributes -->
+      <!-- The unescaped title attribute and the > after the </em> are
+        - intentionally non-standard to test the behavior of innerHTML on
+        - various browsers. -->
       <div id="test-inner-html-xyz___" class="testcontainer"
        ><a id="bar" href="http://foo.com?a=b&c=d" class="link"
          title="<click me!>" target="_parent"
