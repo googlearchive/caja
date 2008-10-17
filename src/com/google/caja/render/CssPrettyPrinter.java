@@ -71,6 +71,7 @@ public final class CssPrettyPrinter extends AbstractRenderer {
       case COMMENT:
         emit(text);
         return;
+      default: break;
     }
 
     char spaceBefore = pendingSpace;

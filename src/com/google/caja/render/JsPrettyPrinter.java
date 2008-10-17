@@ -102,6 +102,7 @@ public final class JsPrettyPrinter extends AbstractRenderer {
           pendingSpace = '\n';
         }
         return;
+      default: break;
     }
 
     boolean spaceBefore = false, breakBefore = false;

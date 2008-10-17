@@ -122,6 +122,8 @@ public final class DomParser {
           continue;
         case TEXT:
           if ("".equals(child.getValue().trim())) { continue; }
+          break;
+        default: break;
       }
       throw new ParseException(new Message(
           DomParserMessageType.MISPLACED_CONTENT, child.getFilePosition()));
@@ -329,6 +331,7 @@ public final class DomParser {
       case TAGBEGIN:  // A namespaced tag name.
         if (firstNonSpace.text.indexOf(':') >= 0) { return true; }
         break;
+      default: break;
     }
     // If we have a file extension, and this XML starts the file, instead
     // of being parsed from a CDATA section inside a larger document, then

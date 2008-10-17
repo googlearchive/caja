@@ -69,6 +69,7 @@ public final class JsMinimalPrinter extends AbstractRenderer {
       case SPACE:
       case COMMENT:
         return;
+      default: break;
     }
 
     boolean spaceBefore = false;

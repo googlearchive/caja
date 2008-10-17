@@ -299,6 +299,7 @@ final class Splitter {
                 mark(0);
                 state = State.SAW_DOLLAR;
                 break;
+              default: break;
             }
             break;
           case '{':
@@ -313,6 +314,7 @@ final class Splitter {
                 mark(0);
                 state = State.LITERAL;
                 break;
+              default: break;
             }
             break;
           case '}':
@@ -330,6 +332,7 @@ final class Splitter {
                 mark(1);
                 state = State.LITERAL;
                 break;
+              default: break;
             }
             break;
           default:
@@ -340,6 +343,7 @@ final class Splitter {
                   mark(0);
                   state = State.IN_REFERENCE;
                   break;
+                default: break;
               }
             } else {
               switch (state) {
@@ -353,6 +357,7 @@ final class Splitter {
                 case SAW_DOLLAR:
                   state = State.LITERAL;
                   break;
+                default: break;
               }
             }
             break;

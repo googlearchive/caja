@@ -20,7 +20,6 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.parser.js.Statement;
-import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.Pipeline;

@@ -508,6 +508,7 @@ public class HtmlCompiler {
           return AttributeXform.SCRIPT;
         case URI:
           return AttributeXform.URI;
+        default: break;
       }
     }
     return null;

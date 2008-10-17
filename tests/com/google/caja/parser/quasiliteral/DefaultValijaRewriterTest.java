@@ -158,7 +158,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         + "assertEquals('number', typeof time);");
   }
 
-  public void testMultiDeclaration() throws Exception {
+  public void testMultiDeclaration2() throws Exception {
     rewriteAndExecute("var a, b, c;");
     rewriteAndExecute(
         ""

@@ -222,6 +222,7 @@ final class TestHttpServletRequest implements HttpServletRequest {
   public boolean isRequestedSessionIdFromURL() {
     throw new UnsupportedOperationException();
   }
+  @Deprecated
   public boolean isRequestedSessionIdFromUrl() {
     throw new UnsupportedOperationException();
   }
@@ -252,6 +253,7 @@ final class TestHttpServletRequest implements HttpServletRequest {
   public BufferedReader getReader() {
     throw new UnsupportedOperationException();
   }
+  @Deprecated
   public String getRealPath(String arg0) {
     throw new UnsupportedOperationException();
   }
@@ -282,10 +284,12 @@ final class TestHttpServletResponse implements HttpServletResponse {
   public String encodeRedirectURL(String arg0) {
     throw new UnsupportedOperationException();
   }
+  @Deprecated
   public String encodeRedirectUrl(String url) { return encodeRedirectURL(url); }
   public String encodeURL(String arg0) {
     throw new UnsupportedOperationException();
   }
+  @Deprecated
   public String encodeUrl(String url) { return encodeURL(url); }
   public void sendError(int code) {
     setStatus(code);
@@ -314,6 +318,7 @@ final class TestHttpServletResponse implements HttpServletResponse {
     if (output != null) { throw new IllegalStateException(); }
     this.status = status;
   }
+  @Deprecated
   public void setStatus(int status, String desc) {
     assert !desc.matches("\\s");
     setStatus(status);

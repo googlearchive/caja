@@ -82,7 +82,7 @@ public class CajitaRewriter extends Rewriter {
   /** Mark a tree as having been translated from another language. */
   private static void markTranslated(ParseTreeNode node) {
     if (node instanceof Statement) {
-      node.getAttributes().put(TRANSLATED, true);
+      node.getAttributes().set(TRANSLATED, true);
       for (ParseTreeNode child : node.children()) {
         markTranslated(child);
       }
@@ -133,10 +133,10 @@ public class CajitaRewriter extends Rewriter {
       nodes.addAll(node.children());
       int lasti = nodes.size() - 1;
       for (int i = 1; i <= lasti; i += 2) {  // Even are conditions.
-        nodes.set(i, returnLast((Statement) nodes.get(i)));
+        nodes.set(i, returnLast(nodes.get(i)));
       }
       if ((lasti & 1) == 0) {  // else clause
-        nodes.set(lasti, returnLast((Statement) nodes.get(lasti)));
+        nodes.set(lasti, returnLast(nodes.get(lasti)));
       }
       result = new Conditional(null, nodes);
     } else if (node instanceof TryStmt) {
@@ -185,7 +185,7 @@ public class CajitaRewriter extends Rewriter {
           ModuleEnvelope rewritten = (ModuleEnvelope) expandAll(node, null, mq);
           ParseTreeNodeContainer moduleStmts = new ParseTreeNodeContainer(
               rewritten.getModuleBody().children());
-          return (Block) substV("body", returnLast(moduleStmts));
+          return substV("body", returnLast(moduleStmts));
         }
         return NONE;
       }

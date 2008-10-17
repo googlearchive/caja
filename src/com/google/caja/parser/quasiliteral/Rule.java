@@ -14,7 +14,6 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
@@ -411,6 +410,7 @@ public abstract class Rule implements MessagePart {
           return sideEffectingReadAssignOperand(
               op.children().get(0), toStringLiteral(op.children().get(1)),
               scope, mq);
+        default: break;
       }
     }
     throw new IllegalArgumentException("Not an lvalue : " + operand);

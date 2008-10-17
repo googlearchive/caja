@@ -191,36 +191,31 @@ public class Scope {
   private final Permit permitsUsed;
 
   public static Scope fromProgram(Block root, MessageQueue mq) {
-    Scope s = new Scope(ScopeType.PROGRAM, mq, true);
+    Scope s = new Scope(ScopeType.PROGRAM, mq);
     walkBlock(s, root);
     return s;
   }
 
   public static Scope fromPlainBlock(Scope parent) {
-    return new Scope(ScopeType.PLAIN_BLOCK, parent, true);
+    return new Scope(ScopeType.PLAIN_BLOCK, parent);
   }
 
   public static Scope fromCatchStmt(Scope parent, CatchStmt root) {
-    Scope s = new Scope(ScopeType.CATCH_BLOCK, parent, true);
+    Scope s = new Scope(ScopeType.CATCH_BLOCK, parent);
     declare(s, root.getException().getIdentifier(),
             LocalType.CAUGHT_EXCEPTION);
     return s;
   }
 
-  public static Scope fromFunctionConstructor(Scope parent, FunctionConstructor root) {
-    return fromFunctionConstructor(parent, root, true);
-  }
-
   public static Scope fromParseTreeNodeContainer(Scope parent, ParseTreeNodeContainer root) {
-    Scope s = new Scope(ScopeType.PLAIN_BLOCK, parent, true);
+    Scope s = new Scope(ScopeType.PLAIN_BLOCK, parent);
     walkBlock(s, root);
     return s;
   }
 
-  private static Scope fromFunctionConstructor(Scope parent,
-                                               FunctionConstructor root,
-                                               boolean sideEffecting) {
-    Scope s = new Scope(ScopeType.FUNCTION_BODY, parent, sideEffecting);
+  public static Scope fromFunctionConstructor(
+      Scope parent, FunctionConstructor root) {
+    Scope s = new Scope(ScopeType.FUNCTION_BODY, parent);
 
     // A function's name is bound to it in its body. After executing
     //    var g = function f() { return f; };
@@ -239,14 +234,14 @@ public class Scope {
     return s;
   }
 
-  private Scope(ScopeType type, MessageQueue mq, boolean sideEffecting) {
+  private Scope(ScopeType type, MessageQueue mq) {
     this.type = type;
     this.parent = null;
     this.mq = mq;
     this.permitsUsed = new Permit();
   }
 
-  private Scope(ScopeType type, Scope parent, boolean sideEffecting) {
+  private Scope(ScopeType type, Scope parent) {
     this.type = type;
     this.parent = parent;
     this.mq = parent.mq;
@@ -483,9 +478,9 @@ public class Scope {
     target.importedVariables.add(name);
   }
 
-  private static LocalType computeDeclarationType(Scope s, Declaration decl) {
+  private static LocalType computeDeclarationType(Declaration decl) {
     return decl instanceof FunctionDeclaration ?
-          LocalType.DECLARED_FUNCTION : LocalType.DATA;
+        LocalType.DECLARED_FUNCTION : LocalType.DATA;
   }
 
   private static void walkBlock(final Scope s, ParseTreeNode root) {
@@ -495,7 +490,7 @@ public class Scope {
     // Record in this scope all the declarations that have been harvested
     // by the visitor.
     for (Declaration decl : v.getDeclarations()) {
-        declare(s, decl.getIdentifier(), computeDeclarationType(s, decl));
+      declare(s, decl.getIdentifier(), computeDeclarationType(decl));
     }
 
     // Now resolve all the references harvested by the visitor. If they have
