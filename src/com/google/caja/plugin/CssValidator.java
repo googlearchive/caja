@@ -30,6 +30,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Name;
 import com.google.caja.util.Strings;
 import com.google.caja.util.SyntheticAttributeKey;
 import com.google.caja.util.SyntheticAttributes;
@@ -54,9 +55,9 @@ public final class CssValidator {
    * might be a font-weight, a font-size, or a line-height, among others.
    * @see com.google.caja.parser.css.CssTree.Term
    */
-  public static final SyntheticAttributeKey<String>
-    CSS_PROPERTY_PART = new SyntheticAttributeKey<String>(
-        String.class, "cssPropertyPart");
+  public static final SyntheticAttributeKey<Name>
+    CSS_PROPERTY_PART = new SyntheticAttributeKey<Name>(
+        Name.class, "cssPropertyPart");
   /**
    * What type is a term?   A term might be an absolute-size, a uri, etc.
    * @see com.google.caja.parser.css.CssTree.Term
@@ -164,8 +165,7 @@ public final class CssValidator {
     if (null == pinfo) {
       mq.addMessage(
           PluginMessageType.UNKNOWN_CSS_PROPERTY, invalidNodeMessageLevel,
-          prop.getFilePosition(),
-          MessagePart.Factory.valueOf(prop.getPropertyName()));
+          prop.getFilePosition(), prop.getPropertyName());
       decl.getAttributes().set(INVALID, Boolean.TRUE);
       return true;
     }
@@ -183,20 +183,19 @@ public final class CssValidator {
    * Tags must exist in html 4 whitelist.
    */
   private boolean validateSimpleSelector(CssTree.SimpleSelector sel) {
-    String tagName = sel.getElementName();
-    if (null == tagName) { return true; }
-    tagName = Strings.toLowerCase(tagName);
+    if (null == sel.getElementName()) { return true; }
+    Name tagName = Name.html(sel.getElementName());
     if (null != htmlSchema.lookupElement(tagName)) {
       if (htmlSchema.isElementAllowed(tagName)
           // Make an exception for BODY which is handled specially by the
           // rewriter and which can be used as the basis for browser specific
           // rules, e.g.  body.ie6 p { ... }
-          || "body".equals(tagName)) {
+          || "body".equals(tagName.getCanonicalForm())) {
         return true;
       }
       mq.addMessage(
           PluginMessageType.UNSAFE_TAG, invalidNodeMessageLevel,
-          sel.getFilePosition(), MessagePart.Factory.valueOf(tagName));
+          sel.getFilePosition(), tagName);
     } else {
       mq.addMessage(
           PluginMessageType.UNKNOWN_TAG, invalidNodeMessageLevel,
@@ -211,8 +210,8 @@ public final class CssValidator {
    * Attrib must exist in html 4 whitelist.
    */
   private boolean validateAttrib(CssTree.Attrib attr) {
-    String attribName = Strings.toLowerCase(attr.getIdent());
-    if (null != htmlSchema.lookupAttribute("*", attribName)) {
+    Name attribName = Name.html(attr.getIdent());
+    if (null != htmlSchema.lookupAttribute(Name.html("*"), attribName)) {
       // Attribs don't parse in IE 6, and allowing them without being able
       // allowing them could leak information about how we're rewriting
       // attribute values.
@@ -224,7 +223,7 @@ public final class CssValidator {
     } else {
       mq.addMessage(
           PluginMessageType.UNKNOWN_ATTRIBUTE, invalidNodeMessageLevel,
-          attr.getFilePosition(), MessagePart.Factory.valueOf(attr.getIdent()),
+          attr.getFilePosition(), attribName,
           MessagePart.Factory.valueOf("{css selector}"));
       attr.getAttributes().set(INVALID, Boolean.TRUE);
       return false;
@@ -270,7 +269,7 @@ public final class CssValidator {
    *   attributes set.
    */
   private boolean applySignature(
-      String propertyName, CssTree.Expr expr, CssPropertySignature sig) {
+      Name propertyName, CssTree.Expr expr, CssPropertySignature sig) {
     SignatureResolver resolver = new SignatureResolver(expr, cssSchema);
     List<Candidate> matches = resolver.applySignature(
         Collections.singletonList(new Candidate(0, null, null)),
@@ -309,7 +308,7 @@ public final class CssValidator {
       }
       mq.addMessage(
           PluginMessageType.MALFORMED_CSS_PROPERTY_VALUE,
-          expr.getFilePosition(), MessagePart.Factory.valueOf(propertyName),
+          expr.getFilePosition(), propertyName,
           MessagePart.Factory.valueOf(buf.toString().trim()));
 
       expr.getAttributes().set(INVALID, Boolean.TRUE);
@@ -341,7 +340,7 @@ final class Candidate {
     this.warning = warning;
   }
 
-  void match(CssTree.Term term, CssPropertyPartType type, String propertyName) {
+  void match(CssTree.Term term, CssPropertyPartType type, Name propertyName) {
     this.match = new Match(term, type, propertyName, this.match);
   }
 
@@ -364,11 +363,11 @@ final class Candidate {
 final class Match {
   final CssTree.Term term;
   final CssPropertyPartType type;
-  final String propertyName;
+  final Name propertyName;
   final Match prev;
 
   Match(CssTree.Term term, CssPropertyPartType type,
-        String propertyName, Match prev) {
+        Name propertyName, Match prev) {
     this.term = term;
     this.type = type;
     this.propertyName = propertyName;
@@ -427,7 +426,7 @@ final class SignatureResolver {
    *   list indicates no possible matches.
    */
   List<Candidate> applySignature(
-      List<Candidate> candidates, String propertyName,
+      List<Candidate> candidates, Name propertyName,
       CssPropertySignature sig) {
 
     List<Candidate> passed = new ArrayList<Candidate>();
@@ -516,7 +515,7 @@ final class SignatureResolver {
 
   private void applySetSignature(
       CssPropertySignature.SetSignature ssig,
-      Candidate candidate, String propertyName, List<Candidate> passed) {
+      Candidate candidate, Name propertyName, List<Candidate> passed) {
     List<Candidate> toApply = Collections.singletonList(candidate);
     for (CssPropertySignature setElement : ssig.children()) {
       List<Candidate> elementsPassed = applySignature(
@@ -531,7 +530,7 @@ final class SignatureResolver {
 
   private void applyExclusiveSetSignature(
       CssPropertySignature.ExclusiveSetSignature ssig,
-      Candidate candidate, String propertyName,
+      Candidate candidate, Name propertyName,
       BitSet used, List<Candidate> passed) {
     List<Candidate> toApply = Collections.singletonList(candidate);
     int k = -1;
@@ -550,7 +549,7 @@ final class SignatureResolver {
 
   private void applySeriesSignature(
       CssPropertySignature.SeriesSignature ssig,
-      Candidate candidate, String propertyName,
+      Candidate candidate, Name propertyName,
       List<Candidate> passed) {
     List<Candidate> toApply = Collections.singletonList(candidate);
     for (CssPropertySignature seriesElement : ssig.children()) {
@@ -562,7 +561,7 @@ final class SignatureResolver {
 
   private void applyRepeatedSignature(
       CssPropertySignature.RepeatedSignature rsig,
-      Candidate candidate, String propertyName, List<Candidate> passed) {
+      Candidate candidate, Name propertyName, List<Candidate> passed) {
 
     /**
      * The maximum branching factor for a repetition.  This is the
@@ -627,7 +626,7 @@ final class SignatureResolver {
 
   private void applyLiteralSignature(
       CssPropertySignature.LiteralSignature literal,
-      Candidate candidate, String propertyName, List<Candidate> passed) {
+      Candidate candidate, Name propertyName, List<Candidate> passed) {
 
     if (0 == (candidate.exprIdx & 1)) {  // a term
       CssTree.Term term =
@@ -651,7 +650,7 @@ final class SignatureResolver {
       }
     } else {  // A punctuation mark
       CssTree.Operation op =
-        (CssTree.Operation) expr.children().get(candidate.exprIdx);
+          (CssTree.Operation) expr.children().get(candidate.exprIdx);
       if (op.getOperator().getSymbol().equals(literal.getValue())) {
         ++candidate.exprIdx;
         passed.add(candidate);
@@ -661,10 +660,9 @@ final class SignatureResolver {
 
   private void applySymbolSignature(
       CssPropertySignature.SymbolSignature ssig,
-      Candidate candidate, String propertyName, List<Candidate> passed) {
+      Candidate candidate, Name propertyName, List<Candidate> passed) {
 
-    CssSchema.SymbolInfo symbolInfo = cssSchema.getSymbol(
-        Strings.toLowerCase(ssig.symbolName));
+    CssSchema.SymbolInfo symbolInfo = cssSchema.getSymbol(ssig.symbolName);
     if (null != symbolInfo) {
       if (false) {
         System.err.println(
@@ -673,7 +671,7 @@ final class SignatureResolver {
       }
       passed.addAll(applySignature(
                         Collections.singletonList(candidate),
-                        propertyName + "::" + symbolInfo.name,
+                        Name.css(propertyName + "::" + symbolInfo.name),
                         symbolInfo.sig));
     } else if (symbolMatch(candidate, propertyName, ssig)) {
       passed.add(candidate);
@@ -682,10 +680,10 @@ final class SignatureResolver {
 
   private void applyPropertyRefSignature(
       CssPropertySignature.PropertyRefSignature ssig,
-      Candidate candidate, String propertyName, List<Candidate> passed) {
+      Candidate candidate, Name propertyName, List<Candidate> passed) {
 
     CssSchema.CssPropertyInfo info = cssSchema.getCssProperty(
-        Strings.toLowerCase(ssig.getPropertyName()));
+        ssig.getPropertyName());
     if (null == info) {
       throw new AssertionError(
           "Unknown property in css property signature: " + propertyName);
@@ -697,16 +695,17 @@ final class SignatureResolver {
 
   private void applyCallSignature(
       CssPropertySignature.CallSignature call,
-      Candidate candidate, String propertyName, List<Candidate> passed) {
+      Candidate candidate, Name propertyName, List<Candidate> passed) {
 
     if (0 == (candidate.exprIdx & 1)) {  // a term
       CssTree.Term term =
-        (CssTree.Term) expr.children().get(candidate.exprIdx);
+          (CssTree.Term) expr.children().get(candidate.exprIdx);
       CssTree.CssExprAtom atom = term.getExprAtom();
       if (null == term.getOperator()
           && atom instanceof CssTree.FunctionCall) {
         CssTree.FunctionCall fn = (CssTree.FunctionCall) atom;
-        if (fn.getName().equals(call.children().get(0).getValue())) {
+        if (fn.getName().getCanonicalForm().equals(
+                call.children().get(0).getValue())) {
           CssPropertySignature formals = call.children().get(1);
           CssTree.Expr actuals = fn.getArguments();
           if (false) {
@@ -788,7 +787,7 @@ final class SignatureResolver {
    * by {@link CssSchema#getSymbol}.
    */
   private boolean symbolMatch(
-      Candidate candidate, String propertyName,
+      Candidate candidate, Name propertyName,
       CssPropertySignature.SymbolSignature sig) {
     if (0 != (candidate.exprIdx & 1)) { return false; }  // not a term
     CssTree.Term term = (CssTree.Term) expr.children().get(candidate.exprIdx);
@@ -804,7 +803,7 @@ final class SignatureResolver {
     // If this is supposed to be a positive identifier, then disallow the
     // negation unary operator.
     // Positive is a bit of a misnomer since this really means non-negative.
-    String symbolName = sig.symbolName;
+    String symbolName = sig.symbolName.getCanonicalForm();
     String constraints = null;
     // Check for any constraints
     {
@@ -866,7 +865,7 @@ final class SignatureResolver {
       String name;
       if (atom instanceof CssTree.IdentLiteral) {
         name = ((CssTree.IdentLiteral) atom).getValue();
-        if (cssSchema.isKeyword(name)) { return false; }
+        if (cssSchema.isKeyword(Name.css(name))) { return false; }
       } else {
         return false;
       }
@@ -923,7 +922,7 @@ final class SignatureResolver {
       String name;
       if (atom instanceof CssTree.IdentLiteral) {
         name = ((CssTree.IdentLiteral) atom).getValue();
-        if (cssSchema.isKeyword(name)) { return false; }
+        if (cssSchema.isKeyword(Name.css(name))) { return false; }
       } else if (atom instanceof CssTree.StringLiteral) {
         name = ((CssTree.StringLiteral) atom).getValue();
       } else {
@@ -990,8 +989,7 @@ final class SignatureResolver {
       }
       if (value < min || value > max) {
         candidate.warn(PluginMessageType.CSS_VALUE_OUT_OF_RANGE,
-                       term.getFilePosition(),
-                       MessagePart.Factory.valueOf(propertyName),
+                       term.getFilePosition(), propertyName,
                        MessagePart.Factory.valueOf(value),
                        MessagePart.Factory.valueOf(min),
                        MessagePart.Factory.valueOf(max));

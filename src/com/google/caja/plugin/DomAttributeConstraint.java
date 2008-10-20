@@ -15,11 +15,13 @@
 package com.google.caja.plugin;
 
 import com.google.caja.parser.html.DomTree;
+import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Strings;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * A constraint that must hold try for a particular tag.  This is fed attributes
@@ -38,70 +40,69 @@ interface DomAttributeConstraint {
    * Returns the attribute prefix and suffix text, or null if the attribute
    * should not be written.
    */
-  Pair<String, String> attributeValueHtml(String attribName);
+  Pair<String, String> attributeValueHtml(Name attribName);
   /** Called to indicate that an attribute was written. */
-  void attributeDone(String attribName);
+  void attributeDone(Name attribName);
   /**
    * Called after the last attribute is written.  Returns a set of key/name
    * pairs of extra attributes to write.
    */
-  Collection<Pair<String, String>> tagDone(DomTree.Tag tag);
+  Collection<Pair<Name, String>> tagDone(DomTree.Tag tag);
 
   static final class Factory {
 
-    static DomAttributeConstraint forTag(String tagName) {
-      tagName = Strings.toUpperCase(tagName);
+    static DomAttributeConstraint forTag(Name tagName) {
       // TODO(ihab): rdub disabled this condition. Am leaving it in.
-      if ("FORM".equals(tagName)) {
+      if ("form".equals(tagName.getCanonicalForm())) {
         // We need an onsubmit handler
         return new DomAttributeConstraint() {
           boolean sawOnSubmit = false;
 
           public void startTag(DomTree.Tag tag) { /* noop */ }
-          public Pair<String, String> attributeValueHtml(String attribName) {
-            if (Strings.equalsIgnoreCase("ONSUBMIT", attribName)) {
+          public Pair<String, String> attributeValueHtml(Name attribName) {
+            if ("onsubmit".equals(attribName.getCanonicalForm())) {
               return Pair.pair("try { ", " } finally { return false; }");
             }
             return Pair.pair("", "");
           }
-          public void attributeDone(String attribName) {
-            if (Strings.equalsIgnoreCase("ONSUBMIT", attribName)) {
+          public void attributeDone(Name attribName) {
+            if ("onsubmit".equals(attribName.getCanonicalForm())) {
               sawOnSubmit = true;
             }
           }
-          public Collection<Pair<String, String>> tagDone(DomTree.Tag tag) {
+          public Collection<Pair<Name, String>> tagDone(
+              DomTree.Tag tag) {
             if (!sawOnSubmit) {
-              return Collections.singleton(
-                  Pair.pair("onsubmit", "return false"));
+              return Collections.singleton(Pair.pair(
+                  Name.html("onsubmit"), "return false"));
             }
-            return Collections.<Pair<String, String>>emptyList();
+            return Collections.<Pair<Name, String>>emptyList();
           }
         };
-      } else if ("A".equals(tagName) || "AREA".equals(tagName)) {
+      } else if ("a".equals(tagName.getCanonicalForm()) || "area".equals(tagName.getCanonicalForm())) {
         // We need a target if there's an href
         return new DomAttributeConstraint() {
           boolean sawHref = false;
 
           public void startTag(DomTree.Tag tag) { /* noop */ }
-          public Pair<String, String> attributeValueHtml(String attribName) {
-            if (Strings.equalsIgnoreCase("TARGET", attribName)) {
-              return null;
-            }
+          public Pair<String, String> attributeValueHtml(Name attribName) {
+            if ("target".equals(attribName.getCanonicalForm())) { return null; }
             return Pair.pair("", "");
           }
-          public void attributeDone(String attribName) {
-            if (Strings.equalsIgnoreCase("HREF", attribName)) {
+          public void attributeDone(Name attribName) {
+            if ("href".equals(attribName.getCanonicalForm())) {
               sawHref = true;
             }
           }
-          public Collection<Pair<String, String>> tagDone(DomTree.Tag tag) {
+          public Collection<Pair<Name, String>> tagDone(DomTree.Tag tag) {
             if (sawHref) {
-              return Collections.singleton(Pair.pair("target", "_blank"));
+              return Collections.singleton(
+                  Pair.pair(Name.html("target"), "_blank"));
             }
-            return Collections.<Pair<String, String>>emptyList();
+            return Collections.<Pair<Name, String>>emptyList();
           }
         };
-      } else if ("SCRIPT".equals(tagName)) {
+      } else if ("script".equals(tagName.getCanonicalForm())) {
         // We disallow the src and id attributes explicity. src allows inclusion
         // of unsafe code, and id allows scripts to inject content into element.
         // TODO(ihab): Handle using HTML4, which does not allow 'id' here.
@@ -111,55 +112,51 @@ interface DomAttributeConstraint {
             boolean sawId = false;
 
             public void startTag(DomTree.Tag tag) { /* noop */ }
-            public Pair<String, String> attributeValueHtml(String attribName) {
-              if (Strings.equalsIgnoreCase("SRC", attribName)) {
-                return null;
-              }
-              if (Strings.equalsIgnoreCase("ID", attribName)) {
-                return null;
-              }
+            public Pair<String, String> attributeValueHtml(
+                Name attribName) {
+              if ("src".equals(attribName.getCanonicalForm())) { return null; }
+              if ("id".equals(attribName.getCanonicalForm())) { return null; }
               return Pair.pair("", "");
             }
-            public void attributeDone(String attribName) {
-              if (Strings.equalsIgnoreCase("SRC", attribName)) {
+            public void attributeDone(Name attribName) {
+              if ("src".equals(attribName.getCanonicalForm())) {
                 sawSrc = true;
-              } else if (Strings.equalsIgnoreCase("ID", attribName)) {
+              } else if ("id".equals(attribName.getCanonicalForm())) {
                 sawId = true;
               }
             }
-            public Collection<Pair<String, String>> tagDone(DomTree.Tag tag) {
-              Collection<Pair<String, String>> ret = Collections.emptyList();
+            public Collection<Pair<Name, String>> tagDone(DomTree.Tag tag) {
+              Collection<Pair<Name, String>> ret
+                  = new ArrayList<Pair<Name, String>>();
               if (sawSrc) {
-                ret.add(Pair.pair("src", ""));
+                ret.add(Pair.pair(Name.html("src"), ""));
               }
               if (sawId) {
-                ret.add(Pair.pair("id", ""));
+                ret.add(Pair.pair(Name.html("id"), ""));
               }
               return ret;
             }
           };
-      } else if ("STYLE".equals(tagName)) {
+      } else if ("style".equals(tagName.getCanonicalForm())) {
         // Disallow id attribute to disallow dynamic insertion of arbitrary CSS.
         // TODO(ihab): Handle using HTML4, which does not allow 'id' here.
         return new DomAttributeConstraint() {
           boolean sawId = false;
 
           public void startTag(DomTree.Tag tag) { /* noop */ }
-          public Pair<String, String> attributeValueHtml(String attribName) {
-            if (Strings.equalsIgnoreCase("ID", attribName)) {
-              return null;
-            }
+          public Pair<String, String> attributeValueHtml(Name attribName) {
+            if ("id".equals(attribName.getCanonicalForm())) { return null; }
             return Pair.pair("", "");
           }
-          public void attributeDone(String attribName) {
-            if (Strings.equalsIgnoreCase("ID", attribName)) {
+          public void attributeDone(Name attribName) {
+            if ("id".equals(attribName.getCanonicalForm())) {
               sawId = true;
             }
           }
-          public Collection<Pair<String, String>> tagDone(DomTree.Tag tag) {
-            Collection<Pair<String, String>> ret = Collections.emptyList();
+          public Collection<Pair<Name, String>> tagDone(DomTree.Tag tag) {
+            List<Pair<Name, String>> ret = new ArrayList<Pair<Name, String>>();
             if (sawId) {
-              ret.add(Pair.pair("id", ""));
+              ret.add(Pair.pair(Name.html("id"), ""));
             }
             return ret;
           }
@@ -167,12 +164,12 @@ interface DomAttributeConstraint {
       }
       return new DomAttributeConstraint() {
         public void startTag(DomTree.Tag tag) { /* noop */ }
-        public Pair<String, String> attributeValueHtml(String attribName) {
+        public Pair<String, String> attributeValueHtml(Name attribName) {
           return Pair.pair("", "");
         }
-        public void attributeDone(String attribName) { /* noop */ }
-        public Collection<Pair<String, String>> tagDone(DomTree.Tag tag) {
-          return Collections.<Pair<String, String>>emptyList();
+        public void attributeDone(Name attribName) { /* noop */ }
+        public Collection<Pair<Name, String>> tagDone(DomTree.Tag tag) {
+          return Collections.<Pair<Name, String>>emptyList();
         }
       };
     }

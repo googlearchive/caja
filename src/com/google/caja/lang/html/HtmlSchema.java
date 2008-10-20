@@ -23,6 +23,7 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Criterion;
+import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Strings;
 
@@ -159,24 +160,20 @@ public final class HtmlSchema {
     }
   }
 
-  public boolean isElementAllowed(String elementName) {
-    assert Strings.isLowerCase(elementName);
-    return allowedElements.contains(elementName);
+  public boolean isElementAllowed(Name elementName) {
+    return allowedElements.contains(elementName.getCanonicalForm());
   }
 
-  public HTML.Element lookupElement(String elementName) {
-    assert Strings.isLowerCase(elementName);
-    return elementDetails.get(elementName);
+  public HTML.Element lookupElement(Name elementName) {
+    return elementDetails.get(elementName.getCanonicalForm());
   }
 
-  public boolean isAttributeAllowed(String elementName, String attribName) {
-    assert Strings.isLowerCase(elementName) && Strings.isLowerCase(attribName);
+  public boolean isAttributeAllowed(Name elementName, Name attribName) {
     return allowedAttributes.contains(elementName + ":" + attribName)
         || allowedAttributes.contains("*:" + attribName);
   }
 
-  public HTML.Attribute lookupAttribute(String elementName, String attribName) {
-    assert Strings.isLowerCase(elementName) && Strings.isLowerCase(attribName);
+  public HTML.Attribute lookupAttribute(Name elementName, Name attribName) {
     HTML.Attribute attr = attributeDetails.get(elementName + ":" + attribName);
     if (attr == null) {
       attr = attributeDetails.get("*:" + attribName);
@@ -186,8 +183,7 @@ public final class HtmlSchema {
 
   /** Criteria that attribute values must satisfy. */
   public Criterion<? super String> getAttributeCriteria(
-      String tagName, String attribName) {
-    assert Strings.isLowerCase(tagName) && Strings.isLowerCase(attribName);
+      Name tagName, Name attribName) {
     Criterion<String> specific
         = attributeCriteria.get(tagName + ":" + attribName);
     Criterion<String> general = attributeCriteria.get("*:" + attribName);

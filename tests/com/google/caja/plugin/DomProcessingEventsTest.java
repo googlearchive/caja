@@ -25,6 +25,7 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.MoreAsserts;
+import com.google.caja.util.Name;
 import com.google.caja.util.RhinoTestBed;
 import com.google.caja.util.TestUtil;
 
@@ -46,10 +47,10 @@ public class DomProcessingEventsTest extends CajaTestCase {
 
   public void testSimpleElement() {
     DomProcessingEvents dpe = new DomProcessingEvents();
-    dpe.begin("b");
+    dpe.begin(Name.html("b"));
     dpe.finishAttrs(false);
     dpe.pcdata("HELLO WORLD");
-    dpe.end("b");
+    dpe.end(Name.html("b"));
     assertEmittingCode(
         "IMPORTS___.htmlEmitter___.b('b').f(false).ih('HELLO WORLD').e('b');",
         "<b>HELLO WORLD</b>",
@@ -58,10 +59,10 @@ public class DomProcessingEventsTest extends CajaTestCase {
 
   public void testEscaping() {
     DomProcessingEvents dpe = new DomProcessingEvents();
-    dpe.begin("b");
+    dpe.begin(Name.html("b"));
     dpe.finishAttrs(false);
     dpe.pcdata("1 < 2 && 3 > 2");
-    dpe.end("b");
+    dpe.end(Name.html("b"));
     assertEmittingCode(
         "IMPORTS___.htmlEmitter___.b('b').f(false)"
         + ".ih('1 &lt; 2 &amp;&amp; 3 &gt; 2').e('b');",
@@ -71,17 +72,17 @@ public class DomProcessingEventsTest extends CajaTestCase {
 
   public void testOptimization() {
     DomProcessingEvents dpe = new DomProcessingEvents();
-    dpe.begin("b");
-    dpe.attr("style", "color: blue");
+    dpe.begin(Name.html("b"));
+    dpe.attr(Name.html("style"), "color: blue");
     dpe.finishAttrs(false);
     dpe.pcdata("[ ");
-    dpe.begin("a");
-    dpe.attr("href", "#");
+    dpe.begin(Name.html("a"));
+    dpe.attr(Name.html("href"), "#");
     dpe.finishAttrs(false);
     dpe.pcdata("1 < 2 && 3 > 2");
-    dpe.end("a");
+    dpe.end(Name.html("a"));
     dpe.pcdata(" ]");
-    dpe.end("b");
+    dpe.end(Name.html("b"));
     assertEmittingCode(
         "IMPORTS___.htmlEmitter___.b('b').a('style', 'color: blue').f(false)"
         + ".ih('[ <a href=\\\"#\\\">1 &lt; 2 &amp;&amp; 3 &gt; 2</a> ]')"
@@ -103,17 +104,17 @@ public class DomProcessingEventsTest extends CajaTestCase {
     //    div.innerHTML = '<select><option>1</option></select>';
     // See bug 730 for more details.
     DomProcessingEvents dpe = new DomProcessingEvents();
-    dpe.begin("select");
+    dpe.begin(Name.html("select"));
     dpe.finishAttrs(false);
-    dpe.begin("option");
+    dpe.begin(Name.html("option"));
     dpe.finishAttrs(false);
     dpe.pcdata("1");
-    dpe.end("option");
-    dpe.begin("option");
+    dpe.end(Name.html("option"));
+    dpe.begin(Name.html("option"));
     dpe.finishAttrs(false);
     dpe.pcdata("2");
-    dpe.end("option");
-    dpe.end("select");
+    dpe.end(Name.html("option"));
+    dpe.end(Name.html("select"));
     assertEmittingCode(
         "IMPORTS___.htmlEmitter___.b('select').f(false)"
         + ".b('option')"
@@ -131,20 +132,20 @@ public class DomProcessingEventsTest extends CajaTestCase {
 
   public void testReDeOptimization() throws Exception {
     DomProcessingEvents dpe = new DomProcessingEvents();
-    dpe.begin("div");
+    dpe.begin(Name.html("div"));
     dpe.finishAttrs(false);
-    dpe.begin("select");
+    dpe.begin(Name.html("select"));
     dpe.finishAttrs(false);
-    dpe.begin("option");
+    dpe.begin(Name.html("option"));
     dpe.finishAttrs(false);
     dpe.pcdata("1");
-    dpe.end("option");
-    dpe.begin("option");
+    dpe.end(Name.html("option"));
+    dpe.begin(Name.html("option"));
     dpe.finishAttrs(false);
     dpe.pcdata("2");
-    dpe.end("option");
-    dpe.end("select");
-    dpe.end("div");
+    dpe.end(Name.html("option"));
+    dpe.end(Name.html("select"));
+    dpe.end(Name.html("div"));
     assertEmittingCode(
         "IMPORTS___.htmlEmitter___.b('div').f(false)"
         + ".ih('<select><option>1</option><option>2</option></select>')"
@@ -155,20 +156,20 @@ public class DomProcessingEventsTest extends CajaTestCase {
 
   public void testInterleaving() throws Exception {
     DomProcessingEvents dpe = new DomProcessingEvents();
-    dpe.begin("p");
-    dpe.attr("id", "foo");
+    dpe.begin(Name.html("p"));
+    dpe.attr(Name.html("id"), "foo");
     dpe.finishAttrs(false);
     dpe.pcdata("hello");
-    dpe.end("p");
-    dpe.begin("p");
+    dpe.end(Name.html("p"));
+    dpe.begin(Name.html("p"));
     dpe.finishAttrs(false);
     dpe.script(js(fromString("bar();")));
-    dpe.end("p");
-    dpe.begin("p");
-    dpe.attr("id", "baz");
+    dpe.end(Name.html("p"));
+    dpe.begin(Name.html("p"));
+    dpe.attr(Name.html("id"), "baz");
     dpe.finishAttrs(false);
     dpe.pcdata("world");
-    dpe.end("p");
+    dpe.end(Name.html("p"));
     assertEmittingCode(
         "IMPORTS___.htmlEmitter___.b('p').a('id', 'foo').f(false)"
         + ".ih('hello')"
@@ -187,23 +188,23 @@ public class DomProcessingEventsTest extends CajaTestCase {
 
   public void testRenderingToInnerHtml() {
     DomProcessingEvents dpe = new DomProcessingEvents();
-    dpe.begin("div");
+    dpe.begin(Name.html("div"));
     dpe.finishAttrs(false);
-    dpe.begin("p");
+    dpe.begin(Name.html("p"));
     dpe.finishAttrs(false);
     dpe.pcdata("...On the Night's Plutonian shore!");
-    dpe.begin("br");
-    dpe.attr("title", "Quoth the <raven>, \"Nevermore.\"");
+    dpe.begin(Name.html("br"));
+    dpe.attr(Name.html("title"), "Quoth the <raven>, \"Nevermore.\"");
     dpe.finishAttrs(true);
     dpe.pcdata("Much I marvelled");
     dpe.pcdata(" this ungainly fowl...");
-    dpe.end("p");
-    dpe.begin("style");
-    dpe.attr("type", "text/css");
+    dpe.end(Name.html("p"));
+    dpe.begin(Name.html("style"));
+    dpe.attr(Name.html("type"), "text/css");
     dpe.finishAttrs(false);
     dpe.cdata("<!--body{ background:white }-->");
-    dpe.end("style");
-    dpe.end("div");
+    dpe.end(Name.html("style"));
+    dpe.end(Name.html("div"));
 
     assertEmittingCode(
         "IMPORTS___.htmlEmitter___.b('div').f(false).ih('"
@@ -225,12 +226,12 @@ public class DomProcessingEventsTest extends CajaTestCase {
 
   public void testDynamicAttributes() throws Exception {
     DomProcessingEvents dpe = new DomProcessingEvents();
-    dpe.begin("foo");
+    dpe.begin(Name.html("foo"));
     dpe.finishAttrs(false);
-    dpe.begin("bar");
-    dpe.attr("baz", jsExpr(fromString("1 + 1")));
+    dpe.begin(Name.html("bar"));
+    dpe.attr(Name.html("baz"), jsExpr(fromString("1 + 1")));
     dpe.finishAttrs(true);
-    dpe.end("foo");
+    dpe.end(Name.html("foo"));
 
     assertEmittingCode(
         "IMPORTS___.htmlEmitter___.b('foo').f(false)"
@@ -242,15 +243,15 @@ public class DomProcessingEventsTest extends CajaTestCase {
   public void testAttribsMustBeClosed() throws Exception {
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin("p");
-      dpe.end("p");
+      dpe.begin(Name.html("p"));
+      dpe.end(Name.html("p"));
       fail();
     } catch (IllegalStateException ex) {
       // pass
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin("p");
+      dpe.begin(Name.html("p"));
       dpe.pcdata("Hello");
       fail();
     } catch (IllegalStateException ex) {
@@ -258,7 +259,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin("p");
+      dpe.begin(Name.html("p"));
       dpe.toJavascript(new Block());
       fail();
     } catch (IllegalStateException ex) {
@@ -266,7 +267,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin("p");
+      dpe.begin(Name.html("p"));
       dpe.toJavascript(new Block());
       fail();
     } catch (IllegalStateException ex) {
@@ -274,8 +275,8 @@ public class DomProcessingEventsTest extends CajaTestCase {
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin("p");
-      dpe.attr("foo", "bar");
+      dpe.begin(Name.html("p"));
+      dpe.attr(Name.html("foo"), "bar");
       dpe.toJavascript(new Block());
       fail();
     } catch (IllegalStateException ex) {
@@ -283,24 +284,24 @@ public class DomProcessingEventsTest extends CajaTestCase {
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin("p");
-      dpe.begin("p");
+      dpe.begin(Name.html("p"));
+      dpe.begin(Name.html("p"));
       fail();
     } catch (IllegalStateException ex) {
       // pass
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin("p");
+      dpe.begin(Name.html("p"));
       dpe.finishAttrs(false);
-      dpe.attr("foo", "bar");
+      dpe.attr(Name.html("foo"), "bar");
       fail();
     } catch (IllegalStateException ex) {
       // pass
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.attr("foo", "bar");
+      dpe.attr(Name.html("foo"), "bar");
       fail();
     } catch (IllegalStateException ex) {
       // pass
@@ -314,7 +315,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin("p");
+      dpe.begin(Name.html("p"));
       dpe.script(js(fromString("foo();")));
       fail();
     } catch (IllegalStateException ex) {
@@ -325,9 +326,9 @@ public class DomProcessingEventsTest extends CajaTestCase {
   public void testUnbalancedTags() {
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin("p");
+      dpe.begin(Name.html("p"));
       dpe.finishAttrs(false);
-      dpe.end("q");
+      dpe.end(Name.html("q"));
       dpe.toJavascript(new Block());
       fail();
     } catch (IllegalStateException ex) {
@@ -335,7 +336,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin("p");
+      dpe.begin(Name.html("p"));
       dpe.finishAttrs(false);
       dpe.toJavascript(new Block());
       fail();
@@ -344,13 +345,13 @@ public class DomProcessingEventsTest extends CajaTestCase {
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin("p");
+      dpe.begin(Name.html("p"));
       dpe.finishAttrs(false);
-      dpe.begin("p");
+      dpe.begin(Name.html("p"));
       dpe.finishAttrs(false);
-      dpe.end("p");
-      dpe.end("p");
-      dpe.end("p");
+      dpe.end(Name.html("p"));
+      dpe.end(Name.html("p"));
+      dpe.end(Name.html("p"));
       dpe.toJavascript(new Block());
       fail();
     } catch (IllegalStateException ex) {
@@ -362,11 +363,11 @@ public class DomProcessingEventsTest extends CajaTestCase {
     Expression x = jsExpr(fromString("x"));
     DomProcessingEvents dpe = new DomProcessingEvents();
     for (int i = 0; i < 30; ++i) {
-      dpe.begin("p");
-      dpe.attr("id", x);  // defeat optimization
+      dpe.begin(Name.html("p"));
+      dpe.attr(Name.html("id"), x);  // defeat optimization
       dpe.finishAttrs(false);
     }
-    for (int i = 0; i < 30; ++i) { dpe.end("p"); }
+    for (int i = 0; i < 30; ++i) { dpe.end(Name.html("p")); }
 
     Block block = new Block();
     dpe.toJavascript(block);

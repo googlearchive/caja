@@ -38,6 +38,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.tools.BuildCommand;
+import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 
 import java.io.File;
@@ -234,7 +235,7 @@ public class CssPropertyPatterns {
   }
 
   private Pattern symbolToPattern(CssPropertySignature.SymbolSignature sig) {
-    String symbolName = sig.getValue();
+    Name symbolName = sig.getValue();
     Pattern builtinMatch = builtinToPattern(symbolName);
     if (builtinMatch != null) { return builtinMatch; }
     CssSchema.SymbolInfo s = schema.getSymbol(symbolName);
@@ -281,8 +282,8 @@ public class CssPropertyPatterns {
     BUILTINS.put("family-name", quotedIdentifiers);
     BUILTINS.put("uri", "url\\(\"[^\\(\\)\\\\\\\"\\r\\n]+\"\\)");
   }
-  private Pattern builtinToPattern(String name) {
-    String pattern = BUILTINS.get(name);
+  private Pattern builtinToPattern(Name name) {
+    String pattern = BUILTINS.get(name.getCanonicalForm());
     return pattern != null ? new Snippet(pattern + "\\s+") : null;
   }
 

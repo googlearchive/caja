@@ -16,6 +16,7 @@ package com.google.caja.parser.html;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlTokenType;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -66,14 +67,9 @@ abstract class AbstractElementStack implements OpenElementStack {
   /**
    * Adds an element to the element stack, puts it on the previous head's
    * child list, and updates file positions.
-   *
-   * @param canonicalTagName a canonical tag name per
-   *   {@link OpenElementStack#canonicalizeElementName} that is used as el's
-   *    value.
    */
-  protected final void push(DomTree.Tag el, String canonicalTagName) {
-    if (DEBUG) System.err.println("push(" + el + ", " + canonicalTagName + ")");
-    el.setTagName(canonicalTagName);
+  protected final void push(DomTree.Tag el) {
+    if (DEBUG) System.err.println("push(" + el + ")");
     DomTree parent = getBottomElement();
     openElements.add(el);
     doAppend(el, parent);

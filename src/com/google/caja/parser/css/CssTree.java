@@ -22,6 +22,7 @@ import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
+import com.google.caja.util.Name;
 
 import java.io.IOException;
 import java.net.URI;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
@@ -217,19 +219,19 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
    * </pre>
    */
   public static final class Medium extends CssTree {
-    final String ident;
+    final Name ident;
 
-    public Medium(FilePosition pos, String ident) {
+    public Medium(FilePosition pos, Name ident) {
       super(pos, Collections.<CssTree>emptyList());
       this.ident = ident;
     }
 
     @Override
-    public String getValue() { return ident; }
+    public Name getValue() { return ident; }
 
     public void render(RenderContext r) {
       r.getOut().mark(getFilePosition());
-      renderCssIdent(ident, r);
+      renderCssIdent(ident.getCanonicalForm(), r);
     }
   }
 
@@ -241,15 +243,15 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
    * </pre>
    */
   public static final class Page extends CssStatement {
-    final String ident;
+    final Name ident;
 
-    Page(FilePosition pos, String ident, List<? extends PageElement> decls) {
+    Page(FilePosition pos, Name ident, List<? extends PageElement> decls) {
       super(pos, decls);
       this.ident = ident;
     }
 
     @Override
-    public String getValue() { return ident; }
+    public Name getValue() { return ident; }
 
     public void render(RenderContext r) {
       TokenConsumer out = r.getOut();
@@ -258,7 +260,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
       out.consume("page");
       if (null != ident) {
         out.consume(" ");
-        renderCssIdent(ident, r);
+        renderCssIdent(ident.getCanonicalForm(), r);
       }
       List<? extends CssTree> children = children();
       if (children.get(0) instanceof PseudoPage) {
@@ -285,20 +287,20 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
    * </pre>
    */
   public static final class PseudoPage extends PageElement {
-    final String ident;
+    final Name ident;
 
-    PseudoPage(FilePosition pos, String ident) {
+    PseudoPage(FilePosition pos, Name ident) {
       super(pos, Collections.<CssTree>emptyList());
       this.ident = ident;
     }
 
     @Override
-    public String getValue() { return ident; }
+    public Name getValue() { return ident; }
 
     public void render(RenderContext r) {
       r.getOut().mark(getFilePosition());
       r.getOut().consume(":");
-      renderCssIdent(ident, r);
+      renderCssIdent(ident.getCanonicalForm(), r);
     }
   }
 
@@ -330,23 +332,23 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
    * </pre>
    */
   public static final class Property extends CssTree {
-    final String ident;
+    final Name ident;
 
-    Property(FilePosition pos, String ident) {
+    Property(FilePosition pos, Name ident) {
       super(pos, Collections.<CssTree>emptyList());
       this.ident = ident;
     }
 
     @Override
-    public String getValue() { return ident; }
+    public Name getValue() { return ident; }
 
-    public String getPropertyName() {
+    public Name getPropertyName() {
       return ident;
     }
 
     public void render(RenderContext r) {
       r.getOut().mark(getFilePosition());
-      renderCssIdent(ident, r);
+      renderCssIdent(ident.getCanonicalForm(), r);
     }
   }
 
@@ -594,7 +596,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     public void render(RenderContext r) {
       r.getOut().mark(getFilePosition());
       r.getOut().consume("!");
-      renderCssIdent(getValue().substring(1), r);
+      renderCssIdent(getValue().substring(1).toLowerCase(Locale.ENGLISH), r);
     }
   }
 
@@ -854,14 +856,14 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
    * </pre>
    */
   public static final class FunctionCall extends CssExprAtom {
-    private final String name;
-    public FunctionCall(FilePosition pos, String name, Expr expr) {
+    private final Name name;
+    public FunctionCall(FilePosition pos, Name name, Expr expr) {
       super(pos, Collections.singletonList(expr));
       this.name = name;
     }
     @Override
-    public String getValue() { return name; }
-    public String getName() { return name; }
+    public Name getValue() { return name; }
+    public Name getName() { return name; }
     public Expr getArguments() { return (Expr) children().get(0); }
 
     @Override
@@ -872,7 +874,7 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
     public void render(RenderContext r) {
       TokenConsumer out = r.getOut();
       out.mark(getFilePosition());
-      renderCssIdent(name, r);
+      renderCssIdent(name.getCanonicalForm(), r);
       out.consume("(");
       children().get(0).render(r);
       out.mark(FilePosition.endOfOrNull(getFilePosition()));

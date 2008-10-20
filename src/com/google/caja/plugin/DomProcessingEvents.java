@@ -25,6 +25,7 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.parser.quasiliteral.ReservedNames;
+import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 
 import java.util.ArrayList;
@@ -92,8 +93,8 @@ final class DomProcessingEvents {
    * @throws IllegalStateException if tags are unbalanced.
    */
   private void optimize() {
-    List<Pair<String, Integer>> openTags
-        = new ArrayList<Pair<String, Integer>>();
+    List<Pair<Name, Integer>> openTags
+        = new ArrayList<Pair<Name, Integer>>();
     eventloop:
     for (int i = 0; i < events.size(); ++i) {  // Concurrent change below.
       DomProcessingEvent e = events.get(i);
@@ -107,7 +108,7 @@ final class DomProcessingEvents {
       } else if (e instanceof EndElementEvent) {
         EndElementEvent ee = (EndElementEvent) e;
         if (openTags.isEmpty()) { throw new IllegalStateException(); }
-        Pair<String, Integer> top = openTags.remove(openTags.size() - 1);
+        Pair<Name, Integer> top = openTags.remove(openTags.size() - 1);
         if (!top.a.equals(ee.name)) { throw new IllegalStateException(); }
         int start = top.b + 1;
         List<DomProcessingEvent> content = events.subList(start, i);
@@ -182,13 +183,13 @@ final class DomProcessingEvents {
 
   /** Creates an element.  Must match up with an {@link EndElementEvent}. */
   static final class BeginElementEvent extends DomProcessingEvent {
-    final String name;
-    BeginElementEvent(String name) { this.name = name; }
+    final Name name;
+    BeginElementEvent(Name name) { this.name = name; }
     @Override void toJavascript(BlockAndEmitter out) {
-      out.emitCall("b", TreeConstruction.stringLiteral(name));
+      out.emitCall("b", TreeConstruction.stringLiteral(name.getCanonicalForm()));
     }
     @Override boolean canOptimizeToInnerHtml(int depth) {
-      return depth > 1 || !"option".equals(name);
+      return depth > 1 || !"option".equals(name.getCanonicalForm());
     }
     @Override void toInnerHtml(StringBuilder out) {
       out.append('<').append(name);
@@ -200,14 +201,14 @@ final class DomProcessingEvents {
   }
 
   static final class AttribEvent extends DomProcessingEvent {
-    final String name;
+    final Name name;
     final Expression value;
-    AttribEvent(String name, Expression value) {
+    AttribEvent(Name name, Expression value) {
       this.name = name;
       this.value = value;
     }
     @Override void toJavascript(BlockAndEmitter out) {
-      out.emitCall("a", TreeConstruction.stringLiteral(name), value);
+      out.emitCall("a", TreeConstruction.stringLiteral(name.getCanonicalForm()), value);
     }
     @Override boolean canOptimizeToInnerHtml(int depth) {
       return value instanceof StringLiteral;
@@ -243,10 +244,11 @@ final class DomProcessingEvents {
   }
 
   static final class EndElementEvent extends DomProcessingEvent {
-    final String name;
-    EndElementEvent(String name) { this.name = name; }
+    final Name name;
+    EndElementEvent(Name name) { this.name = name; }
     @Override void toJavascript(BlockAndEmitter out) {
-      out.emitCall("e", TreeConstruction.stringLiteral(name));
+      out.emitCall(
+          "e", TreeConstruction.stringLiteral(name.getCanonicalForm()));
     }
     @Override boolean canOptimizeToInnerHtml(int depth) { return true; }
     @Override void toInnerHtml(StringBuilder out) {
@@ -319,12 +321,12 @@ final class DomProcessingEvents {
   }
 
   /** Begin an element when a start tag {@code <foo} is seen. */
-  void begin(String name) { addEvent(new BeginElementEvent(name)); }
+  void begin(Name name) { addEvent(new BeginElementEvent(name)); }
   /** Adds an attribute to the current element: {@code key="value"}. */
-  void attr(String name, Expression value) {
+  void attr(Name name, Expression value) {
     addEvent(new AttribEvent(name, value));
   }
-  void attr(String name, String value) {
+  void attr(Name name, String value) {
     attr(name, TreeConstruction.stringLiteral(value));
   }
   /** End the attribute list when a {@code >} or {@code />} is seen. */
@@ -341,7 +343,7 @@ final class DomProcessingEvents {
   }
   void cdata(String text) { addEvent(new CDataEvent(text)); }
   /** Ends an element when an end tag {@code </foo>} is seen. */
-  void end(String name) { addEvent(new EndElementEvent(name)); }
+  void end(Name name) { addEvent(new EndElementEvent(name)); }
   /** An interleaved script block. */
   void script(Statement s) { addEvent(new ScriptBlockEvent(s)); }
 

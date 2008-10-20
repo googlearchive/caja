@@ -27,6 +27,7 @@ import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
+import com.google.caja.util.Name;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -51,7 +52,6 @@ import java.util.List;
  */
 public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
   private final Token<HtmlTokenType> start;
-  private String value;
 
   DomTree(List<? extends DomTree> children,
           Token<HtmlTokenType> start, Token<HtmlTokenType> end) {
@@ -59,8 +59,8 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
          start.pos != null ? FilePosition.span(start.pos, end.pos) : null);
   }
 
-  DomTree(List<? extends DomTree> children, Token<HtmlTokenType> tok,
-          FilePosition pos) {
+  DomTree(List<? extends DomTree> children,
+          Token<HtmlTokenType> tok, FilePosition pos) {
     this.start = tok;
     if (pos != null) {
       setFilePosition(pos);
@@ -87,44 +87,7 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
    * expanded.
    */
   @Override
-  public String getValue() {
-    if (null == value && null != start) { value = computeValue(); }
-    return value;
-  }
-
-  protected final void setValue(String value) {
-    this.value = value;
-  }
-
-  private String computeValue() {
-    switch (start.type) {
-    case TAGBEGIN:
-      return start.text.substring(1);  // tag name
-    case ATTRNAME:
-      return start.text;
-    case ATTRVALUE:
-      {
-        String s = start.text;
-        int n = s.length();
-        if (n >= 2) {
-          char lastChar = s.charAt(n - 1);
-          if ('"' == lastChar || '\'' == lastChar) {
-            s = s.substring(s.charAt(0) == lastChar ? 1 : 0, n - 1);
-          }
-        }
-        return xmlDecode(s);
-      }
-    case TEXT:
-      return xmlDecode(start.text);
-    case CDATA:
-      // Strip <![CDATA[ and ]]>
-      return start.text.substring(9, start.text.length() - 3);
-    case UNESCAPED:
-      return start.text;
-    default:
-      return null;
-    }
-  }
+  public abstract String getValue();
 
   private static final InputSource DECODE =
       new InputSource(URI.create("decode:///xml"));
@@ -188,6 +151,8 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
         child.render(r);
       }
     }
+
+    @Override public String getValue() { return null; }
   }
   private static final Token<HtmlTokenType> NULL_TOKEN
       = Token.instance("", HtmlTokenType.IGNORABLE, null);
@@ -195,26 +160,28 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
 
   /**
    * A DOM element.  This node's value is its tag name.
-   * Its chilren include its attributes, and the element content:
+   * Its children include its attributes, and the element content:
    * other tags, text nodes, CDATA sections.
    */
   public static final class Tag extends DomTree {
-    public Tag(List<? extends DomTree> children,
+    private final Name name;
+    public Tag(Name name, List<? extends DomTree> children,
                Token<HtmlTokenType> start, Token<HtmlTokenType> end) {
       super(children, start, end);
       assert start.type == HtmlTokenType.TAGBEGIN;
       assert end.type == HtmlTokenType.TAGEND;
+      this.name = name;
     }
 
-    public Tag(List<? extends DomTree> children,
+    public Tag(Name name, List<? extends DomTree> children,
                Token<HtmlTokenType> start, FilePosition pos) {
       super(children, start, pos);
       assert start.type == HtmlTokenType.TAGBEGIN;
+      this.name = name;
     }
 
-    void setTagName(String canonicalTagName) { setValue(canonicalTagName); }
-
-    public String getTagName() { return getValue(); }
+    public Name getTagName() { return name; }
+    @Override public String getValue() { return name.getCanonicalForm(); }
 
     public List<Attrib> getAttributeNodes() {
       List<Attrib> attribs = new ArrayList<Attrib>();
@@ -229,7 +196,7 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
      * Returns the first attribute of this element with the given name or null
      * if there is none.
      */
-    public Attrib getAttribute(String name) {
+    public Attrib getAttribute(Name name) {
       for (DomTree child : children()) {
         if (!(child instanceof Attrib)) { break; }
         Attrib attrib = (Attrib) child;
@@ -284,19 +251,23 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
    * Its sole child is the {@link Value attribute value}.
    */
   public static final class Attrib extends DomTree {
-    Attrib(Value value, Token<HtmlTokenType> start, Token<HtmlTokenType> end) {
+    private final Name name;
+    Attrib(Name name, Value value, Token<HtmlTokenType> start,
+           Token<HtmlTokenType> end) {
       super(Collections.<DomTree>singletonList(value), start, end);
       assert start.type == HtmlTokenType.ATTRNAME;
+      this.name = name;
     }
-    public Attrib(Value value, Token<HtmlTokenType> start, FilePosition pos) {
+    public Attrib(Name name, Value value, Token<HtmlTokenType> start,
+                  FilePosition pos) {
       super(Collections.<DomTree>singletonList(value), start, pos);
       assert start.type == HtmlTokenType.ATTRNAME;
+      this.name = name;
     }
-    public String getAttribName() { return getValue(); }
+    public Name getAttribName() { return name; }
+    @Override public String getValue() { return name.getCanonicalForm(); }
     public String getAttribValue() { return children().get(0).getValue(); }
     public Value getAttribValueNode() { return (Value) children().get(0); }
-
-    void setAttribName(String canonicalName) { setValue(canonicalName); }
 
     public void render(RenderContext r) {
       TokenConsumer out = r.getOut();
@@ -310,8 +281,8 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
     @Override
     public Attrib clone() {
       Attrib clone = new Attrib(
-          getAttribValueNode().clone(), getToken(), getFilePosition());
-      clone.setAttribName(getAttribName());
+          getAttribName(), getAttribValueNode().clone(), getToken(),
+          getFilePosition());
       return clone;
     }
   }
@@ -320,6 +291,8 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
    * An attribute value.  This nodes value is the attribute value text.
    */
   public static final class Value extends DomTree {
+    private String memoizedValue;
+
     public Value(Token<HtmlTokenType> tok) {
       super(Collections.<DomTree>emptyList(), tok, tok);
       assert tok.type == HtmlTokenType.ATTRVALUE;
@@ -328,6 +301,20 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
     public void render(RenderContext r) {
       r.getOut().mark(getFilePosition());
       renderHtmlAttributeValue(getValue(), r);
+    }
+
+    @Override
+    public String getValue() {
+      if (memoizedValue != null) { return memoizedValue; }
+      String s = getToken().text;
+      int n = s.length();
+      if (n >= 2) {
+        char lastChar = s.charAt(n - 1);
+        if ('"' == lastChar || '\'' == lastChar) {
+          s = s.substring(s.charAt(0) == lastChar ? 1 : 0, n - 1);
+        }
+      }
+      return memoizedValue = xmlDecode(s);
     }
 
     @Override
@@ -340,6 +327,8 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
    * A text node.  Its value is textual content.
    */
   public static final class Text extends DomTree {
+    private String memoizedValue;
+
     public Text(Token<HtmlTokenType> tok) {
       super(Collections.<DomTree>emptyList(), tok, tok);
       assert tok.type == HtmlTokenType.TEXT
@@ -354,6 +343,17 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
         r.getOut().consume(getValue());
       } else {
         renderHtml(getValue(), r);
+      }
+    }
+
+    @Override
+    public String getValue() {
+      if (memoizedValue != null) { return memoizedValue; }
+      Token<HtmlTokenType> start = getToken();
+      switch (start.type) {
+        case TEXT: return memoizedValue = xmlDecode(start.text);
+        case UNESCAPED: return memoizedValue = start.text;
+        default: throw new AssertionError();
       }
     }
   }
@@ -381,11 +381,18 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
         renderHtml(value, r);
       }
     }
+
+    @Override
+    public String getValue() {
+      Token<HtmlTokenType> start = getToken();
+      // Strip <![CDATA[ and ]]>
+      return start.text.substring(9, start.text.length() - 3);
+    }
   }
 
-  private static void renderHtmlIdentifier(String text, RenderContext r) {
+  private static void renderHtmlIdentifier(Name name, RenderContext r) {
     StringBuilder sb = new StringBuilder();
-    Escaping.escapeXml(text, r.isAsciiOnly(), sb);
+    Escaping.escapeXml(name.getCanonicalForm(), r.isAsciiOnly(), sb);
     r.getOut().consume(sb.toString());
   }
 

@@ -19,6 +19,7 @@ import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.MutableParseTreeNode;
+import com.google.caja.util.Name;
 import com.google.caja.util.SyntheticAttributeKey;
 
 import java.util.ArrayList;
@@ -167,7 +168,7 @@ final class CajaTreeBuilder extends TreeBuilder<DomTree> {
     // This method is used to merge multiple body elements together.  Since
     // it's illegal to have multiple attributes with the same name, we need
     // to filter.  The spec says that firstcomers win.
-    Set<String> have = new HashSet<String>();
+    Set<Name> have = new HashSet<Name>();
     DomTree nodeAfterLastAttrib = null;
     for (DomTree child : el.children()) {
       if (!(child instanceof DomTree.Attrib)) {
@@ -175,13 +176,12 @@ final class CajaTreeBuilder extends TreeBuilder<DomTree> {
         break;
       }
       DomTree.Attrib attr = (DomTree.Attrib) child;
-      have.add(Html5ElementStack.canonicalAttributeName(attr.getAttribName()));
+      have.add(attr.getAttribName());
     }
 
     MutableParseTreeNode.Mutation mut = el.createMutation();
     for (DomTree.Attrib attr : getAttributes(attributes)) {
-      if (have.add(
-              Html5ElementStack.canonicalAttributeName(attr.getAttribName()))) {
+      if (have.add(attr.getAttribName())) {
         mut.insertBefore(attr, nodeAfterLastAttrib);
       }
     }
@@ -243,7 +243,9 @@ final class CajaTreeBuilder extends TreeBuilder<DomTree> {
         if (!(child instanceof DomTree.Attrib)) { break; }
         attribs.add((DomTree.Attrib) child.clone());
       }
-      return new DomTree.Tag(attribs, el.getToken(), el.getFilePosition());
+      return new DomTree.Tag(
+          ((DomTree.Tag) el).getTagName(), attribs, el.getToken(),
+          el.getFilePosition());
     } else if (el instanceof DomTree.Fragment) {
       DomTree.Fragment clone = new DomTree.Fragment();
       clone.setFilePosition(el.getFilePosition());
@@ -294,9 +296,8 @@ final class CajaTreeBuilder extends TreeBuilder<DomTree> {
       pos = FilePosition.startOf(startTok.pos);
       elStartTok = Token.instance("<" + name, HtmlTokenType.TAGBEGIN, pos);
     }
-    DomTree.Tag el
-        = new DomTree.Tag(getAttributes(attributes), elStartTok, pos);
-    el.setTagName(name);
+    DomTree.Tag el = new DomTree.Tag(
+        Name.html(name), getAttributes(attributes), elStartTok, pos);
     return el;
   }
 
@@ -416,6 +417,7 @@ final class CajaTreeBuilder extends TreeBuilder<DomTree> {
         String encodedValue = sb.toString();
         fakeAttribs.add(
             new DomTree.Attrib(
+                Name.html(name),
                 new DomTree.Value(
                     Token.instance(encodedValue, HtmlTokenType.ATTRVALUE, pos)),
                 Token.instance(name, HtmlTokenType.ATTRNAME, pos), pos));
@@ -469,7 +471,7 @@ final class AttributesImpl implements Attributes {
   public int getIndex(String qName) {
     int index = 0;
     for (DomTree.Attrib attrib : attribs) {
-      if (attrib.getAttribName().equals(qName)) { return index; }
+      if (attrib.getValue().equals(qName)) { return index; }
       ++index;
     }
     return -1;
@@ -482,7 +484,7 @@ final class AttributesImpl implements Attributes {
   public int getLength() { return attribs.size(); }
 
   public String getLocalName(int index) {
-    return attribs.get(index).getAttribName();
+    return attribs.get(index).getAttribName().getCanonicalForm();
   }
 
   public String getQName(int index) { return getLocalName(index); }

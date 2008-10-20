@@ -16,6 +16,8 @@ package com.google.caja.lang.html;
 
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.util.Name;
+
 import junit.framework.TestCase;
 
 /**
@@ -32,63 +34,79 @@ public class HtmlSchemaTest extends TestCase {
     schema = HtmlSchema.getDefault(mq);
     assertTrue(mq.getMessages().isEmpty());
   }
-  
+
   /** blacklist the whitelist. */
   public void testSchema() throws Exception {
-    assertFalse(schema.isElementAllowed("script"));
-    assertFalse(schema.isElementAllowed("style"));
-    assertFalse(schema.isElementAllowed("iframe"));
+    assertFalse(schema.isElementAllowed(id("script")));
+    assertFalse(schema.isElementAllowed(id("style")));
+    assertFalse(schema.isElementAllowed(id("iframe")));
     // swapping innerHTML from an XMP or LISTING tag into another tag might
     // allow bad things to happen.
-    assertFalse(schema.isElementAllowed("xmp"));
-    assertFalse(schema.isElementAllowed("listing"));
-    assertFalse(schema.isElementAllowed("frame"));
-    assertFalse(schema.isElementAllowed("frameset"));
-    assertFalse(schema.isElementAllowed("body"));
-    assertFalse(schema.isElementAllowed("head"));
-    assertFalse(schema.isElementAllowed("html"));
-    assertFalse(schema.isElementAllowed("title"));
+    assertFalse(schema.isElementAllowed(id("xmp")));
+    assertFalse(schema.isElementAllowed(id("listing")));
+    assertFalse(schema.isElementAllowed(id("frame")));
+    assertFalse(schema.isElementAllowed(id("frameset")));
+    assertFalse(schema.isElementAllowed(id("body")));
+    assertFalse(schema.isElementAllowed(id("head")));
+    assertFalse(schema.isElementAllowed(id("html")));
+    assertFalse(schema.isElementAllowed(id("title")));
   }
 
   public void testAttributeTypes() throws Exception {
     assertEquals(HTML.Attribute.Type.STYLE,
-                 schema.lookupAttribute("div", "style").getType());
+                 schema.lookupAttribute(id("div"), id("style")).getType());
     assertEquals(HTML.Attribute.Type.SCRIPT,
-                 schema.lookupAttribute("a", "onclick").getType());
+                 schema.lookupAttribute(id("a"), id("onclick")).getType());
     assertEquals(HTML.Attribute.Type.URI,
-                 schema.lookupAttribute("a", "href").getType());
+                 schema.lookupAttribute(id("a"), id("href")).getType());
     assertEquals(HTML.Attribute.Type.NONE,
-                 schema.lookupAttribute("a", "title").getType());
+                 schema.lookupAttribute(id("a"), id("title")).getType());
   }
 
   public void testAttributeMimeTypes() throws Exception {
-    assertEquals("image/*",
-                 schema.lookupAttribute("img", "src").getMimeTypes());
-    assertEquals("text/javascript",
-                 schema.lookupAttribute("script", "src").getMimeTypes());
-    assertEquals(null,
-                 schema.lookupAttribute("table", "cellpadding").getMimeTypes());
+    assertEquals(
+        "image/*",
+        schema.lookupAttribute(id("img"), id("src")).getMimeTypes());
+    assertEquals(
+        "text/javascript",
+        schema.lookupAttribute(id("script"), id("src")).getMimeTypes());
+    assertEquals(
+        null,
+        schema.lookupAttribute(id("table"), id("cellpadding")).getMimeTypes());
   }
 
   public void testAttributeCriteria() throws Exception {
-    assertFalse(schema.getAttributeCriteria("a", "target").accept("_top"));
-    assertTrue(schema.getAttributeCriteria("a", "target").accept("_blank"));
+    assertFalse(schema.getAttributeCriteria(id("a"), id("target"))
+                .accept("_top"));
+    assertTrue(schema.getAttributeCriteria(id("a"), id("target"))
+               .accept("_blank"));
 
-    assertFalse(schema.getAttributeCriteria("table", "cellpadding")
+    assertFalse(schema.getAttributeCriteria(id("table"), id("cellpadding"))
                 .accept("six"));
-    assertTrue(schema.getAttributeCriteria("table", "cellpadding").accept("6"));
+    assertTrue(schema.getAttributeCriteria(id("table"), id("cellpadding"))
+               .accept("6"));
 
-    assertFalse(schema.getAttributeCriteria("script", "type")
+    assertFalse(schema.getAttributeCriteria(id("script"), id("type"))
                 .accept("text/vbscript"));
-    assertTrue(schema.getAttributeCriteria("script", "type")
+    assertTrue(schema.getAttributeCriteria(id("script"), id("type"))
                .accept("text/javascript"));
-    assertTrue(schema.getAttributeCriteria("script", "type")
+    assertTrue(schema.getAttributeCriteria(id("script"), id("type"))
                .accept("text/javascript;charset=UTF-8"));
-    assertTrue(schema.getAttributeCriteria("input", "type").accept("text"));
-    assertTrue(schema.getAttributeCriteria("input", "type").accept("TEXT"));
-    assertTrue(schema.getAttributeCriteria("input", "type").accept("button"));
-    assertFalse(schema.getAttributeCriteria("input", "type").accept("file"));
-    assertFalse(schema.getAttributeCriteria("input", "type").accept("FILE"));
-    assertFalse(schema.getAttributeCriteria("input", "type").accept("bogus"));
+    assertTrue(schema.getAttributeCriteria(id("input"), id("type"))
+               .accept("text"));
+    assertTrue(schema.getAttributeCriteria(id("input"), id("type"))
+               .accept("TEXT"));
+    assertTrue(schema.getAttributeCriteria(id("input"), id("type"))
+               .accept("button"));
+    assertFalse(schema.getAttributeCriteria(id("input"), id("type"))
+                .accept("file"));
+    assertFalse(schema.getAttributeCriteria(id("input"), id("type"))
+                .accept("FILE"));
+    assertFalse(schema.getAttributeCriteria(id("input"), id("type"))
+                .accept("bogus"));
+  }
+
+  private static Name id(String name) {
+    return Name.html(name);
   }
 }

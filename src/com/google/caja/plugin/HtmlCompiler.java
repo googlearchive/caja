@@ -61,8 +61,8 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Criterion;
+import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Strings;
 import static com.google.caja.parser.js.SyntheticNodes.s;
 
 import java.io.StringReader;
@@ -158,16 +158,16 @@ public class HtmlCompiler {
         break;
       case TAGBEGIN:
         DomTree.Tag el = (DomTree.Tag) t;
-        String tagName = Strings.toLowerCase(el.getValue());
+        Name tagName = el.getTagName();
 
-        if (tagName.equals("span")) {
+        if ("span".equals(tagName.getCanonicalForm())) {
           Block extractedScriptBody = el.getAttributes().get(
               RewriteHtmlStage.EXTRACTED_SCRIPT_BODY);
           if (extractedScriptBody != null) {
             out.script(scriptBodyEnvelope(extractedScriptBody));
             return;
           }
-        } else if (tagName.equals("style")) {
+        } else if ("style".equals(tagName.getCanonicalForm())) {
           // nothing to do.  Style tags get combined into one and output as
           // CSS, not written via javascript.
           return;
@@ -186,7 +186,7 @@ public class HtmlCompiler {
         out.begin(tagName);
 
         if (children.isEmpty()) {
-          for (Pair<String, String> extra : constraint.tagDone(el)) {
+          for (Pair<Name, String> extra : constraint.tagDone(el)) {
             out.attr(extra.a, extra.b);
           }
           out.finishAttrs(!requiresCloseTag);
@@ -200,14 +200,14 @@ public class HtmlCompiler {
             DomTree child = children.get(i);
             if (HtmlTokenType.ATTRNAME != child.getType()) { break; }
             DomTree.Attrib attrib = (DomTree.Attrib) child;
-            String name = attrib.getAttribName();
+            Name name = attrib.getAttribName();
 
             name = assertHtmlIdentifier(name, attrib);
 
             Pair<String, String> wrapper = constraint.attributeValueHtml(name);
             if (null == wrapper) { continue; }
 
-            if (Strings.equalsIgnoreCase("style", name)) {
+            if ("style".equals(name.getCanonicalForm())) {
               compileStyleAttrib(attrib, out);
             } else {
               AttributeXform xform = xformForAttribute(tagName, name);
@@ -215,13 +215,14 @@ public class HtmlCompiler {
               DomTree.Attrib temp = (wrapper == null) ?
                   attrib :
                   new DomTree.Attrib(
-                    new DomTree.Value(
-                      Token.<HtmlTokenType>instance(
-                        wrapper.a + attrib.getAttribValue() + wrapper.b,
-                        HtmlTokenType.ATTRVALUE,
-                        attrib.getFilePosition())),
-                    attrib.getToken(),
-                    attrib.getFilePosition());
+                      attrib.getAttribName(),
+                      new DomTree.Value(
+                          Token.<HtmlTokenType>instance(
+                              wrapper.a + attrib.getAttribValue() + wrapper.b,
+                              HtmlTokenType.ATTRVALUE,
+                              attrib.getFilePosition())),
+                      attrib.getToken(),
+                      attrib.getFilePosition());
 
               if (null == xform) {
                 out.attr(name, temp.getAttribValue());
@@ -229,7 +230,9 @@ public class HtmlCompiler {
                 List<DomTree> newchildren = new ArrayList<DomTree>(el.children());
                 newchildren.remove(attrib);
                 newchildren.add(temp);
-                DomTree parent = new DomTree.Tag(newchildren, el.getToken(),el.getFilePosition());
+                DomTree parent = new DomTree.Tag(
+                    el.getTagName(), newchildren, el.getToken(),
+                    el.getFilePosition());
 
                 xform.apply(
                     new AncestorChain<DomTree.Attrib>(
@@ -241,7 +244,7 @@ public class HtmlCompiler {
             constraint.attributeDone(name);
           }
 
-          for (Pair<String, String> extra : constraint.tagDone(el)) {
+          for (Pair<Name, String> extra : constraint.tagDone(el)) {
             out.attr(extra.a, extra.b);
           }
 
@@ -280,43 +283,41 @@ public class HtmlCompiler {
 
   private static final Pattern HTML_ID = Pattern.compile(
       "^[a-z][a-z0-9-]*$", Pattern.CASE_INSENSITIVE);
-  private static String assertHtmlIdentifier(String s, DomTree node)
+  private static Name assertHtmlIdentifier(
+      Name id, DomTree node)
       throws BadContentException {
-    if (!HTML_ID.matcher(s).matches()) {
-      throw new BadContentException(
-          new Message(PluginMessageType.BAD_IDENTIFIER, node.getFilePosition(),
-                      MessagePart.Factory.valueOf(s)));
+    if (!HTML_ID.matcher(id.getCanonicalForm()).matches()) {
+      throw new BadContentException(new Message(
+          PluginMessageType.BAD_IDENTIFIER, node.getFilePosition(), id));
     }
-    return s;
+    return id;
   }
 
-  private void assertNotBlacklistedTag(DomTree node)
+  private void assertNotBlacklistedTag(DomTree.Tag node)
       throws BadContentException {
-    String tagName = Strings.toLowerCase(node.getValue());
+    Name tagName = node.getTagName();
     if (!htmlSchema.isElementAllowed(tagName)) {
       throw new BadContentException(
           new Message(PluginMessageType.UNSAFE_TAG, node.getFilePosition(),
-                      MessagePart.Factory.valueOf(tagName)));
+                      tagName));
     }
   }
 
   /**
    * True if the given name requires a close tag.
    *   "TABLE" -> true, "BR" -> false.
-   * @param tag a tag name, such as {@code P} for {@code <p>} tags.
    */
-  private boolean requiresCloseTag(String tag) {
-    HTML.Element e = htmlSchema.lookupElement(Strings.toLowerCase(tag));
+  private boolean requiresCloseTag(Name tagName) {
+    HTML.Element e = htmlSchema.lookupElement(tagName);
     return null == e || !e.isEmpty();
   }
 
   /**
    * True if the tag can have content.  False for unitary tags like
    * {@code INPUT} and {@code BR}.
-   * @param tag a tag name, such as {@code P} for {@code <p>} tags.
    */
-  private boolean tagAllowsContent(String tag) {
-    HTML.Element e = htmlSchema.lookupElement(Strings.toLowerCase(tag));
+  private boolean tagAllowsContent(Name tagName) {
+    HTML.Element e = htmlSchema.lookupElement(tagName);
     return null == e || !e.isEmpty();
   }
 
@@ -361,7 +362,7 @@ public class HtmlCompiler {
     for (Expression e : operands.subList(2, operands.size())) {
       cssOp = Operation.create(Operator.ADDITION, cssOp, e);
     }
-    out.attr("style", cssOp);
+    out.attr(Name.html("style"), cssOp);
   }
 
   /**
@@ -490,9 +491,7 @@ public class HtmlCompiler {
    * perform on the value?
    */
   private AttributeXform xformForAttribute(
-      String tagName, String attribute) {
-    tagName = Strings.toLowerCase(tagName);
-    attribute = Strings.toLowerCase(attribute);
+      Name tagName, Name attribute) {
     HTML.Attribute a = htmlSchema.lookupAttribute(tagName, attribute);
     if (null != a) {
       switch (a.getType()) {
@@ -514,7 +513,7 @@ public class HtmlCompiler {
     return null;
   }
 
-  private String guessMimeType(String tagName, String attribName) {
+  private String guessMimeType(Name tagName, Name attribName) {
     HTML.Attribute type = htmlSchema.lookupAttribute(tagName, attribName);
     String mimeType = type.getMimeTypes();
     return mimeType != null ? mimeType : "*/*";

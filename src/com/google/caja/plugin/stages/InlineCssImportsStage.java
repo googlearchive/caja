@@ -34,8 +34,8 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Criterion;
+import com.google.caja.util.Name;
 import com.google.caja.util.Pipeline;
-import com.google.caja.util.Strings;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -165,8 +165,8 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
     // the import block and the media blocks in the style-sheet.
     List<CssTree.Medium> media = importNode.getMedia();
     if (!media.isEmpty()) {
-      Set<String> mediaTypes = toMediaTypeSet(media);
-      if (!mediaTypes.contains("all")) {
+      Set<Name> mediaTypes = toMediaTypeSet(media);
+      if (!mediaTypes.contains(Name.css("all"))) {
         restrictToMediaTypes(importedSs, mediaTypes);
       }
     }
@@ -183,7 +183,7 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
    *    >CSS media types</a>.
    */
   private static void restrictToMediaTypes(
-      CssTree.StyleSheet ss, Set<String> mediaTypes) {
+      CssTree.StyleSheet ss, Set<Name> mediaTypes) {
     MutableParseTreeNode.Mutation mut = ss.createMutation();
     int nonMedia = 0;
     int n = ss.children().size();
@@ -199,19 +199,20 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
         MutableParseTreeNode.Mutation mediaMut = media.createMutation();
         boolean oneAllowed = false;
         List<CssTree.Medium> mediaNodes = media.getMedia();
-        if (toMediaTypeSet(mediaNodes).contains("all")) {
+        if (toMediaTypeSet(mediaNodes).contains(Name.css("all"))) {
           oneAllowed = true;
           CssTree.Medium medium0 = mediaNodes.get(0);
           FilePosition pos = medium0.getFilePosition();
-          for (String mediaType : mediaTypes) {
-            mediaMut.insertBefore(new CssTree.Medium(pos, mediaType), medium0);
+          for (Name mediaType : mediaTypes) {
+            mediaMut.insertBefore(
+                new CssTree.Medium(pos, mediaType), medium0);
           }
           for (CssTree.Medium medium : mediaNodes) {
             mediaMut.removeChild(medium);
           }
         } else {
           for (CssTree.Medium medium : mediaNodes) {
-            if (!mediaTypes.contains(Strings.toLowerCase(medium.getValue()))) {
+            if (!mediaTypes.contains(medium.getValue())) {
               mediaMut.removeChild(medium);
             } else {
               oneAllowed = true;
@@ -234,12 +235,12 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
    * <code>&#64;media &lt;mediaTypes&gt; { &lt;nodes&gt; }</code>.
    */
   private static void wrapInMediaBlock(
-      List<? extends CssTree> nodes, Set<String> mediaTypes,
+      List<? extends CssTree> nodes, Set<Name> mediaTypes,
       MutableParseTreeNode.Mutation mut) {
     if (nodes.isEmpty()) { return; }
     List<CssTree> mediaBlockChildren = new ArrayList<CssTree>();
     FilePosition pos = FilePosition.startOf(nodes.get(0).getFilePosition());
-    for (String mediaType : mediaTypes) {
+    for (Name mediaType : mediaTypes) {
       mediaBlockChildren.add(new CssTree.Medium(pos, mediaType));
     }
     mediaBlockChildren.addAll(nodes);
@@ -263,10 +264,10 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
     return p.parseStyleSheet();
   }
 
-  private static Set<String> toMediaTypeSet(List<CssTree.Medium> media) {
-    Set<String> mediaTypes = new LinkedHashSet<String>();
+  private static Set<Name> toMediaTypeSet(List<CssTree.Medium> media) {
+    Set<Name> mediaTypes = new LinkedHashSet<Name>();
     for (CssTree.Medium medium : media) {
-      mediaTypes.add(Strings.toLowerCase(medium.getValue()));
+      mediaTypes.add(medium.getValue());
     }
     return mediaTypes;
   }

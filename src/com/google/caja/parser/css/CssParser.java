@@ -24,6 +24,7 @@ import com.google.caja.lexer.TokenQueue.Mark;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.util.Name;
 import com.google.caja.util.Strings;
 
 import java.net.URI;
@@ -98,7 +99,7 @@ public final class CssParser {
 
   private CssTree.Medium parseMedium() throws ParseException {
     Mark m = tq.mark();
-    return new CssTree.Medium(pos(m), expectIdent());
+    return new CssTree.Medium(pos(m), Name.css(expectIdent()));
   }
 
   private CssTree.CssStatement parseStatement() throws ParseException {
@@ -141,14 +142,15 @@ public final class CssParser {
       Mark m2 = tq.mark();
       tq.expectToken(":");
       String pseudoPage = expectIdent();
-      elements.add(new CssTree.PseudoPage(pos(m2), pseudoPage));
+      elements.add(new CssTree.PseudoPage(pos(m2), Name.css(pseudoPage)));
     }
     tq.expectToken("{");
     do {
       elements.add(parseDeclaration());
     } while (tq.checkToken(";"));
     tq.expectToken("}");
-    return new CssTree.Page(pos(m), ident, elements);
+    return new CssTree.Page(
+        pos(m), ident == null ? null : Name.css(ident), elements);
   }
 
   private CssTree.FontFace parseFontFace() throws ParseException {
@@ -201,7 +203,7 @@ public final class CssParser {
   private CssTree.Property parseProperty() throws ParseException {
     Mark m = tq.mark();
     String ident = expectIdent();
-    return new CssTree.Property(pos(m), ident);
+    return new CssTree.Property(pos(m), Name.css(ident));
   }
 
 
@@ -343,7 +345,7 @@ public final class CssParser {
       CssTree.Expr arg =
         new CssTree.Expr(pos3, Collections.singletonList(term));
       tq.expectToken(")");
-      atom = new CssTree.FunctionCall(pos(m2), fnName, arg);
+      atom = new CssTree.FunctionCall(pos(m2), Name.css(fnName), arg);
     } else {
       String ident = expectIdent();
       atom = new CssTree.IdentLiteral(pos(m2), ident);
@@ -460,7 +462,7 @@ public final class CssParser {
         fn = fn.substring(0, fn.length() - 1);  // strip trailing '('
         CssTree.Expr arg = parseExpr();
         tq.expectToken(")");
-        expr = new CssTree.FunctionCall(pos(m2), fn, arg);
+        expr = new CssTree.FunctionCall(pos(m2), Name.css(fn), arg);
         break;
       }
       case SUBSTITUTION:

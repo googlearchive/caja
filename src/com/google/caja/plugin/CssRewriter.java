@@ -29,6 +29,7 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Name;
 import com.google.caja.util.Strings;
 
 import java.net.URI;
@@ -125,7 +126,7 @@ public final class CssRewriter {
       CssTree.Term t = e.getNthTerm(i);
       if (!isLooseWord(t)) { continue; }
 
-      String propertyPart = t.getAttributes().get(
+      Name propertyPart = t.getAttributes().get(
           CssValidator.CSS_PROPERTY_PART);
       StringBuilder sb = new StringBuilder();
       sb.append(t.getExprAtom().getValue());
@@ -324,11 +325,11 @@ public final class CssRewriter {
                 child = child.children().get(0);
                 // TODO(mikesamuel): check argument if child now a FunctionCall
               }
-              String value = (String) child.getValue();
-              if (value != null && !isSafeSelectorPart(value)) {
+              Object value = child.getValue();
+              if (value != null && !isSafeSelectorPart(value.toString())) {
                 mq.addMessage(PluginMessageType.UNSAFE_CSS_IDENTIFIER,
                               child.getFilePosition(),
-                              MessagePart.Factory.valueOf(value));
+                              MessagePart.Factory.valueOf(value.toString()));
                 // Will be deleted by a later pass after all messages have been
                 // generated
                 node.getAttributes().set(CssValidator.INVALID, Boolean.TRUE);
@@ -337,10 +338,9 @@ public final class CssRewriter {
             }
           } else if (node instanceof CssTree.Property) {
             CssTree.Property p = (CssTree.Property) node;
-            if (!isSafeCssIdentifier(p.getPropertyName())) {
+            if (!isSafeCssIdentifier(p.getPropertyName().getCanonicalForm())) {
               mq.addMessage(PluginMessageType.UNSAFE_CSS_IDENTIFIER,
-                            p.getFilePosition(),
-                            MessagePart.Factory.valueOf(p.getPropertyName()));
+                            p.getFilePosition(), p.getPropertyName());
               declarationFor(ancestors).getAttributes().set(
                   CssValidator.INVALID, Boolean.TRUE);
               return false;
@@ -356,8 +356,9 @@ public final class CssRewriter {
         public boolean visit(AncestorChain<?> ancestors) {
           ParseTreeNode node = ancestors.node;
           if (node instanceof CssTree.Property) {
-            if (Strings.equalsIgnoreCase(
-                    "content", ((CssTree.Property) node).getPropertyName())) {
+            if ("content".equals(
+                    ((CssTree.Property) node).getPropertyName()
+                    .getCanonicalForm())) {
               mq.addMessage(PluginMessageType.UNSAFE_CSS_PROPERTY,
                             invalidNodeMessageLevel, node.getFilePosition(),
                             MessagePart.Factory.valueOf("content"));

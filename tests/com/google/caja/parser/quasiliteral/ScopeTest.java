@@ -261,7 +261,6 @@ public class ScopeTest extends CajaTestCase {
     Block n = js(fromString("function foo() { var x; }"));
 
     Scope s0 = Scope.fromProgram(n, mq);
-    Scope s1 = Scope.fromPlainBlock(s0);
 
     assertEquals(0, mq.getMessages().size());
     assertTrue(s0.isDefined("foo"));

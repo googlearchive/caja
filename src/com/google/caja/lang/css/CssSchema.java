@@ -27,8 +27,8 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Criterion;
+import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Strings;
 
 import java.io.IOException;
 import java.net.URI;
@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,13 +50,13 @@ import java.util.regex.Pattern;
  * @author mikesamuel@gmail.com
  */
 public final class CssSchema {
-  private final Map<String, CssPropertyInfo> properties =
-    new HashMap<String, CssPropertyInfo>();
-  private final Map<String, SymbolInfo> symbols =
-    new HashMap<String, SymbolInfo>();
-  private final Set<String> keywords = new HashSet<String>();
-  private final Set<String> functionsAllowed;
-  private final Set<String> propertiesAllowed;
+  private final Map<Name, CssPropertyInfo> properties =
+    new HashMap<Name, CssPropertyInfo>();
+  private final Map<Name, SymbolInfo> symbols =
+    new HashMap<Name, SymbolInfo>();
+  private final Set<Name> keywords = new HashSet<Name>();
+  private final Set<Name> functionsAllowed;
+  private final Set<Name> propertiesAllowed;
 
   private static Pair<CssSchema, List<Message>> defaultSchema;
   public static CssSchema getDefaultCss21Schema(MessageQueue mq) {
@@ -94,11 +95,11 @@ public final class CssSchema {
    * @param propertyName non null.
    * @return null if no such property.
    */
-  public CssPropertyInfo getCssProperty(String propertyName) {
+  public CssPropertyInfo getCssProperty(Name propertyName) {
     // http://www.w3.org/TR/CSS21/syndata.html#characters
     // All CSS style sheets are case-insensitive, except for parts
     // that are not under the control of CSS.
-    return properties.get(Strings.toLowerCase(propertyName));
+    return properties.get(propertyName);
   }
 
   /** All defined properties including disallowed ones. */
@@ -113,23 +114,23 @@ public final class CssSchema {
    * @return null if no such symbol or the symbol is not defined in terms of a
    *   signature.
    */
-  public SymbolInfo getSymbol(String symbolName) {
+  public SymbolInfo getSymbol(Name symbolName) {
     return symbols.get(symbolName);
   }
 
   /** Is the given word a css keyword? */
-  public boolean isKeyword(String name) {
-    return keywords.contains(Strings.toLowerCase(name));
+  public boolean isKeyword(Name name) {
+    return keywords.contains(name);
   }
 
   /** Is the given word the name of a CSS function? */
-  public boolean isFunctionAllowed(String name) {
-    return functionsAllowed.contains(Strings.toLowerCase(name));
+  public boolean isFunctionAllowed(Name name) {
+    return functionsAllowed.contains(name);
   }
 
   /** Is the given word the name of an allowed CSS property? */
-  public boolean isPropertyAllowed(String name) {
-    return propertiesAllowed.contains(Strings.toLowerCase(name));
+  public boolean isPropertyAllowed(Name name) {
+    return propertiesAllowed.contains(name);
   }
 
   public static boolean isMediaType(String mediaType) {
@@ -159,7 +160,7 @@ public final class CssSchema {
     public final String dom2property;
 
     private CssPropertyInfo(
-        String name, CssPropertySignature sig, Criterion<String> mediaGroups,
+        Name name, CssPropertySignature sig, Criterion<String> mediaGroups,
         boolean inherited, Criterion<String> appliesTo, String defaultValue,
         String dom2property) {
       super(name, sig);
@@ -178,10 +179,10 @@ public final class CssSchema {
    * &lt;integer&gt;, etc.
    */
   public static class SymbolInfo {
-    public final String name;
+    public final Name name;
     public final CssPropertySignature sig;
 
-    private SymbolInfo(String name, CssPropertySignature sig) {
+    private SymbolInfo(Name name, CssPropertySignature sig) {
       this.name = name;
       this.sig = sig;
     }
@@ -242,7 +243,7 @@ public final class CssSchema {
   }
 
   private void defineProperty(
-      String name,
+      Name name,
       String sig,
       String defaultValue,
       Criterion<String> appliesTo,
@@ -253,7 +254,7 @@ public final class CssSchema {
       throw new IllegalArgumentException(
           "Bad default value for symbol " + name + ", use null instead");
     }
-    if (!CSS_IDENTIFIER.matcher(name).matches()) {
+    if (!CSS_IDENTIFIER.matcher(name.getCanonicalForm()).matches()) {
       throw new IllegalArgumentException("Bad property name: " + name);
     }
     if (!JS_IDENTIFIER.matcher(dom2property).matches()) {
@@ -266,11 +267,11 @@ public final class CssSchema {
         dom2property));
   }
 
-  private void defineSymbol(String name, String sig) {
+  private void defineSymbol(Name name, String sig) {
     if (sig == null) {
       throw new NullPointerException("Null signature for symbol " + name);
     }
-    if (!CSS_IDENTIFIER.matcher(name).matches()) {
+    if (!CSS_IDENTIFIER.matcher(name.getCanonicalForm()).matches()) {
       throw new IllegalArgumentException("Bad symbol name: " + name);
     }
     CssPropertySignature csssig = parseSignature(name, sig);
@@ -288,7 +289,7 @@ public final class CssSchema {
       }
       if (key.startsWith("<") && key.endsWith(">")) {
         defineSymbol(
-            key.substring(1, key.length() - 1),
+            Name.css(key.substring(1, key.length() - 1)),
             (String) def.get("signature", null));
       } else {
         Criterion<String> appliesTo = criterionFromConfig(
@@ -297,7 +298,7 @@ public final class CssSchema {
             def.get("mediaGroups", "*"), ALL_MEDIA);
         String dom2property = (String) def.get("dom2property", null);
         defineProperty(
-            key,
+            Name.css(key),
             (String) def.get("signature", null),
             (String) def.get("default", null),
             appliesTo,
@@ -307,8 +308,14 @@ public final class CssSchema {
       }
     }
 
-    functionsAllowed = functions.allowedItems();
-    propertiesAllowed = symbolsAndProperties.allowedItems();
+    functionsAllowed = new LinkedHashSet<Name>();
+    for (String k : functions.allowedItems()) {
+      functionsAllowed.add(Name.css(k));
+    }
+    propertiesAllowed = new LinkedHashSet<Name>();
+    for (String k : symbolsAndProperties.allowedItems()) {
+      propertiesAllowed.add(Name.css(k));
+    }
 
     // Examine the property signatures and extract a list of keywords
     for (CssPropertyInfo pi : properties.values()) {
@@ -317,7 +324,7 @@ public final class CssSchema {
           ParseTreeNode n = ancestors.node;
           if (n instanceof CssPropertySignature.LiteralSignature) {
             String kw = ((CssPropertySignature.LiteralSignature) n).value;
-            keywords.add(Strings.toLowerCase(kw));
+            keywords.add(Name.css(kw));
           }
           return true;
         }
@@ -329,13 +336,13 @@ public final class CssSchema {
           ParseTreeNode n = ancestors.node;
           if (n instanceof CssPropertySignature.LiteralSignature) {
             String kw = ((CssPropertySignature.LiteralSignature) n).value;
-            keywords.add(Strings.toLowerCase(kw));
+            keywords.add(Name.css(kw));
           }
           return true;
         }
       }, null);
     }
-    keywords.add("initial");
+    keywords.add(Name.css("initial"));
   }
 
   private static class RegexpCriterion implements Criterion<String> {
@@ -353,7 +360,7 @@ public final class CssSchema {
    * Parses a CssSignature according to the grammar described in
    * http://www.w3.org/TR/CSS21/about.html#property-defs
    */
-  private static CssPropertySignature parseSignature(String name, String sig) {
+  private static CssPropertySignature parseSignature(Name name, String sig) {
     try {
       return CssPropertySignature.Parser.parseSignature(sig);
     } catch (RuntimeException ex) {

@@ -14,16 +14,16 @@
 
 package com.google.caja.lexer;
 
-import com.google.caja.util.Strings;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import com.google.caja.util.Name;
 
 /**
  * From section 8.1.2.6 of http://www.whatwg.org/specs/web-apps/current-work/
  * <p>
  * The text in CDATA and RCDATA elements must not contain any
- * occurences of the string "</" (U+003C LESS-THAN SIGN, U+002F
+ * occurrences of the string "</" (U+003C LESS-THAN SIGN, U+002F
  * SOLIDUS) followed by characters that case-insensitively match the
  * tag name of the element followed by one of U+0009 CHARACTER
  * TABULATION, U+000A LINE FEED (LF), U+000B LINE TABULATION, U+000C
@@ -67,10 +67,10 @@ public enum HtmlTextEscapingMode {
   VOID,
   ;
 
-  private static final Map<String, HtmlTextEscapingMode> ESCAPING_MODES
-      = new HashMap<String, HtmlTextEscapingMode>();
+  private static final Map<Name, HtmlTextEscapingMode> ESCAPING_MODES
+      = new HashMap<Name, HtmlTextEscapingMode>();
   static {
-    ESCAPING_MODES.put("iframe", CDATA);
+    ESCAPING_MODES.put(Name.html("iframe"), CDATA);
     // HTML5 does not treat listing as CDATA, but HTML2 does
     // at http://www.w3.org/MarkUp/1995-archive/NonStandard.html
     // Listing is not supported by browsers.
@@ -78,42 +78,41 @@ public enum HtmlTextEscapingMode {
 
     // Technically, only if embeds, frames, and scripts, respectively, are
     // enabled.
-    ESCAPING_MODES.put("noembed", CDATA);
-    ESCAPING_MODES.put("noframes", CDATA);
-    ESCAPING_MODES.put("noscript", CDATA);
+    ESCAPING_MODES.put(Name.html("noembed"), CDATA);
+    ESCAPING_MODES.put(Name.html("noframes"), CDATA);
+    ESCAPING_MODES.put(Name.html("noscript"), CDATA);
 
     // Runs till end of file.
-    ESCAPING_MODES.put("plaintext", PLAIN_TEXT);
+    ESCAPING_MODES.put(Name.html("plaintext"), PLAIN_TEXT);
 
-    ESCAPING_MODES.put("script", CDATA);
-    ESCAPING_MODES.put("style", CDATA);
+    ESCAPING_MODES.put(Name.html("script"), CDATA);
+    ESCAPING_MODES.put(Name.html("style"), CDATA);
 
     // Textarea and Title are RCDATA, not CDATA, so decode entity references.
-    ESCAPING_MODES.put("textarea", RCDATA);
-    ESCAPING_MODES.put("title", RCDATA);
+    ESCAPING_MODES.put(Name.html("textarea"), RCDATA);
+    ESCAPING_MODES.put(Name.html("title"), RCDATA);
 
-    ESCAPING_MODES.put("xmp", CDATA);
+    ESCAPING_MODES.put(Name.html("xmp"), CDATA);
 
     // Nodes that can't contain content.
-    ESCAPING_MODES.put("base", VOID);
-    ESCAPING_MODES.put("link", VOID);
-    ESCAPING_MODES.put("meta", VOID);
-    ESCAPING_MODES.put("hr", VOID);
-    ESCAPING_MODES.put("br", VOID);
-    ESCAPING_MODES.put("img", VOID);
-    ESCAPING_MODES.put("embed", VOID);
-    ESCAPING_MODES.put("param", VOID);
-    ESCAPING_MODES.put("area", VOID);
-    ESCAPING_MODES.put("col", VOID);
-    ESCAPING_MODES.put("input", VOID);
+    ESCAPING_MODES.put(Name.html("base"), VOID);
+    ESCAPING_MODES.put(Name.html("link"), VOID);
+    ESCAPING_MODES.put(Name.html("meta"), VOID);
+    ESCAPING_MODES.put(Name.html("hr"), VOID);
+    ESCAPING_MODES.put(Name.html("br"), VOID);
+    ESCAPING_MODES.put(Name.html("img"), VOID);
+    ESCAPING_MODES.put(Name.html("embed"), VOID);
+    ESCAPING_MODES.put(Name.html("param"), VOID);
+    ESCAPING_MODES.put(Name.html("area"), VOID);
+    ESCAPING_MODES.put(Name.html("col"), VOID);
+    ESCAPING_MODES.put(Name.html("input"), VOID);
   }
 
   /**
    * The mode used for content following a start tag with the given name.
    */
-  public static HtmlTextEscapingMode getModeForTag(String canonTagName) {
-    assert Strings.isLowerCase(canonTagName);
-    HtmlTextEscapingMode mode = ESCAPING_MODES.get(canonTagName);
+  public static HtmlTextEscapingMode getModeForTag(Name tagName) {
+    HtmlTextEscapingMode mode = ESCAPING_MODES.get(tagName);
     return mode != null ? mode : PCDATA;
   }
 
@@ -122,8 +121,9 @@ public enum HtmlTextEscapingMode {
    * spans: {@code <!--&hellip;-->} that escape even things that might
    * be an end tag for the corresponding open tag.
    */
-  public static boolean allowsEscapingTextSpan(String canonTagName) {
+  public static boolean allowsEscapingTextSpan(Name tagName) {
     // <xmp> and <plaintext> do not admit escaping text spans.
+    String canonTagName = tagName.getCanonicalForm();
     return "style".equals(canonTagName) || "script".equals(canonTagName)
         || "title".equals(canonTagName) || "textarea".equals(canonTagName)
         || "noembed".equals(canonTagName) || "noscript".equals(canonTagName)
@@ -135,7 +135,7 @@ public enum HtmlTextEscapingMode {
    * special CDATA so that less-thans are not treated as starting tags, comments
    * or directives.
    */
-  public static boolean isTagFollowedByLiteralContent(String tagName) {
+  public static boolean isTagFollowedByLiteralContent(Name tagName) {
     HtmlTextEscapingMode mode = getModeForTag(tagName);
     return mode != PCDATA && mode != VOID;
   }
@@ -144,7 +144,7 @@ public enum HtmlTextEscapingMode {
    * True iff the tag cannot contain any content -- will an HTML parser consider
    * the element to have ended immediately after the start tag.
    */
-  public static boolean isVoidElement(String tagName) {
+  public static boolean isVoidElement(Name tagName) {
     return getModeForTag(tagName) == VOID;
   }
 }

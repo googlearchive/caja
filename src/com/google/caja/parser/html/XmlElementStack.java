@@ -19,6 +19,8 @@ import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.Token;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
+import com.google.caja.util.Name;
+
 import java.util.List;
 
 /**
@@ -29,14 +31,14 @@ import java.util.List;
 class XmlElementStack extends AbstractElementStack {
   XmlElementStack() {}
 
-  public String canonicalizeElementName(String elementName) {
+  public Name canonicalizeElementName(String elementName) {
     // This will need to change if we start accepting namespaced XML.
-    return elementName;
+    return Name.xml(elementName);
   }
 
-  public String canonicalizeAttributeName(String attributeName) {
+  public Name canonicalizeAttributeName(String attributeName) {
     // This will need to change if we start accepting namespaced XML.
-    return attributeName;
+    return Name.xml(attributeName);
   }
 
   /** @inheritDoc */
@@ -47,29 +49,33 @@ class XmlElementStack extends AbstractElementStack {
     assert end.type == HtmlTokenType.TAGEND;
 
     boolean open = !start.text.startsWith("</");
-    String tagName
-        = canonicalizeElementName(start.text.substring(open ? 1 : 2));
+    Name tagName = canonicalizeElementName(
+        start.text.substring(open ? 1 : 2));
 
     processTag(tagName, open, start, end, attrs);
   }
 
   private void processTag(
-      String tagName, boolean open, Token<HtmlTokenType> start,
+      Name tagName, boolean open, Token<HtmlTokenType> start,
       Token<HtmlTokenType> end, List<DomTree.Attrib> attrs)
       throws IllegalDocumentStateException {
     if (open) {
-      DomTree.Tag newElement = new DomTree.Tag(attrs, start, end);
-      push(newElement, tagName);
+      DomTree.Tag newElement = new DomTree.Tag(tagName, attrs, start, end);
+      push(newElement);
 
       // Does the tag end immediately?
       if ("/>".equals(end.text)) { popN(1, end.pos); }
     } else {
-      String bottomElementName = getBottomElement().getValue();
+      Name bottomElementName = null;
+      DomTree bottom = getBottomElement();
+      if (bottom instanceof DomTree.Tag) {
+        bottomElementName = ((DomTree.Tag) bottom).getTagName();
+      }
       if (!tagName.equals(bottomElementName)) {
         throw new IllegalDocumentStateException(new Message(
             DomParserMessageType.UNMATCHED_END,
             start.pos, MessagePart.Factory.valueOf(start.text),
-            MessagePart.Factory.valueOf(bottomElementName)));
+            MessagePart.Factory.valueOf(bottom.getValue())));
       }
       popN(1, end.pos);
     }
@@ -78,7 +84,7 @@ class XmlElementStack extends AbstractElementStack {
   /** @inheritDoc */
   public void processText(Token<HtmlTokenType> text) {
     DomTree parent = getBottomElement();
-    
+
     DomTree textNode;
     switch (text.type) {
       case CDATA:
@@ -134,8 +140,7 @@ class XmlElementStack extends AbstractElementStack {
       DomTree.Tag openEl = getElement(nOpen - 1);
       throw new IllegalDocumentStateException(new Message(
           DomParserMessageType.MISSING_END, endOfDocument,
-          MessagePart.Factory.valueOf(openEl.getTagName()),
-          openEl.getFilePosition()));
+          openEl.getTagName(), openEl.getFilePosition()));
     }
   }
 }

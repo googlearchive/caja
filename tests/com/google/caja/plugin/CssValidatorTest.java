@@ -52,7 +52,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "      SimpleSelector\n"
             + "        IdentLiteral : a\n"
             + "    Declaration\n"
-            + "      Property : COLOR\n"
+            + "      Property : color\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
                         + " ; cssPropertyPart=color::color\n"

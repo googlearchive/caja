@@ -18,6 +18,8 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.Token;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.Name;
+
 import java.util.List;
 
 /**
@@ -58,7 +60,7 @@ public interface OpenElementStack {
    * even if the input is not canonicalizable to a name in an HTML or XML
    * schema.
    */
-  String canonicalizeElementName(String elementName);
+  Name canonicalizeElementName(String elementName);
 
   /**
    * Given an element name, return a canonical attribute name.
@@ -69,7 +71,7 @@ public interface OpenElementStack {
    * even if the input is not canonicalizable to a name in an HTML or XML
    * schema.
    */
-  String canonicalizeAttributeName(String attributeName);
+  Name canonicalizeAttributeName(String attributeName);
 
   /**
    * Records the fact that a tag has been seen, updating internal state

@@ -44,6 +44,7 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Criterion;
+import com.google.caja.util.Name;
 import com.google.caja.util.Pipeline;
 import com.google.caja.util.Strings;
 import com.google.caja.util.SyntheticAttributeKey;
@@ -107,7 +108,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
             MutableParseTreeNode parentNode
                 = (MutableParseTreeNode) ancestors.getParentNode();
             DomTree.Tag tag = (DomTree.Tag) n;
-            String name = Strings.toLowerCase(tag.getTagName());
+            String name = tag.getTagName().getCanonicalForm();
             if ("script".equals(name)) {
               rewriteScriptTag(tag, parentNode, jobs);
             } else if ("style".equals(name)) {
@@ -130,15 +131,15 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     PluginEnvironment env = jobs.getPluginMeta().getPluginEnvironment();
 
     DomTree.Attrib type = lookupAttribute(
-        scriptTag, "type", DupePolicy.YIELD_FIRST);
+        scriptTag, Name.html("type"), DupePolicy.YIELD_FIRST);
     DomTree.Attrib src = lookupAttribute(
-        scriptTag, "src", DupePolicy.YIELD_FIRST);
+        scriptTag, Name.html("src"), DupePolicy.YIELD_FIRST);
     if (type != null && !isJavaScriptContentType(type.getAttribValue())) {
       jobs.getMessageQueue().addMessage(
           PluginMessageType.UNRECOGNIZED_CONTENT_TYPE,
           type.getFilePosition(),
           MessagePart.Factory.valueOf(type.getAttribValue()),
-          MessagePart.Factory.valueOf(scriptTag.getTagName()));
+          scriptTag.getTagName());
       parent.removeChild(scriptTag);
       return;
     }
@@ -209,7 +210,8 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
           "/>", HtmlTokenType.TAGEND,
           FilePosition.endOf(scriptTag.getFilePosition()));
       placeholder = new DomTree.Tag(
-          Collections.<DomTree>emptyList(), startToken, endToken);
+          Name.html("span"), Collections.<DomTree>emptyList(),
+          startToken, endToken);
       placeholder.getAttributes().set(EXTRACTED_SCRIPT_BODY, parsedScriptBody);
     }
 
@@ -234,8 +236,8 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
 
     parent.removeChild(styleTag);
 
-    DomTree.Attrib rel = lookupAttribute(styleTag, "rel",
-        DupePolicy.YIELD_NULL);
+    DomTree.Attrib rel = lookupAttribute(
+        styleTag, Name.html("rel"), DupePolicy.YIELD_NULL);
     if (rel == null || !Strings.equalsIgnoreCase(
             rel.getAttribValue().trim(), "stylesheet")) {
       // If it's not a stylesheet then ignore it.
@@ -244,9 +246,9 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     }
 
     DomTree.Attrib href = lookupAttribute(
-        styleTag, "href", DupePolicy.YIELD_NULL);
+        styleTag, Name.html("href"), DupePolicy.YIELD_NULL);
     DomTree.Attrib media = lookupAttribute(
-        styleTag, "media", DupePolicy.YIELD_FIRST);
+        styleTag, Name.html("media"), DupePolicy.YIELD_FIRST);
 
     if (href == null) {
       jobs.getMessageQueue().addMessage(
@@ -285,14 +287,14 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       DomTree.Tag styleTag, CharProducer cssStream, DomTree.Attrib media,
       Jobs jobs) {
     DomTree.Attrib type = lookupAttribute(
-        styleTag, "type", DupePolicy.YIELD_FIRST);
+        styleTag, Name.html("type"), DupePolicy.YIELD_FIRST);
 
     if (type != null && !isCssContentType(type.getAttribValue())) {
       jobs.getMessageQueue().addMessage(
           PluginMessageType.UNRECOGNIZED_CONTENT_TYPE,
           type.getFilePosition(),
           MessagePart.Factory.valueOf(type.getAttribValue()),
-          MessagePart.Factory.valueOf(styleTag.getTagName()));
+          styleTag.getTagName());
       return;
     }
 
@@ -305,11 +307,11 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       return;
     }
 
-    Set<String> mediaTypes = Collections.<String>emptySet();
+    Set<Name> mediaTypes = Collections.<Name>emptySet();
     if (media != null) {
       String[] mediaTypeArr = media.getAttribValue().trim().split("\\s*,\\s*");
       if (mediaTypeArr.length != 1 || !"".equals(mediaTypeArr[0])) {
-        mediaTypes = new LinkedHashSet<String>();
+        mediaTypes = new LinkedHashSet<Name>();
         for (String mediaType : mediaTypeArr) {
           if (!CssSchema.isMediaType(mediaType)) {
             jobs.getMessageQueue().addMessage(
@@ -318,11 +320,11 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
                 MessagePart.Factory.valueOf(mediaType));
             continue;
           }
-          mediaTypes.add(mediaType);
+          mediaTypes.add(Name.css(mediaType));
         }
       }
     }
-    if (!(mediaTypes.isEmpty() || mediaTypes.contains("all"))) {
+    if (!(mediaTypes.isEmpty() || mediaTypes.contains(Name.css("all")))) {
       final List<CssTree.RuleSet> rules = new ArrayList<CssTree.RuleSet>();
       stylesheet.acceptPreOrder(
           new Visitor() {
@@ -341,7 +343,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
           }, null);
       if (!rules.isEmpty()) {
         List<CssTree> mediaChildren = new ArrayList<CssTree>();
-        for (String mediaType : mediaTypes) {
+        for (Name mediaType : mediaTypes) {
           mediaChildren.add(
               new CssTree.Medium(media.getFilePosition(), mediaType));
         }
@@ -369,9 +371,9 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
    */
   private void moveOnLoadHandlerToEndOfBody(DomTree.Tag body) {
     DomTree.Attrib onload = lookupAttribute(
-        body, "onload", DupePolicy.YIELD_NULL);
+        body, Name.html("onload"), DupePolicy.YIELD_NULL);
     DomTree.Attrib language = lookupAttribute(
-        body, "language", DupePolicy.YIELD_FIRST);
+        body, Name.html("language"), DupePolicy.YIELD_FIRST);
     if (language != null && !isJavaScriptLanguage(language.getAttribValue())) {
       // If the onload handler is vbscript, let the validator complain.
       return;
@@ -385,6 +387,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     DomTree.Text sourceText = new DomTree.Text(
         Token.instance(source, HtmlTokenType.UNESCAPED, pos));
     DomTree.Tag scriptElement = new DomTree.Tag(
+        Name.html("script"),
         Collections.singletonList(sourceText),
         Token.instance("<script", HtmlTokenType.TAGBEGIN,
                        FilePosition.startOf(pos)), pos);
@@ -475,7 +478,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
    * @return null if there is no match.
    */
   private static DomTree.Attrib lookupAttribute(
-      DomTree.Tag el, String attribName, DupePolicy onDupe) {
+      DomTree.Tag el, Name attribName, DupePolicy onDupe) {
     DomTree.Attrib match = null;
     for (DomTree child : el.children()) {
       if (!(child instanceof DomTree.Attrib)) { break; }

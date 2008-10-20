@@ -30,6 +30,7 @@ import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.html.MarkupRenderContext;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.Name;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -75,20 +76,22 @@ public class GadgetParser {
 
   private void readModulePrefs(DomTree doc, GadgetSpec spec)
       throws GadgetRewriteException {
-    List<DomTree.Tag> list = getElementsByTagName(doc, "ModulePrefs");
+    List<DomTree.Tag> list = getElementsByTagName(doc, Name.xml("ModulePrefs"));
     check(list.size() == 1, "Must have exactly one <ModulePrefs>");
     DomTree.Tag modulePrefs = list.get(0);
     for (DomTree.Attrib attr : modulePrefs.getAttributeNodes()) {
-      spec.getModulePrefs().put(attr.getAttribName(), attr.getAttribValue());
+      spec.getModulePrefs().put(
+          attr.getAttribName().getCanonicalForm(), attr.getAttribValue());
     }
   }
 
   private void readRequiredFeatures(DomTree doc, GadgetSpec spec)
       throws GadgetRewriteException {
-    for (DomTree.Tag require : getElementsByTagName(doc, "Require")) {
+    for (DomTree.Tag require : getElementsByTagName(doc, Name.xml("Require"))) {
       List<DomTree.Attrib> attribs = require.getAttributeNodes();
       check(attribs.size() == 1
-            && "feature".equals(attribs.get(0).getAttribName()),
+            && "feature".equals(
+                attribs.get(0).getAttribName().getCanonicalForm()),
             "<Require> can only have a \"feature\" attribute");
       spec.getRequiredFeatures().add(attribs.get(0).getAttribValue());
     }
@@ -96,12 +99,13 @@ public class GadgetParser {
 
   private void readContent(DomTree doc, GadgetSpec spec, String view)
       throws GadgetRewriteException {
-    for (final DomTree.Tag contentNode : getElementsByTagName(doc, "Content")) {
-      DomTree.Attrib viewAttr = contentNode.getAttribute("view");
+    for (final DomTree.Tag contentNode
+         : getElementsByTagName(doc, Name.xml("Content"))) {
+      DomTree.Attrib viewAttr = contentNode.getAttribute(Name.xml("view"));
       if (viewAttr == null
           || Arrays.asList(viewAttr.getAttribValue().trim().split("\\s*,\\s*"))
              .contains(view)) {
-        DomTree.Attrib typeAttr = contentNode.getAttribute("type");
+        DomTree.Attrib typeAttr = contentNode.getAttribute(Name.xml("type"));
         check(typeAttr != null, "No 'type' attribute for view '" + view + "'");
         String value = typeAttr.getAttribValue();
 
@@ -159,39 +163,45 @@ public class GadgetParser {
   private DomTree toDocument(GadgetSpec gadgetSpec) {
     List<DomTree.Attrib> prefs = new ArrayList<DomTree.Attrib>();
     for (Map.Entry<String, String> e : gadgetSpec.getModulePrefs().entrySet()) {
-      prefs.add(attrib(e.getKey(), e.getValue()));
+      prefs.add(attrib(Name.xml(e.getKey()), e.getValue()));
     }
 
     List<DomTree.Tag> features = new ArrayList<DomTree.Tag>();
     for (String feature : gadgetSpec.getRequiredFeatures()) {
-      features.add(el("Require", attrib("feature", feature)));
+      features.add(
+          el(Name.xml("Require"), attrib(Name.xml("feature"), feature)));
     }
 
-    DomTree.Tag modulePrefs = el("ModulePrefs");
+    DomTree.Tag modulePrefs = el(Name.xml("ModulePrefs"));
     modulePrefs.createMutation()
         .appendChildren(prefs)
         .appendChildren(features)
         .execute();
 
     DomTree.Tag content = el(
-        "Content", attrib("type", gadgetSpec.getContentType()),
+        Name.xml("Content"),
+        attrib(Name.xml("type"), gadgetSpec.getContentType()),
         cdata(drain(gadgetSpec.getContent())));
 
-    return el("Module", modulePrefs, content);
+    return el(Name.xml("Module"), modulePrefs, content);
   }
 
-  private static DomTree.Tag el(String name, DomTree... children) {
-    return new DomTree.Tag(Arrays.asList(children), Token.instance(
-        "<" + name, HtmlTokenType.TAGBEGIN, FilePosition.UNKNOWN),
-        FilePosition.UNKNOWN);
+  private static DomTree.Tag el(Name name, DomTree... children) {
+    return new DomTree.Tag(
+        name, Arrays.asList(children), Token.instance(
+            "<" + name, HtmlTokenType.TAGBEGIN, FilePosition.UNKNOWN),
+            FilePosition.UNKNOWN);
   }
 
-  private static DomTree.Attrib attrib(String name, String value) {
+  private static DomTree.Attrib attrib(Name name, String value) {
     return new DomTree.Attrib(
+        name,
         new DomTree.Value(
             Token.instance(value, HtmlTokenType.ATTRVALUE,
                            FilePosition.UNKNOWN)),
-        Token.instance(name, HtmlTokenType.ATTRNAME, FilePosition.UNKNOWN),
+        Token.instance(
+            name.getCanonicalForm(), HtmlTokenType.ATTRNAME,
+            FilePosition.UNKNOWN),
         FilePosition.UNKNOWN);
   }
 
@@ -217,7 +227,7 @@ public class GadgetParser {
   }
 
   private static List<DomTree.Tag> getElementsByTagName(
-      DomTree t, final String name) {
+      DomTree t, final Name name) {
     final List<DomTree.Tag> els = new ArrayList<DomTree.Tag>();
     t.acceptPreOrder(
         new Visitor() {

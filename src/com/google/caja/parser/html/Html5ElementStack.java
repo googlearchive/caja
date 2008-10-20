@@ -22,6 +22,7 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.util.Name;
 import com.google.caja.util.Strings;
 
 import java.util.List;
@@ -104,13 +105,13 @@ public class Html5ElementStack implements OpenElementStack {
   }
 
   /** @inheritDoc */
-  public String canonicalizeElementName(String elementName) {
-    return canonicalElementName(elementName);
+  public Name canonicalizeElementName(String elementName) {
+    return Name.html(elementName);
   }
 
   /** @inheritDoc */
-  public String canonicalizeAttributeName(String attributeName) {
-    return canonicalAttributeName(attributeName);
+  public Name canonicalizeAttributeName(String attributeName) {
+    return Name.html(attributeName);
   }
 
   public static String canonicalElementName(String elementName) {
@@ -153,8 +154,8 @@ public class Html5ElementStack implements OpenElementStack {
         break;
       } else if (child instanceof DomTree.Tag) {
         DomTree.Tag el = (DomTree.Tag) child;
-        if (!("head".equals(el.getTagName())
-              || "body".equals(el.getTagName()))) {
+        String tagName = el.getTagName().getCanonicalForm();
+        if (!("head".equals(tagName) || "body".equals(tagName))) {
           tagsBesidesHeadAndBody = true;
           break;
         }

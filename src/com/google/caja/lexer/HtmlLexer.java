@@ -16,6 +16,7 @@ package com.google.caja.lexer;
 
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.util.Name;
 import com.google.caja.util.Strings;
 
 import java.io.IOException;
@@ -272,7 +273,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
    * Preformatted tags include &lt;script&gt;, &lt;xmp&gt;, etc. that may
    * contain unescaped html input.
    */
-  private String escapeExemptTagName = null;
+  private Name escapeExemptTagName = null;
 
   private HtmlTextEscapingMode textEscapingMode;
 
@@ -318,7 +319,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
       switch (token.type) {
         case TAGBEGIN:
           {
-            String canonTagName = canonTagName(token.text.substring(1));
+            Name canonTagName = name(token.text.substring(1));
             if (HtmlTextEscapingMode
                 .isTagFollowedByLiteralContent(canonTagName)) {
               this.escapeExemptTagName = canonTagName;
@@ -490,8 +491,8 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
               case '!':  // Comment or declaration
                 if (!this.inEscapeExemptBlock) {
                   state = State.BANG;
-                } else if (HtmlTextEscapingMode
-                           .allowsEscapingTextSpan(escapeExemptTagName)) {
+                } else if (HtmlTextEscapingMode.allowsEscapingTextSpan(
+                               escapeExemptTagName)) {
                   // Directives, and cdata suppressed in escape
                   // exempt mode as they could obscure the close of the
                   // escape exempty block, but comments are similar to escaping
@@ -538,7 +539,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                       p.pushback();
                       if (this.inEscapeExemptBlock && '/' == text.charAt(1)
                           && textEscapingMode != HtmlTextEscapingMode.PLAIN_TEXT
-                          && canonTagName(text.substring(2))
+                          && name(text.substring(2))
                               .equals(escapeExemptTagName)) {
                         this.inEscapeExemptBlock = false;
                         this.escapeExemptTagName = null;
@@ -750,8 +751,8 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
     }
   }
 
-  protected String canonTagName(String tagName) {
-    return asXml ? tagName : Strings.toLowerCase(tagName);
+  protected Name name(String tagName) {
+    return asXml ? Name.xml(tagName) : Name.html(tagName);
   }
 
   static <T extends TokenType>

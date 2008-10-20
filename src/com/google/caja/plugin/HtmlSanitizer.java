@@ -27,6 +27,8 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Criterion;
+import com.google.caja.util.Name;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -65,7 +67,7 @@ public final class HtmlSanitizer {
     switch (t.getType()) {
     case TAGBEGIN:
       {
-        String tagName = t.getValue();
+        Name tagName = Name.html(t.getValue());
         if (!schema.isElementAllowed(tagName)) {
           PluginMessageType msgType = schema.lookupElement(tagName) != null
               ? PluginMessageType.UNSAFE_TAG
@@ -108,30 +110,26 @@ public final class HtmlSanitizer {
       break;
     case ATTRNAME:
       DomTree.Tag tag = null;
-      String tagName = "*";
+      Name tagName = Name.html("*");
       if (htmlRoot.parent != null
           && htmlRoot.parent.node instanceof DomTree.Tag) {
         tag = htmlRoot.parent.cast(DomTree.Tag.class).node;
-        tagName = tag.getValue();
+        tagName = Name.html(tag.getValue());
       }
       DomTree.Attrib attrib = (DomTree.Attrib) t;
-      String attrName = attrib.getAttribName();
+      Name attrName = attrib.getAttribName();
       HTML.Attribute a = schema.lookupAttribute(tagName, attrName);
       if (null == a ) {
-        boolean savedValid = valid;
-        valid = false;
         mq.getMessages().add(new Message(
             PluginMessageType.UNKNOWN_ATTRIBUTE, MessageLevel.WARNING,
-            t.getFilePosition(), MessagePart.Factory.valueOf(attrName),
-            MessagePart.Factory.valueOf(tagName)));
-        valid = removeUnknownAttribute(tag, attrName) & savedValid;
+            t.getFilePosition(), attrName, tagName));
+        valid &= removeUnknownAttribute(tag, attrName);
         break;
       }
       if (!schema.isAttributeAllowed(tagName, attrName)) {
         mq.addMessage(
             PluginMessageType.UNSAFE_ATTRIBUTE,
-            t.getFilePosition(), MessagePart.Factory.valueOf(attrName),
-            MessagePart.Factory.valueOf(tagName));
+            t.getFilePosition(), attrName, tagName);
         valid = false;
       }
       Criterion<? super String> criteria = schema.getAttributeCriteria(
@@ -140,8 +138,7 @@ public final class HtmlSanitizer {
         mq.addMessage(
             PluginMessageType.DISALLOWED_ATTRIBUTE_VALUE,
             attrib.getAttribValueNode().getFilePosition(),
-            MessagePart.Factory.valueOf(attrName),
-            MessagePart.Factory.valueOf(attrib.getAttribValue()));
+            attrName, MessagePart.Factory.valueOf(attrib.getAttribValue()));
         valid = false;
       }
       break;
@@ -160,9 +157,10 @@ public final class HtmlSanitizer {
   /**
    * Elements that can be safely removed from the DOM without changing behavior.
    */
-  private static boolean isElementIgnorable(String tagName) {
-    return "noscript".equals(tagName) || "noembed".equals(tagName)
-        || "noframes".equals(tagName) || "title".equals(tagName);
+  private static boolean isElementIgnorable(Name tagName) {
+    String lcName = tagName.getCanonicalForm();
+    return "noscript".equals(lcName) || "noembed".equals(lcName)
+        || "noframes".equals(lcName) || "title".equals(lcName);
   }
 
   /**
@@ -172,9 +170,10 @@ public final class HtmlSanitizer {
    * This list must be kept in sync with the foldable list in
    * <code>html4-defs.js</code>.
    */
-  private static boolean isElementFoldable(String tagName) {
-    return "head".equals(tagName) || "body".equals(tagName)
-        || "html".equals(tagName);
+  private static boolean isElementFoldable(Name tagName) {
+    String lcName = tagName.getCanonicalForm();
+    return "head".equals(lcName) || "body".equals(lcName)
+        || "html".equals(lcName);
   }
 
   /**
@@ -211,8 +210,8 @@ public final class HtmlSanitizer {
         case ATTRNAME:  // Can't fold attributes cross element.
           mq.addMessage(
               PluginMessageType.CANNOT_FOLD_ATTRIBUTE, child.getFilePosition(),
-              MessagePart.Factory.valueOf(child.getValue()),
-              MessagePart.Factory.valueOf(el.node.getValue()));
+              ((DomTree.Attrib) child).getAttribName(),
+              el.node.getTagName());
           valid = false;
           break;
         case TAGBEGIN: case TEXT:
@@ -251,15 +250,16 @@ public final class HtmlSanitizer {
     return valid;
   }
 
-  private boolean removeUnknownAttribute(DomTree.Tag el, String unknownAttr) {
-    if ( null == el ) {
+  private boolean removeUnknownAttribute(
+      DomTree.Tag el, Name unknownAttr) {
+    if (null == el) {
       return false;
     }
     MutableParseTreeNode.Mutation mut = ((MutableParseTreeNode)el).createMutation();
     for (DomTree child : el.children()) {
       if (!(child instanceof DomTree.Attrib)) { break; }
       DomTree.Attrib attr = (DomTree.Attrib) child;
-      String name = attr.getAttribName();
+      Name name = attr.getAttribName();
       if (unknownAttr.equals(name)) {
         mut.removeChild(attr);
       }
@@ -269,19 +269,19 @@ public final class HtmlSanitizer {
   }
 
   private boolean removeDuplicateAttributes(DomTree.Tag el) {
-    Map<String, DomTree.Attrib> byName = new HashMap<String, DomTree.Attrib>();
+    Map<Name, DomTree.Attrib> byName = new HashMap<Name, DomTree.Attrib>();
     boolean valid = true;
     for (DomTree child : el.children()) {
       if (!(child instanceof DomTree.Attrib)) { break; }
       DomTree.Attrib attr = (DomTree.Attrib) child;
-      String name = attr.getAttribName();
+      Name name = attr.getAttribName();
       DomTree.Attrib orig = byName.get(name);
       if (orig == null) {
         byName.put(name, attr);
       } else {
         mq.addMessage(
             PluginMessageType.DUPLICATE_ATTRIBUTE, attr.getFilePosition(),
-            MessagePart.Factory.valueOf(name), orig.getFilePosition());
+            name, orig.getFilePosition());
         // Empirically, browsers use the first occurrence of an attribute.
         ((MutableParseTreeNode) el).removeChild(attr);
       }
