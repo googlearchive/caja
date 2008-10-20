@@ -69,6 +69,8 @@ public class CssSchemaTest extends TestCase {
 
   public void testIsFunctionAllowed() {
     assertTrue(cssSchema.isFunctionAllowed(Name.css("rgb")));
+    assertTrue(cssSchema.isFunctionAllowed(Name.css("rgba")));
+    assertFalse(cssSchema.isFunctionAllowed(Name.css("rgbb")));
     assertFalse(cssSchema.isFunctionAllowed(Name.css("expression")));
   }
 

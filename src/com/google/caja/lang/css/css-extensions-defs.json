@@ -43,7 +43,8 @@
       "mediaGroups": ["visual"],
       "dom2property": "filter",
       "source":
-          "http://msdn2.microsoft.com/en-us/library/ms532853%28VS.85%29.aspx" },
+          "http://msdn2.microsoft.com/en-us/library/ms532853%28VS.85%29.aspx"
+    },
     { "key": "<ie-filter-opacity>",
       "signature": "alpha(opacity=[<percentage:0,100> | <number:0,100>])",
       "default": "100",
@@ -59,7 +60,9 @@
       "dom2property": "opacity",
       "source": "http://www.w3.org/TR/css3-color/#transparency" },
     { "key": "<alphavalue>",
-      "signature": "<number:0,1>" },
+      "signature": "<number:0,1>",
+      "source": "http://www.w3.org/TR/css3-color/#alphavaluedt"
+    },
 
     { "key": "text-wrap",
       "signature": "normal | unrestricted | none | suppress",

@@ -1,0 +1,5 @@
+{
+  "inherits": [
+      "resource:///com/google/caja/lang/css/css-extensions-fns-defs.json",
+      "resource:///com/google/caja/lang/css/css-extensions-fns-whitelist.json"]
+}

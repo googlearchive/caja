@@ -63,9 +63,9 @@ public final class CssSchema {
     if (defaultSchema == null) {
       SimpleMessageQueue cacheMq = new SimpleMessageQueue();
       FilePosition fnPos = FilePosition.startOfFile(new InputSource(URI.create(
-          "resource:///com/google/caja/lang/css/css21-fns.json"))),
+          "resource:///com/google/caja/lang/css/css-extensions-fns.json"))),
           propPos = FilePosition.startOfFile(new InputSource(URI.create(
-          "resource:///com/google/caja/lang/css/css21.json")));
+          "resource:///com/google/caja/lang/css/css-extensions.json")));
       WhiteList propDefs, fnDefs;
       try {
         propDefs = ConfigUtil.loadWhiteListFromJson(
