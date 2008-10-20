@@ -128,6 +128,7 @@
          title="Enable valija mode."
          >Valija</label>
         &nbsp;
+        <button type="button" onclick="runPlain(this.form);">Run plain</button>
         <button type="button" onclick="cajole(this.form)">Cajole</button>
         <br>
         <textarea cols="81" rows="20" name="src"
@@ -136,6 +137,8 @@
 &lt;/script&gt;
 </textarea>
         <br>
+        Uncajoled result (press "Run plain" to refresh)<br>
+        <iframe id="ifr"></iframe>
       </form>
     <td>
       <pre id="messages" class="prettyprint"></pre>

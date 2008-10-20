@@ -245,6 +245,23 @@ var cajole = (function () {
 })();
 
 /**
+ * Runs the given code uncajoled in an iframe.
+ * @param {HTMLFormElement} form the form object containing the code to run.
+ */
+function runPlain(form) {
+  // Get the part of the form name from the dot onward
+  var uiSuffix = form.id.replace(/^[^\.]+/, '');
+  // Strip off whitespace before & after the given text
+  var src = form.elements.src.value.replace(/^\s+|\s+$/g, '');
+  var d=document.getElementById("ifr"+uiSuffix).contentDocument;
+  if (!d) { d = document.frames["ifr"+uiSuffix].document; }
+  if (d) {
+    d.write(src);
+    d.close();
+  }
+}
+
+/**
  * Concatenates all text node leaves of the given DOM subtree to produce the
  * equivalent of IE's innerText attribute.
  * @param {Node} node
