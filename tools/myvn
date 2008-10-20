@@ -82,10 +82,12 @@
 
 default_gvn_path=/opt/googlesvn/bin/gvn
 default_svn_path=/opt/googlesvn/bin/svn
+submit_bug_path=$(dirname $0)/submit-caja-bug.py
 
 function myvn() {
   local verb="$1"
-  local current_cl="$(perl -e 'print $1 if $ENV{PWD}=~m|/svn-changes/([^/]+)|')"
+  # If we're in a directory pointed at via symlinks, first switch to the physical directory
+  local current_cl="$(cd -P . ; perl -e 'print $1 if $ENV{PWD}=~m|/svn-changes/([^/]+)|')"
   local svn=${SVN_BIN:-default_svn_path}
   local gvn=${GVN_BIN:-default_gvn_path}
   local username="$(
@@ -143,7 +145,7 @@ function myvn() {
       "$svn" checkout https://google-caja.googlecode.com/svn/trunk/ google-caja
       ;;
     bug )
-      myvn describe | ~/bin/submit-caja-bug.py -s "$(myvn diffstats)" "$@"
+      myvn describe | "$submit_bug_path" -s "$(myvn diffstats)" "$@"
       ;;
     snapshot)
       echo "myvn snapshot" is deprecated to avoid overlooking snapshotting changes
