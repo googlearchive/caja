@@ -919,7 +919,7 @@ attachDocumentStub = (function () {
     TameInputElement.prototype.setValue = function (newValue) {
       if (!this.editable___) { throw new Error(); }
       this.node___.value = (
-          newValue === null || newValue === void 0 ? '' : '' + value);
+          newValue === null || newValue === void 0 ? '' : '' + newValue);
       return newValue;
     };
     TameInputElement.prototype.focus = function () {
