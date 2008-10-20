@@ -138,7 +138,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   }
 
   public void testInitializeMap() throws Exception {
-    assertConsistent("var zerubabel={bobble:2, apple:1}; zerubabel.apple;");
+    assertConsistent("var zerubabel = {bobble:2, apple:1}; zerubabel.apple;");
   }
 
   public void testValueOf() throws Exception {
@@ -231,17 +231,19 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
   public void testReflectiveMethodInvocation() throws Exception {
     assertConsistent(
-        "(function (first, second){return 'a'+first+'b'+second;}).call([],8,9);");
+        "(function (first, second) { return 'a' + first + 'b' + second; })"
+        + ".call([], 8, 9);");
     assertConsistent(
-        "var a=[]; [].push.call(a, 5, 6); a.join(',');");
+        "var a = []; [].push.call(a, 5, 6); a;");
     assertConsistent(
-        "(function (a,b){return 'a'+a+'b'+b;}).apply([],[8,9]);");
+        "(function (a, b) { return 'a' + a + 'b' + b; }).apply([], [8, 9]);");
     assertConsistent(
-        "var a=[]; [].push.apply(a, [5, 6]); a.join(',');");
+        "var a = []; [].push.apply(a, [5, 6]); a;");
     assertConsistent(
-        "[].sort.apply([6,5]).join('');");
+        "[].sort.apply([6, 5]);");
     assertConsistent(
-        "(function (first, second){return 'a'+first+'b'+second;}).bind([],8)(9);");
+        "(function (first, second) { return 'a' + first + 'b' + second; })"
+        + ".bind([], 8)(9);");
   }
 
   /**
@@ -515,7 +517,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "    ___.readPub(g, 3);" +
         "  }" +
         "}");
-    assertConsistent(
+    rewriteAndExecute(
         "var handled = false;" +
         "try {" +
         "  throw null;" +
@@ -524,7 +526,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "  handled = true;" +
         "}" +
         "assertTrue(handled);");  // Control reached and left the catch block.
-    assertConsistent(
+    rewriteAndExecute(
         "var handled = false;" +
         "try {" +
         "  throw undefined;" +
@@ -533,7 +535,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "  handled = true;" +
         "}" +
         "assertTrue(handled);");
-    assertConsistent(
+    rewriteAndExecute(
         "var handled = false;" +
         "try {" +
         "  throw true;" +
@@ -542,7 +544,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "  handled = true;" +
         "}" +
         "assertTrue(handled);");
-    assertConsistent(
+    rewriteAndExecute(
         "var handled = false;" +
         "try {" +
         "  throw 37639105;" +
@@ -551,7 +553,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "  handled = true;" +
         "}" +
         "assertTrue(handled);");
-    assertConsistent(
+    rewriteAndExecute(
         "var handled = false;" +
         "try {" +
         "  throw 'panic';" +
@@ -560,7 +562,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "  handled = true;" +
         "}" +
         "assertTrue(handled);");
-    assertConsistent(
+    rewriteAndExecute(
         "var handled = false;" +
         "try {" +
         "  throw new Error('hello');" +
@@ -1015,7 +1017,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     assertConsistent("var x = 3; x *= 2;");
     assertConsistent("var x = 1; x += 7;");
     assertConsistent("var x = 1; x /= '2';");
-    assertConsistent("var o = { x: 'a' }; o.x += 'b';");
+    assertConsistent("var o = { x: 'a' }; o.x += 'b'; o;");
 
     EnumSet<Operator> ops = EnumSet.of(
         Operator.ASSIGN_MUL,
@@ -1071,12 +1073,12 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "var x = 2;" +
         "var arr = [--x, x, x--, x, ++x, x, x++, x];" +
         "assertEquals('1,1,1,0,1,1,1,2', arr.join(','));" +
-        "arr.join(',');");
+        "arr;");
     assertConsistent(
         "var x = '2';" +
         "var arr = [--x, x, x--, x, ++x, x, x++, x];" +
         "assertEquals('1,1,1,0,1,1,1,2', arr.join(','));" +
-        "arr.join(',');");
+        "arr;");
   }
 
   public void testSetIncrDecrOnLocals() throws Exception {
@@ -1091,7 +1093,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "  var x = 2;" +
         "  var arr = [--x, x, x--, x, ++x, x, x++, x];" +
         "  assertEquals('1,1,1,0,1,1,1,2', arr.join(','));" +
-        "  return arr.join(',');" +
+        "  return arr;" +
         "})();");
   }
 
@@ -1114,7 +1116,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "  var o = { x: 2 };" +
         "  var arr = [--o.x, o.x, o.x--, o.x, ++o.x, o.x, o.x++, o.x];" +
         "  assertEquals('1,1,1,0,1,1,1,2', arr.join(','));" +
-        "  return arr.join(',');" +
+        "  return arr;" +
         "})();");
   }
 
@@ -1127,7 +1129,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "  assertEquals(2, j);" +
         "  assertEquals(1, arrs[0]);" +
         "  assertEquals(4, arrs[1]);" +
-        "  return arrs.join(',');" +
+        "  return arrs;" +
         "})();");
     assertConsistent(
         "(function () {" +
@@ -1142,7 +1144,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "                 }" +
         "               };" +
         "             })();" +
-        "  foo()[foo()] -= foo();" +
+        "  return foo()[foo()] -= foo();" +
         "})();"
         );
   }
@@ -1188,7 +1190,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "var o = { a: 1 };" +
         "delete o[alert];" +
         "assertEquals(undefined, o.a);" +
-        "o.a;");
+        "o;");
   }
 
   public void testDeleteFails() throws Exception {
@@ -1467,7 +1469,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     assertConsistent("[ (({}) instanceof Object)," +
                      "  ((new Date) instanceof Date)," +
                      "  (({}) instanceof Date)" +
-                     "].toString();");
+                     "];");
     assertConsistent("function foo() {}; (new foo) instanceof foo;");
     assertConsistent("function foo() {}; !(({}) instanceof foo);");
   }
@@ -1598,19 +1600,19 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "var arr = [1, 2, 3], k = -1;" +
         "(function () {" +
         "  var a = arr[++k], b = arr[++k], c = arr[++k];" +
-        "  return [a, b, c].join(',');" +
+        "  return [a, b, c];" +
         "})();");
     // Check exceptions on read of uninitialized variables.
     assertConsistent(
         "(function () {" +
         "  var a = [];" +
         "  for (var i = 0, j = 10; i < j; ++i) { a.push(i); }" +
-        "  return a.join(',');" +
+        "  return a;" +
         "})();");
     assertConsistent(
         "var a = [];" +
         "for (var i = 0, j = 10; i < j; ++i) { a.push(i); }" +
-        "a.join(',');");
+        "a;");
   }
 
   public void testRecurseParseTreeNodeContainer() throws Exception {
@@ -1791,9 +1793,11 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   }
 
   public void testAssertConsistent() throws Exception {
+    // Since we test structurally, this works.
+    assertConsistent("({})");
     try {
-      // A value that cannot be consistent across invocations.
-      assertConsistent("({})");
+      // But this won't.
+      assertConsistent("typeof (new RegExp('foo'))");
     } catch (AssertionFailedError e) {
       // Pass
       return;

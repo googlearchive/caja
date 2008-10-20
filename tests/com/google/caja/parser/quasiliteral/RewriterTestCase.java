@@ -28,6 +28,7 @@ import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.RhinoAsserts;
 import com.google.caja.util.TestUtil;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.Message;
@@ -216,12 +217,20 @@ public abstract class RewriterTestCase extends CajaTestCase {
       throws IOException, ParseException {
     Object plainResult = executePlain(caja);
     Object rewrittenResult = rewriteAndExecute(caja);
+
+    String plainRepr = RhinoAsserts.structuralForm(plainResult);
+    String rewrittenRepr = RhinoAsserts.structuralForm(rewrittenResult);
+    if ("undefined".equals(plainRepr)) {
+      // This usually indicates an error, such as failing to return a value.
+      fail("Consistency check returned undefined");
+    }
+
     System.err.println(
         "Results: "
-        + "plain=<" + plainResult + "> "
-        + "rewritten=<" + rewrittenResult + "> "
+        + "plain=<" + plainRepr + "> "
+        + "rewritten=<" + rewrittenRepr + "> "
         + "for " + getName());
-    assertEquals(message, plainResult, rewrittenResult);
+    assertEquals(message, plainRepr, rewrittenRepr);
   }
 
   protected final <T extends ParseTreeNode> T syntheticTree(T node) {

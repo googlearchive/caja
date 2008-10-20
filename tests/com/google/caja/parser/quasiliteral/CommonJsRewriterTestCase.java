@@ -226,34 +226,35 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
         "var x = [33];" +
         "x.foo = [].push;" +
         "x.foo.call(x, 44);" +
-        "x.toString();");
+        "x;");
     assertConsistent(
         "var x = [33];" +
         "x.foo = [].push;" +
         "x.foo.apply(x, [6,7,8]);" +
-        "x.toString();");
+        "x;");
     assertConsistent(
         "var x = [33];" +
         "x.foo = [].push;" +
         "x.foo.bind(x)(6,7,8);" +
-        "x.toString();");
+        "x;");
     assertConsistent(
         "var x = [33];" +
         "x.foo = [].push;" +
         "x.foo.bind(x,6)(7,8);" +
-        "x.toString();");
+        "x;");
     assertConsistent(
         "[].push.length;");
     assertConsistent(
         "var x = {blue:'green'};" +
         "x.foo = [].push;" +
         "x.foo.call(x, 44);" +
-        "x.toString();");
+        "delete x.foo;" +
+        "x;");
     assertConsistent(
         "var x = {blue:'green'};" +
         "x.foo = [].push;" +
         "x.foo.call(x, 44);" +
-        "cajita.getOwnPropertyNames(x).sort().toString();");
+        "cajita.getOwnPropertyNames(x).sort();");
   }
 
   public void testTypeofConsistent() throws Exception {
@@ -266,7 +267,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
                      "  (typeof (function () {}))," +
                      "  (typeof { x: 4.0 }.x)," +
                      "  (typeof { 2: NaN }[1 + 1])" +
-                     "].toString();");
+                     "];");
     rewriteAndExecute("assertEquals(typeof new RegExp('.*'), 'object');");
   }
 }

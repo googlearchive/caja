@@ -48,7 +48,6 @@ public class RhinoTestBed {
   /**
    * Runs the javascript from the given inputs in order, and returns the
    * result.
-   * If dumpJsFile is not null, also put all the javascript in that file.
    */
   public static Object runJs(Input... inputs) throws IOException {
     Context context = ContextFactory.getGlobal().enterContext();

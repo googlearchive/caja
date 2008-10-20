@@ -31,7 +31,7 @@ public class CajitaTest extends CajaTestCase {
         + "___.asSimpleFunc(o.f);"
         + "assertEquals(42, ___.construct(o.f, [42]).x);");
   }
-  
+
   public void testGrantGeneric() throws Exception {
     runTest(
         "  function A() {} function B() {} function C() {}"
