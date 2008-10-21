@@ -118,11 +118,17 @@ var bridal = (function() {
    * @param value a string containing the value of an attribute.
    */
   function setAttribute(node, name, value) {
-    if (features.setAttributeExtraParam) {
+    if (name === 'style'
+        && (typeof node.style.cssText) === 'string') {
+      // Setting the 'style' attribute does not work for IE, but
+      // setting cssText works on IE 6, Firefox, and IE 7.
+      node.style.cssText = value;
+    } else if (features.setAttributeExtraParam) {
       node.setAttribute(name, value, 0);
     } else {
       node.setAttribute(name, value);
     }
+    return value;
   }
 
   return {

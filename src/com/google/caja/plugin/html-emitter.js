@@ -67,7 +67,7 @@ HtmlEmitter.prototype = {
   a: function (name, value) {
     // The third parameter causes IE to not treat name as case-sensitive.
     // See bug 781 for details.
-    this.top_().setAttribute(name, value, 0);
+    bridal.setAttribute(this.top_(), name, value);
     return this;
   },
   /** emits PCDATA text. */

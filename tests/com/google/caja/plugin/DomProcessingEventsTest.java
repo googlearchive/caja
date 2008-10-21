@@ -94,6 +94,8 @@ public class DomProcessingEventsTest extends CajaTestCase {
   }
 
   public void testDeOptimization() throws Exception {
+    DomProcessingEvents dpe;
+
     // Some elements can't be created at the top level by innerHTML.  So
     //    var select = document.createElement('SELECT');
     //    select.innerHTML = '<option>1</option>;
@@ -103,7 +105,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
     //    var div = document.createElement('DIV');
     //    div.innerHTML = '<select><option>1</option></select>';
     // See bug 730 for more details.
-    DomProcessingEvents dpe = new DomProcessingEvents();
+    dpe = new DomProcessingEvents();
     dpe.begin(Name.html("select"));
     dpe.finishAttrs(false);
     dpe.begin(Name.html("option"));
@@ -128,10 +130,50 @@ public class DomProcessingEventsTest extends CajaTestCase {
         + ".e('select');",
         "<select><option>1</option><option>2</option></select>",
         dpe);
+
+    dpe = new DomProcessingEvents();
+    dpe.begin(Name.html("table"));
+    dpe.finishAttrs(false);
+    dpe.begin(Name.html("tbody"));
+    dpe.finishAttrs(false);
+    dpe.begin(Name.html("tr"));
+    dpe.finishAttrs(false);
+    dpe.begin(Name.html("td"));
+    dpe.finishAttrs(false);
+    dpe.pcdata("1");
+    dpe.end(Name.html("td"));
+    dpe.begin(Name.html("td"));
+    dpe.finishAttrs(false);
+    dpe.pcdata("2");
+    dpe.end(Name.html("td"));
+    dpe.end(Name.html("tr"));
+    dpe.end(Name.html("tbody"));
+    dpe.end(Name.html("table"));
+    assertEmittingCode(
+        "IMPORTS___.htmlEmitter___.b('table').f(false)"
+        + ".b('tbody')"
+        + ".f(false)"
+        + ".b('tr')"
+        + ".f(false)"
+        + ".b('td')"
+        + ".f(false)"
+        + ".ih('1')"
+        + ".e('td')"
+        + ".b('td')"
+        + ".f(false)"
+        + ".ih('2')"
+        + ".e('td')"
+        + ".e('tr')"
+        + ".e('tbody')"
+        + ".e('table');",
+        "<table><tbody><tr><td>1</td><td>2</td></tr></tbody></table>",
+        dpe);
   }
 
   public void testReDeOptimization() throws Exception {
-    DomProcessingEvents dpe = new DomProcessingEvents();
+    DomProcessingEvents dpe;
+
+    dpe = new DomProcessingEvents();
     dpe.begin(Name.html("div"));
     dpe.finishAttrs(false);
     dpe.begin(Name.html("select"));
@@ -151,6 +193,35 @@ public class DomProcessingEventsTest extends CajaTestCase {
         + ".ih('<select><option>1</option><option>2</option></select>')"
         + ".e('div');",
         "<div><select><option>1</option><option>2</option></select></div>",
+        dpe);
+
+    dpe = new DomProcessingEvents();
+    dpe.begin(Name.html("div"));
+    dpe.finishAttrs(false);
+    dpe.begin(Name.html("table"));
+    dpe.finishAttrs(false);
+    dpe.begin(Name.html("tbody"));
+    dpe.finishAttrs(false);
+    dpe.begin(Name.html("tr"));
+    dpe.finishAttrs(false);
+    dpe.begin(Name.html("td"));
+    dpe.finishAttrs(false);
+    dpe.pcdata("1");
+    dpe.end(Name.html("td"));
+    dpe.begin(Name.html("td"));
+    dpe.finishAttrs(false);
+    dpe.pcdata("2");
+    dpe.end(Name.html("td"));
+    dpe.end(Name.html("tr"));
+    dpe.end(Name.html("tbody"));
+    dpe.end(Name.html("table"));
+    dpe.end(Name.html("div"));
+    assertEmittingCode(
+        "IMPORTS___.htmlEmitter___.b('div').f(false)"
+        + ".ih('<table><tbody><tr><td>1</td><td>2</td></tr></tbody></table>')"
+        + ".e('div');",
+        "<div><table><tbody><tr><td>1</td>"
+        + "<td>2</td></tr></tbody></table></div>",
         dpe);
   }
 
@@ -412,11 +483,14 @@ public class DomProcessingEventsTest extends CajaTestCase {
       String actualHtml = (String) RhinoTestBed.runJs(
           new RhinoTestBed.Input(getClass(), "console-stubs.js"),
           new RhinoTestBed.Input(getClass(), "/js/jqueryjs/runtest/env.js"),
+          new RhinoTestBed.Input(
+              "this.location = " + StringLiteral.toQuotedValue(contentUrl),
+              "setup-document"),
+          new RhinoTestBed.Input(getClass(), "bridal.js"),
           new RhinoTestBed.Input(getClass(), "html-emitter.js"),
           new RhinoTestBed.Input(
-              "this.location = " + StringLiteral.toQuotedValue(contentUrl) + ";"
               // Set up the HTML emitter.
-              + "var IMPORTS___ = {"
+              "var IMPORTS___ = {"
               + "  htmlEmitter___: new HtmlEmitter("
               + "      document.getElementById('base'))"
               + "};"

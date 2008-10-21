@@ -384,13 +384,15 @@ var window = this;
     },
 
     get style() {
+      var thisNode = this;
       var style = {
-        get opacity(){ return this._opacity; },
-        set opacity(val){ this._opacity = val + ""; }
+        get opacity() { return this._opacity; },
+        set opacity(val) { this._opacity = val + ""; },
+        get cssText() { return thisNode.getAttribute('style') || ''; },
+        set cssText(val) { thisNode.setAttribute('style', val + ""); }
       };
 
       // Load CSS info
-      style.cssText = this.getAttribute('style') || "";
       var styles = style.cssText.split(/\s*;\s*/);
 
       for ( var i = 0; i < styles.length; i++ ) {

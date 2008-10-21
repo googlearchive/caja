@@ -207,13 +207,18 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
           new RhinoTestBed.Input(
               "var valijaMaker = {};\n" +
               "var testImports = ___.copy(___.sharedImports);\n" +
-              "testImports.loader = {provide:___.simpleFunc(function(v){valijaMaker=v;})};\n" +
+              "testImports.loader = {\n" +
+              "  provide: ___.simpleFunc(function(v) { valijaMaker = v; })\n" +
+              "};\n" +
               "testImports.outers = ___.copy(___.sharedImports);\n" +
               "___.getNewModuleHandler().setImports(testImports);",
               getName() + "valija-setup"),
           new RhinoTestBed.Input(
-              "___.loadModule(function (___, IMPORTS___) {" + valijaCajoled + "\n});",
+              "___.loadModule(function (___, IMPORTS___) {\n" +
+              valijaCajoled + "\n" +
+              "});",
               "valija-cajoled"),
+          new RhinoTestBed.Input(getClass(), "bridal.js"),
           new RhinoTestBed.Input(getClass(), "html-emitter.js"),
           new RhinoTestBed.Input(getClass(), "container.js"),
           // The gadget

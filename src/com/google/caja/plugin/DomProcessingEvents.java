@@ -189,7 +189,23 @@ final class DomProcessingEvents {
       out.emitCall("b", TreeConstruction.stringLiteral(name.getCanonicalForm()));
     }
     @Override boolean canOptimizeToInnerHtml(int depth) {
-      return depth > 1 || !"option".equals(name.getCanonicalForm());
+      String cname = name.getCanonicalForm();
+      return depth > 1 || !("option".equals(cname) || "optgroup".equals(cname)
+                            || "tbody".equals(cname) || "thead".equals(cname)
+                            || "tfoot".equals(cname) || "tr".equals(cname)
+                            || "td".equals(cname) || "th".equals(cname)
+                            || "param".equals(cname));
+      // From http://support.microsoft.com/kb/239832
+      // PRB: Error Setting table.innerHTML in Internet Explorer
+      // SYMPTOMS
+      // Setting table.innerHTML causes the following error message to appear:
+      // Unknown runtime error
+      //
+      // CAUSE
+      // The innerHTML property of the TABLE, TFOOT, THEAD, and TR elements are
+      // read-only.
+
+      // See bug 845 for the derivation of the list abovee.
     }
     @Override void toInnerHtml(StringBuilder out) {
       out.append('<').append(name);
