@@ -80,24 +80,26 @@
 # filetypes    -  sets svn:mime-type of modified files based on file suffix
 
 
-default_gvn_path=/opt/googlesvn/bin/gvn
-default_svn_path=/opt/googlesvn/bin/svn
+function myvn() {
+  local default_gvn_path=/opt/googlesvn/bin/gvn
+  local default_svn_path=/opt/googlesvn/bin/svn
 submit_bug_path=$(dirname $0)/submit-caja-bug.py
 
-function myvn() {
   local verb="$1"
   # If we're in a directory pointed at via symlinks, first switch to the physical directory
   local current_cl="$(cd -P . ; perl -e 'print $1 if $ENV{PWD}=~m|/svn-changes/([^/]+)|')"
-  local svn=${SVN_BIN:-default_svn_path}
-  local gvn=${GVN_BIN:-default_gvn_path}
+  local svn=${SVN_BIN:-$default_svn_path}
+  local gvn=${GVN_BIN:-$default_gvn_path}
   local username="$(
       perl -ne 'print $1 if m/^username\s*=\s*(\S+)$/' "$HOME"/.gvn/config)"
   if [ ! -x "$gvn" ]; then
-    echo "Cannot find gvn.  Please set GVN_BIN (eg. export GVN_BIN=/opt/googlesvn/bin/gvn)"
+    echo "Cannot find gvn : $gvn"
+    echo "Please set GVN_BIN (eg. export GVN_BIN=$default_gvn_path)"
     exit -1
   fi
   if [ ! -x "$svn" ]; then
-    echo "Cannot find svn.  Please set SVN_BIN (eg. export SVN_BIN=/opt/googlesvn/bin/svn)"
+    echo "Cannot find svn : $svn"
+    echo "Please set SVN_BIN (eg. export SVN_BIN=$default_svn_path)"
     exit -1
   fi
   if [ -z "$username" ]; then
@@ -148,7 +150,7 @@ function myvn() {
       myvn describe | "$submit_bug_path" -s "$(myvn diffstats)" "$@"
       ;;
     snapshot)
-      echo "myvn snapshot" is deprecated to avoid overlooking snapshotting changes
+      echo myvn snapshot is deprecated to avoid overlooking snapshotting changes
       echo Please use myvn change
       ;;
     change)
@@ -157,11 +159,11 @@ function myvn() {
       else
         "$gvn" "$verb" "$@"
       fi
-      MISSING=$($gvn nothave | grep -v '^ant-')
+      MISSING=$("$gvn" nothave | egrep -v '^ant-')
       if [ -n "$MISSING" ]; then
-        echo WARNING: The following files are not part of the current changelist:
-       # Ignore ant-* directories which are created during the build
-        gvn nothave | grep -v "^ant-"
+        echo WARNING: The following files are not part of the current change:
+        # Ignore ant-* directories which are created during the build
+        "$gvn" nothave | grep -v "^ant-"
       fi
       ;;
     submit )
@@ -190,7 +192,7 @@ function myvn() {
         if [ -z "$("$svn" propget svn:mime-type "$f")" ]; then
           local type="$(typeForFile $f)"
           if [ -n "$type" ]; then
-            "$svn" propset svn:mime-type "$type" $f
+            "$svn" propset svn:mime-type "$type" "$f"
           fi
         fi
       done
@@ -198,10 +200,13 @@ function myvn() {
     eclipse )
       if [ -z "$ANT_HOME" ]; then
         echo Please set up the following environment variables:
-        test -z "$ANT_HOME" && echo ANT_HOME \(eg. export ANT_HOME=/usr/share/ant\)
+        if [ -z "$ANT_HOME"]; then
+          echo 'ANT_HOME (eg. export ANT_HOME=/usr/share/ant)'
+        fi
       fi
       makeEclipseProject "$current_cl" > .project
       makeEclipseClasspath > .classpath
+      makeEclipseGenfiles
       mkdir -p ant-eclipse-lib
       ;;
     *)
@@ -224,6 +229,9 @@ function typeForFile() {
       ;;
     js )
       echo -n "text/javascript;charset=UTF-8"
+      ;;
+    json )
+      echo -n "text/x-json;charset=UTF-8"
       ;;
     pdf )
       echo -n "application/pdf"
@@ -257,7 +265,7 @@ function makeEclipseClasspath() {
   # Needed so JUnit test works in Eclipse
   echo "	<classpathentry excluding=\"**/*~|**/.svn/**|**/*.java\" kind=\"src\" path=\"third_party\"/>"
   # Needed so JUnit test works in Eclipse
-  echo "	<classpathentry kind=\"lib\" path=\"ant-lib\"/>"
+  echo "	<classpathentry kind=\"lib\" path=\"ant-eclipse-genfiles\"/>"
   for jar in $(find third_party -name \*.jar | sort); do
     echo "	<classpathentry kind=\"lib\" path=\"$jar\"/>"
   done
@@ -286,6 +294,25 @@ function makeEclipseProject() {
   echo "		<nature>org.eclipse.jdt.core.javanature</nature>"
   echo "	</natures>"
   echo "</projectDescription>"
+}
+
+# Build a symlink tree for genfiles.
+# This genfiles tree is used in the eclipse project so that we don't have
+# a bunch of compiled files and copied resources on the classpath that
+# eclipse can already find in its source trees.
+function makeEclipseGenfiles() {
+  rm -rf ant-eclipse-genfiles
+  mkdir ant-eclipse-genfiles
+  if [ -d ant-lib ]; then
+    local f
+    for f in $(find ant-lib -type f | egrep -v '\.(class|jar)$'); do
+      local rel_file="$(echo "$f" | perl -pe 's|^ant-lib/||')"
+      if [ ! -e "src/$rel_file" ] && [ ! -e "tests/$rel_file" ] ; then
+        mkdir -p "$(dirname "ant-eclipse-genfiles/$rel_file")"
+        ln -s "$f" "ant-eclipse-genfiles/$rel_file"
+      fi
+    done
+  fi
 }
 
 function runAntTests() {
