@@ -123,6 +123,8 @@ var bridal = (function() {
       // Setting the 'style' attribute does not work for IE, but
       // setting cssText works on IE 6, Firefox, and IE 7.
       node.style.cssText = value;
+    } else if (name === 'class') {
+      node.className = value;
     } else if (features.setAttributeExtraParam) {
       node.setAttribute(name, value, 0);
     } else {

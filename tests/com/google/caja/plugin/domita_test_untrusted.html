@@ -45,6 +45,8 @@
     <ol><li>Pi</li><li>sqrt(10)</li></ol>
 </ol>
 
+<p class="testcontainer" id="test-class-set-by-emitter"></p>
+
 <div class="testcontainer" id="test-dynamic-styles">
   <span id="test-dynamic-styles1">I should be bold</span><br>
   <span id="test-dynamic-styles2" style="font-weight: bold"
@@ -76,8 +78,9 @@
   <a id="not-blue" href="#">I am not blue</a>
 </div>
 
-<p class="testcontainer" id="test-bug-731"
- >The input should be a radio button: </p>
+<div class="testcontainer" id="test-bug-731"
+ >The input should be a radio button:
+<form><input id="bug-731" type="radio" /></form></div>
 
 <p class="testcontainer" id="test-dom-class-hierarchy">
   <b>Click me</b>
@@ -370,6 +373,30 @@ jsunitRegister('testGetElementsByTagName',
   pass('test-get-elements-by-tag-name');
 });
 
+jsunitRegister('testClassSetByEmitter',
+               function testClassSetByEmitter() {
+  // Make sure that the HTML emitter correctly sets the class.
+  // A testcontainer node should be yellow until it has been marked as having
+  // passed.
+  var cont = document.getElementById('test-class-set-by-emitter');
+  var computedColor = directAccess.getComputedStyle(cont, 'background-color');
+
+  cont.innerHTML = '(background-color=' + computedColor + ')';
+  
+  switch (computedColor.toLowerCase()) {
+    case 'yellow':
+    case '#ffff00':
+    case '#ff0':
+    case 'rgb(255, 255, 0)':
+    case 'rgb(100%, 100%, 0)':
+      pass('test-class-set-by-emitter');
+      break;
+    default:    
+      fail(computedColor + ' is not yellow');
+      break;
+  }
+});
+
 jsunitRegister('testDynamicStyle',
                function testDynamicStyle() {
   function $(id) { return document.getElementById(id); }
@@ -593,16 +620,6 @@ jsunitRegister('testBug731',
   // such as network requests happen all at once.  This is especially important
   // on IE.
 
-  // TODO(mikesamuel): rewrite in cajoled HTML once test HTML in
-  // domita_test.html is cajoled.
-  directAccess.getHtmlEmitter(document.getElementById('test-bug-731'))
-      .b('form')
-      .f(false)
-      .b('input')
-      .a('id', 'bug-731-xyz___')
-      .a('type', 'radio')
-      .f(true)
-      .e('form');
   var bug_731_input = document.getElementById('bug-731');
   assertEquals('radio', bug_731_input.type);
   pass('test-bug-731');
