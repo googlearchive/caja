@@ -379,7 +379,7 @@ attachDocumentStub = (function () {
           var fnName = match[2];
           var pluginId = ___.getId(imports);
           value = (doesReturn ? 'return ' : '') + 'plugin_dispatchEvent___('
-              + 'this, event || window.event, ' + pluginId + ', "'
+              + 'this, event, ' + pluginId + ', "'
               + fnName + '");';
           if (attribName === 'onsubmit') {
             value = 'try { ' + value + ' } finally { return false; }';
@@ -496,7 +496,7 @@ attachDocumentStub = (function () {
       }
       function wrapper(event) {
         return plugin_dispatchEvent___(
-            thisNode, event || window.event, ___.getId(imports), listener);
+            thisNode, event, ___.getId(imports), listener);
       }
       wrapper.originalListener___ = listener;
       return wrapper;
@@ -1298,8 +1298,8 @@ attachDocumentStub = (function () {
     };
 
     // Attach reflexive properties to 'window' object
-    window.top = window.self = window.opener = window.parent = window.window
-        = tameWindow;
+    tameWindow.top = tameWindow.self = tameWindow.opener = tameWindow.parent
+        = tameWindow.window = tameWindow;
 
     // Iterate over all node classes, assigning them to the Window object
     // under their DOM Level 2 standard name.
@@ -1394,6 +1394,7 @@ attachDocumentStub = (function () {
  * Function called from rewritten event handlers to dispatch an event safely.
  */
 function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
+  event = (event || window.event);
   (typeof console !== 'undefined' && console.log) &&
   console.log(
       'Dispatch %s event thisNode=%o, event=%o, pluginId=%o, handler=%o',

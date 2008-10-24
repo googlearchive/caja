@@ -224,7 +224,7 @@ final class DomProcessingEvents {
       this.value = value;
     }
     @Override void toJavascript(BlockAndEmitter out) {
-      out.emitCall("a", TreeConstruction.stringLiteral(name.getCanonicalForm()), value);
+      out.emitCall("a", StringLiteral.valueOf(name.getCanonicalForm()), value);
     }
     @Override boolean canOptimizeToInnerHtml(int depth) {
       return value instanceof StringLiteral;
@@ -233,6 +233,28 @@ final class DomProcessingEvents {
       out.append(' ').append(name).append("=\"");
       Escaping.escapeXml(((StringLiteral) value).getUnquotedValue(), true, out);
       out.append('"');
+    }
+    @Override boolean checkContext(boolean inTag) {
+      if (!inTag) { throw new IllegalStateException(this.toString()); }
+      return true;
+    }
+  }
+
+  /** An event handler, e.g. {@code onclick}. */
+  static final class HandlerEvent extends DomProcessingEvent {
+    final Name name;
+    final Expression fnBody;
+    HandlerEvent(Name name, Expression fnBody) {
+      this.name = name;
+      this.fnBody = fnBody;
+    }
+    @Override void toJavascript(BlockAndEmitter out) {
+      out.emitCall(
+          "h", StringLiteral.valueOf(name.getCanonicalForm()), fnBody);
+    }
+    @Override boolean canOptimizeToInnerHtml(int depth) { return false; }
+    @Override void toInnerHtml(StringBuilder out) {
+      throw new UnsupportedOperationException();
     }
     @Override boolean checkContext(boolean inTag) {
       if (!inTag) { throw new IllegalStateException(this.toString()); }
@@ -344,6 +366,9 @@ final class DomProcessingEvents {
   }
   void attr(Name name, String value) {
     attr(name, TreeConstruction.stringLiteral(value));
+  }
+  void handler(Name name, Expression fnBody) {
+    addEvent(new HandlerEvent(name, fnBody));
   }
   /** End the attribute list when a {@code >} or {@code />} is seen. */
   void finishAttrs(boolean unary) { addEvent(new FinishAttrsEvent(unary)); }

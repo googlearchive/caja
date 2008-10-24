@@ -102,6 +102,10 @@
   <input type="checkbox">
 </form>
 
+<p class="testcontainer" id="test-inline-event-handlers">
+  <input onclick="autoclicky.click()" id="autoclicker" type="checkbox">
+</p>
+
 <script type="text/javascript">
 var setUp, tearDown;
 
@@ -360,7 +364,7 @@ jsunitRegister('testForms',
 
   assertEquals('<form onsubmit="'
                + 'try { plugin_dispatchEvent___'
-               + '(this, event || window.event, 0, &quot;foo&quot;);'
+               + '(this, event, 0, &quot;foo&quot;);'
                + ' } finally { return false; }">'
                + '<input type="submit" value="Submit"></form>',
                canonInnerHtml(directAccess.getInnerHTML(container)));
@@ -708,4 +712,21 @@ jsunitRegister('testInputDefaultValue',
 
   pass('test-input-default-values');
 });
+
+var autoclicky = {
+  clicked: false,
+  click: function () {
+    console.log('clicking');
+    autoclicky.clicked = true;
+  }
+};
+
+jsunitRegister('testInlineEventHandlers',
+               function testInlineEventHandlers() {
+  assertFalse(autoclicky.clicked);
+  directAccess.click(document.getElementById('autoclicker'));
+  assertTrue(autoclicky.clicked);
+  pass('test-inline-event-handlers');
+});
+
 </script>

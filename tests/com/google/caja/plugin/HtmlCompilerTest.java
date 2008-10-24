@@ -18,7 +18,8 @@ import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
-import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParseTreeNodes;
+import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.util.CajaTestCase;
 
@@ -42,14 +43,14 @@ public class HtmlCompilerTest extends CajaTestCase {
     assertOutput(
         "IMPORTS___.htmlEmitter___.b('form').a('onsubmit', 'return false')"
         + ".f(false).e('form');",
-        "<form/>");
+        "<form></form>");
   }
 
   public void testNamesRewritten() throws Exception {
     assertOutput(
         "IMPORTS___.htmlEmitter___.b('p')"
         + ".a('name', 'hi-' + IMPORTS___.getIdClass___())"
-        + ".f(false).e('p');",        
+        + ".f(false).e('p');",
 
         "<p name=\"hi\"/>");
   }
@@ -60,40 +61,44 @@ public class HtmlCompilerTest extends CajaTestCase {
         + ".a('name', 'hi-' + IMPORTS___.getIdClass___())"
         + ".a('onsubmit', 'return false').f(false).e('form');",
 
-        "<form name=\"hi\"/>");
+        "<form name=\"hi\"></form>");
   }
 
   // See bug 722
   public void testFormOnSubmitTrue() throws Exception {
     assertOutput(
-        "IMPORTS___.htmlEmitter___.b('form')"
-        + ".a('onsubmit', 'return plugin_dispatchEvent___(this, event || "
-        + "window.event, ' + ___.getId(IMPORTS___) + ', \\\'c_1___\\\')')"
-        + ".f(false).e('form');\n"
-        + "}\n"
-        + "IMPORTS___.c_1___ = function (event, thisNode___) {\n"
-        + "  try {\n"
-        + "    return true;\n"
-        + "  } finally {\n"
-        + "    return false;\n"
-        + "  }",
-    "<form onsubmit=\"return true\"/>");
+        ""
+        + "IMPORTS___.htmlEmitter___.b('form')"
+        + "  .h('onsubmit',"
+        + "     'return plugin_dispatchEvent___(this, event, '"
+        + "     + ___.getId(IMPORTS___) + ', \\'c_1___\\')')"
+        + "  .f(false).e('form');"
+        + "IMPORTS___.c_1___ = function (event, thisNode___) {"
+        + "  try {"
+        + "    return true;"
+        + "  } finally {"
+        + "    return false;"
+        + "  }"
+        + "};",
+        "<form onsubmit=\"return true;\"></form>");
   }
 
   // See bug 722
   public void testFormOnSubmitEmpty() throws Exception {
     assertOutput(
-        "IMPORTS___.htmlEmitter___.b('form')"
-        + ".a('onsubmit', 'return plugin_dispatchEvent___(this, event || "
-        + "window.event, ' + ___.getId(IMPORTS___) + ', \\\'c_1___\\\')')"
-        + ".f(false).e('form');\n"
-        + "}\n"
-        + "IMPORTS___.c_1___ = function (event, thisNode___) {\n"
-        + "  try {\n"
-        + "  } finally {\n"
-        + "    return false;\n"
-        + "  }",
-        "<form onsubmit=\"\"/>");
+        ""
+        + "IMPORTS___.htmlEmitter___.b('form')"
+        + "  .h('onsubmit',"
+        + "     'return plugin_dispatchEvent___(this, event, '"
+        + "     + ___.getId(IMPORTS___) + ', \\'c_1___\\')')"
+        + "  .f(false).e('form');"
+        + "IMPORTS___.c_1___ = function (event, thisNode___) {"
+        + "  try {"
+        + "  } finally {"
+        + "    return false;"
+        + "  }"
+        + "};",
+        "<form onsubmit=\"\"></form>");
   }
 
   public void testImageSrc() throws Exception {
@@ -150,16 +155,15 @@ public class HtmlCompilerTest extends CajaTestCase {
     HtmlCompiler htmlc = new HtmlCompiler(
         CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
         mc, mq, makeTestPluginMeta());
-    ParseTreeNode compiled = htmlc.compileDocument(
-        htmlFragment(fromString(htmlText)));
+    Block compiled = htmlc.compileDocument(htmlFragment(fromString(htmlText)));
     // TODO(mikesamuel): find a common place for removePseudoNodes.
     DomProcessingEventsTest.removePseudoNodes(compiled);
-    String actual = render(compiled);
     for (Statement handler : htmlc.getEventHandlers()) {
-      actual += "\n" + render(handler);
+      compiled.appendChild(handler);
     }
-    actual = actual.replaceAll("^\\{\n  |\n\\}$", "");
-    assertEquals(actual, golden, actual);
+    if (!ParseTreeNodes.deepEquals(js(fromString(golden)), compiled)) {
+      fail(render(compiled));
+    }
   }
 
   private PluginMeta makeTestPluginMeta() {

@@ -118,9 +118,7 @@ public class HtmlCompiler {
    * <p>This method extracts embedded javascript but performs no validation on
    * it.</p>
    */
-  public Statement compileDocument(DomTree doc)
-      throws BadContentException {
-
+  public Block compileDocument(DomTree doc) throws BadContentException {
     // Produce calls to IMPORTS___.htmlEmitter___(...)
     // with interleaved script bodies.
     DomProcessingEvents cdom = new DomProcessingEvents();
@@ -227,7 +225,8 @@ public class HtmlCompiler {
               if (null == xform) {
                 out.attr(name, temp.getAttribValue());
               } else {
-                List<DomTree> newchildren = new ArrayList<DomTree>(el.children());
+                List<DomTree> newchildren
+                    = new ArrayList<DomTree>(el.children());
                 newchildren.remove(attrib);
                 newchildren.add(temp);
                 DomTree parent = new DomTree.Tag(
@@ -601,13 +600,12 @@ public class HtmlCompiler {
             Operation.create(
                 Operator.ADDITION,
                 TreeConstruction.stringLiteral(
-                    "return plugin_dispatchEvent___("
-                    + "this, event || window.event, "),
+                    "return plugin_dispatchEvent___(this, event, "),
                 TreeConstruction.call(
                     TreeConstruction.memberAccess("___", "getId"),
                     TreeConstruction.ref(ReservedNames.IMPORTS))),
             TreeConstruction.stringLiteral(", " + handlerFnNameLit + ")"));
-        out.attr(t.getAttribName(), dispatcher);
+        out.handler(t.getAttribName(), dispatcher);
       }
     },
     /** Applied to URIs such as {@code href} and {@code src} attributes. */

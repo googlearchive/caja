@@ -110,6 +110,9 @@
       // Give unfiltered DOM access so we can check the results of actions.
       testImports.directAccess = ___.primFreeze({
         // Allow testing of emitHtml by exposing it for testing
+        click: ___.simpleFrozenFunc(function (tameNode) {
+          tameNode.node___.click();
+        }),
         emitCssHook: ___.simpleFrozenFunc(function (css) {
           testImports.emitCss___(css.join('xyz___'));
         }),

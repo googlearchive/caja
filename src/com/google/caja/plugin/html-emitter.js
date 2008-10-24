@@ -97,6 +97,21 @@ HtmlEmitter.prototype = {
     }
     return this;
   },
+  /**
+   * emits an event handler given the name of a function
+   * defined on the containing module's IMPORTS___ object.
+   * @param {string} handlerBody a JavaScript statement that dispatches the
+   *     event to a DOMita handling function.  This statement may contain
+   *     free variables "event" and globals defined in supporting JS files
+   *     including domita.js and cajita.js.
+   */
+  h: function (handlerName, handlerBody) {
+    var node = this.top_();
+    bridal.setAttribute(node, handlerName, handlerBody);
+    // Make IE happy
+    node[handlerName] = new Function('event', handlerBody);
+    return this;
+  },
   /** emits PCDATA text. */
   pc: function (text) {
     this.top_().appendChild(this.doc_().createTextNode(text));

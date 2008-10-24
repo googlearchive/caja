@@ -96,7 +96,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
         "<a onclick=\"foo(this)\">hi</a>",
 
         "assertEquals('<a onclick=\"return plugin_dispatchEvent___(" +
-        "this, event || window.event, 0, \\'c_1___\\')\">hi</a>'," +
+        "this, event, 0, \\'c_1___\\')\">hi</a>'," +
         " document.getElementById('test-test').innerHTML)"
         );
   }
