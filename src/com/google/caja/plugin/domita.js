@@ -55,7 +55,7 @@ attachDocumentStub = (function () {
     array.length = from < 0 ? array.length + from : from;
     return array.push.apply(array, rest);
   }
-  
+
   var tameNodeTrademark = {};
   var tameEventTrademark = {};
 
@@ -884,17 +884,37 @@ attachDocumentStub = (function () {
              ['getHref', 'setHref']);
     exportFields(TameAElement, ['href']);
 
+    // http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-40002357
     function TameFormElement(node, editable) {
       TameElement.call(this, node, editable);
     }
     extend(TameFormElement, TameElement);
     nodeClasses.HTMLFormElement = TameFormElement;
+    TameFormElement.prototype.getAction = function () {
+      return this.getAttribute('action');
+    };
     TameFormElement.prototype.getElements = function () {
       return tameNodeList(this.node___.elements, this.editable___, 'name');
     };
+    TameFormElement.prototype.getMethod = function () {
+      return this.getAttribute('method');
+    };
+    TameFormElement.prototype.getTarget = function () {
+      return this.getAttribute('target');
+    };
+    TameFormElement.prototype.reset = function () {
+      if (!this.editable___) { throw new Error(); }
+      this.node___.reset();
+    };
+    TameFormElement.prototype.submit = function () {
+      if (!this.editable___) { throw new Error(); }
+      this.node___.submit();
+    };
+    TameFormElement.prototype.getElements
     ___.ctor(TameFormElement, TameElement, 'TameFormElement');
-    ___.all2(___.grantTypedGeneric, TameFormElement.prototype, ['getElements']);
-    exportFields(TameFormElement, ['elements']);
+    ___.all2(___.grantTypedGeneric, TameFormElement.prototype,
+             ['reset', 'submit']);
+    exportFields(TameFormElement, ['action', 'elements', 'method', 'target']);
 
 
     function TameInputElement(node, editable) {
@@ -902,6 +922,13 @@ attachDocumentStub = (function () {
     }
     extend(TameInputElement, TameElement);
     nodeClasses.HTMLInputElement = TameInputElement;
+    TameInputElement.prototype.getChecked = function () {
+      return this.node___.checked;
+    };
+    TameInputElement.prototype.setChecked = function (checked) {
+      if (!this.editable___) { throw new Error(); }
+      return (this.node___.checked = !!checked);
+    };
     TameInputElement.prototype.getValue = function () {
       var value = this.node___.value;
       return value === null || value === void 0 ? null : String(value);
@@ -929,7 +956,7 @@ attachDocumentStub = (function () {
     ___.ctor(TameInputElement, TameElement, 'TameInputElement');
     ___.all2(___.grantTypedGeneric, TameInputElement.prototype,
              ['getValue', 'setValue', 'focus', 'getForm', 'getType']);
-    exportFields(TameInputElement, ['form', 'value', 'type']);
+    exportFields(TameInputElement, ['checked', 'form', 'value', 'type']);
 
 
     function TameImageElement(node, editable) {
@@ -952,7 +979,7 @@ attachDocumentStub = (function () {
 
     function TameEvent(event) {
       this.event___ = event;
-      ___.stamp(tameEventTrademark, this, true);      
+      ___.stamp(tameEventTrademark, this, true);
     }
     nodeClasses.Event = TameEvent;
     TameEvent.prototype.getType = function () {

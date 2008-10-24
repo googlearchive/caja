@@ -19,6 +19,26 @@
   .testcontainer.passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
 </style>
 
+<p class="testcontainer" id="test-add-event-listener">
+  <b id="test-add-event-listener-label">click me</b>
+</p>
+
+<p class="testcontainer" id="test-remove-event-listener">
+  <b id="test-remove-event-listener-label">click me</b>
+</p>
+
+<p class="testcontainer" id="test-dom-class-hierarchy">
+  <b>Click me</b>
+</p>
+
+<div class="testcontainer" id="test-case-insensitive-attrs">
+  <table id="is-red">
+    <tr>
+      <td><strong>Click me if this is red</strong></td>
+    </tr>
+  </table>
+</div>
+
 <div id="test-get-element-by-id" class="testcontainer"></div>
 <div id="test-get-element-by-id-2" class="testcontainer"></div>
 
@@ -30,13 +50,6 @@
 
 <div class="testcontainer" id="test-no-script"></div>
 
-<p class="testcontainer" id="test-add-event-listener">
-  <b id="test-add-event-listener-label">click me</b>
-</p>
-
-<p class="testcontainer" id="test-remove-event-listener">
-  <b id="test-remove-event-listener-label">click me</b>
-</p>
 
 <ol class="testcontainer" id="test-get-elements-by-tag-name">
   <li>One
@@ -82,17 +95,12 @@
  >The input should be a radio button:
 <form><input id="bug-731" type="radio" /></form></div>
 
-<p class="testcontainer" id="test-dom-class-hierarchy">
-  <b>Click me</b>
-</p>
-
-<div class="testcontainer" id="test-case-insensitive-attrs">
-  <table id="is-red">
-    <tr>
-      <td><strong>Click me if this is red</strong></td>
-    </tr>
-  </table>
-</div>
+<form class="testcontainer" id="test-input-default-values">
+  <input type="text" value="one">
+  <input id="x" type="text" value="two">
+  <input checked type="checkbox">
+  <input type="checkbox">
+</form>
 
 <script type="text/javascript">
 var setUp, tearDown;
@@ -171,6 +179,92 @@ function canonInnerHtml(s) {
       });
   return s;
 }
+
+jsunitRegister('testAddEventListener',
+               function testAddEventListener() {
+  var container = document.getElementById('test-add-event-listener-label');
+  container.addEventListener(
+      'click',
+      function (event) {
+        console.log('received event');
+        assertEquals('B', event.target.tagName);
+        assertEquals('click', event.type);
+        pass('test-add-event-listener');
+      });
+});
+
+jsunitRegister('testRemoveEventListener',
+               function testRemoveEventListener() {
+  var container = document.getElementById('test-remove-event-listener-label');
+  var firstFired = false;
+  var failed = false;
+  function second(event) {
+    console.log('received event');
+    if (failed) { return; }
+    assertEquals('B', event.target.tagName);
+    assertEquals('click', event.type);
+    event.target.innerHTML = 'All done!';
+    pass('test-remove-event-listener');
+  }
+  function first(event) {
+    if (firstFired) {
+      event.target.innerHTML = '<b>FAILED - event handler was not removed!</b>';
+      failed = true;
+      return;
+    }
+    firstFired = true;
+    console.log('received event');
+    assertEquals('B', event.target.tagName);
+    assertEquals('click', event.type);
+    event.target.innerHTML = 'Thank you, click me again please';
+    container.removeEventListener('click', first);
+    container.addEventListener('click', second);
+  }
+  container.addEventListener('click', first);
+});
+
+jsunitRegister('testDomClassHierarchy',
+               function testDomClassHierarchy() {
+  assertTrue(document instanceof window.Node);
+  assertTrue(document instanceof window.HTMLDocument);
+
+  assertTrue(document.createElement('div') instanceof window.Node);
+  assertTrue(document.createElement('div') instanceof window.Element);
+  assertTrue(document.createElement('div') instanceof window.HTMLDivElement);
+
+  assertTrue(document.createElement('input') instanceof window.Node);
+  assertTrue(document.createElement('input') instanceof window.Element);
+  assertTrue(
+      document.createElement('input') instanceof window.HTMLInputElement);
+
+  assertTrue(document.createElement('a') instanceof window.Node);
+  assertTrue(document.createElement('a') instanceof window.Element);
+  assertTrue(document.createElement('a') instanceof window.HTMLAnchorElement);
+
+  assertTrue(document.createElement('img') instanceof window.Node);
+  assertTrue(document.createElement('img') instanceof window.Element);
+  assertTrue(document.createElement('img') instanceof window.HTMLImageElement);
+
+  // TODO(ihab.awad): Add negative tests when virtual hierarchy is improved:
+  // assertFalse(
+  //     document.createElement('img') instanceof window.HTMLDivElement);
+
+  document.getElementById('test-dom-class-hierarchy').addEventListener(
+      'click',
+      function(event) {
+        assertTrue(event instanceof window.Event);
+        pass('test-dom-class-hierarchy');
+      });
+});
+
+jsunitRegister('testCaseInsensitiveAttrs',
+               function testCaseInsensitiveAttrs() {
+  var tableNode = document.getElementById('is-red');
+  tableNode.setAttribute('bgColor', 'red');
+  tableNode.addEventListener('click', function(event) {
+    pass('test-case-insensitive-attrs');
+  });
+});
 
 jsunitRegister('testGetElementById',
                function testGetElementById() {
@@ -312,49 +406,6 @@ jsunitRegister('testCantLoadScript',
       });
 
   pass('test-no-script');
-});
-
-jsunitRegister('testAddEventListener',
-               function testAddEventListener() {
-  var container = document.getElementById('test-add-event-listener-label');
-  container.addEventListener(
-      'click',
-      function (event) {
-        console.log('received event');
-        assertEquals('B', event.target.tagName);
-        assertEquals('click', event.type);
-        pass('test-add-event-listener');
-      });
-});
-
-jsunitRegister('testRemoveEventListener',
-               function testRemoveEventListener() {
-  var container = document.getElementById('test-remove-event-listener-label');
-  var firstFired = false;
-  var failed = false;
-  function second(event) {
-    console.log('received event');
-    if (failed) { return; }
-    assertEquals('B', event.target.tagName);
-    assertEquals('click', event.type);
-    event.target.innerHTML = 'All done!';
-    pass('test-remove-event-listener');
-  }
-  function first(event) {
-    if (firstFired) {
-      event.target.innerHTML = '<b>FAILED - event handler was not removed!</b>';
-      failed = true;
-      return;
-    }
-    firstFired = true;
-    console.log('received event');
-    assertEquals('B', event.target.tagName);
-    assertEquals('click', event.type);
-    event.target.innerHTML = 'Thank you, click me again please';
-    container.removeEventListener('click', first);
-    container.addEventListener('click', second);
-  }
-  container.addEventListener('click', first);
 });
 
 jsunitRegister('testGetElementsByTagName',
@@ -625,48 +676,36 @@ jsunitRegister('testBug731',
   pass('test-bug-731');
 });
 
-jsunitRegister('testDomClassHierarchy',
-               function testDomClassHierarchy() {
-  assertTrue(document instanceof window.Node);
-  assertTrue(document instanceof window.HTMLDocument);
+jsunitRegister('testInputDefaultValue',
+               function testInputDefaultValue() {
+  var form = document.getElementById('test-input-default-values');
+  var text1 = form.elements[0];
+  var text2 = form.elements[1];
+  var check1 = form.elements[2];
+  var check2 = form.elements[3];
 
-  assertTrue(document.createElement('div') instanceof window.Node);
-  assertTrue(document.createElement('div') instanceof window.Element);
-  assertTrue(document.createElement('div') instanceof window.HTMLDivElement);
+  assertEquals('one', text1.value);
+  assertEquals('two', text2.value);
+  assertTrue(check1.checked);
+  assertFalse(check2.checked);
 
-  assertTrue(document.createElement('input') instanceof window.Node);
-  assertTrue(document.createElement('input') instanceof window.Element);
-  assertTrue(
-      document.createElement('input') instanceof window.HTMLInputElement);
+  text1.value = 'First';
+  text2.value = 'Second';
+  check1.checked = false;
+  check2.checked = true;
 
-  assertTrue(document.createElement('a') instanceof window.Node);
-  assertTrue(document.createElement('a') instanceof window.Element);
-  assertTrue(document.createElement('a') instanceof window.HTMLAnchorElement);
+  assertEquals('First', text1.value);
+  assertEquals('Second', text2.value);
+  assertFalse(check1.checked);
+  assertTrue(check2.checked);
 
-  assertTrue(document.createElement('img') instanceof window.Node);
-  assertTrue(document.createElement('img') instanceof window.Element);
-  assertTrue(document.createElement('img') instanceof window.HTMLImageElement);
+  form.reset();
 
-  // TODO(ihab.awad): Add negative tests when virtual hierarchy is improved:
-  // assertFalse(
-  //     document.createElement('img') instanceof window.HTMLDivElement);
+  assertEquals('one', text1.value);
+  assertEquals('two', text2.value);
+  assertTrue(check1.checked);
+  assertFalse(check2.checked);
 
-  document.getElementById('test-dom-class-hierarchy').addEventListener(
-      'click',
-      function(event) {
-        assertTrue(event instanceof window.Event);
-        pass('test-dom-class-hierarchy');
-      });
-});
-
-jsunitRegister('testCaseInsensitiveAttrs',
-               function testCaseInsensitiveAttrs() {
-//  var container = document.getElementById('test-case-insensitive-attrs');
-  var tableNode = document.getElementById('is-red');
-  console.log('tableNode = ' + tableNode);
-  tableNode.setAttribute('bgColor', 'red');
-  tableNode.addEventListener('click', function(event) {
-    pass('test-case-insensitive-attrs');
-  });
+  pass('test-input-default-values');
 });
 </script>

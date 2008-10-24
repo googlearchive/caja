@@ -65,9 +65,36 @@ HtmlEmitter.prototype = {
   },
   /** emits an attribute: {@code key="value"}. */
   a: function (name, value) {
+    var node = this.top_();
     // The third parameter causes IE to not treat name as case-sensitive.
     // See bug 781 for details.
-    bridal.setAttribute(this.top_(), name, value);
+    bridal.setAttribute(node, name, value);
+
+    // Set the default state for FORM elements, so that
+    // HTMLFormElement.reset() properly resets the form.  We do
+    // this here instead of in the browser abstraction layer,
+    // because this code should emulate a DOM being built for
+    // the first time, and setting an attribute for a newly
+    // created node is different from subsequent changes which
+    // should not update the default value.  See bugs 850 and 855.
+    switch (name) {
+      case 'value':
+        if ('INPUT' === node.tagName || 'TEXTAREA' == node.tagName) {
+          node.defaultValue = value;
+        }
+        break;
+      case 'checked':
+        if ('INPUT' === node.tagName) {
+          // http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-20509171
+          node.defaultChecked = !!value;
+        }
+        break;
+      case 'selected':
+        if ('OPTION' === node.tagName) {
+          node.defaultSelected = !!value;
+        }
+        break;
+    }
     return this;
   },
   /** emits PCDATA text. */
