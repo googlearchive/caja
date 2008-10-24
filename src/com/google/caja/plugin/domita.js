@@ -914,7 +914,6 @@ attachDocumentStub = (function () {
       if (!this.editable___) { throw new Error(); }
       this.node___.submit();
     };
-    TameFormElement.prototype.getElements
     ___.ctor(TameFormElement, TameElement, 'TameFormElement');
     ___.all2(___.grantTypedGeneric, TameFormElement.prototype,
              ['reset', 'submit']);
@@ -1083,7 +1082,7 @@ attachDocumentStub = (function () {
     TameDocument.prototype.write = function(text) {
       // TODO(ihab.awad): Needs implementation
       cajita.log('Called document.write() with: ' + text);
-    }
+    };
     ___.ctor(TameDocument, void 0, 'TameDocument');
     ___.all2(___.grantTypedGeneric, TameDocument.prototype,
              ['createElement', 'createTextNode', 'getElementById', 'write']);

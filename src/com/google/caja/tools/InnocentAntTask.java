@@ -25,9 +25,8 @@ import org.apache.tools.ant.BuildException;
  *
  * Given an ANT task like {@code
  * <innocent>
- *   <job output="foo/bar.js">
- *     <include file="baz/input1.js"/>
- *   </job>
+ *   <output file="foo/bar.js"/>
+ *   <include file="baz/input1.js"/>
  * </innocent>
  * }
  * innocent code transforms the input.  This is intended for uncajoled code
@@ -48,4 +47,7 @@ public class InnocentAntTask extends AbstractCajaAntTask {
        throws BuildException {
     return buildService.transfInnocent(logger, depends, input, output, options);
   }
+  
+  @Override
+  Output makeOutput() { return new Output() {}; }
 }

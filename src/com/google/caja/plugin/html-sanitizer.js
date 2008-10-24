@@ -15,7 +15,7 @@
 /**
  * @fileoverview
  * Provide a factory that allows transformations on HTML.
- * @author mikesamuel@gmail.com
+ * @author mikesamuel@gmail.com 
  */
 
 

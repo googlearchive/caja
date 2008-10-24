@@ -37,9 +37,13 @@ import org.apache.tools.ant.Task;
  * @author mikesamuel@gmail.com
  */
 public abstract class AbstractCajaAntTask extends Task {
-  /** A set of {@code <job>} tasks. */
-  private final List<Job> jobs = new ArrayList<Job>();
-
+  /** Input files to compile. */
+  private final List<Include> includes = new ArrayList<Include>();
+  /** Files that the inputs might include. */
+  private final List<Depend> depends = new ArrayList<Depend>();
+  /** Outputs to generate. */
+  private final List<Output> outputs = new ArrayList<Output>();
+  
   /** Called to actually execute a job by invoking the BuildService. */
   protected abstract boolean run(BuildService buildService, PrintWriter logger,
                                  List<File> depends, List<File> inputs,
@@ -48,18 +52,31 @@ public abstract class AbstractCajaAntTask extends Task {
 
   @Override
   public void execute() throws BuildException {
-    if (jobs.isEmpty()) {
-      throw new BuildException("caja task must have one or more <job>s");
+    if (includes.isEmpty()) {
+      throw new BuildException("caja task must have one or more <include>s");
     }
     try {
+      for (Include include : includes) { include.requireExecutable(); }
+      for (Output output : outputs) { output.requireExecutable(); }
+      for (Depend depend : depends) { depend.requireExecutable(); }
 
-      for (Job job : jobs) { job.requireExecutable(); }
+      long youngest = Long.MIN_VALUE;
+      List<File> inputs = new ArrayList<File>();
+      for (Include include : includes) {
+        inputs.add(include.file);
+        youngest = Math.max(youngest, include.file.lastModified());
+      }
+      List<File> dependees = new ArrayList<File>();
+      for (Depend depend : depends) {
+        dependees.add(depend.file);
+        youngest = Math.max(youngest, depend.file.lastModified());
+      }
 
       BuildService buildService = getBuildService();
       PrintWriter logger = getLogger();
       try {
-        for (Job job : jobs) {
-          job.execute(buildService, logger);
+        for (Output output : outputs) {
+          output.build(inputs, dependees, youngest, buildService, logger);
         }
       } finally {
         logger.flush();
@@ -68,13 +85,6 @@ public abstract class AbstractCajaAntTask extends Task {
       ex.printStackTrace();
       throw new BuildException(ex);
     }
-  }
-
-  /** Invoked reflectively by ANT when a <job> is seen. */
-  public Job createJob() {
-    Job job = new Job();
-    jobs.add(job);
-    return job;
   }
 
   /**
@@ -105,84 +115,80 @@ public abstract class AbstractCajaAntTask extends Task {
     return new BuildServiceImplementation();
   }
 
+  /** Invoked reflectively whenever {@code <include>} is seen. */
+  public Include createInclude() {
+    Include include = new Include();
+    includes.add(include);
+    return include;
+  }
+
+  /** Invoked reflectively whenever {@code <depend>} is seen. */
+  public Depend createDepend() {
+    Depend depend = new Depend();
+    depends.add(depend);
+    return depend;
+  }
+  
+  /** Invoked reflectively whenever {@code <output>} is seen. */
+  public final Output createOutput() {
+    Output output = makeOutput();
+    outputs.add(output);
+    return output;
+  }
+  
+  abstract Output makeOutput();
+
   /** Encapsulates input files and the output files that should be produced. */
-  public class Job {
+  public abstract class Output {
     /** The file to build. */
     private File output;
-    /** Inputs files to compile. */
-    private final List<Include> includes = new ArrayList<Include>();
-    /** Files that the inputs might include. */
-    private final List<Depend> depends = new ArrayList<Depend>();
-
-    public Include createInclude() {
-      Include include = new Include();
-      includes.add(include);
-      return include;
-    }
-
-    public Depend createDepend() {
-      Depend depend = new Depend();
-      depends.add(depend);
-      return depend;
-    }
 
     /**
      * The below are invoked reflectively by ant when {@code <job>} attributes
      * are seen.
      */
-    public void setOutput(File output) { this.output = output; }
+    public void setFile(File output) { this.output = output; }
 
     /** Checks that there is enough information to execute before execution. */
     void requireExecutable() throws BuildException {
       if (output == null) {
         throw new BuildException(
-            "<job> at " + getLocation() + "missing 'output' attribute");
-      }
-      if (includes.isEmpty()) {
-        throw new BuildException(
-            "<job> at " + getLocation() + "missing <include>s");
-      }
-      for (Include include : includes) {
-        include.requireExecutable();
+            "<output> at " + getLocation() + "missing 'file' attribute");
       }
     }
 
     /** Builds output, throwing a BuildException if build fails. */
-    void execute(BuildService buildService, PrintWriter logger)
+    void build(List<File> inputs, List<File> dependees, long youngest,
+               BuildService buildService, PrintWriter logger)
         throws BuildException {
       long outputModified = output.lastModified();
-      boolean modified = false;  // -> the output file is older than any inputs.
-      if (outputModified == 0L) { modified = true; }  // 0L -> !output.exists()
+      boolean modified  // -> the output file is older than any inputs.
+          = (outputModified == 0L    // 0L -> !output.exists()
+              || outputModified < youngest);
 
-      // Make sure the output directory exists.
-      File outputDir = output.getParentFile();
-      if (!outputDir.exists()) {
-        logger.println("mkdir " + outputDir);
-        outputDir.mkdirs();
-      }
-
-      List<File> inputs = new ArrayList<File>();
-      for (Include include : includes) {
-        if (!modified && include.file.lastModified() > outputModified) {
-          modified = true;
-        }
-        inputs.add(include.file);
-      }
-      List<File> dependees = new ArrayList<File>();
-      for (Depend depend : depends) {
-        if (!modified && depend.file.lastModified() > outputModified) {
-          modified = true;
-        }
-        dependees.add(depend.file);
-      }
       if (modified) {
-        logger.println("compiling " + inputs.size() + " files to " + output);
-        if (!run(buildService, logger, dependees, inputs, output,
-                 new HashMap<String, Object>())) {
+        // Make sure the output directory exists.
+        File outputDir = output.getParentFile();
+        if (!outputDir.exists()) {
+          logger.println("mkdir " + outputDir);
+          outputDir.mkdirs();
+        }
+
+        logger.println("building " + inputs.size() + " files to " + output);
+        Map<String, Object> options = getOptions();
+        if (!run(buildService, logger, dependees, inputs, output, options)) {
           if (output.exists()) { output.delete(); }
           throw new BuildException("Failed to build " + output);
         }
       }
+    }
+    
+    /**
+     * A map of options that are specified on the {@code output} element as
+     * expected by {@link AbstractCajaAntTask#run}.
+     */
+    public Map<String, Object> getOptions() {
+      return new HashMap<String, Object>();
     }
   }
 

@@ -18,10 +18,12 @@ import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Minify;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
@@ -31,6 +33,8 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
 import com.google.caja.render.Innocent;
+import com.google.caja.render.JsMinimalPrinter;
+import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.tools.BuildService;
 import com.google.caja.util.Pair;
 import java.io.File;
@@ -119,42 +123,69 @@ public class BuildServiceImplementation implements BuildService {
         }
       };
 
+    MessageContext mc = new MessageContext();
+    
     // Set up the cajoler
-    PluginMeta meta = new PluginMeta(env);
-    meta.setDebugMode(Boolean.TRUE.equals(options.get("debug")));
-    if ("valija".equals(options.get("languageMode"))) {
-      meta.setValijaMode(true);
-    } else if ("cajita".equals(options.get("languageMode"))) {
-      meta.setValijaMode(false);
-    } else if (options.get("languageMode") != null) {
-      throw new RuntimeException(
-          "Unrecognized option languageMode = " + options.get("languageMode"));
-    }
-    PluginCompiler compiler = new PluginCompiler(meta, mq);
-
+    String language = (String) options.get("language");
     boolean passed = true;
+    Block block;
+    if (!"javascript".equals(language)) {
+      PluginMeta meta = new PluginMeta(env);
+      meta.setDebugMode(Boolean.TRUE.equals(options.get("debug")));
+      if ("valija".equals(language)) {
+        meta.setValijaMode(true);
+      } else if ("cajita".equals(language)) {
+        meta.setValijaMode(false);
+      } else {
+        throw new RuntimeException("Unrecognized language: " + language);
+      }
+      PluginCompiler compiler = new PluginCompiler(meta, mq);
+      compiler.setMessageContext(mc);
 
-    // Parse inputs
-    for (File f : inputs) {
-      try {
-        AncestorChain<?> parsedInput
-            = parseInput(new InputSource(f.getCanonicalFile().toURI()), mq);
-        if (parsedInput == null) {
+      // Parse inputs
+      for (File f : inputs) {
+        try {
+          AncestorChain<?> parsedInput = parseInput(
+              new InputSource(f.getCanonicalFile().toURI()), mq);
+          if (parsedInput == null) {
+            passed = false;
+          } else {
+            compiler.addInput(parsedInput);
+          }
+        } catch (IOException ex) {
+          logger.println("Failed to read " + f);
           passed = false;
-        } else {
-          compiler.addInput(parsedInput);
         }
-      } catch (IOException ex) {
-        logger.println("Failed to read " + f);
-        passed = false;
+      }
+
+      // Cajole
+      passed = passed && compiler.run();
+
+      block = passed ? compiler.getJavascript() : null;
+    } else {
+      block = new Block();
+      passed = true;
+      for (File f : inputs) {
+        try {
+          block.appendChild(parseInput(
+              new InputSource(f.getCanonicalFile().toURI()), mq)
+              .cast(Statement.class).node);
+        } catch (IOException ex) {
+          logger.println("Failed to read " + f);
+          passed = false;
+        }
+      }
+      if (passed) {
+        for (Message msg : mq.getMessages()) {
+          if (MessageLevel.ERROR.compareTo(msg.getMessageLevel()) >= 0) {
+            passed = false;
+            break;
+          }
+        }
       }
     }
 
-    // Cajole
-    passed = passed && compiler.run();
-
     // Log messages
-    MessageContext mc = compiler.getMessageContext();
     SnippetProducer snippetProducer = new SnippetProducer(originalSources, mc);
     for (Message msg : mq.getMessages()) {
       if (passed && MessageLevel.LOG.compareTo(msg.getMessageLevel()) >= 0) {
@@ -167,9 +198,17 @@ public class BuildServiceImplementation implements BuildService {
 
     // Write the output
     if (passed) {
-      Block block = compiler.getJavascript();
       StringBuilder out = new StringBuilder();
-      RenderContext rc = new RenderContext(mc, block.makeRenderer(out, null));
+      TokenConsumer renderer;
+      String rendererType = (String) options.get("renderer");
+      if ("pretty".equals(rendererType)) {
+        renderer = new JsPrettyPrinter(out, null);
+      } else if ("minify".equals(rendererType)) {
+        renderer = new JsMinimalPrinter(out, null);
+      } else {
+        throw new RuntimeException("Unrecognized renderer " + rendererType);
+      }
+      RenderContext rc = new RenderContext(mc, renderer);
       block.render(rc);
       rc.getOut().noMoreTokens();
       try {

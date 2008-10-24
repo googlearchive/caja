@@ -55,4 +55,7 @@ public class GenRuleAntTask extends AbstractCajaAntTask {
     Class<?> clazz = loader.loadClass(className);
     this.clazz = clazz.asSubclass(BuildCommand.class);
   }
+  
+  @Override
+  Output makeOutput() { return new Output() {}; }
 }

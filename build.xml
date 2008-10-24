@@ -22,13 +22,14 @@
   - and look for the output in ./ant-* directories.
   -
   - Valid values for <rulename> are:
-  -   default   :  builds the plugin compiler (pluginc), tests, and docs
-  -   clean     :  wipes generated files
-  -   demos     :  demo files
-  -   docs      :  javadoc
-  -   jsdocs    :  jsdoc
-  -   pluginc   :  the plugin compiler
-  -   runtests  :  runs the tests
+  -   default    :  builds the plugin compiler (pluginc), tests, and docs
+  -   clean      :  wipes generated files
+  -   demos      :  demo files
+  -   docs       :  javadoc
+  -   jsdocs     :  jsdoc
+  -   pluginc    :  the plugin compiler
+  -   runtests   :  runs the tests
+  -   benchmarks :  runs the benchmarks
   -
   - To run with assertions enabled, set the environment variable ANT_FLAGS="-ea"
  -->
@@ -189,10 +190,11 @@
       <report format="frames" todir="${reports}/tests"
        styledir="${third_party}/ant/etc"/>
     </junitreport>
-    <fail message="One or more tests failed. For details, see ${reports}/tests/index.html"
-      if="runtests.error"/>
-    <fail message="One or more tests failed to compile. For details, see ${reports}/tests/index.html"
-      if="runtests.failure"/>
+    <fail message=
+     "One or more tests failed. For details, see ${reports}/tests/index.html"
+     if="runtests.error"/>
+    <fail message="One or more tests failed to compile."
+     if="runtests.failure"/>
   </target>
 
   <target name="docs" description="Builds all Caja documentation."
@@ -260,9 +262,7 @@
       <compilerarg line="-Xlint:deprecation"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
-    <taskdef name="cajole" classname="com.google.caja.tools.CajoleAntTask"
-     classpathref="classpath.run"/>
-    <taskdef name="minify" classname="com.google.caja.tools.MinifyAntTask"
+    <taskdef name="transform" classname="com.google.caja.tools.TransformAntTask"
      classpathref="classpath.run"/>
     <taskdef name="innocent" classname="com.google.caja.tools.InnocentAntTask"
      classpathref="classpath.run"/>
@@ -275,17 +275,59 @@
       <include name="**/caja/plugin/CssPropertyPatterns.java"/>
     </javac>
     <genrule class="com.google.caja.plugin.CssPropertyPatterns$Builder">
-      <job output="${lib}/com/google/caja/plugin/css-defs.js">
-        <include file="${src}/com/google/caja/lang/css/css21.json"/>
-        <depend file="${src}/com/google/caja/lang/css/css21-defs.json"/>
-        <depend file="${src}/com/google/caja/lang/css/css21-whitelist.json"/>
-        <include file="${src}/com/google/caja/lang/css/css21-fns.json"/>
-        <depend file="${src}/com/google/caja/lang/css/css21-fns-defs.json"/>
-        <depend file="${src}/com/google/caja/lang/css/css21-fns-whitelist.json"
-         />
-        <depend file="${src}/com/google/caja/plugin/CssPropertyPatterns"/>
-      </job>
+      <include file="${src}/com/google/caja/lang/css/css21.json"/>
+      <depend file="${src}/com/google/caja/lang/css/css21-defs.json"/>
+      <depend file="${src}/com/google/caja/lang/css/css21-whitelist.json"/>
+      <include file="${src}/com/google/caja/lang/css/css21-fns.json"/>
+      <depend file="${src}/com/google/caja/lang/css/css21-fns-defs.json"/>
+      <depend file="${src}/com/google/caja/lang/css/css21-fns-whitelist.json"/>
+      <depend file="${src}/com/google/caja/plugin/CssPropertyPatterns.java"/>
+      <output file="${lib}/com/google/caja/plugin/css-defs.js"/>
     </genrule>
+  </target>
+
+  <target name="benchmarks" description="Runs benchmarks."
+   depends="dirs,pluginc,MinifiedJs,CajoledValija,jars">
+    <copy todir="${lib}/com/google/caja/demos/benchmarks">
+      <fileset dir="${third_party}/js/v8-benchmark">
+        <include name="base.js"/>
+        <include name="richards.js"/>
+        <include name="deltablue.js"/>
+        <include name="crypto.js"/>
+        <include name="raytrace.js"/>
+        <include name="earley-boyer.js"/>
+        <include name="run.js"/>
+      </fileset>
+    </copy>
+    <copy todir="${lib}">
+      <fileset dir="${src}">
+        <include name="com/google/caja/cajita.js"/>
+      </fileset>
+    </copy>
+  	<mkdir dir="${reports}/benchmarks"/>
+    <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
+      <src path="${tests}"/>
+      <classpath refid="classpath.tests.compile"/>
+      <include name="**/caja/demos/benchmarks/*.java"/>
+    </javac>
+    <junit printsummary="yes" fork="yes" maxmemory="512m"
+     errorProperty="benchmarks.error" failureProperty="benchmarks.failure">
+      <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
+      <classpath refid="classpath.tests.run"/>
+      <formatter type="xml" usefile="true"/>
+      <test name="com.google.caja.demos.benchmarks.BenchmarkRunner"
+       todir="${reports}/benchmarks"/>
+    </junit>
+    <junitreport todir="${reports}/benchmarks">
+      <fileset dir="${reports}/benchmarks" includes="TEST-*.xml"/>
+      <report format="frames" todir="${reports}/benchmarks"
+       styledir="${third_party}/ant/etc"/>
+    </junitreport>
+    <fail message=
+     "One or more tests failed. For details, see ${reports}/tests/index.html"
+     if="benchmarks.error"/>
+    <fail message="One or more tests failed to compile."
+     if="benchmarks.failure"/>
   </target>
 
   <target name="jars" depends="pluginc,CajoledValija,MinifiedJs"
@@ -319,51 +361,44 @@
 
   <!-- Cajoles test resources that contain cajita to javascript. -->
   <target name="CajoledTests" depends="pluginc,dirs,CajoledValija">
-    <cajole languageMode="cajita">
-      <job output="${lib}/com/google/caja/plugin/domita_test_cajoled.js">
-        <include file="${tests}/com/google/caja/plugin/asserts.js"/>
-        <include
-         file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"/>
-      </job>
-    </cajole>
-    <cajole languageMode="valija">
-      <job output="${lib}/com/google/caja/plugin/domita_test_valijad.js">
-        <include file="${tests}/com/google/caja/plugin/asserts.js"/>
-        <include
-         file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"/>
-      </job>
-    </cajole>
+    <transform>
+      <include file="${tests}/com/google/caja/plugin/asserts.js"/>
+      <include file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"/>
+
+      <output file="${lib}/com/google/caja/plugin/domita_test.co.js"
+       language="cajita"/>
+      <output file="${lib}/com/google/caja/plugin/domita_test.vo.js"
+       language="valija"/>
+    </transform>
     <copy todir="${lib}">
       <fileset dir="${src}" includes="**/*.html"/>
       <fileset dir="${tests}" includes="**/*.html"/>
     </copy>
   </target>
-
   <target name="CajoledValija" depends="pluginc">
-    <cajole languageMode="cajita">
-      <job output="${lib}/com/google/caja/plugin/valija-cajoled.js">
-        <include file="${src}/com/google/caja/valija-cajita.js" />
-      </job>
-    </cajole>
+    <transform>
+      <output file="${lib}/com/google/caja/plugin/valija.co.js"
+       language="cajita"/>
+      <include file="${src}/com/google/caja/valija-cajita.js"/>
+    </transform>
   </target>
 
   <target name="MinifiedJs" depends="pluginc">
-    <minify>
-      <job output="${lib}/com/google/caja/plugin/html-sanitizer-minified.js">
-        <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
-        <include file="${lib}/com/google/caja/plugin/css-defs.js"/>
-        <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-      </job>
-    </minify>
-    <minify>
-      <job output="${lib}/com/google/caja/plugin/domita-minified.js">
-        <include file="${src}/com/google/caja/cajita.js"/>
-        <include file="${src}/com/google/caja/plugin/unicode.js"/>
-        <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
-        <include file="${src}/com/google/caja/plugin/bridal.js"/>
-        <include file="${src}/com/google/caja/plugin/domita.js"/>
-      </job>
-    </minify>
+    <transform>
+      <output file="${lib}/com/google/caja/plugin/html-sanitizer-minified.js"
+       language="javascript" renderer="minify"/>
+      <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
+      <include file="${lib}/com/google/caja/plugin/css-defs.js"/>
+      <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+    </transform>
+    <transform>
+      <output file="${lib}/com/google/caja/plugin/domita-minified.js"
+       language="javascript" renderer="minify"/>
+      <include file="${src}/com/google/caja/cajita.js"/>
+      <include file="${src}/com/google/caja/plugin/unicode.js"/>
+      <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
+      <include file="${src}/com/google/caja/plugin/domita.js"/>
+    </transform>
   </target>
 
   <target name="AllTests" depends="pluginc,CajolingService,CajoledTests,dirs">
@@ -602,26 +637,20 @@
 
   <target name="lolcat-search" depends="dirs,pluginc,MinifiedJs"
    description="IM IN UR BUILD DEMOING UR GADGETZ">
-    <cajole languageMode="cajita">
-      <job output="${www}/lolcat-search/searchbox-cajoled.js">
-        <include
-         file="${demos}/lolcat-search/searchbox.html"/>
-        <depend
-         file="${demos}/lolcat-search/searchbox.css"/>
-        <depend
-         file="${demos}/lolcat-search/searchbox.js"/>
-      </job>
-      <job output="${www}/lolcat-search/kittens-cajoled.js">
-        <include
-         file="${demos}/lolcat-search/kittens.html"/>
-        <depend
-         file="${demos}/lolcat-search/katTranzlator.js"/>
-        <depend
-         file="${demos}/lolcat-search/kittens.css"/>
-        <depend
-         file="${demos}/lolcat-search/kittens.js"/>
-      </job>
-    </cajole>
+    <transform>
+      <output file="${www}/lolcat-search/searchbox.co.js"
+       language="cajita"/>
+      <include file="${demos}/lolcat-search/searchbox.html"/>
+      <depend file="${demos}/lolcat-search/searchbox.css"/>
+      <depend file="${demos}/lolcat-search/searchbox.js"/>
+    </transform>
+    <transform>
+      <output file="${www}/lolcat-search/kittens.co.js" language="cajita"/>
+      <include file="${demos}/lolcat-search/kittens.html"/>
+      <depend file="${demos}/lolcat-search/katTranzlator.js"/>
+      <depend file="${demos}/lolcat-search/kittens.css"/>
+      <depend file="${demos}/lolcat-search/kittens.js"/>
+    </transform>
 
     <copy todir="${www}/lolcat-search">
       <fileset dir="${demos}/lolcat-search">
@@ -677,7 +706,7 @@
       </fileset>
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="css-defs.js"/>
-        <include name="valija-cajoled.js"/>
+        <include name="valija.co.js"/>
       </fileset>
       <fileset dir="${third_party}/js/prettify">
         <include name="prettify.js"/>
@@ -711,104 +740,73 @@
        <script type="text/javascript" src="domita.js"></script>
        <script type="text/javascript" src="prettify.js"></script>
        <script type="text/javascript" src="testbed.js"></script>
-       <script type="text/javascript" src="valija-cajoled.js"></script>
+       <script type="text/javascript" src="valija.co.js"></script>
        ]]>
      </replacevalue>
     </replace>
-    <minify>
-      <job output="${www}/testbed/cajita-combined-min.js">
-        <include file="${src}/com/google/caja/cajita.js"/>
-        <include file="${src}/com/google/caja/log-to-console.js"/>
-        <include file="${src}/com/google/caja/cajita-debugmode.js"/>
-        <include file="${src}/com/google/caja/plugin/unicode.js"/>
-        <include file="${lib}/com/google/caja/plugin/css-defs.js"/>
-        <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
-        <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-        <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
-        <include file="${src}/com/google/caja/opensocial/applet/setup-valija.js"/>
-        <include file="${src}/com/google/caja/plugin/bridal.js"/>
-        <include file="${src}/com/google/caja/plugin/domita.js"/>
-        <include file="${third_party}/js/prettify/prettify.js"/>
-        <include file="${src}/com/google/caja/opensocial/applet/testbed.js"/>
-        <include file="${lib}/com/google/caja/plugin/valija-cajoled.js"/>
-      </job>
-    </minify>
+    <transform>
+      <output file="${www}/testbed/cajita-combined-min.js"
+       language="javascript" renderer="minify"/>
+      <include file="${src}/com/google/caja/cajita.js"/>
+      <include file="${src}/com/google/caja/log-to-console.js"/>
+      <include file="${src}/com/google/caja/cajita-debugmode.js"/>
+      <include file="${src}/com/google/caja/plugin/unicode.js"/>
+      <include file="${lib}/com/google/caja/plugin/css-defs.js"/>
+      <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
+      <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
+      <include file="${src}/com/google/caja/opensocial/applet/setup-valija.js"/>
+      <include file="${src}/com/google/caja/plugin/domita.js"/>
+      <include file="${third_party}/js/prettify/prettify.js"/>
+      <include file="${src}/com/google/caja/opensocial/applet/testbed.js"/>
+      <include file="${lib}/com/google/caja/plugin/valija.co.js"/>
+    </transform>
   </target>
 
   <target name="calendar" depends="dirs,pluginc,MinifiedJs,jars"
    description="A calendar that can mine data from a read only DOM.">
     <mkdir dir="${www}/calendar"/>
 
-    <minify>
-      <job
-       output="${lib}/com/google/caja/demos/calendar/html-interp-minified.js">
-        <include
-         file="${demos}/calendar/string-interpolation.js"/>
-        <include file="${demos}/calendar/html-interp.js"/>
-      </job>
-      <job output="${lib}/com/google/caja/demos/calendar/calendar-minified.js">
-        <include file="${demos}/calendar/util.js"/>
-        <include file="${demos}/calendar/bitset.js"/>
-        <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
-        <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-        <include file="${demos}/calendar/uformat.js"/>
-        <include file="${demos}/calendar/time-cajita.js"/>
-        <include file="${demos}/calendar/weekday-cajita.js"/>
-        <include file="${demos}/calendar/timezone-cajita.js"/>
-        <include file="${demos}/calendar/time_util-cajita.js"/>
-        <include file="${demos}/calendar/hcalendar.js"/>
-        <include file="${demos}/calendar/generators-cajita.js"/>
-        <include file="${demos}/calendar/instanceGenerators-cajita.js"/>
-        <include file="${demos}/calendar/conditions-cajita.js"/>
-        <include file="${demos}/calendar/predicates-cajita.js"/>
-        <include file="${demos}/calendar/filters-cajita.js"/>
-        <include file="${demos}/calendar/rrule-cajita.js"/>
-        <include file="${demos}/calendar/event.js"/>
-        <include file="${demos}/calendar/chip.js"/>
-        <include file="${demos}/calendar/calendar.js"/>
-        <include file="${demos}/calendar/event_store.js"/>
-        <include file="${demos}/calendar/axis.js"/>
-        <include file="${demos}/calendar/layout_policy.js"/>
-        <include file="${demos}/calendar/layout.js"/>
-        <include file="${demos}/calendar/overlap.js"/>
-        <include file="${demos}/calendar/widget.js"/>
-        <include file="${demos}/calendar/widget-html.js"/>
-        <include file="${demos}/calendar/main.js"/>
-      </job>
-    </minify>
-    <cajole debug="false" languageMode="valija">
-      <job output="${lib}/com/google/caja/demos/calendar/calendar-cajoled.js">
-        <include file="${demos}/calendar/util.js"/>
-        <include file="${demos}/calendar/bitset.js"/>
-        <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
-        <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-        <include file="${demos}/calendar/uformat.js"/>
-        <include file="${demos}/calendar/time-cajita.js"/>
-        <include file="${demos}/calendar/weekday-cajita.js"/>
-        <include file="${demos}/calendar/timezone-cajita.js"/>
-        <include file="${demos}/calendar/time_util-cajita.js"/>
-        <include file="${demos}/calendar/hcalendar.js"/>
-        <include file="${demos}/calendar/generators-cajita.js"/>
-        <include file="${demos}/calendar/instanceGenerators-cajita.js"/>
-        <include file="${demos}/calendar/conditions-cajita.js"/>
-        <include file="${demos}/calendar/predicates-cajita.js"/>
-        <include file="${demos}/calendar/filters-cajita.js"/>
-        <include file="${demos}/calendar/rrule-cajita.js"/>
-        <include file="${demos}/calendar/event.js"/>
-        <include file="${demos}/calendar/chip.js"/>
-        <include file="${demos}/calendar/calendar.js"/>
-        <include file="${demos}/calendar/event_store.js"/>
-        <include file="${demos}/calendar/axis.js"/>
-        <include file="${demos}/calendar/layout_policy.js"/>
-        <include file="${demos}/calendar/layout.js"/>
-        <include file="${demos}/calendar/overlap.js"/>
-        <include file="${demos}/calendar/widget.css"/>
-        <include file="${demos}/calendar/widget.js"/>
-        <include file="${demos}/calendar/widget-html.js"/>
-        <include file="${demos}/calendar/main.js"/>
-      </job>
-    </cajole>
-
+    <transform>
+      <output language="javascript" renderer="minify"
+       file="${lib}/com/google/caja/demos/calendar/html-interp-minified.js"/>
+      <include
+       file="${demos}/calendar/string-interpolation.js"/>
+      <include file="${demos}/calendar/html-interp.js"/>
+    </transform>
+    <transform>
+      <output file="${lib}/com/google/caja/demos/calendar/calendar-minified.js"
+       language="javascript" renderer="minify"/>
+      <output file="${lib}/com/google/caja/demos/calendar/calendar.vo.js"
+       language="valija" debug="false"/>
+      <include file="${demos}/calendar/util.js"/>
+      <include file="${demos}/calendar/bitset.js"/>
+      <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
+      <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <include file="${demos}/calendar/uformat.js"/>
+      <include file="${demos}/calendar/time-cajita.js"/>
+      <include file="${demos}/calendar/weekday-cajita.js"/>
+      <include file="${demos}/calendar/timezone-cajita.js"/>
+      <include file="${demos}/calendar/time_util-cajita.js"/>
+      <include file="${demos}/calendar/hcalendar.js"/>
+      <include file="${demos}/calendar/generators-cajita.js"/>
+      <include file="${demos}/calendar/instanceGenerators-cajita.js"/>
+      <include file="${demos}/calendar/conditions-cajita.js"/>
+      <include file="${demos}/calendar/predicates-cajita.js"/>
+      <include file="${demos}/calendar/filters-cajita.js"/>
+      <include file="${demos}/calendar/rrule-cajita.js"/>
+      <include file="${demos}/calendar/event.js"/>
+      <include file="${demos}/calendar/chip.js"/>
+      <include file="${demos}/calendar/calendar.js"/>
+      <include file="${demos}/calendar/event_store.js"/>
+      <include file="${demos}/calendar/axis.js"/>
+      <include file="${demos}/calendar/layout_policy.js"/>
+      <include file="${demos}/calendar/layout.js"/>
+      <include file="${demos}/calendar/overlap.js"/>
+      <include file="${demos}/calendar/widget.js"/>
+      <include file="${demos}/calendar/widget-html.js"/>
+      <include file="${demos}/calendar/main.js"/>
+    </transform>
     <copy todir="${www}/calendar">
       <fileset dir="${src}/com/google/caja">
         <include name="cajita.js"/>
@@ -816,7 +814,8 @@
       </fileset>
       <fileset dir="${lib}/com/google/caja/demos/calendar">
         <include name="*-minified.js"/>
-        <include name="*-cajoled.js"/>
+        <include name="*.vo.js"/>
+        <include name="*.co.js"/>
       </fileset>
       <fileset dir="${demos}/calendar">
         <include name="demo.html"/>
@@ -826,7 +825,7 @@
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="domita-minified.js"/>
         <include name="html-sanitizer-minified.js"/>
-        <include name="valija-cajoled.js"/>
+        <include name="valija.co.js"/>
       </fileset>
       <fileset dir="${third_party}/js/firebug">
         <include name="firebugx.js"/>
