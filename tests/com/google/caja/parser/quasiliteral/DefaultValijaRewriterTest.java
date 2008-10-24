@@ -302,6 +302,12 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "cajita.getOwnPropertyNames(x).sort();");
   }
 
+  public void testCallback() throws Exception {
+    assertConsistent("Function.prototype.apply.call(function(a, b) {return a + b;}, {}, [3, 4]);");
+    assertConsistent("Function.prototype.call.call(function(a, b) {return a + b;}, {}, 3, 4);");
+    assertConsistent("Function.prototype.bind.call(function(a, b) {return a + b;}, {}, 3)(4);");
+  }
+
   @Override
   protected Object executePlain(String caja)
       throws IOException, ParseException {

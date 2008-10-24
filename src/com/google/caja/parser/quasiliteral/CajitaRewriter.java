@@ -173,7 +173,7 @@ public class CajitaRewriter extends Rewriter {
               "{"
               + "  ___./*@synthetic*/loadModule("
               + "      /*@synthetic*/function (___, IMPORTS___) {"
-              + "        var moduleResult___;"
+              + "        var moduleResult___ = ___.NO_RESULT;"
               + "        @body*;"
               + "        return moduleResult___;"
               + "      });"

@@ -185,7 +185,9 @@ var ___;
     var result = typeof obj;
     if (result !== 'function') { return result; }
     var ctor = obj.constructor;
-    if (typeof ctor === 'function' && ctor.typeTag___ === 'RegExp' && obj instanceof ctor) {
+    if (typeof ctor === 'function' && 
+        ctor.typeTag___ === 'RegExp' && 
+        obj instanceof ctor) {
       return 'object';
     }
     return 'function';
@@ -904,14 +906,15 @@ var ___;
   /**
    * Mark <tt>constr</tt> as a constructor.
    * <p>
-   * If <tt>opt_Sup</tt> is provided, set constr.super to a function which
-   * calls the super constructor to do its part in initializing the object.
-   * <p>
    * A function is tamed and classified by calling one of
    * <tt>ctor()</tt>, <tt>method()</tt>, or <tt>simpleFunc()</tt>. Each
    * of these checks that the function hasn't already been classified by
    * any of the others. A function which has not been so classified is an
    * <i>untamed function</i>.
+   * <p>
+   * If <tt>opt_Sup</tt> is provided, record that const.prototype
+   * inherits from opt_Sup.prototype. This bookkeeping helps
+   * directConstructor().
    * <p>
    * <tt>opt_name</tt>, if provided, should be the name of the constructor
    * function. Currently, this is used only to generate friendlier
@@ -926,35 +929,35 @@ var ___;
       fail("Exophoric functions can't be constructors: ", constr);
     }
     constr.CONSTRUCTOR___ = true;
-    derive(constr, opt_Sup);
+    if (opt_Sup) {
+      derive(constr, opt_Sup);
+    }
     if (opt_name) {
       constr.NAME___ = String(opt_name);
     }
     return constr;  // translator freezes constructor later
   }
 
-  function derive(constr, opt_Sup) {
-    if (opt_Sup) {
-      opt_Sup = asCtor(opt_Sup);
-      if (isFrozen(constr)) {
-        fail('Derived constructor already frozen: ', constr);
-      }
-      if (!isFrozen(constr.prototype)) {
-        // Some platforms, like Safari, actually conform to the part
-        // of the ES3 spec which states that the constructor property
-        // of implicitly created prototypical objects are not
-        // deletable. But this prevents the inheritance-walking
-        // algorithm (kludge) in directConstructor from working. Thus,
-        // we set proto___ here so that directConstructor can skip
-        // that impossible case.
-        constr.prototype.proto___ = opt_Sup.prototype;
-      }
+  function derive(constr, sup) {
+    sup = asCtor(sup);
+    if (isFrozen(constr)) {
+      fail('Derived constructor already frozen: ', constr);
+    }
+    if (!isFrozen(constr.prototype)) {
+      // Some platforms, like Safari, actually conform to the part
+      // of the ES3 spec which states that the constructor property
+      // of implicitly created prototypical objects are not
+      // deletable. But this prevents the inheritance-walking
+      // algorithm (kludge) in directConstructor from working. Thus,
+      // we set proto___ here so that directConstructor can skip
+      // that impossible case.
+      constr.prototype.proto___ = sup.prototype;
     }
   }
 
   /**
    * Enables first-class reification of exophoric functions as
-   * malfunctions -- frozen records with call, bind, and apply
+   * pseudo-functions -- frozen records with call, bind, and apply
    * simpleFunctions. 
    */
   function reifyIfXo4a(xfunc, opt_name) {
@@ -963,13 +966,20 @@ var ___;
     }
     var result = {
       call: simpleFrozenFunc(function(self, var_args) {
+        if (self === null || self === undefined) { self = USELESS; }
         return xfunc.apply(self, Array.slice(arguments, 1));
       }),
       apply: simpleFrozenFunc(function(self, args) {
+        if (self === null || self === undefined) { self = USELESS; }
         return xfunc.apply(self, args);
       }),
       bind: simpleFrozenFunc(function(self, var_args) {
-        return simpleFrozenFunc(xfunc.bind.apply(xfunc, arguments));
+        var args = arguments;
+        if (self === null || self === undefined) { 
+          self = USELESS;
+          args = [self].concat(Array.slice(args, 1));
+        }
+        return simpleFrozenFunc(xfunc.bind.apply(xfunc, args));
       }),
       length: xfunc.length,
       toString: simpleFrozenFunc(function() {
@@ -1087,6 +1097,34 @@ var ___;
       fail("Exophoric functions can't be called as simple functions: ", fun);
     }
     fail("Untamed functions can't be called as simple functions: ", fun);
+  }
+
+  /**
+   * Is <tt>funoid</tt> an applicator -- a non-function object with a
+   * callable <tt>apply</tt> method, such as a pseudo-function or
+   * disfunction? 
+   * <p>
+   * If so, then it can be used as a function in some contexts.
+   */
+  function isApplicator(funoid) {
+    if (typeof funoid !== 'object') { return false; }
+    if (funoid === null) { return false; }
+    return canCallPub(funoid, 'apply');
+  }
+
+  /**
+   * Coerces fun to a genuine simple-function.
+   * <p>
+   * If fun is an applicator, then return a simple-function that invokes
+   * fun's apply method. Otherwise, asSimpleFunc().
+   */
+  function toSimpleFunc(fun) {
+    if (isApplicator(fun)) { 
+      return simpleFrozenFunc(function(var_args) {
+        return callPub(fun, 'apply', [USELESS, Array.slice(arguments, 0)]);
+      });
+    }
+    return asSimpleFunc(fun);
   }
 
   /**
@@ -1332,6 +1370,15 @@ var ___;
   var BREAK = Token('BREAK');
 
   /**
+   * A unique value that should never be made accessible to untrusted
+   * code, for distinguishing the absence of a result from any 
+   * returnable result.
+   * <p>
+   * See makeNewModuleHandler's getLastOutcome().
+   */
+  var NO_RESULT = Token('NO_RESULT');
+
+  /**
    * For each sensible key/value pair in obj, call fn with that
    * pair.
    * <p>
@@ -1339,7 +1386,7 @@ var ___;
    * the canEnumOwn() property names.
    */
   function forOwnKeys(obj, fn) {
-    fn = asSimpleFunc(fn);
+    fn = toSimpleFunc(fn);
     var keys = ownKeys(obj);
     for (var i = 0; i < keys.length; i++) {
       if (fn(keys[i], readPub(obj, keys[i])) === BREAK) {
@@ -1356,7 +1403,7 @@ var ___;
    * the canEnumPub() property names.
    */
   function forAllKeys(obj, fn) {
-    fn = asSimpleFunc(fn);
+    fn = toSimpleFunc(fn);
     var keys = allKeys(obj);
     for (var i = 0; i < keys.length; i++) {
       if (fn(keys[i], readPub(obj, keys[i])) === BREAK) {
@@ -1783,14 +1830,14 @@ var ___;
    * safely be called with its <tt>this</tt> bound to other objects.
    * <p>
    * Since exophoric functions are not first-class, reading
-   * proto[name] returns the corresponding malfunction -- a record
+   * proto[name] returns the corresponding pseudo-function -- a record
    * with simple-functions for its call, bind, and apply.
    */
   function grantGeneric(proto, name) {
     var func = xo4a(proto[name], name);
     grantCall(proto, name);
-    var malfunc = reifyIfXo4a(func, name);
-    useGetHandler(proto, name, function() { return malfunc; });
+    var pseudoFunc = reifyIfXo4a(func, name);
+    useGetHandler(proto, name, function() { return pseudoFunc; });
   }
 
   /**
@@ -1798,14 +1845,14 @@ var ___;
    * exophoric function.
    * <p>
    * Since exophoric functions are not first-class, reading
-   * proto[name] returns the corresponding malfunction -- a record
+   * proto[name] returns the corresponding pseudo-function -- a record
    * with simple-functions for its call, bind, and apply.
    */
   function handleGeneric(obj, name, func) {
     xo4a(func);
     useCallHandler(obj, name, func);
-    var malfunc = reifyIfXo4a(func, name);
-    useGetHandler(obj, name, function() { return malfunc; });
+    var pseudoFunc = reifyIfXo4a(func, name);
+    useGetHandler(obj, name, function() { return pseudoFunc; });
   }
 
   /**
@@ -1968,10 +2015,10 @@ var ___;
   /// Function
 
   handleGeneric(Function.prototype, 'apply', function(self, realArgs) {
-    return asSimpleFunc(this).apply(self, realArgs);
+    return toSimpleFunc(this).apply(self, realArgs);
   });
   handleGeneric(Function.prototype, 'call', function(self, var_args) {
-    return asSimpleFunc(this).apply(self, Array.slice(arguments, 1));
+    return toSimpleFunc(this).apply(self, Array.slice(arguments, 1));
   });
   handleGeneric(Function.prototype, 'bind', function(self, var_args) {
     var thisFunc = this;
@@ -1999,7 +2046,7 @@ var ___;
       fail("Can't sort a frozen array.");
     }
     if (comparator) {
-      return Array.prototype.sort.call(this, asSimpleFunc(comparator));
+      return Array.prototype.sort.call(this, toSimpleFunc(comparator));
     } else {
       return Array.prototype.sort.call(this);
     }
@@ -2025,16 +2072,14 @@ var ___;
   });
   handleGeneric(String.prototype, 'replace', function(searcher, replacement) {
     enforceMatchable(searcher);
-    if ('object' === typeOf(replacement) && 
-        replacement !== null &&
-        canCallPub(replacement, 'bind')) {
-      replacement = ___.callPub(replacement, 'bind', [USELESS]);
+    if (isSimpleFunc(replacement)) {
+      replacement = asSimpleFunc(replacement);
+    } else if (isApplicator(replacement)) {
+      replacement = toSimpleFunc(replacement);
+    } else {
+      replacement = '' + replacement;
     }
-    return this.replace(
-            searcher,
-            (typeOf(replacement) === 'function'
-             ? ___.asSimpleFunc(replacement)
-             : '' + replacement));
+    return this.replace(searcher, replacement);
   });
   handleGeneric(String.prototype, 'search', function(regexp) {
     enforceMatchable(regexp);
@@ -2177,9 +2222,36 @@ var ___;
       setImports: simpleFrozenFunc(function(newImports) { 
         imports = newImports; 
       }),
+
+      /**
+       * An outcome is a pair of a success flag and a value. 
+       * <p>
+       * If the success flag is true, then the value is the normal
+       * result of calling the module function. If the success flag is
+       * false, then the value is the thrown error by which the module
+       * abruptly terminated.
+       * <p>
+       * An html page is cajoled to a module that runs to completion,
+       * but which reports as its outcome the outcome of its last
+       * script block. In order to reify that outcome and report it
+       * later, the html page initializes moduleResult___ to
+       * NO_RESULT, the last script block is cajoled to set
+       * moduleResult___ to something other than NO_RESULT on success
+       * but to call handleUncaughtException() on
+       * failure, and the html page returns moduleResult___ on
+       * completion. handleUncaughtException() records a failed
+       * outcome. This newModuleHandler's handle() method will not
+       * overwrite an already reported outcome with NO_RESULT, so the
+       * last script-block's outcome will be preserved.
+       */
       getLastOutcome: simpleFrozenFunc(function() { 
         return lastOutcome; 
       }),
+
+      /**
+       * If the last outcome is a success, returns its value;
+       * otherwise <tt>undefined</tt>.
+       */
       getLastValue: simpleFrozenFunc(function() {
         if (lastOutcome && lastOutcome[0]) {
           return lastOutcome[1];
@@ -2187,19 +2259,35 @@ var ___;
           return void 0;
         }
       }),
+
+      /**
+       * Runs the newModule's module function.
+       * <p>
+       * Updates the last outcome to report the module function's
+       * reported outcome. Propogate this outcome by terminating in
+       * the same manner. 
+       */
       handle: simpleFrozenFunc(function(newModule) {
+        lastOutcome = void 0;
         try {
           var result = newModule(___, imports);
-          lastOutcome = [true, result];
-          return result;
+          if (result !== NO_RESULT) {
+            lastOutcome = [true, result];
+          }
         } catch (ex) {
-          // TODO(erights): I hope that this outcome reporting can be
-          // adequate to replace the in-place rewrite currently being
-          // done by HtmlCompiler.java as explained below.
           lastOutcome = [false, ex];
-          throw ex;
+        }
+        if (lastOutcome) {
+          if (lastOutcome[0]) {
+            return lastOutcome[1];
+          } else {
+            throw lastOutcome[1];
+          }
+        } else {
+          return void 0;
         }
       }),
+
       /**
        * This emulates HTML5 exception handling for scripts as discussed at
        * http://code.google.com/p/google-caja/wiki/UncaughtExceptionHandling
@@ -2219,8 +2307,10 @@ var ___;
        */
       handleUncaughtException: function (exception, onerror, source, lineNum) {
 
+        lastOutcome = [false, exception];
+
         // Cause exception to be rethrown if it is uncatchable.
-        ___.tameException(exception);
+        tameException(exception);
 
         var message = 'unknown';
         if ('object' === typeOf(exception) && exception !== null) {
@@ -2231,9 +2321,10 @@ var ___;
         // exceptions, it would go here before onerror is invoked.
 
         // See the HTML5 discussion for the reasons behind this rule.
+        if (isApplicator(onerror)) { onerror = toSimpleFunc(onerror); }
         var shouldReport = (
             isSimpleFunc(onerror)
-            ? ___.simpleFunc(onerror)(message, String(source), String(lineNum))
+            ? asSimpleFunc(onerror)(message, String(source), String(lineNum))
             : onerror !== null);
         if (shouldReport !== false) {
           cajita.log(source + ':' + lineNum + ': ' + message);
@@ -2653,7 +2744,7 @@ var ___;
    * func.prototype, what would the value of x[name] be? If the value
    * associated with func.prototype[name] is an exophoric function
    * (resulting from taming a generic method), then return the
-   * corresponding malfunction. See reifyIfXo4a().
+   * corresponding pseudo-function. See reifyIfXo4a().
    */
   function getProtoPropertyValue(func, name) {
     return asFirstClass(readPub(func.prototype, name));
@@ -2811,8 +2902,8 @@ var ___;
     isSimpleFunc: isSimpleFunc,
     isXo4aFunc: isXo4aFunc,
     ctor: ctor,
-    simpleFunc: simpleFunc,       asSimpleFunc: asSimpleFunc,
-    simpleFrozenFunc: simpleFrozenFunc,
+    simpleFunc: simpleFunc,       simpleFrozenFunc: simpleFrozenFunc,
+    asSimpleFunc: asSimpleFunc,   toSimpleFunc: toSimpleFunc,
     xo4a: xo4a,
     initializeMap: initializeMap,
 
@@ -2857,6 +2948,7 @@ var ___;
     obtainNewModule: obtainNewModule,
     makeNormalNewModuleHandler: makeNormalNewModuleHandler,
     loadModule: loadModule,
+    NO_RESULT: NO_RESULT,
 
     getId: getId,
     getImports: getImports,

@@ -53,7 +53,6 @@
  * @author mikesamuel@gmail.com
  */
 
-
 /** UI suffixes of all registered testbeds. */
 var testbeds = [];
 
@@ -137,7 +136,8 @@ var cajole = (function () {
    * @param {string} uiSuffix suffix of testbed identifiers as described above.
    */
   function loadCaja(htmlText, uiSuffix) {
-    var scriptStart = htmlText.indexOf("{"), scriptEnd = htmlText.lastIndexOf("}");
+    var scriptStart = htmlText.indexOf("{");
+    var scriptEnd = htmlText.lastIndexOf("}");
     var script = htmlText.slice(scriptStart, scriptEnd+1);
 
     if (scriptStart > -1 && scriptEnd > -1) {
@@ -153,7 +153,7 @@ var cajole = (function () {
         imports.$v = valijaMaker(imports);
       }
       // Set up the outer new module handler
-      ___.setNewModuleHandler(imports.outerNewModuleHandler___);
+      ___.setNewModuleHandler(imports.newModuleHandler___);
 
       // Load the script
       try {
@@ -312,6 +312,7 @@ var getImports = (function () {
   function typeString(o) {
     if (typeof o === 'object') {
       if (o === null) { return 'null'; }
+      if (o === window) { return 'Window'; }
       var ctor = ___.directConstructor(o);
       var name;
       if (ctor) {
@@ -355,6 +356,7 @@ var getImports = (function () {
    * one that can be evaled.
    */
   function repr(o) {
+    if (o === window) { return "Breach: you've reached the global object"; }
     if (Object.prototype.toSource && typeof o === 'object' && o !== null) {
       return Object.prototype.toSource.call(o);
     }
@@ -371,7 +373,9 @@ var getImports = (function () {
           // get access to the appropriate Disfunction object for an
           // instanceof test.  At worst, an object will print out as
           // [Object object].
-          if (o.call && o.apply && o.bind) { return cajita.callPub(o, "toString"); }
+          if (o.call && o.apply && o.bind) { 
+            return cajita.callPub(o, "toString"); 
+          }
           if (cajita.isJSONContainer(o)) {
             var els = [];
             if ('length' in o
@@ -394,7 +398,7 @@ var getImports = (function () {
     }
   }
 
-  function makeOuterNewModuleHandler(imports, uiSuffix) {
+  function makeNewModuleHandler(imports, uiSuffix) {
     var superHandler = ___.makeNormalNewModuleHandler();
     superHandler.setImports(imports);
     var inner = ___.beget(superHandler);
@@ -419,14 +423,7 @@ var getImports = (function () {
             .appendChild(entry);
       }
     });
-    ___.freeze(inner);
-    var outer = ___.beget(superHandler);
-    outer.handle = ___.simpleFrozenFunc(function(newModule) {
-      ___.setNewModuleHandler(inner);
-      return ___.callPub(superHandler, 'handle', 
-                         [___.simpleFrozenFunc(newModule)]);
-    });
-    return ___.freeze(outer);
+    return ___.freeze(inner);
   }
 
   function getImports(uiSuffix) {
@@ -474,8 +471,8 @@ var getImports = (function () {
               : void 0;
         });
 
-    testImports.outerNewModuleHandler___ = 
-      makeOuterNewModuleHandler(testImports, uiSuffix);
+    testImports.newModuleHandler___ = 
+      makeNewModuleHandler(testImports, uiSuffix);
 
     return importsByUiSuffix[uiSuffix] = testImports;
   }

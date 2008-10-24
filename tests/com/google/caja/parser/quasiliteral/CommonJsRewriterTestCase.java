@@ -270,4 +270,97 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
                      "];");
     rewriteAndExecute("assertEquals(typeof new RegExp('.*'), 'object');");
   }
+
+  /**
+   * Tests that callbacks from the Cajita runtime and from the tamed ES3 API
+   * to either Cajita or Valija code works.
+   * <p>
+   * The uncajoled branch of the tests below establish that the callbacks
+   * work uncajoled when they are tamed as simple frozen functions.
+   */
+  public void testCommonCallback() throws Exception {
+    assertConsistent(
+        "'abc'.replace('b', function() {return 'xy';});");
+    assertConsistent(
+        "var v = [1, 2, 3, 7, 4, 5];" +
+        "var cmp = function(a, b) {" +
+        "  return (a < b) ? +1 : (b < a) ? -1 : 0;" +
+        "};" +
+        "v.sort(cmp);");
+    rewriteAndExecute("",
+        "var a = [];\n" +
+        "cajita.forOwnKeys({x:3}, function(k, v) {a.push(k, v);});" +
+        "assertEquals(a.toString(), 'x,3');",
+        "var a = [];\n" +
+        "cajita.forOwnKeys({x:3}, ___.simpleFrozenFunc(function(k, v) {a.push(k, v);}));" +
+        "assertEquals(a.toString(), 'x,3');");
+    rewriteAndExecute("",
+        "var a = [];\n" +
+        "cajita.forAllKeys({x:3}, function(k, v) {a.push(k, v);});" +
+        "assertEquals(a.toString(), 'x,3');",
+        "var a = [];\n" +
+        "cajita.forAllKeys({x:3}, ___.simpleFrozenFunc(function(k, v) {a.push(k, v);}));" +
+        "assertEquals(a.toString(), 'x,3');");
+    assertConsistent("(function(){}).bind.call(function(a, b) {return a + b;}, {}, 3)(4);");
+  }
+
+  /**
+   * Tests that neither Cajita nor Valija code can cause a privilege
+   * escalation by calling a tamed exophoric function with null as the
+   * this-value.
+   * <p>
+   * The uncajoled branch of the tests below establish that a null does cause
+   * a privilege escalation for normal non-strict JavaScript.
+   */
+  public void testNoPrivilegeEscalation() throws Exception {
+    rewriteAndExecute("",
+        "assertTrue([].valueOf.call(null) === cajita.USELESS);",
+        "assertTrue([].valueOf.call(null) === this);");
+    rewriteAndExecute("",
+        "assertTrue([].valueOf.apply(null, []) === cajita.USELESS);",
+        "assertTrue([].valueOf.apply(null, []) === this);");
+    rewriteAndExecute("",
+        "assertTrue([].valueOf.bind(null)() === cajita.USELESS);",
+        "assertTrue([].valueOf.bind(null)() === this);");
+  }
+
+  /**
+   * Tests that the special handling of null on tamed exophora works.
+   *
+   * The reification of tamed exophoric functions contains
+   * special cases for when the first argument to call, bind, or apply
+   * is null or undefined, in order to protect against privilege escalation.
+   * {@code #testNoPrivilegeEscalation()} tests that we do prevent the
+   * privilege escalation. Here, we test that this special case preserves
+   * correct functionality.
+   */
+  public void testTamedXo4aOkOnNull() throws Exception {
+    rewriteAndExecute("this.foo = 8;",
+
+        "var x = cajita.beget(cajita.USELESS);" +
+        "assertFalse(({foo: 7}).hasOwnProperty.call(null, 'foo'));" +
+        "assertTrue(cajita.USELESS.isPrototypeOf(x));" +
+        "assertTrue(({foo: 7}).isPrototypeOf.call(null, x));",
+
+        "assertTrue(({}).hasOwnProperty.call(null, 'foo'));" +
+        "assertFalse(({bar: 7}).hasOwnProperty.call(null, 'bar'));");
+    rewriteAndExecute("this.foo = 8;",
+
+        "var x = cajita.beget(cajita.USELESS);" +
+        "assertFalse(({foo: 7}).hasOwnProperty.apply(null, ['foo']));" +
+        "assertTrue(cajita.USELESS.isPrototypeOf(x));" +
+        "assertTrue(({foo: 7}).isPrototypeOf.apply(null, [x]));",
+
+        "assertTrue(({}).hasOwnProperty.apply(null, ['foo']));" +
+        "assertFalse(({bar: 7}).hasOwnProperty.apply(null, ['bar']));");
+    rewriteAndExecute("this.foo = 8;",
+
+        "var x = cajita.beget(cajita.USELESS);" +
+        "assertFalse(({foo: 7}).hasOwnProperty.bind(null)('foo'));" +
+        "assertTrue(cajita.USELESS.isPrototypeOf(x));" +
+        "assertTrue(({foo: 7}).isPrototypeOf.bind(null)(x));",
+
+        "assertTrue(({}).hasOwnProperty.bind(null)('foo'));" +
+        "assertFalse(({bar: 7}).hasOwnProperty.bind(null)('bar'));");
+  }
 }

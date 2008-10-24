@@ -2006,6 +2006,13 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "assertThrows(function(){x.foo(44)});");
   }
 
+  public void testCallback() throws Exception {
+    // These two cases won't work in Valija since every Valija disfunction has its own
+    // non-generic call and apply methods.
+    assertConsistent("(function(){}).apply.call(function(a, b) {return a + b;}, {}, [3, 4]);");
+    assertConsistent("(function(){}).call.call(function(a, b) {return a + b;}, {}, 3, 4);");
+  }
+
   @Override
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();

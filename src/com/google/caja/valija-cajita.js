@@ -68,11 +68,12 @@ var valijaMaker = (function(outers) {
   /**
    * Simulates a monkey-patchable <tt>Function.prototype</tt>.
    * <p>
-   * Currently the call(), apply(), and bind() methods are
-   * genuine functions on each Disfunction instance, rather being
-   * disfunctions inherited from DisfunctionPrototype. This is needed
-   * for call() and apply(), but bind() could probably become an
-   * inherited disfunction.
+   * $v.dis(aFunction) creates a disfunction instance inheriting from
+   * DisfunctionPrototype, each with its own specific call() and
+   * apply() methods which capture and use the function provided to
+   * dis(). In addition, DisfunctionPrototype provides generic call(),
+   * apply(), and bind() disfunctions, in order to simulate
+   * Function.prototype.
    */
   var DisfunctionPrototype = cajita.beget(ObjectPrototype);
 
@@ -117,7 +118,7 @@ var valijaMaker = (function(outers) {
       return printRep;
     }
     return 'disfunction(var_args){\n   [cajoled code]\n}';
-  });
+  }, 'toString');
 
   outers.Function = Disfunction;
 
@@ -165,12 +166,12 @@ var valijaMaker = (function(outers) {
         if (k !== 'valueOf') {
           var v = cajita.getProtoPropertyValue(func, k);
           // TODO(erights): If the resolution of bug #814 is for
-	  // 'typeof malfunction' to be 'function', then the following
-	  // test should be rewritten. 
+          // 'typeof aPseudoFunction' to be 'function', then the following
+          // test should be rewritten. 
           if (typeof v === 'object' && 
-	      v !== null && 
-	      typeof v.call === 'function') {
-            v = dis(v.call);
+              v !== null && 
+              typeof v.call === 'function') {
+            v = dis(v.call, k);
           }
           proto[k] = v;
         }
@@ -240,6 +241,9 @@ var valijaMaker = (function(outers) {
   function read(obj, name) {
     if (typeof obj === 'function') {
       return getShadow(obj)[name];
+    }
+    if (obj === null || obj === undefined) {
+      throw new TypeError('Cannot read property "' + name + '" from ' + obj);
     }
     if (hasOwnProp(obj, name)) {
       return obj[name];
@@ -320,14 +324,6 @@ var valijaMaker = (function(outers) {
     result.apply = function(self, args) {
       return callFn.apply(cajita.USELESS, [self].concat(Array.slice(args, 0)));
     };
-    result.bind = function(self, var_args) {
-      var leftArgs = Array.slice(arguments, 0);
-      return function(var_args) {
-        return callFn.apply(cajita.USELESS,
-                            leftArgs.concat(Array.slice(arguments, 0)));
-      };
-    };
-
     result.prototype = cajita.beget(ObjectPrototype);
     result.prototype.constructor = result;
     result.length = callFn.length - 1;
@@ -337,6 +333,45 @@ var valijaMaker = (function(outers) {
     }
     return result;
   }
+
+  /**
+   * The Valija code <tt>Function.prototype.call</tt> evaluates to a
+   * generic disfunction which can be applied to anything with a
+   * callable <tt>apply</tt> method, such as simple-functions,
+   * pseudo-functions, and disfunctions.
+   */
+  DisfunctionPrototype.call = dis(function($dis, self, var_args) {
+    return $dis.apply(self, Array.slice(arguments, 2));
+  }, 'call');
+
+  /**
+   * The Valija code <tt>Function.prototype.apply</tt> evaluates to a
+   * generic disfunction which can be applied to anything with a
+   * callable <tt>apply</tt> method, such as simple-functions,
+   * pseudo-functions, and disfunctions.
+   * <p>
+   * Since other objects may inherit from DisfunctionPrototype, and
+   * since disfunctions actually do, this generic apply method
+   * requires that $dis provides a directly cajita-callable apply
+   * method, so that it will fail if it simply inherits this one.
+   */
+  DisfunctionPrototype.apply = dis(function($dis, self, args) {
+    return $dis.apply(self, args);
+  }, 'apply');
+
+  /**
+   * The Valija code <tt>Function.prototype.bind</tt> evaluates to a
+   * generic disfunction which can be applied to anything with a
+   * callable <tt>apply</tt> method, such as simple-functions,
+   * pseudo-functions, and disfunctions.
+   */
+  DisfunctionPrototype.bind = dis(function($dis, self, var_args) {
+    var leftArgs = Array.slice(arguments, 2);
+    return function(var_args) {
+      return $dis.apply(self, leftArgs.concat(Array.slice(arguments, 0)));
+    };
+  }, 'bind');
+  
 
   function getOuters() {
     cajita.enforceType(outers, 'object');

@@ -128,7 +128,7 @@ var html = (function () {
       // Entity captured in group 1.
       + '&(\\#[0-9]+|\\#[x][0-9a-f]+|\\w+);'
       // Comment, doctypes, and processing instructions not captured.
-      + '|<!--[\\s\\S]*?-->|<!\w[^>]*>|<\\?[^>*]*>'
+      + '|<!--[\\s\\S]*?-->|<!\\w[^>]*>|<\\?[^>*]*>'
       // '/' captured in group 2 for close tags, and name captured in group 3.
       + '|<(/)?([a-z][a-z0-9]*)'
       // Text captured in group 4.

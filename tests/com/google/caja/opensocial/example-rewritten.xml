@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?><Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5" /></ModulePrefs><Content type="html"><![CDATA[<script type="text/javascript">{
   ___.loadModule(function (___, IMPORTS___) {
-                   var moduleResult___;
+                   var moduleResult___ = ___.NO_RESULT;
                    var alert = ___.readImport(IMPORTS___, 'alert');
                    var handleClicky = ___.readImport(IMPORTS___, 'handleClicky');
                    var onerror = ___.readImport(IMPORTS___, 'onerror');
