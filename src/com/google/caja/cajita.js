@@ -740,16 +740,37 @@ var ___;
   // Accessing property attributes
   ////////////////////////////////////////////////////////////////////////
 
-  /** Tests whether the fast-path canRead flag is set. */
-  function canRead(obj, name)   { return !! obj[name + '_canRead___']; }
+  /**
+   * Tests whether the fast-path canRead flag is set.
+   */
+  function canRead(obj, name)   {
+    if (!obj) {
+      throw new TypeError(
+          'canRead called with empty target for name: ' + name);
+    }
+    return !! obj[name + '_canRead___'];
+  }
 
-  /** Tests whether the fast-path canEnum flag is set. */
-  function canEnum(obj, name)   { return !! obj[name + '_canEnum___']; }
+  /**
+   * Tests whether the fast-path canEnum flag is set.
+   */
+  function canEnum(obj, name)   {
+    if (!obj) {
+      throw new TypeError(
+          'canEnum called with empty target for name: ' + name);
+    }
+    return !! obj[name + '_canEnum___']; 
+  }
+
   /**
    * Tests whether the fast-path canCall flag is set, or grantCall() has been
    * called.
    */
   function canCall(obj, name)   {
+    if (!obj) {
+      throw new TypeError(
+          'canCall called with empty target for name: ' + name);
+    }
     return !! (obj[name + '_canCall___'] || obj[name + '_grantCall___']);
   }
   /**
@@ -757,10 +778,23 @@ var ___;
    * called.
    */
   function canSet(obj, name) {
+    if (!obj) {
+      throw new TypeError(
+          'canSet called with empty target for name: ' + name);
+    }
     return !! (obj[name + '_canSet___'] || obj[name + '_grantSet___']);
   }
-  /** Tests whether the fast-path canDelete flag is set. */
-  function canDelete(obj, name) { return !! obj[name + '_canDelete___']; }
+
+  /**
+   * Tests whether the fast-path canDelete flag is set.
+   */
+  function canDelete(obj, name) {
+    if (!obj) {
+      throw new TypeError(
+          'canDelete called with empty target for name: ' + name);
+    }
+    return !! obj[name + '_canDelete___']; 
+  }
 
   /**
    * Sets the fast-path canRead flag.

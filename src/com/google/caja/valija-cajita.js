@@ -281,7 +281,11 @@ var valijaMaker = (function(outers) {
    * Handle Valija <tt><i>obj</i>[<i>name</i>](<i>args...</i>)</tt>.
    */
   function callMethod(obj, name, args) {
-    return read(obj, name).apply(obj, args);
+    var m = read(obj, name);
+    if (!m) {
+      throw new TypeError('callMethod: ' + obj + ' has no method ' + name);
+    }
+    return m.apply(obj, args);
   }
 
   /**

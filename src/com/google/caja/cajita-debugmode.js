@@ -394,9 +394,9 @@
       ]);
 
   // Include the top stack frame in log messages.
-  override_members(cajita, ['log', log], 0);
+  override_members(cajita, ['log', ___.simpleFrozenFunc(log)], 0);
   // Dump stack traces during loading to the console.
-  override_members(___, ['loadModule', loadModule], 0);
+  override_members(___, ['loadModule', ___.simpleFrozenFunc(loadModule)], 0);
 
   startCallerStack();
 })();
