@@ -756,6 +756,7 @@
       <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
       <include file="${src}/com/google/caja/opensocial/applet/setup-valija.js"/>
+      <include file="${src}/com/google/caja/plugin/bridal.js"/>
       <include file="${src}/com/google/caja/plugin/domita.js"/>
       <include file="${third_party}/js/prettify/prettify.js"/>
       <include file="${src}/com/google/caja/opensocial/applet/testbed.js"/>
