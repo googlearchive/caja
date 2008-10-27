@@ -2005,6 +2005,10 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "x.foo = [].push;" +
         "assertThrows(function(){x.foo(44)});");
   }
+  
+  public void testIndexOf() throws Exception {
+    assertConsistent("''.indexOf('1');");
+  }
 
   public void testCallback() throws Exception {
     // These two cases won't work in Valija since every Valija disfunction has its own

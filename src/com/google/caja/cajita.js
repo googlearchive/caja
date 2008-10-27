@@ -746,7 +746,7 @@ var ___;
    * Tests whether the fast-path canRead flag is set.
    */
   function canRead(obj, name)   {
-    if (!obj) {
+    if (obj === (void 0) || obj === null) {
       throw new TypeError(
           'canRead called with empty target for name: ' + name);
     }
@@ -757,7 +757,7 @@ var ___;
    * Tests whether the fast-path canEnum flag is set.
    */
   function canEnum(obj, name)   {
-    if (!obj) {
+    if (obj === (void 0) || obj === null) {
       throw new TypeError(
           'canEnum called with empty target for name: ' + name);
     }
@@ -769,7 +769,7 @@ var ___;
    * called.
    */
   function canCall(obj, name)   {
-    if (!obj) {
+    if (obj === (void 0) || obj === null) {
       throw new TypeError(
           'canCall called with empty target for name: ' + name);
     }
@@ -780,7 +780,7 @@ var ___;
    * called.
    */
   function canSet(obj, name) {
-    if (!obj) {
+    if (obj === (void 0) || obj === null) {
       throw new TypeError(
           'canSet called with empty target for name: ' + name);
     }
@@ -791,7 +791,7 @@ var ___;
    * Tests whether the fast-path canDelete flag is set.
    */
   function canDelete(obj, name) {
-    if (!obj) {
+    if (obj === (void 0) || obj === null) {
       throw new TypeError(
           'canDelete called with empty target for name: ' + name);
     }
@@ -2327,7 +2327,7 @@ var ___;
             ? asSimpleFunc(onerror)(message, String(source), String(lineNum))
             : onerror !== null);
         if (shouldReport !== false) {
-          cajita.log(source + ':' + lineNum + ': ' + message);
+          cajita.log(source + ':' + lineNum + ': ' + message + '\n' + exception.stack);
         }
       }
     });
