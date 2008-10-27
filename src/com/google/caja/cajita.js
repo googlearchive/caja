@@ -2687,9 +2687,8 @@ var ___;
     return (void 0);
   }
 
-  // TODO(ihab.awad): Fix so matches newlines too! See bug 762.
-  var Attribute = new RegExp(
-    '^(.*)_(?:canRead|canCall|getter|handler)___$');
+  var attribute = new RegExp(
+      '^([\\s\\S]*)_(?:canRead|canCall|getter|handler)___$');
 
   /**
    * Returns a list of all caja-readable own properties, whether or
@@ -2708,7 +2707,7 @@ var ___;
             result.push(k);
           }
         } else {
-          var match = Attribute.exec(k);
+          var match = attribute.exec(k);
           if (match !== null) {
             var base = match[1];
             if (!hasOwnProp(seen, base)) {
