@@ -141,10 +141,15 @@ attachDocumentStub = (function () {
 
     for (var i = 0; declarations && i < declarations.length; i++) {
       var propertyAndValue = declarations[i].split(':');
-      var property = trimCssSpaces(propertyAndValue[0]);
+      var property = trimCssSpaces(propertyAndValue[0]).toLowerCase();
       var value = trimCssSpaces(propertyAndValue[1]);
-      if (css.properties.hasOwnProperty(property)
-          && css.properties[property].test(value + ' ')) {
+      // TODO(mikesamuel): make a separate function to map between
+      // CSS property names and style object members while handling
+      // float/cssFloat properly.
+      var stylePropertyName = property.replace(  // font-size -> fontSize
+          /-[a-z]/g, function (m) { return m.substring(1).toUpperCase(); });
+      if (css.properties.hasOwnProperty(stylePropertyName)
+          && css.properties[stylePropertyName].test(value + ' ')) {
         sanitizedDeclarations.push(property + ': ' + value);
       }
     }

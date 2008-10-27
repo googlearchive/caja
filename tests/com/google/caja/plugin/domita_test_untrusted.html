@@ -106,6 +106,8 @@
   <input onclick="autoclicky.click()" id="autoclicker" type="checkbox">
 </p>
 
+<p class="testcontainer" id="test-inner-HTML-style-sanitizer"></p>
+
 <script type="text/javascript">
 var setUp, tearDown;
 
@@ -127,6 +129,24 @@ function assertFailsSafe(canFail, assertionsIfPasses) {
     return;
   }
   assertionsIfPasses();
+}
+
+function assertColor(expected, cssColorString) {
+  if (typeof cssColorString === 'string') {
+    cssColorString = cssColorString.toLowerCase();
+  }
+  if (cssColorString === expected.name) { return; }
+  var hexSix = expected.rgb.toString(16);
+  while (hexSix.length < 6) { hexSix = '0' + hexSix; }
+  if (cssColorString === '#' + hexSix) { return; }
+  var hexThree = hexSix.charAt(0) + hexSix.charAt(2) + hexSix.charAt(4);
+  if (cssColorString === '#' + hexThree) { return; }
+  if (('rgb(' + (expected.rgb >> 16) + ', ' + ((expected.rgb >> 8) & 0xff)
+       + ', ' + (expected.rgb & 0xff) + ')') === cssColorString) {
+    return;
+  }
+
+  fail(cssColorString + ' != #' + hexSix);
 }
 
 /**
@@ -437,19 +457,9 @@ jsunitRegister('testClassSetByEmitter',
   var computedColor = directAccess.getComputedStyle(cont, 'background-color');
 
   cont.innerHTML = '(background-color=' + computedColor + ')';
-  
-  switch (computedColor.toLowerCase()) {
-    case 'yellow':
-    case '#ffff00':
-    case '#ff0':
-    case 'rgb(255, 255, 0)':
-    case 'rgb(100%, 100%, 0)':
-      pass('test-class-set-by-emitter');
-      break;
-    default:    
-      fail(computedColor + ' is not yellow');
-      break;
-  }
+
+  assertColor({ name: 'yellow', rgb: 0xffff00 }, computedColor);
+  pass('test-class-set-by-emitter');
 });
 
 jsunitRegister('testDynamicStyle',
@@ -659,14 +669,9 @@ jsunitRegister('testEmitCss',
                function testCss() {
   directAccess.emitCssHook(['.', ' a { color: #00ff00 }']);
   var computedColor = directAccess.getComputedStyle(
-      document.getElementById('not-blue'), 'color').toLowerCase();
-  if (!(computedColor === 'green' || computedColor === '#00ff00'
-        || computedColor === '#0f0' || computedColor === 'rgb(0, 255, 0)'
-        || computedColor === 'rgb(0, 100%, 0)')) {
-    fail(computedColor + ' is not green');
-  } else {
-    pass('test-emit-css');
-  }
+      document.getElementById('not-blue'), 'color');
+  assertColor({ rgb: 0x00ff00, name: 'green' }, computedColor);
+  pass('test-emit-css');
 });
 
 jsunitRegister('testBug731',
@@ -727,6 +732,30 @@ jsunitRegister('testInlineEventHandlers',
   directAccess.click(document.getElementById('autoclicker'));
   assertTrue(autoclicky.clicked);
   pass('test-inline-event-handlers');
+});
+
+jsunitRegister('testInnerHTMLStyleSanitizer',
+               function testInnerHTMLStyleSanitizer() {
+  function colorOf(id) {
+    return directAccess.getComputedStyle(document.getElementById(id), 'color');
+  }
+  function backgroundOf(id) {
+    return directAccess.getComputedStyle(
+        document.getElementById(id), 'background-color');
+  }
+
+  var cont = document.getElementById('test-inner-HTML-style-sanitizer');
+
+  cont.innerHTML = '<span style="color: #00f" id="style-html">Blue</span>';
+  assertColor({ name: 'blue', rgb: 0x0000ff }, colorOf('style-html'));
+
+  cont.innerHTML = (
+      '<span style="color: red; background-color: purple"'
+      + ' id="style-html">Red on purple</span>');
+  assertColor({ name: 'red', rgb: 0xff0000 }, colorOf('style-html'));
+  assertColor({ name: 'purple', rgb: 0x800080 }, backgroundOf('style-html'));
+
+  pass('test-inner-HTML-style-sanitizer');
 });
 
 </script>
