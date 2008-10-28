@@ -55,7 +55,7 @@ TypeError.typeTag___ = 'TypeError';
 URIError.typeTag___ = 'URIError';
 
 
-if (Array.prototype.indexOf === (void 0)) {
+if (Array.prototype.indexOf === void 0) {
   /**
    * Returns the first index at which the specimen is found (by
    * "===") or -1 if none.
@@ -71,7 +71,7 @@ if (Array.prototype.indexOf === (void 0)) {
   };
 }
 
-if (Array.prototype.lastIndexOf === (void 0)) {
+if (Array.prototype.lastIndexOf === void 0) {
   /**
    * Returns the last index at which the specimen is found (by
    * "===") or -1 if none.
@@ -86,7 +86,7 @@ if (Array.prototype.lastIndexOf === (void 0)) {
   };
 }
 
-if (Date.prototype.toISOString === (void 0)) {
+if (Date.prototype.toISOString === void 0) {
   /** In anticipation of ES3.1 */
   Date.prototype.toISOString = function() {
     function f(n) {
@@ -101,19 +101,19 @@ if (Date.prototype.toISOString === (void 0)) {
   };
 }
 
-if (Date.prototype.toJSON === (void 0)) {
+if (Date.prototype.toJSON === void 0) {
   /** In anticipation of ES3.1 */
   Date.prototype.toJSON = Date.prototype.toISOString;
 }
 
-if (Array.slice === (void 0)) {
+if (Array.slice === void 0) {
   /** In anticipation of ES4, and because it's useful. */
   Array.slice = function(self, start, end) {
     return Array.prototype.slice.call(self, start || 0, end || self.length);
   };
 }
 
-if (Function.prototype.bind === (void 0)) {
+if (Function.prototype.bind === void 0) {
   /**
    * In anticipation of ES3.1.
    * <p>
@@ -227,7 +227,7 @@ var ___;
    * then compares if they are otherwise computationally identical.
    */
   function same(x, y) {
-    if (x === null || x === (void 0) || y === null || y === (void 0)) {
+    if (x === null || x === void 0 || y === null || y === void 0) {
       return x === y;
     }
     return x.getIdent___() === y.getIdent___();
@@ -385,7 +385,7 @@ var ___;
      */
     handleRead: function(obj, name) {
       log('Not readable: (' + debugReference(obj) + ').' + name);
-      return (void 0);
+      return void 0;
     },
 
     /**
@@ -482,26 +482,26 @@ var ___;
    * If obj is a function or not an object, return undefined.
    */
   function directConstructor(obj) {
-    if (obj === null) { return (void 0); }
-    if (obj === void 0) { return (void 0); }
+    if (obj === null) { return void 0; }
+    if (obj === void 0) { return void 0; }
     if (typeOf(obj) === 'function') {
       // Since functions return undefined,
       // directConstructor() doesn't provide access to the
       // forbidden Function constructor.
-      return (void 0);
+      return void 0;
     }
     obj = Object(obj);
     var result;
-    if (hasOwnProp(obj, 'proto___')) {
+    if (myOriginalHOP.call(obj, 'proto___')) {
       var proto = obj.proto___;
-      if (proto === null) { return (void 0); }
+      if (proto === null) { return void 0; }
       if (isPrototypical(proto)) {
         result = proto.constructor;
       } else {
         result = directConstructor(proto);
       }
     } else {
-      if (!hasOwnProp(obj, 'constructor')) {
+      if (!myOriginalHOP.call(obj, 'constructor')) {
         // TODO(erights): Detect whether this is a valid constructor
         // property in the sense that result is a proper answer. If
         // not, at least give a sensible error, which will be hard to
@@ -559,7 +559,7 @@ var ___;
    */
   function isDirectInstanceOf(obj, ctor) {
     var constr = directConstructor(obj);
-    if (constr === (void 0)) { return false; }
+    if (constr === void 0) { return false; }
     return getFuncCategory(constr) === getFuncCategory(ctor);
   }
 
@@ -605,7 +605,7 @@ var ___;
    */
   function isJSONContainer(obj) {
     var constr = directConstructor(obj);
-    if (constr === (void 0)) { return false; }
+    if (constr === void 0) { return false; }
     var typeTag = constr.typeTag___;
     if (typeTag !== 'Object' && typeTag !== 'Array') { return false; }
     return !isPrototypical(obj);
@@ -617,21 +617,20 @@ var ___;
    * obj.
    * <p>
    * The status of being frozen is not inherited. If A inherits from
-   * B (i.e., if A's prototype is B), then (we hope) B must be
-   * frozen regardless, but A may or may not be frozen.
+   * B (i.e., if A's prototype is B), A and B each may or may not be
+   * frozen independently. (Though if B is prototypical, then it must
+   * be frozen.) 
    * <p>
    * If typeof <tt>obj</tt> is neither 'object' nor 'function', then
    * it's currently considered frozen.
    */
   function isFrozen(obj) {
-    var t = typeof obj;
-    if (t !== 'object' && t !== 'function') {
-      return true;
-    }
-    if (obj === null) { return true; }
+    if (!obj) { return true; }
     // TODO(erights): Object(<primitive>) wrappers should also be
     // considered frozen.
-    return hasOwnProp(obj, 'FROZEN___');
+    if (obj.FROZEN___ === obj) { return true; }
+    var t = typeof obj;
+    return t !== 'object' && t !== 'function';
   }
 
   /**
@@ -670,7 +669,7 @@ var ___;
     }
     for (var i = 0; i < badFlags.length; i++) {
       var flag = badFlags[i];
-      if (hasOwnProp(obj, flag)) {
+      if (myOriginalHOP.call(obj, flag)) {
         if (!(delete obj[flag])) {
           fail('internal: failed delete: ', debugReference(obj), '.', flag);
         }
@@ -688,8 +687,12 @@ var ___;
         obj[flag] = false;
       }
     }
-    obj.FROZEN___ = true;
+    obj.FROZEN___ = obj;
     if (typeOf(obj) === 'function') {
+      if (isSimpleFunc(obj)) { 
+        grantCall(obj, 'call');
+        grantCall(obj, 'apply');
+      }
       // Do last to avoid possible infinite recursion.
       if (obj.prototype) { primFreeze(obj.prototype); }
     }
@@ -746,10 +749,7 @@ var ___;
    * Tests whether the fast-path canRead flag is set.
    */
   function canRead(obj, name)   {
-    if (obj === (void 0) || obj === null) {
-      throw new TypeError(
-          'canRead called with empty target for name: ' + name);
-    }
+    if (obj === void 0 || obj === null) { return false; }
     return !! obj[name + '_canRead___'];
   }
 
@@ -757,10 +757,7 @@ var ___;
    * Tests whether the fast-path canEnum flag is set.
    */
   function canEnum(obj, name)   {
-    if (obj === (void 0) || obj === null) {
-      throw new TypeError(
-          'canEnum called with empty target for name: ' + name);
-    }
+    if (obj === void 0 || obj === null) { return false; }
     return !! obj[name + '_canEnum___']; 
   }
 
@@ -769,10 +766,7 @@ var ___;
    * called.
    */
   function canCall(obj, name)   {
-    if (obj === (void 0) || obj === null) {
-      throw new TypeError(
-          'canCall called with empty target for name: ' + name);
-    }
+    if (obj === void 0 || obj === null) { return false; }
     return !! (obj[name + '_canCall___'] || obj[name + '_grantCall___']);
   }
   /**
@@ -780,10 +774,7 @@ var ___;
    * called.
    */
   function canSet(obj, name) {
-    if (obj === (void 0) || obj === null) {
-      throw new TypeError(
-          'canSet called with empty target for name: ' + name);
-    }
+    if (obj === void 0 || obj === null) { return false; }
     return !! (obj[name + '_canSet___'] || obj[name + '_grantSet___']);
   }
 
@@ -791,10 +782,7 @@ var ___;
    * Tests whether the fast-path canDelete flag is set.
    */
   function canDelete(obj, name) {
-    if (obj === (void 0) || obj === null) {
-      throw new TypeError(
-          'canDelete called with empty target for name: ' + name);
-    }
+    if (obj === void 0 || obj === null) { return false; }
     return !! obj[name + '_canDelete___']; 
   }
 
@@ -894,13 +882,13 @@ var ___;
   ////////////////////////////////////////////////////////////////////////
 
   function isCtor(constr)    {
-    return (typeOf(constr) === 'function') && !! constr.CONSTRUCTOR___;
+    return constr && !! constr.CONSTRUCTOR___;
   }
   function isSimpleFunc(fun) {
-    return (typeOf(fun) === 'function')  && !! fun.SIMPLEFUNC___;
+    return fun && !! fun.SIMPLEFUNC___;
   }
   function isXo4aFunc(func) {
-    return (typeOf(func) === 'function') && !! func.XO4A___;
+    return func && !! func.XO4A___;
   }
 
   /**
@@ -966,16 +954,16 @@ var ___;
     }
     var result = {
       call: simpleFrozenFunc(function(self, var_args) {
-        if (self === null || self === undefined) { self = USELESS; }
+        if (self === null || self === void 0) { self = USELESS; }
         return xfunc.apply(self, Array.slice(arguments, 1));
       }),
       apply: simpleFrozenFunc(function(self, args) {
-        if (self === null || self === undefined) { self = USELESS; }
+        if (self === null || self === void 0) { self = USELESS; }
         return xfunc.apply(self, args);
       }),
       bind: simpleFrozenFunc(function(self, var_args) {
         var args = arguments;
-        if (self === null || self === undefined) { 
+        if (self === null || self === void 0) { 
           self = USELESS;
           args = [self].concat(Array.slice(args, 1));
         }
@@ -1060,10 +1048,20 @@ var ___;
     return primFreeze(asCtorOnly(constr));
   }
 
-  /** Only simple functions can be called as simple functions */
+  /** 
+   * Only simple functions can be called as simple functions.
+   * <p>
+   * It is now <tt>asSimpleFunc</tt>'s responsibility to
+   * <tt>primFreeze(fun)</tt>. 
+   */
   function asSimpleFunc(fun) {
-    if (isSimpleFunc(fun)) {
-      return fun;
+    if (fun && fun.SIMPLEFUNC___) {
+      // fastpath shortcut
+      if (fun.FROZEN___ === fun) {
+        return fun;
+      } else {
+        return primFreeze(fun);
+      }
     }
     enforceType(fun, 'function');
     if (isCtor(fun)) {
@@ -1089,7 +1087,7 @@ var ___;
         // <tt>Date</tt>, <tt>RegExp</tt>, and <tt>Error</tt>. (Not
         // sure about <tt>Array</tt>.) We should understand these as
         // well before introducing a proper solution.
-        return fun;
+        return primFreeze(fun);
       }
       fail("Constructors can't be called as simple functions: ", fun);
     }
@@ -1190,15 +1188,24 @@ var ___;
    */
   function canReadPub(obj, name) {
     name = String(name);
-    if (endsWith__.test(name)) { return false; }
     if (obj === null) { return false; }
     if (obj === void 0) { return false; }
-    if (canRead(obj, name)) { return true; }
+    if (obj[name + '_canRead___']) { return true; }
+    if (endsWith__.test(name)) { return false; }
     if (name === 'toString') { return false; }
     if (!isJSONContainer(obj)) { return false; }
-    if (!hasOwnProp(obj, name)) { return false; }
+    if (!myOriginalHOP.call(obj, name)) { return false; }
     fastpathRead(obj, name);
     return true;
+  }
+
+  /**
+   *
+   */
+  function hasOwnPropertyOf(obj, name) {
+    if (typeof name === 'number') { return hasOwnProp(obj, name); }
+    name = String(name);    
+    return canReadPub(obj, name) && myOriginalHOP.call(obj, name);
   }
 
   /**
@@ -1206,7 +1213,7 @@ var ___;
    */
   function inPub(name, obj) {
     if (obj === null || obj === void 0) {
-      return name in obj; // force the stock error
+      throw new TypeError('invalid "in" operand: ' + obj);
     }
     obj = Object(obj);
     if (canReadPub(obj, name)) {
@@ -1234,7 +1241,7 @@ var ___;
    * instead.
    */
   function readPub(obj, name) {
-    if ((typeof name) === 'number') {
+    if (typeof name === 'number') {
       if (typeof obj === 'string') {
         // In partial anticipation of ES3.1. 
         // TODO(erights): Once ES3.1 settles, revisit this and 
@@ -1248,7 +1255,42 @@ var ___;
     }
     name = String(name);
     if (canReadPub(obj, name)) { return obj[name]; }
+    if (obj === null || obj === void 0) {
+      throw new TypeError("Can't read " + name + " on " + obj);
+    }
     return obj.handleRead___(name);
+  }
+
+  /**
+   * If <tt>obj</tt> is a non-function object with readable
+   * own property <tt>name</tt>, return <tt>obj[name]</tt>, else
+   * <tt>pumpkin</tt>. 
+   * <p>
+   * Provides a fastpath for Valija's <tt>read()</tt> function
+   * <tt>$v.r()</tt>. The reason for returning the passed in pumpkin
+   * rather than, for example, <tt>undefined</tt>, is so that the
+   * caller can pass in a known unique value and distinguish it, on
+   * return, from any possible valid value.
+   */
+  function readOwn(obj, name, pumpkin) {
+    if (typeof obj !== 'object' || !obj) {
+      if (typeOf(obj) !== 'object') {
+        return pumpkin;
+      }
+    }
+    if (typeof name === 'number') {
+      if (myOriginalHOP.call(obj, name)) { return obj[name]; }
+      return pumpkin;
+    }
+    name = String(name);
+    if (!myOriginalHOP.call(obj, name)) { return pumpkin; }
+    // inline remaining relevant cases from canReadPub
+    if (obj[name + '_canRead___']) { return obj[name]; }
+    if (endsWith__.test(name)) { return pumpkin; }
+    if (name === 'toString') { return pumpkin; }
+    if (!isJSONContainer(obj)) { return pumpkin; }
+    fastpathRead(obj, name);
+    return obj[name];
   }
 
   /**
@@ -1287,7 +1329,7 @@ var ___;
    */
   function readImport(module_imports, name, opt_permitsUsed) {
     var result;
-    if ((typeof name) === 'number') { 
+    if (typeof name === 'number') { 
       result = module_imports[name]; 
     } else {
       result = readPub(module_imports, name);
@@ -1331,11 +1373,13 @@ var ___;
    * canReadProp. Otherwise according to whitelisting.
    */
   function canEnumPub(obj, name) {
+    if (obj === null) { return false; }
+    if (obj === void 0) { return false; }
     name = String(name);
+    if (obj[name + '_canEnum___']) { return true; }
     if (endsWith__.test(name)) { return false; }
-    if (canEnum(obj, name)) { return true; }
     if (!isJSONContainer(obj)) { return false; }
-    if (!hasOwnProp(obj, name)) { return false; }
+    if (!myOriginalHOP.call(obj, name)) { return false; }
     fastpathEnumOnly(obj, name);
     if (name === 'toString') { return true; }
     fastpathRead(obj, name);
@@ -1347,7 +1391,7 @@ var ___;
    */
   function canEnumOwn(obj, name) {
     name = String(name);
-    return hasOwnProp(obj, name) && canEnumPub(obj, name);
+    return canEnumPub(obj, name) && myOriginalHOP.call(obj, name);
   }
 
   /**
@@ -1464,12 +1508,12 @@ var ___;
    * which we can memoize.
    */
   function canCallPub(obj, name) {
-    name = String(name);
-    if (endsWith__.test(name)) { return false; }
     if (obj === null) { return false; }
     if (obj === void 0) { return false; }
+    name = String(name);
     if (canCall(obj, name)) { return true; }
     if (!canReadPub(obj, name)) { return false; }
+    if (endsWith__.test(name)) { return false; }
     if (name === 'toString') { return false; }
     var func = obj[name];
     if (!isSimpleFunc(func) && !isXo4aFunc(func)) {
@@ -1484,9 +1528,11 @@ var ___;
    */
   function callPub(obj, name, args) {
     name = String(name);
-    if (canCallPub(obj, name)) {
-      var meth = obj[name];
-      return meth.apply(obj, args);
+    if (obj === null || obj === void 0) {
+      throw new TypeError("Can't call " + name + " on " + obj);
+    }
+    if (obj[name + '_canCall___'] || canCallPub(obj, name)) {
+      return obj[name].apply(obj, args);
     }
     if (obj.handleCall___) { return obj.handleCall___(name, args); }
     fail('not callable:', debugReference(obj), '.', name);
@@ -1509,8 +1555,8 @@ var ___;
    */
   function canSetPub(obj, name) {
     name = String(name);
-    if (endsWith__.test(name)) { return false; }
     if (canSet(obj, name)) { return true; }
+    if (endsWith__.test(name)) { return false; }
     if (name === 'valueOf') { return false; }
     if (name === 'toString') { return false; }
     return !isFrozen(obj) && isJSONContainer(obj);
@@ -1518,10 +1564,26 @@ var ___;
 
   /** A client of obj attempts to assign to one of its properties. */
   function setPub(obj, name, val) {
+    // asFirstClass() here would be a useful safety check, to prevent
+    // the further propogation of, for example, a leaked toxic
+    // function. However, its security benefit is questionable, and
+    // the check is expensive in this position.
+//  val = asFirstClass(val);
+    if (typeof name === 'number' &&
+        // See issue 875
+        obj instanceof Array &&
+        obj.FROZEN___ !== obj) {
+      return obj[name] = val;
+    }
     name = String(name);
-    if (canSetPub(obj, name)) {
+    if (obj === null || obj === void 0) {
+      throw new TypeError("Can't set " + name + " on " + obj);
+    }
+    if (obj[name + '_canSet___']) {
+      return obj[name] = val;
+    } else if (canSetPub(obj, name)) {
       fastpathSet(obj, name);
-      return obj[name] = asFirstClass(val);
+      return obj[name] = val;
     } else {
       return obj.handleSet___(name, val);
     }
@@ -1596,6 +1658,9 @@ var ___;
    */
   function deletePub(obj, name) {
     name = String(name);
+    if (obj === null || obj === void 0) {
+      throw new TypeError("Can't delete " + name + " on " + obj);
+    }
     if (canDeletePub(obj, name)) {
       // See deleteFieldEntirely for reasons why we don't cache deletability.
       return deleteFieldEntirely(obj, name);
@@ -1997,15 +2062,14 @@ var ___;
   
   /// Object
 
-  ctor(Object, (void 0), 'Object');
+  ctor(Object, void 0, 'Object');
   grantToString(Object.prototype);
   all2(grantGeneric, Object.prototype, [
     'toLocaleString', 'valueOf', 'isPrototypeOf'
   ]);
   grantRead(Object.prototype, 'length');
   handleGeneric(Object.prototype, 'hasOwnProperty', function(name){
-    name = String(name);
-    return canReadPub(this, name) && hasOwnProp(this, name);
+    return hasOwnPropertyOf(this, name);
   });
   handleGeneric(Object.prototype, 'propertyIsEnumerable', function(name) {
     name = String(name);
@@ -2393,7 +2457,7 @@ var ___;
    */
   function getImports(id) {
     var result = registeredImports[enforceType(id, 'number', 'id')];
-    if (result === (void 0)) {
+    if (result === void 0) {
       fail('imports#', id, ' unregistered');
     }
     return result;
@@ -2412,7 +2476,7 @@ var ___;
     enforceType(imports, 'object', 'imports');
     if ('id___' in imports) {
       var id = enforceType(imports.id___, 'number', 'id');
-      registeredImports[id] = (void 0);
+      registeredImports[id] = void 0;
     }
   }
 
@@ -2474,7 +2538,10 @@ var ___;
   function initializeMap(list) {
     var result = {};
     for (var i = 0; i < list.length; i+=2) {
-      setPub(result, list[i], list[i+1]);
+      // Call asFirstClass() here to prevent, for example, a toxic
+      // function being used at the toString property of an object
+      // literal.
+      setPub(result, list[i], asFirstClass(list[i+1]));
     }
     return result;
   }
@@ -2625,13 +2692,13 @@ var ___;
         case 'function': {
           if (null === key) { return myValues.prim_null; } 
           var index = key[myMagicIndexName];
-          if ((void 0) === index) { return (void 0); }
+          if (void 0 === index) { return void 0; }
           if (myKeys[index] !== key) {
             // In case of collision
             for (index = 0; index < myKeys.length; index++) {
               if (myKeys[index] === key) { break; }
             }
-            if (index === myKeys.length) { return (void 0); }
+            if (index === myKeys.length) { return void 0; }
             // predictive MRU cache
             key[myMagicIndexName] = index;
           }
@@ -2684,7 +2751,7 @@ var ___;
         return result;
       }
     }
-    return (void 0);
+    return void 0;
   }
 
   var attribute = new RegExp(
@@ -2702,7 +2769,7 @@ var ___;
     for (var k in obj) {
       if (hasOwnProp(obj, k)) {
         if (implicit && !endsWith__.test(k)) {
-          if (!hasOwnProp(seen, k)) {
+          if (!myOriginalHOP.call(seen, k)) {
             seen[k] = true;
             result.push(k);
           }
@@ -2710,7 +2777,7 @@ var ___;
           var match = attribute.exec(k);
           if (match !== null) {
             var base = match[1];
-            if (!hasOwnProp(seen, base)) {
+            if (!myOriginalHOP.call(seen, base)) {
               seen[base] = true;
               result.push(base);
             }
@@ -2783,6 +2850,8 @@ var ___;
 
     // Accessing properties
     canReadPub: canReadPub,       readPub: readPub,
+    hasOwnPropertyOf: hasOwnPropertyOf,
+                                  readOwn: readOwn,
     canEnumPub: canEnumPub,
     canEnumOwn: canEnumOwn,
     canInnocentEnum: canInnocentEnum,
@@ -2836,7 +2905,7 @@ var ___;
     'true': true,
     'NaN': NaN,
     'Infinity': Infinity,
-    'undefined': (void 0),
+    'undefined': void 0,
     parseInt: simpleFrozenFunc(parseInt),
     parseFloat: simpleFrozenFunc(parseFloat),
     isNaN: simpleFrozenFunc(isNaN),

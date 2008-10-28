@@ -231,22 +231,26 @@ var valijaMaker = (function(outers) {
     }
   }
 
-  function hasOwnProp(obj, name) {
-    return {}.hasOwnProperty.call(obj, name);
-  }
+  /**
+   * A unique object to be passed as the third argument to
+   * cajita.readOwn(), so that it can pass it back to us to indicate a
+   * quickly testable failure, or pass back anything else instead to
+   * indicate a quickly testable success.
+   */
+  var pumpkin = {};
 
   /**
    * Handle Valija <tt><i>obj</i>[<i>name</i>]</tt>.
    */
   function read(obj, name) {
+    var result = cajita.readOwn(obj, name, pumpkin);
+    if (result !== pumpkin) { return result; }
+
     if (typeof obj === 'function') {
       return getShadow(obj)[name];
     }
-    if (obj === null || obj === undefined) {
+    if (obj === null || obj === void 0) {
       throw new TypeError('Cannot read property "' + name + '" from ' + obj);
-    }
-    if (hasOwnProp(obj, name)) {
-      return obj[name];
     }
 
     // BUG TODO(erights): figure out why things break when the
@@ -379,6 +383,8 @@ var valijaMaker = (function(outers) {
   }
 
   function readOuter(name) {
+    var result = cajita.readOwn(own, name, pumpkin);
+    if (result !== pumpkin) { return result; }
     if (canReadRev(name, outers)) {
       return read(outers, name);
     } else {
