@@ -113,6 +113,8 @@ our $SVN = "/usr/bin/svn";                   requireExe $SVN;
 our $SVNVERSION = "/usr/bin/svnversion";     requireExe $SVNVERSION;
 our $XSLTPROC = "/usr/bin/xsltproc";         requireExe $XSLTPROC;
 
+# Data formats
+our $VARZ_FORMAT = qr/\bVarZ:([\w\.\-]+)=(\d+(?:\.\d+)?)\b/;
 
 sub collectCodeStats() {
   my @status_log = ();
@@ -143,6 +145,10 @@ sub collectCodeStats() {
   print STDERR "copying coverage reports\n";
   extractCoverageSummary("$REPORTS_DIR/coverage/index.html", \@status_log);
 
+  print STDERR "running benchmarks\n";
+  track(\&build, ['benchmarks'], 'tests', \@status_log);
+  extractBenchmarkSummary("$REPORTS_DIR/benchmarks/TESTS-TestSuites.xml", \@status_log);
+
   print STDERR "running tests\n";
   track(\&build, ['runtests'], 'tests', \@status_log);
   extractTestSummary("$REPORTS_DIR/tests/TESTS-TestSuites.xml", \@status_log);
@@ -159,7 +165,7 @@ sub collectCodeStats() {
   print STDERR "copying docs\n";
   outputTree($DOCS_DIR, 'docs', 'java/index.html', \@status_log);
   linkOutput('jsdocs', 'docs/js/index.html', \@status_log);
-  linkOutput('ruledocs', 'docs/rules/DefaultCajaRewriter.html', \@status_log);
+  linkOutput('ruledocs', 'docs/rules/CajitaRewriter.html', \@status_log);
 
   print STDERR "copying test reports\n";
   outputTree("$REPORTS_DIR/tests", 'tests', 'index.html', \@status_log);
@@ -194,7 +200,7 @@ sub track($$$$) {
        qq'<varz name="target.$name.time" value="$dt"/>');
 
   # Extract profiling data.
-  my @varz = $log =~ m/\bVarZ:([\w\.\-]+)=(\d+)\b/g;
+  my @varz = $log =~ m/$VARZ_FORMAT/g;
   for (my $i = 0; $i <= $#varz; $i += 2) {
     push(@{$status_log_ref}, qq'<varz name="$varz[$i]" value="$varz[$i+1]"/>');
   }
@@ -315,6 +321,40 @@ sub extractTestSummary($$) {
   push(@{$status_log_ref}, qq'<varz name="junit.failures" value="$failures"/>');
   push(@{$status_log_ref},
        qq'<varz name="junit.pct" value="'
+       . sprintf("%3.1f", 100 * ($failures + $errors) / $tests)
+       . qq'"/>');
+}
+
+sub extractBenchmarkSummary($$) {
+  my ($xml_file, $status_log_ref) = @_;
+
+  my ($tests, $errors, $failures) = (0, 0, 0);
+  open(IN, "<$xml_file") or die "$xml_file: $!";
+  while (<IN>) {
+    chomp;
+    if (m/<testsuite\b(.*)/) {
+      my $testsummary = $1;
+      die "Malformed $xml_file: $_" unless $testsummary =~ s/>.*//;
+      die "Malformed $xml_file: $_" unless $testsummary =~ m/\btests="(\d+)"/;
+      $tests += $1;
+      die "Malformed $xml_file: $_" unless $testsummary =~ m/\berrors="(\d+)"/;
+      $errors += $1;
+      die "Malformed $xml_file: $_" unless $testsummary =~ m/\bfailures="(\d+)"/;
+      $failures += $1;
+      die "Malformed $xml_file: $_" unless $testsummary =~ m/\bfailures="(\d+)"/;
+      $failures += $1;
+    }
+    if ($_ =~ $VARZ_FORMAT) {
+      push(@{$status_log_ref}, qq'<varz name="$1" value="$2"/>');
+    }
+  }
+  close(IN);
+
+  push(@{$status_log_ref}, qq'<varz name="benchmarks.total" value="$tests"/>');
+  push(@{$status_log_ref}, qq'<varz name="benchmarks.errors" value="$errors"/>');
+  push(@{$status_log_ref}, qq'<varz name="benchmarks.failures" value="$failures"/>');
+  push(@{$status_log_ref},
+       qq'<varz name="benchmarks.pct" value="'
        . sprintf("%3.1f", 100 * ($failures + $errors) / $tests)
        . qq'"/>');
 }
