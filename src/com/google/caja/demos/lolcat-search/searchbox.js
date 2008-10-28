@@ -44,7 +44,8 @@ var resultsOfLastSearch = [];
  */
 function doSearch(button) {
   var form = button.getForm();
-  var query = form.getElements().q.getValue().replace(new RegExp('^\s+|\s+$', 'g'), '');
+  var query = form.getElements().q.getValue().replace(
+      new RegExp('^\\s+|\\s+$', 'g'), '');
   if (!query) {
     form.getElements().q.focus();
     return;

@@ -109,7 +109,7 @@ ContentLine = function(opt_name, opt_value, opt_attributes) {
    * @type {boolean}
    */
   this.noEscape_ = false;
-}
+};
 /** outputs the content line as ICAL. */
 ContentLine.prototype.toString = function () {
     var out = [this.name_];

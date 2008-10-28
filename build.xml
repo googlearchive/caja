@@ -648,7 +648,6 @@
       <output file="${www}/lolcat-search/kittens.co.js" language="cajita"/>
       <include file="${demos}/lolcat-search/kittens.html"/>
       <depend file="${demos}/lolcat-search/katTranzlator.js"/>
-      <depend file="${demos}/lolcat-search/kittens.css"/>
       <depend file="${demos}/lolcat-search/kittens.js"/>
     </transform>
 
