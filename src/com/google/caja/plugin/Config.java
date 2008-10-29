@@ -18,7 +18,6 @@ import com.google.caja.config.ConfigUtil;
 import com.google.caja.config.WhiteList;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.reporting.BuildInfo;
@@ -258,7 +257,8 @@ public final class Config {
         servicePortString = cl.getOptionValue(SERVICE_PORT.getOpt(), "8887");
         servicePort = Integer.parseInt(servicePortString);
       } catch ( NumberFormatException e ) {
-        stderr.println("Invalid service port: " + SERVICE_PORT.getOpt() + "\n    "
+        stderr.println(
+            "Invalid service port: " + SERVICE_PORT.getOpt() + "\n    "
             + e.getMessage());
         return false;
       }
@@ -304,8 +304,7 @@ public final class Config {
     InputSource src = new InputSource(uri);
     try {
       return ConfigUtil.loadWhiteListFromJson(
-          ConfigUtil.openConfigResource(uri, null),
-          FilePosition.startOfFile(src), mq);
+          uri, ConfigUtil.RESOURCE_RESOLVER, mq);
     } catch (IOException ex) {
       mq.addMessage(MessageType.IO_ERROR, src);
     } catch (ParseException ex) {

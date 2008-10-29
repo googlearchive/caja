@@ -32,18 +32,27 @@ function html_sanitize(htmlText, opt_urlPolicy, opt_nmTokenPolicy) {
         for (var i = 0; i < attribs.length; i += 2) {
           var attribName = attribs[i];
           var value = attribs[i + 1];
-          if (html4.ATTRIBS.hasOwnProperty(attribName)) {
-            switch (html4.ATTRIBS[attribName]) {
+          var attribKey;
+          if ((attribKey = tagName + ':' + attribName,
+               html4.ATTRIBS.hasOwnProperty(attribKey))
+              || (attribKey = '*:' + attribName,
+                  html4.ATTRIBS.hasOwnProperty(attribKey))) {
+            var atype = html4.ATTRIBS[attribKey];
+            switch (atype) {
+              case html4.atype.URI:
+                value = opt_urlPolicy && opt_urlPolicy(value);
+                break;
               case html4.atype.SCRIPT:
               case html4.atype.STYLE:
                 value = null;
-              case html4.atype.IDREF:
-              case html4.atype.NAME:
-              case html4.atype.NMTOKENS:
-                value = opt_nmTokenPolicy ? opt_nmTokenPolicy(value) : value;
                 break;
-              case html4.atype.URI:
-                value = opt_urlPolicy && opt_urlPolicy(value);
+              case html4.atype.ID:
+              case html4.atype.IDREF:
+              case html4.atype.IDREFS:
+              case html4.atype.GLOBAL_NAME:
+              case html4.atype.LOCAL_NAME:
+              case html4.atype.CLASSES:
+                value = opt_nmTokenPolicy ? opt_nmTokenPolicy(value) : value;
                 break;
             }
           } else {
@@ -257,8 +266,9 @@ jsunitRegister('testNul',
                function testNul() {
   // See bug 614 for details.
   assertEquals(
-      '<a alt="harmless  SCRIPT&#61;javascript:alert(1) ignored&#61;ignored">'
+      '<a title="harmless  SCRIPT&#61;javascript:alert(1) ignored&#61;ignored">'
       + '</a>',
       html_sanitize(
-          '<A ALT="harmless\0  SCRIPT=javascript:alert(1) ignored=ignored">'));
+          '<A TITLE="harmless\0  SCRIPT=javascript:alert(1) ignored=ignored">'
+          ));
 });

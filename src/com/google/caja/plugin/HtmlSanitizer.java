@@ -80,7 +80,7 @@ public final class HtmlSanitizer {
               && htmlRoot.parent.node instanceof MutableParseTreeNode) {
             if (isElementIgnorable(tagName)) {
               ignore = true;
-            } else if (isElementFoldable(tagName)) {
+            } else if (HtmlSchema.isElementFoldable(tagName)) {
               fold = true;
               msgType = PluginMessageType.FOLDING_ELEMENT;
             }
@@ -95,7 +95,7 @@ public final class HtmlSanitizer {
           if (ignore) {
             ((MutableParseTreeNode) htmlRoot.parent.node).removeChild(t);
             return valid;  // Don't recurse to children if removed.
-          } else if (isElementFoldable(tagName)) {
+          } else if (HtmlSchema.isElementFoldable(tagName)) {
             return valid & foldElement(htmlRoot.cast(DomTree.Tag.class));
           } else {
             valid = false;
@@ -164,21 +164,8 @@ public final class HtmlSanitizer {
   }
 
   /**
-   * Elements that can be removed from the DOM without changing behavior as long
-   * as their children are folded into the element's parent.
-   * <p>
-   * This list must be kept in sync with the foldable list in
-   * <code>html4-defs.js</code>.
-   */
-  private static boolean isElementFoldable(Name tagName) {
-    String lcName = tagName.getCanonicalForm();
-    return "head".equals(lcName) || "body".equals(lcName)
-        || "html".equals(lcName);
-  }
-
-  /**
-   * Fold the children of a {@link #isElementFoldable foldable} element into
-   * that element's parent.
+   * Fold the children of a {@link HtmlSchema#isElementFoldable foldable}
+   * element into that element's parent.
    *
    * <p>
    * This should have the property that:<ul>
@@ -255,7 +242,8 @@ public final class HtmlSanitizer {
     if (null == el) {
       return false;
     }
-    MutableParseTreeNode.Mutation mut = ((MutableParseTreeNode)el).createMutation();
+    MutableParseTreeNode.Mutation mut
+        = ((MutableParseTreeNode) el).createMutation();
     for (DomTree child : el.children()) {
       if (!(child instanceof DomTree.Attrib)) { break; }
       DomTree.Attrib attr = (DomTree.Attrib) child;

@@ -56,58 +56,67 @@ import org.json.simple.JSONValue;
  */
 public class ConfigUtil {
   /**
-   * Resolves a URI from a configuration file.  Configuration files are allowed
-   * to load from the file-system or from the classpath.
-   *
-   * @param uri a URI relative to base, or an absolute URI with scheme in
-   *   {@code ("content", "resource")}.
-   * @param base null or a URI with scheme in {@code "resource"}.
+   * Resolves a URI from a configuration file, allowing access to resources on
+   * the classpath, or content inside {@code content:} URIs.
    */
-  public static Reader openConfigResource(URI uri, URI base)
-      throws IOException {
-    if (uri == null) { throw new NullPointerException(); }
+  public static final ImportResolver RESOURCE_RESOLVER = new ImportResolver() {
+    /**
+     * @inheritDoc
+     * @param uri a URI relative to base, or an absolute URI with scheme in
+     *  {@code ("content", "resource")}.
+     * @param base null or a URI with scheme in {@code "resource"}.
+     */
+    public Pair<Reader, FilePosition> resolve(
+        URI uri, URI base, FilePosition uriPos)
+        throws IOException {
+      if (uri == null) { throw new NullPointerException(); }
 
-    if (!uri.isAbsolute()) {
-      if (base == null) {
-        throw new IllegalArgumentException("Missing base URI");
-      }
-      String scheme = base.getScheme();
-      if (!(Strings.equalsIgnoreCase("resource", scheme)
-            && base.isAbsolute())) {
-        throw new IllegalArgumentException("base URI: " + base);
+      if (!uri.isAbsolute()) {
+        if (base == null) {
+          throw new IllegalArgumentException("Missing base URI");
+        }
+        String scheme = base.getScheme();
+        if (!(Strings.equalsIgnoreCase("resource", scheme)
+              && base.isAbsolute())) {
+          throw new IllegalArgumentException("base URI: " + base);
+        }
+
+        uri = base.resolve(uri);
       }
 
-      uri = base.resolve(uri);
+      if (!uri.isAbsolute()) {
+        throw new IllegalArgumentException("URI not absolute: " + uri);
+      }
+
+      InputStream in;
+
+      String scheme = Strings.toLowerCase(uri.getScheme());
+      if ("content".equals(scheme)) {
+        String content = uri.getSchemeSpecificPart();
+        if (content == null) {
+          throw new IllegalArgumentException("URI missing content: " + uri);
+        }
+        return Pair.pair(
+            (Reader) new StringReader(content),
+            FilePosition.startOfFile(new InputSource(uri)));
+      } else if ("resource".equals(scheme)) {
+        String path = uri.getPath();
+        if (path == null) {
+          throw new IllegalArgumentException("URI missing path: " + uri);
+        }
+        in = ConfigUtil.class.getResourceAsStream(path);
+        if (in == null) {
+          throw new FileNotFoundException(uri.toString());
+        }
+      } else {
+        throw new IllegalArgumentException("URI: " + uri);
+      }
+
+      return Pair.pair(
+          (Reader) new InputStreamReader(in, "UTF-8"),
+          FilePosition.startOfFile(new InputSource(uri)));
     }
-
-    if (!uri.isAbsolute()) {
-      throw new IllegalArgumentException("URI not absolute: " + uri);
-    }
-
-    InputStream in;
-
-    String scheme = Strings.toLowerCase(uri.getScheme());
-    if ("content".equals(scheme)) {
-      String content = uri.getSchemeSpecificPart();
-      if (content == null) {
-        throw new IllegalArgumentException("URI missing content: " + uri);
-      }
-      return new UriReader(uri, new StringReader(content));
-    } else if ("resource".equals(scheme)) {
-      String path = uri.getPath();
-      if (path == null) {
-        throw new IllegalArgumentException("URI missing path: " + uri);
-      }
-      in = ConfigUtil.class.getResourceAsStream(path);
-      if (in == null) {
-        throw new FileNotFoundException(uri.toString());
-      }
-    } else {
-      throw new IllegalArgumentException("URI: " + uri);
-    }
-
-    return new UriReader(uri, new InputStreamReader(in, "UTF-8"));
-  }
+  };
 
   /**
    * Produce a whitelist from the given JSONObject.
@@ -133,10 +142,43 @@ public class ConfigUtil {
    * @throws ParseException if we can't produce a whitelist.
    */
   public static WhiteList loadWhiteListFromJson(
-      Reader in, FilePosition src, MessageQueue mq)
+      Reader in, FilePosition src, ImportResolver resolver, MessageQueue mq)
       throws IOException, ParseException {
-    JSONWhiteListLoader wll = new JSONWhiteListLoader(src, mq);
-    return wll.loadFrom(in);
+    return (new JSONWhiteListLoader(src, resolver, mq)).loadFrom(in);
+  }
+
+  /**
+   * Produce a whitelist from the given JSONObject.
+   *
+   * This implementation uses a third party JSON parser, so does not accurately
+   * track file positions of sub objects.  Error messages will correctly
+   * identify the file, but not the line number.  We do not use the javascript
+   * parser, since JSON is not a subset of javascript.  We could use the
+   * javascript parser with a JSON lexer if error message positions in config
+   * files become a problem.
+   *
+   * @param whitelistUri an absolute URI loadable by resolver.
+   * @param resolver used to load the given URI and any URIs referenced in that
+   *     or included whitelists.
+   * @param mq receives warnings and errors that don't prevent us from
+   *     producing a whitelist.
+   *
+   * @return a WhiteList that may be invalid.  If mq contains no new
+   *     {@link MessageLevel#ERROR}s or more serious messages, then the return
+   *     value is valid.
+   *
+   * @throws IOException if we can't load an inherited whitelist.
+   * @throws ParseException if we can't produce a whitelist.
+   */
+  public static WhiteList loadWhiteListFromJson(
+      URI whitelistUri, ImportResolver resolver, MessageQueue mq)
+      throws IOException, ParseException {
+    Pair<Reader, FilePosition> wl = resolver.resolve(whitelistUri, null, null);
+    try {
+      return (new JSONWhiteListLoader(wl.b, resolver, mq)).loadFrom(wl.a);
+    } finally {
+      wl.a.close();
+    }
   }
 
   /**
@@ -156,9 +198,10 @@ public class ConfigUtil {
    * @throws ParseException if we can't produce a whitelist.
    */
   public static WhiteList loadWhiteListFromJson(
-      JSONObject value, FilePosition src, MessageQueue mq)
+      JSONObject value, FilePosition src, ImportResolver resolver,
+      MessageQueue mq)
       throws IOException, ParseException {
-    return new JSONWhiteListLoader(src, mq).loadFrom(value);
+    return new JSONWhiteListLoader(src, resolver, mq).loadFrom(value);
   }
 
   private ConfigUtil() {}
@@ -174,11 +217,14 @@ final class UriReader extends BufferedReader {
 }
 
 class JSONWhiteListLoader {
-  FilePosition src;
+  final FilePosition src;
+  final ImportResolver resolver;
   MessageQueue mq;
 
-  JSONWhiteListLoader(FilePosition src, MessageQueue mq) {
+  JSONWhiteListLoader(
+      FilePosition src, ImportResolver resolver, MessageQueue mq) {
     this.src = src;
+    this.resolver = resolver;
     this.mq = mq;
   }
 
@@ -267,11 +313,15 @@ class JSONWhiteListLoader {
                            "inherits src");
         try {
           URI uri = src.source().getUri().resolve(new URI(srcStr));
-          FilePosition pos = FilePosition.startOfFile(new InputSource(uri));
-
-          inherited.add(
-              new JSONWhiteListLoader(pos, mq).loadSkeleton(
-                  ConfigUtil.openConfigResource(uri, src.source().getUri())));
+          Pair<Reader, FilePosition> loaded = resolver.resolve(
+              uri, src.source().getUri(), src);
+          try {
+            inherited.add(
+                new JSONWhiteListLoader(loaded.b, resolver, mq)
+                .loadSkeleton(loaded.a));
+          } finally {
+            loaded.a.close();
+          }
         } catch (URISyntaxException ex) {
           mq.addMessage(ConfigMessageType.BAD_URL, src,
                         MessagePart.Factory.valueOf(srcStr));

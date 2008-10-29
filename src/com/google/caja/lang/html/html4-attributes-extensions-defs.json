@@ -3,8 +3,6 @@
       "Extensions of HTML attribute parsing for common browser features."
       ],
 
-  "inherits": ["html4-attributes-defs.json"],
-
   "types": [
       { "key": "*:NAME", "description": "other name",
         "type": "GLOBAL_NAME", "optional": true }

@@ -16,8 +16,6 @@ package com.google.caja.lang.html;
 
 import com.google.caja.config.ConfigUtil;
 import com.google.caja.config.WhiteList;
-import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageQueue;
@@ -46,11 +44,13 @@ import java.util.regex.Pattern;
  * @author mikesamuel@gmail.com
  */
 public final class HtmlSchema {
-  private final Set<String> allowedElements;
-  private final Map<String, HTML.Element> elementDetails;
-  private final Set<String> allowedAttributes;
-  private final Map<String, HTML.Attribute> attributeDetails;
-  private final Map<String, Criterion<String>> attributeCriteria;
+  private static final Name WILDCARD = Name.html("*");
+
+  private final Set<Name> allowedElements;
+  private final Map<Name, HTML.Element> elementDetails;
+  private final Set<Pair<Name, Name>> allowedAttributes;
+  private final Map<Pair<Name, Name>, HTML.Attribute> attributeDetails;
+  private final Map<Pair<Name, Name>, Criterion<String>> attributeCriteria;
 
   private static Pair<HtmlSchema, List<Message>> defaultSchema;
   /**
@@ -60,19 +60,17 @@ public final class HtmlSchema {
   public static HtmlSchema getDefault(MessageQueue mq) {
     if (defaultSchema == null) {
       SimpleMessageQueue cacheMq = new SimpleMessageQueue();
-      FilePosition elPos = FilePosition.startOfFile(
-          new InputSource(URI.create(
-              "resource:///com/google/caja/lang/html/html4-elements.json")));
-      FilePosition attrPos = FilePosition.startOfFile(
-          new InputSource(URI.create(
-              "resource:///com/google/caja/lang/html/html4-attributes.json")));
+      URI elSrc = URI.create(
+              "resource:///com/google/caja/lang/html/html4-elements.json");
+      URI attrSrc = URI.create(
+              "resource:///com/google/caja/lang/html/html4-attributes-extensions.json");
       try {
         defaultSchema = Pair.pair(
             new HtmlSchema(
-                ConfigUtil.loadWhiteListFromJson(ConfigUtil.openConfigResource(
-                    elPos.source().getUri(), null), elPos, cacheMq),
-                ConfigUtil.loadWhiteListFromJson(ConfigUtil.openConfigResource(
-                   attrPos.source().getUri(), null), attrPos, cacheMq)),
+                ConfigUtil.loadWhiteListFromJson(
+                    elSrc, ConfigUtil.RESOURCE_RESOLVER, cacheMq),
+                ConfigUtil.loadWhiteListFromJson(
+                    attrSrc, ConfigUtil.RESOURCE_RESOLVER, cacheMq)),
             cacheMq.getMessages());
       // If the default schema is borked, there's not much we can do.
       } catch (IOException ex) {
@@ -88,14 +86,23 @@ public final class HtmlSchema {
     return defaultSchema.a;
   }
 
+  /**
+   * Elements that can be removed from the DOM without changing behavior as long
+   * as their children are folded into the element's parent.
+   */
+  public static boolean isElementFoldable(Name tagName) {
+    String cname = tagName.getCanonicalForm();
+    return "head".equals(cname) || "body".equals(cname) || "html".equals(cname);
+  }
+
   public HtmlSchema(WhiteList tagList, WhiteList attribList) {
-    this.allowedElements = new HashSet<String>();
+    this.allowedElements = new HashSet<Name>();
     for (String name : tagList.allowedItems()) {
-      allowedElements.add(Strings.toLowerCase(name));
+      allowedElements.add(Name.html(name));
     }
-    this.elementDetails = new HashMap<String, HTML.Element>();
+    this.elementDetails = new HashMap<Name, HTML.Element>();
     for (WhiteList.TypeDefinition def : tagList.typeDefinitions().values()) {
-      String name = Strings.toLowerCase((String) def.get("key", null));
+      Name name = Name.html((String) def.get("key", null));
       elementDetails.put(
           name,
           new HTML.Element(
@@ -103,17 +110,20 @@ public final class HtmlSchema {
               (Boolean) def.get("empty", Boolean.FALSE),
               (Boolean) def.get("optionalEnd", Boolean.FALSE)));
     }
-    this.allowedAttributes = new HashSet<String>();
+    this.allowedAttributes = new HashSet<Pair<Name, Name>>();
     for (String name : attribList.allowedItems()) {
-      allowedAttributes.add(Strings.toLowerCase(name));
+      int colon = name.indexOf(':');
+      allowedAttributes.add(Pair.pair(Name.html(name.substring(0, colon)),
+                                      Name.html(name.substring(colon + 1))));
     }
-    this.attributeDetails = new HashMap<String, HTML.Attribute>();
-    this.attributeCriteria = new HashMap<String, Criterion<String>>();
+    this.attributeDetails = new HashMap<Pair<Name, Name>, HTML.Attribute>();
+    this.attributeCriteria = new HashMap<Pair<Name, Name>, Criterion<String>>();
     for (WhiteList.TypeDefinition def : attribList.typeDefinitions().values()) {
       String key = Strings.toLowerCase((String) def.get("key", null));
       int colon = key.indexOf(':');
-      String element = key.substring(0, colon),
-          attrib = key.substring(colon + 1);
+      Name element = Name.html(key.substring(0, colon)),
+          attrib = Name.html(key.substring(colon + 1));
+      Pair<Name, Name> elAndAttrib = Pair.pair(element, attrib);
       HTML.Attribute.Type type = HTML.Attribute.Type.NONE;
       String typeName = (String) def.get("type", null);
       if (typeName != null) {
@@ -122,7 +132,7 @@ public final class HtmlSchema {
       }
       String mimeTypes = (String) def.get("mimeTypes", null);
       attributeDetails.put(
-          key, new HTML.Attribute(element, attrib, type, mimeTypes));
+          elAndAttrib, new HTML.Attribute(element, attrib, type, mimeTypes));
       final String values = (String) def.get("values", null);
       Criterion<String> criterion = null;
       if (values != null) {
@@ -155,28 +165,37 @@ public final class HtmlSchema {
         }
       }
       if (criterion != null) {
-        attributeCriteria.put(key, criterion);
+        attributeCriteria.put(elAndAttrib, criterion);
       }
     }
   }
 
+  public Set<Pair<Name, Name>> getAttributeNames() {
+    return attributeDetails.keySet();
+  }
+
+  public Set<Name> getElementNames() {
+    return elementDetails.keySet();
+  }
+
   public boolean isElementAllowed(Name elementName) {
-    return allowedElements.contains(elementName.getCanonicalForm());
+    return allowedElements.contains(elementName);
   }
 
   public HTML.Element lookupElement(Name elementName) {
-    return elementDetails.get(elementName.getCanonicalForm());
+    return elementDetails.get(elementName);
   }
 
   public boolean isAttributeAllowed(Name elementName, Name attribName) {
-    return allowedAttributes.contains(elementName + ":" + attribName)
-        || allowedAttributes.contains("*:" + attribName);
+    return allowedAttributes.contains(Pair.pair(elementName, attribName))
+        || allowedAttributes.contains(Pair.pair(WILDCARD, attribName));
   }
 
   public HTML.Attribute lookupAttribute(Name elementName, Name attribName) {
-    HTML.Attribute attr = attributeDetails.get(elementName + ":" + attribName);
+    HTML.Attribute attr = attributeDetails.get(
+        Pair.pair(elementName, attribName));
     if (attr == null) {
-      attr = attributeDetails.get("*:" + attribName);
+      attr = attributeDetails.get(Pair.pair(WILDCARD, attribName));
     }
     return attr;
   }
@@ -184,9 +203,10 @@ public final class HtmlSchema {
   /** Criteria that attribute values must satisfy. */
   public Criterion<? super String> getAttributeCriteria(
       Name tagName, Name attribName) {
-    Criterion<String> specific
-        = attributeCriteria.get(tagName + ":" + attribName);
-    Criterion<String> general = attributeCriteria.get("*:" + attribName);
+    Criterion<String> specific = attributeCriteria.get(
+        Pair.pair(tagName, attribName));
+    Criterion<String> general = attributeCriteria.get(
+        Pair.pair(WILDCARD, attribName));
     if (specific != null) {
       return (general != null)
           ? Criterion.Factory.and(specific, general)

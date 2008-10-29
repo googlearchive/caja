@@ -235,7 +235,7 @@
       <source file="${src}/com/google/caja/permissive.js"/>
       <source file="${src}/com/google/caja/triv-logger.js"/>
       <source file="${src}/com/google/caja/valija-cajita.js"/>
-      <source file="${src}/com/google/caja/plugin/html4-defs.js"/>
+      <source file="${lib}/com/google/caja/plugin/html4-defs.js"/>
       <source file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <source file="${src}/com/google/caja/plugin/html-emitter.js"/>
       <source file="${src}/com/google/caja/plugin/bridal.js"/>
@@ -272,17 +272,43 @@
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
-      <include name="**/caja/plugin/CssPropertyPatterns.java"/>
+      <include name="**/caja/lang/css/CssPropertyPatterns.java"/>
+      <include name="**/caja/lang/css/HtmlDefinitions.java"/>
     </javac>
-    <genrule class="com.google.caja.plugin.CssPropertyPatterns$Builder">
-      <include file="${src}/com/google/caja/lang/css/css21.json"/>
+    <genrule class="com.google.caja.lang.css.CssPropertyPatterns$Builder">
+      <output file="${lib}/com/google/caja/plugin/css-defs.js"/>
+      <include file="${src}/com/google/caja/lang/css/css-extensions.json"/>
+      <depend file="${src}/com/google/caja/lang/css/css21.json"/>
       <depend file="${src}/com/google/caja/lang/css/css21-defs.json"/>
       <depend file="${src}/com/google/caja/lang/css/css21-whitelist.json"/>
+      <depend file="${src}/com/google/caja/lang/css/css-extensions.json"/>
+      <depend file="${src}/com/google/caja/lang/css/css-extensions-defs.json"/>
+      <depend
+       file="${src}/com/google/caja/lang/css/css-extensions-whitelist.json"/>
       <include file="${src}/com/google/caja/lang/css/css21-fns.json"/>
       <depend file="${src}/com/google/caja/lang/css/css21-fns-defs.json"/>
       <depend file="${src}/com/google/caja/lang/css/css21-fns-whitelist.json"/>
-      <depend file="${src}/com/google/caja/plugin/CssPropertyPatterns.java"/>
-      <output file="${lib}/com/google/caja/plugin/css-defs.js"/>
+      <depend file="${src}/com/google/caja/lang/css/CssPropertyPatterns.java"/>
+    </genrule>
+    <genrule class="com.google.caja.lang.html.HtmlDefinitions$Builder">
+      <output file="${lib}/com/google/caja/plugin/html4-defs.js"/>
+      <include file="${src}/com/google/caja/lang/html/html4-elements.json"/>
+      <depend
+       file="${src}/com/google/caja/lang/html/html4-elements-defs.json"/>
+      <depend
+       file="${src}/com/google/caja/lang/html/html4-elements-whitelist.json"/>
+      <include
+       file="${src}/com/google/caja/lang/html/html4-attributes-extensions.json"
+       />
+      <depend file="${src}/com/google/caja/lang/html/html4-attributes.json"/>
+      <depend
+       file="${src}/com/google/caja/lang/html/html4-attributes-defs.json"/>
+      <depend
+       file="${src}/com/google/caja/lang/html/html4-attributes-extensions-defs.json"/>
+      <depend
+       file="${src}/com/google/caja/lang/html/html4-attributes-whitelist.json"
+       />
+      <depend file="${src}/com/google/caja/lang/html/HtmlDefinitions.java"/>
     </genrule>
   </target>
 
@@ -387,8 +413,8 @@
     <transform>
       <output file="${lib}/com/google/caja/plugin/html-sanitizer-minified.js"
        language="javascript" renderer="minify"/>
-      <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
       <include file="${lib}/com/google/caja/plugin/css-defs.js"/>
+      <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
       <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
     </transform>
     <transform>
@@ -397,6 +423,7 @@
       <include file="${src}/com/google/caja/cajita.js"/>
       <include file="${src}/com/google/caja/plugin/unicode.js"/>
       <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
+      <include file="${src}/com/google/caja/plugin/bridal.js"/>
       <include file="${src}/com/google/caja/plugin/domita.js"/>
     </transform>
   </target>
@@ -424,7 +451,6 @@
         <include name="**/caja/opensocial/applet/setup-valija.js"/>
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/domita.js"/>
-        <include name="**/caja/plugin/html4-defs.js"/>
         <include name="**/caja/plugin/html-emitter.js"/>
         <include name="**/caja/plugin/html-sanitizer.js"/>
         <include name="**/caja/plugin/unicode.js"/>
@@ -494,7 +520,6 @@
       <fileset dir="${src}">
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/domita.js"/>
-        <include name="**/caja/plugin/html4-defs.js"/>
         <include name="**/caja/plugin/html-sanitizer.js"/>
         <include name="**/caja/plugin/unicode.js"/>
         <include name="**/caja/plugin/plugin-base.js"/>
@@ -698,13 +723,13 @@
       <fileset dir="${src}/com/google/caja/plugin">
         <include name="bridal.js"/>
         <include name="domita.js"/>
-        <include name="html4-defs.js"/>
         <include name="html-emitter.js"/>
         <include name="html-sanitizer.js"/>
         <include name="unicode.js"/>
       </fileset>
       <fileset dir="${lib}/com/google/caja/plugin">
         <include name="css-defs.js"/>
+        <include name="html4-defs.js"/>
         <include name="valija.co.js"/>
       </fileset>
       <fileset dir="${third_party}/js/prettify">
@@ -722,7 +747,8 @@
       </fileset>
     </copy>
 
-    <copy file="${src}/com/google/caja/opensocial/applet/index.html" tofile="${www}/testbed/debug.html"/>
+    <copy file="${src}/com/google/caja/opensocial/applet/index.html"
+     tofile="${www}/testbed/debug.html"/>
     <replace file="${www}/testbed/debug.html">
      <replacetoken><![CDATA[<script type="text/javascript" src="cajita-combined-min.js"></script>]]></replacetoken>
      <replacevalue><![CDATA[
@@ -751,7 +777,7 @@
       <include file="${src}/com/google/caja/cajita-debugmode.js"/>
       <include file="${src}/com/google/caja/plugin/unicode.js"/>
       <include file="${lib}/com/google/caja/plugin/css-defs.js"/>
-      <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
+      <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
       <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
       <include file="${src}/com/google/caja/opensocial/applet/setup-valija.js"/>

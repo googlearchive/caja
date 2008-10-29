@@ -15,42 +15,23 @@
 package com.google.caja.config;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.TestUtil;
 
 import java.io.StringReader;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import junit.framework.TestCase;
-
-public class ConfigUtilTest extends TestCase {
-  private MessageQueue mq;
-
-  @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    mq = new SimpleMessageQueue();
-  }
-
-  @Override
-  public void tearDown() throws Exception {
-    super.tearDown();
-    mq = null;
-  }
-
+public class ConfigUtilTest extends CajaTestCase {
   // TODO(mikesamuel): better file positions for error messages.
 
   public void testEmptyConfigAllowNothing() throws Exception {
     WhiteList w = ConfigUtil.loadWhiteListFromJson(
-        new StringReader("{}"), makeSrc(), mq);
+        new StringReader("{}"), makeSrc(), ConfigUtil.RESOURCE_RESOLVER, mq);
     assertTrue(w.allowedItems().isEmpty());
     assertMessages();
   }
@@ -59,7 +40,7 @@ public class ConfigUtilTest extends TestCase {
     WhiteList w = ConfigUtil.loadWhiteListFromJson(
         new StringReader(
             "{ \"allowed\": [ \"foo\", { \"key\" : \"bar\" } ] }"),
-        makeSrc(), mq);
+        makeSrc(), ConfigUtil.RESOURCE_RESOLVER, mq);
     assertTrue(w.allowedItems().contains("foo"));
     assertTrue(w.allowedItems().contains("bar"));
     assertEquals(2, w.allowedItems().size());
@@ -73,7 +54,7 @@ public class ConfigUtilTest extends TestCase {
             + " \"denied\": [ \"foo\", { \"key\" : \"bar\" } ],"
             + " \"allowed\": [ \"bar\", { \"key\" : \"boo\" } ],"
             + "}"),
-        makeSrc(), mq);
+        makeSrc(), ConfigUtil.RESOURCE_RESOLVER, mq);
     assertTrue("boo", w.allowedItems().contains("boo"));
     assertFalse("bar", w.allowedItems().contains("bar"));
     assertFalse("foo", w.allowedItems().contains("foo"));
@@ -88,7 +69,7 @@ public class ConfigUtilTest extends TestCase {
             + " \"denies\": [ \"foo\", { \"key\" : \"bar\" } ],"
             + " \"allowed\": [ \"bar\", { \"key\" : \"boo\" } ],"
             + "}"),
-        makeSrc(), mq);
+        makeSrc(), ConfigUtil.RESOURCE_RESOLVER, mq);
     assertMessages(
         "WARNING: testMisspelledDenied:1+1: unrecognized key denies");
   }
@@ -104,7 +85,7 @@ public class ConfigUtilTest extends TestCase {
                 ) + "\"],"
             + " \"denied\": [ \"foo\" ],"
             + "}"),
-        makeSrc(), mq);
+        makeSrc(), ConfigUtil.RESOURCE_RESOLVER, mq);
     assertTrue("bar", w.allowedItems().contains("bar"));
     assertFalse("foo", w.allowedItems().contains("foo"));
     assertEquals(1, w.allowedItems().size());
@@ -123,7 +104,7 @@ public class ConfigUtilTest extends TestCase {
                 ) + "\"],"
             + " \"allowed\": [ \"bar\" ],"
             + "}"),
-        makeSrc(), mq);
+        makeSrc(), ConfigUtil.RESOURCE_RESOLVER, mq);
     assertTrue("bar", w.allowedItems().contains("bar"));
     assertFalse("foo", w.allowedItems().contains("foo"));
     assertEquals(1, w.allowedItems().size());
@@ -147,7 +128,7 @@ public class ConfigUtilTest extends TestCase {
             + "     { \"key\": \"baz\", \"name\": \"BAZ\" }"
             + "     ]"
             + "}"),
-        makeSrc(), mq);
+        makeSrc(), ConfigUtil.RESOURCE_RESOLVER, mq);
     assertEquals("FOO", w.typeDefinitions().get("foo").get("name", null));
     assertEquals("Bar", w.typeDefinitions().get("bar").get("name", null));
     assertEquals("BAZ", w.typeDefinitions().get("baz").get("name", null));
@@ -161,7 +142,7 @@ public class ConfigUtilTest extends TestCase {
               "{"
               + " \"inherits\": [ {} ]"
               + "}"),
-          makeSrc(), mq);
+          makeSrc(), ConfigUtil.RESOURCE_RESOLVER, mq);
       fail("parsing not aborted");
     } catch (ParseException ex) {
       assertMessages();
@@ -190,7 +171,7 @@ public class ConfigUtilTest extends TestCase {
                 + "}"
                 ) + "\"]"
             + "}"),
-        makeSrc(), mq);
+        makeSrc(), ConfigUtil.RESOURCE_RESOLVER, mq);
     assertEquals("Foo", w.typeDefinitions().get("foo").get("name", null));
     assertMessages();
   }
@@ -216,7 +197,7 @@ public class ConfigUtilTest extends TestCase {
             + "     { \"key\": \"foo\", \"name\": \"FOO\" },"
             + "     ]"
             + "}"),
-        makeSrc(), mq);
+        makeSrc(), ConfigUtil.RESOURCE_RESOLVER, mq);
     assertEquals("FOO", w.typeDefinitions().get("foo").get("name", null));
     assertMessages();
   }
@@ -239,7 +220,7 @@ public class ConfigUtilTest extends TestCase {
                 + "}"
                 ) + "\"]"
             + "}"),
-        makeSrc(), mq);
+        makeSrc(), ConfigUtil.RESOURCE_RESOLVER, mq);
     assertEquals("Foo", w.typeDefinitions().get("foo").get("name", null));
     assertMessages("FATAL_ERROR: testUnresolvedAmbiguousDefinition:1+1:"
                    + " ambiguous type definition {@} != {@}");
@@ -272,7 +253,7 @@ public class ConfigUtilTest extends TestCase {
             + "     { \"key\": \"foo\", \"name\": \"Foo-3\" },"
             + "     ]"
             + "}"),
-        makeSrc(), mq);
+        makeSrc(), ConfigUtil.RESOURCE_RESOLVER, mq);
     assertEquals("Foo-3", w.typeDefinitions().get("foo").get("name", null));
     assertMessages();
   }
@@ -287,15 +268,7 @@ public class ConfigUtilTest extends TestCase {
     MoreAsserts.assertListsEqual(Arrays.asList(golden), actual);
   }
 
-  private FilePosition makeSrc() throws Exception {
-    return makeSrc(null);
-  }
-
-  private FilePosition makeSrc(String suffix) throws Exception {
-    InputSource is = new InputSource(URI.create(
-        "test:///" + getName() + (suffix != null ? "/" + suffix : "")));
-    return FilePosition.startOfFile(is);
-  }
+  private FilePosition makeSrc() { return FilePosition.startOfFile(is); }
 
   private static final String JSON_STRING = "(?:\"(?:[^\"\\\\]|\\\\.)*\")";
   private static final String JSON_NUMBER = (

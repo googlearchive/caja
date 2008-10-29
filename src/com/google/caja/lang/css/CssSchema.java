@@ -16,8 +16,6 @@ package com.google.caja.lang.css;
 
 import com.google.caja.config.ConfigUtil;
 import com.google.caja.config.WhiteList;
-import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
@@ -62,18 +60,16 @@ public final class CssSchema {
   public static CssSchema getDefaultCss21Schema(MessageQueue mq) {
     if (defaultSchema == null) {
       SimpleMessageQueue cacheMq = new SimpleMessageQueue();
-      FilePosition fnPos = FilePosition.startOfFile(new InputSource(URI.create(
-          "resource:///com/google/caja/lang/css/css-extensions-fns.json"))),
-          propPos = FilePosition.startOfFile(new InputSource(URI.create(
-          "resource:///com/google/caja/lang/css/css-extensions.json")));
+      URI fnSrc = URI.create(
+              "resource:///com/google/caja/lang/css/css-extensions-fns.json"),
+          propSrc = URI.create(
+              "resource:///com/google/caja/lang/css/css-extensions.json");
       WhiteList propDefs, fnDefs;
       try {
         propDefs = ConfigUtil.loadWhiteListFromJson(
-            ConfigUtil.openConfigResource(propPos.source().getUri(), null),
-            propPos, cacheMq);
+            propSrc, ConfigUtil.RESOURCE_RESOLVER, cacheMq);
         fnDefs = ConfigUtil.loadWhiteListFromJson(
-            ConfigUtil.openConfigResource(fnPos.source().getUri(), null),
-            fnPos, cacheMq);
+            fnSrc, ConfigUtil.RESOURCE_RESOLVER, cacheMq);
       // If the default schema is borked, there's not much we can do.
       } catch (IOException ex) {
         mq.getMessages().addAll(cacheMq.getMessages());

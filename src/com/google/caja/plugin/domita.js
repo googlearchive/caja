@@ -279,8 +279,12 @@ attachDocumentStub = (function () {
           for (var i = 0; i < attribs.length; i += 2) {
             var attribName = attribs[i];
             var value = attribs[i + 1];
-            if (html4.ATTRIBS.hasOwnProperty(attribName)) {
-              var atype = html4.ATTRIBS[attribName];
+            var atype = null, attribKey;
+            if ((attribKey = tagName + ':' + attribName,
+                 html4.ATTRIBS.hasOwnProperty(attribKey))
+                || (attribKey = '*:' + attribName,
+                    html4.ATTRIBS.hasOwnProperty(attribKey))) {
+              atype = html4.ATTRIBS[attribKey];
               value = rewriteAttribute(tagName, attribName, atype, value);
             } else {
               value = null;
@@ -314,17 +318,30 @@ attachDocumentStub = (function () {
           for (var i = 0; i < attribs.length; i += 2) {
             var attribName = attribs[i];
             if (attribName === 'target') { continue; }
-            var atype = html4.ATTRIBS[attribName];
-            var value = attribs[i + 1];
-            if (atype === html4.atype.IDREF) {
-              if (value.length <= idSuffix.length
-                  || (idSuffix
-                      !== value.substring(value.length - idSuffix.length))) {
-                continue;
-              }
-              value = value.substring(0, value.length - idSuffix.length);
+            var attribKey;
+            var atype;
+            if ((attribKey = tagName + ':' + attribName,
+                html4.ATTRIBS.hasOwnProperty(attribKey))
+                || (attribKey = '*:' + attribName,
+                    html4.ATTRIBS.hasOwnProperty(attribKey))) {
+              atype = html4.ATTRIBS[attribKey];
+            } else {
+              return '';
             }
-            if (value != null) {
+            var value = attribs[i + 1];
+            switch (atype) {
+              case html4.atype.ID:
+              case html4.atype.IDREF:
+              case html4.atype.IDREFS:
+                if (value.length <= idSuffix.length
+                    || (idSuffix
+                        !== value.substring(value.length - idSuffix.length))) {
+                  continue;
+                }
+                value = value.substring(0, value.length - idSuffix.length);
+                break;
+            }
+            if (value !== null) {
               out.push(' ', attribName, '="', html.escapeAttrib(value), '"');
             }
           }
@@ -353,19 +370,17 @@ attachDocumentStub = (function () {
      */
     function rewriteAttribute(tagName, attribName, type, value) {
       switch (type) {
+        case html4.atype.ID:
         case html4.atype.IDREF:
+        case html4.atype.IDREFS:
           value = String(value);
           if (value && !illegalSuffix.test(value) && isXmlName(value)) {
             return value + idSuffix;
           }
           return null;
-        case html4.atype.NAME:
-          value = String(value);
-          if (value && !illegalSuffix.test(value) && isXmlName(value)) {
-            return value + idSuffix;
-          }
-          return null;
-        case html4.atype.NMTOKENS:
+        case html4.atype.CLASSES:
+        case html4.atype.GLOBAL_NAME:
+        case html4.atype.LOCAL_NAME:
           value = String(value);
           if (value && !illegalSuffix.test(value) && isXmlNmTokens(value)) {
             return value;
@@ -416,7 +431,7 @@ attachDocumentStub = (function () {
             css.push(propName + ' : ' + propValue);
           }
           return css.join(' ; ');
-        case html4.atype.FRAME:
+        case html4.atype.FRAME_TARGET:
           // Frames are ambient, so disallow reference.
           return null;
         default:
@@ -716,16 +731,25 @@ attachDocumentStub = (function () {
     TameElement.prototype.setId = function (newId) {
       return this.setAttribute('id', newId);
     };
-    TameElement.prototype.getAttribute = function (name) {
-      name = String(name).toLowerCase();
-      var type = html4.ATTRIBS[name];
-      if (type === void 0 || !html4.ATTRIBS.hasOwnProperty(name)) {
-        return null;
+    TameElement.prototype.getAttribute = function (attribName) {
+      attribName = String(attribName).toLowerCase();
+      var tagName = this.node___.tagName.toLowerCase();
+      var attribKey;
+      var atype;
+      if ((attribKey = tagName + ':' + attribName,
+          html4.ATTRIBS.hasOwnProperty(attribKey))
+          || (attribKey = '*:' + attribName,
+              html4.ATTRIBS.hasOwnProperty(attribKey))) {
+        atype = html4.ATTRIBS[attribKey];
+      } else {
+        return '';
       }
-      var value = this.node___.getAttribute(name);
+      var value = this.node___.getAttribute(attribName);
       if ('string' !== typeof value) { return value; }
-      switch (type) {
+      switch (atype) {
+        case html4.atype.ID:
         case html4.atype.IDREF:
+        case html4.atype.IDREFS:
           if (!value) { return ''; }
           var n = idSuffix.length;
           var len = value.length;
@@ -738,17 +762,23 @@ attachDocumentStub = (function () {
           return value;
       }
     };
-    TameElement.prototype.setAttribute = function (name, value) {
+    TameElement.prototype.setAttribute = function (attribName, value) {
       if (!this.editable___) { throw new Error(); }
-      name = String(name).toLowerCase();
-      var type = html4.ATTRIBS[name];
-      if (type === void 0 || !html4.ATTRIBS.hasOwnProperty(name)) {
+      attribName = String(attribName).toLowerCase();
+      var tagName = this.node___.tagName.toLowerCase();
+      var attribKey;
+      var atype;
+      if ((attribKey = tagName + ':' + attribName,
+           html4.ATTRIBS.hasOwnProperty(attribKey))
+          || (attribKey = '*:' + attribName,
+              html4.ATTRIBS.hasOwnProperty(attribKey))) {
+        atype = html4.ATTRIBS[attribKey];
+      } else {
         throw new Error();
       }
-      var sanitizedValue = rewriteAttribute(
-          this.node___.tagName, name, type, value);
+      var sanitizedValue = rewriteAttribute(tagName, attribName, atype, value);
       if (sanitizedValue !== null) {
-        bridal.setAttribute(this.node___, name, sanitizedValue);
+        bridal.setAttribute(this.node___, attribName, sanitizedValue);
       }
       return value;
     };
@@ -852,25 +882,26 @@ attachDocumentStub = (function () {
 
     // Register set handlers for onclick, onmouseover, etc.
     (function () {
+      var attrNameRe = /:(.*)/;
       for (var html4Attrib in html4.ATTRIBS) {
         if (html4.atype.SCRIPT === html4.ATTRIBS[html4Attrib]) {
-          ___.useSetHandler(
-              TameElement.prototype,
-              html4Attrib,
-              (function (attribName) {
-                 return function eventHandlerSetter(listener) {
-                   if (!this.editable___) { throw new Error(); }
-                   if (!listener) {  // Clear the current handler
-                     this.node___[attribName] = null;
-                   } else {
-                     // This handler cannot be copied from one node to another
-                     // which is why getters are not yet supported.
-                     this.node___[attribName] = makeEventHandlerWrapper(
-                         this.node___, listener);
-                     return listener;
-                   }
-                 };
-               })(html4Attrib));
+          (function (attribName) {
+            ___.useSetHandler(
+                TameElement.prototype,
+                attribName,
+                function eventHandlerSetter(listener) {
+                  if (!this.editable___) { throw new Error(); }
+                  if (!listener) {  // Clear the current handler
+                    this.node___[attribName] = null;
+                  } else {
+                    // This handler cannot be copied from one node to another
+                    // which is why getters are not yet supported.
+                    this.node___[attribName] = makeEventHandlerWrapper(
+                        this.node___, listener);
+                    return listener;
+                  }
+                });
+           })(html4Attrib.match(attrNameRe)[0]);
         }
       }
     })();
@@ -1115,7 +1146,7 @@ attachDocumentStub = (function () {
       var p = String(nmtokens).replace(/^\s+|\s+$/g, '').split(/\s+/g);
       var out = [];
       for (var i = 0; i < p.length; ++i) {
-        nmtoken = rewriteAttribute(null, null, html4.atype.IDREF, p[i]);
+        nmtoken = rewriteAttribute(null, null, html4.atype.ID, p[i]);
         if (!nmtoken) { throw new Error(nmtokens); }
         out.push(nmtoken);
       }
@@ -1125,7 +1156,7 @@ attachDocumentStub = (function () {
       var p = String(nmtokens).replace(/^\s+|\s+$/g, '').split(/\s+/g);
       var out = [];
       for (var i = 0; i < p.length; ++i) {
-        nmtoken = rewriteAttribute(null, null, html4.atype.NMTOKENS, p[i]);
+        nmtoken = rewriteAttribute(null, null, html4.atype.CLASSES, p[i]);
         if (!nmtoken) { throw new Error(nmtokens); }
         out.push(nmtoken);
       }

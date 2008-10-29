@@ -21,6 +21,19 @@
 
 /** @namespace */
 var html = (function () {
+  var lcase;
+  // The below may not be true on browsers in the Turkish locale.
+  if ('script' === 'SCRIPT'.toLowerCase()) {
+    lcase = function (s) { return s.toLowerCase(); };
+  } else {
+    lcase = function (s) {
+      return s.replace(
+          /[A-Z]/g,
+          function (ch) {
+            return String.fromCharCode(ch.charCodeAt(0) | 32);
+          });
+    };
+  }
 
   var ENTITIES = {
     LT   : '<',
@@ -51,7 +64,7 @@ var html = (function () {
 
   var nulRe = /\0/g;
   function stripNULs(s) {
-	return s.replace(nulRe, '');
+    return s.replace(nulRe, '');
   }
 
   var entityRe = /&(#\d+|#x[\da-f]+|\w+);/g;
@@ -68,7 +81,7 @@ var html = (function () {
 
   /** Escapes HTML special characters in attribute values as HTML entities. */
   function escapeAttrib(s) {
-	// Escaping '=' defangs many UTF-7 and SGML short-tag attacks.
+    // Escaping '=' defangs many UTF-7 and SGML short-tag attacks.
     return s.replace(ampRe, '&amp;').replace(ltRe, '&lt;').replace(gtRe, '&gt;')
         .replace(quotRe, '&quot;').replace(eqRe, '&#61;');
   }
@@ -163,7 +176,7 @@ var html = (function () {
   function makeSaxParser(handler) {
     return function parse(htmlText, param) {
       htmlText = String(htmlText);
-      var htmlUpper = null;
+      var htmlLower = null;
 
       var inTag = false;  // True iff we're currently processing a tag.
       var attribs = [];  // Accumulates attribute names and values.
@@ -180,7 +193,7 @@ var html = (function () {
         if (inTag) {
           if (m[1]) { // attribute
             // setAttribute with uppercase names doesn't work on IE6.
-            var attribName = m[1].toLowerCase();
+            var attribName = lcase(m[1]);
             var encodedValue = m[2];
             var decodedValue;
             if (encodedValue !== null && encodedValue !== void 0) {
@@ -209,13 +222,13 @@ var html = (function () {
 
             if (openTag
                 && (eflags & (html4.eflags.CDATA | html4.eflags.RCDATA))) {
-              if (htmlUpper === null) {
-                htmlUpper = htmlText.toLowerCase();
+              if (htmlLower === null) {
+                htmlLower = lcase(htmlText);
               } else {
-                htmlUpper = htmlUpper.substring(
-                    htmlUpper.length - htmlText.length);
+                htmlLower = htmlLower.substring(
+                    htmlLower.length - htmlText.length);
               }
-              var dataEnd = htmlUpper.indexOf('</' + tagName);
+              var dataEnd = htmlLower.indexOf('</' + tagName);
               if (dataEnd < 0) { dataEnd = htmlText.length; }
               if (eflags & html4.eflags.CDATA) {
                 handler.cdata
@@ -379,14 +392,23 @@ function html_sanitize(htmlText, opt_urlPolicy, opt_nmTokenPolicy) {
         for (var i = 0; i < attribs.length; i += 2) {
           var attribName = attribs[i];
           var value = attribs[i + 1];
-          if (html4.ATTRIBS.hasOwnProperty(attribName)) {
-            switch (html4.ATTRIBS[attribName]) {
+          var atype = null, attribKey;
+          if ((attribKey = tagName + ':' + attribName,
+               html4.ATTRIBS.hasOwnProperty(attribKey))
+              || (attribKey = '*:' + attribName,
+                  html4.ATTRIBS.hasOwnProperty(attribKey))) {
+            atype = html4.ATTRIBS[attribKey];
+          }
+          if (atype !== null) {
+            switch (atype) {
               case html4.atype.SCRIPT:
               case html4.atype.STYLE:
                 value = null;
               case html4.atype.IDREF:
-              case html4.atype.NAME:
-              case html4.atype.NMTOKENS:
+              case html4.atype.IDREFS:
+              case html4.atype.GLOBAL_NAME:
+              case html4.atype.LOCAL_NAME:
+              case html4.atype.CLASSES:
                 value = opt_nmTokenPolicy ? opt_nmTokenPolicy(value) : value;
                 break;
               case html4.atype.URI:

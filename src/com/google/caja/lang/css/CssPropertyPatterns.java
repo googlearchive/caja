@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.plugin;
+package com.google.caja.lang.css;
 
+import com.google.caja.config.AllowedFileResolver;
 import com.google.caja.config.ConfigUtil;
-import com.google.caja.lang.css.CssSchema;
+import com.google.caja.config.ImportResolver;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
@@ -42,13 +43,10 @@ import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,8 +54,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Operates on CSS property signatures to come up with a simple regular
@@ -540,23 +540,19 @@ public class CssPropertyPatterns {
       MessageQueue mq = new EchoingMessageQueue(
           new PrintWriter(new OutputStreamWriter(System.err), true), mc, false);
 
+      Set<File> inputsAndDeps = new HashSet<File>();
+      for (File f : inputs) { inputsAndDeps.add(f.getAbsoluteFile()); }
+      for (File f : deps) { inputsAndDeps.add(f.getAbsoluteFile()); }
+
+      ImportResolver resolver = new AllowedFileResolver(inputsAndDeps);
+
       CssSchema schema;
       try {
-        Reader spsIn = new InputStreamReader(
-            new FileInputStream(symbolsAndPropertiesFile), "UTF-8");
-        try {
-          Reader fnsIn = new InputStreamReader(
-              new FileInputStream(functionsFile), "UTF-8");
-          try {
-            schema = new CssSchema(
-                ConfigUtil.loadWhiteListFromJson(spsIn, sps, mq),
-                ConfigUtil.loadWhiteListFromJson(fnsIn, fns, mq));
-          } finally {
-            fnsIn.close();
-          }
-        } finally {
-          spsIn.close();
-        }
+        schema = new CssSchema(
+            ConfigUtil.loadWhiteListFromJson(
+                sps.source().getUri(), resolver, mq),
+            ConfigUtil.loadWhiteListFromJson(
+                fns.source().getUri(), resolver, mq));
       } catch (ParseException ex) {
         ex.toMessageQueue(mq);
         throw (IOException) new IOException("Failed to parse schema")

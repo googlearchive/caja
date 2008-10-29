@@ -1,0 +1,7 @@
+{
+  "description": "HTML4 plus some other stuff",
+  "inherits": [
+      "html4-attributes.json",
+      "html4-attributes-extensions-defs.json"
+      ]
+}

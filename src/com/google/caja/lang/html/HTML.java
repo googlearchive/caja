@@ -14,7 +14,7 @@
 
 package com.google.caja.lang.html;
 
-import com.google.caja.util.Strings;
+import com.google.caja.util.Name;
 
 /**
  * HTML class defines Element and Attribute classes.
@@ -28,20 +28,20 @@ public final class HTML {
    */
   public static final class Element {
 
-    private final String name_;
+    private final Name name_;
     private final boolean empty_;
     private final boolean optionalEndTag_;
 
     /** Construct an Element */
-    public Element(String name, boolean empty, boolean optionalEndTag) {
-      assert Strings.isLowerCase(name);
+    public Element(Name name, boolean empty, boolean optionalEndTag) {
+      assert name != null;
       this.name_ = name;
       this.empty_ = empty;
       this.optionalEndTag_ = optionalEndTag;
     }
 
-    /** Name of the element, in lowercase, e.g. "a", "br" */
-    public String getName() {
+    /** Name of the element, e.g. "a", "br" */
+    public Name getName() {
       return name_;
     }
 
@@ -60,7 +60,7 @@ public final class HTML {
      */
     @Override
     public String toString() {
-      return name_;
+      return name_.getCanonicalForm();
     }
 
     @Override
@@ -151,9 +151,9 @@ public final class HTML {
     }
 
     /** Name of the element, e.g. "a" or "*" */
-    private final String elementName_;
+    private final Name elementName_;
     /** Name of the attribute, e.g. "href" */
-    private final String attributeName_;
+    private final Name attributeName_;
 
     /** Type of the attribute value, e.g. URI */
     private final Type type_;
@@ -162,10 +162,10 @@ public final class HTML {
     private final String mimeTypes_;
 
     /** Construct an Attribute */
-    public Attribute(String elementName, String attributeName, Type type,
+    public Attribute(Name elementName, Name attributeName, Type type,
                      String mimeTypes) {
-      assert Strings.isLowerCase(elementName);
-      assert Strings.isLowerCase(attributeName);
+      assert elementName != null;
+      assert attributeName != null;
       assert type != null;
       this.elementName_ = elementName;
       this.attributeName_ = attributeName;
@@ -173,13 +173,13 @@ public final class HTML {
       this.mimeTypes_ = mimeTypes;
     }
 
-    /** Gets the name of the attribute, in lowercase. */
-    public String getAttributeName() {
+    /** Gets the name of the attribute. */
+    public Name getAttributeName() {
       return attributeName_;
     }
 
-    /** Gets the name of the element, in lowercase, or the special value "*". */
-    public String getElementName() {
+    /** Gets the name of the element, or the special value "*". */
+    public Name getElementName() {
       return attributeName_;
     }
 
@@ -198,7 +198,7 @@ public final class HTML {
      */
     @Override
     public String toString() {
-      return attributeName_;
+      return attributeName_.getCanonicalForm();
     }
 
     @Override
