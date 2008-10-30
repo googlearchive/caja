@@ -522,9 +522,11 @@ attachDocumentStub = (function () {
       return wrapper;
     }
 
+    var NOT_EDITABLE = "Node not editable.";
+
     // Implementation of EventTarget::addEventListener
     function tameAddEventListener(name, listener, useCapture) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       if (!this.wrappedListeners___) { this.wrappedListeners___ = []; }
       name = String(name);
       var wrappedListener = makeEventHandlerWrapper(this.node___, listener);
@@ -534,7 +536,7 @@ attachDocumentStub = (function () {
 
     // Implementation of EventTarget::removeEventListener
     function tameRemoveEventListener(name, listener, useCapture) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       if (!this.wrappedListeners___) { return; }
       var wrappedListener;
       for (var i = this.wrappedListeners___.length; --i >= 0;) {
@@ -593,7 +595,7 @@ attachDocumentStub = (function () {
       // Child must be editable since appendChild can remove it from its parent.
       cajita.guard(tameNodeTrademark, child);
       if (!this.editable___ || !child.editable___) {
-        throw new Error();
+        throw new Error(NOT_EDITABLE);
       }
       this.node___.appendChild(child.node___);
     };
@@ -602,7 +604,7 @@ attachDocumentStub = (function () {
       if (child === void 0) { child = null; }
       if (child !== null) { cajita.guard(tameNodeTrademark, child); }
       if (!this.editable___ || !toInsert.editable___) {
-        throw new Error();
+        throw new Error(NOT_EDITABLE);
       }
       this.node___.insertBefore(
           toInsert.node___, child !== null ? child.node___ : null);
@@ -610,7 +612,7 @@ attachDocumentStub = (function () {
     TameNode.prototype.removeChild = function (child) {
       cajita.guard(tameNodeTrademark, child);
       if (!this.editable___ || !child.editable___) {
-        throw new Error();
+        throw new Error(NOT_EDITABLE);
       }
       this.node___.removeChild(child.node___);
     };
@@ -618,7 +620,7 @@ attachDocumentStub = (function () {
       cajita.guard(tameNodeTrademark, child);
       cajita.guard(tameNodeTrademark, replacement);
       if (!this.editable___ || !replacement.editable___) {
-        throw new Error();
+        throw new Error(NOT_EDITABLE);
       }
       this.node___.replaceChild(child.node___, replacement.node___);
     };
@@ -651,7 +653,7 @@ attachDocumentStub = (function () {
           this.node___.getElementsByTagName(String(tagName)), this.editable___);
     };
     TameNode.prototype.getChildNodes = function() {
-      return tameNodeList(this.node___.childNodes);
+      return tameNodeList(this.node___.childNodes, this.editable___);
     };
     ___.ctor(TameNode, void 0, 'TameNode');
     var tameNodeMembers = [
@@ -691,7 +693,7 @@ attachDocumentStub = (function () {
     extend(TameTextNode, TameNode);
     nodeClasses.TextNode = TameTextNode;
     TameTextNode.prototype.setNodeValue = function (value) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.nodeValue = String(value || '');
       return value;
     };
@@ -763,7 +765,7 @@ attachDocumentStub = (function () {
       }
     };
     TameElement.prototype.setAttribute = function (attribName, value) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       attribName = String(attribName).toLowerCase();
       var tagName = this.node___.tagName.toLowerCase();
       var attribKey;
@@ -786,7 +788,7 @@ attachDocumentStub = (function () {
       return this.getAttribute('class') || '';
     };
     TameElement.prototype.setClassName = function (classes) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       return this.setAttribute('class', String(classes));
     };
     TameElement.prototype.getTagName = TameNode.prototype.getNodeName;
@@ -810,7 +812,7 @@ attachDocumentStub = (function () {
       return innerHtml;
     };
     TameElement.prototype.setInnerHTML = function (htmlFragment) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       var tagName = this.node___.tagName.toLowerCase();
       if (!html4.ELEMENTS.hasOwnProperty(tagName)) { throw new Error(); }
       var flags = html4.ELEMENTS[tagName];
@@ -834,7 +836,7 @@ attachDocumentStub = (function () {
       return new TameStyle(this.node___.style, this.editable___);
     };
     TameElement.prototype.updateStyle = function (style) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       var cssPropertiesAndValues = cssSealerUnsealerPair.unseal(style);
       if (!cssPropertiesAndValues) { throw new Error(); }
 
@@ -890,7 +892,7 @@ attachDocumentStub = (function () {
                 TameElement.prototype,
                 attribName,
                 function eventHandlerSetter(listener) {
-                  if (!this.editable___) { throw new Error(); }
+                  if (!this.editable___) { throw new Error(NOT_EDITABLE); }
                   if (!listener) {  // Clear the current handler
                     this.node___[attribName] = null;
                   } else {
@@ -943,11 +945,11 @@ attachDocumentStub = (function () {
       return this.getAttribute('target');
     };
     TameFormElement.prototype.reset = function () {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.reset();
     };
     TameFormElement.prototype.submit = function () {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.submit();
     };
     ___.ctor(TameFormElement, TameElement, 'TameFormElement');
@@ -965,7 +967,7 @@ attachDocumentStub = (function () {
       return this.node___.checked;
     };
     TameInputElement.prototype.setChecked = function (checked) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       return (this.node___.checked = !!checked);
     };
     TameInputElement.prototype.getValue = function () {
@@ -973,17 +975,17 @@ attachDocumentStub = (function () {
       return value === null || value === void 0 ? null : String(value);
     };
     TameInputElement.prototype.setValue = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.value = (
           newValue === null || newValue === void 0 ? '' : '' + newValue);
       return newValue;
     };
     TameInputElement.prototype.focus = function () {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.focus();
     };
     TameInputElement.prototype.blur = function () {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.blur();
     };
     TameInputElement.prototype.getForm = function () {
@@ -1088,7 +1090,7 @@ attachDocumentStub = (function () {
     extend(TameDocument, TameNode);
     nodeClasses.HTMLDocument = TameDocument;
     TameDocument.prototype.createElement = function (tagName) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       tagName = String(tagName).toLowerCase();
       if (!html4.ELEMENTS.hasOwnProperty(tagName)) { throw new Error(); }
       var flags = html4.ELEMENTS[tagName];
@@ -1105,7 +1107,7 @@ attachDocumentStub = (function () {
       return tameNode(newEl, true);
     };
     TameDocument.prototype.createTextNode = function (text) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       return tameNode(this.doc___.createTextNode(
           text !== null && text !== void 0 ? '' + text : ''), true);
     };

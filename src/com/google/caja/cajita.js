@@ -2391,7 +2391,7 @@ var ___;
             ? asSimpleFunc(onerror)(message, String(source), String(lineNum))
             : onerror !== null);
         if (shouldReport !== false) {
-          cajita.log(source + ':' + lineNum + ': ' + message + '\n' + exception.stack);
+          cajita.log(source + ':' + lineNum + ': ' + message);
         }
       }
     });
