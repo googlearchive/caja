@@ -40,6 +40,7 @@
 </div>
 
 <div id="test-get-element-by-id" class="testcontainer"></div>
+
 <div id="test-get-element-by-id-2" class="testcontainer"></div>
 
 <p id="test-element-id" class="testcontainer"></p>
@@ -49,7 +50,6 @@
 <div class="testcontainer" id="test-forms"></div>
 
 <div class="testcontainer" id="test-no-script"></div>
-
 
 <ol class="testcontainer" id="test-get-elements-by-tag-name">
   <li>One
@@ -95,6 +95,8 @@
  >The input should be a radio button:
 <form><input id="bug-731" type="radio" /></form></div>
 
+<br>
+
 <form class="testcontainer" id="test-input-default-values">
   <input type="text" value="one">
   <input id="x" type="text" value="two">
@@ -107,6 +109,13 @@
 </p>
 
 <p class="testcontainer" id="test-inner-HTML-style-sanitizer"></p>
+
+<form class="testcontainer" id="test-radio-buttons">
+  <input type="radio" value="0" name="number" checked>
+  <input type="radio" value="1" name="number">
+  <input type="radio" value="2" name="number">
+</form>
+
 
 <script type="text/javascript">
 var setUp, tearDown;
@@ -756,6 +765,38 @@ jsunitRegister('testInnerHTMLStyleSanitizer',
   assertColor({ name: 'purple', rgb: 0x800080 }, backgroundOf('style-html'));
 
   pass('test-inner-HTML-style-sanitizer');
+});
+
+jsunitRegister('testRadioButtons',
+               function testRadioButtons() {
+  var form = document.getElementById('test-radio-buttons');
+  var radio0 = form.elements[0],
+      radio1 = form.elements[1],
+      radio2 = form.elements[2];
+
+  assertTrue('radio0 should be checked initially', radio0.checked);
+  assertFalse('radio1 should not be checked initially', radio1.checked);
+  assertFalse('radio2 should not be checked initially', radio2.checked);
+
+  radio1.checked = true;
+
+  assertFalse('radio0 should not be checked after 1 checked', radio0.checked);
+  assertTrue('radio1 should be checked after 1 checked', radio1.checked);
+  assertFalse('radio2 should not be checked after 1 checked', radio2.checked);
+
+  radio2.checked = true;
+
+  assertFalse('radio0 should not be checked after 2 checked', radio0.checked);
+  assertFalse('radio1 should not be checked after 2 checked', radio1.checked);
+  assertTrue('radio2 should be checked after 2 checked', radio2.checked);
+
+  form.reset();
+
+  assertTrue('radio0 should be checked after reset', radio0.checked);
+  assertFalse('radio1 should not be checked after reset', radio1.checked);
+  assertFalse('radio2 should not be checked after reset', radio2.checked);
+
+  pass('test-radio-buttons');
 });
 
 </script>
