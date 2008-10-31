@@ -70,7 +70,6 @@ public enum Keyword implements MessagePart {
   INTERFACE("interface"),
   LET("let"),
   LONG("long"),
-  NAMESPACE("namespace"),
   NATIVE("native"),
   NEW("new"),
   NULL("null"),

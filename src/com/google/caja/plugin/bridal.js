@@ -19,6 +19,7 @@
  * functions as opposed to the native DOM functions.
  *
  * @author ihab.awad@gmail.com
+ * @author jasvir@gmail.com
  */
 
 var bridal = (function() {
@@ -37,6 +38,16 @@ var bridal = (function() {
   ////////////////////////////////////////////////////////////////////////////
   // Public section
   ////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Apply fixes to <code>element</code> methods to make it W3 compliant
+   * on broken browsers
+   *
+   * @param element a native DOM element.
+   */
+  function bind(element) {
+    base2.DOM.bind(document);
+  }
 
   /**
    * Add an event listener function to an element.
@@ -60,7 +71,11 @@ var bridal = (function() {
           useCapture === void 0 ? void 0 : Boolean(useCapture));
     }
   }
+  function base2_addEventListener(element, type, handler, useCapture) {
+    element.addEventListener(type, handler, useCapture);
+  }
 
+  
   /**
    * Remove an event listener function from an element.
    *
@@ -81,7 +96,10 @@ var bridal = (function() {
       element.removeEventListener(type, handler, useCapture);
     }
   }
-
+  function base2_removeEventListener(element, type, handler, useCapture) {
+    element.removeEventListener(type, handler, useCapture);
+  }
+  
   /**
    * Create a <code>style</code> element for a document containing some
    * specified CSS text. Does not add the element to the document: the client
@@ -132,11 +150,15 @@ var bridal = (function() {
     }
     return value;
   }
+  function base2_setAttribute(node, name, value) {
+    node.setAttribute(name, value);
+  }
 
   return {
-    addEventListener: addEventListener,
-    removeEventListener: removeEventListener,
+    bind: bind,
+    addEventListener: base2_addEventListener,
+    removeEventListener: base2_removeEventListener,
     createStylesheet: createStylesheet,
-    setAttribute: setAttribute
+    setAttribute: base2_setAttribute
   };
 })();
