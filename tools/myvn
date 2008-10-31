@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # A gvn wrapper that fills in the blanks.
 # If you keep your pending changelists in a directory tree like
@@ -79,11 +79,19 @@
 # files        -  files changed in svn.  Pipeable to xargs 
 # filetypes    -  sets svn:mime-type of modified files based on file suffix
 
-
 function myvn() {
   local default_gvn_path=/opt/googlesvn/bin/gvn
   local default_svn_path=/opt/googlesvn/bin/svn
-submit_bug_path=$(dirname $0)/submit-caja-bug.py
+  submit_bug_path=$(dirname $0)/submit-caja-bug.py
+
+  local tmp=$(which gvn)
+  if [ -x "$tmp" ]; then
+    default_gvn_path=$tmp
+  fi
+  local tmp=$(which svn)
+  if [ -x "$tmp" ]; then
+    default_svn_path=$tmp
+  fi
 
   local verb="$1"
   # If we're in a directory pointed at via symlinks, first switch to the physical directory
