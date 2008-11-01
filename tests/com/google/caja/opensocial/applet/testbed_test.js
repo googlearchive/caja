@@ -21,8 +21,8 @@ jsunitRegister('testIndentAndWrapCode', function () {
       + '</div>',
       indentAndWrapCode(
           ''
-	  + 'foo\n'
-	  + '  bar'));
+          + 'foo\n'
+          + '  bar'));
   assertEquals(
       ''
       + '<div class="line-of-code">'
@@ -48,9 +48,9 @@ jsunitRegister('testIndentAndWrapCode', function () {
       + '</div>',
       indentAndWrapCode(
           ''
-	  + 'function foo() {\n'
-	  + '  var bar = baz(\n'
-	  + '      a, b, "c, d");\n'
-	  + '  return useBar() && bar;\n'
-	  + '}'));
+          + 'function foo() {\n'
+          + '  var bar = baz(\n'
+          + '      a, b, "c, d");\n'
+          + '  return useBar() && bar;\n'
+          + '}'));
 });

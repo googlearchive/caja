@@ -158,7 +158,8 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
     mq.getMessages().clear();
     return RhinoTestBed.runJs(
         new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
-        new RhinoTestBed.Input(getClass(), "../../plugin/asserts.js"),
+        new RhinoTestBed.Input(
+            getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),
         new RhinoTestBed.Input(caja, getName() + "-uncajoled"));
   }
 
@@ -168,9 +169,9 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
     mq.getMessages().clear();
 
     Statement cajaTree = js(fromString(trans, is));
-    String transJs = render(
-        rewriteStatements(js(fromResource("../../plugin/asserts.js")),
-                          cajaTree));
+    String transJs = render(rewriteStatements(
+        js(fromResource("../../../../../js/jsunit/2.2/jsUnitCore.js")),
+        cajaTree));
 
     assertNoErrors();
 

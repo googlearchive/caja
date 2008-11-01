@@ -33,7 +33,8 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    // Start with this one, then switch later to CajitaRewriter for the second pass.
+    // Start with this one, then switch later to CajitaRewriter for
+    // the second pass.
     setRewriter(defaultValijaRewriter);
   }
 
@@ -317,7 +318,8 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         js(fromString(caja, is)));
     return RhinoTestBed.runJs(
         new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
-        new RhinoTestBed.Input(getClass(), "../../plugin/asserts.js"),
+        new RhinoTestBed.Input(
+            getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),
         new RhinoTestBed.Input(render(innocentTree), getName() + "-uncajoled"));
   }
 
@@ -341,8 +343,10 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         new RhinoTestBed.Input(
             getClass(), "/com/google/caja/plugin/console-stubs.js"),
         new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
-        new RhinoTestBed.Input(getClass(), "../../plugin/asserts.js"),
-        new RhinoTestBed.Input(getClass(), "/com/google/caja/log-to-console.js"),
+        new RhinoTestBed.Input(
+            getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),
+        new RhinoTestBed.Input(
+            getClass(), "/com/google/caja/log-to-console.js"),
         new RhinoTestBed.Input(
             "var testImports = ___.copy(___.sharedImports);\n" +
             "testImports.loader = ___.freeze({\n" +

@@ -198,7 +198,8 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
               "location = '" + htmlStubUrl + "';\n",
               "dom"),
           // Make the assertTrue, etc. functions available to javascript
-          new RhinoTestBed.Input(getClass(), "asserts.js"),
+          new RhinoTestBed.Input(
+              getClass(), "../../../../js/jsunit/2.2/jsUnitCore.js"),
           // Plugin Framework
           new RhinoTestBed.Input(getClass(), "../cajita.js"),
           new RhinoTestBed.Input(

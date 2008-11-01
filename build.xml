@@ -330,7 +330,7 @@
         <include name="com/google/caja/cajita.js"/>
       </fileset>
     </copy>
-  	<mkdir dir="${reports}/benchmarks"/>
+    <mkdir dir="${reports}/benchmarks"/>
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${tests}"/>
       <classpath refid="classpath.tests.compile"/>
@@ -388,8 +388,8 @@
   <!-- Cajoles test resources that contain cajita to javascript. -->
   <target name="CajoledTests" depends="pluginc,dirs,CajoledValija">
     <transform>
-      <include file="${tests}/com/google/caja/plugin/asserts.js"/>
-      <include file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"/>
+      <include file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"
+       />
 
       <output file="${lib}/com/google/caja/plugin/domita_test.co.js"
        language="cajita"/>
@@ -473,6 +473,7 @@
         <include name="**/js/base2/base2.js"/>
         <include name="**/js/base2/base2-dom.js"/>
         <include name="js/jqueryjs/runtest/env.js"/>
+        <include name="js/jsunit/2.2/jsUnitCore.js"/>
       </fileset>
     </copy>
   </target>

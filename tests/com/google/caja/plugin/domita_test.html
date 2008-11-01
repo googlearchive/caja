@@ -19,8 +19,8 @@
     <title>Domita</title>
 
     <script src="../cajita.js" onerror="console.error(this.src)"></script>
+    <script src="../../../../js/jsunit/2.2/jsUnitCore.js"></script>
     <script src="jsunit.js"></script>
-    <script src="asserts.js"></script>
     <script src="unicode.js" onerror="console.error(this.src)"></script>
     <script src="html4-defs.js" onerror="console.error(this.src)"></script>
     <script src="css-defs.js" onerror="console.error(this.src)"></script>
@@ -32,9 +32,15 @@
     <script src="html-emitter.js" onerror="console.error(this.src)"></script>
     <script src="domita.js" onerror="console.error(this.src)"></script>
 
+    <script type="text/javascript">
+    function testDomita() {
+      jsunitRun();
+      assertTrue(document.title, / - all tests passed$/.test(document.title));
+    }
+    </script>
   </head>
 
-  <body onload="jsunitRun()" bgcolor="white">
+  <body bgcolor="white" onload="testDomita()">
     <div id="console-results"></div>
 
     <div id="untrusted_content" class="xyz___">
@@ -96,7 +102,7 @@
            testImports);
       console.log('attached stubs');
 
-      testImports.jsunitRegister = ___.simpleFunc(jsunitRegister);
+      testImports.jsunitRegister = ___.simpleFrozenFunc(jsunitRegister);
       testImports.console = ___.primFreeze({
         log: ___.simpleFrozenFunc(
             function () { console.log.apply(console, arguments); }),
@@ -150,6 +156,21 @@
         node.className = (node.className || '') + ' passed';
       }, 'pass');
 
+      var jsunitFns = [
+          'assert', 'assertContains', 'assertEquals', 'assertEvaluatesToFalse',
+          'assertEvaluatesToTrue', 'assertFalse', 'assertHTMLEquals',
+          'assertHashEquals', 'assertNotEquals', 'assertNotNull',
+          'assertNotUndefined', 'assertNull', 'assertRoughlyEquals',
+          'assertTrue', 'assertObjectEquals', 'assertUndefined', 'error',
+          'fail', 'setUp', 'tearDown'];
+      for (var i = jsunitFns.length; --i >= 0;) {
+        var name = jsunitFns[i];
+        if (testImports.hasOwnProperty(name)) {
+          throw new Error('already defined', name);
+        }
+        testImports[name] = ___.simpleFrozenFunc(this[name], name);
+      }
+
       // Create a readonly mirror of document so that we can test that mutations
       // fail when they should.
       testImports.documentRO = new testImports.document.constructor(
@@ -162,7 +183,7 @@
     })();</script>
 
     <script type="text/javascript">
-    loadScript(isValija ? 'domita_test_valijad.js' : 'domita_test_cajoled.js');
+    loadScript(isValija ? 'domita_test.vo.js' : 'domita_test.co.js');
     </script>
 
   </body>

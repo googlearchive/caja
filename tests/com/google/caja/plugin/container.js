@@ -15,7 +15,7 @@
 /**
  * @fileoverview
  * Sets up a caja container for hosting the cajoled tests.
- * Requires that cajita.js, asserts.js and browser-stubs.js be loaded first.
+ * Requires that cajita.js, jsUnitCore.js and env.js be loaded first.
  */
 
 var imports = ___.copy(___.sharedImports);

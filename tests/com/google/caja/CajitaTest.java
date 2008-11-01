@@ -52,7 +52,7 @@ public class CajitaTest extends CajaTestCase {
         new RhinoTestBed.Input(
             getClass(), "/com/google/caja/cajita.js"),
         new RhinoTestBed.Input(
-            getClass(), "/com/google/caja//plugin/asserts.js"),
+            getClass(), "/js/jsunit/2.2/jsUnitCore.js"),
         new RhinoTestBed.Input(
             getClass(), "/com/google/caja/log-to-console.js"),
         new RhinoTestBed.Input(code, getName() + "-test"));

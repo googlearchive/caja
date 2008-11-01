@@ -52,8 +52,9 @@ public abstract class RewriterTestCase extends CajaTestCase {
   protected abstract Object executePlain(String program) throws IOException, ParseException;
 
   /**
-   * Given some code, rewrite it, then execute it in the proper context for the rewritten
-   * version and return the value of the last expression in the original code.
+   * Given some code, rewrite it, then execute it in the proper
+   * context for the rewritten version and return the value of the
+   * last expression in the original code.
    *
    * @param pre a prefix program fragment to be executed plain.
    * @param program a program fragment to be rewritten.
@@ -101,12 +102,15 @@ public abstract class RewriterTestCase extends CajaTestCase {
       }
     }
     if (expectedResultNode != null) {
-      // Test that the source code-like renderings are identical. This will catch any
-      // obvious differences between expected and actual.
+      // Test that the source code-like renderings are identical. This
+      // will catch any obvious differences between expected and
+      // actual.
       assertEquals(render(expectedResultNode), render(actualResultNode));
-      // Then, for good measure, test that the S-expression-like formatted representations
-      // are also identical. This will catch any differences in tree topology that somehow
-      // do not appear in the source code representation (usually due to programming errors).
+      // Then, for good measure, test that the S-expression-like
+      // formatted representations are also identical. This will catch
+      // any differences in tree topology that somehow do not appear
+      // in the source code representation (usually due to programming
+      // errors).
       assertEquals(
           TestUtil.format(expectedResultNode),
           TestUtil.format(actualResultNode));
@@ -143,7 +147,8 @@ public abstract class RewriterTestCase extends CajaTestCase {
     }
   }
 
-  // TODO(ihab.awad): Change dependents to use checkAddsMessage and just call js(fromString("..."))
+  // TODO(ihab.awad): Change dependents to use checkAddsMessage and
+  // just call js(fromString("..."))
 
   // TODO(ihab.awad): Change checkAddsMessage and similar functions to check
   // only the first message added to the message queue
@@ -186,14 +191,15 @@ public abstract class RewriterTestCase extends CajaTestCase {
       MessageLevel level) {
     for (Message m : list) {
       System.out.println("**" + m.getMessageType() + "|" + m.getMessageLevel());
-      if ( m.getMessageType().equals(type) && m.getMessageLevel().equals(level) ) {
+      if (m.getMessageType().equals(type) && m.getMessageLevel() == level) {
         return true;
       }
     }
     return false;
   }
 
-  protected void checkSucceeds(String input, String expectedResult) throws Exception {
+  protected void checkSucceeds(String input, String expectedResult)
+      throws Exception {
     checkSucceeds(js(fromString(input)), js(fromString(expectedResult)));
   }
 
@@ -205,7 +211,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
    * Asserts that the given caja code produces the same value both cajoled and
    * uncajoled.
    *
-   * @param caja executed in the context of asserts.js for its value.  The
+   * @param caja executed in the context of jsUnitCore.js for its value.  The
    *    value is computed from the last statement in cajita.
    */
   protected void assertConsistent(String caja)

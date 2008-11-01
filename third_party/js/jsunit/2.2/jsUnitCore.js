@@ -3,11 +3,12 @@ var JSUNIT_VERSION = 2.2;
 var isTestPageLoaded = false;
 
 //hack for NS62 bug
-function jsUnitFixTop() {
+(function () {
+    if (typeof top === 'undefined') { return; }
     var tempTop = top;
     if (!tempTop) {
         tempTop = window;
-        while (tempTop.parent) {
+        while (tempTop.parent && tempTop.parent !== tempTop) {
             tempTop = tempTop.parent;
             if (tempTop.top && tempTop.top.jsUnitTestSuite) {
                 tempTop = tempTop.top;
@@ -19,9 +20,8 @@ function jsUnitFixTop() {
         window.top = tempTop;
     } catch (e) {
     }
-}
+})();
 
-jsUnitFixTop();
 
 /**
  + * A more functional typeof
@@ -78,21 +78,35 @@ function _trueTypeOf(something) {
 
 function _displayStringForValue(aVar) {
     var result = '<' + aVar + '>';
-    if (!(aVar === null || aVar === top.JSUNIT_UNDEFINED_VALUE)) {
+    if (!(aVar === null || aVar === void 0)) {
         result += ' (' + _trueTypeOf(aVar) + ')';
     }
     return result;
 }
 
 function fail(failureMessage) {
+  if ('undefined' !== typeof Packages
+      && 'function' === typeof Packages.junit.framework.AssertionFailedError) {
+    // If run inside Rhino in the presence of junit, throw an error which will
+    // escape any exception trapping around the Rhino embedding.
+    throw new Packages.junit.framework.AssertionFailedError(failureMessage);
+  } else {
     throw new JsUnitException("Call to fail()", failureMessage);
+  }
 }
 
 function error(errorMessage) {
+  if ('undefined' !== typeof Packages
+      && 'function' === typeof Packages.junit.framework.AssertionFailedError) {
+    // If run inside Rhino in the presence of junit, throw an error which will
+    // escape any exception trapping around the Rhino embedding.
+    throw new Packages.junit.framework.AssertionFailedError(errorMessage);
+  } else {
     var errorObject = new Object();
     errorObject.description = errorMessage;
     errorObject.stackTrace = getStackTrace();
     throw errorObject;
+  }
 }
 
 function argumentsIncludeComments(expectedNumberOfNonCommentArgs, args) {
@@ -182,13 +196,13 @@ function assertNotNull() {
 function assertUndefined() {
     _validateArguments(1, arguments);
     var aVar = nonCommentArg(1, 1, arguments);
-    _assert(commentArg(1, arguments), aVar === top.JSUNIT_UNDEFINED_VALUE, 'Expected ' + _displayStringForValue(top.JSUNIT_UNDEFINED_VALUE) + ' but was ' + _displayStringForValue(aVar));
+    _assert(commentArg(1, arguments), aVar === void 0, 'Expected ' + _displayStringForValue(void 0) + ' but was ' + _displayStringForValue(aVar));
 }
 
 function assertNotUndefined() {
     _validateArguments(1, arguments);
     var aVar = nonCommentArg(1, 1, arguments);
-    _assert(commentArg(1, arguments), aVar !== top.JSUNIT_UNDEFINED_VALUE, 'Expected not to be ' + _displayStringForValue(top.JSUNIT_UNDEFINED_VALUE));
+    _assert(commentArg(1, arguments), aVar !== void 0, 'Expected not to be ' + _displayStringForValue(void 0));
 }
 
 function assertNaN() {
@@ -297,6 +311,32 @@ function assertContains() {
             "Expected '" + container + "' to contain '" + contained + "'",
             container.indexOf(contained) != -1
             );
+}
+
+function assertLessThan(value, exclusiveUpperBound) {
+    _validateArguments(2, arguments);
+    var value = nonCommentArg(1, 2, arguments);
+    var exclusiveUpperBound = nonCommentArg(2, 2, arguments);
+    if (!(exclusiveUpperBound > value)) {
+        var comment = commentArg(2, arguments);
+        error((comment ? comment + ' : ' : '')
+              + value + ' >= ' + exclusiveUpperBound);
+    }
+}
+ 
+function assertThrows(func, opt_msg) {
+    var nil = {};
+    var thrown = nil;
+    try {
+        func();
+    } catch (ex) {
+        thrown = ex;
+    }
+    if (thrown !== nil) {
+        if (opt_msg) { assertEquals(opt_msg, thrown); }
+    } else {
+        fail('Did not throw ' + (opt_msg ? opt_msg : 'an exception'));
+    }
 }
 
 function standardizeHTML(html) {
@@ -463,7 +503,7 @@ function jsUnitGetParm(name)
     return null;
 }
 
-if (top && typeof(top.xbDEBUG) != 'undefined' && top.xbDEBUG.on && top.testManager)
+if (typeof top !== 'undefined' && typeof(top.xbDEBUG) !== 'undefined' && top.xbDEBUG.on && top.testManager)
 {
     top.xbDebugTraceObject('top.testManager.containerTestFrame', 'JSUnitException');
     // asserts
@@ -507,7 +547,7 @@ function newOnLoadEvent() {
 function jsUnitSetOnLoad(windowRef, onloadHandler) {
     var isKonqueror = navigator.userAgent.indexOf('Konqueror/') != -1;
 
-    if (typeof(windowRef.attachEvent) != 'undefined') {
+    if (typeof(windowRef.attachEvent) !== 'undefined') {
         // Internet Explorer, Opera
         windowRef.attachEvent("onload", onloadHandler);
     } else if (typeof(windowRef.addEventListener) != 'undefined' && !isKonqueror) {
@@ -531,4 +571,6 @@ function jsUnitSetOnLoad(windowRef, onloadHandler) {
     }
 }
 
-jsUnitSetOnLoad(window, newOnLoadEvent);
+if (typeof window !== 'undefined') {
+  jsUnitSetOnLoad(window, newOnLoadEvent);
+}

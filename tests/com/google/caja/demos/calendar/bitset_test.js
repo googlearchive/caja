@@ -232,7 +232,7 @@ jsunitRegister('testDenseBitSet', function testDenseBitSet() {
        (b = bitset.nextClearBit(bs, b + 1)) >= 0 && b < 50;) {
     bits.push(b);
   }
-  assertEquals(bs, '0,6,7,12,37,38,41,42,44,45,46,48,49', bits.join(','));
+  assertEquals('0,6,7,12,37,38,41,42,44,45,46,48,49', bits.join(','));
 
   // set a bit
   bitset.setBit(bs, 0);
@@ -248,7 +248,7 @@ jsunitRegister('testDenseBitSet', function testDenseBitSet() {
        (b = bitset.nextClearBit(bs, b + 1)) >= 0 && b < 50;) {
     bits.push(b);
   }
-  assertEquals(bs, '6,7,12,37,38,41,42,44,45,46,48,49', bits.join(','));
+  assertEquals('6,7,12,37,38,41,42,44,45,46,48,49', bits.join(','));
 
   bitset.clearAll(bs);
   assertEquals(-1, bitset.nextSetBit(bs, 0));
