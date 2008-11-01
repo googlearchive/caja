@@ -27,6 +27,7 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Strings;
@@ -334,7 +335,6 @@ public class ParserTest extends CajaTestCase {
   }
 
   private void assertParseSucceeds(String code) {
-    log("assertParseSucceeds", code);
     mq.getMessages().clear();
     try {
       js(fromString(code));
@@ -343,11 +343,15 @@ public class ParserTest extends CajaTestCase {
       afe.initCause(ex);
       throw afe;
     }
-    assertNoErrors();
+    try {
+      assertNoErrors();
+    } catch (AssertionFailedError e) {
+      log("assertParseSucceeds", code);
+      throw e;
+    }
   }
 
   private void assertParseFails(String code) {
-    log("assertParseFails", code);
     mq.getMessages().clear();
     try {
       js(fromString(code));
@@ -357,6 +361,7 @@ public class ParserTest extends CajaTestCase {
     for (Message msg : mq.getMessages()) {
       if (msg.getMessageLevel().compareTo(MessageLevel.ERROR) >= 0) { return; }
     }
+    log("assertParseFails", code);
     fail("expected failure");
   }
 
@@ -411,12 +416,11 @@ public class ParserTest extends CajaTestCase {
 
   private void assertRender(String code, String expectedRendering)
       throws Exception {
-    log("assertRender", code);
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = new JsPrettyPrinter(sb, null);
     RenderContext rc = new RenderContext(mc, true, true, tc);
     js(fromString(code)).children().get(0).render(rc);
-    assertEquals(expectedRendering, sb.toString());
+    assertEquals(code, expectedRendering, sb.toString());
   }
 
   private void log(String testName, String code) {

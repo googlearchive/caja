@@ -75,8 +75,12 @@ public final class TestUtil {
   }
 
   public static MessageQueue createTestMessageQueue(MessageContext mc) {
+    // Tests can be run with
+    //     ant -Djunit.verbose=true runtests
+    // to dump stacktraces with messages in the log.
+    boolean verbose = "true".equals(System.getProperty("junit.verbose"));
     return new EchoingMessageQueue(
-        new PrintWriter(new OutputStreamWriter(System.err)), mc);
+        new PrintWriter(new OutputStreamWriter(System.err)), mc, verbose);
   }
 
   /**

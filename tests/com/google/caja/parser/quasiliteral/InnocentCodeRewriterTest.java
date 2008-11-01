@@ -28,7 +28,7 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    setRewriter(new InnocentCodeRewriter(true));
+    setRewriter(new InnocentCodeRewriter(false));
   }
 
   // Tests block-level forEach statements

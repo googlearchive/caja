@@ -43,7 +43,7 @@ import junit.framework.AssertionFailedError;
  */
 public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
-  protected Rewriter defaultCajaRewriter = new CajitaRewriter(true);
+  protected Rewriter defaultCajaRewriter = new CajitaRewriter(false);
 
   @Override
   public void setUp() throws Exception {
