@@ -26,7 +26,7 @@ public class HtmlSnippetProducerTest extends CajaTestCase {
     String src = "<style>background: url('http://<h1>foo</h1>')</style>";
     HtmlSnippetProducer sp = new HtmlSnippetProducer(
         Collections.singletonMap(is, src), mc);
-    FilePosition pos = FilePosition.instance(is, 1, 1, 24, 24, 1, 1, 45, 45);
+    FilePosition pos = FilePosition.instance(is, 1, 24, 24, 1, 45, 45);
     String snippet = sp.getSnippet(new Message(
         MessageType.MALFORMED_URI,
         pos, MessagePart.Factory.valueOf("http://<h1>foo</h1>")));

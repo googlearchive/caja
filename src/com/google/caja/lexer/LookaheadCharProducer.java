@@ -28,7 +28,7 @@ class LookaheadCharProducer implements CharProducer {
    * {@code lookahead[lookaheadPos : lookaheadLimit]}.
    */
   private final int[] lookahead;
-  /** Positions corresponding to the lookehead chars. */
+  /** Positions corresponding to the lookahead chars. */
   private final MutableFilePosition[] lookaheadLoc;
   /**
    * The position of the first character in lookahead that has been read
@@ -100,7 +100,7 @@ class LookaheadCharProducer implements CharProducer {
    --lookaheadPos;
   }
 
-  /** The numer of tokens available to {@link #peek} and {@link #consume} */
+  /** The number of tokens available to {@link #peek} and {@link #consume} */
   int limit() {
     return lookaheadLimit - lookaheadPos;
   }
@@ -116,7 +116,7 @@ class LookaheadCharProducer implements CharProducer {
 
   /** Consume n characters from the lookahead buffer. */
   void consume(int nChars) {
-    assert lookaheadPos + nChars <= lookaheadLimit;
+    assert (lookaheadPos + nChars <= lookaheadLimit);
     lookaheadPos += nChars;
   }
 

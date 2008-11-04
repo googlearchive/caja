@@ -74,7 +74,12 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
     try {
       int ch;
       while ((ch = p.read()) >= 0 && JsLexer.isJsSpace((char) ch)) {
-        // consume
+        // Issue a token break so that we can correctly compute semicolon
+        // insertion rules later.
+        if (p.tokenBreak()) {
+          return Token.instance(
+              "\\", JsTokenType.LINE_CONTINUATION, p.getCurrentPosition());
+        }
       }
       if (ch < 0) { return null; }
 

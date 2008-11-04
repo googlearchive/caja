@@ -40,7 +40,8 @@ public final class JsTokenQueue extends TokenQueue<JsTokenType> {
   public static final Criterion<Token<JsTokenType>> NO_COMMENT =
     new Criterion<Token<JsTokenType>>() {
       public boolean accept(Token<JsTokenType> t) {
-        return JsTokenType.COMMENT != t.type;
+        return JsTokenType.COMMENT != t.type
+            && JsTokenType.LINE_CONTINUATION != t.type;
       }
     };
 

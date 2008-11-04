@@ -130,9 +130,9 @@ public class GadgetParser {
                     // reduce the position to exclude the <![CDATA[ and ]]>
                     pos = FilePosition.instance(
                         pos.source(),
-                        pos.startLineNo(), pos.startLogicalLineNo(),
+                        pos.startLineNo(),
                         pos.startCharInFile() + 9, pos.startCharInLine() + 9,
-                        pos.endLineNo(), pos.endLogicalLineNo(),
+                        pos.endLineNo(),
                         pos.endCharInFile() - 3, pos.endCharInLine() - 3);
                     chunks.add(CharProducer.Factory.create(
                         new StringReader(cdata), pos));

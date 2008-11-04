@@ -95,7 +95,7 @@ public abstract class CajaTestCase extends TestCase {
   }
 
   protected Block js(CharProducer cp, boolean quasi) throws ParseException {
-    return js(cp, noJsComments(), quasi);
+    return js(cp, JsTokenQueue.NO_COMMENT, quasi);
   }
 
   protected Block js(
@@ -112,19 +112,12 @@ public abstract class CajaTestCase extends TestCase {
   protected Expression jsExpr(CharProducer cp, boolean quasi)
       throws ParseException {
     JsLexer lexer = new JsLexer(cp);
-    JsTokenQueue tq = new JsTokenQueue(lexer, sourceOf(cp), noJsComments());
+    JsTokenQueue tq = new JsTokenQueue(
+        lexer, sourceOf(cp), JsTokenQueue.NO_COMMENT);
     Parser p = new Parser(tq, mq, quasi);
     Expression e = p.parseExpression(true);
     tq.expectEmpty();
     return e;
-  }
-
-  private static Criterion<Token<JsTokenType>> noJsComments() {
-    return new Criterion<Token<JsTokenType>>() {
-          public boolean accept(Token<JsTokenType> t) {
-            return t.type != JsTokenType.COMMENT;
-          }
-        };
   }
 
   protected Block quasi(CharProducer cp) throws ParseException {

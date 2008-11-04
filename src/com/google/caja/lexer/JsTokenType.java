@@ -28,5 +28,13 @@ public enum JsTokenType implements TokenType {
   KEYWORD,
   INTEGER,
   FLOAT,
+  /**
+   * An escape that occurs before a slash in a whitespace token as in
+   * <pre>
+   * foo \
+   * bar
+   * </pre>
+   */
+  LINE_CONTINUATION,
   ;
 }

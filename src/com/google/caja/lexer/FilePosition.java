@@ -29,99 +29,74 @@ import java.util.Collections;
  * are exclusive, so the number of characters in a token is
  * (startCharInFile - endCharInFile).
  *
+ * <p>Line numbers are 1 greater than the number of line breaks where a
+ * line-break is defined greedily as one of {{{CR}}}, {{{LF}}}, {{{CRLF}}}.
+ * Bash, javascript, or python style line-continuations like<pre>
+ *   a, b, c = 0, 1, \
+ *       2
+ * </pre>
+ * are treated as line breaks.
+ * Line numbers are determined solely based on the characters in the file and do
+ * <b>not</b> represent a logical unit of a program.
+ *
+ * <p>File Positions are independent of the language being parsed.
+ *
  * @author mikesamuel@gmail.com
  */
 public final class FilePosition implements MessagePart {
   // TODO(mikesamuel): need unittests
-  private InputSource source;
-  /**
-   * 1 greater than the number of newlines between the start of the token and
-   * the beginning of the file.
-   */
-  protected int startLineNo;
-  /**
-   * counts the number of "logical" lines --
-   * ignoring backslash escaped newlines like
-   * <pre>
-   * var a_string_constant_must_all_be_on_one_line = "I \
-   * lied.";
-   * </pre>
-   *
-   * <p>Escaping of new lines doesn't appear in any javascript spec but all
-   * existing interpreters handle it.</p>
-   *
-   * <p>Two filepositions will only differ in logical line number if there is
-   * an unescaped newline between them.
-   *
-   * <p>For languages that don't have escaped newlines (e.g. HTML), the
-   * logical line number will always be the same as the actual line number.
-   */
-  protected int startLogicalLineNo;
-  /**
-   * 1 greater than the number of characters since the beginning of the file.
-   */
-  protected int startCharInFile;
-  /**
-   * 1 greater than the number of characters since the last newline character.
-   */
-  protected int startCharInLine;
-  protected int endLineNo;
-  protected int endLogicalLineNo;
-  protected int endCharInFile;
-  protected int endCharInLine;
+  private final InputSource source;
+  private final int startLineNo;
+  private final int startCharInFile;
+  private final int startCharInLine;
+  private final int endLineNo;
+  private final int endCharInFile;
+  private final int endCharInLine;
+
   /** a special position for predefineds like the <tt>String</tt> function. */
   public static final FilePosition PREDEFINED = instance(
-      new InputSource(URI.create("predefined:///predefined")), 0, 0, 0, 0);
+      new InputSource(URI.create("predefined:///predefined")), 0, 0, 0);
   public static final FilePosition UNKNOWN = instance(
-      new InputSource(URI.create("unknown:///unknown")), 0, 0, 0, 0);
+      new InputSource(URI.create("unknown:///unknown")), 0, 0, 0);
 
-  protected FilePosition(
+  private FilePosition(
     InputSource source,
-    int startLineNo, int startLogicalLineNo, int startCharInFile,
-    int startCharInLine,
-    int endLineNo, int endLogicalLineNo, int endCharInFile,
-    int endCharInLine) {
+    int startLineNo, int startCharInFile, int startCharInLine,
+    int endLineNo, int endCharInFile, int endCharInLine) {
 
     this.source = source;
     this.startLineNo = startLineNo;
-    this.startLogicalLineNo = startLogicalLineNo;
     this.startCharInFile = startCharInFile;
     this.startCharInLine = startCharInLine;
     this.endLineNo = endLineNo;
-    this.endLogicalLineNo = endLogicalLineNo;
     this.endCharInFile = endCharInFile;
     this.endCharInLine = endCharInLine;
   }
 
   public static FilePosition instance(
       InputSource source,
-      int startLineNo, int startLogicalLineNo, int startCharInFile,
-      int startCharInLine,
-      int endLineNo, int endLogicalLineNo, int endCharInFile,
-      int endCharInLine) {
+      int startLineNo, int startCharInFile, int startCharInLine,
+      int endLineNo, int endCharInFile, int endCharInLine) {
     return new FilePosition(
         source,
-        startLineNo, startLogicalLineNo, startCharInFile, startCharInLine,
-        endLineNo, endLogicalLineNo, endCharInFile, endCharInLine);
+        startLineNo, startCharInFile, startCharInLine,
+        endLineNo, endCharInFile, endCharInLine);
   }
 
   public static FilePosition instance(
-      InputSource source,
-      int lineNo, int logicalLineNo, int charInFile, int charInLine) {
-    return new FilePosition(
-        source, lineNo, logicalLineNo, charInFile, charInLine,
-        lineNo, logicalLineNo, charInFile, charInLine);
+      InputSource source, int lineNo, int charInFile, int charInLine) {
+    return instance(source, lineNo, charInFile, charInLine,
+                    lineNo, charInFile, charInLine);
   }
 
   public static FilePosition between(FilePosition a, FilePosition b) {
-    return instance(a.source(), a.endLineNo(), a.endLogicalLineNo(),
-                    a.endCharInFile(), a.endCharInLine(), b.startLineNo(),
-                    b.startLogicalLineNo(), b.startCharInFile(),
-                    b.startCharInLine());
+    return instance(a.source(),
+                    a.endLineNo(), a.endCharInFile(), a.endCharInLine(),
+                    b.startLineNo(), b.startCharInFile(), b.startCharInLine());
   }
 
   public static FilePosition startOfFile(InputSource source) {
-    return instance(source, 1, 1, 1, 1);
+    return instance(source, 1, 1, 1);
   }
 
   public static FilePosition span(FilePosition start, FilePosition end) {
@@ -130,25 +105,20 @@ public final class FilePosition implements MessagePart {
         || start.startCharInFile > end.endCharInFile) {
       throw new IllegalArgumentException(start + ", " + end);
     }
-    return new FilePosition(
-        start.source, start.startLineNo, start.startLogicalLineNo,
-        start.startCharInFile, start.startCharInLine,
-        end.endLineNo, end.endLogicalLineNo, end.endCharInFile,
-        end.endCharInLine);
+    return instance(
+        start.source,
+        start.startLineNo, start.startCharInFile, start.startCharInLine,
+        end.endLineNo(), end.endCharInFile(), end.endCharInLine());
   }
 
   public static FilePosition startOf(FilePosition fp) {
     return FilePosition.instance(
-        fp.source,
-        fp.startLineNo, fp.startLogicalLineNo, fp.startCharInFile,
-        fp.startCharInLine);
+        fp.source, fp.startLineNo, fp.startCharInFile, fp.startCharInLine);
   }
 
   public static FilePosition endOf(FilePosition fp) {
     return FilePosition.instance(
-        fp.source,
-        fp.endLineNo, fp.endLogicalLineNo,
-        fp.endCharInFile, fp.endCharInLine);
+        fp.source, fp.endLineNo, fp.endCharInFile, fp.endCharInLine);
   }
 
   public static FilePosition startOfOrNull(FilePosition fp) {
@@ -160,12 +130,20 @@ public final class FilePosition implements MessagePart {
   }
 
   public InputSource source() { return this.source; }
+  /**
+   * 1 greater than the number of newlines between the start of the token and
+   * the beginning of the file.
+   */
   public int startLineNo() { return this.startLineNo; }
-  public int startLogicalLineNo() { return this.startLogicalLineNo; }
+  /**
+   * 1 greater than the number of characters since the beginning of the file.
+   */
   public int startCharInFile() { return this.startCharInFile; }
+  /**
+   * 1 greater than the number of characters since the last newline character.
+   */
   public int startCharInLine() { return this.startCharInLine; }
   public int endLineNo() { return this.endLineNo; }
-  public int endLogicalLineNo() { return this.endLogicalLineNo; }
   public int endCharInFile() { return this.endCharInFile; }
   public int endCharInLine() { return this.endCharInLine; }
   public int length() { return this.endCharInFile - this.startCharInFile; }
@@ -230,8 +208,6 @@ public final class FilePosition implements MessagePart {
         && this.source.equals(that.source)
         && this.startLineNo == that.startLineNo
         && this.endLineNo == that.endLineNo
-        && this.startLogicalLineNo == that.startLogicalLineNo
-        && this.endLogicalLineNo == that.endLogicalLineNo
         && this.startCharInLine == that.startCharInLine
         && this.endCharInLine == that.endCharInLine
         );

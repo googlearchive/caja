@@ -593,13 +593,9 @@ public interface CharProducer extends Closeable {
       this.charInFile = charInFile;
       this.charInLine = charInLine;
     }
-    public FilePosition toFilePosition() {
-      return toFilePosition(0);
-    }
 
-    public FilePosition toFilePosition(int logicalDelta) {
-      return FilePosition.instance(
-          source, lineNo, lineNo + logicalDelta, charInFile, charInLine);
+    public FilePosition toFilePosition() {
+      return FilePosition.instance(source, lineNo, charInFile, charInLine);
     }
 
     public void copyTo(MutableFilePosition posBuf) {

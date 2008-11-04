@@ -94,7 +94,7 @@ public class SnippetProducer {
         start);
 
     formatSnippet(
-        FilePosition.instance(src, lineNo, lineNo, 1, line.length() + 1),
+        FilePosition.instance(src, lineNo, 1, line.length() + 1),
         line, start, end, out);
   }
 

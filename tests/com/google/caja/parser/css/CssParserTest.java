@@ -35,7 +35,7 @@ public class CssParserTest extends CajaTestCase {
   }
 
   public void testUnescape() throws Exception {
-    FilePosition pos = FilePosition.instance(is, 1, 1, 1, 1);
+    FilePosition pos = FilePosition.startOfFile(is);
     assertEquals("", CssParser.unescape(
         Token.instance("", CssTokenType.IDENT, pos)));
     assertEquals("foo", CssParser.unescape(

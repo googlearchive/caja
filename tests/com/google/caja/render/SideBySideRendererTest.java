@@ -77,7 +77,7 @@ public class SideBySideRendererTest extends TestCase {
           }
           if (src == null) { throw new RuntimeException(basename); }
           r.mark(FilePosition.instance(
-              src, sln, sln, sln, slc, eln, eln, eln, elc));
+              src, sln, sln, slc, eln, eln, elc));
         }
       } else {
         r.consume(line);

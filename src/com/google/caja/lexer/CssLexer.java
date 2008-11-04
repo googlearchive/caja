@@ -531,8 +531,8 @@ final class CssSplitter implements TokenStream<CssTokenType> {
       pending = Token.instance(sb.toString(), type,
           FilePosition.instance(
               spos.source,
-              spos.lineNo, spos.lineNo, spos.charInFile, spos.charInLine,
-              epos.lineNo, epos.lineNo, epos.charInFile, epos.charInLine));
+              spos.lineNo, spos.charInFile, spos.charInLine,
+              epos.lineNo, epos.charInFile, epos.charInLine));
     } catch (IOException ex) {
       cp.getCurrentPosition(spos);
       throw new ParseException(

@@ -264,7 +264,7 @@ public class ParserTest extends CajaTestCase {
     jsExpr(fromString(" new RegExp('foo\\s+bar') "));
     assertMessage(
         MessageType.REDUNDANT_ESCAPE_SEQUENCE, MessageLevel.LINT,
-        FilePosition.instance(is, 1, 1, 13, 13, 1, 1, 24, 24),
+        FilePosition.instance(is, 1, 13, 13, 1, 24, 24),
         MessagePart.Factory.valueOf("\\s"));
     mq.getMessages().clear();
 
@@ -284,7 +284,7 @@ public class ParserTest extends CajaTestCase {
   public void assertExpectedSemi() {
     assertParseFails("foo(function () {return;");
     assertMessage(MessageType.EXPECTED_TOKEN, MessageLevel.ERROR,
-                  FilePosition.instance(is, 1, 1, 24, 24),
+                  FilePosition.instance(is, 1, 24, 24),
                   MessagePart.Factory.valueOf("}"));
   }
 

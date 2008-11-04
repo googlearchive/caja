@@ -869,8 +869,12 @@ public final class Parser extends ParserBase {
     if (tq.isEmpty() || tq.lookaheadToken(Punctuation.RCURLY)) { return true; }
     FilePosition last = tq.lastPosition(),
               current = tq.currentPosition();
-    return null == last
-        || current.startLogicalLineNo() > last.endLogicalLineNo();
+    if (last == null) { return true; }  // Can insert at beginning
+    if (current.startLineNo() == last.endLineNo()) { return false; }
+    for (Token<JsTokenType> filtered : tq.filteredTokens()) {
+      if (filtered.type == JsTokenType.LINE_CONTINUATION) { return false; }
+    }
+    return true;
   }
 
   private double toNumber(Token<JsTokenType> t) {

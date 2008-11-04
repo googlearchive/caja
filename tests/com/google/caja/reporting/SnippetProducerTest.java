@@ -36,7 +36,7 @@ public class SnippetProducerTest extends TestCase {
 
   static final String F2_TEXT = "f2 line 1";
 
-  
+
   SnippetProducer s;
   final InputSource f1 = new InputSource(URI.create("file:///f1"));
   final InputSource f2 = new InputSource(URI.create("file:///f2"));
@@ -92,7 +92,7 @@ public class SnippetProducerTest extends TestCase {
 
   public void testGetSnippetOnePos() {
     Message msg = new Message(
-        TestMessageType.ONE, FilePosition.instance(f2, 1, 1, 4, 4, 1, 1, 8, 8));
+        TestMessageType.ONE, FilePosition.instance(f2, 1, 4, 4, 1, 8, 8));
     assertEquals(
         ("f2:1: f2 line 1\n" +
          "         ^^^^"),
@@ -102,10 +102,10 @@ public class SnippetProducerTest extends TestCase {
   public void testGetSnippetTwoPos() {
     Message msg = new Message(
         TestMessageType.TWO,
-        FilePosition.instance(f2, 1, 1, 1, 1, 1, 1, 3, 3),
+        FilePosition.instance(f2, 1, 1, 1, 1, 3, 3),
         // Starts on a newline to test that we use the line with text.
-        FilePosition.instance(f1, 2, 2, 1 + F1_TEXT.indexOf("\r\nf1 line 3"), 1,
-                              3, 3, 1 + F1_TEXT.indexOf(" line 3"), 3)
+        FilePosition.instance(f1, 2, 1 + F1_TEXT.indexOf("\r\nf1 line 3"), 1,
+                              3, 1 + F1_TEXT.indexOf(" line 3"), 3)
         );
     assertEquals(
         ("f2:1: f2 line 1\n" +
@@ -117,7 +117,7 @@ public class SnippetProducerTest extends TestCase {
 
   public void testZeroLengthRegion() {
     Message msg = new Message(
-        TestMessageType.ONE, FilePosition.instance(f2, 1, 1, 3, 3, 1, 1, 3, 3));
+        TestMessageType.ONE, FilePosition.instance(f2, 1, 3, 3));
     assertEquals(
         ("f2:1: f2 line 1\n" +
          "        ^"),
@@ -128,7 +128,7 @@ public class SnippetProducerTest extends TestCase {
     int nlPos = 1 + F1_TEXT.indexOf('\n');
     Message msg = new Message(
         TestMessageType.ONE,
-        FilePosition.instance(f1, 1, 1, nlPos, nlPos, 1, 1, nlPos, nlPos));
+        FilePosition.instance(f1, 1, nlPos, nlPos, 1, nlPos, nlPos));
     assertEquals(
         ("f1:1: f1 line 1\n" +
          "               ^"),
@@ -139,7 +139,7 @@ public class SnippetProducerTest extends TestCase {
     int endPos = 1 + F2_TEXT.length();
     Message msg = new Message(
         TestMessageType.ONE,
-        FilePosition.instance(f2, 1, 1, endPos, endPos, 1, 1, endPos, endPos));
+        FilePosition.instance(f2, 1, endPos, endPos, 1, endPos, endPos));
     assertEquals(
         ("f2:1: f2 line 1\n" +
          "               ^"),

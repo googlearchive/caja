@@ -32,7 +32,6 @@ import java.io.IOException;
  * @author mikesamuel@gmail.com
  */
 final class LineContinuingCharProducer implements CharProducer {
-  private int logicalDelta;
   private final CharProducer p;
   private int lookahead = -1;
   private final MutableFilePosition lookaheadPos = new MutableFilePosition();
@@ -62,7 +61,6 @@ final class LineContinuingCharProducer implements CharProducer {
       int ch2 = p.read();
       if (ch2 >= 0) {
         if (JsLexer.isJsLineSeparator((char) ch2)) {
-          --logicalDelta;
           // Make sure that post advanceLast, the last position is on the start
           // of the new line (following the newline)
           p.getCurrentPosition(last2);
@@ -79,12 +77,12 @@ final class LineContinuingCharProducer implements CharProducer {
     if (lookahead < 0) {
       return p.getCurrentPosition();
     } else {
-      return lookaheadPos.toFilePosition(logicalDelta);
+      return lookaheadPos.toFilePosition();
     }
   }
 
   public FilePosition getLastPosition() {
-    return null != last ? last.toFilePosition(logicalDelta) : null;
+    return null != last ? last.toFilePosition() : null;
   }
 
   public boolean getCurrentPosition(MutableFilePosition posBuf) {

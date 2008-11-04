@@ -528,9 +528,8 @@ final class Splitter {
     if (end < start) { end = start; }
     return FilePosition.instance(
         p.source(),
-        p.startLineNo(), p.startLogicalLineNo(),
+        p.startLineNo(),
         p.startCharInFile() + start, p.startCharInLine() + start,
-        p.startLineNo(), p.startLogicalLineNo(),
-        p.startCharInFile() + end, p.startCharInLine() + end);
+        p.startLineNo(), p.startCharInFile() + end, p.startCharInLine() + end);
   }
 }

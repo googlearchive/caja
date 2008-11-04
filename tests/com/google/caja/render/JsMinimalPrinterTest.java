@@ -271,6 +271,8 @@ public class JsMinimalPrinterTest extends CajaTestCase {
         case FLOAT:
           tok = "" + Math.abs(rnd.nextFloat());
           break;
+        case LINE_CONTINUATION:
+          continue;
         default:
           throw new AssertionError();
       }

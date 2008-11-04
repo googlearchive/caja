@@ -45,12 +45,12 @@ public final class CharProducerTest extends TestCase {
         "The quick brown fox\njumps over\nthe lazy dog\n",
       // 0         1          2         3         4
       // 01234567890123456789 01234567890 1234567890123 4
-        ss(0,  FilePosition.instance(src, 1, 1, 1, 1)),
-        ss(3,  FilePosition.instance(src, 1, 1, 4, 4)),
-        ss(19, FilePosition.instance(src, 1, 1, 20, 20)),
-        ss(20, FilePosition.instance(src, 2, 2, 21, 1)),
-        ss(43, FilePosition.instance(src, 3, 3, 44, 13)),
-        ss(44, FilePosition.instance(src, 4, 4, 45, 1))
+        ss(0,  FilePosition.instance(src, 1, 1, 1)),
+        ss(3,  FilePosition.instance(src, 1, 4, 4)),
+        ss(19, FilePosition.instance(src, 1, 20, 20)),
+        ss(20, FilePosition.instance(src, 2, 21, 1)),
+        ss(43, FilePosition.instance(src, 3, 44, 13)),
+        ss(44, FilePosition.instance(src, 4, 45, 1))
         );
   }
 
@@ -63,14 +63,14 @@ public final class CharProducerTest extends TestCase {
     testProducer(
         charProducerFromString(s),
         s,
-        ss(0,  FilePosition.instance(STRING_SOURCE, 1, 1, 1, 1)),
-        ss(24, FilePosition.instance(STRING_SOURCE, 1, 1, 25, 25)),
-        ss(25, FilePosition.instance(STRING_SOURCE, 2, 2, 26, 1)),
-        ss(26, FilePosition.instance(STRING_SOURCE, 3, 3, 27, 1)),
-        ss(42, FilePosition.instance(STRING_SOURCE, 3, 3, 43, 17)),
-        ss(43, FilePosition.instance(STRING_SOURCE, 4, 4, 44, 1)),
-        ss(44, FilePosition.instance(STRING_SOURCE, 4, 4, 45, 1)),
-        ss(65, FilePosition.instance(STRING_SOURCE, 4, 4, 66, 22))
+        ss(0,  FilePosition.instance(STRING_SOURCE, 1, 1, 1)),
+        ss(24, FilePosition.instance(STRING_SOURCE, 1, 25, 25)),
+        ss(25, FilePosition.instance(STRING_SOURCE, 2, 26, 1)),
+        ss(26, FilePosition.instance(STRING_SOURCE, 3, 27, 1)),
+        ss(42, FilePosition.instance(STRING_SOURCE, 3, 43, 17)),
+        ss(43, FilePosition.instance(STRING_SOURCE, 4, 44, 1)),
+        ss(44, FilePosition.instance(STRING_SOURCE, 4, 45, 1)),
+        ss(65, FilePosition.instance(STRING_SOURCE, 4, 66, 22))
     );
 
     testProducer(charProducerFromString(""), "");
@@ -100,19 +100,19 @@ public final class CharProducerTest extends TestCase {
     testProducer(
         chained,
         chainedGolden,
-        ss(0,  FilePosition.instance(src1, 1, 1, 1, 1)),
-        ss(3,  FilePosition.instance(src1, 1, 1, 4, 4)),
-        ss(19, FilePosition.instance(src1, 1, 1, 20, 20)),
-        ss(20, FilePosition.instance(src1, 2, 2, 21, 1)),
-        ss(43, FilePosition.instance(src1, 3, 3, 44, 13)),
-        ss(44, FilePosition.instance(src1, 4, 4, 45, 1)),
-        ss(44 + 24, FilePosition.instance(src2, 1, 1, 25, 25)),
-        ss(44 + 25, FilePosition.instance(src2, 2, 2, 26, 1)),
-        ss(44 + 26, FilePosition.instance(src2, 3, 3, 27, 1)),
-        ss(44 + 42, FilePosition.instance(src2, 3, 3, 43, 17)),
-        ss(44 + 43, FilePosition.instance(src2, 4, 4, 44, 1)),
-        ss(44 + 44, FilePosition.instance(src2, 4, 4, 45, 1)),
-        ss(44 + 65, FilePosition.instance(src2, 4, 4, 66, 22))
+        ss(0,  FilePosition.instance(src1, 1, 1, 1)),
+        ss(3,  FilePosition.instance(src1, 1, 4, 4)),
+        ss(19, FilePosition.instance(src1, 1, 20, 20)),
+        ss(20, FilePosition.instance(src1, 2, 21, 1)),
+        ss(43, FilePosition.instance(src1, 3, 44, 13)),
+        ss(44, FilePosition.instance(src1, 4, 45, 1)),
+        ss(44 + 24, FilePosition.instance(src2, 1, 25, 25)),
+        ss(44 + 25, FilePosition.instance(src2, 2, 26, 1)),
+        ss(44 + 26, FilePosition.instance(src2, 3, 27, 1)),
+        ss(44 + 42, FilePosition.instance(src2, 3, 43, 17)),
+        ss(44 + 43, FilePosition.instance(src2, 4, 44, 1)),
+        ss(44 + 44, FilePosition.instance(src2, 4, 45, 1)),
+        ss(44 + 65, FilePosition.instance(src2, 4, 66, 22))
         );
   }
 
@@ -128,7 +128,7 @@ public final class CharProducerTest extends TestCase {
     testProducer(
         CharProducer.Factory.fromJsString(charProducerFromString(js)),
         golden,
-        ss(0, FilePosition.instance(STRING_SOURCE, 1, 1, 1, 1))
+        ss(0, FilePosition.startOfFile(STRING_SOURCE))
     );
 
     // test interrupted escapes and escapes at end of file handled gracefully
@@ -308,7 +308,7 @@ public final class CharProducerTest extends TestCase {
     testProducer(
         CharProducer.Factory.fromHtmlAttribute(charProducerFromString(js)),
         golden,
-        ss(0, FilePosition.instance(STRING_SOURCE, 1, 1, 1, 1))
+        ss(0, FilePosition.startOfFile(STRING_SOURCE))
     );
 
     // test interrupted escapes and escapes at end of file handled gracefully
@@ -502,9 +502,9 @@ public final class CharProducerTest extends TestCase {
     Reader r2 = new StringReader(", now);");
 
     CharProducer prod1 = CharProducer.Factory.create(
-        r1, FilePosition.instance(src, 1, 1, 1, 1)),
+        r1, FilePosition.instance(src, 1, 1, 1)),
                  prod2 = CharProducer.Factory.create(
-        r2, FilePosition.instance(src, 2, 2, 30, 1));
+        r2, FilePosition.instance(src, 2, 30, 1));
 
     String golden = "hiThere(, now);";
 
@@ -514,22 +514,22 @@ public final class CharProducerTest extends TestCase {
     testProducer(
         chained,
         golden,
-        ss(0, FilePosition.instance(src, 1, 1, 1, 1)),
-        ss(1, FilePosition.instance(src, 1, 1, 2, 2)),
-        ss(2, FilePosition.instance(src, 1, 1, 3, 3)),
-        ss(3, FilePosition.instance(src, 1, 1, 4, 4)),
-        ss(4, FilePosition.instance(src, 1, 1, 5, 5)),
-        ss(5, FilePosition.instance(src, 1, 1, 6, 6)),
-        ss(6, FilePosition.instance(src, 1, 1, 7, 7)),
-        ss(7, FilePosition.instance(src, 1, 1, 8, 8)),
-        ss(8, FilePosition.instance(src, 1, 1, 9, 9)),
-        ss(9, FilePosition.instance(src, 2, 2, 31, 2)),
-        ss(10, FilePosition.instance(src, 2, 2, 32, 3)),
-        ss(11, FilePosition.instance(src, 2, 2, 33, 4)),
-        ss(12, FilePosition.instance(src, 2, 2, 34, 5)),
-        ss(13, FilePosition.instance(src, 2, 2, 35, 6)),
-        ss(14, FilePosition.instance(src, 2, 2, 36, 7)),
-        ss(15, FilePosition.instance(src, 2, 2, 37, 8))
+        ss(0, FilePosition.instance(src, 1, 1, 1)),
+        ss(1, FilePosition.instance(src, 1, 2, 2)),
+        ss(2, FilePosition.instance(src, 1, 3, 3)),
+        ss(3, FilePosition.instance(src, 1, 4, 4)),
+        ss(4, FilePosition.instance(src, 1, 5, 5)),
+        ss(5, FilePosition.instance(src, 1, 6, 6)),
+        ss(6, FilePosition.instance(src, 1, 7, 7)),
+        ss(7, FilePosition.instance(src, 1, 8, 8)),
+        ss(8, FilePosition.instance(src, 1, 9, 9)),
+        ss(9, FilePosition.instance(src, 2, 31, 2)),
+        ss(10, FilePosition.instance(src, 2, 32, 3)),
+        ss(11, FilePosition.instance(src, 2, 33, 4)),
+        ss(12, FilePosition.instance(src, 2, 34, 5)),
+        ss(13, FilePosition.instance(src, 2, 35, 6)),
+        ss(14, FilePosition.instance(src, 2, 36, 7)),
+        ss(15, FilePosition.instance(src, 2, 37, 8))
         );
   }
 
