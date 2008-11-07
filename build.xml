@@ -423,9 +423,6 @@
       <include file="${src}/com/google/caja/cajita.js"/>
       <include file="${src}/com/google/caja/plugin/unicode.js"/>
       <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
-      <include file="${third_party}/js/base2/base2-legacy.js"/>
-      <include file="${third_party}/js/base2/base2.js"/>
-      <include file="${third_party}/js/base2/base2-dom.js"/>
       <include file="${src}/com/google/caja/plugin/bridal.js"/>
       <include file="${src}/com/google/caja/plugin/domita.js"/>
     </transform>
@@ -469,9 +466,6 @@
         <include name="**/caja/**/*.xml"/>
       </fileset>
       <fileset dir="${third_party}">
-        <include name="**/js/base2/base2-legacy.js"/>
-        <include name="**/js/base2/base2.js"/>
-        <include name="**/js/base2/base2-dom.js"/>
         <include name="js/jqueryjs/runtest/env.js"/>
         <include name="js/jsunit/2.2/jsUnitCore.js"/>
       </fileset>
@@ -525,9 +519,6 @@
     </javac>
     <copy todir="${lib}">
       <fileset dir="${third_party}">
-        <include name="**/js/base2/base2-legacy.js"/>
-        <include name="**/js/base2/base2.js"/>
-        <include name="**/js/base2/base2-dom.js"/>
       </fileset>
       <fileset dir="${src}">
         <include name="**/caja/plugin/bridal.js"/>
@@ -744,11 +735,6 @@
         <include name="html4-defs.js"/>
         <include name="valija.co.js"/>
       </fileset>
-      <fileset dir="${third_party}/js/base2/">
-        <include name="**/base2-legacy.js"/>
-        <include name="**/base2.js"/>
-        <include name="**/base2-dom.js"/>
-      </fileset>
       <fileset dir="${third_party}/js/prettify">
         <include name="prettify.js"/>
         <include name="prettify.css"/>
@@ -778,9 +764,6 @@
        <script type="text/javascript" src="html-sanitizer.js"></script>
        <script type="text/javascript" src="html-emitter.js"></script>
        <script type="text/javascript" src="setup-valija.js"></script>
-       <script type="text/javascript" src="base2-legacy.js"></script>
-       <script type="text/javascript" src="base2-dom.js"></script>
-       <script type="text/javascript" src="base2-legacy.js"></script>
        <script type="text/javascript" src="bridal.js"></script>
        <script type="text/javascript" src="domita.js"></script>
        <script type="text/javascript" src="prettify.js"></script>
@@ -800,9 +783,6 @@
       <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
       <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
-      <include file="${third_party}/js/base2/base2-legacy.js"/>
-      <include file="${third_party}/js/base2/base2.js"/>
-      <include file="${third_party}/js/base2/base2-dom.js"/>
       <include file="${src}/com/google/caja/plugin/bridal.js"/>
       <include file="${src}/com/google/caja/plugin/domita.js"/>
       <include file="${third_party}/js/prettify/prettify.js"/>

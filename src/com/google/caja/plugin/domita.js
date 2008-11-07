@@ -449,9 +449,6 @@ attachDocumentStub = (function () {
     function tameNode(node, editable) {
       if (node === null || node === void 0) { return null; }
       // TODO(mikesamuel): make sure it really is a DOM node
-
-      // If it is a node, apply bridal browser fix
-      bridal.bind(node);
       
       switch (node.nodeType) {
         case 1:  // Element

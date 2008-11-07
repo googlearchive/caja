@@ -40,16 +40,6 @@ var bridal = (function() {
   ////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Apply fixes to <code>element</code> methods to make it W3 compliant
-   * on broken browsers
-   *
-   * @param element a native DOM element.
-   */
-  function bind(element) {
-    base2.DOM.bind(document);
-  }
-
-  /**
    * Add an event listener function to an element.
    *
    * <p>Replaces
@@ -71,10 +61,6 @@ var bridal = (function() {
           useCapture === void 0 ? void 0 : Boolean(useCapture));
     }
   }
-  function base2_addEventListener(element, type, handler, useCapture) {
-    element.addEventListener(type, handler, useCapture);
-  }
-
   
   /**
    * Remove an event listener function from an element.
@@ -95,9 +81,6 @@ var bridal = (function() {
     } else {
       element.removeEventListener(type, handler, useCapture);
     }
-  }
-  function base2_removeEventListener(element, type, handler, useCapture) {
-    element.removeEventListener(type, handler, useCapture);
   }
   
   /**
@@ -150,15 +133,11 @@ var bridal = (function() {
     }
     return value;
   }
-  function base2_setAttribute(node, name, value) {
-    node.setAttribute(name, value);
-  }
 
   return {
-    bind: bind,
-    addEventListener: base2_addEventListener,
-    removeEventListener: base2_removeEventListener,
+    addEventListener: addEventListener,
+    removeEventListener: removeEventListener,
     createStylesheet: createStylesheet,
-    setAttribute: base2_setAttribute
+    setAttribute: setAttribute
   };
 })();

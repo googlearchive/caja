@@ -27,7 +27,6 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Strings;
