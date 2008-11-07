@@ -800,7 +800,6 @@
       <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
       <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
-      <include file="${src}/com/google/caja/opensocial/applet/setup-valija.js"/>
       <include file="${third_party}/js/base2/base2-legacy.js"/>
       <include file="${third_party}/js/base2/base2.js"/>
       <include file="${third_party}/js/base2/base2-dom.js"/>
@@ -830,7 +829,7 @@
        language="valija" debug="false"/>
       <include file="${demos}/calendar/util.js"/>
       <include file="${demos}/calendar/bitset.js"/>
-      <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
+      <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
       <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <include file="${demos}/calendar/uformat.js"/>
       <include file="${demos}/calendar/time-cajita.js"/>

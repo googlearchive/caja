@@ -146,7 +146,7 @@ sub collectCodeStats() {
   extractCoverageSummary("$REPORTS_DIR/coverage/index.html", \@status_log);
 
   print STDERR "running benchmarks\n";
-  track(\&build, ['benchmarks'], 'tests', \@status_log);
+  track(\&build, ['benchmarks'], 'benchmarks', \@status_log);
   extractBenchmarkSummary("$REPORTS_DIR/benchmarks/TESTS-TestSuites.xml", \@status_log);
 
   print STDERR "running tests\n";
@@ -157,7 +157,10 @@ sub collectCodeStats() {
   track(\&build, ['docs'], 'docs', \@status_log);
 
   print STDERR "building demos\n";
-  track(\&build, ['AllTests', 'demos', 'testbed'], 'demos', \@status_log);
+  track(\&build, ['AllTests', 'demos'], 'demos', \@status_log);
+
+  print STDERR "building testbed\n";
+  track(\&build, ['testbed'], 'testbed', \@status_log);
 
   print STDERR "making output directory\n";
   makeOutputDir();

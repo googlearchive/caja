@@ -1037,9 +1037,6 @@ var ___;
     }
 
     enforceType(constr, 'function');
-    if (isMethod(constr)) {
-      fail("Methods can't be called as constructors: ", constr);
-    }
     fail("Untamed functions can't be called as constructors: ", constr);
   }
 
