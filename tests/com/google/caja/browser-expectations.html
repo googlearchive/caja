@@ -1,0 +1,128 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!--
+ - Copyright (C) 2008 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+<html>
+  <head>
+    <title>Browser Expectations</title>
+
+    <script src="cajita.js" onerror="console.error(this.src)"></script>
+    <script src="plugin/jsunit.js"></script>
+    <script src="../../../js/jsunit/2.2/jsUnitCore.js"></script>
+  </head>
+  <body onload="jsunitRun()">
+    This file contains tests of our expectations of browser behavior.
+    The tests are not cajoled or transformed in any way.  They just assert
+    that browsers that we support conform to certain norms.
+
+    <script>
+    jsunitRegister('testNumericOperators', function testNumericOperators() {
+      var values = [
+          null, void 0, '"', true, 1, function () {}, {}, [], /./,
+          { i: 0, valueOf: function () { return (++this.i) & 1 ? 4 : 'four'; } }
+          ];
+      // Check that the given operator always yields a number.
+      // We have some an array of typical values above.
+      // This function tries the given operator with every combination of
+      // representative values.
+      function checkOperator(operator) {
+        applyAll();
+
+        function applyAll() {
+          var k = arguments.length;
+          var args = Array.prototype.slice.call(arguments, 0);
+          if (k === operator.length) {
+            assertEquals('operator=' + operator + ', args=' + args,
+                         'number', typeof operator.apply(this, args));
+          } else {
+            for (var i = 0; i < values.length; ++i) {
+              args[k] = values[i];
+              applyAll.apply(this, args);
+            }
+          }
+        }
+      }
+      // allows numbers and undefined through but coerces others to a number.
+      function nou(x) { return x === void 0 ? x : +x; }
+
+      // Our array optimizations depend on certain operators returning numbers.
+      checkOperator(function (x) { return ++x; });
+      checkOperator(function (x) { return --x; });
+      checkOperator(function (x) { return x -= 1; });
+
+      // x++ and y++ do not yield a number on IE6 & IE7, but they should assign
+      // a number to their operand.
+      checkOperator(function (x) { ++x; return x; });
+      checkOperator(function (x) { --x; return x; });
+      checkOperator(function (x) { x++; return x; });
+      checkOperator(function (x) { x--; return x; });
+      checkOperator(function (x) { x -= 1; return x; });
+
+      checkOperator(function (x) { return +x; });
+      checkOperator(function (x) { return -x; });
+      checkOperator(function (x) { return ~x; });
+      checkOperator(function (x, y) { return x | y; });
+      checkOperator(function (x, y) { return x & y; });
+      checkOperator(function (x, y) { return x ^ y; });
+      checkOperator(function (x, y) { return x - y; });
+      checkOperator(function (x, y) { return x * y; });
+      checkOperator(function (x, y) { return x / y; });
+      checkOperator(function (x, y) { return x % y; });
+      checkOperator(function (x, y) { return +(x) || +(y); });
+      checkOperator(function (x, y) { return +(x) && +(y); });
+      checkOperator(function (x, y) { return nou(x) + nou(y); });
+      checkOperator(function (x, y, z) { return x ? +(y) : +(z); });
+    });
+
+    jsunitRegister('testCatchScope', function testCatchScope() {
+      // Our scope checking prevents a caught variable from masking a locally
+      // declared variable, which prevents a safeguard sometimes used on older
+      // interpreters
+      //   var e;
+      //   try {
+      //     ...  // does not use e
+      //   } catch (e) { ... }
+
+      // Ensure that the catch variable, even if it leaks into the enclosing
+      // function body scope, does not leak into the enclosing scope.
+      var e;
+      (function () {
+         try {
+           throw 'foo';
+         } catch (e) {
+           assertEquals('foo', e);
+         }
+       })();
+      assertEquals('undefined', typeof e);
+    });
+
+    jsunitRegister('testFinallyReturns', function testFinallyReturns() {
+      // In our onsubmit handler checking, we use a finally block to make
+      // sure that the form will not actually submit.
+      // Make sure that it is the finally block's value that is received, not
+      // the try block's.
+      assertEquals(
+          'finally',
+          (function () {
+             try {
+               return 'try';
+             } finally {
+               return 'finally';
+             }
+           })());
+    });
+    </script>
+  </body>
+</html>

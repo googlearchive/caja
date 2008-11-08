@@ -235,8 +235,8 @@ public class CajitaRewriter extends Rewriter {
           // since those are specified in ES262 by looking up the identifiers
           // "Array" and "Object" in the local scope.
           // SpiderMonkey actually implements this behavior, though it is fixed
-	  // in FF3, and ES3.1 is specifying the behavior of [] and {} in terms
-	  // of the original Array and Object constructors for that context.
+          // in FF3, and ES3.1 is specifying the behavior of [] and {} in terms
+          // of the original Array and Object constructors for that context.
           Set<String> orderedImportNames = new LinkedHashSet<String>();
           if (importNames.contains("Array")) {
             orderedImportNames.add("Array");
@@ -907,9 +907,9 @@ public class CajitaRewriter extends Rewriter {
           name="readNumPublic",
           synopsis="Recognize that numeric indexing is inherently safe.",
           reason="When the developer knows that their index expression is numeric, " +
-          		"they can indicate this with the unary plus operator -- which " +
-          		"coerces to a number. Since numeric properties are necessarily " +
-          		"readable, we can pass these through directly to JavaScript.",
+              "they can indicate this with the unary plus operator -- which " +
+              "coerces to a number. Since numeric properties are necessarily " +
+              "readable, we can pass these through directly to JavaScript.",
           matches="@o[+@s]",
           substitutes="@o[+@s]")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
@@ -1619,8 +1619,8 @@ public class CajitaRewriter extends Rewriter {
           name="permittedCall",
           synopsis="When @o.@m is a statically permitted call, translate directly.",
           reason="The static permissions check is recorded so that, when the base of " +
-          		"@o is imported, we check that this static permission was actually " +
-          		"safe to assume.",
+              "@o is imported, we check that this static permission was actually " +
+              "safe to assume.",
           matches="@o.@m(@as*)",
           substitutes="@o.@m(@as*)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
@@ -1697,9 +1697,9 @@ public class CajitaRewriter extends Rewriter {
           name="callDeclaredFunc",
           synopsis="When calling a declared function name, leave the freezing to asSimpleFunc.",
           reason="If @fname is a declared function name, an escaping use as here would " +
-          		"normally generate a call to primFreeze it, so that it's frozen on " +
-          		"first use. However, since asSimpleFunc() now freezes its argument, " +
-          		"if @fname is a declared function name, we avoid expanding it.",
+              "normally generate a call to primFreeze it, so that it's frozen on " +
+              "first use. However, since asSimpleFunc() now freezes its argument, " +
+              "if @fname is a declared function name, we avoid expanding it.",
           matches="@fname(@as*)",
           substitutes="___.asSimpleFunc(@fname)(@as*)")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
@@ -1912,8 +1912,8 @@ public class CajitaRewriter extends Rewriter {
           name="mapNonEmpty",
           synopsis="Turns an object literal into an explicit initialization.",
           reason="To avoid creating even a temporary possibly unsafe object " +
-          		"(such as one with a bad 'toString' method), pass an " +
-          		"array of @items, which are interleaved @keys and @vals.",
+              "(such as one with a bad 'toString' method), pass an " +
+              "array of @items, which are interleaved @keys and @vals.",
           matches="({@keys*: @vals*})",
           substitutes="___.initializeMap([@items*])")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
