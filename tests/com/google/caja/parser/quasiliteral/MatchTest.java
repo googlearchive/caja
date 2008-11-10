@@ -23,6 +23,7 @@ import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.util.CajaTestCase;
@@ -234,6 +235,40 @@ public class MatchTest extends CajaTestCase {
     assertEquals(ExpressionStmt.class, m.get("b").children().get(0).getClass());
   }
 
+  public void testFunctionWithOptionalName() throws Exception {
+    match(
+        "function @i?(@actuals*) { @body* }",
+        "function x(a, b) { return; }");
+    assertNotNull(m);
+    assertEquals("x", ((Identifier) m.get("i")).getValue());
+
+    match(
+        "function @i?(@actuals*) { @body* }",
+        "function (a, b) { return; };");
+    assertNotNull(m);
+    assertNull(m.get("i"));
+    assertEquals(
+        "a",
+        ((FormalParam) m.get("actuals").children().get(0)).getIdentifierName());
+    assertEquals(
+        "b",
+        ((FormalParam) m.get("actuals").children().get(1)).getIdentifierName());
+    assertEquals(ReturnStmt.class, m.get("body").children().get(0).getClass());
+
+    match(
+        "function @i?(@actuals*) { @body* }",
+        "function f(a, b) { return; }");
+    assertNotNull(m);
+    assertEquals("f", ((Identifier) m.get("i")).getValue());
+    assertEquals(
+        "a",
+        ((FormalParam) m.get("actuals").children().get(0)).getIdentifierName());
+    assertEquals(
+        "b",
+        ((FormalParam) m.get("actuals").children().get(1)).getIdentifierName());
+    assertEquals(ReturnStmt.class, m.get("body").children().get(0).getClass());
+  }
+
   public void testDotAccessorReference() throws Exception {
     match(
         "@a.@b;",
@@ -286,16 +321,65 @@ public class MatchTest extends CajaTestCase {
         "function @f() {}",
         "var foo = function() {};");
     assertNull(m);
+
     match(
         "function() {}",
         "var foo = function() {};");
     assertNotNull(m);
     assertEquals(0, m.size());
+
     match(
         "function @f() {}",
         "function foo() {}");
     assertNotNull(m);
     assertEquals("foo", ((Identifier) m.get("f")).getName());
+  }
+
+  public void testUseSubsetsInFunctionBodies() throws Exception {
+    match(
+        "function () { 'use strict'; @stmts* }",
+        "function () { return 4; };");
+    assertNull(m);
+
+    match(
+        "function () { 'use strict'; @stmts* }",
+        "function () { 'use strict'; return 4; };");
+    assertNotNull(m);
+    assertEquals(ReturnStmt.class, m.get("stmts").children().get(0).getClass());
+
+    match(
+        "function f() { 'use strict'; @stmts* }",
+        "function f() { return 4; }");
+    assertNull(m);
+
+    match(
+        "function f() { 'use strict'; @stmts* }",
+        "function f() { 'use strict'; return 4; }");
+    assertNotNull(m);
+    assertEquals(ReturnStmt.class, m.get("stmts").children().get(0).getClass());
+
+    match(
+        "function f() { 'use strict'; @stmts* }",
+        "(function f() { return 4; });");
+    assertNull(m);
+
+    match(
+        "function f() { 'use strict'; @stmts* }",
+        "(function f() { 'use strict'; return 4; });");
+    assertNotNull(m);
+    assertEquals(ReturnStmt.class, m.get("stmts").children().get(0).getClass());
+
+    match(
+        "function f() { 'use strict,cajita'; @stmts* }",
+        "(function f() { 'use strict'; return 4; });");
+    assertNull(m);
+
+    // Partial matches work too
+    match(
+        "function f() { 'use strict'; @stmts* }",
+        "(function f() { 'use strict,cajita'; return 4; });");
+    assertNotNull(m);
+    assertEquals(ReturnStmt.class, m.get("stmts").children().get(0).getClass());
   }
 
   private void match(String pattern, String source)
@@ -306,15 +390,15 @@ public class MatchTest extends CajaTestCase {
     System.out.println(qn.render());
     m = null;
     findMatch(qn, quasi(fromString(source)));
-    if (m != null) System.out.println(m);
+    if (m != null) { System.out.println(m); }
   }
 
   private void findMatch(QuasiNode qn, ParseTreeNode n) {
     m = qn.match(n);
-    if (m != null) return;
+    if (m != null) { return; }
     for (ParseTreeNode c : n.children()) {
       findMatch(qn, c);
-      if (m != null) return;
+      if (m != null) { return; }
     }
   }
 }

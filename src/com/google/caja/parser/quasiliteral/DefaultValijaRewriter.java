@@ -29,6 +29,7 @@ import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.ModuleEnvelope;
+import com.google.caja.parser.js.MultiDeclaration;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.QuotedExpression;
@@ -36,7 +37,6 @@ import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.RegexpLiteral;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
-import com.google.caja.parser.js.MultiDeclaration;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.reporting.MessageQueue;
 
@@ -273,6 +273,62 @@ public class DefaultValijaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof ModuleEnvelope) {
           return expandAll(node, null, mq);
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="cajitaUseSubset",
+          synopsis="Skip subtrees with a 'use strict,cajita' declaration",
+          reason="Valija rules should not be applied to embedded cajita code",
+          // TODO(mikesamuel): check after Kona meeting
+          matches="'use cajita'; @stmt*",
+          substitutes="@stmt*")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof Block) {
+          Map<String, ParseTreeNode> bindings = this.match(node);
+          if (bindings != null) {
+            // Do not descend into children.  Cajita nodes are exempt
+            // from the Valija -> Cajita translation since they
+            // presumably already contain Cajita.  If they do not
+            // contain valid Cajita code, the CajitaRewriter will
+            // complain.
+            return subst(bindings);
+          }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="cajitaUseSubsetFn",
+          synopsis="Skip functions with a 'use strict,cajita' declaration",
+          reason="Valija rules should not be applied to embedded cajita code",
+          matches="function @i?(@actuals*) { 'use cajita'; @stmt* }",
+          substitutes="function @i?(@actuals*) { @stmt* }")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        FunctionConstructor ctor;
+        if (node instanceof FunctionDeclaration) {
+          ctor = ((FunctionDeclaration) node).getInitializer();
+        } else if (node instanceof FunctionConstructor) {
+          ctor = (FunctionConstructor) node;
+        } else {
+          return NONE;
+        }
+        Map<String, ParseTreeNode> bindings = this.match(ctor);
+        if (bindings != null) {
+          // Do not expand children. See discussion in cajitaUseSubset above.
+          FunctionConstructor newCtor = (FunctionConstructor) subst(bindings);
+          if (node instanceof FunctionDeclaration) {
+            return new FunctionDeclaration(newCtor.getIdentifier(), newCtor);
+          } else {
+            return newCtor;
+          }
         }
         return NONE;
       }

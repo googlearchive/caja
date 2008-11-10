@@ -76,6 +76,8 @@ public enum MessageType implements MessageTypeInt {
   MISSING_ATTRIBUTE_VALUE(
       "%s: missing value for attribute %s", MessageLevel.FATAL_ERROR),
   OCTAL_LITERAL("%s: octal literal %s", MessageLevel.LINT),
+  UNRECOGNIZED_USE_SUBSET(
+      "%s: unrecognized subset name in 'use' clause: %s", MessageLevel.WARNING),
 
   // platform context
   NOT_IE("%s: Will not work in IE", MessageLevel.WARNING),

@@ -89,7 +89,7 @@ public class SimpleQuasiNode extends QuasiNode {
     List<ParseTreeNode> children = new ArrayList<ParseTreeNode>();
 
     for (QuasiNode child : getChildren()) {
-      if (!child.createSubstitutes(children, bindings)) return false;
+      if (!child.createSubstitutes(children, bindings)) { return false; }
     }
 
     // TODO(ihab.awad): Absorb setting the FilePosition into newNodeInstance and remove the

@@ -15,6 +15,7 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.JsTokenType;
 import com.google.caja.lexer.Keyword;
@@ -71,13 +72,16 @@ import java.util.Set;
  *
  * <xmp>
  * // Terminal productions
- * Program                 => <TerminatedStatement>*
+ * Program                 => <UseSubsetDirective>? <TerminatedStatement>*
  * Statement               => <TerminalStatement>
  *                          | <NonTerminalStatement>
  * Expression              => <CommaOperator>
  *
  * // Non-terminal productions.  Indentation indicates that a nonterminal is
  * // used only by the unindented nonterminal above it.
+ * UseSubsetDirective      => '"' 'use' <UseSubsetList>? '"'
+ * UseSubsetList           => <UseSubset> <UseSubsetTail>*
+ * UseSubsetTail           => ',' <UseSubset>
  * TerminatedStatement     => <BlockStatement>
  *                          | <SimpleStatement> <StatementTerminator>
  *   StatementTerminator   => ';'
@@ -164,10 +168,11 @@ import java.util.Set;
  * FunctionDeclaration     => <NamedFunction>
  * FunctionConstructor     => <NamedFunction>
  *                          | <AnonymousFunction>
- *   AnonymousFunction     => 'function' '(' <FormalParams> ')' <Block>
+ *   AnonymousFunction     => 'function' '(' <FormalParams> ')' <FunctionBody>
  * NamedFunction           => 'function' <Identifier>
- *                           '(' <FormalParams> ')' <Block>
- * FormalParams          => <IdentifierList>?
+ *                            '(' <FormalParams> ')' <FunctionBody>
+ * FunctionBody            => '{' <Program> '}'
+ * FormalParams            => <IdentifierList>?
  *   IdentifierList        => <Identifier> <IdentifierListTail>
  *   IdentifierListTail    => ',' <IdentifierList>
  *
@@ -259,14 +264,9 @@ public final class Parser extends ParserBase {
 
   /** Parses a top level block. */
   public Block parse() throws ParseException {
-    Mark m = tq.mark();
-    List<Statement> stmts = new ArrayList<Statement>();
-    while (!tq.isEmpty()) {
-      stmts.add(parseTerminatedStatement());
-    }
-    Block b = new Block(stmts);
-    finish(b, m);
-    return b;
+    Block program = parseProgramOrFunctionBody();
+    tq.expectEmpty();
+    return program;
   }
 
   /** Parses and returns a Statement. */
@@ -297,6 +297,54 @@ public final class Parser extends ParserBase {
       tq.rewind(m);
     }
     return parseStatementWithoutLabel();
+  }
+
+  private Block parseProgramOrFunctionBody() throws ParseException {
+    Mark m = tq.mark();
+    List<Statement> stmts = new ArrayList<Statement>();
+    UseSubsetDirective usd = parseOptionalUseSubsetDirective();
+    if (usd != null) { stmts.add(usd); }
+    while (!tq.isEmpty() && !tq.lookaheadToken(Punctuation.RCURLY)) {
+      stmts.add(parseTerminatedStatement());
+    }
+    Block b = new Block(stmts);
+    finish(b, m);
+    return b;
+  }
+
+  private UseSubsetDirective parseOptionalUseSubsetDirective()
+      throws ParseException {
+    if (tq.isEmpty() || tq.peek().type != JsTokenType.STRING) { return null; }
+    Mark m = tq.mark();
+    Token<JsTokenType> quotedString = tq.pop();
+    if (!tq.checkToken(Punctuation.SEMI)) {
+      tq.rewind(m);
+      return null;
+    }
+    String decoded = StringLiteral.getUnquotedValueOf(quotedString.text);
+    if (!(decoded.startsWith("use")
+          && (decoded.length() == 3
+              || JsLexer.isJsSpace(decoded.charAt(3))))) {
+      tq.rewind(m);
+      return null;
+    }
+
+    FilePosition quotedStringStart = FilePosition.startOf(quotedString.pos);
+    List<UseSubset> subsets = new ArrayList<UseSubset>();
+    for (String subsetName : decoded.substring(3).split(",")) {
+      String trimName = subsetName.trim();
+      if (!("strict".equals(trimName) || "cajita".equals(trimName))) {
+        mq.addMessage(
+            MessageType.UNRECOGNIZED_USE_SUBSET,
+            quotedString.pos, MessagePart.Factory.valueOf(trimName));
+      }
+      UseSubset us = new UseSubset(trimName);
+      us.setFilePosition(quotedStringStart);
+      subsets.add(us);
+    }
+    UseSubsetDirective usd = new UseSubsetDirective(subsets);
+    finish(usd, m);
+    return usd;
   }
 
   private LabeledStatement parseLoopOrSwitch(String label)
@@ -504,12 +552,11 @@ public final class Parser extends ParserBase {
             tq.expectToken(Punctuation.LPAREN);
             FormalParamList params = parseFormalParams();
             tq.expectToken(Punctuation.RPAREN);
-            if (!tq.lookaheadToken(Punctuation.LCURLY)) {
-              tq.expectToken(Punctuation.LCURLY);
-            }
-            Statement body = parseStatementWithoutLabel();
+            tq.expectToken(Punctuation.LCURLY);
+            Block body = parseProgramOrFunctionBody();
+            tq.expectToken(Punctuation.RCURLY);
             FunctionConstructor fc = new FunctionConstructor(
-                identifier, params.params, (Block) body);
+                identifier, params.params, body);
             finish(fc, m);
             s = new FunctionDeclaration(identifier, fc);
             finish(s, m);
@@ -984,12 +1031,10 @@ public final class Parser extends ParserBase {
               tq.expectToken(Punctuation.LPAREN);
               FormalParamList params = parseFormalParams();
               tq.expectToken(Punctuation.RPAREN);
-              if (!tq.lookaheadToken(Punctuation.LCURLY)) {
-                tq.expectToken(Punctuation.LCURLY);
-              }
-              Statement body = parseStatementWithoutLabel();
-              e = new FunctionConstructor(
-                  identifier, params.params, (Block) body);
+              tq.expectToken(Punctuation.LCURLY);
+              Block body = parseProgramOrFunctionBody();
+              tq.expectToken(Punctuation.RCURLY);
+              e = new FunctionConstructor(identifier, params.params, body);
               break typeswitch;
             }
             default:

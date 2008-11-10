@@ -193,7 +193,8 @@
     <fail message=
      "One or more tests failed. For details, see ${reports}/tests/index.html"
      if="runtests.error"/>
-    <fail message="One or more tests failed to compile."
+    <fail message=
+     "One or more tests failed. For details, see ${reports}/tests/index.html"
      if="runtests.failure"/>
   </target>
 

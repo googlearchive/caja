@@ -194,7 +194,7 @@ public class JsLexer implements TokenStream<JsTokenType> {
 
   }  // WordClassifier
 
-  static boolean isJsSpace(char ch) {
+  public static boolean isJsSpace(char ch) {
     // From http://www.mozilla.org/js/language/es4/formal/lexer-grammar.html
     switch (ch) {
       case ' ': case '\t': case '\r': case '\n': case '\u000c':

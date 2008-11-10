@@ -84,7 +84,7 @@ public final class StringLiteral extends Literal {
   }
 
   /**
-   * If jsLiteral is a quoted javascript string, represent the String value that
+   * If jsLiteral is a quoted javascript string, returns the String value that
    * it represents.  Otherwise returns the parameter unchanged.
    * <p>
    * This is useful for dealing with the keys in object constructors since they

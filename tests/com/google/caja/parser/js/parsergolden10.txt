@@ -1,0 +1,86 @@
+Block
+  UseSubsetDirective
+    UseSubset : strict
+    UseSubset : cajita
+  FunctionDeclaration
+    Identifier : strictFn1
+    FunctionConstructor
+      Identifier : strictFn1
+      Block
+        UseSubsetDirective
+          UseSubset : strict
+        ReturnStmt
+  FunctionDeclaration
+    Identifier : strictFn2
+    FunctionConstructor
+      Identifier : strictFn2
+      Block
+        UseSubsetDirective
+          UseSubset : strict
+          UseSubset : cajita
+        ReturnStmt
+  FunctionDeclaration
+    Identifier : strictFn3
+    FunctionConstructor
+      Identifier : strictFn3
+      Block
+        UseSubsetDirective
+          UseSubset : strict
+          UseSubset : cajita
+        ReturnStmt
+  FunctionDeclaration
+    Identifier : notStrictFn1
+    FunctionConstructor
+      Identifier : notStrictFn1
+      Block
+        ExpressionStmt
+          StringLiteral : "use strict,cajita"
+        ReturnStmt
+  FunctionDeclaration
+    Identifier : notStrictFn2
+    FunctionConstructor
+      Identifier : notStrictFn2
+      Block
+        ExpressionStmt
+          StringLiteral : "use strict,cajita"
+        ReturnStmt
+  FunctionDeclaration
+    Identifier : notStrictFn3
+    FunctionConstructor
+      Identifier : notStrictFn3
+      Block
+        ExpressionStmt
+          SimpleOperation : ADDITION
+            StringLiteral : "use strict,cajita"
+            StringLiteral : "foo"
+        ReturnStmt
+  FunctionDeclaration
+    Identifier : arbitraryBlocksCannotBeStrict
+    FunctionConstructor
+      Identifier : arbitraryBlocksCannotBeStrict
+      Block
+        Block
+          ExpressionStmt
+            StringLiteral : "use strict,cajita"
+  FunctionDeclaration
+    Identifier : malformed1
+    FunctionConstructor
+      Identifier : malformed1
+      Block
+        ExpressionStmt
+          StringLiteral : "usestrict,cajita"
+  FunctionDeclaration
+    Identifier : unrecognizedSet1
+    FunctionConstructor
+      Identifier : unrecognizedSet1
+      Block
+        UseSubsetDirective
+          UseSubset : bogus
+  FunctionDeclaration
+    Identifier : unrecognizedSet2
+    FunctionConstructor
+      Identifier : unrecognizedSet2
+      Block
+        UseSubsetDirective
+          UseSubset : strict
+          UseSubset : bogus

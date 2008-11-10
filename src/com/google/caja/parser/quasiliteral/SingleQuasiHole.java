@@ -43,8 +43,9 @@ public class SingleQuasiHole extends AbstractQuasiHole {
   protected boolean createSubstitutes(
       List<ParseTreeNode> substitutes,
       Map<String, ParseTreeNode> bindings) {
-    if (bindings.containsKey(getIdentifier())) {
-      substitutes.add(bindings.get(getIdentifier()).clone());
+    ParseTreeNode substitute = bindings.get(getIdentifier());
+    if (substitute != null) {
+      substitutes.add(substitute.clone());
       return true;
     }
     return false;

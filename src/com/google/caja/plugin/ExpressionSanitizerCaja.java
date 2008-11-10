@@ -29,8 +29,8 @@ import com.google.caja.reporting.MessageLevel;
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class ExpressionSanitizerCaja {
-  final MessageQueue mq;
-  final PluginMeta meta;
+  private final MessageQueue mq;
+  private final PluginMeta meta;
 
   public ExpressionSanitizerCaja(MessageQueue mq, PluginMeta meta) {
     this.mq = mq;
