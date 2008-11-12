@@ -133,31 +133,29 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
         + "</script>"
         + "<script>"
         + "  'use strict, cajita';"
-        // Not visible to Cajita
-        + "  assertEquals('first', undefined, ({}).hello);"
+        + "  assertEquals('not visible in cajita', undefined, ({}).hello);"
         + "</script>"
         + "<script>"
         + "  'use strict';"
-        + "  assertEquals('second', 'there', ({}).hello);"  // Visible in Valija
+        + "  assertEquals('visible in valija', 'there', ({}).hello);"
         + "</script>"
         + "<script>"
         + "  assertEquals("
-        + "      'third',"
-        + "      'there,,',"  // Nested cajita functions aren't patched
+        + "      'nested cajita fns not patched',"
+        + "      'there,,',"
         + "      [ ({}).hello,"
         + "        (function () { 'use strict,cajita'; return {}.hello; })(),"
         + "        (function f() { 'use strict,cajita'; return {}.hello; })() ]"
         + "      .join(','));"
         + "</script>"
         + "<script>"
-        // TODO(mikesamuel): obviate the need for this envelope when embedding
-        // cajita function declarations since global cajita declarations do not
-        // end up back in outers.
-        + "(function() {"
-        + "  function f() { 'use strict,cajita'; return {}.hello; }"
-        // Nested cajita functions aren't patched
-        + "  assertEquals('fourth', undefined, f());"
-        + "})();"
+        + "  assertEquals('cajita fn decls hoisted to block', undefined, f);"
+        + "  {"
+        + "    function f() { 'use strict,cajita'; return {}.hello; }"
+        + "    assertEquals('cajita fns not patchable', undefined, f());"
+        + "    assertThrows(function () { f.foo = 'bar'; });"
+        + "    assertEquals('cajita fns frozen', undefined, f.foo);"
+        + "  }"
         + "</script>",
 
         // Not visible when uncajoled.

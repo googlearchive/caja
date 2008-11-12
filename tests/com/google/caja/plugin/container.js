@@ -24,6 +24,7 @@ imports.fail = ___.simpleFrozenFunc(fail);
 imports.assertEquals = ___.simpleFrozenFunc(assertEquals);
 imports.assertTrue = ___.simpleFrozenFunc(assertTrue);
 imports.assertFalse = ___.simpleFrozenFunc(assertFalse);
+imports.assertThrows = ___.simpleFrozenFunc(assertThrows);
 imports.document = document;
 imports.console = console;
 imports.$v = valijaMaker(imports);

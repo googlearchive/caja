@@ -382,6 +382,23 @@ public class MatchTest extends CajaTestCase {
     assertEquals(ReturnStmt.class, m.get("stmts").children().get(0).getClass());
   }
 
+  public void testStringLiteralQuasis() throws Exception {
+    match(
+        "o['@p'] = q;",
+        "o['P'] = q;");
+    assertNotNull(m);
+    assertEquals("P", ((Identifier) m.get("p")).getName());
+
+    match("function @name() { @body* }", "function foo() {}");
+    assertNotNull(m);
+    assertEquals("foo", ((Identifier) m.get("name")).getName());
+    assertEquals(
+        render(jsExpr(fromString("fakeGlobals['foo'] = function foo() {}"))),
+        render(QuasiBuilder.subst(
+            "fakeGlobals['@name'] = function @name() { @body* }",
+            m)));
+  }
+
   private void match(String pattern, String source)
       throws Exception {
     QuasiNode qn = QuasiBuilder.parseQuasiNode(

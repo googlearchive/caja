@@ -21,6 +21,7 @@ import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParserBase;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
@@ -259,6 +260,17 @@ public class QuasiBuilder {
 
     if (n instanceof UseSubsetDirective) {
       return buildUseSubsetQuasiNode(((UseSubsetDirective) n).getSubsetNames());
+    }
+
+    if (n instanceof StringLiteral) {
+      StringLiteral lit = (StringLiteral) n;
+      String value = lit.getUnquotedValue();
+      if (value.startsWith("@")) {
+        String bindingName = value.substring(1);
+        if (ParserBase.isJavascriptIdentifier(bindingName)) {
+          return new StringLiteralQuasiNode(bindingName);
+        }
+      }
     }
 
     return buildSimpleNode(n);
