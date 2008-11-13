@@ -18,7 +18,6 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.Pipeline;
@@ -124,7 +123,6 @@ public class InferFilePositionsStage implements Pipeline.Stage<Jobs> {
 
   private static boolean hasFilePosition(ParseTreeNode node) {
     FilePosition pos = node.getFilePosition();
-    return !FilePosition.UNKNOWN.equals(pos)
-        && !QuasiBuilder.NULL_INPUT_SOURCE.equals(pos.source());
+    return !FilePosition.UNKNOWN.equals(pos);
   }
 }

@@ -25,16 +25,21 @@ import java.io.IOException;
 /**
  * @author ihab.awad@gmail.com
  */
-public class SideBySideRendererTest extends OrigSourceRendererTestCase {
+public class SourceSnippetRendererTest extends OrigSourceRendererTestCase {
   public void testRendering() throws Exception {
     runTest(
-        "sbs-golden.js", "sbs-rewritten-tokens.txt",
-        "sbs-test-input1.js", "sbs-test-input2.html", "sbs-test-input3.css");
+        "ss-golden.js", "ss-rewritten-tokens.txt",
+        "ss-test-input.js");
   }
 
   protected TokenConsumer createRenderer(
       Map<InputSource, ? extends CharSequence> originalSource,
       MessageContext mc, Appendable out, Callback<IOException> exHandler) {
-    return new TabularSideBySideRenderer(originalSource, mc, out, exHandler);
+    return new SourceSnippetRenderer(originalSource, mc, out, exHandler) {
+      protected TokenConsumer createDelegateRenderer(
+          Appendable out, Callback<IOException> exHandler) {
+        return new JsPrettyPrinter(out, exHandler);
+      }
+    };
   }
 }

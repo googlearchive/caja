@@ -524,6 +524,7 @@
       <fileset dir="${src}">
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/domita.js"/>
+        <include name="**/caja/plugin/html-emitter.js"/>
         <include name="**/caja/plugin/html-sanitizer.js"/>
         <include name="**/caja/plugin/unicode.js"/>
         <include name="**/caja/plugin/plugin-base.js"/>
@@ -812,7 +813,7 @@
        language="valija" debug="false"/>
       <include file="${demos}/calendar/util.js"/>
       <include file="${demos}/calendar/bitset.js"/>
-      <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
+      <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
       <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <include file="${demos}/calendar/uformat.js"/>
       <include file="${demos}/calendar/time-cajita.js"/>

@@ -8,7 +8,7 @@ function
 IMPORTS___
 )
 {
-# test-input3.css:1+1-3+2
+# sbs-test-input3.css:1+1-3+2
 ___
 .
 defineStyles___
@@ -16,7 +16,7 @@ defineStyles___
 '.prefix p {\n  color: purple\n}'
 )
 ;
-# test-input2.html:1+47-4+1
+# sbs-test-input2.html:1+47-4+1
 IMPORTS___
 .
 htmlEmitter___
@@ -26,50 +26,56 @@ ih
 '\n<h1>Hello\n\n'
 )
 ;
-# test-input1.js:1+1-17
+# sbs-test-input1.js:1+1-17
 IMPORTS___
 .
 sep
 =
 ___
 .
-func
+simpleFunc
 (
 function
 sep
 (
 )
 {
-# test-input1.js:2+3-19
+# sbs-test-input1.js:2+3-19
 return
 '<hr />'
 ;
-# test-input1.js:3+1-3+2
+# sbs-test-input1.js:3+1-3+2
 }
 )
 ;
-# test-input1.js:5+1-22
+# sbs-test-input1.js:5+1-22
 if
+(
+___
+.
+asSimpleFunc
 (
 IMPORTS___
 .
 foo
-.
-CALL___
+)
 (
 )
 )
 {
+___
+.
+asSimpleFunc
+(
 IMPORTS___
 .
 bar
-.
-CALL___
+)
 (
 )
 ;
 }
-# test-input1.js:7+1-16
+# sbs-test-input1.js:7+1-16
 if
 (
 IMPORTS___
@@ -77,7 +83,7 @@ IMPORTS___
 document
 )
 {
-# test-input1.js:8+3-11
+# sbs-test-input1.js:8+3-11
 var
 tmp___
 =
@@ -85,7 +91,7 @@ IMPORTS___
 .
 document
 ;
-# test-input1.js:9+7-22
+# sbs-test-input1.js:9+7-22
 var
 tmp0___
 =
@@ -99,7 +105,7 @@ tmp
 'getElementById'
 )
 )
-# test-input1.js:10+7-22
+# sbs-test-input1.js:10+7-22
 (
 'x'
 )
@@ -112,17 +118,20 @@ tmp0___
 ,
 'innerHTML'
 ,
-# test-input1.js:11+7-15
-sep
+# sbs-test-input1.js:11+7-15
+___
 .
-CALL___
+asSimpleFunc
+(
+sep
+)
 (
 )
 )
 ;
-# test-input1.js:12+1-2
+# sbs-test-input1.js:12+1-2
 }
-# test-input2.html:4+39-7+1
+# sbs-test-input2.html:4+39-7+1
 IMPORTS___
 .
 htmlEmitter___

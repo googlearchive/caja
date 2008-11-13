@@ -20,6 +20,7 @@ import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParserBase;
 import com.google.caja.parser.js.Block;
@@ -53,14 +54,6 @@ import java.net.URI;
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class QuasiBuilder {
-
-  /**
-   * The stub {@code InputSource} associated with quasiliteral strings
-   * that appear directly in source code.
-   */
-  public static final InputSource NULL_INPUT_SOURCE
-      = new InputSource(URI.create("built-in:///js-quasi-literals"));
-
   private static final Map<String, QuasiNode> patternCache
       = new HashMap<String, QuasiNode>();
 
@@ -185,10 +178,10 @@ public class QuasiBuilder {
 
   /**
    * @see #parseQuasiNode(InputSource,String)
-   * @see #NULL_INPUT_SOURCE
+   * @see FilePosition#UNKNOWN
    */
   public static QuasiNode parseQuasiNode(String pattern) throws ParseException {
-    return parseQuasiNode(NULL_INPUT_SOURCE, pattern);
+    return parseQuasiNode(FilePosition.UNKNOWN.source(), pattern);
   }
 
   private static QuasiNode getPatternNode(String patternText) {

@@ -107,8 +107,7 @@ public abstract class Rewriter {
           }
           FilePosition resultPos = result.getFilePosition();
           if (result instanceof AbstractParseTreeNode
-              && (QuasiBuilder.NULL_INPUT_SOURCE.equals(resultPos.source())
-                  || FilePosition.UNKNOWN.equals(resultPos))) {
+              && FilePosition.UNKNOWN.equals(resultPos)) {
             ((AbstractParseTreeNode<?>) result)
                 .setFilePosition(node.getFilePosition());
           }

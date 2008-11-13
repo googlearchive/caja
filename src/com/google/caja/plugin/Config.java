@@ -101,6 +101,19 @@ public final class Config {
   private final Option CAJA_MODE = defineBooleanOption(
       "a", "caja", "Enables Caja (as opposed to Cajita) mode.");
 
+  private final Option RENDERER = defineOption(
+      "r",
+      "renderer",
+      "The output renderer ('minify', 'pretty', or 'sidebyside')",
+      true);
+
+  public enum SourceRenderMode {
+    MINIFY,
+    PRETTY,
+    SIDEBYSIDE,
+    ;
+  }
+
   private final Class<?> mainClass;
   private final PrintWriter stderr;
   private final String usageText;
@@ -114,6 +127,7 @@ public final class Config {
   private String gadgetView;
   private boolean debugMode;
   private boolean cajaMode;
+  private SourceRenderMode renderer;
   private int servicePort;
 
   public Config(Class<?> mainClass, PrintStream stderr, String usageText) {
@@ -159,6 +173,8 @@ public final class Config {
   public boolean debugMode() { return debugMode; }
 
   public boolean cajaMode() { return cajaMode; }
+
+  public SourceRenderMode renderer() { return renderer; }
 
   public boolean processArguments(String[] argv) {
     try {
@@ -261,6 +277,17 @@ public final class Config {
             "Invalid service port: " + SERVICE_PORT.getOpt() + "\n    "
             + e.getMessage());
         return false;
+      }
+
+      String renderString = cl.getOptionValue(RENDERER.getOpt());
+      if (renderString != null) {
+        renderer = SourceRenderMode.valueOf(renderString.toUpperCase());
+        if (renderer == null) {
+          stderr.println("Invalid renderer: " + renderString);
+          return false;
+        }
+      } else {
+        renderer = SourceRenderMode.PRETTY;
       }
 
       return true;

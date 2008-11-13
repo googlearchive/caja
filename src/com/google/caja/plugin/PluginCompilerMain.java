@@ -17,7 +17,6 @@ package com.google.caja.plugin;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
-import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
@@ -41,20 +40,27 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Callback;
 import com.google.caja.util.Criterion;
+import com.google.caja.util.CapturingReader;
+import com.google.caja.render.JsMinimalPrinter;
+import com.google.caja.render.SourceSnippetRenderer;
+import com.google.caja.render.JsPrettyPrinter;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.io.Reader;
+import java.io.FileNotFoundException;
+import java.io.FileInputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * An executable that invokes the {@link PluginCompiler}.
@@ -64,7 +70,20 @@ import java.util.Collection;
 public final class PluginCompilerMain {
   private final MessageQueue mq;
   private final MessageContext mc;
+  private final Map<InputSource, CapturingReader> originalInputs
+      = new HashMap<InputSource, CapturingReader>();
+  private final Config config = new Config(
+      getClass(), System.err,
+      "Cajoles HTML, CSS, and JS files to JS.");
 
+  private class CachingEnvironment extends FileSystemEnvironment {
+    public CachingEnvironment(File f) { super(f); }
+    
+    protected Reader newReader(File f) throws FileNotFoundException {
+      return createReader(new InputSource(f), new FileInputStream(f));
+    }
+  }
+  
   private PluginCompilerMain() {
     mq = new SimpleMessageQueue();
     mc = new MessageContext();
@@ -72,8 +91,6 @@ public final class PluginCompilerMain {
   }
 
   private int run(String[] argv) {
-    Config config = new Config(
-        getClass(), System.err, "Cajoles HTML, CSS, and JS files to JS & CSS.");
     if (!config.processArguments(argv)) {
       return -1;
     }
@@ -131,12 +148,8 @@ public final class PluginCompilerMain {
     InputSource is = new InputSource(input);
     mc.inputSources.add(is);
 
-    // TODO(mikesamuel): capture the input as bytes, guess encoding, and
-    // store in a map so we can generate message snippets and side-by-side
-    // output.
-    InputStream in = input.toURL().openStream();
     CharProducer cp = CharProducer.Factory.create(
-        new InputStreamReader(in, "UTF-8"), is);
+        createReader(is, input.toURL().openStream()), is);
     try {
       return parseInput(is, cp, mq);
     } finally {
@@ -192,8 +205,28 @@ public final class PluginCompilerMain {
     };
     try {
       Writer out = new OutputStreamWriter(new FileOutputStream(f), "UTF-8");
+      TokenConsumer tc;
+      switch (config.renderer()) {
+        case PRETTY:
+          tc = output.makeRenderer(out, ioHandler);
+          break;
+        case MINIFY:
+          tc = new JsMinimalPrinter(out,  ioHandler);
+          break;
+        case SIDEBYSIDE:
+          tc = new SourceSnippetRenderer(
+              buildOriginalInputCharSequences(), mc, out, ioHandler) {
+            protected TokenConsumer createDelegateRenderer(
+                Appendable out, Callback<IOException> exHandler) {
+              return new JsPrettyPrinter(out, exHandler);
+            }
+          };
+          break;
+        default:
+          throw new AssertionError(
+              "Unrecognized renderer: " + config.renderer());
+      }
       try {
-        TokenConsumer tc = output.makeRenderer(out, ioHandler);
         RenderContext rc = new RenderContext(mc, true, true, tc);
         output.render(rc);
         tc.noMoreTokens();
@@ -242,11 +275,39 @@ public final class PluginCompilerMain {
 
   private PluginEnvironment makeEnvironment(Config config) {
     try {
-      return new FileSystemEnvironment(
+      return new CachingEnvironment(
           new File(config.getInputUris().iterator().next()).getParentFile());
     } catch (IllegalArgumentException ex) {  // Not a file: URI
       return PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT;
     }
+  }
+
+  private Reader createReader(InputSource is, InputStream stream) {
+    InputStreamReader isr;
+
+    try {
+      isr = new InputStreamReader(stream, "UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      throw new AssertionError(e);
+    }
+    
+    if (config.renderer() == Config.SourceRenderMode.SIDEBYSIDE) {
+      CapturingReader cr = new CapturingReader(isr);
+      originalInputs.put(is, cr);
+      return cr;
+    } else {
+      return isr;
+    }
+  }
+
+  private Map<InputSource, CharSequence> buildOriginalInputCharSequences()
+      throws IOException {
+    Map<InputSource, CharSequence> results =
+        new HashMap<InputSource, CharSequence>();
+    for (InputSource is : originalInputs.keySet()) {
+      results.put(is, originalInputs.get(is).getCapture());
+    }
+    return results;
   }
 
   public static void main(String[] args) {
@@ -264,54 +325,5 @@ public final class PluginCompilerMain {
       // This method may be invoked under a SecurityManager, e.g. by Ant,
       // so just suppress the security exception and return normally.
     }
-  }
-}
-
-final class FileSystemEnvironment implements PluginEnvironment {
-  private final File directory;
-
-  FileSystemEnvironment(File directory) {
-    this.directory = directory;
-  }
-
-  public CharProducer loadExternalResource(
-      ExternalReference ref, String mimeType) {
-    File f = toFileUnderSameDirectory(ref.getUri());
-    if (f == null) { return null; }
-    try {
-      return CharProducer.Factory.create(
-          new InputStreamReader(new FileInputStream(f), "UTF-8"),
-          new InputSource(f.toURI()));
-    } catch (UnsupportedEncodingException ex) {
-      throw new AssertionError(ex);
-    } catch (FileNotFoundException ex) {
-      return null;
-    }
-  }
-
-  public String rewriteUri(ExternalReference ref, String mimeType) {
-    File f = toFileUnderSameDirectory(ref.getUri());
-    if (f == null) { return null; }
-    return new File(directory, ".").toURI().relativize(f.toURI()).toString();
-  }
-
-  private File toFileUnderSameDirectory(URI uri) {
-    if (!uri.isAbsolute()
-        && !uri.isOpaque()
-        && uri.getScheme() == null
-        && uri.getAuthority() == null
-        && uri.getFragment() == null
-        && uri.getPath() != null
-        && uri.getQuery() == null
-        && uri.getFragment() == null) {
-      File f = new File(new File(directory, ".").toURI().resolve(uri));
-      // Check that f is a descendant of directory
-      for (File tmp = f; tmp != null; tmp = tmp.getParentFile()) {
-        if (directory.equals(tmp)) {
-          return f;
-        }
-      }
-    }
-    return null;
   }
 }
