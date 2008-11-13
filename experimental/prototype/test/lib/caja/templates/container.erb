@@ -37,7 +37,7 @@
     (function(){
       var imports = ___.copy(___.sharedImports);
       imports.loader = {
-        provide: ___.simpleFunc(function(v) { valijaMaker = v; })
+        provide: ___.func(function(v) { valijaMaker = v; })
       };
       ___.grantRead(imports, 'loader');
       ___.grantCall(imports.loader, 'provide');
@@ -57,7 +57,7 @@
                       group: 0, groupEnd: 0, time: 0, timeEnd: 0, dir: 0,
                       assert: 0, dirxml: 0, profile: 0, profileEnd: 0 }) {
         ___.sharedImports.console[k] = (function (k, f) {
-          return ___.simpleFunc(function () { f.apply(console, arguments); });
+          return ___.func(function () { f.apply(console, arguments); });
         })(k, console[k]);
       }
     })();
@@ -71,9 +71,9 @@
       
       var imports = ___.copy(___.sharedImports);
       imports.outers = imports;
-      attachDocumentStub('-test', 'base-test', { rewrite: function () { return null; } }, imports);
+      attachDocumentStub('-test', { rewrite: function () { return null; } }, imports);
       imports.htmlEmitter___ = new HtmlEmitter(document.getElementById('base-test'));
-      imports.$v = valijaMaker(imports);
+      imports.$v = valijaMaker.CALL___(imports);
       ___.grantRead(imports, '$v');
       ___.getNewModuleHandler().setImports(imports);
     })();

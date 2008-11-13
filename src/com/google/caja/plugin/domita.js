@@ -450,6 +450,11 @@ attachDocumentStub = (function () {
       if (node === null || node === void 0) { return null; }
       // TODO(mikesamuel): make sure it really is a DOM node
 
+      // TODO(benl): replace this with a proper cache
+      if (node.tamed___)
+ 	return node.tamed___;
+
+      var tamed;
       switch (node.nodeType) {
         case 1:  // Element
           var tagName = node.tagName.toLowerCase();
@@ -458,40 +463,55 @@ attachDocumentStub = (function () {
             // If an unrecognized node, return a placeholder that
             // doesn't prevent tree navigation, but that doesn't allow
             // mutation or inspection.
-            return new TameOpaqueNode(node, editable);
+            tamed = new TameOpaqueNode(node, editable);
+	    break;
           }
           switch (tagName) {
             case 'a':
-              return new TameAElement(node, editable);
+              tamed = new TameAElement(node, editable);
+	      break;
             case 'form':
-              return new TameFormElement(node, editable);
+              tamed = new TameFormElement(node, editable);
+	      break;
             case 'select':
             case 'button':
             case 'option':
             case 'textarea':
             case 'input':
-              return new TameInputElement(node, editable);
+              tamed = new TameInputElement(node, editable);
+	      break;
             case 'img':
-              return new TameImageElement(node, editable);
+              tamed = new TameImageElement(node, editable);
+	      break;
             case 'td':
             case 'tr':
             case 'thead':
             case 'tfoot':
             case 'tbody':
             case 'th':
-              return new TameTableCompElement(node, editable);
+              tamed = new TameTableCompElement(node, editable);
+	      break;
             case 'table':
-              return new TameTableElement(node, editable);
+              tamed = new TameTableElement(node, editable);
+	      break;
             default:
-              return new TameElement(node, editable);
+              tamed = new TameElement(node, editable);
+	      break;
           }
+	  break;
         case 3:  // Text
-          return new TameTextNode(node, editable);
+          tamed = new TameTextNode(node, editable);
+	  break;
         case 8:  // Comment
-          return new TameCommentNode(node, editable);
+          tamed = new TameCommentNode(node, editable);
+	  break;
         default:
-          return new TameOpaqueNode(node, editable);
+          tamed = new TameOpaqueNode(node, editable);
+	  break;
       }
+
+      node.tamed___ = tamed;
+      return tamed;
     }
 
     function tameRelatedNode(node, editable) {
@@ -677,6 +697,11 @@ attachDocumentStub = (function () {
     TameNode.prototype.getOwnerDocument = function() {
       return imports.document;
     };
+    TameNode.prototype.getElementsByClassName = function(className) {
+      return tameNodeList(
+	this.node___.getElementsByClassName(String(className),
+					    this.editable___));
+    };
     TameNode.prototype.getChildNodes = function() {
       return tameNodeList(this.node___.childNodes, this.editable___);
     };
@@ -688,6 +713,7 @@ attachDocumentStub = (function () {
         'getNodeType', 'getNodeValue', 'getNodeName',
         'appendChild', 'insertBefore', 'removeChild', 'replaceChild',
         'getFirstChild', 'getLastChild', 'getNextSibling', 'getPreviousSibling',
+        'getElementsByTagName',
         'getOwnerDocument',
         'hasChildNodes'
     ];
@@ -752,7 +778,6 @@ attachDocumentStub = (function () {
       TameNode.call(this, node, editable);
       exportFields(this,
                    ['className', 'id', 'innerHTML', 'tagName', 'style',
-                    'offsetLeft', 'offsetTop', 'offsetWidth', 'offsetHeight'm
                     'offsetLeft', 'offsetTop', 'offsetWidth', 'offsetHeight',
                     'offsetParent',
                     'scrollLeft',
@@ -1557,10 +1582,6 @@ attachDocumentStub = (function () {
       // TODO(ihab.awad): Needs implementation
       cajita.log('Called document.write() with: ' + text);
     };
-    TameDocument.prototype.getElementsByClassName = function(className) {
-      // TODO(ihab.awad): Needs implementation
-      cajita.log('Called document.getElementsByClassName() with: ' + className);
-    };
     ___.ctor(TameDocument, void 0, 'TameDocument');
     ___.all2(___.grantTypedGeneric, TameDocument.prototype,
              ['addEventListener', 'removeEventListener', 'dispatchEvent',
@@ -1830,15 +1851,15 @@ attachDocumentStub = (function () {
               window.scrollTo(x, y);
             }
           }),
-      addEventListener: ___.simpleFrozenFunc(
+      addEventListener: ___.frozenFunc(
           function (name, listener, useCapture) {
             // TODO(ihab.awad): Implement
           }),
-      removeEventListener: ___.simpleFrozenFunc(
+      removeEventListener: ___.frozenFunc(
           function (name, listener, useCapture) {
             // TODO(ihab.awad): Implement
           }),
-      dispatchEvent: ___.simpleFrozenFunc(
+      dispatchEvent: ___.frozenFunc(
           function (evt) {
             // TODO(ihab.awad): Implement
           })
