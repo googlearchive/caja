@@ -1,0 +1,302 @@
+diff --git a/Rakefile b/Rakefile
+index 01e95e3..1361d75 100644
+--- a/Rakefile
++++ b/Rakefile
+@@ -74,7 +74,7 @@ JavaScriptTestTask.new(:test_units => [:build_unit_tests]) do |t|
+   end
+ end
+ 
+-task :build_unit_tests do
++task :build_unit_tests => [:clean_tmp] do
+   Dir[File.join('test', 'unit', '*_test.js')].each do |file|
+     PageBuilder.new(file, 'prototype.erb').render
+   end
+@@ -96,7 +96,7 @@ namespace 'caja' do
+   
+   desc 'Builds and cajoles gadgets.'
+   task :cajole_gadgets => [:clean_tmp, :copy_assets, :copy_fixtures] do
+-    Dir["test/unit/truth_test.js"].each do |file|  # TODO *_test.js
++    Dir["test/unit/grep_test.js"].each do |file|  # TODO *_test.js
+       puts "\nBuilding gadget for #{file}."
+       puts "Cajoling gadget for #{file} (this might take a while)."
+       FileUtils.cp(file, PROTOTYPE_TMP_DIR)
+diff --git a/src/dom.js b/src/dom.js
+index 7ba0c39..6cab51f 100644
+--- a/src/dom.js
++++ b/src/dom.js
+@@ -10,14 +10,22 @@ function $(element) {
+ }
+ 
+ if (Prototype.BrowserFeatures.XPath) {
+-  document._getElementsByXPath = function(expression, parentElement) {
+-    var results = [];
+-    var query = document.evaluate(expression, $(parentElement) || document,
+-      null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+-    for (var i = 0, length = query.snapshotLength; i < length; i++)
+-      results.push(Element.extend(query.snapshotItem(i)));
+-    return results;
+-  };
++  (function() {
++    function _getElementsByXPath(expression, parentElement) {
++      var results = [];
++      var query = document.evaluate(expression, $(parentElement) || document,
++        null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
++      for (var i = 0, length = query.snapshotLength; i < length; i++)
++        results.push(Element.extend(query.snapshotItem(i)));
++      return results;
++    }
++    if (Prototype.Browser.Caja) {
++      document.constructor.prototype._getElementsByXPath = _getElementsByXPath;
++    } else {
++      document._getElementsByXPath = _getElementsByXPath;
++    }
++  })();
++
+ }
+ 
+ /*--------------------------------------------------------------------------*/
+@@ -264,11 +272,11 @@ Element.Methods = {
+     return Selector.findChildElements(element.parentNode, args).without(element);
+   },
+   
+-  identify: function(element) {
++  identify: function identify(element) {
+     element = $(element);
+-    var id = element.readAttribute('id'), self = arguments.callee;
++    var id = element.readAttribute('id');
+     if (id) return id;
+-    do { id = 'anonymous_element_' + self.counter++ } while ($(id));
++    do { id = 'anonymous_element_' + identify.counter++ } while ($(id));
+     element.writeAttribute('id', id);
+     return id;
+   },
+@@ -1174,35 +1182,43 @@ Element.addMethods = function(methods) {
+   Element.cache = { };
+ };
+ 
+-document.viewport = {
+-  getDimensions: function() {
+-    var dimensions = { }, B = Prototype.Browser;
+-    $w('width height').each(function(d) {
+-      var D = d.capitalize();
+-      if (B.WebKit && !document.evaluate) {
+-        // Safari <3.0 needs self.innerWidth/Height
+-        dimensions[d] = self['inner' + D];
+-      } else if (B.Opera && parseFloat(window.opera.version()) < 9.5) {
+-        // Opera <9.5 needs document.body.clientWidth/Height
+-        dimensions[d] = document.body['client' + D]
+-      } else {
+-        dimensions[d] = document.documentElement['client' + D];
+-      }
+-    });
+-    return dimensions;
+-  },
+-
+-  getWidth: function() {
+-    return this.getDimensions().width;
+-  },
+-
+-  getHeight: function() {
+-    return this.getDimensions().height;
+-  },
++(function() {
++  var viewport = {
++    getDimensions: function() {
++      var dimensions = { }, B = Prototype.Browser;
++      $w('width height').each(function(d) {
++        var D = d.capitalize();
++        if (B.WebKit && !document.evaluate) {
++          // Safari <3.0 needs self.innerWidth/Height
++          dimensions[d] = self['inner' + D];
++        } else if (B.Opera && parseFloat(window.opera.version()) < 9.5) {
++          // Opera <9.5 needs document.body.clientWidth/Height
++          dimensions[d] = document.body['client' + D]
++        } else {
++          dimensions[d] = document.documentElement['client' + D];
++        }
++      });
++      return dimensions;
++    },
++
++    getWidth: function() {
++      return this.getDimensions().width;
++    },
++
++    getHeight: function() {
++      return this.getDimensions().height;
++    },
++
++    getScrollOffsets: function() {
++      return Element._returnOffset(
++        window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft,
++        window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop);
++    }
++  };
+   
+-  getScrollOffsets: function() {
+-    return Element._returnOffset(
+-      window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft,
+-      window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop);
++  if (Prototype.Browser.Caja) {
++    document.constructor.prototype.viewport = viewport;
++  } else {
++    document.viewport = viewport;
+   }
+-};
++})();
+diff --git a/src/event.js b/src/event.js
+index 0ec4cd9..7a49f84 100644
+--- a/src/event.js
++++ b/src/event.js
+@@ -303,7 +303,7 @@ Element.addMethods({
+   stopObserving: Event.stopObserving
+ });
+ 
+-Object.extend(document, {
++Object.extend(Prototype.Browser.Caja ? document.constructor.prototype : document, {
+   fire:          Element.Methods.fire.methodize(),
+   observe:       Element.Methods.observe.methodize(),
+   stopObserving: Element.Methods.stopObserving.methodize(),
+@@ -320,7 +320,7 @@ Object.extend(document, {
+     if (document.loaded) return;
+     if (timer) window.clearInterval(timer);
+     document.fire("dom:loaded");
+-    document.loaded = true;
++    (Prototype.Browser.Caja ? document.constructor.prototype : document).loaded = true;
+   }
+   
+   if (document.addEventListener) {
+diff --git a/src/prototype.js b/src/prototype.js
+index eea4337..080d3ff 100644
+--- a/src/prototype.js
++++ b/src/prototype.js
+@@ -18,10 +18,14 @@ var Prototype = {
+     XPath: !!document.evaluate,
+     SelectorsAPI: !!document.querySelector,
+     ElementExtensions: !!window.HTMLElement,
+-    SpecificElementExtensions: 
+-      document.createElement('div')['__proto__'] &&
+-      document.createElement('div')['__proto__'] !== 
+-        document.createElement('form')['__proto__']
++    SpecificElementExtensions: (function(){
++      console.log('window.HTMLDivElement: ' + window.HTMLDivElement)
++      var div = document.createElement('div');
++      var form = document.createElement('form');
++      return (div['__proto__'] && div['__proto__'] !== form['__proto__']) ||
++        (div.constructor && div.constructor === window.HTMLDivElement);
++    })()
++
+   },
+ 
+   ScriptFragment: '<script[^>]*>([\\S\\s]*?)<\/script>',
+diff --git a/src/string.js b/src/string.js
+index 58f79c2..a0c59e9 100644
+--- a/src/string.js
++++ b/src/string.js
+@@ -13,9 +13,9 @@ Object.extend(String, {
+ });
+ 
+ Object.extend(String.prototype, {
+-  gsub: function(pattern, replacement) {
++  gsub: function gsub(pattern, replacement) {
+     var result = '', source = this, match;
+-    replacement = arguments.callee.prepareReplacement(replacement);
++    replacement = gsub.prepareReplacement(replacement);
+     
+     while (source.length > 0) {
+       if (match = source.match(pattern)) {
+@@ -75,10 +75,9 @@ Object.extend(String.prototype, {
+     return this.extractScripts().map(function(script) { return eval(script) });
+   },
+ 
+-  escapeHTML: function() {
+-    var self = arguments.callee;
+-    self.text.data = this;
+-    return self.div.innerHTML;
++  escapeHTML: function escapeHTML() {
++    escapeHTML.text.data = this;
++    return escapeHTML.div.innerHTML;
+   },
+ 
+   unescapeHTML: function() {
+diff --git a/test/lib/assets/unittest.js b/test/lib/assets/unittest.js
+index 9b94cec..dd45bbc 100644
+--- a/test/lib/assets/unittest.js
++++ b/test/lib/assets/unittest.js
+@@ -143,7 +143,7 @@ Test.Unit.Logger = Class.create({
+   },
+   
+   appendActionButtons: function(actions) {
+-    actions = $H(actions);
++   /* actions = $H(actions);
+     if (!actions.any()) return;
+     var div = new Element("div", {className: 'action_buttons'});
+     actions.inject(div, function(container, action) {
+@@ -151,7 +151,7 @@ Test.Unit.Logger = Class.create({
+       button.type = "button";
+       return container.insert(button);
+     });
+-    this.getMessageCell().insert(div);
++    this.getMessageCell().insert(div); */
+   },
+   
+   _toHTML: function(txt) {
+diff --git a/test/unit/dom_test.js b/test/unit/dom_test.js
+index 00d695c..df4d746 100644
+--- a/test/unit/dom_test.js
++++ b/test/unit/dom_test.js
+@@ -9,7 +9,7 @@ var createParagraph = function(text) {
+ 
+ new Test.Unit.Runner({
+   setup: function() {
+-    if (documentViewportProperties) return;
++    /* if (documentViewportProperties) return;
+     // Based on properties check from http://www.quirksmode.org/viewport/compatibility.html
+     documentViewportProperties = {
+       properties : [
+@@ -43,7 +43,7 @@ new Test.Unit.Runner({
+         }, this);
+         return props;
+       }
+-    };
++    };*/
+   },
+ 
+   testDollarFunction: function() {
+diff --git a/test/unit/fixtures/dom.css b/test/unit/fixtures/dom.css
+index 029bf11..8785a7d 100644
+--- a/test/unit/fixtures/dom.css
++++ b/test/unit/fixtures/dom.css
+@@ -14,7 +14,7 @@ div.style-test { margin-left: 1px }
+ 
+ #not_floating_style { float: none }
+ #floating_style { float: left }
+-#op2 { opacity:0.5;filter:alpha(opacity=50)progid:DXImageTransform.Microsoft.Blur(strength=10);}
++#op2 { opacity:0.5; /* TODO: filter:alpha(opacity=50)progid:DXImageTransform.Microsoft.Blur(strength=10); */}
+ 
+ #scroll_test_1 { 
+   margin: 10px;
+diff --git a/test/unit/fixtures/dom.html b/test/unit/fixtures/dom.html
+index 99395ee..929a8c8 100644
+--- a/test/unit/fixtures/dom.html
++++ b/test/unit/fixtures/dom.html
+@@ -161,7 +161,7 @@
+ <!-- writeAttributes  -->
+ <p id="write_attribute_para"></p>
+ <a id="write_attribute_link" href="test.html"></a>
+-<form action="/dev/null" id="write_attribute_form" method="get" accept-charset="utf-8">
++<form action="fixtures/empty.html" id="write_attribute_form" method="get" accept-charset="utf-8">
+   <label id="write_attribute_label"></label>
+   <input type="checkbox" name="write_attribute_checkbox" value="" id="write_attribute_checkbox">
+   <input type="checkbox" checked="checked" name="write_attribute_checked_checkbox" value="" id="write_attribute_checked_checkbox">
+diff --git a/test/unit/fixtures/dom.js b/test/unit/fixtures/dom.js
+index 18f62f3..449b8a5 100644
+--- a/test/unit/fixtures/dom.js
++++ b/test/unit/fixtures/dom.js
+@@ -1,4 +1,5 @@
+-var testVar = 'to be updated', testVar2 = '', documentViewportProperties;
++var testVar = 'to be updated', testVar2 = '';
++var documentViewportProperties;
+ 
+ Element.addMethods({
+   hashBrowns: function(element) { return 'hash browns'; }

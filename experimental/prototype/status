@@ -1,0 +1,96 @@
+(with temporary fix for issue 911)
+
+
+ajax_test: 18 tests, 16 assertions, 10 failures, 8 errors
+
+	Heavily reliant on as yet unimplemented TameXMLHTTPRequest().
+
+
+array_test: 20 tests, 98 assertions, 0 failures, 0 errors
+
+
+base_test: 35 tests, 208 assertions, 0 failures, 2 errors
+
+  testObjectToJSON
+
+	http://code.google.com/p/google-caja/issues/detail?id=901
+
+  testBindAsEventListener
+
+	http://code.google.com/p/google-caja/issues/detail?id=908
+
+
+dollar_test: 2 tests, 4 assertions, 0 failures, 0 errors
+
+
+dom_test:
+
+
+element_mixins_test: 4 tests, 11 assertions, 0 failures, 2 errors
+
+  testEvent
+
+	Fails because attributes can't be set on tame nodes.
+
+  testCollections
+
+	Fails. Reason not yet determined.
+
+
+enumerable_test: 25 tests, 83 assertions, 0 failures, 1 errors
+
+  testEnumContext
+
+	Fails because it tries to compare to nonexistent this.min and
+	so throws. I believe it would also fail uncajoled, but not
+	tested. Mysteriously fixed by #911 fix!
+
+  testGrep
+
+	Fails because it uses selector.js:Selector.initialize(), which
+	uses eval() because neither XPath (document.evaluate()) nor
+	Selectors API (document.querySelector()) are available. It may
+	be possible to make the default scheme
+	(selector.js:Select.compileMatcher()) work without eval(),
+	too.
+
+
+event_test:
+
+	Doesn't start.
+
+	http://code.google.com/p/google-caja/issues/detail?id=901
+
+
+form_test: 15 tests, 0 assertions, 0 failures, 15 errors
+
+	 Every test uses eval.
+
+
+grep_test: 1 tests, 1 assertions, 0 failures, 0 errors
+
+
+hash_test: 17 tests, 89 assertions, 3 failures, 0 errors
+
+
+number_test: 5 tests, 22 assertions, 0 failures, 0 errors
+
+
+position_test: 2 tests, 0 assertions, 0 failures, 2 errors
+
+
+range_test: 6 tests, 21 assertions, 0 failures, 0 errors
+
+
+selector_test:
+
+	does not compile
+
+
+string_test: 40 tests, 211 assertions, 0 failures, 2 errors
+
+
+truth_test: 1 tests, 1 assertions, 0 failures, 0 errors
+
+
+unittest_test: 12 tests, 71 assertions, 0 failures, 6 errors

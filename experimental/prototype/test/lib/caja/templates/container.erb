@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Cajoled unit test file | <%= @title %></title>
+  <script type="text/javascript">
+  window.onerror = function (msg, url, line) {
+    url = String(url);
+    try {
+      console.log(
+          url.substring(url.lastIndexOf('/') + 1) + ':' + line + ' ' + msg);
+      console.trace();
+    } catch (ex) {
+      alert(url.substring(url.lastIndexOf('/') + 1) + ':' + line + ' ' + msg);
+    }
+  };
+  </script>
+
+  <script type="text/javascript" src="assets/cajita.js"></script>
+  <script type="text/javascript" src="assets/cajita-debugmode.js"></script>
+  <script type="text/javascript" src="assets/bridal.js"></script>
+  <script type="text/javascript" src="assets/base2.js"></script>
+  <script type="text/javascript" src="assets/base2-dom.js"></script>
+  <script type="text/javascript" src="assets/log-to-console.js"></script>
+  <script type="text/javascript" src="assets/unicode.js"></script>
+  <script type="text/javascript" src="assets/html4-defs.js"></script>
+  <script type="text/javascript" src="assets/css-defs.js"></script>
+  <script type="text/javascript" src="assets/html-sanitizer.js"></script>
+  <script type="text/javascript" src="assets/html-emitter.js"></script>
+  <script type="text/javascript" src="assets/domita.js"></script>
+
+  <script type="text/javascript">
+    var valijaMaker = undefined;
+
+    (function(){
+      var imports = ___.copy(___.sharedImports);
+      imports.loader = {
+        provide: ___.simpleFunc(function(v) { valijaMaker = v; })
+      };
+      ___.grantRead(imports, 'loader');
+      ___.grantCall(imports.loader, 'provide');
+      ___.getNewModuleHandler().setImports(imports);
+      ___.getNewModuleHandler().handleUncaughtException = function(e) {
+        throw e;
+      };
+    })();
+  </script>
+
+  <script type="text/javascript" src="assets/valija.co.js"></script>
+
+  <script type="text/javascript">
+    (function () {
+      ___.sharedImports.console = {};
+      for (var k in { log: 0, warn: 0, info: 0, error: 0, trace: 0,
+                      group: 0, groupEnd: 0, time: 0, timeEnd: 0, dir: 0,
+                      assert: 0, dirxml: 0, profile: 0, profileEnd: 0 }) {
+        ___.sharedImports.console[k] = (function (k, f) {
+          return ___.simpleFunc(function () { f.apply(console, arguments); });
+        })(k, console[k]);
+      }
+    })();
+  </script>
+</head>
+<body>
+  <div id="base-test" class="test"></div>
+
+  <script type="text/javascript">
+    (function() {
+      
+      var imports = ___.copy(___.sharedImports);
+      imports.outers = imports;
+      attachDocumentStub('-test', 'base-test', { rewrite: function () { return null; } }, imports);
+      imports.htmlEmitter___ = new HtmlEmitter(document.getElementById('base-test'));
+      imports.$v = valijaMaker(imports);
+      ___.grantRead(imports, '$v');
+      ___.getNewModuleHandler().setImports(imports);
+    })();
+  </script>
+
+  <script src="<%= @cajoled_gadget %>" type="text/javascript"></script>
+
+</body>
+</html>
