@@ -809,8 +809,38 @@
     <transform>
       <output file="${lib}/com/google/caja/demos/calendar/calendar-minified.js"
        language="javascript" renderer="minify"/>
+      <include file="${demos}/calendar/util.js"/>
+      <include file="${demos}/calendar/bitset.js"/>
+      <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
+      <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
+      <include file="${demos}/calendar/uformat.js"/>
+      <include file="${demos}/calendar/time-cajita.js"/>
+      <include file="${demos}/calendar/weekday-cajita.js"/>
+      <include file="${demos}/calendar/timezone-cajita.js"/>
+      <include file="${demos}/calendar/time_util-cajita.js"/>
+      <include file="${demos}/calendar/hcalendar.js"/>
+      <include file="${demos}/calendar/generators-cajita.js"/>
+      <include file="${demos}/calendar/instanceGenerators-cajita.js"/>
+      <include file="${demos}/calendar/conditions-cajita.js"/>
+      <include file="${demos}/calendar/predicates-cajita.js"/>
+      <include file="${demos}/calendar/filters-cajita.js"/>
+      <include file="${demos}/calendar/rrule-cajita.js"/>
+      <include file="${demos}/calendar/event.js"/>
+      <include file="${demos}/calendar/chip.js"/>
+      <include file="${demos}/calendar/calendar.js"/>
+      <include file="${demos}/calendar/event_store.js"/>
+      <include file="${demos}/calendar/axis.js"/>
+      <include file="${demos}/calendar/layout_policy.js"/>
+      <include file="${demos}/calendar/layout.js"/>
+      <include file="${demos}/calendar/overlap.js"/>
+      <include file="${demos}/calendar/widget.js"/>
+      <include file="${demos}/calendar/widget-html.js"/>
+      <include file="${demos}/calendar/main.js"/>
+    </transform>
+    <transform>
       <output file="${lib}/com/google/caja/demos/calendar/calendar.vo.js"
        language="valija" debug="false"/>
+      <include file="${demos}/calendar/widget.css"/>
       <include file="${demos}/calendar/util.js"/>
       <include file="${demos}/calendar/bitset.js"/>
       <include file="${src}/com/google/caja/plugin/html4-defs.js"/>

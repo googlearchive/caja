@@ -57,6 +57,5 @@
     console.timeEnd('next');
   };
 
-  var t1 = (new Date).getTime();
   console.timeEnd('main');
 })();

@@ -462,7 +462,7 @@ attachDocumentStub = (function () {
               || (html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)) {
             // If an unrecognized node, return a placeholder that
             // doesn't prevent tree navigation, but that doesn't allow
-            // mutation or inspection.
+            // mutation or leak attribute information.
             tamed = new TameOpaqueNode(node, editable);
 	    break;
           }
@@ -723,12 +723,14 @@ attachDocumentStub = (function () {
       TameNode.call(this, node, editable);
     }
     extend(TameOpaqueNode, TameNode);
-    TameOpaqueNode.prototype.getNodeValue = function () { return ''; };
-    TameOpaqueNode.prototype.getNodeType = function () { return -1; };
-    TameOpaqueNode.prototype.getNodeName = function () { return '#'; };
+    TameOpaqueNode.prototype.getNodeValue = TameNode.prototype.getNodeValue;
+    TameOpaqueNode.prototype.getNodeType = TameNode.prototype.getNodeType;
+    TameOpaqueNode.prototype.getNodeName = TameNode.prototype.getNodeName;
     TameOpaqueNode.prototype.getNextSibling = TameNode.prototype.getNextSibling;
     TameOpaqueNode.prototype.getPreviousSibling
         = TameNode.prototype.getPreviousSibling;
+    TameOpaqueNode.prototype.getFirstChild = TameNode.prototype.getFirstChild;
+    TameOpaqueNode.prototype.getLastChild = TameNode.prototype.getLastChild;
     TameOpaqueNode.prototype.getParentNode = TameNode.prototype.getParentNode;
     TameOpaqueNode.prototype.getChildNodes = TameNode.prototype.getChildNodes;
     for (var i = tameNodeMembers.length; --i >= 0;) {
@@ -1015,7 +1017,7 @@ attachDocumentStub = (function () {
                     return listener;
                   }
                 });
-           })(html4Attrib.match(attrNameRe)[0]);
+           })(html4Attrib.match(attrNameRe)[1]);
         }
       }
     })();

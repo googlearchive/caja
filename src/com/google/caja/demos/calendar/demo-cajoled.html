@@ -145,10 +145,12 @@
     imports.StringInterpolation = StringInterpolation;
     ___.all2(___.grantRead, imports,
              ['window', 'htmlInterp', 'StringInterpolation']);
-    ___.grantCall(htmlInterp, 'safeHtml');
-    ___.func(StringInterpolation);
+    ___.grantRead(htmlInterp, 'safeHtml');
+    ___.func(htmlInterp.safeHtml);
 
+    ___.ctor(StringInterpolation, undefined, 'StringInterpolation');
     ___.grantCall(StringInterpolation.prototype, 'append');
+    ___.grantTypedGeneric(StringInterpolation.prototype, 'append');
 
     window.imports = imports;
   })();</script>

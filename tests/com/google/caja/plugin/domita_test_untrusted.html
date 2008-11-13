@@ -104,8 +104,9 @@
   <input type="checkbox">
 </form>
 
-<p class="testcontainer" id="test-inline-event-handlers">
-  <input onclick="autoclicky.click()" id="autoclicker" type="checkbox">
+<p class="testcontainer" id="test-event-handler-attributes">
+  <input onclick="autoclicky.click(0)" id="autoclicker" type="checkbox">
+  <input id="set-onclick-on-me" type="checkbox">
 </p>
 
 <p class="testcontainer" id="test-inner-HTML-style-sanitizer"></p>
@@ -628,9 +629,9 @@ jsunitRegister('testOpaqueNodes',
   assertEquals('Foo', child.nodeValue);
 
   child = child.nextSibling;
-  assertEquals(-1, child.nodeType);
-  assertEquals('#', child.nodeName);
-  assertEquals('', child.nodeValue);
+  assertEquals(1, child.nodeType);
+  assertEquals('SCRIPT', child.nodeName);
+  assertEquals(null, child.nodeValue);
   expectFailure(function () { child.appendChild(noText); },
                 'opaque node was editable');
 
@@ -642,9 +643,9 @@ jsunitRegister('testOpaqueNodes',
   assertEquals('Foo', child.nodeValue);
 
   child = child.nextSibling;
-  assertEquals(-1, child.nodeType);
-  assertEquals('#', child.nodeName);
-  assertEquals('', child.nodeValue);
+  assertEquals(1, child.nodeType);
+  assertEquals('OBJECT', child.nodeName);
+  assertEquals(null, child.nodeValue);
   expectFailure(function () { child.appendChild(noText); },
                 'opaque node was editable');
 
@@ -726,19 +727,28 @@ jsunitRegister('testInputDefaultValue',
 });
 
 var autoclicky = {
-  clicked: false,
-  click: function () {
+  clicked: [false, false],
+  click: function (i) {
     console.log('clicking');
-    autoclicky.clicked = true;
+    autoclicky.clicked[i] = true;
   }
 };
 
-jsunitRegister('testInlineEventHandlers',
-               function testInlineEventHandlers() {
-  assertFalse(autoclicky.clicked);
+jsunitRegister('testEventHandlerAttributes',
+               function testEventHandlerAttributes() {
+  assertFalse(autoclicky.clicked[0]);
   directAccess.click(document.getElementById('autoclicker'));
-  assertTrue(autoclicky.clicked);
-  pass('test-inline-event-handlers');
+  assertTrue(autoclicky.clicked[0]);
+
+  var setOnclickOnMe = document.getElementById('set-onclick-on-me');
+  assertFalse(autoclicky.clicked[1]);
+  directAccess.click(setOnclickOnMe);  
+  assertFalse(autoclicky.clicked[1]);
+  setOnclickOnMe.onclick = function () { autoclicky.click(1); };
+  directAccess.click(setOnclickOnMe);  
+  assertTrue(autoclicky.clicked[1]);
+
+  pass('test-event-handler-attributes');
 });
 
 jsunitRegister('testInnerHTMLStyleSanitizer',

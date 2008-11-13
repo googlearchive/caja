@@ -1177,7 +1177,7 @@ var ___;
   ////////////////////////////////////////////////////////////////////////
 
   /**
-   * Can a Caja client of <tt>obj</tt> read its <name> property?
+   * Can a Caja client of <tt>obj</tt> read its {@code name} property?
    * <p>
    * If the property is Internal (i.e. ends in an '_'), then no.
    * If the property was defined by Caja code, then yes. If it was

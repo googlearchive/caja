@@ -33,7 +33,7 @@ function classMatcher(nmTokens) {
   regex.push(') ');
   regex = new RegExp(regex.join(''), 'ig');
   return function (node) {
-    var names = (' ' + node.className.replace(/\s+/g, '  ') + ' ')
+    var names = (' ' + (node.className || '').replace(/\s+/g, '  ') + ' ')
         .match(regex);
     if (!names) { return null; }
     for (var i = names.length; --i >= 0;) {
