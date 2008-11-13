@@ -256,7 +256,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
                 "var valijaMaker = {};\n" +
                 "var testImports = ___.copy(___.sharedImports);\n" +
                 "testImports.loader = {\n" +
-                "  provide: ___.simpleFrozenFunc(\n" +
+                "  provide: ___.frozenFunc(\n" +
                 "      function(v) { valijaMaker = v; })\n" +
                 "};\n" +
                 "testImports.outers = ___.copy(___.sharedImports);\n" +

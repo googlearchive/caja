@@ -80,6 +80,6 @@ SearchEngine.prototype.imageSearch = function (query, callback) {
 };
 
 // Define what gadgets can access.
-___.simpleFunc(SearchEngine);
+___.func(SearchEngine);
 ___.all2(___.grantTypedGeneric, SearchEngine.prototype, 
          ['webSearch', 'imageSearch']);

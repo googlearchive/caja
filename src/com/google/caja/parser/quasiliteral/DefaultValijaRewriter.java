@@ -36,6 +36,7 @@ import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.QuotedExpression;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.RegexpLiteral;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.TryStmt;
@@ -1045,10 +1046,12 @@ public class DefaultValijaRewriter extends Rewriter {
           matches="/* at top level */ function @f(@ps*) {@bs*;}",
           substitutes=(
               "$v.so('@f', (function () {" +
-              "  var @f = $v.dis(function ($dis, @ps*) {" +
+              "  var @f;" +
+              "  function @fcaller($dis, @ps*) {" +
               "    @stmts*;" +
               "    @bs*;" +
-              "  }, '@f');" +
+              "  }" +
+              "  @rf = $v.dis(@rfcaller, '@f');" +
               "  return @rf;" +
               "})());"))
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
@@ -1061,10 +1064,12 @@ public class DefaultValijaRewriter extends Rewriter {
             Scope s2 = Scope.fromFunctionConstructor(scope, c);
             checkFormals(bindings.get("ps"), mq);
             Identifier f = (Identifier) bindings.get("f");
-            Reference rf = new Reference(f);
+            Identifier fcaller = new Identifier(f.getName() + "$caller");
             Expression expr = (Expression) substV(
                 "f", f,
-                "rf", rf,
+                "rf", new Reference(f),
+                "fcaller", fcaller,
+                "rfcaller", new Reference(fcaller),
                 "ps", bindings.get("ps"),
                 // It's important to expand bs before computing stmts.
                 "bs", expand(bindings.get("bs"), s2, mq),
@@ -1085,11 +1090,11 @@ public class DefaultValijaRewriter extends Rewriter {
           reason="",
           matches="function @fname(@ps*) {@bs*;}",
           substitutes=(
-              "@fname = $v.dis(" +
-              "  function($dis, @ps*) {" +
+              "function @fcaller($dis, @ps*) {" +
               "    @stmts*;" +
               "    @bs*;" +
-              "}, '@fname');"))
+              "}" +
+              "@fname = $v.dis(@rfcaller, '@fname');"))
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = new LinkedHashMap<String, ParseTreeNode>();
         // Named simple function declaration
@@ -1102,14 +1107,19 @@ public class DefaultValijaRewriter extends Rewriter {
               (FunctionConstructor) node.children().get(1));
           checkFormals(bindings.get("ps"), mq);
           Identifier fname = (Identifier) bindings.get("fname");
+          Identifier fcaller = new Identifier(fname.getName() + "$caller");
           scope.declareStartOfScopeVariable(fname);
-          Expression expr = (Expression) substV(
+          Block block = (Block) substV(
               "fname", new Reference(fname),
+              "fcaller", fcaller,
+              "rfcaller", new Reference(fcaller),
               "ps", bindings.get("ps"),
               // It's important to expand bs before computing stmts.
               "bs", expand(bindings.get("bs"), s2, mq),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
-          scope.addStartOfBlockStatement(new ExpressionStmt(expr));
+          for (Statement stat : block.children()) {
+            scope.addStartOfBlockStatement(stat);
+          }
           return QuasiBuilder.substV(";");
         }
         return NONE;
@@ -1125,11 +1135,11 @@ public class DefaultValijaRewriter extends Rewriter {
           matches="function @fname(@ps*) { @bs*; }",
           substitutes=(
               "(function() {" +
-              "  var @fname = $v.dis(function ($dis, @ps*) {" +
+              "  function @fcaller($dis, @ps*) {" +
               "    @stmts*;" +
               "    @bs*;" +
-              "  }," +
-              "  '@fname');" +
+              "  }" +
+              "  var @fname = $v.dis(@rfcaller, '@fname');" +
               "  return @fRef;" +
               "})();"))
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
@@ -1141,10 +1151,12 @@ public class DefaultValijaRewriter extends Rewriter {
               (FunctionConstructor)node);
           checkFormals(bindings.get("ps"), mq);
           Identifier fname = (Identifier)bindings.get("fname");
-          Reference fRef = new Reference(fname);
+          Identifier fcaller = new Identifier(fname.getName() + "$caller");
           return substV(
               "fname", fname,
-              "fRef", fRef,
+              "fRef", new Reference(fname),
+              "fcaller", fcaller,
+              "rfcaller", new Reference(fcaller),
               "ps", bindings.get("ps"),
               // It's important to expand bs before computing stmts.
               "bs", expand(bindings.get("bs"), s2, mq),

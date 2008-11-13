@@ -44,7 +44,7 @@
                       group: 0, groupEnd: 0, time: 0, timeEnd: 0, dir: 0,
                       assert: 0, dirxml: 0, profile: 0, profileEnd: 0 }) {
         ___.sharedImports.console[k] = (function (k, f) {
-          return ___.simpleFunc(function () { f.apply(console, arguments); });
+          return ___.func(function () { f.apply(console, arguments); });
         })(k, console[k]);
       }
     })();</script>
@@ -62,7 +62,7 @@
     <script type="text/javascript" src="chtml.js"></script>
     <script type="text/javascript">
       ___.sharedImports.StringInterpolation
-         = ___.simpleFunc(StringInterpolation);
+         = ___.func(StringInterpolation);
       ___.grantRead(___.sharedImports, 'StringInterpolation');
     </script>
   </head>

@@ -7,22 +7,24 @@
                    var outers = ___.readImport(IMPORTS___, 'outers');
                    var externalScript;
                    var x0___;
-                   var x1___;
                    IMPORTS___.emitCss___([ '.', ' #p3-', ' {\n  color: red\n}' ].join(IMPORTS___.getIdClass___()));
                    IMPORTS___.emitCss___([ '@media print {\n  .', ' #p3-', ' {\n    font-weight: bold;\n    color: black\n  }\n}' ].join(IMPORTS___.getIdClass___()));
                    IMPORTS___.emitCss___([ '@media print, screen {\n  .', ' .p4 {\n    font-weight: bold\n  }\n}' ].join(IMPORTS___.getIdClass___()));
                    IMPORTS___.emitCss___([ '.', ' .p1 {\n  color: red\n}' ].join(IMPORTS___.getIdClass___()));
                    {
-                     IMPORTS___.c_1___ = ___.simpleFrozenFunc(function (event, thisNode___) {
-                                                                ___.asSimpleFunc(handleClicky)();
+                     IMPORTS___.c_1___ = ___.frozenFunc(function (event, thisNode___) {
+                                                                handleClicky.CALL___();
                                                               });
                    }
                    IMPORTS___.htmlEmitter___.pc('\n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    ').b('p').a('class', 'p1 p2').f(false).ih('Paragraph 1').e('p').pc('\n\n    ');
                    try {
                      {
-                       externalScript = ___.simpleFunc(function () {
-                                                         ___.asSimpleFunc(alert)('external script');
-                                                       }, 'externalScript');
+                       externalScript = (function () {
+                                           function externalScript$self() {
+                                             alert.CALL___('external script');
+                                           }
+                                           return ___.func(externalScript$self, 'externalScript');
+                                         })();
                        ;
                      }
                    } catch (ex___) {
@@ -31,13 +33,13 @@
                    IMPORTS___.htmlEmitter___.pc('\n\n    \n    ').b('p').a('id', 'p3-' + IMPORTS___.getIdClass___()).f(false).ih('Paragraph 2').e('p').pc('\n\n    \n    \n\n    \n    \n    ');
                    try {
                      {
-                       moduleResult___ = (x0___ = outers, x1___ = (
+                       moduleResult___ = (x0___ = (
                            function () {
                              function handleClicky() {
-                               ___.asSimpleFunc(alert)('You clicked something!!!');
+                               alert.CALL___('You clicked something!!!');
                              }
-                             return ___.simpleFrozenFunc(handleClicky, 'handleClicky');
-                           })(), x0___.handleClicky_canSet___? (x0___.handleClicky = x1___): ___.setPub(x0___, 'handleClicky', x1___));
+                             return ___.frozenFunc(handleClicky, 'handleClicky');
+                           })(), outers.handleClicky_canSet___? (outers.handleClicky = x0___): ___.setPub(outers, 'handleClicky', x0___));
                      }
                    } catch (ex___) {
                      ___.getNewModuleHandler().handleUncaughtException(ex___, onerror, 'example.xml', '37');

@@ -150,7 +150,7 @@ var cajole = (function () {
       // Provide an object into which the module can export its public API.
       imports.exports = {};
       if (document.getElementById("VALIJA_MODE" + uiSuffix).checked) {
-        imports.$v = valijaMaker(imports);
+        imports.$v = valijaMaker.CALL___(imports);
       }
       // Set up the outer new module handler
       ___.setNewModuleHandler(imports.newModuleHandler___);
@@ -211,7 +211,7 @@ var cajole = (function () {
     // See CajaApplet.Feature
     cajita.forOwnKeys(
         { EMBEDDABLE: true, DEBUG_SYMBOLS: true, VALIJA_MODE: true },
-        ___.simpleFrozenFunc(function (featureName) {
+        ___.frozenFunc(function (featureName) {
           if (inputs[featureName + uiSuffix].checked) {
           features.push(featureName);
           }
@@ -346,7 +346,7 @@ var getImports = (function () {
 
   /** Builds part of the repr of a JSON map. */
   function reprKeyValuePair(els) {
-    return ___.simpleFrozenFunc(function (k, v) {
+    return ___.frozenFunc(function (k, v) {
       els.push(repr(k) + ': ' + repr(v));
     });
   }
@@ -402,10 +402,10 @@ var getImports = (function () {
     var superHandler = ___.makeNormalNewModuleHandler();
     superHandler.setImports(imports);
     var inner = ___.beget(superHandler);
-    inner.handle = ___.simpleFrozenFunc(function(newModule) {
+    inner.handle = ___.frozenFunc(function(newModule) {
       try {
         return ___.callPub(superHandler, 'handle', 
-                           [___.simpleFrozenFunc(newModule)]);
+                           [___.frozenFunc(newModule)]);
       } finally {
         var outcome = superHandler.getLastOutcome();
         var type = document.createElement('span');
@@ -463,7 +463,7 @@ var getImports = (function () {
       return document.getElementById('caja-html' + uiSuffix);
     };
     /** Provide a way to load another gadget's public API. */
-    testImports.loadModule = ___.simpleFrozenFunc(
+    testImports.loadModule = ___.frozenFunc(
         function (moduleName) {
           moduleName = String(moduleName);
           return ___.canEnumPub(gadgetPublicApis, moduleName)

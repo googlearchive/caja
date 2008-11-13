@@ -23,12 +23,12 @@ import com.google.caja.util.CajaTestCase;
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class CajitaTest extends CajaTestCase {
-  public void testGrantSimpleFunc() throws Exception {
+  public void testGrantFunc() throws Exception {
     runTest(
         "  var o = { f: function(x) { this.x = x; } };"
-        + "___.grantSimpleFunc(o, 'f');"
-        + "assertTrue(___.isSimpleFunc(o.f));"
-        + "___.asSimpleFunc(o.f);"
+        + "___.grantFunc(o, 'f');"
+        + "assertTrue(___.isFunc(o.f));"
+        + "___.asFunc(o.f);"
         + "assertEquals(42, ___.construct(o.f, [42]).x);");
   }
 

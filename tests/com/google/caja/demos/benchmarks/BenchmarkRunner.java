@@ -90,7 +90,7 @@ public class BenchmarkRunner extends CajaTestCase {
             ""
             + "var testImports = ___.copy(___.sharedImports);\n"
             + "testImports.loader = ___.freeze({\n"
-            + "        provide: ___.simpleFrozenFunc(\n"
+            + "        provide: ___.frozenFunc(\n"
             + "            function(v){ valijaMaker = v; })\n"
             + "    });\n"
             + "testImports.outers = ___.copy(___.sharedImports);\n"
@@ -102,7 +102,7 @@ public class BenchmarkRunner extends CajaTestCase {
             ""
             + "testImports = ___.copy(___.sharedImports);\n"
             + "testImports.benchmark = {};\n"
-            + "testImports.$v = ___.asSimpleFunc(valijaMaker)(testImports);\n"
+            + "testImports.$v = valijaMaker.CALL___(testImports);\n"
             + "___.getNewModuleHandler().setImports(testImports);",
             "benchmark-container"),
         new RhinoTestBed.Input(cajoledJs, getName()),

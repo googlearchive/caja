@@ -168,7 +168,7 @@ JavaScript that inserts explicit HTML, as in:</p>
 <pre>
 IMPORTS___.document.innerHTML = "
   &lt;a onmouseover=\"
-    return ___.asSimpleFunc(IMPORTS___.alert)(1);
+    return ___.asFunc(IMPORTS___.alert)(1);
   \"&gt;Mouse here&lt;/a&gt;
 ";
 </pre>
@@ -198,7 +198,7 @@ with. </p>
   as local variables. The cajoled code is then placed after a &quot;<code>return</code>&quot; in the
   body of a handler function with a generated unique <i><code>handleName___</code></i>.</p>
 <pre>IMPORTS___.<i>handlerName___</i> = function(thisNode, event) {
-  return ___.asSimpleFunc(IMPORTS___.alert)(1);
+  return ___.asFunc(IMPORTS___.alert)(1);
 };</pre>
 <p class="note">Should we prohibit &quot;<code>thisNode</code>&quot; from appearing in the
   original event handler code? Probably.</p>

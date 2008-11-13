@@ -309,6 +309,12 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     assertConsistent("Function.prototype.bind.call(function(a, b) {return a + b;}, {}, 3)(4);");
   }
 
+  public void testMonkeyPatchPrimordialFunction() throws Exception {
+    assertConsistent(
+        "isNaN.foo = 'bar';" +
+        "isNaN.foo;");
+  }
+
   @Override
   protected Object executePlain(String caja)
       throws IOException, ParseException {
@@ -350,7 +356,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         new RhinoTestBed.Input(
             "var testImports = ___.copy(___.sharedImports);\n" +
             "testImports.loader = ___.freeze({\n" +
-            "        provide: ___.simpleFrozenFunc(\n" +
+            "        provide: ___.frozenFunc(\n" +
             "            function(v){ valijaMaker = v; })\n" +
             "    });\n" +
             "testImports.outers = ___.copy(___.sharedImports);\n" +
@@ -361,13 +367,13 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
             // Set up the imports environment.
             "testImports = ___.copy(___.sharedImports);\n" +
             "testImports.console = console;" +
-            "testImports.assertEquals = ___.simpleFunc(assertEquals);" +
+            "testImports.assertEquals = ___.func(assertEquals);" +
             "___.grantCall(testImports, 'assertEquals');" +
-            "testImports.assertTrue = ___.simpleFunc(assertTrue);" +
+            "testImports.assertTrue = ___.func(assertTrue);" +
             "___.grantCall(testImports, 'assertTrue');" +
-            "testImports.assertFalse = ___.simpleFunc(assertFalse);" +
+            "testImports.assertFalse = ___.func(assertFalse);" +
             "___.grantCall(testImports, 'assertFalse');" +
-            "testImports.$v = ___.asSimpleFunc(valijaMaker)(testImports);\n" +
+            "testImports.$v = valijaMaker.CALL___(testImports);\n" +
             "___.getNewModuleHandler().setImports(testImports);",
             getName() + "-test-fixture"),
         new RhinoTestBed.Input(pre, getName() + "-pre"),

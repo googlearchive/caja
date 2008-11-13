@@ -55,37 +55,6 @@ TypeError.typeTag___ = 'TypeError';
 URIError.typeTag___ = 'URIError';
 
 
-if (Array.prototype.indexOf === void 0) {
-  /**
-   * Returns the first index at which the specimen is found (by
-   * "===") or -1 if none.
-   */
-  Array.prototype.indexOf = function(specimen) {
-    var len = this.length;
-    for (var i = 0; i < len; i += 1) {
-      if (this[i] === specimen) {
-        return i;
-      }
-    }
-    return -1;
-  };
-}
-
-if (Array.prototype.lastIndexOf === void 0) {
-  /**
-   * Returns the last index at which the specimen is found (by
-   * "===") or -1 if none.
-   */
-  Array.prototype.lastIndexOf = function(specimen) {
-    for (var i = this.length; --i >= 0; ) {
-      if (this[i] === specimen) {
-        return i;
-      }
-    }
-    return -1;
-  };
-}
-
 if (Date.prototype.toISOString === void 0) {
   /** In anticipation of ES3.1 */
   Date.prototype.toISOString = function() {
@@ -155,6 +124,34 @@ var ___;
 // like HTMLDivElement.
 
 (function(global) {
+
+  /**
+   * Returns the first index at which the specimen is found (by
+   * "identical()") or -1 if none.
+   */
+  Array.prototype.indexOf = function(specimen) {
+    var len = this.length;
+    for (var i = 0; i < len; i += 1) {
+      if (identical(this[i], specimen)) {
+        return i;
+      }
+    }
+    return -1;
+  };
+
+  /**
+   * Returns the last index at which the specimen is found (by
+   * "identical()") or -1 if none.
+   */
+  Array.prototype.lastIndexOf = function(specimen) {
+    for (var i = this.length; --i >= 0; ) {
+      if (identical(this[i], specimen)) {
+        return i;
+      }
+    }
+    return -1;
+  };
+
   ////////////////////////////////////////////////////////////////////////
   // Some regular expressions checking for specific suffixes.
   ////////////////////////////////////////////////////////////////////////
@@ -209,30 +206,22 @@ var ___;
     return myOriginalHOP.call(obj, name);
   }
   
-  // Returns identity for a decent === check.
-  Object.prototype.getIdent___ = function() { return this; };
-  String.prototype.getIdent___ = String.prototype.valueOf;
-  Boolean.prototype.getIdent___ = Boolean.prototype.valueOf;
-  var NaNIdent = {};
-  var MinusZeroIdent = {};
-  Number.prototype.getIdent___ = function() {
-    var result = this.valueOf();
-    if (isNaN(result)) { return NaNIdent; }
-    if (result === 0 && 1/result === -Infinity) { return MinusZeroIdent; }
-    return result;
-  };
-
   /**
-   * Turns wrappers of primitives into the primitives themselves, and
-   * then compares if they are otherwise computationally identical.
+   * Are x and y not observably distinguishable?
    */
-  function same(x, y) {
-    if (x === null || x === void 0 || y === null || y === void 0) {
-      return x === y;
+  function identical(x, y) {
+    if (x === y) {
+      // 0 === -0, but they are not identical
+      return x !== 0 || 1/x === 1/y;
+    } else {
+      // NaN !== NaN, but they are identical
+      return isNaN(x) && isNaN(y);
     }
-    return x.getIdent___() === y.getIdent___();
   }
 
+  Object.prototype.CALL___ = function(var_args) {
+    return asFunc(this).apply(USELESS, arguments);
+  };
 
   ////////////////////////////////////////////////////////////////////////
   // Diagnostics and condition enforcement
@@ -244,7 +233,7 @@ var ___;
    * Note: JavaScript has no macros, so even in the "does nothing"
    * case, remember that the arguments are still evaluated.
    */
-  var myLogFunc = simpleFrozenFunc(function(str, opt_stop) {});
+  var myLogFunc = frozenFunc(function(str, opt_stop) {});
 
   /**
    * Gets the currently registered logging function.
@@ -689,9 +678,10 @@ var ___;
     }
     obj.FROZEN___ = obj;
     if (typeOf(obj) === 'function') {
-      if (isSimpleFunc(obj)) { 
+      if (isFunc(obj)) { 
         grantCall(obj, 'call');
         grantCall(obj, 'apply');
+        obj.CALL___ = obj;
       }
       // Do last to avoid possible infinite recursion.
       if (obj.prototype) { primFreeze(obj.prototype); }
@@ -726,7 +716,7 @@ var ___;
            debugReference(obj));
     }
     var result = isArray(obj) ? [] : {};
-    forOwnKeys(obj, simpleFrozenFunc(function(k, v) {
+    forOwnKeys(obj, frozenFunc(function(k, v) {
       result[k] = v;
     }));
     return result;
@@ -767,23 +757,34 @@ var ___;
    */
   function canCall(obj, name)   {
     if (obj === void 0 || obj === null) { return false; }
-    return !! (obj[name + '_canCall___'] || obj[name + '_grantCall___']);
+    if (obj[name + '_canCall___']) { return true; }
+    if (obj[name + '_grantCall___']) {
+      fastpathCall(obj, name);
+      return true;
+    }
+    return false;
   }
   /**
    * Tests whether the fast-path canSet flag is set, or grantSet() has been
-   * called.
+   * called, on this object itself as an own (non-inherited) attribute.
    */
   function canSet(obj, name) {
     if (obj === void 0 || obj === null) { return false; }
-    return !! (obj[name + '_canSet___'] || obj[name + '_grantSet___']);
+    if (obj[name + '_canSet___'] === obj) { return true; }
+    if (obj[name + '_grantSet___'] === obj) {
+      fastpathSet(obj, name);
+      return true;
+    }
+    return false;
   }
 
   /**
-   * Tests whether the fast-path canDelete flag is set.
+   * Tests whether the fast-path canDelete flag is set, on this
+   * object itself as an own (non-inherited) attribute.
    */
   function canDelete(obj, name) {
     if (obj === void 0 || obj === null) { return false; }
-    return !! obj[name + '_canDelete___']; 
+    return obj[name + '_canDelete___'] === obj; 
   }
 
   /**
@@ -794,11 +795,11 @@ var ___;
    */
   function fastpathRead(obj, name) {
     if (name === 'toString') { fail("internal: Can't fastpath .toString"); }
-    obj[name + '_canRead___'] = true;
+    obj[name + '_canRead___'] = obj;
   }
 
   function fastpathEnumOnly(obj, name) {
-    obj[name + '_canEnum___'] = true;
+    obj[name + '_canEnum___'] = obj;
   }
 
   /**
@@ -807,13 +808,13 @@ var ___;
    */
   function fastpathCall(obj, name) {
     if (name === 'toString') { fail("internal: Can't fastpath .toString"); }
-    obj[name + '_canCall___'] = true;
     if (obj[name + '_canSet___']) {
       obj[name + '_canSet___'] = false;
     }
     if (obj[name + '_grantSet___']) {
       obj[name + '_grantSet___'] = false;
     }
+    obj[name + '_canCall___'] = obj;
   }
 
   /**
@@ -827,13 +828,13 @@ var ___;
     }
     fastpathEnumOnly(obj, name);
     fastpathRead(obj, name);
-    obj[name + '_canSet___'] = true;
     if (obj[name + '_canCall___']) {
       obj[name + '_canCall___'] = false;
     }
     if (obj[name + '_grantCall___']) {
       obj[name + '_grantCall___'] = false;
     }
+    obj[name + '_canSet___'] = obj;
   }
 
   /**
@@ -848,7 +849,7 @@ var ___;
     if (isFrozen(obj)) {
       fail("Can't delete .", name, ' on frozen (', debugReference(obj), ')');
     }
-    obj[name + '_canDelete___'] = true;
+    obj[name + '_canDelete___'] = obj;
   }
 
   /**
@@ -864,13 +865,13 @@ var ___;
   }
 
   function grantCall(obj, name) {
-//    fastpathCall(obj, name);
-    obj[name + '_grantCall___'] = true;
+    fastpathCall(obj, name);
+    obj[name + '_grantCall___'] = obj;
   }
 
   function grantSet(obj, name) {
-//    fastpathSet(obj, name);
-    obj[name + '_grantSet___'] = true;
+    fastpathSet(obj, name);
+    obj[name + '_grantSet___'] = obj;
   }
 
   function grantDelete(obj, name) {
@@ -884,8 +885,8 @@ var ___;
   function isCtor(constr)    {
     return constr && !! constr.CONSTRUCTOR___;
   }
-  function isSimpleFunc(fun) {
-    return fun && !! fun.SIMPLEFUNC___;
+  function isFunc(fun) {
+    return fun && !! fun.FUNC___;
   }
   function isXo4aFunc(func) {
     return func && !! func.XO4A___;
@@ -895,7 +896,7 @@ var ___;
    * Mark <tt>constr</tt> as a constructor.
    * <p>
    * A function is tamed and classified by calling one of
-   * <tt>ctor()</tt>, <tt>method()</tt>, or <tt>simpleFunc()</tt>. Each
+   * <tt>ctor()</tt>, <tt>method()</tt>, or <tt>func()</tt>. Each
    * of these checks that the function hasn't already been classified by
    * any of the others. A function which has not been so classified is an
    * <i>untamed function</i>.
@@ -910,7 +911,7 @@ var ___;
    */
   function ctor(constr, opt_Sup, opt_name) {
     enforceType(constr, 'function', opt_name);
-    if (isSimpleFunc(constr)) {
+    if (isFunc(constr)) {
       fail("Simple functions can't be constructors: ", constr);
     }
     if (isXo4aFunc(constr)) {
@@ -946,31 +947,31 @@ var ___;
   /**
    * Enables first-class reification of exophoric functions as
    * pseudo-functions -- frozen records with call, bind, and apply
-   * simpleFunctions. 
+   * functions. 
    */
   function reifyIfXo4a(xfunc, opt_name) {
     if (!isXo4aFunc(xfunc)) {
       return asFirstClass(xfunc);
     }
     var result = {
-      call: simpleFrozenFunc(function(self, var_args) {
+      call: frozenFunc(function(self, var_args) {
         if (self === null || self === void 0) { self = USELESS; }
         return xfunc.apply(self, Array.slice(arguments, 1));
       }),
-      apply: simpleFrozenFunc(function(self, args) {
+      apply: frozenFunc(function(self, args) {
         if (self === null || self === void 0) { self = USELESS; }
         return xfunc.apply(self, args);
       }),
-      bind: simpleFrozenFunc(function(self, var_args) {
+      bind: frozenFunc(function(self, var_args) {
         var args = arguments;
         if (self === null || self === void 0) { 
           self = USELESS;
           args = [self].concat(Array.slice(args, 1));
         }
-        return simpleFrozenFunc(xfunc.bind.apply(xfunc, args));
+        return frozenFunc(xfunc.bind.apply(xfunc, args));
       }),
       length: xfunc.length,
-      toString: simpleFrozenFunc(function() {
+      toString: frozenFunc(function() {
         return xfunc.toString();
       })
     };
@@ -994,7 +995,7 @@ var ___;
     if (isCtor(func)) {
       fail("Internal: Constructors can't be exophora: ", func);
     }
-    if (isSimpleFunc(func)) {
+    if (isFunc(func)) {
       fail("Internal: Simple functions can't be exophora: ", func);
     }
     func.XO4A___ = true;
@@ -1008,7 +1009,7 @@ var ___;
    * function. Currently, this is used only to generate friendlier
    * error messages.
    */
-  function simpleFunc(fun, opt_name) {
+  function func(fun, opt_name) {
     enforceType(fun, 'function', opt_name);
     if (isCtor(fun)) {
       fail("Constructors can't be simple functions: ", fun);
@@ -1016,7 +1017,7 @@ var ___;
     if (isXo4aFunc(fun)) {
       fail("Exophoric functions can't be simple functions: ", fun);
     }
-    fun.SIMPLEFUNC___ = true;
+    fun.FUNC___ = true;
     if (opt_name) {
       fun.NAME___ = String(opt_name);
     }
@@ -1026,13 +1027,13 @@ var ___;
   /**
    * Mark fun as a simple function and freeze it.
    */
-  function simpleFrozenFunc(fun, opt_name) {
-    return primFreeze(simpleFunc(fun, opt_name));
+  function frozenFunc(fun, opt_name) {
+    return primFreeze(func(fun, opt_name));
   }
 
   /** This "Only" form doesn't freeze */
   function asCtorOnly(constr) {
-    if (isCtor(constr) || isSimpleFunc(constr)) {
+    if (isCtor(constr) || isFunc(constr)) {
       return constr;
     }
 
@@ -1048,11 +1049,11 @@ var ___;
   /** 
    * Only simple functions can be called as simple functions.
    * <p>
-   * It is now <tt>asSimpleFunc</tt>'s responsibility to
+   * It is now <tt>asFunc</tt>'s responsibility to
    * <tt>primFreeze(fun)</tt>. 
    */
-  function asSimpleFunc(fun) {
-    if (fun && fun.SIMPLEFUNC___) {
+  function asFunc(fun) {
+    if (fun && fun.FUNC___) {
       // fastpath shortcut
       if (fun.FROZEN___ === fun) {
         return fun;
@@ -1064,7 +1065,7 @@ var ___;
     if (isCtor(fun)) {
       if (fun === Number || fun === String || fun === Boolean) {
         // TODO(erights): To avoid accidents, <tt>method</tt>,
-        // <tt>simpleFunc</tt>, and <tt>ctor</tt> each ensure that
+        // <tt>func</tt>, and <tt>ctor</tt> each ensure that
         // these classifications are exclusive. A function can be
         // classified as in at most one of these categories. However,
         // some primordial type conversion functions like
@@ -1111,15 +1112,15 @@ var ___;
    * Coerces fun to a genuine simple-function.
    * <p>
    * If fun is an applicator, then return a simple-function that invokes
-   * fun's apply method. Otherwise, asSimpleFunc().
+   * fun's apply method. Otherwise, asFunc().
    */
-  function toSimpleFunc(fun) {
+  function toFunc(fun) {
     if (isApplicator(fun)) { 
-      return simpleFrozenFunc(function(var_args) {
+      return frozenFunc(function(var_args) {
         return callPub(fun, 'apply', [USELESS, Array.slice(arguments, 0)]);
       });
     }
-    return asSimpleFunc(fun);
+    return asFunc(fun);
   }
 
   /**
@@ -1142,7 +1143,7 @@ var ___;
   function asFirstClass(value) {
     switch(typeOf(value)) {
       case 'function': {
-        if (isSimpleFunc(value) || isCtor(value)) {
+        if (isFunc(value) || isCtor(value)) {
           if (isFrozen(value)) {
             return value;
           }
@@ -1201,7 +1202,8 @@ var ___;
    */
   function hasOwnPropertyOf(obj, name) {
     if (typeof name === 'number') { return hasOwnProp(obj, name); }
-    name = String(name);    
+    name = String(name);
+    if (obj && obj[name + '_canRead___'] === obj) { return true; }
     return canReadPub(obj, name) && myOriginalHOP.call(obj, name);
   }
 
@@ -1280,9 +1282,9 @@ var ___;
       return pumpkin;
     }
     name = String(name);
+    if (obj[name + '_canRead___'] === obj) { return obj[name]; }
     if (!myOriginalHOP.call(obj, name)) { return pumpkin; }
     // inline remaining relevant cases from canReadPub
-    if (obj[name + '_canRead___']) { return obj[name]; }
     if (endsWith__.test(name)) { return pumpkin; }
     if (name === 'toString') { return pumpkin; }
     if (!isJSONContainer(obj)) { return pumpkin; }
@@ -1295,7 +1297,7 @@ var ___;
    * safe to allow without runtime checks.
    */
   function enforceStaticPath(result, permitsUsed) {
-    forOwnKeys(permitsUsed, simpleFrozenFunc(function(name, subPermits) {
+    forOwnKeys(permitsUsed, frozenFunc(function(name, subPermits) {
       // Don't factor out since we don't enforce frozen if permitsUsed
       // are empty. 
       // TODO(erights): Once we have ES3.1ish attribute control, it
@@ -1388,6 +1390,7 @@ var ___;
    */
   function canEnumOwn(obj, name) {
     name = String(name);
+    if (obj && obj[name + '_canEnum___'] === obj) { return true; }
     return canEnumPub(obj, name) && myOriginalHOP.call(obj, name);
   }
 
@@ -1398,10 +1401,10 @@ var ___;
   function Token(name) {
     name = String(name);
     return primFreeze({
-      toString: simpleFrozenFunc(function() { return name; })
+      toString: frozenFunc(function() { return name; })
     });
   }
-  simpleFrozenFunc(Token);
+  frozenFunc(Token);
 
   /**
    * Inside a <tt>cajita.forOwnKeys()</tt>, or <tt>cajita.forAllKeys()</tt>, the
@@ -1427,7 +1430,7 @@ var ___;
    * the canEnumOwn() property names.
    */
   function forOwnKeys(obj, fn) {
-    fn = toSimpleFunc(fn);
+    fn = toFunc(fn);
     var keys = ownKeys(obj);
     for (var i = 0; i < keys.length; i++) {
       if (fn(keys[i], readPub(obj, keys[i])) === BREAK) {
@@ -1444,7 +1447,7 @@ var ___;
    * the canEnumPub() property names.
    */
   function forAllKeys(obj, fn) {
-    fn = toSimpleFunc(fn);
+    fn = toFunc(fn);
     var keys = allKeys(obj);
     for (var i = 0; i < keys.length; i++) {
       if (fn(keys[i], readPub(obj, keys[i])) === BREAK) {
@@ -1508,12 +1511,16 @@ var ___;
     if (obj === null) { return false; }
     if (obj === void 0) { return false; }
     name = String(name);
-    if (canCall(obj, name)) { return true; }
+    if (obj[name + '_canCall___']) { return true; }
+    if (obj[name + '_grantCall___']) { 
+      fastpathCall(obj, name);
+      return true; 
+    }
     if (!canReadPub(obj, name)) { return false; }
     if (endsWith__.test(name)) { return false; }
     if (name === 'toString') { return false; }
     var func = obj[name];
-    if (!isSimpleFunc(func) && !isXo4aFunc(func)) {
+    if (!isFunc(func) && !isXo4aFunc(func)) {
       return false;
     }
     fastpathCall(obj, name);
@@ -1576,7 +1583,7 @@ var ___;
     if (obj === null || obj === void 0) {
       throw new TypeError("Can't set " + name + " on " + obj);
     }
-    if (obj[name + '_canSet___']) {
+    if (obj[name + '_canSet___'] === obj) {
       return obj[name] = val;
     } else if (canSetPub(obj, name)) {
       fastpathSet(obj, name);
@@ -1881,8 +1888,8 @@ var ___;
    * Whilelist obj[name] as a simple frozen function that can be either
    * called or read.
    */
-  function grantSimpleFunc(obj, name) {
-    simpleFrozenFunc(obj[name], name);
+  function grantFunc(obj, name) {
+    frozenFunc(obj[name], name);
     grantCall(obj, name);
     grantRead(obj, name);
   }
@@ -2003,7 +2010,7 @@ var ___;
   all2(grantRead, Math, [
     'E', 'LN10', 'LN2', 'LOG2E', 'LOG10E', 'PI', 'SQRT1_2', 'SQRT2'
   ]);
-  all2(grantSimpleFunc, Math, [
+  all2(grantFunc, Math, [
     'abs', 'acos', 'asin', 'atan', 'atan2', 'ceil', 'cos', 'exp', 'floor',
     'log', 'max', 'min', 'pow', 'random', 'round', 'sin', 'sqrt', 'tan'
   ]);
@@ -2076,15 +2083,15 @@ var ___;
   /// Function
 
   handleGeneric(Function.prototype, 'apply', function(self, realArgs) {
-    return toSimpleFunc(this).apply(self, realArgs);
+    return toFunc(this).apply(self, realArgs);
   });
   handleGeneric(Function.prototype, 'call', function(self, var_args) {
-    return toSimpleFunc(this).apply(self, Array.slice(arguments, 1));
+    return toFunc(this).apply(self, Array.slice(arguments, 1));
   });
   handleGeneric(Function.prototype, 'bind', function(self, var_args) {
     var thisFunc = this;
     var leftArgs = Array.slice(arguments, 1);
-    return simpleFrozenFunc(function(var_args) {
+    return frozenFunc(function(var_args) {
       var args = leftArgs.concat(Array.slice(arguments, 0));
       return callPub(thisFunc, 'apply', [self, args]);
     });
@@ -2093,7 +2100,7 @@ var ___;
   /// Array
 
   ctor(Array, Object, 'Array');
-  grantSimpleFunc(Array, 'slice');
+  grantFunc(Array, 'slice');
   grantToString(Array.prototype);
   all2(grantTypedGeneric, Array.prototype, [ 'toLocaleString' ]);
   all2(grantGeneric, Array.prototype, [
@@ -2107,7 +2114,7 @@ var ___;
       fail("Can't sort a frozen array.");
     }
     if (comparator) {
-      return Array.prototype.sort.call(this, toSimpleFunc(comparator));
+      return Array.prototype.sort.call(this, toFunc(comparator));
     } else {
       return Array.prototype.sort.call(this);
     }
@@ -2116,7 +2123,7 @@ var ___;
   /// String
 
   ctor(String, Object, 'String');
-  grantSimpleFunc(String, 'fromCharCode');
+  grantFunc(String, 'fromCharCode');
   grantToString(String.prototype);
   all2(grantTypedGeneric, String.prototype, [
     'toLocaleString', 'indexOf', 'lastIndexOf'
@@ -2133,10 +2140,10 @@ var ___;
   });
   handleGeneric(String.prototype, 'replace', function(searcher, replacement) {
     enforceMatchable(searcher);
-    if (isSimpleFunc(replacement)) {
-      replacement = asSimpleFunc(replacement);
+    if (isFunc(replacement)) {
+      replacement = asFunc(replacement);
     } else if (isApplicator(replacement)) {
-      replacement = toSimpleFunc(replacement);
+      replacement = toFunc(replacement);
     } else {
       replacement = '' + replacement;
     }
@@ -2171,8 +2178,8 @@ var ___;
   /// Date
 
   ctor(Date, Object, 'Date');
-  grantSimpleFunc(Date, 'parse');
-  grantSimpleFunc(Date, 'UTC');
+  grantFunc(Date, 'parse');
+  grantFunc(Date, 'UTC');
   grantToString(Date.prototype);
   all2(grantTypedGeneric, Date.prototype, [
     'toDateString','toTimeString', 'toUTCString',
@@ -2263,7 +2270,7 @@ var ___;
    * instantiating it.
    */
   var obtainNewModule = freeze({
-    handle: simpleFrozenFunc(function(newModule){ return newModule; })
+    handle: frozenFunc(function(newModule){ return newModule; })
   });
 
   /**
@@ -2279,8 +2286,8 @@ var ___;
     var imports = copy(sharedImports);
     var lastOutcome = void 0;
     return freeze({
-      getImports: simpleFrozenFunc(function() { return imports; }),
-      setImports: simpleFrozenFunc(function(newImports) { 
+      getImports: frozenFunc(function() { return imports; }),
+      setImports: frozenFunc(function(newImports) { 
         imports = newImports; 
       }),
 
@@ -2305,7 +2312,7 @@ var ___;
        * overwrite an already reported outcome with NO_RESULT, so the
        * last script-block's outcome will be preserved.
        */
-      getLastOutcome: simpleFrozenFunc(function() { 
+      getLastOutcome: frozenFunc(function() { 
         return lastOutcome; 
       }),
 
@@ -2313,7 +2320,7 @@ var ___;
        * If the last outcome is a success, returns its value;
        * otherwise <tt>undefined</tt>.
        */
-      getLastValue: simpleFrozenFunc(function() {
+      getLastValue: frozenFunc(function() {
         if (lastOutcome && lastOutcome[0]) {
           return lastOutcome[1];
         } else {
@@ -2328,7 +2335,7 @@ var ___;
        * reported outcome. Propogate this outcome by terminating in
        * the same manner. 
        */
-      handle: simpleFrozenFunc(function(newModule) {
+      handle: frozenFunc(function(newModule) {
         lastOutcome = void 0;
         try {
           var result = newModule(___, imports);
@@ -2358,7 +2365,7 @@ var ___;
        *   any value thrown by an API imported by cajoled code.
        * @param onerror the value of the raw reference "onerror" in top level
        *   cajoled code.  This will likely be undefined much of the time, but
-       *   could be anything.  If it is a simpleFunc, it can be called with
+       *   could be anything.  If it is a func, it can be called with
        *   three strings (message, source, lineNum) as the
        *   {@code window.onerror} event handler.
        * @param {string} source a URI describing the source file from which the
@@ -2382,10 +2389,10 @@ var ___;
         // exceptions, it would go here before onerror is invoked.
 
         // See the HTML5 discussion for the reasons behind this rule.
-        if (isApplicator(onerror)) { onerror = toSimpleFunc(onerror); }
+        if (isApplicator(onerror)) { onerror = toFunc(onerror); }
         var shouldReport = (
-            isSimpleFunc(onerror)
-            ? asSimpleFunc(onerror)(message, String(source), String(lineNum))
+            isFunc(onerror)
+            ? onerror.CALL___(message, String(source), String(lineNum))
             : onerror !== null);
         if (shouldReport !== false) {
           cajita.log(source + ':' + lineNum + ': ' + message);
@@ -2397,12 +2404,12 @@ var ___;
   /**
    * A module is a plugin-maker function.
    * <p>
-   * loadModule(module) marks module as a simpleFunc, freezes it,
+   * loadModule(module) marks module as a func, freezes it,
    * asks the current new-module-handler to handle it (thereby
    * notifying the handler), and returns the new module.
    */
   function loadModule(module) {
-    return callPub(myNewModuleHandler, 'handle', [simpleFrozenFunc(module)]);
+    return callPub(myNewModuleHandler, 'handle', [frozenFunc(module)]);
   }
 
   var registeredImports = [];
@@ -2562,15 +2569,15 @@ var ___;
       function box() {
         flag = true, squirrel = payload;
       }
-      box.toString = simpleFrozenFunc(function () { return '(box)'; });
-      return simpleFrozenFunc(box);
+      box.toString = frozenFunc(function () { return '(box)'; });
+      return frozenFunc(box);
     }
     function unseal(box) {
       // Start off in a known good state.
       flag = false;
       squirrel = null;
       try {  // Don't do anything outside try to foil forwarding functions.
-        asSimpleFunc(box)();
+        box.CALL___();
         if (!flag) { throw new Error('Sealer/Unsealer mismatch'); }
         return squirrel;
       } finally {
@@ -2580,8 +2587,8 @@ var ___;
       }
     }
     return freeze({ 
-      seal: simpleFrozenFunc(seal), 
-      unseal: simpleFrozenFunc(unseal) 
+      seal: frozenFunc(seal), 
+      unseal: frozenFunc(unseal) 
     });
   }
 
@@ -2633,41 +2640,122 @@ var ___;
     }
   }
 
+  /**
+   * Create a unique identification of a given table identity that can
+   * be used to invisibly (to Caja code) annotate a key object to
+   * index into a table.
+   * <p>
+   * magicCount and MAGIC_TOKEN together represent a
+   * unique-across-frames value safe against collisions, under the
+   * normal Caja threat model assumptions. magicCount and
+   * MAGIC_NAME together represent a probably unique across frames
+   * value, with which can generate strings in which collision is
+   * unlikely but possible. 
+   * <p>
+   * The MAGIC_TOKEN is a unique unforgeable per-Cajita runtime
+   * value. magicCount is a per-Cajita counter, which increments each
+   * time a new one is needed.
+   */
   var magicCount = 0;
+  var MAGIC_NUM = Math.random();
+  var MAGIC_TOKEN = Token('MAGIC_TOKEN_FOR:' + MAGIC_NUM);
+  var MAGIC_NAME = '_index:'+ MAGIC_NUM + ':';
 
   /**
-   * Creates a new mutable associative table mapping from the <tt>===</tt> 
-   * identity of arbitrary keys to arbitrary values (with the caveat
-   * that NaN is a valid key even though it isn't <tt>===</tt> to itself).
+   * Creates a new mutable associative table mapping from the
+   * identity of arbitrary keys (as defined by tt>identical()</tt>) to
+   * arbitrary values.
    * <p>
-   * JavaScript has no such construct, and I had thought it impossible
-   * to implement both correctly and with the right complexity measure
-   * using the standard elements of JavaScript. However, the following
+   * Once there is a conventional way for JavaScript implementations
+   * to provide weak-key tables, this should feature-test and use that
+   * where it is available, in which case the opt_useKeyLifetime flag
+   * can be ignored. When no weak-key table is primitively provided,
+   * this flag determines which of two possible approximations to
+   * use. In all three cases (actual weak key tables,
+   * opt_useKeyLifetime is falsy, and opt_useKeyLifetime is
+   * truthy), the table returned
    * <ul>
    * <li>should work across frames, 
-   * <li>should have the right garbage collection behavior, 
    * <li>should have O(1) complexity measure within a frame where
    *     collision is impossible, 
    * <li>and should have O(1) complexity measure between frames with
-   *     high probability. 
+   *     high probability.
+   * <li>the table should not retain its keys. In other words, if a
+   *     given table T is non-garbage but a given value K is otherwise
+   *     garbage, the presence of K as a key in table T will
+   *     not, by itself, prevent K from being garbage collected. (Note
+   *     that this is not quite as aggressive as the contract provided
+   *     by ephemerons.)
    * </ul>
-   * Is this technique well known?
+   * Given that a K=>V association has been stored in table T, the
+   * three cases differ according to how long they retain V:
+   * <li>A genuine weak-key table retains V only while both T and K
+   *     are not garbage.
+   * <li>If opt_useKeyLifetime is falsy, retain V while T is not
+   *     garbage.
+   * <li>If opt_useKeyLifetime is truthy, retain V while K is not
+   *     garbage. In this case, K must be an object rather than a
+   *     primitive value.
+   * </ul>
+   * <p>
+   * To support Domita, the keys might be host objects.
    */
-  function newTable() {
+  function newTable(opt_useKeyLifetime) {
     magicCount++;
-    var myMagicIndexName = '_' + Math.random() + '_' + 
-                           magicCount + '_index___';
-    var myKeys = [];
+    var myMagicIndexName = MAGIC_NAME + magicCount + '___';
+
+    function setOnKey(key, value) {
+      if (key !== Object(key)) {
+        fail("Can't use key lifetime on primitive keys: ", key);
+      }
+      var list = key[myMagicIndexName];
+      if (!list) {
+        key[myMagicIndexName] = [MAGIC_TOKEN, value];
+      } else {
+        var i = 0;
+        for (; i < list.length; i += 2) {
+          if (list[i] === MAGIC_TOKEN) { break; }
+        }
+        list[i] = MAGIC_TOKEN;
+        list[i+1] = value;
+      }
+    }
+
+    function getOnKey(key) {
+      if (key !== Object(key)) {
+        fail("Can't use key lifetime on primitive keys: ", key);
+      }
+      var list = key[myMagicIndexName];
+      if (!list) {
+        return void 0;
+      } else {
+        var i = 0;
+        for (; i < list.length; i += 2) {
+          if (list[i] === MAGIC_TOKEN) { return list[i+1]; }
+        }
+        return void 0;
+      }
+    }
+
+    if (opt_useKeyLifetime) {
+      return primFreeze({
+        set: frozenFunc(setOnKey),
+        get: frozenFunc(getOnKey)
+      });
+    }
+
     var myValues = [];
 
-    function set(key, value) {
+    function setOnTable(key, value) {
       switch (typeof key) {
         case 'object':
         case 'function': {
           if (null === key) { myValues.prim_null = value; return; } 
-          var index = myKeys.length;
-          key[myMagicIndexName] = index;
-          myKeys[index] = key;
+          var index = getOnKey(key);
+          if (index === void 0) { 
+            index = myValues.length;
+            setOnKey(key, index);
+          }
           myValues[index] = value;
           return;
         }
@@ -2682,23 +2770,14 @@ var ___;
      * Users of this table cannot distinguish an <tt>undefined</tt>
      * value from an absent key.
      */
-    function get(key) {
+    function getOnTable(key) {
       var index;
       switch (typeof key) {
         case 'object':
         case 'function': {
           if (null === key) { return myValues.prim_null; } 
-          var index = key[myMagicIndexName];
+          var index = getOnKey(key);
           if (void 0 === index) { return void 0; }
-          if (myKeys[index] !== key) {
-            // In case of collision
-            for (index = 0; index < myKeys.length; index++) {
-              if (myKeys[index] === key) { break; }
-            }
-            if (index === myKeys.length) { return void 0; }
-            // predictive MRU cache
-            key[myMagicIndexName] = index;
-          }
           return myValues[index];
         }
         case 'string': { return myValues['str_' + key];   }
@@ -2707,8 +2786,8 @@ var ___;
     }
 
     return primFreeze({
-      get: simpleFrozenFunc(get),
-      set: simpleFrozenFunc(set)
+      set: frozenFunc(setOnTable),
+      get: frozenFunc(getOnTable)
     });
   }
 
@@ -2742,9 +2821,9 @@ var ___;
    */
   function getSuperCtor(func) {
     enforceType(func, 'function');
-    if (isCtor(func) || isSimpleFunc(func)) {
+    if (isCtor(func) || isFunc(func)) {
       var result = directConstructor(func.prototype);
-      if (isCtor(result) || isSimpleFunc(result)) {
+      if (isCtor(result) || isFunc(result)) {
         return result;
       }
     }
@@ -2881,14 +2960,14 @@ var ___;
     beget: beget
   };
 
-  forOwnKeys(cajita, simpleFrozenFunc(function(k, v) {
+  forOwnKeys(cajita, frozenFunc(function(k, v) {
     switch (typeOf(v)) {
       case 'object': {
         if (v !== null) { primFreeze(v); }
         break;
       }
       case 'function': {
-        simpleFrozenFunc(v);
+        frozenFunc(v);
         break;
       }
     }
@@ -2903,14 +2982,14 @@ var ___;
     'NaN': NaN,
     'Infinity': Infinity,
     'undefined': void 0,
-    parseInt: simpleFrozenFunc(parseInt),
-    parseFloat: simpleFrozenFunc(parseFloat),
-    isNaN: simpleFrozenFunc(isNaN),
-    isFinite: simpleFrozenFunc(isFinite),
-    decodeURI: simpleFrozenFunc(decodeURI),
-    decodeURIComponent: simpleFrozenFunc(decodeURIComponent),
-    encodeURI: simpleFrozenFunc(encodeURI),
-    encodeURIComponent: simpleFrozenFunc(encodeURIComponent),
+    parseInt: frozenFunc(parseInt),
+    parseFloat: frozenFunc(parseFloat),
+    isNaN: frozenFunc(isNaN),
+    isFinite: frozenFunc(isFinite),
+    decodeURI: frozenFunc(decodeURI),
+    decodeURIComponent: frozenFunc(decodeURIComponent),
+    encodeURI: frozenFunc(encodeURI),
+    encodeURIComponent: frozenFunc(encodeURIComponent),
     Math: Math,
 
     Object: Object,
@@ -2930,7 +3009,7 @@ var ___;
     URIError: URIError
   };
 
-  forOwnKeys(sharedImports, simpleFrozenFunc(function(k, v) {
+  forOwnKeys(sharedImports, frozenFunc(function(k, v) {
     switch (typeOf(v)) {
       case 'object': {
         if (v !== null) { primFreeze(v); }
@@ -2964,11 +3043,11 @@ var ___;
 
     // Classifying functions
     isCtor: isCtor,
-    isSimpleFunc: isSimpleFunc,
+    isFunc: isFunc,
     isXo4aFunc: isXo4aFunc,
     ctor: ctor,
-    simpleFunc: simpleFunc,       simpleFrozenFunc: simpleFrozenFunc,
-    asSimpleFunc: asSimpleFunc,   toSimpleFunc: toSimpleFunc,
+    func: func,       frozenFunc: frozenFunc,
+    asFunc: asFunc,   toFunc: toFunc,
     xo4a: xo4a,
     initializeMap: initializeMap,
 
@@ -2979,7 +3058,7 @@ var ___;
     // Other
     typeOf: typeOf,
     hasOwnProp: hasOwnProp,
-    same: same,
+    identical: identical,
     args: args,
     tameException: tameException,
     primBeget: primBeget,
@@ -2995,7 +3074,7 @@ var ___;
     useSetHandler: useSetHandler,
     useDeleteHandler: useDeleteHandler,
 
-    grantSimpleFunc: grantSimpleFunc,
+    grantFunc: grantFunc,
     grantGeneric: grantGeneric,
     handleGeneric: handleGeneric,
     grantTypedGeneric: grantTypedGeneric,
@@ -3020,12 +3099,12 @@ var ___;
     unregister: unregister
   };
 
-  forOwnKeys(cajita, simpleFrozenFunc(function(k, v) {
+  forOwnKeys(cajita, frozenFunc(function(k, v) {
     if (k in ___) {
       fail('internal: initialization conflict: ', k);
     }
     if (typeOf(v) === 'function') {
-      grantSimpleFunc(cajita, k);
+      grantFunc(cajita, k);
     }
     ___[k] = v;
   }));

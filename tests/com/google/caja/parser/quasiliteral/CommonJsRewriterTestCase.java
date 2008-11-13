@@ -292,14 +292,14 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
         "cajita.forOwnKeys({x:3}, function(k, v) {a.push(k, v);});" +
         "assertEquals(a.toString(), 'x,3');",
         "var a = [];\n" +
-        "cajita.forOwnKeys({x:3}, ___.simpleFrozenFunc(function(k, v) {a.push(k, v);}));" +
+        "cajita.forOwnKeys({x:3}, ___.frozenFunc(function(k, v) {a.push(k, v);}));" +
         "assertEquals(a.toString(), 'x,3');");
     rewriteAndExecute("",
         "var a = [];\n" +
         "cajita.forAllKeys({x:3}, function(k, v) {a.push(k, v);});" +
         "assertEquals(a.toString(), 'x,3');",
         "var a = [];\n" +
-        "cajita.forAllKeys({x:3}, ___.simpleFrozenFunc(function(k, v) {a.push(k, v);}));" +
+        "cajita.forAllKeys({x:3}, ___.frozenFunc(function(k, v) {a.push(k, v);}));" +
         "assertEquals(a.toString(), 'x,3');");
     assertConsistent("(function(){}).bind.call(function(a, b) {return a + b;}, {}, 3)(4);");
   }

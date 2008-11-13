@@ -74,7 +74,7 @@
       if (isValija) {
         var testImports = ___.copy(___.sharedImports);
         testImports.loader = ___.freeze({
-              provide: ___.simpleFunc(function (v) { valijaMaker = v; })
+              provide: ___.func(function (v) { valijaMaker = v; })
             });
         ___.getNewModuleHandler().setImports(testImports);
         loadScript('valija.co.js');
@@ -83,7 +83,7 @@
 
     <script type="text/javascript">(function () {
       var testImports = ___.copy(___.sharedImports);
-      if (valijaMaker) { testImports.$v = valijaMaker(testImports); }
+      if (valijaMaker) { testImports.$v = valijaMaker.CALL___(testImports); }
 
       ___.getNewModuleHandler().setImports(testImports);
       attachDocumentStub(
@@ -99,15 +99,15 @@
            testImports);
       console.log('attached stubs');
 
-      testImports.jsunitRegister = ___.simpleFrozenFunc(jsunitRegister);
+      testImports.jsunitRegister = ___.frozenFunc(jsunitRegister);
       testImports.console = ___.primFreeze({
-        log: ___.simpleFrozenFunc(
+        log: ___.frozenFunc(
             function () { console.log.apply(console, arguments); }),
-        warn: ___.simpleFrozenFunc(
+        warn: ___.frozenFunc(
             function () { console.warn.apply(console, arguments); }),
-        error: ___.simpleFrozenFunc(
+        error: ___.frozenFunc(
             function () { console.error.apply(console, arguments); }),
-        trace: ___.simpleFrozenFunc(
+        trace: ___.frozenFunc(
             function () {
               console.trace ? console.trace()
                   : console.error.apply(console, arguments);
@@ -117,19 +117,19 @@
       // Give unfiltered DOM access so we can check the results of actions.
       testImports.directAccess = ___.primFreeze({
         // Allow testing of emitHtml by exposing it for testing
-        click: ___.simpleFrozenFunc(function (tameNode) {
+        click: ___.frozenFunc(function (tameNode) {
           tameNode.node___.click();
         }),
-        emitCssHook: ___.simpleFrozenFunc(function (css) {
+        emitCssHook: ___.frozenFunc(function (css) {
           testImports.emitCss___(css.join('xyz___'));
         }),
-        getInnerHTML: ___.simpleFrozenFunc(function (tameNode) {
+        getInnerHTML: ___.frozenFunc(function (tameNode) {
           return tameNode.node___.innerHTML;
         }),
-        getAttribute: ___.simpleFrozenFunc(function (tameNode, name) {
+        getAttribute: ___.frozenFunc(function (tameNode, name) {
           return tameNode.node___.getAttribute(name);
         }),
-        getComputedStyle: ___.simpleFrozenFunc(function (tameNode, styleProp) {
+        getComputedStyle: ___.frozenFunc(function (tameNode, styleProp) {
           var node = tameNode.node___;
           if (node.currentStyle) {
             return node.currentStyle[styleProp.replace(
@@ -145,7 +145,7 @@
       });
 
       // Marks a container green to indicate that test passed
-      testImports.pass = ___.simpleFunc(function (id) {
+      testImports.pass = ___.func(function (id) {
         var node = testImports.document.getElementById(id);
         if (!node) { console.trace(); }
         node = node.node___;
@@ -165,7 +165,7 @@
         if (testImports.hasOwnProperty(name)) {
           throw new Error('already defined', name);
         }
-        testImports[name] = ___.simpleFrozenFunc(this[name], name);
+        testImports[name] = ___.frozenFunc(this[name], name);
       }
 
       // Create a readonly mirror of document so that we can test that mutations

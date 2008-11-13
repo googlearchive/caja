@@ -20,18 +20,18 @@
 
 var imports = ___.copy(___.sharedImports);
 var exports = {};
-imports.fail = ___.simpleFrozenFunc(fail);
-imports.assertEquals = ___.simpleFrozenFunc(assertEquals);
-imports.assertTrue = ___.simpleFrozenFunc(assertTrue);
-imports.assertFalse = ___.simpleFrozenFunc(assertFalse);
-imports.assertThrows = ___.simpleFrozenFunc(assertThrows);
+imports.fail = ___.frozenFunc(fail);
+imports.assertEquals = ___.frozenFunc(assertEquals);
+imports.assertTrue = ___.frozenFunc(assertTrue);
+imports.assertFalse = ___.frozenFunc(assertFalse);
+imports.assertThrows = ___.frozenFunc(assertThrows);
 imports.document = document;
 imports.console = console;
-imports.$v = valijaMaker(imports);
-___.simpleFrozenFunc(console.log);
+imports.$v = valijaMaker.CALL___(imports);
+___.frozenFunc(console.log);
 // Included in order to test this function;
 // stamp should never be made available to real caja code.
-imports.stamp = ___.simpleFrozenFunc(___.stamp);
+imports.stamp = ___.frozenFunc(___.stamp);
 imports.exports = exports;
 ___.getNewModuleHandler().setImports(imports);
 if ('undefined' !== typeof Packages) {

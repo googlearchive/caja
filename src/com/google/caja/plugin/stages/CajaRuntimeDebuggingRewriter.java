@@ -153,11 +153,11 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
     addRule(new AddPositionParamRule() {
           @Override
           @RuleDescription(
-              name="asSimpleFunc",
-              synopsis="adds debug info to ___.asSimpleFunc calls",
+              name="asFunc",
+              synopsis="Turns .CALL___ calls into ___.asFunc calls with debugging info",
               reason="",
-              matches="___.asSimpleFunc(@fun)",
-              substitutes="___.asSimpleFunc(@fun, @debug)")
+              matches="@fun.CALL___",
+              substitutes="___.asFunc(@fun, @debug)")
           public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
             return super.fire(n, s, mq);
           }
@@ -165,11 +165,11 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
     addRule(new AddPositionParamRule() {
           @Override
           @RuleDescription(
-              name="simpleFunc",
-              synopsis="adds debug info to ___.simpleFunc calls",
+              name="func",
+              synopsis="adds debug info to ___.func calls",
               reason="",
-              matches="___.simpleFunc(@fun, @name)",
-              substitutes="___.simpleFunc(@fun, @name, @debug)")
+              matches="___.func(@fun, @name)",
+              substitutes="___.func(@fun, @name, @debug)")
           public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
             return super.fire(n, s, mq);
           }
@@ -177,11 +177,11 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
     addRule(new AddPositionParamRule() {
           @Override
           @RuleDescription(
-              name="simpleFrozenFuncAnon",
-              synopsis="adds debug info to ___.simpleFrozenFunc calls",
+              name="frozenFuncAnon",
+              synopsis="adds debug info to ___.frozenFunc calls",
               reason="",
-              matches="___.simpleFrozenFunc(@fun)",
-              substitutes="___.simpleFrozenFunc(@fun, undefined, @debug)")
+              matches="___.frozenFunc(@fun)",
+              substitutes="___.frozenFunc(@fun, undefined, @debug)")
           public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
             return super.fire(n, s, mq);
           }
@@ -189,11 +189,11 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
     addRule(new AddPositionParamRule() {
           @Override
           @RuleDescription(
-              name="simpleFrozenFuncNamed",
-              synopsis="adds debug info to ___.simpleFrozenFunc calls",
+              name="frozenFuncNamed",
+              synopsis="adds debug info to ___.frozenFunc calls",
               reason="",
-              matches="___.simpleFrozenFunc(@fun, @name)",
-              substitutes="___.simpleFrozenFunc(@fun, @name, @debug)")
+              matches="___.frozenFunc(@fun, @name)",
+              substitutes="___.frozenFunc(@fun, @name, @debug)")
           public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
             return super.fire(n, s, mq);
           }

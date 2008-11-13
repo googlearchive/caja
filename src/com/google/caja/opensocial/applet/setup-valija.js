@@ -1,5 +1,5 @@
 (function(){
   var imports = ___.getNewModuleHandler().getImports();
-  imports.loader = {provide:___.simpleFunc(function(v){valijaMaker = v;})};
+  imports.loader = {provide:___.func(function(v){valijaMaker = v;})};
   imports.outers = imports;
 })();

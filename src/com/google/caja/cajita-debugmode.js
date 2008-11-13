@@ -187,9 +187,9 @@
     }
   }
 
-  function asSimpleFunc(fun, callerIdx) {
+  function asFunc(fun, callerIdx) {
     return makeWrapper(
-        fun, 'asSimpleFunc', this.debugSymbols_[callerIdx]);
+        fun, 'asFunc', this.debugSymbols_[callerIdx]);
   }
 
   function construct(fun, args, callerIdx) {
@@ -213,7 +213,7 @@
    *
    * @param {Function} fun
    * @param {string} conditionName name of the condition that checks
-   *     that fun is of the right kind.  E.g. 'asSimpleFunc'
+   *     that fun is of the right kind.  E.g. 'asFunc'
    * @param stackFrame of the call of fun in original source code.
    * @return {Function} applies fun, but attaches a cajita stack trace to any
    *     Error raised by fun.
@@ -241,8 +241,8 @@
 
     // fun might pass asCtor because it is simple.  Copy only the bits onto
     // wrapper that allow it to survive similar checks.
-    if (fun.SIMPLEFUNC___) {
-      wrapper.SIMPLEFUNC___ = true;
+    if (fun.FUNC___) {
+      wrapper.FUNC___ = true;
     } else if (fun.XO4A___) {
       wrapper.XO4A___ = true;
     }
@@ -362,7 +362,7 @@
     override_members(
         this,
         [
-         'asSimpleFunc', asSimpleFunc,
+         'asFunc', asFunc,
          'callPub', callPub,
          'construct', construct
         ], 1);
@@ -394,9 +394,9 @@
       ]);
 
   // Include the top stack frame in log messages.
-  override_members(cajita, ['log', ___.simpleFrozenFunc(log)], 0);
+  override_members(cajita, ['log', ___.frozenFunc(log)], 0);
   // Dump stack traces during loading to the console.
-  override_members(___, ['loadModule', ___.simpleFrozenFunc(loadModule)], 0);
+  override_members(___, ['loadModule', ___.frozenFunc(loadModule)], 0);
 
   startCallerStack();
 })();

@@ -33,7 +33,7 @@ sep
 =
 ___
 .
-simpleFunc
+func
 (
 function
 sep
@@ -51,26 +51,20 @@ return
 # test-input1.js:5+1-22
 if
 (
-___
-.
-asSimpleFunc
-(
 IMPORTS___
 .
 foo
-)
+.
+CALL___
 (
 )
 )
 {
-___
-.
-asSimpleFunc
-(
 IMPORTS___
 .
 bar
-)
+.
+CALL___
 (
 )
 ;
@@ -119,12 +113,9 @@ tmp0___
 'innerHTML'
 ,
 # test-input1.js:11+7-15
-___
-.
-asSimpleFunc
-(
 sep
-)
+.
+CALL___
 (
 )
 )

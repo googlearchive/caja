@@ -223,12 +223,12 @@ attachDocumentStub = (function () {
     return ___.freeze(___.stamp(timeoutIdTrademark,
                           { timeoutId___: timeoutId }));
   }
-  ___.simpleFrozenFunc(tameSetTimeout);
+  ___.frozenFunc(tameSetTimeout);
   function tameClearTimeout(timeoutId) {
     ___.guard(timeoutIdTrademark, timeoutId);
     clearTimeout(timeoutId.timeoutId___);
   }
-  ___.simpleFrozenFunc(tameClearTimeout);
+  ___.frozenFunc(tameClearTimeout);
   var intervalIdTrademark = {};
   function tameSetInterval(interval, delayMillis) {
     var intervalId = setInterval(
@@ -237,12 +237,12 @@ attachDocumentStub = (function () {
     return ___.freeze(___.stamp(intervalIdTrademark,
                           { intervalId___: intervalId }));
   }
-  ___.simpleFrozenFunc(tameSetInterval);
+  ___.frozenFunc(tameSetInterval);
   function tameClearInterval(intervalId) {
     ___.guard(intervalIdTrademark, intervalId);
     clearInterval(intervalId.intervalId___);
   }
-  ___.simpleFrozenFunc(tameClearInterval);
+  ___.frozenFunc(tameClearInterval);
 
   // See above for a description of this function.
   function attachDocumentStub(idSuffix, uriCallback, imports) {
@@ -499,7 +499,7 @@ attachDocumentStub = (function () {
       }
       node = nodeList = null;
 
-      tamed.item = ___.simpleFrozenFunc(function (k) {
+      tamed.item = ___.frozenFunc(function (k) {
         k &= 0x7fffffff;
         if (isNaN(k)) { throw new Error(); }
         return tamed[k] || null;
@@ -679,7 +679,7 @@ attachDocumentStub = (function () {
     for (var i = tameNodeMembers.length; --i >= 0;) {
       var k = tameNodeMembers[i];
       if (!TameOpaqueNode.prototype.hasOwnProperty(k)) {
-        TameOpaqueNode.prototype[k] = ___.simpleFrozenFunc(function () {
+        TameOpaqueNode.prototype[k] = ___.frozenFunc(function () {
           throw new Error('Node is opaque');
         });
       }
@@ -1314,7 +1314,7 @@ attachDocumentStub = (function () {
       setInterval: tameSetInterval,
       clearTimeout: tameClearTimeout,
       clearInterval: tameClearInterval,
-      scrollTo: ___.simpleFrozenFunc(
+      scrollTo: ___.frozenFunc(
           function (x, y) {
             // Per DOMado rules, the window can only be scrolled in response to
             // a user action.  Hence the isProcessingEvent___ check.
@@ -1342,7 +1342,7 @@ attachDocumentStub = (function () {
 
     // Iterate over all node classes, assigning them to the Window object
     // under their DOM Level 2 standard name.
-    cajita.forOwnKeys(nodeClasses, ___.simpleFunc(function(name, ctor) {
+    cajita.forOwnKeys(nodeClasses, ___.func(function(name, ctor) {
       ___.primFreeze(ctor);
       tameWindow[name] = ctor;
       ___.grantRead(tameWindow, name);

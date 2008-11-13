@@ -9,7 +9,7 @@
         var x4___;
         var x5___;
         var x6___;
-        IMPORTS___.c_1___ = ___.simpleFunc(
+        IMPORTS___.c_1___ = ___.func(
             function (thisNode___, event) {
                x1___ = thisNode___,
                x0___ = IMPORTS___.blessCss___('color', 'blue'),

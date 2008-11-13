@@ -33,16 +33,16 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
     assertStackTrace(
         "var x = null;\n"
         + "var xDotFoo = (x).foo;",
-        //                   ^^^ 2+19-22
+        //                ^^^^^^ 2+16-22
 
-        "testDereferenceNull:2+19 - 22");
+        "testDereferenceNull:2+16 - 22");
   }
 
   public void testCallOnNullObject() throws Exception {
     assertStackTrace(
         "{\n"
         + "  function f(x) { return x.foo(); }\n"
-        //                            ^^^ 2+28-31
+        //                          ^^^^^ 2+26-31
         + "  function g() { return f(null); }\n"
         //                         ^ 3+25-26
         + "\n"
@@ -52,14 +52,14 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
 
         "testCallOnNullObject:5+3 - 4\n"
         + "testCallOnNullObject:3+25 - 26\n"
-        + "testCallOnNullObject:2+28 - 31");
+        + "testCallOnNullObject:2+26 - 31");
   }
 
   public void testCallUndefinedMethod() throws Exception {
     assertStackTrace(
         "{\n"
         + "  function f(x) { return x.noSuchMethod(); }\n"
-        //                            ^^^^^^^^^^^^ 2+28-40
+        //                          ^^^^^^^^^^^^^^ 2+26-40
         + "  function g() { return f(new Date); }\n"
         //                         ^ 3+25-26
         + "\n"
@@ -69,19 +69,19 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
 
         "testCallUndefinedMethod:5+3 - 4\n"
         + "testCallUndefinedMethod:3+25 - 26\n"
-        + "testCallUndefinedMethod:2+28 - 40");
+        + "testCallUndefinedMethod:2+26 - 40");
   }
 
   public void testReflectiveInvocation() throws Exception {
     // Constructors cannot be called or applied unless they are also simple fns.
     assertStackTrace(
         "Date.call({}, 4);\n",
-        //    ^^^^ 1+6 - 10
-        "testReflectiveInvocation:1+6 - 10");
+        //^^^^^^^^^^^^^^ 1+1 - 16
+        "testReflectiveInvocation:1+1 - 16");
     assertStackTrace(
         "Date.apply({}, 4);\n",
-        //    ^^^^^ 1+6 - 11
-        "testReflectiveInvocation:1+6 - 11");
+        //^^^^^^^^^^^^^^^ 1+1 - 17
+        "testReflectiveInvocation:1+1 - 17");
   }
 
   public void testInaccessibleProperty() throws Exception {
@@ -100,8 +100,8 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
   public void testSetOfNullObject() throws Exception {
     assertStackTrace(
         "(null).x = 0;",
-        //      ^ 1+8-9
-        "testSetOfNullObject:1+8 - 9");
+        //^^^^^^^^^^^ 1+2-13
+        "testSetOfNullObject:1+2 - 13");
   }
 
   public void testDeleteOfNullObject() throws Exception {
@@ -116,8 +116,8 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         ""
         + "var o = cajita.freeze({ x: 1 });\n"
         + "(null).x = 0;",
-        //        ^ 2+8-9
-        "testSetOfFrozenObject:2+8 - 9");
+        //  ^^^^^^^^^^^ 2+2-13
+        "testSetOfFrozenObject:2+2 - 13");
   }
 
   public void testDeleteOfFrozenObject() throws Exception {
@@ -264,7 +264,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
     runCajoled("result(" + js + ");", golden,
                "var output = '<no-output>';"
                + "___.getNewModuleHandler().getImports().result = "
-               + "    ___.simpleFrozenFunc(function (x) { output = x; });"
+               + "    ___.frozenFunc(function (x) { output = x; });"
                + "%s;"
                + "output");
   }

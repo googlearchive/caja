@@ -72,7 +72,7 @@
     (function(){
       var imports = ___.copy(___.sharedImports);
       imports.loader = {
-        provide: ___.simpleFunc(function(v) {
+        provide: ___.func(function(v) {
           valijaMaker = v;
         })
       };
@@ -91,13 +91,13 @@
 
     var origModuleHandler = ___.getNewModuleHandler();
     var debugModuleHandler = {
-      getImports: ___.simpleFunc(function () {
+      getImports: ___.func(function () {
         return origModuleHandler.getImports.apply(origModuleHandler, arguments);
       }),
-      setImports: ___.simpleFunc(function () {
+      setImports: ___.func(function () {
         return origModuleHandler.setImports.apply(origModuleHandler, arguments);
       }),
-      handle: ___.simpleFunc(function () {
+      handle: ___.func(function () {
         try {
           return origModuleHandler.handle.apply(origModuleHandler, arguments);
         } catch (e) {
@@ -119,23 +119,23 @@
 
     var imports = ___.copy(___.sharedImports);
     ___.getNewModuleHandler().setImports(imports);
-    imports.$v = valijaMaker(imports);
+    imports.$v = valijaMaker.CALL___(imports);
     attachDocumentStub('-pre___', uriCallback, imports);
     // Grant readonly access to a portion of the DOM
     imports.document.body = makeReadOnlyNode(document.body);
     imports.document.title = String(document.title);
     ___.all2(___.grantRead, imports.document, ['body', 'title']);
 
-    imports.console = { log: ___.simpleFunc(function (var_args) {
+    imports.console = { log: ___.func(function (var_args) {
                           console.log.apply(console, arguments);
                         }),
-                        assert: ___.simpleFunc(function (var_args) {
+                        assert: ___.func(function (var_args) {
                           console.assert.apply(console, arguments);
                         }),
-                        time: ___.simpleFunc(function (var_args) {
+                        time: ___.func(function (var_args) {
                           console.time.apply(console, arguments);
                         }),
-                        timeEnd: ___.simpleFunc(function (var_args) {
+                        timeEnd: ___.func(function (var_args) {
                           console.timeEnd.apply(console, arguments);
                         })
                       };
@@ -146,7 +146,7 @@
     ___.all2(___.grantRead, imports,
              ['window', 'htmlInterp', 'StringInterpolation']);
     ___.grantCall(htmlInterp, 'safeHtml');
-    ___.simpleFunc(StringInterpolation);
+    ___.func(StringInterpolation);
 
     ___.grantCall(StringInterpolation.prototype, 'append');
 

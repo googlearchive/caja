@@ -773,6 +773,7 @@
        ]]>
      </replacevalue>
     </replace>
+    <!-- The following should use the same files as the above list -->
     <transform>
       <output file="${www}/testbed/cajita-combined-min.js"
        language="javascript" renderer="minify"/>
@@ -784,6 +785,7 @@
       <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
       <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
+      <include file="${src}/com/google/caja/opensocial/applet/setup-valija.js"/>
       <include file="${src}/com/google/caja/plugin/bridal.js"/>
       <include file="${src}/com/google/caja/plugin/domita.js"/>
       <include file="${third_party}/js/prettify/prettify.js"/>

@@ -220,49 +220,100 @@ public abstract class Rule implements MessagePart {
     return new Reference(s(new Identifier(name)));
   }
 
-  protected Expression newCommaOperation(List<? extends ParseTreeNode> operands) {
-    if (operands.isEmpty()) { return Operation.undefined(); }
-    Expression result = (Expression)operands.get(0);
-    for (int i = 1; i < operands.size(); i++) {
-      result = Operation.create(Operator.COMMA, result, (Expression)operands.get(i));
+  /**
+   * Given two expressions in comma normal form (defined below), this returns
+   * an expression equivalent to <tt>left,right</tt> that is also in comma
+   * normal form.
+   * <p>
+   * An expression is in <i>comma normal form</i> if<ul>
+   * <li>It is not a comma expression or
+   * <li>It is a comma expression, but its right operand is not, and<ul>
+   *     <li>its left operand is in comma normal form, and
+   *     <li>its left operand is not <tt>void 0</tt>, and
+   *     <li>if its left operand is a comma expression, its left
+   *         operand's right operand is not <tt>void 0</tt>.
+   *     </ul>
+   * </ul>
+   */
+  private Expression comma(Expression left, Expression right) {
+    Map<String, ParseTreeNode> leftBindings = makeBindings();
+    Map<String, ParseTreeNode> rightBindings = makeBindings();
+    if (QuasiBuilder.match("void 0", left)) {
+      return right;
+    } else if (QuasiBuilder.match("@leftLeft, void 0", left, leftBindings)) {
+      return comma((Expression) leftBindings.get("leftLeft"), right);
+    } else if (QuasiBuilder.match("@rightLeft, @rightRight", right, rightBindings)) {
+      return comma(comma(left, (Expression) rightBindings.get("rightLeft")),
+                   (Expression) rightBindings.get("rightRight"));
+    } else {
+      return Operation.create(Operator.COMMA, left, right);
+    }
+  }
+
+  protected Expression commas(Expression... operands) {
+    Expression result = Operation.undefined();
+    for (int i = 0; i < operands.length; i++) {
+      result = comma(result, operands[i]);
     }
     return result;
   }
 
-  protected Pair<ParseTreeNode, ParseTreeNode> reuse(
+  static private final Expression[] NO_EXPRS = {};
+
+  protected Expression newCommaOperation(List<? extends ParseTreeNode> operands) {
+    return commas(operands.toArray(NO_EXPRS));
+  }
+
+  /**
+   * Returns a pair of a reusable expression and an initializing expression that
+   * together represent the reusable expansion of the <tt>value</tt> expression.
+   * <p>
+   * In the expansion context, the initializing expression must be executed
+   * exactly once and prior to evaluating the reusable expression.
+   */
+  protected Pair<Expression, Expression> reuse(
       ParseTreeNode value,
       Scope scope,
       MessageQueue mq) {
-    ParseTreeNode reference = new Reference(
+    Expression rhs = (Expression) rewriter.expand(value, scope, mq);
+    if (rhs instanceof Reference || rhs instanceof Literal) {
+      return new Pair<Expression, Expression>(rhs, Operation.undefined());
+    }
+    Expression tempRef = new Reference(
         scope.declareStartOfScopeTempVariable());
-    ParseTreeNode variableDefinition = QuasiBuilder.substV(
+    Expression tempInit = (Expression) QuasiBuilder.substV(
         "@ref = @rhs;",
-        "ref", reference,
-        "rhs", rewriter.expand(value, scope, mq));
-    return new Pair<ParseTreeNode, ParseTreeNode>(
-        reference,
-        variableDefinition);
+        "ref", tempRef,
+        "rhs", rhs);
+    return new Pair<Expression, Expression>(tempRef, tempInit);
   }
 
-  protected Pair<ParseTreeNode, ParseTreeNode> reuseAll(
+  /**
+   * Returns a pair of a reusable expression list and an initializing expression that
+   * together represent the reusable expansion of the <tt>arguments</tt> expression list.
+   * <p>
+   * In the expansion context, the initializing expression must be executed
+   * exactly once and prior to evaluating the reusable expression.
+   */
+  protected Pair<ParseTreeNodeContainer, Expression> reuseAll(
       ParseTreeNode arguments,
       Scope scope,
       MessageQueue mq) {
     List<ParseTreeNode> refs = new ArrayList<ParseTreeNode>();
-    List<ParseTreeNode> rhss = new ArrayList<ParseTreeNode>();
+    Expression[] inits = new Expression[arguments.children().size()];
 
     for (int i = 0; i < arguments.children().size(); i++) {
-      Pair<ParseTreeNode, ParseTreeNode> p = reuse(
-          arguments.children().get(i),
+      Pair<Expression, Expression> p = reuse(
+          (Expression) arguments.children().get(i),
           scope,
           mq);
       refs.add(p.a);
-      rhss.add(p.b);
+      inits[i] = p.b;
     }
 
-    return new Pair<ParseTreeNode, ParseTreeNode>(
+    return new Pair<ParseTreeNodeContainer, Expression>(
         new ParseTreeNodeContainer(refs),
-        new ParseTreeNodeContainer(rhss));
+        commas(inits));
   }
 
   protected void checkFormals(ParseTreeNode formals, MessageQueue mq) {
