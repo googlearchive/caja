@@ -55,7 +55,7 @@ abstract class AbstractRenderer implements TokenConsumer {
   }
 
   /**
-   * Handles writing the given token to the output Appendable.
+   * Handles writing the given token to the output {@link Appendable}.
    * @throws IOException iff writing to out raises an IOException.
    */
   protected abstract void append(String text) throws IOException;
