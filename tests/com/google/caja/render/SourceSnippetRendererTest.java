@@ -32,10 +32,12 @@ public class SourceSnippetRendererTest extends OrigSourceRendererTestCase {
         "ss-test-input.js");
   }
 
+  @Override
   protected TokenConsumer createRenderer(
       Map<InputSource, ? extends CharSequence> originalSource,
       MessageContext mc, Appendable out, Callback<IOException> exHandler) {
     return new SourceSnippetRenderer(originalSource, mc, out, exHandler) {
+      @Override
       protected TokenConsumer createDelegateRenderer(
           Appendable out, Callback<IOException> exHandler) {
         return new JsPrettyPrinter(out, exHandler);

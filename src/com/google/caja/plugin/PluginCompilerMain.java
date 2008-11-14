@@ -78,12 +78,13 @@ public final class PluginCompilerMain {
 
   private class CachingEnvironment extends FileSystemEnvironment {
     public CachingEnvironment(File f) { super(f); }
-    
+
+    @Override
     protected Reader newReader(File f) throws FileNotFoundException {
       return createReader(new InputSource(f), new FileInputStream(f));
     }
   }
-  
+
   private PluginCompilerMain() {
     mq = new SimpleMessageQueue();
     mc = new MessageContext();
@@ -216,6 +217,7 @@ public final class PluginCompilerMain {
         case SIDEBYSIDE:
           tc = new SourceSnippetRenderer(
               buildOriginalInputCharSequences(), mc, out, ioHandler) {
+            @Override
             protected TokenConsumer createDelegateRenderer(
                 Appendable out, Callback<IOException> exHandler) {
               return new JsPrettyPrinter(out, exHandler);
@@ -290,7 +292,7 @@ public final class PluginCompilerMain {
     } catch (UnsupportedEncodingException e) {
       throw new AssertionError(e);
     }
-    
+
     if (config.renderer() == Config.SourceRenderMode.SIDEBYSIDE) {
       CapturingReader cr = new CapturingReader(isr);
       originalInputs.put(is, cr);

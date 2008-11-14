@@ -304,9 +304,7 @@ public abstract class Rule implements MessagePart {
 
     for (int i = 0; i < arguments.children().size(); i++) {
       Pair<Expression, Expression> p = reuse(
-          (Expression) arguments.children().get(i),
-          scope,
-          mq);
+          arguments.children().get(i), scope, mq);
       refs.add(p.a);
       inits[i] = p.b;
     }

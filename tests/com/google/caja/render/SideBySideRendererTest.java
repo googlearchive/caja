@@ -32,6 +32,7 @@ public class SideBySideRendererTest extends OrigSourceRendererTestCase {
         "sbs-test-input1.js", "sbs-test-input2.html", "sbs-test-input3.css");
   }
 
+  @Override
   protected TokenConsumer createRenderer(
       Map<InputSource, ? extends CharSequence> originalSource,
       MessageContext mc, Appendable out, Callback<IOException> exHandler) {

@@ -14,8 +14,8 @@
 
 package com.google.caja.util;
 
-import java.io.Reader;
 import java.io.IOException;
+import java.io.Reader;
 
 /**
  * Given any {@code Reader}, captures the characters that are read and makes
@@ -27,18 +27,18 @@ public class CapturingReader extends Reader {
   public static final int DEFAULT_INITIAL_SIZE = 1024;
 
   private final Reader delegate;
-  private StringBuffer buf;
+  private StringBuilder buf;
   private CharSequence capture = null;
 
   /**
    * Creates a {@code CapturingReader}.
    *
    * @param delegate the underlying {@code Reader} to which reads are delegated.
-   * @param initialSize the intial size of the buffer for the cache.
+   * @param initialSize the initial size of the buffer for the cache.
    */
   public CapturingReader(Reader delegate, int initialSize) {
     this.delegate = delegate;
-    buf = new StringBuffer(initialSize);
+    buf = new StringBuilder(initialSize);
   }
 
   /**
@@ -50,9 +50,7 @@ public class CapturingReader extends Reader {
     this(delegate, DEFAULT_INITIAL_SIZE);
   }
 
-  /**
-   * @see java.io.Reader#read(char[], int, int) 
-   */
+  @Override
   public int read(char[] chars, int off, int len) throws IOException {
     if (buf == null) { throw new IOException("Reader is closed"); }
     int bytesRead = delegate.read(chars, off, len);
@@ -61,13 +59,12 @@ public class CapturingReader extends Reader {
     return bytesRead;
   }
 
-  /**
-   * @see java.io.Reader#close()
-   */
+  @Override
   public void close() throws IOException {
     if (buf == null) { return; }
     capture = buf.toString();
     buf = null;
+    delegate.close();
   }
 
   /**

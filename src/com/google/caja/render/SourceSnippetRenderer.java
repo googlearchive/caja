@@ -41,20 +41,17 @@ public abstract class SourceSnippetRenderer implements TokenConsumer {
    * we capture this text by adding it to 'renderedTextAccumulator'
    */
   private final Appendable rendererAppendable = new Appendable() {
-    public Appendable append(CharSequence charSequence)
-        throws IOException {
+    public Appendable append(CharSequence charSequence) {
       renderedTextAccumulator.append(charSequence);
       return this;
     }
 
-    public Appendable append(CharSequence charSequence, int i, int j)
-        throws IOException {
+    public Appendable append(CharSequence charSequence, int i, int j) {
       renderedTextAccumulator.append(charSequence, i, j);
       return this;
     }
 
-    public Appendable append(char c)
-        throws IOException {
+    public Appendable append(char c) {
       renderedTextAccumulator.append(c);
       return this;
     }
@@ -65,7 +62,7 @@ public abstract class SourceSnippetRenderer implements TokenConsumer {
     private final int lineNo;
     private final String text;
     private Map<Integer, Integer> evidence = new HashMap<Integer, Integer>();
-    
+
     public OriginalSourceLine(InputSource source, int lineNo, String text) {
       this.source = source;
       this.lineNo = lineNo;
@@ -86,7 +83,7 @@ public abstract class SourceSnippetRenderer implements TokenConsumer {
           renderedLine,
           evidence.get(renderedLine) + weight);
     }
-    
+
     public int computeBestRenderedLine() {
       int bestLine = -1;
       int bestEvidence = 0;
@@ -107,7 +104,7 @@ public abstract class SourceSnippetRenderer implements TokenConsumer {
     private final StringBuilder textBuffer = new StringBuilder();
     private final Map<InputSource, Map<Integer, OriginalSourceLine>> lines =
         new HashMap<InputSource, Map<Integer, OriginalSourceLine>>();
-    
+
     public RenderedSourceLine(int lineNo, String text) {
       this.lineNo = lineNo;
       textBuffer.append(text);
@@ -138,7 +135,7 @@ public abstract class SourceSnippetRenderer implements TokenConsumer {
             .append("// *** ")
             .append(s.getShortName(mc.inputSources))
             .append(" ***\n");
-        
+
         Map<Integer, OriginalSourceLine> forSource = lines.get(s);
         List<Integer> sortedLines = new ArrayList<Integer>(forSource.keySet());
         Collections.sort(sortedLines);
@@ -194,7 +191,7 @@ public abstract class SourceSnippetRenderer implements TokenConsumer {
   public void consume(String text) {
     delegateRenderer.consume(text);
   }
-  
+
   public void noMoreTokens() {
     delegateRenderer.noMoreTokens();
     processCurrentMark();
@@ -241,7 +238,7 @@ public abstract class SourceSnippetRenderer implements TokenConsumer {
     List<OriginalSourceLine> sourceList =
         originalSourceLines.get(currentMark.source());
     if (sourceList == null) { return; }
-    
+
     for (int l = currentMark.startLineNo() - 1;
          l <= (currentMark.endLineNo() - 1);
          ++l) {

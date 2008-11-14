@@ -45,8 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import java.net.URI;
-
 /**
  * Creates a JavaScript {@link QuasiNode} tree given a JavaScript
  * {@link com.google.caja.parser.ParseTreeNode} tree.
