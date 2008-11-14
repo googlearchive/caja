@@ -23,6 +23,28 @@ import com.google.caja.util.CajaTestCase;
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class CajitaTest extends CajaTestCase {
+  public void testAllKeys() throws Exception {
+    runTest(
+        "  try { var x = cajita.allKeys(undefined); }"
+        + "catch (e) { fail('should be allowed to enumerate properties of undefined'); }");
+    runTest(
+        "  try { var x = cajita.allKeys(null); }"
+        + "catch (e) { fail('should be allowed to enumerate properties of null'); }");
+    runTest(
+        "  try { var x = cajita.allKeys(false); }"
+        + "catch (e) { fail('should be allowed to enumerate properties of false'); }");
+    runTest(
+        "  try { var x = cajita.allKeys(0); }"
+        + "catch (e) { fail('should be allowed to enumerate properties of zero'); }");
+    runTest(
+        "  try { var x = cajita.allKeys(''); }"
+        + "catch (e) { fail('should be allowed to enumerate properties of empty string'); }");
+    runTest(
+        "  try { var x = cajita.allKeys({y:1, z:2}).sort(); }"
+        + "catch (e) { fail('should be allowed to enumerate properties of an object'); }"
+        + "assertTrue(x[0] === 'y' && x[1] === 'z');");
+  }
+  
   public void testGrantFunc() throws Exception {
     runTest(
         "  var o = { f: function(x) { this.x = x; } };"

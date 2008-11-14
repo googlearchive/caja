@@ -1475,7 +1475,7 @@ var ___;
           result.push(k);
         }
       }
-      if (obj.handleEnum___) {
+      if (obj !== void 0 && obj !== null && obj.handleEnum___) {
         result = result.concat(obj.handleEnum___(true));
       }
     }
@@ -1498,7 +1498,7 @@ var ___;
           result.push(k);
         }
       }
-      if (obj.handleEnum___) {
+      if (obj !== void 0 && obj !== null && obj.handleEnum___) {
         result = result.concat(obj.handleEnum___(false));
       }
       return result;
