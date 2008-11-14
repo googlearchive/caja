@@ -117,6 +117,7 @@
   <input type="radio" value="2" name="number">
 </form>
 
+<div class="testcontainer" id="test-props-on-nodes">Original Text</div>
 
 <script type="text/javascript">
 /** Aim high and you might miss the moon! */
@@ -805,6 +806,20 @@ jsunitRegister('testRadioButtons',
   assertFalse('radio2 should not be checked after reset', radio2.checked);
 
   pass('test-radio-buttons');
+});
+
+jsunitRegister('testPropsOnNodes',
+               function testPropsOnNodes() {
+  var div = document.getElementById("test-props-on-nodes");
+  var str = "";
+  var i;
+  
+  div.newProp = 1;
+  cajita.forAllKeys(div, function(i){ str += i + ": " + div[i] + "<br>"; });
+  assertTrue("newProp should be among the enumerated properties", str.match("newProp: 1"));
+  div.innerHTML = str;
+  assertTrue("innerHTML should be treated as an attribute, not a property",
+      div.getAttribute("innerHTML") === str);
 });
 
 </script>

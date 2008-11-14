@@ -1475,6 +1475,9 @@ var ___;
           result.push(k);
         }
       }
+      if (obj.handleEnum___) {
+        result = result.concat(obj.handleEnum___(true));
+      }
     }
     return result;
   }
@@ -1494,6 +1497,9 @@ var ___;
         if (canEnumPub(obj, k)) {
           result.push(k);
         }
+      }
+      if (obj.handleEnum___) {
+        result = result.concat(obj.handleEnum___(false));
       }
       return result;
     }
