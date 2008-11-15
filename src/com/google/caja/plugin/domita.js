@@ -451,8 +451,9 @@ attachDocumentStub = (function () {
       // TODO(mikesamuel): make sure it really is a DOM node
 
       // TODO(benl): replace this with a proper cache
-      if (node.tamed___)
- 	return node.tamed___;
+      if (node.tamed___) {
+        return node.tamed___;
+      }
 
       var tamed;
       switch (node.nodeType) {
@@ -464,25 +465,25 @@ attachDocumentStub = (function () {
             // doesn't prevent tree navigation, but that doesn't allow
             // mutation or leak attribute information.
             tamed = new TameOpaqueNode(node, editable);
-	    break;
+            break;
           }
           switch (tagName) {
             case 'a':
               tamed = new TameAElement(node, editable);
-	      break;
+              break;
             case 'form':
               tamed = new TameFormElement(node, editable);
-	      break;
+              break;
             case 'select':
             case 'button':
             case 'option':
             case 'textarea':
             case 'input':
               tamed = new TameInputElement(node, editable);
-	      break;
+              break;
             case 'img':
               tamed = new TameImageElement(node, editable);
-	      break;
+              break;
             case 'td':
             case 'tr':
             case 'thead':
@@ -490,24 +491,24 @@ attachDocumentStub = (function () {
             case 'tbody':
             case 'th':
               tamed = new TameTableCompElement(node, editable);
-	      break;
+              break;
             case 'table':
               tamed = new TameTableElement(node, editable);
-	      break;
+              break;
             default:
               tamed = new TameElement(node, editable);
-	      break;
+              break;
           }
-	  break;
+          break;
         case 3:  // Text
           tamed = new TameTextNode(node, editable);
-	  break;
+          break;
         case 8:  // Comment
           tamed = new TameCommentNode(node, editable);
-	  break;
+          break;
         default:
           tamed = new TameOpaqueNode(node, editable);
-	  break;
+          break;
       }
 
       node.tamed___ = tamed;
@@ -539,7 +540,10 @@ attachDocumentStub = (function () {
         // Make the node available via its name if doing so would not mask
         // any properties of tamed.
         var key = opt_keyAttrib && node.getAttribute(opt_keyAttrib);
-        if (key && !(/_$/.test(key) || (key in tamed)
+        // TODO(mikesamuel): if key in tamed, we have an ambiguous match.
+        // Include neither?  This may happen with radio buttons in a form's
+        // elements list.
+        if (key && !(key.charAt(key.length - 1) === '_' || (key in tamed)
                      || key === String(key & 0x7fffffff))) {
           tamed[key] = node;
         }
@@ -577,6 +581,7 @@ attachDocumentStub = (function () {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       if (!this.wrappedListeners___) { this.wrappedListeners___ = []; }
       name = String(name);
+      useCapture = Boolean(useCapture);
       var wrappedListener = makeEventHandlerWrapper(this.node___, listener);
       this.wrappedListeners___.push(wrappedListener);
       bridal.addEventListener(this.node___, name, wrappedListener, useCapture);
@@ -597,7 +602,8 @@ attachDocumentStub = (function () {
       }
       if (!wrappedListener) { return; }
       name = String(name);
-      bridal.removeEventListener(this.node___, name, wrappedListener, useCapture);
+      bridal.removeEventListener(
+           this.node___, name, wrappedListener, useCapture);
     }
 
     // Implementation of EventTarget::dispatchEvent
@@ -1389,7 +1395,7 @@ attachDocumentStub = (function () {
       TameElement.call(this, node, editable);
       exportFields(this,
                    ['colSpan','cells','rowSpan','rows','rowIndex','align',
-		    'vAlign','nowrap']);
+                    'vAlign','nowrap']);
     }
     extend(TameTableCompElement, TameElement);
     TameTableCompElement.prototype.getColSpan = function () {
@@ -1655,7 +1661,7 @@ attachDocumentStub = (function () {
     ___.all2(___.grantTypedGeneric, TameDocument.prototype,
              ['addEventListener', 'removeEventListener', 'dispatchEvent',
               'createElement', 'createTextNode', 'getElementById',
-   	      'getElementsByTagName', 'getElementsByClassName', 'write']);
+              'getElementsByTagName', 'getElementsByClassName', 'write']);
 
     imports.tameNode___ = tameNode;
     imports.tameEvent___ = function (event) { return new TameEvent(event); };
@@ -2042,7 +2048,7 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   (typeof console !== 'undefined' && console.log) &&
   console.log(
       'Dispatch %s event thisNode=%o, event=%o, pluginId=%o, handler=%o',
-      event.type, thisNode, event, pluginId, handler);
+      (event && event.type), thisNode, event, pluginId, handler);
   var imports = ___.getImports(pluginId);
   switch (typeof handler) {
     case 'string':

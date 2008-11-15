@@ -107,10 +107,13 @@ var html = (function () {
   var INSIDE_TAG_TOKEN = new RegExp(
       // Don't capture space.
       '^\\s*(?:'
-      // Capture an attribute name in group 1, and value in group 2.
+      // Capture an attribute name in group 1, and value in group 3.
+      // We capture the fact that there was an attribute in group 2, since
+      // interpreters are inconsistent in whether a group that matches nothing
+      // is null, undefined, or the empty string.
       + ('(?:'
          + '([a-z][a-z-]*)'
-         + ('(?:'
+         + ('('
             + '\\s*=\\s*'
             + ('('
                // A double quoted string.
@@ -194,9 +197,9 @@ var html = (function () {
           if (m[1]) { // attribute
             // setAttribute with uppercase names doesn't work on IE6.
             var attribName = lcase(m[1]);
-            var encodedValue = m[2];
             var decodedValue;
-            if (encodedValue !== null && encodedValue !== void 0) {
+            if (m[2]) {
+              var encodedValue = m[3];
               switch (encodedValue.charCodeAt(0)) {  // Strip quotes
                 case 34: case 39:
                   encodedValue = encodedValue.substring(
@@ -211,7 +214,7 @@ var html = (function () {
               decodedValue = attribName;
             }
             attribs.push(attribName, decodedValue);
-          } else if (m[3]) {
+          } else if (m[4]) {
             if (eflags !== void 0) {  // False if not in whitelist.
               if (openTag) {
                 handler.startTag && handler.startTag(tagName, attribs, param);

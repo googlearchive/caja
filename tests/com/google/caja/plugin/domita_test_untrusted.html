@@ -743,10 +743,10 @@ jsunitRegister('testEventHandlerAttributes',
 
   var setOnclickOnMe = document.getElementById('set-onclick-on-me');
   assertFalse(autoclicky.clicked[1]);
-  directAccess.click(setOnclickOnMe);  
+  directAccess.click(setOnclickOnMe);
   assertFalse(autoclicky.clicked[1]);
   setOnclickOnMe.onclick = function () { autoclicky.click(1); };
-  directAccess.click(setOnclickOnMe);  
+  directAccess.click(setOnclickOnMe);
   assertTrue(autoclicky.clicked[1]);
 
   pass('test-event-handler-attributes');
@@ -813,13 +813,15 @@ jsunitRegister('testPropsOnNodes',
   var div = document.getElementById("test-props-on-nodes");
   var str = "";
   var i;
-  
+
   div.newProp = 1;
-  cajita.forAllKeys(div, function(i){ str += i + ": " + div[i] + "<br>"; });
-  assertTrue("newProp should be among the enumerated properties", str.match("newProp: 1"));
+  cajita.forAllKeys(div, function (i){ str += i + ": " + div[i] + "<br>"; });
+  assertTrue("newProp should be among the enumerated properties",
+             (new RegExp('\\bnewProp: 1\\b')).test(str));
   div.innerHTML = str;
-  assertTrue("innerHTML should be treated as an attribute, not a property",
-      div.getAttribute("innerHTML") === str);
+  assertNotEquals("innerHTML should not be treated as an attribute",
+                  str, div.getAttribute("innerHTML"));
+  pass('test-props-on-nodes');
 });
 
 </script>

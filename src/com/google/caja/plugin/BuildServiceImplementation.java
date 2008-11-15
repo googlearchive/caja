@@ -124,7 +124,7 @@ public class BuildServiceImplementation implements BuildService {
       };
 
     MessageContext mc = new MessageContext();
-    
+
     // Set up the cajoler
     String language = (String) options.get("language");
     boolean passed = true;
@@ -167,9 +167,11 @@ public class BuildServiceImplementation implements BuildService {
       passed = true;
       for (File f : inputs) {
         try {
-          block.appendChild(parseInput(
-              new InputSource(f.getCanonicalFile().toURI()), mq)
-              .cast(Statement.class).node);
+          AncestorChain<?> parsedInput = parseInput(
+              new InputSource(f.getCanonicalFile().toURI()), mq);
+          if (parsedInput != null) {
+            block.appendChild(parsedInput.cast(Statement.class).node);
+          }
         } catch (IOException ex) {
           logger.println("Failed to read " + f);
           passed = false;

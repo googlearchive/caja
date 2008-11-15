@@ -436,8 +436,15 @@
       <include name="**/caja/AllTests.java"/>
       <include name="**/caja/util/*.java"/>
       <include name="**/caja/**/*Test.java"/>
+      <include name="**/caja/plugin/DomProcessingEventsTestData.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
+
+    <genrule class="com.google.caja.plugin.DomProcessingEventsTestData$Builder">
+      <depend
+       file="${lib}/com/google/caja/plugin/DomProcessingEventsTestData.class"/>
+      <output file="${lib}/com/google/caja/plugin/dpe-compiled.js"/>
+    </genrule>
 
     <!-- TODO(mikesamuel): Can we replace these tree copies with something
       - that builds a symlink tree? -->

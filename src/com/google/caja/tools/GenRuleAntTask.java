@@ -36,8 +36,10 @@ public class GenRuleAntTask extends AbstractCajaAntTask {
                         List<File> depends, List<File> inputs, File output,
                         Map<String, Object> options)
        throws BuildException {
+    boolean succeeded = false;
     try {
       clazz.newInstance().build(inputs, depends, output);
+      succeeded = true;
       return true;
     } catch (IOException ex) {
       throw new BuildException(ex);
@@ -45,6 +47,8 @@ public class GenRuleAntTask extends AbstractCajaAntTask {
       throw new BuildException(ex);
     } catch (InstantiationException ex) {
       throw new BuildException(ex);
+    } finally {
+      if (!succeeded) { output.delete(); }
     }
   }
 
@@ -55,7 +59,7 @@ public class GenRuleAntTask extends AbstractCajaAntTask {
     Class<?> clazz = loader.loadClass(className);
     this.clazz = clazz.asSubclass(BuildCommand.class);
   }
-  
+
   @Override
   Output makeOutput() { return new Output() {}; }
 }

@@ -58,8 +58,14 @@ function jsunitRun() {
     } catch (e) {
       firstFailure = firstFailure || e;
       nFailures++;
-      (typeof console !== 'undefined')
-          && (console.error((e.message || '' + e) + '\n' + e.stack));
+      if (typeof console !== 'undefined') {
+        if (e.isJsUnitException) {
+          console.error(
+              e.comment + '\n' + e.jsUnitMessage + '\n' + e.stackTrace);
+        } else {
+          console.error((e.message || '' + e) + '\n' + e.stack);
+        }
+      }
     } finally {
       if (groupLogMessages) {
         console.timeEnd(testName);

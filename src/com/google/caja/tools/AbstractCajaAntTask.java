@@ -43,7 +43,7 @@ public abstract class AbstractCajaAntTask extends Task {
   private final List<Depend> depends = new ArrayList<Depend>();
   /** Outputs to generate. */
   private final List<Output> outputs = new ArrayList<Output>();
-  
+
   /** Called to actually execute a job by invoking the BuildService. */
   protected abstract boolean run(BuildService buildService, PrintWriter logger,
                                  List<File> depends, List<File> inputs,
@@ -52,9 +52,6 @@ public abstract class AbstractCajaAntTask extends Task {
 
   @Override
   public void execute() throws BuildException {
-    if (includes.isEmpty()) {
-      throw new BuildException("caja task must have one or more <include>s");
-    }
     try {
       for (Include include : includes) { include.requireExecutable(); }
       for (Output output : outputs) { output.requireExecutable(); }
@@ -128,14 +125,14 @@ public abstract class AbstractCajaAntTask extends Task {
     depends.add(depend);
     return depend;
   }
-  
+
   /** Invoked reflectively whenever {@code <output>} is seen. */
   public final Output createOutput() {
     Output output = makeOutput();
     outputs.add(output);
     return output;
   }
-  
+
   abstract Output makeOutput();
 
   /** Encapsulates input files and the output files that should be produced. */
@@ -182,7 +179,7 @@ public abstract class AbstractCajaAntTask extends Task {
         }
       }
     }
-    
+
     /**
      * A map of options that are specified on the {@code output} element as
      * expected by {@link AbstractCajaAntTask#run}.

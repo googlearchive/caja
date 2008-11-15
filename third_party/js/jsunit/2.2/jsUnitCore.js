@@ -323,7 +323,7 @@ function assertLessThan(value, exclusiveUpperBound) {
               + value + ' >= ' + exclusiveUpperBound);
     }
 }
- 
+
 function assertThrows(func, opt_msg) {
     var nil = {};
     var thrown = nil;
@@ -380,7 +380,7 @@ function getStackTrace() {
         var testExcp;
         try
         {
-            foo.bar;
+            throw new Error();
         }
         catch(testExcp)
         {

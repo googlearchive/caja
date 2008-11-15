@@ -22,6 +22,7 @@ import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.TestUtil;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -157,7 +158,7 @@ public class HtmlCompilerTest extends CajaTestCase {
         mc, mq, makeTestPluginMeta());
     Block compiled = htmlc.compileDocument(htmlFragment(fromString(htmlText)));
     // TODO(mikesamuel): find a common place for removePseudoNodes.
-    DomProcessingEventsTest.removePseudoNodes(compiled);
+    TestUtil.removePseudoNodes(compiled);
     for (Statement handler : htmlc.getEventHandlers()) {
       compiled.appendChild(handler);
     }
