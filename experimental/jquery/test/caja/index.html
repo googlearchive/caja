@@ -1,0 +1,281 @@
+<!--
+ - Copyright (C) 2008 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+
+<html>
+  <head>
+    <title>Caja Test Bed</title>
+
+    <style type="text/css">
+      body { font-family: arial,helvetica }
+      p,td,span,input,label { font-family: arial,helvetica;font-size:12px }
+      form { display: inline }
+      div.message                { margin: 2px 2px .5em 2px; padding-left: 4px }
+      .message                   { border-left: 4px solid #000 }
+      .message.WARNING,
+      .message.CRITICAL_WARNING  { border-left: 4px solid #bb0 }
+      .message.ERROR,
+      .message.FATAL_ERROR       { border-left: 4px solid #800 }
+
+      .problem                   { border: 1px dotted #000 }
+      .WARNING          .problem,
+      .CRITICAL_WARNING .problem { border: 1px dotted #880; background: #ffd }
+      .ERROR            .problem,
+      .FATAL_ERROR      .problem { border: 1px dotted #800; background: #fee }
+
+      center.failure             { font-style: italic; font-size: 150% }
+
+      .result .type { float: right }
+      .result {
+        font-family: monospace;
+        white-space: pre;
+        border-left: 6px solid #888;
+        padding-left: 4px;
+        margin: 2px
+      }
+
+      .output {
+        font-family: monospace;
+        margin-left: 2em;
+      }
+
+      div.indentedblock {
+        margin-left: 1em;
+      }
+      div.line-of-code {
+        text-indent: -2em;
+      }
+
+      .cajita-stack { white-space: pre; font-family: monospace }
+    </style>
+  <script type="text/javascript" src="cajita-combined-min.js"></script>
+  <script>
+    function asyncLoadScript(url) {
+       var e = document.createElement("script");
+       e.src = url;
+       e.type="text/javascript";
+       document.getElementsByTagName("head")[0].appendChild(e);
+    }
+    var loadurl_cb = null;
+    function loadurl(form) {
+      if (loadurl_cb != null) {
+        setTimeout(function(){loadurl(form);}, 1000);
+        return;
+      }
+      loadurl_cb = function(resp) {
+        form.elements.src.value = resp;
+        loadurl_cb = null;
+      };
+      var url = form.elements.urlval.value;
+      // fetch the content at the URL, and then callback to load_and_cajole()
+      asyncLoadScript("http://suprfetch.appspot.com/?output=json&callback=loadurl_cb&url="+encodeURIComponent(url));
+    }
+    function process_urlparams() {
+      var searchString = document.location.search;
+      // strip off the leading '?'
+      searchString = searchString.substring(1);
+      var nvPairs = searchString.split("&");
+      var args = new Array;
+      for (i = 0; i < nvPairs.length; i++) {
+        var nvPair = nvPairs[i].split("=");
+        args[decodeURIComponent(nvPair[0])] = decodeURIComponent(nvPair[1]);
+      }
+      if (args['url1'] != null) {
+        var form1 = document.forms['cajolerForm.1'];
+        form1.elements.urlval.value = args['url1'];
+        loadurl(form1);
+      }
+      if (args['url2'] != null) {
+        var form2 = document.forms['cajolerForm.2'];
+        form2.elements.urlval.value = args['url2'];
+        loadurl(form2);
+      }
+    }
+  </script>
+  </head>
+
+
+  <div style="display:none">
+    <!-- a template for a set of testbed controls and output UI -->
+    <table id="testbed-ui"><tr valign="top">
+    <td>
+      <form id="cajolerForm" onsubmit="return false">
+       URL: <input name="urlval" type="text" size="80" value="">
+       <button id="loadurl" type="button" onclick="loadurl(this.form)">Load URL</button><br/>
+        &nbsp;
+        <input id="EMBEDDABLE" type="checkbox">
+        <label for="EMBEDDABLE" title="Output can be embedded in HTML/XML"
+         >Embeddable</label>
+        &nbsp;
+        <input id="DEBUG_SYMBOLS" type="checkbox">
+        <label for="DEBUG_SYMBOLS" title="Build with debugging symbols"
+         >Debug Symbols</label>
+        &nbsp;
+        <input id="VALIJA_MODE" type="checkbox" checked>
+        <label for="VALIJA_MODE"
+         title="Enable valija mode."
+         >Valija</label>
+        &nbsp;
+        <button type="button" onclick="runPlain(this.form);">Run plain</button>
+        <button type="button" onclick="cajole(this.form)">Cajole</button>
+        <br>
+        <textarea cols="81" rows="20" name="src"
+>&lt;script type="text/javascript"&gt;
+
+&lt;/script&gt;
+</textarea>
+        <br>
+        Uncajoled result (press "Run plain" to refresh)<br>
+        <iframe id="ifr"></iframe>
+      </form>
+    <td>
+      <pre id="messages" class="prettyprint"></pre>
+      <hr>
+      <div id="output" class="output"></div>
+      <hr>
+
+      <div id="eval-results"></div>
+      <div id="cajita-stacks" style="display:none">
+        <hr>
+        Errors
+        <div id="cajita-stack" class="cajita-stack"></div>
+      </div>
+      <hr>
+      <div>
+        <center style="color: gray">HTML</center>
+        <div style="position: relative; clip: 0 0 0 0;
+                    overflow: auto; border: 2px dotted red">
+          <div id="caja-html"></div>
+        </div>
+      </div>
+
+    </table>
+  </div>
+
+
+  <body bgcolor="white" onload="prettyPrint()">
+    <span style="font-size:24px;font-weight:bold">Caja Test Bed
+      <applet code="com.google.caja.opensocial.applet.CajaApplet" name="cajoler"
+       archive="testbed.jar,htmlparser.jar,json_simple.jar"
+       codebase="." height="1" width="1" scriptable="true" MAYSCRIPT>
+      </applet>
+    </span><br/>
+    <span style="font-size:12px" id="cajolerVersion"></span>
+    <p>
+      <a href="http://code.google.com/p/google-caja/issues/entry"
+       target="_blank">File a bug</a>
+      <span id="instrlink">
+        |
+        <a href="javascript:void(
+          document.getElementById('instrs').style.display='',
+          document.getElementById('instrlink').style.display='none')"
+         title="Show Instructions">Instructions</a>
+      </span>
+    </p>
+    <div style="display:none" id="instrs">
+      <p>
+      Enter HTML into the textarea.  Contents of <code>&lt;style&gt;</code> and
+      <code>&lt;script&gt;</code> elements are extracted.  The rest is treated
+      as HTML and emitted normally.
+
+      <p>
+      Any Cajoler warnings are displayed in the top section.
+
+      <p>
+      The script and styles are rewritten and the rewritten gadget is displayed
+      in pretty printed form in the middle section to the right.
+
+      <p>
+      The last expression in the program is logged in the bottom section, and
+      emitted HTML is displayed below that.
+
+      <p>Example:
+      <pre class=prettyprint style="cursor: pointer"
+       onclick="loadExampleInto(this, document.forms['cajolerForm.1'])">
+&lt;!-- Styles are displayed --&gt;
+&lt;style&gt; p { color: purple } &lt;/style&gt;
+
+&lt;!-- Scripts are executed --&gt;
+&lt;script&gt;
+  2 + 2  // You should see a missing semicolon warning too!
+&lt;/script&gt;
+
+&lt;!-- Regular HTML is emitted --&gt;
+&lt;p&gt;Hello World&lt;/p&gt;</pre>
+
+      <p>
+      A module can export a public API by attaching fields to the
+      <code>exports</code> object.
+
+      <pre class=prettyprint style="cursor: pointer"
+       onclick="loadExampleInto(this, document.forms['cajolerForm.1'])">
+&lt;p id=message&gt;Hello World&lt;/p&gt;
+
+&lt;script&gt;
+exports.sayBye = function () {
+  document.getElementById('message').innerHTML = 'Bye';
+};
+&lt;/script&gt;
+</pre>
+
+      <p>
+      So that other modules can load and call them.
+      <pre class=prettyprint style="cursor: pointer"
+       onclick="loadExampleInto(this, document.forms['cajolerForm.2'])">
+&lt;script&gt;loadModule('gadget.1').sayBye();&lt;/script&gt;
+</pre>
+
+      <p>
+      You can log messages to the Firebug console by using
+      <code>cajita.log</code>:
+      <pre class=prettyprint style="cursor: pointer"
+       onclick="loadExampleInto(this, document.forms['cajolerForm.1'])">
+&lt;script&gt;cajita.log('Hello World');&lt;/script&gt;
+</pre>
+
+      <p>
+      You can have all URLs passed through a proxy server if you like.
+      This is necessary for images in HTML to work.  Start the <a
+      href="http://code.google.com/p/google-caja/source/browse/trunk/bin/testbed-proxy.py">proxy
+      server</a> running, and load this page with
+      <code>?backend=http://&lt;your-machine&gt;:&lt;port&gt;</code>
+      appended to the URL.
+      <pre class=prettyprint style="cursor: pointer"
+       onclick="loadExampleInto(this, document.forms['cajolerForm.1'])">
+&lt;img src="http://www.google.com/intl/en_ALL/images/logo.gif"&gt;
+</pre>
+
+
+    </div>
+
+  </body>
+
+  <script type="text/javascript">(function () {
+    function makeTestbed(uiSuffix) {
+      document.body.appendChild(
+          renderTemplate(document.getElementById('testbed-ui'), uiSuffix));
+      registerTestbed(uiSuffix);
+    }
+    makeTestbed('.1');
+    makeTestbed('.2');
+
+    document.forms['cajolerForm.1'].elements.src.select();
+    initTestbeds();
+    document.getElementById("cajolerVersion").innerHTML = getCajoler().getVersion();
+    process_urlparams();
+  })();
+  </script>
+
+</html>
