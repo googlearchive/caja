@@ -1,20 +1,15 @@
 (with temporary fix for issue 911)
 
 
-ajax_test: 18 tests, 16 assertions, 10 failures, 8 errors
+ajax_test: 18 tests, 15 assertions, 11 failures, 8 errors
 
 	Heavily reliant on as yet unimplemented TameXMLHTTPRequest().
 
 
-array_test: 20 tests, 93 assertions, 5 failures, 0 errors
-	    20 tests, 98 assertions, 0 failures, 0 errors
+array_test: 20 tests, 98 assertions, 0 failures, 0 errors
 
 
-base_test: 35 tests, 208 assertions, 0 failures, 2 errors
-
-  testObjectToJSON
-
-	http://code.google.com/p/google-caja/issues/detail?id=901
+base_test: 35 tests, 209 assertions, 0 failures, 1 errors
 
   testBindAsEventListener
 
@@ -24,14 +19,14 @@ base_test: 35 tests, 208 assertions, 0 failures, 2 errors
 dollar_test: 2 tests, 4 assertions, 0 failures, 0 errors
 
 
-dom_test: 92 tests, 229 assertions, 34 failures, 42 errors
+dom_test: 92 tests, 232 assertions, 53 failures, 40 errors
+	  92 tests, 229 assertions, 34 failures, 42 errors
+
+        Increase seems to be caused by shadowing and styles not mixing
+        well.
 
 
-element_mixins_test: 4 tests, 11 assertions, 0 failures, 2 errors
-
-  testEvent
-
-	Fails because attributes can't be set on tame nodes.
+element_mixins_test: 4 tests, 11 assertions, 0 failures, 1 errors
 
   testCollections
 
@@ -39,12 +34,6 @@ element_mixins_test: 4 tests, 11 assertions, 0 failures, 2 errors
 
 
 enumerable_test: 25 tests, 83 assertions, 0 failures, 1 errors
-
-  testEnumContext
-
-	Fails because it tries to compare to nonexistent this.min and
-	so throws. I believe it would also fail uncajoled, but not
-	tested. Mysteriously fixed by #911 fix!
 
   testGrep
 
@@ -56,11 +45,7 @@ enumerable_test: 25 tests, 83 assertions, 0 failures, 1 errors
 	too.
 
 
-event_test:
-
-	Doesn't start.
-
-	http://code.google.com/p/google-caja/issues/detail?id=901
+event_test: 15 tests, 13 assertions, 1 failures, 12 errors
 
 
 form_test: 15 tests, 0 assertions, 0 failures, 15 errors

@@ -125,14 +125,29 @@ var ___;
 
 (function(global) {
 
+  function ToInt32(alleged_int) {
+    return alleged_int >> 0;
+  }
+
+  function ToUInt32(alleged_int) {
+    return alleged_int >>> 0;
+  }
+
   /**
    * Returns the first index at which the specimen is found (by
-   * "identical()") or -1 if none.
+   * "identical()") or -1 if none, starting at offset i, if present.
+   * If i < 0, the offset is relative to the end of the array.
    */
-  Array.prototype.indexOf = function(specimen) {
-    var len = this.length;
-    for (var i = 0; i < len; i += 1) {
-      if (identical(this[i], specimen)) {
+  Array.prototype.indexOf = function(specimen, i) {
+    var len = ToUInt32(this.length);
+    i = ToInt32(i);
+    if (i < 0) {
+      if ((i += len) < 0) {
+	  i = 0;
+      }
+    }
+    for (; i < len; ++i) {
+      if (i in this && identical(this[i], specimen)) {
         return i;
       }
     }
@@ -141,11 +156,28 @@ var ___;
 
   /**
    * Returns the last index at which the specimen is found (by
-   * "identical()") or -1 if none.
+   * "identical()") or -1 if none, starting at offset i, if present.
+   * If i < 0, the offset is relative to the end of the array.
    */
-  Array.prototype.lastIndexOf = function(specimen) {
-    for (var i = this.length; --i >= 0; ) {
-      if (identical(this[i], specimen)) {
+  Array.prototype.lastIndexOf = function(specimen, i) {
+    var len = ToUInt32(this.length);
+    
+    if (isNaN(i)) {
+      i = len - 1;
+    } else {
+      i = ToInt32(i);
+      if (i < 0) {
+	i += len;
+	if (i < 0) {
+	  return -1;
+	}
+      } else if (i >= len) {
+	i = len - 1;
+      }
+    }
+    
+    for (; i >= 0 ; --i) {
+      if (i in this && identical(this[i], specimen)) {
         return i;
       }
     }

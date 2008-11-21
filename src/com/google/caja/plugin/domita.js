@@ -439,6 +439,16 @@ attachDocumentStub = (function () {
       }
     }
 
+    function makeCache() {
+      var cache = cajita.newTable(false);
+      cache.set(null, null);
+      cache.set(void 0, null);
+      return cache;
+    }
+      
+    var editableTameNodeCache = makeCache();
+    var readOnlyTameNodeCache = makeCache();
+
     /**
      * returns a tame DOM node.
      * @param {Node} node
@@ -450,12 +460,13 @@ attachDocumentStub = (function () {
       if (node === null || node === void 0) { return null; }
       // TODO(mikesamuel): make sure it really is a DOM node
 
-      // TODO(benl): replace this with a proper cache
-      if (node.tamed___) {
-        return node.tamed___;
+      
+      var cache = editable ? editableTameNodeCache : readOnlyTameNodeCache;
+      var tamed = cache.get(node);
+      if (tamed !== void 0) {
+	return tamed;
       }
 
-      var tamed;
       switch (node.nodeType) {
         case 1:  // Element
           var tagName = node.tagName.toLowerCase();
@@ -511,7 +522,7 @@ attachDocumentStub = (function () {
           break;
       }
 
-      node.tamed___ = tamed;
+      cache.set(node, tamed);
       return tamed;
     }
 
@@ -595,8 +606,7 @@ attachDocumentStub = (function () {
       for (var i = this.wrappedListeners___.length; --i >= 0;) {
         if (this.wrappedListeners___[i].originalListener___ === listener) {
           wrappedListener = this.wrappedListeners___[i];
-          this.wrappedListeners___ =
-              arrayRemove(this.wrappedListeners___, i, i);
+          arrayRemove(this.wrappedListeners___, i, i);
           break;
         }
       }
@@ -1743,7 +1753,8 @@ attachDocumentStub = (function () {
       exportFields(this, ['requestHeader', 'onreadystatechange', 'readyState',
                           'responseText', 'responseXML', 'responseBody',
                           'status', 'statusText']);
-      alert('Created new XHR: ' + this);
+      // TODO(ihab.awad): Implement
+      throw new Error('Created new XHR: ' + this);
     }
     nodeClasses.XMLHttpRequest = TameXMLHttpRequest;
     TameXMLHttpRequest.prototype.abort = function () {
@@ -1877,7 +1888,7 @@ attachDocumentStub = (function () {
     // specify the gadget's apparent URL.
     // See http://www.whatwg.org/specs/web-apps/current-work/multipage/history.html#location0
     var tameLocation = ___.primFreeze({
-      toString: function () { return tameLocation.href; },
+      toString: ___.frozenFunc(function () { return tameLocation.href; }),
       href: 'http://nosuchhost,fake/',
       hash: '',
       host: 'nosuchhost,fake',
