@@ -850,7 +850,7 @@
       <include file="${demos}/calendar/widget.css"/>
       <include file="${demos}/calendar/util.js"/>
       <include file="${demos}/calendar/bitset.js"/>
-      <include file="${src}/com/google/caja/plugin/html4-defs.js"/>
+      <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
       <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <include file="${demos}/calendar/uformat.js"/>
       <include file="${demos}/calendar/time-cajita.js"/>
