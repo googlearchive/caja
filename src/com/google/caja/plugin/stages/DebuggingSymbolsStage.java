@@ -68,7 +68,11 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
       for (ListIterator<Job> it = jobs.getJobs().listIterator();
            it.hasNext();) {
         Job job = it.next();
-        if (job.getType() != Job.JobType.JAVASCRIPT) { continue; }
+        if (job.getType() != Job.JobType.JAVASCRIPT
+            // May occur if the cajita rewriter does not run due to errors.
+            || !(job.getRoot().node instanceof Block)) {
+          continue;
+        }
 
         if (DEBUG) {
           System.err.println(
