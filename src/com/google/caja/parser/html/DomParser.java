@@ -147,9 +147,11 @@ public final class DomParser {
       // one exception for whitespace preceding the prologue.
       Token<HtmlTokenType> t = tokens.peek();
 
-      if (HtmlTokenType.COMMENT == t.type) {
-        tokens.advance();
-        continue;
+      switch (t.type) {
+        case COMMENT:
+        case DIRECTIVE:  // expecially DOCTYPEs
+          tokens.advance();
+          continue;
       }
 
       parseDom(elementStack);

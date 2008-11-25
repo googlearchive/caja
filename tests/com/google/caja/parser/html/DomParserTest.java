@@ -1680,17 +1680,18 @@ public class DomParserTest extends CajaTestCase {
             "<xmp><br/></xmp>"
             ),
         Arrays.asList(
-            "Tag : html 2+1-2+17",
-            "  Tag : head 2+1-2+1",
-            "  Tag : body 2+1-2+17",
-            "    Tag : xmp 2+1-2+17",
-            "      Text : <br/> 2+6-2+11"
+            "Fragment 1+56-2+17",
+            "  Tag : xmp 2+1-2+17",
+            "    Text : <br/> 2+6-2+11"
             ),
         Arrays.<String>asList(),
         Arrays.asList(
-            "<html><head></head><body><xmp><br/></xmp></body></html>"
+            "<xmp><br/></xmp>"
             ),
-        null, false);
+        null,
+        // We have one of these type guessing tests parse a fragment to tests
+        // the behavior of fragments around DOCTYPEs.
+        true);
   }
 
   public void testDoctypeGuessAsXhtml() throws Exception {
