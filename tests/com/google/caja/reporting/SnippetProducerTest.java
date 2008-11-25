@@ -36,10 +36,14 @@ public class SnippetProducerTest extends TestCase {
 
   static final String F2_TEXT = "f2 line 1";
 
+  static final String F3_TEXT =
+    "123456789.abcdefghi.123456789.ABCDEFGHI.";
 
   SnippetProducer s;
+  SnippetProducer s10;
   final InputSource f1 = new InputSource(URI.create("file:///f1"));
   final InputSource f2 = new InputSource(URI.create("file:///f2"));
+  final InputSource f3 = new InputSource(URI.create("file:///f3"));
 
   @Override
   public void setUp() throws Exception {
@@ -48,7 +52,9 @@ public class SnippetProducerTest extends TestCase {
         = new HashMap<InputSource, String>();
     originalSource.put(f1, F1_TEXT);
     originalSource.put(f2, F2_TEXT);
+    originalSource.put(f3, F3_TEXT);
     s = new SnippetProducer(originalSource, new MessageContext());
+    s10 = new SnippetProducer(originalSource, new MessageContext(), 10);
   }
 
   public enum TestMessageType implements MessageTypeInt {
@@ -144,5 +150,45 @@ public class SnippetProducerTest extends TestCase {
         ("f2:1: f2 line 1\n" +
          "               ^"),
         s.getSnippet(msg));
+  }
+
+  public void testLongLineUncut() {
+    Message msg = new Message(
+        TestMessageType.ONE,
+        FilePosition.instance(f3, 1, 5, 5, 1, 10, 10));
+    assertEquals(
+        "f3:1: 123456789.abcdefghi.123456789.ABCDEFGHI.\n" +
+        "          ^^^^^",
+        s.getSnippet(msg));
+  }
+
+  public void testLongLineCutRight() {
+    Message msg = new Message(
+        TestMessageType.ONE,
+        FilePosition.instance(f3, 1, 5, 5, 1, 10, 10));
+    assertEquals(
+        "f3:1: 123456789.\n" +
+        "          ^^^^^",
+        s10.getSnippet(msg));
+  }
+
+  public void testLongLineCutLeft() {
+    Message msg = new Message(
+        TestMessageType.ONE,
+        FilePosition.instance(f3, 1, 35, 35, 1, 38, 38));
+    assertEquals(
+        "f3:1: 89.ABCDEFG\n" +
+        "             ^^^",
+        s10.getSnippet(msg));
+  }
+
+  public void testLongLineCutBoth() {
+    Message msg = new Message(
+        TestMessageType.ONE,
+        FilePosition.instance(f3, 1, 15, 15, 1, 35, 35));
+    assertEquals(
+        "f3:1: efghi.1234\n" +
+        "      ^^^^^^^^^^",
+        s10.getSnippet(msg));
   }
 }

@@ -33,14 +33,25 @@ import java.util.Map;
  * @author mikesamuel@gmail.com
  */
 public class SnippetProducer {
+  private static final int DEFAULT_MAX_WIDTH = 80;
+
   private final Map<InputSource, ? extends CharSequence> originalSource;
   protected final MessageContext mc;
+  protected final int maxWidth;
 
   public SnippetProducer(
       Map<InputSource, ? extends CharSequence> originalSource,
       MessageContext mc) {
+    this(originalSource, mc, DEFAULT_MAX_WIDTH);
+  }
+
+  public SnippetProducer(
+      Map<InputSource, ? extends CharSequence> originalSource,
+      MessageContext mc,
+      int maxWidth) {
     this.originalSource = originalSource;
     this.mc = mc;
+    this.maxWidth = maxWidth;
   }
 
   public final String getSnippet(Message msg) {
@@ -92,6 +103,16 @@ public class SnippetProducer {
                   ? pos.endCharInLine() - 1 : Integer.MAX_VALUE),
                  line.length()),
         start);
+
+    // Reduce line to maxWidth of context.
+    if (0 < maxWidth && maxWidth < line.length()) {
+      end = Math.min(end, start + maxWidth);
+      int left = Math.max(0, end - maxWidth);
+      int right = Math.min(line.length(), left + maxWidth);
+      line = line.subSequence(left, right);
+      start -= left;
+      end -= left;
+    }
 
     formatSnippet(
         FilePosition.instance(src, lineNo, 1, line.length() + 1),
