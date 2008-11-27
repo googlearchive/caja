@@ -126,9 +126,7 @@ public final class PluginCompilerMain {
     for (URI input : inputs) {
       try {
         ParseTreeNode parseTree = parseInput(input);
-        if (null == parseTree) {
-          parsePassed = false;
-        } else {
+        if (null != parseTree) {
           pluginc.addInput(new AncestorChain<ParseTreeNode>(parseTree));
         }
       } catch (ParseException ex) {
@@ -169,11 +167,13 @@ public final class PluginCompilerMain {
     if (path.endsWith(".js")) {
       JsLexer lexer = new JsLexer(cp);
       JsTokenQueue tq = new JsTokenQueue(lexer, is);
+      if (tq.isEmpty()) { return null; }
       Parser p = new Parser(tq, mq);
       input = p.parse();
       tq.expectEmpty();
     } else if (path.endsWith(".html") || path.endsWith(".xhtml")) {
       DomParser p = new DomParser(new HtmlLexer(cp), is, mq);
+      if (p.getTokenQueue().isEmpty()) { return null; }
       input = p.parseFragment();
       p.getTokenQueue().expectEmpty();
     } else if (path.endsWith(".css")) {
@@ -185,6 +185,7 @@ public final class PluginCompilerMain {
                   && tok.type != CssTokenType.SPACE;
             }
           });
+      if (tq.isEmpty()) { return null; }
 
       CssParser p = new CssParser(tq);
       input = p.parseStyleSheet();

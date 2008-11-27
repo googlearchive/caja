@@ -233,7 +233,7 @@ public final class Config {
         URI inputUri = inputUris.get(0);
 
         outputJsFile = cl.getOptionValue(OUTPUT_JS.getOpt()) == null
-            ? toFileWithExtension(inputUri, "js")
+            ? toFileWithExtension(inputUri, "out.js")
             : new File(cl.getOptionValue(OUTPUT_JS.getOpt()));
 
         if (outputJsFile == null) {
