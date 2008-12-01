@@ -119,6 +119,10 @@
 
 <div class="testcontainer" id="test-props-on-nodes">Original Text</div>
 
+<div class="testcontainer" id="test-xhr-sync">XHR sync</div>
+
+<div class="testcontainer" id="test-xhr-async">XHR async</div>
+
 <script type="text/javascript">
 /** Aim high and you might miss the moon! */
 function expectFailure(shouldFail, opt_msg, opt_failFilter) {
@@ -822,6 +826,35 @@ jsunitRegister('testPropsOnNodes',
   assertNotEquals("innerHTML should not be treated as an attribute",
                   str, div.getAttribute("innerHTML"));
   pass('test-props-on-nodes');
+});
+
+jsunitRegister('testXhrSync',
+               function testXhrSync() {
+  var cont = document.getElementById('test-xhr-sync');
+  var xhr = new window.XMLHttpRequest();
+  xhr.open('GET', './xhrTest.txt', false);
+  xhr.send();
+  assertEquals('The quick brown fox', xhr.responseText);
+  pass('test-xhr-sync');
+});
+
+jsunitRegister('testXhrAsync',
+               function testXhrAsync() {
+  var cont = document.getElementById('test-xhr-async');
+  var xhr = new window.XMLHttpRequest();
+  xhr.open('GET', './xhrTest.txt', true);
+  var asyncFlag = 'PRE';
+  xhr.onreadystatechange = function(event) {
+    assertEquals(xhr, event.target);
+    if (event.target.readyState === 4) {
+      assertNotEquals(4, asyncFlag);
+      asyncFlag = 'DONE';
+      assertEquals('The quick brown fox', event.target.responseText);
+      pass('test-xhr-async');
+    }
+    asyncFlag = event.target.readyState;    
+  };
+  xhr.send();
 });
 
 </script>

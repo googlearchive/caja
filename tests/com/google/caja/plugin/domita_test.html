@@ -82,6 +82,12 @@
     })();</script>
 
     <script type="text/javascript">(function () {
+      if (console) {
+        ___.setLogFunc(function(msg) {
+          console.log(msg);
+        });
+      }
+
       var testImports = ___.copy(___.sharedImports);
       if (valijaMaker) { testImports.$v = valijaMaker.CALL___(testImports); }
 
@@ -91,6 +97,7 @@
            {
              rewrite:
                  function (uri, mimeType) {
+                   if (/\.\/xhrTest.*/.test(uri)) { return uri; }
                    if (!/^https?:\/\//i.test(uri)) { return null; }
                    return 'http://gadget-proxy/?url=' + encodeURIComponent(uri)
                        + '&mimeType=' + encodeURIComponent(mimeType);

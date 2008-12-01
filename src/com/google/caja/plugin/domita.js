@@ -36,6 +36,164 @@
  * @author mikesamuel@gmail.com
  */
 
+var domitaModules;
+if (!domitaModules) { domitaModules = {}; }
+
+domitaModules.classUtils = function() {
+
+  /**
+   * Add setter and getter hooks so that the caja {@code node.innerHTML = '...'}
+   * works as expected.
+   */
+  function exportFields(object, fields) {
+    for (var i = fields.length; --i >= 0;) {
+      var field = fields[i];
+      var fieldUCamel = field.charAt(0).toUpperCase() + field.substring(1);
+      var getterName = 'get' + fieldUCamel;
+      var setterName = 'set' + fieldUCamel;
+      var count = 0;
+      if (object[getterName]) {
+        ++count;
+        ___.useGetHandler(
+           object, field, object[getterName]);
+      }
+      if (object[setterName]) {
+        ++count;
+        ___.useSetHandler(
+           object, field, object[setterName]);
+      }
+      if (!count) {
+        throw new Error('Failed to export field ' + field + ' on ' + object);
+      }
+    }
+  }
+
+  /**
+   * Makes the first a subclass of the second.
+   */
+  function extend(subClass, baseClass) {
+    var noop = function () {};
+    noop.prototype = baseClass.prototype;
+    subClass.prototype = new noop();
+    subClass.prototype.constructor = subClass;
+  }
+
+  return {
+    exportFields: exportFields,
+    extend: extend
+  };
+};
+
+domitaModules.TameXMLHttpRequest = function(
+    nativeXMLHttpRequest,
+    uriCallback) {
+  var classUtils = domitaModules.classUtils();
+
+  // See http://www.w3.org/TR/XMLHttpRequest/
+
+  // TODO(ihab.awad): Improve implementation (interleaving, memory leaks)
+  // per http://www.ilinsky.com/articles/XMLHttpRequest/
+
+  function TameXMLHttpRequest() {
+    this.xhr___ = new nativeXMLHttpRequest();
+    classUtils.exportFields(
+        this,
+        ['onreadystatechange', 'readyState', 'responseText', 'responseXML',
+         'status', 'statusText']);
+  }
+  TameXMLHttpRequest.prototype.setOnreadystatechange = function (handler) {
+    // TODO(ihab.awad): Do we need more attributes of the event than 'target'?
+    // May need to implement full "tame event" wrapper similar to DOM events.
+    var self = this;
+    this.xhr___.onreadystatechange = function(event) {
+      var evt = { target: self };
+      return ___.callPub(handler, 'call', [void 0, evt]);
+    };
+  };
+  TameXMLHttpRequest.prototype.getReadyState = function () {
+    // The ready state should be a number
+    return Number(this.xhr___.readyState);
+  };
+  TameXMLHttpRequest.prototype.open = function (
+      method, URL, opt_async, opt_userName, opt_password) {
+    method = String(method);
+    // The XHR interface does not tell us the MIME type in advance, so we
+    // must assume the broadest possible.
+    var safeUri = uriCallback.rewrite(String(URL), "*/*");
+    // If the uriCallback rejects the URL, we throw an exception, but we do not
+    // put the URI in the exception so as not to put the caller at risk of some
+    // code in its stack sniffing the URI.
+    if (safeUri === undefined) { throw 'URI violates security policy'; }
+    switch (arguments.length) {
+    case 2:
+      this.xhr___.open(method, safeUri);
+      break;
+    case 3:
+      this.xhr___.open(method, safeUri, Boolean(opt_async));
+      break;
+    case 4:
+      this.xhr___.open(
+          method, safeUri, Boolean(opt_async), String(opt_userName));
+      break;
+    case 5:
+      this.xhr___.open(
+          method, safeUri, Boolean(opt_async), String(opt_userName),
+          String(opt_password));
+      break;
+    default:
+      throw 'XMLHttpRequest cannot accept ' + arguments.length + ' arguments';
+      break;
+    }
+  };
+  TameXMLHttpRequest.prototype.setRequestHeader = function (label, value) {
+    this.xhr___.setRequestHeader(String(label), String(value));
+  };
+  TameXMLHttpRequest.prototype.send = function(opt_data) {
+    if (arguments.length === 0) {
+      // TODO(ihab.awad): send()-ing an empty string because send() with no
+      // args does not work on FF3, others?
+      this.xhr___.send('');
+    } else if (opt_data instanceof String) {
+      this.xhr___.send(opt_data);
+      return;
+    } else /* if XML document */ {
+      // TODO(ihab.awad): Expect tamed XML document; unwrap and send
+      throw 'Sending XML data not yet supported';
+    }
+  };
+  TameXMLHttpRequest.prototype.abort = function () {
+    this.xhr___.abort();
+  };
+  TameXMLHttpRequest.prototype.getAllResponseHeaders = function () {
+    return String(this.xhr___.getAllResponseHeaders());
+  };
+  TameXMLHttpRequest.prototype.getResponseHeader = function (headerName) {
+    return String(this.xhr___.getResponseHeader(String(headerName)));
+  };
+  TameXMLHttpRequest.prototype.getResponseText = function () {
+    return String(this.xhr___.responseText);
+  };
+  TameXMLHttpRequest.prototype.getResponseXML = function () {
+    // TODO(ihab.awad): Implement a taming layer for XML. Requires generalizing
+    // the HTML node hierarchy as well so we have a unified implementation.
+    return {};
+  };
+  TameXMLHttpRequest.prototype.getStatus = function () {
+    return Number(this.xhr___.status);
+  };
+  TameXMLHttpRequest.prototype.getStatusText = function () {
+    return String(this.xhr___.statusText);
+  };
+  TameXMLHttpRequest.prototype.toString = function () {
+    return 'Not a real XMLHttpRequest';
+  };
+  ___.ctor(TameXMLHttpRequest, void 0, 'TameXMLHttpRequest');
+  ___.all2(___.grantTypedGeneric, TameXMLHttpRequest.prototype,
+           ['open', 'setRequestHeader', 'send', 'abort',
+            'getAllResponseHeaders', 'getResponseHeader']);
+
+  return TameXMLHttpRequest;
+};
 
 /**
  * Add a tamed document implementation to a Gadget's global scope.
@@ -162,6 +320,8 @@ attachDocumentStub = (function () {
     return '*/*';
   }
 
+  // TODO(ihab.awad): Does this work on IE, where console output
+  // goes to a DOM node?
   function assert(cond) {
     if (!cond) {
       (typeof console !== 'undefined')
@@ -170,42 +330,7 @@ attachDocumentStub = (function () {
     }
   }
 
-  /**
-   * Add setter and getter hooks so that the caja {@code node.innerHTML = '...'}
-   * works as expected.
-   */
-  function exportFields(object, fields) {
-    for (var i = fields.length; --i >= 0;) {
-      var field = fields[i];
-      var fieldUCamel = field.charAt(0).toUpperCase() + field.substring(1);
-      var getterName = 'get' + fieldUCamel;
-      var setterName = 'set' + fieldUCamel;
-      var count = 0;
-      if (object[getterName]) {
-        ++count;
-        ___.useGetHandler(
-           object, field, object[getterName]);
-      }
-      if (object[setterName]) {
-        ++count;
-        ___.useSetHandler(
-           object, field, object[setterName]);
-      }
-      if (!count) {
-        throw new Error('Failed to export field ' + field + ' on ' + object);
-      }
-    }
-  }
-
-  /**
-   * Makes the first a subclass of the second.
-   */
-  function extend(subClass, baseClass) {
-    var noop = function () {};
-    noop.prototype = baseClass.prototype;
-    subClass.prototype = new noop();
-    subClass.prototype.constructor = subClass;
-  }
+  var classUtils = domitaModules.classUtils();
 
   var cssSealerUnsealerPair = cajita.makeSealerUnsealerPair();
 
@@ -445,7 +570,7 @@ attachDocumentStub = (function () {
       cache.set(void 0, null);
       return cache;
     }
-      
+
     var editableTameNodeCache = makeCache();
     var readOnlyTameNodeCache = makeCache();
 
@@ -460,7 +585,7 @@ attachDocumentStub = (function () {
       if (node === null || node === void 0) { return null; }
       // TODO(mikesamuel): make sure it really is a DOM node
 
-      
+
       var cache = editable ? editableTameNodeCache : readOnlyTameNodeCache;
       var tamed = cache.get(node);
       if (tamed !== void 0) {
@@ -644,7 +769,7 @@ attachDocumentStub = (function () {
       this.node___ = node;
       this.editable___ = editable;
       ___.stamp(tameNodeTrademark, this, true);
-      exportFields(this, tameNodeFields);
+      classUtils.exportFields(this, tameNodeFields);
     }
     nodeClasses.Node = TameNode;
     TameNode.prototype.getNodeType = function () {
@@ -771,7 +896,7 @@ attachDocumentStub = (function () {
       if (this.node___ !== void 0 &&
           this.node___ !== null &&
           this.node___.properties___) {
-        return (delete this.node___.properties___[name] && 
+        return (delete this.node___.properties___[name] &&
             delete this[name + "_canEnum___"]);
       } else {
         return true;
@@ -805,7 +930,7 @@ attachDocumentStub = (function () {
     function TameOpaqueNode(node, editable) {
       TameNode.call(this, node, editable);
     }
-    extend(TameOpaqueNode, TameNode);
+    classUtils.extend(TameOpaqueNode, TameNode);
     TameOpaqueNode.prototype.getNodeValue = TameNode.prototype.getNodeValue;
     TameOpaqueNode.prototype.getNodeType = TameNode.prototype.getNodeType;
     TameOpaqueNode.prototype.getNodeName = TameNode.prototype.getNodeName;
@@ -829,9 +954,9 @@ attachDocumentStub = (function () {
     function TameTextNode(node, editable) {
       assert(node.nodeType === 3);
       TameNode.call(this, node, editable);
-      exportFields(this, ['nodeValue', 'data']);
+      classUtils.exportFields(this, ['nodeValue', 'data']);
     }
-    extend(TameTextNode, TameNode);
+    classUtils.extend(TameTextNode, TameNode);
     nodeClasses.TextNode = TameTextNode;
     TameTextNode.prototype.setNodeValue = function (value) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
@@ -851,7 +976,7 @@ attachDocumentStub = (function () {
       assert(node.nodeType === 8);
       TameNode.call(this, node, editable);
     }
-    extend(TameCommentNode, TameNode);
+    classUtils.extend(TameCommentNode, TameNode);
     nodeClasses.CommentNode = TameCommentNode;
     TameCommentNode.prototype.toString = function () {
       return '#comment';
@@ -861,18 +986,19 @@ attachDocumentStub = (function () {
     function TameElement(node, editable) {
       assert(node.nodeType === 1);
       TameNode.call(this, node, editable);
-      exportFields(this,
-                   ['className', 'id', 'innerHTML', 'tagName', 'style',
-                    'offsetLeft', 'offsetTop', 'offsetWidth', 'offsetHeight',
-                    'offsetParent',
-                    'scrollLeft',
-                    'scrollTop',
-                    'scrollWidth',
-                    'scrollHeight',
-                    'title',
-                    'dir']);
+      classUtils.exportFields(
+          this,
+          ['className', 'id', 'innerHTML', 'tagName', 'style',
+            'offsetLeft', 'offsetTop', 'offsetWidth', 'offsetHeight',
+            'offsetParent',
+            'scrollLeft',
+            'scrollTop',
+            'scrollWidth',
+            'scrollHeight',
+            'title',
+            'dir']);
     }
-    extend(TameElement, TameNode);
+    classUtils.extend(TameElement, TameNode);
     nodeClasses.Element = TameElement;
     nodeClasses.HTMLElement = TameElement;
     TameElement.prototype.getId = function () {
@@ -1107,9 +1233,9 @@ attachDocumentStub = (function () {
 
     function TameAElement(node, editable) {
       TameElement.call(this, node, editable);
-      exportFields(this, ['href']);
+      classUtils.exportFields(this, ['href']);
     }
-    extend(TameAElement, TameElement);
+    classUtils.extend(TameAElement, TameElement);
     nodeClasses.HTMLAnchorElement = TameAElement;
     TameAElement.prototype.focus = function () {
       this.node___.focus();
@@ -1128,9 +1254,11 @@ attachDocumentStub = (function () {
     // http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-40002357
     function TameFormElement(node, editable) {
       TameElement.call(this, node, editable);
-      exportFields(this, ['action', 'elements', 'enctype', 'method', 'target']);
+      classUtils.exportFields(
+          this,
+          ['action', 'elements', 'enctype', 'method', 'target']);
     }
-    extend(TameFormElement, TameElement);
+    classUtils.extend(TameFormElement, TameElement);
     nodeClasses.HTMLFormElement = TameFormElement;
     TameFormElement.prototype.submit = function () {
       return this.node___.submit();
@@ -1184,16 +1312,17 @@ attachDocumentStub = (function () {
 
     function TameInputElement(node, editable) {
       TameElement.call(this, node, editable);
-      exportFields(this,
-                   ['form', 'value',
-                    'checked', 'disabled', 'readOnly',
-                    'options', 'selected', 'selectedIndex',
-                    'name', 'accessKey', 'tabIndex', 'text',
-                    'defaultChecked', 'defaultSelected', 'maxLength',
-                    'size', 'type', 'index', 'label',
-                    'multiple', 'cols', 'rows']);
+      classUtils.exportFields(
+          this,
+          ['form', 'value',
+            'checked', 'disabled', 'readOnly',
+            'options', 'selected', 'selectedIndex',
+            'name', 'accessKey', 'tabIndex', 'text',
+            'defaultChecked', 'defaultSelected', 'maxLength',
+            'size', 'type', 'index', 'label',
+            'multiple', 'cols', 'rows']);
     }
-    extend(TameInputElement, TameElement);
+    classUtils.extend(TameInputElement, TameElement);
     nodeClasses.HTMLInputElement = TameInputElement;
     TameInputElement.prototype.getChecked = function () {
       return this.node___.checked;
@@ -1376,9 +1505,9 @@ attachDocumentStub = (function () {
 
     function TameImageElement(node, editable) {
       TameElement.call(this, node, editable);
-      exportFields(this, ['src', 'alt']);
+      classUtils.exportFields(this, ['src', 'alt']);
     }
-    extend(TameImageElement, TameElement);
+    classUtils.extend(TameImageElement, TameElement);
     nodeClasses.HTMLImageElement = TameImageElement;
     TameImageElement.prototype.getSrc = function () {
       return this.node___.src;
@@ -1403,11 +1532,12 @@ attachDocumentStub = (function () {
 
     function TameTableCompElement(node, editable) {
       TameElement.call(this, node, editable);
-      exportFields(this,
-                   ['colSpan','cells','rowSpan','rows','rowIndex','align',
-                    'vAlign','nowrap']);
+      classUtils.exportFields(
+          this,
+          ['colSpan','cells','rowSpan','rows','rowIndex','align',
+           'vAlign','nowrap']);
     }
-    extend(TameTableCompElement, TameElement);
+    classUtils.extend(TameTableCompElement, TameElement);
     TameTableCompElement.prototype.getColSpan = function () {
       return this.node___.colSpan;
     };
@@ -1458,14 +1588,15 @@ attachDocumentStub = (function () {
       return newValue;
     };
     ___.ctor(TameTableCompElement, TameElement, 'TameTableCompElement');
- 
+
 
     function TameTableElement(node, editable) {
       TameTableCompElement.call(this, node, editable);
-      exportFields(this,
-                   ['tBodies','tHead','tFoot']);
+      classUtils.exportFields(
+          this,
+          ['tBodies','tHead','tFoot']);
     }
-    extend(TameTableElement, TameTableCompElement);
+    classUtils.extend(TameTableElement, TameTableCompElement);
     nodeClasses.HTMLTableElement = TameTableElement;
     TameTableElement.prototype.getTBodies = function () {
       return tameNodeList( this.node___.tBodies, this.editable___ );
@@ -1500,13 +1631,15 @@ attachDocumentStub = (function () {
     function TameEvent(event) {
       this.event___ = event;
       ___.stamp(tameEventTrademark, this, true);
-      exportFields(this, ['type', 'target', 'pageX', 'pageY', 'altKey',
-                          'ctrlKey', 'metaKey', 'shiftKey', 'button',
-                          'screenX', 'screenY',
-                          'relatedTarget',
-                          'fromElement', 'toElement',
-                          'srcElement',
-                          'clientX', 'clientY', 'keyCode', 'which']);
+      classUtils.exportFields(
+          this,
+          ['type', 'target', 'pageX', 'pageY', 'altKey',
+            'ctrlKey', 'metaKey', 'shiftKey', 'button',
+            'screenX', 'screenY',
+            'relatedTarget',
+            'fromElement', 'toElement',
+            'srcElement',
+            'clientX', 'clientY', 'keyCode', 'which']);
     }
     nodeClasses.Event = TameEvent;
     TameEvent.prototype.getType = function () {
@@ -1615,7 +1748,7 @@ attachDocumentStub = (function () {
       this.doc___ = doc;
       this.editable___ = editable;
     }
-    extend(TameDocument, TameNode);
+    classUtils.extend(TameDocument, TameNode);
     nodeClasses.HTMLDocument = TameDocument;
     TameDocument.prototype.addEventListener =
         function (name, listener, useCapture) {
@@ -1749,70 +1882,8 @@ attachDocumentStub = (function () {
     }
     TameStyle.prototype.toString = function () { return '[Fake Style]'; };
 
-    function TameXMLHttpRequest() {
-      exportFields(this, ['requestHeader', 'onreadystatechange', 'readyState',
-                          'responseText', 'responseXML', 'responseBody',
-                          'status', 'statusText']);
-      // TODO(ihab.awad): Implement
-      throw new Error('Created new XHR: ' + this);
-    }
-    nodeClasses.XMLHttpRequest = TameXMLHttpRequest;
-    TameXMLHttpRequest.prototype.abort = function () {
-      // TODO(ihab.awad): Implement
-    };
-    TameXMLHttpRequest.prototype.getAllResponseHeaders = function () {
-      // TODO(ihab.awad): Implement
-      return "";
-    };
-    TameXMLHttpRequest.prototype.getResponseHeader = function (headerName) {
-      // TODO(ihab.awad): Implement
-      return "";
-    };
-    TameXMLHttpRequest.prototype.open = function (
-        method, URL, opt_async, opt_userName, opt_password) {
-      // TODO(ihab.awad): Implement
-    };
-    TameXMLHttpRequest.prototype.send = function(content) {
-      // TODO(ihab.awad): Implement
-    };
-    TameXMLHttpRequest.prototype.setRequestHeader = function (label, value) {
-      // TODO(ihab.awad): Implement
-    };
-    TameXMLHttpRequest.prototype.setOnreadystatechange = function (value) {
-      // TODO(ihab.awad): Implement
-    };
-    TameXMLHttpRequest.prototype.getReadyState = function () {
-      // TODO(ihab.awad): Implement
-      return 0;
-    };
-    TameXMLHttpRequest.prototype.getResponseText = function () {
-      // TODO(ihab.awad): Implement
-      return "";
-    };
-    TameXMLHttpRequest.prototype.getResponseXML = function () {
-      // TODO(ihab.awad): Implement
-      return {};
-    };
-    TameXMLHttpRequest.prototype.getResponseBody = function () {
-      // TODO(ihab.awad): Implement
-      return "";
-    };
-    TameXMLHttpRequest.prototype.getStatus = function () {
-      // TODO(ihab.awad): Implement
-      return 404;
-    };
-    TameXMLHttpRequest.prototype.getStatusText = function () {
-      // TODO(ihab.awad): Implement
-      return "Not Found";
-    };
-    TameXMLHttpRequest.prototype.toString = function () {
-      // TODO(ihab.awad): Implement
-      return 'Not a real XMLHttpRequest';
-    };
-    ___.ctor(TameXMLHttpRequest, void 0, 'TameXMLHttpRequest');
-    ___.all2(___.grantTypedGeneric, TameXMLHttpRequest.prototype,
-             ['abort', 'getAllResponseHeaders', 'getResponseHeader', 'open',
-               'send']);
+    nodeClasses.XMLHttpRequest =
+      domitaModules.TameXMLHttpRequest(XMLHttpRequest, uriCallback);
 
     /**
      * given a number, outputs the equivalent css text.

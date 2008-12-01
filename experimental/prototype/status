@@ -4,7 +4,10 @@
 ajax_test: 18 tests, 15 assertions, 11 failures, 8 errors
 
 	Heavily reliant on as yet unimplemented TameXMLHTTPRequest().
-
+        To run this test properly, we will need the test to run from
+        the Rakefile using the WEBrick HTTP server. Currently, this
+        cannot be done for cajoled tests. Tobie is going to make that
+        possible asap.
 
 array_test: 20 tests, 98 assertions, 0 failures, 0 errors
 
