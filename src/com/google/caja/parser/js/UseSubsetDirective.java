@@ -15,6 +15,7 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.escaping.Escaping;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 import java.util.Collections;
@@ -87,7 +88,11 @@ public final class UseSubsetDirective extends AbstractStatement<UseSubset> {
   protected void childrenChanged() {
     super.childrenChanged();
     if (children().isEmpty()) { throw new IndexOutOfBoundsException(); }
-    for (UseSubset us : children()) { }  // Implicit cast constrains type
+    for (ParseTreeNode us : children()) {
+      if (!(us instanceof UseSubset)) {
+        throw new ClassCastException(us.getClass().getName());
+      }
+    }
   }
 
   @Override

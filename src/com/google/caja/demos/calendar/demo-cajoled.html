@@ -55,7 +55,7 @@
           <abbr class="dtend" title="20080506">6 May</abbr>
         </div>
       </div>
-    <td class=pre___>
+    <td class="pre___" id="gadget-body">
       <!-- Populated by main.js -->
       <div id=controls-pre___>
         <span class=control id=prev-button-pre___>&laquo;</span>
@@ -113,14 +113,15 @@
     function makeReadOnlyNode(node) {
       var stub = {};
       // Use a blank suffix to give the gadget access to raw class names.
-      attachDocumentStub('-', uriCallback, stub);
+      attachDocumentStub('-', uriCallback, stub, document.body);
       return stub.tameNode___(node, false);
     }
 
     var imports = ___.copy(___.sharedImports);
     ___.getNewModuleHandler().setImports(imports);
     imports.$v = valijaMaker.CALL___(imports);
-    attachDocumentStub('-pre___', uriCallback, imports);
+    attachDocumentStub('-pre___', uriCallback, imports,
+                       document.getElementById('gadget-body'));
     // Grant readonly access to a portion of the DOM
     imports.document.body = makeReadOnlyNode(document.body);
     imports.document.title = String(document.title);

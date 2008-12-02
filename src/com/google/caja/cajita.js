@@ -2547,8 +2547,9 @@ var ___;
    * the given trademark is not in the list of trademarks.
    */
   function guard(trademark, obj) {
-    enforce (hasTrademark(trademark, obj),
-        'This object does not have the given trademark' );
+    if (!hasTrademark(trademark, obj)) {
+      fail('This object does not have the given trademark');
+    }
   }
 
   /**
@@ -2560,9 +2561,10 @@ var ___;
    * parameter is truthy.
    */
   function stamp(trademark, obj, opt_allow_constructed) {
-    enforce (typeOf(trademark) === 'object',
-        'The supplied trademark is not an object.');
-    enforce (!isFrozen(obj), 'The supplied object ' + obj + ' is frozen.');
+    if (typeOf(trademark) !== 'object') {
+      fail('The supplied trademark is not an object.');
+    }
+    if (isFrozen(obj)) { fail('The supplied object ' + obj + ' is frozen.'); }
     if (!isJSONContainer(obj) &&
         (typeOf(obj) !== 'function') &&
         !obj.underConstruction___ &&

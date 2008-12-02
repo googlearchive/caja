@@ -448,7 +448,8 @@ var getImports = (function () {
                          + '&mimeType=' + encodeURIComponent(mimeType));
                }
          },
-         testImports);
+         testImports,
+         document.getElementById('caja-html' + uiSuffix));
     testImports.clearHtml___ = function () {
       var htmlContainer = document.getElementById('caja-html' + uiSuffix);
       htmlContainer.className = idClass;

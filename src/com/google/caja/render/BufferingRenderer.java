@@ -44,7 +44,6 @@ abstract class BufferingRenderer implements TokenConsumer {
   public final void noMoreTokens() {
     JsTokenAdjacencyChecker adjChecker = new JsTokenAdjacencyChecker();
     try {
-      boolean first = true;
       String lastToken = null;
       LineData lineData = splitLines(pending);
       int[] numTokensPerLine = lineData.numTokensPerLine;

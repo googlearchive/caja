@@ -14,8 +14,8 @@
  - See the License for the specific language governing permissions and
  - limitations under the License.
 -->
-<html>
-  <head>
+<html id="html"><!-- attributes on document should not show in domita. -->
+  <head id="head">
     <title>Domita</title>
 
     <script src="../cajita.js" onerror="console.error(this.src)"></script>
@@ -40,7 +40,8 @@
   <body bgcolor="white" onload="testDomita()">
     <div id="console-results"></div>
 
-    <div id="untrusted_content" class="xyz___">
+    <div id="untrusted_content" class="xyz___"
+     title="<Untrusted Content Title>">
       <!-- inaccessible to document.getElementById -->
       <div id="foo"></div>
 
@@ -90,6 +91,7 @@
 
       var testImports = ___.copy(___.sharedImports);
       if (valijaMaker) { testImports.$v = valijaMaker.CALL___(testImports); }
+      var testDomContainer = document.getElementById('untrusted_content');
 
       ___.getNewModuleHandler().setImports(testImports);
       attachDocumentStub(
@@ -103,7 +105,8 @@
                        + '&mimeType=' + encodeURIComponent(mimeType);
                  }
            },
-           testImports);
+           testImports,
+           testDomContainer);
       console.log('attached stubs');
 
       testImports.jsunitRegister = ___.frozenFunc(jsunitRegister);
@@ -178,9 +181,8 @@
       // Create a readonly mirror of document so that we can test that mutations
       // fail when they should.
       testImports.documentRO = new testImports.document.constructor(
-          document, false);
+          document, testDomContainer, false);
 
-      var testDomContainer = document.getElementById('untrusted_content');
       testImports.htmlEmitter___ = new HtmlEmitter(testDomContainer);
 
       window.toString = function () { return '[WINDOW]'; };

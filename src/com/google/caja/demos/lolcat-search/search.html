@@ -86,7 +86,7 @@
       var searchBoxImports = ___.copy(___.sharedImports);
       attachDocumentStub(
           '-searchbox', { rewrite: function () { return null; } },
-          searchBoxImports);
+          searchBoxImports, document.getElementById('base-searchbox'));
       searchBoxImports.htmlEmitter___ = new HtmlEmitter(
           document.getElementById('base-searchbox'));
     </script>
@@ -97,7 +97,8 @@
       attachDocumentStub(
           '-kittens', { rewrite: function (url, mimeType) {
                           return /^image\//.test(mimeType) ? url : null;
-                        } }, kittensImports);
+                        } },
+          kittensImports, document.getElementById('base-kittens'));
       kittensImports.htmlEmitter___ = new HtmlEmitter(
           document.getElementById('base-kittens'));
     </script>

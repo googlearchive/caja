@@ -26,14 +26,18 @@
  * Caveats:
  * - This is not a full implementation.
  * - Security Review is pending.
- * - <code>===</code> and <code>!==</code> on tamed DOM nodes will not behave
- *   the same as with untamed nodes.  Specifically, it is not always true that
- *   {@code document.getElementById('foo') === document.getElementById('foo')}.
+ * - <code>===</code> and <code>!==</code> on node lists will not
+ *   behave the same as with untamed node lists.  Specifically, it is
+ *   not always true that {@code nodeA.childNodes === nodeA.childNodes}.
  * - Properties backed by setters/getters like {@code HTMLElement.innerHTML}
  *   will not appear to uncajoled code as DOM nodes do, since they are
  *   implemented using cajita property handlers.
  *
  * @author mikesamuel@gmail.com
+ * @requires console, document, window
+ * @requires clearInterval, clearTimeout, setInterval, setTimeout
+ * @requires ___, bridal, cajita, css, html, html4, unicode
+ * @provides attachDocumentStub, plugin_dispatchEvent___
  */
 
 var domitaModules;
@@ -359,8 +363,10 @@ attachDocumentStub = (function () {
   // goes to a DOM node?
   function assert(cond) {
     if (!cond) {
-      (typeof console !== 'undefined')
-      && (console.log('domita assertion failed'), console.trace());
+      if (typeof console !== 'undefined') {
+        console.log('domita assertion failed');
+        console.trace();
+      }
       throw new Error();
     }
   }
@@ -405,7 +411,10 @@ attachDocumentStub = (function () {
   ___.frozenFunc(tameClearInterval);
 
   // See above for a description of this function.
-  function attachDocumentStub(idSuffix, uriCallback, imports) {
+  function attachDocumentStub(idSuffix, uriCallback, imports, pseudoBodyNode) {
+    if (arguments.length !== 4) {
+      throw new Error('arity mismatch: ' + arguments.length);
+    }
     var elementPolicies = {};
     elementPolicies.form = function (attribs) {
       // Forms must have a gated onsubmit handler or they must have an
@@ -693,7 +702,7 @@ attachDocumentStub = (function () {
       try {
         for (var ancestor = node; ancestor; ancestor = ancestor.parentNode) {
           // TODO(mikesamuel): replace with cursors so that subtrees are
-          // delegable
+          // delegable.
           // TODO: handle multiple classes.
           if (idClass === ancestor.className) {
             return tameNode(node, editable);
@@ -708,8 +717,9 @@ attachDocumentStub = (function () {
      */
     function tameNodeList(nodeList, editable, opt_keyAttrib) {
       var tamed = [];
+      var node;
       for (var i = nodeList.length; --i >= 0;) {
-        var node = tameNode(nodeList.item(i), editable);
+        node = tameNode(nodeList.item(i), editable);
         tamed[i] = node;
         // Make the node available via its name if doing so would not mask
         // any properties of tamed.
@@ -792,34 +802,61 @@ attachDocumentStub = (function () {
     var tameNodeFields = [
         'nodeType', 'nodeValue', 'nodeName', 'firstChild',
         'lastChild', 'nextSibling', 'previousSibling', 'parentNode',
-        'ownerDocument',
-        'childNodes'];
+        'ownerDocument', 'childNodes', 'attributes'];
 
     /**
      * Base class for a Node wrapper.  Do not create directly -- use the
      * tameNode factory instead.
+     * @param {boolean} editable true if the node's value, attributes, children,
+     *     or custom properties are mutable.
      * @constructor
      */
-    function TameNode(node, editable) {
-      if (!node) {
-        throw new Error('Creating tame node with undefined native delegate');
-      }
-      this.node___ = node;
+    function TameNode(editable) {
       this.editable___ = editable;
       ___.stamp(tameNodeTrademark, this, true);
       classUtils.exportFields(this, tameNodeFields);
     }
+    TameNode.prototype.getOwnerDocument = function () {
+      // TODO(mikesamuel): upward navigation breaks capability discipline.
+      if (!this.editable___ && tameDocument.editable___) {
+        throw new Error();
+      }
+      return tameDocument;
+    };
     nodeClasses.Node = TameNode;
-    TameNode.prototype.getNodeType = function () {
+    ___.ctor(TameNode, void 0, 'TameNode');
+    var tameNodeMembers = [
+        'getNodeType', 'getNodeValue', 'getNodeName',
+        'appendChild', 'insertBefore', 'removeChild', 'replaceChild',
+        'getFirstChild', 'getLastChild', 'getNextSibling', 'getPreviousSibling',
+        'getElementsByTagName',
+        'getOwnerDocument',
+        'hasChildNodes'
+        ];
+
+
+    /**
+     * A tame node that is backed by a real node.
+     * @constructor
+     */
+    function TameBackedNode(node, editable) {
+      if (!node) {
+        throw new Error('Creating tame node with undefined native delegate');
+      }
+      this.node___ = node;
+      TameNode.call(this, editable);
+    }
+    classUtils.extend(TameBackedNode, TameNode);
+    TameBackedNode.prototype.getNodeType = function () {
       return this.node___.nodeType;
     };
-    TameNode.prototype.getNodeName = function () {
+    TameBackedNode.prototype.getNodeName = function () {
       return this.node___.nodeName;
     };
-    TameNode.prototype.getNodeValue = function () {
+    TameBackedNode.prototype.getNodeValue = function () {
       return this.node___.nodeValue;
     };
-    TameNode.prototype.appendChild = function (child) {
+    TameBackedNode.prototype.appendChild = function (child) {
       // Child must be editable since appendChild can remove it from its parent.
       cajita.guard(tameNodeTrademark, child);
       if (!this.editable___ || !child.editable___) {
@@ -827,7 +864,7 @@ attachDocumentStub = (function () {
       }
       this.node___.appendChild(child.node___);
     };
-    TameNode.prototype.insertBefore = function (toInsert, child) {
+    TameBackedNode.prototype.insertBefore = function (toInsert, child) {
       cajita.guard(tameNodeTrademark, toInsert);
       if (child === void 0) { child = null; }
       if (child !== null) { cajita.guard(tameNodeTrademark, child); }
@@ -837,14 +874,14 @@ attachDocumentStub = (function () {
       this.node___.insertBefore(
           toInsert.node___, child !== null ? child.node___ : null);
     };
-    TameNode.prototype.removeChild = function (child) {
+    TameBackedNode.prototype.removeChild = function (child) {
       cajita.guard(tameNodeTrademark, child);
       if (!this.editable___ || !child.editable___) {
         throw new Error(NOT_EDITABLE);
       }
       this.node___.removeChild(child.node___);
     };
-    TameNode.prototype.replaceChild = function (child, replacement) {
+    TameBackedNode.prototype.replaceChild = function (child, replacement) {
       cajita.guard(tameNodeTrademark, child);
       cajita.guard(tameNodeTrademark, replacement);
       if (!this.editable___ || !replacement.editable___) {
@@ -852,100 +889,101 @@ attachDocumentStub = (function () {
       }
       this.node___.replaceChild(child.node___, replacement.node___);
     };
-    TameNode.prototype.getFirstChild = function () {
+    TameBackedNode.prototype.getFirstChild = function () {
       return tameNode(this.node___.firstChild, this.editable___);
     };
-    TameNode.prototype.getLastChild = function () {
+    TameBackedNode.prototype.getLastChild = function () {
       return tameNode(this.node___.lastChild, this.editable___);
     };
-    TameNode.prototype.getNextSibling = function () {
+    TameBackedNode.prototype.getNextSibling = function () {
       // TODO(mikesamuel): replace with cursors so that subtrees are delegable
       return tameNode(this.node___.nextSibling, this.editable___);
     };
-    TameNode.prototype.getPreviousSibling = function () {
+    TameBackedNode.prototype.getPreviousSibling = function () {
       // TODO(mikesamuel): replace with cursors so that subtrees are delegable
       return tameNode(this.node___.previousSibling, this.editable___);
     };
-    TameNode.prototype.getParentNode = function () {
+    TameBackedNode.prototype.getParentNode = function () {
+      var parent = this.node___.parentNode;
+      if (parent === tameDocument.body___) {
+        if (tameDocument.editable___ && !this.editable___) {
+          // FIXME: return a non-editable version of body.
+          throw new Error();
+        }
+        return tameDocument.getBody();
+      }
       return tameRelatedNode(this.node___.parentNode, this.editable___);
     };
-    TameNode.prototype.getElementsByTagName = function (tagName) {
+    TameBackedNode.prototype.getElementsByTagName = function (tagName) {
       return tameNodeList(
           this.node___.getElementsByTagName(String(tagName)), this.editable___);
     };
-    TameNode.prototype.getOwnerDocument = function() {
-      return imports.document;
-    };
-    TameNode.prototype.getElementsByClassName = function(className) {
-      return tameNodeList(
-          this.node___.getElementsByClassName(
-              String(className), this.editable___));
-    };
-    TameNode.prototype.getChildNodes = function() {
+    if (typeof document.getElementsByClassName !== 'undefined') {
+      TameBackedNode.prototype.getElementsByClassName = function (className) {
+        return tameNodeList(
+            this.node___.getElementsByClassName(String(className)),
+            this.editable___);
+      };
+    }
+    TameBackedNode.prototype.getChildNodes = function () {
       return tameNodeList(this.node___.childNodes, this.editable___);
+    };
+    TameBackedNode.prototype.getAttributes = function () {
+      return tameNodeList(this.node___.attributes, this.editable___);
     };
     var endsWith__ = /__$/;
     // TODO(erights): Come up with some notion of a keeper chain so we can
     // say, "let every other keeper try to handle this first".
-    TameNode.prototype.handleRead___ = function(name) {
+    TameBackedNode.prototype.handleRead___ = function (name) {
       name = String(name);
       if (endsWith__.test(name)) { throw new Error(); }
       var handlerName = name + '_getter___';
       if (this[handlerName]) {
         return this[handlerName]();
       }
-      if (this.node___ !== void 0 &&
-          this.node___ !== null &&
-          this.node___.properties___){
+      if (___.hasOwnProp(this.node___.properties___, name)) {
         return this.node___.properties___[name];
       } else {
         return void 0;
       }
     };
-    TameNode.prototype.handleCall___ = function(name, args) {
+    TameBackedNode.prototype.handleCall___ = function (name, args) {
       name = String(name);
       if (endsWith__.test(name)) { throw new Error(); }
       var handlerName = name + '_handler___';
       if (this[handlerName]) {
         return this[handlerName].call(this, args);
       }
-      if (this.node___ !== void 0 &&
-          this.node___ !== null &&
-          this.node___.properties___) {
+      if (___.hasOwnProp(this.node___.properties___, name)) {
         return this.node___.properties___[name].call(this, args);
       } else {
-        throw new TypeError(name + " is not a function.");
+        throw new TypeError(name + ' is not a function.');
       }
     };
-    TameNode.prototype.handleSet___ = function(name, val) {
+    TameBackedNode.prototype.handleSet___ = function (name, val) {
       name = String(name);
       if (endsWith__.test(name) || !this.editable___) { throw new Error(); }
       var handlerName = name + '_setter___';
       if (this[handlerName]) {
         return this[handlerName](val);
       }
-      // For setting properties on the document object
-      if (this.node___ === void 0 || this.node___ === null) {
-        this.node___ = {};
-      }
       if (!this.node___.properties___) {
         this.node___.properties___ = {};
       }
-      this[name + "_canEnum___"] = true;
+      this[name + '_canEnum___'] = true;
       return this.node___.properties___[name] = val;
     };
-    TameNode.prototype.handleDelete___ = function(name) {
+    TameBackedNode.prototype.handleDelete___ = function (name) {
       name = String(name);
       if (endsWith__.test(name) || !this.editable___) { throw new Error(); }
       var handlerName = name + '_deleter___';
       if (this[handlerName]) {
         return this[handlerName]();
       }
-      if (this.node___ !== void 0 &&
-          this.node___ !== null &&
-          this.node___.properties___) {
-        return (delete this.node___.properties___[name] &&
-            delete this[name + "_canEnum___"]);
+      if (this.node___.properties___) {
+        return (
+            delete this.node___.properties___[name]
+            && delete this[name + '_canEnum___']);
       } else {
         return true;
       }
@@ -953,43 +991,199 @@ attachDocumentStub = (function () {
     /**
      * @param {boolean} ownFlag ignored
      */
-    TameNode.prototype.handleEnum___ = function(ownFlag) {
+    TameBackedNode.prototype.handleEnum___ = function (ownFlag) {
       // TODO(metaweta): Add code to list all the other handled stuff we know
       // about.
-      var result = [];
-      if (this.node___ && this.node___.properties___) {
-        result = cajita.allKeys(this.node___.properties___);
+      if (this.node___.properties___) {
+        return cajita.allKeys(this.node___.properties___);
       }
-      return result;
+      return [];
     };
-    TameNode.prototype.hasChildNodes = function() {
+    TameBackedNode.prototype.hasChildNodes = function () {
       return !!this.node___.hasChildNodes();
     };
-    ___.ctor(TameNode, void 0, 'TameNode');
-    var tameNodeMembers = [
-        'getNodeType', 'getNodeValue', 'getNodeName',
-        'appendChild', 'insertBefore', 'removeChild', 'replaceChild',
-        'getFirstChild', 'getLastChild', 'getNextSibling', 'getPreviousSibling',
-        'getElementsByTagName',
-        'getOwnerDocument',
-        'hasChildNodes'
-    ];
-    ___.all2(___.grantTypedGeneric, TameNode.prototype, tameNodeMembers);
+    ___.ctor(TameBackedNode, TameNode, 'TameBackedNode');
+    ___.all2(___.grantTypedGeneric, TameBackedNode.prototype, tameNodeMembers);
+
+    /**
+     * A fake node that is not backed by a real DOM node.
+     * @constructor
+     */
+    function TamePseudoNode(editable) {
+      TameNode.call(this, editable);
+      this.properties___ = {};
+    }
+    classUtils.extend(TamePseudoNode, TameNode);
+    // Abstract TamePseudoNode.prototype.getNodeType
+    // Abstract TamePseudoNode.prototype.getNodeName
+    // Abstract TamePseudoNode.prototype.getNodeValue
+    // Abstract TamePseudoNode.prototype.getAttributes
+    // Abstract TamePseudoNode.prototype.getChildNodes
+    // Abstract TamePseudoNode.prototype.getParentNode
+    // Abstract TamePseudoNode.prototype.getElementsByTagName
+    // Abstract TamePseudoNode.prototype.getElementsByClassName
+    TamePseudoNode.prototype.appendChild =
+    TamePseudoNode.prototype.insertBefore =
+    TamePseudoNode.prototype.removeChild =
+    TamePseudoNode.prototype.replaceChild =
+        function (child) { throw new Error(NOT_EDITABLE); };
+    TamePseudoNode.prototype.getFirstChild = function () {
+      var children = this.getChildNodes();
+      return children.length ? children[0] : null;
+    };
+    TamePseudoNode.prototype.getLastChild = function () {
+      var children = this.getChildNodes();
+      return children.length ? children[children.length - 1] : null;
+    };
+    TamePseudoNode.prototype.getNextSibling = function () {
+      var parentNode = this.getParentNode();
+      if (!parentNode) { return null; }
+      var siblings = parentNode.getChildNodes();
+      for (var i = siblings.length - 1; --i >= 0;) {
+        if (siblings[i] === this) { return siblings[i + 1]; }
+      }
+      return null;
+    };
+    TamePseudoNode.prototype.getPreviousSibling = function () {
+      var parentNode = this.getParentNode();
+      if (!parentNode) { return null; }
+      var siblings = parentNode.getChildNodes();
+      for (var i = siblings.length; --i >= 1;) {
+        if (siblings[i] === this) { return siblings[i - 1]; }
+      }
+      return null;
+    };
+    TamePseudoNode.prototype.handleRead___ = function (name) {
+      var handlerName = name + '_getter___';
+      if (this[handlerName]) {
+        return this[handlerName]();
+      }
+      if (this.properties___.hasOwnProperty(name)) {
+        return this.properties___[name];
+      } else {
+        return void 0;
+      }
+    };
+    TamePseudoNode.prototype.handleCall___ = function (name, args) {
+      var handlerName = name + '_handler___';
+      if (this[handlerName]) {
+        return this[handlerName].call(this, args);
+      }
+      if (this.properties___.hasOwnProperty(name)) {
+        return this.properties___[name].call(this, args);
+      } else {
+        throw new TypeError(name + ' is not a function.');
+      }
+    };
+    TamePseudoNode.prototype.handleSet___ = function (name, val) {
+      var handlerName = name + '_setter___';
+      if (this[handlerName]) {
+        return this[handlerName](val);
+      }
+      this[name + '_canEnum___'] = true;
+      return this.properties___[name] = val;
+    };
+    TamePseudoNode.prototype.handleDelete___ = function (name) {
+      var handlerName = name + '_deleter___';
+      if (this[handlerName]) {
+        return this[handlerName]();
+      }
+      if (this.properties___) {
+        return (
+            delete this.properties___[name]
+            && delete this[name + '_canEnum___']);
+      } else {
+        return true;
+      }
+    };
+    /**
+     * @param {boolean} ownFlag ignored
+     */
+    TamePseudoNode.prototype.handleEnum___ = function (ownFlag) {
+      // TODO(metaweta): Add code to list all the other handled stuff we know
+      // about.
+      if (this.node___.properties___) {
+        return cajita.allKeys(this.node___.properties___);
+      }
+      return [];
+    };
+    TamePseudoNode.prototype.hasChildNodes = function () {
+      return !!this.node___.hasChildNodes();
+    };
+    ___.ctor(TamePseudoNode, TameNode, 'TamePseudoNode');
+    ___.all2(___.grantTypedGeneric, TamePseudoNode.prototype, tameNodeMembers);
+
+
+    function TamePseudoElement(
+        tagName, tameDoc, childNodesGetter, parentNodeGetter, innerHTMLGetter,
+        editable) {
+      TamePseudoNode.call(this, editable);
+      this.tagName___ = tagName;
+      this.tameDoc___ = tameDoc;
+      this.childNodesGetter___ = childNodesGetter;
+      this.parentNodeGetter___ = parentNodeGetter;
+      this.innerHTMLGetter___ = innerHTMLGetter;
+      classUtils.exportFields(this, ['tagName', 'innerHTML']);
+    }
+    classUtils.extend(TamePseudoElement, TamePseudoNode);
+    // TODO(mikesamuel): make nodeClasses work.
+    TamePseudoElement.prototype.getNodeType = function () { return 1; };
+    TamePseudoElement.prototype.getNodeName
+        = function () { return this.tagName___; };
+    TamePseudoElement.prototype.getTagName
+        = function () { return this.tagName___; };
+    TamePseudoElement.prototype.getNodeValue = function () { return null; };
+    TamePseudoElement.prototype.getOwnerDocument
+        = function () { return this.tameDoc___; };
+    TamePseudoElement.prototype.getChildNodes
+        = function () { return this.childNodesGetter___(); };
+    TamePseudoElement.prototype.getAttributes
+        = function () { return tameNodeList([], false); };
+    TamePseudoElement.prototype.getParentNode
+        = function () { return this.parentNodeGetter___(); };
+    TamePseudoElement.prototype.getInnerHTML
+        = function () { return this.innerHTMLGetter___(); };
+    TamePseudoElement.prototype.getElementsByTagName = function (tagName) {
+      return tameNodeList(
+          this.body___.getElementsByTagName(tagName, this.editable___));
+    };
+    if (typeof document.getElementsByClassName !== 'undefined') {
+      TamePseudoElement.prototype.getElementsByClassName
+          = function (className) {
+        return this.getOwnerDocument().getElementsByClassName(className);
+      };
+    }
+    TamePseudoElement.prototype.toString = function () {
+      return '<' + this.tagName___ + '>';
+    };
+    ___.ctor(TamePseudoElement, TamePseudoNode, 'TamePseudoElement');
+    ___.all2(___.grantTypedGeneric, TameElement.prototype, ['getTagName']);
+
 
     function TameOpaqueNode(node, editable) {
-      TameNode.call(this, node, editable);
+      TameBackedNode.call(this, node, editable);
     }
-    classUtils.extend(TameOpaqueNode, TameNode);
-    TameOpaqueNode.prototype.getNodeValue = TameNode.prototype.getNodeValue;
-    TameOpaqueNode.prototype.getNodeType = TameNode.prototype.getNodeType;
-    TameOpaqueNode.prototype.getNodeName = TameNode.prototype.getNodeName;
-    TameOpaqueNode.prototype.getNextSibling = TameNode.prototype.getNextSibling;
+    classUtils.extend(TameOpaqueNode, TameBackedNode);
+    TameOpaqueNode.prototype.getNodeValue
+        = TameBackedNode.prototype.getNodeValue;
+    TameOpaqueNode.prototype.getNodeType
+        = TameBackedNode.prototype.getNodeType;
+    TameOpaqueNode.prototype.getNodeName
+        = TameBackedNode.prototype.getNodeName;
+    TameOpaqueNode.prototype.getNextSibling
+        = TameBackedNode.prototype.getNextSibling;
     TameOpaqueNode.prototype.getPreviousSibling
-        = TameNode.prototype.getPreviousSibling;
-    TameOpaqueNode.prototype.getFirstChild = TameNode.prototype.getFirstChild;
-    TameOpaqueNode.prototype.getLastChild = TameNode.prototype.getLastChild;
-    TameOpaqueNode.prototype.getParentNode = TameNode.prototype.getParentNode;
-    TameOpaqueNode.prototype.getChildNodes = TameNode.prototype.getChildNodes;
+        = TameBackedNode.prototype.getPreviousSibling;
+    TameOpaqueNode.prototype.getFirstChild
+        = TameBackedNode.prototype.getFirstChild;
+    TameOpaqueNode.prototype.getLastChild
+        = TameBackedNode.prototype.getLastChild;
+    TameOpaqueNode.prototype.getParentNode
+        = TameBackedNode.prototype.getParentNode;
+    TameOpaqueNode.prototype.getChildNodes
+        = TameBackedNode.prototype.getChildNodes;
+    TameOpaqueNode.prototype.getAttributes
+        = function () { return tameNodeList([], false); };
     for (var i = tameNodeMembers.length; --i >= 0;) {
       var k = tameNodeMembers[i];
       if (!TameOpaqueNode.prototype.hasOwnProperty(k)) {
@@ -1002,10 +1196,10 @@ attachDocumentStub = (function () {
 
     function TameTextNode(node, editable) {
       assert(node.nodeType === 3);
-      TameNode.call(this, node, editable);
+      TameBackedNode.call(this, node, editable);
       classUtils.exportFields(this, ['nodeValue', 'data']);
     }
-    classUtils.extend(TameTextNode, TameNode);
+    classUtils.extend(TameTextNode, TameBackedNode);
     nodeClasses.TextNode = TameTextNode;
     TameTextNode.prototype.setNodeValue = function (value) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
@@ -1017,24 +1211,24 @@ attachDocumentStub = (function () {
     TameTextNode.prototype.toString = function () {
       return '#text';
     };
-    ___.ctor(TameTextNode, void 0, 'TameNode');
+    ___.ctor(TameTextNode, TameBackedNode, 'TameTextNode');
     ___.all2(___.grantTypedGeneric, TameTextNode.prototype,
              ['setNodeValue', 'getData', 'setData']);
 
     function TameCommentNode(node, editable) {
       assert(node.nodeType === 8);
-      TameNode.call(this, node, editable);
+      TameBackedNode.call(this, node, editable);
     }
-    classUtils.extend(TameCommentNode, TameNode);
+    classUtils.extend(TameCommentNode, TameBackedNode);
     nodeClasses.CommentNode = TameCommentNode;
     TameCommentNode.prototype.toString = function () {
       return '#comment';
     };
-    ___.ctor(TameCommentNode, void 0, 'TameNode');
+    ___.ctor(TameCommentNode, TameBackedNode, 'TameCommentNode');
 
     function TameElement(node, editable) {
       assert(node.nodeType === 1);
-      TameNode.call(this, node, editable);
+      TameBackedNode.call(this, node, editable);
       classUtils.exportFields(
           this,
           ['className', 'id', 'innerHTML', 'tagName', 'style',
@@ -1047,9 +1241,8 @@ attachDocumentStub = (function () {
             'title',
             'dir']);
     }
-    classUtils.extend(TameElement, TameNode);
-    nodeClasses.Element = TameElement;
-    nodeClasses.HTMLElement = TameElement;
+    classUtils.extend(TameElement, TameBackedNode);
+    nodeClasses.Element = nodeClasses.HTMLElement = TameElement;
     TameElement.prototype.getId = function () {
       return this.getAttribute('id') || '';
     };
@@ -1093,7 +1286,7 @@ attachDocumentStub = (function () {
       if (type === undefined || !html4.ATTRIBS.hasOwnProperty(name)) {
         return false;
       }
-      return this.node___.hasAttribute( name );
+      return this.node___.hasAttribute(name);
     };
     TameElement.prototype.setAttribute = function (attribName, value) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
@@ -1123,7 +1316,7 @@ attachDocumentStub = (function () {
         // Can't remove an attribute you can't read
         return;
       }
-      this.node___.removeAttribute( name );
+      this.node___.removeAttribute(name);
     };
     TameElement.prototype.getClassName = function () {
       return this.getAttribute('class') || '';
@@ -1146,7 +1339,7 @@ attachDocumentStub = (function () {
       if (!this.editable___) { throw new Error(); }
       return this.setAttribute('dir', String(classes));
     };
-    TameElement.prototype.getTagName = TameNode.prototype.getNodeName;
+    TameElement.prototype.getTagName = TameBackedNode.prototype.getNodeName;
     TameElement.prototype.getInnerHTML = function () {
       var tagName = this.node___.tagName.toLowerCase();
       if (!html4.ELEMENTS.hasOwnProperty(tagName)) {
@@ -1242,7 +1435,7 @@ attachDocumentStub = (function () {
     TameElement.prototype.addEventListener = tameAddEventListener;
     TameElement.prototype.removeEventListener = tameRemoveEventListener;
     TameElement.prototype.dispatchEvent = tameDispatchEvent;
-    ___.ctor(TameElement, TameNode, 'TameElement');
+    ___.ctor(TameElement, TameBackedNode, 'TameElement');
     ___.all2(
        ___.grantTypedGeneric, TameElement.prototype,
        ['addEventListener', 'removeEventListener', 'dispatchEvent',
@@ -1641,34 +1834,32 @@ attachDocumentStub = (function () {
 
     function TameTableElement(node, editable) {
       TameTableCompElement.call(this, node, editable);
-      classUtils.exportFields(
-          this,
-          ['tBodies','tHead','tFoot']);
+      classUtils.exportFields(this, ['tBodies','tHead','tFoot']);
     }
     classUtils.extend(TameTableElement, TameTableCompElement);
     nodeClasses.HTMLTableElement = TameTableElement;
     TameTableElement.prototype.getTBodies = function () {
-      return tameNodeList( this.node___.tBodies, this.editable___ );
+      return tameNodeList(this.node___.tBodies, this.editable___);
     };
     TameTableElement.prototype.getTHead = function () {
-      return tameNode( this.node___.tHead, this.editable___ );
+      return tameNode(this.node___.tHead, this.editable___);
     };
     TameTableElement.prototype.getTFoot = function () {
-      return tameNode( this.node___.tFoot, this.editable___ );
+      return tameNode(this.node___.tFoot, this.editable___);
     };
-    TameTableElement.prototype.createTHead = function() {
+    TameTableElement.prototype.createTHead = function () {
       if (!this.editable___) { throw new Error(); }
-      return tameNode( this.node___.createTHead(), this.editable___ );
+      return tameNode(this.node___.createTHead(), this.editable___);
     };
-    TameTableElement.prototype.deleteTHead = function() {
+    TameTableElement.prototype.deleteTHead = function () {
       if (!this.editable___) { throw new Error(); }
       this.node___.deleteTHead();
     };
-    TameTableElement.prototype.createTFoot = function() {
+    TameTableElement.prototype.createTFoot = function () {
       if (!this.editable___) { throw new Error(); }
-      return tameNode( this.node___.createTFoot(), this.editable___ );
+      return tameNode(this.node___.createTFoot(), this.editable___);
     };
-    TameTableElement.prototype.deleteTFoot = function() {
+    TameTableElement.prototype.deleteTFoot = function () {
       if (!this.editable___) { throw new Error(); }
       this.node___.deleteTFoot();
     };
@@ -1729,19 +1920,21 @@ attachDocumentStub = (function () {
       // TODO(mikesamuel): make sure event doesn't propagate to dispatched
       // events for this gadget only.
       // But don't allow it to stop propagation to the container.
-      if( this.event___.stopPropagation )
-          this.event___.stopPropagation();
-      else
-          this.event___.cancelBubble = true;
+      if (this.event___.stopPropagation) {
+        this.event___.stopPropagation();
+      } else {
+        this.event___.cancelBubble = true;
+      }
     };
     TameEvent.prototype.preventDefault = function () {
       // TODO(mikesamuel): make sure event doesn't propagate to dispatched
       // events for this gadget only.
       // But don't allow it to stop propagation to the container.
-      if( this.event___.preventDefault )
-          this.event___.preventDefault();
-      else
-          this.event___.returnValue = false;
+      if (this.event___.preventDefault) {
+        this.event___.preventDefault();
+      } else {
+        this.event___.returnValue = false;
+      }
     };
     TameEvent.prototype.getAltKey = function () {
       return Boolean(this.event___.altKey);
@@ -1792,26 +1985,94 @@ attachDocumentStub = (function () {
               'preventDefault',
               'getKeyCode', 'getWhich']);
 
-
-    function TameDocument(doc, editable) {
+    function TameHTMLDocument(doc, body, editable) {
+      TamePseudoNode.call(this, editable);
       this.doc___ = doc;
-      this.editable___ = editable;
+      this.body___ = body;
+      var tameDoc = this;
+
+      var tameBody = tameNode(body, editable);
+      // TODO(mikesamuel): create a proper class for BODY, HEAD, and HTML along
+      // with all the other specialized node types.
+      var tameBodyElement = new TamePseudoElement(
+          'BODY',
+          this,
+          function () { return tameNodeList(body.childNodes, editable); },
+          function () { return tameHtmlElement; },
+          function () { return tameInnerHtml(body.innerHTML); });
+      cajita.forOwnKeys(
+          { appendChild: 0, removeChild: 0, insertBefore: 0, replaceChild: 0 },
+          ___.frozenFunc(function (k) {
+            tameBodyElement[k] = tameBody[k].bind(tameBody);
+            ___.grantCall(tameBodyElement, k);
+          }));
+
+      var title = doc.createTextNode(body.getAttribute('title') || '');
+      var tameTitleElement = new TamePseudoElement(
+          'TITLE',
+          this,
+          function () { return [tameNode(title, false)]; },
+          function () { return tameHeadElement; },
+          function () { return html.escapeAttrib(title.nodeValue); });
+      var tameHeadElement = new TamePseudoElement(
+          'HEAD',
+          this,
+          function () { return [tameTitleElement]; },
+          function () { return tameHtmlElement; },
+          function () {
+            return '<title>' + tameTitleElement.getInnerHTML() + '</title>';
+          });
+      var tameHtmlElement = new TamePseudoElement(
+          'HTML',
+          this,
+          function () { return [tameHeadElement, tameBodyElement]; },
+          function () { return tameDoc; },
+          function () {
+            return ('<head>' + tameHeadElement.getInnerHTML + '<\/head><body>'
+                    + tameBodyElement.getInnerHTML() + '<\/body>');
+          });
+      this.documentElement___ = tameHtmlElement;
+      classUtils.exportFields(this, ['documentElement', 'body']);
     }
-    classUtils.extend(TameDocument, TameNode);
-    nodeClasses.HTMLDocument = TameDocument;
-    TameDocument.prototype.addEventListener =
+    classUtils.extend(TameHTMLDocument, TamePseudoNode);
+    nodeClasses.HTMLDocument = TameHTMLDocument;
+    TameHTMLDocument.prototype.getNodeType = function () { return 9; };
+    TameHTMLDocument.prototype.getNodeName
+        = function () { return '#document'; };
+    TameHTMLDocument.prototype.getNodeValue = function () { return null; };
+    TameHTMLDocument.prototype.getChildNodes
+        = function () { return [this.documentElement___]; };
+    TameHTMLDocument.prototype.getAttributes = function () { return []; };
+    TameHTMLDocument.prototype.getParentNode = function () { return null; };
+    TameHTMLDocument.prototype.getElementsByTagName = function (tagName) {
+      return tameNodeList(
+          this.body___.getElementsByTagName(tagName, this.editable___));
+    };
+    TameHTMLDocument.prototype.getDocumentElement = function () {
+      return this.documentElement___;
+    };
+    TameHTMLDocument.prototype.getBody = function () {
+      return this.documentElement___.getLastChild();
+    };
+    if (typeof document.getElementsByClassName !== 'undefined') {
+      TameHTMLDocument.prototype.getElementsByClassName = function (className) {
+        return tameNodeList(
+            this.body___.getElementsByClassName(className, this.editable___));
+      };
+    }
+    TameHTMLDocument.prototype.addEventListener =
         function (name, listener, useCapture) {
           // TODO(ihab.awad): Implement
         };
-    TameDocument.prototype.removeEventListener =
+    TameHTMLDocument.prototype.removeEventListener =
         function (name, listener, useCapture) {
           // TODO(ihab.awad): Implement
         };
-    TameDocument.prototype.dispatchEvent =
+    TameHTMLDocument.prototype.dispatchEvent =
         function (evt) {
           // TODO(ihab.awad): Implement
         };
-    TameDocument.prototype.createElement = function (tagName) {
+    TameHTMLDocument.prototype.createElement = function (tagName) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       tagName = String(tagName).toLowerCase();
       if (!html4.ELEMENTS.hasOwnProperty(tagName)) { throw new Error(); }
@@ -1828,32 +2089,29 @@ attachDocumentStub = (function () {
       }
       return tameNode(newEl, true);
     };
-    TameDocument.prototype.createTextNode = function (text) {
+    TameHTMLDocument.prototype.createTextNode = function (text) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       return tameNode(this.doc___.createTextNode(
           text !== null && text !== void 0 ? '' + text : ''), true);
     };
-    TameDocument.prototype.getElementById = function (id) {
+    TameHTMLDocument.prototype.getElementById = function (id) {
       id += idSuffix;
       var node = this.doc___.getElementById(id);
       return tameNode(node, this.editable___);
     };
-    TameDocument.prototype.getElementsByTagName = function(tagName) {
-       //FIXME: this does not consider nested modules, but thats fine for now
-       var base = imports.htmlEmitter___.cursor_[0];
-       return tameNodeList(
-         base.getElementsByTagName(String(tagName)), this.editable___);
-     };
-    TameDocument.prototype.toString = function () { return '[Fake Document]'; };
-    TameDocument.prototype.write = function(text) {
-      // TODO(ihab.awad): Needs implementation
+    TameHTMLDocument.prototype.toString = function () {
+      return '[Fake Document]';
+    };
+    TameHTMLDocument.prototype.write = function (text) {
+      // TODO(mikesamuel): Needs implementation
       cajita.log('Called document.write() with: ' + text);
     };
-    ___.ctor(TameDocument, void 0, 'TameDocument');
-    ___.all2(___.grantTypedGeneric, TameDocument.prototype,
+    ___.ctor(TameHTMLDocument, TamePseudoNode, 'TameHTMLDocument');
+    ___.all2(___.grantTypedGeneric, TameHTMLDocument.prototype,
              ['addEventListener', 'removeEventListener', 'dispatchEvent',
               'createElement', 'createTextNode', 'getElementById',
               'getElementsByTagName', 'getElementsByClassName', 'write']);
+
 
     imports.tameNode___ = tameNode;
     imports.tameEvent___ = function (event) { return new TameEvent(event); };
@@ -1878,7 +2136,7 @@ attachDocumentStub = (function () {
       var p = String(nmtokens).replace(/^\s+|\s+$/g, '').split(/\s+/g);
       var out = [];
       for (var i = 0; i < p.length; ++i) {
-        nmtoken = rewriteAttribute(null, null, html4.atype.ID, p[i]);
+        var nmtoken = rewriteAttribute(null, null, html4.atype.ID, p[i]);
         if (!nmtoken) { throw new Error(nmtokens); }
         out.push(nmtoken);
       }
@@ -1888,7 +2146,7 @@ attachDocumentStub = (function () {
       var p = String(nmtokens).replace(/^\s+|\s+$/g, '').split(/\s+/g);
       var out = [];
       for (var i = 0; i < p.length; ++i) {
-        nmtoken = rewriteAttribute(null, null, html4.atype.CLASSES, p[i]);
+        var nmtoken = rewriteAttribute(null, null, html4.atype.CLASSES, p[i]);
         if (!nmtoken) { throw new Error(nmtokens); }
         out.push(nmtoken);
       }
@@ -1952,8 +2210,8 @@ attachDocumentStub = (function () {
     /**
      * given a number as 24 bits of RRGGBB, outputs a properly formatted CSS
      * color.
-     * @param {Number} num
-     * @return {String} an CSS representation of num suitable for both html
+     * @param {number} num
+     * @return {string} a CSS representation of num suitable for both html
      *    attribs and plain text.
      */
     imports.cssColor___ = function (color) {
@@ -2005,7 +2263,8 @@ attachDocumentStub = (function () {
     imports.clearTimeout = tameClearTimeout;
     imports.clearInterval = tameClearInterval;
 
-    imports.document = new TameDocument(document, true);
+    var tameDocument = new TameHTMLDocument(document, pseudoBodyNode, true);
+    imports.document = tameDocument;
 
     // TODO(mikesamuel): figure out a mechanism by which the container can
     // specify the gadget's apparent URL.
@@ -2156,7 +2415,7 @@ attachDocumentStub = (function () {
 
     var outers = imports.outers;
     if (___.isJSONContainer(outers)) {
-      // For Valija, attach window object members to outers instead so that the
+      // For Valija, attach window object members to outers instead so that
       // the members of window show up as global variables as well.
       for (var k in tameWindow) {
         if (!___.hasOwnProp(outers, k) && ___.canEnumPub(tameWindow, k)) {
@@ -2179,10 +2438,11 @@ attachDocumentStub = (function () {
  */
 function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   event = (event || window.event);
-  (typeof console !== 'undefined' && console.log) &&
-  console.log(
-      'Dispatch %s event thisNode=%o, event=%o, pluginId=%o, handler=%o',
-      (event && event.type), thisNode, event, pluginId, handler);
+  if (typeof console !== 'undefined' && console.log) {
+    console.log(
+        'Dispatch %s event thisNode=%o, event=%o, pluginId=%o, handler=%o',
+        (event && event.type), thisNode, event, pluginId, handler);
+  }
   var imports = ___.getImports(pluginId);
   switch (typeof handler) {
     case 'string':
@@ -2194,7 +2454,7 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
       throw new Error(
           'Expected function as event handler, not ' + typeof handler);
   }
-  ___.startCallerStack && ___.startCallerStack();
+  if (___.startCallerStack) { ___.startCallerStack(); }
   imports.isProcessingEvent___ = true;
   try {
     return ___.callPub(

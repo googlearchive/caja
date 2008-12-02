@@ -117,11 +117,16 @@
   <input type="radio" value="2" name="number">
 </form>
 
-<div class="testcontainer" id="test-props-on-nodes">Original Text</div>
+<p class="testcontainer" id="test-props-on-nodes">Original Text</p>
 
 <div class="testcontainer" id="test-xhr-sync">XHR sync</div>
 
 <div class="testcontainer" id="test-xhr-async">XHR async</div>
+
+<p class="testcontainer" id="test-document-element">Test Document Element</p>
+
+<p class="testcontainer" id="test-document-body-appendChild"
+ >I should be the last element until something is appended to document.body</p>
 
 <script type="text/javascript">
 /** Aim high and you might miss the moon! */
@@ -160,6 +165,80 @@ function assertColor(expected, cssColorString) {
   }
 
   fail(cssColorString + ' != #' + hexSix);
+}
+
+/**
+ * Checks the structure of a DOM structure against a skeleton describing
+ * details of the node.
+ * @param skeleton an acyclic Object whose own properties describe aspects
+ *   of the node such as 'nodeType', 'tagName', etc.  See the switch for
+ *   supported member names.
+ * @param node the node to check against skeleton.
+ */
+function assertDomTree(skeleton, node, opt_stack) {
+  var stack = opt_stack || '(#root:' + node.nodeName + ')';
+  cajita.forOwnKeys(
+      skeleton,
+      function (key) {
+        var msg = stack + ':' + key;
+        var v = skeleton[key];
+        switch (key) {
+          case 'nodeType':
+            assertEquals(msg, v, node.nodeType);
+            break;
+          case 'nodeName':
+            assertEquals(msg, v, node.nodeName);
+            break;
+          case 'nodeValue':
+            assertEquals(msg, v, node.nodeValue);
+            break;
+          case 'tagName':
+            assertEquals(msg, v, node.tagName);
+            assertEquals(msg, v, node.nodeName);
+            break;
+          case 'innerHTML':
+            assertEquals(msg, v, node.innerHTML);
+            break;
+          case 'sameAs':
+            assertEquals(msg, v, node);
+            break;
+          case 'attributes':
+            var attrs = node.attributes;
+            assertEquals(msg + ' #attrs', v.length, attrs.length);
+            for (var i = 0, n = v.length; i < n; ++i) {
+              assertDomTree(
+                  v[i], attrs[i],
+                  stack + '@(#' + i + ':' + attrs[i].nodeName + ')');
+            }
+            break;
+          case 'children':
+            var children = node.childNodes;
+            assertEquals(msg + ' #children', v.length, children.length);
+            for (var i = 0, n = v.length; i < n; ++i) {
+              assertDomTree(
+                  v[i], children[i],
+                  stack + '/(#' + i + ':' + children[i].nodeName + ')');
+            }
+            for (var i = 0, n = v.length, c = node.firstChild; i < n;
+                 ++i, c = c.nextSibling) {
+              // TODO(mikesamuel): enable for all node-types once EQ fixed on IE
+              if (c.nodeType === 1) {
+                assertEquals(msg + ' firstChild check ' + i, c, children[i]);
+              }
+            }
+            for (var i = n = v.length, c = node.lastChild; --i >= 0;
+                 c = c.previousSibling) {
+              // TODO(mikesamuel): enable for all node-types once EQ fixed on IE
+              if (c.nodeType === 1) {
+                assertEquals(msg + ' lastChild check' + i, c, children[i]);
+              }
+            }
+            break;
+          default:
+            fail(msg + ' unrecognized key');
+            break;
+        }
+      });
 }
 
 /**
@@ -262,33 +341,45 @@ jsunitRegister('testRemoveEventListener',
 
 jsunitRegister('testDomClassHierarchy',
                function testDomClassHierarchy() {
-  assertTrue(document instanceof window.Node);
-  assertTrue(document instanceof window.HTMLDocument);
+  assertTrue('document < Node', document instanceof window.Node);
+  assertTrue('document < HTMLDocument',
+             document instanceof window.HTMLDocument);
 
-  assertTrue(document.createElement('div') instanceof window.Node);
-  assertTrue(document.createElement('div') instanceof window.Element);
-  assertTrue(document.createElement('div') instanceof window.HTMLDivElement);
+  assertTrue('<DIV> < Node',
+             document.createElement('div') instanceof window.Node);
+  assertTrue('<DIV> < Element',
+             document.createElement('div') instanceof window.Element);
+  assertTrue('<DIV> < HTMLDivElement',
+             document.createElement('div') instanceof window.HTMLDivElement);
 
-  assertTrue(document.createElement('input') instanceof window.Node);
-  assertTrue(document.createElement('input') instanceof window.Element);
-  assertTrue(
-      document.createElement('input') instanceof window.HTMLInputElement);
+  assertTrue('<INPUT> < Node',
+             document.createElement('input') instanceof window.Node);
+  assertTrue('<INPUT> < Element',
+             document.createElement('input') instanceof window.Element);
+  assertTrue('<INPUT> < HTMLInputElement',
+             document.createElement('input')
+             instanceof window.HTMLInputElement);
 
-  assertTrue(document.createElement('a') instanceof window.Node);
-  assertTrue(document.createElement('a') instanceof window.Element);
-  assertTrue(document.createElement('a') instanceof window.HTMLAnchorElement);
+  assertTrue('<A> < Node', document.createElement('a') instanceof window.Node);
+  assertTrue('<A> < Element',
+             document.createElement('a') instanceof window.Element);
+  assertTrue('<A> < HTMLAnchorElement',
+             document.createElement('a') instanceof window.HTMLAnchorElement);
 
-  assertTrue(document.createElement('img') instanceof window.Node);
-  assertTrue(document.createElement('img') instanceof window.Element);
-  assertTrue(document.createElement('img') instanceof window.HTMLImageElement);
+  assertTrue('<IMG> < Node',
+             document.createElement('img') instanceof window.Node);
+  assertTrue('<IMG> < Element',
+             document.createElement('img') instanceof window.Element);
+  assertTrue('<IMG> < HTMLImageElement',
+             document.createElement('img') instanceof window.HTMLImageElement);
 
   // TODO(ihab.awad): Add negative tests when virtual hierarchy is improved:
-  // assertFalse(
-  //     document.createElement('img') instanceof window.HTMLDivElement);
+  //assertFalse('<IMG> !< HTMLDivElement',
+  //            document.createElement('img') instanceof window.HTMLDivElement);
 
   document.getElementById('test-dom-class-hierarchy').addEventListener(
       'click',
-      function(event) {
+      function (event) {
         assertTrue(event instanceof window.Event);
         pass('test-dom-class-hierarchy');
       });
@@ -574,6 +665,9 @@ jsunitRegister('testNodeLists',
   // Check does not access properties of global.
   assertEquals('LI', item(0).tagName);
 
+  // TODO(mikesamuel): test that getElementsByTagName and getElementsByClassName
+  // do not return the body.
+
   pass('test-node-lists');
 });
 
@@ -852,9 +946,92 @@ jsunitRegister('testXhrAsync',
       assertEquals('The quick brown fox', event.target.responseText);
       pass('test-xhr-async');
     }
-    asyncFlag = event.target.readyState;    
+    asyncFlag = event.target.readyState;
   };
   xhr.send();
+});
+
+jsunitRegister('testDocumentElement',
+               function testDocumentElement() {
+  assertDomTree({
+      nodeType: 9,
+      nodeName: '#document',
+      attributes: [],
+      nodeValue: null,
+      children: [
+        {
+          nodeType: 1,
+          tagName: 'HTML',
+          nodeValue: null,
+          attributes: [],
+          children: [
+            {
+              nodeType: 1,
+              tagName: 'HEAD',
+              nodeValue: null,
+              attributes: [],
+              innerHTML: '<title>&lt;Untrusted Content Title&gt;</title>',
+              children: [
+                {
+                  nodeType: 1,
+                  tagName: 'TITLE',
+                  nodeValue: null,
+                  attributes: [],
+                  innerHTML: '&lt;Untrusted Content Title&gt;',
+                  children: [ {
+                    nodeType: 3,
+                    nodeValue: '<Untrusted Content Title>'
+                  } ]
+                }
+              ]
+            },
+            {
+              nodeType: 1,
+              tagName: 'BODY',
+              nodeValue: null,
+              attributes: [],
+              sameAs: document.body
+            }
+          ]
+        }
+      ]
+    }, document);
+
+  pass('test-document-element');
+});
+
+jsunitRegister('testDocumentBodyAppendChild',
+               function testDocumentBodyAppendChild() {
+  var notWhitespaceRe = new RegExp('\\S');
+  function getPrevNonWhitespace(prev) {
+    while (prev.nodeType === 3 && !notWhitespaceRe.test(prev.nodeValue)) {
+      prev = prev.previousSibling;
+    }
+    return prev;
+  }
+
+  function getNextNonWhitespace(next) {
+    while (next.nodeType === 3 && !notWhitespaceRe.test(next.nodeValue)) {
+      next = next.nextSibling;
+    }
+    return next;
+  }
+
+  var body = document.body;
+  var container = document.getElementById('test-document-body-appendChild');
+  var last = getPrevNonWhitespace(document.body.lastChild);
+  assertEquals('container is not last', container, last);
+
+  var lastest = document.createElement('DIV');
+  lastest.innerHTML = 'lastest';
+  body.appendChild(lastest);
+  assertEquals('lastest in wrong place',
+               lastest, getNextNonWhitespace(last.nextSibling));
+  assertEquals('lastest is not last',
+               lastest, getPrevNonWhitespace(body.lastChild));
+  assertEquals('body changed', body, document.body);
+  assertEquals('parent is not body', lastest.parentNode, body);
+  pass('test-document-body-appendChild');
 });
 
 </script>
