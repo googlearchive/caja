@@ -98,6 +98,7 @@ public final class PluginCompilerMain {
 
     boolean success = false;
     MessageContext mc = null;
+    ParseTreeNode compiledOutput = null;
     try {
       PluginMeta meta = new PluginMeta(makeEnvironment(config));
       meta.setDebugMode(config.debugMode());
@@ -108,14 +109,22 @@ public final class PluginCompilerMain {
       compiler.setHtmlSchema(config.getHtmlSchema(mq));
 
       success = parseInputs(config.getInputUris(), compiler) && compiler.run();
-
       if (success) {
-        writeFile(config.getOutputJsFile(), compiler.getJavascript());
+        compiledOutput = compiler.getJavascript();
       }
     } finally {
       if (mc == null) { mc = new MessageContext(); }
       MessageLevel maxMessageLevel = dumpMessages(mq, mc, System.err);
       success &= MessageLevel.ERROR.compareTo(maxMessageLevel) > 0;
+    }
+
+    if (success) {
+      writeFile(config.getOutputJsFile(), compiledOutput);
+    } else {
+      // Make sure there is no previous output file from a failed run.
+      config.getOutputJsFile().delete();
+      // If it wasn't there in the first place, or is not writable, that's OK,
+      // so ignore the return value.
     }
 
     return success ? 0 : -1;
