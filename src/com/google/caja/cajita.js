@@ -143,7 +143,7 @@ var ___;
     i = ToInt32(i);
     if (i < 0) {
       if ((i += len) < 0) {
-	  i = 0;
+        i = 0;
       }
     }
     for (; i < len; ++i) {
@@ -161,21 +161,21 @@ var ___;
    */
   Array.prototype.lastIndexOf = function(specimen, i) {
     var len = ToUInt32(this.length);
-    
+
     if (isNaN(i)) {
       i = len - 1;
     } else {
       i = ToInt32(i);
       if (i < 0) {
-	i += len;
-	if (i < 0) {
-	  return -1;
-	}
+        i += len;
+        if (i < 0) {
+          return -1;
+        }
       } else if (i >= len) {
-	i = len - 1;
+        i = len - 1;
       }
     }
-    
+
     for (; i >= 0 ; --i) {
       if (i in this && identical(this[i], specimen)) {
         return i;
@@ -2688,7 +2688,7 @@ var ___;
    * normal Caja threat model assumptions. magicCount and
    * MAGIC_NAME together represent a probably unique across frames
    * value, with which can generate strings in which collision is
-   * unlikely but possible. 
+   * unlikely but possible.
    * <p>
    * The MAGIC_TOKEN is a unique unforgeable per-Cajita runtime
    * value. magicCount is a per-Cajita counter, which increments each
@@ -2697,7 +2697,10 @@ var ___;
   var magicCount = 0;
   var MAGIC_NUM = Math.random();
   var MAGIC_TOKEN = Token('MAGIC_TOKEN_FOR:' + MAGIC_NUM);
-  var MAGIC_NAME = '_index:'+ MAGIC_NUM + ':';
+  // Using colons in the below causes it to fail on IE since getting a
+  // property whose name contains a semicolon on a DOM table element causes
+  // an exception.
+  var MAGIC_NAME = '_index;'+ MAGIC_NUM + ';';
 
   /**
    * Creates a new mutable associative table mapping from the
@@ -2715,7 +2718,7 @@ var ___;
    * <ul>
    * <li>should work across frames, 
    * <li>should have O(1) complexity measure within a frame where
-   *     collision is impossible, 
+   *     collision is impossible,
    * <li>and should have O(1) complexity measure between frames with
    *     high probability.
    * <li>the table should not retain its keys. In other words, if a
@@ -2755,7 +2758,7 @@ var ___;
           if (list[i] === MAGIC_TOKEN) { break; }
         }
         list[i] = MAGIC_TOKEN;
-        list[i+1] = value;
+        list[i + 1] = value;
       }
     }
 
@@ -2769,7 +2772,7 @@ var ___;
       } else {
         var i = 0;
         for (; i < list.length; i += 2) {
-          if (list[i] === MAGIC_TOKEN) { return list[i+1]; }
+          if (list[i] === MAGIC_TOKEN) { return list[i + 1]; }
         }
         return void 0;
       }
@@ -2788,9 +2791,9 @@ var ___;
       switch (typeof key) {
         case 'object':
         case 'function': {
-          if (null === key) { myValues.prim_null = value; return; } 
+          if (null === key) { myValues.prim_null = value; return; }
           var index = getOnKey(key);
-          if (index === void 0) { 
+          if (index === void 0) {
             index = myValues.length;
             setOnKey(key, index);
           }
@@ -2802,23 +2805,22 @@ var ___;
       }
     }
 
-    /** 
+    /**
      * If the key is absent, returns <tt>undefined</tt>.
      * <p>
      * Users of this table cannot distinguish an <tt>undefined</tt>
      * value from an absent key.
      */
     function getOnTable(key) {
-      var index;
       switch (typeof key) {
         case 'object':
         case 'function': {
-          if (null === key) { return myValues.prim_null; } 
+          if (null === key) { return myValues.prim_null; }
           var index = getOnKey(key);
           if (void 0 === index) { return void 0; }
           return myValues[index];
         }
-        case 'string': { return myValues['str_' + key];   }
+        case 'string': { return myValues['str_' + key]; }
         default: { return myValues['prim_' + key]; }
       }
     }

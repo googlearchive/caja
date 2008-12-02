@@ -84,8 +84,43 @@ domitaModules.classUtils = function() {
   };
 };
 
+/** XMLHttpRequest or an equivalent on IE 6. */
+domitaModules.XMLHttpRequestCtor = function (XMLHttpRequest, ActiveXObject) {
+  if (XMLHttpRequest) {
+    return XMLHttpRequest;
+  } else if (ActiveXObject) {
+    var activeXClassId;
+    // The first time the ctor is called, 
+    return function ActiveXObjectForIE() {
+      if (activeXClassId === void 0) {
+        activeXClassId = null;
+        /** Candidate Active X types. */
+        var activeXClassIds = [
+            'MSXML2.XMLHTTP.5.0', 'MSXML2.XMLHTTP.4.0',
+            'MSXML2.XMLHTTP.3.0', 'MSXML2.XMLHTTP',
+            'MICROSOFT.XMLHTTP.1.0', 'MICROSOFT.XMLHTTP.1',
+            'MICROSOFT.XMLHTTP'];
+        for (var i = 0, n = activeXClassIds.length; i < n; i++) {
+          var candidate = activeXClassIds[i];
+          try {
+            new ActiveXObject(candidate);
+            activeXClassId = candidate;
+            break;
+          } catch (e) {
+            // do nothing; try next choice
+          }
+        }
+        activeXClassIds = null;
+      }
+      return new ActiveXObject(activeXClassId);
+    };
+  } else {
+    throw new Error('ActiveXObject not available');
+  }
+};
+
 domitaModules.TameXMLHttpRequest = function(
-    nativeXMLHttpRequest,
+    xmlHttpRequestMaker,
     uriCallback) {
   var classUtils = domitaModules.classUtils();
 
@@ -95,7 +130,7 @@ domitaModules.TameXMLHttpRequest = function(
   // per http://www.ilinsky.com/articles/XMLHttpRequest/
 
   function TameXMLHttpRequest() {
-    this.xhr___ = new nativeXMLHttpRequest();
+    this.xhr___ = new xmlHttpRequestMaker();
     classUtils.exportFields(
         this,
         ['onreadystatechange', 'readyState', 'responseText', 'responseXML',
@@ -585,11 +620,10 @@ attachDocumentStub = (function () {
       if (node === null || node === void 0) { return null; }
       // TODO(mikesamuel): make sure it really is a DOM node
 
-
       var cache = editable ? editableTameNodeCache : readOnlyTameNodeCache;
       var tamed = cache.get(node);
       if (tamed !== void 0) {
-	return tamed;
+        return tamed;
       }
 
       switch (node.nodeType) {
@@ -647,7 +681,9 @@ attachDocumentStub = (function () {
           break;
       }
 
-      cache.set(node, tamed);
+      if (node.nodeType === 1) {
+        cache.set(node, tamed);
+      }
       return tamed;
     }
 
@@ -656,8 +692,10 @@ attachDocumentStub = (function () {
       // catch errors because node might be from a different domain
       try {
         for (var ancestor = node; ancestor; ancestor = ancestor.parentNode) {
-          // TODO(mikesamuel): replace with cursors so that subtrees are delegable
-          if (idClass === ancestor.className) {  // TODO: handle multiple classes.
+          // TODO(mikesamuel): replace with cursors so that subtrees are
+          // delegable
+          // TODO: handle multiple classes.
+          if (idClass === ancestor.className) {
             return tameNode(node, editable);
           }
         }
@@ -840,14 +878,18 @@ attachDocumentStub = (function () {
     };
     TameNode.prototype.getElementsByClassName = function(className) {
       return tameNodeList(
-          this.node___.getElementsByClassName(String(className), this.editable___));
+          this.node___.getElementsByClassName(
+              String(className), this.editable___));
     };
     TameNode.prototype.getChildNodes = function() {
       return tameNodeList(this.node___.childNodes, this.editable___);
     };
+    var endsWith__ = /__$/;
     // TODO(erights): Come up with some notion of a keeper chain so we can
     // say, "let every other keeper try to handle this first".
     TameNode.prototype.handleRead___ = function(name) {
+      name = String(name);
+      if (endsWith__.test(name)) { throw new Error(); }
       var handlerName = name + '_getter___';
       if (this[handlerName]) {
         return this[handlerName]();
@@ -861,6 +903,8 @@ attachDocumentStub = (function () {
       }
     };
     TameNode.prototype.handleCall___ = function(name, args) {
+      name = String(name);
+      if (endsWith__.test(name)) { throw new Error(); }
       var handlerName = name + '_handler___';
       if (this[handlerName]) {
         return this[handlerName].call(this, args);
@@ -874,6 +918,8 @@ attachDocumentStub = (function () {
       }
     };
     TameNode.prototype.handleSet___ = function(name, val) {
+      name = String(name);
+      if (endsWith__.test(name) || !this.editable___) { throw new Error(); }
       var handlerName = name + '_setter___';
       if (this[handlerName]) {
         return this[handlerName](val);
@@ -889,6 +935,8 @@ attachDocumentStub = (function () {
       return this.node___.properties___[name] = val;
     };
     TameNode.prototype.handleDelete___ = function(name) {
+      name = String(name);
+      if (endsWith__.test(name) || !this.editable___) { throw new Error(); }
       var handlerName = name + '_deleter___';
       if (this[handlerName]) {
         return this[handlerName]();
@@ -906,7 +954,8 @@ attachDocumentStub = (function () {
      * @param {boolean} ownFlag ignored
      */
     TameNode.prototype.handleEnum___ = function(ownFlag) {
-      // TODO(metaweta): Add code to list all the other handled stuff we know about.
+      // TODO(metaweta): Add code to list all the other handled stuff we know
+      // about.
       var result = [];
       if (this.node___ && this.node___.properties___) {
         result = cajita.allKeys(this.node___.properties___);
@@ -1882,8 +1931,11 @@ attachDocumentStub = (function () {
     }
     TameStyle.prototype.toString = function () { return '[Fake Style]'; };
 
-    nodeClasses.XMLHttpRequest =
-      domitaModules.TameXMLHttpRequest(XMLHttpRequest, uriCallback);
+    nodeClasses.XMLHttpRequest = domitaModules.TameXMLHttpRequest(
+        domitaModules.XMLHttpRequestCtor(
+            window.XMLHttpRequest,
+            window.ActiveXObject),
+        uriCallback);
 
     /**
      * given a number, outputs the equivalent css text.
