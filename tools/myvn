@@ -76,13 +76,14 @@
 # ====================
 # changed      -  files changed in the snapshotted CL.  Pipeable to xargs
 # diffstats    -  number of lines added/changed/removed
-# files        -  files changed in svn.  Pipeable to xargs 
+# files        -  files changed in svn.  Pipeable to xargs
 # filetypes    -  sets svn:mime-type of modified files based on file suffix
 
 function myvn() {
   local default_gvn_path=/opt/googlesvn/bin/gvn
   local default_svn_path=/opt/googlesvn/bin/svn
-  submit_bug_path=$(dirname $0)/submit-caja-bug.py
+  local tools_dir="$(dirname $0)"
+  local submit_bug_path="$tools_dir"/submit-caja-bug.py
 
   local tmp=$(which gvn)
   if [ -x "$tmp" ]; then
@@ -94,7 +95,8 @@ function myvn() {
   fi
 
   local verb="$1"
-  # If we're in a directory pointed at via symlinks, first switch to the physical directory
+  # If we're in a directory pointed at via symlinks, first switch to the
+  # physical directory
   local current_cl="$(cd -P . ; perl -e 'print $1 if $ENV{PWD}=~m|/svn-changes/([^/]+)|')"
   local svn=${SVN_BIN:-$default_svn_path}
   local gvn=${GVN_BIN:-$default_gvn_path}
@@ -145,11 +147,7 @@ function myvn() {
           '
       ;;
     describe )
-      if [ 0 = $# ] && [ -n "$current_cl" ]; then
-        "$gvn" "$verb" "$username/$current_cl"
-      else
-        "$gvn" "$verb" "$@"
-      fi
+      "$tools_dir/appspot.py" show "$@"
       ;;
     checkout|co )
       "$svn" checkout https://google-caja.googlecode.com/svn/trunk/ google-caja
@@ -157,30 +155,15 @@ function myvn() {
     bug )
       myvn describe | "$submit_bug_path" -s "$(myvn diffstats)" "$@"
       ;;
-    snapshot)
-      echo myvn snapshot is deprecated to avoid overlooking snapshotting changes
-      echo Please use myvn change
+    snapshot )
+      "$tools_dir/appspot.py" snapshot "$@"
       ;;
-    change)
-      if [ -n "$current_cl" ] && ! grep -q ' -c ' <(echo -- $*); then
-        "$gvn" "$verb" -c "$username/$current_cl" "$@"
-      else
-        "$gvn" "$verb" "$@"
-      fi
-      MISSING=$("$gvn" nothave | egrep -v '^ant-')
-      if [ -n "$MISSING" ]; then
-        echo WARNING: The following files are not part of the current change:
-        # Ignore ant-* directories which are created during the build
-        "$gvn" nothave | grep -v "^ant-"
-      fi
+    change )
+      "$tools_dir/appspot.py" edit "$@"
       ;;
     submit )
-      if [ -n "$current_cl" ] && ! grep -q ' -c ' <(echo -- $*); then
-        runAntTests && "$gvn" "$verb" -c "$current_cl" "$@"
-      else
-        echo No changelist found
-      fi
-      ;;      
+      runAntTests && "$svn" commit -F <("$tools_dir/appspot.py" show "$@")
+      ;;
     mail )
       local implied=""
       if [ -n "$current_cl" ] && ! grep -q ' -c ' <(echo -- $*); then
@@ -317,7 +300,7 @@ function makeEclipseGenfiles() {
       local rel_file="$(echo "$f" | perl -pe 's|^ant-lib/||')"
       if [ ! -e "src/$rel_file" ] && [ ! -e "tests/$rel_file" ] ; then
         mkdir -p "$(dirname "ant-eclipse-genfiles/$rel_file")"
-        ln -s "$f" "ant-eclipse-genfiles/$rel_file"
+        ln -s "$PWD/$f" "ant-eclipse-genfiles/$rel_file"
       fi
     done
   fi
