@@ -1300,7 +1300,7 @@ attachDocumentStub = (function () {
               html4.ATTRIBS.hasOwnProperty(attribKey))) {
         atype = html4.ATTRIBS[attribKey];
       } else {
-        throw new Error();
+        throw new Error("Invalid property value: " + value);
       }
       var sanitizedValue = rewriteAttribute(tagName, attribName, atype, value);
       if (sanitizedValue !== null) {
@@ -2164,6 +2164,7 @@ attachDocumentStub = (function () {
          ___.useGetHandler(
              TameStyle.prototype, propertyName,
              function () {
+               if (!this.style___) { return void 0; }
                return String(this.style___[propertyName] || '');
              });
          var pattern = css.properties[propertyName];

@@ -19,6 +19,10 @@
   .testcontainer.passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
 </style>
 
+<p class="testcontainer" id="test-nonexistent-style-property">
+  <div id="test-nonexistent-style-property-label">Hide me</div>
+</p>
+
 <p class="testcontainer" id="test-add-event-listener">
   <b id="test-add-event-listener-label">click me</b>
 </p>
@@ -295,6 +299,12 @@ function canonInnerHtml(s) {
       });
   return s;
 }
+
+jsunitRegister('testNonexistentStyleProperty',
+               function testNonexistentStyleProperty() {
+  var container = document.getElementById('test-nonexistent-style-property-label');
+  assertEquals(undefined, container.style.noSuchProperty);
+});
 
 jsunitRegister('testAddEventListener',
                function testAddEventListener() {
