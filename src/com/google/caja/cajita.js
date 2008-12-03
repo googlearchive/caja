@@ -1265,11 +1265,9 @@ var ___;
   }
 
   /**
-   * Caja code attempting to read a property on something besides
-   * <tt>this</tt>.
+   * Called by Caja code attempting to read a property.
    * <p>
-   * If it can't then <tt>readPub</tt> returns <tt>undefined</tt>
-   * instead.
+   * If it can't then <tt>readPub</tt> returns <tt>undefined</tt> instead.
    */
   function readPub(obj, name) {
     if (typeof name === 'number') {
@@ -1401,7 +1399,7 @@ var ___;
    * Would a Caja for/in loop by a client of obj see this name?
    * <p>
    * For properties defined in Caja, this is generally the same as
-   * canReadProp. Otherwise according to whitelisting.
+   * canReadPub.  Otherwise according to whitelisting.
    */
   function canEnumPub(obj, name) {
     if (obj === null) { return false; }
@@ -1589,11 +1587,10 @@ var ___;
    * then yes. If the object is a JSON container, then
    * yes. Otherwise according to whitelisting decisions.
    * <p>
-   * The non-obvious implication of this rule together with the
-   * canSetProp rule is that a Caja client of a Caja constructed
-   * object cannot add new properties to it. But a Caja constructed
-   * object can add new properties to itself, and its clients can
-   * then assign to these properties.
+   * The non-obvious implication of this rule is that a Caja client of
+   * a Caja constructed object cannot add new properties to it. But a
+   * Caja constructor can add new properties to the instance, and its
+   * clients can then assign to these properties.
    */
   function canSetPub(obj, name) {
     name = String(name);

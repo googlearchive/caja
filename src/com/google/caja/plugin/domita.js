@@ -936,7 +936,7 @@ attachDocumentStub = (function () {
     // say, "let every other keeper try to handle this first".
     TameBackedNode.prototype.handleRead___ = function (name) {
       name = String(name);
-      if (endsWith__.test(name)) { throw new Error(); }
+      if (endsWith__.test(name)) { return void 0; }
       var handlerName = name + '_getter___';
       if (this[handlerName]) {
         return this[handlerName]();
@@ -1309,7 +1309,7 @@ attachDocumentStub = (function () {
       return value;
     };
     TameElement.prototype.removeAttribute = function (name) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       name = String(name).toLowerCase();
       var type = html4.ATTRIBS[name];
       if (type === void 0 || !html4.ATTRIBS.hasOwnProperty(name)) {
