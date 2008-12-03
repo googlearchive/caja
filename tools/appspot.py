@@ -75,6 +75,29 @@ class ChangeList(object):
       args.extend(['--message', str(self.message)])
     if send_mail:
       args.append('--send_mail')
+
+    # Try to determine the current user's gmail address by looking for a
+    # GVN config file.  GVN is no longer used, but most appspot.py users
+    # have one, so use it to set the --email flag when present.
+    gmail_address = None
+    if os.getenv('HOME') is not None:
+      gvn_config_file = os.path.join(os.getenv('HOME'), '.gvn', 'config')
+      if os.path.isfile(gvn_config_file):
+        config_file_body = open(gvn_config_file, 'r').read()
+        m = re.search(r'(?m)^email_address\s*=\s*(\S+)$', config_file_body)
+        if m is not None:
+          gmail_address = m.group(1)
+        else:
+          m = re.search(r'(?m)^username\s*=\s*(\S+)$', config_file_body)
+          if m is not None:
+            gmail_username = m.group(1)
+            if '@' in gmail_username:
+              gmail_address = gmail_username
+            else:
+              gmail_address = '%s@gmail.com' % gmail_username
+    if gmail_address is not None:
+      args.extend(['--email', gmail_address])
+
     return args
 
   def merge_into(self, target):
@@ -241,6 +264,9 @@ def do_snapshot(given_cl, current_cl, cl_file_path, send_mail):
     out.write(editable_change(current_cl))
     out.close()
     send_mail = True
+  # If the user has not created a CL description, show an editor.
+  if not current_cl.message or not current_cl.reviewer:
+    do_edit(ChangeList(), current_cl, cl_file_path)
   # If the CL does not have an issue number, send mail since it's the first
   # upload.
   if current_cl.issue is None:
@@ -256,12 +282,22 @@ def do_snapshot(given_cl, current_cl, cl_file_path, send_mail):
 
 def main():
   def parse_flags(flags):
+    # Map short flag names to long flag names
     abbrevs = {
         '-i': '--issue',
         '-m': '--message',
         '-d': '--description',
         '-r': '--reviewer',
         '-c': '--cc',
+        }
+    # Map long flag names to value parsing functions
+    flag_spec = {
+        '--send_mail': bool,
+        '--issue': int,
+        '--message': str,
+        '--description': str,
+        '--reviewer': str,
+        '--cc': str
         }
 
     def to_pairs():
@@ -272,16 +308,26 @@ def main():
         if flag == '--':
           i += 1
           break
-        elif flag.startswith('--'):
+        if flag.startswith('-') and not flag.startswith('--'):
+          if flag not in abbrevs:
+            print >>sys.stderr, 'unrecognized flag %s' % flag
+            show_help_and_exit()
+          flag = abbrevs[flag]
+        if flag.startswith('--'):
           eq = flag.find('=')
           if eq >= 0:
-            pairs.append((flag[:eq], flag[eq+1:]))
+            flag_name, flag_value = flag[:eq], flag[eq+1:]
+          elif flag in flag_spec and flag_spec[flag] is bool:
+            flag_name, flag_value = flag, True
           else:
+            flag_name = flag
             i += 1
-            pairs.append((flag, flags[i]))
-        elif flag.startswith('-'):
-          i += 1
-          pairs.append((abbrevs[flag], flags[i]))
+            flag_value = flags[i]
+          if flag_name in flag_spec:
+            pairs.append((flag_name, flag_spec[flag_name](flag_value)))
+          else:
+            print >>sys.stderr, 'unrecognized flag %s' % flag_name
+            show_help_and_exit()
         else:
           break
         i += 1
@@ -304,7 +350,6 @@ def main():
   if verb.startswith('-'): show_help_and_exit()
 
   params, argv = parse_flags(sys.argv[2:])
-  # TODO(mikesamuel): error out on unused params.
   if len(argv) != 0: show_help_and_exit()
   given_cl = ChangeList(
       issue=params.get('--issue'),
@@ -315,11 +360,16 @@ def main():
 
   # Figure out where the CL lives on disk
   client_root = os.path.abspath(os.curdir)
-  while client_root and os.path.basename(client_root) != 'google-caja':
-    client_root = os.path.dirname(client_root)
-  if not client_root:
-    print >>sys.stderr, '''Cannot locate client root.
-No directory named google-caja on %s''' % os.path.abspath(os.curdir)
+  while True:
+    client_root_parent = os.path.dirname(client_root)
+    if not client_root_parent or client_root_parent == client_root: break
+    if not os.path.isdir(os.path.join(client_root_parent, '.svn')):
+      break
+    client_root = client_root_parent
+  if not os.path.isdir(os.path.join(client_root, '.svn')):
+    print >>sys.stderr, (
+        'Cannot locate client root.\n'
+        'No directory named google-caja on %s') % os.path.abspath(os.curdir)
     sys.exit(-1)
   cl_file_path = os.path.join(client_root, '.appspot-change')
 

@@ -1,25 +1,10 @@
 #!/usr/bin/env bash
 
-# A gvn wrapper that fills in the blanks.
-# If you keep your pending changelists in a directory tree like
-# svn-changes
-#     |
-#     +----my-change-1
-#     |        |
-#     |        +----google-caja
-#     |                 |
-#     |                 +----src
-#     |
-#     +----my-change-2
-#              |
-#              +----google-caja
-#                       |
-#                       +----src
-# then this script will provide the changelist name for you for common commands.
+# An svn wrapper that fills in the blanks.
 #
-# $(myvn change) will behave like $(gvn change -c my-change-1) if run under
-# svn-changes/my-change-1/google-caja as will other gvn commands like
-# (mail, describe, snapshot) unless a changelist name is explicitly provided.
+# $(myvn change) will behave like $(svn change -c my-change-1) if run under
+# a subversion client and adds commands like (snapshot, describe, mail) that
+# interact with codereview.appspot.com.
 #
 # ====================
 # Life of a Changelist
@@ -37,36 +22,31 @@
 #     Should pop up an editor.  Check the EDITOR, or SVNEDITOR environment
 #     variables if it doesn't
 # (5) Send it off for review
-#       $ myvn mail --reviewers your-friendly-neighborhood-cajador@gmail.com
+#       $ myvn mail --reviewer your-friendly-neighborhood-cajador@gmail.com
 #     This will automatically CC google-caja-discuss
-# (6) File a bug to track the review
-#       $ myvn bug
-#     and copy and paste it into your browser.
+# (6) Look for the review at codereview.appspot.com.
+#     If you forget the changelist number, run
+#       $ myvn describe
 # (7) Update your changes based on feedback and snapshot
 #       $ myvn snapshot
-# (8) Maybe add or remove files
-#       $ myvn change
-# (9) Commit the change
+# (8) Commit the change
 #       $ myvn submit
-# (10) Show the change description
-#       $ myvn describe
-# (11) Delete the change branch
-#       $ myvn change --delete
 #
 #
 # ====================
 #       Eclipse
 # ====================
-# (1) Generate the project
+# (1) Build jars
+# (2) Generate the project
 #       $ myvn eclipse
-# (2) Open Eclipse
-# (3) Choose New Java Project  (NOT new google3 project)
-# (4) From Existing Source
-# (5) Enter the .../svn-changes/my-change-1/google-caja/ path
-# (6) Finish
-# (7) Build some stuff
+# (3) Open Eclipse
+# (4) Choose New Java Project  (NOT new google3 project)
+# (5) From Existing Source
+# (6) Enter the .../svn-changes/my-change-1/google-caja/ path
+# (7) Finish
+# (8) Build some stuff
 #       $ ant
-# (8) Test stuff
+# (9) Test stuff
 #       Right click on project and select "Run As" > "JUnit Test"
 #       $ ant runtests
 #
@@ -80,53 +60,23 @@
 # filetypes    -  sets svn:mime-type of modified files based on file suffix
 
 function myvn() {
-  local default_gvn_path=/opt/googlesvn/bin/gvn
   local default_svn_path=/opt/googlesvn/bin/svn
   local tools_dir="$(dirname $0)"
   local submit_bug_path="$tools_dir"/submit-caja-bug.py
 
-  local tmp=$(which gvn)
-  if [ -x "$tmp" ]; then
-    default_gvn_path=$tmp
-  fi
   local tmp=$(which svn)
   if [ -x "$tmp" ]; then
     default_svn_path=$tmp
   fi
 
-  local verb="$1"
-  # If we're in a directory pointed at via symlinks, first switch to the
-  # physical directory
-  local current_cl="$(cd -P . ; perl -e 'print $1 if $ENV{PWD}=~m|/svn-changes/([^/]+)|')"
   local svn=${SVN_BIN:-$default_svn_path}
-  local gvn=${GVN_BIN:-$default_gvn_path}
-  local username="$(
-      perl -ne 'print $1 if m/^username\s*=\s*(\S+)$/' "$HOME"/.gvn/config)"
-  if [ ! -x "$gvn" ]; then
-    echo "Cannot find gvn : $gvn"
-    echo "Please set GVN_BIN (eg. export GVN_BIN=$default_gvn_path)"
-    exit -1
-  fi
-  if [ ! -x "$svn" ]; then
-    echo "Cannot find svn : $svn"
-    echo "Please set SVN_BIN (eg. export SVN_BIN=$default_svn_path)"
-    exit -1
-  fi
-  if [ -z "$username" ]; then
-    echo "Cannot determine username.  Check $HOME/.gvn/config."
-    exit -1
-  fi
 
+  local verb="$1"
   shift
   case "$verb" in
     files )
       "$svn" stat "$@" \
           | perl -ne 'print "$1\n" if m/^\s*[AMD_]?[AMD]\s+(?:\+\s+)?(\S+)/'
-      ;;
-    changed )
-      "$gvn" describe "$current_cl" "$@" \
-          | perl -e 'while (<>) { last if m/^Affected Paths:/; }
-                     while(<>) { print "$1\n" if m|^   [AMD]\s+//trunk/(.*)|; }'
       ;;
     diffstats )
       "$svn" diff -x-uw --notice-ancestry "$@" | perl -e '
@@ -165,14 +115,7 @@ function myvn() {
       runAntTests && "$svn" commit -F <("$tools_dir/appspot.py" show "$@")
       ;;
     mail )
-      local implied=""
-      if [ -n "$current_cl" ] && ! grep -q ' -c ' <(echo -- $*); then
-        implied="$implied -c $username/$current_cl"
-      fi
-      if ! grep -q ' --cc ' <(echo -- $*); then
-        implied="$implied --cc google-caja-discuss@googlegroups.com"
-      fi
-      "$gvn" "$verb" $implied "$@"
+      "$tools_dir/appspot.py" snapshot --send_mail "$@"
       ;;
     filetypes )
       local files=$(myvn files)
@@ -195,7 +138,7 @@ function myvn() {
           echo 'ANT_HOME (eg. export ANT_HOME=/usr/share/ant)'
         fi
       fi
-      makeEclipseProject "$current_cl" > .project
+      makeEclipseProject > .project
       makeEclipseClasspath > .classpath
       makeEclipseGenfiles
       mkdir -p ant-eclipse-lib
@@ -267,7 +210,13 @@ function makeEclipseClasspath() {
 }
 
 function makeEclipseProject() {
-  local projectName="$1"
+  local dir="$PWD"
+  while [ -n "$dir" ] && [ "$dir" != "$(dirname "$dir")" ] && [ -d "$dir/.svn" ]
+  do
+   dir="$(dirname "$dir")"
+  done
+
+  local projectName="$(basename "$dir")"
   echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
   echo "<projectDescription>"
   echo "	<name>$projectName</name>"
