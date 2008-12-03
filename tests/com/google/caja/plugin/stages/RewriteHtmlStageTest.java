@@ -14,12 +14,17 @@
 
 package com.google.caja.plugin.stages;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
+import com.google.caja.plugin.PluginMessageType;
+import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageType;
 import java.util.ArrayList;
 
 /**
@@ -33,12 +38,35 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         job("foo<span></span>baz", Job.JobType.HTML),
         job("{\n  extracted();\n}", Job.JobType.JAVASCRIPT)
         );
+    assertNoErrors();
 
     assertPipeline(
         job("foo<script type=text/vbscript>deleted()</script>baz",
             Job.JobType.HTML),
         job("foobaz", Job.JobType.HTML)
         );
+    assertMessage(
+        PluginMessageType.UNRECOGNIZED_CONTENT_TYPE, MessageLevel.WARNING);
+
+    assertPipeline(
+        job("foo<script type=\"text/javascript\">var x = 1;</script>baz",
+            Job.JobType.HTML),
+        job("foo<span></span>baz", Job.JobType.HTML),
+        job("{\n  var x = 1;\n}", Job.JobType.JAVASCRIPT)
+        );
+    assertNoErrors();
+
+    assertPipeline(
+        job("foo<script type=\"text/javascript\""
+            + ">useXml(<xml>foo</xml>);</script>baz",
+            Job.JobType.HTML),
+        job("foobaz", Job.JobType.HTML)
+        );
+    assertMessage(
+        MessageType.UNEXPECTED_TOKEN,
+        MessageLevel.ERROR,
+        FilePosition.instance(is, 1, 42, 42, 1, 43, 43),
+        MessagePart.Factory.valueOf("<"));
 
     assertPipeline(
         job("foo<script type=text/javascript>extracted();</script>baz",
@@ -46,11 +74,13 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         job("foo<span></span>baz", Job.JobType.HTML),
         job("{\n  extracted();\n}", Job.JobType.JAVASCRIPT)
         );
+    assertNoErrors();
 
     assertPipeline(
         job("foo<script></script>baz", Job.JobType.HTML),
         job("foobaz", Job.JobType.HTML)
         );
+    assertNoErrors();
   }
 
   public void testStyleExtraction() throws Exception {
@@ -58,16 +88,19 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         job("Foo<style>p { color: blue }</style><p>Bar", Job.JobType.HTML),
         job("Foo<p>Bar</p>", Job.JobType.HTML),
         job("p {\n  color: blue\n}", Job.JobType.CSS));
+    assertNoErrors();
 
     assertPipeline(
         job("Foo<link rel=stylesheet href=content:p+%7Bcolor%3A+blue%7D><p>Bar",
             Job.JobType.HTML),
         job("Foo<p>Bar</p>", Job.JobType.HTML),
         job("p {\n  color: blue\n}", Job.JobType.CSS));
+    assertNoErrors();
 
     assertPipeline(
         job("Foo<style></style><p>Bar", Job.JobType.HTML),
         job("Foo<p>Bar</p>", Job.JobType.HTML));
+    assertNoErrors();
   }
 
   public void testOnLoadHandlers() throws Exception {
@@ -76,6 +109,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         job("<html><head></head><body>Foo<span></span></body></html>",
             Job.JobType.HTML),
         job("{\n  init();\n}", Job.JobType.JAVASCRIPT));
+    assertNoErrors();
   }
 
   public void testImportedStyles() throws Exception {
@@ -93,16 +127,22 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
             Job.JobType.HTML),
         job("", Job.JobType.HTML),
         job("@media screen {\n  p {\n  }\n}", Job.JobType.CSS));
+    assertNoErrors();
+
     assertPipeline(
         job("<link rel=stylesheet type=text/css href=content:p+%7B%7D>",
             Job.JobType.HTML),
         job("", Job.JobType.HTML),
         job("p {\n}", Job.JobType.CSS));
+    assertNoErrors();
+
     assertPipeline(
         job("<link rel=stylesheet media=all href=content:p+%7B%7D>",
             Job.JobType.HTML),
         job("", Job.JobType.HTML),
         job("p {\n}", Job.JobType.CSS));
+    assertNoErrors();
+
     assertPipeline(
         job("<link rel=stylesheet media=braille,tty type=text/css"
             + " href=content:p+%7B%7D>",
@@ -115,6 +155,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
   @SuppressWarnings("cast")
   @Override
   protected boolean runPipeline(final Jobs jobs) throws Exception {
+    mq.getMessages().clear();
     boolean result = new RewriteHtmlStage().apply(jobs);
     // Dump the extracted script bits on the queue.
     for (Job job : new ArrayList<Job>(jobs.getJobs())) {

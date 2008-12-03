@@ -462,7 +462,6 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
    * Values: JScript [DEFAULT] | javascript | vbs | vbscript | XML
    */
   private static boolean isJavaScriptLanguage(String language) {
-
     language = Strings.toLowerCase(language);
     return language.startsWith("javascript") || language.startsWith("jscript");
   }

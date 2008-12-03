@@ -35,13 +35,13 @@ import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Parser;
+import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.RenderContext;
-import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageTypeInt;
+import com.google.caja.reporting.RenderContext;
 
 import java.io.IOException;
 import java.io.StringReader;
