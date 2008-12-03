@@ -2805,24 +2805,33 @@ var Selector = Class.create({
       return;
     }
 
-    this.matcher = ["this.matcher = function(root) {",
-                    "var r = root, h = Selector.handlers, c = false, n;"];
+    var criteria = [];
+    var matches = [];
 
     while (e && le != e && (/\S/).test(e)) {
       le = e;
       for (var i in ps) {
         p = ps[i];
         if (m = e.match(p)) {
-          this.matcher.push(Object.isFunction(c[i]) ? c[i](m) :
-            new Template(c[i]).evaluate(m));
+          criteria.push(c[i]);
+          matches.push(m);
           e = e.replace(m[0], '');
           break;
         }
       }
     }
 
-    this.matcher.push("return h.unique(n);\n}");
-    eval(this.matcher.join('\n'));
+    this.matcher = function(root) {
+      var c = false;
+      var n;
+      var result;
+      for (var j=0, length=criteria.length; j < length; j++) {
+        result = criteria[j](n,root,c,Selector.handlers,matches[j]);
+        n = result[0];
+        c = result[1];
+      }
+      return h.unique(n);
+    }
     Selector._cache[this.expression] = this.matcher;
   },
 
@@ -3027,22 +3036,22 @@ Object.extend(Selector, {
   },
 
   criteria: {
-    tagName:      'n = h.tagName(n, r, "#{1}", c);      c = false;',
-    className:    'n = h.className(n, r, "#{1}", c);    c = false;',
-    id:           'n = h.id(n, r, "#{1}", c);           c = false;',
-    attrPresence: 'n = h.attrPresence(n, r, "#{1}", c); c = false;',
-    attr: function(m) {
-      m[3] = (m[5] || m[6]);
-      return new Template('n = h.attr(n, r, "#{1}", "#{3}", "#{2}", c); c = false;').evaluate(m);
+    tagName: function(nodes, root, combinator, handler, match) { return [handler.tagName(nodes,  root,  match[1], combinator), false];},
+    className: function(nodes, root, combinator, handler, match) { return [handler.className(nodes,  root,  match[1], combinator), false];},
+    id: function(nodes, root, combinator, handler, match) { return [handler.id(nodes,  root,  match[1], combinator), false];},
+    attrPresence: function(nodes, root, combinator, handler, match) { return [handler.attrPresence(nodes,  root,  match[1], combinator), false];},
+    attr: function(nodes, root, combinator, handler, match) {
+      match[3] = (match[5] || match[6]);
+      return [handler.attr(nodes,  root,  match[1], match[3], match[2],combinator), false];
     },
-    pseudo: function(m) {
-      if (m[6]) m[6] = m[6].replace(/"/g, '\\"');
-      return new Template('n = h.pseudo(n, "#{1}", "#{6}", r, c); c = false;').evaluate(m);
+    pseudo: function(nodes, root, combinator, handler, match) {
+      if (match[6]) match[6] = match[6].replace(/"/g, '\\"');
+      return [handler.pseudo(nodes,  match[1], match[6], root,  combinator), false];
     },
-    descendant:   'c = "descendant";',
-    child:        'c = "child";',
-    adjacent:     'c = "adjacent";',
-    laterSibling: 'c = "laterSibling";'
+    descendant: function(nodes, root, combinator, handler, match) { return [nodes, 'descendant'];},
+    child: function(nodes, root, combinator, handler, match) { return [nodes, 'child'];},
+    adjacent: function(nodes, root, combinator, handler, match) { return [nodes, 'adjacent'];},
+    laterSibling: function(nodes, root, combinator, handler, match) { return [nodes, 'laterSibling'];},
   },
 
   patterns: {
