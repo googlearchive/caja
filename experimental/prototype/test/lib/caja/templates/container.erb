@@ -3,8 +3,8 @@
 
 <html lang="en">
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<title>Cajoled unit test file | <%= @title %></title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Cajoled unit test file | <%= @title %></title>
   <script type="text/javascript">
   window.onerror = function (msg, url, line) {
     url = String(url);
@@ -21,8 +21,6 @@
   <script type="text/javascript" src="assets/cajita.js"></script>
   <script type="text/javascript" src="assets/cajita-debugmode.js"></script>
   <script type="text/javascript" src="assets/bridal.js"></script>
-  <script type="text/javascript" src="assets/base2.js"></script>
-  <script type="text/javascript" src="assets/base2-dom.js"></script>
   <script type="text/javascript" src="assets/log-to-console.js"></script>
   <script type="text/javascript" src="assets/unicode.js"></script>
   <script type="text/javascript" src="assets/html4-defs.js"></script>
@@ -71,8 +69,11 @@
       
       var imports = ___.copy(___.sharedImports);
       imports.outers = imports;
-      attachDocumentStub('-test', { rewrite: function () { return null; } }, imports);
-      imports.htmlEmitter___ = new HtmlEmitter(document.getElementById('base-test'));
+      var htmlRoot = document.getElementById('base-test');
+      attachDocumentStub(
+          '-test', { rewrite: function () { return null; } }, imports,
+          htmlRoot);
+      imports.htmlEmitter___ = new HtmlEmitter(htmlRoot);
       imports.$v = valijaMaker.CALL___(imports);
       ___.grantRead(imports, '$v');
       ___.getNewModuleHandler().setImports(imports);
