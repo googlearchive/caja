@@ -22,8 +22,7 @@ base_test: 35 tests, 209 assertions, 0 failures, 1 errors
 dollar_test: 2 tests, 4 assertions, 0 failures, 0 errors
 
 
-dom_test: 92 tests, 232 assertions, 53 failures, 40 errors
-	  92 tests, 229 assertions, 34 failures, 42 errors
+dom_test: 92 tests, 285 assertions, 63 failures, 27 errors
 
         Increase seems to be caused by shadowing and styles not mixing
         well.
