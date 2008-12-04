@@ -149,9 +149,10 @@ public final class DomParser {
 
       switch (t.type) {
         case COMMENT:
-        case DIRECTIVE:  // expecially DOCTYPEs
+        case DIRECTIVE:  // especially DOCTYPEs
           tokens.advance();
           continue;
+        default: break;
       }
 
       parseDom(elementStack);

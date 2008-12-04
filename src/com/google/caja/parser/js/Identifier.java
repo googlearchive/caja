@@ -18,11 +18,13 @@ import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParserBase;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 
 import java.io.IOException;
+
 import java.util.List;
 
 /**
@@ -39,6 +41,14 @@ public final class Identifier extends AbstractParseTreeNode<ParseTreeNode> {
   }
 
   public Identifier(String name) {
+    if (!(name == null || ParserBase.isQuasiIdentifier(name))) {
+      // Disallowed in Parser, so no code should ever produce something that
+      // reaches here unless it concatenates two strings together without
+      // normalizing the result.
+      // This is meant to prevent rendered output from containing identifiers
+      // that are not normalized as required by EcmaScript3.1 Chapter 6.
+      throw new IllegalArgumentException("Invalid identifier " + name);
+    }
     this.name = name;
   }
 

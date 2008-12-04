@@ -24,6 +24,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 
+import java.text.Normalizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,8 +60,10 @@ public abstract class ParserBase {
     switch (t.type) {
       case WORD:
         if (!isIdentifier(s)) {
-          mq.addMessage(MessageType.INVALID_IDENTIFIER,
-                        tq.currentPosition(), MessagePart.Factory.valueOf(s));
+          throw new ParseException(
+              new Message(MessageType.INVALID_IDENTIFIER,
+                          tq.currentPosition(), MessagePart.Factory.valueOf(s))
+              );
         }
         break;
       case KEYWORD:
@@ -158,13 +161,20 @@ public abstract class ParserBase {
 
 
   public static boolean isJavascriptIdentifier(String s) {
-    return IDENTIFIER_OR_KEYWORD_RE.matcher(decodeIdentifier(s)).matches();
+    return IDENTIFIER_OR_KEYWORD_RE.matcher(decodeIdentifier(s)).matches()
+        && s.equals(Normalizer.normalize(s, Normalizer.Form.NFC));
+  }
+
+  public static boolean isQuasiIdentifier(String s) {
+    return QUASI_IDENTIFIER_OR_KEYWORD_RE.matcher(decodeIdentifier(s)).matches()
+        && s.equals(Normalizer.normalize(s, Normalizer.Form.NFC));
   }
 
   public boolean isIdentifier(String s) {
     return (isQuasiliteral
             ? QUASI_IDENTIFIER_OR_KEYWORD_RE
-            : IDENTIFIER_OR_KEYWORD_RE).matcher(decodeIdentifier(s)).matches();
+            : IDENTIFIER_OR_KEYWORD_RE).matcher(decodeIdentifier(s)).matches()
+        && s.equals(Normalizer.normalize(s, Normalizer.Form.NFC));
   }
 
   /**

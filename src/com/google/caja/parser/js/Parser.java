@@ -1045,20 +1045,15 @@ public final class Parser extends ParserBase {
       }
       case WORD:
       {
-        String identifier = t.text;
-        Keyword kw = Keyword.fromString(identifier);
-        if (null != kw) {
-          if (Keyword.THIS != kw) {
-            mq.addMessage(MessageType.RESERVED_WORD_USED_AS_IDENTIFIER,
-                          tq.lastPosition(),
-                          Keyword.fromString(identifier));
-          }
-        } else if (!isIdentifier(identifier)) {
-          mq.addMessage(MessageType.INVALID_IDENTIFIER,
-                        tq.lastPosition(),
-                        MessagePart.Factory.valueOf(identifier));
+        String identifier;
+        if (Keyword.THIS.toString().equals(t.text)) {
+          // this is allowed, but not t\u0068is as per the grammar
+          identifier = Keyword.THIS.toString();
+        } else {
+          tq.rewind(m);
+          identifier = parseIdentifier(false);
         }
-        Identifier idNode = new Identifier(decodeIdentifier(identifier));
+        Identifier idNode = new Identifier(identifier);
         finish(idNode, m);
         e = new Reference(idNode);
         e.setFilePosition(idNode.getFilePosition());

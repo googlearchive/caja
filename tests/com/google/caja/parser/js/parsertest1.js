@@ -92,3 +92,8 @@ label: switch (x) {
 useless: hello;
 
 for (arr[arr.length - 1] in o);
+
+a/*
+multiline comments act as newlines for the purposes of semicolon insertion
+according to Section 5.1.2 of ES3.
+*/b

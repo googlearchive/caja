@@ -66,6 +66,14 @@ public class ParserTest extends CajaTestCase {
     assertEquals(MessageType.NOT_IE, m2.getMessageType());
     assertFilePosition("parsertest1.js:35+7 - 8",
                        (FilePosition) m2.getMessageParts().get(0), mc);
+    Message m3 = msgs.next();
+    assertEquals(MessageType.SEMICOLON_INSERTED, m3.getMessageType());
+    assertFilePosition("parsertest1.js:96+2",
+                       (FilePosition) m3.getMessageParts().get(0), mc);
+    Message m4 = msgs.next();
+    assertEquals(MessageType.SEMICOLON_INSERTED, m4.getMessageType());
+    assertFilePosition("parsertest1.js:99+4",
+                       (FilePosition) m4.getMessageParts().get(0), mc);
     assertTrue(!msgs.hasNext());
   }
   public void testParser2() throws Exception {
@@ -125,7 +133,7 @@ public class ParserTest extends CajaTestCase {
   }
 
   public void testParseTreeRendering1() throws Exception {
-    runRenderTest("parsertest1.js", "rendergolden1.txt", false, false);
+    runRenderTest("parsertest1.js", "rendergolden1.txt", false, true);
   }
   public void testParseTreeRendering2() throws Exception {
     runRenderTest("parsertest2.js", "rendergolden2.txt", false, false);
@@ -224,7 +232,12 @@ public class ParserTest extends CajaTestCase {
     assertMessage(MessageType.OCTAL_LITERAL, MessageLevel.ERROR);
 
     mq.getMessages().clear();
-    assertEquals("018i", render(jsExpr(fromString("018i"))));
+    try {
+      assertEquals("018i", render(jsExpr(fromString("018i"))));
+      fail("numeric literal with disallowed letter suffix allowed");
+    } catch (ParseException ex) {
+      mq.getMessages().add(ex.getCajaMessage());
+    }
     assertMessage(MessageType.INVALID_IDENTIFIER, MessageLevel.ERROR);
 
     mq.getMessages().clear();
@@ -306,6 +319,24 @@ public class ParserTest extends CajaTestCase {
     jsExpr(fromString(" '\\v' "));
     assertMessage(MessageType.AMBIGUOUS_ESCAPE_SEQUENCE, MessageLevel.WARNING);
     mq.getMessages().clear();
+  }
+
+  public void testUnnormalizedIdentifiers() throws Exception {
+    // Test that identifiers not normalized to Normal Form C (Unicode NFC)
+    // result in a ParseException with a useful error message.
+    // According to chapter 6 of ES3.1, "The [source] text is expected to
+    // have been normalized to Unicode Normalized Form C (canonical
+    // composition)."
+    try {
+      js(fromString("C\0327();"));  // Normalizes to \xC7
+      fail("Unnormalized identifier parsed without incident");
+    } catch (ParseException ex) {
+      mq.getMessages().add(ex.getCajaMessage());
+    }
+    assertMessage(
+        MessageType.INVALID_IDENTIFIER,
+        MessageLevel.ERROR,
+        MessagePart.Factory.valueOf("C\0327"));
   }
 
   public void assertExpectedSemi() {
@@ -494,7 +525,7 @@ public class ParserTest extends CajaTestCase {
     String golden = TestUtil.readResource(getClass(), goldenFile);
     assertEquals(golden, output.toString());
 
-    // clone the parse tree, and check that it, too, matches
+    // Clone the parse tree, and check that it, too, matches
     Statement cloneParseTree = (Statement) parseTree.clone();
     StringBuilder cloneOutput = new StringBuilder();
     cloneParseTree.format(mc, cloneOutput);

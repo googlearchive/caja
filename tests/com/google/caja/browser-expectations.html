@@ -123,6 +123,53 @@
              }
            })());
     });
+
+    jsunitRegister('testFunctionCall', function testFunctionCall() {
+      // Make sure that calling with an object whose primitive value is null
+      // does not link a reference to the global object.
+      var o1 = { valueOf: function (typeHint) { return null; } };
+      (function () { assertEquals('o1', this, o1); }).call(o1);
+
+      var o2 = { valueOf: function (typeHint) { return void 0; } };
+      (function () { assertEquals('o2', this, o2); }).call(o2);
+
+      var o3 = { toString: function (typeHint) { return null; } };
+      (function () { assertEquals('o3', this, o3); }).call(o3);
+
+      var o4 = { toString: function (typeHint) { return void 0; } };
+      (function () { assertEquals('o4', this, o4); }).call(o4);
+    });
+
+    jsunitRegister('testUnnormalizedIdentifiers',
+                   function testUnnormalizedIdentifiers() {
+      // The character sequence "C\u0327" is normalized to "\u00C7" in Unicode
+      // normal form C.
+      // EcmaScript 3.1 says that all source texts are assumed to be normalized
+      // according to normal form C, but does not specify behavior when they are
+      // not.
+
+      assertTrue(
+          'ident after dot not normalized same as unquoted object member',
+          eval('({ C\u0327: true }).C\u0327'));
+      // Check that identifiers 
+      assertEquals(
+          'var names normalized same as unquoted object members',
+          2,
+          eval(''
+               + '(function () {'
+               + '  var C\u0327 = 1;'
+               + '  with ({ C\u0327: 2 }) {'
+               + '    return C\u0327;'
+               + '  }'
+               + '})()'));
+      // Check that unquoted object property names correspond to a property
+      // whose name is the proper normalized form or the oiginal.
+      // Check that quoted property names are not normalized.
+      var o = eval('({ C\u0327_1: 1, "C\u0327_2": 2, "C\\u0327_3": 3 })');
+      assertEquals(1, o['C\u0327_1'] || o['\xC7_1']);
+      assertEquals(2, o['C\u0327_2']);
+      assertEquals(3, o['C\u0327_3']);
+    });
     </script>
   </body>
 </html>

@@ -298,3 +298,9 @@ Block
     Reference
       Identifier : o
     Noop
+  ExpressionStmt
+    Reference
+      Identifier : a
+  ExpressionStmt
+    Reference
+      Identifier : b
