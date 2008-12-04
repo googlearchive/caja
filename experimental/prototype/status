@@ -71,9 +71,7 @@ position_test: 2 tests, 0 assertions, 0 failures, 2 errors
 range_test: 6 tests, 21 assertions, 0 failures, 0 errors
 
 
-selector_test:
-
-	does not compile
+selector_test: 40 tests, 164 assertions, 13 failures, 2 errors
 
 
 string_test: 40 tests, 211 assertions, 0 failures, 2 errors
