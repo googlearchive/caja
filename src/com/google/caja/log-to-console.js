@@ -16,8 +16,9 @@
 // If this module is loaded after cajita.js is loaded, and in an
 // environment (such as produced by turning on Firebug) where
 // <tt>console.log</tt> is a function, then it will register 
-// (a wrapper around) <tt>console.log</tt> with
-// <tt>___.setLogFunc()</tt> so cajita.js will log its diagnostics
+// a wrapper around <tt>console.log</tt> (or <tt>console.info</tt> 
+// and <tt>console.error</tt> if available) using 
+// <tt>___.setLogFunc()</tt>, so cajita.js will log its diagnostics
 // to the Firebug console.
 
 // If you load triv-logger.js and log-to-console.js into the same
@@ -29,19 +30,28 @@
 
 (function(global) {
   
-  if (global.___ && 
-      global.console && 
-      typeof global.console.log === 'function') {
+  var console;
 
-    ___.setLogFunc(function(str, opt_stop) {
-      global.console.log(str);
+  if (global.___ && 
+      (console = global.console) && 
+      typeof console.log === 'function') {
+
+    function logToConsole(str, opt_stop) {
+      if (opt_stop && typeof console.error === 'function') {
+	console.error(str);
+      } else if (typeof console.info === 'function') {
+	console.info(str);
+      } else {
+	console.log(str);
+      }
       if (opt_stop) {
         // breakpoint here by uncommenting out the following line:
         debugger;
         // or by setting a breakpoint on this useless line:
         return;
       }
-    });
+    };
+    ___.setLogFunc(logToConsole);
   }
 
 })(this);

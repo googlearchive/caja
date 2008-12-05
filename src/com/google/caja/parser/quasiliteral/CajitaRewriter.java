@@ -48,6 +48,7 @@ import com.google.caja.parser.js.RegexpLiteral;
 import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.SimpleOperation;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SwitchStmt;
 import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TranslatedCode;
@@ -163,34 +164,10 @@ public class CajitaRewriter extends Rewriter {
   // is that 'y' is always bound to a Reference.
 
   final public Rule[] cajaRules = {
-    new Rule() {
-      @Override
-      @RuleDescription(
-          name="moduleEnvelope",
-          synopsis="Cajole a ModuleEnvelope into a call to ___.loadModule.",
-          reason="So that the module loader can be invoked to load a module.",
-          matches="<a ModuleEnvelope>",
-          substitutes=(
-              "{"
-              + "  ___./*@synthetic*/loadModule("
-              + "      /*@synthetic*/function (___, IMPORTS___) {"
-              + "        var moduleResult___ = ___.NO_RESULT;"
-              + "        @body*;"
-              + "        return moduleResult___;"
-              + "      });"
-              + "}"))
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
-        if (node instanceof ModuleEnvelope) {
-          // TODO(erights): Pull manifest up into module record.
-          ModuleEnvelope rewritten = (ModuleEnvelope) expandAll(node, null, mq);
-          ParseTreeNodeContainer moduleStmts = new ParseTreeNodeContainer(
-              rewritten.getModuleBody().children());
-          return substV("body", returnLast(moduleStmts));
-        }
-        return NONE;
-      }
-    },
+
+    ////////////////////////////////////////////////////////////////////////
+    // Do nothing if the node is already the result of some translation
+    ////////////////////////////////////////////////////////////////////////
 
     new Rule() {
       @Override
@@ -210,75 +187,6 @@ public class CajitaRewriter extends Rewriter {
         return NONE;
       }
     },
-
-    new Rule() {
-      @Override
-      @RuleDescription(
-          name="module",
-          synopsis="Import free vars. Return last expr-statement",
-          reason="Builds the module body encapsulation around the Cajita "
-              + "code block.",
-          matches="{@ss*;}",
-          substitutes="@importedvars*; @startStmts*; @expanded*;")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
-        if (node instanceof Block && scope == null) {
-          Scope s2 = Scope.fromProgram((Block) node, mq);
-          List<ParseTreeNode> expanded = new ArrayList<ParseTreeNode>();
-          for (ParseTreeNode c : node.children()) {
-            expanded.add(expand(c, s2, mq));
-          }
-          List<ParseTreeNode> importedVars = new ArrayList<ParseTreeNode>();
-
-          Set<String> importNames = s2.getImportedVariables();
-          // Order imports so that Array and Object appear first, and so that
-          // they appear before any use of the [] and {} shorthand syntaxes
-          // since those are specified in ES262 by looking up the identifiers
-          // "Array" and "Object" in the local scope.
-          // SpiderMonkey actually implements this behavior, though it is fixed
-          // in FF3, and ES3.1 is specifying the behavior of [] and {} in terms
-          // of the original Array and Object constructors for that context.
-          Set<String> orderedImportNames = new LinkedHashSet<String>();
-          if (importNames.contains("Array")) {
-            orderedImportNames.add("Array");
-          }
-          if (importNames.contains("Object")) {
-            orderedImportNames.add("Object");
-          }
-          orderedImportNames.addAll(importNames);
-
-          for (String k : orderedImportNames) {
-            Identifier kid = new Identifier(k);
-            Expression permitsUsed = s2.getPermitsUsed(kid);
-            if (null == permitsUsed
-                || "Array".equals(k) || "Object".equals(k)) {
-              importedVars.add(
-                  QuasiBuilder.substV(
-                      "var @vIdent = ___.readImport(IMPORTS___, @vName);",
-                      "vIdent", s(kid),
-                      "vName", toStringLiteral(kid)));
-            } else {
-              importedVars.add(
-                  QuasiBuilder.substV(
-                      "var @vIdent = ___.readImport(IMPORTS___, @vName, @permits);",
-                      "vIdent", s(kid),
-                      "vName", toStringLiteral(kid),
-                      "permits", permitsUsed));
-            }
-          }
-
-          return substV(
-              "importedvars", new ParseTreeNodeContainer(importedVars),
-              "startStmts", new ParseTreeNodeContainer(s2.getStartStatements()),
-              "expanded", new ParseTreeNodeContainer(expanded));
-        }
-        return NONE;
-      }
-    },
-
-    ////////////////////////////////////////////////////////////////////////
-    // Do nothing if the node is already the result of some translation
-    ////////////////////////////////////////////////////////////////////////
 
     new Rule() {
       @Override
@@ -481,8 +389,111 @@ public class CajitaRewriter extends Rewriter {
     },
 
     ////////////////////////////////////////////////////////////////////////
+    // Module envelope
+    ////////////////////////////////////////////////////////////////////////
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="moduleEnvelope",
+          synopsis="Cajole a ModuleEnvelope into a call to ___.loadModule.",
+          reason="So that the module loader can be invoked to load a module.",
+          matches="<a ModuleEnvelope>",
+          // TODO(erights): This creates an uncajoled named function <i>expression</i>
+          // which has dangerous scoping properties under ES3 and current Firefox.
+          // Must either verify that these dangers can't harm us here (which is
+          // plausible), or refactor to avoid this issue.
+          substitutes=(
+              "{"
+              + "  ___./*@synthetic*/loadModule("
+              + "      /*@synthetic*/function moduleFunc___(___, IMPORTS___) {"
+              + "        var moduleResult___ = ___.NO_RESULT;"
+              + "        @body*;"
+              + "        return moduleResult___;"
+              + "      });"
+              + "}"))
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof ModuleEnvelope) {
+          // TODO(erights): Pull manifest up into module record.
+          ModuleEnvelope rewritten = (ModuleEnvelope) expandAll(node, null, mq);
+          ParseTreeNodeContainer moduleStmts = new ParseTreeNodeContainer(
+              rewritten.getModuleBody().children());
+          return substV("body", returnLast(moduleStmts));
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="module",
+          synopsis="Import free vars. Return last expr-statement",
+          reason="Builds the module body encapsulation around the Cajita "
+              + "code block.",
+          matches="{@ss*;}",
+          substitutes="@importedvars*; @startStmts*; @expanded*;")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof Block && scope == null) {
+          Scope s2 = Scope.fromProgram((Block) node, mq);
+          List<ParseTreeNode> expanded = new ArrayList<ParseTreeNode>();
+          for (ParseTreeNode c : node.children()) {
+            expanded.add(expand(c, s2, mq));
+          }
+          List<ParseTreeNode> importedVars = new ArrayList<ParseTreeNode>();
+
+          Set<String> importNames = s2.getImportedVariables();
+          // Order imports so that Array and Object appear first, and so that
+          // they appear before any use of the [] and {} shorthand syntaxes
+          // since those are specified in ES262 by looking up the identifiers
+          // "Array" and "Object" in the local scope.
+          // SpiderMonkey actually implements this behavior, though it is fixed
+          // in FF3, and ES3.1 is specifying the behavior of [] and {} in terms
+          // of the original Array and Object constructors for that context.
+          Set<String> orderedImportNames = new LinkedHashSet<String>();
+          if (importNames.contains("Array")) {
+            orderedImportNames.add("Array");
+          }
+          if (importNames.contains("Object")) {
+            orderedImportNames.add("Object");
+          }
+          orderedImportNames.addAll(importNames);
+
+          for (String k : orderedImportNames) {
+            Identifier kid = new Identifier(k);
+            Expression permitsUsed = s2.getPermitsUsed(kid);
+            if (null == permitsUsed
+                || "Array".equals(k) || "Object".equals(k)) {
+              importedVars.add(
+                  QuasiBuilder.substV(
+                      "var @vIdent = ___.readImport(IMPORTS___, @vName);",
+                      "vIdent", s(kid),
+                      "vName", toStringLiteral(kid)));
+            } else {
+              importedVars.add(
+                  QuasiBuilder.substV(
+                      "var @vIdent = ___.readImport(IMPORTS___, @vName, @permits);",
+                      "vIdent", s(kid),
+                      "vName", toStringLiteral(kid),
+                      "permits", permitsUsed));
+            }
+          }
+
+          return substV(
+              "importedvars", new ParseTreeNodeContainer(importedVars),
+              "startStmts", new ParseTreeNodeContainer(s2.getStartStatements()),
+              "expanded", new ParseTreeNodeContainer(expanded));
+        }
+        return NONE;
+      }
+    },
+
+    ////////////////////////////////////////////////////////////////////////
     // Support hoisting of functions to the top of their containing block
     ////////////////////////////////////////////////////////////////////////
+
     new Rule() {
       @Override
       @RuleDescription(
@@ -574,6 +585,7 @@ public class CajitaRewriter extends Rewriter {
         return NONE;
       }
     },
+
     ////////////////////////////////////////////////////////////////////////
     // try - try/catch/finally constructs
     ////////////////////////////////////////////////////////////////////////
@@ -1128,11 +1140,12 @@ public class CajitaRewriter extends Rewriter {
           Reference fname = (Reference) bindings.get("fname");
           Reference p = (Reference) bindings.get("p");
           if (scope.isDeclaredFunction(getReferenceName(fname))) {
+            ParseTreeNode r = bindings.get("r");
             return QuasiBuilder.substV(
                 "___.setStatic(@fname, @rp, @r)",
                 "fname", fname,
                 "rp", toStringLiteral(p),
-                "r", expand(bindings.get("r"), scope, mq));
+                "r", expand(nymize(r, p.getIdentifierName(), "static"), scope, mq));
           }
         }
         return NONE;
@@ -1157,7 +1170,8 @@ public class CajitaRewriter extends Rewriter {
           Pair<Expression, Expression> oPair = reuse(bindings.get("o"), scope, mq);
           Reference p = (Reference) bindings.get("p");
           String propertyName = p.getIdentifierName();
-          Pair<Expression, Expression> rPair = reuse(bindings.get("r"), scope, mq);
+          ParseTreeNode r = bindings.get("r");
+          Pair<Expression, Expression> rPair = reuse(nymize(r, propertyName, "meth"), scope, mq);
           return commas(oPair.b, rPair.b, (Expression) QuasiBuilder.substV(
               "@oRef.@pCanSet ? (@oRef.@p = @rRef) : ___.setPub(@oRef, @pName, @rRef);",
               "oRef", oPair.a,
@@ -1220,11 +1234,14 @@ public class CajitaRewriter extends Rewriter {
           substitutes="var @v = @r")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = match(node);
-        if (bindings != null
-            && !scope.isFunction(getIdentifierName(bindings.get("v")))) {
-          return substV(
-              "v", bindings.get("v"),
-              "r", expand(bindings.get("r"), scope, mq));
+        if (bindings != null) {
+          Identifier v = (Identifier) bindings.get("v");
+          if (!scope.isFunction(v.getName())) {
+            ParseTreeNode r = bindings.get("r");
+            return substV(
+                "v", v,
+                "r", expand(nymize(r, v.getName(), "var"), scope, mq));
+          }
         }
         return NONE;
       }
@@ -1303,10 +1320,12 @@ public class CajitaRewriter extends Rewriter {
         if (bindings != null) {
           ParseTreeNode v = bindings.get("v");
           if (v instanceof Reference) {
-            if (!scope.isFunction(getReferenceName(v))) {
+            String vname = getReferenceName(v);
+            if (!scope.isFunction(vname)) {
+              ParseTreeNode r = bindings.get("r");
               return substV(
                   "v", v,
-                  "r", expand(bindings.get("r"), scope, mq));
+                  "r", expand(nymize(r, vname, "var"), scope, mq));
             }
           }
         }
@@ -1860,7 +1879,7 @@ public class CajitaRewriter extends Rewriter {
               ((FunctionDeclaration) node).getInitializer());
           checkFormals(bindings.get("ps"), mq);
           Identifier fname = (Identifier) bindings.get("fname");
-          Identifier fself = new Identifier(fname.getName() + "$self");
+          Identifier fself = new Identifier(nym(node, fname.getName(), "self"));
           scope.declareStartOfScopeVariable(fname);
           Expression expr = (Expression) QuasiBuilder.substV(
               "@fRef = (function() {\n"
@@ -1935,78 +1954,6 @@ public class CajitaRewriter extends Rewriter {
     },
 
     ////////////////////////////////////////////////////////////////////////
-    // map - object literals
-    ////////////////////////////////////////////////////////////////////////
-
-    new Rule() {
-      @Override
-      @RuleDescription(
-          name="mapBadKeyValueOf",
-          synopsis="Statically reject 'valueOf' as a key",
-          reason="We depend on valueOf returning consistent results.",
-          matches="({@keys*: @vals*})",
-          substitutes="<reject>")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = match(node);
-        if (bindings != null
-            && literalsContain(bindings.get("keys"), "valueOf")) {
-          mq.addMessage(
-              RewriterMessageType.VALUEOF_PROPERTY_MUST_NOT_BE_SET,
-              node.getFilePosition(), this, node);
-          return node;
-        }
-        return NONE;
-      }
-    },
-
-    new Rule() {
-      @Override
-      @RuleDescription(
-          name="mapBadKeySuffix",
-          synopsis="Statically reject if a key with `__` suffix is found",
-          reason="",
-          matches="({@keys*: @vals*})",
-          substitutes="<reject>")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = match(node);
-        if (bindings != null && literalsEndWith(bindings.get("keys"), "__")) {
-          mq.addMessage(
-              RewriterMessageType.PROPERTIES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
-              node.getFilePosition(), this, node);
-          return node;
-        }
-        return NONE;
-      }
-    },
-
-    new Rule() {
-      @Override
-      @RuleDescription(
-          name="mapNonEmpty",
-          synopsis="Turns an object literal into an explicit initialization.",
-          reason="To avoid creating even a temporary possibly unsafe object " +
-              "(such as one with a bad 'toString' method), pass an " +
-              "array of @items, which are interleaved @keys and @vals.",
-          matches="({@keys*: @vals*})",
-          substitutes="___.initializeMap([@items*])")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        Map<String, ParseTreeNode> bindings = match(node);
-        if (bindings != null) {
-          List<ParseTreeNode> items = new ArrayList<ParseTreeNode>();
-          List<? extends ParseTreeNode> keys = bindings.get("keys").children();
-          List<? extends ParseTreeNode> vals = expand(bindings.get("vals"), scope, mq).children();
-          for (int i = 0, n = keys.size(); i < n; ++i) {
-            items.add(keys.get(i));
-            items.add(vals.get(i));
-          }
-          return substV(
-              "items", new ParseTreeNodeContainer(items));
-        }
-        return NONE;
-      }
-    },
-
-    ////////////////////////////////////////////////////////////////////////
     // multiDeclaration - multiple declarations
     ////////////////////////////////////////////////////////////////////////
 
@@ -2070,6 +2017,120 @@ public class CajitaRewriter extends Rewriter {
             return ParseTreeNodes.newNodeInstance(
                 MultiDeclaration.class, null, expanded);
           }
+        }
+        return NONE;
+      }
+    },
+
+    ////////////////////////////////////////////////////////////////////////
+    // map - object literals
+    ////////////////////////////////////////////////////////////////////////
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="mapBadKeyValueOf",
+          synopsis="Statically reject 'valueOf' as a key",
+          reason="We depend on valueOf returning consistent results.",
+          matches="({@key: @val})",
+          substitutes="<reject>")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = matchSingleMap(node);
+        if (bindings != null) {
+          StringLiteral key = (StringLiteral) bindings.get("key");
+          if (key.getUnquotedValue().equals("valueOf")) {
+            mq.addMessage(
+                RewriterMessageType.VALUEOF_PROPERTY_MUST_NOT_BE_SET,
+                key.getFilePosition(), this, key);
+            return node;
+          }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="mapBadKeySuffix",
+          synopsis="Statically reject if a key with `__` suffix is found",
+          reason="",
+          matches="({@key: @val})",
+          substitutes="<reject>")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = matchSingleMap(node);
+        if (bindings != null) {
+          StringLiteral key = (StringLiteral) bindings.get("key");
+          if (key.getUnquotedValue().endsWith("__")) {
+            mq.addMessage(
+                RewriterMessageType.PROPERTIES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+                key.getFilePosition(), this, key);
+            return node;
+          }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="mapSingle",
+          synopsis="Turns an object literal into an explicit initialization.",
+          reason="To avoid creating even a temporary possibly unsafe object " +
+              "(such as one with a bad 'toString' method), pass an " +
+              "array of a @key and a @val.",
+          matches="({@key: @val})",
+          substitutes="___.initializeMap([@key, @val])")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = matchSingleMap(node);
+        if (bindings != null) {
+          StringLiteral key = (StringLiteral) bindings.get("key");
+          ParseTreeNode val = (ParseTreeNode) bindings.get("val");
+          return substV(
+              "key", key,
+              "val", expand(nymize(val, key.getUnquotedValue(), "lit"), scope, mq));
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="mapPlural",
+          synopsis="Turns an object literal into an explicit initialization.",
+          reason="To avoid creating even a temporary possibly unsafe object " +
+              "(such as one with a bad 'toString' method), pass an " +
+              "array of @items, which are interleaved @keys and @vals.",
+          matches="({@keys*: @vals*})",
+          substitutes="___.initializeMap([@items*])")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          List<ParseTreeNode> items = new ArrayList<ParseTreeNode>();
+          List<? extends ParseTreeNode> keys = bindings.get("keys").children();
+          List<? extends ParseTreeNode> vals = bindings.get("vals").children();
+          int len = keys.size();
+          if (1 == len) {
+            mq.addMessage(
+                RewriterMessageType.MAP_RECURSION_FAILED,
+                node.getFilePosition(), node);
+          }
+          for (int i = 0, n = len; i < n; ++i) {
+            ParseTreeNode pairIn = substSingleMap(keys.get(i), vals.get(i));
+            ParseTreeNode pairOut = expand(pairIn, scope, mq);
+            Map<String, ParseTreeNode> pairBindings = makeBindings();
+            if (! QuasiBuilder.match("___.initializeMap([@key, @val])", pairOut, pairBindings)) {
+              mq.addMessage(
+                  RewriterMessageType.MAP_RECURSION_FAILED,
+                  node.getFilePosition(), node);
+            }
+            items.add(pairBindings.get("key"));
+            items.add(pairBindings.get("val"));
+          }
+          return substV(
+              "items", new ParseTreeNodeContainer(items));
         }
         return NONE;
       }

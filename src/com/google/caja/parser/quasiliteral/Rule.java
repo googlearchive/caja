@@ -19,6 +19,7 @@ import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.ParseTreeNodes;
+import com.google.caja.parser.ParserBase;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FormalParam;
@@ -314,6 +315,93 @@ public abstract class Rule implements MessagePart {
         commas(inits));
   }
 
+  /**
+   * Return a name suitable for naming a function derived from <tt>node</tt>, where
+   * the name is derived from baseName and optionally ext, is distinct from baseName,
+   * and is probably not used within <tt>node</tt>.
+   * <p>
+   * We operate under the (currently unchecked) assumption
+   * that node contains no variables whose names contain a "$_".
+   */
+  protected String nym(ParseTreeNode node, String baseName, String ext) {
+    String result;
+    if (node != null && baseName.indexOf("$_") != -1) {
+      result = baseName + "$";
+    } else {
+      result = baseName + "$_" + ext;
+    }
+    if (! ParserBase.isJavascriptIdentifier(result)) {
+      result = "badName$_" + ext;
+    }
+    // TODO: If we ever have a cheap way to test whether result is used freely
+    // in node <i>including any nested functions</i>, then we should modify result
+    // so that it does not collide.
+    return result;
+  }
+
+  /**
+   * Returns a ParseTreeNode with the same meaning as node, but potentially better
+   * debugging info.
+   * <p>
+   * If node defines an anonymous function expression, then return a new named
+   * function expression, where the name is derived from baseName.
+   * For all other nodes, currently returns the node itself.
+   */
+  protected ParseTreeNode nymize(ParseTreeNode node, String baseName, String ext) {
+    Map<String, ParseTreeNode> bindings = makeBindings();
+    if (QuasiBuilder.match("function (@ps*) {@bs*;}", node, bindings)) {
+      return QuasiBuilder.substV(
+          "function @fname(@ps*) {@bs*;}",
+          "fname", new Identifier(nym(node, baseName, ext)),
+          "ps", bindings.get("ps"),
+          "bs", bindings.get("bs"));
+    }
+    return node;
+  }
+
+  /**
+   * <tt>substSingleMap(k, v)</tt> should be equivalent to<pre>
+   * QuasiBuilder.substV(
+   *     "({@key: @val})",
+   *     "key", k,
+   *     "val", v)</pre>
+   * but currently isn't.
+   * <p>
+   * TODO(erights): figure out why not, and fix if appropriate.
+   */
+  protected ParseTreeNode substSingleMap(ParseTreeNode key, ParseTreeNode val) {
+    List<ParseTreeNode> keys = new ArrayList<ParseTreeNode>();
+    List<ParseTreeNode> vals = new ArrayList<ParseTreeNode>();
+    keys.add(key);
+    vals.add(val);
+    return QuasiBuilder.substV(
+        "({@keys*: @vals*})",
+        "keys", new ParseTreeNodeContainer(keys),
+        "vals", new ParseTreeNodeContainer(vals));
+  }
+
+  /**
+   * <tt>matchSingleMap(node) != null</tt> should be equivalent to<pre>
+   * QuasiBuilder.match("({@key: @val})", node)</pre>
+   * but currently isn't.
+   * <p>
+   * TODO(erights): figure out why not, and fix if appropriate.
+   */
+  protected Map<String, ParseTreeNode> matchSingleMap(ParseTreeNode node) {
+    Map<String, ParseTreeNode> badBindings = makeBindings();
+    if (QuasiBuilder.match("({@keys*: @vals*})", node, badBindings)) {
+      ParseTreeNodeContainer keys = (ParseTreeNodeContainer) badBindings.get("keys");
+      if (keys.children().size() == 1) {
+        ParseTreeNodeContainer vals = (ParseTreeNodeContainer) badBindings.get("vals");
+        Map<String, ParseTreeNode> fixedBindings = makeBindings();
+        fixedBindings.put("key", keys.children().get(0));
+        fixedBindings.put("val", vals.children().get(0));
+        return fixedBindings;
+      }
+    }
+    return null;
+  }
+
   protected void checkFormals(ParseTreeNode formals, MessageQueue mq) {
     for (ParseTreeNode formal : formals.children()) {
       FormalParam f = (FormalParam) formal;
@@ -366,26 +454,6 @@ public abstract class Rule implements MessagePart {
         StringLiteral.toQuotedValue(ident.getName()));
     sl.setFilePosition(ident.getFilePosition());
     return sl;
-  }
-
-  protected boolean literalsEndWith(ParseTreeNode container, String suffix) {
-    for (ParseTreeNode n : container.children()) {
-      assert(n instanceof StringLiteral);
-      if (((StringLiteral)n).getUnquotedValue().endsWith(suffix)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  protected boolean literalsContain(ParseTreeNode container, String key) {
-    for (ParseTreeNode n : container.children()) {
-      assert(n instanceof StringLiteral);
-      if (((StringLiteral)n).getUnquotedValue().equals(key)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   /**

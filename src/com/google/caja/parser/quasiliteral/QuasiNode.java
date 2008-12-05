@@ -21,7 +21,6 @@ import com.google.caja.parser.js.Identifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,7 +43,7 @@ public abstract class QuasiNode {
   public Map<String, ParseTreeNode> match(ParseTreeNode specimen) {
     List<ParseTreeNode> specimens = new ArrayList<ParseTreeNode>();
     specimens.add(specimen);
-    Map<String, ParseTreeNode> bindings = new HashMap<String, ParseTreeNode>();
+    Map<String, ParseTreeNode> bindings = Rule.makeBindings();
     return consumeSpecimens(specimens, bindings) ? bindings : null;
   }
 
@@ -60,7 +59,7 @@ public abstract class QuasiNode {
   protected abstract boolean createSubstitutes(
       List<ParseTreeNode> substitutes,
       Map<String, ParseTreeNode> bindings);
-  
+
   public String render() {
     return render(0);
   }
@@ -77,7 +76,7 @@ public abstract class QuasiNode {
   protected static boolean safeEquals(Object x, Object y) {
     return x != null ? x.equals(y) : y == null;
   }
-  
+
   protected static boolean putIfDeepEquals(
       Map<String, ParseTreeNode> bindings,
       String key,
@@ -86,7 +85,7 @@ public abstract class QuasiNode {
     // TODO(ihab.awad): As a special case, an Identifier with a null value is
     // considered to not match anything, so we reject it. See the following:
     // http://code.google.com/p/google-caja/issues/detail?id=397
-    if (value instanceof Identifier && value.getValue() == null) return false;    
+    if (value instanceof Identifier && value.getValue() == null) return false;
     bindings.put(key, value);
     return true;
   }

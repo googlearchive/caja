@@ -64,7 +64,7 @@ public class QuasiBuilder {
    * @see QuasiNode#match(com.google.caja.parser.ParseTreeNode)
    */
   public static boolean match(String patternText, ParseTreeNode specimen) {
-    return match(patternText, specimen, new HashMap<String, ParseTreeNode>());
+    return match(patternText, specimen, Rule.makeBindings());
   }
 
   /**
@@ -121,7 +121,7 @@ public class QuasiBuilder {
     if (args.length % 2 != 0) {
       throw new RuntimeException("Wrong # of args for subst()");
     }
-    Map<String, ParseTreeNode> bindings = new HashMap<String, ParseTreeNode>();
+    Map<String, ParseTreeNode> bindings = Rule.makeBindings();
     for (int i = 0; i < args.length; ) {
       bindings.put(
           (String) args[i++],

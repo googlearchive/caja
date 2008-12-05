@@ -159,7 +159,7 @@ public class CajolingServiceTest extends TestCase {
         String.format(
             moduleEnvelope,
             "<script type=\"text/javascript\">{\n"
-            + "  ___.loadModule(function (___, IMPORTS___) {\n"
+            + "  ___.loadModule(function moduleFunc___(___, IMPORTS___) {\n"
             + "                   var moduleResult___ = ___.NO_RESULT;\n"
             + "                   IMPORTS___.htmlEmitter___"
             + ".b('p').f(false).ih('Hello, World!').e('p');\n"

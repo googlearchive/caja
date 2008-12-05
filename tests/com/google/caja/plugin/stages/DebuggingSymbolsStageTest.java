@@ -172,8 +172,8 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "new foo();",
         // ^^^^^^^^^ 2+1-10
 
-        "testConstruction:2+1 - 10\n"
-        + "testConstruction:1+25 - 46"
+        "test:///testConstruction:2+1 - 10\n"
+        + "test:///testConstruction:1+25 - 46"
         );
   }
 

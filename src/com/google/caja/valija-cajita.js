@@ -104,7 +104,7 @@ var valijaMaker = (function(outers) {
       // the end of the parameter list, so we'll need to revisit this.
       '([^\\)]*)\\)'); // don't care what's after the close paren
 
-  DisfunctionPrototype.toString = dis(function($dis) {
+  function disfuncToString($dis) {
     var callFn = $dis.call;
     if (callFn) {
       var printRep = callFn.toString();
@@ -118,7 +118,9 @@ var valijaMaker = (function(outers) {
       return printRep;
     }
     return 'disfunction(var_args){\n   [cajoled code]\n}';
-  }, 'toString');
+  }
+
+  DisfunctionPrototype.toString = dis(disfuncToString, 'toString');
 
   outers.Function = Disfunction;
 
@@ -344,9 +346,10 @@ var valijaMaker = (function(outers) {
    * callable <tt>apply</tt> method, such as simple-functions,
    * pseudo-functions, and disfunctions.
    */
-  DisfunctionPrototype.call = dis(function($dis, self, var_args) {
+  function disfuncCall($dis, self, var_args) {
     return $dis.apply(self, Array.slice(arguments, 2));
-  }, 'call');
+  }
+  DisfunctionPrototype.call = dis(disfuncCall, 'call');
 
   /**
    * The Valija code <tt>Function.prototype.apply</tt> evaluates to a
@@ -359,9 +362,10 @@ var valijaMaker = (function(outers) {
    * requires that $dis provides a directly cajita-callable apply
    * method, so that it will fail if it simply inherits this one.
    */
-  DisfunctionPrototype.apply = dis(function($dis, self, args) {
+  function disfuncApply($dis, self, args) {
     return $dis.apply(self, args);
-  }, 'apply');
+  }
+  DisfunctionPrototype.apply = dis(disfuncApply, 'apply');
 
   /**
    * The Valija code <tt>Function.prototype.bind</tt> evaluates to a
@@ -369,12 +373,14 @@ var valijaMaker = (function(outers) {
    * callable <tt>apply</tt> method, such as simple-functions,
    * pseudo-functions, and disfunctions.
    */
-  DisfunctionPrototype.bind = dis(function($dis, self, var_args) {
+  function disfuncBind($dis, self, var_args) {
     var leftArgs = Array.slice(arguments, 2);
-    return function(var_args) {
+    function disfuncBound(var_args) {
       return $dis.apply(self, leftArgs.concat(Array.slice(arguments, 0)));
     };
-  }, 'bind');
+    return disfuncBound;
+  }
+  DisfunctionPrototype.bind = dis(disfuncBind, 'bind');
   
 
   function getOuters() {

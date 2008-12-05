@@ -55,19 +55,20 @@ TypeError.typeTag___ = 'TypeError';
 URIError.typeTag___ = 'URIError';
 
 
+/** In anticipation of ES3.1 */
+function dateToISOString() {
+  function f(n) {
+    return n < 10 ? '0' + n : n;
+  }
+  return (this.getUTCFullYear()     + '-' +
+          f(this.getUTCMonth() + 1) + '-' +
+          f(this.getUTCDate())      + 'T' +
+          f(this.getUTCHours())     + ':' +
+          f(this.getUTCMinutes())   + ':' +
+          f(this.getUTCSeconds())   + 'Z');
+}
 if (Date.prototype.toISOString === void 0) {
-  /** In anticipation of ES3.1 */
-  Date.prototype.toISOString = function() {
-    function f(n) {
-      return n < 10 ? '0' + n : n;
-    }
-    return (this.getUTCFullYear()     + '-' +
-            f(this.getUTCMonth() + 1) + '-' +
-            f(this.getUTCDate())      + 'T' +
-            f(this.getUTCHours())     + ':' +
-            f(this.getUTCMinutes())   + ':' +
-            f(this.getUTCSeconds())   + 'Z');
-  };
+  Date.prototype.toISOString = dateToISOString;
 }
 
 if (Date.prototype.toJSON === void 0) {
@@ -75,40 +76,44 @@ if (Date.prototype.toJSON === void 0) {
   Date.prototype.toJSON = Date.prototype.toISOString;
 }
 
+/** In anticipation of ES4, and because it's useful. */
+function arraySlice(self, start, end) {
+  return Array.prototype.slice.call(self, start || 0, end || self.length);
+}
 if (Array.slice === void 0) {
-  /** In anticipation of ES4, and because it's useful. */
-  Array.slice = function(self, start, end) {
-    return Array.prototype.slice.call(self, start || 0, end || self.length);
-  };
+  Array.slice = arraySlice;
 }
 
-if (Function.prototype.bind === void 0) {
-  /**
-   * In anticipation of ES3.1.
-   * <p>
-   * Bind this function to <tt>self</tt>, which will serve
-   * as the value of <tt>this</tt> during invocation. Curry on a
-   * partial set of arguments in <tt>var_args</tt>. Return the curried
-   * result as a new function object.
-   * <p>
-   * Note: Like the built-in Function.prototype.call and
-   * Function.prototype.apply, this one is not whitelisted. Instead,
-   * it is provided as it would be in future JavaScripts without
-   * special knowledge of Caja. This allows Caja code using bind() to
-   * work today uncajoled as well. It also suppresses the overriding
-   * of 'bind' by the 'in' test in setStatic().
-   * <p>
-   * Note that this is distinct from the tamed form of bind() made
-   * available to Caja code.
-   */
-  Function.prototype.bind = function(self, var_args) {
-    var thisFunc = this;
-    var leftArgs = Array.slice(arguments, 1);
-    return function(var_args) {
-      var args = leftArgs.concat(Array.slice(arguments, 0));
-      return thisFunc.apply(self, args);
-    };
+
+/**
+ * In anticipation of ES3.1.
+ * <p>
+ * Bind this function to <tt>self</tt>, which will serve
+ * as the value of <tt>this</tt> during invocation. Curry on a
+ * partial set of arguments in <tt>var_args</tt>. Return the curried
+ * result as a new function object.
+ * <p>
+ * Note: Like the built-in Function.prototype.call and
+ * Function.prototype.apply, this one is not whitelisted. Instead,
+ * it is provided as it would be in future JavaScripts without
+ * special knowledge of Caja. This allows Caja code using bind() to
+ * work today uncajoled as well. It also suppresses the overriding
+ * of 'bind' by the 'in' test in setStatic().
+ * <p>
+ * Note that this is distinct from the tamed form of bind() made
+ * available to Caja code.
+ */
+function funcBind(self, var_args) {
+  var thisFunc = this;
+  var leftArgs = Array.slice(arguments, 1);
+  function funcBound(var_args) {
+    var args = leftArgs.concat(Array.slice(arguments, 0));
+    return thisFunc.apply(self, args);
   };
+  return funcBound;
+}
+if (Function.prototype.bind === void 0) {
+  Function.prototype.bind = funcBind;
 }
 
 // cajita.js exports the following names to the Javascript global
@@ -138,7 +143,7 @@ var ___;
    * "identical()") or -1 if none, starting at offset i, if present.
    * If i < 0, the offset is relative to the end of the array.
    */
-  Array.prototype.indexOf = function(specimen, i) {
+  function arrayIndexOf(specimen, i) {
     var len = ToUInt32(this.length);
     i = ToInt32(i);
     if (i < 0) {
@@ -152,14 +157,15 @@ var ___;
       }
     }
     return -1;
-  };
+  }
+  Array.prototype.indexOf = arrayIndexOf;
 
   /**
    * Returns the last index at which the specimen is found (by
    * "identical()") or -1 if none, starting at offset i, if present.
    * If i < 0, the offset is relative to the end of the array.
    */
-  Array.prototype.lastIndexOf = function(specimen, i) {
+  function arrayLastIndexOf(specimen, i) {
     var len = ToUInt32(this.length);
 
     if (isNaN(i)) {
@@ -182,7 +188,8 @@ var ___;
       }
     }
     return -1;
-  };
+  }
+  Array.prototype.lastIndexOf = arrayLastIndexOf;
 
   ////////////////////////////////////////////////////////////////////////
   // Some regular expressions checking for specific suffixes.
@@ -251,9 +258,14 @@ var ___;
     }
   }
 
-  Object.prototype.CALL___ = function(var_args) {
+  /**
+   * Inherited by non-frozen simple functions, which freezes them and
+   * installs an overriding fastpath CALL___ to themselves.
+   */
+  function callFault(var_args) {
     return asFunc(this).apply(USELESS, arguments);
-  };
+  }
+  Object.prototype.CALL___ = callFault;
 
   ////////////////////////////////////////////////////////////////////////
   // Diagnostics and condition enforcement
@@ -265,7 +277,8 @@ var ___;
    * Note: JavaScript has no macros, so even in the "does nothing"
    * case, remember that the arguments are still evaluated.
    */
-  var myLogFunc = frozenFunc(function(str, opt_stop) {});
+  function defaultLogger(str, opt_stop) {}
+  var myLogFunc = frozenFunc(defaultLogger);
 
   /**
    * Gets the currently registered logging function.
@@ -399,12 +412,12 @@ var ___;
     /**
      *
      */
-    toString: function() { return '<Logging Keeper>'; },
+    toString: function toString() { return '<Logging Keeper>'; },
 
     /**
      *
      */
-    handleRead: function(obj, name) {
+    handleRead: function handleRead(obj, name) {
       log('Not readable: (' + debugReference(obj) + ').' + name);
       return void 0;
     },
@@ -412,21 +425,21 @@ var ___;
     /**
      *
      */
-    handleCall: function(obj, name, args) {
+    handleCall: function handleCall(obj, name, args) {
       fail('Not callable: (', debugReference(obj), ').', name);
     },
 
     /**
      *
      */
-    handleSet: function(obj, name, val) {
+    handleSet: function handleSet(obj, name, val) {
       fail('Not settable: (', debugReference(obj), ').', name);
     },
 
     /**
      *
      */
-    handleDelete: function(obj, name) {
+    handleDelete: function handleDelete(obj, name) {
       fail('Not deletable: (', debugReference(obj), ').', name);
     }
   };
@@ -434,7 +447,7 @@ var ___;
   /**
    *
    */
-  Object.prototype.handleRead___ = function(name) {
+  Object.prototype.handleRead___ = function handleRead___(name) {
     var handlerName = name + '_getter___';
     if (this[handlerName]) {
       return this[handlerName]();
@@ -445,7 +458,7 @@ var ___;
   /**
    *
    */
-  Object.prototype.handleCall___ = function(name, args) {
+  Object.prototype.handleCall___ = function handleCall___(name, args) {
     var handlerName = name + '_handler___';
     if (this[handlerName]) {
       return this[handlerName].call(this, args);
@@ -456,7 +469,7 @@ var ___;
   /**
    *
    */
-  Object.prototype.handleSet___ = function(name, val) {
+  Object.prototype.handleSet___ = function handleSet___(name, val) {
     var handlerName = name + '_setter___';
     if (this[handlerName]) {
       return this[handlerName](val);
@@ -467,7 +480,7 @@ var ___;
   /**
    *
    */
-  Object.prototype.handleDelete___ = function(name) {
+  Object.prototype.handleDelete___ = function handleDelete___(name) {
     var handlerName = name + '_deleter___';
     if (this[handlerName]) {
       return this[handlerName]();
@@ -986,15 +999,15 @@ var ___;
       return asFirstClass(xfunc);
     }
     var result = {
-      call: frozenFunc(function(self, var_args) {
+      call: frozenFunc(function callXo4a(self, var_args) {
         if (self === null || self === void 0) { self = USELESS; }
         return xfunc.apply(self, Array.slice(arguments, 1));
       }),
-      apply: frozenFunc(function(self, args) {
+      apply: frozenFunc(function applyXo4a(self, args) {
         if (self === null || self === void 0) { self = USELESS; }
         return xfunc.apply(self, args);
       }),
-      bind: frozenFunc(function(self, var_args) {
+      bind: frozenFunc(function bindXo4a(self, var_args) {
         var args = arguments;
         if (self === null || self === void 0) { 
           self = USELESS;
@@ -1003,7 +1016,7 @@ var ___;
         return frozenFunc(xfunc.bind.apply(xfunc, args));
       }),
       length: xfunc.length,
-      toString: frozenFunc(function() {
+      toString: frozenFunc(function xo4aToString() {
         return xfunc.toString();
       })
     };
@@ -1148,7 +1161,7 @@ var ___;
    */
   function toFunc(fun) {
     if (isApplicator(fun)) { 
-      return frozenFunc(function(var_args) {
+      return frozenFunc(function applier(var_args) {
         return callPub(fun, 'apply', [USELESS, Array.slice(arguments, 0)]);
       });
     }
@@ -1431,7 +1444,7 @@ var ___;
   function Token(name) {
     name = String(name);
     return primFreeze({
-      toString: frozenFunc(function() { return name; })
+      toString: frozenFunc(function tokenToString() { return name; })
     });
   }
   frozenFunc(Token);
@@ -1889,7 +1902,7 @@ var ___;
    * FIXME(ben): also fastpath?
    */
   function useCallHandler(obj, name, callHandler) {
-    useApplyHandler(obj, name, function(args) {
+    useApplyHandler(obj, name, function callApplier(args) {
       return callHandler.apply(this, args);
     });
   }
@@ -1941,7 +1954,9 @@ var ___;
     var func = xo4a(proto[name], name);
     grantCall(proto, name);
     var pseudoFunc = reifyIfXo4a(func, name);
-    useGetHandler(proto, name, function() { return pseudoFunc; });
+    useGetHandler(proto, name, function xo4aGetter() { 
+      return pseudoFunc; 
+    });
   }
 
   /**
@@ -1956,7 +1971,9 @@ var ___;
     xo4a(func);
     useCallHandler(obj, name, func);
     var pseudoFunc = reifyIfXo4a(func, name);
-    useGetHandler(obj, name, function() { return pseudoFunc; });
+    useGetHandler(obj, name, function genericGetter() { 
+      return pseudoFunc; 
+    });
   }
 
   /**
@@ -1975,7 +1992,7 @@ var ___;
    */
   function grantTypedGeneric(proto, name) {
     var original = proto[name];
-    handleGeneric(proto, name, function(var_args) {
+    handleGeneric(proto, name, function guardedApplier(var_args) {
       if (!inheritsFrom(this, proto)) {
         fail("Can't call .", name, ' on a non ',
              directConstructor(proto), ': ', this);
@@ -1999,7 +2016,7 @@ var ___;
    */
   function grantMutator(proto, name) {
     var original = proto[name];
-    handleGeneric(proto, name, function(var_args) {
+    handleGeneric(proto, name, function nonMutatingApplier(var_args) {
       if (isFrozen(this)) {
         fail("Can't .", name, ' a frozen object');
       }
@@ -2055,7 +2072,8 @@ var ___;
   function grantToString(proto) {
     proto.TOSTRING___ = xo4a(proto.toString, 'toString');
   }
-  useGetHandler(Object.prototype, 'toString', function() {
+  useGetHandler(Object.prototype, 'toString', 
+		function toStringGetter() {
     if (hasOwnProp(this, 'toString') && 
         typeOf(this.toString) === 'function' &&
         !hasOwnProp(this, 'TOSTRING___')) {
@@ -2068,16 +2086,18 @@ var ___;
     }
     return reifyIfXo4a(this.TOSTRING___, 'toString');
   });
-  useApplyHandler(Object.prototype, 'toString', function(args) {
+  useApplyHandler(Object.prototype, 'toString', 
+		  function toStringApplier(args) {
     return this.toString.apply(this, args); 
   });
-  useSetHandler(Object.prototype, 'toString', function(meth) {
+  useSetHandler(Object.prototype, 'toString', 
+		function toStringSetter(meth) {
     if (isFrozen(this)) {
       return myKeeper.handleSet(this, 'toString', meth);
     }
     meth = asFirstClass(meth);
     this.TOSTRING___ = meth;
-    this.toString = function(var_args) {
+    this.toString = function delegatingToString(var_args) {
       var args = Array.slice(arguments, 0);
       if (typeOf(meth) === 'function') {
         return meth.apply(this, args);
@@ -2092,7 +2112,8 @@ var ___;
     };
     return meth;
   });
-  useDeleteHandler(Object.prototype, 'toString', function() {
+  useDeleteHandler(Object.prototype, 'toString', 
+		   function toStringDeleter() {
     if (isFrozen(this)) {
       return myKeeper.handleDelete(this, 'toString');
     }
@@ -2107,29 +2128,35 @@ var ___;
     'toLocaleString', 'valueOf', 'isPrototypeOf'
   ]);
   grantRead(Object.prototype, 'length');
-  handleGeneric(Object.prototype, 'hasOwnProperty', function(name){
+  handleGeneric(Object.prototype, 'hasOwnProperty', 
+		function hasOwnPropertyHandler(name){
     return hasOwnPropertyOf(this, name);
   });
-  handleGeneric(Object.prototype, 'propertyIsEnumerable', function(name) {
+  handleGeneric(Object.prototype, 'propertyIsEnumerable', 
+		function propertyIsEnumerableHandler(name) {
     name = String(name);
     return canEnumPub(this, name);
   });
 
   /// Function
 
-  handleGeneric(Function.prototype, 'apply', function(self, realArgs) {
+  handleGeneric(Function.prototype, 'apply', 
+		function applyHandler(self, realArgs) {
     return toFunc(this).apply(self, realArgs);
   });
-  handleGeneric(Function.prototype, 'call', function(self, var_args) {
+  handleGeneric(Function.prototype, 'call', 
+		function callHandler(self, var_args) {
     return toFunc(this).apply(self, Array.slice(arguments, 1));
   });
-  handleGeneric(Function.prototype, 'bind', function(self, var_args) {
+  handleGeneric(Function.prototype, 'bind', 
+		function bindHandler(self, var_args) {
     var thisFunc = this;
     var leftArgs = Array.slice(arguments, 1);
-    return frozenFunc(function(var_args) {
+    function boundHandler(var_args) {
       var args = leftArgs.concat(Array.slice(arguments, 0));
       return callPub(thisFunc, 'apply', [self, args]);
-    });
+    }
+    return frozenFunc(boundHandler);
   });
 
   /// Array
@@ -2144,7 +2171,8 @@ var ___;
   all2(grantMutator, Array.prototype, [
     'pop', 'push', 'reverse', 'shift', 'splice', 'unshift'
   ]);
-  handleGeneric(Array.prototype, 'sort', function(comparator) {
+  handleGeneric(Array.prototype, 'sort', 
+		function sortHandler(comparator) {
     if (isFrozen(this)) {
       fail("Can't sort a frozen array.");
     }
@@ -2169,11 +2197,13 @@ var ___;
     'toLowerCase', 'toLocaleLowerCase', 'toUpperCase', 'toLocaleUpperCase'
   ]);
 
-  handleGeneric(String.prototype, 'match', function(regexp) {
+  handleGeneric(String.prototype, 'match', 
+		function matchHandler(regexp) {
     enforceMatchable(regexp);
     return this.match(regexp);
   });
-  handleGeneric(String.prototype, 'replace', function(searcher, replacement) {
+  handleGeneric(String.prototype, 'replace', 
+		function replaceHandler(searcher, replacement) {
     enforceMatchable(searcher);
     if (isFunc(replacement)) {
       replacement = asFunc(replacement);
@@ -2184,11 +2214,13 @@ var ___;
     }
     return this.replace(searcher, replacement);
   });
-  handleGeneric(String.prototype, 'search', function(regexp) {
+  handleGeneric(String.prototype, 'search', 
+		function searchHandler(regexp) {
     enforceMatchable(regexp);
     return this.search(regexp);
   });
-  handleGeneric(String.prototype, 'split', function(separator, limit) {
+  handleGeneric(String.prototype, 'split', 
+		function splitHandler(separator, limit) {
     enforceMatchable(separator);
     return this.split(separator, limit);
   });
@@ -2238,14 +2270,16 @@ var ___;
 
   ctor(RegExp, Object, 'RegExp');
   grantToString(RegExp.prototype);  
-  handleGeneric(RegExp.prototype, 'exec', function(specimen) {
+  handleGeneric(RegExp.prototype, 'exec', 
+		function execHandler(specimen) {
     if (isFrozen(this)) {
       fail("Can't .exec a frozen RegExp");
     }
     specimen = String(specimen); // See bug 528
     return this.exec(specimen);
   });
-  handleGeneric(RegExp.prototype, 'test', function(specimen) {
+  handleGeneric(RegExp.prototype, 'test', 
+		function testHandler(specimen) {
     if (isFrozen(this)) {
       fail("Can't .test a frozen RegExp");
     }
@@ -2305,7 +2339,7 @@ var ___;
    * instantiating it.
    */
   var obtainNewModule = freeze({
-    handle: frozenFunc(function(newModule){ return newModule; })
+    handle: frozenFunc(function handleOnly(newModule){ return newModule; })
   });
 
   /**
@@ -2321,8 +2355,8 @@ var ___;
     var imports = copy(sharedImports);
     var lastOutcome = void 0;
     return freeze({
-      getImports: frozenFunc(function() { return imports; }),
-      setImports: frozenFunc(function(newImports) { 
+      getImports: frozenFunc(function getImports() { return imports; }),
+      setImports: frozenFunc(function setImports(newImports) { 
         imports = newImports; 
       }),
 
@@ -2347,7 +2381,7 @@ var ___;
        * overwrite an already reported outcome with NO_RESULT, so the
        * last script-block's outcome will be preserved.
        */
-      getLastOutcome: frozenFunc(function() { 
+      getLastOutcome: frozenFunc(function getLastOutcome() { 
         return lastOutcome; 
       }),
 
@@ -2355,7 +2389,7 @@ var ___;
        * If the last outcome is a success, returns its value;
        * otherwise <tt>undefined</tt>.
        */
-      getLastValue: frozenFunc(function() {
+      getLastValue: frozenFunc(function getLastValue() {
         if (lastOutcome && lastOutcome[0]) {
           return lastOutcome[1];
         } else {
@@ -2370,7 +2404,7 @@ var ___;
        * reported outcome. Propogate this outcome by terminating in
        * the same manner. 
        */
-      handle: frozenFunc(function(newModule) {
+      handle: frozenFunc(function handle(newModule) {
         lastOutcome = void 0;
         try {
           var result = newModule(___, imports);
@@ -2408,8 +2442,10 @@ var ___;
        * @param {string} lineNum the approximate line number in source at which
        *   the error originated.
        */
-      handleUncaughtException: function (exception, onerror, source, lineNum) {
-
+      handleUncaughtException: function handleUncaughtException(exception,
+								onerror, 
+								source,
+								lineNum) {
         lastOutcome = [false, exception];
 
         // Cause exception to be rethrown if it is uncatchable.
@@ -2596,8 +2632,8 @@ var ___;
    * so that only unseal can get x back from the object.
    *
    * @return {object} of the form
-   *     { seal: function (x) { return {}; },
-   *       unseal: function (obj) { return x; } }.
+   *     { seal: function seal(x) { return {}; },
+   *       unseal: function unseal(obj) { return x; } }.
    */
   function makeSealerUnsealerPair() {
     var flag = false;  // Was a box successfully unsealed
@@ -2606,7 +2642,7 @@ var ___;
       function box() {
         flag = true, squirrel = payload;
       }
-      box.toString = frozenFunc(function () { return '(box)'; });
+      box.toString = frozenFunc(function toString() { return '(box)'; });
       return frozenFunc(box);
     }
     function unseal(box) {
@@ -2669,7 +2705,7 @@ var ___;
         if (ctor.typeTag___ === 'Array') {
           return ctor.apply(USELESS, args);
         }
-        var tmp = function (args) {
+        var tmp = function tmp(args) {
           return ctor.apply(this, args);
         };
         tmp.prototype = ctor.prototype;

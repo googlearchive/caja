@@ -104,6 +104,12 @@ public enum RewriterMessageType implements MessageTypeInt {
           + "Please report this error at: http://code.google.com/p/google-caja/issues/",
       MessageLevel.FATAL_ERROR),
 
+  MAP_RECURSION_FAILED(
+      "%s: INTERNAL COMPILER ERROR. "
+          + "Object literal decomposition did not match any rules at: %s. "
+          + "Please report this error at: http://code.google.com/p/google-caja/issues/",
+      MessageLevel.FATAL_ERROR),
+
   THIS_IN_GLOBAL_CONTEXT(
       "%s: \"this\" cannot be used in the global context",
       MessageLevel.FATAL_ERROR),

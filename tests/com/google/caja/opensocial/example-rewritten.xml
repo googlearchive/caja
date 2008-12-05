@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?><Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5" /></ModulePrefs><Content type="html"><![CDATA[<script type="text/javascript">{
-  ___.loadModule(function (___, IMPORTS___) {
+  ___.loadModule(function moduleFunc___(___, IMPORTS___) {
                    var moduleResult___ = ___.NO_RESULT;
                    var alert = ___.readImport(IMPORTS___, 'alert');
                    var handleClicky = ___.readImport(IMPORTS___, 'handleClicky');
@@ -20,10 +20,10 @@
                    try {
                      {
                        externalScript = (function () {
-                                           function externalScript$self() {
+                                           function externalScript$_self() {
                                              alert.CALL___('external script');
                                            }
-                                           return ___.func(externalScript$self, 'externalScript');
+                                           return ___.func(externalScript$_self, 'externalScript');
                                          })();
                        ;
                      }

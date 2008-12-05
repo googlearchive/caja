@@ -402,7 +402,7 @@ var getImports = (function () {
     var superHandler = ___.makeNormalNewModuleHandler();
     superHandler.setImports(imports);
     var inner = ___.beget(superHandler);
-    inner.handle = ___.frozenFunc(function(newModule) {
+    inner.handle = ___.frozenFunc(function testbedHandle(newModule) {
       try {
         return ___.callPub(superHandler, 'handle', 
                            [___.frozenFunc(newModule)]);

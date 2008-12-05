@@ -116,7 +116,7 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
     Map<String, ParseTreeNode> bindings
         = new LinkedHashMap<String, ParseTreeNode>();
     if (!QuasiBuilder.match(
-            "{ ___.loadModule(function (___, IMPORTS___) { @body* }); }",
+            "{ ___.loadModule(function @mfname(___, IMPORTS___) { @body* }); }",
             js, bindings)) {
       mq.addMessage(PluginMessageType.MALFORMED_ENVELOPE, js.getFilePosition());
       return js;
@@ -124,7 +124,7 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
     return (Block) QuasiBuilder.substV(
         "{"
         + "___.loadModule("
-        + "    function (___, IMPORTS___) {"
+        + "    function @mfname(___, IMPORTS___) {"
         // Pass in varargs to avoid referencing the Array or Object symbol
         // before those are pulled from IMPORTS___ in @body.
         + "      ___.useDebugSymbols(@symbols*);"
@@ -132,6 +132,7 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
         + "    });"
         + "}",
 
+        "mfname", bindings.get("mfname"),
         "symbols", symbols.toJavascriptSideTable(),
         "body", bindings.get("body"));
   }

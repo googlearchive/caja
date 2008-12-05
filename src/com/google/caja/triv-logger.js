@@ -30,13 +30,15 @@
 var logger = (function(global) {
   
   var recording = [];
+  function getRecording() { return recording; }
+  function log(str) { recording.push(String(str) + '\n'); }
 
   var result = {
-    getRecording: function() { return recording; },
-    log: function(str) { recording.push(String(str) + '\n'); }
+    getRecording: getRecording,
+    log: log
   };
 
-  if (global.___) { ___.setLogFunc(result.log); }
+  if (global.___) { ___.setLogFunc(log); }
 
   return result;
 

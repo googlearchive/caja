@@ -402,9 +402,9 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     makeSynthetic(input);
     ParseTreeNode expectedResult = js(fromString(
         "var foo; { foo = (function () {\n" +
-        "             function foo$self() {\n" +
+        "             function foo$_self() {\n" +
         "             }\n" +
-        "             return ___.func(foo$self, \'foo\');\n" +
+        "             return ___.func(foo$_self, \'foo\');\n" +
         "           })(); ; }"));
     checkSucceeds(input, expectedResult);
   }
@@ -446,9 +446,9 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "{ function foo() {} }",
         "var foo;" +
         "{ foo = (function () {\n" +
-        "             function foo$self() {\n" +
+        "             function foo$_self() {\n" +
         "             }\n" +
-        "             return ___.func(foo$self, \'foo\');\n" +
+        "             return ___.func(foo$_self, \'foo\');\n" +
         "           })(); ; }");
   }
 
@@ -711,10 +711,13 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "  p = arguments;" +
         "};",
         "var p;" +
-        "var foo = ___.frozenFunc(function() {" +
-        "  var a___ = ___.args(arguments);" +
-        "  p = a___;" +
-        "});");
+        "var foo = (function () {\n" +
+        "               function foo$_var() {\n" +
+        "                 var a___ = ___.args(arguments);\n" +
+        "                 p = a___;\n" +
+        "               }\n" +
+        "               return ___.frozenFunc(foo$_var, 'foo$_var');\n" +
+        "             })();");
   }
 
   public void testVarThisBad() throws Exception {
@@ -2067,6 +2070,53 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute(
         "var t = cajita.newTable(true);" +
         "assertThrows(function(){t.set('foo', 'v1');});");
+  }
+
+  /**
+   * Although the golden output here tests many extraneous things, the point of
+   * this test is to see that various anonymous functions in the original are
+   * turned into named functions -- named after the variable or property
+   * they are initializing.
+   * <p>
+   * The test is structured as as a call stack resulting in a breakpoint.
+   * If executed, for example, in the testbed applet with Firebug enabled,
+   * one should see the stack of generated function names.
+   */
+  public void testFuncNaming() throws Exception {
+    checkSucceeds(
+        "function foo(){debugger;}" +
+        "var x = {bar: function() {foo();}};" +
+        "x.baz = function(){x.bar();};" +
+        "var zip = function(){x.baz();};" +
+        "var zap;" +
+        "zap = function(){zip();};" +
+        "zap();",
+
+        "function foo() { debugger; }" +
+        "___.func(foo, 'foo');" +
+        "var x0___;;" +
+        "var x = ___.initializeMap(['bar', (function () {" +
+        "  function bar$_lit() { foo.CALL___(); }" +
+        "  return ___.frozenFunc(bar$_lit, 'bar$_lit');" +
+        "})()]);" +
+        "x0___ = (function () {" +
+        "  function baz$_meth() {" +
+        "    x.bar_canCall___? x.bar(): ___.callPub(x, 'bar', []);" +
+        "  }" +
+        "  return ___.frozenFunc(baz$_meth, 'baz$_meth');" +
+        "})(), x.baz_canSet___ ? (x.baz = x0___) : ___.setPub(x, 'baz', x0___);" +
+        "var zip = (function () {" +
+        "  function zip$_var() {" +
+        "    x.baz_canCall___ ? x.baz() : ___.callPub(x, 'baz', []);" +
+        "  }" +
+        "  return ___.frozenFunc(zip$_var, 'zip$_var');" +
+        "})();" +
+        "var zap;" +
+        "zap = (function () {" +
+        "  function zap$_var() { zip.CALL___(); }" +
+        "  return ___.frozenFunc(zap$_var, 'zap$_var');" +
+        "})();" +
+        "zap.CALL___();");
   }
 
   @Override
