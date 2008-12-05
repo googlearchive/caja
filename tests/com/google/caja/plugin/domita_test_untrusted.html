@@ -19,6 +19,10 @@
   .testcontainer.passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
 </style>
 
+<p class="testcontainer" id="test-property-attribute-interaction">
+  <span id="test-property-attribute-interaction-label">Ignore me</span>
+</p>
+
 <p class="testcontainer" id="test-nonexistent-style-property">
   <span id="test-nonexistent-style-property-label">Hide me</span>
 </p>
@@ -300,6 +304,25 @@ function canonInnerHtml(s) {
   return s;
 }
 
+// This test should be replaced by ones for the proper behavior once we get 
+// property names into the HTML schema.
+jsunitRegister('testPropertyAttributeInteraction',
+               function testPropertyAttributeInteraction() {
+  var d = document.getElementById("test-property-attribute-interaction-label");
+  d.setAttribute('foo','hi');
+  d.setAttribute('title','there');
+  assertEquals(void 0, d.FOO);
+  assertEquals(void 0, d.foo);
+  assertEquals('hi', d.getAttribute('FOO'));
+  assertEquals('hi', d.getAttribute('foo'));
+  assertEquals('there', d.TITLE);
+  assertEquals('there', d.title);
+  assertEquals('there', d.getAttribute('title'));
+  assertEquals('there', d.getAttribute('TITLE'));
+  d.title = 'bob';
+  assertEquals('bob', d.getAttribute('title'));
+});
+
 jsunitRegister('testEditabilityInNodeLists',
                function testEditabilityInNodeLists() {
   var paragraph = document.getElementsByTagName('p')[0];
@@ -315,7 +338,8 @@ jsunitRegister('testEditabilityInNodeLists',
 
 jsunitRegister('testNonexistentStyleProperty',
                function testNonexistentStyleProperty() {
-  var container = document.getElementById('test-nonexistent-style-property-label');
+  var container = 
+        document.getElementById('test-nonexistent-style-property-label');
   assertEquals(undefined, container.style.noSuchProperty);
 });
 

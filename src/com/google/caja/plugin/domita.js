@@ -938,7 +938,11 @@ attachDocumentStub = (function () {
     TameBackedNode.prototype.handleRead___ = function (name) {
       name = String(name);
       if (endsWith__.test(name)) { return void 0; }
-      var handlerName = name.toLowerCase() + '_getter___';
+      var handlerName = name + '_getter___';
+      if (this[handlerName]) {
+        return this[handlerName]();
+      }
+      handlerName = handlerName.toLowerCase();
       if (this[handlerName]) {
         return this[handlerName]();
       }
@@ -951,7 +955,11 @@ attachDocumentStub = (function () {
     TameBackedNode.prototype.handleCall___ = function (name, args) {
       name = String(name);
       if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
-      var handlerName = name.toLowerCase() + '_handler___';
+      var handlerName = name + '_handler___';
+      if (this[handlerName]) {
+        return this[handlerName].call(this, args);
+      }
+      handlerName = handlerName.toLowerCase();
       if (this[handlerName]) {
         return this[handlerName].call(this, args);
       }
@@ -965,7 +973,11 @@ attachDocumentStub = (function () {
       name = String(name);
       if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
-      var handlerName = name.toLowerCase() + '_setter___';
+      var handlerName = name + '_setter___';
+      if (this[handlerName]) {
+        return this[handlerName](val);
+      }
+      handlerName = handlerName.toLowerCase();
       if (this[handlerName]) {
         return this[handlerName](val);
       }
@@ -979,7 +991,11 @@ attachDocumentStub = (function () {
       name = String(name);
       if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
-      var handlerName = name.toLowerCase() + '_deleter___';
+      var handlerName = name + '_deleter___';
+      if (this[handlerName]) {
+        return this[handlerName]();
+      }
+      handlerName = handlerName.toLowerCase();
       if (this[handlerName]) {
         return this[handlerName]();
       }
