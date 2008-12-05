@@ -759,6 +759,7 @@ attachDocumentStub = (function () {
     }
 
     var NOT_EDITABLE = "Node not editable.";
+    var INVALID_SUFFIX = "Property names may not end in '__'.";
 
     // Implementation of EventTarget::addEventListener
     function tameAddEventListener(name, listener, useCapture) {
@@ -819,7 +820,7 @@ attachDocumentStub = (function () {
     TameNode.prototype.getOwnerDocument = function () {
       // TODO(mikesamuel): upward navigation breaks capability discipline.
       if (!this.editable___ && tameDocument.editable___) {
-        throw new Error();
+        throw new Error(NOT_EDITABLE);
       }
       return tameDocument;
     };
@@ -908,7 +909,7 @@ attachDocumentStub = (function () {
       if (parent === tameDocument.body___) {
         if (tameDocument.editable___ && !this.editable___) {
           // FIXME: return a non-editable version of body.
-          throw new Error();
+          throw new Error(NOT_EDITABLE);
         }
         return tameDocument.getBody();
       }
@@ -937,7 +938,7 @@ attachDocumentStub = (function () {
     TameBackedNode.prototype.handleRead___ = function (name) {
       name = String(name);
       if (endsWith__.test(name)) { return void 0; }
-      var handlerName = name + '_getter___';
+      var handlerName = name.toLowerCase() + '_getter___';
       if (this[handlerName]) {
         return this[handlerName]();
       }
@@ -949,8 +950,8 @@ attachDocumentStub = (function () {
     };
     TameBackedNode.prototype.handleCall___ = function (name, args) {
       name = String(name);
-      if (endsWith__.test(name)) { throw new Error(); }
-      var handlerName = name + '_handler___';
+      if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
+      var handlerName = name.toLowerCase() + '_handler___';
       if (this[handlerName]) {
         return this[handlerName].call(this, args);
       }
@@ -962,8 +963,9 @@ attachDocumentStub = (function () {
     };
     TameBackedNode.prototype.handleSet___ = function (name, val) {
       name = String(name);
-      if (endsWith__.test(name) || !this.editable___) { throw new Error(); }
-      var handlerName = name + '_setter___';
+      if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      var handlerName = name.toLowerCase() + '_setter___';
       if (this[handlerName]) {
         return this[handlerName](val);
       }
@@ -975,8 +977,9 @@ attachDocumentStub = (function () {
     };
     TameBackedNode.prototype.handleDelete___ = function (name) {
       name = String(name);
-      if (endsWith__.test(name) || !this.editable___) { throw new Error(); }
-      var handlerName = name + '_deleter___';
+      if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      var handlerName = name.toLowerCase() + '_deleter___';
       if (this[handlerName]) {
         return this[handlerName]();
       }
@@ -1145,7 +1148,7 @@ attachDocumentStub = (function () {
         = function () { return this.innerHTMLGetter___(); };
     TamePseudoElement.prototype.getElementsByTagName = function (tagName) {
       return tameNodeList(
-          this.body___.getElementsByTagName(tagName, this.editable___));
+          this.body___.getElementsByTagName(tagName), this.editable___);
     };
     if (typeof document.getElementsByClassName !== 'undefined') {
       TamePseudoElement.prototype.getElementsByClassName
@@ -1260,7 +1263,9 @@ attachDocumentStub = (function () {
               html4.ATTRIBS.hasOwnProperty(attribKey))) {
         atype = html4.ATTRIBS[attribKey];
       } else {
-        return '';
+        return String(
+            (this.node___.attributes___ && 
+            this.node___.attributes___[attribName]) || '');
       }
       var value = this.node___.getAttribute(attribName);
       if ('string' !== typeof value) { return value; }
@@ -1284,7 +1289,9 @@ attachDocumentStub = (function () {
       name = String(name).toLowerCase();
       var type = html4.ATTRIBS[name];
       if (type === undefined || !html4.ATTRIBS.hasOwnProperty(name)) {
-        return false;
+        return !!(
+            this.node___.attributes___ && 
+            ___.hasOwnProp(this.node___.attributes___, name));
       }
       return this.node___.hasAttribute(name);
     };
@@ -1300,7 +1307,9 @@ attachDocumentStub = (function () {
               html4.ATTRIBS.hasOwnProperty(attribKey))) {
         atype = html4.ATTRIBS[attribKey];
       } else {
-        throw new Error("Invalid property value: " + value);
+        if (!this.node___.attributes___) { this.node___.attributes___ = {}; }
+        this.node___.attributes___[attribName] = String(value);
+        return value; 
       }
       var sanitizedValue = rewriteAttribute(tagName, attribName, atype, value);
       if (sanitizedValue !== null) {
@@ -1314,7 +1323,9 @@ attachDocumentStub = (function () {
       var type = html4.ATTRIBS[name];
       if (type === void 0 || !html4.ATTRIBS.hasOwnProperty(name)) {
         // Can't remove an attribute you can't read
-        return;
+        if (this.node___.attributes___) {
+          delete this.node___.attributes___[name];
+        }
       }
       this.node___.removeAttribute(name);
     };
@@ -1329,14 +1340,14 @@ attachDocumentStub = (function () {
       return this.getAttribute('title') || '';
     };
     TameElement.prototype.setTitle = function (classes) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       return this.setAttribute('title', String(classes));
     };
     TameElement.prototype.getDir = function () {
       return this.getAttribute('dir') || '';
     };
     TameElement.prototype.setDir = function (classes) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       return this.setAttribute('dir', String(classes));
     };
     TameElement.prototype.getTagName = TameBackedNode.prototype.getNodeName;
@@ -1512,7 +1523,7 @@ attachDocumentStub = (function () {
       return this.getAttribute('action');
     };
     TameFormElement.prototype.setAction = function (newVal) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       return this.setAttribute('action', String(newVal));
     };
     TameFormElement.prototype.getElements = function () {
@@ -1522,21 +1533,21 @@ attachDocumentStub = (function () {
       return this.getAttribute('enctype') || '';
     };
     TameFormElement.prototype.setEnctype = function (newVal) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       return this.setAttribute('enctype', String(newVal));
     };
     TameFormElement.prototype.getMethod = function () {
       return this.getAttribute('method') || '';
     };
     TameFormElement.prototype.setMethod = function (newVal) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       return this.setAttribute('method', String(newVal));
     };
     TameFormElement.prototype.getTarget = function () {
       return this.getAttribute('target') || '';
     };
     TameFormElement.prototype.setTarget = function (newVal) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       return this.setAttribute('target', String(newVal));
     };
     TameFormElement.prototype.reset = function () {
@@ -1599,7 +1610,7 @@ attachDocumentStub = (function () {
       return this.node___.checked;
     };
     TameInputElement.prototype.setChecked = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.checked = newValue;
       return newValue;
     };
@@ -1607,7 +1618,7 @@ attachDocumentStub = (function () {
       return this.node___.disabled;
     };
     TameInputElement.prototype.setDisabled = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.disabled = newValue;
       return newValue;
     };
@@ -1615,7 +1626,7 @@ attachDocumentStub = (function () {
       return this.node___.readOnly;
     };
     TameInputElement.prototype.setReadOnly = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.readOnly = newValue;
       return newValue;
     };
@@ -1629,7 +1640,7 @@ attachDocumentStub = (function () {
       return this.node___.selected;
     };
     TameInputElement.prototype.setSelected = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.selected = newValue;
       return newValue;
     };
@@ -1637,7 +1648,7 @@ attachDocumentStub = (function () {
       return this.node___.selectedIndex;
     };
     TameInputElement.prototype.setSelectedIndex = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.selectedIndex = newValue;
       return newValue;
     };
@@ -1645,7 +1656,7 @@ attachDocumentStub = (function () {
       return this.node___.name;
     };
     TameInputElement.prototype.setName = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.name = newValue;
       return newValue;
     };
@@ -1653,7 +1664,7 @@ attachDocumentStub = (function () {
       return this.node___.accessKey;
     };
     TameInputElement.prototype.setAccessKey = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.accessKey = newValue;
       return newValue;
     };
@@ -1664,7 +1675,7 @@ attachDocumentStub = (function () {
         return String(this.node___.text);
     };
     TameInputElement.prototype.setTabIndex = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.tabIndex = newValue;
       return newValue;
     };
@@ -1672,7 +1683,7 @@ attachDocumentStub = (function () {
       return this.node___.defaultChecked;
     };
     TameInputElement.prototype.setDefaultChecked = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.defaultChecked = newValue;
       return newValue;
     };
@@ -1680,7 +1691,7 @@ attachDocumentStub = (function () {
       return this.node___.maxLength;
     };
     TameInputElement.prototype.setMaxLength = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.maxLength = newValue;
       return newValue;
     };
@@ -1688,7 +1699,7 @@ attachDocumentStub = (function () {
       return this.node___.size;
     };
     TameInputElement.prototype.setSize = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.size = newValue;
       return newValue;
     };
@@ -1696,7 +1707,7 @@ attachDocumentStub = (function () {
       return String(this.node___.type);
     };
     TameInputElement.prototype.setType = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.type = newValue;
       return newValue;
     };
@@ -1704,7 +1715,7 @@ attachDocumentStub = (function () {
       return this.node___.index;
     };
     TameInputElement.prototype.setIndex = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.index = newValue;
       return newValue;
     };
@@ -1712,7 +1723,7 @@ attachDocumentStub = (function () {
       return this.node___.label;
     };
     TameInputElement.prototype.setLabel = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.label = newValue;
       return newValue;
     };
@@ -1720,7 +1731,7 @@ attachDocumentStub = (function () {
       return this.node___.multiple;
     };
     TameInputElement.prototype.setMultiple = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.multiple = newValue;
       return newValue;
     };
@@ -1728,7 +1739,7 @@ attachDocumentStub = (function () {
       return this.node___.cols;
     };
     TameInputElement.prototype.setCols = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.cols = newValue;
       return newValue;
     };
@@ -1736,7 +1747,7 @@ attachDocumentStub = (function () {
       return this.node___.rows;
     };
     TameInputElement.prototype.setRows = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.rows = newValue;
       return newValue;
     };
@@ -1755,7 +1766,7 @@ attachDocumentStub = (function () {
       return this.node___.src;
     };
     TameImageElement.prototype.setSrc = function (src) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.setAttribute('src', src);
       return src;
     };
@@ -1763,7 +1774,7 @@ attachDocumentStub = (function () {
       return this.node___.alt;
     };
     TameImageElement.prototype.setAlt = function (src) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.alt = src;
       return src;
     };
@@ -1784,7 +1795,7 @@ attachDocumentStub = (function () {
       return this.node___.colSpan;
     };
     TameTableCompElement.prototype.setColSpan = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.colSpan = newValue;
       return newValue;
     };
@@ -1795,7 +1806,7 @@ attachDocumentStub = (function () {
       return this.node___.rowSpan;
     };
     TameTableCompElement.prototype.setRowSpan = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.rowSpan = newValue;
       return newValue;
     };
@@ -1809,7 +1820,7 @@ attachDocumentStub = (function () {
       return this.node___.align;
     };
     TameTableCompElement.prototype.setAlign = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.align = newValue;
       return newValue;
     };
@@ -1817,7 +1828,7 @@ attachDocumentStub = (function () {
       return this.node___.vAlign;
     };
     TameTableCompElement.prototype.setVAlign = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.vAlign = newValue;
       return newValue;
     };
@@ -1825,7 +1836,7 @@ attachDocumentStub = (function () {
       return this.node___.nowrap;
     };
     TameTableCompElement.prototype.setNowrap = function (newValue) {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.nowrap = newValue;
       return newValue;
     };
@@ -1848,19 +1859,19 @@ attachDocumentStub = (function () {
       return tameNode(this.node___.tFoot, this.editable___);
     };
     TameTableElement.prototype.createTHead = function () {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       return tameNode(this.node___.createTHead(), this.editable___);
     };
     TameTableElement.prototype.deleteTHead = function () {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.deleteTHead();
     };
     TameTableElement.prototype.createTFoot = function () {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       return tameNode(this.node___.createTFoot(), this.editable___);
     };
     TameTableElement.prototype.deleteTFoot = function () {
-      if (!this.editable___) { throw new Error(); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.deleteTFoot();
     };
     ___.ctor(TameTableElement, TameTableCompElement, 'TameTableElement');
@@ -1985,6 +1996,12 @@ attachDocumentStub = (function () {
               'preventDefault',
               'getKeyCode', 'getWhich']);
 
+    // This duck types to a node list; we can't expose real nodelists.
+    function FakeNodeList(array) {
+      array.item = ___.func(function(i) { return array[i]; });
+      return cajita.freeze(array);
+    }
+
     function TameHTMLDocument(doc, body, editable) {
       TamePseudoNode.call(this, editable);
       this.doc___ = doc;
@@ -2045,8 +2062,11 @@ attachDocumentStub = (function () {
     TameHTMLDocument.prototype.getAttributes = function () { return []; };
     TameHTMLDocument.prototype.getParentNode = function () { return null; };
     TameHTMLDocument.prototype.getElementsByTagName = function (tagName) {
+      tagName = String(tagName).toLowerCase();
+      if (tagName === "body") { return FakeNodeList( [ this.getBody() ] ); }
+      else if (tagName === "head") { return FakeNodeList( [ this.getHead() ] ); }
       return tameNodeList(
-          this.body___.getElementsByTagName(tagName, this.editable___));
+          this.body___.getElementsByTagName(tagName), this.editable___);
     };
     TameHTMLDocument.prototype.getDocumentElement = function () {
       return this.documentElement___;
@@ -2054,10 +2074,13 @@ attachDocumentStub = (function () {
     TameHTMLDocument.prototype.getBody = function () {
       return this.documentElement___.getLastChild();
     };
+    TameHTMLDocument.prototype.getHead = function () {
+      return this.documentElement___.getFirstChild();
+    };
     if (typeof document.getElementsByClassName !== 'undefined') {
       TameHTMLDocument.prototype.getElementsByClassName = function (className) {
         return tameNodeList(
-            this.body___.getElementsByClassName(className, this.editable___));
+            this.body___.getElementsByClassName(className), this.editable___);
       };
     }
     TameHTMLDocument.prototype.addEventListener =

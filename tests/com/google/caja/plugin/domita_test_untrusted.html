@@ -20,7 +20,7 @@
 </style>
 
 <p class="testcontainer" id="test-nonexistent-style-property">
-  <div id="test-nonexistent-style-property-label">Hide me</div>
+  <span id="test-nonexistent-style-property-label">Hide me</span>
 </p>
 
 <p class="testcontainer" id="test-add-event-listener">
@@ -299,6 +299,19 @@ function canonInnerHtml(s) {
       });
   return s;
 }
+
+jsunitRegister('testEditabilityInNodeLists',
+               function testEditabilityInNodeLists() {
+  var paragraph = document.getElementsByTagName('p')[0];
+  // Make sure the node is editable.
+  paragraph.foo = 1;
+  delete paragraph.foo;
+
+  paragraph = document.getElementsByClassName('testcontainer')[0];
+  // Make sure the node is editable.
+  paragraph.foo = 1;
+  delete paragraph.foo;
+});
 
 jsunitRegister('testNonexistentStyleProperty',
                function testNonexistentStyleProperty() {
