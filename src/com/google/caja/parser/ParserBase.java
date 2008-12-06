@@ -159,22 +159,44 @@ public abstract class ParserBase {
     UNICODE_ESCAPE = Pattern.compile("\\\\u(" + hexDigit + "{4})");
   }
 
+  private static boolean USE_NORMALIZER_TO_NORMALIZE = true;
+  /**
+   * A conservative heuristic as to whether s is normalized according to Unicode
+   * Normal Form C.  It is heuristic, because Caja needs to run with versions
+   * of the Java standard libraries that do not include normalization.
+   * @return false if s is not normalized.
+   */
+  private static boolean isNormalized(String s) {
+    if (USE_NORMALIZER_TO_NORMALIZE) {
+      try {
+	return s.equals(Normalizer.normalize(s, Normalizer.Form.NFC));
+      } catch (NoClassDefFoundError err) {
+	USE_NORMALIZER_TO_NORMALIZE = false;
+      } catch (NoSuchMethodError err) {
+	USE_NORMALIZER_TO_NORMALIZE = false;
+      }
+    }
+    for (int i = s.length(); --i >= 0;) {
+      if (s.charAt(i) >= 127) { return false; }
+    }
+    return true;
+  }
 
   public static boolean isJavascriptIdentifier(String s) {
     return IDENTIFIER_OR_KEYWORD_RE.matcher(decodeIdentifier(s)).matches()
-        && s.equals(Normalizer.normalize(s, Normalizer.Form.NFC));
+        && isNormalized(s);
   }
 
   public static boolean isQuasiIdentifier(String s) {
     return QUASI_IDENTIFIER_OR_KEYWORD_RE.matcher(decodeIdentifier(s)).matches()
-        && s.equals(Normalizer.normalize(s, Normalizer.Form.NFC));
+        && isNormalized(s);
   }
 
   public boolean isIdentifier(String s) {
     return (isQuasiliteral
             ? QUASI_IDENTIFIER_OR_KEYWORD_RE
             : IDENTIFIER_OR_KEYWORD_RE).matcher(decodeIdentifier(s)).matches()
-        && s.equals(Normalizer.normalize(s, Normalizer.Form.NFC));
+        && isNormalized(s);
   }
 
   /**
