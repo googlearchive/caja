@@ -2032,12 +2032,13 @@ attachDocumentStub = (function () {
           this,
           function () { return tameNodeList(body.childNodes, editable); },
           function () { return tameHtmlElement; },
-          function () { return tameInnerHtml(body.innerHTML); });
+          function () { return tameInnerHtml(body.innerHTML); },
+          editable);
       cajita.forOwnKeys(
           { appendChild: 0, removeChild: 0, insertBefore: 0, replaceChild: 0 },
           ___.frozenFunc(function (k) {
             tameBodyElement[k] = tameBody[k].bind(tameBody);
-            ___.grantCall(tameBodyElement, k);
+            ___.grantFunc(tameBodyElement, k);
           }));
 
       var title = doc.createTextNode(body.getAttribute('title') || '');
@@ -2046,7 +2047,8 @@ attachDocumentStub = (function () {
           this,
           function () { return [tameNode(title, false)]; },
           function () { return tameHeadElement; },
-          function () { return html.escapeAttrib(title.nodeValue); });
+          function () { return html.escapeAttrib(title.nodeValue); },
+          editable);
       var tameHeadElement = new TamePseudoElement(
           'HEAD',
           this,
@@ -2054,7 +2056,8 @@ attachDocumentStub = (function () {
           function () { return tameHtmlElement; },
           function () {
             return '<title>' + tameTitleElement.getInnerHTML() + '</title>';
-          });
+          },
+          editable);
       var tameHtmlElement = new TamePseudoElement(
           'HTML',
           this,
@@ -2063,7 +2066,8 @@ attachDocumentStub = (function () {
           function () {
             return ('<head>' + tameHeadElement.getInnerHTML + '<\/head><body>'
                     + tameBodyElement.getInnerHTML() + '<\/body>');
-          });
+          },
+          editable);
       this.documentElement___ = tameHtmlElement;
       classUtils.exportFields(this, ['documentElement', 'body']);
     }
