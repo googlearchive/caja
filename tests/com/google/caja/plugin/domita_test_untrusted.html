@@ -74,6 +74,17 @@
     <ol><li>Pi</li><li>sqrt(10)</li></ol>
 </ol>
 
+<!--
+  - The getElementsByClassName tests are derived from those at
+  - http://code.google.com/p/doctype/wiki/DocumentGetElementsByClassNameMethod
+  - which are themselves derived from the HTML5 spec.
+ -->
+<div class="testcontainer" id="test-get-elements-by-class-name">
+  <p class="aaa bbb">AAA BBB</p>
+  <div class="aaa">AAA</div>
+  <p class="bbb ccc">BBB CCC</p>
+</div>
+
 <p class="testcontainer" id="test-class-set-by-emitter"></p>
 
 <div class="testcontainer" id="test-dynamic-styles">
@@ -645,6 +656,26 @@ jsunitRegister('testGetElementsByTagName',
   assertEquals('Pi', canonInnerHtml(items[3].innerHTML));
   assertEquals('sqrt(10)', canonInnerHtml(items[4].innerHTML));
   pass('test-get-elements-by-tag-name');
+});
+
+jsunitRegister('testGetElementsByClassName',
+               function testGetElementsByTagName() {
+  function assertNodeListTextContent(classes, textContent) {
+    var nodeList = document.getElementsByClassName(classes);
+    var len = nodeList.length;
+    assertEquals(textContent.length, len);
+    for (var i = 0; i < len; ++i) {
+      assertEquals(textContent[i], canonInnerHtml(nodeList[i].innerHTML));
+    }
+  }
+
+  assertNodeListTextContent('aaa', ['AAA BBB', 'AAA']);
+  assertNodeListTextContent('ccc bbb', ['BBB CCC']);
+  assertNodeListTextContent('bbb ccc', ['BBB CCC']);
+  assertNodeListTextContent(' bbb \tccc ', ['BBB CCC']);
+  assertNodeListTextContent('aaa,bbb', []);
+
+  pass('test-get-elements-by-class-name');
 });
 
 jsunitRegister('testClassSetByEmitter',
