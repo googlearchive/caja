@@ -19,12 +19,8 @@
   .testcontainer.passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
 </style>
 
-<p class="testcontainer" id="test-property-attribute-interaction">
-  <span id="test-property-attribute-interaction-label">Ignore me</span>
-</p>
-
-<p class="testcontainer" id="test-nonexistent-style-property">
-  <span id="test-nonexistent-style-property-label">Hide me</span>
+<p class="testcontainer" id="test-timeout-and-interval">
+  Timeouts and Intervals<br>
 </p>
 
 <p class="testcontainer" id="test-add-event-listener">
@@ -46,6 +42,18 @@
     </tr>
   </table>
 </div>
+
+<p class="testcontainer" id="test-property-attribute-interaction">
+  <span id="test-property-attribute-interaction-label">Ignore me</span><br>
+</p>
+
+<p class="testcontainer" id="test-editability-in-node-lists">
+  editability in node lists<br>
+</p>
+
+<p class="testcontainer" id="test-nonexistent-style-property">
+  <span id="test-nonexistent-style-property-label">Hide me</span><br>
+</p>
 
 <div id="test-get-element-by-id" class="testcontainer"></div>
 
@@ -304,45 +312,38 @@ function canonInnerHtml(s) {
   return s;
 }
 
-// This test should be replaced by ones for the proper behavior once we get 
-// property names into the HTML schema.
-jsunitRegister('testPropertyAttributeInteraction',
-               function testPropertyAttributeInteraction() {
-  var d = document.getElementById("test-property-attribute-interaction-label");
-  d.setAttribute('foo','hi');
-  d.setAttribute('title','there');
-  assertEquals(void 0, d.FOO);
-  assertEquals(void 0, d.foo);
-  assertEquals('hi', d.getAttribute('FOO'));
-  assertEquals('hi', d.getAttribute('foo'));
-  assertEquals('there', d.TITLE);
-  assertEquals('there', d.title);
-  assertEquals('there', d.getAttribute('title'));
-  assertEquals('there', d.getAttribute('TITLE'));
-  d.title = 'bob';
-  assertEquals('bob', d.getAttribute('title'));
+// This should be first, so its results come in while the rest of the tests are
+// running.
+jsunitRegister('testTimeoutAndInterval',
+               function testTimeoutAndInterval() {
+  var timeout1Ran = false,
+      timeout2Ran = false;
+  var timeout1Id = setTimeout(function () { timeout1Ran = true; }, 50);
+  var timeout2Id = setTimeout(function () { timeout2Ran = true; }, 50);
+  clearTimeout(timeout1Id);
+
+  var intervalRunIndex = -1;
+  var interval1RunCount = 0,
+      interval2RunCount = 0;
+  var interval1Id = setInterval(function () { ++interval1RunCount; }, 50);
+  var interval2Id = setInterval(function () { ++interval2RunCount; }, 50);
+  setTimeout(
+      function () {
+        clearInterval(interval2Id);
+        setTimeout(
+            function () {
+              if (!timeout1Ran && timeout2Ran
+                  && interval1RunCount > interval2RunCount) {
+                pass('test-timeout-and-interval');
+              }
+            },
+            500);
+      },
+      200);
 });
 
-jsunitRegister('testEditabilityInNodeLists',
-               function testEditabilityInNodeLists() {
-  var paragraph = document.getElementsByTagName('p')[0];
-  // Make sure the node is editable.
-  paragraph.foo = 1;
-  delete paragraph.foo;
-
-  paragraph = document.getElementsByClassName('testcontainer')[0];
-  // Make sure the node is editable.
-  paragraph.foo = 1;
-  delete paragraph.foo;
-});
-
-jsunitRegister('testNonexistentStyleProperty',
-               function testNonexistentStyleProperty() {
-  var container = 
-        document.getElementById('test-nonexistent-style-property-label');
-  assertEquals(undefined, container.style.noSuchProperty);
-});
-
+// These "click me" tests should be early on so they're easy to find on the
+// HTML page.
 jsunitRegister('testAddEventListener',
                function testAddEventListener() {
   var container = document.getElementById('test-add-event-listener-label');
@@ -439,6 +440,53 @@ jsunitRegister('testCaseInsensitiveAttrs',
   tableNode.addEventListener('click', function(event) {
     pass('test-case-insensitive-attrs');
   });
+});
+
+// TODO(metaweta): This test should be replaced by ones for the proper
+// behavior once we get property names into the HTML schema.
+jsunitRegister('testPropertyAttributeInteraction',
+               function testPropertyAttributeInteraction() {
+  var d = document.getElementById('test-property-attribute-interaction-label');
+  d.setAttribute('foo', 'hi');
+  d.setAttribute('title', 'there');
+  assertEquals(void 0, d.FOO);
+  assertEquals(void 0, d.foo);
+  assertEquals('hi', d.getAttribute('FOO'));
+  assertEquals('hi', d.getAttribute('foo'));
+  assertEquals('there', d.TITLE);
+  assertEquals('there', d.title);
+  assertEquals('there', d.getAttribute('title'));
+  assertEquals('there', d.getAttribute('TITLE'));
+  d.title = 'bob';
+  assertEquals('bob', d.getAttribute('title'));
+  pass('test-property-attribute-interaction');
+});
+
+jsunitRegister('testEditabilityInNodeLists',
+               function testEditabilityInNodeLists() {
+  var paragraph = document.getElementsByTagName('p')[0];
+  // Make sure the node is editable.
+  paragraph.foo = 1;
+  assertEquals('1', String(paragraph.foo));
+  delete paragraph.foo;
+  assertEquals(undefined, paragraph.foo);
+
+  paragraph = document.getElementsByClassName('testcontainer')[0];
+  // Make sure the node is editable.
+  paragraph.foo = 1;
+  assertEquals('1', String(paragraph.foo));
+  delete paragraph.foo;
+  assertEquals(undefined, paragraph.foo);
+
+  pass('test-editability-in-node-lists');
+});
+
+jsunitRegister('testNonexistentStyleProperty',
+               function testNonexistentStyleProperty() {
+  var container = document.getElementById(
+      'test-nonexistent-style-property-label');
+  assertEquals(undefined, container.style.noSuchProperty);
+  pass('test-nonexistent-style-property');
 });
 
 jsunitRegister('testGetElementById',

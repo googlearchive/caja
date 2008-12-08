@@ -93,8 +93,9 @@ domitaModules.XMLHttpRequestCtor = function (XMLHttpRequest, ActiveXObject) {
   if (XMLHttpRequest) {
     return XMLHttpRequest;
   } else if (ActiveXObject) {
+    // The first time the ctor is called, find an ActiveX class supported by
+    // this version of IE.
     var activeXClassId;
-    // The first time the ctor is called, 
     return function ActiveXObjectForIE() {
       if (activeXClassId === void 0) {
         activeXClassId = null;
@@ -743,6 +744,100 @@ attachDocumentStub = (function () {
       return cajita.freeze(tamed);
     }
 
+    function tameGetElementsByTagName(rootNode, tagName, editable) {
+      tagName = String(tagName);
+      if (tagName !== '*') {
+        tagName = tagName.toLowerCase();
+        if (!___.hasOwnProp(html4.ELEMENTS, tagName)
+            || html4.ELEMENTS[tagName] & html4.ELEMENTS.UNSAFE) {
+          // Allowing getElementsByTagName to work for opaque element types
+          // would leak information about those elements.
+          return new fakeNodeList([]);
+        }
+      }
+      return tameNodeList(rootNode.getElementsByTagName(tagName), editable);
+    }
+
+    /**
+     * Implements http://www.whatwg.org/specs/web-apps/current-work/#dom-document-getelementsbyclassname
+     * using an existing implementation on browsers that have one.
+     */
+    function tameGetElementsByClassName(rootNode, className, editable) {
+      className = String(className);
+
+      // The quotes below are taken from the HTML5 draft referenced above.
+
+      // "having obtained the classes by splitting a string on spaces"
+      // Instead of using split, we use match with the global modifier so that
+      // we don't have to remove leading and trailing spaces.
+      var classes = className.match(/[^\t\n\f\r ]+/g);
+
+      // Filter out classnames in the restricted namespace.
+      for (var i = classes.length; --i >= 0;) {
+        var classi = classes[i];
+        if (illegalSuffix.test(classi) || !isXmlNmTokens(classi)) {
+          classes[i] = classes[nClasses - 1];
+          --classes.length;
+        }
+      }
+
+      if (classes.length === 0) {
+        // "If there are no tokens specified in the argument, then the method
+        //  must return an empty NodeList" [instead of all elements]
+        // This means that
+        //     htmlEl.ownerDocument.getElementsByClassName(htmlEl.className)
+        // will return an HtmlCollection containing htmlElement iff
+        // htmlEl.className contains a non-space character.
+        return fakeNodeList([]);
+      }
+
+      // "unordered set of unique space-separated tokens representing classes"
+      if (typeof rootNode.getElementsByClassName === 'function') {
+        return tameNodeList(
+            rootNode.getElementsByClassName(classes.join(' '), editable));
+      } else {
+        // Add spaces around each class so that we can use indexOf later to find
+        // a match.
+        // This use of indexOf is strictly incorrect since
+        // http://www.whatwg.org/specs/web-apps/current-work/#reflecting-content-attributes-in-dom-attributes
+        // does not normalize spaces in unordered sets of unique space-separated
+        // tokens.  This is not a problem since HTML5 compliant implementations
+        // already have a getElementsByClassName implementation, and legacy
+        // implementations do normalize according to comments on issue 935.
+
+        // We assume standards mode, so the HTML5 requirement that
+        //   "If the document is in quirks mode, then the comparisons for the
+        //    classes must be done in an ASCII case-insensitive  manner,"
+        // is not operative.
+        var nClasses = classes.length;
+        for (var i = nClasses; --i >= 0;) {
+          classes[i] = ' ' + classes[i] + ' ';
+        }
+
+        // We comply with the requirement that the result is a list
+        //   "containing all the elements in the document, in tree order,"
+        // since the spec for getElementsByTagName has the same language.
+        var candidates = rootNode.getElementsByTagName('*');
+        var matches = [];
+        candidate_loop:
+        for (var j = 0, n = candidates.length, k = -1; j < n; ++j) {
+          var candidate = candidates[j];
+          var candidateClass = ' ' + candidate.className + ' ';
+          for (var i = nClasses; --i >= 0;) {
+            if (-1 === candidateClass.indexOf(classes[i])) {
+              continue candidate_loop;
+            }
+          }
+          var tamed = tameNode(candidate, editable);
+          if (tamed) {
+            matches[++k] = tamed;
+          }
+        }
+        // "the method must return a live NodeList object"
+        return fakeNodeList(matches);
+      }
+    }
+
     function makeEventHandlerWrapper(thisNode, listener) {
       if ('function' !== typeof listener
           // Allow disfunctions
@@ -916,16 +1011,12 @@ attachDocumentStub = (function () {
       return tameRelatedNode(this.node___.parentNode, this.editable___);
     };
     TameBackedNode.prototype.getElementsByTagName = function (tagName) {
-      return tameNodeList(
-          this.node___.getElementsByTagName(String(tagName)), this.editable___);
+      return tameGetElementsByTagName(this.node___, tagName, this.editable___);
     };
-    if (typeof document.getElementsByClassName !== 'undefined') {
-      TameBackedNode.prototype.getElementsByClassName = function (className) {
-        return tameNodeList(
-            this.node___.getElementsByClassName(String(className)),
-            this.editable___);
-      };
-    }
+    TameBackedNode.prototype.getElementsByClassName = function (className) {
+      return tameGetElementsByClassName(
+          this.node___, className, this.editable___);
+    };
     TameBackedNode.prototype.getChildNodes = function () {
       return tameNodeList(this.node___.childNodes, this.editable___);
     };
@@ -1033,14 +1124,6 @@ attachDocumentStub = (function () {
       this.properties___ = {};
     }
     classUtils.extend(TamePseudoNode, TameNode);
-    // Abstract TamePseudoNode.prototype.getNodeType
-    // Abstract TamePseudoNode.prototype.getNodeName
-    // Abstract TamePseudoNode.prototype.getNodeValue
-    // Abstract TamePseudoNode.prototype.getAttributes
-    // Abstract TamePseudoNode.prototype.getChildNodes
-    // Abstract TamePseudoNode.prototype.getParentNode
-    // Abstract TamePseudoNode.prototype.getElementsByTagName
-    // Abstract TamePseudoNode.prototype.getElementsByClassName
     TamePseudoNode.prototype.appendChild =
     TamePseudoNode.prototype.insertBefore =
     TamePseudoNode.prototype.removeChild =
@@ -1163,15 +1246,16 @@ attachDocumentStub = (function () {
     TamePseudoElement.prototype.getInnerHTML
         = function () { return this.innerHTMLGetter___(); };
     TamePseudoElement.prototype.getElementsByTagName = function (tagName) {
-      return tameNodeList(
-          this.body___.getElementsByTagName(tagName), this.editable___);
+      tagName = String(tagName).toLowerCase();
+      if (tagName === this.tagName___) {
+        // Works since html, head, body, and title can't contain themselves.
+        return fakeNodeList([]);
+      }
+      return this.getOwnerDocument().getElementsByTagName(className);
     };
-    if (typeof document.getElementsByClassName !== 'undefined') {
-      TamePseudoElement.prototype.getElementsByClassName
-          = function (className) {
-        return this.getOwnerDocument().getElementsByClassName(className);
-      };
-    }
+    TamePseudoElement.prototype.getElementsByClassName = function (className) {
+      return this.getOwnerDocument().getElementsByClassName(className);
+    };
     TamePseudoElement.prototype.toString = function () {
       return '<' + this.tagName___ + '>';
     };
@@ -1280,7 +1364,7 @@ attachDocumentStub = (function () {
         atype = html4.ATTRIBS[attribKey];
       } else {
         return String(
-            (this.node___.attributes___ && 
+            (this.node___.attributes___ &&
             this.node___.attributes___[attribName]) || '');
       }
       var value = this.node___.getAttribute(attribName);
@@ -1306,7 +1390,7 @@ attachDocumentStub = (function () {
       var type = html4.ATTRIBS[name];
       if (type === undefined || !html4.ATTRIBS.hasOwnProperty(name)) {
         return !!(
-            this.node___.attributes___ && 
+            this.node___.attributes___ &&
             ___.hasOwnProp(this.node___.attributes___, name));
       }
       return this.node___.hasAttribute(name);
@@ -1316,20 +1400,19 @@ attachDocumentStub = (function () {
       attribName = String(attribName).toLowerCase();
       var tagName = this.node___.tagName.toLowerCase();
       var attribKey;
-      var atype;
       if ((attribKey = tagName + ':' + attribName,
            html4.ATTRIBS.hasOwnProperty(attribKey))
           || (attribKey = '*:' + attribName,
               html4.ATTRIBS.hasOwnProperty(attribKey))) {
-        atype = html4.ATTRIBS[attribKey];
+        var atype = html4.ATTRIBS[attribKey];
+        var sanitizedValue = rewriteAttribute(
+            tagName, attribName, atype, value);
+        if (sanitizedValue !== null) {
+          bridal.setAttribute(this.node___, attribName, sanitizedValue);
+        }
       } else {
         if (!this.node___.attributes___) { this.node___.attributes___ = {}; }
         this.node___.attributes___[attribName] = String(value);
-        return value; 
-      }
-      var sanitizedValue = rewriteAttribute(tagName, attribName, atype, value);
-      if (sanitizedValue !== null) {
-        bridal.setAttribute(this.node___, attribName, sanitizedValue);
       }
       return value;
     };
@@ -2012,8 +2095,12 @@ attachDocumentStub = (function () {
               'preventDefault',
               'getKeyCode', 'getWhich']);
 
-    // This duck types to a node list; we can't expose real nodelists.
-    function FakeNodeList(array) {
+    /**
+     * Return a fake node list containing tamed nodes.
+     * @param {Array.<TameNode>} array of tamed nodes.
+     * @return an array that duck types to a node list.
+     */
+    function fakeNodeList(array) {
       array.item = ___.func(function(i) { return array[i]; });
       return cajita.freeze(array);
     }
@@ -2069,7 +2156,7 @@ attachDocumentStub = (function () {
           },
           editable);
       this.documentElement___ = tameHtmlElement;
-      classUtils.exportFields(this, ['documentElement', 'body']);
+      classUtils.exportFields(this, ['documentElement', 'body', 'title']);
     }
     classUtils.extend(TameHTMLDocument, TamePseudoNode);
     nodeClasses.HTMLDocument = TameHTMLDocument;
@@ -2083,10 +2170,14 @@ attachDocumentStub = (function () {
     TameHTMLDocument.prototype.getParentNode = function () { return null; };
     TameHTMLDocument.prototype.getElementsByTagName = function (tagName) {
       tagName = String(tagName).toLowerCase();
-      if (tagName === "body") { return FakeNodeList( [ this.getBody() ] ); }
-      else if (tagName === "head") { return FakeNodeList( [ this.getHead() ] ); }
-      return tameNodeList(
-          this.body___.getElementsByTagName(tagName), this.editable___);
+      switch (tagName) {
+        case 'body': return fakeNodeList([ this.getBody() ]);
+        case 'head': return fakeNodeList([ this.getHead() ]);
+        case 'title': return fakeNodeList([ this.getTitle() ]);
+        default:
+          return tameGetElementsByTagName(
+              this.body___, tagName, this.editable___);
+      }
     };
     TameHTMLDocument.prototype.getDocumentElement = function () {
       return this.documentElement___;
@@ -2097,12 +2188,13 @@ attachDocumentStub = (function () {
     TameHTMLDocument.prototype.getHead = function () {
       return this.documentElement___.getFirstChild();
     };
-    if (typeof document.getElementsByClassName !== 'undefined') {
-      TameHTMLDocument.prototype.getElementsByClassName = function (className) {
-        return tameNodeList(
-            this.body___.getElementsByClassName(className), this.editable___);
-      };
-    }
+    TameHTMLDocument.prototype.getTitle = function () {
+      return this.getHead().getFirstChild();
+    };
+    TameHTMLDocument.prototype.getElementsByClassName = function (className) {
+      return tameGetElementsByClassName(
+          this.body___, className, this.editable___);
+    };
     TameHTMLDocument.prototype.addEventListener =
         function (name, listener, useCapture) {
           // TODO(ihab.awad): Implement
@@ -2153,7 +2245,7 @@ attachDocumentStub = (function () {
     ___.all2(___.grantTypedGeneric, TameHTMLDocument.prototype,
              ['addEventListener', 'removeEventListener', 'dispatchEvent',
               'createElement', 'createTextNode', 'getElementById',
-              'getElementsByTagName', 'getElementsByClassName', 'write']);
+              'getElementsByClassName', 'getElementsByTagName', 'write']);
 
 
     imports.tameNode___ = tameNode;
