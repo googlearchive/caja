@@ -223,6 +223,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
       JsPrettyPrinter pp = new JsPrettyPrinter(js, null);
       RenderContext rc = new RenderContext(mc, pp);
       jsTree.render(rc);
+      pp.noMoreTokens();
 
       ParseTreeNode valijaOrigNode =
           js(fromResource("/com/google/caja/valija-cajita.js"));

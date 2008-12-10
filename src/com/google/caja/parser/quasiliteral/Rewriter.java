@@ -192,6 +192,7 @@ public abstract class Rewriter {
     StringBuilder output = new StringBuilder();
     TokenConsumer renderer = new JsPrettyPrinter(output, null);
     n.render(new RenderContext(new MessageContext(), renderer));
+    renderer.noMoreTokens();
     return output.toString();
   }
 

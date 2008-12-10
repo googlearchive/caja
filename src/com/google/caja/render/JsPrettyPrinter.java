@@ -19,6 +19,7 @@ import com.google.caja.lexer.Keyword;
 import com.google.caja.util.Callback;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -32,28 +33,7 @@ import java.util.Set;
  *
  * @author mikesamuel@gmail.com
  */
-public final class JsPrettyPrinter extends AbstractRenderer {
-  /**
-   * Stack of indentation positions.
-   * Curly brackets indent to two past the last stack position and
-   * parenthetical blocks indent to the open parenthesis.
-   */
-  private List<Indent> indentStack = new LinkedList<Indent>(
-      Arrays.asList(new Indent(0, false)));
-  /** Number of characters written to out since the last linebreak. */
-  private int charInLine;
-
-  /** The end line number of the last token seen. */
-  private int lastLine = 1;
-  /** The last position marked. */
-  private FilePosition mark;
-  /** The classification of the last non-space/comment token. */
-  private TokenClassification lastClass;
-  /** The last non-space/comment token. */
-  private String lastToken;
-  /** True if the last token needs a following space. */
-  private char pendingSpace = '\0';
-
+public final class JsPrettyPrinter extends BufferingRenderer {
   /**
    * @param out receives the rendered text.
    * @param ioExceptionHandler receives exceptions thrown by out.
@@ -63,14 +43,73 @@ public final class JsPrettyPrinter extends AbstractRenderer {
     super(out, ioExceptionHandler);
   }
 
-  public void mark(FilePosition pos) {
-    if (pos != null) {
-      mark = pos;
+  @Override
+  List<String> splitTokens(List<Object> tokens) {
+    Spacer spacer = new Spacer();
+    for (Object lineEl : tokens) {
+      if (lineEl instanceof FilePosition) {
+        spacer.processMark((FilePosition) lineEl);
+      } else {
+        spacer.processToken((String) lineEl);
+      }
+    }
+    return spacer.getOutputTokens();
+  }
+}
+
+class Spacer {
+  /**
+   * Stack of indentation positions.
+   * Curly brackets indent to two past the last stack position and
+   * parenthetical blocks indent to the open parenthesis.
+   */
+  private List<Indent> indentStack = new LinkedList<Indent>(
+      Arrays.asList(new Indent(0, false)));
+  /** The last position marked. */
+  private FilePosition mark;
+  /** Number of characters written to out since the last linebreak. */
+  private int charInLine;
+
+  /** The end line number of the last token seen. */
+  private int lastLine = 1;
+  /** The classification of the last non-space/comment token. */
+  private TokenClassification lastClass;
+  /** The last non-space/comment token. */
+  private String lastToken;
+  /** True if the last token needs a following space. */
+  private char pendingSpace = '\0';
+
+  private final List<String> outputTokens = new ArrayList<String>();
+
+  private static class Indent {
+    int spaces;
+    /**
+     * Are we in a () or [] block.
+     * Semicolons are not treated as statement separators in that context.
+     */
+    final boolean parenthetical;
+    /**
+     * True iff we are in a statement.
+     * E.g. in {@code
+     *    var foo = x
+     *        + y;
+     * }
+     * the <code>+</code> is indented past the beginning of the previous line
+     * because we have not yet seen a semicolon.
+     */
+    boolean inStatement;
+
+    Indent(int spaces, boolean parenthetical) {
+      this.spaces = spaces;
+      this.parenthetical = parenthetical;
     }
   }
 
-  @Override
-  protected void append(String text) throws IOException {
+  List<String> getOutputTokens() { return outputTokens; }
+
+  void processMark(FilePosition mark) { this.mark = mark; }
+
+  void processToken(String text) {
     TokenClassification tClass = TokenClassification.classify(text);
     if (tClass == null) { return; }
     switch (tClass) {
@@ -78,7 +117,7 @@ public final class JsPrettyPrinter extends AbstractRenderer {
         deindentRecentlyOpenedParens();
         pendingSpace = '\0';
 
-        // Allow external code to force linebreaks.
+        // Allow external code to force line-breaks.
         // This allows us to create a composite-renderer that renders
         // original source code next to translated source code.
         emit("\n");
@@ -329,69 +368,53 @@ public final class JsPrettyPrinter extends AbstractRenderer {
     return KEYWORDS.contains(s);
   }
 
-  private void indent(int offset) throws IOException {
+  private void indent(int offset) {
     if (charInLine != 0) { return; }
     Indent sframe = indentStack.get(0);
     int nSpaces = Math.max(0, sframe.spaces + offset);
     if (!sframe.parenthetical && sframe.inStatement) { nSpaces += 4; }
 
     charInLine += nSpaces;
-    String spaces = "                ";
-    while (nSpaces >= spaces.length()) {
-      out.append(spaces);
-      nSpaces -= spaces.length();
+    StringBuilder sb = new StringBuilder(nSpaces + 1);
+    sb.append('\n');
+    while (nSpaces >= 16) {
+      sb.append("                ");
+      nSpaces -= 16;
     }
-    out.append(spaces, 0, nSpaces);
+    sb.append("                ", 0, nSpaces);
+
+    int last = outputTokens.size() - 1;
+    if (last >= 0 && "\n".equals(outputTokens.get(last))) {
+      outputTokens.set(last, sb.toString());
+    } else {
+      outputTokens.add(sb.toString());
+    }
   }
 
-  private void newLine() throws IOException {
+  private void newLine() {
     if (charInLine == 0) { return; }
     charInLine = 0;
-    out.append("\n");
+    outputTokens.add("\n");
   }
 
-  private void space() throws IOException {
+  private void space() {
     if (charInLine != 0) {
-      out.append(" ");
       ++charInLine;
+      outputTokens.add(" ");
     }
   }
 
-  private void emit(CharSequence s) throws IOException {
-    out.append(s);
+  private void emit(String s) {
+    outputTokens.add(s);
     int n = s.length();
-    // Look backwards for a linebreak so we can keep charInLine up-to-date.
+    // Look backwards for a line-break so we can keep charInLine up-to-date.
     for (int i = n; --i >= 0;) {
       char ch = s.charAt(i);
-      if (ch == '\r' || ch == '\n') {  // Using CharProducer's linebreak def.
+      if (ch == '\r' || ch == '\n') {  // Using CharProducer's line-break def.
         charInLine = n - i - 1;
         return;
       }
     }
     charInLine += n;
-  }
-
-  private static class Indent {
-    int spaces;
-    /**
-     * Are we in a () or [] block.
-     * Semicolons are not treated as statement separators in that context.
-     */
-    final boolean parenthetical;
-    /**
-     * True iff we are in a statement.
-     * E.g. in {@code
-     *    var foo = x
-     *        + y;
-     * }
-     * the <code>+</code> is indented past the beginning of the previous line
-     * because we have not yet seen a semicolon.
-     */
-    boolean inStatement;
-
-    Indent(int spaces, boolean parenthetical) {
-      this.spaces = spaces;
-      this.parenthetical = parenthetical;
-    }
   }
 }

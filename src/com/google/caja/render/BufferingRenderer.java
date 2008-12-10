@@ -14,6 +14,8 @@
 
 package com.google.caja.render;
 
+import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.util.Callback;
 import java.io.Flushable;
@@ -21,9 +23,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * An abstract renderer for JavaScript tokens that ensures that implementations
+ * don't fall afoul of JavaScript's syntactic quirks.
+ *
+ * @author mikesamuel@gmail.com
+ */
 abstract class BufferingRenderer implements TokenConsumer {
-  private final List<String> pending = new ArrayList<String>();
-  protected final Appendable out;
+  private final List<Object> pending = new ArrayList<Object>();
+  private final Appendable out;
   private final Callback<IOException> ioExceptionHandler;
   /** True if an IOException has been raised. */
   private boolean closed;
@@ -45,36 +53,59 @@ abstract class BufferingRenderer implements TokenConsumer {
     JsTokenAdjacencyChecker adjChecker = new JsTokenAdjacencyChecker();
     try {
       String lastToken = null;
-      LineData lineData = splitLines(pending);
-      int[] numTokensPerLine = lineData.numTokensPerLine;
-      int[] indentation = lineData.indentation;
-      int nLines = numTokensPerLine.length;
-      int tokIdx = 0;
-      for (int lineNum = 0; lineNum < nLines; ++lineNum) {
-        int numTokens = numTokensPerLine[lineNum];
-        if (lineNum != 0) {
-          String firstOfLine = numTokens == 0 ? null : pending.get(tokIdx);
-          if (JsRenderUtil.canBreakBetween(lastToken, firstOfLine)) {
-            out.append("\n");
-            lastToken = null;
-          } else {
-            out.append(" ");
+      boolean noOutputWritten = true;
+      List<String> outputTokens = splitTokens(pending);
+      pending.clear();
+      String pendingSpace = null;
+      for (int i = 0, nTokens = outputTokens.size(); i < nTokens; ++i) {
+        String token = outputTokens.get(i);
+        if (token.charAt(0) == '\n' || " ".equals(token)) {
+          pendingSpace = token;
+          continue;
+        }
+        if (TokenClassification.isComment(token)) {
+          // Make sure we don't get into a situation where we have to output
+          // a newline to end a line comment, but can't output a newline because
+          // it would break a restricted production.
+          // When we see a line comment, scan forward until the next non-comment
+          // token.  If the canBreakBetween check fails, then remove any
+          // line-breaks by rewriting the comment.
+          // We have to rewrite multi-line block comments, since ES3.1 says that
+          // a multi-line comment is replaced with a newline for the purposes
+          // of semicolon insertion.
+          String nextToken = null;
+          for (int j = i + 1; j < nTokens; ++j) {
+            switch (TokenClassification.classify(outputTokens.get(j))) {
+              case SPACE: case LINEBREAK: case COMMENT: continue;
+              default: break;
+            }
+            nextToken = outputTokens.get(j);
+            break;
+          }
+          if (!JsRenderUtil.canBreakBetween(lastToken, nextToken)) {
+            token = removeLinebreaksFromComment(token);
+            if (pendingSpace != null) { pendingSpace = " "; }
           }
         }
-        if (numTokens != 0) {
-          indent(indentation[lineNum], out);
-          for (int endIdx = tokIdx + numTokens; tokIdx < endIdx; ++tokIdx) {
-            String token = pending.get(tokIdx);
-            // This needs to be invoked for all tokens since adjChecker is
-            // stateful.
-            boolean needSpaceBefore = adjChecker.needSpaceBefore(token);
-            if (lastToken != null
-                && (needSpaceBefore || wantSpaceBetween(lastToken, token))) {
-              out.append(" ");
+        boolean needSpaceBefore = adjChecker.needSpaceBefore(token);
+        if (pendingSpace == null && needSpaceBefore) {
+          pendingSpace = " ";
+        }
+        if (pendingSpace != null) {
+          if (pendingSpace.charAt(0) == '\n') {
+            if (!JsRenderUtil.canBreakBetween(lastToken, token)) {
+              pendingSpace = " ";
+            } else if (noOutputWritten) {
+              pendingSpace = pendingSpace.substring(1);
             }
-            out.append(token);
-            lastToken = token;
           }
+          out.append(pendingSpace);
+          pendingSpace = null;
+        }
+        out.append(token);
+        noOutputWritten = false;
+        if (!TokenClassification.isComment(token)) {
+          lastToken = token;
         }
       }
       if (out instanceof Flushable) {
@@ -88,24 +119,52 @@ abstract class BufferingRenderer implements TokenConsumer {
     }
   }
 
+  /**
+   * May receive line-break or comment tokens.  Implementations may ignore
+   * comment tokens, but the client is responsible for making sure that comments
+   * are well-formed, do not contain code (e.g. conditional compilation code),
+   * and do not violate any containment requirements, such as not containing the
+   * string {@code </script>}.
+   */
   public final void consume(String text) {
     if ("".equals(text)) { return; }
     pending.add(text);
   }
 
-  private static void indent(int nSpaces, Appendable out) throws IOException {
-    while (nSpaces > 16) {
-      out.append("                ");
-      nSpaces -= 16;
+  public final void mark(FilePosition mark) {
+    if (mark != null && !FilePosition.UNKNOWN.equals(mark.source())) {
+      pending.add(mark);
     }
-    if (nSpaces != 0) { out.append("                ".substring(0, nSpaces)); }
   }
 
-  class LineData {
-    int[] numTokensPerLine;
-    int[] indentation;
+  private static String removeLinebreaksFromComment(String token) {
+    if (TokenClassification.isLineComment(token)) {
+      token = "/*" + token.substring(2) + "*/";
+    }
+    StringBuilder sb = new StringBuilder(token);
+    // Section 5.1.2 hinges on whether a MultiLineComment contains a
+    // line-terminator char, so make sure it does not.
+    for (int i = sb.length(); --i >= 0;) {
+      if (JsLexer.isJsLineSeparator(sb.charAt(i))) {
+        sb.setCharAt(i, ' ');
+      }
+    }
+    // Make sure that turning a line comment into a MultiLineComment didn't
+    // cause a */ in the line comment to become lexically significant.
+    for (int e = sb.length() - 3, i; (i = sb.lastIndexOf("*/", e)) >= 0;) {
+      sb.setCharAt(i + 1, ' ');
+    }
+    return sb.toString();
   }
 
-  abstract LineData splitLines(List<String> tokens);
-  abstract boolean wantSpaceBetween(String before, String after);
+  /**
+   * Generates a list of output tokens consisting of non-whitespace tokens,
+   * space tokens ({@code " "}) and newline tokens ({@code '\n'} followed by
+   * any number of spaces).
+   * @param tokens a heterogenous array containing {@code String} tokens and
+   *   {@code FilePosition} marks.
+   * @return the strings in tokens in order with newline and space tokens
+   *   inserted as appropriate.
+   */
+  abstract List<String> splitTokens(List<Object> tokens);
 }

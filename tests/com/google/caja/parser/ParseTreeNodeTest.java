@@ -114,6 +114,7 @@ public class ParseTreeNodeTest extends TestCase {
     MessageContext mc = new MessageContext();
     TokenConsumer tc = new JsPrettyPrinter(sb, null);
     root.render(new RenderContext(mc, tc));
+    tc.noMoreTokens();
     assertEquals(
         "$0: {\n"
         + "  $1: {\n"
@@ -201,6 +202,7 @@ public class ParseTreeNodeTest extends TestCase {
     MessageContext mc = new MessageContext();
     TokenConsumer tc = new JsPrettyPrinter(sb, null);
     root.render(new RenderContext(mc, tc));
+    tc.noMoreTokens();
     assertEquals(
         "$0: {\n"
         + "  $1: {\n"
@@ -300,6 +302,7 @@ public class ParseTreeNodeTest extends TestCase {
     MessageContext mc = new MessageContext();
     TokenConsumer tc = new JsPrettyPrinter(sb, null);
     root.render(new RenderContext(mc, tc));
+    tc.noMoreTokens();
     assertEquals(
         "$0: {\n"
         + "  $1: {\n"
@@ -384,6 +387,7 @@ public class ParseTreeNodeTest extends TestCase {
     MessageContext mc = new MessageContext();
     TokenConsumer tc = new JsPrettyPrinter(sb, null);
     root.render(new RenderContext(mc, tc));
+    tc.noMoreTokens();
     assertEquals(
         "$0: {\n"
         + "  $9: {\n"
@@ -468,6 +472,7 @@ public class ParseTreeNodeTest extends TestCase {
     MessageContext mc = new MessageContext();
     TokenConsumer tc = new JsPrettyPrinter(sb, null);
     root.render(new RenderContext(mc, tc));
+    tc.noMoreTokens();
     assertEquals(
         "$0: {\n"
         + "  $1: {\n"
@@ -543,6 +548,7 @@ public class ParseTreeNodeTest extends TestCase {
     MessageContext mc = new MessageContext();
     TokenConsumer tc = new JsPrettyPrinter(sb, null);
     root.render(new RenderContext(mc, tc));
+    tc.noMoreTokens();
     assertEquals(
         "$0: {\n"
         + "  $1: {\n"
@@ -605,6 +611,7 @@ public class ParseTreeNodeTest extends TestCase {
     MessageContext mc = new MessageContext();
     TokenConsumer tc = new JsPrettyPrinter(sb, null);
     root.render(new RenderContext(mc, tc));
+    tc.noMoreTokens();
     assertEquals(
         "$0: {\n"
         + "  $5: {\n"

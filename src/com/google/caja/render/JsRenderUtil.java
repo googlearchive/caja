@@ -28,6 +28,7 @@ final class JsRenderUtil {
    * @param after null or a non-comment, non-whitespace token.
    */
   static boolean canBreakBetween(String before, String after) {
+    if ("}".equals(before) || ";".equals(before)) { return true; }
     // According to semicolon insertion rules in ES262 Section 7.9.1
     //     When, as the program is parsed from left to right, a token
     //     is encountered that is allowed by some production of the

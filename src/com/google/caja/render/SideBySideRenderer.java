@@ -18,13 +18,18 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.util.Join;
+import com.google.caja.util.Pair;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * Renderers rewritten source code interleaved with the original.  E.g.
+ * Renders rewritten source code interleaved with the original.  E.g.
  * {@code
  *   // Rewritten by cajoler.
  *   muckWith(                    IMPORTS___.muckWith(
@@ -40,7 +45,9 @@ public abstract class SideBySideRenderer implements TokenConsumer {
   private final TokenConsumer renderer;
   private FilePosition lastPos;
   private FilePosition mark;
-  private FilePosition bufStart;
+  private FilePosition chunkStart;
+  /** Chunks of original source. */
+  private final List<Chunk> chunks = new ArrayList<Chunk>();
   private StringBuilder renderedBuf;
 
   public SideBySideRenderer(
@@ -69,11 +76,11 @@ public abstract class SideBySideRenderer implements TokenConsumer {
   /**
    * Called when we render a token from a different source than previously.
    * This method does nothing, but may be overridden.
-   * @param previous the token from which the last rendered token came.
-   * @param next the token from which the next rendered token will come,
+   * @param previous the source from which the last rendered token came.
+   * @param next the source from which the next rendered token will come,
    *   unless switchSource is called again before {@link #consume}.
    */
-  protected void switchSource(FilePosition previous, FilePosition next) {}
+  protected void switchSource(InputSource previous, InputSource next) {}
 
   protected abstract TokenConsumer makeRenderer(StringBuilder renderedSrc);
 
@@ -83,11 +90,11 @@ public abstract class SideBySideRenderer implements TokenConsumer {
   }
 
   public void consume(String text) {
+    if (TokenClassification.isComment(text)) { return; }
     if (!(mark != null
           ? lastPos != null && mark.source().equals(lastPos.source())
           : lastPos == null)) {
       emitLine();
-      switchSource(lastPos, mark);
     } else if (lastPos != null) {
       if (mark.startLineNo() > lastPos.startLineNo()
           && mark.startLineNo() >= lastLineNo(mark.source())) {
@@ -100,33 +107,66 @@ public abstract class SideBySideRenderer implements TokenConsumer {
   }
 
   public void noMoreTokens() {
-    renderer.noMoreTokens();
     emitLine();
+    renderer.noMoreTokens();
+
+    String renderedSrc = renderedBuf.toString();
+    renderedBuf.setLength(0);
+
+    InputSource lastSource = null;
+    for (Pair<String, Integer> chunk : splitChunks(renderedSrc)) {
+      String renderedChunk = chunk.a;
+      int chunkIndex = chunk.b;
+      Chunk originalChunk = (
+          chunkIndex >= 0 ? chunks.get(chunkIndex) : new Chunk("", null));
+      InputSource source = (
+          originalChunk.start != null ? originalChunk.start.source() : null);
+
+      if (!"".equals(renderedChunk) || !"".equals(originalChunk.src)) {
+        if (!(source != null
+            ? lastSource != null && source.equals(lastSource)
+            : lastSource == null)) {
+          switchSource(lastSource, source);
+        }
+
+        emitLine(originalChunk.start, originalChunk.src, renderedChunk);
+      }
+      lastSource = source;
+    }
   }
 
   private void emitLine() {
-    String renderedSrc = renderedBuf.toString();
-    renderedBuf.setLength(0);
-    if (renderedSrc.length() > 0 && renderedSrc.charAt(0) == '\n') {
-      renderedSrc = renderedSrc.substring(1);
-    }
-    renderer.consume("\n");
-
-    if ("".equals(renderedSrc) && bufStart == null) { return; }
-
     String originalSrc = "";
-    if (bufStart != null) {
-      int startLine = lastLineNo(bufStart.source()) + 1;
+    if (chunkStart != null) {
+      int startLine = lastLineNo(chunkStart.source()) + 1;
       int endLine = lastPos.endLineNo();
       if (lastPos.endCharInLine() == 1) { --endLine; }
       originalSrc = originalSourceSnippet(
-          bufStart.source(), startLine, endLine);
-      maxLineSeen.put(bufStart.source(), endLine);
+          chunkStart.source(), startLine, endLine);
+      maxLineSeen.put(chunkStart.source(), endLine);
     }
 
-    emitLine(bufStart, originalSrc, renderedSrc);
+    int chunkId = chunks.size();
+    chunks.add(new Chunk(originalSrc, chunkStart));
+    renderer.consume("/*@" + chunkId + "*/");
+    renderer.consume("\n");
 
-    bufStart = mark;
+    chunkStart = mark;
+  }
+
+  private static List<Pair<String, Integer>> splitChunks(String renderedSrc) {
+    Pattern p = Pattern.compile(" */\\*@([0-9]+)\\*/(?:\n|\r\n?|$)");
+    Matcher m = p.matcher(renderedSrc);
+    int start = 0;
+    List<Pair<String, Integer>> chunks = new ArrayList<Pair<String, Integer>>();
+    while (m.find()) {
+      int chunkIndex = Integer.parseInt(m.group(1));
+      chunks.add(
+          Pair.pair(renderedSrc.substring(start, m.start()), chunkIndex));
+      start = m.end();
+    }
+    chunks.add(Pair.pair(renderedSrc.substring(start), -1));
+    return chunks;
   }
 
   private String originalSourceSnippet(
@@ -146,5 +186,14 @@ public abstract class SideBySideRenderer implements TokenConsumer {
   private int lastLineNo(InputSource src) {
     Integer ln = maxLineSeen.get(src);
     return ln != null ? ln : 0;
+  }
+
+  private static final class Chunk {
+    private final String src;
+    private final FilePosition start;
+    Chunk(String src, FilePosition start) {
+      this.start = start;
+      this.src = src;
+    }
   }
 }

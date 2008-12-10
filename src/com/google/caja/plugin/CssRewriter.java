@@ -380,6 +380,7 @@ public final class CssRewriter {
               StringBuilder rendered = new StringBuilder();
               TokenConsumer tc = new CssPrettyPrinter(rendered, null);
               node.render(new RenderContext(new MessageContext(), tc));
+              tc.noMoreTokens();
               mq.addMessage(PluginMessageType.UNSAFE_CSS_PSEUDO_SELECTOR,
                             invalidNodeMessageLevel, node.getFilePosition(),
                             MessagePart.Factory.valueOf(rendered.toString()));

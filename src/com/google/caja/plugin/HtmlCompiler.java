@@ -709,6 +709,7 @@ public class HtmlCompiler {
           }
           p.render(new RenderContext(new MessageContext(), tc));
           tc.consume(":");
+          tc.noMoreTokens();
           out.append(" ");
           rawCss(out.toString());
         }
@@ -722,6 +723,7 @@ public class HtmlCompiler {
           out.append(" ");
           TokenConsumer tc = p.makeRenderer(out, null);
           p.render(new RenderContext(new MessageContext(), tc));
+          tc.noMoreTokens();
           rawCss(out.toString());
         }
       });
@@ -749,6 +751,7 @@ public class HtmlCompiler {
         StringBuilder cssBuf = new StringBuilder();
         TokenConsumer tc = decl.makeRenderer(cssBuf, null);
         decl.getExpr().render(new RenderContext(new MessageContext(), tc));
+        tc.noMoreTokens();
 
         // Contains the rendered CSS with ${\0###\0} placeholders.
         // Split around the placeholders, parse the javascript, escape the

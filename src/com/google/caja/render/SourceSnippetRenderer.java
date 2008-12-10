@@ -26,6 +26,9 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
 import java.util.Formatter;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import java.io.IOException;
 
 /**
@@ -35,27 +38,6 @@ import java.io.IOException;
  * @author ihab.awad@gmail.com
  */
 public abstract class SourceSnippetRenderer implements TokenConsumer {
-
-  /**
-   * An Appendable to which the renderer we delegate to will append text;
-   * we capture this text by adding it to 'renderedTextAccumulator'
-   */
-  private final Appendable rendererAppendable = new Appendable() {
-    public Appendable append(CharSequence charSequence) {
-      renderedTextAccumulator.append(charSequence);
-      return this;
-    }
-
-    public Appendable append(CharSequence charSequence, int i, int j) {
-      renderedTextAccumulator.append(charSequence, i, j);
-      return this;
-    }
-
-    public Appendable append(char c) {
-      renderedTextAccumulator.append(c);
-      return this;
-    }
-  };
 
   private class OriginalSourceLine {
     private final InputSource source;
@@ -166,7 +148,7 @@ public abstract class SourceSnippetRenderer implements TokenConsumer {
       = new ArrayList<RenderedSourceLine>();
   private final Map<InputSource, List<OriginalSourceLine>> originalSourceLines
       = new HashMap<InputSource, List<OriginalSourceLine>>();
-  private FilePosition currentMark = FilePosition.UNKNOWN;
+  private List<FilePosition> marks = new ArrayList<FilePosition>();
   private StringBuilder renderedTextAccumulator = new StringBuilder();
 
   public SourceSnippetRenderer(
@@ -177,24 +159,45 @@ public abstract class SourceSnippetRenderer implements TokenConsumer {
     this.out = out;
     this.mc = mc;
     this.exHandler = exHandler;
-    delegateRenderer = createDelegateRenderer(rendererAppendable, exHandler);
+    delegateRenderer = createDelegateRenderer(
+        renderedTextAccumulator, exHandler);
     buildOriginalSourceLines(originalSource);
     renderedLines.add(new RenderedSourceLine(0, ""));
   }
 
   public void mark(FilePosition pos) {
-    processCurrentMark();
-    currentMark = pos;
     delegateRenderer.mark(pos);
+    delegateRenderer.consume("/*@" + marks.size() + "*/");
+    marks.add(pos);
   }
 
   public void consume(String text) {
+    if (TokenClassification.isComment(text)) { return; }
     delegateRenderer.consume(text);
   }
 
   public void noMoreTokens() {
     delegateRenderer.noMoreTokens();
-    processCurrentMark();
+
+    int consumed = 0;
+    String renderedText = renderedTextAccumulator.toString();
+    Matcher m = Pattern.compile(" */\\*@([0-9]+)\\*/").matcher(renderedText);
+    FilePosition currentMark = FilePosition.UNKNOWN;
+    boolean first = true;
+    while (m.find()) {
+      String chunk = renderedText.substring(consumed, m.start());
+      consumed = m.end();
+
+      if ("".equals(chunk)) { continue; }
+
+      if (first) {
+        chunk = chunk.replaceFirst("^[\r\n]+", "");
+        first = false;
+      }
+      processCurrentMark(currentMark, splitLines(chunk));
+      currentMark = marks.get(Integer.parseInt(m.group(1)));
+    }
+    processCurrentMark(currentMark, splitLines(renderedText.substring(consumed)));
     processProgram();
     renderOutput();
   }
@@ -207,7 +210,7 @@ public abstract class SourceSnippetRenderer implements TokenConsumer {
       Map<InputSource, ? extends CharSequence> originalSource) {
     for (InputSource is : originalSource.keySet()) {
       List<OriginalSourceLine> lines = new ArrayList<OriginalSourceLine>();
-      String[] text = originalSource.get(is).toString().split("\r\n?|\n");
+      String[] text = splitLines(originalSource.get(is).toString());
       for (int i = 0; i < text.length; i++) {
         lines.add(new OriginalSourceLine(is, i, text[i]));
       }
@@ -215,33 +218,33 @@ public abstract class SourceSnippetRenderer implements TokenConsumer {
     }
   }
 
-  private void processCurrentMark() {
-    String[] textLines = renderedTextAccumulator.toString().split("\n");
-    renderedTextAccumulator = new StringBuilder();
+  private static String[] splitLines(String s) {
+    return s.split("\r\n?|\n");
+  }
+
+  private void processCurrentMark(FilePosition mark, String[] textLines) {
     if (textLines.length == 0) { return; }
 
     // The zeroth element is an addition to the current line
     renderedLines.get(renderedLines.size() - 1).appendText(textLines[0]);
-    addEvidenceForCurrentMark(textLines[0].length());
+    addEvidenceForCurrentMark(mark, textLines[0].length());
 
     // Subsequent elements add new lines
     for (int i = 1; i < textLines.length; ++i) {
       renderedLines.add(
           new RenderedSourceLine(renderedLines.size(), textLines[i]));
-      addEvidenceForCurrentMark(textLines[i].length());
+      addEvidenceForCurrentMark(mark, textLines[i].length());
     }
   }
 
-  private void addEvidenceForCurrentMark(int evidence) {
-    if (currentMark == FilePosition.UNKNOWN || currentMark == null) { return; }
+  private void addEvidenceForCurrentMark(FilePosition mark, int evidence) {
+    if (mark == FilePosition.UNKNOWN || mark == null) { return; }
 
     List<OriginalSourceLine> sourceList =
-        originalSourceLines.get(currentMark.source());
+        originalSourceLines.get(mark.source());
     if (sourceList == null) { return; }
 
-    for (int l = currentMark.startLineNo() - 1;
-         l <= (currentMark.endLineNo() - 1);
-         ++l) {
+    for (int l = mark.startLineNo() - 1; l <= (mark.endLineNo() - 1); ++l) {
       sourceList.get(l).addEvidence(renderedLines.size() - 1, evidence);
     }
   }
@@ -280,7 +283,6 @@ public abstract class SourceSnippetRenderer implements TokenConsumer {
         .replace("*/", "\uFFFD/")
         .replace("<!", "<\uFFFD")
         .replace("-->", "-\uFFFD>")
-        .replace("<!", "<\uFFFD")
         .replace("]]>", "]\uFFFD>")
         .replace("</", "<\uFFFD");
   }

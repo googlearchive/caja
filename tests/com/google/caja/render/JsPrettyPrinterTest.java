@@ -167,12 +167,13 @@ public class JsPrettyPrinterTest extends CajaTestCase {
         for (String token : randomTokens) {
           pp.consume(token);
         }
+        pp.noMoreTokens();
 
         List<String> actualTokens = new ArrayList<String>();
         try {
           JsLexer lex = new JsLexer(fromString(sb.toString()));
           while (lex.hasNext()) {
-            actualTokens.add(lex.next().text);
+            actualTokens.add(simplifyComments(lex.next().text));
           }
         } catch (ParseException ex) {
           for (String tok : randomTokens) {
@@ -182,12 +183,39 @@ public class JsPrettyPrinterTest extends CajaTestCase {
           throw ex;
         }
 
-        MoreAsserts.assertListsEqual(randomTokens, actualTokens);
+        List<String> simplifiedRandomTokens = new ArrayList<String>();
+        for (String randomToken : randomTokens) {
+          simplifiedRandomTokens.add(simplifyComments(randomToken));
+        }
+
+        MoreAsserts.assertListsEqual(simplifiedRandomTokens, actualTokens);
       }
     } catch (Exception e) {
       System.err.println("Using seed " + seed);
       throw e;
     }
+  }
+
+  /**
+   * The renderer is allowed to muck with comment internals to fix problems
+   * with line-breaks in restricted productions.
+   */
+  private static String simplifyComments(String token) {
+    if (token.startsWith("//")) {
+      token = "/*" + token.substring(2) + "*/";
+    }
+    if (!token.startsWith("/*")) { return token; }
+
+    StringBuilder sb = new StringBuilder(token);
+    for (int i = sb.length() - 2; --i >= 2;) {
+      if (JsLexer.isJsLineSeparator(sb.charAt(i))) {
+        sb.setCharAt(i, ' ');
+      }
+    }
+    for (int close = -1; (close = sb.indexOf("*/", close + 1)) >= 0;) {
+      sb.setCharAt(close + 1, ' ');
+    }
+    return sb.toString();
   }
 
   public void testIndentationAfterParens1() throws Exception {
@@ -217,6 +245,14 @@ public class JsPrettyPrinterTest extends CajaTestCase {
                  "         });",
                  "var", "x", "=", "(", "{", "'fooBar'", ":", "[",
                  "\n", "0", ",", "1", ",", "2", ",", "]", "}", ")", ";");
+  }
+
+  public void testCommentsInRestrictedProductions1() throws Exception {
+    assertTokens("return /* */ 4;", "return", "/*\n*/", "4", ";");
+  }
+
+  public void testCommentsInRestrictedProductions2() throws Exception {
+    assertTokens("return /**/ 4;", "return", "//", "4", ";");
   }
 
   private static final JsTokenType[] TYPES = JsTokenType.values();
@@ -344,6 +380,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
     StringBuilder out = new StringBuilder();
     JsPrettyPrinter pp = new JsPrettyPrinter(out, null);
     node.render(new RenderContext(new MessageContext(), pp));
+    pp.noMoreTokens();
 
     assertEquals(golden, out.toString());
   }
@@ -358,6 +395,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
       pp.mark(t.pos);
       pp.consume(t.text);
     }
+    pp.noMoreTokens();
 
     assertEquals(golden, out.toString());
   }
@@ -369,6 +407,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
     for (String token : input) {
       pp.consume(token);
     }
+    pp.noMoreTokens();
     assertEquals(golden, out.toString());
   }
 }

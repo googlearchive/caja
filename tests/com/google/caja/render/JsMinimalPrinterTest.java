@@ -133,6 +133,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
         for (String token : randomTokens) {
           pp.consume(token);
         }
+        pp.noMoreTokens();
 
         List<String> actualTokens = new ArrayList<String>();
         try {
@@ -183,6 +184,12 @@ public class JsMinimalPrinterTest extends CajaTestCase {
   public void testConfusedTokenSequences() throws Exception {
     assertTokens("< ! =", "<", "!", "=");
     assertTokens("< !=", "<", "!=");
+  }
+
+  public void testNumbersAndDots() throws Exception {
+    assertTokens("2 .toString()", "2", ".", "toString", "(", ")");
+    assertTokens("2..toString()", "2.", ".", "toString", "(", ")");
+    assertTokens("2. .5", "2.", ".5");
   }
 
   public void testRestrictedSemicolonInsertion() throws Exception {

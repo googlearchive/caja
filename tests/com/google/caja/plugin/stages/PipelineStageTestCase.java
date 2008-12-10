@@ -18,6 +18,7 @@ import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.plugin.Job;
@@ -93,7 +94,9 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
     for (Job job : jobs.getJobs()) {
       StringBuilder sb = new StringBuilder();
       ParseTreeNode node = job.getRoot().cast(ParseTreeNode.class).node;
-      node.render(new RenderContext(mc, node.makeRenderer(sb, null)));
+      TokenConsumer tc = node.makeRenderer(sb, null);
+      node.render(new RenderContext(mc, tc));
+      tc.noMoreTokens();
       actualJobs.add(new JobStub(sb.toString(), job.getType()));
     }
     MoreAsserts.assertListsEqual(Arrays.asList(outputJobs), actualJobs);

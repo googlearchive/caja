@@ -17,13 +17,15 @@ package com.google.caja.render;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.util.Callback;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * A compact javascript renderer.
+ * A compact JavaScript renderer.
  *
  * @author mikesamuel@gmail.com
  */
-public final class JsMinimalPrinter extends AbstractRenderer {
+public final class JsMinimalPrinter extends BufferingRenderer {
   /** Number of characters written to out since the last linebreak. */
   private int charInLine;
   /**
@@ -45,58 +47,48 @@ public final class JsMinimalPrinter extends AbstractRenderer {
     super(out, ioExceptionHandler);
   }
 
-  public void mark(FilePosition pos) {}
-
   /** Visible for testing.  Should not be used by clients. */
   void setLineLengthLimit(int lineLengthLimit) {
     this.lineLengthLimit = lineLengthLimit;
   }
 
   @Override
-  protected void append(String text) throws IOException {
-    TokenClassification tClass = TokenClassification.classify(text);
-    if (tClass == null) { return; }
-    switch (tClass) {
-      case LINEBREAK:
-      case SPACE:
-      case COMMENT:
-        return;
-      default: break;
-    }
+  List<String> splitTokens(List<Object> tokens) {
+    List<String> outputTokens = new ArrayList<String>();
 
-    // Write any whitespace before the token.
-    if (adjChecker.needSpaceBefore(text)) {
-      // Some security tools/proxies/firewalls break on really long javascript
-      // lines.
-      if (charInLine >= lineLengthLimit
-          && JsRenderUtil.canBreakBetween(lastToken, text)) {
-        newLine();
-      } else {
-        space();
+    for (Object tokenEl : tokens) {
+      if (tokenEl instanceof FilePosition) { continue; }
+      String text = (String) tokenEl;
+      TokenClassification tClass = TokenClassification.classify(text);
+      if (tClass == null) { continue; }
+      switch (tClass) {
+        case LINEBREAK:
+        case SPACE:
+        case COMMENT:
+          continue;
+        default: break;
       }
+
+      // Write any whitespace before the token.
+      if (adjChecker.needSpaceBefore(text)) {
+        // Some security tools/proxies/firewalls break on really long javascript
+        // lines.
+        if (charInLine >= lineLengthLimit
+            && JsRenderUtil.canBreakBetween(lastToken, text)) {
+          charInLine = 0;
+          outputTokens.add("\n");
+        } else if (charInLine != 0) {
+          ++charInLine;
+          outputTokens.add(" ");
+        }
+      }
+
+      // Actually write the token.
+      charInLine += text.length();
+      outputTokens.add(text);
+
+      lastToken = text;
     }
-
-    // Actually write the token.
-    emit(text);
-
-    lastToken = text;
-  }
-
-  private void newLine() throws IOException {
-    if (charInLine == 0) { return; }
-    charInLine = 0;
-    out.append("\n");
-  }
-
-  private void space() throws IOException {
-    if (charInLine != 0) {
-      out.append(" ");
-      ++charInLine;
-    }
-  }
-
-  private void emit(CharSequence s) throws IOException {
-    out.append(s);
-    charInLine += s.length();  // Comments skipped, so no multiline tokens.
+    return outputTokens;
   }
 }

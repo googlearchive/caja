@@ -300,6 +300,7 @@ public final class CssValidator {
         if (k++ == exprIdx) {
           buf.append(" ==>");
           child.render(rc);
+          tc.noMoreTokens();
           buf.append("<== ");
         } else {
           child.render(rc);

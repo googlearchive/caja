@@ -16,7 +16,6 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
@@ -25,7 +24,6 @@ import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMeta;
-import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Pipeline;
 
@@ -116,11 +114,7 @@ public final class OpenTemplateStageTest extends CajaTestCase {
 
     ParseTreeNode bare = stripBoilerPlate(
         jobs.getJobs().get(0).getRoot().cast(ParseTreeNode.class).node);
-    StringBuilder out = new StringBuilder();
-    TokenConsumer tc = bare.makeRenderer(out, null);
-    bare.render(new RenderContext(mc, tc));
-
-    assertEquals(golden, out.toString());
+    assertEquals(golden, render(bare));
   }
 
   private static ParseTreeNode stripBoilerPlate(ParseTreeNode node) {

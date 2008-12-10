@@ -90,4 +90,14 @@ enum TokenClassification {
     }
     return ch >= '0' && ch <= '9';
   }
+
+  static boolean isComment(String s) {
+    if (s.length() < 2 || s.charAt(0) != '/') { return false; }
+    switch (s.charAt(1)) {
+      case '/': case '*': return true;
+      default: return false;
+    }
+  }
+
+  static boolean isLineComment(String s) { return s.startsWith("//"); }
 }

@@ -478,6 +478,7 @@ public class ParserTest extends CajaTestCase {
     TokenConsumer tc = new JsPrettyPrinter(sb, null);
     RenderContext rc = new RenderContext(mc, true, true, tc);
     js(fromString(code)).children().get(0).render(rc);
+    tc.noMoreTokens();
     assertEquals(code, expectedRendering, sb.toString());
   }
 
@@ -496,6 +497,7 @@ public class ParserTest extends CajaTestCase {
     TokenConsumer tc = new JsPrettyPrinter(sb, null);
     RenderContext rc = new RenderContext(mc, asciiOnly, paranoid, tc);
     parseTree.render(rc);
+    tc.noMoreTokens();
     sb.append('\n');
 
     String golden = TestUtil.readResource(getClass(), goldenFile);
