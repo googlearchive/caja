@@ -408,15 +408,16 @@ var getImports = (function () {
                            [___.frozenFunc(newModule)]);
       } finally {
         var outcome = superHandler.getLastOutcome();
+        var outvalue = superHandler.getLastValue();
         var type = document.createElement('span');
         type.className = 'type';
-        type.appendChild(document.createTextNode(typeString(outcome[1])));
+        type.appendChild(document.createTextNode(typeString(outvalue)));
 
         var entry = document.createElement('div');
         entry.className = 'result';
         entry.appendChild(type);
-        entry.appendChild(document.createTextNode(repr(outcome[1])));
-        if (!outcome[0]) {
+        entry.appendChild(document.createTextNode(repr(outvalue)));
+        if (!(outcome && outcome[0])) {
           // TODO(erights): color something red
         }
         document.getElementById('eval-results' + uiSuffix)
@@ -471,6 +472,8 @@ var getImports = (function () {
               ? gadgetPublicApis[moduleName]
               : void 0;
         });
+    /** Provide an alert but one that is less obnoxious */
+    testImports.alert = cajita.log;
 
     testImports.newModuleHandler___ = 
       makeNewModuleHandler(testImports, uiSuffix);
