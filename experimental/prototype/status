@@ -25,6 +25,156 @@ dollar_test: 2 tests, 4 assertions, 0 failures, 0 errors
 
 dom_test: 92 tests, 303 assertions, 65 failures, 24 errors
 	 (92 tests, 837 assertions, 0 failures, 1 errors)
+         (92 tests, 325 assertions, 59 failures, 23 errors)
+
+    TODO(ihab): It turns out element.parentNode **is** available in
+        Domita after all => must review the below where I attributed
+        failure to a lack of parentNode to figure out what in the heck
+        was *really* going on!!
+
+    testGetElementsByClassName -- TODO(ihab).
+
+    testNewElementInsert -- The 'insert' mixin function added in
+        dom.js requires element.parentNode.
+
+    testElementWrap --
+        http://code.google.com/p/google-caja/issues/detail?id=814
+	The test also requires element.parentNode to be defined.
+
+    testElementWrapReturnsWrapper -- The 'up' mixin function added in
+        dom.js requires element.parentNode.
+
+    testElementUpdateWithScript -- Requires that <script>s are
+        actually executed in an element. See the 'update' mixin
+        defined in dom.js.
+
+    testElementReplace --
+        http://code.google.com/p/google-caja/issues/detail?id=775
+
+    testElementReplaceWithScript -- Union of requirements of
+        testElementReplace and testElementUpdateWithScript.
+
+    testElementReplaceWithToHTMLMethod --
+        http://code.google.com/p/google-caja/issues/detail?id=775
+
+    testElementClassNameMethod -- TODO(ihab)
+
+    testElementAncestors -- The 'ancestors' mixin in dom.js requires
+        element.parentNode.
+
+    testElementDescendants --
+        http://code.google.com/p/google-caja/issues/detail?id=814
+
+    testElementChildElements -- Same as testElementDescendants.
+
+    testElementPreviousSiblings -- Same as testElementDescendants.
+
+    testElementNextSiblings -- Same as testElementDescendants.
+
+    testElementSiblings -- Same as testElementDescendants.
+
+    testElement(Up,Down,Previous,Next) --
+        http://code.google.com/p/google-caja/issues/detail?id=814
+        Calling any of the functions 'element.(up,down.previous,next)'
+        with a selector expression, e.g., element.up('li'), throws.
+        TODO(ihab): Why??
+
+    testElementMakeClipping --
+        http://code.google.com/p/google-caja/issues/detail?id=773
+       TODO(ihab): Why the free 'element' variable in this test?
+
+    testElementExtend -- document.createElement() fails because we do
+        not whitelist the following tags:
+ 	applet iframe object param script style
+
+    testDescendantOf -- For some reason, document.body has not been
+        extended with the 'descendantOf' method. TODO(ihab): Why?
+        Also, $('impostor').descendantOf throws since there's no such
+        element. TODO(ihab): Does this work uncajoled, and how? Since
+        there's no element called 'impostor', it should return null
+        even un-cajoled, right?
+
+    testElementSetStyle -- Overriding 'setStyle' is not working
+        properly; MarkM is looking into it along with fixing:
+        http://code.google.com/p/google-caja/issues/detail?id=814
+
+    testElementSetStyleCamelized -- Blocked, see testElementSetStyle.
+
+    testElementSetOpacity -- Blocked, see testElementSetStyle.
+
+    testElementGetStyle -- Blocked, see testElementSetStyle.
+
+    testElementGetOpacity -- Blocked, see testElementSetStyle.
+
+    testElementGetOpacity -- Blocked, see testElementSetStyle.
+
+    testElementReadAttribute --
+        http://code.google.com/p/google-caja/issues/detail?id=904
+        http://code.google.com/p/google-caja/issues/detail?id=946
+        http://code.google.com/p/google-caja/issues/detail?id=947
+
+    testElementWriteAttribute --
+        http://code.google.com/p/google-caja/issues/detail?id=948
+        http://code.google.com/p/google-caja/issues/detail?id=949
+
+    testElementWriteAttributeWithBooleans -- document.createElement()
+        fails because we do not whitelist the following tags:
+	iframe
+
+    testNewElement --
+        http://code.google.com/p/google-caja/issues/detail?id=948
+        document.createElement() fails because we do not whitelist
+        several "dangerous" tags.
+
+    testElementGetHeight -- For some reason, the 'display:none' DIV
+        has zero height. TODO(ihab): Why?
+
+    testElementGetWidth -- See testElementGetHeight.
+
+    testElementGetDimensions --
+        See testElementGetHeight, except that the "-pos-rel" DIVs work
+        okay for some reason. TODO(ihab): omgwtf.
+        The 'dimensions-td', 'dimensions-tr' and 'dimensions-table'
+        sizes are coming back as zero also. TODO(ihab): Why?
+
+    testDOMAttributesHavePrecedenceOverExtendedElementMethods -- Not
+        sure what the expected result is. TODO(ihab).
+
+    testRemoveClassName -- In dom.js, the RegExp in removeClassName
+        does not work for cases where it is emptying the className
+        completely. Why? It sure seems reasonable enough. TODO(ihab):
+        omgwtf.
+
+    testToggleClassName -- See testRemoveClassName.
+
+    testElementScrollTo -- Domado rules (in Domita) prevent scrolling
+        without user event. When I override that logic, the call to
+        native window.scrollTo(x, y) still does not work. TODO(ihab):
+        Need a test case, bug report, further investigation.
+
+    testSpecificCustomElementMethods -- The pancakes() ByTag method is
+        attached to DIVs even though it is not supposed to (see
+        fixtures/dom.js).
+
+    testAbsolutize -- Domita does not whitelit clientWidth,
+        clientHeight properties on Elements.
+
+    testRelativize -- Domita handler for style properties, as in
+        ___.useGetHandler(TameStyle.prototype, propertyName, ...), is
+        getting registered on the prototype not the object itself.
+        This is problematic due to known Valija bug. TODO(ihab): Link
+        to and/or file relevant bugs.
+
+    testViewportDimensions -- Domita window has no resizeTo, resizeBy
+        methods. TODO(ihab): File bug. Also, the test claims it will
+        not pass unless JS can resize the window.
+
+    testElementToViewportDimensionsDoesNotAffectDocumentProperties --
+        Domita document does not have a 'viewport' property.
+        TODO(ihab): File bug.
+
+    testViewportScrollOffsets -- See testViewportDimensions. Also, the
+        test claims it will not pass unless JS can resize the window.
 
 element_mixins_test: 4 tests, 12 assertions, 0 failures, 0 errors
 		    (4 tests, 12 assertions, 0 failures, 0 errors)

@@ -33,6 +33,17 @@
  *   will not appear to uncajoled code as DOM nodes do, since they are
  *   implemented using cajita property handlers.
  *
+ * TODO(ihab.awad): Our implementation of getAttribute (and friends)
+ * is such that standard DOM attributes which we disallow for security
+ * reasons (like 'form:enctype') are placed in the "virtual"
+ * attributes map (this.node___.attributes___). They appear to be
+ * settable and gettable, but their values are ignored and do not have
+ * the expected semantics per the DOM API. This is because we do not
+ * have a column in html4-defs.js stating that an attribute is valid
+ * but explicitly blacklisted. Alternatives would be to always throw
+ * upon access to these attributes; to make them always appear to be
+ * null; etc. Revisit this decision if needed.
+ *
  * @author mikesamuel@gmail.com
  * @requires console, document, window
  * @requires clearInterval, clearTimeout, setInterval, setTimeout
@@ -193,7 +204,7 @@ domitaModules.TameXMLHttpRequest = function(
       // TODO(ihab.awad): send()-ing an empty string because send() with no
       // args does not work on FF3, others?
       this.xhr___.send('');
-    } else if (opt_data instanceof String) {
+    } else if (typeof opt_data == 'string') {
       this.xhr___.send(opt_data);
       return;
     } else /* if XML document */ {
@@ -794,7 +805,7 @@ attachDocumentStub = (function () {
       // "unordered set of unique space-separated tokens representing classes"
       if (typeof rootNode.getElementsByClassName === 'function') {
         return tameNodeList(
-            rootNode.getElementsByClassName(classes.join(' '), editable));
+            rootNode.getElementsByClassName(classes.join(' ')), editable);
       } else {
         // Add spaces around each class so that we can use indexOf later to find
         // a match.
@@ -925,7 +936,7 @@ attachDocumentStub = (function () {
         'getNodeType', 'getNodeValue', 'getNodeName',
         'appendChild', 'insertBefore', 'removeChild', 'replaceChild',
         'getFirstChild', 'getLastChild', 'getNextSibling', 'getPreviousSibling',
-        'getElementsByTagName',
+        'getElementsByClassName', 'getElementsByTagName',
         'getOwnerDocument',
         'hasChildNodes'
         ];
@@ -1329,6 +1340,19 @@ attachDocumentStub = (function () {
     };
     ___.ctor(TameCommentNode, TameBackedNode, 'TameCommentNode');
 
+    function getAttributeType(tagName, attribName){
+      var attribKey;
+      if ((attribKey = tagName + ':' + attribName,
+          html4.ATTRIBS.hasOwnProperty(attribKey))) {
+        return html4.ATTRIBS[attribKey];
+      }
+      if ((attribKey = '*:' + attribName,
+          html4.ATTRIBS.hasOwnProperty(attribKey))) {
+        return html4.ATTRIBS[attribKey];
+      }
+      return undefined;
+    }
+
     function TameElement(node, editable) {
       assert(node.nodeType === 1);
       TameBackedNode.call(this, node, editable);
@@ -1355,17 +1379,13 @@ attachDocumentStub = (function () {
     TameElement.prototype.getAttribute = function (attribName) {
       attribName = String(attribName).toLowerCase();
       var tagName = this.node___.tagName.toLowerCase();
-      var attribKey;
-      var atype;
-      if ((attribKey = tagName + ':' + attribName,
-          html4.ATTRIBS.hasOwnProperty(attribKey))
-          || (attribKey = '*:' + attribName,
-              html4.ATTRIBS.hasOwnProperty(attribKey))) {
-        atype = html4.ATTRIBS[attribKey];
-      } else {
-        return String(
-            (this.node___.attributes___ &&
-            this.node___.attributes___[attribName]) || '');
+      var atype = getAttributeType(tagName, attribName);
+      if (atype === undefined) {
+        // Unrecognized attribute; use virtual map
+        if (this.node___.attributes___) {
+          return this.node___.attributes___[attribName] || null;
+        }
+        return null;
       }
       var value = this.node___.getAttribute(attribName);
       if ('string' !== typeof value) { return value; }
@@ -1373,60 +1393,62 @@ attachDocumentStub = (function () {
         case html4.atype.ID:
         case html4.atype.IDREF:
         case html4.atype.IDREFS:
-          if (!value) { return ''; }
+          if (!value) { return null; }
           var n = idSuffix.length;
           var len = value.length;
           var end = len - n;
           if (end > 0 && idSuffix === value.substring(end, len)) {
             return value.substring(0, end);
           }
-          return '';
+          return null;
         default:
           return value;
       }
     };
-    TameElement.prototype.hasAttribute = function (name) {
-      name = String(name).toLowerCase();
-      var type = html4.ATTRIBS[name];
-      if (type === undefined || !html4.ATTRIBS.hasOwnProperty(name)) {
+    TameElement.prototype.hasAttribute = function (attribName) {
+      attribName = String(attribName).toLowerCase();
+      var tagName = this.node___.tagName.toLowerCase();
+      var atype = getAttributeType(tagName, attribName);
+      if (atype === undefined) {
+        // Unrecognized attribute; use virtual map
         return !!(
             this.node___.attributes___ &&
-            ___.hasOwnProp(this.node___.attributes___, name));
+            ___.hasOwnProp(this.node___.attributes___, attribName));
+      } else {
+        return this.node___.hasAttribute(attribName);
       }
-      return this.node___.hasAttribute(name);
     };
     TameElement.prototype.setAttribute = function (attribName, value) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       attribName = String(attribName).toLowerCase();
       var tagName = this.node___.tagName.toLowerCase();
-      var attribKey;
-      if ((attribKey = tagName + ':' + attribName,
-           html4.ATTRIBS.hasOwnProperty(attribKey))
-          || (attribKey = '*:' + attribName,
-              html4.ATTRIBS.hasOwnProperty(attribKey))) {
-        var atype = html4.ATTRIBS[attribKey];
+      var atype = getAttributeType(tagName, attribName);
+      if (atype === undefined) {
+        // Unrecognized attribute; use virtual map
+        if (!this.node___.attributes___) { this.node___.attributes___ = {}; }
+        this.node___.attributes___[attribName] = String(value);
+      } else {
         var sanitizedValue = rewriteAttribute(
             tagName, attribName, atype, value);
         if (sanitizedValue !== null) {
           bridal.setAttribute(this.node___, attribName, sanitizedValue);
         }
-      } else {
-        if (!this.node___.attributes___) { this.node___.attributes___ = {}; }
-        this.node___.attributes___[attribName] = String(value);
       }
       return value;
     };
-    TameElement.prototype.removeAttribute = function (name) {
+    TameElement.prototype.removeAttribute = function (attribName) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
-      name = String(name).toLowerCase();
-      var type = html4.ATTRIBS[name];
-      if (type === void 0 || !html4.ATTRIBS.hasOwnProperty(name)) {
-        // Can't remove an attribute you can't read
+      attribName = String(attribName).toLowerCase();
+      var tagName = this.node___.tagName.toLowerCase();
+      var atype = getAttributeType(tagName, attribName);
+      if (atype === undefined) {
+        // Unrecognized attribute; use virtual map
         if (this.node___.attributes___) {
-          delete this.node___.attributes___[name];
+          delete this.node___.attributes___[attribName];
         }
+      } else {
+        this.node___.removeAttribute(attribName);
       }
-      this.node___.removeAttribute(name);
     };
     TameElement.prototype.getClassName = function () {
       return this.getAttribute('class') || '';

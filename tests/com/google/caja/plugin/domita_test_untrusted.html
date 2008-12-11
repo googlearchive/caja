@@ -44,8 +44,25 @@
   </table>
 </div>
 
+<div class="testcontainer" id="test-attrs-declared-in-markup"
+    ><form title="test title"></form>
+  <b>Test attributes in markup</b>
+</div>
+
+<div class="testcontainer" id="test-attrs-not-in-markup"
+    ><form></form>
+  <b>Test attributes not in markup</b>
+</div>
+
+<div class="testcontainer" id="test-attrs-nonstandard-permitted"
+    ><form></form>
+  <b>Test attributes nonstandard permitted</b>
+</div>
+
 <p class="testcontainer" id="test-property-attribute-interaction">
-  <span id="test-property-attribute-interaction-label">Ignore me</span><br>
+  <span id="test-property-attribute-interaction-label">
+    Test property attribute interaction
+  </span><br>
 </p>
 
 <p class="testcontainer" id="test-editability-in-node-lists">
@@ -460,6 +477,75 @@ jsunitRegister('testCaseInsensitiveAttrs',
   tableNode.addEventListener('click', function(event) {
     pass('test-case-insensitive-attrs');
   });
+});
+
+jsunitRegister('testAttrsDeclaredInMarkup',
+               function testAttrsDeclaredInMarkup() {
+  var d =
+      document.getElementById('test-attrs-declared-in-markup').firstChild;
+    
+  assertTrue(d.hasAttribute('title'));
+  assertEquals('test title', d.getAttribute('title'));
+  d.setAttribute('title', 'another title');
+  assertTrue(d.hasAttribute('title'));
+  assertEquals('another title', d.getAttribute('title'));
+  d.removeAttribute('title');
+  assertFalse(d.hasAttribute('title'));
+  assertEquals(null, d.getAttribute('title'));
+  // Removing twice should be harmless
+  d.removeAttribute('title');
+  assertFalse(d.hasAttribute('title'));
+  assertEquals(null, d.getAttribute('title'));
+
+  pass('test-attrs-declared-in-markup');
+});
+
+jsunitRegister('testAttrsNotInMarkup',
+               function testAttrsNotInMarkup() {
+  var d =
+      document.getElementById('test-attrs-not-in-markup').firstChild;
+
+  assertFalse(d.hasAttribute('title'));
+  assertEquals(null, d.getAttribute('title'));
+  d.setAttribute('title', 'another title');
+  assertTrue(d.hasAttribute('title'));
+  assertEquals('another title', d.getAttribute('title'));
+  d.removeAttribute('title');
+  assertFalse(d.hasAttribute('title'));
+  assertEquals(null, d.getAttribute('title'));
+
+  // Removing twice should be harmless
+  d.removeAttribute('title');
+  assertFalse(d.hasAttribute('title'));
+  assertEquals(null, d.getAttribute('title'));
+
+  pass('test-attrs-not-in-markup');
+});
+
+jsunitRegister('testAttrsNonstandardPermitted',
+               function testAttrsNonstandardPermitted() {
+  var d =
+      document.getElementById('test-attrs-nonstandard-permitted').firstChild;
+
+  assertFalse(d.hasAttribute('flavor'));
+  assertEquals(null, d.getAttribute('flavor'));
+  d.setAttribute('flavor', 'chocolate');
+  assertTrue(d.hasAttribute('flavor'));
+  assertEquals('chocolate', d.getAttribute('flavor'));
+  d.removeAttribute('flavor');
+  assertFalse(d.hasAttribute('flavor'));
+  assertEquals(null, d.getAttribute('flavor'));
+
+  // Removing twice should be harmless
+  d.removeAttribute('flavor');
+  assertFalse(d.hasAttribute('flavor'));
+  assertEquals(null, d.getAttribute('flavor'));
+
+  // Should be case insensitive
+  d.setAttribute('flavor', 'peach');
+  assertEquals('peach', d.getAttribute('FLAvor'));
+
+  pass('test-attrs-nonstandard-permitted');
 });
 
 // TODO(metaweta): This test should be replaced by ones for the proper
