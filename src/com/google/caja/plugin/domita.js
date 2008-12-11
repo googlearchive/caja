@@ -2325,6 +2325,42 @@ attachDocumentStub = (function () {
     }
     TameStyle.prototype.toString = function () { return '[Fake Style]'; };
 
+    /**
+     * Set of properties accessible on computed style.
+     * This list is a conservative one compiled by looking at what prototype.js
+     * needs to be able to do visibility, containment, and layout calculations.
+     * If expanded, it should not allow an attacker to probe the user's history
+     * as described at https://bugzilla.mozilla.org/show_bug.cgi?id=147777
+     */
+    var COMPUTED_STYLE_WHITELIST = {
+      'display': true,
+      'filter': true,
+      'float': true,
+      'height': true,
+      'opacity': true,
+      'overflow': true,
+      'position': true,
+      'visibility': true,
+      'width': true
+    };
+    function TameComputedStyle(style) {
+      this.style___ = style;
+    }
+    cajita.forOwnKeys(
+        COMPUTED_STYLE_WHITELIST,
+        ___.func(
+            function (propertyName, _) {
+              ___.useGetHandler(
+                  TameComputedStyle.prototype, propertyName,
+                  function () {
+                    if (!this.style___) { return void 0; }
+                    return String(this.style___[propertyName] || '');
+                  });
+            }));
+    TameComputedStyle.prototype.toString = function () {
+      return '[Fake Computed Style]';
+    };
+
     nodeClasses.XMLHttpRequest = domitaModules.TameXMLHttpRequest(
         domitaModules.XMLHttpRequestCtor(
             window.XMLHttpRequest,
@@ -2432,6 +2468,17 @@ attachDocumentStub = (function () {
       userAgent: 'Caja/1.0'
       });
 
+    /**
+     * Set of allowed pseudo elements as described at
+     * http://www.w3.org/TR/CSS2/selector.html#q20
+     */
+    var PSEUDO_ELEMENT_WHITELIST = {
+        // after and before disallowed since they can leak information about
+        // arbitrary ancestor nodes.
+        'first-letter': true,
+        'first-line': true
+    };
+
     // See http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#window for the full API.
     // TODO(mikesamuel): This implements only the parts needed by prototype.
     // The rest can be added on an as-needed basis as long as DOMado rules are
@@ -2466,6 +2513,34 @@ attachDocumentStub = (function () {
       dispatchEvent: ___.frozenFunc(
           function (evt) {
             // TODO(ihab.awad): Implement
+          }),
+      /** A partial implementation of getComputedStyle. */
+      getComputedStyle: ___.frozenFunc(
+          // Pseudo elements are suffixes like :first-line which constrain to
+          // a portion of the element's content as defined at
+          // http://www.w3.org/TR/CSS2/selector.html#q20
+          function (tameElement, pseudoElement) {
+            cajita.guard(tameNodeTrademark, tameElement);
+            pseudoElement = (pseudoElement === null || pseudoElement === void 0)
+                ? void 0 : String(pseudoElement).toLowerCase();
+            if (pseudoElement !== void 0
+                && !PSEUDO_ELEMENT_WHITELIST.hasOwnProperty(pseudoElement)) {
+              throw new Error('Bad pseudo class ' + pseudoElement);
+            }
+            // No need to check editable since computed styles are readonly.
+
+            var rawNode = tameElement.node___;
+            if (rawNode.currentStyle && pseudoElement === void 0) {
+              return new TameComputedStyle(rawNode.currentStyle);              
+            } else if (window.getComputedStyle) {
+              var rawStyleNode = window.getComputedStyle(
+                  tameElement.node___, pseudoElement);
+              return new TameComputedStyle(rawStyleNode);
+            } else {
+              throw new Error(
+                  'Computed style not available for pseudo element '
+                  + pseudoElement);
+            }
           })
 
       // NOT PROVIDED

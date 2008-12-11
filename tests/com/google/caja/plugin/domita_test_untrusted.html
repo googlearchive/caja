@@ -17,6 +17,7 @@
 <style type="text/css">
   .testcontainer { background: yellow; border: 2px solid yellow }
   .testcontainer.passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
+  .invisible { display: none }
 </style>
 
 <p class="testcontainer" id="test-timeout-and-interval">
@@ -52,7 +53,8 @@
 </p>
 
 <p class="testcontainer" id="test-nonexistent-style-property">
-  <span id="test-nonexistent-style-property-label">Hide me</span><br>
+  <span id="test-nonexistent-style-property-label">I ain't got no style</span>
+  <br>
 </p>
 
 <div id="test-get-element-by-id" class="testcontainer"></div>
@@ -149,6 +151,13 @@
 <div class="testcontainer" id="test-xhr-sync">XHR sync</div>
 
 <div class="testcontainer" id="test-xhr-async">XHR async</div>
+
+<div class="testcontainer" id="test-computed-style">
+  <div id="test-computed-style-block">Block</div>
+  <span id="test-computed-style-inline">Inline</span>
+  <div id="test-computed-style-fakie" style="display: inline">???</div>
+  <div id="test-computed-style-invisible" class="invisible">Not here</div>
+</div>
 
 <p class="testcontainer" id="test-document-element">Test Document Element</p>
 
@@ -1075,6 +1084,33 @@ jsunitRegister('testXhrAsync',
     asyncFlag = event.target.readyState;
   };
   xhr.send();
+});
+
+jsunitRegister('testComputedStyle',
+               function testComputedStyle() {
+  var block = document.getElementById('test-computed-style-block');
+  var inline = document.getElementById('test-computed-style-inline');
+  var fakie = document.getElementById('test-computed-style-fakie');
+  var invisible = document.getElementById('test-computed-style-invisible');
+  assertEquals('block', window.getComputedStyle(block, null).display);
+  assertEquals('inline', window.getComputedStyle(inline, null).display);
+  assertEquals('inline', window.getComputedStyle(fakie, null).display);
+  var NO_RESULT = {};
+  var firstLineDisplay = NO_RESULT;
+  try {
+    firstLineDisplay = window.getComputedStyle(fakie, 'first-line').display;
+  } catch (ex) {
+    // Not supported on all browsers
+  }
+  if (firstLineDisplay !== NO_RESULT) {
+    assertEquals(firstLineDisplay, 'inline');
+  }
+  assertEquals('none', window.getComputedStyle(invisible, null).display);
+  // Make sure we don't expose information that we haven't yet sorted out how
+  // to safely expose.
+  assertEquals(undefined, window.getComputedStyle(block, null).color);
+
+  pass('test-computed-style');
 });
 
 jsunitRegister('testDocumentElement',

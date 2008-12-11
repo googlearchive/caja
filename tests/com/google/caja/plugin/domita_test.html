@@ -148,7 +148,7 @@
                   return letter.toUpperCase();
                 })];
           } else if (window.getComputedStyle) {
-            return document.defaultView.getComputedStyle(node, null)
+            return window.getComputedStyle(node, null)
                 .getPropertyValue(styleProp);
           }
         })
