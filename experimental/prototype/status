@@ -30,17 +30,8 @@ element_mixins_test: 4 tests, 12 assertions, 0 failures, 0 errors
 		    (4 tests, 12 assertions, 0 failures, 0 errors)
 
 
-enumerable_test: 25 tests, 83 assertions, 0 failures, 1 errors
-		(25 tests, 83 assertions, 0 failures, 1 errors)
-
-  testGrep
-
-	Fails because it uses selector.js:Selector.initialize(), which
-	uses eval() because neither XPath (document.evaluate()) nor
-	Selectors API (document.querySelector()) are available. It may
-	be possible to make the default scheme
-	(selector.js:Select.compileMatcher()) work without eval(),
-	too. Note that this fails uncajoled, too.
+enumerable_test: 25 tests, 84 assertions, 0 failures, 0 errors
+		(25 tests, 84 assertions, 0 failures, 0 errors)
 
 
 event_test: 15 tests, 14 assertions, 1 failures, 11 errors

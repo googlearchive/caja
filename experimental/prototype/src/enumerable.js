@@ -78,7 +78,7 @@ var Enumerable = {
       filter = new RegExp(filter);
       
     this.each(function(value, index) {
-      if (filter.test(value))
+      if (filter.match(value))
         results.push(iterator.call(context, value, index));
     });
     return results;
