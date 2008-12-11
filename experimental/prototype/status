@@ -1,7 +1,5 @@
-(with temporary fix for issue 911)
-
-
-ajax_test: 18 tests, 15 assertions, 11 failures, 8 errors
+ajax_test: 18 tests, 17 assertions, 11 failures, 7 errors
+	  (18 tests, 18 assertions, 10 failures, 7 errors)
 
 	Heavily reliant on as yet unimplemented TameXMLHTTPRequest().
         To run this test properly, we will need the test to run from
@@ -9,33 +7,31 @@ ajax_test: 18 tests, 15 assertions, 11 failures, 8 errors
         cannot be done for cajoled tests. Tobie is going to make that
         possible asap.
 
+	Without the HTTP server, the only difference is
+	testIsSameOriginMethod.
+
+
 array_test: 20 tests, 98 assertions, 0 failures, 0 errors
+	   (20 tests, 98 assertions, 0 failures, 0 errors)
 
 
-base_test: 35 tests, 209 assertions, 0 failures, 1 errors
-
-  testBindAsEventListener
-
-	http://code.google.com/p/google-caja/issues/detail?id=908
+base_test: 35 tests, 249 assertions, 0 failures, 0 errors
+	  (35 tests, 249 assertions, 0 failures, 0 errors)
 
 
 dollar_test: 2 tests, 4 assertions, 0 failures, 0 errors
+	    (2 tests, 4 assertions, 0 failures, 0 errors)
 
 
-dom_test: 92 tests, 285 assertions, 63 failures, 27 errors
+dom_test: 92 tests, 303 assertions, 65 failures, 24 errors
+	 (92 tests, 837 assertions, 0 failures, 1 errors)
 
-        Increase seems to be caused by shadowing and styles not mixing
-        well.
-
-
-element_mixins_test: 4 tests, 11 assertions, 0 failures, 1 errors
-
-  testCollections
-
-	Fails. Reason not yet determined.
+element_mixins_test: 4 tests, 12 assertions, 0 failures, 0 errors
+		    (4 tests, 12 assertions, 0 failures, 0 errors)
 
 
 enumerable_test: 25 tests, 83 assertions, 0 failures, 1 errors
+		(25 tests, 83 assertions, 0 failures, 1 errors)
 
   testGrep
 
@@ -44,39 +40,66 @@ enumerable_test: 25 tests, 83 assertions, 0 failures, 1 errors
 	Selectors API (document.querySelector()) are available. It may
 	be possible to make the default scheme
 	(selector.js:Select.compileMatcher()) work without eval(),
-	too.
+	too. Note that this fails uncajoled, too.
 
 
-event_test: 15 tests, 13 assertions, 1 failures, 12 errors
+event_test: 15 tests, 14 assertions, 1 failures, 11 errors
+	   (15 tests, 48 assertions, 0 failures, 1 errors)
 
 
 form_test: 15 tests, 0 assertions, 0 failures, 15 errors
+	  (15 tests, 109 assertions, 1 failures, 0 errors)
 
 	 Every test uses eval.
 
 
 grep_test: 1 tests, 1 assertions, 0 failures, 0 errors
+	  (1 tests, 1 assertions, 0 failures, 0 errors)
 
 
 hash_test: 17 tests, 89 assertions, 3 failures, 0 errors
+	  (17 tests, 92 assertions, 0 failures, 0 errors)
+
+  testGet
+
+	Fails because $H({}}.get('toString') is expected to be
+	undefined, but instead is bound to a function.
+
+  testPreventIterationOverShadowedProperties
+
+	Fails twice because the object's constructor appears in
+	Hash(obj).toQueryString().
 
 
 number_test: 5 tests, 22 assertions, 0 failures, 0 errors
+	    (5 tests, 22 assertions, 0 failures, 0 errors)
 
 
-position_test: 2 tests, 0 assertions, 0 failures, 2 errors
+position_test: 2 tests, 14 assertions, 2 failures, 0 errors
+	      (2 tests, 14 assertions, 2 failures, 0 errors)
 
+  testPrepare
+
+	Fails because scrollTo(a, b) doesn't result in Position.deltaX
+	== a and Position.deltaY == b, instead they remain 0.
 
 range_test: 6 tests, 21 assertions, 0 failures, 0 errors
+	   (6 tests, 21 assertions, 0 failures, 0 errors)
 
 
-selector_test: 40 tests, 164 assertions, 13 failures, 2 errors
+selector_test: 40 tests, 162 assertions, 18 failures, 1 errors
+	      (40 tests, 185 assertions, 5 failures, 0 errors)
+
+  (after changing href="#" to href="" three times)
 
 
 string_test: 40 tests, 211 assertions, 0 failures, 2 errors
+	    (40 tests, 232 assertions, 0 failures, 0 errors)
 
 
 truth_test: 1 tests, 1 assertions, 0 failures, 0 errors
+	   (1 tests, 1 assertions, 0 failures, 0 errors)
 
 
-unittest_test: 12 tests, 71 assertions, 0 failures, 6 errors
+unittest_test: 12 tests, 73 assertions, 1 failures, 4 errors
+	      (12 tests, 86 assertions, 0 failures, 0 errors)
