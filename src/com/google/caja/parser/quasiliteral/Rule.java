@@ -362,7 +362,7 @@ public abstract class Rule implements MessagePart {
   /**
    * <tt>substSingleMap(k, v)</tt> should be equivalent to<pre>
    * QuasiBuilder.substV(
-   *     "({@key: @val})",
+   *     "({&#64;key: @val})",
    *     "key", k,
    *     "val", v)</pre>
    * but currently isn't.
@@ -382,7 +382,7 @@ public abstract class Rule implements MessagePart {
 
   /**
    * <tt>matchSingleMap(node) != null</tt> should be equivalent to<pre>
-   * QuasiBuilder.match("({@key: @val})", node)</pre>
+   * QuasiBuilder.match("({&#64;key: @val})", node)</pre>
    * but currently isn't.
    * <p>
    * TODO(erights): figure out why not, and fix if appropriate.

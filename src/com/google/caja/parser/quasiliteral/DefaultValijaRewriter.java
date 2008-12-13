@@ -1386,7 +1386,7 @@ public class DefaultValijaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = matchSingleMap(node);
         if (bindings != null) {
           StringLiteral key = (StringLiteral) bindings.get("key");
-          ParseTreeNode val = (ParseTreeNode) bindings.get("val");
+          ParseTreeNode val = bindings.get("val");
           return substSingleMap(
               key,
               expand(nymize(val, key.getUnquotedValue(), "lit"), scope, mq));

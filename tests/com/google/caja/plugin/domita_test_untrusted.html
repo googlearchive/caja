@@ -176,6 +176,33 @@
   <div id="test-computed-style-invisible" class="invisible">Not here</div>
 </div>
 
+<div class="testcontainer" id="test-clone-node-structure">
+  <p>I have <b title="I have attributes">content</b></p>
+</div>
+
+<div class="testcontainer" id="test-clone-node-listeners">
+  <input id="test-clone-node-clickable" type="checkbox">
+</div>
+
+<div class="testcontainer" id="test-clone-node-defaults">
+  <form>
+    I should reset to the proper state.
+    <input value="default" name="text">
+    <input type="checkbox" checked name="checkbox_checked" value="on">
+    <input type="checkbox" name="checkbox_unchecked" value="on">
+    <input type="radio" name="radio" value="A">
+    <input type="radio" name="radio" checked value="B">
+    <select name="selectlist">
+      <option selected value="1">1</option>
+      <option value="2">2</option>
+    </select>
+  </form>
+</div>
+
+<p class="testcontainer" id="test-clone-node-custom-attrs">
+  I will have a custom attribute
+</p>
+
 <p class="testcontainer" id="test-document-element">Test Document Element</p>
 
 <p class="testcontainer" id="test-document-body-appendChild"
@@ -257,11 +284,21 @@ function assertDomTree(skeleton, node, opt_stack) {
             break;
           case 'attributes':
             var attrs = node.attributes;
-            assertEquals(msg + ' #attrs', v.length, attrs.length);
+            var specified = [];
+            var names = [];
+            for (var i = 0, n = attrs.length; i < n; ++i) {
+              var attr = attrs[i];
+              if (attr.specified) {
+                specified.push(attr);
+                names.push(attr.name);
+              }
+            }
+            assertEquals(
+                msg + ' #attrs (' + names + ')', v.length, specified.length);
             for (var i = 0, n = v.length; i < n; ++i) {
               assertDomTree(
-                  v[i], attrs[i],
-                  stack + '@(#' + i + ':' + attrs[i].nodeName + ')');
+                  v[i], specified[i],
+                  stack + '@(#' + i + ':' + specified[i].nodeName + ')');
             }
             break;
           case 'children':
@@ -483,7 +520,7 @@ jsunitRegister('testAttrsDeclaredInMarkup',
                function testAttrsDeclaredInMarkup() {
   var d =
       document.getElementById('test-attrs-declared-in-markup').firstChild;
-    
+
   assertTrue(d.hasAttribute('title'));
   assertEquals('test title', d.getAttribute('title'));
   d.setAttribute('title', 'another title');
@@ -1056,17 +1093,17 @@ var autoclicky = {
 
 jsunitRegister('testEventHandlerAttributes',
                function testEventHandlerAttributes() {
-  assertFalse(autoclicky.clicked[0]);
+  assertFalse('initially unclicked', autoclicky.clicked[0]);
   directAccess.click(document.getElementById('autoclicker'));
-  assertTrue(autoclicky.clicked[0]);
+  assertTrue('zero clicked', autoclicky.clicked[0]);
 
   var setOnclickOnMe = document.getElementById('set-onclick-on-me');
-  assertFalse(autoclicky.clicked[1]);
+  assertFalse('one not clicked', autoclicky.clicked[1]);
   directAccess.click(setOnclickOnMe);
-  assertFalse(autoclicky.clicked[1]);
+  assertFalse('one still not clicked', autoclicky.clicked[1]);
   setOnclickOnMe.onclick = function () { autoclicky.click(1); };
   directAccess.click(setOnclickOnMe);
-  assertTrue(autoclicky.clicked[1]);
+  assertTrue('one clicked', autoclicky.clicked[1]);
 
   pass('test-event-handler-attributes');
 });
@@ -1197,6 +1234,213 @@ jsunitRegister('testComputedStyle',
   assertEquals(undefined, window.getComputedStyle(block, null).color);
 
   pass('test-computed-style');
+});
+
+jsunitRegister('testCloneNodeStructure', function testCloneNodeStructure() {
+  var p = document.getElementById('test-clone-node-structure')
+      .getElementsByTagName('P')[0];
+  assertDomTree(
+      {
+        nodeType: 1,
+        tagName: 'P',
+        attributes: [],
+        children: [ /* shallow clones contain attrs but not children. */ ]
+      },
+      p.cloneNode(false));
+  assertDomTree(
+      {
+        nodeType: 1,
+        tagName: 'P',
+        attributes: [],
+        children: [
+          {
+            nodeType: 3,
+            nodeValue: 'I have '
+          },
+          {
+            nodeType: 1,
+            nodeName: 'B',
+            attributes: [
+              {
+                nodeName: 'title',
+                nodeValue: 'I have attributes'
+              }
+            ],
+            children: [
+              {
+                nodeType: 3,
+                nodeValue: 'content'
+              }
+            ]
+          }
+        ]
+      },
+      p.cloneNode(true));
+  pass('test-clone-node-structure');
+});
+
+jsunitRegister('testCloneNodeListeners', function testCloneNodeListeners() {
+  var clicked = false;
+  function clickListener(event) {
+    clicked = true;
+  }
+
+  var original = document.getElementById('test-clone-node-clickable');
+
+  // Add an event to the input so we can test that event listeners are copied
+  // and that clone.removeEventListener modifies only clone.
+  original.addEventListener('click', clickListener);
+  directAccess.click(original);
+  assertTrue('initially clickable', clicked);
+  clicked = false;
+
+  var clone = original.cloneNode();
+  original.parentNode.insertBefore(clone, original.nextSibling);
+  // Check that listeners are not copied over.
+  directAccess.click(clone);
+  assertFalse('clone clickable', clicked);
+  clicked = false;
+
+  // Check that the original is still clickable.
+  directAccess.click(original);
+  assertTrue('original still clickable', clicked);
+  clicked = false;
+
+  pass('test-clone-node-listeners');
+});
+
+jsunitRegister('testCloneNodeDefaults', function testCloneNodeDefaults() {
+  function queryStringForForm(form, useDefaults) {
+    var parts = [];
+    var els = form.elements;
+    for (var j = 0, n = els.length; j < n; ++j) {
+      var el = els[j];
+      if (!el.name) { continue; }
+      var values = null;
+      switch (el.tagName) {
+        case 'INPUT':
+          switch (el.type.toUpperCase()) {
+            case 'CHECKBOX':
+            case 'RADIO':
+              values = (useDefaults ? el.defaultChecked : el.checked)
+                  ? [el.value] : null;
+              break;
+            default:
+              values = [useDefaults ? el.defaultValue : el.value];
+              break;
+          }
+          break;
+        case 'TEXTAREA':
+          values = [useDefaults ? el.defaultValue : el.value];
+          break;
+        case 'SELECT':
+          values = [];
+          for (var i = 0, opt; (opt = el.options[i]); ++i) {
+            if (useDefaults ? opt.defaultSelected : opt.selected) {
+              values.push(opt.value);
+            }
+          }
+          break;
+      }
+      if (values !== null) {
+        for (var i = 0; i < values.length; ++i) {
+          parts.push(encodeURIComponent(el.name) + '='
+                     + encodeURIComponent(values[i]));
+        }
+      }
+    }
+    return parts.join('&');
+  }
+
+  var form = document.getElementById('test-clone-node-defaults')
+      .getElementsByTagName('FORM')[0];
+  assertEquals(
+      'initial form state',
+      'text=default&checkbox_checked=on&radio=B&selectlist=1',
+      queryStringForForm(form));
+
+  // Change the values on the original
+  form.elements.text.value = 'changed';
+  form.elements.checkbox_checked.checked = false;
+  form.elements.checkbox_unchecked.checked = true;
+  form.elements[3].checked = true;
+  form.elements.selectlist.options[1].selected = true;
+  assertEquals(
+      'changed form state',
+      'text=changed&checkbox_unchecked=on&radio=A&selectlist=2',
+      queryStringForForm(form));
+
+  // Check the values in the clone
+  var clone = form.cloneNode(true);
+  // Add the clone to the DOM, or reset() below will have no effect on it
+  // on Firefox.  Heisenbug.
+  form.parentNode.insertBefore(clone, form);
+  // HACK(mikesamuel): IE6&7 fail to update the checked state for radio buttons,
+  // and IE 6 fails to updated the checked state for checkboxes until the form
+  // containing it is part of the DOM.
+  if (!','.split(new RegExp(',')).length) {
+    clone.elements[3].checked = true;
+    clone.elements.checkbox_unchecked.checked = true;
+    clone.elements.checkbox_checked.checked = false;
+  }
+  assertEquals(
+      'clone state',
+      'text=changed&checkbox_unchecked=on&radio=A&selectlist=2',
+      queryStringForForm(clone));
+  assertEquals(
+      'clone defaults',
+      'text=default&checkbox_checked=on&radio=B&selectlist=1',
+      queryStringForForm(clone, true));
+
+  // Reset both and check the values on each
+  clone.reset();
+  assertEquals(
+      'form state post clone reset',
+      'text=changed&checkbox_unchecked=on&radio=A&selectlist=2',
+      queryStringForForm(form));
+  assertEquals(
+      'clone state post reset',
+      'text=default&checkbox_checked=on&radio=B&selectlist=1',
+      queryStringForForm(clone));
+  form.reset();
+  assertEquals(
+      'clone state post form reset',
+      'text=default&checkbox_checked=on&radio=B&selectlist=1',
+      queryStringForForm(clone));
+  assertEquals(
+      'form state post reset',
+      'text=default&checkbox_checked=on&radio=B&selectlist=1',
+      queryStringForForm(form));
+
+  pass('test-clone-node-defaults');
+});
+
+jsunitRegister('testCloneNodeCustomAttrs', function testCloneNodeCustomAttrs() {
+  var node = document.getElementById('test-clone-node-custom-attrs');
+  node.setAttribute('bogus', 'foo');
+
+  var clone = node.cloneNode(true);
+  assertEquals('clone value', 'foo', clone.getAttribute('bogus'));
+  assertTrue('clone has attr', clone.hasAttribute('bogus'));
+  assertTrue('original has attr', node.hasAttribute('bogus'));
+
+  clone.setAttribute('bogus', 'bar');
+  assertEquals('clone changed', 'bar', clone.getAttribute('bogus'));
+  assertEquals('original unchanged', 'foo', node.getAttribute('bogus'));
+
+  clone.removeAttribute('bogus');
+  assertEquals('clone deleted', null, clone.getAttribute('bogus'));
+  assertFalse('deleted things do not exist', clone.hasAttribute('bogus'));
+  assertEquals('original not deleted', 'foo', node.getAttribute('bogus'));
+  assertTrue('original attr exists', node.hasAttribute('bogus'));
+
+  node.setAttribute('bogus', 'boo');
+  assertEquals('clone still deleted', null, clone.getAttribute('bogus'));
+  assertFalse('deleted things still do not exist', clone.hasAttribute('bogus'));
+  assertEquals('original changed', 'boo', node.getAttribute('bogus'));
+  assertTrue('original attr still exists', node.hasAttribute('bogus'));
+
+  pass('test-clone-node-custom-attrs');
 });
 
 jsunitRegister('testDocumentElement',

@@ -97,11 +97,36 @@ if ('undefined' === typeof console) {
       return resultsNode;
     }
 
+    function escapeAttrib(s) {
+      return s.replace(/&/g, '&amp;').replace(/\"/g, '&quot;')
+          .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    var htmlBuf = null;
     function emitElement(elName, text, className) {
-      var el = document.createElement(elName);
-      el.appendChild(document.createTextNode(text));
-      if (className) { el.className = className; }
-      getResultsNode().appendChild(el);
+      if (typeof setTimeout !== 'undefined') {
+        if (!htmlBuf) {
+          htmlBuf = [];
+          setTimeout(
+              function () {
+                var div = document.createElement('DIV');
+                div.innerHTML = htmlBuf.join('');
+                getResultsNode().appendChild(div);
+                htmlBuf = null;
+              },
+              0);
+        }
+        htmlBuf.push(
+            '<' + elName
+            + (className ? ' class="' + escapeAttrib(className) + '">' : '>')
+            + escapeAttrib(text)
+            + '</' + elName + '>');
+      } else {
+        var el = document.createElement(elName);
+        el.appendChild(document.createTextNode(text));
+        if (className) { el.className = className; }
+        getResultsNode().appendChild(el);
+      }
     }
 
     function toMessage(args) {
