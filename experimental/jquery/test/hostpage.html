@@ -1,4 +1,11 @@
 <html>
+<!-- 
+  1. Cajole your gadget and put it on your server.
+  2. Put this file in the same directory as your cajoled gadget.
+  3. Put the stuff from ant-www/testbed in a subdirectory called "caja".
+  4. Change the filename in the last script block to point at your cajoled gadget.
+  5. Point your broswer at this page 
+-->
 <head>
        <script type="text/javascript" src="caja/cajita.js"></script>
        <script type="text/javascript" src="caja/log-to-console.js"></script>
@@ -16,34 +23,39 @@
        <script type="text/javascript" src="caja/valija.co.js"></script>
 </head>
 <body>
-  <!-- applet code="com.google.caja.opensocial.applet.CajaApplet" name="cajoler"
+  <applet code="com.google.caja.opensocial.applet.CajaApplet" name="cajoler"
        archive="testbed.jar,htmlparser.jar,json_simple.jar"
        codebase="caja" height="1" width="1" scriptable="true" MAYSCRIPT>
-  </applet -->
-  <div id="jq"></div>
+  </applet>
+  <div id="caja" class="caja"></div>
   <script>
     (function(){
       var imports = ___.copy(___.sharedImports);
       imports.outers = imports;
       imports.$v = valijaMaker.CALL___(imports);
-      var htmlContainer = document.getElementById("jq");
+      var htmlContainer = document.getElementById("caja");
       imports.htmlEmitter___ = new HtmlEmitter(htmlContainer);
       imports.getCssContainer___ = function () {
         return htmlContainer;
       };
       attachDocumentStub(
-          "-jq",
+          "-caja",
           {rewrite: function(uri, mimetype) { return uri; }},
-          imports);
-      var getCajoler = function() { return document.applets.cajoler; }
-      /* imports.eval = ___.simpleFunc(function(text) {
+          imports,
+          document.getElementById("caja"));
+      var getCajoler = function() { return document.applets.cajoler; };
+      imports.escape = ___.func(function(x) { return x.replace("<","&lt;","g"); });
+      imports.alert = ___.func(function(x) { alert(x);});
+      imports.eval = ___.func(function(text) {
         var result = eval(String(getCajoler().cajole(
             "<script>"+text+"<\/script>", 
             "EMBEDDABLE,VALIJA_MODE")))[0];
         var scriptStart = result.indexOf("{"), scriptEnd = result.lastIndexOf("}");
         var script = result.slice(scriptStart, scriptEnd+1);
         return eval(script);
-      }); */
+      });
+
+
       imports.module = function(x) { alert(x); };
       ___.getNewModuleHandler().setImports(imports);
     })();
