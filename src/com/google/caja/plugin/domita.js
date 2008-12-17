@@ -792,7 +792,7 @@ attachDocumentStub = (function () {
       var classes = className.match(/[^\t\n\f\r ]+/g);
 
       // Filter out classnames in the restricted namespace.
-      for (var i = classes.length; --i >= 0;) {
+      for (var i = classes ? classes.length : 0; --i >= 0;) {
         var classi = classes[i];
         if (illegalSuffix.test(classi) || !isXmlNmTokens(classi)) {
           classes[i] = classes[nClasses - 1];
@@ -800,7 +800,7 @@ attachDocumentStub = (function () {
         }
       }
 
-      if (classes.length === 0) {
+      if (!classes || classes.length === 0) {
         // "If there are no tokens specified in the argument, then the method
         //  must return an empty NodeList" [instead of all elements]
         // This means that
