@@ -574,14 +574,27 @@ Test.Unit.Testcase = Class.create(Test.Unit.Assertions, {
   pass: function() {
     this.assertions++;
   },
-  
+
   fail: function(message) {
+    if ('undefined' !== typeof console) {
+      console.error(message);
+      console.trace();
+    }
     this.failures++;
     var line = "";
     try {
       throw new Error("stack");
-    } catch(e){
-      line = (/\.html:(\d+)/.exec(e.stack || '') || ['',''])[1];
+    } catch (e){
+      var stack = e.stack;
+      if (stack && typeof callStackUnsealer !== 'undefined') {
+        stack = callStackUnsealer(stack);
+      }
+      if (stack && 'undefined' !== typeof console) {
+        console.error(
+            // Simplify the stack by taking the basename of absolute file URLs.
+            stack.replace(/\@[/.\w-:]+\/([.\w-]+:\d+(\s|$))/g, '@$1'));
+      }
+      line = (/\.html:(\d+)/.exec(stack || '') || ['',''])[1];
     }
     this.messages.push("Failure: " + message + (line ? " Line #" + line : ""));
   },

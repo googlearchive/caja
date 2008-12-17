@@ -75,6 +75,7 @@
           htmlRoot);
       imports.htmlEmitter___ = new HtmlEmitter(htmlRoot);
       imports.$v = valijaMaker.CALL___(imports);
+      imports.callStackUnsealer = ___.func(___.callStackUnsealer);
       ___.grantRead(imports, '$v');
       ___.getNewModuleHandler().setImports(imports);
     })();

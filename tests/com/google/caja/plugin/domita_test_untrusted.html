@@ -70,7 +70,8 @@
 </p>
 
 <p class="testcontainer" id="test-nonexistent-style-property">
-  <span id="test-nonexistent-style-property-label">I ain't got no style</span>
+  <span id="test-nonexistent-style-property-label"
+   >I ain&apos;t got no style</span>
   <br>
 </p>
 
@@ -202,6 +203,10 @@
 <p class="testcontainer" id="test-clone-node-custom-attrs">
   I will have a custom attribute
 </p>
+
+<p class="testcontainer" id="test-custom-events">&nbsp;</p>
+
+<p class="testcontainer" id="test-factories-not-bypassable">&nbsp;</p>
 
 <p class="testcontainer" id="test-document-element">Test Document Element</p>
 
@@ -1442,6 +1447,43 @@ jsunitRegister('testCloneNodeCustomAttrs', function testCloneNodeCustomAttrs() {
 
   pass('test-clone-node-custom-attrs');
 });
+
+jsunitRegister('testCustomEvents',
+               function testCustomEvents() {
+  assertTrue(!!document.createEvent);
+
+  // Event dispatch for custom events is synchronous
+  var fired;
+  function myHandler(event) {
+    assertEquals('hiya', event.details);
+    fired = true;
+  }
+
+  var eventTarget = document.createElement('DIV');
+  eventTarget.addEventListener('howdy', myHandler, true);
+
+  var event = document.createEvent('HTMLEvents');
+  event.details = 'hiya';
+  event.initEvent('howdy', true, true);
+  assertEquals('hiya', event.details);
+
+  eventTarget.dispatchEvent(event);
+  assertTrue(fired);
+
+  pass('test-custom-events');
+});
+
+jsunitRegister('testFactoriesNotBypassable',
+               function testFactoriesNotBypassable() {
+  // It's not possible to create an element by (new HTMLElement) in any browser
+  // since factories choose the underlying implementation.
+  expectFailure(function () { new HTMLElement; }, 'HTMLElement');
+  expectFailure(function () { new Node; }, 'Node');
+  expectFailure(function () { new Event; }, 'Event');
+  expectFailure(function () { new Text; }, 'Text');
+  pass('test-factories-not-bypassable');
+});
+
 
 jsunitRegister('testDocumentElement',
                function testDocumentElement() {

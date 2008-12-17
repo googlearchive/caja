@@ -376,7 +376,7 @@ attachDocumentStub = (function () {
   function assert(cond) {
     if (!cond) {
       if (typeof console !== 'undefined') {
-        console.log('domita assertion failed');
+        console.error('domita assertion failed');
         console.trace();
       }
       throw new Error();
@@ -875,11 +875,24 @@ attachDocumentStub = (function () {
     var NOT_EDITABLE = "Node not editable.";
     var INVALID_SUFFIX = "Property names may not end in '__'.";
 
+    var CUSTOM_EVENT_TYPE_SUFFIX = ':custom';
+    function tameEventName(name, opt_isCustom) {
+      name = String(name);
+      if (endsWith__.test(name)) {
+        throw new Error('Invalid event name ' + name);
+      }
+      if (opt_isCustom
+          || html4.atype.SCRIPT !== html4.ATTRIBS['*:on' + name]) {
+        name = name + CUSTOM_EVENT_TYPE_SUFFIX;
+      }
+      return name;
+    }
+
     // Implementation of EventTarget::addEventListener
     function tameAddEventListener(name, listener, useCapture) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       if (!this.wrappedListeners___) { this.wrappedListeners___ = []; }
-      name = String(name);
+      name = tameEventName(name);
       useCapture = Boolean(useCapture);
       var wrappedListener = makeEventHandlerWrapper(this.node___, listener);
       this.wrappedListeners___.push(wrappedListener);
@@ -889,6 +902,7 @@ attachDocumentStub = (function () {
     // Implementation of EventTarget::removeEventListener
     function tameRemoveEventListener(name, listener, useCapture) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      name = tameEventName(name);
       if (!this.wrappedListeners___) { return; }
       var wrappedListener;
       for (var i = this.wrappedListeners___.length; --i >= 0;) {
@@ -899,15 +913,8 @@ attachDocumentStub = (function () {
         }
       }
       if (!wrappedListener) { return; }
-      name = String(name);
       bridal.removeEventListener(
            this.node___, name, wrappedListener, useCapture);
-    }
-
-    // Implementation of EventTarget::dispatchEvent
-    function tameDispatchEvent(evt) {
-      cajita.guard(tameEventTrademark, evt);
-      // TODO(ihab.awad): Complete and test implementation
     }
 
     // A map of tamed node classes, keyed by DOM Level 2 standard name, which
@@ -963,6 +970,7 @@ attachDocumentStub = (function () {
         'getFirstChild', 'getLastChild', 'getNextSibling', 'getPreviousSibling',
         'getElementsByClassName', 'getElementsByTagName',
         'getOwnerDocument',
+        'dispatchEvent',
         'hasChildNodes'
         ];
 
@@ -1154,6 +1162,21 @@ attachDocumentStub = (function () {
     TameBackedNode.prototype.hasChildNodes = function () {
       return !!this.node___.hasChildNodes();
     };
+    // http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-EventTarget :
+    // "The EventTarget interface is implemented by all Nodes"
+    TameBackedNode.prototype.dispatchEvent = function dispatchEvent(evt) {
+      cajita.guard(tameEventTrademark, evt);
+      // TODO(mikesamuel): when we change event dispatching to happen
+      // asynchronously, we should exempt custom events since those
+      // need to return a useful value, and there may be code bracketing
+      // them which could observe asynchronous dispatch.
+
+      // "The return value of dispatchEvent indicates whether any of
+      //  the listeners which handled the event called
+      //  preventDefault. If preventDefault was called the value is
+      //  false, else the value is true."
+      return Boolean(this.node___.dispatchEvent(evt.event___));
+    };
     ___.ctor(TameBackedNode, TameNode, 'TameBackedNode');
     ___.all2(___.grantTypedGeneric, TameBackedNode.prototype, tameNodeMembers);
 
@@ -1198,37 +1221,66 @@ attachDocumentStub = (function () {
       return null;
     };
     TamePseudoNode.prototype.handleRead___ = function (name) {
+      name = String(name);
+      if (endsWith__.test(name)) { return void 0; }
       var handlerName = name + '_getter___';
       if (this[handlerName]) {
         return this[handlerName]();
       }
-      if (this.properties___.hasOwnProperty(name)) {
+      handlerName = handlerName.toLowerCase();
+      if (this[handlerName]) {
+        return this[handlerName]();
+      }
+      if (___.hasOwnProp(this.properties___, name)) {
         return this.properties___[name];
       } else {
         return void 0;
       }
     };
     TamePseudoNode.prototype.handleCall___ = function (name, args) {
+      name = String(name);
+      if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
       var handlerName = name + '_handler___';
       if (this[handlerName]) {
         return this[handlerName].call(this, args);
       }
-      if (this.properties___.hasOwnProperty(name)) {
+      handlerName = handlerName.toLowerCase();
+      if (this[handlerName]) {
+        return this[handlerName].call(this, args);
+      }
+      if (___.hasOwnProp(this.properties___, name)) {
         return this.properties___[name].call(this, args);
       } else {
         throw new TypeError(name + ' is not a function.');
       }
     };
     TamePseudoNode.prototype.handleSet___ = function (name, val) {
+      name = String(name);
+      if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       var handlerName = name + '_setter___';
       if (this[handlerName]) {
         return this[handlerName](val);
+      }
+      handlerName = handlerName.toLowerCase();
+      if (this[handlerName]) {
+        return this[handlerName](val);
+      }
+      if (!this.properties___) {
+        this.properties___ = {};
       }
       this[name + '_canEnum___'] = true;
       return this.properties___[name] = val;
     };
     TamePseudoNode.prototype.handleDelete___ = function (name) {
+      name = String(name);
+      if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       var handlerName = name + '_deleter___';
+      if (this[handlerName]) {
+        return this[handlerName]();
+      }
+      handlerName = handlerName.toLowerCase();
       if (this[handlerName]) {
         return this[handlerName]();
       }
@@ -1240,19 +1292,16 @@ attachDocumentStub = (function () {
         return true;
       }
     };
-    /**
-     * @param {boolean} ownFlag ignored
-     */
     TamePseudoNode.prototype.handleEnum___ = function (ownFlag) {
       // TODO(metaweta): Add code to list all the other handled stuff we know
       // about.
-      if (this.node___.properties___) {
-        return cajita.allKeys(this.node___.properties___);
+      if (this.properties___) {
+        return cajita.allKeys(this.properties___);
       }
       return [];
     };
     TamePseudoNode.prototype.hasChildNodes = function () {
-      return !!this.node___.hasChildNodes();
+      return this.getFirstChild() != null;
     };
     ___.ctor(TamePseudoNode, TameNode, 'TamePseudoNode');
     ___.all2(___.grantTypedGeneric, TamePseudoNode.prototype, tameNodeMembers);
@@ -1374,7 +1423,7 @@ attachDocumentStub = (function () {
       classUtils.exportFields(this, ['nodeValue', 'data']);
     }
     classUtils.extend(TameTextNode, TameBackedNode);
-    nodeClasses.TextNode = TameTextNode;
+    nodeClasses.Text = TameTextNode;
     TameTextNode.prototype.setNodeValue = function (value) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.nodeValue = String(value || '');
@@ -1639,11 +1688,10 @@ attachDocumentStub = (function () {
     };
     TameElement.prototype.addEventListener = tameAddEventListener;
     TameElement.prototype.removeEventListener = tameRemoveEventListener;
-    TameElement.prototype.dispatchEvent = tameDispatchEvent;
     ___.ctor(TameElement, TameBackedNode, 'TameElement');
     ___.all2(
        ___.grantTypedGeneric, TameElement.prototype,
-       ['addEventListener', 'removeEventListener', 'dispatchEvent',
+       ['addEventListener', 'removeEventListener',
         'getAttribute', 'setAttribute',
         'removeAttribute',
         'hasAttribute',
@@ -2081,6 +2129,10 @@ attachDocumentStub = (function () {
     ___.all2(___.grantTypedGeneric, TameTableElement.prototype,
              ['createTHead', 'deleteTHead','createTFoot', 'deleteTFoot']);
 
+    function tameEvent(event) {
+      if (event.tamed___) { return event.tamed___; }
+      return event.tamed___ = new TameEvent(event);
+    }
 
     function TameEvent(event) {
       this.event___ = event;
@@ -2088,16 +2140,23 @@ attachDocumentStub = (function () {
       classUtils.exportFields(
           this,
           ['type', 'target', 'pageX', 'pageY', 'altKey',
-            'ctrlKey', 'metaKey', 'shiftKey', 'button',
-            'screenX', 'screenY',
-            'relatedTarget',
-            'fromElement', 'toElement',
-            'srcElement',
-            'clientX', 'clientY', 'keyCode', 'which']);
+           'ctrlKey', 'metaKey', 'shiftKey', 'button',
+           'screenX', 'screenY',
+           'currentTarget', 'relatedTarget',
+           'fromElement', 'toElement',
+           'srcElement',
+           'clientX', 'clientY', 'keyCode', 'which']);
     }
     nodeClasses.Event = TameEvent;
     TameEvent.prototype.getType = function () {
-      return String(this.event___.type);
+      var type = String(this.event___.type);
+      var suffix = CUSTOM_EVENT_TYPE_SUFFIX;
+      var tlen = type.length, slen = suffix.length;
+      var end = tlen - slen;
+      if (end >= 0) {
+        type = type.substring(0, end);
+      }
+      return type;
     };
     TameEvent.prototype.getTarget = function () {
       var event = this.event___;
@@ -2106,10 +2165,14 @@ attachDocumentStub = (function () {
     TameEvent.prototype.getSrcElement = function () {
       return tameRelatedNode(this.event___.srcElement, true);
     };
+    TameEvent.prototype.getCurrentTarget = function () {
+      var e = this.event___;
+      return tameRelatedNode(e.currentTarget, true);
+    };
     TameEvent.prototype.getRelatedTarget = function () {
       var e = this.event___;
       var t = e.relatedTarget;
-      if (! t) {
+      if (!t) {
         if (e.type === 'mouseout') {
           t = e.toElement;
         } else if (e.type === 'mouseover') {
@@ -2186,7 +2249,7 @@ attachDocumentStub = (function () {
       var kc = this.event___.keyCode;
       return kc && Number(kc);
     };
-    TameEvent.prototype.toString = function () { return 'Not a real event'; };
+    TameEvent.prototype.toString = function () { return '[Fake Event]'; };
     ___.ctor(TameEvent, void 0, 'TameEvent');
     ___.all2(___.grantTypedGeneric, TameEvent.prototype,
              ['getType', 'getTarget', 'getPageX', 'getPageY', 'stopPropagation',
@@ -2198,6 +2261,103 @@ attachDocumentStub = (function () {
               'getSrcElement',
               'preventDefault',
               'getKeyCode', 'getWhich']);
+
+    function TameCustomHTMLEvent(event) {
+      TameEvent.call(this, event);
+      this.properties___ = {};
+    }
+    classUtils.extend(TameCustomHTMLEvent, TameEvent);
+    TameCustomHTMLEvent.prototype.initEvent
+        = function (type, bubbles, cancelable) {
+      type = tameEventName(type, true);
+      bubbles = Boolean(bubbles);
+      cancelable = Boolean(cancelable);
+
+      this.event___.initEvent(type, bubbles, cancelable);
+    };
+    TameCustomHTMLEvent.prototype.handleRead___ = function (name) {
+      name = String(name);
+      if (endsWith__.test(name)) { return void 0; }
+      var handlerName = name + '_getter___';
+      if (this[handlerName]) {
+        return this[handlerName]();
+      }
+      handlerName = handlerName.toLowerCase();
+      if (this[handlerName]) {
+        return this[handlerName]();
+      }
+      if (___.hasOwnProp(this.event___.properties___, name)) {
+        return this.event___.properties___[name];
+      } else {
+        return void 0;
+      }
+    };
+    TameCustomHTMLEvent.prototype.handleCall___ = function (name, args) {
+      name = String(name);
+      if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
+      var handlerName = name + '_handler___';
+      if (this[handlerName]) {
+        return this[handlerName].call(this, args);
+      }
+      handlerName = handlerName.toLowerCase();
+      if (this[handlerName]) {
+        return this[handlerName].call(this, args);
+      }
+      if (___.hasOwnProp(this.event___.properties___, name)) {
+        return this.event___.properties___[name].call(this, args);
+      } else {
+        throw new TypeError(name + ' is not a function.');
+      }
+    };
+    TameCustomHTMLEvent.prototype.handleSet___ = function (name, val) {
+      name = String(name);
+      if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
+      var handlerName = name + '_setter___';
+      if (this[handlerName]) {
+        return this[handlerName](val);
+      }
+      handlerName = handlerName.toLowerCase();
+      if (this[handlerName]) {
+        return this[handlerName](val);
+      }
+      if (!this.event___.properties___) {
+        this.event___.properties___ = {};
+      }
+      this[name + '_canEnum___'] = true;
+      return this.event___.properties___[name] = val;
+    };
+    TameCustomHTMLEvent.prototype.handleDelete___ = function (name) {
+      name = String(name);
+      if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
+      var handlerName = name + '_deleter___';
+      if (this[handlerName]) {
+        return this[handlerName]();
+      }
+      handlerName = handlerName.toLowerCase();
+      if (this[handlerName]) {
+        return this[handlerName]();
+      }
+      if (this.event___.properties___) {
+        return (
+            delete this.event___.properties___[name]
+            && delete this[name + '_canEnum___']);
+      } else {
+        return true;
+      }
+    };
+    TameCustomHTMLEvent.prototype.handleEnum___ = function (ownFlag) {
+      // TODO(metaweta): Add code to list all the other handled stuff we know
+      // about.
+      if (this.event___.properties___) {
+        return cajita.allKeys(this.event___.properties___);
+      }
+      return [];
+    };
+    TameCustomHTMLEvent.prototype.toString = function () {
+      return '[Fake CustomEvent]';
+    };
+    ___.grantTypedGeneric(TameCustomHTMLEvent.prototype, 'initEvent');
+    ___.ctor(TameCustomHTMLEvent, TameEvent, 'TameCustomHTMLEvent');
 
     /**
      * Return a fake node list containing tamed nodes.
@@ -2307,10 +2467,6 @@ attachDocumentStub = (function () {
         function (name, listener, useCapture) {
           // TODO(ihab.awad): Implement
         };
-    TameHTMLDocument.prototype.dispatchEvent =
-        function (evt) {
-          // TODO(ihab.awad): Implement
-        };
     TameHTMLDocument.prototype.createElement = function (tagName) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       tagName = String(tagName).toLowerCase();
@@ -2345,15 +2501,41 @@ attachDocumentStub = (function () {
       // TODO(mikesamuel): Needs implementation
       cajita.log('Called document.write() with: ' + text);
     };
+    // http://www.w3.org/TR/DOM-Level-2-Events/events.html
+    // #Events-DocumentEvent-createEvent
+    TameHTMLDocument.prototype.createEvent = function (type) {
+      type = String(type);
+      if (type !== 'HTMLEvents') {
+        // See https://developer.mozilla.org/en/DOM/document.createEvent#Notes
+        // for a long list of event ypes.
+        // See http://www.w3.org/TR/DOM-Level-2-Events/events.html
+        // #Events-eventgroupings
+        // for the DOM2 list.
+        throw new Error('Unrecognized event type ' + type);
+      }
+      var document = this.doc___;
+      var rawEvent;
+      if (document.createEvent) {
+        rawEvent = document.createEvent(type);
+      } else {
+        rawEvent = document.createEventObject();
+        rawEvent.eventType = 'ondataavailable';
+      }
+      var tamedEvent = new TameCustomHTMLEvent(rawEvent);
+      rawEvent.tamed___ = tamedEvent;
+      return tamedEvent;
+    };
     ___.ctor(TameHTMLDocument, TamePseudoNode, 'TameHTMLDocument');
     ___.all2(___.grantTypedGeneric, TameHTMLDocument.prototype,
-             ['addEventListener', 'removeEventListener', 'dispatchEvent',
-              'createElement', 'createTextNode', 'getElementById',
-              'getElementsByClassName', 'getElementsByTagName', 'write']);
+             ['addEventListener', 'removeEventListener',
+              'createElement', 'createTextNode', 'createEvent',
+              'getElementById', 'getElementsByClassName',
+              'getElementsByTagName',
+              'write']);
 
 
     imports.tameNode___ = tameNode;
-    imports.tameEvent___ = function (event) { return new TameEvent(event); };
+    imports.tameEvent___ = tameEvent;
     imports.blessHtml___ = blessHtml;
     imports.blessCss___ = function (var_args) {
       var arr = [];

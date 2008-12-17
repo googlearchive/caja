@@ -21,6 +21,11 @@
  * <li>"cajita" providing some common services to the Caja programmer.
  * </ol>
  * @author erights@gmail.com
+ * @requires console, this
+ * @provides ___, arraySlice, cajita, dateToISOString, funcBind
+ * @overrides Array, Boolean, Date, Function, Number, Object, RegExp, String
+ * @overrides Error, EvalError, RangeError, ReferenceError, SyntaxError,
+ *   TypeError, URIError
  */
 
 // TODO(erights): All code text in comments should be enclosed in
@@ -398,55 +403,34 @@ var ___;
         if (obj === null) { return '<null>'; }
         return '[' + (directConstructor(obj).name || 'Object') + ']';
       }
-      default: { 
-        return '(' + obj + ':' + typeOf(obj) + ')'; 
+      default: {
+        return '(' + obj + ':' + typeOf(obj) + ')';
       }
     }
   }
 
-  /**
-   *
-   */
   var myKeeper = {
 
-    /**
-     *
-     */
     toString: function toString() { return '<Logging Keeper>'; },
 
-    /**
-     *
-     */
     handleRead: function handleRead(obj, name) {
-      log('Not readable: (' + debugReference(obj) + ').' + name);
+      //log('Not readable: (' + debugReference(obj) + ').' + name);
       return void 0;
     },
 
-    /**
-     *
-     */
     handleCall: function handleCall(obj, name, args) {
       fail('Not callable: (', debugReference(obj), ').', name);
     },
 
-    /**
-     *
-     */
     handleSet: function handleSet(obj, name, val) {
       fail('Not settable: (', debugReference(obj), ').', name);
     },
 
-    /**
-     *
-     */
     handleDelete: function handleDelete(obj, name) {
       fail('Not deletable: (', debugReference(obj), ').', name);
     }
   };
 
-  /**
-   *
-   */
   Object.prototype.handleRead___ = function handleRead___(name) {
     var handlerName = name + '_getter___';
     if (this[handlerName]) {
@@ -455,9 +439,6 @@ var ___;
     return myKeeper.handleRead(this, name);
   };
 
-  /**
-   *
-   */
   Object.prototype.handleCall___ = function handleCall___(name, args) {
     var handlerName = name + '_handler___';
     if (this[handlerName]) {
@@ -466,9 +447,6 @@ var ___;
     return myKeeper.handleCall(this, name, args);
   };
 
-  /**
-   *
-   */
   Object.prototype.handleSet___ = function handleSet___(name, val) {
     var handlerName = name + '_setter___';
     if (this[handlerName]) {
@@ -477,9 +455,6 @@ var ___;
     return myKeeper.handleSet(this, name, val);
   };
 
-  /**
-   *
-   */
   Object.prototype.handleDelete___ = function handleDelete___(name) {
     var handlerName = name + '_deleter___';
     if (this[handlerName]) {
@@ -1242,9 +1217,6 @@ var ___;
     return true;
   }
 
-  /**
-   *
-   */
   function hasOwnPropertyOf(obj, name) {
     if (typeof name === 'number') { return hasOwnProp(obj, name); }
     name = String(name);
@@ -2072,9 +2044,9 @@ var ___;
   function grantToString(proto) {
     proto.TOSTRING___ = xo4a(proto.toString, 'toString');
   }
-  useGetHandler(Object.prototype, 'toString', 
-		function toStringGetter() {
-    if (hasOwnProp(this, 'toString') && 
+  useGetHandler(Object.prototype, 'toString',
+                function toStringGetter() {
+    if (hasOwnProp(this, 'toString') &&
         typeOf(this.toString) === 'function' &&
         !hasOwnProp(this, 'TOSTRING___')) {
       // This case is a kludge that doesn't work for undiagnosed reasons.
@@ -2086,12 +2058,12 @@ var ___;
     }
     return reifyIfXo4a(this.TOSTRING___, 'toString');
   });
-  useApplyHandler(Object.prototype, 'toString', 
-		  function toStringApplier(args) {
-    return this.toString.apply(this, args); 
+  useApplyHandler(Object.prototype, 'toString',
+                  function toStringApplier(args) {
+    return this.toString.apply(this, args);
   });
-  useSetHandler(Object.prototype, 'toString', 
-		function toStringSetter(meth) {
+  useSetHandler(Object.prototype, 'toString',
+                function toStringSetter(meth) {
     if (isFrozen(this)) {
       return myKeeper.handleSet(this, 'toString', meth);
     }
@@ -2113,13 +2085,13 @@ var ___;
     return meth;
   });
   useDeleteHandler(Object.prototype, 'toString', 
-		   function toStringDeleter() {
+                   function toStringDeleter() {
     if (isFrozen(this)) {
       return myKeeper.handleDelete(this, 'toString');
     }
     return (delete this.toString) && (delete this.TOSTRING___);
   });
-  
+
   /// Object
 
   ctor(Object, void 0, 'Object');
@@ -2128,28 +2100,28 @@ var ___;
     'toLocaleString', 'valueOf', 'isPrototypeOf'
   ]);
   grantRead(Object.prototype, 'length');
-  handleGeneric(Object.prototype, 'hasOwnProperty', 
-		function hasOwnPropertyHandler(name){
+  handleGeneric(Object.prototype, 'hasOwnProperty',
+                function hasOwnPropertyHandler(name) {
     return hasOwnPropertyOf(this, name);
   });
-  handleGeneric(Object.prototype, 'propertyIsEnumerable', 
-		function propertyIsEnumerableHandler(name) {
+  handleGeneric(Object.prototype, 'propertyIsEnumerable',
+                function propertyIsEnumerableHandler(name) {
     name = String(name);
     return canEnumPub(this, name);
   });
 
   /// Function
 
-  handleGeneric(Function.prototype, 'apply', 
-		function applyHandler(self, realArgs) {
+  handleGeneric(Function.prototype, 'apply',
+                function applyHandler(self, realArgs) {
     return toFunc(this).apply(self, realArgs);
   });
-  handleGeneric(Function.prototype, 'call', 
-		function callHandler(self, var_args) {
+  handleGeneric(Function.prototype, 'call',
+                function callHandler(self, var_args) {
     return toFunc(this).apply(self, Array.slice(arguments, 1));
   });
-  handleGeneric(Function.prototype, 'bind', 
-		function bindHandler(self, var_args) {
+  handleGeneric(Function.prototype, 'bind',
+                function bindHandler(self, var_args) {
     var thisFunc = this;
     var leftArgs = Array.slice(arguments, 1);
     function boundHandler(var_args) {
@@ -2171,8 +2143,8 @@ var ___;
   all2(grantMutator, Array.prototype, [
     'pop', 'push', 'reverse', 'shift', 'splice', 'unshift'
   ]);
-  handleGeneric(Array.prototype, 'sort', 
-		function sortHandler(comparator) {
+  handleGeneric(Array.prototype, 'sort',
+                function sortHandler(comparator) {
     if (isFrozen(this)) {
       fail("Can't sort a frozen array.");
     }
@@ -2197,13 +2169,13 @@ var ___;
     'toLowerCase', 'toLocaleLowerCase', 'toUpperCase', 'toLocaleUpperCase'
   ]);
 
-  handleGeneric(String.prototype, 'match', 
-		function matchHandler(regexp) {
+  handleGeneric(String.prototype, 'match',
+                function matchHandler(regexp) {
     enforceMatchable(regexp);
     return this.match(regexp);
   });
-  handleGeneric(String.prototype, 'replace', 
-		function replaceHandler(searcher, replacement) {
+  handleGeneric(String.prototype, 'replace',
+                function replaceHandler(searcher, replacement) {
     enforceMatchable(searcher);
     if (isFunc(replacement)) {
       replacement = asFunc(replacement);
@@ -2214,13 +2186,13 @@ var ___;
     }
     return this.replace(searcher, replacement);
   });
-  handleGeneric(String.prototype, 'search', 
-		function searchHandler(regexp) {
+  handleGeneric(String.prototype, 'search',
+                function searchHandler(regexp) {
     enforceMatchable(regexp);
     return this.search(regexp);
   });
-  handleGeneric(String.prototype, 'split', 
-		function splitHandler(separator, limit) {
+  handleGeneric(String.prototype, 'split',
+                function splitHandler(separator, limit) {
     enforceMatchable(separator);
     return this.split(separator, limit);
   });
@@ -2269,17 +2241,17 @@ var ___;
   /// RegExp
 
   ctor(RegExp, Object, 'RegExp');
-  grantToString(RegExp.prototype);  
-  handleGeneric(RegExp.prototype, 'exec', 
-		function execHandler(specimen) {
+  grantToString(RegExp.prototype);
+  handleGeneric(RegExp.prototype, 'exec',
+                function execHandler(specimen) {
     if (isFrozen(this)) {
       fail("Can't .exec a frozen RegExp");
     }
     specimen = String(specimen); // See bug 528
     return this.exec(specimen);
   });
-  handleGeneric(RegExp.prototype, 'test', 
-		function testHandler(specimen) {
+  handleGeneric(RegExp.prototype, 'test',
+                function testHandler(specimen) {
     if (isFrozen(this)) {
       fail("Can't .test a frozen RegExp");
     }
@@ -2443,9 +2415,9 @@ var ___;
        *   the error originated.
        */
       handleUncaughtException: function handleUncaughtException(exception,
-								onerror, 
-								source,
-								lineNum) {
+                                                                onerror,
+                                                                source,
+                                                                lineNum) {
         lastOutcome = [false, exception];
 
         // Cause exception to be rethrown if it is uncatchable.
@@ -2569,8 +2541,8 @@ var ___;
   function hasTrademark(trademark, obj) {
     if (!hasOwnProp(obj, 'trademarks___')) { return false; }
     var list = obj.trademarks___;
-    for (var i=0; i < list.length; ++i) {
-      if (list[i]===trademark) { return true; }
+    for (var i = 0; i < list.length; ++i) {
+      if (list[i] === trademark) { return true; }
     }
     return false;
   }
@@ -2614,11 +2586,11 @@ var ___;
 
   function initializeMap(list) {
     var result = {};
-    for (var i = 0; i < list.length; i+=2) {
+    for (var i = 0; i < list.length; i += 2) {
       // Call asFirstClass() here to prevent, for example, a toxic
       // function being used at the toString property of an object
       // literal.
-      setPub(result, list[i], asFirstClass(list[i+1]));
+      setPub(result, list[i], asFirstClass(list[i + 1]));
     }
     return result;
   }
@@ -2640,7 +2612,8 @@ var ___;
     var squirrel = null;  // Receives the payload from an unsealed box.
     function seal(payload) {
       function box() {
-        flag = true, squirrel = payload;
+        flag = true;
+        squirrel = payload;
       }
       box.toString = frozenFunc(function toString() { return '(box)'; });
       return frozenFunc(box);
@@ -2659,9 +2632,9 @@ var ___;
         squirrel = null;
       }
     }
-    return freeze({ 
-      seal: frozenFunc(seal), 
-      unseal: frozenFunc(unseal) 
+    return freeze({
+      seal: frozenFunc(seal),
+      unseal: frozenFunc(unseal)
     });
   }
 
