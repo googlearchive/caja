@@ -909,6 +909,8 @@ attachDocumentStub = (function () {
 
     var NOT_EDITABLE = "Node not editable.";
     var INVALID_SUFFIX = "Property names may not end in '__'.";
+    var UNSAFE_TAGNAME = "Unsafe tag name.";
+    var UNKNOWN_TAGNAME = "Unknown tag name.";
 
     var CUSTOM_EVENT_TYPE_SUFFIX = ':custom';
     function tameEventName(name, opt_isCustom) {
@@ -1390,7 +1392,7 @@ attachDocumentStub = (function () {
       return '<' + this.tagName___ + '>';
     };
     ___.ctor(TamePseudoElement, TamePseudoNode, 'TamePseudoElement');
-    ___.all2(___.grantTypedGeneric, TameElement.prototype,
+    ___.all2(___.grantTypedGeneric, TamePseudoElement.prototype,
              ['getTagName', 'getAttribute', 'hasAttribute']);
 
 
@@ -1784,6 +1786,7 @@ attachDocumentStub = (function () {
     // http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-40002357
     function TameFormElement(node, editable) {
       TameElement.call(this, node, editable);
+      this.length = node.length;
       classUtils.exportFields(
           this,
           ['action', 'elements', 'enctype', 'method', 'target']);
@@ -2509,9 +2512,13 @@ attachDocumentStub = (function () {
     TameHTMLDocument.prototype.createElement = function (tagName) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       tagName = String(tagName).toLowerCase();
-      if (!html4.ELEMENTS.hasOwnProperty(tagName)) { throw new Error(); }
+      if (!html4.ELEMENTS.hasOwnProperty(tagName)) { 
+        throw new Error(UNKNOWN_TAGNAME + "[" + tagName + "]"); 
+      }
       var flags = html4.ELEMENTS[tagName];
-      if (flags & html4.eflags.UNSAFE) { throw new Error(); }
+      if (flags & html4.eflags.UNSAFE) { 
+        throw new Error(UNSAFE_TAGNAME + "[" + tagName + "]"); 
+      }
       var newEl = this.doc___.createElement(tagName);
       if (elementPolicies.hasOwnProperty(tagName)) {
         var attribs = elementPolicies[tagName]([]);

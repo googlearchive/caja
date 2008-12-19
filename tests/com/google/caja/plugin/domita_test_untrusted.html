@@ -65,6 +65,17 @@
   </span><br>
 </p>
 
+<div class="testcontainer" id="test-form-length"
+  ><form id="test-form-length-form">
+    <input type="text">
+    <button></button>
+  </form>
+</div>
+
+<p class="testcontainer" id="test-pseudo-elements">
+  Test pseudo-elements
+</p>
+
 <p class="testcontainer" id="test-editability-in-node-lists">
   editability in node lists<br>
 </p>
@@ -610,6 +621,33 @@ jsunitRegister('testPropertyAttributeInteraction',
   d.title = 'bob';
   assertEquals('bob', d.getAttribute('title'));
   pass('test-property-attribute-interaction');
+});
+
+jsunitRegister('testFormLength',
+               function testFormLength() {
+  var form = document.getElementById('test-form-length-form');
+  assertEquals(2, form.length);
+
+  pass('test-form-length');
+});
+
+jsunitRegister('testPseudoElements',
+               function testPseudoElements() {
+  var body = document.getElementsByTagName('body')[0];
+  var head = document.getElementsByTagName('head')[0];
+  var title = document.getElementsByTagName('title')[0];
+  var html = document.getElementsByTagName('html')[0];
+
+  assertEquals('body', body.getTagName());
+  assertEquals('', body.getAttribute('foo'));
+  assertEquals('head', head.getTagName());
+  assertEquals('', head.getAttribute('foo'));
+  assertEquals('title', title.getTagName());
+  assertEquals('', title.getAttribute('foo'));
+  assertEquals('html', body.getTagName());
+  assertEquals('', html.getAttribute('foo'));
+
+  pass('test-pseudo-elements');
 });
 
 jsunitRegister('testEditabilityInNodeLists',
