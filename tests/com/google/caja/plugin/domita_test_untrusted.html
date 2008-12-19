@@ -128,7 +128,9 @@
 
 <div class="testcontainer" id="test-target-attr"></div>
 
-<div class="testcontainer" id="test-location"></div>
+<div class="testcontainer" id="test-location">
+  test-location
+</div>
 
 <div class="testcontainer" id="test-navigator"></div>
 
@@ -957,9 +959,38 @@ jsunitRegister('testTargetAttr',
 jsunitRegister('testLocation',
                function testLocation() {
   assertEquals(
+      window.location.host, window.location.hostname + ':' + window.location.port);
+  assertEquals(
       window.location.href, window.location.protocol + '//'
-      + window.location.host + window.location.port + window.location.pathname
+      + window.location.hostname + ':' + window.location.port + window.location.pathname
       + window.location.search + window.location.hash);
+  assertEquals(
+      'http://zip.example.com:4242/pumpkin.html?q=getit#myanchor',
+      window.location.href);
+  assertEquals(
+      '#myanchor',
+      window.location.hash);
+  assertEquals(
+      'zip.example.com:4242',
+      window.location.host);
+  assertEquals(
+      'zip.example.com',
+      window.location.hostname);
+  assertEquals(
+      '/pumpkin.html',
+      window.location.pathname);
+  assertEquals(
+      '4242',
+      window.location.port);
+  assertEquals(
+      'http:',
+      window.location.protocol);
+  assertEquals(
+      '?q=getit',
+      window.location.search);
+  assertEquals(
+      window.location.hostname,
+      document.domain);
   pass('test-location');
 });
 
@@ -1187,11 +1218,24 @@ jsunitRegister('testPropsOnNodes',
 
 jsunitRegister('testXhrSync',
                function testXhrSync() {
-  var cont = document.getElementById('test-xhr-sync');
-  var xhr = new window.XMLHttpRequest();
+  var xhr;
+
+  // Check that response text is available after a synchronous XHR
+  xhr = new window.XMLHttpRequest();
   xhr.open('GET', './xhrTest.txt', false);
   xhr.send();
   assertEquals('The quick brown fox', xhr.responseText);
+
+   // Check that a synchronous XHR invokes its callback in ready state 4
+   var responseText;
+   xhr = new window.XMLHttpRequest();
+   xhr.onreadystatechange = function() {
+     if (xhr.readyState == 4) { responseText = xhr.responseText; }
+   };
+   xhr.open('GET', './xhrTest.txt', false);
+   xhr.send();
+   assertEquals('The quick brown fox', responseText);
+
   pass('test-xhr-sync');
 });
 
@@ -1249,7 +1293,9 @@ jsunitRegister('testCloneNodeStructure', function testCloneNodeStructure() {
         nodeType: 1,
         tagName: 'P',
         attributes: [],
-        children: [ /* shallow clones contain attrs but not children. */ ]
+        children: [
+          // shallow clones contain attrs but not children.
+        ]
       },
       p.cloneNode(false));
   assertDomTree(

@@ -160,6 +160,8 @@ domitaModules.TameXMLHttpRequest = function(
       var evt = { target: self };
       return ___.callPub(handler, 'call', [void 0, evt]);
     };
+    // Store for later direct invocation if need be
+    this.handler___ = handler;
   };
   TameXMLHttpRequest.prototype.getReadyState = function () {
     // The ready state should be a number
@@ -177,16 +179,20 @@ domitaModules.TameXMLHttpRequest = function(
     if (safeUri === void 0) { throw 'URI violates security policy'; }
     switch (arguments.length) {
     case 2:
+      this.async___ = true;
       this.xhr___.open(method, safeUri);
       break;
     case 3:
+      this.async___ = opt_async;
       this.xhr___.open(method, safeUri, Boolean(opt_async));
       break;
     case 4:
+      this.async___ = opt_async;
       this.xhr___.open(
           method, safeUri, Boolean(opt_async), String(opt_userName));
       break;
     case 5:
+      this.async___ = opt_async;
       this.xhr___.open(
           method, safeUri, Boolean(opt_async), String(opt_userName),
           String(opt_password));
@@ -206,23 +212,39 @@ domitaModules.TameXMLHttpRequest = function(
       this.xhr___.send('');
     } else if (typeof opt_data === 'string') {
       this.xhr___.send(opt_data);
-      return;
     } else /* if XML document */ {
       // TODO(ihab.awad): Expect tamed XML document; unwrap and send
-      throw 'Sending XML data not yet supported';
+      this.xhr___.send('');
+    }
+
+    // Firefox does not call the 'onreadystatechange' handler in
+    // the case of a synchronous XHR. We simulate this behavior by
+    // calling the handler explicitly.
+    if (this.xhr___.overrideMimeType) {
+      // This is Firefox
+      if (!this.async___ && this.handler___) {
+        var evt = { target: this };
+        ___.callPub(this.handler___, 'call', [void 0, evt]);
+      }
     }
   };
   TameXMLHttpRequest.prototype.abort = function () {
     this.xhr___.abort();
   };
   TameXMLHttpRequest.prototype.getAllResponseHeaders = function () {
-    return String(this.xhr___.getAllResponseHeaders());
+    var result = this.xhr___.getAllResponseHeaders();
+    return (result === undefined || result === null) ?
+      result : String(result);
   };
   TameXMLHttpRequest.prototype.getResponseHeader = function (headerName) {
-    return String(this.xhr___.getResponseHeader(String(headerName)));
+    var result = this.xhr___.getResponseHeader(String(headerName));
+    return (result === undefined || result === null) ?
+      result : String(result);
   };
   TameXMLHttpRequest.prototype.getResponseText = function () {
-    return String(this.xhr___.responseText);
+    var result = this.xhr___.responseText;
+    return (result === undefined || result === null) ?
+      result : String(result);
   };
   TameXMLHttpRequest.prototype.getResponseXML = function () {
     // TODO(ihab.awad): Implement a taming layer for XML. Requires generalizing
@@ -230,10 +252,14 @@ domitaModules.TameXMLHttpRequest = function(
     return {};
   };
   TameXMLHttpRequest.prototype.getStatus = function () {
-    return Number(this.xhr___.status);
+    var result = this.xhr___.status;
+    return (result === undefined || result === null) ?
+      result : Number(result);
   };
   TameXMLHttpRequest.prototype.getStatusText = function () {
-    return String(this.xhr___.statusText);
+    var result = this.xhr___.statusText;
+    return (result === undefined || result === null) ?
+      result : String(result);
   };
   TameXMLHttpRequest.prototype.toString = function () {
     return 'Not a real XMLHttpRequest';
@@ -256,6 +282,11 @@ domitaModules.TameXMLHttpRequest = function(
  *     The rewrite function should be idempotent to allow rewritten HTML
  *     to be reinjected.
  * @param {Object} imports the gadget's global scope.
+ * @param {Node} pseudoBodyNode an HTML node to act as the "body" of the
+ *     virtual document provided to Cajoled code.
+ * @param {Object} optPseudoWindowLocation a record containing the
+ *     properties of the browser "window.location" object, which will
+ *     be provided to the Cajoled code.
  */
 attachDocumentStub = (function () {
   // Array Remove - By John Resig (MIT Licensed)
@@ -423,9 +454,13 @@ attachDocumentStub = (function () {
   ___.frozenFunc(tameClearInterval);
 
   // See above for a description of this function.
-  function attachDocumentStub(idSuffix, uriCallback, imports, pseudoBodyNode) {
-    if (arguments.length !== 4) {
+  function attachDocumentStub(
+      idSuffix, uriCallback, imports, pseudoBodyNode, optPseudoWindowLocation) {
+    if (arguments.length < 4) {
       throw new Error('arity mismatch: ' + arguments.length);
+    }
+    if (!optPseudoWindowLocation) {
+        optPseudoWindowLocation = {};
     }
     var elementPolicies = {};
     elementPolicies.form = function (attribs) {
@@ -2369,10 +2404,11 @@ attachDocumentStub = (function () {
       return cajita.freeze(array);
     }
 
-    function TameHTMLDocument(doc, body, editable) {
+    function TameHTMLDocument(doc, body, domain, editable) {
       TamePseudoNode.call(this, editable);
       this.doc___ = doc;
       this.body___ = body;
+      this.domain___ = domain;
       var tameDoc = this;
 
       var tameBody = tameNode(body, editable);
@@ -2420,7 +2456,7 @@ attachDocumentStub = (function () {
           },
           editable);
       this.documentElement___ = tameHtmlElement;
-      classUtils.exportFields(this, ['documentElement', 'body', 'title']);
+      classUtils.exportFields(this, ['documentElement', 'body', 'title', 'domain']);
     }
     classUtils.extend(TameHTMLDocument, TamePseudoNode);
     nodeClasses.HTMLDocument = TameHTMLDocument;
@@ -2454,6 +2490,9 @@ attachDocumentStub = (function () {
     };
     TameHTMLDocument.prototype.getTitle = function () {
       return this.getHead().getFirstChild();
+    };
+    TameHTMLDocument.prototype.getDomain = function () {
+      return this.domain___;
     };
     TameHTMLDocument.prototype.getElementsByClassName = function (className) {
       return tameGetElementsByClassName(
@@ -2721,7 +2760,11 @@ attachDocumentStub = (function () {
     imports.clearTimeout = tameClearTimeout;
     imports.clearInterval = tameClearInterval;
 
-    var tameDocument = new TameHTMLDocument(document, pseudoBodyNode, true);
+    var tameDocument = new TameHTMLDocument(
+        document,
+        pseudoBodyNode,
+        String(optPseudoWindowLocation.hostname) || 'nosuchhost,fake',
+        true);
     imports.document = tameDocument;
 
     // TODO(mikesamuel): figure out a mechanism by which the container can
@@ -2729,14 +2772,14 @@ attachDocumentStub = (function () {
     // See http://www.whatwg.org/specs/web-apps/current-work/multipage/history.html#location0
     var tameLocation = ___.primFreeze({
       toString: ___.frozenFunc(function () { return tameLocation.href; }),
-      href: 'http://nosuchhost,fake/',
-      hash: '',
-      host: 'nosuchhost,fake',
-      hostname: 'nosuchhost,fake',
-      pathname: '/',
-      port: '',
-      protocol: 'http:',
-      search: ''
+      href: String(optPseudoWindowLocation.href) || 'http://nosuchhost,fake/',
+      hash: String(optPseudoWindowLocation.hash) || '',
+      host: String(optPseudoWindowLocation.host) || 'nosuchhost,fake',
+      hostname: String(optPseudoWindowLocation.hostname) || 'nosuchhost,fake',
+      pathname: String(optPseudoWindowLocation.pathname) || '/',
+      port: String(optPseudoWindowLocation.port) || '',
+      protocol: String(optPseudoWindowLocation.protocol) || 'http:',
+      search: String(optPseudoWindowLocation.search) || ''
       });
 
     // See spec at http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#navigator

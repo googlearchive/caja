@@ -1,15 +1,8 @@
-ajax_test: 18 tests, 17 assertions, 11 failures, 7 errors
+ajax_test: 18 tests, 55 assertions, 1 failures, 3 errors
 	  (18 tests, 18 assertions, 10 failures, 7 errors)
 
-	Heavily reliant on as yet unimplemented TameXMLHTTPRequest().
-        To run this test properly, we will need the test to run from
-        the Rakefile using the WEBrick HTTP server. Currently, this
-        cannot be done for cajoled tests. Tobie is going to make that
-        possible asap.
-
-	Without the HTTP server, the only difference is
-	testIsSameOriginMethod.
-
+	The only remaining failures are the ones that actually test
+	for the behavior of eval().
 
 array_test: 20 tests, 98 assertions, 0 failures, 0 errors
 	   (20 tests, 98 assertions, 0 failures, 0 errors)
@@ -25,14 +18,11 @@ dollar_test: 2 tests, 4 assertions, 0 failures, 0 errors
 
 dom_test: 92 tests, 303 assertions, 65 failures, 24 errors
 	 (92 tests, 837 assertions, 0 failures, 1 errors)
-         (92 tests, 325 assertions, 59 failures, 23 errors)
 
     TODO(ihab): It turns out element.parentNode **is** available in
         Domita after all => must review the below where I attributed
         failure to a lack of parentNode to figure out what in the heck
         was *really* going on!!
-
-    testGetElementsByClassName -- TODO(ihab).
 
     testNewElementInsert -- The 'insert' mixin function added in
         dom.js requires element.parentNode.

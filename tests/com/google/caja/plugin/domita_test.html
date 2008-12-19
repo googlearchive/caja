@@ -92,7 +92,17 @@
       var testImports = ___.copy(___.sharedImports);
       if (valijaMaker) { testImports.$v = valijaMaker.CALL___(testImports); }
       var testDomContainer = document.getElementById('untrusted_content');
-
+      var pseudoWindowLocation = {
+          href: 'http://zip.example.com:4242/pumpkin.html?q=getit#myanchor',
+          hash: '#myanchor',
+          host: 'zip.example.com:4242',
+          hostname: 'zip.example.com',
+          pathname: '/pumpkin.html',
+          port: '4242',
+          protocol: 'http:',
+          search: '?q=getit'
+      };
+        
       ___.getNewModuleHandler().setImports(testImports);
       attachDocumentStub(
            '-xyz___',
@@ -106,7 +116,8 @@
                  }
            },
            testImports,
-           testDomContainer);
+           testDomContainer,
+           pseudoWindowLocation);
       console.log('attached stubs');
 
       testImports.jsunitRegister = ___.frozenFunc(jsunitRegister);
