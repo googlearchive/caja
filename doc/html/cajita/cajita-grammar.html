@@ -457,7 +457,7 @@ Octal         ::== '0' <OctalDigit>+
 Integer       ::== <DigitNotZero> <Digit>*
                  | '0'
 Exponent      ::== <E> <Sign>? <Digit>+
-DivOpPreceder ::== ']'                             ; So / can't start a regexp.  [http://www.mozilla.org/js/language/js20-1999-02-18/tokens.html The JS2.0 grammar] says that the div-op vs regexp decision is based solely on the last significant token.  This is not true of ES 3 for which the lexical grammar is not independent of the parser grammar.  Felix found (x = ++/a/i.x), which introduces a regular expression vs (++/a/i.x) which does not.  There is no valid expression though that ends with one of these operators that can be followed by a regular expression modulo semicolon insertion.
+DivOpPreceder ::== ']'                             ; So / can't start a regexp.  [http://www.mozilla.org/js/language/js20-1999-02-18/tokens.html The JS2.0 grammar] says that the div-op vs regexp decision is based solely on the last significant token.  This is not true of ES 3 for which the lexical grammar is not independent of the parser grammar.  Felix found (x = ++/a/i.x), which introduces a regular expression vs (x++/a/i.x) which does not.  There is no valid expression though that ends with one of these operators that can be followed by a regular expression modulo semicolon insertion.
                  | ')'
                  | <Word>
                  | <Number>
