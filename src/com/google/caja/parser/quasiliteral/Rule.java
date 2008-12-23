@@ -330,7 +330,7 @@ public abstract class Rule implements MessagePart {
     } else {
       result = baseName + "$_" + ext;
     }
-    if (! ParserBase.isJavascriptIdentifier(result)) {
+    if (!ParserBase.isJavascriptIdentifier(result)) {
       result = "badName$_" + ext;
     }
     // TODO: If we ever have a cheap way to test whether result is used freely

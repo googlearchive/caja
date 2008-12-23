@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-  ////////////////////////////////////////////////////////////////////////
-  // TODO(erights): nothing in this file is tested yet
-  ////////////////////////////////////////////////////////////////////////
-
 /**
  * @fileoverview the Valija runtime library.
  * <p>
@@ -207,13 +203,24 @@ var valijaMaker = (function(outers) {
    * Handle Valija <tt>typeof <i>obj</i></tt>.
    * <p>
    * If <tt>obj</tt> inherits from DisfunctionPrototype, then return
-   * 'function'. Otherwise as normal.
+   * 'function'.
+   * <p>
+   * Else if <tt>obj</tt> is a frozen record whose 'call' property is
+   * a Cajita function, as are the reifications of exophoric methods, then
+   * return 'function'. 
+   * TODO(erights): Resolve 'apply' vs 'call' confusions.
+   * TODO(erights): Consider trademarking rather than duck typing.
+   * <p>
+   * Otherwise as normal.
    */
   function typeOf(obj) {
     var result = typeof obj;
     if (result !== 'object') { return result; }
     if (null === obj) { return result; }
     if (cajita.inheritsFrom(obj, DisfunctionPrototype)) { return 'function'; }
+    if (cajita.isFrozen(obj) && typeof obj.call === 'function') {
+      return 'function';
+    }
     return result;
   }
 

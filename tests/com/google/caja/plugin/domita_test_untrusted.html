@@ -369,7 +369,7 @@ function canonInnerHtml(s) {
       htmlStartTag,
       function (_, tagStart, tagBody) {
         var attrs = [];
-        for (var m; !! tagBody && (m = tagBody.match(htmlAttribute));) {
+        for (var m; !!tagBody && (m = tagBody.match(htmlAttribute));) {
           var name = m[1];
           var value = m[2];
           var hasValue = value != null;

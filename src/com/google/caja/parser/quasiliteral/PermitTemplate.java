@@ -76,6 +76,7 @@ final class PermitTemplate {
           "isArray", CanCall,
           "isJSONContainer", CanCall,
           "freeze", CanCall,
+	  "isFrozen", CanCall,
           "copy", CanCall,
           "snapshot", CanCall,
           "canReadPub", CanCall,

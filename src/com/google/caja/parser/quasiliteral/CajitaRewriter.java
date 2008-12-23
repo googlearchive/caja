@@ -2121,7 +2121,7 @@ public class CajitaRewriter extends Rewriter {
             ParseTreeNode pairIn = substSingleMap(keys.get(i), vals.get(i));
             ParseTreeNode pairOut = expand(pairIn, scope, mq);
             Map<String, ParseTreeNode> pairBindings = makeBindings();
-            if (! QuasiBuilder.match("___.initializeMap([@key, @val])", pairOut, pairBindings)) {
+            if (!QuasiBuilder.match("___.initializeMap([@key, @val])", pairOut, pairBindings)) {
               mq.addMessage(
                   RewriterMessageType.MAP_RECURSION_FAILED,
                   node.getFilePosition(), node);

@@ -135,17 +135,6 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
         "if(!success)fail('Object.watch is accessible');");
   }
 
-  /**
-   * Tests that unreadable global properties are not readable by way of
-   * Object.toSource().
-   */
-  public void testToSource() throws Exception {
-    rewriteAndExecute(
-        "var x;" +
-        "try{x=toSource();}catch(e){}" +
-        "if(x) fail('Global write-only values are readable.');");
-  }
-
   public void testForIn() throws Exception {
     // TODO(ihab.awad): Disabled until we figure out how to get a test fixture
     // that allows us to add stuff to IMPORTS___ before the test is run.
@@ -326,7 +315,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
 
   /**
    * Tests that the special handling of null on tamed exophora works.
-   *
+   * <p>
    * The reification of tamed exophoric functions contains
    * special cases for when the first argument to call, bind, or apply
    * is null or undefined, in order to protect against privilege escalation.

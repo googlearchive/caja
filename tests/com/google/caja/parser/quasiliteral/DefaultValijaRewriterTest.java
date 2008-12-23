@@ -398,6 +398,28 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "$v.cf($v.ro('zap'), [ ]);");
   }
 
+  public void testInMonkeyDelete() throws Exception {
+    assertConsistent(
+        // TODO(erights): Fix when bug 953 is fixed.
+        "var BAD_TEST = true;" +
+        "delete Array.prototype.push;" +
+        "('push' in []) || BAD_TEST;");
+  }
+
+  public void testMonkeyOverride() throws Exception {
+    assertConsistent(
+        // TODO(erights): Fix when bug 953 is fixed.
+        "var BAD_TEST = true;" +
+        "Date.prototype.propertyIsEnumerable = function(p) { return true; };" +
+        "(new Date()).propertyIsEnumerable('foo') || BAD_TEST;");
+  }
+
+  public void testValijaTypeofConsistent() throws Exception {
+    assertConsistent("[" +
+        "  (typeof [].push)" +
+        "];");
+  }
+
   @Override
   protected Object executePlain(String caja)
       throws IOException, ParseException {

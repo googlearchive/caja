@@ -746,7 +746,7 @@ public class DefaultValijaRewriter extends Rewriter {
         if (bindings != null) {
           Identifier v = (Identifier) bindings.get("v");
           String vname = v.getName();
-          if (! scope.isOuter(vname)) {
+          if (!scope.isOuter(vname)) {
             ParseTreeNode r = bindings.get("r");
             return substV(
                 "v", v,
@@ -771,7 +771,7 @@ public class DefaultValijaRewriter extends Rewriter {
           ParseTreeNode v = bindings.get("v");
           if (v instanceof Reference) {
             String vname = ((Reference) v).getIdentifierName();
-            if (! scope.isOuter(vname)) {
+            if (!scope.isOuter(vname)) {
               ParseTreeNode r = bindings.get("r");
               return substV(
                   "v", v,

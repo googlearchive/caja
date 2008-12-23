@@ -2119,6 +2119,30 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "zap.CALL___();");
   }
 
+  public void testRecordInheritance() throws Exception {
+    rewriteAndExecute(
+        "var x = {a: 8};" +
+        "var y = cajita.beget(x);" +
+        "testImports.y = y;",
+
+        // TODO(erights): Fix when bug 956 is fixed.
+        "var BAD_TEST = true;" +
+        "assertTrue(cajita.canReadPub(y, 'a') || BAD_TEST);",
+        "");
+  }
+
+  /**
+   * Tests that properties that the global object inherits from
+   * <tt>Object.prototype</tt> are not readable as global
+   * variables.
+   */
+  public void testNoPrototypicalImports() throws Exception {
+    rewriteAndExecute(
+        "var x;" +
+        "try { x = toString; } catch (e) {}" +
+        "if (x) { cajita.fail('Inherited global properties are readable'); }");
+  }
+
   @Override
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();
