@@ -552,7 +552,8 @@ var ___;
     switch (typeOf(obj)) {
       case 'object': {
         if (obj === null) { return '<null>'; }
-        return '[' + (directConstructor(obj).name || 'Object') + ']';
+        var constr = directConstructor(obj);
+        return '[' + ((constr && constr.name) || 'Object') + ']';
       }
       default: {
         return '(' + obj + ':' + typeOf(obj) + ')';
