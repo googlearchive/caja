@@ -48,7 +48,11 @@ public abstract class FileSystemEnvironment implements PluginEnvironment {
 
   public String rewriteUri(ExternalReference ref, String mimeType) {
     File f = toFileUnderSameDirectory(ref.getUri());
-    if (f == null) { return null; }
+    if (f == null) {
+      String uristr = ref.getUri().toString();
+      if (uristr == "#") { return uristr; }
+      else { return null; }
+    }
     return new File(directory, ".").toURI().relativize(f.toURI()).toString();
   }
 
