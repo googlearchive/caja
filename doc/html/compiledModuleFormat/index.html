@@ -1,0 +1,169 @@
+<!--
+  -- Copyright (C) 2008 Google Inc.
+  --
+  -- Licensed under the Apache License, Version 2.0 (the "License");
+  -- you may not use this file except in compliance with the License.
+  -- You may obtain a copy of the License at
+  --
+  -- http://www.apache.org/licenses/LICENSE-2.0
+  --
+  -- Unless required by applicable law or agreed to in writing, software
+  -- distributed under the License is distributed on an "AS IS" BASIS,
+  -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  -- See the License for the specific language governing permissions and
+  -- limitations under the License.
+  -->
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+  <title>Compiled module format</title>
+  <link type="text/css" rel="stylesheet" href="../common/documentStyle.css"/>
+  <link type="text/css" rel="stylesheet" href="../common/prettify.css"/>
+  <script type="text/javascript" src="../common/prettify.js"></script>
+  <script type="text/javascript" src="../common/headingNumbers.js"></script>
+  <style type="text/css">
+    .listing table {
+      border: 1px solid darkgray;
+    }
+    .listing td {
+      background-color: #ffffff;
+      padding: 10px;
+      vertical-align: top;
+    }
+  </style>
+  <script type="text/javascript">
+    function doOnload() {
+      numberDocument();
+      prettyPrint();
+    }
+  </script>
+</head>
+
+<body onload="doOnload();">
+
+<div class="title">Compiled module format</div>
+
+<!-- ############################################################ -->
+
+<h1>Summary</h1>
+
+<p>We describe an updated format for Caja modules, which allows for,
+among other things, debugging information. We outline some debugging
+information that will be included.</p>
+
+<!-- ############################################################ -->
+
+<h1>Background</h1>
+
+<p>Currently, the output of the Caja translator is a Cajita
+module. This module is a JavaScript statement of the following
+form:</p>
+
+<pre class="prettyprint">
+___.loadModule(function(___, IMPORTS___) {
+  <em>... cajoled code here ...</em>
+});
+</pre>
+
+<p>The call to <code class="prettyprint">___.loadModule()</code> is
+merely to handle the case where a containing page loads a module by
+including a
+<code class="prettyprint">&lt;script src="..."&gt;</code> tag pointing
+to the module's text. In that case, the module function must be made
+available to the surrounding page via some side effects; we chose
+those to be the <code class="prettyprint">loadModule()</code> method
+of the global <code class="prettyprint">___</code> object representing
+the Caja &micro;kernel. Otherwise, the Cajita module <em>itself</em>
+is just the anonymous function:</p>
+
+<pre class="prettyprint">
+function(___, IMPORTS___) {
+  <em>... cajoled code here ...</em>
+};
+</pre>
+
+<p>Cajita modules as described above do not have a mechanism for
+providing to their container some important metadata for debugging,
+checksumming, signing, authorship, details of cajoling process and
+time, description of API requirements, and slots for framework
+programmers to use in describing modules.</p>
+
+<!-- ############################################################ -->
+
+<h1>Module format</h1>
+
+<p>Our new module format is an object literal, so the Caja translator
+output looks like:</p>
+
+<pre class="prettyprint">
+___.loadModule({
+  code: function(___, IMPORTS___) { ... },
+  sha1sum: ...,
+  cajolerVersion: ...,
+  debugInfo: { ... },
+  manifest: { ...},
+});
+</pre>
+
+<p>The following are the standard keys:</p>
+
+<div class="listing"><table>
+
+  <tr>
+    <td><code class="prettyprint">code</code></td>
+    <td><em>required</em></td>
+    <td>The anonymous function representing the module, as before.</td>
+  </tr>
+
+  <tr>
+    <td><code class="prettyprint">sha1sum</code></td>
+    <td><em>required</em></td>
+    <td>String literal containing the SHA-1 sum of the string value of
+    the <code class="prettyprint">code</code> property.</td>
+  </tr>
+
+  <tr>
+    <td><code class="prettyprint">cajolerVersion</code></td>
+    <td><em>required</em></td>
+    <td>A string literal uniquely identifying the version of the Caja
+    translator which emitted this module. This is an opaque value;
+    applications may only check it for equality.</td>
+  </tr>
+
+  <tr>
+    <td><code class="prettyprint">debugInfo</code></td>
+    <td><em>optional</em></td>
+    <td>A record containing debug information, described below. If a
+    module was compiled without debugging support, this property is
+    absent.</td>
+  </tr>
+
+  <tr>
+    <td><code class="prettyprint">manifest</code></td>
+    <td><em>optional</em></td>
+    <td>A JSON record containing the module manifest. A program
+    provides this to the cajoler by calling
+    the <code>cajita.manifest()</code> function.</td>
+  </tr>
+
+</table></div>
+
+<h1>Debugging information</h1>
+
+<p>The purpose of the debugging information is to provide hooks for
+transparent source-level debugging of cajoled code. This requires
+providing the original source code; line number mappings from the
+original source to the cajoled output; information about which
+variables are actually in-scope end-user code (as opposed to
+temporaries generated by the cajoler); and enough information for the
+debugger to skip over Caja boilerplate (e.g. to enter a function
+directly rather than step through the
+Cajita <code class="prettyprint">___.callPub()</code> or Valija 
+<code class="prettyprint">$v.callFunc()</code> guff).</p>
+
+</body>
+
+</html>

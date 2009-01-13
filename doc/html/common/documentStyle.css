@@ -55,6 +55,20 @@ code, tt {
   color: darkblue;
 }
 
+dl {
+  padding: 5px;
+  border: 1px solid #d0d0d0;
+}
+
+dt {
+  margin-top: 5px;
+  font-style: italic;
+}
+
+dd {
+    margin-left: 0.25in;
+}
+
 /*
 pre {
   color: darkblue;

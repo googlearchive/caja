@@ -37,66 +37,43 @@
 
 <div class="title">Module System for ES-Harmony</div>
 
-<h1>Summary</h1>
+<center>
+<em>Ihab Awad and Kris Kowal</em><br/>
+<br/>
+<strong>PRELIMINARY</strong>
+</center>
+
+<h1>Introduction</h1>
 
 <p>This is a proposal for a module system for inclusion in ES-Harmony
 and possible prototyping prior to standardization.</p>
 
-<h1>Informal description</h1>
+<p>We have at least two main concerns: how an ES module is written,
+and how it is used by clients. To start the discussion, we will fix
+the <em>desugared</em> format of an ES module. We will then describe
+the various means in which such a module may be used by
+clients. Finally, we will return to the module format, at which point
+we will describe the syntactic sugar for generating module
+definitions, and explain how ES programs written without knowledge of
+the module system can act as modules.</p>
 
-<h2>Example module</h2>
+<h1>Desugared module format</h1>
 
-<p>Our example of a module is a resource stored at the URL:</p>
+<dl>
+  <dt>Closed function</dt>
+  <dd>A function that has no free variables.</dd>
+</dl>
 
-<blockquote><code class="prettyprint">http://example.com/someModule.js</code></blockquote>
-
-<p>containing the text:</p>
-
-<pre class="prettyprint">
-var isOn = false;
-{
-  toggle: function() {
-    document.setBackgroundColor(isOn ?
-        bgColor : '#ffffff');
-    isOn = !isOn;
-  },
-  set: function() {
-    document.setBackgroundColor(bgColor);
-    isOn = true;
-};
-</pre>
-
-<p>Note that this is merely a snippet of top-level ES code without any
-new keywords. The code has two free variables, <code
-class="prettyprint">document</code> and <code
-class="prettyprint">bgColor</code>. It declares the state variable
-<code class="prettyprint">isOn</code>. Its last statement is an
-expression returning an object literal containing closures that
-capture both the state variable <code class="prettyprint">isOn</code>
-and the free variables.</p>
-
-<h2>Loading the module</h2>
-
-<p>Loading a module is done through a <em>loader</em>. When invoked
-as, for example:</p>
+<p>We assume that an ES module is a closed function which takes a
+single argument (which we call <code class="prettyprint">$</code> as a
+placeholder) and returns exactly one ES object, for example:</p>
 
 <pre class="prettyprint">
-var m = loader.loadUrl('http://example.com/someModule.js');
-</pre>
-
-<p>the result, <code class="prettyprint">m</code>, is a <code
-class="prettyprint">Function</code> object that is semantically
-equivalent to the results of a strict <code
-class="prettyprint">eval()</code> of the following code (assuming
-<code class="prettyprint">$</code> is an unmentionable, automatically
-generated identifier):</p>
-
-<pre class="prettyprint">
-<span style="background-color: #ffffe0">function($) {</span>
-  <span style="background-color: #ffffe0">var background = $.background;</span>
-  <span style="background-color: #ffffe0">var document = $.document;</span>
+function ($) {
+  var background = $.background;
+  var document = $.document;
   var isOn = false;
-  <span style="background-color: #ffffe0">return</span> {
+  return {
     toggle: function() {
       document.setBackgroundColor(isOn ?
           background : '#ffffff');
@@ -106,30 +83,73 @@ generated identifier):</p>
       document.setBackgroundColor(background);
       isOn = true;
   };
-<span style="background-color: #ffffe0">};</span>
+}
 </pre>
 
-<p>This function has no free variables: free variables of the original
-code are rewritten to be snapshots of the contents of a supplied
-object literal. In the inner function, <code
-class="prettyprint">this</code> is always <code
-class="prettyprint">undefined</code>. And the function <code
-class="prettyprint">return</code>s the value of the last expression in
-the original code. It is the responsibility of the loader to perform
-the necessary analysis on the loaded code to do this
-transformation.</p>
+<dl>
+  <dt>Module text</dt>
+  <dd>The physical text of a module.</dd>
 
-<div class="note">Is <code class="prettyprint">this.Array ===
-Array</code>, as one would expect from legacy top-level ES code? Not
-according to this trick. What then?</div>
+  <dt>Module constructor</dt>
+  <dd>The ES function value that is produced by compiling the module text.</dd>
+</dl>
 
-<h2>Instantiating the module</h2>
+<h1>Module loaders</h1>
 
-<p>To <em>instantiate</em> the module is to call its module function,
-thus creating an independent instance of its internal state variables.
-Given a loaded module <code class="prettyprint">m</code> as
-previously, we can, within the same client code, create two instances
-as follows:</p>
+<dl>
+  <dt>Module identifier</dt>
+  <dd>A datum that identifies some module text.</dd>
+
+  <dt>Module loader</dt>
+  <dd>A function that maps module identifiers to module functions.</dd>
+</dl>
+
+<p>Module loaders are installation-dependent. For example, the Web
+browser environment may provide a module loader which accepts module
+identifiers in the form of URIs to the module text:</p>
+
+<pre class="prettyprint">
+var moduleFcn = uriLoader("http://example.com/myModule.js");
+</pre>
+
+<p>Another loader may require a module identifier consisting of a
+dotted name and a version range:</p>
+
+<pre class="prettyprint">
+var moduleFcn = nameLoader({
+  name: "org.example.aModule",
+  version: { min: "1.37", max: "1.41" }
+});
+</pre>
+
+<p>Yet another may allow path names relative to the importing
+module:</p>
+
+<pre class="prettyprint">
+var moduleFcn = pathLoader("../util/containers.js");
+</pre>
+
+<div class="note">We seem to be saying that module loading is possible
+as a run-time event, not the result of some statically recognizable
+syntax. How then do we deal with asynchronous
+loading? <strong>Kris</strong> has some ideas (sugared syntax which
+desugars to continuation passing?). Is this an opportunity to start
+talking about standard ES-Harmony future objects?</div>
+
+<h1>Isolated module instantiation</h1>
+
+<p>The simplest and most locally analyzable way to use a module
+function is to explicitly supply it with its imports and explicitly
+receive its exports. Since the module function is closed, each
+invocation creates an object graph provably disjoint from that created
+by previous invocations except as explicitly provided for by the
+imports supplied by the caller.</p>
+
+<dl>
+<dt>Module instance</dt>
+<dd>The value returned from the invocation of a module
+constructor.</dd>
+</dl>
 
 <pre class="prettyprint">
 var docA = /* ... */;
@@ -139,14 +159,16 @@ var docB = /* ... */;
 var colorB = /* ... */;
 
 // Instantiate and assign entire return value of module function
-var controlA = m({ document: docA, bgColor: colorA });
+var controlA =
+    moduleFcn({ document: docA, bgColor: colorA });
 
 // Use the first module instance ...
 controlA.toggle();
 controlA.set();
 
 // Instantiate with destructuring assignment to individual symbols
-var { toggle: toggleB, set: setB } = m({ document: docB, bgColor: colorB });
+var { toggle: toggleB, set: setB } =
+    moduleFcn({ document: docB, bgColor: colorB });
 
 // Use the second module instance ...
 toggleB();
@@ -169,86 +191,94 @@ toggleIt();
 setIt();
 </pre>
 
-<p>An important point is that, since the module function has no free
-variables, a loader may cache it without loss of isolation between
-instances.</p>
+<h1>Sandboxed module instantiation</h1>
 
-<div class="note">The fact of caching without loss of isolation is
-only important if this is being done in user-level code. Otherwise,
-the runtime can control the scope chain. As it likely has to in order
-to make the top-level <code class="prettyprint">this</code> work as
-expected (see above). Unless we punt on that behavior. More thought
-required.</div>
+<p>In the most common use of programming language modules, each module
+is a singleton (within the importing program's universe of discourse).</p>
 
-<h2>Asynchronous loading</h2>
+<dl>
+<dt>Sandbox</dt>
+<dd>An object which caches singleton module instances by module
+name. A sandbox is created with an immutable list of imports for
+instantiating modules.</dd>
+</dl>
 
-<p>In some cases, a loader may need to (say) use an HTTP request to
-fetch a module's text. In this case, the loader's methods execute
-asynchronously. These methods return a <em>future</em> object. Define
-a future such that the behavior of the following:</p>
-
-<pre class="prettyprint">
-var aFuture = /* a future */;
-var aFunction = function(a) { /* some code */ };
-aFuture.when(<em>arg<sub>0</sub>, arg<sub>1</sub>, ..., arg<sub>k</sub></em>, aFunction);
-</pre>
-
-<p>is to invoke the following when the future is resolved:</p>
+<p>Since a sandbox defines a fixed set of imports for many disparate
+modules, its imports will likely follow some well-known criteria. For
+example, a sandbox for modules in a Web page may contain the
+well-known imports <code class="prettyprint">document</code>
+and <code class="prettyprint">window</code>, each implementing a
+well-known API:</p>
 
 <pre class="prettyprint">
-aFunction(aFuture.call(undefined, <em>arg<sub>0</sub>, arg<sub>1</sub>, ..., arg<sub>k</sub></em>));
+var aDocument = /* ... */;
+var aWindow = /* ... */;
+
+var sbx = makeSandbox({ document: aDocument, window: aWindow });
+sbx.importUri("http://example.com/initialModule.js");
 </pre>
 
-<p>If <code class="prettyprint">loadUrl</code> returns a future, the
-syntax for module loading would therefore be:</p>
+<p>Subsequent calls to an import function of this sandbox (such
+as <code class="prettyprint">importUri</code> shown above) with the
+same module identifier will return a memoized copy of the initially
+created module instance.</p>
+
+<p>Within a sandboxed module, the instantiating sandbox is available
+as the variable <code class="prettyprint">sandbox</code> and can be
+used to import dependent modules:</p>
 
 <pre class="prettyprint">
-var document = /* ... */;
-var background = /* ... */;
-
-loader.loadUrl('http://example.com/someModule.js').when(
-  { document: myDoc, background: aColor },
-  function({ toggle: toggleIt, set: setIt }) {
-
-  toggleIt();
-  setIt();
-
-  // Remainder of code depending on the module
-  // ...
-});
+/* Within initialModule.js ... */
+var otherModule = sandbox.importUri("http://example.net/otherModule.js");
 </pre>
 
-<h2>Variant loaders</h2>
+<div class="note">Do we really like the variable
+name <code class="prettyprint">sandbox</code>? Yeesh.</div>
 
-<p>Nothing in this proposal assumes that HTTP resources are the only
-way to designate ES modules. For example, a loader could retrieve
-modules from a database based on a dotted name and version string, and
-be used in the same manner:</p>
+
+<h1>Syntactic Considerations</h1>
+
 
 <pre class="prettyprint">
-dbLoader.lmod('com.example.docbgcolors', '1.7+', true).when(
-  { document: myDoc, background: aColor },
-  function({ toggle: toggleIt, set: setIt }) {
+// The top level of a modularized compilation unit starts
+// with the 'module' keyword and declares its imports explicitly
+// (except for primordials: Array, Object, ...).
 
-  // ...
-});
+module (a, b) {
+
+  // Define a function scope:
+
+  var x = function(c, d) {
+
+    // Define a *nested* module:
+    // Should we go there or is this a redundant
+    // abomination?
+
+    var y = module (e, f) {
+      // Code here is isolated from the parent
+      // scope chain. It only has access to primordials
+      // and the arguments 'e' and 'f'.
+    };
+
+    // The module value 'y' is just a function:
+    y(a, b);
+    y(c, f);
+  };
+}
 </pre>
+
+<div class="note">Discuss the various import statement forms.
+<strong>Kris</strong>?</div>
 
 <h2>Module metadata</h2>
 
 <p>To enforce clean isolation, our proposal does not allow modules to
 name themselves or their contents in their client's universe of
-discourse. The loader is responsible for maintaining the namespace of
-modules, while the instantiating code is responsible for maintaining
-the names to which (portions of) module instances are assigned.</p>
-
-<p>For some purposes, it may be useful for a module to assign metadata
-to itself, to be used at the option of its clients. Our proposal does
-not cover this in any detail, but we imagine it could be used as
-follows:</p>
+discourse. However, it may be useful for the module constructor to
+support standard (or user-defined?) metadata:</p>
 
 <pre class="prettyprint">
-var m = loader.loadUrl('http://example.com/someModule.js');
+var m = loadUrl('http://example.com/someModule.js');
 
 m.name;    // &rarr; 'com.example.someModule'
 m.version; // &rarr; '1.8.10b'
@@ -257,313 +287,8 @@ m.imports; // &rarr; [ 'document', 'background' ]
 m.exports; // &rarr; [ 'toggleIt', 'setIt' ]
 </pre>
 
-<h1>Standardization issues</h1>
-
-<p>Strictly speaking, the functionality in this proposal can be
-written entirely in pure ES (possibly with the help of something like
-the <code class="prettyprint">XMLHttpRequest</code> object provided by
-Web browsers). That said, we believe the following items are
-candidates for standardization.</p>
-
-<h2>Module naming</h2>
-
-<h3>What</h3>
-
-<p>A standard scheme for naming modules; most likely, this would just
-be a statement that modules are identified by unique URIs.</p>
-
-<h3>Pro</h3>
-
-<p>The loader interface could then be standardized. In the typical
-case, where modules are HTTP resources, the module's URI serves as its
-global name; the usual combination of DNS and webadmins ensures that
-the responsible parties deal with the namespace issues. ES embeddings
-can set up local mirrors for module resources yet continue to identify
-them by their original URI. For modules stored in other than HTTP
-resources, variant URI schemes can be enlisted. In fact, the <code
-class="prettyprint">urn:</code> scheme can be used for location
-independent naming.</p>
-
-<h3>Con</h3>
-
-<p>At the risk of introducing a strawman, consider a typical usage of
-this sort of scheme: naming JDBC databases in Java enterprise
-applications. The JDBC URIs, typically of the form:</p>
-
-<pre class="prettyprint">
-jdbc:dbnet://wombat:356/fred
-jdbc:odbc:wombat;CacheSize=20;ExtensionCase=LOWER
-</pre>
-
-<p>invoke JDBC "drivers" which must be registered elsewhere in the
-system. The principal use for this is a form of dependency injection:
-the code loading the database typically reads the JDBC URI from a
-configuration file, allowing an administrator to install and remove
-database drivers, and covariantly modify the configuration URI, as
-needed. However, given that our modules are first-class objects, and
-that ES is a dynamic language, this dependency injection can easily be
-built by passing the module objects directly. So, for example, in ES,
-a system could store a <em>direct</em> reference to a database driver
-module in some configuration, and an application could do:</p>
-
-<pre class="prettyprint">
-var config = /* get the configuration params */;
-
-var dbmodule = config.get('com.wombat.dbdriver');
-var database = dbmodule();
-database.getRows( /* ... */ );
-</pre>
-
-<h3>Recommendation</h3>
-
-<p>Do not standardize module naming for ES. Recognize that Web browser
-environments will likely provide a default (and possibly standardized,
-but not by ES) loader, implemented as a host object that uses HTTP
-URLs to identify modules.</p>
-
-<h2>Loader support</h2>
-
-<h3>What</h3>
-
-<p>Imagine that we implement module loading in terms of a strict <code
-class="prettyprint">eval</code> operator. To avoid capturing variables
-from the invoking code, the loader must perform a parse and scope
-analysis of the module code. ES should provide a standard interface
-for this using native support. For example, the "&mu;kernel" of a
-loader, taking program text and producing a module function, could be
-a standard.</p>
-
-<div class="note">If the scope chain of the module must be fixed up,
-we <em>need</em> native support.</div>
-
-<h3>Pro</h3>
-
-<p>Doing this analysis in plain ES requires implementing a parser and
-scope analysis in ES. This is exhorbitantly expensive.</p>
-
-<h3>Con</h3>
-
-<p>Native loaders, available as host objects (e.g., in Web browsers
-and standardized as such) can do this without the need for any further
-ES standards.</p>
-
-<h3>Recommendation</h3>
-
-<div class="note">TBD pending scope chain issues.</div>
-
-<h2>Standardized module format</h2>
-
-<h3>What</h3>
-
-<p>A minimal specification for how a module is to receive imports
-from, and export symbols to, its instantiating code.</p>
-
-<p>In this proposal, free variables of the module code are imports,
-while the value of the last expression is an export. This is backwards
-compatible with existing ES top-level code. See <em>Alternatives and
-rationale</em> below for further discussion.</p>
-
-<h3>Pro</h3>
-
-<p>The mechanics of how a module is stored, addressed or loaded are
-easily pluggable, but making a module's program text fit a standard
-format is a requirement on the original module developer and is
-therefore an important up-front decision that cannot easily be
-revised. If ES does not standardize a way to do this, there will be a
-multitude of incompatible approaches.</p>
-
-<p>While the <em>concrete symbols</em> imported and exported by
-modules may differ, making the import/export scheme a standard allows
-delegation and chaining of module loading and instantiation tasks
-independently of the details of the modules being loaded.</p>
-
-<h3>Con</h3>
-
-<p>Given that this proposal can be implemented in plain ES, no further
-mechanism is needed.</p>
-
-<h3>Recommendation</h3>
-
-<p>ES should standardize this mechanism for the reasons given under
-<em>Pro</em>.</p>
-
-<h2>Module metadata</h2>
-
-<h3>What</h3>
-
-<p>Provide a standard way for a parsed module function to provide
-meta-information about itself. This information would be exposed as
-transitively immutable data available from the properties of the
-module function itself.</p>
-
-<h3>Pro</h3>
-
-<p>This would allow development tools and system administrators to
-better track the progeny of modules. In the absence of such a scheme,
-multiple nonstandard ones will be invented. </p>
-
-<h3>Con</h3>
-
-<p>Given that this proposal can be implemented in plain ES, no further
-mechanism is needed. There is a risk that this would be misunderstood
-as a scheme for storing "static" or "global" variables on the module;
-if this becomes common, systems using ES would become harder to
-maintain.</p>
-
-<h3>Recommendation</h3>
-
-<p>We tend towards supporting this proposal for the reasons given
-under <em>Pro</em>.</p>
-
-<h1>Alternatives and rationale</h1>
-
-<h2>Explicit module syntax</h2>
-
-<p>We considered an approach where a developer could embed, in their
-code, a <code class="prettyprint">module</code> block that would
-introduce a new lexical scope root:</p>
-
-<pre class="prettyprint">
-var a, b, c;
-
-module (b) {
-  // New lexical scope root
-  // Code here can only see variable 'b'
-};
-</pre>
-
-<p>This could be a candidate for an explicit declaration of top-level
-modules as well, so the top level of a module file could be:</p>
-
-<pre class="prettyprint">
-module (x, y, z) {
-
-  // Module code that imports 'x', 'y' and 'z'
-  // ...
-};
-</pre>
-
-<p>We rejected this idea via a case analysis of the circumstances
-under which it may be used:</p>
-
-<ol>
-
-  <li><p>As a construct within the same compilation unit, it is
-  redundant with other techniques (such as closures) for managing the
-  lexical scope. It also requires extra syntax beyond what we show
-  here for passing in symbols and receiving exports.</p></li>
-
-  <li><p>If it were adopted as part of the required structure of a
-  top-level ES module compilation unit, it would not be compatible
-  with existing ES programs.</p></li>
-  
-</ol>
-
-<h2>Import and export mechanisms</h2>
-
-<p>In our proposal, the module is desugared to code that obeys strict
-lexical scoping yet obtains its imports from a dynamic map. A module's
-exports are simply the value of its last expression evaluated before
-it "falls off the end" of its execution.</p>
-
-<p>This has the benefit of introducing no new syntax. It has the
-disadvantage that, although existing ES code could
-<em>theoretically</em> be (re)used as modules, there would be no
-practical way to extract the exported symbols from that code, since it
-would not be written to return all the exports in its last
-expression.</p>
-
-<p>In this section, we will examine some alternatives. The important
-points we wish to preserve under all circumstances are:</p>
-
-<ul>
-
-<li><p>Isolation between a module's scope and that of its
-instantiating code. The instantiating code cannot force new bindings
-into a module, and the module cannot force new bindings into its
-instantiating code.</p></li>
-
-<li><p>Multiple instantiation of modules. Each module should be parsed
-once to a first-class value that is (or, <em>can be</em>) returned to
-the client as such. This value presents an API such that the client
-can create independent copies of the contents of the module, each of
-which is isolated from all others.</p></li>
-
-</ul>
-
-<h3>Rendezvous at module's top-level dynamic scope</h3>
-
-<p>Imagine that the module code can be evaluated in a new top-level
-scope as a standard ES <em>Program</em>. This scope is pre-populated
-with the imports, as provided by the instantiating code. New top-level
-declarations in the module are placed in the top-level scope. When the
-module code has run to completion, the instantiating code may harvest
-symbols from that scope.</p>
-
-<div class="figure"><img src="moduleScope3Level.png"/></div>
-
-<p>This has the advantage that the expected global <code
-class="prettyprint">this</code> binding works as usual; specifically,
-modules can <code class="prettyprint">delete</code> and declare
-variables at the top level and see the normal behavior.</p>
-
-<p>One disadvantage is that, if a module wishes to isolate portions of
-itself, it must do so using closures:</p>
-
-<pre class="prettyprint">
-var x; // Variable 'x' is exported (or shadows an import)
-
-(function() {
-  var y; // Variable 'y' is module private
-  x = /* ... */; // Assign to and initialize exported variables
-})();
-</pre>
-
-<p>Another disadvantage is that, <em>as described so far</em>, it does
-not separate module loading and instantiation. Specifically, there is
-not a first-class value returned to the client code from module
-loading that can be used multiple times for instantiation. This means
-that the client has to rely on the loader's caching of the module's
-AST for efficiency but, worse, we make it impossible for the client to
-ensure they get the same module every time since the module may have
-changed and the loader may or may not choose to (say) reload from the
-HTTP resource every time.</p>
-
-<p>There seems to be a way to rescue this proposal: we could simply
-always evaluate the module without <em>any</em> imports (beyond
-primordial objects). The only exports such a module can provide are
-now just constants and functions which, when supplied with information
-by the client, can produce outputs. However, since these functions,
-when run, do not cause a new scope chain to be constructed, they can
-share state; hence the module is essentially a singleton and any
-objects instantiated from the module must be assumed to depend on one
-another. This interdependency is detrimental to reasoning about both
-security and code modularity.</p>
-
-<p>Of course, we may simply state that, as part of its contract, a
-loader (or, the standardized loader &mu;kernel) compiles the text of a
-module and returns a special host object that has some API such that,
-when called, it evaluates the contents of the module in an isolated
-scope. Indeed, this may be the only way to achieve the maximum legacy
-compatibility <em>and</em> the proper isolation.</p>
-
-<h3>Explicit calls to import and export facility</h3>
-
-<p>We may require modules to include explicit calls to <code
-class="prettyprint">import</code> or <code
-class="prettyprint">export</code> functions. We eschewed this option
-because it gets in the way of using (re)existing pieces of ES
-top-level code as modules.</p>
-
-<h3>Allowing <code class="prettyprint">return</code> at the top level</h3>
-
-<p>We could allow a module to export symbols by <code
-class="prettyprint">return</code>ing a value (presumably an object
-literal). This requires allowing class="prettyprint">return</code> in
-a <em>Program</em> production. If adopted in conjunction with the idea
-that, for backwards compatibility, and in the absence of a <code
-class="prettyprint">return</code>, the last expression is evaluated,
-this might be a good feature.</p>
+<div class="note">How is this metadata supplied by the module author?
+Via more syntactic sugar?</div>
 
 </body>
 
