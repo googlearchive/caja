@@ -1,0 +1,10 @@
+{
+  "types": [
+      { "key":         "NOBR",
+        "empty":       false,
+        "optionalEnd": false,
+        "deprecated":  false,
+        "description": "present in HTML5, but not in HTML4 though widely used"
+      }
+  ]
+}

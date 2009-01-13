@@ -119,5 +119,5 @@
         "reason": "allows global definition of styles." },
       { "key": "TITLE",
         "reason": "a global level tag" },
-      ],
+      ]
 }

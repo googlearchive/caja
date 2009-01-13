@@ -41,6 +41,66 @@ var bridal = (function() {
   // Public section
   ////////////////////////////////////////////////////////////////////////////
 
+  var CUSTOM_EVENT_TYPE_SUFFIX = '_custom___';
+  function tameEventType(type, opt_isCustom) {
+    type = String(type);
+    if (endsWith__.test(type)) {
+      throw new Error('Invalid event type ' + type);
+    }
+    if (opt_isCustom
+        || html4.atype.SCRIPT !== html4.ATTRIBS['*:on' + type]) {
+      type = type + CUSTOM_EVENT_TYPE_SUFFIX;
+    }
+    return type;
+  }
+
+  function untameEventType(type) {
+    var suffix = CUSTOM_EVENT_TYPE_SUFFIX;
+    var tlen = type.length, slen = suffix.length;
+    var end = tlen - slen;
+    if (end >= 0 && suffix === type.substring(end)) {
+      type = type.substring(0, end);
+    }
+    return type;
+  }
+
+  function initEvent(event, type, bubbles, cancelable) {
+    type = tameEventType(type, true);
+    bubbles = Boolean(bubbles);
+    cancelable = Boolean(cancelable);
+
+    if (event.initEvent) {  // Non-IE
+      event.initEvent(type, bubbles, cancelable);
+    } else if (bubbles && cancelable) {  // IE
+      event.eventType___ = type;
+    } else {
+      // TODO(mikesamuel): can bubbling and cancelable on events be simulated
+      // via http://msdn.microsoft.com/en-us/library/ms533545(VS.85).aspx
+      throw new Error(
+          'Browser does not support non-bubbling/uncanceleable events');
+    }
+  }
+
+  function dispatchEvent(element, event) {
+    // TODO(mikesamuel): when we change event dispatching to happen
+    // asynchronously, we should exempt custom events since those
+    // need to return a useful value, and there may be code bracketing
+    // them which could observe asynchronous dispatch.
+
+    // "The return value of dispatchEvent indicates whether any of
+    //  the listeners which handled the event called
+    //  preventDefault. If preventDefault was called the value is
+    //  false, else the value is true."
+    if (element.dispatchEvent) {
+      return Boolean(element.dispatchEvent(event));
+    } else {
+      // Only dispatches custom events as when tameEventType(t) !== t.
+      element.fireEvent('ondataavailable', event);
+      return Boolean(event.returnValue);
+    }
+  }
+
+
   /**
    * Add an event listener function to an element.
    *
@@ -52,15 +112,37 @@ var bridal = (function() {
    * @param {string} type a string identifying the event type.
    * @param {boolean Element::function (event)} handler an event handler.
    * @param {boolean} useCapture whether the user wishes to initiate capture.
+   * @return {boolean Element::function (event)} the handler added.  May be
+   *     a wrapper around the input.
    */
   function addEventListener(element, type, handler, useCapture) {
+    type = String(type);
+    var tameType = tameEventType(type);
     if (features.attachEvent) {
       // TODO(ihab.awad): How do we emulate 'useCapture' here?
-      element.attachEvent('on' + type, handler);
+      if (type !== tameType) {
+        var wrapper = eventHandlerTypeFilter(handler, tameType);
+        element.attachEvent('ondataavailable', wrapper);
+        return wrapper;
+      } else {
+        element.attachEvent('on' + type, handler);
+        return handler;
+      }
     } else {
       // FF2 fails if useCapture not passed or is not a boolean.
-      element.addEventListener(type, handler, useCapture);
+      element.addEventListener(tameType, handler, useCapture);
+      return handler;
     }
+  }
+  function eventHandlerTypeFilter(handler, tameType) {
+    // This does not need to check that handler is callable by untrusted code
+    // since the handler will invoke plugin_dispatchEvent which will do that
+    // check on the untrusted function reference.
+    return function (event) {
+      if (tameType === event.eventType___) {
+        return handler.call(this, event);
+      }
+    };
   }
 
   /**
@@ -76,11 +158,17 @@ var bridal = (function() {
    * @param useCapture whether the user wishes to initiate capture.
    */
   function removeEventListener(element, type, handler, useCapture) {
+    type = String(type);
+    var tameType = tameEventType(type);
     if (features.attachEvent) {
       // TODO(ihab.awad): How do we emulate 'useCapture' here?
-      element.detachEvent('on' + type, handler);
+      if (tameType !== type) {
+        element.detachEvent('ondataavailable', handler);
+      } else {
+        element.detachEvent('on' + type, handler);
+      }
     } else {
-      element.removeEventListener(type, handler, useCapture);
+      element.removeEventListener(tameType, handler, useCapture);
     }
   }
 
@@ -278,8 +366,11 @@ var bridal = (function() {
   return {
     addEventListener: addEventListener,
     removeEventListener: removeEventListener,
+    initEvent: initEvent,
+    dispatchEvent: dispatchEvent,
     cloneNode: cloneNode,
     createStylesheet: createStylesheet,
-    setAttribute: setAttribute
+    setAttribute: setAttribute,
+    untameEventType: untameEventType
   };
 })();

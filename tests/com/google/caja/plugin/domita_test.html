@@ -41,7 +41,7 @@
     <div id="console-results"></div>
 
     <div id="untrusted_content" class="xyz___"
-     title="<Untrusted Content Title>">
+     title="<Untrusted Content Title>" style="width:1200px; height: 600px">
       <!-- inaccessible to document.getElementById -->
       <div id="foo"></div>
 
@@ -149,6 +149,9 @@
         }),
         getAttribute: ___.frozenFunc(function (tameNode, name) {
           return tameNode.node___.getAttribute(name);
+        }),
+        getBodyNode: ___.frozenFunc(function () {
+          return testImports.tameNode___(testDomContainer);
         }),
         getComputedStyle: ___.frozenFunc(function (tameNode, styleProp) {
           var node = tameNode.node___;

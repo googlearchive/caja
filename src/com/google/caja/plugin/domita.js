@@ -20,9 +20,6 @@
  * <a href="http://www.w3.org/TR/DOM-Level-2-HTML/ecma-script-binding.html"
  * >ECMAScript Language Bindings</a>.
  *
- * Requires cajita.js, css-defs.js, html4-defs.js, html-emitter.js,
- * html-sanitizer.js, unicode.js.
- *
  * Caveats:
  * - This is not a full implementation.
  * - Security Review is pending.
@@ -452,6 +449,138 @@ attachDocumentStub = (function () {
     clearInterval(intervalId.intervalId___);
   }
   ___.frozenFunc(tameClearInterval);
+
+  function makeScrollable(element) {
+    var overflow;
+    if (element.currentStyle) {
+      overflow = element.currentStyle.overflow;
+    } else if (window.getComputedStyle) {
+      overflow = window.getComputedStyle(element, void 0).overflow;
+    }
+    switch (overflow && overflow.toLowerCase()) {
+      case 'visible':
+      case 'hidden':
+        element.style.overflow = 'auto';
+        break;
+    }
+  }
+
+  /**
+   * Moves the given pixel within the element's frame of reference as close to
+   * the top-left-most pixel of the element's viewport as possible without
+   * moving the viewport beyond the bounds of the content.
+   * @param {number} x x-coord of a pixel in the element's frame of reference.
+   * @param {number} y y-coord of a pixel in the element's frame of reference.
+   */
+  function tameScrollTo(element, x, y) {
+    if (x !== +x || y !== +y || x < 0 || y < 0) {
+      throw new Error('Cannot scroll to ' + x + ':' + typeof x + ','
+                      + y + ' : ' + typeof y);
+    }
+    element.scrollLeft = x;
+    element.scrollTop = y;
+  }
+
+  /**
+   * Moves the origin of the given element's view-port by the given offset.
+   * @param {number} dx a delta in pixels.
+   * @param {number} dy a delta in pixels.
+   */
+  function tameScrollBy(element, dx, dy) {
+    if (dx !== +dx || dy !== +dy) {
+      throw new Error('Cannot scroll by ' + dx + ':' + typeof dx + ', '
+                      + dy + ':' + typeof dy);
+    }
+    element.scrollLeft += dx;
+    element.scrollTop += dy;
+  }
+
+  function guessPixelsFromCss(cssStr) {
+    if (!cssStr) { return 0; }
+    var m = cssStr.match(/^([0-9]+)/);
+    return m ? +m[1] : 0;
+  }
+
+  function tameResizeTo(element, w, h) {
+    if (w !== +w || h !== +h) {
+      throw new Error('Cannot resize to ' + w + ':' + typeof w + ', '
+                      + h + ':' + typeof h);
+    }
+    element.style.width = w + 'px';
+    element.style.height = h + 'px';
+  }
+
+  function tameResizeBy(element, dw, dh) {
+    if (dw !== +dw || dh !== +dh) {
+      throw new Error('Cannot resize by ' + dw + ':' + typeof dw + ', '
+                      + dh + ':' + typeof dh);
+    }
+    if (!dw && !dh) { return; }
+
+    // scrollWidth is width + padding + border.
+    // offsetWidth is width + padding + border, but excluding the non-visible
+    // area.
+    // clientWidth iw width + padding, and like offsetWidth, clips to the
+    // viewport.
+    // margin does not count in any of these calculations.
+    //
+    // scrollWidth/offsetWidth
+    //   +------------+
+    //   |            |
+    //
+    // +----------------+
+    // |                | Margin-top
+    // | +------------+ |
+    // | |############| | Border-top
+    // | |#+--------+#| |
+    // | |#|        |#| | Padding-top
+    // | |#| +----+ |#| |
+    // | |#| |    | |#| | Height
+    // | |#| |    | |#| |
+    // | |#| +----+ |#| |
+    // | |#|        |#| |
+    // | |#+--------+#| |
+    // | |############| |
+    // | +------------+ |
+    // |                |
+    // +----------------+
+    //
+    //     |        |
+    //     +--------+
+    //     clientWidth (but excludes content outside viewport)
+
+    var style = element.currentStyle;
+    if (!style) {
+      style = window.getComputedStyle(element, void 0);
+    }
+
+    // We guess the padding since it's not always expressed in px on IE
+    var extraHeight = guessPixelsFromCss(style.paddingBottom)
+        + guessPixelsFromCss(style.paddingTop);
+    var extraWidth = guessPixelsFromCss(style.paddingLeft)
+        + guessPixelsFromCss(style.paddingRight);
+
+    var goalHeight = element.clientHeight + dh;
+    var goalWidth = element.clientWidth + dw;
+
+    var h = goalHeight - extraHeight;
+    var w = goalWidth - extraWidth;
+
+    if (dh) { element.style.height = Math.max(0, h) + 'px'; }
+    if (dw) { element.style.width = Math.max(0, w) + 'px'; }
+
+    // Correct if our guesses re padding and borders were wrong.
+    // We may still not be able to resize if e.g. the deltas would take
+    // a dimension negative.
+    if (dh && element.clientHeight !== goalHeight) {
+      var hError = element.clientHeight - goalHeight;
+      element.style.height = Math.max(0, h - hError) + 'px';
+    }
+    if (dw && element.clientWidth !== goalWidth) {
+      var wError = element.clientWidth - goalWidth;
+      element.style.width = Math.max(0, w - wError) + 'px';
+    }
+  }
 
   // See above for a description of this function.
   function attachDocumentStub(
@@ -903,7 +1032,6 @@ attachDocumentStub = (function () {
         return plugin_dispatchEvent___(
             thisNode, event, ___.getId(imports), listener);
       }
-      wrapper.originalListener___ = listener;
       return wrapper;
     }
 
@@ -912,34 +1040,21 @@ attachDocumentStub = (function () {
     var UNSAFE_TAGNAME = "Unsafe tag name.";
     var UNKNOWN_TAGNAME = "Unknown tag name.";
 
-    var CUSTOM_EVENT_TYPE_SUFFIX = ':custom';
-    function tameEventName(name, opt_isCustom) {
-      name = String(name);
-      if (endsWith__.test(name)) {
-        throw new Error('Invalid event name ' + name);
-      }
-      if (opt_isCustom
-          || html4.atype.SCRIPT !== html4.ATTRIBS['*:on' + name]) {
-        name = name + CUSTOM_EVENT_TYPE_SUFFIX;
-      }
-      return name;
-    }
-
     // Implementation of EventTarget::addEventListener
     function tameAddEventListener(name, listener, useCapture) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       if (!this.wrappedListeners___) { this.wrappedListeners___ = []; }
-      name = tameEventName(name);
       useCapture = Boolean(useCapture);
       var wrappedListener = makeEventHandlerWrapper(this.node___, listener);
+      wrappedListener = bridal.addEventListener(
+          this.node___, name, wrappedListener, useCapture);
+      wrappedListener.originalListener___ = listener;
       this.wrappedListeners___.push(wrappedListener);
-      bridal.addEventListener(this.node___, name, wrappedListener, useCapture);
     }
 
     // Implementation of EventTarget::removeEventListener
     function tameRemoveEventListener(name, listener, useCapture) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
-      name = tameEventName(name);
       if (!this.wrappedListeners___) { return; }
       var wrappedListener;
       for (var i = this.wrappedListeners___.length; --i >= 0;) {
@@ -951,7 +1066,7 @@ attachDocumentStub = (function () {
       }
       if (!wrappedListener) { return; }
       bridal.removeEventListener(
-           this.node___, name, wrappedListener, useCapture);
+          this.node___, name, wrappedListener, useCapture);
     }
 
     // A map of tamed node classes, keyed by DOM Level 2 standard name, which
@@ -1203,16 +1318,7 @@ attachDocumentStub = (function () {
     // "The EventTarget interface is implemented by all Nodes"
     TameBackedNode.prototype.dispatchEvent = function dispatchEvent(evt) {
       cajita.guard(tameEventTrademark, evt);
-      // TODO(mikesamuel): when we change event dispatching to happen
-      // asynchronously, we should exempt custom events since those
-      // need to return a useful value, and there may be code bracketing
-      // them which could observe asynchronous dispatch.
-
-      // "The return value of dispatchEvent indicates whether any of
-      //  the listeners which handled the event called
-      //  preventDefault. If preventDefault was called the value is
-      //  false, else the value is true."
-      return Boolean(this.node___.dispatchEvent(evt.event___));
+      bridal.dispatchEvent(this.node___, evt.event___);
     };
     ___.ctor(TameBackedNode, TameNode, 'TameBackedNode');
     ___.all2(___.grantTypedGeneric, TameBackedNode.prototype, tameNodeMembers);
@@ -1505,14 +1611,13 @@ attachDocumentStub = (function () {
       classUtils.exportFields(
           this,
           ['className', 'id', 'innerHTML', 'tagName', 'style',
-            'offsetLeft', 'offsetTop', 'offsetWidth', 'offsetHeight',
-            'offsetParent',
-            'scrollLeft',
-            'scrollTop',
-            'scrollWidth',
-            'scrollHeight',
-            'title',
-            'dir']);
+           'clientWidth', 'clientHeight',
+           'offsetLeft', 'offsetTop', 'offsetWidth', 'offsetHeight',
+           'offsetParent',
+           'scrollLeft', 'scrollTop',
+           'scrollWidth', 'scrollHeight',
+           'title',
+           'dir']);
     }
     classUtils.extend(TameElement, TameBackedNode);
     nodeClasses.Element = nodeClasses.HTMLElement = TameElement;
@@ -1693,6 +1798,12 @@ attachDocumentStub = (function () {
       }
     };
 
+    TameElement.prototype.getClientWidth = function () {
+      return this.node___.clientWidth;
+    };
+    TameElement.prototype.getClientHeight = function () {
+      return this.node___.clientHeight;
+    };
     TameElement.prototype.getOffsetLeft = function () {
       return this.node___.offsetLeft;
     };
@@ -1714,6 +1825,16 @@ attachDocumentStub = (function () {
     TameElement.prototype.getScrollTop = function () {
       return this.node___.scrollTop;
     };
+    TameElement.prototype.setScrollLeft = function (x) {
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      this.node___.scrollLeft = +x;
+      return x;
+    };
+    TameElement.prototype.setScrollTop = function (y) {
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      this.node___.scrollTop = +y;
+      return y;
+    };
     TameElement.prototype.getScrollWidth = function () {
       return this.node___.scrollWidth;
     };
@@ -1734,8 +1855,7 @@ attachDocumentStub = (function () {
         'hasAttribute',
         'getClassName', 'setClassName', 'getId', 'setId',
         'getInnerHTML', 'setInnerHTML', 'updateStyle', 'getStyle', 'setStyle',
-        'getTagName', 'getOffsetLeft', 'getOffsetTop', 'getOffsetWidth',
-        'getOffsetHeight']);
+        'getTagName']);
 
     // Register set handlers for onclick, onmouseover, etc.
     (function () {
@@ -2187,14 +2307,7 @@ attachDocumentStub = (function () {
     }
     nodeClasses.Event = TameEvent;
     TameEvent.prototype.getType = function () {
-      var type = String(this.event___.type);
-      var suffix = CUSTOM_EVENT_TYPE_SUFFIX;
-      var tlen = type.length, slen = suffix.length;
-      var end = tlen - slen;
-      if (end >= 0) {
-        type = type.substring(0, end);
-      }
-      return type;
+      return bridal.untameEventType(String(this.event___.type));
     };
     TameEvent.prototype.getTarget = function () {
       var event = this.event___;
@@ -2307,11 +2420,7 @@ attachDocumentStub = (function () {
     classUtils.extend(TameCustomHTMLEvent, TameEvent);
     TameCustomHTMLEvent.prototype.initEvent
         = function (type, bubbles, cancelable) {
-      type = tameEventName(type, true);
-      bubbles = Boolean(bubbles);
-      cancelable = Boolean(cancelable);
-
-      this.event___.initEvent(type, bubbles, cancelable);
+      bridal.initEvent(this.event___, type, bubbles, cancelable);
     };
     TameCustomHTMLEvent.prototype.handleRead___ = function (name) {
       name = String(name);
@@ -2815,11 +2924,13 @@ attachDocumentStub = (function () {
         'first-line': true
     };
 
-    // See http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#window for the full API.
-    // TODO(mikesamuel): This implements only the parts needed by prototype.
-    // The rest can be added on an as-needed basis as long as DOMado rules are
-    // obeyed.
-    var tameWindow = {
+    /**
+     * See http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#window for the full API.
+     */
+    function TameWindow() {
+      this.properties___ = {};
+    }
+    cajita.forOwnKeys({
       document: imports.document,
       location: tameLocation,
       navigator: tameNavigator,
@@ -2827,16 +2938,27 @@ attachDocumentStub = (function () {
       setInterval: tameSetInterval,
       clearTimeout: tameClearTimeout,
       clearInterval: tameClearInterval,
+      scrollBy: ___.frozenFunc(
+          function (dx, dy) {
+            // The window is always auto scrollable, so make the apparent window
+            // body scrollable if the gadget tries to scroll it.
+            if (dx || dy) { makeScrollable(tameDocument.body___); }
+            tameScrollBy(tameDocument.body___, dx, dy);
+          }),
       scrollTo: ___.frozenFunc(
           function (x, y) {
-            // Per DOMado rules, the window can only be scrolled in response to
-            // a user action.  Hence the isProcessingEvent___ check.
-            if ('number' === typeof x
-                && 'number' === typeof y
-                && !isNaN(x - y)
-                && imports.isProcessingEvent___) {
-              window.scrollTo(x, y);
-            }
+            // The window is always auto scrollable, so make the apparent window
+            // body scrollable if the gadget tries to scroll it.
+            makeScrollable(tameDocument.body___);
+            tameScrollTo(tameDocument.body___, x, y);
+          }),
+      resizeTo: ___.frozenFunc(
+          function (w, h) {
+            tameResizeTo(tameDocument.body___, w, h);
+          }),
+      resizeBy: ___.frozenFunc(
+          function (dw, dh) {
+            tameResizeBy(tameDocument.body___, dw, dh);
           }),
       addEventListener: ___.frozenFunc(
           function (name, listener, useCapture) {
@@ -2883,9 +3005,136 @@ attachDocumentStub = (function () {
       // event: a global on IE.  We always define it in scopes that can handle
       //        events.
       // opera: defined only on Opera.
-      // pageXOffset, pageYOffset: used if document.body.scroll{Left,Top}
-      //        unavailable
+    }, ___.func(function (propertyName, value) {
+      TameWindow.prototype[propertyName] = value;
+      ___.grantRead(TameWindow.prototype, propertyName);
+    }));
+    TameWindow.prototype.handleRead___ = function (name) {
+      name = String(name);
+      if (endsWith__.test(name)) { return void 0; }
+      var handlerName = name + '_getter___';
+      if (this[handlerName]) {
+        return this[handlerName]();
+      }
+      handlerName = handlerName.toLowerCase();
+      if (this[handlerName]) {
+        return this[handlerName]();
+      }
+      if (___.hasOwnProp(this.properties___, name)) {
+        return this.properties___[name];
+      } else {
+        return void 0;
+      }
     };
+    TameWindow.prototype.handleSet___ = function (name, val) {
+      name = String(name);
+      if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
+      var handlerName = name + '_setter___';
+      if (this[handlerName]) {
+        return this[handlerName](val);
+      }
+      handlerName = handlerName.toLowerCase();
+      if (this[handlerName]) {
+        return this[handlerName](val);
+      }
+      if (!this.properties___) {
+        this.properties___ = {};
+      }
+      this[name + '_canEnum___'] = true;
+      return this.properties___[name] = val;
+    };
+    TameWindow.prototype.handleDelete___ = function (name) {
+      name = String(name);
+      if (endsWith__.test(name)) { throw new Error(INVALID_SUFFIX); }
+      var handlerName = name + '_deleter___';
+      if (this[handlerName]) {
+        return this[handlerName]();
+      }
+      handlerName = handlerName.toLowerCase();
+      if (this[handlerName]) {
+        return this[handlerName]();
+      }
+      if (this.properties___) {
+        return (
+            delete this.properties___[name]
+            && delete this[name + '_canEnum___']);
+      } else {
+        return true;
+      }
+    };
+    TameWindow.prototype.handleEnum___ = function (ownFlag) {
+      // TODO(metaweta): Add code to list all the other handled stuff we know
+      // about.
+      if (this.properties___) {
+        return cajita.allKeys(this.properties___);
+      }
+      return [];
+    };
+
+    var tameWindow = new TameWindow();
+
+    function propertyOnlyHasGetter(_) {
+      throw new TypeError('setting a property that only has a getter');
+    }
+    cajita.forOwnKeys({
+      // We define all the window positional properties relative to
+      // the fake body element to maintain the illusion that the fake
+      // document is completely defined by the nodes under the fake body.
+      clientLeft: {
+        get: function () { return tameDocument.body___.clientLeft; }
+      },
+      clientTop: {
+        get: function () { return tameDocument.body___.clientTop; }
+      },
+      clientHeight: {
+        get: function () { return tameDocument.body___.clientHeight; }
+      },
+      clientWidth: {
+        get: function () { return tameDocument.body___.clientWidth; }
+      },
+      offsetLeft: {
+        get: function () { return tameDocument.body___.offsetLeft; }
+      },
+      offsetTop: {
+        get: function () { return tameDocument.body___.offsetTop; }
+      },
+      offsetHeight: {
+        get: function () { return tameDocument.body___.offsetHeight; }
+      },
+      offsetWidth: {
+        get: function () { return tameDocument.body___.offsetWidth; }
+      },
+      // page{X,Y}Offset appear only as members of window, not on all elements
+      // but http://www.howtocreate.co.uk/tutorials/javascript/browserwindow
+      // says that they are identical to the scrollTop/Left on all browsers but
+      // old versions of Safari.
+      pageXOffset: {
+        get: function () { return tameDocument.body___.scrollLeft; }
+      },
+      pageYOffset: {
+        get: function () { return tameDocument.body___.scrollTop; }
+      },
+      scrollLeft: {
+        get: function () { return tameDocument.body___.scrollLeft; },
+        set: function (x) { tameDocument.body___.scrollLeft = +x; return x; }
+      },
+      scrollTop: {
+        get: function () { return tameDocument.body___.scrollTop; },
+        set: function (y) { tameDocument.body___.scrollTop = +y; return y; }
+      },
+      scrollHeight: {
+        get: function () { return tameDocument.body___.scrollHeight; }
+      },
+      scrollWidth: {
+        get: function () { return tameDocument.body___.scrollWidth; }
+      }
+    }, ___.func(function (propertyName, def) {
+      // TODO(mikesamuel): define on prototype.
+      ___.useGetHandler(tameWindow, propertyName, def.get);
+      ___.useSetHandler(tameWindow, propertyName,
+                        def.set || propertyOnlyHasGetter);
+    }));
+
 
     // Attach reflexive properties to 'window' object
     tameWindow.top = tameWindow.self = tameWindow.opener = tameWindow.parent
@@ -2962,17 +3211,15 @@ attachDocumentStub = (function () {
 
     var outers = imports.outers;
     if (___.isJSONContainer(outers)) {
-      // For Valija, attach window object members to outers instead so that
-      // the members of window show up as global variables as well.
-      for (var k in tameWindow) {
-        if (!___.hasOwnProp(outers, k) && ___.canEnumPub(tameWindow, k)) {
-          var v = tameWindow[k];
-          outers[k] = v === tameWindow ? outers : v;
+      // For Valija, attach use the window object as outers.
+      cajita.forOwnKeys(outers, ___.func(function(k, v) {
+        if (!(k in tameWindow)) {
+          tameWindow[k] = v;
+          ___.grantRead(tameWindow, k);
         }
-      }
-      outers.window = outers;
+      }));
+      imports.outers = window;
     } else {
-      cajita.freeze(tameWindow);
       imports.window = tameWindow;
     }
   }

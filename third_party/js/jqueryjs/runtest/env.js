@@ -35,13 +35,32 @@ var window = this;
 
   window.__defineGetter__("location", function(url){
     return {
-      get protocol(){
+      get hash() {
+        return curLocation.getRef() || '';
+      },
+      get host() {
+        var hostname = this.hostname, port = this.port;
+        return hostname + (port ? ':' + port : '');
+      },
+      get hostname() {
+        return curLocation.getHost() || '';
+      },
+      get href() {
+        return curLocation.toString() || '';
+      },
+      get pathname() {
+        return curLocation.getPath() || '';
+      },
+      get port() {
+        return curLocation.getPort() || 0;
+      },
+      get protocol() {
         return curLocation.getProtocol() + ":";
       },
-      get href(){
-        return curLocation.toString();
+      get search() {
+        return curLocation.getQuery() || '';
       },
-      toString: function(){
+      toString: function () {
         return this.href;
       }
     };

@@ -217,9 +217,26 @@
   I will have a custom attribute
 </p>
 
-<p class="testcontainer" id="test-custom-events">&nbsp;</p>
+<p class="testcontainer" id="test-custom-events">Custom Events<br></p>
 
 <p class="testcontainer" id="test-factories-not-bypassable">&nbsp;</p>
+
+<p class="testcontainer" id="test-scrolling"><nobr
+>A really looooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong
+line that will force the viewport to have a horizontal scroll bar so that we
+can test window.scrollBy with a positive x value with a visible effect.
+</nobr><br></p>
+
+<p class="testcontainer" id="test-resizing">Resizing</p>
+
+<div class="testcontainer" id="test-size-properties"
+ style="
+    width: 100px;
+    height: 50px;
+    border: 2px solid black;
+    padding: 3px;
+    margin: 7px"
+ ></div>
 
 <p class="testcontainer" id="test-document-element">Test Document Element</p>
 
@@ -1543,7 +1560,7 @@ jsunitRegister('testCustomEvents',
     fired = true;
   }
 
-  var eventTarget = document.createElement('DIV');
+  var eventTarget = document.getElementById('test-custom-events');
   eventTarget.addEventListener('howdy', myHandler, true);
 
   var event = document.createEvent('HTMLEvents');
@@ -1568,6 +1585,85 @@ jsunitRegister('testFactoriesNotBypassable',
   pass('test-factories-not-bypassable');
 });
 
+jsunitRegister('testScrolling',
+               function testScrolling() {
+  assertEquals('0,0', String([window.scrollLeft, window.scrollTop]));
+  assertEquals(
+      'visible',
+      directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
+
+  window.scrollBy(0, 0);
+  assertEquals('0,0', String([window.scrollLeft, window.scrollTop]));
+  assertEquals(
+      'visible',
+      directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
+
+  window.scrollTo(0, 10);
+  assertEquals(
+      'auto',
+      directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
+  assertEquals('0,10', String([window.scrollLeft, window.scrollTop]));
+
+  window.scrollBy(10, -5);
+  assertEquals(
+      'auto',
+      directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
+  assertEquals('10,5', String([window.scrollLeft, window.scrollTop]));
+
+  window.scrollTo(0, 0);
+  assertEquals(
+      'auto',
+      directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
+  assertEquals('0,0', String([window.scrollLeft, window.scrollTop]));
+
+  pass('test-scrolling');
+});
+
+jsunitRegister('testResizing',
+               function testResizing() {
+  function windowDims() {
+    return String([window.clientWidth, window.clientHeight]);
+  }
+
+  function windowStyleWidth() {
+    return directAccess.getComputedStyle(directAccess.getBodyNode(), 'width');
+  }
+
+  assertEquals('initial scrollable dimensions', '1200,600', windowDims());
+  assertEquals('initial width', '1200px', windowStyleWidth());
+
+  window.resizeBy(0, 0);
+  assertEquals('scrollable dimensions 1', '1200,600', windowDims());
+  assertEquals('width 1', '1200px', windowStyleWidth());
+
+  window.resizeBy(-100, 200);
+  assertEquals('scrollable dimensions 2', '1100,800', windowDims());
+  assertEquals('width 2', '1100px', windowStyleWidth());
+
+  window.resizeTo(1200, 800);
+  assertEquals('scrollable dimensions 3', '1200,800', windowDims());
+  assertEquals('width 3', '1200px', windowStyleWidth());
+
+  pass('test-resizing');
+});
+
+jsunitRegister('testSizeProperties',
+               function testSizeProperties() {
+  assertEquals('number', typeof window.pageXOffset);
+  assertEquals('number', typeof window.pageYOffset);
+  assertTrue('sign of pageXOffset', window.pageXOffset >= 0);
+  assertTrue('sign of pageYOffset', window.pageYOffset >= 0);
+
+  var el = document.getElementById('test-size-properties');
+  // includes 2*padding
+  assertEquals(106, el.clientWidth);
+  assertEquals(56, el.clientHeight);
+  // includes 2*padding + 2*border
+  assertEquals(110, el.offsetWidth);
+  assertEquals(60, el.offsetHeight);
+
+  pass('test-size-properties');
+});
 
 jsunitRegister('testDocumentElement',
                function testDocumentElement() {

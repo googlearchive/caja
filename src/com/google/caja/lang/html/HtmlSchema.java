@@ -61,9 +61,11 @@ public final class HtmlSchema {
     if (defaultSchema == null) {
       SimpleMessageQueue cacheMq = new SimpleMessageQueue();
       URI elSrc = URI.create(
-              "resource:///com/google/caja/lang/html/html4-elements.json");
+              "resource:///com/google/caja/lang/html/"
+              + "html4-elements-extensions.json");
       URI attrSrc = URI.create(
-              "resource:///com/google/caja/lang/html/html4-attributes-extensions.json");
+              "resource:///com/google/caja/lang/html/"
+              + "html4-attributes-extensions.json");
       try {
         defaultSchema = Pair.pair(
             new HtmlSchema(

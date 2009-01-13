@@ -41,10 +41,34 @@ function jsunitRun() {
   }
   testNames.sort();
 
+  var queryParams = (function () {
+    var queryParams = {};
+    var parts = location.search.match(/[^&?]+/g) || [];
+    for (var i = 0, n = parts.length; i < n; ++i) {
+      var part = parts[i];
+      var eq = part.indexOf('=');
+      var key = decodeURIComponent(eq < 0 ? part : part.substring(0, eq));
+      var value = decodeURIComponent(eq >= 0 ? part.substring(eq + 1) : '');
+      var values = queryParams.hasOwnProperty(key)
+          ? queryParams[key]
+          : (queryParams[key] = []);
+      values.push(value);
+    }
+    return queryParams;
+  })();
+
+  // If loaded with ?test.filter=Foo, should run testFoo and testFooBar, but not
+  // testBar.
+  var testFilter = null;
+  if (queryParams['test.filter']) {
+    testFilter = new RegExp(queryParams['test.filter'][0]);
+  }
+
   var firstFailure = null;
   var nFailures = 0;
   for (var i = 0; i < testNames.length; ++i) {
     var testName = testNames[i];
+    if (testFilter && !testFilter.test(testName)) { continue; }
     var groupLogMessages = (typeof console !== 'undefined'
                             && 'group' in console);  // Not on Safari.
     if (groupLogMessages) {
