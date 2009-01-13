@@ -111,6 +111,11 @@ public class CssPropertyPatternsTest extends CajaTestCase {
         "\"@import\"", "\"!important\"");
   }
 
+  public void testOpacity() throws Exception {
+    assertMatches("<number:0,1>", "0", "0.0", ".5", "0.5", "0.707", "1", "1.0");
+    assertDoesNotMatch("<number:0,1>", "1.1", "-0.5", "0px", "");
+  }
+
   public void testNumbers() throws Exception {
     String leftSignature = "<length> | <percentage> | auto | inherit";
     assertMatches(

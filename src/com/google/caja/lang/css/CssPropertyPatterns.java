@@ -55,6 +55,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -265,6 +266,7 @@ public class CssPropertyPatterns {
     String timeUnits = "m?s";
     String quotedIdentifiers = "\"\\w(?:[\\w-]*\\w)(?:\\s+\\w([\\w-]*\\w))*\"";
     BUILTINS.put("number:0,", "0|" + unsignedNum);
+    BUILTINS.put("number:0,1", "(?:0(?:\\.[0-9]+)?|\\.[0-9]+|1(?:\\.0+)?)");
     BUILTINS.put("number", "0|" + signedNum);
     BUILTINS.put("percentage", "0|" + unsignedNum + "%");
     BUILTINS.put("percentage:0,", "0|" + signedNum + "%");
@@ -284,6 +286,9 @@ public class CssPropertyPatterns {
   }
   private Pattern builtinToPattern(Name name) {
     String pattern = BUILTINS.get(name.getCanonicalForm());
+    if (pattern == null && name.getCanonicalForm().contains(":")) {
+      System.err.println("Failing detail check on " + name);
+    }
     return pattern != null ? new Snippet(pattern + "\\s+") : null;
   }
 
@@ -301,7 +306,7 @@ public class CssPropertyPatterns {
     Pattern subtractTail(int n);
   }
 
-  private static class Snippet implements Pattern {
+  private static final class Snippet implements Pattern {
     final String patternSnippet;
     Snippet(String patternSnippet) {
       this.patternSnippet = patternSnippet;
@@ -315,9 +320,18 @@ public class CssPropertyPatterns {
       return new Snippet(
           patternSnippet.substring(0, patternSnippet.length() - n));
     }
+    @Override
+    public boolean equals(Object o) {
+      if (!(o instanceof Snippet)) { return false; }
+      return patternSnippet.equals(((Snippet) o).patternSnippet);
+    }
+    @Override
+    public int hashCode() {
+      return patternSnippet.hashCode() ^ 0x4482de40;
+    }
   }
 
-  private static class Concatenation implements Pattern {
+  private static final class Concatenation implements Pattern {
     final List<Pattern> children;
     Concatenation(List<Pattern> children) { this.children = children; }
     public Pattern optimize() {
@@ -347,6 +361,15 @@ public class CssPropertyPatterns {
       newChildren.addAll(children.subList(0, last));
       newChildren.add(children.get(last).subtractTail(n));
       return new Concatenation(newChildren);
+    }
+    @Override
+    public boolean equals(Object o) {
+      if (!(o instanceof Concatenation)) { return false; }
+      return children.equals(((Concatenation) o).children);
+    }
+    @Override
+    public int hashCode() {
+      return children.hashCode() ^ 0xd18b17e;
     }
   }
 
@@ -384,6 +407,12 @@ public class CssPropertyPatterns {
           return opt;
         }
       }
+      // Remove duplicates
+      Set<Pattern> seen = new HashSet<Pattern>();
+      for (Iterator<Pattern> it = newChildren.iterator(); it.hasNext();) {
+        if (!seen.add(it.next())) { it.remove(); }
+      }
+      if (n == 1) { return newChildren.get(0); }
       return new Union(newChildren);
     }
     public void render(StringBuilder out) {
@@ -398,9 +427,18 @@ public class CssPropertyPatterns {
     public Pattern subtractTail(int n) {
       throw new UnsupportedOperationException();
     }
+    @Override
+    public boolean equals(Object o) {
+      if (!(o instanceof Union)) { return false; }
+      return children.equals(((Union) o).children);
+    }
+    @Override
+    public int hashCode() {
+      return children.hashCode() ^ 0x11b79bed;
+    }
   }
 
-  private static class Repetition implements Pattern {
+  private static final class Repetition implements Pattern {
     final Pattern repeated;
     final int min, max;
     Repetition(Pattern repeated, int min, int max) {
@@ -429,6 +467,17 @@ public class CssPropertyPatterns {
     public String tail() { return ""; }
     public Pattern subtractTail(int n) {
       throw new UnsupportedOperationException();
+    }
+    @Override
+    public boolean equals(Object o) {
+      if (!(o instanceof Repetition)) { return false; }
+      Repetition that = (Repetition) o;
+      return this.min == that.min && this.max == that.max
+          && this.repeated.equals(that.repeated);
+    }
+    @Override
+    public int hashCode() {
+      return (repeated.hashCode() + 31 * (min + 31 * max)) ^ 0xa3c916;
     }
   }
 
