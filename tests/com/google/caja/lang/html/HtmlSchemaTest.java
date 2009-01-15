@@ -85,6 +85,10 @@ public class HtmlSchemaTest extends TestCase {
                 .accept("six"));
     assertTrue(schema.getAttributeCriteria(id("table"), id("cellpadding"))
                .accept("6"));
+    assertTrue(schema.getAttributeCriteria(id("table"), id("width"))
+               .accept("10%"));
+    assertFalse(schema.getAttributeCriteria(id("table"), id("width"))
+               .accept("%"));
 
     assertFalse(schema.getAttributeCriteria(id("script"), id("type"))
                 .accept("text/vbscript"));
