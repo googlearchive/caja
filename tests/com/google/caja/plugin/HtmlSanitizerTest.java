@@ -82,23 +82,27 @@ public class HtmlSanitizerTest extends TestCase {
   public void testUnknownAttribute() throws Exception {
     assertValid(html("<b unknown=\"bogus\">Hello</b>"),
                 "<b>Hello</b>",
-                "WARNING: unknown attribute unknown on b");
+                "WARNING: removing unknown attribute unknown on b");
   }
   public void testKnownAttribute() throws Exception {
     assertValid(html("<b id=\"bold\">Hello</b>"), "<b id=\"bold\">Hello</b>");
   }
   public void testUnknownElement() throws Exception {
-    assertInvalid(html("<bogus id=\"bold\">Hello</bogus>"),
-                  "ERROR: unknown tag bogus");
+    assertValid(html("<bogus id=\"bold\">Hello</bogus>"),
+                  "Hello",
+                  "WARNING: removing unknown tag bogus",
+                  "WARNING: removing attribute id when folding bogus into parent");
   }
   public void testUnknownEverything() throws Exception {
-    assertInvalid(html("<bogus unknown=\"bogus\">Hello</bogus>"),
-                  "ERROR: unknown tag bogus",
-                  "WARNING: unknown attribute unknown on bogus");
+    assertValid(html("<bogus unknown=\"bogus\">Hello</bogus>"),
+                  "Hello",
+                  "WARNING: removing unknown tag bogus",
+                  "WARNING: removing unknown attribute unknown on bogus");
   }
   public void testDisallowedElement() throws Exception {
-    assertInvalid(html("<script>disallowed</script>"),
-                  "ERROR: tag script is not allowed");
+    assertValid(html("<script>disallowed</script>"),
+                  "disallowed",
+                  "WARNING: removing disallowed tag script");
   }
   public void testAttributeValidity() throws Exception {
     assertValid(html("<form><input type=text></form>"),
@@ -110,37 +114,46 @@ public class HtmlSanitizerTest extends TestCase {
                 "<button type=\"submit\"></button>");
     assertValid(html("<BUTTON TYPE=SUBMIT>"),
                 "<button type=\"SUBMIT\"></button>");
-    assertInvalid(html("<button type=text>"),
-                  "ERROR: attribute type cannot have value text");
-    assertInvalid(html("<BUTTON TYPE=TEXT>"),
-                  "ERROR: attribute type cannot have value TEXT");
+    assertValid(html("<button type=text>"),
+                  "<button></button>",
+                  "WARNING: attribute type cannot have value text");
+    assertValid(html("<BUTTON TYPE=TEXT>"),
+                  "<button></button>",
+                  "WARNING: attribute type cannot have value TEXT");
   }
   public void testIllegalAttributeValue() throws Exception {
-    assertInvalid(html("<form><input type=x></form>"),
-                  "ERROR: attribute type cannot have value x");
+    assertValid(html("<form><input type=x></form>"),
+                  "<form><input /></form>",
+                  "WARNING: attribute type cannot have value x");
   }
   public void testDisallowedElement2() throws Exception {
-    assertInvalid(html("<xmp>disallowed</xmp>"), "ERROR: unknown tag xmp");
+    assertValid(html("<xmp>disallowed</xmp>"),
+        "disallowed",
+        "WARNING: removing unknown tag xmp");
   }
   public void testDisallowedElement3() throws Exception {
-    assertInvalid(html("<meta http-equiv='refresh' content='1'/>"),
-                  "ERROR: tag meta is not allowed");
+    assertValid(html("<meta http-equiv='refresh' content='1'/>"),
+        "",
+        "WARNING: removing disallowed tag meta",
+        "WARNING: removing attribute http-equiv when folding meta into parent",
+        "WARNING: removing attribute content when folding meta into parent");
   }
   public void testDisallowedElement4() throws Exception {
     assertValid(xml("<title>A title</title>"), "",
-                "WARNING: tag title is not allowed");
+                "WARNING: removing disallowed tag title");
   }
   public void testElementFolding1() throws Exception {
-    assertInvalid(xml("<body bgcolor=\"red\">Zoicks</body>"),
-                  "WARNING: folding element body into parent",
-                  "ERROR: cannot fold attribute bgcolor on body into parent");
+    assertValid(xml("<body bgcolor=\"red\">Zoicks</body>"),
+        "Zoicks",
+        "WARNING: folding element body into parent",
+        "WARNING: removing attribute bgcolor when folding body into parent");
   }
   public void testElementFolding2() throws Exception {
     assertValid(xml("<body>Zoicks</body>"),
                 "Zoicks", "WARNING: folding element body into parent");
   }
   public void testElementFolding3() throws Exception {
-    assertInvalid(xml("<html>"
+    assertValid(xml("<html>"
                       + "<head>"
                       + "<title>Blah</title>"
                       + "<p>Foo</p>"
@@ -152,12 +165,13 @@ public class HtmlSanitizerTest extends TestCase {
                       + "<x>Four</x>"
                       + "</body>"
                       + "</html>"),
+                      "<p>Foo</p><p>One</p><p>Two</p>ThreeFour",
                   "WARNING: folding element html into parent",
                   "WARNING: folding element head into parent",
-                  "WARNING: tag title is not allowed",
+                  "WARNING: removing disallowed tag title",
                   "WARNING: folding element body into parent",
-                  "WARNING: unknown attribute styleo on p",
-                  "ERROR: unknown tag x");
+                  "WARNING: removing unknown attribute styleo on p",
+                  "WARNING: removing unknown tag x");
   }
   public void testElementFolding4() throws Exception {
     assertValid(xml("<html>"
@@ -175,7 +189,7 @@ public class HtmlSanitizerTest extends TestCase {
                 "<p>Foo</p><p>One</p><p>Two</p>Three<p>Four</p>",
                 "WARNING: folding element html into parent",
                 "WARNING: folding element head into parent",
-                "WARNING: tag title is not allowed",
+                "WARNING: removing disallowed tag title",
                 "WARNING: folding element body into parent");
   }
   public void testIgnoredElement() throws Exception {
@@ -184,7 +198,7 @@ public class HtmlSanitizerTest extends TestCase {
              + "<noscript>ignorable</noscript>"
              + "<p>Bar"),
         "<p>Foo</p><p>Bar</p>",
-        "WARNING: tag noscript is not allowed");
+        "WARNING: removing disallowed tag noscript");
   }
   public void testDupeAttrs() throws Exception {
     assertValid(

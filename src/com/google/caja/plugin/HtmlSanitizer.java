@@ -95,10 +95,11 @@ public final class HtmlSanitizer {
           if (ignore) {
             ((MutableParseTreeNode) htmlRoot.parent.node).removeChild(t);
             return valid;  // Don't recurse to children if removed.
-          } else if (HtmlSchema.isElementFoldable(tagName)) {
-            return valid & foldElement(htmlRoot.cast(DomTree.Tag.class));
           } else {
-            valid = false;
+            // According to 
+            // http://www.w3.org/TR/html401/appendix/notes.html the recommended
+            // behavior is to try to render an unrecognized element's contents
+            return valid & foldElement(htmlRoot.cast(DomTree.Tag.class));
           }
 
         }
@@ -123,14 +124,14 @@ public final class HtmlSanitizer {
         mq.getMessages().add(new Message(
             PluginMessageType.UNKNOWN_ATTRIBUTE, MessageLevel.WARNING,
             t.getFilePosition(), attrName, tagName));
-        valid &= removeUnknownAttribute(tag, attrName);
+        valid &= removeBadAttribute(tag, attrName);
         break;
       }
       if (!schema.isAttributeAllowed(tagName, attrName)) {
         mq.addMessage(
             PluginMessageType.UNSAFE_ATTRIBUTE,
             t.getFilePosition(), attrName, tagName);
-        valid = false;
+        valid &= removeBadAttribute(tag, attrName);
       }
       Criterion<? super String> criteria = schema.getAttributeCriteria(
           tagName, attrName);
@@ -139,7 +140,7 @@ public final class HtmlSanitizer {
             PluginMessageType.DISALLOWED_ATTRIBUTE_VALUE,
             attrib.getAttribValueNode().getFilePosition(),
             attrName, MessagePart.Factory.valueOf(attrib.getAttribValue()));
-        valid = false;
+        valid &= removeBadAttribute(tag, attrName);
       }
       break;
     case TEXT: case CDATA: case IGNORABLE:
@@ -199,7 +200,6 @@ public final class HtmlSanitizer {
               PluginMessageType.CANNOT_FOLD_ATTRIBUTE, child.getFilePosition(),
               ((DomTree.Attrib) child).getAttribName(),
               el.node.getTagName());
-          valid = false;
           break;
         case TAGBEGIN: case TEXT:
           foldedChildren.add(child);
@@ -237,7 +237,7 @@ public final class HtmlSanitizer {
     return valid;
   }
 
-  private boolean removeUnknownAttribute(
+  private boolean removeBadAttribute(
       DomTree.Tag el, Name unknownAttr) {
     if (null == el) {
       return false;

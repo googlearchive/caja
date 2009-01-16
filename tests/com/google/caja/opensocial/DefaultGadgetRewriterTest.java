@@ -127,21 +127,24 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
 
   // Check that the validating and rewriting passes are hooked up.
   public void testTargetsDisallowed() throws Exception {
-    assertRewriteFailsWithMessage(
+    assertRewritesWithMessage(
         "<a target=\"_top\">Redirect window</a>",
-        "attribute target cannot have value _top");
+        "attribute target cannot have value _top",
+    MessageLevel.WARNING, false /* should not fail */);
   }
 
   public void testMetaRefreshDisallowed() throws Exception {
-    assertRewriteFailsWithMessage(
+    assertRewritesWithMessage(
         "<meta http-equiv=\"refresh\" content=\"5;http://foo.com\"/>",
-        "tag meta is not allowed");
+        "removing disallowed tag meta",
+        MessageLevel.WARNING, false /* should not fail */);
   }
 
   public void testStylesSanitized() throws Exception {
-    assertRewriteFailsWithMessage(
+    assertRewritesWithMessage(
         "<p style=\"color: expression(foo)\">Bar</p>",
-        "css property color has bad value: ==>expression(foo)<==");
+        "css property color has bad value: ==>expression(foo)<==",
+        MessageLevel.ERROR, true /* should fail */);
   }
 
   public void testStylesInScript() throws Exception {
@@ -188,7 +191,8 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
     return xml.replaceFirst("^<\\?xml[^>]*>", "");
   }
 
-  private void assertRewriteFailsWithMessage(String htmlContent, String msg)
+  private void assertRewritesWithMessage(String htmlContent, String msg,
+      MessageLevel level, boolean rewriteShouldFail)
       throws Exception {
     String input = (
         "<?xml version=\"1.0\"?>"
@@ -205,12 +209,13 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
 
     try {
       rewriter.rewrite(gadgetUri, cp, uriCallback, "canvas", System.out);
-      fail("rewrite should have failed with message " + msg);
+      if (rewriteShouldFail)
+        fail("rewrite should have failed with message " + msg);
     } catch (GadgetRewriteException ex) {
       // pass
     }
 
-    List<Message> errors = getMessagesExceedingLevel(MessageLevel.ERROR);
+    List<Message> errors = getMessagesExceedingLevel(level);
 
     assertFalse("Expected error msg: " + msg, errors.isEmpty());
     String actualMsg = errors.get(0).format(new MessageContext());
