@@ -19,8 +19,24 @@
     <title>Caja Test Bed</title>
 
     <style type="text/css">
-      body { font-family: arial,helvetica }
-      p,td,span,input,label { font-family: arial,helvetica;font-size:12px }
+      body { font-family: arial,sans-serif,helvetica }
+      p,td,span,input,label { font-family: arial,sans-serif, helvetica;
+                                        font-size:12px }
+
+      #headerDiv {
+        padding: 10px;
+        margin-bottom: 20px;
+        background-color: #e5ecf9;
+        color: #3366cc;
+        font-size: larger;
+        font-weight: bold;
+      }
+      
+      .subTitle {
+        font-size: smaller;
+        float: right;
+      }
+
       form { display: inline }
       div.message                { margin: 2px 2px .5em 2px; padding-left: 4px }
       .message                   { border-left: 4px solid #000 }
@@ -46,16 +62,56 @@
         margin: 2px
       }
 
-      .output {
+      .cajita-stacks {
+        width: 600px;
+        border: 3px solid #cccccc;
+        position: relative;
+        clip: 0 0 0 0;
+        overflow: auto;
         font-family: monospace;
-        margin-left: 2em;
       }
 
       div.indentedblock {
         margin-left: 1em;
       }
       div.line-of-code {
-        text-indent: -2em;
+        text-indent: 0em;
+      }
+
+      div.renderedoutput {
+        width: 600px;
+        height: 400px;
+        border: 3px solid #cccccc;
+        position: relative;
+        clip: 0 0 0 0;
+        overflow: auto;
+      }
+
+      .variableoutput {
+        width: 600px;
+        min-height: 12px;
+        height: auto !important;
+        height: 12px;
+        border: 3px solid #cccccc;
+        position: relative;
+        overflow: auto;
+        font-family:monospace;
+      }
+
+      .urlsource {
+        width: 600px;
+        border: 3px solid #cccccc;
+        padding: 5px;
+        font-family: monospace, sans-serif;
+      }
+
+      .htmlsource {
+        width: 600px;
+        height: 400px;
+        border: 3px solid #cccccc;
+        padding: 5px;
+        font-family: monospace, sans-serif;
+        display: block;
       }
 
       .cajita-stack { white-space: pre; font-family: monospace }
@@ -109,11 +165,14 @@
 
   <div style="display:none">
     <!-- a template for a set of testbed controls and output UI -->
-    <table id="testbed-ui"><tr valign="top">
-    <td>
+    <div id="testbed-ui" style="display: none">
       <form id="cajolerForm" onsubmit="return false">
-       URL: <input name="urlval" type="text" size="80" value="">
-       <button id="loadurl" type="button" onclick="loadurl(this.form)">Load URL</button><br/>
+      <table id="testbed-ui-table"><tr valign="top">
+      <td>
+        <input name="urlval" type="text" size="80" value="http://..." 
+              onFocus="if(this.value=='http://...') value='';"
+	 onBlur="if(this.value=='') value='http://...';" class="urlsource">
+        <button id="loadurl" type="button" onclick="loadurl(this.form)">Load URL</button><br/>
         &nbsp;
         <input id="EMBEDDABLE" type="checkbox">
         <label for="EMBEDDABLE" title="Output can be embedded in HTML/XML"
@@ -130,38 +189,42 @@
         &nbsp;
         <button type="button" onclick="runPlain(this.form);">Run plain</button>
         <button type="button" onclick="cajole(this.form)">Cajole</button>
-        <br>
-        <textarea cols="81" rows="20" name="src"
+        </tr><tr><td valign="top">
+        <label for="htmlsource">Source
+        <textarea rows="20" name="src" class="htmlsource" name="htmlsource"
 >&lt;script type="text/javascript"&gt;
 
 &lt;/script&gt;
 </textarea>
-        <br>
-        Uncajoled result (press "Run plain" to refresh)<br>
-        <iframe id="ifr"></iframe>
-      </form>
-    <td>
-      <pre id="messages" class="prettyprint"></pre>
-      <hr>
-      <div id="output" class="output"></div>
-      <hr>
+      <td>
+        <div>
+          <label for="caja-html">Rendered Result
+          <div class="renderedoutput">
+            <div id="caja-html"></div>
+          </div>
+        </div><br />
 
-      <div id="eval-results"></div>
-      <div id="cajita-stacks" style="display:none">
-        <hr>
-        Errors
-        <div id="cajita-stack" class="cajita-stack"></div>
-      </div>
-      <hr>
-      <div>
-        <center style="color: gray">HTML</center>
-        <div style="position: relative; clip: 0 0 0 0;
-                    overflow: auto; border: 2px dotted red">
-          <div id="caja-html"></div>
-        </div>
-      </div>
-
+        <label for="eval-results">Eval Results
+        <div id="eval-results" class="variableoutput"></div><br />
+        
+        <label for="messages">Compile Warnings and Errors
+        <pre id="messages" class="prettyprint variableoutput"></pre><br />
+        
+        <label for="runtime-messages">Runtime Warnings and Errors
+        <pre id="console-results" class="variableoutput"></pre><br />      
+        
+        <label for="output">Cajoled Source
+        <div id="output" class="variableoutput"></div><br />
+        
+        <label for="cajita-stacks">Cajita Stacks
+        <div id="cajita-stacks" class="variableoutput" style="display:none">
+          <hr>
+          Errors
+          <div id="cajita-stack" class="cajita-stack"></div>
+        </div><br />
     </table>
+    </form>
+    </div>
   </div>
 
 
@@ -182,6 +245,13 @@
           document.getElementById('instrs').style.display='',
           document.getElementById('instrlink').style.display='none')"
          title="Show Instructions">Instructions</a>
+      </span>
+      <span id="multitestbedlink">
+        |
+        <a href="javascript:void(
+          document.getElementById('testbed-ui.2').style.display='',
+          document.getElementById('multitestbedlink').style.display='none')"
+         title="Second Testbed">Multiple Gadgets</a>
       </span>
     </p>
     <div style="display:none" id="instrs">
@@ -259,9 +329,6 @@ exports.sayBye = function () {
 
 
     </div>
-
-  </body>
-
   <script type="text/javascript">(function () {
     function makeTestbed(uiSuffix) {
       document.body.appendChild(
@@ -270,6 +337,7 @@ exports.sayBye = function () {
     }
     makeTestbed('.1');
     makeTestbed('.2');
+    document.getElementById('testbed-ui.1').style.display = '';
 
     document.forms['cajolerForm.1'].elements.src.select();
     initTestbeds();
@@ -277,5 +345,5 @@ exports.sayBye = function () {
     process_urlparams();
   })();
   </script>
-
+  </body>
 </html>

@@ -253,8 +253,14 @@ function runPlain(form) {
   var uiSuffix = form.id.replace(/^[^\.]+/, '');
   // Strip off whitespace before & after the given text
   var src = form.elements.src.value.replace(/^\s+|\s+$/g, '');
-  var d=document.getElementById("ifr"+uiSuffix).contentDocument;
-  if (!d) { d = document.frames["ifr"+uiSuffix].document; }
+  var div = document.getElementById('caja-html' + uiSuffix);
+  while(div.childNodes[0]) {
+    div.removeChild(div.childNodes[0]);
+  }
+  var iframe=document.createElement('IFRAME');
+  iframe.frameBorder=0;
+  div.appendChild(iframe);
+  var d=iframe.contentDocument || iframe.document;
   if (d) {
     d.write(src);
     d.close();

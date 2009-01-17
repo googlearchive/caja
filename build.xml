@@ -232,6 +232,7 @@
       <source file="${src}/com/google/caja/Brand-cajita.js"/>
       <source file="${src}/com/google/caja/cajita.js"/>
       <source file="${src}/com/google/caja/cajita-debugmode.js"/>
+      <source file="${src}/com/google/caja/console.js"/>
       <source file="${src}/com/google/caja/log-to-console.js"/>
       <source file="${src}/com/google/caja/permissive.js"/>
       <source file="${src}/com/google/caja/triv-logger.js"/>
@@ -452,6 +453,7 @@
       <fileset dir="${src}">
         <include name="**/caja/cajita.js"/>
         <include name="**/caja/cajita-debugmode.js"/>
+        <include name="**/caja/console.js"/>
         <include name="**/caja/log-to-console.js"/>
         <include name="**/caja/valija-cajita.js"/>
         <include name="**/caja/demos/calendar/*.js"/>
@@ -730,6 +732,7 @@
       <fileset dir="${src}/com/google/caja">
         <include name="cajita.js"/>
         <include name="cajita-debugmode.js"/>
+        <include name="console.js"/>
         <include name="log-to-console.js"/>
       </fileset>
       <fileset dir="${src}/com/google/caja/plugin">
@@ -765,6 +768,7 @@
      <replacetoken><![CDATA[<script type="text/javascript" src="cajita-combined-min.js"></script>]]></replacetoken>
      <replacevalue><![CDATA[
        <script type="text/javascript" src="cajita.js"></script>
+       <script type="text/javascript" src="console.js"></script>
        <script type="text/javascript" src="log-to-console.js"></script>
        <script type="text/javascript" src="cajita-debugmode.js"></script>
        <script type="text/javascript" src="unicode.js"></script>
@@ -786,6 +790,7 @@
       <output file="${www}/testbed/cajita-combined-min.js"
        language="javascript" renderer="minify"/>
       <include file="${src}/com/google/caja/cajita.js"/>
+      <include file="${src}/com/google/caja/console.js"/>
       <include file="${src}/com/google/caja/log-to-console.js"/>
       <include file="${src}/com/google/caja/cajita-debugmode.js"/>
       <include file="${src}/com/google/caja/plugin/unicode.js"/>
