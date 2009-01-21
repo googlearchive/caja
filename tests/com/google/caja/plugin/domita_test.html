@@ -18,7 +18,7 @@
   <head id="head">
     <title>Domita</title>
 
-    <script src="../../../../console.js"></script>
+    <script src="../console.js"></script>
     <script src="../cajita.js" onerror="console.error(this.src)"></script>
     <script src="../../../../js/jsunit/2.2/jsUnitCore.js"></script>
     <script src="jsunit.js"></script>
@@ -84,11 +84,7 @@
     })();</script>
 
     <script type="text/javascript">(function () {
-      if (console) {
-        ___.setLogFunc(function(msg) {
-          console.log(msg);
-        });
-      }
+      ___.setLogFunc(function(msg) { console.log(msg); });
 
       var testImports = ___.copy(___.sharedImports);
       if (valijaMaker) { testImports.$v = valijaMaker.CALL___(testImports); }
@@ -103,7 +99,7 @@
           protocol: 'http:',
           search: '?q=getit'
       };
-        
+
       ___.getNewModuleHandler().setImports(testImports);
       attachDocumentStub(
            '-xyz___',
