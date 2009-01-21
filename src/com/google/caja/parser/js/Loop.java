@@ -14,14 +14,16 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.parser.ParseTreeNode;
+
 /**
  * A compound statement that may execute its body zero or more times.
  *
  * @author mikesamuel@gmail.com
  */
 public abstract class Loop extends LabeledStatement {
-  public Loop(String label) {
-    super(label);
+  public Loop(String label, Class<? extends ParseTreeNode> childClass) {
+    super(label, childClass);
   }
 
   public abstract Expression getCondition();

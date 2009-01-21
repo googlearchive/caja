@@ -33,7 +33,7 @@ public class DoWhileLoop extends Loop {
   }
 
   public DoWhileLoop(String label, Statement body, Expression condition) {
-    super(label);
+    super(label, ParseTreeNode.class);
     createMutation().appendChild(body).appendChild(condition).execute();
   }
 

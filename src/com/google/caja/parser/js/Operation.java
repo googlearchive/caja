@@ -18,21 +18,29 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.parser.ParseTreeNode;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * An expression that applies an {@link Operator} to a number of operands.
  *
  * @author mikesamuel@gmail.com
  */
-public abstract class Operation extends AbstractExpression<Expression> {
+public abstract class Operation extends AbstractExpression {
   private Operator op;
 
   protected Operation(Operator op, Expression... params) {
+    super(Expression.class);
     this.op = op;
     if (null == op) { throw new NullPointerException(); }
     createMutation().appendChildren(Arrays.asList(params)).execute();
+  }
+
+  @Override
+  public List<? extends Expression> children() {
+    return childrenAs(Expression.class);
   }
 
   @Override
@@ -124,14 +132,14 @@ public abstract class Operation extends AbstractExpression<Expression> {
         renderParam(0, rc);
         out.consume(op.getOpeningSymbol());
         boolean seen = false;
-        for (Expression e : children().subList(1, children().size())) {
+        for (ParseTreeNode e : children().subList(1, children().size())) {
           if (seen) {
             out.consume(",");
           } else {
             seen = true;
           }
           // make sure that comma operators are properly escaped
-          if (!parenthesize(Operator.COMMA, false, e)) {
+          if (!parenthesize(Operator.COMMA, false, (Expression) e)) {
             e.render(rc);
           } else {
             out.consume("(");
@@ -157,9 +165,9 @@ public abstract class Operation extends AbstractExpression<Expression> {
 
   private void renderParam(int i, RenderContext rc) {
     TokenConsumer out = rc.getOut();
-    Expression e = children().get(i);
+    ParseTreeNode e = children().get(i);
     out.mark(e.getFilePosition());
-    if (!parenthesize(op, 0 == i, e)) {
+    if (!parenthesize(op, 0 == i, (Expression) e)) {
       e.render(rc);
     } else {
       out.consume("(");

@@ -17,7 +17,6 @@ package com.google.caja.parser.js;
 import java.util.List;
 
 import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 /**
@@ -25,12 +24,13 @@ import com.google.caja.reporting.RenderContext;
  * 
  * @author metaweta@gmail.com (Mike Stay)
  */
-public final class QuotedExpression extends AbstractExpression<ParseTreeNode>{
+public final class QuotedExpression extends AbstractExpression {
   /**
    * Create a parse tree node that expands to the given expression in a
    * rewriter.
    */
   public QuotedExpression(Expression e) {
+    super(Expression.class);
     createMutation().appendChild(e).execute();
   }
 

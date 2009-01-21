@@ -22,7 +22,7 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class ThrowStmt extends AbstractStatement<Expression> {
+public final class ThrowStmt extends AbstractStatement {
   private Expression exception;
 
   /** @param value unused.  This ctor is provided for reflection. */
@@ -31,6 +31,7 @@ public final class ThrowStmt extends AbstractStatement<Expression> {
   }
 
   public ThrowStmt(Expression exception) {
+    super(Expression.class);
     createMutation().appendChild(exception).execute();
   }
 
@@ -42,6 +43,11 @@ public final class ThrowStmt extends AbstractStatement<Expression> {
 
   @Override
   public Object getValue() { return null; }
+
+  @Override
+  public List<Expression> children() {
+    return childrenAs(Expression.class);
+  }
 
   public void render(RenderContext rc) {
     rc.getOut().mark(getFilePosition());

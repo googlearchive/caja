@@ -118,7 +118,7 @@ public class InferFilePositionsStage implements Pipeline.Stage<Jobs> {
   }
 
   private static void setFilePosition(ParseTreeNode node, FilePosition pos) {
-    ((AbstractParseTreeNode<?>) node).setFilePosition(pos);
+    ((AbstractParseTreeNode) node).setFilePosition(pos);
   }
 
   private static boolean hasFilePosition(ParseTreeNode node) {

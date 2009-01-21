@@ -57,7 +57,7 @@ public abstract class Rule implements MessagePart {
    * does not apply to the supplied input.
    */
   public static final ParseTreeNode NONE =
-      new AbstractParseTreeNode<ParseTreeNode>() {
+      new AbstractParseTreeNode() {
         @Override public Object getValue() { return null; }
         public void render(RenderContext r) {
           throw new UnsupportedOperationException();

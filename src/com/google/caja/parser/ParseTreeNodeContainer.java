@@ -30,7 +30,7 @@ import java.util.List;
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
-public class ParseTreeNodeContainer extends AbstractParseTreeNode<ParseTreeNode> {
+public class ParseTreeNodeContainer extends AbstractParseTreeNode {
   /** @param value unused.  This ctor is provided for reflection. */
   public ParseTreeNodeContainer(
       Void value, List<? extends ParseTreeNode> children) {

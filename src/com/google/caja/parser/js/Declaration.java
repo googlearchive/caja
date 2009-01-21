@@ -25,16 +25,18 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public class Declaration extends AbstractStatement<ParseTreeNode> {
+public class Declaration extends AbstractStatement {
   private Identifier identifier;
   private Expression initializer;
 
   /** @param value unused.  This ctor is provided for reflection. */
   public Declaration(Void value, List<? extends ParseTreeNode> children) {
+    super(ParseTreeNode.class);
     createMutation().appendChildren(children).execute();
   }
 
   public Declaration(Identifier identifier, Expression initializer) {
+    super(ParseTreeNode.class);
     Mutation m = createMutation();
     m.appendChild(identifier);
     if (null != initializer) { m.appendChild(initializer); }

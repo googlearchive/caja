@@ -23,7 +23,7 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class Reference extends AbstractExpression<ParseTreeNode> {
+public final class Reference extends AbstractExpression {
   private Identifier identifier;
 
   /** @param value unused.  This ctor is provided for reflection. */
@@ -32,6 +32,7 @@ public final class Reference extends AbstractExpression<ParseTreeNode> {
   }
 
   public Reference(Identifier identifier) {
+    super(Identifier.class);
     appendChild(identifier);
   }
 

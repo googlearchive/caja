@@ -31,10 +31,9 @@ import java.util.NoSuchElementException;
 /**
  * An abstract base class for a mutable parse tree node implementations.
  *
- * @param <T> A base class for all children of this node.
  * @author mikesamuel@gmail.com
  */
-public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
+public abstract class AbstractParseTreeNode
     implements MutableParseTreeNode {
   private FilePosition pos;
   private List<Token<?>> comments = Collections.<Token<?>>emptyList();
@@ -44,23 +43,33 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
    * but any operations that remove or insert except at the end require
    * copy-on-write to provide for efficient visitors.
    */
-  private List<T> children = new ArrayList<T>();
-  private List<T> childrenExtern = Collections.<T>unmodifiableList(children);
+  private ChildNodes<ParseTreeNode> children;
+
+  protected <T extends ParseTreeNode> List<T> childrenAs(Class<T> clazz) {
+    return children.as(clazz).getImmutableFacet();
+  }
 
   protected AbstractParseTreeNode() {
+    this(ParseTreeNode.class);
+  }
+  
+  protected AbstractParseTreeNode(Class<? extends ParseTreeNode> childClass) {
+    children = new ChildNodes<ParseTreeNode>(childClass);
     pos = FilePosition.UNKNOWN;
     // initialized via mutators
   }
 
   public FilePosition getFilePosition() { return pos; }
   public List<Token<?>> getComments() { return comments; }
-  public final List<? extends T> children() { return childrenExtern; }
+  public List<? extends ParseTreeNode> children() {
+    return children.getImmutableFacet();
+  }
 
   @SuppressWarnings("unchecked")
-  protected <T2 extends T> List<T2> childrenPart(
+  protected <T2> List<T2> childrenPart(
       int start, int end, Class<T2> cl) {
-    List<T> sub = children.subList(start, end);
-    for (T el : sub) {
+    List<ParseTreeNode> sub = children.getImmutableFacet().subList(start, end);
+    for (ParseTreeNode el : sub) {
       if (!cl.isInstance(el)) {
         throw new ClassCastException(
             "element not an instance of " + cl + " : "
@@ -106,23 +115,20 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
 
   public Mutation createMutation() { return new MutationImpl(); }
 
-  @SuppressWarnings("unchecked")
   private void setChild(int i, ParseTreeNode child) {
-    children.set(i, (T) child);
+    children.getMutableFacet().set(i, child);
   }
 
-  @SuppressWarnings("unchecked")
   private void addChild(int i, ParseTreeNode child) {
-    children.add(i, (T) child);
+    children.getMutableFacet().add(i, child);
   }
 
   private void copyOnWrite() {
-    children = new ArrayList<T>(children);
-    childrenExtern = Collections.<T>unmodifiableList(children);
+    children = new ChildNodes<ParseTreeNode>(children);
   }
 
   private int indexOf(ParseTreeNode child) {
-    return children.indexOf(child);
+    return children.getImmutableFacet().indexOf(child);
   }
 
   /**
@@ -136,7 +142,9 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
    * information about the troublesome node.</p>
    */
   protected void childrenChanged() {
-    if (children.contains(null)) { throw new NullPointerException(); }
+    if (children.getImmutableFacet().contains(null)) {
+      throw new NullPointerException();
+    }
   }
 
   protected void formatSelf(MessageContext context, Appendable out)
@@ -236,34 +244,37 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
 
   private boolean visitChildren(
        Visitor v, AncestorChain<?> ancestors, TraversalType traversalType) {
-    if (this.children.isEmpty()) { return true; }
+    if (this.children.getImmutableFacet().isEmpty()) { return true; }
 
     boolean result = true;
     // This loop is complicated because it needs to survive mutations to the
     // child list.
-    List<? extends ParseTreeNode> childrenCache = this.children;
+    ChildNodes<ParseTreeNode> childrenCache = this.children;
 
-    ParseTreeNode next = childrenCache.get(0);
+    ParseTreeNode next = childrenCache.getImmutableFacet().get(0);
     childLoop:
-    for (int i = 0; i < childrenCache.size(); ++i) {
+    for (int i = 0; i < childrenCache.getImmutableFacet().size(); ++i) {
       if (childrenCache != this.children) {
         // Used lastIndexOf so we make progress in case a child is on the
         // children list multiple times.
-        int j = this.children.lastIndexOf(next);
+        int j = this.children.getImmutableFacet().lastIndexOf(next);
         if (j < 0) {
           // Try to find the next one to use by looking at children we've
           // already visited.
           for (int k = i; --k >= 0;) {
-            j = this.children.lastIndexOf(childrenCache.get(k));
+            j = this.children.getImmutableFacet().lastIndexOf(
+                childrenCache.getImmutableFacet().get(k));
             if (j >= 0) { break; }
           }
-          if (j >= 0 && j < this.children.size()) {
+          if (j >= 0 && j < this.children.getImmutableFacet().size()) {
             ++j;  // Add one since we don't want to reprocess childrenCache[k].
           } else {
             // Check if children from the cached list that we haven't
             // processed yet are still in the new list.
-            for (int k = i + 1; k < childrenCache.size(); ++k) {
-              j = this.children.lastIndexOf(childrenCache.get(k));
+            for (int k = i + 1; k < childrenCache.getImmutableFacet().size();
+                 ++k) {
+              j = this.children.getImmutableFacet().lastIndexOf(
+                  childrenCache.getImmutableFacet().get(k));
               if (j >= 0) { break; }
             }
             // No children left to process.
@@ -272,11 +283,12 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
         }
         i = j;
         childrenCache = this.children;
-        next = childrenCache.get(i);
+        next = childrenCache.getImmutableFacet().get(i);
       }
 
       ParseTreeNode child = next;
-      next = (i + 1 < childrenCache.size() ? childrenCache.get(i + 1) : null);
+      next = (i + 1 < childrenCache.getImmutableFacet().size() ?
+          childrenCache.getImmutableFacet().get(i + 1) : null);
       switch (traversalType) {
         case PREORDER:
           child.acceptPreOrder(v, ancestors);
@@ -300,7 +312,7 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
   }
 
   public final boolean acceptPreOrder(Visitor v, AncestorChain<?> ancestors) {
-    ancestors = new AncestorChain<AbstractParseTreeNode<T>>(ancestors, this);
+    ancestors = new AncestorChain<AbstractParseTreeNode>(ancestors, this);
     if (!v.visit(ancestors)) { return false; }
 
     // Handle the case where v.visit() replaces this with another, inserts
@@ -313,7 +325,7 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
   }
 
   public final boolean acceptPostOrder(Visitor v, AncestorChain<?> ancestors) {
-    ancestors = new AncestorChain<AbstractParseTreeNode<T>>(ancestors, this);
+    ancestors = new AncestorChain<AbstractParseTreeNode>(ancestors, this);
     // Descend into this node's children.
     if (!visitChildren(v, ancestors, TraversalType.POSTORDER)) {
       return false;
@@ -338,11 +350,11 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
   @Override
   public ParseTreeNode clone() {
     List<ParseTreeNode> clonedChildren
-        = new ArrayList<ParseTreeNode>(children.size());
-    for (ParseTreeNode child : children) {
+        = new ArrayList<ParseTreeNode>(children.getImmutableFacet().size());
+    for (ParseTreeNode child : children.getImmutableFacet()) {
       clonedChildren.add(child.clone());
     }
-    AbstractParseTreeNode<?> cloned = ParseTreeNodes.newNodeInstance(
+    AbstractParseTreeNode cloned = ParseTreeNodes.newNodeInstance(
         getClass(), getValue(), clonedChildren);
     cloned.setFilePosition(getFilePosition());
     if (attributes != null) {
@@ -468,7 +480,7 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
 
       // This check corresponds to the replacement.parent == null check in apply
       // which has the effect of asserting that replacement is not rooted.
-      if (children.contains(replaced)) { return; }
+      if (children.getImmutableFacet().contains(replaced)) { return; }
 
       setChild(childIndex, replaced);  // roll back
     }
@@ -493,14 +505,14 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
 
       // Update the child list
       backupIndex = childIndex;
-      children.remove(childIndex);
+      children.getMutableFacet().remove(childIndex);
 
       return true;
     }
 
     @Override
     void rollback() {
-      if (children.contains(toRemove)) { return; }
+      if (children.getImmutableFacet().contains(toRemove)) { return; }
 
       addChild(backupIndex, toRemove);
     }
@@ -520,7 +532,7 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
       // Find where to insert
       int childIndex;
       if (null == before) {
-        childIndex = children.size();
+        childIndex = children.getImmutableFacet().size();
       } else {
         childIndex =  indexOf(before);
         if (childIndex < 0) {
@@ -543,7 +555,7 @@ public abstract class AbstractParseTreeNode<T extends ParseTreeNode>
     void rollback() {
       int childIndex = backupIndex;
 
-      ParseTreeNode removed = children.remove(childIndex);
+      ParseTreeNode removed = children.getMutableFacet().remove(childIndex);
       if (removed != toAdd) {
         setChild(childIndex, removed);
         throw new IllegalStateException();

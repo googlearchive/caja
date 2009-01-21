@@ -22,15 +22,17 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class ReturnStmt extends AbstractStatement<Expression> {
+public final class ReturnStmt extends AbstractStatement {
   private Expression returnValue;
 
   /** @param value unused.  This ctor is provided for reflection. */
   public ReturnStmt(Void value, List<? extends Expression> children) {
+    super(Expression.class);
     createMutation().appendChildren(children).execute();
   }
 
   public ReturnStmt(Expression returnValue) {
+    super(Expression.class);
     if (null != returnValue) {
       appendChild(returnValue);
     }
@@ -50,6 +52,11 @@ public final class ReturnStmt extends AbstractStatement<Expression> {
 
   @Override
   public Object getValue() { return null; }
+
+  @Override
+  public List<Expression> children() {
+    return childrenAs(Expression.class);
+  }
 
   public void render(RenderContext rc) {
     rc.getOut().mark(getFilePosition());

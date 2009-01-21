@@ -17,6 +17,7 @@ package com.google.caja.parser.js;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
+
 import java.util.List;
 
 /**
@@ -24,18 +25,24 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class ArrayConstructor extends AbstractExpression<Expression> {
+public final class ArrayConstructor extends AbstractExpression {
   /** @param value unused.  This ctor is provided for reflection. */
   public ArrayConstructor(Void value, List<? extends Expression> children) {
     this(children);
   }
 
   public ArrayConstructor(List<? extends Expression> elements) {
+    super(Expression.class);
     createMutation().appendChildren(elements).execute();
   }
 
   @Override
   public Object getValue() { return null; }
+
+  @Override
+  public List<Expression> children() {
+    return childrenAs(Expression.class);
+  }
 
   public void render(RenderContext rc) {
     TokenConsumer out = rc.getOut();

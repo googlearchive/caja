@@ -31,8 +31,11 @@ import java.util.Map;
  *
  * @author mikesamuel@gmail.com
  */
-public abstract class AbstractStatement<T extends ParseTreeNode>
-    extends AbstractParseTreeNode<T> implements Statement {
+public abstract class AbstractStatement
+    extends AbstractParseTreeNode implements Statement {
+  public AbstractStatement(Class<? extends ParseTreeNode> childClass) {
+    super(childClass);
+  }
 
   /**
    * Accumulates the set of labels that may be broken out of by statements

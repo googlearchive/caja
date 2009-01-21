@@ -26,7 +26,7 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class ExpressionStmt extends AbstractStatement<Expression> {
+public final class ExpressionStmt extends AbstractStatement {
   private Expression expr;
 
   /** @param value unused.  This ctor is provided for reflection. */
@@ -35,13 +35,14 @@ public final class ExpressionStmt extends AbstractStatement<Expression> {
   }
 
   public ExpressionStmt(Expression expr) {
+    super(Expression.class);
     appendChild(expr);
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.expr = children().get(0);
+    this.expr = (Expression) children().get(0);
     if (1 != children().size()) { throw new IllegalStateException(); }
   }
 

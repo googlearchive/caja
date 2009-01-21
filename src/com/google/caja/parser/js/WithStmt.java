@@ -28,15 +28,17 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class WithStmt extends AbstractStatement<ParseTreeNode>
+public final class WithStmt extends AbstractStatement
     implements NestedScope {
 
   /** @param value unused.  This ctor is provided for reflection. */
   public WithStmt(Void value, List<? extends Statement> children) {
+    super(ParseTreeNode.class);
     createMutation().appendChildren(children).execute();
   }
 
   public WithStmt(Expression scopeObject, Statement body) {
+    super(ParseTreeNode.class);
     createMutation()
         .appendChild(scopeObject)
         .appendChild(body)

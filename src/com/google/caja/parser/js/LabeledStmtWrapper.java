@@ -41,7 +41,7 @@ public final class LabeledStmtWrapper extends LabeledStatement {
   }
 
   public LabeledStmtWrapper(String label, Statement body) {
-    super(label);
+    super(label, Statement.class);
     appendChild(body);
   }
 

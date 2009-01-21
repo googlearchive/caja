@@ -74,13 +74,14 @@ import java.util.Set;
  *
  * @author mikesamuel@gmail.com
  */
-public final class UseSubsetDirective extends AbstractStatement<UseSubset> {
+public final class UseSubsetDirective extends AbstractStatement {
   /** @param value unused.  This ctor is provided for reflection. */
   public UseSubsetDirective(Void value, List<? extends UseSubset> children) {
     this(children);
   }
 
   public UseSubsetDirective(List<? extends UseSubset> children) {
+    super(UseSubset.class);
     createMutation().appendChildren(children).execute();
   }
 
@@ -97,6 +98,11 @@ public final class UseSubsetDirective extends AbstractStatement<UseSubset> {
 
   @Override
   public Object getValue() { return null; }
+
+  @Override
+  public List<UseSubset> children() {
+    return childrenAs(UseSubset.class);
+  }
 
   public Set<String> getSubsetNames() {
     Set<String> names = new LinkedHashSet<String>();

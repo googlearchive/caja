@@ -22,8 +22,8 @@ import com.google.caja.reporting.RenderContext;
  *
  * @author mikesamuel@gmail.com
  */
-public abstract class Literal extends AbstractExpression<Expression> {
-  protected Literal() {}
+public abstract class Literal extends AbstractExpression {
+  protected Literal() { super(NoChildren.class); }
 
   @Override
   public abstract Object getValue();

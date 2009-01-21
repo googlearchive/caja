@@ -30,7 +30,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  * @see UseSubsetDirective
  */
-public final class UseSubset extends AbstractParseTreeNode<NoChildren> {
+public final class UseSubset extends AbstractParseTreeNode {
   private final String subsetName;
 
   /** @param children unused.  This ctor is provided for reflection. */

@@ -26,7 +26,7 @@ import java.util.Map;
  *
  * @author mikesamuel@gmail.com
  */
-public final class BreakStmt extends AbstractStatement<Statement> {
+public final class BreakStmt extends AbstractStatement {
   private String label;
 
   /** @param children unused.  This ctor is provided for reflection. */
@@ -35,6 +35,7 @@ public final class BreakStmt extends AbstractStatement<Statement> {
   }
 
   public BreakStmt(String label) {
+    super(Statement.class);
     this.label = label;
   }
 

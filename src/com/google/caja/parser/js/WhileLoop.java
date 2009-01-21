@@ -33,7 +33,7 @@ public class WhileLoop extends Loop {
   }
 
   public WhileLoop(String label, Expression condition, Statement body) {
-    super(label);
+    super(label, ParseTreeNode.class);
     createMutation().appendChild(condition).appendChild(body).execute();
   }
 

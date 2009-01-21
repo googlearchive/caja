@@ -108,7 +108,7 @@ public abstract class Rewriter {
           FilePosition resultPos = result.getFilePosition();
           if (result instanceof AbstractParseTreeNode
               && FilePosition.UNKNOWN.equals(resultPos)) {
-            ((AbstractParseTreeNode<?>) result)
+            ((AbstractParseTreeNode) result)
                 .setFilePosition(node.getFilePosition());
           }
           if (logging) { logResults(rule, node, result, null); }

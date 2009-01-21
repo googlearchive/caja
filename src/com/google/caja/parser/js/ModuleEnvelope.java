@@ -27,7 +27,7 @@ import java.util.List;
  * @author erights@gmail.com
  * @author ihab.awad@gmail.com
  */
-public final class ModuleEnvelope extends AbstractStatement<Block> {
+public final class ModuleEnvelope extends AbstractStatement {
   /** @param value unused.  This ctor is provided for reflection. */
   public ModuleEnvelope(Void value, List<? extends Block> children) {
     this(children.get(0));
@@ -35,6 +35,7 @@ public final class ModuleEnvelope extends AbstractStatement<Block> {
   }
 
   public ModuleEnvelope(Block body) {
+    super(Block.class);
     createMutation().appendChild(body).execute();
   }
 
@@ -53,6 +54,11 @@ public final class ModuleEnvelope extends AbstractStatement<Block> {
 
   @Override
   public Object getValue() { return null; }
+
+  @Override
+  public List<Block> children() {
+    return childrenAs(Block.class);
+  }
 
   public Block getModuleBody() { return children().get(0); }
 

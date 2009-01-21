@@ -25,6 +25,7 @@ import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue.Mark;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParserBase;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
@@ -278,7 +279,7 @@ public final class Parser extends ParserBase {
       String label = parseIdentifier(false);
       if (tq.checkToken(Punctuation.COLON)) {
         t = tq.peek();
-        AbstractStatement<?> s = null;
+        AbstractStatement s = null;
         if (JsTokenType.KEYWORD == t.type) {
           switch (Keyword.fromString(t.text)) {
             case FOR: case DO: case WHILE: case SWITCH:
@@ -467,14 +468,14 @@ public final class Parser extends ParserBase {
           tq.expectToken(Punctuation.COLON);
           FilePosition colonPos = tq.lastPosition();
           Mark caseBodyStart = tq.mark();
-          List<AbstractStatement<?>> caseBodyContents =
-            new ArrayList<AbstractStatement<?>>();
+          List<AbstractStatement> caseBodyContents =
+            new ArrayList<AbstractStatement>();
           while (!(tq.lookaheadToken(Keyword.DEFAULT)
                    || tq.lookaheadToken(Keyword.CASE)
                    || tq.lookaheadToken(Punctuation.RCURLY))) {
             caseBodyContents.add(parseTerminatedStatement());
           }
-          AbstractStatement<?> caseBody;
+          AbstractStatement caseBody;
           switch (caseBodyContents.size()) {
             case 0:
               caseBody = noop(FilePosition.endOf(colonPos));
@@ -503,14 +504,14 @@ public final class Parser extends ParserBase {
     return s;
   }
 
-  private AbstractStatement<?> parseStatementWithoutLabel()
+  private AbstractStatement parseStatementWithoutLabel()
       throws ParseException {
     Mark m = tq.mark();
 
     Token<JsTokenType> t = tq.peek();
 
     if (JsTokenType.KEYWORD == t.type) {
-      AbstractStatement<?> s;
+      AbstractStatement s;
       switch (Keyword.fromString(t.text)) {
         case FOR: case DO: case WHILE: case SWITCH:
           s = parseLoopOrSwitch("");
@@ -566,7 +567,7 @@ public final class Parser extends ParserBase {
         case RETURN:
         {
           tq.advance();
-          AbstractExpression<?> value;
+          AbstractExpression value;
           // Check for semicolon insertion without lookahead since return is a
           // restricted production.  See the grammar above and ES262 S7.9.1
           if (semicolonInserted() || tq.lookaheadToken(Punctuation.SEMI)) {
@@ -691,10 +692,10 @@ public final class Parser extends ParserBase {
     return parseExpressionInt(insertionProtected);
   }
 
-  private AbstractExpression<?> parseExpressionInt(boolean insertionProtected)
+  private AbstractExpression parseExpressionInt(boolean insertionProtected)
       throws ParseException {
     Mark m = tq.mark();
-    AbstractExpression<?> e = parseOp(Integer.MAX_VALUE, insertionProtected);
+    AbstractExpression e = parseOp(Integer.MAX_VALUE, insertionProtected);
     // Handle comma operator
     while ((insertionProtected || !semicolonInserted())
            && tq.checkToken(Punctuation.COMMA)) {
@@ -719,10 +720,10 @@ public final class Parser extends ParserBase {
     return parseOp(Integer.MAX_VALUE, insertionProtected);
   }
 
-  private AbstractExpression<?> parseOp(
+  private AbstractExpression parseOp(
       int precedence, boolean insertionProtected)
       throws ParseException {
-    AbstractExpression<?> left = null;
+    AbstractExpression left = null;
     // Handle prefix operations
     {
       Token<JsTokenType> t = tq.peek();
@@ -966,8 +967,8 @@ public final class Parser extends ParserBase {
   }
 
   @SuppressWarnings("fallthrough")
-  private AbstractExpression<?> parseExpressionAtom() throws ParseException {
-    AbstractExpression<?> e;
+  private AbstractExpression parseExpressionAtom() throws ParseException {
+    AbstractExpression e;
     Mark m = tq.mark();
 
     Token<JsTokenType> t = tq.pop();
@@ -1213,7 +1214,7 @@ public final class Parser extends ParserBase {
   }
 
   private Expression parseExpressionOrNoop(
-      AbstractExpression<?> def, boolean insertionProtected)
+      AbstractExpression def, boolean insertionProtected)
       throws ParseException {
     Mark m = tq.mark();
     if (tq.checkToken(Punctuation.SEMI)) {
@@ -1233,9 +1234,9 @@ public final class Parser extends ParserBase {
             || s instanceof Noop || s instanceof WithStmt;
   }
 
-  private AbstractStatement<?> parseTerminatedStatement()
+  private AbstractStatement parseTerminatedStatement()
       throws ParseException {
-    AbstractStatement<?> s = (AbstractStatement<?>) parseStatement();
+    AbstractStatement s = (AbstractStatement) parseStatement();
     if (!isTerminal(s)) {
       checkSemicolon();
     }
@@ -1265,7 +1266,7 @@ public final class Parser extends ParserBase {
     return false;
   }
 
-  private AbstractStatement<?> parseDeclarationsOrExpression(
+  private AbstractStatement parseDeclarationsOrExpression(
       boolean insertionProtected)
       throws ParseException {
     Mark m = tq.mark();
@@ -1284,7 +1285,7 @@ public final class Parser extends ParserBase {
     }
 
     if (isDeclaration) {
-      AbstractStatement<?> s;
+      AbstractStatement s;
       Declaration d;
       {
         Identifier idNode = parseIdentifierNode(false);
@@ -1354,7 +1355,7 @@ public final class Parser extends ParserBase {
     return n;
   }
 
-  private void finish(AbstractParseTreeNode<?> n, Mark startMark)
+  private void finish(AbstractParseTreeNode n, Mark startMark)
       throws ParseException {
     FilePosition start;
     List<Token<JsTokenType>> comments;
@@ -1371,7 +1372,7 @@ public final class Parser extends ParserBase {
   }
 
   private void finish(
-      AbstractParseTreeNode<?> n, FilePosition start,
+      AbstractParseTreeNode n, FilePosition start,
       List<? extends Token<?>> comments)
       throws ParseException {
     n.setComments(comments);
@@ -1409,9 +1410,15 @@ public final class Parser extends ParserBase {
    * Placeholder node for the actuals in a function call.  Never appears in the
    * final tree.
    */
-  private static class ActualList extends AbstractExpression<Expression> {
+  private static class ActualList extends AbstractExpression {
     ActualList(List<Expression> actuals) {
+      super(Expression.class);
       createMutation().appendChildren(actuals).execute();
+    }
+
+    @Override
+    public List<? extends Expression> children() {
+      return childrenAs(Expression.class);
     }
 
     @Override

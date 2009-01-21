@@ -22,7 +22,7 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class FinallyStmt extends AbstractStatement<Statement> {
+public final class FinallyStmt extends AbstractStatement {
   private Statement body;
 
   /** @param value unused.  This ctor is provided for reflection. */
@@ -31,13 +31,14 @@ public final class FinallyStmt extends AbstractStatement<Statement> {
   }
 
   public FinallyStmt(Statement body) {
+    super(Statement.class);
     appendChild(body);
   }
 
   @Override
   protected void childrenChanged() {
     super.childrenChanged();
-    this.body = children().get(0);
+    this.body = (Statement) children().get(0);
   }
 
   @Override

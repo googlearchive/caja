@@ -150,7 +150,7 @@ public class CajitaRewriter extends Rewriter {
     if (null == result) { return node; }
     result.getAttributes().putAll(node.getAttributes());
     if (result instanceof AbstractParseTreeNode) {
-      ((AbstractParseTreeNode<?>) result)
+      ((AbstractParseTreeNode) result)
           .setFilePosition(node.getFilePosition());
     }
     return result;

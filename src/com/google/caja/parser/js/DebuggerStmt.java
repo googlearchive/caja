@@ -26,15 +26,17 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class DebuggerStmt extends AbstractStatement<Statement> {
+public final class DebuggerStmt extends AbstractStatement {
   /**
    * This ctor is provided for reflection.
    * @param value unused.
    * @param children unused.
    */
-  public DebuggerStmt(Void value, List<? extends ParseTreeNode> children) {}
+  public DebuggerStmt(Void value, List<? extends ParseTreeNode> children) {
+    super(NoChildren.class); 
+  }
 
-  public DebuggerStmt() {}
+  public DebuggerStmt() { super(NoChildren.class); }
 
   @Override
   public Object getValue() { return null; }

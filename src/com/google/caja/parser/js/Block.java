@@ -28,17 +28,23 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class Block
-    extends AbstractStatement<Statement> implements NestedScope {
+    extends AbstractStatement implements NestedScope {
   /** @param value unused.  This ctor is provided for reflection. */
   public Block(Void value, List<? extends Statement> children) {
     this(children);
   }
 
   public Block(List<? extends Statement> elements) {
+    super(Statement.class);
     createMutation().appendChildren(elements).execute();
   }
 
-  public Block() {}
+  public Block() { super(Statement.class); }
+
+  @Override
+  public List<? extends Statement> children() {
+    return childrenAs(Statement.class);
+  }
 
   public void prepend(Statement statement) {
     insertBefore(statement, children().isEmpty() ? null : children().get(0));

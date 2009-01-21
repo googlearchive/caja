@@ -26,7 +26,7 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class TranslatedCode extends AbstractStatement<Statement> {
+public final class TranslatedCode extends AbstractStatement {
   /** @param value unused.  This ctor is provided for reflection. */
   public TranslatedCode(Void value, List<? extends Statement> children) {
     this(children.get(0));
@@ -34,6 +34,7 @@ public final class TranslatedCode extends AbstractStatement<Statement> {
   }
 
   public TranslatedCode(Statement body) {
+    super(Statement.class);
     createMutation().appendChild(body).execute();
   }
 
@@ -51,6 +52,11 @@ public final class TranslatedCode extends AbstractStatement<Statement> {
 
   @Override
   public Object getValue() { return null; }
+
+  @Override
+  public List<Statement> children() {
+    return childrenAs(Statement.class);
+  }
 
   public Statement getTranslation() { return children().get(0); }
 

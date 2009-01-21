@@ -86,7 +86,7 @@ public class SimpleQuasiNode extends QuasiNode {
 
     // TODO(ihab.awad): Absorb setting the FilePosition into newNodeInstance and remove the
     // assumption here that everything is an AbstractParseTreeNode.
-    AbstractParseTreeNode<?> node = (AbstractParseTreeNode<?>)
+    AbstractParseTreeNode node = (AbstractParseTreeNode)
         ParseTreeNodes.newNodeInstance(clazz, value, children);
     node.setFilePosition(FilePosition.UNKNOWN);
     substitutes.add(node);

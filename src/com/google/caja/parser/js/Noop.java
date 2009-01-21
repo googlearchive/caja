@@ -22,13 +22,14 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class Noop extends AbstractStatement<Statement> {
+public final class Noop extends AbstractStatement {
   /** @param value unused.  This ctor is provided for reflection. */
   public Noop(Void value, List<? extends Statement> children) {
+    super(NoChildren.class);
     assert children.isEmpty();
   }
 
-  public Noop() {}
+  public Noop() { super(NoChildren.class); }
 
   @Override
   public Object getValue() { return null; }

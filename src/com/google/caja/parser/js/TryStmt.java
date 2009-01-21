@@ -23,17 +23,19 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class TryStmt extends AbstractStatement<Statement> {
+public final class TryStmt extends AbstractStatement {
   private Statement body;
   private CatchStmt cat;
   private FinallyStmt fin;
 
   /** @param value unused.  This ctor is provided for reflection. */
   public TryStmt(Void value, List<? extends Statement> children) {
+    super(Statement.class);    
     createMutation().appendChildren(children).execute();
   }
 
   public TryStmt(Statement body, CatchStmt cat, FinallyStmt fin) {
+    super(Statement.class);
     Mutation m = createMutation().appendChild(body);
     if (cat != null) {
       m.appendChild(cat);
@@ -69,6 +71,11 @@ public final class TryStmt extends AbstractStatement<Statement> {
 
   @Override
   public Object getValue() { return null; }
+
+  @Override
+  public List<Statement> children() {
+    return childrenAs(Statement.class);
+  }
 
   public void render(RenderContext rc) {
     rc.getOut().mark(getFilePosition());

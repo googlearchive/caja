@@ -34,10 +34,12 @@ import java.util.Map;
  * @author mikesamuel@gmail.com
  */
 public abstract class LabeledStatement
-    extends AbstractStatement<ParseTreeNode> {
+    extends AbstractStatement {
   private String label;
 
-  protected LabeledStatement(String label) {
+  protected LabeledStatement(String label,
+                             Class<? extends ParseTreeNode> childClass) {
+    super(childClass);
     assert label != null;
     this.label = label;
   }

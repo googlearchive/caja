@@ -28,13 +28,14 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class MultiDeclaration extends AbstractStatement<Declaration> {
+public final class MultiDeclaration extends AbstractStatement {
   /** @param value unused.  This ctor is provided for reflection. */
   public MultiDeclaration(Void value, List<? extends Declaration> children) {
     this(children);
   }
 
   public MultiDeclaration(List<? extends Declaration> decls) {
+    super(Declaration.class);
     createMutation().appendChildren(decls).execute();
   }
 
@@ -51,6 +52,11 @@ public final class MultiDeclaration extends AbstractStatement<Declaration> {
 
   @Override
   public Object getValue() { return null; }
+
+  @Override
+  public List<Declaration> children() {
+    return childrenAs(Declaration.class);
+  }
 
   public void render(RenderContext rc) {
     TokenConsumer out = rc.getOut();

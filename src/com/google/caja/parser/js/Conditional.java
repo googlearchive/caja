@@ -26,14 +26,16 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class Conditional extends AbstractStatement<ParseTreeNode> {
+public final class Conditional extends AbstractStatement {
   /** @param value unused.  This ctor is provided for reflection. */
   public Conditional(Void value, List<? extends ParseTreeNode> children) {
+    super(ParseTreeNode.class);    
     createMutation().appendChildren(children).execute();
   }
 
   public Conditional(
       List<Pair<Expression, Statement>> ifClauses, Statement elseClause) {
+    super(ParseTreeNode.class);
     if (ifClauses.isEmpty()) { throw new IllegalArgumentException(); }
     Mutation m = createMutation();
     for (Pair<Expression, Statement> p : ifClauses) {

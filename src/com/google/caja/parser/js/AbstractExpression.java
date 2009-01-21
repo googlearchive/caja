@@ -26,8 +26,12 @@ import java.io.IOException;
  *
  * @author mikesamuel@gmail.com
  */
-public abstract class AbstractExpression<T extends ParseTreeNode>
-    extends AbstractParseTreeNode<T> implements Expression {
+public abstract class AbstractExpression
+    extends AbstractParseTreeNode implements Expression {
+  public AbstractExpression(Class<? extends ParseTreeNode> childClass) {
+    super(childClass);
+  }
+  
   public boolean isLeftHandSide() { return false; }
 
   public final TokenConsumer makeRenderer(

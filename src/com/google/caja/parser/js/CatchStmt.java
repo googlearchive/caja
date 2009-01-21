@@ -25,7 +25,7 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class CatchStmt extends AbstractStatement<ParseTreeNode> {
+public final class CatchStmt extends AbstractStatement {
   private Declaration exception;
   private Statement body;
 
@@ -35,6 +35,7 @@ public final class CatchStmt extends AbstractStatement<ParseTreeNode> {
   }
 
   public CatchStmt(Declaration exception, Statement body) {
+    super(Statement.class);
     createMutation()
         .appendChild(exception)
         .appendChild(body)

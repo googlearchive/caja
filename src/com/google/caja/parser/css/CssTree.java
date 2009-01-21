@@ -39,8 +39,9 @@ import java.util.regex.Pattern;
  *
  * @author mikesamuel@gmail.com
  */
-public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
+public abstract class CssTree extends AbstractParseTreeNode {
   CssTree(FilePosition pos, List<? extends CssTree> children) {
+    super(CssTree.class);
     this.setFilePosition(pos);
     createMutation().appendChildren(children).execute();
   }
@@ -48,6 +49,11 @@ public abstract class CssTree extends AbstractParseTreeNode<CssTree> {
   @Override
   public Object getValue() {
     return null;
+  }
+
+  @Override
+  public List<CssTree> children() {
+    return childrenAs(CssTree.class);
   }
 
   @Override

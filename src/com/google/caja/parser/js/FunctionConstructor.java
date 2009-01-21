@@ -31,7 +31,7 @@ import java.util.Collections;
  * @author mikesamuel@gmail.com
  */
 public final class FunctionConstructor
-    extends AbstractExpression<ParseTreeNode> implements NestedScope {
+    extends AbstractExpression implements NestedScope {
   private Identifier identifier;
   private List<FormalParam> params;
   private Block body;
@@ -39,12 +39,14 @@ public final class FunctionConstructor
   /** @param value unused.  This ctor is provided for reflection. */
   public FunctionConstructor(
       Void value, List<? extends ParseTreeNode> children) {
+    super(ParseTreeNode.class);    
     createMutation().appendChildren(children).execute();
   }
 
 
   public FunctionConstructor(
       Identifier identifier, List<FormalParam> params, Block body) {
+    super(ParseTreeNode.class);
     createMutation()
         .appendChild(identifier)
         .appendChildren(params)

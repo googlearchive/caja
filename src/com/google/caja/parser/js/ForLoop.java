@@ -40,7 +40,7 @@ public final class ForLoop extends Loop implements NestedScope {
 
   public ForLoop(String label, Statement initializer, Expression cond,
                  Statement increment, Statement body) {
-    super(label);
+    super(label, ParseTreeNode.class);
     createMutation()
         .appendChild(initializer)
         .appendChild(cond)

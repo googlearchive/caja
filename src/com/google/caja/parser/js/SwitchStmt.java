@@ -29,13 +29,13 @@ import java.util.Map;
  */
 public final class SwitchStmt extends LabeledStatement {
   public SwitchStmt(String label, List<? extends ParseTreeNode> children) {
-    super(label);
+    super(label, ParseTreeNode.class);
     createMutation().appendChildren(children).execute();
   }
 
   public SwitchStmt(
       String label, Expression valueExpr, List<SwitchCase> cases) {
-    super(label);
+    super(label, ParseTreeNode.class);
     createMutation().appendChild(valueExpr).appendChildren(cases).execute();
   }
 

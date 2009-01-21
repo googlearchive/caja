@@ -32,7 +32,7 @@ import java.util.List;
  *
  * @author ihab.awad@gmail.com
  */
-public final class Identifier extends AbstractParseTreeNode<ParseTreeNode> {
+public final class Identifier extends AbstractParseTreeNode {
   private final String name;
 
   public Identifier(String name, List<? extends ParseTreeNode> children) {

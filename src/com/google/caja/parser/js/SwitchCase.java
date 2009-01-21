@@ -17,6 +17,7 @@ package com.google.caja.parser.js;
 import com.google.caja.parser.ParseTreeNode;
 
 /** @see SwitchStmt */
-public abstract class SwitchCase extends AbstractStatement<ParseTreeNode> {
+public abstract class SwitchCase extends AbstractStatement {
+  protected SwitchCase() { super(ParseTreeNode.class); }
   // base class for case and default blocks
 }

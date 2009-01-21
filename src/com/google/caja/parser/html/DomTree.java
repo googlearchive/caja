@@ -50,7 +50,7 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
+public abstract class DomTree extends AbstractParseTreeNode {
   private final Token<HtmlTokenType> start;
 
   DomTree(List<? extends DomTree> children,
@@ -61,6 +61,7 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
 
   DomTree(List<? extends DomTree> children,
           Token<HtmlTokenType> tok, FilePosition pos) {
+    super(DomTree.class);
     this.start = tok;
     if (pos != null) {
       setFilePosition(pos);
@@ -88,6 +89,11 @@ public abstract class DomTree extends AbstractParseTreeNode<DomTree> {
    */
   @Override
   public abstract String getValue();
+
+  @Override
+  public List<DomTree> children() {
+    return childrenAs(DomTree.class);
+  }
 
   private static final InputSource DECODE =
       new InputSource(URI.create("decode:///xml"));

@@ -33,13 +33,15 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class ObjectConstructor extends AbstractExpression<Expression> {
+public final class ObjectConstructor extends AbstractExpression {
   /** @param value unused.  This ctor is provided for reflection. */
   public ObjectConstructor(Void value, List<? extends Expression> children) {
+    super(Expression.class);
     createMutation().appendChildren(children).execute();
   }
 
   public ObjectConstructor(List<Pair<Literal, Expression>> properties) {
+    super(Expression.class);    
     Mutation m = createMutation();
     for (Pair<Literal, Expression> p : properties) {
       m.appendChild(p.a);
@@ -75,6 +77,11 @@ public final class ObjectConstructor extends AbstractExpression<Expression> {
 
   @Override
   public Object getValue() { return null; }
+
+  @Override
+  public List<Expression> children() {
+    return childrenAs(Expression.class);
+  }
 
   public void render(RenderContext rc) {
     TokenConsumer out = rc.getOut();

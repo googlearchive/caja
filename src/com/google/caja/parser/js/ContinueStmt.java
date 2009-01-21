@@ -25,7 +25,7 @@ import java.util.Map;
  *
  * @author mikesamuel@gmail.com
  */
-public final class ContinueStmt extends AbstractStatement<Statement> {
+public final class ContinueStmt extends AbstractStatement {
   private String label;
 
   /** @param children unused.  This ctor is provided for reflection. */
@@ -34,6 +34,7 @@ public final class ContinueStmt extends AbstractStatement<Statement> {
   }
 
   public ContinueStmt(String label) {
+    super(Statement.class);
     this.label = label;
   }
 
