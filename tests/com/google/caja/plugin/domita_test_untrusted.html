@@ -655,13 +655,13 @@ jsunitRegister('testPseudoElements',
   var title = document.getElementsByTagName('title')[0];
   var html = document.getElementsByTagName('html')[0];
 
-  assertEquals('body', body.getTagName());
+  assertEquals('BODY', body.getTagName());
   assertEquals('', body.getAttribute('foo'));
-  assertEquals('head', head.getTagName());
+  assertEquals('HEAD', head.getTagName());
   assertEquals('', head.getAttribute('foo'));
-  assertEquals('title', title.getTagName());
+  assertEquals('TITLE', title.getTagName());
   assertEquals('', title.getAttribute('foo'));
-  assertEquals('html', body.getTagName());
+  assertEquals('HTML', html.getTagName());
   assertEquals('', html.getAttribute('foo'));
 
   pass('test-pseudo-elements');

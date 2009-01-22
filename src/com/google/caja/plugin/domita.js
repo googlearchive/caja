@@ -2586,6 +2586,7 @@ attachDocumentStub = (function () {
         case 'body': return fakeNodeList([ this.getBody() ]);
         case 'head': return fakeNodeList([ this.getHead() ]);
         case 'title': return fakeNodeList([ this.getTitle() ]);
+        case 'html': return fakeNodeList([ this.getDocumentElement() ]);
         default:
           return tameGetElementsByTagName(
               this.body___, tagName, this.editable___);
