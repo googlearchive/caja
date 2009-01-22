@@ -106,6 +106,7 @@ our $HISTORY_DIR = "$MASTER_CLIENT/history"; requireDir $HISTORY_DIR;
 # Executables required
 our $ANT_HOME = "/usr/local/ant";            requireDir $ANT_HOME;
 our $ANT = "$ANT_HOME/bin/ant";              requireExe $ANT;
+our $SELENIUM = "/opt/svn/selenium.sh";      requireExe $ANT;
 our $JAVA_HOME = $ENV{JAVA_HOME} or "/usr/lib/jvm/java-6-sun/";
                                              requireDir $JAVA_HOME;
 our $JAVA = "$JAVA_HOME/bin/java";           requireExe $JAVA;
@@ -147,7 +148,8 @@ sub collectCodeStats() {
 
   print STDERR "running benchmarks\n";
   track(\&build, ['benchmarks'], 'benchmarks', \@status_log);
-  extractBenchmarkSummary("$REPORTS_DIR/benchmarks/TESTS-TestSuites.xml", \@status_log);
+  extractBenchmarkSummary("$REPORTS_DIR/benchmarks/TESTS-TestSuites.xml",
+      \@status_log);
 
   print STDERR "running tests\n";
   track(\&build, ['runtests'], 'tests', \@status_log);
@@ -162,6 +164,11 @@ sub collectCodeStats() {
   print STDERR "building testbed\n";
   track(\&build, ['testbed'], 'testbed', \@status_log);
 
+  print STDERR "running selenium\n";
+  track(\&farm, ['all'], 'selenium', \@status_log);
+  extractSeleniumSummary("$REPORTS_DIR/selenium/TESTS-TestSuites.xml", 
+      \@status_log);
+
   print STDERR "making output directory\n";
   makeOutputDir();
 
@@ -172,8 +179,9 @@ sub collectCodeStats() {
 
   print STDERR "copying test reports\n";
   outputTree("$REPORTS_DIR/tests", 'tests', 'index.html', \@status_log);
-
   outputTree("$REPORTS_DIR/coverage", 'coverage', 'index.html', \@status_log);
+  outputTree("$REPORTS_DIR/selenium", 'cross-browser tests', 'index.html', 
+      \@status_log);
 
   print STDERR "copying demos\n";
   outputTree($DEMOS_DIR, 'demos', '', \@status_log);
@@ -251,6 +259,11 @@ sub svnversion() {
   my $version = `"$SVNVERSION"`;
   die "Bad svnversion: $version @ $ENV{PWD}" unless $version =~ m/^(\d{4,})/;
   return $1;
+}
+
+# Run selenium.
+sub farm(@) {
+  return exec_log($BUILD_CLIENT, $SELENIUM, @_);
 }
 
 # Run ant.
@@ -344,8 +357,6 @@ sub extractBenchmarkSummary($$) {
       $errors += $1;
       die "Malformed $xml_file: $_" unless $testsummary =~ m/\bfailures="(\d+)"/;
       $failures += $1;
-      die "Malformed $xml_file: $_" unless $testsummary =~ m/\bfailures="(\d+)"/;
-      $failures += $1;
     }
     if ($_ =~ $VARZ_FORMAT) {
       push(@{$status_log_ref}, qq'<varz name="$1" value="$2"/>');
@@ -360,6 +371,53 @@ sub extractBenchmarkSummary($$) {
        qq'<varz name="benchmarks.pct" value="'
        . sprintf("%3.1f", 100 * ($failures + $errors) / $tests)
        . qq'"/>');
+}
+
+# Parses out number of errors/failures from a xml file that looks as follows:
+# <?xml version="1.0" encoding="UTF-8"?>
+# <testsuite name="com.google.testing.selenium.SeleniumSuite-FIREFOX20_LINUX" tests="4" failures="4" errors="0" time="11.105">
+# <testcase name="com/google/caja/browser-expectations.html" status="run" classname="com.google.caja.selenium.SeleniumTestCase" time="9.969">
+# <failure message="" type="junit.framework.AssertionFailedError"><![CDATA[junit.framework.AssertionFailedError: 
+# ...
+# </testcase>
+# <testcase name="com/google/caja/plugin/domita_test.html" status="run" classname="com.google.caja.selenium.SeleniumTestCase" time="11.033">
+# </testcase></testsuite>
+sub extractSeleniumSummary($$) {
+  my ($xml_file, $status_log_ref) = @_;
+
+  my ($tests, $errors, $failures) = (0, 0, 0);
+  my ($bTests, $bErrors, $bFailures) = (0, 0, 0);
+  open(IN, "<$xml_file") or die "$xml_file: $!";
+  while (<IN>) {
+    chomp;
+    if (m/<testsuite\s+name="[^"]*SeleniumSuite-([^"]*)"(.*)/) {
+      $tests += $bTests;
+      $errors += $bErrors;
+      $failures += $bFailures;
+      ($bTests, $bErrors, $bFailures) = (0, 0, 0);
+
+      my $browser = $1;
+      my $testsummary = $2;
+      die "Malformed $xml_file: $_" unless $testsummary =~ s/>.*//;
+      die "Malformed $xml_file: $_" unless $testsummary =~ m/\btests="(\d+)"/;
+      $bTests += $1;
+      die "Malformed $xml_file: $_" unless $testsummary =~ m/\berrors="(\d+)"/;
+      $bErrors += $1;
+      die "Malformed $xml_file: $_" unless $testsummary =~ m/\bfailures="(\d+)"/;
+      $bFailures += $1;
+      push(@{$status_log_ref}, qq'<varz name="selenium.$browser.total" value="$bTests"/>');
+      push(@{$status_log_ref}, qq'<varz name="selenium.$browser.errors" value="$bErrors"/>');
+      push(@{$status_log_ref}, qq'<varz name="selenium.$browser.failures" value="$bFailures"/>');
+      if ($_ =~ $VARZ_FORMAT) {
+        push(@{$status_log_ref}, qq'<varz name="$1" value="$2"/>');
+      }
+    }
+  }
+  close(IN);
+
+  push(@{$status_log_ref}, qq'<varz name="selenium.total" value="$tests"/>');
+  push(@{$status_log_ref}, qq'<varz name="selenium.errors" value="$errors"/>');
+  push(@{$status_log_ref}, qq'<varz name="selenium.failures" value="$failures"/>');
 }
 
 sub extractCoverageSummary($$) {
