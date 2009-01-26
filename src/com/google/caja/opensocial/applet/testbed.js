@@ -323,7 +323,7 @@ var getImports = (function () {
       var name;
       if (ctor) {
         name = ctor.NAME___;
-        if (!name && ('name' in ctor) && !___.hasOwnProp(ctor, 'name')) {
+        if (!name && ('name' in ctor) && ___.hasOwnProp(ctor, 'name')) {
           name = ctor.name;
         }
         if (name) { return String(name); }
