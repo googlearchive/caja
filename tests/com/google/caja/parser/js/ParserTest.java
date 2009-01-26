@@ -467,9 +467,7 @@ public class ParserTest extends CajaTestCase {
       throws Exception {
     assertRender(
         "({" + k + ": 42});",
-        "({\n"
-         + "   '" + k + "': 42\n"
-         + " })");
+        "({ '" + k + "': 42 })");
   }
 
   private void assertRender(String code, String expectedRendering)

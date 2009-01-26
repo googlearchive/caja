@@ -6,9 +6,7 @@
   return c;
   return;
   c;
-  {
-    return;
-  }
+  { return; }
   break d;
   break;
   d;

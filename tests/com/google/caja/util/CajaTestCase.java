@@ -35,6 +35,8 @@ import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Parser;
+import com.google.caja.render.JsMinimalPrinter;
+import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
@@ -205,6 +207,18 @@ public abstract class CajaTestCase extends TestCase {
   protected String render(ParseTreeNode node) {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = node.makeRenderer(sb, null);
+    node.render(new RenderContext(mc, tc));
+    tc.noMoreTokens();
+    return sb.toString();
+  }
+
+  protected String minify(ParseTreeNode node) {
+    // Make sure it's a JS node.
+    StringBuilder sb = new StringBuilder();
+    if (!(node.makeRenderer(sb, null) instanceof JsPrettyPrinter)) {
+      throw new ClassCastException(node.getClass().getName());
+    }
+    TokenConsumer tc = new JsMinimalPrinter(sb, null);
     node.render(new RenderContext(mc, tc));
     tc.noMoreTokens();
     return sb.toString();

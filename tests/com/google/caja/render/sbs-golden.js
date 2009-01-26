@@ -8,8 +8,8 @@
 /* <h1>Hello                                          */
 /***************************************************** sbs-test-input1.js ******************************************************/
 /* function sep() {                                   */                  IMPORTS___.sep = ___.simpleFunc(function sep() {
-/*   return '<hr />';                                 */                                                    return '<hr />';
-/* }                                                  */                                                  });
+/*   return '<hr />';                                 */                        return '<hr />';
+/* }                                                  */                      });
 /* if (foo()) { bar(); }                              */                  if (___.asSimpleFunc(IMPORTS___.foo)()) {
 /*                                                    */                    ___.asSimpleFunc(IMPORTS___.bar)();
 /*                                                    */                  }

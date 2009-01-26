@@ -161,8 +161,8 @@ public class CajolingServiceTest extends TestCase {
             "<script type=\"text/javascript\">{\n"
             + "  ___.loadModule(function moduleFunc___(___, IMPORTS___) {\n"
             + "                   var moduleResult___ = ___.NO_RESULT;\n"
-            + "                   IMPORTS___.htmlEmitter___"
-            + ".b('p').f(false).ih('Hello, World!').e('p');\n"
+            + "                   IMPORTS___.htmlEmitter___.b('p').f(false)\n"
+            + "                       .ih('Hello, World!').e('p');\n"
             + "                   return moduleResult___;\n"
             + "                 });\n"
             + "}</script>"),

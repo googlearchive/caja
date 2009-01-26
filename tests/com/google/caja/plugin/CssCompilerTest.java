@@ -16,6 +16,8 @@ package com.google.caja.plugin;
 
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.render.JsPrettyPrinter;
+import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 
 public class CssCompilerTest extends CajaTestCase {
@@ -77,7 +79,7 @@ public class CssCompilerTest extends CajaTestCase {
   private void assertCompiledCss(String input, String golden) {
     try {
       Statement s = new CssCompiler().compileCss(css(fromString(input)));
-      assertEquals(golden, stripBoilerPlate(render(s)));
+      assertEquals(golden, stripBoilerPlate(render(s, 160)));
     } catch (ParseException ex) {
       fail(input);
     }
@@ -90,5 +92,14 @@ public class CssCompilerTest extends CajaTestCase {
       return s.substring(pre.length(), s.length() - post.length());
     }
     return s;
+  }
+
+  private String render(Statement node, int limit) {
+    StringBuilder sb = new StringBuilder();
+    JsPrettyPrinter pp = new JsPrettyPrinter(sb, null);
+    pp.setLineLengthLimit(limit);
+    node.render(new RenderContext(mc, pp));
+    pp.noMoreTokens();
+    return sb.toString();
   }
 }

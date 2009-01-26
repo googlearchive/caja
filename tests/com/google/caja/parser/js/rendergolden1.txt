@@ -24,9 +24,7 @@
   case 1:
     return 'panic';
   case 2:
-    if (a === 4) {
-      break;
-    }
+    if (a === 4) { break; }
   case BAR:
     {
       f();
@@ -34,9 +32,7 @@
     }
   default:
     {
-      zowie(wowie());
-      ;
-      ;
+      zowie(wowie());;;
     }
   }
   for (var i in array) {
@@ -51,9 +47,7 @@
     ;
   case 1:
     {
-      {
-        foo();
-      }
+      { foo(); }
       break;
     }
   default:
@@ -63,9 +57,7 @@
   }
   var n = 1.0 / 2;
   foo: while (x) {
-    if (f()) {
-      continue foo;
-    }
+    if (f()) { continue foo; }
     --x;
   }
   continue bar;

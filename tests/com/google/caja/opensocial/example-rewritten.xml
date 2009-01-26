@@ -13,8 +13,8 @@
                    IMPORTS___.emitCss___([ '.', ' .p1 {\n  color: red\n}' ].join(IMPORTS___.getIdClass___()));
                    {
                      IMPORTS___.c_1___ = ___.frozenFunc(function (event, thisNode___) {
-                                                                handleClicky.CALL___();
-                                                              });
+                                                          handleClicky.CALL___();
+                                                        });
                    }
                    IMPORTS___.htmlEmitter___.pc('\n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    ').b('p').a('class', 'p1 p2').f(false).ih('Paragraph 1').e('p').pc('\n\n    ');
                    try {
@@ -24,8 +24,7 @@
                                              alert.CALL___('external script');
                                            }
                                            return ___.func(externalScript$_self, 'externalScript');
-                                         })();
-                       ;
+                                         })();;
                      }
                    } catch (ex___) {
                      ___.getNewModuleHandler().handleUncaughtException(ex___, onerror, 'example-gadget-files/external-script.js', '2');

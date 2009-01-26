@@ -106,7 +106,7 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
     assertRewritePasses("SocialHelloWorld.xml", MessageLevel.WARNING);
     rewriter.setValijaMode(false);
   }
-  
+
   public void testSocialHelloWorld() throws Exception {
     assertRewritePasses("SocialHelloWorld.xml", MessageLevel.WARNING);
   }
@@ -253,6 +253,6 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
   private static final String normalizeIndentation(String xml) {
     return xml.replaceAll("\n +([?:.])", "$1")
         .replaceAll("\\(\n +", "(")
-        .replaceAll("\n +", " ");
+        .replaceAll("\n *", " ");
   }
 }

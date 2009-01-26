@@ -38,15 +38,15 @@ import java.util.Random;
 
 public class JsPrettyPrinterTest extends CajaTestCase {
   public void testEmptyBlock() throws Exception {
-    assertRendered("{\n  {\n  }\n}", "{}");
+    assertRendered("{ { } }", "{}");
   }
 
   public void testAdjacentBlocks() throws Exception {
-    assertRendered("{\n  {\n  }\n  {\n  }\n}", "{}{}");
+    assertRendered("{\n  { }\n  { }\n}", "{}{}");
   }
 
   public void testSimpleStatement() throws Exception {
-    assertRendered("{\n  foo();\n}", "foo();");
+    assertRendered("{ foo(); }", "foo();");
   }
 
   public void testSemisInsideParents() throws Exception {
@@ -63,9 +63,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
         "{\n"
         + "  foo({\n"
         + "        'x': 1,\n"
-        + "        'y': bar({\n"
-        + "                   'w': 4\n"
-        + "                 }),\n"
+        + "        'y': bar({ 'w': 4 }),\n"
         + "        'z': 3\n"
         + "      });\n"
         + "}",
@@ -84,6 +82,24 @@ public class JsPrettyPrinterTest extends CajaTestCase {
         "(function (a, b, c) { foo(a); bar(b); return (c); })(1, 2, 3);");
   }
 
+  public void testBreakBeforeWhile() throws Exception {
+    assertRendered(
+        "{\n"
+        + "  do {\n"
+        + "    foo(bar());\n"
+        + "  } while (1);\n"
+        + "}",
+        "do { foo(bar()); } while(1);");
+    assertRendered(
+        "{\n"
+        + "  {\n"
+        + "    foo(bar());\n"
+        + "  }\n"
+        + "  while (1);\n"
+        + "}",
+        "{ foo(bar()); } while(1);");
+  }
+
   public void testMarkupEndStructures() throws Exception {
     // Make sure -->, </script, and ]]> don't show up in rendered output.
     // Preventing these in strings is handled separately.
@@ -98,8 +114,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
         + "  ({\n"
         + "     'a': [ 1, 2, 3 ],\n"
         + "     'b': {\n"
-        + "       'c': [{\n"
-        + "             }],\n"
+        + "       'c': [{ }],\n"
         + "       'd': [{\n"
         + "               'e': null,\n"
         + "               'f': 'foo'\n"
@@ -113,9 +128,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
   public void testConditional() throws Exception {
     assertRendered(
         "{\n"
-        + "  if (c1) {\n"
-        + "    foo();\n"
-        + "  } else if (c2) bar();\n"
+        + "  if (c1) { foo(); } else if (c2) bar();\n"
         + "  else baz();\n"
         + "}",
         "if (c1) { foo(); } else if (c2) bar(); else baz();");
@@ -129,8 +142,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
     assertLexed(
         "var x = foo; /* end of line */\n"
         + "/** Own line */\n"
-        + "function Bar() {\n"
-        + "}\n"
+        + "function Bar() { }\n"
         + "/* Beginning */\n"
         + "var baz;\n"
         + "a+// Line comment\n"

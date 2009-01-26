@@ -30,7 +30,6 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 import com.google.caja.util.Pair;
-import com.google.caja.parser.ParseTreeNode;
 
 import java.io.File;
 import java.io.FileInputStream;

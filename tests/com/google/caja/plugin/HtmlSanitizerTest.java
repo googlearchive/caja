@@ -215,11 +215,6 @@ public class HtmlSanitizerTest extends TestCase {
     sanitize(input, golden, true, warnings);
   }
 
-  private void assertInvalid(DomTree input, String... warnings)
-      throws Exception {
-    sanitize(input, null, false, warnings);
-  }
-
   private void sanitize(
       DomTree input, String golden, boolean valid, String... warnings)
       throws Exception {

@@ -155,8 +155,8 @@ public class DomProcessingEventsTest extends CajaTestCase {
     dpe.toJavascript(block);
     TestUtil.removePseudoNodes(block);
 
-    String prefix = "\n  IMPORTS___.htmlEmitter___";
-    String startOne = ".b('p').a('id', x).f(false)";
+    String prefix = "IMPORTS___.htmlEmitter___";
+    String startOne = ".b('p').a('id',x).f(false)";
     String startTen = (startOne + startOne + startOne + startOne + startOne
                        + startOne + startOne + startOne + startOne + startOne);
     String endOne = ".e('p')";
@@ -168,7 +168,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
         + prefix + startTen + startTen + startTen + endTen + ";"
         // Split across two lines
         + prefix + endTen + endTen + ";"
-        + "\n}",
-        render(block));
+        + "}",
+        minify(block));
   }
 }

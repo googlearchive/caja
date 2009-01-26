@@ -25,7 +25,6 @@ import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue.Mark;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParserBase;
-import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;

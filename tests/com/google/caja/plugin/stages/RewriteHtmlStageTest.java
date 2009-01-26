@@ -36,7 +36,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertPipeline(
         job("foo<script>extracted();</script>baz", Job.JobType.HTML),
         job("foo<span></span>baz", Job.JobType.HTML),
-        job("{\n  extracted();\n}", Job.JobType.JAVASCRIPT)
+        job("{ extracted(); }", Job.JobType.JAVASCRIPT)
         );
     assertNoErrors();
 
@@ -72,7 +72,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         job("foo<script type=text/javascript>extracted();</script>baz",
             Job.JobType.HTML),
         job("foo<span></span>baz", Job.JobType.HTML),
-        job("{\n  extracted();\n}", Job.JobType.JAVASCRIPT)
+        job("{ extracted(); }", Job.JobType.JAVASCRIPT)
         );
     assertNoErrors();
 
@@ -108,7 +108,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
         job("<body onload=init();>Foo</body>", Job.JobType.HTML),
         job("<html><head></head><body>Foo<span></span></body></html>",
             Job.JobType.HTML),
-        job("{\n  init();\n}", Job.JobType.JAVASCRIPT));
+        job("{ init(); }", Job.JobType.JAVASCRIPT));
     assertNoErrors();
   }
 
