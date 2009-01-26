@@ -2980,7 +2980,15 @@ attachDocumentStub = (function () {
           // http://www.w3.org/TR/CSS2/selector.html#q20
           function (tameElement, pseudoElement) {
             cajita.guard(tameNodeTrademark, tameElement);
-            pseudoElement = (pseudoElement === null || pseudoElement === void 0)
+            // Coerce all nullish values to undefined, since that is the value
+            // for unspecified parameters.
+            // Per bug 973: pseudoElement should be null according to the
+            // spec, but mozilla docs contradict this.
+            // From https://developer.mozilla.org/En/DOM:window.getComputedStyle
+            //     pseudoElt is a string specifying the pseudo-element to match.
+            //     Should be an empty string for regular elements.
+            pseudoElement = (pseudoElement === null || pseudoElement === void 0
+                             || '' === pseudoElement)
                 ? void 0 : String(pseudoElement).toLowerCase();
             if (pseudoElement !== void 0
                 && !PSEUDO_ELEMENT_WHITELIST.hasOwnProperty(pseudoElement)) {
