@@ -238,6 +238,8 @@ can test window.scrollBy with a positive x value with a visible effect.
     margin: 7px"
  ></div>
 
+<p class="testcontainer" id="test-default-view">Test document.defaultView</p>
+
 <p class="testcontainer" id="test-document-element">Test Document Element</p>
 
 <p class="testcontainer" id="test-document-body-appendChild"
@@ -1315,27 +1317,42 @@ jsunitRegister('testXhrAsync',
 
 jsunitRegister('testComputedStyle',
                function testComputedStyle() {
+  function assertComputedStyle(element, pseudoElt, styleName, styleValue) {
+    var msg = element.tagName + (element.id && '#' + element.id)
+        + (pseudoElt && ':' + pseudoElt)
+        + ' { ' + stylename + ': ' + styleValue + '}';
+    assertEquals(
+        msg,
+        styleValue,
+        window.getComputedStyle(element, pseudoElt)[styleName]);
+    assertEquals(
+        msg,
+        styleValue,
+        document.defaultView.getComputedStyle(element, pseudoElt)[styleName]);
+  }
+
   var block = document.getElementById('test-computed-style-block');
   var inline = document.getElementById('test-computed-style-inline');
   var fakie = document.getElementById('test-computed-style-fakie');
   var invisible = document.getElementById('test-computed-style-invisible');
-  assertEquals('block', window.getComputedStyle(block, null).display);
-  assertEquals('inline', window.getComputedStyle(inline, null).display);
-  assertEquals('inline', window.getComputedStyle(fakie, null).display);
+  assertComputedStyle(block, null, 'display', 'block');
+  assertComputedStyle(inline, null, 'display', 'inline');
+  assertComputedStyle(fakie, null, 'display', 'inline');
   var NO_RESULT = {};
-  var firstLineDisplay = NO_RESULT;
+  var pseudoElementsSupported = false;
   try {
-    firstLineDisplay = window.getComputedStyle(fakie, 'first-line').display;
+    window.getComputedStyle(fakie, 'first-line').display;
+    pseudoElementsSupported = true;
   } catch (ex) {
     // Not supported on all browsers
   }
   if (firstLineDisplay !== NO_RESULT) {
-    assertEquals(firstLineDisplay, 'inline');
+    assertComputedStyle(fakie, 'first-line', 'display', 'inline');
   }
-  assertEquals('none', window.getComputedStyle(invisible, null).display);
+  assertComputedStyle(invisible, null, 'display', 'none');
   // Make sure we don't expose information that we haven't yet sorted out how
   // to safely expose.
-  assertEquals(undefined, window.getComputedStyle(block, null).color);
+  assertComputedStyle(block, null, 'color', undefined);
 
   pass('test-computed-style');
 });
@@ -1587,13 +1604,17 @@ jsunitRegister('testFactoriesNotBypassable',
 
 jsunitRegister('testScrolling',
                function testScrolling() {
-  assertEquals('0,0', String([window.scrollLeft, window.scrollTop]));
+  assertEquals('0,0,0,0', String([
+      window.scrollLeft, window.scrollTop,
+      document.defaultView.scrollLeft, document.defaultView.scrollTop]));
   assertEquals(
       'visible',
       directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
 
   window.scrollBy(0, 0);
-  assertEquals('0,0', String([window.scrollLeft, window.scrollTop]));
+  assertEquals('0,0,0,0', String([
+      window.scrollLeft, window.scrollTop,
+      document.defaultView.scrollLeft, document.defaultView.scrollTop]));
   assertEquals(
       'visible',
       directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
@@ -1602,19 +1623,25 @@ jsunitRegister('testScrolling',
   assertEquals(
       'auto',
       directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
-  assertEquals('0,10', String([window.scrollLeft, window.scrollTop]));
+  assertEquals('0,10,0,10', String([
+      window.scrollLeft, window.scrollTop,
+      document.defaultView.scrollLeft, document.defaultView.scrollTop]));
 
   window.scrollBy(10, -5);
   assertEquals(
       'auto',
       directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
-  assertEquals('10,5', String([window.scrollLeft, window.scrollTop]));
+  assertEquals('10,5,10,5', String([
+      window.scrollLeft, window.scrollTop,
+      document.defaultView.scrollLeft, document.defaultView.scrollTop]));
 
-  window.scrollTo(0, 0);
+  document.defaultView.scrollTo(0, 0);
   assertEquals(
       'auto',
       directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
-  assertEquals('0,0', String([window.scrollLeft, window.scrollTop]));
+  assertEquals('0,0,0,0', String([
+      window.scrollLeft, window.scrollTop,
+      document.defaultView.scrollLeft, document.defaultView.scrollTop]));
 
   pass('test-scrolling');
 });
@@ -1622,6 +1649,8 @@ jsunitRegister('testScrolling',
 jsunitRegister('testResizing',
                function testResizing() {
   function windowDims() {
+    assertEquals(window.clientWidth, document.defaultView.clientWidth);
+    assertEquals(window.clientHeight, document.defaultView.clientHeight);
     return String([window.clientWidth, window.clientHeight]);
   }
 
@@ -1640,7 +1669,7 @@ jsunitRegister('testResizing',
   assertEquals('scrollable dimensions 2', '1100,800', windowDims());
   assertEquals('width 2', '1100px', windowStyleWidth());
 
-  window.resizeTo(1200, 800);
+  document.defaultView.resizeTo(1200, 800);
   assertEquals('scrollable dimensions 3', '1200,800', windowDims());
   assertEquals('width 3', '1200px', windowStyleWidth());
 
@@ -1663,6 +1692,12 @@ jsunitRegister('testSizeProperties',
   assertEquals(60, el.offsetHeight);
 
   pass('test-size-properties');
+});
+
+jsunitRegister('testDefaultView',
+               function testDefaultView() {
+  assertNotEquals(window, document.defaultView);
+  pass('test-default-view');
 });
 
 jsunitRegister('testDocumentElement',

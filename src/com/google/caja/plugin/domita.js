@@ -2622,12 +2622,12 @@ attachDocumentStub = (function () {
     TameHTMLDocument.prototype.createElement = function (tagName) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       tagName = String(tagName).toLowerCase();
-      if (!html4.ELEMENTS.hasOwnProperty(tagName)) { 
-        throw new Error(UNKNOWN_TAGNAME + "[" + tagName + "]"); 
+      if (!html4.ELEMENTS.hasOwnProperty(tagName)) {
+        throw new Error(UNKNOWN_TAGNAME + "[" + tagName + "]");
       }
       var flags = html4.ELEMENTS[tagName];
-      if (flags & html4.eflags.UNSAFE) { 
-        throw new Error(UNSAFE_TAGNAME + "[" + tagName + "]"); 
+      if (flags & html4.eflags.UNSAFE) {
+        throw new Error(UNSAFE_TAGNAME + "[" + tagName + "]");
       }
       var newEl = this.doc___.createElement(tagName);
       if (elementPolicies.hasOwnProperty(tagName)) {
@@ -2931,6 +2931,39 @@ attachDocumentStub = (function () {
     function TameWindow() {
       this.properties___ = {};
     }
+
+    /**
+     * An <a href=
+     * href=http://www.w3.org/TR/DOM-Level-2-Views/views.html#Views-AbstractView
+     * >AbstractView</a> implementation that exposes styling, positioning, and
+     * sizing information about the current document's pseudo-body.
+     * <p>
+     * The AbstractView spec specifies very little in its IDL description, but
+     * mozilla defines it thusly:<blockquote>
+     *   document.defaultView is generally a reference to the window object
+     *   for the document, however that is not defined in the specification
+     *   and can't be relied upon for all host environments, particularly as
+     *   not all browsers implement it.
+     * </blockquote>
+     * <p>
+     * We can't provide access to the tamed window directly from document
+     * since it is the global scope of valija code, and so access to another
+     * module's tamed window provides an unbounded amount of authority.
+     * <p>
+     * Instead, we expose styling, positioning, and sizing properties
+     * via this class.  All of this authority is already available from the
+     * document.
+     */
+    function TameDefaultView() {
+      // TODO: expose a read-only version of the document
+      this.document = tameDocument;
+      // Exposing an editable default view that pointed to a read-only
+      // tameDocument via document.defaultView would allow escalation of
+      // authority.
+      assert(tameDocument.editable___);
+      ___.grantRead(this, 'document');
+    }
+
     cajita.forOwnKeys({
       document: imports.document,
       location: tameLocation,
@@ -2939,6 +2972,23 @@ attachDocumentStub = (function () {
       setInterval: tameSetInterval,
       clearTimeout: tameClearTimeout,
       clearInterval: tameClearInterval,
+      addEventListener: ___.frozenFunc(
+          function (name, listener, useCapture) {
+            // TODO(ihab.awad): Implement
+          }),
+      removeEventListener: ___.frozenFunc(
+          function (name, listener, useCapture) {
+            // TODO(ihab.awad): Implement
+          }),
+      dispatchEvent: ___.frozenFunc(
+          function (evt) {
+            // TODO(ihab.awad): Implement
+          })
+    }, ___.func(function (propertyName, value) {
+      TameWindow.prototype[propertyName] = value;
+      ___.grantRead(TameWindow.prototype, propertyName);
+    }));
+    cajita.forOwnKeys({
       scrollBy: ___.frozenFunc(
           function (dx, dy) {
             // The window is always auto scrollable, so make the apparent window
@@ -2960,18 +3010,6 @@ attachDocumentStub = (function () {
       resizeBy: ___.frozenFunc(
           function (dw, dh) {
             tameResizeBy(tameDocument.body___, dw, dh);
-          }),
-      addEventListener: ___.frozenFunc(
-          function (name, listener, useCapture) {
-            // TODO(ihab.awad): Implement
-          }),
-      removeEventListener: ___.frozenFunc(
-          function (name, listener, useCapture) {
-            // TODO(ihab.awad): Implement
-          }),
-      dispatchEvent: ___.frozenFunc(
-          function (evt) {
-            // TODO(ihab.awad): Implement
           }),
       /** A partial implementation of getComputedStyle. */
       getComputedStyle: ___.frozenFunc(
@@ -3017,6 +3055,8 @@ attachDocumentStub = (function () {
     }, ___.func(function (propertyName, value) {
       TameWindow.prototype[propertyName] = value;
       ___.grantRead(TameWindow.prototype, propertyName);
+      TameDefaultView.prototype[propertyName] = value;
+      ___.grantRead(TameDefaultView.prototype, propertyName);
     }));
     TameWindow.prototype.handleRead___ = function (name) {
       name = String(name);
@@ -3081,6 +3121,7 @@ attachDocumentStub = (function () {
     };
 
     var tameWindow = new TameWindow();
+    var tameDefaultView = new TameDefaultView(tameDocument.editable___);
 
     function propertyOnlyHasGetter(_) {
       throw new TypeError('setting a property that only has a getter');
@@ -3142,12 +3183,20 @@ attachDocumentStub = (function () {
       ___.useGetHandler(tameWindow, propertyName, def.get);
       ___.useSetHandler(tameWindow, propertyName,
                         def.set || propertyOnlyHasGetter);
+      ___.useGetHandler(tameDefaultView, propertyName, def.get);
+      ___.useSetHandler(tameDefaultView, propertyName,
+                        def.set || propertyOnlyHasGetter);
     }));
 
 
     // Attach reflexive properties to 'window' object
     tameWindow.top = tameWindow.self = tameWindow.opener = tameWindow.parent
         = tameWindow.window = tameWindow;
+
+    if (tameDocument.editable___) {
+      tameDocument.defaultView = tameDefaultView;
+      ___.grantRead(tameDocument, 'defaultView');
+    }
 
     // Iterate over all node classes, assigning them to the Window object
     // under their DOM Level 2 standard name.
