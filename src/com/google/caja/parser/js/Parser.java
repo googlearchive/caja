@@ -684,6 +684,11 @@ public final class Parser extends ParserBase {
 
   /**
    * Parses an expression.
+   * @param insertionProtected true iff the expression appears directly inside
+   *     parentheses or square brackets or in some other context where
+   *     semicolons cannot be inserted.  For example, the x in {@code f(x);}
+   *     appears in an insertionProtected contexts, but the x in {@code x = 1;}
+   *     does not.
    * @return non null.
    */
   public Expression parseExpression(boolean insertionProtected)
@@ -696,8 +701,7 @@ public final class Parser extends ParserBase {
     Mark m = tq.mark();
     AbstractExpression e = parseOp(Integer.MAX_VALUE, insertionProtected);
     // Handle comma operator
-    while ((insertionProtected || !semicolonInserted())
-           && tq.checkToken(Punctuation.COMMA)) {
+    while (tq.checkToken(Punctuation.COMMA)) {
       // The comma operator is left-associative so parse expression part in loop
       // instead of recursing
       Expression right = parseExpressionPart(insertionProtected);

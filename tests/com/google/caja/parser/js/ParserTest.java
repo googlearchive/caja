@@ -179,6 +179,11 @@ public class ParserTest extends CajaTestCase {
     // But it should pass if there is a line-continuation
     js(fromString("throw \\\n new Error()"));
   }
+  public void testCommaOperatorInReturn() throws Exception {
+    Block bl = js(fromString("return 1  \n  , 2;"));
+    assertTrue("" + mq.getMessages(), mq.getMessages().isEmpty());
+    assertEquals("{\n  return 1, 2;\n}", render(bl));
+  }
 
   public void testRenderKeywordsAsIdentifiers() throws Exception {
     for (Keyword k : Keyword.values()) {
