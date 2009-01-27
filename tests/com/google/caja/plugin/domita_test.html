@@ -87,7 +87,7 @@
       ___.setLogFunc(function(msg) { console.log(msg); });
 
       var testImports = ___.copy(___.sharedImports);
-      if (valijaMaker) { testImports.$v = valijaMaker.CALL___(testImports); }
+      if (valijaMaker) { testImports.outers = testImports; }
       var testDomContainer = document.getElementById('untrusted_content');
       var pseudoWindowLocation = {
           href: 'http://zip.example.com:4242/pumpkin.html?q=getit#myanchor',
@@ -101,21 +101,6 @@
       };
 
       ___.getNewModuleHandler().setImports(testImports);
-      attachDocumentStub(
-           '-xyz___',
-           {
-             rewrite:
-                 function (uri, mimeType) {
-                   if (/\.\/xhrTest.*/.test(uri)) { return uri; }
-                   if (!/^https?:\/\//i.test(uri)) { return null; }
-                   return 'http://gadget-proxy/?url=' + encodeURIComponent(uri)
-                       + '&mimeType=' + encodeURIComponent(mimeType);
-                 }
-           },
-           testImports,
-           testDomContainer,
-           pseudoWindowLocation);
-      console.log('attached stubs');
 
       testImports.jsunitRegister = ___.frozenFunc(jsunitRegister);
       testImports.console = ___.primFreeze({
@@ -189,13 +174,34 @@
         testImports[name] = ___.frozenFunc(this[name], name);
       }
 
+      testImports.valijaMode = !!valijaMaker;
+
+      attachDocumentStub(
+           '-xyz___',
+           {
+             rewrite:
+                 function (uri, mimeType) {
+                   if (/\.\/xhrTest.*/.test(uri)) { return uri; }
+                   if (!/^https?:\/\//i.test(uri)) { return null; }
+                   return 'http://gadget-proxy/?url=' + encodeURIComponent(uri)
+                       + '&mimeType=' + encodeURIComponent(mimeType);
+                 }
+           },
+           testImports,
+           testDomContainer,
+           pseudoWindowLocation);
+      console.log('attached stubs');
+
       // Create a readonly mirror of document so that we can test that mutations
       // fail when they should.
-      testImports.documentRO = new testImports.document.constructor(
+      var documentHolder = valijaMaker ? testImports.outers : testImports;
+      documentHolder.documentRO = new documentHolder.document.constructor(
           document, testDomContainer, false);
 
       testImports.htmlEmitter___ = new HtmlEmitter(testDomContainer);
-
+      if (valijaMaker) { 
+        testImports.$v = valijaMaker.CALL___(testImports.outers); 
+      }
       window.toString = function () { return '[WINDOW]'; };
     })();</script>
 

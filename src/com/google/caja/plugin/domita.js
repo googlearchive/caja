@@ -3069,8 +3069,8 @@ attachDocumentStub = (function () {
       if (this[handlerName]) {
         return this[handlerName]();
       }
-      if (___.hasOwnProp(this.properties___, name)) {
-        return this.properties___[name];
+      if (___.hasOwnProp(this, name)) {
+        return this[name];
       } else {
         return void 0;
       }
@@ -3086,11 +3086,9 @@ attachDocumentStub = (function () {
       if (this[handlerName]) {
         return this[handlerName](val);
       }
-      if (!this.properties___) {
-        this.properties___ = {};
-      }
       this[name + '_canEnum___'] = true;
-      return this.properties___[name] = val;
+      this[name + '_canRead___'] = true;
+      return this[name] = val;
     };
     TameWindow.prototype.handleDelete___ = function (name) {
       name = String(name);
@@ -3103,21 +3101,15 @@ attachDocumentStub = (function () {
       if (this[handlerName]) {
         return this[handlerName]();
       }
-      if (this.properties___) {
-        return (
-            delete this.properties___[name]
-            && delete this[name + '_canEnum___']);
-      } else {
-        return true;
-      }
+      return (
+          delete this[name]
+          && delete this[name + '_canEnum___']
+          && delete this[name + '_canRead___']);
     };
     TameWindow.prototype.handleEnum___ = function (ownFlag) {
       // TODO(metaweta): Add code to list all the other handled stuff we know
       // about.
-      if (this.properties___) {
-        return cajita.allKeys(this.properties___);
-      }
-      return [];
+      return cajita.allKeys(this);
     };
 
     var tameWindow = new TameWindow();
@@ -3190,8 +3182,13 @@ attachDocumentStub = (function () {
 
 
     // Attach reflexive properties to 'window' object
-    tameWindow.top = tameWindow.self = tameWindow.opener = tameWindow.parent
-        = tameWindow.window = tameWindow;
+    var windowProps = ['top', 'self', 'opener', 'parent', 'window'];
+    var wpLen = windowProps.length;
+    for (var i = 0; i < wpLen; ++i) {
+      var prop = windowProps[i];
+      tameWindow[prop] = tameWindow;
+      ___.grantRead(tameWindow, prop);
+    }
 
     if (tameDocument.editable___) {
       tameDocument.defaultView = tameDefaultView;
@@ -3276,7 +3273,7 @@ attachDocumentStub = (function () {
           ___.grantRead(tameWindow, k);
         }
       }));
-      imports.outers = window;
+      imports.outers = tameWindow;
     } else {
       imports.window = tameWindow;
     }

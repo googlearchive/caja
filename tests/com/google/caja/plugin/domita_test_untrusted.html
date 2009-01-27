@@ -242,6 +242,8 @@ can test window.scrollBy with a positive x value with a visible effect.
 
 <p class="testcontainer" id="test-document-element">Test Document Element</p>
 
+<p class="testcontainer" id="test-window-object">Test Window Object</p>
+
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
 
@@ -1320,7 +1322,7 @@ jsunitRegister('testComputedStyle',
   function assertComputedStyle(element, pseudoElt, styleName, styleValue) {
     var msg = element.tagName + (element.id && '#' + element.id)
         + (pseudoElt && ':' + pseudoElt)
-        + ' { ' + stylename + ': ' + styleValue + '}';
+        + ' { ' + styleName + ': ' + styleValue + '}';
     assertEquals(
         msg,
         styleValue,
@@ -1346,7 +1348,7 @@ jsunitRegister('testComputedStyle',
   } catch (ex) {
     // Not supported on all browsers
   }
-  if (firstLineDisplay !== NO_RESULT) {
+  if (pseudoElementsSupported) {
     assertComputedStyle(fakie, 'first-line', 'display', 'inline');
   }
   assertComputedStyle(invisible, null, 'display', 'none');
@@ -1747,6 +1749,19 @@ jsunitRegister('testDocumentElement',
     }, document);
 
   pass('test-document-element');
+});
+
+var testWindowObjectVariable;
+
+jsunitRegister('testWindowObject',
+               function testWindowObject() {
+  // Check to see that in valija globals are properties of window
+  if (valijaMode) {
+    testWindowObjectVariable = 3;
+    assertEquals(testWindowObjectVariable, window.testWindowObjectVariable);
+    assertEquals(testWindowObjectVariable, 3);
+  }
+  pass('test-window-object');
 });
 
 jsunitRegister('testDocumentBodyAppendChild',

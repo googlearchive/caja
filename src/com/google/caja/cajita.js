@@ -1975,6 +1975,8 @@ var ___;
    * Makes a new empty object that directly inherits from <tt>proto</tt>.
    */
   function primBeget(proto) {
+    if (proto === null) { fail("Cannot beget from null."); }
+    if (proto === (void 0)) { fail("Cannot beget from undefined."); }
     function F() {}
     F.prototype = proto;
     var result = new F();
