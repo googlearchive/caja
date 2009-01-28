@@ -896,15 +896,15 @@ attachDocumentStub = (function () {
      */
     function tameNodeList(nodeList, editable, opt_keyAttrib) {
       var tamed = [];
-      var node, untamed;
-      for (var i = 0, k = -1, n = nodeList.length; i < n; ++i) {
-        untamed = nodeList.item(i);
-        // Filter out attribute names in the protected namespace.
-        // These are created on IE as part of the association of a wrapper
-        // with the node it wraps.
-        if (untamed.nodeName && endsWith__.test(untamed.nodeName)) { continue; }
-        node = tameNode(untamed, editable);
-        tamed[++k] = node;
+      var node;
+
+      // Work around NamedNodeMap bugs in IE, Opera, and Safari as discussed
+      // at http://code.google.com/p/google-caja/issues/detail?id=935
+      var limit = nodeList.length;
+      if (limit !== +limit) { limit = 1/0; }
+      for (var i = 0; i < limit && (node = nodeList[i]); ++i) {
+        node = tameNode(nodeList.item(i), editable);
+        tamed[i] = node;
         // Make the node available via its name if doing so would not mask
         // any properties of tamed.
         var key = opt_keyAttrib && node.getAttribute(opt_keyAttrib);
@@ -920,7 +920,7 @@ attachDocumentStub = (function () {
 
       tamed.item = ___.frozenFunc(function (k) {
         k &= 0x7fffffff;
-        if (isNaN(k)) { throw new Error(); }
+        if (k !== k) { throw new Error(); }
         return tamed[k] || null;
       });
       // TODO(mikesamuel): if opt_keyAttrib, could implement getNamedItem
@@ -1002,9 +1002,12 @@ attachDocumentStub = (function () {
         // since the spec for getElementsByTagName has the same language.
         var candidates = rootNode.getElementsByTagName('*');
         var matches = [];
+        var limit = candidates.length;
+        if (limit !== +limit) { limit = 1/0; }  // See issue 935
         candidate_loop:
-        for (var j = 0, n = candidates.length, k = -1; j < n; ++j) {
-          var candidate = candidates[j];
+        for (var j = 0, candidate, k = -1;
+             j < limit && (candidate = candidates[j]);
+             ++j) {
           var candidateClass = ' ' + candidate.className + ' ';
           for (var i = nClasses; --i >= 0;) {
             if (-1 === candidateClass.indexOf(classes[i])) {

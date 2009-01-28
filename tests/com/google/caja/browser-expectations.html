@@ -27,6 +27,12 @@
     The tests are not cajoled or transformed in any way.  They just assert
     that browsers that we support conform to certain norms.
 
+    <form style="display:none" name="iterationTest">
+      <input name="length" id="length">
+      <input name="3" id="3">
+      <input name="1" id="1">
+    </form>
+
     <script>
     jsunitRegister('testNumericOperators', function testNumericOperators() {
       var values = [
@@ -151,7 +157,8 @@
       assertTrue(
           'ident after dot not normalized same as unquoted object member',
           eval('({ C\u0327: true }).C\u0327'));
-      // Check that identifiers 
+      // Check that local variable names and object literal keys are normalized
+      // the same way.
       assertEquals(
           'var names normalized same as unquoted object members',
           2,
@@ -169,6 +176,19 @@
       assertEquals(1, o['C\u0327_1'] || o['\xC7_1']);
       assertEquals(2, o['C\u0327_2']);
       assertEquals(3, o['C\u0327_3']);
+    });
+
+    // Discussed at http://code.google.com/p/google-caja/issues/detail?id=935
+    jsunitRegister('testNamedNodeMapIteration',
+                   function testNamedNodeMapIteration() {
+      var results = [];
+      var nodes = document.forms.iterationTest.elements;
+      var limit = nodes.length;
+      if (limit !== +limit) { limit = 1/0; }
+      for (var i = 0, node; i < limit && (node = nodes[i]); ++i) {
+        results.push(node.name);
+      }
+      assertEquals('length, 3, 1', results.join(', '));
     });
     </script>
   </body>
