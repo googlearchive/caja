@@ -90,8 +90,8 @@
       .variableoutput {
         width: 600px;
         min-height: 12px;
-        height: auto !important;
-        height: 12px;
+        height: auto;
+        min-height: 12px;
         border: 3px solid #cccccc;
         position: relative;
         overflow: auto;
@@ -116,52 +116,7 @@
 
       .cajita-stack { white-space: pre; font-family: monospace }
     </style>
-  <script type="text/javascript" src="cajita-combined-min.js"></script>
-  <script>
-    function asyncLoadScript(url) {
-       var e = document.createElement("script");
-       e.src = url;
-       e.type="text/javascript";
-       document.getElementsByTagName("head")[0].appendChild(e);
-    }
-    var loadurl_cb = null;
-    function loadurl(form) {
-      if (loadurl_cb != null) {
-        setTimeout(function(){loadurl(form);}, 1000);
-        return;
-      }
-      loadurl_cb = function(resp) {
-        form.elements.src.value = resp;
-        loadurl_cb = null;
-      };
-      var url = form.elements.urlval.value;
-      // fetch the content at the URL, and then callback to load_and_cajole()
-      asyncLoadScript("http://suprfetch.appspot.com/?output=json&callback=loadurl_cb&url="+encodeURIComponent(url));
-    }
-    function process_urlparams() {
-      var searchString = document.location.search;
-      // strip off the leading '?'
-      searchString = searchString.substring(1);
-      var nvPairs = searchString.split("&");
-      var args = new Array;
-      for (i = 0; i < nvPairs.length; i++) {
-        var nvPair = nvPairs[i].split("=");
-        args[decodeURIComponent(nvPair[0])] = decodeURIComponent(nvPair[1]);
-      }
-      if (args['url1'] != null) {
-        var form1 = document.forms['cajolerForm.1'];
-        form1.elements.urlval.value = args['url1'];
-        loadurl(form1);
-      }
-      if (args['url2'] != null) {
-        var form2 = document.forms['cajolerForm.2'];
-        form2.elements.urlval.value = args['url2'];
-        loadurl(form2);
-      }
-    }
-  </script>
   </head>
-
 
   <div style="display:none">
     <!-- a template for a set of testbed controls and output UI -->
@@ -229,6 +184,54 @@
 
 
   <body bgcolor="white" onload="prettyPrint()">
+  <!-- Load scripts in body so that document.body is available in IE 6 -->
+  <script type="text/javascript" src="cajita-combined-min.js"></script>
+  <script>
+    function asyncLoadScript(url) {
+       var e = document.createElement("script");
+       e.src = url;
+       e.type="text/javascript";
+       document.getElementsByTagName("head")[0].appendChild(e);
+    }
+    var loadurl_cb = null;
+    function loadurl(form) {
+      if (loadurl_cb != null) {
+        setTimeout(function(){loadurl(form);}, 1000);
+        return;
+      }
+      loadurl_cb = function(resp) {
+        form.elements.src.value = resp;
+        loadurl_cb = null;
+      };
+      var url = form.elements.urlval.value;
+      // fetch the content at the URL, and then callback to load_and_cajole()
+      asyncLoadScript(
+          'http://suprfetch.appspot.com/?output=json&callback=loadurl_cb&url='
+          + encodeURIComponent(url));
+    }
+    function process_urlparams() {
+      var searchString = document.location.search;
+      // strip off the leading '?'
+      searchString = searchString.substring(1);
+      var nvPairs = searchString.split("&");
+      var args = new Array;
+      for (i = 0; i < nvPairs.length; i++) {
+        var nvPair = nvPairs[i].split("=");
+        args[decodeURIComponent(nvPair[0])] = decodeURIComponent(nvPair[1]);
+      }
+      if (args['url1'] != null) {
+        var form1 = document.forms['cajolerForm.1'];
+        form1.elements.urlval.value = args['url1'];
+        loadurl(form1);
+      }
+      if (args['url2'] != null) {
+        var form2 = document.forms['cajolerForm.2'];
+        form2.elements.urlval.value = args['url2'];
+        loadurl(form2);
+      }
+    }
+  </script>
+
     <span style="font-size:24px;font-weight:bold">Caja Test Bed
       <applet code="com.google.caja.opensocial.applet.CajaApplet" name="cajoler"
        archive="testbed.jar,htmlparser.jar,json_simple.jar"
@@ -341,7 +344,8 @@ exports.sayBye = function () {
 
     document.forms['cajolerForm.1'].elements.src.select();
     initTestbeds();
-    document.getElementById("cajolerVersion").innerHTML = getCajoler().getVersion();
+    document.getElementById("cajolerVersion").innerHTML
+        = getCajoler().getVersion();
     process_urlparams();
   })();
   </script>

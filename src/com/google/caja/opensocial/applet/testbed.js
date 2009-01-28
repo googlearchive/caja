@@ -51,6 +51,12 @@
  * </pre>
  *
  * @author mikesamuel@gmail.com
+ * @overrides prettyPrint, prettyPrintOne
+ * @provides BOGUS_PROXY_URL, cajole, gadgetPublicApis, getCajoler, getImports,
+ *     getTestbedServer, indentAndWrapCode, initTestbeds, innerText,
+ *     loadExampleInto, renderTemplate, registerTestbed, runPlain, testbeds
+ * @requires ___, HtmlEmitter, alert, attachDocumentStub, cajita, console,
+ *     document, eval, html, location, valijaMaker, window
  */
 
 /** UI suffixes of all registered testbeds. */
@@ -170,8 +176,9 @@ var cajole = (function () {
         throw ex;
       }
     } else {
-      (typeof console !== 'undefined')
-      && console.warn('Failed to eval cajoled output %s', html);
+      if (typeof console !== 'undefined') {
+        console.warn('Failed to eval cajoled output %s', html);
+      }
     }
   }
 
@@ -379,8 +386,8 @@ var getImports = (function () {
           // get access to the appropriate Disfunction object for an
           // instanceof test.  At worst, an object will print out as
           // [Object object].
-          if (o.call && o.apply && o.bind) { 
-            return cajita.callPub(o, "toString"); 
+          if (o.call && o.apply && o.bind) {
+            return cajita.callPub(o, "toString");
           }
           if (cajita.isJSONContainer(o)) {
             var els = [];
@@ -410,7 +417,7 @@ var getImports = (function () {
     var inner = ___.beget(superHandler);
     inner.handle = ___.frozenFunc(function testbedHandle(newModule) {
       try {
-        return ___.callPub(superHandler, 'handle', 
+        return ___.callPub(superHandler, 'handle',
                            [___.frozenFunc(newModule)]);
       } finally {
         var outcome = superHandler.getLastOutcome();
@@ -461,7 +468,7 @@ var getImports = (function () {
       var htmlContainer = document.getElementById('caja-html' + uiSuffix);
       htmlContainer.className = idClass;
       htmlContainer.innerHTML = '';
-      testImports.htmlEmitter___ = new HtmlEmitter(htmlContainer);      
+      testImports.htmlEmitter___ = new HtmlEmitter(htmlContainer);
     };
     /**
      * Put styles inside a node that is cleared for each gadget so that
@@ -481,7 +488,7 @@ var getImports = (function () {
     /** Provide an alert but one that is less obnoxious */
     testImports.alert = cajita.log;
 
-    testImports.newModuleHandler___ = 
+    testImports.newModuleHandler___ =
       makeNewModuleHandler(testImports, uiSuffix);
 
     return importsByUiSuffix[uiSuffix] = testImports;
