@@ -423,11 +423,18 @@ attachDocumentStub = (function () {
   // setTimeout.
   var timeoutIdTrademark = {};
   function tameSetTimeout(timeout, delayMillis) {
-    var timeoutId = setTimeout(
-        function () { ___.callPub(timeout, 'call', [___.USELESS]); },
-        delayMillis | 0);
+    // Existing browsers treat a timeout of null or undefined as a noop.
+    var timeoutId;
+    if (timeout) {
+      timeoutId = setTimeout(
+          function () { ___.callPub(timeout, 'call', [___.USELESS]); },
+          delayMillis | 0);
+    } else {
+      // Assumes that clearTimeout(NaN) is a noop.  Checked in domita_test.html.
+      timeoutId = NaN;
+    }
     return ___.freeze(___.stamp(timeoutIdTrademark,
-                          { timeoutId___: timeoutId }));
+                                { timeoutId___: timeoutId }));
   }
   ___.frozenFunc(tameSetTimeout);
   function tameClearTimeout(timeoutId) {
@@ -437,11 +444,17 @@ attachDocumentStub = (function () {
   ___.frozenFunc(tameClearTimeout);
   var intervalIdTrademark = {};
   function tameSetInterval(interval, delayMillis) {
-    var intervalId = setInterval(
-        function () { ___.callPub(interval, 'call', [___.USELESS]); },
-        delayMillis | 0);
+    // Existing browsers treat an interval of null or undefined as a noop.
+    var intervalId;
+    if (interval) {
+      intervalId = setInterval(
+          function () { ___.callPub(interval, 'call', [___.USELESS]); },
+          delayMillis | 0);
+    } else {
+      intervalId = NaN;
+    }
     return ___.freeze(___.stamp(intervalIdTrademark,
-                          { intervalId___: intervalId }));
+                                { intervalId___: intervalId }));
   }
   ___.frozenFunc(tameSetInterval);
   function tameClearInterval(intervalId) {

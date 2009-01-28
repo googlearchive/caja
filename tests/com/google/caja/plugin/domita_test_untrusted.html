@@ -440,6 +440,13 @@ jsunitRegister('testTimeoutAndInterval',
       interval2RunCount = 0;
   var interval1Id = setInterval(function () { ++interval1RunCount; }, 50);
   var interval2Id = setInterval(function () { ++interval2RunCount; }, 50);
+
+  // Check that null is a noop as a timeout or interval value, and that the
+  // return value works with clearTimeout and clearInterval and does not
+  // inadvertently clear existing timeouts or intervals.
+  clearTimeout(setTimeout(null, 0));
+  clearInterval(setInterval(null, 0));
+
   setTimeout(
       function () {
         clearInterval(interval2Id);
