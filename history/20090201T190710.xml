@@ -1,0 +1,1664 @@
+<report id="20090201T190710">
+<varz name="time" value="1233515230"/>
+<target name="update">
+  <log>At revision 3222.
+</log>
+</target>
+<varz name="target.update.status" value="1"/>
+<varz name="target.update.time" value="3"/>
+<varz name="svnversion" value="3222"/>
+<target name="clean">
+  <log>Buildfile: build.xml
+
+clean:
+   [delete] Deleting directory /opt/svn/google-caja/ant-reports
+   [delete] Deleting directory /opt/svn/google-caja/ant-docs
+   [delete] Deleting directory /opt/svn/google-caja/ant-instr
+   [delete] Deleting directory /opt/svn/google-caja/ant-jars
+   [delete] Deleting directory /opt/svn/google-caja/ant-lib
+   [delete] Deleting directory /opt/svn/google-caja/ant-www
+
+BUILD SUCCESSFUL
+Total time: 1 second
+</log>
+</target>
+<varz name="target.clean.status" value="1"/>
+<varz name="target.clean.time" value="2"/>
+<tasks rev="3222">
+<task file="src/com/google/caja/lexer/FilePosition.java" line="47" owner="mikesamuel">need unittests</task>
+<task file="src/com/google/caja/lexer/HtmlLexer.java" line="406" owner="mikesamuel">rewrite with a transition table or just use ANTLR</task>
+<task file="src/com/google/caja/lexer/CharProducer.java" line="52" owner="mikesamuel">separate this into two factories in separate files,</task>
+<task file="src/com/google/caja/lexer/CssLexer.java" line="33" owner="mikesamuel">CSS2.1 has changed lexical conventions to effectively</task>
+<task file="src/com/google/caja/render/Innocent.java" line="129" owner="ihab.awad">Move this functionality to a common place. </task>
+<task file="src/com/google/caja/lang/html/HtmlSchema.java" line="42" owner="mikesamuel">respect required attributes for tags.</task>
+<task file="src/com/google/caja/lang/html/HtmlSchema.java" line="132" owner="mikesamuel">divert IllegalArgumentExceptions to MessageQueue</task>
+<task file="src/com/google/caja/lang/css/CssSchema.java" line="187" owner="mikesamuel">Is there any value in enumerating elements?</task>
+<task file="src/com/google/caja/lang/css/css-extensions-defs.json" line="23" owner="unknown">&quot;: &quot;dom2property&quot; },</task>
+<task file="src/com/google/caja/lang/css/css-extensions-defs.json" line="27" owner="unknown">&quot;: &quot;dom2property&quot; },</task>
+<task file="src/com/google/caja/parser/quasiliteral/Permit.java" line="64" owner="erights">Add case for dotted path expression.</task>
+<task file="src/com/google/caja/parser/quasiliteral/Permit.java" line="87" owner="erights">encode (or at least sanitize) key</task>
+<task file="src/com/google/caja/parser/quasiliteral/QuasiNode.java" line="85" owner="ihab.awad">As a special case, an Identifier with a null value is</task>
+<task file="src/com/google/caja/parser/quasiliteral/Rule.java" line="336" owner="unknown">If we ever have a cheap way to test whether result is used freely</task>
+<task file="src/com/google/caja/parser/quasiliteral/Rule.java" line="370" owner="erights">figure out why not, and fix if appropriate.</task>
+<task file="src/com/google/caja/parser/quasiliteral/Rule.java" line="388" owner="erights">figure out why not, and fix if appropriate.</task>
+<task file="src/com/google/caja/parser/quasiliteral/Rule.java" line="510" owner="erights">These rules should be independent of whether we're writing</task>
+<task file="src/com/google/caja/parser/quasiliteral/PermitTemplate.java" line="44" owner="erights">to be read in from a JSON config</task>
+<task file="src/com/google/caja/parser/quasiliteral/TrailingUnderscoresHole.java" line="73" owner="mikesamuel">can this move from the superclass into a sibling class?</task>
+<task file="src/com/google/caja/parser/quasiliteral/DefaultValijaRewriter.java" line="282" owner="mikesamuel">check after Kona meeting</task>
+<task file="src/com/google/caja/parser/quasiliteral/DefaultValijaRewriter.java" line="876" owner="erights">Need a general way to expand readModifyWrite lValues.</task>
+<task file="src/com/google/caja/parser/quasiliteral/DefaultValijaRewriter.java" line="886" owner="mikesamuel">better lower limit</task>
+<task file="src/com/google/caja/parser/quasiliteral/DefaultValijaRewriter.java" line="926" owner="mikesamuel">better lower bound</task>
+<task file="src/com/google/caja/parser/quasiliteral/DefaultValijaRewriter.java" line="936" owner="mikesamuel">Figure out when post increments are being</task>
+<task file="src/com/google/caja/parser/quasiliteral/SimpleQuasiNode.java" line="87" owner="ihab.awad">Absorb setting the FilePosition into newNodeInstance and remove the</task>
+<task file="src/com/google/caja/parser/quasiliteral/Scope.java" line="187" owner="ihab.awad">importedVariables is only used by the root-most scope; it is</task>
+<task file="src/com/google/caja/parser/quasiliteral/Scope.java" line="319" owner="ihab.awad">Uses private access to 's' which is of same class but distinct</task>
+<task file="src/com/google/caja/parser/quasiliteral/Scope.java" line="336" owner="ihab.awad">Uses private access to 's' which is of same class but distinct</task>
+<task file="src/com/google/caja/parser/quasiliteral/Scope.java" line="515" owner="ihab.awad">Refactor to use standard Caja Visitor. Currently not</task>
+<task file="src/com/google/caja/parser/quasiliteral/Scope.java" line="578" owner="ihab.awad">Change the ParseTreeNode type for the right hand sides</task>
+<task file="src/com/google/caja/parser/quasiliteral/Scope.java" line="692" owner="erights">Permit should generate a JSON AST directly,</task>
+<task file="src/com/google/caja/parser/quasiliteral/RuleDescription.java" line="58" owner="ihab.awad">Add metadata for a rule indicating that it always fails,</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="402" owner="erights">This creates an uncajoled named function &lt;i&gt;expression&lt;/i&gt;</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="418" owner="erights">Pull manifest up into module record.</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="790" owner="mikesamuel">limit</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="831" owner="mikesamuel">limit further</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="995" owner="mikesamuel">Limit further</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="1288" owner="erights">Need a general way to expand lValues</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="1309" owner="erights">Need a general way to expand lValues</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="1336" owner="erights">Need a general way to expand readModifyWrite lValues.</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="1346" owner="mikesamuel">better lower limit</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="1380" owner="mikesamuel">better lower bound</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="1390" owner="mikesamuel">Figure out when post increments are being</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="1960" owner="ihab.awad">The 'multiDeclaration' implementation is hard</task>
+<task file="src/com/google/caja/parser/quasiliteral/CajitaRewriter.java" line="2296" owner="mikesamuel">break/continue with unmentionable label</task>
+<task file="src/com/google/caja/parser/html/AbstractElementStack.java" line="134" owner="mikesamuel">check against XML&amp;HTML definitions of whitespace.</task>
+<task file="src/com/google/caja/parser/css/CssParser.java" line="526" owner="mikesamuel">fix this so it doesn't throw a parse exception at end</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="697" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="725" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="741" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="757" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="772" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="787" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="804" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="819" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="844" owner="ihab">Javadoc.</task>
+<task file="src/com/google/caja/parser/css/CssTree.java" line="914" owner="msamuel">maybe enforce the convention that there are matched</task>
+<task file="src/com/google/caja/parser/js/SyntheticNodes.java" line="20" owner="erights,ihab">Remove the concept of &quot;synthetic&quot; entirely.</task>
+<task file="src/com/google/caja/parser/js/Statement.java" line="30" owner="mikesamuel">breaksReaching should probably take a paremeter of type</task>
+<task file="src/com/google/caja/parser/js/Statement.java" line="32" owner="mikesamuel">rename breaks and continues to collectBreakTargets and</task>
+<task file="src/com/google/caja/parser/js/LabeledStmtWrapper.java" line="30" owner="mikesamuel">Investigate whether use of continue to a non loop</task>
+<task file="src/com/google/caja/parser/js/LabeledStmtWrapper.java" line="32" owner="mikesamuel">Do we want to remove labelling of non-loop statements</task>
+<task file="src/com/google/caja/parser/js/LabeledStmtWrapper.java" line="34" owner="mikesamuel">Erase the distinction between LabeledStmtWrapper and</task>
+<task file="src/com/google/caja/parser/js/StringLiteral.java" line="118" owner="msamuel">move unescaping to Escaping.java -- nobody will look there</task>
+<task file="src/com/google/caja/parser/js/UseSubsetDirective.java" line="49" owner="mikesamuel">check after Kona meeting</task>
+<task file="src/com/google/caja/parser/ParseTreeNodeContainer.java" line="48" owner="mikesamuel">this should never be rendered since rendering a group</task>
+<task file="src/com/google/caja/parser/AbstractParseTreeNode.java" line="141" owner="mikesamuel">maybe reliably throw an exception type, that includes</task>
+<task file="src/com/google/caja/opensocial/service/HttpStatus.java" line="20" owner="jasvir">Use a standard class or move to appropriate package</task>
+<task file="src/com/google/caja/opensocial/applet/CajaApplet.java" line="150" owner="mikesamuel">If the text starts with a &lt;base&gt; tag, maybe use that</task>
+<task file="src/com/google/caja/opensocial/applet/testbed.js" line="434" owner="erights">color something red</task>
+<task file="src/com/google/caja/opensocial/GadgetSpec.java" line="31" owner="ihab.awad">Consider a more generic representation that still guards against</task>
+<task file="src/com/google/caja/plugin/stages/OpenTemplateStage.java" line="50" owner="mikesamuel">this could probably be more simply done as a</task>
+<task file="src/com/google/caja/plugin/stages/OpenTemplateStage.java" line="376" owner="unknown">output to a message queue</task>
+<task file="src/com/google/caja/plugin/stages/ValidateCssStage.java" line="51" owner="mikesamuel">build up a list of classes and ids for use in</task>
+<task file="src/com/google/caja/plugin/html-sanitizer.js" line="50" owner="unknown">&amp;pi; is different from &amp;Pi;</task>
+<task file="src/com/google/caja/plugin/html-sanitizer.js" line="100" owner="mikesamuel">validate sanitizer regexs against the HTML5 grammar at</task>
+<task file="src/com/google/caja/plugin/Config.java" line="49" owner="mikesamuel">make this subclassable so opensocial specific flags can be</task>
+<task file="src/com/google/caja/plugin/domita.js" line="33" owner="ihab.awad">Our implementation of getAttribute (and friends)</task>
+<task file="src/com/google/caja/plugin/domita.js" line="142" owner="ihab.awad">Improve implementation (interleaving, memory leaks)</task>
+<task file="src/com/google/caja/plugin/domita.js" line="153" owner="ihab.awad">Do we need more attributes of the event than 'target'?</task>
+<task file="src/com/google/caja/plugin/domita.js" line="207" owner="ihab.awad">send()-ing an empty string because send() with no</task>
+<task file="src/com/google/caja/plugin/domita.js" line="213" owner="ihab.awad">Expect tamed XML document; unwrap and send</task>
+<task file="src/com/google/caja/plugin/domita.js" line="247" owner="ihab.awad">Implement a taming layer for XML. Requires generalizing</task>
+<task file="src/com/google/caja/plugin/domita.js" line="383" owner="mikesamuel">make a separate function to map between</task>
+<task file="src/com/google/caja/plugin/domita.js" line="402" owner="ihab.awad">Does this work on IE, where console output</task>
+<task file="src/com/google/caja/plugin/domita.js" line="752" owner="mikesamuel">integrate cajita compiler to allow arbitrary</task>
+<task file="src/com/google/caja/plugin/domita.js" line="769" owner="mikesamuel">determine mime type properly.</task>
+<task file="src/com/google/caja/plugin/domita.js" line="819" owner="mikesamuel">make sure it really is a DOM node</task>
+<task file="src/com/google/caja/plugin/domita.js" line="896" owner="mikesamuel">replace with cursors so that subtrees are</task>
+<task file="src/com/google/caja/plugin/domita.js" line="898" owner="unknown">handle multiple classes.</task>
+<task file="src/com/google/caja/plugin/domita.js" line="924" owner="mikesamuel">if key in tamed, we have an ambiguous match.</task>
+<task file="src/com/google/caja/plugin/domita.js" line="939" owner="mikesamuel">if opt_keyAttrib, could implement getNamedItem</task>
+<task file="src/com/google/caja/plugin/domita.js" line="1110" owner="mikesamuel">upward navigation breaks capability discipline.</task>
+<task file="src/com/google/caja/plugin/domita.js" line="1213" owner="mikesamuel">replace with cursors so that subtrees are delegable</task>
+<task file="src/com/google/caja/plugin/domita.js" line="1217" owner="mikesamuel">replace with cursors so that subtrees are delegable</task>
+<task file="src/com/google/caja/plugin/domita.js" line="1245" owner="erights">Come up with some notion of a keeper chain so we can</task>
+<task file="src/com/google/caja/plugin/domita.js" line="1323" owner="metaweta">Add code to list all the other handled stuff we know</task>
+<task file="src/com/google/caja/plugin/domita.js" line="1455" owner="metaweta">Add code to list all the other handled stuff we know</task>
+<task file="src/com/google/caja/plugin/domita.js" line="1481" owner="mikesamuel">make nodeClasses work.</task>
+<task file="src/com/google/caja/plugin/domita.js" line="1766" owner="mikesamuel">for RCDATA we only need to escape &amp; if they're not</task>
+<task file="src/com/google/caja/plugin/domita.js" line="2364" owner="mikesamuel">make sure event doesn't propagate to dispatched</task>
+<task file="src/com/google/caja/plugin/domita.js" line="2374" owner="mikesamuel">make sure event doesn't propagate to dispatched</task>
+<task file="src/com/google/caja/plugin/domita.js" line="2512" owner="metaweta">Add code to list all the other handled stuff we know</task>
+<task file="src/com/google/caja/plugin/domita.js" line="2543" owner="mikesamuel">create a proper class for BODY, HEAD, and HTML along</task>
+<task file="src/com/google/caja/plugin/domita.js" line="2632" owner="ihab.awad">Implement</task>
+<task file="src/com/google/caja/plugin/domita.js" line="2636" owner="ihab.awad">Implement</task>
+<task file="src/com/google/caja/plugin/domita.js" line="2673" owner="mikesamuel">Needs implementation</task>
+<task file="src/com/google/caja/plugin/domita.js" line="2777" owner="mikesamuel">recognize and rewrite URLs.</task>
+<task file="src/com/google/caja/plugin/domita.js" line="2848" owner="unknown">maybe whitelist the color names defined for CSS if the arg is a</task>
+<task file="src/com/google/caja/plugin/domita.js" line="2889" owner="mikesamuel">remove these, and only expose them via window once</task>
+<task file="src/com/google/caja/plugin/domita.js" line="2903" owner="mikesamuel">figure out a mechanism by which the container can</task>
+<task file="src/com/google/caja/plugin/domita.js" line="2974" owner="unknown">expose a read-only version of the document</task>
+<task file="src/com/google/caja/plugin/domita.js" line="2993" owner="ihab.awad">Implement</task>
+<task file="src/com/google/caja/plugin/domita.js" line="2997" owner="ihab.awad">Implement</task>
+<task file="src/com/google/caja/plugin/domita.js" line="3001" owner="ihab.awad">Implement</task>
+<task file="src/com/google/caja/plugin/domita.js" line="3126" owner="metaweta">Add code to list all the other handled stuff we know</task>
+<task file="src/com/google/caja/plugin/domita.js" line="3190" owner="mikesamuel">define on prototype.</task>
+<task file="src/com/google/caja/plugin/domita.js" line="3222" owner="ihab.awad">Build a more sophisticated virtual class hierarchy by</task>
+<task file="src/com/google/caja/plugin/DomAttributeConstraint.java" line="55" owner="ihab">rdub disabled this condition. Am leaving it in.</task>
+<task file="src/com/google/caja/plugin/DomAttributeConstraint.java" line="108" owner="ihab">Handle using HTML4, which does not allow 'id' here.</task>
+<task file="src/com/google/caja/plugin/DomAttributeConstraint.java" line="109" owner="ihab">Review other ways SCRIPT.innerHTML may be modified.</task>
+<task file="src/com/google/caja/plugin/DomAttributeConstraint.java" line="142" owner="ihab">Handle using HTML4, which does not allow 'id' here.</task>
+<task file="src/com/google/caja/plugin/CssRewriter.java" line="326" owner="mikesamuel">check argument if child now a FunctionCall</task>
+<task file="src/com/google/caja/plugin/CssRewriter.java" line="517" owner="mikesamuel">for content: and other uri types, use</task>
+<task file="src/com/google/caja/plugin/bridal.js" line="77" owner="mikesamuel">can bubbling and cancelable on events be simulated</task>
+<task file="src/com/google/caja/plugin/bridal.js" line="85" owner="mikesamuel">when we change event dispatching to happen</task>
+<task file="src/com/google/caja/plugin/bridal.js" line="122" owner="ihab.awad">How do we emulate 'useCapture' here?</task>
+<task file="src/com/google/caja/plugin/bridal.js" line="164" owner="ihab.awad">How do we emulate 'useCapture' here?</task>
+<task file="src/com/google/caja/plugin/bridal.js" line="265" owner="mikesamuel">should we whitelist nodes here, to e.g. prevent</task>
+<task file="src/com/google/caja/plugin/CssValidator.java" line="572" owner="mikesamuel">this is currently 5 instead of 4 because it also limits</task>
+<task file="src/com/google/caja/demos/lolcat-search/searchengine.js" line="25" owner="ihab.awad">In un-cajoled code, use ___ instead of _ to indicate</task>
+<task file="src/com/google/caja/demos/calendar/rrule-cajita.js" line="194" owner="mikesamuel">don't need a list here</task>
+<task file="src/com/google/caja/demos/calendar/rrule-cajita.js" line="206" owner="mikesamuel">the spec is not clear on this.  Treat the week</task>
+<task file="src/com/google/caja/demos/calendar/rrule-cajita.js" line="242" owner="mikesamuel">filter byWeekNo and write unit tests</task>
+<task file="src/com/google/caja/demos/calendar/rrule-cajita.js" line="256" owner="mikesamuel">filter byWeekNo and write unit tests</task>
+<task file="src/com/google/caja/demos/calendar/rrule-cajita.js" line="306" owner="mikesamuel">if count is large, we might try predicting the end</task>
+<task file="src/com/google/caja/demos/calendar/rrule-cajita.js" line="311" owner="mikesamuel">warn</task>
+<task file="src/com/google/caja/demos/calendar/rrule-cajita.js" line="348" owner="mikesamuel">if we allow iteration more frequently than daily</task>
+<task file="src/com/google/caja/demos/calendar/rrule-cajita.js" line="602" owner="mikesamuel">apply byhour, byminute, bysecond rules here</task>
+<task file="src/com/google/caja/demos/calendar/string-interpolation.js" line="273" owner="unknown">This implementation does not correctly handle [:Cf:] characters.</task>
+<task file="src/com/google/caja/demos/calendar/event_store.js" line="108" owner="mikesamuel">look at tzid</task>
+<task file="src/com/google/caja/demos/calendar/event_store.js" line="116" owner="mikesamuel">translate to start tzid</task>
+<task file="src/com/google/caja/demos/calendar/event_store.js" line="125" owner="mikesamuel">handle multiple RRULES, EXRULES, RDATES, EXDATES</task>
+<task file="src/com/google/caja/demos/calendar/html-interp.js" line="72" owner="unknown">check for apparent end tag</task>
+<task file="src/com/google/caja/demos/calendar/html-interp.js" line="237" owner="unknown">escape format control characters</task>
+<task file="src/com/google/caja/demos/calendar/html-interp.js" line="1102" owner="mikesamuel">if there's an easy way to interleave bits when</task>
+<task file="src/com/google/caja/demos/calendar/hcalendar.js" line="328" owner="mikesamuel">resolve the href attrib relative to globalProps.url?</task>
+<task file="src/com/google/caja/demos/calendar/hcalendar.js" line="333" owner="mikesamuel">resolve the href attrib relative to globalProps.url?</task>
+<task file="src/com/google/caja/demos/calendar/hcalendar.js" line="341" owner="mikesamuel">other url node/attrib pairs?</task>
+<task file="src/com/google/caja/demos/calendar/package.html" line="34" owner="mikesamuel">write me</task>
+<task file="src/com/google/caja/demos/calendar/package.html" line="73" owner="mikesamuel">write me</task>
+<task file="src/com/google/caja/demos/calendar/filters-cajita.js" line="81" owner="mikesamuel">according to section 4.3.10</task>
+<task file="src/com/google/caja/demos/calendar/instanceGenerators-cajita.js" line="172" owner="mikesamuel">this may be premature.  If needed, We could</task>
+<task file="src/com/google/caja/reporting/MessageType.java" line="26" owner="mikesamuel">rename this to CommonMessageType and rename</task>
+<task file="src/com/google/caja/reporting/MessageContext.java" line="30" owner="mikesamuel">replace these public fields with getters &amp; setters to</task>
+<task file="src/com/google/caja/util/Criterion.java" line="23" owner="mikesamuel">replace &quot;may be null&quot; and &quot;not null&quot; shorthands with</task>
+<task file="src/com/google/caja/util/Criterion.java" line="25" owner="mikesamuel">replace with com.google.common.Predicate and the</task>
+<task file="src/com/google/caja/cajita-debugmode.js" line="27" owner="mikesamuel">how to collect logging.</task>
+<task file="src/com/google/caja/cajita-debugmode.js" line="308" owner="mikesamuel">should userException be defined as identity in</task>
+<task file="src/com/google/caja/valija-cajita.js" line="98" owner="erights">Once EcmaScript and Valija allow patterns in parameter</task>
+<task file="src/com/google/caja/valija-cajita.js" line="166" owner="erights">If the resolution of bug #814 is for</task>
+<task file="src/com/google/caja/valija-cajita.js" line="211" owner="erights">Resolve 'apply' vs 'call' confusions.</task>
+<task file="src/com/google/caja/valija-cajita.js" line="212" owner="erights">Consider trademarking rather than duck typing.</task>
+<task file="src/com/google/caja/valija-cajita.js" line="265" owner="erights">figure out why things break when the</task>
+<task file="src/com/google/caja/valija-cajita.js" line="343" owner="erights">Why are we testing for the empty string here?</task>
+<task file="src/com/google/caja/valija-cajita.js" line="440" owner="erights">fix this once DONTENUM properties are better</task>
+<task file="src/com/google/caja/cajita.js" line="31" owner="erights">All code text in comments should be enclosed in</task>
+<task file="src/com/google/caja/cajita.js" line="34" owner="ihab.awad">Missing tests in CajitaTest.java for the functionality</task>
+<task file="src/com/google/caja/cajita.js" line="60" owner="erights">Move such extensions to a separate extensions.js.</task>
+<task file="src/com/google/caja/cajita.js" line="476" owner="metaweta">Ask mike samuel about this vs. log-to-console.js</task>
+<task file="src/com/google/caja/cajita.js" line="494" owner="erights">We may deprecate this in favor of &lt;pre&gt;</task>
+<task file="src/com/google/caja/cajita.js" line="635" owner="erights">Analyze the security implications</task>
+<task file="src/com/google/caja/cajita.js" line="667" owner="erights">Detect whether this is a valid constructor</task>
+<task file="src/com/google/caja/cajita.js" line="736" owner="erights">walk prototype chain.</task>
+<task file="src/com/google/caja/cajita.js" line="792" owner="erights">Object(&lt;primitive&gt;) wrappers should also be</task>
+<task file="src/com/google/caja/cajita.js" line="1013" owner="erights">Having a fastpath flag for this probably doesn't</task>
+<task file="src/com/google/caja/cajita.js" line="1236" owner="erights">To avoid accidents, &lt;tt&gt;method&lt;/tt&gt;,</task>
+<task file="src/com/google/caja/cajita.js" line="1324" owner="metaweta">make this a cajita-uncatchable exception</task>
+<task file="src/com/google/caja/cajita.js" line="1327" owner="metaweta">make this a cajita-uncatchable exception</task>
+<task file="src/com/google/caja/cajita.js" line="1328" owner="erights">non-user-hostile error message</task>
+<task file="src/com/google/caja/cajita.js" line="1331" owner="metaweta">make this a cajita-uncatchable exception</task>
+<task file="src/com/google/caja/cajita.js" line="1338" owner="metaweta">make this a cajita-uncatchable exception</task>
+<task file="src/com/google/caja/cajita.js" line="1409" owner="erights">Once ES3.1 settles, revisit this and </task>
+<task file="src/com/google/caja/cajita.js" line="1479" owner="erights">Once we have ES3.1ish attribute control, it</task>
+<task file="src/com/google/caja/cajita.js" line="1484" owner="erights">Revisit this case</task>
+<task file="src/com/google/caja/cajita.js" line="2212" owner="erights">This case is a different kludge that needs to</task>
+<task file="src/com/google/caja/cajita.js" line="2214" owner="erights">This is probably wrong in that it can leak xo4a.</task>
+<task file="src/com/google/caja/cajita.js" line="3049" owner="erights">revisit once we do es3.1ish attribute control.</task>
+<task file="src/com/google/caja/cajita.js" line="3185" owner="ihab.awad">Missing support</task>
+<task file="tests/com/google/caja/lang/css/CssSchemaTest.java" line="51" owner="mikesamuel">test getSymbol</task>
+<task file="tests/com/google/caja/config/ConfigUtilTest.java" line="30" owner="mikesamuel">better file positions for error messages.</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="657" owner="unknown">- do we need a special test for this? is x2v working&quot;</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="889" owner="unknown">- wait on MarkM to figure out what\'s up with this test.&quot;</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="919" owner="unknown">not sure about this test</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="955" owner="unknown">- not sure about this one --&gt;&quot;,</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="1237" owner="unknown">- I don\'t think attendee stuff is implemented in X2V&quot;</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="1254" owner="unknown">- should \'REQ-PARTICIPANT be lc\'ed?   --&gt;&quot;,</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="1260" owner="unknown">- should mailto: be here?    --&gt;&quot;,</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="1391" owner="unknown">- ask MarkM about this. Did he mean to use &lt;del&gt;? --&gt;&quot;,</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="1439" owner="unknown">- review the x2v formatting stuff for DESCRIPTION&quot;</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="1506" owner="unknown">--&gt;&quot;,</task>
+<task file="tests/com/google/caja/demos/calendar/hcalendar_test.js" line="1557" owner="unknown">- eh?  --&gt;&quot;,</task>
+<task file="tests/com/google/caja/demos/calendar/rrule_test.html" line="20" owner="mikesamuel">cajole the scripts so that for loops work.  --&gt;</task>
+<task file="tests/com/google/caja/demos/calendar/bitset_test.html" line="20" owner="mikesamuel">cajole the scripts so that for loops work.  --&gt;</task>
+<task file="tests/com/google/caja/demos/calendar/time_util_test.html" line="20" owner="mikesamuel">cajole the scripts so that for loops work.  --&gt;</task>
+<task file="tests/com/google/caja/demos/calendar/time_util_test.js" line="97" owner="mikesamuel">check that these answers are right</task>
+<task file="tests/com/google/caja/demos/calendar/time_test.html" line="20" owner="mikesamuel">cajole the scripts so that for loops work.  --&gt;</task>
+<task file="tests/com/google/caja/demos/calendar/rrule_test.js" line="534" owner="msamuel">implement hourly iteration</task>
+<task file="tests/com/google/caja/demos/calendar/rrule_test.js" line="546" owner="msamuel">implement minutely iteration</task>
+<task file="tests/com/google/caja/demos/calendar/rrule_test.js" line="559" owner="msamuel">implement minutely iteration</task>
+<task file="tests/com/google/caja/demos/calendar/rrule_test.js" line="763" owner="msamuel">is this right?</task>
+<task file="tests/com/google/caja/demos/calendar/rrule_test.js" line="960" owner="msamuel">check advancement of more examples</task>
+<task file="tests/com/google/caja/demos/calendar/filters_test.html" line="20" owner="mikesamuel">cajole the scripts so that for loops work.  --&gt;</task>
+<task file="tests/com/google/caja/demos/calendar/generators_test.html" line="20" owner="mikesamuel">cajole the scripts so that for loops work.  --&gt;</task>
+<task file="tests/com/google/caja/parser/quasiliteral/RewriterTestCase.java" line="70" owner="ihab.awad">Refactor tests to use checkAddsMessage(...) instead</task>
+<task file="tests/com/google/caja/parser/quasiliteral/RewriterTestCase.java" line="150" owner="ihab.awad">Change dependents to use checkAddsMessage and</task>
+<task file="tests/com/google/caja/parser/quasiliteral/RewriterTestCase.java" line="153" owner="ihab.awad">Change checkAddsMessage and similar functions to check</task>
+<task file="tests/com/google/caja/parser/quasiliteral/DefaultValijaRewriterTest.java" line="231" owner="ihab.awad">SECURITY: Re-enable by reading (say) x.foo, and</task>
+<task file="tests/com/google/caja/parser/quasiliteral/DefaultValijaRewriterTest.java" line="403" owner="erights">Fix when bug 953 is fixed.</task>
+<task file="tests/com/google/caja/parser/quasiliteral/DefaultValijaRewriterTest.java" line="411" owner="erights">Fix when bug 953 is fixed.</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CajitaRewriterTest.java" line="161" owner="ihab.awad">Enhance test framework to allow &quot;before&quot; and &quot;after&quot;</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CajitaRewriterTest.java" line="347" owner="erights">This test isn't green because we haven't yet fixed the bug.</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CajitaRewriterTest.java" line="365" owner="erights">Need more tests.</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CajitaRewriterTest.java" line="503" owner="ihab.awad">The below should throw MessageType.MASKING_SYMBOL at</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CajitaRewriterTest.java" line="1262" owner="ihab.awad">Once permit templates can be loaded dynamically, create</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CajitaRewriterTest.java" line="1291" owner="ihab.awad">The below test is not as complete as it should be</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CajitaRewriterTest.java" line="1841" owner="ihab.awad">SECURITY: Re-enable by reading (say) x.foo, and</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CajitaRewriterTest.java" line="2128" owner="erights">Fix when bug 956 is fixed.</task>
+<task file="tests/com/google/caja/parser/quasiliteral/CommonJsRewriterTestCase.java" line="139" owner="ihab.awad">Disabled until we figure out how to get a test fixture</task>
+<task file="tests/com/google/caja/parser/html/DomParserTest.java" line="717" owner="mikesamuel">this error message seems to be a bug.</task>
+<task file="tests/com/google/caja/parser/css/CssTreeTest.java" line="198" owner="mikesamuel">test rendering of @imports, @page, @font-face,</task>
+<task file="tests/com/google/caja/parser/css/CssTreeTest.java" line="200" owner="mikesamuel">test rendering of unicode range literals.</task>
+<task file="tests/com/google/caja/parser/js/FuzzedParserTest.java" line="24" owner="jasvir">These tests were generated by the fuzzer - distill them to</task>
+<task file="tests/com/google/caja/parser/js/ParserTest.java" line="48" owner="mikesamuel">better comment each of the test input files.</task>
+<task file="tests/com/google/caja/opensocial/service/CajolingServiceTest.java" line="157" owner="mikesamuel">why are scripts not fetched?</task>
+<task file="tests/com/google/caja/opensocial/GadgetsTestMain.java" line="180" owner="unknown">&quot;, &quot;messages&quot;, messages);</task>
+<task file="tests/com/google/caja/opensocial/test-parsing.xml" line="80" owner="ihab.awad">Check on proper format for 'location' UserPrefs --&gt;</task>
+<task file="tests/com/google/caja/opensocial/DefaultGadgetRewriterTest.java" line="153" owner="ihab.awad">Rewrite &quot;golden&quot; or turn into a functional test</task>
+<task file="tests/com/google/caja/util/RhinoTestBed.java" line="42" owner="mikesamuel">maybe replace this with the JSR 223 stuff.</task>
+<task file="tests/com/google/caja/util/RhinoTestBed.java" line="177" owner="mikesamuel">do this properly</task>
+<task file="tests/com/google/caja/util/MoreAsserts.java" line="36" owner="mikesamuel">maybe actually diff using</task>
+<task file="tests/com/google/caja/util/MoreAsserts.java" line="49" owner="mikesamuel">maybe actually diff using</task>
+<task file="tests/com/google/caja/plugin/stages/DebuggingSymbolsStageTest.java" line="133" owner="unknown">enable under Valija</task>
+<task file="tests/com/google/caja/plugin/HtmlCompiledPluginTest.java" line="52" owner="metaweta">Move as many of these as possible to</task>
+<task file="tests/com/google/caja/plugin/HtmlCompiledPluginTest.java" line="108" owner="stay">Once they decide on scoping &amp; initialization rules, test</task>
+<task file="tests/com/google/caja/plugin/HtmlCompiledPluginTest.java" line="168" owner="ihab.awad">onerror handling is broken. The exception handling code</task>
+<task file="tests/com/google/caja/plugin/HtmlCompilerTest.java" line="160" owner="mikesamuel">find a common place for removePseudoNodes.</task>
+<task file="tests/com/google/caja/plugin/CssRewriterTest.java" line="41" owner="ihab">Make final decision whether to keep or remove. This test was</task>
+<task file="tests/com/google/caja/plugin/CssValidatorTest.java" line="766" owner="mikesamuel">We could break the position rule into multiple</task>
+<task file="tests/com/google/caja/plugin/domita_test_untrusted.html" line="353" owner="mikesamuel">enable for all node-types once EQ fixed on IE</task>
+<task file="tests/com/google/caja/plugin/domita_test_untrusted.html" line="360" owner="mikesamuel">enable for all node-types once EQ fixed on IE</task>
+<task file="tests/com/google/caja/plugin/domita_test_untrusted.html" line="544" owner="ihab.awad">Add negative tests when virtual hierarchy is improved:</task>
+<task file="tests/com/google/caja/plugin/domita_test_untrusted.html" line="634" owner="metaweta">This test should be replaced by ones for the proper</task>
+<task file="tests/com/google/caja/plugin/domita_test_untrusted.html" line="999" owner="mikesamuel">test that getElementsByTagName and getElementsByClassName</task>
+</tasks>
+<target name="build">
+  <log>Buildfile: build.xml
+
+dirs:
+    [mkdir] Created dir: /opt/svn/google-caja/ant-reports
+    [mkdir] Created dir: /opt/svn/google-caja/ant-docs
+    [mkdir] Created dir: /opt/svn/google-caja/ant-instr
+    [mkdir] Created dir: /opt/svn/google-caja/ant-jars
+    [mkdir] Created dir: /opt/svn/google-caja/ant-lib
+    [mkdir] Created dir: /opt/svn/google-caja/ant-www
+
+Primitives:
+    [javac] Compiling 22 source files to /opt/svn/google-caja/ant-lib
+
+Reporting:
+    [javac] Compiling 14 source files to /opt/svn/google-caja/ant-lib
+
+Lexer:
+    [javac] Compiling 24 source files to /opt/svn/google-caja/ant-lib
+
+ParserCore:
+    [javac] Compiling 9 source files to /opt/svn/google-caja/ant-lib
+
+CssParser:
+    [javac] Compiling 3 source files to /opt/svn/google-caja/ant-lib
+
+HtmlParser:
+    [javac] Compiling 10 source files to /opt/svn/google-caja/ant-lib
+
+JsParser:
+    [javac] Compiling 65 source files to /opt/svn/google-caja/ant-lib
+
+Quasiliterals:
+    [javac] Compiling 35 source files to /opt/svn/google-caja/ant-lib
+
+Rendering:
+    [javac] Compiling 5 source files to /opt/svn/google-caja/ant-lib
+
+Config:
+    [javac] Compiling 5 source files to /opt/svn/google-caja/ant-lib
+
+Schemas:
+    [javac] Compiling 5 source files to /opt/svn/google-caja/ant-lib
+     [copy] Copying 23 files to /opt/svn/google-caja/ant-lib
+
+PluginCompiler:
+    [javac] Compiling 34 source files to /opt/svn/google-caja/ant-lib
+     [copy] Copying 169 files to /opt/svn/google-caja/ant-lib
+
+build.info:
+
+pluginc:
+    [javac] Compiling 13 source files to /opt/svn/google-caja/ant-lib
+    [javac] Compiling 8 source files to /opt/svn/google-caja/ant-lib
+  [genrule] building 2 files to /opt/svn/google-caja/ant-lib/com/google/caja/plugin/css-defs.js
+  [genrule] building 2 files to /opt/svn/google-caja/ant-lib/com/google/caja/plugin/html4-defs.js
+
+CajoledValija:
+[transform] building 1 files to /opt/svn/google-caja/ant-lib/com/google/caja/plugin/valija.co.js
+
+MinifiedJs:
+[transform] building 3 files to /opt/svn/google-caja/ant-lib/com/google/caja/plugin/html-sanitizer-minified.js
+[transform] building 5 files to /opt/svn/google-caja/ant-lib/com/google/caja/plugin/domita-minified.js
+
+jars:
+     [copy] Copying 5 files to /opt/svn/google-caja/ant-jars
+      [jar] Building jar: /opt/svn/google-caja/ant-jars/pluginc.jar
+      [jar] Building jar: /opt/svn/google-caja/ant-jars/pluginc-src.jar
+
+BUILD SUCCESSFUL
+Total time: 13 seconds
+</log>
+</target>
+<varz name="target.build.status" value="1"/>
+<varz name="target.build.time" value="14"/>
+<target name="coverage">
+  <log>Buildfile: build.xml
+
+dirs:
+
+emma:
+
+dirs:
+
+Primitives:
+
+Reporting:
+
+Lexer:
+
+ParserCore:
+
+CssParser:
+
+HtmlParser:
+
+JsParser:
+
+Quasiliterals:
+
+Rendering:
+
+Config:
+
+Schemas:
+
+PluginCompiler:
+
+build.info:
+
+pluginc:
+    [javac] Compiling 1 source file to /opt/svn/google-caja/ant-lib
+
+CajolingService:
+    [javac] Compiling 11 source files to /opt/svn/google-caja/ant-lib
+
+CajoledValija:
+
+CajoledTests:
+[transform] building 1 files to /opt/svn/google-caja/ant-lib/com/google/caja/plugin/domita_test.co.js
+[transform] building 1 files to /opt/svn/google-caja/ant-lib/com/google/caja/plugin/domita_test.vo.js
+     [copy] Copying 34 files to /opt/svn/google-caja/ant-lib
+
+AllTests:
+    [javac] Compiling 75 source files to /opt/svn/google-caja/ant-lib
+  [genrule] building 0 files to /opt/svn/google-caja/ant-lib/com/google/caja/plugin/dpe-compiled.js
+     [copy] Copying 123 files to /opt/svn/google-caja/ant-lib
+
+runtests:
+    [instr] processing instrumentation path ...
+    [instr] instrumentation path processed in 1118 ms
+    [instr] [802 class(es) instrumented, 398 resource(s) copied]
+    [instr] metadata merged into [/opt/svn/google-caja/ant-reports/coverage/metadata.em] {in 683 ms}
+    [mkdir] Created dir: /opt/svn/google-caja/ant-reports/tests
+    [junit] Running com.google.caja.AllTests
+    [junit] Tests run: 720, Failures: 0, Errors: 0, Time elapsed: 116,593 sec
+   [report] processing input files ...
+   [report] 2 file(s) read and merged in 102 ms
+   [report] writing [html] report to [/opt/svn/google-caja/ant-reports/coverage/index.html] ...
+[junitreport] Processing /opt/svn/google-caja/ant-reports/tests/TESTS-TestSuites.xml to /tmp/null1998567288
+[junitreport] Loading stylesheet /opt/svn/google-caja/third_party/ant/etc/junit-frames.xsl
+[junitreport] Transform time: 471ms
+[junitreport] Deleting: /tmp/null1998567288
+
+BUILD SUCCESSFUL
+Total time: 2 minutes 14 seconds
+</log>
+</target>
+<varz name="target.coverage.status" value="1"/>
+<varz name="target.coverage.time" value="135"/>
+<varz name="emma.pct" value="82"/>
+<varz name="emma.covered" value="17026.3"/>
+<varz name="emma.total" value="20788"/>
+<target name="benchmarks">
+  <log>Buildfile: build.xml
+
+dirs:
+
+Primitives:
+
+Reporting:
+
+Lexer:
+
+ParserCore:
+
+CssParser:
+
+HtmlParser:
+
+JsParser:
+
+Quasiliterals:
+
+Rendering:
+
+Config:
+
+Schemas:
+
+PluginCompiler:
+
+build.info:
+
+pluginc:
+    [javac] Compiling 1 source file to /opt/svn/google-caja/ant-lib
+
+MinifiedJs:
+
+CajoledValija:
+
+jars:
+      [jar] Building jar: /opt/svn/google-caja/ant-jars/pluginc.jar
+
+benchmarks:
+     [copy] Copying 7 files to /opt/svn/google-caja/ant-lib/com/google/caja/demos/benchmarks
+    [mkdir] Created dir: /opt/svn/google-caja/ant-reports/benchmarks
+    [javac] Compiling 1 source file to /opt/svn/google-caja/ant-lib
+    [junit] Running com.google.caja.demos.benchmarks.BenchmarkRunner
+    [junit] Tests run: 5, Failures: 0, Errors: 0, Time elapsed: 252.505 sec
+[junitreport] Processing /opt/svn/google-caja/ant-reports/benchmarks/TESTS-TestSuites.xml to /tmp/null1251658088
+[junitreport] Loading stylesheet /opt/svn/google-caja/third_party/ant/etc/junit-frames.xsl
+[junitreport] Transform time: 572ms
+[junitreport] Deleting: /tmp/null1251658088
+
+BUILD SUCCESSFUL
+Total time: 4 minutes 18 seconds
+</log>
+</target>
+<varz name="target.benchmarks.status" value="1"/>
+<varz name="target.benchmarks.time" value="259"/>
+<varz name="benchmark.testRichards.speed.uncajoled.nodebug.rhino.cold" value="53.0"/>
+<varz name="benchmark.testRichards.speed.valija.nodebug.rhino.cold" value="7.0"/>
+<varz name="benchmark.testRichards.speeddiff.valija.nodebug.rhino.cold" value="0.1320754716981132"/>
+<varz name="benchmark.testDeltaBlue.speed.uncajoled.nodebug.rhino.cold" value="352.0"/>
+<varz name="benchmark.testDeltaBlue.speed.valija.nodebug.rhino.cold" value="8.0"/>
+<varz name="benchmark.testDeltaBlue.speeddiff.valija.nodebug.rhino.cold" value="0.022727272727272728"/>
+<varz name="benchmark.testCrypto.speed.uncajoled.nodebug.rhino.cold" value="77.0"/>
+<varz name="benchmark.testCrypto.speed.valija.nodebug.rhino.cold" value="31.0"/>
+<varz name="benchmark.testCrypto.speeddiff.valija.nodebug.rhino.cold" value="0.4025974025974026"/>
+<varz name="benchmark.testRayTrace.speed.uncajoled.nodebug.rhino.cold" value="347.0"/>
+<varz name="benchmark.testRayTrace.speed.valija.nodebug.rhino.cold" value="23.0"/>
+<varz name="benchmark.testRayTrace.speeddiff.valija.nodebug.rhino.cold" value="0.06628242074927954"/>
+<varz name="benchmark.testEarleyBoyer.speed.uncajoled.nodebug.rhino.cold" value="546.0"/>
+<varz name="benchmark.testEarleyBoyer.speed.valija.nodebug.rhino.cold" value="24.0"/>
+<varz name="benchmark.testEarleyBoyer.speeddiff.valija.nodebug.rhino.cold" value="0.04395604395604396"/>
+<varz name="benchmarks.total" value="5"/>
+<varz name="benchmarks.errors" value="0"/>
+<varz name="benchmarks.failures" value="0"/>
+<varz name="benchmarks.pct" value="0.0"/>
+<target name="tests">
+  <log>Buildfile: build.xml
+
+dirs:
+
+Primitives:
+
+Reporting:
+
+Lexer:
+
+ParserCore:
+
+CssParser:
+
+HtmlParser:
+
+JsParser:
+
+Quasiliterals:
+
+Rendering:
+
+Config:
+
+Schemas:
+
+PluginCompiler:
+
+build.info:
+
+pluginc:
+    [javac] Compiling 1 source file to /opt/svn/google-caja/ant-lib
+
+CajolingService:
+
+CajoledValija:
+
+CajoledTests:
+
+AllTests:
+
+runtests:
+    [junit] Running com.google.caja.CajitaTest
+    [junit] Tests run: 3, Failures: 0, Errors: 0, Time elapsed: 5,975 sec
+    [junit] Running com.google.caja.config.ConfigUtilTest
+    [junit] Tests run: 12, Failures: 0, Errors: 0, Time elapsed: 0,213 sec
+    [junit] Running com.google.caja.demos.calendar.EventStoreTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 1,747 sec
+    [junit] Running com.google.caja.demos.calendar.HcalTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 3,948 sec
+    [junit] Running com.google.caja.demos.calendar.LayoutTest
+    [junit] Tests run: 2, Failures: 0, Errors: 0, Time elapsed: 3,147 sec
+    [junit] Running com.google.caja.demos.calendar.RRuleTest
+    [junit] Tests run: 5, Failures: 0, Errors: 0, Time elapsed: 3,931 sec
+    [junit] Running com.google.caja.lang.css.CssSchemaTest
+    [junit] Tests run: 5, Failures: 0, Errors: 0, Time elapsed: 0,339 sec
+    [junit] Running com.google.caja.lang.html.HtmlSchemaTest
+    [junit] Tests run: 4, Failures: 0, Errors: 0, Time elapsed: 0,304 sec
+    [junit] Running com.google.caja.lexer.CharProducerTest
+    [junit] Tests run: 6, Failures: 0, Errors: 0, Time elapsed: 0,173 sec
+    [junit] Running com.google.caja.lexer.CssLexerTest
+    [junit] Tests run: 8, Failures: 0, Errors: 0, Time elapsed: 0,227 sec
+    [junit] Running com.google.caja.lexer.HtmlLexerTest
+    [junit] Tests run: 5, Failures: 0, Errors: 0, Time elapsed: 0,147 sec
+    [junit] Running com.google.caja.lexer.JsLexerTest
+    [junit] Tests run: 20, Failures: 0, Errors: 0, Time elapsed: 0,141 sec
+    [junit] Running com.google.caja.lexer.LookaheadCharProducerTest
+    [junit] Tests run: 3, Failures: 0, Errors: 0, Time elapsed: 0,071 sec
+    [junit] Running com.google.caja.lexer.PunctuationTrieTest
+    [junit] Tests run: 3, Failures: 0, Errors: 0, Time elapsed: 0,109 sec
+    [junit] Running com.google.caja.lexer.escaping.EscapingTest
+    [junit] Tests run: 12, Failures: 0, Errors: 0, Time elapsed: 0,102 sec
+    [junit] Running com.google.caja.opensocial.DefaultGadgetRewriterTest
+    [junit] Tests run: 10, Failures: 0, Errors: 0, Time elapsed: 3,224 sec
+    [junit] Running com.google.caja.opensocial.GadgetParserTest
+    [junit] Tests run: 2, Failures: 0, Errors: 0, Time elapsed: 0,166 sec
+    [junit] Running com.google.caja.opensocial.applet.ExpressionLanguageStageTest
+    [junit] Tests run: 8, Failures: 0, Errors: 0, Time elapsed: 0,229 sec
+    [junit] Running com.google.caja.opensocial.applet.TestBedTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 1,498 sec
+    [junit] Running com.google.caja.opensocial.service.CajolingServiceTest
+    [junit] Tests run: 6, Failures: 0, Errors: 0, Time elapsed: 0,882 sec
+    [junit] Running com.google.caja.opensocial.service.ContentTypeCheckTest
+    [junit] Tests run: 2, Failures: 0, Errors: 0, Time elapsed: 0,048 sec
+    [junit] Running com.google.caja.parser.ParseTreeNodeTest
+    [junit] Tests run: 38, Failures: 0, Errors: 0, Time elapsed: 0,152 sec
+    [junit] Running com.google.caja.parser.ParserBaseTest
+    [junit] Tests run: 2, Failures: 0, Errors: 0, Time elapsed: 0,093 sec
+    [junit] Running com.google.caja.parser.css.CssParserTest
+    [junit] Tests run: 6, Failures: 0, Errors: 0, Time elapsed: 0,296 sec
+    [junit] Running com.google.caja.parser.css.CssPropertySignatureTest
+    [junit] Tests run: 6, Failures: 0, Errors: 0, Time elapsed: 0,105 sec
+    [junit] Running com.google.caja.parser.css.CssTreeTest
+    [junit] Tests run: 10, Failures: 0, Errors: 0, Time elapsed: 0,319 sec
+    [junit] Running com.google.caja.parser.html.DomParserTest
+    [junit] Tests run: 56, Failures: 0, Errors: 0, Time elapsed: 0,399 sec
+    [junit] Running com.google.caja.parser.js.FuzzedParserTest
+    [junit] Tests run: 10, Failures: 0, Errors: 0, Time elapsed: 0,199 sec
+    [junit] Running com.google.caja.parser.js.NumberLiteralTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0,057 sec
+    [junit] Running com.google.caja.parser.js.ParserTest
+    [junit] Tests run: 29, Failures: 0, Errors: 0, Time elapsed: 1,088 sec
+    [junit] Running com.google.caja.parser.js.StringLiteralTest
+    [junit] Tests run: 4, Failures: 0, Errors: 0, Time elapsed: 1,242 sec
+    [junit] Running com.google.caja.parser.quasiliteral.CajitaRewriterTest
+    [junit] Tests run: 133, Failures: 0, Errors: 0, Time elapsed: 45,679 sec
+    [junit] Running com.google.caja.parser.quasiliteral.DefaultValijaRewriterTest
+    [junit] Tests run: 47, Failures: 0, Errors: 0, Time elapsed: 54,947 sec
+    [junit] Running com.google.caja.parser.quasiliteral.IllegalReferenceCheckRewriterTest
+    [junit] Tests run: 3, Failures: 0, Errors: 0, Time elapsed: 0,285 sec
+    [junit] Running com.google.caja.parser.quasiliteral.InnocentCodeRewriterTest
+    [junit] Tests run: 3, Failures: 0, Errors: 0, Time elapsed: 7,379 sec
+    [junit] Running com.google.caja.parser.quasiliteral.MatchTest
+    [junit] Tests run: 22, Failures: 0, Errors: 0, Time elapsed: 0,304 sec
+    [junit] Running com.google.caja.parser.quasiliteral.QuasiBuilderTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0,193 sec
+    [junit] Running com.google.caja.parser.quasiliteral.RewriterTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0,211 sec
+    [junit] Running com.google.caja.parser.quasiliteral.ScopeTest
+    [junit] Tests run: 27, Failures: 0, Errors: 0, Time elapsed: 0,252 sec
+    [junit] Running com.google.caja.plugin.CssCompilerTest
+    [junit] Tests run: 7, Failures: 0, Errors: 0, Time elapsed: 0,32 sec
+    [junit] Running com.google.caja.plugin.CssPropertyPatternsTest
+    [junit] Tests run: 11, Failures: 0, Errors: 0, Time elapsed: 0,783 sec
+    [junit] Running com.google.caja.plugin.CssRewriterTest
+    [junit] Tests run: 14, Failures: 0, Errors: 0, Time elapsed: 0,616 sec
+    [junit] Running com.google.caja.plugin.CssValidatorTest
+    [junit] Tests run: 12, Failures: 0, Errors: 0, Time elapsed: 0,579 sec
+    [junit] Running com.google.caja.plugin.DomProcessingEventsTest
+    [junit] Tests run: 3, Failures: 0, Errors: 0, Time elapsed: 0,234 sec
+    [junit] Running com.google.caja.plugin.ExpressionSanitizerTest
+    [junit] Tests run: 4, Failures: 0, Errors: 0, Time elapsed: 0,409 sec
+    [junit] Running com.google.caja.plugin.HtmlCompiledPluginTest
+    [junit] Tests run: 10, Failures: 0, Errors: 0, Time elapsed: 11,458 sec
+    [junit] Running com.google.caja.plugin.HtmlCompilerTest
+    [junit] Tests run: 10, Failures: 0, Errors: 0, Time elapsed: 0,868 sec
+    [junit] Running com.google.caja.plugin.HtmlSanitizerTest
+    [junit] Tests run: 20, Failures: 0, Errors: 0, Time elapsed: 0,425 sec
+    [junit] Running com.google.caja.plugin.JsHtmlSanitizerTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0,807 sec
+    [junit] Running com.google.caja.plugin.stages.DebuggingSymbolsStageTest
+    [junit] Tests run: 14, Failures: 0, Errors: 0, Time elapsed: 11,038 sec
+    [junit] Running com.google.caja.plugin.stages.InlineCssImportsStageTest
+    [junit] Tests run: 8, Failures: 0, Errors: 0, Time elapsed: 0,16 sec
+    [junit] Running com.google.caja.plugin.stages.OpenTemplateStageTest
+    [junit] Tests run: 5, Failures: 0, Errors: 0, Time elapsed: 0,53 sec
+    [junit] Running com.google.caja.plugin.stages.RewriteHtmlStageTest
+    [junit] Tests run: 5, Failures: 0, Errors: 0, Time elapsed: 0,319 sec
+    [junit] Running com.google.caja.render.JsLinePreservingPrinterTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0,179 sec
+    [junit] Running com.google.caja.render.JsMinimalPrinterTest
+    [junit] Tests run: 22, Failures: 0, Errors: 0, Time elapsed: 0,829 sec
+    [junit] Running com.google.caja.render.JsPrettyPrinterTest
+    [junit] Tests run: 21, Failures: 0, Errors: 0, Time elapsed: 0,989 sec
+    [junit] Running com.google.caja.render.SideBySideRendererTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0,117 sec
+    [junit] Running com.google.caja.render.SourceSnippetRendererTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0,085 sec
+    [junit] Running com.google.caja.render.TokenClassificationTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0,048 sec
+    [junit] Running com.google.caja.reporting.AbstractMessageQueueTest
+    [junit] Tests run: 3, Failures: 0, Errors: 0, Time elapsed: 0,052 sec
+    [junit] Running com.google.caja.reporting.BuildInfoTest
+    [junit] Tests run: 2, Failures: 0, Errors: 0, Time elapsed: 0,059 sec
+    [junit] Running com.google.caja.reporting.HtmlSnippetProducerTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0,07 sec
+    [junit] Running com.google.caja.reporting.SnippetProducerTest
+    [junit] Tests run: 11, Failures: 0, Errors: 0, Time elapsed: 0,066 sec
+    [junit] Running com.google.caja.util.CapturingReaderTest
+    [junit] Tests run: 4, Failures: 0, Errors: 0, Time elapsed: 0,064 sec
+    [junit] Running com.google.caja.util.JoinTest
+    [junit] Tests run: 1, Failures: 0, Errors: 0, Time elapsed: 0,057 sec
+    [junit] Running com.google.caja.util.RhinoAssertsTest
+    [junit] Tests run: 8, Failures: 0, Errors: 0, Time elapsed: 0,345 sec
+    [junit] Running com.google.caja.util.SparseBitSetTest
+    [junit] Tests run: 5, Failures: 0, Errors: 0, Time elapsed: 0,188 sec
+    [junit] Running com.google.caja.util.StringsTest
+    [junit] Tests run: 4, Failures: 0, Errors: 0, Time elapsed: 0,063 sec
+[junitreport] Processing /opt/svn/google-caja/ant-reports/tests/TESTS-TestSuites.xml to /tmp/null1910635183
+[junitreport] Loading stylesheet /opt/svn/google-caja/third_party/ant/etc/junit-frames.xsl
+[junitreport] Transform time: 1408ms
+[junitreport] Deleting: /tmp/null1910635183
+
+BUILD SUCCESSFUL
+Total time: 3 minutes 26 seconds
+</log>
+</target>
+<varz name="target.tests.status" value="1"/>
+<varz name="target.tests.time" value="208"/>
+<varz name="junit.total" value="728"/>
+<varz name="junit.errors" value="0"/>
+<varz name="junit.failures" value="0"/>
+<varz name="junit.pct" value="0.0"/>
+<target name="docs">
+  <log>Buildfile: build.xml
+
+javadocs:
+    [mkdir] Created dir: /opt/svn/google-caja/ant-docs/java
+  [javadoc] Generating Javadoc
+  [javadoc] Javadoc execution
+  [javadoc] Loading source files for package com.google.caja...
+  [javadoc] Loading source files for package com.google.caja.config...
+  [javadoc] Loading source files for package com.google.caja.lang.css...
+  [javadoc] Loading source files for package com.google.caja.lang.html...
+  [javadoc] Loading source files for package com.google.caja.lexer...
+  [javadoc] Loading source files for package com.google.caja.lexer.escaping...
+  [javadoc] Loading source files for package com.google.caja.opensocial...
+  [javadoc] Loading source files for package com.google.caja.opensocial.applet...
+  [javadoc] Loading source files for package com.google.caja.opensocial.service...
+  [javadoc] Loading source files for package com.google.caja.parser...
+  [javadoc] Loading source files for package com.google.caja.parser.css...
+  [javadoc] Loading source files for package com.google.caja.parser.html...
+  [javadoc] Loading source files for package com.google.caja.parser.js...
+  [javadoc] Loading source files for package com.google.caja.parser.quasiliteral...
+  [javadoc] Loading source files for package com.google.caja.plugin...
+  [javadoc] Loading source files for package com.google.caja.plugin.stages...
+  [javadoc] Loading source files for package com.google.caja.render...
+  [javadoc] Loading source files for package com.google.caja.reporting...
+  [javadoc] Loading source files for package com.google.caja.tools...
+  [javadoc] Loading source files for package com.google.caja.util...
+  [javadoc] Constructing Javadoc information...
+  [javadoc] Standard Doclet version 1.6.0
+  [javadoc] Building tree for all the packages and classes...
+  [javadoc] /opt/svn/google-caja/src/com/google/caja/parser/Normalizer.java:26: warning - Tag @link: reference not found: java.text.Normalizer
+  [javadoc] /opt/svn/google-caja/src/com/google/caja/parser/Normalizer.java:26: warning - Tag @link: reference not found: java.text.Normalizer
+  [javadoc] Building index for all the packages and classes...
+  [javadoc] /opt/svn/google-caja/src/com/google/caja/parser/Normalizer.java:26: warning - Tag @link: reference not found: java.text.Normalizer
+  [javadoc] Building index for all classes...
+  [javadoc] Generating /opt/svn/google-caja/ant-docs/java/stylesheet.css...
+  [javadoc] 3 warnings
+
+jsdocs:
+    [mkdir] Created dir: /opt/svn/google-caja/ant-docs/js
+[jsdoctoolkit] &gt;&gt; WARNING: Overwriting symbol documentation for: lcase.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameXMLHttpRequest#setOnreadystatechange without first documenting TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameXMLHttpRequest#setOnreadystatechange without first documenting TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameXMLHttpRequest#open without first documenting TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameXMLHttpRequest#open without first documenting TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameXMLHttpRequest#open without first documenting TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameXMLHttpRequest#open without first documenting TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameBackedNode#handleSet___ without first documenting TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TamePseudoNode#handleSet___ without first documenting TamePseudoNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameAttrNode#setNodeValue without first documenting TameAttrNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameTextNode#setNodeValue without first documenting TameTextNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameElement#setAttribute without first documenting TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameElement#setInnerHTML without first documenting TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameElement#setScrollLeft without first documenting TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameElement#setScrollTop without first documenting TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Overwriting symbol documentation for: TameFormElement#reset.
+[jsdoctoolkit] &gt;&gt; WARNING: Overwriting symbol documentation for: TameFormElement#submit.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setChecked without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setValue without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setDefaultValue without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setDisabled without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setReadOnly without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setDefaultSelected without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setSelected without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setSelectedIndex without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setName without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setAccessKey without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setTabIndex without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setDefaultChecked without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setMaxLength without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setSize without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setType without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setIndex without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setLabel without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setMultiple without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setCols without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameInputElement#setRows without first documenting TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameImageElement#setAlt without first documenting TameImageElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameTableCompElement#setColSpan without first documenting TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameTableCompElement#setRowSpan without first documenting TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameTableCompElement#setAlign without first documenting TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameTableCompElement#setVAlign without first documenting TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameTableCompElement#setNowrap without first documenting TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameEvent#stopPropagation without first documenting TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameEvent#preventDefault without first documenting TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameCustomHTMLEvent#handleSet___ without first documenting TameCustomHTMLEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getTBodies as a member of undocumented symbol TameTableElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getAccessKey as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getChildNodes as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getDomain as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getEnctype as a member of undocumented symbol TameFormElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document open as a member of undocumented symbol TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document hasAttribute as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getDisabled as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getResponseXML as a member of undocumented symbol TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getReadOnly as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getOffsetWidth as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getInnerHTML as a member of undocumented symbol TamePseudoElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getLastChild as a member of undocumented symbol TamePseudoNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleCall___ as a member of undocumented symbol TamePseudoNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document submit as a member of undocumented symbol TameFormElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getAlign as a member of undocumented symbol TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getClientX as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getSize as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getClientY as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getElementsByClassName as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setValue as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document addEventListener as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setTitle as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getAttributes as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document TameXMLHttpRequest as a member of undocumented symbol domitaModules.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document cloneNode as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setDefaultChecked as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getTagName as a member of undocumented symbol TamePseudoElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getSrcElement as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleRead___ as a member of undocumented symbol TameWindow.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document focus as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getParentNode as a member of undocumented symbol TamePseudoElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleRead___ as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document createTextNode as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getOffsetTop as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setTabIndex as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document classUtils as a member of undocumented symbol domitaModules.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getMethod as a member of undocumented symbol TameFormElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getResponseText as a member of undocumented symbol TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getScrollLeft as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document createTFoot as a member of undocumented symbol TameTableElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getDefaultSelected as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document createEvent as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getBody as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNodeType as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getInnerHTML as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getOffsetLeft as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNodeName as a member of undocumented symbol TamePseudoElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleSet___ as a member of undocumented symbol TameWindow.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setType as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getIndex as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getStatusText as a member of undocumented symbol TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNowrap as a member of undocumented symbol TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document createElement as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNodeType as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setLabel as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setVAlign as a member of undocumented symbol TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getClientHeight as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document apply as a member of undocumented symbol result.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setAction as a member of undocumented symbol TameFormElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TameCustomHTMLEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getMultiple as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setSrc as a member of undocumented symbol TameImageElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNodeValue as a member of undocumented symbol TamePseudoElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setCols as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleDelete___ as a member of undocumented symbol TameCustomHTMLEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document suffix___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getButton as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document form as a member of undocumented symbol elementPolicies.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getToElement as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getStyle as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getChildNodes as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setId as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getCells as a member of undocumented symbol TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document area as a member of undocumented symbol elementPolicies.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document blur as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getType as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setInnerHTML as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setRows as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getCtrlKey as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getRelatedTarget as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getOptions as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setNodeValue as a member of undocumented symbol TameAttrNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getName as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getWhich as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getScrollWidth as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document hasChildNodes as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document htmlAttr___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getChecked as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getSelected as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getForm as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getSelectedIndex as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setSelectedIndex as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setDir as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setDisabled as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setReadOnly as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getColSpan as a member of undocumented symbol TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document dispatchEvent as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getAttributes as a member of undocumented symbol TameOpaqueNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document XMLHttpRequestCtor as a member of undocumented symbol domitaModules.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setDefaultValue as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleDelete___ as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getRowSpan as a member of undocumented symbol TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getOwnerDocument as a member of undocumented symbol TamePseudoElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getElementsByTagName as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getOffsetParent as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getReadyState as a member of undocumented symbol TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleRead___ as a member of undocumented symbol TamePseudoNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNextSibling as a member of undocumented symbol TamePseudoNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getTitle as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleEnum___ as a member of undocumented symbol TameCustomHTMLEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document ident___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TameTextNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNodeType as a member of undocumented symbol TamePseudoElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document deleteTHead as a member of undocumented symbol TameTableElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getDefaultChecked as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getId as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getTHead as a member of undocumented symbol TameTableElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setIndex as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setAlt as a member of undocumented symbol TameImageElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getDocumentElement as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TameComputedStyle.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document abort as a member of undocumented symbol TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getElementsByClassName as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleSet___ as a member of undocumented symbol TameCustomHTMLEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getChildNodes as a member of undocumented symbol TamePseudoElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getPageX as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getPageY as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setClassName as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setMethod as a member of undocumented symbol TameFormElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document rewriteUri___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setEnctype as a member of undocumented symbol TameFormElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getHref as a member of undocumented symbol TameAElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNodeValue as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setStyle as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getSrc as a member of undocumented symbol TameImageElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getOffsetHeight as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setDefaultSelected as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setMultiple as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getKeyCode as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getHead as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getType as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getRowIndex as a member of undocumented symbol TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setNowrap as a member of undocumented symbol TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol this.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getScreenX as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getTarget as a member of undocumented symbol TameFormElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getScreenY as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TameCommentNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleEnum___ as a member of undocumented symbol TameWindow.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document hasAttribute as a member of undocumented symbol TamePseudoElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setScrollTop as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getPreviousSibling as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getCols as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleEnum___ as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getFirstChild as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getAction as a member of undocumented symbol TameFormElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document removeEventListener as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document focus as a member of undocumented symbol TameAElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleCall___ as a member of undocumented symbol TameCustomHTMLEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getOwnerDocument as a member of undocumented symbol TameNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document cssColor___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getAttributes as a member of undocumented symbol TamePseudoElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setAlign as a member of undocumented symbol TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getParentNode as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document hasChildNodes as a member of undocumented symbol TamePseudoNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNextSibling as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getDir as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document appendChild as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getRows as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setSelected as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getStatus as a member of undocumented symbol TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getIdClass___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document cssNumber___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setAttribute as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document onreadystatechange as a member of undocumented symbol this.xhr___.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setNodeValue as a member of undocumented symbol TameTextNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document cssUri___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document blessCss___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getElementsByTagName as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document removeAttribute as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document initEvent as a member of undocumented symbol TameCustomHTMLEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getClassName as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getShiftKey as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setScrollLeft as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getAttribute as a member of undocumented symbol TamePseudoElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setSize as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document updateStyle as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getPreviousSibling as a member of undocumented symbol TamePseudoNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document replaceChild as a member of undocumented symbol TamePseudoNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TameAttrNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document createTHead as a member of undocumented symbol TameTableElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getAltKey as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleDelete___ as a member of undocumented symbol TameWindow.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document preventDefault as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getAlt as a member of undocumented symbol TameImageElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TameStyle.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleCall___ as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getTarget as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document replaceChild as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getScrollTop as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getLastChild as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getAllResponseHeaders as a member of undocumented symbol TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getResponseHeader as a member of undocumented symbol TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setAccessKey as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getMaxLength as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getAttributes as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getValue as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getFromElement as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getElementsByClassName as a member of undocumented symbol TamePseudoElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getTitle as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getTabIndex as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setChecked as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getText as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getScrollHeight as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setColSpan as a member of undocumented symbol TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document emitCss___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document stopPropagation as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document write as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getElementById as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getAttribute as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleSet___ as a member of undocumented symbol TamePseudoNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document deleteTFoot as a member of undocumented symbol TameTableElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setHref as a member of undocumented symbol TameAElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getDefaultValue as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol TamePseudoElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setRowSpan as a member of undocumented symbol TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleEnum___ as a member of undocumented symbol TamePseudoNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getFirstChild as a member of undocumented symbol TamePseudoNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getVAlign as a member of undocumented symbol TameTableCompElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getTFoot as a member of undocumented symbol TameTableElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getParentNode as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getMetaKey as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getElementsByTagName as a member of undocumented symbol TamePseudoElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setTarget as a member of undocumented symbol TameFormElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document insertBefore as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleSet___ as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setMaxLength as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document select as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleDelete___ as a member of undocumented symbol TamePseudoNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getElements as a member of undocumented symbol TameFormElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNodeValue as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document removeChild as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setOnreadystatechange as a member of undocumented symbol TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document Function as a member of undocumented symbol outers.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNodeName as a member of undocumented symbol TameHTMLDocument.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getCurrentTarget as a member of undocumented symbol TameEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document handleRead___ as a member of undocumented symbol TameCustomHTMLEvent.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document send as a member of undocumented symbol TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getLabel as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getSpecified as a member of undocumented symbol TameAttrNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setName as a member of undocumented symbol TameInputElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getCssContainer___ as a member of undocumented symbol imports.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document setRequestHeader as a member of undocumented symbol TameXMLHttpRequest.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getNodeName as a member of undocumented symbol TameBackedNode.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document reset as a member of undocumented symbol TameFormElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getClientWidth as a member of undocumented symbol TameElement.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document toString as a member of undocumented symbol Html.
+[jsdoctoolkit] &gt;&gt; WARNING: Can't document getRows as a member of undocumented symbol TameTableCompElement.
+[jsdoctoolkit] 309 warnings.
+
+dirs:
+
+Primitives:
+
+Reporting:
+
+Lexer:
+
+ParserCore:
+
+JsParser:
+
+Quasiliterals:
+
+RuleDoclet:
+
+ruledocs:
+    [mkdir] Created dir: /opt/svn/google-caja/ant-docs/rules
+
+docs:
+
+BUILD SUCCESSFUL
+Total time: 44 seconds
+</log>
+</target>
+<varz name="target.docs.status" value="1"/>
+<varz name="target.docs.time" value="44"/>
+<target name="demos">
+  <log>Buildfile: build.xml
+
+dirs:
+
+Primitives:
+
+Reporting:
+
+Lexer:
+
+ParserCore:
+
+CssParser:
+
+HtmlParser:
+
+JsParser:
+
+Quasiliterals:
+
+Rendering:
+
+Config:
+
+Schemas:
+
+PluginCompiler:
+
+build.info:
+
+pluginc:
+    [javac] Compiling 1 source file to /opt/svn/google-caja/ant-lib
+
+CajolingService:
+
+CajoledValija:
+
+CajoledTests:
+
+AllTests:
+
+dirs:
+
+Primitives:
+
+Reporting:
+
+Lexer:
+
+ParserCore:
+
+CssParser:
+
+HtmlParser:
+
+JsParser:
+
+Quasiliterals:
+
+Rendering:
+
+Config:
+
+Schemas:
+
+PluginCompiler:
+
+build.info:
+
+pluginc:
+    [javac] Compiling 1 source file to /opt/svn/google-caja/ant-lib
+
+MinifiedJs:
+
+CajoledValija:
+
+jars:
+      [jar] Building jar: /opt/svn/google-caja/ant-jars/pluginc.jar
+
+calendar:
+    [mkdir] Created dir: /opt/svn/google-caja/ant-www/calendar
+[transform] building 2 files to /opt/svn/google-caja/ant-lib/com/google/caja/demos/calendar/html-interp-minified.js
+[transform] building 27 files to /opt/svn/google-caja/ant-lib/com/google/caja/demos/calendar/calendar-minified.js
+[transform] building 28 files to /opt/svn/google-caja/ant-lib/com/google/caja/demos/calendar/calendar.vo.js
+[transform] LINT : src/com/google/caja/demos/calendar/widget-html.js:24+12 - 26: Declaration of renderCalendar masks declaration at src/com/google/caja/demos/calendar/widget-html.js:23+5 - 19
+[transform] src/com/google/caja/demos/calendar/widget-html.js:24:   function renderCalendar(layout, viewPort) {
+[transform]                                                                  ^^^^^^^^^^^^^^
+[transform] src/com/google/caja/demos/calendar/widget-html.js:23: var renderCalendar = (function () {
+[transform]                                                           ^^^^^^^^^^^^^^
+     [copy] Copying 12 files to /opt/svn/google-caja/ant-www/calendar
+
+lolcat-search:
+[transform] mkdir /opt/svn/google-caja/ant-www/lolcat-search
+[transform] building 1 files to /opt/svn/google-caja/ant-www/lolcat-search/searchbox.co.js
+[transform] building 1 files to /opt/svn/google-caja/ant-www/lolcat-search/kittens.co.js
+     [copy] Copying 9 files to /opt/svn/google-caja/ant-www/lolcat-search
+
+testbed:
+    [javac] Compiling 1 source file to /opt/svn/google-caja/ant-lib
+      [jar] Building jar: /opt/svn/google-caja/ant-jars/testbed.jar
+    [mkdir] Created dir: /opt/svn/google-caja/ant-www/testbed
+     [copy] Copying 20 files to /opt/svn/google-caja/ant-www/testbed
+     [copy] Copying 1 file to /opt/svn/google-caja/ant-www/testbed
+[transform] building 15 files to /opt/svn/google-caja/ant-www/testbed/cajita-combined-min.js
+
+demos:
+
+BUILD SUCCESSFUL
+Total time: 17 seconds
+</log>
+</target>
+<varz name="target.demos.status" value="1"/>
+<varz name="target.demos.time" value="18"/>
+<target name="testbed">
+  <log>Buildfile: build.xml
+
+dirs:
+
+Primitives:
+
+Reporting:
+
+Lexer:
+
+ParserCore:
+
+CssParser:
+
+HtmlParser:
+
+JsParser:
+
+Quasiliterals:
+
+Rendering:
+
+Config:
+
+Schemas:
+
+PluginCompiler:
+
+build.info:
+
+pluginc:
+    [javac] Compiling 1 source file to /opt/svn/google-caja/ant-lib
+
+CajoledValija:
+
+MinifiedJs:
+
+jars:
+      [jar] Building jar: /opt/svn/google-caja/ant-jars/pluginc.jar
+
+testbed:
+      [jar] Building jar: /opt/svn/google-caja/ant-jars/testbed.jar
+     [copy] Copying 1 file to /opt/svn/google-caja/ant-www/testbed
+
+BUILD SUCCESSFUL
+Total time: 6 seconds
+</log>
+</target>
+<varz name="target.testbed.status" value="1"/>
+<varz name="target.testbed.time" value="7"/>
+<target name="prototype">
+  <log>Already up-to-date.
+</log>
+</target>
+<varz name="target.prototype.status" value="1"/>
+<varz name="target.prototype.time" value="1"/>
+<target name="prototype tests">
+  <log>(in /opt/svn/prototype)
+rake aborted!
+FATAL_ERROR: selector_gadget.html:15+67 - 71: url # cannot be linked to
+FATAL_ERROR: selector_gadget.html:16+47 - 51: url # cannot be linked to
+FATAL_ERROR: selector_gadget.html:20+50 - 54: url # cannot be linked to
+/opt/svn/prototype/Rakefile:183
+(See full trace by running task with --trace)
+</log>
+</target>
+<varz name="target.prototype tests.status" value="0"/>
+<varz name="target.prototype tests.time" value="286"/>
+<target name="selenium">
+  <log>running selenium
+..............
+Welcome to Blaze, release blaze-2008.12.11a (mainline @9378420).  http://blaze/
+____Loading package: experimental/users/msamuel/caja_selenium/java/com/google/caja/selenium
+____Loading package: tools
+____Loading package: experimental/users/msamuel/caja_selenium/third_party/caja
+____Loading package: java/com/google/gse
+____Loading package: java/com/google/testing/javascript
+____Loading package: java/com/google/testing/selenium
+____Loading package: java/com/google/common/base
+____Loading package: third_party/java/jsunit
+____Loading package: java/com/google/testing/util
+____Loading package: third_party/java/junit
+____Loading package: third_party/java/log4j
+____Loading package: third_party/java/junit/v3_8_1
+____Loading package: third_party/java/jsunit/core
+____Loading package: third_party/java/apache_ant
+____Loading package: third_party/java/jakarta_commons_codec
+____Loading package: transconsole/tools
+____Loading package: java/com/google/common/collect
+____Loading package: third_party/java/jakarta_commons
+____Loading package: third_party/java/apache_ant/v1_6_5
+____Loading package: third_party/java/jakarta_httpclient
+____Loading package: java/com/google/common/flags
+____Loading package: third_party/java/jakarta_jasper
+____Loading package: java/com/google/common/io
+____Loading package: third_party/java/webwork
+____Loading package: third_party/java/sun_servlet
+____Loading package: third_party/java/jdom
+____Loading package: java/com/google/common/reflect
+____Loading package: java/com/google/common/logging
+____Loading package: third_party/java/xerces
+____Loading package: third_party/java/icu4j
+____Loading package: devtools/ijar
+____Loading package: java/com/google/devtools/build/java
+____Loading package: java/com/google/common/time
+____Loading package: java/com/google/common/util
+____Loading package: java/com/google/common/annotations
+____Loading package: java/com/google/io/base/shell
+____Loading package: java/com/google/testing/coverage
+____Loading package: java/com/google/common/parameterset
+____Loading package: java/com/google/testing/junit/junit3
+____Loading package: java/com/google/net/base
+____Loading package: java/com/google/common/profile
+____Loading package: third_party/java/testlibrariesforjava
+____Loading package: java/com/google/common/stats
+____Loading package: java/com/google/testing/selenium/farm
+____Loading package: third_party/java/webwork/v2_2_4
+____Loading package: third_party/java/cglib
+____Loading package: third_party/java/jakarta_standard_taglib
+____Loading package: java/com/google/common/util/concurrent
+____Loading package: java/com/google/common/primitives
+____Loading package: tools/autopar
+____Loading package: third_party/java/icu4j/v4_0
+____Loading package: third_party/stl
+____Loading package: java/com/google/gse/open
+____Loading package: third_party/java/guice
+____Loading package: java/com/google/common/cache
+____Loading package: java/com/google/httputil
+____Loading package: third_party/java/joda_time
+____Loading package: java/com/google/io/base
+____Loading package: third_party/java/testlibrariesforjava/v1_1
+____Loading package: third_party/java/emma
+____Loading package: java/com/google/common/staticresource
+____Loading package: third_party/java/freemarker
+____Loading package: third_party/java/jakarta_commons_logging
+____Loading package: pyglib
+____Loading package: third_party/java/ognl
+____Loading package: java/com/google/common/input
+____Loading package: java/com/google/i18n
+____Loading package: java/com/google/common/net
+____Loading package: java/com/google/common/logging/stacktrace
+____Loading package: java/com/google/io/iobuffer
+____Loading package: java/com/google/io/file
+____Loading package: third_party/python2_4_3
+____Loading package: java/com/google/io/protocol
+____Loading package: java/com/google/testing/junit/runner
+____Loading package: third_party/java/joda_time/v1_6
+____Loading package: logs/eventid
+____Loading package: java/com/google/tracing
+____Loading package: java/com/google/net/rpc
+____Loading package: third_party/java/jakarta_commons_logging/v1_1_1
+____Loading package: java/com/google/parser
+____Loading package: java/com/google/common/logging/escalate
+____Loading package: third_party/java/ognl/v2_6_11
+____Loading package: third_party/java/guice/snapshot20081123
+____Loading package: net/proto2/bridge/proto
+____Loading package: net/proto2/compiler/public
+____Loading package: i18n/tools
+____Loading package: java/com/google/i18n/compiler
+____Loading package: java/com/google/devtools/sourcerer/links
+____Loading package: logs/java
+____Loading package: net/proto_compiler
+____Loading package: java/com/google/testing/webdriver
+____Loading package: i18n
+____Loading package: perftools/tracing/proto
+____Loading package: stats/request
+____Loading package: java/com/google/net/httpclient
+____Loading package: java/com/google/io/recordio
+____Loading package: third_party/java/aopalliance
+____Loading package: java/com/google/testing/timing
+____Loading package: stats/io/proto
+____Loading package: java/com/google/borg/util
+____Loading package: net/proto2/public
+____Loading package: third_party/java/selenium
+____Loading package: java/com/google/common/unix
+____Loading package: net/proto
+____Loading package: java/com/google/io/clientrequest
+____Loading package: java/com/google/net/loas
+____Loading package: net/proto2/bridge/internal
+____Loading package: net/proto2/compiler/internal
+____Loading package: webutil/xmlwriter
+____Loading package: net/proto2/internal
+____Loading package: third_party/java/easymock
+____Loading package: net/proto2/bridge/public
+____Loading package: third_party/java/selenium/rev2478_mod
+____Loading package: java/com/google/chubby
+____Loading package: java/com/google/common/jni
+____Loading package: util/coding
+____Loading package: java/com/google/common/compression
+____Loading package: tools/swig
+____Loading package: logs/ads
+____Loading package: base
+____Loading package: logs/ads/quest
+____Loading package: net/rpc
+____Loading package: third_party/libxml
+____Loading package: logs/anonymization/proto
+____Loading package: logs/attributesearch
+____Loading package: logs/browsermetrics
+____Loading package: logs/codesite
+____Loading package: net/proto2/io/public
+____Loading package: logs/docs
+____Loading package: util/regexp
+____Loading package: java/com/google/monitoring/runtime
+____Loading package: logs/dodgeball
+____Loading package: logs/froogle
+____Loading package: third_party/utf
+____Loading package: strings
+____Loading package: java/com/google/net/async
+____Loading package: net/proto2/compiler/cpp/public
+____Loading package: java/com/google/math/crypto
+____Loading package: net/proto2/compiler/python/public
+____Loading package: net/proto2/compiler/java/public
+____Loading package: net/proto2/compiler/go/public
+____Loading package: net/proto2/compiler/javascript/public
+____Loading package: transconsole/base
+____Loading package: third_party/python2_3_2_lib
+____Loading package: net/proto2/proto
+____Loading package: util/sys
+____Loading package: java/com/google/net/resolver
+____Loading package: third_party/java/jdk
+____Loading package: third_party/java/dnsjava
+____Loading package: net/proto2/compiler/cpp/internal
+____Loading package: net/proto2/compiler/python/internal
+____Loading package: net/proto2/compiler/go/internal
+____Loading package: third_party/libxml/v2_6_31
+____Loading package: net/proto2/compiler/javascript/internal
+____Loading package: java/com/google/monitoring/protostatusz
+____Loading package: net/proto2/compiler/java/internal
+____Loading package: third_party/pcre
+____Loading package: java/com/google/net/util
+____Loading package: java/com/google/io/binarylog
+____Loading package: net/proto2/io/internal
+____Loading package: iobuffer
+____Loading package: net/proto2/util/public
+____Loading package: third_party/py/_xmlplus
+____Loading package: third_party/openssl
+____Loading package: third_party/zlib
+____Loading package: util/endian
+____Loading package: util/bits
+____Loading package: util/hash
+____Loading package: chubby/lib/proto
+____Loading package: thread
+____Loading package: util/utf8
+____Loading package: util/gtl
+____Loading package: third_party/libunwind
+____Loading package: net/base
+____Loading package: logs/gadgets
+____Loading package: util/freelist
+____Loading package: util/utf8/unilib
+____Loading package: file/logging
+____Loading package: logs/gbase
+____Loading package: logs/googlen
+____Loading package: monitoring/protostatusz
+____Loading package: net/proto2/util/internal
+____Loading package: logs/hosted
+____Loading package: java/com/google/net/ssl
+____Loading package: util/shell/gbash
+____Loading package: util/random
+____Loading package: third_party/java/webdriver
+____Loading package: webutil/html
+____Loading package: java/com/google/testing/selenium/extensions
+____Loading package: third_party/java/htmlunit
+____Loading package: third_party/bash/v3_2
+____Loading package: googledata/third_party/firefox/v2
+____Loading package: util/math
+____Loading package: third_party/java/gwt/test_support
+____Loading package: third_party/java/json
+____Loading package: third_party/java/hamcrest
+____Loading package: webutil/url
+____Loading package: javascript/closure/color
+____Loading package: tcmalloc
+____Loading package: third_party/java/hamcrest/v1_1
+____Loading package: javascript/closure/dom
+____Loading package: third_party/java/htmlunit/v2_1
+____Loading package: net/util
+____Loading package: java/com/google/security/random
+____Loading package: util/utf8/proptables
+____Loading package: third_party/java/json/r2_20080312
+____Loading package: third_party/java/jakarta_commons_collections
+____Loading package: third_party/java/jakarta_commons_io
+____Loading package: java/com/google/net/security
+____Loading package: javascript/closure
+____Loading package: javascript/closure/math
+____Loading package: third_party/java/jakarta_httpclient/v3_1
+____Loading package: third_party/java/jakarta_commons_collections/v3_2
+____Loading package: logs/images
+____Loading package: javascript/closure/style
+____Loading package: javascript/closure/array
+____Loading package: logs/knol
+____Loading package: javascript/closure/object
+____Loading package: third_party/java/jakarta_commons_lang/v2_4
+____Loading package: logs/linkdoctor
+____Loading package: logs/maps
+____Loading package: javascript
+____Loading package: javascript/closure/string
+____Loading package: java/com/google/security/openssl
+____Loading package: logs/news
+____Loading package: webutil/idna
+____Loading package: logs/ocean
+____Loading package: javascript/closure/useragent
+____Loading package: logs/payments
+____Loading package: third_party/java/cssparser/v0_9_5
+____Loading package: third_party/java/jakarta_commons_io/v1_4
+____Loading package: logs/proto/doubleclick/affiliate
+____Loading package: logs/transit
+____Loading package: third_party/java/rhino
+____Loading package: logs/proto/pistachio
+____Loading package: third_party/java/xalan
+____Loading package: logs/proto/poptart
+____Loading package: logs/proto/newspaper_search
+____Loading package: third_party/java/nekohtml
+____Loading package: logs/proto/visual_element
+____Loading package: javascript/tools/jscompiler
+____Loading package: third_party/java/sac
+____Loading package: third_party/java/xml_apis
+____Loading package: logs/screamer
+____Loading package: news/frontend/rpc
+____Loading package: logs/spelling
+____Loading package: logs/summaries
+____Loading package: java/com/google/wrappers/openssl
+____Loading package: logs/translator_workbench
+____Loading package: logs/video
+____Loading package: ocean/data
+____Loading package: logs/wireless/africaconnect
+____Loading package: logs/wireless/sms
+____Loading package: logs/wireless/smshttpfe
+____Loading package: logs/wireless/tinyurl
+____Loading package: logs/wireless/transcoder
+____Loading package: logs/zwieback
+____Loading package: javascript/closure/builddefs
+____Loading package: third_party/java/nekohtml/v1_9_7
+____Loading package: third_party/java/xml_apis/v1_0b2
+____Loading package: third_party/java/sac/v1_3
+____Loading package: java/com/google/wrappers
+____Loading package: security/loas/lib/proto
+____Loading package: third_party/java/rhino/v1_7R1
+____Loading package: java/com/google/common/monitoring
+____Loading package: logs/avfe
+____Loading package: logs/apphosting
+____Loading package: java/com/google/javascript/util
+____Loading package: logs/wireless/android
+____Loading package: logs/focus
+____Loading package: logs/autofill
+____Loading package: java/com/google/monitoring/runtime/allocation
+____Loading package: logs/bigindex
+____Loading package: logs/blobstore
+____Loading package: logs/blogsearch
+____Loading package: java/com/google/monitoring/runtime/cpu
+____Loading package: logs/calendar
+____Loading package: logs/callhost
+____Loading package: logs/capsela
+____Loading package: java/com/google/monitoring/runtime/periodic
+____Loading package: logs/clientusagestats
+____Loading package: logs/gdrive
+____Loading package: logs/clobber
+____Loading package: logs/cccquota
+____Loading package: monitoring/stacktrace
+____Loading package: logs/confucius
+____Loading package: logs/branding/contest
+____Loading package: logs/corplogin
+____Loading package: java/com/google/monitoring/stacktrace/util
+____Loading package: logs/distributiontracking
+____Loading package: logs/doubleclick/sim
+____Loading package: logs/finance
+____Loading package: java/com/google/monitoring/runtime/sa
+____Loading package: logs/gws
+____Loading package: javascript/externs/builddefs
+____Loading package: logs/googlenav
+____Loading package: java/com/google/servlet
+____Loading package: logs/googleviews
+____Loading package: logs/wireless/mobile_masf
+____Loading package: logs/igoogle
+____Loading package: logs/indic_transliteration
+____Loading package: logs/wireless/download
+____Loading package: logs/jsconcat
+____Loading package: logs/wireless/mmp
+____Loading package: logs/wireless/mobilegw
+____Loading package: logs/caribou
+____Loading package: logs/wireless/mobilesync
+____Loading package: logs/wireless/mobilefe
+____Loading package: logs/navsuggest
+____Loading package: logs/omaha
+____Loading package: logs/persist
+____Loading package: logs/orkut_ask
+____Loading package: logs/quality
+____Loading package: logs/photos
+____Loading package: logs/suggest
+____Loading package: logs/toolbarsync
+____Loading package: logs/wireless/send_to_phone
+____Loading package: logs/superroot
+____Loading package: logs/doubleclick/clickserver
+____Loading package: java/com/google/monitoring/runtime/management
+____Loading package: logs/clir
+____Loading package: java/com/google/monitoring/runtime/instrumentation
+____Loading package: java/com/google/monitoring/stacktrace/stats
+____Loading package: java/com/google/common/xml
+____Loading package: javascript/externs
+____Loading package: java/com/google/javascript/rhino
+____Loading package: java/com/google/protobuf
+____Loading package: javascript/closure/net
+____Loading package: javascript/closure/events
+____Loading package: third_party/javascript/sortabletable
+____Loading package: javascript/closure/debug
+____Loading package: javascript/closure/ui
+____Loading package: javascript/closure/structs
+____Loading package: javascript/closure/json
+____Loading package: javascript/closure/timer
+____Loading package: javascript/closure/iter
+____Loading package: javascript/closure/disposable
+____Loading complete.  Analyzing...
+____Build identifier:           40a84ca6-7793-485b-af25-daaeb35a7c73
+____Host platform:              gcc-4.3.1-glibc-2.3.6-grte-piii
+____Target platform:            gcc-4.3.1-glibc-2.3.6-grte-k8
+____Target cpu for Java:        piii
+____Target cpu for Python:      piii
+____Compilation mode:           fastbuild
+____C/C++ compilation strategy: distcc-pump
+____C/C++ linking strategy:     local
+____Java compilation strategy:  inprocess
+____Test execution strategy:    local
+____Building 2 targets...
+____[6%] Determining build info
+____From Determining build info:
+File(s) not opened on this client.
+____[99%] Testing //experimental/users/msamuel/caja_selenium/java/com/google/caja/selenium:SeleniumTests
+FAIL: //experimental/users/msamuel/caja_selenium/java/com/google/caja/selenium:SeleniumTests (see /usr/local/google/_blaze_jasvir/f71a626e21441a7955c8fa8e8125b17f/google3/blaze-out/gcc-4.3.1-glibc-2.3.6-grte-k8-fastbuild/testlogs/experimental/users/msamuel/caja_selenium/java/com/google/caja/selenium/SeleniumTests/test.log)
+____Elapsed time: 317.490s
+
+Executed 1 out of 1 tests.
+//experimental/users/msamuel/caja_selenium/java/com/google/caja/selenium:SeleniumTests FAILED in 310.8s
+  /usr/local/google/_blaze_jasvir/f71a626e21441a7955c8fa8e8125b17f/google3/blaze-out/gcc-4.3.1-glibc-2.3.6-grte-k8-fastbuild/testlogs/experimental/users/msamuel/caja_selenium/java/com/google/caja/selenium/SeleniumTests/test.log
+
+Finished with 0 passing and 1 failing tests.
+</log>
+</target>
+<varz name="target.selenium.status" value="1"/>
+<varz name="target.selenium.time" value="319"/>
+<varz name="selenium.FIREFOX20_LINUX.total" value="4"/>
+<varz name="selenium.FIREFOX20_LINUX.errors" value="0"/>
+<varz name="selenium.FIREFOX20_LINUX.failures" value="4"/>
+<varz name="selenium.CHROME_VISTA.total" value="4"/>
+<varz name="selenium.CHROME_VISTA.errors" value="3"/>
+<varz name="selenium.CHROME_VISTA.failures" value="1"/>
+<varz name="selenium.IE6_WINXP.total" value="4"/>
+<varz name="selenium.IE6_WINXP.errors" value="0"/>
+<varz name="selenium.IE6_WINXP.failures" value="4"/>
+<varz name="selenium.IE7_VISTA.total" value="4"/>
+<varz name="selenium.IE7_VISTA.errors" value="0"/>
+<varz name="selenium.IE7_VISTA.failures" value="4"/>
+<varz name="selenium.SAFARI3_MACOS.total" value="4"/>
+<varz name="selenium.SAFARI3_MACOS.errors" value="0"/>
+<varz name="selenium.SAFARI3_MACOS.failures" value="4"/>
+<varz name="selenium.total" value="16"/>
+<varz name="selenium.errors" value="3"/>
+<varz name="selenium.failures" value="13"/>
+<output name="docs" href="docs/java/index.html"/>
+<output name="jsdocs" href="docs/js/index.html"/>
+<output name="ruledocs" href="docs/rules/CajitaRewriter.html"/>
+<output name="tests" href="tests/index.html"/>
+<output name="coverage" href="coverage/index.html"/>
+<output name="selenium" href="selenium/index.html"/>
+<output name="prototype" href="prototype/."/>
+<output name="demos" href="demos/"/>
+<output name="snapshot" href="snapshot/"/>
+</report>
