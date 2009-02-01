@@ -100,13 +100,19 @@ our $DOCS_DIR = "ant-docs";
 our $DEMOS_DIR = "ant-www";
 our $LIB_DIR = "ant-lib";
 
+# Caja compatible libraries
+$ENV{CAJA_SRC_PATH} = $BUILD_CLIENT;
+our $PROTOTYPEJS = "/opt/svn/prototype";     requireDir $PROTOTYPEJS;
+
 # History of all builds used to generate time series.
 our $HISTORY_DIR = "$MASTER_CLIENT/history"; requireDir $HISTORY_DIR;
 
 # Executables required
 our $ANT_HOME = "/usr/local/ant";            requireDir $ANT_HOME;
 our $ANT = "$ANT_HOME/bin/ant";              requireExe $ANT;
-our $SELENIUM = "/opt/svn/selenium.sh";      requireExe $ANT;
+our $SELENIUM = "/opt/svn/selenium.sh";      requireExe $SELENIUM;
+our $GIT = "/usr/bin/git";                   requireExe $GIT;
+our $RAKE = "/usr/bin/rake";                   requireExe $RAKE;
 our $JAVA_HOME = $ENV{JAVA_HOME} or "/usr/lib/jvm/java-6-sun/";
                                              requireDir $JAVA_HOME;
 our $JAVA = "$JAVA_HOME/bin/java";           requireExe $JAVA;
@@ -164,6 +170,10 @@ sub collectCodeStats() {
   print STDERR "building testbed\n";
   track(\&build, ['testbed'], 'testbed', \@status_log);
 
+  print STDERR "running compatible library tests\n";
+  track(\&updatePrototypeClient, [], 'prototype', \@status_log);
+  track(\&rakePrototype, ['caja:test'], 'prototype tests', \@status_log);
+
   print STDERR "running selenium\n";
   track(\&farm, ['all'], 'selenium', \@status_log);
   extractSeleniumSummary("$REPORTS_DIR/selenium/TESTS-TestSuites.xml", 
@@ -180,8 +190,8 @@ sub collectCodeStats() {
   print STDERR "copying test reports\n";
   outputTree("$REPORTS_DIR/tests", 'tests', 'index.html', \@status_log);
   outputTree("$REPORTS_DIR/coverage", 'coverage', 'index.html', \@status_log);
-  outputTree("$REPORTS_DIR/selenium", 'cross-browser tests', 'index.html', 
-      \@status_log);
+  outputTree("$REPORTS_DIR/selenium", 'selenium', 'index.html', \@status_log);
+  outputTree("$PROTOTYPEJS/test/unit/tmp/", 'prototype', '.', \@status_log);
 
   print STDERR "copying demos\n";
   outputTree($DEMOS_DIR, 'demos', '', \@status_log);
@@ -254,6 +264,11 @@ sub updateLocalClient() {
   return exec_log($BUILD_CLIENT, $SVN, 'update');
 }
 
+# Run git to pull down the latest version prototype.
+sub updatePrototypeClient() {
+  return exec_log($PROTOTYPEJS, $GIT, 'pull');
+}
+
 # Get the current version number
 sub svnversion() {
   my $version = `"$SVNVERSION"`;
@@ -269,6 +284,11 @@ sub farm(@) {
 # Run ant.
 sub build(@) {
   return exec_log($BUILD_CLIENT, $ANT, @_);
+}
+
+# Run rake.
+sub rakePrototype(@) {
+  return exec_log($PROTOTYPEJS, $RAKE, @_);
 }
 
 # Extract TODOs from code.
