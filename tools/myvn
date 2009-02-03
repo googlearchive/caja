@@ -123,7 +123,9 @@ function myvn() {
         files="$@"
       fi
       for f in $files; do
-        if [ -z "$("$svn" propget svn:mime-type "$f")" ]; then
+        local current_type="$("$svn" propget svn:mime-type "$f")"
+        if [ -z "$current_type" ] \
+           || [ "$current_type" = "application/octet-stream" ]; then
           local type="$(typeForFile $f)"
           if [ -n "$type" ]; then
             "$svn" propset svn:mime-type "$type" "$f"
@@ -154,6 +156,12 @@ function typeForFile() {
   case "$(echo -n $f | perl -pe 's/^.*\.//')" in
     css )
       echo -n "text/css;charset=UTF-8"
+      ;;
+    gif )
+      echo -n "text/gif"
+      ;;
+    graffle )
+      echo -n "text/xml;charset=UTF-8"
       ;;
     html )
       echo -n "text/html;charset=UTF-8"
