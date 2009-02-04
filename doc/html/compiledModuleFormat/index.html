@@ -1,5 +1,5 @@
 <!--
-  -- Copyright (C) 2008 Google Inc.
+  -- Copyright (C) 2009 Google Inc.
   --
   -- Licensed under the Apache License, Version 2.0 (the "License");
   -- you may not use this file except in compliance with the License.
@@ -93,6 +93,37 @@ programmers to use in describing modules.</p>
 
 <!-- ############################################################ -->
 
+<h1>Content references</h1>
+
+<p>In our module format, we frequently refer to large chunks of data
+(<em>e.g.</em>, original source code) that we may either embed
+directly in the module as a JavaScript literal, or provide as a URL
+that may be fetched. We use a content reference object to
+polymorphically represent both. A reference to a URL is of the
+form:</p>
+
+<pre class="prettyprint">
+{
+  type: "url",
+  url: <em>&lt;string&gt;</em>
+}
+</pre>
+
+<p>while the literal inclusion of content is of the form:</p>
+
+<pre class="prettyprint">
+{
+  type: "content",
+  content: [ <em>&lt;string&gt;</em>, <em>&lt;string&gt;</em>, ... ]
+}
+</pre>
+
+<p>where the value of the <code>content</code> key is an array of
+lines of text. If the content is not line-oriented, there will be only
+one array element containing the entire data.</p>
+
+<!-- ############################################################ -->
+
 <h1>Module format</h1>
 
 <p>Our new module format is an object literal, so the Caja translator
@@ -100,11 +131,20 @@ output looks like:</p>
 
 <pre class="prettyprint">
 ___.loadModule({
-  code: function(___, IMPORTS___) { ... },
-  sha1sum: ...,
-  cajolerVersion: ...,
-  debugInfo: { ... },
-  manifest: { ...},
+  cajolerName: <em>&lt;string&gt;</em>,
+  cajolerVersion: <em>&lt;string&gt;</em>,
+  cajoledDate: ...,
+  instantiate: <span style="background-color: #ffff90;">function(___, IMPORTS___) { <em>&lt;code&gt;</em> }, <span style="font-size: small; font-family: sans-serif">/* See below for exact formatting */</span></span>
+  originalSource: {
+    <em>&lt;string&gt;</em>: <em>&lt;contentReference&gt;</em>,
+    ...
+  },
+  sourceLocationMap: <em>&lt;contentReference&gt;</em>,
+  imports: {
+    <em>&lt;string&gt;</em>: ...,
+    ...
+  },
+  manifest: <em>&lt;jsonLiteral&gt;</em>
 });
 </pre>
 
@@ -113,56 +153,188 @@ ___.loadModule({
 <div class="listing"><table>
 
   <tr>
-    <td><code class="prettyprint">code</code></td>
-    <td><em>required</em></td>
-    <td>The anonymous function representing the module, as before.</td>
+    <td valign="top"><code class="prettyprint">instantiate</code></td>
+    <td valign="top"><em>required</em></td>
+    <td valign="top">The anonymous function representing the module, as before.
+    This is called by the Caja runtime to create an instance of the module.</td>
   </tr>
 
   <tr>
-    <td><code class="prettyprint">sha1sum</code></td>
-    <td><em>required</em></td>
-    <td>String literal containing the SHA-1 sum of the string value of
-    the <code class="prettyprint">code</code> property.</td>
+    <td valign="top"><code class="prettyprint">cajolerName</code></td>
+    <td valign="top"><em>required</em></td>
+    <td valign="top">The name of the cajoler software that emitted this
+    module. Each distinct cajoler should assign itself a unique name, which
+    should include the DNS domain name of its author. An example is a dotted
+    path name, such <code>com.google.caja</code>.</td>
   </tr>
 
   <tr>
-    <td><code class="prettyprint">cajolerVersion</code></td>
-    <td><em>required</em></td>
-    <td>A string literal uniquely identifying the version of the Caja
-    translator which emitted this module. This is an opaque value;
-    applications may only check it for equality.</td>
+    <td valign="top"><code class="prettyprint">cajolerVersion</code></td>
+    <td valign="top"><em>required</em></td>
+    <td valign="top">A string identifying the version of the cajoler that emitted
+    this module, for example, the SVN revision number of the cajoler code.</td>
   </tr>
 
   <tr>
-    <td><code class="prettyprint">debugInfo</code></td>
-    <td><em>optional</em></td>
-    <td>A record containing debug information, described below. If a
-    module was compiled without debugging support, this property is
-    absent.</td>
+    <td valign="top"><code class="prettyprint">cajoledDate</code></td>
+    <td valign="top"><em>optional</em></td>
+    <td valign="top">The date at which the module was cajoled, expressed as an integer
+    number of milliseconds since Epoch.</td>
   </tr>
 
   <tr>
-    <td><code class="prettyprint">manifest</code></td>
-    <td><em>optional</em></td>
-    <td>A JSON record containing the module manifest. A program
+    <td valign="top"><code class="prettyprint">imports</code></td>
+    <td valign="top"><em>required</em></td>
+    <td valign="top">Information about the variables imported by this module. This is a record
+    where each key is the name of an imported variable, and each corresponding value
+    is some JSON data providing meta-information about the module's expectations regarding
+    that variable.
+    <div class="note">TODO: Define the imported variable metadata
+    format (essentially equivalent to <code>@param</code> Javadocs)
+    and how Caja programmers can set it. This will include the assumed-safe
+    static path information currently provided as a 2<sup>nd</sup> argument to
+    <code>___.readImport()</code>.</div>
+    </td>
+  </tr>
+
+  <tr>
+    <td valign="top"><code class="prettyprint">originalSource</code></td>
+    <td valign="top"><em>optional</em></td>
+    <td valign="top">The original source from which this module was compiled. This is
+    a record where each key is a resource name (preferably a URL) and
+    the corresponding value is a content reference containing the text
+    of the resource. If included literally, the text is escaped such that
+    it will be UTF-16 code-unit identical to the original source <em>when parsed as a
+    JS string literal</em>; thus it is understood that the actual text
+    embedded in the module file itself will not be bit-identical to the
+    original.</td>
+  </tr>
+
+  <tr>
+    <td valign="top"><code class="prettyprint">sourceLocationMap</code></td>
+    <td valign="top"><em>optional</em></td>
+    <td valign="top">A record containing a mapping from cajoled source
+    locations to original source locations. The format is described below.</td>
+  </tr>
+
+  <tr>
+    <td valign="top"><code class="prettyprint">manifest</code></td>
+    <td valign="top"><em>optional</em></td>
+    <td valign="top">A JSON record containing the module manifest. A program
     provides this to the cajoler by calling
     the <code>cajita.manifest()</code> function.</td>
   </tr>
 
 </table></div>
 
-<h1>Debugging information</h1>
+<h1>Precise rendered format of <code>instantiate</code> property</h1>
 
-<p>The purpose of the debugging information is to provide hooks for
-transparent source-level debugging of cajoled code. This requires
-providing the original source code; line number mappings from the
-original source to the cajoled output; information about which
-variables are actually in-scope end-user code (as opposed to
-temporaries generated by the cajoler); and enough information for the
-debugger to skip over Caja boilerplate (e.g. to enter a function
-directly rather than step through the
-Cajita <code class="prettyprint">___.callPub()</code> or Valija 
-<code class="prettyprint">$v.callFunc()</code> guff).</p>
+<p>To allow debugging with reference to the cajoled code, the format
+of the module regarding its <code>instantiate</code> property will
+always be as follows:</p>
+
+<pre class="prettyprint">
+{
+  &#x22ee;
+  instantiate:
+
+      &#x2460;
+function(___, IMPORTS___) {  &#x2461;
+  <em>&lt;code&gt;</em>
+}  &#x2462;
+
+
+  ,  &#x2463;
+  &#x22ee;
+}
+</pre>
+
+<p>&#x2460; &mdash; Following the <code>instantiate</code> key and
+the colon, and an indeterminate amount of whitespace, there is a
+newline.</p>
+
+<p>&#x2461 &mdash; The text of the cajoled code starts on the next
+line at a level of indentation starting from column 1, as though it
+were in a separate file, and independent of the indentation of the
+surrounding material.</p>
+
+<p>&#x2462 &mdash; The closing brace of the cajoled code is followed
+by optional whitespace, then a newline.</p>
+
+<p>&#x2463 &mdash; Indeterminate whitespace may appear before the
+comma that ends the definition of the <code>instantiate</code>
+property (if needed) is rendered.</p>
+
+<h1>Source location map</h1>
+
+<p>The source location map contains information about the original
+source location(s) corresponding to each character position in the
+cajoled module code. The following is an example:</p>
+
+<pre class="prettyprint">
+/** Begin line maps. **/{ file: 'foo.js', count: 3 }  &#x2460;
+[0,1,2]  &#x2461;
+[3,,,4,,,]  &#x2462;
+[]  &#x2463;
+/** Begin file information. **/  &#x2464;
+['a.js', 'b.js']  &#x2465;
+['a.js']
+['b.js']
+/** Begin mapping definitions. **/  &#x2466;
+['a.js',243,4]  &#x2467;
+['b.js',425,2]
+&#x22ee;
+</pre>
+
+<p>&#x2460; &mdash; The first line is exactly as shown until the
+opening brace, after which the remainder is a JSON literal. The value
+of the <code>file</code> property is whatever name the cajoler may
+have given for the module output file, and is optional. The value of
+the <code>count</code> property is the number of lines in the
+generated source.</p>
+
+<p>&#x2461; &mdash; Each line <em>i</em> of the
+following <code>count</code> lines is a JS array literal describing
+the <em>i</em><sup>th</sup> generated source line. Each array contains
+the same number of entries as the number of characters in this line. A
+number <em>j</em> in an entry is a reference to
+the <em>j</em><sup>th</sup> line of the mapping definitions section
+(defined below).</p>
+
+<p>&#x2462; &mdash; An empty entry in a line map array indicates that
+the corresponding generated character is described by the same line of
+the mapping definitions section as the previous array entry.</p>
+
+<p>&#x2463; &mdash; An empty array indicates there is no mapping
+definitions information for its associated generated line.</p>
+
+<p>&#x2464; &mdash; The next line is exactly as shown.</p>
+
+<p>&#x2465; &mdash; Each line <em>i</em> of the
+following <code>count</code> lines is a JS array literal describing
+the <em>i</em><sup>th</sup> generated source line. Each array contains
+the names of all the original source files that have contributed to
+this line.</p>
+
+<p>&#x2466; &mdash; The next line is exactly as shown.</p>
+
+<p>&#x2467; &mdash; Each line <em>j</em> of the following following
+lines is a JS array literal describing the <em>j</em><sup>th</sup>
+array entry as described in &#x2461;. Each array describes a character
+position in an original source file and is of the form:</p>
+
+<pre class="prettyprint">
+[<em>&lt;filename&gt;</em>,<em>&lt;line&gt;</em>,<em>&lt;col&gt;</em>]
+</pre>
+
+<p>where <em>filename</em> is the name of an original source
+file, <em>line</em> is a line number in that file, and <em>col</em> is
+a column number in the file.<em>
+
+<div class="note">This describes the <em>starting</em> position, in
+the original source, of each character in the generated source
+file. We should probably be describing <em>spans</em> since the Caja
+parse tree has this information.</div>
 
 </body>
 
