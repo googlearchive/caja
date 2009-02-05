@@ -20,7 +20,7 @@ h1, h2, h3 {
 dt { font-weight: bold }
 code { white-space: nowrap }
 div.meta { float: right }
-tr { vertical-align: top }
+table { vertical-align: top }
 </style>
 <script type="text/javascript"
  src="http://google-code-prettify.googlecode.com/svn/trunk/src/prettify.js"
@@ -34,7 +34,7 @@ tr { vertical-align: top }
 </head>
 <body onload="prettyPrint()" bgcolor="white">
 <div class="meta">
-<b>Status</b>: draft as of <span title="20090202">2 Feb, 2009</span><br>
+<b>Status</b>: draft as of <span title="20090205">5 Feb, 2009</span><br>
 <b>Author</b>: <cite>mikesamuel@gmail.com</cite>
 </div>
 <h1>Template Compilers</h1>
@@ -63,7 +63,11 @@ solutions like <a href="http://code.google.com/p/google-jstemplate/"
 the browser.  The wide use of systems like FBML, YML, and OSML amongst gadget
 authors show that templating languages are used.
 
-<p>Some of these templating systems use sensible defaults to reduce XSS and
+<p>Many of these existing templating languages are widely tied to app-hosting
+services (like Facebook and FBML) but there are a number of non-proprietary
+in-browser templating languages.
+
+<p>Some of these templating languages use sensible defaults to mitigate XSS and
 other injection problems, but none of them address malicious template authors.
 
 <h2>Goal</h2>
@@ -133,15 +137,19 @@ the same memory slot with a name that is unique within a compilation unit.
 <dd>A function from input values to strings of HTML usually specified as
     a language with some superficial similarity to HTML.
 <dt>IHTML</dt>
-<dd>HTML plus four custom elements which allow for (1) template definition
+<dd>HTML plus five custom elements which allow for (1) template definition
     and scoping, (2) calling of a defined template, (3) repetition and
-    alternation, and (4) specification of a dynamic portion in terms of
-    javascript.
+    alternation, (4) specification of a dynamic portion in terms of
+    javascript, and (5) text localization.
+<dt>L10N</dt>
+<dd>Text Localization is a mechanism by which appropriate passages of human
+    language text are chosen based on a viewer's locale.
+<dt>RTL Script</dt>
+<dd>Right-To-Left, e.g. the Arabic, Hebrew, and Perso-Arabic scripts.
 <dt>Safe identifier</dt>
 <dd>A valid javascript identifier in unicode normal form C that does not
     end in <code>__</code> and that does not contain any format control
-    characters, and that is not the unreserved-keyword
-    <code>arguments</code>.
+    characters, and that is not the unreserved-keyword <code>arguments</code>.
 <dt>Sanitizer</dt>
 <dd>A transformation from code from an untrusted source to code in the same
     language with well-understood security properties.
@@ -278,7 +286,7 @@ template call contributes the union of the elements in the template
 body.  Since all template calls are dispatched statically, we can
 preserve containment relationships specified in the HTML schema.
 
-<p>IHTML adds four elements to HTML that can appear anywhere an element can
+<p>IHTML adds five elements to HTML that can appear anywhere an element can
 appear.
 
 <h4>Template definition : <code>ihtml:template</code></h4>
@@ -391,12 +399,109 @@ the no other javascript expressions are evaluated, and the current evaluation
 has no effect on the output.  If the attribute is not present, its value
 defaults to <code>true</code>.
 
+<h4>Text Localization : <code>ihtml:message</code></h4>
+<pre class="prettyprint">
+&lt;ihtml:message name="result_index"
+ description="The index of the current result in the result list"&gt;
+  Result &lt;b&gt;&lt;ihtml:ph name="start"/&gt;&lt;ihtml:dynamic text=" i + 1 "/&gt;&lt;ihtml:eph/&gt;&lt;/b&gt;
+  of &lt;b&gt;&lt;ihtml:ph name="end"/&gt;&lt;ihtml:dynamic text=" n "/&gt;&lt;ihtml:eph/&gt;&lt;/b&gt;
+&lt;/ihtml:message&gt;
+</pre>
+Marks a passage of human readable text.  Cannot contain other
+<code>ihtml:{message,def,do,call}</code> elements outside of a
+<code>ihtml:ph</code>, <code>ihtml:eph</code> pair.
+
+<p>This element must have a <code>name</code> attribute which is a safe
+identifier and may contain matched pairs of <code>ihtml:ph</code> and
+<code>ihtml:eph</code> elements, as shown above, which mark the beginning
+and end of a named placeholder respectively.
+
+<p>It is the responsibility of the template compiler to ensure that
+placeholders can be re-ordered without changing the semantics of the
+template.
+
+<h4>Debugging Info in IHTML</h4>
 <p>Template implementors should use a lexer&amp;|parser that preserves source
 file position info, and copy that over to the IHTML tree so that the schema
 can report locations of items that don't validate.  File positions must be
 attached to every node -- even <code>ihtml:dynamic</code> since in debug
 mode, dynamic sanitization failures will emit log messages to the browser
 console.
+
+<h3>I18N &amp; L10N</h3>
+<p>This template scheme provides no explicit mechanism for
+internationalization(<a href="#auto-rtl">*</a>),
+though it does provide for text localization (L10N).  A templating language
+that provides syntactic support for I18N should use javascript libraries to
+provide formatting.
+
+<p>Text localization is almost orthogonal to generic templating &mdash;
+a template compiler could implement it's own message extraction and
+substitution scheme, but app hosting services can help application authors by
+automating parts of the message extraction and translation workflow.
+A hosting service can run the template compiler stage by itself on a
+template to produce a message bundle which can then be forwarded to
+translators.  Text localization, though orthogonal, is one of the features
+that if supported at the generic templating, will lower the cost for hosting
+services to experiment with different templating schemes.
+
+<p>Unlike server-side text-localization, on the browser, we only need to
+deal with a single locale: that of the user.  So we take a message bundle,
+and rewrite the IHTML document to function per-locale.
+This is more efficient, since the client need not maintain mappings
+per-locale, and need not do redundant lookups or string concatenations.
+It is also more secure since we have the localized strings in context
+before we attempt to do validation.
+
+<p>A message bundle is a mapping from message IDs to strings with
+placeholders like a python substitution string
+<code>"Push &lt;button&gt;%(button_text)s&lt;/button&gt; to send mail to %(recipient)."</code>
+where the content is HTML.
+
+<p>The text localizer walks over the IHTML tree replacing
+<code>ihtml:msg</code>, <code>ihtml:ph</code>, and
+<code>ihtml:eph</code> elements with the appropriate message as in
+<table summary="before and after text localization">
+<tr valign="middle">
+<td><pre class="prettyprint">
+&lt;ihtml:message name="greeting"&gt;
+  Hello
+  &lt;ihtml:ph name="planet"/&gt;
+    &lt;ihtml:dynamic text="planet"/&gt;
+  &lt;ihtml:eph/&gt;!
+&lt;/ihtml:message&gt;
+</pre></td>
+<td>&rarr;</td>
+<td>Greeting in English: <code>"Hello %(planet)s!"</code>
+<br>Greeting in Spanish: <code>"&#xA1;Ola %(planet)s!"</code>
+<br>Locale: es
+<td>&rarr;</td>
+<td><pre class="prettyprint lang-html">
+&#xA1;Ola &lt;ihtml:dynamic text="planet"/&gt;!
+</pre></td>
+</table>
+by doing the following:
+<ul>
+  <li>Extract all placeholders (between
+    <code class="prettyprint">&lt;ihtml:ph name="&hellip;"/&gt;&hellip;&lt;ihtml:eph/&gt;</code>)
+    into a map indexed by the <code>ihtml:ph</code>s' name attributes.
+    If a name is reused, report an error.
+  <li>Lookup the message matching the <code>ihtml:message</code>'s
+    <code>name</code> attribute.
+  <li>If the set of placeholder names in the <code>ihtml:message</code> is
+    different from that in the message bundle message, report an error.
+  <li>Parse the message bundle message to a document fragment, and replace
+    all occurrences of <code>%(&lt;safe-identifier&gt;)s</code> in a text node
+    with the corresponding placeholder extracted in step 1, and replace all
+    occurrences of the string <code>"%%"</code> in a text node with
+    <code>"%"</code>.
+  <li>Replace the <code>ihtml:message</code> element with the document
+    fragment's children.
+</ul>
+
+<p>Templating languages that don't explicitly mark messages, or don't
+explicitly name messages can make a best effort to identify message boundaries
+and use string hashing to generate a message id.
 
 <h3>CSS &amp; HTML Schemas</h3>
 <p>CSS and HTML schemas are already applied to Cajoled gadgets, so this
@@ -536,6 +641,7 @@ object with methods named after the template which can be loaded into
 the local scope using the usual javascript mixin operation.
 The names of the top level templates must be distinct.
 
+<h4>Compilation</h4>
 <p>Fist, the compiler creates empty functions for all top-level templates
 and all re-entrant inner templates.  The function signatures look like
 <code class="prettyprint">function <i>&lt;alphaName&gt;</i>(out__, <i>&lt;formal0&gt;</i>, &hellip;) { var tn___, as___, ap___; &hellip; }</code>.
@@ -879,11 +985,16 @@ for (var i = 0; i &lt;= scripts.length; ++i) {
 </pre>
 </table>
 
-<p>This scheme produces a safe HTML part that is 
-
 <p>This HTML generation needs to happen after any text-localization and
-automatic LTR&rarr;RTL restyling.</p>
+any automatic LTR&rarr;RTL restyling.</p>
 
+<h3 id="auto-rtl">Automatic Bidi support</h3>
+<p>Since we have to parse style properties and stylesheets so that we
+can apply schemas, it would be quite easy to rewrite style properties
+(<code>padding-left</code>, <code>margin-left</code>), style values
+(<code>text-align: left</code>) and the HTML
+<a href="http://www.w3.org/TR/html401/struct/dirlang.html"><code>DIR</code>
+attribute</a> when the input locale is for an RTL language.</p>
 
 
 <h2>Assumptions and Invariants</h2>
