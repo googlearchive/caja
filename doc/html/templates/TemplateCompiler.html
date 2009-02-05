@@ -20,6 +20,7 @@ h1, h2, h3 {
 dt { font-weight: bold }
 code { white-space: nowrap }
 div.meta { float: right }
+tr { vertical-align: top }
 </style>
 <script type="text/javascript"
  src="http://google-code-prettify.googlecode.com/svn/trunk/src/prettify.js"
@@ -772,6 +773,19 @@ children), and convert each style rule by prefixing with the GUID as in
 <code class="prettyprint lang-css">p { color: purple }</code> &rarr;
 <code class="prettyprint lang-css">.s1234 p { color: purple }</code>.
 
+<h3>CSS templates via expressions embedded in
+<code>style="&hellip;"</code> attributes</h3>
+Our static CSS schemas are much more flexible than the client side ones, and
+have facilities to require constraints on placeholders as in
+<pre class="prettyprint"
+>&lt;div style="width: $(w)px; height: $(h + 10)px"&gt;
+  &hellip;
+&lt;/div&gt;
+</pre>
+We can expose these so that template compiler implementors can allow
+template parameters to be used to compute positions and URLs flexibly
+and without the possibility of quoting confusion.
+
 <h3>DHTML Behaviors via <code>&lt;SCRIPT&gt;</code> elements in templates</h3>
 <p>We could emulate DHTML behaviors as in
 <pre class="prettyprint">
@@ -785,22 +799,92 @@ children), and convert each style rule by prefixing with the GUID as in
 </pre>
 where the script is pulled out and stored as a promise that is realized
 when the HTML is added to the real DOM.
-<p>Though this example isn't useful, it might be useful to, e.g., wire up
+<p>Though this example isn't useful, behaviors can be used to wire up
 widgets that contain a Google Maps or other gadget that can't be generated
 by a callable template.
 
-<h3>CSS templates via expressions embedded in
-<code>style="&hellip;"</code> attributes</h3>
-Our static CSS schemas are much more flexible than the client side ones, and
-have facilities to require constraints on placeholders as in
-<pre class="prettyprint"
->&lt;div style="width: $(w)px; height: $(h + 10)px"&gt;
-  &hellip;
-&lt;/div&gt;
+<h3 id="gadgets-zero-arg">Gadgets as Zero-Argument Templates</h3>
+<p>Similar to DHTML behaviors, an opensocial gadget is an HTML page with
+interleaved script elements.  To improve latency, we'd like to be able
+to render CSS and HTML before downloading, parsing, or running scripts
+<p>If we treat a gadget as a zero-argument template, we can convert a
+gadget like:
+<pre class="prettyprint">
+&lt;h1&gt;My Gadget&lt;/h1&gt;
+&lt;script&gt;
+  foo();
+&lt;/script&gt;
+&lt;a onclick="hello()"&gt;Hello&lt;/a&gt;
 </pre>
-We can expose these so that template compiler implementors can allow
-template parameters to be used to compute positions and URLs flexibly
-and without the possibility of quoting confusion.
+into a static HTML part and a script part
+<table>
+<tr>
+<td><pre class="prettyprint">
+&lt;noscript&gt;
+  &lt;!-- With script off, works as expected.
+    -  (CAVEAT: noscript content not manipulable by JS on IE)
+   --&gt;
+  &lt;h1&gt;My Gadget&lt;/h1&gt;
+  &lt;!-- Each node opened between the n-th and (n+1)-th script elements
+    -  that is not contained in an element also opened between the n-th and
+    -  (n+1)-th script elements has the class afterScript&lt;n&gt;___.
+   --&gt;
+  &lt;a class="tmp0123___ afterScript0___"&gt;Hello&lt;/a&gt;
+&lt;/noscript&gt;
+</pre>
+<td><pre class="prettyprint">
+// Script elements are cajoled to functions
+var scripts = [ function () { /* Cajoled version of foo() */ } ];
+// A side-table of dynamic attributes which can evaluate dynamic bits
+// in the context of this instance of the module.
+var dynamicBits = [ ['tmp0123___', 'onclick', /* extracted handler */ ] ];
+
+var moduleRoot = document.createElement('DIV');
+// Non-dynamic bits of gadget parsed at HTML parser speed.
+// No IE6 confusion around document.appendChild(whitespaceTextNode)
+moduleRoot.innerHTML = noScriptElement.innerText;
+
+// Reattach dynamicBits to moduleRoot.
+&hellip;
+
+// Pull out everything with class afterScript#___, so that each script
+// is executed in the context of only elements that appear before it.
+var extractedNodes = [];
+for (var i = 0; i &lt;= scripts.length; ++i) {
+  // getElementsByTagName is required to produce results in a preorder
+  // traversal.
+  var els = moduleRoot.getElementsByTagName('afterScript' + i + '___');
+  var wave = extractedNodes[i] = [];
+  for (var j = els.length; --j &gt;= 0;) {
+    // TODO: If the node was a text node wrapped in a span solely so that it
+    // could be marked with a wave class, throw away the span.
+    wave[j] = [els[j], els[j].parentNode];
+    removeClass(els[j], 'afterScript' + i + '___');
+  }
+}
+
+for (var i = 0; i &lt;= scripts.length; ++i) {
+  try {  // Execute script0
+    scripts[i]();
+  } catch (e) {
+    // Simulate window.onerror
+  }
+
+  // Put back removed bits.
+  var wave = extractedNodes[i];
+  for (var j = 0; j &lt; wave.length; ++j) {
+    wave[j][1].appendChild(wave[j][0]);
+  }
+}
+</pre>
+</table>
+
+<p>This scheme produces a safe HTML part that is 
+
+<p>This HTML generation needs to happen after any text-localization and
+automatic LTR&rarr;RTL restyling.</p>
+
+
 
 <h2>Assumptions and Invariants</h2>
 <p>For each of the elements that can contain dynamic tag names
