@@ -416,9 +416,12 @@ identifier and may contain matched pairs of <code>ihtml:ph</code> and
 <code>ihtml:eph</code> elements, as shown above, which mark the beginning
 and end of a named placeholder respectively.
 
-<p>It is the responsibility of the template compiler to ensure that
+<p>TODO: Is it the responsibility of the template compiler to ensure that
 placeholders can be re-ordered without changing the semantics of the
-template.
+template?
+Or can this be automatically handled by allowing a template to be called
+and its output captured in a temporary?</p>
+
 
 <h4>Debugging Info in IHTML</h4>
 <p>Template implementors should use a lexer&amp;|parser that preserves source
