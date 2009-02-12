@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.BooleanLiteral;
@@ -93,8 +94,7 @@ final class DomProcessingEvents {
    * @throws IllegalStateException if tags are unbalanced.
    */
   private void optimize() {
-    List<Pair<Name, Integer>> openTags
-        = new ArrayList<Pair<Name, Integer>>();
+    List<Pair<Name, Integer>> openTags = new ArrayList<Pair<Name, Integer>>();
     eventloop:
     for (int i = 0; i < events.size(); ++i) {  // Concurrent change below.
       DomProcessingEvent e = events.get(i);
@@ -128,8 +128,11 @@ final class DomProcessingEvents {
         for (DomProcessingEvent ce : content) {
           ce.toInnerHtml(innerHtml);
         }
+        FilePosition pos = FilePosition.span(
+            content.get(0).getFilePosition(),
+            content.get(content.size() - 1).getFilePosition());
         content.clear();
-        content.add(new InnerHtmlEvent(innerHtml.toString()));
+        content.add(new InnerHtmlEvent(pos, innerHtml.toString()));
         i = start + 1;
       }
     }
@@ -168,6 +171,8 @@ final class DomProcessingEvents {
      */
     abstract void toInnerHtml(StringBuilder out);
 
+    abstract FilePosition getFilePosition();
+
     @Override
     public String toString() {
       String cn = getClass().getSimpleName();
@@ -184,9 +189,13 @@ final class DomProcessingEvents {
   /** Creates an element.  Must match up with an {@link EndElementEvent}. */
   static final class BeginElementEvent extends DomProcessingEvent {
     final Name name;
-    BeginElementEvent(Name name) { this.name = name; }
+    final FilePosition pos;
+    BeginElementEvent(FilePosition pos, Name name) {
+      this.name = name;
+      this.pos = pos;
+    }
     @Override void toJavascript(BlockAndEmitter out) {
-      out.emitCall("b", TreeConstruction.stringLiteral(name.getCanonicalForm()));
+      out.emitCall("b", StringLiteral.valueOf(pos, name.getCanonicalForm()));
     }
     @Override boolean canOptimizeToInnerHtml(int depth) {
       String cname = name.getCanonicalForm();
@@ -214,6 +223,7 @@ final class DomProcessingEvents {
       if (inTag) { throw new IllegalStateException(this.toString()); }
       return true;
     }
+    @Override FilePosition getFilePosition() { return pos; }
   }
 
   static final class AttribEvent extends DomProcessingEvent {
@@ -224,7 +234,10 @@ final class DomProcessingEvents {
       this.value = value;
     }
     @Override void toJavascript(BlockAndEmitter out) {
-      out.emitCall("a", StringLiteral.valueOf(name.getCanonicalForm()), value);
+      out.emitCall(
+          "a",
+          StringLiteral.valueOf(FilePosition.UNKNOWN, name.getCanonicalForm()),
+          value);
     }
     @Override boolean canOptimizeToInnerHtml(int depth) {
       return value instanceof StringLiteral;
@@ -238,6 +251,7 @@ final class DomProcessingEvents {
       if (!inTag) { throw new IllegalStateException(this.toString()); }
       return true;
     }
+    @Override FilePosition getFilePosition() { return value.getFilePosition(); }
   }
 
   /** An event handler, e.g. {@code onclick}. */
@@ -250,7 +264,9 @@ final class DomProcessingEvents {
     }
     @Override void toJavascript(BlockAndEmitter out) {
       out.emitCall(
-          "h", StringLiteral.valueOf(name.getCanonicalForm()), fnBody);
+          "h",
+          StringLiteral.valueOf(FilePosition.UNKNOWN, name.getCanonicalForm()),
+          fnBody);
     }
     @Override boolean canOptimizeToInnerHtml(int depth) { return false; }
     @Override void toInnerHtml(StringBuilder out) {
@@ -259,6 +275,10 @@ final class DomProcessingEvents {
     @Override boolean checkContext(boolean inTag) {
       if (!inTag) { throw new IllegalStateException(this.toString()); }
       return true;
+    }
+
+    @Override FilePosition getFilePosition() {
+      return fnBody.getFilePosition();
     }
   }
 
@@ -269,7 +289,7 @@ final class DomProcessingEvents {
     final boolean unary;
     FinishAttrsEvent(boolean unary) { this.unary = unary; }
     @Override void toJavascript(BlockAndEmitter out) {
-      out.emitCall("f", new BooleanLiteral(unary));
+      out.emitCall("f", new BooleanLiteral(FilePosition.UNKNOWN, unary));
     }
     @Override boolean canOptimizeToInnerHtml(int depth) { return true; }
     @Override void toInnerHtml(StringBuilder out) {
@@ -279,14 +299,18 @@ final class DomProcessingEvents {
       if (!inTag) { throw new IllegalStateException(this.toString()); }
       return false;
     }
+    @Override FilePosition getFilePosition() { return FilePosition.UNKNOWN; }
   }
 
   static final class EndElementEvent extends DomProcessingEvent {
     final Name name;
-    EndElementEvent(Name name) { this.name = name; }
+    final FilePosition pos;
+    EndElementEvent(FilePosition pos, Name name) {
+      this.name = name;
+      this.pos = pos;
+    }
     @Override void toJavascript(BlockAndEmitter out) {
-      out.emitCall(
-          "e", TreeConstruction.stringLiteral(name.getCanonicalForm()));
+      out.emitCall("e", StringLiteral.valueOf(pos, name.getCanonicalForm()));
     }
     @Override boolean canOptimizeToInnerHtml(int depth) { return true; }
     @Override void toInnerHtml(StringBuilder out) {
@@ -296,14 +320,18 @@ final class DomProcessingEvents {
       if (inTag) { throw new IllegalStateException(this.toString()); }
       return false;
     }
+    @Override FilePosition getFilePosition() { return pos; }
   }
 
   static abstract class CharDataEvent extends DomProcessingEvent {
     final String text;
-    CharDataEvent(String text) { this.text = text; }
+    final FilePosition pos;
+    CharDataEvent(FilePosition pos, String text) {
+      this.pos = pos;
+      this.text = text;
+    }
     final @Override void toJavascript(BlockAndEmitter out) {
-      out.emitCall(getEmitterMethodName(),
-                   TreeConstruction.stringLiteral(text));
+      out.emitCall(getEmitterMethodName(), StringLiteral.valueOf(pos, text));
     }
     @Override boolean canOptimizeToInnerHtml(int depth) { return true; }
     protected abstract String getEmitterMethodName();
@@ -311,10 +339,11 @@ final class DomProcessingEvents {
       if (inTag) { throw new IllegalStateException(this.toString()); }
       return false;
     }
+    @Override FilePosition getFilePosition() { return pos; }
   }
 
   static final class PcDataEvent extends CharDataEvent {  // Or RCDATA
-    PcDataEvent(String text) { super(text); }
+    PcDataEvent(FilePosition pos, String text) { super(pos, text); }
     @Override protected String getEmitterMethodName() { return "pc"; }
     @Override protected void toInnerHtml(StringBuilder out) {
       Escaping.escapeXml(text, true, out);
@@ -322,7 +351,7 @@ final class DomProcessingEvents {
   }
 
   static final class CDataEvent extends CharDataEvent {
-    CDataEvent(String text) { super(text); }
+    CDataEvent(FilePosition pos, String text) { super(pos, text); }
     @Override protected String getEmitterMethodName() { return "cd"; }
     @Override protected void toInnerHtml(StringBuilder out) {
       out.append(text);
@@ -343,10 +372,11 @@ final class DomProcessingEvents {
       if (inTag) { throw new IllegalStateException(this.toString()); }
       return false;
     }
+    @Override FilePosition getFilePosition() { return stmt.getFilePosition(); }
   }
 
   static final class InnerHtmlEvent extends CharDataEvent {
-    InnerHtmlEvent(String text) { super(text); }
+    InnerHtmlEvent(FilePosition pos, String text) { super(pos, text); }
     @Override protected String getEmitterMethodName() { return "ih"; }
     @Override protected void toInnerHtml(StringBuilder out) {
       out.append(text);
@@ -359,13 +389,15 @@ final class DomProcessingEvents {
   }
 
   /** Begin an element when a start tag {@code <foo} is seen. */
-  void begin(Name name) { addEvent(new BeginElementEvent(name)); }
+  void begin(FilePosition pos, Name name) {
+    addEvent(new BeginElementEvent(pos, name));
+  }
   /** Adds an attribute to the current element: {@code key="value"}. */
   void attr(Name name, Expression value) {
     addEvent(new AttribEvent(name, value));
   }
-  void attr(Name name, String value) {
-    attr(name, TreeConstruction.stringLiteral(value));
+  void attr(FilePosition pos, Name name, String value) {
+    attr(name, StringLiteral.valueOf(pos, value));
   }
   void handler(Name name, Expression fnBody) {
     addEvent(new HandlerEvent(name, fnBody));
@@ -373,18 +405,23 @@ final class DomProcessingEvents {
   /** End the attribute list when a {@code >} or {@code />} is seen. */
   void finishAttrs(boolean unary) { addEvent(new FinishAttrsEvent(unary)); }
   /** Textual element content. */
-  void pcdata(String text) {
+  void pcdata(FilePosition pos, String text) {
     int last = events.size() - 1;
     if (last < 0 || !(events.get(last) instanceof PcDataEvent)) {
-      addEvent(new PcDataEvent(text));
+      addEvent(new PcDataEvent(pos, text));
     } else {  // Fold runs of text, effectively normalizing.
       events.set(
-          last, new PcDataEvent(((PcDataEvent) events.get(last)).text + text));
+          last,
+          new PcDataEvent(pos, ((PcDataEvent) events.get(last)).text + text));
     }
   }
-  void cdata(String text) { addEvent(new CDataEvent(text)); }
+  void cdata(FilePosition pos, String text) {
+    addEvent(new CDataEvent(pos, text));
+  }
   /** Ends an element when an end tag {@code </foo>} is seen. */
-  void end(Name name) { addEvent(new EndElementEvent(name)); }
+  void end(FilePosition pos, Name name) {
+    addEvent(new EndElementEvent(pos, name));
+  }
   /** An interleaved script block. */
   void script(Statement s) { addEvent(new ScriptBlockEvent(s)); }
 
@@ -405,7 +442,8 @@ final class DomProcessingEvents {
 
     void interruptEmitter() {
       if (emitter != null) {
-        block.appendChild(new TranslatedCode(new ExpressionStmt(emitter)));
+        block.appendChild(new TranslatedCode(
+            new ExpressionStmt(emitter.getFilePosition(), emitter)));
         emitter = null;
         emitterChainDepth = 0;
       }
@@ -430,7 +468,7 @@ final class DomProcessingEvents {
 
     void emitCall(String emitterMethodName, Expression... methodActuals) {
       Expression[] operands = new Expression[methodActuals.length + 1];
-      operands[0] = Operation.create(
+      operands[0] = Operation.createInfix(
            Operator.MEMBER_ACCESS,
            getEmitter(), TreeConstruction.ref(emitterMethodName));
       System.arraycopy(methodActuals, 0, operands, 1, methodActuals.length);

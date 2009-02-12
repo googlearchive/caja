@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
@@ -30,12 +31,13 @@ public final class CatchStmt extends AbstractStatement {
   private Statement body;
 
   /** @param value unused.  This ctor is provided for reflection. */
-  public CatchStmt(Void value, List<? extends ParseTreeNode> children) {
-    this((Declaration) children.get(0), (Statement) children.get(1));
+  public CatchStmt(
+      FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
+    this(pos, (Declaration) children.get(0), (Statement) children.get(1));
   }
 
-  public CatchStmt(Declaration exception, Statement body) {
-    super(Statement.class);
+  public CatchStmt(FilePosition pos, Declaration exception, Statement body) {
+    super(pos, Statement.class);
     createMutation()
         .appendChild(exception)
         .appendChild(body)

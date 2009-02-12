@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 
 import java.util.List;
@@ -28,12 +29,13 @@ public final class NullLiteral extends Literal {
    * @param value unused.
    * @param children unused.
    */
-  public NullLiteral(NullPlaceholder value,
+  public NullLiteral(FilePosition pos, NullPlaceholder value,
                      List<? extends ParseTreeNode> children) {
-    this();
+    this(pos);
   }
 
-  public NullLiteral() {
+  public NullLiteral(FilePosition pos) {
+    super(pos);
   }
 
   @Override

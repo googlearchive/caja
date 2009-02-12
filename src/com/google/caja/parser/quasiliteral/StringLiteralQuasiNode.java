@@ -56,8 +56,7 @@ class StringLiteralQuasiNode extends QuasiNode {
              && ident.equals(existing.getValue()))) {
       return false;
     } else {
-      Identifier identBinding = new Identifier(ident);
-      identBinding.setFilePosition(lit.getFilePosition());
+      Identifier identBinding = new Identifier(lit.getFilePosition(), ident);
       bindings.put(bindingName, identBinding);
       specimens.remove(0);
       return true;
@@ -77,8 +76,8 @@ class StringLiteralQuasiNode extends QuasiNode {
       return false;
     }
     if (ident.getName() == null) { return false; }
-    StringLiteral sl = StringLiteral.valueOf(ident.getName());
-    sl.setFilePosition(ident.getFilePosition());
+    StringLiteral sl = StringLiteral.valueOf(
+        ident.getFilePosition(), ident.getName());
     substitutes.add(sl);
     return true;
   }

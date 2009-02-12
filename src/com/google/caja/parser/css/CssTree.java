@@ -40,9 +40,8 @@ import java.util.regex.Pattern;
  * @author mikesamuel@gmail.com
  */
 public abstract class CssTree extends AbstractParseTreeNode {
-  CssTree(FilePosition pos, List<? extends CssTree> children) {
-    super(CssTree.class);
-    this.setFilePosition(pos);
+  private CssTree(FilePosition pos, List<? extends CssTree> children) {
+    super(pos, CssTree.class);
     createMutation().appendChildren(children).execute();
   }
 
@@ -83,6 +82,12 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class StyleSheet extends CssTree {
+    /** @param novalue ignored but required for reflection. */
+    public StyleSheet(
+        FilePosition pos, Void novalue, List<? extends CssStatement> rulesets) {
+      this(pos, rulesets);
+    }
+
     public StyleSheet(FilePosition pos, List<? extends CssStatement> rulesets) {
       super(pos, rulesets);
     }
@@ -100,7 +105,14 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * the root node of css parsed from an xhtml <code>style</code> attribute.
    */
   public static final class DeclarationGroup extends CssTree {
-    DeclarationGroup(FilePosition pos, List<? extends Declaration> decls) {
+    /** @param novalue ignored but required for reflection. */
+    public DeclarationGroup(
+        FilePosition pos, Void novalue, List<? extends Declaration> decls) {
+      this(pos, decls);
+    }
+
+    public DeclarationGroup(
+        FilePosition pos, List<? extends Declaration> decls) {
       super(pos, decls);
     }
 
@@ -142,14 +154,15 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Import extends CssStatement {
-    static <T> List<T> join(List<? extends T> a, List<? extends T> b) {
+    private static <T> List<T> join(List<? extends T> a, List<? extends T> b) {
       List<T> l = new ArrayList<T>(a.size() + b.size());
       l.addAll(a);
       l.addAll(b);
       return l;
     }
 
-    Import(FilePosition pos, UriLiteral uri, List<? extends Medium> media) {
+    public Import(
+        FilePosition pos, UriLiteral uri, List<? extends Medium> media) {
       super(pos, join(Collections.singletonList(uri), media));
     }
 
@@ -186,6 +199,12 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Media extends CssStatement {
+    /** @param novalue ignored but required for reflection. */
+    public Media(
+        FilePosition pos, Void novalue,
+        List<? extends CssTree> mediaAndRuleset) {
+      this(pos, mediaAndRuleset);
+    }
     public Media(FilePosition pos, List<? extends CssTree> mediaAndRuleset) {
       super(pos, mediaAndRuleset);
     }
@@ -227,6 +246,10 @@ public abstract class CssTree extends AbstractParseTreeNode {
   public static final class Medium extends CssTree {
     final Name ident;
 
+    /** @param none ignored but required for reflection. */
+    public Medium(FilePosition pos, Name ident, List<? extends CssTree> none) {
+      this(pos, ident);
+    }
     public Medium(FilePosition pos, Name ident) {
       super(pos, Collections.<CssTree>emptyList());
       this.ident = ident;
@@ -251,7 +274,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
   public static final class Page extends CssStatement {
     final Name ident;
 
-    Page(FilePosition pos, Name ident, List<? extends PageElement> decls) {
+    public Page(
+        FilePosition pos, Name ident, List<? extends PageElement> decls) {
       super(pos, decls);
       this.ident = ident;
     }
@@ -295,7 +319,12 @@ public abstract class CssTree extends AbstractParseTreeNode {
   public static final class PseudoPage extends PageElement {
     final Name ident;
 
-    PseudoPage(FilePosition pos, Name ident) {
+    /** @param none ignored but required for reflection. */
+    public PseudoPage(
+        FilePosition pos, Name ident, List<? extends CssTree> none) {
+      this(pos, ident);
+    }
+    public PseudoPage(FilePosition pos, Name ident) {
       super(pos, Collections.<CssTree>emptyList());
       this.ident = ident;
     }
@@ -318,7 +347,13 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class FontFace extends CssStatement {
-    FontFace(FilePosition pos, List<? extends Declaration> decls) {
+    /** @param novalue ignored but required for reflection. */
+    public FontFace(
+        FilePosition pos, Void novalue, List<? extends Declaration> decls) {
+      this(pos, decls);
+    }
+
+    public FontFace(FilePosition pos, List<? extends Declaration> decls) {
       super(pos, decls);
     }
 
@@ -339,8 +374,13 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class Property extends CssTree {
     final Name ident;
+    /** @param none ignored but required for reflection. */
+    public Property(
+        FilePosition pos, Name ident, List<? extends CssTree> none) {
+      this(pos, ident);
+    }
 
-    Property(FilePosition pos, Name ident) {
+    public Property(FilePosition pos, Name ident) {
       super(pos, Collections.<CssTree>emptyList());
       this.ident = ident;
     }
@@ -366,7 +406,14 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class RuleSet extends CssStatement {
-    RuleSet(FilePosition pos, List<? extends CssTree> selectorsAndDecls) {
+    /** @param novalue ignored but required for reflection. */
+    public RuleSet(
+        FilePosition pos, Void novalue,
+        List<? extends CssTree> selectorsAndDecls) {
+      this(pos, selectorsAndDecls);
+    }
+    public RuleSet(
+        FilePosition pos, List<? extends CssTree> selectorsAndDecls) {
       super(pos, selectorsAndDecls);
     }
 
@@ -393,7 +440,12 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Selector extends CssTree {
-    Selector(FilePosition pos, List<? extends CssTree> children) {
+    /** @param novalue ignored but required for reflection. */
+    public Selector(
+        FilePosition pos, Void novalue, List<? extends CssTree> children) {
+      this(pos, children);
+    }
+    public Selector(FilePosition pos, List<? extends CssTree> children) {
       super(pos, children);
     }
     public void render(RenderContext r) {
@@ -408,6 +460,12 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class SimpleSelector extends CssTree {
+    /** @param novalue ignored but required for reflection. */
+    public SimpleSelector(
+        FilePosition pos, Void novalue, List<? extends CssTree> children) {
+      this(pos, children);
+    }
+
     public SimpleSelector(FilePosition pos, List<? extends CssTree> children) {
       super(pos, children);
     }
@@ -433,6 +491,15 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class WildcardElement extends CssTree {
+    /**
+     * @param novalue ignored but required for reflection.
+     * @param none ignored but required for reflection.
+     */
+    public WildcardElement(
+        FilePosition pos, Void novalue, List<? extends CssTree> none) {
+      this(pos);
+    }
+
     public WildcardElement(FilePosition pos) {
       super(pos, Collections.<CssTree>emptyList());
     }
@@ -458,8 +525,15 @@ public abstract class CssTree extends AbstractParseTreeNode {
   public static final class Attrib extends CssTree {
     final String ident;
 
-    Attrib(FilePosition pos, String ident,
-           AttribOperation operator, CssLiteral value) {
+    public Attrib(
+        FilePosition pos, String ident,
+        List<? extends CssTree> operatorAndValue) {
+      super(pos, operatorAndValue);
+      this.ident = ident;
+    }
+
+    public Attrib(FilePosition pos, String ident,
+                  AttribOperation operator, CssLiteral value) {
       super(pos, null == operator
             ? Collections.<CssTree>emptyList()
             : Collections.unmodifiableList(Arrays.asList(operator, value)));
@@ -500,7 +574,13 @@ public abstract class CssTree extends AbstractParseTreeNode {
   /** <pre>[ '=' | INCLUDES | DASHMATCH ]</pre> */
   public static final class AttribOperation extends CssTree {
     final AttribOperator op;
-    AttribOperation(FilePosition pos, AttribOperator op) {
+    /** @param none ignored but required for reflection. */
+    public AttribOperation(
+        FilePosition pos, AttribOperator op, List<? extends CssTree> none) {
+      this(pos, op);
+    }
+
+    public AttribOperation(FilePosition pos, AttribOperator op) {
       super(pos, Collections.<CssTree>emptyList());
       this.op = op;
     }
@@ -521,7 +601,13 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Pseudo extends CssTree {
-    Pseudo(FilePosition pos, CssExprAtom child) {
+    /** @param novalue ignored but required for reflection. */
+    public Pseudo(
+        FilePosition pos, Void novalue, List<? extends CssExprAtom> oneAtom) {
+      this(pos, oneAtom.get(0));
+    }
+
+    public Pseudo(FilePosition pos, CssExprAtom child) {
       super(pos, Collections.singletonList(child));
     }
 
@@ -543,6 +629,12 @@ public abstract class CssTree extends AbstractParseTreeNode {
     private Property prop;
     private Expr expr;
     private Prio prio;
+
+    /** @param novalue ignored but required for reflection. */
+    public Declaration(
+        FilePosition pos, Void novalue, List<? extends CssTree> children) {
+      this(pos, children);
+    }
 
     public Declaration(FilePosition pos, List<? extends CssTree> children) {
       super(pos, children);
@@ -591,7 +683,13 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class Prio extends CssTree {
     final String value;
-    Prio(FilePosition pos, String value) {
+
+    /** @param none ignored but required for reflection. */
+    public Prio(FilePosition pos, String value, List<? extends CssTree> none) {
+      this(pos, value);
+    }
+
+    public Prio(FilePosition pos, String value) {
       super(pos, Collections.<CssTree>emptyList());
       this.value = value;
     }
@@ -613,6 +711,12 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Expr extends CssTree {
+    /** @param novalue ignored but required for reflection. */
+    public Expr(
+        FilePosition pos, Void novalue, List<? extends CssTree> children) {
+      this(pos, children);
+    }
+
     public Expr(FilePosition pos, List<? extends CssTree> children) {
       super(pos, children);
     }
@@ -648,6 +752,10 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class Term extends CssTree {
     private final UnaryOperator op;
+    public Term(FilePosition pos, UnaryOperator op,
+                List<? extends CssExprAtom> oneatom) {
+      this(pos, op, oneatom.get(0));
+    }
     public Term(FilePosition pos, UnaryOperator op, CssExprAtom expr) {
       super(pos, Collections.singletonList(expr));
       this.op = op;
@@ -694,7 +802,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
       "^\\$\\{.*\\}(?:%|[a-z]+)?$", Pattern.DOTALL);
 
   /**
-   * TODO(ihab): Javadoc.
+   * Abstract base class for a literal value such as an ID, CLASS, URI, String,
+   * Color, or keyword value.
    */
   public abstract static class CssLiteral extends CssExprAtom {
     private String value;
@@ -722,9 +831,14 @@ public abstract class CssTree extends AbstractParseTreeNode {
   }
 
   /**
-   * TODO(ihab): Javadoc.
+   * An ID in a selector, like {@code #foo}.
    */
   public static final class IdLiteral extends CssLiteral {
+    /** @param none ignored but required for reflection. */
+    public IdLiteral(
+        FilePosition pos, String inputValue, List<? extends CssTree> none) {
+      this(pos, inputValue);
+    }
     public IdLiteral(FilePosition pos, String value) { super(pos, value); }
     @Override
     protected boolean checkValue(String value) {
@@ -738,9 +852,14 @@ public abstract class CssTree extends AbstractParseTreeNode {
   }
 
   /**
-   * TODO(ihab): Javadoc.
+   * A class name in a selector like {@code .foo}.
    */
   public static final class ClassLiteral extends CssLiteral {
+    /** @param none ignored but required for reflection. */
+    public ClassLiteral(
+        FilePosition pos, String inputValue, List<? extends CssTree> none) {
+      this(pos, inputValue);
+    }
     public ClassLiteral(FilePosition pos, String value) { super(pos, value); }
     @Override
     protected boolean checkValue(String value) {
@@ -754,9 +873,14 @@ public abstract class CssTree extends AbstractParseTreeNode {
   }
 
   /**
-   * TODO(ihab): Javadoc.
+   * A string literal in a property value like {@code 'foo'}.
    */
   public static final class StringLiteral extends CssLiteral {
+    /** @param none ignored but required for reflection. */
+    public StringLiteral(
+        FilePosition pos, String inputValue, List<? extends CssTree> none) {
+      this(pos, inputValue);
+    }
     public StringLiteral(FilePosition pos, String value) { super(pos, value); }
     @Override
     protected boolean checkValue(String value) {
@@ -769,9 +893,14 @@ public abstract class CssTree extends AbstractParseTreeNode {
   }
 
   /**
-   * TODO(ihab): Javadoc.
+   * A color value in a property value like {@code #AABBCC}.
    */
   public static final class HashLiteral extends CssLiteral {
+    /** @param none ignored but required for reflection. */
+    public HashLiteral(
+        FilePosition pos, String inputValue, List<? extends CssTree> none) {
+      this(pos, inputValue);
+    }
     public HashLiteral(FilePosition pos, String value) { super(pos, value); }
     @Override
     protected boolean checkValue(String value) {
@@ -784,9 +913,14 @@ public abstract class CssTree extends AbstractParseTreeNode {
   }
 
   /**
-   * TODO(ihab): Javadoc.
+   * A numeric quantity like {@code 5cm}, {@code 100%}, or {@code 0}.
    */
   public static final class QuantityLiteral extends CssLiteral {
+    /** @param none ignored but required for reflection. */
+    public QuantityLiteral(
+        FilePosition pos, String inputValue, List<? extends CssTree> none) {
+      this(pos, inputValue);
+    }
     public QuantityLiteral(FilePosition pos, String value) {
       super(pos, value);
     }
@@ -801,10 +935,17 @@ public abstract class CssTree extends AbstractParseTreeNode {
   }
 
   /**
-   * TODO(ihab): Javadoc.
+   * A range of unicode code-points.
    */
   public static final class UnicodeRangeLiteral extends CssLiteral {
-    UnicodeRangeLiteral(FilePosition pos, String value) { super(pos, value); }
+    /** @param none ignored but required for reflection. */
+    public UnicodeRangeLiteral(
+        FilePosition pos, String inputValue, List<? extends CssTree> none) {
+      this(pos, inputValue);
+    }
+    public UnicodeRangeLiteral(FilePosition pos, String value) {
+      super(pos, value);
+    }
     @Override
     protected boolean checkValue(String value) {
       return UNICODERANGELITERAL.matcher(value).matches();
@@ -816,10 +957,17 @@ public abstract class CssTree extends AbstractParseTreeNode {
   }
 
   /**
-   * TODO(ihab): Javadoc.
+   * A uri literal like {@code url('foo/bar.css')}.
    */
   public static final class UriLiteral extends CssLiteral {
-    UriLiteral(FilePosition pos, URI value) { super(pos, value.toString()); }
+    /** @param none ignored but required for reflection. */
+    public UriLiteral(
+        FilePosition pos, URI value, List<? extends CssTree> none) {
+      this(pos, value);
+    }
+    public UriLiteral(FilePosition pos, URI value) {
+      super(pos, value.toString());
+    }
     @Override
     protected boolean checkValue(String value) {
       try {
@@ -841,10 +989,18 @@ public abstract class CssTree extends AbstractParseTreeNode {
   }
 
   /**
-   * TODO(ihab): Javadoc.
+   * An identifier in a selector like {@code div} or a keyword in a property
+   * value like {@code auto}.
    */
   public static final class IdentLiteral extends CssLiteral {
-    IdentLiteral(FilePosition pos, String value) { super(pos, value); }
+    /** @param none ignored but required for reflection. */
+    public IdentLiteral(
+        FilePosition pos, String value, List<? extends CssTree> none) {
+      this(pos, value);
+    }
+    public IdentLiteral(FilePosition pos, String value) {
+      super(pos, value);
+    }
     @Override
     protected boolean checkValue(String value) {
       return IDENTLITERAL.matcher(value).matches();
@@ -863,6 +1019,10 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class FunctionCall extends CssExprAtom {
     private final Name name;
+    public FunctionCall(
+        FilePosition pos, Name name, List<? extends Expr> expr) {
+      this(pos, name, expr.get(0));
+    }
     public FunctionCall(FilePosition pos, Name name, Expr expr) {
       super(pos, Collections.singletonList(expr));
       this.name = name;
@@ -895,6 +1055,11 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * is set.
    */
   public static final class Substitution extends CssLiteral {
+    /** @param none ignored but required for reflection. */
+    public Substitution(
+        FilePosition pos, String value, List<? extends CssTree> none) {
+      this(pos, value);
+    }
     public Substitution(FilePosition pos, String value) {
       super(pos, value);
     }
@@ -911,7 +1076,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
 
     @Override
     public boolean checkValue(String value) {
-      // TODO(msamuel): maybe enforce the convention that there are matched
+      // TODO(mikesamuel): maybe enforce the convention that there are matched
       // parentheses outside C-style strings.
       return SUBSTITUTION.matcher(value).matches();
     }
@@ -926,6 +1091,11 @@ public abstract class CssTree extends AbstractParseTreeNode {
   public static final class Combination extends CssTree {
     final Combinator comb;
 
+    /** @param none ignored but required for reflection. */
+    public Combination(
+        FilePosition pos, Combinator comb, List<? extends CssTree> none) {
+      this(pos, comb);
+    }
     public Combination(FilePosition pos, Combinator comb) {
       super(pos, Collections.<CssTree>emptyList());
       this.comb = comb;
@@ -946,7 +1116,12 @@ public abstract class CssTree extends AbstractParseTreeNode {
   public static final class Operation extends CssTree {
     final Operator op;
 
-    Operation(FilePosition pos, Operator op) {
+    /** @param none ignored but required for reflection. */
+    public Operation(
+        FilePosition pos, Operator op, List<? extends CssTree> none) {
+      this(pos, op);
+    }
+    public Operation(FilePosition pos, Operator op) {
       super(pos, Collections.<CssTree>emptyList());
       this.op = op;
     }

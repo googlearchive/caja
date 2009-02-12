@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
@@ -76,12 +77,14 @@ import java.util.Set;
  */
 public final class UseSubsetDirective extends AbstractStatement {
   /** @param value unused.  This ctor is provided for reflection. */
-  public UseSubsetDirective(Void value, List<? extends UseSubset> children) {
-    this(children);
+  public UseSubsetDirective(
+      FilePosition pos, Void value, List<? extends UseSubset> children) {
+    this(pos, children);
   }
 
-  public UseSubsetDirective(List<? extends UseSubset> children) {
-    super(UseSubset.class);
+  public UseSubsetDirective(
+      FilePosition pos, List<? extends UseSubset> children) {
+    super(pos, UseSubset.class);
     createMutation().appendChildren(children).execute();
   }
 

@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.quasiliteral.Rewriter;
@@ -52,17 +53,20 @@ public class ExpressionSanitizerTest extends CajaTestCase {
   }
 
   public void testNoSpuriousRewriteErrorFound() throws Exception {
-    newPassThruSanitizer().sanitize(ac(new Identifier("x")));
+    newPassThruSanitizer().sanitize(
+        ac(new Identifier(FilePosition.UNKNOWN, "x")));
     assertFalse(mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR));
   }
 
   public void testRewriteErrorIsDetected() throws Exception {
-    newPassThruSanitizer().sanitize(ac(new Identifier("x__")));
+    newPassThruSanitizer().sanitize(
+        ac(new Identifier(FilePosition.UNKNOWN, "x__")));
     assertTrue(mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR));
   }
 
   public void testNonAsciiIsDetected() throws Exception {
-    newPassThruSanitizer().sanitize(ac(new Identifier("\u00e6")));
+    newPassThruSanitizer().sanitize(
+        ac(new Identifier(FilePosition.UNKNOWN, "\u00e6")));
     assertTrue(mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR));
   }
 

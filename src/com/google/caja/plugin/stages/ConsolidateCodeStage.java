@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin.stages;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
@@ -36,7 +37,8 @@ import java.util.ListIterator;
 public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
     // create an initializer function
-    Block initFunctionBody = new Block(Collections.<Statement>emptyList());
+    Block initFunctionBody = new Block(
+        FilePosition.UNKNOWN, Collections.<Statement>emptyList());
 
     MutableParseTreeNode.Mutation mut = initFunctionBody.createMutation();
 

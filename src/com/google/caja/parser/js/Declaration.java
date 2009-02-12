@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
@@ -30,13 +31,15 @@ public class Declaration extends AbstractStatement {
   private Expression initializer;
 
   /** @param value unused.  This ctor is provided for reflection. */
-  public Declaration(Void value, List<? extends ParseTreeNode> children) {
-    super(ParseTreeNode.class);
+  public Declaration(
+      FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
+    super(pos, ParseTreeNode.class);
     createMutation().appendChildren(children).execute();
   }
 
-  public Declaration(Identifier identifier, Expression initializer) {
-    super(ParseTreeNode.class);
+  public Declaration(
+      FilePosition pos, Identifier identifier, Expression initializer) {
+    super(pos, ParseTreeNode.class);
     Mutation m = createMutation();
     m.appendChild(identifier);
     if (null != initializer) { m.appendChild(initializer); }

@@ -27,12 +27,14 @@ import java.util.List;
  */
 public final class ArrayConstructor extends AbstractExpression {
   /** @param value unused.  This ctor is provided for reflection. */
-  public ArrayConstructor(Void value, List<? extends Expression> children) {
-    this(children);
+  public ArrayConstructor(
+      FilePosition pos, Void value, List<? extends Expression> children) {
+    this(pos, children);
   }
 
-  public ArrayConstructor(List<? extends Expression> elements) {
-    super(Expression.class);
+  public ArrayConstructor(
+      FilePosition pos, List<? extends Expression> elements) {
+    super(pos, Expression.class);
     createMutation().appendChildren(elements).execute();
   }
 

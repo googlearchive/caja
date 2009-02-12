@@ -491,6 +491,7 @@ public class CssPropertyPatterns {
 
   public static void generatePatterns(CssSchema schema, Appendable out)
       throws IOException {
+    FilePosition unk = FilePosition.UNKNOWN;
     CssPropertyPatterns pp = new CssPropertyPatterns(schema);
     List<CssSchema.CssPropertyInfo> props
         = new ArrayList<CssSchema.CssPropertyInfo>(schema.getCssProperties());
@@ -518,7 +519,7 @@ public class CssPropertyPatterns {
           constantPoolMap.put(pattern, new int[] { -1 });
         } else if (pool[0] == -1) {
           pool[0] = constantPool.size();
-          constantPool.add(new RegexpLiteral(pattern));
+          constantPool.add(new RegexpLiteral(unk, pattern));
         }
       }
     }
@@ -527,20 +528,20 @@ public class CssPropertyPatterns {
     if (!constantPool.isEmpty()) {
       constantPoolDecl = (Declaration) QuasiBuilder.substV(
           "var c = @constantPool;",
-          "constantPool", new ArrayConstructor(constantPool));
+          "constantPool", new ArrayConstructor(unk, constantPool));
     }
     List<Pair<Literal, Expression>> members
         = new ArrayList<Pair<Literal, Expression>>();
     for (Pair<CssSchema.CssPropertyInfo, String> p : patterns) {
-      Literal name = StringLiteral.valueOf(p.a.dom2property);
+      Literal name = StringLiteral.valueOf(unk, p.a.dom2property);
       int poolIndex = constantPoolMap.get(p.b)[0];
       Expression re = poolIndex < 0
-          ? new RegexpLiteral(p.b)
+          ? new RegexpLiteral(unk, p.b)
           : (Expression) QuasiBuilder.substV(
-              "c[@i]", "i", new IntegerLiteral(poolIndex));
+              "c[@i]", "i", new IntegerLiteral(unk, poolIndex));
       members.add(Pair.pair(name, re));
     }
-    ObjectConstructor cssPropConstructor = new ObjectConstructor(members);
+    ObjectConstructor cssPropConstructor = new ObjectConstructor(unk, members);
 
     ParseTreeNode js = QuasiBuilder.substV(
         "var css = { properties: (function () {"

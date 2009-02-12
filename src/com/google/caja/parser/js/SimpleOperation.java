@@ -14,20 +14,18 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import java.util.List;
 
 /**
- * An Operation that simply evaluates all its children in order as rValues and 
+ * An Operation that simply evaluates all its children in order as rValues and
  * then returns a result computed from the resulting values.
  *
  * @author erights@gmail.com
  */
 public final class SimpleOperation extends Operation {
-  public SimpleOperation(Operator value, List<? extends Expression> children) {
-    this(value, children.toArray(new Expression[children.size()]));
-  }
-
-  public SimpleOperation(Operator op, Expression... params) {
-    super(op, params);
+  public SimpleOperation(
+      FilePosition pos, Operator value, List<? extends Expression> children) {
+    super(pos, value, children);
   }
 }

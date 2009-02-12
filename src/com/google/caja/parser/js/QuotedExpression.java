@@ -16,29 +16,32 @@ package com.google.caja.parser.js;
 
 import java.util.List;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
 
 /**
  * FIXME(metaweta): document me
- * 
+ *
  * @author metaweta@gmail.com (Mike Stay)
  */
 public final class QuotedExpression extends AbstractExpression {
+  /** @param value unused.  This ctor is provided for reflection. */
+  public QuotedExpression(
+      FilePosition pos, Void value, List<? extends Expression> children) {
+    super(pos, Expression.class);
+    createMutation().appendChild(children.get(0)).execute();
+  }
+
   /**
    * Create a parse tree node that expands to the given expression in a
    * rewriter.
    */
   public QuotedExpression(Expression e) {
-    super(Expression.class);
+    super(e.getFilePosition(), Expression.class);
     createMutation().appendChild(e).execute();
   }
 
-  /** @param value unused.  This ctor is provided for reflection. */
-  public QuotedExpression(Void value, List<? extends Expression> children) {
-    this(children.get(0));
-  }
-  
   @Override
   public Object getValue() { return null; }
 
@@ -46,10 +49,8 @@ public final class QuotedExpression extends AbstractExpression {
   public void render(RenderContext r) {
     TokenConsumer out = r.getOut();
     out.mark(getFilePosition());
-    out.consume("QuotedExpression");
-    out.consume("(");
+    out.consume("/* QuotedExpression */");
     children().get(0).render(r);
-    out.consume(")");
   }
 
   public Expression unquote() { return (Expression) children().get(0); }

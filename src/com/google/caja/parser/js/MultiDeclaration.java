@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
@@ -30,12 +31,13 @@ import java.util.List;
  */
 public final class MultiDeclaration extends AbstractStatement {
   /** @param value unused.  This ctor is provided for reflection. */
-  public MultiDeclaration(Void value, List<? extends Declaration> children) {
-    this(children);
+  public MultiDeclaration(
+      FilePosition pos, Void value, List<? extends Declaration> children) {
+    this(pos, children);
   }
 
-  public MultiDeclaration(List<? extends Declaration> decls) {
-    super(Declaration.class);
+  public MultiDeclaration(FilePosition pos, List<? extends Declaration> decls) {
+    super(pos, Declaration.class);
     createMutation().appendChildren(decls).execute();
   }
 

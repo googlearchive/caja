@@ -14,10 +14,9 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.parser.AbstractParseTreeNode;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
-import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.AssignOperation;
 import com.google.caja.parser.js.Block;
@@ -112,9 +111,11 @@ public class CajitaRewriter extends Rewriter {
     // result.
     if (node.getAttributes().is(TRANSLATED)) { return node; }
     if (node instanceof ExpressionStmt) {
-      result = new ExpressionStmt((Expression) QuasiBuilder.substV(
-          "moduleResult___ = @result;",
-          "result", ((ExpressionStmt) node).getExpression()));
+      result = new ExpressionStmt(
+          node.getFilePosition(),
+          (Expression) QuasiBuilder.substV(
+              "moduleResult___ = @result;",
+              "result", ((ExpressionStmt) node).getExpression()));
     } else if (node instanceof ParseTreeNodeContainer) {
       List<ParseTreeNode> nodes = new ArrayList<ParseTreeNode>(node.children());
       int lasti = lastRealJavascriptChild(nodes);
@@ -128,7 +129,7 @@ public class CajitaRewriter extends Rewriter {
       int lasti = lastRealJavascriptChild(stats);
       if (lasti >= 0) {
         stats.set(lasti, (Statement) returnLast(stats.get(lasti)));
-        result = new Block(stats);
+        result = new Block(node.getFilePosition(), stats);
       }
     } else if (node instanceof Conditional) {
       List<ParseTreeNode> nodes = new ArrayList<ParseTreeNode>();
@@ -140,19 +141,17 @@ public class CajitaRewriter extends Rewriter {
       if ((lasti & 1) == 0) {  // else clause
         nodes.set(lasti, returnLast(nodes.get(lasti)));
       }
-      result = new Conditional(null, nodes);
+      result = new Conditional(node.getFilePosition(), null, nodes);
     } else if (node instanceof TryStmt) {
       TryStmt tryer = (TryStmt) node;
-      result = new TryStmt((Statement) returnLast(tryer.getBody()),
+      result = new TryStmt(
+          node.getFilePosition(),
+          (Statement) returnLast(tryer.getBody()),
           tryer.getCatchClause(),
           tryer.getFinallyClause());
     }
     if (null == result) { return node; }
     result.getAttributes().putAll(node.getAttributes());
-    if (result instanceof AbstractParseTreeNode) {
-      ((AbstractParseTreeNode) result)
-          .setFilePosition(node.getFilePosition());
-    }
     return result;
   }
 
@@ -462,7 +461,7 @@ public class CajitaRewriter extends Rewriter {
           orderedImportNames.addAll(importNames);
 
           for (String k : orderedImportNames) {
-            Identifier kid = new Identifier(k);
+            Identifier kid = new Identifier(FilePosition.UNKNOWN, k);
             Expression permitsUsed = s2.getPermitsUsed(kid);
             if (null == permitsUsed
                 || "Array".equals(k) || "Object".equals(k)) {
@@ -933,7 +932,8 @@ public class CajitaRewriter extends Rewriter {
               "@oRef.@fp ? @oRef.@p : ___.readPub(@oRef, @rp)",
               "oRef", oPair.a,
               "p",  p,
-              "fp", newReference(propertyName + "_canRead___"),
+              "fp", newReference(
+                  FilePosition.UNKNOWN, propertyName + "_canRead___"),
               "rp", toStringLiteral(p)));
         }
         return NONE;
@@ -1176,7 +1176,8 @@ public class CajitaRewriter extends Rewriter {
               "@oRef.@pCanSet ? (@oRef.@p = @rRef) : ___.setPub(@oRef, @pName, @rRef);",
               "oRef", oPair.a,
               "rRef", rPair.a,
-              "pCanSet", newReference(propertyName + "_canSet___"),
+              "pCanSet", newReference(
+                  FilePosition.UNKNOWN, propertyName + "_canSet___"),
               "p", p,
               "pName", toStringLiteral(p)));
         }
@@ -1360,11 +1361,10 @@ public class CajitaRewriter extends Rewriter {
 
           // For x += 3, rhs is (x + 3)
           Operation rhs = Operation.create(
+              aNode.children().get(0).getFilePosition(),
               op.getAssignmentDelegate(),
               ops.getUncajoledLValue(), aNode.children().get(1));
-          rhs.setFilePosition(aNode.children().get(0).getFilePosition());
           Operation assignment = ops.makeAssignment(rhs);
-          assignment.setFilePosition(aNode.getFilePosition());
           return commas(newCommaOperation(ops.getTemporaries()),
                        (Expression) expand(assignment, scope, mq));
         }
@@ -1699,7 +1699,8 @@ public class CajitaRewriter extends Rewriter {
               "oRef", oPair.a,
               "argRefs", argsPair.a,
               "m",  m,
-              "fm", newReference(methodName + "_canCall___"),
+              "fm", newReference(
+                  FilePosition.UNKNOWN, methodName + "_canCall___"),
               "rm", toStringLiteral(m)));
         }
         return NONE;
@@ -1879,7 +1880,8 @@ public class CajitaRewriter extends Rewriter {
               ((FunctionDeclaration) node).getInitializer());
           checkFormals(bindings.get("ps"), mq);
           Identifier fname = (Identifier) bindings.get("fname");
-          Identifier fself = new Identifier(nym(node, fname.getName(), "self"));
+          Identifier fself = new Identifier(
+              FilePosition.UNKNOWN, nym(node, fname.getName(), "self"));
           scope.declareStartOfScopeVariable(fname);
           Expression expr = (Expression) QuasiBuilder.substV(
               "@fRef = (function() {\n"
@@ -1900,7 +1902,8 @@ public class CajitaRewriter extends Rewriter {
               "bs", expand(bindings.get("bs"), s2, mq),
               "fh", getFunctionHeadDeclarations(s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
-          scope.addStartOfBlockStatement(new ExpressionStmt(expr));
+          scope.addStartOfBlockStatement(
+              new ExpressionStmt(node.getFilePosition(), expr));
           return QuasiBuilder.substV(";");
         }
         return NONE;
@@ -1990,9 +1993,13 @@ public class CajitaRewriter extends Rewriter {
 
           // If they're not all declarations, then split the initializers out
           // so that we can run them in order.
-          if (!allDeclarations) {
-            List<Declaration> declarations = new ArrayList<Declaration>();
-            List<Expression> initializers = new ArrayList<Expression>();
+          List<Declaration> declarations = new ArrayList<Declaration>();
+          List<Expression> initializers = new ArrayList<Expression>();
+          if (allDeclarations) {
+            for (ParseTreeNode n : expanded) {
+              declarations.add((Declaration) n);
+            }
+          } else {
             for (ParseTreeNode n : expanded) {
               if (n instanceof Declaration) {
                 Declaration decl = (Declaration) n;
@@ -2006,16 +2013,17 @@ public class CajitaRewriter extends Rewriter {
                 initializers.add((Expression) n);
               }
             }
-            if (declarations.isEmpty()) {
-              return new ExpressionStmt(newCommaOperation(initializers));
-            } else {
-              return substV(
-                  "decl", new MultiDeclaration(declarations),
-                  "init", new ExpressionStmt(newCommaOperation(initializers)));
-            }
+          }
+          if (initializers.isEmpty()) {
+            return new MultiDeclaration(node.getFilePosition(), declarations);
+          } else if (declarations.isEmpty()) {
+            return newExprStmt(newCommaOperation(initializers));
           } else {
-            return ParseTreeNodes.newNodeInstance(
-                MultiDeclaration.class, null, expanded);
+            Expression init = newCommaOperation(initializers);
+            return substV(
+                "decl", new MultiDeclaration(
+                    FilePosition.UNKNOWN, declarations),
+                "init", newExprStmt(init));
           }
         }
         return NONE;
@@ -2230,10 +2238,9 @@ public class CajitaRewriter extends Rewriter {
                 node.getFilePosition(),
                 MessagePart.Factory.valueOf(lsw.getLabel()));
           }
-          LabeledStmtWrapper expanded = new LabeledStmtWrapper(
+          return new LabeledStmtWrapper(
+              lsw.getFilePosition(),
               lsw.getLabel(), (Statement) expand(lsw.getBody(), scope, mq));
-          expanded.setFilePosition(lsw.getFilePosition());
-          return expanded;
         }
         return NONE;
       }
@@ -2273,7 +2280,7 @@ public class CajitaRewriter extends Rewriter {
           substitutes=";")
       public ParseTreeNode fire(ParseTreeNode node, Scope s, MessageQueue mq) {
         if (node instanceof UseSubsetDirective) {
-          return new Noop();
+          return new Noop(node.getFilePosition());
         }
         return NONE;
       }

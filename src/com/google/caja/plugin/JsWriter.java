@@ -43,7 +43,7 @@ final class JsWriter {
    * makes sure to flatten with any like operation that would immediately
    * precede it.
    *
-   * @param toAppend an expression taht should evaluate to a string
+   * @param toAppend an expression that should evaluate to a string
    * @param tgtMembers the parts of a dotted name of a function to call, such as
    *   <code>{ "out___", "push" }</code> to append to an Array {@code "out___"}.
    * @param b a block to append the a statement whose side effect is to
@@ -69,8 +69,9 @@ final class JsWriter {
     // Make one
     if (null == fnCall) {
       Expression target = makeTargetReference(tgtMembers);
-      fnCall = Operation.create(Operator.FUNCTION_CALL, target);
-      b.insertBefore(new ExpressionStmt(fnCall), null);
+      fnCall = Operation.create(
+          target.getFilePosition(), Operator.FUNCTION_CALL, target);
+      b.appendChild(new ExpressionStmt(fnCall.getFilePosition(), fnCall));
     }
     if (toAppend instanceof StringLiteral) {
       // If toAppend and last child are both string literals, combine them
@@ -78,11 +79,12 @@ final class JsWriter {
       if (fnCallOperands.size() > 1) {
         Expression last = fnCallOperands.get(fnCallOperands.size() - 1);
         if (last instanceof StringLiteral) {
-          StringLiteral concatenation = new StringLiteral(
-              StringLiteral.toQuotedValue(
-                  ((StringLiteral) last).getUnquotedValue()
-                  + ((StringLiteral) toAppend).getUnquotedValue()
-                  ));
+          StringLiteral concatenation = StringLiteral.valueOf(
+              FilePosition.span(
+                  last.getFilePosition(), toAppend.getFilePosition()),
+              ((StringLiteral) last).getUnquotedValue()
+              + ((StringLiteral) toAppend).getUnquotedValue()
+              );
           fnCall.replaceChild(concatenation, last);
           return;
         }
@@ -91,18 +93,19 @@ final class JsWriter {
     fnCall.insertBefore(toAppend, null);
   }
 
-  static void appendString(String string, List<String> tgtChain, Block b) {
-    JsWriter.append(
-        new StringLiteral(StringLiteral.toQuotedValue(string)), tgtChain, b);
+  static void appendString(
+      FilePosition pos, String string, List<String> tgtChain, Block b) {
+    JsWriter.append(StringLiteral.valueOf(pos, string), tgtChain, b);
   }
 
   static void appendText(
-      String text, Esc escaping, List<String> tgtChain, Block b) {
+      FilePosition pos, String text, Esc escaping, List<String> tgtChain,
+      Block b) {
     if ("".equals(text)) { return; }
-    JsWriter.append(new StringLiteral(
-        StringLiteral.toQuotedValue(
-            escaping != JsWriter.Esc.NONE ? htmlEscape(text) : text)),
-            tgtChain, b);
+    JsWriter.append(
+        StringLiteral.valueOf(
+            pos, escaping != JsWriter.Esc.NONE ? htmlEscape(text) : text),
+        tgtChain, b);
   }
 
   static String htmlEscape(String text) {
@@ -128,26 +131,26 @@ final class JsWriter {
     }
 
     if (null == e) {
-      Operation voidOp = Operation.undefined();
-      voidOp.setFilePosition(pos);
+      Operation voidOp = Operation.undefined(pos);
       return voidOp;
     }
 
     // Wrap in an ExpressionStmt so the expression is guaranteed to have a
     // proper parent
-    ExpressionStmt stmt = new ExpressionStmt(e);
+    ExpressionStmt stmt = new ExpressionStmt(e.getFilePosition(), e);
 
     // Expression will be sanitized in a later pass
 
     e = stmt.getExpression();  // Refetch e in case it was rewritten
-    stmt.replaceChild(Operation.undefined(), e);  // Make e not a child of stmt
+    // Make e not a child of stmt
+    stmt.replaceChild(Operation.undefined(e.getFilePosition()), e);
     return e;
   }
 
   static Expression makeTargetReference(List<String> tgtMembers) {
     Expression target = TreeConstruction.ref(tgtMembers.get(0));
     for (int i = 1; i < tgtMembers.size(); ++i) {
-      target = Operation.create(Operator.MEMBER_ACCESS,
+      target = Operation.createInfix(Operator.MEMBER_ACCESS,
           target, TreeConstruction.ref(tgtMembers.get(i)));
     }
     return target;

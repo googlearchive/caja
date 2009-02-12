@@ -49,17 +49,22 @@ public abstract class AbstractParseTreeNode
     return children.as(clazz).getImmutableFacet();
   }
 
-  protected AbstractParseTreeNode() {
-    this(ParseTreeNode.class);
+  protected AbstractParseTreeNode(FilePosition pos) {
+    this(pos, ParseTreeNode.class);
   }
-  
-  protected AbstractParseTreeNode(Class<? extends ParseTreeNode> childClass) {
-    children = new ChildNodes<ParseTreeNode>(childClass);
-    pos = FilePosition.UNKNOWN;
-    // initialized via mutators
+
+  protected AbstractParseTreeNode(
+      FilePosition pos, Class<? extends ParseTreeNode> childClass) {
+    assert pos != null && childClass != null;
+    // populated via mutators
+    this.children = new ChildNodes<ParseTreeNode>(childClass);
+    this.pos = pos;
   }
 
   public FilePosition getFilePosition() { return pos; }
+  public void setFilePosition(FilePosition pos) {
+    assert pos != null; this.pos = pos;
+  }
   public List<Token<?>> getComments() { return comments; }
   public List<? extends ParseTreeNode> children() {
     return children.getImmutableFacet();
@@ -85,9 +90,6 @@ public abstract class AbstractParseTreeNode
       this.attributes = new SyntheticAttributes();
     }
     return this.attributes;
-  }
-  public void setFilePosition(FilePosition pos) {
-    this.pos = (pos == null) ? FilePosition.UNKNOWN : pos;
   }
   @SuppressWarnings("unchecked")
   public void setComments(List<? extends Token> comments) {
@@ -355,8 +357,7 @@ public abstract class AbstractParseTreeNode
       clonedChildren.add(child.clone());
     }
     AbstractParseTreeNode cloned = ParseTreeNodes.newNodeInstance(
-        getClass(), getValue(), clonedChildren);
-    cloned.setFilePosition(getFilePosition());
+        getClass(), getFilePosition(), getValue(), clonedChildren);
     if (attributes != null) {
       cloned.attributes = new SyntheticAttributes(attributes);
       cloned.attributes.remove(TAINTED);

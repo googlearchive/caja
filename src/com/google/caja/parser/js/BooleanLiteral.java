@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 
 import java.util.List;
@@ -27,11 +28,13 @@ public final class BooleanLiteral extends Literal {
   public final boolean value;
 
   /** @param children unused.  This ctor is provided for reflection. */
-  public BooleanLiteral(Boolean value, List<? extends ParseTreeNode> children) {
-    this(value);
+  public BooleanLiteral(
+      FilePosition pos, Boolean value, List<? extends ParseTreeNode> children) {
+    this(pos, value);
   }
 
-  public BooleanLiteral(boolean value) {
+  public BooleanLiteral(FilePosition pos, boolean value) {
+    super(pos);
     this.value = value;
   }
 

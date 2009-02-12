@@ -14,6 +14,7 @@
 
 package com.google.caja.parser;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ExpressionStmt;
@@ -43,6 +44,8 @@ public class ParseTreeNodeTest extends TestCase {
   protected void setUp() throws Exception {
     super.setUp();
 
+    FilePosition unk = FilePosition.UNKNOWN;
+
     // $0: {
     //   $1: {
     //     2;
@@ -63,18 +66,19 @@ public class ParseTreeNodeTest extends TestCase {
 
     ExpressionStmt[] b = new ExpressionStmt[13];
     for (int i = b.length; --i >= 0;) {
-      b[i] = new ExpressionStmt(new IntegerLiteral(i));
+      b[i] = new ExpressionStmt(unk, new IntegerLiteral(unk, i));
     }
 
     LabeledStmtWrapper b1 = new LabeledStmtWrapper(
-        "$1", new Block(Arrays.asList(b[2], b[3], b[4])));
+        unk, "$1", new Block(unk, Arrays.asList(b[2], b[3], b[4])));
 
     LabeledStmtWrapper b5 = new LabeledStmtWrapper(
-        "$5", new Block(Arrays.asList(b[6], b[7], b[8])));
-    root = new LabeledStmtWrapper("$0", new Block(Arrays.asList(b1, b5)));
+        unk, "$5", new Block(unk, Arrays.asList(b[6], b[7], b[8])));
+    root = new LabeledStmtWrapper(
+        unk, "$0", new Block(unk, Arrays.asList(b1, b5)));
 
     b9 = new LabeledStmtWrapper(
-        "$9", new Block(Arrays.asList(b[10], b[11], b[12])));
+        unk, "$9", new Block(unk, Arrays.asList(b[10], b[11], b[12])));
   }
 
   @Override
@@ -813,8 +817,9 @@ public class ParseTreeNodeTest extends TestCase {
           }
         }
         for (int i = 0; i < toAdd.length; ++i) {
-          p.insertBefore(
-              new ExpressionStmt(new IntegerLiteral(toAdd[i])), null);
+          p.appendChild(new ExpressionStmt(
+              FilePosition.UNKNOWN,
+              new IntegerLiteral(FilePosition.UNKNOWN, toAdd[i])));
         }
       }
       return true;

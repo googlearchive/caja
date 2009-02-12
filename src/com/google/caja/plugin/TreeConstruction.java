@@ -14,21 +14,15 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.parser.js.Block;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
-import com.google.caja.parser.js.FormalParam;
-import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
-import com.google.caja.parser.js.StringLiteral;
 
 import static com.google.caja.parser.js.SyntheticNodes.s;
-
-import java.util.List;
-import java.util.Vector;
 
 /**
  * Utilities for parse true construction
@@ -39,34 +33,36 @@ import java.util.Vector;
 public final class TreeConstruction {
   /** {@code thing.member } */
   public static Operation memberAccess(String thing, String member) {
-    return Operation.create(Operator.MEMBER_ACCESS, ref(thing), ref(member));
+    return Operation.create(
+        FilePosition.UNKNOWN, Operator.MEMBER_ACCESS, ref(thing), ref(member));
   }
   /** {@code nodes[0](nodes[1...]) } */
   public static Operation call(Expression... nodes) {
-    return Operation.create(Operator.FUNCTION_CALL, nodes);
+    return Operation.create(
+        FilePosition.span(
+            nodes[0].getFilePosition(),
+            nodes[nodes.length - 1].getFilePosition()),
+        Operator.FUNCTION_CALL, nodes);
   }
-  /** {@code function name(args) <body>} */
+  /** {@code function name(args) <body>}
   public static FunctionConstructor function(
-      String name, Block body, String... args) {
+      FilePosition pos, String name, Block body, String... args) {
     List<FormalParam> params = new Vector<FormalParam>();
     for (String arg : args) {
-      params.add(new FormalParam(s(new Identifier(arg))));
+      params.add(new FormalParam(s(new Identifier(pos, arg))));
     }
-    return new FunctionConstructor(s(new Identifier(name)), params, body);
-  }
+    return new FunctionConstructor(
+        pos, s(new Identifier(pos, name)), params, body);
+  }*/
 
   public static ExpressionStmt assign(Expression lhs, Expression rhs) {
-    return new ExpressionStmt(
-        Operation.create(Operator.ASSIGN, lhs, rhs));
+    Operation assign = Operation.createInfix(Operator.ASSIGN, lhs, rhs);
+    return new ExpressionStmt(assign.getFilePosition(), assign);
   }
 
   public static Reference ref(String name) {
     assert name != null;
-    return new Reference(s(new Identifier(name)));
-  }
-
-  public static StringLiteral stringLiteral(String unquoted) {
-    return new StringLiteral(StringLiteral.toQuotedValue(unquoted));
+    return new Reference(s(new Identifier(FilePosition.UNKNOWN, name)));
   }
 
   // Can't instantiate

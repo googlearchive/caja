@@ -101,8 +101,8 @@ public final class FilePosition implements MessagePart {
 
   public static FilePosition span(FilePosition start, FilePosition end) {
     if (start == end) { return start; }
-    if (!start.source.equals(end.source)
-        || start.startCharInFile > end.endCharInFile) {
+    if (!start.source.equals(end.source)) { return FilePosition.UNKNOWN; }
+    if (start.startCharInFile > end.endCharInFile) {
       throw new IllegalArgumentException(start + ", " + end);
     }
     return instance(

@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
 
@@ -25,13 +26,14 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class FunctionDeclaration extends Declaration {
-  public FunctionDeclaration(Void value, List<? extends Expression> children) {
-    super(value, children);
+  public FunctionDeclaration(
+      FilePosition pos, Void value, List<? extends Expression> children) {
+    super(pos, value, children);
   }
 
   public FunctionDeclaration(
       Identifier identifier, FunctionConstructor initializer) {
-    super(identifier, initializer);
+    super(initializer.getFilePosition(), identifier, initializer);
   }
 
   @Override

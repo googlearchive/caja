@@ -14,10 +14,11 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 
 /** @see SwitchStmt */
 public abstract class SwitchCase extends AbstractStatement {
-  protected SwitchCase() { super(ParseTreeNode.class); }
+  protected SwitchCase(FilePosition pos) { super(pos, ParseTreeNode.class); }
   // base class for case and default blocks
 }

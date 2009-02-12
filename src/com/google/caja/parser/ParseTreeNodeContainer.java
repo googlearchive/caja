@@ -14,6 +14,7 @@
 
 package com.google.caja.parser;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
@@ -22,22 +23,24 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * A simple implementation of {@code ParseTreeNode} which acts as a container for an
- * arbitrary list of {@code ParseTreeNode}s.
+ * A simple implementation of {@code ParseTreeNode} which acts as a container
+ * for an arbitrary list of {@code ParseTreeNode}s.
  *
- * <p>This is used as a convenience wrapper allowing a quasiliteral pattern to return
- * a list of {@code ParseTreeNode}s in a type-safe manner.
+ * <p>This is used as a convenience wrapper allowing a quasiliteral pattern to
+ * return a list of {@code ParseTreeNode}s in a type-safe manner.
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class ParseTreeNodeContainer extends AbstractParseTreeNode {
   /** @param value unused.  This ctor is provided for reflection. */
   public ParseTreeNodeContainer(
-      Void value, List<? extends ParseTreeNode> children) {
-    this(children);
+      FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
+    super(pos);
+    createMutation().appendChildren(children).execute();
   }
 
   public ParseTreeNodeContainer(List<? extends ParseTreeNode> children) {
+    super(FilePosition.UNKNOWN);
     createMutation().appendChildren(children).execute();
   }
 

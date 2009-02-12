@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
@@ -32,13 +33,14 @@ public final class WithStmt extends AbstractStatement
     implements NestedScope {
 
   /** @param value unused.  This ctor is provided for reflection. */
-  public WithStmt(Void value, List<? extends Statement> children) {
-    super(ParseTreeNode.class);
+  public WithStmt(
+      FilePosition pos, Void value, List<? extends Statement> children) {
+    super(pos, ParseTreeNode.class);
     createMutation().appendChildren(children).execute();
   }
 
-  public WithStmt(Expression scopeObject, Statement body) {
-    super(ParseTreeNode.class);
+  public WithStmt(FilePosition pos, Expression scopeObject, Statement body) {
+    super(pos, ParseTreeNode.class);
     createMutation()
         .appendChild(scopeObject)
         .appendChild(body)

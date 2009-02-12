@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.reporting.RenderContext;
 
 import java.util.List;
@@ -24,12 +25,12 @@ import java.util.List;
  */
 public final class Noop extends AbstractStatement {
   /** @param value unused.  This ctor is provided for reflection. */
-  public Noop(Void value, List<? extends Statement> children) {
-    super(NoChildren.class);
+  public Noop(FilePosition p, Void value, List<? extends Statement> children) {
+    super(p, NoChildren.class);
     assert children.isEmpty();
   }
 
-  public Noop() { super(NoChildren.class); }
+  public Noop(FilePosition pos) { super(pos, NoChildren.class); }
 
   @Override
   public Object getValue() { return null; }

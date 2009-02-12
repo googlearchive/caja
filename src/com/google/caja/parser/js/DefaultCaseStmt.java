@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
 
@@ -27,11 +28,13 @@ public final class DefaultCaseStmt extends SwitchCase {
   private Statement body;
 
   /** @param value unused.  This ctor is provided for reflection. */
-  public DefaultCaseStmt(Void value, List<? extends Statement> children) {
-    this(children.get(0));
+  public DefaultCaseStmt(
+      FilePosition pos, Void value, List<? extends Statement> children) {
+    this(pos, children.get(0));
   }
 
-  public DefaultCaseStmt(Statement body) {
+  public DefaultCaseStmt(FilePosition pos, Statement body) {
+    super(pos);
     appendChild(body);
   }
 

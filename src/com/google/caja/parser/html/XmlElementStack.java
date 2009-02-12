@@ -132,8 +132,7 @@ class XmlElementStack extends AbstractElementStack {
         rootStart = root.children().get(0).getFilePosition();
       }
     }
-    root.setFilePosition(
-        FilePosition.span(rootStart, endOfDocument));
+    root.setFilePosition(FilePosition.span(rootStart, endOfDocument));
 
     int nOpen = getNOpenElements();
     if (nOpen != 1) {

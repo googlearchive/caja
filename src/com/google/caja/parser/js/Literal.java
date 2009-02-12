@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.reporting.RenderContext;
 
 /**
@@ -23,7 +24,7 @@ import com.google.caja.reporting.RenderContext;
  * @author mikesamuel@gmail.com
  */
 public abstract class Literal extends AbstractExpression {
-  protected Literal() { super(NoChildren.class); }
+  protected Literal(FilePosition pos) { super(pos, NoChildren.class); }
 
   @Override
   public abstract Object getValue();

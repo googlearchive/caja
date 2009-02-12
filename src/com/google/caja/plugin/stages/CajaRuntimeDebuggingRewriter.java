@@ -60,7 +60,7 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
 
         int index = symbols.indexForPosition(pos);
         rebind(bindings, scope, mq);
-        bindings.put("debug", new IntegerLiteral(index));
+        bindings.put("debug", new IntegerLiteral(FilePosition.UNKNOWN, index));
         return subst(bindings);
       }
       return NONE;

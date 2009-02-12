@@ -61,13 +61,13 @@ public abstract class DomTree extends AbstractParseTreeNode {
 
   DomTree(List<? extends DomTree> children,
           Token<HtmlTokenType> tok, FilePosition pos) {
-    super(DomTree.class);
+    super(pos, DomTree.class);
     this.start = tok;
-    if (pos != null) {
-      setFilePosition(pos);
-    }
     createMutation().appendChildren(children).execute();
   }
+
+  @Override
+  public DomTree clone() { return (DomTree) super.clone(); }
 
   /**
    * The type of the start token.
@@ -137,6 +137,12 @@ public abstract class DomTree extends AbstractParseTreeNode {
    * This can represent a snippet of markup.
    */
   public static final class Fragment extends DomTree {
+    /** @param novalue not used but required for reflective construction. */
+    public Fragment(
+        FilePosition pos, Void novalue, List<? extends DomTree> children) {
+      super(children, NULL_TOKEN, pos);
+    }
+
     public Fragment() {
       super(Collections.<DomTree>emptyList(), NULL_TOKEN, NULL_TOKEN);
     }
@@ -161,7 +167,7 @@ public abstract class DomTree extends AbstractParseTreeNode {
     @Override public String getValue() { return null; }
   }
   private static final Token<HtmlTokenType> NULL_TOKEN
-      = Token.instance("", HtmlTokenType.IGNORABLE, null);
+      = Token.instance("", HtmlTokenType.IGNORABLE, FilePosition.UNKNOWN);
 
 
   /**
@@ -171,6 +177,11 @@ public abstract class DomTree extends AbstractParseTreeNode {
    */
   public static final class Tag extends DomTree {
     private final Name name;
+    public Tag(FilePosition pos, String name, List<? extends DomTree> children) {
+      this(Name.xml(name), children,
+          Token.instance("<" + name, HtmlTokenType.TAGBEGIN, pos), pos);
+    }
+
     public Tag(Name name, List<? extends DomTree> children,
                Token<HtmlTokenType> start, Token<HtmlTokenType> end) {
       super(children, start, end);
@@ -236,8 +247,28 @@ public abstract class DomTree extends AbstractParseTreeNode {
         out.consume(" />");
       } else {
         out.consume(">");
-        while (i < n) {
-          children.get(i++).render(r);
+        HtmlTextEscapingMode escMode = HtmlTextEscapingMode
+            .getModeForTag(getTagName());
+        switch (escMode) {
+          case CDATA: case PLAIN_TEXT:
+            if (!(r instanceof MarkupRenderContext
+                  && ((MarkupRenderContext) r).asXml())) {
+              while (i < n) {
+                DomTree child = children.get(i++);
+                if (child instanceof CData) {
+                  r.getOut().consume(((DomTree.CData) child).getValue());
+                } else {
+                  r.getOut().consume(((DomTree.Text) child).getValue());
+                }
+              }
+              break;
+            }
+            // fall-through
+          default:
+            while (i < n) {
+              children.get(i++).render(r);
+            }
+            break;
         }
         // This is not correct for HTML <plaintext> nodes, but live with it,
         // since handling plaintext correctly would require omitting end tags
@@ -258,6 +289,10 @@ public abstract class DomTree extends AbstractParseTreeNode {
    */
   public static final class Attrib extends DomTree {
     private final Name name;
+    public Attrib(FilePosition pos, String name, List<? extends Value> value) {
+      this(Name.xml(name), value.get(0),
+           Token.instance(name, HtmlTokenType.ATTRNAME, pos), pos);
+    }
     Attrib(Name name, Value value, Token<HtmlTokenType> start,
            Token<HtmlTokenType> end) {
       super(Collections.<DomTree>singletonList(value), start, end);
@@ -283,14 +318,6 @@ public abstract class DomTree extends AbstractParseTreeNode {
       getAttribValueNode().render(r);
       out.consume("\"");
     }
-
-    @Override
-    public Attrib clone() {
-      Attrib clone = new Attrib(
-          getAttribName(), getAttribValueNode().clone(), getToken(),
-          getFilePosition());
-      return clone;
-    }
   }
 
   /**
@@ -298,6 +325,12 @@ public abstract class DomTree extends AbstractParseTreeNode {
    */
   public static final class Value extends DomTree {
     private String memoizedValue;
+
+    /** @param none not used but required for reflective construction. */
+    public Value(FilePosition pos, String value, List<? extends DomTree> none) {
+      this(Token.instance("\"" + xmlEncode(value) + "\"",
+           HtmlTokenType.ATTRVALUE, pos));
+    }
 
     public Value(Token<HtmlTokenType> tok) {
       super(Collections.<DomTree>emptyList(), tok, tok);
@@ -322,11 +355,6 @@ public abstract class DomTree extends AbstractParseTreeNode {
       }
       return memoizedValue = xmlDecode(s);
     }
-
-    @Override
-    public Value clone() {
-      return new Value(getToken());
-    }
   }
 
   /**
@@ -334,6 +362,11 @@ public abstract class DomTree extends AbstractParseTreeNode {
    */
   public static final class Text extends DomTree {
     private String memoizedValue;
+
+    /** @param none not used but required for reflective construction. */
+    public Text(FilePosition pos, String value, List<? extends DomTree> none) {
+      this(Token.instance(value, HtmlTokenType.TEXT, pos));
+    }
 
     public Text(Token<HtmlTokenType> tok) {
       super(Collections.<DomTree>emptyList(), tok, tok);
@@ -343,13 +376,7 @@ public abstract class DomTree extends AbstractParseTreeNode {
 
     public void render(RenderContext r) {
       r.getOut().mark(getFilePosition());
-      if (getToken().type == HtmlTokenType.UNESCAPED
-          && !(r instanceof MarkupRenderContext
-               && ((MarkupRenderContext) r).asXml())) {
-        r.getOut().consume(getValue());
-      } else {
-        renderHtml(getValue(), r);
-      }
+      renderHtml(getValue(), r);
     }
 
     @Override
@@ -368,6 +395,12 @@ public abstract class DomTree extends AbstractParseTreeNode {
    * A CDATA section.  Its value is textual content.
    */
   public static final class CData extends DomTree {
+    /** @param none not used but required for reflective construction. */
+    public CData(FilePosition pos, String text, List<? extends DomTree> none) {
+      this(Token.instance(
+          "<![CDATA[" + text + "]]>", HtmlTokenType.CDATA, pos));
+    }
+
     public CData(Token<HtmlTokenType> tok) {
       super(Collections.<DomTree>emptyList(), tok, tok);
       assert tok.type == HtmlTokenType.CDATA;
@@ -412,5 +445,11 @@ public abstract class DomTree extends AbstractParseTreeNode {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeXml(text, r.isAsciiOnly(), sb);
     r.getOut().consume(sb.toString());
+  }
+
+  private static String xmlEncode(String text) {
+    StringBuilder sb = new StringBuilder();
+    Escaping.escapeXml(text, false, sb);
+    return sb.toString();
   }
 }

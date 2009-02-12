@@ -16,6 +16,7 @@ package com.google.caja.opensocial.applet;
 
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
@@ -225,14 +226,15 @@ public class CajaApplet extends Applet {
     List<Expression> valueExprs = new ArrayList<Expression>();
     for (Object value : values) {
       if (value == null) {
-        valueExprs.add(new NullLiteral());
+        valueExprs.add(new NullLiteral(FilePosition.UNKNOWN));
       } else {
-        valueExprs.add(StringLiteral.valueOf((String) value));
+        valueExprs.add(
+            StringLiteral.valueOf(FilePosition.UNKNOWN, (String) value));
       }
     }
     StringBuilder sb = new StringBuilder();
     JsMinimalPrinter pp = new JsMinimalPrinter(sb, null);
-    (new ArrayConstructor(valueExprs)).render(
+    (new ArrayConstructor(FilePosition.UNKNOWN, valueExprs)).render(
         new RenderContext(new MessageContext(), true, true, pp));
     pp.noMoreTokens();
     return sb.toString();

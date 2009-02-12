@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
@@ -22,6 +23,7 @@ import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.ParserBase;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
@@ -57,7 +59,7 @@ public abstract class Rule implements MessagePart {
    * does not apply to the supplied input.
    */
   public static final ParseTreeNode NONE =
-      new AbstractParseTreeNode() {
+      new AbstractParseTreeNode(FilePosition.UNKNOWN) {
         @Override public Object getValue() { return null; }
         public void render(RenderContext r) {
           throw new UnsupportedOperationException();
@@ -196,6 +198,7 @@ public abstract class Rule implements MessagePart {
 
     ParseTreeNode result = ParseTreeNodes.newNodeInstance(
         parentNodeClass,
+        node.getFilePosition(),
         node.getValue(),
         rewrittenChildren);
     result.getAttributes().putAll(node.getAttributes());
@@ -210,15 +213,20 @@ public abstract class Rule implements MessagePart {
     if (scope.hasFreeArguments()) {
       stmts.add(QuasiBuilder.substV(
           "var @la = ___.args(@ga);",
-          "la", s(new Identifier(ReservedNames.LOCAL_ARGUMENTS)),
-          "ga", newReference(ReservedNames.ARGUMENTS)));
+          "la", s(new Identifier(
+              FilePosition.UNKNOWN, ReservedNames.LOCAL_ARGUMENTS)),
+          "ga", newReference(FilePosition.UNKNOWN, ReservedNames.ARGUMENTS)));
     }
 
     return new ParseTreeNodeContainer(stmts);
   }
 
-  protected Reference newReference(String name) {
-    return new Reference(s(new Identifier(name)));
+  protected Reference newReference(FilePosition pos, String name) {
+    return new Reference(s(new Identifier(pos, name)));
+  }
+
+  protected static ExpressionStmt newExprStmt(Expression e) {
+    return new ExpressionStmt(e.getFilePosition(), e);
   }
 
   /**
@@ -247,13 +255,16 @@ public abstract class Rule implements MessagePart {
       return comma(comma(left, (Expression) rightBindings.get("rightLeft")),
                    (Expression) rightBindings.get("rightRight"));
     } else {
-      return Operation.create(Operator.COMMA, left, right);
+      return Operation.createInfix(Operator.COMMA, left, right);
     }
   }
 
   protected Expression commas(Expression... operands) {
-    Expression result = Operation.undefined();
-    for (int i = 0; i < operands.length; i++) {
+    if (operands.length == 0) {
+      return Operation.undefined(FilePosition.UNKNOWN);
+    }
+    Expression result = operands[0];
+    for (int i = 1; i < operands.length; i++) {
       result = comma(result, operands[i]);
     }
     return result;
@@ -278,7 +289,8 @@ public abstract class Rule implements MessagePart {
       MessageQueue mq) {
     Expression rhs = (Expression) rewriter.expand(value, scope, mq);
     if (rhs instanceof Reference || rhs instanceof Literal) {
-      return new Pair<Expression, Expression>(rhs, Operation.undefined());
+      return new Pair<Expression, Expression>(
+          rhs, Operation.undefined(FilePosition.UNKNOWN));
     }
     Expression tempRef = new Reference(
         scope.declareStartOfScopeTempVariable());
@@ -352,7 +364,9 @@ public abstract class Rule implements MessagePart {
     if (QuasiBuilder.match("function (@ps*) {@bs*;}", node, bindings)) {
       return QuasiBuilder.substV(
           "function @fname(@ps*) {@bs*;}",
-          "fname", new Identifier(nym(node, baseName, ext)),
+          "fname", new Identifier(
+              FilePosition.startOf(node.getFilePosition()),
+              nym(node, baseName, ext)),
           "ps", bindings.get("ps"),
           "bs", bindings.get("bs"));
     }
@@ -450,10 +464,8 @@ public abstract class Rule implements MessagePart {
     } else {
       ident = (Identifier) node;
     }
-    StringLiteral sl = new StringLiteral(
-        StringLiteral.toQuotedValue(ident.getName()));
-    sl.setFilePosition(ident.getFilePosition());
-    return sl;
+    return new StringLiteral(
+        ident.getFilePosition(), StringLiteral.toQuotedValue(ident.getName()));
   }
 
   /**
@@ -593,6 +605,7 @@ public abstract class Rule implements MessagePart {
     }
 
     Operation propertyAccess = Operation.create(
+        FilePosition.span(object.getFilePosition(), key.getFilePosition()),
         Operator.SQUARE_BRACKET, object, key);
     return new ReadAssignOperands(
         temporaries, propertyAccess,
@@ -658,7 +671,7 @@ public abstract class Rule implements MessagePart {
     }
 
     public Operation makeAssignment(Expression rhs) {
-      Operation e = Operation.create(Operator.ASSIGN, this.uncajoled, rhs);
+      Operation e = Operation.createInfix(Operator.ASSIGN, this.uncajoled, rhs);
       e.getAttributes().set(ParseTreeNode.TAINTED, true);
       return e;
     }

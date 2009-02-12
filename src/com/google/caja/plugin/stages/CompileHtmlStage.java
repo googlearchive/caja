@@ -16,6 +16,7 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
@@ -70,6 +71,7 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
 
     if (!htmlc.getEventHandlers().isEmpty()) {
       TranslatedCode compiledHtml = new TranslatedCode(new Block(
+          FilePosition.UNKNOWN,
           new ArrayList<Statement>(htmlc.getEventHandlers())));
       jobs.getJobs().add(new Job(new AncestorChain<Statement>(compiledHtml)));
     }
@@ -80,7 +82,8 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
           && renderedHtmlStatements.get(0) instanceof Block) {
         htmlGeneration = (Block) renderedHtmlStatements.get(0);
       } else {
-        htmlGeneration = new Block(renderedHtmlStatements);
+        htmlGeneration = new Block(
+            FilePosition.UNKNOWN, renderedHtmlStatements);
       }
       jobs.getJobs().add(new Job(new AncestorChain<Block>(htmlGeneration)));
     }

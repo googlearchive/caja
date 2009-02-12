@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
@@ -28,14 +29,16 @@ import java.util.List;
  */
 public final class TranslatedCode extends AbstractStatement {
   /** @param value unused.  This ctor is provided for reflection. */
-  public TranslatedCode(Void value, List<? extends Statement> children) {
-    this(children.get(0));
+  public TranslatedCode(
+      FilePosition pos, Void value, List<? extends Statement> children) {
+    super(pos, Statement.class);
+    appendChild(children.get(0));
     assert children.size() == 1;
   }
 
   public TranslatedCode(Statement body) {
-    super(Statement.class);
-    createMutation().appendChild(body).execute();
+    super(body.getFilePosition(), Statement.class);
+    appendChild(body);
   }
 
   @Override

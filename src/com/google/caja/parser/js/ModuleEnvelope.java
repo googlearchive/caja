@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
@@ -29,13 +30,14 @@ import java.util.List;
  */
 public final class ModuleEnvelope extends AbstractStatement {
   /** @param value unused.  This ctor is provided for reflection. */
-  public ModuleEnvelope(Void value, List<? extends Block> children) {
-    this(children.get(0));
+  public ModuleEnvelope(FilePosition pos, Void value, List<? extends Block> children) {
+    super(pos, Block.class);
     assert children.size() == 1;
+    createMutation().appendChild(children.get(0)).execute();
   }
 
   public ModuleEnvelope(Block body) {
-    super(Block.class);
+    super(body.getFilePosition(), Block.class);
     createMutation().appendChild(body).execute();
   }
 

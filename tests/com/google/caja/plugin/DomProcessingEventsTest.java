@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.util.CajaTestCase;
@@ -23,25 +24,26 @@ import com.google.caja.util.TestUtil;
 public class DomProcessingEventsTest extends CajaTestCase {
 
   public void testAttribsMustBeClosed() throws Exception {
+    FilePosition unk = FilePosition.UNKNOWN;
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin(Name.html("p"));
-      dpe.end(Name.html("p"));
+      dpe.begin(unk, Name.html("p"));
+      dpe.end(unk, Name.html("p"));
       fail();
     } catch (IllegalStateException ex) {
       // pass
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin(Name.html("p"));
-      dpe.pcdata("Hello");
+      dpe.begin(unk, Name.html("p"));
+      dpe.pcdata(unk, "Hello");
       fail();
     } catch (IllegalStateException ex) {
       // pass
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin(Name.html("p"));
+      dpe.begin(unk, Name.html("p"));
       dpe.toJavascript(new Block());
       fail();
     } catch (IllegalStateException ex) {
@@ -49,7 +51,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin(Name.html("p"));
+      dpe.begin(unk, Name.html("p"));
       dpe.toJavascript(new Block());
       fail();
     } catch (IllegalStateException ex) {
@@ -57,8 +59,8 @@ public class DomProcessingEventsTest extends CajaTestCase {
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin(Name.html("p"));
-      dpe.attr(Name.html("foo"), "bar");
+      dpe.begin(unk, Name.html("p"));
+      dpe.attr(unk, Name.html("foo"), "bar");
       dpe.toJavascript(new Block());
       fail();
     } catch (IllegalStateException ex) {
@@ -66,24 +68,24 @@ public class DomProcessingEventsTest extends CajaTestCase {
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin(Name.html("p"));
-      dpe.begin(Name.html("p"));
+      dpe.begin(unk, Name.html("p"));
+      dpe.begin(unk, Name.html("p"));
       fail();
     } catch (IllegalStateException ex) {
       // pass
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin(Name.html("p"));
+      dpe.begin(unk, Name.html("p"));
       dpe.finishAttrs(false);
-      dpe.attr(Name.html("foo"), "bar");
+      dpe.attr(unk, Name.html("foo"), "bar");
       fail();
     } catch (IllegalStateException ex) {
       // pass
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.attr(Name.html("foo"), "bar");
+      dpe.attr(unk, Name.html("foo"), "bar");
       fail();
     } catch (IllegalStateException ex) {
       // pass
@@ -97,7 +99,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin(Name.html("p"));
+      dpe.begin(unk, Name.html("p"));
       dpe.script(js(fromString("foo();")));
       fail();
     } catch (IllegalStateException ex) {
@@ -106,11 +108,12 @@ public class DomProcessingEventsTest extends CajaTestCase {
   }
 
   public void testUnbalancedTags() {
+    FilePosition unk = FilePosition.UNKNOWN;
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin(Name.html("p"));
+      dpe.begin(unk, Name.html("p"));
       dpe.finishAttrs(false);
-      dpe.end(Name.html("q"));
+      dpe.end(unk, Name.html("q"));
       dpe.toJavascript(new Block());
       fail();
     } catch (IllegalStateException ex) {
@@ -118,7 +121,7 @@ public class DomProcessingEventsTest extends CajaTestCase {
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin(Name.html("p"));
+      dpe.begin(unk, Name.html("p"));
       dpe.finishAttrs(false);
       dpe.toJavascript(new Block());
       fail();
@@ -127,13 +130,13 @@ public class DomProcessingEventsTest extends CajaTestCase {
     }
     try {
       DomProcessingEvents dpe = new DomProcessingEvents();
-      dpe.begin(Name.html("p"));
+      dpe.begin(unk, Name.html("p"));
       dpe.finishAttrs(false);
-      dpe.begin(Name.html("p"));
+      dpe.begin(unk, Name.html("p"));
       dpe.finishAttrs(false);
-      dpe.end(Name.html("p"));
-      dpe.end(Name.html("p"));
-      dpe.end(Name.html("p"));
+      dpe.end(unk, Name.html("p"));
+      dpe.end(unk, Name.html("p"));
+      dpe.end(unk, Name.html("p"));
       dpe.toJavascript(new Block());
       fail();
     } catch (IllegalStateException ex) {
@@ -142,14 +145,15 @@ public class DomProcessingEventsTest extends CajaTestCase {
   }
 
   public void testTooMuchRecursionFix() throws Exception {
+    FilePosition unk = FilePosition.UNKNOWN;
     Expression x = jsExpr(fromString("x"));
     DomProcessingEvents dpe = new DomProcessingEvents();
     for (int i = 0; i < 30; ++i) {
-      dpe.begin(Name.html("p"));
+      dpe.begin(unk, Name.html("p"));
       dpe.attr(Name.html("id"), x);  // defeat optimization
       dpe.finishAttrs(false);
     }
-    for (int i = 0; i < 30; ++i) { dpe.end(Name.html("p")); }
+    for (int i = 0; i < 30; ++i) { dpe.end(unk, Name.html("p")); }
 
     Block block = new Block();
     dpe.toJavascript(block);

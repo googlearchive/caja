@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Identifier;
 
@@ -48,7 +49,7 @@ final class SingleOptionalIdentifierQuasiNode extends QuasiNode {
     if (qn.createSubstitutes(substitutes, bindings)) {
       return true;
     } else {
-      substitutes.add(new Identifier(null));
+      substitutes.add(new Identifier(FilePosition.UNKNOWN, null));
       return true;
     }
   }

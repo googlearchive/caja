@@ -15,6 +15,7 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.escaping.Escaping;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
@@ -35,12 +36,14 @@ import java.util.List;
 public final class Identifier extends AbstractParseTreeNode {
   private final String name;
 
-  public Identifier(String name, List<? extends ParseTreeNode> children) {
-    this(name);
+  public Identifier(
+      FilePosition pos, String name, List<? extends ParseTreeNode> children) {
+    this(pos, name);
     assert(children.isEmpty());
   }
 
-  public Identifier(String name) {
+  public Identifier(FilePosition pos, String name) {
+    super(pos);
     if (!(name == null || ParserBase.isQuasiIdentifier(name))) {
       // Disallowed in Parser, so no code should ever produce something that
       // reaches here unless it concatenates two strings together without

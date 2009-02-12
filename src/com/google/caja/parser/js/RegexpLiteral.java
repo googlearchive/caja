@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.ParseTreeNode;
@@ -30,16 +31,18 @@ public final class RegexpLiteral extends Literal {
 
   /** @param children unused.  This ctor is provided for reflection. */
   public RegexpLiteral(
-      RegexpWrapper value, List<? extends ParseTreeNode> children) {
-    this(value);
+      FilePosition pos, RegexpWrapper value,
+      List<? extends ParseTreeNode> children) {
+    this(pos, value);
   }
 
-  public RegexpLiteral(RegexpWrapper value) {
+  public RegexpLiteral(FilePosition pos, RegexpWrapper value) {
+    super(pos);
     this.value = value;
   }
 
-  public RegexpLiteral(String value) {
-    this.value = new RegexpWrapper(value);
+  public RegexpLiteral(FilePosition pos, String value) {
+    this(pos, new RegexpWrapper(value));
   }
 
   @Override
@@ -64,9 +67,9 @@ public final class RegexpLiteral extends Literal {
       out.consume("constructor");
       out.consume(")");
       out.consume("(");
-      StringLiteral.valueOf(body).render(rc);
+      StringLiteral.renderUnquotedValue(body, rc);
       out.consume(",");
-      StringLiteral.valueOf(mods).render(rc);
+      StringLiteral.renderUnquotedValue(mods, rc);
       out.consume(")");
       out.consume(")");
     } else {

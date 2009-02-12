@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
@@ -48,11 +49,13 @@ public final class IntegerLiteral extends NumberLiteral {
   private final long value;
 
   /** @param children unused.  This ctor is provided for reflection. */
-  public IntegerLiteral(Number value, List<? extends ParseTreeNode> children) {
-    this(value.longValue());
+  public IntegerLiteral(
+      FilePosition pos, Number value, List<? extends ParseTreeNode> children) {
+    this(pos, value.longValue());
   }
 
-  public IntegerLiteral(long value) {
+  public IntegerLiteral(FilePosition pos, long value) {
+    super(pos);
     if (MIN_VALUE > value || value > MAX_VALUE) {
       throw new IllegalArgumentException("" + value);
     }

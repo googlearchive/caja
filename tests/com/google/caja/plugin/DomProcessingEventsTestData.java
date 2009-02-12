@@ -15,6 +15,7 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
@@ -81,21 +82,22 @@ public class DomProcessingEventsTestData {
   }
 
   void emit() throws IOException, ParseException {
+    FilePosition unk = FilePosition.UNKNOWN;
     DomProcessingEvents dpe;
     dpe = new DomProcessingEvents();
     compileTest("testNoEvents", "", "", dpe);
 
     dpe = new DomProcessingEvents();
-    dpe.pcdata("hello world");
+    dpe.pcdata(unk, "hello world");
     compileTest(
         "testTextNode",
         "IMPORTS___.htmlEmitter___.pc('hello world');", "hello world", dpe);
 
     dpe = new DomProcessingEvents();
-    dpe.begin(Name.html("b"));
+    dpe.begin(unk, Name.html("b"));
     dpe.finishAttrs(false);
-    dpe.pcdata("HELLO WORLD");
-    dpe.end(Name.html("b"));
+    dpe.pcdata(unk, "HELLO WORLD");
+    dpe.end(unk, Name.html("b"));
     compileTest(
         "testSimpleElement",
         "IMPORTS___.htmlEmitter___.b('b').f(false).ih('HELLO WORLD').e('b');",
@@ -103,10 +105,10 @@ public class DomProcessingEventsTestData {
         dpe);
 
     dpe = new DomProcessingEvents();
-    dpe.begin(Name.html("b"));
+    dpe.begin(unk, Name.html("b"));
     dpe.finishAttrs(false);
-    dpe.pcdata("1 < 2 && 3 > 2");
-    dpe.end(Name.html("b"));
+    dpe.pcdata(unk, "1 < 2 && 3 > 2");
+    dpe.end(unk, Name.html("b"));
     compileTest(
         "testEscaping",
         "IMPORTS___.htmlEmitter___.b('b').f(false)"
@@ -115,17 +117,17 @@ public class DomProcessingEventsTestData {
         dpe);
 
     dpe = new DomProcessingEvents();
-    dpe.begin(Name.html("b"));
-    dpe.attr(Name.html("style"), "color: blue");
+    dpe.begin(unk, Name.html("b"));
+    dpe.attr(unk, Name.html("style"), "color: blue");
     dpe.finishAttrs(false);
-    dpe.pcdata("[ ");
-    dpe.begin(Name.html("a"));
-    dpe.attr(Name.html("href"), "http://foo.com/");
+    dpe.pcdata(unk, "[ ");
+    dpe.begin(unk, Name.html("a"));
+    dpe.attr(unk, Name.html("href"), "http://foo.com/");
     dpe.finishAttrs(false);
-    dpe.pcdata("1 < 2 && 3 > 2");
-    dpe.end(Name.html("a"));
-    dpe.pcdata(" ]");
-    dpe.end(Name.html("b"));
+    dpe.pcdata(unk, "1 < 2 && 3 > 2");
+    dpe.end(unk, Name.html("a"));
+    dpe.pcdata(unk, " ]");
+    dpe.end(unk, Name.html("b"));
     compileTest(
         "testOptimization",
         "IMPORTS___.htmlEmitter___.b('b').a('style', 'color: blue').f(false)"
@@ -147,17 +149,17 @@ public class DomProcessingEventsTestData {
     //    div.innerHTML = '<select><option>1</option></select>';
     // See bug 730 for more details.
     dpe = new DomProcessingEvents();
-    dpe.begin(Name.html("select"));
+    dpe.begin(unk, Name.html("select"));
     dpe.finishAttrs(false);
-    dpe.begin(Name.html("option"));
+    dpe.begin(unk, Name.html("option"));
     dpe.finishAttrs(false);
-    dpe.pcdata("1");
-    dpe.end(Name.html("option"));
-    dpe.begin(Name.html("option"));
+    dpe.pcdata(unk, "1");
+    dpe.end(unk, Name.html("option"));
+    dpe.begin(unk, Name.html("option"));
     dpe.finishAttrs(false);
-    dpe.pcdata("2");
-    dpe.end(Name.html("option"));
-    dpe.end(Name.html("select"));
+    dpe.pcdata(unk, "2");
+    dpe.end(unk, Name.html("option"));
+    dpe.end(unk, Name.html("select"));
     compileTest(
         "testDeOptimization1",
         "IMPORTS___.htmlEmitter___.b('select').f(false)"
@@ -174,23 +176,23 @@ public class DomProcessingEventsTestData {
         dpe);
 
     dpe = new DomProcessingEvents();
-    dpe.begin(Name.html("table"));
+    dpe.begin(unk, Name.html("table"));
     dpe.finishAttrs(false);
-    dpe.begin(Name.html("tbody"));
+    dpe.begin(unk, Name.html("tbody"));
     dpe.finishAttrs(false);
-    dpe.begin(Name.html("tr"));
+    dpe.begin(unk, Name.html("tr"));
     dpe.finishAttrs(false);
-    dpe.begin(Name.html("td"));
+    dpe.begin(unk, Name.html("td"));
     dpe.finishAttrs(false);
-    dpe.pcdata("1");
-    dpe.end(Name.html("td"));
-    dpe.begin(Name.html("td"));
+    dpe.pcdata(unk, "1");
+    dpe.end(unk, Name.html("td"));
+    dpe.begin(unk, Name.html("td"));
     dpe.finishAttrs(false);
-    dpe.pcdata("2");
-    dpe.end(Name.html("td"));
-    dpe.end(Name.html("tr"));
-    dpe.end(Name.html("tbody"));
-    dpe.end(Name.html("table"));
+    dpe.pcdata(unk, "2");
+    dpe.end(unk, Name.html("td"));
+    dpe.end(unk, Name.html("tr"));
+    dpe.end(unk, Name.html("tbody"));
+    dpe.end(unk, Name.html("table"));
     compileTest(
         "testDeOptimization2",
         "IMPORTS___.htmlEmitter___.b('table').f(false)"
@@ -213,20 +215,20 @@ public class DomProcessingEventsTestData {
         dpe);
 
     dpe = new DomProcessingEvents();
-    dpe.begin(Name.html("div"));
+    dpe.begin(unk, Name.html("div"));
     dpe.finishAttrs(false);
-    dpe.begin(Name.html("select"));
+    dpe.begin(unk, Name.html("select"));
     dpe.finishAttrs(false);
-    dpe.begin(Name.html("option"));
+    dpe.begin(unk, Name.html("option"));
     dpe.finishAttrs(false);
-    dpe.pcdata("1");
-    dpe.end(Name.html("option"));
-    dpe.begin(Name.html("option"));
+    dpe.pcdata(unk, "1");
+    dpe.end(unk, Name.html("option"));
+    dpe.begin(unk, Name.html("option"));
     dpe.finishAttrs(false);
-    dpe.pcdata("2");
-    dpe.end(Name.html("option"));
-    dpe.end(Name.html("select"));
-    dpe.end(Name.html("div"));
+    dpe.pcdata(unk, "2");
+    dpe.end(unk, Name.html("option"));
+    dpe.end(unk, Name.html("select"));
+    dpe.end(unk, Name.html("div"));
     compileTest(
         "testReDeOptimization1",
         "IMPORTS___.htmlEmitter___.b('div').f(false)"
@@ -236,26 +238,26 @@ public class DomProcessingEventsTestData {
         dpe);
 
     dpe = new DomProcessingEvents();
-    dpe.begin(Name.html("div"));
+    dpe.begin(unk, Name.html("div"));
     dpe.finishAttrs(false);
-    dpe.begin(Name.html("table"));
+    dpe.begin(unk, Name.html("table"));
     dpe.finishAttrs(false);
-    dpe.begin(Name.html("tbody"));
+    dpe.begin(unk, Name.html("tbody"));
     dpe.finishAttrs(false);
-    dpe.begin(Name.html("tr"));
+    dpe.begin(unk, Name.html("tr"));
     dpe.finishAttrs(false);
-    dpe.begin(Name.html("td"));
+    dpe.begin(unk, Name.html("td"));
     dpe.finishAttrs(false);
-    dpe.pcdata("1");
-    dpe.end(Name.html("td"));
-    dpe.begin(Name.html("td"));
+    dpe.pcdata(unk, "1");
+    dpe.end(unk, Name.html("td"));
+    dpe.begin(unk, Name.html("td"));
     dpe.finishAttrs(false);
-    dpe.pcdata("2");
-    dpe.end(Name.html("td"));
-    dpe.end(Name.html("tr"));
-    dpe.end(Name.html("tbody"));
-    dpe.end(Name.html("table"));
-    dpe.end(Name.html("div"));
+    dpe.pcdata(unk, "2");
+    dpe.end(unk, Name.html("td"));
+    dpe.end(unk, Name.html("tr"));
+    dpe.end(unk, Name.html("tbody"));
+    dpe.end(unk, Name.html("table"));
+    dpe.end(unk, Name.html("div"));
     compileTest(
         "testReDeOptimization2",
         "IMPORTS___.htmlEmitter___.b('div').f(false)"
@@ -266,20 +268,20 @@ public class DomProcessingEventsTestData {
         dpe);
 
     dpe = new DomProcessingEvents();
-    dpe.begin(Name.html("p"));
-    dpe.attr(Name.html("id"), "foo");
+    dpe.begin(unk, Name.html("p"));
+    dpe.attr(unk, Name.html("id"), "foo");
     dpe.finishAttrs(false);
-    dpe.pcdata("hello");
-    dpe.end(Name.html("p"));
-    dpe.begin(Name.html("p"));
+    dpe.pcdata(unk, "hello");
+    dpe.end(unk, Name.html("p"));
+    dpe.begin(unk, Name.html("p"));
     dpe.finishAttrs(false);
     dpe.script(parse("bar();", "testInterleaving"));
-    dpe.end(Name.html("p"));
-    dpe.begin(Name.html("p"));
-    dpe.attr(Name.html("id"), "baz");
+    dpe.end(unk, Name.html("p"));
+    dpe.begin(unk, Name.html("p"));
+    dpe.attr(unk, Name.html("id"), "baz");
     dpe.finishAttrs(false);
-    dpe.pcdata("world");
-    dpe.end(Name.html("p"));
+    dpe.pcdata(unk, "world");
+    dpe.end(unk, Name.html("p"));
     compileTest(
         "testInterleaving",
         "IMPORTS___.htmlEmitter___.b('p').a('id', 'foo').f(false)"
@@ -297,24 +299,24 @@ public class DomProcessingEventsTestData {
         dpe);
 
     dpe = new DomProcessingEvents();
-    dpe.begin(Name.html("div"));
+    dpe.begin(unk, Name.html("div"));
     dpe.finishAttrs(false);
-    dpe.begin(Name.html("p"));
+    dpe.begin(unk, Name.html("p"));
     dpe.finishAttrs(false);
-    dpe.pcdata("...On the Night's Plutonian shore!");
-    dpe.begin(Name.html("br"));
-    dpe.attr(Name.html("title"), "Quoth the <raven>, \"Nevermore.\"");
+    dpe.pcdata(unk, "...On the Night's Plutonian shore!");
+    dpe.begin(unk, Name.html("br"));
+    dpe.attr(unk, Name.html("title"), "Quoth the <raven>, \"Nevermore.\"");
     dpe.finishAttrs(true);
-    dpe.pcdata("Much I marvelled");
-    dpe.pcdata(" this ungainly fowl");
-    dpe.end(Name.html("p"));
-    dpe.begin(Name.html("textarea"));
-    dpe.attr(Name.html("name"), "discourse");
+    dpe.pcdata(unk, "Much I marvelled");
+    dpe.pcdata(unk, " this ungainly fowl");
+    dpe.end(unk, Name.html("p"));
+    dpe.begin(unk, Name.html("textarea"));
+    dpe.attr(unk, Name.html("name"), "discourse");
     dpe.finishAttrs(false);
-    dpe.pcdata("to hear discourse so <plainly>");
-    dpe.end(Name.html("textarea"));
-    dpe.pcdata(", ...");
-    dpe.end(Name.html("div"));
+    dpe.pcdata(unk, "to hear discourse so <plainly>");
+    dpe.end(unk, Name.html("textarea"));
+    dpe.pcdata(unk, ", ...");
+    dpe.end(unk, Name.html("div"));
 
     compileTest(
         "testRenderingToInnerHtml",
@@ -339,12 +341,12 @@ public class DomProcessingEventsTestData {
         dpe);
 
     dpe = new DomProcessingEvents();
-    dpe.begin(Name.html("foo"));
+    dpe.begin(unk, Name.html("foo"));
     dpe.finishAttrs(false);
-    dpe.begin(Name.html("bar"));
+    dpe.begin(unk, Name.html("bar"));
     dpe.attr(Name.html("baz"), parseExpr("1 + 1", "testDynamicAttributes"));
     dpe.finishAttrs(true);
-    dpe.end(Name.html("foo"));
+    dpe.end(unk, Name.html("foo"));
 
     compileTest(
         "testDynamicAttributes",
@@ -362,7 +364,8 @@ public class DomProcessingEventsTestData {
     dpe.toJavascript(actual);
     TestUtil.removePseudoNodes(actual);
 
-    Statement stmt = new ExpressionStmt((Expression) QuasiBuilder.substV(
+    Statement stmt = new ExpressionStmt(
+        FilePosition.UNKNOWN, (Expression) QuasiBuilder.substV(
         ""
         + "jsunitRegister(@nameStr, function @name() {"
         + "    clearTestOutput();"
@@ -373,12 +376,14 @@ public class DomProcessingEventsTestData {
         + "                 @goldenHtml, getTestOutputInnerHTML());"
         + "});",
 
-        "nameStr", StringLiteral.valueOf(testName),
-        "name", new Identifier(testName),
+        "nameStr", StringLiteral.valueOf(FilePosition.UNKNOWN, testName),
+        "name", new Identifier(FilePosition.UNKNOWN, testName),
         "actual", actual,
-        "goldenJs", StringLiteral.valueOf(render(parse(goldenJs, testName))),
-        "actualSource", StringLiteral.valueOf(render(actual)),
-        "goldenHtml", StringLiteral.valueOf(goldenHtml)
+        "goldenJs", StringLiteral.valueOf(
+            FilePosition.UNKNOWN, render(parse(goldenJs, testName))),
+        "actualSource", StringLiteral.valueOf(
+            FilePosition.UNKNOWN, render(actual)),
+        "goldenHtml", StringLiteral.valueOf(FilePosition.UNKNOWN, goldenHtml)
         ));
 
     render(stmt, out);

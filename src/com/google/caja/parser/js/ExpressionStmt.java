@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
 
@@ -30,12 +31,13 @@ public final class ExpressionStmt extends AbstractStatement {
   private Expression expr;
 
   /** @param value unused.  This ctor is provided for reflection. */
-  public ExpressionStmt(Void value, List<? extends Expression> children) {
-    this(children.get(0));
+  public ExpressionStmt(
+      FilePosition pos, Void value, List<? extends Expression> children) {
+    this(pos, children.get(0));
   }
 
-  public ExpressionStmt(Expression expr) {
-    super(Expression.class);
+  public ExpressionStmt(FilePosition pos, Expression expr) {
+    super(pos, Expression.class);
     appendChild(expr);
   }
 

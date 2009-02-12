@@ -19,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.js.AssignOperation;
@@ -58,7 +59,8 @@ public class DefaultValijaRewriter extends Rewriter {
   private final String tempVarPrefix = "$caja$";
 
   Reference newTempVar(Scope scope) {
-    Identifier t = new Identifier(tempVarPrefix + tempVarCount++);
+    Identifier t = new Identifier(
+        FilePosition.UNKNOWN, tempVarPrefix + tempVarCount++);
     scope.declareStartOfScopeVariable(t);
     return new Reference(t);
   }
@@ -316,11 +318,12 @@ public class DefaultValijaRewriter extends Rewriter {
             // declaration to an assignment to outers and hoist it to the top
             // of the block.
             if (scope.isOuter(((Identifier) bindings.get("name")).getName())) {
-              scope.addStartOfScopeStatement(new ExpressionStmt((Expression)
-                  QuasiBuilder.subst("$v.initOuter('@name');", bindings)));
-              scope.addStartOfBlockStatement(
-                  new ExpressionStmt((Expression) subst(bindings)));
-              return new Noop();
+              Expression initScope = (Expression)
+                  QuasiBuilder.subst("$v.initOuter('@name');", bindings);
+              Expression initBlock = (Expression) subst(bindings);
+              scope.addStartOfScopeStatement(newExprStmt(initScope));
+              scope.addStartOfBlockStatement(newExprStmt(initBlock));
+              return new Noop(node.getFilePosition());
             }
           }
         }
@@ -482,12 +485,12 @@ public class DefaultValijaRewriter extends Rewriter {
                   "t2", rt2)));
           assignment.getAttributes().set(ParseTreeNode.TAINTED, true);
 
+          Expression assign = (Expression) expand(assignment, scope, mq);
           return substV(
               "t1", rt1,
               "o", expand(bindings.get("o"), scope, mq),
               "t2", rt2,
-              "assign", SyntheticNodes.s(
-                  new ExpressionStmt((Expression) expand(assignment, scope, mq))),
+              "assign", SyntheticNodes.s(newExprStmt(assign)),
               "ss", expand(bindings.get("ss"), scope, mq));
         } else {
           return NONE;
@@ -620,7 +623,7 @@ public class DefaultValijaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
-          return newReference(ReservedNames.DIS);
+          return newReference(node.getFilePosition(), ReservedNames.DIS);
         }
         return NONE;
       }
@@ -641,7 +644,7 @@ public class DefaultValijaRewriter extends Rewriter {
           String vname = v.getName();
           if (scope.isOuter(vname)) {
             ParseTreeNode r = bindings.get("r");
-            return new ExpressionStmt((Expression) substV(
+            return newExprStmt((Expression) substV(
                 "v", v,
                 "r", expand(nymize(r, vname, "var"), scope, mq)));
           }
@@ -689,8 +692,7 @@ public class DefaultValijaRewriter extends Rewriter {
         if (bindings != null &&
             bindings.get("v") instanceof Identifier &&
             scope.isOuter(((Identifier) bindings.get("v")).getName())) {
-          return new ExpressionStmt(
-              (Expression) substV("v", bindings.get("v")));
+          return newExprStmt((Expression) substV("v", bindings.get("v")));
         }
         return NONE;
       }
@@ -900,11 +902,10 @@ public class DefaultValijaRewriter extends Rewriter {
 
           // For x += 3, rhs is (x + 3)
           Operation rhs = Operation.create(
+              aNode.children().get(0).getFilePosition(),
               op.getAssignmentDelegate(),
               ops.getUncajoledLValue(), aNode.children().get(1));
-          rhs.setFilePosition(aNode.children().get(0).getFilePosition());
           Operation assignment = ops.makeAssignment(rhs);
-          assignment.setFilePosition(aNode.getFilePosition());
           if (ops.getTemporaries().isEmpty()) {
             return expand(assignment, scope, mq);
           } else {
@@ -1242,7 +1243,8 @@ public class DefaultValijaRewriter extends Rewriter {
             Scope s2 = Scope.fromFunctionConstructor(scope, c);
             checkFormals(bindings.get("ps"), mq);
             Identifier f = (Identifier) bindings.get("f");
-            Identifier fcaller = new Identifier(nym(node, f.getName(), "caller"));
+            Identifier fcaller = new Identifier(
+                f.getFilePosition(), nym(node, f.getName(), "caller"));
             Expression expr = (Expression) substV(
                 "f", f,
                 "rf", new Reference(f),
@@ -1252,7 +1254,7 @@ public class DefaultValijaRewriter extends Rewriter {
                 // It's important to expand bs before computing stmts.
                 "bs", expand(bindings.get("bs"), s2, mq),
                 "stmts", new ParseTreeNodeContainer(s2.getStartStatements()));
-            scope.addStartOfBlockStatement(new ExpressionStmt(expr));
+            scope.addStartOfBlockStatement(newExprStmt(expr));
             return QuasiBuilder.substV(";");
           }
         }
@@ -1285,7 +1287,8 @@ public class DefaultValijaRewriter extends Rewriter {
               (FunctionConstructor) node.children().get(1));
           checkFormals(bindings.get("ps"), mq);
           Identifier fname = (Identifier) bindings.get("fname");
-          Identifier fcaller = new Identifier(nym(node, fname.getName(), "caller"));
+          Identifier fcaller = new Identifier(
+              FilePosition.UNKNOWN, nym(node, fname.getName(), "caller"));
           scope.declareStartOfScopeVariable(fname);
           Block block = (Block) substV(
               "fname", new Reference(fname),
@@ -1328,8 +1331,9 @@ public class DefaultValijaRewriter extends Rewriter {
               scope,
               (FunctionConstructor)node);
           checkFormals(bindings.get("ps"), mq);
-          Identifier fname = (Identifier)bindings.get("fname");
-          Identifier fcaller = new Identifier(nym(node, fname.getName(), "caller"));
+          Identifier fname = (Identifier) bindings.get("fname");
+          Identifier fcaller = new Identifier(
+              FilePosition.UNKNOWN, nym(node, fname.getName(), "caller"));
           return substV(
               "fname", fname,
               "fRef", new Reference(fname),
@@ -1363,8 +1367,7 @@ public class DefaultValijaRewriter extends Rewriter {
                 expand(node.children().get(i), scope, mq);
             newChildren.add(i, result.getExpression());
           }
-          return new ExpressionStmt(
-              newCommaOperation(newChildren));
+          return newExprStmt(newCommaOperation(newChildren));
         }
         return NONE;
       }
@@ -1529,9 +1532,11 @@ public class DefaultValijaRewriter extends Rewriter {
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof RegexpLiteral) {
           RegexpLiteral re = (RegexpLiteral) node;
-          StringLiteral pattern = StringLiteral.valueOf(re.getMatchText());
+          StringLiteral pattern = StringLiteral.valueOf(
+              re.getFilePosition(), re.getMatchText());
           StringLiteral modifiers = !"".equals(re.getModifiers())
-              ? StringLiteral.valueOf(re.getModifiers())
+              ? StringLiteral.valueOf(
+                  FilePosition.endOf(re.getFilePosition()), re.getModifiers())
               : null;
           return substV(
               "pattern", pattern,

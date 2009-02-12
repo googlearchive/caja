@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
@@ -38,15 +39,16 @@ public final class FunctionConstructor
 
   /** @param value unused.  This ctor is provided for reflection. */
   public FunctionConstructor(
-      Void value, List<? extends ParseTreeNode> children) {
-    super(ParseTreeNode.class);    
+      FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
+    super(pos, ParseTreeNode.class);
     createMutation().appendChildren(children).execute();
   }
 
 
   public FunctionConstructor(
-      Identifier identifier, List<FormalParam> params, Block body) {
-    super(ParseTreeNode.class);
+      FilePosition pos, Identifier identifier, List<FormalParam> params,
+      Block body) {
+    super(pos, ParseTreeNode.class);
     createMutation()
         .appendChild(identifier)
         .appendChildren(params)

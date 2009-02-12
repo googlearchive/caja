@@ -15,6 +15,7 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 
@@ -27,15 +28,16 @@ import java.util.Map;
  * @author mikesamuel@gmail.com
  */
 public final class BreakStmt extends AbstractStatement {
-  private String label;
+  private final String label;
 
   /** @param children unused.  This ctor is provided for reflection. */
-  public BreakStmt(String value, List<? extends ParseTreeNode> children) {
-    this(value);
+  public BreakStmt(
+      FilePosition pos, String value, List<? extends ParseTreeNode> children) {
+    this(pos, value);
   }
 
-  public BreakStmt(String label) {
-    super(Statement.class);
+  public BreakStmt(FilePosition pos, String label) {
+    super(pos, Statement.class);
     this.label = label;
   }
 

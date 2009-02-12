@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.reporting.RenderContext;
 
 import java.util.List;
@@ -24,12 +25,13 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class FormalParam extends Declaration {
-  public FormalParam(Void value, List<? extends Expression> children) {
-    super(value, children);
+  public FormalParam(
+      FilePosition pos, Void value, List<? extends Expression> children) {
+    super(pos, value, children);
   }
-  
+
   public FormalParam(Identifier identifier) {
-    super(identifier, (Expression) null);
+    super(identifier.getFilePosition(), identifier, (Expression) null);
   }
 
   @Override

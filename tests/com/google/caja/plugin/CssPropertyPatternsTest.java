@@ -16,6 +16,7 @@ package com.google.caja.plugin;
 
 import com.google.caja.lang.css.CssPropertyPatterns;
 import com.google.caja.lang.css.CssSchema;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.css.CssPropertySignature;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.StringLiteral;
@@ -167,9 +168,9 @@ public class CssPropertyPatternsTest extends CajaTestCase {
   private ArrayConstructor toArrayList(String... values) {
     List<StringLiteral> literals = new ArrayList<StringLiteral>();
     for (String value : values) {
-      literals.add(new StringLiteral(StringLiteral.toQuotedValue(value)));
+      literals.add(StringLiteral.valueOf(FilePosition.UNKNOWN, value));
     }
-    return new ArrayConstructor(literals);
+    return new ArrayConstructor(FilePosition.UNKNOWN,literals);
   }
 
   private static CssPropertySignature parseSignature(String sig) {

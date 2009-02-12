@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
@@ -38,11 +39,13 @@ public final class CaseStmt extends SwitchCase {
   private Statement body;
 
   /** @param value unused.  This ctor is provided for reflection. */
-  public CaseStmt(Void value, List<? extends ParseTreeNode> children) {
-    this((Expression) children.get(0), (Statement) children.get(1));
+  public CaseStmt(
+      FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
+    this(pos, (Expression) children.get(0), (Statement) children.get(1));
   }
 
-  public CaseStmt(Expression caseValue, Statement body) {
+  public CaseStmt(FilePosition pos, Expression caseValue, Statement body) {
+    super(pos);
     createMutation()
         .appendChild(caseValue)
         .appendChild(body)

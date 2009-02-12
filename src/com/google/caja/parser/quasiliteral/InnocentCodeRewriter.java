@@ -155,10 +155,10 @@ public class InnocentCodeRewriter extends Rewriter {
             "k", bindings.get("k"),
             "kTempRef", new Reference(kTemp));
         kAssignment = expandAll(kAssignment, scope, mq);
-        kAssignment = new ExpressionStmt((Expression) kAssignment);
+        kAssignment = newExprStmt((Expression) kAssignment);
 
         return substV(
-            "kTempStmt", new ExpressionStmt(new Reference(kTemp)),
+            "kTempStmt", newExprStmt(new Reference(kTemp)),
             "kTempRef", new Reference(kTemp),
             "o", bindings.get("o"),
             "kAssignment", kAssignment,

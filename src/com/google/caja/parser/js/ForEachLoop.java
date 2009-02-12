@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
@@ -30,14 +31,16 @@ public final class ForEachLoop extends LabeledStatement implements NestedScope {
   private Expression container;
   private Statement body;
 
-  public ForEachLoop(String value, List<? extends ParseTreeNode> children) {
-    super(value, ParseTreeNode.class);
+  public ForEachLoop(
+      FilePosition pos, String value, List<? extends ParseTreeNode> children) {
+    super(pos, value, ParseTreeNode.class);
     createMutation().appendChildren(children).execute();
   }
 
-  public ForEachLoop(String label, Declaration var, Expression container,
-                     Statement body) {
-    super(label, ParseTreeNode.class);
+  public ForEachLoop(
+      FilePosition pos, String label, Declaration var, Expression container,
+      Statement body) {
+    super(pos, label, ParseTreeNode.class);
     createMutation()
         .appendChild(var)
         .appendChild(container)
@@ -46,10 +49,11 @@ public final class ForEachLoop extends LabeledStatement implements NestedScope {
   }
 
   public ForEachLoop(
-      String label, Expression lvalue, Expression container, Statement body) {
-    super(label, ParseTreeNode.class);
-    ExpressionStmt varStmt = new ExpressionStmt(lvalue);
-    varStmt.setFilePosition(lvalue.getFilePosition());
+      FilePosition pos, String label, Expression lvalue, Expression container,
+      Statement body) {
+    super(pos, label, ParseTreeNode.class);
+    ExpressionStmt varStmt = new ExpressionStmt(
+        lvalue.getFilePosition(), lvalue);
     createMutation()
         .appendChild(varStmt)
         .appendChild(container)

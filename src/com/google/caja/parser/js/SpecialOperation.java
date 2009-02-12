@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import java.util.List;
 
 /**
@@ -22,11 +23,8 @@ import java.util.List;
  * @author erights@gmail.com
  */
 public class SpecialOperation extends Operation {
-  public SpecialOperation(Operator value, List<? extends Expression> children) {
-    this(value, children.toArray(new Expression[children.size()]));
-  }
-
-  public SpecialOperation(Operator op, Expression... params) {
-    super(op, params);
+  public SpecialOperation(
+      FilePosition pos, Operator op, List<? extends Expression> operands) {
+    super(pos, op, operands);
   }
 }

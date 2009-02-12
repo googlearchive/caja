@@ -170,16 +170,15 @@ public final class CssCompiler {
               content = content.substring(
                   0, content.length() - GADGET_ID_PLACEHOLDER.length());
             }
-            cssParts.add(
-                new StringLiteral(StringLiteral.toQuotedValue(content)));
+            cssParts.add(StringLiteral.valueOf(FilePosition.UNKNOWN, content));
             sb.setLength(0);
           }
         };
     ss.render(new RenderContext(new MessageContext(), cssCompiler));
     cssCompiler.noMoreTokens();
 
-    ArrayConstructor cssPartsArray = new ArrayConstructor(cssParts);
-    cssPartsArray.setFilePosition(ss.getFilePosition());
+    ArrayConstructor cssPartsArray = new ArrayConstructor(
+        ss.getFilePosition(), cssParts);
     // The CSS rule
     //     p { color: purple }
     // is converted to the JavaScript
@@ -190,13 +189,12 @@ public final class CssCompiler {
     // If IMPORTS___.getIdClass() returns "g123___", then the resulting
     //     .g123___ p { color: purple }
     // will only make purple paragraphs that are under a node with class g123__.
-    ExpressionStmt emitStmt = new ExpressionStmt(
+    return new ExpressionStmt(
+        ss.getFilePosition(),
         (Expression) QuasiBuilder.substV(
             ReservedNames.IMPORTS + ".emitCss___(@cssParts./*@synthetic*/join("
             + ReservedNames.IMPORTS + ".getIdClass___()))",
             "cssParts", cssPartsArray));
-    emitStmt.setFilePosition(ss.getFilePosition());
-    return emitStmt;
   }
 
 

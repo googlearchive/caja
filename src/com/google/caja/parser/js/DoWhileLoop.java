@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
@@ -28,12 +29,14 @@ public class DoWhileLoop extends Loop {
   private Statement body;
   private Expression condition;
 
-  public DoWhileLoop(String label, List<? extends ParseTreeNode> children) {
-    this(label, (Statement) children.get(0), (Expression) children.get(1));
+  public DoWhileLoop(
+      FilePosition pos, String label, List<? extends ParseTreeNode> children) {
+    this(pos, label, (Statement) children.get(0), (Expression) children.get(1));
   }
 
-  public DoWhileLoop(String label, Statement body, Expression condition) {
-    super(label, ParseTreeNode.class);
+  public DoWhileLoop(
+      FilePosition pos, String label, Statement body, Expression condition) {
+    super(pos, label, ParseTreeNode.class);
     createMutation().appendChild(body).appendChild(condition).execute();
   }
 

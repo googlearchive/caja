@@ -15,7 +15,7 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.reporting.RenderContext;
 import java.util.List;
@@ -32,11 +32,13 @@ public final class StringLiteral extends Literal {
   private final String value;
 
   /** @param children unused.  This ctor is provided for reflection. */
-  public StringLiteral(String value, List<? extends ParseTreeNode> children) {
-    this(value);
+  public StringLiteral(
+      FilePosition pos, String value, List<? extends ParseTreeNode> children) {
+    this(pos, value);
   }
 
-  public StringLiteral(String value) {
+  public StringLiteral(FilePosition pos, String value) {
+    super(pos);
     if (null == value) { throw new NullPointerException(); }
     this.value = value;
   }
@@ -53,9 +55,12 @@ public final class StringLiteral extends Literal {
 
   @Override
   public void render(RenderContext rc) {
-    TokenConsumer out = rc.getOut();
-    out.mark(getFilePosition());
-    StringBuilder sb = new StringBuilder(value.length() + 18);
+    rc.getOut().mark(getFilePosition());
+    renderUnquotedValue(getUnquotedValue(), rc);
+  }
+
+  public static void renderUnquotedValue(String unquoted, RenderContext rc) {
+    StringBuilder sb = new StringBuilder(unquoted.length() + 18);
     // in paranoid mode we need to produce output that can be safely embedded in
     // HTML or XML.  We make no guarantees for attribute values, and cajoled
     // output should not be included in an attribute value, but to be on the
@@ -69,10 +74,9 @@ public final class StringLiteral extends Literal {
     // would set delim to '"' below.
     char delim = '\'';
     sb.append(delim);
-    Escaping.escapeJsString(
-        getUnquotedValue(), rc.isAsciiOnly(), rc.isParanoid(), sb);
+    Escaping.escapeJsString(unquoted, rc.isAsciiOnly(), rc.isParanoid(), sb);
     sb.append(delim);
-    out.consume(sb.toString());
+    rc.getOut().consume(sb.toString());
   }
 
   /**
@@ -111,8 +115,9 @@ public final class StringLiteral extends Literal {
     return sb.toString();
   }
 
-  public static StringLiteral valueOf(CharSequence unquotedValue) {
-    return new StringLiteral(toQuotedValue(unquotedValue));
+  public static StringLiteral valueOf(
+      FilePosition pos, CharSequence unquotedValue) {
+    return new StringLiteral(pos, toQuotedValue(unquotedValue));
   }
 
   // TODO(msamuel): move unescaping to Escaping.java -- nobody will look there

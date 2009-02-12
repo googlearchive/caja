@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.render.JsPrettyPrinter;
@@ -28,10 +29,11 @@ import java.io.IOException;
  */
 public abstract class AbstractExpression
     extends AbstractParseTreeNode implements Expression {
-  public AbstractExpression(Class<? extends ParseTreeNode> childClass) {
-    super(childClass);
+  public AbstractExpression(
+      FilePosition pos, Class<? extends ParseTreeNode> childClass) {
+    super(pos, childClass);
   }
-  
+
   public boolean isLeftHandSide() { return false; }
 
   public final TokenConsumer makeRenderer(

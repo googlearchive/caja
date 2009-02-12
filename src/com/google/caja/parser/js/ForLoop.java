@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
@@ -30,17 +31,19 @@ public final class ForLoop extends Loop implements NestedScope {
   private Statement increment;
   private Statement body;
 
-  public ForLoop(String value, List<? extends ParseTreeNode> children) {
-    this(value,
+  public ForLoop(
+      FilePosition pos, String value, List<? extends ParseTreeNode> children) {
+    this(pos, value,
          (Statement) children.get(0),
          (Expression) children.get(1),
          (Statement) children.get(2),
          (Statement) children.get(3));
   }
 
-  public ForLoop(String label, Statement initializer, Expression cond,
-                 Statement increment, Statement body) {
-    super(label, ParseTreeNode.class);
+  public ForLoop(
+      FilePosition pos, String label, Statement initializer, Expression cond,
+      Statement increment, Statement body) {
+    super(pos, label, ParseTreeNode.class);
     createMutation()
         .appendChild(initializer)
         .appendChild(cond)

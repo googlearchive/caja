@@ -31,11 +31,12 @@ import java.util.List;
 public abstract class Operation extends AbstractExpression {
   private Operator op;
 
-  protected Operation(Operator op, Expression... params) {
-    super(Expression.class);
+  protected Operation(
+      FilePosition pos, Operator op, List<? extends Expression> params) {
+    super(pos, Expression.class);
     this.op = op;
     if (null == op) { throw new NullPointerException(); }
-    createMutation().appendChildren(Arrays.asList(params)).execute();
+    createMutation().appendChildren(params).execute();
   }
 
   @Override
@@ -56,23 +57,32 @@ public abstract class Operation extends AbstractExpression {
     }
   }
 
-  public static Operation create(Operator op, Expression... params) {
+  public static Operation create(
+      FilePosition pos, Operator op, Expression... params) {
     switch (op.getCategory()) {
       case ASSIGNMENT:
-        return new AssignOperation(op, params);
+        return new AssignOperation(pos, op, Arrays.asList(params));
       case CONTROL:
-        return new ControlOperation(op, params);
+        return new ControlOperation(pos, op, Arrays.asList(params));
       case SPECIAL:
-        return new SpecialOperation(op, params);
+        return new SpecialOperation(pos, op, Arrays.asList(params));
       case SIMPLE:
-        return new SimpleOperation(op, params);
+        return new SimpleOperation(pos, op, Arrays.asList(params));
       default:
         throw new RuntimeException("unexpected: " + op);
     }
   }
 
-  public static Operation undefined() {
-    return create(Operator.VOID, new IntegerLiteral(0));
+  public static Operation createInfix(
+      Operator op, Expression left, Expression right) {
+    assert op.getType() == OperatorType.INFIX;
+    return create(
+        FilePosition.span(left.getFilePosition(), right.getFilePosition()),
+        op, left, right);
+  }
+
+  public static Operation undefined(FilePosition pos) {
+    return create(pos, Operator.VOID, new IntegerLiteral(pos, 0));
   }
 
   @Override
@@ -181,7 +191,7 @@ public abstract class Operation extends AbstractExpression {
     TokenConsumer out = rc.getOut();
     if (isKeywordAccess()) {
       out.consume(Operator.SQUARE_BRACKET.getOpeningSymbol());
-      StringLiteral.valueOf(getMemberName()).render(rc);
+      StringLiteral.renderUnquotedValue(getMemberName(), rc);
       out.consume(Operator.SQUARE_BRACKET.getClosingSymbol());
     } else {
       out.consume(op.getSymbol());

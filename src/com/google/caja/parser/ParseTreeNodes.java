@@ -14,6 +14,8 @@
 
 package com.google.caja.parser;
 
+import com.google.caja.lexer.FilePosition;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
@@ -39,15 +41,16 @@ public class ParseTreeNodes {
    *
    * @param clazz the concrete class of {@code ParseTreeNode} to instantiate.
    * @param value the value for the new node
-   *        (see {@link com.google.caja.parser.ParseTreeNode#getValue()}).
+   *        (see {@link ParseTreeNode#getValue()}).
    * @param children the children of the new node.
    * @return the newly constructed {@code ParseTreeNode}.
    */
   public static <T extends ParseTreeNode> T newNodeInstance(
-      Class<T> clazz, Object value, List<? extends ParseTreeNode> children) {
+      Class<T> clazz, FilePosition pos, Object value,
+      List<? extends ParseTreeNode> children) {
     Constructor<T> ctor = findCloneCtor(clazz);
     try {
-      return ctor.newInstance(value, children);
+      return ctor.newInstance(pos, value, children);
     } catch (InstantiationException e) {
       throw new RuntimeException(getCtorErrorMessage(ctor, value, children), e);
     } catch (IllegalAccessException e) {
@@ -62,8 +65,6 @@ public class ParseTreeNodes {
   /**
    * Perform a deep equality test on a pair of {@code ParseTreeNode}s.
    *
-   * @param x a {@code ParseTreeNode}.
-   * @param y another {@code ParseTreeNode}.
    * @return whether the trees rooted at {@code this} and {@code n} are equal.
    */
   public static boolean deepEquals(ParseTreeNode x, ParseTreeNode y) {
@@ -82,11 +83,9 @@ public class ParseTreeNodes {
     return false;
   }
 
-  private static final Map<Class<? extends ParseTreeNode>,
-                           Constructor<? extends ParseTreeNode>> cloneCtorCache
-      = Collections.synchronizedMap(
-            new HashMap<Class<? extends ParseTreeNode>,
-                        Constructor<? extends ParseTreeNode>>());
+  private static final Map<Class<? extends ParseTreeNode>, Constructor<?>>
+      cloneCtorCache = Collections.synchronizedMap(
+          new HashMap<Class<? extends ParseTreeNode>, Constructor<?>>());
   private static <T extends ParseTreeNode>
   Constructor<T> findCloneCtor(Class<T> clazz) {
     {
@@ -94,8 +93,10 @@ public class ParseTreeNodes {
       if (ctor != null) { return ctor; }
     }
     for (Constructor<T> ctor : declaredCtors(clazz)) {
-      if (ctor.getParameterTypes().length != 2) continue;
-      if (ctor.getParameterTypes()[1].isAssignableFrom(List.class)) {
+      Class<?>[] parameterTypes = ctor.getParameterTypes();
+      if (parameterTypes.length == 3
+          && FilePosition.class.equals(parameterTypes[0])
+          && ctor.getParameterTypes()[2].isAssignableFrom(List.class)) {
         cloneCtorCache.put(clazz, ctor);
         return ctor;
       }

@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AbstractParseTreeNode;
@@ -34,11 +35,13 @@ public final class UseSubset extends AbstractParseTreeNode {
   private final String subsetName;
 
   /** @param children unused.  This ctor is provided for reflection. */
-  public UseSubset(String subsetName, List<NoChildren> children) {
-    this(subsetName);
+  public UseSubset(
+      FilePosition pos, String subsetName, List<NoChildren> children) {
+    this(pos, subsetName);
   }
 
-  public UseSubset(String subsetName) {
+  public UseSubset(FilePosition pos, String subsetName) {
+    super(pos);
     if (subsetName == null) { throw new NullPointerException(); }
     this.subsetName = subsetName;
   }

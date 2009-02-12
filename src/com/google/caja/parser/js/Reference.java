@@ -14,12 +14,16 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 import java.util.List;
 
 /**
+ * An expression that evaluates to the value associated with the property of the
+ * same name in either the current scope chain, or the object to the left of a
+ * dot-operator.
  *
  * @author mikesamuel@gmail.com
  */
@@ -27,12 +31,13 @@ public final class Reference extends AbstractExpression {
   private Identifier identifier;
 
   /** @param value unused.  This ctor is provided for reflection. */
-  public Reference(Void value, List<ParseTreeNode> children) {
-    this((Identifier) children.get(0));
+  public Reference(FilePosition pos, Void value, List<ParseTreeNode> children) {
+    super(pos, Identifier.class);
+    appendChild(children.get(0));
   }
 
   public Reference(Identifier identifier) {
-    super(Identifier.class);
+    super(identifier.getFilePosition(), Identifier.class);
     appendChild(identifier);
   }
 

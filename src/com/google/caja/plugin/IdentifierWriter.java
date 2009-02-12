@@ -38,12 +38,10 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 final class IdentifierWriter {
-  private final FilePosition pos;
   private final MessageQueue mq;
   private final boolean suffix;
 
-  IdentifierWriter(FilePosition pos, MessageQueue mq, boolean suffix) {
-    this.pos = pos;
+  IdentifierWriter(MessageQueue mq, boolean suffix) {
     this.mq = mq;
     this.suffix = suffix;
   }
@@ -54,7 +52,7 @@ final class IdentifierWriter {
    */
   interface Emitter {
     /** @param s a plain text chunk of an attribute value. */
-    void emit(String s);
+    void emit(FilePosition pos, String s);
     /**
      * @param e an expression that will return a string that can be safely
      *   treated as either plain text or HTML.
@@ -67,23 +65,23 @@ final class IdentifierWriter {
    * @param out will be invoked with expressions and string chunks that can be
    *   concatenated to get the rewritten attribute value.
    */
-  void toJavascript(String nmTokens, Emitter out) {
+  void toJavascript(FilePosition pos, String nmTokens, Emitter out) {
     boolean wasSpace = true;
     boolean first = true;
-    int pos = 0;
+    int written = 0;
     for (int i = 0, n = nmTokens.length(); i < n; ++i) {
       char ch = nmTokens.charAt(i);
       boolean space = Character.isWhitespace(ch);
       if (space != wasSpace) {
         if (!wasSpace) {
-          first = emitName(first, nmTokens.substring(pos, i), out);
+          first = emitName(pos, first, nmTokens.substring(written, i), out);
         }
-        pos = i;
+        written = i;
         wasSpace = space;
       }
     }
     if (!wasSpace) {
-      first = emitName(first, nmTokens.substring(pos), out);
+      first = emitName(pos, first, nmTokens.substring(written), out);
     }
   }
 
@@ -94,20 +92,26 @@ final class IdentifierWriter {
   static final class ConcatenationEmitter implements Emitter {
     private final List<Expression> parts = new ArrayList<Expression>();
 
-    public void emit(Expression e) { parts.add(e); }
+    public void emit(Expression e) {
+      if (e instanceof StringLiteral) {
+        emit(e.getFilePosition(), ((StringLiteral) e).getUnquotedValue());
+      } else {
+        parts.add(e);
+      }
+    }
 
-    public void emit(String s) {
+    public void emit(FilePosition pos, String s) {
       if (!parts.isEmpty()) {
         int lastIndex = parts.size() - 1;
         Expression last = parts.get(lastIndex);
         if (last instanceof StringLiteral) {
           parts.set(lastIndex,
-                    TreeConstruction.stringLiteral(
-                        ((StringLiteral) last).getUnquotedValue() + s));
+                    StringLiteral.valueOf(
+                        pos, ((StringLiteral) last).getUnquotedValue() + s));
           return;
         }
       }
-      parts.add(TreeConstruction.stringLiteral(s));
+      parts.add(StringLiteral.valueOf(pos, s));
     }
 
     public Expression getExpression() {
@@ -126,22 +130,23 @@ final class IdentifierWriter {
       this.tgtChain = tgtChain;
       this.out = out;
     }
-    public void emit(String s) {
-      JsWriter.appendText(s, JsWriter.Esc.HTML_ATTRIB, tgtChain, out);
+    public void emit(FilePosition pos, String s) {
+      JsWriter.appendText(pos, s, JsWriter.Esc.HTML_ATTRIB, tgtChain, out);
     }
     public void emit(Expression e) {
       JsWriter.append(e, tgtChain, out);
     }
   }
 
-  private boolean emitName(boolean first, String ident, Emitter out) {
+  private boolean emitName(
+      FilePosition pos, boolean first, String ident, Emitter out) {
     if (ident.endsWith("__")) {
       mq.addMessage(
           PluginMessageType.BAD_IDENTIFIER, pos,
           MessagePart.Factory.valueOf(ident));
       return first;
     }
-    out.emit((first ? "" : " ") + ident + (suffix ? "-" : ""));
+    out.emit(pos, (first ? "" : " ") + ident + (suffix ? "-" : ""));
     if (suffix) {
       out.emit(TreeConstruction.call(
           TreeConstruction.memberAccess(
@@ -156,7 +161,7 @@ final class IdentifierWriter {
       if (e == null) {
         e = operand;
       } else {
-        e = Operation.create(Operator.ADDITION, e, operand);
+        e = Operation.createInfix(Operator.ADDITION, e, operand);
       }
     }
     return e;

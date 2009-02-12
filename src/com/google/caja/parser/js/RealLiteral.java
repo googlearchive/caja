@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
@@ -29,11 +30,15 @@ public final class RealLiteral extends NumberLiteral {
   private final double value;
 
   /** @param children unused.  This ctor is provided for reflection. */
-  public RealLiteral(Number value, List<? extends ParseTreeNode> children) {
-    this(value.doubleValue());
+  public RealLiteral(
+      FilePosition pos, Number value, List<? extends ParseTreeNode> children) {
+    this(pos, value.doubleValue());
   }
 
-  public RealLiteral(double value) { this.value = value; }
+  public RealLiteral(FilePosition pos, double value) {
+    super(pos);
+    this.value = value;
+  }
 
   @Override
   public Number getValue() { return Double.valueOf(value); }

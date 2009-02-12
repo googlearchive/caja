@@ -14,6 +14,7 @@
 
 package com.google.caja.render;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.JsTokenType;
@@ -118,7 +119,9 @@ public class JsMinimalPrinterTest extends CajaTestCase {
   public void testNegatedNegativeNumericConstants() throws Exception {
     assertRendered(
         "-(-3)",  // not --3
-        Operation.create(Operator.NEGATION, new IntegerLiteral(-3)));
+        Operation.create(
+            FilePosition.UNKNOWN, Operator.NEGATION,
+            new IntegerLiteral(FilePosition.UNKNOWN,-3)));
   }
 
   public void testRetokenization() throws Exception {

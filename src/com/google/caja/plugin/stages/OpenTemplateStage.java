@@ -181,13 +181,19 @@ public final class OpenTemplateStage implements Pipeline.Stage<Jobs> {
       List<Expression> templateParts = splitter.parts;
       if (templateParts == null) { return false; }
 
+      FilePosition pos = chain.node.getFilePosition();
+      FilePosition startPos = FilePosition.startOf(pos);
       ((MutableParseTreeNode) chain.parent.node).replaceChild(
           Operation.create(
+              pos,
               Operator.FUNCTION_CALL,
               Operation.create(
+                  startPos,
                   Operator.CONSTRUCTOR,
-                  new Reference(new Identifier("StringInterpolation"))),
-              new ArrayConstructor(templateParts)),
+                  new Reference(new Identifier(
+                      startPos,
+                      "StringInterpolation"))),
+              new ArrayConstructor(pos, templateParts)),
           chain.node);
       return false;
     }
@@ -400,9 +406,7 @@ final class Splitter {
       end = p.b;
       sb.append(p.a);
     }
-    StringLiteral lit = new StringLiteral(StringLiteral.toQuotedValue(sb));
-    lit.setFilePosition(FilePosition.span(start, end));
-    parts.add(lit);
+    parts.add(StringLiteral.valueOf(FilePosition.span(start, end), sb));
   }
 
   /**
@@ -417,11 +421,9 @@ final class Splitter {
       end = p.b;
       sb.append(p.a);
     }
-    Identifier ident = new Identifier(sb.toString());
-    Reference ref = new Reference(ident);
     FilePosition pos = FilePosition.span(start, end);
-    ident.setFilePosition(pos);
-    ref.setFilePosition(pos);
+    Identifier ident = new Identifier(pos, sb.toString());
+    Reference ref = new Reference(ident);
     parts.add(ref);
   }
 
@@ -456,9 +458,7 @@ final class Splitter {
       tq.expectEmpty();
     } catch (ParseException ex) {
       ex.toMessageQueue(mq);
-      Operation placeholder = Operation.undefined();
-      placeholder.setFilePosition(FilePosition.span(start, end));
-      result = placeholder;
+      result = Operation.undefined(FilePosition.span(start, end));
     }
     parts.add(result);
   }

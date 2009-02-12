@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
@@ -33,13 +34,13 @@ import java.util.Map;
  *
  * @author mikesamuel@gmail.com
  */
-public abstract class LabeledStatement
-    extends AbstractStatement {
-  private String label;
+public abstract class LabeledStatement extends AbstractStatement {
+  private final String label;
 
-  protected LabeledStatement(String label,
-                             Class<? extends ParseTreeNode> childClass) {
-    super(childClass);
+  protected LabeledStatement(
+      FilePosition pos,
+      String label, Class<? extends ParseTreeNode> childClass) {
+    super(pos, childClass);
     assert label != null;
     this.label = label;
   }

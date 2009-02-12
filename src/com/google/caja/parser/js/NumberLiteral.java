@@ -14,6 +14,8 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
+
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
@@ -26,7 +28,7 @@ import java.math.RoundingMode;
  * @author mikesamuel@gmail.com
  */
 public abstract class NumberLiteral extends Literal {
-  protected NumberLiteral() { }
+  protected NumberLiteral(FilePosition pos) { super(pos); }
 
   @Override
   public abstract Number getValue();

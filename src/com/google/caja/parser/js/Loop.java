@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 
 /**
@@ -22,8 +23,10 @@ import com.google.caja.parser.ParseTreeNode;
  * @author mikesamuel@gmail.com
  */
 public abstract class Loop extends LabeledStatement {
-  public Loop(String label, Class<? extends ParseTreeNode> childClass) {
-    super(label, childClass);
+  public Loop(
+      FilePosition pos, String label,
+      Class<? extends ParseTreeNode> childClass) {
+    super(pos, label, childClass);
   }
 
   public abstract Expression getCondition();

@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.reporting.RenderContext;
 
 import java.util.List;
@@ -26,13 +27,14 @@ public final class ReturnStmt extends AbstractStatement {
   private Expression returnValue;
 
   /** @param value unused.  This ctor is provided for reflection. */
-  public ReturnStmt(Void value, List<? extends Expression> children) {
-    super(Expression.class);
+  public ReturnStmt(
+      FilePosition pos, Void value, List<? extends Expression> children) {
+    super(pos, Expression.class);
     createMutation().appendChildren(children).execute();
   }
 
-  public ReturnStmt(Expression returnValue) {
-    super(Expression.class);
+  public ReturnStmt(FilePosition pos, Expression returnValue) {
+    super(pos, Expression.class);
     if (null != returnValue) {
       appendChild(returnValue);
     }

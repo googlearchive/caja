@@ -85,9 +85,9 @@ public final class HtmlDefinitions {
   }
 
   public static Block generateJavascriptDefinitions(HtmlSchema schema) {
+    FilePosition unk = FilePosition.UNKNOWN;
     Map<String, HTML.Attribute.Type> atypes = attributeTypes(schema);
     Map<String, EnumSet<EFlag>> eflags = elementFlags(schema);
-
 
     Block definitions = new Block();
     definitions.appendChild(QuasiBuilder.substV("var html4 = {};"));
@@ -99,10 +99,10 @@ public final class HtmlDefinitions {
       List<StringLiteral> keys = new ArrayList<StringLiteral>();
       List<IntegerLiteral> values = new ArrayList<IntegerLiteral>();
       for (HTML.Attribute.Type t : atypesUsed) {
-        keys.add(StringLiteral.valueOf(t.name()));
-        values.add(new IntegerLiteral(A_TYPE_MAP.get(t)));
+        keys.add(StringLiteral.valueOf(unk, t.name()));
+        values.add(new IntegerLiteral(unk, A_TYPE_MAP.get(t)));
       }
-      definitions.appendChild(new ExpressionStmt((Expression)
+      definitions.appendChild(new ExpressionStmt(unk, (Expression)
           QuasiBuilder.substV(
               "html4.atype = { @k*: @v* };",
               "k", new ParseTreeNodeContainer(keys),
@@ -116,11 +116,11 @@ public final class HtmlDefinitions {
         Name elementName = Name.html(key.substring(0, key.indexOf(':')));
         if ("*".equals(elementName.getCanonicalForm())
             || schema.isElementAllowed(elementName)) {
-          keys.add(StringLiteral.valueOf(key));
-          values.add(new IntegerLiteral(A_TYPE_MAP.get(e.getValue())));
+          keys.add(StringLiteral.valueOf(unk, key));
+          values.add(new IntegerLiteral(unk, A_TYPE_MAP.get(e.getValue())));
         }
       }
-      definitions.appendChild(new ExpressionStmt((Expression)
+      definitions.appendChild(new ExpressionStmt(unk, (Expression)
           QuasiBuilder.substV(
               "html4.ATTRIBS = { @k*: @v* };",
               "k", new ParseTreeNodeContainer(keys),
@@ -133,10 +133,10 @@ public final class HtmlDefinitions {
       List<StringLiteral> keys = new ArrayList<StringLiteral>();
       List<IntegerLiteral> values = new ArrayList<IntegerLiteral>();
       for (EFlag f : eflagsUsed) {
-        keys.add(StringLiteral.valueOf(f.name()));
-        values.add(new IntegerLiteral(f.bitMask));
+        keys.add(StringLiteral.valueOf(unk, f.name()));
+        values.add(new IntegerLiteral(unk, f.bitMask));
       }
-      definitions.appendChild(new ExpressionStmt((Expression)
+      definitions.appendChild(new ExpressionStmt(unk, (Expression)
           QuasiBuilder.substV(
               "html4.eflags = { @k*: @v* };",
               "k", new ParseTreeNodeContainer(keys),
@@ -149,10 +149,10 @@ public final class HtmlDefinitions {
         String key = e.getKey();
         int value = 0;
         for (EFlag f : e.getValue()) { value |= f.bitMask; }
-        keys.add(StringLiteral.valueOf(key));
-        values.add(new IntegerLiteral(value));
+        keys.add(StringLiteral.valueOf(unk, key));
+        values.add(new IntegerLiteral(unk, value));
       }
-      definitions.appendChild(new ExpressionStmt((Expression)
+      definitions.appendChild(new ExpressionStmt(unk, (Expression)
           QuasiBuilder.substV(
               "html4.ELEMENTS = { @k*: @v* };",
               "k", new ParseTreeNodeContainer(keys),

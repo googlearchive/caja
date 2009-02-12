@@ -15,7 +15,6 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
 
@@ -86,9 +85,8 @@ public class SimpleQuasiNode extends QuasiNode {
 
     // TODO(ihab.awad): Absorb setting the FilePosition into newNodeInstance and remove the
     // assumption here that everything is an AbstractParseTreeNode.
-    AbstractParseTreeNode node = (AbstractParseTreeNode)
-        ParseTreeNodes.newNodeInstance(clazz, value, children);
-    node.setFilePosition(FilePosition.UNKNOWN);
+    ParseTreeNode node = ParseTreeNodes.newNodeInstance(
+        clazz, FilePosition.UNKNOWN, value, children);
     substitutes.add(node);
 
     return true;

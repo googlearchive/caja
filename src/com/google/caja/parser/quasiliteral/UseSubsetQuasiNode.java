@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.UseSubset;
 import com.google.caja.parser.js.UseSubsetDirective;
@@ -59,9 +60,9 @@ final class UseSubsetQuasiNode extends QuasiNode {
       List<ParseTreeNode> substitutes, Map<String, ParseTreeNode> bindings) {
     List<UseSubset> subsets = new ArrayList<UseSubset>();
     for (String subsetName : subsetNames) {
-      subsets.add(new UseSubset(subsetName));
+      subsets.add(new UseSubset(FilePosition.UNKNOWN, subsetName));
     }
-    substitutes.add(new UseSubsetDirective(subsets));
+    substitutes.add(new UseSubsetDirective(FilePosition.UNKNOWN, subsets));
     return true;
   }
 }

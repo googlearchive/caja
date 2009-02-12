@@ -318,8 +318,9 @@ public class Scope {
     Scope s = getClosestDeclarationContainer();
     // TODO(ihab.awad): Uses private access to 's' which is of same class but distinct
     // instance. Violates capability discipline; kittens unduly sacrificed. Refactor.
-    Identifier id = s(new Identifier("x" + (s.tempVariableCounter++) + "___"));
-    s.addStartOfScopeStatement((Statement)substV(
+    Identifier id = s(new Identifier(
+        FilePosition.UNKNOWN, "x" + (s.tempVariableCounter++) + "___"));
+    s.addStartOfScopeStatement((Statement) substV(
         "var @id;",
         "id", id));
     return id;

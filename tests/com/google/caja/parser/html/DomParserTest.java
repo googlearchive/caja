@@ -21,7 +21,6 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
-import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageType;
@@ -1931,6 +1930,35 @@ public class DomParserTest extends CajaTestCase {
     }
   }
 
+  public void testRender() throws Exception {
+    DomTree t = xmlFragment(fromString(
+        ""
+        + "<script><![CDATA[ foo() < bar() ]]></script>\n"
+        + "<p />\n"
+        + "<![CDATA[ 1 < 2 && 3 > 4 ]]>\n"
+        + "<xmp>1 &lt; 2</xmp>\n"
+        + "<script> foo() &lt; bar() </script>"));
+
+    // Rendered as XML
+    assertEquals(
+        ""
+        + "<script><![CDATA[ foo() < bar() ]]></script>\n"
+        + "<p />\n"
+        + "<![CDATA[ 1 < 2 && 3 > 4 ]]>\n"
+        + "<xmp>1 &lt; 2</xmp>\n"
+        + "<script> foo() &lt; bar() </script>",
+        render(t, true));
+    // Rendered as HTML
+    assertEquals(
+        ""
+        + "<script> foo() < bar() </script>\n"
+        + "<p></p>\n"
+        + " 1 &lt; 2 &amp;&amp; 3 &gt; 4 \n"
+        + "<xmp>1 < 2</xmp>\n"
+        + "<script> foo() < bar() </script>",
+        render(t, false));
+  }
+
   private void assertParsedHtml(
       List<String> htmlInput,
       List<String> expectedParseTree,
@@ -1969,8 +1997,9 @@ public class DomParserTest extends CajaTestCase {
           Join.join("\n", htmlInput), asXml);
       p = new DomParser(tq, asXml, mq);
     } else {
-      p = new DomParser(
-          new HtmlLexer(fromString(Join.join("\n", htmlInput))), is, mq);
+      HtmlLexer lexer = new HtmlLexer(fromString(Join.join("\n", htmlInput)));
+      p = new DomParser(lexer, is, mq);
+      asXml = lexer.getTreatedAsXml();
     }
     DomTree tree = fragment ? p.parseFragment() : p.parseDocument();
 
@@ -1987,11 +2016,20 @@ public class DomParserTest extends CajaTestCase {
     }
     MoreAsserts.assertListsEqual(expectedMessages, actualMessages, 0);
 
-    StringBuilder out = new StringBuilder();
-    RenderContext context = new RenderContext(mc, new Concatenator(out, null));
-    tree.render(context);
-    List<String> outputHtml = Arrays.asList(out.toString().split("\n"));
-    MoreAsserts.assertListsEqual(expectedOutputHtml, outputHtml);
+    MoreAsserts.assertListsEqual(
+        expectedOutputHtml, Arrays.asList(render(tree, asXml).split("\n")));
+    DomTree clone = tree.clone();
+    MoreAsserts.assertListsEqual(
+        expectedOutputHtml, Arrays.asList(render(clone, asXml).split("\n")));
+  }
+
+  private String render(DomTree t, boolean asXml) {
+    StringBuilder sb = new StringBuilder();
+    RenderContext rc = new MarkupRenderContext(
+        mc, t.makeRenderer(sb, null), asXml);
+    t.render(rc);
+    rc.getOut().noMoreTokens();
+    return sb.toString();
   }
 
   private TokenQueue<HtmlTokenType> tokenizeTestInput(

@@ -69,7 +69,8 @@ public abstract class CssPropertySignature implements ParseTreeNode {
 
   @Override
   public CssPropertySignature clone() {
-    return ParseTreeNodes.newNodeInstance(getClass(), getValue(), children());
+    return ParseTreeNodes.newNodeInstance(
+        getClass(), getFilePosition(), getValue(), children());
   }
 
   public final TokenConsumer makeRenderer(

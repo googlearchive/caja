@@ -124,7 +124,8 @@ public class HtmlCompiler {
     DomProcessingEvents cdom = new DomProcessingEvents();
     compileDom(doc, cdom);
 
-    Block body = new Block(Collections.<Statement>emptyList());
+    Block body = new Block(
+        doc.getFilePosition(), Collections.<Statement>emptyList());
     cdom.toJavascript(body);
     return body;
   }
@@ -149,10 +150,10 @@ public class HtmlCompiler {
     }
     switch (t.getType()) {
       case TEXT:
-        out.pcdata(((DomTree.Text) t).getValue());
+        out.pcdata(t.getFilePosition(), ((DomTree.Text) t).getValue());
         break;
       case CDATA:
-        out.cdata(((DomTree.Text) t).getValue());
+        out.cdata(t.getFilePosition(), ((DomTree.Text) t).getValue());
         break;
       case TAGBEGIN:
         DomTree.Tag el = (DomTree.Tag) t;
@@ -181,15 +182,15 @@ public class HtmlCompiler {
         constraint.startTag(el);
         List<? extends DomTree> children = el.children();
 
-        out.begin(tagName);
+        out.begin(el.getToken().pos, tagName);
 
         if (children.isEmpty()) {
           for (Pair<Name, String> extra : constraint.tagDone(el)) {
-            out.attr(extra.a, extra.b);
+            out.attr(FilePosition.UNKNOWN, extra.a, extra.b);
           }
           out.finishAttrs(!requiresCloseTag);
           if (requiresCloseTag) {
-            out.end(tagName);
+            out.end(FilePosition.endOf(t.getFilePosition()), tagName);
           }
         } else {
           int i;
@@ -210,8 +211,7 @@ public class HtmlCompiler {
             } else {
               AttributeXform xform = xformForAttribute(tagName, name);
 
-              DomTree.Attrib temp = (wrapper == null) ?
-                  attrib :
+              DomTree.Attrib temp =
                   new DomTree.Attrib(
                       attrib.getAttribName(),
                       new DomTree.Value(
@@ -223,7 +223,7 @@ public class HtmlCompiler {
                       attrib.getFilePosition());
 
               if (null == xform) {
-                out.attr(name, temp.getAttribValue());
+                out.attr(temp.getFilePosition(), name, temp.getAttribValue());
               } else {
                 List<DomTree> newchildren
                     = new ArrayList<DomTree>(el.children());
@@ -244,7 +244,7 @@ public class HtmlCompiler {
           }
 
           for (Pair<Name, String> extra : constraint.tagDone(el)) {
-            out.attr(extra.a, extra.b);
+            out.attr(FilePosition.UNKNOWN, extra.a, extra.b);
           }
 
           boolean tagAllowsContent = tagAllowsContent(tagName);
@@ -271,7 +271,7 @@ public class HtmlCompiler {
           }
 
           if (wroteChildElement || requiresCloseTag) {
-            out.end(tagName);
+            out.end(FilePosition.endOf(t.getFilePosition()), tagName);
           }
         }
         break;
@@ -345,7 +345,8 @@ public class HtmlCompiler {
     new CssRewriter(meta, mq).withInvalidNodeMessageLevel(MessageLevel.WARNING)
         .rewrite(new AncestorChain<CssTree>(decls));
 
-    Block cssBlock = new Block(Collections.<Statement>emptyList());
+    Block cssBlock = new Block(
+        FilePosition.UNKNOWN, Collections.<Statement>emptyList());
     // Produces a call to cat(bits, of, css);
     declGroupToStyleValue(
         decls, Arrays.asList("cat"), cssBlock, JsWriter.Esc.NONE);
@@ -359,7 +360,7 @@ public class HtmlCompiler {
     List<? extends Expression> operands = ((Operation) css).children();
     Expression cssOp = operands.get(1);
     for (Expression e : operands.subList(2, operands.size())) {
-      cssOp = Operation.create(Operator.ADDITION, cssOp, e);
+      cssOp = Operation.createInfix(Operator.ADDITION, cssOp, e);
     }
     out.attr(Name.html("style"), cssOp);
   }
@@ -432,11 +433,8 @@ public class HtmlCompiler {
       statements.clear();
     }
 
-    Block b = new Block(statements);
-    b.setFilePosition(stmt.getFilePosition());
-
     // expression will be sanitized in a later pass
-    return b;
+    return new Block(stmt.getFilePosition(), statements);
   }
 
   /**
@@ -461,8 +459,9 @@ public class HtmlCompiler {
         + "}",
 
         "scriptBody", scriptBody,
-        "sourceFile", StringLiteral.valueOf(sourcePath),
-        "line", StringLiteral.valueOf(String.valueOf(pos.startLineNo())));
+        "sourceFile", StringLiteral.valueOf(FilePosition.UNKNOWN, sourcePath),
+        "line", StringLiteral.valueOf(
+            FilePosition.UNKNOWN, String.valueOf(pos.startLineNo())));
     envelope.setFilePosition(pos);
     return envelope;
   }
@@ -531,9 +530,9 @@ public class HtmlCompiler {
         DomTree.Attrib t = tChain.node;
         IdentifierWriter.ConcatenationEmitter emitter
             = new IdentifierWriter.ConcatenationEmitter();
-        new IdentifierWriter(
-            t.getAttribValueNode().getFilePosition(), htmlc.mq, true)
-            .toJavascript(t.getAttribValue(), emitter);
+        FilePosition valuePos = t.getAttribValueNode().getFilePosition();
+        new IdentifierWriter(htmlc.mq, true)
+            .toJavascript(valuePos, t.getAttribValue(), emitter);
         Expression value = emitter.getExpression();
         if (value != null) {
           out.attr(t.getAttribName(), value);
@@ -547,9 +546,9 @@ public class HtmlCompiler {
         DomTree.Attrib t = tChain.node;
         IdentifierWriter.ConcatenationEmitter emitter
             = new IdentifierWriter.ConcatenationEmitter();
-        new IdentifierWriter(
-            t.getAttribValueNode().getFilePosition(), htmlc.mq, false)
-            .toJavascript(t.getAttribValue(), emitter);
+        FilePosition attribValue = t.getAttribValueNode().getFilePosition();
+        new IdentifierWriter(htmlc.mq, false)
+            .toJavascript(attribValue, t.getAttribValue(), emitter);
         Expression value = emitter.getExpression();
         if (value != null) {
           out.attr(t.getAttribName(), value);
@@ -579,32 +578,40 @@ public class HtmlCompiler {
         // This function must not be synthetic.  If it were, the rewriter would
         // not treat its formals as affecting scope.
         FunctionConstructor handlerFn = new FunctionConstructor(
-            new Identifier(null),
+            t.getAttribValueNode().getFilePosition(),
+            new Identifier(FilePosition.UNKNOWN, null),
             Arrays.asList(
-                new FormalParam(s(new Identifier("event"))),
-                new FormalParam(s(new Identifier(ReservedNames.THIS_NODE)))),
+                new FormalParam(s(
+                    new Identifier(FilePosition.UNKNOWN, "event"))),
+                new FormalParam(s(
+                    new Identifier(
+                        FilePosition.UNKNOWN, ReservedNames.THIS_NODE)))),
             handler);
 
         String handlerFnName = htmlc.syntheticId();
         htmlc.eventHandlers.put(
             handlerFnName,
-            new ExpressionStmt((Expression) QuasiBuilder.substV(
+            new ExpressionStmt(
+                t.getAttribValueNode().getFilePosition(),
+                (Expression) QuasiBuilder.substV(
                 "IMPORTS___.@handlerFnName = @handlerFn;",
                 "handlerFnName", TreeConstruction.ref(handlerFnName),
                 "handlerFn", handlerFn)));
 
         String handlerFnNameLit = StringLiteral.toQuotedValue(handlerFnName);
 
-        Operation dispatcher = Operation.create(
+        Operation dispatcher = Operation.createInfix(
             Operator.ADDITION,
-            Operation.create(
+            Operation.createInfix(
                 Operator.ADDITION,
-                TreeConstruction.stringLiteral(
+                StringLiteral.valueOf(
+                    t.getAttribValueNode().getFilePosition(),
                     "return plugin_dispatchEvent___(this, event, "),
                 TreeConstruction.call(
                     TreeConstruction.memberAccess("___", "getId"),
                     TreeConstruction.ref(ReservedNames.IMPORTS))),
-            TreeConstruction.stringLiteral(", " + handlerFnNameLit + ")"));
+                    StringLiteral.valueOf(
+                        FilePosition.UNKNOWN, ", " + handlerFnNameLit + ")"));
         out.handler(t.getAttribName(), dispatcher);
       }
     },
@@ -631,7 +638,7 @@ public class HtmlCompiler {
                 uri, t.getAttribValueNode().getFilePosition()),
                 mimeType);
         if (rewrittenUri != null) {
-          out.attr(t.getAttribName(), rewrittenUri);
+          out.attr(t.getFilePosition(), t.getAttribName(), rewrittenUri);
         } else {
           htmlc.mq.addMessage(
               PluginMessageType.DISALLOWED_URI,
@@ -681,8 +688,8 @@ public class HtmlCompiler {
               Reference r = (Reference) node;
               if (Keyword.THIS.toString().equals(r.getIdentifierName())) {
                 Identifier oldRef = r.getIdentifier();
-                Identifier thisNode = new Identifier(ReservedNames.THIS_NODE);
-                thisNode.setFilePosition(oldRef.getFilePosition());
+                Identifier thisNode = new Identifier(
+                    oldRef.getFilePosition(), ReservedNames.THIS_NODE);
                 r.replaceChild(s(thisNode), oldRef);
               }
               return false;
@@ -711,11 +718,11 @@ public class HtmlCompiler {
           tc.consume(":");
           tc.noMoreTokens();
           out.append(" ");
-          rawCss(out.toString());
+          rawCss(p.getFilePosition(), out.toString());
         }
 
-        public void rawCss(String rawCss) {
-          JsWriter.appendText(rawCss, esc, tgtChain, b);
+        public void rawCss(FilePosition pos, String rawCss) {
+          JsWriter.appendText(pos, rawCss, esc, tgtChain, b);
         }
 
         public void priority(CssTree.Prio p) {
@@ -724,7 +731,7 @@ public class HtmlCompiler {
           TokenConsumer tc = p.makeRenderer(out, null);
           p.render(new RenderContext(new MessageContext(), tc));
           tc.noMoreTokens();
-          rawCss(out.toString());
+          rawCss(p.getFilePosition(), out.toString());
         }
       });
   }
@@ -732,7 +739,7 @@ public class HtmlCompiler {
   private static interface DynamicCssReceiver {
     void property(CssTree.Property p);
 
-    void rawCss(String rawCss);
+    void rawCss(FilePosition pos, String rawCss);
 
     void priority(CssTree.Prio p);
   }
@@ -760,7 +767,7 @@ public class HtmlCompiler {
       }
 
       out.property(decl.getProperty());
-      out.rawCss(css);
+      out.rawCss(decl.getFilePosition(), css);
       if (decl.getPrio() != null) { out.priority(decl.getPrio()); }
     }
   }

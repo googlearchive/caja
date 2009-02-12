@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
@@ -28,12 +29,14 @@ public class WhileLoop extends Loop {
   private Expression condition;
   private Statement body;
 
-  public WhileLoop(String label, List<? extends ParseTreeNode> children) {
-    this(label, (Expression) children.get(0), (Statement) children.get(1));
+  public WhileLoop(
+      FilePosition pos, String label, List<? extends ParseTreeNode> children) {
+    this(pos, label, (Expression) children.get(0), (Statement) children.get(1));
   }
 
-  public WhileLoop(String label, Expression condition, Statement body) {
-    super(label, ParseTreeNode.class);
+  public WhileLoop(
+      FilePosition pos, String label, Expression condition, Statement body) {
+    super(pos, label, ParseTreeNode.class);
     createMutation().appendChild(condition).appendChild(body).execute();
   }
 

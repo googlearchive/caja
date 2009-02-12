@@ -24,6 +24,7 @@ import com.google.caja.lexer.Punctuation;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue.Mark;
 import com.google.caja.parser.AbstractParseTreeNode;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParserBase;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
@@ -282,14 +283,15 @@ public final class Parser extends ParserBase {
         if (JsTokenType.KEYWORD == t.type) {
           switch (Keyword.fromString(t.text)) {
             case FOR: case DO: case WHILE: case SWITCH:
-              s = parseLoopOrSwitch(label);
+              s = parseLoopOrSwitch(t.pos, label);
               break;
             default:
               break;
           }
         }
         if (null == s) {
-          s = new LabeledStmtWrapper(label, parseStatementWithoutLabel());
+          Statement labelless = parseStatementWithoutLabel();
+          s = new LabeledStmtWrapper(posFrom(m), label, labelless);
         }
         finish(s, m);
         return s;
@@ -307,7 +309,7 @@ public final class Parser extends ParserBase {
     while (!tq.isEmpty() && !tq.lookaheadToken(Punctuation.RCURLY)) {
       stmts.add(parseTerminatedStatement());
     }
-    Block b = new Block(stmts);
+    Block b = new Block(posFrom(m), stmts);
     finish(b, m);
     return b;
   }
@@ -338,16 +340,15 @@ public final class Parser extends ParserBase {
             MessageType.UNRECOGNIZED_USE_SUBSET,
             quotedString.pos, MessagePart.Factory.valueOf(trimName));
       }
-      UseSubset us = new UseSubset(trimName);
-      us.setFilePosition(quotedStringStart);
+      UseSubset us = new UseSubset(quotedStringStart, trimName);
       subsets.add(us);
     }
-    UseSubsetDirective usd = new UseSubsetDirective(subsets);
+    UseSubsetDirective usd = new UseSubsetDirective(posFrom(m), subsets);
     finish(usd, m);
     return usd;
   }
 
-  private LabeledStatement parseLoopOrSwitch(String label)
+  private LabeledStatement parseLoopOrSwitch(FilePosition start, String label)
       throws ParseException {
     Token<JsTokenType> t = tq.peek();
     LabeledStatement s;
@@ -358,8 +359,8 @@ public final class Parser extends ParserBase {
         tq.expectToken(Punctuation.LPAREN);
         if (tq.checkToken(Punctuation.SEMI)) {
           Statement initializer = noop(tq.lastPosition());
-          Expression condition = parseExpressionOrNoop(
-              new BooleanLiteral(true), true);
+          Expression condition = parseExpressionOrNoop(new BooleanLiteral(
+              FilePosition.startOf(tq.currentPosition()), true), true);
           Statement increment;
 
           if (!tq.checkToken(Punctuation.RPAREN)) {
@@ -370,7 +371,8 @@ public final class Parser extends ParserBase {
           }
           Statement body = parseBody(true);
 
-          s = new ForLoop(label, initializer, condition, increment, body);
+          s = new ForLoop(
+              posFrom(start), label, initializer, condition, increment, body);
         } else {
           Statement initializer = parseDeclarationsOrExpression(true);
           Expression initializerExpr = null;
@@ -403,15 +405,18 @@ public final class Parser extends ParserBase {
 
             if (null == lvalue) {
               s = new ForEachLoop(
+                  posFrom(start),
                   label, (Declaration) initializer, iterable, body);
             } else {
-              s = new ForEachLoop(label, lvalue, iterable, body);
+              s = new ForEachLoop(
+                  posFrom(start), label, lvalue, iterable, body);
             }
 
           } else {
+            Mark m = tq.mark();
             tq.expectToken(Punctuation.SEMI);
             Expression condition = parseExpressionOrNoop(
-                new BooleanLiteral(true), true);
+                new BooleanLiteral(posFrom(m), true), true);
             Statement increment;
 
             if (!tq.checkToken(Punctuation.RPAREN)) {
@@ -421,7 +426,8 @@ public final class Parser extends ParserBase {
               increment = noop(tq.lastPosition());
             }
             Statement body = parseBody(true);
-            s = new ForLoop(label, initializer, condition, increment, body);
+            s = new ForLoop(
+                posFrom(start), label, initializer, condition, increment, body);
           }
         }
         break;
@@ -433,7 +439,7 @@ public final class Parser extends ParserBase {
         Expression cond = parseExpressionInt(true);
         tq.expectToken(Punctuation.RPAREN);
         Statement body = parseBody(true);
-        s = new WhileLoop(label, cond, body);
+        s = new WhileLoop(posFrom(start), label, cond, body);
         break;
       }
       case DO:
@@ -444,7 +450,7 @@ public final class Parser extends ParserBase {
         tq.expectToken(Punctuation.LPAREN);
         Expression cond = parseExpressionInt(true);
         tq.expectToken(Punctuation.RPAREN);
-        s = new DoWhileLoop(label, body, cond);
+        s = new DoWhileLoop(posFrom(start), label, body, cond);
         break;
       }
       case SWITCH:
@@ -483,18 +489,18 @@ public final class Parser extends ParserBase {
               caseBody = caseBodyContents.get(0);
               break;
             default:
-              caseBody = new Block(caseBodyContents);
+              caseBody = new Block(posFrom(caseBodyStart), caseBodyContents);
               finish(caseBody, caseBodyStart);
               break;
           }
           SwitchCase caseStmt = (null != caseValue)
-            ? new CaseStmt(caseValue, caseBody)
-            : new DefaultCaseStmt(caseBody);
+            ? new CaseStmt(posFrom(caseMark), caseValue, caseBody)
+            : new DefaultCaseStmt(posFrom(caseMark), caseBody);
           finish(caseStmt, caseMark);
           cases.add(caseStmt);
         }
 
-        s = new SwitchStmt(label, switchValue, cases);
+        s = new SwitchStmt(posFrom(start), label, switchValue, cases);
         break;
       }
       default:
@@ -503,8 +509,7 @@ public final class Parser extends ParserBase {
     return s;
   }
 
-  private AbstractStatement parseStatementWithoutLabel()
-      throws ParseException {
+  private AbstractStatement parseStatementWithoutLabel() throws ParseException {
     Mark m = tq.mark();
 
     Token<JsTokenType> t = tq.peek();
@@ -513,7 +518,7 @@ public final class Parser extends ParserBase {
       AbstractStatement s;
       switch (Keyword.fromString(t.text)) {
         case FOR: case DO: case WHILE: case SWITCH:
-          s = parseLoopOrSwitch("");
+          s = parseLoopOrSwitch(t.pos, "");
           break;
         case IF:
         {
@@ -533,7 +538,7 @@ public final class Parser extends ParserBase {
           if (sawElse) {
             elseClause = parseBody(true);
           }
-          s = new Conditional(clauses, elseClause);
+          s = new Conditional(posFrom(m), clauses, elseClause);
           break;
         }
         case VAR:
@@ -556,7 +561,7 @@ public final class Parser extends ParserBase {
             Block body = parseProgramOrFunctionBody();
             tq.expectToken(Punctuation.RCURLY);
             FunctionConstructor fc = new FunctionConstructor(
-                identifier, params.params, body);
+                posFrom(m), identifier, params.params, body);
             finish(fc, m);
             s = new FunctionDeclaration(identifier, fc);
             finish(s, m);
@@ -574,7 +579,7 @@ public final class Parser extends ParserBase {
           } else {
             value = parseExpressionInt(false);
           }
-          s = new ReturnStmt(value);
+          s = new ReturnStmt(posFrom(m), value);
           break;
         }
         case BREAK:
@@ -584,7 +589,7 @@ public final class Parser extends ParserBase {
           if (!semicolonInserted() && JsTokenType.WORD == tq.peek().type) {
             targetLabel = parseIdentifier(false);
           }
-          s = new BreakStmt(targetLabel);
+          s = new BreakStmt(posFrom(m), targetLabel);
           break;
         }
         case CONTINUE:
@@ -594,13 +599,13 @@ public final class Parser extends ParserBase {
           if (!semicolonInserted() && JsTokenType.WORD == tq.peek().type) {
             targetLabel = parseIdentifier(false);
           }
-          s = new ContinueStmt(targetLabel);
+          s = new ContinueStmt(posFrom(m), targetLabel);
           break;
         }
         case DEBUGGER:
         {
           tq.advance();
-          s = new DebuggerStmt();
+          s = new DebuggerStmt(posFrom(m));
           break;
         }
         case THROW:
@@ -613,7 +618,8 @@ public final class Parser extends ParserBase {
                 MessagePart.Factory.valueOf("<expression>"),
                 MessagePart.Factory.valueOf("<newline>")));
           }
-          s = new ThrowStmt(parseExpressionInt(false));
+          Expression ex = parseExpressionInt(false);
+          s = new ThrowStmt(posFrom(m), ex);
           break;
         }
         case TRY:
@@ -630,23 +636,24 @@ public final class Parser extends ParserBase {
             tq.expectToken(Keyword.CATCH);
             tq.expectToken(Punctuation.LPAREN);
             Identifier idNode = parseIdentifierNode(false);
-            Declaration exvar = new Declaration(idNode, (Expression)null);
-            exvar.setFilePosition(idNode.getFilePosition());
+            Declaration exvar = new Declaration(
+                idNode.getFilePosition(), idNode, (Expression)null);
             exvar.setComments(idNode.getComments());
             tq.expectToken(Punctuation.RPAREN);
-            handler = new CatchStmt(exvar, parseBody(true));
+            Statement catchBody = parseBody(true);
+            handler = new CatchStmt(posFrom(m2), exvar, catchBody);
             finish(handler, m2);
             m2 = tq.mark();
             sawFinally = tq.checkToken(Keyword.FINALLY);
           }
           if (sawFinally) {
             Statement st = parseBody(true);
-            finallyBlock = new FinallyStmt(st);
+            finallyBlock = new FinallyStmt(posFrom(m2), st);
             finish(finallyBlock, m2);
           } else {
             finallyBlock = null;
           }
-          s = new TryStmt(body, handler, finallyBlock);
+          s = new TryStmt(posFrom(m), body, handler, finallyBlock);
           break;
         }
         case WITH:
@@ -656,7 +663,7 @@ public final class Parser extends ParserBase {
           Expression scopeObject = parseExpressionInt(true);
           tq.expectToken(Punctuation.RPAREN);
           Statement body = parseBody(true);
-          s = new WithStmt(scopeObject, body);
+          s = new WithStmt(posFrom(m), scopeObject, body);
           break;
         }
         default:
@@ -672,7 +679,7 @@ public final class Parser extends ParserBase {
       while (!tq.checkToken(Punctuation.RCURLY)) {
         blockParts.add(parseTerminatedStatement());
       }
-      Block b = new Block(blockParts);
+      Block b = new Block(posFrom(m), blockParts);
       finish(b, m);
       return b;
     } else if (tq.checkToken(Punctuation.SEMI)) {
@@ -705,7 +712,7 @@ public final class Parser extends ParserBase {
       // The comma operator is left-associative so parse expression part in loop
       // instead of recursing
       Expression right = parseExpressionPart(insertionProtected);
-      e = Operation.create(Operator.COMMA, e, right);
+      e = Operation.create(posFrom(m), Operator.COMMA, e, right);
       finish(e, m);
     }
     return e;
@@ -750,7 +757,7 @@ public final class Parser extends ParserBase {
                           MessagePart.Factory.valueOf(t.text)));
         }
         try {
-          left = Operation.create(op, left);
+          left = Operation.create(posFrom(m), op, left);
         } catch (IllegalArgumentException e) {
           throw new ParseException(
               new Message(MessageType.ASSIGN_TO_NON_LVALUE, t.pos,
@@ -865,13 +872,12 @@ public final class Parser extends ParserBase {
         }
         throw ex;
       }
-      FilePosition leftPos = left.getFilePosition();
       switch (op.getType()) {
         case TERNARY:
           {
             tq.expectToken(op.getClosingSymbol());
             Expression farRight = parseExpressionPart(insertionProtected);
-            left = Operation.create(op, left, right, farRight);
+            left = Operation.create(posFrom(left), op, left, right, farRight);
           }
           break;
           case BRACKET:
@@ -885,9 +891,9 @@ public final class Parser extends ParserBase {
               for (int i = 1; i < operands.length; ++i) {
                 operands[i] = params.get(i - 1);
               }
-              left = Operation.create(op, operands);
+              left = Operation.create(posFrom(left), op, operands);
             } else {
-              left = Operation.create(op, left, right);
+              left = Operation.create(posFrom(left), op, left, right);
             }
             break;
           case INFIX:
@@ -897,7 +903,7 @@ public final class Parser extends ParserBase {
                   new Message(MessageType.ASSIGN_TO_NON_LVALUE,
                               t.pos, MessagePart.Factory.valueOf(t.text)));
             }
-            left = Operation.create(op, left, right);
+            left = Operation.create(posFrom(left), op, left, right);
             break;
           case POSTFIX:
             if (op.getCategory() == OperatorCategory.ASSIGNMENT
@@ -906,12 +912,11 @@ public final class Parser extends ParserBase {
                   new Message(MessageType.ASSIGN_TO_NON_LVALUE,
                               t.pos, MessagePart.Factory.valueOf(t.text)));
             }
-            left = Operation.create(op, left);
+            left = Operation.create(posFrom(left), op, left);
             break;
           default:
             throw new AssertionError();
       }
-      finish(left, leftPos, Collections.<Token<JsTokenType>>emptyList());
     }
     return left;
   }
@@ -938,7 +943,7 @@ public final class Parser extends ParserBase {
   }
 
   private NumberLiteral toNumberLiteral(Token<JsTokenType> t) {
-    return new RealLiteral(toNumber(t));
+    return new RealLiteral(t.pos, toNumber(t));
   }
 
   private strictfp long toInteger(Token<JsTokenType> t) {
@@ -963,10 +968,10 @@ public final class Parser extends ParserBase {
     if (0 != ((lv < 0 ? ~lv : lv) & ~((1L << 51) - 1))) {
       mq.addMessage(MessageType.UNREPRESENTABLE_INTEGER_LITERAL,
                     t.pos, MessagePart.Factory.valueOf(t.text));
-      return new RealLiteral(lv);
+      return new RealLiteral(t.pos, lv);
     }
 
-    return new IntegerLiteral(lv);
+    return new IntegerLiteral(t.pos, lv);
   }
 
   @SuppressWarnings("fallthrough")
@@ -978,7 +983,7 @@ public final class Parser extends ParserBase {
     typeswitch: switch (t.type) {
       case STRING:
         issueLintWarningsForProblematicEscapes(t, mq);
-        e = new StringLiteral(t.text);
+        e = new StringLiteral(t.pos, t.text);
         break;
       case INTEGER:
         if (integerPartIsOctal(t.text)) {
@@ -998,7 +1003,7 @@ public final class Parser extends ParserBase {
         break;
       case REGEXP:
       {
-        e = new RegexpLiteral(t.text);
+        e = new RegexpLiteral(t.pos, t.text);
         // Check letters.  Warn on s suffix character as non-FF.
         String modifiers = t.text.substring(t.text.lastIndexOf("/") + 1);
         if (!RegexpLiteral.areRegexpModifiersValid(modifiers)) {
@@ -1014,13 +1019,13 @@ public final class Parser extends ParserBase {
         if (null != k) {
           switch (k) {
             case NULL:
-              e = new NullLiteral();
+              e = new NullLiteral(t.pos);
               break typeswitch;
             case TRUE:
-              e = new BooleanLiteral(true);
+              e = new BooleanLiteral(t.pos, true);
               break typeswitch;
             case FALSE:
-              e = new BooleanLiteral(false);
+              e = new BooleanLiteral(t.pos, false);
               break typeswitch;
             case FUNCTION:
             {
@@ -1028,9 +1033,8 @@ public final class Parser extends ParserBase {
               if (!tq.isEmpty() && JsTokenType.WORD == tq.peek().type) {
                 identifier = parseIdentifierNode(false);
               } else {
-                identifier = new Identifier(null);
-                identifier.setFilePosition(
-                    FilePosition.endOf(tq.lastPosition()));
+                identifier = new Identifier(
+                    FilePosition.endOf(tq.lastPosition()), null);
               }
               tq.expectToken(Punctuation.LPAREN);
               FormalParamList params = parseFormalParams();
@@ -1038,7 +1042,8 @@ public final class Parser extends ParserBase {
               tq.expectToken(Punctuation.LCURLY);
               Block body = parseProgramOrFunctionBody();
               tq.expectToken(Punctuation.RCURLY);
-              e = new FunctionConstructor(identifier, params.params, body);
+              e = new FunctionConstructor(
+                  posFrom(m), identifier, params.params, body);
               break typeswitch;
             }
             default:
@@ -1057,10 +1062,9 @@ public final class Parser extends ParserBase {
           tq.rewind(m);
           identifier = parseIdentifier(false);
         }
-        Identifier idNode = new Identifier(identifier);
+        Identifier idNode = new Identifier(posFrom(m), identifier);
         finish(idNode, m);
         e = new Reference(idNode);
-        e.setFilePosition(idNode.getFilePosition());
         break;
       }
       case PUNCTUATION:
@@ -1080,10 +1084,8 @@ public final class Parser extends ParserBase {
               Mark cm = tq.mark();  // If lastComma, mark of the last comma.
               while (tq.checkToken(Punctuation.COMMA)) {
                 if (empty) {
-                  Operation vl = Operation.undefined();
+                  Operation vl = Operation.undefined(posFrom(cm));
                   finish(vl, cm);
-                  ((IntegerLiteral) vl.children().get(0))
-                    .setFilePosition(vl.getFilePosition());
                   elements.add(vl);
                 } else {
                   empty = true;
@@ -1104,7 +1106,7 @@ public final class Parser extends ParserBase {
               }
             }
 
-            e = new ArrayConstructor(elements);
+            e = new ArrayConstructor(posFrom(m), elements);
             break;
           }
           case LCURLY:
@@ -1119,22 +1121,22 @@ public final class Parser extends ParserBase {
                 Literal key;
                 switch (keyToken.type) {
                   case STRING:
-                    key = new StringLiteral(keyToken.text);
                     tq.advance();
+                    key = new StringLiteral(posFrom(km), keyToken.text);
                     break;
                   case FLOAT:
-                    key = new StringLiteral(
-                        StringLiteral.toQuotedValue(floatToString(keyToken)));
                     tq.advance();
+                    key = StringLiteral.valueOf(
+                        posFrom(km), floatToString(keyToken));
                     break;
                   case INTEGER:
-                    key = new StringLiteral(
-                        StringLiteral.toQuotedValue("" + toInteger(keyToken)));
                     tq.advance();
+                    key = StringLiteral.valueOf(
+                        posFrom(km), "" + toInteger(keyToken));
                     break;
                   default:
-                    key = new StringLiteral(
-                        StringLiteral.toQuotedValue(parseIdentifier(true)));
+                    String ident = parseIdentifier(true);
+                    key = StringLiteral.valueOf(posFrom(km), ident);
                     break;
                 }
                 finish(key, km);
@@ -1153,7 +1155,7 @@ public final class Parser extends ParserBase {
               tq.expectToken(Punctuation.RCURLY);
             }
 
-            e = new ObjectConstructor(properties);
+            e = new ObjectConstructor(posFrom(m), properties);
             break;
           }
           default:
@@ -1173,10 +1175,8 @@ public final class Parser extends ParserBase {
         FilePosition pos = FilePosition.span(
             tq.lastPosition(), tq.currentPosition());
         mq.addMessage(MessageType.PLACEHOLDER_INSERTED, pos);
-        Identifier idNode = new Identifier("_");
-        finish(idNode, pos, Collections.<Token<JsTokenType>>emptyList());
+        Identifier idNode = new Identifier(pos, "_");
         e = new Reference(idNode);
-        e.setFilePosition(idNode.getFilePosition());
       } else {
         throw new ParseException(
             new Message(
@@ -1202,7 +1202,7 @@ public final class Parser extends ParserBase {
       throws ParseException {
     Mark m = tq.mark();
     String identifierName = parseIdentifier(allowReservedWords);
-    Identifier ident = new Identifier(identifierName);
+    Identifier ident = new Identifier(posFrom(m), identifierName);
     finish(ident, m);
     return ident;
   }
@@ -1210,8 +1210,8 @@ public final class Parser extends ParserBase {
   private ExpressionStmt parseExpressionStmt(boolean insertionProtected)
       throws ParseException {
     Mark m = tq.mark();
-    ExpressionStmt es =
-      new ExpressionStmt(parseExpressionInt(insertionProtected));
+    Expression e = parseExpressionInt(insertionProtected);
+    ExpressionStmt es = new ExpressionStmt(posFrom(m), e);
     finish(es, m);
     return es;
   }
@@ -1280,9 +1280,7 @@ public final class Parser extends ParserBase {
       isDeclaration = true;
     } else if (tq.checkToken(Keyword.CONST)) {
       isDeclaration = true;
-      mq.addMessage(
-          MessageType.NOT_IE, FilePosition.span(
-              m.getFilePosition(), tq.lastPosition()));
+      mq.addMessage(MessageType.NOT_IE, posFrom(m));
     } else {
       isDeclaration = false;
     }
@@ -1296,7 +1294,7 @@ public final class Parser extends ParserBase {
         if (tq.checkToken(Punctuation.EQ)) {
           initializer = parseExpressionPart(insertionProtected);
         }
-        d = new Declaration(idNode, initializer);
+        d = new Declaration(posFrom(m), idNode, initializer);
         finish(d, m);
       }
       if (tq.checkToken(Punctuation.COMMA)) {
@@ -1309,11 +1307,11 @@ public final class Parser extends ParserBase {
           if (tq.checkToken(Punctuation.EQ)) {
             initializer = parseExpressionPart(insertionProtected);
           }
-          Declaration d2 = new Declaration(idNode, initializer);
+          Declaration d2 = new Declaration(posFrom(m2), idNode, initializer);
           finish(d2, m2);
           decls.add(d2);
         } while (tq.checkToken(Punctuation.COMMA));
-        MultiDeclaration md = new MultiDeclaration(decls);
+        MultiDeclaration md = new MultiDeclaration(posFrom(m), decls);
         finish(md, m);
         s = md;
       } else {
@@ -1340,9 +1338,7 @@ public final class Parser extends ParserBase {
     if (!tq.lookaheadToken(Punctuation.RPAREN)) {
       do {
         Mark m = tq.mark();
-        Identifier idNode = new Identifier(parseIdentifier(false));
-        finish(idNode, m);
-        FormalParam param = new FormalParam(idNode);
+        FormalParam param = new FormalParam(parseIdentifierNode(false));
         finish(param, m);
         params.add(param);
       } while (tq.checkToken(Punctuation.COMMA));
@@ -1352,41 +1348,39 @@ public final class Parser extends ParserBase {
   }
 
   private static Noop noop(FilePosition fp) {
-    Noop n = new Noop();
-    n.setFilePosition(fp);
+    Noop n = new Noop(fp);
     n.setComments(Collections.<Token<?>>emptyList());
     return n;
   }
 
+  /** The file position that spans from startMark to the current position. */
+  private FilePosition posFrom(Mark startMark) throws ParseException {
+    return posFrom(startMark.getFilePosition());
+  }
+
+  private FilePosition posFrom(ParseTreeNode childFlushWithStart)
+      throws ParseException {
+    return posFrom(childFlushWithStart.getFilePosition());
+  }
+
+  private FilePosition posFrom(FilePosition start) throws ParseException {
+    return (tq.isEmpty() || tq.currentPosition() != start)
+        ? FilePosition.span(start, tq.lastPosition())
+        : FilePosition.startOf(start);
+  }
+
+  /**
+   * Attaches to the parse tree filtered tokens,
+   * such as type annotation carrying comments.
+   */
   private void finish(AbstractParseTreeNode n, Mark startMark)
       throws ParseException {
-    FilePosition start;
-    List<Token<JsTokenType>> comments;
-
     Mark endMark = tq.mark();
     tq.rewind(startMark);
     try {
-      start = tq.currentPosition();
-      comments = tq.filteredTokens();
+      n.setComments(tq.filteredTokens());
     } finally {
       tq.rewind(endMark);
-    }
-    finish(n, start, comments);
-  }
-
-  private void finish(
-      AbstractParseTreeNode n, FilePosition start,
-      List<? extends Token<?>> comments)
-      throws ParseException {
-    n.setComments(comments);
-
-    if (tq.isEmpty() || tq.currentPosition() != start) {
-      n.setFilePosition(FilePosition.span(start, tq.lastPosition()));
-    } else {
-      // Happens when no token consumed such as for the inferred noop following
-      // the first case statment in
-      // switch (a) { case A: case B: break; }
-      n.setFilePosition(FilePosition.startOf(start));
     }
   }
 
@@ -1415,7 +1409,7 @@ public final class Parser extends ParserBase {
    */
   private static class ActualList extends AbstractExpression {
     ActualList(List<Expression> actuals) {
-      super(Expression.class);
+      super(FilePosition.UNKNOWN, Expression.class);
       createMutation().appendChildren(actuals).execute();
     }
 

@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.reporting.RenderContext;
 
 import java.util.List;
@@ -26,12 +27,13 @@ public final class FinallyStmt extends AbstractStatement {
   private Statement body;
 
   /** @param value unused.  This ctor is provided for reflection. */
-  public FinallyStmt(Void value, List<? extends Statement> children) {
-    this(children.get(0));
+  public FinallyStmt(
+      FilePosition pos, Void value, List<? extends Statement> children) {
+    this(pos, children.get(0));
   }
 
-  public FinallyStmt(Statement body) {
-    super(Statement.class);
+  public FinallyStmt(FilePosition pos, Statement body) {
+    super(pos, Statement.class);
     appendChild(body);
   }
 

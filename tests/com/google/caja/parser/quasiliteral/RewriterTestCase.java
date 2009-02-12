@@ -15,6 +15,7 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
@@ -70,7 +71,8 @@ public abstract class RewriterTestCase extends CajaTestCase {
   // TODO(ihab.awad): Refactor tests to use checkAddsMessage(...) instead
   protected void checkFails(String input, String error) throws Exception {
     mq.getMessages().clear();
-    getRewriter().expand(new Block(Arrays.asList(js(fromString(input, is)))), mq);
+    getRewriter().expand(new Block(
+        FilePosition.UNKNOWN, Arrays.asList(js(fromString(input, is)))), mq);
 
     assertFalse(
         "Expected error, found none: " + error,
@@ -250,7 +252,8 @@ public abstract class RewriterTestCase extends CajaTestCase {
   }
 
   protected ParseTreeNode rewriteStatements(Statement... nodes) {
-    return getRewriter().expand(new Block(Arrays.asList(nodes)), mq);
+    return getRewriter().expand(
+        new Block(FilePosition.UNKNOWN, Arrays.asList(nodes)), mq);
   }
 
   protected Rewriter getRewriter() {
@@ -335,8 +338,8 @@ public abstract class RewriterTestCase extends CajaTestCase {
           }
           Identifier ident = ctor.getIdentifier();
           Reference identRef = new Reference(ident);
-          identRef.setFilePosition(ident.getFilePosition());
-          scope.addStartOfBlockStatement(new Declaration(ident, identRef));
+          scope.addStartOfBlockStatement(
+              new Declaration(FilePosition.UNKNOWN, ident, identRef));
           return QuasiBuilder.substV(
               "(@var = function @ident(@formals*) { @fh*; @stmts*; @body*; })",
               "var", identRef,

@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
 
@@ -29,12 +30,13 @@ public final class ContinueStmt extends AbstractStatement {
   private String label;
 
   /** @param children unused.  This ctor is provided for reflection. */
-  public ContinueStmt(String value, List<? extends Statement> children) {
-    this(value);
+  public ContinueStmt(
+      FilePosition pos, String value, List<? extends Statement> children) {
+    this(pos, value);
   }
 
-  public ContinueStmt(String label) {
-    super(Statement.class);
+  public ContinueStmt(FilePosition pos, String label) {
+    super(pos, Statement.class);
     this.label = label;
   }
 

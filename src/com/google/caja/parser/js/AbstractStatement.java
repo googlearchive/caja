@@ -33,8 +33,9 @@ import java.util.Map;
  */
 public abstract class AbstractStatement
     extends AbstractParseTreeNode implements Statement {
-  public AbstractStatement(Class<? extends ParseTreeNode> childClass) {
-    super(childClass);
+  public AbstractStatement(
+      FilePosition pos, Class<? extends ParseTreeNode> childClass) {
+    super(pos, childClass);
   }
 
   /**

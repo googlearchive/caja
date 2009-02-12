@@ -35,13 +35,15 @@ import java.util.List;
  */
 public final class ObjectConstructor extends AbstractExpression {
   /** @param value unused.  This ctor is provided for reflection. */
-  public ObjectConstructor(Void value, List<? extends Expression> children) {
-    super(Expression.class);
+  public ObjectConstructor(
+      FilePosition pos, Void value, List<? extends Expression> children) {
+    super(pos, Expression.class);
     createMutation().appendChildren(children).execute();
   }
 
-  public ObjectConstructor(List<Pair<Literal, Expression>> properties) {
-    super(Expression.class);    
+  public ObjectConstructor(
+      FilePosition pos, List<Pair<Literal, Expression>> properties) {
+    super(pos, Expression.class);
     Mutation m = createMutation();
     for (Pair<Literal, Expression> p : properties) {
       m.appendChild(p.a);

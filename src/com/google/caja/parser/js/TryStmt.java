@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.reporting.RenderContext;
 
 import java.util.List;
@@ -29,13 +30,15 @@ public final class TryStmt extends AbstractStatement {
   private FinallyStmt fin;
 
   /** @param value unused.  This ctor is provided for reflection. */
-  public TryStmt(Void value, List<? extends Statement> children) {
-    super(Statement.class);    
+  public TryStmt(
+      FilePosition pos, Void value, List<? extends Statement> children) {
+    super(pos, Statement.class);
     createMutation().appendChildren(children).execute();
   }
 
-  public TryStmt(Statement body, CatchStmt cat, FinallyStmt fin) {
-    super(Statement.class);
+  public TryStmt(
+      FilePosition pos, Statement body, CatchStmt cat, FinallyStmt fin) {
+    super(pos, Statement.class);
     Mutation m = createMutation().appendChild(body);
     if (cat != null) {
       m.appendChild(cat);

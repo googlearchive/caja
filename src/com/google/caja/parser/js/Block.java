@@ -30,16 +30,17 @@ import java.util.List;
 public final class Block
     extends AbstractStatement implements NestedScope {
   /** @param value unused.  This ctor is provided for reflection. */
-  public Block(Void value, List<? extends Statement> children) {
-    this(children);
+  public Block(
+      FilePosition pos, Void value, List<? extends Statement> children) {
+    this(pos, children);
   }
 
-  public Block(List<? extends Statement> elements) {
-    super(Statement.class);
+  public Block(FilePosition pos, List<? extends Statement> elements) {
+    super(pos, Statement.class);
     createMutation().appendChildren(elements).execute();
   }
 
-  public Block() { super(Statement.class); }
+  public Block() { super(FilePosition.UNKNOWN, Statement.class); }
 
   @Override
   public List<? extends Statement> children() {

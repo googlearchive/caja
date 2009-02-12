@@ -64,10 +64,10 @@ final class DebuggingSymbols {
       int prefixLen = 0;
       if (last != null) {
         prefixLen = commonPrefixLength(posStr, last);
-        debugTable.add(new IntegerLiteral(prefixLen));
+        debugTable.add(new IntegerLiteral(FilePosition.UNKNOWN, prefixLen));
       }
-      debugTable.add(new StringLiteral(
-          StringLiteral.toQuotedValue(posStr.substring(prefixLen))));
+      debugTable.add(StringLiteral.valueOf(
+          FilePosition.UNKNOWN, posStr.substring(prefixLen)));
       last = posStr;
     }
     return new ParseTreeNodeContainer(debugTable);

@@ -14,9 +14,10 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
-import com.google.caja.parser.ParseTreeNodes;
+import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ObjectConstructor;
 
 import java.util.List;
@@ -73,15 +74,13 @@ public class ObjectConstructorHole extends QuasiNode {
       ParseTreeNode keyNode = bindings.get(keyIdentifier);
       ParseTreeNode valueNode = bindings.get(valueIdentifier);
       assert(keyNode.children().size() == valueNode.children().size());
-      List<ParseTreeNode> children = new ArrayList<ParseTreeNode>();
+      List<Expression> children = new ArrayList<Expression>();
       for (int i = 0; i < keyNode.children().size(); i++) {
-        children.add(keyNode.children().get(i));
-        children.add(valueNode.children().get(i));
+        children.add((Expression) keyNode.children().get(i));
+        children.add((Expression) valueNode.children().get(i));
       }
-      substitutes.add(ParseTreeNodes.newNodeInstance(
-          ObjectConstructor.class,
-          null,
-          children));
+      substitutes.add(
+          new ObjectConstructor(FilePosition.UNKNOWN, null, children));
       return true;
     }
     return false;

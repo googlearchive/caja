@@ -15,6 +15,7 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 
@@ -32,11 +33,12 @@ public final class DebuggerStmt extends AbstractStatement {
    * @param value unused.
    * @param children unused.
    */
-  public DebuggerStmt(Void value, List<? extends ParseTreeNode> children) {
-    super(NoChildren.class); 
+  public DebuggerStmt(
+      FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
+    super(pos, NoChildren.class);
   }
 
-  public DebuggerStmt() { super(NoChildren.class); }
+  public DebuggerStmt(FilePosition pos) { super(pos, NoChildren.class); }
 
   @Override
   public Object getValue() { return null; }

@@ -44,8 +44,8 @@ public class TrailingUnderscoresHole extends AbstractQuasiHole {
       if (value != null && value.endsWith(trailing)) {
         specimens.remove(0);
         Identifier shortIdentifier = new Identifier(
+            specimen.getFilePosition(),
             value.substring(0, value.length() - trailing.length()));
-        shortIdentifier.setFilePosition(specimen.getFilePosition());
         shortIdentifier.getAttributes().putAll(specimen.getAttributes());
 
         return putIfDeepEquals(
@@ -63,8 +63,8 @@ public class TrailingUnderscoresHole extends AbstractQuasiHole {
     ParseTreeNode n = bindings.get(getIdentifier());
     if (n == null || !(n instanceof Identifier)) { return false; }
     Identifier withoutSuffix = (Identifier) n;
-    Identifier withSuffix = new Identifier(n.getValue() + trailing);
-    withSuffix.setFilePosition(withoutSuffix.getFilePosition());
+    Identifier withSuffix = new Identifier(
+        withoutSuffix.getFilePosition(), n.getValue() + trailing);
     withSuffix.getAttributes().putAll(withoutSuffix.getAttributes());
     substitutes.add(withSuffix);
     return true;

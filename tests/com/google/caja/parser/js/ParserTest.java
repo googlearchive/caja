@@ -285,13 +285,13 @@ public class ParserTest extends CajaTestCase {
   public void testRenderingOfMalformedRegexSafe() throws Exception {
     assertEquals(
         "(new (/./.constructor)('foo', 'iii'))",
-        render(new RegexpLiteral("/foo/iii")));
+        render(new RegexpLiteral(FilePosition.UNKNOWN, "/foo/iii")));
     assertEquals(
         "(new (/./.constructor)('', ''))",
-        render(new RegexpLiteral("//")));
+        render(new RegexpLiteral(FilePosition.UNKNOWN, "//")));
     assertEquals(
         "(new (/./.constructor)('x', '\\''))",
-        render(new RegexpLiteral("/x/'")));
+        render(new RegexpLiteral(FilePosition.UNKNOWN, "/x/'")));
   }
 
   public void testOutOfRangeLiterals() throws Exception {
@@ -583,10 +583,12 @@ public class ParserTest extends CajaTestCase {
       if (!children.isEmpty()) {
         ParseTreeNode first = children.get(0),
                        last = children.get(children.size() - 1);
-        assertTrue(msg, (first.getFilePosition().startCharInFile()
-                         >= n.getFilePosition().startCharInFile()));
-        assertTrue(msg, (last.getFilePosition().endCharInFile()
-                         <= n.getFilePosition().endCharInFile()));
+        assertTrue(msg + " > " + first + " : " + first.getFilePosition(),
+                   (first.getFilePosition().startCharInFile()
+                    >= n.getFilePosition().startCharInFile()));
+        assertTrue(msg + " < " + last + " : " + last.getFilePosition(),
+                   (last.getFilePosition().endCharInFile()
+                    <= n.getFilePosition().endCharInFile()));
       }
 
       for (ParseTreeNode c : children) {

@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.reporting.RenderContext;
 
 import java.util.List;
@@ -26,12 +27,13 @@ public final class ThrowStmt extends AbstractStatement {
   private Expression exception;
 
   /** @param value unused.  This ctor is provided for reflection. */
-  public ThrowStmt(Void value, List<? extends Expression> children) {
-    this(children.get(0));
+  public ThrowStmt(
+      FilePosition pos, Void value, List<? extends Expression> children) {
+    this(pos, children.get(0));
   }
 
-  public ThrowStmt(Expression exception) {
-    super(Expression.class);
+  public ThrowStmt(FilePosition pos, Expression exception) {
+    super(pos, Expression.class);
     createMutation().appendChild(exception).execute();
   }
 

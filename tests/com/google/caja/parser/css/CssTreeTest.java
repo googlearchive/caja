@@ -41,6 +41,11 @@ public class CssTreeTest extends CajaTestCase {
     runRenderTest("cssrendergolden4.txt", "cssparserinput4.css", true);
   }
 
+  public void testClone() throws Exception {
+    CssTree t = css(fromResource("cssparserinput1.css"));
+    assertEquals(render(t), render(t.clone()));
+  }
+
   public void testStringRendering() throws Exception {
     assertRenderedForm(
         "a {\n  background: ''\n}",
