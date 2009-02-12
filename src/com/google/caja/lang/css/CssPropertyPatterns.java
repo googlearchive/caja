@@ -41,6 +41,7 @@ import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.tools.BuildCommand;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
+import com.google.caja.util.Strings;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -499,7 +500,7 @@ public class CssPropertyPatterns {
         props, new Comparator<CssSchema.CssPropertyInfo>() {
           public int compare(CssSchema.CssPropertyInfo a,
                              CssSchema.CssPropertyInfo b) {
-            return a.dom2property.compareTo(b.dom2property);
+            return a.name.compareTo(b.name);
           }
         });
     Map<String, int[]> constantPoolMap = new HashMap<String, int[]>();
@@ -532,24 +533,42 @@ public class CssPropertyPatterns {
     }
     List<Pair<Literal, Expression>> members
         = new ArrayList<Pair<Literal, Expression>>();
+    List<Pair<Literal, Expression>> alternates
+        = new ArrayList<Pair<Literal, Expression>>();
     for (Pair<CssSchema.CssPropertyInfo, String> p : patterns) {
-      Literal name = StringLiteral.valueOf(unk, p.a.dom2property);
       int poolIndex = constantPoolMap.get(p.b)[0];
       Expression re = poolIndex < 0
           ? new RegexpLiteral(unk, p.b)
           : (Expression) QuasiBuilder.substV(
               "c[@i]", "i", new IntegerLiteral(unk, poolIndex));
+      Literal name = StringLiteral.valueOf(unk, p.a.name.getCanonicalForm());
       members.add(Pair.pair(name, re));
+
+      String dom2property = propertyNameToDom2Property(p.a.name);
+      ArrayConstructor altNames = null;
+      for (String altDom2Property : p.a.dom2properties) {
+        if (altDom2Property.equals(dom2property)) { continue; }
+        if (altNames == null) {
+          altNames = new ArrayConstructor(
+              unk, Collections.<Expression>emptyList());
+          alternates.add(Pair.pair(
+              (Literal) StringLiteral.valueOf(unk, dom2property),
+              (Expression) altNames));
+        }
+        altNames.appendChild(StringLiteral.valueOf(unk, altDom2Property));
+      }
     }
     ObjectConstructor cssPropConstructor = new ObjectConstructor(unk, members);
+    ObjectConstructor alternateNames = new ObjectConstructor(unk, alternates);
 
     ParseTreeNode js = QuasiBuilder.substV(
         "var css = { properties: (function () {"
         + "  @constantPoolDecl?;"
         + "  return @cssPropConstructor;"
-        + "})() };",
+        + "})(), alternates: @alternates };",
         "constantPoolDecl", constantPoolDecl,
-        "cssPropConstructor", cssPropConstructor);
+        "cssPropConstructor", cssPropConstructor,
+        "alternates", alternateNames);
     TokenConsumer tc = js.makeRenderer(out, null);
     js.render(new RenderContext(new MessageContext(), tc));
     tc.consume(";");
@@ -623,6 +642,30 @@ public class CssPropertyPatterns {
         out.close();
       }
     }
+  }
+
+  /**
+   * Converts a css property name to a javascript identifier, e.g.
+   * {@code background-color} => {@code backgroundColor}.
+   */
+  static String propertyNameToDom2Property(Name cssPropertyName) {
+    String lcaseDashed = cssPropertyName.getCanonicalForm();
+    int dash = lcaseDashed.indexOf('-');
+    if (dash < 0) { return lcaseDashed; }
+    StringBuilder sb = new StringBuilder(lcaseDashed.length());
+    int written = 0;
+    do {
+      sb.append(lcaseDashed, written, dash);
+      written = dash + 1;
+      if (written < lcaseDashed.length()) {
+        sb.append(Strings.toUpperCase(
+            lcaseDashed.substring(written, written + 1)));
+        ++written;
+      }
+      dash = lcaseDashed.indexOf('-', written);
+    } while (dash >= 0);
+    sb.append(lcaseDashed, written, lcaseDashed.length());
+    return sb.toString();
   }
 
   public static void main(String[] args) throws IOException {

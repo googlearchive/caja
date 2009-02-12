@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.plugin;
+package com.google.caja.lang.css;
 
 import com.google.caja.lang.css.CssPropertyPatterns;
 import com.google.caja.lang.css.CssSchema;
@@ -21,6 +21,7 @@ import com.google.caja.parser.css.CssPropertySignature;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Name;
 import com.google.caja.util.RhinoTestBed;
 
 import java.util.ArrayList;
@@ -122,6 +123,19 @@ public class CssPropertyPatternsTest extends CajaTestCase {
     assertMatches(
         leftSignature, "0", "10px", "-10.5px", "0.125em", "+10px", "110%");
     assertDoesNotMatch(leftSignature, ".in", "-px", "em");
+  }
+
+  public void testPropertyNameToDom2Property() {
+    assertEquals(
+        "color",
+        CssPropertyPatterns.propertyNameToDom2Property(Name.css("color")));
+    assertEquals(
+        "float",
+        CssPropertyPatterns.propertyNameToDom2Property(Name.css("float")));
+    assertEquals(
+        "listStyleImage",
+        CssPropertyPatterns.propertyNameToDom2Property(
+            Name.css("list-style-image")));
   }
 
   private void assertPattern(String sig, String golden) {

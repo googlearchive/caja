@@ -16,9 +16,12 @@ package com.google.caja.lang.css;
 
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Name;
 
 import java.io.PrintWriter;
+
+import java.util.Arrays;
 
 import junit.framework.TestCase;
 
@@ -80,23 +83,27 @@ public class CssSchemaTest extends TestCase {
     CssSchema.CssPropertyInfo colorInfo
         = cssSchema.getCssProperty(Name.css("color"));
     assertEquals(null, colorInfo.defaultValue);
-    assertEquals("color", colorInfo.dom2property);
+    MoreAsserts.assertListsEqual(
+        Arrays.asList("color"), colorInfo.dom2properties);
 
     // Check one with a name that is a reserved keyword.
     CssSchema.CssPropertyInfo floatInfo
         = cssSchema.getCssProperty(Name.css("float"));
     assertEquals("none", floatInfo.defaultValue);
-    assertEquals("cssFloat", floatInfo.dom2property);
+    MoreAsserts.assertListsEqual(
+        Arrays.asList("cssFloat", "styleFloat"), floatInfo.dom2properties);
 
     // Check two that share most of their definition via aliasing.
     CssSchema.CssPropertyInfo marginTopInfo
         = cssSchema.getCssProperty(Name.css("margin-top"));
     assertEquals("0", marginTopInfo.defaultValue);
-    assertEquals("marginTop", marginTopInfo.dom2property);
+    MoreAsserts.assertListsEqual(
+        Arrays.asList("marginTop"), marginTopInfo.dom2properties);
 
     CssSchema.CssPropertyInfo marginBottomInfo
         = cssSchema.getCssProperty(Name.css("margin-bottom"));
     assertEquals("0", marginBottomInfo.defaultValue);
-    assertEquals("marginBottom", marginBottomInfo.dom2property);
+    MoreAsserts.assertListsEqual(
+        Arrays.asList("marginBottom"), marginBottomInfo.dom2properties);
   }
 }

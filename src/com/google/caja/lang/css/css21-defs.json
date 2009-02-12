@@ -316,7 +316,8 @@
       "appliesTo-comment": "but see 9.7",
       "inherited": false,
       "mediaGroups": ["visual"],
-      "dom2property": "cssFloat" },
+      "dom2property": ["cssFloat", "styleFloat"],
+      "dom2property-comment": "float is a future reserved keyword" },
 
     { "key": "font-family",
       "signature": "[[ <family-name> | <generic-family> ] [, [ <family-name> | <generic-family> ]]* ] | inherit",

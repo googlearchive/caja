@@ -45,7 +45,8 @@
  * @requires console, document, window
  * @requires clearInterval, clearTimeout, setInterval, setTimeout
  * @requires ___, bridal, cajita, css, html, html4, unicode
- * @provides attachDocumentStub, domitaModules, plugin_dispatchEvent___
+ * @provides attachDocumentStub, plugin_dispatchEvent___
+ * @overrides domitaModules
  */
 
 var domitaModules;
@@ -285,7 +286,7 @@ domitaModules.TameXMLHttpRequest = function(
  *     properties of the browser "window.location" object, which will
  *     be provided to the Cajoled code.
  */
-attachDocumentStub = (function () {
+var attachDocumentStub = (function () {
   // Array Remove - By John Resig (MIT Licensed)
   function arrayRemove(array, from, to) {
     var rest = array.slice((to || from) + 1 || array.length);
@@ -380,18 +381,42 @@ attachDocumentStub = (function () {
       var parts = declarations[i].split(':');
       var property = trimCssSpaces(parts[0]).toLowerCase();
       var value = trimCssSpaces(parts.slice(1).join(":"));
-      // TODO(mikesamuel): make a separate function to map between
-      // CSS property names and style object members while handling
-      // float/cssFloat properly.
-      var stylePropertyName = property.replace(  // font-size -> fontSize
-          /-[a-z]/g, function (m) { return m.substring(1).toUpperCase(); });
-      if (css.properties.hasOwnProperty(stylePropertyName)
-          && css.properties[stylePropertyName].test(value + ' ')) {
+      if (css.properties.hasOwnProperty(property)
+          && css.properties[property].test(value + ' ')) {
         sanitizedDeclarations.push(property + ': ' + value);
       }
     }
 
     return sanitizedDeclarations.join(' ; ');
+  }
+
+  var stylePropertyNames = {};
+  /**
+   * Converts a lower-cased style property name, e.g. {@code background-image},
+   * to a style object property name, e.g. {@code backgroundImage}, so that
+   * it can be used as in {@code myHtmlElement.style['backgroundImage']}.
+   * @param {string} cssPropertyName a lower case CSS property name.
+   * @return {string} a Javascript identifier.
+   */
+  function cssNameToStylePropertyName(cssPropertyName) {
+    if (stylePropertyNames.hasOwnProperty(cssPropertyName)) {
+      return stylePropertyNames[cssPropertyName];
+    }
+    var stylePropertyName = cssPropertyName.replace(
+        /-([a-z])/g, function (_, letter) { return letter.toUpperCase(); });
+    // Handle oddities like cssFloat/styleFloat.
+    if (css.alternates.hasOwnProperty(stylePropertyName)
+        && !(stylePropertyName in document.body.style)) {
+      var alternates = css.alternates[stylePropertyName];
+      for (var i = alternates.length; --i >= 0;) {
+        if (alternates[i] in document.body.style) {
+          stylePropertyName = alternates[i];
+          break;
+        }
+      }
+    }
+    stylePropertyNames[cssPropertyName] = stylePropertyName;
+    return stylePropertyName;
   }
 
   function mimeTypeForAttr(tagName, attribName) {
@@ -472,6 +497,8 @@ attachDocumentStub = (function () {
       overflow = element.currentStyle.overflow;
     } else if (window.getComputedStyle) {
       overflow = window.getComputedStyle(element, void 0).overflow;
+    } else {
+      overflow = null;
     }
     switch (overflow && overflow.toLowerCase()) {
       case 'visible':
@@ -932,7 +959,7 @@ attachDocumentStub = (function () {
           tamed[key] = node;
         }
       }
-      node = nodeList = untamed = null;
+      node = nodeList = null;
 
       tamed.item = ___.frozenFunc(function (k) {
         k &= 0x7fffffff;
@@ -975,7 +1002,7 @@ attachDocumentStub = (function () {
       for (var i = classes ? classes.length : 0; --i >= 0;) {
         var classi = classes[i];
         if (illegalSuffix.test(classi) || !isXmlNmTokens(classi)) {
-          classes[i] = classes[nClasses - 1];
+          classes[i] = classes[classes.length - 1];
           --classes.length;
         }
       }
@@ -1075,7 +1102,7 @@ attachDocumentStub = (function () {
     function tameRemoveEventListener(name, listener, useCapture) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       if (!this.wrappedListeners___) { return; }
-      var wrappedListener;
+      var wrappedListener = null;
       for (var i = this.wrappedListeners___.length; --i >= 0;) {
         if (this.wrappedListeners___[i].originalListener___ === listener) {
           wrappedListener = this.wrappedListeners___[i];
@@ -2754,38 +2781,74 @@ attachDocumentStub = (function () {
     function TameStyle(style, editable) {
       this.style___ = style;
       this.editable___ = editable;
+      ___.grantCall(this, 'getPropertyValue');
     }
     nodeClasses.Style = TameStyle;
-    for (var styleProperty in css.properties) {
-      if (!cajita.canEnumOwn(css.properties, styleProperty)) { continue; }
-      (function (propertyName) {
-         ___.useGetHandler(
-             TameStyle.prototype, propertyName,
-             function () {
-               if (!this.style___) { return void 0; }
-               return String(this.style___[propertyName] || '');
-             });
-         var pattern = css.properties[propertyName];
-         ___.useSetHandler(
-             TameStyle.prototype, propertyName,
-             function (val) {
-               if (!this.editable___) { throw new Error('style not editable'); }
-               val = '' + (val || '');
-               if (val && !pattern.test(val + ' ')) {
-                 throw new Error('bad value `' + val + '` for CSS property '
-                                 + propertyName);
-               }
-               // CssPropertyPatterns.java only allows styles of the form
-               // url("...").  See the BUILTINS definition for the "uri" symbol.
-               val = val.replace(/\burl\s*\(\s*\"([^\"]*)\"\s*\)/gi,
-                                 function (_, url) {
-                 // TODO(mikesamuel): recognize and rewrite URLs.
-                 throw new Error('url in style ' + url);
-               });
-               this.style___[propertyName] = val;
-             });
-       })(styleProperty);
-    }
+    cajita.forOwnKeys(css.properties,
+                      ___.frozenFunc(function (cssPropertyName, pattern) {
+      var canonStylePropertyName = cssPropertyName.replace(
+          /-([a-z])/g, function (_, letter) { return letter.toUpperCase(); });
+      if (css.alternates.hasOwnProperty(canonStylePropertyName)) {
+        canonStylePropertyName = css.alternates[canonStylePropertyName][0];
+      }
+      var stylePropertyName = cssNameToStylePropertyName(cssPropertyName);
+
+      function getHandler() {
+        if (!this.style___) { return void 0; }
+        return String(this.style___[stylePropertyName] || '');
+      }
+
+      function setHandler(value) {
+        if (!this.editable___) { throw new Error('style not editable'); }
+        var val = '' + (value || '');
+        if (val && !pattern.test(val + ' ')) {
+          throw new Error('bad value `' + val + '` for CSS property '
+                          + cssPropertyName);
+        }
+        // CssPropertyPatterns.java only allows styles of the form
+        // url("...").  See the BUILTINS definition for the "uri" symbol.
+        val = val.replace(/\burl\s*\(\s*\"([^\"]*)\"\s*\)/gi,
+                          function (_, url) {
+                            var decodedUrl = url.replace(
+                                /\\([0-9A-Fa-f]+)[ \t]?/g,
+                                function (_, hex) {
+                                  return String.fromCharCode(parseInt(hex, 16));
+                                });
+                            var rewrittenUrl = uriCallback
+                                ? uriCallback.rewrite(decodedUrl, 'image/*')
+                            : null;
+                            if (!rewrittenUrl) {
+                              rewrittenUrl = 'about:blank';
+                            }
+                            return rewrittenUrl.replace(
+                                /[\"\'\{\}\(\):\\]/g,
+                                function (ch) {
+                                  return ('\\' + ch.charCodeAt(0).toString(16)
+                                          + ' ');
+                                });
+                          });
+        this.style___[stylePropertyName] = val;
+        return value;
+      }
+
+      ___.useGetHandler(
+         TameStyle.prototype, canonStylePropertyName, getHandler);
+      ___.useSetHandler(
+          TameStyle.prototype, canonStylePropertyName, setHandler);
+
+      if (stylePropertyName !== canonStylePropertyName) {
+        ___.useGetHandler(
+           TameStyle.prototype, stylePropertyName, getHandler);
+        ___.useSetHandler(
+            TameStyle.prototype, stylePropertyName, setHandler);
+      }
+    }));
+    TameStyle.prototype.getPropertyValue = function (cssPropertyName) {
+      cssPropertyName = String(cssPropertyName || '').toLowerCase();
+      if (!(css.properties.hasOwnProperty(cssPropertyName))) { return ''; }
+      var stylePropertyName = cssNameToStylePropertyName(cssPropertyName);
+      return ___.readPub(this, stylePropertyName);
+    };
     TameStyle.prototype.toString = function () { return '[Fake Style]'; };
 
     /**

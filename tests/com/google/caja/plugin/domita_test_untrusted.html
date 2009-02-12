@@ -126,6 +126,10 @@
    >There&apos;s no such thing as super-bold</span><br>
 </div>
 
+<p class="testcontainer" id="test-special-style-names">
+  (<span>(fluffy (little) cloud)</span>)
+</p>
+
 <p class="testcontainer" id="test-read-only">
   <span id="indelible">I am indelible</span>
 </p>
@@ -912,6 +916,36 @@ jsunitRegister('testDynamicStyle',
       },
       'set to super-bold');
   pass('test-dynamic-styles');
+});
+
+jsunitRegister('testSpecialStyleNames',
+               function testSpecialStyleNames() {
+  function getFloatySpanFloat() {
+    return directAccess.getComputedStyle(floatySpan, 'float')
+        || directAccess.getComputedStyle(floatySpan, 'cssFloat')
+        || directAccess.getComputedStyle(floatySpan, 'styleFloat');
+  }
+
+  // Some style names conflict with reserved keywords in many languages,
+  // e.g. float.
+  var floatySpan = document.getElementById('test-special-style-names')
+      .getElementsByTagName('SPAN')[0];
+  assertEquals('none', getFloatySpanFloat());
+  assertEquals('left', (floatySpan.style.cssFloat = 'left'));
+  assertEquals('left', floatySpan.style.cssFloat);
+  assertEquals('left', getFloatySpanFloat());
+  assertEquals('left', floatySpan.style.getPropertyValue('float'));
+  try {
+    floatySpan.style.styleFloat = 'right';
+    console.log('styleFloat supported');
+  } catch (styleFloatWorksOnIE) {
+    floatySpan.style.cssFloat = 'right';
+  }
+  assertEquals('right', getFloatySpanFloat());
+  assertEquals('right', floatySpan.style.cssFloat);
+  assertEquals('right', floatySpan.style.getPropertyValue('float'));
+  
+  pass('test-special-style-names');
 });
 
 jsunitRegister('testReadOnlyNotEditable',
