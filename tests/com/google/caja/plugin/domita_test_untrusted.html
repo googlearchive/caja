@@ -169,6 +169,10 @@
   <input id="set-onclick-on-me" type="checkbox">
 </p>
 
+<p class="testcontainer" id="test-event-listeners-on-document">
+  <input type="checkbox">
+</p>
+
 <p class="testcontainer" id="test-inner-HTML-style-sanitizer"></p>
 
 <form class="testcontainer" id="test-radio-buttons">
@@ -1208,6 +1212,28 @@ jsunitRegister('testEventHandlerAttributes',
   assertTrue('one clicked', autoclicky.clicked[1]);
 
   pass('test-event-handler-attributes');
+});
+
+jsunitRegister('testEventListenersOnDocument',
+               function testEventListenersOnDocument() {
+  var clickCounter = 0;
+  function clickHandler() {
+    ++clickCounter;
+  }
+
+  var inp = document.getElementById('test-event-listeners-on-document')
+      .getElementsByTagName('INPUT')[0];
+
+  assertEquals('initially unclicked', 0, clickCounter);
+  directAccess.click(inp);
+  assertEquals('clicked before handler added', 0, clickCounter);
+  document.addEventListener('click', clickHandler);
+  directAccess.click(inp);
+  assertEquals('clicked after handler added', 1, clickCounter);
+  document.removeEventListener('click', clickHandler);
+  assertEquals('clicked after handler removed', 1, clickCounter);
+
+  pass('test-event-listeners-on-document');
 });
 
 jsunitRegister('testInnerHTMLStyleSanitizer',

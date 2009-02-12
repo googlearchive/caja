@@ -430,7 +430,7 @@ attachDocumentStub = (function () {
           function () { ___.callPub(timeout, 'call', [___.USELESS]); },
           delayMillis | 0);
     } else {
-      // Assumes that clearTimeout(NaN) is a noop.  Checked in domita_test.html.
+      // tameClearTimeout checks for NaN and handles it specially.
       timeoutId = NaN;
     }
     return ___.freeze(___.stamp(timeoutIdTrademark,
@@ -439,7 +439,9 @@ attachDocumentStub = (function () {
   ___.frozenFunc(tameSetTimeout);
   function tameClearTimeout(timeoutId) {
     ___.guard(timeoutIdTrademark, timeoutId);
-    clearTimeout(timeoutId.timeoutId___);
+    var rawTimeoutId = timeoutId.timeoutId___;
+    // Skip NaN values created for null timeouts above.
+    if (rawTimeoutId === rawTimeoutId) { clearTimeout(rawTimeoutId); }
   }
   ___.frozenFunc(tameClearTimeout);
   var intervalIdTrademark = {};
@@ -459,7 +461,8 @@ attachDocumentStub = (function () {
   ___.frozenFunc(tameSetInterval);
   function tameClearInterval(intervalId) {
     ___.guard(intervalIdTrademark, intervalId);
-    clearInterval(intervalId.intervalId___);
+    var rawIntervalId = intervalId.intervalId___;
+    if (rawIntervalId === rawIntervalId) { clearInterval(rawIntervalId); }
   }
   ___.frozenFunc(tameClearInterval);
 
@@ -2540,6 +2543,7 @@ attachDocumentStub = (function () {
       var tameDoc = this;
 
       var tameBody = tameNode(body, editable);
+      this.tameBody___ = tameBody;
       // TODO(mikesamuel): create a proper class for BODY, HEAD, and HTML along
       // with all the other specialized node types.
       var tameBodyElement = new TamePseudoElement(
@@ -2629,11 +2633,12 @@ attachDocumentStub = (function () {
     };
     TameHTMLDocument.prototype.addEventListener =
         function (name, listener, useCapture) {
-          // TODO(ihab.awad): Implement
+          return this.tameBody___.addEventListener(name, listener, useCapture);
         };
     TameHTMLDocument.prototype.removeEventListener =
         function (name, listener, useCapture) {
-          // TODO(ihab.awad): Implement
+          return this.tameBody___.removeEventListener(
+              name, listener, useCapture);
         };
     TameHTMLDocument.prototype.createElement = function (tagName) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
