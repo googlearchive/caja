@@ -451,6 +451,11 @@ var attachDocumentStub = (function () {
     // Existing browsers treat a timeout of null or undefined as a noop.
     var timeoutId;
     if (timeout) {
+      if (typeof timeout === 'string') {
+        throw new Error(
+            'setTimeout called with a string.'
+            + '  Please pass a function instead of a string of javascript');
+      }
       timeoutId = setTimeout(
           function () { ___.callPub(timeout, 'call', [___.USELESS]); },
           delayMillis | 0);
@@ -474,6 +479,11 @@ var attachDocumentStub = (function () {
     // Existing browsers treat an interval of null or undefined as a noop.
     var intervalId;
     if (interval) {
+      if (typeof interval === 'string') {
+        throw new Error(
+            'setInterval called with a string.'
+            + '  Please pass a function instead of a string of javascript');
+      }
       intervalId = setInterval(
           function () { ___.callPub(interval, 'call', [___.USELESS]); },
           delayMillis | 0);
@@ -3003,10 +3013,10 @@ var attachDocumentStub = (function () {
      * http://www.w3.org/TR/CSS2/selector.html#q20
      */
     var PSEUDO_ELEMENT_WHITELIST = {
-        // after and before disallowed since they can leak information about
-        // arbitrary ancestor nodes.
-        'first-letter': true,
-        'first-line': true
+      // after and before disallowed since they can leak information about
+      // arbitrary ancestor nodes.
+      'first-letter': true,
+      'first-line': true
     };
 
     /**
