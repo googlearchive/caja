@@ -50,7 +50,7 @@ public abstract class FileSystemEnvironment implements PluginEnvironment {
     File f = toFileUnderSameDirectory(ref.getUri());
     if (f == null) {
       String uristr = ref.getUri().toString();
-      if (uristr == "#") { return uristr; }
+      if (uristr.equals("#")) { return uristr; }
       else { return null; }
     }
     return new File(directory, ".").toURI().relativize(f.toURI()).toString();
@@ -65,8 +65,7 @@ public abstract class FileSystemEnvironment implements PluginEnvironment {
         && uri.getAuthority() == null
         && uri.getFragment() == null
         && uri.getPath() != null
-        && uri.getQuery() == null
-        && uri.getFragment() == null) {
+        && uri.getQuery() == null) {
       File f = new File(new File(directory, ".").toURI().resolve(uri));
       // Check that f is a descendant of directory
       for (File tmp = f; tmp != null; tmp = tmp.getParentFile()) {
