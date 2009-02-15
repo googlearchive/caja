@@ -75,7 +75,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
     // Make sure -->, </script, and ]]> don't show up in rendered output.
     // Preventing these in strings is handled separately.
     assertRendered(
-        "{i-- >j,k< /script>/,[[0]] >0/ / / *x;}",
+        "{(i--)>j,k< /script>/,[[0]] >0/ / / *x;}",
         "i-->j, k</script>/, [[0]]>0 / / / * x;");
   }
 

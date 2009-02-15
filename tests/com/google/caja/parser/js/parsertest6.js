@@ -24,3 +24,8 @@ var g = 0&amp;
 
 // Make sure we don't treat string literals in Object constructors differently.
 var o = { '</script>': 0, ']]>': 1, '<!DOCTYPE': 2 };
+
+// Make sure that comment markers and escaping text spans can't appear in
+// output.  c should be parenthesized since HTML4 allows space between the
+// -- and >
+var p = a <!-- b && c --> (d);

@@ -274,6 +274,22 @@ public abstract class Operation extends AbstractExpression {
           return true;
         }
       }
+      // Make sure that the sequence -- > never appears in embedded mode
+      // rendered source, since according to HTML4,
+      //   White space is not permitted between the markup declaration open
+      //   delimiter("<!") and the comment open delimiter ("--"), but is
+      //   permitted between the comment close delimiter ("--") and the
+      //   markup declaration close delimiter (">").
+      if (childOp == Operator.POST_DECREMENT) {
+        switch (op) {
+          case ASSIGN_RSH: case ASSIGN_USH:
+          case RSHIFT: case RUSHIFT:
+          case GREATER_THAN: case GREATER_EQUALS:
+            return true;
+          default:
+            break;
+        }
+      }
     }
 
     // Parenthesize based on associativity and precedence

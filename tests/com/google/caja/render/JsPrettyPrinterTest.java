@@ -105,7 +105,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
     // Make sure -->, </script, and ]]> don't show up in rendered output.
     // Preventing these in strings is handled separately.
     assertRendered(
-        "{\n  i-- > j, k < /script>/, [ [ 0 ] ] > 0;\n}",
+        "{\n  (i--) > j, k < /script>/, [ [ 0 ] ] > 0;\n}",
         "i-->j, k</script>/, [[0]]>0;");
   }
 
