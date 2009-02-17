@@ -52,7 +52,7 @@ public enum Operator {
       4, Associativity.RIGHT, "++"),
   PRE_DECREMENT(OperatorType.PREFIX, OperatorCategory.ASSIGNMENT,
       4, Associativity.RIGHT, "--"),
-  IDENTITY(OperatorType.PREFIX, OperatorCategory.SIMPLE,
+  TO_NUMBER(OperatorType.PREFIX, OperatorCategory.SIMPLE,
       4, Associativity.RIGHT, "+"),
   NEGATION(OperatorType.PREFIX, OperatorCategory.SIMPLE,
       4, Associativity.RIGHT, "-"),
