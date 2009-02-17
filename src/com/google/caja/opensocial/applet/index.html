@@ -1,3 +1,6 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+ "http://www.w3.org/TR/html4/strict.dtd">
+
 <!--
  - Copyright (C) 2008 Google Inc.
  -
@@ -17,6 +20,7 @@
 <html>
   <head>
     <title>Caja Test Bed</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 
     <style type="text/css">
       body { font-family: arial,sans-serif,helvetica }
@@ -125,9 +129,10 @@
       <table id="testbed-ui-table"><tr valign="top">
       <td>
         <input name="urlval" type="text" size="80" value="http://..." 
-              onFocus="if(this.value=='http://...') value='';"
-	 onBlur="if(this.value=='') value='http://...';" class="urlsource">
-        <button id="loadurl" type="button" onclick="loadurl(this.form)">Load URL</button><br/>
+         onFocus="if(this.value=='http://...') value='';"
+         onBlur="if(this.value=='') value='http://...';" class="urlsource">
+        <button id="loadurl" type="button" onclick="loadurl(this.form)"
+         >Load URL</button><br/>
         &nbsp;
         <input id="EMBEDDABLE" type="checkbox">
         <label for="EMBEDDABLE" title="Output can be embedded in HTML/XML"
