@@ -39,13 +39,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Writer;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 
 /**
  * An executable that directs the innocent code transformation of
  * input javascript.  It is NOT meant to be used in conjunction with
  * the cajoler; it is for uncajoled code working alongside Caja.js.
- * 
+ *
  * Usage
  * <pre>
  * java com.google.caja.render.Innocent file.js > transformed.js
@@ -54,9 +53,9 @@ import java.util.ArrayList;
  * <p>It rewrites for-in loops.  The addition of Caja.js to innocent code
  * may break it, since Caja.js adds extra properties to Object.prototype
  * that will appear unexpectedly in for-in loops.</p>
- * 
+ *
  * <p>It also adds runtime checks to functions that use the THIS keyword,
- * to make sure that THIS isn't pointing to the global scope.  
+ * to make sure that THIS isn't pointing to the global scope.
  * This added check makes it harder for privileged code to accidentally
  * grant authority, but it's still possible.</p>
  *
@@ -89,24 +88,23 @@ public class Innocent {
   public static boolean transfInnocent(Pair<InputSource, File> input,
       Writer out, PrintWriter err)
       throws IOException {
-    
+
     MessageContext mc = new MessageContext();
-    mc.inputSources = new ArrayList<InputSource>();
-    mc.inputSources.add(input.a);
-    
+    mc.addInputSource(input.a);
+
     final MessageQueue errs = new EchoingMessageQueue(
         err, mc, false);
     CharProducer cp = CharProducer.Factory.create(
         new InputStreamReader(new FileInputStream(input.b), "UTF-8"),
         input.a);
-    
+
     JsLexer lexer = new JsLexer(cp);
     JsTokenQueue tq = new JsTokenQueue(lexer, input.a);
     Parser p = new Parser(tq, errs);
     String output = "";
-    
-    try {    
-      Block start = p.parse();      
+
+    try {
+      Block start = p.parse();
       tq.expectEmpty();
       Rewriter icr = new InnocentCodeRewriter(true);
       output = format(icr.expand(start,errs));
@@ -126,7 +124,7 @@ public class Innocent {
     return maxMessageLevel.compareTo(MessageLevel.ERROR) < 0;
   }
 
-  // TODO(ihab.awad): Move this functionality to a common place. 
+  // TODO(ihab.awad): Move this functionality to a common place.
   private static String format(ParseTreeNode n) {
     StringBuilder output = new StringBuilder();
     TokenConsumer renderer = new JsPrettyPrinter(output, null);

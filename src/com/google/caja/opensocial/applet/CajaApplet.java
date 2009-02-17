@@ -196,7 +196,9 @@ public class CajaApplet extends Applet {
   private String messagesToString(
       Map<InputSource, ? extends CharSequence> originalSrc, MessageQueue mq) {
     MessageContext mc = new MessageContext();
-    mc.inputSources = originalSrc.keySet();
+    for (InputSource is : originalSrc.keySet()) {
+      mc.addInputSource(is);
+    }
     SnippetProducer sp = new HtmlSnippetProducer(originalSrc, mc);
 
     StringBuilder messageText = new StringBuilder();

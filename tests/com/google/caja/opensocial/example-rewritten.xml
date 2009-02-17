@@ -27,7 +27,7 @@
                                          })();;
                      }
                    } catch (ex___) {
-                     ___.getNewModuleHandler().handleUncaughtException(ex___, onerror, 'example-gadget-files/external-script.js', '2');
+                     ___.getNewModuleHandler().handleUncaughtException(ex___, onerror, 'external-script.js', '2');
                    }
                    IMPORTS___.htmlEmitter___.pc('\n\n    \n    ').b('p').a('id', 'p3-' + IMPORTS___.getIdClass___()).f(false).ih('Paragraph 2').e('p').pc('\n\n    \n    \n\n    \n    \n    ');
                    try {

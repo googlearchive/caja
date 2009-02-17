@@ -605,7 +605,8 @@ public class CssPropertyPatterns {
           functionsFile.getAbsoluteFile().toURI()));
 
       MessageContext mc = new MessageContext();
-      mc.inputSources = Arrays.asList(sps.source(), fns.source());
+      mc.addInputSource(sps.source());
+      mc.addInputSource(fns.source());
       MessageQueue mq = new EchoingMessageQueue(
           new PrintWriter(new OutputStreamWriter(System.err), true), mc, false);
 

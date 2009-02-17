@@ -53,8 +53,12 @@ public class SnippetProducerTest extends TestCase {
     originalSource.put(f1, F1_TEXT);
     originalSource.put(f2, F2_TEXT);
     originalSource.put(f3, F3_TEXT);
-    s = new SnippetProducer(originalSource, new MessageContext());
-    s10 = new SnippetProducer(originalSource, new MessageContext(), 10);
+    MessageContext mc = new MessageContext();
+    mc.addInputSource(f1);
+    mc.addInputSource(f2);
+    mc.addInputSource(f3);
+    s = new SnippetProducer(originalSource, mc);
+    s10 = new SnippetProducer(originalSource, mc, 10);
   }
 
   public enum TestMessageType implements MessageTypeInt {

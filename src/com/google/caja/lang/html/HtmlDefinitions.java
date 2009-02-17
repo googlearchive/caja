@@ -21,7 +21,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -260,7 +259,8 @@ public final class HtmlDefinitions {
           attrsFile.getAbsoluteFile().toURI()));
 
       MessageContext mc = new MessageContext();
-      mc.inputSources = Arrays.asList(elements.source(), attrs.source());
+      mc.addInputSource(elements.source());
+      mc.addInputSource(attrs.source());
       MessageQueue mq = new EchoingMessageQueue(
           new PrintWriter(new OutputStreamWriter(System.err), true), mc, false);
 

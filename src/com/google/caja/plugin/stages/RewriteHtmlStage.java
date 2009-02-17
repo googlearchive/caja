@@ -169,9 +169,12 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       }
 
       // Fetch the script source.
+      URI absUri = src.getAttribValueNode().getFilePosition().source().getUri()
+          .resolve(srcUri);
+      jobs.getMessageContext().addInputSource(new InputSource(absUri));
       jsStream = env.loadExternalResource(
           new ExternalReference(
-              srcUri, src.getAttribValueNode().getFilePosition()),
+              absUri, src.getAttribValueNode().getFilePosition()),
           "text/javascript");
       if (jsStream == null) {
         parent.removeChild(scriptTag);
@@ -269,9 +272,12 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     }
 
     // Fetch the stylesheet source.
+    URI absUri = href.getAttribValueNode().getFilePosition().source().getUri()
+        .resolve(hrefUri);
+    jobs.getMessageContext().addInputSource(new InputSource(absUri));
     CharProducer cssStream = env.loadExternalResource(
         new ExternalReference(
-            hrefUri, href.getAttribValueNode().getFilePosition()),
+            absUri, href.getAttribValueNode().getFilePosition()),
         "text/css");
     if (cssStream == null) {
       jobs.getMessageQueue().addMessage(

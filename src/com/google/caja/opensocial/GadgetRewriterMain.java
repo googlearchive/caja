@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,7 +45,6 @@ public class GadgetRewriterMain {
   public GadgetRewriterMain() {
     config = new Config(
         getClass(), System.err, "Cajole an OpenSocial gadget spec's Content");
-    mc.inputSources = new ArrayList<InputSource>();
   }
 
    public static void main(String[] argv)

@@ -14,17 +14,13 @@
 
 package com.google.caja.lexer;
 
-import com.google.caja.reporting.MessageContext;
+import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.TestUtil;
-
-import java.io.StringReader;
-import java.net.URI;
-import junit.framework.TestCase;
 
 /**
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
-public class CssLexerTest extends TestCase {
+public class CssLexerTest extends CajaTestCase {
 
   @Override
   protected void setUp() throws Exception {
@@ -37,8 +33,7 @@ public class CssLexerTest extends TestCase {
   }
 
   public void testLex() throws Exception {
-    CharProducer cp = TestUtil.getResourceAsProducer(
-        getClass(), "csslexerinput1.css");
+    CharProducer cp = fromResource("csslexerinput1.css");
     runTest(cp, TestUtil.readResource(getClass(), "csslexergolden1.txt"));
   }
 
@@ -51,11 +46,11 @@ public class CssLexerTest extends TestCase {
   }
 
   public void testEofInEscape() throws Exception {
-    assertFails("font-family: 'foo\\abc", "1+22: Unclosed string");    
+    assertFails("font-family: 'foo\\abc", "1+22: Unclosed string");
   }
 
   public void testUnterminatedComment() throws Exception {
-    assertFails("foo\nb /* bar ", "2+3: Unclosed comment");    
+    assertFails("foo\nb /* bar ", "2+3: Unclosed comment");
   }
 
   public void testUnterminatedFunction() throws Exception {
@@ -82,17 +77,14 @@ public class CssLexerTest extends TestCase {
       runTest(input, "expected failure: " + golden);
       fail(input);
     } catch (ParseException ex) {
-      String actual = ex.getCajaMessage().format(new MessageContext());
+      String actual = ex.getCajaMessage().format(mc);
       actual = actual.substring(actual.indexOf(':') + 1);
       assertEquals(golden, actual);
     }
   }
 
   private void runTest(String input, String golden) throws ParseException {
-    runTest(CharProducer.Factory.create(
-                new StringReader(input),
-                new InputSource(URI.create("test:///" + getName()))),
-            golden);
+    runTest(fromString(input), golden);
   }
 
   private void runTest(CharProducer cp, String golden) throws ParseException {

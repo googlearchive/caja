@@ -115,7 +115,7 @@ public abstract class SourceSnippetRenderer implements TokenConsumer {
         out
             .append("\n")
             .append("// *** ")
-            .append(s.getShortName(mc.inputSources))
+            .append(mc.abbreviate(s))
             .append(" ***\n");
 
         Map<Integer, OriginalSourceLine> forSource = lines.get(s);

@@ -48,7 +48,6 @@ import com.google.caja.reporting.RenderContext;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
-import java.util.LinkedHashSet;
 import junit.framework.TestCase;
 
 public abstract class CajaTestCase extends TestCase {
@@ -60,7 +59,7 @@ public abstract class CajaTestCase extends TestCase {
   protected void setUp() throws Exception {
     this.is = new InputSource(URI.create("test:///" + getName()));
     this.mc = new MessageContext();
-    this.mc.inputSources = new LinkedHashSet<InputSource>();
+    mc.addInputSource(is);
     this.mq = TestUtil.createTestMessageQueue(this.mc);
   }
 
@@ -76,7 +75,7 @@ public abstract class CajaTestCase extends TestCase {
   }
 
   protected CharProducer fromString(String content, InputSource is) {
-    this.mc.inputSources.add(is);
+    this.mc.addInputSource(is);
     return CharProducer.Factory.create(new StringReader(content), is);
   }
 
@@ -84,7 +83,7 @@ public abstract class CajaTestCase extends TestCase {
     InputSource is = new InputSource(
         TestUtil.getResource(getClass(), resourcePath));
     CharProducer cp = TestUtil.getResourceAsProducer(getClass(), resourcePath);
-    mc.inputSources.add(is);
+    mc.addInputSource(is);
     return cp;
   }
 

@@ -447,7 +447,7 @@ public class HtmlCompiler {
    */
   private Statement scriptBodyEnvelope(Block scriptBody) {
     FilePosition pos = scriptBody.getFilePosition();
-    String sourcePath = pos.source().getShortName(mc.inputSources);
+    String sourcePath = mc.abbreviate(pos.source());
     TryStmt envelope = (TryStmt) QuasiBuilder.substV(
         ""
         + "try {"

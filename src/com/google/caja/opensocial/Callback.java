@@ -43,7 +43,7 @@ public class Callback implements UriCallback {
     final StringBuilder originalSource = new StringBuilder();
     InputSource is = new InputSource(uri);
     originalSources.put(is, originalSource);
-    mc.inputSources.add(is);
+    mc.addInputSource(is);
 
     // Tee the content out to a buffer so that we can keep track of the
     // original content so we can show error message snippets later.

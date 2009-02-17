@@ -76,6 +76,7 @@ import com.google.caja.reporting.AbstractMessageQueueTest;
 import com.google.caja.reporting.BuildInfoTest;
 import com.google.caja.reporting.HtmlSnippetProducerTest;
 import com.google.caja.reporting.SnippetProducerTest;
+import com.google.caja.util.AbbreviatorTest;
 import com.google.caja.util.CapturingReaderTest;
 import com.google.caja.util.JoinTest;
 import com.google.caja.util.SparseBitSetTest;
@@ -97,6 +98,7 @@ public class AllTests {
     TestSuite suite = new TestSuite("Caja Tests");
     Class<? extends TestCase>[] testClasses = new Class[] {
           AbstractMessageQueueTest.class,
+          AbbreviatorTest.class,
           BuildInfoTest.class,
           CajitaRewriterTest.class,
           CajitaTest.class,

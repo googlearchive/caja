@@ -84,9 +84,8 @@ public class Minify {
                                Writer out, PrintWriter err)
       throws IOException {
     MessageContext mc = new MessageContext();
-    mc.inputSources = new ArrayList<InputSource>();
     for (Pair<InputSource, File> input : inputs) {
-      mc.inputSources.add(input.a);
+      mc.addInputSource(input.a);
     }
     final MessageQueue errs = new EchoingMessageQueue(
         err, mc, false);

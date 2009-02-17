@@ -20,7 +20,6 @@ import com.google.caja.reporting.MessagePart;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Collection;
 
 /**
  * A file of source code.  This is identified by a URI, since it may not
@@ -48,24 +47,9 @@ public final class InputSource implements MessagePart {
 
   public URI getUri() { return this.uri; }
 
-  /**
-   * A descriptive name for error messages which is not ambiguous with any of
-   * the given srcs.
-   * @param srcs the set of sources the viewer knows about, and that this source
-   *     might be ambiguous with.
-   */
-  public String getShortName(Collection<InputSource> srcs) {
-    String s = uriStr;
-    // strip the longest common path prefix from the front.
-    for (InputSource src : srcs) {
-      s = longestCommonPrefix(src.uriStr, s);
-    }
-    return uriStr.substring(s.lastIndexOf('/') + 1);
-  }
-
   public void format(MessageContext context, Appendable out)
       throws IOException {
-    out.append(getShortName(context.inputSources));
+    out.append(context.abbreviate(this));
   }
 
   @Override
@@ -79,14 +63,4 @@ public final class InputSource implements MessagePart {
 
   @Override
   public int hashCode() { return this.uri.hashCode(); }
-
-  private static final String longestCommonPrefix(String a, String b) {
-    int max = Math.min(a.length(), b.length());
-    for (int i = 0; i < max; ++i) {
-      if (a.charAt(i) != b.charAt(i)) {
-        return a.substring(0, i);
-      }
-    }
-    return a.length() == max ? a : b;
-  }
 }

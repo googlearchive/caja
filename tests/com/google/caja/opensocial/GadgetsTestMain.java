@@ -69,7 +69,6 @@ public class GadgetsTestMain {
 
   private GadgetsTestMain() {
     resultDoc = new JSONObject();
-    mc.inputSources = new ArrayList<InputSource>();
   }
 
   public static void main(String[] argv) throws UriCallbackException {

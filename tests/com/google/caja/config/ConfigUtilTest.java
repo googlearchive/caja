@@ -262,7 +262,7 @@ public class ConfigUtilTest extends CajaTestCase {
     List<String> actual = new ArrayList<String>();
     for (Message msg : mq.getMessages()) {
       // Simple JSON doesn't preserve key ordering.
-      String msgText = msg.toString().replaceAll(JSON_FLAT_OBJECT, "{@}");
+      String msgText = msg.format(mc).replaceAll(JSON_FLAT_OBJECT, "{@}");
       actual.add(msg.getMessageLevel() + ": " + msgText);
     }
     MoreAsserts.assertListsEqual(Arrays.asList(golden), actual);

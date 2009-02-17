@@ -15,10 +15,13 @@
 package com.google.caja.reporting;
 
 import com.google.caja.lexer.InputSource;
+import com.google.caja.util.Abbreviator;
 import com.google.caja.util.SyntheticAttributeKey;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -27,16 +30,40 @@ import java.util.Set;
  * @author mikesamuel@gmail.com
  */
 public class MessageContext {
-  // TODO(mikesamuel): replace these public fields with getters & setters to
-  // comply with the style guide.
+  private Collection<InputSource> inputSources =
+      Collections.<InputSource>emptySet();
+  private Abbreviator abbreviator;
 
   /**
    * The group of input sources supplied by the viewer of messages.  Used to
    * make sure that shortened file names in messages are still unambiguous.
-   * @see InputSource#getShortName
+   * @see #abbreviate
    */
-  public Collection<InputSource> inputSources =
-      Collections.<InputSource>emptySet();
+  public Collection<InputSource> getInputSources() {
+    return inputSources;
+  }
+
+  public void addInputSource(InputSource src) {
+    if (inputSources.isEmpty()) {
+      inputSources = new LinkedHashSet<InputSource>();
+    }
+    if (inputSources.add(src)) {
+      abbreviator = null;
+    }
+  }
+
+  public String abbreviate(InputSource toAbbreviate) {
+    if (abbreviator == null) {
+      Set<String> uris = new HashSet<String>();
+      for (InputSource is : inputSources) {
+        uris.add(is.getUri().toString());
+      }
+      abbreviator = new Abbreviator(uris, "/");
+    }
+    return abbreviator.unambiguousAbbreviationFor(
+        toAbbreviate.getUri().toString());
+  }
+
   /**
    * The synthetic attribute keys which should be output when dumping an AST for
    * debugging.

@@ -61,7 +61,7 @@ public abstract class OrigSourceRendererTestCase extends TestCase {
       originalSrcs.put(
           is, TestUtil.readResource(getClass(), originalSourceFile));
     }
-    mc.inputSources = originalSrcs.keySet();
+    for (InputSource is : originalSrcs.keySet()) { mc.addInputSource(is); }
 
     StringBuilder actual = new StringBuilder();
     TokenConsumer r = createRenderer(originalSrcs, mc, actual, null);

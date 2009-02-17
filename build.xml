@@ -436,6 +436,7 @@
       <classpath refid="classpath.tests.compile"/>
       <include name="**/caja/AllTests.java"/>
       <include name="**/caja/util/*.java"/>
+      <include name="**/caja/**/*TestCase.java"/>
       <include name="**/caja/**/*Test.java"/>
       <include name="**/caja/plugin/DomProcessingEventsTestData.java"/>
       <compilerarg line="-Xlint:unchecked"/>

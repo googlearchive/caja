@@ -16,7 +16,6 @@ package com.google.caja.plugin;
 
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.lexer.InputSource;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
@@ -59,7 +58,6 @@ public final class PluginCompiler {
 
   public PluginCompiler(PluginMeta meta, MessageQueue mq) {
     MessageContext mc = new MessageContext();
-    mc.inputSources = new ArrayList<InputSource>();
     jobs = new Jobs(mc, mq, meta);
     cssSchema = CssSchema.getDefaultCss21Schema(mq);
     htmlSchema = HtmlSchema.getDefault(mq);
@@ -71,9 +69,6 @@ public final class PluginCompiler {
 
   public void setMessageContext(MessageContext inputMessageContext) {
     assert null != inputMessageContext;
-    if (inputMessageContext.inputSources.isEmpty()) {
-      inputMessageContext.inputSources = new ArrayList<InputSource>();
-    }
     jobs.setMessageContext(inputMessageContext);
   }
 
@@ -93,7 +88,7 @@ public final class PluginCompiler {
 
   public void addInput(AncestorChain<?> input) {
     jobs.getJobs().add(new Job(input));
-    jobs.getMessageContext().inputSources.add(
+    jobs.getMessageContext().addInputSource(
         input.node.getFilePosition().source());
   }
 

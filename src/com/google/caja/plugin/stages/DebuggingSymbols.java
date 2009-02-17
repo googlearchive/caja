@@ -55,7 +55,7 @@ final class DebuggingSymbols {
    */
   public ParseTreeNodeContainer toJavascriptSideTable() {
     MessageContext mc = new MessageContext();
-    mc.inputSources = allInputSources();
+    for (InputSource is : allInputSources()) { mc.addInputSource(is); }
     List<Expression> debugTable = new ArrayList<Expression>(
         positions.size() * 2  - 1);
     String last = null;

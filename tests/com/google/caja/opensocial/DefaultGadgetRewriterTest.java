@@ -80,8 +80,7 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
   public void setUp() throws Exception {
     super.setUp();
     rewriter = new DefaultGadgetRewriter(
-        new EchoingMessageQueue(
-            new PrintWriter(System.err), new MessageContext(), false)) {
+        new EchoingMessageQueue(new PrintWriter(System.err), mc, false)) {
           @Override
           protected RenderContext createRenderContext(
               TokenConsumer out, MessageContext mc) {
@@ -178,8 +177,8 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
 
     checkMessages(failLevel);
 
-    String expected
-        = normalXml(TestUtil.readResource(getClass(), goldenFile)).trim();
+    String expected = normalXml(TestUtil.readResource(getClass(), goldenFile))
+        .trim();
     if (!expected.equals(actual)) {
       assertEquals(actual,
                    normalizeIndentation(expected),

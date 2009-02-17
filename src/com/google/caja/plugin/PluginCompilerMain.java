@@ -57,7 +57,6 @@ import java.io.FileNotFoundException;
 import java.io.FileInputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.HashMap;
@@ -88,7 +87,6 @@ public final class PluginCompilerMain {
   private PluginCompilerMain() {
     mq = new SimpleMessageQueue();
     mc = new MessageContext();
-    mc.inputSources = new ArrayList<InputSource>();
   }
 
   private int run(String[] argv) {
@@ -154,7 +152,7 @@ public final class PluginCompilerMain {
   private ParseTreeNode parseInput(URI input)
       throws IOException, ParseException {
     InputSource is = new InputSource(input);
-    mc.inputSources.add(is);
+    mc.addInputSource(is);
 
     CharProducer cp = CharProducer.Factory.create(
         createReader(is, input.toURL().openStream()), is);

@@ -72,7 +72,7 @@ public class TabularSideBySideRenderer extends SideBySideRenderer {
 
   @Override
   protected void switchSource(InputSource prev, InputSource next) {
-    rows.add(new FileRow(next.getShortName(mc.inputSources)));
+    rows.add(new FileRow(mc.abbreviate(next)));
   }
 
   @Override

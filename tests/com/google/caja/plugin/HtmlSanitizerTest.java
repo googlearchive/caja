@@ -37,7 +37,6 @@ import java.io.StringReader;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -57,7 +56,7 @@ public class HtmlSanitizerTest extends TestCase {
     super.setUp();
     is = new InputSource(new URI("test:///" + getName()));
     mc = new MessageContext();
-    mc.inputSources = Collections.singletonList(is);
+    mc.addInputSource(is);
     mq = new EchoingMessageQueue(err, mc);
   }
 

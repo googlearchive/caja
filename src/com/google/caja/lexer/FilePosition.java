@@ -18,7 +18,6 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Collections;
 
 /**
  * The range of characters in a source file occupied by a token or a group of
@@ -171,7 +170,9 @@ public final class FilePosition implements MessagePart {
 
   public void formatShort(Appendable out) throws IOException {
     if (!FilePosition.PREDEFINED.equals(this)) {
-      out.append(source.getShortName(Collections.<InputSource>emptyList()))
+      MessageContext mc = new MessageContext();
+      mc.addInputSource(source);
+      out.append(mc.abbreviate(source))
         .append(":")
         .append(String.valueOf(this.startLineNo));
     } else {
