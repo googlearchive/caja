@@ -283,7 +283,7 @@ public class DefaultValijaRewriter extends Rewriter {
           reason="Valija rules should not be applied to embedded cajita code",
           // TODO(mikesamuel): check after Kona meeting
           matches="'use cajita'; @stmt*",
-          substitutes="@stmt*")
+          substitutes="{ @stmt* }")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof Block) {
           Map<String, ParseTreeNode> bindings = this.match(node);

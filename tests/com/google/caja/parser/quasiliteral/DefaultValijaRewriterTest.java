@@ -420,6 +420,18 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "];");
   }
 
+  public void testEmbeddedCajita() throws Exception {
+    assertConsistent(
+        ""
+        + "\"use strict,cajita\"; \n"
+        + "var foo; \n"
+        + "(function () { \n"
+        + "  foo = function () { return 8; }; \n"
+        + "})(); \n"
+        + "foo();"
+        );
+  }
+
   @Override
   protected Object executePlain(String caja)
       throws IOException, ParseException {
