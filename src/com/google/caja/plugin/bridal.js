@@ -371,6 +371,7 @@ var bridal = (function() {
     cloneNode: cloneNode,
     createStylesheet: createStylesheet,
     setAttribute: setAttribute,
-    untameEventType: untameEventType
+    untameEventType: untameEventType,
+    isIE: navigator.userAgent.indexOf('MSIE') !== 0
   };
 })();
