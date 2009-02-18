@@ -79,6 +79,10 @@ public class CssTreeTest extends CajaTestCase {
     assertRenderedForm(
         "a {\n  background: url('foo')\n}",
         "a { background: url('foo') }");
+
+    assertRenderedForm(
+        "a {\n  background: url('url%28%27hi%27%29')\n}",
+        "a { background: url(\"url('hi')\") }");
   }
 
   public void testParanoidUrlRendering() throws Exception {

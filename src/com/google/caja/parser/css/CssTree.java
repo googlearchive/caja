@@ -982,7 +982,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
       out.mark(getFilePosition());
       out.consume("url");
       out.consume("(");
-      renderCssString(getValue(), r);
+      renderCssString(Escaping.normalizeUri(getValue()), r);
       out.mark(FilePosition.endOfOrNull(getFilePosition()));
       out.consume(")");
     }

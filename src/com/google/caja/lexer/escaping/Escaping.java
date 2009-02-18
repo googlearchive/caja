@@ -16,6 +16,9 @@ package com.google.caja.lexer.escaping;
 
 import com.google.caja.util.SparseBitSet;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 
 /**
  * Escaping of strings and regular expressions.
@@ -156,6 +159,49 @@ public class Escaping {
       // StringBuilders don't throw IOException
       throw new RuntimeException(ex);
     }
+  }
+
+  private static final Charset UTF8 = Charset.forName("UTF-8");
+
+  /**
+   * Convert a URI to a string %xx escaping some codepoints that are in the
+   * RFC3986 reserved set, but only used in obsolete productions.
+   * This works around problems with inconsistencies in escaping conventions
+   * in CSS URIs, but still allows us to make sure that URIs don't look like
+   * code.
+   */
+  public static String normalizeUri(String uri) {
+    StringBuilder sb = new StringBuilder(uri.length());
+    boolean sawQmark = false;
+    for (int i = 0, n = uri.length(); i < n; ++i) {
+      char ch = uri.charAt(i);
+      boolean esc = false;
+      switch (ch) {
+        // Special in URIs, but only used in the obsolete "mark" production.
+        // Square brackets are used in IPv6 addresses so are not changed.
+        case '(': case ')': case '\'': esc = true; break;
+        case ':': esc = sawQmark; break;
+        case '=': esc = !sawQmark; break;
+        case '?':
+          if (sawQmark) {
+            esc = true;
+          } else {
+            sawQmark = true;
+          }
+          break;
+        default:
+          if (ch >= 0x7f) {
+            esc = true;
+          }
+          break;
+      }
+      if (esc) {
+        pctEncode(ch, sb);
+      } else {
+        sb.append(ch);
+      }
+    }
+    return sb.toString();
   }
 
   /**
@@ -348,7 +394,10 @@ public class Escaping {
        // can't be confused by string literals, so no:
        //  /* /* */ content: '  */ expression(...) /* ' /* */
        0x26, 0x2D,  // amp, single quotes, parentheses, asterisk, plus, comma
-       0x3A, 0x3F,  // colon, semicolon, angle brackets, and equals
+       // TODO(mikesamuel): Once IE allows escapes inside URLs, then
+       // we should add ':' and '=' to this list.
+       // See issue 938 for details.
+       0x3B, 0x3D, 0x3E, 0x3F,  // semicolon, angle brackets
        0x40, 0x41,  // @ symbol.
        0x5B, 0x5E,  // square brackets and back slash
        0x7B, 0x7E,  // curly brackets and pipe.
@@ -500,6 +549,24 @@ public class Escaping {
           .append("0123456789ABCDEF".charAt((ch >> 4) & 0xf))
           .append("0123456789ABCDEF".charAt(ch & 0xf));
     }
+  }
+
+  static void pctEncode(char ch, StringBuilder out) {
+    if (ch < 0x80) {
+      pctEncode((byte) ch, out);
+    } else {
+      // UTF-8 encode
+      ByteBuffer bb = UTF8.encode(CharBuffer.wrap(new char[] { ch }));
+      while (bb.position() < bb.limit()) {
+        pctEncode(bb.get(), out);
+      }
+    }
+  }
+  static void pctEncode(byte b, StringBuilder out) {
+    assert (b & 0x80) == 0;  // One byte form in UTF-8.
+    out.append('%')
+        .append("0123456789abcdef".charAt((b >> 4) & 0xf))
+        .append("0123456789abcdef".charAt(b & 0xf));
   }
 
   /** Produces hex escape for all characters in the given inclusive range. */
