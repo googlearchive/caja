@@ -1694,7 +1694,7 @@ var attachDocumentStub = (function () {
         }
         return null;
       }
-      var value = this.node___.getAttribute(attribName);
+      var value = bridal.getAttribute(this.node___, attribName);
       if ('string' !== typeof value) { return value; }
       switch (atype) {
         case html4.atype.ID:
@@ -1713,7 +1713,7 @@ var attachDocumentStub = (function () {
             // IE creates attribute nodes for any attribute in the HTML schema
             // so even when they are deleted, there will be a value, usually
             // the empty string.
-            var attr = this.node___.getAttributeNode(attribName);
+            var attr = bridal.getAttributeNode(this.node___, attribName);
             if (attr && !attr.specified) { return null; }
           }
           return value;
@@ -1729,13 +1729,7 @@ var attachDocumentStub = (function () {
             this.node___.attributes___ &&
             ___.hasOwnProp(this.node___.attributes___, attribName));
       } else {
-        var node = this.node___;
-        if (node.hasAttribute) {  // Non IE
-          return node.hasAttribute(attribName);
-        } else {
-          var attr = node.getAttributeNode(attribName);
-          return attr !== null && attr.specified;
-        }
+        return bridal.hasAttribute(this.node___, attribName);
       }
     };
     TameElement.prototype.setAttribute = function (attribName, value) {

@@ -21,7 +21,7 @@
  * @author ihab.awad@gmail.com
  * @author jasvir@gmail.com
  * @provides bridal
- * @requires ___, cajita, document, html, navigator
+ * @requires ___, cajita, document, html, html4, navigator
  */
 
 var bridal = (function() {
@@ -33,8 +33,9 @@ var bridal = (function() {
   var features = {
     attachEvent:
         !!(document.createElement('div').attachEvent),
+    // TODO: Does appName depend on the locale?
     setAttributeExtraParam:
-        new RegExp('Internet Explorer').test(navigator.appName)
+        navigator.appName.indexOf('Internet Explorer') >= 0
   };
 
   ////////////////////////////////////////////////////////////////////////////
@@ -343,24 +344,67 @@ var bridal = (function() {
    *
    * <p>Replaces DOM <code>Node::setAttribute</code>.
    *
-   * @param node a DOM document.
-   * @param name a string containing the name of an attribute.
-   * @param value a string containing the value of an attribute.
+   * @param {HTMLElement} element a DOM element.
+   * @param {string} name the name of an attribute.
+   * @param {string} value the value of an attribute.
    */
-  function setAttribute(node, name, value) {
-    if (name === 'style'
-        && (typeof node.style.cssText) === 'string') {
-      // Setting the 'style' attribute does not work for IE, but
-      // setting cssText works on IE 6, Firefox, and IE 7.
-      node.style.cssText = value;
-    } else if (name === 'class') {
-      node.className = value;
-    } else if (features.setAttributeExtraParam) {
-      node.setAttribute(name, value, 0);
+  function setAttribute(element, name, value) {
+    switch (name) {
+      case 'style':
+        if ((typeof element.style.cssText) === 'string') {
+          // Setting the 'style' attribute does not work for IE, but
+          // setting cssText works on IE 6, Firefox, and IE 7.
+          element.style.cssText = value;
+          return value;
+        }
+        break;
+      case 'class':
+        element.className = value;
+        return value;
+      case 'for':
+        element.htmlFor = value;
+        return value;
+    }
+    if (features.setAttributeExtraParam) {
+      element.setAttribute(name, value, 0);
     } else {
-      node.setAttribute(name, value);
+      element.setAttribute(name, value);
     }
     return value;
+  }
+
+  /**
+   * Returns the value of the named attribute on element.
+   *
+   * @param {HTMLElement} element a DOM element.
+   * @param {string} name the name of an attribute.
+   */
+  function getAttribute(element, name) {
+    switch (name) {
+      case 'style':
+        if ((typeof element.style.cssText) === 'string') {
+          return element.style.cssText;
+        }
+        break;
+      case 'class':
+        return element.className;
+      case 'for':
+        return element.htmlFor;
+    }
+    return element.getAttribute(name);
+  }
+
+  function getAttributeNode(element, name) {
+    return element.getAttributeNode(name);
+  }
+
+  function hasAttribute(element, name) {
+    if (element.hasAttribute) {  // Non IE
+      return element.hasAttribute(name);
+    } else {
+      var attr = getAttributeNode(element, name);
+      return attr !== null && attr.specified;
+    }
   }
 
   return {
@@ -371,7 +415,10 @@ var bridal = (function() {
     cloneNode: cloneNode,
     createStylesheet: createStylesheet,
     setAttribute: setAttribute,
+    getAttribute: getAttribute,
+    getAttributeNode: getAttributeNode,
+    hasAttribute: hasAttribute,
     untameEventType: untameEventType,
-    isIE: navigator.userAgent.indexOf('MSIE') !== 0
+    isIE: navigator.userAgent.indexOf('MSIE') >= 0
   };
 })();

@@ -12,8 +12,11 @@ var window = this;
   // Browser Navigator
 
   window.navigator = {
-    get userAgent(){
+    get userAgent() {
       return "Mozilla/5.0 (Macintosh; U; Intel Mac OS X; en-US; rv:1.8.1.3) Gecko/20070309 Firefox/2.0.0.3";
+    },
+    get appName() {
+      return 'Netscape';
     }
   };
 

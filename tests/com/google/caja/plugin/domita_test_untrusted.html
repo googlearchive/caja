@@ -18,6 +18,7 @@
   .testcontainer { background: yellow; border: 2px solid yellow }
   .testcontainer.passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
   .invisible { display: none }
+  .inline { display: inline }
 </style>
 
 <p class="testcontainer" id="test-timeout-and-interval">
@@ -196,6 +197,11 @@
   <span id="test-computed-style-inline">Inline</span>
   <div id="test-computed-style-fakie" style="display: inline">???</div>
   <div id="test-computed-style-invisible" class="invisible">Not here</div>
+</div>
+
+<div>Before 
+<p class="testcontainer" id="test-class-names">I am inline.</p>
+After
 </div>
 
 <div class="testcontainer" id="test-clone-node-structure">
@@ -1424,6 +1430,23 @@ jsunitRegister('testComputedStyle',
   assertComputedStyle(block, null, 'color', undefined);
 
   pass('test-computed-style');
+});
+
+jsunitRegister('testClassNames', function testClassNames() {
+
+  var el = document.getElementById('test-class-names');
+  assertEquals('before class added',
+               'block', window.getComputedStyle(el, null).display);
+
+  el.className += ' inline';
+
+  assertEquals('after class added',
+               'inline', window.getComputedStyle(el, null).display);
+  assertEquals('read className', 'testcontainer inline', el.className);
+
+  assertTrue('has class', el.hasAttribute('class'));
+
+  pass('test-class-names');
 });
 
 jsunitRegister('testCloneNodeStructure', function testCloneNodeStructure() {
