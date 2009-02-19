@@ -263,7 +263,8 @@ public class Html5ElementStack implements OpenElementStack {
    */
   public void processText(Token<HtmlTokenType> textToken) {
     builder.setTokenContext(textToken, textToken);
-    String text = textToken.text;
+    // htmlparser doesn't recognize \r as whitespace.
+    String text = textToken.text.replaceAll("\r\n?", "\n");
     char[] chars;
     int n = text.length();
     if (n <= charBuf.length) {

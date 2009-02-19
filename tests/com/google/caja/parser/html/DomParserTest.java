@@ -1930,6 +1930,44 @@ public class DomParserTest extends CajaTestCase {
     }
   }
 
+  public void testLeadingAndTrailingContent() throws Exception {
+    assertParsedHtml(
+        Arrays.asList(
+            "xyzw<body></body>xyzw"
+            ),
+        Arrays.asList(
+            "Tag : html 1+1-1+22",
+            "  Tag : head 1+1-1+1",
+            "  Tag : body 1+1-1+22",  // Expanded to contain text content.
+            "    Text : xyzwxyzw 1+1-1+22"  // Spans both text chunks.
+            ),
+        Arrays.asList(
+            "LINT testLeadingAndTrailingContent:1+5 - 11:"
+            + " 'body' start tag found but the 'body' element is already open.",
+            "LINT testLeadingAndTrailingContent:1+18 - 22:"
+            + " Non-space character after body."
+            ),
+        Arrays.asList(
+            "<html><head></head><body>xyzwxyzw</body></html>"
+            ));
+
+    assertParsedHtml(
+        Arrays.asList(
+            "\r\n \t<body></body>\r\n \t"
+            ),
+        Arrays.asList(
+            "Tag : html 2+3-3+3",
+            "  Tag : head 2+3-2+3",
+            "  Tag : body 2+3-2+16",
+            "    Text : \n \t 2+16-3+3"
+            ),
+        Arrays.<String>asList(),
+        Arrays.asList(
+            "<html><head></head><body>",
+            " \t</body></html>"
+            ));
+  }
+
   public void testRender() throws Exception {
     DomTree t = xmlFragment(fromString(
         ""
