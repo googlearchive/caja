@@ -1997,6 +1997,45 @@ public class DomParserTest extends CajaTestCase {
         render(t, false));
   }
 
+  public void testUnrenderableXMLTree1() throws Exception {
+    DomTree t = xmlFragment(fromString("<xmp><![CDATA[ </xmp> ]]></xmp>"));
+    assertEquals("<xmp><![CDATA[ </xmp> ]]></xmp>", render(t, true));
+    try {
+      String badness = render(t, false);
+      fail("Bad HTML rendered: " + badness);
+    } catch (IllegalStateException ex) {
+      // Cannot produce <xmp></xmp></xmp> safely in HTML.
+    }
+  }
+
+  public void testUnrenderableXMLTree2() throws Exception {
+    DomTree t = xmlFragment(fromString("<xmp><![CDATA[ </xM]]>p </xmp>"));
+    assertEquals("<xmp><![CDATA[ </xM]]>p </xmp>", render(t, true));
+    try {
+      String badness = render(t, false);
+      fail("Bad HTML rendered: " + badness);
+    } catch (IllegalStateException ex) {
+      // Cannot produce <xmp> </xMp </xmp> safely in HTML.
+    }
+  }
+
+  public void testUnrenderableXMLTree3() throws Exception {
+    DomTree t = xmlFragment(fromString("<xmp> &lt;/XM<!-- -->P&gt; </xmp>"));
+    assertEquals("<xmp> &lt;/XMP&gt; </xmp>", render(t, true));
+    try {
+      String badness = render(t, false);
+      fail("Bad HTML rendered: " + badness);
+    } catch (IllegalStateException ex) {
+      // Cannot produce <xmp> </XMP> </xmp> safely in HTML.
+    }
+  }
+
+  public void testCommentsHidingCdataEnd() throws Exception {
+    DomTree t = xmlFragment(fromString("<xmp> <!-- </xmp> --> </xmp>"));
+    assertEquals("<xmp>  </xmp>", render(t, true));
+    assertEquals("<xmp>  </xmp>", render(t, false));
+  }
+
   private void assertParsedHtml(
       List<String> htmlInput,
       List<String> expectedParseTree,

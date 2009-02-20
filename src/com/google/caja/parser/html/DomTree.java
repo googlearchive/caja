@@ -28,6 +28,7 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 import com.google.caja.util.Name;
+import com.google.caja.util.Strings;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -253,14 +254,27 @@ public abstract class DomTree extends AbstractParseTreeNode {
           case CDATA: case PLAIN_TEXT:
             if (!(r instanceof MarkupRenderContext
                   && ((MarkupRenderContext) r).asXml())) {
+              StringBuilder sb = new StringBuilder();
               while (i < n) {
                 DomTree child = children.get(i++);
                 if (child instanceof CData) {
-                  r.getOut().consume(((DomTree.CData) child).getValue());
+                  sb.append(((DomTree.CData) child).getValue());
                 } else {
-                  r.getOut().consume(((DomTree.Text) child).getValue());
+                  sb.append(((DomTree.Text) child).getValue());
                 }
               }
+              // Make sure that the CDATA section does not contain a close
+              // tag.
+              String cdataContent = sb.toString();
+              String canonCloseTag = (
+                  "</" + Name.html(getTagName().getCanonicalForm())
+                  .getCanonicalForm());
+              if (Strings.toLowerCase(cdataContent).contains(canonCloseTag)) {
+                throw new IllegalStateException(
+                    "XML document not renderable as HTML due to "
+                    + canonCloseTag + " in CDATA tag");
+              }
+              r.getOut().consume(cdataContent);
               break;
             }
             // fall-through
