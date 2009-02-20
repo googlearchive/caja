@@ -163,15 +163,16 @@ public class CajaApplet extends Applet {
         new StringReader(cajaInput), is);
 
     MessageQueue mq = new SimpleMessageQueue();
-    DefaultGadgetRewriter rw = new DefaultGadgetRewriter(mq) {
-        @Override
-        protected RenderContext createRenderContext(
-            TokenConsumer out, MessageContext mc) {
-          return new RenderContext(
-              mc, features.contains(Feature.ASCII_ONLY),
-              features.contains(Feature.EMBEDDABLE), out);
-        }
-      };
+    DefaultGadgetRewriter rw =
+        new DefaultGadgetRewriter(BuildInfo.getInstance(), mq) {
+          @Override
+          protected RenderContext createRenderContext(
+              TokenConsumer out, MessageContext mc) {
+            return new RenderContext(
+                mc, features.contains(Feature.ASCII_ONLY),
+                features.contains(Feature.EMBEDDABLE), out);
+          }
+        };
     rw.setDebugMode(features.contains(Feature.DEBUG_SYMBOLS));
     rw.setValijaMode(features.contains(Feature.VALIJA_MODE));
 

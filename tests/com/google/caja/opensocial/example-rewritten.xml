@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5" /></ModulePrefs><Content type="html"><![CDATA[<script type="text/javascript">{
-  ___.loadModule(function moduleFunc___(___, IMPORTS___) {
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5" /></ModulePrefs><Content type="html"><![CDATA[<script type="text/javascript">{ ___.loadModule({
+                 'instantiate': function (___, IMPORTS___) {
                    var moduleResult___ = ___.NO_RESULT;
                    var alert = ___.readImport(IMPORTS___, 'alert');
                    var handleClicky = ___.readImport(IMPORTS___, 'handleClicky');
@@ -43,7 +43,10 @@
                    } catch (ex___) {
                      ___.getNewModuleHandler().handleUncaughtException(ex___, onerror, 'example.xml', '37');
                    }
-                   IMPORTS___.htmlEmitter___.pc('\n\n    ').b('p').f(false).b('a').h('onclick', 'return plugin_dispatchEvent___(this, event, ' + ___.getId(IMPORTS___) + ', \'c_1___\')').f(false).ih('Paragraph 3').e('a').e('p').pc('\n\n    ').b('a').a('href', 'http://url-proxy.test.google.com/?url=http%3A%2F%2Ffoo.com%2F&mime-type=*%2F*').a('target', '_blank').f(false).ih('External URL.  Apply URICallback.rewrite to me.').e('a').pc('\n\n    \n    \n\n    \n    \n    \n\n  ');
+                   IMPORTS___.htmlEmitter___.pc('\n\n    ').b('p').f(false).b('a').h('onclick', 'return plugin_dispatchEvent___(this, event, ' + ___.getId(IMPORTS___) + ', \'c_1___\')').f(false).ih('Paragraph 3').e('a').e('p').pc('\n\n    ').b('a').a('href', 'http://url-proxy.test.google.com/?url=http%3A%2F%2Ffoo.com%2F&mime-type=*%2F*').a('target', '_blank').f(false).ih('External URL.  Apply URICallback.rewrite to me.').e('a').pc('\n\n    \n    \n\n    \n    \n    \n\n  ') ;
                    return moduleResult___;
-                 });
-}</script>]]></Content></Module>
+                 },
+                 'cajolerName': 'com.google.caja',
+                 'cajolerVersion': 'testBuildVersion',
+                 'cajoledDate': 0
+               }); }</script>]]></Content></Module>

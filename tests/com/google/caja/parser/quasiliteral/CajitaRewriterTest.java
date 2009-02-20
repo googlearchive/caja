@@ -27,8 +27,12 @@ import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.SyntheticNodes;
+import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.reporting.BuildInfo;
+import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.RhinoTestBed;
 
 import java.io.IOException;
@@ -36,6 +40,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import junit.framework.AssertionFailedError;
 
@@ -44,7 +50,8 @@ import junit.framework.AssertionFailedError;
  */
 public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
-  protected Rewriter defaultCajaRewriter = new CajitaRewriter(false);
+  protected Rewriter defaultCajaRewriter =
+      new CajitaRewriter(new TestBuildInfo(), false);
 
   @Override
   public void setUp() throws Exception {
@@ -136,6 +143,42 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "exports.objMaker = objMaker;",
         "assertThrows(function() {testImports.exports.objMaker(function(){return '1';});});"
         );
+  }
+
+  public void testModuleFormat() throws Exception {
+    ParseTreeNode trivialCajoledModule =
+        getRewriter().expand(new ModuleEnvelope(new Block()), mq);
+    Map<String, ParseTreeNode> bindings = new HashMap<String, ParseTreeNode>();
+
+    assertTrue(QuasiBuilder.match(
+        "  {"
+        + "  ___.loadModule({"
+        + "    instantiate: @instantiate,"
+        + "    cajolerName: @cajolerName,"
+        + "    cajolerVersion: @cajolerVersion,"
+        + "    cajoledDate: @cajoledDate,"
+        + "  });"
+        + "}",
+        trivialCajoledModule,
+        bindings));
+    assertNoErrors();
+
+    assertTrue(bindings.get("instantiate") instanceof FunctionConstructor);
+
+    assertTrue(bindings.get("cajolerName") instanceof StringLiteral);
+    assertEquals(
+        "com.google.caja",
+        bindings.get("cajolerName").getValue());
+
+    assertTrue(bindings.get("cajolerVersion") instanceof StringLiteral);
+    assertEquals(
+        new TestBuildInfo().getBuildVersion(),
+        bindings.get("cajolerVersion").getValue());
+
+    assertTrue(bindings.get("cajoledDate") instanceof IntegerLiteral);
+    assertEquals(
+        new Long(new TestBuildInfo().getCurrentTime()),
+        bindings.get("cajoledDate").getValue());
   }
 
   public void testInitializeMap() throws Exception {
@@ -1807,9 +1850,11 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         ""
         + "___.getNewModuleHandler().getImports().assertEquals\n"
         + "    = ___.frozenFunc(assertEquals);\n"
-        + "___.loadModule(function (___, IMPORTS___) {\n"
-        + render(emulated)
-        + "});").toString();
+        + "___.loadModule({\n"
+        + "  instantiate: function (___, IMPORTS___) {\n"
+        + "    " + render(emulated) + "\n" 
+        + "  }\n"
+        + " });").toString();
   }
 
   public void testAssertConsistent() throws Exception {
@@ -1833,8 +1878,10 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     assertNoErrors();
     ParseTreeNode emulated = emulateIE6FunctionConstructors(input);
     executePlain(
-        "___.loadModule(function (___, IMPORTS___) {"
-        + render(emulated)
+        "  ___.loadModule({"
+        + "  instantiate: function (___, IMPORTS___) {"
+        + "    " + render(emulated)
+        + "  }"
         + "});");
   }
 

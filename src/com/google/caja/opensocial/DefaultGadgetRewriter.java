@@ -35,6 +35,7 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Callback;
 import com.google.caja.util.ReadableReader;
 
@@ -49,12 +50,14 @@ import java.net.URI;
  */
 public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewriter {
   private final MessageQueue mq;
+  private final BuildInfo buildInfo;
   private CssSchema cssSchema;
   private HtmlSchema htmlSchema;
   private boolean debugMode;
   private boolean valijaMode;
 
-  public DefaultGadgetRewriter(MessageQueue mq) {
+  public DefaultGadgetRewriter(BuildInfo buildInfo, MessageQueue mq) {
+    this.buildInfo = buildInfo;
     this.mq = mq;
   }
 
@@ -232,7 +235,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
 
   protected PluginCompiler createPluginCompiler(
       PluginMeta meta, MessageQueue mq) {
-    PluginCompiler compiler = new PluginCompiler(meta, mq);
+    PluginCompiler compiler = new PluginCompiler(buildInfo, meta, mq);
     if (cssSchema != null) { compiler.setCssSchema(cssSchema); }
     if (htmlSchema != null) { compiler.setHtmlSchema(htmlSchema); }
     return compiler;

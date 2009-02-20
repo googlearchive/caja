@@ -29,6 +29,7 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
+import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.Json;
 
 import org.json.simple.JSONArray;
@@ -170,7 +171,8 @@ public class GadgetsTestMain {
     Config config = grm.getConfig();
 
     MessageQueue mq = new SimpleMessageQueue();
-    DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(mq);
+    DefaultGadgetRewriter rewriter =
+        new DefaultGadgetRewriter(new TestBuildInfo(), mq);
     rewriter.setCssSchema(config.getCssSchema(mq));
     rewriter.setHtmlSchema(config.getHtmlSchema(mq));
 

@@ -418,7 +418,7 @@ var getImports = (function () {
     inner.handle = ___.frozenFunc(function testbedHandle(newModule) {
       try {
         return ___.callPub(superHandler, 'handle',
-                           [___.frozenFunc(newModule)]);
+                           [newModule]);
       } finally {
         var outcome = superHandler.getLastOutcome();
         var outvalue = superHandler.getLastValue();

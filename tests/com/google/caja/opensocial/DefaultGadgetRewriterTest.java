@@ -22,8 +22,10 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.TestUtil;
+import com.google.caja.parser.quasiliteral.CajitaRewriter;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -80,6 +82,7 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
   public void setUp() throws Exception {
     super.setUp();
     rewriter = new DefaultGadgetRewriter(
+        new TestBuildInfo(),
         new EchoingMessageQueue(new PrintWriter(System.err), mc, false)) {
           @Override
           protected RenderContext createRenderContext(

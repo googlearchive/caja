@@ -17,7 +17,9 @@ package com.google.caja.plugin.stages;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
@@ -28,6 +30,8 @@ import com.google.caja.util.Pipeline;
 import java.util.LinkedHashMap;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Adds debugging symbols to cajoled code.  This looks for calls into the TCB
@@ -113,27 +117,85 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
    */
   private Block attachSymbols(
       DebuggingSymbols symbols, Block js, MessageQueue mq) {
-    Map<String, ParseTreeNode> bindings
+    Map<String, ParseTreeNode> envelopeBindings
         = new LinkedHashMap<String, ParseTreeNode>();
-    if (!QuasiBuilder.match(
-            "{ ___.loadModule(function @mfname(___, IMPORTS___) { @body* }); }",
-            js, bindings)) {
+
+    if (!QuasiBuilder.match("{ ___.loadModule({@keys*: @values*}); }",
+            js, envelopeBindings)) {
       mq.addMessage(PluginMessageType.MALFORMED_ENVELOPE, js.getFilePosition());
       return js;
     }
-    return (Block) QuasiBuilder.substV(
-        "{"
-        + "___.loadModule("
-        + "    function @mfname(___, IMPORTS___) {"
+
+    ParseTreeNode functionValue =
+        getObjectLiteralValue(envelopeBindings, "instantiate");
+
+    if (functionValue == null) {
+      mq.addMessage(PluginMessageType.MALFORMED_ENVELOPE, js.getFilePosition());
+      return js;
+    }
+
+    Map<String, ParseTreeNode> functionBindings
+        = new LinkedHashMap<String, ParseTreeNode>();
+
+    if (!QuasiBuilder.match("function (___, IMPORTS___) { @body* }",
+            functionValue, functionBindings)) {
+      mq.addMessage(PluginMessageType.MALFORMED_ENVELOPE, js.getFilePosition());
+      return js;
+    }
+
+    functionValue = QuasiBuilder.substV(
+        "  function (___, IMPORTS___) {"
         // Pass in varargs to avoid referencing the Array or Object symbol
         // before those are pulled from IMPORTS___ in @body.
-        + "      ___.useDebugSymbols(@symbols*);"
-        + "      @body*"
-        + "    });"
+        + "  ___.useDebugSymbols(@symbols*);"
+        + "  @body*"
         + "}",
-
-        "mfname", bindings.get("mfname"),
         "symbols", symbols.toJavascriptSideTable(),
-        "body", bindings.get("body"));
+        "body", functionBindings.get("body"));
+
+    setObjectLiteralValue(envelopeBindings, "instantiate", functionValue);
+
+    return (Block) QuasiBuilder.subst(
+        "{ ___.loadModule({@keys*: @values*}); }",
+        envelopeBindings);
+  }
+
+  // TODO(ihab.awad): http://code.google.com/p/google-caja/issues/detail?id=994
+  private ParseTreeNode getObjectLiteralValue(
+      Map<String, ParseTreeNode> keyValuePairs,
+      String key) {
+    List<? extends ParseTreeNode> keys =
+        keyValuePairs.get("keys").children();
+    List<? extends ParseTreeNode> values =
+        keyValuePairs.get("values").children();
+
+    for (int i = 0; i < keys.size(); i++) {
+      String candidateKey = ((StringLiteral) keys.get(i)).getUnquotedValue();
+      if (key.equals(candidateKey)) {
+        return values.get(i);
+      }
+    }
+
+    return null;
+  }
+
+  // TODO(ihab.awad): http://code.google.com/p/google-caja/issues/detail?id=994
+  private void setObjectLiteralValue(
+      Map<String, ParseTreeNode> keyValuePairs,
+      String key,
+      ParseTreeNode value) {
+    List<? extends ParseTreeNode> keys =
+        keyValuePairs.get("keys").children();
+    List<ParseTreeNode> values =
+        new ArrayList<ParseTreeNode>(keyValuePairs.get("values").children());
+
+    for (int i = 0; i < keys.size(); i++) {
+      String candidateKey = ((StringLiteral) keys.get(i)).getUnquotedValue();
+      if (key.equals(candidateKey)) {
+        values.set(i, value);
+        keyValuePairs.put("values", new ParseTreeNodeContainer(values));
+        return;
+      }
+    }
   }
 }

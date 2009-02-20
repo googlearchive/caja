@@ -24,6 +24,7 @@ import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Pair;
 
 import java.io.IOException;
@@ -39,6 +40,12 @@ import java.net.URI;
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class JsHandler implements ContentHandler {
+
+  private final BuildInfo buildInfo;
+
+  public JsHandler(BuildInfo buildInfo) {
+    this.buildInfo = buildInfo;
+  }
 
   public boolean canHandle(URI uri, String contentType, ContentTypeCheck checker) {
     return checker.check("text/javascript",contentType);
@@ -71,7 +78,9 @@ public class JsHandler implements ContentHandler {
       input = p.parse();
       tq.expectEmpty();
 
-      CajitaRewriter dcr = new CajitaRewriter(true);
+      CajitaRewriter dcr = new CajitaRewriter(
+          buildInfo,
+          false /* logging */);
       output.append(Rewriter.format(dcr.expand(input, mq)));
     } catch (ParseException e) {
       throw new UnsupportedContentTypeException();

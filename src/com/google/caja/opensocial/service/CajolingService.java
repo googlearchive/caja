@@ -15,6 +15,7 @@
 package com.google.caja.opensocial.service;
 
 import com.google.caja.util.Pair;
+import com.google.caja.reporting.BuildInfo;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -44,8 +45,8 @@ public class CajolingService extends HttpServlet {
   private List<ContentHandler> handlers = new Vector<ContentHandler>();
   private ContentTypeCheck typeCheck = new LooseContentTypeCheck();
 
-  public CajolingService() {
-    registerHandlers();
+  public CajolingService(BuildInfo buildInfo) {
+    registerHandlers(buildInfo);
   }
 
   /**
@@ -158,10 +159,10 @@ public class CajolingService extends HttpServlet {
     return new FetchedData(content, contentType, contentCharSet);
   }
 
-  public void registerHandlers() {
-    handlers.add(new JsHandler());
+  public void registerHandlers(BuildInfo buildInfo) {
+    handlers.add(new JsHandler(buildInfo));
     handlers.add(new ImageHandler());
-    handlers.add(new GadgetHandler());
+    handlers.add(new GadgetHandler(buildInfo));
   }
 
   private Pair<String, String> applyHandler(URI uri,

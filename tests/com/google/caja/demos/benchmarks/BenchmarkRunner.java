@@ -19,6 +19,7 @@ import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.RhinoTestBed;
+import com.google.caja.reporting.TestBuildInfo;
 
 /**
  * Unit test which executes the V8 benchmark and collates the result for rendering with varz
@@ -78,7 +79,7 @@ public class BenchmarkRunner extends CajaTestCase {
   private double runCajoled(String filename) throws Exception {
     PluginMeta meta = new PluginMeta();
     meta.setValijaMode(true);
-    PluginCompiler pc = new PluginCompiler(meta, mq);
+    PluginCompiler pc = new PluginCompiler(new TestBuildInfo(), meta, mq);
     pc.addInput(AncestorChain.instance(js(fromResource("base.js"))));
     pc.addInput(AncestorChain.instance(js(fromResource(filename))));
     pc.addInput(AncestorChain.instance(js(fromString(RUN_SCRIPT))));

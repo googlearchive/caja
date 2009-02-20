@@ -53,10 +53,13 @@ import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.UseSubsetDirective;
+import com.google.caja.parser.js.NumberLiteral;
+import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.util.Pair;
 import com.google.caja.util.SyntheticAttributeKey;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.BuildInfo;
 
 import static com.google.caja.parser.js.SyntheticNodes.s;
 
@@ -66,6 +69,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Date;
 
 /**
  * Rewrites a JavaScript parse tree to comply with default Caja rules.
@@ -79,6 +83,8 @@ import java.util.Set;
 public class CajitaRewriter extends Rewriter {
   private static final SyntheticAttributeKey<Boolean> TRANSLATED
       = new SyntheticAttributeKey<Boolean>(Boolean.class, "translatedCode");
+
+  private final BuildInfo buildInfo;
 
   /** Mark a tree as having been translated from another language. */
   private static void markTranslated(ParseTreeNode node) {
@@ -398,27 +404,41 @@ public class CajitaRewriter extends Rewriter {
           synopsis="Cajole a ModuleEnvelope into a call to ___.loadModule.",
           reason="So that the module loader can be invoked to load a module.",
           matches="<a ModuleEnvelope>",
-          // TODO(erights): This creates an uncajoled named function <i>expression</i>
-          // which has dangerous scoping properties under ES3 and current Firefox.
-          // Must either verify that these dangers can't harm us here (which is
-          // plausible), or refactor to avoid this issue.
           substitutes=(
-              "{"
+              "  {"
               + "  ___./*@synthetic*/loadModule("
-              + "      /*@synthetic*/function moduleFunc___(___, IMPORTS___) {"
+              + "    /*@synthetic*/{"
+              + "      instantiate: /*@synthetic*/function (___, IMPORTS___) {"
               + "        var moduleResult___ = ___.NO_RESULT;"
               + "        @body*;"
               + "        return moduleResult___;"
-              + "      });"
+              + "      },"
+              + "      cajolerName: @cajolerName,"
+              + "      cajolerVersion: @cajolerVersion,"
+              + "      cajoledDate: @cajoledDate"
+              /*       TODO(ihab.awad): originalSource */
+              /*       TODO(ihab.awad): sourceLocationMap */
+              /*       TODO(ihab.awad): imports */
+              /*       TODO(ihab.awad): manifest */                                                      
+              + "    }"
+              + "  );"
               + "}"))
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof ModuleEnvelope) {
-          // TODO(erights): Pull manifest up into module record.
           ModuleEnvelope rewritten = (ModuleEnvelope) expandAll(node, null, mq);
-          ParseTreeNodeContainer moduleStmts = new ParseTreeNodeContainer(
+          ParseTreeNode moduleStmts = new ParseTreeNodeContainer(
               rewritten.getModuleBody().children());
-          return substV("body", returnLast(moduleStmts));
+          return substV(
+              "body", returnLast(moduleStmts),
+              "cajolerName", new StringLiteral(
+                  FilePosition.UNKNOWN, "com.google.caja"),
+              "cajolerVersion", new StringLiteral(
+                  FilePosition.UNKNOWN,
+                  buildInfo.getBuildVersion()),
+              "cajoledDate", new IntegerLiteral(
+                  FilePosition.UNKNOWN,
+                  buildInfo.getCurrentTime()));
         }
         return NONE;
       }
@@ -2326,14 +2346,11 @@ public class CajitaRewriter extends Rewriter {
   };
 
   /**
-   * Creates a default caja rewriter
+   * Creates a Cajita rewriter
    */
-  public CajitaRewriter() {
-    this(false);
-  }
-
-  public CajitaRewriter(boolean logging) {
+  public CajitaRewriter(BuildInfo buildInfo, boolean logging) {
     super(logging);
+    this.buildInfo = buildInfo;
     addRules(cajaRules);
   }
 }

@@ -25,6 +25,7 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
 
 /**
@@ -71,7 +72,7 @@ public class ExpressionSanitizerTest extends CajaTestCase {
   }
 
   private ExpressionSanitizerCaja newPassThruSanitizer() throws Exception {
-    return new ExpressionSanitizerCaja(mq, meta) {
+    return new ExpressionSanitizerCaja(new TestBuildInfo(), mq, meta) {
       @Override
       protected Rewriter newCajitaRewriter() {
         return new Rewriter(true) {{
@@ -94,7 +95,8 @@ public class ExpressionSanitizerTest extends CajaTestCase {
   private void assertSanitize(String input, String golden)
       throws Exception {
     Block inputNode = js(fromString(input));
-    ParseTreeNode sanitized = new ExpressionSanitizerCaja(mq, meta)
+    ParseTreeNode sanitized =
+        new ExpressionSanitizerCaja(new TestBuildInfo(), mq, meta)
         .sanitize(ac(inputNode));
     String inputCmp = render(sanitized);
 

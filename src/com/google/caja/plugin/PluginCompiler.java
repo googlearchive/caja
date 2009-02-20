@@ -34,6 +34,7 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.Pipeline;
 
@@ -47,6 +48,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
 public final class PluginCompiler {
+  private final BuildInfo buildInfo;
   private final Jobs jobs;
   /**
    * A configurable pipeline that performs the compilation of HTML, CSS, and JS
@@ -56,7 +58,8 @@ public final class PluginCompiler {
   private CssSchema cssSchema;
   private HtmlSchema htmlSchema;
 
-  public PluginCompiler(PluginMeta meta, MessageQueue mq) {
+  public PluginCompiler(BuildInfo buildInfo, PluginMeta meta, MessageQueue mq) {
+    this.buildInfo = buildInfo;
     MessageContext mc = new MessageContext();
     jobs = new Jobs(mc, mq, meta);
     cssSchema = CssSchema.getDefaultCss21Schema(mq);
@@ -125,7 +128,7 @@ public final class PluginCompiler {
     stages.add(new ValidateCssStage(cssSchema, htmlSchema));
     stages.add(new CompileCssStage());
     stages.add(new ConsolidateCodeStage());
-    stages.add(new ValidateJavascriptStage());
+    stages.add(new ValidateJavascriptStage(buildInfo));
     stages.add(new InferFilePositionsStage());
     stages.add(new DebuggingSymbolsStage());
     stages.add(new CheckForErrorsStage());

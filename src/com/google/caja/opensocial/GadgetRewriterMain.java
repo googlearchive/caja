@@ -23,6 +23,7 @@ import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
+import com.google.caja.reporting.BuildInfo;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -65,7 +66,8 @@ public class GadgetRewriterMain {
       throws GadgetRewriteException, IOException, UriCallbackException,
           ParseException {
     MessageQueue mq = new SimpleMessageQueue();
-    DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(mq);
+    DefaultGadgetRewriter rewriter =
+        new DefaultGadgetRewriter(BuildInfo.getInstance(), mq);
     rewriter.setCssSchema(config.getCssSchema(mq));
     rewriter.setHtmlSchema(config.getHtmlSchema(mq));
     rewriter.setDebugMode(config.debugMode());

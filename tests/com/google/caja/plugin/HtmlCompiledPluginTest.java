@@ -20,10 +20,12 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.RhinoTestBed;
 import com.google.caja.util.TestUtil;
 import com.google.caja.util.CajaTestCase;
@@ -191,7 +193,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
 
   public void testPartialScript() throws Exception {
     PluginMeta meta = new PluginMeta();
-    PluginCompiler compiler = new PluginCompiler(meta, mq);
+    PluginCompiler compiler = new PluginCompiler(new TestBuildInfo(), meta, mq);
     compiler.setMessageContext(mc);
     DomTree html = htmlFragment(fromString("<script>{</script>"));
     compiler.addInput(new AncestorChain<DomTree>(html));
@@ -208,7 +210,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
       throws Exception {
     PluginMeta meta = new PluginMeta();
     meta.setValijaMode(valija);
-    PluginCompiler compiler = new PluginCompiler(meta, mq);
+    PluginCompiler compiler = new PluginCompiler(new TestBuildInfo(), meta, mq);
     compiler.setMessageContext(mc);
     DomTree html = htmlFragment(fromString(gadgetSpec));
     if (html != null) { compiler.addInput(new AncestorChain<DomTree>(html)); }
@@ -225,10 +227,11 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
       jsTree.render(rc);
       pp.noMoreTokens();
 
-      ParseTreeNode valijaOrigNode =
+      Block valijaOrigNode =
           js(fromResource("/com/google/caja/valija-cajita.js"));
       ParseTreeNode valijaCajoledNode =
-          new CajitaRewriter(false).expand(valijaOrigNode, mq);
+          new CajitaRewriter(new TestBuildInfo(), false)
+              .expand(new ModuleEnvelope(valijaOrigNode), mq);
       String valijaCajoled = render(valijaCajoledNode);
 
       String htmlStubUrl = TestUtil.makeContentUrl(
@@ -264,9 +267,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
                 "___.getNewModuleHandler().setImports(testImports);",
                 getName() + "valija-setup"),
             new RhinoTestBed.Input(
-                "___.loadModule(function (___, IMPORTS___) {\n" +
-                valijaCajoled + "\n" +
-                "});",
+                valijaCajoled,
                 "valija-cajoled"),
             new RhinoTestBed.Input(getClass(), "bridal.js"),
             new RhinoTestBed.Input(getClass(), "html-emitter.js"),

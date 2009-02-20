@@ -23,6 +23,8 @@ import com.google.caja.plugin.ExpressionSanitizerCaja;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.Pipeline;
+import com.google.caja.reporting.BuildInfo;
+
 import java.util.ListIterator;
 
 /**
@@ -31,6 +33,12 @@ import java.util.ListIterator;
  * @author mikesamuel@gmail.com
  */
 public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
+  private final BuildInfo buildInfo;
+
+  public ValidateJavascriptStage(BuildInfo buildInfo) {
+    this.buildInfo = buildInfo;
+  }
+
   public boolean apply(Jobs jobs) {
     for (ListIterator<Job> it = jobs.getJobs().listIterator(); it.hasNext();) {
       Job job = it.next();
@@ -42,6 +50,7 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
 
       if (nonSyntheticScopeRoot != null) {  // False for empty programs
         ParseTreeNode validated = new ExpressionSanitizerCaja(
+            buildInfo,
             jobs.getMessageQueue(), jobs.getPluginMeta())
             .sanitize(nonSyntheticScopeRoot);
         if (nonSyntheticScopeRoot.parent == null) {

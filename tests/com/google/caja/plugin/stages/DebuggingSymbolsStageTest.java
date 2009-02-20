@@ -20,6 +20,7 @@ import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.Message;
+import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Pipeline;
 import com.google.caja.util.RhinoTestBed;
@@ -282,7 +283,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
 
     Pipeline<Jobs> pipeline = new Pipeline<Jobs>();
     pipeline.getStages().add(new ConsolidateCodeStage());
-    pipeline.getStages().add(new ValidateJavascriptStage());
+    pipeline.getStages().add(new ValidateJavascriptStage(new TestBuildInfo()));
     pipeline.getStages().add(new InferFilePositionsStage());
     pipeline.getStages().add(new DebuggingSymbolsStage());
     if (!pipeline.apply(jobs)) {

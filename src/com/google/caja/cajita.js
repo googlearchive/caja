@@ -2537,7 +2537,7 @@ var ___;
       handle: frozenFunc(function handle(newModule) {
         lastOutcome = void 0;
         try {
-          var result = newModule(___, imports);
+          var result = newModule.instantiate(___, imports);
           if (result !== NO_RESULT) {
             lastOutcome = [true, result];
           }
@@ -2603,14 +2603,17 @@ var ___;
   }
 
   /**
-   * A module is a plugin-maker function.
+   * A module is an object literal containing metadata and an
+   * <code>instantiate</code> member, which is a plugin-maker function.
    * <p>
-   * loadModule(module) marks module as a func, freezes it,
-   * asks the current new-module-handler to handle it (thereby
-   * notifying the handler), and returns the new module.
+   * loadModule(module) marks module's <code>instantiate</code> member as a
+   * func, freezes the module, asks the current new-module-handler to handle it
+   * (thereby notifying the handler), and returns the new module.
    */
   function loadModule(module) {
-    return callPub(myNewModuleHandler, 'handle', [frozenFunc(module)]);
+    freeze(module);
+    frozenFunc(module.instantiate);
+    return callPub(myNewModuleHandler, 'handle', [module]);
   }
 
   var registeredImports = [];

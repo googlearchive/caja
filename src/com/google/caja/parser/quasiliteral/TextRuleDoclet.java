@@ -14,6 +14,8 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.reporting.BuildInfo;
+
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -56,7 +58,7 @@ public class TextRuleDoclet extends RuleDoclet {
   
   public static void main(String[] args) throws IOException {
     TextRuleDoclet trd = new TextRuleDoclet();
-    trd.setRewriter(new CajitaRewriter(false));
+    trd.setRewriter(new CajitaRewriter(BuildInfo.getInstance(), false));
     trd.generateDocumentation(new OutputStreamWriter(System.out));
   }
 }

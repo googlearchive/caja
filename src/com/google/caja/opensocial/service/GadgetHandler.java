@@ -23,6 +23,7 @@ import com.google.caja.opensocial.UriCallback;
 import com.google.caja.opensocial.UriCallbackOption;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Pair;
 
 import java.io.IOException;
@@ -35,6 +36,11 @@ import java.net.URI;
 import java.net.URLEncoder;
 
 public class GadgetHandler implements ContentHandler {
+  private final BuildInfo buildInfo;
+
+  public GadgetHandler(BuildInfo buildInfo) {
+    this.buildInfo = buildInfo;
+  }
 
   public boolean canHandle(URI uri, String contentType, ContentTypeCheck checker) {
     return checker.check("application/xml", contentType);
@@ -66,7 +72,7 @@ public class GadgetHandler implements ContentHandler {
   private void cajoleGadget(URI inputUri, String cajaInput, Appendable output)
       throws ParseException, GadgetRewriteException, IOException {
     MessageQueue mq = new SimpleMessageQueue();
-    DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(mq);
+    DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(buildInfo, mq);
 
     UriCallback uriCallback = new UriCallback() {
       public UriCallbackOption getOption(

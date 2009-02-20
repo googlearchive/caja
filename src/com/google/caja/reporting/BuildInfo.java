@@ -24,7 +24,7 @@ import java.io.IOException;
  *
  * @author ihab.awad@gmail.com
  */
-public final class BuildInfo {
+public class BuildInfo {
   private static BuildInfo instance;
 
   public static BuildInfo getInstance() {
@@ -38,7 +38,7 @@ public final class BuildInfo {
     this.properties = properties;
   }
 
-  private BuildInfo() {
+  protected BuildInfo() {
     try {
       properties = ResourceBundle.getBundle("com/google/caja/reporting/buildInfo");
     } catch (MissingResourceException e) {
@@ -57,10 +57,10 @@ public final class BuildInfo {
     return "<unknown>";
   }
 
-  private MessagePart getProperty(final String name) {
+  private MessagePart wrapValue(final String value) {
     return new MessagePart() {
       public void format(MessageContext context, Appendable out) throws IOException {
-        out.append(getPropertyValue(name));
+        out.append(value);
       }
     };
   }
@@ -73,8 +73,8 @@ public final class BuildInfo {
   public void addBuildInfo(MessageQueue mq) {
     mq.addMessage(
         MessageType.BUILD_INFO,
-        getProperty("svnVersion"),
-        getProperty("timestamp"));
+        wrapValue(getBuildVersion()),
+        wrapValue(getBuildTimestamp()));
   }
 
   /**
@@ -87,4 +87,21 @@ public final class BuildInfo {
     addBuildInfo(mq);
     return mq.getMessages().get(0).format(new MessageContext());
   }
+
+  /**
+   * @return the revision control version of the current build.
+   */
+  public String getBuildVersion() { return getPropertyValue("svnVersion"); }
+
+  /**
+   * @return the timestamp of the current build.
+   */
+  public String getBuildTimestamp() { return getPropertyValue("timestamp"); }
+
+  /**
+   * @return the current system date, suitable for a timestamp of the currently
+   * executing operation. This allows us to sequester any nondeterminism in the
+   * cajoler's behavior.
+   */
+  public long getCurrentTime() { return System.currentTimeMillis(); }
 }

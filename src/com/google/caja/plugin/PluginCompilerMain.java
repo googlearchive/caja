@@ -38,6 +38,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
+import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Callback;
 import com.google.caja.util.Criterion;
 import com.google.caja.util.CapturingReader;
@@ -101,7 +102,8 @@ public final class PluginCompilerMain {
       PluginMeta meta = new PluginMeta(makeEnvironment(config));
       meta.setDebugMode(config.debugMode());
       meta.setValijaMode(config.cajaMode());
-      PluginCompiler compiler = new PluginCompiler(meta, mq);
+      PluginCompiler compiler =
+          new PluginCompiler(BuildInfo.getInstance(), meta, mq);
       mc = compiler.getMessageContext();
       compiler.setCssSchema(config.getCssSchema(mq));
       compiler.setHtmlSchema(config.getHtmlSchema(mq));

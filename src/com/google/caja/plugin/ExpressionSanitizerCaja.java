@@ -24,15 +24,20 @@ import com.google.caja.parser.quasiliteral.NonAsciiCheckVisitor;
 import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.BuildInfo;
 
 /**
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class ExpressionSanitizerCaja {
+  private final BuildInfo buildInfo;
   private final MessageQueue mq;
   private final PluginMeta meta;
 
-  public ExpressionSanitizerCaja(MessageQueue mq, PluginMeta meta) {
+  public ExpressionSanitizerCaja(BuildInfo buildInfo,
+                                 MessageQueue mq,
+                                 PluginMeta meta) {
+    this.buildInfo = buildInfo;
     this.mq = mq;
     this.meta = meta;
   }
@@ -60,7 +65,7 @@ public class ExpressionSanitizerCaja {
 
   /** Visible for testing. */
   protected Rewriter newCajitaRewriter() {
-    return new CajitaRewriter(false);
+    return new CajitaRewriter(buildInfo, false);
   }
 
   protected Rewriter newValijaRewriter() {

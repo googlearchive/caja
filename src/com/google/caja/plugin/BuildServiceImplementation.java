@@ -32,6 +32,7 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
+import com.google.caja.reporting.BuildInfo;
 import com.google.caja.render.Innocent;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.JsPrettyPrinter;
@@ -139,7 +140,8 @@ public class BuildServiceImplementation implements BuildService {
       } else {
         throw new RuntimeException("Unrecognized language: " + language);
       }
-      PluginCompiler compiler = new PluginCompiler(meta, mq);
+      PluginCompiler compiler =
+          new PluginCompiler(BuildInfo.getInstance(), meta, mq);
       compiler.setMessageContext(mc);
 
       // Parse inputs

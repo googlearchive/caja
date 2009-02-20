@@ -21,13 +21,15 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.util.RhinoTestBed;
+import com.google.caja.reporting.TestBuildInfo;
 
 /**
  * @author metaweta@gmail.com
  */
 public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
   private Rewriter defaultValijaRewriter = new DefaultValijaRewriter(false);
-  private Rewriter cajitaRewriter = new CajitaRewriter(false);
+  private Rewriter cajitaRewriter =
+      new CajitaRewriter(new TestBuildInfo(), false);
   private Rewriter innocentCodeRewriter = new InnocentCodeRewriter(false);
 
   @Override

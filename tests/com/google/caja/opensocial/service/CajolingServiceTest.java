@@ -15,6 +15,7 @@
 package com.google.caja.opensocial.service;
 
 import com.google.caja.util.Strings;
+import com.google.caja.reporting.TestBuildInfo;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -59,7 +60,7 @@ public class CajolingServiceTest extends TestCase {
   protected void setUp() throws Exception {
     super.setUp();
 
-    service = new CajolingService() {
+    service = new CajolingService(new TestBuildInfo()) {
       @Override
       protected CajolingService.FetchedData fetch(URI uri) throws IOException {
         if (!uriContent.containsKey(uri)) {
@@ -159,11 +160,16 @@ public class CajolingServiceTest extends TestCase {
         String.format(
             moduleEnvelope,
             "<script type=\"text/javascript\">{\n"
-            + "  ___.loadModule(function moduleFunc___(___, IMPORTS___) {\n"
-            + "                   var moduleResult___ = ___.NO_RESULT;\n"
-            + "                   IMPORTS___.htmlEmitter___.b('p').f(false)\n"
-            + "                       .ih('Hello, World!').e('p');\n"
-            + "                   return moduleResult___;\n"
+            + "  ___.loadModule({\n"
+            + "                   'instantiate': function (___, IMPORTS___) {\n"
+            + "                     var moduleResult___ = ___.NO_RESULT;\n"
+            + "                     IMPORTS___.htmlEmitter___.b('p').f(false)\n"
+            + "                         .ih('Hello, World!').e('p');\n"
+            + "                     return moduleResult___;\n"
+            + "                   },\n"
+            + "                   'cajolerName': 'com.google.caja',\n"
+            + "                   'cajolerVersion': 'testBuildVersion',\n"
+            + "                   'cajoledDate': 0\n"
             + "                 });\n"
             + "}</script>"),
         request("?url=http://foo/bar.xml&mime-type=*/*"));
