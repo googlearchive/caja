@@ -3398,8 +3398,10 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   try {
     return ___.callPub(
         handler, 'call',
-        [imports.tameNode___(thisNode, true),
-         imports.tameEvent___(event)]);
+        [___.USELESS,
+         imports.tameEvent___(event),
+         imports.tameNode___(thisNode, true)
+         ]);
   } catch (ex) {
     if (ex && ex.cajitaStack___ && 'undefined' !== (typeof console)) {
       console.error('Event dispatch %s: %s',
