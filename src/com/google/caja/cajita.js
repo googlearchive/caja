@@ -217,8 +217,20 @@ var jsonParse = (function () {
           if (!key) {
             if (cont instanceof Array) {
               key = cont.length;
-            } else {
-              key = tok || EMPTY_STRING;  // Use as key for next value seen.
+            } else { 
+              // Use as key for next value seen.
+              if (tok) {
+                // Check that tok is a key name that can be set on a JSON object.
+                // The below is equivalent to calling canSetPub but we already
+                // know that the object is unfrozen, and is a JSON container.
+                if (tok.substring(tok.length - 2) === '__'
+                    || tok === 'valueOf' || tok === 'toString') {
+                  throw new Error('Invalid key ' + tok);
+                }
+                key = tok;
+              } else {
+                key = EMPTY_STRING;
+              }
               break;
             }
           }

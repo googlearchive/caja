@@ -66,6 +66,23 @@ public class CajitaTest extends CajaTestCase {
         + "assertThrows(function() { ___.callPub(c, 'f', [42]); });");
   }
 
+  public void testJsonParse() throws Exception {
+    runTest(
+        ""
+        + "var safeJSON = ___.sharedImports.JSON; \n"
+        + "assertEquals('foo', safeJSON.parse('{ \"bar\": \"foo\" }').bar); \n"
+        + "assertThrows( \n"
+        + "    function () { safeJSON.parse('{ \"f_canCall___\": true }'); } \n"
+        + "     ); \n"
+        + "assertThrows( \n"
+        + "    function () { safeJSON.parse('{ \"valueOf\": true }'); } \n"
+        + "     ); \n"
+        + "assertThrows( \n"
+        + "    function () { safeJSON.parse('{ \"toString\": true }'); } \n"
+        + "     );"
+        );
+  }
+
   protected void runTest(String code) throws Exception {
     mq.getMessages().clear();
     RhinoTestBed.runJs(
