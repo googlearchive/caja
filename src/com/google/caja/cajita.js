@@ -1943,10 +1943,12 @@ var ___;
         }
         case 'string':
         case 'number':
-        case 'boolean':
-        case 'undefined': {
+        case 'boolean': {
           // Immutable.
           return ex;
+        }
+        case 'undefined': {
+          return (void 0);
         }
         case 'function': {
           // According to Pratap Lakhsman's "JScript Deviations" S2.11
@@ -1971,7 +1973,7 @@ var ___;
         }
         default: {
           log('Unrecognized exception type ' + (typeOf(ex)));
-          return void 0;
+          return 'Unrecognized exception type ' + (typeOf(ex));
         }
       }
     } catch (_) {
@@ -1979,7 +1981,8 @@ var ___;
       // that fail.  This function must never throw an exception
       // because doing so would cause control to leave a catch block
       // before the handler fires.
-      return void 0;
+      log('Exception during exception handling.');
+      return 'Exception during exception handling.';
     }
   }
 

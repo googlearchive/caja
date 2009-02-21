@@ -1555,7 +1555,7 @@ var attachDocumentStub = (function () {
     };
     ___.ctor(TamePseudoElement, TamePseudoNode, 'TamePseudoElement');
     ___.all2(___.grantTypedGeneric, TamePseudoElement.prototype,
-             ['getTagName', 'getAttribute', 'hasAttribute']);
+             ['getTagName', 'getAttribute', 'hasAttribute', 'getElementsByTagName']);
 
 
     function TameOpaqueNode(node, editable) {
@@ -2671,6 +2671,12 @@ var attachDocumentStub = (function () {
           return this.tameBody___.removeEventListener(
               name, listener, useCapture);
         };
+    TameHTMLDocument.prototype.createComment = function (text) {
+      return new TameCommentNode(this.doc___.createComment(" "), true);
+    };
+    TameHTMLDocument.prototype.createDocumentFragment = function () {
+      return new TameBackedNode(this.doc___.createDocumentFragment(), this.editable___);
+    };
     TameHTMLDocument.prototype.createElement = function (tagName) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       tagName = String(tagName).toLowerCase();
@@ -2733,10 +2739,14 @@ var attachDocumentStub = (function () {
       rawEvent.tamed___ = tamedEvent;
       return tamedEvent;
     };
+    TameHTMLDocument.prototype.getOwnerDocument = function () {
+      return null;
+    };
     ___.ctor(TameHTMLDocument, TamePseudoNode, 'TameHTMLDocument');
     ___.all2(___.grantTypedGeneric, TameHTMLDocument.prototype,
              ['addEventListener', 'removeEventListener',
-              'createElement', 'createTextNode', 'createEvent',
+              'createComment', 'createDocumentFragment', 
+              'createElement', 'createEvent', 'createTextNode', 
               'getElementById', 'getElementsByClassName',
               'getElementsByTagName',
               'write']);
@@ -2977,14 +2987,14 @@ var attachDocumentStub = (function () {
     // See http://www.whatwg.org/specs/web-apps/current-work/multipage/history.html#location0
     var tameLocation = ___.primFreeze({
       toString: ___.frozenFunc(function () { return tameLocation.href; }),
-      href: String(optPseudoWindowLocation.href) || 'http://nosuchhost,fake/',
-      hash: String(optPseudoWindowLocation.hash) || '',
-      host: String(optPseudoWindowLocation.host) || 'nosuchhost,fake',
-      hostname: String(optPseudoWindowLocation.hostname) || 'nosuchhost,fake',
-      pathname: String(optPseudoWindowLocation.pathname) || '/',
-      port: String(optPseudoWindowLocation.port) || '',
-      protocol: String(optPseudoWindowLocation.protocol) || 'http:',
-      search: String(optPseudoWindowLocation.search) || ''
+      href: String(optPseudoWindowLocation.href || 'http://nosuchhost,fake/'),
+      hash: String(optPseudoWindowLocation.hash || ''),
+      host: String(optPseudoWindowLocation.host || 'nosuchhost,fake'),
+      hostname: String(optPseudoWindowLocation.hostname || 'nosuchhost,fake'),
+      pathname: String(optPseudoWindowLocation.pathname || '/'),
+      port: String(optPseudoWindowLocation.port || ''),
+      protocol: String(optPseudoWindowLocation.protocol || 'http:'),
+      search: String(optPseudoWindowLocation.search || '')
       });
 
     // See spec at http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#navigator
@@ -3375,13 +3385,11 @@ var attachDocumentStub = (function () {
  */
 function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   event = (event || window.event);
-  if (typeof console !== 'undefined' && console.log) {
-    var sig = String(handler).match(/^function\b[^\)]*\)/);
-    console.log(
-        'Dispatch %s event thisNode=%o, event=%o, pluginId=%o, handler=%o',
-        (event && event.type), thisNode, event, pluginId,
-        sig ? sig[0] : handler);
-  }
+  var sig = String(handler).match(/^function\b[^\)]*\)/);
+  cajita.log(
+      'Dispatch %s event thisNode=%o, event=%o, pluginId=%o, handler=%o',
+      (event && event.type), thisNode, event, pluginId,
+      sig ? sig[0] : handler);
   var imports = ___.getImports(pluginId);
   switch (typeof handler) {
     case 'string':

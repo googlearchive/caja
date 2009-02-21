@@ -655,7 +655,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "try {" +
         "  throw { toString: function () { throw new Error(); } };" +
         "} catch (ex) {" +
-        "  assertEquals(undefined, ex);" +
+        "  assertEquals('Exception during exception handling.', ex);" +
         "  handled = true;" +
         "}" +
         "assertTrue(handled);");
