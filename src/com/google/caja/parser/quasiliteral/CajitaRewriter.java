@@ -34,6 +34,7 @@ import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.LabeledStatement;
 import com.google.caja.parser.js.LabeledStmtWrapper;
 import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Loop;
@@ -387,6 +388,29 @@ public class CajitaRewriter extends Rewriter {
           if (isSynthetic(ex)) {
             expandEntries(bindings, scope, mq);
             return subst(bindings);
+          }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="labeledStatement",
+          synopsis="Statically reject if a label with `__` suffix is found",
+          reason="Caja reserves the `__` suffix for internal use",
+          matches="@lbl: @stmt;",
+          substitutes="@lbl: @stmt;")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof LabeledStatement) {
+          String label = ((LabeledStatement) node).getLabel();
+          if (label.endsWith("__")) {
+            mq.addMessage(
+                RewriterMessageType.LABELS_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+                node.getFilePosition(),
+                MessagePart.Factory.valueOf(label));
           }
         }
         return NONE;
@@ -2243,24 +2267,46 @@ public class CajitaRewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
-          name="labeledStatement",
-          synopsis="Statically reject if a label with `__` suffix is found",
-          reason="Caja reserves the `__` suffix for internal use",
-          matches="@lbl: @stmt;",
-          substitutes="@lbl: @stmt;")
+          name="breakStmt",
+          synopsis="disallow labels that end in __",
+          reason="",
+          matches="break @a;",
+          substitutes="break @a;")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
-        if (node instanceof LabeledStmtWrapper) {
-          LabeledStmtWrapper lsw = (LabeledStmtWrapper) node;
-          if (lsw.getLabel().endsWith("__")) {
+        if (node instanceof BreakStmt) {
+          String label = ((BreakStmt) node).getLabel();
+          if (label.endsWith("__")) {
             mq.addMessage(
                 RewriterMessageType.LABELS_CANNOT_END_IN_DOUBLE_UNDERSCORE,
                 node.getFilePosition(),
-                MessagePart.Factory.valueOf(lsw.getLabel()));
+                MessagePart.Factory.valueOf(label));
           }
-          return new LabeledStmtWrapper(
-              lsw.getFilePosition(),
-              lsw.getLabel(), (Statement) expand(lsw.getBody(), scope, mq));
+          return node;
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="continueStmt",
+          synopsis="disallow labels that end in __",
+          reason="",
+          matches="continue @a;",
+          substitutes="continue @a;")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (node instanceof ContinueStmt) {
+          String label = ((ContinueStmt) node).getLabel();
+          if (label.endsWith("__")) {
+            mq.addMessage(
+                RewriterMessageType.LABELS_CANNOT_END_IN_DOUBLE_UNDERSCORE,
+                node.getFilePosition(),
+                MessagePart.Factory.valueOf(label));
+          }
+          return node;
         }
         return NONE;
       }
@@ -2320,16 +2366,14 @@ public class CajitaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof ParseTreeNodeContainer ||
             node instanceof ArrayConstructor ||
-            // TODO(mikesamuel): break/continue with unmentionable label
-            node instanceof BreakStmt ||
             node instanceof CaseStmt ||
             node instanceof Conditional ||
-            node instanceof ContinueStmt ||
             node instanceof DebuggerStmt ||
             node instanceof DefaultCaseStmt ||
             node instanceof ExpressionStmt ||
             node instanceof FormalParam ||
             node instanceof Identifier ||
+            node instanceof LabeledStmtWrapper ||
             node instanceof Literal ||
             node instanceof Loop ||
             node instanceof Noop ||

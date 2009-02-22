@@ -21,6 +21,8 @@ import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.LabeledStatement;
+import com.google.caja.parser.js.LabeledStmtWrapper;
 import com.google.caja.parser.js.Reference;
 
 import java.util.ArrayList;
@@ -113,6 +115,9 @@ public final class RuleChain {
     }
     if (nodeClass == Reference.class) {
       return Identifier.class;
+    }
+    if (nodeClass == LabeledStmtWrapper.class) {
+      return LabeledStatement.class;
     }
     return nodeClass;
   }

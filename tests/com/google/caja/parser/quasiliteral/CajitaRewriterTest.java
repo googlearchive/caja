@@ -1547,7 +1547,12 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
   public void testLabeledStatement() throws Exception {
     checkFails("IMPORTS___: 1;", "Labels cannot end in \"__\"");
+    checkFails("IMPORTS___: while (1);", "Labels cannot end in \"__\"");
     checkSucceeds("foo: 1;", "foo: 1;");
+    checkFails("while (1) { break x__; }", "Labels cannot end in \"__\"");
+    checkSucceeds("break foo;", "break foo;");
+    checkFails("while (1) { continue x__; }", "Labels cannot end in \"__\"");
+    checkSucceeds("continue foo;", "continue foo;");
     assertConsistent(
         "var k = 0;" +
         "a: for (var i = 0; i < 10; ++i) {" +

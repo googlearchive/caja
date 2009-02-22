@@ -51,7 +51,9 @@ public final class BreakStmt extends AbstractStatement {
   }
 
   @Override
-  public Object getValue() { return label; }
+  public String getValue() { return label; }
+
+  public String getLabel() { return label; }
 
   public void render(RenderContext rc) {
     TokenConsumer out = rc.getOut();
