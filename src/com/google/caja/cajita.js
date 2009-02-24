@@ -220,9 +220,13 @@ var jsonParse = (function () {
             } else { 
               // Use as key for next value seen.
               if (tok) {
-                // Check that tok is a key name that can be set on a JSON object.
+                // Check that tok is a key name that can be set on a JSON
+                // object.
                 // The below is equivalent to calling canSetPub but we already
                 // know that the object is unfrozen, and is a JSON container.
+
+                // FIXME: this is a temporary hack until we can do this in a way
+                // that allows us to use native JSON parsing.  See bug 978.
                 if (tok.substring(tok.length - 2) === '__'
                     || tok === 'valueOf' || tok === 'toString') {
                   throw new Error('Invalid key ' + tok);
