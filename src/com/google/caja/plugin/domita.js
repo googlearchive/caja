@@ -2978,7 +2978,7 @@ var attachDocumentStub = (function () {
     var tameDocument = new TameHTMLDocument(
         document,
         pseudoBodyNode,
-        String(optPseudoWindowLocation.hostname) || 'nosuchhost,fake',
+        String(optPseudoWindowLocation.hostname || 'nosuchhost.fake'),
         true);
     imports.document = tameDocument;
 
@@ -2987,10 +2987,10 @@ var attachDocumentStub = (function () {
     // See http://www.whatwg.org/specs/web-apps/current-work/multipage/history.html#location0
     var tameLocation = ___.primFreeze({
       toString: ___.frozenFunc(function () { return tameLocation.href; }),
-      href: String(optPseudoWindowLocation.href || 'http://nosuchhost,fake/'),
+      href: String(optPseudoWindowLocation.href || 'http://nosuchhost.fake/'),
       hash: String(optPseudoWindowLocation.hash || ''),
-      host: String(optPseudoWindowLocation.host || 'nosuchhost,fake'),
-      hostname: String(optPseudoWindowLocation.hostname || 'nosuchhost,fake'),
+      host: String(optPseudoWindowLocation.host || 'nosuchhost.fake'),
+      hostname: String(optPseudoWindowLocation.hostname || 'nosuchhost.fake'),
       pathname: String(optPseudoWindowLocation.pathname || '/'),
       port: String(optPseudoWindowLocation.port || ''),
       protocol: String(optPseudoWindowLocation.protocol || 'http:'),
