@@ -1710,4 +1710,7 @@ IDEN [span]: csslexerinput1.css:153+25@5065 - 29@5069
 PUNC [>]: csslexerinput1.css:153+29@5069 - 30@5070
 SPAC [ ]: csslexerinput1.css:153+30@5070 - 31@5071
 PUNC [-->]: csslexerinput1.css:153+31@5071 - 34@5074
-SPAC [\n]: csslexerinput1.css:153+34@5074 - 154+1@5075
+SPAC [\n\n]: csslexerinput1.css:153+34@5074 - 155+1@5076
+COMM [// A line comment]: csslexerinput1.css:155+1@5076 - 18@5093
+SPAC [\n]: csslexerinput1.css:155+18@5093 - 156+1@5094
+COMM [/* A regular comment */]: csslexerinput1.css:156+1@5094 - 24@5117

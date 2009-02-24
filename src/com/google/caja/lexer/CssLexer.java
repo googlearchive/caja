@@ -15,8 +15,10 @@
 package com.google.caja.lexer;
 
 import com.google.caja.lexer.CharProducer.MutableFilePosition;
+import com.google.caja.reporting.DevNullMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Strings;
 
@@ -29,6 +31,7 @@ import java.util.regex.Pattern;
 /**
  * A lexer that recognizes the
  * <a href="http://www.w3.org/TR/CSS21/grammar.html#scanner">CSS 2.1 Grammar</a>
+ * plus line comments as interpreted by most browsers.
  *
  * TODO(mikesamuel): CSS2.1 has changed lexical conventions to effectively
  * decode escapes at lex time in most contexts.  E.g., the rule
@@ -45,16 +48,16 @@ public final class CssLexer implements TokenStream<CssTokenType> {
       = new LinkedList<Token<CssTokenType>>();
 
   public CssLexer(CharProducer cp) {
-    this(cp, false);
+    this(cp, DevNullMessageQueue.singleton(), false);
   }
 
   /**
    * @param allowSubstitutions true iff ${...} style substitutions should be
    *   allowed as described at {@link CssTokenType#SUBSTITUTION}
    */
-  public CssLexer(CharProducer cp, boolean allowSubstitutions) {
+  public CssLexer(CharProducer cp, MessageQueue mq, boolean allowSubstitutions) {
     assert null != cp;
-    this.splitter = new CssSplitter(cp, allowSubstitutions);
+    this.splitter = new CssSplitter(cp, mq, allowSubstitutions);
   }
 
   public boolean hasNext() throws ParseException {
@@ -117,6 +120,20 @@ public final class CssLexer implements TokenStream<CssTokenType> {
     }
     if (sb == null) { return ident.toString(); }
     return sb.append(ident, pos, ident.length()).toString();
+  }
+
+  /**
+   * <pre>
+   * nmstart    [_a-z]|{nonascii}|{escape}
+   * nonascii   [\200-\377]
+   * </pre>
+   * @return true iff ch is a nmstart and is not an escape.
+   *     Call {@link #decodeCssIdentifier} before this
+   *     method to figure out whether an escape sequence is a nmstart
+   */
+  public static boolean isNmStart(char ch) {
+    return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
+        || (ch >= 0200 && ch <= 0377) || ch == '_';
   }
 
   /**
@@ -205,6 +222,7 @@ public final class CssLexer implements TokenStream<CssTokenType> {
 
 final class CssSplitter implements TokenStream<CssTokenType> {
   private final LookaheadCharProducer cp;
+  private final MessageQueue mq;
   private boolean allowSubstitutions;
   private Token<CssTokenType> pending;
 
@@ -212,10 +230,11 @@ final class CssSplitter implements TokenStream<CssTokenType> {
    * @param allowSubstitutions true iff ${...} style substitutions should be
    *   allowed as described at {@link CssTokenType#SUBSTITUTION}
    */
-  CssSplitter(CharProducer cp, boolean allowSubstitutions) {
+  CssSplitter(CharProducer cp, MessageQueue mq, boolean allowSubstitutions) {
     assert null != cp;
     // Longest punctuation tokens are <!-- and --> so need LA(3).
     this.cp = new LookaheadCharProducer(cp, 3);
+    this.mq = mq;
     this.allowSubstitutions = allowSubstitutions;
   }
 
@@ -265,7 +284,8 @@ final class CssSplitter implements TokenStream<CssTokenType> {
         sb.append(ch);
         cp.read();
 
-        if (cp.lookahead() == '*') {
+        int la = cp.lookahead();
+        if (la == '*') {
           // \/\*[^*]*\*+([^/*][^*]*\*+)*\/    /* ignore comments */
           int state = 0;  // 0 - start, 1 - in comment, 2 - saw, 3 - done
           do {
@@ -291,6 +311,24 @@ final class CssSplitter implements TokenStream<CssTokenType> {
                 spos.toFilePosition()));
           }
           type = CssTokenType.COMMENT;
+        } else if (la == '/') {
+          do {
+            sb.append((char) la);
+            cp.consume(1);
+            la = cp.lookahead();
+            // Line comment does not contain the newline character that ends it
+            // since we don't want to break \r\n sequences across two tokens,
+            // and for consistency with Javascript conventions which exclude the
+            // newline from the line comment token.
+            if (la < 0 || la == '\r' || la == '\n') { break; }
+          } while (true);
+          type = CssTokenType.COMMENT;
+          cp.getCurrentPosition(epos);
+          FilePosition commentPos = FilePosition.instance(
+              spos.source,
+              spos.lineNo, spos.charInFile, spos.charInLine,
+              epos.lineNo, epos.charInFile, epos.charInLine);
+          mq.addMessage(MessageType.INVALID_CSS_COMMENT, commentPos);
         } else {
           //               *yytext
           type = CssTokenType.PUNCTUATION;
@@ -689,12 +727,9 @@ final class CssSplitter implements TokenStream<CssTokenType> {
 
   private boolean parseNmStart(StringBuilder sb)
       throws IOException, ParseException {
-    // nmstart    [_a-z]|{nonascii}|{escape}
-    // nonascii   [\200-\377]
     int chi = cp.lookahead();
     if (chi < 0) { return false; }
-    if ((chi >= 'a' && chi <= 'z') || (chi >= 'A' && chi <= 'Z')
-        || (chi >= 0200 && chi <= 0377) || chi == '_') {
+    if (CssLexer.isNmStart((char) chi)) {
       sb.append((char) chi);
       cp.read();
       return true;

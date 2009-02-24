@@ -197,7 +197,11 @@ public class TokenQueue<T extends TokenType> {
       Mark endMark = tq.mark();
       tq.rewind(this);
       try {
-        return tq.currentPosition();
+        if (tq.isEmpty()) {
+          return FilePosition.endOf(tq.lastPosition());
+        } else {
+          return tq.currentPosition();
+        }
       } finally {
         tq.rewind(endMark);
       }

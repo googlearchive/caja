@@ -15,7 +15,6 @@
 package com.google.caja.util;
 
 import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.HtmlTokenType;
@@ -172,7 +171,8 @@ public abstract class CajaTestCase extends TestCase {
   protected CssTree.StyleSheet css(CharProducer cp, boolean substs)
       throws ParseException {
     TokenQueue<CssTokenType> tq = cssTokenQueue(cp, substs);
-    CssTree.StyleSheet ss = new CssParser(tq).parseStyleSheet();
+    CssTree.StyleSheet ss = new CssParser(tq, mq, MessageLevel.FATAL_ERROR)
+        .parseStyleSheet();
     tq.expectEmpty();
     return ss;
   }
@@ -185,22 +185,15 @@ public abstract class CajaTestCase extends TestCase {
   protected CssTree.DeclarationGroup cssDecls(CharProducer cp, boolean substs)
       throws ParseException {
     TokenQueue<CssTokenType> tq = cssTokenQueue(cp, substs);
-    CssTree.DeclarationGroup dg = new CssParser(tq).parseDeclarationGroup();
+    CssTree.DeclarationGroup dg = new CssParser(
+        tq, mq, MessageLevel.FATAL_ERROR).parseDeclarationGroup();
     tq.expectEmpty();
     return dg;
   }
 
   private TokenQueue<CssTokenType> cssTokenQueue(
       CharProducer cp, boolean substs) {
-    CssLexer lexer = new CssLexer(cp, substs);
-    return new TokenQueue<CssTokenType>(
-        lexer, cp.getCurrentPosition().source(),
-        new Criterion<Token<CssTokenType>>() {
-          public boolean accept(Token<CssTokenType> t) {
-            return CssTokenType.SPACE != t.type
-                && CssTokenType.COMMENT != t.type;
-          }
-        });
+    return CssParser.makeTokenQueue(cp, mq, substs);
   }
 
   protected String render(ParseTreeNode node) {

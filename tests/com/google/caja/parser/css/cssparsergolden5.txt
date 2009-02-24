@@ -1,0 +1,249 @@
+StyleSheet
+  Import
+    UriLiteral : foo.css
+  Import
+    UriLiteral : baz.css
+  Import
+    UriLiteral : boo.css
+  RuleSet
+    Selector
+      SimpleSelector
+        WildcardElement
+    Declaration
+      Property : color
+      Expr
+        Term
+          IdentLiteral : red
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : body
+    Selector
+      SimpleSelector
+        IdentLiteral : input
+    Selector
+      SimpleSelector
+        IdentLiteral : td
+    Declaration
+      Property : color
+      Expr
+        Term
+          IdentLiteral : blue
+  Media
+    Medium : print
+    RuleSet
+      Selector
+        SimpleSelector
+          WildcardElement
+      Declaration
+        Property : color
+        Expr
+          Term
+            IdentLiteral : black
+        Prio : !important
+  Media
+    Medium : ok
+  Media
+    Medium : ok
+  Media
+    Medium : ok
+  Page
+    Declaration
+  Page
+    PseudoPage : left
+    Declaration
+      Property : margin-left
+      Expr
+        Term
+          QuantityLiteral : 4cm
+    Declaration
+      Property : size
+      Expr
+        Term
+          QuantityLiteral : 8.5in
+        Operation : NONE
+        Term
+          QuantityLiteral : 11in
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : body
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : a
+        Pseudo
+          IdentLiteral : visited
+    Selector
+      SimpleSelector
+        Pseudo
+          IdentLiteral : unvisited
+    Declaration
+      Property : color
+      Expr
+        Term
+          IdentLiteral : blue
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : ok
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : a1
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : a2
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : a3
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+    Declaration
+      Property : unicode-range
+      Expr
+        Term
+          UnicodeRangeLiteral : U+0-FFFF
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : a4
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : a5
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : a6
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : a7
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : a8
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : a9
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : aa
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+    Declaration
+      Property : a
+      Expr
+        Term
+          IdentLiteral : ok
+  FontFace
+    Declaration
+  FontFace
+    Declaration
+      Property : font-family
+      Expr
+        Term
+          IdentLiteral : Letters
+    Declaration
+      Property : src
+      Expr
+        Term
+          UriLiteral : Letters.ttf

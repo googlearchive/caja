@@ -15,13 +15,11 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.css.CssParser;
@@ -33,7 +31,6 @@ import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.util.Criterion;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pipeline;
 
@@ -158,7 +155,7 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
                     MessageLevel.ERROR, importUrl.getReferencePosition(), is);
       return;
     }
-    CssTree.StyleSheet importedSs = parseCss(cp, is);
+    CssTree.StyleSheet importedSs = parseCss(cp, mq);
     inlineImports(importedSs, depth - 1, env, mq);
 
     // Create a set of blocks to import by taking the union of media types on
@@ -250,17 +247,10 @@ public class InlineCssImportsStage implements Pipeline.Stage<Jobs> {
     for (CssTree node : nodes) { mut.removeChild(node); }
   }
 
-  private static CssTree.StyleSheet parseCss(CharProducer cp, InputSource is)
+  private static CssTree.StyleSheet parseCss(CharProducer cp, MessageQueue mq)
       throws ParseException {
-    CssLexer lexer = new CssLexer(cp, false);
-    TokenQueue<CssTokenType> tq = new TokenQueue<CssTokenType>(
-        lexer, is, new Criterion<Token<CssTokenType>>() {
-          public boolean accept(Token<CssTokenType> tok) {
-            return tok.type != CssTokenType.COMMENT
-                && tok.type != CssTokenType.SPACE;
-          }
-        });
-    CssParser p = new CssParser(tq);
+    TokenQueue<CssTokenType> tq = CssParser.makeTokenQueue(cp, mq, false);
+    CssParser p = new CssParser(tq, mq, MessageLevel.WARNING);
     return p.parseStyleSheet();
   }
 

@@ -16,7 +16,6 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
@@ -43,7 +42,6 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.util.Criterion;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pipeline;
 import com.google.caja.util.Strings;
@@ -306,7 +304,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
 
     CssTree.StyleSheet stylesheet;
     try {
-      stylesheet = parseCss(cssStream.getCurrentPosition().source(), cssStream);
+      stylesheet = parseCss(cssStream, jobs.getMessageQueue());
       if (stylesheet == null) { return; }  // If all tokens ignorable.
     } catch (ParseException ex) {
       ex.toMessageQueue(jobs.getMessageQueue());
@@ -516,20 +514,13 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     return body;
   }
 
-  public static CssTree.StyleSheet parseCss(InputSource is, CharProducer cp)
+  public static CssTree.StyleSheet parseCss(CharProducer cp, MessageQueue mq)
       throws ParseException {
-    CssLexer lexer = new CssLexer(cp);
     CssTree.StyleSheet input;
-    TokenQueue<CssTokenType> tq = new TokenQueue<CssTokenType>(
-        lexer, is, new Criterion<Token<CssTokenType>>() {
-          public boolean accept(Token<CssTokenType> tok) {
-            return tok.type != CssTokenType.COMMENT
-                && tok.type != CssTokenType.SPACE;
-          }
-        });
+    TokenQueue<CssTokenType> tq = CssParser.makeTokenQueue(cp, mq, false);
     if (tq.isEmpty()) { return null; }
 
-    CssParser p = new CssParser(tq);
+    CssParser p = new CssParser(tq, mq, MessageLevel.WARNING);
     input = p.parseStyleSheet();
     tq.expectEmpty();
     return input;

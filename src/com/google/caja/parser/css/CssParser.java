@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.css;
 
+import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.FilePosition;
@@ -22,30 +23,156 @@ import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.lexer.TokenQueue.Mark;
 import com.google.caja.reporting.Message;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.reporting.MessageTypeInt;
+import com.google.caja.util.Criterion;
 import com.google.caja.util.Name;
 import com.google.caja.util.Strings;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 /**
  * Produces a parse tree from CSS2.
  *
+ * <h2>Error Recovery</h2>
+ * This class runs in two modes: tolerant where unrecognized constructs are
+ * reported on via the {@link MessageQueue} and dropped, and strict mode where
+ * the parse failures result in a {@link ParseException}.
+ * <p>
+ * In tolerant mode, we follow the rules laid out in
+ * <a href="http://www.w3.org/TR/CSS2/syndata.html#parsing-errors">
+ *  "Rules for handling parsing errors"</a>
+ * but we also attempt to recover from single malformed tokens, by employing
+ * a variety of error recovery strategies.
+ * <p>
+ * In no case do we return a parse tree node for a construct that is not
+ * well-formed in isolation, and when parsing a group of items (a selector list
+ * or declaration group), we discard when not doing so would cause more styles
+ * to apply.  E.g. in <tt>a, b##id, p { color: blue; color::red }</tt> we throw
+ * away the <tt>b##id</tt> instead of turning it into <tt>b</tt> since that
+ * would result in more styles being applied.  We throw away <tt>color::red</tt>
+ * since it is not well-formed in isolation.  We don't need to throw away
+ * anything else, since we assume properties are disjoint, and selectors in a
+ * comma list are disjoint.  The result after discarding malformed content is
+ * <tt>a, p { color: blue }</tt>.
+ * <p>
+ * When we expect a token that is not there in tolerant mode, we report an error
+ * and proceed to the next token that signals the start of a similar chunk or
+ * the end of the containing block.
+ * Usually this means finding the next <tt>;</tt> or <tt>}</tt>.
+ * <p>
+ * E.g. in {@code color red; background-color: blue} we expect a <tt>:</tt>
+ * after <tt>color</tt> but since none is forthcoming, we skip to the semicolon
+ * and start parsing the background color property.
+ * <p>
+ * Mismatched curly brackets are harder to deal with, so those are handled in
+ * the outer loops.
+ *
+ * <h2>Recovery Strategies</h2>
+ * <p>We employ several recovery strategies when we encounter a parsing problem.
+ * <ul>
+ *   <li>Skipping the item in a list as in selector lists :
+ *       {@code a.myclass, "borken", h6} &rarr; {@code a.myclass, h6}.
+ *   <li>Skipping a chunk inside a block as in property pairs :
+ *       {@code color:red; background -color: blue} &rarr; {@code color: red}
+ *   <li>Skipping a chunk that may end with a block as in undefined symbols :
+ *       <tt>@unknown { p { color: blue } }</tt>.
+ * </ul>
+ * We define several generic syntactic constructs and group the actual CSS
+ * grammar into these.
+ * <ul>
+ *   <li>list item &mdash; a minimal run of tokens that does not include a
+ *    comma, semicolon, curly bracket, or symbol.
+ *   <li>inner chunk &mdash; a minimal run of tokens that does not contain a
+ *   symbol or a close curly bracket or semicolon outside a balanced curly
+ *   bracket block.
+ *   <li>outer chunk &mdash; a run of tokens terminated by a curly bracket
+ *   that closes a balanced block, a semicolon outside a balanced curly bracket
+ *   block, or the end-of-file marker.
+ * </ul>
+ * We then group the constructs defined in the CSS grammar into these new
+ * syntactic constructs.
+ * <ul>
+ *   <li>list item includes selectors and mediums.  So a ruleset is then a
+ *   list of list items followed by an outer chunk.
+ *   <li>inner chunks include property/expression pairs which are separated
+ *   by semicolons.  A declaration group is a list of inner chunks surrounded
+ *   by curly brackets aka an outer chunk.
+ *   <li>outer chunks include most of the symbol based productions and the
+ *   ruleset production.  A stylesheet is a list of outer chunks.
+ * </ul>
+ *
+ * <h2>Coding Conventions around error recovery</h2>
+ * <p>All ignored tokens not specified in CSS2.1 as ignorable must be reported.
+ * We only apply the error recovery strategies where we make a decision about
+ * how to proceed.  So the functions that parse list items and parts of list
+ * items return {@code null} to indicate a tolerable failure, and the functions
+ * that parse lists of list items will examine their return values, and
+ * apply one of the recovery strategies.  The recovery strategies are written
+ * to make sure that they enqueue a message if the malformed construct contained
+ * tokens.
+ *
+ * <p>All the parsing functions below should obey these conventions
+ * <ul>
+ *   <li>public parsing functions never return null.
+ *   <li>private <tt>parse*</tt> functions return null to indicate a tolerable
+ *   failure to parse, or throw a {@link ParseException} to indicate an
+ *   intolerable failure.
+ *   <li>When a <tt>parse*</tt> function delegates parsing to another function,
+ *   one of the following is true: the delegator returns null when the delegate
+ *   returns null, or the delegate reports its failure to parse and the
+ *   delegator does not, or the delegate does not report failure to parse and
+ *   the delegator does.  This does not constrain the delegate from reporting
+ *   messages about individual tokens -- only about ranges of skipped tokens.
+ * </ul>
+ *
  * @author mikesamuel@gmail.com
  */
 public final class CssParser {
   private final TokenQueue<CssTokenType> tq;
+  private final MessageQueue mq;
+  private final MessageLevel tolerance;
+  private final boolean isTolerant;
+
+  public static TokenQueue<CssTokenType> makeTokenQueue(
+      CharProducer cp, MessageQueue mq, boolean allowSubstitutions) {
+    return new TokenQueue<CssTokenType>(
+        new CssLexer(cp, mq, allowSubstitutions),
+        cp.getCurrentPosition().source(),
+        new Criterion<Token<CssTokenType>>() {
+          public boolean accept(Token<CssTokenType> t) {
+            // Other ignorables are handled in skipTopLevelIgnorables below.
+            return CssTokenType.SPACE != t.type
+                && CssTokenType.COMMENT != t.type;
+          }
+        });
+  }
 
   /**
    * @param tq the token queue to parse from.  Consumed.
+   * @param mq in {@link #isTolerant() tolerant} mode, receives messages about
+   *      parse problems with a {@link Message#getMessageLevel() level} of
+   *      {@code tolerance}.
+   * @param tolerance if &lt; {@link MessageLevel#FATAL_ERROR}, then
+   *      unrecognized constructs will be dropped from the token stream as
+   *      described above.
+   *      Otherwise, a {@link ParseException} will be thrown.
    */
-  public CssParser(TokenQueue<CssTokenType> tq) {
+  public CssParser(
+      TokenQueue<CssTokenType> tq, MessageQueue mq, MessageLevel tolerance) {
+    assert tq != null && tolerance != null;
     this.tq = tq;
+    this.mq = mq;
+    this.tolerance = tolerance;
+    this.isTolerant = isTolerant();
   }
 
   public CssTree.StyleSheet parseStyleSheet() throws ParseException {
@@ -58,12 +185,12 @@ public final class CssParser {
     while (true) {
       skipTopLevelIgnorables();
       if (!lookaheadSymbol("@import")) { break; }
-      stmts.add(parseImport());
+      addIfNotNull(stmts, parseImport());
     }
     while (true) {
       skipTopLevelIgnorables();
       if (tq.isEmpty()) { break; }
-      stmts.add(parseStatement());
+      addIfNotNull(stmts, parseStatement());
     }
     return new CssTree.StyleSheet(pos(m), stmts);
   }
@@ -76,42 +203,72 @@ public final class CssParser {
     while (!tq.isEmpty()) {
       while (tq.lookaheadToken(";")) { tq.advance(); }
       if (tq.isEmpty()) { break; }
-      decls.add(parseDeclaration());
+      addIfNotNull(decls, parseDeclaration());
       if (!tq.checkToken(";")) { break; }
     }
     return new CssTree.DeclarationGroup(pos(m), decls);
   }
 
+  public boolean isTolerant() {
+    return MessageLevel.FATAL_ERROR.compareTo(tolerance) > 0;
+  }
+
+  // All the non-public parse methods below may return null in tolerant mode.
+
   private CssTree.Import parseImport() throws ParseException {
     Mark m = tq.mark();
     expectSymbol("@import");
     CssTree.UriLiteral uri = parseUri();
+    if (uri == null) {
+      SKIP_TO_CHUNK_END_FROM_OUTSIDE_BLOCK.recover(this, m);
+      return null;
+    }
     List<CssTree.Medium> media = Collections.<CssTree.Medium>emptyList();
     if (!tq.checkToken(";")) {
       media = new ArrayList<CssTree.Medium>();
       do {
-        media.add(parseMedium());
+        CssTree.Medium medium = parseMedium();
+        if (medium == null) {
+          SKIP_TO_CHUNK_END_FROM_OUTSIDE_BLOCK.recover(this, m);
+          return null;
+        }
+        media.add(medium);
       } while (tq.checkToken(","));
-      tq.expectToken(";");
+      if (expect(";", SKIP_TO_CHUNK_END_FROM_OUTSIDE_BLOCK, m)) {
+        return null;
+      }
     }
     return new CssTree.Import(pos(m), uri, media);
   }
 
   private CssTree.Medium parseMedium() throws ParseException {
     Mark m = tq.mark();
-    return new CssTree.Medium(pos(m), Name.css(expectIdent()));
+    String ident = expectIdent();
+    if (ident == null) { return null; }
+    return new CssTree.Medium(pos(m), Name.css(ident));
   }
 
   private CssTree.CssStatement parseStatement() throws ParseException {
-    if (lookaheadSymbol("@media")) {
-      return parseMedia();
-    } else if (lookaheadSymbol("@page")) {
-      return parsePage();
-    } else if (lookaheadSymbol("@font-face")) {
-      return parseFontFace();
-    } else {
-      return parseRuleSet();
+    Token<CssTokenType> t = tq.peek();
+    if (t.type == CssTokenType.SYMBOL) {
+      if (lookaheadSymbol("@media")) {
+        return parseMedia();
+      } else if (lookaheadSymbol("@page")) {
+        return parsePage();
+      } else if (lookaheadSymbol("@font-face")) {
+        return parseFontFace();
+      } else if (isTolerant) {
+        Mark m = tq.mark();
+        tq.advance();
+        SKIP_TO_CHUNK_END_FROM_OUTSIDE_BLOCK.recover(this, m);
+        return null;
+      }
+    } else if (isTolerant && ";".equals(t.text)) {
+      tq.advance();
+      reportSkipping(tq.lastPosition());
+      return null;
     }
+    return parseRuleSet();
   }
 
   private CssTree.Media parseMedia() throws ParseException {
@@ -119,11 +276,24 @@ public final class CssParser {
     expectSymbol("@media");
     List<CssTree> children = new ArrayList<CssTree>();
     do {
-      children.add(parseMedium());
+      CssTree.Medium medium = parseMedium();
+      if (medium == null) {
+        SKIP_TO_CHUNK_END_FROM_OUTSIDE_BLOCK.recover(this, m);
+        return null;
+      }
+      children.add(medium);
     } while (tq.checkToken(","));
-    tq.expectToken("{");
+    if (expect("{", SKIP_TO_CHUNK_END_FROM_OUTSIDE_BLOCK, m)) {
+      return null;
+    }
     while (!tq.checkToken("}")) {
-      children.add(parseRuleSet());
+      CssTree.RuleSet rs = parseRuleSet();
+      if (rs == null) {
+        SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK.recover(this, m);
+        return null;
+      } else {
+        children.add(rs);
+      }
     }
     return new CssTree.Media(pos(m), children);
   }
@@ -142,13 +312,13 @@ public final class CssParser {
       Mark m2 = tq.mark();
       tq.expectToken(":");
       String pseudoPage = expectIdent();
+      if (pseudoPage == null) {
+        SKIP_TO_CHUNK_END_FROM_OUTSIDE_BLOCK.recover(this, m);
+        return null;
+      }
       elements.add(new CssTree.PseudoPage(pos(m2), Name.css(pseudoPage)));
     }
-    tq.expectToken("{");
-    do {
-      elements.add(parseDeclaration());
-    } while (tq.checkToken(";"));
-    tq.expectToken("}");
+    if (parseDeclarationBlock(elements, m)) { return null; }
     return new CssTree.Page(
         pos(m), ident == null ? null : Name.css(ident), elements);
   }
@@ -157,28 +327,38 @@ public final class CssParser {
     Mark m = tq.mark();
     expectSymbol("@font-face");
     List<CssTree.Declaration> elements = new ArrayList<CssTree.Declaration>();
-    tq.expectToken("{");
-    do {
-      elements.add(parseDeclaration());
-    } while (tq.checkToken(";"));
-    tq.expectToken("}");
+    if (parseDeclarationBlock(elements, m)) { return null; }
     return new CssTree.FontFace(pos(m), elements);
   }
 
-  private CssTree.Operation parseOperator() throws ParseException {
+  private boolean parseDeclarationBlock(
+      List<? super CssTree.Declaration> decls, Mark start)
+      throws ParseException {
+    if (expect("{", SKIP_TO_CHUNK_END_FROM_OUTSIDE_BLOCK, start)) {
+      return true;
+    }
+    do {
+      addIfNotNull(decls, parseDeclaration());
+    } while (tq.checkToken(";"));
+    return expect("}", SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK, start);
+  }
+
+  private CssTree.Operation parseOperation() throws ParseException {
     Mark m = tq.mark();
-    Token<CssTokenType> t = tq.peek();
     CssTree.Operator op = CssTree.Operator.NONE;
-    if (CssTokenType.PUNCTUATION == t.type) {
-      if ("/".equals(t.text)) {
-        op = CssTree.Operator.DIV;
-        tq.advance();
-      } else if (",".equals(t.text)) {
-        op = CssTree.Operator.COMMA;
-        tq.advance();
-      } else if ("=".equals(t.text)) {
-        op = CssTree.Operator.EQUAL;
-        tq.advance();
+    if (!tq.isEmpty()) {
+      Token<CssTokenType> t = tq.peek();
+      if (CssTokenType.PUNCTUATION == t.type) {
+        if ("/".equals(t.text)) {
+          op = CssTree.Operator.DIV;
+          tq.advance();
+        } else if (",".equals(t.text)) {
+          op = CssTree.Operator.COMMA;
+          tq.advance();
+        } else if ("=".equals(t.text)) {
+          op = CssTree.Operator.EQUAL;
+          tq.advance();
+        }
       }
     }
     return new CssTree.Operation(pos(m), op);
@@ -186,15 +366,17 @@ public final class CssParser {
 
   private CssTree.Combination parseCombinator() throws ParseException {
     Mark m = tq.mark();
-    Token<CssTokenType> t = tq.peek();
     CssTree.Combinator comb = CssTree.Combinator.DESCENDANT;
-    if (CssTokenType.PUNCTUATION == t.type) {
-      if ("+".equals(t.text)) {
-        comb = CssTree.Combinator.SIBLING;
-        tq.advance();
-      } else if (">".equals(t.text)) {
-        comb = CssTree.Combinator.CHILD;
-        tq.advance();
+    if (!tq.isEmpty()) {
+      Token<CssTokenType> t = tq.peek();
+      if (CssTokenType.PUNCTUATION == t.type) {
+        if ("+".equals(t.text)) {
+          comb = CssTree.Combinator.SIBLING;
+          tq.advance();
+        } else if (">".equals(t.text)) {
+          comb = CssTree.Combinator.CHILD;
+          tq.advance();
+        }
       }
     }
     return new CssTree.Combination(pos(m), comb);
@@ -203,6 +385,7 @@ public final class CssParser {
   private CssTree.Property parseProperty() throws ParseException {
     Mark m = tq.mark();
     String ident = expectIdent();
+    if (ident == null && isTolerant) { return null; }
     return new CssTree.Property(pos(m), Name.css(ident));
   }
 
@@ -211,13 +394,14 @@ public final class CssParser {
     Mark m = tq.mark();
     List<CssTree> elements = new ArrayList<CssTree>();
     do {
-      elements.add(parseSelector());
+      CssTree.Selector sel = parseSelector();
+      addIfNotNull(elements, sel);
     } while (tq.checkToken(","));
-    tq.expectToken("{");
-    do {
-      elements.add(parseDeclaration());
-    } while (tq.checkToken(";"));
-    tq.expectToken("}");
+    if (elements.isEmpty()) {
+      SKIP_TO_CHUNK_END_FROM_OUTSIDE_BLOCK.recover(this, m);
+      return null;
+    }
+    if (parseDeclarationBlock(elements, m)) { return null; }
     return new CssTree.RuleSet(pos(m), elements);
   }
 
@@ -228,15 +412,23 @@ public final class CssParser {
       if (!elements.isEmpty()) {
         elements.add(parseCombinator());
       }
-      elements.add(parseSimpleSelector());
-      Token<CssTokenType> t = tq.peek();
+      CssTree.SimpleSelector sel = parseSimpleSelector();
+      if (sel == null) {
+        SKIP_COMMA_LIST_ITEM.recover(this, m);
+        return null;
+      }
+      elements.add(sel);
       // Check whether the next token continues the selector.
       // See also http://www.w3.org/TR/REC-CSS2/selector.html#q1
-      if (tq.isEmpty()
-          || (CssTokenType.PUNCTUATION == t.type
-              && !":*.[+>".contains(t.text))) {
+      if (tq.isEmpty()) { break; }
+      Token<CssTokenType> t = tq.peek();
+      if (CssTokenType.PUNCTUATION == t.type && !":*.[+>".contains(t.text)) {
         break;
       }
+    }
+    if (elements.isEmpty()) {
+      SKIP_COMMA_LIST_ITEM.recover(this, m);
+      return null;
     }
     return new CssTree.Selector(pos(m), elements);
   }
@@ -244,7 +436,7 @@ public final class CssParser {
   private CssTree.SimpleSelector parseSimpleSelector() throws ParseException {
     Mark m = tq.mark();
     List<CssTree> elements = new ArrayList<CssTree>();
-    {
+    if (!tq.isEmpty()) {
       Token<CssTokenType> t = tq.peek();
       if (CssTokenType.IDENT == t.type) {
         String elementName = unescape(t);
@@ -259,42 +451,49 @@ public final class CssParser {
     }
     while (!tq.isEmpty() && (elements.isEmpty() || adjacent())) {
       Token<CssTokenType> t = tq.peek();
+      CssTree selectorPart;
       if (CssTokenType.HASH == t.type) {
-        elements.add(new CssTree.IdLiteral(t.pos, unescape(t)));
-        tq.advance();
+        String identifier = unescape(t);
+        if (!CssLexer.isNmStart(identifier.charAt(1))) {
+          selectorPart = null;
+        } else {
+          selectorPart = new CssTree.IdLiteral(t.pos, identifier);
+          tq.advance();
+        }
       } else if (".".equals(t.text)) {
-        elements.add(parseClass());
+        selectorPart = parseClass();
       } else if ("[".equals(t.text)) {
-        elements.add(parseAttrib());
+        selectorPart = parseAttrib();
       } else if (":".equals(t.text)) {
-        elements.add(parsePseudo());
+        selectorPart = parsePseudo();
       } else {
         break;
       }
+      if (selectorPart == null) { return null; }
+      elements.add(selectorPart);
     }
     if (elements.isEmpty()) {
-      throw new ParseException(
-          new Message(
-              MessageType.EXPECTED_TOKEN, tq.currentPosition(),
-              MessagePart.Factory.valueOf("{ident}"),
-              MessagePart.Factory.valueOf(tq.peek().text)));
+      throwOrReportExpectedToken("<Selector>");
+      return null;
     }
-
     return new CssTree.SimpleSelector(pos(m), elements);
   }
 
   private CssTree.ClassLiteral parseClass() throws ParseException {
     Mark m = tq.mark();
     tq.expectToken(".");
-    String name = "." + expectIdent();
-    return new CssTree.ClassLiteral(pos(m), name);
+    String ident = expectIdent();
+    if (ident == null) { return null; }
+    return new CssTree.ClassLiteral(pos(m), "." + ident);
   }
 
   private CssTree.Attrib parseAttrib() throws ParseException {
     Mark m = tq.mark();
     tq.expectToken("[");
     String ident = expectIdent();
+    if (ident == null) { return null; }
     CssTree.AttribOperation op = null;
+    if (isTolerant && tq.isEmpty()) { return null; }
     Token<CssTokenType> t = tq.peek();
     if (CssTokenType.PUNCTUATION == t.type) {
       if ("=".equals(t.text)) {
@@ -312,6 +511,7 @@ public final class CssParser {
     }
     CssTree.CssLiteral value = null;
     if (null != op) {
+      if (isTolerant && tq.isEmpty()) { return null; }
       t = tq.peek();
       if (CssTokenType.STRING == t.type) {
         String s = unescape(t);
@@ -319,11 +519,13 @@ public final class CssParser {
         value = new CssTree.StringLiteral(t.pos, s);
         tq.advance();
       } else {
-        value = new CssTree.IdentLiteral(t.pos, expectIdent());
+        String valuePattern = expectIdent();
+        if (valuePattern == null) { return null; }
+        value = new CssTree.IdentLiteral(t.pos, valuePattern);
       }
     }
 
-    tq.expectToken("]");
+    if (expect("]", DO_NOTHING, m)) { return null; }
     return new CssTree.Attrib(pos(m), ident, op, value);
   }
 
@@ -331,6 +533,7 @@ public final class CssParser {
     Mark m = tq.mark();
     tq.expectToken(":");
     Mark m2 = tq.mark();
+    if (isTolerant && tq.isEmpty()) { return null; }
     Token<CssTokenType> t = tq.peek();
     CssTree.CssExprAtom atom;
     if (CssTokenType.FUNCTION == t.type) {
@@ -339,15 +542,17 @@ public final class CssParser {
       tq.advance();
       Mark m3 = tq.mark();
       String argIdent = expectIdent();
+      if (argIdent == null) { return null; }
       FilePosition pos3 = pos(m3);
       CssTree.IdentLiteral lit = new CssTree.IdentLiteral(pos3, argIdent);
       CssTree.Term term = new CssTree.Term(pos3, null, lit);
       CssTree.Expr arg =
         new CssTree.Expr(pos3, Collections.singletonList(term));
-      tq.expectToken(")");
+      if (expect(")", DO_NOTHING, m)) { return null; }
       atom = new CssTree.FunctionCall(pos(m2), Name.css(fnName), arg);
     } else {
       String ident = expectIdent();
+      if (ident == null) { return null; }
       atom = new CssTree.IdentLiteral(pos(m2), ident);
     }
     return new CssTree.Pseudo(pos(m), atom);
@@ -357,11 +562,28 @@ public final class CssParser {
     Mark m = tq.mark();
     List<CssTree> children = new ArrayList<CssTree>();
     if (!(tq.lookaheadToken("}") || tq.lookaheadToken(";"))) {
-      children.add(parseProperty());
-      tq.expectToken(":");
-      children.add(parseExpr());
+      CssTree.Property property = parseProperty();
+      if (property == null) {
+        SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK.recover(this, m);
+        return null;
+      }
+      children.add(property);
+      if (expect(":", SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK, m)) {
+        return null;
+      }
+      CssTree.Expr expr = parseExpr();
+      if (expr == null) {
+        SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK.recover(this, m);
+        return null;
+      }
+      children.add(expr);
       if (!(tq.isEmpty() || tq.lookaheadToken("}") || tq.lookaheadToken(";"))) {
-        children.add(parsePrio());
+        CssTree.Prio prio = parsePrio();
+        if (prio == null) {
+          SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK.recover(this, m);
+          return null;
+        }
+        children.add(prio);
       }
     }
     return new CssTree.Declaration(pos(m), children);
@@ -376,17 +598,20 @@ public final class CssParser {
         return new CssTree.Prio(t.pos, s);
       }
     }
-    throw new ParseException(
-        new Message(
-            MessageType.EXPECTED_TOKEN, t.pos,
-            MessagePart.Factory.valueOf("!important"),
-            MessagePart.Factory.valueOf(t.text)));
+    return throwOrReport(
+        MessageType.EXPECTED_TOKEN, t.pos,
+        MessagePart.Factory.valueOf(";"),
+        MessagePart.Factory.valueOf(t.text));
   }
 
   private CssTree.Expr parseExpr() throws ParseException {
     Mark m = tq.mark();
     List<CssTree> children = new ArrayList<CssTree>();
-    children.add(parseTerm());
+    {
+      CssTree.Term term = parseTerm();
+      if (term == null) { return null; }
+      children.add(term);
+    }
     while (!tq.isEmpty()) {
       Token<CssTokenType> t = tq.peek();
       if (CssTokenType.PUNCTUATION == t.type) {
@@ -397,29 +622,35 @@ public final class CssParser {
       } else if (CssTokenType.DIRECTIVE == t.type) {
         break;
       }
-      children.add(parseOperator());
-      children.add(parseTerm());
+      children.add(parseOperation());
+      CssTree.Term term = parseTerm();
+      if (term == null) { return null; }
+      children.add(term);
     }
     return new CssTree.Expr(pos(m), children);
   }
 
   private CssTree.Term parseTerm() throws ParseException {
     Mark m = tq.mark();
-    Token<CssTokenType> t = tq.peek();
     CssTree.UnaryOperator op = null;
-    if (CssTokenType.PUNCTUATION == t.type) {
-      if ("+".equals(t.text)) {
-        op = CssTree.UnaryOperator.IDENTITY;
-        tq.advance();
-      } else if ("-".equals(t.text)) {
-        op = CssTree.UnaryOperator.NEGATION;
-        tq.advance();
+    if (!tq.isEmpty()) {
+      Token<CssTokenType> t = tq.peek();
+      if (CssTokenType.PUNCTUATION == t.type) {
+        if ("+".equals(t.text)) {
+          op = CssTree.UnaryOperator.IDENTITY;
+          tq.advance();
+        } else if ("-".equals(t.text)) {
+          op = CssTree.UnaryOperator.NEGATION;
+          tq.advance();
+        }
       }
     }
 
+    if (isTolerant && tq.isEmpty()) { return null; }
+
     Mark m2 = tq.mark();
     CssTree.CssExprAtom expr;
-    t = tq.pop();
+    Token<CssTokenType> t = tq.pop();
     switch (t.type) {
       case QUANTITY:
         expr = new CssTree.QuantityLiteral(pos(m2), unescape(t));
@@ -435,16 +666,16 @@ public final class CssParser {
         String color = unescape(t);
         // Require that it have 3 or 6 digits
         if (color.length() != 4 && color.length() != 7) {
-          throw new ParseException(
-              new Message(MessageType.UNEXPECTED_TOKEN, t.pos,
-                          MessagePart.Factory.valueOf(t.text)));
+          return throwOrReport(
+              MessageType.UNEXPECTED_TOKEN, t.pos,
+              MessagePart.Factory.valueOf(t.text));
         }
         try {
           expr = new CssTree.HashLiteral(pos(m2), color);
         } catch (IllegalArgumentException e) {
-          throw new ParseException(
-              new Message(MessageType.UNEXPECTED_TOKEN, t.pos,
-                          MessagePart.Factory.valueOf(t.text)));
+          return throwOrReport(
+              MessageType.UNEXPECTED_TOKEN, t.pos,
+              MessagePart.Factory.valueOf(t.text));
         }
         break;
       case UNICODE_RANGE:
@@ -461,7 +692,8 @@ public final class CssParser {
         String fn = unescape(t);
         fn = fn.substring(0, fn.length() - 1);  // strip trailing '('
         CssTree.Expr arg = parseExpr();
-        tq.expectToken(")");
+        if (arg == null) { return null; }
+        if (expect(")", CssParser.DO_NOTHING, m)) { return null; }
         expr = new CssTree.FunctionCall(pos(m2), Name.css(fn), arg);
         break;
       }
@@ -469,10 +701,12 @@ public final class CssParser {
         expr = new CssTree.Substitution(t.pos, t.text);
         break;
       default:
-        throw new ParseException(
-            new Message(MessageType.UNEXPECTED_TOKEN, t.pos,
-                        MessagePart.Factory.valueOf(t.text)));
+        tq.rewind(m2);
+        return throwOrReport(
+            MessageType.UNEXPECTED_TOKEN, t.pos,
+            MessagePart.Factory.valueOf(t.text));
     }
+    if (expr == null) { return null; }
 
     return new CssTree.Term(pos(m), op, expr);
   }
@@ -507,30 +741,28 @@ public final class CssParser {
           break;
         }
         default:
-          throw new ParseException(
-              new Message(
-                  MessageType.EXPECTED_TOKEN, t.pos,
-                  MessagePart.Factory.valueOf("{uri}"),
-                  MessagePart.Factory.valueOf(t.text)));
+          return throwOrReport(
+              MessageType.EXPECTED_TOKEN, t.pos,
+              MessagePart.Factory.valueOf("<URI>"),
+              MessagePart.Factory.valueOf(t.text));
       }
       return new CssTree.UriLiteral(pos(m), new URI(uriStr));
     } catch (URISyntaxException ex) {
-      throw new ParseException(
-          new Message(MessageType.MALFORMED_URI, t.pos,
-                      MessagePart.Factory.valueOf(t.text)), ex);
+      return throwOrReport(
+          MessageType.MALFORMED_URI, t.pos,
+          MessagePart.Factory.valueOf(t.text));
     }
   }
 
 
   private FilePosition pos(Mark m) throws ParseException {
-    // TODO(mikesamuel): fix this so it doesn't throw a parse exception at end
-    // of file.
     // Example input "import 'foo.css'" without a semicolon.
     FilePosition start = m.getFilePosition(),
-                   end = tq.lastPosition();
-    return !(start.startCharInFile() > end.endCharInFile() &&
-             start.source().equals(end.source()))
-         ? FilePosition.span(start, end)
+        end = tq.lastPosition();
+    return ((tq.isEmpty() || tq.currentPosition() != start)
+            && start.source().equals(end.source())
+            && start.endCharInFile() <= end.startCharInFile())
+         ? FilePosition.span(start, tq.lastPosition())
          : FilePosition.startOf(start);
   }
 
@@ -627,15 +859,16 @@ public final class CssParser {
   }
 
   private String expectIdent() throws ParseException {
-    Token<CssTokenType> t = tq.pop();
-    if (CssTokenType.IDENT == t.type) {
-      return unescape(t);
+    Token<CssTokenType> t = null;
+    if (!tq.isEmpty()) {
+      t = tq.peek();
+      if (CssTokenType.IDENT == t.type) {
+        tq.advance();
+        return unescape(t);
+      }
     }
-    throw new ParseException(
-        new Message(
-            MessageType.EXPECTED_TOKEN, t.pos,
-            MessagePart.Factory.valueOf("{identifier}"),
-            MessagePart.Factory.valueOf(t.text)));
+    throwOrReportExpectedToken("<Identifier>");
+    return null;
   }
 
   /**
@@ -674,5 +907,195 @@ public final class CssParser {
     FilePosition current = tq.currentPosition();
     return null != last && null != current
       && last.endCharInFile() == current.startCharInFile();
+  }
+
+  /** Iff item is not null, add it to coll. */
+  private static <T> void addIfNotNull(Collection<? super T> coll, T item) {
+    if (item != null) { coll.add(item); }
+  }
+
+  /**
+   * Like {@link TokenQueue#expectToken(String)} but reports a message in
+   * {@link #isTolerant() tolerant} mode.
+   * <p>
+   * The return convention is such that this method should be used in a
+   * condition like {@code if (expect(...)) return null;} to abort parsing.
+   *
+   * @param token the token that is expected to be next.
+   * @param rs the action to take if token is not the next token.
+   * @param start the start of the current construct whose parsing will fail
+   *     if token is not the next token.
+   * @return true if parsing failed.
+   * @throws ParseException if not in tolerant mode and token is not the next
+   *     token, or if there is a problem lexing.
+   */
+  private boolean expect(String token, RecoveryStrategy rs, Mark start)
+      throws ParseException {
+    if (tq.checkToken(token)) { return false; }
+    throwOrReportExpectedToken(token);
+    rs.recover(this, start);
+    return true;
+  }
+
+  /**
+   * After a parse failure, consumes tokens from the stream until we are at a
+   * likely good position.
+   */
+  private static abstract class RecoveryStrategy {
+    /**
+     * @param p a parser with a token queue positioned after a parse failure.
+     * @param start the position of the start of the malformed construct.
+     *     This is used to report which tokens are being discarded without
+     *     producing content.
+     */
+    abstract void recover(CssParser p, Mark start) throws ParseException;
+  }
+
+  private static final RecoveryStrategy DO_NOTHING = new RecoveryStrategy() {
+    @Override
+    void recover(CssParser p, Mark start) {}
+  };
+
+  /**
+   * Skips to the next item in the comma list, or the end of the comma list.
+   * The next item in the comma list is assumed to start with a comma,
+   * and the comma list is assumed to be ended by a "{", ";", or "}" token,
+   * or a symbol.
+   */
+  private static final RecoveryStrategy SKIP_COMMA_LIST_ITEM
+      = new RecoveryStrategy() {
+    @Override
+    void recover(CssParser p, Mark start) throws ParseException {
+      if (start == null) { start = p.tq.mark(); }
+      while (!p.tq.isEmpty()) {
+        Token<CssTokenType> t = p.tq.peek();
+        if (t.type == CssTokenType.PUNCTUATION) {
+          if (t.text.length() == 1 && ",{};".contains(t.text)) {
+            break;
+          }
+        } else if (t.type == CssTokenType.SYMBOL) {
+          break;
+        }
+        p.tq.advance();
+      }
+      p.reportSkipping(p.pos(start));
+    }
+  };
+
+  /**
+   * Skips to the end of a chunk within a block.
+   * A chunk is assumed to end with a semicolon or a close curly bracket, but
+   * may contain balanced groups of curly brackets.
+   * A symbol always ends a chunk.
+   * The close curly bracket is not consumed since it is not considered part
+   * of a chunk within a block -- it is part of the containing block.
+   */
+  private static final RecoveryStrategy SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK
+      = new RecoveryStrategy() {
+    @Override
+    void recover(CssParser p, Mark start) throws ParseException {
+      if (start == null) { start = p.tq.mark(); }
+      int depth = 1;
+      while (!p.tq.isEmpty()) {
+        Token<CssTokenType> t = p.tq.peek();
+        if (t.type == CssTokenType.PUNCTUATION) {
+          if (";".equals(t.text) && (depth <= 1)) {
+            break;
+          } else if ("}".equals(t.text)) {
+            if (--depth <= 0) { break; }
+          } else if ("{".equals(t.text)) {
+            ++depth;
+          }
+        } else if (t.type == CssTokenType.SYMBOL) {
+          break;
+        }
+        p.tq.advance();
+      }
+      p.reportSkipping(p.pos(start));
+    }
+  };
+
+  /**
+   * Skips to the end of a chunk outside a block.  Outside a block, a semicolon
+   * is treated as a chunk terminator instead of as a separator, and the
+   * final curly bracket is assumed to be part of the chunk and so is included
+   * in the end.
+   */
+  private static final RecoveryStrategy SKIP_TO_CHUNK_END_FROM_OUTSIDE_BLOCK
+      = new RecoveryStrategy() {
+    @Override
+    void recover(CssParser p, Mark start) throws ParseException {
+      if (start == null) { start = p.tq.mark(); }
+      int depth = 0;
+      while (!p.tq.isEmpty()) {
+        Token<CssTokenType> t = p.tq.peek();
+        if (t.type == CssTokenType.PUNCTUATION) {
+          if (";".equals(t.text) && (depth <= 0)) {
+            p.tq.advance();
+            break;
+          } else if ("}".equals(t.text)) {
+            if (--depth <= 0) {
+              p.tq.advance();
+              break;
+            }
+          } else if ("{".equals(t.text)) {
+            ++depth;
+          }
+        } else if (t.type == CssTokenType.SYMBOL) {
+          break;
+        }
+        p.tq.advance();
+      }
+      p.reportSkipping(p.pos(start));
+    }
+  };
+
+  /**
+   * Adds a message to the message queue in {@link #isTolerant() tolerant} mode
+   * or throws a {@link ParseException} otherwise.
+   * @param token the token that was expected
+   */
+  private void throwOrReportExpectedToken(String token) throws ParseException {
+    String actual;
+    FilePosition pos;
+    if (tq.isEmpty()) {
+      actual = "<EOF>";
+      pos = FilePosition.endOf(tq.lastPosition());
+    } else {
+      actual = tq.peek().text;
+      pos = tq.currentPosition();
+    }
+    throwOrReport(
+        MessageType.EXPECTED_TOKEN, pos,
+        MessagePart.Factory.valueOf(token),
+        MessagePart.Factory.valueOf(actual));
+  }
+
+  /**
+   * Called from error recovery routines to indicate that tokens were skipped.
+   */
+  private void reportSkipping(FilePosition skipped) {
+    if (skipped.length() != 0) {
+      mq.addMessage(MessageType.SKIPPING, tolerance, skipped);
+    }
+  }
+
+  /**
+   * Constructs a message and either throws or reports it depending on whether
+   * the parser is in {@link #isTolerant() tolerant} mode.
+   * @return null which is the convention to indicate that parsing failed
+   *     because of a malformed construct.
+   * @param <T> this always returns null, and the type parameter allows us
+   *     to return the right kind of null.
+   */
+  private <T> T throwOrReport(MessageTypeInt t, MessagePart... parts)
+      throws ParseException {
+    Message msg = new Message(t, tolerance, parts);
+    if (isTolerant) {
+      mq.getMessages().add(msg);
+      return null;
+    } else {
+      throw new ParseException(msg);
+    }
   }
 }

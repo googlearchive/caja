@@ -54,6 +54,8 @@ public enum MessageType implements MessageTypeInt {
   AMBIGUOUS_ESCAPE_SEQUENCE(
       "%s: escape sequence %s does not work in all interpreters",
       MessageLevel.WARNING),
+  INVALID_CSS_COMMENT(
+      "%s: Line comments not allowed in CSS.", MessageLevel.WARNING),
 
   // parsing
   END_OF_FILE("Unexpected end of input in %s", MessageLevel.ERROR),
@@ -65,8 +67,8 @@ public enum MessageType implements MessageTypeInt {
       "%s: Reserved word %s used as an identifier", MessageLevel.ERROR),
   INVALID_IDENTIFIER("%s: Malformed identifier %s", MessageLevel.ERROR),
   UNEXPECTED_TOKEN("%s: Unexpected token %s", MessageLevel.ERROR),
-  DUPLICATE_FORMAL_PARAM("%s: Duplicate formal parameter %s",
-                         MessageLevel.ERROR),
+  DUPLICATE_FORMAL_PARAM(
+      "%s: Duplicate formal parameter %s", MessageLevel.ERROR),
   UNRECOGNIZED_REGEX_MODIFIERS(
       "%s: Unrecognized regular expression modifiers %s", MessageLevel.ERROR),
   PARSE_ERROR("%s: Parse error in %s", MessageLevel.ERROR),
@@ -78,6 +80,8 @@ public enum MessageType implements MessageTypeInt {
   OCTAL_LITERAL("%s: octal literal %s", MessageLevel.LINT),
   UNRECOGNIZED_USE_SUBSET(
       "%s: unrecognized subset name in 'use' clause: %s", MessageLevel.WARNING),
+  SKIPPING(
+      "%s: Skipping malformed content", MessageLevel.WARNING),
 
   // platform context
   NOT_IE("%s: Will not work in IE", MessageLevel.WARNING),

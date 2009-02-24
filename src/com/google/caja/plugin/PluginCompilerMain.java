@@ -15,14 +15,12 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
@@ -40,7 +38,6 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Callback;
-import com.google.caja.util.Criterion;
 import com.google.caja.util.CapturingReader;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.SourceSnippetRenderer;
@@ -186,17 +183,10 @@ public final class PluginCompilerMain {
       input = p.parseFragment();
       p.getTokenQueue().expectEmpty();
     } else if (path.endsWith(".css")) {
-      CssLexer lexer = new CssLexer(cp);
-      TokenQueue<CssTokenType> tq = new TokenQueue<CssTokenType>(
-          lexer, is, new Criterion<Token<CssTokenType>>() {
-            public boolean accept(Token<CssTokenType> tok) {
-              return tok.type != CssTokenType.COMMENT
-                  && tok.type != CssTokenType.SPACE;
-            }
-          });
+      TokenQueue<CssTokenType> tq = CssParser.makeTokenQueue(cp, mq, false);
       if (tq.isEmpty()) { return null; }
 
-      CssParser p = new CssParser(tq);
+      CssParser p = new CssParser(tq, mq, MessageLevel.WARNING);
       input = p.parseStyleSheet();
       tq.expectEmpty();
     } else {

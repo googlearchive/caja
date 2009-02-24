@@ -19,7 +19,6 @@ import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.CssLexer;
 import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
@@ -60,7 +59,6 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.Criterion;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 import static com.google.caja.parser.js.SyntheticNodes.s;
@@ -380,18 +378,10 @@ public class HtmlCompiler {
         CharProducer.Factory.create(
             new StringReader(cssAsHtml), value.getFilePosition()));
     // parse the css as a set of declarations separated by semicolons
-    CssLexer lexer = new CssLexer(cp, true);
-    TokenQueue<CssTokenType> tq = new TokenQueue<CssTokenType>(
-        lexer, cp.getCurrentPosition().source(),
-        new Criterion<Token<CssTokenType>>() {
-          public boolean accept(Token<CssTokenType> t) {
-            return CssTokenType.SPACE != t.type
-                && CssTokenType.COMMENT != t.type;
-          }
-        });
+    TokenQueue<CssTokenType> tq = CssParser.makeTokenQueue(cp, mq, false);
     if (tq.isEmpty()) { return null; }
     tq.setInputRange(value.getFilePosition());
-    CssParser p = new CssParser(tq);
+    CssParser p = new CssParser(tq, mq, MessageLevel.WARNING);
     CssTree.DeclarationGroup decls = p.parseDeclarationGroup();
     tq.expectEmpty();
     return decls;

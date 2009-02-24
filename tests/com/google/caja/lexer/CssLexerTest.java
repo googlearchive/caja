@@ -14,6 +14,8 @@
 
 package com.google.caja.lexer;
 
+import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.TestUtil;
 
@@ -35,6 +37,10 @@ public class CssLexerTest extends CajaTestCase {
   public void testLex() throws Exception {
     CharProducer cp = fromResource("csslexerinput1.css");
     runTest(cp, TestUtil.readResource(getClass(), "csslexergolden1.txt"));
+    assertMessage(
+        MessageType.INVALID_CSS_COMMENT, MessageLevel.WARNING,
+        FilePosition.instance(
+            cp.getCurrentPosition().source(), 155, 5076, 1, 155, 5093, 18));
   }
 
   public void testUnterminatedStrings() throws Exception {
@@ -88,7 +94,7 @@ public class CssLexerTest extends CajaTestCase {
   }
 
   private void runTest(CharProducer cp, String golden) throws ParseException {
-    CssLexer lexer = new CssLexer(cp, true);
+    CssLexer lexer = new CssLexer(cp, mq, true);
     StringBuilder sb = new StringBuilder();
     while (lexer.hasNext()) {
       Token<CssTokenType> t = lexer.next();
