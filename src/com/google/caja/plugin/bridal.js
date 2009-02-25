@@ -35,7 +35,30 @@ var bridal = (function() {
         !!(document.createElement('div').attachEvent),
     // TODO: Does appName depend on the locale?
     setAttributeExtraParam:
-        navigator.appName.indexOf('Internet Explorer') >= 0
+        navigator.appName.indexOf('Internet Explorer') >= 0,
+    /**
+     * Does the extended form of extendedCreateElement work?
+     * From http://msdn.microsoft.com/en-us/library/ms536389.aspx :<blockquote>
+     *     You can also specify all the attributes inside the createElement
+     *     method by using an HTML string for the method argument.
+     *     The following example demonstrates how to dynamically create two
+     *     radio buttons utilizing this technique.
+     *     <pre>
+     *     ...
+     *     var newRadioButton = document.createElement(
+     *         "&lt;INPUT TYPE='RADIO' NAME='RADIOTEST' VALUE='First Choice'>")
+     *     </pre>
+     * </blockquote>
+     */
+    extendedCreateElement: (
+      function () {
+        try {
+          var inp = document.createElement('<input name="x" type="radio">');
+          return inp.name === 'x' && inp.type === 'radio';
+        } catch (ex) {
+          return false;
+        }
+      })()
   };
 
   ////////////////////////////////////////////////////////////////////////////
@@ -419,6 +442,6 @@ var bridal = (function() {
     getAttributeNode: getAttributeNode,
     hasAttribute: hasAttribute,
     untameEventType: untameEventType,
-    isIE: navigator.userAgent.indexOf('MSIE') >= 0
+    extendedCreateElementFeature: features.extendedCreateElement
   };
 })();

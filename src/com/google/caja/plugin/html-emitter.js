@@ -55,7 +55,7 @@ HtmlEmitter.prototype = {
     var handlers = this.handlers_;
     var attribs = this.attribs_;
     var tagName = this.tagName_;
-    if (bridal.isIE && tagName === 'input') {
+    if (bridal.extendedCreateElementFeature && tagName === 'input') {
       var complexTagName = false;
       for (var i = 0, n = attribs.length; i < n; i += 2) {
         var name = attribs[i], value = attribs[i + 1];
