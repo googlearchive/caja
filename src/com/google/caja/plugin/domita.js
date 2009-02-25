@@ -1416,7 +1416,7 @@ var attachDocumentStub = (function () {
       if (!___.hasOwnProp(TameBackedNode.prototype, 'contains')) {
         // http://www.quirksmode.org/blog/archives/2006/01/contains_for_mo.html
         TameBackedNode.prototype.contains = function (other) {
-          var docPos = this.compareDocumentPosition(other) & 0x10;
+          var docPos = this.compareDocumentPosition(other);
           return !(!(docPos & 0x10) && docPos);
         };
       }
@@ -1811,6 +1811,17 @@ var attachDocumentStub = (function () {
         this.node___.removeAttribute(attribName);
       }
     };
+    TameElement.prototype.getBoundingClientRect = function () {
+      var elRect = bridal.getBoundingClientRect(this.node___);
+      var vbody = bridal.getBoundingClientRect(this.getOwnerDocument().body___);
+      var vbodyLeft = vbody.left, vbodyTop = vbody.top;
+      return ({
+                top: elRect.top - vbodyTop,
+                left: elRect.left - vbodyLeft,
+                right: elRect.right - vbodyLeft,
+                bottom: elRect.bottom - vbodyTop
+              });
+    };
     TameElement.prototype.getClassName = function () {
       return this.getAttribute('class') || '';
     };
@@ -1948,8 +1959,8 @@ var attachDocumentStub = (function () {
        ___.grantTypedGeneric, TameElement.prototype,
        ['addEventListener', 'removeEventListener',
         'getAttribute', 'setAttribute',
-        'removeAttribute',
-        'hasAttribute',
+        'removeAttribute', 'hasAttribute',
+        'getBoundingClientRect',
         'getClassName', 'setClassName', 'getId', 'setId',
         'getInnerHTML', 'setInnerHTML', 'updateStyle', 'getStyle', 'setStyle',
         'getTagName']);
@@ -3100,6 +3111,8 @@ var attachDocumentStub = (function () {
      * document.
      */
     function TameDefaultView() {
+      // TODO(mikesamuel): Implement in terms of
+      //     http://www.w3.org/TR/cssom-view/#the-windowview-interface
       // TODO: expose a read-only version of the document
       this.document = tameDocument;
       // Exposing an editable default view that pointed to a read-only

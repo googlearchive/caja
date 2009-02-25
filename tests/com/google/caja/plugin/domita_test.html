@@ -42,7 +42,18 @@
     <div id="console-results"></div>
 
     <div id="untrusted_content" class="xyz___"
-     title="<Untrusted Content Title>" style="width:1200px; height: 600px">
+     title="<Untrusted Content Title>"
+     style="position: relative; width:1200px; height: 600px">
+      <!-- should appear first -->
+      <div id="absolutely-positioned-xyz___"
+       style="position: absolute; padding: 0; margin: 0;
+              left: 11px; top: 3px; width:100px; height:40px; border-width: 0"
+      >abs</div
+      ><div id="relatively-positioned-xyz___"
+        style="margin: 0 0 0 9px; padding: 0; border-width: 0;
+               width: 100px; height: 40px"
+        >rel</div>
+
       <!-- inaccessible to document.getElementById -->
       <div id="foo"></div>
 

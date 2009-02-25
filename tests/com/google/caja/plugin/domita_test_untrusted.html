@@ -265,6 +265,9 @@ can test window.scrollBy with a positive x value with a visible effect.
 
 <p class="testcontainer" id="test-window-object">Test Window Object</p>
 
+<p class="testcontainer" id="test-bounding-client-rect"
+>Test Bounding Client Rect</p>
+
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
 
@@ -1926,6 +1929,30 @@ jsunitRegister('testWindowObject',
     assertEquals(testWindowObjectVariable, 3);
   }
   pass('test-window-object');
+});
+
+jsunitRegister('testBoundingClientRect',
+               function testBoundingClientRect() {
+  // Grab two elements defined in domita_test.html
+  var absPos = document.getElementById('absolutely-positioned');
+  var relPos = document.getElementById('relatively-positioned');
+
+  var absRect = absPos.getBoundingClientRect();
+  var relRect = relPos.getBoundingClientRect();
+
+  function rectToString(rect) {
+    return ('top: ' + rect.top + ', left: ' + rect.left
+            + ', right: ' + rect.right + ', bottom: ' + rect.bottom);
+  }
+
+  assertEquals('absRect', 'top: 3, left: 11, right: 111, bottom: 43',
+               rectToString(absRect));
+  // Since the first rect is absolutely positioned, it does not occupy space in
+  // its parent, so both rects overlap.
+  assertEquals('relRect', 'top: 0, left: 9, right: 109, bottom: 40',
+               rectToString(relRect));
+
+  pass('test-bounding-client-rect');
 });
 
 jsunitRegister('testDocumentBodyAppendChild',

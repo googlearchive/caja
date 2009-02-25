@@ -30,12 +30,13 @@ var bridal = (function() {
   // Private section
   ////////////////////////////////////////////////////////////////////////////
 
+  var isOpera = navigator.userAgent.indexOf('Opera') === 0;
+  var isIE = !isOpera && navigator.userAgent.indexOf('MSIE') !== -1;
+  var isWebkit = !isOpera && navigator.userAgent.indexOf('WebKit') !== -1;
+
   var features = {
-    attachEvent:
-        !!(document.createElement('div').attachEvent),
-    // TODO: Does appName depend on the locale?
-    setAttributeExtraParam:
-        navigator.appName.indexOf('Internet Explorer') >= 0,
+    attachEvent: !!(document.createElement('div').attachEvent),
+    setAttributeExtraParam: isIE,
     /**
      * Does the extended form of extendedCreateElement work?
      * From http://msdn.microsoft.com/en-us/library/ms536389.aspx :<blockquote>
@@ -61,10 +62,6 @@ var bridal = (function() {
       })()
   };
 
-  ////////////////////////////////////////////////////////////////////////////
-  // Public section
-  ////////////////////////////////////////////////////////////////////////////
-
   var CUSTOM_EVENT_TYPE_SUFFIX = '_custom___';
   function tameEventType(type, opt_isCustom) {
     type = String(type);
@@ -78,86 +75,6 @@ var bridal = (function() {
     return type;
   }
 
-  function untameEventType(type) {
-    var suffix = CUSTOM_EVENT_TYPE_SUFFIX;
-    var tlen = type.length, slen = suffix.length;
-    var end = tlen - slen;
-    if (end >= 0 && suffix === type.substring(end)) {
-      type = type.substring(0, end);
-    }
-    return type;
-  }
-
-  function initEvent(event, type, bubbles, cancelable) {
-    type = tameEventType(type, true);
-    bubbles = Boolean(bubbles);
-    cancelable = Boolean(cancelable);
-
-    if (event.initEvent) {  // Non-IE
-      event.initEvent(type, bubbles, cancelable);
-    } else if (bubbles && cancelable) {  // IE
-      event.eventType___ = type;
-    } else {
-      // TODO(mikesamuel): can bubbling and cancelable on events be simulated
-      // via http://msdn.microsoft.com/en-us/library/ms533545(VS.85).aspx
-      throw new Error(
-          'Browser does not support non-bubbling/uncanceleable events');
-    }
-  }
-
-  function dispatchEvent(element, event) {
-    // TODO(mikesamuel): when we change event dispatching to happen
-    // asynchronously, we should exempt custom events since those
-    // need to return a useful value, and there may be code bracketing
-    // them which could observe asynchronous dispatch.
-
-    // "The return value of dispatchEvent indicates whether any of
-    //  the listeners which handled the event called
-    //  preventDefault. If preventDefault was called the value is
-    //  false, else the value is true."
-    if (element.dispatchEvent) {
-      return Boolean(element.dispatchEvent(event));
-    } else {
-      // Only dispatches custom events as when tameEventType(t) !== t.
-      element.fireEvent('ondataavailable', event);
-      return Boolean(event.returnValue);
-    }
-  }
-
-
-  /**
-   * Add an event listener function to an element.
-   *
-   * <p>Replaces
-   * W3C <code>Element::addEventListener</code> and
-   * IE <code>Element::attachEvent</code>.
-   *
-   * @param {HTMLElement} element a native DOM element.
-   * @param {string} type a string identifying the event type.
-   * @param {boolean Element::function (event)} handler an event handler.
-   * @param {boolean} useCapture whether the user wishes to initiate capture.
-   * @return {boolean Element::function (event)} the handler added.  May be
-   *     a wrapper around the input.
-   */
-  function addEventListener(element, type, handler, useCapture) {
-    type = String(type);
-    var tameType = tameEventType(type);
-    if (features.attachEvent) {
-      // TODO(ihab.awad): How do we emulate 'useCapture' here?
-      if (type !== tameType) {
-        var wrapper = eventHandlerTypeFilter(handler, tameType);
-        element.attachEvent('ondataavailable', wrapper);
-        return wrapper;
-      } else {
-        element.attachEvent('on' + type, handler);
-        return handler;
-      }
-    } else {
-      // FF2 fails if useCapture not passed or is not a boolean.
-      element.addEventListener(tameType, handler, useCapture);
-      return handler;
-    }
-  }
   function eventHandlerTypeFilter(handler, tameType) {
     // This does not need to check that handler is callable by untrusted code
     // since the handler will invoke plugin_dispatchEvent which will do that
@@ -167,72 +84,6 @@ var bridal = (function() {
         return handler.call(this, event);
       }
     };
-  }
-
-  /**
-   * Remove an event listener function from an element.
-   *
-   * <p>Replaces
-   * W3C <code>Element::removeEventListener</code> and
-   * IE <code>Element::detachEvent</code>.
-   *
-   * @param element a native DOM element.
-   * @param type a string identifying the event type.
-   * @param handler a function acting as an event handler.
-   * @param useCapture whether the user wishes to initiate capture.
-   */
-  function removeEventListener(element, type, handler, useCapture) {
-    type = String(type);
-    var tameType = tameEventType(type);
-    if (features.attachEvent) {
-      // TODO(ihab.awad): How do we emulate 'useCapture' here?
-      if (tameType !== type) {
-        element.detachEvent('ondataavailable', handler);
-      } else {
-        element.detachEvent('on' + type, handler);
-      }
-    } else {
-      element.removeEventListener(tameType, handler, useCapture);
-    }
-  }
-
-  /**
-   * Clones a node per {@code Node.clone()}.
-   * <p>
-   * Returns a duplicate of this node, i.e., serves as a generic copy
-   * constructor for nodes. The duplicate node has no parent;
-   * (parentNode is null.).
-   * <p>
-   * Cloning an Element copies all attributes and their values,
-   * including those generated by the XML processor to represent
-   * defaulted attributes, but this method does not copy any text it
-   * contains unless it is a deep clone, since the text is contained
-   * in a child Text node. Cloning an Attribute directly, as opposed
-   * to be cloned as part of an Element cloning operation, returns a
-   * specified attribute (specified is true). Cloning any other type
-   * of node simply returns a copy of this node.
-   * <p>
-   * Note that cloning an immutable subtree results in a mutable copy,
-   * but the children of an EntityReference clone are readonly. In
-   * addition, clones of unspecified Attr nodes are specified. And,
-   * cloning Document, DocumentType, Entity, and Notation nodes is
-   * implementation dependent.
-   *
-   * @param {boolean} deep If true, recursively clone the subtree
-   * under the specified node; if false, clone only the node itself
-   * (and its attributes, if it is an Element).
-   *
-   * @return {Node} The duplicate node.
-   */
-  function cloneNode(node, deep) {
-    var clone;
-    if (!document.all) {  // Not IE 6 or IE 7
-      clone = node.cloneNode(deep);
-    } else {
-      clone = constructClone(node, deep);
-    }
-    fixupClone(node, clone);
-    return clone;
   }
 
   var endsWith__ = /__$/;
@@ -336,6 +187,156 @@ var bridal = (function() {
     }
   }
 
+  ////////////////////////////////////////////////////////////////////////////
+  // Public section
+  ////////////////////////////////////////////////////////////////////////////
+
+  function untameEventType(type) {
+    var suffix = CUSTOM_EVENT_TYPE_SUFFIX;
+    var tlen = type.length, slen = suffix.length;
+    var end = tlen - slen;
+    if (end >= 0 && suffix === type.substring(end)) {
+      type = type.substring(0, end);
+    }
+    return type;
+  }
+
+  function initEvent(event, type, bubbles, cancelable) {
+    type = tameEventType(type, true);
+    bubbles = Boolean(bubbles);
+    cancelable = Boolean(cancelable);
+
+    if (event.initEvent) {  // Non-IE
+      event.initEvent(type, bubbles, cancelable);
+    } else if (bubbles && cancelable) {  // IE
+      event.eventType___ = type;
+    } else {
+      // TODO(mikesamuel): can bubbling and cancelable on events be simulated
+      // via http://msdn.microsoft.com/en-us/library/ms533545(VS.85).aspx
+      throw new Error(
+          'Browser does not support non-bubbling/uncanceleable events');
+    }
+  }
+
+  function dispatchEvent(element, event) {
+    // TODO(mikesamuel): when we change event dispatching to happen
+    // asynchronously, we should exempt custom events since those
+    // need to return a useful value, and there may be code bracketing
+    // them which could observe asynchronous dispatch.
+
+    // "The return value of dispatchEvent indicates whether any of
+    //  the listeners which handled the event called
+    //  preventDefault. If preventDefault was called the value is
+    //  false, else the value is true."
+    if (element.dispatchEvent) {
+      return Boolean(element.dispatchEvent(event));
+    } else {
+      // Only dispatches custom events as when tameEventType(t) !== t.
+      element.fireEvent('ondataavailable', event);
+      return Boolean(event.returnValue);
+    }
+  }
+
+  /**
+   * Add an event listener function to an element.
+   *
+   * <p>Replaces
+   * W3C <code>Element::addEventListener</code> and
+   * IE <code>Element::attachEvent</code>.
+   *
+   * @param {HTMLElement} element a native DOM element.
+   * @param {string} type a string identifying the event type.
+   * @param {boolean Element::function (event)} handler an event handler.
+   * @param {boolean} useCapture whether the user wishes to initiate capture.
+   * @return {boolean Element::function (event)} the handler added.  May be
+   *     a wrapper around the input.
+   */
+  function addEventListener(element, type, handler, useCapture) {
+    type = String(type);
+    var tameType = tameEventType(type);
+    if (features.attachEvent) {
+      // TODO(ihab.awad): How do we emulate 'useCapture' here?
+      if (type !== tameType) {
+        var wrapper = eventHandlerTypeFilter(handler, tameType);
+        element.attachEvent('ondataavailable', wrapper);
+        return wrapper;
+      } else {
+        element.attachEvent('on' + type, handler);
+        return handler;
+      }
+    } else {
+      // FF2 fails if useCapture not passed or is not a boolean.
+      element.addEventListener(tameType, handler, useCapture);
+      return handler;
+    }
+  }
+
+  /**
+   * Remove an event listener function from an element.
+   *
+   * <p>Replaces
+   * W3C <code>Element::removeEventListener</code> and
+   * IE <code>Element::detachEvent</code>.
+   *
+   * @param element a native DOM element.
+   * @param type a string identifying the event type.
+   * @param handler a function acting as an event handler.
+   * @param useCapture whether the user wishes to initiate capture.
+   */
+  function removeEventListener(element, type, handler, useCapture) {
+    type = String(type);
+    var tameType = tameEventType(type);
+    if (features.attachEvent) {
+      // TODO(ihab.awad): How do we emulate 'useCapture' here?
+      if (tameType !== type) {
+        element.detachEvent('ondataavailable', handler);
+      } else {
+        element.detachEvent('on' + type, handler);
+      }
+    } else {
+      element.removeEventListener(tameType, handler, useCapture);
+    }
+  }
+
+  /**
+   * Clones a node per {@code Node.clone()}.
+   * <p>
+   * Returns a duplicate of this node, i.e., serves as a generic copy
+   * constructor for nodes. The duplicate node has no parent;
+   * (parentNode is null.).
+   * <p>
+   * Cloning an Element copies all attributes and their values,
+   * including those generated by the XML processor to represent
+   * defaulted attributes, but this method does not copy any text it
+   * contains unless it is a deep clone, since the text is contained
+   * in a child Text node. Cloning an Attribute directly, as opposed
+   * to be cloned as part of an Element cloning operation, returns a
+   * specified attribute (specified is true). Cloning any other type
+   * of node simply returns a copy of this node.
+   * <p>
+   * Note that cloning an immutable subtree results in a mutable copy,
+   * but the children of an EntityReference clone are readonly. In
+   * addition, clones of unspecified Attr nodes are specified. And,
+   * cloning Document, DocumentType, Entity, and Notation nodes is
+   * implementation dependent.
+   *
+   * @param {boolean} deep If true, recursively clone the subtree
+   * under the specified node; if false, clone only the node itself
+   * (and its attributes, if it is an Element).
+   *
+   * @return {Node} The duplicate node.
+   */
+  function cloneNode(node, deep) {
+    var clone;
+    if (!document.all) {  // Not IE 6 or IE 7
+      clone = node.cloneNode(deep);
+    } else {
+      clone = constructClone(node, deep);
+    }
+    fixupClone(node, clone);
+    return clone;
+  }
+
   /**
    * Create a <code>style</code> element for a document containing some
    * specified CSS text. Does not add the element to the document: the client
@@ -397,6 +398,107 @@ var bridal = (function() {
   }
 
   /**
+   * See <a href="http://www.w3.org/TR/cssom-view/#the-getclientrects"
+   *      >ElementView.getBoundingClientRect()</a>.
+   * @return {Object} duck types as a TextRectangle with numeric fields
+   *    {@code left}, {@code right}, {@code top}, and {@code bottom}.
+   */
+  function getBoundingClientRect(el) {
+    var doc = el.ownerDocument;
+    // Use the native method if present.
+    if (el.getBoundingClientRect) {
+      var cRect = el.getBoundingClientRect();
+      if (isIE) {
+        // IE has an unnecessary border, which can be mucked with by styles, so
+        // the amount of border is not predictable.
+        // Depending on whether the document is in quirks or standards mode,
+        // the border will be present on either the HTML or BODY elements.
+        var fixupLeft = doc.documentElement.clientLeft + doc.body.clientLeft;
+        cRect.left -= fixupLeft;
+        cRect.right -= fixupLeft;
+        var fixupTop = doc.documentElement.clientTop + doc.body.clientTop
+        cRect.top -= fixupTop;
+        cRect.bottom -= fixupTop;
+      }
+      return ({
+                top: +cRect.top,
+                left: +cRect.left,
+                right: +cRect.right,
+                bottom: +cRect.bottom
+              });
+    }
+
+    // Otherwise, try using the deprecated gecko method, or emulate it in
+    // horribly inefficient ways.
+
+    // http://code.google.com/p/doctype/wiki/ArticleClientViewportElement
+    var viewport = (isIE && doc.compatMode === 'CSS1Compat')
+        ? doc.body : doc.documentElement;
+
+    // Figure out the position relative to the viewport.
+    // From http://code.google.com/p/doctype/wiki/ArticlePageOffset
+    var pageX = 0, pageY = 0;
+    if (el === viewport) {
+      // The viewport is the origin.
+    } else if (doc.getBoxObjectFor) {  // Handles Firefox < 3
+      var elBoxObject = doc.getBoxObjectFor(el);
+      var viewPortBoxObject = doc.getBoxObjectFor(viewport);
+      pageX = elBoxObject.screenX - viewPortBoxObject.screenX;
+      pageY = elBoxObject.screenY - viewPortBoxObject.screenY;
+    } else {
+      // Walk the offsetParent chain adding up offsets.
+      for (var op = el; (op && op !== el); op = op.offsetParent) {
+        pageX += op.offsetLeft;
+        pageY += op.offsetTop;
+        if (op !== el) {
+          pageX += op.clientLeft || 0;
+          pageY += op.clientTop || 0;
+        }
+        if (isWebkit) {
+          // On webkit the offsets for position:fixed elements are off by the
+          // scroll offset.
+          var opPosition = doc.defaultView.getComputedStyle(op, 'position');
+          if (opPosition === 'fixed') {
+            pageX += doc.body.scrollLeft;
+            pageY += doc.body.scrollTop;
+          }
+          break;
+        }
+      }
+
+      // Opera & (safari absolute) incorrectly account for body offsetTop
+      if ((isWebkit
+           && doc.defaultView.getComputedStyle(el, 'position') === 'absolute')
+          || isOpera) {
+        pageY -= doc.body.offsetTop;
+      }
+
+      // Accumulate the scroll positions for everything but the body element
+      for (var op = el; (op = op.offsetParent) && op !== doc.body;) {
+        pageX -= op.scrollLeft;
+        // see https://bugs.opera.com/show_bug.cgi?id=249965
+        if (!isOpera || op.tagName !== 'TR') {
+          pageY -= op.scrollTop;
+        }
+      }
+    }
+
+    // Figure out the viewport container so we can subtract the window's
+    // scroll offsets.
+    var scrollEl = !isWebkit && doc.compatMode === 'CSS1Compat'
+        ? doc.documentElement
+        : doc.body;
+
+    var left = pageX - scrollEl.scrollLeft, top = pageY - scrollEl.scrollTop;
+    return ({
+              top: top,
+              left: left,
+              right: left + el.clientWidth,
+              bottom: top + el.clientHeight
+            });
+  }
+
+  /**
    * Returns the value of the named attribute on element.
    *
    * @param {HTMLElement} element a DOM element.
@@ -441,6 +543,7 @@ var bridal = (function() {
     getAttribute: getAttribute,
     getAttributeNode: getAttributeNode,
     hasAttribute: hasAttribute,
+    getBoundingClientRect: getBoundingClientRect,
     untameEventType: untameEventType,
     extendedCreateElementFeature: features.extendedCreateElement
   };
