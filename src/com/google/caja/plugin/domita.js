@@ -20,16 +20,18 @@
  * <a href="http://www.w3.org/TR/DOM-Level-2-HTML/ecma-script-binding.html"
  * >ECMAScript Language Bindings</a>.
  *
- * Caveats:
- * - This is not a full implementation.
- * - Security Review is pending.
- * - <code>===</code> and <code>!==</code> on node lists will not
+ * Caveats:<ul>
+ * <li>This is not a full implementation.
+ * <li>Security Review is pending.
+ * <li><code>===</code> and <code>!==</code> on node lists will not
  *   behave the same as with untamed node lists.  Specifically, it is
  *   not always true that {@code nodeA.childNodes === nodeA.childNodes}.
- * - Properties backed by setters/getters like {@code HTMLElement.innerHTML}
+ * <li>Properties backed by setters/getters like {@code HTMLElement.innerHTML}
  *   will not appear to uncajoled code as DOM nodes do, since they are
  *   implemented using cajita property handlers.
+ * </ul>
  *
+ * <p>
  * TODO(ihab.awad): Our implementation of getAttribute (and friends)
  * is such that standard DOM attributes which we disallow for security
  * reasons (like 'form:enctype') are placed in the "virtual"
@@ -1378,6 +1380,51 @@ var attachDocumentStub = (function () {
     };
     ___.ctor(TameBackedNode, TameNode, 'TameBackedNode');
     ___.all2(___.grantTypedGeneric, TameBackedNode.prototype, tameNodeMembers);
+    if (document.body.contains) {  // typeof is 'object' on IE
+      TameBackedNode.prototype.contains = function (other) {
+        cajita.guard(tameNodeTrademark, other);
+        var otherNode = other.node___;
+        return this.node___.contains(otherNode);
+      };
+    }
+    if ('function' === typeof document.body.compareDocumentPosition) {
+      /**
+       * Speced in <a href="http://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-compareDocumentPosition">DOM-Level-3</a>.
+       */
+      TameBackedNode.prototype.compareDocumentPosition = function (other) {
+        cajita.guard(tameNodeTrademark, other);
+        var otherNode = other.node___;
+        if (!otherNode) { return 0; }
+        var bitmask = +this.node___.compareDocumentPosition(otherNode);
+        // To avoid leaking information about the relative positioning of
+        // different roots, if neither contains the other, then we mask out
+        // the preceeding/following bits.
+        // 0x18 is (CONTAINS | CONTAINED)
+        // 0x1f is all the bits documented at
+        //     http://www.w3.org/TR/DOM-Level-3-Core/core.html#DocumentPosition
+        //     except IMPLEMENTATION_SPECIFIC
+        // 0x01 is DISCONNECTED
+        /*
+        if (!(bitmask & 0x18)) {
+          // TODO: If they are not under the same virtual doc root, return
+          // DOCUMENT_POSITION_DISCONNECTED instead of leaking information
+          // about PRECEEDED | FOLLOWING.
+        }
+        */
+        return bitmask & 0x1f;
+      };
+      if (!___.hasOwnProp(TameBackedNode.prototype, 'contains')) {
+        // http://www.quirksmode.org/blog/archives/2006/01/contains_for_mo.html
+        TameBackedNode.prototype.contains = function (other) {
+          var docPos = this.compareDocumentPosition(other) & 0x10;
+          return !(!(docPos & 0x10) && docPos);
+        };
+      }
+    }
+    ___.all2(function (o, k) {
+               if (___.hasOwnProp(o, k)) { ___.grantTypedGeneric(o, k);  }
+             }, TameBackedNode.prototype,
+             ['contains', 'compareDocumentPosition']);
 
     /**
      * A fake node that is not backed by a real DOM node.
@@ -2745,8 +2792,8 @@ var attachDocumentStub = (function () {
     ___.ctor(TameHTMLDocument, TamePseudoNode, 'TameHTMLDocument');
     ___.all2(___.grantTypedGeneric, TameHTMLDocument.prototype,
              ['addEventListener', 'removeEventListener',
-              'createComment', 'createDocumentFragment', 
-              'createElement', 'createEvent', 'createTextNode', 
+              'createComment', 'createDocumentFragment',
+              'createElement', 'createEvent', 'createTextNode',
               'getElementById', 'getElementsByClassName',
               'getElementsByTagName',
               'write']);

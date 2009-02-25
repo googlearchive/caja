@@ -46,7 +46,7 @@
 </div>
 
 <p class="testcontainer" id="test-onclick-handler">
-  <b id="test-onclick-handler-label" 
+  <b id="test-onclick-handler-label"
      onclick="pass('test-onclick-handler');">click me</b>
 </p>
 
@@ -95,6 +95,8 @@
 <div id="test-get-element-by-id" class="testcontainer"></div>
 
 <div id="test-get-element-by-id-2" class="testcontainer"></div>
+
+<p id="test-contains" class="testcontainer"></p>
 
 <p id="test-element-id" class="testcontainer"></p>
 
@@ -204,7 +206,7 @@
   <div id="test-computed-style-invisible" class="invisible">Not here</div>
 </div>
 
-<div>Before 
+<div>Before
 <p class="testcontainer" id="test-class-names">I am inline.</p>
 After
 </div>
@@ -737,6 +739,73 @@ jsunitRegister('testGetElementById',
   pass('test-get-element-by-id-2');
 });
 
+jsunitRegister('testContains',
+               function testContains() {
+  // Some nodes that are not under the document element.
+  var disconnectedEl = document.createElement('DIV');
+  var disconnectedChild = document.createElement('B');
+  disconnectedEl.appendChild(disconnectedChild);
+
+  var testContainer = document.getElementById('test-contains');
+  var testContainerChild = document.createElement('SPAN');
+  testContainer.appendChild(testContainerChild);
+  // This test assume that test-forms follows test-contains in the HTML above.
+  var follower = document.getElementById('test-forms');
+
+  var hasContains = 'contains' in testContainer;
+  var hasCompare = 'compareDocumentPosition' in testContainer;
+  assertTrue('neither contains nor compare present', hasContains || hasCompare);
+
+  if (hasContains) {
+    assertTrue('dEl > dCh', disconnectedEl.contains(disconnectedChild));
+    assertFalse('dCh > dEl', disconnectedChild.contains(disconnectedEl));
+    assertTrue('tCo > tCo', testContainer.contains(testContainer));
+    assertFalse('tCo > fo', testContainer.contains(follower));
+    assertFalse('fo > tCo', follower.contains(testContainer));
+    assertTrue('tCo > tCh', testContainer.contains(testContainerChild));
+    assertFalse('tCh > tCo', testContainerChild.contains(testContainer));
+  }
+
+  if (hasCompare) {
+    var DOCUMENT_POSITION_DISCONNECTED = 0x01;
+    var DOCUMENT_POSITION_PRECEDING = 0x02;
+    var DOCUMENT_POSITION_FOLLOWING = 0x04;
+    var DOCUMENT_POSITION_CONTAINS = 0x08;
+    var DOCUMENT_POSITION_IS_CONTAINED = 0x10;
+
+    assertEquals(
+        'dEl cmp tCo',
+        DOCUMENT_POSITION_DISCONNECTED,
+        disconnectedEl.compareDocumentPosition(testContainer));
+    assertEquals(
+        'tCo cmp dEl',
+        DOCUMENT_POSITION_DISCONNECTED,
+        testContainer.compareDocumentPosition(disconnectedEl));
+    assertEquals(
+        'tCo cmp fo',
+        DOCUMENT_POSITION_FOLLOWING,
+        testContainer.compareDocumentPosition(follower));
+    assertEquals(
+        'fo cmp tCo',
+        DOCUMENT_POSITION_PRECEDING,
+        follower.compareDocumentPosition(testContainer));
+    assertEquals(
+        'tCp cmp tCh',
+        DOCUMENT_POSITION_FOLLOWING | DOCUMENT_POSITION_IS_CONTAINED,
+        testContainer.compareDocumentPosition(testContainerChild));
+    assertEquals(
+        'tCh cmp tCo',
+        DOCUMENT_POSITION_PRECEDING | DOCUMENT_POSITION_CONTAINS,
+        testContainerChild.compareDocumentPosition(testContainer));
+    assertEquals(
+        'tCo cmp tCo',
+        0,
+        testContainer.compareDocumentPosition(testContainer));
+  }
+
+  pass('test-contains');
+});
+
 jsunitRegister('testElementId',
                function testElementId() {
   var el = document.getElementById('test-element-id');
@@ -955,7 +1024,7 @@ jsunitRegister('testSpecialStyleNames',
   assertEquals('right', getFloatySpanFloat());
   assertEquals('right', floatySpan.style.cssFloat);
   assertEquals('right', floatySpan.style.getPropertyValue('float'));
-  
+
   pass('test-special-style-names');
 });
 
