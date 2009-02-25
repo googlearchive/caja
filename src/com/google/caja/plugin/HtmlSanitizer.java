@@ -96,12 +96,11 @@ public final class HtmlSanitizer {
             ((MutableParseTreeNode) htmlRoot.parent.node).removeChild(t);
             return valid;  // Don't recurse to children if removed.
           } else {
-            // According to 
+            // According to
             // http://www.w3.org/TR/html401/appendix/notes.html the recommended
             // behavior is to try to render an unrecognized element's contents
             return valid & foldElement(htmlRoot.cast(DomTree.Tag.class));
           }
-
         }
         // Make sure that there is only one instance of an attribute
         // with a given name.  Otherwise, passes that only inspect the
@@ -120,27 +119,27 @@ public final class HtmlSanitizer {
       DomTree.Attrib attrib = (DomTree.Attrib) t;
       Name attrName = attrib.getAttribName();
       HTML.Attribute a = schema.lookupAttribute(tagName, attrName);
-      if (null == a ) {
+      if (null == a) {
         mq.getMessages().add(new Message(
             PluginMessageType.UNKNOWN_ATTRIBUTE, MessageLevel.WARNING,
             t.getFilePosition(), attrName, tagName));
         valid &= removeBadAttribute(tag, attrName);
-        break;
-      }
-      if (!schema.isAttributeAllowed(tagName, attrName)) {
+
+      } else if (!schema.isAttributeAllowed(tagName, attrName)) {
         mq.addMessage(
             PluginMessageType.UNSAFE_ATTRIBUTE,
             t.getFilePosition(), attrName, tagName);
         valid &= removeBadAttribute(tag, attrName);
-      }
-      Criterion<? super String> criteria = schema.getAttributeCriteria(
-          tagName, attrName);
-      if (!criteria.accept(attrib.getAttribValue())) {
-        mq.addMessage(
-            PluginMessageType.DISALLOWED_ATTRIBUTE_VALUE,
-            attrib.getAttribValueNode().getFilePosition(),
-            attrName, MessagePart.Factory.valueOf(attrib.getAttribValue()));
-        valid &= removeBadAttribute(tag, attrName);
+      } else {
+        Criterion<? super String> criteria = schema.getAttributeCriteria(
+            tagName, attrName);
+        if (!criteria.accept(attrib.getAttribValue())) {
+          mq.addMessage(
+              PluginMessageType.DISALLOWED_ATTRIBUTE_VALUE,
+              attrib.getAttribValueNode().getFilePosition(),
+              attrName, MessagePart.Factory.valueOf(attrib.getAttribValue()));
+          valid &= removeBadAttribute(tag, attrName);
+        }
       }
       break;
     case TEXT: case CDATA: case IGNORABLE:
@@ -237,18 +236,12 @@ public final class HtmlSanitizer {
     return valid;
   }
 
-  private boolean removeBadAttribute(
-      DomTree.Tag el, Name unknownAttr) {
-    if (null == el) {
-      return false;
-    }
+  private boolean removeBadAttribute(DomTree.Tag el, Name attrName) {
     MutableParseTreeNode.Mutation mut
         = ((MutableParseTreeNode) el).createMutation();
-    for (DomTree child : el.children()) {
-      if (!(child instanceof DomTree.Attrib)) { break; }
-      DomTree.Attrib attr = (DomTree.Attrib) child;
+    for (DomTree.Attrib attr : el.getAttributeNodes()) {
       Name name = attr.getAttribName();
-      if (unknownAttr.equals(name)) {
+      if (attrName.equals(name)) {
         mut.removeChild(attr);
       }
     }
@@ -259,9 +252,7 @@ public final class HtmlSanitizer {
   private boolean removeDuplicateAttributes(DomTree.Tag el) {
     Map<Name, DomTree.Attrib> byName = new HashMap<Name, DomTree.Attrib>();
     boolean valid = true;
-    for (DomTree child : el.children()) {
-      if (!(child instanceof DomTree.Attrib)) { break; }
-      DomTree.Attrib attr = (DomTree.Attrib) child;
+    for (DomTree.Attrib attr : el.getAttributeNodes()) {
       Name name = attr.getAttribName();
       DomTree.Attrib orig = byName.get(name);
       if (orig == null) {
@@ -271,7 +262,7 @@ public final class HtmlSanitizer {
             PluginMessageType.DUPLICATE_ATTRIBUTE, attr.getFilePosition(),
             name, orig.getFilePosition());
         // Empirically, browsers use the first occurrence of an attribute.
-        ((MutableParseTreeNode) el).removeChild(attr);
+        el.removeChild(attr);
       }
     }
     return valid;

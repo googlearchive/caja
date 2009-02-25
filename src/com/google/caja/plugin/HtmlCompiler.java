@@ -199,6 +199,8 @@ public class HtmlCompiler {
             DomTree.Attrib attrib = (DomTree.Attrib) child;
             Name name = attrib.getAttribName();
 
+            assertNotBlacklistedAttrib(tagName, attrib);
+
             name = assertHtmlIdentifier(name, attrib);
 
             Pair<String, String> wrapper = constraint.attributeValueHtml(name);
@@ -297,6 +299,16 @@ public class HtmlCompiler {
       throw new BadContentException(
           new Message(PluginMessageType.UNSAFE_TAG, node.getFilePosition(),
                       tagName));
+    }
+  }
+
+  private void assertNotBlacklistedAttrib(Name tagName, DomTree.Attrib attr)
+      throws BadContentException {
+    Name attrName = attr.getAttribName();
+    if (!htmlSchema.isAttributeAllowed(tagName, attrName)) {
+      throw new BadContentException(new Message(
+          PluginMessageType.UNSAFE_ATTRIBUTE, attr.getFilePosition(),
+          attrName, tagName));
     }
   }
 

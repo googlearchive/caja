@@ -87,10 +87,11 @@ public class HtmlSanitizerTest extends TestCase {
     assertValid(html("<b id=\"bold\">Hello</b>"), "<b id=\"bold\">Hello</b>");
   }
   public void testUnknownElement() throws Exception {
-    assertValid(html("<bogus id=\"bold\">Hello</bogus>"),
-                  "Hello",
-                  "WARNING: removing unknown tag bogus",
-                  "WARNING: removing attribute id when folding bogus into parent");
+    assertValid(
+        html("<bogus id=\"bold\">Hello</bogus>"),
+        "Hello",
+        "WARNING: removing unknown tag bogus",
+        "WARNING: removing attribute id when folding bogus into parent");
   }
   public void testUnknownEverything() throws Exception {
     assertValid(html("<bogus unknown=\"bogus\">Hello</bogus>"),
@@ -202,11 +203,17 @@ public class HtmlSanitizerTest extends TestCase {
   public void testDupeAttrs() throws Exception {
     assertValid(
         xml("<font color=\"red\" color=\"blue\">Purple</font>"),
+        //         ^^^^^
+        //            1 
+        //   123456789012
         "<font color=\"red\">Purple</font>",
-        //     ^^^^^
-        // 3456789012345678901234567890123
-        //        1         2         3
         "WARNING: attribute color duplicates one at testDupeAttrs:1+7 - 12");
+  }
+  public void testDisallowedAttrs() throws Exception {
+    assertValid(
+        html("<a href=\"foo.html\" charset=\"utf-7\">foo</a>"),
+        "<a href=\"foo.html\">foo</a>",
+        "WARNING: removing disallowed attribute charset on tag a");
   }
 
   private void assertValid(DomTree input, String golden, String... warnings)

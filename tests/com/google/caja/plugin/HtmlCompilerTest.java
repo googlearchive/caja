@@ -49,11 +49,25 @@ public class HtmlCompilerTest extends CajaTestCase {
 
   public void testNamesRewritten() throws Exception {
     assertOutput(
-        "IMPORTS___.htmlEmitter___.b('p')"
+        "IMPORTS___.htmlEmitter___.b('a')"
         + ".a('name', 'hi-' + IMPORTS___.getIdClass___())"
-        + ".f(false).e('p');",
+        + ".f(false).e('a');",
 
-        "<p name=\"hi\"/>");
+        "<a name=\"hi\"/>");
+  }
+
+  public void testSanityCheck() throws Exception {
+    // The name attribute is not allowed on <p> elements,
+    // so it should have been stripped out by the HtmlSanitizer pass.
+    HtmlCompiler htmlc = new HtmlCompiler(
+        CssSchema.getDefaultCss21Schema(mq), HtmlSchema.getDefault(mq),
+        mc, mq, makeTestPluginMeta());
+    try {
+      htmlc.compileDocument(htmlFragment(fromString("<p name=hi></p>")));
+    } catch (HtmlCompiler.BadContentException ex) {
+      return;
+    }
+    fail("HtmlCompiler didn't abort on bad attribute");
   }
 
   public void testFormName() throws Exception {
