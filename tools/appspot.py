@@ -229,8 +229,9 @@ def do_edit(given_cl, current_cl, cl_file_path):
     tmp_fd, tmp_path = tempfile.mkstemp(prefix='appspot-', suffix='.txt')
     os.write(tmp_fd, editable_change(current_cl))
     os.close(tmp_fd)
+    
     retcode = subprocess.call(
-        '%s %s' % (os.getenv('VISUAL', os.getenv('EDITOR')),
+        '%s %s' % (os.getenv('VISUAL', os.getenv('EDITOR', 'vi')),
                    commands.mkarg(tmp_path)),
         shell=True)
     try:
@@ -263,13 +264,15 @@ def do_snapshot(given_cl, current_cl, cl_file_path, send_mail):
     out = open(cl_file_path, 'w')
     out.write(editable_change(current_cl))
     out.close()
-    send_mail = True
+    # if a reviewer has been specified, sent out for review
+    if current_cl.reviewer is not None:
+      send_mail = True
   # If the user has not created a CL description, show an editor.
   if not current_cl.message or not current_cl.reviewer:
     do_edit(ChangeList(), current_cl, cl_file_path)
-  # If the CL does not have an issue number, send mail since it's the first
-  # upload.
-  if current_cl.issue is None:
+  # If the CL does not have an issue number but user specified a reviewer
+  # send mail since it's the first upload.
+  if current_cl.issue is None and current_cl.reviewer is not None:
     send_mail = True
   argv = [sys.argv[0]]  # upload.RealMain expects argv[0] to be the program
   argv.extend(current_cl.get_upload_args(send_mail=send_mail))
