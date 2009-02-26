@@ -408,10 +408,10 @@ var attachDocumentStub = (function () {
         /-([a-z])/g, function (_, letter) { return letter.toUpperCase(); });
     // Handle oddities like cssFloat/styleFloat.
     if (css.alternates.hasOwnProperty(stylePropertyName)
-        && !(stylePropertyName in document.body.style)) {
+        && !(stylePropertyName in document.documentElement.style)) {
       var alternates = css.alternates[stylePropertyName];
       for (var i = alternates.length; --i >= 0;) {
-        if (alternates[i] in document.body.style) {
+        if (alternates[i] in document.documentElement.style) {
           stylePropertyName = alternates[i];
           break;
         }
@@ -1380,14 +1380,15 @@ var attachDocumentStub = (function () {
     };
     ___.ctor(TameBackedNode, TameNode, 'TameBackedNode');
     ___.all2(___.grantTypedGeneric, TameBackedNode.prototype, tameNodeMembers);
-    if (document.body.contains) {  // typeof is 'object' on IE
+    if (document.documentElement.contains) {  // typeof is 'object' on IE
       TameBackedNode.prototype.contains = function (other) {
         cajita.guard(tameNodeTrademark, other);
         var otherNode = other.node___;
         return this.node___.contains(otherNode);
       };
     }
-    if ('function' === typeof document.body.compareDocumentPosition) {
+    if ('function' === typeof document.documentElement.compareDocumentPosition
+        ) {
       /**
        * Speced in <a href="http://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-compareDocumentPosition">DOM-Level-3</a>.
        */
