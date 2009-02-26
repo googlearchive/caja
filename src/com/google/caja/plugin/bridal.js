@@ -416,7 +416,7 @@ var bridal = (function() {
         var fixupLeft = doc.documentElement.clientLeft + doc.body.clientLeft;
         cRect.left -= fixupLeft;
         cRect.right -= fixupLeft;
-        var fixupTop = doc.documentElement.clientTop + doc.body.clientTop
+        var fixupTop = doc.documentElement.clientTop + doc.body.clientTop;
         cRect.top -= fixupTop;
         cRect.bottom -= fixupTop;
       }

@@ -429,7 +429,7 @@
     </transform>
   </target>
 
-  <target name="AllTests" depends="pluginc,CajolingService,CajoledTests,dirs">
+  <target name="AllTests" depends="jars,CajolingService,CajoledTests,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${tests}"/>
       <classpath refid="classpath.tests.compile"/>
