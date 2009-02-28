@@ -25,7 +25,6 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.TestUtil;
-import com.google.caja.parser.quasiliteral.CajitaRewriter;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;

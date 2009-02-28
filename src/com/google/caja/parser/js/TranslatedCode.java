@@ -57,7 +57,7 @@ public final class TranslatedCode extends AbstractStatement {
   public Object getValue() { return null; }
 
   @Override
-  public List<Statement> children() {
+  public List<? extends Statement> children() {
     return childrenAs(Statement.class);
   }
 

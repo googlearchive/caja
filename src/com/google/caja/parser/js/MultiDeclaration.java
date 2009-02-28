@@ -56,7 +56,7 @@ public final class MultiDeclaration extends AbstractStatement {
   public Object getValue() { return null; }
 
   @Override
-  public List<Declaration> children() {
+  public List<? extends Declaration> children() {
     return childrenAs(Declaration.class);
   }
 

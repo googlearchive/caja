@@ -54,7 +54,6 @@ import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.UseSubsetDirective;
-import com.google.caja.parser.js.NumberLiteral;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.util.Pair;
 import com.google.caja.util.SyntheticAttributeKey;
@@ -70,7 +69,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Date;
 
 /**
  * Rewrites a JavaScript parse tree to comply with default Caja rules.
@@ -443,7 +441,7 @@ public class CajitaRewriter extends Rewriter {
               /*       TODO(ihab.awad): originalSource */
               /*       TODO(ihab.awad): sourceLocationMap */
               /*       TODO(ihab.awad): imports */
-              /*       TODO(ihab.awad): manifest */                                                      
+              /*       TODO(ihab.awad): manifest */
               + "    }"
               + "  );"
               + "}"))

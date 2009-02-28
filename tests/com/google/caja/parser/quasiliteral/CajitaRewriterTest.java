@@ -31,7 +31,6 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
-import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.RhinoTestBed;
 
@@ -1857,7 +1856,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         + "    = ___.frozenFunc(assertEquals);\n"
         + "___.loadModule({\n"
         + "  instantiate: function (___, IMPORTS___) {\n"
-        + "    " + render(emulated) + "\n" 
+        + "    " + render(emulated) + "\n"
         + "  }\n"
         + " });").toString();
   }

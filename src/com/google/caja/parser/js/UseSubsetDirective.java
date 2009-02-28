@@ -103,7 +103,7 @@ public final class UseSubsetDirective extends AbstractStatement {
   public Object getValue() { return null; }
 
   @Override
-  public List<UseSubset> children() {
+  public List<? extends UseSubset> children() {
     return childrenAs(UseSubset.class);
   }
 

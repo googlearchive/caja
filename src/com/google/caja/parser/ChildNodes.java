@@ -73,7 +73,7 @@ final class ChildNodes<T extends ParseTreeNode> {
     public void add(int i, T element) {
       getBackingList().add(i, elementClass.cast(element));
     }
-    
+
     @Override
     public T remove(int i) { return getBackingList().remove(i); }
   }
@@ -131,13 +131,13 @@ final class ChildNodes<T extends ParseTreeNode> {
    * Statically cast this ChildNodes object to represent a collection
    * containing a subtype of the original. This only succeeds if the dynamic
    * type of this ChildNodes is such that the cast is safe.
-   *  
+   *
    * @param subClass the desired class of the elements of the result.
    * @param <SubT> the desired class of the elements of the result.
    * @return a narrowed reference to this ChildNodes.
    */
   @SuppressWarnings("unchecked")
-  public <SubT extends T> ChildNodes<SubT> as(Class<SubT> subClass) {
+  public <SubT extends T> ChildNodes<? extends SubT> as(Class<SubT> subClass) {
     elementClass.asSubclass(subClass);
     return (ChildNodes<SubT>) this;
   }

@@ -42,7 +42,7 @@ public final class ArrayConstructor extends AbstractExpression {
   public Object getValue() { return null; }
 
   @Override
-  public List<Expression> children() {
+  public List<? extends Expression> children() {
     return childrenAs(Expression.class);
   }
 

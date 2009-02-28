@@ -58,7 +58,7 @@ public final class ModuleEnvelope extends AbstractStatement {
   public Object getValue() { return null; }
 
   @Override
-  public List<Block> children() {
+  public List<? extends Block> children() {
     return childrenAs(Block.class);
   }
 

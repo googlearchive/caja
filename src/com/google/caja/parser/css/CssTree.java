@@ -51,7 +51,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
   }
 
   @Override
-  public List<CssTree> children() {
+  public List<? extends CssTree> children() {
     return childrenAs(CssTree.class);
   }
 

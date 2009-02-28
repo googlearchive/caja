@@ -92,7 +92,7 @@ public abstract class DomTree extends AbstractParseTreeNode {
   public abstract String getValue();
 
   @Override
-  public List<DomTree> children() {
+  public List<? extends DomTree> children() {
     return childrenAs(DomTree.class);
   }
 

@@ -45,7 +45,8 @@ public abstract class AbstractParseTreeNode
    */
   private ChildNodes<ParseTreeNode> children;
 
-  protected <T extends ParseTreeNode> List<T> childrenAs(Class<T> clazz) {
+  protected <T extends ParseTreeNode>
+  List<? extends T> childrenAs(Class<T> clazz) {
     return children.as(clazz).getImmutableFacet();
   }
 
