@@ -19,8 +19,8 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.Pipeline;
@@ -72,8 +72,8 @@ public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
 
     // Now initFunctionBody contains all the top level statements.
 
-    ModuleEnvelope envelope = new ModuleEnvelope(initFunctionBody);
-    jobs.getJobs().add(new Job(new AncestorChain<ModuleEnvelope>(envelope)));
+    UncajoledModule envelope = new UncajoledModule(initFunctionBody);
+    jobs.getJobs().add(new Job(new AncestorChain<UncajoledModule>(envelope)));
 
     return jobs.hasNoFatalErrors();
   }

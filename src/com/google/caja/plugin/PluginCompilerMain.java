@@ -27,6 +27,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -41,7 +42,6 @@ import com.google.caja.util.Callback;
 import com.google.caja.util.CapturingReader;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.SourceSnippetRenderer;
-import com.google.caja.render.JsPrettyPrinter;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -72,6 +72,12 @@ public final class PluginCompilerMain {
   private final Config config = new Config(
       getClass(), System.err,
       "Cajoles HTML, CSS, and JS files to JS.");
+  private final Callback<IOException> exHandler = new Callback<IOException>() {
+    public void handle(IOException ex) {
+      mq.addMessage(
+          MessageType.IO_ERROR, MessagePart.Factory.valueOf(ex.toString()));
+    }
+  };
 
   private class CachingEnvironment extends FileSystemEnvironment {
     public CachingEnvironment(File f) { super(f); }
@@ -94,7 +100,7 @@ public final class PluginCompilerMain {
 
     boolean success = false;
     MessageContext mc = null;
-    ParseTreeNode compiledOutput = null;
+    CajoledModule compiledOutput = null;
     try {
       PluginMeta meta = new PluginMeta(makeEnvironment(config));
       meta.setDebugMode(config.debugMode());
@@ -196,49 +202,56 @@ public final class PluginCompilerMain {
   }
 
   /** Write the given parse tree to the given file. */
-  private void writeFile(File f, ParseTreeNode output) {
-    if (output == null) { return; }
-    Callback<IOException> ioHandler = new Callback<IOException>() {
-      public void handle(IOException ex) {
-        mq.addMessage(
-            MessageType.IO_ERROR, MessagePart.Factory.valueOf(ex.toString()));
-      }
-    };
+  private void writeFile(File f, CajoledModule module) {
+    if (module == null) { return; }
+
+    Writer out = null;
+
     try {
-      Writer out = new OutputStreamWriter(new FileOutputStream(f), "UTF-8");
-      TokenConsumer tc;
-      switch (config.renderer()) {
-        case PRETTY:
-          tc = output.makeRenderer(out, ioHandler);
-          break;
-        case MINIFY:
-          tc = new JsMinimalPrinter(out,  ioHandler);
-          break;
-        case SIDEBYSIDE:
-          tc = new SourceSnippetRenderer(
-              buildOriginalInputCharSequences(), mc, out, ioHandler) {
-            @Override
-            protected TokenConsumer createDelegateRenderer(
-                Appendable out, Callback<IOException> exHandler) {
-              return new JsPrettyPrinter(out, exHandler);
-            }
-          };
-          break;
-        default:
-          throw new AssertionError(
-              "Unrecognized renderer: " + config.renderer());
-      }
-      try {
-        RenderContext rc = new RenderContext(mc, true, true, tc);
-        output.render(rc);
-        tc.noMoreTokens();
-        out.append('\n');
-      } finally {
-        out.close();
+      out = new OutputStreamWriter(new FileOutputStream(f), "UTF-8");
+      if (config.renderer() == Config.SourceRenderMode.DEBUGGER) {
+        // Debugger rendering is weird enough to warrant its own method
+        writeFileWithDebug(out, module);
+      } else {
+        writeFileNonDebug(out, module);
       }
     } catch (IOException ex) {
-      ioHandler.handle(ex);
+      exHandler.handle(ex);
+    } finally {
+      if (out != null) {
+        try { out.close(); } catch (IOException e) {}
+      }
     }
+  }
+
+  private void writeFileNonDebug(Writer out, CajoledModule module)
+      throws IOException {
+    TokenConsumer tc;
+    switch (config.renderer()) {
+      case PRETTY:
+        tc = module.makeRenderer(out, exHandler);
+        break;
+      case MINIFY:
+        tc = new JsMinimalPrinter(out,  exHandler);
+        break;
+      case SIDEBYSIDE:
+        tc = new SourceSnippetRenderer(
+            buildOriginalInputCharSequences(), mc, out, exHandler);
+        break;
+      default:
+        throw new AssertionError(
+            "Unrecognized renderer: " + config.renderer());
+    }
+    RenderContext rc = new RenderContext(mc, true, true, tc);
+    module.render(rc);
+    tc.noMoreTokens();
+    out.append('\n');
+  }
+
+  private void writeFileWithDebug(Writer out, CajoledModule module)
+      throws IOException {
+    module.renderWithDebugSymbols(
+        buildOriginalInputCharSequences(), mc, out, exHandler);
   }
 
   /**

@@ -18,8 +18,9 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
-import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
@@ -74,19 +75,19 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
         Job job = it.next();
         if (job.getType() != Job.JobType.JAVASCRIPT
             // May occur if the cajita rewriter does not run due to errors.
-            || !(job.getRoot().node instanceof Block)) {
+            || !(job.getRoot().node instanceof CajoledModule)) {
           continue;
         }
 
         if (DEBUG) {
           System.err.println(
               "\n\nPre\n===\n"
-              + (job.getRoot().cast(Block.class).node.toStringDeep(1))
+              + (job.getRoot().cast(CajoledModule.class).node.toStringDeep(1))
               + "\n\n");
         }
 
         DebuggingSymbols symbols = new DebuggingSymbols();
-        Block js = addSymbols(job.getRoot().cast(Block.class), symbols, mq);
+        CajoledModule js = addSymbols(job.getRoot().cast(CajoledModule.class), symbols, mq);
         if (!symbols.isEmpty()) {
           if (DEBUG) {
             System.err.println("\n\nPost\n===\n" + js.toStringDeep() + "\n\n");
@@ -106,22 +107,22 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
    * @param mq receives rewriting messages.
    * @return js rewritten.
    */
-  private Block addSymbols(
-      AncestorChain<Block> js, DebuggingSymbols symbols, MessageQueue mq) {
-    return (Block) new CajaRuntimeDebuggingRewriter(symbols)
+  private CajoledModule addSymbols(
+      AncestorChain<CajoledModule> js, DebuggingSymbols symbols, MessageQueue mq) {
+    return (CajoledModule) new CajaRuntimeDebuggingRewriter(symbols)
         .expand(js.node, mq);
   }
 
   /**
    * Adds a call to ___.useDebugSymbols to a ___.loadModule call.
    */
-  private Block attachSymbols(
-      DebuggingSymbols symbols, Block js, MessageQueue mq) {
+  private CajoledModule attachSymbols(
+      DebuggingSymbols symbols, CajoledModule js, MessageQueue mq) {
     Map<String, ParseTreeNode> envelopeBindings
         = new LinkedHashMap<String, ParseTreeNode>();
 
-    if (!QuasiBuilder.match("{ ___.loadModule({@keys*: @values*}); }",
-            js, envelopeBindings)) {
+    if (!QuasiBuilder.match("({@keys*: @values*})",
+            js.getModuleBody(), envelopeBindings)) {
       mq.addMessage(PluginMessageType.MALFORMED_ENVELOPE, js.getFilePosition());
       return js;
     }
@@ -155,10 +156,11 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
 
     setObjectLiteralValue(envelopeBindings, "instantiate", functionValue);
 
-    return (Block) QuasiBuilder.subst(
-        "{ ___.loadModule({@keys*: @values*}); }",
-        envelopeBindings);
+    return new CajoledModule((ObjectConstructor) QuasiBuilder.subst(
+        "({@keys*: @values*})",
+        envelopeBindings));
   }
+
 
   // TODO(ihab.awad): http://code.google.com/p/google-caja/issues/detail?id=994
   private ParseTreeNode getObjectLiteralValue(

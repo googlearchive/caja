@@ -23,12 +23,10 @@ import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
-import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.SyntheticNodes;
-import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.js.IntegerLiteral;
+import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.TestBuildInfo;
@@ -39,8 +37,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 
 import junit.framework.AssertionFailedError;
 
@@ -142,42 +138,6 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "exports.objMaker = objMaker;",
         "assertThrows(function() {testImports.exports.objMaker(function(){return '1';});});"
         );
-  }
-
-  public void testModuleFormat() throws Exception {
-    ParseTreeNode trivialCajoledModule =
-        getRewriter().expand(new ModuleEnvelope(new Block()), mq);
-    Map<String, ParseTreeNode> bindings = new HashMap<String, ParseTreeNode>();
-
-    assertTrue(QuasiBuilder.match(
-        "  {"
-        + "  ___.loadModule({"
-        + "    instantiate: @instantiate,"
-        + "    cajolerName: @cajolerName,"
-        + "    cajolerVersion: @cajolerVersion,"
-        + "    cajoledDate: @cajoledDate,"
-        + "  });"
-        + "}",
-        trivialCajoledModule,
-        bindings));
-    assertNoErrors();
-
-    assertTrue(bindings.get("instantiate") instanceof FunctionConstructor);
-
-    assertTrue(bindings.get("cajolerName") instanceof StringLiteral);
-    assertEquals(
-        "com.google.caja",
-        bindings.get("cajolerName").getValue());
-
-    assertTrue(bindings.get("cajolerVersion") instanceof StringLiteral);
-    assertEquals(
-        new TestBuildInfo().getBuildVersion(),
-        bindings.get("cajolerVersion").getValue());
-
-    assertTrue(bindings.get("cajoledDate") instanceof IntegerLiteral);
-    assertEquals(
-        new Long(new TestBuildInfo().getCurrentTime()),
-        bindings.get("cajoledDate").getValue());
   }
 
   public void testInitializeMap() throws Exception {
@@ -2216,8 +2176,8 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
     List<Statement> children = new ArrayList<Statement>();
     children.add(js(fromString(caja, is)));
-    String cajoledJs = render(rewriteStatements(
-        new ModuleEnvelope(new Block(FilePosition.UNKNOWN, children))));
+    String cajoledJs = render(rewriteTopLevelNode(
+        new UncajoledModule(new Block(FilePosition.UNKNOWN, children))));
 
     assertNoErrors();
 

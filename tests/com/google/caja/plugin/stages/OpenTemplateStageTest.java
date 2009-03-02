@@ -20,7 +20,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.ExpressionStmt;
-import com.google.caja.parser.js.ModuleEnvelope;
+import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMeta;
@@ -116,7 +116,7 @@ public final class OpenTemplateStageTest extends CajaTestCase {
   }
 
   private static ParseTreeNode stripBoilerPlate(ParseTreeNode node) {
-    if (!(node instanceof ModuleEnvelope)) { return node; }
+    if (!(node instanceof UncajoledModule)) { return node; }
     node = node.children().get(0);
     if (!(node instanceof Block && node.children().size() == 1)) {
       return node;

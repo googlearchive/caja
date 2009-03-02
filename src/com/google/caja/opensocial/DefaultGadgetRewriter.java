@@ -25,7 +25,7 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.DomTree;
-import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
@@ -149,10 +149,10 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
       }
     };
 
-    Block js = compiler.getJavascript();
-    if (js != null) {
+    CajoledModule cajoled = compiler.getJavascript();
+    if (cajoled != null) {
       TokenConsumer tc = new JsPrettyPrinter(script, errorHandler);
-      js.render(createRenderContext(tc, mc));
+      cajoled.render(createRenderContext(tc, mc));
       tc.noMoreTokens();
     }
 

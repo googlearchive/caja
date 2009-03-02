@@ -18,8 +18,9 @@ import java.io.IOException;
 
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.ModuleEnvelope;
+import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.util.RhinoTestBed;
 import com.google.caja.reporting.TestBuildInfo;
 
@@ -439,7 +440,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
       throws IOException, ParseException {
     mq.getMessages().clear();
     setRewriter(innocentCodeRewriter);
-    Statement innocentTree = (Statement) rewriteStatements(
+    Statement innocentTree = (Statement) rewriteTopLevelNode(
         js(fromString(caja, is)));
     return RhinoTestBed.runJs(
         new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
@@ -455,12 +456,13 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
 
     setRewriter(defaultValijaRewriter);
     Block valijaTree = js(fromString(caja, is));
-    Block cajitaTree = (Block) rewriteStatements(valijaTree);
+    Block cajitaTree = (Block) rewriteTopLevelNode(valijaTree);
     setRewriter(cajitaRewriter);
-    Block body = (Block) rewriteStatements(new ModuleEnvelope(cajitaTree));
-    String cajoledJs = render(body);
-    Block valijaBody = (Block) rewriteStatements(new ModuleEnvelope(
-        js(fromResource("../../valija-cajita.js"))));
+    CajoledModule cajoled = (CajoledModule)
+        rewriteTopLevelNode(new UncajoledModule(cajitaTree));
+    String cajoledJs = render(cajoled);
+    CajoledModule valijaBody = (CajoledModule) rewriteTopLevelNode(
+        new UncajoledModule(js(fromResource("../../valija-cajita.js"))));
     String valijaCajoled = render(valijaBody);
     assertNoErrors();
 

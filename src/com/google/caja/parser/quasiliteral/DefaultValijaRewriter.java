@@ -29,7 +29,6 @@ import com.google.caja.parser.js.ExpressionStmt;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
-import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.parser.js.MultiDeclaration;
 import com.google.caja.parser.js.Noop;
 import com.google.caja.parser.js.Operation;
@@ -41,6 +40,7 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.TryStmt;
+import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.reporting.MessageQueue;
 
 /**
@@ -372,10 +372,10 @@ public class DefaultValijaRewriter extends Rewriter {
           name="moduleEnvelope",
           synopsis="Expand to a Caja module using an isolated scope.",
           reason="The 'module' rule should fire on the body of the module.",
-          matches="<a Valija ModuleEnvelope>",
-          substitutes="<a Caja ModuleEnvelope>")
+          matches="<a Valija UncajoledModule>",
+          substitutes="<a Caja UncajoledModule>")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        if (node instanceof ModuleEnvelope) {
+        if (node instanceof UncajoledModule) {
           return expandAll(node, null, mq);
         }
         return NONE;

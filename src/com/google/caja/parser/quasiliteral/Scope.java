@@ -19,7 +19,6 @@ import com.google.caja.lexer.Keyword;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.CatchStmt;
 import com.google.caja.parser.js.Declaration;
@@ -31,6 +30,7 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
+import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
@@ -537,8 +537,8 @@ public class Scope {
         visitOperation((Operation)node);
       } else if (node instanceof Reference) {
         visitReference((Reference) node);
-      } else if (node instanceof ModuleEnvelope) {
-        visitModuleEnvelope((ModuleEnvelope) node);
+      } else if (node instanceof UncajoledModule) {
+        visitModuleEnvelope((UncajoledModule) node);
       } else {
         visitChildren(node);
       }
@@ -596,7 +596,7 @@ public class Scope {
     }
 
     /** @param node unused */
-    private void visitModuleEnvelope(ModuleEnvelope node) {
+    private void visitModuleEnvelope(UncajoledModule node) {
       // don't look inside a module envelope
     }
   }

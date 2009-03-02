@@ -129,7 +129,7 @@ public class BuildServiceImplementation implements BuildService {
     // Set up the cajoler
     String language = (String) options.get("language");
     boolean passed = true;
-    Block block;
+    ParseTreeNode cajoled;
     if (!"javascript".equals(language)) {
       PluginMeta meta = new PluginMeta(env);
       meta.setDebugMode(Boolean.TRUE.equals(options.get("debug")));
@@ -163,9 +163,9 @@ public class BuildServiceImplementation implements BuildService {
       // Cajole
       passed = passed && compiler.run();
 
-      block = passed ? compiler.getJavascript() : null;
+      cajoled = passed ? compiler.getJavascript() : null;
     } else {
-      block = new Block();
+      Block block = new Block();
       passed = true;
       for (File f : inputs) {
         try {
@@ -187,6 +187,7 @@ public class BuildServiceImplementation implements BuildService {
           }
         }
       }
+      cajoled = block;
     }
 
     // Log messages
@@ -213,7 +214,7 @@ public class BuildServiceImplementation implements BuildService {
         throw new RuntimeException("Unrecognized renderer " + rendererType);
       }
       RenderContext rc = new RenderContext(mc, renderer);
-      block.render(rc);
+      cajoled.render(rc);
       rc.getOut().noMoreTokens();
       try {
         Writer w = new OutputStreamWriter(new FileOutputStream(output));

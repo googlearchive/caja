@@ -104,13 +104,14 @@ public final class Config {
   private final Option RENDERER = defineOption(
       "r",
       "renderer",
-      "The output renderer ('minify', 'pretty', or 'sidebyside')",
+      "The output renderer ('minify', 'pretty', 'sidebyside', or 'debugger')",
       true);
 
   public enum SourceRenderMode {
     MINIFY,
     PRETTY,
     SIDEBYSIDE,
+    DEBUGGER,
     ;
   }
 

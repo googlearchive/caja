@@ -26,7 +26,6 @@ import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Reference;
-import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.RhinoAsserts;
@@ -251,9 +250,8 @@ public abstract class RewriterTestCase extends CajaTestCase {
     return node;
   }
 
-  protected ParseTreeNode rewriteStatements(Statement... nodes) {
-    return getRewriter().expand(
-        new Block(FilePosition.UNKNOWN, Arrays.asList(nodes)), mq);
+  protected ParseTreeNode rewriteTopLevelNode(ParseTreeNode node) {
+    return getRewriter().expand(node, mq);
   }
 
   protected Rewriter getRewriter() {
@@ -338,6 +336,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
           }
           Identifier ident = ctor.getIdentifier();
           Reference identRef = new Reference(ident);
+          identRef.setFilePosition(ident.getFilePosition());
           scope.addStartOfBlockStatement(
               new Declaration(FilePosition.UNKNOWN, ident, identRef));
           return QuasiBuilder.substV(

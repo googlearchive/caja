@@ -14,11 +14,13 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.Block;
 import com.google.caja.util.RhinoTestBed;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * @author adrienne.felt@gmail.com
@@ -168,10 +170,12 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
       throws IOException, ParseException {
     mq.getMessages().clear();
 
-    Statement cajaTree = js(fromString(trans, is));
-    String transJs = render(rewriteStatements(
-        js(fromResource("../../../../../js/jsunit/2.2/jsUnitCore.js")),
-        cajaTree));
+    Block input = new Block(
+        FilePosition.UNKNOWN,
+        Arrays.asList(
+            js(fromResource("../../../../../js/jsunit/2.2/jsUnitCore.js")),
+            js(fromString(trans, is))));
+    String transJs = render(rewriteTopLevelNode(input));
 
     assertNoErrors();
 

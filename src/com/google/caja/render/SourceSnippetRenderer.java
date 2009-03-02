@@ -37,7 +37,7 @@ import java.io.IOException;
  *
  * @author ihab.awad@gmail.com
  */
-public abstract class SourceSnippetRenderer implements TokenConsumer {
+public class SourceSnippetRenderer implements TokenConsumer {
 
   private class OriginalSourceLine {
     private final InputSource source;
@@ -159,8 +159,7 @@ public abstract class SourceSnippetRenderer implements TokenConsumer {
     this.out = out;
     this.mc = mc;
     this.exHandler = exHandler;
-    delegateRenderer = createDelegateRenderer(
-        renderedTextAccumulator, exHandler);
+    delegateRenderer = new JsPrettyPrinter(renderedTextAccumulator, exHandler);
     buildOriginalSourceLines(originalSource);
     renderedLines.add(new RenderedSourceLine(0, ""));
   }
@@ -201,10 +200,6 @@ public abstract class SourceSnippetRenderer implements TokenConsumer {
     processProgram();
     renderOutput();
   }
-
-  protected abstract TokenConsumer createDelegateRenderer(
-      Appendable out,
-      Callback<IOException> exHandler);
 
   private void buildOriginalSourceLines(
       Map<InputSource, ? extends CharSequence> originalSource) {

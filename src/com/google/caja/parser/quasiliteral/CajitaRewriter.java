@@ -21,6 +21,7 @@ import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.AssignOperation;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.BreakStmt;
+import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.CaseStmt;
 import com.google.caja.parser.js.Conditional;
 import com.google.caja.parser.js.ContinueStmt;
@@ -34,13 +35,14 @@ import com.google.caja.parser.js.FormalParam;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.LabeledStatement;
 import com.google.caja.parser.js.LabeledStmtWrapper;
 import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Loop;
-import com.google.caja.parser.js.ModuleEnvelope;
 import com.google.caja.parser.js.MultiDeclaration;
 import com.google.caja.parser.js.Noop;
+import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Reference;
@@ -53,8 +55,8 @@ import com.google.caja.parser.js.SwitchStmt;
 import com.google.caja.parser.js.ThrowStmt;
 import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.parser.js.TryStmt;
+import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.parser.js.UseSubsetDirective;
-import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.util.Pair;
 import com.google.caja.util.SyntheticAttributeKey;
 import com.google.caja.reporting.MessagePart;
@@ -423,16 +425,16 @@ public class CajitaRewriter extends Rewriter {
       @Override
       @RuleDescription(
           name="moduleEnvelope",
-          synopsis="Cajole a ModuleEnvelope into a call to ___.loadModule.",
+          synopsis="Cajole an UncajoledModule into a CajoledModule. Note "
+              + "that the ouptut is a CajoledModule wrapper *around* the"
+              + "contents of the 'substitutes' of this rule.",
           reason="So that the module loader can be invoked to load a module.",
-          matches="<a ModuleEnvelope>",
+          matches="<an UncajoledModule>",
           substitutes=(
-              "  {"
-              + "  ___./*@synthetic*/loadModule("
-              + "    /*@synthetic*/{"
+              "      (/*@synthetic*/{"
               + "      instantiate: /*@synthetic*/function (___, IMPORTS___) {"
               + "        var moduleResult___ = ___.NO_RESULT;"
-              + "        @body*;"
+              + "        @rewrittenModuleStmts*;"
               + "        return moduleResult___;"
               + "      },"
               + "      cajolerName: @cajolerName,"
@@ -442,17 +444,15 @@ public class CajitaRewriter extends Rewriter {
               /*       TODO(ihab.awad): sourceLocationMap */
               /*       TODO(ihab.awad): imports */
               /*       TODO(ihab.awad): manifest */
-              + "    }"
-              + "  );"
-              + "}"))
+              + "    })"))
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
-        if (node instanceof ModuleEnvelope) {
-          ModuleEnvelope rewritten = (ModuleEnvelope) expandAll(node, null, mq);
-          ParseTreeNode moduleStmts = new ParseTreeNodeContainer(
-              rewritten.getModuleBody().children());
-          return substV(
-              "body", returnLast(moduleStmts),
+        if (node instanceof UncajoledModule) {
+          Block inputModuleStmts = ((UncajoledModule) node).getModuleBody();
+          Block rewrittenModuleStmts = (Block)
+              expand(inputModuleStmts, null, mq);
+          ObjectConstructor moduleObjectLiteral = (ObjectConstructor) substV(
+              "rewrittenModuleStmts", returnLast(rewrittenModuleStmts),
               "cajolerName", new StringLiteral(
                   FilePosition.UNKNOWN, "com.google.caja"),
               "cajolerVersion", new StringLiteral(
@@ -461,6 +461,7 @@ public class CajitaRewriter extends Rewriter {
               "cajoledDate", new IntegerLiteral(
                   FilePosition.UNKNOWN,
                   buildInfo.getCurrentTime()));
+          return new CajoledModule(moduleObjectLiteral);
         }
         return NONE;
       }

@@ -33,6 +33,12 @@ public final class InputSource implements MessagePart {
   private URI uri;
   private String uriStr;
 
+  /** a special source for predefineds like the <tt>String</tt> function. */
+  public static final InputSource PREDEFINED =
+      new InputSource(URI.create("predefined:///predefined"));
+  public static final InputSource UNKNOWN =
+      new InputSource(URI.create("unknown:///unknown"));
+
   public InputSource(File f) {
     this(f.getAbsoluteFile().toURI());
   }

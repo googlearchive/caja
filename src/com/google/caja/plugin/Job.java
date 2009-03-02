@@ -18,8 +18,10 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.js.UncajoledModule;
 
 /**
  * A parse tree that is awaiting rewriting, compiling, or rendering.
@@ -48,7 +50,10 @@ public final class Job {
     this.root = root;
     this.target = target;
     ParseTreeNode rootNode = root.node;
-    if (rootNode instanceof Statement || rootNode instanceof Expression) {
+    if (rootNode instanceof Statement
+        || rootNode instanceof Expression
+        || rootNode instanceof UncajoledModule
+        || rootNode instanceof CajoledModule) {
       this.type = Job.JobType.JAVASCRIPT;
     } else if (rootNode instanceof DomTree.Fragment
                || rootNode instanceof DomTree.Tag) {

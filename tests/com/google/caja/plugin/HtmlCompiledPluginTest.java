@@ -20,7 +20,8 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.ModuleEnvelope;
+import com.google.caja.parser.js.CajoledModule;
+import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
@@ -220,7 +221,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
     if (failed) {
       fail();
     } else {
-      Block jsTree = compiler.getJavascript();
+      CajoledModule jsTree = compiler.getJavascript();
       StringBuilder js = new StringBuilder();
       JsPrettyPrinter pp = new JsPrettyPrinter(js, null);
       RenderContext rc = new RenderContext(mc, pp);
@@ -231,7 +232,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
           js(fromResource("/com/google/caja/valija-cajita.js"));
       ParseTreeNode valijaCajoledNode =
           new CajitaRewriter(new TestBuildInfo(), false)
-              .expand(new ModuleEnvelope(valijaOrigNode), mq);
+              .expand(new UncajoledModule(valijaOrigNode), mq);
       String valijaCajoled = render(valijaCajoledNode);
 
       String htmlStubUrl = TestUtil.makeContentUrl(

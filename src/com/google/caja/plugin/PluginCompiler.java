@@ -18,7 +18,7 @@ import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.plugin.stages.CheckForErrorsStage;
 import com.google.caja.plugin.stages.CompileCssStage;
 import com.google.caja.plugin.stages.CompileHtmlStage;
@@ -143,13 +143,13 @@ public final class PluginCompiler {
    * If the javascript has been compiled and consolidated, return the resulting
    * parse tree, otherwise return null.
    */
-  public Block getJavascript() {
+  public CajoledModule getJavascript() {
     Job soleJsJob = getConsolidatedOutput(new Criterion<Job>() {
           public boolean accept(Job job) {
             return job.getType() == Job.JobType.JAVASCRIPT;
           }
         });
-    return soleJsJob != null ? (Block) soleJsJob.getRoot().node : null;
+    return soleJsJob != null ? (CajoledModule) soleJsJob.getRoot().node : null;
   }
 
   private Job getConsolidatedOutput(Criterion<Job> filter) {

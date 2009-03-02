@@ -50,9 +50,14 @@ class Indenter {
    * parenthetical is {@code [false, true, true, false, false, false, true]}
    */
   final boolean[] parenthetical;
+  /**
+   * Whether to break after a comment.
+   */
+  final boolean breakAfterComment;
 
-  Indenter(List<String> tokens) {
+  Indenter(List<String> tokens, boolean breakAfterComment) {
     this.tokens = tokens;
+    this.breakAfterComment = breakAfterComment;
     match = new int[tokens.size()];
     parenthetical = new boolean[tokens.size()];
     // Keep track of the bracket blocks still open at point i.
@@ -148,7 +153,7 @@ class Indenter {
           isBreak = true;
         }
       } else if (prev != null && TokenClassification.isComment(prev)) {
-        isBreak = true;
+        isBreak = breakAfterComment;
       } else {
         isBreak = false;
       }

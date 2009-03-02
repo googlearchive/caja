@@ -53,7 +53,7 @@ public class BenchmarkRunner extends CajaTestCase {
 
   // Like run.js but outputs the result differently.
   // Cannot use ___.getNewModuleHandler.getLastValue() to get the result since
-  // there is no ModuleEnvelope until We fix the compilation unit problem.
+  // there is no UncajoledModule until We fix the compilation unit problem.
   // Instead, we attach the result to an outer object called benchmark.
   private static final String RUN_SCRIPT = (
       ""

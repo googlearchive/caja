@@ -16,6 +16,7 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMeta;
@@ -272,14 +273,15 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
 
   private void runCajoled(String js, Object golden, String context)
       throws Exception {
-    Block block = js(fromString(js));
-    System.err.println("\n\nblock\n=====\n" + block.toStringDeep(1));
+    Block uncajoledModuleBody = js(fromString(js));
+    System.err.println("\n\nblock\n=====\n" +
+        uncajoledModuleBody.toStringDeep(1));
 
     PluginMeta meta = new PluginMeta();
     meta.setDebugMode(true);
 
     Jobs jobs = new Jobs(mc, mq, meta);
-    jobs.getJobs().add(new Job(AncestorChain.instance(block)));
+    jobs.getJobs().add(new Job(AncestorChain.instance(uncajoledModuleBody)));
 
     Pipeline<Jobs> pipeline = new Pipeline<Jobs>();
     pipeline.getStages().add(new ConsolidateCodeStage());
@@ -296,10 +298,11 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
       fail(sb.toString());
     }
 
-    block = jobs.getJobs().get(0).getRoot().cast(Block.class).node;
+    CajoledModule cajoledModule =
+        jobs.getJobs().get(0).getRoot().cast(CajoledModule.class).node;
 
     try {
-      String cajoled = String.format(context, render(block));
+      String cajoledText = String.format(context, render(cajoledModule));
       Object actual = RhinoTestBed.runJs(
           new RhinoTestBed.Input(getClass(), "../console-stubs.js"),
           new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
@@ -307,13 +310,13 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
               getClass(), "/com/google/caja/log-to-console.js"),
           new RhinoTestBed.Input(
               getClass(), "/com/google/caja/cajita-debugmode.js"),
-          new RhinoTestBed.Input(cajoled, getName()));
+          new RhinoTestBed.Input(cajoledText, getName()));
       assertEquals(golden, actual);
     } catch (Exception ex) {
-      System.err.println(render(block));
+      System.err.println(render(cajoledModule));
       throw ex;
     } catch (Error ex) {
-      System.err.println(render(block));
+      System.err.println(render(cajoledModule));
       throw ex;
     }
   }

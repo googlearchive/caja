@@ -37,7 +37,7 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
   private final DebuggingSymbols symbols;
 
   CajaRuntimeDebuggingRewriter(DebuggingSymbols symbols) {
-    super(false);
+    super(true);
     this.symbols = symbols;
   }
 

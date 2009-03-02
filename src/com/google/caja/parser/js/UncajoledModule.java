@@ -15,30 +15,40 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Callback;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
- * Translates to a module envelope: <tt>___.loadModule...</tt>.
+ * Translates to a cajoled module which renders as: <tt>___.loadModule...</tt>.
  * This is not a core JavaScript parse tree node &mdash; it is never produced by
  * {@link Parser}.
  *
  * @author erights@gmail.com
  * @author ihab.awad@gmail.com
  */
-public final class ModuleEnvelope extends AbstractStatement {
+public final class UncajoledModule extends AbstractParseTreeNode {
   /** @param value unused.  This ctor is provided for reflection. */
-  public ModuleEnvelope(FilePosition pos, Void value, List<? extends Block> children) {
-    super(pos, Block.class);
+  public UncajoledModule(FilePosition pos,
+                         Void value,
+                         List<? extends Block> children) {
+    this(pos, children.get(0));
     assert children.size() == 1;
-    createMutation().appendChild(children.get(0)).execute();
   }
 
-  public ModuleEnvelope(Block body) {
-    super(body.getFilePosition(), Block.class);
+  public UncajoledModule(FilePosition pos, Block body) {
+    super(pos, Block.class);
     createMutation().appendChild(body).execute();
+  }
+
+  public UncajoledModule(Block body) {
+    this(FilePosition.UNKNOWN, body);
   }
 
   @Override
@@ -46,7 +56,7 @@ public final class ModuleEnvelope extends AbstractStatement {
     super.childrenChanged();
     if (children().size() != 1) {
       throw new IllegalStateException(
-          "A ModuleEnvelope may only have one child");
+          "An UncajoledModule may only have one child");
     }
     ParseTreeNode module = children().get(0);
     if (!(module instanceof Block)) {
@@ -64,15 +74,15 @@ public final class ModuleEnvelope extends AbstractStatement {
 
   public Block getModuleBody() { return children().get(0); }
 
+  public final TokenConsumer makeRenderer(
+      Appendable out, Callback<IOException> exHandler) {
+    return new JsPrettyPrinter(out, exHandler);
+  }
+  
   public void render(RenderContext rc) {
     // FIXME(erights): must emit valid javascript or throw an exception
     rc.getOut().consume("<<<<");
     children().get(0).render(rc);
     rc.getOut().consume(">>>>");
-  }
-
-  @Override
-  public boolean isTerminal() {
-    return true;
   }
 }

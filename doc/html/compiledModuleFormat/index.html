@@ -99,28 +99,47 @@ programmers to use in describing modules.</p>
 (<em>e.g.</em>, original source code) that we may either embed
 directly in the module as a JavaScript literal, or provide as a URL
 that may be fetched. We use a content reference object to
-polymorphically represent both. A reference to a URL is of the
+polymorphically represent both. A content reference is of the
 form:</p>
 
 <pre class="prettyprint">
 {
-  type: "url",
-  url: <em>&lt;string&gt;</em>
+  'url': <em>&lt;string&gt;</em>
+  'sha1sum': <em>&lt;integer&gt;</em>
+  'content': [ <em>&lt;string&gt;</em>, <em>&lt;string&gt;</em>, ... ]
 }
 </pre>
 
-<p>while the literal inclusion of content is of the form:</p>
+<p>where the fields are:</p>
 
-<pre class="prettyprint">
-{
-  type: "content",
-  content: [ <em>&lt;string&gt;</em>, <em>&lt;string&gt;</em>, ... ]
-}
-</pre>
+<div class="listing"><table>
 
-<p>where the value of the <code>content</code> key is an array of
-lines of text. If the content is not line-oriented, there will be only
-one array element containing the entire data.</p>
+  <tr>
+    <td valign="top"><code class="prettyprint">url</code></td>
+    <td valign="top"><em>optional</em></td>
+    <td valign="top">The URL at which the content may be (or has been)
+    retrieved.</td>
+  </tr>
+
+  <tr>
+    <td valign="top"><code class="prettyprint">sha1sum</code></td>
+    <td valign="top"><em>optional</em></td>
+    <td valign="top">The SHA-1 checksum of the content.</td>
+  </tr>
+
+  <tr>
+    <td valign="top"><code class="prettyprint">content</code></td>
+    <td valign="top"><em>optional</em></td>
+    <td valign="top">The actual content, as an array of JavaScript
+    string literals, one for each line of the content. If the content
+    is not line-oriented, there will be only one array element containing
+    the entire data.</td>
+  </tr>
+
+</table></div>
+
+<p>A valid content reference must contain at least one of
+the <code>url</code> or <code>content</code> fields.</p>
 
 <!-- ############################################################ -->
 
@@ -131,20 +150,20 @@ output looks like:</p>
 
 <pre class="prettyprint">
 ___.loadModule({
-  cajolerName: <em>&lt;string&gt;</em>,
-  cajolerVersion: <em>&lt;string&gt;</em>,
-  cajoledDate: ...,
-  instantiate: <span style="background-color: #ffff90;">function(___, IMPORTS___) { <em>&lt;code&gt;</em> }, <span style="font-size: small; font-family: sans-serif">/* See below for exact formatting */</span></span>
-  originalSource: {
+  'cajolerName': <em>&lt;string&gt;</em>,
+  'cajolerVersion': <em>&lt;string&gt;</em>,
+  'cajoledDate': ...,
+  'instantiate': <span style="background-color: #ffff90;">function(___, IMPORTS___) { <em>&lt;code&gt;</em> }, <span style="font-size: small; font-family: sans-serif">/* See below for exact formatting */</span></span>
+  'originalSource': {
     <em>&lt;string&gt;</em>: <em>&lt;contentReference&gt;</em>,
     ...
   },
-  sourceLocationMap: <em>&lt;contentReference&gt;</em>,
-  imports: {
+  'sourceLocationMap': <em>&lt;contentReference&gt;</em>,
+  'imports': {
     <em>&lt;string&gt;</em>: ...,
     ...
   },
-  manifest: <em>&lt;jsonLiteral&gt;</em>
+  'manifest': <em>&lt;jsonLiteral&gt;</em>
 });
 </pre>
 
@@ -184,7 +203,7 @@ ___.loadModule({
 
   <tr>
     <td valign="top"><code class="prettyprint">imports</code></td>
-    <td valign="top"><em>required</em></td>
+    <td valign="top"><em>optional</em></td>
     <td valign="top">Information about the variables imported by this module. This is a record
     where each key is the name of an imported variable, and each corresponding value
     is some JSON data providing meta-information about the module's expectations regarding
@@ -193,7 +212,7 @@ ___.loadModule({
     format (essentially equivalent to <code>@param</code> Javadocs)
     and how Caja programmers can set it. This will include the assumed-safe
     static path information currently provided as a 2<sup>nd</sup> argument to
-    <code>___.readImport()</code>.</div>
+    <code>___.readImport()</code>. At that point, make this field <em>required<em>.</div>
     </td>
   </tr>
 
@@ -229,14 +248,18 @@ ___.loadModule({
 
 <h1>Precise rendered format of <code>instantiate</code> property</h1>
 
-<p>To allow debugging with reference to the cajoled code, the format
-of the module regarding its <code>instantiate</code> property will
-always be as follows:</p>
+<p>To allow debugging with reference to the cajoled code, if
+the <code>sourceLocationMap</code> is present, the textual format of
+the module regarding its <code>instantiate</code> property will follow
+the precise format in this section. If <code>sourceLocationMap</code>
+is not present, this section does not apply and the textual format of
+the module will be any valid JavaScript syntax encoding the specified
+structure.</p>
 
 <pre class="prettyprint">
 {
   &#x22ee;
-  instantiate:
+  'instantiate':
 
       &#x2460;
 function(___, IMPORTS___) {  &#x2461;
@@ -249,9 +272,9 @@ function(___, IMPORTS___) {  &#x2461;
 }
 </pre>
 
-<p>&#x2460; &mdash; Following the <code>instantiate</code> key and
-the colon, and an indeterminate amount of whitespace, there is a
-newline.</p>
+<p>&#x2460; &mdash; Following the <code>instantiate</code> key (which
+is enclosed in single quotes) and the colon, and an indeterminate
+amount of whitespace, there is a newline.</p>
 
 <p>&#x2461 &mdash; The text of the cajoled code starts on the next
 line at a level of indentation starting from column 1, as though it
@@ -279,10 +302,11 @@ cajoled module code. The following is an example:</p>
 /** Begin file information. **/  &#x2464;
 ['a.js', 'b.js']  &#x2465;
 ['a.js']
-['b.js']
+[(void 0)] &#x2468;
 /** Begin mapping definitions. **/  &#x2466;
 ['a.js',243,4]  &#x2467;
 ['b.js',425,2]
+[(void 0)] &#x2468;
 &#x22ee;
 </pre>
 
@@ -322,6 +346,9 @@ this line.</p>
 lines is a JS array literal describing the <em>j</em><sup>th</sup>
 array entry as described in &#x2461;. Each array describes a character
 position in an original source file and is of the form:</p>
+
+<p>&#x2467; &mdash; The value <code>undefined</code> (denoted by the expression
+<code>(void 0)</code> indicates an unknown file name.</p>
 
 <pre class="prettyprint">
 [<em>&lt;filename&gt;</em>,<em>&lt;line&gt;</em>,<em>&lt;col&gt;</em>]

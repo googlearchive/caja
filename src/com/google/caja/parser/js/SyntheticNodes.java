@@ -44,7 +44,7 @@ public final class SyntheticNodes {
   public static boolean isSynthesizable(ParseTreeNode node) {
     return (node instanceof Identifier && node.getValue() != null)
         || node instanceof FunctionConstructor
-        || node instanceof ModuleEnvelope;
+        || node instanceof UncajoledModule;
   }
 
   /**

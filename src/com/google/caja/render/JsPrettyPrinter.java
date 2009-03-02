@@ -29,6 +29,7 @@ import java.util.List;
  */
 public final class JsPrettyPrinter extends BufferingRenderer {
   private int lineLengthLimit = 80;
+  private boolean breakAfterComment = true;
 
   /**
    * @param out receives the rendered text.
@@ -45,6 +46,12 @@ public final class JsPrettyPrinter extends BufferingRenderer {
 
   public int getLineLengthLimit() { return this.lineLengthLimit; }
 
+  public void setBreakAfterComment(boolean breakAfterComment) {
+    this.breakAfterComment = breakAfterComment;
+  }
+
+  public boolean isBreakAfterComment() { return this.breakAfterComment; }
+
   @Override
   List<String> splitTokens(List<Object> tokens) {
     Spacer spacer = new Spacer();
@@ -57,7 +64,7 @@ public final class JsPrettyPrinter extends BufferingRenderer {
     }
     List<String> outputTokens = spacer.getOutputTokens();
 
-    Indenter indenter = new Indenter(outputTokens);
+    Indenter indenter = new Indenter(outputTokens, breakAfterComment);
     indenter.breakLines();
     indenter.indent(lineLengthLimit);
     return outputTokens;

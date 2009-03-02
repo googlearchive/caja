@@ -50,6 +50,7 @@ import com.google.caja.parser.quasiliteral.DefaultValijaRewriterTest;
 import com.google.caja.parser.quasiliteral.IllegalReferenceCheckRewriterTest;
 import com.google.caja.parser.quasiliteral.InnocentCodeRewriterTest;
 import com.google.caja.parser.quasiliteral.MatchTest;
+import com.google.caja.parser.quasiliteral.ModuleFormatTest;
 import com.google.caja.parser.quasiliteral.QuasiBuilderTest;
 import com.google.caja.parser.quasiliteral.RewriterTest;
 import com.google.caja.parser.quasiliteral.ScopeTest;
@@ -71,6 +72,7 @@ import com.google.caja.render.JsMinimalPrinterTest;
 import com.google.caja.render.JsPrettyPrinterTest;
 import com.google.caja.render.SideBySideRendererTest;
 import com.google.caja.render.SourceSnippetRendererTest;
+import com.google.caja.render.SourceSpansRendererTest;
 import com.google.caja.render.TokenClassificationTest;
 import com.google.caja.reporting.AbstractMessageQueueTest;
 import com.google.caja.reporting.BuildInfoTest;
@@ -146,6 +148,7 @@ public class AllTests {
           LayoutTest.class,
           LookaheadCharProducerTest.class,
           MatchTest.class,
+          ModuleFormatTest.class,
           NumberLiteralTest.class,
           OpenTemplateStageTest.class,
           ParseTreeNodeTest.class,
@@ -160,6 +163,7 @@ public class AllTests {
           SideBySideRendererTest.class,
           SnippetProducerTest.class,
           SourceSnippetRendererTest.class,
+          SourceSpansRendererTest.class,
           SparseBitSetTest.class,
           StringLiteralTest.class,
           StringsTest.class,
