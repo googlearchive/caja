@@ -59,21 +59,37 @@ public abstract class FileSystemEnvironment implements PluginEnvironment {
   protected abstract Reader newReader(File f) throws FileNotFoundException;
 
   private File toFileUnderSameDirectory(URI uri) {
-    if (!uri.isAbsolute()
-        && !uri.isOpaque()
-        && uri.getScheme() == null
-        && uri.getAuthority() == null
-        && uri.getFragment() == null
-        && uri.getPath() != null
-        && uri.getQuery() == null) {
-      File f = new File(new File(directory, ".").toURI().resolve(uri));
-      // Check that f is a descendant of directory
-      for (File tmp = f; tmp != null; tmp = tmp.getParentFile()) {
-        if (directory.equals(tmp)) {
-          return f;
-        }
+    if (uri.isOpaque()) {
+      // An opaque URI is not interpretable as a relative path
+      return null;
+    }
+
+    if (uri.getScheme() != null &&
+        !"file".equals(uri.getScheme())) {
+      // Not a "file://..." URL so cannot be relative to a directory
+      return null;
+    }
+    
+    if (uri.getAuthority() != null
+        || uri.getFragment() != null
+        || uri.getQuery() != null) {
+      // URI contains stuff that does not apply to filesystems
+      return null;
+    }
+
+    if (uri.getPath() == null) {
+      // Cannot resolve as a file without a path
+      return null;
+    }
+
+    File f = new File(new File(directory, ".").toURI().resolve(uri));
+    // Check that f is a descendant of directory
+    for (File tmp = f; tmp != null; tmp = tmp.getParentFile()) {
+      if (directory.equals(tmp)) {
+        return f;
       }
     }
+
     return null;
   }
 }

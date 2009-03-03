@@ -306,7 +306,8 @@ public final class PluginCompilerMain {
       throw new AssertionError(e);
     }
 
-    if (config.renderer() == Config.SourceRenderMode.SIDEBYSIDE) {
+    if (config.renderer() == Config.SourceRenderMode.SIDEBYSIDE ||
+        config.renderer() == Config.SourceRenderMode.DEBUGGER) {
       CapturingReader cr = new CapturingReader(isr);
       originalInputs.put(is, cr);
       return cr;
