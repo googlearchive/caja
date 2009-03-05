@@ -105,7 +105,7 @@ $ENV{CAJA_SRC_PATH} = $BUILD_CLIENT;
 our $PROTOTYPEJS = "/opt/svn/prototype";     requireDir $PROTOTYPEJS;
 
 # History of all builds used to generate time series.
-our $HISTORY_DIR = "$MASTER_CLIENT/history"; requireDir $HISTORY_DIR;
+our $HISTORY_DIR = "$MASTER_CLIENT/../history"; requireDir $HISTORY_DIR;
 
 # Executables required
 our $ANT_HOME = "/usr/local/ant";            requireDir $ANT_HOME;
