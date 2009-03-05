@@ -2733,7 +2733,8 @@ var ___;
    */
   function guard(trademark, obj) {
     if (!hasTrademark(trademark, obj)) {
-      fail('This object does not have the given trademark');
+      fail('Object "' + obj + '" does not have the "'
+	   + (trademark.name || '*unknown*') + '" trademark');
     }
   }
 

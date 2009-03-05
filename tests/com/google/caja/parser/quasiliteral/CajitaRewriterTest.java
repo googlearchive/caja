@@ -1959,11 +1959,11 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "    ___.frozenFunc(___.stamp);" +
         "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
         "var foo = {};" +
-        "var tm = {};" +
+        "var tm = { name: 'test' };" +
         "var passed = false;" +
         "try { cajita.guard(tm, foo); }" +
         "catch (e) {" +
-        "  if (!e.message.match('This object does not have the given trademark')) {" +
+        "  if (e.message != 'Object \"[object Object]\" does not have the \"test\" trademark') {" +
         "    fail(e.message);" +
         "  }" +
         "  passed = true;" +
@@ -1975,12 +1975,12 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "    ___.frozenFunc(___.stamp);" +
         "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
         "var foo = {};" +
-        "var tm = {};" +
-        "var tm2 = {};" +
+        "var tm = { name: 'test' };" +
+        "var tm2 = { name: 'test2' };" +
         "var passed = false;" +
         "try { stamp(tm, foo); cajita.guard(tm2, foo); }" +
         "catch (e) {" +
-        "  if (!e.message.match('This object does not have the given trademark')) {" +
+        "  if (e.message != 'Object \"[object Object]\" does not have the \"test2\" trademark') {" +
         "    fail(e.message);" +
         "  }" +
         "  passed = true;" +
