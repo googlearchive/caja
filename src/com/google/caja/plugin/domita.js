@@ -1574,7 +1574,9 @@ var attachDocumentStub = (function () {
         = function () { return this.tagName___; };
     TamePseudoElement.prototype.getNodeValue = function () { return null; };
     TamePseudoElement.prototype.getAttribute
-        = function (attribName) { return ''; };
+        = function (attribName) { return null; };
+    TamePseudoElement.prototype.setAttribute
+        = function (attribName) { return null; };
     TamePseudoElement.prototype.hasAttribute
         = function (attribName) { return false; };
     TamePseudoElement.prototype.getOwnerDocument
@@ -1603,7 +1605,8 @@ var attachDocumentStub = (function () {
     };
     ___.ctor(TamePseudoElement, TamePseudoNode, 'TamePseudoElement');
     ___.all2(___.grantTypedGeneric, TamePseudoElement.prototype,
-             ['getTagName', 'getAttribute', 'hasAttribute', 'getElementsByTagName']);
+             ['getTagName', 'getAttribute', 'setAttribute', 
+              'hasAttribute', 'getElementsByTagName']);
 
 
     function TameOpaqueNode(node, editable) {
@@ -3494,9 +3497,11 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   event = (event || window.event);
   var sig = String(handler).match(/^function\b[^\)]*\)/);
   cajita.log(
-      'Dispatch %s event thisNode=%o, event=%o, pluginId=%o, handler=%o',
-      (event && event.type), thisNode, event, pluginId,
-      sig ? sig[0] : handler);
+      'Dispatch ' + (event && event.type) + 
+      'event thisNode=' + thisNode + ', ' +
+      'event=' + event + ', ' +
+      'pluginId=' + pluginId + ', ' +
+      'handler=' + (sig ? sig[0] : handler));
   var imports = ___.getImports(pluginId);
   switch (typeof handler) {
     case 'string':
