@@ -1696,7 +1696,7 @@ var attachDocumentStub = (function () {
     };
     ___.ctor(TameCommentNode, TameBackedNode, 'TameCommentNode');
 
-    function getAttributeType(tagName, attribName){
+    function getAttributeType(tagName, attribName) {
       var attribKey;
       attribKey = tagName + ':' + attribName;
       if (html4.ATTRIBS.hasOwnProperty(attribKey)) {
@@ -1709,7 +1709,49 @@ var attachDocumentStub = (function () {
       return void 0;
     }
 
-    function TameElement(node, editable) {
+    /**
+     * Plays the role of an Attr node for TameElement objects.
+     */
+    function TameBackedAttributeNode(elem, name){
+      TameNode.call(this, false);
+      classUtils.exportFields(this, 
+          ['name', 'specified', 'value', 'ownerElement']);
+      this.name___ = name;
+      this.ownerElement___ = elem;
+    }
+    classUtils.extend(TameBackedAttributeNode, TameNode);
+    ___.ctor(TameBackedAttributeNode, TameNode, 'TameBackedAttributeNode');
+    TameBackedAttributeNode.prototype.getNodeName = 
+    TameBackedAttributeNode.prototype.getName = 
+        function () { return this.name___; };
+    TameBackedAttributeNode.prototype.getSpecified = 
+        function () { return this.ownerElement___.hasAttribute(this.name___); };
+    TameBackedAttributeNode.prototype.getNodeValue =
+    TameBackedAttributeNode.prototype.getValue = 
+        function () { return this.ownerElement___.getAttribute(this.name___); };
+    TameBackedAttributeNode.prototype.getOwnerElement = 
+        function () { return this.ownerElement___; };
+    TameBackedAttributeNode.prototype.getNodeType = function () { return 2; };
+    TameBackedAttributeNode.prototype.cloneNode = function () {
+      return new TameBackedAttributeNode(this.ownerElement___, this.name___);
+    };
+    TameBackedAttributeNode.prototype.appendChild =
+    TameBackedAttributeNode.prototype.insertBefore =
+    TameBackedAttributeNode.prototype.removeChild =
+    TameBackedAttributeNode.prototype.replaceChild =
+    TameBackedAttributeNode.prototype.getFirstChild =
+    TameBackedAttributeNode.prototype.getLastChild =
+    TameBackedAttributeNode.prototype.getNextSibling =
+    TameBackedAttributeNode.prototype.getPreviousSibling =
+    TameBackedAttributeNode.prototype.getParentNode =
+    TameBackedAttributeNode.prototype.getElementsByTagName =
+    TameBackedAttributeNode.prototype.getElementsByClassName =
+    TameBackedAttributeNode.prototype.getChildNodes =
+    TameBackedAttributeNode.prototype.getAttributes = function () {
+      throw new Error ("Not implemented.");
+    };
+
+    function TameElement(node,editable) {
       assert(node.nodeType === 1);
       TameBackedNode.call(this, node, editable);
       classUtils.exportFields(
@@ -1766,6 +1808,9 @@ var attachDocumentStub = (function () {
           }
           return value;
       }
+    };
+    TameElement.prototype.getAttributeNode = function (name) {
+      return new TameBackedAttributeNode(this, name);
     };
     TameElement.prototype.hasAttribute = function (attribName) {
       attribName = String(attribName).toLowerCase();
@@ -1961,6 +2006,7 @@ var attachDocumentStub = (function () {
        ['addEventListener', 'removeEventListener',
         'getAttribute', 'setAttribute',
         'removeAttribute', 'hasAttribute',
+        'getAttributeNode',
         'getBoundingClientRect',
         'getClassName', 'setClassName', 'getId', 'setId',
         'getInnerHTML', 'setInnerHTML', 'updateStyle', 'getStyle', 'setStyle',

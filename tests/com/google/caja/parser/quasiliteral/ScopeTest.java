@@ -506,9 +506,6 @@ public class ScopeTest extends CajaTestCase {
     assertMessage(
         RewriterMessageType.CANNOT_MASK_IDENTIFIER, MessageLevel.FATAL_ERROR,
         MessagePart.Factory.valueOf("Array"));
-    assertMessage(
-        RewriterMessageType.CANNOT_MASK_IDENTIFIER, MessageLevel.FATAL_ERROR,
-        MessagePart.Factory.valueOf("undefined"));
   }
 
   public void testUnmaskableFormals() throws Exception {

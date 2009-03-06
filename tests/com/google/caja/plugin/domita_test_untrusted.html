@@ -268,6 +268,9 @@ can test window.scrollBy with a positive x value with a visible effect.
 <p class="testcontainer" id="test-bounding-client-rect"
 >Test Bounding Client Rect</p>
 
+<p class="testcontainer" id="test-attribute-nodes"
+>Test Attribute Nodes</p>
+
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
 
@@ -1953,6 +1956,21 @@ jsunitRegister('testBoundingClientRect',
                rectToString(relRect));
 
   pass('test-bounding-client-rect');
+});
+
+jsunitRegister('testAttributeNodes',
+               function testAttributeNodes() {
+  var p = document.getElementById('test-attribute-nodes');
+  var attrNode = p.getAttributeNode('id');
+  assertEquals('test-attribute-nodes', attrNode.value);
+  assertEquals(true, attrNode.specified);
+  assertEquals(p, attrNode.ownerElement);
+  assertEquals('id', attrNode.name);
+  attrNode = p.getAttributeNode('name');
+  assertEquals(null, attrNode.value);
+  assertEquals(false, attrNode.specified);
+
+  pass('test-attribute-nodes');
 });
 
 jsunitRegister('testDocumentBodyAppendChild',

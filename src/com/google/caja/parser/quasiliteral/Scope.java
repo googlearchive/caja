@@ -612,8 +612,7 @@ public class Scope {
           "NaN",
           "Object",     // Masking Object can change the behavior of { k: v }
           "arguments",  // Can muck with arguments to synthetic values.
-          "cajita",     // Used for caja extensions.
-          "undefined"
+          "cajita"     // Used for caja extensions.
           ));
 
   /**
