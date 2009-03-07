@@ -296,8 +296,8 @@ var attachDocumentStub = (function () {
     return array.push.apply(array, rest);
   }
 
-  var tameNodeTrademark = { name: 'tameNode' };
-  var tameEventTrademark = { name: 'tameEvent' };
+  var tameNodeTrademark = cajita.Trademark('tameNode');
+  var tameEventTrademark = cajita.Trademark('tameEvent');
 
   // Define a wrapper type for known safe HTML, and a trademarker.
   // This does not actually use the trademarking functions since trademarks
@@ -448,7 +448,7 @@ var attachDocumentStub = (function () {
   // This is safe even if accessed across frame since the same
   // trademark value is never used with more than one version of
   // setTimeout.
-  var timeoutIdTrademark = { name: 'timeoutId' };
+  var timeoutIdTrademark = cajita.Trademark('timeoutId');
   function tameSetTimeout(timeout, delayMillis) {
     // Existing browsers treat a timeout of null or undefined as a noop.
     var timeoutId;
@@ -476,7 +476,7 @@ var attachDocumentStub = (function () {
     if (rawTimeoutId === rawTimeoutId) { clearTimeout(rawTimeoutId); }
   }
   ___.frozenFunc(tameClearTimeout);
-  var intervalIdTrademark = { name: 'intervalId' };
+  var intervalIdTrademark = cajita.Trademark('intervalId');
   function tameSetInterval(interval, delayMillis) {
     // Existing browsers treat an interval of null or undefined as a noop.
     var intervalId;

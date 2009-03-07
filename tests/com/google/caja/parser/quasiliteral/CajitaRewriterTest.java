@@ -1925,7 +1925,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "var foo = new Foo;" +
         "var passed = false;" +
         "cajita.log('### stamp = ' + stamp);" +
-        "try { stamp({}, foo); }" +
+        "try { stamp(cajita.Trademark('test'), foo); }" +
         "catch (e) {" +
         "  if (!e.message.match('may not be stamped')) {" +
         "    fail(e.message);" +
@@ -1940,7 +1940,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
         "function Foo(){}" +
         "var foo = new Foo;" +
-        "try { stamp({}, foo, true); }" +
+        "try { stamp(cajita.Trademark('test'), foo, true); }" +
         "catch (e) {" +
         "  fail(e.message);" +
         "}",
@@ -1950,7 +1950,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "    ___.frozenFunc(___.stamp);" +
         "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
         "var foo = {};" +
-        "var tm = {};" +
+        "var tm = cajita.Trademark('test');" +
         "stamp(tm, foo);" +
         "cajita.guard(tm, foo);",
         "");
@@ -1959,7 +1959,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "    ___.frozenFunc(___.stamp);" +
         "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
         "var foo = {};" +
-        "var tm = { name: 'test' };" +
+        "var tm = cajita.Trademark('test');" +
         "var passed = false;" +
         "try { cajita.guard(tm, foo); }" +
         "catch (e) {" +
@@ -1975,8 +1975,8 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "    ___.frozenFunc(___.stamp);" +
         "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
         "var foo = {};" +
-        "var tm = { name: 'test' };" +
-        "var tm2 = { name: 'test2' };" +
+        "var tm = cajita.Trademark('test');" +
+        "var tm2 = cajita.Trademark('test2');" +
         "var passed = false;" +
         "try { stamp(tm, foo); cajita.guard(tm2, foo); }" +
         "catch (e) {" +
@@ -1992,7 +1992,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "    ___.frozenFunc(___.stamp);" +
         "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
         "function foo(){};" +
-        "var tm = {};" +
+        "var tm = cajita.Trademark('test');" +
         "var passed = false;" +
         "try { stamp(tm, foo); }" +
         "catch (e) {" +

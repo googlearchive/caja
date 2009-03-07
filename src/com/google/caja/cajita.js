@@ -2712,7 +2712,13 @@ var ___;
   // Trademarking
   ////////////////////////////////////////////////////////////////////////
 
-  // Any object may be used as a trademark.
+  /**
+   * Return a trademark object.
+   */
+  function Trademark(name) {
+    return Token(name);
+  }
+  frozenFunc(Trademark);
 
   /**
    * Returns true if the object has a list of trademarks
@@ -2734,7 +2740,7 @@ var ___;
   function guard(trademark, obj) {
     if (!hasTrademark(trademark, obj)) {
       fail('Object "' + obj + '" does not have the "'
-	   + (trademark.name || '*unknown*') + '" trademark');
+	   + (trademark.toString() || '*unknown*') + '" trademark');
     }
   }
 
@@ -3168,6 +3174,7 @@ var ___;
     canDeletePub: canDeletePub,   deletePub: deletePub,
 
     // Trademarking
+    Trademark: Trademark,
     hasTrademark: hasTrademark,
     guard: guard,
 
