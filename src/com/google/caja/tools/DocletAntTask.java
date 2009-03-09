@@ -21,13 +21,18 @@ import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.parser.quasiliteral.RuleDoclet;
 import com.google.caja.parser.quasiliteral.TextRuleDoclet;
 import com.google.caja.parser.quasiliteral.WikiRuleDoclet;
+import com.google.caja.reporting.BuildInfo;
+
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
-
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
 
 /**
  * ANT task that extracts and generates documentation on rewrite rules
@@ -64,16 +69,42 @@ public class DocletAntTask extends Task {
     }
   }
 
-  public void setRewriter(String rewriter) {
+  public void setRewriter(String className) {
     try {
-      this.rewriter = (Rewriter)Class.forName(rewriter).newInstance();
+      Class<? extends Rewriter> rewriterClass = Class.forName(className)
+          .asSubclass(Rewriter.class);
+      Constructor<? extends Rewriter> ctor = publicCtor(rewriterClass);
+      Object[] actuals = new Object[ctor.getParameterTypes().length];
+      int i = 0;
+      for (Class<?> ptype : ctor.getParameterTypes()) {
+        if (Boolean.TYPE.equals(ptype)) {
+          actuals[i] = Boolean.FALSE;  // No logging
+        } else if (BuildInfo.class.isAssignableFrom(ptype)) {
+          actuals[i] = BuildInfo.getInstance();
+        }
+        ++i;
+      }
+      this.rewriter = ctor.newInstance(actuals);
     } catch (InstantiationException e) {
+      throw new BuildException(e);
+    } catch (InvocationTargetException e) {
       throw new BuildException(e);
     } catch (IllegalAccessException e) {
       throw new BuildException(e);
     } catch (ClassNotFoundException e) {
       throw new BuildException(e);
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <T> Constructor<T> publicCtor(Class<T> cl)
+      throws IllegalAccessException {
+    for (Constructor<?> c : cl.getDeclaredConstructors()) {
+      if (Modifier.isPublic(c.getModifiers())) {
+        return (Constructor<T>) c;
+      }
+    }
+    throw new IllegalAccessException();  // No public ctor
   }
 
   private void checkValidParameters() {
@@ -107,7 +138,8 @@ public class DocletAntTask extends Task {
       checkValidParameters();
       output.setRewriter(rewriter);
       String outputFile = getOutputFileName();
-      BufferedWriter outputStream = new BufferedWriter(new FileWriter(outputFile));
+      BufferedWriter outputStream = new BufferedWriter(
+          new OutputStreamWriter(new FileOutputStream(outputFile), "UTF-8"));
       output.generateDocumentation(outputStream);
       outputStream.close();
     } catch (IOException e) {

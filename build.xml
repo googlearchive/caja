@@ -26,7 +26,6 @@
   -   clean      :  wipes generated files
   -   demos      :  demo files
   -   docs       :  javadoc
-  -   jsdocs     :  jsdoc
   -   pluginc    :  the plugin compiler
   -   runtests   :  runs the tests
   -   benchmarks :  runs the benchmarks
@@ -53,7 +52,6 @@
   <property name="docs"        location="ant-docs"/>
   <property name="ruledocs"    location="${docs}/rules"/>
   <property name="javadocs"    location="${docs}/java"/>
-  <property name="jsdocs"      location="${docs}/js"/>
   <property name="jars"        location="ant-jars"/>
   <property name="www"         location="ant-www"/>  <!-- demo files dir -->
 
@@ -96,11 +94,6 @@
     <path refid="classpath.compile"/>
     <path refid="classpath.ant"/>
   </path>
-  <path id="classpath.jsdocs">
-    <pathelement
-     path="${third_party}/java/jsdoctoolkit_ant/jsdoctoolkit-0.3.jar"/>
-    <pathelement path="${third_party}/java/rhino/js.jar"/>
-  </path>
 
   <!--== Tasks Used Below ==-->
   <taskdef resource="emma_ant.properties"
@@ -109,10 +102,6 @@
   <taskdef name="junit"
    classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
    classpathref="classpath.extensions" />
-
-  <taskdef name="jsdoctoolkit"
-   classname="uk.co.darrenhurley.ant.tasks.JsDocToolkit"
-   classpathref="classpath.jsdocs" />
 
   <!--== rules.  Lowercase are public.  Uppercase are used internally. ==-->
   <target name="default" depends="jars"
@@ -198,7 +187,7 @@
   </target>
 
   <target name="docs" description="Builds all Caja documentation."
-   depends="javadocs,jsdocs,ruledocs">
+   depends="javadocs,ruledocs">
   </target>
 
   <target name="javadocs" description="Builds javadoc documentation.">
@@ -220,29 +209,6 @@
     <mkdir dir="${ruledocs}"/>
     <ruledoclet output="html" outputdir="${ruledocs}"
      rewriter="com.google.caja.parser.quasiliteral.CajitaRewriter"/>
-  </target>
-
-  <target name="jsdocs" description="Builds jsdoc documentation.">
-    <mkdir dir="${jsdocs}"/>
-    <jsdoctoolkit jsdochome="${third_party}/java/jsdoctoolkit/"
-     encoding="utf-8" template="jsdoc"
-     includeundocumented="true" includeprivate="true" includeunderscored="true"
-     outputdir="${jsdocs}">
-      <source file="${src}/com/google/caja/Brand-cajita.js"/>
-      <source file="${src}/com/google/caja/cajita.js"/>
-      <source file="${src}/com/google/caja/cajita-debugmode.js"/>
-      <source file="${src}/com/google/caja/console.js"/>
-      <source file="${src}/com/google/caja/log-to-console.js"/>
-      <source file="${src}/com/google/caja/permissive.js"/>
-      <source file="${src}/com/google/caja/triv-logger.js"/>
-      <source file="${src}/com/google/caja/valija-cajita.js"/>
-      <source file="${lib}/com/google/caja/plugin/html4-defs.js"/>
-      <source file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
-      <source file="${src}/com/google/caja/plugin/html-emitter.js"/>
-      <source file="${src}/com/google/caja/plugin/bridal.js"/>
-      <source file="${src}/com/google/caja/plugin/domita.js"/>
-      <source file="${src}/com/google/caja/plugin/unicode.js"/>
-    </jsdoctoolkit>
   </target>
 
   <target name="pluginc" depends="dirs,PluginCompiler,build.info"
