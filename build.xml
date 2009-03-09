@@ -62,8 +62,6 @@
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/jsdk2.1/servlet.jar"/>
     <pathelement path="${third_party}/java/jsdk2.1/server.jar"/>
-    <pathelement path="${third_party}/java/nekohtml-1.9.9/nekohtml.jar"/>
-    <pathelement path="${third_party}/java/nekohtml-1.9.9/xercesImpl.jar"/>
   </path>
   <path id="classpath.run">
     <pathelement path="${lib}"/>
@@ -341,13 +339,6 @@
         <include name="server.jar"/>
         <include name="servlet.jar"/>
       </fileset>
-      <fileset dir="${third_party}/java/nekohtml-1.9.9">
-        <include name="nekohtml.jar"/>
-        <include name="xercesImpl.jar"/>
-      </fileset>
-      <fileset dir="${third_party}/java/nekohtml-1.9.9">
-        <include name="*.jar"/>
-      </fileset>
     </copy>
     <jar destfile="${jars}/pluginc.jar" basedir="${lib}">
       <manifest>
@@ -495,7 +486,6 @@
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
-      <include name="**/caja/ParserBenchmark.java"/>
       <include name="**/caja/plugin/*.java"/>
       <include name="**/caja/plugin/stages/*.java"/>
 
