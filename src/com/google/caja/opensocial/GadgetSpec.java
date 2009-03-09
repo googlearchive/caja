@@ -17,6 +17,7 @@ package com.google.caja.opensocial;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,10 +48,12 @@ public class GadgetSpec {
 
   public void setContentType(String contentType) { this.contentType = contentType; }
 
-  public CharProducer getContent() { return content.producer(); }
+  public CharProducer getContent() throws IOException {
+    return content.producer();
+  }
 
   public void setContent(CharProducerFactory content) { this.content = content; }
-  
+
   public void setContent(final String content) {
     setContent(
         new CharProducerFactory() {
@@ -62,6 +65,6 @@ public class GadgetSpec {
   }
 
   public interface CharProducerFactory {
-    CharProducer producer();
+    CharProducer producer() throws IOException ;
   }
 }

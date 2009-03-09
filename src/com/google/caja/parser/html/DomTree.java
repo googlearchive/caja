@@ -104,22 +104,10 @@ public abstract class DomTree extends AbstractParseTreeNode {
    * external entities.
    */
   private static String xmlDecode(String s) {
-    StringBuilder sb = new StringBuilder(s.length());
+    if (s.indexOf('&') < 0) { return s; }
     CharProducer cp = CharProducer.Factory.fromHtmlAttribute(
         CharProducer.Factory.create(new StringReader(s), DECODE));
-    try {
-      try {
-        for (int ch; (ch = cp.read()) >= 0;) {
-          sb.append((char) ch);
-        }
-      } finally {
-        cp.close();
-      }
-    } catch (IOException ex) {
-      throw (AssertionError) new AssertionError(
-          "IOException thrown using StringReader").initCause(ex);
-    }
-    return sb.toString();
+    return String.valueOf(cp.getBuffer(), 0, cp.getLimit());
   }
 
   @Override

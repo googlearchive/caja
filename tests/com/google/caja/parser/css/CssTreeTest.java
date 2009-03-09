@@ -14,7 +14,6 @@
 
 package com.google.caja.parser.css;
 
-import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
@@ -175,13 +174,7 @@ public class CssTreeTest extends CajaTestCase {
       String goldenFile, String inputFile, boolean paranoid)
       throws Exception {
     String golden = TestUtil.readResource(getClass(), goldenFile);
-    CssTree.StyleSheet stylesheet;
-    CharProducer cp = fromResource(inputFile);
-    try {
-      stylesheet = css(cp);
-    } finally {
-      cp.close();
-    }
+    CssTree.StyleSheet stylesheet = css(fromResource(inputFile));
     StringBuilder sb = new StringBuilder();
     CssPrettyPrinter csspp = new CssPrettyPrinter(sb, null);
     RenderContext rc = new RenderContext(

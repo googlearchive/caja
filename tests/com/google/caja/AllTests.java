@@ -24,9 +24,9 @@ import com.google.caja.lang.css.CssSchemaTest;
 import com.google.caja.lang.html.HtmlSchemaTest;
 import com.google.caja.lexer.CharProducerTest;
 import com.google.caja.lexer.CssLexerTest;
+import com.google.caja.lexer.FilePositionTest;
 import com.google.caja.lexer.HtmlLexerTest;
 import com.google.caja.lexer.JsLexerTest;
-import com.google.caja.lexer.LookaheadCharProducerTest;
 import com.google.caja.lexer.PunctuationTrieTest;
 import com.google.caja.lexer.escaping.EscapingTest;
 import com.google.caja.opensocial.DefaultGadgetRewriterTest;
@@ -127,6 +127,7 @@ public class AllTests {
           EventStoreTest.class,
           ExpressionLanguageStageTest.class,
           ExpressionSanitizerTest.class,
+          FilePositionTest.class,
           FuzzedParserTest.class,
           GadgetParserTest.class,
           HcalTest.class,
@@ -146,7 +147,6 @@ public class AllTests {
           JsMinimalPrinterTest.class,
           JsPrettyPrinterTest.class,
           LayoutTest.class,
-          LookaheadCharProducerTest.class,
           MatchTest.class,
           ModuleFormatTest.class,
           NumberLiteralTest.class,

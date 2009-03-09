@@ -18,7 +18,7 @@ import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 
 /**
- * Specifies how the plugin resolves external resources such as scripts and 
+ * Specifies how the plugin resolves external resources such as scripts and
  * stylesheets.
  *
  * @author mikesamuel@gmail.com
@@ -40,7 +40,7 @@ public interface PluginEnvironment {
    * @return null if the URI cannot be made safe.
    */
   String rewriteUri(ExternalReference uri, String mimeType);
-  
+
   /** A plugin environment that will not resolve or rewrite any URI. */
   public static final PluginEnvironment CLOSED_PLUGIN_ENVIRONMENT
       = new PluginEnvironment() {

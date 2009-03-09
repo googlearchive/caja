@@ -14,31 +14,38 @@
 
 package com.google.caja.lexer;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.TreeSet;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
- * A trie used to separate punctuation tokens in a run of non-whatespace
- * characters by preferring the longest punctution string possible in a
+ * A trie used to separate punctuation tokens in a run of non-whitespace
+ * characters by preferring the longest punctuation string possible in a
  * greedy left-to-right scan.
  *
  * @author mikesamuel@gmail.com
  */
-public final class PunctuationTrie {
+public final class PunctuationTrie<T> {
   private final char[] childMap;
-  private final PunctuationTrie[] children;
+  private final PunctuationTrie<T>[] children;
   private final boolean terminal;
+  private final T value;
 
   /**
-   * @param punctuationStrings not empty, non null.
+   * @param elements not empty, non null.
    */
-  public PunctuationTrie(String[] punctuationStrings) {
-    this(sortedUniqCopy(punctuationStrings), 0, 0, punctuationStrings.length);
+  public PunctuationTrie(Map<String, T> elements) {
+    this(sortedUniqEntries(elements), 0);
+  }
+
+  private PunctuationTrie(List<Map.Entry<String, T>> elements, int depth) {
+    this(elements, depth, 0, elements.size());
   }
 
   /**
-   * @param punctuationStrings not empty, non null.  Must not be modified.
+   * @param elements not empty, non null.  Not modified.
    * @param depth the depth in the tree.
    * @param start an index into punctuationStrings of the first string in this
    *   subtree.
@@ -46,22 +53,25 @@ public final class PunctuationTrie {
    *   subtree.
    */
   private PunctuationTrie(
-      String[] punctuationStrings, int depth, int start, int end) {
-    this.terminal = depth == punctuationStrings[start].length();
+      List<Map.Entry<String, T>> elements, int depth, int start, int end) {
+    this.terminal = depth == elements.get(start).getKey().length();
     if (this.terminal) {
+      this.value = elements.get(start).getValue();
       if (start + 1 == end) {  // base case
         this.childMap = ZERO_CHARS;
-        this.children = ZERO_TRIES;
+        this.children = ownedChildArray(ZERO_TRIES);
         return;
       } else {
         ++start;
       }
+    } else {
+      this.value = null;
     }
     int childCount = 0;
     {
       int last = -1;
       for (int i = start; i < end; ++i) {
-        char ch = punctuationStrings[i].charAt(depth);
+        char ch = elements.get(i).getKey().charAt(depth);
         if (ch != last) {
           ++childCount;
           last = ch;
@@ -69,45 +79,58 @@ public final class PunctuationTrie {
       }
     }
     this.childMap = new char[childCount];
-    this.children = new PunctuationTrie[childCount];
+    this.children = ownedChildArray(new PunctuationTrie[childCount]);
     int childStart = start;
     int childIndex = 0;
-    char lastCh = punctuationStrings[start].charAt(depth);
+    char lastCh = elements.get(start).getKey().charAt(depth);
     for (int i = start + 1; i < end; ++i) {
-      char ch = punctuationStrings[i].charAt(depth);
+      char ch = elements.get(i).getKey().charAt(depth);
       if (ch != lastCh) {
         childMap[childIndex] = lastCh;
-        children[childIndex++] = new PunctuationTrie(
-          punctuationStrings, depth + 1, childStart, i);
+        children[childIndex++] = new PunctuationTrie<T>(
+          elements, depth + 1, childStart, i);
         childStart = i;
         lastCh = ch;
       }
     }
     childMap[childIndex] = lastCh;
-    children[childIndex++] = new PunctuationTrie(
-        punctuationStrings, depth + 1, childStart, end);
+    children[childIndex++] = new PunctuationTrie<T>(
+        elements, depth + 1, childStart, end);
   }
 
   /** Does this node correspond to a complete string in the input set. */
-  public boolean isTerminal() { return this.terminal; }
+  public boolean isTerminal() { return terminal; }
+
+  public T getValue() { return value; }
+
+  @SuppressWarnings("unchecked")
+  private PunctuationTrie<T>[] ownedChildArray(
+      PunctuationTrie<?>[] unfilledArray) {
+    // This method must only be called with a newly created array or an array
+    // of size 0.
+    // Since all the elements of this array is null, and it either has no
+    // mutable elements (because it is of size 0), or is not reachable by a
+    // more general type, it is typesafe to cast it to a more specific type.
+    return (PunctuationTrie<T>[]) unfilledArray;
+  }
 
   /**
    * The child corresponding to the given character.
    * @return null if no such trie.
    */
-  public PunctuationTrie lookup(char ch) {
+  public PunctuationTrie<T> lookup(char ch) {
     int i = Arrays.binarySearch(childMap, ch);
     return i >= 0 ? children[i] : null;
   }
 
   /**
-   * The descendent of this trie corresponding to the string for this trie
+   * The descendant of this trie corresponding to the string for this trie
    * appended with s.
    * @param s non null.
    * @return null if no such trie.
    */
-  public PunctuationTrie lookup(CharSequence s) {
-    PunctuationTrie t = this;
+  public PunctuationTrie<T> lookup(CharSequence s) {
+    PunctuationTrie<T> t = this;
     for (int i = 0, n = s.length(); i < n; ++i) {
       t = t.lookup(s.charAt(i));
       if (null == t) { break; }
@@ -119,12 +142,14 @@ public final class PunctuationTrie {
     return Arrays.binarySearch(childMap, ch) >= 0;
   }
 
-  private static String[] sortedUniqCopy(String[] arr) {
-    return new TreeSet<String>(Arrays.asList(arr)).toArray(new String[0]);
+  private static <T> List<Map.Entry<String, T>> sortedUniqEntries(
+      Map<String, T> m) {
+    return new ArrayList<Map.Entry<String, T>>(
+        new TreeMap<String, T>(m).entrySet());
   }
 
   private static final char[] ZERO_CHARS = new char[0];
-  private static final PunctuationTrie[] ZERO_TRIES = new PunctuationTrie[0];
+  private static final PunctuationTrie<?>[] ZERO_TRIES = new PunctuationTrie[0];
 
   /**
    * Append all strings s such that {@code this.lookup(s).isTerminal()} to the

@@ -17,8 +17,6 @@ package com.google.caja.lexer;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageType;
 
-import java.io.IOException;
-
 /**
  * Splits lines into strings, comments, regular expression literals, and
  * blocks of non-whitespace.
@@ -26,12 +24,12 @@ import java.io.IOException;
  * @author mikesamuel@gmail.com
  */
 final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
-  private final LineContinuingCharProducer p;
+  private final DecodingCharProducer p;
   /**
    * A trie used to split a chunk of text into punctuation tokens and
    * non-punctuation tokens.
    */
-  private final PunctuationTrie punctuation;
+  private final PunctuationTrie<?> punctuation;
   /**
    * The last token that was not a comment token.
    * This can be used to decide whether to take a particular parsing path
@@ -45,13 +43,13 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
    */
   private final boolean isQuasiliteral;
 
-  public InputElementSplitter(CharProducer p, PunctuationTrie punctuation) {
+  public InputElementSplitter(CharProducer p, PunctuationTrie<?> punctuation) {
     this(p, punctuation, false);
   }
 
-  public InputElementSplitter(
-      CharProducer p, PunctuationTrie punctuation, boolean isQuasiliteral) {
-    this.p = new LineContinuingCharProducer(p);
+  public InputElementSplitter(CharProducer p, PunctuationTrie<?> punctuation,
+                              boolean isQuasiliteral) {
+    this.p = lineContinuingCharProducer(p);
     this.punctuation = punctuation;
     this.isQuasiliteral = isQuasiliteral;
   }
@@ -67,202 +65,204 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
 
   @Override
   protected Token<JsTokenType> produce() throws ParseException {
-    StringBuilder text;
-    JsTokenType type;
-    FilePosition start;
-
-    try {
-      int ch;
-      while ((ch = p.read()) >= 0 && JsLexer.isJsSpace((char) ch)) {
-        // Issue a token break so that we can correctly compute semicolon
-        // insertion rules later.
-        if (p.tokenBreak()) {
+    char[] buf = p.getBuffer();
+    int start = p.getOffset();
+    int limit = p.getLimit();
+    if (start < limit && JsLexer.isJsSpace(buf[start])) {
+      ++start;
+      while (start < limit && JsLexer.isJsSpace(buf[start])) {
+        if (tokenBreak(start)) {
+          p.consume(start - p.getOffset());
           return Token.instance(
               "\\", JsTokenType.LINE_CONTINUATION, p.getCurrentPosition());
         }
+        ++start;
       }
-      if (ch < 0) { return null; }
+      p.consume(start - p.getOffset());
+    }
 
-      start = p.getLastPosition();
-      text = new StringBuilder();
-      text.append((char) ch);
-      switch (ch) {
-        case '"': case '\'':
-        {
-          boolean closed = false;
-          boolean escaped = false;
-          for (int ch2; (ch2 = p.read()) >= 0;) {
-            text.append((char) ch2);
-            if (ch2 == ch && !escaped) {
-              closed = true;
-              break;
-            } else if (JsLexer.isJsLineSeparator((char) ch2)) {
-              // will register as an unterminated string token below
-              break;
-            }
-            escaped = !escaped && ch2 == '\\';
+    if (p.isEmpty()) { return null; }
+
+    JsTokenType type;
+    int end = start + 1;
+    char ch = buf[start];
+    switch (ch) {
+      case '"': case '\'':
+      {
+        boolean closed = false;
+        boolean escaped = false;
+        while (end < limit) {
+          char ch2 = buf[end++];
+          if (ch2 == ch && !escaped) {
+            closed = true;
+            break;
+          } else if (JsLexer.isJsLineSeparator(ch2)) {
+            // will register as an unterminated string token below
+            break;
           }
-          if (!closed) {
-            throw new ParseException(
-                new Message(
-                    MessageType.UNTERMINATED_STRING_TOKEN,
-                    FilePosition.span(start, p.getCurrentPosition())));
-          }
-          type = JsTokenType.STRING;
-          break;
+          escaped = !escaped && ch2 == '\\';
         }
-        case '/':
-        {
-          int ch2 = p.read();
-          if (ch2 < 0) {
-            type = JsTokenType.PUNCTUATION;
-          } else {
-            switch (ch2) {
-            case '/':
-              do {
-                text.append((char) ch2);
-              } while ((ch2 = p.read()) >= 0 &&
-                       !JsLexer.isJsLineSeparator((char) ch2));
-              if (ch2 >= 0) { p.pushback(ch2); }
-              type = JsTokenType.COMMENT;
-              break;
-            case '*':
-              {
-                text.append((char) ch2);
-                boolean star = false;
-                boolean closed = false;
-                while ((ch2 = p.read()) >= 0) {
-                  text.append((char) ch2);
-                  if (star && '/' == ch2) {
-                    closed = true;
-                    break;
-                  } else {
-                    star = (ch2 == '*') && !p.tokenBreak();
-                  }
+        if (!closed) {
+          throw new ParseException(
+              new Message(
+                  MessageType.UNTERMINATED_STRING_TOKEN,
+                  p.filePositionForOffsets(start, end)));
+        }
+        type = JsTokenType.STRING;
+        break;
+      }
+      case '/':
+      {
+        if (end == limit) {
+          type = JsTokenType.PUNCTUATION;
+        } else {
+          char ch2 = buf[end];
+          switch (ch2) {
+          case '/':
+            while (end < limit && !JsLexer.isJsLineSeparator(buf[end])) {
+              ++end;
+            }
+            type = JsTokenType.COMMENT;
+            break;
+          case '*':
+            {
+              boolean star = false;
+              boolean closed = false;
+              while (++end < limit) {
+                ch2 = buf[end];
+                if (star && '/' == ch2) {
+                  closed = true;
+                  ++end;
+                  break;
+                } else {
+                  star = (ch2 == '*') && !tokenBreak(end);
                 }
+              }
+              if (!closed) {
+                throw new ParseException(
+                    new Message(MessageType.UNTERMINATED_STRING_TOKEN,
+                        p.filePositionForOffsets(start, p.getOffset())));
+              }
+              type = JsTokenType.COMMENT;
+            }
+            break;
+          default:
+            {
+              if (lastNonCommentToken == null
+                  || JsLexer.isRegexp(lastNonCommentToken.text)) {
+                boolean closed = false;
+                boolean escaped = false;
+                boolean inCharSet = false;
+
+                regex_body:
+                do {
+                  ch2 = buf[end];
+                  if (JsLexer.isJsLineSeparator(ch2)) {
+                    // will register as unterminated token below
+                    break;
+                  } else if (!escaped) {
+                    switch (ch2) {
+                      case '/':
+                        if (!inCharSet) {
+                          closed = true;
+                          ++end;
+                          break regex_body;
+                        }
+                        break;
+                      case '[':
+                        inCharSet = true;
+                        break;
+                      case ']':
+                        inCharSet = false;
+                        break;
+                      case '\\':
+                        escaped = true;
+                        break;
+                    }
+                  } else {
+                    escaped = false;
+                  }
+                  ++end;
+                } while (end < limit);
                 if (!closed) {
                   throw new ParseException(
                       new Message(MessageType.UNTERMINATED_STRING_TOKEN,
-                          FilePosition.span(start, p.getCurrentPosition())));
+                          p.filePositionForOffsets(start, end)));
                 }
-                type = JsTokenType.COMMENT;
-              }
-              break;
-            default:
-              {
-                if (lastNonCommentToken == null
-                    || JsLexer.isRegexp(lastNonCommentToken.text)) {
-                  boolean closed = false;
-                  boolean escaped = false;
-                  boolean inCharSet = false;
-
-                  regex_body:
-                  do {
-                    text.append((char) ch2);
-                    if (JsLexer.isJsLineSeparator((char) ch2)) {
-                      // will register as unterminated token below
-                      break;
-                    } else if (!escaped) {
-                      switch (ch2) {
-                        case '/':
-                          if (!inCharSet) {
-                            closed = true;
-                            break regex_body;
-                          }
-                          break;
-                        case '[':
-                          inCharSet = true;
-                          break;
-                        case ']':
-                          inCharSet = false;
-                          break;
-                        case '\\':
-                          escaped = true;
-                          break;
-                      }
-                    } else {
-                      escaped = false;
-                    }
-                  } while ((ch2 = p.read()) >= 0);
-                  if (!closed) {
-                    throw new ParseException(
-                        new Message(MessageType.UNTERMINATED_STRING_TOKEN,
-                            FilePosition.span(start, p.getCurrentPosition())));
-                  }
-                  // Pick up any modifiers at the end, e.g. /foo/g
-                  // Firefox fails on "/foo/instanceof RegExp" with an
-                  // invalid identifiers error, so just pick up all letters
-                  while ((ch2 = p.read()) >= 0) {
-                    if (!Character.isLetter(ch2)) {
-                      p.pushback(ch2);
-                      break;
-                    }
-                    text.append((char) ch2);
-                  }
-
-                  type = JsTokenType.REGEXP;
-                } else {
-                  p.pushback((char) ch2);
-                  processPunctuation(text);
-                  type = JsTokenType.PUNCTUATION;
+                // Pick up any modifiers at the end, e.g. /foo/g
+                // Firefox fails on "/foo/instanceof RegExp" with an
+                // invalid identifiers error, so just pick up all letters
+                while (end < limit && Character.isLetter(buf[end])) {
+                  ++end;
                 }
-              }
-              break;
-            }
-          }
-          break;
-        }
-        case '.':
-          {
-            // punctuation that may start a number
-            int ch2 = p.read();
-            if (ch2 >= '0' && ch2 <= '9') {
-              text.append((char) ch2);
-              type = processNumber(text);
-            } else {
-              p.pushback(ch2);
-              processPunctuation(text);
-              type = JsTokenType.PUNCTUATION;
-            }
-          }
-          break;
-        case '0': case '1': case '2': case '3': case '4':
-        case '5': case '6': case '7': case '8': case '9':
-          type = processNumber(text);
-          break;
-        default:
-          if (punctuation.contains((char) ch)) {
-            processPunctuation(text);
-            type = JsTokenType.PUNCTUATION;
-          } else {
-            for (int ch2; (ch2 = p.read()) >= 0;) {
-              if (isQuasiliteral && text.length() > 0 && text.charAt(0) == '@'
-                  && (ch2 == '*' || ch2 == '+' || ch2 == '?')) {
-                text.append((char) ch2);
-              } else  if (JsLexer.isJsSpace((char) ch2) || p.tokenBreak()
-                          || '\'' == ch2 || '"' == ch2
-                          || punctuation.contains((char) ch2)) {
-                p.pushback(ch2);
-                break;
+
+                type = JsTokenType.REGEXP;
               } else {
-                text.append((char) ch2);
+                end = processPunctuation(start, end);
+                type = JsTokenType.PUNCTUATION;
               }
             }
-            type = JsTokenType.WORD;
+            break;
           }
-          break;
+        }
+        break;
       }
-    } catch (IOException ex) {
-      throw new ParseException(
-          new Message(MessageType.PARSE_ERROR, p.getCurrentPosition()), ex);
+      case '.':
+        // punctuation that may start a number
+        if (end < limit && buf[end] >= '0' && buf[end] <= '9') {
+          ParsedNumber pn = processNumber(start, end);
+          end = pn.end;
+          type = pn.type;
+        } else {
+          end = processPunctuation(start, end);
+          type = JsTokenType.PUNCTUATION;
+        }
+        break;
+      case '0': case '1': case '2': case '3': case '4':
+      case '5': case '6': case '7': case '8': case '9':
+        ParsedNumber pn = processNumber(start, end);
+        end = pn.end;
+        type = pn.type;
+        break;
+      default:
+        if (punctuation.contains(ch)) {
+          end = processPunctuation(start, end);
+          type = JsTokenType.PUNCTUATION;
+        } else {
+          boolean isQuasi = isQuasiliteral && buf[start] == '@';
+          while (end < limit) {
+            char ch2 = buf[end];
+            if (isQuasi && (ch2 == '*' || ch2 == '+' || ch2 == '?')) {
+              ++end;
+              break;
+            } else if (JsLexer.isJsSpace(ch2) || tokenBreak(end)
+                || '\'' == ch2 || '"' == ch2
+                || punctuation.contains(ch2)) {
+              break;
+            } else {
+              ++end;
+            }
+          }
+          type = JsTokenType.WORD;
+        }
+        break;
     }
 
-    FilePosition pos = FilePosition.span(start, p.getCurrentPosition());
-    p.advanceLast();
-    return Token.instance(text.toString(), type, pos);
+    FilePosition pos = p.filePositionForOffsets(start, end);
+    int length = end - start;
+    p.consume(length);
+    return Token.instance(String.valueOf(buf, start, length), type, pos);
   }
 
-  private JsTokenType processNumber(StringBuilder sb) throws IOException {
+  private static final class ParsedNumber {
+    final JsTokenType type;
+    final int end;
+    ParsedNumber(JsTokenType type, int end) {
+      this.type = type;
+      this.end = end;
+    }
+  }
+  private ParsedNumber processNumber(int start, int end) {
     // This recognizes several patterns
     // 0x<hex><modifiers>
     // <decimal>+("."<decimal>*)?<exponent>?<modifiers>
@@ -274,30 +274,30 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
     // Both those groupings are done by the joiner to preserve the one
     // character lookahead rule.
 
-    // Anything not obviously a number is labelled a word.
+    char[] buf = p.getBuffer();
+    int limit = p.getLimit();
+
+    // Anything not obviously a number is labeled a word.
     NumberRecognizer nr = new NumberRecognizer();
-    for (int i = 0, n = sb.length(); i < n; ++i) {
-      if (!nr.consume(sb.charAt(i))) {
-        return nr.getTokenType();
+    for (int i = start; i < end; ++i) {
+      if (!nr.consume(buf[i])) {
+        return new ParsedNumber(nr.getTokenType(), end);
       }
     }
 
-    for (int chi; (chi = p.read()) >= 0;) {
-      char ch = (char) chi;
+    while (end < limit) {
+      char ch = buf[end];
       if ('"' == ch || '\'' == ch || ('.' != ch && punctuation.contains(ch))
-          || JsLexer.isJsSpace(ch) || p.tokenBreak() || !nr.consume(ch)) {
-        p.pushback(ch);
+          || JsLexer.isJsSpace(ch) || !nr.consume(ch)) {
         break;
       }
-
-      sb.append(ch);
+      ++end;
     }
-    return nr.getTokenType();
+    return new ParsedNumber(nr.getTokenType(), end);
   }
 
-  private void processPunctuation(StringBuilder sb)
-      throws IOException {
-    PunctuationTrie t = this.punctuation;
+  private int processPunctuation(int start, int end) {
+    PunctuationTrie<?> t = this.punctuation;
     // Assumes that for every punctuation string pair (A, B) in t
     // where A is a strict prefix of B, then for every string C such that
     // A is a strict prefix of C and C is a strict prefix of B, then
@@ -313,16 +313,73 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
     // There is one another assumption: that every terminal multi-character
     // punctuation string has a one character prefix that is also a
     // terminal punctuation string.
-    t = t.lookup(sb);
-    assert t.isTerminal();
-    for (int ch; (ch = p.read()) >= 0;) {
-      PunctuationTrie t2 = t.lookup((char) ch);
-      if (null == t2 || !t2.isTerminal() || p.tokenBreak()) {
-        p.pushback(ch);
-        break;
-      }
-      t = t2;
-      sb.append((char) ch);
+    char[] buf = p.getBuffer();
+    int limit = p.getLimit();
+    for (int i = start; i < end; ++i) {
+      t = t.lookup(buf[i]);
     }
+    assert t.isTerminal();
+    while (end < limit) {
+      char ch = buf[end];
+      PunctuationTrie<?> t2 = t.lookup(ch);
+      if (null == t2 || !t2.isTerminal() || tokenBreak(end)) { break; }
+      ++end;
+      t = t2;
+    }
+    return end;
+  }
+
+  /**
+   * True if the given offset into p fell on a line continuation.
+   * This helps us distinguish between <pre>
+   * a++
+   * b
+   * </pre>
+   * and
+   * <pre>
+   * a+\
+   * +
+   * b
+   * </pre>
+   * where the fist is equivalent to <pre>{ a ++; b; }</pre> and the latter to
+   * <pre>{ (a + (+b)); }</pre>.
+   */
+  private boolean tokenBreak(int offset) {
+    if (offset == p.getLimit()) { return false; }
+    int nUnderlyingChars = (
+        p.getUnderlyingOffset(offset + 1) - p.getUnderlyingOffset(offset));
+    return nUnderlyingChars != 1;
+  }
+
+  DecodingCharProducer lineContinuingCharProducer(CharProducer p) {
+    return DecodingCharProducer.make(new DecodingCharProducer.Decoder() {
+      @Override
+      void decode(char[] chars, int offset, int limit) {
+        int end = offset;
+        while (end + 1 < limit
+               && chars[end] == '\\'
+               && (chars[end + 1] == '\r' || chars[end + 1] == '\n')) {
+          if (chars[end + 1] == '\r'
+              && chars[end + 2] < limit && chars[end + 2] == '\n') {
+            end += 3;
+          } else {
+            end += 2;
+          }
+        }
+        // TODO: can this first clause go away?
+        if (end == offset) {
+          this.end = offset + 1;
+          this.codePoint = chars[offset];
+        } else if (end <= limit) {  // Skipped one or more line continuations
+          this.end = end + 1;
+          this.codePoint = chars[end];
+        } else {
+          this.end = end;
+          // If a run of line escapes runs right up until the end-of-file,
+          // pretend there is a newline at the end of file.
+          this.codePoint = '\n';
+        }
+      }
+    }, p);
   }
 }

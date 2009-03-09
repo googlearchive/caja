@@ -65,7 +65,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertMessage(
         MessageType.UNEXPECTED_TOKEN,
         MessageLevel.ERROR,
-        FilePosition.instance(is, 1, 42, 42, 1, 43, 43),
+        FilePosition.instance(is, 1, 42, 42, 1),
         MessagePart.Factory.valueOf("<"));
 
     assertPipeline(

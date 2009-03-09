@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.io.IOException;
+import java.net.URI;
 
 /**
  * Test case base class for a renderer that includes snippets of the original
@@ -51,13 +52,14 @@ public abstract class OrigSourceRendererTestCase extends TestCase {
    *     'rewrittenFile' refer to positions in these files.
    */
   protected void runTest(String goldenFile, String rewrittenFile,
-                       String... originalSourceFiles) throws Exception {
+                         String... originalSourceFiles) throws Exception {
     final MessageContext mc = new MessageContext();
 
     Map<InputSource, String> originalSrcs = new HashMap<InputSource, String>();
     for (String originalSourceFile : originalSourceFiles) {
-      InputSource is = new InputSource(
-          TestUtil.getResource(getClass(), originalSourceFile));
+      URI resourceUri = TestUtil.getResource(getClass(), originalSourceFile);
+      if (resourceUri == null) { throw new IOException(originalSourceFile); }
+      InputSource is = new InputSource(resourceUri);
       originalSrcs.put(
           is, TestUtil.readResource(getClass(), originalSourceFile));
     }
@@ -72,25 +74,7 @@ public abstract class OrigSourceRendererTestCase extends TestCase {
         if ("<null>".equals(line)) {
           r.mark(null);
         } else {
-          Matcher m = Pattern.compile(
-              "(.*):(\\d+)\\+(\\d+)-(?:(\\d+)\\+)?(\\d+)$")
-              .matcher(line);
-          if (!m.matches()) { throw new RuntimeException(line); }
-          String basename = m.group(1);
-          int sln = Integer.parseInt(m.group(2));
-          int slc = Integer.parseInt(m.group(3));
-          String g4 = m.group(4);
-          int eln = g4 != null ? Integer.parseInt(g4) : sln;
-          int elc = Integer.parseInt(m.group(5));
-          InputSource src = null;
-          for (InputSource candidate : originalSrcs.keySet()) {
-            if (candidate.getUri().getPath().endsWith(basename)) {
-              src = candidate;
-            }
-          }
-          if (src == null) { throw new RuntimeException(basename); }
-          r.mark(FilePosition.instance(
-              src, sln, sln, slc, eln, eln, elc));
+          r.mark(toFilePosition(line, originalSrcs));
         }
       } else {
         r.consume(line);
@@ -109,4 +93,28 @@ public abstract class OrigSourceRendererTestCase extends TestCase {
   protected abstract TokenConsumer createRenderer(
       Map<InputSource, ? extends CharSequence> originalSource,
       MessageContext mc, Appendable out, Callback<IOException> exHandler);
+
+  private FilePosition toFilePosition(
+      String testInputLine, Map<InputSource, String> originalSrcs) {
+    Matcher m = Pattern.compile(
+        "(.*):(\\d+)\\+(\\d+)-(?:(\\d+)\\+)?(\\d+)$")
+        .matcher(testInputLine);
+    if (!m.matches()) { throw new RuntimeException(testInputLine); }
+    String basename = m.group(1);
+    int sln = Integer.parseInt(m.group(2));
+    int slc = Integer.parseInt(m.group(3));
+    String g4 = m.group(4);
+    int eln = g4 != null ? Integer.parseInt(g4) : sln;
+    int elc = Integer.parseInt(m.group(5));
+
+    InputSource src = null;
+    for (InputSource candidate : originalSrcs.keySet()) {
+      if (candidate.getUri().getPath().endsWith(basename)) {
+        src = candidate;
+      }
+    }
+    if (src == null) { throw new RuntimeException(basename); }
+
+    return FilePosition.fromLinePositions(src, sln, slc, eln, elc);
+  }
 }

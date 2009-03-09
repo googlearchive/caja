@@ -31,6 +31,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.MoreAsserts;
 
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringReader;
@@ -204,7 +205,7 @@ public class HtmlSanitizerTest extends TestCase {
     assertValid(
         xml("<font color=\"red\" color=\"blue\">Purple</font>"),
         //         ^^^^^
-        //            1 
+        //            1
         //   123456789012
         "<font color=\"red\">Purple</font>",
         "WARNING: attribute color duplicates one at testDupeAttrs:1+7 - 12");
@@ -257,8 +258,12 @@ public class HtmlSanitizerTest extends TestCase {
   }
 
   private DomTree parse(String markup, boolean asXml) throws ParseException {
-    TokenQueue<HtmlTokenType> tq = DomParser.makeTokenQueue(
-        is, new StringReader(markup), asXml);
+    TokenQueue<HtmlTokenType> tq;
+    try {
+      tq = DomParser.makeTokenQueue(is, new StringReader(markup), asXml);
+    } catch (IOException ex) {
+      throw new RuntimeException(ex);  // IOException reading from string.
+    }
     DomTree t = new DomParser(tq, asXml, mq).parseFragment();
     tq.expectEmpty();
     return t;

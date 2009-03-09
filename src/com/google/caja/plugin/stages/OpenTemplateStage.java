@@ -530,6 +530,6 @@ final class Splitter {
         p.source(),
         p.startLineNo(),
         p.startCharInFile() + start, p.startCharInLine() + start,
-        p.startLineNo(), p.startCharInFile() + end, p.startCharInLine() + end);
+        end - start);
   }
 }

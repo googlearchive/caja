@@ -32,12 +32,7 @@ public class HtmlLexerTest extends CajaTestCase {
     // Do the lexing.
     CharProducer p = fromResource("htmllexerinput1.html");
     StringBuilder actual = new StringBuilder();
-    try {
-      HtmlLexer lexer = new HtmlLexer(p);
-      lex(lexer, actual);
-    } finally {
-      p.close();
-    }
+    lex(new HtmlLexer(p), actual);
 
     // Get the golden.
     String golden = TestUtil.readResource(getClass(), "htmllexergolden1.txt");
@@ -50,13 +45,9 @@ public class HtmlLexerTest extends CajaTestCase {
     // Do the lexing.
     CharProducer p = fromResource("htmllexerinput2.xml");
     StringBuilder actual = new StringBuilder();
-    try {
-      HtmlLexer lexer = new HtmlLexer(p);
-      lexer.setTreatedAsXml(true);
-      lex(lexer, actual);
-    } finally {
-      p.close();
-    }
+    HtmlLexer lexer = new HtmlLexer(p);
+    lexer.setTreatedAsXml(true);
+    lex(lexer, actual);
 
     // Get the golden.
     String golden = TestUtil.readResource(getClass(), "htmllexergolden2.txt");

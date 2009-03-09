@@ -34,12 +34,11 @@ public class JsLexerTest extends TestCase {
     InputSource input = new InputSource(
         TestUtil.getResource(getClass(), "lexertest1.js"));
     StringBuilder output = new StringBuilder();
-
     BufferedReader in = new BufferedReader(
         new InputStreamReader(TestUtil.getResourceAsStream(
                                   getClass(), "lexertest1.js"), "UTF-8"));
-    JsLexer t = new JsLexer(in, input);
     try {
+      JsLexer t = new JsLexer(CharProducer.Factory.create(in, input));
       while (t.hasNext()) {
         Token<JsTokenType> tok = t.next();
         output.append(tok.type.toString().substring(0, 4)
@@ -75,7 +74,7 @@ public class JsLexerTest extends TestCase {
     BufferedReader in = new BufferedReader(
         new InputStreamReader(TestUtil.getResourceAsStream(
                                   getClass(), "lexertest2.js"), "UTF-8"));
-    JsLexer t = new JsLexer(in, input);
+    JsLexer t = new JsLexer(CharProducer.Factory.create(in, input));
     try {
       while (t.hasNext()) {
         Token<JsTokenType> tok = t.next();
@@ -104,6 +103,19 @@ public class JsLexerTest extends TestCase {
     }
 
     assertEquals(golden, output.toString());
+  }
+
+  public void testRegexLiterals() {
+    JsLexer lexer = createLexer("foo.replace(/[A-Z]/g, '#')");
+    assertNext(lexer, JsTokenType.WORD, "foo");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ".");
+    assertNext(lexer, JsTokenType.WORD, "replace");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "(");
+    assertNext(lexer, JsTokenType.REGEXP, "/[A-Z]/g");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ",");
+    assertNext(lexer, JsTokenType.STRING, "'#'");
+    assertNext(lexer, JsTokenType.PUNCTUATION, ")");
+    assertEmpty(lexer);
   }
 
   public void testSimpleExpression() {
@@ -297,8 +309,9 @@ public class JsLexerTest extends TestCase {
     } catch (URISyntaxException e) {
       throw new RuntimeException(e);
     }
-    BufferedReader in = new BufferedReader(new StringReader(src));
-    return new JsLexer(in, input, isQuasiliteral);
+    return new JsLexer(
+        CharProducer.Factory.create(new StringReader(src), input),
+        isQuasiliteral);
   }
 
   private void assertNext(JsLexer lexer, JsTokenType type, String text) {
@@ -326,7 +339,7 @@ public class JsLexerTest extends TestCase {
 
     BufferedReader in = new BufferedReader(
         new InputStreamReader(System.in, "UTF-8"));
-    JsLexer t = new JsLexer(in, input);
+    JsLexer t = new JsLexer(CharProducer.Factory.create(in, input));
     while (t.hasNext()) {
       Token<JsTokenType> tok = t.next();
       System.out.append(tok.type.toString().substring(0, 4)

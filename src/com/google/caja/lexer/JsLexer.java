@@ -14,7 +14,7 @@
 
 package com.google.caja.lexer;
 
-import java.io.Reader;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 /**
@@ -25,30 +25,13 @@ import java.util.regex.Pattern;
 public class JsLexer implements TokenStream<JsTokenType> {
   private TokenStream<JsTokenType> ts;
 
-  private static PunctuationTrie JAVASCRIPT_PUNCTUATOR;
+  private static PunctuationTrie<?> JAVASCRIPT_PUNCTUATOR;
   static {
-    String[] javascriptPunctuation = new String[Punctuation.values().length];
-    int i = 0;
+    TreeMap<String, Void> javascriptPunctuation = new TreeMap<String, Void>();
     for (Punctuation p : Punctuation.values()) {
-      javascriptPunctuation[i++] = p.toString();
+      javascriptPunctuation.put(p.toString(), null);
     }
-    JAVASCRIPT_PUNCTUATOR = new PunctuationTrie(javascriptPunctuation);
-  }
-
-  public JsLexer(Reader r, InputSource source) {
-    this(r, source, false);
-  }
-
-  public JsLexer(Reader r, InputSource source, boolean isQuasiliteral) {
-    this(CharProducer.Factory.create(r, source), isQuasiliteral);
-  }
-
-  public JsLexer(Reader r, FilePosition pos) {
-    this(r, pos, false);
-  }
-
-  public JsLexer(Reader r, FilePosition pos, boolean isQuasiliteral) {
-    this(CharProducer.Factory.create(r, pos), isQuasiliteral);
+    JAVASCRIPT_PUNCTUATOR = new PunctuationTrie<Void>(javascriptPunctuation);
   }
 
   public JsLexer(CharProducer producer) {
@@ -221,7 +204,7 @@ public class JsLexer implements TokenStream<JsTokenType> {
     }
   }
 
-  public static PunctuationTrie getPunctuationTrie() {
+  public static PunctuationTrie<?> getPunctuationTrie() {
     return JAVASCRIPT_PUNCTUATOR;
   }
 }

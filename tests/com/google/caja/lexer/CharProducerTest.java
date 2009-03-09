@@ -14,12 +14,15 @@
 
 package com.google.caja.lexer;
 
+import com.google.caja.util.Pair;
 import com.google.caja.util.TestUtil;
 
-import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URI;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -45,12 +48,12 @@ public final class CharProducerTest extends TestCase {
         "The quick brown fox\njumps over\nthe lazy dog\n",
       // 0         1          2         3         4
       // 01234567890123456789 01234567890 1234567890123 4
-        ss(0,  FilePosition.instance(src, 1, 1, 1)),
-        ss(3,  FilePosition.instance(src, 1, 4, 4)),
-        ss(19, FilePosition.instance(src, 1, 20, 20)),
-        ss(20, FilePosition.instance(src, 2, 21, 1)),
-        ss(43, FilePosition.instance(src, 3, 44, 13)),
-        ss(44, FilePosition.instance(src, 4, 45, 1))
+        ss(0,  "testinput1.txt:1+1@1"),
+        ss(3,  "testinput1.txt:1+4@4"),
+        ss(19, "testinput1.txt:1+20@20"),
+        ss(20, "testinput1.txt:2+1@21"),
+        ss(43, "testinput1.txt:3+13@44"),
+        ss(44, "testinput1.txt:4+1@45")
         );
   }
 
@@ -61,26 +64,22 @@ public final class CharProducerTest extends TestCase {
     // 0123456789012345678901234 5 67890123456789012 3 4567890123456789012345
 
     testProducer(
-        charProducerFromString(s),
+        fromString(s),
         s,
-        ss(0,  FilePosition.instance(STRING_SOURCE, 1, 1, 1)),
-        ss(24, FilePosition.instance(STRING_SOURCE, 1, 25, 25)),
-        ss(25, FilePosition.instance(STRING_SOURCE, 2, 26, 1)),
-        ss(26, FilePosition.instance(STRING_SOURCE, 3, 27, 1)),
-        ss(42, FilePosition.instance(STRING_SOURCE, 3, 43, 17)),
-        ss(43, FilePosition.instance(STRING_SOURCE, 4, 44, 1)),
-        ss(44, FilePosition.instance(STRING_SOURCE, 4, 45, 1)),
-        ss(65, FilePosition.instance(STRING_SOURCE, 4, 66, 22))
+        ss(0,  "CharProducerTest.java:1+1@1"),
+        ss(24, "CharProducerTest.java:1+25@25"),
+        ss(25, "CharProducerTest.java:2+1@26"),
+        ss(26, "CharProducerTest.java:3+1@27"),
+        ss(42, "CharProducerTest.java:3+17@43"),
+        ss(43, "CharProducerTest.java:3+18@44"),
+        ss(44, "CharProducerTest.java:4+1@45"),
+        ss(65, "CharProducerTest.java:4+22@66")
     );
 
-    testProducer(charProducerFromString(""), "");
+    testProducer(fromString(""), "");
   }
 
   public void testChaining() throws Exception {
-    InputSource src1 = new InputSource(
-        TestUtil.getResource(CharProducerTest.class, "testinput1.txt"));
-    InputSource src2 = STRING_SOURCE;
-
     String input2 =
       "but was shocked to learn\n\rthe lazy dog had\r\na fox-seeking missle.";
     // 0         1         2           3         4           5         6
@@ -89,7 +88,7 @@ public final class CharProducerTest extends TestCase {
 
     CharProducer prod1 = TestUtil.getResourceAsProducer(
         CharProducerTest.class, "testinput1.txt");
-    CharProducer prod2 = CharProducer.Factory.create(r, src2);
+    CharProducer prod2 = CharProducer.Factory.create(r, STRING_SOURCE);
 
     String golden1 = "The quick brown fox\njumps over\nthe lazy dog\n",
            golden2 = input2;
@@ -100,19 +99,19 @@ public final class CharProducerTest extends TestCase {
     testProducer(
         chained,
         chainedGolden,
-        ss(0,  FilePosition.instance(src1, 1, 1, 1)),
-        ss(3,  FilePosition.instance(src1, 1, 4, 4)),
-        ss(19, FilePosition.instance(src1, 1, 20, 20)),
-        ss(20, FilePosition.instance(src1, 2, 21, 1)),
-        ss(43, FilePosition.instance(src1, 3, 44, 13)),
-        ss(44, FilePosition.instance(src1, 4, 45, 1)),
-        ss(44 + 24, FilePosition.instance(src2, 1, 25, 25)),
-        ss(44 + 25, FilePosition.instance(src2, 2, 26, 1)),
-        ss(44 + 26, FilePosition.instance(src2, 3, 27, 1)),
-        ss(44 + 42, FilePosition.instance(src2, 3, 43, 17)),
-        ss(44 + 43, FilePosition.instance(src2, 4, 44, 1)),
-        ss(44 + 44, FilePosition.instance(src2, 4, 45, 1)),
-        ss(44 + 65, FilePosition.instance(src2, 4, 66, 22))
+        ss(0,  "testinput1.txt:1+1@1"),
+        ss(3,  "testinput1.txt:1+4@4"),
+        ss(19, "testinput1.txt:1+20@20"),
+        ss(20, "testinput1.txt:2+1@21"),
+        ss(43, "testinput1.txt:3+13@44"),
+        ss(44, "testinput1.txt:4+1@45"),
+        ss(44 + 24, "CharProducerTest.java:1+25@25"),
+        ss(44 + 25, "CharProducerTest.java:2+1@26"),
+        ss(44 + 26, "CharProducerTest.java:3+1@27"),
+        ss(44 + 42, "CharProducerTest.java:3+17@43"),
+        ss(44 + 43, "CharProducerTest.java:3+18@44"),
+        ss(44 + 44, "CharProducerTest.java:4+1@45"),
+        ss(44 + 65, "CharProducerTest.java:4+22@66")
         );
   }
 
@@ -126,370 +125,292 @@ public final class CharProducerTest extends TestCase {
     // 0         1          2         3           4
     // 01234567890123456789 01234567890 1 2345678901234 5
     testProducer(
-        CharProducer.Factory.fromJsString(charProducerFromString(js)),
+        CharProducer.Factory.fromJsString(fromString(js)),
         golden,
-        ss(0, FilePosition.startOfFile(STRING_SOURCE))
+        ss(0, "CharProducerTest.java:1+1@1")
     );
 
     // test interrupted escapes and escapes at end of file handled gracefully
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\\\u000a")),
+        CharProducer.Factory.fromJsString(fromString("\\\\u000a")),
         "\\u000a");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\u00ziggy")),
+        CharProducer.Factory.fromJsString(fromString("\\u00ziggy")),
         "u00ziggy");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\u\\u000a")),
+        CharProducer.Factory.fromJsString(fromString("\\u\\u000a")),
         "u\n");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\u0\\u000a")),
+        CharProducer.Factory.fromJsString(fromString("\\u0\\u000a")),
         "u0\n");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\u00\\u000a")),
+        CharProducer.Factory.fromJsString(fromString("\\u00\\u000a")),
         "u00\n");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\u0")),
+        CharProducer.Factory.fromJsString(fromString("\\u0")),
         "u0");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\u000")),
+        CharProducer.Factory.fromJsString(fromString("\\u000")),
         "u000");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\u")),
+        CharProducer.Factory.fromJsString(fromString("\\u")),
         "u");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\uffff")),
+        CharProducer.Factory.fromJsString(fromString("\\uffff")),
         "\uffff");
 
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\")),
-        "");
+        CharProducer.Factory.fromJsString(fromString("\\")),
+        "\\");
 
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\\\x0a")),
+        CharProducer.Factory.fromJsString(fromString("\\\\x0a")),
         "\\x0a");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\x0ziggy")),
+        CharProducer.Factory.fromJsString(fromString("\\x0ziggy")),
         "x0ziggy");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\x\\u000a")),
+        CharProducer.Factory.fromJsString(fromString("\\x\\u000a")),
         "x\n");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\x0\\u000a")),
+        CharProducer.Factory.fromJsString(fromString("\\x0\\u000a")),
         "x0\n");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\s0")),
+        CharProducer.Factory.fromJsString(fromString("\\s0")),
         "s0");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\x")),
+        CharProducer.Factory.fromJsString(fromString("\\x")),
         "x");
 
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\0")),
+        CharProducer.Factory.fromJsString(fromString("\\0")),
         "\0");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\11")),
+        CharProducer.Factory.fromJsString(fromString("\\11")),
         "\t");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\011")),
+        CharProducer.Factory.fromJsString(fromString("\\011")),
         "\t");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\009")),
+        CharProducer.Factory.fromJsString(fromString("\\009")),
         "\0009");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\09")),
+        CharProducer.Factory.fromJsString(fromString("\\09")),
         "\0009");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\9")),
+        CharProducer.Factory.fromJsString(fromString("\\9")),
         "9");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\00")),
+        CharProducer.Factory.fromJsString(fromString("\\00")),
         "\0");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\000")),
+        CharProducer.Factory.fromJsString(fromString("\\000")),
         "\0");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\0000")),
+        CharProducer.Factory.fromJsString(fromString("\\0000")),
         "\u0000" + "0");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\37")),
+        CharProducer.Factory.fromJsString(fromString("\\37")),
         "\037");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\037")),
+        CharProducer.Factory.fromJsString(fromString("\\037")),
         "\037");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\040")),
+        CharProducer.Factory.fromJsString(fromString("\\040")),
         " ");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\40")),
+        CharProducer.Factory.fromJsString(fromString("\\40")),
         " ");
     testProducer(
-        CharProducer.Factory.fromJsString(
-        charProducerFromString("\\400")),
+        CharProducer.Factory.fromJsString(fromString("\\400")),
         " 0");
     testProducer(
-        CharProducer.Factory.fromJsString(
-            charProducerFromString("\\380")),
-            "\003" + "80");
+        CharProducer.Factory.fromJsString(fromString("\\380")),
+        "\003" + "80");
 
     // test the special escapes
     testProducer(
-        CharProducer.Factory.fromJsString(
-            charProducerFromString("\\n")),
-            "\n");
+        CharProducer.Factory.fromJsString(fromString("\\n")),
+        "\n");
     testProducer(
-        CharProducer.Factory.fromJsString(
-            charProducerFromString("\\r")),
-            "\r");
+        CharProducer.Factory.fromJsString(fromString("\\r")),
+        "\r");
     testProducer(
-        CharProducer.Factory.fromJsString(
-            charProducerFromString("\\r\\n")),
-            "\r\n");
+        CharProducer.Factory.fromJsString(fromString("\\r\\n")),
+        "\r\n");
     testProducer(
-        CharProducer.Factory.fromJsString(
-            charProducerFromString("\\t")),
-            "\t");
+        CharProducer.Factory.fromJsString(fromString("\\t")),
+        "\t");
     testProducer(
-        CharProducer.Factory.fromJsString(
-            charProducerFromString("\\b")),
-            "\b");
+        CharProducer.Factory.fromJsString(fromString("\\b")),
+        "\b");
     testProducer(
-        CharProducer.Factory.fromJsString(
-            charProducerFromString("\\f")),
-            "\f");
+        CharProducer.Factory.fromJsString(fromString("\\f")),
+        "\f");
     testProducer(
-        CharProducer.Factory.fromJsString(
-            charProducerFromString("\\v")),
-            "\013");
+        CharProducer.Factory.fromJsString(fromString("\\v")),
+        "\013");
   }
 
-  private static CharProducer charProducerFromString(String js) {
-    Reader r = new StringReader(js);
-    return CharProducer.Factory.create(r, STRING_SOURCE);
+  private static CharProducer fromString(String js) {
+    return CharProducer.Factory.create(new StringReader(js), STRING_SOURCE);
   }
 
   public void testHtmlUnEscaping() throws Exception {
-    String js =
+    String html =
       "The quick&nbsp;brown fox&#xa;jumps over&#xd;&#10;the lazy dog&#x000a;";
-    // 0          1         2          3           4          5
-    // 0123456789 012345678901234 5678901 2345678 90 12345678901234 56
+    //          1         2         3         4         5         6
+    // 123456789012345678901234567890123456789012345678901234567890123456789
     String golden =
       "The quick\u00a0brown fox\njumps over\r\nthe lazy dog\n";
-    // 0         1          2         3           4
-    // 01234567890123456789 01234567890 1 2345678901234 5
+    // 0              1          2         3           4
+    // 0123456789     0123456789 01234567890 1 234567890123
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(charProducerFromString(js)),
+        CharProducer.Factory.fromHtmlAttribute(fromString(html)),
         golden,
-        ss(0, FilePosition.startOfFile(STRING_SOURCE))
+        ss(0, "CharProducerTest.java:1+1@1"),
+        ss(10, "CharProducerTest.java:1+16@16"),  // The 'b' in "brown"
+        ss(20, "CharProducerTest.java:1+30@30"),  // The 'j' in "jumps"
+        ss(30, "CharProducerTest.java:1+40@40"),  // The CR before "the lazy"
+        ss(40, "CharProducerTest.java:1+58@58")   // The space before "dog"
     );
 
     // test interrupted escapes and escapes at end of file handled gracefully
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("\\\\u000a")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("\\\\u000a")),
         "\\\\u000a");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#x000a;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#x000a;")),
         "\n");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#x00a;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#x00a;")),
         "\n");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#x0a;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#x0a;")),
         "\n");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#xa;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#xa;")),
         "\n");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#xa")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#xa")),
         "&#xa");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#x00ziggy")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#x00ziggy")),
         "&#x00ziggy");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#xa00z;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#xa00z;")),
         "&#xa00z;");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#&#x000a;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#&#x000a;")),
         "&#\n");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#x&#x000a;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#x&#x000a;")),
         "&#x\n");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#xa&#x000a;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#xa&#x000a;")),
         "&#xa\n");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#&#xa;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#&#xa;")),
         "&#\n");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#x")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#x")),
         "&#x");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#x0")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#x0")),
         "&#x0");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#")),
         "&#");
 
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("\\")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("\\")),
         "\\");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&")),
         "&");
 
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#000a;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#000a;")),
         "&#000a;");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#10;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#10;")),
         "\n");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#010;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#010;")),
         "\n");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#0010;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#0010;")),
         "\n");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#9;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#9;")),
         "\t");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#10")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#10")),
         "&#10");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#00ziggy")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#00ziggy")),
         "&#00ziggy");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#&#010;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#&#010;")),
         "&#\n");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#0&#010;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#0&#010;")),
         "&#0\n");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#01&#10;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#01&#10;")),
         "&#01\n");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#&#10;")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#&#10;")),
         "&#\n");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#1")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#1")),
         "&#1");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-        charProducerFromString("&#10")),
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#10")),
         "&#10");
 
     // test the named escapes
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-            charProducerFromString("&lt;")),
-            "<");
+        CharProducer.Factory.fromHtmlAttribute(fromString("&lt;")),
+        "<");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-            charProducerFromString("&gt;")),
-            ">");
+        CharProducer.Factory.fromHtmlAttribute(fromString("&gt;")),
+        ">");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-            charProducerFromString("&quot;")),
-            "\"");
+        CharProducer.Factory.fromHtmlAttribute(fromString("&quot;")),
+        "\"");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-            charProducerFromString("&apos;")),
-            "'");
+        CharProducer.Factory.fromHtmlAttribute(fromString("&apos;")),
+        "'");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-            charProducerFromString("&amp;")),
-            "&");
+        CharProducer.Factory.fromHtmlAttribute(fromString("&amp;")),
+        "&");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-            charProducerFromString("&amp;lt;")),
-            "&lt;");
+        CharProducer.Factory.fromHtmlAttribute(fromString("&amp;lt;")),
+        "&lt;");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-            charProducerFromString("&AMP;")),
-            "&");
+        CharProducer.Factory.fromHtmlAttribute(fromString("&AMP;")),
+        "&");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-            charProducerFromString("&AMP")),
-            "&AMP");
+        CharProducer.Factory.fromHtmlAttribute(fromString("&AMP")),
+        "&AMP");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-            charProducerFromString("&AmP;")),
-            "&");
+        CharProducer.Factory.fromHtmlAttribute(fromString("&AmP;")),
+        "&");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-            charProducerFromString("&Alpha;")),
-            ""+Character.valueOf('\u0391'));
+        CharProducer.Factory.fromHtmlAttribute(fromString("&Alpha;")),
+        "\u0391");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-            charProducerFromString("&alpha;")),
-            ""+Character.valueOf('\u03b1'));
+        CharProducer.Factory.fromHtmlAttribute(fromString("&alpha;")),
+        "\u03b1");
 
 
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-            charProducerFromString("&;")),
-            "&;");
+        CharProducer.Factory.fromHtmlAttribute(fromString("&;")),
+        "&;");
     testProducer(
-        CharProducer.Factory.fromHtmlAttribute(
-            charProducerFromString("&bogus;")),
-            "&bogus;");
+        CharProducer.Factory.fromHtmlAttribute(fromString("&bogus;")),
+        "&bogus;");
   }
 
   public void testChainingAndUnescaping() throws Exception {
@@ -502,7 +423,7 @@ public final class CharProducerTest extends TestCase {
     Reader r2 = new StringReader(", now);");
 
     CharProducer prod1 = CharProducer.Factory.create(
-        r1, FilePosition.instance(src, 1, 1, 1)),
+        r1, FilePosition.startOfFile(src)),
                  prod2 = CharProducer.Factory.create(
         r2, FilePosition.instance(src, 2, 30, 1));
 
@@ -514,22 +435,22 @@ public final class CharProducerTest extends TestCase {
     testProducer(
         chained,
         golden,
-        ss(0, FilePosition.instance(src, 1, 1, 1)),
-        ss(1, FilePosition.instance(src, 1, 2, 2)),
-        ss(2, FilePosition.instance(src, 1, 3, 3)),
-        ss(3, FilePosition.instance(src, 1, 4, 4)),
-        ss(4, FilePosition.instance(src, 1, 5, 5)),
-        ss(5, FilePosition.instance(src, 1, 6, 6)),
-        ss(6, FilePosition.instance(src, 1, 7, 7)),
-        ss(7, FilePosition.instance(src, 1, 8, 8)),
-        ss(8, FilePosition.instance(src, 1, 9, 9)),
-        ss(9, FilePosition.instance(src, 2, 31, 2)),
-        ss(10, FilePosition.instance(src, 2, 32, 3)),
-        ss(11, FilePosition.instance(src, 2, 33, 4)),
-        ss(12, FilePosition.instance(src, 2, 34, 5)),
-        ss(13, FilePosition.instance(src, 2, 35, 6)),
-        ss(14, FilePosition.instance(src, 2, 36, 7)),
-        ss(15, FilePosition.instance(src, 2, 37, 8))
+        ss(0, "CharProducerTest.java:1+1@1"),
+        ss(1, "CharProducerTest.java:1+2@2"),
+        ss(2, "CharProducerTest.java:1+3@3"),
+        ss(3, "CharProducerTest.java:1+4@4"),
+        ss(4, "CharProducerTest.java:1+5@5"),
+        ss(5, "CharProducerTest.java:1+6@6"),
+        ss(6, "CharProducerTest.java:1+7@7"),
+        ss(7, "CharProducerTest.java:1+8@8"),
+        ss(8, "CharProducerTest.java:1+9@9"),
+        ss(9, "CharProducerTest.java:2+2@31"),
+        ss(10, "CharProducerTest.java:2+3@32"),
+        ss(11, "CharProducerTest.java:2+4@33"),
+        ss(12, "CharProducerTest.java:2+5@34"),
+        ss(13, "CharProducerTest.java:2+6@35"),
+        ss(14, "CharProducerTest.java:2+7@36"),
+        ss(15, "CharProducerTest.java:2+8@37")
         );
   }
 
@@ -541,32 +462,42 @@ public final class CharProducerTest extends TestCase {
    * @param positions s.t. positions[k+1].charsRead > positions[k].charsRead.
    */
   private static void testProducer(
-      CharProducer p, String golden, StreamState... positions)
-      throws IOException {
-    try {
-      int k = 0;
-      StringBuilder sb = new StringBuilder();
-      while (true) {
-        if (k < positions.length && sb.length() == positions[k].charsRead) {
-          FilePosition pos = p.getCurrentPosition();
-          assertEquals(
-              "Read so far [" + sb + "] : ["
-              + golden.substring(0, Math.min(sb.length(), golden.length()))
-              + "]",
-              positions[k++].pos, pos);
-        }
-        int ch = p.read();
-        if (ch < 0) { break; }
-        sb.append((char) ch);
+      CharProducer p, String golden, StreamState... positions) {
+    List<Pair<String, FilePosition>> actualPositions
+        = new ArrayList<Pair<String, FilePosition>>();
+    StringBuilder sb = new StringBuilder();
+    char[] buf = p.getBuffer();
+    for (int k = p.getOffset(); ; p.consume(1)) {
+      int offset = p.getOffset();
+      if (k < positions.length && sb.length() == positions[k].charsRead) {
+        FilePosition pos = p.getSourceBreaks(offset).toFilePosition(
+            p.getCharInFile(offset));
+        actualPositions.add(Pair.pair(sb.toString(), pos));
+        ++k;
       }
-      String actual = sb.toString();
-      assertEquals(
-          "golden:[" + escape(golden) + "]\nactual:[" + escape(actual) + "]",
-          golden, actual);
-      assertEquals(positions.length, k);
-    } finally {
-      p.close();
+      if (offset != p.getLimit()) {
+        sb.append(buf[p.getOffset()]);
+      } else {
+        break;
+      }
     }
+
+    String actual = sb.toString();
+    assertEquals(
+        "golden:[" + escape(golden) + "]\nactual:[" + escape(actual) + "]",
+        golden, actual);
+
+    for (int k = 0; k < Math.min(positions.length, actualPositions.size()); ++k) {
+      Pair<String, FilePosition> actualPos = actualPositions.get(k);
+      String posStr = actualPos.b.toString();
+      assertEquals(
+          "Read so far [" + actualPos.a + "] : ["
+          + golden.substring(
+              0, Math.min(actualPos.a.length(), golden.length()))
+          + "]",
+          positions[k].pos, posStr);
+    }
+    assertEquals(positions.length, actualPositions.size());
   }
 
   private static final Pattern ESCAPED =
@@ -587,15 +518,15 @@ public final class CharProducerTest extends TestCase {
     return m.appendTail(sb).toString();
   }
 
-  private static StreamState ss(int charsRead, FilePosition p) {
+  private static StreamState ss(int charsRead, String p) {
     return new StreamState(charsRead, p);
   }
 
   static class StreamState {
     final int charsRead;
-    final FilePosition pos;
+    final String pos;
 
-    StreamState(int charsRead, FilePosition pos) {
+    StreamState(int charsRead, String pos) {
       this.charsRead = charsRead;
       this.pos = pos;
     }

@@ -333,10 +333,10 @@ public class EscapingTest extends TestCase {
     assertStringsEqual(
         (// all ctrl chars escaped
          "&#0;&#1;&#2;&#3;&#4;&#5;&#6;&#7;"
-         + "&#8;\t\n&#xB;&#xC;\r\016\017"
-         + "\020\021\022\023\024\025\026\027"
-         + "\030\031\032\033\034\035\036\037"
-         + " !&quot;#$%&amp;&#39;()*+,-./"
+         + "&#8;\t\n&#11;&#12;\r&#14;&#15;"
+         + "&#16;&#17;&#18;&#19;&#20;&#21;&#22;&#23;"
+         + "&#24;&#25;&#26;&#27;&#28;&#29;&#30;&#31;"
+         + " !&#34;#$%&amp;&#39;()*+,-./"
          + "0123456789:;&lt;=&gt;?"
          + "@ABCDEFGHIJKLMNO"
          + "PQRSTUVWXYZ[\\]^_"
@@ -346,6 +346,30 @@ public class EscapingTest extends TestCase {
          + "\u200e\u200f\u2010\u2028\u2029"
          + "\ud834\udd20"
          + "\ud834\udd77"
+         ),
+        sb.toString());
+  }
+
+  public void testEscapeXmlAsciiOnly() throws Exception {
+    StringBuilder sb = new StringBuilder();
+    Escaping.escapeXml(CHARS, true, sb);
+    assertStringsEqual(
+        (// all ctrl chars escaped
+         "&#0;&#1;&#2;&#3;&#4;&#5;&#6;&#7;"
+         + "&#8;\t\n&#11;&#12;\r&#14;&#15;"
+         + "&#16;&#17;&#18;&#19;&#20;&#21;&#22;&#23;"
+         + "&#24;&#25;&#26;&#27;&#28;&#29;&#30;&#31;"
+         + " !&#34;#$%&amp;&#39;()*+,-./"
+         + "0123456789:;&lt;=&gt;?"
+         + "@ABCDEFGHIJKLMNO"
+         + "PQRSTUVWXYZ[\\]^_"
+         + "&#96;abcdefghijklmno"
+         + "pqrstuvwxyz{|}~&#127;"
+         + "&#128;&#129;&#130;&#131;&#132;"
+         + "&#8206;&#8207;&#8208;&#8232;&#8233;"
+         // Surrogate pairs are escaped by code-point, not code-unit.
+         + "&#119072;"
+         + "&#119159;"
          ),
         sb.toString());
   }

@@ -260,6 +260,6 @@ public abstract class CajaTestCase extends TestCase {
   }
 
   private InputSource sourceOf(CharProducer cp) {
-    return cp.getCurrentPosition().source();
+    return cp.getSourceBreaks(0).source();
   }
 }

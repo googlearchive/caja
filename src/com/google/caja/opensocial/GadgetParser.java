@@ -132,8 +132,7 @@ public class GadgetParser {
                         pos.source(),
                         pos.startLineNo(),
                         pos.startCharInFile() + 9, pos.startCharInLine() + 9,
-                        pos.endLineNo(),
-                        pos.endCharInFile() - 3, pos.endCharInLine() - 3);
+                        pos.length() - 12);
                     chunks.add(CharProducer.Factory.create(
                         new StringReader(cdata), pos));
                   }
@@ -154,14 +153,15 @@ public class GadgetParser {
    *
    * @param output to which XML is written.
    */
-  public void render(GadgetSpec gadgetSpec, Appendable output) {
+  public void render(GadgetSpec gadgetSpec, Appendable output)
+      throws IOException {
     DomTree doc = toDocument(gadgetSpec);
     TokenConsumer tc = doc.makeRenderer(output, null);
     doc.render(new MarkupRenderContext(new MessageContext(), tc, true));
     tc.noMoreTokens();
   }
 
-  private DomTree toDocument(GadgetSpec gadgetSpec) {
+  private DomTree toDocument(GadgetSpec gadgetSpec) throws IOException {
     List<DomTree.Attrib> prefs = new ArrayList<DomTree.Attrib>();
     for (Map.Entry<String, String> e : gadgetSpec.getModulePrefs().entrySet()) {
       prefs.add(attrib(Name.xml(e.getKey()), e.getValue()));
@@ -218,13 +218,8 @@ public class GadgetParser {
   }
 
   private String drain(CharProducer cp) {
-    try {
-      StringBuilder sb = new StringBuilder();
-      for (int ch = 0; (ch = cp.read()) >= 0;) { sb.append((char) ch); }
-      return sb.toString();
-    } catch (IOException ex) {
-      throw new RuntimeException();
-    }
+    return String.valueOf(
+        cp.getBuffer(), cp.getOffset(), cp.getLimit() - cp.getOffset());
   }
 
   private static List<DomTree.Tag> getElementsByTagName(

@@ -161,11 +161,7 @@ public final class PluginCompilerMain {
 
     CharProducer cp = CharProducer.Factory.create(
         createReader(is, input.toURL().openStream()), is);
-    try {
-      return parseInput(is, cp, mq);
-    } finally {
-      cp.close();
-    }
+    return parseInput(is, cp, mq);
   }
 
   /** Classify an input by extension and use the appropriate parser. */

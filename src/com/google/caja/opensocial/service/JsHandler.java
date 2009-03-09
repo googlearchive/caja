@@ -66,7 +66,7 @@ public class JsHandler implements ContentHandler {
   }
 
   private void cajoleJs(URI inputUri, Reader cajaInput, Appendable output)
-      throws UnsupportedContentTypeException {
+      throws IOException, UnsupportedContentTypeException {
     InputSource is = new InputSource (inputUri);
     CharProducer cp = CharProducer.Factory.create(cajaInput,is);
     MessageQueue mq = new SimpleMessageQueue();

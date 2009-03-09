@@ -30,7 +30,6 @@ import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.Pair;
 
-import java.io.IOException;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -61,7 +60,6 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
   protected void tearDown() throws Exception {
     super.tearDown();
     meta = null;
-    pluginEnv.closeAll();
     pluginEnv = null;
   }
 
@@ -213,14 +211,6 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
     public String rewriteUri(ExternalReference uri, String mimeType) {
       return "http://proxy/?uri=" + encode(uri.getUri().toString())
           + "&mimeType=" + encode(mimeType);
-    }
-
-    private void closeAll() {
-      for (Pair<URI, CharProducer> e : filesToLoad) {
-        try {
-          e.b.close();
-        } catch (IOException ex) {}
-      }
     }
   }
 }

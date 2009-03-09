@@ -49,7 +49,7 @@ public final class CajoledModule extends AbstractParseTreeNode {
   public CajoledModule(FilePosition pos,
                        Void value,
                        List<? extends ObjectConstructor> children) {
-    this(children.get(0));
+    this(pos, children.get(0));
     assert children.size() == 1;
   }
 
@@ -67,10 +67,10 @@ public final class CajoledModule extends AbstractParseTreeNode {
   /**
    * Creates a CajoledModule.
    *
-   * @param body an object contructor representing the module.
+   * @param body an object constructor representing the module.
    */
   public CajoledModule(ObjectConstructor body) {
-    this(FilePosition.UNKNOWN, body);
+    this(body.getFilePosition(), body);
   }
 
   @Override
@@ -159,7 +159,7 @@ public final class CajoledModule extends AbstractParseTreeNode {
 
     // Open top level function call and object literal
     // Note that we deliberately add an enclosing block. See:
-    // http://code.google.com/p/google-caja/issues/detail?id=1000        
+    // http://code.google.com/p/google-caja/issues/detail?id=1000
     hout.append("{___.loadModule({\n");
 
     // Render the cajoled code
@@ -209,7 +209,7 @@ public final class CajoledModule extends AbstractParseTreeNode {
     // Close top level function call and object literal
     hout.append("});}\n");
   }
-  
+
   private static ParseTreeNode buildOriginalSourceNode(
       List<String> abbreviatedOriginalFileNames,
       List<List<String>> originalFileContents) {
@@ -253,9 +253,7 @@ public final class CajoledModule extends AbstractParseTreeNode {
   }
 
   private static ParseTreeNode stringToStringLiteral(String s) {
-    return new StringLiteral(
-        FilePosition.UNKNOWN,
-        StringLiteral.toQuotedValue(s));
+    return StringLiteral.valueOf(FilePosition.UNKNOWN, s);
   }
 
   private static String charSequenceToString(CharSequence cs) {

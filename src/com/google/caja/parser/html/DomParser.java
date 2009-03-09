@@ -30,6 +30,7 @@ import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Name;
 import com.google.caja.util.Strings;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -176,18 +177,22 @@ public final class DomParser {
   /**
    * Creates a TokenQueue suitable for this class's parse methods.
    * @param asXml true to parse as XML, false as HTML.
+   * @param in closed by this method.
+   * @throws IOException when in raises an exception during read.
    */
   public static TokenQueue<HtmlTokenType> makeTokenQueue(
-      InputSource is, Reader in, boolean asXml) {
+      InputSource is, Reader in, boolean asXml) throws IOException {
     return makeTokenQueue(FilePosition.startOfFile(is), in, asXml);
   }
   /**
    * Creates a TokenQueue suitable for this class's parse methods.
    * @param pos the position of the first character on in.
+   * @param in closed by this method.
    * @param asXml true to parse as XML, false as HTML.
+   * @throws IOException when in raises an exception during read.
    */
   public static TokenQueue<HtmlTokenType> makeTokenQueue(
-      FilePosition pos, Reader in, boolean asXml) {
+      FilePosition pos, Reader in, boolean asXml) throws IOException {
     CharProducer cp = CharProducer.Factory.create(in, pos);
     HtmlLexer lexer = new HtmlLexer(cp);
     lexer.setTreatedAsXml(asXml);

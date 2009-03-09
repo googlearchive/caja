@@ -20,6 +20,9 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Escaping of strings and regular expressions.
  *
@@ -346,30 +349,35 @@ public class Escaping {
       = REGEX_PARANOID_ESCAPES.plus(
             simpleEscapes("()[]{}*+?.^$|\\".toCharArray()));
 
-  // Escapes for XML special characters.
-  // From http://www.w3.org/TR/REC-xml/#charsets:
-  // Char   ::=   #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD]
-  //          |   [#x10000-#x10FFFF]
-  private static final EscapeMap XML_ESCAPES = new EscapeMap(
-      new Escape('\u0000', "&#0;"),
-      new Escape('\u0001', "&#1;"),
-      new Escape('\u0002', "&#2;"),
-      new Escape('\u0003', "&#3;"),
-      new Escape('\u0004', "&#4;"),
-      new Escape('\u0005', "&#5;"),
-      new Escape('\u0006', "&#6;"),
-      new Escape('\u0007', "&#7;"),
-      new Escape('\u0008', "&#8;"),
-      new Escape('\u000B', "&#xB;"),
-      new Escape('\u000C', "&#xC;"),
-      new Escape('&', "&amp;"),
-      new Escape('<', "&lt;"),
-      new Escape('>', "&gt;"),
-      new Escape('"', "&quot;"),
-      new Escape('\'', "&#" + ((int) '\'') + ";"),
-      new Escape('`', "&#" + ((int) '`') + ";")
-      );
-
+  /**
+   * Escapes for XML special characters.
+   * From http://www.w3.org/TR/REC-xml/#charsets:
+   * <pre>
+   * Char   ::=   #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD]
+   *          |   [#x10000-#x10FFFF]
+   * </pre>
+   */
+  private static final EscapeMap XML_ESCAPES;
+  static {
+    List<Escape> escapes = new ArrayList<Escape>();
+    for (int i = 0; i < 0x20; ++i) {
+      switch (i) {
+        // Only three control characters are allowed in XML text.
+        case '\t': case '\n': case '\r': break;
+        default: escapes.add(new Escape((char) i, "&#" + i + ";")); break;
+      }
+    }
+    escapes.add(new Escape('&', "&amp;"));
+    escapes.add(new Escape('<', "&lt;"));
+    escapes.add(new Escape('>', "&gt;"));
+    // &#34; is shorter than &quot;
+    escapes.add(new Escape('"', "&#" + ((int) '\"') + ";"));
+    // &#39; is shorter than &apos; and works in both HTML and XML.
+    escapes.add(new Escape('\'', "&#" + ((int) '\'') + ";"));
+    escapes.add(new Escape('`', "&#" + ((int) '`') + ";"));
+    escapes.add(new Escape((char) 0x7f, "&#x7f;"));
+    XML_ESCAPES = new EscapeMap(escapes.toArray(new Escape[escapes.size()]));
+  }
   private static final SparseBitSet CSS_IDENT_ESCAPES = SparseBitSet.withRanges(
      new int[] {
        0, 0x2D,  // 0x2D is '-'

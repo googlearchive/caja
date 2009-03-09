@@ -20,6 +20,7 @@ import com.google.caja.lexer.InputSource;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
 
@@ -39,9 +40,9 @@ public abstract class FileSystemEnvironment implements PluginEnvironment {
     if (f == null) { return null; }
     try {
       return CharProducer.Factory.create(
-          newReader(f), // new InputStreamReader(new FileInputStream(f), "UTF-8"),
+          newReader(f),
           new InputSource(f.toURI()));
-    } catch (FileNotFoundException ex) {
+    } catch (IOException ex) {
       return null;
     }
   }

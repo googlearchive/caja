@@ -14,12 +14,9 @@
 
 package com.google.caja.lexer;
 
-import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageType;
 import com.google.caja.util.Name;
 import com.google.caja.util.Strings;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -258,7 +255,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
   private boolean asXml = false;
 
   /** The source of html character data. */
-  private final LookaheadCharProducer p;
+  private final CharProducer p;
   /** True iff the current character is inside a tag. */
   private boolean inTag;
   /**
@@ -278,7 +275,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
   private HtmlTextEscapingMode textEscapingMode;
 
   public HtmlInputSplitter(CharProducer p) {
-    this.p = new LookaheadCharProducer(p, 2);
+    this.p = p;
   }
 
   /**
@@ -299,7 +296,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
    * Make sure that there is a token ready to yield in this.token.
    */
   @Override
-  protected Token<HtmlTokenType> produce() throws ParseException {
+  protected Token<HtmlTokenType> produce() {
     Token<HtmlTokenType> token = parseToken();
     if (null == token) { return null; }
 
@@ -402,357 +399,372 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
    *
    * <p>Later passes are responsible for throwing away useless tokens.
    */
-  private Token<HtmlTokenType> parseToken() throws ParseException {
+  private Token<HtmlTokenType> parseToken() {
     // TODO(mikesamuel): rewrite with a transition table or just use ANTLR
-    try {
-      FilePosition start = p.getCurrentPosition();
-      int ch = p.read();
-      if (ch < 0) { return null; }
+    if (p.isEmpty()) { return null; }
+    int start = p.getOffset();
+    int limit = p.getLimit();
+    char[] buffer = p.getBuffer();
 
-      HtmlTokenType type;
-      StringBuilder text = new StringBuilder(128);
-      text.append((char) ch);
-      if (inTag) {
-        if ('>' == ch) {
+    int end = start + 1;
+    HtmlTokenType type;
+
+    char ch = buffer[start];
+    if (inTag) {
+      if ('>' == ch) {
+        type = HtmlTokenType.TAGEND;
+        inTag = false;
+      } else if ('/' == ch) {
+        if (end != limit && '>' == buffer[end]) {
           type = HtmlTokenType.TAGEND;
           inTag = false;
-        } else if ('/' == ch) {
-          ch = p.read();
-          if ('>' == ch) {
-            type = HtmlTokenType.TAGEND;
-            text.append((char) ch);
-            inTag = false;
-          } else {
-            p.pushback();
-            type = HtmlTokenType.TEXT;
-          }
-        } else if ('=' == ch) {
-          type = HtmlTokenType.TEXT;
-        } else if ('"' == ch || '\'' == ch) {
-          type = HtmlTokenType.QSTRING;
-          int delim = ch;
-          while ((ch = p.read()) >= 0) {
-            text.append((char) ch);
-            if (delim == ch) { break; }
-          }
-        } else if (!Character.isWhitespace((char) ch)) {
-          type = HtmlTokenType.TEXT;
-          while ((ch = p.read()) >= 0) {
-            // End a text chunk before />
-            if ('/' == ch) {
-              p.pushback();
-              p.fetch(2);  // Make sure we have space for 2 lookahead.
-              if ('>' == p.peek(1)) {
-                break;
-              } else {
-                p.read();  // re-consume '/'
-              }
-            } else if ('>' == ch || '=' == ch
-                       || Character.isWhitespace((char) ch)) {
-              p.pushback();
-              break;
-            } else if ('"' == ch || '\'' == ch) {
-              p.pushback();
-              p.fetch(2);
-              int ch2 = p.peek(1);
-              if (ch2 >= 0 && Character.isWhitespace((char) ch2)
-                  || ch2 == '>' || ch2 == '/') {
-                text.append((char) ch);
-                p.consume(1);
-                break;
-              }
-              p.consume(1);
-            }
-            text.append((char) ch);
-          }
+          ++end;
         } else {
-          // We skip whitespace tokens inside tag bodies.
-          type = HtmlTokenType.IGNORABLE;
-          while ((ch = p.read()) >= 0) {
-            if (!Character.isWhitespace((char) ch)) {
-              p.pushback();
-              break;
+          type = HtmlTokenType.TEXT;
+        }
+      } else if ('=' == ch) {
+        type = HtmlTokenType.TEXT;
+      } else if ('"' == ch || '\'' == ch) {
+        type = HtmlTokenType.QSTRING;
+        int delim = ch;
+        for (; end < limit; ++end) {
+          if (buffer[end] == delim) {
+            ++end;
+            break;
+          }
+        }
+      } else if (!Character.isWhitespace(ch)) {
+        type = HtmlTokenType.TEXT;
+        for (; end < limit; ++end) {
+          ch = buffer[end];
+          // End a text chunk before />
+          if ('/' == ch && end + 1 < limit && '>' == buffer[end + 1]) {
+            break;
+          } else if ('>' == ch || '=' == ch
+                     || Character.isWhitespace(ch)) {
+            break;
+          } else if ('"' == ch || '\'' == ch) {
+            if (end + 1 < limit) {
+              char ch2 = buffer[end + 1];
+              if (ch2 >= 0 && Character.isWhitespace(ch2)
+                  || ch2 == '>' || ch2 == '/') {
+                ++end;
+                break;
+              }
             }
-            text.append((char) ch);
           }
         }
       } else {
-        if (ch == '<') {
-          ch = p.read();
-          if (ch < 0) {
-            type = HtmlTokenType.TEXT;
-          } else {
-            type = null;
-            State state = null;
-            switch (ch) {
-              case '/':  // close tag?
-                state = State.SLASH;
-                break;
-              case '!':  // Comment or declaration
-                if (!this.inEscapeExemptBlock) {
-                  state = State.BANG;
-                } else if (HtmlTextEscapingMode.allowsEscapingTextSpan(
-                               escapeExemptTagName)) {
-                  // Directives, and cdata suppressed in escape
-                  // exempt mode as they could obscure the close of the
-                  // escape exempty block, but comments are similar to escaping
-                  // text spans, and are significant in all CDATA and RCDATA
-                  // blocks except those inside <xmp> tags.
-                  // See "Escaping text spans" in section 8.1.2.6 of HTML5.
-                  // http://www.w3.org/html/wg/html5/#cdata-rcdata-restrictions
-                  state = State.UNESCAPED_LT_BANG;
-                } else {
-                  text.append((char) ch);
-                }
-                break;
-              case '?':
-                if (!this.inEscapeExemptBlock) {
-                  state = State.APP_DIRECTIVE;
-                } else {
-                  text.append((char) ch);
-                }
-                break;
-              case '%':
-                state = State.SERVER_CODE;
-                break;
-              default:
-                if (Character.isLetter(ch) && !this.inEscapeExemptBlock) {
-                  state = State.TAGNAME;
-                } else if ('<' == ch) {
-                  p.pushback();
-                  type = HtmlTokenType.TEXT;
-                } else {
-                  text.append((char) ch);
-                }
-                break;
-            }
-            if (null != state) {
-              text.append((char) ch);
-              charloop:
-              while ((ch = p.read()) >= 0) {
-                switch (state) {
-                  case TAGNAME:
-                    if (Character.isWhitespace((char) ch)
-                        || '>' == ch || '/' == ch || '<' == ch) {
-                      // End processing of an escape exempt block when we see
-                      // a corresponding end tag.
-                      p.pushback();
-                      if (this.inEscapeExemptBlock && '/' == text.charAt(1)
-                          && textEscapingMode != HtmlTextEscapingMode.PLAIN_TEXT
-                          && name(text.substring(2))
-                              .equals(escapeExemptTagName)) {
-                        this.inEscapeExemptBlock = false;
-                        this.escapeExemptTagName = null;
-                        this.textEscapingMode = null;
-                      }
-                      type = HtmlTokenType.TAGBEGIN;
-                      // Don't process content as attributes if we're inside
-                      // an escape exempt block.
-                      inTag = !this.inEscapeExemptBlock;
-                      state = State.DONE;
-                      break charloop;
-                    }
-                    break;
-                  case SLASH:
-                    if (Character.isLetter((char) ch)) {
-                      state = State.TAGNAME;
-                    } else {
-                      if ('<' == ch) {
-                        p.pushback();
-                        type = HtmlTokenType.TEXT;
-                      } else {
-                        text.append((char) ch);
-                      }
-                      break charloop;
-                    }
-                    break;
-                  case BANG:
-                    if ('[' == ch && asXml) {
-                      state = State.CDATA;
-                    } else if ('-' == ch) {
-                      state = State.BANG_DASH;
-                    } else {
-                      state = State.DIRECTIVE;
-                    }
-                    break;
-                  case CDATA:
-                    if (']' == ch) { state = State.CDATA_SQ_1; }
-                    break;
-                  case CDATA_SQ_1:
-                    if (']' == ch) {
-                      state = State.CDATA_SQ_2;
-                    } else {
-                      state = State.CDATA;
-                    }
-                    break;
-                  case CDATA_SQ_2:
-                    if ('>' == ch) {
-                      type = HtmlTokenType.CDATA;
-                      state = State.DONE;
-                    } else if (']' != ch) {
-                      state = State.CDATA;
-                    }
-                    break;
-                  case BANG_DASH:
-                    if ('-' == ch) {
-                      state = State.COMMENT;
-                    } else {
-                      state = State.DIRECTIVE;
-                    }
-                    break;
-                  case COMMENT:
-                    if ('-' == ch) {
-                      state = State.COMMENT_DASH;
-                    }
-                    break;
-                  case COMMENT_DASH:
-                    state = ('-' == ch)
-                        ? State.COMMENT_DASH_DASH
-                        : State.COMMENT_DASH;
-                    break;
-                  case COMMENT_DASH_DASH:
-                    if ('>' == ch) {
-                      state = State.DONE;
-                      type = HtmlTokenType.COMMENT;
-                    } else if ('-' == ch) {
-                      state = State.COMMENT_DASH_DASH;
-                    } else {
-                      state = State.COMMENT_DASH;
-                    }
-                    break;
-                  case DIRECTIVE:
-                    if ('>' == ch) {
-                      type = HtmlTokenType.DIRECTIVE;
-                      state = State.DONE;
-                    }
-                    break;
-                  case APP_DIRECTIVE:
-                    if ('?' == ch) { state = State.APP_DIRECTIVE_QMARK; }
-                    break;
-                  case APP_DIRECTIVE_QMARK:
-                    if ('>' == ch) {
-                      type = HtmlTokenType.DIRECTIVE;
-                      state = State.DONE;
-                    } else if ('?' != ch) {
-                      state = State.APP_DIRECTIVE;
-                    }
-                    break;
-                  case SERVER_CODE:
-                    if ('%' == ch) {
-                      state = State.SERVER_CODE_PCT;
-                    }
-                    break;
-                  case SERVER_CODE_PCT:
-                    if ('>' == ch) {
-                      type = HtmlTokenType.SERVERCODE;
-                      state = State.DONE;
-                    } else if ('%' != ch) {
-                      state = State.SERVER_CODE;
-                    }
-                    break;
-                  case UNESCAPED_LT_BANG:
-                    if ('-' == ch) {
-                      state = State.UNESCAPED_LT_BANG_DASH;
-                    } else {
-                      type = HtmlTokenType.TEXT;
-                      state = State.DONE;
-                    }
-                    break;
-                  case UNESCAPED_LT_BANG_DASH:
-                    if ('-' == ch) {
-                      // According to HTML 5 section 8.1.2.6
-
-                      // An escaping text span start may share its
-                      // U+002D HYPHEN-MINUS characters with its
-                      // corresponding escaping text span end.
-                      state = State.ESCAPING_TEXT_SPAN_DASH_DASH;
-                    } else {
-                      type = HtmlTokenType.TEXT;
-                      state = State.DONE;
-                    }
-                    break;
-                  case ESCAPING_TEXT_SPAN:
-                    if ('-' == ch) {
-                      state = State.ESCAPING_TEXT_SPAN_DASH;
-                    }
-                    break;
-                  case ESCAPING_TEXT_SPAN_DASH:
-                    if ('-' == ch) {
-                      state = State.ESCAPING_TEXT_SPAN_DASH_DASH;
-                    } else {
-                      state = State.ESCAPING_TEXT_SPAN;
-                    }
-                    break;
-                  case ESCAPING_TEXT_SPAN_DASH_DASH:
-                    if ('>' == ch) {
-                      type = HtmlTokenType.TEXT;
-                      state = State.DONE;
-                    } else if ('-' != ch) {
-                      state = State.ESCAPING_TEXT_SPAN;
-                    }
-                    break;
-                  case DONE:
-                    throw new AssertionError();
-                }
-                text.append((char) ch);
-                if (State.DONE == state) { break; }
+        // We skip whitespace tokens inside tag bodies.
+        type = HtmlTokenType.IGNORABLE;
+        while (end < limit && Character.isWhitespace(buffer[end])) {
+          ++end;
+        }
+      }
+    } else {
+      if (ch == '<') {
+        if (p.isEmpty()) {
+          type = HtmlTokenType.TEXT;
+        } else {
+          ch = buffer[end];
+          type = null;
+          State state = null;
+          switch (ch) {
+            case '/':  // close tag?
+              state = State.SLASH;
+              ++end;
+              break;
+            case '!':  // Comment or declaration
+              if (!this.inEscapeExemptBlock) {
+                state = State.BANG;
+              } else if (HtmlTextEscapingMode.allowsEscapingTextSpan(
+                             escapeExemptTagName)) {
+                // Directives, and cdata suppressed in escape
+                // exempt mode as they could obscure the close of the
+                // escape exempty block, but comments are similar to escaping
+                // text spans, and are significant in all CDATA and RCDATA
+                // blocks except those inside <xmp> tags.
+                // See "Escaping text spans" in section 8.1.2.6 of HTML5.
+                // http://www.w3.org/html/wg/html5/#cdata-rcdata-restrictions
+                state = State.UNESCAPED_LT_BANG;
               }
-              if (ch < 0) {
-                switch (state) {
-                  case DONE:
-                    break;
-                  case CDATA:
-                  case CDATA_SQ_1:
-                  case CDATA_SQ_2:
-                    type = HtmlTokenType.CDATA;
-                    break;
-                  case COMMENT:
-                  case COMMENT_DASH:
-                  case COMMENT_DASH_DASH:
-                    type = HtmlTokenType.COMMENT;
-                    break;
-                  case DIRECTIVE:
-                  case APP_DIRECTIVE:
-                  case APP_DIRECTIVE_QMARK:
-                    type = HtmlTokenType.DIRECTIVE;
-                    break;
-                  case SERVER_CODE:
-                  case SERVER_CODE_PCT:
-                    type = HtmlTokenType.SERVERCODE;
-                    break;
-                  case TAGNAME:
+              ++end;
+              break;
+            case '?':
+              if (!this.inEscapeExemptBlock) {
+                state = State.APP_DIRECTIVE;
+              }
+              ++end;
+              break;
+            case '%':
+              state = State.SERVER_CODE;
+              ++end;
+              break;
+            default:
+              if (isIdentStart(ch) && !this.inEscapeExemptBlock) {
+                state = State.TAGNAME;
+                ++end;
+              } else if ('<' == ch) {
+                type = HtmlTokenType.TEXT;
+              } else {
+                ++end;
+              }
+              break;
+          }
+          if (null != state) {
+            charloop:
+            while (end < limit) {
+              ch = buffer[end];
+              switch (state) {
+                case TAGNAME:
+                  if (Character.isWhitespace(ch)
+                      || '>' == ch || '/' == ch || '<' == ch) {
+                    // End processing of an escape exempt block when we see
+                    // a corresponding end tag.
+                    if (this.inEscapeExemptBlock && '/' == buffer[start + 1]
+                        && textEscapingMode != HtmlTextEscapingMode.PLAIN_TEXT
+                        && name(buffer, start + 2, end)
+                            .equals(escapeExemptTagName)) {
+                      this.inEscapeExemptBlock = false;
+                      this.escapeExemptTagName = null;
+                      this.textEscapingMode = null;
+                    }
                     type = HtmlTokenType.TAGBEGIN;
-                    break;
-                  default:
+                    // Don't process content as attributes if we're inside
+                    // an escape exempt block.
+                    inTag = !this.inEscapeExemptBlock;
+                    state = State.DONE;
+                    break charloop;
+                  }
+                  break;
+                case SLASH:
+                  if (Character.isLetter(ch)) {
+                    state = State.TAGNAME;
+                  } else {
+                    if ('<' == ch) {
+                      type = HtmlTokenType.TEXT;
+                    } else {
+                      ++end;
+                    }
+                    break charloop;
+                  }
+                  break;
+                case BANG:
+                  if ('[' == ch && asXml) {
+                    state = State.CDATA;
+                  } else if ('-' == ch) {
+                    state = State.BANG_DASH;
+                  } else {
+                    state = State.DIRECTIVE;
+                  }
+                  break;
+                case CDATA:
+                  if (']' == ch) { state = State.CDATA_SQ_1; }
+                  break;
+                case CDATA_SQ_1:
+                  if (']' == ch) {
+                    state = State.CDATA_SQ_2;
+                  } else {
+                    state = State.CDATA;
+                  }
+                  break;
+                case CDATA_SQ_2:
+                  if ('>' == ch) {
+                    type = HtmlTokenType.CDATA;
+                    state = State.DONE;
+                  } else if (']' != ch) {
+                    state = State.CDATA;
+                  }
+                  break;
+                case BANG_DASH:
+                  if ('-' == ch) {
+                    state = State.COMMENT;
+                  } else {
+                    state = State.DIRECTIVE;
+                  }
+                  break;
+                case COMMENT:
+                  if ('-' == ch) {
+                    state = State.COMMENT_DASH;
+                  }
+                  break;
+                case COMMENT_DASH:
+                  state = ('-' == ch)
+                      ? State.COMMENT_DASH_DASH
+                      : State.COMMENT_DASH;
+                  break;
+                case COMMENT_DASH_DASH:
+                  if ('>' == ch) {
+                    state = State.DONE;
+                    type = HtmlTokenType.COMMENT;
+                  } else if ('-' == ch) {
+                    state = State.COMMENT_DASH_DASH;
+                  } else {
+                    state = State.COMMENT_DASH;
+                  }
+                  break;
+                case DIRECTIVE:
+                  if ('>' == ch) {
+                    type = HtmlTokenType.DIRECTIVE;
+                    state = State.DONE;
+                  }
+                  break;
+                case APP_DIRECTIVE:
+                  if ('?' == ch) { state = State.APP_DIRECTIVE_QMARK; }
+                  break;
+                case APP_DIRECTIVE_QMARK:
+                  if ('>' == ch) {
+                    type = HtmlTokenType.DIRECTIVE;
+                    state = State.DONE;
+                  } else if ('?' != ch) {
+                    state = State.APP_DIRECTIVE;
+                  }
+                  break;
+                case SERVER_CODE:
+                  if ('%' == ch) {
+                    state = State.SERVER_CODE_PCT;
+                  }
+                  break;
+                case SERVER_CODE_PCT:
+                  if ('>' == ch) {
+                    type = HtmlTokenType.SERVERCODE;
+                    state = State.DONE;
+                  } else if ('%' != ch) {
+                    state = State.SERVER_CODE;
+                  }
+                  break;
+                case UNESCAPED_LT_BANG:
+                  if ('-' == ch) {
+                    state = State.UNESCAPED_LT_BANG_DASH;
+                  } else {
                     type = HtmlTokenType.TEXT;
-                    break;
-                }
+                    state = State.DONE;
+                  }
+                  break;
+                case UNESCAPED_LT_BANG_DASH:
+                  if ('-' == ch) {
+                    // According to HTML 5 section 8.1.2.6
+
+                    // An escaping text span start may share its
+                    // U+002D HYPHEN-MINUS characters with its
+                    // corresponding escaping text span end.
+                    state = State.ESCAPING_TEXT_SPAN_DASH_DASH;
+                  } else {
+                    type = HtmlTokenType.TEXT;
+                    state = State.DONE;
+                  }
+                  break;
+                case ESCAPING_TEXT_SPAN:
+                  if ('-' == ch) {
+                    state = State.ESCAPING_TEXT_SPAN_DASH;
+                  }
+                  break;
+                case ESCAPING_TEXT_SPAN_DASH:
+                  if ('-' == ch) {
+                    state = State.ESCAPING_TEXT_SPAN_DASH_DASH;
+                  } else {
+                    state = State.ESCAPING_TEXT_SPAN;
+                  }
+                  break;
+                case ESCAPING_TEXT_SPAN_DASH_DASH:
+                  if ('>' == ch) {
+                    type = HtmlTokenType.TEXT;
+                    state = State.DONE;
+                  } else if ('-' != ch) {
+                    state = State.ESCAPING_TEXT_SPAN;
+                  }
+                  break;
+                case DONE:
+                  throw new AssertionError();
+              }
+              ++end;
+              if (State.DONE == state) { break; }
+            }
+            if (end == limit) {
+              switch (state) {
+                case DONE:
+                  break;
+                case CDATA:
+                case CDATA_SQ_1:
+                case CDATA_SQ_2:
+                  type = HtmlTokenType.CDATA;
+                  break;
+                case COMMENT:
+                case COMMENT_DASH:
+                case COMMENT_DASH_DASH:
+                  type = HtmlTokenType.COMMENT;
+                  break;
+                case DIRECTIVE:
+                case APP_DIRECTIVE:
+                case APP_DIRECTIVE_QMARK:
+                  type = HtmlTokenType.DIRECTIVE;
+                  break;
+                case SERVER_CODE:
+                case SERVER_CODE_PCT:
+                  type = HtmlTokenType.SERVERCODE;
+                  break;
+                case TAGNAME:
+                  type = HtmlTokenType.TAGBEGIN;
+                  break;
+                default:
+                  type = HtmlTokenType.TEXT;
+                  break;
               }
             }
           }
-        } else {
-          type = null;
         }
+      } else {
+        type = null;
       }
-      if (null == type) {
-        while ((ch = p.read()) >= 0 && '<' != ch) {
-          text.append((char) ch);
-        }
-        p.pushback();
-        type = HtmlTokenType.TEXT;
-      }
-
-      FilePosition end = p.getCurrentPosition();
-      return Token.instance(
-          text.toString(), type, FilePosition.span(start, end));
-    } catch (IOException ex) {
-      throw new ParseException(
-          new Message(MessageType.PARSE_ERROR, p.getCurrentPosition()), ex);
     }
+    if (null == type) {
+      while (end < limit && '<' != buffer[end]) { ++end; }
+      type = HtmlTokenType.TEXT;
+    }
+
+    SourceBreaks breaks = p.getSourceBreaks(start);
+    int tokenLength = end - start;
+    p.consume(tokenLength);
+    return Token.instance(
+        String.valueOf(buffer, start, tokenLength), type,
+        breaks.toFilePosition(
+            p.getCharInFile(start),
+            p.getCharInFile(end)));
   }
 
   protected Name name(String tagName) {
     return asXml ? Name.xml(tagName) : Name.html(tagName);
+  }
+
+  private Name name(char[] buf, int start, int end) {
+    return name(String.valueOf(buf, start, end - start));
+  }
+
+  private boolean isIdentStart(char ch) {
+    if (ch >= 'A' && ch <= 'z' && (ch <= 'Z' || ch >= 'a')) { return true; }
+    // From the XML Spec:
+    //    NameStartChar      ::=      ":" | [A-Z] | "_" | [a-z] | [#xC0-#xD6]
+    //        | [#xD8-#xF6] | [#xF8-#x2FF] | [#x370-#x37D] | [#x37F-#x1FFF]
+    //        | [#x200C-#x200D] | [#x2070-#x218F] | [#x2C00-#x2FEF]
+    //        | [#x3001-#xD7FF] | [#xF900-#xFDCF] | [#xFDF0-#xFFFD]
+    //        | [#x10000-#xEFFFF]
+    if (!asXml) { return false; }
+    if (ch < 0x80) {
+      return ch == ':' || ch == '_';
+    } else {
+      return (ch >= 0xc0 && ch <= 0xd6)
+          || (ch >= 0xf7 && ch <= 0x2ff)
+          || (ch >= 0x370 && ch <= 0x37d)
+          || (ch >= 0x37f && ch <= 0x1fff)
+          || (ch >= 0x200c && ch <= 0x200d)
+          || (ch >= 0x2070 && ch <= 0x218f)
+          || (ch >= 0x2c00 && ch <= 0x2fef)
+          || (ch >= 0x3001 && ch <= 0xd7ff)
+          || (ch >= 0xf900 && ch <= 0xfdcf)
+          || (ch >= 0xfdf0 && ch <= 0xfefc)
+          || (ch >= 0xff66 && ch <= 0xff9d)
+          || (ch >= 0xffa0 && ch <= 0xffdc);
+    }
   }
 
   static <T extends TokenType>

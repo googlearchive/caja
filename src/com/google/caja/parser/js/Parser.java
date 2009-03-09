@@ -381,13 +381,9 @@ public final class Parser extends ParserBase {
           if ((initializer instanceof Declaration  // no multi-decls
                && null == ((Declaration) initializer).getInitializer()
                && tq.checkToken(Keyword.IN))
-              || (initializer instanceof ExpressionStmt
-                  && !tq.lookaheadToken(Punctuation.SEMI)
-                  && (initializerExpr = ((ExpressionStmt) initializer)
-                      .getExpression()) instanceof Operation
-                  && Operator.IN == ((Operation) initializerExpr).getOperator()
-                  && (((Operation) initializerExpr).children().get(0)
-                      .isLeftHandSide()))) {
+              || (!tq.lookaheadToken(Punctuation.SEMI)
+                  && (initializerExpr = checkInExprWithLhs(initializer)) != null
+                  )) {
 
             Expression iterable;
             Expression lvalue;
@@ -1461,5 +1457,14 @@ public final class Parser extends ParserBase {
           break;
       }
     }
+  }
+
+  private static Operation checkInExprWithLhs(Statement s) {
+    if (!(s instanceof ExpressionStmt)) { return null; }
+    Expression e = ((ExpressionStmt) s).getExpression();
+    if (!(e instanceof Operation)) { return null; }
+    Operation op = (Operation) e;
+    if (Operator.IN != op.getOperator()) { return null; }
+    return op.children().get(0).isLeftHandSide() ? op : null;
   }
 }

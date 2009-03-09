@@ -107,17 +107,11 @@ public class CssParserTest extends CajaTestCase {
       String cssFile, String goldenFile, boolean tolerant)
       throws Exception {
     String golden = TestUtil.readResource(getClass(), goldenFile);
-    CssTree.StyleSheet stylesheet;
     CharProducer cp = fromResource(cssFile);
-    try {
-      MessageLevel lvl = tolerant
-          ? MessageLevel.WARNING : MessageLevel.FATAL_ERROR;
-      stylesheet = new CssParser(
-          CssParser.makeTokenQueue(cp, mq, false), mq, lvl)
-          .parseStyleSheet();
-    } finally {
-      cp.close();
-    }
+    MessageLevel lvl = tolerant
+        ? MessageLevel.WARNING : MessageLevel.FATAL_ERROR;
+    CssTree.StyleSheet stylesheet = new CssParser(
+        CssParser.makeTokenQueue(cp, mq, false), mq, lvl).parseStyleSheet();
     StringBuilder sb = new StringBuilder();
     stylesheet.format(new MessageContext(), sb);
     assertEquals(golden.trim(), sb.toString().trim());

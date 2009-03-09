@@ -46,7 +46,7 @@ public class SourceSpansRenderer implements TokenConsumer {
   private class Slot<T> {
     public T value;
   }
-  
+
   private static final Pattern markPattern =
       Pattern.compile(" */\\*@([0-9]+)\\*/");
 
@@ -93,7 +93,7 @@ public class SourceSpansRenderer implements TokenConsumer {
 
     List<List<FilePosition>> allPositionsByLine = buildSourcePositionMappings();
     programText = programTextAccumulator.toString();
-    
+
     compressSourcePositionMappings(allPositionsByLine);
   }
 
@@ -182,10 +182,10 @@ public class SourceSpansRenderer implements TokenConsumer {
 
         inputSourcesByLine.get(lineIdx).add(currentPos.source());
 
-        if (currentPos.source() != InputSource.UNKNOWN) {
+        if (!currentPos.source().equals(InputSource.UNKNOWN)) {
           mc.addInputSource(currentPos.source());
         }
-        
+
         if (currentPos.equals(lastPos) && charIdx != 0) {
           linePositionIndicesByLine.get(lineIdx).add(-1);
           continue;
@@ -198,7 +198,7 @@ public class SourceSpansRenderer implements TokenConsumer {
           filePositionTable.add(currentPos);
         }
 
-        linePositionIndicesByLine.get(lineIdx).add(tableIndex);        
+        linePositionIndicesByLine.get(lineIdx).add(tableIndex);
 
         lastPos = currentPos;
       }

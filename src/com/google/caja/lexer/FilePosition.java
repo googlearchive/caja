@@ -17,15 +17,14 @@ package com.google.caja.lexer;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import java.io.IOException;
-import java.net.URI;
 
 /**
  * The range of characters in a source file occupied by a token or a group of
  * tokens.
  *
  * <p>Fields are 1 indexed since that is how most text editors display line and
- * character positions.  The start numbers are inclusive, and the end numbers
- * are exclusive, so the number of characters in a token is
+ * character (UTF-16 code-unit) positions.  The start numbers are inclusive, and
+ * the end numbers are exclusive, so the number of characters in a token is
  * (startCharInFile - endCharInFile).
  *
  * <p>Line numbers are 1 greater than the number of line breaks where a
@@ -43,55 +42,89 @@ import java.net.URI;
  * @author mikesamuel@gmail.com
  */
 public final class FilePosition implements MessagePart {
-  // TODO(mikesamuel): need unittests
-  private final InputSource source;
-  private final int startLineNo;
-  private final int startCharInFile;
-  private final int startCharInLine;
-  private final int endLineNo;
-  private final int endCharInFile;
-  private final int endCharInLine;
+  public static final FilePosition UNKNOWN = FilePosition.instance(
+      InputSource.UNKNOWN, 1, 0, 0);
 
-  /** a special position for predefineds like the <tt>String</tt> function. */
-  public static final FilePosition PREDEFINED = instance(
-      InputSource.PREDEFINED, 0, 0, 0);
-  public static final FilePosition UNKNOWN = instance(
-      InputSource.UNKNOWN, 0, 0, 0);
+  private final SourceBreaks breaks;
+  private final int startCharInFile, length;
 
-  private FilePosition(
-    InputSource source,
-    int startLineNo, int startCharInFile, int startCharInLine,
-    int endLineNo, int endCharInFile, int endCharInLine) {
-
-    this.source = source;
-    this.startLineNo = startLineNo;
+  FilePosition(SourceBreaks breaks, int startCharInFile, int length) {
+    assert length >= 0;
+    this.breaks = breaks;
     this.startCharInFile = startCharInFile;
-    this.startCharInLine = startCharInLine;
-    this.endLineNo = endLineNo;
-    this.endCharInFile = endCharInFile;
-    this.endCharInLine = endCharInLine;
+    this.length = length;
   }
 
-  public static FilePosition instance(
-      InputSource source,
-      int startLineNo, int startCharInFile, int startCharInLine,
-      int endLineNo, int endCharInFile, int endCharInLine) {
+  SourceBreaks getBreaks() { return breaks; }
+
+  public InputSource source() { return breaks.source(); }
+  /**
+   * 1 greater than the number of newlines between the start of the token and
+   * the beginning of the file.
+   */
+  public int startLineNo() { return breaks.lineAt(startCharInFile); }
+  /**
+   * 1 greater than the number of characters since the beginning of the file.
+   */
+  public int startCharInFile() { return startCharInFile; }
+  /**
+   * 1 greater than the number of characters since the last newline character.
+   */
+  public int startCharInLine() { return breaks.charInLineAt(startCharInFile); }
+  public int endLineNo() { return breaks.lineAt(endCharInFile()); }
+  public int endCharInFile() { return startCharInFile + length; }
+  public int endCharInLine() { return breaks.charInLineAt(endCharInFile()); }
+  public int length() { return length; }
+
+  public static FilePosition between(FilePosition a, FilePosition b) {
+    if (a.getBreaks() != b.getBreaks()) { return FilePosition.UNKNOWN; }
+    int start = a.startCharInFile() + a.length();
     return new FilePosition(
-        source,
-        startLineNo, startCharInFile, startCharInLine,
-        endLineNo, endCharInFile, endCharInLine);
+          a.getBreaks(), start, b.startCharInFile() - start);
   }
 
   public static FilePosition instance(
       InputSource source, int lineNo, int charInFile, int charInLine) {
-    return instance(source, lineNo, charInFile, charInLine,
-                    lineNo, charInFile, charInLine);
+    return instance(source, lineNo, charInFile, charInLine, 0);
   }
 
-  public static FilePosition between(FilePosition a, FilePosition b) {
-    return instance(a.source(),
-                    a.endLineNo(), a.endCharInFile(), a.endCharInLine(),
-                    b.startLineNo(), b.startCharInFile(), b.startCharInLine());
+  public static FilePosition instance(
+      InputSource source, int lineNo,
+      int charInFile, int charInLine, int length) {
+    SourceBreaks breaks = new SourceBreaks(source, lineNo - 1);
+    breaks.lineStartsAt(charInFile - charInLine + 1);
+    return breaks.toFilePosition(charInFile, charInFile + length);
+  }
+
+  public static FilePosition fromLinePositions(
+      InputSource source,
+      int startLineNo, int startCharInLine, int endLineNo, int endCharInLine) {
+    int lineNo = startLineNo - 1;
+    SourceBreaks b = new SourceBreaks(source, lineNo);
+
+    // Construct source breaks as if we were parsing a file.
+    int charInFile = 1;
+    int charInLine = 1;
+    while (lineNo < startLineNo) {
+      b.lineStartsAt(++charInFile);
+      ++lineNo;
+    }
+    int delta = startCharInLine - charInLine;
+    charInFile += delta;
+    charInLine += delta;
+    int startCharInFile = charInFile;
+
+    while (lineNo < endLineNo) {
+      charInLine = 1;
+      b.lineStartsAt(++charInFile);
+      ++lineNo;
+    }
+    delta = endCharInLine - charInLine;
+    charInFile += delta;
+    charInLine += delta;
+    int endCharInFile = charInFile;
+
+    return b.toFilePosition(startCharInFile, endCharInFile);
   }
 
   public static FilePosition startOfFile(InputSource source) {
@@ -100,24 +133,20 @@ public final class FilePosition implements MessagePart {
 
   public static FilePosition span(FilePosition start, FilePosition end) {
     if (start == end) { return start; }
-    if (!start.source.equals(end.source)) { return FilePosition.UNKNOWN; }
-    if (start.startCharInFile > end.endCharInFile) {
-      throw new IllegalArgumentException(start + ", " + end);
-    }
-    return instance(
-        start.source,
-        start.startLineNo, start.startCharInFile, start.startCharInLine,
-        end.endLineNo(), end.endCharInFile(), end.endCharInLine());
+    if (!start.source().equals(end.source())) { return FilePosition.UNKNOWN; }
+    return start.getBreaks().toFilePosition(
+        start.startCharInFile(), end.endCharInFile());
   }
 
   public static FilePosition startOf(FilePosition fp) {
-    return FilePosition.instance(
-        fp.source, fp.startLineNo, fp.startCharInFile, fp.startCharInLine);
+    if (fp.length() == 0) { return fp; }
+    return new FilePosition(fp.getBreaks(), fp.startCharInFile(), 0);
   }
 
   public static FilePosition endOf(FilePosition fp) {
-    return FilePosition.instance(
-        fp.source, fp.endLineNo, fp.endCharInFile, fp.endCharInLine);
+    if (fp.length() == 0) { return fp; }
+    return new FilePosition(
+        fp.getBreaks(), fp.startCharInFile() + fp.length(), 0);
   }
 
   public static FilePosition startOfOrNull(FilePosition fp) {
@@ -128,98 +157,70 @@ public final class FilePosition implements MessagePart {
     return fp != null ? endOf(fp) : null;
   }
 
-  public InputSource source() { return this.source; }
-  /**
-   * 1 greater than the number of newlines between the start of the token and
-   * the beginning of the file.
-   */
-  public int startLineNo() { return this.startLineNo; }
-  /**
-   * 1 greater than the number of characters since the beginning of the file.
-   */
-  public int startCharInFile() { return this.startCharInFile; }
-  /**
-   * 1 greater than the number of characters since the last newline character.
-   */
-  public int startCharInLine() { return this.startCharInLine; }
-  public int endLineNo() { return this.endLineNo; }
-  public int endCharInFile() { return this.endCharInFile; }
-  public int endCharInLine() { return this.endCharInLine; }
-  public int length() { return this.endCharInFile - this.startCharInFile; }
-
-  public void format(MessageContext context, Appendable out)
+  public final void format(MessageContext context, Appendable out)
       throws IOException {
-    if (!FilePosition.PREDEFINED.equals(this)) {
-      source.format(context, out);
-      out.append(":")
-        .append(String.valueOf(this.startLineNo))
+    source().format(context, out);
+    out.append(":")
+        .append(String.valueOf(this.startLineNo()))
         .append("+")
-        .append(String.valueOf(this.startCharInLine));
-      if (this.startCharInFile != this.endCharInFile) {
-        out.append(" - ");
-        if (this.startLineNo != this.endLineNo) {
-          out.append(String.valueOf(this.endLineNo))
+        .append(String.valueOf(this.startCharInLine()));
+    if (this.startCharInFile() != this.endCharInFile()) {
+      out.append(" - ");
+      if (this.startLineNo() != this.endLineNo()) {
+        out.append(String.valueOf(this.endLineNo()))
             .append("+");
-        }
-        out.append(String.valueOf(this.endCharInLine));
       }
-    } else {
-      out.append("predefined");
+      out.append(String.valueOf(this.endCharInLine()));
     }
   }
 
-  public void formatShort(Appendable out) throws IOException {
-    if (!FilePosition.PREDEFINED.equals(this)) {
-      MessageContext mc = new MessageContext();
-      mc.addInputSource(source);
-      out.append(mc.abbreviate(source))
+  public final void formatShort(Appendable out) throws IOException {
+    MessageContext mc = new MessageContext();
+    InputSource is = source();
+    mc.addInputSource(is);
+    out.append(mc.abbreviate(is))
         .append(":")
-        .append(String.valueOf(this.startLineNo));
-    } else {
-      out.append("predefined");
-    }
+        .append(String.valueOf(this.startLineNo()));
   }
 
   @Override
-  public String toString() {
-    String fn = this.source.getUri().toString();
+  public final String toString() {
+    String fn = this.source().getUri().toString();
     StringBuilder sb = new StringBuilder();
     sb.append(fn.substring(fn.lastIndexOf('/') + 1))
-      .append(':').append(this.startLineNo).append('+')
-      .append(this.startCharInLine).append('@')
-      .append(this.startCharInFile);
-    if (this.startCharInFile != this.endCharInFile) {
+      .append(':').append(this.startLineNo()).append('+')
+      .append(this.startCharInLine()).append('@')
+      .append(this.startCharInFile());
+    if (this.startCharInFile() != this.endCharInFile()) {
       sb.append(" - ");
-      if (this.endLineNo != this.startLineNo) {
-        sb.append(this.endLineNo).append('+');
+      if (this.endLineNo() != this.startLineNo()) {
+        sb.append(this.endLineNo()).append('+');
       }
-      sb.append(this.endCharInLine).append('@')
-        .append(this.endCharInFile);
+      sb.append(this.endCharInLine()).append('@')
+        .append(this.endCharInFile());
     }
     return sb.toString();
   }
 
   @Override
-  public boolean equals(Object o) {
+  public final boolean equals(Object o) {
     if (!(o instanceof FilePosition)) { return false; }
     FilePosition that = (FilePosition) o;
+    // equals and hashCode depend only on information available
+    // without walking the newline array.
     return (
         this.startCharInFile == that.startCharInFile
-        && this.endCharInFile == that.endCharInFile
-        && this.source.equals(that.source)
-        && this.startLineNo == that.startLineNo
-        && this.endLineNo == that.endLineNo
-        && this.startCharInLine == that.startCharInLine
-        && this.endCharInLine == that.endCharInLine
+        && this.source().equals(that.source())
+        && this.length == that.length
         );
   }
 
   @Override
-  public int hashCode() {
+  public final int hashCode() {
     return (
-        this.source.hashCode()
-        ^ this.startCharInFile()
-        ^ (this.endCharInFile - this.startCharInFile)
+        this.source().hashCode()
+        ^ this.startCharInFile
+        ^ this.length
         );
   }
 }

@@ -190,8 +190,15 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
               ex.toMessageQueue(getMessageQueue());
               return null;
             }
-            return CharProducer.Factory.create(
-                content, new InputSource(absRef.getUri()));
+            try {
+              return CharProducer.Factory.create(
+                  content, new InputSource(absRef.getUri()));
+            } catch (IOException ex) {
+              mq.addMessage(
+                  MessageType.IO_ERROR,
+                  MessagePart.Factory.valueOf(ex.getMessage()));
+              return null;
+            }
           }
 
           public String rewriteUri(ExternalReference ref, String mimeType) {
@@ -224,7 +231,8 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
     return "<script type=\"text/javascript\">" + script + "</script>";
   }
 
-  private CharProducer readReadable(Readable input, InputSource src) {
+  private CharProducer readReadable(Readable input, InputSource src)
+      throws IOException {
     return CharProducer.Factory.create(new ReadableReader(input), src);
   }
 

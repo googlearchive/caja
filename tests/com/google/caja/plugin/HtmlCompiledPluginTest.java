@@ -204,7 +204,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
 
     assertMessage(
         MessageType.END_OF_FILE, MessageLevel.ERROR,
-        FilePosition.instance(is, 1, 9, 9, 1, 10, 10));
+        FilePosition.instance(is, 1, 9, 9, 1));
   }
 
   private void execGadget(String gadgetSpec, String tests, boolean valija)

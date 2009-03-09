@@ -39,12 +39,11 @@ public class CssLexerTest extends CajaTestCase {
     runTest(cp, TestUtil.readResource(getClass(), "csslexergolden1.txt"));
     assertMessage(
         MessageType.INVALID_CSS_COMMENT, MessageLevel.WARNING,
-        FilePosition.instance(
-            cp.getCurrentPosition().source(), 155, 5076, 1, 155, 5093, 18));
+        cp.getSourceBreaks(0).toFilePosition(5076, 5093));
   }
 
   public void testUnterminatedStrings() throws Exception {
-    assertFails("font-family: 'foo", "1+18: Unclosed string");
+    assertFails("font-family: 'foo", "1+14 - 18: Unclosed string");
   }
 
   public void testLinebreakInString() throws Exception {
@@ -52,7 +51,7 @@ public class CssLexerTest extends CajaTestCase {
   }
 
   public void testEofInEscape() throws Exception {
-    assertFails("font-family: 'foo\\abc", "1+22: Unclosed string");
+    assertFails("font-family: 'foo\\abc", "1+14 - 22: Unclosed string");
   }
 
   public void testUnterminatedComment() throws Exception {

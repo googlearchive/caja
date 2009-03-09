@@ -14,10 +14,12 @@
 
 package com.google.caja.reporting;
 
+import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -102,7 +104,8 @@ public class SnippetProducerTest extends TestCase {
 
   public void testGetSnippetOnePos() {
     Message msg = new Message(
-        TestMessageType.ONE, FilePosition.instance(f2, 1, 4, 4, 1, 8, 8));
+        TestMessageType.ONE,
+        FilePosition.instance(f2, 1, 4, 4, 4));
     assertEquals(
         ("f2:1: f2 line 1\n" +
          "         ^^^^"),
@@ -110,12 +113,17 @@ public class SnippetProducerTest extends TestCase {
   }
 
   public void testGetSnippetTwoPos() {
+    CharProducer cp = CharProducer.Factory.create(
+        new StringReader(F1_TEXT), f1);
+    while (cp.read() >= 0) {}
+
     Message msg = new Message(
         TestMessageType.TWO,
-        FilePosition.instance(f2, 1, 1, 1, 1, 3, 3),
+        FilePosition.instance(f2, 1, 1, 1, 2),
         // Starts on a newline to test that we use the line with text.
-        FilePosition.instance(f1, 2, 1 + F1_TEXT.indexOf("\r\nf1 line 3"), 1,
-                              3, 1 + F1_TEXT.indexOf(" line 3"), 3)
+        cp.getSourceBreaks(0).toFilePosition(
+            1 + F1_TEXT.indexOf("\r\nf1 line 3"),
+            1 + F1_TEXT.indexOf(" line 3"))
         );
     assertEquals(
         ("f2:1: f2 line 1\n" +
@@ -138,7 +146,7 @@ public class SnippetProducerTest extends TestCase {
     int nlPos = 1 + F1_TEXT.indexOf('\n');
     Message msg = new Message(
         TestMessageType.ONE,
-        FilePosition.instance(f1, 1, nlPos, nlPos, 1, nlPos, nlPos));
+        FilePosition.instance(f1, 1, nlPos, nlPos));
     assertEquals(
         ("f1:1: f1 line 1\n" +
          "               ^"),
@@ -149,7 +157,7 @@ public class SnippetProducerTest extends TestCase {
     int endPos = 1 + F2_TEXT.length();
     Message msg = new Message(
         TestMessageType.ONE,
-        FilePosition.instance(f2, 1, endPos, endPos, 1, endPos, endPos));
+        FilePosition.instance(f2, 1, endPos, endPos));
     assertEquals(
         ("f2:1: f2 line 1\n" +
          "               ^"),
@@ -159,7 +167,7 @@ public class SnippetProducerTest extends TestCase {
   public void testLongLineUncut() {
     Message msg = new Message(
         TestMessageType.ONE,
-        FilePosition.instance(f3, 1, 5, 5, 1, 10, 10));
+        FilePosition.instance(f3, 1, 5, 5, 5));
     assertEquals(
         "f3:1: 123456789.abcdefghi.123456789.ABCDEFGHI.\n" +
         "          ^^^^^",
@@ -169,7 +177,7 @@ public class SnippetProducerTest extends TestCase {
   public void testLongLineCutRight() {
     Message msg = new Message(
         TestMessageType.ONE,
-        FilePosition.instance(f3, 1, 5, 5, 1, 10, 10));
+        FilePosition.instance(f3, 1, 5, 5, 5));
     assertEquals(
         "f3:1: 123456789.\n" +
         "          ^^^^^",
@@ -179,7 +187,7 @@ public class SnippetProducerTest extends TestCase {
   public void testLongLineCutLeft() {
     Message msg = new Message(
         TestMessageType.ONE,
-        FilePosition.instance(f3, 1, 35, 35, 1, 38, 38));
+        FilePosition.instance(f3, 1, 35, 35, 3));
     assertEquals(
         "f3:1: 89.ABCDEFG\n" +
         "             ^^^",
@@ -189,7 +197,7 @@ public class SnippetProducerTest extends TestCase {
   public void testLongLineCutBoth() {
     Message msg = new Message(
         TestMessageType.ONE,
-        FilePosition.instance(f3, 1, 15, 15, 1, 35, 35));
+        FilePosition.instance(f3, 1, 15, 15, 20));
     assertEquals(
         "f3:1: efghi.1234\n" +
         "      ^^^^^^^^^^",

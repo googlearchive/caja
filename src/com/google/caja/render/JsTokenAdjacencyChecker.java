@@ -18,6 +18,8 @@ import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.PunctuationTrie;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Keeps track of tokens as they're emitted so that we can put spaces between
@@ -27,7 +29,7 @@ import java.util.List;
  */
 final class JsTokenAdjacencyChecker {
   /** Keeps track of our position in a run of punctuation tokens. */
-  private PunctuationTrie trie = START_TRIE;
+  private PunctuationTrie<?> trie = START_TRIE;
   /** The classification of the last non-space/comment token. */
   private TokenClassification lastClass;
   /** The last non-space/comment token. */
@@ -119,7 +121,7 @@ final class JsTokenAdjacencyChecker {
     return spaceBefore;
   }
 
-  private static final PunctuationTrie START_TRIE;
+  private static final PunctuationTrie<?> START_TRIE;
   static {
     List<String> punctuationStrings = new ArrayList<String>();
     JsLexer.getPunctuationTrie().toStringList(punctuationStrings);
@@ -133,6 +135,8 @@ final class JsTokenAdjacencyChecker {
     punctuationStrings.add("]>");  // Suffix of ]]>
     punctuationStrings.add("//");
     punctuationStrings.add("/*");
-    START_TRIE = new PunctuationTrie(punctuationStrings.toArray(new String[0]));
+    Map<String, Void> punctuation = new TreeMap<String, Void>();
+    for (String p : punctuationStrings) { punctuation.put(p, null); }
+    START_TRIE = new PunctuationTrie<Void>(punctuation);
   }
 }

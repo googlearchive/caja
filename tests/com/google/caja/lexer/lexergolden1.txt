@@ -114,12 +114,12 @@ COMM [// a numeric token]: lexertest1.js:46+5@994 - 23@1012
 COMM [// test how line continuations affect punctuation]: lexertest1.js:48+1@1014 - 50@1063
 INTE [1]: lexertest1.js:49+1@1064 - 2@1065
 PUNC [+]: lexertest1.js:49+2@1065 - 3@1066
-PUNC [+]: lexertest1.js:50+1@1068 - 2@1069
+PUNC [+]: lexertest1.js:49+3@1066 - 50+2@1069
 INTE [2]: lexertest1.js:50+2@1069 - 3@1070
 PUNC [;]: lexertest1.js:50+3@1070 - 4@1071
 COMM [// should parse as 1 + + 2, not 1 ++ 2;]: lexertest1.js:51+1@1072 - 40@1111
 WORD [foo]: lexertest1.js:52+1@1112 - 4@1115
-WORD [bar]: lexertest1.js:53+1@1117 - 4@1120
+WORD [bar]: lexertest1.js:52+4@1115 - 53+4@1120
 PUNC [;]: lexertest1.js:53+4@1120 - 5@1121
 WORD [elipsis]: lexertest1.js:55+1@1123 - 8@1130
 PUNC [...]: lexertest1.js:55+8@1130 - 11@1133
