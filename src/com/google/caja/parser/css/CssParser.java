@@ -761,7 +761,7 @@ public final class CssParser {
         end = tq.lastPosition();
     return ((tq.isEmpty() || tq.currentPosition() != start)
             && start.source().equals(end.source())
-            && start.endCharInFile() <= end.startCharInFile())
+            && start.endCharInFile() <= end.endCharInFile())
          ? FilePosition.span(start, tq.lastPosition())
          : FilePosition.startOf(start);
   }
