@@ -114,7 +114,7 @@
     "widows",
     "width",
     "word-spacing",
-    "z-index",
+    "z-index"
   ],
 
   "denied": [
@@ -123,6 +123,6 @@
     { "key": "orphans",
       "reason": "Allows manipulation of page outside clipping region" },
     { "key": "widows",
-      "reason": "Allows manipulation of page outside clipping region" },
-  ],
+      "reason": "Allows manipulation of page outside clipping region" }
+  ]
 }

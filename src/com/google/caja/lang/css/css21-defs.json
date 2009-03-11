@@ -941,7 +941,7 @@
           "Space separated words that should be quoted.",
           "The validator contains a separate pass that finds adjacent loose",
           " words and turns them into a single quoted term"],
-      "signature": "<unreserved-word>+" },
+      "signature": "<unreserved-word>+" }
 
     ]
 }

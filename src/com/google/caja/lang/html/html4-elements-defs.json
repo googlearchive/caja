@@ -37,7 +37,7 @@
       "            \"description\": $descStr },\n';",
       "    }",
       "",
-      "See also http://www.w3.org/Library/src/HTMLPDTD.html",
+      "See also http://www.w3.org/Library/src/HTMLPDTD.html"
       ],
 
 
@@ -494,6 +494,6 @@
         "empty":       false,
         "optionalEnd": false,
         "deprecated":  false,
-        "description": "instance of a variable or program argument" },
+        "description": "instance of a variable or program argument" }
       ]
 }

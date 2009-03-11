@@ -308,7 +308,7 @@
       "APPLET:WIDTH",
       "COL:WIDTH",
       "COLGROUP:WIDTH",
-      "PRE:WIDTH",
+      "PRE:WIDTH"
     ],
   "denied": [
       { "key": "FORM:ACCEPT-CHARSET",
@@ -324,8 +324,7 @@
             "of Content-typeheaders.  A server might specify UTF-8 via the",
             "header Content-type:text/javascript;charset=UTF-8, but an",
             "embedding page might cause that file to be interpreted as UTF-7."
-          ] }
-      "A:CHARSET",
+          ] },
       "LINK:CHARSET",
       "SCRIPT:CHARSET"
     ]

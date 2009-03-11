@@ -1,7 +1,7 @@
 {
   "description": [
       "See http://code.google.com/p/google-caja/wiki/CajaWhitelists",
-      "The denied is not necessary but lets us document why they're denied.",
+      "The denied is not necessary but lets us document why they're denied."
       ],
 
   "allowed": [
@@ -76,7 +76,7 @@
       "TT",
       "U",
       "UL",
-      "VAR",
+      "VAR"
       ],
 
   "denied": [
@@ -118,6 +118,6 @@
       { "key": "STYLE",
         "reason": "allows global definition of styles." },
       { "key": "TITLE",
-        "reason": "a global level tag" },
+        "reason": "a global level tag" }
       ]
 }

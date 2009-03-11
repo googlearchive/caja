@@ -3,7 +3,7 @@
   "inherits": [
       "html4-attributes-defs.json",
       "html4-attributes-whitelist.json"
-      ]
+      ],
 
   "types": [
       {
@@ -19,9 +19,9 @@
              "  _parent renders the link in the immediate FRAMESET parent",
              "  _top renders the link in the full, unframed window",
              "",
-             "We allow only _blank.",
+             "We allow only _blank."
              ],
-        "values": "_blank",
+        "values": "_blank"
       },
       {
         "key": "*:LANGUAGE",
