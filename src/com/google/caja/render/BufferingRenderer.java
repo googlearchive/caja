@@ -132,7 +132,7 @@ abstract class BufferingRenderer implements TokenConsumer {
   }
 
   public final void mark(FilePosition mark) {
-    if (mark != null && !FilePosition.UNKNOWN.equals(mark.source())) {
+    if (mark != null && !FilePosition.UNKNOWN.equals(mark)) {
       pending.add(mark);
     }
   }

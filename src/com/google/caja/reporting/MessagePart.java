@@ -121,7 +121,7 @@ public interface MessagePart {
         ArrayPart that = (ArrayPart) o;
         if (that.partArr.length != this.partArr.length) { return false; }
         for (int i = partArr.length; --i >= 0;) {
-          if (!this.partArr[i].equals(that.partArr.length)) { return false; }
+          if (!this.partArr[i].equals(that.partArr[i])) { return false; }
         }
         return true;
       }
