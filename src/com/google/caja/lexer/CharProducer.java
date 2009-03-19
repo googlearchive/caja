@@ -54,8 +54,19 @@ public abstract class CharProducer {
    * are changed to consumed.
    */
   public final void consume(int n) {
-    assert offset + n <= limit;
-    offset += n;
+    consumeTo(offset + n);
+  }
+  public final void consumeTo(int end) {
+    assert offset <= end && end <= limit;
+    offset = end;
+  }
+  /**
+   * @param start an offset in [0, limit].
+   * @param end an offset in [start, limit].
+   * @return a String of the characters in {@code buf[start:end]}.
+   */
+  public final String toString(int start, int end) {
+    return String.valueOf(buf, start, end - start);
   }
 
   /** True iff the {@link #getOffset offset} is at the end of the input. */
@@ -267,6 +278,8 @@ public abstract class CharProducer {
     public static CharProducer chain(final CharProducer... srcs) {
       if (srcs.length == 0) {
         return new CharProducerImpl(new char[0], 0, FilePosition.UNKNOWN);
+      } else if (srcs.length == 1) {
+        return srcs[0];
       }
       final int[] ends = new int[srcs.length];
       for (int i = 0; i < srcs.length; ++i) {

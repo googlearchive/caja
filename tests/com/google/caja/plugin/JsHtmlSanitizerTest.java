@@ -14,16 +14,17 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.RhinoTestBed;
-import junit.framework.TestCase;
 
 /**
  * JUnit wrapper for html-sanitizer JSUnit unittests.
  *
  * @author mikesamuel@gmail.com
  */
-public final class JsHtmlSanitizerTest extends TestCase {
+public final class JsHtmlSanitizerTest extends CajaTestCase {
   public void testHtmlSanitizer() throws Exception {
-    RhinoTestBed.runJsUnittestFromHtml(getClass(), "html-sanitizer-test.html");
+    RhinoTestBed.runJsUnittestFromHtml(
+        html(fromResource("html-sanitizer-test.html")));
   }
 }

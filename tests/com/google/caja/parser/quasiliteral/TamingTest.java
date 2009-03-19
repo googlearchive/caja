@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Google Inc.
+// Copyright (C) 2009 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.demos.calendar;
+package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.RhinoTestBed;
 
-/**
- * @author mikesamuel@gmail.com
- */
-public class EventStoreTest extends CajaTestCase {
+/** See taming_test.html */
+public class TamingTest extends CajaTestCase {
   public void testInRhino() throws Exception {
-    RhinoTestBed.runJsUnittestFromHtml(
-        html(fromResource("event_store_test.html")));
+    RhinoTestBed.runJsUnittestFromHtml(html(fromResource("taming_test.html")));
   }
 }

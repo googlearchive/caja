@@ -660,7 +660,7 @@ final class CssSplitter implements TokenStream<CssTokenType> {
       if (!CssLexer.isSpaceChar(buf[end])) { break; }
     }
     sb.append(buf, start, end - start);
-    cp.consume(end - start);
+    cp.consumeTo(end);
   }
 
   /**

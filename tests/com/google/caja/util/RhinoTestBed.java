@@ -14,20 +14,44 @@
 
 package com.google.caja.util;
 
+import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.InputSource;
+import com.google.caja.lexer.JsLexer;
+import com.google.caja.lexer.JsTokenQueue;
+import com.google.caja.lexer.ParseException;
+import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.MutableParseTreeNode;
+import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.html.MarkupRenderContext;
+import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.Parser;
+import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.parser.js.UseSubsetDirective;
+import com.google.caja.parser.quasiliteral.CajitaRewriter;
+import com.google.caja.reporting.EchoingMessageQueue;
+import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.TestBuildInfo;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.URISyntaxException;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import junit.framework.Assert;
 import junit.framework.AssertionFailedError;
@@ -90,15 +114,11 @@ public class RhinoTestBed {
    * This lets us write test html files that can be run both
    * in a browser, and automatically via ANT.
    *
-   * @param base the class which should be used to resolve javascript files as
-   *   classpath resources.
-   * @param htmlResource path to html file relative to base
+   * @param html an HTML DOM tree to run in Rhino.
    */
-  public static void runJsUnittestFromHtml(Class<?> base, String htmlResource)
-      throws IOException {
-    TestUtil.enableContentUrls();
-
-    StringBuilder html = new StringBuilder();
+  public static void runJsUnittestFromHtml(DomTree html)
+      throws IOException, ParseException {
+    TestUtil.enableContentUrls();  // Used to get HTML to env.js
     List<Input> inputs = new ArrayList<Input>();
 
     // Stub out the Browser
@@ -106,26 +126,71 @@ public class RhinoTestBed {
     inputs.add(new Input(RhinoTestBed.class, "/js/jqueryjs/runtest/env.js"));
     int injectHtmlIndex = inputs.size();
 
-    extractScriptsFromHtml(new Input(base, htmlResource), base, html, inputs);
+    List<Pair<String, InputSource>> scripts
+        = new ArrayList<Pair<String, InputSource>>();
+    MessageContext mc = new MessageContext();
+    MessageQueue mq = new EchoingMessageQueue(new PrintWriter(System.err), mc);
+    for (AncestorChain<DomTree.Tag> script : getElementsByTagName(
+             AncestorChain.instance(html), Name.html("script"))) {
+      DomTree.Attrib src = script.node.getAttribute(Name.html("src"));
+      CharProducer scriptBody;
+      if (src != null) {
+        String resourcePath = src.getAttribValue();
+        InputSource resource;
+        if (resourcePath.startsWith("/")) {
+          try {
+            resource = new InputSource(
+                RhinoTestBed.class.getResource(resourcePath).toURI());
+          } catch (URISyntaxException ex) {
+            throw new RuntimeException(
+                "java.net.URL is not a valid java.net.URI", ex);
+          }
+        } else {
+          resource = new InputSource(
+              html.getFilePosition().source().getUri().resolve(resourcePath));
+        }
+        scriptBody = loadResource(resource);
+      } else {
+        scriptBody = textContentOf(script.node);
+      }
+      String scriptText;
+      Block js = parseJavascript(scriptBody, mq);
+      if (hasUseSubsetDirective(js, "cajita")) {
+        scriptText = render(cajole(js, mq));
+      } else {
+        // Add blank lines at the front so that Rhino stack traces have correct
+        // line numbers.
+        scriptText = prefixWithBlankLines(
+          scriptBody.toString(0, scriptBody.getLimit()),
+          script.node.getFilePosition().startLineNo() - 1);
+      }
+      scripts.add(Pair.pair(scriptText, js.getFilePosition().source()));
+      mc.addInputSource(js.getFilePosition().source());
+      script.parent.cast(MutableParseTreeNode.class).node
+          .removeChild(script.node);
+    }
+    for (Pair<String, InputSource> script : scripts) {
+      inputs.add(new Input(script.a, mc.abbreviate(script.b)));
+    }
 
     // Set up the DOM.  env.js requires that location be set to a URI before it
     // creates a DOM.  Since it fetches HTML via java.net.URL and passes it off
     // to the org.w3c parser, we use a content: URL which is handled by handlers
-    // registed in TestUtil so that we can provide html without having a file
+    // registered in TestUtil so that we can provide html without having a file
     // handy.
     String domJs = "window.location = "
-        + StringLiteral.toQuotedValue(TestUtil.makeContentUrl(html.toString()))
+        + StringLiteral.toQuotedValue(TestUtil.makeContentUrl(render(html)))
         + ";";
-    inputs.add(injectHtmlIndex, new Input(domJs, htmlResource));
+    String htmlSource = html.getFilePosition().source().toString();
+    inputs.add(injectHtmlIndex, new Input(domJs, htmlSource));
     inputs.add(new Input(
         "(function () {\n"
         + "   var onload = document.body.getAttribute('onload');\n"
         + "   onload && eval(onload);\n"
-        + " })();", htmlResource));
-
+        + " })();", htmlSource));
 
     // Execute for side-effect
-    runJs(inputs.toArray(new Input[0]));
+    runJs(inputs.toArray(new Input[inputs.size()]));
   }
 
   /** An input javascript file. */
@@ -171,36 +236,96 @@ public class RhinoTestBed {
     return w.toString();
   }
 
-  private static void extractScriptsFromHtml(
-      Input input, Class<?> base, Appendable htmlOut, List<Input> jsOut)
+  private static ParseTreeNode cajole(Block program, MessageQueue mq) {
+    CajitaRewriter rw = new CajitaRewriter(new TestBuildInfo(), false);
+    return rw.expand(new UncajoledModule(program), mq);
+  }
+
+  private static String render(ParseTreeNode n) {
+    StringBuilder sb = new StringBuilder();
+    TokenConsumer tc = n.makeRenderer(sb, null);
+    n.render(new MarkupRenderContext(new MessageContext(), tc, true));
+    tc.noMoreTokens();
+    return sb.toString();
+  }
+
+  private static boolean hasUseSubsetDirective(Block block, String subsetName) {
+    if (block.children().isEmpty()) { return false; }
+    Statement first = block.children().get(0);
+    if (!(first instanceof UseSubsetDirective)) { return false; }
+    UseSubsetDirective usd = (UseSubsetDirective) first;
+    return usd.getSubsetNames().contains(subsetName);
+  }
+
+  private static Block parseJavascript(CharProducer cp, MessageQueue mq)
+      throws ParseException {
+    JsLexer lexer = new JsLexer(cp, false);
+    Parser p = new Parser(
+        new JsTokenQueue(lexer, cp.getSourceBreaks(0).source()), mq, false);
+    return p.parse();
+  }
+
+  private static CharProducer loadResource(InputSource resource)
       throws IOException {
-    // Some quick and dirty parsing.  TODO(mikesamuel): do this properly
-    Pattern scriptPattern = Pattern.compile(
-        "<script\\b[^>]*>.*?</script\\b[^>]*>",
-        Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
-    String html = readReader(input.input);
-    Matcher m = scriptPattern.matcher(html);
-    int pos = 0;
-    while (m.find()) {
-      htmlOut.append(html.substring(pos, m.start()));
-      pos = m.end();
+    File f = new File(resource.getUri());
+    return CharProducer.Factory.create(
+        new InputStreamReader(new FileInputStream(f), "UTF-8"), resource);
+  }
 
-      String script = m.group();
-      int open = script.indexOf('>') + 1;
+  private static Iterable<AncestorChain<DomTree.Tag>> getElementsByTagName(
+      AncestorChain<? extends DomTree> t, Name tagName) {
+    List<AncestorChain<DomTree.Tag>> els
+        = new ArrayList<AncestorChain<DomTree.Tag>>();
+    emitElementsByTagName(t, tagName, els);
+    return els;
+  }
 
-      Pattern srcPattern
-          = Pattern.compile("\\bsrc\\s*=\\s*[\"']?([^\\s>\"']+)");
-      Matcher m2 = srcPattern.matcher(script.substring(0, open));
-      if (m2.find()) {
-        String src = m2.group(1);
-        jsOut.add(new Input(base, src));
-      } else {
-        int close = script.lastIndexOf("</");
-        String inlineScript = script.substring(open, close);
-        jsOut.add(new Input(new StringReader(inlineScript), input.source));
+  private static void emitElementsByTagName(
+      AncestorChain<? extends DomTree> t, Name tagName,
+      List<AncestorChain<DomTree.Tag>> out) {
+    if (t.node instanceof DomTree.Tag) {
+      DomTree.Tag el = (DomTree.Tag) t.node;
+      if (tagName.equals(el.getTagName())) {
+        out.add(t.cast(DomTree.Tag.class));
       }
     }
-    htmlOut.append(html.substring(pos));
+    for (DomTree c : t.node.children()) {
+      emitElementsByTagName(AncestorChain.instance(t, c), tagName, out);
+    }
+  }
+
+  private static String prefixWithBlankLines(String s, int n) {
+    if (n <= 0) { return s; }
+    StringBuilder sb = new StringBuilder(s.length() + n);
+    while (--n >= 0) { sb.append('\n'); }
+    return sb.append(s).toString();
+  }
+
+  private static CharProducer textContentOf(DomTree.Tag script) {
+    List<CharProducer> parts = new ArrayList<CharProducer>();
+    for (DomTree child : script.children()) {
+      switch (child.getType()) {
+        case UNESCAPED:
+          parts.add(CharProducer.Factory.create(
+              new StringReader(child.getValue()), child.getFilePosition()));
+          break;
+        case CDATA:
+          String cdata = child.getToken().text;
+          parts.add(CharProducer.Factory.create(
+              new StringReader(
+                  "         " + cdata.substring(9, cdata.length() - 3)),
+              child.getFilePosition()));
+          break;
+        case TEXT:
+          parts.add(CharProducer.Factory.fromHtmlAttribute(
+              CharProducer.Factory.create(
+                  new StringReader(child.getToken().text),
+                  child.getFilePosition())));
+          break;
+        default: break;
+      }
+    }
+    return CharProducer.Factory.chain(parts.toArray(new CharProducer[0]));
   }
 
   private RhinoTestBed() { /* uninstantiable */ }

@@ -523,8 +523,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
                     // a corresponding end tag.
                     if (this.inEscapeExemptBlock && '/' == buffer[start + 1]
                         && textEscapingMode != HtmlTextEscapingMode.PLAIN_TEXT
-                        && name(buffer, start + 2, end)
-                            .equals(escapeExemptTagName)) {
+                        && name(start + 2, end).equals(escapeExemptTagName)) {
                       this.inEscapeExemptBlock = false;
                       this.escapeExemptTagName = null;
                       this.textEscapingMode = null;
@@ -723,10 +722,9 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
     }
 
     SourceBreaks breaks = p.getSourceBreaks(start);
-    int tokenLength = end - start;
-    p.consume(tokenLength);
+    p.consumeTo(end);
     return Token.instance(
-        String.valueOf(buffer, start, tokenLength), type,
+        p.toString(start, end), type,
         breaks.toFilePosition(
             p.getCharInFile(start),
             p.getCharInFile(end)));
@@ -736,8 +734,8 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
     return asXml ? Name.xml(tagName) : Name.html(tagName);
   }
 
-  private Name name(char[] buf, int start, int end) {
-    return name(String.valueOf(buf, start, end - start));
+  private Name name(int start, int end) {
+    return name(p.toString(start, end));
   }
 
   private boolean isIdentStart(char ch) {

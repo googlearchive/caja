@@ -72,13 +72,13 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
       ++start;
       while (start < limit && JsLexer.isJsSpace(buf[start])) {
         if (tokenBreak(start)) {
-          p.consume(start - p.getOffset());
+          p.consumeTo(start);
           return Token.instance(
               "\\", JsTokenType.LINE_CONTINUATION, p.getCurrentPosition());
         }
         ++start;
       }
-      p.consume(start - p.getOffset());
+      p.consumeTo(start);
     }
 
     if (p.isEmpty()) { return null; }
@@ -249,9 +249,8 @@ final class InputElementSplitter extends AbstractTokenStream<JsTokenType> {
     }
 
     FilePosition pos = p.filePositionForOffsets(start, end);
-    int length = end - start;
-    p.consume(length);
-    return Token.instance(String.valueOf(buf, start, length), type, pos);
+    p.consumeTo(end);
+    return Token.instance(p.toString(start, end), type, pos);
   }
 
   private static final class ParsedNumber {

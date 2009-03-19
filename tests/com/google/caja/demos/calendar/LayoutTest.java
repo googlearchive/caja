@@ -14,19 +14,18 @@
 
 package com.google.caja.demos.calendar;
 
-import junit.framework.TestCase;
-
+import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.RhinoTestBed;
 
 /**
- * @author msamuel@google.com (Mike Samuel)
+ * @author mikesamuel@gmail.com (Mike Samuel)
  */
-public class LayoutTest extends TestCase {
+public class LayoutTest extends CajaTestCase {
   public void testBitSet() throws Exception {
-    RhinoTestBed.runJsUnittestFromHtml(getClass(), "bitset_test.html");
+    RhinoTestBed.runJsUnittestFromHtml(html(fromResource("bitset_test.html")));
   }
 
   public void testLayout() throws Exception {
-    RhinoTestBed.runJsUnittestFromHtml(getClass(), "layout_test.html");
+    RhinoTestBed.runJsUnittestFromHtml(html(fromResource("layout_test.html")));
   }
 }

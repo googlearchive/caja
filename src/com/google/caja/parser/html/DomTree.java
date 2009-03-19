@@ -107,7 +107,7 @@ public abstract class DomTree extends AbstractParseTreeNode {
     if (s.indexOf('&') < 0) { return s; }
     CharProducer cp = CharProducer.Factory.fromHtmlAttribute(
         CharProducer.Factory.create(new StringReader(s), DECODE));
-    return String.valueOf(cp.getBuffer(), 0, cp.getLimit());
+    return cp.toString(cp.getOffset(), cp.getLimit());
   }
 
   @Override

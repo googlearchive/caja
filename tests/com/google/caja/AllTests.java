@@ -54,6 +54,7 @@ import com.google.caja.parser.quasiliteral.ModuleFormatTest;
 import com.google.caja.parser.quasiliteral.QuasiBuilderTest;
 import com.google.caja.parser.quasiliteral.RewriterTest;
 import com.google.caja.parser.quasiliteral.ScopeTest;
+import com.google.caja.parser.quasiliteral.TamingTest;
 import com.google.caja.plugin.CssCompilerTest;
 import com.google.caja.plugin.CssRewriterTest;
 import com.google.caja.plugin.CssValidatorTest;
@@ -167,6 +168,7 @@ public class AllTests {
           SparseBitSetTest.class,
           StringLiteralTest.class,
           StringsTest.class,
+          TamingTest.class,
           TestBedTest.class,
           TokenClassificationTest.class,
     };

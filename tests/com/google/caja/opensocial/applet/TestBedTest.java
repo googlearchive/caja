@@ -14,14 +14,14 @@
 
 package com.google.caja.opensocial.applet;
 
+import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.RhinoTestBed;
-import junit.framework.TestCase;
 
 /**
  * @author mikesamuel@gmail.com
  */
-public class TestBedTest extends TestCase {
+public class TestBedTest extends CajaTestCase {
   public void testInRhino() throws Exception {
-    RhinoTestBed.runJsUnittestFromHtml(getClass(), "testbed_test.html");
+    RhinoTestBed.runJsUnittestFromHtml(html(fromResource("testbed_test.html")));
   }
 }

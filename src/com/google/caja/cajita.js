@@ -489,11 +489,6 @@ var ___;
    * the message of the Error that's thrown.
    */
   function fail(var_args) {
-    // TODO(metaweta): Ask mike samuel about this vs. log-to-console.js
-    if ((typeof console !== 'undefined') && 
-        (typeOf(console.trace) === 'function')) {
-      console.trace();
-    }
     var message = Array.slice(arguments, 0).join('');
     myLogFunc(message, true);
     throw new Error(message);
@@ -1045,6 +1040,7 @@ var ___;
     fastpathRead(obj, name);
   }
 
+  // TODO(mikesamuel): none of the other grants grant enum, is "Only" operable?
   function grantEnumOnly(obj, name) {
     fastpathEnumOnly(obj, name);
   }
@@ -3279,6 +3275,7 @@ var ___;
     // Accessing property attributes.
     canRead: canRead,        grantRead: grantRead,
     canEnum: canEnum,        grantEnumOnly: grantEnumOnly,
+    // TODO(mikesamuel): should grantCall be exported?
     canCall: canCall,        grantCall: grantCall,
     canSet: canSet,          grantSet: grantSet,
     canDelete: canDelete,    grantDelete: grantDelete,
