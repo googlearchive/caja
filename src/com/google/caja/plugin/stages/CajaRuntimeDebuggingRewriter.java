@@ -18,6 +18,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
+import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.parser.quasiliteral.Rule;
 import com.google.caja.parser.quasiliteral.RuleDescription;
@@ -37,7 +38,7 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
   private final DebuggingSymbols symbols;
 
   CajaRuntimeDebuggingRewriter(DebuggingSymbols symbols) {
-    super(true);
+    super(false, true);
     this.symbols = symbols;
   }
 
@@ -48,42 +49,29 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
    * present, or is otherwise drawn from the match as a whole.
    */
   abstract class AddPositionParamRule extends Rule {
+    // TODO(erights): Nothing is gained by having this be a partial override of 
+    // fire() which subclasses have to further override. Make into a protected
+    // (or package scoped) method instead, where the concrete fire() methods
+    // simply call it. Or perhaps have it override transform().
     @Override
     public ParseTreeNode fire(
         ParseTreeNode node, Scope scope, MessageQueue mq) {
       Map<String, ParseTreeNode> bindings = match(node);
       if (bindings != null) {
+        Map<String, ParseTreeNode> newBindings = makeBindings();
+        for (String key : bindings.keySet()) {
+          newBindings.put(key, expand(bindings.get(key), scope, mq));
+        }
+
         ParseTreeNode posNode = bindings.get("posNode");
         if (posNode == null) { posNode = node; }
         FilePosition pos = spanningPos(posNode);
         if (pos == null) { pos = FilePosition.UNKNOWN; }
-
         int index = symbols.indexForPosition(pos);
-        rebind(bindings, scope, mq);
-        bindings.put("debug", new IntegerLiteral(FilePosition.UNKNOWN, index));
-        return subst(bindings);
-      }
-      return NONE;
-    }
-
-    protected void rebind(Map<String, ParseTreeNode> bindings,
-                          Scope scope, MessageQueue mq) {
-      expandEntries(bindings, scope, mq);
-    }
-  }
-
-  /**
-   * Simplifies cajoled code by stripping out the fasttrack check and
-   * fasttrack path leaving only the slow, instrumented path.
-   */
-  abstract class SimplifyingRule extends Rule {
-    @Override
-    public ParseTreeNode fire(
-        ParseTreeNode node, Scope scope, MessageQueue mq) {
-      Map<String, ParseTreeNode> bindings = match(node);
-      if (bindings != null) {
-        expandEntries(bindings, scope, mq);
-        return subst(bindings);
+        newBindings.put("debug",
+                        new IntegerLiteral(FilePosition.UNKNOWN, index));
+        return QuasiBuilder.subst(getRuleDescription().substitutes(),
+                                  newBindings);
       }
       return NONE;
     }
@@ -210,7 +198,7 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
         return super.fire(n, s, mq);
       }
     });
-    addRule(new SimplifyingRule() {
+    addRule(new Rule() {
           @Override
           @RuleDescription(
               name="simplifyCall",
@@ -220,10 +208,10 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
               matches="@obj.@x_canCall___ ? (@obj.@x(@actuals*)) : @operation",
               substitutes="@operation")
           public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
+            return transform(n, s, mq);
           }
         });
-    addRule(new SimplifyingRule() {
+    addRule(new Rule() {
           @Override
           @RuleDescription(
               name="simplifyRead",
@@ -233,10 +221,10 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
               matches="@obj.@key_canRead___ ? (@obj.@key) : @operation",
               substitutes="@operation")
           public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
+            return transform(n, s, mq);
           }
         });
-    addRule(new SimplifyingRule() {
+    addRule(new Rule() {
           @Override
           @RuleDescription(
               name="simplifySet",
@@ -246,7 +234,7 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
               matches="@obj.@key_canSet___ ? (@obj.@key = @y) : @operation",
               substitutes="@operation")
           public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
+            return transform(n, s, mq);
           }
         });
     addRule(new AddPositionParamRule() {

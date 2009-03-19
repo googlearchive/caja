@@ -361,7 +361,6 @@ public abstract class AbstractParseTreeNode
         getClass(), getFilePosition(), getValue(), clonedChildren);
     if (attributes != null) {
       cloned.attributes = new SyntheticAttributes(attributes);
-      cloned.attributes.remove(TAINTED);
     }
     return cloned;
   }

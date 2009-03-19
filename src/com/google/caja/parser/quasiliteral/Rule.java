@@ -165,23 +165,6 @@ public abstract class Rule implements MessagePart {
     out.append("Rule \"" + name + "\"");
   }
 
-  protected final void expandEntry(
-      Map<String, ParseTreeNode> bindings,
-      String key,
-      Scope scope,
-      MessageQueue mq) {
-    bindings.put(key, rewriter.expand(bindings.get(key), scope, mq));
-  }
-
-  protected final void expandEntries(
-      Map<String, ParseTreeNode> bindings,
-      Scope scope,
-      MessageQueue mq) {
-    for (String key : bindings.keySet()) {
-      expandEntry(bindings, key, scope, mq);
-    }
-  }
-
   protected final ParseTreeNode expandAll(ParseTreeNode node, Scope scope, MessageQueue mq) {
     return expandAllTo(node, node.getClass(), scope, mq);
   }
@@ -486,11 +469,21 @@ public abstract class Rule implements MessagePart {
   }
 
   /**
-   * Substitutes bindings into the Quasi-pattern from
-   * {@link RuleDescription#substitutes}.
+   * For when you just want to match(), expand() all bindings, and subst() using
+   * the rule's matches and substitutes annotations.
    */
-  protected ParseTreeNode subst(Map<String, ParseTreeNode> bindings) {
-    return QuasiBuilder.subst(getRuleDescription().substitutes(), bindings);
+  protected ParseTreeNode transform(
+      ParseTreeNode node, Scope scope, MessageQueue mq) {
+    Map<String, ParseTreeNode> bindings = match(node);
+    if (bindings != null) {
+      Map<String, ParseTreeNode> newBindings = makeBindings();
+      for (String key : bindings.keySet()) {
+        newBindings.put(key, getRewriter().expand(bindings.get(key), scope, mq));
+      }
+      return QuasiBuilder.subst(getRuleDescription().substitutes(),
+                                newBindings);
+    }
+    return NONE;
   }
 
   /**

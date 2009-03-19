@@ -18,11 +18,20 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.ParseTreeNodeContainer;
+import com.google.caja.parser.js.BreakStmt;
+import com.google.caja.parser.js.ContinueStmt;
+import com.google.caja.parser.js.Declaration;
+import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.Literal;
+import com.google.caja.parser.js.Reference;
+import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.SyntheticAttributes;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -40,6 +49,7 @@ public abstract class Rewriter {
    */
   private final RuleChain rules = new RuleChain();
   private final Set<String> ruleNames = new HashSet<String>();
+  private final boolean taintChecking;
   private final boolean logging;
 
   /**
@@ -48,7 +58,8 @@ public abstract class Rewriter {
    * @param logging whether this Rewriter should log the details of
    *     rule firings to standard error.
    */
-  public Rewriter(boolean logging) {
+  public Rewriter(boolean taintChecking, boolean logging) {
+    this.taintChecking = taintChecking;
     this.logging = logging;
   }
 
@@ -58,7 +69,8 @@ public abstract class Rewriter {
    * @param logging whether this Rewriter should log the details of
    *     rule firings to standard error.
    */
-  public Rewriter(boolean logging, Rule[] rules) {
+  public Rewriter(boolean tainting, boolean logging, Rule[] rules) {
+    this.taintChecking = tainting;
     this.logging = logging;
     addRules(rules);
   }
@@ -68,21 +80,6 @@ public abstract class Rewriter {
    */
   public Iterable<? extends Rule> getRules() {
     return rules.getAllRules();
-  }
-
-  /**
-   * Expands a parse tree node according to the rules of this
-   * rewriter, returning the expanded result.
-   *
-   * @param node a top-level parse tree node to expand.
-   * @param mq a message queue for compiler messages.
-   * @return the expanded parse tree node.
-   */
-  public final ParseTreeNode expand(ParseTreeNode node, MessageQueue mq) {
-    flagTainted(node, mq);
-    ParseTreeNode result = expand(node, null, mq);
-    checkTainted(result, mq);
-    return result;
   }
 
   /**
@@ -196,7 +193,29 @@ public abstract class Rewriter {
     return output.toString();
   }
 
+  /**
+   * Expands a parse tree node according to the rules of this
+   * rewriter, returning the expanded result.
+   *
+   * @param node a top-level parse tree node to expand.
+   * @param mq a message queue for compiler messages.
+   * @return the expanded parse tree node.
+   */
+  public final ParseTreeNode expand(ParseTreeNode node, MessageQueue mq) {
+    if (taintChecking) {
+      flagTainted(node, mq);
+      ParseTreeNode result = expand(node, null, mq);
+      checkTainted(result, mq);
+      return result;
+    }
+    return expand(node, null, mq);
+  }
+
   private static void flagTainted(ParseTreeNode node, MessageQueue mq) {
+    if (node.getAttributes().is(ParseTreeNode.TAINTED)) {
+      mq.addMessage(
+          RewriterMessageType.MULTIPLY_TAINTED, node, node.getFilePosition());
+    }
     node.getAttributes().set(ParseTreeNode.TAINTED, true);
     for (ParseTreeNode n : node.children()) {
       flagTainted(n, mq);
@@ -209,12 +228,79 @@ public abstract class Rewriter {
     if (mq.hasMessageAtLevel(MessageLevel.ERROR)) {
       return;
     }
-    if (node.getAttributes().is(ParseTreeNode.TAINTED)) {
-      mq.addMessage(
-          RewriterMessageType.UNSEEN_NODE_LEFT_OVER, node.getFilePosition());
+    SyntheticAttributes attrs = node.getAttributes();
+    if (attrs.is(ParseTreeNode.TAINTED)) {
+      if (!attrs.is(SyntheticNodes.SYNTHETIC)) {
+        mq.addMessage(
+            RewriterMessageType.UNSEEN_NODE_LEFT_OVER, node, node.getFilePosition());
+      }
     }
     for (ParseTreeNode n : node.children()) {
       checkTainted(n, mq);
     }
+  }
+
+  /**
+   * Guard access to this to go through the noexpand() overloadings below.
+   */
+  private <T extends ParseTreeNode> T removeTaint(T node) {
+    if (taintChecking) {
+      // TODO(erights): consider returning a defensive copy rather than
+      // side effecting in place. If we do, we also need to revisit all
+      // calls to removeTaint and noexpand().
+      node.getAttributes().remove(ParseTreeNode.TAINTED);
+    }
+    return node;
+  }
+
+  /**
+   * Returns its argument, but declares that we are avoiding passing it
+   * through the expander on purpose.
+   * <p>
+   * We are using taint to check that all nodes emerging from this translator
+   * are expanded unless stated otherwise, so noexpand()
+   * removes this taint in order to state otherwise.
+   */
+  protected Reference noexpand(Reference node, MessageQueue mq) {
+    removeTaint(node.getIdentifier());
+    return removeTaint(node);
+  }
+
+  protected Declaration noexpand(Declaration node, MessageQueue mq) {
+    if (node.getInitializer() != null) {
+      mq.addMessage(
+          RewriterMessageType.NOEXPAND_BINARY_DECL,
+          node.getFilePosition(), node);
+      return node;
+    }
+    removeTaint(node.getIdentifier());
+    return removeTaint(node);
+  }
+
+  protected Identifier noexpand(Identifier node, MessageQueue mq) {
+    return removeTaint(node);
+  }
+
+  protected Literal noexpand(Literal node, MessageQueue mq) {
+    return removeTaint(node);
+  }
+
+  protected BreakStmt noexpand(BreakStmt node, MessageQueue mq) {
+    return removeTaint(node);
+  }
+
+  protected ContinueStmt noexpand(ContinueStmt node, MessageQueue mq) {
+    return removeTaint(node);
+  }
+
+  protected ParseTreeNodeContainer
+  noexpandParams(ParseTreeNodeContainer node, MessageQueue mq) {
+    if (taintChecking) {
+      for (ParseTreeNode child : node.children()) {
+        noexpand((Declaration) child, mq);
+      }
+      return removeTaint(node);
+    }
+    return node;
   }
 }

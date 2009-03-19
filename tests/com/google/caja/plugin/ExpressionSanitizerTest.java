@@ -75,16 +75,16 @@ public class ExpressionSanitizerTest extends CajaTestCase {
     return new ExpressionSanitizerCaja(new TestBuildInfo(), mq, meta) {
       @Override
       protected Rewriter newCajitaRewriter() {
-        return new Rewriter(true) {{
+        return new Rewriter(true, true) {{
           addRule(new Rule() {
             @Override
             @RuleDescription(
                 name="passthru",
-                synopsis="Pass through input unchanged",
+                synopsis="Pass through input vacuously 'expanded'",
                 reason="Dummy rule for testing")
-            public ParseTreeNode fire(
-                ParseTreeNode node, Scope scope, MessageQueue mq) {
-              return node.clone();
+                public ParseTreeNode fire(
+                    ParseTreeNode node, Scope scope, MessageQueue mq) {
+              return expandAll(node.clone(), scope, mq);
             }
           });
         }};

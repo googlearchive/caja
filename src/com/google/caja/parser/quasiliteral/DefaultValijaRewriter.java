@@ -54,7 +54,6 @@ import com.google.caja.reporting.MessageQueue;
   )
 
 public class DefaultValijaRewriter extends Rewriter {
-
   private int tempVarCount = 1;
   private final String tempVarPrefix = "$caja$";
 
@@ -64,6 +63,14 @@ public class DefaultValijaRewriter extends Rewriter {
     scope.declareStartOfScopeVariable(t);
     return new Reference(t);
   }
+
+  protected ParseTreeNode noexpandAll(ParseTreeNode node, MessageQueue mq) {
+    // TODO(erights): If we ever turn on taint checking for
+    // DefaultValijaRewriter this needs to return a node (perhaps a defensive
+    // copy) in which all taint has been removed.
+    return node;
+  }
+
 
   final public Rule[] valijaRules = {
 
@@ -237,8 +244,11 @@ public class DefaultValijaRewriter extends Rewriter {
         if (bindings != null) {
           Identifier ex = (Identifier) bindings.get("ex");
           if (isSynthetic(ex)) {
-            expandEntries(bindings, scope, mq);
-            return subst(bindings);
+            return substV(
+                "body", expand(bindings.get("body"), scope, mq),
+                "ex", noexpand(ex, mq),
+                "handler", expand(bindings.get("handler"), scope, mq)
+                );
           }
         }
         return NONE;
@@ -263,8 +273,12 @@ public class DefaultValijaRewriter extends Rewriter {
         if (bindings != null) {
           Identifier ex = (Identifier) bindings.get("ex");
           if (isSynthetic(ex)) {
-            expandEntries(bindings, scope, mq);
-            return subst(bindings);
+            return substV(
+                "body", expand(bindings.get("body"), scope, mq),
+                "ex", noexpand(ex, mq),
+                "handler", expand(bindings.get("handler"), scope, mq),
+                "cleanup", expand(bindings.get("cleanup"), scope, mq)
+                );
           }
         }
         return NONE;
@@ -293,7 +307,7 @@ public class DefaultValijaRewriter extends Rewriter {
             // presumably already contain Cajita.  If they do not
             // contain valid Cajita code, the CajitaRewriter will
             // complain.
-            return subst(bindings);
+            return substV("stmt", noexpandAll(bindings.get("stmt"), mq));
           }
         }
         return NONE;
@@ -317,10 +331,17 @@ public class DefaultValijaRewriter extends Rewriter {
             // But we do want to make the name visible on outers, so expand the
             // declaration to an assignment to outers and hoist it to the top
             // of the block.
-            if (scope.isOuter(((Identifier) bindings.get("name")).getName())) {
+            Identifier fname = (Identifier) bindings.get("name");
+            if (scope.isOuter((fname).getName())) {
               Expression initScope = (Expression)
-                  QuasiBuilder.subst("$v.initOuter('@name');", bindings);
-              Expression initBlock = (Expression) subst(bindings);
+                  QuasiBuilder.substV("$v.initOuter('@name');",
+                      "name", fname);
+              ParseTreeNodeContainer actuals = (ParseTreeNodeContainer) bindings.get("actuals");
+              Expression initBlock = (Expression) substV(
+                  "name", fname,
+                  "actuals", noexpandParams(actuals, mq),
+                  "body", noexpandAll(bindings.get("body"), mq)
+              );
               scope.addStartOfScopeStatement(newExprStmt(initScope));
               scope.addStartOfBlockStatement(newExprStmt(initBlock));
               return new Noop(node.getFilePosition());
@@ -351,9 +372,14 @@ public class DefaultValijaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = this.match(ctor);
         if (bindings != null) {
           // Do not expand children. See discussion in cajitaUseSubset above.
-          FunctionConstructor newCtor = (FunctionConstructor) subst(bindings);
+          Identifier iOpt = (Identifier) bindings.get("i");
+          ParseTreeNodeContainer actuals = (ParseTreeNodeContainer) bindings.get("actuals");
+          FunctionConstructor newCtor = (FunctionConstructor) substV(
+              "i", null == iOpt ? null : noexpand(iOpt, mq),
+              "actuals", noexpandParams(actuals, mq),
+              "stmt", noexpandAll(bindings.get("stmt"), mq));
           if (node instanceof FunctionDeclaration) {
-            return new FunctionDeclaration(newCtor.getIdentifier(), newCtor);
+            return new FunctionDeclaration(newCtor);
           } else {
             return newCtor;
           }
@@ -556,11 +582,12 @@ public class DefaultValijaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
           TryStmt t = (TryStmt) node;
-          bindings.put("s0", expandAll(bindings.get("s0"), scope, mq));
-          bindings.put("s1",
-              expandAll(bindings.get("s1"),
-                  Scope.fromCatchStmt(scope, t.getCatchClause()), mq));
-          return subst(bindings);
+          return substV(
+              "s0", expandAll(bindings.get("s0"), scope, mq),
+              "x", noexpand((Identifier) bindings.get("x"), mq),
+              "s1", expandAll(bindings.get("s1"),
+                              Scope.fromCatchStmt(scope, t.getCatchClause()),
+                              mq));
         }
         return NONE;
       }
@@ -578,12 +605,13 @@ public class DefaultValijaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
           TryStmt t = (TryStmt) node;
-          bindings.put("s0", expandAll(bindings.get("s0"), scope, mq));
-          bindings.put("s1",
-              expandAll(bindings.get("s1"),
-                  Scope.fromCatchStmt(scope, t.getCatchClause()), mq));
-          bindings.put("s2", expandAll(bindings.get("s2"), scope, mq));
-          return subst(bindings);
+          return substV(
+              "s0", expandAll(bindings.get("s0"), scope, mq),
+              "x", noexpand((Identifier) bindings.get("x"), mq),
+              "s1", expandAll(bindings.get("s1"),
+                              Scope.fromCatchStmt(scope, t.getCatchClause()),
+                              mq),
+              "s2", expandAll(bindings.get("s2"), scope, mq));
         }
         return NONE;
       }
@@ -709,7 +737,7 @@ public class DefaultValijaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
-          return subst(bindings);
+          return substV();
         }
         return NONE;
       }
@@ -728,7 +756,7 @@ public class DefaultValijaRewriter extends Rewriter {
         if (bindings != null && bindings.get("v") instanceof Reference) {
           Reference v = (Reference) bindings.get("v");
           if (scope.isOuter(v.getIdentifierName())) {
-            return subst(bindings);
+            return substV("v", noexpand(v, mq));
           }
         }
         return NONE;
@@ -1058,10 +1086,9 @@ public class DefaultValijaRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
-          expandEntries(bindings, scope, mq);
-          return QuasiBuilder.subst(
-              "$v.construct(@c, [@as*])",
-              bindings);
+          return substV(
+              "c", expand(bindings.get("c"), scope, mq),
+              "as", expand(bindings.get("as"), scope, mq));
         }
         return NONE;
       }
@@ -1456,7 +1483,7 @@ public class DefaultValijaRewriter extends Rewriter {
           if (f instanceof Reference) {
             Reference fRef = (Reference) f;
             if (scope.isOuter(fRef.getIdentifierName())) {
-              return subst(bindings);
+              return substV("f", noexpand(fRef, mq));
             }
           }
         }
@@ -1584,7 +1611,7 @@ public class DefaultValijaRewriter extends Rewriter {
   }
 
   public DefaultValijaRewriter(boolean logging) {
-    super(logging);
+    super(false, logging);
     addRules(valijaRules);
   }
 

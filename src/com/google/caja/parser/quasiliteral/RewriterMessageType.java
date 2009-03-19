@@ -94,9 +94,15 @@ public enum RewriterMessageType implements MessageTypeInt {
 
   UNSEEN_NODE_LEFT_OVER(
       "%s: INTERNAL COMPILER ERROR. "
-          + "Unseen node left over from rewriter. "
+          + "Unseen node left over from rewriter: %s. "
           + "Please report this error at: http://code.google.com/p/google-caja/issues/",
       MessageLevel.FATAL_ERROR),
+
+  MULTIPLY_TAINTED(
+      "%s: INTERNAL COMPILER WARNING. "
+          + "Node appears multiple times in tree being tainted: %s. "
+          + "Please report this error at: http://code.google.com/p/google-caja/issues/",
+      MessageLevel.WARNING),
 
   UNMATCHED_NODE_LEFT_OVER(
       "%s: INTERNAL COMPILER ERROR. "
@@ -109,6 +115,12 @@ public enum RewriterMessageType implements MessageTypeInt {
           + "Object literal decomposition did not match any rules at: %s. "
           + "Please report this error at: http://code.google.com/p/google-caja/issues/",
       MessageLevel.FATAL_ERROR),
+
+  NOEXPAND_BINARY_DECL(
+      "%s: INTERNAL COMPILER ERROR. "
+          + "Can't noexpand a binary Declaration: %s. "
+          + "Please report this error at: http://code.google.com/p/google-caja/issues/",
+          MessageLevel.ERROR),
 
   THIS_IN_GLOBAL_CONTEXT(
       "%s: \"this\" cannot be used in the global context",

@@ -156,9 +156,10 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
 
     setObjectLiteralValue(envelopeBindings, "instantiate", functionValue);
 
-    return new CajoledModule((ObjectConstructor) QuasiBuilder.subst(
+    return new CajoledModule((ObjectConstructor) QuasiBuilder.substV(
         "({@keys*: @values*})",
-        envelopeBindings));
+        "keys", envelopeBindings.get("keys"),
+        "values", envelopeBindings.get("values")));
   }
 
 

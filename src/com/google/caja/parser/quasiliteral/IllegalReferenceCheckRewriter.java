@@ -71,7 +71,7 @@ public class IllegalReferenceCheckRewriter extends Rewriter {
   }
 
   public IllegalReferenceCheckRewriter(boolean logging) {
-    super(logging);
+    super(false, logging);
     addRules(cajaRules);
   }
 }

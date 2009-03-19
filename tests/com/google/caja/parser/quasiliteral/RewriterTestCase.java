@@ -263,7 +263,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
   }
 
   protected ParseTreeNode emulateIE6FunctionConstructors(ParseTreeNode node) {
-    Rewriter w = new Rewriter(false) {};
+    Rewriter w = new Rewriter(true, false) {};
     w.addRule(new Rule() {
       @Override
       @RuleDescription(
@@ -314,7 +314,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
                       new ParseTreeNodeContainer(ctor.getBody().children()),
                       s2, mq)
                   );
-          return new FunctionDeclaration(rewritten.getIdentifier(), rewritten);
+          return new FunctionDeclaration(rewritten);
         }
         return NONE;
       }

@@ -559,7 +559,7 @@ public final class Parser extends ParserBase {
             FunctionConstructor fc = new FunctionConstructor(
                 posFrom(m), identifier, params.params, body);
             finish(fc, m);
-            s = new FunctionDeclaration(identifier, fc);
+            s = new FunctionDeclaration(fc);
             finish(s, m);
           }
           break;

@@ -32,8 +32,10 @@ public final class FunctionDeclaration extends Declaration {
   }
 
   public FunctionDeclaration(
-      Identifier identifier, FunctionConstructor initializer) {
-    super(initializer.getFilePosition(), identifier, initializer);
+      FunctionConstructor initializer) {
+    super(initializer.getFilePosition(),
+          (Identifier) initializer.getIdentifier().clone(),
+          initializer);
   }
 
   @Override

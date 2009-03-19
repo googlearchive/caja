@@ -394,9 +394,10 @@ public class MatchTest extends CajaTestCase {
     assertEquals("foo", ((Identifier) m.get("name")).getName());
     assertEquals(
         render(jsExpr(fromString("fakeGlobals['foo'] = function foo() {}"))),
-        render(QuasiBuilder.subst(
+        render(QuasiBuilder.substV(
             "fakeGlobals['@name'] = function @name() { @body* }",
-            m)));
+            "name", m.get("name"),
+            "body", m.get("body"))));
   }
 
   private void match(String pattern, String source)

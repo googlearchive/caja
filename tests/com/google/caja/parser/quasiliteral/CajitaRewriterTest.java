@@ -422,7 +422,6 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         FilePosition.UNKNOWN,
         java.util.Arrays.asList(
             new FunctionDeclaration(
-                new Identifier(FilePosition.UNKNOWN, "f"),
                 SyntheticNodes.s(new FunctionConstructor(
                     FilePosition.UNKNOWN,
                     new Identifier(FilePosition.UNKNOWN, "f"),
