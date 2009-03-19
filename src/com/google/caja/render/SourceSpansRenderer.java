@@ -23,11 +23,12 @@ import com.google.caja.util.Callback;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -46,6 +47,16 @@ public class SourceSpansRenderer implements TokenConsumer {
   private class Slot<T> {
     public T value;
   }
+
+  private static final Comparator<InputSource> INPUT_SOURCE_COMPARATOR =
+      new Comparator<InputSource>() {
+        public int compare(InputSource x, InputSource y) {
+          if (x == null && y == null) { return 0; }
+          if (x == null) { return -1; }
+          if (y == null) { return 1; }
+          return x.getUri().compareTo(y.getUri());
+        }
+      };
 
   private static final Pattern markPattern =
       Pattern.compile(" */\\*@([0-9]+)\\*/");
@@ -169,7 +180,7 @@ public class SourceSpansRenderer implements TokenConsumer {
 
     for (int lineIdx = 0; lineIdx < allPositionsByLine.size(); lineIdx++) {
       linePositionIndicesByLine.add(new ArrayList<Integer>());
-      inputSourcesByLine.add(new HashSet<InputSource>());
+      inputSourcesByLine.add(new TreeSet<InputSource>(INPUT_SOURCE_COMPARATOR));
 
       FilePosition lastPos = null;
       FilePosition currentPos;
