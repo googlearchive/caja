@@ -45,7 +45,7 @@
                       assert: 0, dirxml: 0, profile: 0, profileEnd: 0 }) {
         ___.sharedImports.console[k] = (function (k, f) {
           return ___.func(function () { f.apply(console, arguments); });
-        })(k, console[k]);
+        })(k, console[k] || function () {});
       }
     })();</script>
 

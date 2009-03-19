@@ -29,7 +29,8 @@ searchEngine;
  */
 exports.showKitten = function showKitten(result) {
   var title = result.titleHtml.replace(new RegExp('<\/?\\w[^>]*>', 'g'), '');
-  var snippet = result.snippetHtml.replace(new RegExp('<\/?\\w[^>]*>', 'g'), '');
+  var snippet = result.snippetHtml.replace(
+        new RegExp('<\/?\\w[^>]*>', 'g'), '');
 
   // Make sure that the kittens table shows a loading image until the kitty is
   // loaded.
@@ -48,7 +49,7 @@ exports.showKitten = function showKitten(result) {
         }
 
         // Pick one at random.
-        var k = 0;  // (Math.random() * n) | 0;  FAKE FOR DEMO
+        var k = 1;  // (Math.random() * n) | 0;  FAKE FOR DEMO
         console.log('chose ' + k + ' from ' + imageResults.length);
 
         // Display it.

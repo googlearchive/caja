@@ -71,7 +71,8 @@ function doSearch(button) {
           var li = document.createElement('LI');
           var snippetText = result.snippetHtml.replace(
               new RegExp('<\/?[A-Za-z][^>]*>', 'g'), ' ');
-          var titleText = result.titleHtml.replace(new RegExp('<\/?[A-Za-z][^>]*>', 'g'), ' ');
+          var titleText = result.titleHtml.replace(
+              new RegExp('<\/?[A-Za-z][^>]*>', 'g'), ' ');
           li.innerHTML = eval(Template(
               '<b>$titleText</b> &mdash; '
               + '<tt><a href="#">${result.url}</a></tt>'));
@@ -103,7 +104,7 @@ function showResult(index) {
  */
 function clone(original) {
   var cloned = {};
-  caja.forOwnKeys(original, function(k) {
+  cajita.forOwnKeys(original, function(k) {
     cloned[k] = original[k];
   });
   return cloned;

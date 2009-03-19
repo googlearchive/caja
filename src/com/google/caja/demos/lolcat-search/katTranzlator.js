@@ -25,8 +25,8 @@
  */
 function katTranzlator(text) {
   text = text.toUpperCase()
-      .replace(new RegExp('\\s+', 'g', ' '))
-      .replace(new RegExp('^ +| +$', 'g', ''));
+      .replace(new RegExp('\\s+', 'g'), ' ')
+      .replace(new RegExp('^ +| +$', 'g'), '');
   for (var i = 0, n = TRANSFORMATIONS.length; i < n; i += 2) {
     text = text.replace(TRANSFORMATIONS[i], TRANSFORMATIONS[i + 1]);
   }
