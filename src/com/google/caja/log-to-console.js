@@ -38,11 +38,11 @@
 
     function logToConsole(str, opt_stop) {
       if (opt_stop && typeof console.error === 'function') {
-	console.error(str);
+        console.error(str);
       } else if (typeof console.info === 'function') {
-	console.info(str);
+        console.info(str);
       } else {
-	console.log(str);
+        console.log(str);
       }
       if (opt_stop) {
         // breakpoint here by uncommenting out the following line:

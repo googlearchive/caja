@@ -1967,9 +1967,8 @@ var ___;
           // local declaration of 'x'; this gives Catch the same performance
           // problems as with.
 
-          // We return undefined to make sure that caught functions cannot be
-          // evaluated within the catch block.
-          return void 0;
+          // We return a different, powerless function instead.
+          return ___.func(function () {});
         }
         default: {
           log('Unrecognized exception type ' + (typeOf(ex)));

@@ -1387,8 +1387,7 @@ var attachDocumentStub = (function () {
         return this.node___.contains(otherNode);
       };
     }
-    if ('function' === typeof document.documentElement.compareDocumentPosition
-        ) {
+    if ('function' === typeof document.documentElement.compareDocumentPosition) {
       /**
        * Speced in <a href="http://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-compareDocumentPosition">DOM-Level-3</a>.
        */
@@ -1440,7 +1439,7 @@ var attachDocumentStub = (function () {
     TamePseudoNode.prototype.insertBefore =
     TamePseudoNode.prototype.removeChild =
     TamePseudoNode.prototype.replaceChild =
-        function (child) { throw new Error(NOT_EDITABLE); };
+        function (child) { cajita.log("Node not editable; no action performed."); };
     TamePseudoNode.prototype.getFirstChild = function () {
       var children = this.getChildNodes();
       return children.length ? children[0] : null;
@@ -1576,9 +1575,11 @@ var attachDocumentStub = (function () {
     TamePseudoElement.prototype.getAttribute
         = function (attribName) { return null; };
     TamePseudoElement.prototype.setAttribute
-        = function (attribName) { return null; };
+        = function (attribName, value) { };
     TamePseudoElement.prototype.hasAttribute
         = function (attribName) { return false; };
+    TamePseudoElement.prototype.removeAttribute
+        = function (attribName) { };
     TamePseudoElement.prototype.getOwnerDocument
         = function () { return this.tameDoc___; };
     TamePseudoElement.prototype.getChildNodes
@@ -1605,8 +1606,8 @@ var attachDocumentStub = (function () {
     };
     ___.ctor(TamePseudoElement, TamePseudoNode, 'TamePseudoElement');
     ___.all2(___.grantTypedGeneric, TamePseudoElement.prototype,
-             ['getTagName', 'getAttribute', 'setAttribute', 
-              'hasAttribute', 'getElementsByTagName']);
+             ['getTagName', 'getAttribute', 'setAttribute',
+              'hasAttribute', 'removeAttribute', 'getElementsByTagName']);
 
 
     function TameOpaqueNode(node, editable) {
@@ -2726,6 +2727,50 @@ var attachDocumentStub = (function () {
                     + tameBodyElement.getInnerHTML() + '<\/body>');
           },
           editable);
+      if (body.contains) {  // typeof is 'object' on IE
+        tameHtmlElement.contains = function (other) {
+          cajita.guard(tameNodeTrademark, other);
+          var otherNode = other.node___;
+          return body.contains(otherNode);
+        };
+        ___.grantFunc(tameHtmlElement, 'contains');
+      }
+      if ('function' === typeof body.compareDocumentPosition) {
+        /**
+         * Speced in <a href="http://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-compareDocumentPosition">DOM-Level-3</a>.
+         */
+        tameHtmlElement.compareDocumentPosition = function (other) {
+          cajita.guard(tameNodeTrademark, other);
+          var otherNode = other.node___;
+          if (!otherNode) { return 0; }
+          var bitmask = +body.compareDocumentPosition(otherNode);
+          // To avoid leaking information about the relative positioning of
+          // different roots, if neither contains the other, then we mask out
+          // the preceeding/following bits.
+          // 0x18 is (CONTAINS | CONTAINED)
+          // 0x1f is all the bits documented at
+          //     http://www.w3.org/TR/DOM-Level-3-Core/core.html#DocumentPosition
+          //     except IMPLEMENTATION_SPECIFIC
+          // 0x01 is DISCONNECTED
+          /*
+          if (!(bitmask & 0x18)) {
+            // TODO: If they are not under the same virtual doc root, return
+            // DOCUMENT_POSITION_DISCONNECTED instead of leaking information
+            // about PRECEEDED | FOLLOWING.
+          }
+          */
+          return bitmask & 0x1f;
+        };
+        if (!___.hasOwnProp(tameHtmlElement, 'contains')) {
+          // http://www.quirksmode.org/blog/archives/2006/01/contains_for_mo.html
+          tameHtmlElement.contains = (function (other) {
+            var docPos = this.compareDocumentPosition(other);
+            return !(!(docPos & 0x10) && docPos);
+          }).bind(tameHtmlElement);
+          ___.grantFunc(tameHtmlElement, 'contains');
+        }
+        ___.grantFunc(tameHtmlElement, 'compareDocumentPosition');
+      }
       this.documentElement___ = tameHtmlElement;
       classUtils.exportFields(this, ['documentElement', 'body', 'title', 'domain']);
     }
@@ -2793,7 +2838,8 @@ var attachDocumentStub = (function () {
       }
       var flags = html4.ELEMENTS[tagName];
       if (flags & html4.eflags.UNSAFE) {
-        throw new Error(UNSAFE_TAGNAME + "[" + tagName + "]");
+        cajita.log(UNSAFE_TAGNAME + "[" + tagName + "]: no action performed");
+        return null;
       }
       var newEl = this.doc___.createElement(tagName);
       if (elementPolicies.hasOwnProperty(tagName)) {

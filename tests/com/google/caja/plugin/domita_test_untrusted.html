@@ -694,13 +694,13 @@ jsunitRegister('testPseudoElements',
   var html = document.getElementsByTagName('html')[0];
 
   assertEquals('BODY', body.getTagName());
-  assertEquals('', body.getAttribute('foo'));
+  assertEquals(null, body.getAttribute('foo'));
   assertEquals('HEAD', head.getTagName());
-  assertEquals('', head.getAttribute('foo'));
+  assertEquals(null, head.getAttribute('foo'));
   assertEquals('TITLE', title.getTagName());
-  assertEquals('', title.getAttribute('foo'));
+  assertEquals(null, title.getAttribute('foo'));
   assertEquals('HTML', html.getTagName());
-  assertEquals('', html.getAttribute('foo'));
+  assertEquals(null, html.getAttribute('foo'));
 
   pass('test-pseudo-elements');
 });
@@ -910,21 +910,9 @@ function foo() {
 
 jsunitRegister('testCantLoadScript',
                function testCantLoadScript() {
-  expectFailure(
-      function () {
-        document.createElement('SCRIPT');
-      },
-      'successfully created a script tag via SCRIPT');
-  expectFailure(
-      function () {
-        document.createElement('script');
-      },
-      'successfully created a script tag via script');
-  expectFailure(
-      function () {
-        document.createElement('scRipt');
-      },
-      'successfully created a script tag via scRipt');
+  assertEquals(document.createElement('SCRIPT'), null);
+  assertEquals(document.createElement('script'), null);
+  assertEquals(document.createElement('scRipt'), null);
 
   var node;
   assertFailsSafe(
