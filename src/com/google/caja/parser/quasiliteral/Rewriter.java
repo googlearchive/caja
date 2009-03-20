@@ -258,10 +258,10 @@ public abstract class Rewriter {
    * through the expander on purpose.
    * <p>
    * We are using taint to check that all nodes emerging from this translator
-   * are expanded unless stated otherwise, so noexpand()
+   * are expanded unless stated otherwise, so {@code noexpand()}
    * removes this taint in order to state otherwise.
    */
-  protected Reference noexpand(Reference node, MessageQueue mq) {
+  protected Reference noexpand(Reference node) {
     removeTaint(node.getIdentifier());
     return removeTaint(node);
   }
@@ -277,24 +277,24 @@ public abstract class Rewriter {
     return removeTaint(node);
   }
 
-  protected Identifier noexpand(Identifier node, MessageQueue mq) {
+  protected Identifier noexpand(Identifier node) {
     return removeTaint(node);
   }
 
-  protected Literal noexpand(Literal node, MessageQueue mq) {
+  protected Literal noexpand(Literal node) {
     return removeTaint(node);
   }
 
-  protected BreakStmt noexpand(BreakStmt node, MessageQueue mq) {
+  protected BreakStmt noexpand(BreakStmt node) {
     return removeTaint(node);
   }
 
-  protected ContinueStmt noexpand(ContinueStmt node, MessageQueue mq) {
+  protected ContinueStmt noexpand(ContinueStmt node) {
     return removeTaint(node);
   }
 
-  protected ParseTreeNodeContainer
-  noexpandParams(ParseTreeNodeContainer node, MessageQueue mq) {
+  protected ParseTreeNodeContainer noexpandParams(
+      ParseTreeNodeContainer node, MessageQueue mq) {
     if (taintChecking) {
       for (ParseTreeNode child : node.children()) {
         noexpand((Declaration) child, mq);

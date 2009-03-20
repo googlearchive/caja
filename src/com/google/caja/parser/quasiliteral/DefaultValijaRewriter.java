@@ -64,7 +64,7 @@ public class DefaultValijaRewriter extends Rewriter {
     return new Reference(t);
   }
 
-  protected ParseTreeNode noexpandAll(ParseTreeNode node, MessageQueue mq) {
+  protected ParseTreeNode noexpandAll(ParseTreeNode node) {
     // TODO(erights): If we ever turn on taint checking for
     // DefaultValijaRewriter this needs to return a node (perhaps a defensive
     // copy) in which all taint has been removed.
@@ -72,7 +72,7 @@ public class DefaultValijaRewriter extends Rewriter {
   }
 
 
-  final public Rule[] valijaRules = {
+  public final Rule[] valijaRules = {
 
     ////////////////////////////////////////////////////////////////////////
     // Do nothing if the node is already the result of some translation
@@ -246,7 +246,7 @@ public class DefaultValijaRewriter extends Rewriter {
           if (isSynthetic(ex)) {
             return substV(
                 "body", expand(bindings.get("body"), scope, mq),
-                "ex", noexpand(ex, mq),
+                "ex", noexpand(ex),
                 "handler", expand(bindings.get("handler"), scope, mq)
                 );
           }
@@ -275,7 +275,7 @@ public class DefaultValijaRewriter extends Rewriter {
           if (isSynthetic(ex)) {
             return substV(
                 "body", expand(bindings.get("body"), scope, mq),
-                "ex", noexpand(ex, mq),
+                "ex", noexpand(ex),
                 "handler", expand(bindings.get("handler"), scope, mq),
                 "cleanup", expand(bindings.get("cleanup"), scope, mq)
                 );
@@ -307,7 +307,7 @@ public class DefaultValijaRewriter extends Rewriter {
             // presumably already contain Cajita.  If they do not
             // contain valid Cajita code, the CajitaRewriter will
             // complain.
-            return substV("stmt", noexpandAll(bindings.get("stmt"), mq));
+            return substV("stmt", noexpandAll(bindings.get("stmt")));
           }
         }
         return NONE;
@@ -340,7 +340,7 @@ public class DefaultValijaRewriter extends Rewriter {
               Expression initBlock = (Expression) substV(
                   "name", fname,
                   "actuals", noexpandParams(actuals, mq),
-                  "body", noexpandAll(bindings.get("body"), mq)
+                  "body", noexpandAll(bindings.get("body"))
               );
               scope.addStartOfScopeStatement(newExprStmt(initScope));
               scope.addStartOfBlockStatement(newExprStmt(initBlock));
@@ -375,9 +375,9 @@ public class DefaultValijaRewriter extends Rewriter {
           Identifier iOpt = (Identifier) bindings.get("i");
           ParseTreeNodeContainer actuals = (ParseTreeNodeContainer) bindings.get("actuals");
           FunctionConstructor newCtor = (FunctionConstructor) substV(
-              "i", null == iOpt ? null : noexpand(iOpt, mq),
+              "i", null == iOpt ? null : noexpand(iOpt),
               "actuals", noexpandParams(actuals, mq),
-              "stmt", noexpandAll(bindings.get("stmt"), mq));
+              "stmt", noexpandAll(bindings.get("stmt")));
           if (node instanceof FunctionDeclaration) {
             return new FunctionDeclaration(newCtor);
           } else {
@@ -584,7 +584,7 @@ public class DefaultValijaRewriter extends Rewriter {
           TryStmt t = (TryStmt) node;
           return substV(
               "s0", expandAll(bindings.get("s0"), scope, mq),
-              "x", noexpand((Identifier) bindings.get("x"), mq),
+              "x", noexpand((Identifier) bindings.get("x")),
               "s1", expandAll(bindings.get("s1"),
                               Scope.fromCatchStmt(scope, t.getCatchClause()),
                               mq));
@@ -607,7 +607,7 @@ public class DefaultValijaRewriter extends Rewriter {
           TryStmt t = (TryStmt) node;
           return substV(
               "s0", expandAll(bindings.get("s0"), scope, mq),
-              "x", noexpand((Identifier) bindings.get("x"), mq),
+              "x", noexpand((Identifier) bindings.get("x")),
               "s1", expandAll(bindings.get("s1"),
                               Scope.fromCatchStmt(scope, t.getCatchClause()),
                               mq),
@@ -756,7 +756,7 @@ public class DefaultValijaRewriter extends Rewriter {
         if (bindings != null && bindings.get("v") instanceof Reference) {
           Reference v = (Reference) bindings.get("v");
           if (scope.isOuter(v.getIdentifierName())) {
-            return substV("v", noexpand(v, mq));
+            return substV("v", noexpand(v));
           }
         }
         return NONE;
@@ -1483,7 +1483,7 @@ public class DefaultValijaRewriter extends Rewriter {
           if (f instanceof Reference) {
             Reference fRef = (Reference) f;
             if (scope.isOuter(fRef.getIdentifierName())) {
-              return substV("f", noexpand(fRef, mq));
+              return substV("f", noexpand(fRef));
             }
           }
         }

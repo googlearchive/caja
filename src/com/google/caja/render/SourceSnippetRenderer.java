@@ -233,7 +233,7 @@ public class SourceSnippetRenderer implements TokenConsumer {
   }
 
   private void addEvidenceForCurrentMark(FilePosition mark, int evidence) {
-    if (mark == FilePosition.UNKNOWN || mark == null) { return; }
+    if (mark == null || InputSource.UNKNOWN.equals(mark.source())) { return; }
 
     List<OriginalSourceLine> sourceList =
         originalSourceLines.get(mark.source());

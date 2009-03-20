@@ -209,7 +209,7 @@ public class CajitaRewriter extends Rewriter {
           if (isSynthetic(ref.getIdentifier())) {
             // noexpand needed since node itself may not be synthetic
             // even though we now know it contains a synthetic identifier.
-            return noexpand(ref, mq);
+            return noexpand(ref);
           }
         }
         return NONE;
@@ -364,7 +364,7 @@ public class CajitaRewriter extends Rewriter {
           if (isSynthetic(ex)) {
             return substV(
                 "body", expand(bindings.get("body"), scope, mq),
-                "ex", noexpand(ex, mq),
+                "ex", noexpand(ex),
                 "handler", expand(bindings.get("handler"), scope, mq));
           }
         }
@@ -392,7 +392,7 @@ public class CajitaRewriter extends Rewriter {
           if (isSynthetic(ex)) {
             return substV(
                 "body", expand(bindings.get("body"), scope, mq),
-                "ex", noexpand(ex, mq),
+                "ex", noexpand(ex),
                 "handler", expand(bindings.get("handler"), scope, mq),
                 "cleanup", expand(bindings.get("cleanup"), scope, mq));
           }
@@ -686,7 +686,7 @@ public class CajitaRewriter extends Rewriter {
           }
           return substV(
             "s0",  expandAll(bindings.get("s0"), scope, mq),
-            "x",   noexpand((Identifier) bindings.get("x"), mq),
+            "x",   noexpand((Identifier) bindings.get("x")),
             "s1",  expandAll(bindings.get("s1"),
                              Scope.fromCatchStmt(scope, t.getCatchClause()), mq));
         }
@@ -728,7 +728,7 @@ public class CajitaRewriter extends Rewriter {
           }
           return substV(
             "s0",  expandAll(bindings.get("s0"), scope, mq),
-            "x",   noexpand((Identifier) bindings.get("x"), mq),
+            "x",   noexpand((Identifier) bindings.get("x")),
             "s1",  expandAll(bindings.get("s1"),
                              Scope.fromCatchStmt(scope, t.getCatchClause()), mq),
             "s2",  expandAll(bindings.get("s2"), scope, mq));
@@ -856,7 +856,7 @@ public class CajitaRewriter extends Rewriter {
         if (bindings != null) {
           ParseTreeNode fname = bindings.get("fname");
           if (scope.isDeclaredFunctionReference(fname)) {
-            return substV("fname", noexpand((Reference) fname, mq));
+            return substV("fname", noexpand((Reference) fname));
           }
         }
         return NONE;
@@ -876,7 +876,7 @@ public class CajitaRewriter extends Rewriter {
         if (bindings != null) {
           ParseTreeNode v = bindings.get("v");
           if (v instanceof Reference) {
-            return noexpand((Reference) v, mq);
+            return noexpand((Reference) v);
           }
         }
         return NONE;
@@ -951,7 +951,7 @@ public class CajitaRewriter extends Rewriter {
             if (null != oPermit.canRead(m)) {
               return substV(
                   "o",  expand(o, scope, mq),
-                  "m",  noexpand(m, mq));
+                  "m",  noexpand(m));
             }
           }
         }
@@ -976,7 +976,7 @@ public class CajitaRewriter extends Rewriter {
           return commas(oPair.b, (Expression) QuasiBuilder.substV(
               "@oRef.@fp ? @oRef.@p : ___.readPub(@oRef, @rp)",
               "oRef", oPair.a,
-              "p",    noexpand(p, mq),
+              "p",    noexpand(p),
               "fp",   newReference(
                           FilePosition.UNKNOWN, propertyName + "_canRead___"),
               "rp",   toStringLiteral(p)));
@@ -1176,7 +1176,7 @@ public class CajitaRewriter extends Rewriter {
             ParseTreeNode r = bindings.get("r");
             return QuasiBuilder.substV(
                 "___.setStatic(@fname, @rp, @r)",
-                "fname", noexpand(fname, mq),
+                "fname", noexpand(fname),
                 "rp", toStringLiteral(p),
                 "r", expand(nymize(r, p.getIdentifierName(), "static"), scope, mq));
           }
@@ -1211,7 +1211,7 @@ public class CajitaRewriter extends Rewriter {
               "rRef", rPair.a,
               "pCanSet", newReference(
                   FilePosition.UNKNOWN, propertyName + "_canSet___"),
-              "p", noexpand(p, mq),
+              "p", noexpand(p),
               "pName", toStringLiteral(p)));
         }
         return NONE;
@@ -1273,7 +1273,7 @@ public class CajitaRewriter extends Rewriter {
           if (!scope.isFunction(v.getName())) {
             ParseTreeNode r = bindings.get("r");
             return substV(
-                "v", noexpand(v, mq),
+                "v", noexpand(v),
                 "r", expand(nymize(r, v.getName(), "var"), scope, mq));
           }
         }
@@ -1313,7 +1313,7 @@ public class CajitaRewriter extends Rewriter {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null
             && !scope.isFunction(getIdentifierName(bindings.get("v")))) {
-          return substV("v", noexpand((Identifier) bindings.get("v"), mq));
+          return substV("v", noexpand((Identifier) bindings.get("v")));
         }
         return NONE;
       }
@@ -1358,7 +1358,7 @@ public class CajitaRewriter extends Rewriter {
             if (!scope.isFunction(vname)) {
               ParseTreeNode r = bindings.get("r");
               return substV(
-                  "v", noexpand((Reference) v, mq),
+                  "v", noexpand((Reference) v),
                   "r", expand(nymize(r, vname, "var"), scope, mq));
             }
           }
@@ -1695,7 +1695,7 @@ public class CajitaRewriter extends Rewriter {
             if (null != oPermit.canCall(m)) {
               return substV(
                   "o",  expand(o, scope, mq),
-                  "m",  noexpand(m, mq),
+                  "m",  noexpand(m),
                   "as", expandAll(bindings.get("as"), scope, mq));
             }
           }
@@ -1724,7 +1724,7 @@ public class CajitaRewriter extends Rewriter {
               "@oRef.@fm ? @oRef.@m(@argRefs*) : ___.callPub(@oRef, @rm, [@argRefs*]);",
               "oRef",    oPair.a,
               "argRefs", argsPair.a,
-              "m",       noexpand(m, mq),
+              "m",       noexpand(m),
               "fm",      newReference(
                              FilePosition.UNKNOWN, methodName + "_canCall___"),
               "rm",      toStringLiteral(m)));
@@ -1764,7 +1764,7 @@ public class CajitaRewriter extends Rewriter {
           ParseTreeNode fname = bindings.get("fname");
           if (scope.isDeclaredFunctionReference(fname)) {
             return substV(
-              "fname", noexpand((Reference) fname, mq),
+              "fname", noexpand((Reference) fname),
               "as",    expandAll(bindings.get("as"), scope, mq));
           }
         }
@@ -1846,7 +1846,7 @@ public class CajitaRewriter extends Rewriter {
                 ((FunctionDeclaration) node).getInitializer());
             ParseTreeNodeContainer ps = (ParseTreeNodeContainer) bindings.get("ps");
             checkFormals(ps, mq);
-            Identifier fname = noexpand((Identifier) bindings.get("fname"), mq);
+            Identifier fname = noexpand((Identifier) bindings.get("fname"));
             Block block = (Block) QuasiBuilder.substV(
                 "function @fname(@ps*) {\n"
                 + "  @fh*;\n"
@@ -1899,7 +1899,7 @@ public class CajitaRewriter extends Rewriter {
               ((FunctionDeclaration) node).getInitializer());
           ParseTreeNodeContainer ps = (ParseTreeNodeContainer) bindings.get("ps");
           checkFormals(ps, mq);
-          Identifier fname = noexpand((Identifier) bindings.get("fname"), mq);
+          Identifier fname = noexpand((Identifier) bindings.get("fname"));
           Identifier fself = new Identifier(
               FilePosition.UNKNOWN, nym(node, fname.getName(), "self"));
           scope.declareStartOfScopeVariable(fname);
@@ -1954,7 +1954,7 @@ public class CajitaRewriter extends Rewriter {
               (FunctionConstructor) node);
           ParseTreeNodeContainer ps = (ParseTreeNodeContainer) bindings.get("ps");
           checkFormals(ps, mq);
-          Identifier fname = noexpand((Identifier) bindings.get("fname"), mq);
+          Identifier fname = noexpand((Identifier) bindings.get("fname"));
           return QuasiBuilder.substV(
               "(function() {\n"
               + "  function @fname(@ps*) {\n"
@@ -2117,7 +2117,7 @@ public class CajitaRewriter extends Rewriter {
           StringLiteral key = (StringLiteral) bindings.get("key");
           ParseTreeNode val = bindings.get("val");
           return substV(
-              "key", noexpand(key, mq),
+              "key", noexpand(key),
               "val", expand(nymize(val, key.getUnquotedValue(), "lit"), scope, mq));
         }
         return NONE;
@@ -2244,7 +2244,7 @@ public class CajitaRewriter extends Rewriter {
                 node.getFilePosition(),
                 MessagePart.Factory.valueOf(label));
           }
-          return noexpand((BreakStmt) node, mq);
+          return noexpand((BreakStmt) node);
         }
         return NONE;
       }
@@ -2268,7 +2268,7 @@ public class CajitaRewriter extends Rewriter {
                 node.getFilePosition(),
                 MessagePart.Factory.valueOf(label));
           }
-          return noexpand((ContinueStmt) node, mq);
+          return noexpand((ContinueStmt) node);
         }
         return NONE;
       }

@@ -15,6 +15,7 @@
 package com.google.caja.render;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.util.Callback;
@@ -132,7 +133,7 @@ abstract class BufferingRenderer implements TokenConsumer {
   }
 
   public final void mark(FilePosition mark) {
-    if (mark != null && !FilePosition.UNKNOWN.equals(mark)) {
+    if (mark != null && !InputSource.UNKNOWN.equals(mark.source())) {
       pending.add(mark);
     }
   }

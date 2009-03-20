@@ -44,7 +44,7 @@ import java.util.regex.Matcher;
 public class SourceSpansRenderer implements TokenConsumer {
 
   // A helper for declaring in/out function parameters.
-  private class Slot<T> {
+  private static class Slot<T> {
     public T value;
   }
 
@@ -67,7 +67,7 @@ public class SourceSpansRenderer implements TokenConsumer {
   private final List<FilePosition> marks = new ArrayList<FilePosition>();
   private final StringBuilder programTextAccumulator = new StringBuilder();
   private String programText;
-  private List<String> sourceLocationMap = new ArrayList<String>();
+  private final List<String> sourceLocationMap = new ArrayList<String>();
 
   /**
    * Create a SourceSpansRenderer.
@@ -315,7 +315,7 @@ public class SourceSpansRenderer implements TokenConsumer {
   }
 
   private static String renderInputSource(MessageContext mc, InputSource is) {
-    return is == InputSource.UNKNOWN
+    return InputSource.UNKNOWN.equals(is)
         ? "(void 0)"
         : "'" + mc.abbreviate(is) + "'";
   }
