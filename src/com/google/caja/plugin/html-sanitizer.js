@@ -14,8 +14,15 @@
 
 /**
  * @fileoverview
- * Provide a factory that allows transformations on HTML.
- * @author mikesamuel@gmail.com 
+ * An HTML sanitizer that can satisfy a variety of security policies.
+ *
+ * <p>
+ * The HTML sanitizer is built around a SAX parser and HTML element and
+ * attributes schemas. 
+ *
+ * @author mikesamuel@gmail.com
+ * @requires html4
+ * @provides html, html_sanitize
  */
 
 
@@ -26,6 +33,14 @@ var html = (function () {
   if ('script' === 'SCRIPT'.toLowerCase()) {
     lcase = function (s) { return s.toLowerCase(); };
   } else {
+    /**
+     * {@updoc
+     * $ lcase('SCRIPT')
+     * # 'script'
+     * $ lcase('script')
+     * # 'script'
+     * }
+     */
     lcase = function (s) {
       return s.replace(
           /[A-Z]/g,
@@ -36,18 +51,53 @@ var html = (function () {
   }
 
   var ENTITIES = {
-    LT   : '<',
-    GT   : '>',
-    AMP  : '&',
-    NBSP : '\240',
-    QUOT : '"',
-    APOS : '\''
+    lt   : '<',
+    gt   : '>',
+    amp  : '&',
+    nbsp : '\240',
+    quot : '"',
+    apos : '\''
   };
 
   var decimalEscapeRe = /^#(\d+)$/;
-  var hexEscapeRe = /^#x([0-9A-F]+)$/;
+  var hexEscapeRe = /^#x([0-9A-Fa-f]+)$/;
+  /**
+   * Decodes an HTML entity.
+   * 
+   * {@updoc
+   * $ lookupEntity('lt')
+   * # '<'
+   * $ lookupEntity('GT')
+   * # '>'
+   * $ lookupEntity('amp')
+   * # '&'
+   * $ lookupEntity('nbsp')
+   * # '\xA0'
+   * $ lookupEntity('apos')
+   * # "'"
+   * $ lookupEntity('quot')
+   * # '"'
+   * $ lookupEntity('#xa')
+   * # '\n'
+   * $ lookupEntity('#10')
+   * # '\n'
+   * $ lookupEntity('#x0a')
+   * # '\n'
+   * $ lookupEntity('#010')
+   * # '\n'
+   * $ lookupEntity('#x00A')
+   * # '\n'
+   * $ lookupEntity('Pi')      // Known failure
+   * # '\u03A0'
+   * $ lookupEntity('pi')      // Known failure
+   * # '\u03C0'
+   * }
+   *
+   * @param name the content between the '&' and the ';'.
+   * @return a single unicode code-point as a string.
+   */
   function lookupEntity(name) {
-    name = name.toUpperCase();  // TODO: &pi; is different from &Pi;
+    name = lcase(name);  // TODO: &pi; is different from &Pi;
     if (ENTITIES.hasOwnProperty(name)) { return ENTITIES[name]; }
     var m = name.match(decimalEscapeRe);
     if (m) {
@@ -67,7 +117,28 @@ var html = (function () {
     return s.replace(nulRe, '');
   }
 
-  var entityRe = /&(#\d+|#x[\da-f]+|\w+);/g;
+  var entityRe = /&(#\d+|#x[0-9A-Fa-f]+|\w+);/g;
+  /**
+   * The plain text of a chunk of HTML CDATA which possibly containing.
+   *
+   * {@updoc
+   * $ unescapeEntities('')
+   * # ''
+   * $ unescapeEntities('hello World!')
+   * # 'hello World!'
+   * $ unescapeEntities('1 &lt; 2 &amp;&AMP; 4 &gt; 3&#10;')
+   * # '1 < 2 && 4 > 3\n'
+   * $ unescapeEntities('&lt;&lt <- unfinished entity&gt;')
+   * # '<&lt <- unfinished entity>'
+   * $ unescapeEntities('/foo?bar=baz&copy=true')  // & often unescaped in URLS
+   * # '/foo?bar=baz&copy=true'
+   * $ unescapeEntities('pi=&pi;&#x3c0;, Pi=&Pi;\u03A0') // FIXME: known failure
+   * # 'pi=\u03C0\u03c0, Pi=\u03A0\u03A0'
+   * }
+   *
+   * @param s a chunk of HTML CDATA.  It must not start or end inside an HTML
+   *   entity.
+   */
   function unescapeEntities(s) {
     return s.replace(entityRe, decodeOneEntity);
   }
@@ -79,7 +150,18 @@ var html = (function () {
   var quotRe = /\"/g;
   var eqRe = /=/g;
 
-  /** Escapes HTML special characters in attribute values as HTML entities. */
+  /**
+   * Escapes HTML special characters in attribute values as HTML entities.
+   *
+   * {@updoc
+   * $ escapeAttrib('')
+   * # ''
+   * $ escapeAttrib('"<<&==&>>"')  // Do not just escape the first occurrence.
+   * # '&quot;&lt;&lt;&amp;&#61;&#61;&amp;&gt;&gt;&quot;'
+   * $ escapeAttrib('Hello <World>!')
+   * # 'Hello &lt;World&gt;!'
+   * }
+   */
   function escapeAttrib(s) {
     // Escaping '=' defangs many UTF-7 and SGML short-tag attacks.
     return s.replace(ampRe, '&amp;').replace(ltRe, '&lt;').replace(gtRe, '&gt;')
@@ -88,6 +170,10 @@ var html = (function () {
 
   /**
    * Escape entities in RCDATA that can be escaped without changing the meaning.
+   * {@updoc
+   * $ normalizeRCData('1 < 2 &&amp; 3 > 4 &amp;& 5 &lt; 7&8')
+   * # '1 &lt; 2 &amp;&amp; 3 &gt; 4 &amp;&amp; 5 &lt; 7&amp;8'
+   * }
    */
   function normalizeRCData(rcdata) {
     return rcdata
@@ -112,8 +198,8 @@ var html = (function () {
       // interpreters are inconsistent in whether a group that matches nothing
       // is null, undefined, or the empty string.
       + ('(?:'
-         + '([a-z][a-z-]*)'
-         + ('('
+         + '([a-z][a-z-]*)'                    // attribute name
+         + ('('                                // optionally followed
             + '\\s*=\\s*'
             + ('('
                // A double quoted string.
@@ -157,7 +243,7 @@ var html = (function () {
    * Given a SAX-like event handler, produce a function that feeds those
    * events and a parameter to the event handler.
    *
-   * The event handler has the form:<pre>
+   * The event handler has the form:{@code
    * {
    *   // Name is an upper-case HTML tag name.  Attribs is an array of
    *   // alternating upper-case attribute names, and attribute values.  The
@@ -169,10 +255,10 @@ var html = (function () {
    *   rcdata:   function (text, param) { ... },
    *   cdata:    function (text, param) { ... },
    *   startDoc: function (param) { ... },
-   *   endDod:   function (param) { ... },
-   * }</pre>
+   *   endDoc:   function (param) { ... }
+   * }}
    *
-   * @param {Object} event handler.
+   * @param {Object} handler a record containing event handlers.
    * @return {Function} that takes a chunk of html and a parameter.
    *   The parameter is passed on to the handler methods.
    */
@@ -183,11 +269,11 @@ var html = (function () {
 
       var inTag = false;  // True iff we're currently processing a tag.
       var attribs = [];  // Accumulates attribute names and values.
-      var tagName;  // The name of the tag currently being processed.
-      var eflags;  // The element flags for the current tag.
-      var openTag;  // True if the current tag is an open tag.
+      var tagName = void 0;  // The name of the tag currently being processed.
+      var eflags = void 0;  // The element flags for the current tag.
+      var openTag = void 0;  // True if the current tag is an open tag.
 
-      handler.startDoc && handler.startDoc(param);
+      if (handler.startDoc) { handler.startDoc(param); }
 
       while (htmlText) {
         var m = htmlText.match(inTag ? INSIDE_TAG_TOKEN : OUTSIDE_TAG_TOKEN);
@@ -217,9 +303,13 @@ var html = (function () {
           } else if (m[4]) {
             if (eflags !== void 0) {  // False if not in whitelist.
               if (openTag) {
-                handler.startTag && handler.startTag(tagName, attribs, param);
+                if (handler.startTag) {
+                  handler.startTag(tagName, attribs, param);
+                }
               } else {
-                handler.endTag && handler.endTag(tagName, param);
+                if (handler.endTag) {
+                  handler.endTag(tagName, param);
+                }
               }
             }
 
@@ -234,8 +324,9 @@ var html = (function () {
               var dataEnd = htmlLower.indexOf('</' + tagName);
               if (dataEnd < 0) { dataEnd = htmlText.length; }
               if (eflags & html4.eflags.CDATA) {
-                handler.cdata
-                    && handler.cdata(htmlText.substring(0, dataEnd), param);
+                if (handler.cdata) {
+                  handler.cdata(htmlText.substring(0, dataEnd), param);
+                }
               } else if (handler.rcdata) {
                 handler.rcdata(
                     normalizeRCData(htmlText.substring(0, dataEnd)), param);
@@ -249,15 +340,15 @@ var html = (function () {
           }
         } else {
           if (m[1]) {  // Entity
-            handler.pcdata && handler.pcdata(m[0], param);
+            if (handler.pcdata) { handler.pcdata(m[0], param); }
           } else if (m[3]) {  // Tag
             openTag = !m[2];
             inTag = true;
-            tagName = m[3].toLowerCase();
+            tagName = lcase(m[3]);
             eflags = html4.ELEMENTS.hasOwnProperty(tagName)
                 ? html4.ELEMENTS[tagName] : void 0;
           } else if (m[4]) {  // Text
-            handler.pcdata && handler.pcdata(m[4], param);
+            if (handler.pcdata) { handler.pcdata(m[4], param); }
           } else if (m[5]) {  // Cruft
             if (handler.pcdata) {
               switch (m[5]) {
@@ -270,7 +361,7 @@ var html = (function () {
         }
       }
 
-      handler.endDoc && handler.endDoc(param);
+      if (handler.endDoc) { handler.endDoc(param); }
     };
   }
 
@@ -285,7 +376,7 @@ var html = (function () {
 /**
  * Returns a function that strips unsafe tags and attributes from html.
  * @param {Function} sanitizeAttributes
- *     from tagName, attribs[]) to null or a sanitized attribute array.
+ *     maps from (tagName, attribs[]) to null or a sanitized attribute array.
  *     The attribs array can be arbitrarily modified, but the same array
  *     instance is reused, so should not be held.
  * @return {Function} from html to sanitized html
@@ -381,10 +472,10 @@ html.makeHtmlSanitizer = function (sanitizeAttributes) {
 
 /**
  * Strips unsafe tags and attributes from html.
- * @param {string} html to sanitize
- * @param {Function} opt_urlXform : string -> string? -- a transform to apply to
- *     url attribute values.
- * @param {Function} opt_nmTokenXform : string -> string? -- a transform to
+ * @param {string} htmlText to sanitize
+ * @param {Function} opt_urlPolicy -- a transform to apply to url attribute
+ *     values.
+ * @param {Function} opt_nmTokenPolicy : string -> string? -- a transform to
  *     apply to names, ids, and classes.
  * @return {string} html
  */
@@ -407,6 +498,7 @@ function html_sanitize(htmlText, opt_urlPolicy, opt_nmTokenPolicy) {
               case html4.atype.SCRIPT:
               case html4.atype.STYLE:
                 value = null;
+                break;
               case html4.atype.IDREF:
               case html4.atype.IDREFS:
               case html4.atype.GLOBAL_NAME:
