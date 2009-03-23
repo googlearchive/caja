@@ -3044,12 +3044,17 @@ var attachDocumentStub = (function () {
         COMPUTED_STYLE_WHITELIST,
         ___.func(
             function (propertyName, _) {
+              var canonPropertyName = cssNameToStylePropertyName(propertyName);
+              function getHandler() {
+                if (!this.style___) { return void 0; }
+                return String(this.style___[canonPropertyName] || '');
+              }
               ___.useGetHandler(
-                  TameComputedStyle.prototype, propertyName,
-                  function () {
-                    if (!this.style___) { return void 0; }
-                    return String(this.style___[propertyName] || '');
-                  });
+                  TameComputedStyle.prototype, propertyName, getHandler);
+              if (propertyName !== canonPropertyName) {
+                ___.useGetHandler(
+                    TameComputedStyle.prototype, canonPropertyName, getHandler);
+              }
             }));
     TameComputedStyle.prototype.toString = function () {
       return '[Fake Computed Style]';
@@ -3431,6 +3436,9 @@ var attachDocumentStub = (function () {
                         def.set || propertyOnlyHasGetter);
       ___.useGetHandler(tameDefaultView, propertyName, def.get);
       ___.useSetHandler(tameDefaultView, propertyName,
+                        def.set || propertyOnlyHasGetter);
+      ___.useGetHandler(tameDocument.getBody(), propertyName, def.get);
+      ___.useSetHandler(tameDocument.getBody(), propertyName,
                         def.set || propertyOnlyHasGetter);
     }));
 

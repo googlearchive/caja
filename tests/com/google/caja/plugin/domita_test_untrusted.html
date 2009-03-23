@@ -17,7 +17,7 @@
 <style type="text/css">
   .testcontainer { background: yellow; border: 2px solid yellow }
   .testcontainer.passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
-  .invisible { display: none }
+  .invisible { display: none; float: left }
   .inline { display: inline }
 </style>
 
@@ -1493,9 +1493,11 @@ jsunitRegister('testComputedStyle',
     assertComputedStyle(fakie, 'first-line', 'display', 'inline');
   }
   assertComputedStyle(invisible, null, 'display', 'none');
+  assertComputedStyle(invisible, null, 'float', 'left');
   // Make sure we don't expose information that we haven't yet sorted out how
   // to safely expose.
   assertComputedStyle(block, null, 'color', undefined);
+  assertComputedStyle(block, null, 'float', 'none');
 
   pass('test-computed-style');
 });
@@ -1811,6 +1813,8 @@ jsunitRegister('testResizing',
   function windowDims() {
     assertEquals(window.clientWidth, document.defaultView.clientWidth);
     assertEquals(window.clientHeight, document.defaultView.clientHeight);
+    assertEquals(window.clientWidth, document.body.clientWidth);
+    assertEquals(window.clientHeight, document.body.clientHeight);
     return String([window.clientWidth, window.clientHeight]);
   }
 
