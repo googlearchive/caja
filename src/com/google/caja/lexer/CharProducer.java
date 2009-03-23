@@ -97,6 +97,10 @@ public abstract class CharProducer {
         .toFilePosition(getCharInFile(start), getCharInFile(end));
   }
 
+  /** Returns a distinct instance initialized with the same offset and limit. */
+  @Override
+  public abstract CharProducer clone();
+
   /**
    * Convenience methods for creating producers.
    */
@@ -275,42 +279,13 @@ public abstract class CharProducer {
      * argument, and when that is exhausted proceeds to the next input.
      * The inputs are not consumed.
      */
-    public static CharProducer chain(final CharProducer... srcs) {
+    public static CharProducer chain(CharProducer... srcs) {
       if (srcs.length == 0) {
         return new CharProducerImpl(new char[0], 0, FilePosition.UNKNOWN);
       } else if (srcs.length == 1) {
         return srcs[0];
       }
-      final int[] ends = new int[srcs.length];
-      for (int i = 0; i < srcs.length; ++i) {
-        CharProducer s = srcs[i];
-        int length = s.getLimit() - s.getOffset();
-        ends[i] = i != 0 ? ends[i - 1] + length : length;
-      }
-      char[] concatenation = new char[ends[ends.length - 1]];
-      int pos = 0;
-      for (CharProducer s : srcs) {
-        int len = s.getLimit() - s.getOffset();
-        System.arraycopy(s.getBuffer(), s.getOffset(), concatenation, pos, len);
-        pos += len;
-      }
-      return new CharProducer(concatenation, concatenation.length) {
-        @Override
-        public int getCharInFile(int offset) {
-          int i = Arrays.binarySearch(ends, offset);
-          if (i < 0) { i = ~i; }
-          int prev = i == 0 ? 0 : ends[i - 1];
-          return srcs[i].getCharInFile(offset - prev);
-        }
-
-        @Override
-        public SourceBreaks getSourceBreaks(int offset) {
-          int i = Arrays.binarySearch(ends, offset);
-          if (i < 0) { i = ~i; }
-          int prev = i == 0 ? 0 : ends[i - 1];
-          return srcs[i].getSourceBreaks(offset - prev);
-        }
-      };
+      return ChainCharProducer.make(srcs);
     }
 
     private Factory() {
@@ -336,6 +311,13 @@ public abstract class CharProducer {
         }
       }
 
+      private CharProducerImpl(CharProducerImpl orig) {
+        super(orig.getBuffer(), orig.getLimit());
+        this.breaks = orig.breaks;
+        this.charInFile = orig.charInFile;
+        this.consume(orig.getOffset());
+      }
+
       @Override
       public int getCharInFile(int offset) {
         return charInFile + offset;
@@ -343,6 +325,68 @@ public abstract class CharProducer {
 
       @Override
       public SourceBreaks getSourceBreaks(int offset) { return breaks; }
+
+      @Override
+      public CharProducer clone() {
+        return new CharProducerImpl(this);
+      }
+    }
+  }
+
+  private static class ChainCharProducer extends CharProducer {
+    private final int[] ends;
+    private final CharProducer[] srcs;
+
+    private ChainCharProducer(
+        char[] concatenation, int[] ends, CharProducer... srcs) {
+      super(concatenation, concatenation.length);
+      this.ends = ends;
+      this.srcs = srcs;
+    }
+
+    private ChainCharProducer(ChainCharProducer orig) {
+      super(orig.getBuffer(), orig.getLimit());
+      this.ends = orig.ends;
+      this.srcs = orig.srcs;
+      this.consume(orig.getOffset());
+    }
+
+    static CharProducer make(CharProducer... srcs) {
+      int[] ends = new int[srcs.length];
+      for (int i = 0; i < srcs.length; ++i) {
+        CharProducer s = srcs[i];
+        int length = s.getLimit() - s.getOffset();
+        ends[i] = i != 0 ? ends[i - 1] + length : length;
+      }
+      char[] concatenation = new char[ends[ends.length - 1]];
+      int pos = 0;
+      for (CharProducer s : srcs) {
+        int len = s.getLimit() - s.getOffset();
+        System.arraycopy(s.getBuffer(), s.getOffset(), concatenation, pos, len);
+        pos += len;
+      }
+      return new ChainCharProducer(concatenation, ends, srcs);
+    }
+
+    @Override
+    public int getCharInFile(int offset) {
+      int i = Arrays.binarySearch(ends, offset);
+      if (i < 0) { i = ~i; }
+      int prev = i == 0 ? 0 : ends[i - 1];
+      return srcs[i].getCharInFile(offset - prev);
+    }
+
+    @Override
+    public SourceBreaks getSourceBreaks(int offset) {
+      int i = Arrays.binarySearch(ends, offset);
+      if (i < 0) { i = ~i; }
+      int prev = i == 0 ? 0 : ends[i - 1];
+      return srcs[i].getSourceBreaks(offset - prev);
+    }
+
+    @Override
+    public CharProducer clone() {
+      return new ChainCharProducer(this);
     }
   }
 }

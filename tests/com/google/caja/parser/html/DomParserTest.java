@@ -14,6 +14,7 @@
 
 package com.google.caja.parser.html;
 
+import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.HtmlTokenType;
@@ -21,8 +22,10 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
+import com.google.caja.reporting.DevNullMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
@@ -30,9 +33,11 @@ import com.google.caja.util.Criterion;
 import com.google.caja.util.Join;
 import com.google.caja.util.MoreAsserts;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 
@@ -2034,6 +2039,30 @@ public class DomParserTest extends CajaTestCase {
     DomTree t = xmlFragment(fromString("<xmp> <!-- </xmp> --> </xmp>"));
     assertEquals("<xmp>  </xmp>", render(t, true));
     assertEquals("<xmp>  </xmp>", render(t, false));
+  }
+
+  public void testParserSpeed() throws Exception {
+    benchmark(100);  // prime the JIT
+    Thread.sleep(250);  // Let the JIT kick-in.
+    int microsPerRun = benchmark(250);
+    // See extractVarZ in "tools/dashboard/dashboard.pl".
+    System.out.println(
+        " VarZ:" + getClass().getName() + ".msPerRun=" + microsPerRun);
+  }
+
+  private int benchmark(int nRuns) throws IOException, ParseException {
+    CharProducer testInput = fromResource("amazon.com.html");
+    InputSource is = testInput.getSourceBreaks(0).source();
+    MessageQueue mq = DevNullMessageQueue.singleton();
+    long t0 = System.nanoTime();
+    for (int i = nRuns; --i >= 0;) {
+      HtmlLexer lexer = new HtmlLexer(testInput.clone());
+      lexer.setTreatedAsXml(false);
+      TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(lexer, is);
+      DomParser p = new DomParser(tq, false, mq);
+      p.parseDocument();
+    }
+    return (int) ((((double) (System.nanoTime() - t0)) / nRuns) / 1e3);
   }
 
   private void assertParsedHtml(

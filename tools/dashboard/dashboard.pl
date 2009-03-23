@@ -112,7 +112,7 @@ our $ANT_HOME = "/usr/local/ant";            requireDir $ANT_HOME;
 our $ANT = "$ANT_HOME/bin/ant";              requireExe $ANT;
 our $SELENIUM = "/opt/svn/selenium.sh";      requireExe $SELENIUM;
 our $GIT = "/usr/bin/git";                   requireExe $GIT;
-our $RAKE = "/usr/bin/rake";                   requireExe $RAKE;
+our $RAKE = "/usr/bin/rake";                 requireExe $RAKE;
 our $JAVA_HOME = $ENV{JAVA_HOME} or "/usr/lib/jvm/java-6-sun/";
                                              requireDir $JAVA_HOME;
 our $JAVA = "$JAVA_HOME/bin/java";           requireExe $JAVA;
@@ -155,7 +155,7 @@ sub collectCodeStats() {
   print STDERR "running benchmarks\n";
   track(\&build, ['benchmarks'], 'benchmarks', \@status_log);
   extractBenchmarkSummary("$REPORTS_DIR/benchmarks/TESTS-TestSuites.xml",
-      \@status_log);
+                          \@status_log);
 
   print STDERR "running tests\n";
   track(\&build, ['runtests'], 'tests', \@status_log);
@@ -176,15 +176,14 @@ sub collectCodeStats() {
 
   print STDERR "running selenium\n";
   track(\&farm, ['all'], 'selenium', \@status_log);
-  extractSeleniumSummary("$REPORTS_DIR/selenium/TESTS-TestSuites.xml", 
-      \@status_log);
+  extractSeleniumSummary("$REPORTS_DIR/selenium/TESTS-TestSuites.xml",
+                         \@status_log);
 
   print STDERR "making output directory\n";
   makeOutputDir();
 
   print STDERR "copying docs\n";
   outputTree($DOCS_DIR, 'docs', 'java/index.html', \@status_log);
-  linkOutput('jsdocs', 'docs/js/index.html', \@status_log);
   linkOutput('ruledocs', 'docs/rules/CajitaRewriter.html', \@status_log);
 
   print STDERR "copying test reports\n";
@@ -220,6 +219,11 @@ sub track($$$$) {
        qq'<varz name="target.$name.status" value="$status"/>',
        qq'<varz name="target.$name.time" value="$dt"/>');
 
+  extractVarZ($log, $status_log_ref);
+}
+
+sub extractVarZ($$) {
+  my ($log, $status_log_ref) = @_;
   # Extract profiling data.
   my @varz = $log =~ m/$VARZ_FORMAT/g;
   for (my $i = 0; $i <= $#varz; $i += 2) {
@@ -338,7 +342,9 @@ sub extractTestSummary($$) {
 
   my ($tests, $errors, $failures) = (0, 0, 0);
   open(IN, "<$xml_file") or die "$xml_file: $!";
+  my $log = "";
   while (<IN>) {
+    $log .= $_;
     chomp;
     next unless m/<testsuite\b(.*)/;
     my $testsummary = $1;
@@ -359,6 +365,8 @@ sub extractTestSummary($$) {
        qq'<varz name="junit.pct" value="'
        . sprintf("%3.1f", 100 * ($failures + $errors) / $tests)
        . qq'"/>');
+
+  extractVarZ($log, $status_log_ref);
 }
 
 sub extractBenchmarkSummary($$) {
@@ -397,7 +405,7 @@ sub extractBenchmarkSummary($$) {
 # <?xml version="1.0" encoding="UTF-8"?>
 # <testsuite name="com.google.testing.selenium.SeleniumSuite-FIREFOX20_LINUX" tests="4" failures="4" errors="0" time="11.105">
 # <testcase name="com/google/caja/browser-expectations.html" status="run" classname="com.google.caja.selenium.SeleniumTestCase" time="9.969">
-# <failure message="" type="junit.framework.AssertionFailedError"><![CDATA[junit.framework.AssertionFailedError: 
+# <failure message="" type="junit.framework.AssertionFailedError"><![CDATA[junit.framework.AssertionFailedError:
 # ...
 # </testcase>
 # <testcase name="com/google/caja/plugin/domita_test.html" status="run" classname="com.google.caja.selenium.SeleniumTestCase" time="11.033">

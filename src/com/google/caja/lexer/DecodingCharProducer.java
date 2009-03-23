@@ -54,6 +54,14 @@ final class DecodingCharProducer extends CharProducer {
     return new DecodingCharProducer(buf, limit, p, deltas, poffset);
   }
 
+  private DecodingCharProducer(DecodingCharProducer orig) {
+    super(orig.getBuffer(), orig.getLimit());
+    this.deltas = orig.deltas;
+    this.poffset = orig.poffset;
+    this.p = orig;
+    this.consume(orig.getOffset());
+  }
+
   private DecodingCharProducer(
       char[] buf, int limit, CharProducer p, short[] deltas, int poffset) {
     super(buf, limit);
@@ -70,6 +78,11 @@ final class DecodingCharProducer extends CharProducer {
   @Override
   public SourceBreaks getSourceBreaks(int offset) {
     return p.getSourceBreaks(getUnderlyingOffset(offset));
+  }
+
+  @Override
+  public CharProducer clone() {
+    return new DecodingCharProducer(this);
   }
 
   /** The offset in the underlying CharProducer. */
