@@ -32,6 +32,7 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.parser.js.UseSubsetDirective;
 import com.google.caja.parser.quasiliteral.CajitaRewriter;
+import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
@@ -156,7 +157,9 @@ public class RhinoTestBed {
       String scriptText;
       Block js = parseJavascript(scriptBody, mq);
       if (hasUseSubsetDirective(js, "cajita")) {
-        scriptText = render(cajole(js, mq));
+        scriptText = render(cajoleCajita(js, mq));
+      } else if (hasUseSubsetDirective(js, "valija")) {
+        scriptText = render(cajoleValija(js, mq));
       } else {
         // Add blank lines at the front so that Rhino stack traces have correct
         // line numbers.
@@ -236,9 +239,15 @@ public class RhinoTestBed {
     return w.toString();
   }
 
-  private static ParseTreeNode cajole(Block program, MessageQueue mq) {
+  private static ParseTreeNode cajoleCajita(Block program, MessageQueue mq) {
     CajitaRewriter rw = new CajitaRewriter(new TestBuildInfo(), false);
     return rw.expand(new UncajoledModule(program), mq);
+  }
+
+  private static ParseTreeNode cajoleValija(Block program, MessageQueue mq) {
+    DefaultValijaRewriter vrw = new DefaultValijaRewriter(false);
+    CajitaRewriter crw = new CajitaRewriter(new TestBuildInfo(), false);
+    return crw.expand(vrw.expand(new UncajoledModule(program), mq), mq);
   }
 
   private static String render(ParseTreeNode n) {

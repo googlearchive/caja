@@ -55,6 +55,7 @@ import com.google.caja.parser.quasiliteral.QuasiBuilderTest;
 import com.google.caja.parser.quasiliteral.RewriterTest;
 import com.google.caja.parser.quasiliteral.ScopeTest;
 import com.google.caja.parser.quasiliteral.TamingTest;
+import com.google.caja.parser.quasiliteral.ValijaModuleLoadingTest;
 import com.google.caja.plugin.CssCompilerTest;
 import com.google.caja.plugin.CssRewriterTest;
 import com.google.caja.plugin.CssValidatorTest;
@@ -171,6 +172,7 @@ public class AllTests {
           TamingTest.class,
           TestBedTest.class,
           TokenClassificationTest.class,
+          ValijaModuleLoadingTest.class,
     };
     Pattern testFilter = Pattern.compile(System.getProperty("test.filter", ""));
     for (Class<? extends TestCase> testClass : testClasses) {
