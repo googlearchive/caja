@@ -1718,22 +1718,22 @@ var attachDocumentStub = (function () {
      */
     function TameBackedAttributeNode(elem, name){
       TameNode.call(this, false);
-      classUtils.exportFields(this, 
+      classUtils.exportFields(this,
           ['name', 'specified', 'value', 'ownerElement']);
       this.name___ = name;
       this.ownerElement___ = elem;
     }
     classUtils.extend(TameBackedAttributeNode, TameNode);
     ___.ctor(TameBackedAttributeNode, TameNode, 'TameBackedAttributeNode');
-    TameBackedAttributeNode.prototype.getNodeName = 
-    TameBackedAttributeNode.prototype.getName = 
+    TameBackedAttributeNode.prototype.getNodeName =
+    TameBackedAttributeNode.prototype.getName =
         function () { return this.name___; };
-    TameBackedAttributeNode.prototype.getSpecified = 
+    TameBackedAttributeNode.prototype.getSpecified =
         function () { return this.ownerElement___.hasAttribute(this.name___); };
     TameBackedAttributeNode.prototype.getNodeValue =
-    TameBackedAttributeNode.prototype.getValue = 
+    TameBackedAttributeNode.prototype.getValue =
         function () { return this.ownerElement___.getAttribute(this.name___); };
-    TameBackedAttributeNode.prototype.getOwnerElement = 
+    TameBackedAttributeNode.prototype.getOwnerElement =
         function () { return this.ownerElement___; };
     TameBackedAttributeNode.prototype.getNodeType = function () { return 2; };
     TameBackedAttributeNode.prototype.cloneNode = function () {
@@ -2951,23 +2951,31 @@ var attachDocumentStub = (function () {
       this.editable___ = editable;
       ___.grantCall(this, 'getPropertyValue');
     }
+    TameStyle.prototype.allowProperty___ = function (cssPropertyName) {
+      return css.properties.hasOwnProperty(cssPropertyName);
+    };
     nodeClasses.Style = TameStyle;
     cajita.forOwnKeys(css.properties,
                       ___.frozenFunc(function (cssPropertyName, pattern) {
-      var canonStylePropertyName = cssPropertyName.replace(
+      var baseStylePropertyName = cssPropertyName.replace(
           /-([a-z])/g, function (_, letter) { return letter.toUpperCase(); });
+      var stylePropertyName = cssNameToStylePropertyName(cssPropertyName);
+      var canonStylePropertyName = baseStylePropertyName;
       if (css.alternates.hasOwnProperty(canonStylePropertyName)) {
         canonStylePropertyName = css.alternates[canonStylePropertyName][0];
       }
-      var stylePropertyName = cssNameToStylePropertyName(cssPropertyName);
 
       function getHandler() {
-        if (!this.style___) { return void 0; }
+        if (!this.style___ || !this.allowProperty___(cssPropertyName)) {
+          return void 0;
+        }
         return String(this.style___[stylePropertyName] || '');
       }
 
       function setHandler(value) {
-        if (!this.editable___) { throw new Error('style not editable'); }
+        if (!this.editable___ || !this.allowProperty___(cssPropertyName)) {
+          throw new Error('style not editable');
+        }
         var val = '' + (value || '');
         if (val && !pattern.test(val + ' ')) {
           throw new Error('bad value `' + val + '` for CSS property '
@@ -2998,17 +3006,23 @@ var attachDocumentStub = (function () {
         this.style___[stylePropertyName] = val;
         return value;
       }
-
       ___.useGetHandler(
-         TameStyle.prototype, canonStylePropertyName, getHandler);
+          TameStyle.prototype, stylePropertyName, getHandler);
       ___.useSetHandler(
-          TameStyle.prototype, canonStylePropertyName, setHandler);
+          TameStyle.prototype, stylePropertyName, setHandler);
 
-      if (stylePropertyName !== canonStylePropertyName) {
+      if (stylePropertyName !== baseStylePropertyName) {
         ___.useGetHandler(
-           TameStyle.prototype, stylePropertyName, getHandler);
+           TameStyle.prototype, baseStylePropertyName, getHandler);
         ___.useSetHandler(
-            TameStyle.prototype, stylePropertyName, setHandler);
+            TameStyle.prototype, baseStylePropertyName, setHandler);
+      }
+
+      if (canonStylePropertyName !== baseStylePropertyName) {
+        ___.useGetHandler(
+           TameStyle.prototype, canonStylePropertyName, getHandler);
+        ___.useSetHandler(
+            TameStyle.prototype, canonStylePropertyName, setHandler);
       }
     }));
     TameStyle.prototype.getPropertyValue = function (cssPropertyName) {
@@ -3038,24 +3052,12 @@ var attachDocumentStub = (function () {
       'width': true
     };
     function TameComputedStyle(style) {
-      this.style___ = style;
+      TameStyle.call(this, style, false);
     }
-    cajita.forOwnKeys(
-        COMPUTED_STYLE_WHITELIST,
-        ___.func(
-            function (propertyName, _) {
-              var canonPropertyName = cssNameToStylePropertyName(propertyName);
-              function getHandler() {
-                if (!this.style___) { return void 0; }
-                return String(this.style___[canonPropertyName] || '');
-              }
-              ___.useGetHandler(
-                  TameComputedStyle.prototype, propertyName, getHandler);
-              if (propertyName !== canonPropertyName) {
-                ___.useGetHandler(
-                    TameComputedStyle.prototype, canonPropertyName, getHandler);
-              }
-            }));
+    classUtils.extend(TameComputedStyle, TameStyle);
+    TameComputedStyle.prototype.allowProperty___ = function (cssPropertyName) {
+      return COMPUTED_STYLE_WHITELIST.hasOwnProperty(cssPropertyName);
+    };
     TameComputedStyle.prototype.toString = function () {
       return '[Fake Computed Style]';
     };
@@ -3551,7 +3553,7 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   event = (event || window.event);
   var sig = String(handler).match(/^function\b[^\)]*\)/);
   cajita.log(
-      'Dispatch ' + (event && event.type) + 
+      'Dispatch ' + (event && event.type) +
       'event thisNode=' + thisNode + ', ' +
       'event=' + event + ', ' +
       'pluginId=' + pluginId + ', ' +
