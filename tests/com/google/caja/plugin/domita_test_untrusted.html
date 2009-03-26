@@ -1463,16 +1463,18 @@ jsunitRegister('testComputedStyle',
   function assertComputedStyle(element, pseudoElt, styleName, styleValue) {
     var msg = element.tagName + (element.id && '#' + element.id)
         + (pseudoElt ? ':' + pseudoElt : '')
-        + ' { ' + styleName + ': ' + styleValue + '}';
+        + ' { ' + styleName + ': ' + styleValue + ' }';
     var winStyle = window.getComputedStyle(element, pseudoElt),
         viewStyle = document.defaultView.getComputedStyle(element, pseudoElt);
     var propertyName = styleName.replace(
          new RegExp('([a-z])([A-Z])', 'g'),
          function (_, lc, uc) { return lc + '-' + uc.toLowerCase(); });
     assertEquals(msg, styleValue, winStyle[styleName]);
-    assertEquals(msg, styleValue, winStyle.getPropertyValue(propertyName));
+    assertEquals(msg, styleValue || '',
+                 winStyle.getPropertyValue(propertyName));
     assertEquals(msg, styleValue, viewStyle[styleName]);
-    assertEquals(msg, styleValue, viewStyle.getPropertyValue(propertyName));
+    assertEquals(msg, styleValue || '',
+                 viewStyle.getPropertyValue(propertyName));
   }
 
   var block = document.getElementById('test-computed-style-block');

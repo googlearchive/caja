@@ -368,6 +368,39 @@ var attachDocumentStub = (function () {
   }
 
   /**
+   * The plain text equivalent of a CSS string body.
+   * @param {string} s the body of a CSS string literal w/o quotes
+   *     or CSS identifier.
+   * @return {string} plain text.
+   * {@updoc
+   * $ decodeCssString('')
+   * # ''
+   * $ decodeCssString('foo')
+   * # 'foo'
+   * $ decodeCssString('foo\\\nbar\\\r\nbaz\\\rboo\\\ffar')
+   * # 'foobarbazboofar'
+   * $ decodeCssString('foo\\000a bar\\000Abaz')
+   * # 'foo' + '\n' + 'bar' + '\u0ABA' + 'z'
+   * $ decodeCssString('foo\\\\bar\\\'baz')
+   * # "foo\\bar'baz"
+   * }
+   */
+  function decodeCssString(s) {
+    // Decode a CSS String literal.
+    // From http://www.w3.org/TR/CSS21/grammar.html
+    //     string1    \"([^\n\r\f\\"]|\\{nl}|{escape})*\"
+    //     unicode    \\{h}{1,6}(\r\n|[ \t\r\n\f])?
+    //     escape     {unicode}|\\[^\r\n\f0-9a-f]
+    //     s          [ \t\r\n\f]+
+    //     nl         \n|\r\n|\r|\f
+    return s.replace(
+        /\\(?:(\r\n?|\n|\f)|([0-9a-f]{1,6})(?:\r\n?|[ \t\n\f])?|(.))/gi,
+        function (_, nl, hex, esc) {
+          return esc || (nl ? '' : String.fromCharCode(parseInt(hex, 16)));
+        });
+  }
+
+  /**
    * Sanitize the 'style' attribute value of an HTML element.
    *
    * @param styleAttrValue the value of a 'style' attribute, which we
@@ -390,35 +423,6 @@ var attachDocumentStub = (function () {
     }
 
     return sanitizedDeclarations.join(' ; ');
-  }
-
-  var stylePropertyNames = {};
-  /**
-   * Converts a lower-cased style property name, e.g. {@code background-image},
-   * to a style object property name, e.g. {@code backgroundImage}, so that
-   * it can be used as in {@code myHtmlElement.style['backgroundImage']}.
-   * @param {string} cssPropertyName a lower case CSS property name.
-   * @return {string} a Javascript identifier.
-   */
-  function cssNameToStylePropertyName(cssPropertyName) {
-    if (stylePropertyNames.hasOwnProperty(cssPropertyName)) {
-      return stylePropertyNames[cssPropertyName];
-    }
-    var stylePropertyName = cssPropertyName.replace(
-        /-([a-z])/g, function (_, letter) { return letter.toUpperCase(); });
-    // Handle oddities like cssFloat/styleFloat.
-    if (css.alternates.hasOwnProperty(stylePropertyName)
-        && !(stylePropertyName in document.documentElement.style)) {
-      var alternates = css.alternates[stylePropertyName];
-      for (var i = alternates.length; --i >= 0;) {
-        if (alternates[i] in document.documentElement.style) {
-          stylePropertyName = alternates[i];
-          break;
-        }
-      }
-    }
-    stylePropertyNames[cssPropertyName] = stylePropertyName;
-    return stylePropertyName;
   }
 
   function mimeTypeForAttr(tagName, attribName) {
@@ -2945,91 +2949,98 @@ var attachDocumentStub = (function () {
       }
       return out.join(' ');
     };
+    // Maps a lower-cased style property name, e.g. background-image,
+    // to a style object property name, e.g. backgroundImage, so that
+    // it can be used as a style object property name as in
+    // myHtmlElement.style['backgroundImage'].
+    var canonicalStylePropertyNames = {};
+    // Maps style property names, e.g. cssFloat, to property names, e.g. float.
+    var cssPropertyNames = [];
+
+    cajita.forOwnKeys(css.properties,
+                      ___.frozenFunc(function (cssPropertyName, pattern) {
+      var baseStylePropertyName = cssPropertyName.replace(
+          /-([a-z])/g, function (_, letter) { return letter.toUpperCase(); });
+      var canonStylePropertyName = baseStylePropertyName;
+      cssPropertyNames[baseStylePropertyName]
+          = cssPropertyNames[canonStylePropertyName]
+          = cssPropertyName;
+      if (css.alternates.hasOwnProperty(canonStylePropertyName)) {
+        var alts = css.alternates[canonStylePropertyName];
+        for (var i = alts.length; --i >= 0;) {
+          cssPropertyNames[alts[i]] = cssPropertyName;
+          // Handle oddities like cssFloat/styleFloat.
+          if (alts[i] in document.documentElement.style
+              && !(canonStylePropertyName in document.documentElement.style)) {
+            canonStylePropertyName = alts[i];
+          }
+        }
+      }
+      canonicalStylePropertyNames[cssPropertyName] = canonStylePropertyName;
+    }));
 
     function TameStyle(style, editable) {
       this.style___ = style;
       this.editable___ = editable;
       ___.grantCall(this, 'getPropertyValue');
     }
+    nodeClasses.Style = TameStyle;
     TameStyle.prototype.allowProperty___ = function (cssPropertyName) {
       return css.properties.hasOwnProperty(cssPropertyName);
     };
-    nodeClasses.Style = TameStyle;
-    cajita.forOwnKeys(css.properties,
-                      ___.frozenFunc(function (cssPropertyName, pattern) {
-      var baseStylePropertyName = cssPropertyName.replace(
-          /-([a-z])/g, function (_, letter) { return letter.toUpperCase(); });
-      var stylePropertyName = cssNameToStylePropertyName(cssPropertyName);
-      var canonStylePropertyName = baseStylePropertyName;
-      if (css.alternates.hasOwnProperty(canonStylePropertyName)) {
-        canonStylePropertyName = css.alternates[canonStylePropertyName][0];
+    TameStyle.prototype.handleRead___ = function (stylePropertyName) {
+      if (!this.style___
+          || !cssPropertyNames.hasOwnProperty(stylePropertyName)) {
+        return void 0;
       }
-
-      function getHandler() {
-        if (!this.style___ || !this.allowProperty___(cssPropertyName)) {
-          return void 0;
-        }
-        return String(this.style___[stylePropertyName] || '');
-      }
-
-      function setHandler(value) {
-        if (!this.editable___ || !this.allowProperty___(cssPropertyName)) {
-          throw new Error('style not editable');
-        }
-        var val = '' + (value || '');
-        if (val && !pattern.test(val + ' ')) {
-          throw new Error('bad value `' + val + '` for CSS property '
-                          + cssPropertyName);
-        }
-        // CssPropertyPatterns.java only allows styles of the form
-        // url("...").  See the BUILTINS definition for the "uri" symbol.
-        val = val.replace(/\burl\s*\(\s*\"([^\"]*)\"\s*\)/gi,
-                          function (_, url) {
-                            var decodedUrl = url.replace(
-                                /\\([0-9A-Fa-f]+)[ \t]?/g,
-                                function (_, hex) {
-                                  return String.fromCharCode(parseInt(hex, 16));
-                                });
-                            var rewrittenUrl = uriCallback
-                                ? uriCallback.rewrite(decodedUrl, 'image/*')
-                            : null;
-                            if (!rewrittenUrl) {
-                              rewrittenUrl = 'about:blank';
-                            }
-                            return rewrittenUrl.replace(
-                                /[\"\'\{\}\(\):\\]/g,
-                                function (ch) {
-                                  return ('\\' + ch.charCodeAt(0).toString(16)
-                                          + ' ');
-                                });
-                          });
-        this.style___[stylePropertyName] = val;
-        return value;
-      }
-      ___.useGetHandler(
-          TameStyle.prototype, stylePropertyName, getHandler);
-      ___.useSetHandler(
-          TameStyle.prototype, stylePropertyName, setHandler);
-
-      if (stylePropertyName !== baseStylePropertyName) {
-        ___.useGetHandler(
-           TameStyle.prototype, baseStylePropertyName, getHandler);
-        ___.useSetHandler(
-            TameStyle.prototype, baseStylePropertyName, setHandler);
-      }
-
-      if (canonStylePropertyName !== baseStylePropertyName) {
-        ___.useGetHandler(
-           TameStyle.prototype, canonStylePropertyName, getHandler);
-        ___.useSetHandler(
-            TameStyle.prototype, canonStylePropertyName, setHandler);
-      }
-    }));
+      var cssPropertyName = cssPropertyNames[stylePropertyName];
+      if (!this.allowProperty___(cssPropertyName)) { return void 0; }
+      var canonName = canonicalStylePropertyNames[cssPropertyName];
+      return String(this.style___[canonName] || '');
+    };
     TameStyle.prototype.getPropertyValue = function (cssPropertyName) {
       cssPropertyName = String(cssPropertyName || '').toLowerCase();
-      if (!(css.properties.hasOwnProperty(cssPropertyName))) { return ''; }
-      var stylePropertyName = cssNameToStylePropertyName(cssPropertyName);
-      return ___.readPub(this, stylePropertyName);
+      if (!this.allowProperty___(cssPropertyName)) { return ''; }
+      var canonName = canonicalStylePropertyNames[cssPropertyName];
+      return String(this.style___[canonName] || '');
+    };
+    TameStyle.prototype.handleSet___ = function (stylePropertyName, value) {
+      if (!this.editable___) { throw new Error('style not editable'); }
+      if (!cssPropertyNames.hasOwnProperty(stylePropertyName)) {
+        throw new Error('Unknown CSS property name ' + stylePropertyName);
+      }
+      var cssPropertyName = cssPropertyNames[stylePropertyName];
+      if (!this.allowProperty___(cssPropertyName)) { return void 0; }
+      var pattern = css.properties[cssPropertyName];
+      if (!pattern) { throw new Error('style not editable'); }
+      var val = '' + (value || '');
+      // CssPropertyPatterns.java only allows styles of the form
+      // url("...").  See the BUILTINS definition for the "uri" symbol.
+      val = val.replace(
+          /\burl\s*\(\s*\"([^\"]*)\"\s*\)/gi,
+          function (_, url) {
+            var decodedUrl = decodeCssString(url);
+            var rewrittenUrl = uriCallback
+                ? uriCallback.rewrite(decodedUrl, 'image/*')
+                : null;
+            if (!rewrittenUrl) {
+              rewrittenUrl = 'about:blank';
+            }
+            return 'url("'
+                + rewrittenUrl.replace(
+                    /[\"\'\{\}\(\):\\]/g,
+                    function (ch) {
+                      return '\\' + ch.charCodeAt(0).toString(16) + ' ';
+                    })
+                + '")';
+          });
+      if (val && !pattern.test(val + ' ')) {
+        throw new Error('bad value `' + val + '` for CSS property '
+                        + stylePropertyName);
+      }
+      var canonName = canonicalStylePropertyNames[cssPropertyName];
+      this.style___[canonName] = val;
+      return value;
     };
     TameStyle.prototype.toString = function () { return '[Fake Style]'; };
 
