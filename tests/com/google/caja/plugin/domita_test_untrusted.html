@@ -167,6 +167,8 @@
  >The input should be a radio button:
 <form><input id="bug-731" type="radio" /></form></div>
 
+<p class="testcontainer" id="test-bug-920"><input id="bug-920" /></p>
+
 <br>
 
 <form class="testcontainer" id="test-input-default-values">
@@ -1262,6 +1264,13 @@ jsunitRegister('testBug731',
   var bug_731_input = document.getElementById('bug-731');
   assertEquals('radio', bug_731_input.type);
   pass('test-bug-731');
+});
+
+jsunitRegister('testBug920',
+               function testBug920() {
+  var bug_920_input = document.getElementById('bug-920');
+  assertEquals('text', bug_920_input.type);
+  pass('test-bug-920');
 });
 
 jsunitRegister('testInputDefaultValue',

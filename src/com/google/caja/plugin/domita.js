@@ -1391,7 +1391,8 @@ var attachDocumentStub = (function () {
         return this.node___.contains(otherNode);
       };
     }
-    if ('function' === typeof document.documentElement.compareDocumentPosition) {
+    if ('function' ===
+        typeof document.documentElement.compareDocumentPosition) {
       /**
        * Speced in <a href="http://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-compareDocumentPosition">DOM-Level-3</a>.
        */
@@ -1402,7 +1403,7 @@ var attachDocumentStub = (function () {
         var bitmask = +this.node___.compareDocumentPosition(otherNode);
         // To avoid leaking information about the relative positioning of
         // different roots, if neither contains the other, then we mask out
-        // the preceeding/following bits.
+        // the preceding/following bits.
         // 0x18 is (CONTAINS | CONTAINED)
         // 0x1f is all the bits documented at
         //     http://www.w3.org/TR/DOM-Level-3-Core/core.html#DocumentPosition
@@ -1412,9 +1413,15 @@ var attachDocumentStub = (function () {
         if (!(bitmask & 0x18)) {
           // TODO: If they are not under the same virtual doc root, return
           // DOCUMENT_POSITION_DISCONNECTED instead of leaking information
-          // about PRECEEDED | FOLLOWING.
+          // about PRECEDING | FOLLOWING.
         }
         */
+        // Firefox3 returns spurious PRECEDING and FOLLOWING bits for
+        // disconnected trees.
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=486002
+        if (bitmask & 1) {
+          bitmask &= ~6;
+        }
         return bitmask & 0x1f;
       };
       if (!___.hasOwnProp(TameBackedNode.prototype, 'contains')) {
@@ -1442,8 +1449,9 @@ var attachDocumentStub = (function () {
     TamePseudoNode.prototype.appendChild =
     TamePseudoNode.prototype.insertBefore =
     TamePseudoNode.prototype.removeChild =
-    TamePseudoNode.prototype.replaceChild =
-        function (child) { cajita.log("Node not editable; no action performed."); };
+    TamePseudoNode.prototype.replaceChild = function (child) {
+      cajita.log("Node not editable; no action performed.");
+    };
     TamePseudoNode.prototype.getFirstChild = function () {
       var children = this.getChildNodes();
       return children.length ? children[0] : null;
