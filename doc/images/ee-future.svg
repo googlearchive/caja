@@ -13,9 +13,9 @@
    id="svg2"
    sodipodi:version="0.32"
    inkscape:version="0.46"
-   sodipodi:docname="tt-future.svg"
+   sodipodi:docname="ee-future.svg"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
-   inkscape:export-filename="/Users/erights/src/svn-changes/current/google-caja/doc/images/tt-future.png"
+   inkscape:export-filename="/Users/erights/src/svn-changes/current/google-caja/doc/images/ee-future.png"
    inkscape:export-xdpi="150"
    inkscape:export-ydpi="150">
   <defs
@@ -64,9 +64,9 @@
      objecttolerance="10"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="8.6215029"
+     inkscape:zoom="8.6254108"
      inkscape:cx="381.14502"
-     inkscape:cy="534.52588"
+     inkscape:cy="598.54346"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -111,31 +111,36 @@
          x="360"
          y="492.36218">SES</tspan></text>
     <text
-       xml:space="preserve"
-       style="font-size:18px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#580000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Verdana;-inkscape-font-specification:Verdana;opacity:1"
+       sodipodi:linespacing="100%"
+       id="text2413"
+       y="428.36218"
        x="336"
-       y="556.36218"
-       id="text2409"
+       style="font-size:18px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#580000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Verdana;-inkscape-font-specification:Verdana;opacity:1"
+       xml:space="preserve"><tspan
+         y="428.36218"
+         x="336"
+         id="tspan2415"
+         sodipodi:role="line">ES5-strict</tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Mend)"
+       d="M 376,436.36218 C 376,468.36218 376,468.36218 376,468.36218"
+       id="path4504"
+       sodipodi:nodetypes="cc" />
+    <path
+       sodipodi:nodetypes="cc"
+       id="path5027"
+       d="M 376,436.36218 C 376,468.36218 376,468.36218 376,468.36218"
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Mend)" />
+    <text
+       xml:space="preserve"
+       style="font-size:18px;font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman;-inkscape-font-specification:Times New Roman Italic"
+       x="378"
+       y="456.36218"
+       id="text5039"
        sodipodi:linespacing="100%"><tspan
          sodipodi:role="line"
-         id="tspan2411"
-         x="336"
-         y="556.36218">ES5-strict</tspan></text>
-    <path
-       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow2Mend);stroke-opacity:1"
-       d="M 376,500.36218 C 376,532.36218 376,532.36218 376,532.36218"
-       id="path5029"
-       sodipodi:nodetypes="cc" />
-    <text
-       sodipodi:linespacing="100%"
-       id="text5043"
-       y="520.36218"
-       x="378"
-       style="font-size:18px;font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman;-inkscape-font-specification:Times New Roman Italic"
-       xml:space="preserve"><tspan
-         y="520.36218"
+         id="tspan5041"
          x="378"
-         id="tspan5045"
-         sodipodi:role="line">T</tspan></text>
+         y="456.36218">E</tspan></text>
   </g>
 </svg>

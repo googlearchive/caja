@@ -13,9 +13,9 @@
    id="svg2"
    sodipodi:version="0.32"
    inkscape:version="0.46"
-   sodipodi:docname="tt-future.svg"
+   sodipodi:docname="nn-today.svg"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
-   inkscape:export-filename="/Users/erights/src/svn-changes/current/google-caja/doc/images/tt-future.png"
+   inkscape:export-filename="/Users/erights/src/svn-changes/current/google-caja/doc/images/nn-today.png"
    inkscape:export-xdpi="150"
    inkscape:export-ydpi="150">
   <defs
@@ -64,12 +64,12 @@
      objecttolerance="10"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="8.6215029"
-     inkscape:cx="381.14502"
-     inkscape:cy="534.52588"
+     inkscape:zoom="8.5617965"
+     inkscape:cx="326.31885"
+     inkscape:cy="562.54346"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
-     showgrid="false"
+     showgrid="true"
      inkscape:window-width="1392"
      inkscape:window-height="856"
      inkscape:window-x="20"
@@ -102,40 +102,40 @@
     <text
        xml:space="preserve"
        style="font-size:18px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#004600;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Verdana;-inkscape-font-specification:Verdana"
-       x="360"
+       x="352"
        y="492.36218"
        id="text2393"
        sodipodi:linespacing="100%"><tspan
          sodipodi:role="line"
          id="tspan2395"
-         x="360"
-         y="492.36218">SES</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:18px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#580000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Verdana;-inkscape-font-specification:Verdana;opacity:1"
-       x="336"
-       y="556.36218"
-       id="text2409"
-       sodipodi:linespacing="100%"><tspan
-         sodipodi:role="line"
-         id="tspan2411"
-         x="336"
-         y="556.36218">ES5-strict</tspan></text>
-    <path
-       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-end:url(#Arrow2Mend);stroke-opacity:1"
-       d="M 376,500.36218 C 376,532.36218 376,532.36218 376,532.36218"
-       id="path5029"
-       sodipodi:nodetypes="cc" />
+         x="352"
+         y="492.36218">Cajita</tspan></text>
     <text
        sodipodi:linespacing="100%"
-       id="text5043"
-       y="520.36218"
-       x="378"
-       style="font-size:18px;font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman;-inkscape-font-specification:Times New Roman Italic"
+       id="text2397"
+       y="492.36218"
+       x="248"
+       style="font-size:18px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;opacity:1;fill:#580000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Verdana;-inkscape-font-specification:Verdana"
        xml:space="preserve"><tspan
-         y="520.36218"
-         x="378"
-         id="tspan5045"
-         sodipodi:role="line">T</tspan></text>
+         y="492.36218"
+         x="248"
+         id="tspan2399"
+         sodipodi:role="line">ES3R</tspan></text>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;marker-start:url(#Arrow2Mstart);marker-end:url(#Arrow2Mend);stroke-opacity:1"
+       d="M 304,484.36218 C 336,484.36218 344,484.36218 344,484.36218"
+       id="path2421"
+       sodipodi:nodetypes="cc" />
+    <text
+       xml:space="preserve"
+       style="font-size:18px;font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:100%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Times New Roman;-inkscape-font-specification:Times New Roman Italic"
+       x="320"
+       y="500.36218"
+       id="text5031"
+       sodipodi:linespacing="100%"><tspan
+         sodipodi:role="line"
+         id="tspan5033"
+         x="320"
+         y="500.36218">N</tspan></text>
   </g>
 </svg>
