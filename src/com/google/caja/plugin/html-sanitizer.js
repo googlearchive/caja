@@ -18,7 +18,7 @@
  *
  * <p>
  * The HTML sanitizer is built around a SAX parser and HTML element and
- * attributes schemas. 
+ * attributes schemas.
  *
  * @author mikesamuel@gmail.com
  * @requires html4
@@ -63,7 +63,7 @@ var html = (function () {
   var hexEscapeRe = /^#x([0-9A-Fa-f]+)$/;
   /**
    * Decodes an HTML entity.
-   * 
+   *
    * {@updoc
    * $ lookupEntity('lt')
    * # '<'

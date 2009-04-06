@@ -29,12 +29,54 @@
     <script src="bridal.js" onerror="console.error(this.src)"></script>
     <script src="html-emitter.js" onerror="console.error(this.src)"></script>
     <script src="domita.js" onerror="console.error(this.src)"></script>
+    <!-- Prime the browser cache by loading the whitelisted script
+      - synchronously so the test doesn't take so long. -->
+    <script src="whitelisted_script.js"
+     onerror="console.error(this.src)"></script>
+
+    <script src="../console.js"></script>
 
     <script type="text/javascript">
     function testDomita() {
       jsunitRun();
-      assertTrue(document.title, / - all tests passed$/.test(document.title));
+      this.evaluateAsyncRequirements(function (pass) {
+        if (!pass) {
+          document.title = document.title.replace(
+              / - all tests passed$/, ' - async tests failed');
+        }
+        assertTrue(document.title,
+                   /(?: - all tests passed)?$/.test(document.title));
+      });
     }
+
+    // globalSideEffect() is not exposed to cajoled code, so if cajoled code
+    // can reach it, then it has escaped containment.
+    // checkGlobalSideEffect() is exposed to cajoled code and returns true iff
+    // globalSideEffect() has been called since the last call to
+    // checkGlobalSideEffect().
+    (function () {
+      var sideEffectHappened = false;
+      function globalSideEffect() { sideEffectHappened = true; }
+      function checkGlobalSideEffect() {
+        var result = sideEffectHappened;
+        sideEffectHappened = false;
+        return result;
+      }
+      this.globalSideEffect = globalSideEffect;
+      this.checkGlobalSideEffect = checkGlobalSideEffect;
+    })();
+
+    // Test that side effect catching works by trying it uncajoled.
+    jsunitRegister(
+        '_testSideEffectTestFramework',
+        function _testSideEffectTestFramework() {
+          assertFalse(checkGlobalSideEffect());
+          var s = document.createElement('SCRIPT');
+          s.innerHTML = 'globalSideEffect()';
+          document.body.appendChild(s);
+          assertTrue(checkGlobalSideEffect());
+          assertFalse(checkGlobalSideEffect());
+        });
     </script>
   </head>
 
@@ -68,7 +110,8 @@
       </div>
 
       <div class="testcontainer" id="test-opaque-nodes-xyz___"
-       ><!-- Comment -->a<script></script>b<object></object>c</div>
+       ><!-- Comment -->a<script id="howdy-script-xyz___">/* Howdy */</script
+       >b<object></object>c</div>
     </div>
 
     <script type="text/javascript">
@@ -157,7 +200,16 @@
           } else if (window.getComputedStyle) {
             return window.getComputedStyle(node, null)
                 .getPropertyValue(styleProp);
+          } else {
+            return null;
           }
+        }),
+        // Lets tests check that an outer hull breach -- access to
+        // an unexecuted script node -- does not allow a full breach.
+        makeUnattachedScriptNode: ___.frozenFunc(function () {
+          var s = document.createElement('script');
+          s.appendChild(document.createTextNode('/* intentionally blank */'));
+          return testImports.tameNode___(s, true);
         })
       });
 
@@ -169,6 +221,77 @@
         node.appendChild(document.createTextNode('Passed ' + id));
         node.className = (node.className || '') + ' passed';
       }, 'pass');
+
+      testImports.checkGlobalSideEffect = ___.frozenFunc(checkGlobalSideEffect);
+      // An explicit channel between whitelisted_script.js and cajoled tests.
+      testImports.externalScript = { loaded: false };
+
+      // Define an asynchronous test mechanism so that we can test things like
+      // XHR, dynamic script loading, setTimeout, etc.
+      // This allows test code to requister conditions that must be true.
+      // The conditions can be run periodically until all are satisfied or
+      // the test times out.
+      // If a condition returns true once, it is never evaluated again.
+      // TODO(mikesamuel): rewrite XHR and setTimeout tests to use this scheme.
+      (function () {
+        var req = [];
+        var intervalId = null;
+        var TIMEOUT_MILLIS = 250;
+
+        /**
+         * Registers a requirement for later checking.
+         * @param {string} msg descriptive text used in error messages.
+         * @param {function () : boolean} predicate returns true to indicate
+         *     the requirement has been satisfied.
+         */
+        testImports.assertAsynchronousRequirement = ___.frozenFunc(
+            function (msg, predicate) {
+              req.push({ message: String(msg), predicate: predicate });
+            });
+        /**
+         * Start checking the asynchronous requirements.
+         * @param {function (boolean) : void} handler called with the value
+         *     {@code true} when and if all requirements are satisfied.
+         *     Called with false if more than TIMEOUT_MILLIS time passes
+         *     and requirements still aren't satisfied.
+         */
+        this.evaluateAsyncRequirements = function (handler) {
+          if (intervalId !== null) { throw new Error('dupe handler'); }
+          if (req.length === 0) {
+            handler(true);
+          } else {
+            var timeoutTime = (new Date).getTime() + TIMEOUT_MILLIS;
+            intervalId = setInterval(function () {
+              for (var i = req.length; --i >= 0;) {
+                var msgAndPredicate = req[i];
+                try {
+                  if (true === ___.toFunc(msgAndPredicate.predicate)()) {
+                    // Requirement satisfied.
+                    req[i] = req[req.length - 1];
+                    --req.length;
+                  }
+                } catch (e) {
+                  console.error(
+                      'Asynchronous failure : ' + msgAndPredicate.message);
+                }
+              }
+              if (req.length === 0 || (new Date).getTime() >= timeoutTime) {
+                clearInterval(intervalId);
+                intervalId = null;
+
+                var failures = req.length !== 0;
+                if (failures) {
+                  for (var i = req.length; --i >= 0;) {
+                    console.error('async test timeout: ' + req[i].message);
+                  }
+                  req.length = 0;
+                }
+                handler(!failures);
+              }
+            }, 50);
+          }
+        };
+      })();
 
       var jsunitFns = [
           'assert', 'assertContains', 'assertEquals', 'assertEvaluatesToFalse',
@@ -192,7 +315,14 @@
            {
              rewrite:
                  function (uri, mimeType) {
-                   if (/\.\/xhrTest.*/.test(uri)) { return uri; }
+                   // TODO(mikesamuel): write this properly.
+                   // Whitelisting via regexp is not correct.
+                   var m = uri.match(
+                       /^([^?#]*\/)?unproxied_whitelisted_script\.js$/);
+                   if (m) { return (m[1] || '') + 'whitelisted_script.js'; }
+                   if (/^(?:[^?#]*\/)?xhrTest[^\/?#]*$/.test(uri)) {
+                     return uri;
+                   }
                    if (!/^https?:\/\//i.test(uri)) { return null; }
                    return 'http://gadget-proxy/?url=' + encodeURIComponent(uri)
                        + '&mimeType=' + encodeURIComponent(mimeType);
@@ -210,8 +340,8 @@
           document, testDomContainer, false);
 
       testImports.htmlEmitter___ = new HtmlEmitter(testDomContainer);
-      if (valijaMaker) { 
-        testImports.$v = valijaMaker.CALL___(testImports.outers); 
+      if (valijaMaker) {
+        testImports.$v = valijaMaker.CALL___(testImports.outers);
       }
       window.toString = function () { return '[WINDOW]'; };
     })();</script>

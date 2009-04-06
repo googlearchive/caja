@@ -104,7 +104,7 @@
 
 <div class="testcontainer" id="test-forms"></div>
 
-<div class="testcontainer" id="test-no-script"></div>
+<p class="testcontainer" id="test-script-loading"></p>
 
 <ol class="testcontainer" id="test-get-elements-by-tag-name">
   <li>One
@@ -910,25 +910,71 @@ function foo() {
   container.appendChild(div);
 }
 
-jsunitRegister('testCantLoadScript',
-               function testCantLoadScript() {
-  assertEquals(document.createElement('SCRIPT'), null);
-  assertEquals(document.createElement('script'), null);
-  assertEquals(document.createElement('scRipt'), null);
-
-  var node;
+jsunitRegister('testScriptLoading',
+               function testScriptLoading() {
+  // Test that we block ways scripts can be used to executed code in strings.
+  expectFailure(
+      function () {
+        var s = document.createElement('script');
+        s.appendChild(document.createTextNode('globalSideEffect()'));
+      }, 'script injection via appendChild');
+  assertFalse('gse1', checkGlobalSideEffect());
+  expectFailure(
+      function () {
+        var s = document.createElement('script');
+        s.innerHTML = 'globalSideEffect()';
+      }, 'script injection via innerHTML');
+  assertFalse('gse2', checkGlobalSideEffect());
+  expectFailure(
+      function () {
+        var s = directAccess.makeUnattachedScriptNode();
+        s.firstChild.nodeValue = 'globalSideEffect()';
+      }, 'script injection via nodeValue');
+  assertFalse('gse3', checkGlobalSideEffect());
+  expectFailure(
+      function () {
+        var os = document.getElementById('howdy-script');
+        var s = os.cloneNode(true);
+        s.firstChild.nodeValue = 'globalSideEffect()';
+      }, 'script injection via cloneNode');
+  assertFalse('gse4', checkGlobalSideEffect());
   assertFailsSafe(
       function () {
-        var i = 0;
-        node = document.createElement({
-          toString: function () { return (++i & 1) ? 'DIV' : 'SCRIPT'; }
-        });
+        var s = document.createElement('script');
+        s.innerText = 'globalSideEffect()';  // IE only, so failsafe.
+        document.body.appendChild(s);
       },
+      function () {});
+  assertFalse('gse5', checkGlobalSideEffect());
+  assertFailsSafe(
       function () {
-        assertEquals('DIV', node.tagName);
-      });
+        var s = document.createElement('script');
+        // IE only, so failsafe.
+        s.outerHTML = '<script>globalSideEffect()<\/script>';
+        document.body.appendChild(s);
+      },
+      function () {});
+  assertFalse('gse6', checkGlobalSideEffect());
+  assertFailsSafe(
+      function () {
+        var s = document.createElement('div');
+        // IE only, so failsafe.
+        s.outerHTML = '<script>globalSideEffect()<\/script>';
+        document.body.appendChild(s);
+      },
+      function () {});
+  assertFalse('gse7', checkGlobalSideEffect());
 
-  pass('test-no-script');
+  // Test that an external script can be loaded by setting the "src" attribute
+  // of a newly created script elements.
+  var s = document.createElement('script');
+  assertAsynchronousRequirement(
+      'whitelisted script never ran',
+      function () { return externalScript.loaded === true; });
+  s.src = 'unproxied_whitelisted_script.js';
+  document.getElementById('test-script-loading').appendChild(s);
+
+  pass('test-script-loading');
 });
 
 jsunitRegister('testGetElementsByTagName',
@@ -1206,7 +1252,7 @@ jsunitRegister('testOpaqueNodes',
   assertEquals('SCRIPT', child.nodeName);
   assertEquals(null, child.nodeValue);
   expectFailure(function () { child.appendChild(noText); },
-                'opaque node was editable');
+                'script node was editable');
 
   child = child.nextSibling;
   assertEquals(3, child.nodeType);
@@ -1220,7 +1266,7 @@ jsunitRegister('testOpaqueNodes',
   assertEquals('OBJECT', child.nodeName);
   assertEquals(null, child.nodeValue);
   expectFailure(function () { child.appendChild(noText); },
-                'opaque node was editable');
+                'object node was editable');
 
   child = child.nextSibling;
   assertEquals(3, child.nodeType);

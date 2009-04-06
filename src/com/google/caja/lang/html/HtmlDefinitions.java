@@ -76,6 +76,8 @@ public final class HtmlDefinitions {
      * HtmlSanitizer.java#isElementFoldable.
      */
     FOLDABLE(0x20),
+    SCRIPT(0x40),
+    STYLE(0x80),
     ;
 
     public final int bitMask;
@@ -114,7 +116,9 @@ public final class HtmlDefinitions {
         String key = e.getKey();
         Name elementName = Name.html(key.substring(0, key.indexOf(':')));
         if ("*".equals(elementName.getCanonicalForm())
-            || schema.isElementAllowed(elementName)) {
+            || schema.isElementAllowed(elementName)
+            // Whitelisted to allow dynamic script loading via proxy
+            || "script:src".equals(key)) {
           keys.add(StringLiteral.valueOf(unk, key));
           values.add(new IntegerLiteral(unk, A_TYPE_MAP.get(e.getValue())));
         }
@@ -221,6 +225,11 @@ public final class HtmlDefinitions {
       }
       if (!schema.isElementAllowed(elementName)) {
         flags.add(EFlag.UNSAFE);
+        if (Name.html("script").equals(elementName)) {
+          flags.add(EFlag.SCRIPT);
+        } else if (Name.html("style").equals(elementName)) {
+          flags.add(EFlag.STYLE);
+        }
       }
       if (HtmlSchema.isElementFoldable(elementName)) {
         flags.add(EFlag.FOLDABLE);

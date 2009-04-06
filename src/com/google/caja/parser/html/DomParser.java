@@ -229,7 +229,7 @@ public final class DomParser {
               }
             } else {
               attribs = new ArrayList<DomTree.Attrib>();
-              end = parseTagAttributes(attribs);
+              end = parseTagAttributes(t.pos, attribs);
             }
             attribs = Collections.unmodifiableList(attribs);
             try {
@@ -259,7 +259,7 @@ public final class DomParser {
    * token.
    */
   private Token<HtmlTokenType> parseTagAttributes(
-      List<? super DomTree.Attrib> children)
+      FilePosition start, List<? super DomTree.Attrib> children)
       throws ParseException {
     Token<HtmlTokenType> last;
     tokloop:
@@ -274,7 +274,7 @@ public final class DomParser {
         break;
       default:
         throw new ParseException(new Message(
-            MessageType.MALFORMED_XHTML, last.pos,
+            MessageType.MALFORMED_XHTML, FilePosition.span(start, last.pos),
             MessagePart.Factory.valueOf(last.text)));
       }
     }

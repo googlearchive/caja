@@ -426,7 +426,10 @@ var attachDocumentStub = (function () {
   }
 
   function mimeTypeForAttr(tagName, attribName) {
-    if (tagName === 'img' && attribName === 'src') { return 'image/*'; }
+    if (attribName === 'src') {
+      if (tagName === 'img') { return 'image/*'; }
+      if (tagName === 'script') { return 'text/javascript'; }
+    }
     return '*/*';
   }
 
@@ -730,7 +733,7 @@ var attachDocumentStub = (function () {
                     html4.ATTRIBS.hasOwnProperty(attribKey))) {
               atype = html4.ATTRIBS[attribKey];
             } else {
-              return '';
+              return;
             }
             var value = attribs[i + 1];
             switch (atype) {
@@ -873,14 +876,6 @@ var attachDocumentStub = (function () {
       switch (node.nodeType) {
         case 1:  // Element
           var tagName = node.tagName.toLowerCase();
-          if (!html4.ELEMENTS.hasOwnProperty(tagName)
-              || (html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)) {
-            // If an unrecognized node, return a placeholder that
-            // doesn't prevent tree navigation, but that doesn't allow
-            // mutation or leak attribute information.
-            tamed = new TameOpaqueNode(node, editable);
-            break;
-          }
           switch (tagName) {
             case 'a':
               tamed = new TameAElement(node, editable);
@@ -898,6 +893,9 @@ var attachDocumentStub = (function () {
             case 'img':
               tamed = new TameImageElement(node, editable);
               break;
+            case 'script':
+              tamed = new TameScriptElement(node, editable);
+              break;
             case 'td':
             case 'tr':
             case 'thead':
@@ -910,7 +908,16 @@ var attachDocumentStub = (function () {
               tamed = new TameTableElement(node, editable);
               break;
             default:
-              tamed = new TameElement(node, editable);
+              if (!html4.ELEMENTS.hasOwnProperty(tagName)
+                  || (html4.ELEMENTS[tagName] & html4.eflags.UNSAFE)) {
+                // If an unrecognized or unsafe node, return a
+                // placeholder that doesn't prevent tree navigation,
+                // but that doesn't allow mutation or leak attribute
+                // information.
+                tamed = new TameOpaqueNode(node, editable);
+              } else {
+                tamed = new TameElement(node, editable, editable);
+              }
               break;
           }
           break;
@@ -1191,13 +1198,15 @@ var attachDocumentStub = (function () {
 
     /**
      * A tame node that is backed by a real node.
+     * @param {boolean} childrenEditable true iff the child list is mutable.
      * @constructor
      */
-    function TameBackedNode(node, editable) {
+    function TameBackedNode(node, editable, childrenEditable) {
       if (!node) {
         throw new Error('Creating tame node with undefined native delegate');
       }
       this.node___ = node;
+      this.childrenEditable___ = editable && childrenEditable;
       TameNode.call(this, editable);
     }
     classUtils.extend(TameBackedNode, TameNode);
@@ -1219,7 +1228,7 @@ var attachDocumentStub = (function () {
     TameBackedNode.prototype.appendChild = function (child) {
       // Child must be editable since appendChild can remove it from its parent.
       cajita.guard(tameNodeTrademark, child);
-      if (!this.editable___ || !child.editable___) {
+      if (!this.childrenEditable___ || !child.editable___) {
         throw new Error(NOT_EDITABLE);
       }
       this.node___.appendChild(child.node___);
@@ -1228,7 +1237,7 @@ var attachDocumentStub = (function () {
       cajita.guard(tameNodeTrademark, toInsert);
       if (child === void 0) { child = null; }
       if (child !== null) { cajita.guard(tameNodeTrademark, child); }
-      if (!this.editable___ || !toInsert.editable___) {
+      if (!this.childrenEditable___ || !toInsert.editable___) {
         throw new Error(NOT_EDITABLE);
       }
       this.node___.insertBefore(
@@ -1236,7 +1245,7 @@ var attachDocumentStub = (function () {
     };
     TameBackedNode.prototype.removeChild = function (child) {
       cajita.guard(tameNodeTrademark, child);
-      if (!this.editable___ || !child.editable___) {
+      if (!this.childrenEditable___ || !child.editable___) {
         throw new Error(NOT_EDITABLE);
       }
       this.node___.removeChild(child.node___);
@@ -1244,16 +1253,16 @@ var attachDocumentStub = (function () {
     TameBackedNode.prototype.replaceChild = function (child, replacement) {
       cajita.guard(tameNodeTrademark, child);
       cajita.guard(tameNodeTrademark, replacement);
-      if (!this.editable___ || !replacement.editable___) {
+      if (!this.childrenEditable___ || !replacement.editable___) {
         throw new Error(NOT_EDITABLE);
       }
       this.node___.replaceChild(child.node___, replacement.node___);
     };
     TameBackedNode.prototype.getFirstChild = function () {
-      return tameNode(this.node___.firstChild, this.editable___);
+      return tameNode(this.node___.firstChild, this.childrenEditable___);
     };
     TameBackedNode.prototype.getLastChild = function () {
-      return tameNode(this.node___.lastChild, this.editable___);
+      return tameNode(this.node___.lastChild, this.childrenEditable___);
     };
     TameBackedNode.prototype.getNextSibling = function () {
       // TODO(mikesamuel): replace with cursors so that subtrees are delegable
@@ -1275,14 +1284,15 @@ var attachDocumentStub = (function () {
       return tameRelatedNode(this.node___.parentNode, this.editable___);
     };
     TameBackedNode.prototype.getElementsByTagName = function (tagName) {
-      return tameGetElementsByTagName(this.node___, tagName, this.editable___);
+      return tameGetElementsByTagName(
+          this.node___, tagName, this.childrenEditable___);
     };
     TameBackedNode.prototype.getElementsByClassName = function (className) {
       return tameGetElementsByClassName(
-          this.node___, className, this.editable___);
+          this.node___, className, this.childrenEditable___);
     };
     TameBackedNode.prototype.getChildNodes = function () {
-      return tameNodeList(this.node___.childNodes, this.editable___);
+      return tameNodeList(this.node___.childNodes, this.childrenEditable___);
     };
     TameBackedNode.prototype.getAttributes = function () {
       return tameNodeList(this.node___.attributes, this.editable___);
@@ -1623,7 +1633,7 @@ var attachDocumentStub = (function () {
 
 
     function TameOpaqueNode(node, editable) {
-      TameBackedNode.call(this, node, editable);
+      TameBackedNode.call(this, node, editable, editable);
     }
     classUtils.extend(TameOpaqueNode, TameBackedNode);
     TameOpaqueNode.prototype.getNodeValue
@@ -1658,7 +1668,7 @@ var attachDocumentStub = (function () {
 
     function TameAttrNode(node, editable) {
       assert(node.nodeType === 2);
-      TameBackedNode.call(this, node, editable);
+      TameBackedNode.call(this, node, editable, editable);
       classUtils.exportFields(
           this, ['name', 'nodeValue', 'value', 'specified']);
     }
@@ -1682,7 +1692,22 @@ var attachDocumentStub = (function () {
 
     function TameTextNode(node, editable) {
       assert(node.nodeType === 3);
-      TameBackedNode.call(this, node, editable);
+
+      // The below should not be strictly necessary since childrenEditable for
+      // TameScriptElements is always false, but it protects against tameNode
+      // being called naively on a text node from container code.
+      var pn = node.parentNode;
+      if (editable && pn) {
+        if (1 === pn.nodeType
+            && (html4.ELEMENTS[pn.tagName.toLowerCase()]
+                & html4.eflags.UNSAFE)) {
+          // Do not allow mutation of text inside script elements.
+          // See the testScriptLoading testcase for examples of exploits.
+          editable = false;
+        }
+      }
+
+      TameBackedNode.call(this, node, editable, editable);
       classUtils.exportFields(this, ['nodeValue', 'data']);
     }
     classUtils.extend(TameTextNode, TameBackedNode);
@@ -1703,7 +1728,7 @@ var attachDocumentStub = (function () {
 
     function TameCommentNode(node, editable) {
       assert(node.nodeType === 8);
-      TameBackedNode.call(this, node, editable);
+      TameBackedNode.call(this, node, editable, editable);
     }
     classUtils.extend(TameCommentNode, TameBackedNode);
     nodeClasses.CommentNode = TameCommentNode;
@@ -1767,9 +1792,9 @@ var attachDocumentStub = (function () {
       throw new Error ("Not implemented.");
     };
 
-    function TameElement(node,editable) {
+    function TameElement(node, editable, childrenEditable) {
       assert(node.nodeType === 1);
-      TameBackedNode.call(this, node, editable);
+      TameBackedNode.call(this, node, editable, childrenEditable);
       classUtils.exportFields(
           this,
           ['className', 'id', 'innerHTML', 'tagName', 'style',
@@ -2046,8 +2071,8 @@ var attachDocumentStub = (function () {
                     // which is why getters are not yet supported.
                     this.node___[attribName] = makeEventHandlerWrapper(
                         this.node___, listener);
-                    return listener;
                   }
+                  return listener;
                 });
            })(html4Attrib.match(attrNameRe)[1]);
         }
@@ -2055,7 +2080,7 @@ var attachDocumentStub = (function () {
     })();
 
     function TameAElement(node, editable) {
-      TameElement.call(this, node, editable);
+      TameElement.call(this, node, editable, editable);
       classUtils.exportFields(this, ['href']);
     }
     classUtils.extend(TameAElement, TameElement);
@@ -2076,7 +2101,7 @@ var attachDocumentStub = (function () {
 
     // http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-40002357
     function TameFormElement(node, editable) {
-      TameElement.call(this, node, editable);
+      TameElement.call(this, node, editable, editable);
       this.length = node.length;
       classUtils.exportFields(
           this,
@@ -2135,7 +2160,7 @@ var attachDocumentStub = (function () {
 
 
     function TameInputElement(node, editable) {
-      TameElement.call(this, node, editable);
+      TameElement.call(this, node, editable, editable);
       classUtils.exportFields(
           this,
           ['form', 'value', 'defaultValue',
@@ -2337,7 +2362,7 @@ var attachDocumentStub = (function () {
 
 
     function TameImageElement(node, editable) {
-      TameElement.call(this, node, editable);
+      TameElement.call(this, node, editable, editable);
       classUtils.exportFields(this, ['src', 'alt']);
     }
     classUtils.extend(TameImageElement, TameElement);
@@ -2346,25 +2371,45 @@ var attachDocumentStub = (function () {
       return this.node___.src;
     };
     TameImageElement.prototype.setSrc = function (src) {
-      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.setAttribute('src', src);
       return src;
     };
     TameImageElement.prototype.getAlt = function () {
       return this.node___.alt;
     };
-    TameImageElement.prototype.setAlt = function (src) {
+    TameImageElement.prototype.setAlt = function (alt) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
-      this.node___.alt = src;
-      return src;
+      this.node___.alt = String(alt);
+      return alt;
     };
     ___.ctor(TameImageElement, TameElement, 'TameImageElement');
     ___.all2(___.grantTypedGeneric, TameImageElement.prototype,
              ['getSrc', 'setSrc', 'getAlt', 'setAlt']);
 
+    /**
+     * A script element wrapper that allows setting of a src that has been
+     * rewritten by a URL policy, but not modifying of textual content.
+     */
+    function TameScriptElement(node, editable) {
+      // Make the child list immutable so that text content can't be added
+      // or removed.
+      TameElement.call(this, node, editable, false);
+      classUtils.exportFields(this, ['src']);
+    }
+    classUtils.extend(TameScriptElement, TameElement);
+    nodeClasses.HTMLScriptElement = TameScriptElement;
+    TameScriptElement.prototype.getSrc = function () {
+      return this.node___.src;
+    };
+    TameScriptElement.prototype.setSrc = function (src) {
+      this.setAttribute('src', src);
+      return src;
+    };
+    ___.ctor(TameScriptElement, TameElement, 'TameScriptElement');
+
 
     function TameTableCompElement(node, editable) {
-      TameElement.call(this, node, editable);
+      TameElement.call(this, node, editable, editable);
       classUtils.exportFields(
           this,
           ['colSpan','cells','rowSpan','rows','rowIndex','align',
@@ -2759,11 +2804,11 @@ var attachDocumentStub = (function () {
           // To avoid leaking information about the relative positioning of
           // different roots, if neither contains the other, then we mask out
           // the preceeding/following bits.
-          // 0x18 is (CONTAINS | CONTAINED)
+          // 0x18 is (CONTAINS | CONTAINED).
           // 0x1f is all the bits documented at
-          //     http://www.w3.org/TR/DOM-Level-3-Core/core.html#DocumentPosition
-          //     except IMPLEMENTATION_SPECIFIC
-          // 0x01 is DISCONNECTED
+          // http://www.w3.org/TR/DOM-Level-3-Core/core.html#DocumentPosition
+          // except IMPLEMENTATION_SPECIFIC.
+          // 0x01 is DISCONNECTED.
           /*
           if (!(bitmask & 0x18)) {
             // TODO: If they are not under the same virtual doc root, return
@@ -2784,7 +2829,8 @@ var attachDocumentStub = (function () {
         ___.grantFunc(tameHtmlElement, 'compareDocumentPosition');
       }
       this.documentElement___ = tameHtmlElement;
-      classUtils.exportFields(this, ['documentElement', 'body', 'title', 'domain']);
+      classUtils.exportFields(
+          this, ['documentElement', 'body', 'title', 'domain']);
     }
     classUtils.extend(TameHTMLDocument, TamePseudoNode);
     nodeClasses.HTMLDocument = TameHTMLDocument;
@@ -2840,7 +2886,8 @@ var attachDocumentStub = (function () {
       return new TameCommentNode(this.doc___.createComment(" "), true);
     };
     TameHTMLDocument.prototype.createDocumentFragment = function () {
-      return new TameBackedNode(this.doc___.createDocumentFragment(), this.editable___);
+      return new TameBackedNode(this.doc___.createDocumentFragment(),
+                                this.editable___);
     };
     TameHTMLDocument.prototype.createElement = function (tagName) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
@@ -2849,7 +2896,8 @@ var attachDocumentStub = (function () {
         throw new Error(UNKNOWN_TAGNAME + "[" + tagName + "]");
       }
       var flags = html4.ELEMENTS[tagName];
-      if (flags & html4.eflags.UNSAFE) {
+      // Script exemption allows dynamic loading of proxied scripts.
+      if ((flags & html4.eflags.UNSAFE) && !(flags & html4.eflags.SCRIPT)) {
         cajita.log(UNSAFE_TAGNAME + "[" + tagName + "]: no action performed");
         return null;
       }
