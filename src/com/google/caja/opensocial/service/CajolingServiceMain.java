@@ -14,10 +14,14 @@
 
 package com.google.caja.opensocial.service;
 
-import com.sun.web.core.Context;
-import com.sun.web.server.HttpServer;
-import java.net.InetAddress;
-import java.net.URL;
+import com.google.caja.reporting.BuildInfo;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.mortbay.jetty.Server;
+import org.mortbay.jetty.handler.AbstractHandler;
 
 /**
  * A executable that starts a cajoling service which proxies connections:<ul>
@@ -30,10 +34,18 @@ import java.net.URL;
  */
 public class CajolingServiceMain {
   public static void main(String[] args) throws Exception {
-    HttpServer server = new HttpServer(8887, InetAddress.getLocalHost(), null);
-    Context context = server.getContext("default");
-    context.setDocumentBase(new URL("http://localhost/"));
-    context.getContainer().addServlet("/", CajolingService.class);
+    final CajolingService service
+        = new CajolingService(BuildInfo.getInstance());
+    // http://docs.codehaus.org/display/JETTY/Embedding+Jetty
+    Server server = new Server(8887);
+    server.setHandler(new AbstractHandler() {
+      public void handle(
+          String target, HttpServletRequest req, HttpServletResponse resp,
+          int dispatch)
+          throws ServletException {
+        service.doGet(req, resp);
+      }
+    });
     server.start();
   }
 }

@@ -106,9 +106,9 @@ public class CajolingServiceTest extends TestCase {
   }
 
   public void testSimpleJs() throws Exception {
-    registerUri("http://foo/bar.js", "var x = y;", "text/javascript");
+    registerUri("http://foo/bar.js", "g(1);", "text/javascript");
     assertEquals(
-        "{\n  var y = ___.readImport(IMPORTS___, 'y');\n  var x = y;\n}",
+        valijaModule("moduleResult___ = $v.cf($v.ro('g'), [ 1 ]);"),
         request("?url=http://foo/bar.js&mime-type=text/javascript"));
   }
 
@@ -124,9 +124,8 @@ public class CajolingServiceTest extends TestCase {
     registerUri(
         "http://foo/bar.js", "f();", "application/x-javascript");
     assertEquals(
-        request("?url=http://foo/bar.js&mime-type=text/javascript"),
-        "{\n  var f = ___.readImport(IMPORTS___, 'f');\n"
-        + "  f.CALL___();\n}");
+        valijaModule("moduleResult___ = $v.cf($v.ro('f'), [ ]);"),
+        request("?url=http://foo/bar.js&mime-type=text/javascript"));
   }
 
   public void testImage() throws Exception {
@@ -173,6 +172,50 @@ public class CajolingServiceTest extends TestCase {
             + "                 });\n"
             + "}</script>"),
         request("?url=http://foo/bar.xml&mime-type=*/*"));
+  }
+
+
+  private static String valijaModule(String... lines) {
+    String prefix = (
+        ""
+        + "{\n"
+        + "  ___.loadModule({\n"
+        + "                   'instantiate': function (___, IMPORTS___) {\n"
+        + "                     var moduleResult___ = ___.NO_RESULT;\n"
+        + "                     var $v = ___.readImport(IMPORTS___, '$v', {\n"
+        + "                           'ro': {\n"
+        + "                             '()': { }\n"
+        + "                           },\n"
+        + "                           'initOuter': {\n"
+        + "                             '()': { }\n"
+        + "                           },\n"
+        + "                           'getOuters': {\n"
+        + "                             '()': { }\n"
+        + "                           },\n"
+        + "                           'cf': {\n"
+        + "                             '()': { }\n"
+        + "                           }\n"
+        + "                         });\n"
+        + "                     var $dis = $v.getOuters();\n"
+        + "                     $v.initOuter('onerror');\n"
+        );
+    String suffix = (
+        ""
+        + "                     return moduleResult___;\n"
+        + "                   },\n"
+        + "                   'cajolerName': 'com.google.caja',\n"
+        + "                   'cajolerVersion': 'testBuildVersion',\n"
+        + "                   'cajoledDate': 0\n"
+        + "                 });\n"
+        + "}"
+        );
+    StringBuilder sb = new StringBuilder();
+    sb.append(prefix);
+    for (String line : lines) {
+      sb.append("                     ").append(line).append('\n');
+    }
+    sb.append(suffix);
+    return sb.toString();
   }
 }
 

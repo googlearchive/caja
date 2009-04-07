@@ -177,10 +177,10 @@ public class CajolingService extends HttpServlet {
     throw new UnsupportedContentTypeException();
   }
 
-  public static final class FetchedData {
-    public final byte[] content;
-    public final String contentType;
-    public final String charSet;
+  static final class FetchedData {
+    final byte[] content;
+    final String contentType;
+    final String charSet;
     FetchedData(byte[] content, String contentType, String charSet) {
       this.content = content;
       this.contentType = contentType;

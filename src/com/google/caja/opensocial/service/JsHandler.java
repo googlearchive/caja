@@ -18,9 +18,11 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
+import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.parser.quasiliteral.CajitaRewriter;
+import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
 import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
@@ -40,14 +42,14 @@ import java.net.URI;
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class JsHandler implements ContentHandler {
-
   private final BuildInfo buildInfo;
 
   public JsHandler(BuildInfo buildInfo) {
     this.buildInfo = buildInfo;
   }
 
-  public boolean canHandle(URI uri, String contentType, ContentTypeCheck checker) {
+  public boolean canHandle(
+      URI uri, String contentType, ContentTypeCheck checker) {
     return checker.check("text/javascript",contentType);
   }
 
@@ -55,6 +57,7 @@ public class JsHandler implements ContentHandler {
       URI uri, String contentType, String charset, byte[] content,
       OutputStream response)
       throws UnsupportedContentTypeException {
+    if (charset == null) { charset = "UTF-8"; }
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
       cajoleJs(uri, new StringReader(new String(content, charset)), writer);
@@ -71,17 +74,14 @@ public class JsHandler implements ContentHandler {
     CharProducer cp = CharProducer.Factory.create(cajaInput,is);
     MessageQueue mq = new SimpleMessageQueue();
     try {
-      ParseTreeNode input;
-      JsLexer lexer = new JsLexer(cp);
-      JsTokenQueue tq = new JsTokenQueue(lexer, is);
-      Parser p = new Parser(tq, mq);
-      input = p.parse();
+      JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), is);
+      Block input = new Parser(tq, mq).parse();
       tq.expectEmpty();
 
-      CajitaRewriter dcr = new CajitaRewriter(
-          buildInfo,
-          false /* logging */);
-      output.append(Rewriter.format(dcr.expand(input, mq)));
+      DefaultValijaRewriter rw = new DefaultValijaRewriter(false /* logging */);
+      CajitaRewriter dcr = new CajitaRewriter(buildInfo, false /* logging */);
+      output.append(Rewriter.format(
+          dcr.expand(rw.expand(new UncajoledModule(input), mq), mq)));
     } catch (ParseException e) {
       throw new UnsupportedContentTypeException();
     } catch (IllegalArgumentException e) {

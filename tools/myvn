@@ -166,6 +166,9 @@ function typeForFile() {
     html )
       echo -n "text/html;charset=UTF-8"
       ;;
+    jar )
+      echo -n "application/java-archive"
+      ;;
     jpg )
       echo -n "image/jpeg"
       ;;

@@ -61,7 +61,8 @@
     <pathelement path="${third_party}/java/jakarta_commons/commons-cli.jar"/>
     <pathelement path="${third_party}/java/json_simple/json_simple.jar"/>
     <pathelement path="${third_party}/java/jsdk2.1/servlet.jar"/>
-    <pathelement path="${third_party}/java/jsdk2.1/server.jar"/>
+    <pathelement path="${third_party}/java/jetty/lib/jetty.jar"/>
+    <pathelement path="${third_party}/java/jetty/lib/jetty-util.jar"/>
   </path>
   <path id="classpath.run">
     <pathelement path="${lib}"/>
@@ -336,8 +337,11 @@
         <include name="json_simple.jar"/>
       </fileset>
       <fileset dir="${third_party}/java/jsdk2.1">
-        <include name="server.jar"/>
         <include name="servlet.jar"/>
+      </fileset>
+      <fileset dir="${third_party}/java/jetty/lib">
+        <include name="jetty.jar"/>
+        <include name="jetty-util.jar"/>
       </fileset>
     </copy>
     <jar destfile="${jars}/pluginc.jar" basedir="${lib}">
