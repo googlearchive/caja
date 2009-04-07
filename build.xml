@@ -681,6 +681,93 @@
     </copy>
   </target>
 
+  <target name="slides" depends="dirs,pluginc,MinifiedJs,CajoledValija,lolcat-search"
+   description="Explain Caja">
+    <transform>
+      <output file="${www}/slides/redirection.co.js" language="valija"/>
+      <include file="${demos}/slides/redirection.html"/>
+    </transform>
+    <transform>
+      <output file="${www}/slides/history.co.js" language="valija"/>
+      <include file="${demos}/slides/history.html"/>
+    </transform>
+    <transform>
+      <output file="${www}/slides/cookie.co.js" language="valija"/>
+      <include file="${demos}/slides/cookie.html"/>
+    </transform>
+    <transform>
+      <output file="${www}/slides/script-injection.co.js" language="valija"/>
+      <include file="${demos}/slides/script-injection.html"/>
+    </transform>
+    <transform>
+      <output file="${www}/slides/tame-alert.co.js" language="valija"/>
+      <include file="${demos}/slides/tame-alert.html"/>
+    </transform>
+
+    <transform>
+      <output file="${www}/slides/searchbox.co.js"
+       language="cajita"/>
+      <include file="${demos}/lolcat-search/searchbox.html"/>
+      <depend file="${demos}/lolcat-search/searchbox.css"/>
+      <depend file="${demos}/lolcat-search/searchbox.js"/>
+    </transform>
+    <transform>
+      <output file="${www}/slides/kittens.co.js" language="cajita"/>
+      <include file="${demos}/lolcat-search/kittens.html"/>
+      <depend file="${demos}/lolcat-search/katTranzlator.js"/>
+      <depend file="${demos}/lolcat-search/kittens.js"/>
+    </transform>
+
+    <copy todir="${www}/slides">
+      <fileset dir="${lib}/com/google/caja/plugin">
+        <include name="unicode.js"/>
+        <include name="html-sanitizer.js"/>
+        <include name="html-emitter.js"/>
+        <include name="css-defs.js"/>
+        <include name="html4-defs.js"/>
+        <include name="valija.co.js"/>
+        <include name="bridal.js"/>
+        <include name="domita.js"/>
+        <include name="domita-minified.js"/>
+        <include name="html-sanitizer-minified.js"/>
+      </fileset>
+      <fileset dir="${third_party}/js/prettify/">
+        <include name="prettify.js"/>
+      </fileset>
+      <fileset dir="${third_party}/js/firebug/">
+        <include name="firebugx.js"/>
+      </fileset>
+      <fileset dir="${src}/com/google/caja/opensocial/applet/">
+      <include name="setup-valija.js"/>
+      </fileset>
+
+      <!-- Copy slide container from slides/ -->
+      <fileset dir="${demos}/slides">
+        <include name="index.html"/>
+        <include name="slidy.js"/>
+        <include name="slidy.css"/>
+        <include name="cajaslides.css"/>
+
+        <include name="redirection.html"/>
+        <include name="history.html"/>
+        <include name="cookie.html"/>
+        <include name="script-injection.html"/>
+        <include name="tame-alert.html"/>
+      </fileset>
+
+      <!-- Copy demo from lolcat -->
+      <fileset dir="${demos}/lolcat-search">
+        <include name="chtml.js"/>
+        <include name="error.jpg"/>
+        <include name="loading.jpg"/>
+        <include name="lolcat-search.png"/>
+        <include name="sandboxes-to-playgrounds.png"/>
+        <include name="DecomposeByFailureMode.png"/>
+        <include name="searchengine.js"/>
+      </fileset>
+    </copy>
+  </target>
+
   <target name="testbed" depends="dirs,jars"
    description="Produce an Applet that interactively cajoles in the browser.">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
