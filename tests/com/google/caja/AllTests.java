@@ -24,10 +24,12 @@ import com.google.caja.lang.css.CssSchemaTest;
 import com.google.caja.lang.html.HtmlSchemaTest;
 import com.google.caja.lexer.CharProducerTest;
 import com.google.caja.lexer.CssLexerTest;
+import com.google.caja.lexer.DecodingCharProducerTest;
 import com.google.caja.lexer.FilePositionTest;
 import com.google.caja.lexer.HtmlLexerTest;
 import com.google.caja.lexer.JsLexerTest;
 import com.google.caja.lexer.PunctuationTrieTest;
+import com.google.caja.lexer.SourceBreaksTest;
 import com.google.caja.lexer.escaping.EscapingTest;
 import com.google.caja.opensocial.DefaultGadgetRewriterTest;
 import com.google.caja.opensocial.GadgetParserTest;
@@ -83,6 +85,7 @@ import com.google.caja.reporting.SnippetProducerTest;
 import com.google.caja.util.AbbreviatorTest;
 import com.google.caja.util.CapturingReaderTest;
 import com.google.caja.util.JoinTest;
+import com.google.caja.util.RhinoAssertsTest;
 import com.google.caja.util.SparseBitSetTest;
 import com.google.caja.util.StringsTest;
 
@@ -101,8 +104,8 @@ public class AllTests {
   public static Test suite() {
     TestSuite suite = new TestSuite("Caja Tests");
     Class<? extends TestCase>[] testClasses = new Class[] {
-          AbstractMessageQueueTest.class,
           AbbreviatorTest.class,
+          AbstractMessageQueueTest.class,
           BuildInfoTest.class,
           CajitaRewriterTest.class,
           CajitaTest.class,
@@ -121,6 +124,7 @@ public class AllTests {
           CssTreeTest.class,
           CssValidatorTest.class,
           DebuggingSymbolsStageTest.class,
+          DecodingCharProducerTest.class,
           DefaultGadgetRewriterTest.class,
           DefaultValijaRewriterTest.class,
           DomParserTest.class,
@@ -161,9 +165,11 @@ public class AllTests {
           RRuleTest.class,
           RewriteHtmlStageTest.class,
           RewriterTest.class,
+          RhinoAssertsTest.class,
           ScopeTest.class,
           SideBySideRendererTest.class,
           SnippetProducerTest.class,
+          SourceBreaksTest.class,
           SourceSnippetRendererTest.class,
           SourceSpansRendererTest.class,
           SparseBitSetTest.class,
