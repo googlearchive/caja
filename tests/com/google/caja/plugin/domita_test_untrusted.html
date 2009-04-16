@@ -1873,6 +1873,10 @@ jsunitRegister('testResizing',
     assertEquals(window.clientHeight, document.defaultView.clientHeight);
     assertEquals(window.clientWidth, document.body.clientWidth);
     assertEquals(window.clientHeight, document.body.clientHeight);
+    assertEquals(window.clientWidth, document.documentElement.clientWidth);
+    assertEquals(window.clientHeight, document.documentElement.clientHeight);
+    assertEquals(window.clientWidth, window.innerWidth);
+    assertEquals(window.clientHeight, window.innerHeight);
     return String([window.clientWidth, window.clientHeight]);
   }
 

@@ -1577,13 +1577,14 @@ var attachDocumentStub = (function () {
 
     function TamePseudoElement(
         tagName, tameDoc, childNodesGetter, parentNodeGetter, innerHTMLGetter,
-        editable) {
+        geometryDelegate, editable) {
       TamePseudoNode.call(this, editable);
       this.tagName___ = tagName;
       this.tameDoc___ = tameDoc;
       this.childNodesGetter___ = childNodesGetter;
       this.parentNodeGetter___ = parentNodeGetter;
       this.innerHTMLGetter___ = innerHTMLGetter;
+      this.geometryDelegate___ = geometryDelegate;
       classUtils.exportFields(this, ['tagName', 'innerHTML']);
     }
     classUtils.extend(TamePseudoElement, TamePseudoNode);
@@ -1623,14 +1624,20 @@ var attachDocumentStub = (function () {
     TamePseudoElement.prototype.getElementsByClassName = function (className) {
       return this.getOwnerDocument().getElementsByClassName(className);
     };
+    TamePseudoElement.prototype.getBoundingClientRect = function () {
+      return this.geometryDelegate___.getBoundingClientRect();
+    };
+    TamePseudoElement.prototype.getGeometryDelegate___ = function () {
+      return this.geometryDelegate___;
+    };
     TamePseudoElement.prototype.toString = function () {
       return '<' + this.tagName___ + '>';
     };
     ___.ctor(TamePseudoElement, TamePseudoNode, 'TamePseudoElement');
     ___.all2(___.grantTypedGeneric, TamePseudoElement.prototype,
              ['getTagName', 'getAttribute', 'setAttribute',
-              'hasAttribute', 'removeAttribute', 'getElementsByTagName']);
-
+              'hasAttribute', 'removeAttribute',
+              'getBoundingClientRect', 'getElementsByTagName']);
 
     function TameOpaqueNode(node, editable) {
       TameBackedNode.call(this, node, editable, editable);
@@ -1798,13 +1805,7 @@ var attachDocumentStub = (function () {
       classUtils.exportFields(
           this,
           ['className', 'id', 'innerHTML', 'tagName', 'style',
-           'clientWidth', 'clientHeight',
-           'offsetLeft', 'offsetTop', 'offsetWidth', 'offsetHeight',
-           'offsetParent',
-           'scrollLeft', 'scrollTop',
-           'scrollWidth', 'scrollHeight',
-           'title',
-           'dir']);
+           'offsetParent', 'title', 'dir']);
     }
     classUtils.extend(TameElement, TameBackedNode);
     nodeClasses.Element = nodeClasses.HTMLElement = TameElement;
@@ -1993,48 +1994,11 @@ var attachDocumentStub = (function () {
       }
     };
 
-    TameElement.prototype.getClientWidth = function () {
-      return this.node___.clientWidth;
-    };
-    TameElement.prototype.getClientHeight = function () {
-      return this.node___.clientHeight;
-    };
-    TameElement.prototype.getOffsetLeft = function () {
-      return this.node___.offsetLeft;
-    };
-    TameElement.prototype.getOffsetTop = function () {
-      return this.node___.offsetTop;
-    };
-    TameElement.prototype.getOffsetWidth = function () {
-      return this.node___.offsetWidth;
-    };
-    TameElement.prototype.getOffsetHeight = function () {
-      return this.node___.offsetHeight;
-    };
     TameElement.prototype.getOffsetParent = function () {
       return tameRelatedNode(this.node___.offsetParent, this.editable___);
     };
-    TameElement.prototype.getScrollLeft = function () {
-      return this.node___.scrollLeft;
-    };
-    TameElement.prototype.getScrollTop = function () {
-      return this.node___.scrollTop;
-    };
-    TameElement.prototype.setScrollLeft = function (x) {
-      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
-      this.node___.scrollLeft = +x;
-      return x;
-    };
-    TameElement.prototype.setScrollTop = function (y) {
-      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
-      this.node___.scrollTop = +y;
-      return y;
-    };
-    TameElement.prototype.getScrollWidth = function () {
-      return this.node___.scrollWidth;
-    };
-    TameElement.prototype.getScrollHeight = function () {
-      return this.node___.scrollHeight;
+    TameElement.prototype.getGeometryDelegate___ = function () {
+      return this.node___;
     };
     TameElement.prototype.toString = function () {
       return '<' + this.node___.tagName + '>';
@@ -2052,6 +2016,55 @@ var attachDocumentStub = (function () {
         'getClassName', 'setClassName', 'getId', 'setId',
         'getInnerHTML', 'setInnerHTML', 'updateStyle', 'getStyle', 'setStyle',
         'getTagName']);
+
+    cajita.forOwnKeys({
+      clientWidth: {
+        get: function () { return this.getGeometryDelegate___().clientWidth; }
+      },
+      clientHeight: {
+        get: function () { return this.getGeometryDelegate___().clientHeight; }
+      },
+      offsetLeft: {
+        get: function () { return this.getGeometryDelegate___().offsetLeft; }
+      },
+      offsetTop: {
+        get: function () { return this.getGeometryDelegate___().offsetTop; }
+      },
+      offsetWidth: {
+        get: function () { return this.getGeometryDelegate___().offsetWidth; }
+      },
+      offsetHeight: {
+        get: function () { return this.getGeometryDelegate___().offsetHeight; }
+      },
+      scrollLeft: {
+        get: function () { return this.getGeometryDelegate___().scrollLeft; },
+        set: function (x) {
+          if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+          this.getGeometryDelegate___().scrollLeft = +x;
+          return x;
+        }
+      },
+      scrollTop: {
+        get: function () { return this.getGeometryDelegate___().scrollTop; },
+        set: function (y) {
+          if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+          this.getGeometryDelegate___().scrollTop = +y;
+          return y;
+        }
+      },
+      scrollWidth: {
+        get: function () { return this.getGeometryDelegate___().scrollWidth; }
+      },
+      scrollHeight: {
+        get: function () { return this.getGeometryDelegate___().scrollHeight; }
+      }
+    }, ___.func(function (propertyName, def) {
+      var setter = def.set || propertyOnlyHasGetter;
+      ___.useGetHandler(TameElement.prototype, propertyName, def.get);
+      ___.useSetHandler(TameElement.prototype, propertyName, setter);
+      ___.useGetHandler(TamePseudoElement.prototype, propertyName, def.get);
+      ___.useSetHandler(TamePseudoElement.prototype, propertyName, setter);
+    }));
 
     // Register set handlers for onclick, onmouseover, etc.
     (function () {
@@ -2749,6 +2762,7 @@ var attachDocumentStub = (function () {
           function () { return tameNodeList(body.childNodes, editable); },
           function () { return tameHtmlElement; },
           function () { return tameInnerHtml(body.innerHTML); },
+          tameBody,
           editable);
       cajita.forOwnKeys(
           { appendChild: 0, removeChild: 0, insertBefore: 0, replaceChild: 0 },
@@ -2764,6 +2778,7 @@ var attachDocumentStub = (function () {
           function () { return [tameNode(title, false)]; },
           function () { return tameHeadElement; },
           function () { return html.escapeAttrib(title.nodeValue); },
+          null,
           editable);
       var tameHeadElement = new TamePseudoElement(
           'HEAD',
@@ -2773,6 +2788,7 @@ var attachDocumentStub = (function () {
           function () {
             return '<title>' + tameTitleElement.getInnerHTML() + '</title>';
           },
+          null,
           editable);
       var tameHtmlElement = new TamePseudoElement(
           'HTML',
@@ -2783,6 +2799,7 @@ var attachDocumentStub = (function () {
             return ('<head>' + tameHeadElement.getInnerHTML + '<\/head><body>'
                     + tameBodyElement.getInnerHTML() + '<\/body>');
           },
+          tameBody,
           editable);
       if (body.contains) {  // typeof is 'object' on IE
         tameHtmlElement.contains = function (other) {
@@ -2803,7 +2820,7 @@ var attachDocumentStub = (function () {
           var bitmask = +body.compareDocumentPosition(otherNode);
           // To avoid leaking information about the relative positioning of
           // different roots, if neither contains the other, then we mask out
-          // the preceeding/following bits.
+          // the preceding/following bits.
           // 0x18 is (CONTAINS | CONTAINED).
           // 0x1f is all the bits documented at
           // http://www.w3.org/TR/DOM-Level-3-Core/core.html#DocumentPosition
@@ -3103,7 +3120,8 @@ var attachDocumentStub = (function () {
     /**
      * Set of properties accessible on computed style.
      * This list is a conservative one compiled by looking at what prototype.js
-     * needs to be able to do visibility, containment, and layout calculations.
+     * and YUI need to be able to do visibility, containment, and layout
+     * calculations.
      * If expanded, it should not allow an attacker to probe the user's history
      * as described at https://bugzilla.mozilla.org/show_bug.cgi?id=147777
      */
@@ -3112,9 +3130,11 @@ var attachDocumentStub = (function () {
       'filter': true,
       'float': true,
       'height': true,
+      'left': true,
       'opacity': true,
       'overflow': true,
       'position': true,
+      'top': true,
       'visibility': true,
       'width': true
     };
@@ -3499,18 +3519,30 @@ var attachDocumentStub = (function () {
         get: function () { return tameDocument.body___.scrollWidth; }
       }
     }, ___.func(function (propertyName, def) {
+      var setter = def.set || propertyOnlyHasGetter;
       // TODO(mikesamuel): define on prototype.
       ___.useGetHandler(tameWindow, propertyName, def.get);
-      ___.useSetHandler(tameWindow, propertyName,
-                        def.set || propertyOnlyHasGetter);
+      ___.useSetHandler(tameWindow, propertyName, setter);
       ___.useGetHandler(tameDefaultView, propertyName, def.get);
-      ___.useSetHandler(tameDefaultView, propertyName,
-                        def.set || propertyOnlyHasGetter);
-      ___.useGetHandler(tameDocument.getBody(), propertyName, def.get);
-      ___.useSetHandler(tameDocument.getBody(), propertyName,
-                        def.set || propertyOnlyHasGetter);
+      ___.useSetHandler(tameDefaultView, propertyName, setter);
+      var tameBody = tameDocument.getBody();
+      ___.useGetHandler(tameBody, propertyName, def.get);
+      ___.useSetHandler(tameBody, propertyName, setter);
+      var tameDocEl = tameDocument.getDocumentElement();
+      ___.useGetHandler(tameDocEl, propertyName, def.get);
+      ___.useSetHandler(tameDocEl, propertyName, setter);
     }));
 
+    cajita.forOwnKeys({
+      innerHeight: function () { return tameDocument.body___.clientHeight; },
+      innerWidth: function () { return tameDocument.body___.clientWidth; },
+      outerHeight: function () { return tameDocument.body___.clientHeight; },
+      outerWidth: function () { return tameDocument.body___.clientWidth; }
+    }, ___.func(function (propertyName, handler) {
+      // TODO(mikesamuel): define on prototype.
+      ___.useGetHandler(tameWindow, propertyName, handler);
+      ___.useGetHandler(tameDefaultView, propertyName, handler);
+    }));
 
     // Attach reflexive properties to 'window' object
     var windowProps = ['top', 'self', 'opener', 'parent', 'window'];
