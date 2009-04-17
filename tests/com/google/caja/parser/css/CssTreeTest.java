@@ -40,6 +40,11 @@ public class CssTreeTest extends CajaTestCase {
     runRenderTest("cssrendergolden4.txt", "cssparserinput4.css", true);
   }
 
+  public void testRenderFilters() throws Exception {
+    runRenderTest("cssrendergolden-filters.css", "cssparserinput-filters.css",
+                  false);
+  }
+
   public void testClone() throws Exception {
     CssTree t = css(fromResource("cssparserinput1.css"));
     assertEquals(render(t), render(t.clone()));

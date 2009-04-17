@@ -52,7 +52,7 @@ public abstract class CssPropertySignature implements ParseTreeNode {
   private final List<CssPropertySignature> children;
   private CssPropertySignature parent, nextSibling, prevSibling;
 
-  CssPropertySignature(List<CssPropertySignature> children) {
+  CssPropertySignature(List<? extends CssPropertySignature> children) {
     this.children = children.isEmpty()
                   ? Collections.<CssPropertySignature>emptyList()
                   : Collections.unmodifiableList(
@@ -253,6 +253,65 @@ public abstract class CssPropertySignature implements ParseTreeNode {
     }
   }
 
+  /**
+   * Matches an IE CSS Filter, as described at
+   * http://msdn.microsoft.com/en-us/library/ms532847(VS.85).aspx
+   */
+  public static final class ProgIdSignature extends CssPropertySignature {
+    private final Name name;
+    /**
+     * @param name A dotted CSS name like DXImageTransform.Microsoft.Alpha.
+     * @param attrs name value pairs.
+     */
+    private ProgIdSignature(Name name, List<ProgIdAttrSignature> attrs) {
+      super(attrs);
+      this.name = name;
+    }
+    public Name getValue() { return name; }
+    public Name getName() { return name; }
+
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      out.consume("progid");
+      out.consume(":");
+      out.consume(name.getCanonicalForm());
+      out.consume("(");
+      boolean comma = false;
+      for (CssPropertySignature a : children()) {
+        if (comma) { out.consume(","); }
+        comma = true;
+        a.render(r);
+      }
+      out.consume(")");
+    }
+
+    public ProgIdAttrSignature getProgIdAttr(Name attrName) {
+      for (CssPropertySignature child : children()) {
+        ProgIdAttrSignature attr = (ProgIdAttrSignature) child;
+        if (attrName.equals(attr.getName())) { return attr; }
+      }
+      return null;
+    }
+  }
+
+  public static final class ProgIdAttrSignature extends CssPropertySignature {
+    private final Name name;
+    private ProgIdAttrSignature(Name name, CssPropertySignature valueSig) {
+      super(Collections.singletonList(valueSig));
+      this.name = name;
+    }
+    public Name getValue() { return name; }
+    public Name getName() { return name; }
+    public CssPropertySignature getValueSig() { return children().get(0); }
+
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      out.consume(name.getCanonicalForm());
+      out.consume("=");
+      children().get(0).render(r);
+    }
+  }
+
   public ParseTreeNode getParent() { return this.parent; }
 
   public ParseTreeNode getNextSibling() { return this.nextSibling; }
@@ -369,7 +428,7 @@ public abstract class CssPropertySignature implements ParseTreeNode {
       // multi-character punctuation
       Pattern.compile("^(\\|\\|)"),
       // other single character tokens
-      Pattern.compile("^([\\(\\)=\\{\\}\\*\\+\\,\\/\\|\\[\\]\\?])"),
+      Pattern.compile("^([\\(\\)=\\{\\}\\*\\+\\,\\/\\|\\[\\]\\?\\.:])"),
     };
     static ListIterator<String> tokenizeSignature(String sig) {
       List<String> toks = new ArrayList<String>();
@@ -453,14 +512,20 @@ public abstract class CssPropertySignature implements ParseTreeNode {
       return new SeriesSignature(children);
     }
 
-    static CssPropertySignature parseSignatureAtom(
-        ListIterator<String> toks) {
+    static CssPropertySignature parseSignatureAtom(ListIterator<String> toks) {
       String s = toks.next();
       CssPropertySignature sig;
       if ("[".equals(s)) {
         sig = parseSignature(toks);
         if (!"]".equals(toks.next())) {
           throw new IllegalArgumentException(unroll(toks));
+        }
+      } else if (Name.css("progid").equals(Name.css(s))) {
+        if (":".equals(toks.next())) {
+          sig = parseProgId(toks);
+        } else {
+          toks.previous();
+          sig = new LiteralSignature(s);
         }
       } else {
         char ch0 = s.charAt(0);
@@ -541,6 +606,44 @@ public abstract class CssPropertySignature implements ParseTreeNode {
         toks.previous();
         return sig;
       }
+    }
+
+    private static final Pattern DOTTED_NAME = Pattern.compile(
+        "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$", Pattern.CASE_INSENSITIVE);
+    static ProgIdSignature parseProgId(ListIterator<String> toks) {
+      StringBuilder name = new StringBuilder();
+      while (true) {
+        String t = toks.next();
+        if ("(".equals(t)) { break; }
+        name.append(t);
+      }
+      if (!DOTTED_NAME.matcher(name).matches()) {
+        throw new IllegalArgumentException(
+            "Not dotted name: " + name.toString());
+      }
+      List<ProgIdAttrSignature> attrs = new ArrayList<ProgIdAttrSignature>();
+      String t = toks.next();
+      if (!")".equals(t)) {
+        while (true) {
+          if (!Character.isLetter(t.charAt(0))) {
+            throw new IllegalArgumentException("Not attr name: " + t);
+          }
+          Name attrName = Name.css(t);
+          t = toks.next();
+          if (!"=".equals(t)) {
+            throw new IllegalArgumentException("Not '=':" + t);
+          }
+          CssPropertySignature valueSig = parseSignatureAtom(toks);
+          attrs.add(new ProgIdAttrSignature(attrName, valueSig));
+          t = toks.next();
+          if (")".equals(t)) { break; }
+          if (!",".equals(t)) {
+            throw new IllegalArgumentException("Not comma: " + t);
+          }
+          t = toks.next();
+        }
+      }
+      return new ProgIdSignature(Name.css(name.toString()), attrs);
     }
 
     /**

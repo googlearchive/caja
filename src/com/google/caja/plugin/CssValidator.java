@@ -399,7 +399,7 @@ final class SignatureResolver {
 
   /**
    * The best match so far.  Used to generate an informative error
-   * message if the applifcation fails.
+   * message if the application fails.
    */
   private Candidate best;
   /** The css expression.  Non null. */
@@ -468,6 +468,10 @@ final class SignatureResolver {
       } else if (sig instanceof CssPropertySignature.CallSignature) {
         applyCallSignature(
             (CssPropertySignature.CallSignature) sig,
+            candidate, propertyName, passed);
+      } else if (sig instanceof CssPropertySignature.ProgIdSignature) {
+        applyProgIdSignature(
+            (CssPropertySignature.ProgIdSignature) sig,
             candidate, propertyName, passed);
       } else {
         throw new AssertionError(sig.getClass().getName());
@@ -699,8 +703,7 @@ final class SignatureResolver {
       Candidate candidate, Name propertyName, List<Candidate> passed) {
 
     if (0 == (candidate.exprIdx & 1)) {  // a term
-      CssTree.Term term =
-          (CssTree.Term) expr.children().get(candidate.exprIdx);
+      CssTree.Term term = (CssTree.Term) expr.children().get(candidate.exprIdx);
       CssTree.CssExprAtom atom = term.getExprAtom();
       if (null == term.getOperator()
           && atom instanceof CssTree.FunctionCall) {
@@ -723,6 +726,47 @@ final class SignatureResolver {
                            candidate.exprIdx + 1, resultInFnSpace.match,
                            resultInFnSpace.warning));
           }
+        }
+      }
+    }
+  }
+
+  private void applyProgIdSignature(
+      CssPropertySignature.ProgIdSignature progIdSig,
+      Candidate candidate, Name propertyName, List<Candidate> passed) {
+
+    if (0 == (candidate.exprIdx & 1)) {  // a term
+      CssTree.Term term = (CssTree.Term) expr.children().get(candidate.exprIdx);
+      CssTree.CssExprAtom atom = term.getExprAtom();
+      if (null == term.getOperator() && atom instanceof CssTree.ProgId) {
+        CssTree.ProgId progId = (CssTree.ProgId) atom;
+        if (progIdSig.getName().equals(progId.getName())) {
+          Match match = candidate.match;
+          MessageSList warning = candidate.warning;
+          for (CssTree.ProgIdAttribute attr : progId.children()) {
+            CssPropertySignature.ProgIdAttrSignature attrSig
+                = progIdSig.getProgIdAttr(attr.getName());
+            if (attrSig == null) { return; }
+            Candidate inAttrSpace = new Candidate(0, match, warning);
+            CssTree.Term value = attr.getPropertyValue();
+            CssTree.Expr valueExpr = new CssTree.Expr(
+                value.getFilePosition(), Collections.singletonList(value));
+            SignatureResolver sr = new SignatureResolver(valueExpr, cssSchema);
+            List<Candidate> resultInAttrSpaces = sr.applySignature(
+                Collections.singletonList(inAttrSpace), propertyName,
+                attrSig.getValueSig());
+            boolean matched = false;
+            for (Candidate c : resultInAttrSpaces) {
+              if (c.exprIdx == 1) {
+                match = c.match;
+                warning = c.warning;
+                matched = true;
+                break;
+              }
+            }
+            if (!matched) { return; }
+          }
+          passed.add(new Candidate(candidate.exprIdx + 1, match, warning));
         }
       }
     }

@@ -22,6 +22,7 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.lexer.TokenQueue.Mark;
+import com.google.caja.parser.css.CssTree.ProgIdAttribute;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
@@ -40,7 +41,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Produces a parse tree from CSS2.
+ * Produces a parse tree from CSS2.  This parses the CSS2 grammar plus
+ * an {@link CssTree.ProgId IE specific extension}.
  *
  * <h2>Error Recovery</h2>
  * This class runs in two modes: tolerant where unrecognized constructs are
@@ -632,6 +634,42 @@ public final class CssParser {
 
   private CssTree.Term parseTerm() throws ParseException {
     Mark m = tq.mark();
+    CssTree.UnaryOperator op = parseUnaryOperator();
+
+    if (isTolerant && tq.isEmpty()) { return null; }
+
+    Mark m2 = tq.mark();
+    CssTree.CssExprAtom expr;
+    Token<CssTokenType> t = tq.peek();
+    switch (t.type) {
+      case IDENT:
+        String ident = unescape(t);
+        tq.advance();
+        if (PROG_ID_KEYWORD.equals(Name.css(ident)) && tq.checkToken(":")) {
+          expr = parseProgId(m2);
+        } else {
+          expr = new CssTree.IdentLiteral(pos(m2), ident);
+        }
+        break;
+      case FUNCTION:
+        tq.advance();
+        String fn = unescape(t);
+        fn = fn.substring(0, fn.length() - 1);  // strip trailing '('
+        CssTree.Expr arg = parseExpr();
+        if (arg == null) { return null; }
+        if (expect(")", CssParser.DO_NOTHING, m)) { return null; }
+        expr = new CssTree.FunctionCall(pos(m2), Name.css(fn), arg);
+        break;
+      default:
+        expr = parseLiteral();
+        break;
+    }
+    if (expr == null) { return null; }
+
+    return new CssTree.Term(pos(m), op, expr);
+  }
+
+  private CssTree.UnaryOperator parseUnaryOperator() throws ParseException {
     CssTree.UnaryOperator op = null;
     if (!tq.isEmpty()) {
       Token<CssTokenType> t = tq.peek();
@@ -645,22 +683,20 @@ public final class CssParser {
         }
       }
     }
+    return op;
+  }
 
-    if (isTolerant && tq.isEmpty()) { return null; }
-
-    Mark m2 = tq.mark();
-    CssTree.CssExprAtom expr;
+  private CssTree.CssLiteral parseLiteral() throws ParseException {
+    Mark m = tq.mark();
     Token<CssTokenType> t = tq.pop();
     switch (t.type) {
       case QUANTITY:
-        expr = new CssTree.QuantityLiteral(pos(m2), unescape(t));
-        break;
+        return new CssTree.QuantityLiteral(pos(m), unescape(t));
       case STRING:
       {
         String value = unescape(t);
         value = value.substring(1, value.length() - 1);
-        expr = new CssTree.StringLiteral(pos(m2), value);
-        break;
+        return new CssTree.StringLiteral(pos(m), value);
       }
       case HASH:
         String color = unescape(t);
@@ -671,44 +707,27 @@ public final class CssParser {
               MessagePart.Factory.valueOf(t.text));
         }
         try {
-          expr = new CssTree.HashLiteral(pos(m2), color);
+          return new CssTree.HashLiteral(pos(m), color);
         } catch (IllegalArgumentException e) {
           return throwOrReport(
               MessageType.UNEXPECTED_TOKEN, t.pos,
               MessagePart.Factory.valueOf(t.text));
         }
-        break;
       case UNICODE_RANGE:
-        expr = new CssTree.UnicodeRangeLiteral(pos(m2), unescape(t));
-        break;
+        return new CssTree.UnicodeRangeLiteral(pos(m), unescape(t));
       case URI:
-        tq.rewind(m2);
-        expr = parseUri();
-        break;
-      case IDENT:
-        expr = new CssTree.IdentLiteral(pos(m2), unescape(t));
-        break;
-      case FUNCTION: {
-        String fn = unescape(t);
-        fn = fn.substring(0, fn.length() - 1);  // strip trailing '('
-        CssTree.Expr arg = parseExpr();
-        if (arg == null) { return null; }
-        if (expect(")", CssParser.DO_NOTHING, m)) { return null; }
-        expr = new CssTree.FunctionCall(pos(m2), Name.css(fn), arg);
-        break;
-      }
+        tq.rewind(m);
+        return parseUri();
       case SUBSTITUTION:
-        expr = new CssTree.Substitution(t.pos, t.text);
-        break;
+        return new CssTree.Substitution(t.pos, t.text);
+      case IDENT:
+        return new CssTree.IdentLiteral(t.pos, unescape(t));
       default:
-        tq.rewind(m2);
+        tq.rewind(m);
         return throwOrReport(
             MessageType.UNEXPECTED_TOKEN, t.pos,
             MessagePart.Factory.valueOf(t.text));
     }
-    if (expr == null) { return null; }
-
-    return new CssTree.Term(pos(m), op, expr);
   }
 
   private CssTree.UriLiteral parseUri() throws ParseException {
@@ -752,6 +771,72 @@ public final class CssParser {
           MessageType.MALFORMED_URI, t.pos,
           MessagePart.Factory.valueOf(t.text));
     }
+  }
+
+  private static final Name PROG_ID_KEYWORD = Name.css("progid");
+  private CssTree.ProgId parseProgId(Mark start) throws ParseException {
+    StringBuilder sb = new StringBuilder();
+    nameLoop:
+    while (true) {
+      if (tq.isEmpty()) { return null; }
+      Token<CssTokenType> t = tq.pop();
+      switch (t.type) {
+        case FUNCTION:
+          sb.append(unescape(t.text.substring(0, t.text.length() - 1), true));
+          break nameLoop;
+        case IDENT:
+          sb.append(unescape(t));
+          break;
+        default: return null;
+      }
+      if (!tq.checkToken(".")) { return null; }
+      sb.append('.');
+    }
+    List<ProgIdAttribute> attrs = new ArrayList<ProgIdAttribute>();
+    if (!tq.checkToken(")")) {
+      do {
+        CssTree.ProgIdAttribute attr = parseProgIdAttribute();
+        if (attr == null) { return null; }
+        attrs.add(attr);
+      } while (tq.checkToken(","));
+      if (!tq.checkToken(")")) { return null; }
+    }
+    return new CssTree.ProgId(pos(start), Name.css(sb.toString()), attrs);
+  }
+
+  private CssTree.ProgIdAttribute parseProgIdAttribute() throws ParseException {
+    Mark attrStart = tq.mark();
+    String name = expectIdent();
+    if (name == null) { return null; }
+    if (!tq.checkToken("=")) { return null; }
+    Mark valueStart = tq.mark();
+    CssTree.UnaryOperator op = parseUnaryOperator();
+    if (tq.isEmpty()) { return null; }
+    Token<CssTokenType> t = tq.peek();
+    CssTree.CssLiteral lit = null;
+    if (t.type == CssTokenType.HASH) {
+      String color = unescape(t);
+      if (9 == color.length()) {
+        tq.advance();
+        // IE Filters use #RRGGBBAA style color literals which are different
+        // from those used by the rest of the CSS grammar.
+        try {
+          lit = new CssTree.HashLiteral(t.pos, color);
+        } catch (IllegalArgumentException e) {
+          return throwOrReport(
+              MessageType.UNEXPECTED_TOKEN, t.pos,
+              MessagePart.Factory.valueOf(t.text));
+        }
+      } else {
+        lit = parseLiteral();
+      }
+    } else {
+      lit = parseLiteral();
+    }
+    if (lit == null) { return null; }
+    return new CssTree.ProgIdAttribute(
+        pos(attrStart), Name.css(name),
+        Collections.singletonList(new CssTree.Term(pos(valueStart), op, lit)));
   }
 
 

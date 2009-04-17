@@ -1053,6 +1053,48 @@ public final class CssValidatorTest extends CajaTestCase {
             );
   }
 
+  public void testOpacity() throws Exception {
+    runTest("img {\n"
+            + "  opacity: 0.5;\n"
+            + "  filter:alpha(opacity=50)\n"
+            + "         progid:DXImageTransform.Microsoft.Alpha(opacity=50) }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : img\n"
+            + "    Declaration\n"
+            + "      Property : opacity\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=NUMBER"
+                        + " ; cssPropertyPart=opacity::alphavalue\n"
+            + "          QuantityLiteral : 0.5\n"
+            + "    Declaration\n"
+            + "      Property : filter\n"
+            + "      Expr\n"
+            + "        Term\n"
+            + "          FunctionCall : alpha\n"
+            + "            Expr\n"
+            + "              Term ; cssPropertyPartType=IDENT"
+                              + " ; cssPropertyPart=filter::ie-filter-opacity\n"
+            + "                IdentLiteral : opacity\n"
+            + "              Operation : EQUAL\n"
+            + "              Term ; cssPropertyPartType=NUMBER"
+                              + " ; cssPropertyPart=filter::ie-filter-opacity\n"
+            + "                QuantityLiteral : 50\n"
+            + "        Operation : NONE\n"
+            + "        Term\n"
+            + "          ProgId : dximagetransform.microsoft.alpha\n"
+            + "            ProgIdAttribute : opacity\n"
+            + "              Term ; cssPropertyPartType=NUMBER"
+                              + " ; cssPropertyPart=filter::prog-id"
+                                   + "::prog-id-alpha::filter-opacity\n"
+            + "                QuantityLiteral : 50\n"
+            );
+    fails("p { filter: progid:foo.bar() }");
+    fails("p { filter: progid:dximagetransform.microsoft.alpha(opaquity=50) }");
+  }
+
   private void fails(String css) throws Exception {
     CssTree t = css(fromString(css), true);
     CssValidator v = makeCssValidator(mq);

@@ -68,7 +68,7 @@ public class CssPropertySignatureTest extends CajaTestCase {
         + " | inherit",
 
         "SetSignature",
-        "  SeriesSignature",  // covers first two linws
+        "  SeriesSignature",  // covers first two lines
         "    SetSignature",
         "      SymbolSignature : percentage",
         "      SymbolSignature : length",
@@ -129,7 +129,7 @@ public class CssPropertySignatureTest extends CajaTestCase {
         "      LiteralSignature : wait",
         "      LiteralSignature : help",
         "      LiteralSignature : progress",
-        "  LiteralSignature : inherit"        
+        "  LiteralSignature : inherit"
         );
   }
 
@@ -148,6 +148,17 @@ public class CssPropertySignatureTest extends CajaTestCase {
         "    LiteralSignature : ,",
         "    SymbolSignature : left"
         );
+  }
+
+  public void testParseProgId() {
+    assertParseTree(
+        "progid:foo.bar(baz=<number>, enabled=true)",
+
+        "ProgIdSignature : foo.bar",
+        "  ProgIdAttrSignature : baz",
+        "    SymbolSignature : number",
+        "  ProgIdAttrSignature : enabled",
+        "    LiteralSignature : true");
   }
 
   private static CssPropertySignature sig(String sig) {

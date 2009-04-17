@@ -1,0 +1,739 @@
+StyleSheet
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : width
+      Expr
+        Term
+          QuantityLiteral : 100%
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.motionblur
+            ProgIdAttribute : strength
+              Term
+                QuantityLiteral : 13
+            ProgIdAttribute : direction
+              Term
+                QuantityLiteral : 310
+        Operation : NONE
+        Term
+          ProgId : dximagetransform.microsoft.blur
+            ProgIdAttribute : pixelradius
+              Term
+                QuantityLiteral : 2
+        Operation : NONE
+        Term
+          ProgId : dximagetransform.microsoft.wheel
+            ProgIdAttribute : duration
+              Term
+                QuantityLiteral : 3
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.alphaimageloader
+            ProgIdAttribute : src
+              Term
+                StringLiteral : /workshop/graphics/earglobe.gif
+            ProgIdAttribute : sizingmethod
+              Term
+                StringLiteral : scale
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.gradient
+            ProgIdAttribute : enabled
+              Term
+                StringLiteral : false
+            ProgIdAttribute : startcolorstr
+              Term
+                HashLiteral : #550000FF
+            ProgIdAttribute : endcolorstr
+              Term
+                HashLiteral : #55FFFF00
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : INPUT
+        ClassLiteral : .aFilter
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.alpha
+            ProgIdAttribute : opacity
+              Term
+                QuantityLiteral : 50
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : a
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.basicimage
+            ProgIdAttribute : mirror
+              Term
+                QuantityLiteral : 1
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : b
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.basicimage
+            ProgIdAttribute : invert
+              Term
+                QuantityLiteral : 1
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : i
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.basicimage
+            ProgIdAttribute : grayscale
+              Term
+                QuantityLiteral : 1
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.basicimage
+            ProgIdAttribute : xray
+              Term
+                QuantityLiteral : 1
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : q
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.basicimage
+            ProgIdAttribute : mask
+              Term
+                QuantityLiteral : 1
+            ProgIdAttribute : maskcolor
+              Term
+                QuantityLiteral : 255
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.blur
+            ProgIdAttribute : pixelradius
+              Term
+                QuantityLiteral : 3
+            ProgIdAttribute : enabled
+              Term
+                StringLiteral : false
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.chroma
+            ProgIdAttribute : color
+              Term
+                StringLiteral : yellow
+        Operation : COMMA
+        Term
+          ProgId : dximagetransform.microsoft.chroma
+            ProgIdAttribute : color
+              Term
+                StringLiteral : red
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : cursor
+      Expr
+        Term
+          IdentLiteral : hand
+    Declaration
+      Property : height
+      Expr
+        Term
+          QuantityLiteral : 160px
+    Declaration
+      Property : padding
+      Expr
+        Term
+          QuantityLiteral : 10px
+    Declaration
+      Property : font
+      Expr
+        Term
+          IdentLiteral : bold
+        Operation : NONE
+        Term
+          QuantityLiteral : 13pt
+        Operation : NONE
+        Term
+          IdentLiteral : verdana
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.dropshadow
+            ProgIdAttribute : offx
+              Term
+                QuantityLiteral : 5
+            ProgIdAttribute : offy
+              Term
+                QuantityLiteral : 5
+            ProgIdAttribute : color
+              Term
+                StringLiteral : gray
+            ProgIdAttribute : positive
+              Term
+                StringLiteral : true
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.emboss
+            ProgIdAttribute : enabled
+              Term
+                StringLiteral : false
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : position
+      Expr
+        Term
+          IdentLiteral : absolute
+    Declaration
+      Property : left
+      Expr
+        Term
+          QuantityLiteral : 270px
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.engrave
+            ProgIdAttribute : enabled
+              Term
+                StringLiteral : false
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : DIV
+        ClassLiteral : .aFilter
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.glow
+            ProgIdAttribute : color
+              Term
+                IdentLiteral : blue
+            ProgIdAttribute : strength
+              Term
+                QuantityLiteral : 5
+    Declaration
+      Property : width
+      Expr
+        Term
+          QuantityLiteral : 150px
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        ClassLiteral : .aFilter
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.light
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : DIV
+        ClassLiteral : .aFilter
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.maskfilter
+            ProgIdAttribute : color
+              Term
+                IdentLiteral : magenta
+    Declaration
+      Property : width
+      Expr
+        Term
+          QuantityLiteral : 100px
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.matrix
+            ProgIdAttribute : sizingmethod
+              Term
+                StringLiteral : auto expand
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : DIV
+        ClassLiteral : .aFilter
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.motionblur
+            ProgIdAttribute : strength
+              Term
+                QuantityLiteral : 30
+            ProgIdAttribute : direction
+              Term
+                QuantityLiteral : 45
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : DIV
+        ClassLiteral : .aFilter
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.shadow
+            ProgIdAttribute : color
+              Term
+                HashLiteral : #0000FF
+            ProgIdAttribute : direction
+              Term
+                QuantityLiteral : 45
+    Declaration
+      Property : width
+      Expr
+        Term
+          QuantityLiteral : 150px
+    Declaration
+      Property : color
+      Expr
+        Term
+          HashLiteral : #FF0000
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : DIV
+        ClassLiteral : .aFilter
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.wave
+            ProgIdAttribute : strength
+              Term
+                QuantityLiteral : 2
+            ProgIdAttribute : freq
+              Term
+                QuantityLiteral : 3
+            ProgIdAttribute : lightstrength
+              Term
+                QuantityLiteral : 20
+            ProgIdAttribute : add
+              Term
+                QuantityLiteral : 0
+            ProgIdAttribute : phase
+              Term
+                QuantityLiteral : 90
+    Declaration
+      Property : width
+      Expr
+        Term
+          QuantityLiteral : 150px
+    Declaration
+      Property : color
+      Expr
+        Term
+          HashLiteral : #FF0000
+    Declaration
+      Property : background-color
+      Expr
+        Term
+          QuantityLiteral : 00ffff
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : height
+      Expr
+        Term
+          QuantityLiteral : 250px
+    Declaration
+      Property : width
+      Expr
+        Term
+          QuantityLiteral : 250px
+    Declaration
+      Property : background-color
+      Expr
+        Term
+          IdentLiteral : gold
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.barn
+            ProgIdAttribute : duration
+              Term
+                QuantityLiteral : 2
+            ProgIdAttribute : motion
+              Term
+                StringLiteral : out
+            ProgIdAttribute : orientation
+              Term
+                StringLiteral : vertical
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : body
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.blinds
+            ProgIdAttribute : direction
+              Term
+                StringLiteral : down
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.checkerboard
+            ProgIdAttribute : duration
+              Term
+                QuantityLiteral : 5
+            ProgIdAttribute : direction
+              Term
+                StringLiteral : left
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : height
+      Expr
+        Term
+          QuantityLiteral : 250px
+    Declaration
+      Property : width
+      Expr
+        Term
+          QuantityLiteral : 250px
+    Declaration
+      Property : background-color
+      Expr
+        Term
+          IdentLiteral : gold
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.fade
+            ProgIdAttribute : duration
+              Term
+                QuantityLiteral : 2
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.gradientwipe
+            ProgIdAttribute : duration
+              Term
+                QuantityLiteral : 3
+            ProgIdAttribute : gradientsize
+              Term
+                QuantityLiteral : 0.5
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.inset
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.iris
+            ProgIdAttribute : duration
+              Term
+                QuantityLiteral : 3
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : p
+    Declaration
+      Property : width
+      Expr
+        Term
+          QuantityLiteral : 100px
+    Declaration
+      Property : background-color
+      Expr
+        Term
+          IdentLiteral : lightblue
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.pixelate
+            ProgIdAttribute : duration
+              Term
+                QuantityLiteral : 3
+            ProgIdAttribute : enabled
+              Term
+                StringLiteral : false
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : a
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.radialwipe
+            ProgIdAttribute : duration
+              Term
+                QuantityLiteral : 2
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : img
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.randombars
+            ProgIdAttribute : duration
+              Term
+                QuantityLiteral : 5
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : u
+    Declaration
+      Property : height
+      Expr
+        Term
+          QuantityLiteral : 250px
+    Declaration
+      Property : width
+      Expr
+        Term
+          QuantityLiteral : 250px
+    Declaration
+      Property : background-color
+      Expr
+        Term
+          IdentLiteral : gold
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.randomdissolve
+            ProgIdAttribute : duration
+              Term
+                QuantityLiteral : 3
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : table
+    Declaration
+      Property : height
+      Expr
+        Term
+          QuantityLiteral : 250px
+    Declaration
+      Property : width
+      Expr
+        Term
+          QuantityLiteral : 250px
+    Declaration
+      Property : background-color
+      Expr
+        Term
+          IdentLiteral : gold
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.slide
+            ProgIdAttribute : duration
+              Term
+                QuantityLiteral : 3
+            ProgIdAttribute : bands
+              Term
+                StringLiteral : 8
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : div
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.spiral
+            ProgIdAttribute : duration
+              Term
+                QuantityLiteral : 3
+            ProgIdAttribute : gridsizex
+              Term
+                QuantityLiteral : 25
+            ProgIdAttribute : gridsizey
+              Term
+                QuantityLiteral : 25
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : b
+    Declaration
+      Property : height
+      Expr
+        Term
+          QuantityLiteral : 250px
+    Declaration
+      Property : width
+      Expr
+        Term
+          QuantityLiteral : 250px
+    Declaration
+      Property : background-color
+      Expr
+        Term
+          IdentLiteral : gold
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.stretch
+            ProgIdAttribute : duration
+              Term
+                QuantityLiteral : 3
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : i
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.strips
+            ProgIdAttribute : duration
+              Term
+                QuantityLiteral : 5
+            ProgIdAttribute : motion
+              Term
+                StringLiteral : rightdown
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : hr
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.wheel
+            ProgIdAttribute : duration
+              Term
+                QuantityLiteral : 2
+            ProgIdAttribute : spokes
+              Term
+                QuantityLiteral : 8
+    Declaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : object
+    Declaration
+      Property : filter
+      Expr
+        Term
+          ProgId : dximagetransform.microsoft.zigzag
+            ProgIdAttribute : duration
+              Term
+                QuantityLiteral : 3
+            ProgIdAttribute : gridsizex
+              Term
+                QuantityLiteral : 25
+            ProgIdAttribute : gridsizey
+              Term
+                QuantityLiteral : 25
+    Declaration

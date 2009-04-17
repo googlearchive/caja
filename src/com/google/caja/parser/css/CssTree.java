@@ -44,6 +44,11 @@ public abstract class CssTree extends AbstractParseTreeNode {
     super(pos, CssTree.class);
     createMutation().appendChildren(children).execute();
   }
+  private <T extends CssTree> CssTree(FilePosition pos, Class<T> subType,
+                                      List<? extends T> children) {
+    super(pos, subType);
+    createMutation().appendChildren(children).execute();
+  }
 
   @Override
   public Object getValue() {
@@ -113,7 +118,12 @@ public abstract class CssTree extends AbstractParseTreeNode {
 
     public DeclarationGroup(
         FilePosition pos, List<? extends Declaration> decls) {
-      super(pos, decls);
+      super(pos, Declaration.class, decls);
+    }
+
+    @Override
+    public List<? extends Declaration> children() {
+      return childrenAs(Declaration.class);
     }
 
     @Override
@@ -373,7 +383,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * </pre>
    */
   public static final class Property extends CssTree {
-    final Name ident;
+    private final Name ident;
     /** @param none ignored but required for reflection. */
     public Property(
         FilePosition pos, Name ident, List<? extends CssTree> none) {
@@ -782,8 +792,13 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * See also http://www.w3.org/TR/REC-CSS2/syndata.html#values
    */
   public abstract static class CssExprAtom extends CssTree {
-    CssExprAtom(FilePosition pos, List<? extends Expr> children) {
+    CssExprAtom(FilePosition pos, List<? extends CssTree> children) {
       super(pos, children);
+    }
+    <T extends CssTree>
+    CssExprAtom(
+        FilePosition pos, Class<T> childType, List<? extends T> children) {
+      super(pos, childType, children);
     }
   }
 
@@ -792,7 +807,9 @@ public abstract class CssTree extends AbstractParseTreeNode {
   private static final Pattern CLASSLITERAL = Pattern.compile("^\\..+$");
   private static final Pattern IDENTLITERAL = Pattern.compile("^.+$");
   private static final Pattern HASHLITERAL = Pattern.compile(
-      "^#[a-fA-F0-9]{3,6}$");
+      // The CSS spec allows for 3 and 6 digit forms where "#ABC" is equivalent
+      // to "#AABBCC".  IE filters use a non-standard 8 digit RRGGBB form.
+      "^#[a-fA-F0-9]{3}(?:[a-fA-F0-9]{3}(?:[a-fA-F0-9]{2})?)?$");
   private static final Pattern QUANTITYLITERAL = Pattern.compile(
       "^(?:\\.\\d+|\\d+(?:\\.\\d+)?)([a-zA-Z]+|%)?$");
   private static final Pattern UNICODERANGELITERAL = Pattern.compile(
@@ -1045,6 +1062,92 @@ public abstract class CssTree extends AbstractParseTreeNode {
       children().get(0).render(r);
       out.mark(FilePosition.endOfOrNull(getFilePosition()));
       out.consume(")");
+    }
+  }
+
+  /**
+   * An IE extension used in the filter property as described at
+   * http://msdn.microsoft.com/en-us/library/ms532847(VS.85).aspx.
+   *
+   * The grammar looks like {@code
+   *  ProgId ::== 'progid' ':' <DottedFunctionName> <ProgIdAttributeList>? ')'
+   *  DottedFunctionName ::== <Function>    // Includes an open parenthesis
+   *                        | <Identifier> '.' <DottedFunctionName>
+   *  ProgIdAttributeList ::== <ProgIdAttribute>
+   *                         | <ProgIdAttribute> ',' <ProgIdAttributeList>
+   *  ProgIdAttribute ::== <Identifier> '=' <Expr>
+   * }
+   * <p>
+   * See the test file "cssparseinput-filters.css" for examples.
+   */
+  public static final class ProgId extends CssExprAtom {
+    private final Name name;
+
+    public ProgId(
+        FilePosition pos, Name name, List<? extends ProgIdAttribute> attrs) {
+      super(pos, ProgIdAttribute.class, attrs);
+      this.name = name;
+    }
+
+    @Override
+    public Name getValue() { return name; }
+    public Name getName() { return name; }
+    @Override
+    public List<? extends ProgIdAttribute> children() {
+      return childrenAs(ProgIdAttribute.class);
+    }
+
+    public void render(RenderContext r) {
+      TokenConsumer tc = r.getOut();
+      tc.mark(getFilePosition());
+      tc.consume("progid");
+      tc.consume(":");
+      boolean dot = false;
+      for (String part : name.getCanonicalForm().split("\\.")) {
+        if (dot) { tc.consume("."); }
+        dot = true;
+        renderCssIdent(part, r);
+      }
+      tc.consume("(");
+      renderCommaGroup(children(), r);
+      tc.consume(")");
+    }
+  }
+
+  public static final class ProgIdAttribute extends CssTree {
+    private final Name name;
+
+    public ProgIdAttribute(
+        FilePosition pos, Name name, List<? extends Term> value) {
+      super(pos, Term.class, value);
+      this.name = name;
+    }
+
+    @Override
+    public Name getValue() { return name; }
+    public Name getName() { return name; }
+    @Override
+    public List<? extends Term> children() {
+      return childrenAs(Term.class);
+    }
+    public Term getPropertyValue() { return children().get(0); }
+    @Override
+    protected void childrenChanged() {
+      super.childrenChanged();
+      List<? extends Term> terms = children();
+      if (terms.size() != 1) { throw new IllegalStateException(); }
+      CssExprAtom atom = terms.get(0).getExprAtom();
+      if (!(atom instanceof CssLiteral)) {
+        throw new ClassCastException(atom.getClass().getName());
+      }
+    }
+
+    public void render(RenderContext r) {
+      TokenConsumer tc = r.getOut();
+      tc.mark(getFilePosition());
+      renderCssIdent(name.getCanonicalForm(), r);
+      tc.consume("=");
+      getPropertyValue().render(r);
     }
   }
 
