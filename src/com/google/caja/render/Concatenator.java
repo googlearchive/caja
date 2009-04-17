@@ -21,7 +21,7 @@ import java.io.IOException;
 
 /**
  * A {@link com.google.caja.reporting.RenderContext} renderer that concatenates
- * tokens.  Suitable for rendering {@link com.google.caja.parser.html.DomTree}s.
+ * tokens.  Suitable for rendering {@link org.w3c.dom.Node HTML parse trees}.
  *
  * @author mikesamuel@gmail.com
  */

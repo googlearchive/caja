@@ -18,10 +18,10 @@ import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.TranslatedCode;
+import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.HtmlCompiler;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
@@ -63,7 +63,7 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
       it.remove();
       try {
         renderedHtmlStatements.add(
-            htmlc.compileDocument((DomTree) job.getRoot().node));
+            htmlc.compileDocument(((Dom) job.getRoot().node).getValue()));
       } catch (HtmlCompiler.BadContentException ex) {
         ex.toMessageQueue(jobs.getMessageQueue());
       }

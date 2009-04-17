@@ -30,7 +30,6 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.DomParser;
-import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Parser;
@@ -47,6 +46,11 @@ import com.google.caja.reporting.RenderContext;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
+
+import org.w3c.dom.DocumentFragment;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
 import junit.framework.TestCase;
 
 public abstract class CajaTestCase extends TestCase {
@@ -124,44 +128,47 @@ public abstract class CajaTestCase extends TestCase {
     return js(cp, true);
   }
 
-  protected DomTree xml(CharProducer cp) throws ParseException {
-    return parseMarkup(cp, true, true);
+  protected Element xml(CharProducer cp) throws ParseException {
+    return (Element) parseMarkup(cp, true, true);
   }
 
-  protected DomTree xmlFragment(CharProducer cp) throws ParseException {
-    return parseMarkup(cp, true, false);
+  protected DocumentFragment xmlFragment(CharProducer cp) throws ParseException {
+    return (DocumentFragment) parseMarkup(cp, true, false);
   }
 
-  protected DomTree html(CharProducer cp) throws ParseException {
-    return parseMarkup(cp, false, true);
+  protected Element html(CharProducer cp) throws ParseException {
+    return (Element) parseMarkup(cp, false, true);
   }
 
-  protected DomTree htmlFragment(CharProducer cp) throws ParseException {
-    return parseMarkup(cp, false, false);
+  protected DocumentFragment htmlFragment(CharProducer cp) throws ParseException {
+    return (DocumentFragment) parseMarkup(cp, false, false);
   }
 
-  private DomTree parseMarkup(CharProducer cp, boolean asXml, boolean asDoc)
+  private Node parseMarkup(CharProducer cp, boolean asXml, boolean asDoc)
       throws ParseException {
     InputSource is = sourceOf(cp);
     HtmlLexer lexer = new HtmlLexer(cp);
     lexer.setTreatedAsXml(asXml);
     TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(lexer, is);
     DomParser p = new DomParser(tq, asXml, mq);
-    DomTree t = asDoc ? p.parseDocument() : p.parseFragment();
+    Node t = asDoc
+        ? p.parseDocument()
+        : p.parseFragment(DomParser.makeDocument(null, null));
     tq.expectEmpty();
     return t;
   }
 
-  protected DomTree markup(CharProducer cp) throws ParseException {
+  protected Element markup(CharProducer cp) throws ParseException {
     HtmlLexer lexer = new HtmlLexer(cp);
     DomParser p = new DomParser(lexer, sourceOf(cp), mq);
     return p.parseDocument();
   }
 
-  protected DomTree markupFragment(CharProducer cp) throws ParseException {
+  protected DocumentFragment markupFragment(CharProducer cp)
+      throws ParseException {
     HtmlLexer lexer = new HtmlLexer(cp);
     DomParser p = new DomParser(lexer, sourceOf(cp), mq);
-    return p.parseFragment();
+    return p.parseFragment(DomParser.makeDocument(null, null));
   }
 
   protected CssTree.StyleSheet css(CharProducer cp) throws ParseException {

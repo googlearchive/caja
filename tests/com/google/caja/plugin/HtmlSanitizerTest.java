@@ -20,9 +20,9 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.TokenQueue;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomParser;
-import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.html.Nodes;
+import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -39,6 +39,9 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.w3c.dom.DocumentFragment;
+import org.w3c.dom.Node;
 
 import junit.framework.TestCase;
 
@@ -136,8 +139,8 @@ public class HtmlSanitizerTest extends TestCase {
     assertValid(html("<meta http-equiv='refresh' content='1'/>"),
         "",
         "WARNING: removing disallowed tag meta",
-        "WARNING: removing attribute http-equiv when folding meta into parent",
-        "WARNING: removing attribute content when folding meta into parent");
+        "WARNING: removing attribute content when folding meta into parent",
+        "WARNING: removing attribute http-equiv when folding meta into parent");
   }
   public void testDisallowedElement4() throws Exception {
     assertValid(xml("<title>A title</title>"), "",
@@ -217,17 +220,16 @@ public class HtmlSanitizerTest extends TestCase {
         "WARNING: removing disallowed attribute charset on tag a");
   }
 
-  private void assertValid(DomTree input, String golden, String... warnings)
+  private void assertValid(Node input, String golden, String... warnings)
       throws Exception {
     sanitize(input, golden, true, warnings);
   }
 
   private void sanitize(
-      DomTree input, String golden, boolean valid, String... warnings)
+      Node input, String golden, boolean valid, String... warnings)
       throws Exception {
-    mq.getMessages().clear();
     boolean validated = new HtmlSanitizer(HtmlSchema.getDefault(mq), mq)
-        .sanitize(new AncestorChain<DomTree>(input));
+        .sanitize(input);
 
     List<String> actualWarnings = new ArrayList<String>();
     for (Message msg : mq.getMessages()) {
@@ -237,34 +239,36 @@ public class HtmlSanitizerTest extends TestCase {
         actualWarnings.add(msg.getMessageLevel().name() + ":" + msgText);
       }
     }
+    mq.getMessages().clear();
     MoreAsserts.assertListsEqual(Arrays.asList(warnings), actualWarnings);
 
     assertEquals(valid, validated);
 
     if (golden != null) {
       StringBuilder sb = new StringBuilder();
-      TokenConsumer tc = input.makeRenderer(sb, null);
-      input.render(new RenderContext(mc, tc));
+      TokenConsumer tc = new Concatenator(sb, null);
+      Nodes.render(input, new RenderContext(mc, tc));
       assertEquals(golden, sb.toString());
     }
   }
 
-  private DomTree html(String html) throws ParseException {
+  private DocumentFragment html(String html) throws ParseException {
     return parse(html, false);
   }
 
-  private DomTree xml(String xml) throws ParseException {
+  private DocumentFragment xml(String xml) throws ParseException {
     return parse(xml, true);
   }
 
-  private DomTree parse(String markup, boolean asXml) throws ParseException {
+  private DocumentFragment parse(String markup, boolean asXml) throws ParseException {
     TokenQueue<HtmlTokenType> tq;
     try {
       tq = DomParser.makeTokenQueue(is, new StringReader(markup), asXml);
     } catch (IOException ex) {
       throw new RuntimeException(ex);  // IOException reading from string.
     }
-    DomTree t = new DomParser(tq, asXml, mq).parseFragment();
+    DocumentFragment t = new DomParser(tq, asXml, mq).parseFragment(
+        DomParser.makeDocument(null, null));
     tq.expectEmpty();
     return t;
   }

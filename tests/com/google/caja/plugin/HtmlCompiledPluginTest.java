@@ -18,7 +18,6 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.quasiliteral.CajitaRewriter;
-import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.UncajoledModule;
@@ -196,8 +195,8 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
     PluginMeta meta = new PluginMeta();
     PluginCompiler compiler = new PluginCompiler(new TestBuildInfo(), meta, mq);
     compiler.setMessageContext(mc);
-    DomTree html = htmlFragment(fromString("<script>{</script>"));
-    compiler.addInput(new AncestorChain<DomTree>(html));
+    Dom html = new Dom(htmlFragment(fromString("<script>{</script>")));
+    compiler.addInput(new AncestorChain<Dom>(html));
 
     boolean passed = compiler.run();
     assertFalse(passed);
@@ -213,8 +212,8 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
     meta.setValijaMode(valija);
     PluginCompiler compiler = new PluginCompiler(new TestBuildInfo(), meta, mq);
     compiler.setMessageContext(mc);
-    DomTree html = htmlFragment(fromString(gadgetSpec));
-    if (html != null) { compiler.addInput(new AncestorChain<DomTree>(html)); }
+    Dom html = new Dom(htmlFragment(fromString(gadgetSpec)));
+    compiler.addInput(AncestorChain.instance(html));
 
     boolean failed = !compiler.run();
 

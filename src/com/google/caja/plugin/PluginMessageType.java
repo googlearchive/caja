@@ -39,8 +39,6 @@ public enum PluginMessageType implements MessageTypeInt {
   UNSAFE_TAG("%s: removing disallowed tag %s", MessageLevel.WARNING),
   NO_SUCH_TEMPLATE("%s: no such template %s", MessageLevel.FATAL_ERROR),
   MISSING_ATTRIBUTE("%s: expected param %s on %s", MessageLevel.ERROR),
-  DUPLICATE_ATTRIBUTE(
-      "%s: attribute %s duplicates one at %s", MessageLevel.WARNING),
   UNKNOWN_ATTRIBUTE("%s: removing unknown attribute %s on %s",
       MessageLevel.WARNING),
   UNSAFE_ATTRIBUTE("%s: removing disallowed attribute %s on tag %s",

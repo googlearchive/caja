@@ -182,7 +182,7 @@ public final class PluginCompilerMain {
     } else if (path.endsWith(".html") || path.endsWith(".xhtml")) {
       DomParser p = new DomParser(new HtmlLexer(cp), is, mq);
       if (p.getTokenQueue().isEmpty()) { return null; }
-      input = p.parseFragment();
+      input = new Dom(p.parseFragment(DomParser.makeDocument(null, null)));
       p.getTokenQueue().expectEmpty();
     } else if (path.endsWith(".css")) {
       TokenQueue<CssTokenType> tq = CssParser.makeTokenQueue(cp, mq, false);
@@ -238,7 +238,8 @@ public final class PluginCompilerMain {
         throw new AssertionError(
             "Unrecognized renderer: " + config.renderer());
     }
-    RenderContext rc = new RenderContext(mc, true, true, tc);
+    RenderContext rc = new RenderContext(mc, tc)
+        .withAsciiOnly(true).withEmbeddable(true);
     module.render(rc);
     tc.noMoreTokens();
     out.append('\n');

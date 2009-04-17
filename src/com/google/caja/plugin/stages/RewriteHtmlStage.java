@@ -19,21 +19,20 @@ import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
-import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
+import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginEnvironment;
@@ -45,7 +44,6 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pipeline;
 import com.google.caja.util.Strings;
-import com.google.caja.util.SyntheticAttributeKey;
 
 import java.io.StringReader;
 import java.net.URI;
@@ -55,6 +53,11 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.Text;
 
 /**
  * Extract some unsafe bits from HTML for processing by later stages.
@@ -79,65 +82,64 @@ import java.util.Set;
 public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
 
   /**
-   * A synthetic attribute that stores the name of a function extracted from a
+   * A user data property of an Element that points to the body of an extracted
    * script tag.
    */
-  public static final SyntheticAttributeKey<Block> EXTRACTED_SCRIPT_BODY
-      = new SyntheticAttributeKey<Block>(Block.class, "extractedScript");
+  private static final String EXTRACTED_SCRIPT_BODY = "caja:extractedScript";
+
+  /**
+   * The body of a script tag extracted.  Script elements are replaced with
+   * place-holder span elements that have the extracted script associated with
+   * them.
+   */
+  public static final Block extractedScriptFor(Element el) {
+    return (Block) el.getUserData(EXTRACTED_SCRIPT_BODY);
+  }
 
   public boolean apply(Jobs jobs) {
     for (Job job : jobs.getJobsByType(Job.JobType.HTML)) {
-      rewriteDomTree((DomTree) job.getRoot().node, jobs);
+      rewriteDomTree(((Dom) job.getRoot().node).getValue(), jobs);
     }
     return jobs.hasNoFatalErrors();
   }
 
-  DomTree rewriteDomTree(DomTree t, final Jobs jobs) {
+  void rewriteDomTree(Node n, Jobs jobs) {
     // Rewrite styles and scripts.
     // <script>foo()</script>  ->  <script>(cajoled foo)</script>
     // <style>foo { ... }</style>  ->  <style>foo { ... }</style>
     // <script src=foo.js></script>  ->  <script>(cajoled, inlined foo)</script>
     // <link rel=stylesheet href=foo.css>
     //     ->  <style>(cajoled, inlined styles)</style>
-    Visitor domRewriter = new Visitor() {
-        public boolean visit(AncestorChain<?> ancestors) {
-          DomTree n = (DomTree) ancestors.node;
-          if (n instanceof DomTree.Tag) {
-            MutableParseTreeNode parentNode
-                = (MutableParseTreeNode) ancestors.getParentNode();
-            DomTree.Tag tag = (DomTree.Tag) n;
-            String name = tag.getTagName().getCanonicalForm();
-            if ("script".equals(name)) {
-              rewriteScriptTag(tag, parentNode, jobs);
-            } else if ("style".equals(name)) {
-              rewriteStyleTag(tag, parentNode, jobs);
-            } else if ("link".equals(name)) {
-              rewriteLinkTag(tag, parentNode, jobs);
-            } else if ("body".equals(name)) {
-              moveOnLoadHandlerToEndOfBody(tag);
-            }
-          }
-          return true;
-        }
-      };
-    t.acceptPreOrder(domRewriter, null);
-    return t;
+    if (n.getNodeType() == Node.ELEMENT_NODE) {
+      Element el = (Element) n;
+      String name = el.getTagName();
+      if ("script".equals(name)) {
+        rewriteScriptTag(el, jobs);
+      } else if ("style".equals(name)) {
+        rewriteStyleTag(el, jobs);
+      } else if ("link".equals(name)) {
+        rewriteLinkTag(el, jobs);
+      } else if ("body".equals(name)) {
+        moveOnLoadHandlerToEndOfBody(el);
+      }
+    }
+    for (Node child : Nodes.childrenOf(n)) {
+      rewriteDomTree(child, jobs);
+    }
   }
 
-  private void rewriteScriptTag(
-      DomTree.Tag scriptTag, MutableParseTreeNode parent, Jobs jobs) {
+  private void rewriteScriptTag(Element scriptTag, Jobs jobs) {
+    Node parent = scriptTag.getParentNode();
     PluginEnvironment env = jobs.getPluginMeta().getPluginEnvironment();
 
-    DomTree.Attrib type = lookupAttribute(
-        scriptTag, Name.html("type"), DupePolicy.YIELD_FIRST);
-    DomTree.Attrib src = lookupAttribute(
-        scriptTag, Name.html("src"), DupePolicy.YIELD_FIRST);
-    if (type != null && !isJavaScriptContentType(type.getAttribValue())) {
+    Attr type = scriptTag.getAttributeNode("type");
+    Attr src = scriptTag.getAttributeNode("src");
+    if (type != null && !isJavaScriptContentType(type.getNodeValue())) {
       jobs.getMessageQueue().addMessage(
           PluginMessageType.UNRECOGNIZED_CONTENT_TYPE,
-          type.getFilePosition(),
-          MessagePart.Factory.valueOf(type.getAttribValue()),
-          scriptTag.getTagName());
+          Nodes.getFilePositionFor(type),
+          MessagePart.Factory.valueOf(type.getNodeValue()),
+          MessagePart.Factory.valueOf(scriptTag.getTagName()));
       parent.removeChild(scriptTag);
       return;
     }
@@ -145,40 +147,40 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     CharProducer jsStream;
     FilePosition scriptPos;
     if (src == null) {  // Parse the script tag body.
-      List<? extends DomTree> textNodes = scriptTag.children();
-      jsStream = textNodesToCharProducer(textNodes, true);
+      jsStream = textNodesToCharProducer(Nodes.childrenOf(scriptTag), true);
       if (jsStream == null) {
         parent.removeChild(scriptTag);
         return;
       }
       scriptPos = FilePosition.span(
-          textNodes.get(0).getFilePosition(),
-          textNodes.get(textNodes.size() - 1).getFilePosition());
+          Nodes.getFilePositionFor(scriptTag.getFirstChild()),
+          Nodes.getFilePositionFor(scriptTag.getLastChild()));
     } else {  // Load the src attribute
+      FilePosition srcPos = Nodes.getFilePositionFor(src);
+      FilePosition srcValuePos = Nodes.getFilePositionForValue(src);
       URI srcUri;
       try {
-        srcUri = new URI(src.getAttribValue());
+        srcUri = new URI(src.getNodeValue());
       } catch (URISyntaxException ex) {
         jobs.getMessageQueue().getMessages().add(
             new Message(PluginMessageType.MALFORMED_URL, MessageLevel.ERROR,
-                        src.getFilePosition(), src));
+                        srcPos, MessagePart.Factory.valueOf(src.getNodeName()))
+            );
         parent.removeChild(scriptTag);
         return;
       }
 
       // Fetch the script source.
-      URI absUri = src.getAttribValueNode().getFilePosition().source().getUri()
+      URI absUri = srcValuePos.source().getUri()
           .resolve(srcUri);
       jobs.getMessageContext().addInputSource(new InputSource(absUri));
       jsStream = env.loadExternalResource(
-          new ExternalReference(
-              absUri, src.getAttribValueNode().getFilePosition()),
-          "text/javascript");
+          new ExternalReference(absUri, srcValuePos), "text/javascript");
       if (jsStream == null) {
         parent.removeChild(scriptTag);
         jobs.getMessageQueue().addMessage(
             PluginMessageType.FAILED_TO_LOAD_EXTERNAL_URL,
-            src.getFilePosition(), MessagePart.Factory.valueOf("" + srcUri));
+            srcPos, MessagePart.Factory.valueOf("" + srcUri));
         return;
       }
       scriptPos = null;
@@ -200,60 +202,47 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       return;
     }
 
-    // Build a replacment element, <span/>, and link it to the extracted
+    // Build a replacement element, <span/>, and link it to the extracted
     // javascript, so that when the DOM is rendered, we can properly interleave
     // the extract scripts with the scripts that generate markup.
-    DomTree.Tag placeholder;
-    {
-      Token<HtmlTokenType> startToken = Token.instance(
-          "<span", HtmlTokenType.TAGBEGIN, scriptTag.getToken().pos);
-      Token<HtmlTokenType> endToken = Token.instance(
-          "/>", HtmlTokenType.TAGEND,
-          FilePosition.endOf(scriptTag.getFilePosition()));
-      placeholder = new DomTree.Tag(
-          Name.html("span"), Collections.<DomTree>emptyList(),
-          startToken, endToken);
-      placeholder.getAttributes().set(EXTRACTED_SCRIPT_BODY, parsedScriptBody);
-    }
+    Element placeholder = parent.getOwnerDocument().createElement("span");
+    Nodes.setFilePositionFor(placeholder, Nodes.getFilePositionFor(scriptTag));
+    placeholder.setUserData(EXTRACTED_SCRIPT_BODY, parsedScriptBody, null);
 
     // Replace the external script tag with the inlined script.
     parent.replaceChild(placeholder, scriptTag);
   }
 
-  private void rewriteStyleTag(
-      DomTree.Tag styleTag, MutableParseTreeNode parent, Jobs jobs) {
-    parent.removeChild(styleTag);
+  private void rewriteStyleTag(Element styleTag, Jobs jobs) {
+    styleTag.getParentNode().removeChild(styleTag);
 
-    CharProducer cssStream
-        = textNodesToCharProducer(styleTag.children(), false);
+    CharProducer cssStream = textNodesToCharProducer(
+        Nodes.childrenOf(styleTag), false);
     if (cssStream != null) {
       extractStyles(styleTag, cssStream, null, jobs);
     }
   }
 
-  private void rewriteLinkTag(
-      DomTree.Tag styleTag, MutableParseTreeNode parent, Jobs jobs) {
+  private void rewriteLinkTag(Element styleTag, Jobs jobs) {
     PluginEnvironment env = jobs.getPluginMeta().getPluginEnvironment();
 
-    parent.removeChild(styleTag);
+    styleTag.getParentNode().removeChild(styleTag);
 
-    DomTree.Attrib rel = lookupAttribute(
-        styleTag, Name.html("rel"), DupePolicy.YIELD_NULL);
+    Attr rel = styleTag.getAttributeNode("rel");
     if (rel == null || !Strings.equalsIgnoreCase(
-            rel.getAttribValue().trim(), "stylesheet")) {
+        rel.getNodeValue().trim(), "stylesheet")) {
       // If it's not a stylesheet then ignore it.
       // The HtmlValidator should complain but that's not our problem.
       return;
     }
 
-    DomTree.Attrib href = lookupAttribute(
-        styleTag, Name.html("href"), DupePolicy.YIELD_NULL);
-    DomTree.Attrib media = lookupAttribute(
-        styleTag, Name.html("media"), DupePolicy.YIELD_FIRST);
+    Attr href = styleTag.getAttributeNode("href");
+    Attr media = styleTag.getAttributeNode("media");
 
     if (href == null) {
       jobs.getMessageQueue().addMessage(
-          PluginMessageType.MISSING_ATTRIBUTE, styleTag.getFilePosition(),
+          PluginMessageType.MISSING_ATTRIBUTE,
+          Nodes.getFilePositionFor(styleTag),
           MessagePart.Factory.valueOf("href"),
           MessagePart.Factory.valueOf("link"));
       return;
@@ -261,26 +250,28 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
 
     URI hrefUri;
     try {
-      hrefUri = new URI(href.getAttribValue());
+      hrefUri = new URI(href.getNodeValue());
     } catch (URISyntaxException ex) {
       jobs.getMessageQueue().getMessages().add(
           new Message(PluginMessageType.MALFORMED_URL, MessageLevel.ERROR,
-                      href.getFilePosition(), href));
+                      Nodes.getFilePositionFor(href),
+                      MessagePart.Factory.valueOf(href.getNodeName())));
       return;
     }
 
     // Fetch the stylesheet source.
-    URI absUri = href.getAttribValueNode().getFilePosition().source().getUri()
+    URI absUri = Nodes.getFilePositionForValue(href).source().getUri()
         .resolve(hrefUri);
     jobs.getMessageContext().addInputSource(new InputSource(absUri));
     CharProducer cssStream = env.loadExternalResource(
         new ExternalReference(
-            absUri, href.getAttribValueNode().getFilePosition()),
+            absUri, Nodes.getFilePositionForValue(href)),
         "text/css");
     if (cssStream == null) {
       jobs.getMessageQueue().addMessage(
           PluginMessageType.FAILED_TO_LOAD_EXTERNAL_URL,
-          href.getFilePosition(), MessagePart.Factory.valueOf("" + hrefUri));
+          Nodes.getFilePositionFor(href),
+          MessagePart.Factory.valueOf("" + hrefUri));
       return;
     }
 
@@ -288,17 +279,15 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
   }
 
   private void extractStyles(
-      DomTree.Tag styleTag, CharProducer cssStream, DomTree.Attrib media,
-      Jobs jobs) {
-    DomTree.Attrib type = lookupAttribute(
-        styleTag, Name.html("type"), DupePolicy.YIELD_FIRST);
+      Element styleTag, CharProducer cssStream, Attr media, Jobs jobs) {
+    Attr type = styleTag.getAttributeNode("type");
 
-    if (type != null && !isCssContentType(type.getAttribValue())) {
+    if (type != null && !isCssContentType(type.getNodeValue())) {
       jobs.getMessageQueue().addMessage(
           PluginMessageType.UNRECOGNIZED_CONTENT_TYPE,
-          type.getFilePosition(),
-          MessagePart.Factory.valueOf(type.getAttribValue()),
-          styleTag.getTagName());
+          Nodes.getFilePositionFor(type),
+          MessagePart.Factory.valueOf(type.getNodeValue()),
+          MessagePart.Factory.valueOf(styleTag.getTagName()));
       return;
     }
 
@@ -313,14 +302,14 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
 
     Set<Name> mediaTypes = Collections.<Name>emptySet();
     if (media != null) {
-      String[] mediaTypeArr = media.getAttribValue().trim().split("\\s*,\\s*");
+      String[] mediaTypeArr = media.getNodeValue().trim().split("\\s*,\\s*");
       if (mediaTypeArr.length != 1 || !"".equals(mediaTypeArr[0])) {
         mediaTypes = new LinkedHashSet<Name>();
         for (String mediaType : mediaTypeArr) {
           if (!CssSchema.isMediaType(mediaType)) {
             jobs.getMessageQueue().addMessage(
                 PluginMessageType.UNRECOGNIZED_MEDIA_TYPE,
-                media.getFilePosition(),
+                Nodes.getFilePositionFor(media),
                 MessagePart.Factory.valueOf(mediaType));
             continue;
           }
@@ -349,11 +338,11 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
         List<CssTree> mediaChildren = new ArrayList<CssTree>();
         for (Name mediaType : mediaTypes) {
           mediaChildren.add(
-              new CssTree.Medium(media.getFilePosition(), mediaType));
+              new CssTree.Medium(Nodes.getFilePositionFor(media), mediaType));
         }
         mediaChildren.addAll(rules);
         CssTree.Media mediaBlock = new CssTree.Media(
-            styleTag.getFilePosition(), mediaChildren);
+            Nodes.getFilePositionFor(styleTag), mediaChildren);
         stylesheet.appendChild(mediaBlock);
       }
     }
@@ -373,28 +362,24 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
    *                                &lt;/body&gt;
    * </pre>
    */
-  private void moveOnLoadHandlerToEndOfBody(DomTree.Tag body) {
-    DomTree.Attrib onload = lookupAttribute(
-        body, Name.html("onload"), DupePolicy.YIELD_NULL);
-    DomTree.Attrib language = lookupAttribute(
-        body, Name.html("language"), DupePolicy.YIELD_FIRST);
-    if (language != null && !isJavaScriptLanguage(language.getAttribValue())) {
-      // If the onload handler is vbscript, let the validator complain.
+  private void moveOnLoadHandlerToEndOfBody(Element body) {
+    Attr onload = body.getAttributeNode("onload");
+    Attr language = body.getAttributeNode("language");
+    if (onload == null
+        // If the onload handler is vbscript, let the validator complain.
+        || (language != null && !isJavaScriptLanguage(language.getNodeValue()))
+        ) {
       return;
     }
+    body.removeAttributeNode(onload);
 
-    if (onload == null) { return; }
-    body.removeChild(onload);
-
-    FilePosition pos = onload.getAttribValueNode().getFilePosition();
-    String source = onload.getAttribValue();
-    DomTree.Text sourceText = new DomTree.Text(
-        Token.instance(source, HtmlTokenType.UNESCAPED, pos));
-    DomTree.Tag scriptElement = new DomTree.Tag(
-        Name.html("script"),
-        Collections.singletonList(sourceText),
-        Token.instance("<script", HtmlTokenType.TAGBEGIN,
-                       FilePosition.startOf(pos)), pos);
+    FilePosition pos = Nodes.getFilePositionForValue(onload);
+    String source = onload.getNodeValue();
+    Text sourceText = body.getOwnerDocument().createTextNode(source);
+    Nodes.setFilePositionFor(sourceText, pos);
+    Element scriptElement = body.getOwnerDocument().createElement("script");
+    scriptElement.appendChild(sourceText);
+    Nodes.setFilePositionFor(scriptElement, pos);
 
     body.appendChild(scriptElement);
   }
@@ -404,18 +389,16 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
    * the text nodes in the given node list.
    */
   private static CharProducer textNodesToCharProducer(
-      List<? extends DomTree> nodes, boolean stripComments) {
-    List<DomTree> textNodes = new ArrayList<DomTree>();
-    for (DomTree node : nodes) {
-      if (node instanceof DomTree.Text || node instanceof DomTree.CData) {
-        textNodes.add(node);
-      }
+      Iterable<? extends Node> nodes, boolean stripComments) {
+    List<Text> textNodes = new ArrayList<Text>();
+    for (Node node : nodes) {
+      if (node instanceof Text) { textNodes.add((Text) node); }
     }
     if (textNodes.isEmpty()) { return null; }
     List<CharProducer> content = new ArrayList<CharProducer>();
     for (int i = 0, n = textNodes.size(); i < n; ++i) {
-      DomTree node = textNodes.get(i);
-      String text = node.getValue();
+      Text node = textNodes.get(i);
+      String text = node.getNodeValue();
       if (stripComments) {
         if (i == 0) {
           text = text.replaceFirst("^(\\s*)<!--", "$1     ");
@@ -426,7 +409,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       }
       content.add(CharProducer.Factory.create(
           new StringReader(text),
-          FilePosition.startOf(node.getFilePosition())));
+          FilePosition.startOf(Nodes.getFilePositionFor(node))));
     }
     if (content.size() == 1) {
       return content.get(0);
@@ -473,32 +456,6 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
   private static boolean isCssContentType(String contentType) {
     return "text/css".equals(getMimeType(contentType));
   }
-
-  /**
-   * @param attribName a canonicalized attribute name.
-   * @param onDupe what to do if there are multiple attributes with name
-   *     attribName.
-   * @return null if there is no match.
-   */
-  private static DomTree.Attrib lookupAttribute(
-      DomTree.Tag el, Name attribName, DupePolicy onDupe) {
-    DomTree.Attrib match = null;
-    for (DomTree child : el.children()) {
-      if (!(child instanceof DomTree.Attrib)) { break; }
-      DomTree.Attrib attrib = (DomTree.Attrib) child;
-      if (attribName.equals(attrib.getAttribName())) {
-        if (onDupe == DupePolicy.YIELD_NULL) { return attrib; }
-        if (match == null) {
-          match = attrib;
-        } else {
-          // If there are duplicates, it's unclear what to do, so return null.
-          return null;
-        }
-      }
-    }
-    return match;
-  }
-  private static enum DupePolicy { YIELD_NULL, YIELD_FIRST, }
 
   public static Block parseJs(
       InputSource is, CharProducer cp, FilePosition scriptPos,

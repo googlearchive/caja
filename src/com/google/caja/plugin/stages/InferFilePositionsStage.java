@@ -123,6 +123,6 @@ public class InferFilePositionsStage implements Pipeline.Stage<Jobs> {
 
   private static boolean hasFilePosition(ParseTreeNode node) {
     FilePosition pos = node.getFilePosition();
-    return !FilePosition.UNKNOWN.equals(pos);
+    return !InputSource.UNKNOWN.equals(pos.source());
   }
 }

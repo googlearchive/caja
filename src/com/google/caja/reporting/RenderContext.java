@@ -23,23 +23,26 @@ import com.google.caja.lexer.TokenConsumer;
 public class RenderContext {
 
   /** Produce output that can be safely embedded. */
-  private final boolean paranoid;
+  private final boolean embeddable;
   /** Produce output that only contains lower 7-bit characters. */
   private final boolean asciiOnly;
-  private final MessageContext msgContext;
+  /** True iff DOM tree nodes should be rendered as XML. */
+  private final boolean asXml;
+  private final MessageContext mc;
   private final TokenConsumer out;
 
   public RenderContext(MessageContext msgContext, TokenConsumer out) {
-    this(msgContext, true, false, out);
+    this(msgContext, true, false, false, out);
   }
 
-  public RenderContext(
-      MessageContext msgContext, boolean asciiOnly, boolean paranoid,
-      TokenConsumer out) {
-    if (null == msgContext || null == out) { throw new NullPointerException(); }
-    this.msgContext = msgContext;
-    this.paranoid = paranoid;
+  private RenderContext(
+      MessageContext mc, boolean asciiOnly, boolean embeddable,
+      boolean asXml, TokenConsumer out) {
+    if (null == mc || null == out) { throw new NullPointerException(); }
+    this.mc = mc;
+    this.embeddable = embeddable;
     this.asciiOnly = asciiOnly;
+    this.asXml = asXml;
     this.out = out;
   }
 
@@ -47,12 +50,32 @@ public class RenderContext {
    * True if the renderer produces output that can be embedded inside a CDATA
    * section, or {@code script} element without further escaping?
    */
-  public final boolean isParanoid() { return paranoid; }
+  public final boolean isEmbeddable() { return embeddable; }
   /**
    * True if the renderer produces output that only contains characters in
    * {@code [\1-\x7f]}.
    */
   public final boolean isAsciiOnly() { return asciiOnly; }
-  public final MessageContext getMessageContext() { return msgContext; }
+  /** True iff DOM tree nodes should be rendered as XML. */
+  public final boolean asXml() { return asXml; }
+  public final MessageContext getMessageContext() { return mc; }
   public final TokenConsumer getOut() { return out; }
+
+  public RenderContext withEmbeddable(boolean embeddable) {
+    return embeddable == this.embeddable
+        ? this
+        : new RenderContext(mc, asciiOnly, embeddable, asXml, out);
+  }
+
+  public RenderContext withAsciiOnly(boolean asciiOnly) {
+    return asciiOnly == this.asciiOnly
+        ? this
+        : new RenderContext(mc, asciiOnly, embeddable, asXml, out);
+  }
+
+  public RenderContext withAsXml(boolean asXml) {
+    return asXml == this.asXml
+        ? this
+        : new RenderContext(mc, asciiOnly, embeddable, asXml, out);
+  }
 }

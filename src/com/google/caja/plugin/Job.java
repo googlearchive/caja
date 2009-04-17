@@ -17,7 +17,6 @@ package com.google.caja.plugin;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssTree;
-import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Statement;
@@ -55,8 +54,7 @@ public final class Job {
         || rootNode instanceof UncajoledModule
         || rootNode instanceof CajoledModule) {
       this.type = Job.JobType.JAVASCRIPT;
-    } else if (rootNode instanceof DomTree.Fragment
-               || rootNode instanceof DomTree.Tag) {
+    } else if (rootNode instanceof Dom) {
       this.type = Job.JobType.HTML;
     } else if (rootNode instanceof CssTree.StyleSheet) {
       this.type = Job.JobType.CSS;

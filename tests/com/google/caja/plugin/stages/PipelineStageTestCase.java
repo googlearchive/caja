@@ -21,6 +21,7 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginEnvironment;
@@ -106,7 +107,7 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
       case HTML:
         outputJobs.getJobs().add(
             new Job(AncestorChain.instance(
-                htmlFragment(fromString(inputJob.content, is)))));
+                new Dom(htmlFragment(fromString(inputJob.content, is))))));
         break;
       case CSS:
         outputJobs.getJobs().add(

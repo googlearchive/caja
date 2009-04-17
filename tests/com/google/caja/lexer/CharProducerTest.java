@@ -292,6 +292,9 @@ public final class CharProducerTest extends TestCase {
         CharProducer.Factory.fromHtmlAttribute(fromString("&#xa;")),
         "\n");
     testProducer(
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#x10000;")),
+        String.valueOf(Character.toChars(0x10000)));
+    testProducer(
         CharProducer.Factory.fromHtmlAttribute(fromString("&#xa")),
         "&#xa");
     testProducer(

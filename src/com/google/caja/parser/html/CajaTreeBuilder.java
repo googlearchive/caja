@@ -17,10 +17,9 @@ package com.google.caja.parser.html;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.Token;
-import com.google.caja.lexer.escaping.Escaping;
-import com.google.caja.parser.MutableParseTreeNode;
-import com.google.caja.util.Name;
-import com.google.caja.util.SyntheticAttributeKey;
+import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.MessageType;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +27,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.Text;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -41,10 +46,7 @@ import nu.validator.htmlparser.impl.TreeBuilder;
  *
  * @author mikesamuel@gmail.com
  */
-final class CajaTreeBuilder extends TreeBuilder<DomTree> {
-  /** Maintain parent chains while the DOM is being built. */
-  private static final SyntheticAttributeKey<DomTree> PARENT
-      = new SyntheticAttributeKey<DomTree>(DomTree.class, "parent");
+final class CajaTreeBuilder extends TreeBuilder<Node> {
   private static final boolean DEBUG = false;
 
   // Keep track of the tokens bounding the section we're processing so that
@@ -53,7 +55,7 @@ final class CajaTreeBuilder extends TreeBuilder<DomTree> {
   private Token<HtmlTokenType> endTok;
   // The root html element.  TreeBuilder always creates a valid tree with
   // html, head, and body elements.
-  private DomTree.Tag rootElement;
+  private Element rootElement;
   // Used to compute the spanning file position on the overall document.  Since
   // nodes can move around we can't easily compute this without looking at all
   // descendants.
@@ -61,20 +63,26 @@ final class CajaTreeBuilder extends TreeBuilder<DomTree> {
   // Track unpopped elements since a </html> tag will not close tables
   // and other scoping elements.
   // @see #closeUnclosedNodes
-  private final Set<DomTree> unpoppedElements = new HashSet<DomTree>();
+  private final Set<Node> unpoppedElements = new HashSet<Node>();
+  private final Document doc;
+  private final boolean needsDebugData;
+  private final MessageQueue mq;
 
-
-  CajaTreeBuilder() {
+  /** @param needsDebugData see {@link DomParser#setNeedsDebugData(boolean)} */
+  CajaTreeBuilder(Document doc, boolean needsDebugData, MessageQueue mq) {
     super(
         // Allow loose parsing
         XmlViolationPolicy.ALLOW,
         // Don't coalesce text so that we can apply file positions.
         false);
+    this.doc = doc;
+    this.needsDebugData = needsDebugData;
+    this.mq = mq;
     setIgnoringComments(true);
     setScriptingEnabled(true);  // Affects behavior of noscript
   }
 
-  DomTree.Tag getRootElement() {
+  Element getRootElement() {
     return rootElement;
   }
 
@@ -116,220 +124,229 @@ final class CajaTreeBuilder extends TreeBuilder<DomTree> {
   protected void appendCommentToDocument(char[] buf, int start, int length) {}
 
   @Override
-  protected void appendComment(DomTree el, char[] buf, int start, int length) {}
+  protected void appendComment(Node el, char[] buf, int start, int length) {}
 
   @Override
   protected void appendCharacters(
-      DomTree el, char[] buf, int start, int length) {
-    insertCharactersBefore(buf, start, length, null, el);
+      Node n, char[] buf, int start, int length) {
+    insertCharactersBefore(buf, start, length, null, n);
   }
 
   @Override
   protected void insertCharactersBefore(
-      char[] buf, int start, int length, DomTree sibling, DomTree parent) {
+      char[] buf, int start, int length, Node sibling, Node parent) {
     // Normalize text by adding to an existing text node.
-    List<? extends DomTree> siblings = parent.children();
+    Node priorSibling = sibling != null
+        ? sibling.getPreviousSibling()
+        : parent.getLastChild();
 
-    int siblingIndex = siblings.indexOf(sibling);
-    if (siblingIndex < 0) {
-      siblingIndex = siblings.size();
+    FilePosition pos = null;
+    String htmlText = null;
+    String plainText;
+
+    String tokText;
+    if (bufferMatches(buf, start, length, startTok.text)) {
+      tokText = startTok.text;
+    } else {
+      tokText = String.valueOf(buf, start, length);
     }
-    if (siblingIndex > 0) {
-      DomTree priorSibling = siblings.get(siblingIndex - 1);
-      if (priorSibling instanceof DomTree.Text
-          && priorSibling.getToken().type == HtmlTokenType.TEXT) {
-        // Normalize the DOM by collapsing adjacent text nodes.
-        Token<HtmlTokenType> previous = priorSibling.getToken();
-        StringBuilder sb = new StringBuilder(previous.text);
-        sb.append(buf, start, length);
-        Token<HtmlTokenType> combined = Token.instance(
-            sb.toString(), previous.type,
-            FilePosition.span(previous.pos, endTok.pos));
-        parent.replaceChild(withParent(new DomTree.Text(combined), parent),
-                            priorSibling);
-        clearParent(priorSibling);
-        return;
+
+    if (startTok.type == HtmlTokenType.TEXT) {
+      pos = startTok.pos;
+      htmlText = tokText;
+      plainText = Nodes.decode(htmlText);
+    } else if (startTok.type == HtmlTokenType.UNESCAPED
+               || startTok.type == HtmlTokenType.CDATA) {
+      pos = startTok.pos;
+      plainText = htmlText = tokText;
+    } else {
+      pos = endTok.pos;
+      plainText = tokText;
+      if (needsDebugData) {
+        htmlText = Nodes.encode(plainText);
       }
     }
 
-    Token<HtmlTokenType> tok = this.startTok;
-    if (!bufferMatches(buf, start, length, tok.text)) {
-      tok = Token.instance(String.valueOf(buf, start, length),
-                           HtmlTokenType.TEXT, endTok.pos);
-    }
-    insertBefore(new DomTree.Text(tok), null, parent);
-  }
-
-  @Override
-  protected void addAttributesToElement(DomTree el, Attributes attributes) {
-    int n = attributes.getLength();
-    if (n == 0) { return; }
-
-    // This method is used to merge multiple body elements together.  Since
-    // it's illegal to have multiple attributes with the same name, we need
-    // to filter.  The spec says that firstcomers win.
-    Set<Name> have = new HashSet<Name>();
-    DomTree nodeAfterLastAttrib = null;
-    for (DomTree child : el.children()) {
-      if (!(child instanceof DomTree.Attrib)) {
-        nodeAfterLastAttrib = child;
-        break;
+    if (priorSibling != null && priorSibling.getNodeType() == Node.TEXT_NODE) {
+      Text prevText = (Text) priorSibling;
+      // Normalize the DOM by collapsing adjacent text nodes.
+      String prevTextContent = prevText.getTextContent();
+      StringBuilder sb = new StringBuilder(prevTextContent.length() + length);
+      sb.append(prevTextContent).append(buf, start, length);
+      Text combined = doc.createTextNode(sb.toString());
+      if (needsDebugData) {
+        Nodes.setFilePositionFor(
+            combined,
+            FilePosition.span(
+               Nodes.getFilePositionFor(priorSibling),
+                 pos));
+        Nodes.setRawText(combined, Nodes.getRawText(prevText) + htmlText);
       }
-      DomTree.Attrib attr = (DomTree.Attrib) child;
-      have.add(attr.getAttribName());
+      parent.replaceChild(combined, priorSibling);
+      return;
     }
 
-    MutableParseTreeNode.Mutation mut = el.createMutation();
-    for (DomTree.Attrib attr : getAttributes(attributes)) {
-      if (have.add(attr.getAttribName())) {
-        mut.insertBefore(attr, nodeAfterLastAttrib);
+    Text text = doc.createTextNode(plainText);
+    if (needsDebugData) {
+      Nodes.setFilePositionFor(text, pos);
+      Nodes.setRawText(text, htmlText);
+    }
+    parent.insertBefore(text, sibling);
+  }
+
+  @Override
+  protected void addAttributesToElement(Node node, Attributes attributes) {
+    Element el = (Element) node;
+    for (Attr a : getAttributes(attributes)) {
+      String name = a.getName();
+      if (!el.hasAttribute(a.getName())) {
+        el.setAttributeNode(a);
+      } else {
+        mq.addMessage(
+            MessageType.DUPLICATE_ATTRIBUTE, Nodes.getFilePositionFor(a),
+            MessagePart.Factory.valueOf(name),
+            Nodes.getFilePositionFor(el.getAttributeNode(name)));
       }
     }
-    mut.execute();
   }
 
   @Override
-  protected void insertBefore(DomTree child, DomTree sibling, DomTree parent) {
-    parent.insertBefore(withParent(child, parent), sibling);
+  protected void insertBefore(Node child, Node sibling, Node parent) {
+    parent.insertBefore(child, sibling);
   }
 
   @Override
-  protected DomTree parentElementFor(DomTree child) {
-    return child.getAttributes().get(PARENT);
+  protected Node parentElementFor(Node child) {
+    return child.getParentNode();
   }
 
   @Override
-  protected void appendChildrenToNewParent(
-      DomTree oldParent, DomTree newParent) {
+  protected void appendChildrenToNewParent(Node oldParent, Node newParent) {
     if (DEBUG) {
       System.err.println(
           "Appending children of " + oldParent + " to " + newParent);
     }
-    List<? extends DomTree> children = oldParent.children();
-    if (oldParent == newParent || oldParent.children().isEmpty()) { return; }
-    MutableParseTreeNode.Mutation oldMut = oldParent.createMutation();
-    MutableParseTreeNode.Mutation newMut = newParent.createMutation();
-    for (DomTree child : children) {
-      // Attributes not considered children by DOM2
-      if (child instanceof DomTree.Attrib) { continue; }
-      oldMut.removeChild(child);
-      newMut.appendChild(withParent(child, newParent));
+    Node child;
+    while ((child = oldParent.getFirstChild()) != null) {
+      newParent.appendChild(child);
     }
-    oldMut.execute();
-    newMut.execute();
   }
 
   @Override
   protected void detachFromParentAndAppendToNewParent(
-      DomTree child, DomTree newParent) {
-    DomTree oldParent = parentElementFor(child);
-    if (DEBUG) {
-      System.err.println("detach " + child + " and append to " + newParent
-                         + ", oldParent=" + oldParent);
+      Node child, Node newParent) {
+    newParent.appendChild(child);
+  }
+
+  @Override
+  protected Node shallowClone(Node node) {
+    Node clone = node.cloneNode(false);
+    if (needsDebugData) {
+      Nodes.setFilePositionFor(clone, Nodes.getFilePositionFor(node));
     }
-    if (oldParent != null) {
-      oldParent.removeChild(child);
+    switch (node.getNodeType()) {
+      case Node.ATTRIBUTE_NODE:
+        if (needsDebugData) {
+          Nodes.setFilePositionForValue(
+              (Attr) clone, Nodes.getFilePositionForValue((Attr) node));
+        }
+        break;
+      case Node.ELEMENT_NODE:
+        Element el = (Element) node;
+        Element cloneEl = (Element) clone;
+        NamedNodeMap attrs = el.getAttributes();
+        for (int i = 0, n = attrs.getLength(); i < n; ++i) {
+          Attr a = (Attr) attrs.item(i);
+          Attr cloneA = cloneEl.getAttributeNode(a.getName());
+          if (needsDebugData) {
+            Nodes.setFilePositionFor(cloneA, Nodes.getFilePositionFor(a));
+            Nodes.setFilePositionForValue(
+                cloneA, Nodes.getFilePositionForValue(a));
+          }
+        }
+        break;
+      case Node.TEXT_NODE: case Node.CDATA_SECTION_NODE:
+        if (needsDebugData) {
+          Text t = (Text) node;
+          Nodes.setRawText(t, Nodes.getRawText(t));
+        }
+        break;
     }
-    newParent.appendChild(withParent(child, newParent));
+    return clone;
   }
 
   @Override
-  protected DomTree shallowClone(DomTree el) {
-    if (DEBUG) { System.err.println("cloning " + el); }
-    if (el instanceof DomTree.Tag) {
-      List<DomTree.Attrib> attribs = new ArrayList<DomTree.Attrib>();
-      // Shallow clone includes attributes since they're not really children.
-      for (DomTree child : el.children()) {
-        if (!(child instanceof DomTree.Attrib)) { break; }
-        attribs.add((DomTree.Attrib) child.clone());
-      }
-      return new DomTree.Tag(
-          ((DomTree.Tag) el).getTagName(), attribs, el.getToken(),
-          el.getFilePosition());
-    } else if (el instanceof DomTree.Fragment) {
-      DomTree.Fragment clone = new DomTree.Fragment();
-      clone.setFilePosition(el.getFilePosition());
-      return clone;
-    } else {
-      throw new IllegalArgumentException();
-    }
+  protected boolean hasChildren(Node node) {
+    return node.getFirstChild() != null;
   }
 
   @Override
-  protected boolean hasChildren(DomTree element) {
-    List<? extends DomTree> children = element.children();
-    // If the last child is an attribute then we don't have any non-attribute
-    // children.
-    return !(children.isEmpty()
-             || children.get(children.size() - 1) instanceof DomTree.Attrib);
+  protected void detachFromParent(Node node) {
+    node.getParentNode().removeChild(node);
   }
 
   @Override
-  protected void detachFromParent(DomTree element) {
-    if (DEBUG) { System.err.println("detach " + element + " from parent"); }
-    parentElementFor(element).removeChild(element);
-    clearParent(element);
-  }
-
-  @Override
-  protected DomTree createHtmlElementSetAsRoot(Attributes attributes) {
-    DomTree.Tag documentElement = createElement("html", attributes);
+  protected Element createHtmlElementSetAsRoot(Attributes attributes) {
+    Element documentElement = createElement("html", attributes);
     if (DEBUG) { System.err.println("Created root " + documentElement); }
     this.rootElement = documentElement;
     return documentElement;
   }
 
   @Override
-  protected DomTree.Tag createElement(String name, Attributes attributes) {
+  protected Element createElement(String name, Attributes attributes) {
     if (DEBUG) { System.err.println("Created element " + name); }
-    Token<HtmlTokenType> elStartTok;
-    FilePosition pos;
     name = Html5ElementStack.canonicalElementName(name);
-    if (startTok == null) {
-      elStartTok = Token.instance("<" + name, HtmlTokenType.TAGBEGIN, null);
-      pos = null;
-    } else if (startTok.type == HtmlTokenType.TAGBEGIN
-               && tagMatchesElementName(tagName(startTok.text), name)) {
-      elStartTok = startTok;
-      pos = FilePosition.span(startTok.pos, endTok.pos);
-    } else {
-      pos = FilePosition.startOf(startTok.pos);
-      elStartTok = Token.instance("<" + name, HtmlTokenType.TAGBEGIN, pos);
+
+    Element el = doc.createElement(name);
+    addAttributesToElement(el, attributes);
+
+    if (needsDebugData) {
+      FilePosition pos;
+      if (startTok == null) {
+        pos = null;
+      } else if (startTok.type == HtmlTokenType.TAGBEGIN
+                 && tagMatchesElementName(tagName(startTok.text), name)) {
+        pos = FilePosition.span(startTok.pos, endTok.pos);
+      } else {
+        pos = FilePosition.startOf(startTok.pos);
+      }
+      Nodes.setFilePositionFor(el, pos);
     }
-    DomTree.Tag el = new DomTree.Tag(
-        Name.html(name), getAttributes(attributes), elStartTok, pos);
     return el;
   }
 
   @Override
-  protected void elementPopped(String name, DomTree node) {
-    name = Html5ElementStack.canonicalElementName(name);
-    if (DEBUG) { System.err.println("popped " + name + ", node=" + node); }
-    FilePosition endPos;
-    if (startTok.type == HtmlTokenType.TAGBEGIN
-        // A start <select> tag inside a select element is treated as a close
-        // select tag.  Don't ask -- there's just no good reason.
-        // http://www.whatwg.org/specs/web-apps/current-work/#in-select
-        //    If the insertion mode is "in select"
-        //    A start tag whose tag name is "select"
-        //      Parse error. Act as if the token had been an end tag
-        //      with the tag name "select" instead.
-        && (isEndTag(startTok.text) || "select".equals(name))
-        && tagCloses(tagName(startTok.text), name)) {
-      endPos = endTok.pos;
-    } else {
-      // Implied ending.
-      endPos = FilePosition.startOf(startTok.pos);
-    }
-    FilePosition startPos = node.getFilePosition();
-    if (startPos == null) {
-      startPos = node.children().isEmpty()
-          ? endPos : node.children().get(0).getFilePosition();
-    }
-    if (endPos.endCharInFile() >= startPos.endCharInFile()) {
-      node.setFilePosition(FilePosition.span(startPos, endPos));
-    }
+  protected void elementPopped(String name, Node node) {
     unpoppedElements.remove(node);
+    if (DEBUG) { System.err.println("popped " + name + ", node=" + node); }
+    if (needsDebugData) {
+      name = Html5ElementStack.canonicalElementName(name);
+      FilePosition endPos;
+      if (startTok.type == HtmlTokenType.TAGBEGIN
+          // A start <select> tag inside a select element is treated as a close
+          // select tag.  Don't ask -- there's just no good reason.
+          // http://www.whatwg.org/specs/web-apps/current-work/#in-select
+          //    If the insertion mode is "in select"
+          //    A start tag whose tag name is "select"
+          //      Parse error. Act as if the token had been an end tag
+          //      with the tag name "select" instead.
+          && (isEndTag(startTok.text) || "select".equals(name))
+          && tagCloses(tagName(startTok.text), name)) {
+        endPos = endTok.pos;
+      } else {
+        // Implied ending.
+        endPos = FilePosition.startOf(startTok.pos);
+      }
+      FilePosition startPos = Nodes.getFilePositionFor(node);
+      if (startPos == null) {
+        Node first = node.getFirstChild();
+        startPos = first == null ? endPos : Nodes.getFilePositionFor(first);
+      }
+      if (endPos.endCharInFile() >= startPos.endCharInFile()) {
+        Nodes.setFilePositionFor(node, FilePosition.span(startPos, endPos));
+      }
+    }
   }
 
   /**
@@ -337,17 +354,17 @@ final class CajaTreeBuilder extends TreeBuilder<DomTree> {
    * elements, or for void elements.
    */
   @Override
-  protected void bodyClosed(DomTree body) {
+  protected void bodyClosed(Node body) {
     elementPopped("body", body);
   }
 
   @Override
-  protected void htmlClosed(DomTree html) {
+  protected void htmlClosed(Node html) {
     elementPopped("html", html);
   }
 
   @Override
-  protected void elementPushed(String name, DomTree node) {
+  protected void elementPushed(String name, Node node) {
     if (DEBUG) { System.err.println("pushed " + name + ", node=" + node); }
     unpoppedElements.add(node);
   }
@@ -357,9 +374,12 @@ final class CajaTreeBuilder extends TreeBuilder<DomTree> {
    * when EOF is reached.
    */
   void closeUnclosedNodes() {
-    for (DomTree node : unpoppedElements) {
-      node.setFilePosition(
-          FilePosition.span(node.getFilePosition(), endTok.pos));
+    if (needsDebugData) {
+      for (Node node : unpoppedElements) {
+        Nodes.setFilePositionFor(
+            node,
+            FilePosition.span(Nodes.getFilePositionFor(node), endTok.pos));
+      }
     }
     unpoppedElements.clear();
   }
@@ -373,30 +393,12 @@ final class CajaTreeBuilder extends TreeBuilder<DomTree> {
     return true;
   }
 
-  /**
-   * Set up the parent chain so we can simulate org.w3c.dom.Node.getParentNode.
-   * @see #clearParent
-   * @see #parentElementFor
-   */
-  private static <T extends DomTree> T withParent(T el, DomTree parent) {
-    el.getAttributes().set(PARENT, parent);
-    return el;
-  }
-
-  /**
-   * Clears the parent chain after it's no longer required.
-   * @see #withParent
-   */
-  private static void clearParent(DomTree el) {
-    el.getAttributes().set(PARENT, null);
-  }
-
   // htmlparser passes around an org.xml.sax Attributes list which is a
   // String->String map, but I want to use DomTree.Attrib nodes since they
   // have position info.  htmlparser in some cases does create its own
   // Attributes instances, such as when it is expanding a tag to emulate
   // deprecated elements.
-  private List<DomTree.Attrib> getAttributes(Attributes attributes) {
+  private List<Attr> getAttributes(Attributes attributes) {
     if (attributes instanceof AttributesImpl) {
       return ((AttributesImpl) attributes).getAttributes();
     }
@@ -404,25 +406,20 @@ final class CajaTreeBuilder extends TreeBuilder<DomTree> {
     // mess that is "isindex"
     int n = attributes.getLength();
     if (n == 0) {
-      return Collections.<DomTree.Attrib>emptyList();
+      return Collections.<Attr>emptyList();
     } else {
-      List<DomTree.Attrib> fakeAttribs = new ArrayList<DomTree.Attrib>();
+      List<Attr> newAttribs = new ArrayList<Attr>();
       FilePosition pos = FilePosition.startOf(startTok.pos);
       for (int i = 0; i < n; ++i) {
-        String name = attributes.getLocalName(i);
-        StringBuilder sb = new StringBuilder();
-        sb.append('"');
-        Escaping.escapeXml(attributes.getValue(i), false, sb);
-        sb.append('"');
-        String encodedValue = sb.toString();
-        fakeAttribs.add(
-            new DomTree.Attrib(
-                Name.html(name),
-                new DomTree.Value(
-                    Token.instance(encodedValue, HtmlTokenType.ATTRVALUE, pos)),
-                Token.instance(name, HtmlTokenType.ATTRNAME, pos), pos));
+        Attr a = doc.createAttribute(attributes.getQName(i));
+        a.setNodeValue(attributes.getValue(i));
+        if (needsDebugData) {
+          Nodes.setFilePositionFor(a, pos);
+          Nodes.setFilePositionForValue(a, pos);
+        }
+        newAttribs.add(a);
       }
-      return fakeAttribs;
+      return newAttribs;
     }
   }
 
@@ -457,60 +454,73 @@ final class CajaTreeBuilder extends TreeBuilder<DomTree> {
     char ch1 = tagName.charAt(1);
     return ch1 >= '1' && ch1 <= '6';
   }
-}
 
-/**
- * An implementation of org.xml.sax that wraps {@code DomTree.Attrib}s.
- * This ignores all namespacing since HTML doesn't do namespacing.
- */
-final class AttributesImpl implements Attributes {
-  private final List<DomTree.Attrib> attribs;
+  /**
+   * An implementation of org.xml.sax that wraps {@code DomTree.Attrib}s.
+   * This ignores all namespacing since HTML doesn't do namespacing.
+   */
+  static final class AttributesImpl implements Attributes {
+    private final List<Attr> attribs;
 
-  AttributesImpl(List<DomTree.Attrib> attribs) { this.attribs = attribs; }
+    AttributesImpl(List<Attr> attribs) { this.attribs = attribs; }
 
-  public int getIndex(String qName) {
-    int index = 0;
-    for (DomTree.Attrib attrib : attribs) {
-      if (attrib.getValue().equals(qName)) { return index; }
-      ++index;
+    public int getIndex(String qName) {
+      int index = 0;
+      for (Attr attrib : attribs) {
+        if (attrib.getName().equals(qName)) { return index; }
+        ++index;
+      }
+      return -1;
     }
-    return -1;
-  }
 
-  public int getIndex(String uri, String localName) {
-    return getIndex(localName);
-  }
+    public int getIndex(String uri, String localName) {
+      int index = 0;
+      for (Attr attrib : attribs) {
+        if ((uri == null
+             ? attrib.getNamespaceURI() == null
+             : uri.equals(attrib.getNamespaceURI()))
+            && attrib.getLocalName().equals(localName)) {
+          return index;
+        }
+        ++index;
+      }
+      return -1;
+    }
 
-  public int getLength() { return attribs.size(); }
+    public int getLength() { return attribs.size(); }
 
-  public String getLocalName(int index) {
-    return attribs.get(index).getAttribName().getCanonicalForm();
-  }
+    public String getLocalName(int index) {
+      return attribs.get(index).getLocalName();
+    }
 
-  public String getQName(int index) { return getLocalName(index); }
+    public String getQName(int index) { return attribs.get(index).getName(); }
 
-  public String getType(int index) { return null; }
+    public String getType(int index) { return null; }
 
-  public String getType(String qName) { return null; }
+    public String getType(String qName) { return null; }
 
-  public String getType(String uri, String localName) { return null; }
+    public String getType(String uri, String localName) { return null; }
 
-  public String getURI(int index) { return null; }
+    public String getURI(int index) {
+      return attribs.get(index).getNamespaceURI();
+    }
 
-  public String getValue(int index) {
-    return attribs.get(index).getAttribValue();
-  }
+    public String getValue(int index) {
+      return attribs.get(index).getValue();
+    }
 
-  public String getValue(String qName) {
-    int index = getIndex(qName);
-    return index < 0 ? null : getValue(index);
-  }
+    public String getValue(String qName) {
+      int index = getIndex(qName);
+      return index < 0 ? null : getValue(index);
+    }
 
-  public String getValue(String uri, String localName) {
-    return getValue(localName);
-  }
+    public String getValue(String uri, String localName) {
+      int index = getIndex(uri, localName);
+      return index < 0 ? null : getValue(index);
+    }
 
-  public List<DomTree.Attrib> getAttributes() {
-    return Collections.unmodifiableList(attribs);
+    public List<Attr> getAttributes() {
+      return Collections.unmodifiableList(attribs);
+    }
   }
 }

@@ -15,7 +15,7 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.parser.html.DomTree;
+import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.HtmlSanitizer;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
@@ -25,7 +25,7 @@ import com.google.caja.util.Pipeline;
  * Whitelist html tags and attributes, and supply values for key
  * attributes that are missing them.
  *
- * @see HtmlSanitizer 
+ * @see HtmlSanitizer
  *
  * @author mikesamuel@gmail.com
  */
@@ -42,7 +42,7 @@ public final class SanitizeHtmlStage implements Pipeline.Stage<Jobs> {
 
     boolean valid = true;
     for (Job job : jobs.getJobsByType(Job.JobType.HTML)) {
-      if (!s.sanitize(job.getRoot().cast(DomTree.class))) {
+      if (!s.sanitize(job.getRoot().cast(Dom.class).node.getValue())) {
         valid = false;
         // Keep going so that we can display error messages for all inputs.
       }

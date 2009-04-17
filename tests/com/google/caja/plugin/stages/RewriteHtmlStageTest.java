@@ -16,16 +16,19 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.Visitor;
 import com.google.caja.parser.js.Block;
+import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMessageType;
+import com.google.caja.plugin.Job.JobType;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageType;
 import java.util.ArrayList;
+
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 /**
  *
@@ -152,25 +155,34 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertNoErrors();
   }
 
-  @SuppressWarnings("cast")
   @Override
-  protected boolean runPipeline(final Jobs jobs) throws Exception {
+  protected boolean runPipeline(Jobs jobs) throws Exception {
     mq.getMessages().clear();
     boolean result = new RewriteHtmlStage().apply(jobs);
     // Dump the extracted script bits on the queue.
-    for (Job job : new ArrayList<Job>(jobs.getJobs())) {
-      ParseTreeNode node = (ParseTreeNode)(job.getRoot().node);
-      node.acceptPreOrder(new Visitor() {
-          public boolean visit(AncestorChain<?> ac) {
-            Block extracted = ac.node.getAttributes()
-                .get(RewriteHtmlStage.EXTRACTED_SCRIPT_BODY);
-            if (extracted != null) {
-              jobs.getJobs().add(new Job(new AncestorChain<Block>(extracted)));
-            }
-            return true;
-          }
-        }, null);
+    for (Job job : new ArrayList<Job>(jobs.getJobsByType(JobType.HTML))) {
+      Dom dom = job.getRoot().cast(Dom.class).node;
+      extractScripts(dom.getValue(), jobs);
     }
     return result;
+  }
+
+  private void extractScripts(Node node, Jobs jobs) {
+    switch (node.getNodeType()) {
+      case Node.ELEMENT_NODE:
+        Block extracted = RewriteHtmlStage.extractedScriptFor((Element) node);
+        if (extracted != null) {
+          jobs.getJobs().add(new Job(new AncestorChain<Block>(extracted)));
+        }
+        for (Node c = node.getFirstChild(); c != null; c = c.getNextSibling()) {
+          extractScripts(c, jobs);
+        }
+        break;
+      case Node.DOCUMENT_FRAGMENT_NODE: case Node.DOCUMENT_NODE:
+        for (Node c = node.getFirstChild(); c != null; c = c.getNextSibling()) {
+          extractScripts(c, jobs);
+        }
+        break;
+    }
   }
 }

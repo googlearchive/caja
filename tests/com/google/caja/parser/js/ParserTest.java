@@ -481,7 +481,8 @@ public class ParserTest extends CajaTestCase {
       throws Exception {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = new JsPrettyPrinter(sb, null);
-    RenderContext rc = new RenderContext(mc, true, true, tc);
+    RenderContext rc = new RenderContext(mc, tc)
+        .withAsciiOnly(true).withEmbeddable(true);
     js(fromString(code)).children().get(0).render(rc);
     tc.noMoreTokens();
     assertEquals(code, expectedRendering, sb.toString());
@@ -493,14 +494,15 @@ public class ParserTest extends CajaTestCase {
   }
 
   private void runRenderTest(
-      String testFile, String goldenFile, boolean paranoid, boolean asciiOnly)
+      String testFile, String goldenFile, boolean embeddable, boolean asciiOnly)
       throws Exception {
     Statement parseTree = js(fromResource(testFile));
     checkFilePositionInvariants(parseTree);
 
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = new JsPrettyPrinter(sb, null);
-    RenderContext rc = new RenderContext(mc, asciiOnly, paranoid, tc);
+    RenderContext rc = new RenderContext(mc, tc)
+        .withAsciiOnly(asciiOnly).withEmbeddable(embeddable);
     parseTree.render(rc);
     tc.noMoreTokens();
     sb.append('\n');

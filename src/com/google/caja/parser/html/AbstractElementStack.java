@@ -15,10 +15,14 @@
 package com.google.caja.parser.html;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.HtmlTokenType;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.DocumentFragment;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 /**
  * Abstract base class for OpenElementStack implementations that maintains the
@@ -28,20 +32,26 @@ import java.util.List;
  */
 abstract class AbstractElementStack implements OpenElementStack {
   protected static final boolean DEBUG = false;
-  private DomTree.Fragment rootElement = new DomTree.Fragment();
-  /**
-   * A list of open elements.
-   */
-  private final List<DomTree> openElements = new ArrayList<DomTree>();
+  protected final Document doc;
+  protected final boolean needsDebugData;
+  private final DocumentFragment rootElement;
+  /** A list of open nodes. */
+  private final List<Node> openNodes = new ArrayList<Node>();
 
-  {
-    openElements.add(rootElement);
+  /**
+   * @param needsDebugData see {@link DomParser#setNeedsDebugData(boolean)}
+   */
+  AbstractElementStack(Document doc, boolean needsDebugData) {
+    this.doc = doc;
+    this.needsDebugData = needsDebugData;
+    this.rootElement = doc.createDocumentFragment();
+    this.openNodes.add(rootElement);
   }
 
-  AbstractElementStack() {}
+  public final Document getDocument() { return doc; }
 
   /** @inheritDoc */
-  public final DomTree.Fragment getRootElement() {
+  public final DocumentFragment getRootElement() {
     return rootElement;
   }
 
@@ -49,29 +59,29 @@ abstract class AbstractElementStack implements OpenElementStack {
   public void open(boolean fragment) {}
 
   /** The current element &mdash; according to HTML5 the stack grows down. */
-  protected final DomTree getBottomElement() {
-    return openElements.get(openElements.size() - 1);
+  protected final Node getBottomElement() {
+    return openNodes.get(openNodes.size() - 1);
   }
 
   /** The count of open elements. */
   protected final int getNOpenElements() {
-    return openElements.size();
+    return openNodes.size();
   }
 
   /** The index-th open element counting from 0 at the root. */
-  protected final DomTree.Tag getElement(int index) {
+  protected final Element getElement(int index) {
     assert index > 0 : "" + index;
-    return (DomTree.Tag) openElements.get(index);
+    return (Element) openNodes.get(index);
   }
 
   /**
    * Adds an element to the element stack, puts it on the previous head's
    * child list, and updates file positions.
    */
-  protected final void push(DomTree.Tag el) {
+  protected final void push(Element el) {
     if (DEBUG) System.err.println("push(" + el + ")");
-    DomTree parent = getBottomElement();
-    openElements.add(el);
+    Node parent = getBottomElement();
+    openNodes.add(el);
     doAppend(el, parent);
   }
 
@@ -80,8 +90,8 @@ abstract class AbstractElementStack implements OpenElementStack {
    * This may be overridden by subclasses if they wish to add at a different
    * location.
    */
-  protected void doAppend(DomTree el, DomTree parent) {
-    parent.insertBefore(el, null);
+  protected void doAppend(Node el, Node parent) {
+    parent.appendChild(el);
   }
 
   /**
@@ -91,36 +101,38 @@ abstract class AbstractElementStack implements OpenElementStack {
    */
   protected final void popN(int n, FilePosition endPos) {
     if (DEBUG) System.err.println("popN(" + n + ", " + endPos + ")");
+    n = Math.min(n, openNodes.size() - 1);
     while (--n >= 0) {
-      int top = openElements.size() - 1;
-      DomTree node = openElements.remove(top);
-      node.setFilePosition(FilePosition.span(node.getFilePosition(), endPos));
-      if (openElements.size() == 1) {
-        FilePosition rootPos = rootElement.getFilePosition();
-        if (rootPos.endCharInFile() <= 1) {
-          rootPos = rootElement.children().get(0).getFilePosition();
+      Node node = openNodes.remove(openNodes.size() - 1);
+      if (needsDebugData) {
+        Nodes.setFilePositionFor(
+            node, FilePosition.span(Nodes.getFilePositionFor(node), endPos));
+        if (openNodes.size() == 1) {
+          FilePosition rootPos = Nodes.getFilePositionFor(rootElement);
+          if (rootPos.endCharInFile() <= 1) {
+            rootPos = Nodes.getFilePositionFor(rootElement.getFirstChild());
+          }
+          Nodes.setFilePositionFor(
+              rootElement, FilePosition.span(rootPos, endPos));
         }
-        rootElement.setFilePosition(FilePosition.span(rootPos, endPos));
-        break;
       }
     }
   }
 
   /** Strip ignorable whitespace nodes from the root. */
   protected void stripIgnorableText() {
-    if (rootElement.children().isEmpty()) { return; }
+    if (rootElement.getFirstChild() == null) { return; }
 
     // No need to loop because processText normalizes.
-    DomTree firstChild = rootElement.children().get(0);
+    Node firstChild = rootElement.getFirstChild();
     if (isIgnorableTextNode(firstChild)) {
       rootElement.removeChild(firstChild);
 
-      if (rootElement.children().isEmpty()) { return; }
+      if (rootElement.getFirstChild() == null) { return; }
     }
 
     // No need to loop because processText normalizes.
-    DomTree lastChild = rootElement.children().get(
-        rootElement.children().size() - 1);
+    Node lastChild = rootElement.getLastChild();
     if (isIgnorableTextNode(lastChild)) {
       rootElement.removeChild(lastChild);
     }
@@ -130,10 +142,10 @@ abstract class AbstractElementStack implements OpenElementStack {
    * @see <a href="http://www.w3.org/TR/REC-xml/#sec-white-space">ignorable
    *      white space</a>
    */
-  private static boolean isIgnorableTextNode(DomTree t) {
+  private static boolean isIgnorableTextNode(Node t) {
     // TODO(mikesamuel): check against XML&HTML definitions of whitespace.
     // Note: CDATA and ESCAPED text purposefully not treated as whitespace.
-    return t instanceof DomTree.Text && t.getToken().type == HtmlTokenType.TEXT
-        && "".equals(t.getToken().text.trim());
+    return t.getNodeType() == Node.TEXT_NODE
+        && "".equals(t.getNodeValue().trim());
   }
 }

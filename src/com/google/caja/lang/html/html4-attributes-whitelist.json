@@ -323,7 +323,9 @@
             "Per bug 585:  Charset is disallowed since it allows overriding",
             "of Content-typeheaders.  A server might specify UTF-8 via the",
             "header Content-type:text/javascript;charset=UTF-8, but an",
-            "embedding page might cause that file to be interpreted as UTF-7."
+            "embedding page might cause that file to be interpreted as UTF-7.",
+            "According to http://www.w3schools.com/TAGS/att_a_charset.asp: ",
+            "The charset attribute is not supported in any of the major browsers."
           ] },
       "LINK:CHARSET",
       "SCRIPT:CHARSET"

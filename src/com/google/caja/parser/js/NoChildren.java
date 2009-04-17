@@ -23,7 +23,7 @@ import com.google.caja.reporting.RenderContext;
  *
  * @author mikesamuel@gmail.com
  */
-final class NoChildren extends AbstractExpression {
+public final class NoChildren extends AbstractExpression {
   private NoChildren() { super(null, null); /* Not instantiable. */ }
   @Override
   public Object getValue() { throw new AssertionError(); }

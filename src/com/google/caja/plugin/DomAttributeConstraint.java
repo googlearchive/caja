@@ -14,7 +14,6 @@
 
 package com.google.caja.plugin;
 
-import com.google.caja.parser.html.DomTree;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 
@@ -22,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
+import org.w3c.dom.Element;
 
 /**
  * A constraint that must hold try for a particular tag.  This is fed attributes
@@ -35,7 +36,7 @@ import java.util.List;
  */
 interface DomAttributeConstraint {
   /** Called before any attributes are written. */
-  void startTag(DomTree.Tag tag);
+  void startTag(Element el);
   /**
    * Returns the attribute prefix and suffix text, or null if the attribute
    * should not be written.
@@ -47,7 +48,7 @@ interface DomAttributeConstraint {
    * Called after the last attribute is written.  Returns a set of key/name
    * pairs of extra attributes to write.
    */
-  Collection<Pair<Name, String>> tagDone(DomTree.Tag tag);
+  Collection<Pair<Name, String>> tagDone(Element el);
 
   static final class Factory {
 
@@ -58,7 +59,7 @@ interface DomAttributeConstraint {
         return new DomAttributeConstraint() {
           boolean sawOnSubmit = false;
 
-          public void startTag(DomTree.Tag tag) { /* noop */ }
+          public void startTag(Element el) { /* noop */ }
           public Pair<String, String> attributeValueHtml(Name attribName) {
             if ("onsubmit".equals(attribName.getCanonicalForm())) {
               return Pair.pair("try { ", " } finally { return false; }");
@@ -70,8 +71,7 @@ interface DomAttributeConstraint {
               sawOnSubmit = true;
             }
           }
-          public Collection<Pair<Name, String>> tagDone(
-              DomTree.Tag tag) {
+          public Collection<Pair<Name, String>> tagDone(Element el) {
             if (!sawOnSubmit) {
               return Collections.singleton(Pair.pair(
                   Name.html("onsubmit"), "return false"));
@@ -84,7 +84,7 @@ interface DomAttributeConstraint {
         return new DomAttributeConstraint() {
           boolean sawHref = false;
 
-          public void startTag(DomTree.Tag tag) { /* noop */ }
+          public void startTag(Element el) { /* noop */ }
           public Pair<String, String> attributeValueHtml(Name attribName) {
             if ("target".equals(attribName.getCanonicalForm())) { return null; }
             return Pair.pair("", "");
@@ -94,7 +94,7 @@ interface DomAttributeConstraint {
               sawHref = true;
             }
           }
-          public Collection<Pair<Name, String>> tagDone(DomTree.Tag tag) {
+          public Collection<Pair<Name, String>> tagDone(Element el) {
             if (sawHref) {
               return Collections.singleton(
                   Pair.pair(Name.html("target"), "_blank"));
@@ -111,7 +111,7 @@ interface DomAttributeConstraint {
             boolean sawSrc = false;
             boolean sawId = false;
 
-            public void startTag(DomTree.Tag tag) { /* noop */ }
+            public void startTag(Element el) { /* noop */ }
             public Pair<String, String> attributeValueHtml(
                 Name attribName) {
               if ("src".equals(attribName.getCanonicalForm())) { return null; }
@@ -125,7 +125,7 @@ interface DomAttributeConstraint {
                 sawId = true;
               }
             }
-            public Collection<Pair<Name, String>> tagDone(DomTree.Tag tag) {
+            public Collection<Pair<Name, String>> tagDone(Element el) {
               Collection<Pair<Name, String>> ret
                   = new ArrayList<Pair<Name, String>>();
               if (sawSrc) {
@@ -143,7 +143,7 @@ interface DomAttributeConstraint {
         return new DomAttributeConstraint() {
           boolean sawId = false;
 
-          public void startTag(DomTree.Tag tag) { /* noop */ }
+          public void startTag(Element el) { /* noop */ }
           public Pair<String, String> attributeValueHtml(Name attribName) {
             if ("id".equals(attribName.getCanonicalForm())) { return null; }
             return Pair.pair("", "");
@@ -153,7 +153,7 @@ interface DomAttributeConstraint {
               sawId = true;
             }
           }
-          public Collection<Pair<Name, String>> tagDone(DomTree.Tag tag) {
+          public Collection<Pair<Name, String>> tagDone(Element el) {
             List<Pair<Name, String>> ret = new ArrayList<Pair<Name, String>>();
             if (sawId) {
               ret.add(Pair.pair(Name.html("id"), ""));
@@ -163,12 +163,12 @@ interface DomAttributeConstraint {
         };
       }
       return new DomAttributeConstraint() {
-        public void startTag(DomTree.Tag tag) { /* noop */ }
+        public void startTag(Element el) { /* noop */ }
         public Pair<String, String> attributeValueHtml(Name attribName) {
           return Pair.pair("", "");
         }
         public void attributeDone(Name attribName) { /* noop */ }
-        public Collection<Pair<Name, String>> tagDone(DomTree.Tag tag) {
+        public Collection<Pair<Name, String>> tagDone(Element el) {
           return Collections.<Pair<Name, String>>emptyList();
         }
       };

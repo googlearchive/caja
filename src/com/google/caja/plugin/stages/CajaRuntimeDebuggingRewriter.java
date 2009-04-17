@@ -15,6 +15,7 @@
 package com.google.caja.plugin.stages;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.IntegerLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
@@ -276,7 +277,7 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
   private FilePosition spanningPos(ParseTreeNode node) {
     FilePosition pos = node.getFilePosition();
     if (!node.getAttributes().is(SyntheticNodes.SYNTHETIC)
-        && !FilePosition.UNKNOWN.equals(pos)) {
+        && !InputSource.UNKNOWN.equals(pos.source())) {
       return pos;
     }
 

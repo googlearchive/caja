@@ -20,24 +20,31 @@ import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.TokenQueue;
-import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.Visitor;
 import com.google.caja.parser.html.DomParser;
-import com.google.caja.parser.html.DomTree;
-import com.google.caja.parser.html.MarkupRenderContext;
+import com.google.caja.parser.html.Nodes;
+import com.google.caja.plugin.Dom;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Callback;
 import com.google.caja.util.Name;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 
 /**
  * Safe XML parser for gadget specifications. Rejects invalid markup.
@@ -61,53 +68,52 @@ public class GadgetParser {
       throws GadgetRewriteException, ParseException {
     HtmlLexer lexer = new HtmlLexer(gadgetSpec);
     lexer.setTreatedAsXml(true);
-    DomTree d = new DomParser(
+    Element el = new DomParser(
         new TokenQueue<HtmlTokenType>(lexer, src), true, mq).parseDocument();
 
-    //System.err.println(d.toStringDeep());
-
+    Document doc = el.getOwnerDocument();
     GadgetSpec spec = new GadgetSpec();
-    readModulePrefs(d, spec);
-    readRequiredFeatures(d, spec);
-    readContent(d, spec, view);
+    readModulePrefs(doc, spec);
+    readRequiredFeatures(doc, spec);
+    readContent(doc, spec, view);
 
     return spec;
   }
 
-  private void readModulePrefs(DomTree doc, GadgetSpec spec)
+  private void readModulePrefs(Document doc, GadgetSpec spec)
       throws GadgetRewriteException {
-    List<DomTree.Tag> list = getElementsByTagName(doc, Name.xml("ModulePrefs"));
-    check(list.size() == 1, "Must have exactly one <ModulePrefs>");
-    DomTree.Tag modulePrefs = list.get(0);
-    for (DomTree.Attrib attr : modulePrefs.getAttributeNodes()) {
-      spec.getModulePrefs().put(
-          attr.getAttribName().getCanonicalForm(), attr.getAttribValue());
+    Iterator<Element> els = getElementsByTagName(doc, Name.xml("ModulePrefs"))
+        .iterator();
+    Element modulePrefs = null;
+    if (els.hasNext()) { modulePrefs = els.next(); }
+    check(modulePrefs != null && !els.hasNext(),
+          "Must have exactly one <ModulePrefs>");
+    for (Attr attr : Nodes.attributesOf(modulePrefs)) {
+      spec.getModulePrefs().put(attr.getNodeName(), attr.getNodeValue());
     }
   }
 
-  private void readRequiredFeatures(DomTree doc, GadgetSpec spec)
+  private void readRequiredFeatures(Document doc, GadgetSpec spec)
       throws GadgetRewriteException {
-    for (DomTree.Tag require : getElementsByTagName(doc, Name.xml("Require"))) {
-      List<DomTree.Attrib> attribs = require.getAttributeNodes();
-      check(attribs.size() == 1
-            && "feature".equals(
-                attribs.get(0).getAttribName().getCanonicalForm()),
-            "<Require> can only have a \"feature\" attribute");
-      spec.getRequiredFeatures().add(attribs.get(0).getAttribValue());
+    for (Element require : getElementsByTagName(doc, Name.xml("Require"))) {
+      Attr feature = require.getAttributeNode("feature");
+      check(feature != null,
+            "<Require> must have a \"feature\" attribute");
+      spec.getRequiredFeatures().add(feature.getNodeValue());
     }
   }
 
-  private void readContent(DomTree doc, GadgetSpec spec, String view)
+  private void readContent(Document doc, GadgetSpec spec, String view)
       throws GadgetRewriteException {
-    for (final DomTree.Tag contentNode
+    for (final Element contentNode
          : getElementsByTagName(doc, Name.xml("Content"))) {
-      DomTree.Attrib viewAttr = contentNode.getAttribute(Name.xml("view"));
+      Attr viewAttr = contentNode.getAttributeNode("view");
       if (viewAttr == null
-          || Arrays.asList(viewAttr.getAttribValue().trim().split("\\s*,\\s*"))
+          || Arrays.asList(viewAttr.getNodeValue().trim().split("\\s*,\\s*"))
              .contains(view)) {
-        DomTree.Attrib typeAttr = contentNode.getAttribute(Name.xml("type"));
+        Attr typeAttr = contentNode.getAttributeNode("type");
         check(typeAttr != null, "No 'type' attribute for view '" + view + "'");
-        String value = typeAttr.getAttribValue();
+        String value = typeAttr.getNodeValue();
 
         check(value.equals("html"), "Can't handle Content type '" + value +"'");
 
@@ -117,16 +123,31 @@ public class GadgetParser {
             new GadgetSpec.CharProducerFactory() {
               public CharProducer producer() {
                 List<CharProducer> chunks = new ArrayList<CharProducer>();
-                for (DomTree child : contentNode.children()) {
-                  if (child instanceof DomTree.Text) {
-                    chunks.add(CharProducer.Factory.fromHtmlAttribute(
-                        CharProducer.Factory.create(
-                            new StringReader(
-                                ((DomTree.Text) child).getToken().text),
-                            child.getFilePosition())));
-                  } else if (child instanceof DomTree.CData) {
-                    String cdata = ((DomTree.CData) child).getValue();
-                    FilePosition pos = child.getFilePosition();
+                for (Node child : Nodes.childrenOf(contentNode)) {
+                  if (child.getNodeType() == Node.TEXT_NODE) {
+                    Text t = (Text) child;
+                    FilePosition tpos = Nodes.getFilePositionFor(t);
+                    String rawText = Nodes.getRawText(t);
+                    String plainText = t.getNodeValue();
+                    CharProducer cp = null;
+                    if (rawText != null) {
+                      cp = CharProducer.Factory.fromHtmlAttribute(
+                          CharProducer.Factory.create(
+                              new StringReader(rawText), tpos));
+                      if (!String.valueOf(
+                              cp.getBuffer(), cp.getOffset(), cp.getLength())
+                          .equals(plainText)) {
+                        cp = null;
+                      }
+                    }
+                    if (cp == null) {
+                      cp = CharProducer.Factory.create(
+                          new StringReader(plainText), tpos);
+                    }
+                    chunks.add(cp);
+                  } else if (child.getNodeType() == Node.CDATA_SECTION_NODE) {
+                    String cdata = child.getNodeValue();
+                    FilePosition pos = Nodes.getFilePositionFor(child);
                     // reduce the position to exclude the <![CDATA[ and ]]>
                     pos = FilePosition.instance(
                         pos.source(),
@@ -155,61 +176,49 @@ public class GadgetParser {
    */
   public void render(GadgetSpec gadgetSpec, Appendable output)
       throws IOException {
-    DomTree doc = toDocument(gadgetSpec);
-    TokenConsumer tc = doc.makeRenderer(output, null);
-    doc.render(new MarkupRenderContext(new MessageContext(), tc, true));
-    tc.noMoreTokens();
+    try {
+      Element doc = toDocument(gadgetSpec);
+      Dom dom = new Dom(doc);
+      TokenConsumer tc = dom.makeRenderer(output, new Callback<IOException>() {
+        @Override
+        public void handle(IOException e) {
+          throw new RenderFailure(e);
+        }
+      });
+      dom.render(new RenderContext(new MessageContext(), tc).withAsXml(true));
+      tc.noMoreTokens();
+    } catch (RenderFailure e) {
+      throw (IOException) e.getCause();
+    }
+  }
+  private static class RenderFailure extends RuntimeException {
+    RenderFailure(IOException ex) { initCause(ex); }
   }
 
-  private DomTree toDocument(GadgetSpec gadgetSpec) throws IOException {
-    List<DomTree.Attrib> prefs = new ArrayList<DomTree.Attrib>();
+  private Element toDocument(GadgetSpec gadgetSpec) throws IOException {
+    Document doc = DomParser.makeDocument(null, null);
+
+    Element modulePrefs = doc.createElement("ModulePrefs");
     for (Map.Entry<String, String> e : gadgetSpec.getModulePrefs().entrySet()) {
-      prefs.add(attrib(Name.xml(e.getKey()), e.getValue()));
+      modulePrefs.setAttribute(e.getKey(), e.getValue());
     }
 
-    List<DomTree.Tag> features = new ArrayList<DomTree.Tag>();
     for (String feature : gadgetSpec.getRequiredFeatures()) {
-      features.add(
-          el(Name.xml("Require"), attrib(Name.xml("feature"), feature)));
+      Element featureEl = doc.createElement("Require");
+      featureEl.setAttribute("feature", feature);
+      modulePrefs.appendChild(featureEl);
     }
 
-    DomTree.Tag modulePrefs = el(Name.xml("ModulePrefs"));
-    modulePrefs.createMutation()
-        .appendChildren(prefs)
-        .appendChildren(features)
-        .execute();
+    Element content = doc.createElement("Content");
+    content.setAttribute("type", gadgetSpec.getContentType());
+    content.appendChild(doc.createCDATASection(drain(gadgetSpec.getContent())));
 
-    DomTree.Tag content = el(
-        Name.xml("Content"),
-        attrib(Name.xml("type"), gadgetSpec.getContentType()),
-        cdata(drain(gadgetSpec.getContent())));
+    Element module = doc.createElement("Module");
+    module.appendChild(modulePrefs);
+    module.appendChild(content);
 
-    return el(Name.xml("Module"), modulePrefs, content);
-  }
-
-  private static DomTree.Tag el(Name name, DomTree... children) {
-    return new DomTree.Tag(
-        name, Arrays.asList(children), Token.instance(
-            "<" + name, HtmlTokenType.TAGBEGIN, FilePosition.UNKNOWN),
-            FilePosition.UNKNOWN);
-  }
-
-  private static DomTree.Attrib attrib(Name name, String value) {
-    return new DomTree.Attrib(
-        name,
-        new DomTree.Value(
-            Token.instance(value, HtmlTokenType.ATTRVALUE,
-                           FilePosition.UNKNOWN)),
-        Token.instance(
-            name.getCanonicalForm(), HtmlTokenType.ATTRNAME,
-            FilePosition.UNKNOWN),
-        FilePosition.UNKNOWN);
-  }
-
-  private static DomTree.CData cdata(String text) {
-    return new DomTree.CData(
-        Token.instance("<![CDATA[" + text + "]]>", HtmlTokenType.CDATA,
-                       FilePosition.UNKNOWN));
+    doc.appendChild(module);
+    return module;
   }
 
   private void check(boolean condition, String msg)
@@ -222,19 +231,8 @@ public class GadgetParser {
         cp.getBuffer(), cp.getOffset(), cp.getLimit() - cp.getOffset());
   }
 
-  private static List<DomTree.Tag> getElementsByTagName(
-      DomTree t, final Name name) {
-    final List<DomTree.Tag> els = new ArrayList<DomTree.Tag>();
-    t.acceptPreOrder(
-        new Visitor() {
-          public boolean visit(AncestorChain<?> ac) {
-            if (ac.node instanceof DomTree.Tag) {
-              DomTree.Tag el = (DomTree.Tag) ac.node;
-              if (name.equals(el.getTagName())) { els.add(el); }
-            }
-            return true;
-          }
-        }, null);
-    return els;
+  private static Iterable<Element> getElementsByTagName(Document d, Name name) {
+    NodeList elements = d.getElementsByTagName(name.getCanonicalForm());
+    return Nodes.nodeListIterable(elements, Element.class);
   }
 }

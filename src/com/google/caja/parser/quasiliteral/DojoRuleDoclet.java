@@ -59,7 +59,7 @@ public class DojoRuleDoclet extends RuleDoclet {
 
   private String escape(String js) {
     StringBuilder result = new StringBuilder();
-    Escaping.escapeJsString(js, /* asciiOnly */ false, /* paranoid */ false,
+    Escaping.escapeJsString(js, /* asciiOnly */ false, /* embeddable */ false,
         result);
     return result.toString();
   }

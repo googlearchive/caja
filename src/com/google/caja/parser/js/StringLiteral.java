@@ -61,8 +61,8 @@ public final class StringLiteral extends Literal {
 
   public static void renderUnquotedValue(String unquoted, RenderContext rc) {
     StringBuilder sb = new StringBuilder(unquoted.length() + 18);
-    // in paranoid mode we need to produce output that can be safely embedded in
-    // HTML or XML.  We make no guarantees for attribute values, and cajoled
+    // In embeddable mode we need to produce output that can be safely embedded
+    // in HTML or XML.  We make no guarantees for attribute values, and cajoled
     // output should not be included in an attribute value, but to be on the
     // safe side, we use single quotes since when naive HTML authors use quotes
     // at all for attribute values, they tend to use double quotes, and putting
@@ -74,7 +74,7 @@ public final class StringLiteral extends Literal {
     // would set delim to '"' below.
     char delim = '\'';
     sb.append(delim);
-    Escaping.escapeJsString(unquoted, rc.isAsciiOnly(), rc.isParanoid(), sb);
+    Escaping.escapeJsString(unquoted, rc.isAsciiOnly(), rc.isEmbeddable(), sb);
     sb.append(delim);
     rc.getOut().consume(sb.toString());
   }

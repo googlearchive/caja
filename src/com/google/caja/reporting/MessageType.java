@@ -80,8 +80,9 @@ public enum MessageType implements MessageTypeInt {
   OCTAL_LITERAL("%s: octal literal %s", MessageLevel.LINT),
   UNRECOGNIZED_USE_SUBSET(
       "%s: unrecognized subset name in 'use' clause: %s", MessageLevel.WARNING),
-  SKIPPING(
-      "%s: Skipping malformed content", MessageLevel.WARNING),
+  SKIPPING("%s: Skipping malformed content", MessageLevel.WARNING),
+  DUPLICATE_ATTRIBUTE(
+      "%s: attribute %s duplicates one at %s", MessageLevel.WARNING),
 
   // platform context
   NOT_IE("%s: Will not work in IE", MessageLevel.WARNING),

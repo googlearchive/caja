@@ -63,6 +63,7 @@
     <pathelement path="${third_party}/java/jsdk2.1/servlet.jar"/>
     <pathelement path="${third_party}/java/jetty/lib/jetty.jar"/>
     <pathelement path="${third_party}/java/jetty/lib/jetty-util.jar"/>
+    <pathelement path="${third_party}/java/xerces/xercesImpl.jar"/>
   </path>
   <path id="classpath.run">
     <pathelement path="${lib}"/>
@@ -342,6 +343,9 @@
       <fileset dir="${third_party}/java/jetty/lib">
         <include name="jetty.jar"/>
         <include name="jetty-util.jar"/>
+      </fileset>
+      <fileset dir="${third_party}/java/xerces">
+        <include name="xercesImpl.jar"/>
       </fileset>
     </copy>
     <jar destfile="${jars}/pluginc.jar" basedir="${lib}">

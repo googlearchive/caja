@@ -15,16 +15,14 @@
 package com.google.caja.util;
 
 import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.html.DomTree;
-import com.google.caja.parser.html.MarkupRenderContext;
+import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Statement;
@@ -36,6 +34,7 @@ import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.TestBuildInfo;
 
 import java.io.BufferedReader;
@@ -61,6 +60,10 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.RhinoException;
 import org.mozilla.javascript.ScriptableObject;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.Text;
 
 /**
  * A testbed that allows running javascript via the Rhino interpreter.
@@ -117,7 +120,7 @@ public class RhinoTestBed {
    *
    * @param html an HTML DOM tree to run in Rhino.
    */
-  public static void runJsUnittestFromHtml(DomTree html)
+  public static void runJsUnittestFromHtml(Element html)
       throws IOException, ParseException {
     TestUtil.enableContentUrls();  // Used to get HTML to env.js
     List<Input> inputs = new ArrayList<Input>();
@@ -127,16 +130,21 @@ public class RhinoTestBed {
     inputs.add(new Input(RhinoTestBed.class, "/js/jqueryjs/runtest/env.js"));
     int injectHtmlIndex = inputs.size();
 
-    List<Pair<String, InputSource>> scripts
+    List<Pair<String, InputSource>> scriptContent
         = new ArrayList<Pair<String, InputSource>>();
     MessageContext mc = new MessageContext();
     MessageQueue mq = new EchoingMessageQueue(new PrintWriter(System.err), mc);
-    for (AncestorChain<DomTree.Tag> script : getElementsByTagName(
-             AncestorChain.instance(html), Name.html("script"))) {
-      DomTree.Attrib src = script.node.getAttribute(Name.html("src"));
+
+    List<Element> scripts = new ArrayList<Element>();
+    for (Element script : Nodes.nodeListIterable(
+             html.getElementsByTagName("script"), Element.class)) {
+      scripts.add(script);
+    }
+    for (Element script : scripts) {
+      Attr src = script.getAttributeNode("src");
       CharProducer scriptBody;
       if (src != null) {
-        String resourcePath = src.getAttribValue();
+        String resourcePath = src.getNodeValue();
         InputSource resource;
         if (resourcePath.startsWith("/")) {
           try {
@@ -147,12 +155,12 @@ public class RhinoTestBed {
                 "java.net.URL is not a valid java.net.URI", ex);
           }
         } else {
-          resource = new InputSource(
-              html.getFilePosition().source().getUri().resolve(resourcePath));
+          InputSource baseUri = Nodes.getFilePositionFor(html).source();
+          resource = new InputSource(baseUri.getUri().resolve(resourcePath));
         }
         scriptBody = loadResource(resource);
       } else {
-        scriptBody = textContentOf(script.node);
+        scriptBody = textContentOf(script);
       }
       String scriptText;
       Block js = parseJavascript(scriptBody, mq);
@@ -165,14 +173,13 @@ public class RhinoTestBed {
         // line numbers.
         scriptText = prefixWithBlankLines(
           scriptBody.toString(0, scriptBody.getLimit()),
-          script.node.getFilePosition().startLineNo() - 1);
+          Nodes.getFilePositionFor(script).startLineNo() - 1);
       }
-      scripts.add(Pair.pair(scriptText, js.getFilePosition().source()));
+      scriptContent.add(Pair.pair(scriptText, js.getFilePosition().source()));
       mc.addInputSource(js.getFilePosition().source());
-      script.parent.cast(MutableParseTreeNode.class).node
-          .removeChild(script.node);
+      script.getParentNode().removeChild(script);
     }
-    for (Pair<String, InputSource> script : scripts) {
+    for (Pair<String, InputSource> script : scriptContent) {
       inputs.add(new Input(script.a, mc.abbreviate(script.b)));
     }
 
@@ -182,9 +189,10 @@ public class RhinoTestBed {
     // registered in TestUtil so that we can provide html without having a file
     // handy.
     String domJs = "window.location = "
-        + StringLiteral.toQuotedValue(TestUtil.makeContentUrl(render(html)))
+        + StringLiteral.toQuotedValue(
+            TestUtil.makeContentUrl(Nodes.render(html)))
         + ";";
-    String htmlSource = html.getFilePosition().source().toString();
+    String htmlSource = Nodes.getFilePositionFor(html).source().toString();
     inputs.add(injectHtmlIndex, new Input(domJs, htmlSource));
     inputs.add(new Input(
         "(function () {\n"
@@ -253,7 +261,7 @@ public class RhinoTestBed {
   private static String render(ParseTreeNode n) {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = n.makeRenderer(sb, null);
-    n.render(new MarkupRenderContext(new MessageContext(), tc, true));
+    n.render(new RenderContext(new MessageContext(), tc).withAsXml(true));
     tc.noMoreTokens();
     return sb.toString();
   }
@@ -281,28 +289,6 @@ public class RhinoTestBed {
         new InputStreamReader(new FileInputStream(f), "UTF-8"), resource);
   }
 
-  private static Iterable<AncestorChain<DomTree.Tag>> getElementsByTagName(
-      AncestorChain<? extends DomTree> t, Name tagName) {
-    List<AncestorChain<DomTree.Tag>> els
-        = new ArrayList<AncestorChain<DomTree.Tag>>();
-    emitElementsByTagName(t, tagName, els);
-    return els;
-  }
-
-  private static void emitElementsByTagName(
-      AncestorChain<? extends DomTree> t, Name tagName,
-      List<AncestorChain<DomTree.Tag>> out) {
-    if (t.node instanceof DomTree.Tag) {
-      DomTree.Tag el = (DomTree.Tag) t.node;
-      if (tagName.equals(el.getTagName())) {
-        out.add(t.cast(DomTree.Tag.class));
-      }
-    }
-    for (DomTree c : t.node.children()) {
-      emitElementsByTagName(AncestorChain.instance(t, c), tagName, out);
-    }
-  }
-
   private static String prefixWithBlankLines(String s, int n) {
     if (n <= 0) { return s; }
     StringBuilder sb = new StringBuilder(s.length() + n);
@@ -310,26 +296,33 @@ public class RhinoTestBed {
     return sb.append(s).toString();
   }
 
-  private static CharProducer textContentOf(DomTree.Tag script) {
+  private static CharProducer textContentOf(Element script) {
     List<CharProducer> parts = new ArrayList<CharProducer>();
-    for (DomTree child : script.children()) {
-      switch (child.getType()) {
-        case UNESCAPED:
-          parts.add(CharProducer.Factory.create(
-              new StringReader(child.getValue()), child.getFilePosition()));
+    for (Node child : Nodes.childrenOf(script)) {
+      FilePosition childPos = Nodes.getFilePositionFor(child);
+      switch (child.getNodeType()) {
+        case Node.TEXT_NODE:
+          String rawText = Nodes.getRawText((Text) child);
+          String decodedText = child.getNodeValue();
+          CharProducer cp = null;
+          if (rawText != null) {
+            cp = CharProducer.Factory.fromHtmlAttribute(
+                CharProducer.Factory.create(
+                    new StringReader(rawText), childPos));
+            if (!String.valueOf(cp.getBuffer(), cp.getOffset(), cp.getLength())
+                .equals(decodedText)) {  // XHTML
+              cp = null;
+            }
+          }
+          if (cp == null) {
+            cp = CharProducer.Factory.create(
+                new StringReader(child.getNodeValue()), childPos);
+          }
+          parts.add(cp);
           break;
-        case CDATA:
-          String cdata = child.getToken().text;
+        case Node.CDATA_SECTION_NODE:
           parts.add(CharProducer.Factory.create(
-              new StringReader(
-                  "         " + cdata.substring(9, cdata.length() - 3)),
-              child.getFilePosition()));
-          break;
-        case TEXT:
-          parts.add(CharProducer.Factory.fromHtmlAttribute(
-              CharProducer.Factory.create(
-                  new StringReader(child.getToken().text),
-                  child.getFilePosition())));
+              new StringReader("         " + child.getNodeValue()), childPos));
           break;
         default: break;
       }

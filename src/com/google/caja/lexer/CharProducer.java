@@ -69,6 +69,9 @@ public abstract class CharProducer {
     return String.valueOf(buf, start, end - start);
   }
 
+  /** Number of characters available in buffer between the offset and limit. */
+  public final int getLength() { return limit - offset; }
+
   /** True iff the {@link #getOffset offset} is at the end of the input. */
   public final boolean isEmpty() { return offset == limit; }
 
@@ -125,6 +128,15 @@ public abstract class CharProducer {
         r.close();
       }
       return new CharProducerImpl(buf, limit, pos);
+    }
+
+    public static CharProducer fromString(String s, InputSource src) {
+      return fromString(s, FilePosition.startOfFile(src));
+    }
+
+    public static CharProducer fromString(String s, FilePosition pos) {
+      char[] buf = s.toCharArray();
+      return new CharProducerImpl(buf, buf.length, pos);
     }
 
     public static CharProducer create(Reader r, InputSource src)
@@ -210,65 +222,10 @@ public abstract class CharProducer {
       return DecodingCharProducer.make(new DecodingCharProducer.Decoder() {
         @Override
         void decode(char[] chars, int offset, int limit) {
-          char ch = chars[offset];
-          if ('&' != ch) {
-            this.codePoint = ch;
-            this.end = offset + 1;
-            return;
-          }
-
-          int entityLimit = Math.min(limit, offset + 10);
-          int end = -1;
-          for (int i = offset + 1; i < entityLimit; ++i) {
-            if (';' == chars[i]) {
-              end = i;
-              break;
-            }
-          }
-          if (end < 0 || offset + 2 >= end) {
-            this.codePoint = ch;
-            this.end = offset + 1;
-            return;
-          }
-          // Now we know where the entity ends, and that there is at least one
-          // character in the entity name
-          char ch1 = chars[offset + 1];
-          char ch2 = chars[offset + 2];
-          if ('#' == ch1) {
-            // numeric entity
-            if ('x' == ch2 || 'X' == ch2) {
-              // hex literal
-              if (decodeHex(chars, offset + 3, end, end + 1)) { return; }
-            } else {
-              // decimal literal
-              if (decodeDecimal(chars, offset + 2, end, end + 1)) { return; }
-            }
-            this.codePoint = ch;
-            this.end = offset + 1;
-          } else {
-            PunctuationTrie<Integer> t = HtmlEntities.ENTITY_TRIE;
-            for (int i = offset + 1; i < end; ++i) {
-              char nameChar = chars[i];
-              t = t.lookup(nameChar);
-              if (t == null) { break; }
-            }
-            if (t == null) {
-              t = HtmlEntities.ENTITY_TRIE;
-              for (int i = offset + 1; i < end; ++i) {
-                char nameChar = chars[i];
-                if ('Z' >= nameChar && nameChar >= 'A') { nameChar |= 32; }
-                t = t.lookup(nameChar);
-                if (t == null) { break; }
-              }
-            }
-            if (t == null || !t.isTerminal()) {
-              this.codePoint = ch;
-              this.end = offset + 1;
-            } else {
-              this.codePoint = t.getValue().intValue();
-              this.end = end + 1;
-            }
-          }
+          long packedEndAndCodepoint = HtmlEntities.decodeEntityAt(
+              chars, offset, limit);
+          this.codePoint = (int) (packedEndAndCodepoint & 0xffffffL);
+          this.end = (int) (packedEndAndCodepoint >>> 32);
         }
       }, p);
     }

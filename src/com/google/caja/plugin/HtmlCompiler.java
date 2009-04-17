@@ -22,12 +22,10 @@ import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssTokenType;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenQueue;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
@@ -35,7 +33,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
-import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
@@ -74,6 +72,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 /**
  * Compiles HTML containing CSS and JavaScript to Javascript + safe CSS.
@@ -116,14 +118,14 @@ public class HtmlCompiler {
    * <p>This method extracts embedded javascript but performs no validation on
    * it.</p>
    */
-  public Block compileDocument(DomTree doc) throws BadContentException {
+  public Block compileDocument(Node doc) throws BadContentException {
     // Produce calls to IMPORTS___.htmlEmitter___(...)
     // with interleaved script bodies.
     DomProcessingEvents cdom = new DomProcessingEvents();
     compileDom(doc, cdom);
 
     Block body = new Block(
-        doc.getFilePosition(), Collections.<Statement>emptyList());
+        Nodes.getFilePositionFor(doc), Collections.<Statement>emptyList());
     cdom.toJavascript(body);
     return body;
   }
@@ -138,28 +140,24 @@ public class HtmlCompiler {
    *
    * @param t the tree to render
    */
-  private void compileDom(DomTree t, DomProcessingEvents out)
+  private void compileDom(Node t, DomProcessingEvents out)
       throws BadContentException {
-    if (t instanceof DomTree.Fragment) {
-      for (DomTree child : t.children()) {
-        compileDom(child, out);
-      }
-      return;
-    }
-    switch (t.getType()) {
-      case TEXT:
-        out.pcdata(t.getFilePosition(), ((DomTree.Text) t).getValue());
+    switch (t.getNodeType()) {
+      case Node.DOCUMENT_FRAGMENT_NODE:
+        for (Node c = t.getFirstChild(); c != null; c = c.getNextSibling()) {
+          compileDom(c, out);
+        }
         break;
-      case CDATA:
-        out.cdata(t.getFilePosition(), ((DomTree.Text) t).getValue());
+      case Node.TEXT_NODE:
+      case Node.CDATA_SECTION_NODE:
+        out.pcdata(Nodes.getFilePositionFor(t), t.getNodeValue());
         break;
-      case TAGBEGIN:
-        DomTree.Tag el = (DomTree.Tag) t;
-        Name tagName = el.getTagName();
+      case Node.ELEMENT_NODE:
+        Element el = (Element) t;
+        Name tagName = Name.xml(el.getTagName());
 
         if ("span".equals(tagName.getCanonicalForm())) {
-          Block extractedScriptBody = el.getAttributes().get(
-              RewriteHtmlStage.EXTRACTED_SCRIPT_BODY);
+          Block extractedScriptBody = RewriteHtmlStage.extractedScriptFor(el);
           if (extractedScriptBody != null) {
             out.script(scriptBodyEnvelope(extractedScriptBody));
             return;
@@ -178,136 +176,105 @@ public class HtmlCompiler {
         tagName = assertHtmlIdentifier(tagName, el);
         boolean requiresCloseTag = requiresCloseTag(tagName);
         constraint.startTag(el);
-        List<? extends DomTree> children = el.children();
 
-        out.begin(el.getToken().pos, tagName);
+        out.begin(Nodes.getFilePositionFor(el), tagName);
 
-        if (children.isEmpty()) {
-          for (Pair<Name, String> extra : constraint.tagDone(el)) {
-            out.attr(FilePosition.UNKNOWN, extra.a, extra.b);
+        // output attributes
+        for (Attr attrib : Nodes.attributesOf(el)) {
+          Name name = Name.xml(attrib.getNodeName());
+
+          assertNotBlacklistedAttrib(tagName, attrib);
+
+          name = assertHtmlIdentifier(name, attrib);
+
+          Pair<String, String> wrapper = constraint.attributeValueHtml(name);
+          if (null == wrapper) { continue; }
+
+          if ("style".equals(name.getCanonicalForm())) {
+            compileStyleAttrib(attrib, out);
+          } else {
+            AttributeXform xform = xformForAttribute(tagName, name);
+
+            Attr temp = el.getOwnerDocument().createAttribute(
+                name.getCanonicalForm());
+            temp.setNodeValue(wrapper.a + attrib.getNodeValue() + wrapper.b);
+            Nodes.setFilePositionFor(temp, Nodes.getFilePositionFor(attrib));
+            Nodes.setFilePositionForValue(
+                temp, Nodes.getFilePositionForValue(attrib));
+
+            if (null == xform) {
+              out.attr(
+                  Nodes.getFilePositionFor(temp), name, temp.getNodeValue());
+            } else {
+              xform.apply(tagName, temp, this, out);
+            }
           }
-          out.finishAttrs(!requiresCloseTag);
-          if (requiresCloseTag) {
-            out.end(FilePosition.endOf(t.getFilePosition()), tagName);
+          constraint.attributeDone(name);
+        }
+
+        for (Pair<Name, String> extra : constraint.tagDone(el)) {
+          out.attr(FilePosition.UNKNOWN, extra.a, extra.b);
+        }
+
+        boolean tagAllowsContent = tagAllowsContent(tagName);
+        out.finishAttrs(!(requiresCloseTag || tagAllowsContent));
+
+        Iterable<? extends Node> children = Nodes.childrenOf(el);
+
+        // recurse to contents
+        boolean wroteChildElement = false;
+
+        if (tagAllowsContent) {
+          for (Node child : children) {
+            compileDom(child, out);
+            wroteChildElement = true;
           }
         } else {
-          int i;
-          // output attributes
-          for (i = 0; i < children.size(); ++i) {
-            DomTree child = children.get(i);
-            if (HtmlTokenType.ATTRNAME != child.getType()) { break; }
-            DomTree.Attrib attrib = (DomTree.Attrib) child;
-            Name name = attrib.getAttribName();
-
-            assertNotBlacklistedAttrib(tagName, attrib);
-
-            name = assertHtmlIdentifier(name, attrib);
-
-            Pair<String, String> wrapper = constraint.attributeValueHtml(name);
-            if (null == wrapper) { continue; }
-
-            if ("style".equals(name.getCanonicalForm())) {
-              compileStyleAttrib(attrib, out);
-            } else {
-              AttributeXform xform = xformForAttribute(tagName, name);
-
-              DomTree.Attrib temp =
-                  new DomTree.Attrib(
-                      attrib.getAttribName(),
-                      new DomTree.Value(
-                          Token.<HtmlTokenType>instance(
-                              wrapper.a + attrib.getAttribValue() + wrapper.b,
-                              HtmlTokenType.ATTRVALUE,
-                              attrib.getFilePosition())),
-                      attrib.getToken(),
-                      attrib.getFilePosition());
-
-              if (null == xform) {
-                out.attr(temp.getFilePosition(), name, temp.getAttribValue());
-              } else {
-                List<DomTree> newchildren
-                    = new ArrayList<DomTree>(el.children());
-                newchildren.remove(attrib);
-                newchildren.add(temp);
-                DomTree parent = new DomTree.Tag(
-                    el.getTagName(), newchildren, el.getToken(),
-                    el.getFilePosition());
-
-                xform.apply(
-                    new AncestorChain<DomTree.Attrib>(
-                        new AncestorChain<DomTree>(
-                          parent), temp),
-                    this, out);
-              }
-            }
-            constraint.attributeDone(name);
-          }
-
-          for (Pair<Name, String> extra : constraint.tagDone(el)) {
-            out.attr(FilePosition.UNKNOWN, extra.a, extra.b);
-          }
-
-          boolean tagAllowsContent = tagAllowsContent(tagName);
-          out.finishAttrs(!(requiresCloseTag || tagAllowsContent));
-
-          List<? extends DomTree> childrenRemaining =
-              children.subList(i, children.size());
-
-          // recurse to contents
-          boolean wroteChildElement = false;
-
-          if (tagAllowsContent) {
-            for (DomTree child : childrenRemaining) {
-              compileDom(child, out);
-              wroteChildElement = true;
-            }
-          } else {
-            for (DomTree child : childrenRemaining) {
-              if (!isWhitespaceTextNode(child)) {
-                mq.addMessage(MessageType.MALFORMED_XHTML,
-                              child.getFilePosition(), child);
-              }
+          for (Node child : children) {
+            if (!isWhitespaceTextNode(child)) {
+              mq.addMessage(MessageType.MALFORMED_XHTML,
+                            Nodes.getFilePositionFor(child),
+                            MessagePart.Factory.valueOf("<" + tagName + ">"));
             }
           }
+        }
 
-          if (wroteChildElement || requiresCloseTag) {
-            out.end(FilePosition.endOf(t.getFilePosition()), tagName);
-          }
+        if (wroteChildElement || requiresCloseTag) {
+          out.end(FilePosition.endOf(Nodes.getFilePositionFor(el)), tagName);
         }
         break;
       default:
-        throw new AssertionError(t.getType().name() + "  " + t.toStringDeep());
+        throw new AssertionError(t.getNodeName());
     }
   }
 
   private static final Pattern HTML_ID = Pattern.compile(
       "^[a-z][a-z0-9-]*$", Pattern.CASE_INSENSITIVE);
-  private static Name assertHtmlIdentifier(
-      Name id, DomTree node)
+  private static Name assertHtmlIdentifier(Name id, Node node)
       throws BadContentException {
     if (!HTML_ID.matcher(id.getCanonicalForm()).matches()) {
       throw new BadContentException(new Message(
-          PluginMessageType.BAD_IDENTIFIER, node.getFilePosition(), id));
+          PluginMessageType.BAD_IDENTIFIER,
+          Nodes.getFilePositionFor(node), id));
     }
     return id;
   }
 
-  private void assertNotBlacklistedTag(DomTree.Tag node)
-      throws BadContentException {
-    Name tagName = node.getTagName();
+  private void assertNotBlacklistedTag(Element el) throws BadContentException {
+    Name tagName = Name.xml(el.getTagName());
     if (!htmlSchema.isElementAllowed(tagName)) {
       throw new BadContentException(
-          new Message(PluginMessageType.UNSAFE_TAG, node.getFilePosition(),
-                      tagName));
+          new Message(PluginMessageType.UNSAFE_TAG,
+                      Nodes.getFilePositionFor(el), tagName));
     }
   }
 
-  private void assertNotBlacklistedAttrib(Name tagName, DomTree.Attrib attr)
+  private void assertNotBlacklistedAttrib(Name tagName, Attr attr)
       throws BadContentException {
-    Name attrName = attr.getAttribName();
+    Name attrName = Name.xml(attr.getNodeName());
     if (!htmlSchema.isAttributeAllowed(tagName, attrName)) {
       throw new BadContentException(new Message(
-          PluginMessageType.UNSAFE_ATTRIBUTE, attr.getFilePosition(),
+          PluginMessageType.UNSAFE_ATTRIBUTE, Nodes.getFilePositionFor(attr),
           attrName, tagName));
     }
   }
@@ -334,8 +301,7 @@ public class HtmlCompiler {
    * Invokes the CSS validator to rewrite style attributes.
    * @param attrib an attribute with name {@code "style"}.
    */
-  private void compileStyleAttrib(
-      DomTree.Attrib attrib, DomProcessingEvents out)
+  private void compileStyleAttrib(Attr attrib, DomProcessingEvents out)
       throws BadContentException {
     CssTree.DeclarationGroup decls;
     try {
@@ -362,7 +328,7 @@ public class HtmlCompiler {
         decls, Arrays.asList("cat"), cssBlock, JsWriter.Esc.NONE);
     if (cssBlock.children().isEmpty()) { return; }
     if (cssBlock.children().size() != 1) {
-      throw new IllegalStateException(attrib.getAttribValue());
+      throw new IllegalStateException(attrib.getNodeValue());
     }
     Expression css = ((ExpressionStmt) cssBlock.children().get(0))
         .getExpression();
@@ -378,25 +344,38 @@ public class HtmlCompiler {
   /**
    * Parses a style attribute's value as a CSS declaration group.
    */
-  private CssTree.DeclarationGroup parseStyleAttrib(DomTree.Attrib t)
+  private CssTree.DeclarationGroup parseStyleAttrib(Attr a)
       throws ParseException {
-    // parse the attribute value as CSS
-    DomTree.Value value = t.getAttribValueNode();
-    // use the raw value so that the file positions come out right in
-    // CssValidator error messages.
-    String cssAsHtml = deQuote(value.getToken().text);
-    // the raw value is html so we wrap it in an html unescaper
-    CharProducer cp = CharProducer.Factory.fromHtmlAttribute(
-        CharProducer.Factory.create(
-            new StringReader(cssAsHtml), value.getFilePosition()));
-    // parse the css as a set of declarations separated by semicolons
+    CharProducer cp = fromAttrValue(a);
+    // Parse the css as a set of declarations separated by semicolons.
     TokenQueue<CssTokenType> tq = CssParser.makeTokenQueue(cp, mq, false);
     if (tq.isEmpty()) { return null; }
-    tq.setInputRange(value.getFilePosition());
+    tq.setInputRange(Nodes.getFilePositionForValue(a));
     CssParser p = new CssParser(tq, mq, MessageLevel.WARNING);
     CssTree.DeclarationGroup decls = p.parseDeclarationGroup();
     tq.expectEmpty();
     return decls;
+  }
+
+  private static CharProducer fromAttrValue(Attr a) {
+    String value = a.getNodeValue();
+    FilePosition pos = Nodes.getFilePositionForValue(a);
+    String rawValue = Nodes.getRawValue(a);
+    // Use the raw value so that the file positions come out right in
+    // error messages.
+    if (rawValue != null) {
+      // The raw value is html so we wrap it in an html unescaper.
+      CharProducer cp = CharProducer.Factory.fromHtmlAttribute(
+          CharProducer.Factory.create(
+              new StringReader(deQuote(rawValue)), pos));
+      // Check if the attribute value has been set since parsing.
+      if (String.valueOf(cp.getBuffer(), cp.getOffset(), cp.getLength())
+          .equals(value)) {
+        return cp;
+      }
+    }
+    // Reached if no raw value stored or if the raw value is out of sync.
+    return CharProducer.Factory.create(new StringReader(value), pos);
   }
 
   /**
@@ -415,12 +394,10 @@ public class HtmlCompiler {
    * Parses an {@code onclick} handler's or other handler's attribute value
    * as a javascript statement.
    */
-  private Block asBlock(DomTree stmt) {
+  private Block asBlock(Attr jsAttr) {
     // parse as a javascript expression.
-    String src = deQuote(stmt.getToken().text);
-    FilePosition pos = stmt.getToken().pos;
-    CharProducer cp = CharProducer.Factory.fromHtmlAttribute(
-        CharProducer.Factory.create(new StringReader(src), pos));
+    FilePosition pos = Nodes.getFilePositionForValue(jsAttr);
+    CharProducer cp = fromAttrValue(jsAttr);
     JsLexer lexer = new JsLexer(cp);
     JsTokenQueue tq = new JsTokenQueue(lexer, pos.source());
     tq.setInputRange(pos);
@@ -436,7 +413,7 @@ public class HtmlCompiler {
     }
 
     // expression will be sanitized in a later pass
-    return new Block(stmt.getFilePosition(), statements);
+    return new Block(pos, statements);
   }
 
   /**
@@ -477,10 +454,10 @@ public class HtmlCompiler {
   }
 
   /** is the given node a text node that consists only of whitespace? */
-  private static boolean isWhitespaceTextNode(DomTree t) {
-    switch (t.getType()) {
-      case TEXT: case CDATA:
-        return "".equals(t.getValue().trim());
+  private static boolean isWhitespaceTextNode(Node t) {
+    switch (t.getNodeType()) {
+      case Node.TEXT_NODE: case Node.CDATA_SECTION_NODE:
+        return "".equals(t.getNodeValue().trim());
       default:
         return false;
     }
@@ -527,41 +504,39 @@ public class HtmlCompiler {
     /** Applied to {@code name} and {@code id} attributes. */
     NAMES {
       @Override
-      void apply(AncestorChain<DomTree.Attrib> tChain, HtmlCompiler htmlc,
-                 DomProcessingEvents out) {
-        DomTree.Attrib t = tChain.node;
+      void apply(
+          Name elName, Attr a, HtmlCompiler htmlc, DomProcessingEvents out) {
         IdentifierWriter.ConcatenationEmitter emitter
             = new IdentifierWriter.ConcatenationEmitter();
-        FilePosition valuePos = t.getAttribValueNode().getFilePosition();
+        FilePosition valuePos = Nodes.getFilePositionForValue(a);
         new IdentifierWriter(htmlc.mq, true)
-            .toJavascript(valuePos, t.getAttribValue(), emitter);
+            .toJavascript(valuePos, a.getNodeValue(), emitter);
         Expression value = emitter.getExpression();
         if (value != null) {
-          out.attr(t.getAttribName(), value);
+          out.attr(Name.xml(a.getNodeName()), value);
         }
       }
     },
     CLASSES {
       @Override
-      void apply(AncestorChain<DomTree.Attrib> tChain, HtmlCompiler htmlc,
-                 DomProcessingEvents out) {
-        DomTree.Attrib t = tChain.node;
+      void apply(
+          Name elName, Attr a, HtmlCompiler htmlc, DomProcessingEvents out) {
         IdentifierWriter.ConcatenationEmitter emitter
             = new IdentifierWriter.ConcatenationEmitter();
-        FilePosition attribValue = t.getAttribValueNode().getFilePosition();
+        FilePosition valuePos = Nodes.getFilePositionForValue(a);
         new IdentifierWriter(htmlc.mq, false)
-            .toJavascript(attribValue, t.getAttribValue(), emitter);
+            .toJavascript(valuePos, a.getNodeValue(), emitter);
         Expression value = emitter.getExpression();
         if (value != null) {
-          out.attr(t.getAttribName(), value);
+          out.attr(Name.xml(a.getNodeName()), value);
         }
       }
     },
     /** Applied to CSS such as {@code style} attributes. */
     STYLE {
       @Override
-      void apply(AncestorChain<DomTree.Attrib> tChain, HtmlCompiler htmlc,
-                 DomProcessingEvents out) {
+      void apply(
+          Name elName, Attr a, HtmlCompiler htmlc, DomProcessingEvents out) {
         // should be handled in compileDOM
         throw new AssertionError();
       }
@@ -569,18 +544,17 @@ public class HtmlCompiler {
     /** Applied to javascript such as {@code onclick} attributes. */
     SCRIPT {
       @Override
-      void apply(AncestorChain<DomTree.Attrib> tChain, HtmlCompiler htmlc,
-                 DomProcessingEvents out) {
-        DomTree.Attrib t = tChain.node;
+      void apply(
+          Name elName, Attr a, HtmlCompiler htmlc, DomProcessingEvents out) {
         // Extract the handler into a function so that it can be analyzed.
-        Block handler = htmlc.asBlock(t.getAttribValueNode());
+        Block handler = htmlc.asBlock(a);
         if (handler.children().isEmpty()) { return; }
         rewriteEventHandlerReferences(handler);
 
         // This function must not be synthetic.  If it were, the rewriter would
         // not treat its formals as affecting scope.
         FunctionConstructor handlerFn = new FunctionConstructor(
-            t.getAttribValueNode().getFilePosition(),
+            Nodes.getFilePositionForValue(a),
             new Identifier(FilePosition.UNKNOWN, null),
             Arrays.asList(
                 new FormalParam(s(
@@ -594,7 +568,7 @@ public class HtmlCompiler {
         htmlc.eventHandlers.put(
             handlerFnName,
             new ExpressionStmt(
-                t.getAttribValueNode().getFilePosition(),
+                Nodes.getFilePositionForValue(a),
                 (Expression) QuasiBuilder.substV(
                 "IMPORTS___.@handlerFnName = @handlerFn;",
                 "handlerFnName", TreeConstruction.ref(handlerFnName),
@@ -607,44 +581,43 @@ public class HtmlCompiler {
             Operation.createInfix(
                 Operator.ADDITION,
                 StringLiteral.valueOf(
-                    t.getAttribValueNode().getFilePosition(),
+                    Nodes.getFilePositionForValue(a),
                     "return plugin_dispatchEvent___(this, event, "),
                 TreeConstruction.call(
                     TreeConstruction.memberAccess("___", "getId"),
                     TreeConstruction.ref(ReservedNames.IMPORTS))),
                     StringLiteral.valueOf(
                         FilePosition.UNKNOWN, ", " + handlerFnNameLit + ")"));
-        out.handler(t.getAttribName(), dispatcher);
+        out.handler(Name.xml(a.getNodeName()), dispatcher);
       }
     },
     /** Applied to URIs such as {@code href} and {@code src} attributes. */
     URI {
       @Override
-      void apply(AncestorChain<DomTree.Attrib> tChain, HtmlCompiler htmlc,
-                 DomProcessingEvents out) {
-        DomTree.Attrib t = tChain.node;
+      void apply(
+          Name elName, Attr a, HtmlCompiler htmlc, DomProcessingEvents out) {
         URI uri;
         try {
-          uri = new URI(t.getAttribValue());
+          uri = new URI(a.getNodeValue());
         } catch (URISyntaxException ex) {
-          htmlc.mq.addMessage(PluginMessageType.MALFORMED_URL,
-                              t.getAttribValueNode().getFilePosition(),
-                              MessagePart.Factory.valueOf(t.getAttribValue()));
+          htmlc.mq.addMessage(
+              PluginMessageType.MALFORMED_URL,
+              Nodes.getFilePositionForValue(a),
+              MessagePart.Factory.valueOf(a.getNodeValue()));
           return;
         }
         String mimeType = htmlc.guessMimeType(
-            ((DomTree.Tag) tChain.getParentNode()).getTagName(),
-            tChain.node.getAttribName());
+            elName, Name.xml(a.getNodeName()));
         String rewrittenUri = htmlc.meta.getPluginEnvironment().rewriteUri(
-            new ExternalReference(
-                uri, t.getAttribValueNode().getFilePosition()),
-                mimeType);
+            new ExternalReference(uri, Nodes.getFilePositionForValue(a)),
+            mimeType);
         if (rewrittenUri != null) {
-          out.attr(t.getFilePosition(), t.getAttribName(), rewrittenUri);
+          out.attr(Nodes.getFilePositionFor(a), Name.xml(a.getNodeName()),
+                   rewrittenUri);
         } else {
           htmlc.mq.addMessage(
               PluginMessageType.DISALLOWED_URI,
-              t.getAttribValueNode().getFilePosition(),
+              Nodes.getFilePositionForValue(a),
               MessagePart.Factory.valueOf(uri.toString()));
         }
       }
@@ -656,8 +629,7 @@ public class HtmlCompiler {
      * value.
      */
     abstract void apply(
-        AncestorChain<DomTree.Attrib> tChain,
-        HtmlCompiler htmlc, DomProcessingEvents out)
+        Name elName, Attr a, HtmlCompiler htmlc, DomProcessingEvents out)
         throws BadContentException;
   }
 

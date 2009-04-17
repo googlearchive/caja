@@ -37,26 +37,27 @@ public class Escaping {
    * @param asciiOnly Makes sure that only ASCII characters are written to out.
    *     This is a good idea if you don't have control over the charset that
    *     the javascript will be served with.
-   * @param paranoid True to make sure that nothing is written to out that could
-   *     interfere with embedding inside a script tag or CDATA section, or
+   * @param embeddable True to make sure that nothing is written to out that
+   *     could interfere with embedding inside a script tag or CDATA section, or
    *     other tag that typically contains markup.
    *     This does not make it safe to embed in an HTML attribute without
    *     further escaping.
    * @param out written to.
    */
   public static void escapeJsString(
-      CharSequence s, boolean asciiOnly, boolean paranoid, Appendable out)
+      CharSequence s, boolean asciiOnly, boolean embeddable, Appendable out)
       throws IOException {
-    new Escaper(s, paranoid ? STRING_PARANOID_ESCAPES : STRING_MINIMAL_ESCAPES,
+    new Escaper(s, embeddable ? STRING_EMBEDDABLE_ESCAPES : STRING_MINIMAL_ESCAPES,
                 asciiOnly ? NO_NON_ASCII : ALLOW_NON_ASCII, JS_ENCODER, out)
         .escape();
   }
 
   /** @see #escapeJsString(CharSequence, boolean, boolean, Appendable) */
   public static void escapeJsString(
-      CharSequence s, boolean asciiOnly, boolean paranoid, StringBuilder out) {
+      CharSequence s, boolean asciiOnly, boolean embeddable,
+      StringBuilder out) {
     try {
-      escapeJsString(s, asciiOnly, paranoid, (Appendable) out);
+      escapeJsString(s, asciiOnly, embeddable, (Appendable) out);
     } catch (IOException ex) {
       // StringBuilders don't throw IOException
       throw new RuntimeException(ex);
@@ -101,7 +102,7 @@ public class Escaping {
    * @param asciiOnly Makes sure that only ASCII characters are written to out.
    *     This is a good idea if you don't have control over the charset that
    *     the javascript will be served with.
-   * @param paranoid True to make sure that nothing is written to out that could
+   * @param embeddable True to make sure that nothing is written to out that could
    *     interfere with embedding inside a script tag or CDATA section, or
    *     other tag that typically contains markup.
    *     This does not make it safe to embed in an HTML attribute without
@@ -109,19 +110,21 @@ public class Escaping {
    * @param out written to.
    */
   public static void escapeRegex(
-      CharSequence s, boolean asciiOnly, boolean paranoid, Appendable out)
+      CharSequence s, boolean asciiOnly, boolean embeddable, Appendable out)
       throws IOException {
     new Escaper(
-        s, paranoid ? REGEX_LITERAL_PARANOID_ESCAPES : REGEX_LITERAL_ESCAPES,
+        s,
+        embeddable ? REGEX_LITERAL_EMBEDDABLE_ESCAPES : REGEX_LITERAL_ESCAPES,
         asciiOnly ? NO_NON_ASCII : ALLOW_NON_ASCII, JS_ENCODER, out)
         .escape();
   }
 
   /** @see #escapeRegex(CharSequence, boolean, boolean, Appendable) */
   public static void escapeRegex(
-      CharSequence s, boolean asciiOnly, boolean paranoid, StringBuilder out) {
+      CharSequence s, boolean asciiOnly, boolean embeddable,
+      StringBuilder out) {
     try {
-      escapeRegex(s, asciiOnly, paranoid, (Appendable) out);
+      escapeRegex(s, asciiOnly, embeddable, (Appendable) out);
     } catch (IOException ex) {
       // StringBuilders don't throw IOException
       throw new RuntimeException(ex);
@@ -137,7 +140,7 @@ public class Escaping {
    * @param asciiOnly Makes sure that only ASCII characters are written to out.
    *     This is a good idea if you don't have control over the charset that
    *     the javascript will be served with.
-   * @param paranoid True to make sure that nothing is written to out that could
+   * @param embeddable True to make sure that nothing is written to out that could
    *     interfere with embedding inside a script tag or CDATA section, or
    *     other tag that typically contains markup.
    *     This does not make it safe to embed in an HTML attribute without
@@ -145,19 +148,20 @@ public class Escaping {
    * @param out written to.
    */
   public static void normalizeRegex(
-      CharSequence s, boolean asciiOnly, boolean paranoid, Appendable out)
+      CharSequence s, boolean asciiOnly, boolean embeddable, Appendable out)
       throws IOException {
     new Escaper(requireEndUnescaped(rebalance(s, '[', ']')),
-                paranoid ? REGEX_PARANOID_ESCAPES : REGEX_MINIMAL_ESCAPES,
+                embeddable ? REGEX_EMBEDDABLE_ESCAPES : REGEX_MINIMAL_ESCAPES,
                 asciiOnly ? NO_NON_ASCII : ALLOW_NON_ASCII, JS_ENCODER, out)
         .normalize();
   }
 
   /** @see #normalizeRegex(CharSequence, boolean, boolean, Appendable) */
   public static void normalizeRegex(
-      CharSequence s, boolean asciiOnly, boolean paranoid, StringBuilder out) {
+      CharSequence s, boolean asciiOnly, boolean embeddable,
+      StringBuilder out) {
     try {
-      normalizeRegex(s, asciiOnly, paranoid, (Appendable) out);
+      normalizeRegex(s, asciiOnly, embeddable, (Appendable) out);
     } catch (IOException ex) {
       // StringBuilders don't throw IOException
       throw new RuntimeException(ex);
@@ -298,7 +302,7 @@ public class Escaping {
       );
   // Escape enough characters in a string to make sure it can be safely embedded
   // in the body of an XML and HTML document.
-  private static final EscapeMap STRING_PARANOID_ESCAPES = new EscapeMap(
+  private static final EscapeMap STRING_EMBEDDABLE_ESCAPES = new EscapeMap(
       new Escape('\b', "\\b"),
       new Escape('\t', "\\t"),
       new Escape('\n', "\\n"),
@@ -323,11 +327,11 @@ public class Escaping {
   // Escape enough characters in a string to make sure it can be safely embedded
   // in XML and HTML without changing the meaning of regular expression
   // specials.
-  private static final EscapeMap REGEX_PARANOID_ESCAPES = new EscapeMap(
+  private static final EscapeMap REGEX_EMBEDDABLE_ESCAPES = new EscapeMap(
       new Escape('\b', "\\b"),
       new Escape('\t', "\\t"),
       new Escape('\n', "\\n"),
-      // JScript treates \v as the letter v
+      // JScript treats \v as the letter v
       new Escape('\f', "\\f"),
       new Escape('\r', "\\r"),
       new Escape('&', "\\x26"),
@@ -345,8 +349,8 @@ public class Escaping {
             simpleEscapes("()[]{}*+?.^$|\\".toCharArray()));
 
   // Escape all characters that have a special meaning in a regular expression
-  private static final EscapeMap REGEX_LITERAL_PARANOID_ESCAPES
-      = REGEX_PARANOID_ESCAPES.plus(
+  private static final EscapeMap REGEX_LITERAL_EMBEDDABLE_ESCAPES
+      = REGEX_EMBEDDABLE_ESCAPES.plus(
             simpleEscapes("()[]{}*+?.^$|\\".toCharArray()));
 
   /**

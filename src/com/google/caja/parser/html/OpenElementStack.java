@@ -22,6 +22,10 @@ import com.google.caja.util.Name;
 
 import java.util.List;
 
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.DocumentFragment;
+
 /**
  * Consumes SAX style events (tag name and attributes) from the
  * {@link DomParser} to build a DomTree.
@@ -32,9 +36,9 @@ import java.util.List;
  * <p>
  * The {@link OpenElementStack.Factory Factory} class has implementations of
  * this interface for both
- * {@link OpenElementStack.Factory#createHtml5ElementStack(MessageQueue) HTML}
+ * {@link OpenElementStack.Factory#createHtml5ElementStack HTML}
  *  and a trivial one for all
- * {@link OpenElementStack.Factory#createXmlElementStack() XML} including XHTML.
+ * {@link OpenElementStack.Factory#createXmlElementStack XML} including XHTML.
  *
  * @see <a href="http://www.whatwg.org/specs/web-apps/current-work/">HTML5</a>
  * @see <a href="http://www.w3.org/TR/REC-xml/">XML</a>
@@ -45,11 +49,13 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public interface OpenElementStack {
+  /** The document used to create Nodes. */
+  Document getDocument();
 
   /**
    * The root element.
    */
-  DomTree.Fragment getRootElement();
+  DocumentFragment getRootElement();
 
   /**
    * Given an element name, return a canonical element name.
@@ -84,7 +90,7 @@ public interface OpenElementStack {
    *   for end tags.
    */
   void processTag(Token<HtmlTokenType> start, Token<HtmlTokenType> end,
-                  List<DomTree.Attrib> attrs)
+                  List<Attr>  attrs)
       throws IllegalDocumentStateException;
 
   /**
@@ -115,12 +121,24 @@ public interface OpenElementStack {
    * Constructors.
    */
   public static final class Factory {
-    public static OpenElementStack createHtml5ElementStack(MessageQueue mq) {
-      return new Html5ElementStack(mq);
+    /**
+     * @param doc the document used to create DOM nodes.
+     * @param needsDebugData see {@link DomParser#setNeedsDebugData(boolean)}
+     * @param mq receives parser warnings.
+     */
+    public static OpenElementStack createHtml5ElementStack(
+        Document doc, boolean needsDebugData, MessageQueue mq) {
+      return new Html5ElementStack(doc, needsDebugData, mq);
     }
 
-    public static OpenElementStack createXmlElementStack() {
-      return new XmlElementStack();
+    /**
+     * @param doc the document used to create DOM nodes.
+     * @param needsDebugData see {@link DomParser#setNeedsDebugData(boolean)}
+     * @param mq receives parser warnings.
+     */
+    public static OpenElementStack createXmlElementStack(
+        Document doc, boolean needsDebugData, MessageQueue mq) {
+      return new XmlElementStack(doc, needsDebugData, mq);
     }
 
     private Factory() {}

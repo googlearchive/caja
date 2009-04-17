@@ -20,6 +20,109 @@ import java.util.Map;
 public class HtmlEntities {
   public static final PunctuationTrie<Integer> ENTITY_TRIE;
 
+  public static long decodeEntityAt(char[] chars, int offset, int limit) {
+    char ch = chars[offset];
+    if ('&' != ch) {
+      return ((offset + 1L) << 32) | ch;
+    }
+
+    int entityLimit = Math.min(limit, offset + 10);
+    int end = -1;
+    for (int i = offset + 1; i < entityLimit; ++i) {
+      if (';' == chars[i]) {
+        end = i;
+        break;
+      }
+    }
+    if (end < 0 || offset + 2 >= end) {
+      return ((offset + 1L) << 32) | '&';
+    }
+    // Now we know where the entity ends, and that there is at least one
+    // character in the entity name
+    char ch1 = chars[offset + 1];
+    char ch2 = chars[offset + 2];
+    int codepoint = -1;
+    if ('#' == ch1) {
+      // numeric entity
+      if ('x' == ch2 || 'X' == ch2) {
+        codepoint = 0;
+        // hex literal
+        digloop:
+        for (int i = offset + 3; i < end; ++i) {
+          char digit = chars[i];
+          switch (digit & 0xfff8) {
+            case 0x30: case 0x38: // ASCII 48-57 are '0'-'9'
+              int decDig = digit & 0xf;
+              if (decDig < 10) {
+                codepoint = (codepoint << 4) | decDig;
+              } else {
+                codepoint = -1;
+                break digloop;
+              }
+              break;
+            case 0x40: case 0x60: // ASCII 65-70 and 97-102 are 'A'-'Z' && 'a'-'z'
+              int hexDig = (digit & 0x7);
+              if (hexDig != 0 && hexDig < 7) {
+                codepoint = (codepoint << 4) | (hexDig + 9);
+              } else {
+                codepoint = -1;
+                break digloop;
+              }
+              break;
+            default:
+              codepoint = -1;
+              break digloop;
+          }
+        }
+      } else {
+        codepoint = 0;
+        // decimal literal
+        digloop:
+        for (int i = offset + 2; i < end; ++i) {
+          char digit = chars[i];
+          switch (digit & 0xfff8) {
+            case 0x30: case 0x38: // ASCII 48-57 are '0'-'9'
+              int decDig = digit & 0xf;
+              if (decDig < 10) {
+                codepoint = (codepoint * 10) | decDig;
+              } else {
+                codepoint = -1;
+                break digloop;
+              }
+              break;
+            default:
+              codepoint = -1;
+              break digloop;
+          }
+        }
+      }
+    } else {
+      PunctuationTrie<Integer> t = HtmlEntities.ENTITY_TRIE;
+      for (int i = offset + 1; i < end; ++i) {
+        char nameChar = chars[i];
+        t = t.lookup(nameChar);
+        if (t == null) { break; }
+      }
+      if (t == null) {
+        t = HtmlEntities.ENTITY_TRIE;
+        for (int i = offset + 1; i < end; ++i) {
+          char nameChar = chars[i];
+          if ('Z' >= nameChar && nameChar >= 'A') { nameChar |= 32; }
+          t = t.lookup(nameChar);
+          if (t == null) { break; }
+        }
+      }
+      if (t != null && t.isTerminal()) {
+        codepoint = t.getValue().intValue();
+      }
+    }
+    if (codepoint < 0) {
+      return ((offset + 1L) << 32) | '&';
+    } else {
+      return ((end + 1L) << 32) | codepoint;
+    }
+  }
+
   static {
     Map<String, Integer> entities = new HashMap<String, Integer>();
     // C0 Controls and Basic Latin

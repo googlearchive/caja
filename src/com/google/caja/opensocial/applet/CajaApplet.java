@@ -168,9 +168,9 @@ public class CajaApplet extends Applet {
           @Override
           protected RenderContext createRenderContext(
               TokenConsumer out, MessageContext mc) {
-            return new RenderContext(
-                mc, features.contains(Feature.ASCII_ONLY),
-                features.contains(Feature.EMBEDDABLE), out);
+            return new RenderContext(mc, out)
+                .withAsciiOnly(features.contains(Feature.ASCII_ONLY))
+                .withEmbeddable(features.contains(Feature.EMBEDDABLE));
           }
         };
     rw.setDebugMode(features.contains(Feature.DEBUG_SYMBOLS));
@@ -238,7 +238,8 @@ public class CajaApplet extends Applet {
     StringBuilder sb = new StringBuilder();
     JsMinimalPrinter pp = new JsMinimalPrinter(sb, null);
     (new ArrayConstructor(FilePosition.UNKNOWN, valueExprs)).render(
-        new RenderContext(new MessageContext(), true, true, pp));
+        new RenderContext(new MessageContext(), pp)
+        .withAsciiOnly(true).withEmbeddable(true));
     pp.noMoreTokens();
     return sb.toString();
   }

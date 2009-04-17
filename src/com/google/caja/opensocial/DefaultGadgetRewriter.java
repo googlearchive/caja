@@ -24,8 +24,8 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomParser;
-import com.google.caja.parser.html.DomTree;
 import com.google.caja.parser.js.CajoledModule;
+import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
@@ -42,6 +42,8 @@ import com.google.caja.util.ReadableReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
+
+import org.w3c.dom.DocumentFragment;
 
 /**
  * A default implementation of the Caja/OpenSocial gadget rewriter.
@@ -129,7 +131,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
       URI baseUri, CharProducer content, UriCallback callback)
       throws GadgetRewriteException {
 
-    DomTree.Fragment htmlContent;
+    DocumentFragment htmlContent;
     try {
       htmlContent = parseHtml(content, new InputSource(baseUri));
     } catch (ParseException ex) {
@@ -163,18 +165,18 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
     return rewriteContent(script.toString());
   }
 
-  private DomTree.Fragment parseHtml(CharProducer htmlContent, InputSource src)
+  private DocumentFragment parseHtml(CharProducer htmlContent, InputSource src)
       throws GadgetRewriteException, ParseException {
     DomParser p = new DomParser(new HtmlLexer(htmlContent), src, mq);
     if (p.getTokenQueue().isEmpty()) {
       mq.addMessage(OpenSocialMessageType.NO_CONTENT, src);
       throw new GadgetRewriteException("No content");
     }
-    return p.parseFragment();
+    return p.parseFragment(DomParser.makeDocument(null, null));
   }
 
   private PluginCompiler compileGadget(
-      DomTree.Fragment content, final URI baseUri, final UriCallback callback)
+      DocumentFragment content, final URI baseUri, final UriCallback callback)
       throws GadgetRewriteException {
     PluginMeta meta = new PluginMeta(
         new PluginEnvironment() {
@@ -218,7 +220,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
 
     PluginCompiler compiler = createPluginCompiler(meta, mq);
 
-    compiler.addInput(new AncestorChain<DomTree.Fragment>(content));
+    compiler.addInput(new AncestorChain<Dom>(new Dom(content)));
 
     if (!compiler.run()) {
       throw new GadgetRewriteException("Gadget has compile errors");
@@ -238,7 +240,7 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
 
   protected RenderContext createRenderContext(
       TokenConsumer tc, MessageContext mc) {
-    return new RenderContext(mc, true, true, tc);
+    return new RenderContext(mc, tc).withAsciiOnly(true).withEmbeddable(true);
   }
 
   protected PluginCompiler createPluginCompiler(

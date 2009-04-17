@@ -75,7 +75,7 @@ public final class RegexpLiteral extends Literal {
     } else {
       StringBuilder sb = new StringBuilder();
       sb.append('/');
-      Escaping.normalizeRegex(body, rc.isAsciiOnly(), rc.isParanoid(), sb);
+      Escaping.normalizeRegex(body, rc.isAsciiOnly(), rc.isEmbeddable(), sb);
       sb.append('/');
       sb.append(mods);
       out.consume(sb.toString());

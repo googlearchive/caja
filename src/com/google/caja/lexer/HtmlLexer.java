@@ -401,9 +401,10 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
    */
   private Token<HtmlTokenType> parseToken() {
     // TODO(mikesamuel): rewrite with a transition table or just use ANTLR
-    if (p.isEmpty()) { return null; }
     int start = p.getOffset();
     int limit = p.getLimit();
+    if (start == limit) { return null; }
+
     char[] buffer = p.getBuffer();
 
     int end = start + 1;
@@ -463,7 +464,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
       }
     } else {
       if (ch == '<') {
-        if (p.isEmpty()) {
+        if (end == limit) {
           type = HtmlTokenType.TEXT;
         } else {
           ch = buffer[end];

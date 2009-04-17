@@ -16,12 +16,7 @@ package com.google.caja.plugin;
 
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.lexer.HtmlTokenType;
-import com.google.caja.lexer.Token;
-import com.google.caja.parser.AncestorChain;
-import com.google.caja.parser.MutableParseTreeNode;
-import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.html.DomTree;
+import com.google.caja.parser.html.Nodes;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
@@ -30,9 +25,12 @@ import com.google.caja.util.Criterion;
 import com.google.caja.util.Name;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 
 /**
  * Rewrites an xhtml or html dom, removing potentially unsafe constructs that
@@ -56,18 +54,22 @@ public final class HtmlSanitizer {
   }
 
   /**
-   * @param htmlRoot the node to sanitize.
+   * @param t the node to sanitize.
    * @return true iff the htmlRoot can be safely used.  If false, explanatory
    *     messages were added to the MessageQueue passed to the constructor.
    */
-  public boolean sanitize(AncestorChain<? extends DomTree> htmlRoot) {
-    DomTree t = htmlRoot.node;
-
+  public boolean sanitize(Node t) {
     boolean valid = true;
-    switch (t.getType()) {
-    case TAGBEGIN:
+    switch (t.getNodeType()) {
+      case Node.DOCUMENT_FRAGMENT_NODE:
+        for (Node child : Nodes.childrenOf(t)) {
+          sanitize(child);
+        }
+        break;
+      case Node.ELEMENT_NODE:
       {
-        Name tagName = Name.html(t.getValue());
+        Element el = (Element) t;
+        Name tagName = Name.xml(el.getTagName());
         if (!schema.isElementAllowed(tagName)) {
           PluginMessageType msgType = schema.lookupElement(tagName) != null
               ? PluginMessageType.UNSAFE_TAG
@@ -76,8 +78,8 @@ public final class HtmlSanitizer {
           // Figure out what to do with the disallowed tag.  We can remove it
           // from the node, replace it with its children (fold), or error out.
           boolean ignore = false, fold = false;
-          if (htmlRoot.parent != null
-              && htmlRoot.parent.node instanceof MutableParseTreeNode) {
+          Node p = el.getParentNode();
+          if (p != null) {
             if (isElementIgnorable(tagName)) {
               ignore = true;
             } else if (HtmlSchema.isElementFoldable(tagName)) {
@@ -89,67 +91,71 @@ public final class HtmlSanitizer {
           MessageLevel msgLevel
               = ignore || fold ? MessageLevel.WARNING : msgType.getLevel();
           mq.getMessages().add(new Message(
-              msgType, msgLevel, t.getFilePosition(),
-              MessagePart.Factory.valueOf(t.getValue())));
+              msgType, msgLevel, Nodes.getFilePositionFor(el), tagName));
 
           if (ignore) {
-            ((MutableParseTreeNode) htmlRoot.parent.node).removeChild(t);
+            p.removeChild(el);
             return valid;  // Don't recurse to children if removed.
           } else {
             // According to
             // http://www.w3.org/TR/html401/appendix/notes.html the recommended
             // behavior is to try to render an unrecognized element's contents
-            return valid & foldElement(htmlRoot.cast(DomTree.Tag.class));
+            return valid & foldElement(el);
           }
         }
-        // Make sure that there is only one instance of an attribute
-        // with a given name.  Otherwise, passes that only inspect the
+        valid &= sanitizeAttrs(el);
+        // We know by construction of org.w3c.Element that there can only be
+        // one attribute with a given name.
+        // If that were not the case, passes that only inspect the
         // first occurrence of an attribute could be spoofed.
-        valid &= removeDuplicateAttributes((DomTree.Tag) t);
       }
       break;
-    case ATTRNAME:
-      DomTree.Tag tag = null;
-      Name tagName = Name.html("*");
-      if (htmlRoot.parent != null
-          && htmlRoot.parent.node instanceof DomTree.Tag) {
-        tag = htmlRoot.parent.cast(DomTree.Tag.class).node;
-        tagName = Name.html(tag.getValue());
-      }
-      DomTree.Attrib attrib = (DomTree.Attrib) t;
-      Name attrName = attrib.getAttribName();
-      HTML.Attribute a = schema.lookupAttribute(tagName, attrName);
-      if (null == a) {
-        mq.getMessages().add(new Message(
-            PluginMessageType.UNKNOWN_ATTRIBUTE, MessageLevel.WARNING,
-            t.getFilePosition(), attrName, tagName));
-        valid &= removeBadAttribute(tag, attrName);
-
-      } else if (!schema.isAttributeAllowed(tagName, attrName)) {
-        mq.addMessage(
-            PluginMessageType.UNSAFE_ATTRIBUTE,
-            t.getFilePosition(), attrName, tagName);
-        valid &= removeBadAttribute(tag, attrName);
-      } else {
-        Criterion<? super String> criteria = schema.getAttributeCriteria(
-            tagName, attrName);
-        if (!criteria.accept(attrib.getAttribValue())) {
-          mq.addMessage(
-              PluginMessageType.DISALLOWED_ATTRIBUTE_VALUE,
-              attrib.getAttribValueNode().getFilePosition(),
-              attrName, MessagePart.Factory.valueOf(attrib.getAttribValue()));
-          valid &= removeBadAttribute(tag, attrName);
-        }
-      }
-      break;
-    case TEXT: case CDATA: case IGNORABLE:
-    case ATTRVALUE: case COMMENT: case UNESCAPED:
+    case Node.TEXT_NODE: case Node.CDATA_SECTION_NODE:
       break;
     default:
-      throw new AssertionError(t.getType().toString());
+      throw new AssertionError(t.getNodeName());
     }
-    for (DomTree child : t.children()) {
-      valid &= sanitize(new AncestorChain<DomTree>(htmlRoot, child));
+    for (Node child : Nodes.childrenOf(t)) {
+      valid &= sanitize(child);
+    }
+    return valid;
+  }
+
+  private boolean sanitizeAttrs(Element el) {
+    boolean valid = true;
+    // Iterate in reverse so that removed attributes don't break iteration.
+    NamedNodeMap attrs = el.getAttributes();
+    for (int i = attrs.getLength(); --i >= 0;) {
+      valid &= sanitizeAttr(el, (Attr) attrs.item(i));
+    }
+    return valid;
+  }
+
+  private boolean sanitizeAttr(Element el, Attr attrib) {
+    boolean valid = true;
+    Name tagName = Name.xml(el.getTagName());
+    Name attrName = Name.xml(attrib.getNodeName());
+    HTML.Attribute a = schema.lookupAttribute(tagName, attrName);
+    if (null == a) {
+      mq.getMessages().add(new Message(
+          PluginMessageType.UNKNOWN_ATTRIBUTE, MessageLevel.WARNING,
+          Nodes.getFilePositionFor(attrib), attrName, tagName));
+      valid &= removeBadAttribute(el, attrName);
+    } else if (!schema.isAttributeAllowed(tagName, attrName)) {
+      mq.addMessage(
+          PluginMessageType.UNSAFE_ATTRIBUTE,
+          Nodes.getFilePositionFor(attrib), attrName, tagName);
+      valid &= removeBadAttribute(el, attrName);
+    } else {
+      Criterion<? super String> criteria = schema.getAttributeCriteria(
+          tagName, attrName);
+      if (!criteria.accept(attrib.getNodeValue())) {
+        mq.addMessage(
+            PluginMessageType.DISALLOWED_ATTRIBUTE_VALUE,
+            Nodes.getFilePositionForValue(attrib),
+            attrName, MessagePart.Factory.valueOf(attrib.getNodeValue()));
+        valid &= removeBadAttribute(el, attrName);
+      }
     }
     return valid;
   }
@@ -182,89 +188,45 @@ public final class HtmlSanitizer {
    * @return true iff the el's children are transitively valid, and if they
    *     could all be folded into the parent.
    */
-  private boolean foldElement(AncestorChain<DomTree.Tag> el) {
+  private boolean foldElement(Element el) {
     boolean valid = true;
 
     // Recurse to children to ensure that all nodes are processed.
-    for (DomTree child : el.node.children()) {
-      valid &= sanitize(new AncestorChain<DomTree>(el, child));
+    valid &= sanitizeAttrs(el);
+    for (Node child : Nodes.childrenOf(el)) { valid &= sanitize(child); }
+
+    for (Attr a : Nodes.attributesOf(el)) {
+      mq.addMessage(
+          PluginMessageType.CANNOT_FOLD_ATTRIBUTE, Nodes.getFilePositionFor(a),
+          MessagePart.Factory.valueOf(a.getNodeName()),
+          MessagePart.Factory.valueOf(el.getTagName()));
     }
 
     // Pick the subset of children to fold in.
-    List<DomTree> foldedChildren = new ArrayList<DomTree>();
-    for (DomTree child : el.node.children()) {
-      switch (child.getType()) {
-        case ATTRNAME:  // Can't fold attributes cross element.
-          mq.addMessage(
-              PluginMessageType.CANNOT_FOLD_ATTRIBUTE, child.getFilePosition(),
-              ((DomTree.Attrib) child).getAttribName(),
-              el.node.getTagName());
-          break;
-        case TAGBEGIN: case TEXT:
+    List<Node> foldedChildren = new ArrayList<Node>();
+    for (Node child : Nodes.childrenOf(el)) {
+      switch (child.getNodeType()) {
+        case Node.ELEMENT_NODE: case Node.TEXT_NODE:
+        case Node.CDATA_SECTION_NODE:
           foldedChildren.add(child);
-          break;
-        case UNESCAPED: case CDATA:  // Convert to a text node.
-          foldedChildren.add(new DomTree.Text(
-              Token.instance(child.getValue(), HtmlTokenType.TEXT,
-                             child.getFilePosition())));
           break;
         default:
           // Ignore.
       }
     }
 
-    // Rebuild the sibling list, substituting foldedChildren for any occurences
+    // Rebuild the sibling list, substituting foldedChildren for any occurrences
     // of el.node.
-    List<? extends ParseTreeNode> originalSiblings = el.parent.node.children();
-
-    MutableParseTreeNode.Mutation mut = el.parent.cast(
-        MutableParseTreeNode.class).node.createMutation();
-    for (ParseTreeNode sibling : originalSiblings) {
-      mut.removeChild(sibling);
-    }
-
-    for (ParseTreeNode sibling : originalSiblings) {
-      // Might appear more than once.
-      if (sibling != el.node) {
-        mut.appendChild(sibling);
-      } else {
-        mut.appendChildren(foldedChildren);
-      }
-    }
-    mut.execute();
+    Node next = el.getNextSibling();
+    Node parent = el.getParentNode();
+    parent.removeChild(el);
+    for (Node n : foldedChildren) { parent.insertBefore(n, next); }
 
     return valid;
   }
 
-  private boolean removeBadAttribute(DomTree.Tag el, Name attrName) {
-    MutableParseTreeNode.Mutation mut
-        = ((MutableParseTreeNode) el).createMutation();
-    for (DomTree.Attrib attr : el.getAttributeNodes()) {
-      Name name = attr.getAttribName();
-      if (attrName.equals(name)) {
-        mut.removeChild(attr);
-      }
-    }
-    mut.execute();
+  private boolean removeBadAttribute(Element el, Name attrName) {
+    el.removeAttribute(attrName.getCanonicalForm());
     return true;
-  }
-
-  private boolean removeDuplicateAttributes(DomTree.Tag el) {
-    Map<Name, DomTree.Attrib> byName = new HashMap<Name, DomTree.Attrib>();
-    boolean valid = true;
-    for (DomTree.Attrib attr : el.getAttributeNodes()) {
-      Name name = attr.getAttribName();
-      DomTree.Attrib orig = byName.get(name);
-      if (orig == null) {
-        byName.put(name, attr);
-      } else {
-        mq.addMessage(
-            PluginMessageType.DUPLICATE_ATTRIBUTE, attr.getFilePosition(),
-            name, orig.getFilePosition());
-        // Empirically, browsers use the first occurrence of an attribute.
-        el.removeChild(attr);
-      }
-    }
-    return valid;
   }
 }

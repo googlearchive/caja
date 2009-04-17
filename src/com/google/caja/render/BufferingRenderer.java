@@ -162,7 +162,7 @@ abstract class BufferingRenderer implements TokenConsumer {
    * Generates a list of output tokens consisting of non-whitespace tokens,
    * space tokens ({@code " "}) and newline tokens ({@code '\n'} followed by
    * any number of spaces).
-   * @param tokens a heterogenous array containing {@code String} tokens and
+   * @param tokens a heterogeneous array containing {@code String} tokens and
    *   {@code FilePosition} marks.
    * @return the strings in tokens in order with newline and space tokens
    *   inserted as appropriate.

@@ -177,8 +177,8 @@ public class CssTreeTest extends CajaTestCase {
     CssTree.StyleSheet stylesheet = css(fromResource(inputFile));
     StringBuilder sb = new StringBuilder();
     CssPrettyPrinter csspp = new CssPrettyPrinter(sb, null);
-    RenderContext rc = new RenderContext(
-        new MessageContext(), true, paranoid, csspp);
+    RenderContext rc = new RenderContext(new MessageContext(), csspp)
+        .withAsciiOnly(true).withEmbeddable(paranoid);
     stylesheet.render(rc);
     assertEquals(golden.trim(), sb.toString().trim());
   }
@@ -189,7 +189,7 @@ public class CssTreeTest extends CajaTestCase {
 
     StringBuilder sb = new StringBuilder();
     CssPrettyPrinter csspp = new CssPrettyPrinter(sb, null);
-    RenderContext rc = new RenderContext(mc, true, false, csspp);
+    RenderContext rc = new RenderContext(mc, csspp).withAsciiOnly(true);
     stylesheet.render(rc);
     csspp.noMoreTokens();
     String actual = sb.toString();

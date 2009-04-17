@@ -15,6 +15,7 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
@@ -104,7 +105,7 @@ public abstract class Rewriter {
           }
           FilePosition resultPos = result.getFilePosition();
           if (result instanceof AbstractParseTreeNode
-              && FilePosition.UNKNOWN.equals(resultPos)) {
+              && InputSource.UNKNOWN.equals(resultPos.source())) {
             ((AbstractParseTreeNode) result)
                 .setFilePosition(node.getFilePosition());
           }
