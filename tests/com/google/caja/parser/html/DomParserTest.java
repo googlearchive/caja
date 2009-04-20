@@ -2067,6 +2067,7 @@ public class DomParserTest extends CajaTestCase {
       lexer.setTreatedAsXml(false);
       TokenQueue<HtmlTokenType> tq = new TokenQueue<HtmlTokenType>(lexer, is);
       DomParser p = new DomParser(tq, false, mq);
+      p.setNeedsDebugData(false);
       p.parseDocument();
     }
     return (int) ((((double) (System.nanoTime() - t0)) / nRuns) / 1e3);
