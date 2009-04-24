@@ -25,7 +25,7 @@
     <style type="text/css">
       body { font-family: arial,sans-serif,helvetica }
       p,td,span,input,label { font-family: arial,sans-serif, helvetica;
-                                        font-size:12px }
+                              font-size:12px }
 
       #headerDiv {
         padding: 10px;
@@ -35,7 +35,7 @@
         font-size: larger;
         font-weight: bold;
       }
-      
+
       .subTitle {
         font-size: smaller;
         float: right;
@@ -128,7 +128,7 @@
       <form id="cajolerForm" onsubmit="return false">
       <table id="testbed-ui-table"><tr valign="top">
       <td>
-        <input name="urlval" type="text" size="80" value="http://..." 
+        <input name="urlval" type="text" size="80" value="http://..."
          onFocus="if(this.value=='http://...') value='';"
          onBlur="if(this.value=='') value='http://...';" class="urlsource">
         <button id="loadurl" type="button" onclick="loadurl(this.form)"
@@ -166,16 +166,16 @@
 
         <label for="eval-results">Eval Results
         <div id="eval-results" class="variableoutput"></div><br />
-        
+
         <label for="messages">Compile Warnings and Errors
         <pre id="messages" class="prettyprint variableoutput"></pre><br />
-        
+
         <label for="runtime-messages">Runtime Warnings and Errors
-        <pre id="console-results" class="variableoutput"></pre><br />      
-        
+        <pre id="console-results" class="variableoutput"></pre><br />
+
         <label for="output">Cajoled Source
         <div id="output" class="variableoutput"></div><br />
-        
+
         <label for="cajita-stacks">Cajita Stacks
         <div id="cajita-stacks" class="variableoutput" style="display:none">
           <hr>

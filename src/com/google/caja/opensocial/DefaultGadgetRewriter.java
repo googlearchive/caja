@@ -24,6 +24,7 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.PluginCompiler;
@@ -43,14 +44,17 @@ import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
 
+import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
+import org.w3c.dom.Element;
 
 /**
  * A default implementation of the Caja/OpenSocial gadget rewriter.
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
-public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewriter {
+public class DefaultGadgetRewriter
+    implements GadgetRewriter, GadgetContentRewriter {
   private final MessageQueue mq;
   private final BuildInfo buildInfo;
   private CssSchema cssSchema;
@@ -81,7 +85,9 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
   /**
    * @param valijaMode whether to treat the source as valija.
    */
-  public void setValijaMode(boolean valijaMode) { this.valijaMode = valijaMode; }
+  public void setValijaMode(boolean valijaMode) {
+    this.valijaMode = valijaMode;
+  }
 
   public void rewrite(ExternalReference gadgetRef, UriCallback uriCallback,
                       String view, Appendable output)
@@ -98,8 +104,9 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
         output);
   }
 
-  public void rewrite(URI baseUri, CharProducer gadgetSpec, UriCallback uriCallback,
-                      String view, Appendable output)
+  public void rewrite(
+      URI baseUri, CharProducer gadgetSpec, UriCallback uriCallback,
+      String view, Appendable output)
       throws GadgetRewriteException, IOException, ParseException {
     GadgetParser parser = new GadgetParser();
     GadgetSpec spec = parser.parse(
@@ -230,7 +237,11 @@ public class DefaultGadgetRewriter implements GadgetRewriter, GadgetContentRewri
   }
 
   private String rewriteContent(String script) {
-    return "<script type=\"text/javascript\">" + script + "</script>";
+    Document doc = DomParser.makeDocument(null, null);
+    Element scriptElement = doc.createElement("script");
+    scriptElement.setAttribute("type", "text/javascript");
+    scriptElement.appendChild(doc.createTextNode(script));
+    return Nodes.render(scriptElement);
   }
 
   private CharProducer readReadable(Readable input, InputSource src)

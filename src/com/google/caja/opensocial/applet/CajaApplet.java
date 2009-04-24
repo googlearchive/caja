@@ -150,7 +150,8 @@ public class CajaApplet extends Applet {
                               final Set<Feature> features) {
     // TODO(mikesamuel): If the text starts with a <base> tag, maybe use that
     // and white it out to preserve file positions.
-    String url = standAlone ? "http://www.example.com/" : getDocumentBase().toString();
+    String url = standAlone
+        ? "http://www.example.com/" : getDocumentBase().toString();
     URI src = URI.create(url);
     InputSource is = new InputSource(src);
 
