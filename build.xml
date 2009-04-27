@@ -820,6 +820,7 @@
         <include name="testbed.jar"/>
         <include name="htmlparser.jar"/>
         <include name="json_simple.jar"/>
+        <include name="xercesImpl.jar"/>
       </fileset>
     </copy>
 
