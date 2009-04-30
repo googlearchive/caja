@@ -25,6 +25,7 @@ import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssPropertySignature;
 import com.google.caja.parser.js.ArrayConstructor;
+import com.google.caja.parser.js.BooleanLiteral;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.IntegerLiteral;
@@ -147,6 +148,25 @@ import java.util.Set;
  */
 public class CssPropertyPatterns {
   private final CssSchema schema;
+
+  /**
+   * Set of properties accessible on computed style.
+   * This list is a conservative one compiled by looking at what prototype.js
+   * needs to be able to do visibility, containment, and layout calculations.
+   * If expanded, it should not allow an attacker to probe the user's history
+   * as described at https://bugzilla.mozilla.org/show_bug.cgi?id=147777 .
+   * This list must not contain anything in
+   * CssRewriter.VISITED_PROPERTY_WHITELIST.
+   * <p>
+   * This list should not contain any properties that differ between visited and
+   * unvisited links in the container.
+   */
+  public static Set<Name> COMPUTED_STYLE_WHITELIST = new HashSet<Name>(
+      Arrays.asList(
+          Name.css("display"), Name.css("filter"), Name.css("float"),
+          Name.css("height"), Name.css("left"), Name.css("opacity"),
+          Name.css("overflow"), Name.css("position"), Name.css("right"),
+          Name.css("top"), Name.css("visibility"), Name.css("width")));
 
   public CssPropertyPatterns(CssSchema schema) {
     this.schema = schema;
@@ -558,17 +578,34 @@ public class CssPropertyPatterns {
         altNames.appendChild(StringLiteral.valueOf(unk, altDom2Property));
       }
     }
+
+    List<Pair<Literal, Expression>> computedStyleWhitelistEls
+        = new ArrayList<Pair<Literal, Expression>>();
+    for (Name propertyName : COMPUTED_STYLE_WHITELIST) {
+      computedStyleWhitelistEls.add(Pair.<Literal, Expression>pair(
+          StringLiteral.valueOf(unk, propertyName.getCanonicalForm()),
+          new BooleanLiteral(unk, true)));
+    }
+
     ObjectConstructor cssPropConstructor = new ObjectConstructor(unk, members);
     ObjectConstructor alternateNames = new ObjectConstructor(unk, alternates);
+    ObjectConstructor computedStyleWhitelist
+        = new ObjectConstructor(unk, computedStyleWhitelistEls);
 
     ParseTreeNode js = QuasiBuilder.substV(
-        "var css = { properties: (function () {"
-        + "  @constantPoolDecl?;"
-        + "  return @cssPropConstructor;"
-        + "})(), alternates: @alternates };",
+        ""
+        + "var css = {"
+        + "  properties: (function () {"
+        + "    @constantPoolDecl?;"
+        + "    return @cssPropConstructor;"
+        + "  })(),"
+        + "  alternates: @alternates,"
+        + "  COMPUTED_STYLE_WHITELIST: @computedStyleWhitelist"
+        + "};",
         "constantPoolDecl", constantPoolDecl,
         "cssPropConstructor", cssPropConstructor,
-        "alternates", alternateNames);
+        "alternates", alternateNames,
+        "computedStyleWhitelist", computedStyleWhitelist);
     TokenConsumer tc = js.makeRenderer(out, null);
     js.render(new RenderContext(new MessageContext(), tc));
     tc.consume(";");

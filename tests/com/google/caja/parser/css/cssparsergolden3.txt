@@ -3,7 +3,7 @@ StyleSheet
     Selector
       SimpleSelector
         IdLiteral : #xxx
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -14,12 +14,12 @@ StyleSheet
               Operation : EQUAL
               Term
                 QuantityLiteral : 50
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : margin
       Expr
         Term : NEGATION
@@ -31,7 +31,7 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : margin
       Expr
         Term : NEGATION

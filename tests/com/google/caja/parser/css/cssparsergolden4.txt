@@ -3,7 +3,7 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : content
       Expr
         Term

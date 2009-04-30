@@ -855,13 +855,13 @@
       "dom2property": "wordSpacing" },
 
     { "key": "z-index",
-      "signature": "auto | <integer:0,> | inherit",
+      "signature": "auto | <integer> | inherit",
       "default": "auto",
       "appliesTo": { "include": ["positioned"] },
       "inherited": false,
       "mediaGroups": ["visual"],
-      "dom2property": "zIndex" },
-
+      "dom2property": "zIndex",
+      "source": "http://www.w3.org/TR/css3-box/#stacking" },
 
     { "key": "<absolute-size>",
       "see": "http://www.w3.org/TR/CSS21/fonts.html#propdef-font-size",
@@ -877,7 +877,7 @@
 
     { "key": "<color>",
       "see": "http://www.w3.org/TR/REC-CSS2/syndata.html#value-def-color and http://www.w3.org/TR/REC-CSS2/ui.html#system-colors",
-      "signature": "<hex-color>|aqua|black|blue|fuchsia|gray|green|lime|maroon|navy|olive|purple|red|silver|teal|white|yellow|rgb(<red>,<green>,<blue>)" },
+      "signature": "<hex-color>|aqua|black|blue|fuchsia|gray|green|lime|maroon|navy|olive|orange|purple|red|silver|teal|white|yellow|rgb(<red>,<green>,<blue>)" },
 
     { "key": "<generic-family>",
       "see": "http://www.w3.org/TR/CSS21/fonts.html#value-def-family-name",
@@ -940,8 +940,10 @@
       "description": [
           "Space separated words that should be quoted.",
           "The validator contains a separate pass that finds adjacent loose",
-          " words and turns them into a single quoted term"],
-      "signature": "<unreserved-word>+" }
+          " words and turns them into a single quoted term.",
+          "Subsequent words need not be unreserved since a 'font-family'",
+          " cannot be followed directly by a reserved keyword."],
+      "signature": "<unreserved-word> <quotable-word>*" }
 
     ]
 }

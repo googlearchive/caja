@@ -723,26 +723,28 @@ public class HtmlCompiler {
       DynamicCssReceiver out) {
     assert esc == JsWriter.Esc.NONE || esc == JsWriter.Esc.HTML_ATTRIB : esc;
 
-    for (CssTree child : decls.children()) {
-      CssTree.Declaration decl = (CssTree.Declaration) child;
-      // Render the style to a canonical form with consistent escaping
-      // conventions, so that we can avoid browser bugs.
-      String css;
-      {
-        StringBuilder cssBuf = new StringBuilder();
-        TokenConsumer tc = decl.makeRenderer(cssBuf, null);
-        decl.getExpr().render(new RenderContext(new MessageContext(), tc));
-        tc.noMoreTokens();
+    for (CssTree.Declaration decl : decls.children()) {
+      if (decl instanceof CssTree.PropertyDeclaration) {
+        CssTree.PropertyDeclaration pdecl = (CssTree.PropertyDeclaration) decl;
+        // Render the style to a canonical form with consistent escaping
+        // conventions, so that we can avoid browser bugs.
+        String css;
+        {
+          StringBuilder cssBuf = new StringBuilder();
+          TokenConsumer tc = decl.makeRenderer(cssBuf, null);
+          pdecl.getExpr().render(new RenderContext(new MessageContext(), tc));
+          tc.noMoreTokens();
 
-        // Contains the rendered CSS with ${\0###\0} placeholders.
-        // Split around the placeholders, parse the javascript, escape the
-        // literal text, and emit the appropriate javascript.
-        css = cssBuf.toString();
+          // Contains the rendered CSS with ${\0###\0} placeholders.
+          // Split around the placeholders, parse the javascript, escape the
+          // literal text, and emit the appropriate javascript.
+          css = cssBuf.toString();
+        }
+
+        out.property(pdecl.getProperty());
+        out.rawCss(pdecl.getFilePosition(), css);
+        if (pdecl.getPrio() != null) { out.priority(pdecl.getPrio()); }
       }
-
-      out.property(decl.getProperty());
-      out.rawCss(decl.getFilePosition(), css);
-      if (decl.getPrio() != null) { out.priority(decl.getPrio()); }
     }
   }
 }

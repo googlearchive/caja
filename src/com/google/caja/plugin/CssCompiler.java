@@ -125,8 +125,10 @@ public final class CssCompiler {
             CssTree.SimpleSelector restrictSel = new CssTree.SimpleSelector(
                 pos, Collections.singletonList(restrictClass));
 
-            sel.insertBefore(op, baseSelector);
-            sel.insertBefore(restrictSel, op);
+            sel.createMutation()
+               .insertBefore(op, baseSelector)
+               .insertBefore(restrictSel, op)
+               .execute();
             return false;
           }
         }, null);

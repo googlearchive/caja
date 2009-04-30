@@ -111,16 +111,23 @@ public class CssParserTest extends CajaTestCase {
     assertMessagesLessSevereThan(MessageLevel.WARNING);
   }
 
+  public void testUserAgentHacks() throws Exception {
+    runTestCssParser(
+        "cssparserinput-uahacks.css", "cssparsergolden-uahacks.txt", true);
+    assertMessagesLessSevereThan(MessageLevel.WARNING);
+  }
+
   public void testFilterFilePositions() throws Exception {
     CssTree.DeclarationGroup ss = cssDecls(
         // Character in file indices used in assertFilePosition below.
         //          0        1         2         3         4         5
-        //          123456789012345678901234567890123456789012345678901234567890
+        //          1234567890123456789012345678901234567890123456789012345
         fromString("filter:progid:foo.bar.baz(a=1) progid:foo.bar.baz(a=2)"));
     assertMessagesLessSevereThan(MessageLevel.WARNING);
 
     assertEquals(1, ss.children().size());
-    CssTree.Declaration d = ss.children().get(0);
+    CssTree.PropertyDeclaration d
+        = (CssTree.PropertyDeclaration) ss.children().get(0);
     assertFilePosition(1, 55, d);
     CssTree.Property p = d.getProperty();
     assertFilePosition(1, 7, p);

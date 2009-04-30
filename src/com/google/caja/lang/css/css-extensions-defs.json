@@ -20,11 +20,20 @@
     { "key": "-moz-border-radius",
       "as": "border-radius",
       "source": "http://www.the-art-of-web.com/css/border-radius/",
-      "TODO": "dom2property" },
+      "dom2property": "MozBorderRadius" },
     { "key": "-webkit-border-radius",
       "as": "border-radius",
       "source": "http://www.the-art-of-web.com/css/border-radius/",
-      "TODO": "dom2property" },
+      "dom2property": "WebkitBorderRadius" },
+
+    { "key": "content",
+      "signature": " \"\" | \" \" | \".\" ",
+      "default": " \"\" ",
+      "description": [
+          "Allow space and dot since YUI frequently uses those.",
+          "Allow the empty string since it is the default value."
+          ]
+    },
 
     { "key": "cursor",
       "signature": "[ [<uri> ,]* [ auto | crosshair | default | pointer | move | e-resize | ne-resize | nw-resize | n-resize | se-resize | sw-resize | s-resize | w-resize | text | wait | help | progress | all-scroll | col-resize | hand | no-drop | not-allowed | row-resize | vertical-text ] ] | inherit",
@@ -34,6 +43,14 @@
       "mediaGroups": ["visual", "interactive"],
       "dom2property": "cursor",
       "source": "http://www.quirksmode.org/css/cursor.html" },
+
+    { "key": "display",
+      "signature": "inline | block | list-item | run-in | inline-block | table | inline-table | table-row-group | table-header-group | table-footer-group | table-row | table-column-group | table-column | table-cell | table-caption | none | inherit | -moz-inline-box | -moz-inline-stack",
+      "default": "inline",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": "*",
+      "dom2property": "display" },
 
     { "key": "filter",
       "signature": "[ <ie-filter-opacity> | <prog-id> ]+",
@@ -51,6 +68,16 @@
       "source": "http://msdn2.microsoft.com/en-us/library/ms532910(VS.85).aspx"
     },
 
+    { "key": "font-stretch",
+      "signature": "normal | wider | narrower | ultra-condensed | extra-condensed | condensed | semi-condensed | semi-expanded | expanded | extra-expanded | ultra-expanded",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "fontStretch",
+      "source": "http://www.w3.org/TR/css3-fonts/#font-stretch"
+    },
+
     { "key": "opacity",
       "signature": "<alphavalue> | inherit",
       "default": "1",
@@ -59,10 +86,68 @@
       "mediaGroups": ["visual"],
       "dom2property": "opacity",
       "source": "http://www.w3.org/TR/css3-color/#transparency" },
+    { "key": "-moz-opacity",
+      "signature": "<alphavalue> | inherit",
+      "default": "1",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "MozOpacity",
+      "source": "https://developer.mozilla.org/en/CSS/opacity" },
     { "key": "<alphavalue>",
       "signature": "<number:0,1>",
       "source": "http://www.w3.org/TR/css3-color/#alphavaluedt"
     },
+
+    { "key": "-moz-outline",
+      "as": "outline",
+      "dom2property": "MozOutline",
+      "source": "https://developer.mozilla.org/en/CSS/-moz-outline"
+    },
+    { "key": "-moz-outline-color",
+      "as": "outline-color",
+      "dom2property": "MozOutlineColor" },
+    { "key": "-moz-outline-style",
+      "as": "outline-style",
+      "dom2property": "MozOutlineStyle" },
+    { "key": "-moz-outline-width",
+      "as": "outline-width",
+      "dom2property": "MozOutlineWidth" },
+
+    { "key": "overflow-x",
+      "signature": "visible | hidden | scroll | auto | no-display | no-content",
+      "default": "visible",
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "overflowX",
+      "source": "http://www.w3.org/TR/css3-box/#overflow"
+    },
+    { "key": "overflow-y", "as": "overflow-x", "dom2property": "overflowY" },
+
+    { "key": "text-overflow",
+      "signature": "clip | ellipsis",
+      "default": null,
+      "appliesTo": "*",
+      "inherited": false,
+      "mediaGroups": ["visual"],
+      "dom2property": "textOverflow",
+      "source": "http://www.css3.com/css-text-overflow/" },
+
+    { "key": "-o-text-overflow",
+      "as": "text-overflow",
+      "dom2property": "OTextOverflow" },
+
+    { "key": "text-shadow",
+      "signature": "none | [ <shadow>, ]* <shadow>",
+      "default": "none",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "textShadow",
+      "source": "http://www.w3.org/TR/css3-text/#text-shadow" },
+    { "key": "<shadow>",
+      "signature": "[ <color> <length> <length> <length:0,>? | <length> <length> <length:0,>? <color>? ]" },
 
     { "key": "text-wrap",
       "signature": "normal | unrestricted | none | suppress",
@@ -72,6 +157,16 @@
       "mediaGroups": ["visual"],
       "dom2property": "textWrap",
       "source": "http://www.w3.org/TR/css3-text/#text-wrap" },
+
+    { "key": "white-space",
+      "signature": "normal | pre | nowrap | pre-wrap | pre-line | inherit | -o-pre-wrap | -moz-pre-wrap | -pre-wrap",
+      "default": "normal",
+      "appliesTo": "*",
+      "inherited": true,
+      "mediaGroups": ["visual"],
+      "dom2property": "whiteSpace",
+      "source": "http://www.w3.org/TR/2007/WD-css3-text-20070306/#white-space"
+    },
 
     { "key": "word-wrap",
       "signature": "normal | break-word",
@@ -91,18 +186,35 @@
       "dom2property": "zoom",
       "source": "http://msdn2.microsoft.com/en-us/library/ms531189(VS.85).aspx"
     },
-    
+
     { "key": "<prog-id>",
-      "signature": "<prog-id-alpha>",
+      "signature": "<prog-id-alpha>|<prog-id-alpha-image-loader>",
       "source": "http://msdn.microsoft.com/en-us/library/ms532853(VS.85).aspx"
     },
-    
+
     { "key": "<prog-id-alpha>",
       "signature":
           "progid:DXImageTransform.Microsoft.Alpha(opacity=<filter-opacity>)",
       "source": "http://msdn.microsoft.com/en-us/library/ms532967(VS.85).aspx"
-    }
-    
+    },
+
+    { "key": "<prog-id-alpha-image-loader>",
+      "signature":
+          "progid:DXImageTransform.Microsoft.AlphaImageLoader(src=<page-url>, sizingMethod=<sizing-method>)",
+      "source": "http://msdn.microsoft.com/en-us/library/ms532969(VS.85).aspx"
+    },
+
+    { "key": "<sizing-method>",
+      "signature": "\"crop\" | \"image\" | \"scale\"",
+      "default": "image",
+      "source": "http://msdn.microsoft.com/en-us/library/ms532920(VS.85).aspx"
+    },
+
+    { "key": "<page-url>",
+      "signature": "<uri>",
+      "description": "A URI that is resolved relative to the base URL of the document containing the styled node, not the containing stylesheet."
+    },
+
     { "key": "<filter-opacity>",
       "signature": "<number:0,100>",
       "default": "0",

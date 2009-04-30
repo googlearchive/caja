@@ -67,7 +67,7 @@ public class CssSchemaTest extends TestCase {
 
   public void testIsPropertyAllowed() {
     assertTrue(cssSchema.isPropertyAllowed(Name.css("color")));
-    assertFalse(cssSchema.isPropertyAllowed(Name.css("content")));
+    assertFalse(cssSchema.isPropertyAllowed(Name.css("expression")));
   }
 
   public void testIsFunctionAllowed() {

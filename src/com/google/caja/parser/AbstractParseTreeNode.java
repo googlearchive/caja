@@ -18,6 +18,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Token;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
+import com.google.caja.util.Join;
 import com.google.caja.util.SyntheticAttributeKey;
 import com.google.caja.util.SyntheticAttributes;
 
@@ -150,12 +151,9 @@ public abstract class AbstractParseTreeNode
     }
   }
 
-  protected void formatSelf(MessageContext context, Appendable out)
+  protected void formatSelf(MessageContext context, int depth, Appendable out)
       throws IOException {
-    String cn = this.getClass().getName();
-    cn = cn.substring(cn.lastIndexOf(".") + 1);
-    cn = cn.substring(cn.lastIndexOf("$") + 1);
-    out.append(cn);
+    out.append(this.getClass().getSimpleName());
     Object value = getValue();
     if (null != value) {
       out.append(" : ");
@@ -171,7 +169,24 @@ public abstract class AbstractParseTreeNode
           out.append(" ; ").append(k.getName()).append('=');
           Object attribValue = attributes.get(k);
           if (attribValue instanceof MessagePart) {
-            ((MessagePart) attribValue).format(context, out);
+            StringBuilder sb = new StringBuilder();
+            ((MessagePart) attribValue).format(context, sb);
+            String[] lines = sb.toString().split("\n");
+            String keyValue;
+            if (lines.length == 1) {
+              keyValue = lines[0];
+            } else {
+              sb.setLength(0);
+              sb.append("\n    ");
+              for (int i = depth; --i >= 0;) { sb.append("  "); }
+              String prefix = sb.toString();
+              sb.setLength(0);
+              sb.append('(');
+              sb.append(Join.join(prefix, lines));
+              sb.append(')');
+              keyValue = sb.toString();
+            }
+            out.append(keyValue);
           } else {
             out.append(String.valueOf(attribValue));
           }
@@ -194,7 +209,7 @@ public abstract class AbstractParseTreeNode
       MessageContext context, int depth, Appendable out)
       throws IOException {
     for (int d = depth; --d >= 0;) { out.append("  "); }
-    formatSelf(context, out);
+    formatSelf(context, depth, out);
     for (ParseTreeNode child : children()) {
       out.append("\n");
       child.formatTree(context, depth + 1, out);
@@ -205,7 +220,7 @@ public abstract class AbstractParseTreeNode
   public String toString() {
     StringBuilder sb = new StringBuilder();
     try {
-      formatSelf(new MessageContext(), sb);
+      formatSelf(new MessageContext(), 0, sb);
     } catch (IOException ex) {
       throw new AssertionError("StringBuilders shouldn't throw IOExceptions");
     }
@@ -222,25 +237,6 @@ public abstract class AbstractParseTreeNode
       throw new AssertionError("StringBuilders shouldn't throw IOExceptions");
     }
     return sb.toString();
-  }
-
-  @Deprecated
-  public final boolean equivalentTo(ParseTreeNode that) {
-    Object valueA = this.getValue(), valueB = that.getValue();
-    if (!(null != valueA ? valueA.equals(valueB) : null == valueB)) {
-      return false;
-    }
-
-    List<? extends ParseTreeNode> aChildren = this.children();
-    List<? extends ParseTreeNode> bChildren = that.children();
-    int n = aChildren.size();
-    if (n != bChildren.size()) { return false; }
-    while (--n >= 0) {
-      if (!aChildren.get(n).equals(bChildren.get(n))) {
-        return false;
-      }
-    }
-    return true;
   }
 
   private enum TraversalType { PREORDER, POSTORDER; }
@@ -269,7 +265,7 @@ public abstract class AbstractParseTreeNode
                 childrenCache.getImmutableFacet().get(k));
             if (j >= 0) { break; }
           }
-          if (j >= 0 && j < this.children.getImmutableFacet().size()) {
+          if (j >= 0 && j + 1 < this.children.getImmutableFacet().size()) {
             ++j;  // Add one since we don't want to reprocess childrenCache[k].
           } else {
             // Check if children from the cached list that we haven't

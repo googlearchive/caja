@@ -9,7 +9,7 @@ p { width:100%; filter:
     progid:DXImageTransform.Microsoft.Blur(pixelradius=2)
     progid:DXImageTransform.Microsoft.Wheel(duration=3); }
 
- 
+
 /* ************************** Procedural Surfaces ************************** */
 
 /* =========================== AlphaImageLoader ============================ */
@@ -44,8 +44,8 @@ p { filter:progid:DXImageTransform.Microsoft.Chroma(color='yellow'),
 /* N/A */
 
 /* =============================== DropShadow ============================== */
-p { cursor:hand;height:160px; padding:10px; font:bold 13pt verdana;  
-    filter:progid:DXImageTransform.Microsoft.dropshadow(OffX=5, OffY=5, 
+p { cursor:hand;height:160px; padding:10px; font:bold 13pt verdana;
+    filter:progid:DXImageTransform.Microsoft.dropshadow(OffX=5, OffY=5,
                                                Color='gray', Positive='true') }
 
 /* ================================= Emboss ================================ */

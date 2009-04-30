@@ -42,7 +42,7 @@ import java.util.List;
 
 /**
  * Produces a parse tree from CSS2.  This parses the CSS2 grammar plus
- * an {@link CssTree.ProgId IE specific extension}.
+ * some browser-specific extensions described below.
  *
  * <h2>Error Recovery</h2>
  * This class runs in two modes: tolerant where unrecognized constructs are
@@ -92,24 +92,24 @@ import java.util.List;
  * grammar into these.
  * <ul>
  *   <li>list item &mdash; a minimal run of tokens that does not include a
- *    comma, semicolon, curly bracket, or symbol.
+ *       comma, semicolon, curly bracket, or symbol.
  *   <li>inner chunk &mdash; a minimal run of tokens that does not contain a
- *   symbol or a close curly bracket or semicolon outside a balanced curly
- *   bracket block.
+ *       symbol or a close curly bracket or semicolon outside a balanced curly
+ *       bracket block.
  *   <li>outer chunk &mdash; a run of tokens terminated by a curly bracket
- *   that closes a balanced block, a semicolon outside a balanced curly bracket
- *   block, or the end-of-file marker.
+ *       that closes a balanced block, a semicolon outside a balanced curly
+ *       bracket block, or the end-of-file marker.
  * </ul>
  * We then group the constructs defined in the CSS grammar into these new
  * syntactic constructs.
  * <ul>
  *   <li>list item includes selectors and mediums.  So a ruleset is then a
- *   list of list items followed by an outer chunk.
+ *       list of list items followed by an outer chunk.
  *   <li>inner chunks include property/expression pairs which are separated
- *   by semicolons.  A declaration group is a list of inner chunks surrounded
- *   by curly brackets aka an outer chunk.
+ *       by semicolons.  A declaration group is a list of inner chunks
+ *       surrounded by curly brackets aka an outer chunk.
  *   <li>outer chunks include most of the symbol based productions and the
- *   ruleset production.  A stylesheet is a list of outer chunks.
+ *       ruleset production.  A stylesheet is a list of outer chunks.
  * </ul>
  *
  * <h2>Coding Conventions around error recovery</h2>
@@ -126,14 +126,48 @@ import java.util.List;
  * <ul>
  *   <li>public parsing functions never return null.
  *   <li>private <tt>parse*</tt> functions return null to indicate a tolerable
- *   failure to parse, or throw a {@link ParseException} to indicate an
- *   intolerable failure.
+ *       failure to parse, or throw a {@link ParseException} to indicate an
+ *       intolerable failure.
  *   <li>When a <tt>parse*</tt> function delegates parsing to another function,
- *   one of the following is true: the delegator returns null when the delegate
- *   returns null, or the delegate reports its failure to parse and the
- *   delegator does not, or the delegate does not report failure to parse and
- *   the delegator does.  This does not constrain the delegate from reporting
- *   messages about individual tokens -- only about ranges of skipped tokens.
+ *       one of the following is true: the delegator returns null when the
+ *       delegate returns null, or the delegate reports its failure to parse and
+ *       the delegator does not, or the delegate does not report failure to
+ *       parse and the delegator does.  This does not constrain the delegate
+ *       from reporting messages about individual tokens -- only about ranges of
+ *       skipped tokens.
+ * </ul>
+ *
+ * <h2>Differences from CSS grammar</h2>
+ * <p>This class parses a few extensions to the CSS grammar.
+ * <ul>
+ *   <li>IE Filters and Transformations are parsed using the grammar below to
+ *       a {@link CssTree.ProgId special node class}.  These filters and
+ *       transformations are documented on the
+ *       <a href="http://msdn.microsoft.com/en-us/library/ms532847(VS.85).aspx"
+ *        >MSDN</a> though the grammar below is made up.
+ * {@code
+ *  ProgId ::== 'progid' ':' <DottedFunctionName> <ProgIdAttributeList>? ')'
+ *  DottedFunctionName ::== <Function>    // Includes an open parenthesis
+ *                        | <Identifier> '.' <DottedFunctionName>
+ *  ProgIdAttributeList ::== <ProgIdAttribute>
+ *                         | <ProgIdAttribute> ',' <ProgIdAttributeList>
+ *  ProgIdAttribute ::== <Identifier> '=' <Expr>
+ * }
+ *   See the test file "cssparseinput-filters.css" for examples.
+ *
+ *   <li>CSS frequently contains
+ *       <a href="http://en.wikipedia.org/wiki/CSS_filter">CSS hacks</a>
+ *       to make a style apparent to some user-agents and not others.  These are
+ *       represented using special node-types so that clients which only want to
+ *       deal with standards-compliant CSS can filter out those nodes.
+ *       <p>
+ *       The star hack described in the wiki article is very widely used, and we
+ *       handle it by adding a new type node type: {@link CssTree.UserAgentHack}
+ *       which has a set of user agent IDs, and the node that would be visible
+ *       to those user-agents.  Clients that care about filters can transform
+ *       the tree to remove inappropriate filters, or to transform the tree so
+ *       that those filters will be visible in only the appropriate contexts
+ *       using CSS.
  * </ul>
  *
  * @author mikesamuel@gmail.com
@@ -197,7 +231,7 @@ public final class CssParser {
     return new CssTree.StyleSheet(pos(m), stmts);
   }
 
-  /** Parse a series of css properties as seen in an xhtml style attribute. */
+  /** Parse a series of CSS properties as seen in an XHTML style attribute. */
   public CssTree.DeclarationGroup parseDeclarationGroup()
       throws ParseException {
     Mark m = tq.mark();
@@ -562,33 +596,44 @@ public final class CssParser {
 
   private CssTree.Declaration parseDeclaration() throws ParseException {
     Mark m = tq.mark();
-    List<CssTree> children = new ArrayList<CssTree>();
-    if (!(tq.lookaheadToken("}") || tq.lookaheadToken(";"))) {
-      CssTree.Property property = parseProperty();
-      if (property == null) {
-        SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK.recover(this, m);
-        return null;
-      }
-      children.add(property);
-      if (expect(":", SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK, m)) {
-        return null;
-      }
-      CssTree.Expr expr = parseExpr();
-      if (expr == null) {
-        SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK.recover(this, m);
-        return null;
-      }
-      children.add(expr);
-      if (!(tq.isEmpty() || tq.lookaheadToken("}") || tq.lookaheadToken(";"))) {
-        CssTree.Prio prio = parsePrio();
-        if (prio == null) {
-          SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK.recover(this, m);
-          return null;
-        }
-        children.add(prio);
-      }
+    if (tq.lookaheadToken("}") || tq.lookaheadToken(";")) {
+      return new CssTree.EmptyDeclaration(pos(m));
     }
-    return new CssTree.Declaration(pos(m), children);
+    boolean hasStarHack = tq.checkToken("*");
+    Mark declStart = tq.mark();
+    CssTree.Property property = parseProperty();
+    if (property == null) {
+      SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK.recover(this, m);
+      return null;
+    }
+    List<CssTree> children = new ArrayList<CssTree>(3);
+    children.add(property);
+    if (expect(":", SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK, m)) {
+      return null;
+    }
+    CssTree.Expr expr = parseExpr();
+    if (expr == null) {
+      SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK.recover(this, m);
+      return null;
+    }
+    children.add(expr);
+    if (!(tq.isEmpty() || tq.lookaheadToken("}") || tq.lookaheadToken(";"))) {
+      CssTree.Prio prio = parsePrio();
+      if (prio == null) {
+        SKIP_TO_CHUNK_END_FROM_WITHIN_BLOCK.recover(this, m);
+        return null;
+      }
+      children.add(prio);
+    }
+    CssTree.PropertyDeclaration d = new CssTree.PropertyDeclaration(
+        pos(declStart), children);
+    if (hasStarHack) {
+      return new CssTree.UserAgentHack(
+          pos(m), CssTree.UserAgent.ie7OrOlder(),
+          Collections.singletonList(d));
+    } else {
+      return d;
+    }
   }
 
   private CssTree.Prio parsePrio() throws ParseException {
@@ -965,7 +1010,7 @@ public final class CssParser {
    * "-->"               {return CDC;}
    * </pre>
    *
-   * From the parser grammer:<pre>
+   * From the parser grammar:<pre>
    * stylesheet
    *   : [ CHARSET_SYM STRING ';' ]?
    *     [S|<b>CDO|CDC</b>]* [ import [S|<b>CDO|CDC</b>]* ]*

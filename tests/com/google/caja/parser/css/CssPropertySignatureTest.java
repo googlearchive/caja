@@ -152,13 +152,15 @@ public class CssPropertySignatureTest extends CajaTestCase {
 
   public void testParseProgId() {
     assertParseTree(
-        "progid:foo.bar(baz=<number>, enabled=true)",
+        "progid:foo.bar(baz=<number>, enabled=[\"true\" | \"false\"])",
 
         "ProgIdSignature : foo.bar",
         "  ProgIdAttrSignature : baz",
         "    SymbolSignature : number",
         "  ProgIdAttrSignature : enabled",
-        "    LiteralSignature : true");
+        "    SetSignature",
+        "      QuotedLiteralSignature : true",
+        "      QuotedLiteralSignature : false");
   }
 
   private static CssPropertySignature sig(String sig) {

@@ -3,12 +3,12 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : width
       Expr
         Term
           QuantityLiteral : 100%
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -31,12 +31,12 @@ StyleSheet
             ProgIdAttribute : duration
               Term
                 QuantityLiteral : 3
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -47,12 +47,12 @@ StyleSheet
             ProgIdAttribute : sizingmethod
               Term
                 StringLiteral : scale
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -71,7 +71,7 @@ StyleSheet
       SimpleSelector
         IdentLiteral : INPUT
         ClassLiteral : .aFilter
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -79,12 +79,12 @@ StyleSheet
             ProgIdAttribute : opacity
               Term
                 QuantityLiteral : 50
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : a
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -96,7 +96,7 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : b
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -108,7 +108,7 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : i
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -120,7 +120,7 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -132,7 +132,7 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : q
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -147,7 +147,7 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -162,7 +162,7 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -180,22 +180,22 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : cursor
       Expr
         Term
           IdentLiteral : hand
-    Declaration
+    PropertyDeclaration
       Property : height
       Expr
         Term
           QuantityLiteral : 160px
-    Declaration
+    PropertyDeclaration
       Property : padding
       Expr
         Term
           QuantityLiteral : 10px
-    Declaration
+    PropertyDeclaration
       Property : font
       Expr
         Term
@@ -206,7 +206,7 @@ StyleSheet
         Operation : NONE
         Term
           IdentLiteral : verdana
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -227,7 +227,7 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -239,17 +239,17 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : position
       Expr
         Term
           IdentLiteral : absolute
-    Declaration
+    PropertyDeclaration
       Property : left
       Expr
         Term
           QuantityLiteral : 270px
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -257,13 +257,13 @@ StyleSheet
             ProgIdAttribute : enabled
               Term
                 StringLiteral : false
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : DIV
         ClassLiteral : .aFilter
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -274,28 +274,28 @@ StyleSheet
             ProgIdAttribute : strength
               Term
                 QuantityLiteral : 5
-    Declaration
+    PropertyDeclaration
       Property : width
       Expr
         Term
           QuantityLiteral : 150px
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         ClassLiteral : .aFilter
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
           ProgId : dximagetransform.microsoft.light
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : DIV
         ClassLiteral : .aFilter
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -303,17 +303,17 @@ StyleSheet
             ProgIdAttribute : color
               Term
                 IdentLiteral : magenta
-    Declaration
+    PropertyDeclaration
       Property : width
       Expr
         Term
           QuantityLiteral : 100px
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -326,7 +326,7 @@ StyleSheet
       SimpleSelector
         IdentLiteral : DIV
         ClassLiteral : .aFilter
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -337,13 +337,13 @@ StyleSheet
             ProgIdAttribute : direction
               Term
                 QuantityLiteral : 45
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : DIV
         ClassLiteral : .aFilter
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -354,23 +354,23 @@ StyleSheet
             ProgIdAttribute : direction
               Term
                 QuantityLiteral : 45
-    Declaration
+    PropertyDeclaration
       Property : width
       Expr
         Term
           QuantityLiteral : 150px
-    Declaration
+    PropertyDeclaration
       Property : color
       Expr
         Term
           HashLiteral : #FF0000
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : DIV
         ClassLiteral : .aFilter
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -390,17 +390,17 @@ StyleSheet
             ProgIdAttribute : phase
               Term
                 QuantityLiteral : 90
-    Declaration
+    PropertyDeclaration
       Property : width
       Expr
         Term
           QuantityLiteral : 150px
-    Declaration
+    PropertyDeclaration
       Property : color
       Expr
         Term
           HashLiteral : #FF0000
-    Declaration
+    PropertyDeclaration
       Property : background-color
       Expr
         Term
@@ -409,22 +409,22 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : height
       Expr
         Term
           QuantityLiteral : 250px
-    Declaration
+    PropertyDeclaration
       Property : width
       Expr
         Term
           QuantityLiteral : 250px
-    Declaration
+    PropertyDeclaration
       Property : background-color
       Expr
         Term
           IdentLiteral : gold
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -438,12 +438,12 @@ StyleSheet
             ProgIdAttribute : orientation
               Term
                 StringLiteral : vertical
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : body
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -455,7 +455,7 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -470,22 +470,22 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : height
       Expr
         Term
           QuantityLiteral : 250px
-    Declaration
+    PropertyDeclaration
       Property : width
       Expr
         Term
           QuantityLiteral : 250px
-    Declaration
+    PropertyDeclaration
       Property : background-color
       Expr
         Term
           IdentLiteral : gold
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -497,7 +497,7 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -512,7 +512,7 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -521,7 +521,7 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -533,17 +533,17 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : p
-    Declaration
+    PropertyDeclaration
       Property : width
       Expr
         Term
           QuantityLiteral : 100px
-    Declaration
+    PropertyDeclaration
       Property : background-color
       Expr
         Term
           IdentLiteral : lightblue
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -554,12 +554,12 @@ StyleSheet
             ProgIdAttribute : enabled
               Term
                 StringLiteral : false
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : a
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -567,12 +567,12 @@ StyleSheet
             ProgIdAttribute : duration
               Term
                 QuantityLiteral : 2
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : img
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -580,27 +580,27 @@ StyleSheet
             ProgIdAttribute : duration
               Term
                 QuantityLiteral : 5
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : u
-    Declaration
+    PropertyDeclaration
       Property : height
       Expr
         Term
           QuantityLiteral : 250px
-    Declaration
+    PropertyDeclaration
       Property : width
       Expr
         Term
           QuantityLiteral : 250px
-    Declaration
+    PropertyDeclaration
       Property : background-color
       Expr
         Term
           IdentLiteral : gold
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -608,27 +608,27 @@ StyleSheet
             ProgIdAttribute : duration
               Term
                 QuantityLiteral : 3
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : table
-    Declaration
+    PropertyDeclaration
       Property : height
       Expr
         Term
           QuantityLiteral : 250px
-    Declaration
+    PropertyDeclaration
       Property : width
       Expr
         Term
           QuantityLiteral : 250px
-    Declaration
+    PropertyDeclaration
       Property : background-color
       Expr
         Term
           IdentLiteral : gold
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -639,12 +639,12 @@ StyleSheet
             ProgIdAttribute : bands
               Term
                 StringLiteral : 8
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : div
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -658,27 +658,27 @@ StyleSheet
             ProgIdAttribute : gridsizey
               Term
                 QuantityLiteral : 25
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : b
-    Declaration
+    PropertyDeclaration
       Property : height
       Expr
         Term
           QuantityLiteral : 250px
-    Declaration
+    PropertyDeclaration
       Property : width
       Expr
         Term
           QuantityLiteral : 250px
-    Declaration
+    PropertyDeclaration
       Property : background-color
       Expr
         Term
           IdentLiteral : gold
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -690,7 +690,7 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : i
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -701,12 +701,12 @@ StyleSheet
             ProgIdAttribute : motion
               Term
                 StringLiteral : rightdown
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : hr
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -717,12 +717,12 @@ StyleSheet
             ProgIdAttribute : spokes
               Term
                 QuantityLiteral : 8
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : object
-    Declaration
+    PropertyDeclaration
       Property : filter
       Expr
         Term
@@ -736,4 +736,4 @@ StyleSheet
             ProgIdAttribute : gridsizey
               Term
                 QuantityLiteral : 25
-    Declaration
+    EmptyDeclaration

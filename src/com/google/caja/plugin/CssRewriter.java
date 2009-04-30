@@ -14,6 +14,7 @@
 
 package com.google.caja.plugin;
 
+import com.google.caja.lang.css.CssPropertyPatterns;
 import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
@@ -35,6 +36,7 @@ import com.google.caja.util.Strings;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -92,7 +94,7 @@ public final class CssRewriter {
     // declarations which is technically illegal, so we remove rulesets without
     // declarations.
     removeEmptyRuleSets(t);
-    // Disallow classes and ids that end in double underscore.
+    // Disallow classes and IDs that end in double underscore.
     removeForbiddenIdents(t);
     // Do this again to make sure no earlier changes introduce unsafe constructs
     removeUnsafeConstructs(t);
@@ -126,8 +128,7 @@ public final class CssRewriter {
       CssTree.Term t = e.getNthTerm(i);
       if (!isLooseWord(t)) { continue; }
 
-      Name propertyPart = t.getAttributes().get(
-          CssValidator.CSS_PROPERTY_PART);
+      Name propertyPart = t.getAttributes().get(CssValidator.CSS_PROPERTY_PART);
       StringBuilder sb = new StringBuilder();
       sb.append(t.getExprAtom().getValue());
 
@@ -239,13 +240,10 @@ public final class CssRewriter {
     t.node.acceptPreOrder(new Visitor() {
         public boolean visit(AncestorChain<?> ancestors) {
           ParseTreeNode node = ancestors.node;
-          if (node instanceof CssTree.Declaration) {
-            CssTree.Declaration decl = (CssTree.Declaration) node;
-            if (null == decl.getProperty()) {
-              ParseTreeNode parent = ancestors.getParentNode();
-              if (parent instanceof MutableParseTreeNode) {
-                ((MutableParseTreeNode) parent).removeChild(decl);
-              }
+          if (node instanceof CssTree.EmptyDeclaration) {
+            ParseTreeNode parent = ancestors.getParentNode();
+            if (parent instanceof MutableParseTreeNode) {
+              ((MutableParseTreeNode) parent).removeChild(node);
             }
             return false;
           } else if (node instanceof CssTree.Selector) {
@@ -273,8 +271,10 @@ public final class CssRewriter {
           List<? extends CssTree> children = rset.children();
           if (children.isEmpty()
               || (children.get(children.size() - 1)
-                  instanceof CssTree.Selector)) {
-            // No declarations, so get rid of it.
+                  instanceof CssTree.Selector)
+              || !(children.get(0) instanceof CssTree.Selector)) {
+            // No declarations or no selectors, so either the properties apply
+            // to nothing or there are no properties to apply.
             ParseTreeNode parent = ancestors.getParentNode();
             if (parent instanceof MutableParseTreeNode) {
               ((MutableParseTreeNode) parent).removeChild(rset);
@@ -308,10 +308,31 @@ public final class CssRewriter {
       }, t.parent);
   }
 
-  private static final Set<String> ALLOWED_PSEUDO_SELECTORS =
-      new HashSet<String>(Arrays.asList(
-          "link", "visited", "hover", "active", "first-child", "first-letter"
+  private static final Set<String> ALLOWED_PSEUDO_CLASSES = new HashSet<String>(
+      Arrays.asList(
+          "active", "after", "before", "first-child", "first-letter", "focus",
+          "link", "hover"
           ));
+  /**
+   * A set of pseudo classes that are allowed in restricted context because they
+   * can leak user history information.
+   * <p>
+   * From http://www.w3.org/TR/css3-selectors/#dynamic-pseudos : <blockquote>
+   *   <h3>6.6.1. Dynamic pseudo-classes</h3>
+   *   The link pseudo-classes: :link and :visited<br>
+   *   <br>
+   *   User agents commonly display unvisited links differently from previously
+   *   visited ones. Selectors provides the pseudo-classes :link and :visited to
+   *   distinguish them:<ul>
+   *     <li>The :link pseudo-class applies to links that have not yet been
+   *         visited.
+   *     <li>The :visited pseudo-class applies once the link has been visited by
+   *         the user.
+   *   </ul>
+   * </blockquote>
+   */
+  private static final Set<String> LINK_PSEUDO_CLASSES = new HashSet<String>(
+      Arrays.asList("link", "visited"));
   void removeUnsafeConstructs(AncestorChain<? extends CssTree> t) {
 
     // 1) Check that all classes, ids, property names, etc. are valid
@@ -336,45 +357,36 @@ public final class CssRewriter {
                 return false;
               }
             }
-          } else if (node instanceof CssTree.Property) {
-            CssTree.Property p = (CssTree.Property) node;
-            if (!isSafeCssIdentifier(p.getPropertyName().getCanonicalForm())) {
-              mq.addMessage(PluginMessageType.UNSAFE_CSS_IDENTIFIER,
-                            p.getFilePosition(), p.getPropertyName());
-              declarationFor(ancestors).getAttributes().set(
-                  CssValidator.INVALID, Boolean.TRUE);
-              return false;
-            }
           }
+          // The CssValidator checks the safety of CSS property names.
           return true;
         }
       }, t.parent);
 
-    // 2) Ban content properties, and attr pseudo selectors, and any other
+    // 2) Ban content properties, and attr pseudo classes, and any other
     //    pseudo selectors that don't match the whitelist
     t.node.acceptPreOrder(new Visitor() {
         public boolean visit(AncestorChain<?> ancestors) {
           ParseTreeNode node = ancestors.node;
-          if (node instanceof CssTree.Property) {
-            if ("content".equals(
-                    ((CssTree.Property) node).getPropertyName()
-                    .getCanonicalForm())) {
-              mq.addMessage(PluginMessageType.UNSAFE_CSS_PROPERTY,
-                            invalidNodeMessageLevel, node.getFilePosition(),
-                            MessagePart.Factory.valueOf("content"));
-              declarationFor(ancestors).getAttributes().set(
-                  CssValidator.INVALID, Boolean.TRUE);
-            }
-          } else if (node instanceof CssTree.Pseudo) {
+          if (node instanceof CssTree.Pseudo) {
             boolean remove = false;
             CssTree child = ((CssTree.Pseudo) node).children().get(0);
             if (child instanceof CssTree.IdentLiteral) {
-              if (!ALLOWED_PSEUDO_SELECTORS.contains(Strings.toLowerCase(
-                      ((CssTree.IdentLiteral) child).getValue()))) {
-                mq.addMessage(PluginMessageType.UNSAFE_CSS_PSEUDO_SELECTOR,
-                              invalidNodeMessageLevel, node.getFilePosition(),
-                              node);
-                remove = true;
+              String pseudoName = Strings.toLowerCase(
+                  ((CssTree.IdentLiteral) child).getValue());
+              if (!ALLOWED_PSEUDO_CLASSES.contains(pseudoName)) {
+                // Allow the visited pseudo selector but not with any styles
+                // that are fetchable via getComputedStyle in DOMita's
+                // COMPUTED_STYLE_WHITELIST.
+                if (!(LINK_PSEUDO_CLASSES.contains(pseudoName)
+                      && strippedPropertiesBannedInLinkClasses(
+                          ancestors.parent.parent.cast(CssTree.Selector.class)
+                          ))) {
+                  mq.addMessage(PluginMessageType.UNSAFE_CSS_PSEUDO_SELECTOR,
+                                invalidNodeMessageLevel, node.getFilePosition(),
+                                node);
+                  remove = true;
+                }
               }
             } else {
               StringBuilder rendered = new StringBuilder();
@@ -463,22 +475,13 @@ public final class CssRewriter {
       }, t.parent);
 
     // 4) Remove invalid nodes
-    t.node.acceptPreOrder(new Visitor() {
-        public boolean visit(AncestorChain<?> ancestors) {
-          ParseTreeNode node = ancestors.node;
-          if (node.getAttributes().is(CssValidator.INVALID)) {
-            ((MutableParseTreeNode) ancestors.parent.node).removeChild(node);
-            return false;
-          }
-          return true;
-        }
-      }, t.parent);
+    removeInvalidNodes(t);
 
     // 5) Cleanup.  Remove any rulesets with empty selectors
     // Since this is a post order traversal, we will first remove empty
     // selectors, and then consider any rulesets that have become empty due to
     // a lack of selectors.
-    t.node.acceptPostOrder(new Visitor() {
+    t.node.acceptPreOrder(new Visitor() {
         public boolean visit(AncestorChain<?> ancestors) {
           ParseTreeNode node = ancestors.node;
           if ((node instanceof CssTree.Selector && node.children().isEmpty())
@@ -492,6 +495,26 @@ public final class CssRewriter {
           return true;
         }
       }, t.parent);
+  }
+
+  private void removeInvalidNodes(AncestorChain<? extends CssTree> t) {
+    if (t.node.getAttributes().is(CssValidator.INVALID)) {
+      ((MutableParseTreeNode) t.parent.node).removeChild(t.node);
+      return;
+    }
+
+    // Use a mutation to remove invalid nodes so that the sanity checks in
+    // childrenChanged sees all removals at once.
+    MutableParseTreeNode.Mutation mut = null;
+    for (CssTree child : t.node.children()) {
+      if (child.getAttributes().is(CssValidator.INVALID)) {
+        if (mut == null) { mut = t.node.createMutation(); }
+        mut.removeChild(child);
+      } else {
+        removeInvalidNodes(AncestorChain.instance(t, child));
+      }
+    }
+    if (mut != null) { mut.execute(); }
   }
 
   private void translateUrls(AncestorChain<? extends CssTree> t) {
@@ -559,6 +582,70 @@ public final class CssRewriter {
     return null;
   }
 
+  private static final Set<Name> PROPERTIES_ALLOWED_IN_LINK_CLASSES;
+  static {
+    Set<Name> propNames = new HashSet<Name>(Arrays.asList(
+        Name.css("background-color"), Name.css("color"), Name.css("cursor")));
+    // Rules limited to link and visited styles cannot allow properties that
+    // can be tested by DOMita's getComputedStyle since it would allow history
+    // mining.
+    // Do not inline the below.  The removeAll relies on the input being a set
+    // of names, but since removeAll takes a Collection<?> it would fail
+    // silently if the whitelist were changed to a Collection<String>.
+    // Assigning to a local does type-check though.
+    Set<Name> computedStyleNames = CssPropertyPatterns.COMPUTED_STYLE_WHITELIST;
+    propNames.removeAll(computedStyleNames);
+    PROPERTIES_ALLOWED_IN_LINK_CLASSES = Collections.unmodifiableSet(propNames);
+  }
+  private boolean strippedPropertiesBannedInLinkClasses(
+      AncestorChain<CssTree.Selector> sel) {
+    if (!(sel.parent.node instanceof CssTree.RuleSet)) { return false; }
+    Set<Name> propertyNames = PROPERTIES_ALLOWED_IN_LINK_CLASSES;
+    CssTree.RuleSet rs = sel.parent.cast(CssTree.RuleSet.class).node;
+    MutableParseTreeNode.Mutation mut = rs.createMutation();
+    for (CssTree child : rs.children()) {
+      if (child instanceof CssTree.Selector
+          || child instanceof CssTree.EmptyDeclaration) {
+        continue;
+      }
+      CssTree.PropertyDeclaration pd;
+      if (child instanceof CssTree.PropertyDeclaration) {
+        pd = (CssTree.PropertyDeclaration) child;
+      } else {
+        pd = ((CssTree.UserAgentHack) child).getDeclaration();
+      }
+      CssTree.Property p = pd.getProperty();
+      Name propName = p.getPropertyName();
+      boolean allowedInLinkClass = propertyNames.contains(propName);
+      if (!allowedInLinkClass && propName.getCanonicalForm().startsWith("_")) {
+        allowedInLinkClass = propertyNames.contains(Name.css(
+            propName.getCanonicalForm().substring(1)));
+      }
+      if (!allowedInLinkClass || mightContainUrl(pd.getExpr())) {
+        mq.getMessages().add(new Message(
+            PluginMessageType.DISALLOWED_CSS_PROPERTY_IN_SELECTOR,
+            this.invalidNodeMessageLevel,
+            p.getFilePosition(), p.getPropertyName(),
+            sel.node.getFilePosition()));
+        mut.removeChild(child);
+      }
+    }
+    mut.execute();
+    return true;
+  }
+
+  private boolean mightContainUrl(CssTree.Expr expr) {
+    for (int n = expr.getNTerms(), i = 0; i < n; ++i) {
+      CssTree.CssExprAtom atom = expr.getNthTerm(i).getExprAtom();
+      if (!(atom instanceof CssTree.IdentLiteral
+            || atom instanceof CssTree.QuantityLiteral
+            || atom instanceof CssTree.HashLiteral)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private static final Pattern SAFE_SELECTOR_PART
       = Pattern.compile("^[#!\\.]?[a-zA-Z][_a-zA-Z0-9\\-]*$");
   /**
@@ -567,23 +654,5 @@ public final class CssRewriter {
    */
   private static boolean isSafeSelectorPart(String s) {
     return SAFE_SELECTOR_PART.matcher(s).matches();
-  }
-  // Does not allow leading underscores.  From "The Underscore Hack" at
-  // http://www.wellstyled.com/css-underscore-hack.html:
-  // Let's start with three simple facts \u2014 as Petr Pisar found out.
-
-  // 1. The underscore ("_") is allowed in CSS identifiers by the CSS2.1
-  //    Specification
-  // 2. Browsers have to ignore unknown CSS properties
-  // 3. MSIE 5+ for Windows ignores the "_" at the beginning of any CSS property
-  //    name
-  private static final Pattern SAFE_CSS_IDENTIFIER
-      = Pattern.compile("^[a-zA-Z\\-][_a-zA-Z0-9\\-]*$");
-  /**
-   * Restrict identifiers to ascii characters until we can test browser handling
-   * of escape sequences.
-   */
-  private static boolean isSafeCssIdentifier(String s) {
-    return SAFE_CSS_IDENTIFIER.matcher(s).matches();
   }
 }

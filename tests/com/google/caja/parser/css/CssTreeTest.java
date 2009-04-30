@@ -45,6 +45,14 @@ public class CssTreeTest extends CajaTestCase {
                   false);
   }
 
+  public void testRenderUserAgentHacks() throws Exception {
+    // User agent hacks do not show up in rendered output.
+    runRenderTest(
+        "cssrendergolden-uahacks.css", "cssparserinput-uahacks.css", false);
+    runRenderTest(
+        "cssrendergolden-uahacks.css", "cssparserinput-uahacks.css", true);
+  }
+
   public void testClone() throws Exception {
     CssTree t = css(fromResource("cssparserinput1.css"));
     assertEquals(render(t), render(t.clone()));

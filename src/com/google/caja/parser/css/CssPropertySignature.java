@@ -17,6 +17,7 @@ package com.google.caja.parser.css;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.Token;
 import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
@@ -198,6 +199,31 @@ public abstract class CssPropertySignature implements ParseTreeNode {
     }
   }
 
+  /**
+   * A signature that matches a quoted string.
+   * This production does not occur in the CSS property signature scheme, but
+   * is required because of IE progid extensions which use quotes around keyword
+   * values.
+   */
+  public static final class QuotedLiteralSignature
+      extends CssPropertySignature {
+    public final String value;
+    private QuotedLiteralSignature(String value) {
+      super(Collections.<CssPropertySignature>emptyList());
+      this.value = value;
+    }
+
+    public String getValue() { return value; }
+
+    public void render(RenderContext r) {
+      StringBuilder sb = new StringBuilder(value.length() + 16);
+      sb.append('"');
+      Escaping.escapeCssString(value, sb);
+      sb.append('"');
+      r.getOut().consume(sb.toString());
+    }
+  }
+
   /** A signature that defers to a CSS 2 property signature. */
   public static final class PropertyRefSignature extends CssPropertySignature {
     public final Name name;
@@ -360,20 +386,16 @@ public abstract class CssPropertySignature implements ParseTreeNode {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    try {
-      formatSelf(new MessageContext(), sb);
-    } catch (IOException ex) {
-      throw new AssertionError("StringBuilders shouldn't throw IOExceptions");
-    }
+    MessageContext mc = new MessageContext();
+    RenderContext rc = new RenderContext(mc, makeRenderer(sb, null));
+    render(rc);
+    rc.getOut().noMoreTokens();
     return sb.toString();
   }
 
   protected void formatSelf(MessageContext context, Appendable out)
       throws IOException {
-    String className = getClass().getName();
-    className = className.substring(className.lastIndexOf(".") + 1);
-    className = className.substring(className.lastIndexOf("$") + 1);
-    out.append(className);
+    out.append(getClass().getSimpleName());
     Object value = getValue();
     if (null != value) {
       out.append(" : ");
@@ -422,7 +444,9 @@ public abstract class CssPropertySignature implements ParseTreeNode {
       // a property reference
       Pattern.compile("^('[a-zA-Z][\\w\\-]*')"),
       // a literal keyword
-      Pattern.compile("^([a-zA-Z][\\w\\-]*)"),
+      Pattern.compile("^(-?[a-zA-Z][\\w\\-]*)"),
+      // a quoted literal
+      Pattern.compile("^(\"[^\"]*\")"),
       // a number
       Pattern.compile("^([0-9]+)\\b"),
       // multi-character punctuation
@@ -531,9 +555,12 @@ public abstract class CssPropertySignature implements ParseTreeNode {
         char ch0 = s.charAt(0);
         if (Character.isLetter(ch0)) { // a literal identifier
           sig = new LiteralSignature(s);
-        } else if (ch0 == '\'') {  // a quoted literal
+        } else if (ch0 == '\'') {  // a property reference
           sig = new PropertyRefSignature(
               Name.css(s.substring(1, s.length() - 1)));
+        } else if (ch0 == '"') {  // a quoted literal
+          sig = new QuotedLiteralSignature(
+              CssParser.unescape(s.substring(1, s.length() - 1), false));
         } else if (ch0 == '<') {  // a symbol
           sig = new SymbolSignature(Name.css(s.substring(1, s.length() - 1)));
         } else { // a literal number or punctuation mark

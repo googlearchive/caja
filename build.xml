@@ -220,7 +220,7 @@
       <classpath refid="classpath.compile"/>
       <include name="**/caja/opensocial/*.java"/>
       <include name="**/caja/opensocial/applet/ExpressionLanguageStage.java"/>
-      <include name="**/caja/plugin/PluginCompilerMain.java"/>
+      <include name="**/caja/plugin/*Main.java"/>
     </javac>
     <!-- Now that we have the main method, build ant task wrappers -->
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">

@@ -9,7 +9,7 @@ StyleSheet
     Selector
       SimpleSelector
         WildcardElement
-    Declaration
+    PropertyDeclaration
       Property : color
       Expr
         Term
@@ -24,7 +24,7 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : td
-    Declaration
+    PropertyDeclaration
       Property : color
       Expr
         Term
@@ -35,7 +35,7 @@ StyleSheet
       Selector
         SimpleSelector
           WildcardElement
-      Declaration
+      PropertyDeclaration
         Property : color
         Expr
           Term
@@ -48,15 +48,15 @@ StyleSheet
   Media
     Medium : ok
   Page
-    Declaration
+    EmptyDeclaration
   Page
     PseudoPage : left
-    Declaration
+    PropertyDeclaration
       Property : margin-left
       Expr
         Term
           QuantityLiteral : 4cm
-    Declaration
+    PropertyDeclaration
       Property : size
       Expr
         Term
@@ -64,7 +64,7 @@ StyleSheet
         Operation : NONE
         Term
           QuantityLiteral : 11in
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
@@ -79,7 +79,7 @@ StyleSheet
       SimpleSelector
         Pseudo
           IdentLiteral : unvisited
-    Declaration
+    PropertyDeclaration
       Property : color
       Expr
         Term
@@ -88,17 +88,17 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : ok
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         IdentLiteral : a1
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
           IdentLiteral : ok
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
@@ -107,12 +107,12 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : a2
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
           IdentLiteral : ok
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
@@ -121,17 +121,17 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : a3
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
           IdentLiteral : ok
-    Declaration
+    PropertyDeclaration
       Property : unicode-range
       Expr
         Term
           UnicodeRangeLiteral : U+0-FFFF
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
@@ -140,12 +140,12 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : a4
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
           IdentLiteral : ok
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
@@ -154,12 +154,12 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : a5
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
           IdentLiteral : ok
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
@@ -168,12 +168,12 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : a6
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
           IdentLiteral : ok
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
@@ -182,12 +182,12 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : a7
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
           IdentLiteral : ok
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
@@ -196,12 +196,12 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : a8
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
           IdentLiteral : ok
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
@@ -210,12 +210,12 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : a9
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
           IdentLiteral : ok
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
@@ -224,25 +224,25 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : aa
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
           IdentLiteral : ok
-    Declaration
+    PropertyDeclaration
       Property : a
       Expr
         Term
           IdentLiteral : ok
   FontFace
-    Declaration
+    EmptyDeclaration
   FontFace
-    Declaration
+    PropertyDeclaration
       Property : font-family
       Expr
         Term
           IdentLiteral : Letters
-    Declaration
+    PropertyDeclaration
       Property : src
       Expr
         Term

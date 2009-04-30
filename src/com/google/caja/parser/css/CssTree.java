@@ -26,12 +26,13 @@ import com.google.caja.util.Name;
 
 import java.io.IOException;
 import java.net.URI;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -44,8 +45,8 @@ public abstract class CssTree extends AbstractParseTreeNode {
     super(pos, CssTree.class);
     createMutation().appendChildren(children).execute();
   }
-  private <T extends CssTree> CssTree(FilePosition pos, Class<T> subType,
-                                      List<? extends T> children) {
+  private <T extends CssTree> CssTree(
+      FilePosition pos, Class<T> subType, List<? extends T> children) {
     super(pos, subType);
     createMutation().appendChildren(children).execute();
   }
@@ -64,7 +65,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     try {
-      formatSelf(new MessageContext(), sb);
+      formatSelf(new MessageContext(), 0, sb);
     } catch (IOException ex) {
       throw new AssertionError("StringBuilders shouldn't throw IOExceptions");
     }
@@ -107,7 +108,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
   /**
    * A root node with no equivalent in the grammar.
    * This node is like a ruleset, but without the selector, so it works as
-   * the root node of css parsed from an xhtml <code>style</code> attribute.
+   * the root node of CSS parsed from an XHTML <code>style</code> attribute.
    */
   public static final class DeclarationGroup extends CssTree {
     /** @param novalue ignored but required for reflection. */
@@ -131,7 +132,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
       super.childrenChanged();
       for (CssTree child : children()) {
         if (!(child instanceof Declaration)) {
-          throw new IllegalArgumentException();
+          throw new ClassCastException(child.getClass().getName());
         }
       }
     }
@@ -139,13 +140,13 @@ public abstract class CssTree extends AbstractParseTreeNode {
     public void render(RenderContext r) {
       r.getOut().mark(getFilePosition());
       boolean first = true;
-      for (CssTree t : children()) {
+      for (Declaration d : children()) {
         if (!first) {
           r.getOut().consume(";");
         } else {
           first = false;
         }
-        t.render(r);
+        d.render(r);
       }
     }
   }
@@ -315,8 +316,12 @@ public abstract class CssTree extends AbstractParseTreeNode {
    * A part of a CSS statement.
    */
   public abstract static class PageElement extends CssTree {
-    PageElement(FilePosition pos, List<? extends CssTree> rulesets) {
-      super(pos, rulesets);
+    PageElement(FilePosition pos, List<? extends CssTree> children) {
+      super(pos, children);
+    }
+    <T extends CssTree> PageElement(
+        FilePosition pos, Class<T> childType, List<? extends T> children) {
+      super(pos, childType, children);
     }
   }
 
@@ -365,6 +370,16 @@ public abstract class CssTree extends AbstractParseTreeNode {
 
     public FontFace(FilePosition pos, List<? extends Declaration> decls) {
       super(pos, decls);
+    }
+
+    @Override
+    protected void childrenChanged() {
+      super.childrenChanged();
+      for (CssTree child : children()) {
+        if (!(child instanceof Declaration)) {
+          throw new ClassCastException(child.getClass().getName());
+        }
+      }
     }
 
     public void render(RenderContext r) {
@@ -460,6 +475,25 @@ public abstract class CssTree extends AbstractParseTreeNode {
     }
     public void render(RenderContext r) {
       renderSpaceGroup(children(), r);
+    }
+    @Override
+    protected void childrenChanged() {
+      super.childrenChanged();
+      List<? extends CssTree> children = children();
+      int n = children.size();
+      boolean needSelector = true;
+      for (CssTree child : children) {
+        if (child instanceof SimpleSelector) {
+          needSelector = false;
+        } else if (!needSelector && child instanceof Combination) {
+          needSelector = true;
+        } else {
+          throw new ClassCastException(child.getClass().getName());
+        }
+      }
+      if (needSelector && n != 0) {
+        throw new IllegalArgumentException();
+      }
     }
   }
 
@@ -629,24 +663,74 @@ public abstract class CssTree extends AbstractParseTreeNode {
   }
 
   /**
+   * A CSS property name, style value pair.
    * <pre>
    * declaration
-   *   : property ':' S* expr prio?
-   *   | <i>empty</i>
+   *   : property-declaration
+   *   | empty-declaration
+   *   | user-agent-hack
+   * </pre>
+   * The term "declaration" is used in the CSS2 spec to describe both
+   * {@link PropertyDeclaration} and {@link EmptyDeclaration}.  Neither
+   * of those terms appear in the spec, and the <code>user-agent-hack</code>
+   * has no analog in the spec since it models a browser hack.
+   */
+  public static abstract class Declaration extends PageElement {
+    Declaration(FilePosition pos, List<? extends CssTree> children) {
+      super(pos, children);
+    }
+
+    <T extends CssTree> Declaration(
+        FilePosition pos, Class<T> childType, List<? extends T> children) {
+      super(pos, childType, children);
+    }
+  }
+
+  /**
+   * <pre>
+   * empty-declaration
+   *   : <i>empty</i>
    * </pre>
    */
-  public static final class Declaration extends PageElement {
+  public static final class EmptyDeclaration extends Declaration {
+    /**
+     * @param novalue ignored but required for reflection.
+     * @param none ignored but required for reflection.
+     */
+    public EmptyDeclaration(
+        FilePosition pos, Void novalue, List<? extends CssTree> none) {
+      this(pos);
+      assert none.isEmpty();
+    }
+
+    public EmptyDeclaration(FilePosition pos) {
+      super(pos, Collections.<CssTree>emptyList());
+    }
+
+    public void render(RenderContext r) {
+      r.getOut().mark(getFilePosition());
+    }
+  }
+
+  /**
+   * <pre>
+   * property-declaration
+   *   : property ':' S* expr prio?
+   * </pre>
+   */
+  public static final class PropertyDeclaration extends Declaration {
     private Property prop;
     private Expr expr;
     private Prio prio;
 
     /** @param novalue ignored but required for reflection. */
-    public Declaration(
+    public PropertyDeclaration(
         FilePosition pos, Void novalue, List<? extends CssTree> children) {
       this(pos, children);
     }
 
-    public Declaration(FilePosition pos, List<? extends CssTree> children) {
+    public PropertyDeclaration(
+        FilePosition pos, List<? extends CssTree> children) {
       super(pos, children);
     }
 
@@ -654,16 +738,10 @@ public abstract class CssTree extends AbstractParseTreeNode {
     protected void childrenChanged() {
       super.childrenChanged();
       List<? extends CssTree> children = children();
-      if (!children.isEmpty()) {
-        prop = (Property) children.get(0);
-        expr = (Expr) children.get(1);
-        prio = children.size() > 2 ? (Prio) children.get(2) : null;
-        assert children.size() <= 3 && null != prop && null != expr;
-      } else {
-        prop = null;
-        expr = null;
-        prio = null;
-      }
+      prop = (Property) children.get(0);
+      expr = (Expr) children.get(1);
+      prio = children.size() > 2 ? (Prio) children.get(2) : null;
+      assert children.size() <= 3 && null != prop && null != expr;
     }
 
     public Property getProperty() { return prop; }
@@ -672,15 +750,13 @@ public abstract class CssTree extends AbstractParseTreeNode {
 
     public void render(RenderContext r) {
       r.getOut().mark(getFilePosition());
-      if (null != prop) {
-        prop.render(r);
-        r.getOut().consume(":");
+      prop.render(r);
+      r.getOut().consume(":");
+      r.getOut().consume(" ");
+      expr.render(r);
+      if (null != prio) {
         r.getOut().consume(" ");
-        expr.render(r);
-        if (null != prio) {
-          r.getOut().consume(" ");
-          prio.render(r);
-        }
+        prio.render(r);
       }
     }
   }
@@ -1068,17 +1144,6 @@ public abstract class CssTree extends AbstractParseTreeNode {
   /**
    * An IE extension used in the filter property as described at
    * http://msdn.microsoft.com/en-us/library/ms532847(VS.85).aspx.
-   *
-   * The grammar looks like {@code
-   *  ProgId ::== 'progid' ':' <DottedFunctionName> <ProgIdAttributeList>? ')'
-   *  DottedFunctionName ::== <Function>    // Includes an open parenthesis
-   *                        | <Identifier> '.' <DottedFunctionName>
-   *  ProgIdAttributeList ::== <ProgIdAttribute>
-   *                         | <ProgIdAttribute> ',' <ProgIdAttributeList>
-   *  ProgIdAttribute ::== <Identifier> '=' <Expr>
-   * }
-   * <p>
-   * See the test file "cssparseinput-filters.css" for examples.
    */
   public static final class ProgId extends CssExprAtom {
     private final Name name;
@@ -1288,6 +1353,62 @@ public abstract class CssTree extends AbstractParseTreeNode {
     private final String symbol;
     Combinator(String symbol) { this.symbol = symbol; }
     public String getSymbol() { return symbol; }
+  }
+
+  /**
+   * A hack that uses syntactically invalid CSS to make a rule visible on some
+   * user agents but invisible on others.
+   * <pre>
+   * user-agent-hack
+   *   : '*' declaration
+   * </pre>
+   */
+  public static final class UserAgentHack extends Declaration {
+    private final EnumSet<UserAgent> enabledOn;
+
+    public UserAgentHack(
+        FilePosition pos, Set<UserAgent> enabledOn,
+        List<? extends PropertyDeclaration> decl) {
+      super(pos, PropertyDeclaration.class, decl);
+      this.enabledOn = EnumSet.copyOf(enabledOn);
+    }
+
+    @Override
+    public EnumSet<UserAgent> getValue() { return EnumSet.copyOf(enabledOn); }
+
+    @Override
+    protected void childrenChanged() {
+      super.childrenChanged();
+      List<? extends CssTree> children = children();
+      if (children.size() != 1) { throw new IllegalStateException(); }
+      if (!(children.get(0) instanceof PropertyDeclaration)) {
+        throw new ClassCastException(children.get(0).getClass().getName());
+      }
+    }
+
+    public PropertyDeclaration getDeclaration() {
+      return (PropertyDeclaration) children().get(0);
+    }
+
+    @Override
+    public void render(RenderContext r) {
+      TokenConsumer out = r.getOut();
+      out.mark(getFilePosition());
+      out.consume("*");
+      getDeclaration().render(r);
+    }
+  }
+
+  /** An identifier for a version of a supported browser. */
+  public static enum UserAgent {
+    IE6,
+    IE7,
+    IE8,
+    ;
+
+    public static EnumSet<UserAgent> ie7OrOlder() {
+      return EnumSet.of(IE6, IE7);
+    }
   }
 
   private static void renderStatements(

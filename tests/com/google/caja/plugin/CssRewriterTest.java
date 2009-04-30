@@ -18,10 +18,14 @@ import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.css.CssTree;
+import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.Name;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -85,6 +89,8 @@ public class CssRewriterTest extends CajaTestCase {
     runTest("a { font:12pt Times  New Roman, Times,\"Times Old Roman\",serif }",
             "a {\n  font: 12pt 'Times New Roman', 'Times',"
             + " 'Times Old Roman', serif\n}");
+    runTest("a { font:bold 12pt Arial Black }",
+            "a {\n  font: bold 12pt 'Arial Black'\n}");
   }
 
   public void testNamespacing() throws Exception {
@@ -92,8 +98,11 @@ public class CssRewriterTest extends CajaTestCase {
     runTest("#foo { color: blue }", "#foo {\n  color: blue\n}");
     runTest("body.ie6 p { color: blue }",
             "body.ie6 p {\n  color: blue\n}");
-    runTest("body { margin: 0; }", "body {\n  margin: 0\n}");
-    runTest("body.ie6 { margin: 0; }", "body.ie6 {\n  margin: 0\n}");
+    runTest("body { margin: 0; }", "");  // Not allowed
+    runTest("body.ie6 { margin: 0; }", "");  // Not allowed
+    runTest("* html p { margin: 0; }", "* html p {\n  margin: 0\n}");
+    runTest("* html { margin: 0; }", "");  // Not allowed
+    runTest("* html > * > p { margin: 0; }", "");  // Not allowed
     runTest("#foo > #bar { color: blue }",
             "#foo > #bar {\n  color: blue\n}");
     runTest("#foo .bar { color: blue }",
@@ -107,8 +116,6 @@ public class CssRewriterTest extends CajaTestCase {
             "a.foo, .b_c {\n  color: blue\n}");
     runTest("a.foo, ._c {color: blue}",
             "a.foo {\n  color: blue\n}");
-    runTest("a.c {_color: blue; margin:0;}",
-            "a.c {\n  margin: 0\n}");
     runTest("a._c {_color: blue; margin:0;}", "");
     runTest("a#_c {_color: blue; margin:0;}", "");
     runTest(".c__ {_color: blue; margin:0;}", "");
@@ -118,6 +125,62 @@ public class CssRewriterTest extends CajaTestCase {
   public void testPseudosWhitelisted() throws Exception {
     runTest("a:link, a:badness { color:blue }",
             "a:link {\n  color: blue\n}");
+    mq.getMessages().clear();
+    runTest("a:visited { color:blue }",
+            "a:visited {\n  color: blue\n}");
+    assertNoErrors();
+
+    // Properties that are on DOMita's COMPUTED_STYLE_WHITELIST should not be
+    // allowed in any rule that correlates with the :visited pseudo selector.
+    mq.getMessages().clear();
+    runTest(
+        "a:visited { color:blue; float:left; _float:left; *float:left }",
+        "a:visited {\n  color: blue\n}");
+    assertMessage(
+        PluginMessageType.DISALLOWED_CSS_PROPERTY_IN_SELECTOR,
+        MessageLevel.ERROR,
+        FilePosition.instance(is, 1, 25, 25, 5), Name.css("float"),
+        FilePosition.instance(is, 1, 1, 1, 9));
+    assertMessage(
+        PluginMessageType.DISALLOWED_CSS_PROPERTY_IN_SELECTOR,
+        MessageLevel.ERROR,
+        FilePosition.instance(is, 1, 37, 37, 6), Name.css("_float"),
+        FilePosition.instance(is, 1, 1, 1, 9));
+    assertMessage(
+        PluginMessageType.DISALLOWED_CSS_PROPERTY_IN_SELECTOR,
+        MessageLevel.ERROR,
+        FilePosition.instance(is, 1, 51, 51, 5), Name.css("float"),
+        FilePosition.instance(is, 1, 1, 1, 9));
+
+    runTest(
+        "a:visited { COLOR:blue; FLOAT:left; _FLOAT:left; *FLOAT:left }",
+        "a:visited {\n  color: blue\n}");
+
+    runTest(
+        ""
+        + "a#foo-bank {"
+        + "  background-image: 'http://whitelisted-host.com/?bank=X&u=Al';"
+        + "  color: purple"
+        + "}",
+        ""
+        + "a#foo-bank {\n"
+        + "  background-image: 'http://whitelisted-host.com/?bank=X\\26u=Al';\n"
+        + "  color: purple\n"
+        + "}");
+    // Differs from the previous only in that it has the :visited pseudo
+    // selector which means we can't allow it to cause a network fetch because
+    // that could leak user history state.
+    mq.getMessages().clear();
+    runTest(
+        ""
+        + "a#foo-bank:visited {"
+        + "  background-image: 'http://whitelisted-host.com/?bank=X&u=Al';"
+        + "  color: purple"
+        + "}",
+        ""
+        + "a#foo-bank:visited {\n"
+        + "  color: purple\n"
+        + "}");
   }
 
   public void testNoBadUrls() throws Exception {
@@ -165,6 +228,34 @@ public class CssRewriterTest extends CajaTestCase {
             "div {\n  padding: 10px 0 5.0px 4px\n}", false);
     runTest("div { margin: -5 5; z-index: 2 }",
             "div {\n  margin: -5px 5px;\n  z-index: 2\n}", false);
+  }
+
+  public void testUserAgentHacks() throws Exception {
+    runTest(
+        ""
+        + "p {\n"
+        + "  color: blue;\n"
+        + "  *color: red;\n"
+        + "  background-color: green;\n"
+        + "  *background-color: yelow;\n"  // misspelled
+        + "  font-weight: bold\n"
+        + "}",
+        ""
+        + "p {\n"
+        + "  color: blue;\n"
+        + "  *color: red;\n"  // Good user agent hack
+        + "  background-color: green;\n"
+        // Bad user-agent hack removed.
+        + "  font-weight: bold\n"
+        + "}"
+        );
+    assertMessage(PluginMessageType.MALFORMED_CSS_PROPERTY_VALUE,
+                  MessageLevel.ERROR,
+                  Name.css("background-color"),
+                  MessagePart.Factory.valueOf("==>yelow<=="));
+    runTest("a.c {_color: blue; margin:0;}",
+            "a.c {\n  _color: blue;\n  margin: 0\n}");
+    assertNoErrors();
   }
 
   private void runTest(String css, String golden) throws Exception {

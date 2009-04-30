@@ -22,6 +22,7 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssPropertySignature;
 import com.google.caja.parser.css.CssTree;
+import com.google.caja.parser.css.CssTree.Combinator;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -59,7 +60,7 @@ public final class CssValidator {
     CSS_PROPERTY_PART = new SyntheticAttributeKey<Name>(
         Name.class, "cssPropertyPart");
   /**
-   * What type is a term?   A term might be an absolute-size, a uri, etc.
+   * What type is a term?   A term might be an absolute-size, a URI, etc.
    * @see com.google.caja.parser.css.CssTree.Term
    */
   public static final SyntheticAttributeKey<CssPropertyPartType>
@@ -70,7 +71,7 @@ public final class CssValidator {
    * Used to mark invalid nodes.  Default to false.
    */
   public static final SyntheticAttributeKey<Boolean> INVALID =
-    new SyntheticAttributeKey<Boolean>(Boolean.class, "cssValidator-invalid");
+      new SyntheticAttributeKey<Boolean>(Boolean.class, "cssValidator-invalid");
 
   private final CssSchema cssSchema;
   private final HtmlSchema htmlSchema;
@@ -100,97 +101,135 @@ public final class CssValidator {
   }
 
   /**
-   * True iff the given css tree is valid according to the CSS Schema.
+   * True iff the given CSS tree is valid according to the CSS Schema.
    * If invalid, parts with problems will be marked {@link #INVALID}.
    * Clients may ignore the return value so long as nodes so marked are removed
    * from the parse tree.
    */
   public boolean validateCss(AncestorChain<? extends CssTree> css) {
-    if (css.node instanceof CssTree.Declaration) {
-      return validateDeclaration((CssTree.Declaration) css.node);
-    } else if (css.node instanceof CssTree.Attrib) {
-      return validateAttrib((CssTree.Attrib) css.node);
-    } else if (css.node instanceof CssTree.SimpleSelector) {
-      if (!validateSimpleSelector((CssTree.SimpleSelector) css.node)) {
+    return validateCss(css.node);
+  }
+
+  private boolean validateCss(CssTree t) {
+    if (t instanceof CssTree.PropertyDeclaration) {
+      CssTree.PropertyDeclaration d = (CssTree.PropertyDeclaration) t;
+      return validatePropertyDeclaration(d);
+    } else if (t instanceof CssTree.UserAgentHack) {
+      return validateUserAgentHack((CssTree.UserAgentHack) t);
+    } else if (t instanceof CssTree.Attrib) {
+      return validateAttrib((CssTree.Attrib) t);
+    } else if (t instanceof CssTree.SimpleSelector) {
+      if (!validateSimpleSelector((CssTree.SimpleSelector) t)) {
         return false;
       }
       // recurse below
-    } else if (css.node instanceof CssTree.Import) {
-      return validateImport((CssTree.Import) css.node);
-    } else if (css.node instanceof CssTree.FontFace) {
-      return validateFontFace((CssTree.FontFace) css.node);
+    } else if (t instanceof CssTree.Import) {
+      return validateImport((CssTree.Import) t);
+    } else if (t instanceof CssTree.FontFace) {
+      return validateFontFace((CssTree.FontFace) t);
+    } else if (t instanceof CssTree.Selector) {
+      return validateSelector((CssTree.Selector) t);
     }
 
     // Whitelist the set of allowed nodes.
-    if (css.node instanceof CssTree.Combination
-        || css.node instanceof CssTree.CssExprAtom
-        || css.node instanceof CssTree.DeclarationGroup
-        || css.node instanceof CssTree.Expr
-        || css.node instanceof CssTree.FontFace
-        || css.node instanceof CssTree.Media
-        || css.node instanceof CssTree.Medium
-        || css.node instanceof CssTree.Page
-        || css.node instanceof CssTree.Property
-        || css.node instanceof CssTree.Pseudo
-        || css.node instanceof CssTree.PseudoPage
-        || css.node instanceof CssTree.RuleSet
-        || css.node instanceof CssTree.SimpleSelector
-        || css.node instanceof CssTree.Selector
-        || css.node instanceof CssTree.StyleSheet
-        || css.node instanceof CssTree.Term
-        || css.node instanceof CssTree.WildcardElement) {
+    if (t instanceof CssTree.Combination
+        || t instanceof CssTree.CssExprAtom
+        || t instanceof CssTree.DeclarationGroup
+        || t instanceof CssTree.EmptyDeclaration
+        || t instanceof CssTree.Expr
+        || t instanceof CssTree.FontFace
+        || t instanceof CssTree.Media
+        || t instanceof CssTree.Medium
+        || t instanceof CssTree.Page
+        || t instanceof CssTree.Property
+        || t instanceof CssTree.Pseudo
+        || t instanceof CssTree.PseudoPage
+        || t instanceof CssTree.RuleSet
+        || t instanceof CssTree.SimpleSelector
+        || t instanceof CssTree.StyleSheet
+        || t instanceof CssTree.Term
+        || t instanceof CssTree.WildcardElement) {
       boolean valid = true;
-      for (CssTree child : css.node.children()) {
-        valid &= validateCss(new AncestorChain<CssTree>(css, child));
+      for (CssTree child : t.children()) {
+        valid &= validateCss(child);
       }
       return valid;
     }
 
     // unrecognized node type
-    throw new IllegalStateException(css.node.getClass().getName());
+    throw new IllegalArgumentException(t.getClass().getName());
   }
 
   /**
    * For each property, apply the signature, and try to identify which parts
    * are URLs, etc., so that we can maintain invariants across terms, such
-   * as the "urls must be under a particular domain invariant".
+   * as the "URLs must be under a particular domain" invariant.
    */
-  private boolean validateDeclaration(CssTree.Declaration decl) {
+  private boolean validatePropertyDeclaration(CssTree.PropertyDeclaration d) {
     // Is it an empty declaration?  Effectively a noop, but the CSS2 spec
     // insists that a noop is a full-class declaration.
-    if (decl.children().isEmpty()) { return true; }
-    CssTree.Property prop = decl.getProperty();
+    CssTree.Property prop = d.getProperty();
     CssSchema.CssPropertyInfo pinfo = cssSchema.getCssProperty(
         prop.getPropertyName());
+    if (null == pinfo
+        && prop.getPropertyName().getCanonicalForm().startsWith("_")) {
+      // From {@link "http://en.wikipedia.org/wiki/CSS_filter#Underscore_hack"}:
+      //     Versions 6 and below of Internet Explorer recognize properties
+      //     which are preceded by an underscore.  All other browsers ignore
+      //     such properties as invalid.
+      //
+      // From "The Underscore Hack" at
+      // http://www.wellstyled.com/css-underscore-hack.html:
+      //     Let's start with three simple facts \u2014 as Petr Pisar found out.
+      //     1. The underscore ("_") is allowed in CSS identifiers by the CSS2.1
+      //        Specification
+      //     2. Browsers have to ignore unknown CSS properties
+      //     3. MSIE 5+ for Windows ignores the "_" at the beginning of any CSS
+      //        property name
+      pinfo = cssSchema.getCssProperty(
+          Name.css(prop.getPropertyName().getCanonicalForm().substring(1)));
+    }
     if (null == pinfo) {
       mq.addMessage(
           PluginMessageType.UNKNOWN_CSS_PROPERTY, invalidNodeMessageLevel,
           prop.getFilePosition(), prop.getPropertyName());
-      decl.getAttributes().set(INVALID, Boolean.TRUE);
-      return true;
+      d.getAttributes().set(INVALID, Boolean.TRUE);
+      return false;
+    }
+    if (!cssSchema.isPropertyAllowed(pinfo.name)) {
+      mq.addMessage(
+          PluginMessageType.UNSAFE_CSS_PROPERTY, invalidNodeMessageLevel,
+          prop.getFilePosition(), prop.getPropertyName());
+      d.getAttributes().set(INVALID, Boolean.TRUE);
+      return false;
     }
     // Apply the signature
-    if (!applySignature(pinfo.name, decl.getExpr(), pinfo.sig)) {
+    if (!applySignature(pinfo.name, d.getExpr(), pinfo.sig)) {
       // Apply takes care of adding the error message
-      decl.getAttributes().set(INVALID, Boolean.TRUE);
+      d.getAttributes().set(INVALID, Boolean.TRUE);
       return false;
     }
 
     return true;
   }
 
+  /** User agent hacks' declarations must be valid. */
+  private boolean validateUserAgentHack(CssTree.UserAgentHack hack) {
+    if (hack != null && !validatePropertyDeclaration(hack.getDeclaration())) {
+      hack.getAttributes().set(INVALID, Boolean.TRUE);
+      return false;
+    }
+    return true;
+  }
+
   /**
-   * Tags must exist in html 4 whitelist.
+   * Tags must exist in the HTML schema.
    */
   private boolean validateSimpleSelector(CssTree.SimpleSelector sel) {
     if (null == sel.getElementName()) { return true; }
     Name tagName = Name.html(sel.getElementName());
     if (null != htmlSchema.lookupElement(tagName)) {
-      if (htmlSchema.isElementAllowed(tagName)
-          // Make an exception for BODY which is handled specially by the
-          // rewriter and which can be used as the basis for browser specific
-          // rules, e.g.  body.ie6 p { ... }
-          || "body".equals(tagName.getCanonicalForm())) {
+      if (htmlSchema.isElementAllowed(tagName)) {
         return true;
       }
       mq.addMessage(
@@ -207,7 +246,7 @@ public final class CssValidator {
   }
 
   /**
-   * Attrib must exist in html 4 whitelist.
+   * Attrib must exist in HTML 4 whitelist.
    */
   private boolean validateAttrib(CssTree.Attrib attr) {
     Name attribName = Name.html(attr.getIdent());
@@ -254,6 +293,85 @@ public final class CssValidator {
         ff.getFilePosition());
     ff.getAttributes().set(INVALID, Boolean.TRUE);
     return false;
+  }
+
+  private boolean validateSelector(CssTree.Selector s) {
+    List<? extends CssTree> children = s.children();
+    int i = 0;
+    if (i == 0) {
+      // Make an exception for BODY which is handled specially by the
+      // rewriter and which can be used as the basis for browser specific
+      // rules, e.g.  body.ie6 p { ... }
+      i = skipDescendantOfBodyWithClass(children);
+    }
+    if (i == 0) {
+      // Make an exception for HTML which is handled specially by the
+      // rewriter to allow user agent hacks like: * html p {...}
+      // See http://en.wikipedia.org/wiki/CSS_filter#Star_HTML_hack for details
+      // of where and why this hack is used.
+      i = skipDescendantOfWildcardHtml(children);
+    }
+
+    boolean valid = true;
+    for (CssTree t : children.subList(i, children.size())) {
+      valid &= validateCss(t);
+    }
+    if (!valid) {
+      // Removing an invalid part of a selector makes the rule match
+      // more broadly, so mark the whole thing invalid.
+      s.getAttributes().set(INVALID, Boolean.TRUE);
+    }
+    return valid;
+  }
+  /**
+   * If the first parts of the selector looks like "body.foo " then return
+   * the index of the child after the combinator.  Otherwise return the index 0.
+   */
+  private int skipDescendantOfBodyWithClass(List<? extends CssTree> children) {
+    if (children.size() <= 2) { return 0; }
+    CssTree.Combination c = (CssTree.Combination) children.get(1);
+    if (c.getCombinator() != Combinator.DESCENDANT) { return 0; }
+
+    CssTree.SimpleSelector ss = (CssTree.SimpleSelector) children.get(0);
+    List<? extends CssTree> ssParts = ss.children();
+    if (ssParts.size() != 2) { return 0; }
+    CssTree ssPart0 = ssParts.get(0);
+    if (!(ssPart0 instanceof CssTree.IdentLiteral
+          && "body".equals(ssPart0.getValue())
+          && ssParts.get(1) instanceof CssTree.ClassLiteral)) {
+      return 0;
+    }
+    return 2;
+  }
+
+  /**
+   * If the first parts of the selector looks like "* html " then return
+   * the index of the child after the combinator.  Otherwise return the index 0.
+   */
+  private int skipDescendantOfWildcardHtml(List<? extends CssTree> children) {
+    if (children.size() <= 4) { return 0; }
+    CssTree.Combination c;
+    c = (CssTree.Combination) children.get(1);
+    if (c.getCombinator() != Combinator.DESCENDANT) { return 0; }
+    c = (CssTree.Combination) children.get(3);
+    if (c.getCombinator() != Combinator.DESCENDANT) { return 0; }
+
+    CssTree.SimpleSelector ss0 = (CssTree.SimpleSelector) children.get(0);
+    List<? extends CssTree> ss0Parts = ss0.children();
+    if (!(ss0Parts.size() == 1
+          && ss0Parts.get(0) instanceof CssTree.WildcardElement)) {
+      return 0;
+    }
+
+    CssTree.SimpleSelector ss2 = (CssTree.SimpleSelector) children.get(2);
+    List<? extends CssTree> ss2Parts = ss2.children();
+    if (ss2Parts.size() != 1) { return 0; }
+    CssTree ss2Part0 = ss2Parts.get(0);
+    if (!(ss2Part0 instanceof CssTree.IdentLiteral
+          && "html".equals(ss2Part0.getValue()))) {
+      return 0;
+    }
+    return 4;
   }
 
   /**
@@ -353,6 +471,11 @@ final class Candidate {
   protected Candidate clone() {
     return new Candidate(exprIdx, match, warning);
   }
+
+  @Override
+  public String toString() {
+    return "[Candidate idx=" + exprIdx + ", match=" + match + "]";
+  }
 }
 
 /**
@@ -374,6 +497,11 @@ final class Match {
     this.propertyName = propertyName;
     this.prev = prev;
   }
+
+  @Override
+  public String toString() {
+    return "[Match " + propertyName + ":" + type + " " + prev + "]";
+  }
 }
 
 final class MessageSList {
@@ -392,7 +520,7 @@ final class MessageSList {
 }
 
 /**
- * Resolves a css property signature against a Css expression, marking
+ * Resolves a CSS property signature against a CSS expression, marking
  * each of the terms with a type, and the sub-rule that matched it.
  */
 final class SignatureResolver {
@@ -456,6 +584,10 @@ final class SignatureResolver {
       } else if (sig instanceof CssPropertySignature.LiteralSignature) {
         applyLiteralSignature(
             (CssPropertySignature.LiteralSignature) sig,
+            candidate, propertyName, passed);
+      } else if (sig instanceof CssPropertySignature.QuotedLiteralSignature) {
+        applyQuotedLiteralSignature(
+            (CssPropertySignature.QuotedLiteralSignature) sig,
             candidate, propertyName, passed);
       } else if (sig instanceof CssPropertySignature.SymbolSignature) {
         applySymbolSignature(
@@ -634,8 +766,7 @@ final class SignatureResolver {
       Candidate candidate, Name propertyName, List<Candidate> passed) {
 
     if (0 == (candidate.exprIdx & 1)) {  // a term
-      CssTree.Term term =
-        (CssTree.Term) expr.children().get(candidate.exprIdx);
+      CssTree.Term term = (CssTree.Term) expr.children().get(candidate.exprIdx);
       CssTree.CssExprAtom atom = term.getExprAtom();
       if (null == term.getOperator()) {
         boolean match;
@@ -659,6 +790,23 @@ final class SignatureResolver {
       if (op.getOperator().getSymbol().equals(literal.getValue())) {
         ++candidate.exprIdx;
         passed.add(candidate);
+      }
+    }
+  }
+
+  private void applyQuotedLiteralSignature(
+      CssPropertySignature.QuotedLiteralSignature lit,
+      Candidate candidate, Name propertyName, List<Candidate> passed) {
+    if (0 == (candidate.exprIdx & 1)) {  // a term
+      CssTree.Term term = (CssTree.Term) expr.children().get(candidate.exprIdx);
+      CssTree.CssExprAtom atom = term.getExprAtom();
+      if (null == term.getOperator()) {
+        if (atom instanceof CssTree.StringLiteral
+            && lit.value.equals(((CssTree.StringLiteral) atom).getValue())) {
+          candidate.match(term, CssPropertyPartType.STRING, propertyName);
+          ++candidate.exprIdx;
+          passed.add(candidate);
+        }
       }
     }
   }
@@ -811,7 +959,7 @@ final class SignatureResolver {
       "^(?:" + REAL_NUMBER_RE + "(?:hz|kHz)|0+)$",
       Pattern.CASE_INSENSITIVE);
 
-  // Suffixes for substitutions.  A subsitution like ${x * 4}em can only be
+  // Suffixes for substitutions.  A substitution like ${x * 4}em can only be
   // a length.  Substitutions without a suffix can only be of certain kinds
   private static final Pattern LENGTH_SUFFIX_RE = Pattern.compile(
       "\\}(?:in|cm|mm|pt|pc|em|ex|px)$", Pattern.CASE_INSENSITIVE);
@@ -912,6 +1060,13 @@ final class SignatureResolver {
         name = ((CssTree.IdentLiteral) atom).getValue();
         if (cssSchema.isKeyword(Name.css(name))) { return false; }
       } else {
+        return false;
+      }
+      candidate.match(term, CssPropertyPartType.LOOSE_WORD, propertyName);
+      ++candidate.exprIdx;
+    } else if ("quotable-word".equals(symbolName)) {
+      if (!(null == term.getOperator()
+            && atom instanceof CssTree.IdentLiteral)) {
         return false;
       }
       candidate.match(term, CssPropertyPartType.LOOSE_WORD, propertyName);

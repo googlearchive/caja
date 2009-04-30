@@ -19,7 +19,9 @@ import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssTree;
+import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.CajaTestCase;
@@ -39,7 +41,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : a\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : color\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
@@ -51,7 +53,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : a\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : color\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
@@ -63,7 +65,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : a\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : color\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=COLOR"
@@ -75,7 +77,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : a\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : color\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=COLOR"
@@ -87,7 +89,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : a\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : color\n"
             + "      Expr\n"
             + "        Term\n"
@@ -110,7 +112,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : a\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : color\n"
             + "      Expr\n"
             + "        Term\n"
@@ -140,13 +142,13 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : font\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
                         + " ; cssPropertyPart=font\n"
             + "          IdentLiteral : caption\n"
-            + "    Declaration");
+            + "    EmptyDeclaration");
     fails("bogus, dl { font: caption; }");
     fails("p, bogus { font: caption; }");
     fails("p[bogus] { font: caption; }");
@@ -161,13 +163,13 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : font\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
                         + " ; cssPropertyPart=font\n"
             + "          IdentLiteral : status-bar\n"
-            + "    Declaration");
+            + "    EmptyDeclaration");
     fails("p, dl { font: status-bar caption; }");
 
     // size and family
@@ -180,7 +182,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : font\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=LENGTH"
@@ -191,7 +193,7 @@ public final class CssValidatorTest extends CajaTestCase {
                         + " ; cssPropertyPart=font-family::family-name"
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
-            + "    Declaration");
+            + "    EmptyDeclaration");
     warns("p, dl { font: -12pt Arial; }");
     fails("p, dl { font: -12pt url(Arial); }");
     fails("p, dl { font: twelve Arial; }");
@@ -204,7 +206,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : font\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=PERCENTAGE"
@@ -215,7 +217,7 @@ public final class CssValidatorTest extends CajaTestCase {
                         + " ; cssPropertyPart=font-family::family-name"
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
-            + "    Declaration");
+            + "    EmptyDeclaration");
     fails("p, dl { font: 150Arial; }");
     fails("p, dl { font: 150/Arial; }");
     runTest("p, dl { font: medium Arial; }",
@@ -227,7 +229,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : font\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
@@ -238,7 +240,7 @@ public final class CssValidatorTest extends CajaTestCase {
                         + " ; cssPropertyPart=font-family::family-name"
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
-            + "    Declaration");
+            + "    EmptyDeclaration");
     fails("p, dl { font: medium; }");
 
     // style weight size family
@@ -251,7 +253,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : font\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
@@ -270,7 +272,7 @@ public final class CssValidatorTest extends CajaTestCase {
                         + " ; cssPropertyPart=font-family::family-name"
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
-            + "    Declaration");
+            + "    EmptyDeclaration");
     fails("p, dl { font: italic bolderer 150% Arial; }");
     fails("p, dl { font: italix bolder 150% Arial; }");
 
@@ -284,7 +286,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : font\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
@@ -294,7 +296,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "        Term ; cssPropertyPartType=STRING"
                         + " ; cssPropertyPart=font-family::family-name\n"
             + "          StringLiteral : Arial\n"
-            + "    Declaration");
+            + "    EmptyDeclaration");
     fails("p, dl { font: inherit; }");
 
     // weight size family
@@ -307,7 +309,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : font\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
@@ -322,7 +324,7 @@ public final class CssValidatorTest extends CajaTestCase {
                         + " ; cssPropertyPart=font-family::family-name"
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
-            + "    Declaration");
+            + "    EmptyDeclaration");
     fails("p, dl { font: 800; }");
 
     // variant weight family
@@ -335,7 +337,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : font\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
@@ -354,7 +356,7 @@ public final class CssValidatorTest extends CajaTestCase {
                         + " ; cssPropertyPart=font-family::family-name"
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
-            + "    Declaration");
+            + "    EmptyDeclaration");
     fails("p, dl { font: abnormal 150% Arial; }");
 
     // with line-height following /
@@ -367,7 +369,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : font\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
@@ -390,7 +392,7 @@ public final class CssValidatorTest extends CajaTestCase {
                         + " ; cssPropertyPart=font-family::family-name"
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
-            + "    Declaration");
+            + "    EmptyDeclaration");
     fails("p, dl { font: abnormal 150%/175% Arial; }");
     fails("p, dl { font: normal 800 150%/ Arial; }");
     runTest("p, dl { font: normal 800 150%/17.5 Arial; }",
@@ -402,7 +404,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : font\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
@@ -425,7 +427,7 @@ public final class CssValidatorTest extends CajaTestCase {
                         + " ; cssPropertyPart=font-family::family-name"
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
-            + "    Declaration");
+            + "    EmptyDeclaration");
     warns("p, dl { font: normal 800 150%/-175% Arial; }");
     warns("p, dl { font: normal 800 150%/-17.5 Arial; }");
 
@@ -436,7 +438,7 @@ public final class CssValidatorTest extends CajaTestCase {
             "    Selector\n" +
             "      SimpleSelector\n" +
             "        IdentLiteral : p\n" +
-            "    Declaration\n" +
+            "    PropertyDeclaration\n" +
             "      Property : font\n" +
             "      Expr\n" +
             "        Term ; cssPropertyPartType=IDENT"
@@ -455,7 +457,29 @@ public final class CssValidatorTest extends CajaTestCase {
                       + " ; cssPropertyPart=font-family::family-name"
                                          + "::loose-quotable-words\n" +
             "          IdentLiteral : Arial\n" +
-            "    Declaration");
+            "    EmptyDeclaration");
+  }
+
+  public void testValidateUnquotedFamilyNames() throws Exception {
+    runTest("p { font-family: Arial Black }",
+            "StyleSheet\n" +
+            "  RuleSet\n" +
+            "    Selector\n" +
+            "      SimpleSelector\n" +
+            "        IdentLiteral : p\n" +
+            "    PropertyDeclaration\n" +
+            "      Property : font-family\n" +
+            "      Expr\n" +
+            "        Term ; cssPropertyPartType=LOOSE_WORD"
+                      + " ; cssPropertyPart=font-family::family-name"
+                                         + "::loose-quotable-words\n" +
+            "          IdentLiteral : Arial\n" +
+            "        Operation : NONE\n" +
+            "        Term ; cssPropertyPartType=LOOSE_WORD"
+                      + " ; cssPropertyPart=font-family::family-name"
+                                         + "::loose-quotable-words\n" +
+            "          IdentLiteral : Black"
+            );
   }
 
   public void testValidateBorder() throws Exception {
@@ -468,20 +492,20 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : border\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
                         + " ; cssPropertyPart=border-top-color\n"
             + "          IdentLiteral : inherit\n"
-            + "    Declaration");
+            + "    EmptyDeclaration");
     runTest("p { border: 2px }",
             "StyleSheet\n"
             + "  RuleSet\n"
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : border\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=LENGTH"
@@ -493,7 +517,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : border\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=LENGTH"
@@ -513,7 +537,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : border\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
@@ -523,14 +547,14 @@ public final class CssValidatorTest extends CajaTestCase {
             + "        Term ; cssPropertyPartType=IDENT"
                         + " ; cssPropertyPart=border-top-color::color\n"
             + "          IdentLiteral : black\n"
-            + "    Declaration");
+            + "    EmptyDeclaration");
     runTest("p { border:solid black 1em}",
             "StyleSheet\n"
             + "  RuleSet\n"
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : border\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
@@ -550,7 +574,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : border\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=LENGTH"
@@ -569,7 +593,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : clip\n"
             + "      Expr\n"
             + "        Term\n"
@@ -594,32 +618,34 @@ public final class CssValidatorTest extends CajaTestCase {
 
   public void testContent() throws Exception {
     // Tests a string that is not a URL.
-    runTest("body:before { content: 'Hello ' } body:after { content: 'World' }",
+    runTest(""
+            + "#body:before { content: ' ' }"
+            + "#body:after { content: '.' }",
             "StyleSheet\n"
             + "  RuleSet\n"
             + "    Selector\n"
             + "      SimpleSelector\n"
-            + "        IdentLiteral : body\n"
+            + "        IdLiteral : #body\n"
             + "        Pseudo\n"
             + "          IdentLiteral : before\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : content\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=STRING"
                         + " ; cssPropertyPart=content\n"
-            + "          StringLiteral : Hello \n"
+            + "          StringLiteral :  \n"
             + "  RuleSet\n"
             + "    Selector\n"
             + "      SimpleSelector\n"
-            + "        IdentLiteral : body\n"
+            + "        IdLiteral : #body\n"
             + "        Pseudo\n"
             + "          IdentLiteral : after\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : content\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=STRING"
                         + " ; cssPropertyPart=content\n"
-            + "          StringLiteral : World\n");
+            + "          StringLiteral : .\n");
   }
 
   public void testBackground() throws Exception {
@@ -629,7 +655,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : background\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=URI"
@@ -645,7 +671,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : background\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=URI"
@@ -661,7 +687,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : background-image\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=URI"
@@ -674,7 +700,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : background\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=COLOR"
@@ -700,7 +726,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "        Term ; cssPropertyPartType=IDENT"
                         + " ; cssPropertyPart=background-position\n"
             + "          IdentLiteral : top\n"
-            + "    Declaration\n"
+            + "    EmptyDeclaration\n"
             );
     runTest("p { background:#FFEBE8 none repeat scroll 0% }",
             "StyleSheet\n"
@@ -708,7 +734,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : background\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=COLOR"
@@ -737,7 +763,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : background\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
@@ -772,7 +798,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : background-position\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
@@ -789,7 +815,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : background-position\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
@@ -806,7 +832,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : background-position\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
@@ -819,7 +845,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : background-position\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=IDENT"
@@ -835,7 +861,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : left\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=LENGTH"
@@ -850,7 +876,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : background\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=COLOR"
@@ -865,7 +891,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : background\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=URI"
@@ -877,7 +903,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : background-image\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=URI"
@@ -892,7 +918,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : a\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : font\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=LENGTH"
@@ -933,7 +959,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : font-family\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=LOOSE_WORD"
@@ -960,7 +986,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : font-family\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=LOOSE_WORD"
@@ -984,7 +1010,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : font-family\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=LOOSE_WORD"
@@ -1015,7 +1041,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : padding\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=LENGTH"
@@ -1040,7 +1066,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : border\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=LENGTH"
@@ -1063,13 +1089,13 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : img\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : opacity\n"
             + "      Expr\n"
             + "        Term ; cssPropertyPartType=NUMBER"
                         + " ; cssPropertyPart=opacity::alphavalue\n"
             + "          QuantityLiteral : 0.5\n"
-            + "    Declaration\n"
+            + "    PropertyDeclaration\n"
             + "      Property : filter\n"
             + "      Expr\n"
             + "        Term\n"
@@ -1091,14 +1117,102 @@ public final class CssValidatorTest extends CajaTestCase {
                                    + "::prog-id-alpha::filter-opacity\n"
             + "                QuantityLiteral : 50\n"
             );
+  }
+
+  public void testProgId() throws Exception {
+    runTest(
+        "img {\n"
+        + "  filter:progid:DXImageTransform.Microsoft.AlphaImageLoader("
+        + "      src='howdy', sizingMethod='scale') }",
+        "StyleSheet\n"
+        + "  RuleSet\n"
+        + "    Selector\n"
+        + "      SimpleSelector\n"
+        + "        IdentLiteral : img\n"
+        + "    PropertyDeclaration\n"
+        + "      Property : filter\n"
+        + "      Expr\n"
+        + "        Term\n"
+        + "          ProgId : dximagetransform.microsoft.alphaimageloader\n"
+        + "            ProgIdAttribute : src\n"
+        + "              Term ; cssPropertyPartType=URI"
+                          + " ; cssPropertyPart=filter::prog-id"
+                              + "::prog-id-alpha-image-loader::page-url\n"
+        + "                StringLiteral : howdy\n"
+        + "            ProgIdAttribute : sizingmethod\n"
+        + "              Term ; cssPropertyPartType=STRING"
+                          + " ; cssPropertyPart=filter::prog-id"
+                              + "::prog-id-alpha-image-loader::sizing-method\n"
+        + "                StringLiteral : scale\n"
+        );
     fails("p { filter: progid:foo.bar() }");
     fails("p { filter: progid:dximagetransform.microsoft.alpha(opaquity=50) }");
   }
 
+  public void testStarHack() throws Exception {
+    runTest("p {\n"
+            + "  color: blue;\n"
+            + "  *color: red }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    PropertyDeclaration\n"
+            + "      Property : color\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=IDENT"
+                        + " ; cssPropertyPart=color::color\n"
+            + "          IdentLiteral : blue\n"
+            + "    UserAgentHack : [IE6, IE7]\n"
+            + "      PropertyDeclaration\n"
+            + "        Property : color\n"
+            + "        Expr\n"
+            + "          Term ; cssPropertyPartType=IDENT"
+                          + " ; cssPropertyPart=color::color\n"
+            + "            IdentLiteral : red\n"
+            );
+    fails("p { *color: yelow }");
+  }
+
+  public void testHtmlStarHack() throws Exception {
+    runTest("* html p { color: blue }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        WildcardElement\n"
+            + "      Combination : DESCENDANT\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : html\n"
+            + "      Combination : DESCENDANT\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    PropertyDeclaration\n"
+            + "      Property : color\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=IDENT"
+                        + " ; cssPropertyPart=color::color\n"
+            + "          IdentLiteral : blue\n"
+            );
+    fails("* html { color: blue }");
+    fails("* html > p { color: blue }");
+    fails("* html object { color: blue }");
+    fails("* html#hiya p { color: blue }");
+  }
+
   private void fails(String css) throws Exception {
     CssTree t = css(fromString(css), true);
+    mq.getMessages().clear();
     CssValidator v = makeCssValidator(mq);
     assertTrue(css, !v.validateCss(ac(t)));
+    MessageLevel maxLevel = MessageLevel.values()[0];
+    for (Message msg : mq.getMessages()) {
+      MessageLevel level = msg.getMessageLevel();
+      if (level.compareTo(maxLevel) > 0) { maxLevel = level; }
+    }
+    // If there is a failure, there should be an error or greater on the queue.
+    assertTrue(maxLevel.name(), MessageLevel.ERROR.compareTo(maxLevel) <= 0);
   }
 
   private void warns(String css) throws Exception {

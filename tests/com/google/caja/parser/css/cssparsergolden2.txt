@@ -4,22 +4,22 @@ StyleSheet
     Medium : mumbling
     Medium : blather
   FontFace
-    Declaration
+    PropertyDeclaration
       Property : font-family
       Expr
         Term
           IdentLiteral : Arial
-    Declaration
+    EmptyDeclaration
   Page
-    Declaration
+    PropertyDeclaration
       Property : background
       Expr
         Term
           UriLiteral : sparkley.jpg
-    Declaration
+    EmptyDeclaration
   Page : hiya
     PseudoPage : sparkley
-    Declaration
+    PropertyDeclaration
       Property : background
       Expr
         Term
@@ -34,7 +34,7 @@ StyleSheet
       Combination : SIBLING
       SimpleSelector
         IdentLiteral : BAZ
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
@@ -48,12 +48,12 @@ StyleSheet
           StringLiteral : hello
         Pseudo
           IdentLiteral : blinky
-    Declaration
+    PropertyDeclaration
       Property : color
       Expr
         Term
           HashLiteral : #fff
-    Declaration
+    PropertyDeclaration
       Property : background
       Expr
         Term : IDENTITY
@@ -74,7 +74,7 @@ StyleSheet
             Expr
               Term
                 IdentLiteral : languidly
-    Declaration
+    PropertyDeclaration
       Property : font-weight
       Expr
         Term
@@ -90,7 +90,7 @@ StyleSheet
       SimpleSelector
         IdentLiteral : foo
         ClassLiteral : .bar
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
@@ -98,7 +98,7 @@ StyleSheet
       Combination : DESCENDANT
       SimpleSelector
         ClassLiteral : .bar
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
@@ -106,7 +106,7 @@ StyleSheet
       Combination : DESCENDANT
       SimpleSelector
         ClassLiteral : .quoted
-    Declaration
+    PropertyDeclaration
       Property : content
       Expr
         Term
@@ -118,7 +118,7 @@ StyleSheet
       Combination : DESCENDANT
       SimpleSelector
         ClassLiteral : .dquoted
-    Declaration
+    PropertyDeclaration
       Property : content
       Expr
         Term
@@ -130,7 +130,7 @@ StyleSheet
       Combination : DESCENDANT
       SimpleSelector
         ClassLiteral : .long
-    Declaration
+    PropertyDeclaration
       Property : content
       Expr
         Term
@@ -142,7 +142,7 @@ StyleSheet
       Combination : DESCENDANT
       SimpleSelector
         ClassLiteral : .extended-unicode
-    Declaration
+    PropertyDeclaration
       Property : content
       Expr
         Term
@@ -151,9 +151,9 @@ StyleSheet
     Selector
       SimpleSelector
         IdLiteral : #a_b
-    Declaration
+    EmptyDeclaration
   RuleSet
     Selector
       SimpleSelector
         ClassLiteral : .a_b
-    Declaration
+    EmptyDeclaration

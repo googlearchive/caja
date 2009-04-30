@@ -63,6 +63,9 @@ public enum PluginMessageType implements MessageTypeInt {
   REWROTE_STYLE("%s: rewrote unsafe style attribute %s", MessageLevel.ERROR),
   MALFORMED_CSS_PROPERTY_VALUE("%s: css property %s has bad value: %s",
                                MessageLevel.ERROR),
+  DISALLOWED_CSS_PROPERTY_IN_SELECTOR(
+      "%s: css property %s not allowed in :visited selector at %s",
+      MessageLevel.ERROR),
   CANT_CONVERT_TO_GXP(
       "%s: can't convert %s to a gxp", MessageLevel.FATAL_ERROR),
   UNKNOWN_CSS_PROPERTY("%s: unknown css property %s", MessageLevel.ERROR),

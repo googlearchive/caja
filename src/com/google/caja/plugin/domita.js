@@ -3117,33 +3117,12 @@ var attachDocumentStub = (function () {
     };
     TameStyle.prototype.toString = function () { return '[Fake Style]'; };
 
-    /**
-     * Set of properties accessible on computed style.
-     * This list is a conservative one compiled by looking at what prototype.js
-     * and YUI need to be able to do visibility, containment, and layout
-     * calculations.
-     * If expanded, it should not allow an attacker to probe the user's history
-     * as described at https://bugzilla.mozilla.org/show_bug.cgi?id=147777
-     */
-    var COMPUTED_STYLE_WHITELIST = {
-      'display': true,
-      'filter': true,
-      'float': true,
-      'height': true,
-      'left': true,
-      'opacity': true,
-      'overflow': true,
-      'position': true,
-      'top': true,
-      'visibility': true,
-      'width': true
-    };
     function TameComputedStyle(style) {
       TameStyle.call(this, style, false);
     }
     classUtils.extend(TameComputedStyle, TameStyle);
     TameComputedStyle.prototype.allowProperty___ = function (cssPropertyName) {
-      return COMPUTED_STYLE_WHITELIST.hasOwnProperty(cssPropertyName);
+      return css.COMPUTED_STYLE_WHITELIST.hasOwnProperty(cssPropertyName);
     };
     TameComputedStyle.prototype.toString = function () {
       return '[Fake Computed Style]';
