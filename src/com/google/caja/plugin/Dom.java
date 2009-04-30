@@ -40,13 +40,11 @@ public final class Dom extends AbstractParseTreeNode {
   @Override
   public Node getValue() { return n; }
 
-  @Override
   public TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> handler) {
     return new Concatenator(out, handler);
   }
 
-  @Override
   public void render(RenderContext r) {
     Nodes.render(n, r);
   }

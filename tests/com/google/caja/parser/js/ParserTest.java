@@ -92,7 +92,9 @@ public class ParserTest extends CajaTestCase {
     assertTrue(mq.getMessages().isEmpty());
   }
   public void testParser5() throws Exception {
-    runParseTest("parsertest5.js", "parsergolden5.txt");
+    if (!TestUtil.isJava15()) {
+      runParseTest("parsertest5.js", "parsergolden5.txt");
+    }
   }
   public void testParser7() throws Exception {
     runParseTest("parsertest7.js", "parsergolden7.txt");
@@ -145,7 +147,9 @@ public class ParserTest extends CajaTestCase {
     runRenderTest("parsertest4.js", "rendergolden4.txt", false, false);
   }
   public void testParseTreeRendering5() throws Exception {
-    runRenderTest("parsertest5.js", "rendergolden5.txt", false, true);
+    if (!TestUtil.isJava15()) {
+      runRenderTest("parsertest5.js", "rendergolden5.txt", false, true);
+    }
   }
   public void testSecureParseTreeRendering6() throws Exception {
     runRenderTest("parsertest6.js", "rendergolden6.txt", true, false);

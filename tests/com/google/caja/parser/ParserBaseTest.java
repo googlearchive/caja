@@ -14,6 +14,7 @@
 
 package com.google.caja.parser;
 
+import com.google.caja.util.TestUtil;
 import junit.framework.TestCase;
 
 /**
@@ -24,9 +25,14 @@ public class ParserBaseTest extends TestCase {
     for (String s : new String[] {
              "$", "_", "$$", "_foo_bar", "fooBar", "h3", "i", "___",
              "__proto__", "FOO_BAR_BAZ_", "i18n", "ev\\u0061l",
-             "\u0101\u0107\u0115", "\\u0101\\u0107\\u0115",
          }) {
       assertTrue(s, ParserBase.isJavascriptIdentifier(s));
+    }
+    for (String s : new String[] {
+            "\u0101\u0107\u0115", "\\u0101\\u0107\\u0115",
+         }) {
+      assertEquals(
+          s, true, TestUtil.isJava15() || ParserBase.isJavascriptIdentifier(s));
     }
     for (String s : new String[] {
              "", "3$", "1", "\u0000", "", "a-b", "a.b", "3_", "a=b",

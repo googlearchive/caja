@@ -19,16 +19,13 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Pair;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Sometimes called an object literal, a shorthand for constructing an object
  * with a declared set of properties.  I avoid the term object literal since
- * everytime the expression is evaluated, it results in a new object, and
+ * every time the expression is evaluated, it results in a new object, and
  * subexpressions need not be literal.
  *
  * <p>E.g.
@@ -37,11 +34,6 @@ import java.util.Map;
  * @author mikesamuel@gmail.com
  */
 public final class ObjectConstructor extends AbstractExpression {
-  private final Map<String, Expression> entries =
-      new HashMap<String, Expression>();
-  private final Map<String, Expression> unmodifiableEntries =
-      Collections.unmodifiableMap(entries);
-
   /** @param value unused.  This ctor is provided for reflection. */
   public ObjectConstructor(
       FilePosition pos, Void value, List<? extends Expression> children) {
@@ -64,8 +56,6 @@ public final class ObjectConstructor extends AbstractExpression {
   protected void childrenChanged() {
     super.childrenChanged();
 
-    entries.clear();
-
     // Make sure that all children are expressions and that the left hand sides
     // are literals.
 
@@ -77,7 +67,6 @@ public final class ObjectConstructor extends AbstractExpression {
       throw new IllegalArgumentException("Odd number of children");
     }
 
-    StringLiteral key = null;
     for (int i = 0; i < children.size(); ++i) {
       Expression e = children.get(i);
       if ((i & 1) == 0) {
@@ -85,11 +74,6 @@ public final class ObjectConstructor extends AbstractExpression {
           throw new ClassCastException(
               "object field must be a string literal, not " + e);
         }
-        key = (StringLiteral) e;
-      } else {
-        entries.put(
-            StringLiteral.getUnquotedValueOf(key.getValue()),
-            e);
       }
     }
   }
@@ -102,12 +86,15 @@ public final class ObjectConstructor extends AbstractExpression {
     return childrenAs(Expression.class);
   }
 
-  /**
-   * @return the entries of this {@code ObjectConstructor} as a
-   * plain Java {@code Map}.
-   */
-  public Map<String, Expression> getEntries() {
-    return unmodifiableEntries;
+  public Expression getValue(String key) {
+    List<? extends Expression> children = children();
+    for (int i = 0, n = children.size(); i < n; i += 2) {
+      StringLiteral sl = (StringLiteral) children.get(i);
+      if (key.equals(sl.getUnquotedValue())) {
+        return children.get(i + 1);
+      }
+    }
+    return null;
   }
 
   public void render(RenderContext rc) {

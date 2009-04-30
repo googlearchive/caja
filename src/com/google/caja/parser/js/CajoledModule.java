@@ -118,7 +118,7 @@ public final class CajoledModule extends AbstractParseTreeNode {
         exHandler, cajoledOutputFileName);
     RenderContext rc = new RenderContext(mc, ssr);
 
-    getModuleBody().getEntries().get("instantiate").render(rc);
+    getModuleBody().getValue("instantiate").render(rc);
     ssr.noMoreTokens();
 
     // Build the abbreviated original file names and their contents.
@@ -170,7 +170,9 @@ public final class CajoledModule extends AbstractParseTreeNode {
     hout.append(instantiateFunctionText);
     hout.append(",\n");
 
-    for (String key : moduleBody.getEntries().keySet()) {
+    List<? extends Expression> moduleBodyParts = moduleBody.children();
+    for (int i = 0, n = moduleBodyParts.size(); i < n; i += 2) {
+      String key = ((StringLiteral) moduleBodyParts.get(i)).getUnquotedValue();
       if ("instantiate".equals(key)) { continue; }
 
       // Render remaining key/value pairs in the module body
@@ -178,9 +180,7 @@ public final class CajoledModule extends AbstractParseTreeNode {
           stringToStringLiteral(key),
           mc, out, exHandler);
       hout.append(": ");
-      renderNode(
-          moduleBody.getEntries().get(key),
-          mc, out, exHandler);
+      renderNode(moduleBodyParts.get(i + 1), mc, out, exHandler);
       hout.append(",\n");
     }
 

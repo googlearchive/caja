@@ -1390,7 +1390,6 @@ public abstract class CssTree extends AbstractParseTreeNode {
       return (PropertyDeclaration) children().get(0);
     }
 
-    @Override
     public void render(RenderContext r) {
       TokenConsumer out = r.getOut();
       out.mark(getFilePosition());

@@ -29,6 +29,8 @@ import com.google.caja.util.TestUtil;
 
 import java.io.IOException;
 import java.net.URI;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,7 +49,7 @@ public class ModuleFormatTest extends CajaTestCase {
   private final Callback<IOException> exHandler = new Callback<IOException>() {
     public void handle(IOException e) { throw new RuntimeException(e); }
   };
-  
+
   public void testCajoledModuleContents() throws Exception {
     CajoledModule trivialCajoledModule = (CajoledModule)
         rewriter.expand(new UncajoledModule(new Block()), mq);
@@ -90,19 +92,13 @@ public class ModuleFormatTest extends CajaTestCase {
             mq);
     assertNoErrors();
 
-    Map<InputSource, CharSequence>
-        originalSource = new HashMap<InputSource, CharSequence>();
-    originalSource.put(
+    Map<InputSource, CharSequence> originalSource = Collections.singletonMap(
         new InputSource(
             new URI(getClass().getResource("testModule.js").toExternalForm())),
-        TestUtil.readResource(getClass(), "testModule.js"));
+        (CharSequence) TestUtil.readResource(getClass(), "testModule.js"));
 
     StringBuilder sb = new StringBuilder();
-    cajoledModule.renderWithDebugSymbols(
-        originalSource,
-        mc,
-        sb,
-        exHandler);
+    cajoledModule.renderWithDebugSymbols(originalSource, mc, sb, exHandler);
 
     assertEquals(
         TestUtil.readResource(getClass(), "testModule.co.js"),

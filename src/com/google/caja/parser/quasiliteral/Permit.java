@@ -14,7 +14,7 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.google.caja.parser.ParseTreeNode;
@@ -36,7 +36,7 @@ final class Permit {
   }
 
   Permit(PermitTemplate template) {
-    permitsUsed = new HashMap<String, Permit>();
+    permitsUsed = new LinkedHashMap<String, Permit>();
     this.template = template;
   }
 

@@ -180,7 +180,6 @@ public class GadgetParser {
       Element doc = toDocument(gadgetSpec);
       Dom dom = new Dom(doc);
       TokenConsumer tc = dom.makeRenderer(output, new Callback<IOException>() {
-        @Override
         public void handle(IOException e) {
           throw new RenderFailure(e);
         }
