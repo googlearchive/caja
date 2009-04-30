@@ -272,3 +272,13 @@ jsunitRegister('testNul',
           '<A TITLE="harmless\0  SCRIPT=javascript:alert(1) ignored=ignored">'
           ));
 });
+
+jsunitRegister('testDigitsInAttrNames',
+               function testDigitsInAttrNames() {
+  // See bug 614 for details.
+  assertEquals(
+      '<div>Hello</div>',
+      html_sanitize(
+          '<div style1="expression(\'alert(1)\')">Hello</div>'
+          ));
+});

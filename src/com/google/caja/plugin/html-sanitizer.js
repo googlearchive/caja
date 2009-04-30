@@ -148,7 +148,7 @@ var html = (function () {
   var ltRe = /</g;
   var gtRe = />/g;
   var quotRe = /\"/g;
-  var eqRe = /=/g;
+  var eqRe = /\=/g;  // Backslash required on JScript.net
 
   /**
    * Escapes HTML special characters in attribute values as HTML entities.
@@ -222,7 +222,7 @@ var html = (function () {
       // End of tag captured in group 3.
       + '|(/?>)'
       // Don't capture cruft
-      + '|[^\\w\\s>]+)',
+      + '|.[^\\w\\s>]*)',
       'i');
 
   var OUTSIDE_TAG_TOKEN = new RegExp(
@@ -230,7 +230,7 @@ var html = (function () {
       // Entity captured in group 1.
       + '&(\\#[0-9]+|\\#[x][0-9a-f]+|\\w+);'
       // Comment, doctypes, and processing instructions not captured.
-      + '|<!--[\\s\\S]*?-->|<!\\w[^>]*>|<\\?[^>*]*>'
+      + '|<\!--[\\s\\S]*?--\>|<!\\w[^>]*>|<\\?[^>*]*>'
       // '/' captured in group 2 for close tags, and name captured in group 3.
       + '|<(/)?([a-z][a-z0-9]*)'
       // Text captured in group 4.
