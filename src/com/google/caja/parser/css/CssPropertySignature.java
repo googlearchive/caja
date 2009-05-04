@@ -22,6 +22,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
 import com.google.caja.parser.Visitor;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
@@ -76,7 +77,7 @@ public abstract class CssPropertySignature implements ParseTreeNode {
 
   public final TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> exHandler) {
-    return new JsPrettyPrinter(out, exHandler);
+    return new JsPrettyPrinter(new Concatenator(out, exHandler));
   }
 
   /** A signature that can be repeated zero or more times. */
@@ -386,8 +387,7 @@ public abstract class CssPropertySignature implements ParseTreeNode {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    MessageContext mc = new MessageContext();
-    RenderContext rc = new RenderContext(mc, makeRenderer(sb, null));
+    RenderContext rc = new RenderContext(makeRenderer(sb, null));
     render(rc);
     rc.getOut().noMoreTokens();
     return sb.toString();

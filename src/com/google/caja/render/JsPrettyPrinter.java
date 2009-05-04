@@ -15,9 +15,7 @@
 package com.google.caja.render;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.util.Callback;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -33,11 +31,9 @@ public final class JsPrettyPrinter extends BufferingRenderer {
 
   /**
    * @param out receives the rendered text.
-   * @param ioExceptionHandler receives exceptions thrown by out.
    */
-  public JsPrettyPrinter(
-      Appendable out, Callback<IOException> ioExceptionHandler) {
-    super(out, ioExceptionHandler);
+  public JsPrettyPrinter(Concatenator out) {
+    super(out);
   }
 
   public void setLineLengthLimit(int lineLengthLimit) {

@@ -21,7 +21,6 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.render.Concatenator;
-import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Name;
 import com.google.caja.util.Strings;
@@ -323,8 +322,7 @@ public class Nodes {
 
   public static String render(Node node, boolean asXml) {
     StringBuilder sb = new StringBuilder();
-    RenderContext rc = new RenderContext(
-        new MessageContext(), new Concatenator(sb, null))
+    RenderContext rc = new RenderContext(new Concatenator(sb, null))
         .withAsXml(asXml);
     render(node, rc);
     rc.getOut().noMoreTokens();

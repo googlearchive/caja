@@ -15,8 +15,6 @@
 package com.google.caja.render;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.util.Callback;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,11 +38,9 @@ public final class JsMinimalPrinter extends BufferingRenderer {
 
   /**
    * @param out receives the rendered text.
-   * @param ioExceptionHandler receives exceptions thrown by out.
    */
-  public JsMinimalPrinter(
-      Appendable out, Callback<IOException> ioExceptionHandler) {
-    super(out, ioExceptionHandler);
+  public JsMinimalPrinter(Concatenator out) {
+    super(out);
   }
 
   /** Visible for testing.  Should not be used by clients. */

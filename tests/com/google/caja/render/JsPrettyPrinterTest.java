@@ -28,7 +28,6 @@ import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.MoreAsserts;
@@ -178,7 +177,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
       for (int i = 1000; --i >= 0;) {
         List<String> randomTokens = generateRandomTokens(rnd);
         StringBuilder sb = new StringBuilder();
-        JsPrettyPrinter pp = new JsPrettyPrinter(sb, null);
+        JsPrettyPrinter pp = new JsPrettyPrinter(new Concatenator(sb));
         for (String token : randomTokens) {
           pp.consume(token);
         }
@@ -393,8 +392,8 @@ public class JsPrettyPrinterTest extends CajaTestCase {
   private void assertRendered(String golden, ParseTreeNode node)
       throws Exception {
     StringBuilder out = new StringBuilder();
-    JsPrettyPrinter pp = new JsPrettyPrinter(out, null);
-    node.render(new RenderContext(new MessageContext(), pp));
+    JsPrettyPrinter pp = new JsPrettyPrinter(new Concatenator(out));
+    node.render(new RenderContext(pp));
     pp.noMoreTokens();
 
     assertEquals(golden, out.toString());
@@ -402,7 +401,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
 
   private void assertLexed(String golden, String input) throws Exception {
     StringBuilder out = new StringBuilder();
-    JsPrettyPrinter pp = new JsPrettyPrinter(out, null);
+    JsPrettyPrinter pp = new JsPrettyPrinter(new Concatenator(out));
 
     JsLexer lex = new JsLexer(fromString(input));
     while (lex.hasNext()) {
@@ -417,7 +416,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
 
   private void assertTokens(String golden, String... input) throws Exception {
     StringBuilder out = new StringBuilder();
-    JsPrettyPrinter pp = new JsPrettyPrinter(out, null);
+    JsPrettyPrinter pp = new JsPrettyPrinter(new Concatenator(out));
 
     for (String token : input) {
       pp.consume(token);

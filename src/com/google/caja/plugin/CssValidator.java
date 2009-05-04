@@ -23,6 +23,7 @@ import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssPropertySignature;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.css.CssTree.Combinator;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -406,8 +407,8 @@ public final class CssValidator {
       int exprIdx = null != best ? best.exprIdx : 0;
 
       StringBuilder buf = new StringBuilder();
-      TokenConsumer tc = new CssPrettyPrinter(buf, null);
-      RenderContext rc = new RenderContext(new MessageContext(), tc);
+      TokenConsumer tc = new CssPrettyPrinter(new Concatenator(buf));
+      RenderContext rc = new RenderContext(tc);
       boolean needsSpace = false;
       int k = 0;
       for (CssTree child : expr.children()) {

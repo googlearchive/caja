@@ -23,9 +23,9 @@ import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -390,8 +390,9 @@ public final class CssRewriter {
               }
             } else {
               StringBuilder rendered = new StringBuilder();
-              TokenConsumer tc = new CssPrettyPrinter(rendered, null);
-              node.render(new RenderContext(new MessageContext(), tc));
+              TokenConsumer tc = new CssPrettyPrinter(
+                  new Concatenator(rendered));
+              node.render(new RenderContext(tc));
               tc.noMoreTokens();
               mq.addMessage(PluginMessageType.UNSAFE_CSS_PSEUDO_SELECTOR,
                             invalidNodeMessageLevel, node.getFilePosition(),

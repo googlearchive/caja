@@ -94,7 +94,7 @@ public abstract class PipelineStageTestCase extends CajaTestCase {
       StringBuilder sb = new StringBuilder();
       ParseTreeNode node = job.getRoot().cast(ParseTreeNode.class).node;
       TokenConsumer tc = node.makeRenderer(sb, null);
-      node.render(new RenderContext(mc, tc));
+      node.render(new RenderContext(tc));
       tc.noMoreTokens();
       actualJobs.add(new JobStub(sb.toString(), job.getType()));
     }

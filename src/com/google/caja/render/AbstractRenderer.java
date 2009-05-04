@@ -15,10 +15,6 @@
 package com.google.caja.render;
 
 import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.util.Callback;
-
-import java.io.Flushable;
-import java.io.IOException;
 
 /**
  * A {@link TokenConsumer} that adds the tokens, possibly with intervening
@@ -27,50 +23,22 @@ import java.io.IOException;
  * @author mikesamuel@gmail.com
  */
 abstract class AbstractRenderer implements TokenConsumer {
-  protected final Appendable out;
-  private final Callback<IOException> ioExceptionHandler;
-  /** True if an IOException has been raised. */
-  private boolean closed;
+  protected final Concatenator out;
 
   /**
    * @param out receives the rendered text.
-   * @param ioExceptionHandler receives exceptions thrown by out.
    */
-  AbstractRenderer(Appendable out, Callback<IOException> ioExceptionHandler) {
+  AbstractRenderer(Concatenator out) {
     this.out = out;
-    this.ioExceptionHandler = ioExceptionHandler;
   }
 
   public final void noMoreTokens() {
-    if (out instanceof Flushable) {
-      try {
-        ((Flushable) out).flush();
-      } catch (IOException ex) {
-        if (!closed) {
-          closed = true;
-          ioExceptionHandler.handle(ex);
-        }
-      }
-    }
+    out.noMoreTokens();
   }
-
-  /**
-   * Handles writing the given token to the output {@link Appendable}.
-   * @throws IOException iff writing to out raises an IOException.
-   */
-  protected abstract void append(String text) throws IOException;
 
   /**
    * @throws NullPointerException if out raises an IOException
    *     and ioExceptionHandler is null.
    */
-  public final void consume(String text) {
-    if (closed) { return; }
-    try {
-      append(text);
-    } catch (IOException ex) {
-      closed = true;
-      ioExceptionHandler.handle(ex);
-    }
-  }
+  public abstract void consume(String text);
 }

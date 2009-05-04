@@ -302,8 +302,7 @@ public final class HtmlDefinitions {
       out.write(" */\n");
       try {
         Block node = generateJavascriptDefinitions(schema);
-        RenderContext rc = new RenderContext(
-            new MessageContext(), node.makeRenderer(out, null));
+        RenderContext rc = new RenderContext(node.makeRenderer(out, null));
         for (Statement s : node.children()) {
           s.render(rc);
           if (!s.isTerminal()) { rc.getOut().consume(";"); }
@@ -318,8 +317,7 @@ public final class HtmlDefinitions {
   public static void main(String[] args) {
     HtmlSchema schema = HtmlSchema.getDefault(new SimpleMessageQueue());
     Block node = generateJavascriptDefinitions(schema);
-    RenderContext rc = new RenderContext(
-        new MessageContext(), node.makeRenderer(System.out, null));
+    RenderContext rc = new RenderContext(node.makeRenderer(System.out, null));
     for (Statement s : node.children()) {
       s.render(rc);
       if (!s.isTerminal()) { rc.getOut().consume(";"); }

@@ -51,7 +51,7 @@ public class TabularSideBySideRenderer extends SideBySideRenderer {
 
   @Override
   protected TokenConsumer makeRenderer(StringBuilder sb) {
-    return new JsPrettyPrinter(sb, null);
+    return new JsPrettyPrinter(new Concatenator(sb));
   }
 
   @Override

@@ -20,6 +20,7 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParserBase;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
@@ -73,6 +74,6 @@ public final class Identifier extends AbstractParseTreeNode {
 
   public final TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> exHandler) {
-    return new JsPrettyPrinter(out, exHandler);
+    return new JsPrettyPrinter(new Concatenator(out, exHandler));
   }
 }

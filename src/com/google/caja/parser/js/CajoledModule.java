@@ -21,9 +21,9 @@ import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.render.SourceSpansRenderer;
-import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 import com.google.caja.util.HandledAppendable;
@@ -91,7 +91,7 @@ public final class CajoledModule extends AbstractParseTreeNode {
 
   public final TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> exHandler) {
-    return new JsPrettyPrinter(out, exHandler);
+    return new JsPrettyPrinter(new Concatenator(out, exHandler));
   }
 
   public void render(RenderContext rc) {
@@ -109,14 +109,13 @@ public final class CajoledModule extends AbstractParseTreeNode {
 
   public void renderWithDebugSymbols(
       Map<InputSource, CharSequence> originalSources,
-      MessageContext mc,
       Appendable out,
       Callback<IOException> exHandler) {
     // Render the module function. With this, the SourceSpansRenderer captures
     // the rendered form of the function, and also builds the debug information.
     SourceSpansRenderer ssr = new SourceSpansRenderer(
         exHandler, cajoledOutputFileName);
-    RenderContext rc = new RenderContext(mc, ssr);
+    RenderContext rc = new RenderContext(ssr);
 
     getModuleBody().getValue("instantiate").render(rc);
     ssr.noMoreTokens();
@@ -139,7 +138,6 @@ public final class CajoledModule extends AbstractParseTreeNode {
         ssr.getSourceLocationMap(),
         abbreviatedOriginalFileNames,
         originalFileContents,
-        mc,
         out,
         exHandler);
   }
@@ -152,7 +150,6 @@ public final class CajoledModule extends AbstractParseTreeNode {
                                  List<String> sourceLocationMap,
                                  List<String> abbreviatedOriginalFileNames,
                                  List<List<String>> originalFileContents,
-                                 MessageContext mc,
                                  Appendable out,
                                  Callback<IOException> exHandler) {
     HandledAppendable hout = new HandledAppendable(exHandler, out);
@@ -163,9 +160,7 @@ public final class CajoledModule extends AbstractParseTreeNode {
     hout.append("{___.loadModule({\n");
 
     // Render the cajoled code
-    renderNode(
-        stringToStringLiteral("instantiate"),
-        mc, out, exHandler);
+    renderNode(stringToStringLiteral("instantiate"), out, exHandler);
     hout.append(":\n");
     hout.append(instantiateFunctionText);
     hout.append(",\n");
@@ -176,34 +171,26 @@ public final class CajoledModule extends AbstractParseTreeNode {
       if ("instantiate".equals(key)) { continue; }
 
       // Render remaining key/value pairs in the module body
-      renderNode(
-          stringToStringLiteral(key),
-          mc, out, exHandler);
+      renderNode(stringToStringLiteral(key), out, exHandler);
       hout.append(": ");
-      renderNode(moduleBodyParts.get(i + 1), mc, out, exHandler);
+      renderNode(moduleBodyParts.get(i + 1), out, exHandler);
       hout.append(",\n");
     }
 
     // Render source location map
-    renderNode(
-        stringToStringLiteral("sourceLocationMap"),
-        mc, out, exHandler);
+    renderNode(stringToStringLiteral("sourceLocationMap"), out, exHandler);
     hout.append(": ");
-    renderNode(
-        stringListToContentNode(sourceLocationMap),
-        mc, out, exHandler);
+    renderNode(stringListToContentNode(sourceLocationMap), out, exHandler);
     hout.append(",\n");
 
     // Render original source
-    renderNode(
-        stringToStringLiteral("originalSource"),
-        mc, out, exHandler);
+    renderNode(stringToStringLiteral("originalSource"), out, exHandler);
     hout.append(": ");
     renderNode(
         buildOriginalSourceNode(
             abbreviatedOriginalFileNames,
             originalFileContents),
-        mc, out, exHandler);
+        out, exHandler);
     hout.append("\n");
 
     // Close top level function call and object literal
@@ -263,12 +250,10 @@ public final class CajoledModule extends AbstractParseTreeNode {
   }
 
   private static void renderNode(ParseTreeNode node,
-                                 MessageContext mc,
                                  Appendable out,
                                  Callback<IOException> exHandler) {
-    TokenConsumer tc = new JsPrettyPrinter(out, exHandler);
-    RenderContext rc = new RenderContext(mc, tc);
-    node.render(rc);
+    TokenConsumer tc = new JsPrettyPrinter(new Concatenator(out, exHandler));
+    node.render(new RenderContext(tc));
     tc.noMoreTokens();
   }
 }

@@ -15,8 +15,8 @@
 package com.google.caja.parser.css;
 
 import com.google.caja.lexer.ParseException;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.CssPrettyPrinter;
-import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.TestUtil;
@@ -189,8 +189,8 @@ public class CssTreeTest extends CajaTestCase {
     String golden = TestUtil.readResource(getClass(), goldenFile);
     CssTree.StyleSheet stylesheet = css(fromResource(inputFile));
     StringBuilder sb = new StringBuilder();
-    CssPrettyPrinter csspp = new CssPrettyPrinter(sb, null);
-    RenderContext rc = new RenderContext(new MessageContext(), csspp)
+    CssPrettyPrinter csspp = new CssPrettyPrinter(new Concatenator(sb));
+    RenderContext rc = new RenderContext(csspp)
         .withAsciiOnly(true).withEmbeddable(paranoid);
     stylesheet.render(rc);
     assertEquals(golden.trim(), sb.toString().trim());
@@ -201,8 +201,8 @@ public class CssTreeTest extends CajaTestCase {
     CssTree.StyleSheet stylesheet = css(fromString(cssInput));
 
     StringBuilder sb = new StringBuilder();
-    CssPrettyPrinter csspp = new CssPrettyPrinter(sb, null);
-    RenderContext rc = new RenderContext(mc, csspp).withAsciiOnly(true);
+    CssPrettyPrinter csspp = new CssPrettyPrinter(new Concatenator(sb));
+    RenderContext rc = new RenderContext(csspp).withAsciiOnly(true);
     stylesheet.render(rc);
     csspp.noMoreTokens();
     String actual = sb.toString();

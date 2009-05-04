@@ -15,9 +15,7 @@
 package com.google.caja.render;
 
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.util.Callback;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +35,7 @@ public final class CssPrettyPrinter extends AbstractRenderer {
    * number a parenthetical indentation.
    */
   private List<Integer> indentStack = new ArrayList<Integer>();
-  /** Number of characters written to out since the last linebreak. */
+  /** Number of characters written to out since the last line-break. */
   private int charInLine;
 
   /** True if the last token needs a following space. */
@@ -45,22 +43,20 @@ public final class CssPrettyPrinter extends AbstractRenderer {
 
   /**
    * @param out receives the rendered text.
-   * @param ioExceptionHandler receives exceptions thrown by out.
    */
-  public CssPrettyPrinter(
-      Appendable out, Callback<IOException> ioExceptionHandler) {
-    super(out, ioExceptionHandler);
+  public CssPrettyPrinter(Concatenator out) {
+    super(out);
   }
 
   public void mark(FilePosition pos) {}
 
   @Override
-  protected void append(String text) throws IOException {
+  public void consume(String text) {
     TokenClassification tClass = TokenClassification.classify(text);
     if (tClass == null) { return; }
     switch (tClass) {
       case LINEBREAK:
-        // Allow external code to force linebreaks.
+        // Allow external code to force line-breaks.
         // This allows us to create a composite-renderer that renders
         // original source code next to translated source code.
         newLine();
@@ -136,7 +132,7 @@ public final class CssPrettyPrinter extends AbstractRenderer {
     }
   }
 
-  private void indent() throws IOException {
+  private void indent() {
     if (charInLine != 0) { return; }
     int indent = getIndentation();
 
@@ -149,20 +145,20 @@ public final class CssPrettyPrinter extends AbstractRenderer {
     out.append(spaces, 0, indent);
   }
 
-  private void newLine() throws IOException {
+  private void newLine() {
     if (charInLine == 0) { return; }
     charInLine = 0;
     out.append("\n");
   }
 
-  private void space() throws IOException {
+  private void space() {
     if (charInLine != 0) {
       out.append(" ");
       ++charInLine;
     }
   }
 
-  private void emit(CharSequence s) throws IOException {
+  private void emit(String s) {
     out.append(s);
     int n = s.length();
     for (int i = n; --i >= 0;) {

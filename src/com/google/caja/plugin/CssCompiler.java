@@ -27,8 +27,8 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.parser.quasiliteral.ReservedNames;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.CssPrettyPrinter;
-import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Strings;
 
@@ -152,7 +152,8 @@ public final class CssCompiler {
     final List<Expression> cssParts = new ArrayList<Expression>();
     TokenConsumer cssCompiler = new TokenConsumer() {
           final StringBuilder sb = new StringBuilder();
-          final CssPrettyPrinter pp = new CssPrettyPrinter(sb, null);
+          final CssPrettyPrinter pp
+              = new CssPrettyPrinter(new Concatenator(sb));
           public void mark(FilePosition p) { pp.mark(p); }
           public void consume(String s) {
             pp.consume(s);
@@ -176,7 +177,7 @@ public final class CssCompiler {
             sb.setLength(0);
           }
         };
-    ss.render(new RenderContext(new MessageContext(), cssCompiler));
+    ss.render(new RenderContext(cssCompiler));
     cssCompiler.noMoreTokens();
 
     ArrayConstructor cssPartsArray = new ArrayConstructor(

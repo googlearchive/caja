@@ -247,7 +247,7 @@ public class HtmlSanitizerTest extends TestCase {
     if (golden != null) {
       StringBuilder sb = new StringBuilder();
       TokenConsumer tc = new Concatenator(sb, null);
-      Nodes.render(input, new RenderContext(mc, tc));
+      Nodes.render(input, new RenderContext(tc));
       assertEquals(golden, sb.toString());
     }
   }

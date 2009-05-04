@@ -30,8 +30,8 @@ import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
-import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
@@ -148,7 +148,6 @@ public class DefaultGadgetRewriter
 
     PluginCompiler compiler = compileGadget(htmlContent, baseUri, callback);
 
-    MessageContext mc = compiler.getMessageContext();
     StringBuilder script = new StringBuilder();
 
     Callback<IOException> errorHandler = new Callback<IOException>() {
@@ -160,8 +159,9 @@ public class DefaultGadgetRewriter
 
     CajoledModule cajoled = compiler.getJavascript();
     if (cajoled != null) {
-      TokenConsumer tc = new JsPrettyPrinter(script, errorHandler);
-      cajoled.render(createRenderContext(tc, mc));
+      TokenConsumer tc = new JsPrettyPrinter(
+          new Concatenator(script, errorHandler));
+      cajoled.render(createRenderContext(tc));
       tc.noMoreTokens();
     }
 
@@ -249,9 +249,8 @@ public class DefaultGadgetRewriter
     return CharProducer.Factory.create(new ReadableReader(input), src);
   }
 
-  protected RenderContext createRenderContext(
-      TokenConsumer tc, MessageContext mc) {
-    return new RenderContext(mc, tc).withAsciiOnly(true).withEmbeddable(true);
+  protected RenderContext createRenderContext(TokenConsumer tc) {
+    return new RenderContext(tc).withAsciiOnly(true).withEmbeddable(true);
   }
 
   protected PluginCompiler createPluginCompiler(

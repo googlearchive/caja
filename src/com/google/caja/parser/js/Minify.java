@@ -19,6 +19,7 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
@@ -90,14 +91,13 @@ public class Minify {
     final MessageQueue errs = new EchoingMessageQueue(
         err, mc, false);
     RenderContext rc = new RenderContext(
-        mc,
-        new JsMinimalPrinter(out, new Callback<IOException>() {
+        new JsMinimalPrinter(new Concatenator(out, new Callback<IOException>() {
           public void handle(IOException ex) {
             errs.addMessage(
                 MessageType.IO_ERROR,
                 MessagePart.Factory.valueOf(ex.getMessage()));
           }
-        }));
+        })));
 
     for (Pair<InputSource, File> input : inputs) {
       CharProducer cp = CharProducer.Factory.create(

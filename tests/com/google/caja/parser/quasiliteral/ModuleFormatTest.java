@@ -98,7 +98,7 @@ public class ModuleFormatTest extends CajaTestCase {
         (CharSequence) TestUtil.readResource(getClass(), "testModule.js"));
 
     StringBuilder sb = new StringBuilder();
-    cajoledModule.renderWithDebugSymbols(originalSource, mc, sb, exHandler);
+    cajoledModule.renderWithDebugSymbols(originalSource, sb, exHandler);
 
     assertEquals(
         TestUtil.readResource(getClass(), "testModule.co.js"),

@@ -21,6 +21,7 @@ import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
@@ -222,8 +223,8 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
     } else {
       CajoledModule jsTree = compiler.getJavascript();
       StringBuilder js = new StringBuilder();
-      JsPrettyPrinter pp = new JsPrettyPrinter(js, null);
-      RenderContext rc = new RenderContext(mc, pp);
+      JsPrettyPrinter pp = new JsPrettyPrinter(new Concatenator(js));
+      RenderContext rc = new RenderContext(pp);
       jsTree.render(rc);
       pp.noMoreTokens();
 

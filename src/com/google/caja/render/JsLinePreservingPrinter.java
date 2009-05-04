@@ -16,9 +16,6 @@ package com.google.caja.render;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
-import com.google.caja.util.Callback;
-
-import java.io.IOException;
 
 /**
  * Renders tokens with spaces or line breaks in between in such a way that
@@ -31,16 +28,14 @@ public class JsLinePreservingPrinter extends AbstractRenderer {
   private int lineNumber = 1;
   private String pendingSpace;
 
-  public JsLinePreservingPrinter(
-      InputSource is, Appendable out,
-      Callback<IOException> ioExceptionHandler) {
-    super(out, ioExceptionHandler);
+  public JsLinePreservingPrinter(InputSource is, Concatenator out) {
+    super(out);
     if (is == null) { throw new NullPointerException(); }
     this.is = is;
   }
 
   @Override
-  protected void append(String text) throws IOException {
+  public void consume(String text) {
     if ("".equals(text.trim())) { return; }
     if (pendingSpace != null) { out.append(pendingSpace); }
     out.append(text);

@@ -28,6 +28,7 @@ import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
 import com.google.caja.opensocial.UriCallback;
 import com.google.caja.opensocial.UriCallbackOption;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.HtmlSnippetProducer;
@@ -167,9 +168,8 @@ public class CajaApplet extends Applet {
     DefaultGadgetRewriter rw =
         new DefaultGadgetRewriter(BuildInfo.getInstance(), mq) {
           @Override
-          protected RenderContext createRenderContext(
-              TokenConsumer out, MessageContext mc) {
-            return new RenderContext(mc, out)
+          protected RenderContext createRenderContext(TokenConsumer out) {
+            return new RenderContext(out)
                 .withAsciiOnly(features.contains(Feature.ASCII_ONLY))
                 .withEmbeddable(features.contains(Feature.EMBEDDABLE));
           }
@@ -237,10 +237,9 @@ public class CajaApplet extends Applet {
       }
     }
     StringBuilder sb = new StringBuilder();
-    JsMinimalPrinter pp = new JsMinimalPrinter(sb, null);
+    JsMinimalPrinter pp = new JsMinimalPrinter(new Concatenator(sb));
     (new ArrayConstructor(FilePosition.UNKNOWN, valueExprs)).render(
-        new RenderContext(new MessageContext(), pp)
-        .withAsciiOnly(true).withEmbeddable(true));
+        new RenderContext(pp).withAsciiOnly(true).withEmbeddable(true));
     pp.noMoreTokens();
     return sb.toString();
   }

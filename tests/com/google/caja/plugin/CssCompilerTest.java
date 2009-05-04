@@ -16,6 +16,7 @@ package com.google.caja.plugin;
 
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.js.Statement;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
@@ -96,9 +97,9 @@ public class CssCompilerTest extends CajaTestCase {
 
   private String render(Statement node, int limit) {
     StringBuilder sb = new StringBuilder();
-    JsPrettyPrinter pp = new JsPrettyPrinter(sb, null);
+    JsPrettyPrinter pp = new JsPrettyPrinter(new Concatenator(sb));
     pp.setLineLengthLimit(limit);
-    node.render(new RenderContext(mc, pp));
+    node.render(new RenderContext(pp));
     pp.noMoreTokens();
     return sb.toString();
   }

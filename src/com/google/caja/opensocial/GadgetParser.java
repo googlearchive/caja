@@ -25,7 +25,6 @@ import com.google.caja.lexer.TokenQueue;
 import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.plugin.Dom;
-import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
@@ -184,7 +183,7 @@ public class GadgetParser {
           throw new RenderFailure(e);
         }
       });
-      dom.render(new RenderContext(new MessageContext(), tc).withAsXml(true));
+      dom.render(new RenderContext(tc).withAsXml(true));
       tc.noMoreTokens();
     } catch (RenderFailure e) {
       throw (IOException) e.getCause();

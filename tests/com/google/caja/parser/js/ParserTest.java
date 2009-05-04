@@ -20,6 +20,7 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
@@ -484,8 +485,8 @@ public class ParserTest extends CajaTestCase {
   private void assertRender(String code, String expectedRendering)
       throws Exception {
     StringBuilder sb = new StringBuilder();
-    TokenConsumer tc = new JsPrettyPrinter(sb, null);
-    RenderContext rc = new RenderContext(mc, tc)
+    TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
+    RenderContext rc = new RenderContext(tc)
         .withAsciiOnly(true).withEmbeddable(true);
     js(fromString(code)).children().get(0).render(rc);
     tc.noMoreTokens();
@@ -504,8 +505,8 @@ public class ParserTest extends CajaTestCase {
     checkFilePositionInvariants(parseTree);
 
     StringBuilder sb = new StringBuilder();
-    TokenConsumer tc = new JsPrettyPrinter(sb, null);
-    RenderContext rc = new RenderContext(mc, tc)
+    TokenConsumer tc = new JsPrettyPrinter(new Concatenator(sb));
+    RenderContext rc = new RenderContext(tc)
         .withAsciiOnly(asciiOnly).withEmbeddable(embeddable);
     parseTree.render(rc);
     tc.noMoreTokens();

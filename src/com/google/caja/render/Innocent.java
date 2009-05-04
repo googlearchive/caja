@@ -127,8 +127,8 @@ public class Innocent {
   // TODO(ihab.awad): Move this functionality to a common place.
   private static String format(ParseTreeNode n) {
     StringBuilder output = new StringBuilder();
-    TokenConsumer renderer = new JsPrettyPrinter(output, null);
-    n.render(new RenderContext(new MessageContext(), renderer));
+    TokenConsumer renderer = new JsPrettyPrinter(new Concatenator(output));
+    n.render(new RenderContext(renderer));
     return output.toString();
   }
 }

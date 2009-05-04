@@ -159,7 +159,8 @@ public class SourceSnippetRenderer implements TokenConsumer {
     this.out = out;
     this.mc = mc;
     this.exHandler = exHandler;
-    delegateRenderer = new JsPrettyPrinter(renderedTextAccumulator, exHandler);
+    this.delegateRenderer = new JsPrettyPrinter(
+        new Concatenator(renderedTextAccumulator, exHandler));
     buildOriginalSourceLines(originalSource);
     renderedLines.add(new RenderedSourceLine(0, ""));
   }

@@ -261,7 +261,7 @@ public class RhinoTestBed {
   private static String render(ParseTreeNode n) {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = n.makeRenderer(sb, null);
-    n.render(new RenderContext(new MessageContext(), tc).withAsXml(true));
+    n.render(new RenderContext(tc).withAsXml(true));
     tc.noMoreTokens();
     return sb.toString();
   }

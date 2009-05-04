@@ -15,8 +15,10 @@
 package com.google.caja.render;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.util.Callback;
 
+import java.io.Flushable;
 import java.io.IOException;
 
 /**
@@ -25,20 +27,62 @@ import java.io.IOException;
  *
  * @author mikesamuel@gmail.com
  */
-public final class Concatenator extends AbstractRenderer {
+public final class Concatenator implements TokenConsumer {
+  private final Appendable out;
+  private final Callback<IOException> ioExceptionHandler;
+  /** True if an IOException has been raised. */
+  private boolean closed;
+
   /**
    * @param out receives the rendered text.
    * @param ioExceptionHandler receives exceptions thrown by out.
+   *     If null, then {@code IOException}s will result in a
+   *     {@code NullPointerException}.
    */
   public Concatenator(
       Appendable out, Callback<IOException> ioExceptionHandler) {
-    super(out, ioExceptionHandler);
+    this.out = out;
+    this.ioExceptionHandler = ioExceptionHandler;
   }
+
+  public Concatenator(StringBuilder out) { this(out, null); }
 
   public void mark(FilePosition pos) {}
 
-  @Override
-  protected void append(String text) throws IOException {
-    out.append(text);
+  public void consume(String text) {
+    append(text);
+  }
+
+  public void append(CharSequence text) {
+    if (closed) { return; }
+    try {
+      out.append(text);
+    } catch (IOException ex) {
+      closed = true;
+      ioExceptionHandler.handle(ex);
+    }
+  }
+
+  public void append(CharSequence text, int offset, int length) {
+    if (closed) { return; }
+    try {
+      out.append(text, offset, length);
+    } catch (IOException ex) {
+      closed = true;
+      ioExceptionHandler.handle(ex);
+    }
+  }
+
+  public void noMoreTokens() {
+    if (out instanceof Flushable) {
+      try {
+        ((Flushable) out).flush();
+      } catch (IOException ex) {
+        if (!closed) {
+          closed = true;
+          ioExceptionHandler.handle(ex);
+        }
+      }
+    }
   }
 }

@@ -40,6 +40,7 @@ import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Callback;
 import com.google.caja.util.CapturingReader;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.SourceSnippetRenderer;
 
@@ -228,7 +229,7 @@ public final class PluginCompilerMain {
         tc = module.makeRenderer(out, exHandler);
         break;
       case MINIFY:
-        tc = new JsMinimalPrinter(out,  exHandler);
+        tc = new JsMinimalPrinter(new Concatenator(out,  exHandler));
         break;
       case SIDEBYSIDE:
         tc = new SourceSnippetRenderer(
@@ -238,7 +239,7 @@ public final class PluginCompilerMain {
         throw new AssertionError(
             "Unrecognized renderer: " + config.renderer());
     }
-    RenderContext rc = new RenderContext(mc, tc)
+    RenderContext rc = new RenderContext(tc)
         .withAsciiOnly(true).withEmbeddable(true);
     module.render(rc);
     tc.noMoreTokens();
@@ -248,7 +249,7 @@ public final class PluginCompilerMain {
   private void writeFileWithDebug(Writer out, CajoledModule module)
       throws IOException {
     module.renderWithDebugSymbols(
-        buildOriginalInputCharSequences(), mc, out, exHandler);
+        buildOriginalInputCharSequences(), out, exHandler);
   }
 
   /**

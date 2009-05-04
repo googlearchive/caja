@@ -18,6 +18,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
@@ -76,9 +77,9 @@ public final class UncajoledModule extends AbstractParseTreeNode {
 
   public final TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> exHandler) {
-    return new JsPrettyPrinter(out, exHandler);
+    return new JsPrettyPrinter(new Concatenator(out, exHandler));
   }
-  
+
   public void render(RenderContext rc) {
     // FIXME(erights): must emit valid javascript or throw an exception
     rc.getOut().consume("<<<<");

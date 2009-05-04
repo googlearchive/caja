@@ -33,6 +33,7 @@ import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.Parser;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.Message;
@@ -206,7 +207,7 @@ public abstract class CajaTestCase extends TestCase {
   protected String render(ParseTreeNode node) {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = node.makeRenderer(sb, null);
-    node.render(new RenderContext(mc, tc));
+    node.render(new RenderContext(tc));
     tc.noMoreTokens();
     return sb.toString();
   }
@@ -217,8 +218,8 @@ public abstract class CajaTestCase extends TestCase {
     if (!(node.makeRenderer(sb, null) instanceof JsPrettyPrinter)) {
       throw new ClassCastException(node.getClass().getName());
     }
-    TokenConsumer tc = new JsMinimalPrinter(sb, null);
-    node.render(new RenderContext(mc, tc));
+    TokenConsumer tc = new JsMinimalPrinter(new Concatenator(sb));
+    node.render(new RenderContext(tc));
     tc.noMoreTokens();
     return sb.toString();
   }

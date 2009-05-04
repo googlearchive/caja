@@ -31,7 +31,6 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
@@ -418,7 +417,7 @@ public class DomProcessingEventsTestData {
       throws IOException {
     TokenConsumer tc = node.makeRenderer(out, new ErrorWrapper());
     try {
-      RenderContext rc = new RenderContext(new MessageContext(), tc);
+      RenderContext rc = new RenderContext(tc);
       node.render(rc);
       if (!node.isTerminal()) { tc.consume(";"); }
       tc.noMoreTokens();
@@ -430,7 +429,7 @@ public class DomProcessingEventsTestData {
   private static String render(ParseTreeNode node) {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = node.makeRenderer(sb, null);
-    RenderContext rc = new RenderContext(new MessageContext(), tc);
+    RenderContext rc = new RenderContext(tc);
     node.render(rc);
     tc.noMoreTokens();
     return sb.toString();

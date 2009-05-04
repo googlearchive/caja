@@ -33,6 +33,7 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.SnippetProducer;
 import com.google.caja.reporting.BuildInfo;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.Innocent;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.render.JsPrettyPrinter;
@@ -207,13 +208,13 @@ public class BuildServiceImplementation implements BuildService {
       TokenConsumer renderer;
       String rendererType = (String) options.get("renderer");
       if ("pretty".equals(rendererType)) {
-        renderer = new JsPrettyPrinter(out, null);
+        renderer = new JsPrettyPrinter(new Concatenator(out));
       } else if ("minify".equals(rendererType)) {
-        renderer = new JsMinimalPrinter(out, null);
+        renderer = new JsMinimalPrinter(new Concatenator(out));
       } else {
         throw new RuntimeException("Unrecognized renderer " + rendererType);
       }
-      RenderContext rc = new RenderContext(mc, renderer);
+      RenderContext rc = new RenderContext(renderer);
       cajoled.render(rc);
       rc.getOut().noMoreTokens();
       try {

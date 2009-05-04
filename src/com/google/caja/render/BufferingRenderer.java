@@ -18,9 +18,6 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.util.Callback;
-import java.io.Flushable;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,18 +29,13 @@ import java.util.List;
  */
 abstract class BufferingRenderer implements TokenConsumer {
   private final List<Object> pending = new ArrayList<Object>();
-  private final Appendable out;
-  private final Callback<IOException> ioExceptionHandler;
-  /** True if an IOException has been raised. */
-  private boolean closed;
+  private final Concatenator out;
 
   /**
    * @param out receives the rendered text.
-   * @param ioExceptionHandler receives exceptions thrown by out.
    */
-  BufferingRenderer(Appendable out, Callback<IOException> ioExceptionHandler) {
+  BufferingRenderer(Concatenator out) {
     this.out = out;
-    this.ioExceptionHandler = ioExceptionHandler;
   }
 
   /**
@@ -52,72 +44,64 @@ abstract class BufferingRenderer implements TokenConsumer {
    */
   public final void noMoreTokens() {
     JsTokenAdjacencyChecker adjChecker = new JsTokenAdjacencyChecker();
-    try {
-      String lastToken = null;
-      boolean noOutputWritten = true;
-      List<String> outputTokens = splitTokens(pending);
-      pending.clear();
-      String pendingSpace = null;
-      for (int i = 0, nTokens = outputTokens.size(); i < nTokens; ++i) {
-        String token = outputTokens.get(i);
-        if (token.charAt(0) == '\n' || " ".equals(token)) {
-          pendingSpace = token;
-          continue;
-        }
-        if (TokenClassification.isComment(token)) {
-          // Make sure we don't get into a situation where we have to output
-          // a newline to end a line comment, but can't output a newline because
-          // it would break a restricted production.
-          // When we see a line comment, scan forward until the next non-comment
-          // token.  If the canBreakBetween check fails, then remove any
-          // line-breaks by rewriting the comment.
-          // We have to rewrite multi-line block comments, since ES3.1 says that
-          // a multi-line comment is replaced with a newline for the purposes
-          // of semicolon insertion.
-          String nextToken = null;
-          for (int j = i + 1; j < nTokens; ++j) {
-            switch (TokenClassification.classify(outputTokens.get(j))) {
-              case SPACE: case LINEBREAK: case COMMENT: continue;
-              default: break;
-            }
-            nextToken = outputTokens.get(j);
-            break;
+
+    String lastToken = null;
+    boolean noOutputWritten = true;
+    List<String> outputTokens = splitTokens(pending);
+    pending.clear();
+    String pendingSpace = null;
+    for (int i = 0, nTokens = outputTokens.size(); i < nTokens; ++i) {
+      String token = outputTokens.get(i);
+      if (token.charAt(0) == '\n' || " ".equals(token)) {
+        pendingSpace = token;
+        continue;
+      }
+      if (TokenClassification.isComment(token)) {
+        // Make sure we don't get into a situation where we have to output
+        // a newline to end a line comment, but can't output a newline because
+        // it would break a restricted production.
+        // When we see a line comment, scan forward until the next non-comment
+        // token.  If the canBreakBetween check fails, then remove any
+        // line-breaks by rewriting the comment.
+        // We have to rewrite multi-line block comments, since ES3.1 says that
+        // a multi-line comment is replaced with a newline for the purposes
+        // of semicolon insertion.
+        String nextToken = null;
+        for (int j = i + 1; j < nTokens; ++j) {
+          switch (TokenClassification.classify(outputTokens.get(j))) {
+            case SPACE: case LINEBREAK: case COMMENT: continue;
+            default: break;
           }
-          if (!JsRenderUtil.canBreakBetween(lastToken, nextToken)) {
-            token = removeLinebreaksFromComment(token);
-            if (pendingSpace != null) { pendingSpace = " "; }
-          }
+          nextToken = outputTokens.get(j);
+          break;
         }
-        boolean needSpaceBefore = adjChecker.needSpaceBefore(token);
-        if (pendingSpace == null && needSpaceBefore) {
-          pendingSpace = " ";
-        }
-        if (pendingSpace != null) {
-          if (pendingSpace.charAt(0) == '\n') {
-            if (!JsRenderUtil.canBreakBetween(lastToken, token)) {
-              pendingSpace = " ";
-            } else if (noOutputWritten) {
-              pendingSpace = pendingSpace.substring(1);
-            }
-          }
-          out.append(pendingSpace);
-          pendingSpace = null;
-        }
-        out.append(token);
-        noOutputWritten = false;
-        if (!TokenClassification.isComment(token)) {
-          lastToken = token;
+        if (!JsRenderUtil.canBreakBetween(lastToken, nextToken)) {
+          token = removeLinebreaksFromComment(token);
+          if (pendingSpace != null) { pendingSpace = " "; }
         }
       }
-      if (out instanceof Flushable) {
-        ((Flushable) out).flush();
+      boolean needSpaceBefore = adjChecker.needSpaceBefore(token);
+      if (pendingSpace == null && needSpaceBefore) {
+        pendingSpace = " ";
       }
-    } catch (IOException ex) {
-      if (!closed) {
-        closed = true;
-        ioExceptionHandler.handle(ex);
+      if (pendingSpace != null) {
+        if (pendingSpace.charAt(0) == '\n') {
+          if (!JsRenderUtil.canBreakBetween(lastToken, token)) {
+            pendingSpace = " ";
+          } else if (noOutputWritten) {
+            pendingSpace = pendingSpace.substring(1);
+          }
+        }
+        out.append(pendingSpace);
+        pendingSpace = null;
+      }
+      out.append(token);
+      noOutputWritten = false;
+      if (!TokenClassification.isComment(token)) {
+        lastToken = token;
       }
     }
+    out.noMoreTokens();
   }
 
   /**

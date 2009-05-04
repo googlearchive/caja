@@ -607,7 +607,7 @@ public class CssPropertyPatterns {
         "alternates", alternateNames,
         "computedStyleWhitelist", computedStyleWhitelist);
     TokenConsumer tc = js.makeRenderer(out, null);
-    js.render(new RenderContext(new MessageContext(), tc));
+    js.render(new RenderContext(tc));
     tc.consume(";");
     tc.noMoreTokens();
     out.append("\n");

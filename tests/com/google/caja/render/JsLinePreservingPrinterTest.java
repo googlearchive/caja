@@ -15,7 +15,6 @@
 package com.google.caja.render;
 
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 
@@ -58,7 +57,7 @@ public class JsLinePreservingPrinterTest extends CajaTestCase {
   private String renderLP(ParseTreeNode node) {
     StringBuilder out = new StringBuilder();
     RenderContext rc = new RenderContext(
-        new MessageContext(), new JsLinePreservingPrinter(is, out, null));
+        new JsLinePreservingPrinter(is, new Concatenator(out)));
     node.render(rc);
     rc.getOut().noMoreTokens();
     return out.toString();

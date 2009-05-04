@@ -688,7 +688,7 @@ public class HtmlCompiler {
           } else {
             tc.consume(";");
           }
-          p.render(new RenderContext(new MessageContext(), tc));
+          p.render(new RenderContext(tc));
           tc.consume(":");
           tc.noMoreTokens();
           out.append(" ");
@@ -703,7 +703,7 @@ public class HtmlCompiler {
           StringBuilder out = new StringBuilder();
           out.append(" ");
           TokenConsumer tc = p.makeRenderer(out, null);
-          p.render(new RenderContext(new MessageContext(), tc));
+          p.render(new RenderContext(tc));
           tc.noMoreTokens();
           rawCss(p.getFilePosition(), out.toString());
         }
@@ -732,7 +732,7 @@ public class HtmlCompiler {
         {
           StringBuilder cssBuf = new StringBuilder();
           TokenConsumer tc = decl.makeRenderer(cssBuf, null);
-          pdecl.getExpr().render(new RenderContext(new MessageContext(), tc));
+          pdecl.getExpr().render(new RenderContext(tc));
           tc.noMoreTokens();
 
           // Contains the rendered CSS with ${\0###\0} placeholders.

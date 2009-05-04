@@ -18,6 +18,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.AbstractParseTreeNode;
+import com.google.caja.render.Concatenator;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
@@ -74,7 +75,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
 
   public final TokenConsumer makeRenderer(
       Appendable out, Callback<IOException> exHandler) {
-    return new CssPrettyPrinter(out, exHandler);
+    return new CssPrettyPrinter(new Concatenator(out, exHandler));
   }
 
 

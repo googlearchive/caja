@@ -28,18 +28,15 @@ public class RenderContext {
   private final boolean asciiOnly;
   /** True iff DOM tree nodes should be rendered as XML. */
   private final boolean asXml;
-  private final MessageContext mc;
   private final TokenConsumer out;
 
-  public RenderContext(MessageContext msgContext, TokenConsumer out) {
-    this(msgContext, true, false, false, out);
+  public RenderContext(TokenConsumer out) {
+    this(true, false, false, out);
   }
 
   private RenderContext(
-      MessageContext mc, boolean asciiOnly, boolean embeddable,
-      boolean asXml, TokenConsumer out) {
-    if (null == mc || null == out) { throw new NullPointerException(); }
-    this.mc = mc;
+      boolean asciiOnly, boolean embeddable, boolean asXml, TokenConsumer out) {
+    if (null == out) { throw new NullPointerException(); }
     this.embeddable = embeddable;
     this.asciiOnly = asciiOnly;
     this.asXml = asXml;
@@ -58,24 +55,20 @@ public class RenderContext {
   public final boolean isAsciiOnly() { return asciiOnly; }
   /** True iff DOM tree nodes should be rendered as XML. */
   public final boolean asXml() { return asXml; }
-  public final MessageContext getMessageContext() { return mc; }
   public final TokenConsumer getOut() { return out; }
 
   public RenderContext withEmbeddable(boolean embeddable) {
     return embeddable == this.embeddable
-        ? this
-        : new RenderContext(mc, asciiOnly, embeddable, asXml, out);
+        ? this : new RenderContext(asciiOnly, embeddable, asXml, out);
   }
 
   public RenderContext withAsciiOnly(boolean asciiOnly) {
     return asciiOnly == this.asciiOnly
-        ? this
-        : new RenderContext(mc, asciiOnly, embeddable, asXml, out);
+        ? this : new RenderContext(asciiOnly, embeddable, asXml, out);
   }
 
   public RenderContext withAsXml(boolean asXml) {
     return asXml == this.asXml
-        ? this
-        : new RenderContext(mc, asciiOnly, embeddable, asXml, out);
+        ? this : new RenderContext(asciiOnly, embeddable, asXml, out);
   }
 }

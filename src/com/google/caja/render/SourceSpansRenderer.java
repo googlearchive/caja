@@ -81,7 +81,8 @@ public class SourceSpansRenderer implements TokenConsumer {
       InputSource cajoledOutputFilename) {
     this.mc = new MessageContext();
     this.cajoledOutputFilename = cajoledOutputFilename;
-    delegateRenderer = new JsPrettyPrinter(programTextAccumulator, exHandler);
+    this.delegateRenderer = new JsPrettyPrinter(
+        new Concatenator(programTextAccumulator, exHandler));
     ((JsPrettyPrinter) delegateRenderer).setBreakAfterComment(false);
   }
 
