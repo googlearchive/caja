@@ -238,33 +238,48 @@ public abstract class CajaTestCase extends TestCase {
 
   protected void assertMessage(
       MessageTypeInt type, MessageLevel level, MessagePart... expectedParts) {
+    assertMessage(false, type, level, expectedParts);
+  }
+
+  protected void assertMessage(
+      boolean consume, MessageTypeInt type, MessageLevel level,
+      MessagePart... expectedParts) {
     Message closest = null;
+    int closestScore = Integer.MIN_VALUE;
     for (Message msg : mq.getMessages()) {
-      if (msg.getMessageType() == type) {
-        if (msg.getMessageLevel() == level) {
-          if (messageHasParts(msg, expectedParts)) { return; }
-          closest = msg;
-        } else if (closest == null || closest.getMessageLevel() != level) {
-          closest = msg;
+      int score = 0;
+      if (msg.getMessageType() == type) { ++score; }
+      if (msg.getMessageLevel() == level) { ++score; }
+      score -= partsMissing(msg, expectedParts);
+      if (score == 2) {
+        if (consume) {
+          mq.getMessages().remove(msg);
         }
+        return;
+      }
+      if (score > closestScore) {
+        closest = msg;
+        closestScore = score;
       }
     }
     if (closest == null) {
       fail("No message found of type " + type + " and level " + level);
     } else {
-      fail("Failed to find message.  Closest match was " + closest.format(mc));
+      fail("Failed to find message.  Closest match was " + closest.format(mc)
+           + " with parts " + closest.getMessageParts());
     }
   }
 
-  private static boolean messageHasParts(Message msg, MessagePart... parts) {
+  private static int partsMissing(Message msg, MessagePart... parts) {
+    int missing = 0;
     outerLoop:
     for (MessagePart expectedPart : parts) {
       for (MessagePart candidate : msg.getMessageParts()) {
         if (candidate.equals(expectedPart)) { continue outerLoop; }
       }
-      return false;
+      ++missing;
     }
-    return true;
+    return missing;
   }
 
   private InputSource sourceOf(CharProducer cp) {
