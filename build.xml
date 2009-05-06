@@ -219,7 +219,7 @@
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
       <include name="**/caja/opensocial/*.java"/>
-      <include name="**/caja/opensocial/applet/ExpressionLanguageStage.java"/>
+      <include name="**/caja/demos/applet/ExpressionLanguageStage.java"/>
       <include name="**/caja/plugin/*Main.java"/>
     </javac>
     <!-- Now that we have the main method, build ant task wrappers -->
@@ -403,7 +403,7 @@
     </transform>
   </target>
 
-  <target name="AllTests" depends="jars,CajolingService,CajoledTests,dirs">
+  <target name="AllTests" depends="jars,CajolingService,CajoledTests,dirs,testbed">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${tests}"/>
       <classpath refid="classpath.tests.compile"/>
@@ -431,8 +431,8 @@
         <include name="**/caja/log-to-console.js"/>
         <include name="**/caja/valija-cajita.js"/>
         <include name="**/caja/demos/calendar/*.js"/>
-        <include name="**/caja/opensocial/applet/testbed.js"/>
-        <include name="**/caja/opensocial/applet/setup-valija.js"/>
+        <include name="**/caja/demos/applet/testbed.js"/>
+        <include name="**/caja/demos/applet/setup-valija.js"/>
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/domita.js"/>
         <include name="**/caja/plugin/html-emitter.js"/>
@@ -521,7 +521,7 @@
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
-      <include name="**/caja/opensocial/service/*.java"/>
+      <include name="**/caja/service/*.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
   </target>
@@ -741,7 +741,7 @@
       <fileset dir="${third_party}/js/firebug/">
         <include name="firebugx.js"/>
       </fileset>
-      <fileset dir="${src}/com/google/caja/opensocial/applet/">
+      <fileset dir="${src}/com/google/caja/demos/applet/">
       <include name="setup-valija.js"/>
       </fileset>
 
@@ -777,14 +777,14 @@
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
       <classpath refid="classpath.compile"/>
-      <include name="**/caja/opensocial/applet/*.java"/>
+      <include name="**/caja/demos/applet/*.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
 
     <jar destfile="${jars}/testbed.jar" basedir="${lib}">
       <manifest>
         <attribute name="Main-Class"
-         value="com.google.caja.opensocial.applet.CajaApplet"/>
+         value="com.google.caja.demos.applet.CajaApplet"/>
       </manifest>
     </jar>
 
@@ -812,7 +812,7 @@
         <include name="prettify.js"/>
         <include name="prettify.css"/>
       </fileset>
-      <fileset dir="${src}/com/google/caja/opensocial/applet">
+      <fileset dir="${src}/com/google/caja/demos/applet">
         <include name="*.html"/>
         <include name="*.js"/>
       </fileset>
@@ -824,7 +824,7 @@
       </fileset>
     </copy>
 
-    <copy file="${src}/com/google/caja/opensocial/applet/index.html"
+    <copy file="${src}/com/google/caja/demos/applet/index.html"
      tofile="${www}/testbed/debug.html"/>
     <replace file="${www}/testbed/debug.html">
      <replacetoken><![CDATA[<script type="text/javascript" src="cajita-combined-min.js"></script>]]></replacetoken>
@@ -860,11 +860,11 @@
       <include file="${lib}/com/google/caja/plugin/html4-defs.js"/>
       <include file="${src}/com/google/caja/plugin/html-sanitizer.js"/>
       <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
-      <include file="${src}/com/google/caja/opensocial/applet/setup-valija.js"/>
+      <include file="${src}/com/google/caja/demos/applet/setup-valija.js"/>
       <include file="${src}/com/google/caja/plugin/bridal.js"/>
       <include file="${src}/com/google/caja/plugin/domita.js"/>
       <include file="${third_party}/js/prettify/prettify.js"/>
-      <include file="${src}/com/google/caja/opensocial/applet/testbed.js"/>
+      <include file="${src}/com/google/caja/demos/applet/testbed.js"/>
       <include file="${lib}/com/google/caja/plugin/valija.co.js"/>
     </transform>
   </target>

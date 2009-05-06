@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.opensocial.service;
+package com.google.caja.service;
 
 import com.google.caja.util.Pair;
 import com.google.caja.reporting.BuildInfo;
@@ -177,7 +177,7 @@ public class CajolingService extends HttpServlet {
     throw new UnsupportedContentTypeException();
   }
 
-  static final class FetchedData {
+  public static final class FetchedData {
     final byte[] content;
     final String contentType;
     final String charSet;

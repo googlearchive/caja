@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.opensocial.service;
+package com.google.caja.service;
 
 import com.google.caja.util.Strings;
 import com.google.caja.reporting.TestBuildInfo;

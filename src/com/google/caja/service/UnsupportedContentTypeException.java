@@ -1,4 +1,5 @@
-// Copyright 2007 Google Inc. All Rights Reserved.
+//Copyright (C) 2008 Google Inc.
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -11,15 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.opensocial.service;
+package com.google.caja.service;
+/**
+ * Thrown by cajoling service when it is requested to retrieve content
+ * for which there is no associated checker.
+ * 
+ * Only the cajoling service should catch this exception.
+ * 
+ * @author jasvir@gmail.com (Jasvir Nagra)
+ */
+public class UnsupportedContentTypeException extends Exception {
 
-public abstract class ContentTypeCheck {
-
-  /**
-   * Tests whether content-type {@code requested} mime-type
-   * is consistent with {@code received} mime-type
-   * @return true if they are consistent 
-   */
-  public abstract boolean check(String requested, String received);
+    public UnsupportedContentTypeException() {
+      this("Unknown content type requested");
+    }
   
+    public UnsupportedContentTypeException(String msg) {
+      super(msg);
+    }
 }

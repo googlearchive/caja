@@ -87,7 +87,7 @@ if ('undefined' === typeof prettyPrintOne) {
  * Returns an instance of CajaApplet that exposes public methods as javascript
  * methods.
  * @see CajaApplet.java
- * @return {com.google.caja.opensocial.applet.CajaApplet}
+ * @return {com.google.caja.demos.applet.CajaApplet}
  */
 function getCajoler() {
   return document.applets.cajoler;

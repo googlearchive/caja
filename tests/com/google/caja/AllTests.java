@@ -15,6 +15,9 @@
 package com.google.caja;
 
 import com.google.caja.config.ConfigUtilTest;
+import com.google.caja.demos.applet.CajaAppletTest;
+import com.google.caja.demos.applet.ExpressionLanguageStageTest;
+import com.google.caja.demos.applet.TestBedTest;
 import com.google.caja.demos.calendar.EventStoreTest;
 import com.google.caja.demos.calendar.HcalTest;
 import com.google.caja.demos.calendar.LayoutTest;
@@ -33,10 +36,8 @@ import com.google.caja.lexer.SourceBreaksTest;
 import com.google.caja.lexer.escaping.EscapingTest;
 import com.google.caja.opensocial.DefaultGadgetRewriterTest;
 import com.google.caja.opensocial.GadgetParserTest;
-import com.google.caja.opensocial.applet.ExpressionLanguageStageTest;
-import com.google.caja.opensocial.applet.TestBedTest;
-import com.google.caja.opensocial.service.CajolingServiceTest;
-import com.google.caja.opensocial.service.ContentTypeCheckTest;
+import com.google.caja.service.CajolingServiceTest;
+import com.google.caja.service.ContentTypeCheckTest;
 import com.google.caja.parser.ParseTreeNodeTest;
 import com.google.caja.parser.ParserBaseTest;
 import com.google.caja.parser.css.CssParserTest;
@@ -89,11 +90,11 @@ import com.google.caja.util.RhinoAssertsTest;
 import com.google.caja.util.SparseBitSetTest;
 import com.google.caja.util.StringsTest;
 
-import java.util.regex.Pattern;
-
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+
+import java.util.regex.Pattern;
 
 /**
  * @author mikesamuel@gmail.com
@@ -107,6 +108,7 @@ public class AllTests {
           AbbreviatorTest.class,
           AbstractMessageQueueTest.class,
           BuildInfoTest.class,
+          CajaAppletTest.class,
           CajitaRewriterTest.class,
           CajitaTest.class,
           CajolingServiceTest.class,
