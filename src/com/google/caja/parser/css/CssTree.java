@@ -17,6 +17,7 @@ package com.google.caja.parser.css;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
+import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.CssPrettyPrinter;
@@ -1076,7 +1077,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
       out.mark(getFilePosition());
       out.consume("url");
       out.consume("(");
-      renderCssString(Escaping.normalizeUri(getValue()), r);
+      renderCssString(UriUtil.normalizeUri(getValue()), r);
       out.mark(FilePosition.endOfOrNull(getFilePosition()));
       out.consume(")");
     }

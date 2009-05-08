@@ -317,16 +317,6 @@ public class EscapingTest extends TestCase {
     }
   }
 
-  public void testUriNormalization() throws Exception {
-    // Don't muck with ':' after protocol or before port, or '=' in query
-    // parameters.
-    assertEquals("http://www.google.com:80/?a=b",
-                 Escaping.normalizeUri("http://www.google.com:80/?a=b"));
-    // But normalize = before '?', and ':' afterwards.
-    assertEquals("x%3dfoo/bar?a=b%3ac=d",
-                 Escaping.normalizeUri("x=foo/bar?a=b:c=d"));
-  }
-
   public void testEscapeXml() throws Exception {
     StringBuilder sb = new StringBuilder();
     Escaping.escapeXml(CHARS, false, sb);

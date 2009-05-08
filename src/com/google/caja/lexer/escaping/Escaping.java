@@ -16,9 +16,6 @@ package com.google.caja.lexer.escaping;
 
 import com.google.caja.util.SparseBitSet;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -168,51 +165,8 @@ public class Escaping {
     }
   }
 
-  private static final Charset UTF8 = Charset.forName("UTF-8");
-
   /**
-   * Convert a URI to a string %xx escaping some codepoints that are in the
-   * RFC3986 reserved set, but only used in obsolete productions.
-   * This works around problems with inconsistencies in escaping conventions
-   * in CSS URIs, but still allows us to make sure that URIs don't look like
-   * code.
-   */
-  public static String normalizeUri(String uri) {
-    StringBuilder sb = new StringBuilder(uri.length());
-    boolean sawQmark = false;
-    for (int i = 0, n = uri.length(); i < n; ++i) {
-      char ch = uri.charAt(i);
-      boolean esc = false;
-      switch (ch) {
-        // Special in URIs, but only used in the obsolete "mark" production.
-        // Square brackets are used in IPv6 addresses so are not changed.
-        case '(': case ')': case '\'': esc = true; break;
-        case ':': esc = sawQmark; break;
-        case '=': esc = !sawQmark; break;
-        case '?':
-          if (sawQmark) {
-            esc = true;
-          } else {
-            sawQmark = true;
-          }
-          break;
-        default:
-          if (ch >= 0x7f) {
-            esc = true;
-          }
-          break;
-      }
-      if (esc) {
-        pctEncode(ch, sb);
-      } else {
-        sb.append(ch);
-      }
-    }
-    return sb.toString();
-  }
-
-  /**
-   * Given plain text, output html/XML with the same meaning.
+   * Given plain text, output HTML/XML with the same meaning.
    *
    * @param s the plain text string to escape.
    * @param asciiOnly Makes sure that only ASCII characters are written to out.
@@ -561,24 +515,6 @@ public class Escaping {
           .append("0123456789ABCDEF".charAt((ch >> 4) & 0xf))
           .append("0123456789ABCDEF".charAt(ch & 0xf));
     }
-  }
-
-  static void pctEncode(char ch, StringBuilder out) {
-    if (ch < 0x80) {
-      pctEncode((byte) ch, out);
-    } else {
-      // UTF-8 encode
-      ByteBuffer bb = UTF8.encode(CharBuffer.wrap(new char[] { ch }));
-      while (bb.position() < bb.limit()) {
-        pctEncode(bb.get(), out);
-      }
-    }
-  }
-  static void pctEncode(byte b, StringBuilder out) {
-    assert (b & 0x80) == 0;  // One byte form in UTF-8.
-    out.append('%')
-        .append("0123456789abcdef".charAt((b >> 4) & 0xf))
-        .append("0123456789abcdef".charAt(b & 0xf));
   }
 
   /** Produces hex escape for all characters in the given inclusive range. */

@@ -137,7 +137,9 @@
     <emma enabled="${emma.enabled}">
       <instr instrpath="${lib}" destdir="${instr}" mode="fullcopy"
        metadatafile="${reports}/coverage/metadata.em" merge="true">
-        <filter value="${emma.filter}"/>
+        <filter value="${emma.filter},
+                       -com.google.caja.tools.*,
+                       -com.google.caja.parser.quasiliteral.*RuleDoclet"/>
       </instr>
     </emma>
     <mkdir dir="${reports}/tests"/>

@@ -34,6 +34,7 @@ import com.google.caja.lexer.JsLexerTest;
 import com.google.caja.lexer.PunctuationTrieTest;
 import com.google.caja.lexer.SourceBreaksTest;
 import com.google.caja.lexer.escaping.EscapingTest;
+import com.google.caja.lexer.escaping.UriUtilTest;
 import com.google.caja.opensocial.DefaultGadgetRewriterTest;
 import com.google.caja.opensocial.GadgetParserTest;
 import com.google.caja.service.CajolingServiceTest;
@@ -180,6 +181,7 @@ public class AllTests {
           TamingTest.class,
           TestBedTest.class,
           TokenClassificationTest.class,
+          UriUtilTest.class,
           ValijaModuleLoadingTest.class,
     };
     Pattern testFilter = Pattern.compile(System.getProperty("test.filter", ""));
