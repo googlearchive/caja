@@ -508,7 +508,7 @@ var visited = computedColor == 'rgb(0, 0, 0)' ? "Yes!" : "Unknown";
         <div class="slide">
             <h1>Goals</h1>
             <ul class="incremental">
-	<li>Defensive Code Problem</li>
+	<li>Offensive Code Problem</li>
 	    <ul>
 	        <li>A gadget can't interfere with the container</li>
 	            <li>Gadgets can't interfere with other gadgets</li>
@@ -521,7 +521,7 @@ var visited = computedColor == 'rgb(0, 0, 0)' ? "Yes!" : "Unknown";
 		<ul>
 		    <li>Existing code can be easily adapted to work with the language</li>
 		</ul>
-	    <li>Offensive Code Problem</li>
+	    <li>Defensive Code Problem</li>
 	        <ul>
 	            <li>Mutually suspicious gadgets can cooperate</li>
 	        </ul>
@@ -642,49 +642,71 @@ searchBoxImports.resultConsumer = kittensImports.showKitten;</pre>
 	</table></center>
         </div>        
 
-        <div class="slide">
-            <h1>Cajita: Remove the knives from javascript</h1>
+    <div class="slide">
+      <h1>Cajita: Remove the knives from javascript</h1>
+      <table>
+        <tr>
+          <td width="50%">
             <ul>
-                <li>Removes from javascript</li>
-                    <ul>
-                    <li><tt>eval</tt></li>
-                    <li><tt>with</tt></li>
-                    <li><tt>this</tt></li>
-                    <li><tt>variable deletion</tt></li>
-                    <li>Complicated coercing rules surrounding <tt>==</tt> and <tt>!=</tt></li>
-                    </ul>
-                <li>Adds to javascript</li>
-                    <ul>
-                    <li><tt>cajita.freeze</tt></li>
-                    <li><tt>immutable objects</tt></li>
-                    </ul>
-                <li>Interoperates well with existing browser api</li>
-<br><br><br>
-                <li>A decent language to program in!</li>
+              <li>Removes from javascript</li>
+              <ul>
+                <li><tt>eval</tt></li>
+                <li><tt>with</tt></li>
+                <li><tt>this</tt></li>
+                <li><tt>variable deletion</tt></li>
+                <li>Complicated coercing rules surrounding <tt>==</tt> and <tt>!=</tt></li>
+              </ul>
+              <li>Adds to javascript</li>
+              <ul>
+                <li><tt>cajita.freeze</tt></li>
+                <li><tt>immutable objects</tt></li>
+              </ul>
+              <li>Interoperates well with existing browser api</li>
+              <br><br><br>
+                    <li>A decent language to program in!</li>
             </ul>
-        </div>
+          </td>
+          <td width="50%">
+            <ul class="incremental">
+              <li>Offensive Code Problem &#10003;</li>
+              <li>Legacy Tools Problem &#10003;</li>
+              <li>Defensive Code Problem &#10003;</li>
+              <li><s>Legacy Code Problem</s></li>
+            </ul>
+          </td>
+        </tr>
+      </table>
+    </div>
 
-        <div class="slide">
-            <h1>Valija: Add toy knives right back in again</h1>
-<ul>
-    <li>Defensive Code Problem &#10003;</li>
-    <li>Legacy Tools Problem &#10003;</li>
-    <li>Offensive Code Problem &#10003;</li>
-    <li><s>Legacy Code Problem</s></li>
-</ul>
-            <div class="center incremental"><h2>Solving All Four Goals In One Step Is Hard</h2></div>
-            <div class="center incremental"><h2>Instead solve in steps</h2></div>
-<ul class="incremental">
-<li>Make the target language cajita</li>
-<ul>
-<li>Take advantage of the security guarantees</li>
-</ul>
-<li>Implement the lost functionality of    javascript in cajita</li>
-<li>Compile legacy javascript &rarr; cajita &rarr; secure third-party javascript</li>
-</ul>
-            <div class="handout">
-            </div>
-        </div>
+    <div class="slide">
+      <h1>Valija: Add toy knives right back in again</h1>
+      <div class="center incremental"><h2>Solving All Four Goals In One Step Is Hard</h2></div>
+      <div class="center incremental"><h2>Instead solve in steps</h2></div>
+      <table>
+        <tr>
+          <td width="50%">
+            <ul class="incremental">
+              <li>Make the target language cajita</li>
+              <ul>
+                <li>Take advantage of the security guarantees</li>
+              </ul>
+              <li>Implement the lost functionality of    javascript in cajita</li>
+              <li>Compile legacy javascript &rarr; cajita &rarr; secure third-party javascript</li>
+            </ul>
+          </td>
+          <td width="50%">
+            <ul>
+              <li>Offensive Code Problem &#10003;</li>
+              <li>Legacy Tools Problem &#10003;</li>
+              <li>Defensive Code Problem &#10003;</li>
+              <li>Legacy Code Problem &#10003;</li>
+            </ul>
+          </td>
+        </tr>
+      </table>
+      <div class="handout">
+      </div>
+    </div>
 
         <div class="slide">
             <h1>Taming</h1>

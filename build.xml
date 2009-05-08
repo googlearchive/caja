@@ -357,7 +357,7 @@
     <jar destfile="${jars}/pluginc-src.jar" basedir="${src}"/>
   </target>
 
-  <target name="demos" depends="calendar,lolcat-search,testbed"
+  <target name="demos" depends="calendar,lolcat-search,testbed,slides"
    description="Puts all the demo files together for easy browsing."/>
 
   <!-- Cajoles test resources that contain cajita to javascript. -->
