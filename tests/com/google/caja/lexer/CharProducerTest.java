@@ -386,6 +386,12 @@ public final class CharProducerTest extends TestCase {
         CharProducer.Factory.fromHtmlAttribute(fromString("&apos;")),
         "'");
     testProducer(
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#39;")),
+        "'");
+    testProducer(
+        CharProducer.Factory.fromHtmlAttribute(fromString("&#x27;")),
+        "'");
+    testProducer(
         CharProducer.Factory.fromHtmlAttribute(fromString("&amp;")),
         "&");
     testProducer(

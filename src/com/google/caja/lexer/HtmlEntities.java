@@ -60,7 +60,8 @@ public class HtmlEntities {
                 break digloop;
               }
               break;
-            case 0x40: case 0x60: // ASCII 65-70 and 97-102 are 'A'-'Z' && 'a'-'z'
+            // ASCII 65-70 and 97-102 are 'A'-'Z' && 'a'-'z'
+            case 0x40: case 0x60:
               int hexDig = (digit & 0x7);
               if (hexDig != 0 && hexDig < 7) {
                 codepoint = (codepoint << 4) | (hexDig + 9);
@@ -82,9 +83,9 @@ public class HtmlEntities {
           char digit = chars[i];
           switch (digit & 0xfff8) {
             case 0x30: case 0x38: // ASCII 48-57 are '0'-'9'
-              int decDig = digit & 0xf;
+              int decDig = digit - '0';
               if (decDig < 10) {
-                codepoint = (codepoint * 10) | decDig;
+                codepoint = (codepoint * 10) + decDig;
               } else {
                 codepoint = -1;
                 break digloop;
