@@ -2155,8 +2155,11 @@ public class CajitaRewriter extends Rewriter {
                   RewriterMessageType.MAP_RECURSION_FAILED,
                   node.getFilePosition(), node);
             }
-            items.add(pairBindings.get("key"));
-            items.add(pairBindings.get("val"));
+            // Map recursion may reject invalid map keys
+            if (pairBindings.get("key") != null) {
+              items.add(pairBindings.get("key"));
+              items.add(pairBindings.get("val"));
+            }
           }
           return substV(
               "items", new ParseTreeNodeContainer(items));

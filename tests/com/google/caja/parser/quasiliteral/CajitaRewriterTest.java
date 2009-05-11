@@ -146,6 +146,9 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
   public void testValueOf() throws Exception {
     checkFails("var a = {valueOf:1};", "The valueOf property must not be set");
+    checkFails(
+        "var a = {x:0,valueOf:1};",
+        "The valueOf property must not be set");
     checkFails("var a={}; a.valueOf=1;", "The valueOf property must not be set");
     checkFails(
         "  function f(){}"
