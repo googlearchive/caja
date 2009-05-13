@@ -59,7 +59,8 @@ public final class CssPrettyPrinter extends AbstractRenderer {
         // Allow external code to force line-breaks.
         // This allows us to create a composite-renderer that renders
         // original source code next to translated source code.
-        newLine();
+        if (pendingSpace == '\n') { newLine(); }
+        pendingSpace = '\n';
         return;
       case SPACE:
         if (pendingSpace != '\n') { pendingSpace = ' '; }
@@ -95,7 +96,10 @@ public final class CssPrettyPrinter extends AbstractRenderer {
           break;
         case ';':
           spaceBefore = '\0';
-          spaceAfter = '\n';
+          // If we're rendering a declaration group, e.g. inside an HTML style
+          // attribute, separate them with spaces, but if we're pretty printing
+          // a stylesheet, put newlines between declarations.
+          spaceAfter = indentStack.isEmpty() ? ' ' : '\n';
           break;
       }
     }

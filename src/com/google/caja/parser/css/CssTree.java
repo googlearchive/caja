@@ -202,6 +202,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
         renderCommaGroup(media, r);
       }
       out.consume(";");
+      out.consume("\n");
     }
   }
 

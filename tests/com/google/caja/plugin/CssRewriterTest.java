@@ -159,12 +159,12 @@ public class CssRewriterTest extends CajaTestCase {
     runTest(
         ""
         + "a#foo-bank {"
-        + "  background-image: 'http://whitelisted-host.com/?bank=X&u=Al';"
+        + "  background: 'http://whitelisted-host.com/?bank=X&u=Al';"
         + "  color: purple"
         + "}",
         ""
         + "a#foo-bank {\n"
-        + "  background-image: 'http://whitelisted-host.com/?bank=X\\26u=Al';\n"
+        + "  background: url('http://whitelisted-host.com/?bank=X&u=Al');\n"
         + "  color: purple\n"
         + "}");
     // Differs from the previous only in that it has the :visited pseudo
@@ -190,10 +190,11 @@ public class CssRewriterTest extends CajaTestCase {
     runTest("#foo { background: url('/bar.png') }",
             "#foo {\n  background: url('/foo/bar.png')\n}");
     runTest("#foo { background: '/bar.png' }",
-            "#foo {\n  background: '/foo/bar.png'\n}");
+            "#foo {\n  background: url('/foo/bar.png')\n}");
     runTest(
         "#foo { background: 'http://whitelisted-host.com/blinky.gif' }",
-        "#foo {\n  background: 'http://whitelisted-host.com/blinky.gif'\n}");
+        "#foo {\n  background: url('http://whitelisted-host.com/blinky.gif')\n}"
+        );
 
     // disallowed
     runTest("#foo { background: url('http://cnn.com/bar.png') }",

@@ -359,9 +359,9 @@ public class Escaping {
        // Escape asterisks to make sure that IE 5's nested comment lexer
        // can't be confused by string literals, so no:
        //  /* /* */ content: '  */ expression(...) /* ' /* */
-       0x26, 0x2D,  // amp, single quotes, parentheses, asterisk, plus, comma
+       0x27, 0x2D,  // single quotes, parentheses, asterisk, plus, comma
        // TODO(mikesamuel): Once IE allows escapes inside URLs, then
-       // we should add ':' and '=' to this list.
+       // we should add '&', ':' and '=' to this list.
        // See issue 938 for details.
        0x3B, 0x3D, 0x3E, 0x3F,  // semicolon, angle brackets
        0x40, 0x41,  // @ symbol.

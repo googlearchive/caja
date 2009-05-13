@@ -523,9 +523,7 @@ public final class CssRewriter {
           public boolean visit(AncestorChain<?> ancestors) {
             ParseTreeNode node = ancestors.node;
             if (node instanceof CssTree.Term
-                && CssPropertyPartType.URI ==
-                node.getAttributes().get(
-                    CssValidator.CSS_PROPERTY_PART_TYPE)) {
+                && CssPropertyPartType.URI == propertyPartType(node)) {
               CssTree term = (CssTree.Term) node;
 
               CssTree.CssLiteral content =
@@ -544,7 +542,10 @@ public final class CssRewriter {
                     = new ExternalReference(uri, content.getFilePosition());
                 String rewrittenUri = meta.getPluginEnvironment().rewriteUri(
                     ref, "image/*");
-                content.setValue(rewrittenUri);
+                CssTree.UriLiteral replacement = new CssTree.UriLiteral(
+                        content.getFilePosition(), URI.create(rewrittenUri));
+                replacement.getAttributes().putAll(content.getAttributes());
+                term.replaceChild(replacement, content);
               } catch (URISyntaxException ex) {
                 // Should've been checked in removeUnsafeConstructs.
                 throw new AssertionError();
@@ -655,5 +656,9 @@ public final class CssRewriter {
    */
   private static boolean isSafeSelectorPart(String s) {
     return SAFE_SELECTOR_PART.matcher(s).matches();
+  }
+
+  private static CssPropertyPartType propertyPartType(ParseTreeNode node) {
+    return node.getAttributes().get(CssValidator.CSS_PROPERTY_PART_TYPE);
   }
 }

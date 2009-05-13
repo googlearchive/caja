@@ -127,8 +127,8 @@ public class HtmlCompilerTest extends CajaTestCase {
   public void testStyleRewriting() throws Exception {
     assertOutput(
         "IMPORTS___.htmlEmitter___.b('div')"
-        + ".a('style', 'position: absolute;"
-        + "\\nbackground: url(\\'/testplugin/bg-image\\')')"
+        + ".a('style', 'position: absolute; "
+        + "background: url(\\'/testplugin/bg-image\\')')"
         + ".f(false)"
         + ".ih('\\nHello\\n').e('div').pc('\\n');",
 
