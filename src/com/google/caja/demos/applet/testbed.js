@@ -224,8 +224,8 @@ var cajole = (function () {
           }
         }));
     features = features.join(',');
-
-    var src = inputs.src.value.replace(/^\s+|\s+$/g, '');
+    
+    var src = inputs['htmlsource' + uiSuffix].value.replace(/^\s+|\s+$/g, '');
 
     logToServer('features:' + features + '\nsrc:' + src);
 

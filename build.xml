@@ -817,6 +817,8 @@
       <fileset dir="${src}/com/google/caja/demos/applet">
         <include name="*.html"/>
         <include name="*.js"/>
+        <include name="*.css"/>
+        <include name="*.png"/>
       </fileset>
       <fileset dir="${jars}">
         <include name="testbed.jar"/>

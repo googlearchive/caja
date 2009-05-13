@@ -21,105 +21,7 @@
   <head>
     <title>Caja Test Bed</title>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-
-    <style type="text/css">
-      body { font-family: arial,sans-serif,helvetica }
-      p,td,span,input,label { font-family: arial,sans-serif, helvetica;
-                              font-size:12px }
-
-      #headerDiv {
-        padding: 10px;
-        margin-bottom: 20px;
-        background-color: #e5ecf9;
-        color: #3366cc;
-        font-size: larger;
-        font-weight: bold;
-      }
-
-      .subTitle {
-        font-size: smaller;
-        float: right;
-      }
-
-      form { display: inline }
-      div.message                { margin: 2px 2px .5em 2px; padding-left: 4px }
-      .message                   { border-left: 4px solid #000 }
-      .message.WARNING,
-      .message.CRITICAL_WARNING  { border-left: 4px solid #bb0 }
-      .message.ERROR,
-      .message.FATAL_ERROR       { border-left: 4px solid #800 }
-
-      .problem                   { border: 1px dotted #000 }
-      .WARNING          .problem,
-      .CRITICAL_WARNING .problem { border: 1px dotted #880; background: #ffd }
-      .ERROR            .problem,
-      .FATAL_ERROR      .problem { border: 1px dotted #800; background: #fee }
-
-      center.failure             { font-style: italic; font-size: 150% }
-
-      .result .type { float: right }
-      .result {
-        font-family: monospace;
-        white-space: pre;
-        border-left: 6px solid #888;
-        padding-left: 4px;
-        margin: 2px
-      }
-
-      .cajita-stacks {
-        width: 600px;
-        border: 3px solid #cccccc;
-        position: relative;
-        clip: 0 0 0 0;
-        overflow: auto;
-        font-family: monospace;
-      }
-
-      div.indentedblock {
-        margin-left: 1em;
-      }
-      div.line-of-code {
-        text-indent: 0em;
-      }
-
-      div.renderedoutput {
-        width: 600px;
-        height: 400px;
-        border: 3px solid #cccccc;
-        position: relative;
-        clip: 0 0 0 0;
-        overflow: auto;
-      }
-
-      .variableoutput {
-        width: 600px;
-        min-height: 12px;
-        height: auto;
-        min-height: 12px;
-        border: 3px solid #cccccc;
-        position: relative;
-        overflow: auto;
-        font-family:monospace;
-      }
-
-      .urlsource {
-        width: 600px;
-        border: 3px solid #cccccc;
-        padding: 5px;
-        font-family: monospace, sans-serif;
-      }
-
-      .htmlsource {
-        width: 600px;
-        height: 400px;
-        border: 3px solid #cccccc;
-        padding: 5px;
-        font-family: monospace, sans-serif;
-        display: block;
-      }
-
-      .cajita-stack { white-space: pre; font-family: monospace }
-    </style>
+    <link rel="stylesheet" type="text/css" href="testbed.css">
   </head>
 
   <div style="display:none">
@@ -151,7 +53,7 @@
         <button type="button" onclick="cajole(this.form)">Cajole</button>
         </tr><tr><td valign="top">
         <label for="htmlsource">Source
-        <textarea rows="20" name="src" class="htmlsource" name="htmlsource"
+        <textarea rows="20" class="htmlsource" name="htmlsource" id="htmlsource"
 >&lt;script type="text/javascript"&gt;
 
 &lt;/script&gt;
@@ -205,7 +107,7 @@
         return;
       }
       loadurl_cb = function(resp) {
-        form.elements.src.value = resp;
+        form.elements.htmlsource.value = resp;
         loadurl_cb = null;
       };
       var url = form.elements.urlval.value;
@@ -236,32 +138,44 @@
       }
     }
   </script>
-
-    <span style="font-size:24px;font-weight:bold">Caja Test Bed
-      <applet code="com.google.caja.demos.applet.CajaApplet" name="cajoler"
-       archive="testbed.jar,htmlparser.jar,json_simple.jar,xercesImpl.jar"
-       codebase="." height="1" width="1" scriptable="true" MAYSCRIPT>
-      </applet>
-    </span><br/>
-    <span style="font-size:12px" id="cajolerVersion"></span>
-    <p>
-      <a href="http://code.google.com/p/google-caja/issues/entry"
+      <div id="feedbackBar"> <a href="http://spreadsheets.google.com/viewform?hl=en&formkey=ckZDVUxsWUx6b21CYlI1S2QxNkg4Umc6MA.." style="color: #C00000;font-weight: bold;" target="_blank">Tell us what you think</a>  | <a href="http://code.google.com/p/google-caja/issues/entry"
        target="_blank">File a bug</a>
-      <span id="instrlink">
+        <span id="instrlink">
         |
         <a href="javascript:void(
           document.getElementById('instrs').style.display='',
           document.getElementById('instrlink').style.display='none')"
          title="Show Instructions">Instructions</a>
-      </span>
-      <span id="multitestbedlink">
-        |
-        <a href="javascript:void(
-          document.getElementById('testbed-ui.2').style.display='',
-          document.getElementById('multitestbedlink').style.display='none')"
-         title="Second Testbed">Multiple Gadgets</a>
-      </span>
-    </p>
+        </span>
+        <span id="multitestbedlink">
+          |
+          <a href="javascript:void(
+            document.getElementById('testbed-ui.2').style.display='',
+            document.getElementById('multitestbedlink').style.display='none')"
+           title="Second Testbed">Multiple Gadgets</a>
+        </span>
+      </p>
+      </div>
+      <div class="logoBar">
+        <table style="">
+            <tr>
+              <td id="googleLogoTD">
+                <img src="caja_logo_small.png" title="Google Caja Logo">
+              </td>
+              <td valign=middle style="width: 60%">
+                <span style="font-size:24px;font-weight:bold">Caja Test Bed
+                  <applet code="com.google.caja.demos.applet.CajaApplet" name="cajoler"
+                    archive="testbed.jar,htmlparser.jar,json_simple.jar,xercesImpl.jar"
+                    codebase="." height="1" width="1" scriptable="true" MAYSCRIPT>
+                  </applet>
+                </span><br/>
+                <span style="font-size:12px" id="cajolerVersion"></span>
+              </td>
+              <td style="width:80%;">&nbsp;</td>
+            </tr>
+        </table>
+      </div>
+    <p>
     <div style="display:none" id="instrs">
       <p>
       Enter HTML into the textarea.  Contents of <code>&lt;style&gt;</code> and
@@ -340,19 +254,21 @@ exports.sayBye = function () {
   <script type="text/javascript">(function () {
     function makeTestbed(uiSuffix) {
       document.body.appendChild(
-          renderTemplate(document.getElementById('testbed-ui'), uiSuffix));
+        renderTemplate(document.getElementById('testbed-ui'), uiSuffix));
       registerTestbed(uiSuffix);
     }
     makeTestbed('.1');
     makeTestbed('.2');
     document.getElementById('testbed-ui.1').style.display = '';
 
-    document.forms['cajolerForm.1'].elements.src.select();
+    document.forms['cajolerForm.1'].elements['htmlsource.1'].select();
     initTestbeds();
     document.getElementById("cajolerVersion").innerHTML
         = getCajoler().getVersion();
     process_urlparams();
   })();
   </script>
+  <script type='text/javascript' 
+    src='http://getfirebug.com/releases/lite/1.2/firebug-lite-compressed.js'></script>
   </body>
 </html>
