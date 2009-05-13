@@ -147,8 +147,7 @@ public final class HtmlSanitizer {
           Nodes.getFilePositionFor(attrib), attrName, tagName);
       valid &= removeBadAttribute(el, attrName);
     } else {
-      Criterion<? super String> criteria = schema.getAttributeCriteria(
-          tagName, attrName);
+      Criterion<? super String> criteria = a.getValueCriterion();
       if (!criteria.accept(attrib.getNodeValue())) {
         mq.addMessage(
             PluginMessageType.DISALLOWED_ATTRIBUTE_VALUE,

@@ -27,7 +27,9 @@ import com.google.caja.util.Strings;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -50,7 +52,6 @@ public final class HtmlSchema {
   private final Map<Name, HTML.Element> elementDetails;
   private final Set<Pair<Name, Name>> allowedAttributes;
   private final Map<Pair<Name, Name>, HTML.Attribute> attributeDetails;
-  private final Map<Pair<Name, Name>, Criterion<String>> attributeCriteria;
 
   private static Pair<HtmlSchema, List<Message>> defaultSchema;
   /**
@@ -98,43 +99,13 @@ public final class HtmlSchema {
   }
 
   public HtmlSchema(WhiteList tagList, WhiteList attribList) {
-    this.allowedElements = new HashSet<Name>();
-    for (String name : tagList.allowedItems()) {
-      allowedElements.add(Name.html(name));
-    }
-    this.elementDetails = new HashMap<Name, HTML.Element>();
-    for (WhiteList.TypeDefinition def : tagList.typeDefinitions().values()) {
-      Name name = Name.html((String) def.get("key", null));
-      elementDetails.put(
-          name,
-          new HTML.Element(
-              name,
-              (Boolean) def.get("empty", Boolean.FALSE),
-              (Boolean) def.get("optionalEnd", Boolean.FALSE)));
-    }
     this.allowedAttributes = new HashSet<Pair<Name, Name>>();
-    for (String name : attribList.allowedItems()) {
-      int colon = name.indexOf(':');
-      allowedAttributes.add(Pair.pair(Name.html(name.substring(0, colon)),
-                                      Name.html(name.substring(colon + 1))));
+    for (String key : attribList.allowedItems()) {
+      allowedAttributes.add(elAndAttrib(key));
     }
-    this.attributeDetails = new HashMap<Pair<Name, Name>, HTML.Attribute>();
-    this.attributeCriteria = new HashMap<Pair<Name, Name>, Criterion<String>>();
+    Map<Pair<Name, Name>, Criterion<String>> criteria
+        = new HashMap<Pair<Name, Name>, Criterion<String>>();
     for (WhiteList.TypeDefinition def : attribList.typeDefinitions().values()) {
-      String key = Strings.toLowerCase((String) def.get("key", null));
-      int colon = key.indexOf(':');
-      Name element = Name.html(key.substring(0, colon)),
-          attrib = Name.html(key.substring(colon + 1));
-      Pair<Name, Name> elAndAttrib = Pair.pair(element, attrib);
-      HTML.Attribute.Type type = HTML.Attribute.Type.NONE;
-      String typeName = (String) def.get("type", null);
-      if (typeName != null) {
-        // TODO(mikesamuel): divert IllegalArgumentExceptions to MessageQueue
-        type = HTML.Attribute.Type.valueOf(typeName);
-      }
-      String mimeTypes = (String) def.get("mimeTypes", null);
-      attributeDetails.put(
-          elAndAttrib, new HTML.Attribute(element, attrib, type, mimeTypes));
       final String values = (String) def.get("values", null);
       Criterion<String> criterion = null;
       if (values != null) {
@@ -167,8 +138,98 @@ public final class HtmlSchema {
         }
       }
       if (criterion != null) {
-        attributeCriteria.put(elAndAttrib, criterion);
+        String key = Strings.toLowerCase((String) def.get("key", null));
+        criteria.put(elAndAttrib(key), criterion);
       }
+    }
+
+    this.attributeDetails = new HashMap<Pair<Name, Name>, HTML.Attribute>();
+    Map<Name, List<HTML.Attribute>> attributeDetailsByElement
+        = new HashMap<Name, List<HTML.Attribute>>();
+    for (WhiteList.TypeDefinition def : attribList.typeDefinitions().values()) {
+      String key = Strings.toLowerCase((String) def.get("key", null));
+      Pair<Name, Name> elAndAttrib = elAndAttrib(key);
+      Name element = elAndAttrib.a;
+      Name attrib = elAndAttrib.b;
+      HTML.Attribute.Type type = HTML.Attribute.Type.NONE;
+      String typeName = (String) def.get("type", null);
+      if (typeName != null) {
+        // TODO(mikesamuel): divert IllegalArgumentExceptions to MessageQueue
+        type = HTML.Attribute.Type.valueOf(typeName);
+      }
+      String mimeTypes = (String) def.get("mimeTypes", null);
+      Criterion<String> elCriterion = criteria.get(elAndAttrib);
+      Criterion<String> wcCriterion = criteria.get(Pair.pair(WILDCARD, attrib));
+      Criterion<String> criterion;
+      if (elCriterion != null) {
+        if (wcCriterion != null) {
+          criterion = Criterion.Factory.and(elCriterion, wcCriterion);
+        } else {
+          criterion = elCriterion;
+        }
+      } else if (wcCriterion != null) {
+        criterion = wcCriterion;
+      } else {
+        criterion = Criterion.Factory.<String>optimist();
+      }
+      String defaultValue = (String) def.get("default", null);
+      boolean optional = Boolean.TRUE.equals(def.get("optional", true));
+      String safeValue = (String) def.get("safeValue", null);
+      if (safeValue == null) {
+        String candidate = defaultValue != null ? defaultValue : "";
+        if (criterion.accept(candidate)) {
+          safeValue = candidate;
+        } else {
+          String values = (String) def.get("values", null);
+          if (values != null) {
+            safeValue = values.split(",")[0];
+          }
+        }
+      }
+      HTML.Attribute a = new HTML.Attribute(
+          element, attrib, type, defaultValue, safeValue, optional, mimeTypes,
+          criterion);
+      attributeDetails.put(elAndAttrib, a);
+      List<HTML.Attribute> byElement = attributeDetailsByElement.get(element);
+      if (byElement == null) {
+        byElement = new ArrayList<HTML.Attribute>();
+        attributeDetailsByElement.put(element, byElement);
+      }
+      byElement.add(a);
+    }
+
+    List<HTML.Attribute> all = attributeDetailsByElement.get(WILDCARD);
+    if (all != null) {
+      for (Map.Entry<Name, List<HTML.Attribute>> e
+           : attributeDetailsByElement.entrySet()) {
+        Name element = e.getKey();
+        if (!WILDCARD.equals(element)) {
+          for (HTML.Attribute ecAttr : all) {
+            if (!attributeDetails.containsKey(
+                    Pair.pair(element, ecAttr.getAttributeName()))) {
+              e.getValue().add(ecAttr);
+            }
+          }
+        }
+        e.setValue(Collections.unmodifiableList(e.getValue()));
+      }
+      all = Collections.unmodifiableList(all);
+    } else {
+      all = Collections.<HTML.Attribute>emptyList();
+    }
+    this.allowedElements = new HashSet<Name>();
+    for (String name : tagList.allowedItems()) {
+      allowedElements.add(Name.html(name));
+    }
+    this.elementDetails = new HashMap<Name, HTML.Element>();
+    for (WhiteList.TypeDefinition def : tagList.typeDefinitions().values()) {
+      Name name = Name.html((String) def.get("key", null));
+      List<HTML.Attribute> attrs = attributeDetailsByElement.get(name);
+      if (attrs == null) { attrs = all; }
+      boolean empty = (Boolean) def.get("empty", Boolean.FALSE);
+      boolean optionalEnd = (Boolean) def.get("optionalEnd", Boolean.FALSE);
+      elementDetails.put(
+          name, new HTML.Element(name, attrs, empty, optionalEnd));
     }
   }
 
@@ -202,19 +263,10 @@ public final class HtmlSchema {
     return attr;
   }
 
-  /** Criteria that attribute values must satisfy. */
-  public Criterion<? super String> getAttributeCriteria(
-      Name tagName, Name attribName) {
-    Criterion<String> specific = attributeCriteria.get(
-        Pair.pair(tagName, attribName));
-    Criterion<String> general = attributeCriteria.get(
-        Pair.pair(WILDCARD, attribName));
-    if (specific != null) {
-      return (general != null)
-          ? Criterion.Factory.and(specific, general)
-          : specific;
-    } else {
-      return general != null ? general : Criterion.Factory.<String>optimist();
-    }
+  private static Pair<Name, Name> elAndAttrib(String key) {
+    int separator = key.indexOf("::");
+    Name element = Name.html(key.substring(0, separator));
+    Name attrib = Name.html(key.substring(separator + 2));
+    return Pair.pair(element, attrib);
   }
 }

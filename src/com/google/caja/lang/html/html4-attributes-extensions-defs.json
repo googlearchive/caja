@@ -4,7 +4,7 @@
       ],
 
   "types": [
-      { "key": "*:NAME", "description": "other name",
+      { "key": "*::NAME", "description": "other name",
         "type": "GLOBAL_NAME", "optional": true }
       ]
 }

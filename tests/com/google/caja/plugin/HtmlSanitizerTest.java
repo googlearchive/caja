@@ -15,170 +15,135 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.lexer.HtmlTokenType;
-import com.google.caja.lexer.InputSource;
-import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.TokenConsumer;
-import com.google.caja.lexer.TokenQueue;
-import com.google.caja.parser.html.DomParser;
 import com.google.caja.parser.html.Nodes;
-import com.google.caja.render.Concatenator;
-import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
-import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.MoreAsserts;
 
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.StringReader;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Node;
-
-import junit.framework.TestCase;
 
 /**
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
-public class HtmlSanitizerTest extends TestCase {
-  private static final PrintWriter err
-      = new PrintWriter(new OutputStreamWriter(System.err));
-  private InputSource is;
-  private MessageContext mc;
-  private MessageQueue mq;
-
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-    is = new InputSource(new URI("test:///" + getName()));
-    mc = new MessageContext();
-    mc.addInputSource(is);
-    mq = new EchoingMessageQueue(err, mc);
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-    is = null;
-    mc = null;
-    mq = null;
-    err.flush();
-  }
-
+public class HtmlSanitizerTest extends CajaTestCase {
   public void testSingleElement() throws Exception {
-    assertValid(html("<br/>"), "<br />");
+    assertValid(htmlFragment(fromString("<br/>")), "<br />");
   }
   public void testText() throws Exception {
-    assertValid(html("Hello World"), "Hello World");
+    assertValid(htmlFragment(fromString("Hello World")), "Hello World");
   }
   public void testFormattingElement() throws Exception {
-    assertValid(html("<b>Hello</b>"), "<b>Hello</b>");
+    assertValid(htmlFragment(fromString("<b>Hello</b>")), "<b>Hello</b>");
   }
   public void testUnknownAttribute() throws Exception {
-    assertValid(html("<b unknown=\"bogus\">Hello</b>"),
+    assertValid(htmlFragment(fromString("<b unknown=\"bogus\">Hello</b>")),
                 "<b>Hello</b>",
                 "WARNING: removing unknown attribute unknown on b");
   }
   public void testKnownAttribute() throws Exception {
-    assertValid(html("<b id=\"bold\">Hello</b>"), "<b id=\"bold\">Hello</b>");
+    assertValid(htmlFragment(fromString("<b id=\"bold\">Hello</b>")),
+                "<b id=\"bold\">Hello</b>");
   }
   public void testUnknownElement() throws Exception {
     assertValid(
-        html("<bogus id=\"bold\">Hello</bogus>"),
+        htmlFragment(fromString("<bogus id=\"bold\">Hello</bogus>")),
         "Hello",
         "WARNING: removing unknown tag bogus",
         "WARNING: removing attribute id when folding bogus into parent");
   }
   public void testUnknownEverything() throws Exception {
-    assertValid(html("<bogus unknown=\"bogus\">Hello</bogus>"),
-                  "Hello",
-                  "WARNING: removing unknown tag bogus",
-                  "WARNING: removing unknown attribute unknown on bogus");
+    assertValid(
+        htmlFragment(fromString("<bogus unknown=\"bogus\">Hello</bogus>")),
+        "Hello",
+        "WARNING: removing unknown tag bogus",
+        "WARNING: removing unknown attribute unknown on bogus");
   }
   public void testDisallowedElement() throws Exception {
-    assertValid(html("<script>disallowed</script>"),
-                  "disallowed",
-                  "WARNING: removing disallowed tag script");
+    assertValid(htmlFragment(fromString("<script>disallowed</script>")),
+                "disallowed",
+                "WARNING: removing disallowed tag script");
   }
   public void testAttributeValidity() throws Exception {
-    assertValid(html("<form><input type=text></form>"),
+    assertValid(htmlFragment(fromString("<form><input type=text></form>")),
                 "<form><input type=\"text\" /></form>");
   }
   public void testAttributePatternsTagSpecific() throws Exception {
-    assertValid(html("<input type=text>"), "<input type=\"text\" />");
-    assertValid(html("<button type=submit>"),
+    assertValid(htmlFragment(fromString("<input type=text>")),
+                "<input type=\"text\" />");
+    assertValid(htmlFragment(fromString("<button type=submit>")),
                 "<button type=\"submit\"></button>");
-    assertValid(html("<BUTTON TYPE=SUBMIT>"),
+    assertValid(htmlFragment(fromString("<BUTTON TYPE=SUBMIT>")),
                 "<button type=\"SUBMIT\"></button>");
-    assertValid(html("<button type=text>"),
-                  "<button></button>",
-                  "WARNING: attribute type cannot have value text");
-    assertValid(html("<BUTTON TYPE=TEXT>"),
-                  "<button></button>",
-                  "WARNING: attribute type cannot have value TEXT");
+    assertValid(htmlFragment(fromString("<button type=text>")),
+                "<button></button>",
+                "WARNING: attribute type cannot have value text");
+    assertValid(htmlFragment(fromString("<BUTTON TYPE=TEXT>")),
+                "<button></button>",
+                "WARNING: attribute type cannot have value TEXT");
   }
   public void testIllegalAttributeValue() throws Exception {
-    assertValid(html("<form><input type=x></form>"),
-                  "<form><input /></form>",
-                  "WARNING: attribute type cannot have value x");
+    assertValid(htmlFragment(fromString("<form><input type=x></form>")),
+                "<form><input /></form>",
+                "WARNING: attribute type cannot have value x");
   }
   public void testDisallowedElement2() throws Exception {
-    assertValid(html("<xmp>disallowed</xmp>"),
-        "disallowed",
-        "WARNING: removing unknown tag xmp");
+    assertValid(htmlFragment(fromString("<xmp>disallowed</xmp>")),
+                "disallowed",
+                "WARNING: removing unknown tag xmp");
   }
   public void testDisallowedElement3() throws Exception {
-    assertValid(html("<meta http-equiv='refresh' content='1'/>"),
+    assertValid(
+        htmlFragment(fromString("<meta http-equiv='refresh' content='1'/>")),
         "",
         "WARNING: removing disallowed tag meta",
         "WARNING: removing attribute content when folding meta into parent",
         "WARNING: removing attribute http-equiv when folding meta into parent");
   }
   public void testDisallowedElement4() throws Exception {
-    assertValid(xml("<title>A title</title>"), "",
+    assertValid(xmlFragment(fromString("<title>A title</title>")), "",
                 "WARNING: removing disallowed tag title");
   }
   public void testElementFolding1() throws Exception {
-    assertValid(xml("<body bgcolor=\"red\">Zoicks</body>"),
+    assertValid(
+        xmlFragment(fromString("<body bgcolor=\"red\">Zoicks</body>")),
         "Zoicks",
         "WARNING: folding element body into parent",
         "WARNING: removing attribute bgcolor when folding body into parent");
   }
   public void testElementFolding2() throws Exception {
-    assertValid(xml("<body>Zoicks</body>"),
+    assertValid(xmlFragment(fromString("<body>Zoicks</body>")),
                 "Zoicks", "WARNING: folding element body into parent");
   }
   public void testElementFolding3() throws Exception {
-    assertValid(xml("<html>"
-                      + "<head>"
-                      + "<title>Blah</title>"
-                      + "<p>Foo</p>"
-                      + "</head>"
-                      + "<body>"
-                      + "<p>One</p>"
-                      + "<p styleo=\"color: red\">Two</p>"
-                      + "Three"
-                      + "<x>Four</x>"
-                      + "</body>"
-                      + "</html>"),
-                      "<p>Foo</p><p>One</p><p>Two</p>ThreeFour",
-                  "WARNING: folding element html into parent",
-                  "WARNING: folding element head into parent",
-                  "WARNING: removing disallowed tag title",
-                  "WARNING: folding element body into parent",
-                  "WARNING: removing unknown attribute styleo on p",
-                  "WARNING: removing unknown tag x");
+    assertValid(xmlFragment(fromString(
+                    "<html>"
+                    + "<head>"
+                    + "<title>Blah</title>"
+                    + "<p>Foo</p>"
+                    + "</head>"
+                    + "<body>"
+                    + "<p>One</p>"
+                    + "<p styleo=\"color: red\">Two</p>"
+                    + "Three"
+                    + "<x>Four</x>"
+                    + "</body>"
+                    + "</html>")),
+                "<p>Foo</p><p>One</p><p>Two</p>ThreeFour",
+                "WARNING: folding element html into parent",
+                "WARNING: folding element head into parent",
+                "WARNING: removing disallowed tag title",
+                "WARNING: folding element body into parent",
+                "WARNING: removing unknown attribute styleo on p",
+                "WARNING: removing unknown tag x");
   }
   public void testElementFolding4() throws Exception {
-    assertValid(xml("<html>"
+    assertValid(xmlFragment(fromString(
+                    "<html>"
                     + "<head>"
                     + "<title>Blah</title>"
                     + "<p>Foo</p>"
@@ -189,7 +154,7 @@ public class HtmlSanitizerTest extends TestCase {
                     + "Three"
                     + "<p>Four</p>"
                     + "</body>"
-                    + "</html>"),
+                    + "</html>")),
                 "<p>Foo</p><p>One</p><p>Two</p>Three<p>Four</p>",
                 "WARNING: folding element html into parent",
                 "WARNING: folding element head into parent",
@@ -198,15 +163,17 @@ public class HtmlSanitizerTest extends TestCase {
   }
   public void testIgnoredElement() throws Exception {
     assertValid(
-        html("<p>Foo"
+        htmlFragment(fromString(
+             "<p>Foo"
              + "<noscript>ignorable</noscript>"
-             + "<p>Bar"),
+             + "<p>Bar")),
         "<p>Foo</p><p>Bar</p>",
         "WARNING: removing disallowed tag noscript");
   }
   public void testDupeAttrs() throws Exception {
     assertValid(
-        xml("<font color=\"red\" color=\"blue\">Purple</font>"),
+        xmlFragment(fromString(
+            "<font color=\"red\" color=\"blue\">Purple</font>")),
         //         ^^^^^
         //            1
         //   123456789012
@@ -215,7 +182,8 @@ public class HtmlSanitizerTest extends TestCase {
   }
   public void testDisallowedAttrs() throws Exception {
     assertValid(
-        html("<a href=\"foo.html\" charset=\"utf-7\">foo</a>"),
+        htmlFragment(fromString(
+            "<a href=\"foo.html\" charset=\"utf-7\">foo</a>")),
         "<a href=\"foo.html\">foo</a>",
         "WARNING: removing disallowed attribute charset on tag a");
   }
@@ -245,31 +213,7 @@ public class HtmlSanitizerTest extends TestCase {
     assertEquals(valid, validated);
 
     if (golden != null) {
-      StringBuilder sb = new StringBuilder();
-      TokenConsumer tc = new Concatenator(sb, null);
-      Nodes.render(input, new RenderContext(tc));
-      assertEquals(golden, sb.toString());
+      assertEquals(golden, Nodes.render(input));
     }
-  }
-
-  private DocumentFragment html(String html) throws ParseException {
-    return parse(html, false);
-  }
-
-  private DocumentFragment xml(String xml) throws ParseException {
-    return parse(xml, true);
-  }
-
-  private DocumentFragment parse(String markup, boolean asXml) throws ParseException {
-    TokenQueue<HtmlTokenType> tq;
-    try {
-      tq = DomParser.makeTokenQueue(is, new StringReader(markup), asXml);
-    } catch (IOException ex) {
-      throw new RuntimeException(ex);  // IOException reading from string.
-    }
-    DocumentFragment t = new DomParser(tq, asXml, mq).parseFragment(
-        DomParser.makeDocument(null, null));
-    tq.expectEmpty();
-    return t;
   }
 }

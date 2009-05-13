@@ -7,8 +7,8 @@
 
   "types": [
       {
-        "key": "*:TARGET",
-        "optional": "false",
+        "key": "A::TARGET",
+        "optional": "true",
         "type": "FRAME_TARGET",
         "reason": [
              "Either the name of a window or one of the special values that",
@@ -21,28 +21,37 @@
              "",
              "We allow only _blank."
              ],
-        "values": "_blank"
+        "values": "_blank",
+        "default": "_self"
       },
+      { "key": "AREA::TARGET", "optional": "true", "type": "FRAME_TARGET",
+        "values": "_blank", "default": "_self" },
+      { "key": "BASE::TARGET", "optional": "true", "type": "FRAME_TARGET",
+        "values": "_blank", "default": "_self" },
+      { "key": "FORM::TARGET", "optional": "true", "type": "FRAME_TARGET",
+        "values": "_blank", "default": "_self" },
+      { "key": "LINK::TARGET", "optional": "true", "type": "FRAME_TARGET",
+        "values": "_blank", "default": "_self" },
       {
-        "key": "*:LANGUAGE",
+        "key": "*::LANGUAGE",
         "description": "predefined script language name",
         "optional": true, "values": "text/javascript"
       },
       {
-        "key": "SCRIPT:TYPE",
+        "key": "SCRIPT::TYPE",
         "description": "content type of script language",
         "optional": true, "pattern": "text/javascript(;.*)?"
       },
       {
-        "key": "STYLE:TYPE",
+        "key": "STYLE::TYPE",
         "description": "content type of a style language",
         "optional": true, "pattern": "text/css(;.*)?"
       },
       {
-        "key": "INPUT:TYPE",
+        "key": "INPUT::TYPE",
         "description": "what kind of widget is needed -- disallows FILE and PASSWORD",
         "pattern": "TEXT|CHECKBOX|RADIO|SUBMIT|RESET|HIDDEN|IMAGE|BUTTON",
-        "optional": true
+        "optional": true, "default": "TEXT"
       }
       ]
 }

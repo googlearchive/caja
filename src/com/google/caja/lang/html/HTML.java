@@ -14,7 +14,12 @@
 
 package com.google.caja.lang.html;
 
+import com.google.caja.util.Criterion;
 import com.google.caja.util.Name;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * HTML class defines Element and Attribute classes.
@@ -27,17 +32,25 @@ public final class HTML {
    * Html element
    */
   public static final class Element {
-
     private final Name name_;
+    private final List<Attribute> attrs_;
     private final boolean empty_;
     private final boolean optionalEndTag_;
 
     /** Construct an Element */
-    public Element(Name name, boolean empty, boolean optionalEndTag) {
+    public Element(
+        Name name, List<Attribute> attrs,
+        boolean empty, boolean optionalEndTag) {
       assert name != null;
       this.name_ = name;
+      this.attrs_ = Collections.unmodifiableList(
+          new ArrayList<Attribute>(attrs));
       this.empty_ = empty;
       this.optionalEndTag_ = optionalEndTag;
+    }
+
+    public List<Attribute> getAttributes() {
+      return attrs_;
     }
 
     /** Name of the element, e.g. "a", "br" */
@@ -158,19 +171,37 @@ public final class HTML {
     /** Type of the attribute value, e.g. URI */
     private final Type type_;
 
+    /** The value the attribute assumes if not specified or null. */
+    private final String defaultValue_;
+
+    /** A known safe value for the attribute. */
+    private final String safeValue_;
+
+    private final boolean optional_;
+
     /** Mime-Type for URI attributes. */
     private final String mimeTypes_;
 
+    private final Criterion<String> valueCriterion_;
+
     /** Construct an Attribute */
-    public Attribute(Name elementName, Name attributeName, Type type,
-                     String mimeTypes) {
+    public Attribute(
+        Name elementName, Name attributeName, Type type, String defaultValue,
+        String safeValue, boolean optional, String mimeTypes,
+        Criterion<String> valueCriterion) {
       assert elementName != null;
       assert attributeName != null;
       assert type != null;
+      // HACK: null should not be allowed
+      assert safeValue == null || valueCriterion.accept(safeValue);
       this.elementName_ = elementName;
       this.attributeName_ = attributeName;
       this.type_ = type;
+      this.defaultValue_ = defaultValue;
+      this.safeValue_ = safeValue;
+      this.optional_ = optional;
       this.mimeTypes_ = mimeTypes;
+      this.valueCriterion_ = valueCriterion;
     }
 
     /** Gets the name of the attribute. */
@@ -188,9 +219,31 @@ public final class HTML {
       return type_;
     }
 
+    /** The value the attribute assumes when it is not specified. */
+    public String getDefaultValue() {
+      return defaultValue_;
+    }
+
+    /**
+     * A value that is known to match the {@link #getValueCriterion criterion}.
+     */
+    public String getSafeValue() {
+      return safeValue_;
+    }
+
     /** The mime-types or null. */
     public String getMimeTypes() {
       return mimeTypes_;
+    }
+
+    /** Accepts values that are allowed for this attribute. */
+    public Criterion<String> getValueCriterion() {
+      return valueCriterion_;
+    }
+
+    /** True if the attribute is optional. */
+    public boolean isOptional() {
+      return optional_;
     }
 
     /**

@@ -18,6 +18,8 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Name;
 
+import java.util.List;
+
 import junit.framework.TestCase;
 
 /**
@@ -50,6 +52,8 @@ public class HtmlSchemaTest extends TestCase {
     assertFalse(schema.isElementAllowed(id("head")));
     assertFalse(schema.isElementAllowed(id("html")));
     assertFalse(schema.isElementAllowed(id("title")));
+    assertTrue(schema.isElementAllowed(id("div")));
+    assertTrue(schema.isElementAllowed(id("span")));
   }
 
   public void testAttributeTypes() throws Exception {
@@ -76,38 +80,69 @@ public class HtmlSchemaTest extends TestCase {
   }
 
   public void testAttributeCriteria() throws Exception {
-    assertFalse(schema.getAttributeCriteria(id("a"), id("target"))
-                .accept("_top"));
-    assertTrue(schema.getAttributeCriteria(id("a"), id("target"))
-               .accept("_blank"));
+    assertFalse(schema.lookupAttribute(id("a"), id("target"))
+                .getValueCriterion().accept("_top"));
+    assertTrue(schema.lookupAttribute(id("a"), id("target"))
+               .getValueCriterion().accept("_blank"));
 
-    assertFalse(schema.getAttributeCriteria(id("table"), id("cellpadding"))
-                .accept("six"));
-    assertTrue(schema.getAttributeCriteria(id("table"), id("cellpadding"))
-               .accept("6"));
-    assertTrue(schema.getAttributeCriteria(id("table"), id("width"))
-               .accept("10%"));
-    assertFalse(schema.getAttributeCriteria(id("table"), id("width"))
-               .accept("%"));
+    assertFalse(schema.lookupAttribute(id("table"), id("cellpadding"))
+                .getValueCriterion().accept("six"));
+    assertTrue(schema.lookupAttribute(id("table"), id("cellpadding"))
+               .getValueCriterion().accept("6"));
+    assertTrue(schema.lookupAttribute(id("table"), id("width"))
+               .getValueCriterion().accept("10%"));
+    assertFalse(schema.lookupAttribute(id("table"), id("width"))
+               .getValueCriterion().accept("%"));
 
-    assertFalse(schema.getAttributeCriteria(id("script"), id("type"))
-                .accept("text/vbscript"));
-    assertTrue(schema.getAttributeCriteria(id("script"), id("type"))
-               .accept("text/javascript"));
-    assertTrue(schema.getAttributeCriteria(id("script"), id("type"))
-               .accept("text/javascript;charset=UTF-8"));
-    assertTrue(schema.getAttributeCriteria(id("input"), id("type"))
-               .accept("text"));
-    assertTrue(schema.getAttributeCriteria(id("input"), id("type"))
-               .accept("TEXT"));
-    assertTrue(schema.getAttributeCriteria(id("input"), id("type"))
-               .accept("button"));
-    assertFalse(schema.getAttributeCriteria(id("input"), id("type"))
-                .accept("file"));
-    assertFalse(schema.getAttributeCriteria(id("input"), id("type"))
-                .accept("FILE"));
-    assertFalse(schema.getAttributeCriteria(id("input"), id("type"))
-                .accept("bogus"));
+    assertFalse(schema.lookupAttribute(id("script"), id("type"))
+                .getValueCriterion().accept("text/vbscript"));
+    assertTrue(schema.lookupAttribute(id("script"), id("type"))
+               .getValueCriterion().accept("text/javascript"));
+    assertTrue(schema.lookupAttribute(id("script"), id("type"))
+               .getValueCriterion().accept("text/javascript;charset=UTF-8"));
+    assertTrue(schema.lookupAttribute(id("input"), id("type"))
+               .getValueCriterion().accept("text"));
+    assertTrue(schema.lookupAttribute(id("input"), id("type"))
+               .getValueCriterion().accept("TEXT"));
+    assertTrue(schema.lookupAttribute(id("input"), id("type"))
+               .getValueCriterion().accept("button"));
+    assertFalse(schema.lookupAttribute(id("input"), id("type"))
+                .getValueCriterion().accept("file"));
+    assertFalse(schema.lookupAttribute(id("input"), id("type"))
+                .getValueCriterion().accept("FILE"));
+    assertFalse(schema.lookupAttribute(id("input"), id("type"))
+                .getValueCriterion().accept("bogus"));
+  }
+
+  public void testSafeAndDefaultValues() {
+    HTML.Attribute tgt = schema.lookupAttribute(id("a"), id("target"));
+    assertEquals("_blank", tgt.getSafeValue());
+    assertEquals("_self", tgt.getDefaultValue());
+  }
+
+  public void testAttributeList() {
+    HTML.Element a = schema.lookupElement(id("a"));
+    assertEquals(
+        schema.lookupAttribute(id("A"), id("HREF")),
+        withId(a.getAttributes(), id("HREF")));
+    assertEquals(
+        schema.lookupAttribute(id("A"), id("ID")),
+        withId(a.getAttributes(), id("ID")));
+    assertEquals(null, withId(a.getAttributes(), id("COLSPAN")));
+    HTML.Element b = schema.lookupElement(id("b"));
+    assertEquals(
+        schema.lookupAttribute(id("B"), id("ID")),
+        withId(b.getAttributes(), id("ID")));
+  }
+  private static HTML.Attribute withId(List<HTML.Attribute> attrs, Name name) {
+    HTML.Attribute result = null;
+    for (HTML.Attribute a : attrs) {
+      if (name.equals(a.getAttributeName())) {
+        if (result != null) { throw new IllegalStateException("DUPE"); }
+        result = a;
+      }
+    }
+    return result;
   }
 
   private static Name id(String name) {
