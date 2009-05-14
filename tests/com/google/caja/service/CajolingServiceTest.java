@@ -109,7 +109,23 @@ public class CajolingServiceTest extends TestCase {
     registerUri("http://foo/bar.js", "g(1);", "text/javascript");
     assertEquals(
         valijaModule("moduleResult___ = $v.cf($v.ro('g'), [ 1 ]);"),
-        request("?url=http://foo/bar.js&mime-type=text/javascript"));
+        request("?url=http://foo/bar.js&mime-type=text/javascript" +
+            "&transform=VALIJA"));
+  }
+
+  public void testInnocentJs() throws Exception {
+    registerUri("http://foo/innocent.js", "for (var k in x) { k; }",
+        "text/javascript");
+    assertEquals("{\n" +
+        "  var x0___;\n" +
+        "  for (x0___ in x) {\n" +
+        "    if (x0___.match(/___$/)) { continue; }\n" +
+        "    k = x0___;\n" +
+        "    { k; }\n" +
+        "  }\n" +
+        "}",
+        request("?url=http://foo/innocent.js&mime-type=text/javascript" +
+            "&transform=INNOCENT"));
   }
 
   public void testVbScriptRejected() throws Exception {
@@ -125,7 +141,8 @@ public class CajolingServiceTest extends TestCase {
         "http://foo/bar.js", "f();", "application/x-javascript");
     assertEquals(
         valijaModule("moduleResult___ = $v.cf($v.ro('f'), [ ]);"),
-        request("?url=http://foo/bar.js&mime-type=text/javascript"));
+        request("?url=http://foo/bar.js&mime-type=text/javascript" +
+            "&transform=VALIJA"));
   }
 
   public void testImage() throws Exception {
@@ -143,6 +160,48 @@ public class CajolingServiceTest extends TestCase {
   }
 
   public void testHtml() throws Exception {
+    String htmlEnvelope = (
+        "<html>" +
+        "  <head><title>Caja Test</title></head>" +
+        "  <body>" +
+        "  %s" +
+        "  </body>" +
+        "</html>");
+
+    registerUri("http://foo/bar.js", "foo()", "text/javascript");
+    registerUri("http://foo/bar.html",
+                String.format(
+                    htmlEnvelope,
+                    "<script src=bar.js></script><p>Hello, World!</p>"),
+                "text/html");
+    assertEquals(
+        "{\n"
+      + "  ___.loadModule({\n"
+      + "                   'instantiate': function (___, IMPORTS___) {\n"
+      + "                     var moduleResult___ = ___.NO_RESULT;\n"
+      + "                     var $v = ___.readImport(IMPORTS___, '$v', {\n"
+      + "                           'getOuters': {\n"
+      + "                             '()': { }\n"
+      + "                           },\n"
+      + "                           'initOuter': {\n"
+      + "                             '()': { }\n"
+      + "                           }\n"
+      + "                         });\n"
+      + "                     var $dis = $v.getOuters();\n"
+      + "                     moduleResult___ = $v.initOuter('onerror');\n"
+      + "                     IMPORTS___.htmlEmitter___.pc('      ').b('p').f(false)\n"
+      + "                         .ih('Hello, World!').e('p').pc('  ');\n"
+      + "                     return moduleResult___;\n"
+      + "                   },\n"
+      + "                   'cajolerName': 'com.google.caja',\n"
+      + "                   'cajolerVersion': 'testBuildVersion',\n"
+      + "                   'cajoledDate': 0\n"
+      + "                 });\n"
+      + "}",
+        request("?url=http://foo/bar.html&mime-type=*/*"));
+  }
+
+  public void testGadget() throws Exception {
     String moduleEnvelope = (
         "<Module><ModulePrefs /><Content type=\"html\">"
         + "<![CDATA[%s]]>"
@@ -173,7 +232,6 @@ public class CajolingServiceTest extends TestCase {
             + "}</script>"),
         request("?url=http://foo/bar.xml&mime-type=*/*"));
   }
-
 
   private static String valijaModule(String... lines) {
     String prefix = (

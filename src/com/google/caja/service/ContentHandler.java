@@ -31,11 +31,13 @@ public interface ContentHandler {
    * {@code checker}
    *
    * @param uri URI of content
+   * @param transform Type of rewriting to perform
    * @param contentType Expected content-type
    * @param checker Used to check whether two content-types are compatible
    * @return true if this content-handler is appropriate for this URL and content-type
    */
-  public boolean canHandle(URI uri, String contentType, ContentTypeCheck checker);
+  public boolean canHandle(URI uri, CajolingService.Transform transform,
+      String contentType, ContentTypeCheck checker);
 
   /**
    * Reads content from {@code stream} and writes it to {@code response}.
@@ -43,13 +45,13 @@ public interface ContentHandler {
    * if fetched from {@code uri}
    *
    * @param uri URI of content
+   * @param trans Type of rewriting to perform
    * @param contentType Expected content-type
    * @param content content from uri
    * @param response writes modified content to user
    * @return the content-type and content-encoding of the resulting output
    */
-  public Pair<String, String> apply(
-      URI uri, String contentType, String charSet, byte[] content,
-      OutputStream response)
+  public Pair<String, String> apply(URI uri, CajolingService.Transform trans,
+      String contentType, String charSet, byte[] content, OutputStream response)
       throws UnsupportedContentTypeException;
 }

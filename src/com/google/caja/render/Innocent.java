@@ -19,26 +19,23 @@ import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.JsLexer;
 import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.Parser;
+import com.google.caja.parser.quasiliteral.InnocentCodeRewriter;
+import com.google.caja.parser.quasiliteral.Rewriter;
 import com.google.caja.reporting.EchoingMessageQueue;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Pair;
-import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.Parser;
-import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.quasiliteral.Rewriter;
-import com.google.caja.parser.quasiliteral.InnocentCodeRewriter;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Writer;
 import java.io.PrintWriter;
+import java.io.Writer;
 
 /**
  * An executable that directs the innocent code transformation of
@@ -106,8 +103,8 @@ public class Innocent {
     try {
       Block start = p.parse();
       tq.expectEmpty();
-      Rewriter icr = new InnocentCodeRewriter(true);
-      output = format(icr.expand(start,errs));
+      Rewriter icr = new InnocentCodeRewriter(false /* logging */);
+      output = Rewriter.render(icr.expand(start,errs));
       out.append(output);
     } catch (ParseException ex) {
       ex.toMessageQueue(errs);
@@ -122,13 +119,5 @@ public class Innocent {
       }
     }
     return maxMessageLevel.compareTo(MessageLevel.ERROR) < 0;
-  }
-
-  // TODO(ihab.awad): Move this functionality to a common place.
-  private static String format(ParseTreeNode n) {
-    StringBuilder output = new StringBuilder();
-    TokenConsumer renderer = new JsPrettyPrinter(new Concatenator(output));
-    n.render(new RenderContext(renderer));
-    return output.toString();
   }
 }

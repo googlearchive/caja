@@ -14,13 +14,8 @@
 
 package com.google.caja.service;
 
-import com.google.caja.util.Pair;
 import com.google.caja.reporting.BuildInfo;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import com.google.caja.util.Pair;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,6 +26,11 @@ import java.net.URISyntaxException;
 import java.net.URLConnection;
 import java.util.List;
 import java.util.Vector;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * A cajoling service which proxies connections:<ul>
@@ -44,8 +44,14 @@ import java.util.Vector;
 public class CajolingService extends HttpServlet {
   private List<ContentHandler> handlers = new Vector<ContentHandler>();
   private ContentTypeCheck typeCheck = new LooseContentTypeCheck();
-
+  private String host = "http://caja.appspot.com/cajoler";
+  
   public CajolingService(BuildInfo buildInfo) {
+    registerHandlers(buildInfo);
+  }
+
+  public CajolingService(BuildInfo buildInfo, String host) {
+    this.host = host;
     registerHandlers(buildInfo);
   }
 
@@ -63,15 +69,25 @@ public class CajolingService extends HttpServlet {
     }
   }
 
+  /**
+   * Fetch query parameter from request
+   */
+  private String getParam(HttpServletRequest r, String param, boolean required)
+    throws ServletException {
+    String result = r.getParameter(param);
+    if (required && result == null) {
+      throw new ServletException(
+        "Missing parameter \"" + param + "\" is required: " + 
+          r.getRequestURI());
+    }
+    return result;
+  }
+  
   @Override
   public void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException {
 
-    String gadgetUrlString = req.getParameter("url");
-    if (gadgetUrlString == null) {
-      throw new ServletException(
-          "Missing parameter \"url\" is required: " + req.getRequestURI());
-    }
+    String gadgetUrlString = getParam(req, "url", true /* required */);
     URI gadgetUrl;
     try {
       gadgetUrl = new URI(gadgetUrlString);
@@ -79,11 +95,13 @@ public class CajolingService extends HttpServlet {
       throw (ServletException) new ServletException().initCause(ex);
     }
 
-    String expectedMimeType = req.getParameter("mime-type");
-    if (expectedMimeType == null) {
-      throw new ServletException(
-          "Missing parameter \"mime-type\" is required: "
-          + req.getRequestURI());
+    String expectedMimeType = getParam(req, "mime-type", true /* required */);
+    Transform transform;
+    try {
+      transform = Transform.valueOf(
+          getParam(req, "transform", false /* required */));
+    } catch (Exception e ) {
+      transform = null;
     }
 
     String contentType, contentCharSet;
@@ -108,7 +126,8 @@ public class CajolingService extends HttpServlet {
     Pair<String,String> contentInfo;
     try {
       contentInfo = applyHandler(
-          URI.create(gadgetUrl.toString()), contentType, contentCharSet,
+          URI.create(gadgetUrl.toString()), 
+          transform, contentType, contentCharSet,
           content, intermediateResponse);
     } catch (UnsupportedContentTypeException e) {
       closeBadRequest(resp);
@@ -163,15 +182,18 @@ public class CajolingService extends HttpServlet {
     handlers.add(new JsHandler(buildInfo));
     handlers.add(new ImageHandler());
     handlers.add(new GadgetHandler(buildInfo));
+    handlers.add(new InnocentHandler(buildInfo));
+    handlers.add(new HtmlHandler(buildInfo, host));
   }
 
   private Pair<String, String> applyHandler(URI uri,
-      String contentType, String charSet,
+      Transform t, String contentType, String charSet,
       byte[] content, OutputStream response)
       throws UnsupportedContentTypeException {
     for (ContentHandler handler : handlers) {
-      if (handler.canHandle(uri, contentType, typeCheck)) {
-        return handler.apply(uri, contentType, charSet, content, response);
+      if (handler.canHandle(uri, t, contentType, typeCheck)) {
+        return 
+          handler.apply(uri, t, contentType, charSet, content, response);
       }
     }
     throw new UnsupportedContentTypeException();
@@ -186,5 +208,11 @@ public class CajolingService extends HttpServlet {
       this.contentType = contentType;
       this.charSet = charSet;
     }
+  }
+  
+  public static enum Transform {
+    INNOCENT,
+    VALIJA,
+    CAJITA;
   }
 }

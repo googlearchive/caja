@@ -35,6 +35,7 @@ public class LooseContentTypeCheck extends ContentTypeCheck {
 
   public LooseContentTypeCheck () {
     canonicalMimeType.put("application/x-javascript", "text/javascript");
+    canonicalMimeType.put("application/javascript", "text/javascript");
     canonicalMimeType.put("text/xml", "application/xml");
   }
 

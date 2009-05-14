@@ -20,13 +20,11 @@ import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
-import com.google.caja.parser.js.UncajoledModule;
-import com.google.caja.parser.quasiliteral.CajitaRewriter;
-import com.google.caja.parser.quasiliteral.DefaultValijaRewriter;
+import com.google.caja.parser.quasiliteral.InnocentCodeRewriter;
 import com.google.caja.parser.quasiliteral.Rewriter;
+import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
-import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Pair;
 
 import java.io.IOException;
@@ -41,30 +39,26 @@ import java.net.URI;
  *
  * @author jasvir@google.com (Jasvir Nagra)
  */
-public class JsHandler implements ContentHandler {
-  private final BuildInfo buildInfo;
-
-  public JsHandler(BuildInfo buildInfo) {
-    this.buildInfo = buildInfo;
+public class InnocentHandler implements ContentHandler {
+  public InnocentHandler(BuildInfo buildInfo) {
   }
 
-  public boolean canHandle(URI uri, CajolingService.Transform transform,
+  public boolean canHandle(URI uri, CajolingService.Transform transform, 
       String contentType, ContentTypeCheck checker) {
-    return checker.check("text/javascript",contentType)
-      && (transform == null
-          || transform.equals(CajolingService.Transform.CAJITA)
-          || transform.equals(CajolingService.Transform.VALIJA));
+    return CajolingService.Transform.INNOCENT.equals(transform)
+      && checker.check("text/javascript", contentType);
   }
 
   public Pair<String,String> apply(URI uri, CajolingService.Transform transform,
       String contentType, String charset, byte[] content, OutputStream response)
       throws UnsupportedContentTypeException {
+    if (!CajolingService.Transform.INNOCENT.equals(transform)) {
+      return null;
+    }
     if (charset == null) { charset = "UTF-8"; }
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
-      boolean valijaMode = CajolingService.Transform.VALIJA.equals(transform);
-      cajoleJs(uri, new StringReader(new String(content, charset)), valijaMode,
-          writer);
+      innocentJs(uri, new StringReader(new String(content, charset)), writer);
       writer.flush();
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
@@ -72,8 +66,7 @@ public class JsHandler implements ContentHandler {
     return new Pair<String, String>("text/javascript", "UTF-8");
   }
 
-  private void cajoleJs(URI inputUri, Reader cajaInput, boolean valijaMode,
-      Appendable output)
+  private void innocentJs(URI inputUri, Reader cajaInput, Appendable output)
       throws IOException, UnsupportedContentTypeException {
     InputSource is = new InputSource (inputUri);
     CharProducer cp = CharProducer.Factory.create(cajaInput,is);
@@ -83,15 +76,9 @@ public class JsHandler implements ContentHandler {
       Block input = new Parser(tq, mq).parse();
       tq.expectEmpty();
 
-      DefaultValijaRewriter rw = new DefaultValijaRewriter(false /* logging */);
-      CajitaRewriter dcr = new CajitaRewriter(buildInfo, false /* logging */);
-      if (valijaMode) {
-        output.append(Rewriter.render(
-          dcr.expand(rw.expand(new UncajoledModule(input), mq), mq)));
-      } else {
-        output.append(Rewriter.render(
-            dcr.expand(new UncajoledModule(input), mq)));
-      }
+      InnocentCodeRewriter rw = new InnocentCodeRewriter(false /* logging */);
+      output.append(Rewriter.render(
+          rw.expand(input, mq)));
     } catch (ParseException e) {
       throw new UnsupportedContentTypeException();
     } catch (IllegalArgumentException e) {

@@ -168,14 +168,14 @@ public abstract class Rewriter {
       s.append("input: (")
           .append(input.getClass().getSimpleName())
           .append(") ")
-          .append(format(input))
+          .append(render(input))
           .append("\n");
     }
     if (result != null) {
       s.append("result: (")
           .append(result.getClass().getSimpleName())
           .append(") ")
-          .append(format(result))
+          .append(render(result))
           .append("\n");
     }
     if (exception != null) {
@@ -186,7 +186,7 @@ public abstract class Rewriter {
     System.err.println(s.toString());
   }
 
-  public static String format(ParseTreeNode n) {
+  public static String render(ParseTreeNode n) {
     StringBuilder output = new StringBuilder();
     TokenConsumer renderer = new JsPrettyPrinter(new Concatenator(output));
     n.render(new RenderContext(renderer));

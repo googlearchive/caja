@@ -34,10 +34,14 @@ import org.mortbay.jetty.handler.AbstractHandler;
  */
 public class CajolingServiceMain {
   public static void main(String[] args) throws Exception {
-    final CajolingService service
-        = new CajolingService(BuildInfo.getInstance());
     // http://docs.codehaus.org/display/JETTY/Embedding+Jetty
-    Server server = new Server(8887);
+    int port = 8887;
+    Server server = new Server(port);
+    
+    final CajolingService service
+    = new CajolingService(BuildInfo.getInstance(),
+        "http://localhost:" + port);
+    
     server.setHandler(new AbstractHandler() {
       public void handle(
           String target, HttpServletRequest req, HttpServletResponse resp,

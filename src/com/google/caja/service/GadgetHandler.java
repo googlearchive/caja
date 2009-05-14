@@ -41,13 +41,14 @@ public class GadgetHandler implements ContentHandler {
     this.buildInfo = buildInfo;
   }
 
-  public boolean canHandle(URI uri, String contentType, ContentTypeCheck checker) {
+  public boolean canHandle(URI uri, CajolingService.Transform transform,
+      String contentType, ContentTypeCheck checker) {
     return checker.check("application/xml", contentType);
   }
 
-  public Pair<String, String> apply(URI uri, String contentType, String charSet,
-                                    byte[] content, OutputStream response)
-      throws UnsupportedContentTypeException {
+  public Pair<String, String> apply(URI uri, CajolingService.Transform trans, 
+      String contentType, String charSet, byte[] content, OutputStream response)
+        throws UnsupportedContentTypeException {
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
       cajoleGadget(uri, new String(content, charSet), writer);
