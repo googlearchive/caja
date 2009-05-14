@@ -32,12 +32,8 @@ public enum PluginMessageType implements MessageTypeInt {
       "%s: access not allowed to global %s", MessageLevel.FATAL_ERROR),
   UNSAFE_ACCESS(
       "%s: unsafe access to protected namespace: %s", MessageLevel.FATAL_ERROR),
-  XHTML_NO_SUCH_TAG("%s: unrecognized tag %s", MessageLevel.FATAL_ERROR),
-  XHTML_NO_SUCH_PARAM(
-      "%s: unrecognized param %s on <%s>", MessageLevel.FATAL_ERROR),
   UNKNOWN_TAG("%s: removing unknown tag %s", MessageLevel.WARNING),
   UNSAFE_TAG("%s: removing disallowed tag %s", MessageLevel.WARNING),
-  NO_SUCH_TEMPLATE("%s: no such template %s", MessageLevel.FATAL_ERROR),
   MISSING_ATTRIBUTE("%s: expected param %s on %s", MessageLevel.ERROR),
   UNKNOWN_ATTRIBUTE("%s: removing unknown attribute %s on %s",
       MessageLevel.WARNING),
@@ -48,26 +44,16 @@ public enum PluginMessageType implements MessageTypeInt {
                         MessageLevel.WARNING),
   DISALLOWED_ATTRIBUTE_VALUE("%s: attribute %s cannot have value %s",
                              MessageLevel.WARNING),
-  EXTRANEOUS_CONTENT("%s: unused content in tag %s", MessageLevel.FATAL_ERROR),
-  UNKNOWN_TEMPLATE_PARAM(
-      "%s: template %s defined at %s does not define a parameter %s",
-      MessageLevel.FATAL_ERROR),
-  MISSING_TEMPLATE_PARAM(
-      "%s: template %s is missing parameter %s defined at %s",
-      MessageLevel.FATAL_ERROR),
   BAD_IDENTIFIER("%s: bad identifier %s", MessageLevel.FATAL_ERROR),
   ATTRIBUTE_CANNOT_BE_DYNAMIC(
       "%s: tag %s cannot have dynamic attribute %s", MessageLevel.ERROR),
   DISALLOWED_URI("%s: url %s cannot be linked to", MessageLevel.FATAL_ERROR),
   MALFORMED_URL("%s: malformed url %s", MessageLevel.FATAL_ERROR),
-  REWROTE_STYLE("%s: rewrote unsafe style attribute %s", MessageLevel.ERROR),
-  MALFORMED_CSS_PROPERTY_VALUE("%s: css property %s has bad value: %s",
-                               MessageLevel.ERROR),
+  MALFORMED_CSS_PROPERTY_VALUE(
+      "%s: removing css property %s with bad value: %s", MessageLevel.WARNING),
   DISALLOWED_CSS_PROPERTY_IN_SELECTOR(
       "%s: css property %s not allowed in :visited selector at %s",
       MessageLevel.ERROR),
-  CANT_CONVERT_TO_GXP(
-      "%s: can't convert %s to a gxp", MessageLevel.FATAL_ERROR),
   UNKNOWN_CSS_PROPERTY("%s: unknown css property %s", MessageLevel.ERROR),
   CSS_VALUE_OUT_OF_RANGE(
       "%s: css property %s with value %s not in range [%s, %s]",
@@ -82,10 +68,6 @@ public enum PluginMessageType implements MessageTypeInt {
       "%s: css attribute-selectors not allowed", MessageLevel.ERROR),
   SKIPPING_CSS_PROPERTY(
       "%s: skipping invalid css property %s", MessageLevel.WARNING),
-  TAG_NOT_ALLOWED_IN_ATTRIBUTE(
-      "%s: tags not allowed inside an attribute: %s", MessageLevel.ERROR),
-  CSS_SUBSTITUTION_NOT_ALLOWED_HERE(
-      "%s: css substitution not allowed for type %s", MessageLevel.FATAL_ERROR),
   IMPORTS_NOT_ALLOWED_HERE("%s: @import not allowed here", MessageLevel.ERROR),
   CYCLIC_INCLUDE("%s: cyclic include of %s", MessageLevel.ERROR),
   FONT_FACE_NOT_ALLOWED("%s: @font-face not allowed", MessageLevel.ERROR),

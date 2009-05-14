@@ -251,7 +251,7 @@ public class CssRewriterTest extends CajaTestCase {
         + "}"
         );
     assertMessage(PluginMessageType.MALFORMED_CSS_PROPERTY_VALUE,
-                  MessageLevel.ERROR,
+                  MessageLevel.WARNING,
                   Name.css("background-color"),
                   MessagePart.Factory.valueOf("==>yelow<=="));
     runTest("a.c {_color: blue; margin:0;}",

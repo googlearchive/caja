@@ -138,8 +138,8 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
   public void testStylesSanitized() throws Exception {
     assertRewritesWithMessage(
         "<p style=\"color: expression(foo)\">Bar</p>",
-        "css property color has bad value: ==>expression(foo)<==",
-        MessageLevel.ERROR, true /* should fail */);
+        "removing css property color with bad value: ==>expression(foo)<==",
+        MessageLevel.WARNING, false /* should not fail */);
   }
 
   public void testStylesInScript() throws Exception {

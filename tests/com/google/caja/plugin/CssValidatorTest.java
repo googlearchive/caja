@@ -17,6 +17,7 @@ package com.google.caja.plugin;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.AncestorChain;
+import com.google.caja.parser.MutableParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.reporting.Message;
@@ -25,10 +26,13 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.MoreAsserts;
 import com.google.caja.util.SyntheticAttributeKey;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 
 /**
  * @author mikesamuel@gmail.com (Mike Samuel)
@@ -152,8 +156,15 @@ public final class CssValidatorTest extends CajaTestCase {
     fails("bogus, dl { font: caption; }");
     fails("p, bogus { font: caption; }");
     fails("p[bogus] { font: caption; }");
-    fails("p { font: waption; }");
-
+    runTest("p { font: waption; }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    EmptyDeclaration\n",
+            "WARNING: removing css property font with bad value:"
+            + " ==>waption<==");
     runTest("p, dl { font: status-bar; }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -170,7 +181,18 @@ public final class CssValidatorTest extends CajaTestCase {
                         + " ; cssPropertyPart=font\n"
             + "          IdentLiteral : status-bar\n"
             + "    EmptyDeclaration");
-    fails("p, dl { font: status-bar caption; }");
+    runTest("p, dl { font: status-bar caption; }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : dl\n"
+            + "    EmptyDeclaration",
+            "WARNING: removing css property font with bad value: "
+            + "status-bar  ==><==  caption");
 
     // size and family
     runTest("p, dl { font: 12pt Arial; }",  // absolute
@@ -195,8 +217,30 @@ public final class CssValidatorTest extends CajaTestCase {
             + "          IdentLiteral : Arial\n"
             + "    EmptyDeclaration");
     warns("p, dl { font: -12pt Arial; }");
-    fails("p, dl { font: -12pt url(Arial); }");
-    fails("p, dl { font: twelve Arial; }");
+    runTest("p, dl { font: -12pt url(Arial); }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : dl\n"
+            + "    EmptyDeclaration",
+            "WARNING: removing css property font with bad value:"
+            + " -12pt  ==>url('Arial')<==");
+    runTest("p, dl { font: twelve Arial; }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : dl\n"
+            + "    EmptyDeclaration",
+            "WARNING: removing css property font with bad value:"
+            + " ==>twelve<==  Arial");
     runTest("p, dl { font: 150% Arial; }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -218,8 +262,30 @@ public final class CssValidatorTest extends CajaTestCase {
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             + "    EmptyDeclaration");
-    fails("p, dl { font: 150Arial; }");
-    fails("p, dl { font: 150/Arial; }");
+    runTest("p, dl { font: 150Arial; }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : dl\n"
+            + "    EmptyDeclaration",
+            "WARNING: removing css property font with bad value:"
+            + " ==>150Arial<==");
+    runTest("p, dl { font: 150/Arial; }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : dl\n"
+            + "    EmptyDeclaration",
+            "WARNING: removing css property font with bad value:"
+            + " 150 /  ==>Arial<==");
     runTest("p, dl { font: medium Arial; }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -241,7 +307,17 @@ public final class CssValidatorTest extends CajaTestCase {
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             + "    EmptyDeclaration");
-    fails("p, dl { font: medium; }");
+    runTest("p, dl { font: medium; }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : dl\n"
+            + "    EmptyDeclaration",
+            "WARNING: removing css property font with bad value: medium");
 
     // style weight size family
     runTest("p, dl { font: italic bolder 150% Arial; }",
@@ -273,8 +349,30 @@ public final class CssValidatorTest extends CajaTestCase {
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             + "    EmptyDeclaration");
-    fails("p, dl { font: italic bolderer 150% Arial; }");
-    fails("p, dl { font: italix bolder 150% Arial; }");
+    runTest("p, dl { font: italic bolderer 150% Arial; }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : dl\n"
+            + "    EmptyDeclaration",
+            "WARNING: removing css property font with bad value:"
+            + " italic  ==>bolderer<==  150% Arial");
+    runTest("p, dl { font: italix bolder 150% Arial; }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : dl\n"
+            + "    EmptyDeclaration",
+            "WARNING: removing css property font with bad value:"
+            + " ==>italix<==  bolder 150% Arial");
 
     // font-size also matches by previous terms
     runTest("p, dl { font: inherit \"Arial\"; }",  // special
@@ -297,7 +395,17 @@ public final class CssValidatorTest extends CajaTestCase {
                         + " ; cssPropertyPart=font-family::family-name\n"
             + "          StringLiteral : Arial\n"
             + "    EmptyDeclaration");
-    fails("p, dl { font: inherit; }");
+    runTest("p, dl { font: inherit; }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : dl\n"
+            + "    EmptyDeclaration",
+            "WARNING: removing css property font with bad value: inherit");
 
     // weight size family
     runTest("p, dl { font: 800 150% Arial; }",
@@ -325,7 +433,17 @@ public final class CssValidatorTest extends CajaTestCase {
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             + "    EmptyDeclaration");
-    fails("p, dl { font: 800; }");
+    runTest("p, dl { font: 800; }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : dl\n"
+            + "    EmptyDeclaration",
+            "WARNING: removing css property font with bad value: 800");
 
     // variant weight family
     runTest("p, dl { font: normal 800 150% Arial; }",
@@ -357,7 +475,18 @@ public final class CssValidatorTest extends CajaTestCase {
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             + "    EmptyDeclaration");
-    fails("p, dl { font: abnormal 150% Arial; }");
+    runTest("p, dl { font: abnormal 150% Arial; }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : dl\n"
+            + "    EmptyDeclaration",
+            "WARNING: removing css property font with bad value:"
+            + " ==>abnormal<==  150% Arial");
 
     // with line-height following /
     runTest("p, dl { font: normal 800 150%/175% Arial; }",
@@ -393,8 +522,30 @@ public final class CssValidatorTest extends CajaTestCase {
                                            + "::loose-quotable-words\n"
             + "          IdentLiteral : Arial\n"
             + "    EmptyDeclaration");
-    fails("p, dl { font: abnormal 150%/175% Arial; }");
-    fails("p, dl { font: normal 800 150%/ Arial; }");
+    runTest("p, dl { font: abnormal 150%/175% Arial; }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : dl\n"
+            + "    EmptyDeclaration",
+            "WARNING: removing css property font with bad value:"
+            + " ==>abnormal<==  150% / 175% Arial");
+    runTest("p, dl { font: normal 800 150%/ Arial; }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : dl\n"
+            + "    EmptyDeclaration",
+            "WARNING: removing css property font with bad value:"
+            + " normal 800 150% /  ==>Arial<==");
     runTest("p, dl { font: normal 800 150%/17.5 Arial; }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -1145,8 +1296,22 @@ public final class CssValidatorTest extends CajaTestCase {
                               + "::prog-id-alpha-image-loader::sizing-method\n"
         + "                StringLiteral : scale\n"
         );
-    fails("p { filter: progid:foo.bar() }");
-    fails("p { filter: progid:dximagetransform.microsoft.alpha(opaquity=50) }");
+    runTest("p { filter: progid:foo.bar() }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n",
+            "WARNING: removing css property filter with bad value:"
+            + " ==>progid:foo.bar()<==");
+    runTest("p { filter: progid:dximagetransform.microsoft.alpha(opaquity=50) }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n",
+            "WARNING: removing css property filter with bad value:"
+            + " ==>progid:dximagetransform.microsoft.alpha(opaquity=50)<==");
   }
 
   public void testStarHack() throws Exception {
@@ -1172,7 +1337,13 @@ public final class CssValidatorTest extends CajaTestCase {
                           + " ; cssPropertyPart=color::color\n"
             + "            IdentLiteral : red\n"
             );
-    fails("p { *color: yelow }");
+    runTest("p { *color: yelow }",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n",
+            "WARNING: removing css property color with bad value: ==>yelow<==");
   }
 
   public void testHtmlStarHack() throws Exception {
@@ -1224,19 +1395,48 @@ public final class CssValidatorTest extends CajaTestCase {
     assertTrue(css, valid);
     assertTrue(css, !mq.getMessages().isEmpty());
   }
+  
+  private static void removeInvalidNodes(AncestorChain<? extends CssTree> t) {
+    if (t.node.getAttributes().is(CssValidator.INVALID)) {
+      ((MutableParseTreeNode) t.parent.node).removeChild(t.node);
+      return;
+    }
 
-  private void runTest(String css, String golden) throws Exception {
+    // Use a mutation to remove invalid nodes so that the sanity checks in
+    // childrenChanged sees all removals at once.
+    MutableParseTreeNode.Mutation mut = null;
+    for (CssTree child : t.node.children()) {
+      if (child.getAttributes().is(CssValidator.INVALID)) {
+        if (mut == null) { mut = t.node.createMutation(); }
+        mut.removeChild(child);
+      } else {
+        removeInvalidNodes(AncestorChain.instance(t, child));
+      }
+    }
+    if (mut != null) { mut.execute(); }
+  }
+
+
+  private void runTest(String css, String golden, String... warnings)
+    throws Exception {
     MessageContext mc = new MessageContext();
+    mq.getMessages().clear();
     CssTree cssTree = css(fromString(css), true);
     MessageQueue smq = new SimpleMessageQueue();
     CssValidator v = makeCssValidator(smq);
     boolean valid = v.validateCss(ac(cssTree));
     mq.getMessages().addAll(smq.getMessages());
-    if (!valid) {
-      System.err.println(cssTree.toStringDeep());
+    
+    // If no warnings are expected, the result should be valid
+    if (warnings.length == 0) {
+      if (!valid) {
+        System.err.println(cssTree.toStringDeep());
+      }
+      assertTrue(css, valid);
+    } else {
+      removeInvalidNodes(AncestorChain.instance(cssTree));
     }
-    assertTrue(css, valid);
-
+    
     mc.relevantKeys = new LinkedHashSet<SyntheticAttributeKey<?>>(
         Arrays.<SyntheticAttributeKey<?>>asList(
             CssValidator.CSS_PROPERTY_PART_TYPE,
@@ -1244,7 +1444,17 @@ public final class CssValidatorTest extends CajaTestCase {
     StringBuilder sb = new StringBuilder();
     cssTree.format(mc, sb);
     assertEquals(css, golden.trim(), sb.toString().trim());
-    assertTrue(css, smq.getMessages().isEmpty());
+
+    List<String> actualWarnings = new ArrayList<String>();
+    for (Message msg : mq.getMessages()) {
+      if (MessageLevel.WARNING.compareTo(msg.getMessageLevel()) <= 0) {
+        String msgText = msg.format(mc);
+        msgText = msgText.substring(msgText.indexOf(": ") + 1);
+        actualWarnings.add(msg.getMessageLevel().name() + ":" + msgText);
+      }
+    }
+    mq.getMessages().clear();
+    MoreAsserts.assertListsEqual(Arrays.asList(warnings), actualWarnings);
   }
 
   private static CssValidator makeCssValidator(MessageQueue mq) {
