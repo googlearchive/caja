@@ -20,7 +20,6 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
 import com.google.caja.opensocial.UriCallback;
-import com.google.caja.opensocial.UriCallbackOption;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.BuildInfo;
@@ -75,10 +74,6 @@ public class GadgetHandler implements ContentHandler {
     DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(buildInfo, mq);
 
     UriCallback uriCallback = new UriCallback() {
-      public UriCallbackOption getOption(
-          ExternalReference extRef, String mimeType) {
-        return UriCallbackOption.REWRITE;
-      }
       public Reader retrieve(ExternalReference extref, String mimeType) {
         return null;
       }

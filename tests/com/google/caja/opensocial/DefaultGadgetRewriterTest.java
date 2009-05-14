@@ -42,11 +42,6 @@ import java.util.List;
 public class DefaultGadgetRewriterTest extends CajaTestCase {
 
   private static final UriCallback uriCallback = new UriCallback() {
-    public UriCallbackOption getOption(
-        ExternalReference extref, String mimeType) {
-      return UriCallbackOption.RETRIEVE;
-    }
-
     public Reader retrieve(ExternalReference extref, String mimeType)
         throws UriCallbackException {
       if ("file".equals(extref.getUri().getScheme())) {

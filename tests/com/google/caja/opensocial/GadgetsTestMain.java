@@ -186,7 +186,7 @@ public class GadgetsTestMain {
     MessageLevel worstErrorLevel = MessageLevel.LOG;
     MessageTypeInt worstErrorType = null;
     try {
-      Callback cb = new Callback(config, mc, originalSources);
+      Callback cb = new Callback(mc, originalSources);
       URI baseUri = config.getBaseUri();
       for (URI input : config.getInputUris()) {
         System.err.println(input);

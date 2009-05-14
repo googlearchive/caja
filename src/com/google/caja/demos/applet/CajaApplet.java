@@ -27,7 +27,6 @@ import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
 import com.google.caja.opensocial.UriCallback;
-import com.google.caja.opensocial.UriCallbackOption;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.BuildInfo;
@@ -110,11 +109,6 @@ public class CajaApplet extends Applet {
       final String uriCallbackProxyServer = testbedServer;
 
       UriCallback uriCallback = new UriCallback() {
-          public UriCallbackOption getOption(
-              ExternalReference extRef, String mimeType) {
-            return UriCallbackOption.REWRITE;
-          }
-
           public Reader retrieve(ExternalReference extref, String mimeType) {
             // If we do retreive content, make sure to stick the original source
             // in originalSources.

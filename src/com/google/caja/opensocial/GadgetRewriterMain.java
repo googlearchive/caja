@@ -75,7 +75,7 @@ public class GadgetRewriterMain {
 
     Writer w = new BufferedWriter(new FileWriter(config.getOutputBase()));
     try {
-      Callback cb = new Callback(config, mc, originalSources);
+      Callback cb = new Callback(mc, originalSources);
       URI baseUri = config.getBaseUri();
       for (URI input : config.getInputUris()) {
         Reader r = cb.retrieve(new ExternalReference(input, null), null);
