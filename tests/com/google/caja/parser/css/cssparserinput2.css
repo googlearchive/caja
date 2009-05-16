@@ -17,6 +17,18 @@ A[href] BOO[zwop |= 'hello']:blinky {
   font-weight: super(bold / italic)
 }
 
+/* The RHS of the attribute comparison operator in the following cases
+ * will parse to a StringLiteral since it is surrounded by quotes. */
+foo[attr = 'bar'] {}
+foo[attr = "bar"] {}
+foo[attr ~= 'bar baz'] {}
+foo[attr |= 'bar-baz'] {}
+
+/* The RHS of the attribute comparison operator in the following cases
+ * will parse to an IdentLiteral since it is unquoted. */
+foo[attr = bar] {}
+foo[attr |= bar-baz] {}
+
 foo.bar { }
 
 foo .bar { }

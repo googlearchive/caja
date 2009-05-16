@@ -17,6 +17,18 @@ A[href] BOO[zwop |= 'hello']:blinky {
 .myclass[attr ~= almost] #id:hover(languidly) {
   font-weight: super(bold / italic)
 }
+foo[attr = 'bar'] {
+}
+foo[attr = 'bar'] {
+}
+foo[attr ~= 'bar baz'] {
+}
+foo[attr |= 'bar-baz'] {
+}
+foo[attr = bar] {
+}
+foo[attr |= bar-baz] {
+}
 foo.bar {
 }
 foo .bar {

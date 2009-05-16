@@ -15,6 +15,7 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lang.css.CssSchema;
+import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
@@ -38,8 +39,11 @@ import com.google.caja.util.SyntheticAttributeKey;
 import com.google.caja.util.SyntheticAttributes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -117,13 +121,8 @@ public final class CssValidator {
       return validatePropertyDeclaration(d);
     } else if (t instanceof CssTree.UserAgentHack) {
       return validateUserAgentHack((CssTree.UserAgentHack) t);
-    } else if (t instanceof CssTree.Attrib) {
-      return validateAttrib((CssTree.Attrib) t);
     } else if (t instanceof CssTree.SimpleSelector) {
-      if (!validateSimpleSelector((CssTree.SimpleSelector) t)) {
-        return false;
-      }
-      // recurse below
+      return validateSimpleSelector((CssTree.SimpleSelector) t);
     } else if (t instanceof CssTree.Import) {
       return validateImport((CssTree.Import) t);
     } else if (t instanceof CssTree.FontFace) {
@@ -227,39 +226,50 @@ public final class CssValidator {
    * Tags must exist in the HTML schema.
    */
   private boolean validateSimpleSelector(CssTree.SimpleSelector sel) {
-    if (null == sel.getElementName()) { return true; }
-    Name tagName = Name.html(sel.getElementName());
-    if (null != htmlSchema.lookupElement(tagName)) {
-      if (htmlSchema.isElementAllowed(tagName)) {
-        return true;
+    boolean valid = true;
+    if (null != sel.getElementName()) {
+      Name tagName = Name.html(sel.getElementName());
+      if (null != htmlSchema.lookupElement(tagName)) {
+        if (!htmlSchema.isElementAllowed(tagName)) {
+          mq.addMessage(
+              PluginMessageType.UNSAFE_TAG, invalidNodeMessageLevel,
+              sel.getFilePosition(), tagName);
+          valid = false;
+        }
+      } else {
+        mq.addMessage(
+            PluginMessageType.UNKNOWN_TAG, invalidNodeMessageLevel,
+            sel.getFilePosition(),
+            MessagePart.Factory.valueOf(sel.getElementName()));
+        valid = false;
       }
-      mq.addMessage(
-          PluginMessageType.UNSAFE_TAG, invalidNodeMessageLevel,
-          sel.getFilePosition(), tagName);
-    } else {
-      mq.addMessage(
-          PluginMessageType.UNKNOWN_TAG, invalidNodeMessageLevel,
-          sel.getFilePosition(),
-          MessagePart.Factory.valueOf(sel.getElementName()));
     }
-    sel.getAttributes().set(INVALID, Boolean.TRUE);
-    return false;
+    valid &= validateAllAttribs(sel);
+    if (!valid) { sel.getAttributes().set(INVALID, Boolean.TRUE); }
+    return valid;
   }
 
+  private boolean validateAllAttribs(CssTree.SimpleSelector sel) {
+    Name tagName = (null == sel.getElementName()) ?
+        Name.html("*") : Name.html(sel.getElementName());
+    boolean valid = true;
+    for (CssTree n : sel.children()) {
+      if (n instanceof CssTree.Attrib) {
+        valid &= validateAttrib(tagName, (CssTree.Attrib) n);
+      }
+    }
+    return valid;
+  }
+  
   /**
    * Attrib must exist in HTML 4 whitelist.
    */
-  private boolean validateAttrib(CssTree.Attrib attr) {
+  private boolean validateAttrib(Name tagName, CssTree.Attrib attr) {
     Name attribName = Name.html(attr.getIdent());
-    if (null != htmlSchema.lookupAttribute(Name.html("*"), attribName)) {
-      // Attribs don't parse in IE 6, and allowing them without being able
-      // allowing them could leak information about how we're rewriting
-      // attribute values.
-      mq.addMessage(
-          PluginMessageType.CSS_ATTRIBUTE_SELECTOR_NOT_ALLOWED,
-          invalidNodeMessageLevel, attr.getFilePosition());
-      attr.getAttributes().set(INVALID, Boolean.TRUE);
-      return false;
+    HTML.Attribute htmlAttribute =
+        htmlSchema.lookupAttribute(tagName, attribName);
+    if (null != htmlAttribute) {
+      return validateAttribToSchema(tagName, htmlAttribute, attr);
     } else {
       mq.addMessage(
           PluginMessageType.UNKNOWN_ATTRIBUTE, invalidNodeMessageLevel,
@@ -268,6 +278,118 @@ public final class CssValidator {
       attr.getAttributes().set(INVALID, Boolean.TRUE);
       return false;
     }
+  }
+
+  /**
+   * Selectors for attributes that are, or refer to, IDs and URIs are disallowed
+   * because IDs are rewritten by the cajoler and we do not implement logic to
+   * fix up the references correctly on both ends.
+   */
+  private static final Collection<HTML.Attribute.Type>
+      DISALLOWED_SELECTOR_ATTRIBUTE_TYPES =
+      Collections.unmodifiableSet(EnumSet.of(      
+          HTML.Attribute.Type.ID,
+          HTML.Attribute.Type.IDREF,
+          HTML.Attribute.Type.IDREFS,
+          HTML.Attribute.Type.URI));
+
+  /**
+   * Selectors for STYLE attributes would allow embedding of CSS within CSS
+   * which could lead to undefined behavior.
+   */
+  private static final Collection<Name>
+      DISALLOWED_SELECTOR_ATTRIBUTE_NAMES =
+      Collections.unmodifiableList(Arrays.asList(
+          Name.html("style")));
+
+  private boolean validateAttribToSchema(Name tagName,
+                                         HTML.Attribute htmlAttribute,
+                                         CssTree.Attrib attr) {
+    boolean valid = true;
+    for (HTML.Attribute.Type type : DISALLOWED_SELECTOR_ATTRIBUTE_TYPES) {
+      if (type == htmlAttribute.getType()) {
+        mq.addMessage(
+            PluginMessageType.CSS_ATTRIBUTE_TYPE_NOT_ALLOWED_IN_SELECTOR,
+            invalidNodeMessageLevel,
+            MessagePart.Factory.valueOf(type.toString()),
+            attr.getFilePosition());
+        valid = false;
+      }
+    }
+    for (Name name : DISALLOWED_SELECTOR_ATTRIBUTE_NAMES) {
+      if (name.equals(htmlAttribute.getAttributeName())) {
+        mq.addMessage(
+            PluginMessageType.CSS_ATTRIBUTE_NAME_NOT_ALLOWED_IN_SELECTOR,
+            invalidNodeMessageLevel,
+            name,
+            attr.getFilePosition());
+        valid = false;
+      }
+    }
+    if (null != attr.getOperation()) {
+      switch (attr.getOperation().getValue()) {
+        case EQUAL:
+          valid &= validateAttribValueEqual(tagName, htmlAttribute, attr);
+          break;
+        case INCLUDES:
+          valid &= validateAttribValueIncludes(tagName, htmlAttribute, attr);
+          break;
+        case DASHMATCH:
+          mq.addMessage(
+              PluginMessageType.CSS_DASHMATCH_ATTRIBUTE_OPERATOR_NOT_ALLOWED,
+              invalidNodeMessageLevel, attr.getFilePosition());
+          valid = false;
+          break;
+        default:
+          return false;  // Unreachable
+      }
+    }
+    return valid;
+  }
+
+  private boolean validateAttribValueEqual(Name tagName,
+                                           HTML.Attribute htmlAttribute,
+                                           CssTree.Attrib attr) {
+    return validateAttribValue(
+        tagName,
+        htmlAttribute,
+        attr,
+        attr.getRhsValue().getValue());
+  }
+
+  private boolean validateAttribValueIncludes(Name tagName,
+                                              HTML.Attribute htmlAttribute,
+                                              CssTree.Attrib attr) {
+    boolean valid = true;
+    // http://www.w3.org/TR/CSS2/selector.html#attribute-selectors
+    // specifies that the value for the "~=" operator is a whitespace
+    // separated list of words
+    for (String value : attr.getRhsValue().getValue().split("\\s+")) {
+      if ("".equals(value)) { continue; }  // Blank due to whitespace
+      valid &= validateAttribValue(
+          tagName,
+          htmlAttribute,
+          attr,
+          value);
+    }
+    return valid;
+  }
+
+  private boolean validateAttribValue(Name tagName,
+                                      HTML.Attribute htmlAttribute,
+                                      CssTree.Attrib attr,
+                                      String value) {
+    if (!htmlAttribute.getValueCriterion().accept(value)) {
+      mq.addMessage(
+          PluginMessageType.UNRECOGNIZED_ATTRIBUTE_VALUE,
+          invalidNodeMessageLevel,
+          attr.getFilePosition(),
+          MessagePart.Factory.valueOf(value),
+          tagName,
+          htmlAttribute.getAttributeName());
+      return false;
+    }
+    return true;
   }
 
   /**

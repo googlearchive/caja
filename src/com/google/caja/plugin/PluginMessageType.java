@@ -64,8 +64,14 @@ public enum PluginMessageType implements MessageTypeInt {
   UNSAFE_CSS_PROPERTY("%s: unsafe css property %s", MessageLevel.ERROR),
   UNSAFE_CSS_PSEUDO_SELECTOR(
       "%s: unsafe css pseudo-selector %s", MessageLevel.ERROR),
-  CSS_ATTRIBUTE_SELECTOR_NOT_ALLOWED(
-      "%s: css attribute-selectors not allowed", MessageLevel.ERROR),
+  CSS_DASHMATCH_ATTRIBUTE_OPERATOR_NOT_ALLOWED(
+      "%s: css dash match attribute operation not allowed", MessageLevel.ERROR),
+  CSS_URI_VALUED_ATTRIBUTE_SELECTOR_NOT_ALLOWED(
+      "%s: css URI-valued attribute selector not allowed", MessageLevel.ERROR),
+  CSS_ATTRIBUTE_NAME_NOT_ALLOWED_IN_SELECTOR(
+      "%s: css attribute name %s not allowed in selector", MessageLevel.ERROR),
+  CSS_ATTRIBUTE_TYPE_NOT_ALLOWED_IN_SELECTOR(
+      "%s: css attribute type %s not allowed in selector", MessageLevel.ERROR),
   SKIPPING_CSS_PROPERTY(
       "%s: skipping invalid css property %s", MessageLevel.WARNING),
   IMPORTS_NOT_ALLOWED_HERE("%s: @import not allowed here", MessageLevel.ERROR),
@@ -77,6 +83,9 @@ public enum PluginMessageType implements MessageTypeInt {
       "%s: unrecognized content type %s for %s tag", MessageLevel.WARNING),
   UNRECOGNIZED_MEDIA_TYPE(
       "%s: unrecognized media type %s", MessageLevel.WARNING),
+  UNRECOGNIZED_ATTRIBUTE_VALUE(
+      "%s: unrecognized attribute value %s for %s attribute of %s tag",
+      MessageLevel.WARNING),
   QUOTED_CSS_VALUE("%s: quoted unquoted css value %s", MessageLevel.LINT),
   ASSUMING_PIXELS_FOR_LENGTH(
       "%s: assuming pixels for length %s", MessageLevel.WARNING),

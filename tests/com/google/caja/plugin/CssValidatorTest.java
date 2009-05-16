@@ -1372,6 +1372,104 @@ public final class CssValidatorTest extends CajaTestCase {
     fails("* html#hiya p { color: blue }");
   }
 
+  public void testAttrSelectorNoTag() throws Exception {
+    // we do not allow a selector without a tag name to
+    // have attribute selectors
+    fails("[type] { font-weight: bold }");
+    fails("*[type] { font-weight: bold }");
+    fails("*[type='radio'] { font-weight: bold }");
+    fails("input [type='radio'] { font-weight: bold }");
+    fails("#zork[type] { font-weight: bold }");
+    fails(".zork[type] { font-weight: bold }");
+  }
+
+  public void testAttrSelectorBadTag() throws Exception {
+    // invalid tag names should be marked invalid even though they have
+    // attribute selectors (defensive test cases)
+    // first try a tag name that is not in the HTML schema
+    fails("zork[type] { font-weight: bold }");
+    fails("zork[type='radio'] { font-weight: bold }");
+    fails("zork[type~='radio'] { font-weight: bold }");
+    fails("zork[type|='radio'] { font-weight: bold }");
+    // now try tags in the schema, but which we disallow
+    fails("link[type] { font-weight: bold }");
+    fails("object[type] { font-weight: bold }");
+    fails("script[type] { font-weight: bold }");
+  }
+
+  public void testSimpleAttrSelectorNoValue() throws Exception {
+    // various forms of attribute selector without a value match
+    runTest("input[type] { font-weight: bold }", null);
+    fails("input[zork] { font-weight: bold }");
+  }
+
+  public void testSimpleAttrSelectorEqual() throws Exception {
+    // various forms of attribute selector with an 'equals' comparator
+    runTest("input[type='radio'] { font-weight: bold }", null);
+    runTest("input[type=radio] { font-weight: bold }", null);    
+    fails("input[zork='radio'] { font-weight: bold }");
+    fails("input[type='atyourservice'] { font-weight: bold }");
+    fails("input[type=atyourservice] { font-weight: bold }");
+    fails("input[zork='atyourservice'] { font-weight: bold }");
+  }
+
+  public void testSimpleAttrSelectorIncludes() throws Exception {
+    // various forms of attribute selector with an 'includes' comparator
+    runTest("input[type~='radio'] { font-weight: bold }", null);
+    runTest("input[type~=radio] { font-weight: bold }", null);
+    runTest("input[type~='radio button'] { font-weight: bold }", null);
+    runTest("input[type~=' radio \t button \t '] { font-weight: bold }", null);
+    fails("input[zork~='radio'] { font-weight: bold }");
+    fails("input[zork~='radio atyourservice'] { font-weight: bold }");
+    fails("input[type~='atyourservice'] { font-weight: bold }");
+    fails("input[type~=atyourservice] { font-weight: bold }");    
+    fails("input[type~='radio atyourservice'] { font-weight: bold }");
+  }
+  
+  public void testSimpleAttrSelectorDashMatch() throws Exception {
+    // we don't know how to whitelist the "|=" form so rejected
+    fails("input[type|='button'] { font-weight: bold }");
+  }
+
+  public void testAttrSelectorNesting() throws Exception {
+    // attribute selectors on nested node type; ensure that whitelisting
+    // is done on the basis of the innermost tag
+    //   - the TR tag has attribute VALIGN with valid value TOP
+    //   - the TABLE tag (enclosing in the rule) has no attribute VALIGN
+    // first poke valid attributes of the enclosed TR ensuring that they
+    // are whitelisted (or rejected) correctly based on the TR schema
+    runTest("table tr[valign='top'] { font-weight: bold }", null);
+    fails("table tr[valign='atyourservice'] { font-weight: bold }");
+    fails("table tr[zork='top'] { font-weight: bold }");
+    // then, just to be sure, poke a valid attribute and value of the
+    // enclosing TABLE tag to make sure that the TABLE schema is not being
+    // erroneously appplied. The TABLE tag has an attribute RULES, with a
+    // valid value GROUPS, which is not applicable to the TR tag
+    fails("table tr[rules='groups'] { font-weight: bold }");
+  }
+
+  public void testDisallowedAttrs() throws Exception {
+    // ID-like attributes disallowed because the cajoler rewrites them, and
+    // we don't yet implement logic to reconstruct the rewritten values
+    fails("input[id] { font-weight: bold }");
+    fails("input[id='foo'] { font-weight: bold }");
+    fails("input[id~='foo'] { font-weight: bold }");
+    fails("td[headers] { font-weight: bold }");
+    fails("label[for] { font-weight: bold }");
+    // the STYLE attribute could be used to embed stylesheet content
+    // recursively in a stylesheet; probably harmless but does not make
+    // sense and is useless anyway so why risk it?
+    fails("input[style] { font-weight: bold }");
+    fails("input[style='foo'] { font-weight: bold }");
+    fails("input[style~='foo'] { font-weight: bold }");
+    // any URI-valued attribute is disallowed because the cajoler rewrites it,
+    // and we don't yet implement logic to reconstruct the rewritten values.
+    // we first verify that tag BLOCKQUOTE is allowed with valid attribute TITLE
+    runTest("blockquote[title] { font-weight: bold }", null);
+    // we then ensure it fails with URI-valued attribute CITE
+    fails("blockquote[cite] { font-weight: bold }");
+  }
+
   private void fails(String css) throws Exception {
     CssTree t = css(fromString(css), true);
     mq.getMessages().clear();
@@ -1443,7 +1541,9 @@ public final class CssValidatorTest extends CajaTestCase {
             CssValidator.CSS_PROPERTY_PART));
     StringBuilder sb = new StringBuilder();
     cssTree.format(mc, sb);
-    assertEquals(css, golden.trim(), sb.toString().trim());
+    if (golden != null) {
+      assertEquals(css, golden.trim(), sb.toString().trim());
+    }
 
     List<String> actualWarnings = new ArrayList<String>();
     for (Message msg : mq.getMessages()) {

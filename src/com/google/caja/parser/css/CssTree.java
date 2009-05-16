@@ -591,6 +591,14 @@ public abstract class CssTree extends AbstractParseTreeNode {
     public String getValue() { return ident; }
     public String getIdent() { return ident; }
 
+    public AttribOperation getOperation() {
+      return children().isEmpty() ? null : (AttribOperation) children().get(0);
+    }
+
+    public CssLiteral getRhsValue() {
+      return children().isEmpty() ? null : (CssLiteral) children().get(1);
+    }
+
     public void render(RenderContext r) {
       TokenConsumer out = r.getOut();
       out.mark(getFilePosition());

@@ -89,6 +89,54 @@ StyleSheet
     Selector
       SimpleSelector
         IdentLiteral : foo
+        Attrib : attr
+          AttribOperation : EQUAL
+          StringLiteral : bar
+    EmptyDeclaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : foo
+        Attrib : attr
+          AttribOperation : EQUAL
+          StringLiteral : bar
+    EmptyDeclaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : foo
+        Attrib : attr
+          AttribOperation : INCLUDES
+          StringLiteral : bar baz
+    EmptyDeclaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : foo
+        Attrib : attr
+          AttribOperation : DASHMATCH
+          StringLiteral : bar-baz
+    EmptyDeclaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : foo
+        Attrib : attr
+          AttribOperation : EQUAL
+          IdentLiteral : bar
+    EmptyDeclaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : foo
+        Attrib : attr
+          AttribOperation : DASHMATCH
+          IdentLiteral : bar-baz
+    EmptyDeclaration
+  RuleSet
+    Selector
+      SimpleSelector
+        IdentLiteral : foo
         ClassLiteral : .bar
     EmptyDeclaration
   RuleSet
