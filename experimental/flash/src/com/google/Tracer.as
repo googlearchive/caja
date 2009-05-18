@@ -1,0 +1,1 @@
+﻿class com.google.Tracer {    function Tracer() {    _root.createTextField("message",0,0,0,600,600);  }    function append(str) {    _root.message.text += str + "\n";  }}
