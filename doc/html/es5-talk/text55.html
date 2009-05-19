@@ -1,0 +1,25 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+     "http://www.w3.org/TR/html4/transitional.dtd">
+<html>
+<head>
+  <meta HTTP-EQUIV=CONTENT-TYPE CONTENT="text/html; charset=utf-8">
+  <title>Imperfect Lambda Abstraction in ES5</title>
+</head>
+<body text="#000000" bgcolor="#FFFFFF" link="#000080" vlink="#0000CC" alink="#000080">
+<center>
+<a href="text0.html">First page</a> <a href="text54.html">Back</a> <a href="text56.html">Continue</a> <a href="text58.html">Last page</a> <a href="es5-talk.html">Overview</a> <a href="img55.html">Graphics</a></center><br>
+<h1 style="direction:ltr;"><font color="#660066">Imperfect Lambda Abstraction in ES5</font></h1>
+<h2 style="direction:ltr;"><font color="#40458C">Tennet Correspondence Principle (TCP)</font>
+<h2 style="direction:ltr;"><font color="#40458C">Litmus test of lambda abstraction</font>
+<h2 style="direction:ltr;"><font color="#40458C"></font>
+<h2 style="direction:ltr;"><font color="#40458C">Blocks: </font>{…} <font color="#40458C">≡</font> (function(){…})();
+<h2 style="direction:ltr;"><font color="#40458C">but for </font>return, break, continue, <b><font color="#660000">this</b></font>, arguments, var, function
+<h2 style="direction:ltr;"><font color="#40458C"></font>
+<h2 style="direction:ltr;"><font color="#40458C">Expressions: </font>(…) <font color="#40458C">≡</font> (function(){return …;})()
+<h2 style="direction:ltr;"><font color="#40458C">but for <b></font><font color="#660000">this</b></font>, arguments
+<h2 style="direction:ltr;"><font color="#40458C"></font>
+<h2 style="direction:ltr;"><font color="#40458C">Non-TCP </font>arguments<font color="#40458C">, others don't hurt much.</font>
+<h2 style="direction:ltr;"><font color="#40458C">Non-TCP <b></font><font color="#660000">this</b></font><font color="#40458C"> is a common trap</font>
+<h2 style="direction:ltr;"><font color="#40458C">repaired by “</font>.bind(this)<font color="#40458C">”.</font>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+     "http://www.w3.org/TR/html4/transitional.dtd">
+<html>
+<head>
+  <meta HTTP-EQUIV=CONTENT-TYPE CONTENT="text/html; charset=utf-8">
+  <title>Problem:  Can’t emulate platform objects</title>
+</head>
+<body text="#000000" bgcolor="#FFFFFF" link="#000080" vlink="#0000CC" alink="#000080">
+<center>
+<a href="text0.html">First page</a> <a href="text5.html">Back</a> <a href="text7.html">Continue</a> <a href="text58.html">Last page</a> <a href="es5-talk.html">Overview</a> <a href="img6.html">Graphics</a></center><br>
+<h1 style="direction:ltr;"><font color="#660066">Problem: 
+Can’t emulate platform objects</font></h1>
+<h2 style="direction:ltr;">domObject.innerHTML = <font color="#40458C">…</font>;
+<h2 style="direction:ltr;">Object.prototype.myToString = <font color="#40458C">…</font>;
+<h2 style="direction:ltr;">for (var k in {}) {
+<h2 style="direction:ltr;"><font color="#40458C">  //Sees ‘myToString’ but not ‘toString’.</font>
+<h2 style="direction:ltr;">}
+<h2 style="direction:ltr;"><font color="#40458C"></font>
+<h2 style="direction:ltr;"><font color="#40458C">Primitives have powers unavailable in JS.</font>
+<h2 style="direction:ltr;"><font color="#40458C"></font>
+<h2 style="direction:ltr;"><font color="#40458C">Can’t transparently emulate or wrap.</font>
+</body>
+</html>

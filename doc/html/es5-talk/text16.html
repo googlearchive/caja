@@ -1,0 +1,24 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+     "http://www.w3.org/TR/html4/transitional.dtd">
+<html>
+<head>
+  <meta HTTP-EQUIV=CONTENT-TYPE CONTENT="text/html; charset=utf-8">
+  <title>What’s the Point? Can’t preserve invariants in ES3</title>
+</head>
+<body text="#000000" bgcolor="#FFFFFF" link="#000080" vlink="#0000CC" alink="#000080">
+<center>
+<a href="text0.html">First page</a> <a href="text15.html">Back</a> <a href="text17.html">Continue</a> <a href="text58.html">Last page</a> <a href="es5-talk.html">Overview</a> <a href="img16.html">Graphics</a></center><br>
+<h1 style="direction:ltr;"><font color="#660066">What’s the Point?
+Can’t preserve invariants in ES3</font></h1>
+<h2 style="direction:ltr;">function Point(x, y) {
+<h2 style="direction:ltr;">&nbsp;&nbsp;this.x = +x; 
+<h2 style="direction:ltr;">  this.y = +y; 
+<h2 style="direction:ltr;">}
+<h2 style="direction:ltr;">var pt = new Point(3,5);
+<h2 style="direction:ltr;">pt.x = 'foo'; <font color="#40458C">//Clobbers pt’s consistency</font>
+<h2 style="direction:ltr;"><font color="#40458C"></font>
+<h2 style="direction:ltr;"><font color="#40458C">Modular oo programming:</font>
+<h2 style="direction:ltr;"><font color="#40458C">Clients make requests of providers.</font>
+<h2 style="direction:ltr;"><font color="#40458C">Provider’s responsibility to maintain own invariants.</font>
+</body>
+</html>

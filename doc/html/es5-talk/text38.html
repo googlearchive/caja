@@ -1,0 +1,23 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+     "http://www.w3.org/TR/html4/transitional.dtd">
+<html>
+<head>
+  <meta HTTP-EQUIV=CONTENT-TYPE CONTENT="text/html; charset=utf-8">
+  <title>Slide 39</title>
+</head>
+<body text="#000000" bgcolor="#FFFFFF" link="#000080" vlink="#0000CC" alink="#000080">
+<center>
+<a href="text0.html">First page</a> <a href="text37.html">Back</a> <a href="text39.html">Continue</a> <a href="text58.html">Last page</a> <a href="es5-talk.html">Overview</a> <a href="img38.html">Graphics</a></center><br>
+<h1 style="direction:ltr;"><font color="#660066">Nonstrict this-coercion hazards</font></h1>
+<h2 style="direction:ltr;">Boolean.prototype.not = function() {
+<h2 style="direction:ltr;">&nbsp;&nbsp; return !<b><font color="#660000">this</b></font>;
+<h2 style="direction:ltr;">};
+<h2 style="direction:ltr;"><font color="#40458C"></font>
+<h2 style="direction:ltr;"><font color="#40458C">Nonstrict: </font>true.not()<font color="#40458C">  // false</font>
+<h2 style="direction:ltr;"><font color="#40458C">       </font>false.not()<font color="#40458C"> // <b></font><font color="#660000">false</b></font>
+<h2 style="direction:ltr;"><font color="#40458C"></font>
+<h2 style="direction:ltr;"><font color="#40458C">Strict: </font>true.not()<font color="#40458C">  // false</font>
+<h2 style="direction:ltr;"><font color="#40458C">    </font>false.not()<font color="#40458C"> // <b></font><font color="#660000">true</b></font>
+<h2 style="direction:ltr;"><b><font color="#660000"></b></font>
+</body>
+</html>

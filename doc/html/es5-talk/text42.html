@@ -1,0 +1,22 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+     "http://www.w3.org/TR/html4/transitional.dtd">
+<html>
+<head>
+  <meta HTTP-EQUIV=CONTENT-TYPE CONTENT="text/html; charset=utf-8">
+  <title>ES5-nonstrict isn't statically scoped</title>
+</head>
+<body text="#000000" bgcolor="#FFFFFF" link="#000080" vlink="#0000CC" alink="#000080">
+<center>
+<a href="text0.html">First page</a> <a href="text41.html">Back</a> <a href="text43.html">Continue</a> <a href="text58.html">Last page</a> <a href="es5-talk.html">Overview</a> <a href="img42.html">Graphics</a></center><br>
+<h1 style="direction:ltr;"><font color="#660066">ES5-nonstrict isn't statically scoped</font></h1>
+<h2 style="direction:ltr;">function foo() {
+<h2 style="direction:ltr;">&nbsp;&nbsp; var xfoo = 4;<font color="#40458C"> …</font>
+<h2 style="direction:ltr;"><font color="#40458C">&nbsp;&nbsp; <b></font><font color="#660000">xFoo</b></font><font color="#40458C"> </font>= 8;<font color="#40458C">     //Misspelling makes global var</font>
+<h2 style="direction:ltr;">}
+<h2 style="direction:ltr;">with (o) {<font color="#40458C">…</font>}<font color="#40458C">     //Attractive idea badly botched</font>
+<h2 style="direction:ltr;">delete foo; <font color="#40458C">     //Dynamically delete static var</font>
+<h2 style="direction:ltr;">eval('var <b><font color="#660000">x</b></font>=8'); <b><font color="#660000">x</b></font><font color="#40458C"> //Dynamically add static var</font>
+<h2 style="direction:ltr;"><font color="#40458C"></font>
+<h2 style="direction:ltr;"><font color="#40458C">All are fixed or rejected by ES5-strict.</font>
+</body>
+</html>

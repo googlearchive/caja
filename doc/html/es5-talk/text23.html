@@ -1,0 +1,26 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+     "http://www.w3.org/TR/html4/transitional.dtd">
+<html>
+<head>
+  <meta HTTP-EQUIV=CONTENT-TYPE CONTENT="text/html; charset=utf-8">
+  <title>Slide 24</title>
+</head>
+<body text="#000000" bgcolor="#FFFFFF" link="#000080" vlink="#0000CC" alink="#000080">
+<center>
+<a href="text0.html">First page</a> <a href="text22.html">Back</a> <a href="text24.html">Continue</a> <a href="text58.html">Last page</a> <a href="es5-talk.html">Overview</a> <a href="img23.html">Graphics</a></center><br>
+<h1 style="direction:ltr;"><font color="#660066">Scoping accident 1:
+Nested named function expressions</font></h1>
+<h2 style="direction:ltr;">function foo() {
+<h2 style="direction:ltr;">&nbsp;&nbsp; var <b><font color="#660000">x</b></font> = 8;
+<h2 style="direction:ltr;">&nbsp;&nbsp; bar(function baz() { return <b><font color="#660000">x</b></font>; });
+<h2 style="direction:ltr;">}
+<h2 style="direction:ltr;">Object.prototype.<b><font color="#660000">x</b></font> = 'foo';
+<h2 style="direction:ltr;"><font color="#40458C"></font>
+<h2 style="direction:ltr;"><font color="#40458C">Which <b></font><font color="#660000">x</b></font><font color="#40458C"> does “</font>return<font color="#40458C"> </font>x<font color="#40458C">” return?</font>
+<h2 style="direction:ltr;"><font color="#40458C"></font>
+<h2 style="direction:ltr;"><font color="#40458C">ES3: </font>'foo'<font color="#40458C">. </font>
+<h2 style="direction:ltr;"><font color="#40458C">Editorial error deployed by some browsers.</font>
+<h2 style="direction:ltr;"><font color="#40458C"></font>
+<h2 style="direction:ltr;"><font color="#40458C">ES5: Statically scoped where possible, so </font>8<font color="#40458C">.</font>
+</body>
+</html>

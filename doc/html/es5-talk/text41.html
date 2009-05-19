@@ -1,0 +1,24 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+     "http://www.w3.org/TR/html4/transitional.dtd">
+<html>
+<head>
+  <meta HTTP-EQUIV=CONTENT-TYPE CONTENT="text/html; charset=utf-8">
+  <title>ES5-strict functions encapsulated</title>
+</head>
+<body text="#000000" bgcolor="#FFFFFF" link="#000080" vlink="#0000CC" alink="#000080">
+<center>
+<a href="text0.html">First page</a> <a href="text40.html">Back</a> <a href="text42.html">Continue</a> <a href="text58.html">Last page</a> <a href="es5-talk.html">Overview</a> <a href="img41.html">Graphics</a></center><br>
+<h1 style="direction:ltr;"><font color="#660066">ES5-strict functions encapsulated</font></h1>
+<h2 style="direction:ltr;">function foo(x,y){bar();}
+<h2 style="direction:ltr;"><font color="#40458C"></font>
+<h2 style="direction:ltr;"><font color="#40458C">Nonstrict: </font>arguments<font color="#40458C"> joined to parameters.</font>
+<h2 style="direction:ltr;"><i><font color="#40458C">de facto</i>: </font>foo.caller, foo.arguments, arguments.caller
+<h2 style="direction:ltr;"><i><font color="#40458C">de jure</i>: </font>arguments.callee
+<h2 style="direction:ltr;"><font color="#40458C"></font>
+<h2 style="direction:ltr;"><font color="#40458C">Strict: </font>arguments<font color="#40458C"> not joined</font>
+<h2 style="direction:ltr;"><i><font color="#40458C">defused</i>: </font>foo.caller, foo.arguments, arguments.caller
+<h2 style="direction:ltr;"><i><font color="#40458C">defused</i>: </font>arguments.callee
+<h2 style="direction:ltr;"><font color="#40458C">All throw on access, to help catch porting bugs.</font>
+<h2 style="direction:ltr;"><font color="#40458C">Strict functions safe even from non-strict code.</font>
+</body>
+</html>
