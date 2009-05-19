@@ -15,6 +15,7 @@
 package com.google.caja.parser.quasiliteral;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.ParseTreeNode;
@@ -552,8 +553,8 @@ public abstract class Rule implements MessagePart {
   private ReadAssignOperands sideEffectingReadAssignOperand(
       Expression uncajoledObject, Expression uncajoledKey, Scope scope,
       MessageQueue mq) {
-    final Reference object;  // The object that contains the field to assign.
-    final Expression key;  // Identifies the field to assign.
+    Reference object;  // The object that contains the field to assign.
+    Expression key;  // Identifies the field to assign.
     List<Expression> temporaries = new ArrayList<Expression>();
 
     // Don't cajole the operands.  We return a simple assignment operator that
@@ -589,17 +590,39 @@ public abstract class Rule implements MessagePart {
     if (isKeySimple) {
       key = uncajoledKey;
     } else {
+      ParseTreeNode rightExpanded = rewriter.expand(uncajoledKey, scope, mq);
       Identifier tmpVar = scope.declareStartOfScopeTempVariable();
+      key = new Reference(tmpVar);
+      if (isToNumberOp(rightExpanded)) {
+        key = Operation.create(key.getFilePosition(), Operator.TO_NUMBER, key);
+      }
       temporaries.add((Expression) QuasiBuilder.substV(
           "@tmpVar = @right;",
           "tmpVar", new Reference(tmpVar),
-          "right", rewriter.expand(uncajoledKey, scope, mq)));
-      key = new Reference(tmpVar);
+          "right", rightExpanded));
     }
 
-    Operation propertyAccess = Operation.create(
-        FilePosition.span(object.getFilePosition(), key.getFilePosition()),
-        Operator.SQUARE_BRACKET, object, key);
+    Operation propertyAccess = null;
+    if (key instanceof StringLiteral) {
+      // Make sure that cases like
+      //   arr.length -= 1
+      // optimize arr.length in the right-hand-side usage.
+      // See the array length case in testSetReadModifyWriteLocalVar.
+      String keyText = ((StringLiteral) key).getUnquotedValue();
+      if (ParserBase.isJavascriptIdentifier(keyText)
+          && Keyword.fromString(keyText) == null) {
+        Reference ident = new Reference(
+            new Identifier(key.getFilePosition(), keyText));
+        propertyAccess = Operation.create(
+            FilePosition.span(object.getFilePosition(), key.getFilePosition()),
+            Operator.MEMBER_ACCESS, object, ident);
+      }
+    }
+    if (propertyAccess == null) {
+      propertyAccess = Operation.create(
+          FilePosition.span(object.getFilePosition(), key.getFilePosition()),
+          Operator.SQUARE_BRACKET, object, key);
+    }
     return new ReadAssignOperands(
         temporaries, propertyAccess,
         (Expression) rewriter.expand(propertyAccess, scope, mq));
@@ -622,6 +645,11 @@ public abstract class Rule implements MessagePart {
     return ReservedNames.IMPORTS.equals(((Reference) e).getIdentifierName());
   }
 
+  private static boolean isToNumberOp(ParseTreeNode n) {
+    return n instanceof Operation
+        && Operator.TO_NUMBER == ((Operation) n).getOperator();
+  }
+
   /**
    * The operands in a read/assign operation.
    * <p>
@@ -636,7 +664,7 @@ public abstract class Rule implements MessagePart {
     private final List<Expression> temporaries;
     private final Expression uncajoled, cajoled;
 
-    ReadAssignOperands(
+    private ReadAssignOperands(
         List<Expression> temporaries, Expression lhs, Expression rhs) {
       assert lhs.isLeftHandSide();
       this.temporaries = temporaries;
@@ -660,7 +688,8 @@ public abstract class Rule implements MessagePart {
      * the need for temporaries?
      */
     public boolean isSimpleLValue() {
-      return temporaries.isEmpty() && cajoled.isLeftHandSide();
+      return temporaries.isEmpty() && cajoled.isLeftHandSide()
+          && cajoled instanceof Reference;
     }
 
     public Operation makeAssignment(Expression rhs) {

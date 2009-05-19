@@ -42,6 +42,7 @@ import com.google.caja.parser.js.Literal;
 import com.google.caja.parser.js.Loop;
 import com.google.caja.parser.js.MultiDeclaration;
 import com.google.caja.parser.js.Noop;
+import com.google.caja.parser.js.NumberLiteral;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
@@ -962,23 +963,36 @@ public class CajitaRewriter extends Rewriter {
     new Rule() {
       @Override
       @RuleDescription(
+          name="readPublicLength",
+          synopsis="",
+          reason="Length is whitelisted on Object.prototype",
+          matches="@o.length",
+          substitutes="@o.length")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        return transform(node, scope, mq);
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
           name="readPublic",
           synopsis="",
           reason="",
           matches="@o.@p",
-          substitutes="<approx> ___.readPub(@o, @'p')")
+          substitutes="@oRef.@fp ? @oRef.@p : ___.readPub(@oRef, '@p')")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
           Pair<Expression, Expression> oPair = reuse(bindings.get("o"), scope, mq);
           Reference p = (Reference) bindings.get("p");
           String propertyName = p.getIdentifierName();
-          return commas(oPair.b, (Expression) QuasiBuilder.substV(
-              "@oRef.@fp ? @oRef.@p : ___.readPub(@oRef, @rp)",
+          return commas(oPair.b, (Expression) substV(
               "oRef", oPair.a,
               "p",    noexpand(p),
-              "fp",   newReference(
-                          FilePosition.UNKNOWN, propertyName + "_canRead___"),
+              "fp",   newReference(p.getFilePosition(),
+                                   propertyName + "_canRead___"),
               "rp",   toStringLiteral(p)));
         }
         return NONE;
@@ -990,14 +1004,40 @@ public class CajitaRewriter extends Rewriter {
       @RuleDescription(
           name="readNumPublic",
           synopsis="Recognize that numeric indexing is inherently safe.",
-          reason="When the developer knows that their index expression is numeric, " +
-              "they can indicate this with the unary plus operator -- which " +
-              "coerces to a number. Since numeric properties are necessarily " +
-              "readable, we can pass these through directly to JavaScript.",
+          reason="When the developer knows that their index expression is" +
+              " numeric, they can indicate this with the unary plus operator" +
+              " -- which coerces to a number. Since numeric properties are" +
+              " necessarily readable, we can pass these through directly to" +
+              " JavaScript.",
           matches="@o[+@s]",
           substitutes="@o[+@s]")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
         return transform(node, scope, mq);
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="readNumWithConstantIndex",
+          synopsis="Recognize that numeric indexing is inherently safe.",
+          reason="Numeric properties are always readable, we can pass these"
+              + " through directly to JavaScript.",
+          matches="@o[@numLiteral]",
+          substitutes="@o[@numLiteral]")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null) {
+          ParseTreeNode index = bindings.get("numLiteral");
+          if (index instanceof NumberLiteral) {
+            return substV(
+                "o", expand(bindings.get("o"), scope, mq),
+                "numLiteral", expand(index, scope, mq));
+          }
+        }
+        return NONE;
       }
     },
 

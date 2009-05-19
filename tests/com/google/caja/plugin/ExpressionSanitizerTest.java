@@ -48,9 +48,10 @@ public class ExpressionSanitizerTest extends CajaTestCase {
 
   public void testBasicRewriting() throws Exception {
     assertSanitize(
-        "g[0];",
+        "g[i];",
         "var g = ___.readImport(IMPORTS___, 'g');"
-        + "___.readPub(g, 0);");
+        + "var i = ___.readImport(IMPORTS___, 'i');"
+        + "___.readPub(g, i);");
   }
 
   public void testNoSpuriousRewriteErrorFound() throws Exception {
