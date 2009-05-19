@@ -614,7 +614,7 @@ public class CssPropertyPatterns {
   }
 
   public static class Builder implements BuildCommand {
-    public void build(List<File> inputs, List<File> deps, File output)
+    public boolean build(List<File> inputs, List<File> deps, File output)
         throws IOException {
       File symbolsAndPropertiesFile = null;
       File functionsFile = null;
@@ -679,6 +679,7 @@ public class CssPropertyPatterns {
       } finally {
         out.close();
       }
+      return true;
     }
   }
 

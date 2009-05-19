@@ -115,6 +115,10 @@ public enum Keyword implements MessagePart {
     return JAVASCRIPT_KEYWORDS.get(keywordText);
   }
 
+  public static boolean isKeyword(String s) {
+    return fromString(s) != null;
+  }
+
   private static final Map<String, Keyword> JAVASCRIPT_KEYWORDS
       = new HashMap<String, Keyword>();
   static {

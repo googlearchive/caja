@@ -274,6 +274,12 @@ public abstract class CajaTestCase extends TestCase {
     }
   }
 
+  protected void assertNoMessage(MessageTypeInt type) {
+    for (Message msg : mq.getMessages()) {
+      if (msg.getMessageType() == type) { fail(msg.format(mc)); }
+    }
+  }
+
   private static int partsMissing(Message msg, MessagePart... parts) {
     int missing = 0;
     outerLoop:

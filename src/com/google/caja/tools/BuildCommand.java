@@ -23,6 +23,6 @@ import java.util.List;
  * ANT build rules with dependency checking.
  */
 public interface BuildCommand {
-  void build(List<File> inputs, List<File> dependencies, File output)
+  boolean build(List<File> inputs, List<File> dependencies, File output)
       throws IOException;
 }

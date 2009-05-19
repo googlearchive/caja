@@ -28,13 +28,14 @@ public enum MessageType implements MessageTypeInt {
 
   UNIMPLEMENTED("Lazy author error", MessageLevel.FATAL_ERROR),
   INTERNAL_ERROR("Internal error: %s", MessageLevel.FATAL_ERROR),
-  IO_ERROR("Error reading from %s", MessageLevel.FATAL_ERROR),
+  IO_ERROR("I/O Error: %s", MessageLevel.FATAL_ERROR),
 
   // command line flags
   NO_SOURCE_FILES("No source files specified", MessageLevel.FATAL_ERROR),
   UNRECOGNIZED_FLAG("Unrecognized flag: %s", MessageLevel.FATAL_ERROR),
   DUPLICATE_FLAG(
       "duplicate command line argument %s", MessageLevel.FATAL_ERROR),
+  NO_SUCH_FILE("%s: No such file", MessageLevel.FATAL_ERROR),
 
   // lexing messages
   UNTERMINATED_STRING_TOKEN("%s: Unclosed string", MessageLevel.FATAL_ERROR),

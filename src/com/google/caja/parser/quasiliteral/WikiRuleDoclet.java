@@ -18,27 +18,27 @@ import java.io.IOException;
 import java.io.Writer;
 
 /**
- * Extracts and formats the rules of Caja from DefaultCajaRewriter 
+ * Extracts and formats the rules of Caja from DefaultCajaRewriter
  * as a wiki page output to the given file
- * 
+ *
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class WikiRuleDoclet extends RuleDoclet {
   private int countRules = 0;
-  
+
   @Override
   public String getDefaultExtension() {
     return "wiki";
-  }  
+  }
 
   private String heading1(String name) {
     return "=" + name + "=\n";
   }
-  
+
   private String heading2(String name) {
     return "==" + name + "==\n";
   }
-  
+
   private String row(String... cells) {
     StringBuilder result = new StringBuilder();
     boolean hasContent = false;
@@ -58,9 +58,9 @@ public class WikiRuleDoclet extends RuleDoclet {
   private String code(String code) {
     return code.equals("") ? " " : "{{{" + code + "}}}";
   }
-  
+
   @Override
-  public void generateHeader(Writer output, RulesetDescription ruleSet) 
+  public void generateHeader(Writer output, RulesetDescription ruleSet)
     throws IOException {
     output.write(heading1(ruleSet.name()));
     output.write(heading2(ruleSet.synopsis()));
@@ -70,11 +70,18 @@ public class WikiRuleDoclet extends RuleDoclet {
   public void generateFooter(Writer output, RulesetDescription ruleSet) {}
 
   @Override
-  public void generateRuleDocumentation(Writer output, RuleDescription anno) throws IOException {
+  public void generateRuleDocumentation(Writer output, RuleDescription anno)
+      throws IOException {
     if (countRules == 0) {
-      output.write(row("", "Rule", "Synopsis", "Reason", "Matches", "Substitutes"));
+      output.write(
+          row("", "Rule", "Synopsis", "Reason", "Matches", "Substitutes"));
     }
-    output.write(row("" + countRules++, anno.name(), anno.synopsis(), 
-                          anno.reason(), code(anno.matches()), code(anno.substitutes())));
+    output.write(
+        row("" + countRules++, anno.name(), anno.synopsis(),
+            anno.reason(), code(anno.matches()), code(anno.substitutes())));
   }
+
+  /** @param out unused. */
+  @Override
+  public void finish(Writer out) {}
 }

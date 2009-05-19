@@ -16,6 +16,8 @@ package com.google.caja.tools;
 
 import com.google.caja.plugin.BuildServiceImplementation;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -31,7 +33,7 @@ import org.apache.tools.ant.Task;
  *
  * @see <a href="http://ant.apache.org/manual/tutorial-writing-tasks.html">ANT
  *     Task Tutorial</a>
- * @see <a href="http://ant.apache.org/manual/CoreTasks/typedef.html">Deploting
+ * @see <a href="http://ant.apache.org/manual/CoreTasks/typedef.html">Deploying
  *     Tasks</a>
  *
  * @author mikesamuel@gmail.com
@@ -158,7 +160,13 @@ public abstract class AbstractCajaAntTask extends Task {
     void build(List<File> inputs, List<File> dependees, long youngest,
                BuildService buildService, PrintWriter logger)
         throws BuildException {
-      long outputModified = output.lastModified();
+      File outputTimeFile;
+      if (output.isDirectory()) {
+        outputTimeFile = new File(output, ".tstamp");
+      } else {
+        outputTimeFile = output;
+      }
+      long outputModified = outputTimeFile.lastModified();
       boolean modified  // -> the output file is older than any inputs.
           = (outputModified == 0L    // 0L -> !output.exists()
               || outputModified < youngest);
@@ -173,9 +181,25 @@ public abstract class AbstractCajaAntTask extends Task {
 
         logger.println("building " + inputs.size() + " files to " + output);
         Map<String, Object> options = getOptions();
-        if (!run(buildService, logger, dependees, inputs, output, options)) {
-          if (output.exists()) { output.delete(); }
-          throw new BuildException("Failed to build " + output);
+        boolean success = false;
+        try {
+          success = run(
+              buildService, logger, dependees, inputs, output, options);
+          if (success) {
+            if (!outputTimeFile.exists()) {
+              try {
+                (new FileOutputStream(outputTimeFile)).close();
+              } catch (IOException ex) {
+                throw new BuildException("Failed to build " + output, ex);
+              }
+            }
+          } else {
+            throw new BuildException("Failed to build " + output);
+          }
+        } finally {
+          if (!success) {
+            if (outputTimeFile.exists()) { outputTimeFile.delete(); }
+          }
         }
       }
     }

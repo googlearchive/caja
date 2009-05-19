@@ -286,8 +286,9 @@ public abstract class Rule implements MessagePart {
   }
 
   /**
-   * Returns a pair of a reusable expression list and an initializing expression that
-   * together represent the reusable expansion of the <tt>arguments</tt> expression list.
+   * Returns a pair of a reusable expression list and an initializing
+   * expression that together represent the reusable expansion of the
+   * <tt>arguments</tt> expression list.
    * <p>
    * In the expansion context, the initializing expression must be executed
    * exactly once and prior to evaluating the reusable expression.

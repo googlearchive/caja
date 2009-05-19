@@ -1943,10 +1943,12 @@ var attachDocumentStub = (function () {
         innerHtml = html.escapeAttrib(innerHtml);
       } else if (flags & html4.eflags.RCDATA) {
         // Make sure we return PCDATA.
-        // TODO(mikesamuel): for RCDATA we only need to escape & if they're not
-        // part of an entity.
+        // For RCDATA we only need to escape & if they're not part of an entity.
         innerHtml = html.normalizeRCData(innerHtml);
       } else {
+        // If we blessed the resulting HTML, then this would round trip better
+        // but it would still not survive appending, and it would propagate
+        // event handlers where the setter of innerHTML does not expect it to.
         innerHtml = tameInnerHtml(innerHtml);
       }
       return innerHtml;

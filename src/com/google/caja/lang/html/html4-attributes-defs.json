@@ -250,6 +250,7 @@
       { "key": "LABEL::FOR", "description": "matches field ID value",
         "type": "IDREF", "optional": true },
       { "key": "TABLE::FRAME", "description": "which parts of frame to render",
+        "values": "void,above,below,border,box,hsides,lhs,rhs,vsides",
         "optional": true },
       { "key": "FRAME::FRAMEBORDER", "description": "request frame borders?",
         "values": "1,0", "default": "1", "optional": true },

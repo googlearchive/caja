@@ -18,7 +18,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
- * Provides a similar interface to {@link java.text.Normalizer}, but will
+ * Provides a similar interface to {@code java.text.Normalizer}, but will
  * compile and run on JDK1.5 in a stricter mode.
  *
  * @author mikesamuel@gmail.com

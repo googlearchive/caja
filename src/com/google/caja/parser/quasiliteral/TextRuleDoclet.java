@@ -22,9 +22,9 @@ import java.io.Writer;
 import java.util.Date;
 
 /**
- * Extracts and formats the rules of Caja from DefaultCajaRewriter 
+ * Extracts and formats the rules of Caja from DefaultCajaRewriter
  * output to the console
- * 
+ *
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class TextRuleDoclet extends RuleDoclet {
@@ -34,28 +34,33 @@ public class TextRuleDoclet extends RuleDoclet {
   }
 
   @Override
-  public void generateHeader(Writer output, RulesetDescription ruleSet) 
+  public void generateHeader(Writer output, RulesetDescription ruleSet)
     throws IOException {
     output.write("Rules for " + ruleSet.name() + "\n");
     output.write(ruleSet.synopsis() + "\n");
   }
 
   @Override
-  public void generateFooter(Writer output, RulesetDescription ruleSet) 
+  public void generateFooter(Writer output, RulesetDescription ruleSet)
     throws IOException {
     output.write("Generated " + new Date());
   }
 
   @Override
-  public void generateRuleDocumentation(Writer output, RuleDescription anno) throws IOException {
+  public void generateRuleDocumentation(Writer output, RuleDescription anno)
+    throws IOException {
     output.write("  Rule: " + anno.name());
     output.write("\n  Synopsis: " + anno.synopsis());
-    output.write("\n  Reason: " + anno.reason()); 
-    output.write("\n  Matches: " + anno.reason()); 
-    output.write("\n  Substitutes: " + anno.reason()); 
+    output.write("\n  Reason: " + anno.reason());
+    output.write("\n  Matches: " + anno.matches());
+    output.write("\n  Substitutes: " + anno.substitutes());
     output.append("\n\n");
   }
-  
+
+  /** @param out unused. */
+  @Override
+  public void finish(Writer out) {}
+
   public static void main(String[] args) throws IOException {
     TextRuleDoclet trd = new TextRuleDoclet();
     trd.setRewriter(new CajitaRewriter(BuildInfo.getInstance(), false));

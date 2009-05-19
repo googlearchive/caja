@@ -25,8 +25,9 @@
  * @provides html, html_sanitize
  */
 
-
-/** @namespace */
+/**
+ * @namespace
+ */
 var html = (function () {
   var lcase;
   // The below may not be true on browsers in the Turkish locale.
@@ -400,6 +401,8 @@ html.makeHtmlSanitizer = function (sanitizeAttributes) {
             return;
           }
           attribs = sanitizeAttributes(tagName, attribs);
+          // TODO(mikesamuel): relying on sanitizeAttributes not to
+          // insert unsafe attribute names.
           if (attribs) {
             if (!(eflags & html4.eflags.EMPTY)) {
               stack.push(tagName);

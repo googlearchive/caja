@@ -377,7 +377,6 @@ public final class Parser extends ParserBase {
           Statement initializer = parseDeclarationsOrExpression(true);
           Expression initializerExpr = null;
 
-          s = null;
           if ((initializer instanceof Declaration  // no multi-decls
                && null == ((Declaration) initializer).getInitializer()
                && tq.checkToken(Keyword.IN))

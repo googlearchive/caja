@@ -42,7 +42,7 @@ import java.util.Map;
  */
 public final class CajoledModule extends AbstractParseTreeNode {
   // A stub file name by which to call the (otherwise anonymous) cajoled output.
-  private static final InputSource cajoledOutputFileName =
+  private static final InputSource CAJOLED_OUTPUT_FILE_NAME =
       new InputSource(URI.create("file:///CAJOLED-OUTPUT"));
 
   /** @param value unused.  This ctor is provided for reflection. */
@@ -114,7 +114,7 @@ public final class CajoledModule extends AbstractParseTreeNode {
     // Render the module function. With this, the SourceSpansRenderer captures
     // the rendered form of the function, and also builds the debug information.
     SourceSpansRenderer ssr = new SourceSpansRenderer(
-        exHandler, cajoledOutputFileName);
+        exHandler, CAJOLED_OUTPUT_FILE_NAME);
     RenderContext rc = new RenderContext(ssr);
 
     getModuleBody().getValue("instantiate").render(rc);

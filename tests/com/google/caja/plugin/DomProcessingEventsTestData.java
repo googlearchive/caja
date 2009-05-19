@@ -59,7 +59,7 @@ public class DomProcessingEventsTestData {
   }
 
   public static class Builder implements BuildCommand {
-    public void build(List<File> inputs, List<File> deps, File output)
+    public boolean build(List<File> inputs, List<File> deps, File output)
         throws IOException {
       MessageQueue mq = new SimpleMessageQueue();
       Writer out = new OutputStreamWriter(
@@ -77,6 +77,7 @@ public class DomProcessingEventsTestData {
           System.err.println(msg);
         }
       }
+      return true;
     }
   }
 

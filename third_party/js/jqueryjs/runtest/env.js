@@ -46,22 +46,22 @@ var window = this;
         return hostname + (port ? ':' + port : '');
       },
       get hostname() {
-        return curLocation.getHost() || '';
+        return String(curLocation.getHost()) || '';
       },
       get href() {
-        return curLocation.toString() || '';
+        return String(curLocation.toString()) || '';
       },
       get pathname() {
-        return curLocation.getPath() || '';
+        return String(curLocation.getPath()) || '';
       },
       get port() {
-        return curLocation.getPort() || 0;
+        return String(curLocation.getPort()) || 0;
       },
       get protocol() {
-        return curLocation.getProtocol() + ":";
+        return String(curLocation.getProtocol()) + ":";
       },
       get search() {
-        return curLocation.getQuery() || '';
+        return String(curLocation.getQuery()) || '';
       },
       toString: function () {
         return this.href;
@@ -154,11 +154,15 @@ var window = this;
 
   // DOM Document
 
-  window.DOMDocument = function(file){
+  window.DOMDocument = function(file) {
     this._file = file;
     this._dom = Packages.javax.xml.parsers.
       DocumentBuilderFactory.newInstance()
         .newDocumentBuilder().parse(file);
+    if ('scriptEngine___' in window) {
+      window.scriptEngine___.dontEnum(this, '_file');
+      window.scriptEngine___.dontEnum(this, '_dom');
+    }
 
     if ( !obj_nodes.containsKey( this._dom ) )
       obj_nodes.put( this._dom, this );
@@ -255,6 +259,10 @@ var window = this;
 
   window.DOMNodeList = function(list){
     this._dom = list;
+    if ('scriptEngine___' in window) {
+      window.scriptEngine___.dontEnum(this, '_dom');
+    }
+
     this.length = list.getLength();
 
     for ( var i = 0; i < this.length; i++ ) {
@@ -278,6 +286,9 @@ var window = this;
 
   window.DOMNode = function(node){
     this._dom = node;
+    if ('scriptEngine___' in window) {
+      window.scriptEngine___.dontEnum(this, '_dom');
+    }
   };
 
   DOMNode.prototype = {
@@ -323,6 +334,9 @@ var window = this;
 
   window.DOMElement = function(elem){
     this._dom = elem;
+    if ('scriptEngine___' in window) {
+      window.scriptEngine___.dontEnum(this, '_dom');
+    }
   };
 
   DOMElement.prototype = extend( new DOMNode(), {

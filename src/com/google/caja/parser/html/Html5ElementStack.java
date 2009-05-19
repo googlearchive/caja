@@ -163,16 +163,24 @@ public class Html5ElementStack implements OpenElementStack {
 
     // If disposing of the html, body, or head elements would lose info don't
     // do it, so look for attributes.
-    boolean tagsBesidesHeadAndBody = false;
+    boolean tagsBesidesHeadBodyFrameset = false;
     boolean topLevelTagsWithAttributes = hasSpecifiedAttributes(root);
 
     for (Node child = first; child != null; child = child.getNextSibling()) {
       if (child instanceof Element) {
         Element el = (Element) child;
         String tagName = el.getTagName();
-        if (!("head".equals(tagName) || "body".equals(tagName))) {
-          tagsBesidesHeadAndBody = true;
-        } else if (!topLevelTagsWithAttributes && hasSpecifiedAttributes(el)) {
+        if (!("head".equals(tagName) || "body".equals(tagName)
+              || "frameset".equals(tagName))) {
+          tagsBesidesHeadBodyFrameset = true;
+          break;
+        }
+        if (!topLevelTagsWithAttributes
+            && hasSpecifiedAttributes(el)
+            // framesets, unlike body elements, are never created out of whole
+            // cloth, so we do not behave differently when there is a frameset
+            // with attributes.
+            && !"frameset".equals(tagName)) {
           topLevelTagsWithAttributes = true;
         }
       }
@@ -183,7 +191,7 @@ public class Html5ElementStack implements OpenElementStack {
     //   <html><body bgcolor=white>...</body></html>
     // tagsBesidesHeadAndBody is true for
     //   <html><frameset>...</frameset></html>
-    if (tagsBesidesHeadAndBody || topLevelTagsWithAttributes) {
+    if (tagsBesidesHeadBodyFrameset || topLevelTagsWithAttributes) {
       // Merging the body and head would lose info.
       result.appendChild(root);
       return result;
@@ -207,10 +215,15 @@ public class Html5ElementStack implements OpenElementStack {
     Node pending = null;
     for (Node child = first; child != null; child = child.getNextSibling()) {
       if (child instanceof Element) {
-        // Shallow descent
-        for (Node grandchild = child.getFirstChild(); grandchild != null;
-             grandchild = grandchild.getNextSibling()) {
-          pending = appendNormalized(pending, grandchild, result);
+        String tagName = ((Element) child).getTagName();
+        if ("head".equals(tagName) || "body".equals(tagName)) {
+          // Shallow descent
+          for (Node grandchild = child.getFirstChild(); grandchild != null;
+               grandchild = grandchild.getNextSibling()) {
+            pending = appendNormalized(pending, grandchild, result);
+          }
+        } else {  // reached for framesets
+          pending = child;
         }
       } else {
         pending = appendNormalized(pending, child, result);

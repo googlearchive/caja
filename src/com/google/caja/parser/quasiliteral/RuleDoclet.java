@@ -85,8 +85,7 @@ public abstract class RuleDoclet {
    * Emits documentation for a set of rules
    * @throws IOException if writing to output fails.
    */
-  public void generateDocumentation(Writer output)
-      throws IOException {
+  public void generateDocumentation(Writer output) throws IOException {
     try {
       RulesetDescription ruleSetDescription =
           rewriter.getClass().getAnnotation(RulesetDescription.class);

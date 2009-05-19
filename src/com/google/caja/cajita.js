@@ -21,10 +21,9 @@
  * <li>"cajita" providing some common services to the Cajita programmer.
  * </ol>
  * @author erights@gmail.com
- * @requires jsonParse, this
- * @provides ___, cajita, safeJSON
- * @overrides Array, Boolean, Date, Function, JSON, Number, Object, RegExp,
- *   String, escape
+ * @requires console
+ * @provides ___, arraySlice, cajita, dateToISOString, funcBind
+ * @overrides Array, Boolean, Date, Function, Number, Object, RegExp, String
  * @overrides Error, EvalError, RangeError, ReferenceError, SyntaxError,
  *   TypeError, URIError
  */
@@ -2764,6 +2763,7 @@ var safeJSON;
    * </ul>
    * Given that a K=>V association has been stored in table T, the
    * three cases differ according to how long they retain V:
+   * <ul>
    * <li>A genuine weak-key table retains V only while both T and K
    *     are not garbage.
    * <li>If opt_useKeyLifetime is falsy, retain V while T is not

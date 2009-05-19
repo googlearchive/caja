@@ -29,7 +29,7 @@ import java.util.List;
  * subexpressions need not be literal.
  *
  * <p>E.g.
- * <code>{ x: 0, y : 1}</code>
+ * <code>{ x: 0, y : 1 }</code>
  *
  * @author mikesamuel@gmail.com
  */
@@ -50,6 +50,10 @@ public final class ObjectConstructor extends AbstractExpression {
       m.appendChild(p.b);
     }
     m.execute();
+  }
+
+  public ObjectConstructor(FilePosition pos) {
+    super(pos, Expression.class);
   }
 
   @Override

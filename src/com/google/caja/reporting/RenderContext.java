@@ -26,19 +26,23 @@ public class RenderContext {
   private final boolean embeddable;
   /** Produce output that only contains lower 7-bit characters. */
   private final boolean asciiOnly;
+  /** Should javascript output be rendered using JSON conventions. */
+  private final boolean json;
   /** True iff DOM tree nodes should be rendered as XML. */
   private final boolean asXml;
   private final TokenConsumer out;
 
   public RenderContext(TokenConsumer out) {
-    this(true, false, false, out);
+    this(true, false, false, false, out);
   }
 
   private RenderContext(
-      boolean asciiOnly, boolean embeddable, boolean asXml, TokenConsumer out) {
+      boolean asciiOnly, boolean embeddable, boolean json, boolean asXml,
+      TokenConsumer out) {
     if (null == out) { throw new NullPointerException(); }
     this.embeddable = embeddable;
     this.asciiOnly = asciiOnly;
+    this.json = json;
     this.asXml = asXml;
     this.out = out;
   }
@@ -53,22 +57,25 @@ public class RenderContext {
    * {@code [\1-\x7f]}.
    */
   public final boolean isAsciiOnly() { return asciiOnly; }
+  public final boolean asJson() { return json; }
   /** True iff DOM tree nodes should be rendered as XML. */
   public final boolean asXml() { return asXml; }
   public final TokenConsumer getOut() { return out; }
 
-  public RenderContext withEmbeddable(boolean embeddable) {
-    return embeddable == this.embeddable
-        ? this : new RenderContext(asciiOnly, embeddable, asXml, out);
+  public RenderContext withAsciiOnly(boolean b) {
+    return b != asciiOnly
+        ? new RenderContext(b, embeddable, json, asXml, out) : this;
   }
-
-  public RenderContext withAsciiOnly(boolean asciiOnly) {
-    return asciiOnly == this.asciiOnly
-        ? this : new RenderContext(asciiOnly, embeddable, asXml, out);
+  public RenderContext withEmbeddable(boolean b) {
+    return b != embeddable
+        ? new RenderContext(asciiOnly, b, json, asXml, out) : this;
   }
-
-  public RenderContext withAsXml(boolean asXml) {
-    return asXml == this.asXml
-        ? this : new RenderContext(asciiOnly, embeddable, asXml, out);
+  public RenderContext withJson(boolean b) {
+    return b != json
+        ? new RenderContext(asciiOnly, embeddable, b, asXml, out) : this;
+  }
+  public RenderContext withAsXml(boolean b) {
+    return b != this.asXml
+        ? new RenderContext(asciiOnly, embeddable, json, b, out) : this;
   }
 }

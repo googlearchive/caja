@@ -464,6 +464,59 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
+  public void testFramesetFragment() throws Exception {
+    assertParsedHtmlFragment(
+        Arrays.asList(
+            "<frameset><frame src=foo.html /></frameset>"),
+        Arrays.asList(
+            "Fragment 1+1-1+44",
+            "  Element : frameset 1+1-1+44",
+            "    Element : frame 1+11-1+33",
+            "      Attrib : src 1+18-1+21",
+            "        Value : foo.html 1+22-1+30"
+            ),
+        Arrays.<String>asList(
+            ),
+        Arrays.asList(
+            "<frameset><frame src=\"foo.html\"></frame></frameset>"
+            )
+        );
+  }
+
+  public void testFramesetFragment2() throws Exception {
+    assertParsedHtmlFragment(
+        Arrays.asList(
+            ""
+            + "<frameset cols=\"20%,80%\">\n"
+            + "  <frame src=\"foo.html\" />\n"
+            + "  <frame src=\"bar.html\" />\n"
+            + "</frameset>"),
+        Arrays.asList(
+            "Fragment 1+1-4+12",
+            "  Element : frameset 1+1-4+12",
+            "    Attrib : cols 1+11-1+15",
+            "      Value : 20%,80% 1+16-1+25",
+            "    Text : \\n   1+26-2+3",
+            "    Element : frame 2+3-2+27",
+            "      Attrib : src 2+10-2+13",
+            "        Value : foo.html 2+14-2+24",
+            "    Text : \\n   2+27-3+3",
+            "    Element : frame 3+3-3+27",
+            "      Attrib : src 3+10-3+13",
+            "        Value : bar.html 3+14-3+24",
+            "    Text : \\n 3+27-4+1"
+            ),
+        Arrays.<String>asList(
+            ),
+        Arrays.asList(
+            "<frameset cols=\"20%,80%\">",
+            "  <frame src=\"foo.html\"></frame>",
+            "  <frame src=\"bar.html\"></frame>",
+            "</frameset>"
+            )
+        );
+  }
+
   public void testFragmentThatEndsWithAComment() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(

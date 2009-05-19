@@ -240,7 +240,7 @@ public final class HtmlDefinitions {
   }
 
   public static class Builder implements BuildCommand {
-    public void build(List<File> inputs, List<File> deps, File output)
+    public boolean build(List<File> inputs, List<File> deps, File output)
         throws IOException {
       File elementsFile = null;
       File attrsFile = null;
@@ -311,6 +311,7 @@ public final class HtmlDefinitions {
       } finally {
         out.close();
       }
+      return true;
     }
   }
 
