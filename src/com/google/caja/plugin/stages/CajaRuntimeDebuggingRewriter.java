@@ -39,7 +39,7 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
   private final DebuggingSymbols symbols;
 
   CajaRuntimeDebuggingRewriter(DebuggingSymbols symbols) {
-    super(false, true);
+    super(false, false);
     this.symbols = symbols;
   }
 
@@ -50,7 +50,7 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
    * present, or is otherwise drawn from the match as a whole.
    */
   abstract class AddPositionParamRule extends Rule {
-    // TODO(erights): Nothing is gained by having this be a partial override of 
+    // TODO(erights): Nothing is gained by having this be a partial override of
     // fire() which subclasses have to further override. Make into a protected
     // (or package scoped) method instead, where the concrete fire() methods
     // simply call it. Or perhaps have it override transform().

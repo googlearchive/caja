@@ -21,9 +21,10 @@
  * <li>"cajita" providing some common services to the Cajita programmer.
  * </ol>
  * @author erights@gmail.com
- * @requires console, this
- * @provides ___, arraySlice, cajita, dateToISOString, funcBind
- * @overrides Array, Boolean, Date, Function, Number, Object, RegExp, String
+ * @requires jsonParse, this
+ * @provides ___, cajita, safeJSON
+ * @overrides Array, Boolean, Date, Function, JSON, Number, Object, RegExp,
+ *   String, escape
  * @overrides Error, EvalError, RangeError, ReferenceError, SyntaxError,
  *   TypeError, URIError
  */
@@ -60,20 +61,19 @@ Object.prototype.proto___ = null;
 // TODO(erights): Move such extensions to a separate extensions.js.
 ////////////////////////////////////////////////////////////////////////
 
-/** In anticipation of ES3.1 */
-function dateToISOString() {
-  function f(n) {
-    return n < 10 ? '0' + n : n;
-  }
-  return (this.getUTCFullYear()     + '-' +
-          f(this.getUTCMonth() + 1) + '-' +
-          f(this.getUTCDate())      + 'T' +
-          f(this.getUTCHours())     + ':' +
-          f(this.getUTCMinutes())   + ':' +
-          f(this.getUTCSeconds())   + 'Z');
-}
 if (Date.prototype.toISOString === void 0) {
-  Date.prototype.toISOString = dateToISOString;
+  /** In anticipation of ES3.1 */
+  Date.prototype.toISOString = function () {
+    function f(n) {
+      return n < 10 ? '0' + n : n;
+    }
+    return (this.getUTCFullYear()     + '-' +
+            f(this.getUTCMonth() + 1) + '-' +
+            f(this.getUTCDate())      + 'T' +
+            f(this.getUTCHours())     + ':' +
+            f(this.getUTCMinutes())   + ':' +
+            f(this.getUTCSeconds())   + 'Z');
+  };
 }
 
 if (Date.prototype.toJSON === void 0) {
@@ -82,11 +82,10 @@ if (Date.prototype.toJSON === void 0) {
 }
 
 /** In anticipation of ES4, and because it's useful. */
-function arraySlice(self, start, end) {
-  return Array.prototype.slice.call(self, start || 0, end || self.length);
-}
 if (Array.slice === void 0) {
-  Array.slice = arraySlice;
+  Array.slice = function (self, start, end) {
+    return Array.prototype.slice.call(self, start || 0, end || self.length);
+  };
 }
 
 
@@ -108,182 +107,26 @@ if (Array.slice === void 0) {
  * Note that this is distinct from the tamed form of bind() made
  * available to Cajita code.
  */
-function funcBind(self, var_args) {
-  var thisFunc = this;
-  var leftArgs = Array.slice(arguments, 1);
-  function funcBound(var_args) {
-    var args = leftArgs.concat(Array.slice(arguments, 0));
-    return thisFunc.apply(self, args);
-  };
-  return funcBound;
-}
 if (Function.prototype.bind === void 0) {
-  Function.prototype.bind = funcBind;
+  Function.prototype.bind = function (self, var_args) {
+    var thisFunc = this;
+    var leftArgs = Array.slice(arguments, 1);
+    function funcBound(var_args) {
+      var args = leftArgs.concat(Array.slice(arguments, 0));
+      return thisFunc.apply(self, args);
+    }
+    return funcBound;
+  };
 }
 
-/**
- * In anticipation of ES 3.1.
- *
- * Parses a string of well-formed JSON text. This is a snapshot
- * of http://code.google.com/p/json-sans-eval/.
- *
- * If the input is not well-formed, then behavior is undefined, but it is
- * deterministic and is guaranteed not to modify any object other than its
- * return value.
- *
- * @param {string} json per RFC 4627
- * @return {Object|Array}
- * @author Mike Samuel <mikesamuel@gmail.com>
- */
-var jsonParse = (function () {
-  var number
-      = '(?:-?\\b(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\\b)';
-  var oneChar = '(?:[^\\0-\\x08\\x0a-\\x1f\"\\\\]'
-      + '|\\\\(?:[\"/\\\\bfnrt]|u[0-9A-Fa-f]{4}))';
-  var string = '(?:\"' + oneChar + '*\")';
-
-  // Will match a value in a well-formed JSON file.
-  // If the input is not well-formed, may match strangely, but not in an unsafe
-  // way.
-  // Since this only matches value tokens, it does not match whitespace, colons,
-  // or commas.
-  var jsonToken = new RegExp(
-      '(?:false|true|null|[\\{\\}\\[\\]]'
-      + '|' + number
-      + '|' + string
-      + ')', 'g');
-
-  // Matches escape sequences in a string literal
-  var escapeSequence = new RegExp('\\\\(?:([^u])|u(.{4}))', 'g');
-
-  // Decodes escape sequences in object literals
-  var escapes = {
-    '"': '"',
-    '/': '/',
-    '\\': '\\',
-    'b': '\b',
-    'f': '\f',
-    'n': '\n',
-    'r': '\r',
-    't': '\t'
-  };
-  function unescapeOne(_, ch, hex) {
-    return ch ? escapes[ch] : String.fromCharCode(parseInt(hex, 16));
-  }
-
-  // A non-falsy value that coerces to the empty string when used as a key.
-  var EMPTY_STRING = new String('');
-  var SLASH = '\\';
-
-  // Constructor to use based on an open token.
-  var firstTokenCtors = { '{': Object, '[': Array };
-
-  return function (json) {
-    // Split into tokens
-    var toks = json.match(jsonToken);
-    // Construct the object to return
-    var result;
-    var tok = toks[0];
-    if ('{' === tok) {
-      result = {};
-    } else if ('[' === tok) {
-      result = [];
-    } else {
-      throw new Error(tok);
-    }
-
-    // If undefined, the key in an object key/value record to use for the next
-    // value parsed.
-    var key;
-    // Loop over remaining tokens maintaining a stack of uncompleted objects and
-    // arrays.
-    var stack = [result];
-    for (var i = 1, n = toks.length; i < n; ++i) {
-      tok = toks[i];
-
-      var cont;
-      switch (tok.charCodeAt(0)) {
-        default:  // sign or digit
-          cont = stack[0];
-          cont[key || cont.length] = +(tok);
-          key = void 0;
-          break;
-        case 0x22:  // '"'
-          tok = tok.substring(1, tok.length - 1);
-          if (tok.indexOf(SLASH) !== -1) {
-            tok = tok.replace(escapeSequence, unescapeOne);
-          }
-          cont = stack[0];
-          if (!key) {
-            if (cont instanceof Array) {
-              key = cont.length;
-            } else { 
-              // Use as key for next value seen.
-              if (tok) {
-                // Check that tok is a key name that can be set on a JSON
-                // object.
-                // The below is equivalent to calling canSetPub but we already
-                // know that the object is unfrozen, and is a JSON container.
-
-                // FIXME: this is a temporary hack until we can do this in a way
-                // that allows us to use native JSON parsing.  See bug 978.
-                if (tok.substring(tok.length - 2) === '__'
-                    || tok === 'valueOf' || tok === 'toString') {
-                  throw new Error('Invalid key ' + tok);
-                }
-                key = tok;
-              } else {
-                key = EMPTY_STRING;
-              }
-              break;
-            }
-          }
-          cont[key] = tok;
-          key = void 0;
-          break;
-        case 0x5b:  // '['
-          cont = stack[0];
-          stack.unshift(cont[key || cont.length] = []);
-          key = void 0;
-          break;
-        case 0x5d:  // ']'
-          stack.shift();
-          break;
-        case 0x66:  // 'f'
-          cont = stack[0];
-          cont[key || cont.length] = false;
-          key = void 0;
-          break;
-        case 0x6e:  // 'n'
-          cont = stack[0];
-          cont[key || cont.length] = null;
-          key = void 0;
-          break;
-        case 0x74:  // 't'
-          cont = stack[0];
-          cont[key || cont.length] = true;
-          key = void 0;
-          break;
-        case 0x7b:  // '{'
-          cont = stack[0];
-          stack.unshift(cont[key || cont.length] = {});
-          key = void 0;
-          break;
-        case 0x7d:  // '}'
-          stack.shift();
-          break;
-      }
-    }
-    // Fail if we've got an uncompleted object.
-    if (stack.length) { throw new Error(); }
-    return result;
-  };
-})();
+// Use json_sans_eval.js if there is no native implementation.
+if ('undefined' === typeof JSON) {
+  JSON = { parse: jsonParse };
+}
 
 // The following may or may not exist in the browser-supplied
 // global scope; declare as a 'var' to avoid errors when we
 // check for its existence later.
-
 var escape;
 
 // cajita.js exports the following names to the Javascript global
@@ -293,6 +136,7 @@ var escape;
 
 var cajita;
 var ___;
+var safeJSON;
 
 // Explicitly passing in the actual global object to avoid
 // ReferenceErrors when referring to potentially nonexistent objects
@@ -391,8 +235,8 @@ var ___;
     var result = typeof obj;
     if (result !== 'function') { return result; }
     var ctor = obj.constructor;
-    if (typeof ctor === 'function' && 
-        ctor.typeTag___ === 'RegExp' && 
+    if (typeof ctor === 'function' &&
+        ctor.typeTag___ === 'RegExp' &&
         obj instanceof ctor) {
       return 'object';
     }
@@ -406,15 +250,15 @@ var ___;
    * <tt>obj.hasOwnProperty(name)</tt> would normally mean in an
    * unmodified Javascript system.
    */
-  function hasOwnProp(obj, name) { 
+  function hasOwnProp(obj, name) {
     var t = typeof obj;
     if (t !== 'object' && t !== 'function') {
       // If obj is a primitive, Object(obj) still has no own properties.
-      return false; 
+      return false;
     }
     return myOriginalHOP.call(obj, name);
   }
-  
+
   /**
    * Are x and y not observably distinguishable?
    */
@@ -649,7 +493,7 @@ var ___;
    * By "obj's prototype", we mean the prototypical object that obj
    * most directly inherits from, not the value of its 'prototype'
    * property. We memoize the apparent prototype into 'proto___' to
-   * speed up future queries. 
+   * speed up future queries.
    * <p>
    * If obj is a function or not an object, return undefined.
    */
@@ -663,7 +507,7 @@ var ___;
       return void 0;
     }
     obj = Object(obj);
-    var result;
+    var result = null;
     if (myOriginalHOP.call(obj, 'proto___')) {
       var proto = obj.proto___;
       // At this point we know that (typeOf(proto) === 'object')
@@ -678,7 +522,7 @@ var ___;
         // TODO(erights): Detect whether this is a valid constructor
         // property in the sense that result is a proper answer. If
         // not, at least give a sensible error, which will be hard to
-        // phrase. 
+        // phrase.
         result = obj.constructor;
       } else {
         var oldConstr = obj.constructor;
@@ -697,7 +541,7 @@ var ___;
         } else {
           fail('Discovery of direct constructors unsupported when the ',
                'constructor property is not deletable: ',
-               oldConstr); 
+               oldConstr);
         }
       }
       if (typeOf(result) !== 'function' || !(obj instanceof result)) {
@@ -716,12 +560,12 @@ var ___;
    * The function category of the whitelisted global constructors
    * defined in ES is the string name of the constructor, allowing
    * isInstanceOf() to work cross-frame. Otherwise, the function
-   * category of a function is just the function itself.  
+   * category of a function is just the function itself.
    */
   function getFuncCategory(fun) {
     enforceType(fun, 'function');
-    if (fun.typeTag___) { 
-      return fun.typeTag___; 
+    if (fun.typeTag___) {
+      return fun.typeTag___;
     } else {
       return fun;
     }
@@ -729,7 +573,7 @@ var ___;
 
   /**
    * Is <tt>obj</tt> a direct instance of a function whose category is
-   * the same as the category of <tt>ctor</tt>? 
+   * the same as the category of <tt>ctor</tt>?
    */
   function isDirectInstanceOf(obj, ctor) {
     var constr = directConstructor(obj);
@@ -739,7 +583,7 @@ var ___;
 
   /**
    * Is <tt>obj</tt> an instance of a function whose category is
-   * the same as the category of <tt>ctor</tt>? 
+   * the same as the category of <tt>ctor</tt>?
    */
   function isInstanceOf(obj, ctor) {
     if (obj instanceof ctor) { return true; }
@@ -749,21 +593,21 @@ var ___;
     // cross-frame instance of a "subclass" of ctor.
     return false;
   }
-  
+
   /**
    * A Record is an object whose direct constructor is Object.
    * <p>
-   * These are the kinds of objects that can be expressed as 
+   * These are the kinds of objects that can be expressed as
    * an object literal ("<tt>{...}</tt>") in the JSON language.
    */
   function isRecord(obj) {
     return isDirectInstanceOf(obj, Object);
   }
-  
+
   /**
    * An Array is an object whose direct constructor is Array.
    * <p>
-   * These are the kinds of objects that can be expressed as 
+   * These are the kinds of objects that can be expressed as
    * an array literal ("<tt>[...]</tt>") in the JSON language.
    */
   function isArray(obj) {
@@ -793,7 +637,7 @@ var ___;
    * The status of being frozen is not inherited. If A inherits from
    * B (i.e., if A's prototype is B), A and B each may or may not be
    * frozen independently. (Though if B is prototypical, then it must
-   * be frozen.) 
+   * be frozen.)
    * <p>
    * If <tt>typeof obj</tt> is neither 'object' nor 'function', then
    * it's currently considered frozen.
@@ -856,7 +700,7 @@ var ___;
     }
     obj.FROZEN___ = obj;
     if (typeOf(obj) === 'function') {
-      if (isFunc(obj)) { 
+      if (isFunc(obj)) {
         grantCall(obj, 'call');
         grantCall(obj, 'apply');
         obj.CALL___ = obj;
@@ -928,7 +772,7 @@ var ___;
    */
   function canEnum(obj, name)   {
     if (obj === void 0 || obj === null) { return false; }
-    return !!obj[name + '_canEnum___']; 
+    return !!obj[name + '_canEnum___'];
   }
 
   /**
@@ -964,7 +808,7 @@ var ___;
    */
   function canDelete(obj, name) {
     if (obj === void 0 || obj === null) { return false; }
-    return obj[name + '_canDelete___'] === obj; 
+    return obj[name + '_canDelete___'] === obj;
   }
 
   /**
@@ -1128,7 +972,7 @@ var ___;
   /**
    * Enables first-class reification of exophoric functions as
    * pseudo-functions -- frozen records with call, bind, and apply
-   * functions. 
+   * functions.
    */
   function reifyIfXo4a(xfunc, opt_name) {
     if (!isXo4aFunc(xfunc)) {
@@ -1145,7 +989,7 @@ var ___;
       }),
       bind: frozenFunc(function bindXo4a(self, var_args) {
         var args = arguments;
-        if (self === null || self === void 0) { 
+        if (self === null || self === void 0) {
           self = USELESS;
           args = [self].concat(Array.slice(args, 1));
         }
@@ -1227,11 +1071,11 @@ var ___;
     return primFreeze(asCtorOnly(constr));
   }
 
-  /** 
+  /**
    * Only simple functions can be called as simple functions.
    * <p>
    * It is now <tt>asFunc</tt>'s responsibility to
-   * <tt>primFreeze(fun)</tt>. 
+   * <tt>primFreeze(fun)</tt>.
    */
   function asFunc(fun) {
     if (fun && fun.FUNC___) {
@@ -1279,7 +1123,7 @@ var ___;
   /**
    * Is <tt>funoid</tt> an applicator -- a non-function object with a
    * callable <tt>apply</tt> method, such as a pseudo-function or
-   * disfunction? 
+   * disfunction?
    * <p>
    * If so, then it can be used as a function in some contexts.
    */
@@ -1296,7 +1140,7 @@ var ___;
    * fun's apply method. Otherwise, asFunc().
    */
   function toFunc(fun) {
-    if (isApplicator(fun)) { 
+    if (isApplicator(fun)) {
       return frozenFunc(function applier(var_args) {
         return callPub(fun, 'apply', [USELESS, Array.slice(arguments, 0)]);
       });
@@ -1417,14 +1261,14 @@ var ___;
   function readPub(obj, name) {
     if (typeof name === 'number') {
       if (typeof obj === 'string') {
-        // In partial anticipation of ES3.1. 
-        // TODO(erights): Once ES3.1 settles, revisit this and 
+        // In partial anticipation of ES3.1.
+        // TODO(erights): Once ES3.1 settles, revisit this and
         // correctly implement the agreed semantics.
         // Mike Samuel suggests also making it conditional on
         //  (+name) === (name & 0x7fffffff)
         return obj.charAt(name);
       } else {
-        return obj[name]; 
+        return obj[name];
       }
     }
     name = String(name);
@@ -1438,7 +1282,7 @@ var ___;
   /**
    * If <tt>obj</tt> is an object with a property <tt>name</tt> that
    * should be objectively readable from Valija, return
-   * <tt>obj[name]</tt>, else <tt>pumpkin</tt>. 
+   * <tt>obj[name]</tt>, else <tt>pumpkin</tt>.
    * <p>
    * Provides a fastpath for Valija's <tt>read()</tt> function
    * <tt>$v.r()</tt>. The reason for returning the passed in pumpkin
@@ -1487,7 +1331,7 @@ var ___;
   function enforceStaticPath(result, permitsUsed) {
     forOwnKeys(permitsUsed, frozenFunc(function(name, subPermits) {
       // Don't factor out since we don't enforce frozen if permitsUsed
-      // are empty. 
+      // are empty.
       // TODO(erights): Once we have ES3.1ish attribute control, it
       // will suffice to enforce that each used property is frozen
       // independent of the object as a whole.
@@ -1603,7 +1447,7 @@ var ___;
 
   /**
    * A unique value that should never be made accessible to untrusted
-   * code, for distinguishing the absence of a result from any 
+   * code, for distinguishing the absence of a result from any
    * returnable result.
    * <p>
    * See makeNewModuleHandler's getLastOutcome().
@@ -1706,9 +1550,9 @@ var ___;
     if (obj === void 0) { return false; }
     name = String(name);
     if (obj[name + '_canCall___']) { return true; }
-    if (obj[name + '_grantCall___']) { 
+    if (obj[name + '_grantCall___']) {
       fastpathCall(obj, name);
-      return true; 
+      return true;
     }
     if (!canReadPub(obj, name)) { return false; }
     if (endsWith__.test(name)) { return false; }
@@ -1911,7 +1755,7 @@ var ___;
   /**
    * A call to cajita.manifest(data) is dynamically ignored, but if the
    * data expression is valid static JSON text, its value is made
-   * statically available to the module loader. 
+   * statically available to the module loader.
    */
   function manifest(ignored) {}
 
@@ -2098,8 +1942,8 @@ var ___;
     var func = xo4a(proto[name], name);
     grantCall(proto, name);
     var pseudoFunc = reifyIfXo4a(func, name);
-    useGetHandler(proto, name, function xo4aGetter() { 
-      return pseudoFunc; 
+    useGetHandler(proto, name, function xo4aGetter() {
+      return pseudoFunc;
     });
   }
 
@@ -2115,15 +1959,15 @@ var ___;
     xo4a(func);
     useCallHandler(obj, name, func);
     var pseudoFunc = reifyIfXo4a(func, name);
-    useGetHandler(obj, name, function genericGetter() { 
-      return pseudoFunc; 
+    useGetHandler(obj, name, function genericGetter() {
+      return pseudoFunc;
     });
   }
 
   /**
    * Virtually replace proto[name] with a fault-handler
    * wrapper that first verifies that <tt>this</tt> inherits from
-   * proto. 
+   * proto.
    * <p>
    * When a pre-existing Javascript method may do something unsafe
    * when applied to a <tt>this</tt> of the wrong type, we need to
@@ -2131,7 +1975,7 @@ var ___;
    * <p>
    * In order for this fault handler to get control, it's important
    * that no one does an grantCall() or other grants which imply
-   * grantCall(). 
+   * grantCall().
    * FIXME(ben): also fastpath?
    */
   function grantTypedGeneric(proto, name) {
@@ -2151,11 +1995,11 @@ var ___;
    * <p>
    * When a pre-existing Javascript method would mutate its object,
    * we need to provide a fault handler instead to prevent such
-   * mutation from violating Cajita semantics. 
+   * mutation from violating Cajita semantics.
    * <p>
    * In order for this fault handler to get control, it's important
    * that no one does an grantCall() or other grants which imply
-   * grantCall(). 
+   * grantCall().
    * FIXME(ben): also fastpath?
    */
   function grantMutator(proto, name) {
@@ -2256,7 +2100,7 @@ var ___;
     };
     return meth;
   });
-  useDeleteHandler(Object.prototype, 'toString', 
+  useDeleteHandler(Object.prototype, 'toString',
                    function toStringDeleter() {
     if (isFrozen(this)) {
       return myKeeper.handleDelete(this, 'toString');
@@ -2500,12 +2344,12 @@ var ___;
     var lastOutcome = void 0;
     return freeze({
       getImports: frozenFunc(function getImports() { return imports; }),
-      setImports: frozenFunc(function setImports(newImports) { 
-        imports = newImports; 
+      setImports: frozenFunc(function setImports(newImports) {
+        imports = newImports;
       }),
 
       /**
-       * An outcome is a pair of a success flag and a value. 
+       * An outcome is a pair of a success flag and a value.
        * <p>
        * If the success flag is true, then the value is the normal
        * result of calling the module function. If the success flag is
@@ -2525,8 +2369,8 @@ var ___;
        * overwrite an already reported outcome with NO_RESULT, so the
        * last script-block's outcome will be preserved.
        */
-      getLastOutcome: frozenFunc(function getLastOutcome() { 
-        return lastOutcome; 
+      getLastOutcome: frozenFunc(function getLastOutcome() {
+        return lastOutcome;
       }),
 
       /**
@@ -2546,7 +2390,7 @@ var ___;
        * <p>
        * Updates the last outcome to report the module function's
        * reported outcome. Propogate this outcome by terminating in
-       * the same manner. 
+       * the same manner.
        */
       handle: frozenFunc(function handle(newModule) {
         lastOutcome = void 0;
@@ -2735,7 +2579,7 @@ var ___;
   function guard(trademark, obj) {
     if (!hasTrademark(trademark, obj)) {
       fail('Object "' + obj + '" does not have the "'
-	   + (trademark.toString() || '*unknown*') + '" trademark');
+           + (trademark.toString() || '*unknown*') + '" trademark');
     }
   }
 
@@ -2860,7 +2704,7 @@ var ___;
         if (ctor.typeTag___ === 'Array') {
           return ctor.apply(USELESS, args);
         }
-        var tmp = function tmp(args) {
+        var tmp = function (args) {
           return ctor.apply(this, args);
         };
         tmp.prototype = ctor.prototype;
@@ -2906,7 +2750,7 @@ var ___;
    * opt_useKeyLifetime is falsy, and opt_useKeyLifetime is
    * truthy), the table returned
    * <ul>
-   * <li>should work across frames, 
+   * <li>should work across frames,
    * <li>should have O(1) complexity measure within a frame where
    *     collision is impossible,
    * <li>and should have O(1) complexity measure between frames with
@@ -3065,7 +2909,7 @@ var ___;
 
   /**
    * Returns a list of all cajita-readable own properties, whether or
-   * not they are cajita-enumerable. 
+   * not they are cajita-enumerable.
    */
   function getOwnPropertyNames(obj) {
     var result = [];
@@ -3132,7 +2976,7 @@ var ___;
     return primBeget(parent);
   }
 
-  
+
   ////////////////////////////////////////////////////////////////////////
   // Exports
   ////////////////////////////////////////////////////////////////////////
@@ -3204,13 +3048,41 @@ var ___;
     }
   }));
 
-  safeJSON = {
-    parse: frozenFunc(jsonParse),
-    stringify: frozenFunc(function(obj) {
-      // TODO(ihab.awad): Missing support
-      return '';
+  var nativeJSON = global.JSON;
+  safeJSON = primFreeze({
+    parse: frozenFunc(function (text, opt_reviver) {
+      var attenuatedReviver;
+      // In attenuatedReviver, key will be a string, and "this" will be an
+      // object constructed by the JSON parser or attached to the JSON parser
+      // during a previous call to the reviver.
+
+      text = String(text);
+      if (opt_reviver) {
+        opt_reviver = toFunc(opt_reviver);
+        throw new Error('JSON.parse with a reviver unimplemented');
+        // TODO(mikesamuel): implement me
+      } else {
+        return nativeJSON.parse(text, function (key, value) {
+          return canSetPub(this, key) ? value : void 0;
+        });
+      }
+    }),
+    stringify: frozenFunc(function (obj, opt_replacer, opt_space) {
+      switch (typeof opt_space) {
+        case 'object': case 'function':
+          throw new TypeError('space must be a number or string');
+      }
+      if (opt_replacer) {
+        opt_replacer = toFunc(opt_replacer);
+        throw new Error('JSON.stringify with a replacer unimplemented');
+        // TODO(mikesamuel): implement me
+      } else {
+        return nativeJSON.stringify(obj, function (key, value) {
+          return (canReadPub(this, key)) ? value : void 0;
+        }, opt_space);
+      }
     })
-  };
+  });
 
   sharedImports = {
     cajita: cajita,

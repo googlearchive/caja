@@ -397,6 +397,7 @@
     <transform>
       <output file="${lib}/com/google/caja/plugin/domita-minified.js"
        language="javascript" renderer="minify"/>
+      <include file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <include file="${src}/com/google/caja/cajita.js"/>
       <include file="${src}/com/google/caja/plugin/unicode.js"/>
       <include file="${src}/com/google/caja/plugin/html-emitter.js"/>
@@ -454,6 +455,7 @@
       <fileset dir="${third_party}">
         <include name="js/jqueryjs/runtest/env.js"/>
         <include name="js/jsunit/2.2/jsUnitCore.js"/>
+        <include name="js/json_sans_eval/json_sans_eval.js"/>
       </fileset>
     </copy>
   </target>
@@ -811,7 +813,8 @@
         <include name="valija.co.js"/>
       </fileset>
       <fileset dir="${third_party}/js/prettify">
-        <include name="prettify.js"/>
+      	<include name="lang-css.js"/>
+      	<include name="prettify.js"/>
         <include name="prettify.css"/>
       </fileset>
       <fileset dir="${src}/com/google/caja/demos/applet">
@@ -833,6 +836,7 @@
     <replace file="${www}/testbed/debug.html">
      <replacetoken><![CDATA[<script type="text/javascript" src="cajita-combined-min.js"></script>]]></replacetoken>
      <replacevalue><![CDATA[
+       <script type="text/javascript" src="json_sans_eval.js"></script>
        <script type="text/javascript" src="cajita.js"></script>
        <script type="text/javascript" src="console.js"></script>
        <script type="text/javascript" src="log-to-console.js"></script>
@@ -846,6 +850,7 @@
        <script type="text/javascript" src="bridal.js"></script>
        <script type="text/javascript" src="domita.js"></script>
        <script type="text/javascript" src="prettify.js"></script>
+     	 <script type="text/javascript" src="lang-css.js"></script>
        <script type="text/javascript" src="testbed.js"></script>
        <script type="text/javascript" src="valija.co.js"></script>
        ]]>
@@ -855,6 +860,7 @@
     <transform>
       <output file="${www}/testbed/cajita-combined-min.js"
        language="javascript" renderer="minify"/>
+      <include file="${third_party}/js/json_sans_eval/json_sans_eval.js"/>
       <include file="${src}/com/google/caja/cajita.js"/>
       <include file="${src}/com/google/caja/console.js"/>
       <include file="${src}/com/google/caja/log-to-console.js"/>
@@ -868,6 +874,7 @@
       <include file="${src}/com/google/caja/plugin/bridal.js"/>
       <include file="${src}/com/google/caja/plugin/domita.js"/>
       <include file="${third_party}/js/prettify/prettify.js"/>
+      <include file="${third_party}/js/prettify/lang-css.js"/>
       <include file="${src}/com/google/caja/demos/applet/testbed.js"/>
       <include file="${lib}/com/google/caja/plugin/valija.co.js"/>
     </transform>

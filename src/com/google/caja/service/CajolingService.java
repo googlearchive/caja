@@ -45,7 +45,7 @@ public class CajolingService extends HttpServlet {
   private List<ContentHandler> handlers = new Vector<ContentHandler>();
   private ContentTypeCheck typeCheck = new LooseContentTypeCheck();
   private String host = "http://caja.appspot.com/cajoler";
-  
+
   public CajolingService(BuildInfo buildInfo) {
     registerHandlers(buildInfo);
   }
@@ -77,12 +77,12 @@ public class CajolingService extends HttpServlet {
     String result = r.getParameter(param);
     if (required && result == null) {
       throw new ServletException(
-        "Missing parameter \"" + param + "\" is required: " + 
+        "Missing parameter \"" + param + "\" is required: " +
           r.getRequestURI());
     }
     return result;
   }
-  
+
   @Override
   public void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException {
@@ -126,7 +126,7 @@ public class CajolingService extends HttpServlet {
     Pair<String,String> contentInfo;
     try {
       contentInfo = applyHandler(
-          URI.create(gadgetUrl.toString()), 
+          URI.create(gadgetUrl.toString()),
           transform, contentType, contentCharSet,
           content, intermediateResponse);
     } catch (UnsupportedContentTypeException e) {
@@ -182,7 +182,7 @@ public class CajolingService extends HttpServlet {
     handlers.add(new JsHandler(buildInfo));
     handlers.add(new ImageHandler());
     handlers.add(new GadgetHandler(buildInfo));
-    handlers.add(new InnocentHandler(buildInfo));
+    handlers.add(new InnocentHandler());
     handlers.add(new HtmlHandler(buildInfo, host));
   }
 
@@ -192,7 +192,7 @@ public class CajolingService extends HttpServlet {
       throws UnsupportedContentTypeException {
     for (ContentHandler handler : handlers) {
       if (handler.canHandle(uri, t, contentType, typeCheck)) {
-        return 
+        return
           handler.apply(uri, t, contentType, charSet, content, response);
       }
     }
@@ -209,7 +209,7 @@ public class CajolingService extends HttpServlet {
       this.charSet = charSet;
     }
   }
-  
+
   public static enum Transform {
     INNOCENT,
     VALIJA,

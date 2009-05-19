@@ -44,6 +44,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.reporting.RenderContext;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
@@ -84,8 +85,11 @@ public abstract class CajaTestCase extends TestCase {
   }
 
   protected CharProducer fromResource(String resourcePath) throws IOException {
-    InputSource is = new InputSource(
-        TestUtil.getResource(getClass(), resourcePath));
+    URI uri = TestUtil.getResource(getClass(), resourcePath);
+    if (uri == null) {
+      throw new FileNotFoundException(resourcePath);
+    }
+    InputSource is = new InputSource(uri);
     CharProducer cp = TestUtil.getResourceAsProducer(getClass(), resourcePath);
     mc.addInputSource(is);
     return cp;

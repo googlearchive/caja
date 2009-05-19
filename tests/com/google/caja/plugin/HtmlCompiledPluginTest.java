@@ -253,6 +253,8 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
             new RhinoTestBed.Input(
                 getClass(), "../../../../js/jsunit/2.2/jsUnitCore.js"),
             // Plugin Framework
+            new RhinoTestBed.Input(
+                getClass(), "../../../../js/json_sans_eval/json_sans_eval.js"),
             new RhinoTestBed.Input(getClass(), "../cajita.js"),
             new RhinoTestBed.Input(
                 "___.setLogFunc(function(s, opt_stop) { console.log(s); });",

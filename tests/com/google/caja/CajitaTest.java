@@ -25,26 +25,50 @@ import com.google.caja.util.CajaTestCase;
 public class CajitaTest extends CajaTestCase {
   public void testAllKeys() throws Exception {
     runTest(
-        "  try { var x = cajita.allKeys(undefined); }"
-        + "catch (e) { fail('should be allowed to enumerate properties of undefined'); }");
+        ""
+        + "try {"
+        + "  var x = cajita.allKeys(undefined);"
+        + "} catch (e) {"
+        + "  fail('should be allowed to enumerate properties of undefined');"
+        + "}");
     runTest(
-        "  try { var x = cajita.allKeys(null); }"
-        + "catch (e) { fail('should be allowed to enumerate properties of null'); }");
+        ""
+        + "try {"
+        + "  var x = cajita.allKeys(null);"
+        + "} catch (e) {"
+        + "  fail('should be allowed to enumerate properties of null');"
+        + "}");
     runTest(
-        "  try { var x = cajita.allKeys(false); }"
-        + "catch (e) { fail('should be allowed to enumerate properties of false'); }");
+        ""
+        + "try {"
+        + "  var x = cajita.allKeys(false);"
+        + "} catch (e) {"
+        + "  fail('should be allowed to enumerate properties of false');"
+        + "}");
     runTest(
-        "  try { var x = cajita.allKeys(0); }"
-        + "catch (e) { fail('should be allowed to enumerate properties of zero'); }");
+        ""
+        + "try {"
+        + "  var x = cajita.allKeys(0);"
+        + "} catch (e) {"
+        + "  fail('should be allowed to enumerate properties of zero');"
+        + "}");
     runTest(
-        "  try { var x = cajita.allKeys(''); }"
-        + "catch (e) { fail('should be allowed to enumerate properties of empty string'); }");
+        ""
+        + "try {"
+        + "  var x = cajita.allKeys('');"
+        + "} catch (e) {"
+        + "  fail('should be allowed to enumerate properties of empty string');"
+        + "}");
     runTest(
-        "  try { var x = cajita.allKeys({y:1, z:2}).sort(); }"
-        + "catch (e) { fail('should be allowed to enumerate properties of an object'); }"
+        ""
+        + "try {"
+        + "  var x = cajita.allKeys({y:1, z:2}).sort();"
+        + "} catch (e) {"
+        + "  fail('should be allowed to enumerate properties of an object');"
+        + "}"
         + "assertTrue(x[0] === 'y' && x[1] === 'z');");
   }
-  
+
   public void testGrantFunc() throws Exception {
     runTest(
         "  var o = { f: function(x) { this.x = x; } };"
@@ -69,23 +93,24 @@ public class CajitaTest extends CajaTestCase {
   public void testJsonParse() throws Exception {
     runTest(
         ""
+        + "function hop(o, k) {\n"
+        + "  return ___.hasOwnProp(o, k); \n"
+        + "}\n"
         + "var safeJSON = ___.sharedImports.JSON; \n"
         + "assertEquals('foo', safeJSON.parse('{ \"bar\": \"foo\" }').bar); \n"
-        + "assertThrows( \n"
-        + "    function () { safeJSON.parse('{ \"f_canCall___\": true }'); } \n"
-        + "     ); \n"
-        + "assertThrows( \n"
-        + "    function () { safeJSON.parse('{ \"valueOf\": true }'); } \n"
-        + "     ); \n"
-        + "assertThrows( \n"
-        + "    function () { safeJSON.parse('{ \"toString\": true }'); } \n"
-        + "     );"
+        + "assertFalse(hop(safeJSON.parse('{ \"f___\": 1 }'), 'f__')); \n"
+        + "assertFalse( \n"
+        + "    hop(safeJSON.parse('{ \"valueOf\": true }'), 'valueOf')); \n"
+        + "assertFalse( \n"
+        + "    hop(safeJSON.parse('{ \"toString\": true }'), 'toString')); \n"
         );
   }
 
   protected void runTest(String code) throws Exception {
     mq.getMessages().clear();
     RhinoTestBed.runJs(
+        new RhinoTestBed.Input(
+            getClass(), "/js/json_sans_eval/json_sans_eval.js"),
         new RhinoTestBed.Input(
             getClass(), "/com/google/caja/plugin/console-stubs.js"),
         new RhinoTestBed.Input(

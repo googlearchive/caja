@@ -261,6 +261,8 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
   private void assertConsistent(String js) throws Exception {
     // Execute js in the presence of cajita so it can use Caja symbols.
     Object golden = RhinoTestBed.runJs(
+        new RhinoTestBed.Input(
+            getClass(), "/js/json_sans_eval/json_sans_eval.js"),
         new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
         new RhinoTestBed.Input(js, getName()));
     runCajoled("result(" + js + ");", golden,
@@ -275,7 +277,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
       throws Exception {
     Block uncajoledModuleBody = js(fromString(js));
     System.err.println("\n\nblock\n=====\n" +
-        uncajoledModuleBody.toStringDeep(1));
+                       uncajoledModuleBody.toStringDeep(1));
 
     PluginMeta meta = new PluginMeta();
     meta.setDebugMode(true);
@@ -304,6 +306,8 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
     try {
       String cajoledText = String.format(context, render(cajoledModule));
       Object actual = RhinoTestBed.runJs(
+          new RhinoTestBed.Input(
+              getClass(), "/js/json_sans_eval/json_sans_eval.js"),
           new RhinoTestBed.Input(getClass(), "../console-stubs.js"),
           new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
           new RhinoTestBed.Input(

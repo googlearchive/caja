@@ -2165,6 +2165,8 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();
     return RhinoTestBed.runJs(
+        new RhinoTestBed.Input(
+            getClass(), "../../../../../js/json_sans_eval/json_sans_eval.js"),
         new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
         new RhinoTestBed.Input(
             getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),
@@ -2205,6 +2207,8 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     Object result = RhinoTestBed.runJs(
         new RhinoTestBed.Input(
             getClass(), "/com/google/caja/plugin/console-stubs.js"),
+        new RhinoTestBed.Input(
+            getClass(), "../../../../../js/json_sans_eval/json_sans_eval.js"),
         new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
         new RhinoTestBed.Input(
             getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),

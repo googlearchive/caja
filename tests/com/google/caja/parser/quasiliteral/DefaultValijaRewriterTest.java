@@ -443,6 +443,8 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     Statement innocentTree = (Statement) rewriteTopLevelNode(
         js(fromString(caja, is)));
     return RhinoTestBed.runJs(
+        new RhinoTestBed.Input(
+            getClass(), "../../../../../js/json_sans_eval/json_sans_eval.js"),
         new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
         new RhinoTestBed.Input(
             getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),
@@ -469,6 +471,8 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     Object result = RhinoTestBed.runJs(
         new RhinoTestBed.Input(
             getClass(), "/com/google/caja/plugin/console-stubs.js"),
+        new RhinoTestBed.Input(
+            getClass(), "../../../../../js/json_sans_eval/json_sans_eval.js"),
         new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
         new RhinoTestBed.Input(
             getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),

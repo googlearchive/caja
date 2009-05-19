@@ -50,8 +50,7 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
 
       if (nonSyntheticScopeRoot != null) {  // False for empty programs
         ParseTreeNode validated = new ExpressionSanitizerCaja(
-            buildInfo,
-            jobs.getMessageQueue(), jobs.getPluginMeta())
+            buildInfo, jobs.getMessageQueue(), jobs.getPluginMeta())
             .sanitize(nonSyntheticScopeRoot);
         if (nonSyntheticScopeRoot.parent == null) {
           it.set(new Job(AncestorChain.instance(validated)));

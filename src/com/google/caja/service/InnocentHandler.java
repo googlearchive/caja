@@ -22,7 +22,6 @@ import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.quasiliteral.InnocentCodeRewriter;
 import com.google.caja.parser.quasiliteral.Rewriter;
-import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Pair;
@@ -40,10 +39,8 @@ import java.net.URI;
  * @author jasvir@google.com (Jasvir Nagra)
  */
 public class InnocentHandler implements ContentHandler {
-  public InnocentHandler(BuildInfo buildInfo) {
-  }
 
-  public boolean canHandle(URI uri, CajolingService.Transform transform, 
+  public boolean canHandle(URI uri, CajolingService.Transform transform,
       String contentType, ContentTypeCheck checker) {
     return CajolingService.Transform.INNOCENT.equals(transform)
       && checker.check("text/javascript", contentType);
