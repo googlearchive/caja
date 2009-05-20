@@ -2,78 +2,82 @@
      "http://www.w3.org/TR/html4/transitional.dtd">
 <html>
 <head>
-  <meta HTTP-EQUIV=CONTENT-TYPE CONTENT="text/html; charset=utf-8">
-  <title>Changes to JavaScript, Part 1: EcmaScript 5</title>
+<meta HTTP-EQUIV=CONTENT-TYPE CONTENT="text/html; charset=utf-8">
+<title>Changes to JavaScript, Part 1: EcmaScript 5</title>
 </head>
 <body text="#000000" bgcolor="#FFFFFF" link="#000080" vlink="#0000CC" alink="#000080">
 <center>
-<h2><a href="img0.html">Click here to start</a></h2>
+  <h2><a href="img0.html">Click here to start</a></h2>
 </center>
-<center><table width="90%"><tr>
-<td valign="top" align="left" width="50%">
-<h3>Table of contents</h3><div align="left"><a href="img0.html">Changes to JavaScript, Part 1: EcmaScript 5</a></div>
-<div align="left"><a href="img1.html">Brief History</a></div>
-<div align="left"><a href="img2.html">EcmaScript 5 Overview</a></div>
-<div align="left"><a href="img3.html">Slide 4</a></div>
-<div align="left"><a href="img4.html">Aren't standards doomed to grow?</a></div>
-<div align="left"><a href="img5.html">Slide 6</a></div>
-<div align="left"><a href="img6.html">Problem:  Can’t emulate platform objects</a></div>
-<div align="left"><a href="img7.html">Accessor (getter/setter) properties</a></div>
-<div align="left"><a href="img8.html">Accessor (getter/setter) properties… </a></div>
-<div align="left"><a href="img9.html">Need property attribute control</a></div>
-<div align="left"><a href="img10.html">Property attribute control API</a></div>
-<div align="left"><a href="img11.html">Example:  Unobtrusive Convenience Methods</a></div>
-<div align="left"><a href="img12.html">Accessor (getter/setter) properties…</a></div>
-<div align="left"><a href="img13.html">Practical emulation of host objects</a></div>
-<div align="left"><a href="img14.html">ES3 Makes Robustness Too Hard</a></div>
-<div align="left"><a href="img15.html">More Robust Programming in ES5</a></div>
-<div align="left"><a href="img16.html">What’s the Point? Can’t preserve invariants in ES3</a></div>
-<div align="left"><a href="img17.html">Tamper proof objects</a></div>
-<div align="left"><a href="img18.html">Tamper proof points, first try</a></div>
-<div align="left"><a href="img19.html">Tamper proof points, second try</a></div>
-<div align="left"><a href="img20.html">Frozen object builder helper</a></div>
-<div align="left"><a href="img21.html">Tamper proof points</a></div>
-<div align="left"><a href="img22.html">Scoping accident 1: Nested named function expressions</a></div>
-<div align="left"><a href="img23.html">Slide 24</a></div>
-<div align="left"><a href="img24.html">Finding Opportunity in Confusion</a></div>
-<div align="left"><a href="img25.html">Scoping accident 2: Throwing a function </a></div>
-<div align="left"><a href="img26.html">Scoping accident 3: “as if by” initial or current?</a></div>
-<div align="left"><a href="img27.html">Slide 28</a></div>
-<div align="left"><a href="img28.html">Wart exchange: keyword collision</a></div>
-<div align="left"><a href="img29.html">Wart removal: Backchannel</a></div>
-<div align="left"><a href="img30.html">Wart exchange: eval in what scope?</a></div>
-<div align="left"><a href="img31.html">Wart clarifications: Internal“types”</a></div>
-<div align="left"><a href="img32.html">Strict mode: Support Defensive Code</a></div>
-<div align="left"><a href="img33.html">Strict mode: Per script opt-in</a></div>
-<div align="left"><a href="img34.html">Strict mode: Per script or per function opt-in</a></div>
-<div align="left"><a href="img35.html">Slide 36</a></div>
-<div align="left"><a href="img36.html">Nonstrict global object leakage</a></div>
-<div align="left"><a href="img37.html">Nonstrict this-coercion hazards</a></div>
-<div align="left"><a href="img38.html">Slide 39</a></div>
-<div align="left"><a href="img39.html">ES5 functions encapsulated?</a></div>
-<div align="left"><a href="img40.html">Slide 41</a></div>
-<div align="left"><a href="img41.html">ES5-strict functions encapsulated</a></div>
-<div align="left"><a href="img42.html">ES5-nonstrict isn't statically scoped</a></div>
-<div align="left"><a href="img43.html">ES5-strict is statically scoped, but…</a></div>
-<div align="left"><a href="img44.html">But static scoping isn’t lexical scoping</a></div>
-<div align="left"><a href="img45.html">Slide 46</a></div>
-<div align="left"><a href="img46.html">Slide 47</a></div>
-<div align="left"><a href="img47.html">Lexical Scoping just missed ES5 train. How to cope? </a></div>
-<div align="left"><a href="img48.html">Higher order array methods</a></div>
-<div align="left"><a href="img49.html">Slide 50</a></div>
-<div align="left"><a href="img50.html">JSON: S-expressions of the web</a></div>
-<div align="left"><a href="img51.html">JSON in ES5</a></div>
-<div align="left"><a href="img52.html">Closures don’t capture “this”</a></div>
-<div align="left"><a href="img53.html">Slide 54</a></div>
-<div align="left"><a href="img54.html">Function.prototype.bind() helps</a></div>
-<div align="left"><a href="img55.html">Imperfect Lambda Abstraction in ES5</a></div>
-<div align="left"><a href="img56.html">Remaining fixable ES5 warts</a></div>
-<div align="left"><a href="img57.html">Conclusions</a></div>
-<div align="left"><a href="img58.html">Further Reading</a></div>
-</td>
-<td valign="top" width="50%">
-<p><strong>Author:</strong> Mark S. Miller, Waldemar Horwat, Mike Samuel</p>
-<p>Download presentation (<a href="es5-talk.odp">OpenOffice</a>) (<a href="es5-talk.ppt">PowerPoint</a>) (<a href="es5-talk.pdf">PDF</a>)</p>
-</td></tr></table></center>
+<center>
+  <table width="90%">
+    <tr>
+      <td valign="top" align="left" width="50%"><h3>Table of contents</h3>
+        <div align="left"><a href="img0.html">Changes to JavaScript, Part 1: EcmaScript 5</a></div>
+        <div align="left"><a href="img1.html">Brief History</a></div>
+        <div align="left"><a href="img2.html">EcmaScript 5 Overview</a></div>
+        <div align="left"><a href="img3.html">Slide 4</a></div>
+        <div align="left"><a href="img4.html">Aren't standards doomed to grow?</a></div>
+        <div align="left"><a href="img5.html">Slide 6</a></div>
+        <div align="left"><a href="img6.html">Problem:  Can’t emulate platform objects</a></div>
+        <div align="left"><a href="img7.html">Accessor (getter/setter) properties</a></div>
+        <div align="left"><a href="img8.html">Accessor (getter/setter) properties… </a></div>
+        <div align="left"><a href="img9.html">Need property attribute control</a></div>
+        <div align="left"><a href="img10.html">Property attribute control API</a></div>
+        <div align="left"><a href="img11.html">Example:  Unobtrusive Convenience Methods</a></div>
+        <div align="left"><a href="img12.html">Accessor (getter/setter) properties…</a></div>
+        <div align="left"><a href="img13.html">Practical emulation of host objects</a></div>
+        <div align="left"><a href="img14.html">ES3 Makes Robustness Too Hard</a></div>
+        <div align="left"><a href="img15.html">More Robust Programming in ES5</a></div>
+        <div align="left"><a href="img16.html">What’s the Point? Can’t preserve invariants in ES3</a></div>
+        <div align="left"><a href="img17.html">Tamper proof objects</a></div>
+        <div align="left"><a href="img18.html">Tamper proof points, first try</a></div>
+        <div align="left"><a href="img19.html">Tamper proof points, second try</a></div>
+        <div align="left"><a href="img20.html">Frozen object builder helper</a></div>
+        <div align="left"><a href="img21.html">Tamper proof points</a></div>
+        <div align="left"><a href="img22.html">Scoping accident 1: Nested named function expressions</a></div>
+        <div align="left"><a href="img23.html">Slide 24</a></div>
+        <div align="left"><a href="img24.html">Finding Opportunity in Confusion</a></div>
+        <div align="left"><a href="img25.html">Scoping accident 2: Throwing a function </a></div>
+        <div align="left"><a href="img26.html">Scoping accident 3: “as if by” initial or current?</a></div>
+        <div align="left"><a href="img27.html">Slide 28</a></div>
+        <div align="left"><a href="img28.html">Wart exchange: keyword collision</a></div>
+        <div align="left"><a href="img29.html">Wart removal: Backchannel</a></div>
+        <div align="left"><a href="img30.html">Wart exchange: eval in what scope?</a></div>
+        <div align="left"><a href="img31.html">Wart clarifications: Internal“types”</a></div>
+        <div align="left"><a href="img32.html">Strict mode: Support Defensive Code</a></div>
+        <div align="left"><a href="img33.html">Strict mode: Per script opt-in</a></div>
+        <div align="left"><a href="img34.html">Strict mode: Per script or per function opt-in</a></div>
+        <div align="left"><a href="img35.html">Slide 36</a></div>
+        <div align="left"><a href="img36.html">Nonstrict global object leakage</a></div>
+        <div align="left"><a href="img37.html">Nonstrict this-coercion hazards</a></div>
+        <div align="left"><a href="img38.html">Slide 39</a></div>
+        <div align="left"><a href="img39.html">ES5 functions encapsulated?</a></div>
+        <div align="left"><a href="img40.html">Slide 41</a></div>
+        <div align="left"><a href="img41.html">ES5-strict functions encapsulated</a></div>
+        <div align="left"><a href="img42.html">ES5-nonstrict isn't statically scoped</a></div>
+        <div align="left"><a href="img43.html">ES5-strict is statically scoped, but…</a></div>
+        <div align="left"><a href="img44.html">But static scoping isn’t lexical scoping</a></div>
+        <div align="left"><a href="img45.html">Slide 46</a></div>
+        <div align="left"><a href="img46.html">Slide 47</a></div>
+        <div align="left"><a href="img47.html">Lexical Scoping just missed ES5 train. How to cope? </a></div>
+        <div align="left"><a href="img48.html">Higher order array methods</a></div>
+        <div align="left"><a href="img49.html">Slide 50</a></div>
+        <div align="left"><a href="img50.html">JSON: S-expressions of the web</a></div>
+        <div align="left"><a href="img51.html">JSON in ES5</a></div>
+        <div align="left"><a href="img52.html">Closures don’t capture “this”</a></div>
+        <div align="left"><a href="img53.html">Slide 54</a></div>
+        <div align="left"><a href="img54.html">Function.prototype.bind() helps</a></div>
+        <div align="left"><a href="img55.html">Imperfect Lambda Abstraction in ES5</a></div>
+        <div align="left"><a href="img56.html">Remaining fixable ES5 warts</a></div>
+        <div align="left"><a href="img57.html">Conclusions</a></div>
+        <div align="left"><a href="img58.html">Further Reading</a></div></td>
+      <td valign="top" width="50%"><p><strong>Author:</strong> Mark S. Miller, Waldemar Horwat, Mike Samuel</p>
+        <p><a href="http://www.youtube.com/watch?v=Kq4FpMe6cRs">View presentation on YouTube</a>.</p>
+        <p>Download slides (<a href="es5-talk.odp">OpenOffice</a>) (<a href="es5-talk.ppt">PowerPoint</a>) (<a href="es5-talk.pdf">PDF</a>)</p>
+        <p>&nbsp;</p></td>
+    </tr>
+  </table>
+</center>
 </body>
 </html>
