@@ -2743,7 +2743,7 @@ var attachDocumentStub = (function () {
      * @return an array that duck types to a node list.
      */
     function fakeNodeList(array) {
-      array.item = ___.func(function(i) { return array[i]; });
+      array.item = ___.frozenFunc(function(i) { return array[i]; });
       return cajita.freeze(array);
     }
 
@@ -2752,6 +2752,7 @@ var attachDocumentStub = (function () {
       this.doc___ = doc;
       this.body___ = body;
       this.domain___ = domain;
+      this.onLoadListeners___ = [];
       var tameDoc = this;
 
       var tameBody = tameNode(body, editable);
@@ -2975,6 +2976,18 @@ var attachDocumentStub = (function () {
     TameHTMLDocument.prototype.getOwnerDocument = function () {
       return null;
     };
+    // Called by the html-emitter when the virtual document has been loaded.
+    TameHTMLDocument.prototype.signalLoaded___ = function () {
+      var listeners = this.onLoadListeners___;
+      this.onLoadListeners___ = [];
+      for (var i = 0, n = listeners.length; i < n; ++i) {
+        (function (listener) {
+          var listenerFn = ___.asFunc(listener);
+          setTimeout(function () { listenerFn.call(cajita.USELESS); }, 0);
+        })(listeners[i]);
+      }
+    };
+
     ___.ctor(TameHTMLDocument, TamePseudoNode, 'TameHTMLDocument');
     ___.all2(___.grantTypedGeneric, TameHTMLDocument.prototype,
              ['addEventListener', 'removeEventListener',
@@ -3294,25 +3307,33 @@ var attachDocumentStub = (function () {
     }
 
     cajita.forOwnKeys({
-      document: imports.document,
+      document: tameDocument,
       location: tameLocation,
       navigator: tameNavigator,
       setTimeout: tameSetTimeout,
       setInterval: tameSetInterval,
       clearTimeout: tameClearTimeout,
       clearInterval: tameClearInterval,
-      addEventListener: ___.frozenFunc(
-          function (name, listener, useCapture) {
-            // TODO(ihab.awad): Implement
-          }),
-      removeEventListener: ___.frozenFunc(
-          function (name, listener, useCapture) {
-            // TODO(ihab.awad): Implement
-          }),
-      dispatchEvent: ___.frozenFunc(
-          function (evt) {
-            // TODO(ihab.awad): Implement
-          })
+      addEventListener: ___.frozenFunc(function (name, listener, useCapture) {
+        if (name === 'load') {
+          ___.asFunc(listener);
+          tameDocument.onLoadListeners___.push(listener);
+        }
+      }),
+      removeEventListener: ___.frozenFunc(function (name, listener, useCapture) {
+        var listeners = tameDocument.onLoadListeners___;
+        var k = 0;
+        for (var i = 0, n = listeners.length; i < n; ++i) {
+          listeners[i - k] = listeners[i];
+          if (listeners[i] === listener) {
+            ++k;
+          }
+        }
+        listeners.length -= k;
+      }),
+      dispathEvent: ___.frozenFunc(function (evt) {
+        // TODO(ihab.awad): Implement
+      })
     }, ___.func(function (propertyName, value) {
       TameWindow.prototype[propertyName] = value;
       ___.grantRead(TameWindow.prototype, propertyName);

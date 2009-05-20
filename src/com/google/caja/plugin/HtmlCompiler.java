@@ -123,6 +123,7 @@ public class HtmlCompiler {
     // with interleaved script bodies.
     DomProcessingEvents cdom = new DomProcessingEvents();
     compileDom(doc, cdom);
+    cdom.endDoc(FilePosition.endOf(Nodes.getFilePositionFor(doc)));
 
     Block body = new Block(
         Nodes.getFilePositionFor(doc), Collections.<Statement>emptyList());

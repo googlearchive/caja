@@ -149,10 +149,6 @@ public final class FilePosition implements MessagePart {
         fp.getBreaks(), fp.startCharInFile() + fp.length(), 0);
   }
 
-  public static FilePosition startOfOrNull(FilePosition fp) {
-    return fp != null ? startOf(fp) : null;
-  }
-
   public static FilePosition endOfOrNull(FilePosition fp) {
     return fp != null ? endOf(fp) : null;
   }

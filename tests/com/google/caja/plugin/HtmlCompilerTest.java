@@ -35,7 +35,7 @@ public class HtmlCompilerTest extends CajaTestCase {
   public void testTargetsRewritten() throws Exception {
     assertOutput(
         "IMPORTS___.htmlEmitter___.b('a').a('href', '/testplugin/foo')"
-        + ".a('target', '_blank').f(false).ih('hello').e('a');",
+        + ".a('target', '_blank').f(false).ih('hello').e('a').cd();",
 
         "<a href=\"foo\" target=\"_self\">hello</a>");
   }
@@ -43,7 +43,7 @@ public class HtmlCompilerTest extends CajaTestCase {
   public void testFormRewritten() throws Exception {
     assertOutput(
         "IMPORTS___.htmlEmitter___.b('form').a('onsubmit', 'return false')"
-        + ".f(false).e('form');",
+        + ".f(false).e('form').cd();",
         "<form></form>");
   }
 
@@ -51,7 +51,7 @@ public class HtmlCompilerTest extends CajaTestCase {
     assertOutput(
         "IMPORTS___.htmlEmitter___.b('a')"
         + ".a('name', 'hi-' + IMPORTS___.getIdClass___())"
-        + ".f(false).e('a');",
+        + ".f(false).e('a').cd();",
 
         "<a name=\"hi\"/>");
   }
@@ -74,7 +74,7 @@ public class HtmlCompilerTest extends CajaTestCase {
     assertOutput(
         "IMPORTS___.htmlEmitter___.b('form')"
         + ".a('name', 'hi-' + IMPORTS___.getIdClass___())"
-        + ".a('onsubmit', 'return false').f(false).e('form');",
+        + ".a('onsubmit', 'return false').f(false).e('form').cd();",
 
         "<form name=\"hi\"></form>");
   }
@@ -87,7 +87,7 @@ public class HtmlCompilerTest extends CajaTestCase {
         + "  .h('onsubmit',"
         + "     'return plugin_dispatchEvent___(this, event, '"
         + "     + ___.getId(IMPORTS___) + ', \\'c_1___\\')')"
-        + "  .f(false).e('form');"
+        + "  .f(false).e('form').cd();"
         + "IMPORTS___.c_1___ = function (event, thisNode___) {"
         + "  try {"
         + "    return true;"
@@ -106,7 +106,7 @@ public class HtmlCompilerTest extends CajaTestCase {
         + "  .h('onsubmit',"
         + "     'return plugin_dispatchEvent___(this, event, '"
         + "     + ___.getId(IMPORTS___) + ', \\'c_1___\\')')"
-        + "  .f(false).e('form');"
+        + "  .f(false).e('form').cd();"
         + "IMPORTS___.c_1___ = function (event, thisNode___) {"
         + "  try {"
         + "  } finally {"
@@ -120,7 +120,7 @@ public class HtmlCompilerTest extends CajaTestCase {
     assertOutput(
         "IMPORTS___.htmlEmitter___.b('img')"
         + ".a('src', '/testplugin/blank.gif')"
-        + ".a('width', '20').f(true);",
+        + ".a('width', '20').f(true).cd();",
         "<img src=\"blank.gif\" width=\"20\"/>");
   }
 
@@ -130,7 +130,7 @@ public class HtmlCompilerTest extends CajaTestCase {
         + ".a('style', 'position: absolute; "
         + "background: url(\\'/testplugin/bg-image\\')')"
         + ".f(false)"
-        + ".ih('\\nHello\\n').e('div').pc('\\n');",
+        + ".ih('\\nHello\\n').e('div').pc('\\n').cd();",
 
         "<div style=\"position: absolute; background: url('bg-image')\">\n"
         + "Hello\n"
@@ -140,20 +140,20 @@ public class HtmlCompilerTest extends CajaTestCase {
   public void testEmptyStyleRewriting() throws Exception {
     assertOutput(
         "IMPORTS___.htmlEmitter___.b('div').f(false)"
-        + ".ih('\\nHello\\n').e('div').pc('\\n');",
+        + ".ih('\\nHello\\n').e('div').pc('\\n').cd();",
 
         "<div style=>\nHello\n</div>\n");
     assertOutput(
         "IMPORTS___.htmlEmitter___.b('div').f(false)"
-        + ".ih('\\nHello\\n').e('div').pc('\\n');",
+        + ".ih('\\nHello\\n').e('div').pc('\\n').cd();",
 
         "<div style=\"\">\nHello\n</div>\n");
     assertOutput(
-        "IMPORTS___.htmlEmitter___.pc('Hello, World!');",
+        "IMPORTS___.htmlEmitter___.pc('Hello, World!').cd();",
 
         "<style type=text/css></style>Hello, World!");
     assertOutput(
-        "IMPORTS___.htmlEmitter___.pc('Hello, World!');",
+        "IMPORTS___.htmlEmitter___.pc('Hello, World!').cd();",
 
         "<style type=text/css>/* Noone here */</style>Hello, World!");
   }
@@ -161,7 +161,7 @@ public class HtmlCompilerTest extends CajaTestCase {
   public void testEmptyScriptRewriting() throws Exception {
     assertOutput(
         "IMPORTS___.htmlEmitter___.b('div').f(false)"
-        + ".ih('\\nHello\\n').e('div').pc('\\n');",
+        + ".ih('\\nHello\\n').e('div').pc('\\n').cd();",
 
         "<div onclick=\"\">\nHello\n</div>\n");
   }

@@ -164,12 +164,15 @@ final class DomProcessingEvents {
      *   due to browser quirks.  See the unittests for specific examples.
      *   If depth is -1, then acts conservatively.
      */
-    abstract boolean canOptimizeToInnerHtml(int depth);
+    boolean canOptimizeToInnerHtml(int depth) { return false; }
     /**
      * Appends HTML to the given buffer.
      * Only callable if {@link #canOptimizeToInnerHtml}.
+     * @param out buffer to receive HTML.
      */
-    abstract void toInnerHtml(StringBuilder out);
+    void toInnerHtml(StringBuilder out) {
+      throw new UnsupportedOperationException();
+    }
 
     abstract FilePosition getFilePosition();
 
@@ -268,10 +271,6 @@ final class DomProcessingEvents {
           StringLiteral.valueOf(FilePosition.UNKNOWN, name.getCanonicalForm()),
           fnBody);
     }
-    @Override boolean canOptimizeToInnerHtml(int depth) { return false; }
-    @Override void toInnerHtml(StringBuilder out) {
-      throw new UnsupportedOperationException();
-    }
     @Override boolean checkContext(boolean inTag) {
       if (!inTag) { throw new IllegalStateException(this.toString()); }
       return true;
@@ -364,10 +363,6 @@ final class DomProcessingEvents {
     @Override void toJavascript(BlockAndEmitter out) {
       out.getBlock().appendChild(stmt);
     }
-    @Override boolean canOptimizeToInnerHtml(int depth) { return false; }
-    @Override void toInnerHtml(StringBuilder out) {
-      throw new UnsupportedOperationException();
-    }
     @Override boolean checkContext(boolean inTag) {
       if (inTag) { throw new IllegalStateException(this.toString()); }
       return false;
@@ -381,6 +376,18 @@ final class DomProcessingEvents {
     @Override protected void toInnerHtml(StringBuilder out) {
       out.append(text);
     }
+  }
+
+  static final class CloseDocumentEvent extends DomProcessingEvent {
+    final FilePosition pos;
+    CloseDocumentEvent(FilePosition pos) { this.pos = pos; }
+    @Override
+    boolean checkContext(boolean inTag) {
+      if (inTag) { throw new IllegalStateException(); }
+      return false;
+    }
+    @Override void toJavascript(BlockAndEmitter out) { out.emitCall("cd"); }
+    @Override FilePosition getFilePosition() { return pos; }
   }
 
   private void addEvent(DomProcessingEvent e) {
@@ -424,6 +431,8 @@ final class DomProcessingEvents {
   }
   /** An interleaved script block. */
   void script(Statement s) { addEvent(new ScriptBlockEvent(s)); }
+  /** Signals the end of the document. */
+  void endDoc(FilePosition pos) { addEvent(new CloseDocumentEvent(pos)); }
 
   private final class BlockAndEmitter {
     /** An expression that will return an HTML emitter. */

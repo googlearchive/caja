@@ -190,7 +190,7 @@ public class CajolingServiceTest extends TestCase {
       + "                     var $dis = $v.getOuters();\n"
       + "                     moduleResult___ = $v.initOuter('onerror');\n"
       + "                     IMPORTS___.htmlEmitter___.pc('      ').b('p').f(false)\n"
-      + "                         .ih('Hello, World!').e('p').pc('  ');\n"
+      + "                         .ih('Hello, World!').e('p').pc('  ').cd();\n"
       + "                     return moduleResult___;\n"
       + "                   },\n"
       + "                   'cajolerName': 'com.google.caja',\n"
@@ -198,7 +198,7 @@ public class CajolingServiceTest extends TestCase {
       + "                   'cajoledDate': 0\n"
       + "                 });\n"
       + "}",
-        request("?url=http://foo/bar.html&mime-type=*/*"));
+        (String) request("?url=http://foo/bar.html&mime-type=*/*"));
   }
 
   public void testGadget() throws Exception {
@@ -222,7 +222,7 @@ public class CajolingServiceTest extends TestCase {
             + "                   'instantiate': function (___, IMPORTS___) {\n"
             + "                     var moduleResult___ = ___.NO_RESULT;\n"
             + "                     IMPORTS___.htmlEmitter___.b('p').f(false)\n"
-            + "                         .ih('Hello, World!').e('p');\n"
+            + "                         .ih('Hello, World!').e('p').cd();\n"
             + "                     return moduleResult___;\n"
             + "                   },\n"
             + "                   'cajolerName': 'com.google.caja',\n"

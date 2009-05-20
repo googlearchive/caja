@@ -38,16 +38,17 @@ public class CajaAppletTest extends CajaTestCase {
   };
 
   private String replaceValue(String inString, String key) {
-    return inString.replaceFirst("\\\\'" + key + "\\\\'"
+    return inString.replaceFirst(
+        "\\\\'" + key + "\\\\'"
         + ":\\s*(\\\\')?\\w+(\\\\')?",
         "\\\\'" + key + "\\\\': \\\\'*\\\\'");
   }
-  
+
   /**
    * Does a string equality comparison on expected vs actual output of
    * a cajoled module.  Removes the cajoled date and version from the
    * comparison
-   *  
+   *
    * @param expected expected output without date and version number
    * @param actual cajoled module output
    */
@@ -56,50 +57,51 @@ public class CajaAppletTest extends CajaTestCase {
     deterministic = replaceValue(deterministic, "cajoledDate");
     assertEquals(expected, deterministic);
   }
-  
+
+  private final String INDENT = "                 ";
   public void testCajoleInValija() throws Exception {
     assertModule(
-      "['\\x3cscript type=\\\"text/javascript\\\"\\x3e" +
-      "{\\n" +
-      "  ___.loadModule({\\n" +
-      "                   \\'instantiate\\': function (___, IMPORTS___) {\\n" +
-      "                     var moduleResult___ = ___.NO_RESULT;\\n" +
-      "                     var $v = ___.readImport(IMPORTS___, \\'$v\\', {\\n" +
-      "                           \\'getOuters\\': {\\n" +
-      "                             \\'()\\': { }\\n" +
-      "                           },\\n" +
-      "                           \\'initOuter\\': {\\n" +
-      "                             \\'()\\': { }\\n" +
-      "                           }\\n" +
-      "                         });\\n" +
-      "                     var $dis = $v.getOuters();\\n" +
-      "                     moduleResult___ = $v.initOuter(\\'onerror\\');\\n" +
-      "                     IMPORTS___.htmlEmitter___.pc(\\'var x = 1;\\');\\n" +
-      "                     return moduleResult___;\\n" +
-      "                   },\\n" +
-      "                   \\'cajolerName\\': \\'com.google.caja\\',\\n" +
-      "                   \\'cajolerVersion\\': \\'*\\',\\n" +
-      "                   \\'cajoledDate\\': \\'*\\'\\n" +
-      "                 });\\n" +
-      "}\\x3c/script\\x3e','']", 
-      applet.cajole("var x = 1;", "VALIJA_MODE"));
+        "['\\x3cscript type=\\\"text/javascript\\\"\\x3e" +
+        "{\\n" +
+        "  ___.loadModule({\\n" +
+        INDENT + "  \\'instantiate\\': function (___, IMPORTS___) {\\n" +
+        INDENT + "    var moduleResult___ = ___.NO_RESULT;\\n" +
+        INDENT + "    var $v = ___.readImport(IMPORTS___, \\'$v\\', {\\n" +
+        INDENT + "          \\'getOuters\\': {\\n" +
+        INDENT + "            \\'()\\': { }\\n" +
+        INDENT + "          },\\n" +
+        INDENT + "          \\'initOuter\\': {\\n" +
+        INDENT + "            \\'()\\': { }\\n" +
+        INDENT + "          }\\n" +
+        INDENT + "        });\\n" +
+        INDENT + "    var $dis = $v.getOuters();\\n" +
+        INDENT + "    moduleResult___ = $v.initOuter(\\'onerror\\');\\n" +
+        INDENT + "    IMPORTS___.htmlEmitter___.pc(\\'var x = 1;\\').cd();\\n" +
+        INDENT + "    return moduleResult___;\\n" +
+        INDENT + "  },\\n" +
+        INDENT + "  \\'cajolerName\\': \\'com.google.caja\\',\\n" +
+        INDENT + "  \\'cajolerVersion\\': \\'*\\',\\n" +
+        INDENT + "  \\'cajoledDate\\': \\'*\\'\\n" +
+        INDENT + "});\\n" +
+        "}\\x3c/script\\x3e','']",
+        applet.cajole("var x = 1;", "VALIJA_MODE"));
   }
 
   public void testCajoleInCajita() throws Exception {
     assertModule(
-      "['\\x3cscript type=\\\"text/javascript\\\"\\x3e" +
-      "{\\n" +
-      "  ___.loadModule({\\n" +
-      "                   \\'instantiate\\': function (___, IMPORTS___) {\\n" +
-      "                     var moduleResult___ = ___.NO_RESULT;\\n" +
-      "                     IMPORTS___.htmlEmitter___.pc(\\'var x = 1;\\');\\n" +
-      "                     return moduleResult___;\\n" +
-      "                   },\\n" +
-      "                   \\'cajolerName\\': \\'com.google.caja\\',\\n" +
-      "                   \\'cajolerVersion\\': \\'*\\',\\n" +
-      "                   \\'cajoledDate\\': \\'*\\'\\n" +
-      "                 });\\n" +
-      "}\\x3c/script\\x3e','']", 
-      applet.cajole("var x = 1;", ""));
+        "['\\x3cscript type=\\\"text/javascript\\\"\\x3e" +
+        "{\\n" +
+        "  ___.loadModule({\\n" +
+        INDENT + "  \\'instantiate\\': function (___, IMPORTS___) {\\n" +
+        INDENT + "    var moduleResult___ = ___.NO_RESULT;\\n" +
+        INDENT + "    IMPORTS___.htmlEmitter___.pc(\\'var x = 1;\\').cd();\\n" +
+        INDENT + "    return moduleResult___;\\n" +
+        INDENT + "  },\\n" +
+        INDENT + "  \\'cajolerName\\': \\'com.google.caja\\',\\n" +
+        INDENT + "  \\'cajolerVersion\\': \\'*\\',\\n" +
+        INDENT + "  \\'cajoledDate\\': \\'*\\'\\n" +
+        INDENT + "});\\n" +
+        "}\\x3c/script\\x3e','']",
+        applet.cajole("var x = 1;", ""));
   }
 }

@@ -20,12 +20,13 @@
  */
 
 
-function HtmlEmitter(base) {
+function HtmlEmitter(base, opt_tameDocument) {
   if (!base) { throw new Error(); }
   this.cursor_ = [base];
   this.attribs_ = [];
   this.handlers_ = [];
   this.tagName_ = null;
+  this.tameDocument___ = opt_tameDocument;
 }
 HtmlEmitter.prototype = {
   top_: function () { return this.cursor_[this.cursor_.length - 1]; },
@@ -115,7 +116,7 @@ HtmlEmitter.prototype = {
           break;
       }
     }
-    
+
     // This branch could be implemented in e() except for the fact that
     // everything on the stack must be reachable from base before an
     // interleaved script tag is executed.
@@ -170,6 +171,15 @@ HtmlEmitter.prototype = {
     } else {
       top.innerHTML = html;
     }
+    return this;
+  },
+  /**
+   * Signals the close of the document and fires any window.onload event
+   * handlers.
+   */
+  cd: function () {
+    var doc = this.tameDocument___;
+    if (doc) { doc.signalLoaded___(); }
     return this;
   }
 };
