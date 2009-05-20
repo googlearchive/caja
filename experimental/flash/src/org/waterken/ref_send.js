@@ -154,9 +154,12 @@ var Q = (function () {
                 var todo = pending;
                 pending = null;
                 value = promise(p);
-                todo.filter(function (task) {
-                    forward(value, task.op, task.arg1, task.arg2, task.arg3);
-                });
+
+                var i, len = todo.length, task;
+                for (i = 0; i < len; ++i) {
+                  task = todo[i];
+                  forward(value, task.op, task.arg1, task.arg2, task.arg3);
+                }
             }
         };
     }
