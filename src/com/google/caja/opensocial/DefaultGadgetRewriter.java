@@ -227,7 +227,7 @@ public class DefaultGadgetRewriter
 
     PluginCompiler compiler = createPluginCompiler(meta, mq);
 
-    compiler.addInput(new AncestorChain<Dom>(new Dom(content)));
+    compiler.addInput(AncestorChain.instance(new Dom(content)));
 
     if (!compiler.run()) {
       throw new GadgetRewriteException("Gadget has compile errors");

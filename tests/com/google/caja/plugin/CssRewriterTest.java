@@ -279,7 +279,7 @@ public class CssRewriterTest extends CajaTestCase {
 
     new CssValidator(CssSchema.getDefaultCss21Schema(mq),
                      HtmlSchema.getDefault(mq), mq)
-        .validateCss(new AncestorChain<CssTree>(t));
+        .validateCss(AncestorChain.instance(t));
     new CssRewriter(
         new PluginMeta(
             new PluginEnvironment() {
@@ -310,7 +310,7 @@ public class CssRewriterTest extends CajaTestCase {
               }
             }),
         mq)
-        .rewrite(new AncestorChain<CssTree>(t));
+        .rewrite(AncestorChain.instance(t));
 
     {
       StringBuilder msgBuf = new StringBuilder();

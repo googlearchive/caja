@@ -102,7 +102,7 @@ public final class OpenTemplateStageTest extends CajaTestCase {
     ParseTreeNode node = js(fromString(input));
     PluginMeta meta = new PluginMeta();
     Jobs jobs = new Jobs(mc, mq, meta);
-    jobs.getJobs().add(new Job(new AncestorChain<ParseTreeNode>(node)));
+    jobs.getJobs().add(new Job(AncestorChain.instance(node)));
 
     assertTrue(pipeline.apply(jobs));
     assertEquals(

@@ -601,8 +601,7 @@ public class ParserTest extends CajaTestCase {
       }
 
       for (ParseTreeNode c : children) {
-        checkFilePositionInvariants(
-            new AncestorChain<ParseTreeNode>(nChain, c));
+        checkFilePositionInvariants(AncestorChain.instance(nChain, c));
       }
     } catch (RuntimeException ex) {
       throw new RuntimeException(msg, ex);

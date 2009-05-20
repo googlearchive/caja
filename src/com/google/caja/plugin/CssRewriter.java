@@ -119,7 +119,7 @@ public final class CssRewriter {
       combineLooseWords(t.cast(CssTree.Expr.class).node);
     }
     for (CssTree child : t.node.children()) {
-      quoteLooseWords(new AncestorChain<CssTree>(t, child));
+      quoteLooseWords(AncestorChain.instance(t, child));
     }
   }
 

@@ -316,11 +316,11 @@ public class HtmlCompiler {
     // marking those that aren't, and identifies all urls.
     CssValidator v = new CssValidator(cssSchema, htmlSchema, mq)
         .withInvalidNodeMessageLevel(MessageLevel.WARNING);
-    v.validateCss(new AncestorChain<CssTree>(decls));
+    v.validateCss(AncestorChain.instance(decls));
     // The rewriter will remove any unsafe constructs.
     // and put urls in the proper filename namespace
     new CssRewriter(meta, mq).withInvalidNodeMessageLevel(MessageLevel.WARNING)
-        .rewrite(new AncestorChain<CssTree>(decls));
+        .rewrite(AncestorChain.instance(decls));
 
     Block cssBlock = new Block(
         FilePosition.UNKNOWN, Collections.<Statement>emptyList());

@@ -85,7 +85,7 @@ public final class ValidateJavascriptStage implements Pipeline.Stage<Jobs> {
     AncestorChain<?> nonSyntheticChild = null;
     for (ParseTreeNode child : node.children()) {
       AncestorChain<?> result = nonSyntheticRoot(
-          new AncestorChain<ParseTreeNode>(js, child));
+          AncestorChain.instance(js, child));
       if (result != null) {
         // Two children at least, so return js as the LCD
         if (nonSyntheticChild != null) { return js; }

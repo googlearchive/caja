@@ -192,8 +192,7 @@ public class CajolingService extends HttpServlet {
       throws UnsupportedContentTypeException {
     for (ContentHandler handler : handlers) {
       if (handler.canHandle(uri, t, contentType, typeCheck)) {
-        return
-          handler.apply(uri, t, contentType, charSet, content, response);
+        return handler.apply(uri, t, contentType, charSet, content, response);
       }
     }
     throw new UnsupportedContentTypeException();

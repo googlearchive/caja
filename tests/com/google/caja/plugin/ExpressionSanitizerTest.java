@@ -108,6 +108,6 @@ public class ExpressionSanitizerTest extends CajaTestCase {
   }
 
   private static <T extends ParseTreeNode> AncestorChain<T> ac(T node) {
-    return new AncestorChain<T>(node);
+    return AncestorChain.instance(node);
   }
 }

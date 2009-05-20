@@ -311,7 +311,7 @@ public abstract class AbstractParseTreeNode
   }
 
   public final boolean acceptPreOrder(Visitor v, AncestorChain<?> ancestors) {
-    ancestors = new AncestorChain<AbstractParseTreeNode>(ancestors, this);
+    ancestors = AncestorChain.instance(ancestors, this);
     if (!v.visit(ancestors)) { return false; }
 
     // Handle the case where v.visit() replaces this with another, inserts
@@ -324,7 +324,7 @@ public abstract class AbstractParseTreeNode
   }
 
   public final boolean acceptPostOrder(Visitor v, AncestorChain<?> ancestors) {
-    ancestors = new AncestorChain<AbstractParseTreeNode>(ancestors, this);
+    ancestors = AncestorChain.instance(ancestors, this);
     // Descend into this node's children.
     if (!visitChildren(v, ancestors, TraversalType.POSTORDER)) {
       return false;

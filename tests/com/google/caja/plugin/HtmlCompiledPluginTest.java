@@ -197,7 +197,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
     PluginCompiler compiler = new PluginCompiler(new TestBuildInfo(), meta, mq);
     compiler.setMessageContext(mc);
     Dom html = new Dom(htmlFragment(fromString("<script>{</script>")));
-    compiler.addInput(new AncestorChain<Dom>(html));
+    compiler.addInput(AncestorChain.instance(html));
 
     boolean passed = compiler.run();
     assertFalse(passed);

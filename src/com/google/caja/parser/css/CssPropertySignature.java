@@ -366,7 +366,7 @@ public abstract class CssPropertySignature implements ParseTreeNode {
   public List<? extends CssPropertySignature> children() { return children; }
 
   public final boolean acceptPreOrder(Visitor v, AncestorChain<?> ancestors) {
-    ancestors = new AncestorChain<CssPropertySignature>(ancestors, this);
+    ancestors = AncestorChain.instance(ancestors, this);
     if (!v.visit(ancestors)) { return false; }
     for (CssPropertySignature child : children) {
       child.acceptPreOrder(v, ancestors);
@@ -375,7 +375,7 @@ public abstract class CssPropertySignature implements ParseTreeNode {
   }
 
   public final boolean acceptPostOrder(Visitor v, AncestorChain<?> ancestors) {
-    ancestors = new AncestorChain<CssPropertySignature>(ancestors, this);
+    ancestors = AncestorChain.instance(ancestors, this);
     for (CssPropertySignature child : children) {
       if (!child.acceptPostOrder(v, ancestors)) {
         return false;

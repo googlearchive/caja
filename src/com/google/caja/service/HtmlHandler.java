@@ -51,14 +51,14 @@ import java.net.URLEncoder;
 public class HtmlHandler implements ContentHandler {
   private final BuildInfo buildInfo;
   private PluginMeta meta;
-  private final static String DEFAULT_HOSTED_SERVICE = 
+  private final static String DEFAULT_HOSTED_SERVICE =
     "http://caja.appsport.com/cajoler";
-  
+
   public HtmlHandler(BuildInfo buildInfo) {
     this(buildInfo, DEFAULT_HOSTED_SERVICE);
   }
-  
-  
+
+
   public HtmlHandler(BuildInfo buildInfo, final String hostedService) {
     this.buildInfo = buildInfo;
     this.meta = new PluginMeta(new PluginEnvironment() {
@@ -71,7 +71,7 @@ public class HtmlHandler implements ContentHandler {
         if (hostedService != null) {
           try {
             return hostedService
-            + "?url=" 
+            + "?url="
             + URLEncoder.encode(uri.getUri().toString(),
                 "UTF-8")
             + "&mime-type=" + mimeType;
@@ -82,18 +82,18 @@ public class HtmlHandler implements ContentHandler {
           return null;
         }
       }
-      
+
     });
     // HtmlHandler only cajoles in valija mode
     meta.setValijaMode(true);
   }
 
-  public boolean canHandle(URI uri, CajolingService.Transform transform, 
+  public boolean canHandle(URI uri, CajolingService.Transform transform,
       String contentType, ContentTypeCheck checker) {
     return checker.check("text/html", contentType);
   }
 
-  public Pair<String,String> apply(URI uri, CajolingService.Transform transform, 
+  public Pair<String,String> apply(URI uri, CajolingService.Transform transform,
       String contentType, String charset, byte[] content, OutputStream response)
       throws UnsupportedContentTypeException {
     if (charset == null) { charset = "UTF-8"; }
@@ -120,9 +120,9 @@ public class HtmlHandler implements ContentHandler {
       ex.printStackTrace();
     }
   }
-  
+
   private void cajoleHtml(final URI inputUri, Reader cajaInput,
-      Appendable output) 
+      Appendable output)
       throws IOException, UnsupportedContentTypeException {
     InputSource is = new InputSource (inputUri);
     CharProducer cp = CharProducer.Factory.create(cajaInput,is);
@@ -138,7 +138,7 @@ public class HtmlHandler implements ContentHandler {
 
       PluginCompiler compiler = new PluginCompiler(buildInfo, meta, mq);
 
-      compiler.addInput(new AncestorChain<ParseTreeNode>(html));
+      compiler.addInput(AncestorChain.instance(html));
       if (okToContinue) {
         okToContinue &= compiler.run();
       }

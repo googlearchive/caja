@@ -347,12 +347,11 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       }
     }
 
-    jobs.getJobs().add(
-        new Job(new AncestorChain<CssTree.StyleSheet>(stylesheet)));
+    jobs.getJobs().add(new Job(AncestorChain.instance(stylesheet)));
   }
 
   /**
-   * Convert a <body> onload handler to a script tag so that it can be
+   * Convert a {@code <body>} onload handler to a script tag so that it can be
    * processed correctly in the normal flow of HTML.
    *
    * <pre>

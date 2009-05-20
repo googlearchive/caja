@@ -40,7 +40,7 @@ public final class CompileCssStage implements Pipeline.Stage<Jobs> {
       it.remove();
       Statement js = new CssCompiler().compileCss(
           job.getRoot().cast(CssTree.StyleSheet.class).node);
-      it.add(new Job(new AncestorChain<Statement>(new TranslatedCode(js))));
+      it.add(new Job(AncestorChain.instance(new TranslatedCode(js))));
     }
     return jobs.hasNoFatalErrors();
   }

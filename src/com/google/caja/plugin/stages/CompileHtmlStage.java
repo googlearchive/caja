@@ -73,7 +73,7 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
       TranslatedCode compiledHtml = new TranslatedCode(new Block(
           FilePosition.UNKNOWN,
           new ArrayList<Statement>(htmlc.getEventHandlers())));
-      jobs.getJobs().add(new Job(new AncestorChain<Statement>(compiledHtml)));
+      jobs.getJobs().add(new Job(AncestorChain.instance(compiledHtml)));
     }
 
     if (!renderedHtmlStatements.isEmpty()) {
@@ -85,7 +85,7 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
         htmlGeneration = new Block(
             FilePosition.UNKNOWN, renderedHtmlStatements);
       }
-      jobs.getJobs().add(new Job(new AncestorChain<Block>(htmlGeneration)));
+      jobs.getJobs().add(new Job(AncestorChain.instance(htmlGeneration)));
     }
     return jobs.hasNoFatalErrors();
   }

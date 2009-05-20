@@ -12,11 +12,7 @@ public final class AncestorChain<T extends ParseTreeNode> {
   public final AncestorChain<? extends ParseTreeNode> parent;
   public final T node;
 
-  public AncestorChain(T node) {
-    this(null, node);
-  }
-
-  public AncestorChain(AncestorChain<? extends ParseTreeNode> parent, T node) {
+  private AncestorChain(AncestorChain<? extends ParseTreeNode> parent, T node) {
     if (node == null) { throw new NullPointerException(); }
     assert parent == null || parent.node.children().contains(node);
     this.parent = parent;
@@ -24,7 +20,7 @@ public final class AncestorChain<T extends ParseTreeNode> {
   }
 
   public static <T extends ParseTreeNode> AncestorChain<T> instance(T node) {
-    return new AncestorChain<T>(node);
+    return new AncestorChain<T>(null, node);
   }
 
   public static <T extends ParseTreeNode> AncestorChain<T> instance(

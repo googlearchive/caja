@@ -172,7 +172,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
       case Node.ELEMENT_NODE:
         Block extracted = RewriteHtmlStage.extractedScriptFor((Element) node);
         if (extracted != null) {
-          jobs.getJobs().add(new Job(new AncestorChain<Block>(extracted)));
+          jobs.getJobs().add(new Job(AncestorChain.instance(extracted)));
         }
         for (Node c = node.getFirstChild(); c != null; c = c.getNextSibling()) {
           extractScripts(c, jobs);

@@ -1493,7 +1493,7 @@ public final class CssValidatorTest extends CajaTestCase {
     assertTrue(css, valid);
     assertTrue(css, !mq.getMessages().isEmpty());
   }
-  
+
   private static void removeInvalidNodes(AncestorChain<? extends CssTree> t) {
     if (t.node.getAttributes().is(CssValidator.INVALID)) {
       ((MutableParseTreeNode) t.parent.node).removeChild(t.node);
@@ -1524,7 +1524,7 @@ public final class CssValidatorTest extends CajaTestCase {
     CssValidator v = makeCssValidator(smq);
     boolean valid = v.validateCss(ac(cssTree));
     mq.getMessages().addAll(smq.getMessages());
-    
+
     // If no warnings are expected, the result should be valid
     if (warnings.length == 0) {
       if (!valid) {
@@ -1534,7 +1534,7 @@ public final class CssValidatorTest extends CajaTestCase {
     } else {
       removeInvalidNodes(AncestorChain.instance(cssTree));
     }
-    
+
     mc.relevantKeys = new LinkedHashSet<SyntheticAttributeKey<?>>(
         Arrays.<SyntheticAttributeKey<?>>asList(
             CssValidator.CSS_PROPERTY_PART_TYPE,
@@ -1563,6 +1563,6 @@ public final class CssValidatorTest extends CajaTestCase {
   }
 
   private static <T extends ParseTreeNode> AncestorChain<T> ac(T node) {
-    return new AncestorChain<T>(node);
+    return AncestorChain.instance(node);
   }
 }
