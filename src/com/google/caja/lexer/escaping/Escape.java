@@ -32,4 +32,17 @@ final class Escape implements Comparable<Escape> {
   public int compareTo(Escape other) {
     return this.raw - other.raw;
   }
+  
+  @Override
+  public boolean equals(Object other) {
+    if (!(other instanceof Escape)) {
+      return false;
+    }
+    return this.raw == ((Escape)other).raw;
+  }
+  
+  @Override
+  public int hashCode () {
+    return raw;
+  }
 }

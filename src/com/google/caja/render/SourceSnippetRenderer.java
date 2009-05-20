@@ -204,13 +204,14 @@ public class SourceSnippetRenderer implements TokenConsumer {
 
   private void buildOriginalSourceLines(
       Map<InputSource, ? extends CharSequence> originalSource) {
-    for (InputSource is : originalSource.keySet()) {
+    for (Map.Entry<InputSource, ? extends CharSequence> entry 
+        : originalSource.entrySet()) {
       List<OriginalSourceLine> lines = new ArrayList<OriginalSourceLine>();
-      String[] text = splitLines(originalSource.get(is).toString());
+      String[] text = splitLines(entry.getValue().toString());
       for (int i = 0; i < text.length; i++) {
-        lines.add(new OriginalSourceLine(is, i, text[i]));
+        lines.add(new OriginalSourceLine(entry.getKey(), i, text[i]));
       }
-      originalSourceLines.put(is, lines);
+      originalSourceLines.put(entry.getKey(), lines);
     }
   }
 

@@ -479,8 +479,9 @@ public abstract class Rule implements MessagePart {
     Map<String, ParseTreeNode> bindings = match(node);
     if (bindings != null) {
       Map<String, ParseTreeNode> newBindings = makeBindings();
-      for (String key : bindings.keySet()) {
-        newBindings.put(key, getRewriter().expand(bindings.get(key), scope, mq));
+      for (Map.Entry<String, ParseTreeNode> entry : bindings.entrySet()) {
+        newBindings.put(entry.getKey(), 
+            getRewriter().expand(entry.getValue(), scope, mq));
       }
       return QuasiBuilder.subst(getRuleDescription().substitutes(),
                                 newBindings);

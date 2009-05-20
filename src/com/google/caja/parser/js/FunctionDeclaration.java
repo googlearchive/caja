@@ -46,9 +46,7 @@ public final class FunctionDeclaration extends Declaration {
       throw new IllegalArgumentException(
           "Function declaration missing function");
     }
-    if (!(initializer instanceof FunctionConstructor)) {
-      throw new ClassCastException(initializer.getClass().getName());
-    }
+    assert initializer instanceof FunctionConstructor;
   }
 
   @Override

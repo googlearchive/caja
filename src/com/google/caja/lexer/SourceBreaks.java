@@ -96,12 +96,18 @@ public final class SourceBreaks {
   /**
    * Like {@link java.util.Arrays#binarySearch} but doesn't assume the entire
    * array is full.
+   * 
+   * @param arr array to be searched
+   * @param target target the value to be searched for
+   * @param limit index of the last element to be included in the search
+   * @return index of the target, if it is contained in the array; 
+   *    otherwise, a negative value.
    */
   private static int boundedBinarySearch(int[] arr, int target, int limit) {
     int lo = 0;
     int hi = limit - 1;
     while (lo <= hi) {
-      int midpoint = (lo + hi) >> 1;
+      int midpoint = (lo + hi) >>> 1;
       int el = arr[midpoint];
       if (target > el) {
         lo = midpoint + 1;

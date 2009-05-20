@@ -66,7 +66,8 @@ public class MatchExperiments {
     if (specimen.children().size() != 1)
       throw new Exception("Top level of specimen does not have exactly 1 child");
 
-    Map<String, ParseTreeNode> matchResult = matchPattern.match(specimen.children().get(0));
+    Map<String, ParseTreeNode> matchResult = 
+      matchPattern.match(specimen.children().get(0));
 
     System.out.println(
         (matchResult == null) ?
@@ -94,11 +95,12 @@ public class MatchExperiments {
     return output.toString();
   }
 
-  private static String format(Map<String, ParseTreeNode> map) throws Exception {
+  private static String format(Map<String, ParseTreeNode> map) 
+    throws Exception {
     String s = "{\n";
-    for (String k : map.keySet()) {
-      s += k + " = ";
-      s += format(map.get(k));
+    for (Map.Entry<String, ParseTreeNode> k : map.entrySet()) {
+      s += k.getKey() + " = ";
+      s += format(k.getValue());
       s += "\n";
     }
     s += "}";

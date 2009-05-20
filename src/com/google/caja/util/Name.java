@@ -57,7 +57,7 @@ public final class Name implements Comparable<Name>, MessagePart {
 
   @Override
   public boolean equals(Object o) {
-    if (o.getClass() != Name.class) { return false; }
+    if (o == null || o.getClass() != Name.class) { return false; }
     return canonicalForm.equals(((Name) o).canonicalForm);
   }
 

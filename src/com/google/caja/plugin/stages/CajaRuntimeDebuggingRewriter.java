@@ -28,7 +28,6 @@ import com.google.caja.reporting.MessageQueue;
 
 import java.util.Map;
 
-
 /**
  * Modifies cajoled code to remove fasttrack branches, and add debugging info
  * to the slow branches.
@@ -60,8 +59,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
       Map<String, ParseTreeNode> bindings = match(node);
       if (bindings != null) {
         Map<String, ParseTreeNode> newBindings = makeBindings();
-        for (String key : bindings.keySet()) {
-          newBindings.put(key, expand(bindings.get(key), scope, mq));
+        for (Map.Entry<String, ParseTreeNode> entry : bindings.entrySet()) {
+          newBindings.put(entry.getKey(), expand(entry.getValue(), scope, mq));
         }
 
         ParseTreeNode posNode = bindings.get("posNode");

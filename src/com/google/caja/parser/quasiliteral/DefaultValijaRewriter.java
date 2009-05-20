@@ -1453,8 +1453,9 @@ public class DefaultValijaRewriter extends Rewriter {
               mq.addMessage(
                   RewriterMessageType.MAP_RECURSION_FAILED,
                   node.getFilePosition(), node);
+            } else {
+              newVals.add(pairBindings.get("val"));
             }
-            newVals.add(pairBindings.get("val"));
           }
           return substV(
               "keys", new ParseTreeNodeContainer(keys),

@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * A Message that can be displayed to the user.
@@ -29,7 +30,7 @@ import java.io.IOException;
  *
  * @author mikesamuel@gmail.com
  */
-public final class Message {
+public final class Message implements Serializable {
   private MessageTypeInt type;
   private MessageLevel level;
   private MessagePart[] parts;
