@@ -415,7 +415,7 @@
   </target>
 
   <target name="AllTests"
-   depends="pluginc,CajoledValija,MinifiedJs,CajolingService,CajoledTests,dirs">
+   depends="pluginc,CajoledValija,MinifiedJs,CajolingService,CajoledTests,TestbedClasses,dirs">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${tests}"/>
       <classpath refid="classpath.tests.compile"/>
@@ -785,7 +785,7 @@
     </copy>
   </target>
 
-  <target name="testbed" depends="dirs,jars"
+  <target name="TestbedClasses" depends="dirs"
    description="Produce an Applet that interactively cajoles in the browser.">
     <javac destdir="${lib}" debug="true" target="1.5" source="1.5">
       <src path="${src}"/>
@@ -793,7 +793,10 @@
       <include name="**/caja/demos/applet/*.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
+  </target>
 
+  <target name="testbed" depends="dirs,TestbedClasses,jars"
+   description="Produce an Applet that interactively cajoles in the browser.">
     <jar destfile="${jars}/testbed.jar" basedir="${lib}">
       <manifest>
         <attribute name="Main-Class"
