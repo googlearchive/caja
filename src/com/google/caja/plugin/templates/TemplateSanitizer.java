@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Google Inc.
+// Copyright (C) 2009 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.plugin;
+package com.google.caja.plugin.templates;
 
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.html.Nodes;
+import com.google.caja.plugin.PluginMessageType;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
@@ -33,14 +34,14 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 /**
- * Rewrites an xhtml or html dom, removing potentially unsafe constructs that
+ * Rewrites an IHTML DOM, removing potentially unsafe constructs that
  * can be ignored, and issuing errors if the constructs cannot be removed.
  *
  * @author mikesamuel@gmail.com
  */
-public final class HtmlSanitizer {
-  private final MessageQueue mq;
+public final class TemplateSanitizer {
   private final HtmlSchema schema;
+  private final MessageQueue mq;
 
   /**
    * @param schema specifies which tags and attributes are allowed, and which
@@ -48,7 +49,7 @@ public final class HtmlSanitizer {
    * @param mq a message queue that will receive errors on unsafe nodes or
    *   attributes, and warnings on removed nodes.
    */
-  public HtmlSanitizer(HtmlSchema schema, MessageQueue mq) {
+  public TemplateSanitizer(HtmlSchema schema, MessageQueue mq) {
     this.schema = schema;
     this.mq = mq;
   }
@@ -70,50 +71,52 @@ public final class HtmlSanitizer {
       {
         Element el = (Element) t;
         Name tagName = Name.xml(el.getTagName());
-        if (!schema.isElementAllowed(tagName)) {
-          PluginMessageType msgType = schema.lookupElement(tagName) != null
-              ? PluginMessageType.UNSAFE_TAG
-              : PluginMessageType.UNKNOWN_TAG;
+        {
+          if (!schema.isElementAllowed(tagName)) {
+            IhtmlMessageType msgType = schema.lookupElement(tagName) != null
+                ? IhtmlMessageType.UNSAFE_TAG
+                : IhtmlMessageType.UNKNOWN_TAG;
 
-          // Figure out what to do with the disallowed tag.  We can remove it
-          // from the node, replace it with its children (fold), or error out.
-          boolean ignore = false, fold = false;
-          Node p = el.getParentNode();
-          if (p != null) {
-            if (isElementIgnorable(tagName)) {
-              ignore = true;
-            } else if (HtmlSchema.isElementFoldable(tagName)) {
-              fold = true;
-              msgType = PluginMessageType.FOLDING_ELEMENT;
+            // Figure out what to do with the disallowed tag.  We can remove it
+            // from the node, replace it with its children (fold), or error out.
+            boolean ignore = false, fold = false;
+            Node p = el.getParentNode();
+            if (p != null) {
+              if (isElementIgnorable(tagName)) {
+                ignore = true;
+              } else if (HtmlSchema.isElementFoldable(tagName)) {
+                fold = true;
+                msgType = IhtmlMessageType.FOLDING_ELEMENT;
+              }
+            }
+
+            MessageLevel msgLevel
+                = ignore || fold ? MessageLevel.WARNING : msgType.getLevel();
+            mq.getMessages().add(new Message(
+                msgType, msgLevel, Nodes.getFilePositionFor(el), tagName));
+
+            if (ignore) {
+              p.removeChild(el);
+              return valid;  // Don't recurse to children if removed.
+            } else {
+              // According to http://www.w3.org/TR/html401/appendix/notes.html
+              // the recommended behavior is to try to render an unrecognized
+              // element's contents
+              return valid & foldElement(el);
             }
           }
-
-          MessageLevel msgLevel
-              = ignore || fold ? MessageLevel.WARNING : msgType.getLevel();
-          mq.getMessages().add(new Message(
-              msgType, msgLevel, Nodes.getFilePositionFor(el), tagName));
-
-          if (ignore) {
-            p.removeChild(el);
-            return valid;  // Don't recurse to children if removed.
-          } else {
-            // According to
-            // http://www.w3.org/TR/html401/appendix/notes.html the recommended
-            // behavior is to try to render an unrecognized element's contents
-            return valid & foldElement(el);
-          }
+          valid &= sanitizeAttrs(el);
         }
-        valid &= sanitizeAttrs(el);
         // We know by construction of org.w3c.Element that there can only be
         // one attribute with a given name.
         // If that were not the case, passes that only inspect the
         // first occurrence of an attribute could be spoofed.
+        break;
       }
-      break;
-    case Node.TEXT_NODE: case Node.CDATA_SECTION_NODE:
-      break;
-    default:
-      throw new AssertionError(t.getNodeName());
+      case Node.TEXT_NODE: case Node.CDATA_SECTION_NODE:
+        break;
+      default:
+        throw new AssertionError(t.getNodeName());
     }
     for (Node child : Nodes.childrenOf(t)) {
       valid &= sanitize(child);

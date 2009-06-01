@@ -45,13 +45,10 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
     public Reader retrieve(ExternalReference extref, String mimeType)
         throws UriCallbackException {
       if ("file".equals(extref.getUri().getScheme())) {
-        if (extref.getUri().toString().startsWith(
-                TestUtil.getResource(getClass(), "").toString())) {
-          try {
-            return new FileReader(extref.getUri().getPath());
-          } catch (FileNotFoundException ex) {
-            throw new UriCallbackException(extref, ex);
-          }
+        try {
+          return new FileReader(extref.getUri().getPath());
+        } catch (FileNotFoundException ex) {
+          throw new UriCallbackException(extref, ex);
         }
       }
       throw new UriCallbackException(extref);

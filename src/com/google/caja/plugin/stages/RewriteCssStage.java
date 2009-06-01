@@ -14,11 +14,8 @@
 
 package com.google.caja.plugin.stages;
 
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.css.CssTree;
-import com.google.caja.parser.js.Statement;
-import com.google.caja.parser.js.TranslatedCode;
-import com.google.caja.plugin.CssCompiler;
+import com.google.caja.plugin.CssRuleRewriter;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.util.Pipeline;
@@ -32,15 +29,14 @@ import java.util.ListIterator;
  *
  * @author mikesamuel@gmail.com
  */
-public final class CompileCssStage implements Pipeline.Stage<Jobs> {
+public final class RewriteCssStage implements Pipeline.Stage<Jobs> {
   public boolean apply(Jobs jobs) {
     for (ListIterator<Job> it = jobs.getJobs().listIterator(); it.hasNext();) {
       Job job = it.next();
       if (job.getType() != Job.JobType.CSS) { continue; }
-      it.remove();
-      Statement js = new CssCompiler().compileCss(
+
+      new CssRuleRewriter(jobs.getPluginMeta()).rewriteCss(
           job.getRoot().cast(CssTree.StyleSheet.class).node);
-      it.add(new Job(AncestorChain.instance(new TranslatedCode(js))));
     }
     return jobs.hasNoFatalErrors();
   }

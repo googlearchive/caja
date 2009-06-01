@@ -64,10 +64,10 @@ public final class TranslatedCode extends AbstractStatement {
   public Statement getTranslation() { return children().get(0); }
 
   public void render(RenderContext rc) {
-    // FIXME(erights): must emit valid javascript or throw an exception
-    rc.getOut().consume("<<<<");
+    rc.getOut().consume("/* Start translated code */");
+    rc.getOut().consume("throw 'Translated code must never be executed';");
     children().get(0).render(rc);
-    rc.getOut().consume(">>>>");
+    rc.getOut().consume("/* End translated code */");
   }
 
   @Override

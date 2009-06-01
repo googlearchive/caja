@@ -376,9 +376,9 @@
       <include file="${tests}/com/google/caja/plugin/domita_test_untrusted.html"
        />
 
-      <output file="${lib}/com/google/caja/plugin/domita_test.co.js"
+      <output file="${lib}/com/google/caja/plugin/domita_test.co.html"
        language="cajita"/>
-      <output file="${lib}/com/google/caja/plugin/domita_test.vo.js"
+      <output file="${lib}/com/google/caja/plugin/domita_test.vo.html"
        language="valija"/>
     </transform>
     <copy todir="${lib}">
@@ -423,15 +423,8 @@
       <include name="**/caja/util/*.java"/>
       <include name="**/caja/**/*TestCase.java"/>
       <include name="**/caja/**/*Test.java"/>
-      <include name="**/caja/plugin/DomProcessingEventsTestData.java"/>
       <compilerarg line="-Xlint:unchecked"/>
     </javac>
-
-    <genrule class="com.google.caja.plugin.DomProcessingEventsTestData$Builder">
-      <depend
-       file="${lib}/com/google/caja/plugin/DomProcessingEventsTestData.class"/>
-      <output file="${lib}/com/google/caja/plugin/dpe-compiled.js"/>
-    </genrule>
 
     <!-- TODO(mikesamuel): Can we replace these tree copies with something
       - that builds a symlink tree? -->
@@ -509,6 +502,7 @@
       <classpath refid="classpath.compile"/>
       <include name="**/caja/plugin/*.java"/>
       <include name="**/caja/plugin/stages/*.java"/>
+      <include name="**/caja/plugin/templates/*.java"/>
 
       <exclude name="**/caja/plugin/*Main.java"/>
       <exclude name="**/caja/plugin/BuildServiceImplementation.java"/>
@@ -524,6 +518,7 @@
         <include name="**/caja/plugin/html-sanitizer.js"/>
         <include name="**/caja/plugin/unicode.js"/>
         <include name="**/caja/plugin/plugin-base.js"/>
+        <include name="**/caja/plugin/templates/*.json"/>
       </fileset>
     </copy>
   </target>
@@ -664,14 +659,14 @@
   <target name="lolcat-search" depends="dirs,pluginc,MinifiedJs"
    description="IM IN UR BUILD DEMOING UR GADGETZ">
     <transform>
-      <output file="${www}/lolcat-search/searchbox.co.js"
+      <output file="${www}/lolcat-search/searchbox.co.html"
        language="cajita"/>
       <include file="${demos}/lolcat-search/searchbox.html"/>
       <depend file="${demos}/lolcat-search/searchbox.css"/>
       <depend file="${demos}/lolcat-search/searchbox.js"/>
     </transform>
     <transform>
-      <output file="${www}/lolcat-search/kittens.co.js" language="cajita"/>
+      <output file="${www}/lolcat-search/kittens.co.html" language="cajita"/>
       <include file="${demos}/lolcat-search/kittens.html"/>
       <depend file="${demos}/lolcat-search/katTranzlator.js"/>
       <depend file="${demos}/lolcat-search/kittens.js"/>
@@ -701,35 +696,35 @@
   <target name="slides" depends="dirs,pluginc,MinifiedJs,CajoledValija,lolcat-search"
    description="Explain Caja">
     <transform>
-      <output file="${www}/slides/redirection.co.js" language="valija"/>
+      <output file="${www}/slides/redirection.co.html" language="valija"/>
       <include file="${demos}/slides/redirection.html"/>
     </transform>
     <transform>
-      <output file="${www}/slides/history.co.js" language="valija"/>
+      <output file="${www}/slides/history.co.html" language="valija"/>
       <include file="${demos}/slides/history.html"/>
     </transform>
     <transform>
-      <output file="${www}/slides/cookie.co.js" language="valija"/>
+      <output file="${www}/slides/cookie.co.html" language="valija"/>
       <include file="${demos}/slides/cookie.html"/>
     </transform>
     <transform>
-      <output file="${www}/slides/script-injection.co.js" language="valija"/>
+      <output file="${www}/slides/script-injection.co.html" language="valija"/>
       <include file="${demos}/slides/script-injection.html"/>
     </transform>
     <transform>
-      <output file="${www}/slides/tame-alert.co.js" language="valija"/>
+      <output file="${www}/slides/tame-alert.co.html" language="valija"/>
       <include file="${demos}/slides/tame-alert.html"/>
     </transform>
 
     <transform>
-      <output file="${www}/slides/searchbox.co.js"
+      <output file="${www}/slides/searchbox.co.html"
        language="cajita"/>
       <include file="${demos}/lolcat-search/searchbox.html"/>
       <depend file="${demos}/lolcat-search/searchbox.css"/>
       <depend file="${demos}/lolcat-search/searchbox.js"/>
     </transform>
     <transform>
-      <output file="${www}/slides/kittens.co.js" language="cajita"/>
+      <output file="${www}/slides/kittens.co.html" language="cajita"/>
       <include file="${demos}/lolcat-search/kittens.html"/>
       <depend file="${demos}/lolcat-search/katTranzlator.js"/>
       <depend file="${demos}/lolcat-search/kittens.js"/>

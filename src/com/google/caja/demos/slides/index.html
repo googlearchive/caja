@@ -40,6 +40,39 @@
         })(k, console[k] || function () {});
       }
     })();</script>
+
+    <script type="text/javascript">
+      function makeXhr() {
+        if (typeof XMLHttpRequest === 'undefined') {
+          var activeXClassIds = [
+              'MSXML2.XMLHTTP.5.0', 'MSXML2.XMLHTTP.4.0', 'MSXML2.XMLHTTP.3.0',
+              'MSXML2.XMLHTTP', 'MICROSOFT.XMLHTTP.1.0', 'MICROSOFT.XMLHTTP.1',
+              'MICROSOFT.XMLHTTP'];
+          for (var i = 0, n = activeXClassIds.length; i < n; i++) {
+            var candidate = activeXClassIds[i];
+            try {
+              return new ActiveXObject(candidate);
+            } catch (e) {}
+          }
+        }
+        return new XMLHttpRequest;
+      }
+
+      function inlineHtml(href, container) {
+        var xhr = makeXhr();
+        xhr.open('GET', href, false);
+        xhr.send(null);
+        if (xhr.status !== 200 && xhr.status !== 0) {
+          throw new Error('Failed to load ' + href + ' : ' + xhr.status);
+        }
+        var htmlAndScript = xhr.responseText.match(
+            /^([\s\S]*?)<script[^>]*>([\s\S]*?)<\/script>$/);
+        var div = container.ownerDocument.createElement('DIV');
+        div.innerHTML = htmlAndScript[1];
+        while (div.firstChild) { container.appendChild(div.firstChild); }
+        (new Function(htmlAndScript[2]))();
+      }
+    </script>
 <script>
 var valijaMaker = undefined;
 
@@ -260,8 +293,9 @@ var newIsolatedGadget = (function() {
 
         <script type="text/javascript">
             ___.getNewModuleHandler().setImports(kittensImports);
+            inlineHtml('kittens.co.html',
+                document.getElementById('base-kittens'));
         </script>
-        <script type="text/javascript" src="kittens.co.js"></script>
 
 
         <!-- Allow searchBoxImports to talk to kittens. -->
@@ -272,8 +306,9 @@ var newIsolatedGadget = (function() {
 
         <script type="text/javascript">
             ___.getNewModuleHandler().setImports(searchBoxImports);
+            inlineHtml('searchbox.co.html',
+                document.getElementById('base-searchbox'));
         </script>
-        <script type="text/javascript" src=searchbox.co.js></script>
         <div class="handout">
         </div>
     </div>
@@ -305,9 +340,12 @@ var newIsolatedGadget = (function() {
       </div>
       <script type="text/javascript">
       </script>
-      <script type="text/javascript">newIsolatedGadget('attackRedirection');</script>
-      <script src="redirection.co.js"></script>
-      
+      <script type="text/javascript">
+          newIsolatedGadget('attackRedirection');
+          inlineHtml('redirection.co.html',
+              document.getElementById('base-attackRedirection'));
+      </script>
+
       <div class="vbox">
         <div class="hbox">
           <iframe src="redirection.html" frameborder="0" width="100%" height="100%"></iframe>
@@ -343,11 +381,14 @@ var newIsolatedGadget = (function() {
             <div id='base-attackHistory' class="attackHistory"></div>
 	</div>
             </div>
-        <script type="text/javascript">newIsolatedGadget('attackHistory');</script>
-        <script src="history.co.js"></script>
+        <script type="text/javascript">
+            newIsolatedGadget('attackHistory');
+            inlineHtml('history.co.html',
+                document.getElementById('base-attackHistory'));
+        </script>
 
             <div class="vbox">
-	<div class="hbox">
+.co	<div class="hbox">
 	    <iframe src="history.html" frameborder="0" width="100%" height="100%"></iframe>
 	</div>
             </div>
@@ -382,8 +423,11 @@ var visited = computedColor == 'rgb(0, 0, 0)' ? "Yes!" : "Unknown";
 	</div>
             </div>
         <script type="text/javascript">document.cookie = "secret cookie"</script>
-        <script type="text/javascript">newIsolatedGadget('attackCookie');</script>
-        <script src="cookie.co.js"></script>
+        <script type="text/javascript">
+            newIsolatedGadget('attackCookie');
+            inlineHtml('cookie.co.html',
+                document.getElementById('base-attackCookie'));
+        </script>
 
             <div class="vbox">
 	<div class="hbox">
@@ -415,8 +459,11 @@ var visited = computedColor == 'rgb(0, 0, 0)' ? "Yes!" : "Unknown";
             <div id='base-attackScript' class="attackScript"></div>
 	</div>
             </div>
-        <script type="text/javascript">newIsolatedGadget('attackScript');</script>
-        <script src="script-injection.co.js"></script>
+        <script type="text/javascript">
+            newIsolatedGadget('attackScript');
+            inlineHtml('script-injection.co.html',
+                document.getElementById('base-attackScript'));
+        </script>
 
             <div class="vbox">
 	<div class="hbox">

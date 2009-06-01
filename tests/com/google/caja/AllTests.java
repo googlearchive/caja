@@ -60,19 +60,19 @@ import com.google.caja.parser.quasiliteral.RewriterTest;
 import com.google.caja.parser.quasiliteral.ScopeTest;
 import com.google.caja.parser.quasiliteral.TamingTest;
 import com.google.caja.parser.quasiliteral.ValijaModuleLoadingTest;
-import com.google.caja.plugin.CssCompilerTest;
 import com.google.caja.plugin.CssRewriterTest;
+import com.google.caja.plugin.CssRuleRewriterTest;
 import com.google.caja.plugin.CssValidatorTest;
-import com.google.caja.plugin.DomProcessingEventsTest;
 import com.google.caja.plugin.ExpressionSanitizerTest;
 import com.google.caja.plugin.HtmlCompiledPluginTest;
-import com.google.caja.plugin.HtmlCompilerTest;
-import com.google.caja.plugin.HtmlSanitizerTest;
+import com.google.caja.plugin.HtmlEmitterTest;
 import com.google.caja.plugin.JsHtmlSanitizerTest;
 import com.google.caja.plugin.stages.DebuggingSymbolsStageTest;
 import com.google.caja.plugin.stages.InlineCssImportsStageTest;
 import com.google.caja.plugin.stages.OpenTemplateStageTest;
 import com.google.caja.plugin.stages.RewriteHtmlStageTest;
+import com.google.caja.plugin.templates.TemplateCompilerTest;
+import com.google.caja.plugin.templates.TemplateSanitizerTest;
 import com.google.caja.render.JsLinePreservingPrinterTest;
 import com.google.caja.render.JsMinimalPrinterTest;
 import com.google.caja.render.JsPrettyPrinterTest;
@@ -117,12 +117,12 @@ public class AllTests {
           CharProducerTest.class,
           ConfigUtilTest.class,
           ContentTypeCheckTest.class,
-          CssCompilerTest.class,
           CssLexerTest.class,
           CssParserTest.class,
           CssPropertyPatternsTest.class,
           CssPropertySignatureTest.class,
           CssRewriterTest.class,
+          CssRuleRewriterTest.class,
           CssSchemaTest.class,
           CssTreeTest.class,
           CssValidatorTest.class,
@@ -131,7 +131,6 @@ public class AllTests {
           DefaultGadgetRewriterTest.class,
           DefaultValijaRewriterTest.class,
           DomParserTest.class,
-          DomProcessingEventsTest.class,
           EscapingTest.class,
           EventStoreTest.class,
           ExpressionLanguageStageTest.class,
@@ -141,9 +140,8 @@ public class AllTests {
           GadgetParserTest.class,
           HcalTest.class,
           HtmlCompiledPluginTest.class,
-          HtmlCompilerTest.class,
+          HtmlEmitterTest.class,
           HtmlLexerTest.class,
-          HtmlSanitizerTest.class,
           HtmlSchemaTest.class,
           HtmlSnippetProducerTest.class,
           IllegalReferenceCheckRewriterTest.class,
@@ -179,6 +177,8 @@ public class AllTests {
           StringLiteralTest.class,
           StringsTest.class,
           TamingTest.class,
+          TemplateCompilerTest.class,
+          TemplateSanitizerTest.class,
           TestBedTest.class,
           TokenClassificationTest.class,
           UriUtilTest.class,

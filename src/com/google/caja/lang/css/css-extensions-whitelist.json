@@ -4,11 +4,12 @@
   "inherits": ["css21-whitelist.json"],
 
   "allowed": [
-    "border-radius", "content", "filter", "font-stretch",
+    "border-radius", "content", "filter", "font-stretch", "-moz-border-radius",
     "-moz-opacity", "-moz-outline", "-moz-outline-color", "-moz-outline-style",
     "-moz-outline-width", "-o-text-overflow",
     "opacity", "overflow-x", "overflow-y",
-    "text-overflow", "text-shadow", "text-wrap", "word-wrap", "zoom"
+    "text-overflow", "text-shadow", "text-wrap", "-webkit-border-radius",
+    "word-wrap", "zoom"
   ],
 
   "denied": [

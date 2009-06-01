@@ -112,8 +112,10 @@ abstract class AbstractElementStack implements OpenElementStack {
           if (rootPos.endCharInFile() <= 1) {
             rootPos = Nodes.getFilePositionFor(rootElement.getFirstChild());
           }
-          Nodes.setFilePositionFor(
-              rootElement, FilePosition.span(rootPos, endPos));
+          if (rootPos.startCharInFile() <= endPos.startCharInFile()) {
+            Nodes.setFilePositionFor(
+                rootElement, FilePosition.span(rootPos, endPos));
+          }
         }
       }
     }

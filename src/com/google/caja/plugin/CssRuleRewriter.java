@@ -22,11 +22,7 @@ import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.ExpressionStmt;
-import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.quasiliteral.QuasiBuilder;
-import com.google.caja.parser.quasiliteral.ReservedNames;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.CssPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
@@ -43,7 +39,7 @@ import java.util.List;
  *
  * @author mikesamuel@gmail.com
  */
-public final class CssCompiler {
+public final class CssRuleRewriter {
   /**
    * A string that will not pass {@link CssRewriter#removeForbiddenIdents}, but
    * which can be used as a suffix for identifiers and class literals that need
@@ -51,10 +47,17 @@ public final class CssCompiler {
    */
   private static final String GADGET_ID_PLACEHOLDER = "___GADGET___";
 
+  private final String gadgetNameSuffix;
+
+  public CssRuleRewriter(PluginMeta meta) {
+    String idSuffix = meta.getIdClass();
+    this.gadgetNameSuffix = idSuffix != null ? idSuffix : GADGET_ID_PLACEHOLDER;
+  }
+
   /**
    * @param ss modified destructively.
    */
-  public Statement compileCss(CssTree.StyleSheet ss) {
+  public void rewriteCss(CssTree.StyleSheet ss) {
     //     '#foo {}'                                        ; The original rule
     // =>  '#foo-' + IMPORTS___.getIdClass___() + ' {}'     ; Cajoled rule
     // =>  '#foo-gadget123___ {}'                           ; In the browser
@@ -65,11 +68,6 @@ public final class CssCompiler {
     // =>  '.' + IMPORTS___.getIdClass___() + '___ p { }'   ; Cajoled rule
     // =>  '.gadget123___ p { }'                            ; In the browser
     restrictRulesToSubtreeWithGadgetClass(ss);
-    // Convert the CSS to JavaScript which emits the same styles.
-    //     'p { }'
-    // =>  'IMPORTS___.emitCss___(
-    //         ['.',' p { }'].join(IMPORTS___.getIdClass___()))
-    return cssToJs(ss);
   }
 
   private void rewriteIds(CssTree.StyleSheet ss) {
@@ -86,7 +84,7 @@ public final class CssCompiler {
                 CssTree.IdLiteral idLit = (CssTree.IdLiteral) child;
                 idLit.setValue(
                     "#" + idLit.getValue().substring(1)
-                    + "-" + GADGET_ID_PLACEHOLDER);
+                    + "-" + gadgetNameSuffix);
               }
             }
             return true;
@@ -121,7 +119,7 @@ public final class CssCompiler {
                 pos, CssTree.Combinator.DESCENDANT);
 
             CssTree.ClassLiteral restrictClass = new CssTree.ClassLiteral(
-                pos, "." + GADGET_ID_PLACEHOLDER);
+                pos, "." + gadgetNameSuffix);
             CssTree.SimpleSelector restrictSel = new CssTree.SimpleSelector(
                 pos, Collections.singletonList(restrictClass));
 
@@ -134,7 +132,14 @@ public final class CssCompiler {
         }, null);
   }
 
-  private Statement cssToJs(CssTree.StyleSheet ss) {
+  /**
+   * Returns an array containing chunks of CSS text that can be joined on a
+   * CSS identifier to yield sandboxed CSS.
+   * This can be used client side with the {@code emitCss___} method defined in
+   * "domita.js".
+   * @param ss a rewritten stylesheet.
+   */
+  public static ArrayConstructor cssToJs(CssTree.StyleSheet ss) {
     // Render the CSS to a string, split it (effectively) on the
     // GADGET_ID_PLACEHOLDER to get an array of strings, and produce JavaScript
     // which joins it on the actual gadget id which is chosen at runtime.
@@ -180,24 +185,7 @@ public final class CssCompiler {
     ss.render(new RenderContext(cssCompiler));
     cssCompiler.noMoreTokens();
 
-    ArrayConstructor cssPartsArray = new ArrayConstructor(
-        ss.getFilePosition(), cssParts);
-    // The CSS rule
-    //     p { color: purple }
-    // is converted to the JavaScript
-    //     IMPORTS___.emitCss___(
-    //         ['.', ' p { color: purple }']
-    //         .join(IMPORTS___.getIdClass___()));
-    //
-    // If IMPORTS___.getIdClass() returns "g123___", then the resulting
-    //     .g123___ p { color: purple }
-    // will only make purple paragraphs that are under a node with class g123__.
-    return new ExpressionStmt(
-        ss.getFilePosition(),
-        (Expression) QuasiBuilder.substV(
-            ReservedNames.IMPORTS + ".emitCss___(@cssParts./*@synthetic*/join("
-            + ReservedNames.IMPORTS + ".getIdClass___()))",
-            "cssParts", cssPartsArray));
+    return new ArrayConstructor(ss.getFilePosition(), cssParts);
   }
 
 

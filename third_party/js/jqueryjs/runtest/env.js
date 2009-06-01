@@ -278,7 +278,7 @@ var window = this;
     },
     get outerHTML(){
       return Array.prototype.map.call(
-        this, function(node){return node.outerHTML;}).join('');
+          this, function(node){ return node.outerHTML; }).join('');
     }
   };
 
@@ -545,6 +545,9 @@ var window = this;
     },
     removeChild: function(node){
       this._dom.removeChild( node._dom );
+    },
+    replaceChild: function (replacement, child) {
+      this._dom.replaceChild(replacement._dom, child._dom);
     },
 
     getElementsByTagName: DOMDocument.prototype.getElementsByTagName,

@@ -111,6 +111,10 @@ public enum Keyword implements MessagePart {
   @Override
   public String toString() { return keywordText; }
 
+  public static boolean isIdentifier(String identifier) {
+    return JAVASCRIPT_KEYWORDS.containsKey(identifier);
+  }
+
   public static Keyword fromString(String keywordText) {
     return JAVASCRIPT_KEYWORDS.get(keywordText);
   }

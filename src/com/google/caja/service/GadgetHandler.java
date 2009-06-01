@@ -20,6 +20,7 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.opensocial.DefaultGadgetRewriter;
 import com.google.caja.opensocial.GadgetRewriteException;
 import com.google.caja.opensocial.UriCallback;
+import com.google.caja.opensocial.UriCallbackException;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.reporting.BuildInfo;
@@ -36,12 +37,15 @@ import java.net.URLEncoder;
 
 public class GadgetHandler implements ContentHandler {
   private final BuildInfo buildInfo;
+  private final UriCallback retriever;
 
-  public GadgetHandler(BuildInfo buildInfo) {
+  public GadgetHandler(BuildInfo buildInfo, UriCallback retriever) {
     this.buildInfo = buildInfo;
+    this.retriever = retriever;
   }
 
-  public boolean canHandle(URI uri, CajolingService.Transform transform,
+  public boolean canHandle(
+      URI uri, CajolingService.Transform transform,
       String contentType, ContentTypeCheck checker) {
     return checker.check("application/xml", contentType);
   }
@@ -75,8 +79,9 @@ public class GadgetHandler implements ContentHandler {
     DefaultGadgetRewriter rewriter = new DefaultGadgetRewriter(buildInfo, mq);
 
     UriCallback uriCallback = new UriCallback() {
-      public Reader retrieve(ExternalReference extref, String mimeType) {
-        return null;
+      public Reader retrieve(ExternalReference extref, String mimeType)
+          throws UriCallbackException {
+        return retriever != null ? retriever.retrieve(extref, mimeType) : null;
       }
 
       public URI rewrite(ExternalReference extref, String mimeType) {

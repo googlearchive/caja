@@ -81,9 +81,9 @@ public final class UncajoledModule extends AbstractParseTreeNode {
   }
 
   public void render(RenderContext rc) {
-    // FIXME(erights): must emit valid javascript or throw an exception
-    rc.getOut().consume("<<<<");
-    children().get(0).render(rc);
-    rc.getOut().consume(">>>>");
+    rc.getOut().consume("/* Start Uncajoled Module */");
+    rc.getOut().consume("throw 'Uncajoled Module must never be executed';");
+    getModuleBody().render(rc);
+    rc.getOut().consume("/* End Uncajoled Module */");
   }
 }

@@ -21,6 +21,8 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Minify;
 import com.google.caja.parser.js.Statement;
@@ -58,6 +60,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 /**
  * Build integration to {@link PluginCompiler} and {@link Minify}.
@@ -130,7 +136,8 @@ public class BuildServiceImplementation implements BuildService {
     // Set up the cajoler
     String language = (String) options.get("language");
     boolean passed = true;
-    ParseTreeNode cajoled;
+    ParseTreeNode outputJs;
+    Node outputHtml;
     if (!"javascript".equals(language)) {
       PluginMeta meta = new PluginMeta(env);
       meta.setDebugMode(Boolean.TRUE.equals(options.get("debug")));
@@ -164,7 +171,8 @@ public class BuildServiceImplementation implements BuildService {
       // Cajole
       passed = passed && compiler.run();
 
-      cajoled = passed ? compiler.getJavascript() : null;
+      outputJs = passed ? compiler.getJavascript() : null;
+      outputHtml = passed ? compiler.getStaticHtml() : null;
     } else {
       Block block = new Block();
       passed = true;
@@ -188,7 +196,8 @@ public class BuildServiceImplementation implements BuildService {
           }
         }
       }
-      cajoled = block;
+      outputJs = block;
+      outputHtml = null;
     }
 
     // Log messages
@@ -204,23 +213,47 @@ public class BuildServiceImplementation implements BuildService {
 
     // Write the output
     if (passed) {
-      StringBuilder out = new StringBuilder();
+      // Write out as HTML if the output file has the right extension.
+      boolean asXml = output.getName().endsWith(".xhtml");
+      boolean emitMarkup = asXml || output.getName().endsWith(".html");
+
+      StringBuilder jsOut = new StringBuilder();
       TokenConsumer renderer;
       String rendererType = (String) options.get("renderer");
       if ("pretty".equals(rendererType)) {
-        renderer = new JsPrettyPrinter(new Concatenator(out));
+        renderer = new JsPrettyPrinter(new Concatenator(jsOut));
       } else if ("minify".equals(rendererType)) {
-        renderer = new JsMinimalPrinter(new Concatenator(out));
+        renderer = new JsMinimalPrinter(new Concatenator(jsOut));
       } else {
         throw new RuntimeException("Unrecognized renderer " + rendererType);
       }
-      RenderContext rc = new RenderContext(renderer);
-      cajoled.render(rc);
+      RenderContext rc = new RenderContext(renderer).withEmbeddable(emitMarkup);
+      outputJs.render(rc);
       rc.getOut().noMoreTokens();
+
+      String htmlOut = "";
+      if (outputHtml != null) {
+        htmlOut = Nodes.render(outputHtml, asXml);
+      }
+
+      String translatedCode;
+      if (emitMarkup) {
+        Document doc = DomParser.makeDocument(null, null);
+        Element script = doc.createElement("script");
+        script.setAttribute("type", "text/javascript");
+        script.appendChild(doc.createCDATASection(jsOut.toString()));
+        translatedCode = htmlOut + Nodes.render(script, asXml);
+      } else {
+        if (!"".equals(htmlOut)) {
+          throw new RuntimeException("Can't emit HTML to " + output);
+        }
+        translatedCode = jsOut.toString();
+      }
+
       try {
         Writer w = new OutputStreamWriter(new FileOutputStream(output));
         try {
-          w.write(out.toString());
+          w.write(translatedCode);
         } finally {
           w.close();
         }

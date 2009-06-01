@@ -441,10 +441,10 @@ public final class CssRewriter {
 
             String uriStr = content.getValue();
             try {
-              URI uri = new URI(uriStr);
-              ExternalReference ref
-                  = new ExternalReference(uri, content.getFilePosition());
-              // the same url check as GxpCompiler
+              URI baseUri = content.getFilePosition().source().getUri();
+              URI uri = baseUri.resolve(new URI(uriStr));
+              ExternalReference ref = new ExternalReference(
+                  uri, content.getFilePosition());
               if (meta.getPluginEnvironment().rewriteUri(ref, "image/*")
                   == null) {
                 removeMsg = new Message(
@@ -534,12 +534,13 @@ public final class CssRewriter {
 
               String uriStr = content.getValue();
               try {
-                URI uri = new URI(uriStr);
+                URI baseUri = content.getFilePosition().source().getUri();
+                URI uri = baseUri.resolve(new URI(uriStr));
                 // Rewrite the URI.
-                // TODO(mikesamuel): for content: and other uri types, use
+                // TODO(mikesamuel): for content: and other URI types, use
                 // mime-type of text/*.
-                ExternalReference ref
-                    = new ExternalReference(uri, content.getFilePosition());
+                ExternalReference ref = new ExternalReference(
+                    uri, content.getFilePosition());
                 String rewrittenUri = meta.getPluginEnvironment().rewriteUri(
                     ref, "image/*");
                 CssTree.UriLiteral replacement = new CssTree.UriLiteral(

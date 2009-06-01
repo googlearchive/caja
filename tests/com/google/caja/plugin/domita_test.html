@@ -122,6 +122,37 @@
             + ' onerror="console.error(this.src)"><\/script>');
       }
 
+      function makeXhr() {
+        if (typeof XMLHttpRequest === 'undefined') {
+          var activeXClassIds = [
+              'MSXML2.XMLHTTP.5.0', 'MSXML2.XMLHTTP.4.0', 'MSXML2.XMLHTTP.3.0',
+              'MSXML2.XMLHTTP', 'MICROSOFT.XMLHTTP.1.0', 'MICROSOFT.XMLHTTP.1',
+              'MICROSOFT.XMLHTTP'];
+          for (var i = 0, n = activeXClassIds.length; i < n; i++) {
+            var candidate = activeXClassIds[i];
+            try {
+              return new ActiveXObject(candidate);
+            } catch (e) {}
+          }
+        }
+        return new XMLHttpRequest;
+      }
+
+      function inlineHtml(href, container) {
+        var xhr = makeXhr();
+        xhr.open('GET', href, false);
+        xhr.send(null);
+        if (xhr.status !== 200 && xhr.status !== 0) {
+          throw new Error('Failed to load ' + href + ' : ' + xhr.status);
+        }
+        var htmlAndScript = xhr.responseText.match(
+            /^([\s\S]*?)<script[^>]*>([\s\S]*?)<\/script>$/);
+        var div = container.ownerDocument.createElement('DIV');
+        div.innerHTML = htmlAndScript[1];
+        while (div.firstChild) { container.appendChild(div.firstChild); }
+        (new Function(htmlAndScript[2]))();
+      }
+
       var isValija = /[&?]valija([=&]|$)/.test(location.search);
     </script>
 
@@ -347,11 +378,10 @@
         testImports.$v = valijaMaker.CALL___(testImports.outers);
       }
       window.toString = function () { return '[WINDOW]'; };
-    })();</script>
 
-    <script type="text/javascript">
-    loadScript(isValija ? 'domita_test.vo.js' : 'domita_test.co.js');
-    </script>
+      inlineHtml(isValija ? 'domita_test.vo.html' : 'domita_test.co.html',
+          testDomContainer);
+    })(); </script>
 
   </body>
 </html>

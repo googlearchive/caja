@@ -41,6 +41,11 @@ public final class ExpressionStmt extends AbstractStatement {
     appendChild(expr);
   }
 
+  public ExpressionStmt(Expression expr) {
+    super(expr.getFilePosition(), Expression.class);
+    appendChild(expr);
+  }
+
   @Override
   protected void childrenChanged() {
     super.childrenChanged();

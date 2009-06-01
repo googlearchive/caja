@@ -433,6 +433,10 @@ function JsUnitException(comment, message) {
     this.jsUnitMessage = message;
     this.stackTrace = getStackTrace();
 }
+JsUnitException.prototype.toString = function () {
+  return ('[JsUnitException ' + (this.comment || '')
+          + ' : ' + this.jsUnitMessage + '\n' + this.stackTrace + ']');
+};
 
 function warn() {
     if (top.tracer != null)

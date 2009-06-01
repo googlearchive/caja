@@ -33,6 +33,7 @@ import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.plugin.Dom;
+import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginEnvironment;
@@ -81,29 +82,15 @@ import org.w3c.dom.Text;
  */
 public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
 
-  /**
-   * A user data property of an Element that points to the body of an extracted
-   * script tag.
-   */
-  private static final String EXTRACTED_SCRIPT_BODY = "caja:extractedScript";
-
-  /**
-   * The body of a script tag extracted.  Script elements are replaced with
-   * place-holder span elements that have the extracted script associated with
-   * them.
-   */
-  public static final Block extractedScriptFor(Element el) {
-    return (Block) el.getUserData(EXTRACTED_SCRIPT_BODY);
-  }
-
   public boolean apply(Jobs jobs) {
     for (Job job : jobs.getJobsByType(Job.JobType.HTML)) {
-      rewriteDomTree(((Dom) job.getRoot().node).getValue(), jobs);
+      Node root = ((Dom) job.getRoot().node).getValue();
+      rewriteDomTree(root, root, jobs);
     }
     return jobs.hasNoFatalErrors();
   }
 
-  void rewriteDomTree(Node n, Jobs jobs) {
+  void rewriteDomTree(Node root, Node n, Jobs jobs) {
     // Rewrite styles and scripts.
     // <script>foo()</script>  ->  <script>(cajoled foo)</script>
     // <style>foo { ... }</style>  ->  <style>foo { ... }</style>
@@ -114,7 +101,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       Element el = (Element) n;
       String name = el.getTagName();
       if ("script".equals(name)) {
-        rewriteScriptTag(el, jobs);
+        rewriteScriptTag(root, el, jobs);
       } else if ("style".equals(name)) {
         rewriteStyleTag(el, jobs);
       } else if ("link".equals(name)) {
@@ -124,11 +111,11 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       }
     }
     for (Node child : Nodes.childrenOf(n)) {
-      rewriteDomTree(child, jobs);
+      rewriteDomTree(root, child, jobs);
     }
   }
 
-  private void rewriteScriptTag(Element scriptTag, Jobs jobs) {
+  private void rewriteScriptTag(Node root, Element scriptTag, Jobs jobs) {
     Node parent = scriptTag.getParentNode();
     PluginEnvironment env = jobs.getPluginMeta().getPluginEnvironment();
 
@@ -180,7 +167,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
         parent.removeChild(scriptTag);
         jobs.getMessageQueue().addMessage(
             PluginMessageType.FAILED_TO_LOAD_EXTERNAL_URL,
-            srcPos, MessagePart.Factory.valueOf("" + srcUri));
+            srcValuePos, MessagePart.Factory.valueOf("" + srcUri));
         return;
       }
       scriptPos = null;
@@ -207,10 +194,17 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     // the extract scripts with the scripts that generate markup.
     Element placeholder = parent.getOwnerDocument().createElement("span");
     Nodes.setFilePositionFor(placeholder, Nodes.getFilePositionFor(scriptTag));
-    placeholder.setUserData(EXTRACTED_SCRIPT_BODY, parsedScriptBody, null);
+    ExtractedHtmlContent.setExtractedScriptFor(
+        placeholder, parsedScriptBody);
 
-    // Replace the external script tag with the inlined script.
-    parent.replaceChild(placeholder, scriptTag);
+    // Replace the script tag with a placeholder that points to the inlined
+    // script.
+    if (Strings.equalsIgnoreCase("defer", scriptTag.getAttribute("defer"))) {
+      parent.removeChild(scriptTag);
+      root.appendChild(placeholder);
+    } else {
+      parent.replaceChild(placeholder, scriptTag);
+    }
   }
 
   private void rewriteStyleTag(Element styleTag, Jobs jobs) {
@@ -270,7 +264,7 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
     if (cssStream == null) {
       jobs.getMessageQueue().addMessage(
           PluginMessageType.FAILED_TO_LOAD_EXTERNAL_URL,
-          Nodes.getFilePositionFor(href),
+          Nodes.getFilePositionForValue(href),
           MessagePart.Factory.valueOf("" + hrefUri));
       return;
     }

@@ -63,6 +63,7 @@ import java.util.Set;
  */
 public class CajaApplet extends Applet {
   private final boolean standAlone;
+  private BuildInfo buildInfo = BuildInfo.getInstance();
 
   public CajaApplet() {
     standAlone = false;
@@ -71,6 +72,8 @@ public class CajaApplet extends Applet {
   public CajaApplet(boolean standalone) {
     this.standAlone = standalone;
   }
+
+  void setBuildInfo(BuildInfo buildInfo) { this.buildInfo = buildInfo; }
 
   @Override
   public String getAppletInfo() {
@@ -138,7 +141,7 @@ public class CajaApplet extends Applet {
   }
 
   public String getVersion() {
-    return BuildInfo.getInstance().getBuildInfo();
+    return buildInfo.getBuildInfo();
   }
 
   private Object[] runCajoler(String cajaInput, UriCallback uriCallback,
@@ -160,7 +163,7 @@ public class CajaApplet extends Applet {
 
     MessageQueue mq = new SimpleMessageQueue();
     DefaultGadgetRewriter rw =
-        new DefaultGadgetRewriter(BuildInfo.getInstance(), mq) {
+        new DefaultGadgetRewriter(buildInfo, mq) {
           @Override
           protected RenderContext createRenderContext(TokenConsumer out) {
             return new RenderContext(out)

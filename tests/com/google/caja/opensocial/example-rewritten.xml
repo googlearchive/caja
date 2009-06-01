@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5" /></ModulePrefs><Content type="html"><![CDATA[<script type="text/javascript">{ ___.loadModule({
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5" /></ModulePrefs><Content type="html"><![CDATA[<p class="p1 p2"><span id="id_2___">Paragraph 1</span></p><p id="id_3___"><span id="id_4___">Paragraph 2</span></p><p><a id="id_5___" target="_blank">Paragraph 3</a></p><a href="http://url-proxy.test.google.com/?url=http%3A%2F%2Ffoo.com%2F&amp;mime-type=%2A%2F%2A" target="_blank">External URL.  Apply URICallback.rewrite to me.</a><script type="text/javascript">{
+___.loadModule({
                  'instantiate': function (___, IMPORTS___) {
                    var moduleResult___ = ___.NO_RESULT;
                    var alert = ___.readImport(IMPORTS___, 'alert');
@@ -7,16 +8,19 @@
                    var outers = ___.readImport(IMPORTS___, 'outers');
                    var externalScript;
                    var x0___;
-                   IMPORTS___.emitCss___([ '.', ' #p3-', ' {\n  color: red\n}' ].join(IMPORTS___.getIdClass___()));
-                   IMPORTS___.emitCss___([ '@media print {\n  .', ' #p3-', ' {\n    font-weight: bold;\n    color: black\n  }\n}' ].join(IMPORTS___.getIdClass___()));
-                   IMPORTS___.emitCss___([ '@media print, screen {\n  .', ' .p4 {\n    font-weight: bold\n  }\n}' ].join(IMPORTS___.getIdClass___()));
-                   IMPORTS___.emitCss___([ '.', ' .p1 {\n  color: red\n}' ].join(IMPORTS___.getIdClass___()));
+                   IMPORTS___.emitCss___([ '.', ' #p3-',
+                       ' {\n  color: red\n}\n@media print {\n  .', ' #p3-',
+                       ' {\n    font-weight: bold;\n    color: black\n  }\n}\n@media print, screen {\n  .',
+                       ' .p4 {\n    font-weight: bold\n  }\n}\n.',
+                       ' .p1 {\n  color: red\n}' ].join(IMPORTS___.getIdClass___()));
                    {
                      IMPORTS___.c_1___ = ___.frozenFunc(function (event, thisNode___) {
                                                           handleClicky.CALL___();
                                                         });
+                     var el___;
+                     var emitter___ = IMPORTS___.htmlEmitter___;
+                     emitter___.unwrap(emitter___.attach('id_2___'));
                    }
-                   IMPORTS___.htmlEmitter___.pc('\n\n    \n    \n\n    \n    \n\n    \n    \n\n    \n    ').b('p').a('class', 'p1 p2').f(false).ih('Paragraph 1').e('p').pc('\n\n    ');
                    try {
                      {
                        externalScript = (function () {
@@ -24,12 +28,17 @@
                                              alert.CALL___('external script');
                                            }
                                            return ___.func(externalScript$_self, 'externalScript');
-                                         })();;
+                                         })();
                      }
                    } catch (ex___) {
                      ___.getNewModuleHandler().handleUncaughtException(ex___, onerror, 'external-script.js', '2');
                    }
-                   IMPORTS___.htmlEmitter___.pc('\n\n    \n    ').b('p').a('id', 'p3-' + IMPORTS___.getIdClass___()).f(false).ih('Paragraph 2').e('p').pc('\n\n    \n    \n\n    \n    \n    ');
+                   {
+                     el___ = emitter___.byId('id_3___');
+                     emitter___.setAttr(el___, 'id', 'p3-' +
+                                            IMPORTS___.getIdClass___());
+                     emitter___.unwrap(emitter___.attach('id_4___'));
+                   }
                    try {
                      {
                        moduleResult___ = (x0___ = (
@@ -43,7 +52,14 @@
                    } catch (ex___) {
                      ___.getNewModuleHandler().handleUncaughtException(ex___, onerror, 'example.xml', '37');
                    }
-                   IMPORTS___.htmlEmitter___.pc('\n\n    ').b('p').f(false).b('a').h('onclick', 'return plugin_dispatchEvent___(this, event, ' + ___.getId(IMPORTS___) + ', \'c_1___\')').f(false).ih('Paragraph 3').e('a').e('p').pc('\n\n    ').b('a').a('href', 'http://url-proxy.test.google.com/?url=http%3A%2F%2Ffoo.com%2F&mime-type=*%2F*').a('target', '_blank').f(false).ih('External URL.  Apply URICallback.rewrite to me.').e('a').pc('\n\n    \n    \n\n    \n    \n    \n\n  ').cd();
+                   {
+                     el___ = emitter___.byId('id_5___');
+                     emitter___.setAttr(el___, 'onclick',
+                         'return plugin_dispatchEvent___(this, event, ' +
+                         ___.getId(IMPORTS___) + ', \'c_1___\');');
+                     el___.removeAttribute('id');
+                     el___ = emitter___.finish();
+                   }
                    return moduleResult___;
                  },
                  'cajolerName': 'com.google.caja',

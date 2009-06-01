@@ -20,12 +20,12 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.plugin.stages.CheckForErrorsStage;
-import com.google.caja.plugin.stages.CompileCssStage;
 import com.google.caja.plugin.stages.CompileHtmlStage;
 import com.google.caja.plugin.stages.ConsolidateCodeStage;
 import com.google.caja.plugin.stages.DebuggingSymbolsStage;
 import com.google.caja.plugin.stages.InferFilePositionsStage;
 import com.google.caja.plugin.stages.OpenTemplateStage;
+import com.google.caja.plugin.stages.RewriteCssStage;
 import com.google.caja.plugin.stages.RewriteHtmlStage;
 import com.google.caja.plugin.stages.SanitizeHtmlStage;
 import com.google.caja.plugin.stages.ValidateCssStage;
@@ -41,9 +41,11 @@ import com.google.caja.util.Pipeline;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.w3c.dom.Node;
+
 /**
- * Compiles a bundle of css, javascript, and gxp files to a sandboxed javascript
- * and css widget.
+ * Compiles a bundle of CSS, javascript, and HTML files to a sandboxed
+ * javascript and HTML widget.
  *
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
@@ -81,12 +83,12 @@ public final class PluginCompiler {
 
   public void setCssSchema(CssSchema cssSchema) {
     this.cssSchema = cssSchema;
-    compilationPipeline = null;
+    this.compilationPipeline = null;
   }
 
   public void setHtmlSchema(HtmlSchema htmlSchema) {
     this.htmlSchema = htmlSchema;
-    compilationPipeline = null;
+    this.compilationPipeline = null;
   }
 
   public void addInput(AncestorChain<?> input) {
@@ -123,10 +125,10 @@ public final class PluginCompiler {
     List<Pipeline.Stage<Jobs>> stages = compilationPipeline.getStages();
     stages.add(new RewriteHtmlStage());
     stages.add(new SanitizeHtmlStage(htmlSchema));
+    stages.add(new ValidateCssStage(cssSchema, htmlSchema));
+    stages.add(new RewriteCssStage());
     stages.add(new CompileHtmlStage(cssSchema, htmlSchema));
     stages.add(new OpenTemplateStage());
-    stages.add(new ValidateCssStage(cssSchema, htmlSchema));
-    stages.add(new CompileCssStage());
     stages.add(new ConsolidateCodeStage());
     stages.add(new ValidateJavascriptStage(buildInfo));
     stages.add(new InferFilePositionsStage());
@@ -140,8 +142,24 @@ public final class PluginCompiler {
   }
 
   /**
-   * If the javascript has been compiled and consolidated, return the resulting
-   * parse tree, otherwise return null.
+   * If the HTML has been compiled and consolidated, return the static HTML
+   * portion of the gadget.
+   * @return null if no HTML portion.
+   */
+  public Node getStaticHtml() {
+    Job soleHtmlJob = getConsolidatedOutput(new Criterion<Job>() {
+          public boolean accept(Job job) {
+            return job.getType() == Job.JobType.HTML;
+          }
+        });
+    return soleHtmlJob != null
+        ? soleHtmlJob.getRoot().cast(Dom.class).node.getValue() : null;
+  }
+
+  /**
+   * If the javascript has been compiled and consolidated, return the script
+   * portion of the gadget.
+   * @return null if no javascript portion.
    */
   public CajoledModule getJavascript() {
     Job soleJsJob = getConsolidatedOutput(new Criterion<Job>() {

@@ -44,8 +44,9 @@ public class Escaping {
   public static void escapeJsString(
       CharSequence s, boolean asciiOnly, boolean embeddable, Appendable out)
       throws IOException {
-    new Escaper(s, embeddable ? STRING_EMBEDDABLE_ESCAPES : STRING_MINIMAL_ESCAPES,
-                asciiOnly ? NO_NON_ASCII : ALLOW_NON_ASCII, JS_ENCODER, out)
+    new Escaper(
+        s, embeddable ? STRING_EMBEDDABLE_ESCAPES : STRING_MINIMAL_ESCAPES,
+        asciiOnly ? NO_NON_ASCII : ALLOW_NON_ASCII, JS_ENCODER, out)
         .escape();
   }
 
@@ -99,8 +100,8 @@ public class Escaping {
    * @param asciiOnly Makes sure that only ASCII characters are written to out.
    *     This is a good idea if you don't have control over the charset that
    *     the javascript will be served with.
-   * @param embeddable True to make sure that nothing is written to out that could
-   *     interfere with embedding inside a script tag or CDATA section, or
+   * @param embeddable True to make sure that nothing is written to out that
+   *     could interfere with embedding inside a script tag or CDATA section, or
    *     other tag that typically contains markup.
    *     This does not make it safe to embed in an HTML attribute without
    *     further escaping.
@@ -137,8 +138,8 @@ public class Escaping {
    * @param asciiOnly Makes sure that only ASCII characters are written to out.
    *     This is a good idea if you don't have control over the charset that
    *     the javascript will be served with.
-   * @param embeddable True to make sure that nothing is written to out that could
-   *     interfere with embedding inside a script tag or CDATA section, or
+   * @param embeddable True to make sure that nothing is written to out that
+   *     could interfere with embedding inside a script tag or CDATA section, or
    *     other tag that typically contains markup.
    *     This does not make it safe to embed in an HTML attribute without
    *     further escaping.

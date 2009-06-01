@@ -1,4 +1,4 @@
-// Copyright (C) 2008 Google Inc.
+// Copyright (C) 2009 Google Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.caja.plugin;
+package com.google.caja.plugin.templates;
 
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.parser.html.Nodes;
@@ -27,10 +27,7 @@ import java.util.List;
 
 import org.w3c.dom.Node;
 
-/**
- * @author mikesamuel@gmail.com (Mike Samuel)
- */
-public class HtmlSanitizerTest extends CajaTestCase {
+public class TemplateSanitizerTest extends CajaTestCase {
   public void testSingleElement() throws Exception {
     assertValid(htmlFragment(fromString("<br/>")), "<br />");
   }
@@ -41,9 +38,10 @@ public class HtmlSanitizerTest extends CajaTestCase {
     assertValid(htmlFragment(fromString("<b>Hello</b>")), "<b>Hello</b>");
   }
   public void testUnknownAttribute() throws Exception {
-    assertValid(htmlFragment(fromString("<b unknown=\"bogus\">Hello</b>")),
-                "<b>Hello</b>",
-                "WARNING: removing unknown attribute unknown on b");
+    assertValid(
+        htmlFragment(fromString("<b unknown=\"bogus\">Hello</b>")),
+        "<b>Hello</b>",
+        "WARNING: removing unknown attribute unknown on b");
   }
   public void testKnownAttribute() throws Exception {
     assertValid(htmlFragment(fromString("<b id=\"bold\">Hello</b>")),
@@ -64,37 +62,46 @@ public class HtmlSanitizerTest extends CajaTestCase {
         "WARNING: removing unknown attribute unknown on bogus");
   }
   public void testDisallowedElement() throws Exception {
-    assertValid(htmlFragment(fromString("<script>disallowed</script>")),
-                "disallowed",
-                "WARNING: removing disallowed tag script");
+    assertValid(
+        htmlFragment(fromString("<script>disallowed</script>")),
+        "disallowed",
+        "WARNING: removing disallowed tag script");
   }
   public void testAttributeValidity() throws Exception {
-    assertValid(htmlFragment(fromString("<form><input type=text></form>")),
-                "<form><input type=\"text\" /></form>");
+    assertValid(
+        htmlFragment(fromString("<form><input type=text></form>")),
+        "<form><input type=\"text\" /></form>");
   }
   public void testAttributePatternsTagSpecific() throws Exception {
-    assertValid(htmlFragment(fromString("<input type=text>")),
-                "<input type=\"text\" />");
-    assertValid(htmlFragment(fromString("<button type=submit>")),
-                "<button type=\"submit\"></button>");
-    assertValid(htmlFragment(fromString("<BUTTON TYPE=SUBMIT>")),
-                "<button type=\"SUBMIT\"></button>");
-    assertValid(htmlFragment(fromString("<button type=text>")),
-                "<button></button>",
-                "WARNING: attribute type cannot have value text");
-    assertValid(htmlFragment(fromString("<BUTTON TYPE=TEXT>")),
-                "<button></button>",
-                "WARNING: attribute type cannot have value TEXT");
+    assertValid(
+        htmlFragment(fromString("<input type=text>")),
+        "<input type=\"text\" />");
+    assertValid(
+        htmlFragment(fromString("<button type=submit>")),
+        "<button type=\"submit\" />");
+    assertValid(
+        htmlFragment(fromString("<BUTTON TYPE=SUBMIT>")),
+        "<button type=\"SUBMIT\" />");
+    assertValid(
+        htmlFragment(fromString("<button type=text>")),
+        "<button />",
+        "WARNING: attribute type cannot have value text");
+    assertValid(
+        htmlFragment(fromString("<BUTTON TYPE=TEXT>")),
+        "<button />",
+        "WARNING: attribute type cannot have value TEXT");
   }
   public void testIllegalAttributeValue() throws Exception {
-    assertValid(htmlFragment(fromString("<form><input type=x></form>")),
-                "<form><input /></form>",
-                "WARNING: attribute type cannot have value x");
+    assertValid(
+        htmlFragment(fromString("<form><input type=x></form>")),
+        "<form><input /></form>",
+        "WARNING: attribute type cannot have value x");
   }
   public void testDisallowedElement2() throws Exception {
-    assertValid(htmlFragment(fromString("<xmp>disallowed</xmp>")),
-                "disallowed",
-                "WARNING: removing unknown tag xmp");
+    assertValid(
+        htmlFragment(fromString("<xmp>disallowed</xmp>")),
+        "disallowed",
+        "WARNING: removing unknown tag xmp");
   }
   public void testDisallowedElement3() throws Exception {
     assertValid(
@@ -105,8 +112,9 @@ public class HtmlSanitizerTest extends CajaTestCase {
         "WARNING: removing attribute http-equiv when folding meta into parent");
   }
   public void testDisallowedElement4() throws Exception {
-    assertValid(xmlFragment(fromString("<title>A title</title>")), "",
-                "WARNING: removing disallowed tag title");
+    assertValid(
+        xmlFragment(fromString("<title>A title</title>")), "",
+        "WARNING: removing disallowed tag title");
   }
   public void testElementFolding1() throws Exception {
     assertValid(
@@ -116,50 +124,53 @@ public class HtmlSanitizerTest extends CajaTestCase {
         "WARNING: removing attribute bgcolor when folding body into parent");
   }
   public void testElementFolding2() throws Exception {
-    assertValid(xmlFragment(fromString("<body>Zoicks</body>")),
-                "Zoicks", "WARNING: folding element body into parent");
+    assertValid(
+        xmlFragment(fromString("<body>Zoicks</body>")),
+        "Zoicks", "WARNING: folding element body into parent");
   }
   public void testElementFolding3() throws Exception {
-    assertValid(xmlFragment(fromString(
-                    "<html>"
-                    + "<head>"
-                    + "<title>Blah</title>"
-                    + "<p>Foo</p>"
-                    + "</head>"
-                    + "<body>"
-                    + "<p>One</p>"
-                    + "<p styleo=\"color: red\">Two</p>"
-                    + "Three"
-                    + "<x>Four</x>"
-                    + "</body>"
-                    + "</html>")),
-                "<p>Foo</p><p>One</p><p>Two</p>ThreeFour",
-                "WARNING: folding element html into parent",
-                "WARNING: folding element head into parent",
-                "WARNING: removing disallowed tag title",
-                "WARNING: folding element body into parent",
-                "WARNING: removing unknown attribute styleo on p",
-                "WARNING: removing unknown tag x");
+    assertValid(
+        xmlFragment(fromString(
+            "<html>"
+            + "<head>"
+            + "<title>Blah</title>"
+            + "<p>Foo</p>"
+            + "</head>"
+            + "<body>"
+            + "<p>One</p>"
+            + "<p styleo=\"color: red\">Two</p>"
+            + "Three"
+            + "<x>Four</x>"
+            + "</body>"
+            + "</html>")),
+        "<p>Foo</p><p>One</p><p>Two</p>ThreeFour",
+        "WARNING: folding element html into parent",
+        "WARNING: folding element head into parent",
+        "WARNING: removing disallowed tag title",
+        "WARNING: folding element body into parent",
+        "WARNING: removing unknown attribute styleo on p",
+        "WARNING: removing unknown tag x");
   }
   public void testElementFolding4() throws Exception {
-    assertValid(xmlFragment(fromString(
-                    "<html>"
-                    + "<head>"
-                    + "<title>Blah</title>"
-                    + "<p>Foo</p>"
-                    + "</head>"
-                    + "<body>"
-                    + "<p>One</p>"
-                    + "<p>Two</p>"
-                    + "Three"
-                    + "<p>Four</p>"
-                    + "</body>"
-                    + "</html>")),
-                "<p>Foo</p><p>One</p><p>Two</p>Three<p>Four</p>",
-                "WARNING: folding element html into parent",
-                "WARNING: folding element head into parent",
-                "WARNING: removing disallowed tag title",
-                "WARNING: folding element body into parent");
+    assertValid(
+        xmlFragment(fromString(
+            "<html>"
+            + "<head>"
+            + "<title>Blah</title>"
+            + "<p>Foo</p>"
+            + "</head>"
+            + "<body>"
+            + "<p>One</p>"
+            + "<p>Two</p>"
+            + "Three"
+            + "<p>Four</p>"
+            + "</body>"
+            + "</html>")),
+        "<p>Foo</p><p>One</p><p>Two</p>Three<p>Four</p>",
+        "WARNING: folding element html into parent",
+        "WARNING: folding element head into parent",
+        "WARNING: removing disallowed tag title",
+        "WARNING: folding element body into parent");
   }
   public void testIgnoredElement() throws Exception {
     assertValid(
@@ -196,7 +207,7 @@ public class HtmlSanitizerTest extends CajaTestCase {
   private void sanitize(
       Node input, String golden, boolean valid, String... warnings)
       throws Exception {
-    boolean validated = new HtmlSanitizer(HtmlSchema.getDefault(mq), mq)
+    boolean validated = new TemplateSanitizer(HtmlSchema.getDefault(mq), mq)
         .sanitize(input);
 
     List<String> actualWarnings = new ArrayList<String>();
@@ -213,7 +224,7 @@ public class HtmlSanitizerTest extends CajaTestCase {
     assertEquals(valid, validated);
 
     if (golden != null) {
-      assertEquals(golden, Nodes.render(input));
+      assertEquals(golden, Nodes.render(input, true));
     }
   }
 }

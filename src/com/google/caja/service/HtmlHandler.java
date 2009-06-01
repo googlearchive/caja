@@ -18,19 +18,25 @@ import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
+import com.google.caja.opensocial.UriCallback;
+import com.google.caja.opensocial.UriCallbackException;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.DomParser;
-import com.google.caja.parser.quasiliteral.Rewriter;
+import com.google.caja.parser.html.Nodes;
+import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
+import com.google.caja.render.Concatenator;
+import com.google.caja.render.JsMinimalPrinter;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.util.Pair;
 
@@ -43,6 +49,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
 /**
  * Retrieves html files and cajoles them
  *
@@ -50,31 +60,40 @@ import java.net.URLEncoder;
  */
 public class HtmlHandler implements ContentHandler {
   private final BuildInfo buildInfo;
-  private PluginMeta meta;
+  private final PluginMeta meta;
   private final static String DEFAULT_HOSTED_SERVICE =
     "http://caja.appsport.com/cajoler";
 
   public HtmlHandler(BuildInfo buildInfo) {
-    this(buildInfo, DEFAULT_HOSTED_SERVICE);
+    this(buildInfo, DEFAULT_HOSTED_SERVICE, null);
   }
 
-
-  public HtmlHandler(BuildInfo buildInfo, final String hostedService) {
+  public HtmlHandler(
+      BuildInfo buildInfo, final String hostedService,
+      final UriCallback retriever) {
     this.buildInfo = buildInfo;
     this.meta = new PluginMeta(new PluginEnvironment() {
-      public CharProducer loadExternalResource(ExternalReference ref,
-          String mimeType) {
-        return null;
+      public CharProducer loadExternalResource(
+          ExternalReference ref, String mimeType) {
+        try {
+          Reader in = retriever != null
+              ? retriever.retrieve(ref, mimeType) : null;
+          InputSource is = new InputSource(ref.getUri());
+          return in != null ? CharProducer.Factory.create(in, is) : null;
+        } catch (UriCallbackException ex) {
+          return null;
+        } catch (IOException ex) {
+          return null;
+        }
       }
 
       public String rewriteUri(ExternalReference uri, String mimeType) {
         if (hostedService != null) {
           try {
             return hostedService
-            + "?url="
-            + URLEncoder.encode(uri.getUri().toString(),
-                "UTF-8")
-            + "&mime-type=" + mimeType;
+                + "?url="
+                + URLEncoder.encode(uri.getUri().toString(), "UTF-8")
+                + "&mime-type=" + mimeType;
           } catch (UnsupportedEncodingException e) {
             return null;
           }
@@ -121,8 +140,7 @@ public class HtmlHandler implements ContentHandler {
     }
   }
 
-  private void cajoleHtml(final URI inputUri, Reader cajaInput,
-      Appendable output)
+  private void cajoleHtml(URI inputUri, Reader cajaInput, Appendable output)
       throws IOException, UnsupportedContentTypeException {
     InputSource is = new InputSource (inputUri);
     CharProducer cp = CharProducer.Factory.create(cajaInput,is);
@@ -132,8 +150,8 @@ public class HtmlHandler implements ContentHandler {
       DomParser p = new DomParser(new HtmlLexer(cp), is, mq);
       if (p.getTokenQueue().isEmpty()) { okToContinue = false; }
 
-      ParseTreeNode html = new Dom(p.parseFragment(
-          DomParser.makeDocument(null, null)));
+      Document doc = DomParser.makeDocument(null, null);
+      ParseTreeNode html = new Dom(p.parseFragment(doc));
       p.getTokenQueue().expectEmpty();
 
       PluginCompiler compiler = new PluginCompiler(buildInfo, meta, mq);
@@ -143,7 +161,24 @@ public class HtmlHandler implements ContentHandler {
         okToContinue &= compiler.run();
       }
       if (okToContinue) {
-        output.append(Rewriter.render(compiler.getJavascript()));
+        Node staticHtml = compiler.getStaticHtml();
+        if (staticHtml != null) {
+          output.append(Nodes.render(staticHtml));
+        }
+        CajoledModule js = compiler.getJavascript();
+        if (js != null) {
+          StringBuilder jsOut = new StringBuilder();
+          RenderContext rc = new RenderContext(
+              new JsMinimalPrinter(new Concatenator(jsOut)))
+              .withEmbeddable(true);
+          js.render(rc);
+          rc.getOut().noMoreTokens();
+
+          Element script = doc.createElement("SCRIPT");
+          script.setAttribute("type", "text/javascript");
+          script.appendChild(doc.createTextNode(jsOut.toString()));
+          output.append(Nodes.render(script));
+        }
       } else {
         MessageContext mc = new MessageContext();
         printMessages(mq, mc, System.err);

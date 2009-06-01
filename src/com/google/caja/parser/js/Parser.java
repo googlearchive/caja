@@ -468,14 +468,13 @@ public final class Parser extends ParserBase {
           tq.expectToken(Punctuation.COLON);
           FilePosition colonPos = tq.lastPosition();
           Mark caseBodyStart = tq.mark();
-          List<AbstractStatement> caseBodyContents =
-            new ArrayList<AbstractStatement>();
+          List<Statement> caseBodyContents = new ArrayList<Statement>();
           while (!(tq.lookaheadToken(Keyword.DEFAULT)
                    || tq.lookaheadToken(Keyword.CASE)
                    || tq.lookaheadToken(Punctuation.RCURLY))) {
             caseBodyContents.add(parseTerminatedStatement());
           }
-          AbstractStatement caseBody;
+          Statement caseBody;
           switch (caseBodyContents.size()) {
             case 0:
               caseBody = noop(FilePosition.endOf(colonPos));
@@ -485,7 +484,7 @@ public final class Parser extends ParserBase {
               break;
             default:
               caseBody = new Block(posFrom(caseBodyStart), caseBodyContents);
-              finish(caseBody, caseBodyStart);
+              finish((AbstractParseTreeNode) caseBody, caseBodyStart);
               break;
           }
           SwitchCase caseStmt = (null != caseValue)
@@ -1232,9 +1231,8 @@ public final class Parser extends ParserBase {
             || s instanceof Noop || s instanceof WithStmt;
   }
 
-  private AbstractStatement parseTerminatedStatement()
-      throws ParseException {
-    AbstractStatement s = (AbstractStatement) parseStatement();
+  private Statement parseTerminatedStatement() throws ParseException {
+    Statement s = parseStatement();
     if (!isTerminal(s)) {
       checkSemicolon();
     }
@@ -1243,13 +1241,13 @@ public final class Parser extends ParserBase {
 
   private void checkSemicolon() throws ParseException {
     // Look for a semicolon
-    if (!tq.checkToken(Punctuation.SEMI)) {
-      // none found, so maybe do insertion
-      if (semicolonInserted()) {
-        FilePosition semiPoint = FilePosition.endOf(tq.lastPosition());
-        mq.addMessage(MessageType.SEMICOLON_INSERTED, semiPoint);
-        return;
-      }
+    if (tq.checkToken(Punctuation.SEMI)) { return; }
+    // None found, so maybe do insertion.
+    if (tq.isEmpty()) { return; }
+    if (semicolonInserted()) {
+      FilePosition semiPoint = FilePosition.endOf(tq.lastPosition());
+      mq.addMessage(MessageType.SEMICOLON_INSERTED, semiPoint);
+    } else {
       tq.expectToken(Punctuation.SEMI);  // Just used to throw an exception
     }
   }

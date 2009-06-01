@@ -16,16 +16,16 @@ package com.google.caja.plugin.stages;
 
 import com.google.caja.lang.html.HtmlSchema;
 import com.google.caja.plugin.Dom;
-import com.google.caja.plugin.HtmlSanitizer;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
+import com.google.caja.plugin.templates.TemplateSanitizer;
 import com.google.caja.util.Pipeline;
 
 /**
- * Whitelist html tags and attributes, and supply values for key
+ * Whitelist HTML tags and attributes, and supply values for key
  * attributes that are missing them.
  *
- * @see HtmlSanitizer
+ * @see TemplateSanitizer
  *
  * @author mikesamuel@gmail.com
  */
@@ -38,7 +38,8 @@ public final class SanitizeHtmlStage implements Pipeline.Stage<Jobs> {
   }
 
   public boolean apply(Jobs jobs) {
-    HtmlSanitizer s = new HtmlSanitizer(htmlSchema, jobs.getMessageQueue());
+    TemplateSanitizer s = new TemplateSanitizer(
+        htmlSchema, jobs.getMessageQueue());
 
     boolean valid = true;
     for (Job job : jobs.getJobsByType(Job.JobType.HTML)) {

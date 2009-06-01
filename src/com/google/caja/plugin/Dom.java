@@ -19,6 +19,7 @@ import com.google.caja.parser.AbstractParseTreeNode;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.NoChildren;
 import com.google.caja.render.Concatenator;
+import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 
@@ -47,5 +48,17 @@ public final class Dom extends AbstractParseTreeNode {
 
   public void render(RenderContext r) {
     Nodes.render(n, r);
+  }
+
+  @Override
+  public void formatSelf(MessageContext context, int depth, Appendable out)
+      throws IOException {
+    out.append(this.getClass().getSimpleName()).append(" : ");
+    String html = Nodes.render(n, true)
+        .replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "\\r");
+    if (html.length() > 40) {
+      html = html.substring(0, 37) + "...";
+    }
+    out.append(html);
   }
 }

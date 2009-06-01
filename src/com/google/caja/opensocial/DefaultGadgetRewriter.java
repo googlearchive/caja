@@ -37,7 +37,6 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.BuildInfo;
-import com.google.caja.util.Callback;
 import com.google.caja.util.ReadableReader;
 
 import java.io.IOException;
@@ -47,6 +46,7 @@ import java.net.URI;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 /**
  * A default implementation of the Caja/OpenSocial gadget rewriter.
@@ -150,26 +150,24 @@ public class DefaultGadgetRewriter
 
     StringBuilder script = new StringBuilder();
 
-    Callback<IOException> errorHandler = new Callback<IOException>() {
-      public void handle(IOException ex) {
-        mq.addMessage(MessageType.IO_ERROR,
-                      MessagePart.Factory.valueOf("" + ex));
-      }
-    };
-
     CajoledModule cajoled = compiler.getJavascript();
     if (cajoled != null) {
-      TokenConsumer tc = new JsPrettyPrinter(
-          new Concatenator(script, errorHandler));
+      TokenConsumer tc = new JsPrettyPrinter(new Concatenator(script));
       cajoled.render(createRenderContext(tc));
       tc.noMoreTokens();
     }
+    Node dom = compiler.getStaticHtml();
+    String html = dom != null ? Nodes.render(dom) : "";
 
     if (!compiler.getJobs().hasNoErrors()) {
       throw new GadgetRewriteException();
     }
 
-    return rewriteContent(script.toString());
+    Document doc = dom.getOwnerDocument();
+    Element scriptElement = doc.createElement("script");
+    scriptElement.setAttribute("type", "text/javascript");
+    scriptElement.appendChild(doc.createTextNode(script.toString()));
+    return html + Nodes.render(scriptElement);
   }
 
   private DocumentFragment parseHtml(CharProducer htmlContent, InputSource src)
@@ -196,7 +194,6 @@ public class DefaultGadgetRewriter
               content = callback.retrieve(absRef, mimeType);
               if (content == null) { return null; }
             } catch (UriCallbackException ex) {
-              ex.toMessageQueue(getMessageQueue());
               return null;
             }
             try {
@@ -234,14 +231,6 @@ public class DefaultGadgetRewriter
     }
 
     return compiler;
-  }
-
-  private String rewriteContent(String script) {
-    Document doc = DomParser.makeDocument(null, null);
-    Element scriptElement = doc.createElement("script");
-    scriptElement.setAttribute("type", "text/javascript");
-    scriptElement.appendChild(doc.createTextNode(script));
-    return Nodes.render(scriptElement);
   }
 
   private CharProducer readReadable(Readable input, InputSource src)

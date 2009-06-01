@@ -290,7 +290,7 @@ public class CssRewriterTest extends CajaTestCase {
               public String rewriteUri(ExternalReference ref, String mimeType) {
                 URI uri = ref.getUri();
 
-                if (uri.getScheme() == null
+                if ("test".equals(uri.getScheme())  // Used by CajaTestCase
                     && uri.getHost() == null
                     && uri.getPath() != null
                     && uri.getPath().startsWith("/")) {

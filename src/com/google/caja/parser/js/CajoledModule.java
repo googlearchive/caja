@@ -95,7 +95,6 @@ public final class CajoledModule extends AbstractParseTreeNode {
   }
 
   public void render(RenderContext rc) {
-
     Expression expr = (Expression) QuasiBuilder.substV(
         "___.loadModule(@body)",
         "body", getModuleBody());
@@ -109,8 +108,7 @@ public final class CajoledModule extends AbstractParseTreeNode {
 
   public void renderWithDebugSymbols(
       Map<InputSource, CharSequence> originalSources,
-      Appendable out,
-      Callback<IOException> exHandler) {
+      Appendable out, Callback<IOException> exHandler) {
     // Render the module function. With this, the SourceSpansRenderer captures
     // the rendered form of the function, and also builds the debug information.
     SourceSpansRenderer ssr = new SourceSpansRenderer(

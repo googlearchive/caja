@@ -16,6 +16,7 @@ package com.google.caja.util;
 
 import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.CssTokenType;
+import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.InputSource;
@@ -46,6 +47,8 @@ import com.google.caja.reporting.RenderContext;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.URI;
 
@@ -84,13 +87,22 @@ public abstract class CajaTestCase extends TestCase {
     return CharProducer.Factory.create(new StringReader(content), is);
   }
 
+  protected CharProducer fromString(String content, FilePosition pos) {
+    this.mc.addInputSource(is);
+    return CharProducer.Factory.create(new StringReader(content), pos);
+  }
+
   protected CharProducer fromResource(String resourcePath) throws IOException {
-    URI uri = TestUtil.getResource(getClass(), resourcePath);
-    if (uri == null) {
-      throw new FileNotFoundException(resourcePath);
-    }
-    InputSource is = new InputSource(uri);
-    CharProducer cp = TestUtil.getResourceAsProducer(getClass(), resourcePath);
+    URI resource = TestUtil.getResource(getClass(), resourcePath);
+    if (resource == null) { throw new FileNotFoundException(resourcePath); }
+    return fromResource(resourcePath, new InputSource(resource));
+  }
+
+  protected CharProducer fromResource(String resourcePath, InputSource is)
+      throws IOException {
+    InputStream in = TestUtil.getResourceAsStream(getClass(), resourcePath);
+    CharProducer cp = CharProducer.Factory.create(
+        new InputStreamReader(in, "UTF-8"), is);
     mc.addInputSource(is);
     return cp;
   }
@@ -208,7 +220,7 @@ public abstract class CajaTestCase extends TestCase {
     return CssParser.makeTokenQueue(cp, mq, substs);
   }
 
-  protected String render(ParseTreeNode node) {
+  public static String render(ParseTreeNode node) {
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = node.makeRenderer(sb, null);
     node.render(new RenderContext(tc));

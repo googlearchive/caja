@@ -569,10 +569,15 @@ public class CajitaRewriter extends Rewriter {
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof Block) {
-          List<ParseTreeNode> expanded = new ArrayList<ParseTreeNode>();
+          List<Statement> expanded = new ArrayList<Statement>();
           Scope s2 = Scope.fromPlainBlock(scope);
-          for (ParseTreeNode c : node.children()) {
-            expanded.add(expand(c, s2, mq));
+          for (Statement c : ((Block) node).children()) {
+            ParseTreeNode rewritten = expand(c, s2, mq);
+            if (rewritten.getClass() == Block.class) {
+              expanded.addAll(((Block) rewritten).children());
+            } else if (!(rewritten instanceof Noop)) {
+              expanded.add((Statement) rewritten);
+            }
           }
           return substV(
               "startStmts", new ParseTreeNodeContainer(s2.getStartStatements()),
@@ -2190,13 +2195,12 @@ public class CajitaRewriter extends Rewriter {
             ParseTreeNode pairIn = substSingleMap(keys.get(i), vals.get(i));
             ParseTreeNode pairOut = expand(pairIn, scope, mq);
             Map<String, ParseTreeNode> pairBindings = makeBindings();
-            if (!QuasiBuilder.match("___.initializeMap([@key, @val])", pairOut, pairBindings)) {
+            if (!QuasiBuilder.match("___.initializeMap([@key, @val])",
+                                    pairOut, pairBindings)) {
               mq.addMessage(
                   RewriterMessageType.MAP_RECURSION_FAILED,
                   node.getFilePosition(), node);
-            }
-            // Map recursion may reject invalid map keys
-            if (pairBindings.get("key") != null) {
+            } else {
               items.add(pairBindings.get("key"));
               items.add(pairBindings.get("val"));
             }

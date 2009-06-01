@@ -178,7 +178,7 @@ compiled to.  Template language designers can implement this conversion,
 and the system does not depend on any aspect of this conversion to
 maintain security properties so they need not have a background in security.
 <pre class="prettyprint"
->&lt;template name="helloPlanets">&gt;
+>&lt;template name="helloPlanets"&gt;
   <b>&lt;ul&gt;</b>
     &lt;for-each name="planet" in="planets"&gt;
       <b>&lt;li&gt;</b>
@@ -195,7 +195,7 @@ might compile to
      step="++i"&gt;
       &lt;ihtml:template name="loopbody0" formals="planet"&gt;
         <b>&lt;li&gt;</b>
-          <b>Hello </b>&lt;ihtml:dynamic pcdata="planet"/&gt;
+          <b>Hello </b>&lt;ihtml:dynamic type="pcdata" expr="planet"/&gt;
         <b>&lt;/li&gt;</b>
       &lt;/ihtml:template&gt;
       &lt;ihtml:call ihtml:template="loopbody0" planet="planet"/&gt;
@@ -286,8 +286,9 @@ template call contributes the union of the elements in the template
 body.  Since all template calls are dispatched statically, we can
 preserve containment relationships specified in the HTML schema.
 
-<p>IHTML adds five elements to HTML that can appear anywhere an element can
-appear.
+<p>IHTML adds five elements to HTML that can appear anywhere
+<a href="http://www.w3.org/TR/REC-html40/sgml/dtd.html#special">elements</a>
+can appear.
 
 <h4>Template definition : <code>ihtml:template</code></h4>
 <pre class="prettyprint">
@@ -343,7 +344,7 @@ elements to <code>PRE</code> tags if those need to be supported.
   &lt;p&gt;Evaluated once if init is initially falsey.&lt;/p&gt;
 &lt;/ihtml:do&gt;
 </pre>
- 
+
 <p>Introduces a block scope, and possibly repeatedly evaluates its body.
 <p>The optional <code>vars</code> attribute specifies a set of variables
 that enter scope when the <code>ihtml:do</code> is entered, and which
@@ -366,22 +367,26 @@ Otherwise the body is every child, and the alternate is the empty node list.
 <pre class="prettyprint">
 &lt;a&gt;
   &lt;!-- A link with a dynamic URL --&gt;
-  &lt;ihtml:dynamic attribute="['href', myUrl]" if="myUrl !== null"/&gt;
+  &lt;ihtml:dynamic type="attribute" expr="['href', myUrl]" if="myUrl !== null"/&gt;
   Link Text
 &lt;/a&gt;
 </pre>
 <p>Uses javascript to specify changes to the containing HTML element.
-<p>This element must have exactly one of the following attributes:
+<p>This element must have a <code>type</code> attribute with one of the
+following values, which controls the meaning of the required <code>expr</code>
+attribute:
 <ul>
-  <li><code>pcdata</code> : a javascript expression that is evaluated as a
+  <li><code>pcdata</code> : <code>expr</code> is evaluated as a
       string, escaped using PCDATA escaping contentions and added as a text
       node at the place where the <code>ihtml:dynamic</code> element appears.
       It is an error for this type of dynamic element to appear in a node that
       cannot take PCDATA, though we make an exception for <code>TEXTAREA</code>
-      elements since RCDATA is more restrictive than PCDATA.
-  <li><code>attribute</code> : a javascript expression that evaluates to a
-      <code class="prettyprint">[attributeName, attributeValue]</code> pair.
-  <li><code>tagName</code> : a javascript expression that evaluates to a
+      elements since RCDATA is more restrictive than PCDATA.</li>
+  <li><code>attribute</code> : <code>expr</code> is a javascript expression that
+      evaluates to a
+      <code class="prettyprint">[attributeName, attributeValue]</code>
+      pair.</li>
+  <li><code>tagName</code> : expr is a javascript expression that evaluates to a
       string containing a lower-case HTML 4 element name.
       It must appear as a child of <code>SPAN</code>, <code>DIV</code>,
       <code>TBODY</code>, or <code>TD</code> element, and will cause the
@@ -391,11 +396,11 @@ Otherwise the body is every child, and the alternate is the empty node list.
       The name must be that of an element that can appear wherever the
       original can.  E.g., any inline element may replace a SPAN, any block
       element may replace a DIV, a TH may replace a TD, and a THEAD or TFOOT
-      may replace a TBODY.
+      may replace a TBODY.</li>
 </ul>
 <p>And it may have an <code>if</code> attribute which is a javascript expression
 that is evaluated before the other attributes.  If it evaluates to falsey, then
-the no other javascript expressions are evaluated, and the current evaluation
+the <code>expr</code> expression is not evaluated, and the current evaluation
 has no effect on the output.  If the attribute is not present, its value
 defaults to <code>true</code>.
 
@@ -403,8 +408,8 @@ defaults to <code>true</code>.
 <pre class="prettyprint">
 &lt;ihtml:message name="result_index"
  description="The index of the current result in the result list"&gt;
-  Result &lt;b&gt;&lt;ihtml:ph name="start"/&gt;&lt;ihtml:dynamic text=" i + 1 "/&gt;&lt;ihtml:eph/&gt;&lt;/b&gt;
-  of &lt;b&gt;&lt;ihtml:ph name="end"/&gt;&lt;ihtml:dynamic text=" n "/&gt;&lt;ihtml:eph/&gt;&lt;/b&gt;
+  Result &lt;b&gt;&lt;ihtml:ph name="start"/&gt;&lt;ihtml:dynamic type="pcdata" expr=" i + 1 "/&gt;&lt;ihtml:eph/&gt;&lt;/b&gt;
+  of &lt;b&gt;&lt;ihtml:ph name="end"/&gt;&lt;ihtml:dynamic type="pcdata" expr=" n "/&gt;&lt;ihtml:eph/&gt;&lt;/b&gt;
 &lt;/ihtml:message&gt;
 </pre>
 Marks a passage of human readable text.  Cannot contain other
@@ -457,8 +462,9 @@ It is also more secure since we have the localized strings in context
 before we attempt to do validation.
 
 <p>A message bundle is a mapping from message IDs to strings with
-placeholders like a python substitution string
-<code>"Push &lt;button&gt;%(button_text)s&lt;/button&gt; to send mail to %(recipient)."</code>
+placeholders like
+<code>"Push &lt;button&gt;&lt;ihtml:ph name='button_text'/&gt;&lt;/button&gt; to
+send mail to &lt;ihtml:ph name='recipient'/&gt;."</code>
 where the content is HTML.
 
 <p>The text localizer walks over the IHTML tree replacing
@@ -470,23 +476,24 @@ where the content is HTML.
 &lt;ihtml:message name="greeting"&gt;
   Hello
   &lt;ihtml:ph name="planet"/&gt;
-    &lt;ihtml:dynamic text="planet"/&gt;
+    &lt;ihtml:dynamic type="pcdata" expr="planet"/&gt;
   &lt;ihtml:eph/&gt;!
 &lt;/ihtml:message&gt;
 </pre></td>
 <td>&rarr;</td>
-<td>Greeting in English: <code>"Hello %(planet)s!"</code>
-<br>Greeting in Spanish: <code>"&#xA1;Ola %(planet)s!"</code>
+<td>Greeting in English: <code>"Hello &lt;ihtml:ph name='planet'/&gt;!"</code>
+<br>Greeting in Spanish: <code>"&#xA1;Ola &lt;ihtml:ph name='planet'/&gt;!"</code>
 <br>Locale: es
 <td>&rarr;</td>
 <td><pre class="prettyprint lang-html">
-&#xA1;Ola &lt;ihtml:dynamic text="planet"/&gt;!
+&#xA1;Ola &lt;ihtml:dynamic type="pcdata" expr="planet"/&gt;!
 </pre></td>
 </table>
 by doing the following:
 <ul>
   <li>Extract all placeholders (between
-    <code class="prettyprint">&lt;ihtml:ph name="&hellip;"/&gt;&hellip;&lt;ihtml:eph/&gt;</code>)
+    <code class="prettyprint"
+     >&lt;ihtml:ph name="&hellip;"/&gt;&hellip;&lt;ihtml:eph/&gt;</code>)
     into a map indexed by the <code>ihtml:ph</code>s' name attributes.
     If a name is reused, report an error.
   <li>Lookup the message matching the <code>ihtml:message</code>'s
@@ -494,10 +501,8 @@ by doing the following:
   <li>If the set of placeholder names in the <code>ihtml:message</code> is
     different from that in the message bundle message, report an error.
   <li>Parse the message bundle message to a document fragment, and replace
-    all occurrences of <code>%(&lt;safe-identifier&gt;)s</code> in a text node
-    with the corresponding placeholder extracted in step 1, and replace all
-    occurrences of the string <code>"%%"</code> in a text node with
-    <code>"%"</code>.
+    all <code>ihtml:ph</code> elements with the corresponding placeholder
+    extracted in step 1.
   <li>Replace the <code>ihtml:message</code> element with the document
     fragment's children.
 </ul>
@@ -517,7 +522,7 @@ their templates content (or nothing if recursion would result), all
 <code>ihtml:do</code> were replaced with either their body or
 alternate, and all other <code>ihtml:</code> elements were replaced
 with their children.
-<p>We also assume that 
+<p>We also assume that
 
 <h3>Javascript sandboxing</h3>
 <p>Some of the custom <code>ihtml:</code> elements contain attributes that are
@@ -546,7 +551,7 @@ block scoped language, but the <code>ihtml:template</code> and
 
 <p>After an alpha it becomes trivial to inline <code>ihtml:call</code>s
 which is important since we provide only one operation that can decompose
-the input.  Most looping constructs will need both a 
+the input.
 
 <p>We define a <code>Renaming</code> class,
 <pre class="prettyprint">
@@ -707,9 +712,9 @@ in
 ao(out___, 3, "hello");
 </pre>
 
-<p>When we see an <code>ihtml:dynamic</code> element with a
-<code>pcdata</code> attribute, we invoke the compiler's
-<code>emitHtmlChunk</code> operation wrapping the <code>pcdata</code>
+<p>When we see an <code>ihtml:dynamic</code> element with
+<code>pcdata</code> type attribute, we invoke the compiler's
+<code>emitHtmlChunk</code> operation wrapping the <code>expr</code>
 expression in a call to a javascript function that escapes HTML
 special characters.
 
@@ -743,19 +748,19 @@ quasiliteral
 When we see a non-<code>ihtml</code> element e, do the following:
 <ol>
 <li>Let dTagName be the list of all
-    <code>&lt;ihtml:dynamic tagName="&hellip;"&gt;</code> elements that are
-    direct children of e.
+    <code>&lt;ihtml:dynamic type="tagName" expr="&hellip;"&gt;</code> elements
+    that are direct children of e.
 <li>Let dAttrs be the list of all
-    <code>&lt;ihtml:dynamic attribute="&hellip;"&gt;</code> elements that are
-    direct children of e.
+    <code>&lt;ihtml:dynamic type="attribute" expr="&hellip;"&gt;</code> elements
+    that are direct children of e.
 <li>Let dDynamic be the set of all <code>@name</code> such that an element in
     <code>dAttrs</code> does match the quasiliteral
     <code class="prettyprint">["@name", @value]</code>
 <li>Let rChildren be the list of all direct children not in dTagName or dAttrs.
 <li>Let sAttrs be the set of the names of all attributes on e.
-<li>If dTagName is not null and its size is > 1, issue an error and set dTagName
-    to null.
-<li>If dTagName is not null, invoke <code>emitHtmlChunk('<')</code> followed by
+<li>If dTagName is not null and its size is &gt; 1, issue an error and set
+    dTagName to null.
+<li>If dTagName is not null, invoke <code>emitHtmlChunk('&lt;')</code> followed by
     <pre class="prettyprint">
     emitHtmlChunk(
         QuasiBuilder.substV(
@@ -768,10 +773,10 @@ When we see a non-<code>ihtml</code> element e, do the following:
     the second argument, or raise an exception.
 <li>Else if dAttrNames is not empty,
     <pre class="prettyprint">
-    emitHtmlChunk("<");
+    emitHtmlChunk("&lt;");
     emitHtmlChunk(QuasiBuilder.substV("tn___ = @dTagName",
                   "dTagName", StringLiteral.valueOf(e.getTagName())))</pre>
-<li>Else <code class="prettyprint">emitHtmlChunk("<" + e.getTagName())</code>
+<li>Else <code class="prettyprint">emitHtmlChunk("&lt;" + e.getTagName())</code>
 <li>If dAttrs is not empty, append the statement <code>as___ = {};</code>
 <li>For each element a in dAttrs, append the statement from expanding the
     quasiliteral
@@ -1005,7 +1010,7 @@ attribute</a> when the input locale is for an RTL language.</p>
 (DIV, SPAN, TBODY, TR), we can identify which tag names can safely
 go there by comparing allowed attributes and attribute criteria.
 E.g., we can say that a DIV element can be turned into a P element
-by a <code>&lt;ihtml:dynamic tagName="'P'"&gt;</code> safely since
+by a <code>&lt;ihtml:dynamic type="tagName" expr="'P'"&gt;</code> safely since
 attributes allowed on DIV always have the same meaning on P.
 
 <p>If an HTML element that a template can produce can contain one of any

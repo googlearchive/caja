@@ -71,10 +71,7 @@ public class ParserTest extends CajaTestCase {
     assertEquals(MessageType.SEMICOLON_INSERTED, m3.getMessageType());
     assertFilePosition("parsertest1.js:96+2",
                        (FilePosition) m3.getMessageParts().get(0), mc);
-    Message m4 = msgs.next();
-    assertEquals(MessageType.SEMICOLON_INSERTED, m4.getMessageType());
-    assertFilePosition("parsertest1.js:99+4",
-                       (FilePosition) m4.getMessageParts().get(0), mc);
+    // No semicolon needed at the end.
     assertTrue(!msgs.hasNext());
   }
   public void testParser2() throws Exception {

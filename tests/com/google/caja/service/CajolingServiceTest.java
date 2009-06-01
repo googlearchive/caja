@@ -14,7 +14,9 @@
 
 package com.google.caja.service;
 
+import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Strings;
+import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.TestBuildInfo;
 
 import java.io.BufferedReader;
@@ -45,14 +47,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import junit.framework.TestCase;
-
 /**
  * Tests the running the cajoler as a webservice
  *
  * @author jasvir@google.com (Jasvir Nagra)
  */
-public class CajolingServiceTest extends TestCase {
+public class CajolingServiceTest extends CajaTestCase {
   private CajolingService service;
   private Map<URI, CajolingService.FetchedData> uriContent;
 
@@ -110,7 +110,7 @@ public class CajolingServiceTest extends TestCase {
     assertEquals(
         valijaModule("moduleResult___ = $v.cf($v.ro('g'), [ 1 ]);"),
         request("?url=http://foo/bar.js&mime-type=text/javascript" +
-            "&transform=VALIJA"));
+                "&transform=VALIJA"));
   }
 
   public void testInnocentJs() throws Exception {
@@ -125,7 +125,7 @@ public class CajolingServiceTest extends TestCase {
         "  }\n" +
         "}",
         request("?url=http://foo/innocent.js&mime-type=text/javascript" +
-            "&transform=INNOCENT"));
+                "&transform=INNOCENT"));
   }
 
   public void testVbScriptRejected() throws Exception {
@@ -162,42 +162,45 @@ public class CajolingServiceTest extends TestCase {
   public void testHtml() throws Exception {
     String htmlEnvelope = (
         "<html>" +
-        "  <head><title>Caja Test</title></head>" +
-        "  <body>" +
-        "  %s" +
-        "  </body>" +
+        "<head><title>Caja Test</title></head>" +
+        "<body>" +
+        "%s" +
+        "</body>" +
         "</html>");
 
     registerUri("http://foo/bar.js", "foo()", "text/javascript");
     registerUri("http://foo/bar.html",
                 String.format(
                     htmlEnvelope,
-                    "<script src=bar.js></script><p>Hello, World!</p>"),
+                    "<p>Hello, World!</p><script src=bar.js></script>"),
                 "text/html");
+    assertMessagesLessSevereThan(MessageLevel.WARNING);
     assertEquals(
-        "{\n"
-      + "  ___.loadModule({\n"
-      + "                   'instantiate': function (___, IMPORTS___) {\n"
-      + "                     var moduleResult___ = ___.NO_RESULT;\n"
-      + "                     var $v = ___.readImport(IMPORTS___, '$v', {\n"
-      + "                           'getOuters': {\n"
-      + "                             '()': { }\n"
-      + "                           },\n"
-      + "                           'initOuter': {\n"
-      + "                             '()': { }\n"
-      + "                           }\n"
-      + "                         });\n"
-      + "                     var $dis = $v.getOuters();\n"
-      + "                     moduleResult___ = $v.initOuter('onerror');\n"
-      + "                     IMPORTS___.htmlEmitter___.pc('      ').b('p').f(false)\n"
-      + "                         .ih('Hello, World!').e('p').pc('  ').cd();\n"
-      + "                     return moduleResult___;\n"
-      + "                   },\n"
-      + "                   'cajolerName': 'com.google.caja',\n"
-      + "                   'cajolerVersion': 'testBuildVersion',\n"
-      + "                   'cajoledDate': 0\n"
-      + "                 });\n"
-      + "}",
+        "<p>Hello, World!</p><script type=\"text/javascript\">{"
+        + "___.loadModule({"
+            + "'instantiate':function(___,IMPORTS___){"
+              + "var moduleResult___=___.NO_RESULT;"
+              + "var\n$v=___.readImport(IMPORTS___,'$v',{"
+                  + "'getOuters':{'()':{}},"
+                  + "'initOuter':{'()':{}},"
+                  + "'cf':{'()':{}},"
+                  + "'ro':{'()':{}}"
+              + "});"
+              + "var\n$dis=$v.getOuters();"
+              + "$v.initOuter('onerror');"
+              + "try{"
+                + "{moduleResult___=$v.cf($v.ro('foo'),[]);}"
+              + "}catch(ex___){"
+                + "___.getNewModuleHandler().handleUncaughtException("
+                    + "ex___,$v.ro('onerror'),'bar.js','1');"
+              + "}"
+              + "return moduleResult___;"
+            + "},"
+          + "'cajolerName':'com.google.caja',"
+          + "'cajolerVersion':'testBuildVersion',"
+          + "'cajoledDate':0"
+          + "});"
+        + "}</script>",
         (String) request("?url=http://foo/bar.html&mime-type=*/*"));
   }
 
@@ -213,58 +216,69 @@ public class CajolingServiceTest extends TestCase {
                     moduleEnvelope,
                     "<script src=bar.js></script><p>Hello, World!</p>"),
                 "application/xml");
-    // TODO(mikesamuel): why are scripts not fetched?
+    String indent = "                 ";
     assertEquals(
         String.format(
             moduleEnvelope,
-            "<script type=\"text/javascript\">{\n"
+            "<p>Hello, World!</p><script type=\"text/javascript\">{\n"
             + "  ___.loadModule({\n"
-            + "                   'instantiate': function (___, IMPORTS___) {\n"
-            + "                     var moduleResult___ = ___.NO_RESULT;\n"
-            + "                     IMPORTS___.htmlEmitter___.b('p').f(false)\n"
-            + "                         .ih('Hello, World!').e('p').cd();\n"
-            + "                     return moduleResult___;\n"
-            + "                   },\n"
-            + "                   'cajolerName': 'com.google.caja',\n"
-            + "                   'cajolerVersion': 'testBuildVersion',\n"
-            + "                   'cajoledDate': 0\n"
-            + "                 });\n"
+            + indent + "  'instantiate': function (___, IMPORTS___) {\n"
+            + indent + "    var moduleResult___ = ___.NO_RESULT;\n"
+            + indent + "    var foo = ___.readImport(IMPORTS___, 'foo');\n"
+            + indent + "    var onerror = ___.readImport("
+                                           + "IMPORTS___, 'onerror');\n"
+            + indent + "    try {\n"
+            + indent + "      {\n"
+            + indent + "        moduleResult___ = foo.CALL___();\n"
+            + indent + "      }\n"
+            + indent + "    } catch (ex___) {\n"
+            + indent + "      ___.getNewModuleHandler()"
+                               + ".handleUncaughtException(ex___,\n"
+            + indent + "          onerror, 'bar.js', '1');\n"
+            + indent + "    }\n"
+            + indent + "    return moduleResult___;\n"
+            + indent + "  },\n"
+            + indent + "  'cajolerName': 'com.google.caja',\n"
+            + indent + "  'cajolerVersion': 'testBuildVersion',\n"
+            + indent + "  'cajoledDate': 0\n"
+            + indent + "});\n"
             + "}</script>"),
-        request("?url=http://foo/bar.xml&mime-type=*/*"));
+        (String) request("?url=http://foo/bar.xml&mime-type=*/*"));
   }
 
   private static String valijaModule(String... lines) {
+    String indent = "                 ";
     String prefix = (
         ""
         + "{\n"
         + "  ___.loadModule({\n"
-        + "                   'instantiate': function (___, IMPORTS___) {\n"
-        + "                     var moduleResult___ = ___.NO_RESULT;\n"
-        + "                     var $v = ___.readImport(IMPORTS___, '$v', {\n"
-        + "                           'getOuters': {\n"
-        + "                             '()': { }\n"
-        + "                           },\n"
-        + "                           'initOuter': {\n"
-        + "                             '()': { }\n"
-        + "                           },\n"
-        + "                           'cf': {\n"
-        + "                             '()': { }\n"
-        + "                           },\n"
-        + "                           'ro': {\n"
-        + "                             '()': { }\n"
-        + "                           }\n"
-        + "                         });\n"
-        + "                     var $dis = $v.getOuters();\n"
-        + "                     $v.initOuter('onerror');\n"
+        + indent + "  'instantiate': function (___, IMPORTS___) {\n"
+        + indent + "    var moduleResult___ = ___.NO_RESULT;\n"
+        + indent + "    var $v = ___.readImport(IMPORTS___, '$v', {\n"
+        + indent + "          'getOuters': {\n"
+        + indent + "            '()': { }\n"
+        + indent + "          },\n"
+        + indent + "          'initOuter': {\n"
+        + indent + "            '()': { }\n"
+        + indent + "          },\n"
+        + indent + "          'cf': {\n"
+        + indent + "            '()': { }\n"
+        + indent + "          },\n"
+        + indent + "          'ro': {\n"
+        + indent + "            '()': { }\n"
+        + indent + "          }\n"
+        + indent + "        });\n"
+        + indent + "    var $dis = $v.getOuters();\n"
+        + indent + "    $v.initOuter('onerror');\n"
         );
     String suffix = (
         ""
-        + "                     return moduleResult___;\n"
-        + "                   },\n"
-        + "                   'cajolerName': 'com.google.caja',\n"
-        + "                   'cajolerVersion': 'testBuildVersion',\n"
-        + "                   'cajoledDate': 0\n"
-        + "                 });\n"
+        + indent + "    return moduleResult___;\n"
+        + indent + "  },\n"
+        + indent + "  'cajolerName': 'com.google.caja',\n"
+        + indent + "  'cajolerVersion': 'testBuildVersion',\n"
+        + indent + "  'cajoledDate': 0\n"
+        + indent + "});\n"
         + "}"
         );
     StringBuilder sb = new StringBuilder();

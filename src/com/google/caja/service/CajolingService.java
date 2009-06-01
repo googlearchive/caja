@@ -16,11 +16,17 @@ package com.google.caja.service;
 
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Pair;
+import com.google.caja.lexer.ExternalReference;
+import com.google.caja.opensocial.UriCallback;
+import com.google.caja.opensocial.UriCallbackException;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLConnection;
@@ -123,7 +129,7 @@ public class CajolingService extends HttpServlet {
     }
 
     ByteArrayOutputStream intermediateResponse = new ByteArrayOutputStream();
-    Pair<String,String> contentInfo;
+    Pair<String, String> contentInfo;
     try {
       contentInfo = applyHandler(
           URI.create(gadgetUrl.toString()),
@@ -142,7 +148,10 @@ public class CajolingService extends HttpServlet {
     if (contentInfo.b != null) {
       responseContentType += ";charset=" + contentInfo.b;
     }
-    resp.setHeader("Content-Type", responseContentType);
+    if (containsNewline(responseContentType)) {
+      throw new IllegalArgumentException(responseContentType);
+    }
+    resp.setContentType(responseContentType);
     resp.setContentLength(responseLength);
 
     try {
@@ -179,15 +188,32 @@ public class CajolingService extends HttpServlet {
   }
 
   public void registerHandlers(BuildInfo buildInfo) {
+    UriCallback retriever = new UriCallback() {
+      public Reader retrieve(ExternalReference extref, String mimeType)
+          throws UriCallbackException {
+        try {
+          FetchedData data = fetch(extref.getUri());
+          if (data == null) { return null; }
+          return new InputStreamReader(
+              new ByteArrayInputStream(data.content), data.charSet);
+        } catch (IOException ex) {
+          throw new UriCallbackException(extref, ex);
+        }
+      }
+
+      public URI rewrite(ExternalReference extref, String mimeType) {
+        return null;
+      }
+    };
     handlers.add(new JsHandler(buildInfo));
     handlers.add(new ImageHandler());
-    handlers.add(new GadgetHandler(buildInfo));
+    handlers.add(new GadgetHandler(buildInfo, retriever));
     handlers.add(new InnocentHandler());
-    handlers.add(new HtmlHandler(buildInfo, host));
+    handlers.add(new HtmlHandler(buildInfo, host, retriever));
   }
 
-  private Pair<String, String> applyHandler(URI uri,
-      Transform t, String contentType, String charSet,
+  private Pair<String, String> applyHandler(
+      URI uri, Transform t, String contentType, String charSet,
       byte[] content, OutputStream response)
       throws UnsupportedContentTypeException {
     for (ContentHandler handler : handlers) {
@@ -207,6 +233,11 @@ public class CajolingService extends HttpServlet {
       this.contentType = contentType;
       this.charSet = charSet;
     }
+  }
+
+  // Used to protect against header splitting attacks.
+  private static boolean containsNewline(String s) {
+    return s.indexOf('\n') >= 0 || s.indexOf('\r') >= 0;
   }
 
   public static enum Transform {

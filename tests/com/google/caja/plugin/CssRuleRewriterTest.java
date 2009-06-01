@@ -15,13 +15,15 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lexer.ParseException;
-import com.google.caja.parser.js.Statement;
+import com.google.caja.parser.ParseTreeNode;
+import com.google.caja.parser.css.CssTree;
+import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.render.Concatenator;
 import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 
-public class CssCompilerTest extends CajaTestCase {
+public class CssRuleRewriterTest extends CajaTestCase {
   public void testSimpleRule() {
     assertCompiledCss(
         "p {color:purple}",
@@ -77,25 +79,31 @@ public class CssCompilerTest extends CajaTestCase {
         "[ '.', ' div * {\\n  margin: 0;\\n}' ]");
   }
 
+  public void testStaticIdClass() {
+    assertCompiledCss(
+        "#a > #b, .c { color: blue }",
+        "[ '.xyz___ #a-xyz___ > #b-xyz___, .xyz___ .c {\\n  color: blue\\n}' ]",
+        false);
+  }
+
   private void assertCompiledCss(String input, String golden) {
+    assertCompiledCss(input, golden, true);
+  }
+
+  private void assertCompiledCss(String input, String golden, boolean dynamic) {
     try {
-      Statement s = new CssCompiler().compileCss(css(fromString(input)));
-      assertEquals(golden, stripBoilerPlate(render(s, 160)));
+      PluginMeta pm = new PluginMeta();
+      if (!dynamic) { pm.setIdClass("xyz___"); }
+      CssTree.StyleSheet css = css(fromString(input));
+      new CssRuleRewriter(pm).rewriteCss(css);
+      ArrayConstructor ac = CssRuleRewriter.cssToJs(css);
+      assertEquals(golden, render(ac, 160));
     } catch (ParseException ex) {
       fail(input);
     }
   }
 
-  private String stripBoilerPlate(String s) {
-    String pre = "IMPORTS___.emitCss___(";
-    String post = ".join(IMPORTS___.getIdClass___()))";
-    if (s.startsWith(pre) && s.endsWith(post)) {
-      return s.substring(pre.length(), s.length() - post.length());
-    }
-    return s;
-  }
-
-  private String render(Statement node, int limit) {
+  private static String render(ParseTreeNode node, int limit) {
     StringBuilder sb = new StringBuilder();
     JsPrettyPrinter pp = new JsPrettyPrinter(new Concatenator(sb));
     pp.setLineLengthLimit(limit);

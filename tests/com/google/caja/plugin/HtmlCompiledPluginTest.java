@@ -15,17 +15,17 @@
 package com.google.caja.plugin;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.ExternalReference;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.quasiliteral.CajitaRewriter;
+import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.UncajoledModule;
-import com.google.caja.render.Concatenator;
-import com.google.caja.render.JsPrettyPrinter;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
-import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.RhinoTestBed;
 import com.google.caja.util.TestUtil;
@@ -101,7 +101,7 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
         "<a onclick=\"foo(this)\">hi</a>",
 
         "assertEquals('<a onclick=\"return plugin_dispatchEvent___(" +
-        "this, event, 0, \\'c_1___\\')\">hi</a>'," +
+        "this, event, 0, \\'c_1___\\');\" target=\"_blank\">hi</a>'," +
         " document.getElementById('test-test').innerHTML)",
 
         true);
@@ -209,7 +209,15 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
 
   private void execGadget(String gadgetSpec, String tests, boolean valija)
       throws Exception {
-    PluginMeta meta = new PluginMeta();
+    PluginMeta meta = new PluginMeta(new PluginEnvironment() {
+      public CharProducer loadExternalResource(
+          ExternalReference ref, String mimeType) {
+        return null;
+      }
+      public String rewriteUri(ExternalReference uri, String mimeType) {
+        return uri.toString();
+      }
+    });
     meta.setValijaMode(valija);
     PluginCompiler compiler = new PluginCompiler(new TestBuildInfo(), meta, mq);
     compiler.setMessageContext(mc);
@@ -222,21 +230,20 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
       fail();
     } else {
       CajoledModule jsTree = compiler.getJavascript();
-      StringBuilder js = new StringBuilder();
-      JsPrettyPrinter pp = new JsPrettyPrinter(new Concatenator(js));
-      RenderContext rc = new RenderContext(pp);
-      jsTree.render(rc);
-      pp.noMoreTokens();
+      String staticHtml = Nodes.render(compiler.getStaticHtml(), true);
+      String js = render(jsTree);
 
-      Block valijaOrigNode =
-          js(fromResource("/com/google/caja/valija-cajita.js"));
+      Block valijaOrigNode = js(fromResource(
+          "/com/google/caja/valija-cajita.js"));
       ParseTreeNode valijaCajoledNode =
           new CajitaRewriter(new TestBuildInfo(), false)
               .expand(new UncajoledModule(valijaOrigNode), mq);
       String valijaCajoled = render(valijaCajoledNode);
 
       String htmlStubUrl = TestUtil.makeContentUrl(
-          "<html><head/><body><div id=\"test-test\"/></body></html>");
+          "<html><head/><body><div id=\"test-test\">"
+          + staticHtml
+          + "</div></body></html>");
 
       try {
         RhinoTestBed.Input[] inputs = new RhinoTestBed.Input[] {
@@ -282,10 +289,10 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
           };
         RhinoTestBed.runJs(inputs);
       } catch (Exception e) {
-        System.out.println("Compiled gadget: " + js);
+        System.out.println("Compiled gadget: \n" + staticHtml + "\n" + js);
         throw e;
       } catch (Error e) {
-        System.out.println("Compiled gadget: " + js);
+        System.out.println("Compiled gadget: \n" + staticHtml + "\n" + js);
         throw e;
       }
     }

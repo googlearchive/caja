@@ -422,7 +422,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "             function foo$_self() {\n" +
         "             }\n" +
         "             return ___.func(foo$_self, \'foo\');\n" +
-        "           })(); ; }"));
+        "           })(); }"));
     checkSucceeds(input, expectedResult);
   }
 
@@ -468,7 +468,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "             function foo$_self() {\n" +
         "             }\n" +
         "             return ___.func(foo$_self, \'foo\');\n" +
-        "           })(); ; }");
+        "           })(); }");
   }
 
   public void testNestedBlockWithVariable() throws Exception {

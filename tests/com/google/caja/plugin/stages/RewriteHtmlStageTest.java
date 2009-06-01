@@ -18,6 +18,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.js.Block;
 import com.google.caja.plugin.Dom;
+import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.Job;
 import com.google.caja.plugin.Jobs;
 import com.google.caja.plugin.PluginMessageType;
@@ -38,7 +39,8 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
   public void testScriptExtraction() throws Exception {
     assertPipeline(
         job("foo<script>extracted();</script>baz", Job.JobType.HTML),
-        job("foo<span></span>baz", Job.JobType.HTML),
+        // The "jobnum" attribute was added by the extractScript method below.
+        job("foo<span jobnum=\"1\"></span>baz", Job.JobType.HTML),
         job("{ extracted(); }", Job.JobType.JAVASCRIPT)
         );
     assertNoErrors();
@@ -54,7 +56,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertPipeline(
         job("foo<script type=\"text/javascript\">var x = 1;</script>baz",
             Job.JobType.HTML),
-        job("foo<span></span>baz", Job.JobType.HTML),
+        job("foo<span jobnum=\"1\"></span>baz", Job.JobType.HTML),
         job("{\n  var x = 1;\n}", Job.JobType.JAVASCRIPT)
         );
     assertNoErrors();
@@ -74,7 +76,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertPipeline(
         job("foo<script type=text/javascript>extracted();</script>baz",
             Job.JobType.HTML),
-        job("foo<span></span>baz", Job.JobType.HTML),
+        job("foo<span jobnum=\"1\"></span>baz", Job.JobType.HTML),
         job("{ extracted(); }", Job.JobType.JAVASCRIPT)
         );
     assertNoErrors();
@@ -109,7 +111,8 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
   public void testOnLoadHandlers() throws Exception {
     assertPipeline(
         job("<body onload=init();>Foo</body>", Job.JobType.HTML),
-        job("<html><head></head><body>Foo<span></span></body></html>",
+        job("<html><head></head>"
+            + "<body>Foo<span jobnum=\"1\"></span></body></html>",
             Job.JobType.HTML),
         job("{ init(); }", Job.JobType.JAVASCRIPT));
     assertNoErrors();
@@ -155,6 +158,24 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertNoErrors();
   }
 
+  public void testDeferredScripts() throws Exception {
+    assertPipeline(
+        job("<script src=content:a();></script>"
+            + "<script defer>b();</script>"
+            + "<script src=content:c(); defer=defer></script>"
+            + "<script src=content:d(); defer=no></script>"
+            + "<br>",
+            Job.JobType.HTML),
+        job("<span jobnum=\"1\"></span><span jobnum=\"2\"></span><br />"
+            + "<span jobnum=\"3\"></span><span jobnum=\"4\"></span>",
+            Job.JobType.HTML),
+        job("{ a(); }", Job.JobType.JAVASCRIPT),
+        job("{ d(); }", Job.JobType.JAVASCRIPT),
+        job("{ b(); }", Job.JobType.JAVASCRIPT),
+        job("{ c(); }", Job.JobType.JAVASCRIPT));
+    assertNoErrors();
+  }
+
   @Override
   protected boolean runPipeline(Jobs jobs) throws Exception {
     mq.getMessages().clear();
@@ -170,11 +191,14 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
   private void extractScripts(Node node, Jobs jobs) {
     switch (node.getNodeType()) {
       case Node.ELEMENT_NODE:
-        Block extracted = RewriteHtmlStage.extractedScriptFor((Element) node);
+        Element el = (Element) node;
+        Block extracted = ExtractedHtmlContent.getExtractedScriptFor(el);
         if (extracted != null) {
+          int jobNum = jobs.getJobs().size();
+          el.setAttribute("jobnum", "" + jobNum);
           jobs.getJobs().add(new Job(AncestorChain.instance(extracted)));
         }
-        for (Node c = node.getFirstChild(); c != null; c = c.getNextSibling()) {
+        for (Node c = el.getFirstChild(); c != null; c = c.getNextSibling()) {
           extractScripts(c, jobs);
         }
         break;

@@ -26,6 +26,12 @@ public final class PluginMeta {
   private boolean debugMode;
   /** True if the source should be treated as Valija */
   private boolean valijaMode;
+  /**
+   * The DOM ID suffix if known at Cajole time.  Most clients should allow the
+   * module ID to be assigned dynamically but for those clients who know that
+   * they can avoid overlaps.
+   */
+  private String idClass;
 
   public PluginMeta() {
     this(PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT);
@@ -56,5 +62,15 @@ public final class PluginMeta {
   /** True if the source should be treated as Valija. */
   public boolean isValijaMode() { return valijaMode; }
 
-  public void setValijaMode(boolean valijaMode) { this.valijaMode = valijaMode; }
+  public void setValijaMode(boolean valijaMode) {
+    this.valijaMode = valijaMode;
+  }
+
+  /**
+   * Null if the module ID is not known statically.
+   * See {@code imports.getIdClass___()} defined in "domita.js".
+   */
+  public String getIdClass() { return idClass; }
+
+  public void setIdClass(String idClass) { this.idClass = idClass; }
 }

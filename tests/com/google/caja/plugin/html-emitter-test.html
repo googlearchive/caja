@@ -1,0 +1,78 @@
+<!--
+ - Copyright (C) 2009 Google Inc.
+ -
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+<html>
+  <head>
+    <title>HTML Emitter Tests</title>
+    <script type="text/javascript"
+     src="../../../../js/jsunit/2.2/jsUnitCore.js"></script>
+    <script type="text/javascript" src="bridal.js"></script>
+    <script type="text/javascript" src="html-emitter.js"></script>
+  </head>
+
+  <body>
+    <blockquote id="base">
+<p>Hi</p>
+<div id="id_1___"><span id="id_2___">Hello </span>World!!!</div>
+<h1>Foo <b id="id_3___">Bar</b> Baz</h1>
+<h2 id="id_4___">Boo</h2>
+</blockquote>
+
+    <script>//<![CDATA[
+    function normInnerHtml(el) {
+      // Convert XHTML style <div/> returned by env.js to HTML style <div></div>
+      return el.innerHTML.replace(/<(\w+)([^>]*)\/>/g, '<$1$2><\/$1>')
+          // Gloss over differences in how browsers compute innerHTML.
+          .replace(/\s+</g, '<').replace(/>\s+/g, '>');
+    }
+    var base = document.getElementById('base');
+
+    var el___, emitter___ = new HtmlEmitter(base);
+
+    emitter___.attach('id_1___');
+    var el___ = emitter___.byId('id_1___');
+    el___.removeAttribute('id');
+    console.log('Attached 1');
+    assertEquals('Attached 1', '<p>Hi<\/p><div><\/div>', normInnerHtml(base));
+
+    emitter___.unwrap(emitter___.attach('id_2___'));
+    console.log('Attached and unwrapped 2');
+    assertEquals(
+        'Attached and unwrapped 2',
+        '<p>Hi<\/p><div>Hello<\/div>', normInnerHtml(base));
+
+    var el___ = emitter___.byId('id_3___');
+    el___.removeAttribute('id');
+    emitter___.attach('id_3___');
+    console.log('Attached 3');
+    assertEquals(
+        'Attached 3',
+        '<p>Hi<\/p><div>Hello World!!!<\/div><h1>Foo<b><\/b><\/h1>',
+        normInnerHtml(base));
+
+    var el___ = emitter___.byId('id_4___');
+    el___.setAttribute('id', 'mySuffix___');
+    console.log('Almost Done');
+    el___ = emitter___.finish();
+    console.log('Done');
+    assertEquals(
+        'Done',
+        '<p>Hi<\/p><div>Hello World!!!<\/div><h1>Foo<b>Bar<\/b>Baz<\/h1>'
+        + '<h2 id="mySuffix___">Boo<\/h2>',
+        normInnerHtml(base));
+    //]]></script>
+
+  </body>
+</html>
