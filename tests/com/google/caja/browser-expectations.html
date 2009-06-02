@@ -20,8 +20,8 @@
     <title>Browser Expectations</title>
     <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 
-    <script src="cajita.js" onerror="console.error(this.src)"></script>
     <script src="plugin/jsunit.js"></script>
+    <script src="plugin/css-defs.js"></script>
     <script src="../../../js/jsunit/2.2/jsUnitCore.js"></script>
   </head>
   <body onload="jsunitRun()">
@@ -38,7 +38,7 @@
     <script>
     jsunitRegister('testNumericOperators', function testNumericOperators() {
       var values = [
-          null, void 0, '"', true, 1, function () {}, {}, [], /./,
+          null, void 0, '\x22', true, 1, function () {}, {}, [], /./,
           { i: 0, valueOf: function () { return (++this.i) & 1 ? 4 : 'four'; } }
           ];
       // Check that the given operator always yields a number.
@@ -213,6 +213,71 @@
       assertEquals('undefined', typeof k);
       assertEquals('number', typeof f);
       assertEquals(3, f);  // not overidden by function declaration.
+    });
+    </script>
+
+    <p>A visited link and an unvisited link:
+      <a href="browser-expectations.html" id="visited_link"
+       title="visited">Link</a>
+      <a href="javascript:void-0" id="unvisited_link" title="unvisited">Link</a>
+    </p>
+    <script>
+    // Check that visited and unvisited links, by default, only differ in
+    // certain computed style properties.
+    // These differing properties must not affect layout or cause network
+    // access or we will not be able to prevent history mining attacks.
+    // Note: These test the default properties of browsers.  If these same
+    // properties are modified by the container in a way that affect layout or
+    // results in network access, these history mining attacks are reopened.
+    jsunitRegister('testLinkStyles',
+                   function testLinkStyles() {
+      function computedStyles(el) {
+        if (window.getComputedStyle) {
+          return window.getComputedStyle(el, null);
+        } else {
+          return el.currentStyle;
+        }
+      }
+
+      var styleProps = [];
+      (function () {
+        for (var styleProp in css.properties) {
+          if (!css.properties.hasOwnProperty(styleProp)) { continue; }
+          if (css.alternates.hasOwnProperty(styleProp)) {
+            var alternates = css.alternates[styleProp];
+            for (var i = 0, n = alternates.length; i < n; ++i) {
+              styleProps.push(alternates[i]);
+            }
+          } else {
+            styleProps.push(
+                styleProp.replace(/-([a-z])/g,
+                function (_, ch) { return ch.toUpperCase(); }));
+          }
+        }
+        styleProps.sort();
+      })();
+
+      var visited = computedStyles(document.getElementById('visited_link'));
+      var unvisited = computedStyles(document.getElementById('unvisited_link'));
+
+      assertTrue('visited links should differ by color',
+                 visited.color !== unvisited.color);
+
+      var allowedDifferences = {
+          borderBottomColor: true, borderLeftColor: true,
+          borderRightColor: true, borderTopColor: true,
+          borderColor: true, color: true, outlineColor: true };
+      var differences = [];
+      for (var i = 0, n = styleProps.length; i < n; ++i) {
+        var styleProp = styleProps[i];
+        if (visited[styleProp] !== unvisited[styleProp]) {
+          differences.push(styleProp);
+          assertTrue(styleProp, allowedDifferences.hasOwnProperty(styleProp));
+        }
+      }
+
+      document.body.appendChild(document.createTextNode(
+          'Visited style affects [' + differences + ']'));
     });
     </script>
   </body>

@@ -24,10 +24,10 @@ var isTestPageLoaded = false;
 
 
 /**
- + * A more functional typeof
- + * @param Object o
- + * @return String
- + */
+ * A more functional typeof
+ * @param Object o
+ * @return String
+ */
 function _trueTypeOf(something) {
     var result = typeof something;
     try {
