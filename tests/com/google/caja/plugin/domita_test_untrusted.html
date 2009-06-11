@@ -275,6 +275,9 @@ can test window.scrollBy with a positive x value with a visible effect.
 <p class="testcontainer" id="test-attribute-nodes"
 >Test Attribute Nodes</p>
 
+<p class="testcontainer" id="test-shorthand-css"
+ >Test shorthand css</p>
+
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
 
@@ -2052,6 +2055,22 @@ jsunitRegister('testAttributeNodes',
   assertEquals(false, attrNode.specified);
 
   pass('test-attribute-nodes');
+});
+
+jsunitRegister('testShorthandCss',
+               function testShorthandCss() {
+  var body = document.body;
+  var container = document.getElementById('test-shorthand-css');
+  var elementRef = document.createElement('DIV');
+  elementRef.id = 'foo';
+  elementRef.innerHTML = 'style me shortly';
+  container.appendChild(elementRef);
+  elementRef.style.border = '5px dashed blue';
+  assertEquals('shorthand width set', elementRef.style.borderTopWidth, '5px');
+  assertEquals('shorthand color set', elementRef.style.borderTopColor, 'blue');
+  assertEquals('shorthand style set', elementRef.style.borderTopStyle, 'dashed');
+
+  pass('test-shorthand-css');
 });
 
 jsunitRegister('testDocumentBodyAppendChild',

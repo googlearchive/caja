@@ -696,10 +696,9 @@ final class SignatureResolver {
       if (sig instanceof CssPropertySignature.SetSignature) {
         applySetSignature((CssPropertySignature.SetSignature) sig,
                           candidate, propertyName, passed);
-      } else if (sig instanceof CssPropertySignature.SeriesSignature) {
-        applySeriesSignature(
-            (CssPropertySignature.SeriesSignature) sig,
-            candidate, propertyName, passed);
+      } else if (sig instanceof CssPropertySignature.SeriesSignature) {    
+        applySeriesSignature((CssPropertySignature.SeriesSignature) sig,     
+                          candidate, propertyName, passed);
       } else if (sig instanceof CssPropertySignature.RepeatedSignature) {
         applyRepeatedSignature(
             (CssPropertySignature.RepeatedSignature) sig,
@@ -732,7 +731,6 @@ final class SignatureResolver {
         throw new AssertionError(sig.getClass().getName());
       }
     }
-
     for (Candidate candidate : passed) {
       if (null == best || best.exprIdx < candidate.exprIdx) {
         best = candidate;

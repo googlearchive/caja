@@ -24,6 +24,7 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssPropertySignature;
+import com.google.caja.parser.css.CssPropertySignature.ExclusiveSetSignature;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.BooleanLiteral;
 import com.google.caja.parser.js.Declaration;
@@ -210,7 +211,7 @@ public class CssPropertyPatterns {
     } else if (sig instanceof CssPropertySignature.SymbolSignature) {
       return symbolToPattern((CssPropertySignature.SymbolSignature) sig);
     } else if (sig instanceof CssPropertySignature.SetSignature
-               || sig instanceof CssPropertySignature.ExclusiveSetSignature) {
+        || sig instanceof CssPropertySignature.ExclusiveSetSignature) {
       return setToPattern(sig);
     }
     return null;
@@ -232,9 +233,11 @@ public class CssPropertyPatterns {
   private Pattern repToPattern(CssPropertySignature.RepeatedSignature sig) {
     CssPropertySignature rep = sig.getRepeatedSignature();
     if (rep instanceof CssPropertySignature.ExclusiveSetSignature) {
-      // Can't easily handle the special semantics of [ a || b ]* allowing
-      // "a b", "b a", "a", "b", but not "a a", "b b".
-      return null;
+      // The spec (http://www.w3.org/TR/REC-CSS1/#css1-properties) defines
+      // A double bar (A || B) means that either A or B or both must occur
+      // in any order.
+      // We convert [ a || b ] -> [a | b]+
+      return exclusiveToPattern(rep);
     }
     Pattern repeatedPattern = sigToPattern(rep);
     if (repeatedPattern == null) { return null; }
@@ -275,6 +278,19 @@ public class CssPropertyPatterns {
     return new Union(children);
   }
 
+  // TODO(jasvir): Clarify the meaning of (a||b)* and modify this function
+  // if to neccessary to reflect it.
+  private Pattern exclusiveToPattern(CssPropertySignature sig) {
+    if (sig.children().isEmpty()) { return null; }
+    List<Pattern> children = new ArrayList<Pattern>();
+    for (CssPropertySignature child : sig.children()) {
+      Pattern childP = sigToPattern(child);
+      if (childP != null) { children.add(childP); }
+    }
+    if (children.isEmpty()) { return null; }
+    return new Repetition(new Union(children), 1, Integer.MAX_VALUE);    
+  }
+  
   private static final Map<String, String> BUILTINS
       = new HashMap<String, String>();
   static {

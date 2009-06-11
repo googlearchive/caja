@@ -41,9 +41,9 @@ public class CssPropertyPatternsTest extends CajaTestCase {
   }
 
 
-  public void testUnionsExcludeComplex() throws Exception {
+  public void testExclusiveUnionPattern() throws Exception {
     assertPattern("[ foo | [ a || b || c || d ] | bar ]",
-                  "/^\\s*(?:foo|bar)\\s+$/i");
+                  "/^\\s*(?:foo\\s+|(?:(?:a|b|c|d)\\s+)+|bar\\s+)$/i");
   }
 
   public void testReferencePattern() throws Exception {
@@ -68,7 +68,7 @@ public class CssPropertyPatternsTest extends CajaTestCase {
   public void testConcatenations() throws Exception {
     assertPattern("foo bar", "/^\\s*foo\\s+bar\\s+$/i");
     // Fail if cannot handle a member of a concatenation
-    assertPattern("[ a b [ c || d ] ]", null);
+    assertPattern("[ a b [ c || d ] ]", "/^\\s*a\\s+b\\s+(?:(?:c|d)\\s+)+$/i");
     assertMatches("foo bar", "foo bar", "foo  bar");
     assertDoesNotMatch("foo bar", "foo", "bar", "bar foo", "");
   }
