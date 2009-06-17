@@ -820,9 +820,12 @@
         <include name="valija.co.js"/>
       </fileset>
       <fileset dir="${third_party}/js/prettify">
-      	<include name="lang-css.js"/>
-      	<include name="prettify.js"/>
+        <include name="lang-css.js"/>
+        <include name="prettify.js"/>
         <include name="prettify.css"/>
+      </fileset>
+      <fileset dir="${third_party}/js/json_sans_eval">
+        <include name="json_sans_eval.js"/>
       </fileset>
       <fileset dir="${src}/com/google/caja/demos/applet">
         <include name="*.html"/>
