@@ -259,7 +259,8 @@ function runPlain(form) {
   // Get the part of the form name from the dot onward
   var uiSuffix = form.id.replace(/^[^\.]+/, '');
   // Strip off whitespace before & after the given text
-  var src = form.elements.src.value.replace(/^\s+|\s+$/g, '');
+  var src = 
+      form.elements['htmlsource' + uiSuffix].value.replace(/^\s+|\s+$/g, '');
   var div = document.getElementById('caja-html' + uiSuffix);
   while(div.childNodes[0]) {
     div.removeChild(div.childNodes[0]);
@@ -546,7 +547,8 @@ function initTestbeds() {
 }
 
 function loadExampleInto(containerNode, form) {
-  form.elements.src.value = innerText(containerNode);
+  var uiSuffix = form.id.replace(/^[^\.]+/, '');
+  form.elements['htmlsource' + uiSuffix].value = innerText(containerNode);
 }
 
 /**
