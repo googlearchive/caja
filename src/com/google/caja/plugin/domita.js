@@ -3292,18 +3292,16 @@ var attachDocumentStub = (function () {
       });
 
     // See spec at http://www.whatwg.org/specs/web-apps/current-work/multipage/browsers.html#navigator
+    // We don't attempt to hide or abstract userAgent details since
+    // they are discoverable via side-channels we don't control.
     var tameNavigator = ___.primFreeze({
-      appCodeName: 'Caja',
-      appName: 'Sandbox',
-      appVersion: '1.0',  // Should we expose the user's Locale here?
-      language: '',  // Should we expose the user's Locale here?
-      platform: 'Caja',
-      oscpu: 'Caja',
-      vendor: '',
-      vendorSub: '',
-      product: 'Caja',
-      productSub: '',
-      userAgent: 'Caja/1.0'
+      appName: String(window.navigator.appName),
+      appVersion: String(window.navigator.appVersion),
+      platform: String(window.navigator.platform),
+      // userAgent should equal the string sent in the User-Agent HTTP header.
+      userAgent: String(window.navigator.userAgent),
+      // Custom attribute indicating Caja is active.
+      cajaVersion: '1.0'
       });
 
     /**
