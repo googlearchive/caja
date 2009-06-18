@@ -142,43 +142,41 @@ var cajole = (function () {
    * @param {string} uiSuffix suffix of testbed identifiers as described above.
    */
   function loadCaja(htmlText, uiSuffix) {
-    var scriptStart = htmlText.indexOf("{");
-    var scriptEnd = htmlText.lastIndexOf("}");
-    var script = htmlText.slice(scriptStart, scriptEnd+1);
+    var splitPoint = htmlText.indexOf('<script ');
+    var script = htmlText.slice(splitPoint);
+    var html = htmlText.slice(0, splitPoint);
+    var script = script.slice(script.indexOf('{'), script.lastIndexOf('}') + 1);
 
-    if (scriptStart > -1 && scriptEnd > -1) {
-      var imports = getImports(uiSuffix);
+    var imports = getImports(uiSuffix);
 
-      imports.clearHtml___();
-      var stackTrace = document.getElementById('cajita-stacks' + uiSuffix);
-      stackTrace.style.display = 'none';
+    imports.clearHtml___();
+    var htmlContainer = document.getElementById('caja-html' + uiSuffix);
+    htmlContainer.innerHTML = html;
+    
+    var stackTrace = document.getElementById('cajita-stacks' + uiSuffix);
+    stackTrace.style.display = 'none';
 
-      // Provide an object into which the module can export its public API.
-      imports.exports = {};
-      if (document.getElementById("VALIJA_MODE" + uiSuffix).checked) {
-        imports.$v = valijaMaker.CALL___(imports.outers);
+    // Provide an object into which the module can export its public API.
+    imports.exports = {};
+    if (document.getElementById("VALIJA_MODE" + uiSuffix).checked) {
+      imports.$v = valijaMaker.CALL___(imports.outers);
+    }
+    // Set up the outer new module handler
+    ___.setNewModuleHandler(imports.newModuleHandler___);
+
+    // Load the script
+    try {
+      eval(script);
+      gadgetPublicApis['gadget' + uiSuffix] = ___.primFreeze(imports.exports);
+    } catch (ex) {
+      var cajitaStack = ex.cajitaStack___
+          && ___.unsealCallerStack(ex.cajitaStack___);
+      if (cajitaStack) {
+        stackTrace.style.display = '';
+        document.getElementById('cajita-stack' + uiSuffix).appendChild(
+            document.createTextNode(cajitaStack.join('\n')));
       }
-      // Set up the outer new module handler
-      ___.setNewModuleHandler(imports.newModuleHandler___);
-
-      // Load the script
-      try {
-        eval(script);
-        gadgetPublicApis['gadget' + uiSuffix] = ___.primFreeze(imports.exports);
-      } catch (ex) {
-        var cajitaStack = ex.cajitaStack___
-            && ___.unsealCallerStack(ex.cajitaStack___);
-        if (cajitaStack) {
-          stackTrace.style.display = '';
-          document.getElementById('cajita-stack' + uiSuffix).appendChild(
-              document.createTextNode(cajitaStack.join('\n')));
-        }
-        throw ex;
-      }
-    } else {
-      if (typeof console !== 'undefined') {
-        console.warn('Failed to eval cajoled output %s', html);
-      }
+      throw ex;
     }
   }
 

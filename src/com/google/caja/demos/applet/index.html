@@ -108,7 +108,8 @@
         return;
       }
       loadurl_cb = function(resp) {
-        form.elements.htmlsource.value = resp;
+        var uiSuffix = form.id.replace(/^[^\.]+/, '');
+        form.elements['htmlsource' + uiSuffix].value = resp;
         loadurl_cb = null;
       };
       var url = form.elements.urlval.value;
