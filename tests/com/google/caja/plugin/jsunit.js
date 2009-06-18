@@ -29,17 +29,21 @@ function jsunitRegister(testName, test) {
 }
 
 /** Run tests. */
-function jsunitRun() {
+function jsunitRun(opt_testName) {
   document.title += ' (' + (navigator.appName
                             ? navigator.appName + ' ' + navigator.appVersion
                             : navigator.userAgent) + ')';
   var originalTitle = document.title;
 
   var testNames = [];
-  for (var k in jsunitTests) {
-    if (jsunitTests.hasOwnProperty(k)) { testNames.push(k); }
+  if (opt_testName) {
+    testNames.push(opt_testName);
+  } else {
+    for (var k in jsunitTests) {
+      if (jsunitTests.hasOwnProperty(k)) { testNames.push(k); }
+    }
+    testNames.sort();
   }
-  testNames.sort();
 
   var queryParams = (function () {
     var queryParams = {};

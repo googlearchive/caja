@@ -31,10 +31,12 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Name;
+import com.google.caja.util.Pair;
 import com.google.caja.util.Strings;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -85,6 +87,7 @@ public final class CssRewriter {
    * @param t non null.  modified in place.
    */
   public void rewrite(AncestorChain<? extends CssTree> t) {
+    rewriteHistorySensitiveRulesets(t);
     quoteLooseWords(t);
     fixUnitlessLengths(t);
     // Once at the beginning, and again at the end.
@@ -100,6 +103,184 @@ public final class CssRewriter {
     removeUnsafeConstructs(t);
 
     translateUrls(t);
+  }
+
+  /**
+   * A set of pseudo classes that are allowed in restricted context because they
+   * can leak user history information.
+   * <p>
+   * From http://www.w3.org/TR/css3-selectors/#dynamic-pseudos : <blockquote>
+   *   <h3>6.6.1. Dynamic pseudo-classes</h3>
+   *   The link pseudo-classes: :link and :visited<br>
+   *   <br>
+   *   User agents commonly display unvisited links differently from previously
+   *   visited ones. Selectors provides the pseudo-classes :link and :visited to
+   *   distinguish them:<ul>
+   *     <li>The :link pseudo-class applies to links that have not yet been
+   *         visited.
+   *     <li>The :visited pseudo-class applies once the link has been visited by
+   *         the user.
+   *   </ul>
+   * </blockquote>
+   */
+  private static final Set<Name> LINK_PSEUDO_CLASSES = new HashSet<Name>(
+      Arrays.asList(Name.css("link"), Name.css("visited")));
+
+  /**
+   * Split any ruleset containing :link or :visited pseudoclasses into two
+   * rulesets: one with these pseudoclasses in the selector, and one without.
+   * (One of these resulting rulesets may be empty and thus not emitted.) So
+   * for example, the stylesheet:
+   *
+   * <pre>
+   *   :visited, a:link, p, div { color: blue }
+   * </pre>
+   *
+   * <p>becomes:
+   *
+   * <pre>
+   *   :visited, a:link { color: blue }
+   *   p, div { color: blue }
+   * </pre>
+   *
+   * <p>We do this because, downstream, we are going to cull away declarations
+   * for properties which are not permitted to depend on the :link or :visisted
+   * pseudoclasses. We do this, in turn, to prevent history mining attacks.
+   *
+   * <p>Furthermore, scope any selectors containing linkey pseudo classes to
+   * operate only on anchor (<A>) elements. Modify it if necessary, or record
+   * an error if the selector is already scoped to some element that is not an
+   * anchor. For example:
+   *
+   * <pre>
+   *   div#foo     -->  div#foo     (unmodified)
+   *   :visited    -->  a:visited
+   *   :link       -->  a:link
+   *   *:visited   -->  a:visited
+   *   p:visited   -->  ERROR
+   * </pre>
+   *
+   * <p>We do this to ensure the most predictable possible browser behavior
+   * around this sensitive and exploitable issue.
+   */
+  private void rewriteHistorySensitiveRulesets(
+      final AncestorChain<? extends CssTree> t) {
+    t.node.acceptPreOrder(new Visitor() {
+        public boolean visit(AncestorChain<?> ancestors) {
+          if (!(ancestors.node instanceof CssTree.RuleSet)) { return true; }
+          Pair<CssTree.RuleSet, CssTree.RuleSet> rewritten =
+              rewriteHistorySensitiveRuleset((CssTree.RuleSet) ancestors.node);
+          if (rewritten != null) {
+            t.node.insertBefore(rewritten.a, ancestors.node);
+            t.node.insertBefore(rewritten.b, ancestors.node);
+            t.node.removeChild(ancestors.node);
+          }
+          return false;
+        }
+      }, t.parent);
+  }
+
+  private Pair<CssTree.RuleSet, CssTree.RuleSet> rewriteHistorySensitiveRuleset(
+      CssTree.RuleSet ruleSet) {
+    List<CssTree> linkeyChildren = null;
+    List<CssTree> nonLinkeyChildren = null;
+
+    for (CssTree child : ruleSet.children()) {
+      if (child instanceof CssTree.Selector) {
+        CssTree.Selector selector = (CssTree.Selector) child;
+        if (addAnchorToHistorySensitiveSelector(selector)) {
+          if (linkeyChildren == null) {
+            linkeyChildren = new ArrayList<CssTree>();
+          }
+          linkeyChildren.add(selector);
+        }
+        else {
+          if (nonLinkeyChildren == null) {
+            nonLinkeyChildren = new ArrayList<CssTree>();
+          }
+          nonLinkeyChildren.add(selector);
+        }
+      } else {
+        if (linkeyChildren == null || nonLinkeyChildren == null) {
+          return null;
+        } else {
+          linkeyChildren.add(child);
+          nonLinkeyChildren.add((CssTree) child.clone());
+        }
+      }
+    }
+
+    return new Pair<CssTree.RuleSet, CssTree.RuleSet>(
+        new CssTree.RuleSet(ruleSet.getFilePosition(), linkeyChildren),
+        new CssTree.RuleSet(ruleSet.getFilePosition(), nonLinkeyChildren));
+  }
+
+  /** Argument is a compound selector like "div#foo > p > *:visited". */
+  private boolean addAnchorToHistorySensitiveSelector(
+      CssTree.Selector selector) {
+    boolean modified = false;
+    for (CssTree child : selector.children()) {
+      if (child instanceof CssTree.SimpleSelector) {
+        modified |= addAnchorToHistorySensitiveSimpleSelector(
+            (CssTree.SimpleSelector) child);
+      }
+    }
+    return modified;
+  }
+
+  /** The name of an anchor (<A>) HTML tag. */
+  private static final Name HTML_ANCHOR = Name.html("a");
+  
+  /** Argument is a simple selector like "div#foo", "p", or "*:visited". */
+  private boolean addAnchorToHistorySensitiveSimpleSelector(
+      CssTree.SimpleSelector selector) {
+    if (selector.children().isEmpty()) { return false; }
+    if (!containsLinkPseudoClass(selector)) { return false; }
+    CssTree firstChild = selector.children().get(0);
+    if (firstChild instanceof CssTree.WildcardElement) {
+      // "*#foo:visited" --> "a#foo:visited"
+      selector.replaceChild(
+          new CssTree.IdentLiteral(
+              firstChild.getFilePosition(), HTML_ANCHOR.getCanonicalForm()),
+          firstChild);
+      return true;
+    } else if (firstChild instanceof CssTree.IdentLiteral) {
+      // "a#foo:visited" is legal; "p#foo:visited" is not
+      String value = ((CssTree.IdentLiteral) firstChild).getValue();
+      if (HTML_ANCHOR.compareTo(Name.html(value)) != 0) {
+        mq.addMessage(
+            PluginMessageType.CSS_LINK_PSEUDO_SELECTOR_NOT_ALLOWED_ON_NONANCHOR,
+            firstChild.getFilePosition());
+      }
+      return false;
+    } else {
+      // "#foo:visited" --> "a#foo:visited"
+      selector.insertBefore(
+          new CssTree.IdentLiteral(
+              firstChild.getFilePosition(), HTML_ANCHOR.getCanonicalForm()),
+          firstChild);
+      return true;
+    }
+  }
+
+  private boolean containsLinkPseudoClass(CssTree.SimpleSelector selector) {
+    final boolean[] result = new boolean[1];
+    selector.acceptPreOrder(new Visitor() {
+      public boolean visit(AncestorChain<?> chain) {
+        if (chain.node instanceof CssTree.Pseudo) {
+          CssTree firstChild = (CssTree) chain.node.children().get(0);
+          if (firstChild instanceof CssTree.IdentLiteral) {
+            CssTree.IdentLiteral ident = (CssTree.IdentLiteral) firstChild;
+            if (LINK_PSEUDO_CLASSES.contains(Name.css(ident.getValue()))) {
+              result[0] = true;
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+    }, null);
+    return result[0];
   }
 
   /**
@@ -308,31 +489,12 @@ public final class CssRewriter {
       }, t.parent);
   }
 
-  private static final Set<String> ALLOWED_PSEUDO_CLASSES = new HashSet<String>(
+  private static final Set<Name> ALLOWED_PSEUDO_CLASSES = new HashSet<Name>(
       Arrays.asList(
-          "active", "after", "before", "first-child", "first-letter", "focus",
-          "link", "hover"
+          Name.css("active"), Name.css("after"), Name.css("before"),
+          Name.css("first-child"), Name.css("first-letter"), Name.css("focus"),
+          Name.css("link"), Name.css("hover")
           ));
-  /**
-   * A set of pseudo classes that are allowed in restricted context because they
-   * can leak user history information.
-   * <p>
-   * From http://www.w3.org/TR/css3-selectors/#dynamic-pseudos : <blockquote>
-   *   <h3>6.6.1. Dynamic pseudo-classes</h3>
-   *   The link pseudo-classes: :link and :visited<br>
-   *   <br>
-   *   User agents commonly display unvisited links differently from previously
-   *   visited ones. Selectors provides the pseudo-classes :link and :visited to
-   *   distinguish them:<ul>
-   *     <li>The :link pseudo-class applies to links that have not yet been
-   *         visited.
-   *     <li>The :visited pseudo-class applies once the link has been visited by
-   *         the user.
-   *   </ul>
-   * </blockquote>
-   */
-  private static final Set<String> LINK_PSEUDO_CLASSES = new HashSet<String>(
-      Arrays.asList("link", "visited"));
   void removeUnsafeConstructs(AncestorChain<? extends CssTree> t) {
 
     // 1) Check that all classes, ids, property names, etc. are valid
@@ -372,7 +534,7 @@ public final class CssRewriter {
             boolean remove = false;
             CssTree child = ((CssTree.Pseudo) node).children().get(0);
             if (child instanceof CssTree.IdentLiteral) {
-              String pseudoName = Strings.toLowerCase(
+              Name pseudoName = Name.css(
                   ((CssTree.IdentLiteral) child).getValue());
               if (!ALLOWED_PSEUDO_CLASSES.contains(pseudoName)) {
                 // Allow the visited pseudo selector but not with any styles
@@ -596,7 +758,8 @@ public final class CssRewriter {
     // of names, but since removeAll takes a Collection<?> it would fail
     // silently if the whitelist were changed to a Collection<String>.
     // Assigning to a local does type-check though.
-    Set<Name> computedStyleNames = CssPropertyPatterns.COMPUTED_STYLE_WHITELIST;
+    Set<Name> computedStyleNames =
+        CssPropertyPatterns.HISTORY_INSENSITIVE_STYLE_WHITELIST;
     propNames.removeAll(computedStyleNames);
     PROPERTIES_ALLOWED_IN_LINK_CLASSES = Collections.unmodifiableSet(propNames);
   }

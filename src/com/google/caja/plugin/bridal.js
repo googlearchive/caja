@@ -532,6 +532,25 @@ var bridal = (function() {
     }
   }
 
+  /**
+   * Returns a "computed style" object for a DOM node.
+   *
+   * @param {HTMLElement element a DOM element.
+   * @param {string} pseudoElement an optional pseudo-element selector,
+   * such as ":first-child".
+   */
+  function getComputedStyle(element, pseudoElement) {
+    if (element.currentStyle && pseudoElement === void 0) {
+      return element.currentStyle;
+    } else if (window.getComputedStyle) {
+      return window.getComputedStyle(element, pseudoElement);
+    } else {
+      throw new Error(
+          'Computed style not available for pseudo element '
+          + pseudoElement);
+    }
+  }
+
   return {
     addEventListener: addEventListener,
     removeEventListener: removeEventListener,
@@ -545,6 +564,7 @@ var bridal = (function() {
     hasAttribute: hasAttribute,
     getBoundingClientRect: getBoundingClientRect,
     untameEventType: untameEventType,
-    extendedCreateElementFeature: features.extendedCreateElement
+    extendedCreateElementFeature: features.extendedCreateElement,
+    getComputedStyle: getComputedStyle
   };
 })();

@@ -990,6 +990,17 @@
     </copy>
   </target>
 
+  <target name="yuitest" depends="pluginc,dirs,CajoledValija">
+    <transform>
+      <include file="yuitest/yahoo-dom.js"/>
+      <output file="yuitest/yahoo-dom.vo.js" language="valija"/>
+    </transform>
+    <transform>
+      <include file="yuitest/dom_test.html"/>
+      <output file="yuitest/dom_test.vo.html" language="valija"/>
+    </transform>
+  </target>
+
   <!--
     - Enable Emma
     -

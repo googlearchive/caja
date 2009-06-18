@@ -72,6 +72,9 @@ public enum PluginMessageType implements MessageTypeInt {
       "%s: css attribute name %s not allowed in selector", MessageLevel.ERROR),
   CSS_ATTRIBUTE_TYPE_NOT_ALLOWED_IN_SELECTOR(
       "%s: css attribute type %s not allowed in selector", MessageLevel.ERROR),
+  CSS_LINK_PSEUDO_SELECTOR_NOT_ALLOWED_ON_NONANCHOR(
+      "%s: css :link and :visited pseudo selectors only allowed on A elements",
+      MessageLevel.ERROR),      
   SKIPPING_CSS_PROPERTY(
       "%s: skipping invalid css property %s", MessageLevel.WARNING),
   IMPORTS_NOT_ALLOWED_HERE("%s: @import not allowed here", MessageLevel.ERROR),

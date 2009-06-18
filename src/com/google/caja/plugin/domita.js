@@ -272,6 +272,50 @@ domitaModules.TameXMLHttpRequest = function(
   return TameXMLHttpRequest;
 };
 
+domitaModules.CssPropertiesCollection =
+    function(cssPropertyNameCollection, anElement, css) {
+  var canonicalStylePropertyNames = {};
+  // Maps style property names, e.g. cssFloat, to property names, e.g. float.
+  var cssPropertyNames = {};
+
+  cajita.forOwnKeys(cssPropertyNameCollection,
+                    ___.frozenFunc(function (cssPropertyName) {
+    var baseStylePropertyName = cssPropertyName.replace(
+        /-([a-z])/g, function (_, letter) { return letter.toUpperCase(); });
+    var canonStylePropertyName = baseStylePropertyName;
+    cssPropertyNames[baseStylePropertyName]
+        = cssPropertyNames[canonStylePropertyName]
+        = cssPropertyName;
+    if (css.alternates.hasOwnProperty(canonStylePropertyName)) {
+      var alts = css.alternates[canonStylePropertyName];
+      for (var i = alts.length; --i >= 0;) {
+        cssPropertyNames[alts[i]] = cssPropertyName;
+        // Handle oddities like cssFloat/styleFloat.
+        if (alts[i] in anElement.style
+            && !(canonStylePropertyName in anElement.style)) {
+          canonStylePropertyName = alts[i];
+        }
+      }
+    }
+    canonicalStylePropertyNames[cssPropertyName] = canonStylePropertyName;
+  }));
+
+  return {
+    isCanonicalProp: function (p) {
+      return cssPropertyNames.hasOwnProperty(p);
+    },
+    isCssProp: function (p) {
+      return canonicalStylePropertyNames.hasOwnProperty(p);
+    },
+    getCanonicalPropFromCss: function (p) {
+      return canonicalStylePropertyNames[p];
+    },
+    getCssPropFromCanonical: function(p) {
+      return cssPropertyNames[p];
+    }
+  };
+};
+
 /**
  * Add a tamed document implementation to a Gadget's global scope.
  *
@@ -3037,35 +3081,11 @@ var attachDocumentStub = (function () {
       }
       return out.join(' ');
     };
-    // Maps a lower-cased style property name, e.g. background-image,
-    // to a style object property name, e.g. backgroundImage, so that
-    // it can be used as a style object property name as in
-    // myHtmlElement.style['backgroundImage'].
-    var canonicalStylePropertyNames = {};
-    // Maps style property names, e.g. cssFloat, to property names, e.g. float.
-    var cssPropertyNames = [];
 
-    cajita.forOwnKeys(css.properties,
-                      ___.frozenFunc(function (cssPropertyName, pattern) {
-      var baseStylePropertyName = cssPropertyName.replace(
-          /-([a-z])/g, function (_, letter) { return letter.toUpperCase(); });
-      var canonStylePropertyName = baseStylePropertyName;
-      cssPropertyNames[baseStylePropertyName]
-          = cssPropertyNames[canonStylePropertyName]
-          = cssPropertyName;
-      if (css.alternates.hasOwnProperty(canonStylePropertyName)) {
-        var alts = css.alternates[canonStylePropertyName];
-        for (var i = alts.length; --i >= 0;) {
-          cssPropertyNames[alts[i]] = cssPropertyName;
-          // Handle oddities like cssFloat/styleFloat.
-          if (alts[i] in document.documentElement.style
-              && !(canonStylePropertyName in document.documentElement.style)) {
-            canonStylePropertyName = alts[i];
-          }
-        }
-      }
-      canonicalStylePropertyNames[cssPropertyName] = canonStylePropertyName;
-    }));
+    var allCssProperties = domitaModules.CssPropertiesCollection(
+        css.properties, document.documentElement, css);
+    var historyInsensitiveCssProperties = domitaModules.CssPropertiesCollection(
+        css.HISTORY_INSENSITIVE_STYLE_WHITELIST, document.documentElement, css);
 
     function TameStyle(style, editable) {
       this.style___ = style;
@@ -3073,31 +3093,39 @@ var attachDocumentStub = (function () {
       ___.grantCall(this, 'getPropertyValue');
     }
     nodeClasses.Style = TameStyle;
+    TameStyle.prototype.readByCanonicalName___ = function(canonName) {
+      return String(this.style___[canonName] || '');
+    };
+    TameStyle.prototype.writeByCanonicalName___ = function(canonName, val) {
+      this.style___[canonName] = val;
+    };
     TameStyle.prototype.allowProperty___ = function (cssPropertyName) {
-      return css.properties.hasOwnProperty(cssPropertyName);
+      return allCssProperties.isCssProp(cssPropertyName);
     };
     TameStyle.prototype.handleRead___ = function (stylePropertyName) {
       if (!this.style___
-          || !cssPropertyNames.hasOwnProperty(stylePropertyName)) {
+          || !allCssProperties.isCanonicalProp(stylePropertyName)) {
         return void 0;
       }
-      var cssPropertyName = cssPropertyNames[stylePropertyName];
+      var cssPropertyName =
+          allCssProperties.getCssPropFromCanonical(stylePropertyName);
       if (!this.allowProperty___(cssPropertyName)) { return void 0; }
-      var canonName = canonicalStylePropertyNames[cssPropertyName];
-      return String(this.style___[canonName] || '');
+      var canonName = allCssProperties.getCanonicalPropFromCss(cssPropertyName);
+      return this.readByCanonicalName___(canonName);      
     };
     TameStyle.prototype.getPropertyValue = function (cssPropertyName) {
       cssPropertyName = String(cssPropertyName || '').toLowerCase();
       if (!this.allowProperty___(cssPropertyName)) { return ''; }
-      var canonName = canonicalStylePropertyNames[cssPropertyName];
-      return String(this.style___[canonName] || '');
+      var canonName = allCssProperties.getCanonicalPropFromCss(cssPropertyName);
+      return this.readByCanonicalName___(canonName);
     };
     TameStyle.prototype.handleSet___ = function (stylePropertyName, value) {
       if (!this.editable___) { throw new Error('style not editable'); }
-      if (!cssPropertyNames.hasOwnProperty(stylePropertyName)) {
+      if (!allCssProperties.isCanonicalProp(stylePropertyName)) {
         throw new Error('Unknown CSS property name ' + stylePropertyName);
       }
-      var cssPropertyName = cssPropertyNames[stylePropertyName];
+      var cssPropertyName =
+          allCssProperties.getCssPropFromCanonical(stylePropertyName);
       if (!this.allowProperty___(cssPropertyName)) { return void 0; }
       var pattern = css.properties[cssPropertyName];
       if (!pattern) { throw new Error('style not editable'); }
@@ -3126,18 +3154,42 @@ var attachDocumentStub = (function () {
         throw new Error('bad value `' + val + '` for CSS property '
                         + stylePropertyName);
       }
-      var canonName = canonicalStylePropertyNames[cssPropertyName];
-      this.style___[canonName] = val;
+      var canonName = allCssProperties.getCanonicalPropFromCss(cssPropertyName);
+      this.writeByCanonicalName___(canonName, val);
       return value;
     };
     TameStyle.prototype.toString = function () { return '[Fake Style]'; };
 
-    function TameComputedStyle(style) {
-      TameStyle.call(this, style, false);
+    function isNestedInAnchor(rawElement) {
+      for ( ; rawElement && rawElement != pseudoBodyNode;
+           rawElement = rawElement.parentNode) {
+        if (rawElement.tagName.toLowerCase() === 'a') { return true; }
+      }
+      return false;
+    }
+
+    function TameComputedStyle(rawElement, pseudoElement) {
+      TameStyle.call(
+          this,
+          bridal.getComputedStyle(rawElement, pseudoElement),
+          false);
+      this.rawElement___ = rawElement;
+      this.pseudoElement___ = pseudoElement;
     }
     classUtils.extend(TameComputedStyle, TameStyle);
-    TameComputedStyle.prototype.allowProperty___ = function (cssPropertyName) {
-      return css.COMPUTED_STYLE_WHITELIST.hasOwnProperty(cssPropertyName);
+    TameComputedStyle.prototype.readByCanonicalName___ = function(canonName) {
+      var canReturnDirectValue =
+          historyInsensitiveCssProperties.isCanonicalProp(canonName)
+          || !isNestedInAnchor(this.rawElement___);
+      if (canReturnDirectValue) {
+        return TameStyle.prototype.readByCanonicalName___.call(this, canonName);
+      } else {
+        return new TameComputedStyle(pseudoBodyNode, this.pseudoElement___)
+            .readByCanonicalName___(canonName);
+      }
+    };
+    TameComputedStyle.prototype.writeByCanonicalName___ = function(canonName) {
+      throw 'Computed styles not editable: This code should be unreachable';
     };
     TameComputedStyle.prototype.toString = function () {
       return '[Fake Computed Style]';
@@ -3380,22 +3432,12 @@ var attachDocumentStub = (function () {
                 ? void 0 : String(pseudoElement).toLowerCase();
             if (pseudoElement !== void 0
                 && !PSEUDO_ELEMENT_WHITELIST.hasOwnProperty(pseudoElement)) {
-              throw new Error('Bad pseudo class ' + pseudoElement);
+              throw new Error('Bad pseudo element ' + pseudoElement);
             }
             // No need to check editable since computed styles are readonly.
-
-            var rawNode = tameElement.node___;
-            if (rawNode.currentStyle && pseudoElement === void 0) {
-              return new TameComputedStyle(rawNode.currentStyle);
-            } else if (window.getComputedStyle) {
-              var rawStyleNode = window.getComputedStyle(
-                  tameElement.node___, pseudoElement);
-              return new TameComputedStyle(rawStyleNode);
-            } else {
-              throw new Error(
-                  'Computed style not available for pseudo element '
-                  + pseudoElement);
-            }
+            return new TameComputedStyle(
+                tameElement.node___,
+                pseudoElement);
           })
 
       // NOT PROVIDED

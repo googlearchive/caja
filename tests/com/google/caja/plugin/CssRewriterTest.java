@@ -130,8 +130,9 @@ public class CssRewriterTest extends CajaTestCase {
             "a:visited {\n  color: blue\n}");
     assertNoErrors();
 
-    // Properties that are on DOMita's COMPUTED_STYLE_WHITELIST should not be
-    // allowed in any rule that correlates with the :visited pseudo selector.
+    // Properties that are on DOMita's HISTORY_INSENSITIVE_STYLE_WHITELIST
+    // should not be allowed in any rule that correlates with the :visited
+    // pseudo selector.
     mq.getMessages().clear();
     runTest(
         "a:visited { color:blue; float:left; _float:left; *float:left }",
@@ -155,6 +156,31 @@ public class CssRewriterTest extends CajaTestCase {
     runTest(
         "a:visited { COLOR:blue; FLOAT:left; _FLOAT:left; *FLOAT:left }",
         "a:visited {\n  color: blue\n}");
+
+    runTest(
+        "*:visited { color: blue; }",
+        "a:visited {\n  color: blue\n}");
+    runTest(
+        "#foo:visited { color: blue; }",
+        "a#foo:visited {\n  color: blue\n}");
+    runTest(
+        ".foo:link { color: blue; }",
+        "a.foo:link {\n  color: blue\n}");
+    
+    runTest(
+        ""
+        + "#foo:visited, div, .bar:link, p {\n"
+        + "  padding: 1px;\n"
+        + "  color: blue;\n"
+        + "}",
+        ""
+        + "a#foo:visited, a.bar:link {\n"
+        + "  color: blue\n"
+        + "}\n"
+        + "div, p {\n"
+        + "  padding: 1px;\n"
+        + "  color: blue\n"
+        + "}");
 
     runTest(
         ""

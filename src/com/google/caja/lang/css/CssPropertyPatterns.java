@@ -151,23 +151,24 @@ public class CssPropertyPatterns {
   private final CssSchema schema;
 
   /**
-   * Set of properties accessible on computed style.
-   * This list is a conservative one compiled by looking at what prototype.js
-   * needs to be able to do visibility, containment, and layout calculations.
-   * If expanded, it should not allow an attacker to probe the user's history
-   * as described at https://bugzilla.mozilla.org/show_bug.cgi?id=147777 .
-   * This list must not contain anything in
-   * CssRewriter.VISITED_PROPERTY_WHITELIST.
-   * <p>
-   * This list should not contain any properties that differ between visited and
-   * unvisited links in the container.
+   * Set of properties accessible on computed style of an anchor (<A>) element
+   * or some element nested within an anchor. This list is a conservative one
+   * based on the ability to do visibility, containment, and layout
+   * calculations. It REQUIRES that user CSS is prevented from specifying ANY
+   * of these properties in a history sensitive manner (i.e., in a rule with
+   * a ":link" or ":visited" predicate). Otherwise, it would allow an attacker
+   * to probe the user's history as described at
+   * https://bugzilla.mozilla.org/show_bug.cgi?id=147777 .
    */
-  public static Set<Name> COMPUTED_STYLE_WHITELIST = new HashSet<Name>(
-      Arrays.asList(
-          Name.css("display"), Name.css("filter"), Name.css("float"),
-          Name.css("height"), Name.css("left"), Name.css("opacity"),
-          Name.css("overflow"), Name.css("position"), Name.css("right"),
-          Name.css("top"), Name.css("visibility"), Name.css("width")));
+  public static Set<Name> HISTORY_INSENSITIVE_STYLE_WHITELIST =
+      new HashSet<Name>(
+          Arrays.asList(
+              Name.css("display"), Name.css("filter"), Name.css("float"),
+              Name.css("height"), Name.css("left"), Name.css("opacity"),
+              Name.css("overflow"), Name.css("position"), Name.css("right"),
+              Name.css("top"), Name.css("visibility"), Name.css("width"),
+              Name.css("padding-left"), Name.css("padding-right"),
+              Name.css("padding-top"), Name.css("padding-bottom")));
 
   public CssPropertyPatterns(CssSchema schema) {
     this.schema = schema;
@@ -595,18 +596,18 @@ public class CssPropertyPatterns {
       }
     }
 
-    List<Pair<Literal, Expression>> computedStyleWhitelistEls
+    List<Pair<Literal, Expression>> historyInsensitiveStyleWhitelistEls
         = new ArrayList<Pair<Literal, Expression>>();
-    for (Name propertyName : COMPUTED_STYLE_WHITELIST) {
-      computedStyleWhitelistEls.add(Pair.<Literal, Expression>pair(
+    for (Name propertyName : HISTORY_INSENSITIVE_STYLE_WHITELIST) {
+      historyInsensitiveStyleWhitelistEls.add(Pair.<Literal, Expression>pair(
           StringLiteral.valueOf(unk, propertyName.getCanonicalForm()),
           new BooleanLiteral(unk, true)));
     }
 
     ObjectConstructor cssPropConstructor = new ObjectConstructor(unk, members);
     ObjectConstructor alternateNames = new ObjectConstructor(unk, alternates);
-    ObjectConstructor computedStyleWhitelist
-        = new ObjectConstructor(unk, computedStyleWhitelistEls);
+    ObjectConstructor historyInsensitiveStyleWhitelist
+        = new ObjectConstructor(unk, historyInsensitiveStyleWhitelistEls);
 
     ParseTreeNode js = QuasiBuilder.substV(
         ""
@@ -616,12 +617,13 @@ public class CssPropertyPatterns {
         + "    return @cssPropConstructor;"
         + "  })(),"
         + "  alternates: @alternates,"
-        + "  COMPUTED_STYLE_WHITELIST: @computedStyleWhitelist"
+        + "  HISTORY_INSENSITIVE_STYLE_WHITELIST: "
+        + "      @historyInsensitiveStyleWhitelist"
         + "};",
         "constantPoolDecl", constantPoolDecl,
         "cssPropConstructor", cssPropConstructor,
         "alternates", alternateNames,
-        "computedStyleWhitelist", computedStyleWhitelist);
+        "historyInsensitiveStyleWhitelist", historyInsensitiveStyleWhitelist);
     TokenConsumer tc = js.makeRenderer(out, null);
     js.render(new RenderContext(tc));
     tc.consume(";");

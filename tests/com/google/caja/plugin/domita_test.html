@@ -82,11 +82,23 @@
   </head>
 
   <body bgcolor="white" onload="testDomita()">
+
+    <style type="text/css">
+      a:visited { color: purple; }
+      a:link { color: blue; }
+    </style>
+
+    <!-- Ensure http://www.google.com is :visited -->
+    <iframe src="http://www.google.com"></iframe>
+
     <div id="console-results"></div>
 
     <div id="untrusted_content" class="xyz___"
      title="<Untrusted Content Title>"
-     style="position: relative; width:1200px; height: 600px">
+     style="position: relative;
+            width:1200px;
+            height: 600px;
+            color: rgb(12, 34, 56)">
       <!-- should appear first -->
       <div id="absolutely-positioned-xyz___"
        style="position: absolute; padding: 0; margin: 0;
@@ -113,6 +125,22 @@
       <div class="testcontainer" id="test-opaque-nodes-xyz___"
        ><!-- Comment -->a<script id="howdy-script-xyz___">/* Howdy */</script
        >b<object></object>c</div>
+
+      <!-- http://www.google.com/ has been visited by the above IFRAME -->
+      <a id="direct-visited-xyz___" href="http://www.google.com/">Visited</a>
+      <a href="http://www.google.com/">
+        <p>
+          <span id="nested-visited-xyz___">Visited</span>
+        </p>
+      </a>
+      
+      <!-- http://www.example.com/ is reserved by RFC2606 -->
+      <a id="direct-link-xyz___" href="http://www.example.com/">Link</a>
+      <a href="http://www.example.com/">
+        <p>
+          <span id="nested-link-xyz___">Link</span>
+        </p>
+      </a>
     </div>
 
     <script type="text/javascript">
