@@ -484,6 +484,13 @@ jsunitRegister('testTimeoutAndInterval',
   // inadvertently clear existing timeouts or intervals.
   clearTimeout(setTimeout(null, 0));
   clearInterval(setInterval(null, 0));
+  
+  // Check that clearInterval and clearTimeout ignore null 
+  // and undefined intervalId's
+  clearInterval(null);
+  clearInterval(void 0);
+  clearTimeout(null);
+  clearTimeout(void 0);
 
   setTimeout(
       function () {

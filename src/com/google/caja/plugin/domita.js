@@ -521,6 +521,7 @@ var attachDocumentStub = (function () {
   }
   ___.frozenFunc(tameSetTimeout);
   function tameClearTimeout(timeoutId) {
+    if (timeoutId === null || timeoutId === (void 0)) { return; }
     ___.guard(timeoutIdTrademark, timeoutId);
     var rawTimeoutId = timeoutId.timeoutId___;
     // Skip NaN values created for null timeouts above.
@@ -548,6 +549,7 @@ var attachDocumentStub = (function () {
   }
   ___.frozenFunc(tameSetInterval);
   function tameClearInterval(intervalId) {
+    if (intervalId === null || intervalId === (void 0)) { return; }
     ___.guard(intervalIdTrademark, intervalId);
     var rawIntervalId = intervalId.intervalId___;
     if (rawIntervalId === rawIntervalId) { clearInterval(rawIntervalId); }
