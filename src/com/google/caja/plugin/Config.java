@@ -55,11 +55,18 @@ public final class Config {
   private final Options options = new Options();
 
   private final Option INPUT = defineOption(
-      "i", "input", "Input URI containing HTML, JS, or CSS.", true);
+      "i", "input", "Input URI containing HTML (with optional "
+      + "script and style blocks)", true);
+
+  private final Option OUTPUT_HTML = defineOption(
+      "h", "output_html",
+      "Output file path for translated HTML (defaults to input with "
+      + "\".out.html\")",
+      true);
 
   private final Option OUTPUT_JS = defineOption(
       "j", "output_js",
-      "Output file path for translated JS (defaults to input with \".js\")",
+      "Output file path for translated JS (defaults to input with \".out.js\")",
       true);
 
   private final Option OUTPUT_BASE = defineOption(
@@ -98,9 +105,6 @@ public final class Config {
   private final Option DEBUG_MODE = defineBooleanOption(
       "g", "debug", "Set to add debugging info to cajoled output.");
 
-  private final Option CAJA_MODE = defineBooleanOption(
-      "a", "caja", "Enables Caja (as opposed to Cajita) mode.");
-
   private final Option RENDERER = defineOption(
       "r",
       "renderer",
@@ -121,13 +125,13 @@ public final class Config {
   private List<URI> inputUris;
   private File outputBase;
   private File outputJsFile;
+  private File outputHtmlFile;
   private URI cssPropertyWhitelistUri;
   private URI htmlAttributeWhitelistUri;
   private URI htmlElementWhitelistUri;
   private URI baseUri;
   private String gadgetView;
   private boolean debugMode;
-  private boolean cajaMode;
   private SourceRenderMode renderer;
   private int servicePort;
 
@@ -143,6 +147,7 @@ public final class Config {
 
   public Collection<URI> getInputUris() { return inputUris; }
   public File getOutputJsFile() { return outputJsFile; }
+  public File getOutputHtmlFile() { return outputHtmlFile; }
   public File getOutputBase() { return outputBase; }
   public int getServicePort() { return servicePort; }
   public URI getCssPropertyWhitelistUri() {
@@ -172,8 +177,6 @@ public final class Config {
   public String getGadgetView() { return gadgetView; }
 
   public boolean debugMode() { return debugMode; }
-
-  public boolean cajaMode() { return cajaMode; }
 
   public SourceRenderMode renderer() { return renderer; }
 
@@ -224,10 +227,15 @@ public final class Config {
       if (cl.getOptionValue(OUTPUT_BASE.getOpt()) != null) {
         outputBase = new File(cl.getOptionValue(OUTPUT_BASE.getOpt()));
 
-        outputJsFile = substituteExtension(outputBase, "js");
+        outputJsFile = substituteExtension(outputBase, ".out.js");
+        outputHtmlFile = substituteExtension(outputBase, ".out.html");
 
         if (cl.getOptionValue(OUTPUT_JS.getOpt()) != null) {
           usage("Can't specify both --out and --output_js", stderr);
+          return false;
+        }
+        if (cl.getOptionValue(OUTPUT_HTML.getOpt()) != null) {
+          usage("Can't specify both --out and --output_html", stderr);
           return false;
         }
       } else {
@@ -239,7 +247,15 @@ public final class Config {
 
         if (outputJsFile == null) {
           usage("Please specify js output via " + OUTPUT_JS.getLongOpt(),
-                stderr);
+              stderr);
+        }
+        outputHtmlFile = cl.getOptionValue(OUTPUT_HTML.getOpt()) == null
+            ? toFileWithExtension(inputUri, "out.html")
+            : new File(cl.getOptionValue(OUTPUT_HTML.getOpt()));
+
+        if (outputHtmlFile == null) {
+          usage("Please specify js output via " + OUTPUT_HTML.getLongOpt(),
+              stderr);
         }
       }
 
@@ -267,7 +283,6 @@ public final class Config {
 
       gadgetView = cl.getOptionValue(VIEW.getOpt(), "canvas");
       debugMode = cl.hasOption(DEBUG_MODE.getOpt());
-      cajaMode = cl.hasOption(CAJA_MODE.getOpt());
 
       String servicePortString;
       try {

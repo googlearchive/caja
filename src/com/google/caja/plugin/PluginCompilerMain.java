@@ -27,6 +27,7 @@ import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.html.DomParser;
+import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.CajoledModule;
 import com.google.caja.parser.js.Parser;
 import com.google.caja.reporting.Message;
@@ -59,6 +60,8 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.Map;
 import java.util.HashMap;
+
+import org.w3c.dom.Node;
 
 /**
  * An executable that invokes the {@link PluginCompiler}.
@@ -101,11 +104,14 @@ public final class PluginCompilerMain {
 
     boolean success = false;
     MessageContext mc = null;
-    CajoledModule compiledOutput = null;
+    CajoledModule compiledJsOutput = null;
+    Node compiledDomOutput = null;
+    String compiledHtmlOutput = null;
+    
     try {
       PluginMeta meta = new PluginMeta(makeEnvironment(config));
       meta.setDebugMode(config.debugMode());
-      meta.setValijaMode(config.cajaMode());
+      meta.setValijaMode(true);
       PluginCompiler compiler =
           new PluginCompiler(BuildInfo.getInstance(), meta, mq);
       mc = compiler.getMessageContext();
@@ -114,7 +120,10 @@ public final class PluginCompilerMain {
 
       success = parseInputs(config.getInputUris(), compiler) && compiler.run();
       if (success) {
-        compiledOutput = compiler.getJavascript();
+        compiledJsOutput = compiler.getJavascript();
+        compiledDomOutput = compiler.getStaticHtml();
+        compiledHtmlOutput = compiledDomOutput != null ? 
+            Nodes.render(compiledDomOutput) : "";
       }
     } finally {
       if (mc == null) { mc = new MessageContext(); }
@@ -123,10 +132,12 @@ public final class PluginCompilerMain {
     }
 
     if (success) {
-      writeFile(config.getOutputJsFile(), compiledOutput);
+      writeFile(config.getOutputJsFile(), compiledJsOutput);
+      writeFile(config.getOutputHtmlFile(), compiledHtmlOutput);
     } else {
       // Make sure there is no previous output file from a failed run.
       config.getOutputJsFile().delete();
+      config.getOutputHtmlFile().delete();
       // If it wasn't there in the first place, or is not writable, that's OK,
       // so ignore the return value.
     }
@@ -196,6 +207,22 @@ public final class PluginCompilerMain {
       throw new AssertionError("Can't classify input " + is);
     }
     return input;
+  }
+
+  /** Write the given HTML to the given file. */
+  private void writeFile(File outputHtmlFile, String compiledHtmlOutput) {
+    OutputStreamWriter out = null;
+    try {
+      out = new OutputStreamWriter(
+          new FileOutputStream(config.getOutputHtmlFile()), "UTF-8");
+      out.append(compiledHtmlOutput);
+    } catch (IOException ex) {
+      exHandler.handle(ex);
+    } finally {
+      if (out != null) {
+        try { out.close(); } catch (IOException e) {}
+      }
+    }
   }
 
   /** Write the given parse tree to the given file. */
