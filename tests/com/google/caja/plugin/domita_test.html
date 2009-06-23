@@ -397,7 +397,7 @@
       // Create a readonly mirror of document so that we can test that mutations
       // fail when they should.
       var documentHolder = valijaMaker ? testImports.outers : testImports;
-      documentHolder.documentRO = new documentHolder.document.constructor(
+      documentHolder.documentRO = new testImports.TameHTMLDocument___(
           document, testDomContainer, false);
 
       testImports.htmlEmitter___ = new HtmlEmitter(

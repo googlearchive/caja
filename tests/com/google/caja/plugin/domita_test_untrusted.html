@@ -272,8 +272,10 @@ can test window.scrollBy with a positive x value with a visible effect.
 <p class="testcontainer" id="test-bounding-client-rect"
 >Test Bounding Client Rect</p>
 
-<p class="testcontainer" id="test-attribute-nodes"
->Test Attribute Nodes</p>
+<p class="testcontainer" id="test-attribute-nodes">
+  <input id="test-attribute-nodes-onclick" type="checkbox" onclick="return 0;">
+  Test Attribute Nodes
+</p>
 
 <p class="testcontainer" id="test-shorthand-css"
  >Test shorthand css</p>
@@ -292,6 +294,7 @@ function expectFailure(shouldFail, opt_msg, opt_failFilter) {
     shouldFail();
   } catch (e) {
     if (opt_failFilter && !opt_failFilter(e)) { throw e; }
+    console.log('Caught expected failure ' + e + ' (' + e.message + ')');
     return;
   }
   fail(opt_msg || 'Expected failure');
@@ -981,8 +984,8 @@ jsunitRegister('testScriptLoading',
       function () {});
   assertFalse('gse7', checkGlobalSideEffect());
 
-  // Test that an external script can be loaded by setting the "src" attribute
-  // of a newly created script elements.
+  // Test that an external script cannot be loaded by setting the "src"
+  // attribute of a newly created script element.
   var s = document.createElement('script');
   assertAsynchronousRequirement(
       'whitelisted script never ran',
@@ -1854,10 +1857,18 @@ jsunitRegister('testFactoriesNotBypassable',
                function testFactoriesNotBypassable() {
   // It's not possible to create an element by (new HTMLElement) in any browser
   // since factories choose the underlying implementation.
-  expectFailure(function () { new HTMLElement; }, 'HTMLElement');
-  expectFailure(function () { new Node; }, 'Node');
-  expectFailure(function () { new Event; }, 'Event');
-  expectFailure(function () { new Text; }, 'Text');
+  expectFailure(
+      function () { new window.HTMLElement({ nodeType: 1 }, false); },
+      'HTMLElement');
+  expectFailure(
+      function () { new window.Node({ nodeType: 0 }, false); },
+      'Node');
+  expectFailure(
+      function () { new window.Event({}); },
+      'Event');
+  expectFailure(
+      function () { new window.Text({ nodeType: 3 }, false); },
+      'Text');
   pass('test-factories-not-bypassable');
 });
 
@@ -2053,15 +2064,40 @@ jsunitRegister('testBoundingClientRect',
 
 jsunitRegister('testAttributeNodes',
                function testAttributeNodes() {
-  var p = document.getElementById('test-attribute-nodes');
-  var attrNode = p.getAttributeNode('id');
-  assertEquals('test-attribute-nodes', attrNode.value);
+  var cb = document.getElementById('test-attribute-nodes-onclick');
+
+  var attrNode = cb.getAttributeNode('id');
+  assertEquals('test-attribute-nodes-onclick', attrNode.value);
   assertEquals(true, attrNode.specified);
-  assertEquals(p, attrNode.ownerElement);
+  assertEquals(cb, attrNode.ownerElement);
   assertEquals('id', attrNode.name);
-  attrNode = p.getAttributeNode('name');
-  assertEquals(null, attrNode.value);
-  assertEquals(false, attrNode.specified);
+
+  assertEquals(null, cb.getAttributeNode('name'));
+
+  function checkScriptAttrNode(attrNode) {
+    var scriptAttrRE = new RegExp('plugin_dispatchEvent___\\(.*\\);');
+
+    function assertScript(value) {
+      assertTrue(value.match(scriptAttrRE).length > 0);
+    }
+
+    assertScript(attrNode.value);
+    assertScript(attrNode.nodeValue);
+  }
+
+  checkScriptAttrNode(cb.getAttributeNode('onclick'));
+
+  var onclickAttrNode;
+  for (var i = 0; i < cb.attributes.length; ++i) {
+    if (cb.attributes[i].name === 'onclick') {
+      onclickAttrNode = cb.attributes[i];
+    }
+  }
+  assertTrue(!!onclickAttrNode);
+  checkScriptAttrNode(onclickAttrNode);
+
+  onclickAttrNode.value = 'globalSideEffect();';
+  checkScriptAttrNode(onclickAttrNode);
 
   pass('test-attribute-nodes');
 });
