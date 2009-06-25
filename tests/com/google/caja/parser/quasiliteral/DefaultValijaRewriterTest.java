@@ -53,6 +53,45 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     assertConsistent("function f() { this.x = 1; } f; var g = new f(); g.x;");
   }
 
+  public void testThrowCatch() throws Exception {
+    assertConsistent(
+        "var x = 0; try { throw 1; }" +
+        "catch (e) { x = e; }" +
+        "x;");
+    assertConsistent(
+        "var x = 0; try { throw { a: 1 }; }" +
+        "catch (e) { x = e; }" +
+        "x;");
+    assertConsistent(
+        "var x = 0; try { throw 'err'; }" +
+        "catch (e) { x = e; }" +
+        "x;");
+    assertConsistent(
+        "var x = 0; try { throw new Error('err'); }" +
+        "catch (e) { x = e.message; }" +
+        "x;");
+    assertConsistent(
+        "var x = 0; try { throw 1; }" +
+        "catch (e) { x = e; }" +
+        "finally { x = 2; }" +
+        "x;");
+    assertConsistent(
+        "var x = 0; try { throw { a: 1 }; }" +
+        "catch (e) { x = e; }" +
+        "finally { x = 2; }" +
+        "x;");
+    assertConsistent(
+        "var x = 0; try { throw 'err'; }" +
+        "catch (e) { x = e; }" +
+        "finally { x = 2; }" +
+        "x;");
+    assertConsistent(
+        "var x = 0; try { throw new Error('err'); }" +
+        "catch (e) { x = e.message; }" +
+        "finally { x = 2; }" +
+        "x;");
+  }
+
   public void testProtoCall() throws Exception {
     assertConsistent("Array.prototype.sort.call([3, 1, 2]);");
     assertConsistent("[3, 1, 2].sort();");

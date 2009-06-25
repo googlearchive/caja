@@ -577,14 +577,16 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="try { @s0*; } catch (@x) { @s1*; }",
-          substitutes="try { @s0*; } catch (@x) { @s1*; }")
+          substitutes="try { @s0*; } catch (@x) { @rx = $v.tr(@rx); @s1*; }")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
           TryStmt t = (TryStmt) node;
+          Identifier x = (Identifier) bindings.get("x");
           return substV(
               "s0", expandAll(bindings.get("s0"), scope, mq),
-              "x", noexpand((Identifier) bindings.get("x")),
+              "x", noexpand(x),
+              "rx", new Reference(x),
               "s1", expandAll(bindings.get("s1"),
                               Scope.fromCatchStmt(scope, t.getCatchClause()),
                               mq));
@@ -600,14 +602,16 @@ public class DefaultValijaRewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="try { @s0*; } catch (@x) { @s1*; } finally { @s2*; }",
-          substitutes="try { @s0*; } catch (@x) { @s1*; } finally { @s2*; }")
+          substitutes="try { @s0*; } catch (@x) { @rx = $v.tr(@rx); @s1*; } finally { @s2*; }")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
           TryStmt t = (TryStmt) node;
+          Identifier x = (Identifier) bindings.get("x");
           return substV(
               "s0", expandAll(bindings.get("s0"), scope, mq),
-              "x", noexpand((Identifier) bindings.get("x")),
+              "x", noexpand(x),
+              "rx", new Reference(x),
               "s1", expandAll(bindings.get("s1"),
                               Scope.fromCatchStmt(scope, t.getCatchClause()),
                               mq),
@@ -636,6 +640,19 @@ public class DefaultValijaRewriter extends Rewriter {
       }
     },
 
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="throw",
+          synopsis="",
+          reason="",
+          matches="throw @ex",
+          substitutes="throw $v.ts(@ex)")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+        return transform(node, scope, mq);
+      }
+    },
+    
     ////////////////////////////////////////////////////////////////////////
     // variable - variable name handling
     ////////////////////////////////////////////////////////////////////////

@@ -1432,7 +1432,8 @@ var safeJSON;
   function Token(name) {
     name = String(name);
     return primFreeze({
-      toString: frozenFunc(function tokenToString() { return name; })
+      toString: frozenFunc(function tokenToString() { return name; }),
+      throwable___: true
     });
   }
   frozenFunc(Token);
@@ -1782,6 +1783,7 @@ var safeJSON;
             name = !name ? void 0 : '' + name;
             return primFreeze({ message: message, name: name, stack: stack });
           }
+          if (ex.throwable___) { return ex; }
           return '' + ex;
         }
         case 'string':
@@ -2731,7 +2733,7 @@ var safeJSON;
   var MAGIC_NUM = Math.random();
   var MAGIC_TOKEN = Token('MAGIC_TOKEN_FOR:' + MAGIC_NUM);
   // Using colons in the below causes it to fail on IE since getting a
-  // property whose name contains a semicolon on a DOM table element causes
+  // property whose name contains a colon on a DOM table element causes
   // an exception.
   var MAGIC_NAME = '_index;'+ MAGIC_NUM + ';';
 

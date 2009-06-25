@@ -109,7 +109,7 @@ public class CajitaRewriter extends Rewriter {
 
   /**
    * Find the last expression statetement executed in a block of code and
-   * emit it's value to a variable "moduleResult___" so that it can used as
+   * emit its value to a variable "moduleResult___" so that it can used as
    * the result of module loading.
    */
   @SuppressWarnings("unchecked")

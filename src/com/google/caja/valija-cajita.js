@@ -464,10 +464,35 @@ var valijaMaker = (function(outers) {
     }
   }
 
+  /* Cajita does not allow throwing powerful objects because
+   * it's too hard to keep them in mind when doing a security 
+   * review.  So we construct a powerless object to throw in
+   * its place, stash the actual exception in $v using the
+   * powerless object as a key, the retrieve the original in the
+   * catch block.  This also means that you can't throw a powerful
+   * object between Valija sandboxes, which is as it should be.
+   */
+  var t = cajita.newTable();
+  var undefIndicator = {};
+  
+  function exceptionTableSet(ex) {
+    var result = cajita.Trademark('' + ex);
+    t.set(result, (ex === void 0) ? undefIndicator : ex);
+    return result;
+  }
+  
+  function exceptionTableRead(key) {
+    var v = t.get(key);
+    t.set(key, void 0);
+    return (v === void 0) ? key : ((v === undefIndicator) ? void 0 : v);
+  }
+
   // If you change these names, also change them in PermitTemplate.java
   return cajita.freeze({
     typeOf: typeOf,
     instanceOf: instanceOf,
+    tr: exceptionTableRead,
+    ts: exceptionTableSet,
 
     r: read,
     s: set,
