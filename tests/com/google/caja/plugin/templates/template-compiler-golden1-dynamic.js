@@ -50,4 +50,5 @@ try {
   el___ = emitter___.byId('id_6___');
   emitter___.setAttr(el___, 'id', 'zag-' + IMPORTS___.getIdClass___());
   el___ = emitter___.finish();
+  emitter___.signalLoaded();
 }

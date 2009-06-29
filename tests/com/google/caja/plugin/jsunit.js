@@ -28,22 +28,29 @@ function jsunitRegister(testName, test) {
   jsunitTests[testName] = test;
 }
 
+function arrayContains(anArray, anElement) {
+  for (var i = 0; i < anArray.length; i++) {
+    if (anElement === anArray[i]) { return true; }
+  }
+  return false;
+}
+
 /** Run tests. */
-function jsunitRun(opt_testName) {
+function jsunitRun(opt_testNames) {
   document.title += ' (' + (navigator.appName
                             ? navigator.appName + ' ' + navigator.appVersion
                             : navigator.userAgent) + ')';
   var originalTitle = document.title;
 
   var testNames = [];
-  if (opt_testName) {
-    testNames.push(opt_testName);
-  } else {
-    for (var k in jsunitTests) {
-      if (jsunitTests.hasOwnProperty(k)) { testNames.push(k); }
+  for (var k in jsunitTests) {
+    if (jsunitTests.hasOwnProperty(k)) {
+      if (!opt_testNames || arrayContains(arguments, k)) {
+        testNames.push(k); 
+      }
     }
-    testNames.sort();
   }
+  testNames.sort();
 
   var queryParams = (function () {
     var queryParams = {};

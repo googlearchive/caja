@@ -74,19 +74,21 @@ public final class CompileHtmlStage implements Pipeline.Stage<Jobs> {
       }
     }
 
-    MessageQueue mq = jobs.getMessageQueue();
+    if (!ihtmlRoots.isEmpty() || !stylesheets.isEmpty()) {
+      MessageQueue mq = jobs.getMessageQueue();
+  
+      TemplateSanitizer ts = new TemplateSanitizer(htmlSchema, mq);
+      for (Node ihtmlRoot : ihtmlRoots) { ts.sanitize(ihtmlRoot); }
+      TemplateCompiler tc = new TemplateCompiler(
+          ihtmlRoots, stylesheets, cssSchema, htmlSchema,
+          jobs.getPluginMeta(), jobs.getMessageContext(), mq);
+      Pair<Node, List<Block>> htmlAndJs = tc.getSafeHtml(
+          DomParser.makeDocument(null, null));
 
-    TemplateSanitizer ts = new TemplateSanitizer(htmlSchema, mq);
-    for (Node ihtmlRoot : ihtmlRoots) { ts.sanitize(ihtmlRoot); }
-    TemplateCompiler tc = new TemplateCompiler(
-        ihtmlRoots, stylesheets, cssSchema, htmlSchema,
-        jobs.getPluginMeta(), jobs.getMessageContext(), mq);
-    Pair<Node, List<Block>> htmlAndJs = tc.getSafeHtml(
-        DomParser.makeDocument(null, null));
-
-    jobs.getJobs().add(new Job(AncestorChain.instance(new Dom(htmlAndJs.a))));
-    for (Block bl : htmlAndJs.b) {
-      jobs.getJobs().add(new Job(AncestorChain.instance(bl)));
+      jobs.getJobs().add(new Job(AncestorChain.instance(new Dom(htmlAndJs.a))));
+      for (Block bl : htmlAndJs.b) {
+        jobs.getJobs().add(new Job(AncestorChain.instance(bl)));
+      }
     }
 
     return jobs.hasNoFatalErrors();

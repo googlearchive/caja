@@ -43,6 +43,12 @@
  * upon access to these attributes; to make them always appear to be
  * null; etc. Revisit this decision if needed.
  *
+ * <p>
+ * TODO(ihab.awad): Come up with a uniform convention (and helper functions,
+ * etc.) for checking that a user-supplied callback is a valid Cajita function
+ * or Valija Disfunction.
+
+ *
  * @author mikesamuel@gmail.com
  * @requires console, document, window
  * @requires clearInterval, clearTimeout, setInterval, setTimeout
@@ -85,6 +91,55 @@ domitaModules.classUtils = function() {
 
   // TODO(ihab.awad): extend(...) and inertClassCtor(...) are used together.
   // Merge them into one function so as to avoid potential for mistakes.
+
+  /**
+   * Apply a supplied list of getter and setter functions to a given object.
+   *
+   * @param object an object to be decorated with getters and setters
+   * implementing some properties.
+   *
+   * @param handlers an object containing the handler functions in the form:
+   *
+   *     {
+   *       <propName> : { get: <getHandlerFcn>, set: <setHandlerFcn> },
+   *       <propName> : { get: <getHandlerFcn>, set: <setHandlerFcn> },
+   *       ...
+   *     }
+   *
+   * For each <propName> entry, the "get" field is required, but the "set"
+   * field may be empty; this implies that <propName> is a read-only property.
+   */
+  function applyAccessors(object, handlers) {
+    function propertyOnlyHasGetter(_) {
+      throw new TypeError('setting a property that only has a getter');
+    }
+
+    cajita.forOwnKeys(handlers, ___.func(function (propertyName, def) {
+      var setter = def.set || propertyOnlyHasGetter;
+      ___.useGetHandler(object, propertyName, def.get);
+      ___.useSetHandler(object, propertyName, setter);
+    }));
+  }
+
+  /**
+   * Checks that a user-supplied callback is either a Cajita function or a
+   * Valija Disfuction. Return silently if the callback is valid; throw an
+   * exception if it is not valid.
+   *
+   * @param aCallback some user-supplied "function-like" callback.
+   */
+  function ensureValidCallback(aCallback) {
+
+    // ????????
+    // ___.asFunc(___.readPub(aListener, 'call'))
+
+    if ('function' !== typeof aCallback
+        // Allow disfunctions
+        && !('object' === (typeof aCallback) && aCallback !== null
+             && ___.canCallPub(aCallback, 'call'))) {
+      throw new Error('Expected function not ' + typeof aCallback);
+    }
+  }
 
   /**
    * Makes the first a subclass of the second.
@@ -142,7 +197,9 @@ domitaModules.classUtils = function() {
 
   return {
     exportFields: exportFields,
+    ensureValidCallback: ensureValidCallback,
     extend: extend,
+    applyAccessors: applyAccessors,
     inertClassCtor: inertClassCtor
   };
 };
@@ -533,7 +590,7 @@ var attachDocumentStub = (function () {
         console.error('domita assertion failed');
         console.trace();
       }
-      throw new Error();
+      throw new Error("Domita assertion failed");
     }
   }
 
@@ -1192,12 +1249,7 @@ var attachDocumentStub = (function () {
     }
 
     function makeEventHandlerWrapper(thisNode, listener) {
-      if ('function' !== typeof listener
-          // Allow disfunctions
-          && !('object' === (typeof listener) && listener !== null
-               && ___.canCallPub(listener, 'call'))) {
-        throw new Error('Expected function not ' + typeof listener);
-      }
+      classUtils.ensureValidCallback(listener);
       function wrapper(event) {
         return plugin_dispatchEvent___(
             thisNode, event, ___.getId(imports), listener);
@@ -1683,6 +1735,48 @@ var attachDocumentStub = (function () {
     ___.ctor(TamePseudoNode, TameNode, 'TamePseudoNode');
     ___.all2(___.grantTypedGeneric, TamePseudoNode.prototype, tameNodeMembers);
 
+    var commonElementPropertyHandlers = {
+      clientWidth: {
+        get: function () { return this.getGeometryDelegate___().clientWidth; }
+      },
+      clientHeight: {
+        get: function () { return this.getGeometryDelegate___().clientHeight; }
+      },
+      offsetLeft: {
+        get: function () { return this.getGeometryDelegate___().offsetLeft; }
+      },
+      offsetTop: {
+        get: function () { return this.getGeometryDelegate___().offsetTop; }
+      },
+      offsetWidth: {
+        get: function () { return this.getGeometryDelegate___().offsetWidth; }
+      },
+      offsetHeight: {
+        get: function () { return this.getGeometryDelegate___().offsetHeight; }
+      },
+      scrollLeft: {
+        get: function () { return this.getGeometryDelegate___().scrollLeft; },
+        set: function (x) {
+          if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+          this.getGeometryDelegate___().scrollLeft = +x;
+          return x;
+        }
+      },
+      scrollTop: {
+        get: function () { return this.getGeometryDelegate___().scrollTop; },
+        set: function (y) {
+          if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+          this.getGeometryDelegate___().scrollTop = +y;
+          return y;
+        }
+      },
+      scrollWidth: {
+        get: function () { return this.getGeometryDelegate___().scrollWidth; }
+      },
+      scrollHeight: {
+        get: function () { return this.getGeometryDelegate___().scrollHeight; }
+      }
+    };
 
     function TamePseudoElement(
         tagName, tameDoc, childNodesGetter, parentNodeGetter, innerHTMLGetter,
@@ -1695,6 +1789,7 @@ var attachDocumentStub = (function () {
       this.innerHTMLGetter___ = innerHTMLGetter;
       this.geometryDelegate___ = geometryDelegate;
       classUtils.exportFields(this, ['tagName', 'innerHTML']);
+      classUtils.applyAccessors(this, commonElementPropertyHandlers);
     }
     classUtils.extend(TamePseudoElement, TamePseudoNode);
     // TODO(mikesamuel): make nodeClasses work.
@@ -1897,6 +1992,32 @@ var attachDocumentStub = (function () {
       return '[Fake attribute node]';
     };
 
+    // Register set handlers for onclick, onmouseover, etc.
+    function registerElementScriptAttributeHandlers(aTameElement) {
+      var attrNameRe = /:(.*)/;
+      for (var html4Attrib in html4.ATTRIBS) {
+        if (html4.atype.SCRIPT === html4.ATTRIBS[html4Attrib]) {
+          (function (attribName) {
+            ___.useSetHandler(
+                aTameElement,
+                attribName,
+                function eventHandlerSetter(listener) {
+                  if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+                  if (!listener) {  // Clear the current handler
+                    this.node___[attribName] = null;
+                  } else {
+                    // This handler cannot be copied from one node to another
+                    // which is why getters are not yet supported.
+                    this.node___[attribName] = makeEventHandlerWrapper(
+                        this.node___, listener);
+                  }
+                  return listener;
+                });
+           })(html4Attrib.match(attrNameRe)[1]);
+        }
+      }
+    }
+
     function TameElement(node, editable, childrenEditable) {
       assert(node.nodeType === 1);
       TameBackedNode.call(this, node, editable, childrenEditable);
@@ -1904,6 +2025,8 @@ var attachDocumentStub = (function () {
           this,
           ['className', 'id', 'innerHTML', 'tagName', 'style',
            'offsetParent', 'title', 'dir']);
+      classUtils.applyAccessors(this, commonElementPropertyHandlers);
+      registerElementScriptAttributeHandlers(this);
     }
     classUtils.extend(TameElement, TameBackedNode);
     nodeClasses.Element = nodeClasses.HTMLElement =
@@ -2121,81 +2244,6 @@ var attachDocumentStub = (function () {
         'getClassName', 'setClassName', 'getId', 'setId',
         'getInnerHTML', 'setInnerHTML', 'updateStyle', 'getStyle', 'setStyle',
         'getTagName']);
-
-    cajita.forOwnKeys({
-      clientWidth: {
-        get: function () { return this.getGeometryDelegate___().clientWidth; }
-      },
-      clientHeight: {
-        get: function () { return this.getGeometryDelegate___().clientHeight; }
-      },
-      offsetLeft: {
-        get: function () { return this.getGeometryDelegate___().offsetLeft; }
-      },
-      offsetTop: {
-        get: function () { return this.getGeometryDelegate___().offsetTop; }
-      },
-      offsetWidth: {
-        get: function () { return this.getGeometryDelegate___().offsetWidth; }
-      },
-      offsetHeight: {
-        get: function () { return this.getGeometryDelegate___().offsetHeight; }
-      },
-      scrollLeft: {
-        get: function () { return this.getGeometryDelegate___().scrollLeft; },
-        set: function (x) {
-          if (!this.editable___) { throw new Error(NOT_EDITABLE); }
-          this.getGeometryDelegate___().scrollLeft = +x;
-          return x;
-        }
-      },
-      scrollTop: {
-        get: function () { return this.getGeometryDelegate___().scrollTop; },
-        set: function (y) {
-          if (!this.editable___) { throw new Error(NOT_EDITABLE); }
-          this.getGeometryDelegate___().scrollTop = +y;
-          return y;
-        }
-      },
-      scrollWidth: {
-        get: function () { return this.getGeometryDelegate___().scrollWidth; }
-      },
-      scrollHeight: {
-        get: function () { return this.getGeometryDelegate___().scrollHeight; }
-      }
-    }, ___.func(function (propertyName, def) {
-      var setter = def.set || propertyOnlyHasGetter;
-      ___.useGetHandler(TameElement.prototype, propertyName, def.get);
-      ___.useSetHandler(TameElement.prototype, propertyName, setter);
-      ___.useGetHandler(TamePseudoElement.prototype, propertyName, def.get);
-      ___.useSetHandler(TamePseudoElement.prototype, propertyName, setter);
-    }));
-
-    // Register set handlers for onclick, onmouseover, etc.
-    (function () {
-      var attrNameRe = /:(.*)/;
-      for (var html4Attrib in html4.ATTRIBS) {
-        if (html4.atype.SCRIPT === html4.ATTRIBS[html4Attrib]) {
-          (function (attribName) {
-            ___.useSetHandler(
-                TameElement.prototype,
-                attribName,
-                function eventHandlerSetter(listener) {
-                  if (!this.editable___) { throw new Error(NOT_EDITABLE); }
-                  if (!listener) {  // Clear the current handler
-                    this.node___[attribName] = null;
-                  } else {
-                    // This handler cannot be copied from one node to another
-                    // which is why getters are not yet supported.
-                    this.node___[attribName] = makeEventHandlerWrapper(
-                        this.node___, listener);
-                  }
-                  return listener;
-                });
-           })(html4Attrib.match(attrNameRe)[1]);
-        }
-      }
-    })();
 
     function TameAElement(node, editable) {
       TameElement.call(this, node, editable, editable);
@@ -2633,6 +2681,7 @@ var attachDocumentStub = (function () {
     }
 
     function TameEvent(event) {
+      assert(!!event);
       this.event___ = event;
       ___.stamp(tameEventTrademark, this, true);
       classUtils.exportFields(
@@ -3095,8 +3144,9 @@ var attachDocumentStub = (function () {
       this.onLoadListeners___ = [];
       for (var i = 0, n = listeners.length; i < n; ++i) {
         (function (listener) {
-          var listenerFn = ___.asFunc(listener);
-          setTimeout(function () { listenerFn.call(cajita.USELESS); }, 0);
+          setTimeout(
+              function () { ___.callPub(listener, 'call', [___.USELESS]); },
+              0);
         })(listeners[i]);
       }
     };
@@ -3160,7 +3210,6 @@ var attachDocumentStub = (function () {
     function TameStyle(style, editable) {
       this.style___ = style;
       this.editable___ = editable;
-      ___.grantCall(this, 'getPropertyValue');
     }
     classUtils.extend(TameStyle, Object);
     nodeClasses.Style = classUtils.inertClassCtor(TameStyle);
@@ -3174,6 +3223,12 @@ var attachDocumentStub = (function () {
       return allCssProperties.isCssProp(cssPropertyName);
     };
     TameStyle.prototype.handleRead___ = function (stylePropertyName) {
+      var self = this;
+      if (String(stylePropertyName) === 'getPropertyValue') {
+        return ___.func(function(args) {
+          return TameStyle.prototype.getPropertyValue.call(self, args);
+        });
+      }
       if (!this.style___
           || !allCssProperties.isCanonicalProp(stylePropertyName)) {
         return void 0;
@@ -3183,6 +3238,12 @@ var attachDocumentStub = (function () {
       if (!this.allowProperty___(cssPropertyName)) { return void 0; }
       var canonName = allCssProperties.getCanonicalPropFromCss(cssPropertyName);
       return this.readByCanonicalName___(canonName);      
+    };
+    TameStyle.prototype.handleCall___ = function(name, args) {
+      if (String(name) === 'getPropertyValue') {
+        return TameStyle.prototype.getPropertyValue.call(this, args);
+      }
+      throw 'Cannot handle method ' + String(name);
     };
     TameStyle.prototype.getPropertyValue = function (cssPropertyName) {
       cssPropertyName = String(cssPropertyName || '').toLowerCase();
@@ -3439,7 +3500,7 @@ var attachDocumentStub = (function () {
       clearInterval: tameClearInterval,
       addEventListener: ___.frozenFunc(function (name, listener, useCapture) {
         if (name === 'load') {
-          ___.asFunc(listener);
+          classUtils.ensureValidCallback(listener);
           tameDocument.onLoadListeners___.push(listener);
         }
       }),

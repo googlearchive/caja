@@ -255,6 +255,7 @@ final class SafeHtmlMaker {
       }
     }
     finish();
+    signalLoaded();
   }
 
   /** Define bits needed by the emitter calls and the attribute fixup. */
@@ -271,6 +272,13 @@ final class SafeHtmlMaker {
     if (started && !finished) {
       emitStatement(quasiStmt("el___ = emitter___./*@synthetic*/finish();"));
       finished = true;
+    }
+  }
+
+  /** Call the document's "onload" listeners. */
+  private void signalLoaded() {
+    if (started) {
+      emitStatement(quasiStmt("emitter___./*@synthetic*/signalLoaded();"));
     }
   }
 

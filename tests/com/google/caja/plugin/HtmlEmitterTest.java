@@ -119,6 +119,7 @@ public class HtmlEmitterTest extends CajaTestCase {
         "  el___ = emitter___.byId('id_4___');",
         "  emitter___.setAttr(el___, 'id', 'x-' + IMPORTS___.getIdClass___());",
         "  el___ = emitter___.finish();",
+        "  emitter___.signalLoaded();",        
         "}",
         "/* End translated code */"
         );

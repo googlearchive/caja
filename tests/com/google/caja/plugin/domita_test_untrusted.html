@@ -244,7 +244,13 @@ After
 
 <p class="testcontainer" id="test-custom-events">Custom Events<br></p>
 
-<p class="testcontainer" id="test-factories-not-bypassable">&nbsp;</p>
+<p class="testcontainer" id="test-domita-globals-accessible">
+  Test Domita globals accessible
+</p>
+    
+<p class="testcontainer" id="test-factories-not-bypassable">
+  Test factories not bypassable
+</p>
 
 <p class="testcontainer" id="test-scrolling"><nobr
 >A really looooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong
@@ -523,6 +529,16 @@ jsunitRegister('testAddEventListener',
         assertEquals('click', event.type);
         pass('test-add-event-listener');
       });
+  expectFailure(
+      function() {
+        container.addEventListener('foo');
+      },
+      'addEventListener of a string');
+  expectFailure(
+      function() {
+        container.addEventListener({});
+      },
+      'addEventListener of an ordinary object');
 });
 
 jsunitRegister('testRemoveEventListener',
@@ -1241,9 +1257,7 @@ jsunitRegister('testLocation',
 
 jsunitRegister('testNavigator',
                function testNavigator() {
-  assertEquals(
-      window.navigator.userAgent,
-      window.navigator.appCodeName + '/' + window.navigator.appVersion);
+  assertNotNull(window.navigator.userAgent);
   pass('test-navigator');
 });
 
@@ -1851,6 +1865,40 @@ jsunitRegister('testCustomEvents',
   assertTrue(fired);
 
   pass('test-custom-events');
+});
+
+jsunitRegister('testDomitaGlobalsAccessible',
+               function testDomitaGlobalsAccessible() {
+  // In Valija mode, all the "window" globals are put on the Valija
+  // "outers" object. In Cajita mode, Domita demurs on the matter,
+  // tastefully putting these globals on the "window" object only,
+  // and not polluting Cajita's global namespace with them.
+
+  if (directAccess.isValija) {
+    assertTrue(!!HTMLElement);
+    assertTrue(!!Node);
+    assertTrue(!!Event);
+    assertTrue(!!Text);
+  } else {
+    assertTrue(!!window.HTMLElement);
+    assertTrue(!!window.Node);
+    assertTrue(!!window.Event);
+    assertTrue(!!window.Text);
+  }
+
+  if (directAccess.isValija) {
+    assertEquals('function', typeof HTMLElement);
+    assertEquals('function', typeof Node);
+    assertEquals('function', typeof Event);
+    assertEquals('function', typeof Text);
+  } else {
+    assertEquals('function', typeof window.HTMLElement);
+    assertEquals('function', typeof window.Node);
+    assertEquals('function', typeof window.Event);
+    assertEquals('function', typeof window.Text);
+  }
+
+  pass('test-domita-globals-accessible');
 });
 
 jsunitRegister('testFactoriesNotBypassable',

@@ -80,6 +80,7 @@ public class CajaAppletTest extends CajaTestCase {
       sp + "    }\n" +
       sp + "    {\n" +
       sp + "      el___ = emitter___.finish();\n" +
+      sp + "      emitter___.signalLoaded();\n" +
       sp + "    }\n" +
       sp + "    return moduleResult___;\n" +
       sp + "  },\n" +
@@ -118,6 +119,7 @@ public class CajaAppletTest extends CajaTestCase {
       sp + "    }\n" +
       sp + "    {\n" +
       sp + "      el___ = emitter___.finish();\n" +
+      sp + "      emitter___.signalLoaded();\n" +
       sp + "    }\n" +
       sp + "    return moduleResult___;\n" +
       sp + "  },\n" +

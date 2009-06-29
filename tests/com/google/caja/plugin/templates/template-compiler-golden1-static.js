@@ -45,4 +45,5 @@ try {
       + ', \'c_1___\');');
   el___.removeAttribute('id');
   el___ = emitter___.finish();
+  emitter___.signalLoaded();
 }

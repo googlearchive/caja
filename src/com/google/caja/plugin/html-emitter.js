@@ -226,7 +226,10 @@ function HtmlEmitter(base, opt_tameDocument) {
     }
     // Release references so nodes can be garbage collected.
     idMap = detached = base = null;
+    return this;
+  }
 
+  function signalLoaded() {
     // Signals the close of the document and fires any window.onload event
     // handlers.
     var doc = opt_tameDocument;
@@ -238,5 +241,6 @@ function HtmlEmitter(base, opt_tameDocument) {
   this.attach = attach;
   this.unwrap = unwrap;
   this.finish = finish;
+  this.signalLoaded = signalLoaded;
   this.setAttr = bridal.setAttribute;
 }

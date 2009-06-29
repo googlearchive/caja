@@ -106,6 +106,37 @@ public class TemplateCompilerTest extends CajaTestCase {
         js(fromResource("template-compiler-golden1-static.js")));
   }
 
+  public void testSignalLoadedAtEnd() throws Exception {
+    // Ensure that, although finish() is called as soon as possible after the
+    // last HTML is rolled forward, signalLoaded() is called at the very end,
+    // after all scripts are encountered.
+    assertSafeHtml(
+        htmlFragment(fromString(
+            ""
+            + "<p id=\"a\">a</p>"
+            + "<script type=\"text/javascript\">1;</script>")),
+        htmlFragment(fromString(
+            "<p id=\"id_1___\">a</p>")),
+        js(fromString(
+            ""
+            + "{"
+            + "  var el___;"
+            + "  var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "  el___ = emitter___.byId('id_1___');"
+            + "  emitter___.setAttr("
+            + "      el___, 'id', 'a-' + IMPORTS___.getIdClass___());"
+            + "  el___ = emitter___.finish();"
+            + "}"
+            + "try {"
+            + "  { 1; }"
+            + "} catch (ex___) {"
+            + "  ___.getNewModuleHandler().handleUncaughtException(ex___,"
+            + "      onerror, 'testSignalLoadedAtEnd', '1');"
+            + "}"
+            + "{"
+            + "  emitter___.signalLoaded();"
+            + "}")));
+  }
 
   public void testTargetsRewritten() throws Exception {
     assertSafeHtml(
@@ -139,6 +170,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "      el___, 'name', 'hi-' + IMPORTS___.getIdClass___());"
             + "  el___.removeAttribute('id');"
             + "  el___ = emitter___.finish();"
+            + "  emitter___.signalLoaded();"
             + "}")));
 
     meta.setIdClass("xyz___");
@@ -194,6 +226,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "      + ___.getId(IMPORTS___) + ', \\'c_1___\\');');"
             + "  el___.removeAttribute('id');"
             + "  el___ = emitter___.finish();"
+            + "  emitter___.signalLoaded();"
             + "}")));
   }
 

@@ -88,8 +88,8 @@
       a:link { color: blue; }
     </style>
 
-    <!-- Ensure http://www.google.com is :visited -->
-    <iframe src="http://www.google.com"></iframe>
+    <!-- Ensure http://www.google.com/favicon.ico is :visited -->
+    <img src="http://www.google.com/favicon.ico"/>
 
     <div id="console-results"></div>
 
@@ -126,8 +126,11 @@
        ><!-- Comment -->a<script id="howdy-script-xyz___">/* Howdy */</script
        >b<object></object>c</div>
 
-      <!-- http://www.google.com/ has been visited by the above IFRAME -->
-      <a id="direct-visited-xyz___" href="http://www.google.com/">Visited</a>
+      <!-- http://www.google.com/favicon.ico has been visited
+           by the above IMG tag -->
+      <a id="direct-visited-xyz___" href="http://www.google.com/favicon.ico">
+        Visited
+      </a>
       <a href="http://www.google.com/">
         <p>
           <span id="nested-visited-xyz___">Visited</span>
@@ -135,7 +138,9 @@
       </a>
       
       <!-- http://www.example.com/ is reserved by RFC2606 -->
-      <a id="direct-link-xyz___" href="http://www.example.com/">Link</a>
+      <a id="direct-link-xyz___" href="http://www.example.com/">
+        Link
+      </a>
       <a href="http://www.example.com/">
         <p>
           <span id="nested-link-xyz___">Link</span>
@@ -271,7 +276,8 @@
           var s = document.createElement('script');
           s.appendChild(document.createTextNode('/* intentionally blank */'));
           return testImports.tameNode___(s, true);
-        })
+        }),
+        isValija: isValija
       });
 
       // Marks a container green to indicate that test passed
