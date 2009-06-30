@@ -17,6 +17,7 @@
 <style type="text/css">
   .testcontainer { background: yellow; border: 2px solid yellow }
   .testcontainer.passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
+  .clickme-testcontainer { background: yellow; border: 2px solid yellow }
   .invisible { display: none; float: left }
   .inline { display: inline }
 </style>
@@ -25,19 +26,19 @@
   Timeouts and Intervals<br>
 </p>
 
-<p class="testcontainer" id="test-add-event-listener">
+<p class="clickme-testcontainer" id="test-add-event-listener">
   <b id="test-add-event-listener-label">click me</b>
 </p>
 
-<p class="testcontainer" id="test-remove-event-listener">
+<p class="clickme-testcontainer" id="test-remove-event-listener">
   <b id="test-remove-event-listener-label">click me</b>
 </p>
 
-<p class="testcontainer" id="test-dom-class-hierarchy">
+<p class="clickme-testcontainer" id="test-dom-class-hierarchy">
   <b>Click me</b>
 </p>
 
-<div class="testcontainer" id="test-case-insensitive-attrs">
+<div class="clickme-testcontainer" id="test-case-insensitive-attrs">
   <table id="is-red">
     <tr>
       <td><strong>Click me if this is red</strong></td>
@@ -45,7 +46,7 @@
   </table>
 </div>
 
-<p class="testcontainer" id="test-onclick-handler">
+<p class="clickme-testcontainer" id="test-onclick-handler">
   <b id="test-onclick-handler-label"
      onclick="pass('test-onclick-handler');">click me</b>
 </p>

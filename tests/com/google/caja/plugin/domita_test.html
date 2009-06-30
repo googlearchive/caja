@@ -286,6 +286,10 @@
         if (!node) { console.trace(); }
         node = node.node___;
         node.appendChild(document.createTextNode('Passed ' + id));
+        if (node.className != null && 
+            node.className.substring(0, 8) === 'clickme-') {
+        	   node.className = node.className.substring(8);
+            }
         node.className = (node.className || '') + ' passed';
       }, 'pass');
 
