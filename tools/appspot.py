@@ -163,8 +163,8 @@ def readable_change(cl):
   return ('''
 
 
-Issue %(issue)s  %(url)s
 %(message)s
+%(url)s
 
 %(description)s
 
@@ -378,7 +378,7 @@ def main():
 
   # Load any existing changelist
   if os.path.isfile(cl_file_path):
-    print >>sys.stderr, 'reading from %s' % cl_file_path
+    print >>sys.stderr, 'reading from %s\n' % cl_file_path
     current_cl = parse_change(open(cl_file_path).read())
   else:
     current_cl = ChangeList()
