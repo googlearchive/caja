@@ -36,9 +36,9 @@ import java.util.List;
 */
 public class DomitaTest extends CajaTestCase {
   final int clickingRoundLimit = 10;
-  
+
   Server server;
-  
+
   /**
    * Start a local web server on port 8000.
    */
@@ -49,14 +49,14 @@ public class DomitaTest extends CajaTestCase {
     HandlerList handlers = new HandlerList();
     handlers.setHandlers(new Handler[]{resource_handler,new DefaultHandler()});
     server.setHandler(handlers);
-    
+
     try {
       server.start();
     } catch (Exception e) {
       fail("Starting the local web server failed!");
-    }    
+    }
   }
-  
+
   /**
    * Stop the local web server
    */
@@ -67,45 +67,54 @@ public class DomitaTest extends CajaTestCase {
       // the server will be turned down when the test exits
     }
   }
-  
+
+  public void testDomitaCajita() {
+    runPage("domita_test.html");
+  }
+
+  public void testDomitaValija() {
+    runPage("domita_test.html?valija=1");
+  }
+
   /**
-   * Automatically click the elements with a class name containing "clickme". 
+   * Automatically click the elements with a class name containing "clickme".
    * Repeat until all tests are passed, or the number of rounds exceeds the
    * threshold.
    */
-  public void testDomita() {
+  public void runPage(String pageName) {
     StartLocalServer();
-    
+
     //System.setProperty("webdriver.firefox.bin", "/usr/bin/firefox");
     WebDriver driver = new FirefoxDriver();
-    
+
     driver.get("http://localhost:8000/"
-        + "ant-lib/com/google/caja/plugin/domita_test.html");
-    
+        + "ant-lib/com/google/caja/plugin/"
+        + pageName);
+
     int roundCount = 0;
     do
     {
-      List<WebElement> clickingList = 
+      List<WebElement> clickingList =
          driver.findElements(By.xpath("//*[contains(@class,'clickme')]/*"));
-      
+
       if (clickingList.size() == 0) {
         break;
       }
-      
+
       for (WebElement e : clickingList) {
         e.click();
       }
-      
+
       roundCount++;
     } while (roundCount <= clickingRoundLimit);
-    
+
     assertTrue("Too many clicking rounds.", roundCount <= clickingRoundLimit);
-    
+
     // check the title of the document
     String title = driver.getTitle();
     assertTrue("The title shows " + title.substring(title.lastIndexOf("-") + 1),
         title.endsWith("all tests passed"));
-    
+
     //driver.quit();
     StopLocalServer();
   }
