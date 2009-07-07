@@ -185,7 +185,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
          + "} catch (ex) {"
          + "  msg = ex.message;"
          + "}"
-         + "assertEquals('Not settable: ([Object]).x__', msg);");
+         + "assertEquals('Not writable: ([Object]).x__', msg);");
      checkFails(
          "var o = { p__: 1 };",
          "Properties cannot end in \"__\"");
@@ -257,7 +257,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
          + "} catch (ex) {"
          + "  msg = ex.message;"
          + "}"
-         + "assertEquals('Not settable: ([Object]).valueOf', msg);"
+         + "assertEquals('Not writable: ([Object]).valueOf', msg);"
          );
     checkFails("var x = { valueOf: function (hint) { return 2; } };",
                "The valueOf property must not be set");
@@ -520,7 +520,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         new RhinoTestBed.Input(
             "var testImports = ___.copy(___.sharedImports);\n" +
             "testImports.loader = ___.freeze({\n" +
-            "        provide: ___.frozenFunc(\n" +
+            "        provide: ___.markFuncFreeze(\n" +
             "            function(v){ valijaMaker = v; })\n" +
             "    });\n" +
             "testImports.outers = ___.copy(___.sharedImports);\n" +
@@ -531,12 +531,12 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
             // Set up the imports environment.
             "testImports = ___.copy(___.sharedImports);\n" +
             "testImports.console = console;" +
-            "testImports.assertEquals = ___.func(assertEquals);" +
-            "___.grantCall(testImports, 'assertEquals');" +
-            "testImports.assertTrue = ___.func(assertTrue);" +
-            "___.grantCall(testImports, 'assertTrue');" +
-            "testImports.assertFalse = ___.func(assertFalse);" +
-            "___.grantCall(testImports, 'assertFalse');" +
+            "testImports.assertEquals = assertEquals;" +
+            "___.grantFunc(testImports, 'assertEquals');" +
+            "testImports.assertTrue = assertTrue;" +
+            "___.grantFunc(testImports, 'assertTrue');" +
+            "testImports.assertFalse = assertFalse;" +
+            "___.grantFunc(testImports, 'assertFalse');" +
             "testImports.$v = valijaMaker.CALL___(testImports);\n" +
             "___.getNewModuleHandler().setImports(testImports);",
             getName() + "-test-fixture"),

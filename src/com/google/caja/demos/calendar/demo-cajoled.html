@@ -72,12 +72,12 @@
     (function(){
       var imports = ___.copy(___.sharedImports);
       imports.loader = {
-        provide: ___.func(function(v) {
+        provide: function(v) {
           valijaMaker = v;
-        })
+        }
       };
       ___.grantRead(imports, 'loader');
-      ___.grantCall(imports.loader, 'provide');
+      ___.grantFunc(imports.loader, 'provide');
       ___.getNewModuleHandler().setImports(imports);
     })();
   </script>
@@ -91,13 +91,13 @@
 
     var origModuleHandler = ___.getNewModuleHandler();
     var debugModuleHandler = {
-      getImports: ___.func(function () {
+      getImports: ___.markFuncFreeze(function () {
         return origModuleHandler.getImports.apply(origModuleHandler, arguments);
       }),
-      setImports: ___.func(function () {
+      setImports: ___.markFuncFreeze(function () {
         return origModuleHandler.setImports.apply(origModuleHandler, arguments);
       }),
-      handle: ___.func(function () {
+      handle: ___.markFuncFreeze(function () {
         try {
           return origModuleHandler.handle.apply(origModuleHandler, arguments);
         } catch (e) {
@@ -127,16 +127,16 @@
     imports.document.title = String(document.title);
     ___.all2(___.grantRead, imports.document, ['body', 'title']);
 
-    imports.console = { log: ___.func(function (var_args) {
+    imports.console = { log: ___.markFuncFreeze(function (var_args) {
                           console.log.apply(console, arguments);
                         }),
-                        assert: ___.func(function (var_args) {
+                        assert: ___.markFuncFreeze(function (var_args) {
                           console.assert.apply(console, arguments);
                         }),
-                        time: ___.func(function (var_args) {
+                        time: ___.markFuncFreeze(function (var_args) {
                           console.time.apply(console, arguments);
                         }),
-                        timeEnd: ___.func(function (var_args) {
+                        timeEnd: ___.markFuncFreeze(function (var_args) {
                           console.timeEnd.apply(console, arguments);
                         })
                       };
@@ -147,11 +147,10 @@
     ___.all2(___.grantRead, imports,
              ['window', 'htmlInterp', 'StringInterpolation']);
     ___.grantRead(htmlInterp, 'safeHtml');
-    ___.func(htmlInterp.safeHtml);
+    ___.markFuncFreeze(htmlInterp.safeHtml);
 
-    ___.ctor(StringInterpolation, undefined, 'StringInterpolation');
-    ___.grantCall(StringInterpolation.prototype, 'append');
-    ___.grantTypedGeneric(StringInterpolation.prototype, 'append');
+    ___.markCtor(StringInterpolation, Object, 'StringInterpolation');
+    ___.grantTypedMethod(StringInterpolation.prototype, 'append');
 
     window.imports = imports;
   })();</script>

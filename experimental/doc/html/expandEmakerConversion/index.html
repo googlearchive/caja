@@ -414,7 +414,7 @@
                   !(anyFreeThis(as))            { def scope2 := scope.nest(e)
                                                   def a2s    := expandAll(as, scope2)
                                                   def b2s    := expandAll(bs, scope2)
-                                                  expandDef(f, js`___.ctor(function($ps*) {
+                                                  expandDef(f, js`___.markCtor(function($ps*) {
                                                        ${scope2.tempDefs()}*;
                                                        $f2.Super.call(this, $a2s*);
                                                        $b2s*
@@ -430,7 +430,7 @@
                      }` ?
                   anyFreeThis(bs)               { def scope2 := scope.nest(e)
                                                   def b2s    := expandAll(bs, scope2)
-                                                  expandDef(f, js`___.ctor(function($ps*) {
+                                                  expandDef(f, js`___.markCtor(function($ps*) {
                                                        ${scope2.tempDefs()}*;
                                                        $b2s*
                                                      })`)

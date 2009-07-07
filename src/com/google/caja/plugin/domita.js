@@ -89,9 +89,6 @@ domitaModules.classUtils = function() {
     }
   }
 
-  // TODO(ihab.awad): extend(...) and inertClassCtor(...) are used together.
-  // Merge them into one function so as to avoid potential for mistakes.
-
   /**
    * Apply a supplied list of getter and setter functions to a given object.
    *
@@ -114,7 +111,8 @@ domitaModules.classUtils = function() {
       throw new TypeError('setting a property that only has a getter');
     }
 
-    cajita.forOwnKeys(handlers, ___.func(function (propertyName, def) {
+    cajita.forOwnKeys(handlers, 
+                      ___.markFuncFreeze(function (propertyName, def) {
       var setter = def.set || propertyOnlyHasGetter;
       ___.useGetHandler(object, propertyName, def.get);
       ___.useSetHandler(object, propertyName, setter);
@@ -141,66 +139,10 @@ domitaModules.classUtils = function() {
     }
   }
 
-  /**
-   * Makes the first a subclass of the second.
-   */
-  function extend(subClass, baseClass) {
-    // TODO(ihab.awad): This should set up the Cajita "proto___" property.
-    var noop = function () {};
-    noop.prototype = baseClass.prototype;
-    subClass.prototype = new noop();
-    subClass.prototype.constructor = subClass;
-  }
-
-  /**
-   * Exports a "safe" version of a supplied constructor. Given:
-   *
-   *   function Foo() { ... some uncajoled constructor ... }
-   *   var SafeFoo = inertClassCtor(Foo);
-   *
-   * it will be the case that:
-   *
-   *   new Foo() instanceof SafeFoo
-   *
-   * however -- and this is the crucial property -- cajoled code will get an
-   * error if it invokes either of:
-   *
-   *   new SafeFoo()
-   *   SafeFoo()
-   *
-   * This allows us to expose SafeFoo to cajoled code, allowing it to sense
-   * that all the Foo instances we give it are instanceof SafeFoo, without
-   * granting to cajoled code the means to create any new such instances.
-   *
-   * @param ctor an uncajoled constructor. This must NOT be exposed to cajoled
-   * code by any other mechanism.
-   *
-   * @return an inert class constructor as described above.
-   */
-  function inertClassCtor(ctor) {
-    if (!('function' === typeof ctor)) {
-      throw 'Internal: Provided constructor is not a function';
-    }
-    if (!ctor.prototype) {
-      throw 'Internal: Provided constructor has no prototype';
-    }
-
-    var inertCtor = function() {
-      throw 'This constructor cannot be called directly';
-    };
-
-    inertCtor.prototype = ctor.prototype;
-    ctor.prototype.constructor = inertCtor;
-    ___.ctor(inertCtor);
-    return inertCtor;
-  }
-
   return {
     exportFields: exportFields,
     ensureValidCallback: ensureValidCallback,
-    extend: extend,
-    applyAccessors: applyAccessors,
-    inertClassCtor: inertClassCtor
+    applyAccessors: applyAccessors
   };
 };
 
@@ -369,8 +311,8 @@ domitaModules.TameXMLHttpRequest = function(
   TameXMLHttpRequest.prototype.toString = function () {
     return 'Not a real XMLHttpRequest';
   };
-  ___.ctor(TameXMLHttpRequest, void 0, 'TameXMLHttpRequest');
-  ___.all2(___.grantTypedGeneric, TameXMLHttpRequest.prototype,
+  ___.markCtor(TameXMLHttpRequest, Object, 'TameXMLHttpRequest');
+  ___.all2(___.grantTypedMethod, TameXMLHttpRequest.prototype,
            ['open', 'setRequestHeader', 'send', 'abort',
             'getAllResponseHeaders', 'getResponseHeader']);
 
@@ -384,7 +326,7 @@ domitaModules.CssPropertiesCollection =
   var cssPropertyNames = {};
 
   cajita.forOwnKeys(cssPropertyNameCollection,
-                    ___.frozenFunc(function (cssPropertyName) {
+                    ___.markFuncFreeze(function (cssPropertyName) {
     var baseStylePropertyName = cssPropertyName.replace(
         /-([a-z])/g, function (_, letter) { return letter.toUpperCase(); });
     var canonStylePropertyName = baseStylePropertyName;
@@ -624,7 +566,7 @@ var attachDocumentStub = (function () {
     return ___.freeze(___.stamp(timeoutIdTrademark,
                                 { timeoutId___: timeoutId }));
   }
-  ___.frozenFunc(tameSetTimeout);
+  ___.markFuncFreeze(tameSetTimeout);
   function tameClearTimeout(timeoutId) {
     if (timeoutId === null || timeoutId === (void 0)) { return; }
     ___.guard(timeoutIdTrademark, timeoutId);
@@ -632,7 +574,7 @@ var attachDocumentStub = (function () {
     // Skip NaN values created for null timeouts above.
     if (rawTimeoutId === rawTimeoutId) { clearTimeout(rawTimeoutId); }
   }
-  ___.frozenFunc(tameClearTimeout);
+  ___.markFuncFreeze(tameClearTimeout);
   var intervalIdTrademark = cajita.Trademark('intervalId');
   function tameSetInterval(interval, delayMillis) {
     // Existing browsers treat an interval of null or undefined as a noop.
@@ -652,14 +594,14 @@ var attachDocumentStub = (function () {
     return ___.freeze(___.stamp(intervalIdTrademark,
                                 { intervalId___: intervalId }));
   }
-  ___.frozenFunc(tameSetInterval);
+  ___.markFuncFreeze(tameSetInterval);
   function tameClearInterval(intervalId) {
     if (intervalId === null || intervalId === (void 0)) { return; }
     ___.guard(intervalIdTrademark, intervalId);
     var rawIntervalId = intervalId.intervalId___;
     if (rawIntervalId === rawIntervalId) { clearInterval(rawIntervalId); }
   }
-  ___.frozenFunc(tameClearInterval);
+  ___.markFuncFreeze(tameClearInterval);
 
   function makeScrollable(element) {
     var overflow;
@@ -1140,7 +1082,7 @@ var attachDocumentStub = (function () {
       }
       node = nodeList = null;
 
-      tamed.item = ___.frozenFunc(function (k) {
+      tamed.item = ___.markFuncFreeze(function (k) {
         k &= 0x7fffffff;
         if (k !== k) { throw new Error(); }
         return tamed[k] || null;
@@ -1295,6 +1237,10 @@ var attachDocumentStub = (function () {
     // will be exposed to the client.
     var nodeClasses = {};
 
+    function inertCtor(tamedCtor, someSuper, name) {
+      return nodeClasses[name] = ___.extend(tamedCtor, someSuper, name);
+    }
+
     var tameNodeFields = [
         'nodeType', 'nodeValue', 'nodeName', 'firstChild',
         'lastChild', 'nextSibling', 'previousSibling', 'parentNode',
@@ -1312,8 +1258,7 @@ var attachDocumentStub = (function () {
       ___.stamp(tameNodeTrademark, this, true);
       classUtils.exportFields(this, tameNodeFields);
     }
-    classUtils.extend(TameNode, Object);
-    nodeClasses.Node = classUtils.inertClassCtor(TameNode);
+    inertCtor(TameNode, Object, 'Node');
     TameNode.prototype.getOwnerDocument = function () {
       // TODO(mikesamuel): upward navigation breaks capability discipline.
       if (!this.editable___ && tameDocument.editable___) {
@@ -1321,7 +1266,6 @@ var attachDocumentStub = (function () {
       }
       return tameDocument;
     };
-    ___.ctor(TameNode, void 0, 'TameNode');
     // abstract TameNode.prototype.getNodeType
     // abstract TameNode.prototype.getNodeName
     // abstract TameNode.prototype.getNodeValue
@@ -1363,7 +1307,7 @@ var attachDocumentStub = (function () {
       this.childrenEditable___ = editable && childrenEditable;
       TameNode.call(this, editable);
     }
-    classUtils.extend(TameBackedNode, TameNode);
+    ___.extend(TameBackedNode, TameNode);
     TameBackedNode.prototype.getNodeType = function () {
       return this.node___.nodeType;
     };
@@ -1553,8 +1497,7 @@ var attachDocumentStub = (function () {
       cajita.guard(tameEventTrademark, evt);
       bridal.dispatchEvent(this.node___, evt.event___);
     };
-    ___.ctor(TameBackedNode, TameNode, 'TameBackedNode');
-    ___.all2(___.grantTypedGeneric, TameBackedNode.prototype, tameNodeMembers);
+    ___.all2(___.grantTypedMethod, TameBackedNode.prototype, tameNodeMembers);
     if (document.documentElement.contains) {  // typeof is 'object' on IE
       TameBackedNode.prototype.contains = function (other) {
         cajita.guard(tameNodeTrademark, other);
@@ -1604,7 +1547,7 @@ var attachDocumentStub = (function () {
       }
     }
     ___.all2(function (o, k) {
-               if (___.hasOwnProp(o, k)) { ___.grantTypedGeneric(o, k);  }
+               if (___.hasOwnProp(o, k)) { ___.grantTypedMethod(o, k);  }
              }, TameBackedNode.prototype,
              ['contains', 'compareDocumentPosition']);
 
@@ -1616,7 +1559,7 @@ var attachDocumentStub = (function () {
       TameNode.call(this, editable);
       this.properties___ = {};
     }
-    classUtils.extend(TamePseudoNode, TameNode);
+    ___.extend(TamePseudoNode, TameNode);
     TamePseudoNode.prototype.appendChild =
     TamePseudoNode.prototype.insertBefore =
     TamePseudoNode.prototype.removeChild =
@@ -1732,8 +1675,7 @@ var attachDocumentStub = (function () {
     TamePseudoNode.prototype.hasChildNodes = function () {
       return this.getFirstChild() != null;
     };
-    ___.ctor(TamePseudoNode, TameNode, 'TamePseudoNode');
-    ___.all2(___.grantTypedGeneric, TamePseudoNode.prototype, tameNodeMembers);
+    ___.all2(___.grantTypedMethod, TamePseudoNode.prototype, tameNodeMembers);
 
     var commonElementPropertyHandlers = {
       clientWidth: {
@@ -1791,7 +1733,7 @@ var attachDocumentStub = (function () {
       classUtils.exportFields(this, ['tagName', 'innerHTML']);
       classUtils.applyAccessors(this, commonElementPropertyHandlers);
     }
-    classUtils.extend(TamePseudoElement, TamePseudoNode);
+    ___.extend(TamePseudoElement, TamePseudoNode);
     // TODO(mikesamuel): make nodeClasses work.
     TamePseudoElement.prototype.getNodeType = function () { return 1; };
     TamePseudoElement.prototype.getNodeName
@@ -1837,8 +1779,7 @@ var attachDocumentStub = (function () {
     TamePseudoElement.prototype.toString = function () {
       return '<' + this.tagName___ + '>';
     };
-    ___.ctor(TamePseudoElement, TamePseudoNode, 'TamePseudoElement');
-    ___.all2(___.grantTypedGeneric, TamePseudoElement.prototype,
+    ___.all2(___.grantTypedMethod, TamePseudoElement.prototype,
              ['getTagName', 'getAttribute', 'setAttribute',
               'hasAttribute', 'removeAttribute',
               'getBoundingClientRect', 'getElementsByTagName']);
@@ -1846,7 +1787,7 @@ var attachDocumentStub = (function () {
     function TameOpaqueNode(node, editable) {
       TameBackedNode.call(this, node, editable, editable);
     }
-    classUtils.extend(TameOpaqueNode, TameBackedNode);
+    ___.extend(TameOpaqueNode, TameBackedNode);
     TameOpaqueNode.prototype.getNodeValue
         = TameBackedNode.prototype.getNodeValue;
     TameOpaqueNode.prototype.getNodeType
@@ -1870,12 +1811,12 @@ var attachDocumentStub = (function () {
     for (var i = tameNodeMembers.length; --i >= 0;) {
       var k = tameNodeMembers[i];
       if (!TameOpaqueNode.prototype.hasOwnProperty(k)) {
-        TameOpaqueNode.prototype[k] = ___.frozenFunc(function () {
+        TameOpaqueNode.prototype[k] = ___.markFuncFreeze(function () {
           throw new Error('Node is opaque');
         });
       }
     }
-    ___.all2(___.grantTypedGeneric, TameOpaqueNode.prototype, tameNodeMembers);
+    ___.all2(___.grantTypedMethod, TameOpaqueNode.prototype, tameNodeMembers);
 
     function TameTextNode(node, editable) {
       assert(node.nodeType === 3);
@@ -1897,8 +1838,7 @@ var attachDocumentStub = (function () {
       TameBackedNode.call(this, node, editable, editable);
       classUtils.exportFields(this, ['nodeValue', 'data']);
     }
-    classUtils.extend(TameTextNode, TameBackedNode);
-    nodeClasses.Text = classUtils.inertClassCtor(TameTextNode);
+    inertCtor(TameTextNode, TameBackedNode, 'Text');
     TameTextNode.prototype.setNodeValue = function (value) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.nodeValue = String(value || '');
@@ -1909,20 +1849,17 @@ var attachDocumentStub = (function () {
     TameTextNode.prototype.toString = function () {
       return '#text';
     };
-    ___.ctor(TameTextNode, TameBackedNode, 'TameTextNode');
-    ___.all2(___.grantTypedGeneric, TameTextNode.prototype,
+    ___.all2(___.grantTypedMethod, TameTextNode.prototype,
              ['setNodeValue', 'getData', 'setData']);
 
     function TameCommentNode(node, editable) {
       assert(node.nodeType === 8);
       TameBackedNode.call(this, node, editable, editable);
     }
-    classUtils.extend(TameCommentNode, TameBackedNode);
-    nodeClasses.CommentNode = classUtils.inertClassCtor(TameCommentNode);
+    inertCtor(TameCommentNode, TameBackedNode, 'CommentNode');
     TameCommentNode.prototype.toString = function () {
       return '#comment';
     };
-    ___.ctor(TameCommentNode, TameBackedNode, 'TameCommentNode');
 
     function getAttributeType(tagName, attribName) {
       var attribKey;
@@ -1946,8 +1883,7 @@ var attachDocumentStub = (function () {
       classUtils.exportFields(this,
           ['name', 'specified', 'value', 'ownerElement']);
     }
-    classUtils.extend(TameBackedAttributeNode, TameBackedNode);
-    nodeClasses.Attr = classUtils.inertClassCtor(TameBackedAttributeNode);
+    inertCtor(TameBackedAttributeNode, TameBackedNode, 'Attr');
     TameBackedAttributeNode.prototype.getNodeName =
     TameBackedAttributeNode.prototype.getName =
         function () { return String(this.node___.name); };
@@ -2028,9 +1964,7 @@ var attachDocumentStub = (function () {
       classUtils.applyAccessors(this, commonElementPropertyHandlers);
       registerElementScriptAttributeHandlers(this);
     }
-    classUtils.extend(TameElement, TameBackedNode);
-    nodeClasses.Element = nodeClasses.HTMLElement =
-        classUtils.inertClassCtor(TameElement);
+    nodeClasses.Element = inertCtor(TameElement, TameBackedNode, 'HTMLElement');
     TameElement.prototype.getId = function () {
       return this.getAttribute('id') || '';
     };
@@ -2233,9 +2167,8 @@ var attachDocumentStub = (function () {
     };
     TameElement.prototype.addEventListener = tameAddEventListener;
     TameElement.prototype.removeEventListener = tameRemoveEventListener;
-    ___.ctor(TameElement, TameBackedNode, 'TameElement');
     ___.all2(
-       ___.grantTypedGeneric, TameElement.prototype,
+       ___.grantTypedMethod, TameElement.prototype,
        ['addEventListener', 'removeEventListener',
         'getAttribute', 'setAttribute',
         'removeAttribute', 'hasAttribute',
@@ -2249,8 +2182,7 @@ var attachDocumentStub = (function () {
       TameElement.call(this, node, editable, editable);
       classUtils.exportFields(this, ['href']);
     }
-    classUtils.extend(TameAElement, TameElement);
-    nodeClasses.HTMLAnchorElement = classUtils.inertClassCtor(TameAElement);
+    inertCtor(TameAElement, TameElement, 'HTMLAnchorElement');
     TameAElement.prototype.focus = function () {
       this.node___.focus();
     };
@@ -2261,8 +2193,7 @@ var attachDocumentStub = (function () {
       this.setAttribute('href', href);
       return href;
     };
-    ___.ctor(TameAElement, TameElement, 'TameAElement');
-    ___.all2(___.grantTypedGeneric, TameAElement.prototype,
+    ___.all2(___.grantTypedMethod, TameAElement.prototype,
              ['getHref', 'setHref', 'focus']);
 
     // http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-40002357
@@ -2273,8 +2204,7 @@ var attachDocumentStub = (function () {
           this,
           ['action', 'elements', 'enctype', 'method', 'target']);
     }
-    classUtils.extend(TameFormElement, TameElement);
-    nodeClasses.HTMLFormElement = classUtils.inertClassCtor(TameFormElement);
+    inertCtor(TameFormElement, TameElement, 'HTMLFormElement');
     TameFormElement.prototype.submit = function () {
       return this.node___.submit();
     };
@@ -2321,8 +2251,7 @@ var attachDocumentStub = (function () {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.submit();
     };
-    ___.ctor(TameFormElement, TameElement, 'TameFormElement');
-    ___.all2(___.grantTypedGeneric, TameFormElement.prototype,
+    ___.all2(___.grantTypedMethod, TameFormElement.prototype,
              ['getElements', 'reset', 'submit']);
 
 
@@ -2338,8 +2267,7 @@ var attachDocumentStub = (function () {
            'size', 'type', 'index', 'label',
            'multiple', 'cols', 'rows']);
     }
-    classUtils.extend(TameInputElement, TameElement);
-    nodeClasses.HTMLInputElement = classUtils.inertClassCtor(TameInputElement);
+    inertCtor(TameInputElement, TameElement, 'HTMLInputElement');
     TameInputElement.prototype.getChecked = function () {
       return this.node___.checked;
     };
@@ -2525,8 +2453,7 @@ var attachDocumentStub = (function () {
       this.node___.rows = newValue;
       return newValue;
     };
-    ___.ctor(TameInputElement, TameElement, 'TameInputElement');
-    ___.all2(___.grantTypedGeneric, TameInputElement.prototype,
+    ___.all2(___.grantTypedMethod, TameInputElement.prototype,
              ['getValue', 'setValue', 'focus', 'getForm', 'getType', 'select']);
 
 
@@ -2534,8 +2461,7 @@ var attachDocumentStub = (function () {
       TameElement.call(this, node, editable, editable);
       classUtils.exportFields(this, ['src', 'alt']);
     }
-    classUtils.extend(TameImageElement, TameElement);
-    nodeClasses.HTMLImageElement = classUtils.inertClassCtor(TameImageElement);
+    inertCtor(TameImageElement, TameElement, 'HTMLImageElement');
     TameImageElement.prototype.getSrc = function () {
       return this.node___.src;
     };
@@ -2551,8 +2477,7 @@ var attachDocumentStub = (function () {
       this.node___.alt = String(alt);
       return alt;
     };
-    ___.ctor(TameImageElement, TameElement, 'TameImageElement');
-    ___.all2(___.grantTypedGeneric, TameImageElement.prototype,
+    ___.all2(___.grantTypedMethod, TameImageElement.prototype,
              ['getSrc', 'setSrc', 'getAlt', 'setAlt']);
 
     /**
@@ -2565,9 +2490,7 @@ var attachDocumentStub = (function () {
       TameElement.call(this, node, editable, false);
       classUtils.exportFields(this, ['src']);
     }
-    classUtils.extend(TameScriptElement, TameElement);
-    nodeClasses.HTMLScriptElement =
-        classUtils.inertClassCtor(TameScriptElement);
+    inertCtor(TameScriptElement, TameElement, 'HTMLScriptElement');
     TameScriptElement.prototype.getSrc = function () {
       return this.node___.src;
     };
@@ -2575,7 +2498,6 @@ var attachDocumentStub = (function () {
       this.setAttribute('src', src);
       return src;
     };
-    ___.ctor(TameScriptElement, TameElement, 'TameScriptElement');
 
 
     function TameTableCompElement(node, editable) {
@@ -2585,7 +2507,7 @@ var attachDocumentStub = (function () {
           ['colSpan','cells','rowSpan','rows','rowIndex','align',
            'vAlign','nowrap']);
     }
-    classUtils.extend(TameTableCompElement, TameElement);
+    ___.extend(TameTableCompElement, TameElement);
     TameTableCompElement.prototype.getColSpan = function () {
       return this.node___.colSpan;
     };
@@ -2636,15 +2558,13 @@ var attachDocumentStub = (function () {
       this.node___.nowrap = newValue;
       return newValue;
     };
-    ___.ctor(TameTableCompElement, TameElement, 'TameTableCompElement');
 
 
     function TameTableElement(node, editable) {
       TameTableCompElement.call(this, node, editable);
       classUtils.exportFields(this, ['tBodies','tHead','tFoot']);
     }
-    classUtils.extend(TameTableElement, TameTableCompElement);
-    nodeClasses.HTMLTableElement = classUtils.inertClassCtor(TameTableElement);
+    inertCtor(TameTableElement, TameTableCompElement, 'HTMLTableElement');
     TameTableElement.prototype.getTBodies = function () {
       return tameNodeList(
           this.node___.tBodies, this.editable___, defaultTameNode);
@@ -2671,8 +2591,7 @@ var attachDocumentStub = (function () {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.deleteTFoot();
     };
-    ___.ctor(TameTableElement, TameTableCompElement, 'TameTableElement');
-    ___.all2(___.grantTypedGeneric, TameTableElement.prototype,
+    ___.all2(___.grantTypedMethod, TameTableElement.prototype,
              ['createTHead', 'deleteTHead','createTFoot', 'deleteTFoot']);
 
     function tameEvent(event) {
@@ -2694,8 +2613,7 @@ var attachDocumentStub = (function () {
            'srcElement',
            'clientX', 'clientY', 'keyCode', 'which']);
     }
-    classUtils.extend(TameEvent, Object);
-    nodeClasses.Event = classUtils.inertClassCtor(TameEvent);
+    inertCtor(TameEvent, Object, 'Event');
     TameEvent.prototype.getType = function () {
       return bridal.untameEventType(String(this.event___.type));
     };
@@ -2792,8 +2710,7 @@ var attachDocumentStub = (function () {
       return kc && Number(kc);
     };
     TameEvent.prototype.toString = function () { return '[Fake Event]'; };
-    ___.ctor(TameEvent, void 0, 'TameEvent');
-    ___.all2(___.grantTypedGeneric, TameEvent.prototype,
+    ___.all2(___.grantTypedMethod, TameEvent.prototype,
              ['getType', 'getTarget', 'getPageX', 'getPageY', 'stopPropagation',
               'getAltKey', 'getCtrlKey', 'getMetaKey', 'getShiftKey',
               'getButton', 'getClientX', 'getClientY',
@@ -2808,7 +2725,7 @@ var attachDocumentStub = (function () {
       TameEvent.call(this, event);
       this.properties___ = {};
     }
-    classUtils.extend(TameCustomHTMLEvent, TameEvent);
+    ___.extend(TameCustomHTMLEvent, TameEvent);
     TameCustomHTMLEvent.prototype.initEvent
         = function (type, bubbles, cancelable) {
       bridal.initEvent(this.event___, type, bubbles, cancelable);
@@ -2894,8 +2811,7 @@ var attachDocumentStub = (function () {
     TameCustomHTMLEvent.prototype.toString = function () {
       return '[Fake CustomEvent]';
     };
-    ___.grantTypedGeneric(TameCustomHTMLEvent.prototype, 'initEvent');
-    ___.ctor(TameCustomHTMLEvent, TameEvent, 'TameCustomHTMLEvent');
+    ___.grantTypedMethod(TameCustomHTMLEvent.prototype, 'initEvent');
 
     /**
      * Return a fake node list containing tamed nodes.
@@ -2903,7 +2819,7 @@ var attachDocumentStub = (function () {
      * @return an array that duck types to a node list.
      */
     function fakeNodeList(array) {
-      array.item = ___.frozenFunc(function(i) { return array[i]; });
+      array.item = ___.markFuncFreeze(function(i) { return array[i]; });
       return cajita.freeze(array);
     }
 
@@ -2931,7 +2847,7 @@ var attachDocumentStub = (function () {
           editable);
       cajita.forOwnKeys(
           { appendChild: 0, removeChild: 0, insertBefore: 0, replaceChild: 0 },
-          ___.frozenFunc(function (k) {
+          ___.markFuncFreeze(function (k) {
             tameBodyElement[k] = tameBody[k].bind(tameBody);
             ___.grantFunc(tameBodyElement, k);
           }));
@@ -3014,8 +2930,7 @@ var attachDocumentStub = (function () {
       classUtils.exportFields(
           this, ['documentElement', 'body', 'title', 'domain']);
     }
-    classUtils.extend(TameHTMLDocument, TamePseudoNode);
-    nodeClasses.HTMLDocument = classUtils.inertClassCtor(TameHTMLDocument);
+    inertCtor(TameHTMLDocument, TamePseudoNode, 'HTMLDocument');
     TameHTMLDocument.prototype.getNodeType = function () { return 9; };
     TameHTMLDocument.prototype.getNodeName
         = function () { return '#document'; };
@@ -3151,8 +3066,7 @@ var attachDocumentStub = (function () {
       }
     };
 
-    ___.ctor(TameHTMLDocument, TamePseudoNode, 'TameHTMLDocument');
-    ___.all2(___.grantTypedGeneric, TameHTMLDocument.prototype,
+    ___.all2(___.grantTypedMethod, TameHTMLDocument.prototype,
              ['addEventListener', 'removeEventListener',
               'createComment', 'createDocumentFragment',
               'createElement', 'createEvent', 'createTextNode',
@@ -3211,8 +3125,7 @@ var attachDocumentStub = (function () {
       this.style___ = style;
       this.editable___ = editable;
     }
-    classUtils.extend(TameStyle, Object);
-    nodeClasses.Style = classUtils.inertClassCtor(TameStyle);
+    inertCtor(TameStyle, Object, 'Style');
     TameStyle.prototype.readByCanonicalName___ = function(canonName) {
       return String(this.style___[canonName] || '');
     };
@@ -3225,7 +3138,7 @@ var attachDocumentStub = (function () {
     TameStyle.prototype.handleRead___ = function (stylePropertyName) {
       var self = this;
       if (String(stylePropertyName) === 'getPropertyValue') {
-        return ___.func(function(args) {
+        return ___.markFuncFreeze(function(args) {
           return TameStyle.prototype.getPropertyValue.call(self, args);
         });
       }
@@ -3308,7 +3221,7 @@ var attachDocumentStub = (function () {
       this.rawElement___ = rawElement;
       this.pseudoElement___ = pseudoElement;
     }
-    classUtils.extend(TameComputedStyle, TameStyle);
+    ___.extend(TameComputedStyle, TameStyle);
     TameComputedStyle.prototype.readByCanonicalName___ = function(canonName) {
       var canReturnDirectValue =
           historyInsensitiveCssProperties.isCanonicalProp(canonName)
@@ -3328,7 +3241,7 @@ var attachDocumentStub = (function () {
     };
 
     // Note: nodeClasses.XMLHttpRequest is a ctor that *can* be directly
-    // called by cajoled code, so we do not use classUtils.inertCtor().
+    // called by cajoled code, so we do not use inertCtor().
     nodeClasses.XMLHttpRequest = domitaModules.TameXMLHttpRequest(
         domitaModules.XMLHttpRequestCtor(
             window.XMLHttpRequest,
@@ -3414,7 +3327,7 @@ var attachDocumentStub = (function () {
     // specify the gadget's apparent URL.
     // See http://www.whatwg.org/specs/web-apps/current-work/multipage/history.html#location0
     var tameLocation = ___.primFreeze({
-      toString: ___.frozenFunc(function () { return tameLocation.href; }),
+      toString: ___.markFuncFreeze(function () { return tameLocation.href; }),
       href: String(optPseudoWindowLocation.href || 'http://nosuchhost.fake/'),
       hash: String(optPseudoWindowLocation.hash || ''),
       host: String(optPseudoWindowLocation.host || 'nosuchhost.fake'),
@@ -3498,55 +3411,57 @@ var attachDocumentStub = (function () {
       setInterval: tameSetInterval,
       clearTimeout: tameClearTimeout,
       clearInterval: tameClearInterval,
-      addEventListener: ___.frozenFunc(function (name, listener, useCapture) {
-        if (name === 'load') {
-          classUtils.ensureValidCallback(listener);
-          tameDocument.onLoadListeners___.push(listener);
-        }
-      }),
-      removeEventListener: ___.frozenFunc(function (name, listener, useCapture) {
-        var listeners = tameDocument.onLoadListeners___;
-        var k = 0;
-        for (var i = 0, n = listeners.length; i < n; ++i) {
-          listeners[i - k] = listeners[i];
-          if (listeners[i] === listener) {
-            ++k;
-          }
-        }
-        listeners.length -= k;
-      }),
-      dispathEvent: ___.frozenFunc(function (evt) {
+      addEventListener: ___.markFuncFreeze(
+          function (name, listener, useCapture) {
+            if (name === 'load') {
+              classUtils.ensureValidCallback(listener);
+              tameDocument.onLoadListeners___.push(listener);
+            }
+          }),
+      removeEventListener: ___.markFuncFreeze(
+          function (name, listener, useCapture) {
+            var listeners = tameDocument.onLoadListeners___;
+            var k = 0;
+            for (var i = 0, n = listeners.length; i < n; ++i) {
+              listeners[i - k] = listeners[i];
+              if (listeners[i] === listener) {
+                ++k;
+              }
+            }
+            listeners.length -= k;
+          }),
+      dispathEvent: ___.markFuncFreeze(function (evt) {
         // TODO(ihab.awad): Implement
       })
-    }, ___.func(function (propertyName, value) {
+    }, ___.markFuncFreeze(function (propertyName, value) {
       TameWindow.prototype[propertyName] = value;
       ___.grantRead(TameWindow.prototype, propertyName);
     }));
     cajita.forOwnKeys({
-      scrollBy: ___.frozenFunc(
+      scrollBy: ___.markFuncFreeze(
           function (dx, dy) {
             // The window is always auto scrollable, so make the apparent window
             // body scrollable if the gadget tries to scroll it.
             if (dx || dy) { makeScrollable(tameDocument.body___); }
             tameScrollBy(tameDocument.body___, dx, dy);
           }),
-      scrollTo: ___.frozenFunc(
+      scrollTo: ___.markFuncFreeze(
           function (x, y) {
             // The window is always auto scrollable, so make the apparent window
             // body scrollable if the gadget tries to scroll it.
             makeScrollable(tameDocument.body___);
             tameScrollTo(tameDocument.body___, x, y);
           }),
-      resizeTo: ___.frozenFunc(
+      resizeTo: ___.markFuncFreeze(
           function (w, h) {
             tameResizeTo(tameDocument.body___, w, h);
           }),
-      resizeBy: ___.frozenFunc(
+      resizeBy: ___.markFuncFreeze(
           function (dw, dh) {
             tameResizeBy(tameDocument.body___, dw, dh);
           }),
       /** A partial implementation of getComputedStyle. */
-      getComputedStyle: ___.frozenFunc(
+      getComputedStyle: ___.markFuncFreeze(
           // Pseudo elements are suffixes like :first-line which constrain to
           // a portion of the element's content as defined at
           // http://www.w3.org/TR/CSS2/selector.html#q20
@@ -3576,7 +3491,7 @@ var attachDocumentStub = (function () {
       // event: a global on IE.  We always define it in scopes that can handle
       //        events.
       // opera: defined only on Opera.
-    }, ___.func(function (propertyName, value) {
+    }, ___.markFuncFreeze(function (propertyName, value) {
       TameWindow.prototype[propertyName] = value;
       ___.grantRead(TameWindow.prototype, propertyName);
       TameDefaultView.prototype[propertyName] = value;
@@ -3694,7 +3609,7 @@ var attachDocumentStub = (function () {
       scrollWidth: {
         get: function () { return tameDocument.body___.scrollWidth; }
       }
-    }, ___.func(function (propertyName, def) {
+    }, ___.markFuncFreeze(function (propertyName, def) {
       var setter = def.set || propertyOnlyHasGetter;
       // TODO(mikesamuel): define on prototype.
       ___.useGetHandler(tameWindow, propertyName, def.get);
@@ -3714,7 +3629,7 @@ var attachDocumentStub = (function () {
       innerWidth: function () { return tameDocument.body___.clientWidth; },
       outerHeight: function () { return tameDocument.body___.clientHeight; },
       outerWidth: function () { return tameDocument.body___.clientWidth; }
-    }, ___.func(function (propertyName, handler) {
+    }, ___.markFuncFreeze(function (propertyName, handler) {
       // TODO(mikesamuel): define on prototype.
       ___.useGetHandler(tameWindow, propertyName, handler);
       ___.useGetHandler(tameDefaultView, propertyName, handler);
@@ -3736,7 +3651,7 @@ var attachDocumentStub = (function () {
 
     // Iterate over all node classes, assigning them to the Window object
     // under their DOM Level 2 standard name.
-    cajita.forOwnKeys(nodeClasses, ___.func(function(name, ctor) {
+    cajita.forOwnKeys(nodeClasses, ___.markFuncFreeze(function(name, ctor) {
       ___.primFreeze(ctor);
       tameWindow[name] = ctor;
       ___.grantRead(tameWindow, name);
@@ -3806,7 +3721,7 @@ var attachDocumentStub = (function () {
     var outers = imports.outers;
     if (___.isJSONContainer(outers)) {
       // For Valija, attach use the window object as outers.
-      cajita.forOwnKeys(outers, ___.func(function(k, v) {
+      cajita.forOwnKeys(outers, ___.markFuncFreeze(function(k, v) {
         if (!(k in tameWindow)) {
           tameWindow[k] = v;
           ___.grantRead(tameWindow, k);

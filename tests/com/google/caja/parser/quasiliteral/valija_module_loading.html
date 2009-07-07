@@ -38,7 +38,7 @@ var valijaMaker;
 (function () {
   var imports = ___.copy(___.sharedImports);
   imports.loader = ___.freeze({
-    provide: ___.func(function (v) { valijaMaker = v; })
+    provide: ___.markFuncFreeze(function (v) { valijaMaker = v; })
   });
   ___.getNewModuleHandler().setImports(imports);
 })();
@@ -53,13 +53,13 @@ var imports;
   ___.setNewModuleHandler(nmh);
   var imports = nmh.getImports();
   imports.outers = imports;
-  imports.assertEquals = ___.frozenFunc(assertEquals);
-  imports.assertFalse = ___.frozenFunc(assertFalse);
-  imports.assertTrue = ___.frozenFunc(assertTrue);
-  imports.assertThrows = ___.frozenFunc(function (func, opt_msg) {
+  imports.assertEquals = ___.markFuncFreeze(assertEquals);
+  imports.assertFalse = ___.markFuncFreeze(assertFalse);
+  imports.assertTrue = ___.markFuncFreeze(assertTrue);
+  imports.assertThrows = ___.markFuncFreeze(function (func, opt_msg) {
     assertThrows(___.toFunc(func), opt_msg);
   });
-  imports.fail = ___.frozenFunc(fail);
+  imports.fail = ___.markFuncFreeze(fail);
   imports.$v = valijaMaker.CALL___(imports.outers);
 })();
 </script>

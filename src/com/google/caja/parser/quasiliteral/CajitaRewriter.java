@@ -1841,7 +1841,7 @@ public class CajitaRewriter extends Rewriter {
           synopsis="",
           reason="",
           matches="function (@ps*) { @bs*; }",
-          substitutes="___.frozenFunc(\n"
+          substitutes="___.markFuncFreeze(\n"
               + "  function (@ps*) {\n"
               + "    @fh*;\n"
               + "    @stmts*;\n"
@@ -1877,7 +1877,7 @@ public class CajitaRewriter extends Rewriter {
             + "  @stmts*;\n"
             + "  @bs*;\n"
             + "}\n"
-            + "___.func(@fname, @'fname');")
+            + "___.markFuncOnly(@fname, @'fname');")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         if (node instanceof FunctionDeclaration &&
             scope == scope.getClosestDeclarationContainer()) {
@@ -1898,7 +1898,7 @@ public class CajitaRewriter extends Rewriter {
                 + "  @stmts*;\n"
                 + "  @bs*;\n"
                 + "}\n"
-                + "___.func(@fRef, @rf);",
+                + "___.markFuncOnly(@fRef, @rf);",
                 "fname", fname,
                 "fRef", new Reference(fname),
                 "rf", toStringLiteral(fname),
@@ -1930,7 +1930,7 @@ public class CajitaRewriter extends Rewriter {
             + "    @stmts*;\n"
             + "    @bs*;\n"
             + "  }\n"
-            + "  return ___.func(@fself, @'fname');\n"
+            + "  return ___.markFuncOnly(@fself, @'fname');\n"
             + "})();")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = (
@@ -1955,7 +1955,7 @@ public class CajitaRewriter extends Rewriter {
               + "    @stmts*;\n"
               + "    @bs*;\n"
               + "  }\n"
-              + "  return ___.func(@rfself, @rf);\n"
+              + "  return ___.markFuncOnly(@rfself, @rf);\n"
               + "})();",
               "fname", fname,
               "fRef", new Reference(fname),
@@ -1988,7 +1988,7 @@ public class CajitaRewriter extends Rewriter {
               + "    @stmts*;\n"
               + "    @bs*;\n"
               + "  }\n"
-              + "  return ___.frozenFunc(@fname, @'fname');\n"
+              + "  return ___.markFuncFreeze(@fname, @'fname');\n"
               + "})();")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = match(node);
@@ -2007,7 +2007,7 @@ public class CajitaRewriter extends Rewriter {
               + "    @stmts*;\n"
               + "    @bs*;\n"
               + "  }\n"
-              + "  return ___.frozenFunc(@fRef, @rf);\n"
+              + "  return ___.markFuncFreeze(@fRef, @rf);\n"
               + "})();",
               "fname", fname,
               "fRef", new Reference(fname),

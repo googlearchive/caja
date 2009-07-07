@@ -195,7 +195,7 @@
       if (isValija) {
         var testImports = ___.copy(___.sharedImports);
         testImports.loader = ___.freeze({
-              provide: ___.func(function (v) { valijaMaker = v; })
+              provide: ___.markFuncFreeze(function (v) { valijaMaker = v; })
             });
         ___.getNewModuleHandler().setImports(testImports);
         loadScript('valija.co.js');
@@ -221,16 +221,16 @@
 
       ___.getNewModuleHandler().setImports(testImports);
 
-      testImports.jsunitRegister = ___.frozenFunc(jsunitRegister);
-      testImports.jsunitRun = ___.frozenFunc(jsunitRun);
+      testImports.jsunitRegister = ___.markFuncFreeze(jsunitRegister);
+      testImports.jsunitRun = ___.markFuncFreeze(jsunitRun);
       testImports.console = ___.primFreeze({
-        log: ___.frozenFunc(
+        log: ___.markFuncFreeze(
             function () { console.log.apply(console, arguments); }),
-        warn: ___.frozenFunc(
+        warn: ___.markFuncFreeze(
             function () { console.warn.apply(console, arguments); }),
-        error: ___.frozenFunc(
+        error: ___.markFuncFreeze(
             function () { console.error.apply(console, arguments); }),
-        trace: ___.frozenFunc(
+        trace: ___.markFuncFreeze(
             function () {
               console.trace ? console.trace()
                   : console.error.apply(console, arguments);
@@ -240,22 +240,22 @@
       // Give unfiltered DOM access so we can check the results of actions.
       testImports.directAccess = ___.primFreeze({
         // Allow testing of emitHtml by exposing it for testing
-        click: ___.frozenFunc(function (tameNode) {
+        click: ___.markFuncFreeze(function (tameNode) {
           tameNode.node___.click();
         }),
-        emitCssHook: ___.frozenFunc(function (css) {
+        emitCssHook: ___.markFuncFreeze(function (css) {
           testImports.emitCss___(css.join('xyz___'));
         }),
-        getInnerHTML: ___.frozenFunc(function (tameNode) {
+        getInnerHTML: ___.markFuncFreeze(function (tameNode) {
           return tameNode.node___.innerHTML;
         }),
-        getAttribute: ___.frozenFunc(function (tameNode, name) {
+        getAttribute: ___.markFuncFreeze(function (tameNode, name) {
           return tameNode.node___.getAttribute(name);
         }),
-        getBodyNode: ___.frozenFunc(function () {
+        getBodyNode: ___.markFuncFreeze(function () {
           return testImports.tameNode___(testDomContainer);
         }),
-        getComputedStyle: ___.frozenFunc(function (tameNode, styleProp) {
+        getComputedStyle: ___.markFuncFreeze(function (tameNode, styleProp) {
           var node = tameNode.node___;
           if (node.currentStyle) {
             return node.currentStyle[styleProp.replace(
@@ -272,7 +272,7 @@
         }),
         // Lets tests check that an outer hull breach -- access to
         // an unexecuted script node -- does not allow a full breach.
-        makeUnattachedScriptNode: ___.frozenFunc(function () {
+        makeUnattachedScriptNode: ___.markFuncFreeze(function () {
           var s = document.createElement('script');
           s.appendChild(document.createTextNode('/* intentionally blank */'));
           return testImports.tameNode___(s, true);
@@ -281,7 +281,7 @@
       });
 
       // Marks a container green to indicate that test passed
-      testImports.pass = ___.func(function (id) {
+      testImports.pass = ___.markFuncFreeze(function (id) {
         var node = testImports.document.getElementById(id);
         if (!node) { console.trace(); }
         node = node.node___;
@@ -293,7 +293,8 @@
         node.className = (node.className || '') + ' passed';
       }, 'pass');
 
-      testImports.checkGlobalSideEffect = ___.frozenFunc(checkGlobalSideEffect);
+      testImports.checkGlobalSideEffect = 
+          ___.markFuncFreeze(checkGlobalSideEffect);
       // An explicit channel between whitelisted_script.js and cajoled tests.
       testImports.externalScript = { loaded: false };
 
@@ -315,7 +316,7 @@
          * @param {function () : boolean} predicate returns true to indicate
          *     the requirement has been satisfied.
          */
-        testImports.assertAsynchronousRequirement = ___.frozenFunc(
+        testImports.assertAsynchronousRequirement = ___.markFuncFreeze(
             function (msg, predicate) {
               req.push({ message: String(msg), predicate: predicate });
             });
@@ -376,7 +377,7 @@
         if (testImports.hasOwnProperty(name)) {
           throw new Error('already defined', name);
         }
-        testImports[name] = ___.frozenFunc(this[name], name);
+        testImports[name] = ___.markFuncFreeze(this[name], name);
       }
 
       testImports.valijaMode = !!valijaMaker;

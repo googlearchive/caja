@@ -70,16 +70,6 @@
     }
   }
 
-  // Disable fast-tracking so that we receive notification on every operation
-  // that modifies the stack.
-  function noop(obj, name) {}
-  function requireNotFrozen(obj, name) {
-    if (orig.isFrozen(obj)) {
-      cajita.fail("Can't set .", name, ' on frozen (', obj, ')');
-    }
-  }
-
-
   // Define the stack, and accessors
   var stack;
   var stackInvalid;
@@ -347,17 +337,6 @@
     }
     this.debugSymbols_ = debugSymbols;
 
-    // Disable fast-tracking
-    override_members(
-        this,
-        [
-         'grantRead', noop,
-         'grantEnumOnly', noop,
-         'grantCall', noop,
-         'grantSet', requireNotFrozen,
-         'grantDelete', requireNotFrozen
-        ], 0);
-
     // Maintain stack through calls, and attach a stack when an operation fails.
     override_members(
         this,
@@ -394,9 +373,9 @@
       ]);
 
   // Include the top stack frame in log messages.
-  override_members(cajita, ['log', ___.frozenFunc(log)], 0);
+  override_members(cajita, ['log', ___.markFuncFreeze(log)], 0);
   // Dump stack traces during loading to the console.
-  override_members(___, ['loadModule', ___.frozenFunc(loadModule)], 0);
+  override_members(___, ['loadModule', ___.markFuncFreeze(loadModule)], 0);
 
   startCallerStack();
 })();

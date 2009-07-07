@@ -216,7 +216,7 @@ var cajole = (function () {
     // See CajaApplet.Feature
     cajita.forOwnKeys(
         { EMBEDDABLE: true, DEBUG_SYMBOLS: true, VALIJA_MODE: true },
-        ___.frozenFunc(function (featureName) {
+        ___.markFuncFreeze(function (featureName) {
           if (inputs[featureName + uiSuffix].checked) {
           features.push(featureName);
           }
@@ -358,7 +358,7 @@ var getImports = (function () {
 
   /** Builds part of the repr of a JSON map. */
   function reprKeyValuePair(els) {
-    return ___.frozenFunc(function (k, v) {
+    return ___.markFuncFreeze(function (k, v) {
       els.push(repr(k) + ': ' + repr(v));
     });
   }
@@ -414,7 +414,7 @@ var getImports = (function () {
     var superHandler = ___.makeNormalNewModuleHandler();
     superHandler.setImports(imports);
     var inner = ___.beget(superHandler);
-    inner.handle = ___.frozenFunc(function testbedHandle(newModule) {
+    inner.handle = ___.markFuncFreeze(function testbedHandle(newModule) {
       try {
         return ___.callPub(superHandler, 'handle',
                            [newModule]);
@@ -477,7 +477,7 @@ var getImports = (function () {
       return document.getElementById('caja-html' + uiSuffix);
     };
     /** Provide a way to load another gadget's public API. */
-    testImports.loadModule = ___.frozenFunc(
+    testImports.loadModule = ___.markFuncFreeze(
         function (moduleName) {
           moduleName = String(moduleName);
           return ___.canEnumPub(gadgetPublicApis, moduleName)

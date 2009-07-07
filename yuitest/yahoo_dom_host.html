@@ -23,7 +23,7 @@
       var imports = ___.copy(___.sharedImports);
       ___.getNewModuleHandler().setImports(imports);
       imports.loader = ___.freeze(
-          { provide:___.func(function (v) { valijaMaker = v; }) });
+          { provide:___.markFuncFreeze(function (v) { valijaMaker = v; }) });
     })();
     </script>
 

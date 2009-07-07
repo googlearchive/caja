@@ -20,6 +20,7 @@
  *     other untranslated Javascript code.
  * <li>"cajita" providing some common services to the Cajita programmer.
  * </ol>
+ *
  * @author erights@gmail.com
  * @requires console
  * @provides ___, arraySlice, cajita, dateToISOString, funcBind
@@ -33,6 +34,17 @@
 
 // TODO(ihab.awad): Missing tests in CajitaTest.java for the functionality
 // in this file.
+
+// FIXME(erights): After the Caja runtime was started, some of Caja's
+// ideas for controlling ES3 attribute helped inspire the new ES5
+// attribute control APIs. But in the process, different terms were
+// adopted for these attributes. The current correspondences:
+// ES3          Caja         ES5
+// ReadOnly     canSet       writable
+// DontEnum     canEnum      enumerable
+// DontDelete   canDelete    configurable
+// We should consider migrating our terminology towards ES5's,
+// especially changing "set" to "write".
 
 
 // Add a tag to whitelisted builtin constructors so we can check the class
@@ -242,6 +254,17 @@ var safeJSON;
     return 'function';
   }
 
+  if (typeof new RegExp('x') === 'object') {
+    // Since typeof does what we want on FF3, IE6, Chrome, and Opera,
+    // on these platforms we shouldn't pay for the more expensive
+    // typeOf. Note that we declare the safe one but conditionally
+    // reset it to the fast one. This is safe even if hoisting causes
+    // the declared function to be called before we can replace it.
+    typeOf = function fastTypeof(obj) {
+      return typeof obj;
+    };
+  }
+
   var myOriginalHOP = Object.prototype.hasOwnProperty;
 
   /**
@@ -293,7 +316,7 @@ var safeJSON;
    * case, remember that the arguments are still evaluated.
    */
   function defaultLogger(str, opt_stop) {}
-  var myLogFunc = frozenFunc(defaultLogger);
+  var myLogFunc = markFuncFreeze(defaultLogger);
 
   /**
    * Gets the currently registered logging function.
@@ -398,6 +421,28 @@ var safeJSON;
     return specimen;
   }
 
+  /**
+   * Returns a function that can typically be used in lieu of
+   * <tt>func</tt>, but that logs a deprecation warning on first use.
+   * <p>
+   * Currently for internal use only, though may make this available
+   * on <tt>___</tt> or even <tt>cajita</tt> at a later time, after
+   * making it safe for such use. Forwards only arguments to
+   * <tt>func</tt> and returns results back, without forwarding
+   * <tt>this</tt>. If you want to deprecate an exophoric function,
+   * deprecate a bind()ing of that function instead.
+   */
+  function deprecate(func, badName, advice) {
+    var warningNeeded = true;
+    return function() {
+      if (warningNeeded) {
+        log('"' + badName + '" is deprecated.\n' + advice);
+        warningNeeded = false;
+      }
+      return func.apply(USELESS, arguments);
+    };
+  }
+
   ////////////////////////////////////////////////////////////////////////
   // Privileged fault handlers
   ////////////////////////////////////////////////////////////////////////
@@ -429,7 +474,7 @@ var safeJSON;
     },
 
     handleSet: function handleSet(obj, name, val) {
-      fail('Not settable: (', debugReference(obj), ').', name);
+      fail('Not writable: (', debugReference(obj), ').', name);
     },
 
     handleDelete: function handleDelete(obj, name) {
@@ -675,27 +720,34 @@ var safeJSON;
     //   })();
     if (isFrozen(obj)) { return obj; }
 
-    // badFlags are names of properties we need to turn off.
-    // We accumulate these first, so that we're not in the midst of a
-    // for/in loop on obj while we're deleting properties from obj.
-    var badFlags = [];
-    for (var k in obj) {
-      if (endsWith_canSet___.test(k) || endsWith_canDelete___.test(k)) {
-        if (obj[k]) {
-          badFlags.push(k);
+    if (obj.SLOWFREEZE___) {
+      // Still true even if SLOWFREEZE___ is inherited.
+
+      // badFlags are names of properties we need to turn off.
+      // We accumulate these first, so that we're not in the midst of a
+      // for/in loop on obj while we're deleting properties from obj.
+      var badFlags = [];
+      for (var k in obj) {
+        if (endsWith_canSet___.test(k) || endsWith_canDelete___.test(k)) {
+          if (obj[k]) {
+            badFlags.push(k);
+          }
         }
       }
-    }
-    for (var i = 0; i < badFlags.length; i++) {
-      var flag = badFlags[i];
-      if (myOriginalHOP.call(obj, flag)) {
-        if (!(delete obj[flag])) {
-          fail('internal: failed delete: ', debugReference(obj), '.', flag);
+      for (var i = 0; i < badFlags.length; i++) {
+        var flag = badFlags[i];
+        if (myOriginalHOP.call(obj, flag)) {
+          if (!(delete obj[flag])) {
+            fail('internal: failed delete: ', debugReference(obj), '.', flag);
+          }
+        }
+        if (obj[flag]) {
+          obj[flag] = false;
         }
       }
-      if (obj[flag]) {
-        obj[flag] = false;
-      }
+      // Will only delete it as an own property, so may legitimately
+      // fail if obj only inherits SLOWFREEZE___.
+      delete obj.SLOWFREEZE___;
     }
     obj.FROZEN___ = obj;
     if (typeOf(obj) === 'function') {
@@ -739,7 +791,7 @@ var safeJSON;
            debugReference(obj));
     }
     var result = isArray(obj) ? [] : {};
-    forOwnKeys(obj, frozenFunc(function(k, v) {
+    forOwnKeys(obj, markFuncFreeze(function(k, v) {
       result[k] = v;
     }));
     return result;
@@ -821,7 +873,7 @@ var safeJSON;
     obj[name + '_canRead___'] = obj;
   }
 
-  function fastpathEnumOnly(obj, name) {
+  function fastpathEnum(obj, name) {
     obj[name + '_canEnum___'] = obj;
   }
 
@@ -841,15 +893,21 @@ var safeJSON;
   }
 
   /**
-   * fastpathSet implies fastpathEnumOnly and fastpathRead. It also
-   * disables the ability to call.
+   * fastpathSet implies fastpathEnum and fastpathRead.
+   * <p>
+   * fastpathSet also disables the ability to call and records that
+   * more work must be done to freeze this object. 
    */
   function fastpathSet(obj, name) {
     if (name === 'toString') { fail("internal: Can't fastpath .toString"); }
     if (isFrozen(obj)) {
       fail("Can't set .", name, ' on frozen (', debugReference(obj), ')');
     }
-    fastpathEnumOnly(obj, name);
+    if (typeOf(obj) === 'function') {
+      fail("Can't make .", name, 
+           ' writable on a function (', debugReference(obj), ')');
+    }
+    fastpathEnum(obj, name);
     fastpathRead(obj, name);
     if (obj[name + '_canCall___']) {
       obj[name + '_canCall___'] = false;
@@ -857,12 +915,16 @@ var safeJSON;
     if (obj[name + '_grantCall___']) {
       obj[name + '_grantCall___'] = false;
     }
+    obj.SLOWFREEZE___ = obj;
     obj[name + '_canSet___'] = obj;
   }
 
   /**
    * fastpathDelete allows delete of a member on a constructed object via
-   * the private API.
+   * the public API.
+   * <p>
+   * fastpathDelete also records that more work must be done to freeze
+   * this object.  
    * <p>
    * TODO(erights): Having a fastpath flag for this probably doesn't
    * make sense.
@@ -872,6 +934,11 @@ var safeJSON;
     if (isFrozen(obj)) {
       fail("Can't delete .", name, ' on frozen (', debugReference(obj), ')');
     }
+    if (typeOf(obj) === 'function') {
+      fail("Can't make .", name, 
+           ' deletable on a function (', debugReference(obj), ')');
+    }
+    obj.SLOWFREEZE___ = obj;
     obj[name + '_canDelete___'] = obj;
   }
 
@@ -883,9 +950,8 @@ var safeJSON;
     fastpathRead(obj, name);
   }
 
-  // TODO(mikesamuel): none of the other grants grant enum, is "Only" operable?
-  function grantEnumOnly(obj, name) {
-    fastpathEnumOnly(obj, name);
+  function grantEnum(obj, name) {
+    fastpathEnum(obj, name);
   }
 
   function grantCall(obj, name) {
@@ -920,7 +986,7 @@ var safeJSON;
    * Mark <tt>constr</tt> as a constructor.
    * <p>
    * A function is tamed and classified by calling one of
-   * <tt>ctor()</tt>, <tt>method()</tt>, or <tt>func()</tt>. Each
+   * <tt>markCtor()</tt>, <tt>markXo4a()</tt>, or <tt>markFuncOnly()</tt>. Each
    * of these checks that the function hasn't already been classified by
    * any of the others. A function which has not been so classified is an
    * <i>untamed function</i>.
@@ -933,7 +999,7 @@ var safeJSON;
    * function. Currently, this is used only to generate friendlier
    * error messages.
    */
-  function ctor(constr, opt_Sup, opt_name) {
+  function markCtor(constr, opt_Sup, opt_name) {
     enforceType(constr, 'function', opt_name);
     if (isFunc(constr)) {
       fail("Simple functions can't be constructors: ", constr);
@@ -944,6 +1010,8 @@ var safeJSON;
     constr.CONSTRUCTOR___ = true;
     if (opt_Sup) {
       derive(constr, opt_Sup);
+    } else if (constr !== Object) {
+      fail('Only "Object" has no super: ', constr);
     }
     if (opt_name) {
       constr.NAME___ = String(opt_name);
@@ -952,11 +1020,18 @@ var safeJSON;
   }
 
   function derive(constr, sup) {
+    var proto = constr.prototype;
     sup = asCtor(sup);
     if (isFrozen(constr)) {
       fail('Derived constructor already frozen: ', constr);
     }
-    if (!isFrozen(constr.prototype)) {
+    if (!(proto instanceof sup)) {
+      fail('"' + constr + '" does not derive from "', sup);
+    }
+    if ('__proto__' in proto && proto.__proto__ !== sup.prototype) {
+      fail('"' + constr + '" does not derive directly from "', sup);
+    }
+    if (!isFrozen(proto)) {
       // Some platforms, like Safari, actually conform to the part
       // of the ES3 spec which states that the constructor property
       // of implicitly created prototypical objects are not
@@ -964,8 +1039,77 @@ var safeJSON;
       // algorithm (kludge) in directConstructor from working. Thus,
       // we set proto___ here so that directConstructor can skip
       // that impossible case.
-      constr.prototype.proto___ = sup.prototype;
+      proto.proto___ = sup.prototype;
     }
+  }
+
+  /**
+   * Initialize argument constructor <i>hiddenCtor</i> so that it
+   * represents a "subclass" of argument constructor <i>someSuper</i>,
+   * and return a safely non-invokable version of <i>hiddenCtor</i>. 
+   *
+   * Given: 
+   *
+   *   function HiddenFoo() { ... some uncajoled constructor ... }
+   *   var Foo = extend(HiddenFoo, HiddenSuper, 'Foo');
+   *
+   * it will be the case that:
+   *
+   *   new HiddenFoo() instanceof Foo
+   *
+   * however -- and this is the crucial property -- cajoled code will get an
+   * error if it invokes either of:
+   *
+   *   new Foo()
+   *   Foo()
+   *
+   * This allows us to expose Foo to cajoled code, allowing it to sense
+   * that all the HiddenFoo instances we give it are instanceof Foo, without
+   * granting to cajoled code the means to create any new such
+   * instances.
+   * 
+   * extend() also sets <i>hiddenCtor</i>.prototype to set up the
+   * prototype chain so that 
+   *
+   *   new HiddenFoo() instanceof HiddenSuper
+   * and
+   *   new HiddenFoo() instanceof Super
+   *
+   * @param hiddenCtor An uncajoled constructor. This must NOT be
+   *        exposed to cajoled code by any other mechanism.
+   * @param someSuper Some constructor representing the
+   *        superclass. This can be <ul>
+   *        <li>a hiddenCtor that had been provided as a first argument
+   *            in a previous call to extend(), 
+   *        <li>an inertCtor as returned by a previous call to
+   *            extend(), or 
+   *        <li>a constructor that has been marked as such by ___.markCtor().
+   *        </ul>
+   *        In all cases, someSuper.prototype.constructor must be
+   *        a constructor that has been marked as such by
+   *        ___.markCtor(). 
+   * @param opt_name If the returned inert constructor is made
+   *        available this should be the property name used.
+   *
+   * @return an inert class constructor as described above.
+   */
+  function extend(hiddenCtor, someSuper, opt_name) {
+    if (!('function' === typeof hiddenCtor)) {
+      throw 'Internal: Provided constructor is not a function';
+    }
+    someSuper = asCtor(someSuper.prototype.constructor);
+    var noop = function () {};
+    noop.prototype = someSuper.prototype;
+    hiddenCtor.prototype = new noop();
+    hiddenCtor.prototype.proto___ = someSuper.prototype;
+
+    var inert = function() {
+      throw 'This constructor cannot be called directly';
+    };
+
+    inert.prototype = hiddenCtor.prototype;
+    hiddenCtor.prototype.constructor = inert;
+    return markCtor(inert, someSuper, opt_name);
   }
 
   /**
@@ -978,24 +1122,24 @@ var safeJSON;
       return asFirstClass(xfunc);
     }
     var result = {
-      call: frozenFunc(function callXo4a(self, var_args) {
+      call: markFuncFreeze(function callXo4a(self, var_args) {
         if (self === null || self === void 0) { self = USELESS; }
         return xfunc.apply(self, Array.slice(arguments, 1));
       }),
-      apply: frozenFunc(function applyXo4a(self, args) {
+      apply: markFuncFreeze(function applyXo4a(self, args) {
         if (self === null || self === void 0) { self = USELESS; }
         return xfunc.apply(self, args);
       }),
-      bind: frozenFunc(function bindXo4a(self, var_args) {
+      bind: markFuncFreeze(function bindXo4a(self, var_args) {
         var args = arguments;
         if (self === null || self === void 0) {
           self = USELESS;
           args = [self].concat(Array.slice(args, 1));
         }
-        return frozenFunc(xfunc.bind.apply(xfunc, args));
+        return markFuncFreeze(xfunc.bind.apply(xfunc, args));
       }),
       length: xfunc.length,
-      toString: frozenFunc(function xo4aToString() {
+      toString: markFuncFreeze(function xo4aToString() {
         return xfunc.toString();
       })
     };
@@ -1014,7 +1158,7 @@ var safeJSON;
    *   with the method. Currently, this is used only to generate
    *   friendlier error messages.
    */
-  function xo4a(func, opt_name) {
+  function markXo4a(func, opt_name) {
     enforceType(func, 'function', opt_name);
     if (isCtor(func)) {
       fail("Internal: Constructors can't be exophora: ", func);
@@ -1029,11 +1173,15 @@ var safeJSON;
   /**
    * Mark fun as a simple function.
    * <p>
+   * For use only by the cajoled output of the Cajita rewriter; not for use
+   * for taming, since it does not also freeze the function. See 
+   * markFuncFreeze.
+   * <p>
    * opt_name, if provided, should be the name of the
    * function. Currently, this is used only to generate friendlier
    * error messages.
    */
-  function func(fun, opt_name) {
+  function markFuncOnly(fun, opt_name) {
     enforceType(fun, 'function', opt_name);
     if (isCtor(fun)) {
       fail("Constructors can't be simple functions: ", fun);
@@ -1051,8 +1199,8 @@ var safeJSON;
   /**
    * Mark fun as a simple function and freeze it.
    */
-  function frozenFunc(fun, opt_name) {
-    return primFreeze(func(fun, opt_name));
+  function markFuncFreeze(fun, opt_name) {
+    return primFreeze(markFuncOnly(fun, opt_name));
   }
 
   /** This "Only" form doesn't freeze */
@@ -1071,7 +1219,8 @@ var safeJSON;
   }
 
   /**
-   * Only simple functions can be called as simple functions.
+   * Only simple functions (or Number, String, or Boolean) can be
+   * called as simple functions. 
    * <p>
    * It is now <tt>asFunc</tt>'s responsibility to
    * <tt>primFreeze(fun)</tt>.
@@ -1088,8 +1237,8 @@ var safeJSON;
     enforceType(fun, 'function');
     if (isCtor(fun)) {
       if (fun === Number || fun === String || fun === Boolean) {
-        // TODO(erights): To avoid accidents, <tt>method</tt>,
-        // <tt>func</tt>, and <tt>ctor</tt> each ensure that
+        // TODO(erights): To avoid accidents, <tt>markXo4a</tt>,
+        // <tt>markFuncOnly</tt>, and <tt>markCtor</tt> each ensure that
         // these classifications are exclusive. A function can be
         // classified as in at most one of these categories. However,
         // some primordial type conversion functions like
@@ -1140,7 +1289,7 @@ var safeJSON;
    */
   function toFunc(fun) {
     if (isApplicator(fun)) {
-      return frozenFunc(function applier(var_args) {
+      return markFuncFreeze(function applier(var_args) {
         return callPub(fun, 'apply', [USELESS, Array.slice(arguments, 0)]);
       });
     }
@@ -1328,7 +1477,7 @@ var safeJSON;
    * safe to allow without runtime checks.
    */
   function enforceStaticPath(result, permitsUsed) {
-    forOwnKeys(permitsUsed, frozenFunc(function(name, subPermits) {
+    forOwnKeys(permitsUsed, markFuncFreeze(function(name, subPermits) {
       // Don't factor out since we don't enforce frozen if permitsUsed
       // are empty.
       // TODO(erights): Once we have ES3.1ish attribute control, it
@@ -1410,7 +1559,7 @@ var safeJSON;
     if (endsWith__.test(name)) { return false; }
     if (!isJSONContainer(obj)) { return false; }
     if (!myOriginalHOP.call(obj, name)) { return false; }
-    fastpathEnumOnly(obj, name);
+    fastpathEnum(obj, name);
     if (name === 'toString') { return true; }
     fastpathRead(obj, name);
     return true;
@@ -1432,11 +1581,11 @@ var safeJSON;
   function Token(name) {
     name = String(name);
     return primFreeze({
-      toString: frozenFunc(function tokenToString() { return name; }),
+      toString: markFuncFreeze(function tokenToString() { return name; }),
       throwable___: true
     });
   }
-  frozenFunc(Token);
+  markFuncFreeze(Token);
 
   /**
    * Inside a <tt>cajita.forOwnKeys()</tt>, or <tt>cajita.forAllKeys()</tt>, the
@@ -1626,28 +1775,32 @@ var safeJSON;
   }
 
   /**
-   * Can the given constructor have the given static method added to it?
-   * @param {Function} ctor
+   * Can the given function have the given static method added to it?
+   * @param {Function} fun
    * @param {string} staticMemberName an identifier in the public namespace.
    */
-  function canSetStatic(ctor, staticMemberName) {
+  function canSetStatic(fun, staticMemberName) {
     staticMemberName = '' + staticMemberName;
-    if (typeOf(ctor) !== 'function') {
-      log('Cannot set static member of non function', ctor);
+    if (typeOf(fun) !== 'function') {
+      log('Cannot set static member of non function: ' + fun);
       return false;
     }
-    if (isFrozen(ctor)) {
-      log('Cannot set static member of frozen function', ctor);
+    if (isFrozen(fun)) {
+      log('Cannot set static member of frozen function: ' + fun);
+      return false;
+    }
+    if (!isFunc(fun)) {
+      log('Can only set static members on simple-functions: ' + fun);
       return false;
     }
     // disallows prototype, call, apply, bind
-    if (staticMemberName in ctor) {
-      log('Cannot override static member ', staticMemberName);
+    if (staticMemberName in fun) {
+      log('Cannot override static member: ' + staticMemberName);
       return false;
     }
     // statics are public
     if (endsWith__.test(staticMemberName) || staticMemberName === 'valueOf') {
-      log('Illegal static member name ', staticMemberName);
+      log('Illegal static member name: ' + staticMemberName);
       return false;
     }
     if (staticMemberName === 'toString') {
@@ -1658,20 +1811,20 @@ var safeJSON;
   }
 
   /**
-   * Sets a static members of a ctor, making sure that it can't be used to
+   * Sets a static members of a fun, making sure that it can't be used to
    * override call/apply/bind and other builtin members of function.
-   * @param {Function} ctor
+   * @param {Function} fun
    * @param {string} staticMemberName an identifier in the public namespace.
    * @param staticMemberValue the value of the static member.
    */
-  function setStatic(ctor, staticMemberName, staticMemberValue) {
+  function setStatic(fun, staticMemberName, staticMemberValue) {
     staticMemberName = '' + staticMemberName;
-    if (canSetStatic(ctor, staticMemberName)) {
-      ctor[staticMemberName] = staticMemberValue;
-      fastpathEnumOnly(ctor, staticMemberName);
-      fastpathRead(ctor, staticMemberName);
+    if (canSetStatic(fun, staticMemberName)) {
+      fun[staticMemberName] = staticMemberValue;
+      fastpathEnum(fun, staticMemberName);
+      fastpathRead(fun, staticMemberName);
     } else {
-      ctor.handleSet___(staticMemberName, staticMemberValue);
+      fun.handleSet___(staticMemberName, staticMemberValue);
     }
   }
 
@@ -1813,7 +1966,7 @@ var safeJSON;
           // problems as with.
 
           // We return a different, powerless function instead.
-          return ___.func(function () {});
+          return markFuncFreeze(function () {});
         }
         default: {
           log('Unrecognized exception type ' + (typeOf(ex)));
@@ -1926,7 +2079,7 @@ var safeJSON;
    * called or read.
    */
   function grantFunc(obj, name) {
-    frozenFunc(obj[name], name);
+    markFuncFreeze(obj[name], name);
     grantCall(obj, name);
     grantRead(obj, name);
   }
@@ -1939,8 +2092,8 @@ var safeJSON;
    * proto[name] returns the corresponding pseudo-function -- a record
    * with simple-functions for its call, bind, and apply.
    */
-  function grantGeneric(proto, name) {
-    var func = xo4a(proto[name], name);
+  function grantGenericMethod(proto, name) {
+    var func = markXo4a(proto[name], name);
     grantCall(proto, name);
     var pseudoFunc = reifyIfXo4a(func, name);
     useGetHandler(proto, name, function xo4aGetter() {
@@ -1956,8 +2109,8 @@ var safeJSON;
    * proto[name] returns the corresponding pseudo-function -- a record
    * with simple-functions for its call, bind, and apply.
    */
-  function handleGeneric(obj, name, func) {
-    xo4a(func);
+  function handleGenericMethod(obj, name, func) {
+    markXo4a(func);
     useCallHandler(obj, name, func);
     var pseudoFunc = reifyIfXo4a(func, name);
     useGetHandler(obj, name, function genericGetter() {
@@ -1979,9 +2132,9 @@ var safeJSON;
    * grantCall().
    * FIXME(ben): also fastpath?
    */
-  function grantTypedGeneric(proto, name) {
+  function grantTypedMethod(proto, name) {
     var original = proto[name];
-    handleGeneric(proto, name, function guardedApplier(var_args) {
+    handleGenericMethod(proto, name, function guardedApplier(var_args) {
       if (!inheritsFrom(this, proto)) {
         fail("Can't call .", name, ' on a non ',
              directConstructor(proto), ': ', this);
@@ -2003,9 +2156,9 @@ var safeJSON;
    * grantCall().
    * FIXME(ben): also fastpath?
    */
-  function grantMutator(proto, name) {
+  function grantMutatingMethod(proto, name) {
     var original = proto[name];
-    handleGeneric(proto, name, function nonMutatingApplier(var_args) {
+    handleGenericMethod(proto, name, function nonMutatingApplier(var_args) {
       if (isFrozen(this)) {
         fail("Can't .", name, ' a frozen object');
       }
@@ -2059,7 +2212,7 @@ var safeJSON;
   /// toString
 
   function grantToString(proto) {
-    proto.TOSTRING___ = xo4a(proto.toString, 'toString');
+    proto.TOSTRING___ = markXo4a(proto.toString, 'toString');
   }
   useGetHandler(Object.prototype, 'toString',
                 function toStringGetter() {
@@ -2067,7 +2220,7 @@ var safeJSON;
         typeOf(this.toString) === 'function' &&
         !hasOwnProp(this, 'TOSTRING___')) {
       // This case is a kludge that doesn't work for undiagnosed reasons.
-//    this.TOSTRING___ = xo4a(this.toString, 'toString');
+//    this.TOSTRING___ = markXo4a(this.toString, 'toString');
       // TODO(erights): This case is a different kludge that needs to
       // be explained.
       // TODO(erights): This is probably wrong in that it can leak xo4a.
@@ -2111,57 +2264,57 @@ var safeJSON;
 
   /// Object
 
-  ctor(Object, void 0, 'Object');
+  markCtor(Object, void 0, 'Object');
   grantToString(Object.prototype);
-  all2(grantGeneric, Object.prototype, [
+  all2(grantGenericMethod, Object.prototype, [
     'toLocaleString', 'valueOf', 'isPrototypeOf'
   ]);
   grantRead(Object.prototype, 'length');
-  handleGeneric(Object.prototype, 'hasOwnProperty',
-                function hasOwnPropertyHandler(name) {
+  handleGenericMethod(Object.prototype, 'hasOwnProperty',
+                      function hasOwnPropertyHandler(name) {
     return hasOwnPropertyOf(this, name);
   });
-  handleGeneric(Object.prototype, 'propertyIsEnumerable',
-                function propertyIsEnumerableHandler(name) {
+  handleGenericMethod(Object.prototype, 'propertyIsEnumerable',
+                      function propertyIsEnumerableHandler(name) {
     name = String(name);
     return canEnumPub(this, name);
   });
 
   /// Function
 
-  handleGeneric(Function.prototype, 'apply',
-                function applyHandler(self, realArgs) {
+  handleGenericMethod(Function.prototype, 'apply',
+                      function applyHandler(self, realArgs) {
     return toFunc(this).apply(self, realArgs);
   });
-  handleGeneric(Function.prototype, 'call',
-                function callHandler(self, var_args) {
+  handleGenericMethod(Function.prototype, 'call',
+                      function callHandler(self, var_args) {
     return toFunc(this).apply(self, Array.slice(arguments, 1));
   });
-  handleGeneric(Function.prototype, 'bind',
-                function bindHandler(self, var_args) {
+  handleGenericMethod(Function.prototype, 'bind',
+                      function bindHandler(self, var_args) {
     var thisFunc = this;
     var leftArgs = Array.slice(arguments, 1);
     function boundHandler(var_args) {
       var args = leftArgs.concat(Array.slice(arguments, 0));
       return callPub(thisFunc, 'apply', [self, args]);
     }
-    return frozenFunc(boundHandler);
+    return markFuncFreeze(boundHandler);
   });
 
   /// Array
 
-  ctor(Array, Object, 'Array');
+  markCtor(Array, Object, 'Array');
   grantFunc(Array, 'slice');
   grantToString(Array.prototype);
-  all2(grantTypedGeneric, Array.prototype, [ 'toLocaleString' ]);
-  all2(grantGeneric, Array.prototype, [
+  all2(grantTypedMethod, Array.prototype, [ 'toLocaleString' ]);
+  all2(grantGenericMethod, Array.prototype, [
     'concat', 'join', 'slice', 'indexOf', 'lastIndexOf'
   ]);
-  all2(grantMutator, Array.prototype, [
+  all2(grantMutatingMethod, Array.prototype, [
     'pop', 'push', 'reverse', 'shift', 'splice', 'unshift'
   ]);
-  handleGeneric(Array.prototype, 'sort',
-                function sortHandler(comparator) {
+  handleGenericMethod(Array.prototype, 'sort',
+                      function sortHandler(comparator) {
     if (isFrozen(this)) {
       fail("Can't sort a frozen array.");
     }
@@ -2174,25 +2327,25 @@ var safeJSON;
 
   /// String
 
-  ctor(String, Object, 'String');
+  markCtor(String, Object, 'String');
   grantFunc(String, 'fromCharCode');
   grantToString(String.prototype);
-  all2(grantTypedGeneric, String.prototype, [
+  all2(grantTypedMethod, String.prototype, [
     'toLocaleString', 'indexOf', 'lastIndexOf'
   ]);
-  all2(grantGeneric, String.prototype, [
+  all2(grantGenericMethod, String.prototype, [
     'charAt', 'charCodeAt', 'concat',
     'localeCompare', 'slice', 'substr', 'substring',
     'toLowerCase', 'toLocaleLowerCase', 'toUpperCase', 'toLocaleUpperCase'
   ]);
 
-  handleGeneric(String.prototype, 'match',
-                function matchHandler(regexp) {
+  handleGenericMethod(String.prototype, 'match',
+                      function matchHandler(regexp) {
     enforceMatchable(regexp);
     return this.match(regexp);
   });
-  handleGeneric(String.prototype, 'replace',
-                function replaceHandler(searcher, replacement) {
+  handleGenericMethod(String.prototype, 'replace',
+                      function replaceHandler(searcher, replacement) {
     enforceMatchable(searcher);
     if (isFunc(replacement)) {
       replacement = asFunc(replacement);
@@ -2203,41 +2356,41 @@ var safeJSON;
     }
     return this.replace(searcher, replacement);
   });
-  handleGeneric(String.prototype, 'search',
-                function searchHandler(regexp) {
+  handleGenericMethod(String.prototype, 'search',
+                      function searchHandler(regexp) {
     enforceMatchable(regexp);
     return this.search(regexp);
   });
-  handleGeneric(String.prototype, 'split',
-                function splitHandler(separator, limit) {
+  handleGenericMethod(String.prototype, 'split',
+                      function splitHandler(separator, limit) {
     enforceMatchable(separator);
     return this.split(separator, limit);
   });
 
   /// Boolean
 
-  ctor(Boolean, Object, 'Boolean');
+  markCtor(Boolean, Object, 'Boolean');
   grantToString(Boolean.prototype);
 
   /// Number
 
-  ctor(Number, Object, 'Number');
+  markCtor(Number, Object, 'Number');
   all2(grantRead, Number, [
     'MAX_VALUE', 'MIN_VALUE', 'NaN',
     'NEGATIVE_INFINITY', 'POSITIVE_INFINITY'
   ]);
   grantToString(Number.prototype);
-  all2(grantTypedGeneric, Number.prototype, [
+  all2(grantTypedMethod, Number.prototype, [
     'toFixed', 'toExponential', 'toPrecision'
   ]);
 
   /// Date
 
-  ctor(Date, Object, 'Date');
+  markCtor(Date, Object, 'Date');
   grantFunc(Date, 'parse');
   grantFunc(Date, 'UTC');
   grantToString(Date.prototype);
-  all2(grantTypedGeneric, Date.prototype, [
+  all2(grantTypedMethod, Date.prototype, [
     'toDateString','toTimeString', 'toUTCString',
     'toLocaleString', 'toLocaleDateString', 'toLocaleTimeString',
     'toISOString',
@@ -2248,7 +2401,7 @@ var safeJSON;
     'getMinutes', 'getUTCMinutes', 'getSeconds', 'getUTCSeconds',
     'getMilliseconds', 'getUTCMilliseconds'
   ]);
-  all2(grantMutator, Date.prototype, [
+  all2(grantMutatingMethod, Date.prototype, [
     'setTime', 'setFullYear', 'setUTCFullYear', 'setMonth', 'setUTCMonth',
     'setDate', 'setUTCDate', 'setHours', 'setUTCHours',
     'setMinutes', 'setUTCMinutes', 'setSeconds', 'setUTCSeconds',
@@ -2257,18 +2410,18 @@ var safeJSON;
 
   /// RegExp
 
-  ctor(RegExp, Object, 'RegExp');
+  markCtor(RegExp, Object, 'RegExp');
   grantToString(RegExp.prototype);
-  handleGeneric(RegExp.prototype, 'exec',
-                function execHandler(specimen) {
+  handleGenericMethod(RegExp.prototype, 'exec',
+                      function execHandler(specimen) {
     if (isFrozen(this)) {
       fail("Can't .exec a frozen RegExp");
     }
     specimen = String(specimen); // See bug 528
     return this.exec(specimen);
   });
-  handleGeneric(RegExp.prototype, 'test',
-                function testHandler(specimen) {
+  handleGenericMethod(RegExp.prototype, 'test',
+                      function testHandler(specimen) {
     if (isFrozen(this)) {
       fail("Can't .test a frozen RegExp");
     }
@@ -2282,16 +2435,16 @@ var safeJSON;
 
   /// errors
 
-  ctor(Error, Object, 'Error');
+  markCtor(Error, Object, 'Error');
   grantToString(Error.prototype);
   grantRead(Error.prototype, 'name');
   grantRead(Error.prototype, 'message');
-  ctor(EvalError, Error, 'EvalError');
-  ctor(RangeError, Error, 'RangeError');
-  ctor(ReferenceError, Error, 'ReferenceError');
-  ctor(SyntaxError, Error, 'SyntaxError');
-  ctor(TypeError, Error, 'TypeError');
-  ctor(URIError, Error, 'URIError');
+  markCtor(EvalError, Error, 'EvalError');
+  markCtor(RangeError, Error, 'RangeError');
+  markCtor(ReferenceError, Error, 'ReferenceError');
+  markCtor(SyntaxError, Error, 'SyntaxError');
+  markCtor(TypeError, Error, 'TypeError');
+  markCtor(URIError, Error, 'URIError');
 
 
   var sharedImports;
@@ -2328,7 +2481,7 @@ var safeJSON;
    * instantiating it.
    */
   var obtainNewModule = freeze({
-    handle: frozenFunc(function handleOnly(newModule){ return newModule; })
+    handle: markFuncFreeze(function handleOnly(newModule){ return newModule; })
   });
 
   /**
@@ -2344,8 +2497,8 @@ var safeJSON;
     var imports = copy(sharedImports);
     var lastOutcome = void 0;
     return freeze({
-      getImports: frozenFunc(function getImports() { return imports; }),
-      setImports: frozenFunc(function setImports(newImports) {
+      getImports: markFuncFreeze(function getImports() { return imports; }),
+      setImports: markFuncFreeze(function setImports(newImports) {
         imports = newImports;
       }),
 
@@ -2370,7 +2523,7 @@ var safeJSON;
        * overwrite an already reported outcome with NO_RESULT, so the
        * last script-block's outcome will be preserved.
        */
-      getLastOutcome: frozenFunc(function getLastOutcome() {
+      getLastOutcome: markFuncFreeze(function getLastOutcome() {
         return lastOutcome;
       }),
 
@@ -2378,7 +2531,7 @@ var safeJSON;
        * If the last outcome is a success, returns its value;
        * otherwise <tt>undefined</tt>.
        */
-      getLastValue: frozenFunc(function getLastValue() {
+      getLastValue: markFuncFreeze(function getLastValue() {
         if (lastOutcome && lastOutcome[0]) {
           return lastOutcome[1];
         } else {
@@ -2393,7 +2546,7 @@ var safeJSON;
        * reported outcome. Propogate this outcome by terminating in
        * the same manner.
        */
-      handle: frozenFunc(function handle(newModule) {
+      handle: markFuncFreeze(function handle(newModule) {
         lastOutcome = void 0;
         try {
           var result = newModule.instantiate(___, imports);
@@ -2471,7 +2624,7 @@ var safeJSON;
    */
   function loadModule(module) {
     freeze(module);
-    frozenFunc(module.instantiate);
+    markFuncFreeze(module.instantiate);
     return callPub(myNewModuleHandler, 'handle', [module]);
   }
 
@@ -2558,7 +2711,7 @@ var safeJSON;
   function Trademark(name) {
     return Token(name);
   }
-  frozenFunc(Trademark);
+  markFuncFreeze(Trademark);
 
   /**
    * Returns true if the object has a list of trademarks
@@ -2615,7 +2768,7 @@ var safeJSON;
     var result = {};
     for (var i = 0; i < list.length; i += 2) {
       // Call asFirstClass() here to prevent, for example, a toxic
-      // function being used at the toString property of an object
+      // function being used as the toString property of an object
       // literal.
       setPub(result, list[i], asFirstClass(list[i + 1]));
     }
@@ -2642,8 +2795,8 @@ var safeJSON;
         flag = true;
         squirrel = payload;
       }
-      box.toString = frozenFunc(function toString() { return '(box)'; });
-      return frozenFunc(box);
+      box.toString = markFuncFreeze(function toString() { return '(box)'; });
+      return markFuncFreeze(box);
     }
     function unseal(box) {
       // Start off in a known good state.
@@ -2660,8 +2813,8 @@ var safeJSON;
       }
     }
     return freeze({
-      seal: frozenFunc(seal),
-      unseal: frozenFunc(unseal)
+      seal: markFuncFreeze(seal),
+      unseal: markFuncFreeze(unseal)
     });
   }
 
@@ -2816,8 +2969,8 @@ var safeJSON;
 
     if (opt_useKeyLifetime) {
       return primFreeze({
-        set: frozenFunc(setOnKey),
-        get: frozenFunc(getOnKey)
+        set: markFuncFreeze(setOnKey),
+        get: markFuncFreeze(getOnKey)
       });
     }
 
@@ -2862,8 +3015,8 @@ var safeJSON;
     }
 
     return primFreeze({
-      set: frozenFunc(setOnTable),
-      get: frozenFunc(getOnTable)
+      set: markFuncFreeze(setOnTable),
+      get: markFuncFreeze(getOnTable)
     });
   }
 
@@ -3037,14 +3190,14 @@ var safeJSON;
     beget: beget
   };
 
-  forOwnKeys(cajita, frozenFunc(function(k, v) {
+  forOwnKeys(cajita, markFuncFreeze(function(k, v) {
     switch (typeOf(v)) {
       case 'object': {
         if (v !== null) { primFreeze(v); }
         break;
       }
       case 'function': {
-        frozenFunc(v);
+        markFuncFreeze(v);
         break;
       }
     }
@@ -3052,7 +3205,7 @@ var safeJSON;
 
   var nativeJSON = global.JSON;
   safeJSON = primFreeze({
-    parse: frozenFunc(function (text, opt_reviver) {
+    parse: markFuncFreeze(function (text, opt_reviver) {
       var attenuatedReviver;
       // In attenuatedReviver, key will be a string, and "this" will be an
       // object constructed by the JSON parser or attached to the JSON parser
@@ -3069,7 +3222,7 @@ var safeJSON;
         });
       }
     }),
-    stringify: frozenFunc(function (obj, opt_replacer, opt_space) {
+    stringify: markFuncFreeze(function (obj, opt_replacer, opt_space) {
       switch (typeof opt_space) {
         case 'object': case 'function':
           throw new TypeError('space must be a number or string');
@@ -3095,15 +3248,15 @@ var safeJSON;
     'NaN': NaN,
     'Infinity': Infinity,
     'undefined': void 0,
-    parseInt: frozenFunc(parseInt),
-    parseFloat: frozenFunc(parseFloat),
-    isNaN: frozenFunc(isNaN),
-    isFinite: frozenFunc(isFinite),
-    decodeURI: frozenFunc(decodeURI),
-    decodeURIComponent: frozenFunc(decodeURIComponent),
-    encodeURI: frozenFunc(encodeURI),
-    encodeURIComponent: frozenFunc(encodeURIComponent),
-    escape: escape ? frozenFunc(escape) : (void 0),
+    parseInt: markFuncFreeze(parseInt),
+    parseFloat: markFuncFreeze(parseFloat),
+    isNaN: markFuncFreeze(isNaN),
+    isFinite: markFuncFreeze(isFinite),
+    decodeURI: markFuncFreeze(decodeURI),
+    decodeURIComponent: markFuncFreeze(decodeURIComponent),
+    encodeURI: markFuncFreeze(encodeURI),
+    encodeURIComponent: markFuncFreeze(encodeURIComponent),
+    escape: escape ? markFuncFreeze(escape) : (void 0),
     Math: Math,
     JSON: safeJSON,
 
@@ -3124,7 +3277,7 @@ var safeJSON;
     URIError: URIError
   };
 
-  forOwnKeys(sharedImports, frozenFunc(function(k, v) {
+  forOwnKeys(sharedImports, markFuncFreeze(function(k, v) {
     switch (typeOf(v)) {
       case 'object': {
         if (v !== null) { primFreeze(v); }
@@ -3146,12 +3299,11 @@ var safeJSON;
     primFreeze: primFreeze,
 
     // Accessing property attributes.
-    canRead: canRead,        grantRead: grantRead,
-    canEnum: canEnum,        grantEnumOnly: grantEnumOnly,
-    // TODO(mikesamuel): should grantCall be exported?
-    canCall: canCall,        grantCall: grantCall,
-    canSet: canSet,          grantSet: grantSet,
-    canDelete: canDelete,    grantDelete: grantDelete,
+    canRead: canRead,             grantRead: grantRead,
+    canEnum: canEnum,             grantEnum: grantEnum,
+    canCall: canCall,        
+    canSet: canSet,               grantSet: grantSet,
+    canDelete: canDelete,         grantDelete: grantDelete,
 
     // Module linkage
     readImport: readImport,
@@ -3159,11 +3311,9 @@ var safeJSON;
     // Classifying functions
     isCtor: isCtor,
     isFunc: isFunc,
-    isXo4aFunc: isXo4aFunc,
-    ctor: ctor,
-    func: func,       frozenFunc: frozenFunc,
-    asFunc: asFunc,   toFunc: toFunc,
-    xo4a: xo4a,
+    markCtor: markCtor,           extend: extend,
+    markFuncOnly: markFuncOnly,   markFuncFreeze: markFuncFreeze,
+    asFunc: asFunc,               toFunc: toFunc,
     initializeMap: initializeMap,
 
     // Accessing properties
@@ -3184,22 +3334,16 @@ var safeJSON;
 
     // Taming mechanism
     useGetHandler: useGetHandler,
-    useApplyHandler: useApplyHandler,
-    useCallHandler: useCallHandler,
     useSetHandler: useSetHandler,
-    useDeleteHandler: useDeleteHandler,
 
     grantFunc: grantFunc,
-    grantGeneric: grantGeneric,
-    handleGeneric: handleGeneric,
-    grantTypedGeneric: grantTypedGeneric,
-    grantMutator: grantMutator,
+    grantGenericMethod: grantGenericMethod,
+    handleGenericMethod: handleGenericMethod,
+    grantTypedMethod: grantTypedMethod,
+    grantMutatingMethod: grantMutatingMethod,
 
     enforceMatchable: enforceMatchable,
     all2: all2,
-
-    // Taming decisions
-    sharedImports: sharedImports,
 
     // Module loading
     getNewModuleHandler: getNewModuleHandler,
@@ -3211,10 +3355,50 @@ var safeJSON;
 
     getId: getId,
     getImports: getImports,
-    unregister: unregister
+    unregister: unregister,
+
+    // Deprecated
+    grantEnumOnly: deprecate(grantEnum, '___.grantEnumOnly',
+                             'Use ___.grantEnum instead.'),
+    grantCall: deprecate(grantGenericMethod, '___.grantCall',
+                         'Choose a method tamer (e.g., ___.grantFunc,' +
+                         '___.grantGenericMethod,etc) according to the ' +
+                         'safety properties of calling and reading the ' +
+                         'method.'),
+    grantGeneric: deprecate(grantGenericMethod, '___.grantGeneric',
+                            'Use ___.grantGenericMethod instead.'),
+    useApplyHandler: deprecate(useApplyHandler, '___.useApplyHandler',
+                               'Use ___.handleGenericMethod instead.'),
+    useCallHandler: deprecate(useCallHandler, '___.useCallHandler',
+                              'Use ___.handleGenericMethod instead.'),
+    handleGeneric: deprecate(useCallHandler, '___.handleGeneric',
+                              'Use ___.handleGenericMethod instead.'),
+    grantTypedGeneric: deprecate(useCallHandler, '___.grantTypedGeneric',
+                              'Use ___.grantTypedMethod instead.'),
+    grantMutator: deprecate(useCallHandler, '___.grantMutator',
+                              'Use ___.grantMutatingMethod instead.'),
+    useDeleteHandler: deprecate(useDeleteHandler, '___.useDeleteHandler',
+                                'Refactor to avoid needing to handle ' +
+                                'deletions.'),
+    isXo4aFunc: deprecate(isXo4aFunc, '___.isXo4aFunc',
+                          'Refactor to avoid needing to dynamically test ' +
+                          'whether a function is marked exophoric.'),
+    xo4a: deprecate(markXo4a, '___.xo4a',
+                    'Refactor to avoid needing to explicitly mark ' +
+                    'a function as exophoric. Use one of the exophoric ' +
+                    'method tamers (e.g., ___.grantGenericMethod) instead.'),
+    ctor: deprecate(markCtor, '___.ctor',
+		    'Use ___.markCtor instead.'),
+    func: deprecate(markFuncOnly, '___.func',
+		    'Use ___.markFuncOnly instead.'),
+    frozenFunc: deprecate(markFuncFreeze, '___.frozenFunc',
+			  'Use ___.markFuncFreeze instead.'),
+
+    // Taming decisions
+    sharedImports: sharedImports
   };
 
-  forOwnKeys(cajita, frozenFunc(function(k, v) {
+  forOwnKeys(cajita, markFuncFreeze(function(k, v) {
     if (k in ___) {
       fail('internal: initialization conflict: ', k);
     }

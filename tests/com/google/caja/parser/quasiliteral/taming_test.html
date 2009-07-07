@@ -86,16 +86,16 @@ ___.useSetHandler(MyRootNamespace, 'mutable_data', function (val) {
 });
 ___.grantRead(MyRootNamespace, 'SubSpace');
 ___.grantFunc(MyRootNamespace.SubSpace, 'safeToCall');
-___.useCallHandler(MyRootNamespace.SubSpace, 'attenuated', function (f) {
+___.handleGenericMethod(MyRootNamespace.SubSpace, 'attenuated', function (f) {
   return MyRootNamespace.SubSpace.attenuated(
       function () { return closestOddNumber(___.toFunc(f)()); });
 });
 ___.grantFunc(MyRootNamespace.JsonObj, 'callable');
 
 // Granting read does not make a property enumerable.
-___.grantEnumOnly(MyRootNamespace, 'PUBLIC_DATA');
-___.grantEnumOnly(MyRootNamespace, 'mutable_data');
-___.grantEnumOnly(MyRootNamespace, 'SubSpace');
+___.grantEnum(MyRootNamespace, 'PUBLIC_DATA');
+___.grantEnum(MyRootNamespace, 'mutable_data');
+___.grantEnum(MyRootNamespace, 'SubSpace');
 // JsonObj not marked enumerable
 
 </script>
@@ -105,13 +105,13 @@ var nmh = ___.makeNormalNewModuleHandler();
 ___.setNewModuleHandler(nmh);
 var imports = nmh.getImports();
 imports.MyRootNamespace = MyRootNamespace;
-imports.assertEquals = ___.frozenFunc(assertEquals);
-imports.assertFalse = ___.frozenFunc(assertFalse);
-imports.assertTrue = ___.frozenFunc(assertTrue);
-imports.assertThrows = ___.frozenFunc(function (func, opt_msg) {
+imports.assertEquals = ___.markFuncFreeze(assertEquals);
+imports.assertFalse = ___.markFuncFreeze(assertFalse);
+imports.assertTrue = ___.markFuncFreeze(assertTrue);
+imports.assertThrows = ___.markFuncFreeze(function (func, opt_msg) {
   assertThrows(___.toFunc(func), opt_msg);
 });
-imports.fail = ___.frozenFunc(fail);
+imports.fail = ___.markFuncFreeze(fail);
 </script>
 
 <script type="text/javascript">
@@ -167,7 +167,7 @@ assertEquals('private check', void 0, MyRootNamespace.PRIVATE_DATA);
 assertEquals('private check by key', void 0, MyRootNamespace[privateDataKey]);
 assertFalse('private in', privateDataKey in MyRootNamespace);
 
-cajita.log('Testing that the mutable field is settable and readable');
+cajita.log('Testing that the mutable field is writable and readable');
 assertEquals('mutable initial read', 3, MyRootNamespace.mutable_data);
 assertEquals('mutable set 1', 0, (MyRootNamespace.mutable_data = 0));
 assertEquals('mutable read 1', 1, MyRootNamespace.mutable_data);

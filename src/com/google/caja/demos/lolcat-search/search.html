@@ -44,7 +44,9 @@
                       group: 0, groupEnd: 0, time: 0, timeEnd: 0, dir: 0,
                       assert: 0, dirxml: 0, profile: 0, profileEnd: 0 }) {
         ___.sharedImports.console[k] = (function (k, f) {
-          return ___.func(function () { f.apply(console, arguments); });
+          return ___.markFuncFreeze(function () {
+            f.apply(console, arguments); 
+          });
         })(k, console[k] || function () {});
       }
     })();</script>
@@ -94,9 +96,8 @@
     <script type="text/javascript" src="searchengine.js"></script>
     <script type="text/javascript" src="chtml.js"></script>
     <script type="text/javascript">
-      ___.sharedImports.StringInterpolation
-         = ___.func(StringInterpolation);
-      ___.grantRead(___.sharedImports, 'StringInterpolation');
+      ___.sharedImports.StringInterpolation = StringInterpolation;
+      ___.grantFunc(___.sharedImports, 'StringInterpolation');
     </script>
   </head>
   <body bgcolor="white">

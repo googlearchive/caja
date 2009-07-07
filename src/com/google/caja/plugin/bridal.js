@@ -177,7 +177,7 @@ var bridal = (function() {
     if (originalAttribs) {
       var attribs = {};
       clone.attributes___ = attribs;
-      cajita.forOwnKeys(originalAttribs, ___.func(function (k, v) {
+      cajita.forOwnKeys(originalAttribs, ___.markFuncFreeze(function (k, v) {
         switch (typeof v) {
           case 'string': case 'number': case 'boolean':
             attribs[k] = v;

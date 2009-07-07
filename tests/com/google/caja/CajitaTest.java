@@ -83,7 +83,7 @@ public class CajitaTest extends CajaTestCase {
         "  function A() {} function B() {} function C() {}"
         + "var f = function(x) { this.x = x; };"
         + "A.prototype.f = B.prototype.f = f;"
-        + "___.grantGeneric(A.prototype, 'f');"
+        + "___.grantGenericMethod(A.prototype, 'f');"
         + "var a = new A(), b = new B(), c = new C();"
         + "___.callPub(a, 'f', [42]); assertEquals(42, a.x);"
         + "assertThrows(function() { ___.callPub(b, 'f', [42]); });"

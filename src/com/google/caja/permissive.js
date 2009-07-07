@@ -122,7 +122,7 @@
           var constr = proto.constructor;
           ___.log('Allowing call of ".' + name + '()" for: ' + constr);
         }
-        ___.grantCall(proto, name);
+        ___.grantFunc(proto, name);
         return obj[name].apply(obj, args);
       }
       return oldKeeper.handleCall(obj, name, args);

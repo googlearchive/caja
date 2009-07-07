@@ -14,7 +14,7 @@ ___.loadModule({
                        ' .p4 {\n    font-weight: bold\n  }\n}\n.',
                        ' .p1 {\n  color: red\n}' ].join(IMPORTS___.getIdClass___()));
                    {
-                     IMPORTS___.c_1___ = ___.frozenFunc(function (event, thisNode___) {
+                     IMPORTS___.c_1___ = ___.markFuncFreeze(function (event, thisNode___) {
                                                           handleClicky.CALL___();
                                                         });
                      var el___;
@@ -27,7 +27,7 @@ ___.loadModule({
                                            function externalScript$_self() {
                                              alert.CALL___('external script');
                                            }
-                                           return ___.func(externalScript$_self, 'externalScript');
+                                           return ___.markFuncOnly(externalScript$_self, 'externalScript');
                                          })();
                      }
                    } catch (ex___) {
@@ -46,7 +46,7 @@ ___.loadModule({
                              function handleClicky() {
                                alert.CALL___('You clicked something!!!');
                              }
-                             return ___.frozenFunc(handleClicky, 'handleClicky');
+                             return ___.markFuncFreeze(handleClicky, 'handleClicky');
                            })(), outers.handleClicky_canSet___? (outers.handleClicky = x0___): ___.setPub(outers, 'handleClicky', x0___));
                      }
                    } catch (ex___) {
