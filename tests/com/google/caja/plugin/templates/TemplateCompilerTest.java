@@ -298,6 +298,46 @@ public class TemplateCompilerTest extends CajaTestCase {
         );
   }
 
+  public void testBug1050Finish() throws Exception {
+    // bug 1050, sometimes finish() is misplaced
+    // http://code.google.com/p/google-caja/issues/detail?id=1050
+    assertSafeHtml(
+        htmlFragment(fromString(
+            ""
+            + "<div id=\"a\"></div>"
+            + "<div id=\"b\"></div>"
+            + "<script>1</script>")),
+        htmlFragment(fromString(
+            ""
+            + "<div id=\"id_1___\"></div>"
+            + "<div id=\"id_2___\"></div>")),
+        js(fromString(
+            ""
+            + "{"
+            + "  var el___;"
+            + "  var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "  el___ = emitter___.byId('id_1___');"
+            + "  emitter___.setAttr(el___, 'id',"
+            + "    'a-' + IMPORTS___.getIdClass___());"
+            + "  el___ = emitter___.byId('id_2___');"
+            + "  emitter___.setAttr(el___, 'id',"
+            + "    'b-' + IMPORTS___.getIdClass___());"
+            + "  el___ = emitter___.finish();"
+            + "}"
+            + "try {"
+            + "  {"
+            + "    1;"
+            + "  }"
+            + "} catch (ex___) {"
+            + "  ___.getNewModuleHandler().handleUncaughtException(ex___,"
+            + "    onerror, 'testBug1050Finish', '1');"
+            + "}"
+            + "{"
+            + "  emitter___.signalLoaded();"
+            + "}"
+            )));
+  }
+
   private void assertSafeHtml(
       DocumentFragment input, DocumentFragment htmlGolden, Block jsGolden)
       throws ParseException {
