@@ -9,6 +9,9 @@ For verb in
           an SVN commit message.
   snapshot -- update appspot with the current change description
 
+The current change description is stored in a file named '.appspot-change'.
+If you're using git, the filename will be '.appspot-change.$GITBRANCH'.
+
 Flags:
   -m --message : overrides the changelist message, a one line summary.
   -d --description : overrides the changelist's detailed description.
@@ -282,6 +285,26 @@ def do_snapshot(given_cl, current_cl, cl_file_path, send_mail):
   if issue and str(issue) != current_cl.issue:
     do_edit(ChangeList(issue=str(issue)), current_cl, cl_file_path)
 
+def current_gitbranch(workdir):
+  """Returns the name of the current git branch at WORKDIR, or None"""
+  gitdir = os.path.join(workdir, '.git')
+  if os.path.isdir(gitdir):
+    branch = subprocess.Popen(
+      ['git', '--git-dir', gitdir, 'symbolic-ref', 'HEAD'],
+      stdout=subprocess.PIPE).communicate()[0].strip()
+    branch = re.sub(r'^refs/heads/', '', branch)
+    if branch != '':
+      return branch
+  return None
+
+def make_cl_file_path(rootdir):
+  """Returns the pathname of the changelist info file for ROOTDIR."""
+  path = os.path.join(rootdir, '.appspot-change')
+  gitbranch = current_gitbranch(rootdir)
+  if gitbranch:
+    return path + '.' + re.sub(r'\W', '-', gitbranch)
+  else:
+    return path
 
 def main():
   def parse_flags(flags):
@@ -374,7 +397,7 @@ def main():
         'Cannot locate client root.\n'
         'No directory named google-caja on %s') % os.path.abspath(os.curdir)
     sys.exit(-1)
-  cl_file_path = os.path.join(client_root, '.appspot-change')
+  cl_file_path = make_cl_file_path(client_root)
 
   # Load any existing changelist
   if os.path.isfile(cl_file_path):
