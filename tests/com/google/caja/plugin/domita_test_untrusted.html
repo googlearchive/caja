@@ -291,6 +291,26 @@ can test window.scrollBy with a positive x value with a visible effect.
   Test anchor computed styles don't leak history
 </p>
 
+<div class="testcontainer" id="test-table-elements">
+  <table>
+    <thead>
+      <tr>
+        <td>h00</td>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>b00</td>
+        <td>b01</td>
+      </tr>
+      <tr id="test-table-elements-tr-b1">
+       <td>b10</td>
+       <td>b11</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
 
@@ -2239,6 +2259,13 @@ jsunitRegister('testAnchorComputedStylesDontLeakHistory',
        window.getComputedStyle(p1, null).getPropertyValue('padding-left'));
 
   pass('test-anchor-computed-styles-dont-leak-history');
+});
+
+jsunitRegister('testTableElements',
+               function testTableElements() {
+  var tr_b1 = document.getElementById('test-table-elements-tr-b1');
+  assertEquals(1, tr_b1.sectionRowIndex);
+  assertEquals(2, tr_b1.rowIndex);
 });
 
 jsunitRegister('testDocumentBodyAppendChild',

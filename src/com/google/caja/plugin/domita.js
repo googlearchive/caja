@@ -2505,7 +2505,7 @@ var attachDocumentStub = (function () {
       classUtils.exportFields(
           this,
           ['colSpan','cells','rowSpan','rows','rowIndex','align',
-           'vAlign','nowrap']);
+           'vAlign','nowrap','sectionRowIndex']);
     }
     ___.extend(TameTableCompElement, TameElement);
     TameTableCompElement.prototype.getColSpan = function () {
@@ -2533,6 +2533,9 @@ var attachDocumentStub = (function () {
     };
     TameTableCompElement.prototype.getRowIndex = function () {
       return this.node___.rowIndex;
+    };
+    TameTableCompElement.prototype.getSectionRowIndex = function () {
+      return this.node___.sectionRowIndex;
     };
     TameTableCompElement.prototype.getAlign = function () {
       return this.node___.align;
