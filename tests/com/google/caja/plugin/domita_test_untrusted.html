@@ -2091,6 +2091,10 @@ jsunitRegister('testDocumentElement',
       ]
     }, document);
 
+  var html = document.documentElement.innerHTML;
+  assertTrue(!!html.match(
+    '<head><title>&lt;Untrusted Content Title&gt;</title></head><body>'));
+
   pass('test-document-element');
 });
 
