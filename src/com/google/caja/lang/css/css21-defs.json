@@ -386,7 +386,7 @@
       "dom2property": "left" },
 
     { "key": "letter-spacing",
-      "signature": "normal | <length:0,> | inherit",
+      "signature": "normal | <length> | inherit",
       "default": "normal",
       "appliesTo": "*",
       "inherited": true,
@@ -847,7 +847,7 @@
       "dom2property": "width" },
 
     { "key": "word-spacing",
-      "signature": "normal | <length:0,> | inherit",
+      "signature": "normal | <length> | inherit",
       "default": "normal",
       "appliesTo": "*",
       "inherited": true,

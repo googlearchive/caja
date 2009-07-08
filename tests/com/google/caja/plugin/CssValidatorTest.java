@@ -1230,6 +1230,28 @@ public final class CssValidatorTest extends CajaTestCase {
             );
   }
 
+  public void testNegativeSpacing() throws Exception {
+    runTest("p { letter-spacing: -4px; word-spacing: -2px }",
+        "StyleSheet\n"
+        + "  RuleSet\n"
+        + "    Selector\n"
+        + "      SimpleSelector\n"
+        + "        IdentLiteral : p\n"
+        + "    PropertyDeclaration\n"
+        + "      Property : letter-spacing\n"
+        + "      Expr\n"
+        + "        Term : NEGATION ; cssPropertyPartType=LENGTH"
+                    + " ; cssPropertyPart=letter-spacing\n"
+        + "          QuantityLiteral : 4px\n"
+        + "    PropertyDeclaration\n"
+        + "      Property : word-spacing\n"
+        + "      Expr\n"
+        + "        Term : NEGATION ; cssPropertyPartType=LENGTH"
+                    + " ; cssPropertyPart=word-spacing\n"
+        + "          QuantityLiteral : 2px\n"
+        );
+  }
+
   public void testOpacity() throws Exception {
     runTest("img {\n"
             + "  opacity: 0.5;\n"
@@ -1406,7 +1428,7 @@ public final class CssValidatorTest extends CajaTestCase {
   public void testSimpleAttrSelectorEqual() throws Exception {
     // various forms of attribute selector with an 'equals' comparator
     runTest("input[type='radio'] { font-weight: bold }", null);
-    runTest("input[type=radio] { font-weight: bold }", null);    
+    runTest("input[type=radio] { font-weight: bold }", null);
     fails("input[zork='radio'] { font-weight: bold }");
     fails("input[type='atyourservice'] { font-weight: bold }");
     fails("input[type=atyourservice] { font-weight: bold }");
@@ -1422,10 +1444,10 @@ public final class CssValidatorTest extends CajaTestCase {
     fails("input[zork~='radio'] { font-weight: bold }");
     fails("input[zork~='radio atyourservice'] { font-weight: bold }");
     fails("input[type~='atyourservice'] { font-weight: bold }");
-    fails("input[type~=atyourservice] { font-weight: bold }");    
+    fails("input[type~=atyourservice] { font-weight: bold }");
     fails("input[type~='radio atyourservice'] { font-weight: bold }");
   }
-  
+
   public void testSimpleAttrSelectorDashMatch() throws Exception {
     // we don't know how to whitelist the "|=" form so rejected
     fails("input[type|='button'] { font-weight: bold }");
