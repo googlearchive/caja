@@ -23,6 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * @author mikesamuel@gmail.com
@@ -47,14 +48,33 @@ public abstract class FileSystemEnvironment implements PluginEnvironment {
     }
   }
 
+  /** Return a new URI with a different fragment. */
+  private URI refragUri(URI uri, String frag) throws URISyntaxException {
+    return new URI(uri.getScheme(), uri.getSchemeSpecificPart(), frag);
+  }
+
   public String rewriteUri(ExternalReference ref, String mimeType) {
-    File f = toFileUnderSameDirectory(ref.getUri());
-    if (f == null) {
-      String uristr = ref.getUri().toString();
-      if (uristr.equals("#")) { return uristr; }
-      else { return null; }
-    }
-    return new File(directory, ".").toURI().relativize(f.toURI()).toString();
+    try {
+      URI fragless = refragUri(ref.getUri(), null);
+
+      // allow uri references within the base directory
+      File f = toFileUnderSameDirectory(fragless);
+      if (f != null) {
+        URI base = new File(directory, ".").toURI();
+        URI rel = base.relativize(fragless);
+        return refragUri(rel, ref.getUri().getFragment()).toString();
+      }
+
+      // allow bare fragments
+      URI self = ref.getReferencePosition().source().getUri();
+      String uristr = self.relativize(ref.getUri()).toString();
+      if (uristr.startsWith("#")) {
+        return uristr;
+      }
+    } catch (URISyntaxException e) { }
+
+    // denied
+    return null;
   }
 
   protected abstract Reader newReader(File f) throws FileNotFoundException;
@@ -70,7 +90,7 @@ public abstract class FileSystemEnvironment implements PluginEnvironment {
       // Not a "file://..." URL so cannot be relative to a directory
       return null;
     }
-    
+
     if (uri.getAuthority() != null
         || uri.getFragment() != null
         || uri.getQuery() != null) {
