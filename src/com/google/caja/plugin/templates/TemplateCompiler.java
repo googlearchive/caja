@@ -363,8 +363,7 @@ public class TemplateCompiler {
       case URI:
         try {
           URI uri = new URI(value);
-          ExternalReference ref = new ExternalReference(
-              pos.source().getUri().resolve(uri), pos);
+          ExternalReference ref = new ExternalReference(uri, pos);
           String rewrittenUri = meta.getPluginEnvironment()
               .rewriteUri(ref, info.getMimeTypes());
           if (rewrittenUri == null) {

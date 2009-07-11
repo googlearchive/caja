@@ -39,6 +39,7 @@ import com.google.caja.util.Pair;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.net.URI;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -62,7 +63,9 @@ public class TemplateCompilerTest extends CajaTestCase {
       }
 
       public String rewriteUri(ExternalReference ref, String mimeType) {
-        return "/proxy?url=" + encodeUrl(ref.getUri().toString())
+        URI resolvedUri = ref.getReferencePosition().source().getUri()
+            .resolve(ref.getUri());
+        return "/proxy?url=" + encodeUrl(resolvedUri.toString())
             + "&mime-type=" + encodeUrl(mimeType);
       }
 
@@ -298,7 +301,49 @@ public class TemplateCompilerTest extends CajaTestCase {
         );
   }
 
-  public void testBug1050Finish() throws Exception {
+  private class Holder<T> { T value; }
+
+  public void testUriAttributeResolution() throws Exception {
+    // Ensure that the TemplateCompiler calls its PluginEnvironment with the
+    // correct information when it encounters a URI-valued HTML attribute.
+
+    final Holder<ExternalReference> savedRef = new Holder<ExternalReference>();
+
+    meta = new PluginMeta(new PluginEnvironment() {
+      public CharProducer loadExternalResource(
+          ExternalReference ref, String mimeType) {
+        throw new RuntimeException("NOT IMPLEMENTED");
+      }
+
+      public String rewriteUri(ExternalReference ref, String mimeType) {
+        savedRef.value = ref;
+        return "rewritten";
+      }
+    });
+
+    DocumentFragment htmlInput =
+        htmlFragment(fromString("<a href=\"x.html\"></a>"));
+    assertSafeHtml(
+        htmlInput,
+        htmlFragment(fromString(
+            "<a href=\"rewritten\" target=\"_blank\"></a>")),
+        new Block());
+
+    // The ExternalReference reference position should contain the URI of the
+    // source in which the HREF was seen.
+    assertEquals(
+        Nodes.getFilePositionFor(htmlInput).source(),
+        savedRef.value.getReferencePosition().source());
+
+    // The ExternalReference target URI should be the URI that was embedded in
+    // the original source. The TemplateCompiler should not attempt to resolve
+    // it; that is the job of the PluginEnvironment.
+    assertEquals(
+        new URI("x.html"),
+        savedRef.value.getUri());
+  }
+
+  public void testFinishCalledAtEnd() throws Exception {
     // bug 1050, sometimes finish() is misplaced
     // http://code.google.com/p/google-caja/issues/detail?id=1050
     assertSafeHtml(
@@ -330,7 +375,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "  }"
             + "} catch (ex___) {"
             + "  ___.getNewModuleHandler().handleUncaughtException(ex___,"
-            + "    onerror, 'testBug1050Finish', '1');"
+            + "    onerror, 'testFinishCalledAtEnd', '1');"
             + "}"
             + "{"
             + "  emitter___.signalLoaded();"
