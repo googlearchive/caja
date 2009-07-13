@@ -18,24 +18,23 @@ import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.ExternalReference;
 
 /**
- * Specifies how the plugin resolves external resources such as scripts and
- * stylesheets.
+ * Specifies how the cajoler resolves external resources such as scripts and
+ * stylesheets in the code being cajoled.
  *
  * @author mikesamuel@gmail.com
  */
 public interface PluginEnvironment {
 
   /**
-   * Loads an externally resource such as the src of a script tags or
-   * a stylesheet.
+   * Loads an external resource such as the {@code src} of a {@code script}
+   * tag or a stylesheet.
    *
-   * @return null if it could not be loaded.
+   * @return null if the resource could not be loaded.
    */
   CharProducer loadExternalResource(ExternalReference ref, String mimeType);
 
   /**
-   * May be overridden to apply a URI policy and return a URI that enforces that
-   * policy.
+   * Applies a URI policy and returns a URI that enforces that policy.
    *
    * @return null if the URI cannot be made safe.
    */

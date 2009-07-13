@@ -17,10 +17,31 @@ import java.net.URI;
 
 /**
  * A reference to an external resource from an input.
- * <p>
- * In {@code <script src="foo.js"/>} the URI foo.js is an external reference,
- * and the reference position is the position of the text {code "foo.js"}.
- * 
+ *
+ * <p>For example, parsing a file {@code x/y/foo.html} with contents:
+ *
+ * <pre>
+ *   &lt;script src="../z/bar.js"/&gt;
+ * </pre>
+ *
+ * will result in an {@code ExternalReference} with:
+ *
+ * <ul>
+ *
+ *   <li>A {@link #getReferencePosition() reference position} which is the span
+ *   in {@code foo.html} where the reference occurred. This position contains,
+ *   among other things, the URI {@code "x/y/foo.html"}.</li>
+ *
+ *   <li>The target {@link #getUri() URI}, {@code "../z/bar.js"}.
+ *
+ * </ul>
+ *
+ * <p>Note that, in the case of HTML links (as in the above example), the
+ * URI is implicitly relative to the reference position; in other words, the
+ * author of {@code x/y/foo.html} meant to retrieve a script at
+ * {@code "x/z/bar.js"}. The {@code ExternalReference} itself, however, is
+ * oblivious to this level of interpretation.
+ *
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
 public final class ExternalReference {
