@@ -1370,7 +1370,7 @@ var safeJSON;
     name = String(name);
     if (obj === null) { return false; }
     if (obj === void 0) { return false; }
-    if (obj[name + '_canRead___']) { return true; }
+    if (obj[name + '_canRead___']) { return (name in Object(obj)); }
     if (endsWith__.test(name)) { return false; }
     if (name === 'toString') { return false; }
     if (!isJSONContainer(obj)) { return false; }
@@ -1390,7 +1390,8 @@ var safeJSON;
    * Implements Cajita's <tt><i>name</i> in <i>obj</i></tt>
    */
   function inPub(name, obj) {
-    if (obj === null || obj === void 0) {
+    var t = typeof obj;
+    if (obj === null || (t !== "object" && t !== "function")) {
       throw new TypeError('invalid "in" operand: ' + obj);
     }
     obj = Object(obj);

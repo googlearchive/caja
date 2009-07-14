@@ -264,11 +264,11 @@ var valijaMaker = (function(outers) {
 
     // BUG TODO(erights): figure out why things break when the
     // following line (which really shouldn't be there) is deleted.
-    if (name in obj) { return obj[name];}
+    if (name in new Object(obj)) { return obj[name];}
 
     var stepParent = getFakeProtoOf(cajita.directConstructor(obj));
     if (stepParent !== (void 0) &&
-        name in stepParent &&
+        name in new Object(stepParent) &&
         name !== 'valueOf') {
       return stepParent[name];
     }
@@ -447,7 +447,7 @@ var valijaMaker = (function(outers) {
   }
 
   function canReadRev(name, obj) {
-    if (name in obj) { return true; }
+    if (name in new Object(obj)) { return true; }
     return name in getSupplement(obj);
   }
 
