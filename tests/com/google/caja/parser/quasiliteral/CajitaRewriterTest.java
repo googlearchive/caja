@@ -14,7 +14,10 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodes;
@@ -28,12 +31,14 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.RhinoTestBed;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,8 +52,30 @@ import junit.framework.AssertionFailedError;
  */
 public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
+  protected class TestPluginEnvironment implements PluginEnvironment {
+    @Override
+    public CharProducer loadExternalResource(
+        ExternalReference ref, String mimeType) {
+      URI uri = ref.getUri();
+      uri = ref.getReferencePosition().source().getUri().resolve(uri);
+      if ("test".equals(uri.getScheme())) {
+        try {
+          InputSource is = new InputSource(uri);
+          return fromResource(uri.getPath().substring(1), is);
+        } catch (IOException e) {
+        }
+      }
+      return null;
+    }
+
+    @Override
+    public String rewriteUri(ExternalReference uri, String mimeType) {
+      return null;
+    }    
+  }
+  
   protected Rewriter defaultCajaRewriter =
-      new CajitaRewriter(new TestBuildInfo(), false);
+      new CajitaRewriter(new TestBuildInfo(), new TestPluginEnvironment(), false);
 
   @Override
   public void setUp() throws Exception {
@@ -2256,6 +2283,30 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "var x;" +
         "try { x = toString; } catch (e) {}" +
         "if (x) { cajita.fail('Inherited global properties are readable'); }");
+  }
+
+  /**
+   * Tests the securable module loading
+   */
+  public void testModule() throws Exception {
+    rewriteAndExecute(
+        "var r = loader.load('foo/b')({x: 6, y: 3}); "
+        + "assertEquals(11, r);");
+    
+    rewriteAndExecute(
+        "var m = loader.load('foo/b');"
+        + "var s = m.cajolerName;"
+        + "assertEquals('com.google.caja', s);");
+
+    checkAddsMessage(
+        js(fromString("var m = loader.load('foo/c');")),
+        RewriterMessageType.MODULE_NOT_FOUND,
+        MessageLevel.FATAL_ERROR);
+    
+    checkAddsMessage(
+        js(fromString("var s = 'c'; var m = loader.load(s);")),
+        RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_MODULE,
+        MessageLevel.FATAL_ERROR);
   }
 
   @Override

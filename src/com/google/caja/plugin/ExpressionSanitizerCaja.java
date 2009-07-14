@@ -65,7 +65,8 @@ public class ExpressionSanitizerCaja {
 
   /** Visible for testing. */
   protected Rewriter newCajitaRewriter() {
-    return new CajitaRewriter(buildInfo, false);
+    return new CajitaRewriter(
+        buildInfo, meta.getPluginEnvironment(), false);
   }
 
   protected Rewriter newValijaRewriter() {

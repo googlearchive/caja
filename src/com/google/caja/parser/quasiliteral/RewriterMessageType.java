@@ -158,7 +158,27 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: Prototypical inheritance is not supported in Cajita. "
       + "The \"prototype\" property of a function is always "
       + "\"undefined\": %s, %s",
-      MessageLevel.LINT);
+      MessageLevel.LINT),
+
+  LOADING_MODULE_FAILED(
+          "%s: Loading module %s failed: %s",
+          MessageLevel.FATAL_ERROR),
+
+  INVALID_MODULE_URI(
+          "%s: Invalid URI for the module: %s",
+          MessageLevel.FATAL_ERROR),
+
+  MODULE_NOT_FOUND(
+          "%s: Module not found: %s",
+          MessageLevel.FATAL_ERROR),
+
+  PARSING_MODULE_FAILED(
+      "%s: Parsing module failed: %s",
+      MessageLevel.FATAL_ERROR),
+
+  CANNOT_LOAD_A_DYNAMIC_MODULE(
+      "%s: Cannot load a dynamic module",
+      MessageLevel.FATAL_ERROR);
 
   private final String formatString;
   private final MessageLevel level;
