@@ -143,6 +143,13 @@
   <span id="indelible">I am indelible</span>
 </p>
 
+<p class="testcontainer" id="test-remove-child"
+  >hello<span id="test-remove-child-1">world</span></p>
+
+<p class="testcontainer" id="test-replace-child"
+  ><span id="test-replace-child-1">alpha</span
+  >bravo<span id="test-replace-child-2">charlie</span></p>
+
 <p class="testcontainer" id="test-insert-before">zero</p>
 
 <ul class="testcontainer" id="test-node-lists"
@@ -812,11 +819,13 @@ jsunitRegister('testContains',
   // Some nodes that are not under the document element.
   var disconnectedEl = document.createElement('DIV');
   var disconnectedChild = document.createElement('B');
-  disconnectedEl.appendChild(disconnectedChild);
+  var result = disconnectedEl.appendChild(disconnectedChild);
+  assertEquals(result, disconnectedChild);
 
   var testContainer = document.getElementById('test-contains');
   var testContainerChild = document.createElement('SPAN');
-  testContainer.appendChild(testContainerChild);
+  result = testContainer.appendChild(testContainerChild);
+  assertEquals(result, testContainerChild);
   // This test assume that test-forms follows test-contains in the HTML above.
   var follower = document.getElementById('test-forms');
 
@@ -1165,6 +1174,29 @@ jsunitRegister('testReadOnlyNotEditable',
   pass('test-read-only');
 });
 
+jsunitRegister('testRemoveChild',
+               function testRemoveChild() {
+  var parent = document.getElementById('test-remove-child');
+  var child = document.getElementById('test-remove-child-1');
+  var result = parent.removeChild(child);
+  assertEquals(child, result);
+  assertEquals('hello', canonInnerHtml(parent.innerHTML));
+  pass('test-remove-child');
+});
+
+jsunitRegister('testReplaceChild',
+               function testReplaceChild() {
+  var parent = document.getElementById('test-replace-child');
+  var newChild = document.getElementById('test-replace-child-1');
+  var oldChild = document.getElementById('test-replace-child-2');
+  var result = parent.replaceChild(newChild, oldChild);
+  assertEquals(oldChild, result);
+  assertEquals(
+    'bravo<span id="test-replace-child-1">alpha</span>',
+    canonInnerHtml(parent.innerHTML));
+  pass('test-replace-child');
+});
+
 jsunitRegister('testInsertBefore',
                function testInsertBefore() {
   var el = document.getElementById('test-insert-before');
@@ -1179,7 +1211,8 @@ jsunitRegister('testInsertBefore',
   var two = document.createTextNode('two');
   var three = document.createTextNode('three');
   var four = document.createTextNode('four');
-  el.insertBefore(three, null);
+  var result = el.insertBefore(three, null);
+  assertEquals(three, result);
   assertChildren('zero', 'three');
   el.insertBefore(one, three);
   assertChildren('zero', 'one', 'three');

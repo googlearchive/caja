@@ -1330,16 +1330,23 @@ var attachDocumentStub = (function () {
         throw new Error(NOT_EDITABLE);
       }
       this.node___.appendChild(child.node___);
+      return child;
     };
     TameBackedNode.prototype.insertBefore = function (toInsert, child) {
       cajita.guard(tameNodeTrademark, toInsert);
       if (child === void 0) { child = null; }
-      if (child !== null) { cajita.guard(tameNodeTrademark, child); }
+      if (child !== null) {
+        cajita.guard(tameNodeTrademark, child);
+        if (!child.editable___) {
+          throw new Error(NOT_EDITABLE);
+        }
+      }
       if (!this.childrenEditable___ || !toInsert.editable___) {
         throw new Error(NOT_EDITABLE);
       }
       this.node___.insertBefore(
           toInsert.node___, child !== null ? child.node___ : null);
+      return toInsert;
     };
     TameBackedNode.prototype.removeChild = function (child) {
       cajita.guard(tameNodeTrademark, child);
@@ -1347,14 +1354,17 @@ var attachDocumentStub = (function () {
         throw new Error(NOT_EDITABLE);
       }
       this.node___.removeChild(child.node___);
+      return child;
     };
-    TameBackedNode.prototype.replaceChild = function (child, replacement) {
-      cajita.guard(tameNodeTrademark, child);
-      cajita.guard(tameNodeTrademark, replacement);
-      if (!this.childrenEditable___ || !replacement.editable___) {
+    TameBackedNode.prototype.replaceChild = function (newChild, oldChild) {
+      cajita.guard(tameNodeTrademark, newChild);
+      cajita.guard(tameNodeTrademark, oldChild);
+      if (!this.childrenEditable___ || !newChild.editable___
+          || !oldChild.editable___) {
         throw new Error(NOT_EDITABLE);
       }
-      this.node___.replaceChild(child.node___, replacement.node___);
+      this.node___.replaceChild(newChild.node___, oldChild.node___);
+      return oldChild;
     };
     TameBackedNode.prototype.getFirstChild = function () {
       return defaultTameNode(this.node___.firstChild, this.childrenEditable___);
@@ -1563,8 +1573,9 @@ var attachDocumentStub = (function () {
     TamePseudoNode.prototype.appendChild =
     TamePseudoNode.prototype.insertBefore =
     TamePseudoNode.prototype.removeChild =
-    TamePseudoNode.prototype.replaceChild = function (child) {
+    TamePseudoNode.prototype.replaceChild = function () {
       cajita.log("Node not editable; no action performed.");
+      return void 0;
     };
     TamePseudoNode.prototype.getFirstChild = function () {
       var children = this.getChildNodes();
