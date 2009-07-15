@@ -28,6 +28,7 @@ import java.util.Map;
  * @author mikesamuel@gmail.com
  */
 public final class SwitchStmt extends LabeledStatement {
+  @ReflectiveCtor
   public SwitchStmt(
       FilePosition pos, String label, List<? extends ParseTreeNode> children) {
     super(pos, label, ParseTreeNode.class);

@@ -39,6 +39,7 @@ public final class CaseStmt extends SwitchCase {
   private Statement body;
 
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public CaseStmt(
       FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
     this(pos, (Expression) children.get(0), (Statement) children.get(1));

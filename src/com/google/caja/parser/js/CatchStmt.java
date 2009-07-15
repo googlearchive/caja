@@ -31,6 +31,7 @@ public final class CatchStmt extends AbstractStatement {
   private Statement body;
 
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public CatchStmt(
       FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
     this(pos, (Declaration) children.get(0), (Statement) children.get(1));

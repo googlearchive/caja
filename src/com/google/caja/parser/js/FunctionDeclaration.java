@@ -26,6 +26,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class FunctionDeclaration extends Declaration {
+  @ReflectiveCtor
   public FunctionDeclaration(
       FilePosition pos, Void value, List<? extends Expression> children) {
     super(pos, value, children);

@@ -174,6 +174,7 @@ public class CssParserTest extends CajaTestCase {
         ? MessageLevel.WARNING : MessageLevel.FATAL_ERROR;
     CssTree.StyleSheet stylesheet = new CssParser(
         CssParser.makeTokenQueue(cp, mq, false), mq, lvl).parseStyleSheet();
+    assertCloneable(stylesheet);    
     StringBuilder sb = new StringBuilder();
     stylesheet.format(new MessageContext(), sb);
     assertEquals(golden.trim(), sb.toString().trim());

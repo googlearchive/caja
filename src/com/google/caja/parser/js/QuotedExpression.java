@@ -27,6 +27,7 @@ import com.google.caja.reporting.RenderContext;
  */
 public final class QuotedExpression extends AbstractExpression {
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public QuotedExpression(
       FilePosition pos, Void value, List<? extends Expression> children) {
     super(pos, Expression.class);

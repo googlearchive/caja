@@ -27,6 +27,7 @@ import java.util.List;
  */
 public final class ArrayConstructor extends AbstractExpression {
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public ArrayConstructor(
       FilePosition pos, Void value, List<? extends Expression> children) {
     this(pos, children);

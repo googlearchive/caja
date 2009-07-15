@@ -30,6 +30,7 @@ public final class RegexpLiteral extends Literal {
   private final RegexpWrapper value;
 
   /** @param children unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public RegexpLiteral(
       FilePosition pos, RegexpWrapper value,
       List<? extends ParseTreeNode> children) {

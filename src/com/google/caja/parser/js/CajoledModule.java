@@ -46,6 +46,7 @@ public final class CajoledModule extends AbstractParseTreeNode {
       new InputSource(URI.create("file:///CAJOLED-OUTPUT"));
 
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public CajoledModule(FilePosition pos,
                        Void value,
                        List<? extends ObjectConstructor> children) {

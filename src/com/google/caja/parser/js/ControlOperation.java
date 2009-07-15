@@ -25,6 +25,7 @@ import java.util.List;
  * @author erights@gmail.com
  */
 public final class ControlOperation extends Operation {
+  @ReflectiveCtor
   public ControlOperation(
       FilePosition pos, Operator value, List<? extends Expression> children) {
     super(pos, value, children);

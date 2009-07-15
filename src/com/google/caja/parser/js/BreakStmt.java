@@ -31,6 +31,7 @@ public final class BreakStmt extends AbstractStatement {
   private final String label;
 
   /** @param children unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public BreakStmt(
       FilePosition pos, String value, List<? extends ParseTreeNode> children) {
     this(pos, value);

@@ -49,6 +49,7 @@ public final class IntegerLiteral extends NumberLiteral {
   private final long value;
 
   /** @param children unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public IntegerLiteral(
       FilePosition pos, Number value, List<? extends ParseTreeNode> children) {
     this(pos, value.longValue());

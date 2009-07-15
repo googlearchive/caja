@@ -31,6 +31,7 @@ public class Declaration extends AbstractStatement {
   private Expression initializer;
 
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public Declaration(
       FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
     super(pos, ParseTreeNode.class);

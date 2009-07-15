@@ -35,6 +35,7 @@ import java.util.List;
  */
 public final class ObjectConstructor extends AbstractExpression {
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public ObjectConstructor(
       FilePosition pos, Void value, List<? extends Expression> children) {
     super(pos, Expression.class);

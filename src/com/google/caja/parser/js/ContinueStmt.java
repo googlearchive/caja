@@ -30,6 +30,7 @@ public final class ContinueStmt extends AbstractStatement {
   private String label;
 
   /** @param children unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public ContinueStmt(
       FilePosition pos, String value, List<? extends Statement> children) {
     this(pos, value);

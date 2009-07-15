@@ -31,6 +31,7 @@ public final class ForEachLoop extends LabeledStatement implements NestedScope {
   private Expression container;
   private Statement body;
 
+  @ReflectiveCtor
   public ForEachLoop(
       FilePosition pos, String value, List<? extends ParseTreeNode> children) {
     super(pos, value, ParseTreeNode.class);

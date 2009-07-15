@@ -30,6 +30,7 @@ import java.io.IOException;
  */
 public abstract class AbstractExpression
     extends AbstractParseTreeNode implements Expression {
+  @ReflectiveCtor
   public AbstractExpression(
       FilePosition pos, Class<? extends ParseTreeNode> childClass) {
     super(pos, childClass);

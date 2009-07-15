@@ -31,6 +31,7 @@ public final class ExpressionStmt extends AbstractStatement {
   private Expression expr;
 
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public ExpressionStmt(
       FilePosition pos, Void value, List<? extends Expression> children) {
     this(pos, children.get(0));

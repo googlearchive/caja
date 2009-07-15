@@ -27,6 +27,7 @@ public final class ReturnStmt extends AbstractStatement {
   private Expression returnValue;
 
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public ReturnStmt(
       FilePosition pos, Void value, List<? extends Expression> children) {
     super(pos, Expression.class);

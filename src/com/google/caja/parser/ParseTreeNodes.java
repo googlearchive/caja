@@ -96,12 +96,23 @@ public class ParseTreeNodes {
       Class<?>[] parameterTypes = ctor.getParameterTypes();
       if (parameterTypes.length == 3
           && FilePosition.class.equals(parameterTypes[0])
-          && ctor.getParameterTypes()[2].isAssignableFrom(List.class)) {
+          && ctor.getParameterTypes()[2].isAssignableFrom(List.class)
+          && isReflectiveCtorAnnotated(ctor)) {
         cloneCtorCache.put(clazz, ctor);
         return ctor;
       }
     }
     throw new RuntimeException("Cannot find clone ctor for node " + clazz);
+  }
+
+  private static final boolean isReflectiveCtorAnnotated(Constructor<?> ctor) {
+    for (int i = 0; i < ctor.getDeclaredAnnotations().length; ++i) {
+      if (ctor.getDeclaredAnnotations()[i]
+              instanceof ParseTreeNode.ReflectiveCtor) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @SuppressWarnings("unchecked")

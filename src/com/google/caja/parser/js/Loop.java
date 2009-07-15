@@ -23,6 +23,7 @@ import com.google.caja.parser.ParseTreeNode;
  * @author mikesamuel@gmail.com
  */
 public abstract class Loop extends LabeledStatement {
+  @ReflectiveCtor
   public Loop(
       FilePosition pos, String label,
       Class<? extends ParseTreeNode> childClass) {

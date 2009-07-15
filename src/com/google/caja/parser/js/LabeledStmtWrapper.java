@@ -36,6 +36,7 @@ public final class LabeledStmtWrapper extends LabeledStatement {
   // LabeledStatement.
   private Statement body;
 
+  @ReflectiveCtor
   public LabeledStmtWrapper(
       FilePosition pos, String value, List<? extends ParseTreeNode> children) {
     this(pos, value, (Statement)children.get(0));

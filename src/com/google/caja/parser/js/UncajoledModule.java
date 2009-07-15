@@ -36,6 +36,7 @@ import java.util.List;
  */
 public final class UncajoledModule extends AbstractParseTreeNode {
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public UncajoledModule(FilePosition pos,
                          Void value,
                          List<? extends Block> children) {

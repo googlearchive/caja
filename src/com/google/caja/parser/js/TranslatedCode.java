@@ -29,6 +29,7 @@ import java.util.List;
  */
 public final class TranslatedCode extends AbstractStatement {
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public TranslatedCode(
       FilePosition pos, Void value, List<? extends Statement> children) {
     super(pos, Statement.class);

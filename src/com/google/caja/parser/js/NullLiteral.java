@@ -29,6 +29,7 @@ public final class NullLiteral extends Literal {
    * @param value unused.
    * @param children unused.
    */
+  @ReflectiveCtor
   public NullLiteral(FilePosition pos, NullPlaceholder value,
                      List<? extends ParseTreeNode> children) {
     this(pos);

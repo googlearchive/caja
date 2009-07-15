@@ -29,6 +29,7 @@ public class DoWhileLoop extends Loop {
   private Statement body;
   private Expression condition;
 
+  @ReflectiveCtor
   public DoWhileLoop(
       FilePosition pos, String label, List<? extends ParseTreeNode> children) {
     this(pos, label, (Statement) children.get(0), (Expression) children.get(1));

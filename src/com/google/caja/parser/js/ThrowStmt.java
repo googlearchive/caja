@@ -27,6 +27,7 @@ public final class ThrowStmt extends AbstractStatement {
   private Expression exception;
 
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public ThrowStmt(
       FilePosition pos, Void value, List<? extends Expression> children) {
     this(pos, children.get(0));

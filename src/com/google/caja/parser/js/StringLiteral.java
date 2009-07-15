@@ -32,6 +32,7 @@ public final class StringLiteral extends Literal {
   private final String value;
 
   /** @param children unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public StringLiteral(
       FilePosition pos, String value, List<? extends ParseTreeNode> children) {
     this(pos, value);

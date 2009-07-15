@@ -28,6 +28,7 @@ public final class DefaultCaseStmt extends SwitchCase {
   private Statement body;
 
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public DefaultCaseStmt(
       FilePosition pos, Void value, List<? extends Statement> children) {
     this(pos, children.get(0));

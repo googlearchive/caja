@@ -37,6 +37,7 @@ import java.util.List;
 public final class Identifier extends AbstractParseTreeNode {
   private final String name;
 
+  @ReflectiveCtor
   public Identifier(
       FilePosition pos, String name, List<? extends ParseTreeNode> children) {
     this(pos, name);

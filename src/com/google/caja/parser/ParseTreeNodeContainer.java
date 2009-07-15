@@ -33,6 +33,7 @@ import java.util.List;
  */
 public class ParseTreeNodeContainer extends AbstractParseTreeNode {
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public ParseTreeNodeContainer(
       FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
     super(pos);

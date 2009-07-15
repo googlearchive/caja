@@ -27,6 +27,7 @@ public final class FinallyStmt extends AbstractStatement {
   private Statement body;
 
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public FinallyStmt(
       FilePosition pos, Void value, List<? extends Statement> children) {
     this(pos, children.get(0));

@@ -30,6 +30,7 @@ public final class TryStmt extends AbstractStatement {
   private FinallyStmt fin;
 
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public TryStmt(
       FilePosition pos, Void value, List<? extends Statement> children) {
     super(pos, Statement.class);

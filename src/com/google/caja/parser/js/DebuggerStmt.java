@@ -33,6 +33,7 @@ public final class DebuggerStmt extends AbstractStatement {
    * @param value unused.
    * @param children unused.
    */
+  @ReflectiveCtor
   public DebuggerStmt(
       FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
     super(pos, NoChildren.class);

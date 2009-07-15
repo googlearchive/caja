@@ -24,6 +24,11 @@ import com.google.caja.util.SyntheticAttributeKey;
 
 import java.io.IOException;
 import java.util.List;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.annotation.ElementType;
 
 /**
  * A node in a parse tree.
@@ -90,4 +95,14 @@ public interface ParseTreeNode extends MessagePart, Renderable, Cloneable {
    * @return a deep clone of the node tree rooted at this {@code ParseTreeNode}.
    */
   ParseTreeNode clone();
+
+  /**
+   * Indicates that the annotated constructor of a {@code ParseTreeNode} is to
+   * be used for reflectively constructing a new node or cloning an existing
+   * node.
+   */
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target(ElementType.CONSTRUCTOR)
+  public @interface ReflectiveCtor { }
 }

@@ -31,6 +31,7 @@ import java.util.List;
  */
 public final class MultiDeclaration extends AbstractStatement {
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public MultiDeclaration(
       FilePosition pos, Void value, List<? extends Declaration> children) {
     this(pos, children);

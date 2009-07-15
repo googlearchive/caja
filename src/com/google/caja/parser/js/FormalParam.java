@@ -25,6 +25,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public final class FormalParam extends Declaration {
+  @ReflectiveCtor
   public FormalParam(
       FilePosition pos, Void value, List<? extends Expression> children) {
     super(pos, value, children);

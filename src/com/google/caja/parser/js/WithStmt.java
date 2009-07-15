@@ -33,6 +33,7 @@ public final class WithStmt extends AbstractStatement
     implements NestedScope {
 
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public WithStmt(
       FilePosition pos, Void value, List<? extends Statement> children) {
     super(pos, ParseTreeNode.class);

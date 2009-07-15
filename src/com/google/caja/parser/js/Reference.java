@@ -31,6 +31,7 @@ public final class Reference extends AbstractExpression {
   private Identifier identifier;
 
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public Reference(FilePosition pos, Void value, List<ParseTreeNode> children) {
     super(pos, Identifier.class);
     appendChild(children.get(0));

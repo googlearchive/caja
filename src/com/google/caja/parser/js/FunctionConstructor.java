@@ -38,6 +38,7 @@ public final class FunctionConstructor
   private Block body;
 
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public FunctionConstructor(
       FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
     super(pos, ParseTreeNode.class);

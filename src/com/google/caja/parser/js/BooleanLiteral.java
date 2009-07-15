@@ -28,6 +28,7 @@ public final class BooleanLiteral extends Literal {
   public final boolean value;
 
   /** @param children unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor  
   public BooleanLiteral(
       FilePosition pos, Boolean value, List<? extends ParseTreeNode> children) {
     this(pos, value);

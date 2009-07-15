@@ -24,6 +24,7 @@ import java.util.List;
  * @author erights@gmail.com
  */
 public final class SimpleOperation extends Operation {
+  @ReflectiveCtor
   public SimpleOperation(
       FilePosition pos, Operator value, List<? extends Expression> children) {
     super(pos, value, children);

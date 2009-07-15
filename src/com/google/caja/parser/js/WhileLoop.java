@@ -29,6 +29,7 @@ public class WhileLoop extends Loop {
   private Expression condition;
   private Statement body;
 
+  @ReflectiveCtor
   public WhileLoop(
       FilePosition pos, String label, List<? extends ParseTreeNode> children) {
     this(pos, label, (Expression) children.get(0), (Statement) children.get(1));

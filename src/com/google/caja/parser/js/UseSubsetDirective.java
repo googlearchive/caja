@@ -77,6 +77,7 @@ import java.util.Set;
  */
 public final class UseSubsetDirective extends AbstractStatement {
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public UseSubsetDirective(
       FilePosition pos, Void value, List<? extends UseSubset> children) {
     this(pos, children);

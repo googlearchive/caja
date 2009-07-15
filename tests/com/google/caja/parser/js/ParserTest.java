@@ -526,6 +526,7 @@ public class ParserTest extends CajaTestCase {
       String testFile, String goldenFile, String ... errors)
       throws Exception {
     Statement parseTree = js(fromResource(testFile));
+    assertCloneable(parseTree);
     checkFilePositionInvariants(parseTree);
 
     StringBuilder output = new StringBuilder();

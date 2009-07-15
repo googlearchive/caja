@@ -30,6 +30,7 @@ public final class RealLiteral extends NumberLiteral {
   private final double value;
 
   /** @param children unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public RealLiteral(
       FilePosition pos, Number value, List<? extends ParseTreeNode> children) {
     this(pos, value.doubleValue());

@@ -25,6 +25,7 @@ import java.util.List;
  */
 public final class Noop extends AbstractStatement {
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public Noop(FilePosition p, Void value, List<? extends Statement> children) {
     super(p, NoChildren.class);
     assert children.isEmpty();

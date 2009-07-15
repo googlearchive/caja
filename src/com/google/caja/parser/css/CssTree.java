@@ -91,6 +91,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class StyleSheet extends CssTree {
     /** @param novalue ignored but required for reflection. */
+    @ReflectiveCtor
     public StyleSheet(
         FilePosition pos, Void novalue, List<? extends CssStatement> rulesets) {
       this(pos, rulesets);
@@ -114,6 +115,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class DeclarationGroup extends CssTree {
     /** @param novalue ignored but required for reflection. */
+    @ReflectiveCtor
     public DeclarationGroup(
         FilePosition pos, Void novalue, List<? extends Declaration> decls) {
       this(pos, decls);
@@ -174,6 +176,13 @@ public abstract class CssTree extends AbstractParseTreeNode {
       return l;
     }
 
+    /** @param novalue ignored but required for reflection. */
+    @ReflectiveCtor
+    public Import(
+        FilePosition pos, Void novalue, List<? extends Medium> media) {
+      super(pos, media);
+    }
+
     public Import(
         FilePosition pos, UriLiteral uri, List<? extends Medium> media) {
       super(pos, join(Collections.singletonList(uri), media));
@@ -214,6 +223,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class Media extends CssStatement {
     /** @param novalue ignored but required for reflection. */
+    @ReflectiveCtor
     public Media(
         FilePosition pos, Void novalue,
         List<? extends CssTree> mediaAndRuleset) {
@@ -261,6 +271,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
     final Name ident;
 
     /** @param none ignored but required for reflection. */
+    @ReflectiveCtor
     public Medium(FilePosition pos, Name ident, List<? extends CssTree> none) {
       this(pos, ident);
     }
@@ -288,6 +299,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
   public static final class Page extends CssStatement {
     final Name ident;
 
+    @ReflectiveCtor
     public Page(
         FilePosition pos, Name ident, List<? extends PageElement> decls) {
       super(pos, decls);
@@ -338,6 +350,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
     final Name ident;
 
     /** @param none ignored but required for reflection. */
+    @ReflectiveCtor
     public PseudoPage(
         FilePosition pos, Name ident, List<? extends CssTree> none) {
       this(pos, ident);
@@ -366,6 +379,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class FontFace extends CssStatement {
     /** @param novalue ignored but required for reflection. */
+    @ReflectiveCtor
     public FontFace(
         FilePosition pos, Void novalue, List<? extends Declaration> decls) {
       this(pos, decls);
@@ -403,6 +417,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
   public static final class Property extends CssTree {
     private final Name ident;
     /** @param none ignored but required for reflection. */
+    @ReflectiveCtor
     public Property(
         FilePosition pos, Name ident, List<? extends CssTree> none) {
       this(pos, ident);
@@ -435,6 +450,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class RuleSet extends CssStatement {
     /** @param novalue ignored but required for reflection. */
+    @ReflectiveCtor
     public RuleSet(
         FilePosition pos, Void novalue,
         List<? extends CssTree> selectorsAndDecls) {
@@ -469,6 +485,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class Selector extends CssTree {
     /** @param novalue ignored but required for reflection. */
+    @ReflectiveCtor
     public Selector(
         FilePosition pos, Void novalue, List<? extends CssTree> children) {
       this(pos, children);
@@ -508,6 +525,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class SimpleSelector extends CssTree {
     /** @param novalue ignored but required for reflection. */
+    @ReflectiveCtor
     public SimpleSelector(
         FilePosition pos, Void novalue, List<? extends CssTree> children) {
       this(pos, children);
@@ -542,6 +560,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
      * @param novalue ignored but required for reflection.
      * @param none ignored but required for reflection.
      */
+    @ReflectiveCtor
     public WildcardElement(
         FilePosition pos, Void novalue, List<? extends CssTree> none) {
       this(pos);
@@ -572,6 +591,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
   public static final class Attrib extends CssTree {
     final String ident;
 
+    @ReflectiveCtor
     public Attrib(
         FilePosition pos, String ident,
         List<? extends CssTree> operatorAndValue) {
@@ -630,6 +650,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
   public static final class AttribOperation extends CssTree {
     final AttribOperator op;
     /** @param none ignored but required for reflection. */
+    @ReflectiveCtor
     public AttribOperation(
         FilePosition pos, AttribOperator op, List<? extends CssTree> none) {
       this(pos, op);
@@ -657,6 +678,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class Pseudo extends CssTree {
     /** @param novalue ignored but required for reflection. */
+    @ReflectiveCtor
     public Pseudo(
         FilePosition pos, Void novalue, List<? extends CssExprAtom> oneAtom) {
       this(pos, oneAtom.get(0));
@@ -708,6 +730,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
      * @param novalue ignored but required for reflection.
      * @param none ignored but required for reflection.
      */
+    @ReflectiveCtor
     public EmptyDeclaration(
         FilePosition pos, Void novalue, List<? extends CssTree> none) {
       this(pos);
@@ -735,6 +758,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
     private Prio prio;
 
     /** @param novalue ignored but required for reflection. */
+    @ReflectiveCtor
     public PropertyDeclaration(
         FilePosition pos, Void novalue, List<? extends CssTree> children) {
       this(pos, children);
@@ -782,6 +806,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
     final String value;
 
     /** @param none ignored but required for reflection. */
+    @ReflectiveCtor
     public Prio(FilePosition pos, String value, List<? extends CssTree> none) {
       this(pos, value);
     }
@@ -809,6 +834,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class Expr extends CssTree {
     /** @param novalue ignored but required for reflection. */
+    @ReflectiveCtor
     public Expr(
         FilePosition pos, Void novalue, List<? extends CssTree> children) {
       this(pos, children);
@@ -849,6 +875,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class Term extends CssTree {
     private final UnaryOperator op;
+    @ReflectiveCtor
     public Term(FilePosition pos, UnaryOperator op,
                 List<? extends CssExprAtom> oneatom) {
       this(pos, op, oneatom.get(0));
@@ -939,6 +966,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class IdLiteral extends CssLiteral {
     /** @param none ignored but required for reflection. */
+    @ReflectiveCtor
     public IdLiteral(
         FilePosition pos, String inputValue, List<? extends CssTree> none) {
       this(pos, inputValue);
@@ -960,6 +988,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class ClassLiteral extends CssLiteral {
     /** @param none ignored but required for reflection. */
+    @ReflectiveCtor
     public ClassLiteral(
         FilePosition pos, String inputValue, List<? extends CssTree> none) {
       this(pos, inputValue);
@@ -981,6 +1010,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class StringLiteral extends CssLiteral {
     /** @param none ignored but required for reflection. */
+    @ReflectiveCtor
     public StringLiteral(
         FilePosition pos, String inputValue, List<? extends CssTree> none) {
       this(pos, inputValue);
@@ -1001,6 +1031,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class HashLiteral extends CssLiteral {
     /** @param none ignored but required for reflection. */
+    @ReflectiveCtor
     public HashLiteral(
         FilePosition pos, String inputValue, List<? extends CssTree> none) {
       this(pos, inputValue);
@@ -1021,6 +1052,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class QuantityLiteral extends CssLiteral {
     /** @param none ignored but required for reflection. */
+    @ReflectiveCtor
     public QuantityLiteral(
         FilePosition pos, String inputValue, List<? extends CssTree> none) {
       this(pos, inputValue);
@@ -1043,6 +1075,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class UnicodeRangeLiteral extends CssLiteral {
     /** @param none ignored but required for reflection. */
+    @ReflectiveCtor
     public UnicodeRangeLiteral(
         FilePosition pos, String inputValue, List<? extends CssTree> none) {
       this(pos, inputValue);
@@ -1065,9 +1098,10 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class UriLiteral extends CssLiteral {
     /** @param none ignored but required for reflection. */
+    @ReflectiveCtor
     public UriLiteral(
-        FilePosition pos, URI value, List<? extends CssTree> none) {
-      this(pos, value);
+        FilePosition pos, String value, List<? extends CssTree> none) {
+      this(pos, URI.create(value));
     }
     public UriLiteral(FilePosition pos, URI value) {
       super(pos, value.toString());
@@ -1098,6 +1132,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class IdentLiteral extends CssLiteral {
     /** @param none ignored but required for reflection. */
+    @ReflectiveCtor
     public IdentLiteral(
         FilePosition pos, String value, List<? extends CssTree> none) {
       this(pos, value);
@@ -1123,6 +1158,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
    */
   public static final class FunctionCall extends CssExprAtom {
     private final Name name;
+    @ReflectiveCtor
     public FunctionCall(
         FilePosition pos, Name name, List<? extends Expr> expr) {
       this(pos, name, expr.get(0));
@@ -1159,6 +1195,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
   public static final class ProgId extends CssExprAtom {
     private final Name name;
 
+    @ReflectiveCtor
     public ProgId(
         FilePosition pos, Name name, List<? extends ProgIdAttribute> attrs) {
       super(pos, ProgIdAttribute.class, attrs);
@@ -1193,6 +1230,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
   public static final class ProgIdAttribute extends CssTree {
     private final Name name;
 
+    @ReflectiveCtor
     public ProgIdAttribute(
         FilePosition pos, Name name, List<? extends Term> value) {
       super(pos, Term.class, value);
@@ -1271,6 +1309,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
     final Combinator comb;
 
     /** @param none ignored but required for reflection. */
+    @ReflectiveCtor
     public Combination(
         FilePosition pos, Combinator comb, List<? extends CssTree> none) {
       this(pos, comb);
@@ -1296,6 +1335,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
     final Operator op;
 
     /** @param none ignored but required for reflection. */
+    @ReflectiveCtor
     public Operation(
         FilePosition pos, Operator op, List<? extends CssTree> none) {
       this(pos, op);
@@ -1377,6 +1417,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
   public static final class UserAgentHack extends Declaration {
     private final EnumSet<UserAgent> enabledOn;
 
+    @ReflectiveCtor
     public UserAgentHack(
         FilePosition pos, Set<UserAgent> enabledOn,
         List<? extends PropertyDeclaration> decl) {

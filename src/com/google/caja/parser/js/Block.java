@@ -30,6 +30,7 @@ import java.util.List;
 public final class Block
     extends AbstractStatement implements NestedScope {
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor  
   public Block(
       FilePosition pos, Void value, List<? extends Statement> children) {
     this(pos, children);

@@ -36,6 +36,7 @@ public final class UseSubset extends AbstractParseTreeNode {
   private final String subsetName;
 
   /** @param children unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public UseSubset(
       FilePosition pos, String subsetName, List<NoChildren> children) {
     this(pos, subsetName);

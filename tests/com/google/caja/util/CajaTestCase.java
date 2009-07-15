@@ -240,6 +240,36 @@ public abstract class CajaTestCase extends TestCase {
     return sb.toString();
   }
 
+  /**
+   * Ensures that a given node is cloneable by calling {@code clone()} on it and
+   * checking sanity of the result. Tests for specific {@code ParseTreeNode}
+   * subsystems should invoke this on a substantial set of example trees to
+   * guard against problems creeping into the {@code clone()} implementations.
+   *
+   * @param node a {@code ParseTreeNode}.
+   */
+  protected void assertCloneable(ParseTreeNode node) {
+    assertDeepEquals(node, node.clone());
+  }
+
+  /**
+   * Ensures that two {@code ParseTreeNode} trees are deeply equal in the
+   * topology and types of nodes in each tree, and in the {@code getValue()} and
+   * {@code getFilePosition()} of each respective node.
+   *
+   * @param a a {@code ParseTreeNode}.
+   * @param b a {@code ParseTreeNode}.
+   */
+  protected void assertDeepEquals(ParseTreeNode a, ParseTreeNode b) {
+    assertEquals(a.getValue(), b.getValue());
+    assertEquals(a.getFilePosition(), b.getFilePosition());
+    assertEquals(a.children().size(), b.children().size());
+    
+    for (int i = 0; i < a.children().size(); ++i) {
+      assertDeepEquals(a.children().get(i), b.children().get(i));
+    }
+  }
+
   protected void assertMessagesLessSevereThan(MessageLevel level) {
     for (Message msg : mq.getMessages()) {
       if (level.compareTo(msg.getMessageLevel()) <= 0) {

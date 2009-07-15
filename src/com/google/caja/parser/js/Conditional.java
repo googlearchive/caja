@@ -29,6 +29,7 @@ import java.util.List;
  */
 public final class Conditional extends AbstractStatement {
   /** @param value unused.  This ctor is provided for reflection. */
+  @ReflectiveCtor
   public Conditional(
       FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
     super(pos, ParseTreeNode.class);

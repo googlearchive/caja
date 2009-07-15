@@ -31,6 +31,7 @@ public final class ForLoop extends Loop implements NestedScope {
   private Statement increment;
   private Statement body;
 
+  @ReflectiveCtor
   public ForLoop(
       FilePosition pos, String value, List<? extends ParseTreeNode> children) {
     this(pos, value,
