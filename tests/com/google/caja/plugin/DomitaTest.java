@@ -35,7 +35,8 @@ import java.util.List;
 * @author maoziqing@gmail.com (Ziqing Mao)
 */
 public class DomitaTest extends CajaTestCase {
-  final int clickingRoundLimit = 10;
+  final int clickRoundLimit = 10;
+  final int waitRoundLimit = 10;
 
   Server server;
 
@@ -98,24 +99,31 @@ public class DomitaTest extends CajaTestCase {
         + "ant-lib/com/google/caja/plugin/"
         + pageName);
 
-    int roundCount = 0;
-    do
-    {
+    int clickRounds = 0;
+    for (; clickRounds < clickRoundLimit; clickRounds++) {
       List<WebElement> clickingList =
          driver.findElements(By.xpath("//*[contains(@class,'clickme')]/*"));
-
       if (clickingList.size() == 0) {
         break;
       }
-
       for (WebElement e : clickingList) {
         e.click();
       }
+    }
+    assertTrue("Too many click rounds.", clickRounds < clickRoundLimit);
 
-      roundCount++;
-    } while (roundCount <= clickingRoundLimit);
-
-    assertTrue("Too many clicking rounds.", roundCount <= clickingRoundLimit);
+    int waitRounds = 0;
+    for (; waitRounds < waitRoundLimit; waitRounds++) {
+      List<WebElement> waitingList =
+         driver.findElements(By.xpath("//*[contains(@class,'waiting')]/*"));
+      if (waitingList.size() == 0) {
+        break;
+      }
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {}
+    }
+    assertTrue("Too many wait rounds.", waitRounds < waitRoundLimit);
 
     // check the title of the document
     String title = driver.getTitle();

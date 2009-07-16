@@ -63,16 +63,21 @@ var bridal = (function() {
   };
 
   var CUSTOM_EVENT_TYPE_SUFFIX = '_custom___';
-  function tameEventType(type, opt_isCustom) {
+  function tameEventType(type, opt_isCustom, opt_tagName) {
     type = String(type);
     if (endsWith__.test(type)) {
       throw new Error('Invalid event type ' + type);
     }
-    if (opt_isCustom
-        || html4.atype.SCRIPT !== html4.ATTRIBS['*:on' + type]) {
-      type = type + CUSTOM_EVENT_TYPE_SUFFIX;
+    var tagAttr = false;
+    if (opt_tagName) {
+      tagAttr = String(opt_tagName).toLowerCase() + ':on' + type;
     }
-    return type;
+    if (!opt_isCustom
+        && ((tagAttr && html4.atype.SCRIPT === html4.ATTRIBS[tagAttr])
+            || html4.atype.SCRIPT === html4.ATTRIBS['*:on' + type])) {
+      return type;
+    }
+    return type + CUSTOM_EVENT_TYPE_SUFFIX;
   }
 
   function eventHandlerTypeFilter(handler, tameType) {
@@ -253,7 +258,7 @@ var bridal = (function() {
    */
   function addEventListener(element, type, handler, useCapture) {
     type = String(type);
-    var tameType = tameEventType(type);
+    var tameType = tameEventType(type, false, element.tagName);
     if (features.attachEvent) {
       // TODO(ihab.awad): How do we emulate 'useCapture' here?
       if (type !== tameType) {
@@ -285,7 +290,7 @@ var bridal = (function() {
    */
   function removeEventListener(element, type, handler, useCapture) {
     type = String(type);
-    var tameType = tameEventType(type);
+    var tameType = tameEventType(type, false, element.tagName);
     if (features.attachEvent) {
       // TODO(ihab.awad): How do we emulate 'useCapture' here?
       if (tameType !== type) {

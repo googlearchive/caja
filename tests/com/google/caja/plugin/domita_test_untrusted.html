@@ -18,11 +18,12 @@
   .testcontainer { background: yellow; border: 2px solid yellow }
   .testcontainer.passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
   .clickme-testcontainer { background: yellow; border: 2px solid yellow }
+  .waiting-testcontainer { background: yellow; border: 2px solid yellow }
   .invisible { display: none; float: left }
   .inline { display: inline }
 </style>
 
-<p class="testcontainer" id="test-timeout-and-interval">
+<p class="waiting-testcontainer" id="test-timeout-and-interval">
   Timeouts and Intervals<br>
 </p>
 
@@ -45,6 +46,23 @@
     </tr>
   </table>
 </div>
+
+<!-- TODO: testOnFocus/testOnBlur don't work in webdriver -->
+<!--
+<p class="clickme-testcontainer" id="test-onfocus">
+  <input id="test-onfocus-input" value="first, click inside this box">
+</p>
+
+<div class="clickme-testcontainer" id="test-onblur">
+  <b>second, click outside that box</b>
+</div>
+-->
+
+<form id="test-onreset-form">
+  <div class="clickme-testcontainer" id="test-onreset">
+    <input type="reset">
+  </div>
+</form>
 
 <p class="clickme-testcontainer" id="test-onclick-handler">
   <b id="test-onclick-handler-label"
@@ -525,7 +543,7 @@ jsunitRegister('testTimeoutAndInterval',
   // inadvertently clear existing timeouts or intervals.
   clearTimeout(setTimeout(null, 0));
   clearInterval(setInterval(null, 0));
-  
+
   // Check that clearInterval and clearTimeout ignore null 
   // and undefined intervalId's
   clearInterval(null);
@@ -807,10 +825,15 @@ jsunitRegister('testGetElementById',
   assertEquals(null, document.getElementById('bar'));
   assertEquals(null, document.getElementById('no_such_node'));
   assertTrue(document.getElementById('test-get-element-by-id') != null);
+
+  pass('test-get-element-by-id');
+});
+
+jsunitRegister('testGetElementById2',
+               function testGetElementById2() {
   assertEquals(null, document.getElementById('xyz-test-get-element-by-id'));
   assertTrue(document.getElementById('test-get-element-by-id-2') != null);
 
-  pass('test-get-element-by-id');
   pass('test-get-element-by-id-2');
 });
 
@@ -2040,20 +2063,20 @@ jsunitRegister('testResizing',
     return directAccess.getComputedStyle(directAccess.getBodyNode(), 'width');
   }
 
-  assertEquals('initial scrollable dimensions', '1200,600', windowDims());
-  assertEquals('initial width', '1200px', windowStyleWidth());
+  assertEquals('initial scrollable dimensions', '600,400', windowDims());
+  assertEquals('initial width', '600px', windowStyleWidth());
 
   window.resizeBy(0, 0);
-  assertEquals('scrollable dimensions 1', '1200,600', windowDims());
-  assertEquals('width 1', '1200px', windowStyleWidth());
+  assertEquals('scrollable dimensions 1', '600,400', windowDims());
+  assertEquals('width 1', '600px', windowStyleWidth());
 
   window.resizeBy(-100, 200);
-  assertEquals('scrollable dimensions 2', '1100,800', windowDims());
-  assertEquals('width 2', '1100px', windowStyleWidth());
+  assertEquals('scrollable dimensions 2', '500,600', windowDims());
+  assertEquals('width 2', '500px', windowStyleWidth());
 
-  document.defaultView.resizeTo(1200, 800);
-  assertEquals('scrollable dimensions 3', '1200,800', windowDims());
-  assertEquals('width 3', '1200px', windowStyleWidth());
+  document.defaultView.resizeTo(600, 400);
+  assertEquals('scrollable dimensions 3', '600,400', windowDims());
+  assertEquals('width 3', '600px', windowStyleWidth());
 
   pass('test-resizing');
 });
@@ -2307,6 +2330,7 @@ jsunitRegister('testTableElements',
   var tr_b1 = document.getElementById('test-table-elements-tr-b1');
   assertEquals(1, tr_b1.sectionRowIndex);
   assertEquals(2, tr_b1.rowIndex);
+  pass('test-table-elements');
 });
 
 jsunitRegister('testDocumentBodyAppendChild',
@@ -2351,6 +2375,35 @@ jsunitRegister('testFocusBlur',
   // TODO: verify focus does change.  requires an event-driven tester.
   pass('test-focus-blur');
 });
+
+// TODO: testOnFocus/testOnBlur don't work in webdriver, because
+// webdriver runs without focusing the browser, so onfocus never fires.
+/*
+jsunitRegister('testOnFocus',
+               function testOnFocus() {
+  var input = document.getElementById('test-onfocus-input');
+  input.addEventListener('focus',
+      function() { pass('test-onfocus'); },
+      false);
+});
+jsunitRegister('testOnBlur',
+               function testOnBlur() {
+  var input = document.getElementById('test-onfocus-input');
+  input.addEventListener('blur',
+      function() { pass('test-onblur'); },
+      false);
+});
+*/
+
+// form:onreset uses the same logic path as input:onfocus
+jsunitRegister('testOnReset',
+               function testOnReset() {
+  var form = document.getElementById('test-onreset-form');
+  form.addEventListener('reset',
+      function() { pass('test-onreset'); },
+      false);
+});
+
 
 // Before onload events fire
 jsunitRun();

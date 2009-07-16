@@ -91,13 +91,11 @@
     <!-- Ensure http://www.google.com/favicon.ico is :visited -->
     <img src="http://www.google.com/favicon.ico"/>
 
-    <div id="console-results"></div>
-
     <div id="untrusted_content" class="xyz___"
      title="<Untrusted Content Title>"
      style="position: relative;
-            width:1200px;
-            height: 600px;
+            width:600px;
+            height:400px;
             color: rgb(12, 34, 56)">
       <!-- should appear first -->
       <div id="absolutely-positioned-xyz___"
@@ -147,6 +145,8 @@
         </p>
       </a>
     </div>
+
+    <div id="console-results"></div>
 
     <script type="text/javascript">
       function loadScript(src) {
@@ -286,11 +286,11 @@
         if (!node) { console.trace(); }
         node = node.node___;
         node.appendChild(document.createTextNode('Passed ' + id));
-        if (node.className != null && 
-            node.className.substring(0, 8) === 'clickme-') {
-        	   node.className = node.className.substring(8);
-            }
+        if (node.className) {
+          node.className = node.className.replace(/^clickme-|^waiting-/, '');
+        }
         node.className = (node.className || '') + ' passed';
+        jsunit.pass(id);
       }, 'pass');
 
       testImports.checkGlobalSideEffect = 

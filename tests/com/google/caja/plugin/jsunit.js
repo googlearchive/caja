@@ -20,12 +20,40 @@
  * @author mikesamuel@gmail.com
  */
 
-var jsunitTests = {};
+var jsunit = {};
+jsunit.tests = {};
+jsunit.testCount = 0;
+jsunit.passTests = {};
+jsunit.passCount = 0;
+jsunit.failCount = 0;
+jsunit.originalTitle = '';
+
+jsunit.pass = function(id) {
+  if (id in jsunit.passTests) {
+    throw new Error('dupe pass ' + id);
+  }
+  jsunit.passTests[id] = true;
+  jsunit.passCount += 1;
+  jsunit.updateStatus()
+  console.log('PASS: ' + id);
+};
+
+jsunit.updateStatus = function() {
+  var status = ' -';
+  if (jsunit.failCount) {
+    status += ' ' + jsunit.failCount + '/' + jsunit.testCount + ' fail';
+  }
+  status += ' ' + jsunit.passCount + '/' + jsunit.testCount + ' pass';
+  if (!jsunit.failCount && jsunit.passCount == jsunit.testCount) {
+    status += ' - all tests passed';
+  }
+  document.title = jsunit.originalTitle + status;
+};
 
 /** Register a test that can be run later. */
 function jsunitRegister(testName, test) {
-  if (testName in jsunitTests) { throw new Error('dupe test ' + testName); }
-  jsunitTests[testName] = test;
+  if (testName in jsunit.tests) { throw new Error('dupe test ' + testName); }
+  jsunit.tests[testName] = test;
 }
 
 function arrayContains(anArray, anElement) {
@@ -40,11 +68,11 @@ function jsunitRun(opt_testNames) {
   document.title += ' (' + (navigator.appName
                             ? navigator.appName + ' ' + navigator.appVersion
                             : navigator.userAgent) + ')';
-  var originalTitle = document.title;
+  jsunit.originalTitle = document.title;
 
   var testNames = [];
-  for (var k in jsunitTests) {
-    if (jsunitTests.hasOwnProperty(k)) {
+  for (var k in jsunit.tests) {
+    if (jsunit.tests.hasOwnProperty(k)) {
       if (!opt_testNames || arrayContains(arguments, k)) {
         testNames.push(k); 
       }
@@ -75,8 +103,15 @@ function jsunitRun(opt_testNames) {
     testFilter = new RegExp(queryParams['test.filter'][0]);
   }
 
+  jsunit.testCount = 0;
+  for (var i = 0; i < testNames.length; ++i) {
+    if (!testFilter || testFilter.test(testName)) {
+      jsunit.testCount++;
+    }
+  }
+
   var firstFailure = null;
-  var nFailures = 0;
+  jsunit.failCount = 0;
   for (var i = 0; i < testNames.length; ++i) {
     var testName = testNames[i];
     if (testFilter && !testFilter.test(testName)) { continue; }
@@ -88,11 +123,13 @@ function jsunitRun(opt_testNames) {
     }
     try {
       (typeof setUp === 'function') && setUp();
-      jsunitTests[testName].call(this);
+      jsunit.tests[testName].call(this);
       (typeof tearDown === 'function') && tearDown();
     } catch (e) {
       firstFailure = firstFailure || e;
-      nFailures++;
+      jsunit.failCount++;
+      jsunit.updateStatus();
+      console.log('FAIL: ' + testName);
       if (typeof console !== 'undefined') {
         if (e.isJsUnitException) {
           console.error(
@@ -109,12 +146,9 @@ function jsunitRun(opt_testNames) {
     }
   }
 
-  if (testNames.length && !nFailures) {
-    document.title = originalTitle + ' - all tests passed';
-  } else {
-    var msg = nFailures + '/' + testNames.length + ' failed';
-    document.title = (originalTitle + ' - ' + msg);
-    throw firstFailure || new Error(msg);
+  jsunit.updateStatus();
+  if (firstFailure) {
+    throw firstFailure;
   }
   (typeof console !== 'undefined' && 'group' in console)
       && (console.group(document.title), console.groupEnd());
