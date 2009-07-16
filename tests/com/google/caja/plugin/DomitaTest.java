@@ -83,6 +83,7 @@ public class DomitaTest extends CajaTestCase {
    * threshold.
    */
   public void exercise(String pageName) {
+    if (checkHeadless()) return;
     StartLocalServer();
     try {
       exerciseFirefox(pageName);

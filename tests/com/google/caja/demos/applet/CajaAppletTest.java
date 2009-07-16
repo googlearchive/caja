@@ -17,6 +17,7 @@ package com.google.caja.demos.applet;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
 
+import java.awt.HeadlessException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -26,20 +27,25 @@ import java.net.URL;
  * @author Jasvir Nagra <jasvir@gmail.com>
  */
 public class CajaAppletTest extends CajaTestCase {
-  CajaApplet applet = new CajaApplet() {
-    { setBuildInfo(new TestBuildInfo()); }
-    @Override
-    public URL getDocumentBase() {
-      try {
-        return new URL("http://example.com");
-      } catch (MalformedURLException e) {
-        assert(false);
-      }
-      return null;
-    }
-  };
+
+  private CajaApplet makeApplet() throws HeadlessException {
+    return new CajaApplet() {
+        { setBuildInfo(new TestBuildInfo()); }
+        @Override
+        public URL getDocumentBase() {
+          try {
+            return new URL("http://example.com");
+          } catch (MalformedURLException e) {
+            assert(false);
+          }
+          return null;
+        }
+    };
+  }
 
   public void testCajoleInValija() throws Exception {
+    if (checkHeadless()) return;
+    CajaApplet applet = makeApplet();
     // TODO(mikesamuel): move these goldens into files
     String sp = "                 ";
     assertEquals(
@@ -94,6 +100,8 @@ public class CajaAppletTest extends CajaTestCase {
   }
 
   public void testCajoleInCajita() throws Exception {
+    if (checkHeadless()) return;
+    CajaApplet applet = makeApplet();
     String sp = "                 ";
     assertEquals(
       "['\\x3cspan id=\\\"id_1___\\\"\\x3eHowdy\\x3c/span\\x3eThere" +

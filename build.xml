@@ -183,6 +183,7 @@
         </fileset>
       </batchtest>
       <syspropertyset>
+        <propertyref name="test.headless"/>
         <propertyref prefix="webdriver.firefox.bin"/>
       </syspropertyset>
       <sysproperty key="emma.coverage.out.file"
