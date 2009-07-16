@@ -3432,21 +3432,28 @@ var attachDocumentStub = (function () {
             if (name === 'load') {
               classUtils.ensureValidCallback(listener);
               tameDocument.onLoadListeners___.push(listener);
+            } else {
+              # TODO: need a testcase for this
+              tameDocument.addEventListener(name, listener, useCapture);
             }
           }),
       removeEventListener: ___.markFuncFreeze(
           function (name, listener, useCapture) {
-            var listeners = tameDocument.onLoadListeners___;
-            var k = 0;
-            for (var i = 0, n = listeners.length; i < n; ++i) {
-              listeners[i - k] = listeners[i];
-              if (listeners[i] === listener) {
-                ++k;
+            if (name === 'load') {
+              var listeners = tameDocument.onLoadListeners___;
+              var k = 0;
+              for (var i = 0, n = listeners.length; i < n; ++i) {
+                listeners[i - k] = listeners[i];
+                if (listeners[i] === listener) {
+                  ++k;
+                }
               }
+              listeners.length -= k;
+            } else {
+              tameDocument.removeEventListener(name, listener, useCapture);
             }
-            listeners.length -= k;
           }),
-      dispathEvent: ___.markFuncFreeze(function (evt) {
+      dispatchEvent: ___.markFuncFreeze(function (evt) {
         // TODO(ihab.awad): Implement
       })
     }, ___.markFuncFreeze(function (propertyName, value) {
