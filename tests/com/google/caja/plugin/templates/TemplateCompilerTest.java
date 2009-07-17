@@ -62,19 +62,9 @@ public class TemplateCompilerTest extends CajaTestCase {
         throw new RuntimeException("NOT IMPLEMENTED");
       }
 
+      // return the URI unchanged, so we can test URI normalization
       public String rewriteUri(ExternalReference ref, String mimeType) {
-        URI resolvedUri = ref.getReferencePosition().source().getUri()
-            .resolve(ref.getUri());
-        return "/proxy?url=" + encodeUrl(resolvedUri.toString())
-            + "&mime-type=" + encodeUrl(mimeType);
-      }
-
-      private String encodeUrl(String s) {
-        try {
-          return URLEncoder.encode(s, "UTF-8");
-        } catch (UnsupportedEncodingException ex) {
-          throw new RuntimeException(ex);  // UTF-8 must be supported.
-        }
+        return ref.getUri().toString();
       }
     });
   }
@@ -145,7 +135,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertSafeHtml(
         htmlFragment(fromString("<a href='foo' target='_self'>hello</a>")),
         htmlFragment(fromString(
-            "<a href='/proxy?url=test%3A%2Ffoo&amp;mime-type=%2A%2F%2A'"
+            "<a href='foo'"
             + " target='_blank'>hello</a>")),
         new Block());
   }
@@ -154,8 +144,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertSafeHtml(
         htmlFragment(fromString("<form></form>")),
         htmlFragment(fromString(
-            "<form action='/proxy?url=test%3A%2F%2F%2FtestFormRewritten"
-            + "&amp;mime-type=application%2Fx-www-form-urlencoded'"
+            "<form action='test:///testFormRewritten'"
             + " target='_blank'></form>")),
         new Block());
   }
@@ -198,8 +187,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertSafeHtml(
         htmlFragment(fromString("<form name='hi'></form>")),
         htmlFragment(fromString(
-            "<form action='/proxy?url=test%3A%2F%2F%2FtestFormName"
-            + "&amp;mime-type=application%2Fx-www-form-urlencoded'"
+            "<form action='test:///testFormName'"
             + " name='hi-suffix___' target=_blank></form>")),
         new Block());
   }
@@ -210,8 +198,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<form onsubmit='alert(&quot;hi&quot;); return true;'></form>")),
         htmlFragment(fromString(
-            "<form action='/proxy?url=test%3A%2F%2F%2FtestFormOnSubmitTrue"
-            + "&amp;mime-type=application%2Fx-www-form-urlencoded'"
+            "<form action='test:///testFormOnSubmitTrue'"
             + " id=id_2___ target='_blank'></form>")),
         js(fromString(
             ""
@@ -238,8 +225,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertSafeHtml(
         htmlFragment(fromString("<form onsubmit=''></form>")),
         htmlFragment(fromString(
-            "<form action='/proxy?url=test%3A%2F%2F%2FtestFormOnSubmitEmpty"
-            + "&amp;mime-type=application%2Fx-www-form-urlencoded'"
+            "<form action='test:///testFormOnSubmitEmpty'"
             + " target='_blank'></form>")),
         new Block());
   }
@@ -248,8 +234,7 @@ public class TemplateCompilerTest extends CajaTestCase {
     assertSafeHtml(
         htmlFragment(fromString("<img src='blank.gif' width='20'/>")),
         htmlFragment(fromString(
-            "<img src='/proxy?url=test%3A%2Fblank.gif"
-            + "&amp;mime-type=image%2F%2A' width='20'/>")),
+            "<img src='blank.gif' width='20'/>")),
         new Block());
   }
 
@@ -261,7 +246,7 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "</div>\n")),
         htmlFragment(fromString(
             "<div style=\"position: absolute; background:"
-            + " url('/proxy?url=test%3A%2Fbg-image&amp;mime-type=image%2F%2A')"
+            + " url('test:/bg-image')"
             + "\">\nHello\n</div>")),
         new Block());
   }
@@ -299,6 +284,24 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "      ex___, onerror, 'testDeferredScripts', '1');"
             + "}"))
         );
+  }
+
+  public void testMailto() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString(
+            "<a href='mailto:x@y' target='_blank'>z</a>")),
+        htmlFragment(fromString(
+            "<a href='mailto:x@y' target='_blank'>z</a>")),
+        new Block());
+  }
+
+  public void testComplexUrl() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString(
+            "<a href='http://b/c;_d=e?f=g&i=%26' target='_blank'>z</a>")),
+        htmlFragment(fromString(
+            "<a href='http://b/c;_d=e?f=g&i=%26' target='_blank'>z</a>")),
+        new Block());
   }
 
   private class Holder<T> { T value; }
