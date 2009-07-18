@@ -2614,6 +2614,23 @@ var safeJSON;
       }
     });
   }
+  
+  /**
+   * Produces a function module given an object literal module 
+   */
+  function prepareModule(module) {
+    function theModule(imports) {
+      return module.instantiate(___, imports);
+    }
+    markFuncOnly(theModule);
+      
+    forOwnKeys(module, markFuncFreeze(function(k, v) {
+      if (k != 'instantiate') {
+        setStatic(theModule, k, v);
+      }
+    }));
+    return primFreeze(theModule);
+  }
 
   /**
    * A module is an object literal containing metadata and an
@@ -3352,6 +3369,7 @@ var safeJSON;
     obtainNewModule: obtainNewModule,
     makeNormalNewModuleHandler: makeNormalNewModuleHandler,
     loadModule: loadModule,
+    prepareModule: prepareModule,
     NO_RESULT: NO_RESULT,
 
     getId: getId,

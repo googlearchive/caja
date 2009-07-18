@@ -75,7 +75,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   }
   
   protected Rewriter defaultCajaRewriter =
-      new CajitaRewriter(new TestBuildInfo(), new TestPluginEnvironment(), false);
+      new CajitaRewriter(new TestBuildInfo(), false);
 
   @Override
   public void setUp() throws Exception {
@@ -2288,25 +2288,43 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   /**
    * Tests the securable module loading
    */
+  // TODO: Refactor the test cases so that we can use CajitaModuleRewriter
+  // for all tests
+  // CajitaModuleRewriter only accepts an UncajoledModule, so it does not work 
+  // for those tests that run against other ParseTreeNode
   public void testModule() throws Exception {
+    CajitaModuleRewriter moduleRewriter = new CajitaModuleRewriter(
+        new TestBuildInfo(), new TestPluginEnvironment(), false);
+    setRewriter(moduleRewriter);
+    
     rewriteAndExecute(
         "var r = loader.load('foo/b')({x: 6, y: 3}); "
-        + "assertEquals(11, r);");
-    
+        + "assertEquals(r, 11);");
+
+    rewriteAndExecute(
+        "var r1 = loader.load('foo/b')({x: 6, y: 3}); "
+        + "var r2 = loader.load('foo/b')({x: 1, y: 2}); "
+        + "var r3 = loader.load('c')({x: 2, y: 6}); "
+        + "var r = r1 + r2 + r3; "
+        + "assertEquals(r, 24);");
+
     rewriteAndExecute(
         "var m = loader.load('foo/b');"
         + "var s = m.cajolerName;"
         + "assertEquals('com.google.caja', s);");
 
     checkAddsMessage(
-        js(fromString("var m = loader.load('foo/c');")),
+        new UncajoledModule(js(fromString("var m = loader.load('foo/c');"))),
         RewriterMessageType.MODULE_NOT_FOUND,
         MessageLevel.FATAL_ERROR);
     
     checkAddsMessage(
-        js(fromString("var s = 'c'; var m = loader.load(s);")),
+        new UncajoledModule(
+            js(fromString("var s = 'c'; var m = loader.load(s);"))),
         RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_MODULE,
         MessageLevel.FATAL_ERROR);
+
+    setRewriter(defaultCajaRewriter);
   }
 
   @Override

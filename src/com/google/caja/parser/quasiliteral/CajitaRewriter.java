@@ -14,13 +14,7 @@
 
 package com.google.caja.parser.quasiliteral;
 
-import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.ExternalReference;
 import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.InputSource;
-import com.google.caja.lexer.JsLexer;
-import com.google.caja.lexer.JsTokenQueue;
-import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;
 import com.google.caja.parser.js.ArrayConstructor;
@@ -52,7 +46,6 @@ import com.google.caja.parser.js.NumberLiteral;
 import com.google.caja.parser.js.ObjectConstructor;
 import com.google.caja.parser.js.Operation;
 import com.google.caja.parser.js.Operator;
-import com.google.caja.parser.js.Parser;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.RegexpLiteral;
 import com.google.caja.parser.js.ReturnStmt;
@@ -65,7 +58,6 @@ import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.parser.js.TryStmt;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.parser.js.UseSubsetDirective;
-import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
@@ -74,8 +66,6 @@ import com.google.caja.util.SyntheticAttributeKey;
 
 import static com.google.caja.parser.js.SyntheticNodes.s;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -97,7 +87,7 @@ public class CajitaRewriter extends Rewriter {
       = new SyntheticAttributeKey<Boolean>(Boolean.class, "translatedCode");
 
   private final BuildInfo buildInfo;
-  private final PluginEnvironment pluginEnv;
+  private final ModuleManager moduleManager;
 
   /** Mark a tree as having been translated from another language. */
   private static void markTranslated(ParseTreeNode node) {
@@ -172,59 +162,6 @@ public class CajitaRewriter extends Rewriter {
     if (null == result) { return node; }
     result.getAttributes().putAll(node.getAttributes());
     return result;
-  }
-
-  /**
-   * Retrieve the module source, cajole it and return a cajoled module.
-   * Return null if loading the module failed
-   */
-  public ParseTreeNode fetchStaticModule(
-      StringLiteral src, MessageQueue mq) {
-    String loc = src.getUnquotedValue();
-    if (!loc.toLowerCase().endsWith(".js")) {
-      loc = loc + ".js";
-    }
-
-    URI inputUri;
-    try {
-      inputUri = new URI(loc);
-    } catch (URISyntaxException ex) {
-      mq.addMessage(
-          RewriterMessageType.INVALID_MODULE_URI,
-          src.getFilePosition(),
-          MessagePart.Factory.valueOf(src.getUnquotedValue()));
-      return null;
-    }
-
-    ExternalReference er = new ExternalReference(
-        inputUri, src.getFilePosition());
-
-    CharProducer cp = 
-      this.pluginEnv.loadExternalResource(er, "text/javascript");
-    if (cp == null) {
-      mq.addMessage(
-          RewriterMessageType.MODULE_NOT_FOUND,
-          src.getFilePosition(),
-          MessagePart.Factory.valueOf(src.getUnquotedValue()));
-      return null;
-    }
-
-    InputSource is = new InputSource(cp.getCurrentPosition().source().getUri());
-    try {
-      JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), is);
-      Block input = new Parser(tq, mq).parse();
-      tq.expectEmpty();
-
-      CajitaRewriter dcr = new CajitaRewriter(
-          buildInfo, this.pluginEnv, false /* logging */);
-      return dcr.expand(new UncajoledModule(input), mq);
-    } catch (ParseException e) {
-      mq.addMessage(
-          RewriterMessageType.PARSING_MODULE_FAILED,
-          src.getFilePosition(),
-          MessagePart.Factory.valueOf(src.getUnquotedValue()));
-      return null;
-    }
   }
 
   // A NOTE ABOUT MATCHING MEMBER ACCESS EXPRESSIONS
@@ -498,43 +435,22 @@ public class CajitaRewriter extends Rewriter {
           synopsis="rewrites the loader.load function.",
           reason="",
           matches="loader.load(@arg)",
-          substitutes="___.markFuncFreeze(function() {" 
-            + "  function theModule(IMPORTS___) {"
-            + "    function instantiate___(___, IMPORTS___) {"
-            + "      @body;"
-            + "    }"
-            + "    ___.markFuncFreeze(instantiate___, 'instantiate___');"
-            + "    return instantiate___(___, IMPORTS___);"
-            + "  }"
-            + "  ___.markFuncOnly(theModule, 'theModule');"
-            + "  ___.setStatic(theModule, 'cajolerName', @cajolerName);"
-            + "  ___.setStatic(theModule, 'cajolerVersion', @cajolerVersion);"
-            + "  ___.setStatic(theModule, 'cajolerDate', @cajoledDate);"
-            + "  return ___.primFreeze(theModule);"
-            + "})();")
+          substitutes="moduleMap___[@moduleIndex]")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null && scope.isOuter("loader")) {
           ParseTreeNode arg = bindings.get("arg");
           if (arg instanceof StringLiteral) {
-            ParseTreeNode cajoledModule = fetchStaticModule(
-                (StringLiteral)arg, mq);
-
-            if (cajoledModule != null) {
-              ObjectConstructor oc = 
-                ((CajoledModule)cajoledModule).getModuleBody();
-              FunctionConstructor fc = 
-                ((FunctionConstructor)oc.getValue("instantiate"));
-
-              return substV(
-                  "body", fc.getBody(),
-                  "cajolerName", oc.getValue("cajolerName"),
-                  "cajolerVersion", oc.getValue("cajolerVersion"),
-                  "cajoledDate", oc.getValue("cajoledDate"));
+            assert(moduleManager != null);
+            
+            int index = moduleManager.getModule((StringLiteral) arg);
+            if (index != -1) {
+              return substV("moduleIndex", 
+                  new IntegerLiteral(FilePosition.UNKNOWN, index));
             }
             else {
-              // error messages were logged in the function fetchStaticModule
+              // error messages were logged in the function getModule
               return node;
             }
           }
@@ -548,7 +464,7 @@ public class CajitaRewriter extends Rewriter {
         return NONE;
       }      
     },
-
+    
     ////////////////////////////////////////////////////////////////////////
     // Module envelope
     ////////////////////////////////////////////////////////////////////////
@@ -2526,14 +2442,14 @@ public class CajitaRewriter extends Rewriter {
    * Creates a Cajita rewriter
    */
   public CajitaRewriter(
-      BuildInfo buildInfo, PluginEnvironment pluginEnv, boolean logging) {
+      BuildInfo buildInfo, ModuleManager moduleManager, boolean logging) {
     super(true, logging);
     this.buildInfo = buildInfo;
-    this.pluginEnv = pluginEnv;
+    this.moduleManager = moduleManager;
     addRules(cajaRules);
   }
   
   public CajitaRewriter(BuildInfo buildInfo, boolean logging) {
-    this(buildInfo, PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT, logging);
+    this(buildInfo, null, logging);
   }
 }
