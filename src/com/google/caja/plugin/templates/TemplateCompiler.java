@@ -26,7 +26,6 @@ import com.google.caja.lexer.JsTokenQueue;
 import com.google.caja.lexer.Keyword;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.TokenQueue;
-import com.google.caja.lexer.escaping.UriUtil;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.ParseTreeNodeContainer;

@@ -107,7 +107,7 @@ public final class PluginCompilerMain {
     CajoledModule compiledJsOutput = null;
     Node compiledDomOutput = null;
     String compiledHtmlOutput = null;
-    
+
     try {
       PluginMeta meta = new PluginMeta(makeEnvironment(config));
       meta.setDebugMode(config.debugMode());
@@ -122,7 +122,7 @@ public final class PluginCompilerMain {
       if (success) {
         compiledJsOutput = compiler.getJavascript();
         compiledDomOutput = compiler.getStaticHtml();
-        compiledHtmlOutput = compiledDomOutput != null ? 
+        compiledHtmlOutput = compiledDomOutput != null ?
             Nodes.render(compiledDomOutput) : "";
       }
     } finally {
@@ -214,7 +214,7 @@ public final class PluginCompilerMain {
     OutputStreamWriter out = null;
     try {
       out = new OutputStreamWriter(
-          new FileOutputStream(config.getOutputHtmlFile()), "UTF-8");
+          new FileOutputStream(outputHtmlFile), "UTF-8");
       out.append(compiledHtmlOutput);
     } catch (IOException ex) {
       exHandler.handle(ex);

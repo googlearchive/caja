@@ -24,7 +24,6 @@ import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.lexer.escaping.Escaping;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.css.CssPropertySignature;
-import com.google.caja.parser.css.CssPropertySignature.ExclusiveSetSignature;
 import com.google.caja.parser.js.ArrayConstructor;
 import com.google.caja.parser.js.BooleanLiteral;
 import com.google.caja.parser.js.Declaration;
@@ -289,9 +288,9 @@ public class CssPropertyPatterns {
       if (childP != null) { children.add(childP); }
     }
     if (children.isEmpty()) { return null; }
-    return new Repetition(new Union(children), 1, Integer.MAX_VALUE);    
+    return new Repetition(new Union(children), 1, Integer.MAX_VALUE);
   }
-  
+
   private static final Map<String, String> BUILTINS
       = new HashMap<String, String>();
   static {

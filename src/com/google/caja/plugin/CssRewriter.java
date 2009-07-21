@@ -32,7 +32,6 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
-import com.google.caja.util.Strings;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -230,7 +229,7 @@ public final class CssRewriter {
 
   /** The name of an anchor (<A>) HTML tag. */
   private static final Name HTML_ANCHOR = Name.html("a");
-  
+
   /** Argument is a simple selector like "div#foo", "p", or "*:visited". */
   private boolean addAnchorToHistorySensitiveSimpleSelector(
       CssTree.SimpleSelector selector) {

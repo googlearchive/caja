@@ -216,7 +216,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     assertConsistent("var a = { x: 1 }; delete a.x; typeof a.x;");
   }
 
-  public void testIn() throws Exception {
+  public void testIn2() throws Exception {
     assertConsistent(
         "(function () {" +
         "  var a = { x: 1 };\n" +
@@ -537,6 +537,8 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
             "___.grantFunc(testImports, 'assertTrue');" +
             "testImports.assertFalse = assertFalse;" +
             "___.grantFunc(testImports, 'assertFalse');" +
+            "testImports.fail = fail;" +
+            "___.grantFunc(testImports, 'fail');" +
             "testImports.$v = valijaMaker.CALL___(testImports);\n" +
             "___.getNewModuleHandler().setImports(testImports);",
             getName() + "-test-fixture"),
