@@ -77,6 +77,7 @@
           document.body.appendChild(s);
           assertTrue(checkGlobalSideEffect());
           assertFalse(checkGlobalSideEffect());
+          jsunit.pass('_testSideEffectTestFramework');
         });
     </script>
   </head>
@@ -96,7 +97,7 @@
      style="position: relative;
             width:600px;
             height:400px;
-            color: rgb(12, 34, 56)">
+            color: rgb(3,6,9);">
       <!-- should appear first -->
       <div id="absolutely-positioned-xyz___"
        style="position: absolute; padding: 0; margin: 0;
@@ -130,19 +131,15 @@
         Visited
       </a>
       <a href="http://www.google.com/">
-        <p>
-          <span id="nested-visited-xyz___">Visited</span>
-        </p>
+        <span id="nested-visited-xyz___">Visited</span>
       </a>
-      
+
       <!-- http://www.example.com/ is reserved by RFC2606 -->
       <a id="direct-link-xyz___" href="http://www.example.com/">
         Link
       </a>
       <a href="http://www.example.com/">
-        <p>
-          <span id="nested-link-xyz___">Link</span>
-        </p>
+        <span id="nested-link-xyz___">Link</span>
       </a>
     </div>
 
@@ -282,15 +279,15 @@
 
       // Marks a container green to indicate that test passed
       testImports.pass = ___.markFuncFreeze(function (id) {
+        jsunit.pass(id);
         var node = testImports.document.getElementById(id);
-        if (!node) { console.trace(); }
+        if (!node) return;
         node = node.node___;
         node.appendChild(document.createTextNode('Passed ' + id));
         if (node.className) {
           node.className = node.className.replace(/^clickme-|^waiting-/, '');
         }
         node.className = (node.className || '') + ' passed';
-        jsunit.pass(id);
       }, 'pass');
 
       testImports.checkGlobalSideEffect = 
@@ -298,9 +295,11 @@
       // An explicit channel between whitelisted_script.js and cajoled tests.
       testImports.externalScript = { loaded: false };
 
+      // TODO: async requirements are not counted in the test status.
+
       // Define an asynchronous test mechanism so that we can test things like
       // XHR, dynamic script loading, setTimeout, etc.
-      // This allows test code to requister conditions that must be true.
+      // This allows test code to register conditions that must be true.
       // The conditions can be run periodically until all are satisfied or
       // the test times out.
       // If a condition returns true once, it is never evaluated again.

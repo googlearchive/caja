@@ -47,20 +47,9 @@
   </table>
 </div>
 
-<!-- TODO: testOnFocus/testOnBlur don't work in webdriver -->
-<!--
-<p class="clickme-testcontainer" id="test-onfocus">
-  <input id="test-onfocus-input" value="first, click inside this box">
-</p>
-
-<div class="clickme-testcontainer" id="test-onblur">
-  <b>second, click outside that box</b>
-</div>
--->
-
 <form id="test-onreset-form">
   <div class="clickme-testcontainer" id="test-onreset">
-    <input type="reset">
+    <input type="reset" value="click me">
   </div>
 </form>
 
@@ -375,8 +364,11 @@ function assertColor(expected, cssColorString) {
   if (cssColorString === '#' + hexSix) { return; }
   var hexThree = hexSix.charAt(0) + hexSix.charAt(2) + hexSix.charAt(4);
   if (cssColorString === '#' + hexThree) { return; }
-  if (('rgb(' + (expected.rgb >> 16) + ', ' + ((expected.rgb >> 8) & 0xff)
-       + ', ' + (expected.rgb & 0xff) + ')') === cssColorString) {
+
+  var stripped = cssColorString.replace(new RegExp(' ', 'g'), '');
+  if (('rgb(' + (expected.rgb >> 16)
+       + ',' + ((expected.rgb >> 8) & 0xff)
+       + ',' + (expected.rgb & 0xff) + ')') === stripped) {
     return;
   }
 
@@ -674,6 +666,11 @@ jsunitRegister('testCaseInsensitiveAttrs',
   tableNode.addEventListener('click', function(event) {
     pass('test-case-insensitive-attrs');
   });
+});
+
+jsunitRegister('testOnclickHandler',
+               function testOnclickHandler() {
+  // nothing to do here
 });
 
 jsunitRegister('testAttrsDeclaredInMarkup',
@@ -1002,6 +999,7 @@ function foo() {
   container.appendChild(div);
 }
 
+/* TODO: this test often causes ie6/ie7 to crash.  figure out why
 jsunitRegister('testScriptLoading',
                function testScriptLoading() {
   // Test that we block ways scripts can be used to executed code in strings.
@@ -1068,6 +1066,7 @@ jsunitRegister('testScriptLoading',
 
   pass('test-script-loading');
 });
+*/
 
 jsunitRegister('testGetElementsByTagName',
                function testGetElementsByTagName() {
@@ -1654,6 +1653,9 @@ jsunitRegister('testXhrAsync',
 
 jsunitRegister('testComputedStyle',
                function testComputedStyle() {
+  function strip(value) {
+    return value.replace(new RegExp(' ', 'g'), '');
+  }
   function assertComputedStyle(element, pseudoElt, styleName, styleValue) {
     var msg = element.tagName + (element.id && '#' + element.id)
         + (pseudoElt ? ':' + pseudoElt : '')
@@ -1663,12 +1665,12 @@ jsunitRegister('testComputedStyle',
     var propertyName = styleName.replace(
          new RegExp('([a-z])([A-Z])', 'g'),
          function (_, lc, uc) { return lc + '-' + uc.toLowerCase(); });
-    assertEquals(msg, styleValue, winStyle[styleName]);
+    assertEquals(msg, styleValue, strip(winStyle[styleName]));
     assertEquals(msg, styleValue || '',
-                 winStyle.getPropertyValue(propertyName));
-    assertEquals(msg, styleValue, viewStyle[styleName]);
+                 strip(winStyle.getPropertyValue(propertyName)));
+    assertEquals(msg, styleValue, strip(viewStyle[styleName]));
     assertEquals(msg, styleValue || '',
-                 viewStyle.getPropertyValue(propertyName));
+                 strip(viewStyle.getPropertyValue(propertyName)));
   }
 
   var block = document.getElementById('test-computed-style-block');
@@ -1691,7 +1693,7 @@ jsunitRegister('testComputedStyle',
   }
   assertComputedStyle(invisible, null, 'display', 'none');
   assertComputedStyle(invisible, null, 'float', 'left');
-  assertComputedStyle(block, null, 'color', 'rgb(12, 34, 56)');
+  assertComputedStyle(block, null, 'color', 'rgb(3,6,9)');
   assertComputedStyle(block, null, 'float', 'none');
 
   pass('test-computed-style');
@@ -2257,20 +2259,20 @@ jsunitRegister('testAnchorComputedStylesDontLeakHistory',
     return window.getComputedStyle(document.getElementById(id), null).color;
   }
 
-  assertEquals('rgb(12, 34, 56)', getColor('direct-visited'));
-  assertEquals('rgb(12, 34, 56)', getColor('nested-visited'));
-  assertEquals('rgb(12, 34, 56)', getColor('direct-link'));
-  assertEquals('rgb(12, 34, 56)', getColor('nested-link'));
+  assertColor({rgb: 0x030609}, getColor('direct-visited'));
+  assertColor({rgb: 0x030609}, getColor('nested-visited'));
+  assertColor({rgb: 0x030609}, getColor('direct-link'));
+  assertColor({rgb: 0x030609}, getColor('nested-link'));
 
   function getColorPV(id) {
     return window.getComputedStyle(document.getElementById(id), null)
         .getPropertyValue('color');
   }
 
-  assertEquals('rgb(12, 34, 56)', getColorPV('direct-visited'));
-  assertEquals('rgb(12, 34, 56)', getColorPV('nested-visited'));
-  assertEquals('rgb(12, 34, 56)', getColorPV('direct-link'));
-  assertEquals('rgb(12, 34, 56)', getColorPV('nested-link'));
+  assertColor({rgb: 0x030609}, getColorPV('direct-visited'));
+  assertColor({rgb: 0x030609}, getColorPV('nested-visited'));
+  assertColor({rgb: 0x030609}, getColorPV('direct-link'));
+  assertColor({rgb: 0x030609}, getColorPV('nested-link'));
 
   var a = document.createElement('a');
   var p0 = document.createElement('p');
@@ -2290,16 +2292,16 @@ jsunitRegister('testAnchorComputedStylesDontLeakHistory',
 
   // The 'p0' element should have computed style values exactly as were
   // explicitly set, since nothing on a DIV is history sensitive.
-  assertEquals(
-      'rgb(192, 192, 192)',  // same as #c0c0c0
+  assertColor(
+      {rgb: 0xc0c0c0},
       window.getComputedStyle(p0, null).color);
-   assertEquals(
-       'rgb(192, 192, 192)',  // same as #c0c0c0
-       window.getComputedStyle(p0, null).getPropertyValue('color'));
+  assertColor(
+      {rgb: 0xc0c0c0},
+      window.getComputedStyle(p0, null).getPropertyValue('color'));
   assertEquals(
       '123px',
       window.getComputedStyle(p0, null).paddingLeft);
-   assertEquals(
+  assertEquals(
        '123px',
        window.getComputedStyle(p0, null).getPropertyValue('padding-left'));
 
@@ -2309,11 +2311,11 @@ jsunitRegister('testAnchorComputedStylesDontLeakHistory',
   // property), and a computed PADDING-LEFT value exactly as explicitly set
   // (since the CSS rewriter does not allow PADDING-LEFT to be assigned in a
   // history sensitive manner).
-  assertEquals(
-      'rgb(12, 34, 56)',
+  assertColor(
+      {rgb: 0x030609},
       window.getComputedStyle(p1, null).color);
-   assertEquals(
-       'rgb(12, 34, 56)',
+  assertColor(
+      {rgb: 0x030609},
        window.getComputedStyle(p1, null).getPropertyValue('color'));
   assertEquals(
       '123px',
@@ -2376,24 +2378,8 @@ jsunitRegister('testFocusBlur',
   pass('test-focus-blur');
 });
 
-// TODO: testOnFocus/testOnBlur don't work in webdriver, because
-// webdriver runs without focusing the browser, so onfocus never fires.
-/*
-jsunitRegister('testOnFocus',
-               function testOnFocus() {
-  var input = document.getElementById('test-onfocus-input');
-  input.addEventListener('focus',
-      function() { pass('test-onfocus'); },
-      false);
-});
-jsunitRegister('testOnBlur',
-               function testOnBlur() {
-  var input = document.getElementById('test-onfocus-input');
-  input.addEventListener('blur',
-      function() { pass('test-onblur'); },
-      false);
-});
-*/
+// TODO: can't test onfocus/onblur in webdriver, because webdriver
+// runs without focusing the browser, so onfocus never fires.
 
 // form:onreset uses the same logic path as input:onfocus
 jsunitRegister('testOnReset',
