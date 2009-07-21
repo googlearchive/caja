@@ -184,6 +184,8 @@
 
 <p class="testcontainer" id="test-bug-920"><input id="bug-920" /></p>
 
+<p class="testcontainer" id="test-browser-apply">test-browser-apply</p>
+
 <br>
 
 <form class="testcontainer" id="test-input-default-values">
@@ -1430,6 +1432,16 @@ jsunitRegister('testBug920',
   var bug_920_input = document.getElementById('bug-920');
   assertEquals('text', bug_920_input.type);
   pass('test-bug-920');
+});
+
+// http://code.google.com/p/google-caja/issues/detail?id=1077
+jsunitRegister('testBrowserApply',
+               function testBrowserApply() {
+  var canary = 'alive';
+  var kill = function() { canary = 'dead'; };
+  kill.apply({});
+  assertEquals('dead', canary);
+  pass('test-browser-apply');
 });
 
 jsunitRegister('testInputDefaultValue',
