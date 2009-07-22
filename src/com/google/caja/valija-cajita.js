@@ -447,7 +447,7 @@ var valijaMaker = (function(outers) {
   }
 
   function canReadRev(name, obj) {
-    if (name in new Object(obj)) { return true; }
+    if (name in obj) { return true; }
     return name in getSupplement(obj);
   }
 

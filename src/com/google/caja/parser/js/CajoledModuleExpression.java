@@ -54,11 +54,8 @@ public class CajoledModuleExpression extends AbstractExpression {
     return childrenAs(CajoledModule.class).get(0);
   }
 
-  @Override
   public void render(RenderContext r) {
     ObjectConstructor oc = getCajoledModule().getModuleBody();
-    FunctionConstructor fc = 
-      ((FunctionConstructor) oc.getValue("instantiate"));
     
     Expression e = (Expression) QuasiBuilder.substV(
       "___.prepareModule(@module);",

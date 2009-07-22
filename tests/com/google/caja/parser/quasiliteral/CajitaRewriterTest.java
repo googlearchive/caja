@@ -53,7 +53,6 @@ import junit.framework.AssertionFailedError;
 public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
   protected class TestPluginEnvironment implements PluginEnvironment {
-    @Override
     public CharProducer loadExternalResource(
         ExternalReference ref, String mimeType) {
       URI uri = ref.getUri();
@@ -68,7 +67,6 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
       return null;
     }
 
-    @Override
     public String rewriteUri(ExternalReference uri, String mimeType) {
       return null;
     }    
