@@ -47,14 +47,14 @@ public class DecodingCharProducerTest extends CajaTestCase {
             FilePosition.instance(is, 1, 101, 101)));
   }
 
-  public void testDecoding() {
+  public final void testDecoding() {
     assertEquals(
         "foo3bar2baz1boo0far",
         String.valueOf(
             p.getBuffer(), p.getOffset(), p.getLimit() - p.getOffset()));
   }
 
-  public void testCharInFile() {
+  public final void testCharInFile() {
     int[] charsInFile = new int[p.getLimit() - p.getOffset() + 1];
     for (int i = 0; i < charsInFile.length; ++i) {
       charsInFile[i] = p.getCharInFile(p.getOffset() + i);
@@ -78,7 +78,7 @@ public class DecodingCharProducerTest extends CajaTestCase {
         Arrays.toString(charsInFile));
   }
 
-  public void testUnderlyingOffsets() {
+  public final void testUnderlyingOffsets() {
     int[] underlyingOffsets = new int[p.getLimit() - p.getOffset() + 1];
     for (int i = 0; i < underlyingOffsets.length; ++i) {
       underlyingOffsets[i] = p.getUnderlyingOffset(p.getOffset() + i);

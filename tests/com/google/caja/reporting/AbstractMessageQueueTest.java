@@ -79,7 +79,7 @@ public class AbstractMessageQueueTest extends TestCase {
     mq = null;
   }
 
-  public void testAddMessageSimple() {
+  public final void testAddMessageSimple() {
     assertEquals(0, mq.getMessages().size());
     mq.addMessage(TEST_WARNING, MessagePart.Factory.valueOf("test"));
     assertEquals(1, mq.getMessages().size());
@@ -91,7 +91,7 @@ public class AbstractMessageQueueTest extends TestCase {
         mq.getMessages().get(0).format(mc));
   }
 
-  public void testAddMessageWithLevel() {
+  public final void testAddMessageWithLevel() {
     assertEquals(0, mq.getMessages().size());
     mq.addMessage(
         TEST_WARNING,
@@ -106,7 +106,7 @@ public class AbstractMessageQueueTest extends TestCase {
         mq.getMessages().get(0).format(mc));
   }
 
-  public void testHasMessageAtLevel() {
+  public final void testHasMessageAtLevel() {
     assertEquals(0, mq.getMessages().size());
     mq.addMessage(TEST_WARNING, MessagePart.Factory.valueOf("test"));
     assertEquals(1, mq.getMessages().size());

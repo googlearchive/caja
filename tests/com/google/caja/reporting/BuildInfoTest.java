@@ -42,15 +42,15 @@ public class BuildInfoTest extends TestCase {
     return mq.getMessages().get(0);
   }
 
-  public void testNonemptyInfo() throws Exception {
+  public final void testNonemptyInfo() throws Exception {
     Message m = getMessage(getDefaultBuildInfo());
     assertEquals(MessageLevel.LOG, m.getMessageLevel());
     String s = m.format(new MessageContext());
     assertTrue(s.contains("345M"));
-    assertTrue(s.contains("January 1, 2007"));    
+    assertTrue(s.contains("January 1, 2007"));
   }
 
-  public void testEmptyInfo() throws Exception {
+  public final void testEmptyInfo() throws Exception {
     Message m = getMessage(new BuildInfo(null));
     // Just ensure that nothing failed dramatically
     assertEquals(MessageLevel.LOG, m.getMessageLevel());

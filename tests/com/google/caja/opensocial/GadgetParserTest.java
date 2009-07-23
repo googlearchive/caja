@@ -31,7 +31,7 @@ public class GadgetParserTest extends TestCase {
     void test(GadgetSpec spec);
   }
 
-  public void testListFriends() throws Exception {
+  public final void testListFriends() throws Exception {
     testFile("listfriends.xml", new Tests() {
       public void test(GadgetSpec spec) {
         assertEquals(1, spec.getRequiredFeatures().size());
@@ -43,7 +43,7 @@ public class GadgetParserTest extends TestCase {
     });
   }
 
-  public void testTestParsing() throws Exception {
+  public final void testTestParsing() throws Exception {
     testFile("test-parsing.xml", new Tests() {
       public void test(GadgetSpec spec) {
         assertEquals(2, spec.getRequiredFeatures().size());
@@ -61,7 +61,7 @@ public class GadgetParserTest extends TestCase {
   }
 
   private GadgetSpec parseString(String gadgetSpec, String view) throws Exception {
-    InputSource is = new InputSource(URI.create("test:///" + getName())); 
+    InputSource is = new InputSource(URI.create("test:///" + getName()));
     return new GadgetParser().parse(
         CharProducer.Factory.create(
             new StringReader(gadgetSpec), is),

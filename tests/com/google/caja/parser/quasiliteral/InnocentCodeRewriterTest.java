@@ -34,7 +34,7 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
   }
 
   // Tests block-level forEach statements
-  public void testForEachPlain() throws Exception {
+  public final void testForEachPlain() throws Exception {
     checkSucceeds(
         "for (var k in x) { k; }",
 
@@ -93,7 +93,7 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
   }
 
   // Checks that var x0 is added *inside* the function scope
-  public void testForEachFunc() throws Exception {
+  public final void testForEachFunc() throws Exception {
     checkSucceeds(
         "function add() {" +
         "  for (var k in x) { k; }" +
@@ -128,7 +128,7 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
   }
 
   // Checks calls, sets, and reads of members of THIS
-  public void testThis() throws Exception {
+  public final void testThis() throws Exception {
     rewriteAndExecute(
         ";",
         "assertThrows(function a() {" +

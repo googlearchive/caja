@@ -24,19 +24,19 @@ import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.CajaTestCase;
 
 public class CssRuleRewriterTest extends CajaTestCase {
-  public void testSimpleRule() {
+  public final void testSimpleRule() {
     assertCompiledCss(
         "p {color:purple}",
         "[ '.', ' p {\\n  color: purple\\n}' ]");
   }
 
-  public void testClassRule() {
+  public final void testClassRule() {
     assertCompiledCss(
         ".foo .bar {color:blue}",
         "[ '.', ' .foo .bar {\\n  color: blue\\n}' ]");
   }
 
-  public void testIdRule() {
+  public final void testIdRule() {
     assertCompiledCss(
         "#foo {color:blue}",
         "[ '.', ' #foo-', ' {\\n  color: blue\\n}' ]");
@@ -45,7 +45,7 @@ public class CssRuleRewriterTest extends CajaTestCase {
         "[ '.', ' p#foo-', ' #baz-', ' {\\n  color: blue\\n}' ]");
   }
 
-  public void testBodyMarker() {
+  public final void testBodyMarker() {
     assertCompiledCss(
         "body.ie6 p {color:blue}",
         "[ 'body.ie6 .', ' p {\\n  color: blue\\n}' ]");
@@ -57,13 +57,13 @@ public class CssRuleRewriterTest extends CajaTestCase {
         "[ '.', ' body.ie6 {\\n  color: blue\\n}' ]");
   }
 
-  public void testCompoundRule() {
+  public final void testCompoundRule() {
     assertCompiledCss(
         "a, b {color:blue}",
         "[ '.', ' a, .', ' b {\\n  color: blue\\n}' ]");
   }
 
-  public void testDescendentRule() {
+  public final void testDescendentRule() {
     assertCompiledCss(
         "#foo > #bar { color: blue }",
         "[ '.', ' #foo-', ' > #bar-', ' {\\n  color: blue\\n}' ]");
@@ -73,13 +73,13 @@ public class CssRuleRewriterTest extends CajaTestCase {
    * "*" selectors should rewrite properly.
    * <a href="http://code.google.com/p/google-caja/issues/detail?id=57">bug</a>
    */
-  public void testWildcardSelectors() throws Exception {
+  public final void testWildcardSelectors() throws Exception {
     assertCompiledCss(
         "div * { margin: 0; }",
         "[ '.', ' div * {\\n  margin: 0;\\n}' ]");
   }
 
-  public void testStaticIdClass() {
+  public final void testStaticIdClass() {
     assertCompiledCss(
         "#a > #b, .c { color: blue }",
         "[ '.xyz___ #a-xyz___ > #b-xyz___, .xyz___ .c {\\n  color: blue\\n}' ]",

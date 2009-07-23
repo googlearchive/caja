@@ -8,7 +8,7 @@ import junit.framework.TestCase;
  * @author msamuel@google.com (Mike Samuel)
  */
 public class JoinTest extends TestCase {
-  public void testJoin() {
+  public final void testJoin() {
     assertEquals("", Join.join(""));
     assertEquals("", Join.join("foo"));
     assertEquals("barFOObaz", Join.join("FOO", "bar", "baz"));

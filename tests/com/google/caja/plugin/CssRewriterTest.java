@@ -36,7 +36,7 @@ import java.util.Collections;
  * @author mikesamuel@gmail.com
  */
 public class CssRewriterTest extends CajaTestCase {
-  public void testUnknownTagsRemoved() throws Exception {
+  public final void testUnknownTagsRemoved() throws Exception {
     runTest("bogus { display: none }", "");
     runTest("a, bogus, i { display: none }",
             "a, i {\n  display: none\n}");
@@ -45,7 +45,7 @@ public class CssRewriterTest extends CajaTestCase {
   // TODO(ihab): Make final decision whether to keep or remove. This test was
   // disabled since we decided to support more arbitrary HTML, but the deeper
   // implications are not yet clear.
-  public void testBadTagsRemoved() throws Exception {
+  public final void testBadTagsRemoved() throws Exception {
     if (false) {
       runTest("script { display: none }", "");
       runTest("strike, script, strong { display: none }",
@@ -53,11 +53,11 @@ public class CssRewriterTest extends CajaTestCase {
     }
   }
 
-  public void testBadAttribsRemoved() throws Exception {
+  public final void testBadAttribsRemoved() throws Exception {
     runTest("div[zwop] { color: blue }", "");
   }
 
-  public void testInvalidPropertiesRemoved() throws Exception {
+  public final void testInvalidPropertiesRemoved() throws Exception {
     // visibility takes "hidden", not "none"
     runTest("a { visibility: none }", "");
     runTest("a { visibility: hidden; }", "a {\n  visibility: hidden\n}");
@@ -74,18 +74,18 @@ public class CssRewriterTest extends CajaTestCase {
             "a {\n  font-weight: bold\n}");
   }
 
-  public void testContentRemoved() throws Exception {
+  public final void testContentRemoved() throws Exception {
     runTest("a { color: blue; content: 'booyah'; text-decoration: underline; }",
             "a {\n  color: blue;\n  text-decoration: underline\n}");
   }
 
-  public void testAttrRemoved() throws Exception {
+  public final void testAttrRemoved() throws Exception {
     runTest("a:attr(href) { color: blue }", "");
     runTest("a:attr(href) { color: blue } b { font-weight: bolder }",
             "b {\n  font-weight: bolder\n}");
   }
 
-  public void testFontNamesQuoted() throws Exception {
+  public final void testFontNamesQuoted() throws Exception {
     runTest("a { font:12pt Times  New Roman, Times,\"Times Old Roman\",serif }",
             "a {\n  font: 12pt 'Times New Roman', 'Times',"
             + " 'Times Old Roman', serif\n}");
@@ -93,7 +93,7 @@ public class CssRewriterTest extends CajaTestCase {
             "a {\n  font: bold 12pt 'Arial Black'\n}");
   }
 
-  public void testNamespacing() throws Exception {
+  public final void testNamespacing() throws Exception {
     runTest("a.foo { color:blue }", "a.foo {\n  color: blue\n}");
     runTest("#foo { color: blue }", "#foo {\n  color: blue\n}");
     runTest("body.ie6 p { color: blue }",
@@ -109,7 +109,7 @@ public class CssRewriterTest extends CajaTestCase {
             "#foo .bar {\n  color: blue\n}");
   }
 
-  public void testUnsafeIdentifiers() throws Exception {
+  public final void testUnsafeIdentifiers() throws Exception {
     runTest("a.foo, b#c\\2c d, .e { color:blue }",  // "\\2c " -> ","
             "a.foo, .e {\n  color: blue\n}");
     runTest("a.foo, .b_c {color: blue}",
@@ -122,7 +122,7 @@ public class CssRewriterTest extends CajaTestCase {
     runTest("#c__ {_color: blue; margin:0;}", "");
   }
 
-  public void testPseudosWhitelisted() throws Exception {
+  public final void testPseudosWhitelisted() throws Exception {
     runTest("a:link, a:badness { color:blue }",
             "a:link {\n  color: blue\n}");
     mq.getMessages().clear();
@@ -166,7 +166,7 @@ public class CssRewriterTest extends CajaTestCase {
     runTest(
         ".foo:link { color: blue; }",
         "a.foo:link {\n  color: blue\n}");
-    
+
     runTest(
         ""
         + "#foo:visited, div, .bar:link, p {\n"
@@ -209,7 +209,7 @@ public class CssRewriterTest extends CajaTestCase {
         + "}");
   }
 
-  public void testNoBadUrls() throws Exception {
+  public final void testNoBadUrls() throws Exception {
     // ok
     runTest("#foo { background: url(/bar.png) }",
             "#foo {\n  background: url('/foo/bar.png')\n}");
@@ -229,7 +229,7 @@ public class CssRewriterTest extends CajaTestCase {
             "");
   }
 
-  public void testSubstitutions() throws Exception {
+  public final void testSubstitutions() throws Exception {
     try {
       runTest("#foo { left: ${x * 4}px; top: ${y * 4}px; }",
               "", false);
@@ -246,18 +246,18 @@ public class CssRewriterTest extends CajaTestCase {
    * "*" selectors should rewrite properly.
    * <a href="http://code.google.com/p/google-caja/issues/detail?id=57">bug</a>
    */
-  public void testWildcardSelectors() throws Exception {
+  public final void testWildcardSelectors() throws Exception {
     runTest("div * { margin: 0; }", "div * {\n  margin: 0\n}", false);
   }
 
-  public void testUnitlessLengths() throws Exception {
+  public final void testUnitlessLengths() throws Exception {
     runTest("div { padding: 10 0 5.0 4 }",
             "div {\n  padding: 10px 0 5.0px 4px\n}", false);
     runTest("div { margin: -5 5; z-index: 2 }",
             "div {\n  margin: -5px 5px;\n  z-index: 2\n}", false);
   }
 
-  public void testUserAgentHacks() throws Exception {
+  public final void testUserAgentHacks() throws Exception {
     runTest(
         ""
         + "p {\n"

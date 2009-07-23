@@ -17,14 +17,14 @@ package com.google.caja.render;
 import junit.framework.TestCase;
 
 public class CssPrettyPrinterTest extends TestCase {
-  public void testRender() {
+  public final void testRender() {
     assertTokens(
         "p {\n  color: red;\n  background: blue\n}",
         "p", "{", "color", ":", " ", "red", ";",
         "background", ":", " ", "blue", "}");
   }
 
-  public void testDeclarationGroup() {
+  public final void testDeclarationGroup() {
     assertTokens(
         "color: red; background: blue",
         "color", ":", " ", "red", ";", "background", ":", " ", "blue");

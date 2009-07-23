@@ -21,7 +21,7 @@ import com.google.caja.util.RhinoTestBed;
  * @author mikesamuel@gmail.com
  */
 public class EventStoreTest extends CajaTestCase {
-  public void testInRhino() throws Exception {
+  public final void testInRhino() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(
         html(fromResource("event_store_test.html")));
   }

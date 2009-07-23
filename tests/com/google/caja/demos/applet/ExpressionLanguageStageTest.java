@@ -19,23 +19,23 @@ import com.google.caja.parser.quasiliteral.CajitaRewriter;
 import com.google.caja.util.CajaTestCase;
 
 public class ExpressionLanguageStageTest extends CajaTestCase {
-  public void testEmptyBlock() throws Exception {
+  public final void testEmptyBlock() throws Exception {
     assertRewritten("{}", "{}");
   }
 
-  public void testExpressionStmt() throws Exception {
+  public final void testExpressionStmt() throws Exception {
     assertRewritten("{ moduleResult___ = 2 + 2; }", "{ 2 + 2; }");
   }
 
-  public void testMultipleStatementsInBlock() throws Exception {
+  public final void testMultipleStatementsInBlock() throws Exception {
     assertRewritten("{ 3 * 3; moduleResult___ = 2 + 2; }", "{ 3 * 3; 2 + 2; }");
   }
 
-  public void testReturnUnchanged() throws Exception {
+  public final void testReturnUnchanged() throws Exception {
     assertRewritten("{ return foo; }", "{ return foo; }");
   }
 
-  public void testConditions() throws Exception {
+  public final void testConditions() throws Exception {
     assertRewritten(
         "{ if (rnd()) { moduleResult___ = 1; } else moduleResult___ = 2; }",
         "{ if (rnd()) { 1; } else 2; }");
@@ -49,17 +49,17 @@ public class ExpressionLanguageStageTest extends CajaTestCase {
         "{ if (rnd()) 1; else if (rnd()) 2; }");
   }
 
-  public void testTryBlock() throws Exception {
+  public final void testTryBlock() throws Exception {
     assertRewritten("{ try { moduleResult___ = foo(); } catch (e) { bar(); } }",
                     "{ try { foo(); } catch (e) { bar(); } }");
   }
 
-  public void testLoopUnchanged() throws Exception {
+  public final void testLoopUnchanged() throws Exception {
     assertRewritten("{ for (;;) 4; }",
                     "{ for (;;) 4; }");
   }
 
-  public void testMultipleBlocks() throws Exception {
+  public final void testMultipleBlocks() throws Exception {
     assertRewritten("{ 1; } { moduleResult___ = 2; }",
                     "{ 1; } { 2; }");
   }

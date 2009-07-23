@@ -22,7 +22,7 @@ import java.util.Locale;
  * @author mikesamuel@gmail.com
  */
 public class HcalTest extends CajaTestCase {
-  public void testInRhino() throws Exception {
+  public final void testInRhino() throws Exception {
     Locale defaultLocale = Locale.getDefault();
     Locale.setDefault(Locale.ENGLISH);
     try {

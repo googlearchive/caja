@@ -50,7 +50,7 @@ public class ModuleFormatTest extends CajaTestCase {
     public void handle(IOException e) { throw new RuntimeException(e); }
   };
 
-  public void testCajoledModuleContents() throws Exception {
+  public final void testCajoledModuleContents() throws Exception {
     CajoledModule trivialCajoledModule = (CajoledModule)
         rewriter.expand(new UncajoledModule(new Block()), mq);
     assertNoErrors();
@@ -85,7 +85,7 @@ public class ModuleFormatTest extends CajaTestCase {
         bindings.get("cajoledDate").getValue());
   }
 
-  public void testCajoledModuleDebugRendering() throws Exception {
+  public final void testCajoledModuleDebugRendering() throws Exception {
     CajoledModule cajoledModule = (CajoledModule)
         rewriter.expand(
             new UncajoledModule(js(fromResource("testModule.js"))),

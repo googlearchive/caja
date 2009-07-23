@@ -18,7 +18,7 @@ import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.RhinoTestBed;
 
 public class ValijaModuleLoadingTest extends CajaTestCase {
-  public void testInRhino() throws Exception {
+  public final void testInRhino() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(
         html(fromResource("valija_module_loading.html")));
   }

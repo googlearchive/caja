@@ -32,7 +32,7 @@ public class SourceBreaksTest extends CajaTestCase {
     breaks.lineStartsAt(30);
   }
 
-  public void testCharInLineAt() {
+  public final void testCharInLineAt() {
     assertEquals(1, breaks.charInLineAt(1));
     assertEquals(2, breaks.charInLineAt(2));
     assertEquals(3, breaks.charInLineAt(3));
@@ -67,7 +67,7 @@ public class SourceBreaksTest extends CajaTestCase {
     assertEquals(3, breaks.charInLineAt(32));
   }
 
-  public void testLineAt() {
+  public final void testLineAt() {
     assertEquals(1, breaks.lineAt(1));
     assertEquals(1, breaks.lineAt(2));
     assertEquals(1, breaks.lineAt(3));

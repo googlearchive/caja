@@ -33,7 +33,7 @@ public class SparseBitSetTest extends TestCase {
     System.err.println("junit.seed=" + SEED);
   }
 
-  public void testAgainstRegularImplementation() throws Exception {
+  public final void testAgainstRegularImplementation() throws Exception {
     Random rnd = new Random(SEED);
 
     for (int run = 10; --run >= 0;) {
@@ -59,7 +59,7 @@ public class SparseBitSetTest extends TestCase {
     }
   }
 
-  public void testEmptySparseBitSet() {
+  public final void testEmptySparseBitSet() {
     SparseBitSet sbs = SparseBitSet.withRanges(new int[0]);
     for (int i = -1000; i < 1000; ++i) {
       assertFalse(sbs.contains(i));
@@ -67,7 +67,7 @@ public class SparseBitSetTest extends TestCase {
     assertEquals("[]", sbs.toString());
   }
 
-  public void testSparseBitSetFactories() {
+  public final void testSparseBitSetFactories() {
     SparseBitSet bsbs = SparseBitSet.withMembers(new byte[] { 0, 1, 4, 9 });
     assertEquals(bsbs.toString(), "[0x0-0x1 0x4 0x9]", bsbs.toString());
     SparseBitSet ssbs = SparseBitSet.withMembers(new short[] { 0, 1, 4, 9 });
@@ -92,7 +92,7 @@ public class SparseBitSetTest extends TestCase {
     assertFalse(bsbs.hashCode() == esbs.hashCode());
   }
 
-  public void testRangeConstructor() {
+  public final void testRangeConstructor() {
     try {
       SparseBitSet.withRanges(new int[] { 1 });
       fail("Mismatched ranges");
@@ -122,7 +122,7 @@ public class SparseBitSetTest extends TestCase {
     }
   }
 
-  public void testDupeMembers() {
+  public final void testDupeMembers() {
     SparseBitSet sbs1 = SparseBitSet.withMembers(new int[] { 0, 1, 4, 9 });
     assertEquals(sbs1.toString(), "[0x0-0x1 0x4 0x9]", sbs1.toString());
 

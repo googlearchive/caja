@@ -42,12 +42,12 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 public class HtmlEmitterTest extends CajaTestCase {
-  public void testJavascript() throws Exception {
+  public final void testJavascript() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(
         html(fromResource("html-emitter-test.html")));
   }
 
-  public void testCompiler() throws Exception {
+  public final void testCompiler() throws Exception {
     // Test that the input HTML produces the series of calls tested in
     // html-emitter-test.html.
     String input = (
@@ -119,7 +119,7 @@ public class HtmlEmitterTest extends CajaTestCase {
         "  el___ = emitter___.byId('id_4___');",
         "  emitter___.setAttr(el___, 'id', 'x-' + IMPORTS___.getIdClass___());",
         "  el___ = emitter___.finish();",
-        "  emitter___.signalLoaded();",        
+        "  emitter___.signalLoaded();",
         "}",
         "/* End translated code */"
         );

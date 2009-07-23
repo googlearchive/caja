@@ -89,57 +89,57 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
   }
 
   // Test Gadget parsing
-  public void testInlineGadget() throws Exception {
+  public final void testInlineGadget() throws Exception {
     assertRewritePasses("listfriends-inline.xml", MessageLevel.WARNING);
   }
 
-  public void testValijaGadget() throws Exception {
+  public final void testValijaGadget() throws Exception {
     rewriter.setValijaMode(true);
     assertRewritePasses("SocialHelloWorld.xml", MessageLevel.WARNING);
     rewriter.setValijaMode(false);
   }
 
-  public void testSocialHelloWorld() throws Exception {
+  public final void testSocialHelloWorld() throws Exception {
     assertRewritePasses("SocialHelloWorld.xml", MessageLevel.WARNING);
   }
 
-  public void testParsing() throws Exception {
+  public final void testParsing() throws Exception {
     assertRewritePasses("test-parsing.xml", MessageLevel.WARNING);
   }
 
-  public void testSourcedGadget() throws Exception {
+  public final void testSourcedGadget() throws Exception {
     assertRewritePasses("listfriends.xml", MessageLevel.WARNING);
   }
 
   // Test Gadget rewriting
-  public void testExampleGadget() throws Exception {
+  public final void testExampleGadget() throws Exception {
     assertRewriteMatches("example.xml", "example-rewritten.xml",
                          MessageLevel.ERROR);
   }
 
   // Check that the validating and rewriting passes are hooked up.
-  public void testTargetsDisallowed() throws Exception {
+  public final void testTargetsDisallowed() throws Exception {
     assertRewritesWithMessage(
         "<a target=\"_top\">Redirect window</a>",
         "attribute target cannot have value _top",
     MessageLevel.WARNING, false /* should not fail */);
   }
 
-  public void testMetaRefreshDisallowed() throws Exception {
+  public final void testMetaRefreshDisallowed() throws Exception {
     assertRewritesWithMessage(
         "<meta http-equiv=\"refresh\" content=\"5;http://foo.com\"/>",
         "removing disallowed tag meta",
         MessageLevel.WARNING, false /* should not fail */);
   }
 
-  public void testStylesSanitized() throws Exception {
+  public final void testStylesSanitized() throws Exception {
     assertRewritesWithMessage(
         "<p style=\"color: expression(foo)\">Bar</p>",
         "removing css property color with bad value: ==>expression(foo)<==",
         MessageLevel.WARNING, false /* should not fail */);
   }
 
-  public void testStylesInScript() throws Exception {
+  public final void testStylesInScript() throws Exception {
     // CSS template expansion works on style templates in extracted event
     // handlers and script tags.
     // TODO(ihab.awad): Rewrite "golden" or turn into a functional test

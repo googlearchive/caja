@@ -28,30 +28,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CssPropertyPatternsTest extends CajaTestCase {
-  public void testKeywordPattern() throws Exception {
+  public final void testKeywordPattern() throws Exception {
     assertPattern("zoicks", "/^\\s*zoicks\\s+$/i");
     assertMatches("zoicks", "zoicks", "  zoicks", " ZOICKS ");
     assertDoesNotMatch("zoicks", "zoick", "zzoicks", "zoicks zoicks");
   }
 
-  public void testUnionPattern() throws Exception {
+  public final void testUnionPattern() throws Exception {
     assertPattern("[ foo | bar ]", "/^\\s*(?:foo|bar)\\s+$/i");
     assertMatches("[ foo | bar ]", "foo", "bar", " foo ", " bar ");
     assertDoesNotMatch("[ foo | bar ]", "fo", "ar", " foo bar", " far ");
   }
 
 
-  public void testExclusiveUnionPattern() throws Exception {
+  public final void testExclusiveUnionPattern() throws Exception {
     assertPattern("[ foo | [ a || b || c || d ] | bar ]",
                   "/^\\s*(?:foo\\s+|(?:(?:a|b|c|d)\\s+)+|bar\\s+)$/i");
   }
 
-  public void testReferencePattern() throws Exception {
+  public final void testReferencePattern() throws Exception {
     assertPattern("'background-attachment'",
                   "/^\\s*(?:scroll|fixed|inherit)\\s+$/i");
   }
 
-  public void testMultiFoo() throws Exception {
+  public final void testMultiFoo() throws Exception {
     assertPattern("foo*", "/^\\s*(?:foo\\s+)*$/i");
     assertMatches("foo*", "", "foo", "foo foo");
     assertDoesNotMatch("foo*", "bar", "foo bar", "bar foo foo", "foofoo");
@@ -65,7 +65,7 @@ public class CssPropertyPatternsTest extends CajaTestCase {
     assertDoesNotMatch("foo?", "bar", "foo bar", "foo foo", "foofoo");
   }
 
-  public void testConcatenations() throws Exception {
+  public final void testConcatenations() throws Exception {
     assertPattern("foo bar", "/^\\s*foo\\s+bar\\s+$/i");
     // Fail if cannot handle a member of a concatenation
     assertPattern("[ a b [ c || d ] ]", "/^\\s*a\\s+b\\s+(?:(?:c|d)\\s+)+$/i");
@@ -73,7 +73,7 @@ public class CssPropertyPatternsTest extends CajaTestCase {
     assertDoesNotMatch("foo bar", "foo", "bar", "bar foo", "");
   }
 
-  public void testUnionsFolded() throws Exception {
+  public final void testUnionsFolded() throws Exception {
     assertPattern("[ foo | [ bar bar | baz ] | boo ]",
                   "/^\\s*(?:foo|bar\\s+bar|baz|boo)\\s+$/i");
     assertMatches("[ foo | [ bar bar | baz ] | boo ]",
@@ -82,7 +82,7 @@ public class CssPropertyPatternsTest extends CajaTestCase {
                        "bar", "", "faz", "fooo");
   }
 
-  public void testBackgroundImage() throws Exception {
+  public final void testBackgroundImage() throws Exception {
     assertPattern(
         "<uri> | none | inherit",
         "/^\\s*(?:url\\(\"[^\\(\\)\\\\\\\"\\r\\n]+\"\\)|none|inherit)\\s+$/i");
@@ -95,7 +95,7 @@ public class CssPropertyPatternsTest extends CajaTestCase {
         );
   }
 
-  public void testFontFamilies() throws Exception {
+  public final void testFontFamilies() throws Exception {
     String fontFamilySignature = (
         "[[ <family-name> | <generic-family> ]"
         + " [, [ <family-name> | <generic-family> ]]* ] | inherit");
@@ -113,19 +113,19 @@ public class CssPropertyPatternsTest extends CajaTestCase {
         "\"@import\"", "\"!important\"");
   }
 
-  public void testOpacity() throws Exception {
+  public final void testOpacity() throws Exception {
     assertMatches("<number:0,1>", "0", "0.0", ".5", "0.5", "0.707", "1", "1.0");
     assertDoesNotMatch("<number:0,1>", "1.1", "-0.5", "0px", "");
   }
 
-  public void testNumbers() throws Exception {
+  public final void testNumbers() throws Exception {
     String leftSignature = "<length> | <percentage> | auto | inherit";
     assertMatches(
         leftSignature, "0", "10px", "-10.5px", "0.125em", "+10px", "110%");
     assertDoesNotMatch(leftSignature, ".in", "-px", "em");
   }
 
-  public void testPropertyNameToDom2Property() {
+  public final void testPropertyNameToDom2Property() {
     assertEquals(
         "color",
         CssPropertyPatterns.propertyNameToDom2Property(Name.css("color")));

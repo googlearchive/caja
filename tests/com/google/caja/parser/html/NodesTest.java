@@ -17,7 +17,7 @@ package com.google.caja.parser.html;
 import junit.framework.TestCase;
 
 public class NodesTest extends TestCase {
-  public void testDecode() throws Exception {
+  public final void testDecode() throws Exception {
     assertEquals(Nodes.decode("1 &lt; 2 &amp;&amp; 4 &gt; &quot;3&quot;"),
                  "1 < 2 && 4 > \"3\"");
     assertEquals("", Nodes.decode(""));

@@ -23,7 +23,7 @@ import com.google.caja.util.RhinoTestBed;
  * @author mikesamuel@gmail.com
  */
 public final class JsHtmlSanitizerTest extends CajaTestCase {
-  public void testHtmlSanitizer() throws Exception {
+  public final void testHtmlSanitizer() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(
         html(fromResource("html-sanitizer-test.html")));
   }

@@ -31,28 +31,28 @@ import com.google.caja.util.Pipeline;
  * @author mikesamuel@gmail.com
  */
 public final class OpenTemplateStageTest extends CajaTestCase {
-  public void testSimpleRewrite1() throws Exception {
+  public final void testSimpleRewrite1() throws Exception {
     assertRewritten(
         "new StringInterpolation([ 'foo ', bar, ' baz' ])",
         "eval(Template('foo $bar baz'))",
         true);
   }
 
-  public void testSimpleRewrite2() throws Exception {
+  public final void testSimpleRewrite2() throws Exception {
     assertRewritten(
         "new StringInterpolation([ 'foo', bar, 'baz' ])",
         "eval(Template('foo${bar}baz'))",
         true);
   }
 
-  public void testExpressionSubstitution() throws Exception {
+  public final void testExpressionSubstitution() throws Exception {
     assertRewritten(
         "new StringInterpolation([ 'foo', bar() * 3, 'baz' ])",
         "eval(Template('foo${bar() * 3}baz'))",
         true);
   }
 
-  public void testMaskedTemplate() throws Exception {
+  public final void testMaskedTemplate() throws Exception {
     assertRewritten(
         "{\n"
         + "  eval(Template('foo${bar}baz'));\n"  // not rewritten
@@ -66,7 +66,7 @@ public final class OpenTemplateStageTest extends CajaTestCase {
         true);
   }
 
-  public void testMaskedEval() throws Exception {
+  public final void testMaskedEval() throws Exception {
     assertRewritten(
         "{\n"
         + "  function eval() { }\n"

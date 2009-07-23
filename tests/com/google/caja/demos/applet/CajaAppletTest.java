@@ -43,7 +43,7 @@ public class CajaAppletTest extends CajaTestCase {
     };
   }
 
-  public void testCajoleInValija() throws Exception {
+  public final void testCajoleInValija() throws Exception {
     if (checkHeadless()) return;
     CajaApplet applet = makeApplet();
     // TODO(mikesamuel): move these goldens into files
@@ -99,7 +99,7 @@ public class CajaAppletTest extends CajaTestCase {
           .replace("\\n", "\n"));
   }
 
-  public void testCajoleInCajita() throws Exception {
+  public final void testCajoleInCajita() throws Exception {
     if (checkHeadless()) return;
     CajaApplet applet = makeApplet();
     String sp = "                 ";

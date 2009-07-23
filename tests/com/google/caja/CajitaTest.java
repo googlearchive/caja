@@ -23,7 +23,7 @@ import com.google.caja.util.CajaTestCase;
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class CajitaTest extends CajaTestCase {
-  public void testAllKeys() throws Exception {
+  public final void testAllKeys() throws Exception {
     runTest(
         ""
         + "try {"
@@ -69,7 +69,7 @@ public class CajitaTest extends CajaTestCase {
         + "assertTrue(x[0] === 'y' && x[1] === 'z');");
   }
 
-  public void testGrantFunc() throws Exception {
+  public final void testGrantFunc() throws Exception {
     runTest(
         "  var o = { f: function(x) { this.x = x; } };"
         + "___.grantFunc(o, 'f');"
@@ -78,7 +78,7 @@ public class CajitaTest extends CajaTestCase {
         + "assertEquals(42, ___.construct(o.f, [42]).x);");
   }
 
-  public void testGrantGeneric() throws Exception {
+  public final void testGrantGeneric() throws Exception {
     runTest(
         "  function A() {} function B() {} function C() {}"
         + "var f = function(x) { this.x = x; };"
@@ -90,7 +90,7 @@ public class CajitaTest extends CajaTestCase {
         + "assertThrows(function() { ___.callPub(c, 'f', [42]); });");
   }
 
-  public void testJsonParse() throws Exception {
+  public final void testJsonParse() throws Exception {
     runTest(
         ""
         + "function hop(o, k) {\n"

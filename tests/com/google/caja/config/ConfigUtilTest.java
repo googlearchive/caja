@@ -29,14 +29,14 @@ import java.util.List;
 public class ConfigUtilTest extends CajaTestCase {
   // TODO(mikesamuel): better file positions for error messages.
 
-  public void testEmptyConfigAllowNothing() throws Exception {
+  public final void testEmptyConfigAllowNothing() throws Exception {
     WhiteList w = ConfigUtil.loadWhiteListFromJson(
         new StringReader("{}"), makeSrc(), ConfigUtil.RESOURCE_RESOLVER, mq);
     assertTrue(w.allowedItems().isEmpty());
     assertMessages();
   }
 
-  public void testAllowed() throws Exception {
+  public final void testAllowed() throws Exception {
     WhiteList w = ConfigUtil.loadWhiteListFromJson(
         new StringReader(
             "{ \"allowed\": [ \"foo\", { \"key\" : \"bar\" } ] }"),
@@ -47,7 +47,7 @@ public class ConfigUtilTest extends CajaTestCase {
     assertMessages();
   }
 
-  public void testDenied() throws Exception {
+  public final void testDenied() throws Exception {
     WhiteList w = ConfigUtil.loadWhiteListFromJson(
         new StringReader(
             "{"
@@ -62,7 +62,7 @@ public class ConfigUtilTest extends CajaTestCase {
     assertMessages();
   }
 
-  public void testMisspelledDenied() throws Exception {
+  public final void testMisspelledDenied() throws Exception {
     ConfigUtil.loadWhiteListFromJson(
         new StringReader(
             "{"
@@ -74,7 +74,7 @@ public class ConfigUtilTest extends CajaTestCase {
         "WARNING: testMisspelledDenied:1+1: unrecognized key denies");
   }
 
-  public void testAllowedOverridden() throws Exception {
+  public final void testAllowedOverridden() throws Exception {
     WhiteList w = ConfigUtil.loadWhiteListFromJson(
         new StringReader(
             "{"
@@ -92,7 +92,7 @@ public class ConfigUtilTest extends CajaTestCase {
     assertMessages();
   }
 
-  public void testDeniedOverridden() throws Exception {
+  public final void testDeniedOverridden() throws Exception {
     WhiteList w = ConfigUtil.loadWhiteListFromJson(
         new StringReader(
             "{"
@@ -111,7 +111,7 @@ public class ConfigUtilTest extends CajaTestCase {
     assertMessages();
   }
 
-  public void testDefinitionOverridden() throws Exception {
+  public final void testDefinitionOverridden() throws Exception {
     WhiteList w = ConfigUtil.loadWhiteListFromJson(
         new StringReader(
             "{"
@@ -135,7 +135,7 @@ public class ConfigUtilTest extends CajaTestCase {
     assertMessages();
   }
 
-  public void testMissingUrl() throws Exception {
+  public final void testMissingUrl() throws Exception {
     try {
       ConfigUtil.loadWhiteListFromJson(
           new StringReader(
@@ -153,7 +153,7 @@ public class ConfigUtilTest extends CajaTestCase {
         + ": malformed config file: expected inherits src, not null");
   }
 
-  public void testDuplicatedDefinitionsOk() throws Exception {
+  public final void testDuplicatedDefinitionsOk() throws Exception {
     WhiteList w = ConfigUtil.loadWhiteListFromJson(
         new StringReader(
             "{"
@@ -176,7 +176,7 @@ public class ConfigUtilTest extends CajaTestCase {
     assertMessages();
   }
 
-  public void testOverriddenDuplicatedDefinitionsOk() throws Exception {
+  public final void testOverriddenDuplicatedDefinitionsOk() throws Exception {
     WhiteList w = ConfigUtil.loadWhiteListFromJson(
         new StringReader(
             "{"
@@ -202,7 +202,7 @@ public class ConfigUtilTest extends CajaTestCase {
     assertMessages();
   }
 
-  public void testUnresolvedAmbiguousDefinition() throws Exception {
+  public final void testUnresolvedAmbiguousDefinition() throws Exception {
     WhiteList w = ConfigUtil.loadWhiteListFromJson(
         new StringReader(
             "{"
@@ -226,7 +226,8 @@ public class ConfigUtilTest extends CajaTestCase {
                    + " ambiguous type definition {@} != {@}");
   }
 
-  public void testConflictsBetweenInheritedTypesResolved() throws Exception {
+  public final void testConflictsBetweenInheritedTypesResolved()
+      throws Exception {
     WhiteList w = ConfigUtil.loadWhiteListFromJson(
         new StringReader(
             "{"

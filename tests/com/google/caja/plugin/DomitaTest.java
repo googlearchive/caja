@@ -69,11 +69,11 @@ public class DomitaTest extends CajaTestCase {
     }
   }
 
-  public void testDomitaCajita() {
+  public final void testDomitaCajita() {
     exercise("domita_test.html");
   }
 
-  public void testDomitaValija() {
+  public final void testDomitaValija() {
     exercise("domita_test.html?valija=1");
   }
 

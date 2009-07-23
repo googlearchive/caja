@@ -17,7 +17,7 @@ package com.google.caja.util;
 import junit.framework.TestCase;
 
 public class StringsTest extends TestCase {
-  public void testEqualsIgnoreCase() {
+  public final void testEqualsIgnoreCase() {
     assertTrue(Strings.equalsIgnoreCase(null, null));
     assertTrue(Strings.equalsIgnoreCase("", ""));
     assertTrue(Strings.equalsIgnoreCase("foo", "foo"));
@@ -34,7 +34,7 @@ public class StringsTest extends TestCase {
     assertFalse(Strings.equalsIgnoreCase("\u0391", "\u03B1"));
   }
 
-  public void testIsLowerCase() {
+  public final void testIsLowerCase() {
     assertTrue(Strings.isLowerCase(""));
     assertTrue(Strings.isLowerCase("foo"));
     assertTrue(Strings.isLowerCase("123"));
@@ -47,7 +47,7 @@ public class StringsTest extends TestCase {
     assertFalse(Strings.isLowerCase("fooD!"));
   }
 
-  public void testToLowerCase() {
+  public final void testToLowerCase() {
     assertEquals("", Strings.toLowerCase(""));
     assertEquals("foo", Strings.toLowerCase("foo"));
     assertEquals("foo", Strings.toLowerCase("FOO"));
@@ -68,7 +68,7 @@ public class StringsTest extends TestCase {
             + "OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"));
   }
 
-  public void testToUpperCase() {
+  public final void testToUpperCase() {
     assertEquals("", Strings.toUpperCase(""));
     assertEquals("FOO", Strings.toUpperCase("foo"));
     assertEquals("FOO", Strings.toUpperCase("FOO"));

@@ -22,7 +22,7 @@ import junit.framework.TestCase;
  * @author mikesamuel@gmail.com
  */
 public class StringLiteralTest extends TestCase {
-  public void testUnquotedValue() throws Exception {
+  public final void testUnquotedValue() throws Exception {
     assertEquals("", StringLiteral.getUnquotedValueOf(""));
     assertEquals("foo", StringLiteral.getUnquotedValueOf("foo"));
     assertEquals("foo\\bar", StringLiteral.getUnquotedValueOf("foo\\bar"));
@@ -61,7 +61,7 @@ public class StringLiteralTest extends TestCase {
     assertEquals("x4", StringLiteral.getUnquotedValueOf("'\\x4'"));
   }
 
-  public void testQuoteValue() throws Exception {
+  public final void testQuoteValue() throws Exception {
     assertEquals("''", StringLiteral.toQuotedValue(""));
     assertEquals("'foo'", StringLiteral.toQuotedValue("foo"));
     assertEquals("'foo\\bar'", StringLiteral.toQuotedValue("foo\bar"));
@@ -88,7 +88,7 @@ public class StringLiteralTest extends TestCase {
     System.err.println("junit.seed=" + SEED);
   }
 
-  public void testQuotingAndUnquotingAreComplements() {
+  public final void testQuotingAndUnquotingAreComplements() {
     Random rnd = new Random(SEED);
     for (int i = 2000; --i >= 0;) {
       String s = makeRandomString(rnd);
@@ -97,7 +97,7 @@ public class StringLiteralTest extends TestCase {
     }
   }
 
-  public void testRandomStringsParseable() {
+  public final void testRandomStringsParseable() {
     Random rnd = new Random(SEED);
     for (int i = 2000; --i >= 0;) {
       String literal = makeRandomQuotedString(rnd);

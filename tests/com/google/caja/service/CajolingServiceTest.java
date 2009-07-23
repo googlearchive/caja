@@ -105,7 +105,7 @@ public class CajolingServiceTest extends CajaTestCase {
     return resp.getOutputObject();
   }
 
-  public void testSimpleJs() throws Exception {
+  public final void testSimpleJs() throws Exception {
     registerUri("http://foo/bar.js", "g(1);", "text/javascript");
     assertEquals(
         valijaModule("moduleResult___ = $v.cf($v.ro('g'), [ 1 ]);"),
@@ -113,7 +113,7 @@ public class CajolingServiceTest extends CajaTestCase {
                 "&transform=VALIJA"));
   }
 
-  public void testInnocentJs() throws Exception {
+  public final void testInnocentJs() throws Exception {
     registerUri("http://foo/innocent.js", "for (var k in x) { k; }",
         "text/javascript");
     assertEquals("{\n" +
@@ -128,7 +128,7 @@ public class CajolingServiceTest extends CajaTestCase {
                 "&transform=INNOCENT"));
   }
 
-  public void testVbScriptRejected() throws Exception {
+  public final void testVbScriptRejected() throws Exception {
     registerUri("http://foo/bar.vb", "zoicks()", "text/vbscript");
     assertEquals(
         "ERROR",
@@ -136,7 +136,7 @@ public class CajolingServiceTest extends CajaTestCase {
 
   }
 
-  public void testAltJscriptMimeType() throws Exception {
+  public final void testAltJscriptMimeType() throws Exception {
     registerUri(
         "http://foo/bar.js", "f();", "application/x-javascript");
     assertEquals(
@@ -145,7 +145,7 @@ public class CajolingServiceTest extends CajaTestCase {
             "&transform=VALIJA"));
   }
 
-  public void testImage() throws Exception {
+  public final void testImage() throws Exception {
     byte[] byteData = { (byte) 0x47, (byte) 0x49, (byte) 0x46,
                         (byte) 0x39, (byte) 0x38, (byte) 0x61 };
     registerUri("http://foo/bar.gif", byteData, "image/gif", null);
@@ -154,12 +154,12 @@ public class CajolingServiceTest extends CajaTestCase {
         byteData));
   }
 
-  public void testNotImage() throws Exception {
+  public final void testNotImage() throws Exception {
     registerUri("http://foo/bar.gif", "foo()", "text/javascript");
     assertEquals("ERROR", request("?url=http://foo/bar.gif&mime-type=image/*"));
   }
 
-  public void testHtml() throws Exception {
+  public final void testHtml() throws Exception {
     String htmlEnvelope = (
         "<html>" +
         "<head><title>Caja Test</title></head>" +
@@ -204,7 +204,7 @@ public class CajolingServiceTest extends CajaTestCase {
         (String) request("?url=http://foo/bar.html&mime-type=*/*"));
   }
 
-  public void testGadget() throws Exception {
+  public final void testGadget() throws Exception {
     String moduleEnvelope = (
         "<Module><ModulePrefs /><Content type=\"html\">"
         + "<![CDATA[%s]]>"

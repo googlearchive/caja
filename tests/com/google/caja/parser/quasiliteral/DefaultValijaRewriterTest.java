@@ -41,19 +41,19 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     setRewriter(defaultValijaRewriter);
   }
 
-  public void testConstant() throws Exception {
+  public final void testConstant() throws Exception {
     assertConsistent("1;");
   }
 
-  public void testInit() throws Exception {
+  public final void testInit() throws Exception {
     assertConsistent("var a = 0; a;");
   }
 
-  public void testNew() throws Exception {
+  public final void testNew() throws Exception {
     assertConsistent("function f() { this.x = 1; } f; var g = new f(); g.x;");
   }
 
-  public void testThrowCatch() throws Exception {
+  public final void testThrowCatch() throws Exception {
     assertConsistent(
         "var x = 0; try { throw 1; }" +
         "catch (e) { x = e; }" +
@@ -92,7 +92,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "x;");
   }
 
-  public void testProtoCall() throws Exception {
+  public final void testProtoCall() throws Exception {
     assertConsistent("Array.prototype.sort.call([3, 1, 2]);");
     assertConsistent("[3, 1, 2].sort();");
     assertConsistent("[3, 1, 2].sort.call([4, 2, 7]);");
@@ -104,7 +104,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
     assertConsistent("'foo'.indexOf.call('bar', 'a');");
   }
 
-  public void testInherit() throws Exception {
+  public final void testInherit() throws Exception {
     assertConsistent(
         "function Point(x) { this.x = x; }\n" +
         "Point.prototype.toString = function () {\n" +
@@ -117,12 +117,12 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
   }
 
   /** See bug 528 */
-  public void testRegExpLeak() throws Exception {
+  public final void testRegExpLeak() throws Exception {
     rewriteAndExecute(
         "assertEquals('' + (/(.*)/).exec(), 'undefined,undefined');");
   }
 
-  public void testClosure() throws Exception {
+  public final void testClosure() throws Exception {
     assertConsistent(
         "function f() {" +
         "  var y = 2; " +
@@ -137,26 +137,26 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "h.x() + h.y();");
   }
 
-  public void testNamedFunctionShadow() throws Exception {
+  public final void testNamedFunctionShadow() throws Exception {
     assertConsistent("function f() { return f; } f === f();");
     assertConsistent(
         "(function () { function f() { return f; } return f === f(); })();");
   }
 
-  public void testArray() throws Exception {
+  public final void testArray() throws Exception {
     assertConsistent("[3, 2, 1].sort();");
     assertConsistent("[3, 2, 1].sort.call([4, 2, 7]);");
   }
 
-  public void testObject() throws Exception {
+  public final void testObject() throws Exception {
     assertConsistent("({ x: 1, y: 2 });");
   }
 
-  public void testIndexOf() throws Exception {
+  public final void testIndexOf() throws Exception {
     assertConsistent("'foo'.indexOf('o');");
   }
 
-  public void testFunctionToStringCall() throws Exception {
+  public final void testFunctionToStringCall() throws Exception {
     rewriteAndExecute(
         "function foo() {}\n"
         + "assertEquals(foo.toString(),\n"
@@ -175,7 +175,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         + "             'function foo$_var(x$x, y_y) {\\n  [cajoled code]\\n}');");
   }
 
-  public void testUnderscore() throws Exception {
+  public final void testUnderscore() throws Exception {
      rewriteAndExecute(
          ""
          + "var msg;"
@@ -191,7 +191,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
          "Properties cannot end in \"__\"");
   }
 
-  public void testDate() throws Exception {
+  public final void testDate() throws Exception {
     assertConsistent("(new Date(0)).getTime();");
     assertConsistent("'' + (new Date(0));");
     rewriteAndExecute(
@@ -201,7 +201,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         + "assertEquals('number', typeof time);");
   }
 
-  public void testMultiDeclaration2() throws Exception {
+  public final void testMultiDeclaration2() throws Exception {
     rewriteAndExecute("var a, b, c;");
     rewriteAndExecute(
         ""
@@ -209,14 +209,14 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         + "assertEquals(++a * b / c, 1.5);");
   }
 
-  public void testDelete() throws Exception {
+  public final void testDelete() throws Exception {
     assertConsistent(
         "(function () { var a = { x: 1 }; delete a.x; return typeof a.x; })();"
         );
     assertConsistent("var a = { x: 1 }; delete a.x; typeof a.x;");
   }
 
-  public void testIn2() throws Exception {
+  public final void testIn2() throws Exception {
     assertConsistent(
         "(function () {" +
         "  var a = { x: 1 };\n" +
@@ -227,7 +227,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "[('x' in a), ('y' in a)];");
   }
 
-  public void testForIn2() throws Exception {
+  public final void testForIn2() throws Exception {
     assertConsistent(
         "(function () {" +
         "  var str = '';" +
@@ -246,7 +246,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "str = ''; for (var i in { x: 1, y: true }) { str += i; } str;");
   }
 
-  public void testValueOf() throws Exception {
+  public final void testValueOf() throws Exception {
      rewriteAndExecute(
          ""
          + "var msg;"
@@ -269,7 +269,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
    * Tests that the container can get access to
    * "virtual globals" defined in cajoled code.
    */
-  public void testWrapperAccess() throws Exception {
+  public final void testWrapperAccess() throws Exception {
     // TODO(ihab.awad): SECURITY: Re-enable by reading (say) x.foo, and
     // defining the property IMPORTS___.foo.
     rewriteAndExecute(
@@ -283,7 +283,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
   /**
    * Try to construct some class instances.
    */
-  public void testFuncCtor() throws Exception {
+  public final void testFuncCtor() throws Exception {
     rewriteAndExecute(
         "function Foo(x) { this.x = x; }" +
         "var foo = new Foo(2);" +
@@ -304,7 +304,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "}");
   }
 
-  public void testFuncArgs() throws Exception {
+  public final void testFuncArgs() throws Exception {
     rewriteAndExecute(
         ""
         + "var x = 0;"
@@ -313,18 +313,18 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         + "assertEquals(3, x);");
   }
 
-  public void testStatic() throws Exception {
+  public final void testStatic() throws Exception {
     assertConsistent("Array.slice([3, 4, 5, 6], 1);");
   }
 
-  public void testConcatArgs() throws Exception {
+  public final void testConcatArgs() throws Exception {
     rewriteAndExecute("", "(function(x, y){ return [x, y]; })",
         "var f = ___.getNewModuleHandler().getLastValue();"
         + "function g(var_args) { return f.apply(___.USELESS, arguments); }"
         + "assertEquals(g(3, 4).toString(), [3, 4].toString());");
   }
 
-  public void testReformedGenerics() throws Exception {
+  public final void testReformedGenerics() throws Exception {
     assertConsistent(
         "var x = [33];" +
         "x.foo = [].push;" +
@@ -345,13 +345,13 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "cajita.getOwnPropertyNames(x).sort();");
   }
 
-  public void testCallback() throws Exception {
+  public final void testCallback() throws Exception {
     assertConsistent("Function.prototype.apply.call(function(a, b) {return a + b;}, {}, [3, 4]);");
     assertConsistent("Function.prototype.call.call(function(a, b) {return a + b;}, {}, 3, 4);");
     assertConsistent("Function.prototype.bind.call(function(a, b) {return a + b;}, {}, 3)(4);");
   }
 
-  public void testMonkeyPatchPrimordialFunction() throws Exception {
+  public final void testMonkeyPatchPrimordialFunction() throws Exception {
     assertConsistent(
         "isNaN.foo = 'bar';" +
         "isNaN.foo;");
@@ -367,7 +367,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
    * If executed, for example, in the testbed applet with Firebug enabled,
    * one should see the stack of generated function names.
    */
-  public void testFuncNaming() throws Exception {
+  public final void testFuncNaming() throws Exception {
     checkSucceeds(
         "function foo(){debugger;}" +
         "var x = {bar: function() {foo();}};" +
@@ -440,7 +440,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "$v.cf($v.ro('zap'), [ ]);");
   }
 
-  public void testInMonkeyDelete() throws Exception {
+  public final void testInMonkeyDelete() throws Exception {
     assertConsistent(
         // TODO(erights): Fix when bug 953 is fixed.
         "var BAD_TEST = true;" +
@@ -448,7 +448,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "('push' in []) || BAD_TEST;");
   }
 
-  public void testMonkeyOverride() throws Exception {
+  public final void testMonkeyOverride() throws Exception {
     assertConsistent(
         // TODO(erights): Fix when bug 953 is fixed.
         "var BAD_TEST = true;" +
@@ -456,13 +456,13 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "(new Date()).propertyIsEnumerable('foo') || BAD_TEST;");
   }
 
-  public void testValijaTypeofConsistent() throws Exception {
+  public final void testValijaTypeofConsistent() throws Exception {
     assertConsistent("[" +
         "  (typeof [].push)" +
         "];");
   }
 
-  public void testEmbeddedCajita() throws Exception {
+  public final void testEmbeddedCajita() throws Exception {
     assertConsistent(
         ""
         + "\"use strict,cajita\"; \n"

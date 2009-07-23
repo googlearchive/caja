@@ -36,7 +36,7 @@ public final class CharProducerTest extends TestCase {
   private static final InputSource STRING_SOURCE = new InputSource(
       URI.create("file:///CharProducerTest.java"));
 
-  public void testFromReader() throws Exception {
+  public final void testFromReader() throws Exception {
     InputSource src = new InputSource(
         TestUtil.getResource(CharProducerTest.class, "testinput1.txt"));
     testProducer(
@@ -57,7 +57,7 @@ public final class CharProducerTest extends TestCase {
         );
   }
 
-  public void testFromString() throws Exception {
+  public final void testFromString() throws Exception {
     String s =
       "but was shocked to learn\n\rthe lazy dog had\r\na fox-seeking missle.";
     // 0         1         2           3         4           5         6
@@ -79,7 +79,7 @@ public final class CharProducerTest extends TestCase {
     testProducer(fromString(""), "");
   }
 
-  public void testChaining() throws Exception {
+  public final void testChaining() throws Exception {
     String input2 =
       "but was shocked to learn\n\rthe lazy dog had\r\na fox-seeking missle.";
     // 0         1         2           3         4           5         6
@@ -115,7 +115,7 @@ public final class CharProducerTest extends TestCase {
         );
   }
 
-  public void testJsUnEscaping() throws Exception {
+  public final void testJsUnEscaping() throws Exception {
     String js =
       "The quick\\u0020brown fox\\njumps\\40over\\r\\nthe lazy dog\\n";
     // 0          1         2          3           4          5
@@ -256,7 +256,7 @@ public final class CharProducerTest extends TestCase {
     return CharProducer.Factory.create(new StringReader(js), STRING_SOURCE);
   }
 
-  public void testHtmlUnEscaping() throws Exception {
+  public final void testHtmlUnEscaping() throws Exception {
     String html =
       "The quick&nbsp;brown fox&#xa;jumps over&#xd;&#10;the lazy dog&#x000a;";
     //          1         2         3         4         5         6
@@ -422,7 +422,7 @@ public final class CharProducerTest extends TestCase {
         "&bogus;");
   }
 
-  public void testChainingAndUnescaping() throws Exception {
+  public final void testChainingAndUnescaping() throws Exception {
     InputSource src = STRING_SOURCE;
 
     //                            12345678

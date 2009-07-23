@@ -36,7 +36,7 @@ import org.w3c.dom.Node;
  * @author mikesamuel@gmail.com
  */
 public final class RewriteHtmlStageTest extends PipelineStageTestCase {
-  public void testScriptExtraction() throws Exception {
+  public final void testScriptExtraction() throws Exception {
     assertPipeline(
         job("foo<script>extracted();</script>baz", Job.JobType.HTML),
         // The "jobnum" attribute was added by the extractScript method below.
@@ -88,7 +88,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertNoErrors();
   }
 
-  public void testStyleExtraction() throws Exception {
+  public final void testStyleExtraction() throws Exception {
     assertPipeline(
         job("Foo<style>p { color: blue }</style><p>Bar", Job.JobType.HTML),
         job("Foo<p>Bar</p>", Job.JobType.HTML),
@@ -108,7 +108,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertNoErrors();
   }
 
-  public void testOnLoadHandlers() throws Exception {
+  public final void testOnLoadHandlers() throws Exception {
     assertPipeline(
         job("<body onload=init();>Foo</body>", Job.JobType.HTML),
         job("<html><head></head>"
@@ -118,7 +118,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertNoErrors();
   }
 
-  public void testImportedStyles() throws Exception {
+  public final void testImportedStyles() throws Exception {
     assertPipeline(
         job("<style>@import 'styles.css';</style>", Job.JobType.HTML),
         job("", Job.JobType.HTML),
@@ -127,7 +127,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertNoErrors();
   }
 
-  public void testTypeAndMediaAttributes() throws Exception {
+  public final void testTypeAndMediaAttributes() throws Exception {
     assertPipeline(
         job("<link rel=stylesheet media=screen href=content:p+%7B%7D>",
             Job.JobType.HTML),
@@ -158,7 +158,7 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertNoErrors();
   }
 
-  public void testDeferredScripts() throws Exception {
+  public final void testDeferredScripts() throws Exception {
     assertPipeline(
         job("<script src=content:a();></script>"
             + "<script defer>b();</script>"

@@ -46,14 +46,14 @@ public class CssSchemaTest extends TestCase {
     cssSchema = null;
   }
 
-  public void testGetCssProperty() {
+  public final void testGetCssProperty() {
     assertNull(cssSchema.getCssProperty(Name.css("bogus")));
     assertNotNull(cssSchema.getCssProperty(Name.css("font-style")));
   }
 
   // TODO(mikesamuel): test getSymbol
 
-  public void testIsKeyword() {
+  public final void testIsKeyword() {
     assertTrue(cssSchema.isKeyword(Name.css("inherit")));
     assertTrue(cssSchema.isKeyword(Name.css("default")));
     assertTrue(cssSchema.isKeyword(Name.css("initial")));
@@ -65,19 +65,19 @@ public class CssSchemaTest extends TestCase {
     assertFalse(cssSchema.isKeyword(Name.css("notakeyword")));
   }
 
-  public void testIsPropertyAllowed() {
+  public final void testIsPropertyAllowed() {
     assertTrue(cssSchema.isPropertyAllowed(Name.css("color")));
     assertFalse(cssSchema.isPropertyAllowed(Name.css("expression")));
   }
 
-  public void testIsFunctionAllowed() {
+  public final void testIsFunctionAllowed() {
     assertTrue(cssSchema.isFunctionAllowed(Name.css("rgb")));
     assertTrue(cssSchema.isFunctionAllowed(Name.css("rgba")));
     assertFalse(cssSchema.isFunctionAllowed(Name.css("rgbb")));
     assertFalse(cssSchema.isFunctionAllowed(Name.css("expression")));
   }
 
-  public void testPropertyInfo() {
+  public final void testPropertyInfo() {
     assertEquals(null, cssSchema.getCssProperty(Name.css("bogus")));
 
     CssSchema.CssPropertyInfo colorInfo

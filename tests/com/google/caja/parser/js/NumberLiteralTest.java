@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 import junit.framework.TestCase;
 
 public class NumberLiteralTest extends TestCase {
-  public void testNumberToString() {
+  public final void testNumberToString() {
     assertEquals("NaN", NumberLiteral.numberToString(Double.NaN));
     assertEquals("Infinity",
                  NumberLiteral.numberToString(Double.POSITIVE_INFINITY));

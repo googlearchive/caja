@@ -34,7 +34,7 @@ public class CssLexerTest extends CajaTestCase {
     super.tearDown();
   }
 
-  public void testLex() throws Exception {
+  public final void testLex() throws Exception {
     CharProducer cp = fromResource("csslexerinput1.css");
     runTest(cp, TestUtil.readResource(getClass(), "csslexergolden1.txt"));
     assertMessage(
@@ -42,31 +42,31 @@ public class CssLexerTest extends CajaTestCase {
         cp.getSourceBreaks(0).toFilePosition(5076, 5093));
   }
 
-  public void testUnterminatedStrings() throws Exception {
+  public final void testUnterminatedStrings() throws Exception {
     assertFails("font-family: 'foo", "1+14 - 18: Unclosed string");
   }
 
-  public void testLinebreakInString() throws Exception {
+  public final void testLinebreakInString() throws Exception {
     assertFails("font-family: 'foo\nbar'", "1+18: Illegal char in string '\n'");
   }
 
-  public void testEofInEscape() throws Exception {
+  public final void testEofInEscape() throws Exception {
     assertFails("font-family: 'foo\\abc", "1+14 - 22: Unclosed string");
   }
 
-  public void testUnterminatedComment() throws Exception {
+  public final void testUnterminatedComment() throws Exception {
     assertFails("foo\nb /* bar ", "2+3: Unclosed comment");
   }
 
-  public void testUnterminatedFunction() throws Exception {
+  public final void testUnterminatedFunction() throws Exception {
     assertFails("url(bar", "1+8: Expected ) not -1");
   }
 
-  public void testMalformedNumber() throws Exception {
+  public final void testMalformedNumber() throws Exception {
     assertFails("100.?", "1+5: Malformed number 100.");
   }
 
-  public void testDecodeCssIdentifier() throws Exception {
+  public final void testDecodeCssIdentifier() throws Exception {
     assertEquals("foo", CssLexer.decodeCssIdentifier("foo"));
     assertEquals("foo", CssLexer.decodeCssIdentifier("f\\6fo"));
     assertEquals("foo", CssLexer.decodeCssIdentifier("f\\6f o"));

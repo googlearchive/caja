@@ -28,51 +28,51 @@ import java.util.List;
 import org.w3c.dom.Node;
 
 public class TemplateSanitizerTest extends CajaTestCase {
-  public void testSingleElement() throws Exception {
+  public final void testSingleElement() throws Exception {
     assertValid(htmlFragment(fromString("<br/>")), "<br />");
   }
-  public void testText() throws Exception {
+  public final void testText() throws Exception {
     assertValid(htmlFragment(fromString("Hello World")), "Hello World");
   }
-  public void testFormattingElement() throws Exception {
+  public final void testFormattingElement() throws Exception {
     assertValid(htmlFragment(fromString("<b>Hello</b>")), "<b>Hello</b>");
   }
-  public void testUnknownAttribute() throws Exception {
+  public final void testUnknownAttribute() throws Exception {
     assertValid(
         htmlFragment(fromString("<b unknown=\"bogus\">Hello</b>")),
         "<b>Hello</b>",
         "WARNING: removing unknown attribute unknown on b");
   }
-  public void testKnownAttribute() throws Exception {
+  public final void testKnownAttribute() throws Exception {
     assertValid(htmlFragment(fromString("<b id=\"bold\">Hello</b>")),
                 "<b id=\"bold\">Hello</b>");
   }
-  public void testUnknownElement() throws Exception {
+  public final void testUnknownElement() throws Exception {
     assertValid(
         htmlFragment(fromString("<bogus id=\"bold\">Hello</bogus>")),
         "Hello",
         "WARNING: removing unknown tag bogus",
         "WARNING: removing attribute id when folding bogus into parent");
   }
-  public void testUnknownEverything() throws Exception {
+  public final void testUnknownEverything() throws Exception {
     assertValid(
         htmlFragment(fromString("<bogus unknown=\"bogus\">Hello</bogus>")),
         "Hello",
         "WARNING: removing unknown tag bogus",
         "WARNING: removing unknown attribute unknown on bogus");
   }
-  public void testDisallowedElement() throws Exception {
+  public final void testDisallowedElement() throws Exception {
     assertValid(
         htmlFragment(fromString("<script>disallowed</script>")),
         "disallowed",
         "WARNING: removing disallowed tag script");
   }
-  public void testAttributeValidity() throws Exception {
+  public final void testAttributeValidity() throws Exception {
     assertValid(
         htmlFragment(fromString("<form><input type=text></form>")),
         "<form><input type=\"text\" /></form>");
   }
-  public void testAttributePatternsTagSpecific() throws Exception {
+  public final void testAttributePatternsTagSpecific() throws Exception {
     assertValid(
         htmlFragment(fromString("<input type=text>")),
         "<input type=\"text\" />");
@@ -91,19 +91,19 @@ public class TemplateSanitizerTest extends CajaTestCase {
         "<button />",
         "WARNING: attribute type cannot have value TEXT");
   }
-  public void testIllegalAttributeValue() throws Exception {
+  public final void testIllegalAttributeValue() throws Exception {
     assertValid(
         htmlFragment(fromString("<form><input type=x></form>")),
         "<form><input /></form>",
         "WARNING: attribute type cannot have value x");
   }
-  public void testDisallowedElement2() throws Exception {
+  public final void testDisallowedElement2() throws Exception {
     assertValid(
         htmlFragment(fromString("<xmp>disallowed</xmp>")),
         "disallowed",
         "WARNING: removing unknown tag xmp");
   }
-  public void testDisallowedElement3() throws Exception {
+  public final void testDisallowedElement3() throws Exception {
     assertValid(
         htmlFragment(fromString("<meta http-equiv='refresh' content='1'/>")),
         "",
@@ -111,24 +111,24 @@ public class TemplateSanitizerTest extends CajaTestCase {
         "WARNING: removing attribute content when folding meta into parent",
         "WARNING: removing attribute http-equiv when folding meta into parent");
   }
-  public void testDisallowedElement4() throws Exception {
+  public final void testDisallowedElement4() throws Exception {
     assertValid(
         xmlFragment(fromString("<title>A title</title>")), "",
         "WARNING: removing disallowed tag title");
   }
-  public void testElementFolding1() throws Exception {
+  public final void testElementFolding1() throws Exception {
     assertValid(
         xmlFragment(fromString("<body bgcolor=\"red\">Zoicks</body>")),
         "Zoicks",
         "WARNING: folding element body into parent",
         "WARNING: removing attribute bgcolor when folding body into parent");
   }
-  public void testElementFolding2() throws Exception {
+  public final void testElementFolding2() throws Exception {
     assertValid(
         xmlFragment(fromString("<body>Zoicks</body>")),
         "Zoicks", "WARNING: folding element body into parent");
   }
-  public void testElementFolding3() throws Exception {
+  public final void testElementFolding3() throws Exception {
     assertValid(
         xmlFragment(fromString(
             "<html>"
@@ -151,7 +151,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
         "WARNING: removing unknown attribute styleo on p",
         "WARNING: removing unknown tag x");
   }
-  public void testElementFolding4() throws Exception {
+  public final void testElementFolding4() throws Exception {
     assertValid(
         xmlFragment(fromString(
             "<html>"
@@ -172,7 +172,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
         "WARNING: removing disallowed tag title",
         "WARNING: folding element body into parent");
   }
-  public void testIgnoredElement() throws Exception {
+  public final void testIgnoredElement() throws Exception {
     assertValid(
         htmlFragment(fromString(
              "<p>Foo"
@@ -181,7 +181,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
         "<p>Foo</p><p>Bar</p>",
         "WARNING: removing disallowed tag noscript");
   }
-  public void testDupeAttrs() throws Exception {
+  public final void testDupeAttrs() throws Exception {
     assertValid(
         xmlFragment(fromString(
             "<font color=\"red\" color=\"blue\">Purple</font>")),
@@ -191,7 +191,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
         "<font color=\"red\">Purple</font>",
         "WARNING: attribute color duplicates one at testDupeAttrs:1+7 - 12");
   }
-  public void testDisallowedAttrs() throws Exception {
+  public final void testDisallowedAttrs() throws Exception {
     assertValid(
         htmlFragment(fromString(
             "<a href=\"foo.html\" charset=\"utf-7\">foo</a>")),

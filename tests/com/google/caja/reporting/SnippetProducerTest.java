@@ -91,18 +91,18 @@ public class SnippetProducerTest extends TestCase {
     public int getParamCount() { return paramCount; }
   }
 
-  public void testGetSnippetNoPos() {
+  public final void testGetSnippetNoPos() {
     Message msg = new Message(TestMessageType.ZERO);
     assertEquals("", s.getSnippet(msg));
   }
 
-  public void testGetSnippetOnePartNoPos() {
+  public final void testGetSnippetOnePartNoPos() {
     Message msg = new Message(
         TestMessageType.ONE, MessagePart.Factory.valueOf("hi"));
     assertEquals("", s.getSnippet(msg));
   }
 
-  public void testGetSnippetOnePos() {
+  public final void testGetSnippetOnePos() {
     Message msg = new Message(
         TestMessageType.ONE,
         FilePosition.instance(f2, 1, 4, 4, 4));
@@ -112,7 +112,7 @@ public class SnippetProducerTest extends TestCase {
         s.getSnippet(msg));
   }
 
-  public void testGetSnippetTwoPos() {
+  public final void testGetSnippetTwoPos() {
     CharProducer cp = CharProducer.Factory.create(
         new StringReader(F1_TEXT), f1);
     while (cp.read() >= 0) {}
@@ -133,7 +133,7 @@ public class SnippetProducerTest extends TestCase {
         s.getSnippet(msg));
   }
 
-  public void testZeroLengthRegion() {
+  public final void testZeroLengthRegion() {
     Message msg = new Message(
         TestMessageType.ONE, FilePosition.instance(f2, 1, 3, 3));
     assertEquals(
@@ -142,7 +142,7 @@ public class SnippetProducerTest extends TestCase {
         s.getSnippet(msg));
   }
 
-  public void testZeroLengthAtEndOfLine() {
+  public final void testZeroLengthAtEndOfLine() {
     int nlPos = 1 + F1_TEXT.indexOf('\n');
     Message msg = new Message(
         TestMessageType.ONE,
@@ -153,7 +153,7 @@ public class SnippetProducerTest extends TestCase {
         s.getSnippet(msg));
   }
 
-  public void testZeroLengthAtEndOfFile() {
+  public final void testZeroLengthAtEndOfFile() {
     int endPos = 1 + F2_TEXT.length();
     Message msg = new Message(
         TestMessageType.ONE,
@@ -164,7 +164,7 @@ public class SnippetProducerTest extends TestCase {
         s.getSnippet(msg));
   }
 
-  public void testLongLineUncut() {
+  public final void testLongLineUncut() {
     Message msg = new Message(
         TestMessageType.ONE,
         FilePosition.instance(f3, 1, 5, 5, 5));
@@ -174,7 +174,7 @@ public class SnippetProducerTest extends TestCase {
         s.getSnippet(msg));
   }
 
-  public void testLongLineCutRight() {
+  public final void testLongLineCutRight() {
     Message msg = new Message(
         TestMessageType.ONE,
         FilePosition.instance(f3, 1, 5, 5, 5));
@@ -184,7 +184,7 @@ public class SnippetProducerTest extends TestCase {
         s10.getSnippet(msg));
   }
 
-  public void testLongLineCutLeft() {
+  public final void testLongLineCutLeft() {
     Message msg = new Message(
         TestMessageType.ONE,
         FilePosition.instance(f3, 1, 35, 35, 3));
@@ -194,7 +194,7 @@ public class SnippetProducerTest extends TestCase {
         s10.getSnippet(msg));
   }
 
-  public void testLongLineCutBoth() {
+  public final void testLongLineCutBoth() {
     Message msg = new Message(
         TestMessageType.ONE,
         FilePosition.instance(f3, 1, 15, 15, 20));

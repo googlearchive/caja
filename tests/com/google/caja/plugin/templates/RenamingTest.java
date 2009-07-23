@@ -17,7 +17,7 @@ package com.google.caja.plugin.templates;
 import junit.framework.TestCase;
 
 public class RenamingTest extends TestCase {
-  public void testRenaming() {
+  public final void testRenaming() {
     // TODO
   }
 }

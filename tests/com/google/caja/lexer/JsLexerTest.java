@@ -30,7 +30,7 @@ import junit.framework.TestCase;
  */
 public class JsLexerTest extends TestCase {
 
-  public void testLexer() throws Exception {
+  public final void testLexer() throws Exception {
     InputSource input = new InputSource(
         TestUtil.getResource(getClass(), "lexertest1.js"));
     StringBuilder output = new StringBuilder();
@@ -66,7 +66,7 @@ public class JsLexerTest extends TestCase {
     assertEquals(golden, output.toString());
   }
 
-  public void testLexer2() throws Exception {
+  public final void testLexer2() throws Exception {
     InputSource input = new InputSource(
         TestUtil.getResource(getClass(), "lexertest2.js"));
     StringBuilder output = new StringBuilder();
@@ -105,7 +105,7 @@ public class JsLexerTest extends TestCase {
     assertEquals(golden, output.toString());
   }
 
-  public void testRegexLiterals() {
+  public final void testRegexLiterals() {
     JsLexer lexer = createLexer("foo.replace(/[A-Z]/g, '#')");
     assertNext(lexer, JsTokenType.WORD, "foo");
     assertNext(lexer, JsTokenType.PUNCTUATION, ".");
@@ -118,7 +118,7 @@ public class JsLexerTest extends TestCase {
     assertEmpty(lexer);
   }
 
-  public void testSimpleExpression() {
+  public final void testSimpleExpression() {
     JsLexer lexer = createLexer("while (foo) { 1; }");
     assertNext(lexer, JsTokenType.KEYWORD, "while");
     assertNext(lexer, JsTokenType.PUNCTUATION, "(");
@@ -131,7 +131,7 @@ public class JsLexerTest extends TestCase {
     assertEmpty(lexer);
   }
 
-  public void testQuasiExpressionSingle() {
+  public final void testQuasiExpressionSingle() {
     JsLexer lexer = createLexer("@foo * 1;", true);
     assertNext(lexer, JsTokenType.WORD, "@foo");
     assertNext(lexer, JsTokenType.PUNCTUATION, "*");
@@ -140,7 +140,7 @@ public class JsLexerTest extends TestCase {
     assertEmpty(lexer);
   }
 
-  public void testQuasiExpressionStar() {
+  public final void testQuasiExpressionStar() {
     JsLexer lexer = createLexer("@foo* * 1;", true);
     assertNext(lexer, JsTokenType.WORD, "@foo*");
     assertNext(lexer, JsTokenType.PUNCTUATION, "*");
@@ -149,7 +149,7 @@ public class JsLexerTest extends TestCase {
     assertEmpty(lexer);
   }
 
-  public void testQuasiExpressionPlus() {
+  public final void testQuasiExpressionPlus() {
     JsLexer lexer = createLexer("@foo+ + 1;", true);
     assertNext(lexer, JsTokenType.WORD, "@foo+");
     assertNext(lexer, JsTokenType.PUNCTUATION, "+");
@@ -158,7 +158,7 @@ public class JsLexerTest extends TestCase {
     assertEmpty(lexer);
   }
 
-  public void testQuasiExpressionSingleParens() {
+  public final void testQuasiExpressionSingleParens() {
     JsLexer lexer = createLexer("(@foo)", true);
     assertNext(lexer, JsTokenType.PUNCTUATION, "(");
     assertNext(lexer, JsTokenType.WORD, "@foo");
@@ -166,7 +166,7 @@ public class JsLexerTest extends TestCase {
     assertEmpty(lexer);
   }
 
-  public void testQuasiExpressionStarParens() {
+  public final void testQuasiExpressionStarParens() {
     JsLexer lexer = createLexer("(@foo*)", true);
     assertNext(lexer, JsTokenType.PUNCTUATION, "(");
     assertNext(lexer, JsTokenType.WORD, "@foo*");
@@ -174,7 +174,7 @@ public class JsLexerTest extends TestCase {
     assertEmpty(lexer);
   }
 
-  public void testQuasiExpressionPlusParens() {
+  public final void testQuasiExpressionPlusParens() {
     JsLexer lexer = createLexer("(@foo+)", true);
     assertNext(lexer, JsTokenType.PUNCTUATION, "(");
     assertNext(lexer, JsTokenType.WORD, "@foo+");
@@ -182,7 +182,7 @@ public class JsLexerTest extends TestCase {
     assertEmpty(lexer);
   }
 
-  public void testDoubleDot() {
+  public final void testDoubleDot() {
     JsLexer lexer = createLexer(
         "a == = function () {..} ... .. . .... foo", true);
     assertNext(lexer, JsTokenType.WORD, "a");
@@ -203,7 +203,7 @@ public class JsLexerTest extends TestCase {
     assertEmpty(lexer);
   }
 
-  public void testNumberDotWord() {
+  public final void testNumberDotWord() {
     JsLexer lexer = createLexer("0..toString()", false);  // evaluates to "0"
     assertNext(lexer, JsTokenType.FLOAT, "0.");
     assertNext(lexer, JsTokenType.PUNCTUATION, ".");
@@ -213,34 +213,34 @@ public class JsLexerTest extends TestCase {
     assertEmpty(lexer);
   }
 
-  public void testByteOrderMarkersAtBeginning() {
+  public final void testByteOrderMarkersAtBeginning() {
     JsLexer lexer = createLexer("\uFEFFvar foo", false);
     assertNext(lexer, JsTokenType.KEYWORD, "var");
     assertNext(lexer, JsTokenType.WORD, "foo");
     assertEmpty(lexer);
   }
 
-  public void testByteOrderMarkersBetweenTokens() {
+  public final void testByteOrderMarkersBetweenTokens() {
     JsLexer lexer = createLexer("1.\uFEFF3", false);
     assertNext(lexer, JsTokenType.FLOAT, "1.");
     assertNext(lexer, JsTokenType.INTEGER, "3");
     assertEmpty(lexer);
   }
 
-  public void testByteOrderMarkersInStrings() {
+  public final void testByteOrderMarkersInStrings() {
     JsLexer lexer = createLexer("'\uFEFF'", false);
     assertNext(lexer, JsTokenType.STRING, "'\uFEFF'");
     assertEmpty(lexer);
   }
 
-  public void testEllipsisAndNumber() {
+  public final void testEllipsisAndNumber() {
     JsLexer lexer = createLexer("...0x01", false);
     assertNext(lexer, JsTokenType.PUNCTUATION, "...");
     assertNext(lexer, JsTokenType.INTEGER, "0x01");
     assertEmpty(lexer);
   }
 
-  public void testEmphaticallyDecremented() {
+  public final void testEmphaticallyDecremented() {
     JsLexer lexer = createLexer("i---j", false);
     assertNext(lexer, JsTokenType.WORD, "i");
     assertNext(lexer, JsTokenType.PUNCTUATION, "--");
@@ -249,7 +249,7 @@ public class JsLexerTest extends TestCase {
     assertEmpty(lexer);
   }
 
-  public void testIsRegexpFollowingWord() {
+  public final void testIsRegexpFollowingWord() {
     {
       JsLexer lexer = createLexer("min / max /*/**/", false);
       assertNext(lexer, JsTokenType.WORD, "min");
@@ -268,14 +268,14 @@ public class JsLexerTest extends TestCase {
     }
   }
 
-  public void testRegexpFollowingVoid() {
+  public final void testRegexpFollowingVoid() {
     JsLexer lexer = createLexer("void /./", false);
     assertNext(lexer, JsTokenType.KEYWORD, "void");
     assertNext(lexer, JsTokenType.REGEXP, "/./");
     assertEmpty(lexer);
   }
 
-  public void testRegexpFollowingPreincrement() {
+  public final void testRegexpFollowingPreincrement() {
     // KNOWN FAILURE
     if (false) {
       JsLexer lexer = createLexer("x = ++/x/m", false);
@@ -287,7 +287,7 @@ public class JsLexerTest extends TestCase {
     }
   }
 
-  public void testRegexpFollowingPostincrement() {
+  public final void testRegexpFollowingPostincrement() {
     JsLexer lexer = createLexer("x++/y/m", false);
     assertNext(lexer, JsTokenType.WORD, "x");
     assertNext(lexer, JsTokenType.PUNCTUATION, "++");

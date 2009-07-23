@@ -21,27 +21,27 @@ import com.google.caja.util.RhinoTestBed;
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
 public class RRuleTest extends CajaTestCase {
-  public void testFilters() throws Exception {
+  public final void testFilters() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(
         html(fromResource("filters_test.html")));
   }
 
-  public void testGenerators() throws Exception {
+  public final void testGenerators() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(
         html(fromResource("generators_test.html")));
   }
 
-  public void testRRule() throws Exception {
+  public final void testRRule() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(
         html(fromResource("rrule_test.html")));
   }
 
-  public void testTime() throws Exception {
+  public final void testTime() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(
         html(fromResource("time_test.html")));
   }
 
-  public void testUtil() throws Exception {
+  public final void testUtil() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(
         html(fromResource("time_util_test.html")));
   }

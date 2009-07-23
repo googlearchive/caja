@@ -17,7 +17,7 @@ package com.google.caja.service;
 import junit.framework.TestCase;
 
 public class ContentTypeCheckTest extends TestCase {
-  public void testStrictContentTypeCheck() {
+  public final void testStrictContentTypeCheck() {
     ContentTypeCheck ctc = new StrictContentTypeCheck();
     assertFalse(ctc.check("image/*", ""));
     assertFalse(ctc.check("image/*", "bogus-nonsense"));
@@ -38,7 +38,7 @@ public class ContentTypeCheckTest extends TestCase {
     assertTrue(ctc.check("image/*", "image/jpg"));
   }
 
-  public void testLooseContentTypeCheck() {
+  public final void testLooseContentTypeCheck() {
     ContentTypeCheck ctc = new LooseContentTypeCheck();
     assertFalse(ctc.check("image/*", ""));
     assertFalse(ctc.check("image/*", "bogus-nonsense"));

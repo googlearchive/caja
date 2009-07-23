@@ -37,19 +37,19 @@ import java.util.List;
 import java.util.Random;
 
 public class JsPrettyPrinterTest extends CajaTestCase {
-  public void testEmptyBlock() throws Exception {
+  public final void testEmptyBlock() throws Exception {
     assertRendered("{ { } }", "{}");
   }
 
-  public void testAdjacentBlocks() throws Exception {
+  public final void testAdjacentBlocks() throws Exception {
     assertRendered("{\n  { }\n  { }\n}", "{}{}");
   }
 
-  public void testSimpleStatement() throws Exception {
+  public final void testSimpleStatement() throws Exception {
     assertRendered("{ foo(); }", "foo();");
   }
 
-  public void testSemisInsideParents() throws Exception {
+  public final void testSemisInsideParents() throws Exception {
     assertRendered(
         "{\n  for (var i = 0, n = a.length; i < n; ++i) {\n"
         + "    bar(a[ i ]);\n  }\n}",
@@ -58,7 +58,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
         + "}");
   }
 
-  public void testObjectConstructor() throws Exception {
+  public final void testObjectConstructor() throws Exception {
     assertRendered(
         "{\n"
         + "  foo({\n"
@@ -70,7 +70,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
         "foo({ x: 1, y: bar({ w: 4 }), z: 3 });");
   }
 
-  public void testMultipleStatements() throws Exception {
+  public final void testMultipleStatements() throws Exception {
     assertRendered(
         "{\n"
         + "  (function (a, b, c) {\n"
@@ -82,7 +82,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
         "(function (a, b, c) { foo(a); bar(b); return (c); })(1, 2, 3);");
   }
 
-  public void testBreakBeforeWhile() throws Exception {
+  public final void testBreakBeforeWhile() throws Exception {
     assertRendered(
         "{\n"
         + "  do {\n"
@@ -100,7 +100,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
         "{ foo(bar()); } while(1);");
   }
 
-  public void testMarkupEndStructures() throws Exception {
+  public final void testMarkupEndStructures() throws Exception {
     // Make sure -->, </script, and ]]> don't show up in rendered output.
     // Preventing these in strings is handled separately.
     assertRendered(
@@ -108,7 +108,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
         "i-->j, k</script>/, [[0]]>0;");
   }
 
-  public void testJSON() throws Exception {
+  public final void testJSON() throws Exception {
     assertRendered(
         "{\n"
         + "  ({\n"
@@ -125,7 +125,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
         "({ a: [1,2,3], b: { c: [{}], d: [{ e: null, f: 'foo' }, null] } });");
   }
 
-  public void testConditional() throws Exception {
+  public final void testConditional() throws Exception {
     assertRendered(
         "{\n"
         + "  if (c1) { foo(); } else if (c2) bar();\n"
@@ -134,11 +134,11 @@ public class JsPrettyPrinterTest extends CajaTestCase {
         "if (c1) { foo(); } else if (c2) bar(); else baz();");
   }
 
-  public void testNumberPropertyAccess() throws Exception {
+  public final void testNumberPropertyAccess() throws Exception {
     assertRendered("{\n  (3).toString();\n}", "(3).toString();");
   }
 
-  public void testComments() throws Exception {
+  public final void testComments() throws Exception {
     assertLexed(
         "var x = foo; /* end of line */\n"
         + "/** Own line */\n"
@@ -157,11 +157,11 @@ public class JsPrettyPrinterTest extends CajaTestCase {
         + "b;");
   }
 
-  public void testDivisionByRegex() throws Exception {
+  public final void testDivisionByRegex() throws Exception {
     assertLexed("3/ /foo/;", "3 / /foo/;");
   }
 
-  public void testNegatedNegativeNumericConstants() throws Exception {
+  public final void testNegatedNegativeNumericConstants() throws Exception {
     assertRendered(
         "- (-3)",  // not --3
         Operation.create(
@@ -169,7 +169,7 @@ public class JsPrettyPrinterTest extends CajaTestCase {
             new IntegerLiteral(FilePosition.UNKNOWN,-3)));
   }
 
-  public void testRetokenization() throws Exception {
+  public final void testRetokenization() throws Exception {
     long seed = Long.parseLong(
         System.getProperty("junit.seed", "" + System.currentTimeMillis()));
     Random rnd = new Random(seed);
@@ -232,27 +232,27 @@ public class JsPrettyPrinterTest extends CajaTestCase {
     return sb.toString();
   }
 
-  public void testIndentationAfterParens1() throws Exception {
+  public final void testIndentationAfterParens1() throws Exception {
     assertTokens("longObjectInstance.reallyLongMethodName(a, b, c, d);",
                  "longObjectInstance", ".", "reallyLongMethodName", "(",
                  "a", ",", "b", ",", "c", ",", "d", ")", ";");
   }
 
-  public void testIndentationAfterParens2() throws Exception {
+  public final void testIndentationAfterParens2() throws Exception {
     assertTokens("longObjectInstance.reallyLongMethodName(a, b, c,\n" +
                  "                                        d);",
                  "longObjectInstance", ".", "reallyLongMethodName", "(",
                  "a", ",", "b", ",", "c", ",", "\n", "d", ")", ";");
   }
 
-  public void testIndentationAfterParens3() throws Exception {
+  public final void testIndentationAfterParens3() throws Exception {
     assertTokens("longObjectInstance.reallyLongMethodName(\n" +
                  "    a, b, c, d);",
                  "longObjectInstance", ".", "reallyLongMethodName", "(",
                  "\n", "a", ",", "b", ",", "c", ",", "d", ")", ";");
   }
 
-  public void testIndentationAfterParens4() throws Exception {
+  public final void testIndentationAfterParens4() throws Exception {
     assertTokens("var x = ({\n" +
                  "           'fooBar': [\n" +
                  "               0, 1, 2, ]\n" +
@@ -261,11 +261,11 @@ public class JsPrettyPrinterTest extends CajaTestCase {
                  "\n", "0", ",", "1", ",", "2", ",", "]", "}", ")", ";");
   }
 
-  public void testCommentsInRestrictedProductions1() throws Exception {
+  public final void testCommentsInRestrictedProductions1() throws Exception {
     assertTokens("return /* */ 4;", "return", "/*\n*/", "4", ";");
   }
 
-  public void testCommentsInRestrictedProductions2() throws Exception {
+  public final void testCommentsInRestrictedProductions2() throws Exception {
     assertTokens("return /**/ 4;", "return", "//", "4", ";");
   }
 

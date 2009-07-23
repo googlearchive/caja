@@ -49,7 +49,7 @@ public class ParserTest extends CajaTestCase {
   // TODO(mikesamuel): better comment each of the test input files.
   // What is each one supposed to test.
 
-  public void testParser() throws Exception {
+  public final void testParser() throws Exception {
     runParseTest("parsertest1.js", "parsergolden1.txt",
                  "Reserved word else used as an identifier");
 
@@ -74,7 +74,7 @@ public class ParserTest extends CajaTestCase {
     // No semicolon needed at the end.
     assertTrue(!msgs.hasNext());
   }
-  public void testParser2() throws Exception {
+  public final void testParser2() throws Exception {
     runParseTest("parsertest2.js", "parsergolden2.txt");
 
     Iterator<Message> msgs = mq.getMessages().iterator();
@@ -85,25 +85,25 @@ public class ParserTest extends CajaTestCase {
                        (FilePosition) m1.getMessageParts().get(0), mc);
     assertTrue(!msgs.hasNext());
   }
-  public void testParser3() throws Exception {
+  public final void testParser3() throws Exception {
     runParseTest("parsertest3.js", "parsergolden3.txt");
     assertTrue(mq.getMessages().isEmpty());
   }
-  public void testParser5() throws Exception {
+  public final void testParser5() throws Exception {
     if (!TestUtil.isJava15()) {
       runParseTest("parsertest5.js", "parsergolden5.txt");
     }
   }
-  public void testParser7() throws Exception {
+  public final void testParser7() throws Exception {
     runParseTest("parsertest7.js", "parsergolden7.txt");
   }
-  public void testParser8() throws Exception {
+  public final void testParser8() throws Exception {
     runParseTest("parsertest8.js", "parsergolden8.txt");
   }
-  public void testParser9() throws Exception {
+  public final void testParser9() throws Exception {
     runParseTest("parsertest9.js", "parsergolden9.txt");
   }
-  public void testParser10() throws Exception {
+  public final void testParser10() throws Exception {
     runParseTest("parsertest10.js", "parsergolden10.txt");
 
     Message m;
@@ -132,24 +132,24 @@ public class ParserTest extends CajaTestCase {
     assertFalse(msgs.hasNext());
   }
 
-  public void testParseTreeRendering1() throws Exception {
+  public final void testParseTreeRendering1() throws Exception {
     runRenderTest("parsertest1.js", "rendergolden1.txt", false, true);
   }
-  public void testParseTreeRendering2() throws Exception {
+  public final void testParseTreeRendering2() throws Exception {
     runRenderTest("parsertest2.js", "rendergolden2.txt", false, false);
   }
-  public void testParseTreeRendering3() throws Exception {
+  public final void testParseTreeRendering3() throws Exception {
     runRenderTest("parsertest3.js", "rendergolden3.txt", false, false);
   }
-  public void testParseTreeRendering4() throws Exception {
+  public final void testParseTreeRendering4() throws Exception {
     runRenderTest("parsertest4.js", "rendergolden4.txt", false, false);
   }
-  public void testParseTreeRendering5() throws Exception {
+  public final void testParseTreeRendering5() throws Exception {
     if (!TestUtil.isJava15()) {
       runRenderTest("parsertest5.js", "rendergolden5.txt", false, true);
     }
   }
-  public void testSecureParseTreeRendering6() throws Exception {
+  public final void testSecureParseTreeRendering6() throws Exception {
     runRenderTest("parsertest6.js", "rendergolden6.txt", true, false);
 
     // Since we're doing these checks for security, double check that someone
@@ -161,16 +161,16 @@ public class ParserTest extends CajaTestCase {
     assertFalse(golden.contains("<script"));
     assertFalse(golden.contains("</script"));
   }
-  public void testParseTreeRendering7() throws Exception {
+  public final void testParseTreeRendering7() throws Exception {
     runRenderTest("parsertest7.js", "rendergolden7.txt", false, false);
   }
-  public void testParseTreeRendering8() throws Exception {
+  public final void testParseTreeRendering8() throws Exception {
     runRenderTest("parsertest8.js", "rendergolden8.txt", true, false);
   }
-  public void testParseTreeRendering9() throws Exception {
+  public final void testParseTreeRendering9() throws Exception {
     runRenderTest("parsertest9.js", "rendergolden9.txt", false, false);
   }
-  public void testThrowAsRestrictedProduction() throws Exception {
+  public final void testThrowAsRestrictedProduction() throws Exception {
     if (false) {
     try {
       js(fromString("throw \n new Error()"));
@@ -183,25 +183,25 @@ public class ParserTest extends CajaTestCase {
     // But it should pass if there is a line-continuation
     js(fromString("throw \\\n new Error()"));
   }
-  public void testCommaOperatorInReturn() throws Exception {
+  public final void testCommaOperatorInReturn() throws Exception {
     Block bl = js(fromString("return 1  \n  , 2;"));
     assertTrue("" + mq.getMessages(), mq.getMessages().isEmpty());
     assertEquals("{\n  return 1, 2;\n}", render(bl));
   }
 
-  public void testRenderKeywordsAsIdentifiers() throws Exception {
+  public final void testRenderKeywordsAsIdentifiers() throws Exception {
     for (Keyword k : Keyword.values()) {
       assertRenderKeywordAsIdentifier(k);
     }
   }
 
-  public void testParseKeywordsAsIdentifiers() throws Exception {
+  public final void testParseKeywordsAsIdentifiers() throws Exception {
     for (Keyword k : Keyword.values()) {
       assertParseKeywordAsIdentifier(k);
     }
   }
 
-  public void testDebuggerKeyword() throws Exception {
+  public final void testDebuggerKeyword() throws Exception {
     // The debugger keyword can appear in a statement context
     assertParseSucceeds("{ debugger; }");
     // but not in an expression context
@@ -228,7 +228,7 @@ public class ParserTest extends CajaTestCase {
         MessagePart.Factory.valueOf(":"));
   }
 
-  public void testOctalLiterals() throws Exception {
+  public final void testOctalLiterals() throws Exception {
     assertEquals("10", render(jsExpr(fromString("012"))));
     assertMessage(MessageType.OCTAL_LITERAL, MessageLevel.LINT);
 
@@ -269,7 +269,7 @@ public class ParserTest extends CajaTestCase {
     assertMessage(MessageType.OCTAL_LITERAL, MessageLevel.LINT);
   }
 
-  public void testIntegerPartIsOctal() throws Exception {
+  public final void testIntegerPartIsOctal() throws Exception {
     assertTrue(Parser.integerPartIsOctal("012"));
     assertTrue(Parser.integerPartIsOctal("0012"));
     assertTrue(Parser.integerPartIsOctal("012.34"));
@@ -282,11 +282,11 @@ public class ParserTest extends CajaTestCase {
     assertFalse(Parser.integerPartIsOctal("0.12"));
   }
 
-  public void testNUL() throws Exception {
+  public final void testNUL() throws Exception {
     assertEquals("'\\x00'", render(jsExpr(fromString("'\0'"))));
   }
 
-  public void testRenderingOfMalformedRegexSafe() throws Exception {
+  public final void testRenderingOfMalformedRegexSafe() throws Exception {
     assertEquals(
         "(new (/./.constructor)('foo', 'iii'))",
         render(new RegexpLiteral(FilePosition.UNKNOWN, "/foo/iii")));
@@ -298,14 +298,14 @@ public class ParserTest extends CajaTestCase {
         render(new RegexpLiteral(FilePosition.UNKNOWN, "/x/'")));
   }
 
-  public void testOutOfRangeLiterals() throws Exception {
+  public final void testOutOfRangeLiterals() throws Exception {
     NumberLiteral l = (NumberLiteral) jsExpr(fromString("0x7fffffffffffffff"));
     assertMessage(
         MessageType.UNREPRESENTABLE_INTEGER_LITERAL, MessageLevel.WARNING);
     assertEquals(new Double(9223372036854776000d), l.getValue());
   }
 
-  public void testRedundantEscapeSequences() throws Exception {
+  public final void testRedundantEscapeSequences() throws Exception {
     // Should issue a warning if there is an escape sequence in a string where
     // the escaped character is not interpreted differently, and the escaped
     // character has a special meaning in a regular expression.
@@ -330,7 +330,7 @@ public class ParserTest extends CajaTestCase {
     mq.getMessages().clear();
   }
 
-  public void testUnnormalizedIdentifiers() throws Exception {
+  public final void testUnnormalizedIdentifiers() throws Exception {
     // Test that identifiers not normalized to Normal Form C (Unicode NFC)
     // result in a ParseException with a useful error message.
     // According to chapter 6 of ES3.1, "The [source] text is expected to

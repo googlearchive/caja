@@ -53,7 +53,7 @@ public class PunctuationTrieTest extends TestCase {
     this.skinny = null;
   }
 
-  public void testTreeStructure() {
+  public final void testTreeStructure() {
     String jsTree = (
         "nonterminal\n" +
         "\t'!' terminal\n" +
@@ -129,7 +129,7 @@ public class PunctuationTrieTest extends TestCase {
     assertEquals(skinnyTree, skinny.toString());
   }
 
-  public void testPunctuationTrie() throws Exception {
+  public final void testPunctuationTrie() throws Exception {
     // make sure that we can find strings in jsPunc
     Set<PunctuationTrie<?>> uniq = new HashSet<PunctuationTrie<?>>();
     for (Punctuation p : Punctuation.values()) {
@@ -151,7 +151,7 @@ public class PunctuationTrieTest extends TestCase {
     assertTrue(!jsPunc.lookup("..").isTerminal());
   }
 
-  public void testSkinnyTrie() throws Exception {
+  public final void testSkinnyTrie() throws Exception {
     String s = "hellooooooo";
     PunctuationTrie<Integer> t = skinny;
     for (int i = 0; i < s.length(); ++i) {

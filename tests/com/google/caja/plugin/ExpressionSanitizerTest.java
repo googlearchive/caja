@@ -46,7 +46,7 @@ public class ExpressionSanitizerTest extends CajaTestCase {
     meta = null;
   }
 
-  public void testBasicRewriting() throws Exception {
+  public final void testBasicRewriting() throws Exception {
     assertSanitize(
         "g[i];",
         "var g = ___.readImport(IMPORTS___, 'g');"
@@ -54,19 +54,19 @@ public class ExpressionSanitizerTest extends CajaTestCase {
         + "___.readPub(g, i);");
   }
 
-  public void testNoSpuriousRewriteErrorFound() throws Exception {
+  public final void testNoSpuriousRewriteErrorFound() throws Exception {
     newPassThruSanitizer().sanitize(
         ac(new Identifier(FilePosition.UNKNOWN, "x")));
     assertFalse(mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR));
   }
 
-  public void testRewriteErrorIsDetected() throws Exception {
+  public final void testRewriteErrorIsDetected() throws Exception {
     newPassThruSanitizer().sanitize(
         ac(new Identifier(FilePosition.UNKNOWN, "x__")));
     assertTrue(mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR));
   }
 
-  public void testNonAsciiIsDetected() throws Exception {
+  public final void testNonAsciiIsDetected() throws Exception {
     newPassThruSanitizer().sanitize(
         ac(new Identifier(FilePosition.UNKNOWN, "\u00e6")));
     assertTrue(mq.hasMessageAtLevel(MessageLevel.FATAL_ERROR));

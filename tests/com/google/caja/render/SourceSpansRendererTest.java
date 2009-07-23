@@ -71,7 +71,7 @@ public class SourceSpansRendererTest extends OrigSourceRendererTestCase {
     }
   }
 
-  public void testRendering() throws Exception {
+  public final void testRendering() throws Exception {
     runTest(
         "ssp-golden.txt", "ssp-rewritten-tokens.txt",
         "ssp-test-input.js");

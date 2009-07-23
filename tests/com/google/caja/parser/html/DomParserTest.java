@@ -82,13 +82,13 @@ public class DomParserTest extends CajaTestCase {
       + "  Text : \\n 5+37-6+1"
       );
 
-  public void testParseDom() throws Exception {
+  public final void testParseDom() throws Exception {
     TokenQueue<HtmlTokenType> tq = tokenizeTestInput(DOM1_XML, true);
     Element el = new DomParser(tq, true, mq).parseDocument();
     assertEquals(DOM1_GOLDEN, formatToString(el, true));
   }
 
-  public void testOneRootXmlElement() throws Exception {
+  public final void testOneRootXmlElement() throws Exception {
     TokenQueue<HtmlTokenType> tq = tokenizeTestInput("<foo/><bar/>", true);
     try {
       new DomParser(tq, true, mq).parseDocument();
@@ -101,7 +101,7 @@ public class DomParserTest extends CajaTestCase {
     fail("Parsing of an XML document with multiple roots did not fail");
   }
 
-  public void testEmptyFragment() throws Exception {
+  public final void testEmptyFragment() throws Exception {
     assertParsedMarkup(Arrays.<String>asList(),
                        Arrays.asList("Fragment 1+1-1+1"),
                        Arrays.<String>asList(),
@@ -116,7 +116,7 @@ public class DomParserTest extends CajaTestCase {
                        true);
   }
 
-  public void testParseDirective() throws Exception {
+  public final void testParseDirective() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
@@ -160,7 +160,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testTextOnlyFragment() throws Exception {
+  public final void testTextOnlyFragment() throws Exception {
     for (int i = 0; i < 2; ++i) {
       boolean isXml = i == 0;
       assertParsedMarkup(
@@ -175,7 +175,7 @@ public class DomParserTest extends CajaTestCase {
     }
   }
 
-  public void testHtml1() throws Exception {
+  public final void testHtml1() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<html><head>",
@@ -246,7 +246,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testHtml2() throws Exception {
+  public final void testHtml2() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<html>",
@@ -310,7 +310,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testBeforeHead() throws Exception {
+  public final void testBeforeHead() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<html><SCRIPT>foo()</scriPt></html>"),
@@ -329,7 +329,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testMinimalHtml() throws Exception {
+  public final void testMinimalHtml() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<html></html>"),
@@ -346,7 +346,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testMinimalFrameset() throws Exception {
+  public final void testMinimalFrameset() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<html><frameset></frameset></html>"),
@@ -363,7 +363,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testSpuriousCloseTagBeforeHead() throws Exception {
+  public final void testSpuriousCloseTagBeforeHead() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<html></script></html>"),
@@ -382,7 +382,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testHeadless() throws Exception {
+  public final void testHeadless() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<html><body>Hello World</body></html>"),
@@ -400,7 +400,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testLooseStyleTagEndsInHead() throws Exception {
+  public final void testLooseStyleTagEndsInHead() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<html><style>",
@@ -426,7 +426,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testDoubleHeadedHtml() throws Exception {
+  public final void testDoubleHeadedHtml() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<html><head><head><body></body></html>"),
@@ -445,7 +445,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testBodyFragment() throws Exception {
+  public final void testBodyFragment() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<body><p>&#60;Bar&#x3E;<p>Baz</body>"),
@@ -464,7 +464,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testFramesetFragment() throws Exception {
+  public final void testFramesetFragment() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<frameset><frame src=foo.html /></frameset>"),
@@ -483,7 +483,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testFramesetFragment2() throws Exception {
+  public final void testFramesetFragment2() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             ""
@@ -517,7 +517,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testFragmentThatEndsWithAComment() throws Exception {
+  public final void testFragmentThatEndsWithAComment() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<p>Hello</p>  <!-- Zoicks -->   "),
@@ -535,7 +535,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testTableFragment() throws Exception {
+  public final void testTableFragment() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<table>",
@@ -562,7 +562,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testFragmentWithClose() throws Exception {
+  public final void testFragmentWithClose() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "</head>",  // Nothing here but text
@@ -580,7 +580,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testMisplacedTitle() throws Exception {
+  public final void testMisplacedTitle() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<html><body><title>What head?</title></body></html>"),
@@ -601,7 +601,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testBodyWithAttributeInFragment() throws Exception {
+  public final void testBodyWithAttributeInFragment() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(  // A fragment with body attributes is a whole document
             "<div>",
@@ -637,7 +637,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testListFragment() throws Exception {
+  public final void testListFragment() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             // </br> is treated as a <br>.  <br></br> -- 2 for the price of 1!
@@ -678,7 +678,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testFormsNotNested() throws Exception {
+  public final void testFormsNotNested() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<form action= 'fly'>",
@@ -734,7 +734,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testListNesting() throws Exception {
+  public final void testListNesting() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<ul id=unordered-list>",
@@ -797,7 +797,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testParagraphInterrupters() throws Exception {
+  public final void testParagraphInterrupters() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<body><p>Hi <pre>There</pre>",
@@ -869,7 +869,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testParagraphNotNested() throws Exception {
+  public final void testParagraphNotNested() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<html>",
@@ -907,7 +907,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testAnyHeadingTagCloses() throws Exception {
+  public final void testAnyHeadingTagCloses() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<html>",
@@ -963,7 +963,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testLinksDontNest() throws Exception {
+  public final void testLinksDontNest() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<div>",
@@ -1014,7 +1014,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testFormattingElements() throws Exception {
+  public final void testFormattingElements() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<body>",
@@ -1075,7 +1075,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testObjectElements() throws Exception {
+  public final void testObjectElements() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<object>",
@@ -1111,7 +1111,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testButtonsDontNest() throws Exception {
+  public final void testButtonsDontNest() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<div>",
@@ -1162,7 +1162,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testImageTag() throws Exception {
+  public final void testImageTag() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<image src='foo.gif?a=b&c=d'>"
@@ -1182,7 +1182,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testIsIndex() throws Exception {
+  public final void testIsIndex() throws Exception {
     // Its semantics are really weird and it's deprecated, so drop it.
     assertParsedHtml(
         Arrays.asList(
@@ -1214,7 +1214,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testDisablersAreCdata() throws Exception {
+  public final void testDisablersAreCdata() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<noframes><iframe src=foo></noframes></noscript>"
@@ -1234,7 +1234,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testInputElements() throws Exception {
+  public final void testInputElements() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<form>",
@@ -1298,7 +1298,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testUnknownTagsNest() throws Exception {
+  public final void testUnknownTagsNest() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<html><foo><bar>baz</bar></baz>boo<command></html>"
@@ -1325,7 +1325,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testRegularTags() throws Exception {
+  public final void testRegularTags() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<span><span>Foo</span>Bar</span></span>"
@@ -1345,7 +1345,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testXmp() throws Exception {
+  public final void testXmp() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<p><b>Foo</b><xmp><b>Foo</b></xmp><b>Foo</b></p>"
@@ -1368,7 +1368,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testColumnGroups() throws Exception {
+  public final void testColumnGroups() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<table><caption>Test</caption>",
@@ -1425,7 +1425,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testMalformedTables() throws Exception {
+  public final void testMalformedTables() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<div><table>",
@@ -1490,7 +1490,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testMoreTables() throws Exception {
+  public final void testMoreTables() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<div>",
@@ -1536,7 +1536,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testEvenMoreTables() throws Exception {
+  public final void testEvenMoreTables() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<table><colgroup><col></col><caption></colgroup></caption>",
@@ -1562,7 +1562,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testTablesBonus() throws Exception {
+  public final void testTablesBonus() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<div><table><tbody></body></br><tr></td></tr></table></div>"
@@ -1587,7 +1587,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testTableRows() throws Exception {
+  public final void testTableRows() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(  // table does not end because none of these close the th
             "<div><table><tr><hr><td></th></html><select></td></table></div>"
@@ -1619,7 +1619,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testSelects() throws Exception {
+  public final void testSelects() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<select>",
@@ -1655,7 +1655,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testTrailingEndPhase() throws Exception {
+  public final void testTrailingEndPhase() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "<html></html><br>"
@@ -1675,7 +1675,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testValuelessAttributes() throws Exception {
+  public final void testValuelessAttributes() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<input type=checkbox checked>"
@@ -1696,7 +1696,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testNoDoctypeGuessAsHtml() throws Exception {
+  public final void testNoDoctypeGuessAsHtml() throws Exception {
     assertParsedMarkup(
         Arrays.asList(
             "<xmp><br/></xmp>"
@@ -1733,7 +1733,7 @@ public class DomParserTest extends CajaTestCase {
         null, false);
   }
 
-  public void testDoctypeGuessAsHtml() throws Exception {
+  public final void testDoctypeGuessAsHtml() throws Exception {
     assertParsedMarkup(
         Arrays.asList(
             "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">",
@@ -1754,7 +1754,7 @@ public class DomParserTest extends CajaTestCase {
         true);
   }
 
-  public void testDoctypeGuessAsXhtml() throws Exception {
+  public final void testDoctypeGuessAsXhtml() throws Exception {
     assertParsedMarkup(
         Arrays.asList(
             "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"",
@@ -1772,7 +1772,7 @@ public class DomParserTest extends CajaTestCase {
         null, false);
   }
 
-  public void testXmlPrologueTreatedAsXml() throws Exception {
+  public final void testXmlPrologueTreatedAsXml() throws Exception {
     assertParsedMarkup(
         Arrays.asList(
             "<?xml version=\"1.0\"?>",
@@ -1789,7 +1789,8 @@ public class DomParserTest extends CajaTestCase {
         null, false);
   }
 
-  public void testFileExtensionsBasedContentTypeGuessing() throws Exception {
+  public final void testFileExtensionsBasedContentTypeGuessing()
+      throws ParseException {
     // Override input sources, so that DomParser has a file extension available
     // when deciding whether to treat the input as HTML or XML.
     this.is = new InputSource(URI.create("test:///" + getName() + ".html"));
@@ -1841,7 +1842,7 @@ public class DomParserTest extends CajaTestCase {
         null, true);
   }
 
-  public void testQualifiedNameTreatedAsXml() throws Exception {
+  public final void testQualifiedNameTreatedAsXml() throws Exception {
     assertParsedMarkup(
         Arrays.asList(
             "<html:xmp><br/></html:xmp>"
@@ -1857,7 +1858,7 @@ public class DomParserTest extends CajaTestCase {
         null, false);
   }
 
-  public void testAmbiguousAttributes() throws Exception {
+  public final void testAmbiguousAttributes() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<a href= title=foo>bar</a>"
@@ -1894,7 +1895,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testEndTagCruft() throws Exception {
+  public final void testEndTagCruft() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<a href=foo>bar</a href>"
@@ -1930,7 +1931,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testMisplacedQuotes() throws Exception {
+  public final void testMisplacedQuotes() throws Exception {
     assertParsedHtmlFragment(
         Arrays.asList(
             "<span title=malformed attribs' do=don't id=foo checked",
@@ -1959,7 +1960,7 @@ public class DomParserTest extends CajaTestCase {
         );
   }
 
-  public void testShortTags() throws Exception {
+  public final void testShortTags() throws Exception {
     // See comments in html-sanitizer-test.js as to why we don't bother with
     // short tags.  In short, they are not in HTML5 and not implemented properly
     // in existing HTML4 clients.
@@ -1991,7 +1992,7 @@ public class DomParserTest extends CajaTestCase {
     }
   }
 
-  public void testLeadingAndTrailingContent() throws Exception {
+  public final void testLeadingAndTrailingContent() throws Exception {
     assertParsedHtml(
         Arrays.asList(
             "xyzw<body></body>xyzw"
@@ -2029,7 +2030,7 @@ public class DomParserTest extends CajaTestCase {
             ));
   }
 
-  public void testRender() throws Exception {
+  public final void testRender() throws Exception {
     DocumentFragment t = xmlFragment(fromString(
         ""
         + "<script><![CDATA[ foo() < bar() ]]></script>\n"
@@ -2058,7 +2059,7 @@ public class DomParserTest extends CajaTestCase {
         Nodes.render(t, false));
   }
 
-  public void testUnrenderableXMLTree1() throws Exception {
+  public final void testUnrenderableXMLTree1() throws Exception {
     DocumentFragment t = xmlFragment(
         fromString("<xmp><![CDATA[ </xmp> ]]></xmp>"));
     assertEquals("<xmp><![CDATA[ </xmp> ]]></xmp>", Nodes.render(t, true));
@@ -2070,7 +2071,7 @@ public class DomParserTest extends CajaTestCase {
     }
   }
 
-  public void testUnrenderableXMLTree2() throws Exception {
+  public final void testUnrenderableXMLTree2() throws Exception {
     DocumentFragment t = xmlFragment(
         fromString("<xmp><![CDATA[ </xM]]>p </xmp>"));
     assertEquals("<xmp><![CDATA[ </xM]]>p </xmp>", Nodes.render(t, true));
@@ -2082,7 +2083,7 @@ public class DomParserTest extends CajaTestCase {
     }
   }
 
-  public void testUnrenderableXMLTree3() throws Exception {
+  public final void testUnrenderableXMLTree3() throws Exception {
     DocumentFragment t = xmlFragment(
         fromString("<xmp> &lt;/XM<!-- -->P&gt; </xmp>"));
     assertEquals("<xmp> &lt;/XMP&gt; </xmp>", Nodes.render(t, true));
@@ -2094,14 +2095,14 @@ public class DomParserTest extends CajaTestCase {
     }
   }
 
-  public void testCommentsHidingCdataEnd() throws Exception {
+  public final void testCommentsHidingCdataEnd() throws Exception {
     DocumentFragment t = xmlFragment(
         fromString("<xmp> <!-- </xmp> --> </xmp>"));
     assertEquals("<xmp>  </xmp>", Nodes.render(t, true));
     assertEquals("<xmp>  </xmp>", Nodes.render(t, false));
   }
 
-  public void testParserSpeed() throws Exception {
+  public final void testParserSpeed() throws Exception {
     benchmark(100);  // prime the JIT
     Thread.sleep(250);  // Let the JIT kick-in.
     int microsPerRun = benchmark(250);

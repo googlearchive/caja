@@ -38,7 +38,7 @@ import java.util.ArrayList;
  * @author ihab.awad@gmail.com
  */
 public class ScopeTest extends CajaTestCase {
-  public void testSimpleDeclaredFunction() throws Exception {
+  public final void testSimpleDeclaredFunction() throws Exception {
     Block n = js(fromString(
         "var x = 3;" +
         "function foo() {" +
@@ -89,47 +89,47 @@ public class ScopeTest extends CajaTestCase {
     assertFalse(s1.isDeclaredFunction("z"));
   }
 
-  public void testFreeVariablesDotted() throws Exception {
+  public final void testFreeVariablesDotted() throws Exception {
     assertFreeVariables("a;", "a", "");
     assertFreeVariables("a.b;", "a", "b");
     assertFreeVariables("a.b.c;", "a", "b,c");
     assertFreeVariables("a.b.c.d;", "a", "b,c,d");
   }
 
-  public void testFreeVariablesIndexedChained() throws Exception {
+  public final void testFreeVariablesIndexedChained() throws Exception {
     assertFreeVariables("a;", "a", "");
     assertFreeVariables("a[b];", "a,b", "");
     assertFreeVariables("a[b][c];", "a,b,c", "");
     assertFreeVariables("a[b][c][d];", "a,b,c,d", "");
   }
 
-  public void testFreeVariablesIndexedRecursive() throws Exception {
+  public final void testFreeVariablesIndexedRecursive() throws Exception {
     assertFreeVariables("a;", "a", "");
     assertFreeVariables("a[b];", "a,b", "");
     assertFreeVariables("a[b[c]];", "a,b,c", "");
     assertFreeVariables("a[b[c[d]]];", "a,b,c,d", "");
   }
 
-  public void testFreeVariableFunction() throws Exception {
+  public final void testFreeVariableFunction() throws Exception {
     assertFreeVariables("a();", "a", "");
   }
 
-  public void testFreeVariableFunctionWithMember() throws Exception {
+  public final void testFreeVariableFunctionWithMember() throws Exception {
     assertFreeVariables("a();", "a", "");
     assertFreeVariables("a().b;", "a", "b");
     assertFreeVariables("a().b.c;", "a", "b,c");
     assertFreeVariables("a().b.c.d;", "a", "b,c,d");
   }
 
-  public void testFreeVariableFunctionParams() throws Exception {
+  public final void testFreeVariableFunctionParams() throws Exception {
     assertFreeVariables("a(b, c, d);", "a,b,c,d", "");
   }
 
-  public void testFreeVariableDeclaration() throws Exception {
+  public final void testFreeVariableDeclaration() throws Exception {
     assertFreeVariables("var a = b, c = d;", "b,d", "a,c");
   }
 
-  public void testFreeVariableCatchStmt() throws Exception {
+  public final void testFreeVariableCatchStmt() throws Exception {
     assertFreeVariables(
         "   try {"
         + "   a;"
@@ -188,7 +188,7 @@ public class ScopeTest extends CajaTestCase {
     }
   }
 
-  public void testAnonymousFunction() throws Exception {
+  public final void testAnonymousFunction() throws Exception {
     Block n = js(fromString("var x = function() {};"));
     Scope s0 = Scope.fromProgram(n, mq);
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, null));
@@ -200,7 +200,7 @@ public class ScopeTest extends CajaTestCase {
     assertFalse(s1.isImported("x"));
   }
 
-  public void testNamedFunction() throws Exception {
+  public final void testNamedFunction() throws Exception {
     Block n = js(fromString("var x = function foo() {};"));
     Scope s0 = Scope.fromProgram(n, mq);
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, "foo"));
@@ -218,7 +218,7 @@ public class ScopeTest extends CajaTestCase {
     assertFalse(s1.isImported("foo"));
   }
 
-  public void testNamedFunctionSameName() throws Exception {
+  public final void testNamedFunctionSameName() throws Exception {
     Block n = js(fromString("var x = function x() {};"));
     Scope s0 = Scope.fromProgram(n, mq);
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, "x"));
@@ -230,7 +230,7 @@ public class ScopeTest extends CajaTestCase {
     assertFalse(s1.isImported("x"));
   }
 
-  public void testFormalParams() throws Exception {
+  public final void testFormalParams() throws Exception {
     Block n = js(fromString("function f(x) {};"));
     Scope s0 = Scope.fromProgram(n, mq);
     Scope s1 = Scope.fromFunctionConstructor(s0, findFunctionConstructor(n, "f"));
@@ -239,7 +239,7 @@ public class ScopeTest extends CajaTestCase {
     assertTrue(s1.isDefined("x"));
   }
 
-  public void testCatchBlocks() throws Exception {
+  public final void testCatchBlocks() throws Exception {
     Block n = js(fromString("try { } catch (e) { var x; }"));
 
     TryStmt t = (TryStmt) n.children().get(0);
@@ -257,7 +257,7 @@ public class ScopeTest extends CajaTestCase {
     assertTrue(s0.isDefined("x"));
   }
 
-  public void testBodyOfNamedFunction() throws Exception {
+  public final void testBodyOfNamedFunction() throws Exception {
     Block n = js(fromString("function foo() { var x; }"));
 
     Scope s0 = Scope.fromProgram(n, mq);
@@ -266,7 +266,7 @@ public class ScopeTest extends CajaTestCase {
     assertTrue(s0.isDefined("foo"));
   }
 
-  public void testMaskedExceptionVariablesErrorA() throws Exception {
+  public final void testMaskedExceptionVariablesErrorA() throws Exception {
     Block n = js(fromString("var e; try { } catch (e) { var x; }"));
 
     TryStmt t = (TryStmt) n.children().get(1);
@@ -279,7 +279,7 @@ public class ScopeTest extends CajaTestCase {
     assertMsgLevel(MessageLevel.ERROR, mq.getMessages().get(0));
   }
 
-  public void testMaskedExceptionVariablesErrorB() throws Exception {
+  public final void testMaskedExceptionVariablesErrorB() throws Exception {
     Block n = js(fromString(
         "try { } catch (e) { function foo() { var e; } }"));
 
@@ -297,7 +297,7 @@ public class ScopeTest extends CajaTestCase {
     assertMsgLevel(MessageLevel.ERROR, mq.getMessages().get(0));
   }
 
-  public void testMaskedExceptionVariablesSame() throws Exception {
+  public final void testMaskedExceptionVariablesSame() throws Exception {
     Block outerBlock = js(fromString(
         "try { } catch (e) { try { } catch (e) { var x; } }"));
 
@@ -332,7 +332,7 @@ public class ScopeTest extends CajaTestCase {
     assertMsgLevel(level, mq.getMessages().get(0));
   }
 
-  public void testFunctionsRedefined() throws Exception {
+  public final void testFunctionsRedefined() throws Exception {
     assertFunctionRedefined(
         "function foo() {} var foo;",
         false,
@@ -389,7 +389,7 @@ public class ScopeTest extends CajaTestCase {
         MessageLevel.ERROR);
   }
 
-  public void testStartStatementsForProgram() throws Exception {
+  public final void testStartStatementsForProgram() throws Exception {
     Scope s0 = Scope.fromProgram(js(fromString("{}")), mq);
 
     assertEquals(0, s0.getStartStatements().size());
@@ -404,7 +404,7 @@ public class ScopeTest extends CajaTestCase {
     assertEquals(3, s0.getStartStatements().size());
   }
 
-  public void testStartStatementsForPlainBlock() throws Exception {
+  public final void testStartStatementsForPlainBlock() throws Exception {
     Scope s0 = Scope.fromProgram(js(fromString("{}")), mq);
     Scope s1 = Scope.fromPlainBlock(s0);
 
@@ -424,7 +424,7 @@ public class ScopeTest extends CajaTestCase {
     assertEquals(1, s1.getStartStatements().size());
   }
 
-  public void testStartStatementsForCatchStmt() throws Exception {
+  public final void testStartStatementsForCatchStmt() throws Exception {
     Scope s0 = Scope.fromProgram(js(fromString("{}")), mq);
     Block block = js(fromString("try {} catch (e) {}"));
     TryStmt t = (TryStmt)block.children().get(0);
@@ -446,10 +446,12 @@ public class ScopeTest extends CajaTestCase {
     assertEquals(1, s1.getStartStatements().size());
   }
 
-  public void testStartStatementsForFunctionConstructor() throws Exception {
+  public final void testStartStatementsForFunctionConstructor()
+      throws Exception {
     Scope s0 = Scope.fromProgram(js(fromString("{}")), mq);
     Block block = js(fromString("function() {};"));
-    FunctionConstructor fc = (FunctionConstructor)block.children().get(0).children().get(0);
+    FunctionConstructor fc = (FunctionConstructor)
+        block.children().get(0).children().get(0);
     Scope s1 = Scope.fromFunctionConstructor(s0, fc);
 
     assertEquals(0, s0.getStartStatements().size());
@@ -468,7 +470,8 @@ public class ScopeTest extends CajaTestCase {
     assertEquals(3, s1.getStartStatements().size());
   }
 
-  public void testStartStatementsForParseTreeNodeContainer() throws Exception {
+  public final void testStartStatementsForParseTreeNodeContainer()
+      throws Exception {
     Scope s0 = Scope.fromProgram(js(fromString("{}")), mq);
     Scope s1 = Scope.fromParseTreeNodeContainer(
         s0,
@@ -490,7 +493,7 @@ public class ScopeTest extends CajaTestCase {
     assertEquals(1, s1.getStartStatements().size());
   }
 
-  public void testUnmaskableIdentifiersInCatch() throws Exception {
+  public final void testUnmaskableIdentifiersInCatch() throws Exception {
     Block b = js(fromString("try {} catch (Object) {}"));
     TryStmt tryStmt = (TryStmt) b.children().get(0);
     Scope top = Scope.fromProgram(b, mq);
@@ -500,7 +503,7 @@ public class ScopeTest extends CajaTestCase {
         MessagePart.Factory.valueOf("Object"));
   }
 
-  public void testUnmaskableIdentifiersInDeclarations() throws Exception {
+  public final void testUnmaskableIdentifiersInDeclarations() throws Exception {
     Block b = js(fromString("var Array, undefined;"));
     Scope.fromProgram(b, mq);
     assertMessage(
@@ -508,7 +511,7 @@ public class ScopeTest extends CajaTestCase {
         MessagePart.Factory.valueOf("Array"));
   }
 
-  public void testUnmaskableFormals() throws Exception {
+  public final void testUnmaskableFormals() throws Exception {
     Block b = js(fromString("function NaN(Infinity, arguments) {}"));
     Scope top = Scope.fromProgram(b, mq);
     FunctionDeclaration fn = ((FunctionDeclaration) b.children().get(0));

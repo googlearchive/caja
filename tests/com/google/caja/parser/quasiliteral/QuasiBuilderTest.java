@@ -24,7 +24,7 @@ import java.net.URI;
  * @author ihab.awad@gmail.com
  */
 public class QuasiBuilderTest extends TestCase {
-  public void testParseDoesNotFail() throws Exception {
+  public final void testParseDoesNotFail() throws Exception {
     QuasiNode n = QuasiBuilder.parseQuasiNode(
         new InputSource(URI.create("built-in:///js-quasi-literals")),
         "function @a() { @b.@c = @d; @e = @f; }");

@@ -118,7 +118,7 @@ public class RewriterTest extends RewriterTestCase {
     super.setUp();
   }
 
-  public void testReturningExactInputIsCaught() throws Exception {
+  public final void testReturningExactInputIsCaught() throws Exception {
     setRewriter(new ReturnExactInputRewriter(true));
     checkAddsMessage(
         js(fromString("3;")),
@@ -130,7 +130,7 @@ public class RewriterTest extends RewriterTestCase {
         null);
   }
 
-  public void testReturningUnexpandedIsCaught() throws Exception {
+  public final void testReturningUnexpandedIsCaught() throws Exception {
     setRewriter(new ReturnUnexpandedRewriter(true));
     checkAddsMessage(
         makeSimpleAdditionExpr(),
@@ -142,7 +142,7 @@ public class RewriterTest extends RewriterTestCase {
         null);
   }
 
-  public void testUnmatchedThrowsError() throws Exception {
+  public final void testUnmatchedThrowsError() throws Exception {
     setRewriter(new Rewriter(true, true) {});  // No rules
     checkAddsMessage(
         js(fromString("3;")),

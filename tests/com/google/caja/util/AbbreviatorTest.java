@@ -21,13 +21,13 @@ import java.util.HashSet;
 import junit.framework.TestCase;
 
 public class AbbreviatorTest extends TestCase {
-  public void testOne() {
+  public final void testOne() {
     Abbreviator a = new Abbreviator(
         Collections.singleton("test:///foo/bar"), "/");
     assertEquals("bar", a.unambiguousAbbreviationFor("test:///foo/bar"));
   }
 
-  public void testAbbreviator() {
+  public final void testAbbreviator() {
     Abbreviator a = new Abbreviator(
         new HashSet<String>(Arrays.asList(
             "/a/b/c", "/a/d/e", "/a/d/f", "/a/g/h/c",
@@ -47,7 +47,7 @@ public class AbbreviatorTest extends TestCase {
     assertEquals("/notpresent", a.unambiguousAbbreviationFor("/notpresent"));
   }
 
-  public void testSetContainsSuffixOfOtherMember() {
+  public final void testSetContainsSuffixOfOtherMember() {
     Abbreviator a = new Abbreviator(
         new HashSet<String>(Arrays.asList(
             "foo:bar/z", "foo:foo:baz/z", "foo:baz/z", "foo:bar:far/z")),

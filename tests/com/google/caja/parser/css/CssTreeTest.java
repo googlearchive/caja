@@ -27,25 +27,25 @@ import com.google.caja.util.TestUtil;
  */
 public class CssTreeTest extends CajaTestCase {
 
-  public void testRender1() throws Exception {
+  public final void testRender1() throws Exception {
     runRenderTest("cssrendergolden1.txt", "cssparserinput1.css", false);
   }
 
-  public void testRender2() throws Exception {
+  public final void testRender2() throws Exception {
     runRenderTest("cssrendergolden2.txt", "cssparserinput2.css", false);
   }
 
-  public void testRender4() throws Exception {
+  public final void testRender4() throws Exception {
     // Make sure we don't have <!-- or --> in output in paranoid mode.
     runRenderTest("cssrendergolden4.txt", "cssparserinput4.css", true);
   }
 
-  public void testRenderFilters() throws Exception {
+  public final void testRenderFilters() throws Exception {
     runRenderTest("cssrendergolden-filters.css", "cssparserinput-filters.css",
                   false);
   }
 
-  public void testRenderUserAgentHacks() throws Exception {
+  public final void testRenderUserAgentHacks() throws Exception {
     // User agent hacks do not show up in rendered output.
     runRenderTest(
         "cssrendergolden-uahacks.css", "cssparserinput-uahacks.css", false);
@@ -53,12 +53,12 @@ public class CssTreeTest extends CajaTestCase {
         "cssrendergolden-uahacks.css", "cssparserinput-uahacks.css", true);
   }
 
-  public void testClone() throws Exception {
+  public final void testClone() throws Exception {
     CssTree t = css(fromResource("cssparserinput1.css"));
     assertEquals(render(t), render(t.clone()));
   }
 
-  public void testStringRendering() throws Exception {
+  public final void testStringRendering() throws Exception {
     assertRenderedForm(
         "a {\n  background: ''\n}",
         "a { background: '' }");
@@ -79,7 +79,7 @@ public class CssTreeTest extends CajaTestCase {
         "a { background: ']]\\3E ' }");
   }
 
-  public void testUrlRendering() throws Exception {
+  public final void testUrlRendering() throws Exception {
     assertRenderedForm(
         "a {\n  background: url('')\n}",
         "a { background: url('') }");
@@ -97,7 +97,7 @@ public class CssTreeTest extends CajaTestCase {
         "a { background: url(\"url('hi')\") }");
   }
 
-  public void testParanoidUrlRendering() throws Exception {
+  public final void testParanoidUrlRendering() throws Exception {
     try {
       assertRenderedForm(
           "a {\n  background: url('\\3C/script')\n}",
@@ -147,7 +147,7 @@ public class CssTreeTest extends CajaTestCase {
     }
   }
 
-  public void testIdentifierEscaping() throws Exception {
+  public final void testIdentifierEscaping() throws Exception {
     assertRenderedForm(
         "Le caja .no es #un rect\\E1ngulo {\n}",
         "Le caja .no es #un rect\u00E1ngulo {}");
@@ -162,19 +162,19 @@ public class CssTreeTest extends CajaTestCase {
         "\\34 0 is a number and an identifier too {}");
   }
 
-  public void testPrio() throws Exception {
+  public final void testPrio() throws Exception {
     assertRenderedForm(
         "sky {\n  color: #0000ff !important\n}",
         "sky { color: #0000ff !important }");
   }
 
-  public void testOperators() throws Exception {
+  public final void testOperators() throws Exception {
     assertRenderedForm(
         "hi {\n  x: f(-3);\n  y: +g(2)\n}",
         "hi { x: f(-3); y: +g( 2 ) }");
   }
 
-  public void testCombinatorRules() throws Exception {
+  public final void testCombinatorRules() throws Exception {
     assertRenderedForm(
         "hello > world {\n  color: blue\n}",
         "hello>world { color: blue }");

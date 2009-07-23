@@ -21,7 +21,7 @@ import junit.framework.TestCase;
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
 public class ParserBaseTest extends TestCase {
-  public void testIsJavascriptIdentifier() {
+  public final void testIsJavascriptIdentifier() {
     for (String s : new String[] {
              "$", "_", "$$", "_foo_bar", "fooBar", "h3", "i", "___",
              "__proto__", "FOO_BAR_BAZ_", "i18n", "ev\\u0061l",
@@ -42,7 +42,7 @@ public class ParserBaseTest extends TestCase {
     }
   }
 
-  public void testDecodeIdentifier() {
+  public final void testDecodeIdentifier() {
     assertEquals("eval", ParserBase.decodeIdentifier("eval"));
     assertEquals("eval", ParserBase.decodeIdentifier("ev\\u0061l"));
   }

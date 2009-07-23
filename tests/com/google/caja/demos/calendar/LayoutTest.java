@@ -21,11 +21,11 @@ import com.google.caja.util.RhinoTestBed;
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
 public class LayoutTest extends CajaTestCase {
-  public void testBitSet() throws Exception {
+  public final void testBitSet() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(html(fromResource("bitset_test.html")));
   }
 
-  public void testLayout() throws Exception {
+  public final void testLayout() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(html(fromResource("layout_test.html")));
   }
 }

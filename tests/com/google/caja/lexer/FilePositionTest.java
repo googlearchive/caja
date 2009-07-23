@@ -19,7 +19,7 @@ import java.net.URI;
 import junit.framework.TestCase;
 
 public class FilePositionTest extends TestCase {
-  public void testInstance1() {
+  public final void testInstance1() {
     InputSource is = new InputSource(URI.create("t:///foo"));
     FilePosition inst = FilePosition.instance(is, 1, 1, 1);
     assertEquals(is, inst.source());
@@ -33,7 +33,7 @@ public class FilePositionTest extends TestCase {
     assertEquals("foo:1+1@1", inst.toString());
   }
 
-  public void testInstance2() {
+  public final void testInstance2() {
     InputSource is = new InputSource(URI.create("t:///foo"));
     FilePosition inst = FilePosition.instance(is, 1, 1, 1, 1);
     assertEquals(is, inst.source());
@@ -47,7 +47,7 @@ public class FilePositionTest extends TestCase {
     assertEquals("foo:1+1@1 - 2@2", inst.toString());
   }
 
-  public void testInstance3() {
+  public final void testInstance3() {
     InputSource is = new InputSource(URI.create("t:///foo"));
     FilePosition inst = FilePosition.instance(is, 2, 30, 2, 3);
     assertEquals(is, inst.source());
@@ -61,7 +61,7 @@ public class FilePositionTest extends TestCase {
     assertEquals("foo:2+2@30 - 5@33", inst.toString());
   }
 
-  public void testInstance4() {
+  public final void testInstance4() {
     InputSource is = new InputSource(URI.create("t:///foo"));
     FilePosition inst = FilePosition.instance(is, 2, 30, 1);
     assertEquals(is, inst.source());

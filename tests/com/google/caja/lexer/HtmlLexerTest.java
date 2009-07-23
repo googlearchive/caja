@@ -28,7 +28,7 @@ import java.util.List;
  */
 public class HtmlLexerTest extends CajaTestCase {
 
-  public void testHtmlLexer() throws Exception {
+  public final void testHtmlLexer() throws Exception {
     // Do the lexing.
     CharProducer p = fromResource("htmllexerinput1.html");
     StringBuilder actual = new StringBuilder();
@@ -41,7 +41,7 @@ public class HtmlLexerTest extends CajaTestCase {
     assertEquals(golden, actual.toString());
   }
 
-  public void testXmlLexer() throws Exception {
+  public final void testXmlLexer() throws Exception {
     // Do the lexing.
     CharProducer p = fromResource("htmllexerinput2.xml");
     StringBuilder actual = new StringBuilder();
@@ -56,7 +56,7 @@ public class HtmlLexerTest extends CajaTestCase {
     assertEquals(golden, actual.toString());
   }
 
-  public void testEofInTag() throws Exception {
+  public final void testEofInTag() throws Exception {
     assertTokens("<div", true, "TAGBEGIN: <div");
     assertTokens("</div", true, "TAGBEGIN: </div");
     assertTokens("<div\n", true, "TAGBEGIN: <div");
@@ -67,7 +67,7 @@ public class HtmlLexerTest extends CajaTestCase {
     assertTokens("</div\n", false, "TAGBEGIN: </div");
   }
 
-  public void testPartialTagInCData() throws Exception {
+  public final void testPartialTagInCData() throws Exception {
     assertTokens(
         "<script>w('</b')</script>", false,
         "TAGBEGIN: <script",
@@ -77,7 +77,7 @@ public class HtmlLexerTest extends CajaTestCase {
         "TAGEND: >");
   }
 
-  public void testShortTags() throws Exception {
+  public final void testShortTags() throws Exception {
     // See comments in html-sanitizer-test.js as to why we don't bother with
     // short tags.  In short, they are not in HTML5 and not implemented properly
     // in existing HTML4 clients.

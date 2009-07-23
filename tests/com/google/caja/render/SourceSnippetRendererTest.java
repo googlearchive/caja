@@ -26,7 +26,7 @@ import java.io.IOException;
  * @author ihab.awad@gmail.com
  */
 public class SourceSnippetRendererTest extends OrigSourceRendererTestCase {
-  public void testRendering() throws Exception {
+  public final void testRendering() throws Exception {
     runTest(
         "ss-golden.js", "ss-rewritten-tokens.txt",
         "ss-test-input.js");

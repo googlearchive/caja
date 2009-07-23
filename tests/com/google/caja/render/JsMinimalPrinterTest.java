@@ -37,19 +37,19 @@ import java.util.List;
 import java.util.Random;
 
 public class JsMinimalPrinterTest extends CajaTestCase {
-  public void testEmptyBlock() throws Exception {
+  public final void testEmptyBlock() throws Exception {
     assertRendered("{{}}", "{}");
   }
 
-  public void testAdjacentBlocks() throws Exception {
+  public final void testAdjacentBlocks() throws Exception {
     assertRendered("{{}{}}", "{}{}");
   }
 
-  public void testSimpleStatement() throws Exception {
+  public final void testSimpleStatement() throws Exception {
     assertRendered("{foo();}", "foo();");
   }
 
-  public void testSemisInsideParents() throws Exception {
+  public final void testSemisInsideParents() throws Exception {
     assertRendered(
         "{for(var i=0,n=a.length;i<n;++i){"
         + "bar(a[i]);}}",
@@ -58,19 +58,19 @@ public class JsMinimalPrinterTest extends CajaTestCase {
         + "}");
   }
 
-  public void testObjectConstructor() throws Exception {
+  public final void testObjectConstructor() throws Exception {
     assertRendered(
         "{foo({'x':1,'y':bar({'w':4}),'z':3});}",
         "foo({ x: 1, y: bar({ w: 4 }), z: 3 });");
   }
 
-  public void testMultipleStatements() throws Exception {
+  public final void testMultipleStatements() throws Exception {
     assertRendered(
         "{(function(a,b,c){foo(a);bar(b);return c;})(1,2,3);}",
         "(function (a, b, c) { foo(a); bar(b); return (c); })(1, 2, 3);");
   }
 
-  public void testMarkupEndStructures() throws Exception {
+  public final void testMarkupEndStructures() throws Exception {
     // Make sure -->, </script, and ]]> don't show up in rendered output.
     // Preventing these in strings is handled separately.
     assertRendered(
@@ -78,23 +78,23 @@ public class JsMinimalPrinterTest extends CajaTestCase {
         "i-->j, k</script>/, [[0]]>0 / / / * x;");
   }
 
-  public void testJSON() throws Exception {
+  public final void testJSON() throws Exception {
     assertRendered(
         "{({'a':[1,2,3],'b':{'c':[{}],'d':[{'e':null,'f':'foo'},null]}});}",
         "({ a: [1,2,3], b: { c: [{}], d: [{ e: null, f: 'foo' }, null] } });");
   }
 
-  public void testConditional() throws Exception {
+  public final void testConditional() throws Exception {
     assertRendered(
         "{if(c1){foo();}else if(c2)bar();else baz();}",
         "if (c1) { foo(); } else if (c2) bar(); else baz();");
   }
 
-  public void testNumberPropertyAccess() throws Exception {
+  public final void testNumberPropertyAccess() throws Exception {
     assertRendered("{(3).toString();}", "(3).toString();");
   }
 
-  public void testComments() throws Exception {
+  public final void testComments() throws Exception {
     assertLexed(
         "var x=foo;function Bar(){}var baz;a+b;",
 
@@ -107,15 +107,15 @@ public class JsMinimalPrinterTest extends CajaTestCase {
         + "b;");
   }
 
-  public void testDivisionByRegex() throws Exception {
+  public final void testDivisionByRegex() throws Exception {
     assertLexed("3/ /foo/;", "3 / /foo/;");
   }
 
-  public void testPunctuationRun() throws Exception {
+  public final void testPunctuationRun() throws Exception {
     assertLexed("!=|| =", "!= || =");
   }
 
-  public void testNegatedNegativeNumericConstants() throws Exception {
+  public final void testNegatedNegativeNumericConstants() throws Exception {
     assertRendered(
         "-(-3)",  // not --3
         Operation.create(
@@ -123,7 +123,7 @@ public class JsMinimalPrinterTest extends CajaTestCase {
             new IntegerLiteral(FilePosition.UNKNOWN,-3)));
   }
 
-  public void testRetokenization() throws Exception {
+  public final void testRetokenization() throws Exception {
     long seed = Long.parseLong(
         System.getProperty("junit.seed", "" + System.currentTimeMillis()));
     Random rnd = new Random(seed);
@@ -159,42 +159,42 @@ public class JsMinimalPrinterTest extends CajaTestCase {
     }
   }
 
-  public void testSpacingAroundBrackets1() throws Exception {
+  public final void testSpacingAroundBrackets1() throws Exception {
     assertTokens("longObjectInstance.reallyLongMethodName(a,b,c,d);",
                  "longObjectInstance", ".", "reallyLongMethodName", "(",
                  "a", ",", "b", ",", "c", ",", "d", ")", ";");
   }
 
-  public void testSpacingAroundBrackets2() throws Exception {
+  public final void testSpacingAroundBrackets2() throws Exception {
     assertTokens("longObjectInstance.reallyLongMethodName(a,b,c,d);",
                  "longObjectInstance", ".", "reallyLongMethodName", "(",
                  "a", ",", "b", ",", "c", ",", "\n", "d", ")", ";");
   }
 
-  public void testSpacingAroundBrackets3() throws Exception {
+  public final void testSpacingAroundBrackets3() throws Exception {
     assertTokens("longObjectInstance.reallyLongMethodName(a,b,c,d);",
                  "longObjectInstance", ".", "reallyLongMethodName", "(",
                  "\n", "a", ",", "b", ",", "c", ",", "d", ")", ";");
   }
 
-  public void testSpacingAroundBrackets4() throws Exception {
+  public final void testSpacingAroundBrackets4() throws Exception {
     assertTokens("var x=({'fooBar':[0,1,2,]});",
                  "var", "x", "=", "(", "{", "'fooBar'", ":", "[",
                  "\n", "0", ",", "1", ",", "2", ",", "]", "}", ")", ";");
   }
 
-  public void testConfusedTokenSequences() throws Exception {
+  public final void testConfusedTokenSequences() throws Exception {
     assertTokens("< ! =", "<", "!", "=");
     assertTokens("< !=", "<", "!=");
   }
 
-  public void testNumbersAndDots() throws Exception {
+  public final void testNumbersAndDots() throws Exception {
     assertTokens("2 .toString()", "2", ".", "toString", "(", ")");
     assertTokens("2..toString()", "2.", ".", "toString", "(", ")");
     assertTokens("2. .5", "2.", ".5");
   }
 
-  public void testRestrictedSemicolonInsertion() throws Exception {
+  public final void testRestrictedSemicolonInsertion() throws Exception {
     ParseTreeNode node = js(fromString(
         ""
         // 0123456789

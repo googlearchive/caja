@@ -31,7 +31,7 @@ import com.google.caja.util.RhinoTestBed;
  */
 public class DebuggingSymbolsStageTest extends CajaTestCase {
 
-  public void testDereferenceNull() throws Exception {
+  public final void testDereferenceNull() throws Exception {
     assertStackTrace(
         "var x = null;\n"
         + "var xDotFoo = (x).foo;",
@@ -40,7 +40,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         "testDereferenceNull:2+16 - 22");
   }
 
-  public void testCallOnNullObject() throws Exception {
+  public final void testCallOnNullObject() throws Exception {
     assertStackTrace(
         "{\n"
         + "  function f(x) { return x.foo(); }\n"
@@ -57,7 +57,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "testCallOnNullObject:2+26 - 31");
   }
 
-  public void testCallUndefinedMethod() throws Exception {
+  public final void testCallUndefinedMethod() throws Exception {
     assertStackTrace(
         "{\n"
         + "  function f(x) { return x.noSuchMethod(); }\n"
@@ -74,7 +74,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "testCallUndefinedMethod:2+26 - 40");
   }
 
-  public void testReflectiveInvocation() throws Exception {
+  public final void testReflectiveInvocation() throws Exception {
     // Constructors cannot be called or applied unless they are also simple fns.
     assertStackTrace(
         "Date.call({}, 4);\n",
@@ -86,7 +86,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         "testReflectiveInvocation:1+1 - 17");
   }
 
-  public void testInaccessibleProperty() throws Exception {
+  public final void testInaccessibleProperty() throws Exception {
     assertStackTrace(
         "{\n"
         + "  function f(x, k) { return x['foo_'] = 0; }\n"
@@ -99,21 +99,21 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "testInaccessibleProperty:2+29 - 42");
   }
 
-  public void testSetOfNullObject() throws Exception {
+  public final void testSetOfNullObject() throws Exception {
     assertStackTrace(
         "(null).x = 0;",
         //^^^^^^^^^^^ 1+2-13
         "testSetOfNullObject:1+2 - 13");
   }
 
-  public void testDeleteOfNullObject() throws Exception {
+  public final void testDeleteOfNullObject() throws Exception {
     assertStackTrace(
         "{ delete (null).x; }",
         // ^^^^^^^^^^^^^^^ 1+3-18
         "testDeleteOfNullObject:1+3 - 18");
   }
 
-  public void testSetOfFrozenObject() throws Exception {
+  public final void testSetOfFrozenObject() throws Exception {
     assertStackTrace(
         ""
         + "var o = cajita.freeze({ x: 1 });\n"
@@ -122,7 +122,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         "testSetOfFrozenObject:2+2 - 13");
   }
 
-  public void testDeleteOfFrozenObject() throws Exception {
+  public final void testDeleteOfFrozenObject() throws Exception {
     assertStackTrace(
         ""
         + "var o = cajita.freeze({ x: 1 });\n"
@@ -131,7 +131,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         "testDeleteOfFrozenObject:2+1 - 16");
   }
 
-  public void testEnumerateOfNull() throws Exception {
+  public final void testEnumerateOfNull() throws Exception {
     if (false) {  // TODO: enable under Valija
       assertStackTrace(
           ""
@@ -152,7 +152,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
     }
   }
 
-  public void testPropertyInNull() throws Exception {
+  public final void testPropertyInNull() throws Exception {
     assertStackTrace(
         ""
         + "(function (x) {\n"
@@ -166,7 +166,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "testPropertyInNull:2+10 - 18");
   }
 
-  public void testConstruction() throws Exception {
+  public final void testConstruction() throws Exception {
     assertStackTrace(
         ""
         + "var foo = function () { throw new Error('hi'); };\n"
@@ -179,7 +179,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         );
   }
 
-  public void testIllegalAccessInsideHoistedFunction() throws Exception {
+  public final void testIllegalAccessInsideHoistedFunction() throws Exception {
     assertStackTrace(
         "var x = true;\n"
         + "var foo = {};\n"
@@ -198,7 +198,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         + "testIllegalAccessInsideHoistedFunction:7+5 - 15");
   }
 
-  public void testWrappedConstructors() throws Exception {
+  public final void testWrappedConstructors() throws Exception {
     // Normally, trying to subclass a Date results in an object whose
     // methods fail with 'Method "<name>" called on incompatible object.'
     // in both Rhino and SpiderMonkey.

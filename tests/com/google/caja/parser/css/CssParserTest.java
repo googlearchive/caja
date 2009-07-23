@@ -44,11 +44,11 @@ import java.util.Map;
  */
 public class CssParserTest extends CajaTestCase {
 
-  public void testBadHashValue() throws Exception {
+  public final void testBadHashValue() throws Exception {
     throwsParseException("h1 { color: #OOOOOO}");  // Letters instead of zeroes
   }
 
-  public void testUnescape() throws Exception {
+  public final void testUnescape() throws Exception {
     FilePosition pos = FilePosition.startOfFile(is);
     assertEquals("", CssParser.unescape(
         Token.instance("", CssTokenType.IDENT, pos)));
@@ -76,23 +76,23 @@ public class CssParserTest extends CajaTestCase {
         Token.instance("\\\\66oo-ba\\0072", CssTokenType.IDENT, pos)));
   }
 
-  public void testCssParser1() throws Exception {
+  public final void testCssParser1() throws Exception {
     runTestCssParser("cssparserinput1.css", "cssparsergolden1.txt", false);
   }
 
-  public void testCssParser2() throws Exception {
+  public final void testCssParser2() throws Exception {
     runTestCssParser("cssparserinput2.css", "cssparsergolden2.txt", false);
   }
 
-  public void testCssParser3() throws Exception {
+  public final void testCssParser3() throws Exception {
     runTestCssParser("cssparserinput3.css", "cssparsergolden3.txt", false);
   }
 
-  public void testCssParser4() throws Exception {
+  public final void testCssParser4() throws Exception {
     runTestCssParser("cssparserinput4.css", "cssparsergolden4.txt", false);
   }
 
-  public void testTolerantParsing() throws Exception {
+  public final void testTolerantParsing() throws Exception {
     String inputFile = "cssparserinput5.css";
     InputSource inputSource = new InputSource(
         TestUtil.getResource(getClass(), inputFile));
@@ -105,19 +105,19 @@ public class CssParserTest extends CajaTestCase {
                 TestUtil.readResource(getClass(), inputFile))));
   }
 
-  public void testFilters() throws Exception {
+  public final void testFilters() throws Exception {
     runTestCssParser(
         "cssparserinput-filters.css", "cssparsergolden-filters.txt", true);
     assertMessagesLessSevereThan(MessageLevel.WARNING);
   }
 
-  public void testUserAgentHacks() throws Exception {
+  public final void testUserAgentHacks() throws Exception {
     runTestCssParser(
         "cssparserinput-uahacks.css", "cssparsergolden-uahacks.txt", true);
     assertMessagesLessSevereThan(MessageLevel.WARNING);
   }
 
-  public void testFilterFilePositions() throws Exception {
+  public final void testFilterFilePositions() throws Exception {
     CssTree.DeclarationGroup ss = cssDecls(
         // Character in file indices used in assertFilePosition below.
         //          0        1         2         3         4         5
@@ -174,7 +174,7 @@ public class CssParserTest extends CajaTestCase {
         ? MessageLevel.WARNING : MessageLevel.FATAL_ERROR;
     CssTree.StyleSheet stylesheet = new CssParser(
         CssParser.makeTokenQueue(cp, mq, false), mq, lvl).parseStyleSheet();
-    assertCloneable(stylesheet);    
+    assertCloneable(stylesheet);
     StringBuilder sb = new StringBuilder();
     stylesheet.format(new MessageContext(), sb);
     assertEquals(golden.trim(), sb.toString().trim());

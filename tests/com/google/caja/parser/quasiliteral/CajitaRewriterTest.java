@@ -137,7 +137,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
            "', " + permitsUsed + ");";
   }
 
-  public void testToString() throws Exception {
+  public final void testToString() throws Exception {
     assertConsistent(
         "var z = { toString: function () { return 'blah'; } };" +
         "try {" +
@@ -175,11 +175,11 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         );
   }
 
-  public void testInitializeMap() throws Exception {
+  public final void testInitializeMap() throws Exception {
     assertConsistent("var zerubabel = {bobble:2, apple:1}; zerubabel.apple;");
   }
 
-  public void testValueOf() throws Exception {
+  public final void testValueOf() throws Exception {
     checkFails("var a = {valueOf:1};", "The valueOf property must not be set");
     checkFails(
         "var a = {x:0,valueOf:1};",
@@ -197,7 +197,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "var a={}; assertThrows(function(){delete a['valueOf'];});");
   }
 
-  public void testFunctionDoesNotMaskVariable() throws Exception {
+  public final void testFunctionDoesNotMaskVariable() throws Exception {
     // Regress http://code.google.com/p/google-caja/issues/detail?id=370
     // TODO(ihab.awad): Enhance test framework to allow "before" and "after"
     // un-cajoled code to be executed, then change this to a functional test.
@@ -212,7 +212,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         + "var x;");
   }
 
-  public void testAssertEqualsCajoled() throws Exception {
+  public final void testAssertEqualsCajoled() throws Exception {
     try {
       rewriteAndExecute("assertEquals(1, 2);");
     } catch (AssertionFailedError e) {
@@ -221,7 +221,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     fail("Assertions do not work in cajoled mode");
   }
 
-  public void testAssertThrowsCajoledNoError() throws Exception {
+  public final void testAssertThrowsCajoledNoError() throws Exception {
     rewriteAndExecute(
         "  assertThrows(function() { throw 'foo'; });");
     rewriteAndExecute(
@@ -230,7 +230,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         + "    'foo');");
   }
 
-  public void testAssertThrowsCajoledErrorNoMsg() throws Exception {
+  public final void testAssertThrowsCajoledErrorNoMsg() throws Exception {
     try {
       rewriteAndExecute("assertThrows(function() {});");
     } catch (AssertionFailedError e) {
@@ -239,7 +239,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     fail("Assertions do not work in cajoled mode");
   }
 
-  public void testAssertThrowsCajoledErrorWithMsg() throws Exception {
+  public final void testAssertThrowsCajoledErrorWithMsg() throws Exception {
     try {
       rewriteAndExecute("assertThrows(function() {}, 'foo');");
     } catch (AssertionFailedError e) {
@@ -248,7 +248,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     fail("Assertions do not work in cajoled mode");
   }
 
-  public void testFreeVariables() throws Exception {
+  public final void testFreeVariables() throws Exception {
     checkSucceeds(
         "var y = x;",
         weldPrelude("x") +
@@ -261,7 +261,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "});");
   }
 
-  public void testConstructionWithFunction() throws Exception {
+  public final void testConstructionWithFunction() throws Exception {
     assertConsistent(
         "  function Point() {}"
         + "var p = new Point();"
@@ -272,7 +272,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         + "(p !== undefined);");
   }
 
-  public void testReflectiveMethodInvocation() throws Exception {
+  public final void testReflectiveMethodInvocation() throws Exception {
     assertConsistent(
         "(function (first, second) { return 'a' + first + 'b' + second; })"
         + ".call([], 8, 9);");
@@ -301,7 +301,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
    * that Caja code could call the whitelisted bind() on it, and then call the result,
    * causing an <i>inner hull breach</i> which threatens kernel integrity.
    */
-  public void testToxicBind() throws Exception {
+  public final void testToxicBind() throws Exception {
     rewriteAndExecute(
         "var confused = false;" +
         "testImports.keystone = function keystone() { confused = true; };",
@@ -319,7 +319,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
    * code was able to delete <i>protected</i> properties of non-frozen JSON
    * containers.
    */
-  public void testBadDelete() throws Exception {
+  public final void testBadDelete() throws Exception {
     rewriteAndExecute(
         "testImports.badContainer = {secret__: 3469};",
         "assertThrows(function() {delete badContainer['secret__'];});",
@@ -346,7 +346,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
    * As a result, the following test currently succeeds whether this bug is fixed or
    * not.
    */
-  public void testNameFuncExprScoping() throws Exception {
+  public final void testNameFuncExprScoping() throws Exception {
     rewriteAndExecute(
         "assertEquals(0, function() { \n" +
         "  var propertyIsEnumerable = 0;\n" +
@@ -366,7 +366,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
    * are functions, they should be marked as simple-functions. Before
    * this bug was fixed, <tt>cajita.js</tt> failed to do either.
    */
-  public void testCajaPropsFrozen() throws Exception {
+  public final void testCajaPropsFrozen() throws Exception {
     rewriteAndExecute(";","0;",
     "assertTrue(___.isFunc(___.sharedImports.cajita.manifest));");
     rewriteAndExecute(";","0;",
@@ -382,7 +382,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
    * using indexes which are numbers or stringified numbers, so long as
    * they are in range.
    */
-  public void testStringIndexing() throws Exception {
+  public final void testStringIndexing() throws Exception {
     rewriteAndExecute("assertEquals('b', 'abc'[1]);");
 
     // TODO(erights): This test isn't green because we haven't yet fixed the bug.
@@ -399,7 +399,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
    * Reading the apply property of a function should result in the apply
    * method as attached to that function.
    */
-  public void testAttachedReflection() throws Exception {
+  public final void testAttachedReflection() throws Exception {
     rewriteAndExecute(
         "function f() {}\n" +
         "f.apply;");
@@ -413,7 +413,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
    * <p>
    * The <tt>in</tt> operator should only test for properties visible to Caja.
    */
-  public void testInVeil() throws Exception {
+  public final void testInVeil() throws Exception {
     rewriteAndExecute(
         "assertFalse('FROZEN___' in Object);");
   }
@@ -422,19 +422,19 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   // Handling of synthetic nodes
   ////////////////////////////////////////////////////////////////////////
 
-  public void testSyntheticIsUntouched() throws Exception {
+  public final void testSyntheticIsUntouched() throws Exception {
     ParseTreeNode input = js(fromString("function foo() { this; arguments; }"));
     syntheticTree(input);
     checkSucceeds(input, input);
   }
 
-  public void testSyntheticMemberAccess() throws Exception {
+  public final void testSyntheticMemberAccess() throws Exception {
     ParseTreeNode input = js(fromString("({}).foo"));
     syntheticTree(input);
     checkSucceeds(input, js(fromString("___.initializeMap([]).foo;")));
   }
 
-  public void testSyntheticNestedIsExpanded() throws Exception {
+  public final void testSyntheticNestedIsExpanded() throws Exception {
     ParseTreeNode innerInput = js(fromString("function foo() {}"));
     ParseTreeNode input = ParseTreeNodes.newNodeInstance(
         Block.class,
@@ -451,7 +451,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     checkSucceeds(input, expectedResult);
   }
 
-  public void testSyntheticNestedFunctionIsExpanded() throws Exception {
+  public final void testSyntheticNestedFunctionIsExpanded() throws Exception {
     // This test checks that a synthetic function, as is commonly generated
     // by Caja to wrap JavaScript event handlers declared in HTML, is rewritten
     // correctly.
@@ -485,7 +485,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   // Handling of nested blocks
   ////////////////////////////////////////////////////////////////////////
 
-  public void testNestedBlockWithFunction() throws Exception {
+  public final void testNestedBlockWithFunction() throws Exception {
     checkSucceeds(
         "{ function foo() {} }",
         "var foo;" +
@@ -496,7 +496,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "           })(); }");
   }
 
-  public void testNestedBlockWithVariable() throws Exception {
+  public final void testNestedBlockWithVariable() throws Exception {
     checkSucceeds(
         "{ var x = g().y; }",
         weldPrelude("g") +
@@ -510,21 +510,21 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   // Specific rules
   ////////////////////////////////////////////////////////////////////////
 
-  public void testWith() throws Exception {
+  public final void testWith() throws Exception {
     checkFails("with (dreams || ambiguousScoping) anything.isPossible();",
                "\"with\" blocks are not allowed");
     checkFails("with (dreams || ambiguousScoping) { anything.isPossible(); }",
                "\"with\" blocks are not allowed");
   }
 
-  public void testForInBad() throws Exception {
+  public final void testForInBad() throws Exception {
     checkAddsMessage(js(fromString(
         "for (var x in {}) {}")),
         RewriterMessageType.FOR_IN_NOT_IN_CAJITA,
         MessageLevel.FATAL_ERROR);
   }
 
-  public void testTryCatch() throws Exception {
+  public final void testTryCatch() throws Exception {
     checkAddsMessage(js(fromString(
         "try {" +
         "  throw 2;" +
@@ -658,7 +658,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "assertTrue(handled);");
   }
 
-  public void testTryCatchFinally() throws Exception {
+  public final void testTryCatchFinally() throws Exception {
     checkAddsMessage(js(fromString(
         "try {" +
         "} catch (e) {" +
@@ -714,7 +714,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "}");
   }
 
-  public void testTryFinally() throws Exception {
+  public final void testTryFinally() throws Exception {
     assertConsistent(
         "var out = 0;" +
         "try {" +
@@ -751,7 +751,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "}");
   }
 
-  public void testVarArgs() throws Exception {
+  public final void testVarArgs() throws Exception {
     checkSucceeds(
         "var p;" +
         "var foo = function() {" +
@@ -767,7 +767,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "             })();");
   }
 
-  public void testVarThisBad() throws Exception {
+  public final void testVarThisBad() throws Exception {
     checkAddsMessage(
         js(fromString("var x = this;")),
         RewriterMessageType.THIS_NOT_IN_CAJITA,
@@ -786,7 +786,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         MessageLevel.FATAL_ERROR);
   }
 
-  public void testVarBadSuffix() throws Exception {
+  public final void testVarBadSuffix() throws Exception {
     checkFails(
         "function() { foo__; };",
         "Variables cannot end in \"__\"");
@@ -796,7 +796,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "___.markFuncFreeze(function() { var foo_ = 3; });");
   }
 
-  public void testVarBadSuffixDeclaration() throws Exception {
+  public final void testVarBadSuffixDeclaration() throws Exception {
     checkFails(
         "function foo__() { }",
         "Variables cannot end in \"__\"");
@@ -817,7 +817,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "Variables cannot end in \"__\"");
   }
 
-  public void testVarFuncFreeze() throws Exception {
+  public final void testVarFuncFreeze() throws Exception {
     // We can cajole and refer to a function
     rewriteAndExecute(
         "function foo() {};" +
@@ -843,7 +843,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "});");
   }
 
-  public void testVarGlobal() throws Exception {
+  public final void testVarGlobal() throws Exception {
     checkSucceeds(
         "foo;",
         weldPrelude("foo") +
@@ -867,7 +867,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "});");
   }
 
-  public void testVarDefault() throws Exception {
+  public final void testVarDefault() throws Exception {
     String unchanged =
         "var x = 3;" +
         "if (x) { }" +
@@ -883,13 +883,13 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "});");
   }
 
-  public void testReadBadSuffix() throws Exception {
+  public final void testReadBadSuffix() throws Exception {
     checkFails(
         "x.y__;",
         "Properties cannot end in \"__\"");
   }
 
-  public void testReadBadPrototype() throws Exception {
+  public final void testReadBadPrototype() throws Exception {
     checkAddsMessage(
         js(fromString("function foo() {} foo.prototype;")),
         RewriterMessageType.PROTOTYPICAL_INHERITANCE_NOT_IN_CAJITA);
@@ -898,7 +898,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         RewriterMessageType.PROTOTYPICAL_INHERITANCE_NOT_IN_CAJITA);
   }
 
-  public void testReadPublicLength() throws Exception {
+  public final void testReadPublicLength() throws Exception {
     checkSucceeds(
         "var arr = [1, 2, 3];" +
         "arr.length;",
@@ -922,7 +922,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         );
   }
 
-  public void testReadPublic() throws Exception {
+  public final void testReadPublic() throws Exception {
     checkSucceeds(
         "var p;" +
         "p = foo().p;",
@@ -932,7 +932,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "p = " + weldReadPub("foo.CALL___()", "p", "x0___") + ";");
   }
 
-  public void testReadNumPublic() throws Exception {
+  public final void testReadNumPublic() throws Exception {
     checkSucceeds(
         "var p, q, x;" +
         "p = q[+x];",
@@ -975,7 +975,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "___.setPub(x0___, +x1___, x0___[+x1___] - 1);");
   }
 
-  public void testNumWithConstantIndex() throws Exception {
+  public final void testNumWithConstantIndex() throws Exception {
     checkSucceeds(
         "var p, q;" +
         "p = q[3];",
@@ -999,7 +999,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "___.setPub(p, 3, p[3] - 1);");
   }
 
-  public void testReadIndexPublic() throws Exception {
+  public final void testReadIndexPublic() throws Exception {
     checkSucceeds(
         "var p, q, x;" +
         "p = q[x];",
@@ -1007,7 +1007,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "p = ___.readPub(q, x);");
   }
 
-  public void testSetBadAssignToFunctionName() throws Exception {
+  public final void testSetBadAssignToFunctionName() throws Exception {
     checkAddsMessage(js(fromString(
         "  function foo() {};"
         + "foo = 3;")),
@@ -1037,13 +1037,13 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         RewriterMessageType.CANNOT_ASSIGN_TO_FUNCTION_NAME);
   }
 
-  public void testSetBadThis() throws Exception {
+  public final void testSetBadThis() throws Exception {
     checkAddsMessage(
         js(fromString("function f() { this = 3; }")),
         RewriterMessageType.THIS_NOT_IN_CAJITA);
   }
 
-  public void testSetBadFreeVariable() throws Exception {
+  public final void testSetBadFreeVariable() throws Exception {
     checkAddsMessage(
         js(fromString("Array = function () { return [] };")),
         RewriterMessageType.CANNOT_MASK_IDENTIFIER);
@@ -1052,13 +1052,13 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE);
   }
 
-  public void testSetBadSuffix() throws Exception {
+  public final void testSetBadSuffix() throws Exception {
     checkFails(
         "x.y__ = z;",
         "Properties cannot end in \"__\"");
   }
 
-  public void testSetBadPrototype() throws Exception {
+  public final void testSetBadPrototype() throws Exception {
     checkAddsMessage(
         js(fromString("function foo() {} foo.prototype = 3;")),
         RewriterMessageType.PROTOTYPICAL_INHERITANCE_NOT_IN_CAJITA);
@@ -1067,7 +1067,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         RewriterMessageType.PROTOTYPICAL_INHERITANCE_NOT_IN_CAJITA);
   }
 
-  public void testSetPublic() throws Exception {
+  public final void testSetPublic() throws Exception {
     checkSucceeds(
         "x().p = g[h];",
         weldPreludes("g", "h", "x") +
@@ -1077,7 +1077,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         ";");
   }
 
-  public void testSetIndexPublic() throws Exception {
+  public final void testSetIndexPublic() throws Exception {
     checkSucceeds(
         "g[0][g[1]] = g[2];",
         weldPrelude("g") +
@@ -1088,20 +1088,20 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "___.setPub(___.readPub(g, a), ___.readPub(g, b), ___.readPub(g, c));");
   }
 
-  public void testSetBadInitialize() throws Exception {
+  public final void testSetBadInitialize() throws Exception {
     checkFails(
         "var x__ = 3;",
         "Variables cannot end in \"__\"");
   }
 
-  public void testSetInitialize() throws Exception {
+  public final void testSetInitialize() throws Exception {
     checkSucceeds(
         "var v = g[h];",
         weldPreludes("g", "h") +
         "var v = ___.readPub(g, h);");
   }
 
-  public void testSetBadDeclare() throws Exception {
+  public final void testSetBadDeclare() throws Exception {
     checkFails(
         "var x__;",
         "Variables cannot end in \"__\"");
@@ -1123,7 +1123,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "}");
   }
 
-  public void testSetVar() throws Exception {
+  public final void testSetVar() throws Exception {
     checkAddsMessage(
         js(fromString("try {} catch (x__) { x__ = 3; }")),
         RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE);
@@ -1135,7 +1135,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "x = ___.readPub(g, y);");
   }
 
-  public void testSetReadModifyWriteLocalVar() throws Exception {
+  public final void testSetReadModifyWriteLocalVar() throws Exception {
     checkFails("x__ *= 2;", "");
     checkFails("x *= y__;", "");
     checkSucceeds(
@@ -1200,7 +1200,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     }
   }
 
-  public void testSetIncrDecr() throws Exception {
+  public final void testSetIncrDecr() throws Exception {
     checkFails("x__--;", "");
     checkSucceeds(
         "g[i]++;",
@@ -1245,7 +1245,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "arr;");
   }
 
-  public void testSetIncrDecrOnLocals() throws Exception {
+  public final void testSetIncrDecrOnLocals() throws Exception {
     checkFails("++x__;", "");
     checkSucceeds(
         "(function (x, y) { return [x--, --x, y++, ++y]; });",
@@ -1261,7 +1261,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "})();");
   }
 
-  public void testSetIncrDecrOfComplexLValues() throws Exception {
+  public final void testSetIncrDecrOfComplexLValues() throws Exception {
     checkFails("arr[x__]--;", "Variables cannot end in \"__\"");
     checkFails("arr__[x]--;", "Variables cannot end in \"__\"");
 
@@ -1288,7 +1288,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "})();");
   }
 
-  public void testSetIncrDecrOrderOfAssignment() throws Exception {
+  public final void testSetIncrDecrOrderOfAssignment() throws Exception {
     assertConsistent(
         "(function () {" +
         "  var arrs = [1, 2];" +
@@ -1317,21 +1317,21 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         );
   }
 
-  public void testNewCallledCtor() throws Exception {
+  public final void testNewCallledCtor() throws Exception {
     checkSucceeds(
         "new Date();",
         weldPrelude("Date", "{}")
         + "___.construct(Date, []);");
   }
 
-  public void testNewCalllessCtor() throws Exception {
+  public final void testNewCalllessCtor() throws Exception {
     checkSucceeds(
         "(new Date);",
         weldPrelude("Date", "{}")
         + "___.construct(Date, []);");
   }
 
-  public void testDeletePub() throws Exception {
+  public final void testDeletePub() throws Exception {
     checkFails("delete x.foo___;", "Properties cannot end in \"__\"");
     checkSucceeds(
         "delete foo()[bar()];",
@@ -1360,7 +1360,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "o;");
   }
 
-  public void testDeleteFails() throws Exception {
+  public final void testDeleteFails() throws Exception {
     assertConsistent(
         "var status;" +
         "try {" +
@@ -1375,11 +1375,11 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "status;");
   }
 
-  public void testDeleteNonLvalue() throws Exception {
+  public final void testDeleteNonLvalue() throws Exception {
     checkFails("delete 4;", "Invalid operand to delete");
   }
 
-  public void testCallPublic() throws Exception {
+  public final void testCallPublic() throws Exception {
     checkSucceeds(
         "g[i + 0].m(g[i + 1], g[i + 2]);",
         weldPreludes("g", "i") +
@@ -1394,7 +1394,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "  ___.callPub(x0___, 'm', [x1___, x2___]);");
   }
 
-  public void testCallIndexPublic() throws Exception {
+  public final void testCallIndexPublic() throws Exception {
     checkSucceeds(
         "g[i + 0][g[i + 1]](g[i + 2], g[i + 3]);",
         weldPreludes("g", "i") +
@@ -1404,7 +1404,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "    [___.readPub(g, i + 2), ___.readPub(g, i + 3)]);");
   }
 
-  public void testCallFunc() throws Exception {
+  public final void testCallFunc() throws Exception {
     checkSucceeds(
         "g(g[i + 1], g[i + 2]);",
         weldPreludes("g", "i") +
@@ -1412,7 +1412,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "     (___.readPub(g, i + 1), ___.readPub(g, i + 2));");
   }
 
-  public void testPermittedCall() throws Exception {
+  public final void testPermittedCall() throws Exception {
     // TODO(ihab.awad): Once permit templates can be loaded dynamically, create
     // one here for testing rather than rely on the Valija permits.
     String fixture =
@@ -1441,7 +1441,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         + "assertEquals(0, x);");
   }
 
-  public void testFuncAnonSimple() throws Exception {
+  public final void testFuncAnonSimple() throws Exception {
     // TODO(ihab.awad): The below test is not as complete as it should be
     // since it does not test the "@stmts*" substitution in the rule
     checkSucceeds(
@@ -1471,7 +1471,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "foo.x;");
   }
 
-  public void testFuncNamedSimpleDecl() throws Exception {
+  public final void testFuncNamedSimpleDecl() throws Exception {
     rewriteAndExecute(
         "  assertThrows(function() {"
         + "  (function foo() { foo.x = 3; })();"
@@ -1537,7 +1537,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         + "assertEquals(x, 31415);");
   }
 
-  public void testFuncNamedSimpleValue() throws Exception {
+  public final void testFuncNamedSimpleValue() throws Exception {
     checkSucceeds(
         "var f = function foo(x, y) {" +
         "  x = arguments;" +
@@ -1580,19 +1580,19 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         MessageType.MASKING_SYMBOL );
   }
 
-  public void testMapEmpty() throws Exception {
+  public final void testMapEmpty() throws Exception {
     checkSucceeds(
         "var f = {};",
         "var f = ___.initializeMap([]);");
   }
 
-  public void testMapBadKeySuffix() throws Exception {
+  public final void testMapBadKeySuffix() throws Exception {
     checkAddsMessage(
         js(fromString("var o = { x__: 3 };")),
         RewriterMessageType.PROPERTIES_CANNOT_END_IN_DOUBLE_UNDERSCORE);
   }
 
-  public void testMapNonEmpty() throws Exception {
+  public final void testMapNonEmpty() throws Exception {
     checkSucceeds(
         "var o = { k0: g().x, k1: g().y };",
         weldPrelude("g") +
@@ -1619,7 +1619,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         ";");
   }
 
-  public void testOtherInstanceof() throws Exception {
+  public final void testOtherInstanceof() throws Exception {
     checkSucceeds(
         "function foo() {}" +
         "g[void 0] instanceof foo;",
@@ -1642,7 +1642,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     assertConsistent("function foo() {}; !(({}) instanceof foo);");
   }
 
-  public void testOtherTypeof() throws Exception {
+  public final void testOtherTypeof() throws Exception {
     checkSucceeds(
         "typeof g[i];",
         weldPreludes("g", "i") +
@@ -1650,7 +1650,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     checkFails("typeof ___;", "Variables cannot end in \"__\"");
   }
 
-  public void testLabeledStatement() throws Exception {
+  public final void testLabeledStatement() throws Exception {
     checkFails("IMPORTS___: 1;", "Labels cannot end in \"__\"");
     checkFails("IMPORTS___: while (1);", "Labels cannot end in \"__\"");
     checkSucceeds("foo: 1;", "foo: 1;");
@@ -1676,7 +1676,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "k;");
   }
 
-  public void testRegexLiteral() throws Exception {
+  public final void testRegexLiteral() throws Exception {
     checkAddsMessage(
         js(fromString("/x/;")),
         RewriterMessageType.REGEX_LITERALS_NOT_IN_CAJITA);
@@ -1685,7 +1685,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         RewriterMessageType.REGEX_LITERALS_NOT_IN_CAJITA);
   }
 
-  public void testOtherSpecialOp() throws Exception {
+  public final void testOtherSpecialOp() throws Exception {
     checkSucceeds("void 0;", "void 0;");
     checkSucceeds("void g();",
                   weldPrelude("g") +
@@ -1695,7 +1695,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
                   "___.readPub(g, i), g[1];");
   }
 
-  public void testMultiDeclaration2() throws Exception {
+  public final void testMultiDeclaration2() throws Exception {
     // 'var' in global scope, part of a block
     checkSucceeds(
         "var x, y;",
@@ -1788,35 +1788,35 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "a;");
   }
 
-  public void testRecurseParseTreeNodeContainer() throws Exception {
+  public final void testRecurseParseTreeNodeContainer() throws Exception {
     // Tested implicitly by other cases
   }
 
-  public void testRecurseArrayConstructor() throws Exception {
+  public final void testRecurseArrayConstructor() throws Exception {
     checkSucceeds(
         "var foo = [ g[a], g[b] ];",
         weldPreludes("a", "b", "g") +
         "var foo = [___.readPub(g, a), ___.readPub(g, b)];");
   }
 
-  public void testRecurseBlock() throws Exception {
+  public final void testRecurseBlock() throws Exception {
     // Tested implicitly by other cases
   }
 
-  public void testRecurseBreakStmt() throws Exception {
+  public final void testRecurseBreakStmt() throws Exception {
     checkSucceeds(
         "while (true) { break; }",
         "while (true) { break; }");
   }
 
-  public void testRecurseCaseStmt() throws Exception {
+  public final void testRecurseCaseStmt() throws Exception {
     checkSucceeds(
         "switch (g[i]) { case 1: break; }",
         weldPreludes("g", "i") +
         "switch (___.readPub(g, i)) { case 1: break; }");
   }
 
-  public void testRecurseConditional() throws Exception {
+  public final void testRecurseConditional() throws Exception {
     checkSucceeds(
         "if (g[i] === g[i + 1]) {" +
         "  g[i + 2];" +
@@ -1835,38 +1835,38 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "}");
   }
 
-  public void testRecurseContinueStmt() throws Exception {
+  public final void testRecurseContinueStmt() throws Exception {
     checkSucceeds(
         "while (true) { continue; }",
         "while (true) { continue; }");
   }
 
-  public void testRecurseDebuggerStmt() throws Exception {
+  public final void testRecurseDebuggerStmt() throws Exception {
     checkSucceeds("debugger;", "debugger;");
   }
 
-  public void testRecurseDefaultCaseStmt() throws Exception {
+  public final void testRecurseDefaultCaseStmt() throws Exception {
     checkSucceeds(
         "switch (g[i]) { default: break; }",
         weldPreludes("g", "i") +
         "switch(___.readPub(g, i)) { default: break; }");
   }
 
-  public void testRecurseExpressionStmt() throws Exception {
+  public final void testRecurseExpressionStmt() throws Exception {
     // Tested implicitly by other cases
   }
 
-  public void testRecurseIdentifier() throws Exception {
+  public final void testRecurseIdentifier() throws Exception {
     // Tested implicitly by other cases
   }
 
-  public void testRecurseLiteral() throws Exception {
+  public final void testRecurseLiteral() throws Exception {
     checkSucceeds(
         "3;",
         "3;");
   }
 
-  public void testRecurseLoop() throws Exception {
+  public final void testRecurseLoop() throws Exception {
     checkSucceeds(
         "for (var i, k = 0; k < g[i]; k++) {" +
         "  g[i + 1];" +
@@ -1881,13 +1881,13 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "while (___.readPub(g, i)) { ___.readPub(g, i + 1); }");
   }
 
-  public void testRecurseNoop() throws Exception {
+  public final void testRecurseNoop() throws Exception {
     checkSucceeds(
         ";",
         ";");
   }
 
-  public void testRecurseOperation() throws Exception {
+  public final void testRecurseOperation() throws Exception {
     checkSucceeds(
         "g[i] + g[j];",
         weldPreludes("g", "i", "j") +
@@ -1903,21 +1903,21 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "x = y = ___.readPub(g, z);");
   }
 
-  public void testRecurseReturnStmt() throws Exception {
+  public final void testRecurseReturnStmt() throws Exception {
     checkSucceeds(
         "return g[i];",
         weldPreludes("g", "i") +
         "return ___.readPub(g, i);");
   }
 
-  public void testRecurseSwitchStmt() throws Exception {
+  public final void testRecurseSwitchStmt() throws Exception {
     checkSucceeds(
         "switch (g[i]) { }",
         weldPreludes("g", "i") +
         "switch (___.readPub(g, i)) { }");
   }
 
-  public void testRecurseThrowStmt() throws Exception {
+  public final void testRecurseThrowStmt() throws Exception {
     checkSucceeds(
         "throw g[i];",
         weldPreludes("g", "i") +
@@ -1933,21 +1933,21 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "});");
   }
 
-  public void testCantReadProto() throws Exception {
+  public final void testCantReadProto() throws Exception {
     rewriteAndExecute(
         "function foo(){}" +
         "assertEquals(foo.prototype, undefined);");
   }
 
-  public void testSpecimenClickme() throws Exception {
+  public final void testSpecimenClickme() throws Exception {
     checkSucceeds(fromResource("clickme.js"));
   }
 
-  public void testSpecimenListfriends() throws Exception {
+  public final void testSpecimenListfriends() throws Exception {
     checkSucceeds(fromResource("listfriends.js"));
   }
 
-  public void testRecursionOnIE() throws Exception {
+  public final void testRecursionOnIE() throws Exception {
     ParseTreeNode input = js(fromString(
         ""
         + "var x = 1;\n"
@@ -1967,7 +1967,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         + " });").toString();
   }
 
-  public void testAssertConsistent() throws Exception {
+  public final void testAssertConsistent() throws Exception {
     // Since we test structurally, this works.
     assertConsistent("({})");
     try {
@@ -1980,7 +1980,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     fail("assertConsistent not working");
   }
 
-  public void testIE_Emulation() throws Exception {
+  public final void testIE_Emulation() throws Exception {
     ParseTreeNode input = js(fromString(
         ""
         + "void (function x() {});\n"
@@ -1999,7 +1999,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
    * Tests that the container can get access to
    * "virtual globals" defined in cajoled code.
    */
-  public void testWrapperAccess() throws Exception {
+  public final void testWrapperAccess() throws Exception {
     // TODO(ihab.awad): SECURITY: Re-enable by reading (say) x.foo, and
     // defining the property IMPORTS___.foo.
     if (false) {
@@ -2015,7 +2015,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   /**
    * Tests that Array.prototype cannot be modified.
    */
-  public void testFrozenArray() throws Exception {
+  public final void testFrozenArray() throws Exception {
     rewriteAndExecute(
         "var success = false;" +
         "try {" +
@@ -2029,7 +2029,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   /**
    * Tests that Object.prototype cannot be modified.
    */
-  public void testFrozenObject() throws Exception {
+  public final void testFrozenObject() throws Exception {
     rewriteAndExecute(
         "var success = false;" +
         "try {" +
@@ -2040,7 +2040,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "if (!success) fail('Object not frozen.');");
   }
 
-  public void testStamp() throws Exception {
+  public final void testStamp() throws Exception {
     rewriteAndExecute(
         "___.getNewModuleHandler().getImports().stamp =" +
         "    ___.markFuncFreeze(___.stamp);" +
@@ -2129,7 +2129,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "");
   }
 
-  public void testForwardReference() throws Exception {
+  public final void testForwardReference() throws Exception {
     rewriteAndExecute(
         "var g = Bar;" +
         "if (true) { var f = Foo; }" +
@@ -2150,7 +2150,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "})();");
   }
 
-  public void testReformedGenerics() throws Exception {
+  public final void testReformedGenerics() throws Exception {
     rewriteAndExecute(
         "var x = [33];" +
         "x.foo = [].push;" +
@@ -2161,11 +2161,11 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "assertThrows(function(){x.foo(44)});");
   }
 
-  public void testIndexOf() throws Exception {
+  public final void testIndexOf() throws Exception {
     assertConsistent("''.indexOf('1');");
   }
 
-  public void testCallback() throws Exception {
+  public final void testCallback() throws Exception {
     // These two cases won't work in Valija since every Valija disfunction has its own
     // non-generic call and apply methods.
     assertConsistent("(function(){}).apply.call(function(a, b) {return a + b;}, {}, [3, 4]);");
@@ -2179,7 +2179,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
    * designed to provide, nor its O(1) complexity measure. However, we can test that it works
    * as a simple lookup table.
    */
-  public void testTable() throws Exception {
+  public final void testTable() throws Exception {
     rewriteAndExecute(
         "var t = cajita.newTable();" +
         "var k1 = {};" +
@@ -2222,7 +2222,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
    * If executed, for example, in the testbed applet with Firebug enabled,
    * one should see the stack of generated function names.
    */
-  public void testFuncNaming() throws Exception {
+  public final void testFuncNaming() throws Exception {
     checkSucceeds(
         "function foo(){debugger;}" +
         "var x = {bar: function() {foo();}};" +
@@ -2259,7 +2259,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "zap.CALL___();");
   }
 
-  public void testRecordInheritance() throws Exception {
+  public final void testRecordInheritance() throws Exception {
     rewriteAndExecute(
         "var x = {a: 8};" +
         "var y = cajita.beget(x);" +
@@ -2276,7 +2276,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
    * <tt>Object.prototype</tt> are not readable as global
    * variables.
    */
-  public void testNoPrototypicalImports() throws Exception {
+  public final void testNoPrototypicalImports() throws Exception {
     rewriteAndExecute(
         "var x;" +
         "try { x = toString; } catch (e) {}" +
@@ -2290,7 +2290,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   // for all tests
   // CajitaModuleRewriter only accepts an UncajoledModule, so it does not work
   // for those tests that run against other ParseTreeNode
-  public void testModule() throws Exception {
+  public final void testModule() throws Exception {
     CajitaModuleRewriter moduleRewriter = new CajitaModuleRewriter(
         new TestBuildInfo(), new TestPluginEnvironment(), false);
     setRewriter(moduleRewriter);

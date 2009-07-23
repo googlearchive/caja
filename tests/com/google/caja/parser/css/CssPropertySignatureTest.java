@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class CssPropertySignatureTest extends CajaTestCase {
-  public void testParser1() {
+  public final void testParser1() {
     assertParseTree(
         "<length> <length>? | inherit",
 
@@ -34,7 +34,7 @@ public class CssPropertySignatureTest extends CajaTestCase {
         );
   }
 
-  public void testParser2() {
+  public final void testParser2() {
     assertParseTree(
         "<border-style>{1,4} | inherit",
 
@@ -45,7 +45,7 @@ public class CssPropertySignatureTest extends CajaTestCase {
         );
   }
 
-  public void testParser3() {
+  public final void testParser3() {
     assertParseTree(
         "[ <border-width> || <border-style> || 'border-top-color' ] | inherit",
 
@@ -59,7 +59,7 @@ public class CssPropertySignatureTest extends CajaTestCase {
         );
   }
 
-  public void testParser4() {
+  public final void testParser4() {
     assertParseTree(
         ""
         + "[ [ <percentage> | <length> | left | center | right ]"
@@ -96,7 +96,7 @@ public class CssPropertySignatureTest extends CajaTestCase {
         );
   }
 
-  public void testParser5() {
+  public final void testParser5() {
     assertParseTree(
         ""
         + "[ [<uri> ,]*"
@@ -133,7 +133,7 @@ public class CssPropertySignatureTest extends CajaTestCase {
         );
   }
 
-  public void testParser6() {
+  public final void testParser6() {
     assertParseTree(
         "rect(<top>, <right>, <bottom>, <left>)",
 
@@ -150,7 +150,7 @@ public class CssPropertySignatureTest extends CajaTestCase {
         );
   }
 
-  public void testParseProgId() {
+  public final void testParseProgId() {
     assertParseTree(
         "progid:foo.bar(baz=<number>, enabled=[\"true\" | \"false\"])",
 

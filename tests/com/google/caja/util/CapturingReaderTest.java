@@ -23,7 +23,7 @@ import java.io.IOException;
  * @author ihab.awad@gmail.com (Ihab Awad)
  */
 public class CapturingReaderTest extends TestCase {
-  public void testExpansion() throws Exception {
+  public final void testExpansion() throws Exception {
     String s = "The quick brown fox";
     CapturingReader cr = new CapturingReader(new StringReader(s), 0);
     for (int i = 0; i < s.length(); i++) {
@@ -32,7 +32,7 @@ public class CapturingReaderTest extends TestCase {
     assertEquals(s, cr.getCapture().toString());
   }
 
-  public void testPastEnd() throws Exception {
+  public final void testPastEnd() throws Exception {
     CapturingReader cr = new CapturingReader(new StringReader("ab"));
     assertEquals('a', cr.read());
     assertEquals('b', cr.read());
@@ -40,7 +40,7 @@ public class CapturingReaderTest extends TestCase {
     assertEquals("ab", cr.getCapture().toString());
   }
 
-  public void testAutoClose() throws Exception {
+  public final void testAutoClose() throws Exception {
     CapturingReader cr = new CapturingReader(new StringReader("abcdef"));
     assertEquals('a', cr.read());
     assertEquals('b', cr.read());
@@ -53,7 +53,7 @@ public class CapturingReaderTest extends TestCase {
     }
   }
 
-  public void testManualClose() throws Exception {
+  public final void testManualClose() throws Exception {
     CapturingReader cr = new CapturingReader(new StringReader("abcdef"));
     assertEquals('a', cr.read());
     assertEquals('b', cr.read());

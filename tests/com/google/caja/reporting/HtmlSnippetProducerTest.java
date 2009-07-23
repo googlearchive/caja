@@ -22,7 +22,7 @@ import java.util.Collections;
  * @author mikesamuel@gmail.com
  */
 public class HtmlSnippetProducerTest extends CajaTestCase {
-  public void testSnippetEscaped() {
+  public final void testSnippetEscaped() {
     String src = "<style>background: url('http://<h1>foo</h1>')</style>";
     HtmlSnippetProducer sp = new HtmlSnippetProducer(
         Collections.singletonMap(is, src), mc);

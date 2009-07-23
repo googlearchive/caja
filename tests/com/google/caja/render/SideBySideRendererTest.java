@@ -26,7 +26,7 @@ import java.io.IOException;
  * @author ihab.awad@gmail.com
  */
 public class SideBySideRendererTest extends OrigSourceRendererTestCase {
-  public void testRendering() throws Exception {
+  public final void testRendering() throws Exception {
     runTest(
         "sbs-golden.js", "sbs-rewritten-tokens.txt",
         "sbs-test-input1.js", "sbs-test-input2.html", "sbs-test-input3.css");

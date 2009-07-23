@@ -19,7 +19,7 @@ import com.google.caja.util.RhinoTestBed;
 
 /** See taming_test.html */
 public class TamingTest extends CajaTestCase {
-  public void testInRhino() throws Exception {
+  public final void testInRhino() throws Exception {
     RhinoTestBed.runJsUnittestFromHtml(html(fromResource("taming_test.html")));
   }
 }

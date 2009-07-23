@@ -38,7 +38,7 @@ import java.util.List;
  * @author mikesamuel@gmail.com (Mike Samuel)
  */
 public final class CssValidatorTest extends CajaTestCase {
-  public void testValidateColor() throws Exception {
+  public final void testValidateColor() throws Exception {
     runTest("a { color: blue }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -135,7 +135,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "                QuantityLiteral : 100%");
   }
 
-  public void testValidateFont() throws Exception {
+  public final void testValidateFont() throws Exception {
     // special names
     runTest("p, dl { font: caption; }",
             "StyleSheet\n"
@@ -611,7 +611,7 @@ public final class CssValidatorTest extends CajaTestCase {
             "    EmptyDeclaration");
   }
 
-  public void testValidateUnquotedFamilyNames() throws Exception {
+  public final void testValidateUnquotedFamilyNames() throws Exception {
     runTest("p { font-family: Arial Black }",
             "StyleSheet\n" +
             "  RuleSet\n" +
@@ -633,7 +633,7 @@ public final class CssValidatorTest extends CajaTestCase {
             );
   }
 
-  public void testValidateBorder() throws Exception {
+  public final void testValidateBorder() throws Exception {
     runTest("p, dl { border: inherit; }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -737,7 +737,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "          IdentLiteral : transparent");
   }
 
-  public void testClip() throws Exception {
+  public final void testClip() throws Exception {
     runTest("p { clip: rect(10px, 10px, 10px, auto) }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -767,7 +767,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "                IdentLiteral : auto");
   }
 
-  public void testContent() throws Exception {
+  public final void testContent() throws Exception {
     // Tests a string that is not a URL.
     runTest(""
             + "#body:before { content: ' ' }"
@@ -799,7 +799,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "          StringLiteral : .\n");
   }
 
-  public void testBackground() throws Exception {
+  public final void testBackground() throws Exception {
     runTest("p { background: url( /images/smiley-face.jpg ) no-repeat }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -939,7 +939,7 @@ public final class CssValidatorTest extends CajaTestCase {
             );
   }
 
-  public void testBackgroundPosition() throws Exception {
+  public final void testBackgroundPosition() throws Exception {
     // TODO(mikesamuel): We could break the position rule into multiple
     // subrules so that the part for "right" becomes background-position::x-pos,
     // and the part for "top" becomes background-position::y-pos.
@@ -1005,7 +1005,7 @@ public final class CssValidatorTest extends CajaTestCase {
             );
   }
 
-  public void testPositionSubstitution() throws Exception {
+  public final void testPositionSubstitution() throws Exception {
     runTest("p { left: ${3}px }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -1020,7 +1020,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "          Substitution : ${3}px");
   }
 
-  public void testColorSubstitution() throws Exception {
+  public final void testColorSubstitution() throws Exception {
     runTest("p { background: ${shade << 16 | shade << 8 | shade} }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -1035,7 +1035,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "          Substitution : ${shade << 16 | shade << 8 | shade}");
   }
 
-  public void testUriSubstitution() throws Exception {
+  public final void testUriSubstitution() throws Exception {
     runTest("p { background: ${imageName + '.png'}uri }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -1062,7 +1062,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + "          Substitution : ${imageName + '.png'}");
   }
 
-  public void testFontFamily() throws Exception {
+  public final void testFontFamily() throws Exception {
     runTest("a { font: 12pt Times New Roman, Times, 'Times Old Roman', serif }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -1185,7 +1185,7 @@ public final class CssValidatorTest extends CajaTestCase {
             );
   }
 
-  public void testUnitlessLengths() throws Exception {
+  public final void testUnitlessLengths() throws Exception {
     runTest("p { padding: 4 10 0 10 }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -1230,7 +1230,7 @@ public final class CssValidatorTest extends CajaTestCase {
             );
   }
 
-  public void testNegativeSpacing() throws Exception {
+  public final void testNegativeSpacing() throws Exception {
     runTest("p { letter-spacing: -4px; word-spacing: -2px }",
         "StyleSheet\n"
         + "  RuleSet\n"
@@ -1252,7 +1252,7 @@ public final class CssValidatorTest extends CajaTestCase {
         );
   }
 
-  public void testOpacity() throws Exception {
+  public final void testOpacity() throws Exception {
     runTest("img {\n"
             + "  opacity: 0.5;\n"
             + "  filter:alpha(opacity=50)\n"
@@ -1292,7 +1292,7 @@ public final class CssValidatorTest extends CajaTestCase {
             );
   }
 
-  public void testProgId() throws Exception {
+  public final void testProgId() throws Exception {
     runTest(
         "img {\n"
         + "  filter:progid:DXImageTransform.Microsoft.AlphaImageLoader("
@@ -1336,7 +1336,7 @@ public final class CssValidatorTest extends CajaTestCase {
             + " ==>progid:dximagetransform.microsoft.alpha(opaquity=50)<==");
   }
 
-  public void testStarHack() throws Exception {
+  public final void testStarHack() throws Exception {
     runTest("p {\n"
             + "  color: blue;\n"
             + "  *color: red }",
@@ -1368,7 +1368,7 @@ public final class CssValidatorTest extends CajaTestCase {
             "WARNING: removing css property color with bad value: ==>yelow<==");
   }
 
-  public void testHtmlStarHack() throws Exception {
+  public final void testHtmlStarHack() throws Exception {
     runTest("* html p { color: blue }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -1394,7 +1394,7 @@ public final class CssValidatorTest extends CajaTestCase {
     fails("* html#hiya p { color: blue }");
   }
 
-  public void testAttrSelectorNoTag() throws Exception {
+  public final void testAttrSelectorNoTag() throws Exception {
     // we do not allow a selector without a tag name to
     // have attribute selectors
     fails("[type] { font-weight: bold }");
@@ -1405,7 +1405,7 @@ public final class CssValidatorTest extends CajaTestCase {
     fails(".zork[type] { font-weight: bold }");
   }
 
-  public void testAttrSelectorBadTag() throws Exception {
+  public final void testAttrSelectorBadTag() throws Exception {
     // invalid tag names should be marked invalid even though they have
     // attribute selectors (defensive test cases)
     // first try a tag name that is not in the HTML schema
@@ -1419,13 +1419,13 @@ public final class CssValidatorTest extends CajaTestCase {
     fails("script[type] { font-weight: bold }");
   }
 
-  public void testSimpleAttrSelectorNoValue() throws Exception {
+  public final void testSimpleAttrSelectorNoValue() throws Exception {
     // various forms of attribute selector without a value match
     runTest("input[type] { font-weight: bold }", null);
     fails("input[zork] { font-weight: bold }");
   }
 
-  public void testSimpleAttrSelectorEqual() throws Exception {
+  public final void testSimpleAttrSelectorEqual() throws Exception {
     // various forms of attribute selector with an 'equals' comparator
     runTest("input[type='radio'] { font-weight: bold }", null);
     runTest("input[type=radio] { font-weight: bold }", null);
@@ -1435,7 +1435,7 @@ public final class CssValidatorTest extends CajaTestCase {
     fails("input[zork='atyourservice'] { font-weight: bold }");
   }
 
-  public void testSimpleAttrSelectorIncludes() throws Exception {
+  public final void testSimpleAttrSelectorIncludes() throws Exception {
     // various forms of attribute selector with an 'includes' comparator
     runTest("input[type~='radio'] { font-weight: bold }", null);
     runTest("input[type~=radio] { font-weight: bold }", null);
@@ -1448,12 +1448,12 @@ public final class CssValidatorTest extends CajaTestCase {
     fails("input[type~='radio atyourservice'] { font-weight: bold }");
   }
 
-  public void testSimpleAttrSelectorDashMatch() throws Exception {
+  public final void testSimpleAttrSelectorDashMatch() throws Exception {
     // we don't know how to whitelist the "|=" form so rejected
     fails("input[type|='button'] { font-weight: bold }");
   }
 
-  public void testAttrSelectorNesting() throws Exception {
+  public final void testAttrSelectorNesting() throws Exception {
     // attribute selectors on nested node type; ensure that whitelisting
     // is done on the basis of the innermost tag
     //   - the TR tag has attribute VALIGN with valid value TOP
@@ -1470,7 +1470,7 @@ public final class CssValidatorTest extends CajaTestCase {
     fails("table tr[rules='groups'] { font-weight: bold }");
   }
 
-  public void testDisallowedAttrs() throws Exception {
+  public final void testDisallowedAttrs() throws Exception {
     // ID-like attributes disallowed because the cajoler rewrites them, and
     // we don't yet implement logic to reconstruct the rewritten values
     fails("input[id] { font-weight: bold }");

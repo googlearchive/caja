@@ -22,7 +22,7 @@ import com.google.caja.util.CajaTestCase;
  * @author mikesamuel@gmail.com
  */
 public class JsLinePreservingPrinterTest extends CajaTestCase {
-  public void testRendering() throws Exception {
+  public final void testRendering() throws Exception {
     assertEquals(
         ""
         + "\n"
