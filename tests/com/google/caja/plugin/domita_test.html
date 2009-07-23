@@ -290,7 +290,7 @@
         node.className = (node.className || '') + ' passed';
       }, 'pass');
 
-      testImports.checkGlobalSideEffect = 
+      testImports.checkGlobalSideEffect =
           ___.markFuncFreeze(checkGlobalSideEffect);
       // An explicit channel between whitelisted_script.js and cajoled tests.
       testImports.externalScript = { loaded: false };

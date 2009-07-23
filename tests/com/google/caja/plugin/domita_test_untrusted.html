@@ -112,7 +112,7 @@
 
 <div class="testcontainer" id="test-forms"></div>
 
-<p class="testcontainer" id="test-script-loading"></p>
+<p class="testcontainer" id="test-script-loading">Test script loading</p>
 
 <ol class="testcontainer" id="test-get-elements-by-tag-name">
   <li>One
@@ -208,6 +208,24 @@
 
 <p class="testcontainer" id="test-inner-HTML-style-sanitizer"></p>
 
+<div class="testcontainer" id="test-whitespace-nodes-1">
+  <div style="width: 150px; border: 1px solid blue; margin: 0; padding: 2px"
+   id="whitespace-outer">
+    <p class="redp" style="margin: 10px; border: 1px dotted red; padding: 2px"
+     >hi</p>
+    <p class="redp" style="margin: 10px; border: 1px dotted red; padding: 2px"
+     >hi</p>
+  </div>
+  <p id="text-only" style="margin: 0; border-width: 0; padding: 0">hi</p>
+</div>
+
+<div class="testcontainer" id="test-whitespace-nodes-2" style="padding: 0px">
+  <div id="twn2-0">
+   <p style="margin: 0; border-width: 0; padding: 0">hi</p>
+  </div>
+  <p style="margin: 0; border-width: 0; padding: 0" id="twn2-1">hi</p>
+</div>
+
 <form class="testcontainer" id="test-radio-buttons">
   <input type="radio" value="0" id="test-radio-button-0" name="number" checked>
   <input type="radio" value="1" id="test-radio-button-1" name="number">
@@ -264,7 +282,7 @@ After
 <p class="testcontainer" id="test-domita-globals-accessible">
   Test Domita globals accessible
 </p>
-    
+
 <p class="testcontainer" id="test-factories-not-bypassable">
   Test factories not bypassable
 </p>
@@ -538,7 +556,7 @@ jsunitRegister('testTimeoutAndInterval',
   clearTimeout(setTimeout(null, 0));
   clearInterval(setInterval(null, 0));
 
-  // Check that clearInterval and clearTimeout ignore null 
+  // Check that clearInterval and clearTimeout ignore null
   // and undefined intervalId's
   clearInterval(null);
   clearInterval(void 0);
@@ -698,8 +716,7 @@ jsunitRegister('testAttrsDeclaredInMarkup',
 
 jsunitRegister('testAttrsNotInMarkup',
                function testAttrsNotInMarkup() {
-  var d =
-      document.getElementById('test-attrs-not-in-markup').firstChild;
+  var d = document.getElementById('test-attrs-not-in-markup').firstChild;
 
   assertFalse(d.hasAttribute('title'));
   assertEquals(null, d.getAttribute('title'));
@@ -1534,7 +1551,7 @@ jsunitRegister('testOnLoadListener',
   window.addEventListener('load', setb1);
   window.addEventListener('load', setb2);
   window.removeEventListener('load', setb1);
-  
+
   assertAsynchronousRequirement(
       'onload listeners',
       function () {
@@ -1571,6 +1588,62 @@ jsunitRegister('testInnerHTMLStyleSanitizer',
   assertColor({ name: 'purple', rgb: 0x800080 }, backgroundOf('style-html'));
 
   pass('test-inner-HTML-style-sanitizer');
+});
+
+function assertWithin(msg, golden, actual, tolerance) {
+  if (!(Math.abs(golden - actual) <= tolerance)) {
+    assertEquals(msg, golden, actual);
+  }
+}
+
+jsunitRegister('testWhitespaceNodes1',
+               function testWhitespaceNodes1() {
+  var outerDiv = document.getElementById('whitespace-outer');
+  var textOnlyP = document.getElementById('text-only');
+  assertWithin('outer DIV width', 156, outerDiv.offsetWidth, 2);
+  //
+  // +---------+ outer top border
+  // |         | outer top padding
+  // |         | inner1 top margin
+  // | +-----+ | inner1 top border
+  // | |     | | inner1 top padding
+  // | | hi  | | textOnly height
+  // | |     | | inner1 bottom padding
+  // | +-----+ | inner1 bottom border
+  // |         | ceiling(inner1 bottom margin, inner2 top margin)
+  // | +-----+ | inner2 top border
+  // | |     | | inner2 top padding
+  // | | hi  | | textOnly height
+  // | |     | | inner2 bottom padding
+  // | +-----+ | inner2 bottom border
+  // |         | inner2 bottom margin
+  // |         | outer bottom padding
+  // +---------+ outer bottom border
+
+  assertWithin('outer DIV height',
+               2 * textOnlyP.offsetHeight
+               + 2 * 4 /* inner padding */
+               + 30 /* inner margin, top/middle/bottom */
+               + 2 * 2 /* inner borders */
+               + 4 /* outer padding */
+               + 2 /* outer border -- may be skipped */,
+               3 /* slop for outer border & rounding */,
+               outerDiv.offsetHeight);
+  pass('test-whitespace-nodes-1');
+});
+
+jsunitRegister('testWhitespaceNodes2',
+               function testWhitespaceNodes1() {
+  var cont = document.getElementById('test-whitespace-nodes-2');
+
+  var node1 = document.getElementById('twn2-0');
+  var node2 = document.getElementById('twn2-1');
+
+  // These two nodes should be immediately adjacent vertically.
+  assertWithin(
+      'stacked paragraphs', node2.offsetHeight * 2, cont.offsetHeight, 4);
+
+  pass('test-whitespace-nodes-2');
 });
 
 jsunitRegister('testRadioButtons',
