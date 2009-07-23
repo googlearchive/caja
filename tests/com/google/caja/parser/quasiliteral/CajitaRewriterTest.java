@@ -69,9 +69,9 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
     public String rewriteUri(ExternalReference uri, String mimeType) {
       return null;
-    }    
+    }
   }
-  
+
   protected Rewriter defaultCajaRewriter =
       new CajitaRewriter(new TestBuildInfo(), false);
 
@@ -2288,13 +2288,13 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
    */
   // TODO: Refactor the test cases so that we can use CajitaModuleRewriter
   // for all tests
-  // CajitaModuleRewriter only accepts an UncajoledModule, so it does not work 
+  // CajitaModuleRewriter only accepts an UncajoledModule, so it does not work
   // for those tests that run against other ParseTreeNode
   public void testModule() throws Exception {
     CajitaModuleRewriter moduleRewriter = new CajitaModuleRewriter(
         new TestBuildInfo(), new TestPluginEnvironment(), false);
     setRewriter(moduleRewriter);
-    
+
     rewriteAndExecute(
         "var r = loader.load('foo/b')({x: 6, y: 3}); "
         + "assertEquals(r, 11);");
@@ -2315,7 +2315,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         new UncajoledModule(js(fromString("var m = loader.load('foo/c');"))),
         RewriterMessageType.MODULE_NOT_FOUND,
         MessageLevel.FATAL_ERROR);
-    
+
     checkAddsMessage(
         new UncajoledModule(
             js(fromString("var s = 'c'; var m = loader.load(s);"))),

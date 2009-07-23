@@ -23,27 +23,29 @@ import java.util.List;
 /**
  * Wraps a cajoled module to be an expression, which evaluates to a function
  * module
- * 
+ *
  * @author maoziqing@gmail.com
  */
 public class CajoledModuleExpression extends AbstractExpression {
+  /**
+   * @param value not used but required for reflection.
+   */
   @ReflectiveCtor
-  public CajoledModuleExpression(FilePosition pos,
-      Void value,
-      List<? extends CajoledModule> children) {
+  public CajoledModuleExpression(
+      FilePosition pos, Void value, List<? extends CajoledModule> children) {
     this(pos, children.get(0));
     assert children.size() == 1;
   }
-  
+
   public CajoledModuleExpression(
       FilePosition pos, CajoledModule cajoledModule) {
     super(pos, CajoledModule.class);
-    createMutation().appendChild(cajoledModule).execute();    
+    createMutation().appendChild(cajoledModule).execute();
   }
-  
+
   public CajoledModuleExpression(CajoledModule cajoledModule) {
     this(cajoledModule.getFilePosition(), cajoledModule);
-  }  
+  }
 
   @Override
   public Object getValue() {
@@ -58,9 +60,8 @@ public class CajoledModuleExpression extends AbstractExpression {
     ObjectConstructor oc = getCajoledModule().getModuleBody();
     
     Expression e = (Expression) QuasiBuilder.substV(
-      "___.prepareModule(@module);",
-      "module", oc);
-    
+        "___.prepareModule(@module);",
+        "module", oc);
     e.render(r);
   }
 }
