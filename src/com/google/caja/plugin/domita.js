@@ -1025,6 +1025,9 @@ var attachDocumentStub = (function () {
         case 8:  // Comment
           tamed = new TameCommentNode(node, editable);
           break;
+        case 11: // Document Fragment
+          tamed = new TameBackedNode(node, editable, editable);
+          break;
         default:
           tamed = new TameOpaqueNode(node, editable);
           break;
@@ -2996,11 +2999,11 @@ var attachDocumentStub = (function () {
               name, listener, useCapture);
         };
     TameHTMLDocument.prototype.createComment = function (text) {
-      return new TameCommentNode(this.doc___.createComment(" "), true);
+      return defaultTameNode(this.doc___.createComment(" "), true);
     };
     TameHTMLDocument.prototype.createDocumentFragment = function () {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
-      return new TameBackedNode(this.doc___.createDocumentFragment(), true, true);
+      return defaultTameNode(this.doc___.createDocumentFragment(), true);
     };
     TameHTMLDocument.prototype.createElement = function (tagName) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
