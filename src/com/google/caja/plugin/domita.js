@@ -2999,8 +2999,8 @@ var attachDocumentStub = (function () {
       return new TameCommentNode(this.doc___.createComment(" "), true);
     };
     TameHTMLDocument.prototype.createDocumentFragment = function () {
-      return new TameBackedNode(this.doc___.createDocumentFragment(),
-                                this.editable___);
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      return new TameBackedNode(this.doc___.createDocumentFragment(), true, true);
     };
     TameHTMLDocument.prototype.createElement = function (tagName) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
