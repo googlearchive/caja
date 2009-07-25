@@ -15,6 +15,7 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
@@ -65,10 +66,13 @@ public final class TranslatedCode extends AbstractStatement {
   public Statement getTranslation() { return children().get(0); }
 
   public void render(RenderContext rc) {
-    rc.getOut().consume("/* Start translated code */");
-    rc.getOut().consume("throw 'Translated code must never be executed';");
+    TokenConsumer out = rc.getOut();
+    out.consume("/* Start translated code */");
+    out.consume("throw");
+    out.consume("'Translated code must never be executed'");
+    out.consume(";");
     children().get(0).render(rc);
-    rc.getOut().consume("/* End translated code */");
+    out.consume("/* End translated code */");
   }
 
   @Override

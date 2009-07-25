@@ -82,9 +82,12 @@ public final class UncajoledModule extends AbstractParseTreeNode {
   }
 
   public void render(RenderContext rc) {
-    rc.getOut().consume("/* Start Uncajoled Module */");
-    rc.getOut().consume("throw 'Uncajoled Module must never be executed';");
+    TokenConsumer out = rc.getOut();
+    out.consume("/* Start Uncajoled Module */");
+    out.consume("throw");
+    out.consume("'Uncajoled Module must never be executed'");
+    out.consume(";");
     getModuleBody().render(rc);
-    rc.getOut().consume("/* End Uncajoled Module */");
+    out.consume("/* End Uncajoled Module */");
   }
 }
