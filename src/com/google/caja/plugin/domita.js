@@ -3788,12 +3788,11 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   if (___.startCallerStack) { ___.startCallerStack(); }
   imports.isProcessingEvent___ = true;
   try {
+    var node = imports.tameNode___(thisNode, true);
     return ___.callPub(
-        handler, 'call',
-        [___.USELESS,
-         imports.tameEvent___(event),
-         imports.tameNode___(thisNode, true)
-         ]);
+        handler, 
+        'call',
+        [ node, imports.tameEvent___(event), node ]);
   } catch (ex) {
     if (ex && ex.cajitaStack___ && 'undefined' !== (typeof console)) {
       console.error('Event dispatch %s: %s',

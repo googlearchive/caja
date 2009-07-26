@@ -349,6 +349,10 @@ can test window.scrollBy with a positive x value with a visible effect.
  ><input id="test-focus-blur-1">
 </p>
 
+<p class="testcontainer" id="test-this-in-event-handlers"
+ ><input type="checkbox" id="test-this-in-event-handlers-1" />
+</p>
+
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
 
@@ -2418,6 +2422,24 @@ jsunitRegister('testTableElements',
   assertEquals(1, tr_b1.sectionRowIndex);
   assertEquals(2, tr_b1.rowIndex);
   pass('test-table-elements');
+});
+
+jsunitRegister('testThisInEventHandlers',
+               function testThisInEventHandlers() {
+  var inp = document.getElementById('test-this-in-event-handlers-1');
+  
+  // By declaring f() to be cajita, but supplying it as the 'call'
+  // property of the object passed to the event listener, we get
+  // access to the value the function is supposed to use for the
+  // 'this' keyword, even in cajita.
+  function f($dis, event, thisNode) {
+    "use cajita";
+    // In an event handler, "this" should be bound to the node.
+    assertEquals($dis, thisNode); 
+    pass('test-this-in-event-handlers');
+  }
+  inp.addEventListener('click', {call: f}, false);
+  directAccess.click(inp);
 });
 
 jsunitRegister('testDocumentBodyAppendChild',
