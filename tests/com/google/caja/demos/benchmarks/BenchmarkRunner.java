@@ -22,7 +22,8 @@ import com.google.caja.util.RhinoTestBed;
 import com.google.caja.reporting.TestBuildInfo;
 
 /**
- * Unit test which executes the V8 benchmark and collates the result for rendering with varz
+ * Unit test which executes the V8 benchmark 
+ * and collates the result for rendering with varz
  */
 public class BenchmarkRunner extends CajaTestCase {
   public void testRichards() throws Exception { runBenchmark("richards.js"); }
@@ -33,22 +34,27 @@ public class BenchmarkRunner extends CajaTestCase {
     runBenchmark("earley-boyer.js");
   }
 
+
   /**
    * Runs the given benchmark
    * Accumulates the result and formats it for consumption by varz
    * Format:
-   * VarZ:benchmark.<benchmark name>.<speed|size>.<language>.<debug?>.<engine>.<primed?>
+   * VarZ:benchmark.<benchmark name>.<speed|size>.<language>
+   *               .<debug?>.<engine>.<primed?>
    */
   private void runBenchmark(String filename) throws Exception {
-    double scoreUncajoled = runUncajoled(filename);
-    double scoreCajoled = runCajoled(filename);
+    double timeTakenUncajoled = runUncajoled(filename);
+    double timeTakenCajoled = runCajoled(filename);
+    
     System.out.println(
-        "VarZ:benchmark." + getName() + ".speed.uncajoled.nodebug.rhino.cold=" + scoreUncajoled);
+        "VarZ:benchmark." + getName() + ".time.uncajoled.nodebug.rhino.cold="
+        + timeTakenUncajoled);
     System.out.println(
-        "VarZ:benchmark." + getName() + ".speed.valija.nodebug.rhino.cold=" + scoreCajoled);
+        "VarZ:benchmark." + getName() + ".time.valija.nodebug.rhino.cold=" 
+        + timeTakenCajoled);
     System.out.println(
-        "VarZ:benchmark." + getName() + ".speeddiff.valija.nodebug.rhino.cold="
-        + (scoreCajoled / scoreUncajoled));
+        "VarZ:benchmark." + getName() + ".timeratio.valija.nodebug.rhino.cold="
+        + (timeTakenCajoled / timeTakenUncajoled));
   }
 
   // Like run.js but outputs the result differently.
@@ -65,15 +71,16 @@ public class BenchmarkRunner extends CajaTestCase {
       + "      NotifyScore: function (s) { benchmark.score = s; }\n"
       + "    });"
       );
-
+  
   private double runUncajoled(String filename) throws Exception {
-    Number score = (Number) RhinoTestBed.runJs(
+    Number elapsed = (Number) RhinoTestBed.runJs(
         new RhinoTestBed.Input("var benchmark = {};", "setup"),
+        new RhinoTestBed.Input("benchmark.startTime = new Date();", "clock"),
         new RhinoTestBed.Input(getClass(), "base.js"),
         new RhinoTestBed.Input(getClass(), filename),
         new RhinoTestBed.Input(RUN_SCRIPT, getName()),
-        new RhinoTestBed.Input("benchmark.score", "score"));
-    return score.doubleValue();
+        new RhinoTestBed.Input("(new Date() - benchmark.startTime)", "elapsed"));
+    return elapsed.doubleValue();
   }
 
   private double runCajoled(String filename) throws Exception {
@@ -85,7 +92,9 @@ public class BenchmarkRunner extends CajaTestCase {
     pc.addInput(AncestorChain.instance(js(fromString(RUN_SCRIPT))));
     assertTrue(pc.run());
     String cajoledJs = render(pc.getJavascript());
-    Number score = (Number) RhinoTestBed.runJs(
+    Number elapsed = (Number) RhinoTestBed.runJs(
+        new RhinoTestBed.Input(getClass(), 
+            "../../../../../js/json_sans_eval/json_sans_eval.js"),
         new RhinoTestBed.Input(getClass(), "../../cajita.js"),
         new RhinoTestBed.Input(
             ""
@@ -103,13 +112,14 @@ public class BenchmarkRunner extends CajaTestCase {
             ""
             + "testImports = ___.copy(___.sharedImports);\n"
             + "testImports.benchmark = {};\n"
+            + "testImports.benchmark.startTime = new Date();"
             + "testImports.$v = valijaMaker.CALL___(testImports);\n"
             + "___.getNewModuleHandler().setImports(testImports);",
             "benchmark-container"),
         new RhinoTestBed.Input(cajoledJs, getName()),
 	new RhinoTestBed.Input(
-            "testImports.benchmark.score",
-            "score"));
-    return score.doubleValue();
+            "(new Date() - testImports.benchmark.startTime)",
+            "elapsed"));
+    return elapsed.doubleValue();
   }
 }

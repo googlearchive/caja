@@ -108,6 +108,10 @@ public abstract class CajaTestCase extends TestCase {
     return cp;
   }
 
+  protected String plain(CharProducer cp) {
+    return new String(cp.getBuffer());
+  }
+  
   protected Block js(CharProducer cp) throws ParseException {
     return js(cp, false);
   }

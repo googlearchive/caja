@@ -72,7 +72,6 @@ import org.w3c.dom.Text;
  * @author mikesamuel@gmail.com
  */
 public class RhinoTestBed {
-
   /**
    * Runs the javascript from the given inputs in order, and returns the
    * result.
