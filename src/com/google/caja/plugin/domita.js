@@ -990,12 +990,14 @@ var attachDocumentStub = (function () {
               tamed = new TameScriptElement(node, editable);
               break;
             case 'td':
-            case 'tr':
             case 'thead':
             case 'tfoot':
             case 'tbody':
             case 'th':
               tamed = new TameTableCompElement(node, editable);
+              break;
+            case 'tr':
+              tamed = new TameTableRowElement(node, editable);
               break;
             case 'table':
               tamed = new TameTableElement(node, editable);
@@ -1206,6 +1208,7 @@ var attachDocumentStub = (function () {
     var INVALID_SUFFIX = "Property names may not end in '__'.";
     var UNSAFE_TAGNAME = "Unsafe tag name.";
     var UNKNOWN_TAGNAME = "Unknown tag name.";
+    var INDEX_SIZE_ERROR = "Index size error.";
 
     // Implementation of EventTarget::addEventListener
     function tameAddEventListener(name, listener, useCapture) {
@@ -2577,6 +2580,30 @@ var attachDocumentStub = (function () {
       return newValue;
     };
 
+    function requireIntIn(idx, min, max) {
+      if (idx !== (idx | 0) || idx < min || idx > max) {
+        throw new Error(INDEX_SIZE_ERROR);
+      }
+    }
+
+    function TameTableRowElement(node, editable) {
+      TameTableCompElement.call(this, node, editable);
+    }
+    inertCtor(TameTableRowElement, TameTableCompElement, 'HTMLTableRowElement');
+    TameTableRowElement.prototype.insertCell = function (index) {
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      requireIntIn(index, -1, this.node___.cells.length);
+      return defaultTameNode(
+          this.node___.insertCell(index), 
+          this.editable___);
+    };
+    TameTableRowElement.prototype.deleteCell = function (index) {
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      requireIntIn(index, -1, this.node___.cells.length);
+      this.node___.deleteCell(index);
+    };
+    ___.all2(___.grantTypedMethod, TameTableRowElement.prototype,
+             ['insertCell', 'deleteCell']);
 
     function TameTableElement(node, editable) {
       TameTableCompElement.call(this, node, editable);
@@ -2609,8 +2636,28 @@ var attachDocumentStub = (function () {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       this.node___.deleteTFoot();
     };
+    TameTableElement.prototype.createCaption = function () {
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      return defaultTameNode(this.node___.createCaption(), this.editable___);
+    };
+    TameTableElement.prototype.deleteCaption = function () {
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      this.node___.deleteCaption();
+    };
+    TameTableElement.prototype.insertRow = function (index) {
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      requireIntIn(index, -1, this.node___.rows.length);
+      return defaultTameNode(this.node___.insertRow(index), this.editable___);
+    };
+    TameTableElement.prototype.deleteRow = function (index) {
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      requireIntIn(index, -1, this.node___.rows.length);
+      this.node___.deleteRow(index);
+    };
+    
     ___.all2(___.grantTypedMethod, TameTableElement.prototype,
-             ['createTHead', 'deleteTHead','createTFoot', 'deleteTFoot']);
+             ['createTHead', 'deleteTHead','createTFoot', 'deleteTFoot',
+              'createCaption', 'deleteCaption', 'insertRow', 'deleteRow']);
 
     function tameEvent(event) {
       if (event.tamed___) { return event.tamed___; }

@@ -353,6 +353,11 @@ can test window.scrollBy with a positive x value with a visible effect.
  ><input type="checkbox" id="test-this-in-event-handlers-1" />
 </p>
 
+<div class="testcontainer" id="test-row-cell">
+  <table id="test-row-cell-1">
+  </table>
+</div>
+
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
 
@@ -2440,6 +2445,27 @@ jsunitRegister('testThisInEventHandlers',
   }
   inp.addEventListener('click', {call: f}, false);
   directAccess.click(inp);
+});
+
+jsunitRegister('testRowCell',
+               function testRowCell() {
+  var table = document.getElementById('test-row-cell-1');
+  assertEquals(table.rows.length, 0);
+  table.insertRow(-1);
+  assertEquals(table.rows.length, 1);
+  assertEquals(table.rows.item(0).cells.length, 0);
+  table.rows.item(0).insertCell(-1);
+  table.rows.item(0).insertCell(-1);
+  assertEquals(table.rows.item(0).cells.length, 2);
+  table.rows.item(0).deleteCell(1);
+  table.rows.item(0).deleteCell(0);
+  assertEquals(table.rows.item(0).cells.length, 0);
+  try{
+    table.deleteRow(2);
+  } catch(e) {
+    assertEquals(e.message, 'Index size error.');
+  }
+  pass('test-row-cell');
 });
 
 jsunitRegister('testDocumentBodyAppendChild',
