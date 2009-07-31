@@ -110,7 +110,7 @@ public class TemplateCompiler {
    * <li>If the node is an attribute, then the value is an expression
    * that returns a (key, value) pair.</li>
    *
-   * <li>If the node is a text node inside ascript block, then the value is an
+   * <li>If the node is a text node inside a script block, then the value is an
    * {@link UncajoledModule}.</li>
    *
    * <li>Otherwise, the value is a JavaScript expression which evaluates to the
@@ -512,8 +512,8 @@ public class TemplateCompiler {
     inspect();
 
     // Emit safe HTML with JS which attaches dynamic attributes.
-    SafeHtmlMaker htmlMaker =
-        new SafeHtmlMaker(meta, mc, doc, scriptsPerNode, ihtmlRoots, handlers);
+    SafeHtmlMaker htmlMaker = new SafeHtmlMaker(
+        meta, mc, doc, scriptsPerNode, ihtmlRoots, handlers);
     Pair<Node, List<Block>> htmlAndJs = htmlMaker.make();
     Node html = htmlAndJs.a;
     List<Block> js = htmlAndJs.b;

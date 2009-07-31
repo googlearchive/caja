@@ -31,7 +31,7 @@ try {
   el___ = emitter___.byId('id_3___');
   emitter___.setAttr(el___, 'id', 'yo-' + IMPORTS___.getIdClass___());
   // Reattach the bits the second script should see.
-  emitter___.unwrap(emitter___.attach('id_4___'));
+  emitter___.discard(emitter___.attach('id_4___'));
 }
 try {
   { b(); }

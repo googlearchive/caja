@@ -15,6 +15,7 @@
 package com.google.caja.plugin.templates;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.HtmlTextEscapingMode;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
@@ -93,15 +94,15 @@ final class SafeHtmlMaker {
   private final Document doc;
   private final List<Block> js = new ArrayList<Block>();
   private final Map<Node, ParseTreeNode> scriptsPerNode;
+  private final List<Node> roots;
+  private final List<Statement> handlers;
   private Block currentBlock = null;
   /** True iff the current block is in a {@link TranslatedCode} section. */
   private boolean currentBlockStyle;
   /** True iff JS contains the definitions required by HtmlEmitter calls. */
-  boolean started = false;
+  private boolean started = false;
   /** True iff JS contains a HtmlEmitter.finish() call to release resources. */
-  boolean finished = false;
-  List<Node> roots;
-  List<Statement> handlers;
+  private boolean finished = false;
   /**
    * @param doc the owner document for the safe HTML. Used only as a
    * factory for DOM nodes.
@@ -142,8 +143,8 @@ final class SafeHtmlMaker {
 
     fleshOutSkeleton(domSkeleton);
 
-    return Pair.<Node, List<Block>>pair(
-        consolidateHtml(safe), new ArrayList<Block>(js));
+    Node safeHtml = consolidateHtml(safe);
+    return Pair.pair(safeHtml, (List<Block>) new ArrayList<Block>(js));
   }
 
   /** Part of a DOM skeleton. */
@@ -245,7 +246,7 @@ final class SafeHtmlMaker {
             && i + 1 != firstDeferredScriptIndex;
         if (splitDom) { start(); }
         if (nb.node instanceof Text) {
-          fleshOutText((Text) nb.safeNode, splitDom);
+          if (splitDom) { insertPlaceholderAfter(nb.safeNode); }
         } else {
           fleshOutElement((Element) nb.node, (Element) nb.safeNode, splitDom);
         }
@@ -311,34 +312,55 @@ final class SafeHtmlMaker {
   }
 
   /**
-   * Emit a text block.
-   * @param safe a text block that is safe, e.g. not in a context where it would
+   * Emit a placeholder so that we can break before a script element that is
+   * not immediately preceded by an element in the skeleton.
+   * @param preceder a node that is safe, e.g. not in a context where it would
    *     cause code to execute.
-   * @param splitDom true if this text node is immediately followed by an inline
-   *     script block.
    */
-  private void fleshOutText(Text safe, boolean splitDom) {
-    if (splitDom) {
-      String dynId = meta.generateUniqueName(ID.getCanonicalForm());
-      emitStatement(quasiStmt(
-          ""
-          + "emitter___./*@synthetic*/unwrap("
-          + "    emitter___./*@synthetic*/attach(@id));",
-          "id", StringLiteral.valueOf(FilePosition.UNKNOWN, dynId)));
+  private void insertPlaceholderAfter(Node preceder) {
+    String dynId = meta.generateUniqueName(ID.getCanonicalForm());
+    emitStatement(quasiStmt(
+        ""
+        + "emitter___./*@synthetic*/discard("
+        + "    emitter___./*@synthetic*/attach(@id));",
+        "id", StringLiteral.valueOf(FilePosition.UNKNOWN, dynId)));
 
-      Element wrapper = doc.createElement("span");
-      wrapper.setAttribute(ID.getCanonicalForm(), dynId);
-      Nodes.setFilePositionFor(wrapper, Nodes.getFilePositionFor(safe));
-      safe.getParentNode().replaceChild(wrapper, safe);
-      wrapper.appendChild(safe);
+    Node follower = preceder.getNextSibling();
+    Node parent = preceder.getParentNode();
+    if (containsOnlyText(parent)) {
+      // Elements like <textarea> and <pre> can't contain elements, so move
+      // the placeholder into the parent, where it will be in the same
+      // position in the depth-first-order traversal.
+
+      // <textarea>s should contain at most a single text nodes since they can't
+      // contain elements.  The DOM skeleton is normalized as it is constructed.
+      assert follower == null;
+
+      follower = parent.getNextSibling();
+      parent = parent.getParentNode();
+
+      // The new parent must be able to accept the text node since it contained
+      // an element.
+      assert !containsOnlyText(parent);
     }
+
+    Element placeholder = doc.createElement("span");
+    placeholder.setAttribute(ID.getCanonicalForm(), dynId);
+    parent.insertBefore(placeholder, follower);
+  }
+
+  private static boolean containsOnlyText(Node n) {
+    if (!(n instanceof Element)) { return false; }
+    Name tagName = Name.html(((Element) n).getTagName());
+    HtmlTextEscapingMode mode = HtmlTextEscapingMode.getModeForTag(tagName);
+    return mode != HtmlTextEscapingMode.PCDATA;
   }
 
   /**
    * Attaches attributes to the safe DOM node corresponding to those on el.
    *
    * @param el an element in the input DOM.
-   * @param safe the element in the safe HTML Dom corresponding to el.
+   * @param safe the element in the safe HTML DOM corresponding to el.
    * @param splitDom true if this text node is immediately followed by an inline
    *     script block.
    */

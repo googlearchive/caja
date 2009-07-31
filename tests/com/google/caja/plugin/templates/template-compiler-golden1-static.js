@@ -25,7 +25,7 @@ try {
 }
 {
   //Attach the tail, taking the text out of the manufactured SPAN.
-  emitter___.unwrap(emitter___.attach('id_3___'));
+  emitter___.discard(emitter___.attach('id_3___'));
 }
 // The second script.
 try {

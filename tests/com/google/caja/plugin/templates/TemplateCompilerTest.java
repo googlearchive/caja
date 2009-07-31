@@ -168,7 +168,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString("<a name='hi'></a>")),
         htmlFragment(fromString("<a name='hi-xyz___' target='_blank'></a>")),
         new Block());
-    }
+  }
 
   public final void testSanityCheck() throws Exception {
     // The name attribute is not allowed on <p> elements, so
@@ -300,6 +300,39 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             "<a href='http://b/c;_d=e?f=g&i=%26' target='_blank'>z</a>")),
         new Block());
+  }
+
+  public final void testTextAreas() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString(
+            ""
+            + "<textarea>Howdy!</textarea>"
+            + "<script>alert('Howdy yourself!');</script>"
+            + "<textarea>Bye!</textarea>")),
+        htmlFragment(fromString(
+            ""
+            // textareas can't contain nodes, so the span had better follow it
+            // which leaves it in the same position according to the
+            // depth-first-ordering ignoring end tags used by the HTML emitter.
+            + "<textarea>Howdy!</textarea>"
+            + "<span id=\"id_1___\"></span>"
+            + "<textarea>Bye!</textarea>")),
+        js(fromString(
+            ""
+            + "{"
+            + "  var el___; var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "  emitter___.discard(emitter___.attach('id_1___'));"
+            + "}"
+            + "try {"
+            + "  { alert('Howdy yourself!'); }"
+            + "}catch (ex___) {"
+            + "  ___.getNewModuleHandler().handleUncaughtException("
+            + "      ex___, onerror, 'testTextAreas', '1');"
+            + "}"
+            + "{"
+            + "  el___ = emitter___.finish();"
+            + "  emitter___.signalLoaded();"
+            + "}")));
   }
 
   private class Holder<T> { T value; }

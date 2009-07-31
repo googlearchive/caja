@@ -75,7 +75,7 @@ public class HtmlEmitterTest extends CajaTestCase {
     assertEquals(
         ""
         + "<p>Hi</p>"
-        + "<div id=\"id_1___\"><span id=\"id_2___\">Hello </span>World!!!</div>"
+        + "<div id=\"id_1___\">Hello <span id=\"id_2___\"></span>World!!!</div>"
         + "<h1>Foo <b id=\"id_3___\">Bar</b> Baz</h1>"
         + "<h2 id=\"id_4___\">Boo</h2>",
         Nodes.render(htmlAndJs.a));
@@ -98,7 +98,7 @@ public class HtmlEmitterTest extends CajaTestCase {
         "} /* Start translated code */",
         "throw 'Translated code must never be executed';",
         "{",
-        "  emitter___.unwrap(emitter___.attach('id_2___'));",
+        "  emitter___.discard(emitter___.attach('id_2___'));",
         "} /* End translated code */",
         "try {",
         "  { b(); }",

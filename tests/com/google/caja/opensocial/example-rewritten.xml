@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5" /></ModulePrefs><Content type="html"><![CDATA[<p class="p1 p2"><span id="id_2___">Paragraph 1</span></p><p id="id_3___"><span id="id_4___">Paragraph 2</span></p><p><a id="id_5___" target="_blank">Paragraph 3</a></p><a href="http://url-proxy.test.google.com/?url=http%3A%2F%2Ffoo.com%2F&amp;mime-type=*%2F*" target="_blank">External URL.  Apply URICallback.rewrite to me.</a><script type="text/javascript">{
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><Module><ModulePrefs title="Example Gadget"><Require feature="opensocial-0.5" /></ModulePrefs><Content type="html"><![CDATA[<p class="p1 p2">Paragraph 1<span id="id_2___"></span></p><p id="id_3___">Paragraph 2<span id="id_4___"></span></p><p><a id="id_5___" target="_blank">Paragraph 3</a></p><a href="http://url-proxy.test.google.com/?url=http%3A%2F%2Ffoo.com%2F&amp;mime-type=*%2F*" target="_blank">External URL.  Apply URICallback.rewrite to me.</a><script type="text/javascript">{
 ___.loadModule({
                  'instantiate': function (___, IMPORTS___) {
                    var moduleResult___ = ___.NO_RESULT;
@@ -19,7 +19,7 @@ ___.loadModule({
                                                         });
                      var el___;
                      var emitter___ = IMPORTS___.htmlEmitter___;
-                     emitter___.unwrap(emitter___.attach('id_2___'));
+                     emitter___.discard(emitter___.attach('id_2___'));
                    }
                    try {
                      {
@@ -37,7 +37,7 @@ ___.loadModule({
                      el___ = emitter___.byId('id_3___');
                      emitter___.setAttr(el___, 'id', 'p3-' +
                                             IMPORTS___.getIdClass___());
-                     emitter___.unwrap(emitter___.attach('id_4___'));
+                     emitter___.discard(emitter___.attach('id_4___'));
                    }
                    try {
                      {

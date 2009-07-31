@@ -66,7 +66,7 @@ function HtmlEmitter(base, opt_tameDocument) {
     return null;
   }
 
-  // Below we define the attach, unwrap, and finish operations.
+  // Below we define the attach, detach, and finish operations.
   // These obey the conventions that:
   //   (1) All detached nodes, along with their ex-parents are in detached,
   //       and they are ordered depth-first.
@@ -198,21 +198,17 @@ function HtmlEmitter(base, opt_tameDocument) {
     return limit;
   }
   /**
-   * Removes a wrapper from a textNode
+   * Removes a script place-holder.
    * When a text node immediately precedes a script block, the limit will be
    * a text node.  Text nodes can't be addressed by ID, so the TemplateCompiler
-   * wraps them in a <span> which must be removed to be semantics preserving.
+   * follows them with a {@code <span>} which must be removed to be semantics
+   * preserving.
    */
-  function unwrap(wrapper) {
-    // Text nodes must have exactly one child, so it must be first on the
-    // detached list, since children are earlier than siblings by DFS order.
-    var text = detached[0];
-    // If this is not true, the TemplateCompiler must be generating unwrap calls
-    // out of order.
-    // An untrusted script block should not be able to nuke the wrapper before
-    // it's removed so there should be a parentNode.
-    wrapper.parentNode.replaceChild(text, wrapper);
-    detached.splice(0, 2);
+  function discard(placeholder) {
+    // An untrusted script block should not be able to access the wrapper before
+    // it's removed since it won't be part of the DOM so there should be a
+    // parentNode.
+    placeholder.parentNode.removeChild(placeholder);
   }
   /**
    * Reattach any remaining detached bits, free resources, and fire a document
@@ -239,7 +235,7 @@ function HtmlEmitter(base, opt_tameDocument) {
 
   this.byId = byId;
   this.attach = attach;
-  this.unwrap = unwrap;
+  this.discard = discard;
   this.finish = finish;
   this.signalLoaded = signalLoaded;
   this.setAttr = bridal.setAttribute;

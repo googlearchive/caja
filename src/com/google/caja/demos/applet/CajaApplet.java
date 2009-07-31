@@ -241,7 +241,7 @@ public class CajaApplet extends Applet {
     return sb.toString();
   }
 
-  private static enum Feature {
+  static enum Feature {
     /** Present if rendered output should only contain ASCII characters. */
     ASCII_ONLY,
     /** Present to output debug symbols for use with cajita-debugmode.js. */
