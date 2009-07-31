@@ -935,44 +935,44 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   public final void testReadNumPublic() throws Exception {
     checkSucceeds(
         "var p, q, x;" +
-        "p = q[+x];",
+        "p = q[x&(-1>>>1)];",
         "var p, q, x;" +
-        "p = q[+x];");
+        "p = q[x&(-1>>>1)];");
     // Make sure that setPub is used on assignment to test frozenness.
     checkSucceeds(
         "var p, q, x;" +
-        "q[+x] = p;",
+        "q[x&(-1>>>1)] = p;",
         "var p, q, x;" +
-        "___.setPub(q, +x, p);");
+        "___.setPub(q, x&(-1>>>1), p);");
     checkSucceeds(
         "var p, q;" +
-        "p[+q] += 2;",
+        "p[q&(-1>>>1)] += 2;",
         "var x0___;" +
         "var x1___;" +
         "var p, q;" +
         "x0___ = p," +
-        "x1___ = +q," +
-        "___.setPub(x0___, +x1___, x0___[+x1___] + 2);");
+        "x1___ = q&(-1>>>1)," +
+        "___.setPub(x0___, x1___&(-1>>>1), x0___[x1___&(-1>>>1)] + 2);");
     checkSucceeds(
         "var p, q;" +
-        "p[+q]--;",
+        "p[q&(-1>>>1)]--;",
         "var x0___;" +
         "var x1___;" +
         "var x2___;" +
         "var p, q;" +
         "x0___ = p," +
-        "x1___ = +q," +
-        "x2___ = +x0___[+x1___]," +
-        "___.setPub(x0___, +x1___, x2___ - 1), x2___;");
+        "x1___ = q&(-1>>>1)," +
+        "x2___ = +x0___[x1___&(-1>>>1)]," +
+        "___.setPub(x0___, x1___&(-1>>>1), x2___ - 1), x2___;");
     checkSucceeds(
         "var p, q;" +
-        "--p[+q];",
+        "--p[q&(-1>>>1)];",
         "var x0___;" +
         "var x1___;" +
         "var p, q;" +
         "x0___ = p," +
-        "x1___ = +q," +
-        "___.setPub(x0___, +x1___, x0___[+x1___] - 1);");
+        "x1___ = q&(-1>>>1)," +
+        "___.setPub(x0___, x1___&(-1>>>1), x0___[x1___&(-1>>>1)] - 1);");
   }
 
   public final void testNumWithConstantIndex() throws Exception {

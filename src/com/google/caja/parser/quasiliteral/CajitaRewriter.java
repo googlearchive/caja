@@ -1048,14 +1048,15 @@ public class CajitaRewriter extends Rewriter {
       @Override
       @RuleDescription(
           name="readNumPublic",
-          synopsis="Recognize that numeric indexing is inherently safe.",
+          synopsis="Recognize that array indexing is inherently safe.",
           reason="When the developer knows that their index expression is" +
-              " numeric, they can indicate this with the unary plus operator" +
-              " -- which coerces to a number. Since numeric properties are" +
-              " necessarily readable, we can pass these through directly to" +
-              " JavaScript.",
-          matches="@o[+@s]",
-          substitutes="@o[+@s]")
+              " an array index, they can indicate this with the" +
+              " 'absolute value operator', really an expression which" +
+              " coerces to a nonnegative 32-bit integer. Since these" +
+              " properties are necessarily readable, we can pass them " +
+              " through directly to JavaScript.",
+          matches="@o[@s&(-1>>>1)]",
+          substitutes="@o[@s&(-1>>>1)]")
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
         return transform(node, scope, mq);
@@ -1066,9 +1067,9 @@ public class CajitaRewriter extends Rewriter {
       @Override
       @RuleDescription(
           name="readNumWithConstantIndex",
-          synopsis="Recognize that numeric indexing is inherently safe.",
-          reason="Numeric properties are always readable, we can pass these"
-              + " through directly to JavaScript.",
+          synopsis="Recognize that array indexing is inherently safe.",
+          reason="Nonnegative integer properties are always readable;" +
+              " we can pass these through directly to JavaScript.",
           matches="@o[@numLiteral]",
           substitutes="@o[@numLiteral]")
       public ParseTreeNode fire(
@@ -1077,9 +1078,14 @@ public class CajitaRewriter extends Rewriter {
         if (bindings != null) {
           ParseTreeNode index = bindings.get("numLiteral");
           if (index instanceof NumberLiteral) {
-            return substV(
-                "o", expand(bindings.get("o"), scope, mq),
-                "numLiteral", expand(index, scope, mq));
+            double indexValue = 
+                ((NumberLiteral) index).getValue().doubleValue();
+            if (indexValue >= 0 &&
+                indexValue == Math.floor(indexValue)) {
+              return substV(
+                  "o", expand(bindings.get("o"), scope, mq),
+                  "numLiteral", expand(index, scope, mq));
+            }
           }
         }
         return NONE;
@@ -1484,7 +1490,7 @@ public class CajitaRewriter extends Rewriter {
               ops.getUncajoledLValue(), aNode.children().get(1));
           Operation assignment = ops.makeAssignment(rhs);
           return commas(newCommaOperation(ops.getTemporaries()),
-                       (Expression) expand(assignment, scope, mq));
+                        (Expression) expand(assignment, scope, mq));
         }
         return NONE;
       }

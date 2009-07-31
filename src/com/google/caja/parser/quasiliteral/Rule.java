@@ -595,8 +595,10 @@ public abstract class Rule implements MessagePart {
       ParseTreeNode rightExpanded = rewriter.expand(uncajoledKey, scope, mq);
       Identifier tmpVar = scope.declareStartOfScopeTempVariable();
       key = new Reference(tmpVar);
-      if (isToNumberOp(rightExpanded)) {
-        key = Operation.create(key.getFilePosition(), Operator.TO_NUMBER, key);
+      if (QuasiBuilder.match("@s&(-1>>>1)", rightExpanded)) {
+        // TODO(metaweta): Figure out a way to leave key alone and
+        // protect propertyAccess from rewriting instead.
+        key = (Expression) QuasiBuilder.substV("@key&(-1>>>1)", "key", key);
       }
       temporaries.add((Expression) QuasiBuilder.substV(
           "@tmpVar = @right;",
@@ -645,11 +647,6 @@ public abstract class Rule implements MessagePart {
   private static boolean isImportsReference(Expression e) {
     if (!(e instanceof Reference)) { return false; }
     return ReservedNames.IMPORTS.equals(((Reference) e).getIdentifierName());
-  }
-
-  private static boolean isToNumberOp(ParseTreeNode n) {
-    return n instanceof Operation
-        && Operator.TO_NUMBER == ((Operation) n).getOperator();
   }
 
   /**

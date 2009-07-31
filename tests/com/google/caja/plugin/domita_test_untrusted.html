@@ -360,6 +360,8 @@ can test window.scrollBy with a positive x value with a visible effect.
   </table>
 </div>
 
+<p class="testcontainer" id="test-negative-indices" />
+
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
 
@@ -2479,6 +2481,24 @@ jsunitRegister('testRowCell',
     assertEquals(e.message, 'Index size error.');
   }
   pass('test-row-cell');
+});
+
+jsunitRegister('testNegativeIndices',
+               function testNegativeIndices() {
+  // Under Firefox, there are many undocumented properties 
+  // with negative indices; see
+  // http://www.thespanner.co.uk/2009/07/14/hidden-firefox-properties-revisited/
+  // http://webreflection.blogspot.com/2009/06/javascript-arguments-weridness.html
+  var i;
+  function f(a, b, c) {}
+  (function () {
+    for (i = -1; i > -10; --i) {
+      assertEquals(f[i], void 0);
+      assertEquals((new RegExp('.'))[i], void 0);
+      assertEquals(arguments[i], void 0);
+    }
+  })();
+  pass('test-negative-indices');
 });
 
 jsunitRegister('testDocumentBodyAppendChild',
