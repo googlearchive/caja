@@ -37,6 +37,7 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.BuildInfo;
+import com.google.caja.util.Pair;
 import com.google.caja.util.ReadableReader;
 
 import java.io.IOException;
@@ -134,18 +135,9 @@ public class DefaultGadgetRewriter
     output.append(rewriteContent(baseUri, content, uriCallback));
   }
 
-  private String rewriteContent(
-      URI baseUri, CharProducer content, UriCallback callback)
+  public Pair<Node, Element> rewriteContent(
+      URI baseUri, Node htmlContent, UriCallback callback)
       throws GadgetRewriteException {
-
-    DocumentFragment htmlContent;
-    try {
-      htmlContent = parseHtml(content, new InputSource(baseUri));
-    } catch (ParseException ex) {
-      ex.toMessageQueue(mq);
-      throw new GadgetRewriteException(ex);
-    }
-
     PluginCompiler compiler = compileGadget(htmlContent, baseUri, callback);
 
     StringBuilder script = new StringBuilder();
@@ -167,7 +159,27 @@ public class DefaultGadgetRewriter
     Element scriptElement = doc.createElement("script");
     scriptElement.setAttribute("type", "text/javascript");
     scriptElement.appendChild(doc.createTextNode(script.toString()));
-    return html + Nodes.render(scriptElement);
+    return new Pair<Node, Element>(dom, scriptElement);
+  }
+
+  private String rewriteContent(
+      URI baseUri, CharProducer content, UriCallback callback)
+      throws GadgetRewriteException {
+
+    Node htmlContent;
+    try {
+      htmlContent = parseHtml(content, new InputSource(baseUri));
+    } catch (ParseException ex) {
+      ex.toMessageQueue(mq);
+      throw new GadgetRewriteException(ex);
+    }
+    Pair<Node, Element> result = rewriteContent(baseUri, htmlContent, callback);
+    Node dom = result.a;
+    Element scriptElement = result.b;
+
+    String html = dom != null ? Nodes.render(dom) : "";
+    String script = scriptElement != null ? Nodes.render(scriptElement): "";
+    return html + script;
   }
 
   private DocumentFragment parseHtml(CharProducer htmlContent, InputSource src)
@@ -181,7 +193,7 @@ public class DefaultGadgetRewriter
   }
 
   private PluginCompiler compileGadget(
-      DocumentFragment content, final URI baseUri, final UriCallback callback)
+      Node content, final URI baseUri, final UriCallback callback)
       throws GadgetRewriteException {
     PluginMeta meta = new PluginMeta(
         new PluginEnvironment() {
