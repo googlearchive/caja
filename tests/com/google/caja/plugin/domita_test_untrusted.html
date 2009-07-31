@@ -353,6 +353,8 @@ can test window.scrollBy with a positive x value with a visible effect.
  ><input type="checkbox" id="test-this-in-event-handlers-1" />
 </p>
 
+<p class="testcontainer" id="test-bug-1066">Bug 1066</p>
+
 <div class="testcontainer" id="test-row-cell">
   <table id="test-row-cell-1">
   </table>
@@ -2445,6 +2447,17 @@ jsunitRegister('testThisInEventHandlers',
   }
   inp.addEventListener('click', {call: f}, false);
   directAccess.click(inp);
+});
+
+jsunitRegister('testBug1066', function testBug1066() {
+  var label = document.createElement('label');
+  label.setAttribute('for', 'X');
+  assertEquals('X', label.getAttribute('for'));
+  assertEquals('X', label.htmlFor);
+  label.htmlFor = 'Y';
+  assertEquals('Y', label.getAttribute('for'));
+  assertEquals('Y', label.htmlFor);
+  pass('test-bug-1066');
 });
 
 jsunitRegister('testRowCell',

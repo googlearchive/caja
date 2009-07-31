@@ -47,7 +47,6 @@
  * TODO(ihab.awad): Come up with a uniform convention (and helper functions,
  * etc.) for checking that a user-supplied callback is a valid Cajita function
  * or Valija Disfunction.
-
  *
  * @author mikesamuel@gmail.com
  * @requires console, document, window
@@ -985,6 +984,9 @@ var attachDocumentStub = (function () {
               break;
             case 'img':
               tamed = new TameImageElement(node, editable);
+              break;
+            case 'label':
+              tamed = new TameLabelElement(node, editable);
               break;
             case 'script':
               tamed = new TameScriptElement(node, editable);
@@ -2497,6 +2499,19 @@ var attachDocumentStub = (function () {
     };
     ___.all2(___.grantTypedMethod, TameImageElement.prototype,
              ['getSrc', 'setSrc', 'getAlt', 'setAlt']);
+
+    function TameLabelElement(node, editable) {
+      TameElement.call(this, node, editable, editable);
+      classUtils.exportFields(this, ['htmlFor']);
+    }
+    inertCtor(TameLabelElement, TameElement, 'HTMLLabelElement');
+    TameLabelElement.prototype.getHtmlFor = function () {
+      return this.getAttribute('for');
+    };
+    TameLabelElement.prototype.setHtmlFor = function (id) {
+      this.setAttribute('for', id);
+      return id;
+    };
 
     /**
      * A script element wrapper that allows setting of a src that has been
