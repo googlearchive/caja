@@ -308,6 +308,24 @@
         <include name="earley-boyer.js"/>
         <include name="run.js"/>
       </fileset>
+      <fileset dir="${third_party}/js/sunspider-benchmark/">
+        <include name="v8-crypto.js"/>
+        <include name="v8-earley-boyer.js"/>
+        <include name="v8-raytrace.js"/>
+        <include name="v8-richards.js"/>
+        <include name="v8-deltablue.js"/>
+      </fileset>
+      <fileset dir="${third_party}/js/sunspider-benchmark/ubench">
+        <include name="function-closure.js"/>
+        <include name="function-correct-args.js"/>
+        <include name="function-empty.js"/>
+        <include name="function-excess-args.js"/>
+        <include name="function-missing-args.js"/>
+        <include name="function-sum.js"/>
+        <include name="loop-empty-resolve.js"/>
+        <include name="loop-empty.js"/>
+        <include name="loop-sum.js"/>
+      </fileset>
     </copy>
     <copy todir="${lib}">
       <fileset dir="${src}">
@@ -325,6 +343,8 @@
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
       <classpath refid="classpath.tests.run"/>
       <formatter type="xml" usefile="true"/>
+      <test name="com.google.caja.demos.benchmarks.BenchmarkSize"
+       todir="${reports}/benchmarks"/>
       <test name="com.google.caja.demos.benchmarks.BenchmarkRunner"
        todir="${reports}/benchmarks"/>
     </junit>

@@ -26,12 +26,47 @@ import com.google.caja.reporting.TestBuildInfo;
  * and collates the result for rendering with varz
  */
 public class BenchmarkRunner extends CajaTestCase {
-  public void testRichards() throws Exception { runBenchmark("richards.js"); }
-  public void testDeltaBlue() throws Exception { runBenchmark("deltablue.js"); }
-  public void testCrypto() throws Exception { runBenchmark("crypto.js"); }
-  public void testRayTrace() throws Exception { runBenchmark("raytrace.js"); }
+  public void testRichards() throws Exception {
+    runBenchmark("v8-richards.js");
+  }
+  public void testDeltaBlue() throws Exception {
+    runBenchmark("v8-deltablue.js");
+  }
+  public void testCrypto() throws Exception {
+    runBenchmark("v8-crypto.js");
+  }
+  public void testRayTrace() throws Exception {
+    runBenchmark("v8-raytrace.js");
+  }
   public void testEarleyBoyer() throws Exception {
-    runBenchmark("earley-boyer.js");
+    runBenchmark("v8-earley-boyer.js");
+  }
+  public void testFunctionClosure() throws Exception {
+    runBenchmark("function-closure.js"); 
+  }
+  public void testFunctionCorrectArgs() throws Exception { 
+    runBenchmark("function-correct-args.js"); 
+  }
+  public void testFunctionEmpty() throws Exception { 
+    runBenchmark("function-empty.js"); 
+  }
+  public void testFunctionExcessArgs() throws Exception {
+    runBenchmark("function-excess-args.js");
+  }
+  public void testFunctionMissingArgs() throws Exception {
+    runBenchmark("function-missing-args.js");
+  }
+  public void testFunctionSum() throws Exception {
+    runBenchmark("function-sum.js");
+  }
+  public void testLoopEmptyResolve() throws Exception {
+    runBenchmark("loop-empty-resolve.js"); 
+  }
+  public void testLoopEmpty() throws Exception {
+    runBenchmark("loop-empty.js");
+  }
+  public void testLoopSum() throws Exception {
+    runBenchmark("loop-sum.js"); 
   }
 
 
@@ -56,29 +91,12 @@ public class BenchmarkRunner extends CajaTestCase {
         "VarZ:benchmark." + getName() + ".timeratio.valija.nodebug.rhino.cold="
         + (timeTakenCajoled / timeTakenUncajoled));
   }
-
-  // Like run.js but outputs the result differently.
-  // Cannot use ___.getNewModuleHandler.getLastValue() to get the result since
-  // there is no UncajoledModule until We fix the compilation unit problem.
-  // Instead, we attach the result to an outer object called benchmark.
-  private static final String RUN_SCRIPT = (
-      ""
-      + "BenchmarkSuite.RunSuites({\n"
-      + "      NotifyResult: function (n, r) {\n"
-      + "        benchmark.name = n;\n"
-      + "        benchmark.result = r;\n"
-      + "      },\n"
-      + "      NotifyScore: function (s) { benchmark.score = s; }\n"
-      + "    });"
-      );
   
   private double runUncajoled(String filename) throws Exception {
     Number elapsed = (Number) RhinoTestBed.runJs(
         new RhinoTestBed.Input("var benchmark = {};", "setup"),
         new RhinoTestBed.Input("benchmark.startTime = new Date();", "clock"),
-        new RhinoTestBed.Input(getClass(), "base.js"),
         new RhinoTestBed.Input(getClass(), filename),
-        new RhinoTestBed.Input(RUN_SCRIPT, getName()),
         new RhinoTestBed.Input("(new Date() - benchmark.startTime)", "elapsed"));
     return elapsed.doubleValue();
   }
@@ -87,9 +105,7 @@ public class BenchmarkRunner extends CajaTestCase {
     PluginMeta meta = new PluginMeta();
     meta.setValijaMode(true);
     PluginCompiler pc = new PluginCompiler(new TestBuildInfo(), meta, mq);
-    pc.addInput(AncestorChain.instance(js(fromResource("base.js"))));
     pc.addInput(AncestorChain.instance(js(fromResource(filename))));
-    pc.addInput(AncestorChain.instance(js(fromString(RUN_SCRIPT))));
     assertTrue(pc.run());
     String cajoledJs = render(pc.getJavascript());
     Number elapsed = (Number) RhinoTestBed.runJs(

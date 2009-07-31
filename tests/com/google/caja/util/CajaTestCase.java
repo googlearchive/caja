@@ -226,6 +226,9 @@ public abstract class CajaTestCase extends TestCase {
   }
 
   public static String render(ParseTreeNode node) {
+    if (node == null) {
+      return null;
+    }
     StringBuilder sb = new StringBuilder();
     TokenConsumer tc = node.makeRenderer(sb, null);
     node.render(new RenderContext(tc));
@@ -234,6 +237,9 @@ public abstract class CajaTestCase extends TestCase {
   }
 
   protected String minify(ParseTreeNode node) {
+    if (node == null) {
+      return null;
+    }
     // Make sure it's a JS node.
     StringBuilder sb = new StringBuilder();
     if (!(node.makeRenderer(sb, null) instanceof JsPrettyPrinter)) {

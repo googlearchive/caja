@@ -7,7 +7,7 @@ use Date::Format qw ( time2str );
 use Encode qw ( decode_utf8 );
 use File::Basename qw ( dirname );
 use File::Path qw ( rmtree );
-
+use JSON;
 
 sub usage() {
   print "Usage: /usr/bin/perl $0 -o <output_dir> [-b <svn_client_root>]
@@ -591,8 +591,25 @@ sub makeDashboard() {
   }
 }
 
+# Extract varz from current build into a JSON file for use by other programs
+sub extractSnapshotStats() {
+  print STDERR "extracting performance stats\n";
+  open(OUT, ">$OUTPUT_DIR/varz.js") or die "varz.js: $!";
+  # TODO(jasvir): Consider exposing all varz rather than just benchmarks
+  open(TIMESERIES, "<$REPORTS_DIR/benchmarks/TESTS-TestSuites.xml") or die "$REPORTS_DIR/benchmarks/TESTS-TestSuites.xml: $!";
+  my $result = {};
+  while (<TIMESERIES>) {
+    eval "\$result->{" . (join '}{', split /[.]/, $1) . '}=' . $2 if /VarZ:([^=]*)=(.*)/;
+  }
+
+  print OUT "var varz = " . JSON::to_json($result, {pretty => 1});
+  close(TIMESERIES);
+  close(OUT);
+}
 
 collectCodeStats();
+
+extractSnapshotStats();
 
 extractTimeSeries();
 
