@@ -1047,14 +1047,18 @@ var attachDocumentStub = (function () {
       if (node === null || node === void 0) { return null; }
       // catch errors because node might be from a different domain
       try {
+        var docElem = node.ownerDocument.documentElement;
         for (var ancestor = node; ancestor; ancestor = ancestor.parentNode) {
           // TODO(mikesamuel): replace with cursors so that subtrees are
           // delegable.
           // TODO: handle multiple classes.
           if (idClass === ancestor.className) {
             return tameNodeCtor(node, editable);
+          } else if (ancestor === docElem) {
+            return null;
           }
         }
+        return tameNodeCtor(node, editable);
       } catch (e) {}
       return null;
     }
@@ -1397,8 +1401,7 @@ var attachDocumentStub = (function () {
         }
         return tameDocument.getBody();
       }
-      return tameRelatedNode(
-          this.node___.parentNode, this.editable___, defaultTameNode);
+      return tameRelatedNode(parent, this.editable___, defaultTameNode);
     };
     TameBackedNode.prototype.getElementsByTagName = function (tagName) {
       return tameGetElementsByTagName(
