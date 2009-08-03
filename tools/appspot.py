@@ -17,6 +17,7 @@ Flags:
   -d --description : overrides the changelist's detailed description.
   -r --reviewer : overrides the email of the assigned reviewer
   -c --cc : overrides the CC list.
+  -p --private : mark the mail as private.
   -i --issue : overrides the CL number.  DO NOT USE.
   --send_mail : send mail.  For snapshot only.
 See (upload.py --help) for the meaning of these parameters.
@@ -27,23 +28,32 @@ See (upload.py --help) for the meaning of these parameters.
 import commands
 import os
 import re
-import sys
+import rfc822
 import subprocess
+import sys
 import tempfile
 import upload
 
 class ChangeList(object):
   def __init__(self, issue=None, description=None, reviewer=None, cc=None,
-               message=None):
+               message=None, private=None):
     """
     A value of None for any parameter means its unspecified and so will not
     be set on a merge operation.
     """
+    assert issue is None or type(issue) in (str, unicode)
+    assert description is None or type(description) in (str, unicode)
+    assert cc is None or type(cc) in (str, unicode)
+    assert reviewer is None or type(reviewer) in (str, unicode)
+    assert message is None or type(message) in (str, unicode)
+    assert private is None or type(private) is bool
+
     self.issue = issue
     self.description = description
     self.cc = cc
     self.reviewer = reviewer
     self.message = message
+    self.private = private
     # TODO(mikesamuel): add a code.google.com bug number to update when code
     # is submitted
 
@@ -55,7 +65,8 @@ class ChangeList(object):
 
   def is_unspecified(self):
     return (self.issue is None and self.description is None and self.cc is None
-            and self.reviewer is None and self.message is None)
+            and self.reviewer is None and self.message is None
+            and self.private is None)
 
   def get_upload_args(self, send_mail=False):
     """
@@ -67,15 +78,22 @@ class ChangeList(object):
       args.extend(['--issue', str(self.issue)])
     if self.description:
       args.extend(['--description', str(self.description)])
-    args.extend(
-        ['--cc',
-         include_if_not_present(
-             comma_separated_list=self.cc,
-             to_include='google-caja-discuss@googlegroups.com')])
+    if self.private:
+      # Private issues should not go to the public list.
+      cc_list = difference_of_address_lists(
+          union_of_address_lists(
+              self.cc, 'caja-discuss-undisclosed@googlegroups.com'),
+          'google-caja-discuss@googlegroups.com')
+    else:
+      cc_list = union_of_address_lists(
+          self.cc or '', 'google-caja-discuss@googlegroups.com')
+    args.extend(['--cc', cc_list])
     if self.reviewer:
       args.extend(['--reviewer', str(self.reviewer)])
     if self.message:
       args.extend(['--message', str(self.message)])
+    if self.private:
+      args.append('--private');
     if send_mail:
       args.append('--send_mail')
 
@@ -109,15 +127,41 @@ class ChangeList(object):
     if self.cc is not None:           target.cc = self.cc
     if self.reviewer is not None:     target.reviewer = self.reviewer
     if self.message is not None:      target.message = self.message
+    if self.private is not None:      target.private = self.private
 
 
-def include_if_not_present(comma_separated_list, to_include):
-  assert ',' not in to_include
-  if not comma_separated_list: return to_include
-  if re.search(r'(^|,)%s(,|$)' % re.escape(to_include), comma_separated_list):
-    return comma_separated_list
-  else:
-    return '%s,%s' % (comma_separated_list, to_include)
+def union_of_address_lists(*email_lists):
+  """
+  Takes comma separated lists of RFC822 email address and returns a comma
+  separated list with the union of the addresses.
+
+  *email_lists : str -- as entered in an email address,
+                        e.g. 'foo@bar.com, Bob <bob@baz.com>'
+
+  returns : str -- a comma separated list of addresses.
+  """
+
+  address_set = {}
+  for email_list in email_lists:
+    for name, address in rfc822.AddressList(email_list):
+      address_set[address] = True
+
+  address_list = [rfc822.dump_address_pair(('', address))
+                  for address in address_set.iterkeys()]
+  address_list.sort()
+  return ','.join(address_list)
+
+
+def difference_of_address_lists(addresses, to_remove):
+  address_set = dict([
+      (address, True) for (_, address) in rfc822.AddressList(addresses)])
+  for name, address in rfc822.AddressList(to_remove):
+    if address in address_set: del address_set[address]
+
+  address_list = [rfc822.dump_address_pair(('', address))
+                  for address in address_set.iterkeys()]
+  address_list.sort()
+  return ','.join(address_list)
 
 
 def editable_change(cl):
@@ -142,6 +186,12 @@ def editable_change(cl):
 ### Message:
 ### One-line summary of the change.
 %(message)s
+
+
+### Private:
+### Does this contain details of an outstanding vulnerability which we
+### need to disclose responsibly?  Valid values are 'True' and 'False'.
+%(private)s
 
 
 ### Description:
@@ -179,6 +229,9 @@ R=%(reviewer)s
 
 def pack_for_display(changelist):
   """Converts a changelist to a hash with human readable default values."""
+  private_str = ''
+  if changelist.private is not None:
+    private_str = str(bool(changelist.private))
   return {
     'issue': changelist.issue or '<unassigned>',
     'url': changelist.get_app_spot_uri() or '<unassigned>',
@@ -186,6 +239,7 @@ def pack_for_display(changelist):
     'description': changelist.description or '',
     'reviewer': changelist.reviewer or '',
     'cc': changelist.cc or '',
+    'private': private_str,
   }
 
 
@@ -222,8 +276,15 @@ def parse_change(editable_change):
   cc = fields.get('CC')
   reviewer = fields.get('Reviewer')
   message = fields.get('Message')
+  private = fields.get('Private')
+  if private is not None:
+    private = private.strip().lower()
+    if private == '':
+      private = None
+    else:
+      private = private != 'false'
   return ChangeList(issue=issue, description=description, cc=cc,
-                    reviewer=reviewer, message=message)
+                    reviewer=reviewer, message=message, private=private)
 
 
 def do_edit(given_cl, current_cl, cl_file_path):
@@ -232,7 +293,7 @@ def do_edit(given_cl, current_cl, cl_file_path):
     tmp_fd, tmp_path = tempfile.mkstemp(prefix='appspot-', suffix='.txt')
     os.write(tmp_fd, editable_change(current_cl))
     os.close(tmp_fd)
-    
+
     retcode = subprocess.call(
         '%s %s' % (os.getenv('VISUAL', os.getenv('EDITOR', 'vi')),
                    commands.mkarg(tmp_path)),
@@ -240,7 +301,7 @@ def do_edit(given_cl, current_cl, cl_file_path):
     try:
       if retcode < 0:
         raise Exception('editor closed with signal %s' % -retcode)
-      elif retcode < 0:
+      elif retcode > 0:
         raise Exception('editor exited with error value %s' % retcode)
       edited_cl = parse_change(open(tmp_path).read())
     finally:
@@ -279,11 +340,12 @@ def do_snapshot(given_cl, current_cl, cl_file_path, send_mail):
     send_mail = True
   argv = [sys.argv[0]]  # upload.RealMain expects argv[0] to be the program
   argv.extend(current_cl.get_upload_args(send_mail=send_mail))
-  issue = upload.RealMain(argv)
+  issue, patchset_id = upload.RealMain(argv)
   # If an issue number was assigned as part of the update, store that with
   # our issue record.
   if issue and str(issue) != current_cl.issue:
     do_edit(ChangeList(issue=str(issue)), current_cl, cl_file_path)
+
 
 def current_gitbranch(workdir):
   """Returns the name of the current git branch at WORKDIR, or None"""
@@ -297,6 +359,7 @@ def current_gitbranch(workdir):
       return branch
   return None
 
+
 def make_cl_file_path(rootdir):
   """Returns the pathname of the changelist info file for ROOTDIR."""
   path = os.path.join(rootdir, '.appspot-change')
@@ -305,6 +368,7 @@ def make_cl_file_path(rootdir):
     return path + '.' + re.sub(r'\W', '-', gitbranch)
   else:
     return path
+
 
 def main():
   def parse_flags(flags):
@@ -315,6 +379,7 @@ def main():
         '-d': '--description',
         '-r': '--reviewer',
         '-c': '--cc',
+        '-p': '--private',
         }
     # Map long flag names to value parsing functions
     flag_spec = {
@@ -323,7 +388,8 @@ def main():
         '--message': str,
         '--description': str,
         '--reviewer': str,
-        '--cc': str
+        '--cc': str,
+        '--private': bool,
         }
 
     def to_pairs():
@@ -382,7 +448,8 @@ def main():
       message=params.get('--message'),
       description=params.get('--description'),
       reviewer=params.get('--reviewer'),
-      cc=params.get('--cc'))
+      cc=params.get('--cc'),
+      private=params.get('--private'))
 
   # Figure out where the CL lives on disk
   client_root = os.path.abspath(os.curdir)
