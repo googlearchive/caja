@@ -45,6 +45,12 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.reporting.RenderContext;
 
+import junit.framework.TestCase;
+
+import org.w3c.dom.DocumentFragment;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
 import java.awt.GraphicsEnvironment;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -52,12 +58,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.URI;
-
-import org.w3c.dom.DocumentFragment;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-
-import junit.framework.TestCase;
 
 public abstract class CajaTestCase extends TestCase {
   protected InputSource is;
@@ -109,9 +109,9 @@ public abstract class CajaTestCase extends TestCase {
   }
 
   protected String plain(CharProducer cp) {
-    return new String(cp.getBuffer());
+    return cp.toString(cp.getOffset(), cp.getLimit());
   }
-  
+
   protected Block js(CharProducer cp) throws ParseException {
     return js(cp, false);
   }

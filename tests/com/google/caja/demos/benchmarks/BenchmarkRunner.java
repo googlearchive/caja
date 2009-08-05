@@ -14,12 +14,13 @@
 
 package com.google.caja.demos.benchmarks;
 
+import com.google.caja.lexer.CharProducer;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.plugin.PluginCompiler;
 import com.google.caja.plugin.PluginMeta;
+import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.RhinoTestBed;
-import com.google.caja.reporting.TestBuildInfo;
 
 /**
  * Unit test which executes the V8 benchmark 
@@ -78,18 +79,33 @@ public class BenchmarkRunner extends CajaTestCase {
    *               .<debug?>.<engine>.<primed?>
    */
   private void runBenchmark(String filename) throws Exception {
-    double timeTakenUncajoled = runUncajoled(filename);
-    double timeTakenCajoled = runCajoled(filename);
+    double uncajoledTime = runUncajoled(filename);
+    double cajoledTime = runCajoled(filename, false);
+    double cajoledWrappedTime = runCajoled(filename, true);
+    varz(getName(), uncajoledTime, cajoledTime);
     
+    // We rename the test here because wrapping globals is an optimization 
+    // that changes the benchmark -- albeit a trivial one that is easy for
+    // developers to perform on their own code.
+    varz(getName() + "WrapGlobals", uncajoledTime, cajoledWrappedTime);
+    
+    
+  }
+  
+  private void varz(String name, double uncajoled, double cajoled) {
     System.out.println(
-        "VarZ:benchmark." + getName() + ".time.uncajoled.nodebug.rhino.cold="
-        + timeTakenUncajoled);
+        "VarZ:benchmark." + name + ".time.uncajoled.nodebug.rhino.cold=" + 
+        uncajoled);
     System.out.println(
-        "VarZ:benchmark." + getName() + ".time.valija.nodebug.rhino.cold=" 
-        + timeTakenCajoled);
+        "VarZ:benchmark." + name + ".time.valija.nodebug.rhino.cold=" +
+        cajoled);
     System.out.println(
-        "VarZ:benchmark." + getName() + ".timeratio.valija.nodebug.rhino.cold="
-        + (timeTakenCajoled / timeTakenUncajoled));
+        "VarZ:benchmark." + name + ".timeratio.valija.nodebug.rhino.cold=" +
+        (cajoled / uncajoled));
+  }
+  
+  private String wrapGlobals(String nakedJS) {
+    return "(function() {" + nakedJS + "})();";
   }
   
   private double runUncajoled(String filename) throws Exception {
@@ -101,13 +117,18 @@ public class BenchmarkRunner extends CajaTestCase {
     return elapsed.doubleValue();
   }
 
-  private double runCajoled(String filename) throws Exception {
+  private double runCajoled(String filename, boolean wrapGlobals)
+    throws Exception {
     PluginMeta meta = new PluginMeta();
     meta.setValijaMode(true);
     PluginCompiler pc = new PluginCompiler(new TestBuildInfo(), meta, mq);
-    pc.addInput(AncestorChain.instance(js(fromResource(filename))));
+    CharProducer src = wrapGlobals ? 
+        fromString(wrapGlobals(plain(fromResource(filename)))):
+            fromString(plain(fromResource(filename)));
+    pc.addInput(AncestorChain.instance(js(src)));
     assertTrue(pc.run());
     String cajoledJs = render(pc.getJavascript());
+    System.err.println("-- Cajoled:" + filename + "(wrapped: " + wrapGlobals + ") --\n" + cajoledJs + "\n---\n");
     Number elapsed = (Number) RhinoTestBed.runJs(
         new RhinoTestBed.Input(getClass(), 
             "../../../../../js/json_sans_eval/json_sans_eval.js"),
