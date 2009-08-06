@@ -1909,8 +1909,10 @@ var attachDocumentStub = (function () {
     TameBackedAttributeNode.prototype.getNodeName =
     TameBackedAttributeNode.prototype.getName =
         function () { return String(this.node___.name); };
-    TameBackedAttributeNode.prototype.getSpecified =
-        function () { return !!this.node___.specified; };
+    TameBackedAttributeNode.prototype.getSpecified = function () {
+      return defaultTameNode(this.ownerElement___, this.editable___)
+          .hasAttribute(this.getName());
+    };
     TameBackedAttributeNode.prototype.getNodeValue =
     TameBackedAttributeNode.prototype.getValue = function () {
       return defaultTameNode(this.ownerElement___, this.editable___)
