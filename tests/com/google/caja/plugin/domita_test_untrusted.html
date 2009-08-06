@@ -2305,31 +2305,42 @@ jsunitRegister('testAttributeNodes',
   assertEquals(cb, attrNode.ownerElement);
   assertEquals('id', attrNode.name);
 
-  assertEquals(null, cb.getAttributeNode('name'));
+  assertNoAttr(cb.getAttributeNode('name'));
+
+  function assertNoAttr(attrNode) {
+    if (attrNode === null) { return; }
+    assertFalse('specified ' + attrNode.name, attrNode.specified);
+    assertEquals(
+        'non blank value for ' + attrNode.name, '', attrNode.value || '');
+  }
 
   function checkScriptAttrNode(attrNode) {
-    var scriptAttrRE = new RegExp('plugin_dispatchEvent___\\(.*\\);');
+    if (attrNode == null || (!attrNode.specified && '' === attrNode.value)) {
+      return;  // Works if node not present.
+    }
+    // If it is present, it had better be rewritten.
+    var scriptAttrRE = new RegExp('\\bplugin_dispatchEvent___\\(');
 
     function assertScript(value) {
-      assertTrue(value.match(scriptAttrRE).length > 0);
+      value = '' + value;
+      assertTrue(scriptAttrRE.test(value));
     }
 
     assertScript(attrNode.value);
     assertScript(attrNode.nodeValue);
   }
 
-  checkScriptAttrNode(cb.getAttributeNode('onclick'));
-
-  var onclickAttrNode;
-  for (var i = 0; i < cb.attributes.length; ++i) {
-    if (cb.attributes[i].name === 'onclick') {
-      onclickAttrNode = cb.attributes[i];
-    }
-  }
-  assertTrue(!!onclickAttrNode);
+  var onclickAttrNode = cb.getAttributeNode('onclick');
   checkScriptAttrNode(onclickAttrNode);
 
-  onclickAttrNode.value = 'globalSideEffect();';
+  try {
+    cb.onclick = 'globalSideEffect();';
+  } catch (ex) {}
+  if (onclickAttrNode) {
+    try {
+      onclickAttrNode.value = 'globalSideEffect();';
+    } catch (ex) {}
+  }
   checkScriptAttrNode(onclickAttrNode);
 
   pass('test-attribute-nodes');
@@ -2436,7 +2447,7 @@ jsunitRegister('testTableElements',
 jsunitRegister('testThisInEventHandlers',
                function testThisInEventHandlers() {
   var inp = document.getElementById('test-this-in-event-handlers-1');
-  
+
   // By declaring f() to be cajita, but supplying it as the 'call'
   // property of the object passed to the event listener, we get
   // access to the value the function is supposed to use for the
@@ -2444,7 +2455,7 @@ jsunitRegister('testThisInEventHandlers',
   function f($dis, event, thisNode) {
     "use cajita";
     // In an event handler, "this" should be bound to the node.
-    assertEquals($dis, thisNode); 
+    assertEquals($dis, thisNode);
     pass('test-this-in-event-handlers');
   }
   inp.addEventListener('click', {call: f}, false);
@@ -2485,7 +2496,7 @@ jsunitRegister('testRowCell',
 
 jsunitRegister('testNegativeIndices',
                function testNegativeIndices() {
-  // Under Firefox, there are many undocumented properties 
+  // Under Firefox, there are many undocumented properties
   // with negative indices; see
   // http://www.thespanner.co.uk/2009/07/14/hidden-firefox-properties-revisited/
   // http://webreflection.blogspot.com/2009/06/javascript-arguments-weridness.html
