@@ -95,9 +95,11 @@
     <div id="untrusted_content" class="xyz___"
      title="<Untrusted Content Title>"
      style="position: relative;
-            width:600px;
-            height:400px;
-            color: rgb(3,6,9);">
+            width: 600px;
+            height: 400px;
+            color: rgb(3,6,9);
+            /* on IE, width and height aren't limited for overflow: visible */
+            overflow: hidden;">
       <!-- should appear first -->
       <div id="absolutely-positioned-xyz___"
        style="position: absolute; padding: 0; margin: 0;

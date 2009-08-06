@@ -2103,19 +2103,19 @@ jsunitRegister('testFactoriesNotBypassable',
 
 jsunitRegister('testScrolling',
                function testScrolling() {
-  assertEquals('0,0,0,0', String([
+  var initialViewPort = String([
       window.scrollLeft, window.scrollTop,
-      document.defaultView.scrollLeft, document.defaultView.scrollTop]));
+      document.defaultView.scrollLeft, document.defaultView.scrollTop]);
   assertEquals(
-      'visible',
+      'hidden',
       directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
 
   window.scrollBy(0, 0);
-  assertEquals('0,0,0,0', String([
+  assertEquals(initialViewPort, String([
       window.scrollLeft, window.scrollTop,
       document.defaultView.scrollLeft, document.defaultView.scrollTop]));
   assertEquals(
-      'visible',
+      'hidden',
       directAccess.getComputedStyle(directAccess.getBodyNode(), 'overflow'));
 
   window.scrollTo(0, 10);
@@ -2148,14 +2148,20 @@ jsunitRegister('testScrolling',
 jsunitRegister('testResizing',
                function testResizing() {
   function windowDims() {
-    assertEquals(window.clientWidth, document.defaultView.clientWidth);
-    assertEquals(window.clientHeight, document.defaultView.clientHeight);
-    assertEquals(window.clientWidth, document.body.clientWidth);
-    assertEquals(window.clientHeight, document.body.clientHeight);
-    assertEquals(window.clientWidth, document.documentElement.clientWidth);
-    assertEquals(window.clientHeight, document.documentElement.clientHeight);
-    assertEquals(window.clientWidth, window.innerWidth);
-    assertEquals(window.clientHeight, window.innerHeight);
+    assertEquals('document.defaultView.clientWidth',
+                 window.clientWidth, document.defaultView.clientWidth);
+    assertEquals('document.defaultView.clientHeight',
+                 window.clientHeight, document.defaultView.clientHeight);
+    assertEquals('document.body.clientWidth',
+                 window.clientWidth, document.body.clientWidth);
+    assertEquals('document.body.clientHeight',
+                 window.clientHeight, document.body.clientHeight);
+    assertEquals('document.documentElement.clientWidth',
+                 window.clientWidth, document.documentElement.clientWidth);
+    assertEquals('document.documentElement.clientHeight',
+                 window.clientHeight, document.documentElement.clientHeight);
+    assertEquals('window.innerWidth', window.clientWidth, window.innerWidth);
+    assertEquals('window.innerHeight', window.clientHeight, window.innerHeight);
     return String([window.clientWidth, window.clientHeight]);
   }
 
@@ -2277,6 +2283,7 @@ jsunitRegister('testBoundingClientRect',
   var absPos = document.getElementById('absolutely-positioned');
   var relPos = document.getElementById('relatively-positioned');
 
+  window.scrollLeft = window.scrollTop = 0;
   var absRect = absPos.getBoundingClientRect();
   var relRect = relPos.getBoundingClientRect();
 
