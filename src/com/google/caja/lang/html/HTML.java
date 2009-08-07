@@ -211,7 +211,7 @@ public final class HTML {
 
     /** Gets the name of the element, or the special value "*". */
     public Name getElementName() {
-      return attributeName_;
+      return elementName_;
     }
 
     /** Gets the type, e.g. URI. */
