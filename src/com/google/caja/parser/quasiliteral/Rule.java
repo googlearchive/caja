@@ -37,7 +37,6 @@ import com.google.caja.parser.js.SyntheticNodes;
 import static com.google.caja.parser.js.SyntheticNodes.s;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessagePart;
-import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Callback;
 import com.google.caja.util.Pair;
@@ -71,7 +70,7 @@ public abstract class Rule implements MessagePart {
         }
       };
 
-  private String name;
+  private final String name;
   private Rewriter rewriter;
   private RuleDescription description;
 
@@ -80,7 +79,7 @@ public abstract class Rule implements MessagePart {
    * method's {@link RuleDescription}.
    */
   public Rule() {
-    setName(getRuleDescription().name());
+    this.name = getRuleDescription().name();
   }
 
   /**
@@ -89,6 +88,7 @@ public abstract class Rule implements MessagePart {
    * @param name the unique name of this rule.
    */
   public Rule(String name, Rewriter rewriter) {
+    assert name != null;
     this.name = name;
     this.rewriter = rewriter;
   }
@@ -97,16 +97,7 @@ public abstract class Rule implements MessagePart {
    * @return the name of this {@code Rule}.
    */
   public String getName() {
-    assert this.name != null;
     return name;
-  }
-
-  /**
-   * Set the name of this {@code Rule}.
-   */
-  public void setName(String name) {
-    assert this.name == null;
-    this.name = name;
   }
 
   /**
@@ -118,6 +109,7 @@ public abstract class Rule implements MessagePart {
    * Set the rewriter this {@code Rule} uses.
    */
   public void setRewriter(Rewriter rewriter) {
+    assert this.rewriter == null;
     this.rewriter = rewriter;
   }
 
@@ -130,7 +122,7 @@ public abstract class Rule implements MessagePart {
       Method fire;
       try {
         fire = getClass().getMethod("fire", new Class<?>[] {
-              ParseTreeNode.class, Scope.class, MessageQueue.class
+              ParseTreeNode.class, Scope.class
             });
       } catch (NoSuchMethodException e) {
         NoSuchMethodError error = new NoSuchMethodError();
@@ -150,14 +142,10 @@ public abstract class Rule implements MessagePart {
    *
    * @param node an input node.
    * @param scope the current scope.
-   * @param mq a {@code MessageQueue} for error reporting.
    * @return the rewritten node, or {@link #NONE} to indicate
    * that this rule does not apply to the given input.
    */
-  public abstract ParseTreeNode fire(
-      ParseTreeNode node,
-      Scope scope,
-      MessageQueue mq);
+  public abstract ParseTreeNode fire(ParseTreeNode node, Scope scope);
 
   /**
    * @see MessagePart#format(MessageContext,Appendable)
@@ -166,18 +154,17 @@ public abstract class Rule implements MessagePart {
     out.append("Rule \"" + name + "\"");
   }
 
-  protected final ParseTreeNode expandAll(ParseTreeNode node, Scope scope, MessageQueue mq) {
-    return expandAllTo(node, node.getClass(), scope, mq);
+  protected final ParseTreeNode expandAll(ParseTreeNode node, Scope scope) {
+    return expandAllTo(node, node.getClass(), scope);
   }
 
   protected final ParseTreeNode expandAllTo(
       ParseTreeNode node,
       Class<? extends ParseTreeNode> parentNodeClass,
-      Scope scope,
-      MessageQueue mq) {
+      Scope scope) {
     List<ParseTreeNode> rewrittenChildren = new ArrayList<ParseTreeNode>();
     for (ParseTreeNode child : node.children()) {
-      rewrittenChildren.add(rewriter.expand(child, scope, mq));
+      rewrittenChildren.add(rewriter.expand(child, scope));
     }
 
     ParseTreeNode result = ParseTreeNodes.newNodeInstance(
@@ -268,10 +255,8 @@ public abstract class Rule implements MessagePart {
    * exactly once and prior to evaluating the reusable expression.
    */
   protected Pair<Expression, Expression> reuse(
-      ParseTreeNode value,
-      Scope scope,
-      MessageQueue mq) {
-    Expression rhs = (Expression) rewriter.expand(value, scope, mq);
+      ParseTreeNode value, Scope scope) {
+    Expression rhs = (Expression) rewriter.expand(value, scope);
     if (rhs instanceof Reference || rhs instanceof Literal) {
       return new Pair<Expression, Expression>(
           rhs, Operation.undefined(FilePosition.UNKNOWN));
@@ -294,15 +279,13 @@ public abstract class Rule implements MessagePart {
    * exactly once and prior to evaluating the reusable expression.
    */
   protected Pair<ParseTreeNodeContainer, Expression> reuseAll(
-      ParseTreeNode arguments,
-      Scope scope,
-      MessageQueue mq) {
+      ParseTreeNode arguments, Scope scope) {
     List<ParseTreeNode> refs = new ArrayList<ParseTreeNode>();
     Expression[] inits = new Expression[arguments.children().size()];
 
     for (int i = 0; i < arguments.children().size(); i++) {
       Pair<Expression, Expression> p = reuse(
-          arguments.children().get(i), scope, mq);
+          arguments.children().get(i), scope);
       refs.add(p.a);
       inits[i] = p.b;
     }
@@ -401,12 +384,12 @@ public abstract class Rule implements MessagePart {
     return null;
   }
 
-  protected void checkFormals(ParseTreeNode formals, MessageQueue mq) {
+  protected void checkFormals(ParseTreeNode formals) {
     for (ParseTreeNode formal : formals.children()) {
       FormalParam f = (FormalParam) formal;
       if (!isSynthetic(f.getIdentifier())
           && f.getIdentifierName().endsWith("__")) {
-        mq.addMessage(
+        rewriter.mq.addMessage(
             RewriterMessageType.VARIABLES_CANNOT_END_IN_DOUBLE_UNDERSCORE,
             f.getFilePosition(), this, f);
       }
@@ -474,14 +457,13 @@ public abstract class Rule implements MessagePart {
    * For when you just want to match(), expand() all bindings, and subst() using
    * the rule's matches and substitutes annotations.
    */
-  protected ParseTreeNode transform(
-      ParseTreeNode node, Scope scope, MessageQueue mq) {
+  protected ParseTreeNode transform(ParseTreeNode node, Scope scope) {
     Map<String, ParseTreeNode> bindings = match(node);
     if (bindings != null) {
       Map<String, ParseTreeNode> newBindings = makeBindings();
       for (Map.Entry<String, ParseTreeNode> entry : bindings.entrySet()) {
-        newBindings.put(entry.getKey(), 
-            getRewriter().expand(entry.getValue(), scope, mq));
+        newBindings.put(entry.getKey(),
+            getRewriter().expand(entry.getValue(), scope));
       }
       return QuasiBuilder.subst(getRuleDescription().substitutes(),
                                 newBindings);
@@ -508,33 +490,33 @@ public abstract class Rule implements MessagePart {
    *    not cajole.
    */
   ReadAssignOperands deconstructReadAssignOperand(
-      Expression operand, Scope scope, MessageQueue mq) {
-    return deconstructReadAssignOperand(operand, scope, mq, true);
+      Expression operand, Scope scope) {
+    return deconstructReadAssignOperand(operand, scope, true);
   }
 
   ReadAssignOperands deconstructReadAssignOperand(
-    Expression operand, Scope scope, MessageQueue mq, boolean checkImported) {
+    Expression operand, Scope scope, boolean checkImported) {
     if (operand instanceof Reference) {
       // TODO(erights): These rules should be independent of whether we're writing
       // new-caja or cajita.  The check for whether it's imported only applies in the
       // cajita case.
       if (checkImported && scope.isImported(((Reference) operand).getIdentifierName())) {
-        mq.addMessage(
+        rewriter.mq.addMessage(
             RewriterMessageType.CANNOT_ASSIGN_TO_FREE_VARIABLE,
             operand.getFilePosition(), this, operand);
         return null;
       }
-      return sideEffectlessReadAssignOperand(operand, scope, mq);
+      return sideEffectlessReadAssignOperand(operand, scope);
     } else if (operand instanceof Operation) {
       Operation op = (Operation) operand;
       switch (op.getOperator()) {
         case SQUARE_BRACKET:
           return sideEffectingReadAssignOperand(
-              op.children().get(0), op.children().get(1), scope, mq);
+              op.children().get(0), op.children().get(1), scope);
         case MEMBER_ACCESS:
           return sideEffectingReadAssignOperand(
               op.children().get(0), toStringLiteral(op.children().get(1)),
-              scope, mq);
+              scope);
         default: break;
       }
     }
@@ -546,15 +528,14 @@ public abstract class Rule implements MessagePart {
    * a ReadAssignOperands without using temporaries.
    */
   private ReadAssignOperands sideEffectlessReadAssignOperand(
-      final Expression lhs, Scope scope, MessageQueue mq) {
+      Expression lhs, Scope scope) {
     return new ReadAssignOperands(
         Collections.<Expression>emptyList(),
-        lhs, (Expression) rewriter.expand(lhs, scope, mq));
+        lhs, (Expression) rewriter.expand(lhs, scope));
   }
 
   private ReadAssignOperands sideEffectingReadAssignOperand(
-      Expression uncajoledObject, Expression uncajoledKey, Scope scope,
-      MessageQueue mq) {
+      Expression uncajoledObject, Expression uncajoledKey, Scope scope) {
     Reference object;  // The object that contains the field to assign.
     Expression key;  // Identifies the field to assign.
     List<Expression> temporaries = new ArrayList<Expression>();
@@ -584,7 +565,7 @@ public abstract class Rule implements MessagePart {
       temporaries.add((Expression) QuasiBuilder.substV(
           "@tmpVar = @left;",
           "tmpVar", new Reference(tmpVar),
-          "left", rewriter.expand(uncajoledObject, scope, mq)));
+          "left", rewriter.expand(uncajoledObject, scope)));
       object = new Reference(tmpVar);
     }
 
@@ -592,7 +573,7 @@ public abstract class Rule implements MessagePart {
     if (isKeySimple) {
       key = uncajoledKey;
     } else {
-      ParseTreeNode rightExpanded = rewriter.expand(uncajoledKey, scope, mq);
+      ParseTreeNode rightExpanded = rewriter.expand(uncajoledKey, scope);
       Identifier tmpVar = scope.declareStartOfScopeTempVariable();
       key = new Reference(tmpVar);
       if (QuasiBuilder.match("@s&(-1>>>1)", rightExpanded)) {
@@ -629,7 +610,7 @@ public abstract class Rule implements MessagePart {
     }
     return new ReadAssignOperands(
         temporaries, propertyAccess,
-        (Expression) rewriter.expand(propertyAccess, scope, mq));
+        (Expression) rewriter.expand(propertyAccess, scope));
   }
 
   /**

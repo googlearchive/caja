@@ -38,8 +38,8 @@ import java.util.Map;
 /**
  * Maintains the mapping from a absolute URI to a module name and the mapping
  * from a module name to the cajoled module.
- * 
- * Responsible for retrieving and cajoling the embedded modules if necessary 
+ *
+ * Responsible for retrieving and cajoling the embedded modules if necessary
  *
  * @author maoziqing@gmail.com
  */
@@ -47,37 +47,36 @@ public class ModuleManager {
   private final PluginEnvironment pluginEnv;
   private final BuildInfo buildInfo;
   private final MessageQueue mq;
-  
-  private final Map<String, Integer> moduleNameMap 
+
+  private final Map<String, Integer> moduleNameMap
     = new HashMap<String, Integer>();
   private final Map<Integer, CajoledModule> moduleIndexMap
     = new HashMap<Integer, CajoledModule>();
   private int moduleCounter = 0;
-  
+
   public ModuleManager(
-      BuildInfo buildInfo, PluginEnvironment pluginEnv, MessageQueue mq) {      
+      BuildInfo buildInfo, PluginEnvironment pluginEnv, MessageQueue mq) {
     this.buildInfo = buildInfo;
     this.pluginEnv = pluginEnv;
     this.mq = mq;
   }
-  
+
   public Map<Integer, CajoledModule> getModuleIndexMap() {
     return moduleIndexMap;
   }
-  
+
   public void appendUncajoledModule(UncajoledModule uncajoledModule) {
     moduleCounter++;
-    CajitaRewriter dcr = new CajitaRewriter(buildInfo, this, false);
-    CajoledModule cajoledModule = 
-        (CajoledModule) dcr.expand(uncajoledModule, mq);
+    CajitaRewriter dcr = new CajitaRewriter(buildInfo, this, mq, false);
+    CajoledModule cajoledModule = (CajoledModule) dcr.expand(uncajoledModule);
     moduleIndexMap.put(0, cajoledModule);
   }
-  
+
   /**
    * Look up the module URL in the local map
    * Retrieve the module if necessary
    * Return the index of the module in the local list
-   * 
+   *
    * Return -1 if error occurs
    */
   public int getModule(StringLiteral src) {
@@ -100,7 +99,7 @@ public class ModuleManager {
     ExternalReference er = new ExternalReference(
         inputUri, src.getFilePosition());
 
-    CharProducer cp = 
+    CharProducer cp =
         this.pluginEnv.loadExternalResource(er, "text/javascript");
     if (cp == null) {
       mq.addMessage(
@@ -109,28 +108,26 @@ public class ModuleManager {
           MessagePart.Factory.valueOf(src.getUnquotedValue()));
       return -1;
     }
-    
+
     String absoluteUri = cp.getCurrentPosition().source().getUri().toString();
     if (moduleNameMap.containsKey(absoluteUri)) {
       return moduleNameMap.get(absoluteUri);
     }
-    
+
     int cur = moduleCounter;
     moduleCounter++;
     moduleNameMap.put(absoluteUri, cur);
-        
+
     InputSource is = new InputSource(cp.getCurrentPosition().source().getUri());
     try {
       JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp), is);
       Block input = new Parser(tq, mq).parse();
       tq.expectEmpty();
 
-      CajitaRewriter dcr = 
-          new CajitaRewriter(buildInfo, this, false);
+      CajitaRewriter dcr = new CajitaRewriter(buildInfo, this, mq, false);
       UncajoledModule uncajoledModule = new UncajoledModule(input);
-      CajoledModule cajoledModule = 
-          (CajoledModule) dcr.expand(uncajoledModule, mq);
-      
+      CajoledModule cajoledModule = (CajoledModule) dcr.expand(uncajoledModule);
+
       moduleIndexMap.put(cur, cajoledModule);
     } catch (ParseException e) {
       mq.addMessage(
@@ -139,6 +136,7 @@ public class ModuleManager {
           MessagePart.Factory.valueOf(src.getUnquotedValue()));
       return -1;
     }
+
     return cur;
   }
 }

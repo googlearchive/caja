@@ -31,8 +31,9 @@ public class RewriterTest extends RewriterTestCase {
    * was given.
    */
   private static class ReturnExactInputRewriter extends Rewriter {
-    public ReturnExactInputRewriter(final boolean returnExactInput) {
-      super(true, true);
+    public ReturnExactInputRewriter(
+        MessageQueue mq, final boolean returnExactInput) {
+      super(mq, true, true);
 
       addRule(new Rule() {
         @Override
@@ -40,13 +41,11 @@ public class RewriterTest extends RewriterTestCase {
             name="setTaint",
             synopsis="",
             reason="")
-        public ParseTreeNode fire(ParseTreeNode node,
-                                  Scope scope,
-                                  MessageQueue mq) {
+        public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
           if (returnExactInput) { return node; }
           node.getAttributes().remove(ParseTreeNode.TAINTED);
           for (ParseTreeNode c : node.children()) {
-            getRewriter().expand(c, scope, mq);
+            getRewriter().expand(c, scope);
           }
           return node;
       }});
@@ -59,8 +58,9 @@ public class RewriterTest extends RewriterTestCase {
    * expand the values plugged into the quasi substitution.
    */
   private static class ReturnUnexpandedRewriter extends Rewriter {
-    public ReturnUnexpandedRewriter(final boolean returnUnexpanded) {
-      super(true, true);
+    public ReturnUnexpandedRewriter(
+        MessageQueue mq, final boolean returnUnexpanded) {
+      super(mq, true, true);
 
       // Top-level rule that matches an addition expression
       addRule(new Rule() {
@@ -71,9 +71,7 @@ public class RewriterTest extends RewriterTestCase {
             substitutes="@x - @y",
             synopsis="",
             reason="")
-        public ParseTreeNode fire(ParseTreeNode node,
-                                  Scope scope,
-                                  MessageQueue mq) {
+        public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
           Map<String, ParseTreeNode> m = match(node);
 
           if (m != null) {
@@ -81,8 +79,8 @@ public class RewriterTest extends RewriterTestCase {
             ParseTreeNode y = m.get("y");
 
             if (!returnUnexpanded) {
-              x = expandAll(x, scope, mq);
-              y = expandAll(y, scope, mq);
+              x = expandAll(x, scope);
+              y = expandAll(y, scope);
             }
 
             return substV(
@@ -100,9 +98,7 @@ public class RewriterTest extends RewriterTestCase {
             name="numberLiteral",
             synopsis="",
             reason="")
-        public ParseTreeNode fire(ParseTreeNode node,
-                                  Scope scope,
-                                  MessageQueue mq) {
+        public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
           if (node instanceof NumberLiteral) {
             node.getAttributes().remove(ParseTreeNode.TAINTED);
             return node;
@@ -119,31 +115,31 @@ public class RewriterTest extends RewriterTestCase {
   }
 
   public final void testReturningExactInputIsCaught() throws Exception {
-    setRewriter(new ReturnExactInputRewriter(true));
+    setRewriter(new ReturnExactInputRewriter(mq, true));
     checkAddsMessage(
         js(fromString("3;")),
         RewriterMessageType.UNSEEN_NODE_LEFT_OVER,
         MessageLevel.FATAL_ERROR);
-    setRewriter(new ReturnExactInputRewriter(false));
+    setRewriter(new ReturnExactInputRewriter(mq, false));
     checkSucceeds(
         js(fromString("3;")),
         null);
   }
 
   public final void testReturningUnexpandedIsCaught() throws Exception {
-    setRewriter(new ReturnUnexpandedRewriter(true));
+    setRewriter(new ReturnUnexpandedRewriter(mq, true));
     checkAddsMessage(
         makeSimpleAdditionExpr(),
         RewriterMessageType.UNSEEN_NODE_LEFT_OVER,
         MessageLevel.FATAL_ERROR);
-    setRewriter(new ReturnUnexpandedRewriter(false));
+    setRewriter(new ReturnUnexpandedRewriter(mq, false));
     checkSucceeds(
         makeSimpleAdditionExpr(),
         null);
   }
 
   public final void testUnmatchedThrowsError() throws Exception {
-    setRewriter(new Rewriter(true, true) {});  // No rules
+    setRewriter(new Rewriter(mq, true, true) {});  // No rules
     checkAddsMessage(
         js(fromString("3;")),
         RewriterMessageType.UNMATCHED_NODE_LEFT_OVER,

@@ -32,7 +32,6 @@ import com.google.caja.util.RhinoAsserts;
 import com.google.caja.util.TestUtil;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.Message;
-import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageTypeInt;
 
 import java.io.IOException;
@@ -43,7 +42,7 @@ import java.util.Arrays;
  * @author ihab.awad@gmail.com
  */
 public abstract class RewriterTestCase extends CajaTestCase {
-  protected Rewriter rewriter = null;
+  protected Rewriter rewriter;
 
   /**
    * Given some code, execute it without rewriting and return the value of the
@@ -71,7 +70,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
   protected void checkFails(String input, String error) throws Exception {
     mq.getMessages().clear();
     getRewriter().expand(new Block(
-        FilePosition.UNKNOWN, Arrays.asList(js(fromString(input, is)))), mq);
+        FilePosition.UNKNOWN, Arrays.asList(js(fromString(input, is)))));
 
     assertFalse(
         "Expected error, found none: " + error,
@@ -96,7 +95,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
       MessageLevel highest)
       throws Exception {
     mq.getMessages().clear();
-    ParseTreeNode actualResultNode = getRewriter().expand(inputNode, mq);
+    ParseTreeNode actualResultNode = getRewriter().expand(inputNode);
     for (Message m : mq.getMessages()) {
       if (m.getMessageLevel().compareTo(highest) >= 0) {
         fail(m.toString());
@@ -128,21 +127,18 @@ public abstract class RewriterTestCase extends CajaTestCase {
   }
 
   private void checkDoesNotAddMessage(
-      ParseTreeNode inputNode,
-      MessageTypeInt type)  {
+      ParseTreeNode inputNode, MessageTypeInt type)  {
     mq.getMessages().clear();
-    getRewriter().expand(inputNode, mq);
+    getRewriter().expand(inputNode);
     if (containsConsistentMessage(mq.getMessages(),type)) {
       fail("Unexpected add message of type " + type);
     }
   }
 
   protected void checkDoesNotAddMessage(
-        ParseTreeNode inputNode,
-        MessageTypeInt type,
-        MessageLevel level)  {
+      ParseTreeNode inputNode, MessageTypeInt type, MessageLevel level)  {
     mq.getMessages().clear();
-    getRewriter().expand(inputNode, mq);
+    getRewriter().expand(inputNode);
     if (containsConsistentMessage(mq.getMessages(),type, level)) {
       fail("Unexpected add message of type " + type + " and level " + level);
     }
@@ -170,7 +166,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
         MessageTypeInt type,
         MessageLevel level)  {
     mq.getMessages().clear();
-    getRewriter().expand(inputNode, mq);
+    getRewriter().expand(inputNode);
     if (!containsConsistentMessage(mq.getMessages(), type, level)) {
       fail("Failed to add message of type " + type + " and level " + level);
     }
@@ -187,9 +183,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
   }
 
   protected boolean containsConsistentMessage(
-      List<Message> list,
-      MessageTypeInt type,
-      MessageLevel level) {
+      List<Message> list, MessageTypeInt type, MessageLevel level) {
     for (Message m : list) {
       System.out.println("**" + m.getMessageType() + "|" + m.getMessageLevel());
       if (m.getMessageType().equals(type) && m.getMessageLevel() == level) {
@@ -251,7 +245,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
   }
 
   protected ParseTreeNode rewriteTopLevelNode(ParseTreeNode node) {
-    return getRewriter().expand(node, mq);
+    return getRewriter().expand(node);
   }
 
   protected Rewriter getRewriter() {
@@ -263,19 +257,18 @@ public abstract class RewriterTestCase extends CajaTestCase {
   }
 
   protected ParseTreeNode emulateIE6FunctionConstructors(ParseTreeNode node) {
-    Rewriter w = new Rewriter(true, false) {};
+    Rewriter w = new Rewriter(mq, true, false) {};
     w.addRule(new Rule() {
       @Override
       @RuleDescription(
           name="blockScope",
           reason="Set up the root scope and handle block scope statements",
           synopsis="")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof Block) {
           Scope s2;
           if (scope == null) {
-            s2 = Scope.fromProgram((Block) node, mq);
+            s2 = Scope.fromProgram((Block) node, getRewriter().mq);
           } else {
             s2 = Scope.fromPlainBlock(scope);
           }
@@ -283,7 +276,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
               "@startStmts*; @body*;",
               "startStmts", new ParseTreeNodeContainer(s2.getStartStatements()),
               "body", expandAll(
-                  new ParseTreeNodeContainer(node.children()), s2, mq));
+                  new ParseTreeNodeContainer(node.children()), s2));
         }
         return NONE;
       }
@@ -295,8 +288,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
           reason="function declarations contain function constructors but don't"
               + " have the same discrepencies on IE 6 as function constructors",
           synopsis="")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof FunctionDeclaration) {
           FunctionDeclaration decl = ((FunctionDeclaration) node);
           FunctionConstructor ctor = decl.getInitializer();
@@ -307,12 +299,11 @@ public abstract class RewriterTestCase extends CajaTestCase {
                   "function @ident(@formals*) { @fh*; @stmts*; @body*; }",
                   "ident", ctor.getIdentifier(),
                   "formals", expandAll(
-                      new ParseTreeNodeContainer(ctor.getParams()), s2, mq),
+                      new ParseTreeNodeContainer(ctor.getParams()), s2),
                   "fh", getFunctionHeadDeclarations(s2),
                   "stmts", new ParseTreeNodeContainer(s2.getStartStatements()),
                   "body", expandAll(
-                      new ParseTreeNodeContainer(ctor.getBody().children()),
-                      s2, mq)
+                      new ParseTreeNodeContainer(ctor.getBody().children()), s2)
                   );
           return new FunctionDeclaration(rewritten);
         }
@@ -326,13 +317,12 @@ public abstract class RewriterTestCase extends CajaTestCase {
           reason="simulate IE 6's broken scoping of function constructors as "
               + "described in JScript Deviations Section 2.3",
           synopsis="")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof FunctionConstructor) {
           FunctionConstructor ctor = (FunctionConstructor) node;
           Scope s2 = Scope.fromFunctionConstructor(scope, ctor);
           if (ctor.getIdentifierName() == null) {
-            return expandAll(node, s2, mq);
+            return expandAll(node, s2);
           }
           Identifier ident = ctor.getIdentifier();
           Reference identRef = new Reference(ident);
@@ -347,8 +337,7 @@ public abstract class RewriterTestCase extends CajaTestCase {
               "fh", getFunctionHeadDeclarations(s2),
               "stmts", new ParseTreeNodeContainer(s2.getStartStatements()),
               "body", expandAll(
-                  new ParseTreeNodeContainer(ctor.getBody().children()),
-                  s2, mq)
+                  new ParseTreeNodeContainer(ctor.getBody().children()), s2)
               );
         }
         return NONE;
@@ -360,11 +349,10 @@ public abstract class RewriterTestCase extends CajaTestCase {
           name="catchAll",
           reason="Handles non function constructors.",
           synopsis="")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
-        return expandAll(node, scope, mq);
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        return expandAll(node, scope);
       }
     });
-    return w.expand(node, mq);
+    return w.expand(node);
   }
 }

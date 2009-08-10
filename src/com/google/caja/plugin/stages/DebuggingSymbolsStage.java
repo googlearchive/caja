@@ -105,12 +105,13 @@ public final class DebuggingSymbolsStage implements Pipeline.Stage<Jobs> {
    * @param js cajoled javascript.
    * @param symbols added to.
    * @param mq receives rewriting messages.
-   * @return js rewritten.
+   * @return rewritten JS.
    */
   private CajoledModule addSymbols(
-      AncestorChain<CajoledModule> js, DebuggingSymbols symbols, MessageQueue mq) {
-    return (CajoledModule) new CajaRuntimeDebuggingRewriter(symbols)
-        .expand(js.node, mq);
+      AncestorChain<CajoledModule> js, DebuggingSymbols symbols,
+      MessageQueue mq) {
+    return (CajoledModule) new CajaRuntimeDebuggingRewriter(symbols, mq)
+        .expand(js.node);
   }
 
   /**

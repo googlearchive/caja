@@ -50,6 +50,7 @@ public abstract class Rewriter {
    */
   private final RuleChain rules = new RuleChain();
   private final Set<String> ruleNames = new HashSet<String>();
+  final MessageQueue mq;
   private final boolean taintChecking;
   private final boolean logging;
 
@@ -59,21 +60,11 @@ public abstract class Rewriter {
    * @param logging whether this Rewriter should log the details of
    *     rule firings to standard error.
    */
-  public Rewriter(boolean taintChecking, boolean logging) {
+  public Rewriter(MessageQueue mq, boolean taintChecking, boolean logging) {
+    assert mq != null;
+    this.mq = mq;
     this.taintChecking = taintChecking;
     this.logging = logging;
-  }
-
-  /**
-   * Creates a new Rewriter.
-   *
-   * @param logging whether this Rewriter should log the details of
-   *     rule firings to standard error.
-   */
-  public Rewriter(boolean tainting, boolean logging, Rule[] rules) {
-    this.taintChecking = tainting;
-    this.logging = logging;
-    addRules(rules);
   }
 
   /**
@@ -84,20 +75,18 @@ public abstract class Rewriter {
   }
 
   /**
-   * Alternate form of {@link #expand(ParseTreeNode, MessageQueue)}.
+   * Alternate form of {@link #expand(ParseTreeNode)}.
    *
    * @param node a parse tree node to expand.
    * @param scope the scope in which 'node' is defined.
-   * @param mq a message queue for compiler messages.
    * @return the expanded parse tree node.
    */
-  protected final ParseTreeNode expand(
-      ParseTreeNode node, Scope scope, MessageQueue mq) {
+  protected final ParseTreeNode expand(ParseTreeNode node, Scope scope) {
     boolean debug = false;
     Iterable<Rule> run = debug ? rules.getAllRules() : rules.applicableTo(node);
     for (Rule rule : run) {
       try {
-        ParseTreeNode result = rule.fire(node, scope, mq);
+        ParseTreeNode result = rule.fire(node, scope);
         if (result != Rule.NONE) {
           if (debug && !rules.applicableTo(node).contains(rule)) {
             throw new AssertionError(
@@ -199,17 +188,16 @@ public abstract class Rewriter {
    * rewriter, returning the expanded result.
    *
    * @param node a top-level parse tree node to expand.
-   * @param mq a message queue for compiler messages.
    * @return the expanded parse tree node.
    */
-  public final ParseTreeNode expand(ParseTreeNode node, MessageQueue mq) {
+  public final ParseTreeNode expand(ParseTreeNode node) {
     if (taintChecking) {
       flagTainted(node, mq);
-      ParseTreeNode result = expand(node, null, mq);
+      ParseTreeNode result = expand(node, null);
       checkTainted(result, mq);
       return result;
     }
-    return expand(node, null, mq);
+    return expand(node, null);
   }
 
   private static void flagTainted(ParseTreeNode node, MessageQueue mq) {
@@ -267,7 +255,7 @@ public abstract class Rewriter {
     return removeTaint(node);
   }
 
-  protected Declaration noexpand(Declaration node, MessageQueue mq) {
+  protected Declaration noexpand(Declaration node) {
     if (node.getInitializer() != null) {
       mq.addMessage(
           RewriterMessageType.NOEXPAND_BINARY_DECL,
@@ -294,11 +282,10 @@ public abstract class Rewriter {
     return removeTaint(node);
   }
 
-  protected ParseTreeNodeContainer noexpandParams(
-      ParseTreeNodeContainer node, MessageQueue mq) {
+  protected ParseTreeNodeContainer noexpandParams(ParseTreeNodeContainer node) {
     if (taintChecking) {
       for (ParseTreeNode child : node.children()) {
-        noexpand((Declaration) child, mq);
+        noexpand((Declaration) child);
       }
       return removeTaint(node);
     }

@@ -70,19 +70,18 @@ public class CajitaModuleRewriter extends Rewriter {
               + "      cajolerVersion: @cajolerVersion,"
               + "      cajoledDate: @cajoledDate"
               + "    })"))
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof UncajoledModule) {
-          ModuleManager moduleManager = 
+          ModuleManager moduleManager =
             new ModuleManager(buildInfo, pluginEnv, mq);
           moduleManager.appendUncajoledModule((UncajoledModule)node);
-          
+
           List<ParseTreeNode> moduleDefs = new ArrayList<ParseTreeNode>();
-          Map<Integer, CajoledModule> modules= 
+          Map<Integer, CajoledModule> modules=
             moduleManager.getModuleIndexMap();
-          
+
           if (modules.size() == 1) {
-            return modules.get(0);            
+            return modules.get(0);
           }
           else {
             for (int k : modules.keySet()) {
@@ -92,10 +91,10 @@ public class CajitaModuleRewriter extends Rewriter {
                     FilePosition.UNKNOWN, k),
                 "cajoledModuleExpression", new CajoledModuleExpression(
                     FilePosition.UNKNOWN, modules.get(k)));
-              
+
               moduleDefs.add(new ExpressionStmt((Expression)e));
             }
-  
+
             ObjectConstructor moduleObjectLiteral = (ObjectConstructor) substV(
                 "setModules", new ParseTreeNodeContainer(moduleDefs),
                 "cajolerName", new StringLiteral(
@@ -118,15 +117,16 @@ public class CajitaModuleRewriter extends Rewriter {
    * Creates a CajitaModuleRewriter
    */
   public CajitaModuleRewriter(
-      BuildInfo buildInfo, PluginEnvironment pluginEnv, boolean logging) {
-    super(false, logging);
+      BuildInfo buildInfo, PluginEnvironment pluginEnv, MessageQueue mq,
+      boolean logging) {
+    super(mq, false, logging);
     this.buildInfo = buildInfo;
     this.pluginEnv = pluginEnv;
     addRules(cajaRules);
   }
-  
+
   public CajitaModuleRewriter(
-      BuildInfo buildInfo, boolean logging) {
-    this(buildInfo, PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT, logging);
+      BuildInfo buildInfo, MessageQueue mq, boolean logging) {
+    this(buildInfo, PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT, mq, logging);
   }
 }

@@ -42,17 +42,19 @@ import com.google.caja.reporting.TestBuildInfo;
  * @author metaweta@gmail.com
  */
 public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
-  private Rewriter defaultValijaRewriter = new DefaultValijaRewriter(false);
-  private Rewriter cajitaRewriter =
-      new CajitaRewriter(new TestBuildInfo(), false);
-  private Rewriter innocentCodeRewriter = new InnocentCodeRewriter(false);
+  private Rewriter valijaRewriter;
+  private Rewriter cajitaRewriter;
+  private Rewriter innocentCodeRewriter;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
+    valijaRewriter = new DefaultValijaRewriter(mq, false);
+    cajitaRewriter = new CajitaRewriter(new TestBuildInfo(), mq, false);
+    innocentCodeRewriter = new InnocentCodeRewriter(mq, false);
     // Start with this one, then switch later to CajitaRewriter for
     // the second pass.
-    setRewriter(defaultValijaRewriter);
+    setRewriter(valijaRewriter);
   }
 
   public final void testSyntheticIsUntouched() throws Exception {
@@ -640,7 +642,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
       throws IOException, ParseException {
     mq.getMessages().clear();
 
-    setRewriter(defaultValijaRewriter);
+    setRewriter(valijaRewriter);
     Block valijaTree = js(fromString(caja, is));
     Block cajitaTree = (Block) rewriteTopLevelNode(valijaTree);
     setRewriter(cajitaRewriter);

@@ -45,7 +45,7 @@ import java.util.Map;
 public class InnocentCodeRewriter extends Rewriter {
   final public Rule[] innocentRules = {
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="module",
@@ -56,13 +56,12 @@ public class InnocentCodeRewriter extends Rewriter {
               "@startStmts*;" +
               "@thisVar?;" +
               "@expanded*;"))
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof Block && scope == null) {
           Scope s2 = Scope.fromProgram((Block) node, mq);
           List<ParseTreeNode> expanded = new ArrayList<ParseTreeNode>();
           for (ParseTreeNode c : node.children()) {
-            expanded.add(expand(c, s2, mq));
+            expanded.add(expand(c, s2));
           }
 
           // If the program body has a free THIS, bind this___ to the global
@@ -81,7 +80,7 @@ public class InnocentCodeRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="functions",
@@ -94,14 +93,13 @@ public class InnocentCodeRewriter extends Rewriter {
               "  @thisVar?;" +
               "  @body*" +
               "}"))
-      public ParseTreeNode fire(
-        ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null) {
           Scope s2 = Scope.fromFunctionConstructor(
               scope, (FunctionConstructor) node);
-          ParseTreeNode params = expandAll(bindings.get("ps"), s2, mq);
-          ParseTreeNode body = expandAll(bindings.get("bs"), s2, mq);
+          ParseTreeNode params = expandAll(bindings.get("ps"), s2);
+          ParseTreeNode body = expandAll(bindings.get("bs"), s2);
 
           // Checks to see if the block contains a free THIS and emulate ES5
           // strict mode behavior where it is undefined if called without an
@@ -125,7 +123,7 @@ public class InnocentCodeRewriter extends Rewriter {
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="this",
@@ -134,14 +132,13 @@ public class InnocentCodeRewriter extends Rewriter {
                   + " and substitute a reasonable value."),
           matches="this",
           substitutes="this___")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (match(node) != null) { return substV(); }
         return NONE;
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="foreach",
@@ -156,7 +153,7 @@ public class InnocentCodeRewriter extends Rewriter {
             "  @kAssignment;" +
             "  @ss;" +
             "}"))
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = makeBindings();
 
         if (QuasiBuilder.match("for (var @k in @o) @ss;", node, bindings)) {
@@ -173,7 +170,7 @@ public class InnocentCodeRewriter extends Rewriter {
             "@k = @kTempRef;",
             "k", bindings.get("k"),
             "kTempRef", new Reference(kTemp));
-        kAssignment = expandAll(kAssignment, scope, mq);
+        kAssignment = expandAll(kAssignment, scope);
         kAssignment = newExprStmt((Expression) kAssignment);
 
         return substV(
@@ -181,24 +178,24 @@ public class InnocentCodeRewriter extends Rewriter {
             "kTempRef", new Reference(kTemp),
             "o", bindings.get("o"),
             "kAssignment", kAssignment,
-            "ss", expandAll(bindings.get("ss"), scope, mq));
+            "ss", expandAll(bindings.get("ss"), scope));
       }
     },
 
-    new Rule () {
+    new Rule() {
       @Override
       @RuleDescription(
           name="recurse",
           synopsis="Automatically recurse into some structures",
           reason="")
-      public ParseTreeNode fire(ParseTreeNode node, Scope scope, MessageQueue mq) {
-        return expandAll(node, scope, mq);
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        return expandAll(node, scope);
       }
     }
   };
 
-  public InnocentCodeRewriter(boolean logging) {
-    super(false, logging);
+  public InnocentCodeRewriter(MessageQueue mq, boolean logging) {
+    super(mq, false, logging);
     addRules(innocentRules);
   }
 }

@@ -37,8 +37,8 @@ import java.util.Map;
 final class CajaRuntimeDebuggingRewriter extends Rewriter {
   private final DebuggingSymbols symbols;
 
-  CajaRuntimeDebuggingRewriter(DebuggingSymbols symbols) {
-    super(false, false);
+  CajaRuntimeDebuggingRewriter(DebuggingSymbols symbols, MessageQueue mq) {
+    super(mq, false, false);
     this.symbols = symbols;
   }
 
@@ -54,13 +54,12 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
     // (or package scoped) method instead, where the concrete fire() methods
     // simply call it. Or perhaps have it override transform().
     @Override
-    public ParseTreeNode fire(
-        ParseTreeNode node, Scope scope, MessageQueue mq) {
+    public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
       Map<String, ParseTreeNode> bindings = match(node);
       if (bindings != null) {
         Map<String, ParseTreeNode> newBindings = makeBindings();
         for (Map.Entry<String, ParseTreeNode> entry : bindings.entrySet()) {
-          newBindings.put(entry.getKey(), expand(entry.getValue(), scope, mq));
+          newBindings.put(entry.getKey(), expand(entry.getValue(), scope));
         }
 
         ParseTreeNode posNode = bindings.get("posNode");
@@ -86,8 +85,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
               reason="",
               matches="___.callPub(@obj, @name, @args)",
               substitutes="___.callPub(@obj, @name, @args, @debug)")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
+          public ParseTreeNode fire(ParseTreeNode n, Scope s) {
+            return super.fire(n, s);
           }
         });
     addRule(new AddPositionParamRule() {
@@ -98,8 +97,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
               reason="",
               matches="___.deletePub(@obj, @name)",
               substitutes="___.deletePub(@obj, @name, @debug)")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
+          public ParseTreeNode fire(ParseTreeNode n, Scope s) {
+            return super.fire(n, s);
           }
         });
     addRule(new AddPositionParamRule() {
@@ -110,8 +109,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
               reason="",
               matches="___.readPub(@obj, @name)",
               substitutes="___.readPub(@obj, @name, @debug)")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
+          public ParseTreeNode fire(ParseTreeNode n, Scope s) {
+            return super.fire(n, s);
           }
         });
     addRule(new AddPositionParamRule() {
@@ -122,8 +121,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
               reason="",
               matches="___.inPub(@obj, @name)",
               substitutes="___.inPub(@obj, @name, @debug)")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
+          public ParseTreeNode fire(ParseTreeNode n, Scope s) {
+            return super.fire(n, s);
           }
         });
     addRule(new AddPositionParamRule() {
@@ -134,8 +133,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
               reason="",
               matches="___.setPub(@obj, @name, @val)",
               substitutes="___.setPub(@obj, @name, @val, @debug)")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
+          public ParseTreeNode fire(ParseTreeNode n, Scope s) {
+            return super.fire(n, s);
           }
         });
     addRule(new AddPositionParamRule() {
@@ -146,8 +145,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
               reason="",
               matches="@fun.CALL___",
               substitutes="___.asFunc(@fun, @debug)")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
+          public ParseTreeNode fire(ParseTreeNode n, Scope s) {
+            return super.fire(n, s);
           }
         });
     addRule(new AddPositionParamRule() {
@@ -158,8 +157,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
               reason="",
               matches="___.markFuncOnly(@fun, @name)",
               substitutes="___.markFuncOnly(@fun, @name, @debug)")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
+          public ParseTreeNode fire(ParseTreeNode n, Scope s) {
+            return super.fire(n, s);
           }
         });
     addRule(new AddPositionParamRule() {
@@ -170,8 +169,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
               reason="",
               matches="___.markFuncFreeze(@fun)",
               substitutes="___.markFuncFreeze(@fun, undefined, @debug)")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
+          public ParseTreeNode fire(ParseTreeNode n, Scope s) {
+            return super.fire(n, s);
           }
         });
     addRule(new AddPositionParamRule() {
@@ -182,8 +181,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
               reason="",
               matches="___.markFuncFreeze(@fun, @name)",
               substitutes="___.markFuncFreeze(@fun, @name, @debug)")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
+          public ParseTreeNode fire(ParseTreeNode n, Scope s) {
+            return super.fire(n, s);
           }
         });
     addRule(new AddPositionParamRule() {
@@ -194,8 +193,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
           reason="",
           matches="___.construct(@fun, @args)",
           substitutes="___.construct(@fun, @args, @debug)")
-      public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-        return super.fire(n, s, mq);
+      public ParseTreeNode fire(ParseTreeNode n, Scope s) {
+        return super.fire(n, s);
       }
     });
     addRule(new Rule() {
@@ -207,8 +206,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
                       + "errors outside our stack"),
               matches="@obj.@x_canCall___ ? (@obj.@x(@actuals*)) : @operation",
               substitutes="@operation")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return transform(n, s, mq);
+          public ParseTreeNode fire(ParseTreeNode n, Scope s) {
+            return transform(n, s);
           }
         });
     addRule(new Rule() {
@@ -220,8 +219,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
                       + "errors outside our stack"),
               matches="@obj.@key_canRead___ ? (@obj.@key) : @operation",
               substitutes="@operation")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return transform(n, s, mq);
+          public ParseTreeNode fire(ParseTreeNode n, Scope s) {
+            return transform(n, s);
           }
         });
     addRule(new Rule() {
@@ -233,8 +232,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
                       + "errors outside our stack"),
               matches="@obj.@key_canSet___ ? (@obj.@key = @y) : @operation",
               substitutes="@operation")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return transform(n, s, mq);
+          public ParseTreeNode fire(ParseTreeNode n, Scope s) {
+            return transform(n, s);
           }
         });
     addRule(new AddPositionParamRule() {
@@ -245,8 +244,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
               reason="to identify the source of null pointer exceptions",
               matches=("(@key in @posNode)"),
               substitutes=("(@key in ___.requireObject(@posNode, @debug))"))
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
+          public ParseTreeNode fire(ParseTreeNode n, Scope s) {
+            return super.fire(n, s);
           }
         });
     addRule(new AddPositionParamRule() {
@@ -257,8 +256,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
               reason="identify the location where user errors are thrown",
               matches="throw @ex",
               substitutes="throw ___.userException(@ex, @debug)")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return super.fire(n, s, mq);
+          public ParseTreeNode fire(ParseTreeNode n, Scope s) {
+            return super.fire(n, s);
           }
         });
     addRule(new Rule() {
@@ -267,8 +266,8 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
               name="fallback",
               synopsis="handles cases not recognized by ",
               reason="because not everything is a runtime check")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s, MessageQueue mq) {
-            return expandAll(n, s, mq);
+          public ParseTreeNode fire(ParseTreeNode n, Scope s) {
+            return expandAll(n, s);
           }
         });
   }

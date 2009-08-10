@@ -247,14 +247,14 @@ public class RhinoTestBed {
   }
 
   private static ParseTreeNode cajoleCajita(Block program, MessageQueue mq) {
-    CajitaRewriter rw = new CajitaRewriter(new TestBuildInfo(), false);
-    return rw.expand(new UncajoledModule(program), mq);
+    CajitaRewriter rw = new CajitaRewriter(new TestBuildInfo(), mq, false);
+    return rw.expand(new UncajoledModule(program));
   }
 
   private static ParseTreeNode cajoleValija(Block program, MessageQueue mq) {
-    DefaultValijaRewriter vrw = new DefaultValijaRewriter(false);
-    CajitaRewriter crw = new CajitaRewriter(new TestBuildInfo(), false);
-    return crw.expand(vrw.expand(new UncajoledModule(program), mq), mq);
+    DefaultValijaRewriter vrw = new DefaultValijaRewriter(mq, false);
+    CajitaRewriter crw = new CajitaRewriter(new TestBuildInfo(), mq, false);
+    return crw.expand(vrw.expand(new UncajoledModule(program)));
   }
 
   private static String render(ParseTreeNode n) {

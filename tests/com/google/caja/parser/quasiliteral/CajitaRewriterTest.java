@@ -74,13 +74,13 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     }
   }
 
-  protected Rewriter defaultCajaRewriter =
-      new CajitaRewriter(new TestBuildInfo(), false);
+  protected Rewriter cajitaRewriter;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    setRewriter(defaultCajaRewriter);
+    cajitaRewriter = new CajitaRewriter(new TestBuildInfo(), mq, false);
+    setRewriter(cajitaRewriter);
   }
 
   /**
@@ -2004,7 +2004,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         + "var x = 1;\n"
         + "var f = function x(b) { return b ? 1 : x(true); };\n"
         + "assertEquals(2, x + f());"));
-    ParseTreeNode cajoled = defaultCajaRewriter.expand(input, mq);
+    ParseTreeNode cajoled = cajitaRewriter.expand(input);
     assertNoErrors();
     ParseTreeNode emulated = emulateIE6FunctionConstructors(cajoled);
     executePlain(
@@ -2343,7 +2343,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   // for those tests that run against other ParseTreeNode
   public final void testModule() throws Exception {
     CajitaModuleRewriter moduleRewriter = new CajitaModuleRewriter(
-        new TestBuildInfo(), new TestPluginEnvironment(), false);
+        new TestBuildInfo(), new TestPluginEnvironment(), mq, false);
     setRewriter(moduleRewriter);
 
     rewriteAndExecute(
@@ -2373,7 +2373,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_MODULE,
         MessageLevel.FATAL_ERROR);
 
-    setRewriter(defaultCajaRewriter);
+    setRewriter(cajitaRewriter);
   }
 
   @Override

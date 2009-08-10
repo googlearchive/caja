@@ -83,14 +83,13 @@ public class JsHandler implements ContentHandler {
       Block input = new Parser(tq, mq).parse();
       tq.expectEmpty();
 
-      DefaultValijaRewriter rw = new DefaultValijaRewriter(false /* logging */);
-      CajitaRewriter dcr = new CajitaRewriter(buildInfo, false /* logging */);
+      Rewriter vrw = new DefaultValijaRewriter(mq, false /* logging */);
+      Rewriter crw = new CajitaRewriter(buildInfo, mq, false /* logging */);
+      UncajoledModule ucm = new UncajoledModule(input);
       if (valijaMode) {
-        output.append(Rewriter.render(
-          dcr.expand(rw.expand(new UncajoledModule(input), mq), mq)));
+        output.append(Rewriter.render(crw.expand(vrw.expand(ucm))));
       } else {
-        output.append(Rewriter.render(
-            dcr.expand(new UncajoledModule(input), mq)));
+        output.append(Rewriter.render(crw.expand(ucm)));
       }
     } catch (ParseException e) {
       throw new UnsupportedContentTypeException();

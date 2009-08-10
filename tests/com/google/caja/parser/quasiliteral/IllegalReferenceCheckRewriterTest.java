@@ -25,7 +25,7 @@ public class IllegalReferenceCheckRewriterTest extends RewriterTestCase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    setRewriter(new IllegalReferenceCheckRewriter(true));
+    setRewriter(new IllegalReferenceCheckRewriter(mq, true));
   }
 
   public final void testIllegalRefs() throws Exception {

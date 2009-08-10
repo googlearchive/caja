@@ -46,16 +46,15 @@ public class ExpressionSanitizerCaja {
     MutableParseTreeNode input = (MutableParseTreeNode) toSanitize.node;
     ParseTreeNode result;
     if (this.meta.isValijaMode()) {
-      result = newValijaRewriter().expand(input, this.mq);
+      result = newValijaRewriter(this.mq).expand(input);
       if (!this.mq.hasMessageAtLevel(MessageLevel.ERROR)) {
-        result = newCajitaRewriter().expand(result, this.mq);
+        result = newCajitaRewriter(this.mq).expand(result);
       }
     } else {
-      result = newCajitaRewriter().expand(input, this.mq);
+      result = newCajitaRewriter(this.mq).expand(input);
     }
     if (!this.mq.hasMessageAtLevel(MessageLevel.ERROR)) {
-      result = new IllegalReferenceCheckRewriter(false)
-          .expand(result, this.mq);
+      result = new IllegalReferenceCheckRewriter(this.mq, false).expand(result);
       if (!this.mq.hasMessageAtLevel(MessageLevel.ERROR)) {
         result.acceptPreOrder(new NonAsciiCheckVisitor(mq), null);
       }
@@ -64,11 +63,11 @@ public class ExpressionSanitizerCaja {
   }
 
   /** Visible for testing. */
-  protected Rewriter newCajitaRewriter() {
-    return new CajitaRewriter(buildInfo, false);
+  protected Rewriter newCajitaRewriter(MessageQueue mq) {
+    return new CajitaRewriter(buildInfo, mq, false);
   }
 
-  protected Rewriter newValijaRewriter() {
-    return new DefaultValijaRewriter(false);
+  protected Rewriter newValijaRewriter(MessageQueue mq) {
+    return new DefaultValijaRewriter(mq, false);
   }
 }

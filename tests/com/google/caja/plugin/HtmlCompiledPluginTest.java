@@ -236,8 +236,8 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
       Block valijaOrigNode = js(fromResource(
           "/com/google/caja/valija-cajita.js"));
       ParseTreeNode valijaCajoledNode =
-          new CajitaRewriter(new TestBuildInfo(), false)
-              .expand(new UncajoledModule(valijaOrigNode), mq);
+          new CajitaRewriter(new TestBuildInfo(), mq, false)
+              .expand(new UncajoledModule(valijaOrigNode));
       String valijaCajoled = render(valijaCajoledNode);
 
       String htmlStubUrl = TestUtil.makeContentUrl(

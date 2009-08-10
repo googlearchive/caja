@@ -73,9 +73,8 @@ public class InnocentHandler implements ContentHandler {
       Block input = new Parser(tq, mq).parse();
       tq.expectEmpty();
 
-      InnocentCodeRewriter rw = new InnocentCodeRewriter(false /* logging */);
-      output.append(Rewriter.render(
-          rw.expand(input, mq)));
+      Rewriter rw = new InnocentCodeRewriter(mq, false /* logging */);
+      output.append(Rewriter.render(rw.expand(input)));
     } catch (ParseException e) {
       throw new UnsupportedContentTypeException();
     } catch (IllegalArgumentException e) {

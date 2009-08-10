@@ -21,7 +21,6 @@ import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Reference;
-import com.google.caja.reporting.MessageQueue;
 
 import java.util.Map;
 
@@ -47,8 +46,7 @@ class SyntheticRuleSet {
           reason="A variable may not be mentionable otherwise.",
           matches="/* synthetic */ @ref",
           substitutes="<expanded>")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof Reference) {
           Reference ref = (Reference) node;
           if (isSynthetic(ref.getIdentifier())) {
@@ -69,13 +67,12 @@ class SyntheticRuleSet {
           reason="A synthetic method may not be marked callable.",
           matches="/* synthetic */ @f(@as*)",
           substitutes="<expanded>")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           Expression f = (Expression) bindings.get("f");
           if (f instanceof Reference && isSynthetic((Reference) f)) {
-            return expandAll(node, scope, mq);
+            return expandAll(node, scope);
           }
         }
         return NONE;
@@ -90,11 +87,10 @@ class SyntheticRuleSet {
           reason="A synthetic method may not be marked callable.",
           matches="/* synthetic */ @o.@m(@as*)",
           substitutes="<expanded>")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null && isSynthetic((Reference) bindings.get("m"))) {
-          return expandAll(node, scope, mq);
+          return expandAll(node, scope);
         }
         return NONE;
       }
@@ -108,11 +104,10 @@ class SyntheticRuleSet {
           reason="A synthetic member may not be marked deletable.",
           matches="/* synthetic */ delete @o.@m",
           substitutes="<expanded>")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null && isSynthetic((Reference) bindings.get("m"))) {
-          return expandAll(node, scope, mq);
+          return expandAll(node, scope);
         }
         return NONE;
       }
@@ -126,11 +121,10 @@ class SyntheticRuleSet {
           reason="A synthetic member may not be marked readable.",
           matches="/* synthetic */ @o.@m",
           substitutes="<expanded>")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null && isSynthetic((Reference) bindings.get("m"))) {
-          return expandAll(node, scope, mq);
+          return expandAll(node, scope);
         }
         return NONE;
       }
@@ -144,11 +138,10 @@ class SyntheticRuleSet {
           reason="A synthetic member may not be marked writable.",
           matches="/* synthetic */ @o.@m = @v",
           substitutes="<expanded>")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null && isSynthetic((Reference) bindings.get("m"))) {
-          return expandAll(node, scope, mq);
+          return expandAll(node, scope);
         }
         return NONE;
       }
@@ -162,12 +155,11 @@ class SyntheticRuleSet {
           reason="A local variable might not be mentionable otherwise.",
           matches="/* synthetic */ @lhs = @rhs",
           substitutes="<expanded>")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null && bindings.get("lhs") instanceof Reference) {
           if (isSynthetic((Reference) bindings.get("lhs"))) {
-            return expandAll(node, scope, mq);
+            return expandAll(node, scope);
           }
         }
         return NONE;
@@ -182,11 +174,10 @@ class SyntheticRuleSet {
           reason="Synthetic code might need local variables for safe-keeping.",
           matches="/* synthetic */ var @v = @initial?;",
           substitutes="<expanded>")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null && isSynthetic((Identifier) bindings.get("v"))) {
-          return expandAll(node, scope, mq);
+          return expandAll(node, scope);
         }
         return NONE;
       }
@@ -200,11 +191,10 @@ class SyntheticRuleSet {
           reason="Synthetic code might need local variables for safe-keeping.",
           matches="/* synthetic */ @x in a parameter list",
           substitutes="<expanded>")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof FormalParam
             && isSynthetic(((FormalParam) node).getIdentifier())) {
-          return expandAll(node, scope, mq);
+          return expandAll(node, scope);
         }
         return NONE;
       }
@@ -219,14 +209,13 @@ class SyntheticRuleSet {
               + " unnecessary scopes.",
           matches="/* synthetic */ function @i?(@actuals*) { @body* }",
           substitutes="<expanded>")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         FunctionConstructor ctor = node instanceof FunctionDeclaration
             ? ((FunctionDeclaration) node).getInitializer()
             : (FunctionConstructor) node;
         if (isSynthetic(ctor)) {
           Scope newScope = Scope.fromFunctionConstructor(scope, ctor);
-          ParseTreeNode result = expandAll(node, newScope, mq);
+          ParseTreeNode result = expandAll(node, newScope);
           scope.getStartStatements().addAll(newScope.getStartStatements());
           return result;
         }
@@ -243,16 +232,15 @@ class SyntheticRuleSet {
           matches=(
               "try { @body*; } catch (/* synthetic */ @ex___) { @handler*; }"),
           substitutes="try { @body*; } catch (@ex___) { @handler*; }")
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           Identifier ex = (Identifier) bindings.get("ex");
           if (isSynthetic(ex)) {
             return substV(
-                "body", rw.expand(bindings.get("body"), scope, mq),
+                "body", rw.expand(bindings.get("body"), scope),
                 "ex", rw.noexpand(ex),
-                "handler", rw.expand(bindings.get("handler"), scope, mq)
+                "handler", rw.expand(bindings.get("handler"), scope)
                 );
           }
         }
@@ -272,17 +260,16 @@ class SyntheticRuleSet {
           substitutes=(
                "try { @body*; } catch (/* synthetic */ @ex___) { @handler*; }"
                + " finally { @cleanup*; }"))
-      public ParseTreeNode fire(
-          ParseTreeNode node, Scope scope, MessageQueue mq) {
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = this.match(node);
         if (bindings != null) {
           Identifier ex = (Identifier) bindings.get("ex");
           if (isSynthetic(ex)) {
             return substV(
-                "body", rw.expand(bindings.get("body"), scope, mq),
+                "body", rw.expand(bindings.get("body"), scope),
                 "ex", rw.noexpand(ex),
-                "handler", rw.expand(bindings.get("handler"), scope, mq),
-                "cleanup", rw.expand(bindings.get("cleanup"), scope, mq)
+                "handler", rw.expand(bindings.get("handler"), scope),
+                "cleanup", rw.expand(bindings.get("cleanup"), scope)
                 );
           }
         }

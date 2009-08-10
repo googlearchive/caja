@@ -43,16 +43,17 @@ import java.util.Map;
  * @author ihab.awad@gmail.com
  */
 public class ModuleFormatTest extends CajaTestCase {
-  private final Rewriter rewriter =
-      new CajitaRewriter(new TestBuildInfo(), false);
+  private final Rewriter makeRewriter() {
+    return new CajitaRewriter(new TestBuildInfo(), mq, false);
+  }
 
   private final Callback<IOException> exHandler = new Callback<IOException>() {
     public void handle(IOException e) { throw new RuntimeException(e); }
   };
 
   public final void testCajoledModuleContents() throws Exception {
-    CajoledModule trivialCajoledModule = (CajoledModule)
-        rewriter.expand(new UncajoledModule(new Block()), mq);
+    CajoledModule trivialCajoledModule = (CajoledModule) makeRewriter().expand(
+        new UncajoledModule(new Block()));
     assertNoErrors();
 
     Map<String, ParseTreeNode> bindings = new HashMap<String, ParseTreeNode>();
@@ -86,10 +87,8 @@ public class ModuleFormatTest extends CajaTestCase {
   }
 
   public final void testCajoledModuleDebugRendering() throws Exception {
-    CajoledModule cajoledModule = (CajoledModule)
-        rewriter.expand(
-            new UncajoledModule(js(fromResource("testModule.js"))),
-            mq);
+    CajoledModule cajoledModule = (CajoledModule) makeRewriter().expand(
+        new UncajoledModule(js(fromResource("testModule.js"))));
     assertNoErrors();
 
     Map<InputSource, CharSequence> originalSource = Collections.singletonMap(

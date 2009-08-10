@@ -103,8 +103,8 @@ public class Innocent {
     try {
       Block start = p.parse();
       tq.expectEmpty();
-      Rewriter icr = new InnocentCodeRewriter(false /* logging */);
-      output = Rewriter.render(icr.expand(start,errs));
+      Rewriter icr = new InnocentCodeRewriter(errs, false /* logging */);
+      output = Rewriter.render(icr.expand(start));
       out.append(output);
     } catch (ParseException ex) {
       ex.toMessageQueue(errs);
