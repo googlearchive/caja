@@ -34,7 +34,7 @@ jsunit.pass = function(id) {
   }
   jsunit.passTests[id] = true;
   jsunit.passCount += 1;
-  jsunit.updateStatus()
+  jsunit.updateStatus();
   console.log('PASS: ' + id);
 };
 
@@ -74,7 +74,7 @@ function jsunitRun(opt_testNames) {
   for (var k in jsunit.tests) {
     if (jsunit.tests.hasOwnProperty(k)) {
       if (!opt_testNames || arrayContains(arguments, k)) {
-        testNames.push(k); 
+        testNames.push(k);
       }
     }
   }

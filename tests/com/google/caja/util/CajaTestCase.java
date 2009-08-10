@@ -275,7 +275,7 @@ public abstract class CajaTestCase extends TestCase {
     assertEquals(a.getValue(), b.getValue());
     assertEquals(a.getFilePosition(), b.getFilePosition());
     assertEquals(a.children().size(), b.children().size());
-    
+
     for (int i = 0; i < a.children().size(); ++i) {
       assertDeepEquals(a.children().get(i), b.children().get(i));
     }

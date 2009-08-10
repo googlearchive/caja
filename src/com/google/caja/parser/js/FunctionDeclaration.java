@@ -16,6 +16,7 @@ package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.TokenConsumer;
+import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.reporting.RenderContext;
 
 import java.util.List;
@@ -28,7 +29,7 @@ import java.util.List;
 public final class FunctionDeclaration extends Declaration {
   @ReflectiveCtor
   public FunctionDeclaration(
-      FilePosition pos, Void value, List<? extends Expression> children) {
+      FilePosition pos, Void value, List<? extends ParseTreeNode> children) {
     super(pos, value, children);
   }
 

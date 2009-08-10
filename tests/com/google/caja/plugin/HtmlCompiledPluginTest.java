@@ -100,10 +100,10 @@ public class HtmlCompiledPluginTest extends CajaTestCase {
     execGadget(
         "<a onclick=\"foo(this)\">hi</a>",
 
-        "assertEquals('<a onclick=\"return plugin_dispatchEvent___(" +
-        "this, event, 0, \\'c_1___\\');\" target=\"_blank\">hi</a>'," +
-        " document.getElementById('test-test').innerHTML)",
-
+        // Handler is attached separately.
+        ""
+        + "assertEquals('<a target=\"_blank\">hi</a>',"
+        + "             document.getElementById('test-test').innerHTML);",
         true);
   }
 

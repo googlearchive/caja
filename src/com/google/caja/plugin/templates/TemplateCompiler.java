@@ -34,6 +34,7 @@ import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
+import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.FunctionConstructor;
 import com.google.caja.parser.js.Identifier;
@@ -315,21 +316,30 @@ public class TemplateCompiler {
           rewriteEventHandlerReferences(b);
 
           handlerFnName = meta.generateUniqueName("c");
-          handlers.add(QuasiUtil.quasiStmt(
+          Declaration handler = (Declaration) QuasiBuilder.substV(
               ""
-              + "IMPORTS___.@handlerName = function ("
-              + "    event, " + ReservedNames.THIS_NODE + ") { @body*; };",
-              "handlerName", new Reference(SyntheticNodes.s(
-                  new Identifier(FilePosition.UNKNOWN, handlerFnName))),
-              "body", new ParseTreeNodeContainer(b.children())));
+              + "var @handlerName = ___./*@synthetic*/markFuncFreeze("
+              + "    /*@synthetic*/function ("
+              + "        event, " + ReservedNames.THIS_NODE + ") { @body*; });",
+              "handlerName", SyntheticNodes.s(
+                  new Identifier(FilePosition.UNKNOWN, handlerFnName)),
+              "body", new ParseTreeNodeContainer(b.children()));
+          handlers.add(handler);
           handlerCache.put(attr.getValue(), handlerFnName);
         }
 
-        dynamicValue = (Expression) QuasiBuilder.substV(
-            "'return plugin_dispatchEvent___("
-            + "this, event, ' + ___./*@synthetic*/getId(IMPORTS___) + @tail",
-            "tail", StringLiteral.valueOf(
-                pos, ", " + StringLiteral.toQuotedValue(handlerFnName) + ");"));
+        FunctionConstructor eventAdapter
+            = (FunctionConstructor) QuasiBuilder.substV(
+            ""
+            + "(/*@synthetic*/ function (event) {"
+            + "  return /*@synthetic*/ (plugin_dispatchEvent___("
+            + "      /*@synthetic*/this, event, "
+            + "      ___./*@synthetic*/getId(IMPORTS___), @tail));"
+            + "})",
+            "tail", new Reference(SyntheticNodes.s(
+                new Identifier(pos, handlerFnName))));
+        eventAdapter.setFilePosition(pos);
+        dynamicValue = eventAdapter;
         break;
       case STYLE:
         CssTree.DeclarationGroup decls;

@@ -5,18 +5,18 @@ IMPORTS___.emitCss___(['.', ' p {\n  color: purple\n}\n.',
 //Set up local variables required for HTML support.
 {
   // Define handlers
-  IMPORTS___.c_1___ = function (event, thisNode___) {
+  var c_1___ = ___.markFuncFreeze(function (event, thisNode___) {
     wasClicked(thisNode___);
-  };
+  });
   // Attach the onclick handler.
   var el___;
   var emitter___ = IMPORTS___.htmlEmitter___;
   el___ = emitter___.byId('id_2___');
   // Remove the bits the first script shouldn't see.
   emitter___.attach('id_2___');
-  emitter___.setAttr(el___, 'onclick',
-      'return plugin_dispatchEvent___(this, event, '
-      + ___.getId(IMPORTS___) + ', \'c_1___\');');
+  el___.onclick = function (event) {
+    return plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_1___);
+  };
   // Remove the manufactured ID
   el___.removeAttribute('id');
 }
@@ -41,11 +41,9 @@ try {
 }
 {
   el___ = emitter___.byId('id_5___');
-  emitter___.setAttr(
-      el___, 'onclick',
-      'return plugin_dispatchEvent___(this, event, '
-      + ___.getId(IMPORTS___)
-      + ', \'c_1___\');');
+  el___.onclick = function (event) {
+    return plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_1___);
+  };
   el___.removeAttribute('id');
   el___ = emitter___.byId('id_6___');
   emitter___.setAttr(el___, 'id', 'zag-' + IMPORTS___.getIdClass___());

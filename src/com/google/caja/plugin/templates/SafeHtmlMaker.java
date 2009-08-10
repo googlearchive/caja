@@ -20,8 +20,12 @@ import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Expression;
+import com.google.caja.parser.js.FunctionConstructor;
+import com.google.caja.parser.js.Identifier;
+import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.StringLiteral;
+import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.TranslatedCode;
 import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.PluginMeta;
@@ -440,12 +444,20 @@ final class SafeHtmlMaker {
   }
 
   private void emitDynamicAttr(Attr a, Expression dynamicValue) {
+    FilePosition pos = Nodes.getFilePositionFor(a);
+    String name = a.getName();
     // Emit a statement to attach the dynamic attribute.
-    emitStatement(quasiStmt(
-        "emitter___./*@synthetic*/setAttr(el___, @name, @value);",
-        "name", StringLiteral.valueOf(
-            Nodes.getFilePositionFor(a), a.getName()),
-        "value", dynamicValue));
+    if (dynamicValue instanceof FunctionConstructor) {
+      emitStatement(quasiStmt(
+          "el___.@name = @eventAdapter;",
+          "name", new Reference(SyntheticNodes.s(new Identifier(pos, name))),
+          "eventAdapter", dynamicValue));
+    } else {
+      emitStatement(quasiStmt(
+          "emitter___./*@synthetic*/setAttr(el___, @name, @value);",
+          "name", StringLiteral.valueOf(pos, name),
+          "value", dynamicValue));
+    }
     // TODO(mikesamuel): do we need to emit a static attribute when the
     // default value does not match the value criterion?
   }

@@ -14,9 +14,9 @@ ___.loadModule({
                        ' .p4 {\n    font-weight: bold\n  }\n}\n.',
                        ' .p1 {\n  color: red\n}' ].join(IMPORTS___.getIdClass___()));
                    {
-                     IMPORTS___.c_1___ = ___.markFuncFreeze(function (event, thisNode___) {
-                                                          handleClicky.CALL___();
-                                                        });
+                     var c_1___ = ___.markFuncFreeze(function (event, thisNode___) {
+                       handleClicky.CALL___();
+                     });
                      var el___;
                      var emitter___ = IMPORTS___.htmlEmitter___;
                      emitter___.discard(emitter___.attach('id_2___'));
@@ -36,7 +36,7 @@ ___.loadModule({
                    {
                      el___ = emitter___.byId('id_3___');
                      emitter___.setAttr(el___, 'id', 'p3-' +
-                                            IMPORTS___.getIdClass___());
+                                        IMPORTS___.getIdClass___());
                      emitter___.discard(emitter___.attach('id_4___'));
                    }
                    try {
@@ -54,9 +54,9 @@ ___.loadModule({
                    }
                    {
                      el___ = emitter___.byId('id_5___');
-                     emitter___.setAttr(el___, 'onclick',
-                         'return plugin_dispatchEvent___(this, event, ' +
-                         ___.getId(IMPORTS___) + ', \'c_1___\');');
+                     el___.onclick = function (event) {
+                       return plugin_dispatchEvent___(this, event, ___.getId(IMPORTS___), c_1___);
+                     };
                      el___.removeAttribute('id');
                      el___ = emitter___.finish();
                      emitter___.signalLoaded();

@@ -209,8 +209,9 @@ function makeEclipseClasspath() {
   echo "	<classpathentry excluding=\"**/*~|**/.svn/**\" kind=\"src\" path=\"tests\"/>"
   # Needed so JUnit test works in Eclipse
   echo "	<classpathentry excluding=\"**/*~|**/.svn/**|**/*.java\" kind=\"src\" path=\"third_party\"/>"
-  # Needed so JUnit test works in Eclipse
   echo "	<classpathentry kind=\"lib\" path=\"ant-eclipse-genfiles\"/>"
+  # TODO(mikesamuel): limit to only those jars listed in build.xml.
+  # Perhaps create a build target for ant that writes the classpath to stdout.
   for jar in $(find third_party -name \*.jar | sort); do
     echo "	<classpathentry kind=\"lib\" path=\"$jar\"/>"
   done
@@ -258,10 +259,8 @@ function makeEclipseGenfiles() {
     local f
     for f in $(find ant-lib -type f | egrep -v '\.(class|jar)$'); do
       local rel_file="$(echo "$f" | perl -pe 's|^ant-lib/||')"
-      if [ ! -e "src/$rel_file" ] && [ ! -e "tests/$rel_file" ] ; then
-        mkdir -p "$(dirname "ant-eclipse-genfiles/$rel_file")"
-        ln -s "$PWD/$f" "ant-eclipse-genfiles/$rel_file"
-      fi
+      mkdir -p "$(dirname "ant-eclipse-genfiles/$rel_file")"
+      ln -s "$PWD/$f" "ant-eclipse-genfiles/$rel_file"
     done
   fi
 }

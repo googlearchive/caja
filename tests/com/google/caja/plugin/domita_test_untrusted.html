@@ -1332,10 +1332,12 @@ jsunitRegister('testTargetAttr',
 jsunitRegister('testLocation',
                function testLocation() {
   assertEquals(
-      window.location.host, window.location.hostname + ':' + window.location.port);
+      window.location.host,
+      window.location.hostname + ':' + window.location.port);
   assertEquals(
-      window.location.href, window.location.protocol + '//'
-      + window.location.hostname + ':' + window.location.port + window.location.pathname
+      window.location.href,
+      window.location.protocol + '//' + window.location.hostname
+      + ':' + window.location.port + window.location.pathname
       + window.location.search + window.location.hash);
   assertEquals(
       'http://zip.example.com:4242/pumpkin.html?q=getit#myanchor',
@@ -1781,7 +1783,7 @@ jsunitRegister('testComputedStyle',
   var NO_RESULT = {};
   var pseudoElementsSupported = false;
   try {
-    window.getComputedStyle(fakie, 'first-line').display;
+    var unused = window.getComputedStyle(fakie, 'first-line').display;
     pseudoElementsSupported = true;
   } catch (ex) {
     // Not supported on all browsers
