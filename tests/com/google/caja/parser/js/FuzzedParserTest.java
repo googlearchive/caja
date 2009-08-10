@@ -26,7 +26,7 @@ import com.google.caja.util.CajaTestCase;
  */
 public class FuzzedParserTest extends CajaTestCase {
 
-  public void testParse1 () {
+  public final void testParse1 () {
     throwsParseException(
       "if(++(({y:5, toString: function() { return this; } }))) {" +
       "switch((+[<><x><y/></x></> for each (x in this)])) { " +
@@ -38,7 +38,7 @@ public class FuzzedParserTest extends CajaTestCase {
   }
 
   //java.lang.IllegalArgumentException: BooleanLiteral : false not an lvalue
-  public void testParse2 () {
+  public final void testParse2 () {
     throwsParseException(
       "for(var x in ((/a/gi)(window.x))){do {gc } while(0);" +
       "if( /x/  != false--) { /x/g" +
@@ -47,56 +47,61 @@ public class FuzzedParserTest extends CajaTestCase {
   }
 
   //SpecialOperation : FUNCTION_CALL not an lvalue
-  public void testParse3 () {
+  public final void testParse3 () {
     throwsParseException(
       "with({x: ([Math.sin])})L:switch(((new (true)()++).__iterator"
     );
   }
 
   //ObjectConstructor not an lvalue
-  public void testParse4 () {
+  public final void testParse4 () {
     throwsParseException(
       "/* HOISTY2 */for(let [x, x] = ({})-- in <x><y/></x>) {gc()th"
     );
   }
 
   //SpecialOperation : FUNCTION_CALL not an lvalue
-  public void testParse305 () {
+  public final void testParse305 () {
     throwsParseException(
-        "L: for ([x, x] in [15,16,17,18].filter(/a/gi, undefined)++) {throw StopIteration; }"
+        "L: for ([x, x] in [15,16,17,18].filter(/a/gi, undefined)++) {" +
+        "throw StopIteration; }"
     );
   }
 
   //BooleanLiteral : true not an lvalue
-  public void testParse690 () {
+  public final void testParse690 () {
     throwsParseException(
-        "if((let (x=3,y=4) (true++))) {return; } else  if ( /* Comment */this) import x.*;"
+        "if((let (x=3,y=4) (true++))) {return; } " +
+        "else  if ( /* Comment */this) import x.*;"
     );
   }
 
   //SpecialOperation : FUNCTION_CALL not an lvalue
-  public void testParse692 () {
+  public final void testParse692 () {
     throwsParseException(
-        "L:if([15,16,17,18].some(x = y, let (x = 3) ++<><x><y/></x></>)) {return; } else  if (<x/>) gc()"
+        "L:if([15,16,17,18].some(x = y, let (x = 3) ++<><x><y/></x></>)) {" +
+        "return; } else  if (<x/>) gc()"
     );
   }
 
   //NullLiteral : null not an lvalue
-  public void testParse564 () {
+  public final void testParse564 () {
     throwsParseException(
-        "/* HOISTY1 */M:for(var x = ({y:5, valueOf: eval(\"x\", null--)}) in <y><z/></y>.x ? ([11,12,13,14].filter) : NaN+=\"\" ) 1e-81; const window;"
+        "/* HOISTY1 */M:for(var x = ({y:5, valueOf: eval(\"x\", null--)}) " +
+        "in <y><z/></y>.x ? ([11,12,13,14].filter) : NaN+=\"\" ) 1e-81; " +
+        "const window;"
     );
   }
 
   // Should not throw null
-  public void testParse477 () {
+  public final void testParse477 () {
     throwsParseException(
         "/*infloop*/do while( \"\" );"
     );
   }
 
   // Should parse correctly
-  public void testParse478 () {
+  public final void testParse478 () {
     throwsParseException(
         "do while(true); while(true);"
     );

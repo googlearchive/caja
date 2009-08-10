@@ -37,14 +37,13 @@ import com.google.caja.lexer.escaping.EscapingTest;
 import com.google.caja.lexer.escaping.UriUtilTest;
 import com.google.caja.opensocial.DefaultGadgetRewriterTest;
 import com.google.caja.opensocial.GadgetParserTest;
-import com.google.caja.service.CajolingServiceTest;
-import com.google.caja.service.ContentTypeCheckTest;
 import com.google.caja.parser.ParseTreeNodeTest;
 import com.google.caja.parser.ParserBaseTest;
 import com.google.caja.parser.css.CssParserTest;
 import com.google.caja.parser.css.CssPropertySignatureTest;
 import com.google.caja.parser.css.CssTreeTest;
 import com.google.caja.parser.html.DomParserTest;
+import com.google.caja.parser.html.NodesTest;
 import com.google.caja.parser.js.FuzzedParserTest;
 import com.google.caja.parser.js.NumberLiteralTest;
 import com.google.caja.parser.js.ParserTest;
@@ -63,6 +62,7 @@ import com.google.caja.parser.quasiliteral.ValijaModuleLoadingTest;
 import com.google.caja.plugin.CssRewriterTest;
 import com.google.caja.plugin.CssRuleRewriterTest;
 import com.google.caja.plugin.CssValidatorTest;
+import com.google.caja.plugin.DomitaTest;
 import com.google.caja.plugin.ExpressionSanitizerTest;
 import com.google.caja.plugin.HtmlCompiledPluginTest;
 import com.google.caja.plugin.HtmlEmitterTest;
@@ -73,6 +73,7 @@ import com.google.caja.plugin.stages.OpenTemplateStageTest;
 import com.google.caja.plugin.stages.RewriteHtmlStageTest;
 import com.google.caja.plugin.templates.TemplateCompilerTest;
 import com.google.caja.plugin.templates.TemplateSanitizerTest;
+import com.google.caja.render.CssPrettyPrinterTest;
 import com.google.caja.render.JsLinePreservingPrinterTest;
 import com.google.caja.render.JsMinimalPrinterTest;
 import com.google.caja.render.JsPrettyPrinterTest;
@@ -84,6 +85,8 @@ import com.google.caja.reporting.AbstractMessageQueueTest;
 import com.google.caja.reporting.BuildInfoTest;
 import com.google.caja.reporting.HtmlSnippetProducerTest;
 import com.google.caja.reporting.SnippetProducerTest;
+import com.google.caja.service.CajolingServiceTest;
+import com.google.caja.service.ContentTypeCheckTest;
 import com.google.caja.util.AbbreviatorTest;
 import com.google.caja.util.CapturingReaderTest;
 import com.google.caja.util.JoinTest;
@@ -119,6 +122,7 @@ public class AllTests {
           ContentTypeCheckTest.class,
           CssLexerTest.class,
           CssParserTest.class,
+          CssPrettyPrinterTest.class,
           CssPropertyPatternsTest.class,
           CssPropertySignatureTest.class,
           CssRewriterTest.class,
@@ -130,6 +134,7 @@ public class AllTests {
           DecodingCharProducerTest.class,
           DefaultGadgetRewriterTest.class,
           DefaultValijaRewriterTest.class,
+          DomitaTest.class,
           DomParserTest.class,
           EscapingTest.class,
           EventStoreTest.class,
@@ -156,6 +161,7 @@ public class AllTests {
           LayoutTest.class,
           MatchTest.class,
           ModuleFormatTest.class,
+          NodesTest.class,
           NumberLiteralTest.class,
           OpenTemplateStageTest.class,
           ParseTreeNodeTest.class,

@@ -1107,7 +1107,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "Variables cannot end in \"__\"");
   }
 
-  public  void testSetDeclare() throws Exception {
+  public final void testSetDeclare() throws Exception {
     checkSucceeds(
         "var v;",
         "var v;");
@@ -1566,7 +1566,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "}();");
   }
 
-  public void testMaskingFunction () throws Exception {
+  public final void testMaskingFunction() throws Exception {
     assertAddsMessage(
         "function Goo() { function Goo() {} }",
         MessageType.SYMBOL_REDEFINED,
