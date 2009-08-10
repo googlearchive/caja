@@ -149,7 +149,6 @@ public class DefaultGadgetRewriter
       tc.noMoreTokens();
     }
     Node dom = compiler.getStaticHtml();
-    String html = dom != null ? Nodes.render(dom) : "";
 
     if (!compiler.getJobs().hasNoErrors()) {
       throw new GadgetRewriteException();

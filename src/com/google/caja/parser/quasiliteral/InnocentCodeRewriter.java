@@ -54,7 +54,7 @@ public class InnocentCodeRewriter extends Rewriter {
           matches="{@ss*;}",
           substitutes=(
               "@startStmts*;" +
-              "@refError?;" +
+              "@thisVar?;" +
               "@expanded*;"))
       public ParseTreeNode fire(
           ParseTreeNode node, Scope scope, MessageQueue mq) {
@@ -65,16 +65,16 @@ public class InnocentCodeRewriter extends Rewriter {
             expanded.add(expand(c, s2, mq));
           }
 
-          // Checks to see if the block contains a free THIS
-          ParseTreeNode refError = null;
+          // If the program body has a free THIS, bind this___ to the global
+          // object.  This is consistent with ES5 strict.
+          ParseTreeNode thisVar = null;
           if (s2.hasFreeThis()) {
-            refError = QuasiBuilder.substV(
-                "if (this.___) { throw ReferenceError; }");
+            thisVar = QuasiBuilder.substV("var this___ = this;");
           }
 
           return substV(
               "startStmts", new ParseTreeNodeContainer(s2.getStartStatements()),
-              "refError", refError,
+              "thisVar", thisVar,
               "expanded", new ParseTreeNodeContainer(expanded));
         }
         return NONE;
@@ -87,11 +87,11 @@ public class InnocentCodeRewriter extends Rewriter {
           name="functions",
           synopsis="",
           reason="",
-          matches="function @f? (@ps*) { @bs* }",
+          matches="function @f?(@ps*) { @bs* }",
           substitutes=(
-              "function @f? (@params*) {" +
+              "function @f?(@params*) {" +
               "  @startStmts*;" +
-              "  @refError?;" +
+              "  @thisVar?;" +
               "  @body*" +
               "}"))
       public ParseTreeNode fire(
@@ -103,21 +103,40 @@ public class InnocentCodeRewriter extends Rewriter {
           ParseTreeNode params = expandAll(bindings.get("ps"), s2, mq);
           ParseTreeNode body = expandAll(bindings.get("bs"), s2, mq);
 
-          // If the function has a free THIS, check what it binds to at runtime
-          ParseTreeNode refError = null;
+          // Checks to see if the block contains a free THIS and emulate ES5
+          // strict mode behavior where it is undefined if called without an
+          // object to the left.  We cannot exactly emulate the ES5 strict
+          // behavior without a much heavierweight rewriting as described in
+          // issue 1019, so we always void out the global object.
+          ParseTreeNode thisVar = null;
           if (s2.hasFreeThis()) {
-            refError = QuasiBuilder.substV(
-                "if (this.___) { throw ReferenceError; }");
+            thisVar = QuasiBuilder.substV(
+                "var this___ = this && this.___ ? void 0 : this;");
           }
 
           return substV(
-              "refError", refError,
+              "thisVar", thisVar,
               "f", bindings.get("f"),
-              "ps", bindings.get("params"),
               "params", params,
               "startStmts", new ParseTreeNodeContainer(s2.getStartStatements()),
               "body", body);
         }
+        return NONE;
+      }
+    },
+
+    new Rule () {
+      @Override
+      @RuleDescription(
+          name="this",
+          synopsis="Replaces references to 'this' with references to this___",
+          reason=("So that we can check whether this points to the global scope"
+                  + " and substitute a reasonable value."),
+          matches="this",
+          substitutes="this___")
+      public ParseTreeNode fire(
+          ParseTreeNode node, Scope scope, MessageQueue mq) {
+        if (match(node) != null) { return substV(); }
         return NONE;
       }
     },

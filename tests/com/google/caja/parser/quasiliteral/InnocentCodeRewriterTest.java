@@ -149,9 +149,11 @@ public class InnocentCodeRewriterTest extends RewriterTestCase {
         ";");
     rewriteAndExecute(
         ";",
-        "assertThrows(function a() {" +
-        "  return this;" +
-        "});",
+        "assertEquals(undefined, (function a() { return this; })());",
+        ";");
+    rewriteAndExecute(
+        ";",
+        "assertEquals(assertEquals, this.assertEquals);",
         ";");
   }
 
