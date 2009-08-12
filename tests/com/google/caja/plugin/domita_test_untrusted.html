@@ -47,6 +47,17 @@
   </table>
 </div>
 
+<!-- form element named 'id' triggers bug 1090. -->
+<!-- NOTE, this form must be first, otherwise ff3.5.x will produce
+     false passes due to an optimizer bug.
+     https://bugzilla.mozilla.org/show_bug.cgi?id=508744 -->
+<div class="testcontainer" id="test-emitter-id">
+  <script>921</script>
+  <form id="test-emitter-id-0">
+    <input id="test-emitter-id-1" name="id" value="pigeon">
+  </form>
+</div>
+
 <form id="test-onreset-form">
   <div class="clickme-testcontainer" id="test-onreset">
     <input type="reset" value="click me">
@@ -361,6 +372,15 @@ can test window.scrollBy with a positive x value with a visible effect.
 </div>
 
 <p class="testcontainer" id="test-negative-indices" />
+
+<!-- this sequence of interleaved html/text/script triggers bug 1060 -->
+<div class="testcontainer" id="test-emitter-ie">
+  <div id="test-emitter-ie-0">duck-0</div>duck-2
+  <script>1</script>
+  <div id="test-emitter-ie-1">duck-1</div>duck-3
+  <script>2</script>
+  duck-4
+</div>
 
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
@@ -2519,6 +2539,38 @@ jsunitRegister('testNegativeIndices',
     }
   })();
   pass('test-negative-indices');
+});
+
+// make sure emitter isn't confused by form element named "id"
+jsunitRegister('testEmitterId',
+               function testEmitterId() {
+
+  // did emitter find form.id correctly?
+  var el = document.getElementById('test-emitter-id-0');
+  assertTrue('el is truthy', !!el);
+
+  // make sure we're still the first form
+  var forms = document.getElementsByTagName('form');
+  assertEquals(el.id, forms[0].id);
+
+  pass('test-emitter-id');
+});
+
+jsunitRegister('testEmitterIe',
+               function testEmitterIe() {
+  // did emitter finish removing marker spans?
+  var el = document.getElementById('test-emitter-ie');
+  var kids = el.getElementsByTagName('span');
+  assertEquals(0, kids.length);
+
+  // did emitter reattach everything?
+  var html = el.innerHTML;
+  for (var k = 0; k < 5; ++k) {
+    var duck = 'duck-' + k;
+    assertNotEquals(duck, -1, html.indexOf(duck));
+  }
+
+  pass('test-emitter-ie');
 });
 
 jsunitRegister('testDocumentBodyAppendChild',

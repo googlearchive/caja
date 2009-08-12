@@ -40,7 +40,8 @@ function HtmlEmitter(base, opt_tameDocument) {
     idMap = {};
     var descs = base.getElementsByTagName('*');
     for (var i = 0, desc; (desc = descs[i]); ++i) {
-      if (desc.id) { idMap[desc.id] = desc; }
+      var id = desc.getAttribute('id');
+      if (id) { idMap[id] = desc; }
     }
   }
   /**
@@ -179,12 +180,19 @@ function HtmlEmitter(base, opt_tameDocument) {
         limitAnc = parent;
       }
       // Reattach up to and including limit ancestor.
+      // If some browser quirk causes us to miss limit in detached, we'll
+      // reattach everything and try to continue.
       var nConsumed = 0;
-      while (true) {
-        var toReattach = detached[nConsumed];
-        (detached[nConsumed + 1] /* the parent */).appendChild(toReattach);
+      while (nConsumed < detached.length) {
+        // in IE, some types of nodes can't be standalone, and detaching
+        // one will create new parentNodes for them.  so at this point,
+        // limitAnc might be an ancestor of the node on detached.
+        var reattach = detached[nConsumed];
+        var reattAnc = reattach;
+        for (; reattAnc.parentNode; reattAnc = reattAnc.parentNode) {}
+        (detached[nConsumed + 1] /* the parent */).appendChild(reattach);
         nConsumed += 2;
-        if (toReattach === limitAnc) { break; }
+        if (reattAnc === limitAnc) { break; }
       }
       // Replace the reattached bits with the ones detached from limit.
       newDetached[1] = nConsumed;  // splice's second arg is the number removed
