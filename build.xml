@@ -299,15 +299,6 @@
   <target name="benchmarks" description="Runs benchmarks."
    depends="dirs,pluginc,MinifiedJs,CajoledValija,jars">
     <copy todir="${lib}/com/google/caja/demos/benchmarks">
-      <fileset dir="${third_party}/js/v8-benchmark">
-        <include name="base.js"/>
-        <include name="richards.js"/>
-        <include name="deltablue.js"/>
-        <include name="crypto.js"/>
-        <include name="raytrace.js"/>
-        <include name="earley-boyer.js"/>
-        <include name="run.js"/>
-      </fileset>
       <fileset dir="${third_party}/js/sunspider-benchmark/">
         <include name="v8-crypto.js"/>
         <include name="v8-earley-boyer.js"/>

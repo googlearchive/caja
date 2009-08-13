@@ -41,11 +41,11 @@ public class BenchmarkSize extends CajaTestCase {
   // Javascript files to benchmark
   // TODO(jasvir): Find a nice collection of "typical" html files!
   String[][] pureJs = {
-      {"richards.js", "testRichards"},
-      {"deltablue.js", "testDeltaBlue"},
-      {"crypto.js", "testCrypto"},
-      {"earley-boyer.js", "testEarleyBoyer"},
-      {"raytrace.js", "testRayTrace"},
+      {"v8-richards.js", "testRichards"},
+      {"v8-deltablue.js", "testDeltaBlue"},
+      {"v8-crypto.js", "testCrypto"},
+      {"v8-earley-boyer.js", "testEarleyBoyer"},
+      {"v8-raytrace.js", "testRayTrace"},
       {"function-closure.js", "testFunctionClosure"},
       {"function-correct-args.js", "testFunctionCorrectArgs"},
       {"function-empty.js", "testFunctionEmpty"},
