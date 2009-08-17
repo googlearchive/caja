@@ -761,7 +761,7 @@ var attachDocumentStub = (function () {
       return attribs;
     };
     elementPolicies.a = elementPolicies.area = function (attribs) {
-      // Anchor tags must have a target.
+      // Anchor tags must always have the target '_blank'.
       attribs.push('target', '_blank');
       return attribs;
     };
@@ -964,7 +964,6 @@ var attachDocumentStub = (function () {
       if (tamed !== void 0) {
         return tamed;
       }
-
       switch (node.nodeType) {
         case 1:  // Element
           var tagName = node.tagName.toLowerCase();
@@ -981,6 +980,9 @@ var attachDocumentStub = (function () {
             case 'textarea':
             case 'input':
               tamed = new TameInputElement(node, editable);
+              break;
+            case 'iframe':
+              tamed = new TameIFrameElement(node, editable);
               break;
             case 'img':
               tamed = new TameImageElement(node, editable);
@@ -2536,6 +2538,90 @@ var attachDocumentStub = (function () {
       this.setAttribute('src', src);
       return src;
     };
+
+    function TameIFrameElement(node, editable) {
+      // Make the child list immutable so that text content can't be added
+      // or removed.
+      TameElement.call(this, node, editable, false);
+      classUtils.exportFields(
+          this,
+          ['align', 'frameBorder', 'height', 'width']);
+    }
+    inertCtor(TameIFrameElement, TameElement, "HTMLIFrameElement");
+    TameIFrameElement.prototype.getAlign = function () {
+      return this.node___.align;
+    };
+    TameIFrameElement.prototype.setAlign = function (alignment) {
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      alignment = String(alignment);
+      if (alignment === 'left' || 
+          alignment === 'right' || 
+          alignment === 'center') {
+        this.node___.align = alignment;
+      }
+    };
+    TameIFrameElement.prototype.getAttribute = function(attr) {
+      attrLc = String(attr).toLowerCase();
+      if (attrLc !== 'name' && attrLc !== 'src') {
+        return TameElement.prototype.getAttribute.call(this, attr);
+      }
+      return null;
+    };
+    TameIFrameElement.prototype.setAttribute = function(attr, value) {
+      attrLc = String(attr).toLowerCase();
+      // The 'name' and 'src' attributes are whitelisted for all tags in
+      // html4-attributes-whitelist.json, since they're needed on tags
+      // like <img>.  Because there's currently no way to filter attributes
+      // based on the tag, we have to blacklist these two here.
+      if (attrLc !== 'name' && attrLc !== 'src') {
+        return TameElement.prototype.setAttribute.call(this, attr, value);
+      }
+      cajita.log('Cannot set the [' + nameLc + '] attribute of an iframe.');
+      return value;
+    };
+    TameIFrameElement.prototype.getFrameBorder = function () {
+      return this.node___.frameBorder;
+    };
+    TameIFrameElement.prototype.setFrameBorder = function (border) {
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      border = String(border).toLowerCase();
+      if (border === '0' || border === '1' || 
+          border === 'no' || border === 'yes') {
+        this.node___.frameBorder = border;
+      }
+    };
+    TameIFrameElement.prototype.getHeight = function () {
+      return this.node___.height;
+    };
+    TameIFrameElement.prototype.setHeight = function (height) {
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      this.node___.height = +height;
+    };
+    TameIFrameElement.prototype.getWidth = function () {
+      return this.node___.width;
+    };
+    TameIFrameElement.prototype.setWidth = function (width) {
+      if (!this.editable___) { throw new Error(NOT_EDITABLE); }
+      this.node___.width = +width;
+    };
+    TameIFrameElement.prototype.handleRead___ = function (name) {
+      nameLc = String(name).toLowerCase();
+      if (nameLc !== 'src' && nameLc !== 'name') {
+        return TameElement.prototype.handleRead___.call(this, name);
+      }
+      return undefined;
+    };
+    TameIFrameElement.prototype.handleSet___ = function (name, value) {
+      nameLc = String(name).toLowerCase();
+      if (nameLc !== 'src' && nameLc !== 'name') {
+        return TameElement.prototype.handleSet___.call(this, name, value);
+      }
+      cajita.log('Cannot set the [' + nameLc + '] property of an iframe.');
+      return value;
+    };
+    ___.all2(___.grantTypedMethod, TameIFrameElement.prototype,
+             ['getAttribute', 'setAttribute']);
+
 
 
     function TameTableCompElement(node, editable) {

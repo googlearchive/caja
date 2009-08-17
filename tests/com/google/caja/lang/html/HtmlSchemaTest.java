@@ -41,7 +41,6 @@ public class HtmlSchemaTest extends TestCase {
   public final void testSchema() throws Exception {
     assertFalse(schema.isElementAllowed(id("script")));
     assertFalse(schema.isElementAllowed(id("style")));
-    assertFalse(schema.isElementAllowed(id("iframe")));
     // swapping innerHTML from an XMP or LISTING tag into another tag might
     // allow bad things to happen.
     assertFalse(schema.isElementAllowed(id("xmp")));

@@ -35,6 +35,13 @@
       <input name="1" id="1">
     </form>
 
+    <div id="test-ids-as-targets">
+      <iframe style="display:none" id="test-ids-as-targets-1"></iframe>
+      <form target="test-ids-as-targets-1" 
+            id="test-ids-as-targets-1-form"
+            action="http://www.google.com"></form>
+    </div>
+
     <script>
     jsunitRegister('testNumericOperators', function testNumericOperators() {
       var values = [
@@ -278,6 +285,25 @@
 
       document.body.appendChild(document.createTextNode(
           'Visited style affects [' + differences + ']'));
+    });
+    jsunitRegister('testIdsAsTargets',
+                   function testIdsAsTargets() {
+      var w = window.open();
+      if (w === null) {
+        fail('Popup blocker must be disabled for this test.');
+      }
+      w.close();
+      document.getElementById('test-ids-as-targets-1-form').submit();
+      try {
+        // If the iframe got redirected, we shouldn't be able
+        // to read its location.
+        var loc = document.
+            getElementById('test-ids-as-targets-1').contentWindow.location;
+      } catch (e) {
+        fail('This browser allows ids as targets');
+      }
+      document.getElementById('test-ids-as-targets').
+          innerHTML = 'testIdsAsTargets passed.';
     });
     </script>
   </body>
