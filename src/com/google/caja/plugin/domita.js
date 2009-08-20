@@ -1991,6 +1991,14 @@ var attachDocumentStub = (function () {
       registerElementScriptAttributeHandlers(this);
     }
     nodeClasses.Element = inertCtor(TameElement, TameBackedNode, 'HTMLElement');
+    TameElement.prototype.blur = function () {
+      this.node___.blur();
+    };
+    TameElement.prototype.focus = function () {
+      if (imports.isProcessingEvent___) {
+        this.node___.focus();
+      }
+    };
     TameElement.prototype.getId = function () {
       return this.getAttribute('id') || '';
     };
@@ -2196,6 +2204,7 @@ var attachDocumentStub = (function () {
     ___.all2(
        ___.grantTypedMethod, TameElement.prototype,
        ['addEventListener', 'removeEventListener',
+        'blur', 'focus',
         'getAttribute', 'setAttribute',
         'removeAttribute', 'hasAttribute',
         'getAttributeNode',
@@ -2209,9 +2218,6 @@ var attachDocumentStub = (function () {
       classUtils.exportFields(this, ['href']);
     }
     inertCtor(TameAElement, TameElement, 'HTMLAnchorElement');
-    TameAElement.prototype.focus = function () {
-      this.node___.focus();
-    };
     TameAElement.prototype.getHref = function () {
       return this.node___.href;
     };
@@ -2220,7 +2226,7 @@ var attachDocumentStub = (function () {
       return href;
     };
     ___.all2(___.grantTypedMethod, TameAElement.prototype,
-             ['getHref', 'setHref', 'focus']);
+             ['getHref', 'setHref']);
 
     // http://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-40002357
     function TameFormElement(node, editable) {
@@ -2322,12 +2328,6 @@ var attachDocumentStub = (function () {
       this.node___.defaultValue = (
           newValue === null || newValue === void 0 ? '' : '' + newValue);
       return newValue;
-    };
-    TameInputElement.prototype.focus = function () {
-      this.node___.focus();
-    };
-    TameInputElement.prototype.blur = function () {
-      this.node___.blur();
     };
     TameInputElement.prototype.select = function () {
       this.node___.select();
@@ -2480,8 +2480,7 @@ var attachDocumentStub = (function () {
       return newValue;
     };
     ___.all2(___.grantTypedMethod, TameInputElement.prototype,
-             ['getValue', 'setValue', 'focus', 'blur',
-               'getForm', 'getType', 'select']);
+             ['getValue', 'setValue', 'getForm', 'getType', 'select']);
 
 
     function TameImageElement(node, editable) {
