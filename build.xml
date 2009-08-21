@@ -420,18 +420,6 @@
      <include file="${tests}/com/google/caja/x.js"/>
      <output file="${lib}/com/google/caja/x.vo.js" language="valija"/>
     </transform>
-    <transform>
-     <include file="${tests}/com/google/caja/foo/inc.js"/>
-     <output file="${lib}/com/google/caja/foo/inc.vo.js" language="valija"/>
-    </transform>
-    <transform>
-     <include file="${tests}/com/google/caja/add.js"/>
-     <output file="${lib}/com/google/caja/add.vo.js" language="valija"/>
-    </transform>
-    <transform>
-     <include file="${tests}/com/google/caja/serverJsRecursion.js"/>
-     <output file="${lib}/com/google/caja/serverJsRecursion.vo.js" language="valija"/>
-    </transform>
     <copy todir="${lib}">
       <fileset dir="${src}" includes="**/*.html"/>
       <fileset dir="${tests}" includes="**/*.html"/>
