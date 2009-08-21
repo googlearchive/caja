@@ -15,10 +15,13 @@
 package com.google.caja.parser.quasiliteral;
 
 import java.io.IOException;
-
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 
+import com.google.caja.lexer.CharProducer;
+import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.parser.ParseTreeNode;
@@ -35,6 +38,7 @@ import com.google.caja.parser.js.ReturnStmt;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.UncajoledModule;
+import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.util.RhinoTestBed;
 import com.google.caja.reporting.TestBuildInfo;
 
@@ -42,6 +46,24 @@ import com.google.caja.reporting.TestBuildInfo;
  * @author metaweta@gmail.com
  */
 public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
+  protected class TestPluginEnvironment implements PluginEnvironment {
+    public CharProducer loadExternalResource(
+        ExternalReference ref, String mimeType) {
+      URI uri = ref.getUri();
+      uri = ref.getReferencePosition().source().getUri().resolve(uri);
+      try {
+        InputSource is = new InputSource(uri);
+        return fromResource(uri.getPath().substring(1), is);
+      } catch (IOException e) {
+      }
+      return null;
+    }
+
+    public String rewriteUri(ExternalReference uri, String mimeType) {
+      return null;
+    }
+  }
+
   private Rewriter valijaRewriter;
   private Rewriter cajitaRewriter;
   private Rewriter innocentCodeRewriter;
@@ -50,7 +72,8 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
   public void setUp() throws Exception {
     super.setUp();
     valijaRewriter = new DefaultValijaRewriter(mq, false);
-    cajitaRewriter = new CajitaRewriter(new TestBuildInfo(), mq, false);
+    cajitaRewriter = new CajitaModuleRewriter(
+        new TestBuildInfo(), new TestPluginEnvironment(), mq, false, true);
     innocentCodeRewriter = new InnocentCodeRewriter(mq, false);
     // Start with this one, then switch later to CajitaRewriter for
     // the second pass.
@@ -620,7 +643,14 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         + "foo();"
         );
   }
-
+  
+  public final void testStaticModuleLoading() throws Exception {
+    rewriteAndExecute(
+        "includeScript('x');"
+        + "assertEquals(x, 3);"
+        );
+  }
+  
   @Override
   protected Object executePlain(String caja)
       throws IOException, ParseException {
@@ -661,11 +691,14 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
             getClass(), "../../../../../js/json_sans_eval/json_sans_eval.js"),
         new RhinoTestBed.Input(getClass(), "/com/google/caja/cajita.js"),
         new RhinoTestBed.Input(
+            getClass(), "/com/google/caja/cajita-promise.js"),
+        new RhinoTestBed.Input(
             getClass(), "../../../../../js/jsunit/2.2/jsUnitCore.js"),
         new RhinoTestBed.Input(
             getClass(), "/com/google/caja/log-to-console.js"),
         new RhinoTestBed.Input(
             "var testImports = ___.copy(___.sharedImports);\n" +
+            "testImports.Q = Q;" +
             "testImports.loader = ___.freeze({\n" +
             "        provide: ___.markFuncFreeze(\n" +
             "            function(v){ valijaMaker = v; })\n" +
@@ -677,6 +710,8 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         new RhinoTestBed.Input(
             // Set up the imports environment.
             "testImports = ___.copy(___.sharedImports);\n" +
+            "testImports.Q = Q;" +
+            "testImports.env = {x: 6};" +
             "testImports.console = console;" +
             "testImports.assertEquals = assertEquals;" +
             "___.grantFunc(testImports, 'assertEquals');" +

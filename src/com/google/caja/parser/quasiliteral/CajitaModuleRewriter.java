@@ -46,6 +46,7 @@ import java.util.Map;
 public class CajitaModuleRewriter extends Rewriter {
   private final BuildInfo buildInfo;
   private final PluginEnvironment pluginEnv;
+  private final boolean isFromValija;
 
   final public Rule[] cajaRules = {
     new Rule() {
@@ -73,7 +74,7 @@ public class CajitaModuleRewriter extends Rewriter {
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         if (node instanceof UncajoledModule) {
           ModuleManager moduleManager =
-            new ModuleManager(buildInfo, pluginEnv, mq);
+            new ModuleManager(buildInfo, pluginEnv, mq, isFromValija);
           moduleManager.appendUncajoledModule((UncajoledModule)node);
 
           List<ParseTreeNode> moduleDefs = new ArrayList<ParseTreeNode>();
@@ -118,15 +119,18 @@ public class CajitaModuleRewriter extends Rewriter {
    */
   public CajitaModuleRewriter(
       BuildInfo buildInfo, PluginEnvironment pluginEnv, MessageQueue mq,
-      boolean logging) {
+      boolean logging, boolean isFromValija) {
     super(mq, false, logging);
     this.buildInfo = buildInfo;
     this.pluginEnv = pluginEnv;
+    this.isFromValija = isFromValija;
     addRules(cajaRules);
   }
 
   public CajitaModuleRewriter(
-      BuildInfo buildInfo, MessageQueue mq, boolean logging) {
-    this(buildInfo, PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT, mq, logging);
+      BuildInfo buildInfo, MessageQueue mq, boolean logging, 
+      boolean isFromValija) {
+    this(buildInfo, PluginEnvironment.CLOSED_PLUGIN_ENVIRONMENT, mq, logging, 
+        isFromValija);
   }
 }

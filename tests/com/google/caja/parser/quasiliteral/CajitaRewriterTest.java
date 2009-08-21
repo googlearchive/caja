@@ -2335,7 +2335,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   }
 
   /**
-   * Tests the securable module loading
+   * Tests the static module loading
    */
   // TODO: Refactor the test cases so that we can use CajitaModuleRewriter
   // for all tests
@@ -2343,34 +2343,33 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   // for those tests that run against other ParseTreeNode
   public final void testModule() throws Exception {
     CajitaModuleRewriter moduleRewriter = new CajitaModuleRewriter(
-        new TestBuildInfo(), new TestPluginEnvironment(), mq, false);
+        new TestBuildInfo(), new TestPluginEnvironment(), mq, false, false);
     setRewriter(moduleRewriter);
 
     rewriteAndExecute(
-        "var r = loader.load('foo/b')({x: 6, y: 3}); "
+        "var r = load('foo/b')({x: 6, y: 3}); "
         + "assertEquals(r, 11);");
 
     rewriteAndExecute(
-        "var r1 = loader.load('foo/b')({x: 6, y: 3}); "
-        + "var r2 = loader.load('foo/b')({x: 1, y: 2}); "
-        + "var r3 = loader.load('c')({x: 2, y: 6}); "
+        "var r1 = load('foo/b')({x: 6, y: 3}); "
+        + "var r2 = load('foo/b')({x: 1, y: 2}); "
+        + "var r3 = load('c')({x: 2, y: 6}); "
         + "var r = r1 + r2 + r3; "
         + "assertEquals(r, 24);");
 
     rewriteAndExecute(
-        "var m = loader.load('foo/b');"
+        "var m = load('foo/b');"
         + "var s = m.cajolerName;"
         + "assertEquals('com.google.caja', s);");
 
     checkAddsMessage(
-        new UncajoledModule(js(fromString("var m = loader.load('foo/c');"))),
+        new UncajoledModule(js(fromString("var m = load('foo/c');"))),
         RewriterMessageType.MODULE_NOT_FOUND,
         MessageLevel.FATAL_ERROR);
 
     checkAddsMessage(
-        new UncajoledModule(
-            js(fromString("var s = 'c'; var m = loader.load(s);"))),
-        RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_MODULE,
+        new UncajoledModule(js(fromString("var s = 'c'; var m = load(s);"))),
+        RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_CAJITA_MODULE,
         MessageLevel.FATAL_ERROR);
 
     setRewriter(cajitaRewriter);

@@ -27,6 +27,7 @@ import com.google.caja.parser.js.FunctionDeclaration;
 import com.google.caja.parser.js.Identifier;
 import com.google.caja.parser.js.Reference;
 import com.google.caja.parser.js.SyntheticNodes;
+import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.RhinoAsserts;
 import com.google.caja.util.TestUtil;
@@ -69,8 +70,8 @@ public abstract class RewriterTestCase extends CajaTestCase {
   // TODO(ihab.awad): Refactor tests to use checkAddsMessage(...) instead
   protected void checkFails(String input, String error) throws Exception {
     mq.getMessages().clear();
-    getRewriter().expand(new Block(
-        FilePosition.UNKNOWN, Arrays.asList(js(fromString(input, is)))));
+    getRewriter().expand(new UncajoledModule(new Block(
+        FilePosition.UNKNOWN, Arrays.asList(js(fromString(input, is))))));
 
     assertFalse(
         "Expected error, found none: " + error,

@@ -219,19 +219,19 @@ public class CajitaRewriter extends Rewriter {
       }
     },
 
-    // Loading a Module
+    // Loading a static module
 
     new Rule() {
       @Override
       @RuleDescription(
           name="loadmodule",
-          synopsis="rewrites the loader.load function.",
+          synopsis="rewrites the load function.",
           reason="",
-          matches="loader.load(@arg)",
+          matches="load(@arg)",
           substitutes="moduleMap___[@moduleIndex]")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
-        if (bindings != null && scope.isOuter("loader")) {
+        if (bindings != null && scope.isImported("load")) {
           ParseTreeNode arg = bindings.get("arg");
           if (arg instanceof StringLiteral) {
             assert(moduleManager != null);
@@ -240,15 +240,13 @@ public class CajitaRewriter extends Rewriter {
             if (index != -1) {
               return substV("moduleIndex",
                   new IntegerLiteral(FilePosition.UNKNOWN, index));
-            }
-            else {
+            } else {
               // error messages were logged in the function getModule
               return node;
             }
-          }
-          else {
+          } else {
             mq.addMessage(
-                RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_MODULE,
+                RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_CAJITA_MODULE,
                 node.getFilePosition());
             return node;
           }

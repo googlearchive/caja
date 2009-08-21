@@ -130,5 +130,7 @@ public class DomitaTest extends CajaTestCase {
     String title = driver.getTitle();
     assertTrue("The title shows " + title.substring(title.lastIndexOf("-") + 1),
         title.endsWith("all tests passed"));
+    
+    driver.quit();
   }
 }

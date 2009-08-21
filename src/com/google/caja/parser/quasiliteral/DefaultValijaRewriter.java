@@ -177,7 +177,36 @@ public class DefaultValijaRewriter extends Rewriter {
         return NONE;
       }
     },
-
+    
+    // static module loading
+    
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="staticModuleIncluding",
+          synopsis="Replaced with the Cajita module loading",
+          reason="",
+          matches="includeScript(@arg)",
+          substitutes="load(@arg)({$v: $v})")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null && scope.isOuter("includeScript")) {
+          ParseTreeNode arg = bindings.get("arg");
+          if (arg instanceof StringLiteral) {
+            return substV("arg", 
+                new StringLiteral(FilePosition.UNKNOWN, 
+                    ((StringLiteral) arg).getUnquotedValue()));
+          } else {
+            mq.addMessage(
+                RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_VALIJA_MODULE,
+                node.getFilePosition());
+            return node;
+          }
+        }
+        return NONE;
+      }
+    },
+    
     ////////////////////////////////////////////////////////////////////////
     // Module envelope
     ////////////////////////////////////////////////////////////////////////

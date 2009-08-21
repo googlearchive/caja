@@ -385,6 +385,25 @@ Test row cell
   duck-4
 </div>
 
+<p class="testcontainer" id="xhr-module-loader">XHR Module Loader</p>
+
+<p class="testcontainer" id="script-module-loader">Script Module Loader</p>
+
+<p class="testcontainer" id="xhr-module-loader-2">
+XHR Module Loader 2</p>
+
+<p class="testcontainer" id="script-module-loader-2">
+Script Module Loader 2</p>
+
+<p class="testcontainer" id="xhr-module-loader-failure">
+XHR Module Loader Failure</p>
+
+<p class="testcontainer" id="script-module-loader-failure">
+Script Module Loader Failure</p>
+
+<p class="testcontainer" id="recursive-module">
+Recursive Module</p>
+
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
 
@@ -2651,6 +2670,132 @@ jsunitRegister('testOnReset',
       false);
 });
 
+function testAsyncModuleLoader(load, includeScript, prefix) {
+  directAccess.clearModuleCache();
+  if (!valijaMode) {
+    var m = load.async('a.co');
+    var f1 = function(module) {
+      var r = module({x: 1, y: 2});
+      assertEquals(r, 3);
+      pass(prefix + '-module-loader');
+    };
+    var f2 = function(reason) {
+      fail("Loading module a failed, " + reason);
+    };
+    Q.when(m, f1, f2);
+  } else {
+    var m = includeScript.async('x.vo');
+    var f1 = function(result) {
+      assertEquals(x, 3);
+      pass(prefix + '-module-loader');
+    };
+    var f2 = function(reason) {
+      fail("Loading module x failed, " + reason);
+    };
+    Q.when(m, f1, f2);
+  }
+}
+
+jsunitRegister('testXhrModuleLoader', 
+               function testXhrModuleLoader() {
+  testAsyncModuleLoader(xhrModuleLoad, xhrIncludeScript, "xhr");
+});
+
+jsunitRegister('testScriptModuleLoader', 
+               function testScriptModuleLoader() {
+  testAsyncModuleLoader(scriptModuleLoad, scriptIncludeScript, "script");
+});
+
+function testAsyncModuleLoader2(load, prefix) {
+  directAccess.clearModuleCache();
+  if (!valijaMode) {
+    var m = load.async('foo/b.co');
+    var f1 = function(module) {
+      var r = module({x: 1, y: 2, load: { async: function(src) 
+          { return load.async('foo/' + src); } }, 
+          Q: Q, fail: fail});
+      Q.when(r, function(result) { 
+                  assertEquals(result, 5);
+                  pass(prefix + '-module-loader-2');
+                },
+                function(reason) { 
+                  fail("Waiting for result failed, " + reason);
+                });
+    };
+    var f2 = function(reason) {
+      fail("loading module B failed, " + reason);
+    };
+    Q.when(m, f1, f2);
+  } else {
+    pass(prefix + '-module-loader-2');
+  }  
+}
+
+jsunitRegister('testXhrModuleLoader2', 
+        function testXhrModuleLoader2() {
+  testAsyncModuleLoader2(xhrModuleLoad, "xhr");
+});
+
+jsunitRegister('testScriptModuleLoader2', 
+               function testScriptModuleLoader2() {
+  testAsyncModuleLoader2(scriptModuleLoad, "script");
+});
+
+function testAsyncModuleLoaderFailure(load, includeScript, prefix) {
+  directAccess.clearModuleCache();
+  var f1 = function(module) {
+      fail('It should not be resolved.');
+  };
+  
+  var f2 = function(reason) {
+    if (reason.substring(0, 26) === 'Retrieving module failed, ') { 
+      pass(prefix + '-module-loader-failure');
+    }
+  };
+  
+  if (!valijaMode) {
+    var m = xhrModuleLoad.async('b.co');
+    Q.when(m, f1, f2);
+  }
+  else {
+    var m = xhrIncludeScript.async('foo/x.vo');
+    Q.when(m, f1, f2);
+  }  
+}
+
+jsunitRegister('testXhrModuleLoaderFailure',
+               function testXhrModuleLoaderFailure() {
+   testAsyncModuleLoaderFailure(xhrModuleLoad, xhrIncludeScript, 'xhr');
+});
+
+jsunitRegister('testScriptModuleLoaderFailure',
+               function testScriptModuleLoaderFailure() {
+  testAsyncModuleLoaderFailure(scriptModuleLoad, scriptIncludeScript, 'script');
+});
+
+jsunitRegister('testRecursiveModule',
+               function testRecursiveModule() {
+  directAccess.clearModuleCache();
+  if (!valijaMode) {
+    var m = scriptModuleLoad.async('recursion.co');
+    var f1 = function(module) {
+      var r = module({x: 5, load: scriptModuleLoad, Q: Q});
+        Q.when(r, function(result) { 
+                    assertEquals(result, 120);
+                    pass('recursive-module');
+                  },
+                  function(reason) { 
+                    fail("Waiting for result failed, " + reason);
+                  });
+      };
+    var f2 = function(reason) { 
+      fail("Loading module Recursion failed, " + reason);
+    };
+    Q.when(m, f1, f2);
+  } else {
+    pass('recursive-module');
+  }
+});
 
 // Before onload events fire
 jsunitRun();

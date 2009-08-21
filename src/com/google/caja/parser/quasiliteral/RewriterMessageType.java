@@ -176,8 +176,16 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: Parsing module failed: %s",
       MessageLevel.FATAL_ERROR),
 
-  CANNOT_LOAD_A_DYNAMIC_MODULE(
-      "%s: Cannot load a dynamic module",
+  CANNOT_LOAD_A_DYNAMIC_CAJITA_MODULE(
+      "%s: Dynamically computed names should use load.async()",
+      MessageLevel.FATAL_ERROR),
+
+  CANNOT_LOAD_A_DYNAMIC_VALIJA_MODULE(
+      "%s: Dynamically computed names should use includeScript.async()",
+      MessageLevel.FATAL_ERROR),
+      
+  CANNOT_LOAD_A_DYNAMIC_SERVERJS_MODULE(
+      "%s: Dynamically computed names should use require.async()",
       MessageLevel.FATAL_ERROR);
 
   private final String formatString;

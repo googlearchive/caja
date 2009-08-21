@@ -47,18 +47,21 @@ public class ModuleManager {
   private final PluginEnvironment pluginEnv;
   private final BuildInfo buildInfo;
   private final MessageQueue mq;
+  private final boolean isValija;
 
-  private final Map<String, Integer> moduleNameMap
+  private final Map<String, Integer> moduleNameMap 
     = new HashMap<String, Integer>();
   private final Map<Integer, CajoledModule> moduleIndexMap
     = new HashMap<Integer, CajoledModule>();
   private int moduleCounter = 0;
 
   public ModuleManager(
-      BuildInfo buildInfo, PluginEnvironment pluginEnv, MessageQueue mq) {
+      BuildInfo buildInfo, PluginEnvironment pluginEnv, MessageQueue mq,
+      boolean isValija) {
     this.buildInfo = buildInfo;
     this.pluginEnv = pluginEnv;
     this.mq = mq;
+    this.isValija = isValija;
   }
 
   public Map<Integer, CajoledModule> getModuleIndexMap() {
@@ -124,8 +127,17 @@ public class ModuleManager {
       Block input = new Parser(tq, mq).parse();
       tq.expectEmpty();
 
-      CajitaRewriter dcr = new CajitaRewriter(buildInfo, this, mq, false);
-      UncajoledModule uncajoledModule = new UncajoledModule(input);
+      Block intermediate;
+      if (isValija) {
+        DefaultValijaRewriter dvr = new DefaultValijaRewriter(mq);
+        intermediate = (Block) dvr.expand(input); 
+      } else {
+        intermediate = input;
+      }
+      
+      CajitaRewriter dcr = 
+          new CajitaRewriter(buildInfo, this, mq, false);
+      UncajoledModule uncajoledModule = new UncajoledModule(intermediate);
       CajoledModule cajoledModule = (CajoledModule) dcr.expand(uncajoledModule);
 
       moduleIndexMap.put(cur, cajoledModule);

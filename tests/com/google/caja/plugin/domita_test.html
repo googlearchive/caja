@@ -22,6 +22,10 @@
     <script src="../../../../js/json_sans_eval/json_sans_eval.js"
      onerror="console.error(this.src)"></script>
     <script src="../cajita.js" onerror="console.error(this.src)"></script>
+    <script src="../cajita-promise.js" onerror="console.error(this.src)">
+     </script>
+    <script src="../cajita-module.js" onerror="console.error(this.src)">
+     </script>
     <script src="../../../../js/jsunit/2.2/jsUnitCore.js"></script>
     <script src="jsunit.js" onerror="console.error(this.src)"></script>
     <script src="unicode.js" onerror="console.error(this.src)"></script>
@@ -276,7 +280,8 @@
           s.appendChild(document.createTextNode('/* intentionally blank */'));
           return testImports.tameNode___(s, true);
         }),
-        isValija: isValija
+        isValija: isValija,
+        clearModuleCache: clearModuleCache
       });
 
       // Marks a container green to indicate that test passed
@@ -382,6 +387,40 @@
       }
 
       testImports.valijaMode = !!valijaMaker;
+
+      testImports.Q = Q;
+
+      testImports.xhrModuleLoad = ___.primFreeze({
+        async: ___.markFuncFreeze(function(src) {
+          return xhrModuleLoader.async(
+              '/ant-lib/com/google/caja/' + src);
+        })
+      });
+        
+      testImports.scriptModuleLoad = ___.primFreeze({
+        async: ___.markFuncFreeze(function(src) {
+          return scriptModuleLoader.async(
+              'http://localhost:8000/ant-lib/com/google/caja/' + src);
+        })
+      });
+
+      testImports.xhrIncludeScript = ___.primFreeze({ 
+        async: ___.markFuncFreeze(function(src) {
+          var m = xhrModuleLoader.async(
+              '/ant-lib/com/google/caja/' + src);
+          return Q.when(m,
+              function(module) { return module({$v: testImports.$v}); });
+        })
+      });
+          
+      testImports.scriptIncludeScript = ___.primFreeze({ 
+        async: ___.markFuncFreeze(function(src) {
+          var m = scriptModuleLoader.async(
+              'http://localhost:8000/ant-lib/com/google/caja/' + src);
+          return Q.when(m,
+              function(module) { return module({$v: testImports.$v}); });
+        })
+      });
 
       attachDocumentStub(
            '-xyz___',

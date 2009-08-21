@@ -487,7 +487,7 @@ var valijaMaker = (function(outers) {
     return (v === void 0) ? key : ((v === undefIndicator) ? void 0 : v);
   }
 
-  // If you change these names, also change them in PermitTemplate.java
+  //If you change these names, also change them in PermitTemplate.java
   return cajita.freeze({
     typeOf: typeOf,
     instanceOf: instanceOf,
