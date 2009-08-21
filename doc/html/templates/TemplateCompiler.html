@@ -191,11 +191,11 @@ might compile to
 <pre class="prettyprint">
 &lt;ihtml:template name="helloPlanets" formals="planet"&gt;
   <b>&lt;ul&gt;</b>
-    &lt;ihtml:do vars="planet,i" init="i=0,true" while="i &lt; planets.length"
-     step="++i"&gt;
+    &lt;ihtml:do vars="planet,i" init="(i = 0) &lt; planets.length"
+     while="++i &lt; planets.length"&gt;
       &lt;ihtml:template name="loopbody0" formals="planet"&gt;
         <b>&lt;li&gt;</b>
-          <b>Hello </b>&lt;ihtml:dynamic type="pcdata" expr="planet"/&gt;
+          <b>Hello </b>&lt;ihtml:dynamic expr="planet"/&gt;
         <b>&lt;/li&gt;</b>
       &lt;/ihtml:template&gt;
       &lt;ihtml:call ihtml:template="loopbody0" planet="planet"/&gt;
@@ -224,12 +224,10 @@ to a javascript function.  This stage may be implemented in a number of ways:
     repeated sections, and walking the tree to inject dynamic bits at the
     right place.
 </ul>
-but they all have to vet dynamic values.  For each
-<code>&lt;ihtml:dynamic&gt;</code> bit they have to apply a policy:
+but they all have to vet dynamic values.  For each dynamic bit they have to apply a policy:
 <ul>
 <li>For dynamic element names, they have to whitelist the name, and check
     whether it can appear in its parent.
-<li>For dynamic attribute names, they have to whitelist, and vet the value.
 <li>For dynamic attribute values, they have to check the client-side
     schema against the (element name, attribute name) pair, and possibly
     rewrite or reject the value.
@@ -339,7 +337,8 @@ elements to <code>PRE</code> tags if those need to be supported.
  vars="aLocalVariableName,another"
  init="aBooleanExpression()"
  while="aBooleanExpression()"&gt;
-  &lt;p&gt;Evaluated until the while attribute evaluates to falsey.&lt;/p&gt;
+  &lt;p&gt;Evaluated once if init is initially truthy and then continually until
+     the while attribute evaluates to falsey.&lt;/p&gt;
 &lt;ihtml:else/&gt;
   &lt;p&gt;Evaluated once if init is initially falsey.&lt;/p&gt;
 &lt;/ihtml:do&gt;
@@ -355,61 +354,59 @@ If the result is truthy then control passes to the <code>while</code> attribute,
 otherwise control passes to the alternate as described below.
 This can be used to initialize <code>vars</code> as in
 <code class="prettyprint">a = 1, b = 2, true</code>.
-<p>The required <code>while</code> attribute is a javascript expression.
+<p>The optional <code>while</code> attribute is a javascript expression.
 The body is evaluated as long as the <code>while</code> attribute's result is
-truthy.
+truthy.  The <code>init</code> expression controls whether the body is executed
+the first time, and the <code>while</code> expression determines whether control
+reenters the body.
 <p>The <code>ihtml:do</code> may contain a single <code>ihtml:else</code>
 element.  If it does, its body is every child before the
 <code>ihtml:else</code> and its alternate is every child after.
 Otherwise the body is every child, and the alternate is the empty node list.
 
-<h4>Dynamic content : <code>ihtml:dynamic</code></h4>
+<h4>Element Names : <code>ihtml:element</code></h4>
 <pre class="prettyprint">
+&lt;h1&gt;
+  <b>&lt;ihtml:element&gt;</b>H&lt;ihtml:dynamic expr="headerLevel"/&gt;<b>&lt;/ihtml:element&gt;</b>
+  Header Text
+&lt;/h1&gt;
+</pre>
+
+<p>Used in conjunction with <code>ihtml:dynamic</code> to specify a replacement for the tag name of the containing HTML element.  Must be a descendant of an HTML element.
+<p>Contains textual content specifying the name of an element to use in place of a containing HTML element.  The containing element must be one that has a set of attribute definitions that have the same meaning when applied to the replacement tag type, and must be able to appear in similar circumstances.  E.g. if the containing element is a <code>TBODY</code> then the textual content of the body of the <code>ihtml:element</code> (after <code>ihtml:dynamic</code> evaluation) could be any of <code>TBODY</code>, <code>TFOOT</code>, or <code>THEAD</code> since all of those can appear in the same position, can contain the same kinds of nodes, and have the same set of attribute definitions.
+
+<h4>Attribute Values : <code>ihtml:attribute</code></h4>
+<pre class="prettyprint">
+&lt;!-- A link with a dynamic URL --&gt;
 &lt;a&gt;
-  &lt;!-- A link with a dynamic URL --&gt;
-  &lt;ihtml:dynamic type="attribute" expr="['href', myUrl]" if="myUrl !== null"/&gt;
+  <b>&lt;ihtml:attribute name="href"&gt;</b>
+    &lt;ihtml:dynamic expr="url"/&gt;
+  <b>&lt;/ihtml:attribute&gt;</b>
   Link Text
 &lt;/a&gt;
 </pre>
-<p>Uses javascript to specify changes to the containing HTML element.
-<p>This element must have a <code>type</code> attribute with one of the
-following values, which controls the meaning of the required <code>expr</code>
-attribute:
-<ul>
-  <li><code>pcdata</code> : <code>expr</code> is evaluated as a
-      string, escaped using PCDATA escaping contentions and added as a text
-      node at the place where the <code>ihtml:dynamic</code> element appears.
-      It is an error for this type of dynamic element to appear in a node that
-      cannot take PCDATA, though we make an exception for <code>TEXTAREA</code>
-      elements since RCDATA is more restrictive than PCDATA.</li>
-  <li><code>attribute</code> : <code>expr</code> is a javascript expression that
-      evaluates to a
-      <code class="prettyprint">[attributeName, attributeValue]</code>
-      pair.</li>
-  <li><code>tagName</code> : expr is a javascript expression that evaluates to a
-      string containing a lower-case HTML 4 element name.
-      It must appear as a child of <code>SPAN</code>, <code>DIV</code>,
-      <code>TBODY</code>, or <code>TD</code> element, and will cause the
-      containing element to be replaced with one with the given name containing
-      the same content and same specified attributes.
-      <br>
-      The name must be that of an element that can appear wherever the
-      original can.  E.g., any inline element may replace a SPAN, any block
-      element may replace a DIV, a TH may replace a TD, and a THEAD or TFOOT
-      may replace a TBODY.</li>
-</ul>
-<p>And it may have an <code>if</code> attribute which is a javascript expression
-that is evaluated before the other attributes.  If it evaluates to falsey, then
-the <code>expr</code> expression is not evaluated, and the current evaluation
-has no effect on the output.  If the attribute is not present, its value
-defaults to <code>true</code>.
+
+<p>Used in conjunction with <code>ihtml:dynamic</code> and <ocde>ihtml:message</code> to specify an attribute value.
+<p>Must have a <code>name</code> attribute which must be a valid HTML attribute name.
+If the element is a descendant of an <code>ihtml:template</code> then it's name attribute
+must be allowed on the type of element from which the template is called.  Otherwise it
+must be allowed on the closest containing HTML element.
+<p>SCRIPT attributes (e.g. <code>onclick</code>) attributes cannot be added this way.
+<p>If its content is a single <code>&lt;ihtml:dynamic&gt;</code> element, and the attribute specified is a valueless attribute (e.g. <code>checked</code> or <code>selected</code>) then the expression will be treated as a boolean expression which specifies whether or not the attribute is present on the output &mdash; any truthy value will cause the attribute to be present, and any falsy value will cause it to be absent.
+
+<h4>Dynamic content : <code>ihtml:dynamic</code></h4>
+<pre class="prettyprint">
+&lt;!-- Dynamic text --&gt;
+&lt;p&gt;My name is <b>&lt;ihtml:dynamic expr="name"/&gt;</b>.&lt;/p&gt;
+</pre>
+<p>Uses javascript to output dynamic text.  This can be used to specify dynamic PCDATA text nodes, or if it appears inside an <code>ihtml:element</code> or <code>ihtml:attribute</code>, then it can be used to change an element name or attribute value.
 
 <h4>Text Localization : <code>ihtml:message</code></h4>
 <pre class="prettyprint">
 &lt;ihtml:message name="result_index"
  description="The index of the current result in the result list"&gt;
-  Result &lt;b&gt;&lt;ihtml:ph name="start"/&gt;&lt;ihtml:dynamic type="pcdata" expr=" i + 1 "/&gt;&lt;ihtml:eph/&gt;&lt;/b&gt;
-  of &lt;b&gt;&lt;ihtml:ph name="end"/&gt;&lt;ihtml:dynamic type="pcdata" expr=" n "/&gt;&lt;ihtml:eph/&gt;&lt;/b&gt;
+  Result &lt;b&gt;&lt;ihtml:ph name="start"/&gt;&lt;ihtml:dynamic expr=" i + 1 "/&gt;&lt;ihtml:eph/&gt;&lt;/b&gt;
+  of &lt;b&gt;&lt;ihtml:ph name="end"/&gt;&lt;ihtml:dynamic expr=" n "/&gt;&lt;ihtml:eph/&gt;&lt;/b&gt;
 &lt;/ihtml:message&gt;
 </pre>
 Marks a passage of human readable text.  Cannot contain other
@@ -476,7 +473,7 @@ where the content is HTML.
 &lt;ihtml:message name="greeting"&gt;
   Hello
   &lt;ihtml:ph name="planet"/&gt;
-    &lt;ihtml:dynamic type="pcdata" expr="planet"/&gt;
+    &lt;ihtml:dynamic expr="planet"/&gt;
   &lt;ihtml:eph/&gt;!
 &lt;/ihtml:message&gt;
 </pre></td>
@@ -486,7 +483,7 @@ where the content is HTML.
 <br>Locale: es
 <td>&rarr;</td>
 <td><pre class="prettyprint lang-html">
-&#xA1;Ola &lt;ihtml:dynamic type="pcdata" expr="planet"/&gt;!
+&#xA1;Ola &lt;ihtml:dynamic expr="planet"/&gt;!
 </pre></td>
 </table>
 by doing the following:
@@ -535,15 +532,15 @@ expressions.
 <p>The first step is to do an alpha-renaming to prevent namespace
 collisions and preserve the block scoping properties of the
 <code>ihtml:do</code> and <code>ihtml:template</code> constructs.
-This alpha renaming affects template names as well.
+This alpha-renaming affects template names as well.
 Template names are treated as in a distinct namespace from formal
 parameters and locals.  For security we rely on the alpha-renaming to
 not introduce unsafe-identifiers since it might mask the output
 buffer, and the sanitizer functions.  We do not rely on the
 alpha-renaming to be correct for security to hold.
 
-<h4 id="alpha-renaming">Alpha renaming</h4>
-<p>An alpha renaming is a remapping of identifiers which ensures that
+<h4 id="alpha-renaming">Alpha-Renaming</h4>
+<p>An alpha-renaming is a remapping of identifiers which ensures that
 no use of an identifier in a scope masks a use of an identifier in an
 outer scope.  We do an alpha-renaming because javascript is not a
 block scoped language, but the <code>ihtml:template</code> and
@@ -553,10 +550,10 @@ block scoped language, but the <code>ihtml:template</code> and
 which is important since we provide only one operation that can decompose
 the input.
 
-<p>We define a <code>Renaming</code> class,
+<p>We define a <code>NameContext</code> class,
 <pre class="prettyprint">
-final class Renaming {
-  Renaming parent;
+final class NameContext {
+  NameContext parent;
   Iterator&lt;String&gt; nameGenerator;
   // maps names in original source to
   Map&lt;String, VarInfo&gt; vars = new HashMap&lt;String;, VarInfo&gt;;
@@ -572,12 +569,12 @@ final class Renaming {
    *    that do not match any identifier used in javascript expressions attached
    *    to IHTML nodes, and that never returns the same String twice.
    */
-  Renaming(Iterator&lt;String&gt; nameGenerator) {
+  NameContext(Iterator&lt;String&gt; nameGenerator) {
     this.nameGenerator = nameGenerator;
   }
 
-  Renaming subScope() {
-    Renaming subScope = new Renaming(this);
+  NameContext subScope() {
+    NameContext subScope = new NameContext(this);
     subScope.parent = this;
     return subScope;
   }
@@ -590,8 +587,8 @@ final class Renaming {
   }
 
   private VarInfo lookup(String originalName, boolean isTemplate) {
-    for (Renaming r = this; r != null; r = r.parent) {
-      VarInfo vi = vars.get(originalName);
+    for (NameContext c = this; c != null; c = c.parent) {
+      VarInfo vi = c.vars.get(originalName);
       if (vi != null &amp;&amp; vi.isTemplate == isTemplate) { return vi; }
     }
     return null;
@@ -602,7 +599,7 @@ final class Renaming {
   }
 
   VarInfo lookupTemplate(String originalName) {
-    return lookup(originalName, false);
+    return lookup(originalName, true);
   }
 
   Iterable&lt;VarInfo&gt; newVarNames() {
@@ -612,11 +609,11 @@ final class Renaming {
   }
 }</pre>
 
-<p>We create a blank <code>Renaming</code> instance which will collect all
+<p>We create a blank <code>NameContext</code> instance which will collect all
 top-level template names, and recursively walk the DOM.  We also create an
 empty set of variables to import.
 
-<p>We invoke <code>Renaming.subScope()</code> to create a new scope for each
+<p>We invoke <code>NameContext.subScope()</code> to create a new scope for each
 <code>ihtml:template</code> and <code>ihtml:do</code> element we reach.
 For the former, we <code>declare()</code> the template name in the super-scope,
 and the <code>formals</code> in the sub-scope.  For the latter, we declare the
@@ -725,7 +722,7 @@ containing them.
 <p>When we see a <code>ihtml:do</code> element we do the following:
 <ol>
 <li>For each identifier in the <code>vars</code> attribute we call
-<code>lookupVar</code> on the element's <code>Renaming</code> instance
+<code>lookupVar</code> on the element's <code>NameContext</code> instance
 and add it to a list of vars to declare.  If that list is non-empty,
 add a statement like <code class="prettyprint">var a0, a1, &hellip;</code>.
 <li>If the <code>init</code> attribute is not present or is guaranted to return
@@ -748,14 +745,11 @@ quasiliteral
 When we see a non-<code>ihtml</code> element e, do the following:
 <ol>
 <li>Let dTagName be the list of all
-    <code>&lt;ihtml:dynamic type="tagName" expr="&hellip;"&gt;</code> elements
+    <code>&lt;ihtml:element&gt;</code> elements
     that are direct children of e.
 <li>Let dAttrs be the list of all
-    <code>&lt;ihtml:dynamic type="attribute" expr="&hellip;"&gt;</code> elements
+    <code>&lt;ihtml:attribute&gt;</code> elements
     that are direct children of e.
-<li>Let dDynamic be the set of all <code>@name</code> such that an element in
-    <code>dAttrs</code> does match the quasiliteral
-    <code class="prettyprint">["@name", @value]</code>
 <li>Let rChildren be the list of all direct children not in dTagName or dAttrs.
 <li>Let sAttrs be the set of the names of all attributes on e.
 <li>If dTagName is not null and its size is &gt; 1, issue an error and set
@@ -1010,7 +1004,7 @@ attribute</a> when the input locale is for an RTL language.</p>
 (DIV, SPAN, TBODY, TR), we can identify which tag names can safely
 go there by comparing allowed attributes and attribute criteria.
 E.g., we can say that a DIV element can be turned into a P element
-by a <code>&lt;ihtml:dynamic type="tagName" expr="'P'"&gt;</code> safely since
+by a <code>&lt;ihtml:element&gt;&lt;ihtml:dynamic expr="'P'"/&gt;&lt;/ihtml:element&gt;</code> safely since
 attributes allowed on DIV always have the same meaning on P.
 
 <p>If an HTML element that a template can produce can contain one of any
