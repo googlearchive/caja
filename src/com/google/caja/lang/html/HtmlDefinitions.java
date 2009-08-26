@@ -170,7 +170,7 @@ public final class HtmlDefinitions {
       = new EnumMap<HTML.Attribute.Type, Integer>(HTML.Attribute.Type.class);
   static {
     // Under no circumstances should this be changed to use Enum.ordinal().
-    // This mapping to integer mapping must stay the same, or version skew
+    // This type to integer mapping must stay the same, or version skew
     // will mean that the HTML definitions JavaScript can only be used with
     // the same version of the cajoler that cajoled the gadget.
     A_TYPE_MAP.put(HTML.Attribute.Type.NONE, 0);
@@ -190,6 +190,11 @@ public final class HtmlDefinitions {
       }
     }
   }
+
+  public static int getJavascriptValueForAType(HTML.Attribute.Type atype) {
+    return A_TYPE_MAP.get(atype);
+  }
+
   private static Map<String, HTML.Attribute.Type> attributeTypes(
       HtmlSchema schema) {
     Map<String, HTML.Attribute.Type> attributeFlags

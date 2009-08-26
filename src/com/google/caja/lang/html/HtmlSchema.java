@@ -20,7 +20,6 @@ import com.google.caja.lexer.ParseException;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.SimpleMessageQueue;
-import com.google.caja.util.Criterion;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 import com.google.caja.util.Strings;
@@ -35,13 +34,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * An HTML schema which defines attributes of elements and which elements are
  * allowed.
- *
- * TODO(mikesamuel): respect required attributes for tags.
  *
  * @author mikesamuel@gmail.com
  */
@@ -103,38 +99,19 @@ public final class HtmlSchema {
     for (String key : attribList.allowedItems()) {
       allowedAttributes.add(elAndAttrib(key));
     }
-    Map<Pair<Name, Name>, Criterion<String>> criteria
-        = new HashMap<Pair<Name, Name>, Criterion<String>>();
+    Map<Pair<Name, Name>, RegularCriterion> criteria
+        = new HashMap<Pair<Name, Name>, RegularCriterion>();
     for (WhiteList.TypeDefinition def : attribList.typeDefinitions().values()) {
       final String values = (String) def.get("values", null);
-      Criterion<String> criterion = null;
+      RegularCriterion criterion = null;
       if (values != null) {
-        criterion = new Criterion<String>() {
-          final Set<String> valueSet = new HashSet<String>(
-             Arrays.asList(Strings.toLowerCase(values).split(",")));
-          public boolean accept(String s) {
-            return valueSet.contains(Strings.toLowerCase(s));
-          }
-
-          @Override
-          public String toString() {
-            return "[Value in " + values + "]";
-          }
-        };
+        criterion = RegularCriterion.Factory.fromValueSet(
+            Arrays.asList(values.split(",")));
       } else {
         String pattern = (String) def.get("pattern", null);
         if (pattern != null) {
-          final Pattern p = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
-          criterion = new Criterion<String>() {
-            public boolean accept(String s) {
-              return p.matcher(s).matches();
-            }
-
-            @Override
-            public String toString() {
-              return "[Value =~ /" + p.pattern() + "/]";
-            }
-          };
+          criterion = RegularCriterion.Factory.fromPattern(
+              "(?i:" + pattern + ")");
         }
       }
       if (criterion != null) {
@@ -158,19 +135,19 @@ public final class HtmlSchema {
         type = HTML.Attribute.Type.valueOf(typeName);
       }
       String mimeTypes = (String) def.get("mimeTypes", null);
-      Criterion<String> elCriterion = criteria.get(elAndAttrib);
-      Criterion<String> wcCriterion = criteria.get(Pair.pair(WILDCARD, attrib));
-      Criterion<String> criterion;
+      RegularCriterion elCriterion = criteria.get(elAndAttrib);
+      RegularCriterion wcCriterion = criteria.get(Pair.pair(WILDCARD, attrib));
+      RegularCriterion criterion;
       if (elCriterion != null) {
         if (wcCriterion != null) {
-          criterion = Criterion.Factory.and(elCriterion, wcCriterion);
+          criterion = RegularCriterion.Factory.and(elCriterion, wcCriterion);
         } else {
           criterion = elCriterion;
         }
       } else if (wcCriterion != null) {
         criterion = wcCriterion;
       } else {
-        criterion = Criterion.Factory.<String>optimist();
+        criterion = RegularCriterion.Factory.optimist();
       }
       String defaultValue = (String) def.get("default", null);
       boolean optional = Boolean.TRUE.equals(def.get("optional", true));
@@ -186,9 +163,10 @@ public final class HtmlSchema {
           }
         }
       }
+      boolean valueless = Boolean.TRUE.equals(def.get("valueless", false));
       HTML.Attribute a = new HTML.Attribute(
-          element, attrib, type, defaultValue, safeValue, optional, mimeTypes,
-          criterion);
+          element, attrib, type, defaultValue, safeValue, valueless, optional,
+          mimeTypes, criterion);
       attributeDetails.put(elAndAttrib, a);
       List<HTML.Attribute> byElement = attributeDetailsByElement.get(element);
       if (byElement == null) {

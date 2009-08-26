@@ -6,6 +6,13 @@
       ],
 
   "types": [
+      { "key": "A::HREF",
+        "mimeTypes": "*/*", "type": "URI", "optional": true,
+        "safeValue": "#",
+        "reason": [
+            "Specify the safe value # since it does not navigate the page"
+            ]
+      },
       {
         "key": "A::TARGET",
         "optional": "true",
@@ -50,7 +57,7 @@
       {
         "key": "INPUT::TYPE",
         "description": "what kind of widget is needed -- disallows FILE and PASSWORD",
-        "pattern": "TEXT|CHECKBOX|RADIO|SUBMIT|RESET|HIDDEN|IMAGE|BUTTON",
+        "values": "text,checkbox,radio,submit,reset,hidden,image,button",
         "optional": true, "default": "TEXT"
       }
       ]

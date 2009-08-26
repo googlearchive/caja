@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+# Extracts JSON from http://www.w3.org/TR/html4/index/attributes.html
+
 use strict;
 
 my %TYPE_CLASSES = (
@@ -83,6 +85,11 @@ while (<STDIN>) {
   my $negatedElementSet = $1;
   my @elements = split m/, /, $2;
 
+  # In the input, the value in the Type column for the "checked" attribute is
+  # "(checked)" meaning it can only assume that value if present, and
+  # similarly for other valueless attributes like selected, multiple, etc. 
+  my $valueless = ("\L$type" eq "\L($name)");
+
   if (exists($TYPE_OVERRIDES{qq'*::$name'})) {
     $type = $TYPE_OVERRIDES{qq'*::$name'};
   }
@@ -106,8 +113,10 @@ while (<STDIN>) {
 
   foreach my $elName (sort(@elNames)) {
     my $elType = $type;
-    if (exists($TYPE_OVERRIDES{qq'$elName::$name'})) {
-      $elType = $TYPE_OVERRIDES{qq'$elName::$name'};
+    my $elAndAttr = qq'$elName\E::$name';
+    print STDERR "$elAndAttr\n" if $valueless;
+    if (exists($TYPE_OVERRIDES{$elAndAttr})) {
+      $elType = $TYPE_OVERRIDES{$elAndAttr};
     }
 
     my $typeName;
@@ -130,12 +139,12 @@ while (<STDIN>) {
 
     my $mimeTypes = undef;
     if ('URI' eq $typeClass) {
-      $mimeTypes = $MIME_TYPES{qq'$elName::$name'}
-          || $MIME_TYPES{qq'*::$name'};
+      $mimeTypes = $MIME_TYPES{$elAndAttr}
+          || $MIME_TYPES{qq'*\E::$name'};
       die qq'$.: mimeTypes: $_' unless $mimeTypes;
     }
     my $descStr = $desc; $descStr =~ s/[\"\\]/\\$&/g;
-    print qq'      { \"key\": \"$elName::$name\",';
+    print qq'      { \"key\": \"$elAndAttr\",';
     print qq' \"description\": \"$descStr\",' if $descStr =~ /\S/;
     print qq'\n       ';
     print qq' \"mimeTypes\": \"$mimeTypes\",' if $mimeTypes;
@@ -155,6 +164,7 @@ while (<STDIN>) {
       $defaultValueStr =~ s/[\"\\]/\\$&/g;
       print qq' \"default\": \"$defaultValueStr\",'
     }
+    print qq' \"valueless\": true,' if $valueless;
     my $optional = $default eq '#REQUIRED' ? 'false' : 'true';
     print qq' \"optional\": $optional';
     print qq' },\n';

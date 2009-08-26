@@ -14,7 +14,6 @@
 
 package com.google.caja.lang.html;
 
-import com.google.caja.util.Criterion;
 import com.google.caja.util.Name;
 
 import java.util.ArrayList;
@@ -177,28 +176,39 @@ public final class HTML {
     /** A known safe value for the attribute. */
     private final String safeValue_;
 
+    /**
+     * Is the attribute's value irrelevent?
+     * The state of the attribute is specified entirely by whether or not it is
+     * present.
+     */
+    private final boolean valueless_;
+
+    /** Is the attribute required on all elements on which it is allowed? */
     private final boolean optional_;
 
     /** Mime-Type for URI attributes. */
     private final String mimeTypes_;
 
-    private final Criterion<String> valueCriterion_;
+    private final RegularCriterion valueCriterion_;
 
     /** Construct an Attribute */
     public Attribute(
         Name elementName, Name attributeName, Type type, String defaultValue,
-        String safeValue, boolean optional, String mimeTypes,
-        Criterion<String> valueCriterion) {
+        String safeValue, boolean valueless, boolean optional, String mimeTypes,
+        RegularCriterion valueCriterion) {
       assert elementName != null;
       assert attributeName != null;
       assert type != null;
       // HACK: null should not be allowed
-      assert safeValue == null || valueCriterion.accept(safeValue);
+      assert safeValue == null || valueCriterion.accept(safeValue)
+          : "[" + safeValue + "] for " + elementName + "::" + attributeName
+            + " with criterion /" + valueCriterion.toRegularExpression() + "/";
       this.elementName_ = elementName;
       this.attributeName_ = attributeName;
       this.type_ = type;
       this.defaultValue_ = defaultValue;
       this.safeValue_ = safeValue;
+      this.valueless_ = valueless;
       this.optional_ = optional;
       this.mimeTypes_ = mimeTypes;
       this.valueCriterion_ = valueCriterion;
@@ -237,8 +247,17 @@ public final class HTML {
     }
 
     /** Accepts values that are allowed for this attribute. */
-    public Criterion<String> getValueCriterion() {
+    public RegularCriterion getValueCriterion() {
       return valueCriterion_;
+    }
+
+    /**
+     * Like the CHECKED attribute on the INPUT element, true iff the
+     * attribute's state is specified entirely by whether or not it is
+     * present.  True for optional attributes that have only one legal value.
+     */
+    public boolean isValueless() {
+      return valueless_;
     }
 
     /** True if the attribute is optional. */
