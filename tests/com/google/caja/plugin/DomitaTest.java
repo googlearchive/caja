@@ -101,9 +101,10 @@ public class DomitaTest extends CajaTestCase {
         + pageName);
 
     int clickRounds = 0;
+    List<WebElement> clickingList = null;
     for (; clickRounds < clickRoundLimit; clickRounds++) {
-      List<WebElement> clickingList =
-         driver.findElements(By.xpath("//*[contains(@class,'clickme')]/*"));
+      clickingList =
+          driver.findElements(By.xpath("//*[contains(@class,'clickme')]/*"));
       if (clickingList.size() == 0) {
         break;
       }
@@ -111,12 +112,16 @@ public class DomitaTest extends CajaTestCase {
         e.click();
       }
     }
-    assertTrue("Too many click rounds.", clickRounds < clickRoundLimit);
+    assertTrue(
+        "Too many click rounds. " +
+        "Remaining elements = " + renderElements(clickingList),
+        clickRounds < clickRoundLimit);
 
     int waitRounds = 0;
+    List<WebElement> waitingList = null;
     for (; waitRounds < waitRoundLimit; waitRounds++) {
-      List<WebElement> waitingList =
-         driver.findElements(By.xpath("//*[contains(@class,'waiting')]/*"));
+      waitingList =
+          driver.findElements(By.xpath("//*[contains(@class,'waiting')]/*"));
       if (waitingList.size() == 0) {
         break;
       }
@@ -124,7 +129,10 @@ public class DomitaTest extends CajaTestCase {
         Thread.sleep(1000);
       } catch (InterruptedException e) {}
     }
-    assertTrue("Too many wait rounds.", waitRounds < waitRoundLimit);
+    assertTrue(
+        "Too many wait rounds. " +
+        "Remaining elements = " + renderElements(waitingList),
+        waitRounds < waitRoundLimit);
 
     // check the title of the document
     String title = driver.getTitle();
@@ -132,5 +140,23 @@ public class DomitaTest extends CajaTestCase {
         title.endsWith("all tests passed"));
     
     driver.quit();
+  }
+
+  private static String renderElements(List<WebElement> elements) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("[");
+    for (int i = 0; i < elements.size(); i++) {
+      sb
+          .append("<")
+          .append(elements.get(i).getElementName())
+          .append(" id=\"")
+          .append(elements.get(i).getAttribute("id"))
+          .append(" class=\"")
+          .append(elements.get(i).getAttribute("class"))
+          .append("\"/>");
+      if (i < elements.size() - 1) { sb.append(", "); }
+    }
+    sb.append("]");
+    return sb.toString();
   }
 }

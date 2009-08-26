@@ -186,7 +186,7 @@
         var div = container.ownerDocument.createElement('DIV');
         div.innerHTML = htmlAndScript[1];
         while (div.firstChild) { container.appendChild(div.firstChild); }
-        (new Function(htmlAndScript[2]))();
+        eval(htmlAndScript[2]);
       }
 
       var isValija = /[&?]valija([=&]|$)/.test(location.search);

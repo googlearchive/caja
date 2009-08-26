@@ -58,6 +58,20 @@
   </form>
 </div>
 
+<!-- This should be the second test case with any FORM nodes in it,
+     so the tests get predictable results. -->
+<form class="testcontainer" id="test-document-forms">Form 0</form>
+
+<form class="testcontainer" id="test-form-elements">
+  <input type="checkbox" name="a">
+  <input type="checkbox" name="a">
+  <input type="checkbox" name="a">
+  <button type="button" name="b">Button B 0</button>
+  <button type="button" name="b">Button B 1</button>
+  <button type="button" name="b">Button B 2</button>
+  <input type="checkbox" name="c">
+</form>
+    
 <form id="test-onreset-form">
   <div class="clickme-testcontainer" id="test-onreset">
     <input type="reset" value="click me">
@@ -741,6 +755,83 @@ jsunitRegister('testCaseInsensitiveAttrs',
   tableNode.addEventListener('click', function(event) {
     pass('test-case-insensitive-attrs');
   });
+});
+
+jsunitRegister('testDocumentForms',
+               function testDocumentForms() {
+  var df = document.forms;
+  assertEquals('test-document-forms', df[1].id);
+  assertTrue(df.length >= 2);
+  pass('test-document-forms');
+});
+
+jsunitRegister('testFormElements',
+               function testFormElements() {
+  var f = document.getElementById('test-form-elements');
+
+  ////////////////////////////////////////////////////////////
+  // Ensure that the form provides access to its elements by
+  // direct property access based on the NAME of the enclosed
+  // form element. This access is HTMLCollection-like, but not
+  // the full HTMLCollection API (it does not include the
+  // namedItem() method).
+
+  // If there exist multiple elements with the same name, the
+  // result of this access must be a DOM NodeList.
+
+  assertEquals(3, f.a.length);
+  assertEquals(3, f.b.length);
+  assertEquals('INPUT', f.a[0].tagName);
+  assertEquals('BUTTON', f.b[0].tagName);
+  assertEquals('INPUT', f.a.item(0).tagName);
+  assertEquals('BUTTON', f.b.item(0).tagName);
+
+  // If there exists only one element with that name, the
+  // result of this access must be that HTMLElement itself.
+  assertEquals('INPUT', f.c.tagName);
+
+  ////////////////////////////////////////////////////////////
+  // Ensure that f.elements is a proper HTMLCollection.
+
+  // Check numeric indexing
+  assertEquals(7, f.elements.length);
+  assertEquals('INPUT', f.elements[0].tagName);
+  assertEquals('BUTTON', f.elements[3].tagName);
+  assertEquals('INPUT', f.elements[6].tagName);
+  assertEquals('INPUT', f.elements.item(0).tagName);
+  assertEquals('BUTTON', f.elements.item(3).tagName);
+  assertEquals('INPUT', f.elements.item(6).tagName);
+  assertFalse(!!f.elements.item(7));
+
+  // Check indexing by name.
+  // If there exist multiple elements with the same name, the
+  // result of this access must be a DOM NodeList.
+  assertEquals(3, f.elements.a.length);
+  assertEquals(3, f.elements.b.length);
+  assertEquals('INPUT', f.elements.a[0].tagName);
+  assertEquals('BUTTON', f.elements.b[0].tagName);
+  assertEquals('INPUT', f.elements.a.item(0).tagName);
+  assertEquals('BUTTON', f.elements.b.item(0).tagName);
+
+  // Check indexing by name.
+  // If there exists only one element with that name, the
+  // result of this access must be that HTMLElement itself.
+  assertEquals('INPUT', f.elements.c.tagName);
+
+  // Check indexing by name.
+  // Nonexistent names return falsy.
+  assertFalse(!!f.elements.d);
+
+  // Check indexing by name.
+  // The namedItem() method will return only the *first*
+  // element having the given name, and nonexistent names
+  // return falsy.
+  assertEquals('INPUT', f.elements.namedItem('a').tagName);
+  assertEquals('BUTTON', f.elements.namedItem('b').tagName);
+  assertEquals('INPUT', f.elements.namedItem('c').tagName);
+  assertFalse(!!f.elements.namedItem('d'));
+
+  pass('test-form-elements');
 });
 
 jsunitRegister('testOnclickHandler',

@@ -1066,42 +1066,125 @@ var attachDocumentStub = (function () {
     }
 
     /**
-     * Returns a NodeList like object.
+     * Returns the length of a raw DOM Nodelist object, working around
+     * NamedNodeMap bugs in IE, Opera, and Safari as discussed at
+     * http://code.google.com/p/google-caja/issues/detail?id=935
+     *
+     * @param nodeList a DOM NodeList.
+     *
+     * @return the number of nodes in the NodeList.
      */
-    function tameNodeList(nodeList, editable, opt_tameNodeCtor, opt_keyAttrib) {
-      var tamed = [];
-      var node;
-
-      // Work around NamedNodeMap bugs in IE, Opera, and Safari as discussed
-      // at http://code.google.com/p/google-caja/issues/detail?id=935
+    function getNodeListLength(nodeList) {
       var limit = nodeList.length;
       if (limit !== +limit) { limit = 1/0; }
-      for (var i = 0; i < limit && (node = nodeList[i]); ++i) {
-        if (!opt_tameNodeCtor) {
-          throw 'Internal: Nonempty tameNodeList() without a tameNodeCtor';
-        }
-        node = opt_tameNodeCtor(nodeList.item(i), editable);
-        tamed[i] = node;
-        // Make the node available via its name if doing so would not mask
-        // any properties of tamed.
-        var key = opt_keyAttrib && node.getAttribute(opt_keyAttrib);
-        // TODO(mikesamuel): if key in tamed, we have an ambiguous match.
-        // Include neither?  This may happen with radio buttons in a form's
-        // elements list.
-        if (key && !(key.charAt(key.length - 1) === '_' || (key in tamed)
-                     || key === String(key & 0x7fffffff))) {
-          tamed[key] = node;
-        }
+      return limit;
+    }
+
+    /**
+     * Constructs a NodeList-like object.
+     *
+     * @param tamed a JavaScript array that will be populated and decorated
+     *     with the DOM NodeList API.
+     * @param nodeList an array-like object supporting a "length" property
+     *     and "[]" numeric indexing, or a raw DOM NodeList;
+     * @param editable whether the tame nodes wrapped by this object
+     *     should permit editing.
+     * @param opt_tameNodeCtor a function for constructing tame nodes
+     *     out of raw DOM nodes.
+     */
+    function mixinNodeList(tamed, nodeList, editable, opt_tameNodeCtor) {
+      var limit = getNodeListLength(nodeList);
+      if (limit > 0 && !opt_tameNodeCtor) {
+        throw 'Internal: Nonempty mixinNodeList() without a tameNodeCtor';
       }
-      node = nodeList = null;
+
+      for (var i = 0; i < limit && nodeList[i]; ++i) {
+        tamed[i] = opt_tameNodeCtor(nodeList[i], editable);
+      }
+
+      // Guard against accidental leakage of untamed nodes
+      nodeList = null;
 
       tamed.item = ___.markFuncFreeze(function (k) {
         k &= 0x7fffffff;
         if (k !== k) { throw new Error(); }
         return tamed[k] || null;
       });
-      // TODO(mikesamuel): if opt_keyAttrib, could implement getNamedItem
-      return cajita.freeze(tamed);
+
+      return tamed;
+    }
+
+    function tameNodeList(nodeList, editable, opt_tameNodeCtor) {
+      return cajita.freeze(
+          mixinNodeList([], nodeList, editable, opt_tameNodeCtor));
+    }
+
+    /**
+     * Return a fake node list containing tamed nodes.
+     * @param {Array.<TameNode>} array of tamed nodes.
+     * @return an array that duck types to a node list.
+     */
+    function fakeNodeList(array) {
+      array.item = ___.markFuncFreeze(function(i) { return array[i]; });
+      return cajita.freeze(array);
+    }
+
+    /**
+     * Constructs an HTMLCollection-like object which indexes its elements
+     * based on their NAME attribute.
+     *
+     * @param tamed a JavaScript array that will be populated and decorated
+     *     with the DOM HTMLCollection API.
+     * @param nodeList an array-like object supporting a "length" property
+     *     and "[]" numeric indexing.
+     * @param editable whether the tame nodes wrapped by this object
+     *     should permit editing.
+     * @param opt_tameNodeCtor a function for constructing tame nodes
+     *     out of raw DOM nodes.
+     */
+    function mixinHTMLCollection(tamed, nodeList, editable, opt_tameNodeCtor) {
+      mixinNodeList(tamed, nodeList, editable, opt_tameNodeCtor);
+
+      var tameNodesByName = {};
+      var tameNode;
+
+      for (var i = 0; i < tamed.length && (tameNode = tamed[i]); ++i) {
+        var name = tameNode.getAttribute('name');
+        if (name && !(name.charAt(name.length - 1) === '_' || (name in tamed)
+                     || name === String(name & 0x7fffffff))) {
+          if (!tameNodesByName[name]) { tameNodesByName[name] = []; }
+          tameNodesByName[name].push(tameNode);
+        }
+      }
+
+      cajita.forOwnKeys(
+        tameNodesByName,
+        ___.markFuncFreeze(function (name, tameNodes) {
+          if (tameNodes.length > 1) {
+            tamed[name] = fakeNodeList(tameNodes);
+          } else {
+            tamed[name] = tameNodes[0];
+          }
+        }));
+
+      tamed.namedItem = ___.markFuncFreeze(function(name) {
+        name = String(name);
+        if (name.charAt(name.length - 1) === '_') {
+          return null;
+        }
+        if (___.hasOwnProp(tamed, name)) {
+          return cajita.hasTrademark(tameNodeTrademark, tamed[name])
+              ? tamed[name] : tamed[name][0];
+        }
+        return null;
+      });
+
+      return tamed;
+    }
+
+    function tameHTMLCollection(nodeList, editable, opt_tameNodeCtor) {
+      return cajita.freeze(
+          mixinHTMLCollection([], nodeList, editable, opt_tameNodeCtor));
     }
 
     function tameGetElementsByTagName(rootNode, tagName, editable) {
@@ -2237,6 +2320,20 @@ var attachDocumentStub = (function () {
           ['action', 'elements', 'enctype', 'method', 'target']);
     }
     inertCtor(TameFormElement, TameElement, 'HTMLFormElement');
+    TameFormElement.prototype.handleRead___ = function (name) {
+      name = String(name);
+      if (endsWith__.test(name)) { return void 0; }
+      // TODO(ihab.awad): Due to the following bug:
+      //     http://code.google.com/p/google-caja/issues/detail?id=997
+      // the read handlers get called on the *prototypes* as well as the
+      // instances on which they are installed. In that case, we just
+      // defer to the super handler, which works for now.
+      if (cajita.hasTrademark(tameNodeTrademark, this)) {
+        var tameElements = this.getElements();
+        if (___.hasOwnProp(tameElements, name)) { return tameElements[name]; }
+      }
+      return TameBackedNode.prototype.handleRead___.call(this, name);
+    };
     TameFormElement.prototype.submit = function () {
       return this.node___.submit();
     };
@@ -2251,8 +2348,8 @@ var attachDocumentStub = (function () {
       return this.setAttribute('action', String(newVal));
     };
     TameFormElement.prototype.getElements = function () {
-      return tameNodeList(
-          this.node___.elements, this.editable___, defaultTameNode, 'name');
+      return tameHTMLCollection(
+          this.node___.elements, this.editable___, defaultTameNode);
     };
     TameFormElement.prototype.getEnctype = function () {
       return this.getAttribute('enctype') || '';
@@ -2983,16 +3080,6 @@ var attachDocumentStub = (function () {
     };
     ___.grantTypedMethod(TameCustomHTMLEvent.prototype, 'initEvent');
 
-    /**
-     * Return a fake node list containing tamed nodes.
-     * @param {Array.<TameNode>} array of tamed nodes.
-     * @return an array that duck types to a node list.
-     */
-    function fakeNodeList(array) {
-      array.item = ___.markFuncFreeze(function(i) { return array[i]; });
-      return cajita.freeze(array);
-    }
-
     function TameHTMLDocument(doc, body, domain, editable) {
       TamePseudoNode.call(this, editable);
       this.doc___ = doc;
@@ -3099,7 +3186,7 @@ var attachDocumentStub = (function () {
       }
       this.documentElement___ = tameHtmlElement;
       classUtils.exportFields(
-          this, ['documentElement', 'body', 'title', 'domain']);
+          this, ['documentElement', 'body', 'title', 'domain', 'forms']);
     }
     inertCtor(TameHTMLDocument, TamePseudoNode, 'HTMLDocument');
     TameHTMLDocument.prototype.getNodeType = function () { return 9; };
@@ -3189,6 +3276,17 @@ var attachDocumentStub = (function () {
       id += idSuffix;
       var node = this.doc___.getElementById(id);
       return defaultTameNode(node, this.editable___);
+    };
+    TameHTMLDocument.prototype.getForms = function () {
+      var tameForms = [];
+      for (var i = 0; i < this.doc___.forms.length; i++) {
+        var tameForm = tameRelatedNode(
+          this.doc___.forms.item(i), this.editable___, defaultTameNode);
+        // tameRelatedNode returns null if the node is not part of
+        // this node's virtual document.
+        if (tameForm !== null) { tameForms.push(tameForm); }
+      }
+      return fakeNodeList(tameForms);
     };
     TameHTMLDocument.prototype.toString = function () {
       return '[Fake Document]';

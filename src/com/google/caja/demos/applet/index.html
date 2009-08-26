@@ -28,7 +28,6 @@
   <div style="display:none">
     <!-- a template for a set of testbed controls and output UI -->
     <div id="testbed-ui" style="display: none">
-      <form id="cajolerForm" onsubmit="return false">
       <table id="testbed-ui-table"><tr valign="top">
       <td>
         <input name="urlval" type="text" size="80" value="http://..."
@@ -50,10 +49,10 @@
          title="Enable valija mode."
          >Valija</label>
         &nbsp;
-        <button type="button" onclick="runPlain(this.form);">Run plain</button>
-        <button type="button" onclick="cajole(this.form)">Cajole</button>
+        <button type="button" onclick="runPlain(getUiSuffix(this));">Run plain</button>
+        <button type="button" onclick="cajole(getUiSuffix(this))">Cajole</button>
         </tr><tr><td valign="top">
-        <label for="htmlsource">Source
+        <label for="htmlsource">Source</label>
         <textarea rows="20" class="htmlsource" name="htmlsource" id="htmlsource"
 >&lt;script type="text/javascript"&gt;
 
@@ -61,7 +60,7 @@
 </textarea>
       <td>
         <div>
-          <label for="caja-html">Rendered Result
+          <label for="caja-html">Rendered Result</label>
           <div class="renderedoutput">
             <div id="caja-html"></div>
           </div>
@@ -73,7 +72,7 @@
         <label for="messages">Compile Warnings and Errors</label>
         <pre id="messages" class="prettyprint variableoutput"></pre><br />
 
-        <label for="runtime-messages">Runtime Warnings and Errors</label>
+        <label for="console-results">Runtime Warnings and Errors</label>
         <pre id="console-results" class="variableoutput"></pre><br />
 
         <label for="output">Cajoled Source</label>
@@ -86,14 +85,30 @@
           <div id="cajita-stack" class="cajita-stack"></div>
         </div><br />
     </table>
-    </form>
     </div>
   </div>
 
 
   <body bgcolor="white" onload="prettyPrint()">
   <!-- Load scripts in body so that document.body is available in IE 6 -->
-  <script type="text/javascript" src="cajita-combined-min.js"></script>
+  <script type="text/javascript" src="json_sans_eval.js"></script>
+  <script type="text/javascript" src="cajita.js"></script>
+  <script type="text/javascript" src="console.js"></script>
+  <script type="text/javascript" src="log-to-console.js"></script>
+  <script type="text/javascript" src="cajita-debugmode.js"></script>
+  <script type="text/javascript" src="unicode.js"></script>
+  <script type="text/javascript" src="css-defs.js"></script>
+  <script type="text/javascript" src="html4-defs.js"></script>
+  <script type="text/javascript" src="html-sanitizer.js"></script>
+  <script type="text/javascript" src="html-emitter.js"></script>
+  <script type="text/javascript" src="setup-valija.js"></script>
+  <script type="text/javascript" src="bridal.js"></script>
+  <script type="text/javascript" src="domita.js"></script>
+  <script type="text/javascript" src="prettify.js"></script>
+  <script type="text/javascript" src="lang-css.js"></script>
+  <script type="text/javascript" src="testbed.js"></script>
+  <script type="text/javascript" src="valija.co.js"></script>
+  <!-- <script type="text/javascript" src="cajita-combined-min.js"></script> -->
   <script>
     function asyncLoadScript(url) {
        var e = document.createElement("script");
@@ -263,14 +278,14 @@ exports.sayBye = function () {
     makeTestbed('.2');
     document.getElementById('testbed-ui.1').style.display = '';
 
-    document.forms['cajolerForm.1'].elements['htmlsource.1'].select();
+    document.getElementById('htmlsource.1').select();
     initTestbeds();
     document.getElementById("cajolerVersion").innerHTML
         = getCajoler().getVersion();
     process_urlparams();
   })();
   </script>
-  <script type='text/javascript' 
+  <script type='text/javascript'
     src='http://getfirebug.com/releases/lite/1.2/firebug-lite-compressed.js'></script>
   </body>
 </html>
