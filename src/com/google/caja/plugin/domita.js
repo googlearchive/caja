@@ -110,7 +110,7 @@ domitaModules.classUtils = function() {
       throw new TypeError('setting a property that only has a getter');
     }
 
-    cajita.forOwnKeys(handlers, 
+    cajita.forOwnKeys(handlers,
                       ___.markFuncFreeze(function (propertyName, def) {
       var setter = def.set || propertyOnlyHasGetter;
       ___.useGetHandler(object, propertyName, def.get);
@@ -603,7 +603,7 @@ var attachDocumentStub = (function () {
   ___.markFuncFreeze(tameClearInterval);
 
   function makeScrollable(element) {
-    var overflow;
+    var overflow = null;
     if (element.currentStyle) {
       overflow = element.currentStyle.overflow;
     } else if (window.getComputedStyle) {
@@ -1217,11 +1217,13 @@ var attachDocumentStub = (function () {
       var classes = className.match(/[^\t\n\f\r ]+/g);
 
       // Filter out classnames in the restricted namespace.
-      for (var i = classes ? classes.length : 0; --i >= 0;) {
+      if (classes) {
+        for (var i = classes.length; --i >= 0;) {
         var classi = classes[i];
-        if (illegalSuffix.test(classi) || !isXmlNmTokens(classi)) {
-          classes[i] = classes[classes.length - 1];
-          --classes.length;
+          if (illegalSuffix.test(classi) || !isXmlNmTokens(classi)) {
+            classes[i] = classes[classes.length - 1];
+            --classes.length;
+          }
         }
       }
 
@@ -2650,21 +2652,21 @@ var attachDocumentStub = (function () {
     TameIFrameElement.prototype.setAlign = function (alignment) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       alignment = String(alignment);
-      if (alignment === 'left' || 
-          alignment === 'right' || 
+      if (alignment === 'left' ||
+          alignment === 'right' ||
           alignment === 'center') {
         this.node___.align = alignment;
       }
     };
     TameIFrameElement.prototype.getAttribute = function(attr) {
-      attrLc = String(attr).toLowerCase();
+      var attrLc = String(attr).toLowerCase();
       if (attrLc !== 'name' && attrLc !== 'src') {
         return TameElement.prototype.getAttribute.call(this, attr);
       }
       return null;
     };
     TameIFrameElement.prototype.setAttribute = function(attr, value) {
-      attrLc = String(attr).toLowerCase();
+      var attrLc = String(attr).toLowerCase();
       // The 'name' and 'src' attributes are whitelisted for all tags in
       // html4-attributes-whitelist.json, since they're needed on tags
       // like <img>.  Because there's currently no way to filter attributes
@@ -2672,7 +2674,7 @@ var attachDocumentStub = (function () {
       if (attrLc !== 'name' && attrLc !== 'src') {
         return TameElement.prototype.setAttribute.call(this, attr, value);
       }
-      cajita.log('Cannot set the [' + nameLc + '] attribute of an iframe.');
+      cajita.log('Cannot set the [' + attrLc + '] attribute of an iframe.');
       return value;
     };
     TameIFrameElement.prototype.getFrameBorder = function () {
@@ -2681,7 +2683,7 @@ var attachDocumentStub = (function () {
     TameIFrameElement.prototype.setFrameBorder = function (border) {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       border = String(border).toLowerCase();
-      if (border === '0' || border === '1' || 
+      if (border === '0' || border === '1' ||
           border === 'no' || border === 'yes') {
         this.node___.frameBorder = border;
       }
@@ -2796,7 +2798,7 @@ var attachDocumentStub = (function () {
       if (!this.editable___) { throw new Error(NOT_EDITABLE); }
       requireIntIn(index, -1, this.node___.cells.length);
       return defaultTameNode(
-          this.node___.insertCell(index), 
+          this.node___.insertCell(index),
           this.editable___);
     };
     TameTableRowElement.prototype.deleteCell = function (index) {
@@ -2856,7 +2858,7 @@ var attachDocumentStub = (function () {
       requireIntIn(index, -1, this.node___.rows.length);
       this.node___.deleteRow(index);
     };
-    
+
     ___.all2(___.grantTypedMethod, TameTableElement.prototype,
              ['createTHead', 'deleteTHead','createTFoot', 'deleteTFoot',
               'createCaption', 'deleteCaption', 'insertRow', 'deleteRow']);
@@ -3419,7 +3421,7 @@ var attachDocumentStub = (function () {
           allCssProperties.getCssPropFromCanonical(stylePropertyName);
       if (!this.allowProperty___(cssPropertyName)) { return void 0; }
       var canonName = allCssProperties.getCanonicalPropFromCss(cssPropertyName);
-      return this.readByCanonicalName___(canonName);      
+      return this.readByCanonicalName___(canonName);
     };
     TameStyle.prototype.handleCall___ = function(name, args) {
       if (String(name) === 'getPropertyValue') {
@@ -4036,7 +4038,7 @@ function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   try {
     var node = imports.tameNode___(thisNode, true);
     return ___.callPub(
-        handler, 
+        handler,
         'call',
         [ node, imports.tameEvent___(event), node ]);
   } catch (ex) {
