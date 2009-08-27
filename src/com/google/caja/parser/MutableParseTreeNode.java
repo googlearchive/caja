@@ -22,8 +22,8 @@ package com.google.caja.parser;
 public interface MutableParseTreeNode extends ParseTreeNode {
 
   /**
-   * @inheritDoc
-   *
+   * {@inheritDoc}
+   * <p>
    * As per {@link ParseTreeNode#acceptPreOrder}, but with the following caveats
    * relating to parse tree manipulation during visiting:
    * <p>Will work even if visitor {@link #replaceChild replaces} this node or a
@@ -35,8 +35,8 @@ public interface MutableParseTreeNode extends ParseTreeNode {
   boolean acceptPreOrder(Visitor v, AncestorChain<?> ancestors);
 
   /**
-   * @inheritDoc
-   *
+   * {@inheritDoc}
+   * <p>
    * As per {@link ParseTreeNode#acceptPostOrder}, but with the following
    * caveats relating to parse tree manipulation during visiting:
    * <p>Will work even if visitor {@link #replaceChild replaces} this node or a

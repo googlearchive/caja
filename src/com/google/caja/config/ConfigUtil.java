@@ -61,7 +61,7 @@ public class ConfigUtil {
    */
   public static final ImportResolver RESOURCE_RESOLVER = new ImportResolver() {
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      * @param uri a URI relative to base, or an absolute URI with scheme in
      *  {@code ("content", "resource")}.
      * @param base null or a URI with scheme in {@code "resource"}.

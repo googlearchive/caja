@@ -50,12 +50,12 @@ abstract class AbstractElementStack implements OpenElementStack {
 
   public final Document getDocument() { return doc; }
 
-  /** @inheritDoc */
+  /** {@inheritDoc} */
   public final DocumentFragment getRootElement() {
     return rootElement;
   }
 
-  /** @inheritDoc */
+  /** {@inheritDoc} */
   public void open(boolean fragment) {}
 
   /** The current element &mdash; according to HTML5 the stack grows down. */

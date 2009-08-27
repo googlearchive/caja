@@ -57,9 +57,7 @@ public class SourceSnippetRenderer implements TokenConsumer {
       if (!evidence.containsKey(renderedLine)) {
         evidence.put(renderedLine, 0);
       }
-      evidence.put(
-          renderedLine,
-          evidence.get(renderedLine) + weight);
+      evidence.put(renderedLine, evidence.get(renderedLine) + weight);
     }
 
     public int computeBestRenderedLine() {

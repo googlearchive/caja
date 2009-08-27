@@ -69,7 +69,7 @@ public class Html5ElementStack implements OpenElementStack {
 
   public final Document getDocument() { return doc; }
 
-  /** @inheritDoc */
+  /** {@inheritDoc} */
   public void open(boolean isFragment) {
     this.isFragment = isFragment;
     builder.setDoctypeExpectation(DoctypeExpectation.NO_DOCTYPE_ERRORS);
@@ -114,18 +114,18 @@ public class Html5ElementStack implements OpenElementStack {
         });
   }
 
-  /** @inheritDoc */
+  /** {@inheritDoc} */
   public void finish(FilePosition endOfFile) {
     builder.finish(endOfFile);
     builder.closeUnclosedNodes();
   }
 
-  /** @inheritDoc */
+  /** {@inheritDoc} */
   public Name canonicalizeElementName(String elementName) {
     return Name.html(elementName);
   }
 
-  /** @inheritDoc */
+  /** {@inheritDoc} */
   public Name canonicalizeAttributeName(String attributeName) {
     return Name.html(attributeName);
   }
@@ -140,7 +140,7 @@ public class Html5ElementStack implements OpenElementStack {
     return Strings.toLowerCase(attributeName);
   }
 
-  /** @inheritDoc */
+  /** {@inheritDoc} */
   public DocumentFragment getRootElement() {
     // libHtmlParser always produces a document with html, head, and body tags
     // which we usually don't want, so unroll it.

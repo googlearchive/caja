@@ -27,7 +27,7 @@ import java.io.IOException;
 public interface Renderable {
 
   /**
-   * Output the textual form to 
+   * Output the textual form to
    * {@link RenderContext#getOut <code>r.getOut()</code>}.
    */
   void render(RenderContext r);
@@ -37,7 +37,7 @@ public interface Renderable {
    * @param out a channel to receive the rendered form.
    * @param handler receives IOExceptions thrown by out.  May be null if out
    *   will not throw an IOException on append.
-   * @see com.google.caja.render
+   * @see <a href="../render/package-summary.html">com.google.caja.render</a>
    */
   TokenConsumer makeRenderer(Appendable out, Callback<IOException> handler);
 }

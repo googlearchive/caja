@@ -56,7 +56,7 @@ class XmlElementStack extends AbstractElementStack {
     return Name.xml(attributeName);
   }
 
-  /** @inheritDoc */
+  /** {@inheritDoc} */
   public void processTag(Token<HtmlTokenType> start, Token<HtmlTokenType> end,
                          List<Attr> attrs)
       throws IllegalDocumentStateException {
@@ -111,7 +111,7 @@ class XmlElementStack extends AbstractElementStack {
     }
   }
 
-  /** @inheritDoc */
+  /** {@inheritDoc} */
   public void processText(Token<HtmlTokenType> text) {
     Node parent = getBottomElement();
 
@@ -156,7 +156,7 @@ class XmlElementStack extends AbstractElementStack {
     doAppend(textNode, parent);
   }
 
-  /** @inheritDoc */
+  /** {@inheritDoc} */
   public void finish(FilePosition endOfDocument)
       throws IllegalDocumentStateException {
     stripIgnorableText();
