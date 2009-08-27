@@ -3580,6 +3580,16 @@ var attachDocumentStub = (function () {
       return idClass;
     };
 
+    // bitmask of trace points
+    //    0x0001 plugin_dispatchEvent
+    imports.domitaTrace___ = 0;
+    imports.getDomitaTrace = ___.markFuncFreeze(
+        function () { return imports.domitaTrace___; }
+    );
+    imports.setDomitaTrace = ___.markFuncFreeze(
+        function (x) { imports.domitaTrace___ = x; }
+    );
+
     // TODO(mikesamuel): remove these, and only expose them via window once
     // Valija works
     imports.setTimeout = tameSetTimeout;
@@ -4016,13 +4026,15 @@ var attachDocumentStub = (function () {
 function plugin_dispatchEvent___(thisNode, event, pluginId, handler) {
   event = (event || window.event);
   var sig = String(handler).match(/^function\b[^\)]*\)/);
-  cajita.log(
-      'Dispatch ' + (event && event.type) +
-      'event thisNode=' + thisNode + ', ' +
-      'event=' + event + ', ' +
-      'pluginId=' + pluginId + ', ' +
-      'handler=' + (sig ? sig[0] : handler));
   var imports = ___.getImports(pluginId);
+  if (imports.domitaTrace___ & 0x1) {
+    cajita.log(
+        'Dispatch ' + (event && event.type) +
+        'event thisNode=' + thisNode + ', ' +
+        'event=' + event + ', ' +
+        'pluginId=' + pluginId + ', ' +
+        'handler=' + (sig ? sig[0] : handler));
+  }
   switch (typeof handler) {
     case 'string':
       handler = imports[handler];
