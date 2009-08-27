@@ -15,6 +15,7 @@
 package com.google.caja.render;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.TokenConsumer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,13 +43,13 @@ public final class CssPrettyPrinter extends AbstractRenderer {
   private char pendingSpace = '\0';
 
   /**
-   * @param out receives the rendered text.
+   * @param out receives the rendered text.  Typically a {@link Concatenator}.
    */
-  public CssPrettyPrinter(Concatenator out) {
+  public CssPrettyPrinter(TokenConsumer out) {
     super(out);
   }
 
-  public void mark(FilePosition pos) {}
+  public void mark(FilePosition pos) { out.mark(pos); }
 
   @Override
   public void consume(String text) {
@@ -143,27 +144,29 @@ public final class CssPrettyPrinter extends AbstractRenderer {
     charInLine += indent;
     String spaces = "                ";
     while (indent >= spaces.length()) {
-      out.append(spaces);
+      out.consume(spaces);
       indent -= spaces.length();
     }
-    out.append(spaces, 0, indent);
+    if (indent != 0) {
+      out.consume(spaces.substring(0, indent));
+    }
   }
 
   private void newLine() {
     if (charInLine == 0) { return; }
     charInLine = 0;
-    out.append("\n");
+    out.consume("\n");
   }
 
   private void space() {
     if (charInLine != 0) {
-      out.append(" ");
+      out.consume(" ");
       ++charInLine;
     }
   }
 
   private void emit(String s) {
-    out.append(s);
+    out.consume(s);
     int n = s.length();
     for (int i = n; --i >= 0;) {
       char ch = s.charAt(i);

@@ -37,8 +37,8 @@ public class JsLinePreservingPrinter extends AbstractRenderer {
   @Override
   public void consume(String text) {
     if ("".equals(text.trim())) { return; }
-    if (pendingSpace != null) { out.append(pendingSpace); }
-    out.append(text);
+    if (pendingSpace != null) { out.consume(pendingSpace); }
+    out.consume(text);
     pendingSpace = " ";
   }
 

@@ -17,18 +17,19 @@ package com.google.caja.render;
 import com.google.caja.lexer.TokenConsumer;
 
 /**
- * A {@link TokenConsumer} that adds the tokens, possibly with intervening
- * whitespace to an {@link Appendable} stream.
+ * A {@link TokenConsumer} that adds the tokens, possibly with changes to
+ * intervening whitespace or normalization of tokens to a simpler TokenConsumer
+ * such as a {@link Concatenator} that dumps tokens to an output buffer.
  *
  * @author mikesamuel@gmail.com
  */
 abstract class AbstractRenderer implements TokenConsumer {
-  protected final Concatenator out;
+  protected final TokenConsumer out;
 
   /**
    * @param out receives the rendered text.
    */
-  AbstractRenderer(Concatenator out) {
+  AbstractRenderer(TokenConsumer out) {
     this.out = out;
   }
 
