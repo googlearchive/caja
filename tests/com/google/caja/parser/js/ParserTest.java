@@ -171,14 +171,12 @@ public class ParserTest extends CajaTestCase {
     runRenderTest("parsertest9.js", "rendergolden9.txt", false, false);
   }
   public final void testThrowAsRestrictedProduction() throws Exception {
-    if (false) {
     try {
       js(fromString("throw \n new Error()"));
       fail("throw followed by newline should fail");
     } catch (ParseException ex) {
       assertEquals(MessageType.EXPECTED_TOKEN,
                    ex.getCajaMessage().getMessageType());
-    }
     }
     // But it should pass if there is a line-continuation
     js(fromString("throw \\\n new Error()"));

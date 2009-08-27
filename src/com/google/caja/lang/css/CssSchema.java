@@ -212,7 +212,7 @@ public final class CssSchema {
       Object type, Criterion<String> permissiveCriterion) {
     if ("*".equals(type)) { return permissiveCriterion; }
     boolean invert = false;
-    if (type instanceof Map) {
+    if (type instanceof Map<?, ?>) {
       Map<?, ?> map = (Map<?, ?>) type;
       if (map.containsKey("exclude")) {
         invert = true;

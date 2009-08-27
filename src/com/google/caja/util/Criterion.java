@@ -111,9 +111,9 @@ public interface Criterion<T> {
      * @return non null.
      */
     public static <T> Criterion<T> not(final Criterion<T> criterion) {
-      return !(criterion instanceof Contrarian)
-        ? new Contrarian<T>(criterion)
-        : ((Contrarian<T>) criterion).c;
+      return !(criterion instanceof Contrarian<?>)
+          ? new Contrarian<T>(criterion)
+          : ((Contrarian<T>) criterion).c;
     }
 
     private static final class Contrarian<T> implements Criterion<T> {

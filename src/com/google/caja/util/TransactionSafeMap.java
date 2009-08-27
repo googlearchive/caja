@@ -124,7 +124,7 @@ public class TransactionSafeMap<K, V> implements Map<K, V> {
       }
       @Override
       public boolean equals(Object o) {
-        if (!(o instanceof Map.Entry)) { return false; }
+        if (!(o instanceof Map.Entry<?, ?>)) { return false; }
         Map.Entry<?, ?> that = (Map.Entry<?, ?>) o;
         return
           (this.getKey() == null ?

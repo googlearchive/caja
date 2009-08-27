@@ -42,7 +42,7 @@ public final class SyntheticAttributeKey<T>
 
   @Override
   public boolean equals(Object obj) {
-    if (!(obj instanceof SyntheticAttributeKey)) {
+    if (!(obj instanceof SyntheticAttributeKey<?>)) {
       return false;
     }
     SyntheticAttributeKey<?> that = (SyntheticAttributeKey<?>) obj;
