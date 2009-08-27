@@ -1219,7 +1219,7 @@ var attachDocumentStub = (function () {
       // Filter out classnames in the restricted namespace.
       if (classes) {
         for (var i = classes.length; --i >= 0;) {
-        var classi = classes[i];
+          var classi = classes[i];
           if (illegalSuffix.test(classi) || !isXmlNmTokens(classi)) {
             classes[i] = classes[classes.length - 1];
             --classes.length;
@@ -2703,14 +2703,14 @@ var attachDocumentStub = (function () {
       this.node___.width = +width;
     };
     TameIFrameElement.prototype.handleRead___ = function (name) {
-      nameLc = String(name).toLowerCase();
+      var nameLc = String(name).toLowerCase();
       if (nameLc !== 'src' && nameLc !== 'name') {
         return TameElement.prototype.handleRead___.call(this, name);
       }
       return undefined;
     };
     TameIFrameElement.prototype.handleSet___ = function (name, value) {
-      nameLc = String(name).toLowerCase();
+      var nameLc = String(name).toLowerCase();
       if (nameLc !== 'src' && nameLc !== 'name') {
         return TameElement.prototype.handleSet___.call(this, name, value);
       }
@@ -2726,8 +2726,8 @@ var attachDocumentStub = (function () {
       TameElement.call(this, node, editable, editable);
       classUtils.exportFields(
           this,
-          ['colSpan','cells','rowSpan','rows','rowIndex','align',
-           'vAlign','nowrap','sectionRowIndex']);
+          ['colSpan', 'cells', 'rowSpan', 'rows', 'rowIndex', 'align',
+           'vAlign', 'nowrap', 'sectionRowIndex']);
     }
     ___.extend(TameTableCompElement, TameElement);
     TameTableCompElement.prototype.getColSpan = function () {
@@ -2811,7 +2811,7 @@ var attachDocumentStub = (function () {
 
     function TameTableElement(node, editable) {
       TameTableCompElement.call(this, node, editable);
-      classUtils.exportFields(this, ['tBodies','tHead','tFoot']);
+      classUtils.exportFields(this, ['tBodies', 'tHead', 'tFoot']);
     }
     inertCtor(TameTableElement, TameTableCompElement, 'HTMLTableElement');
     TameTableElement.prototype.getTBodies = function () {
@@ -2860,7 +2860,7 @@ var attachDocumentStub = (function () {
     };
 
     ___.all2(___.grantTypedMethod, TameTableElement.prototype,
-             ['createTHead', 'deleteTHead','createTFoot', 'deleteTFoot',
+             ['createTHead', 'deleteTHead', 'createTFoot', 'deleteTFoot',
               'createCaption', 'deleteCaption', 'insertRow', 'deleteRow']);
 
     function tameEvent(event) {
