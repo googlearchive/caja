@@ -17,58 +17,24 @@ package com.google.caja.plugin.templates;
 import com.google.caja.lang.css.CssSchema;
 import com.google.caja.lang.html.HTML;
 import com.google.caja.lang.html.HtmlSchema;
-import com.google.caja.lexer.CharProducer;
-import com.google.caja.lexer.CssTokenType;
-import com.google.caja.lexer.ExternalReference;
-import com.google.caja.lexer.FilePosition;
-import com.google.caja.lexer.JsLexer;
-import com.google.caja.lexer.JsTokenQueue;
-import com.google.caja.lexer.Keyword;
-import com.google.caja.lexer.ParseException;
-import com.google.caja.lexer.TokenQueue;
-import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.ParseTreeNode;
-import com.google.caja.parser.ParseTreeNodeContainer;
-import com.google.caja.parser.Visitor;
-import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
-import com.google.caja.parser.js.Declaration;
-import com.google.caja.parser.js.Expression;
-import com.google.caja.parser.js.FunctionConstructor;
-import com.google.caja.parser.js.Identifier;
-import com.google.caja.parser.js.Parser;
-import com.google.caja.parser.js.Reference;
-import com.google.caja.parser.js.Statement;
-import com.google.caja.parser.js.StringLiteral;
-import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.UncajoledModule;
-import com.google.caja.parser.quasiliteral.QuasiBuilder;
-import com.google.caja.parser.quasiliteral.ReservedNames;
-import com.google.caja.plugin.CssRewriter;
-import com.google.caja.plugin.CssValidator;
 import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
-import com.google.caja.reporting.RenderContext;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 
-import java.io.StringReader;
-import java.net.URI;
-import java.net.URISyntaxException;
-
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -92,11 +58,12 @@ import org.w3c.dom.Text;
 public class TemplateCompiler {
   private final List<Node> ihtmlRoots;
   private final List<CssTree.StyleSheet> safeStylesheets;
-  private final CssSchema cssSchema;
   private final HtmlSchema htmlSchema;
   private final PluginMeta meta;
   private final MessageContext mc;
   private final MessageQueue mq;
+  private final HtmlAttributeRewriter aRewriter;
+
   /**
    * Maps {@link Node}s to JS parse trees.
    *
@@ -104,9 +71,6 @@ public class TemplateCompiler {
    *
    * <li>If the value is {@code null}, then the literal value in the
    * original parse tree may be used.</li>
-   *
-   * <li>If the node is an {@code Element}, then the value is an expression
-   * that returns a tag name.</li>
    *
    * <li>If the node is an attribute, then the value is an expression
    * that returns a (key, value) pair.</li>
@@ -121,11 +85,6 @@ public class TemplateCompiler {
    */
   private final Map<Node, ParseTreeNode> scriptsPerNode
       = new IdentityHashMap<Node, ParseTreeNode>();
-  /** Extracted event handler functions. */
-  private final List<Statement> handlers = new ArrayList<Statement>();
-  /** Maps handler attribute source to handler names. */
-  private final Map<String, String> handlerCache
-      = new HashMap<String, String>();
 
   /**
    * @param ihtmlRoots roots of trees to process.
@@ -143,11 +102,11 @@ public class TemplateCompiler {
       PluginMeta meta, MessageContext mc, MessageQueue mq) {
     this.ihtmlRoots = new ArrayList<Node>(ihtmlRoots);
     this.safeStylesheets = new ArrayList<CssTree.StyleSheet>(safeStylesheets);
-    this.cssSchema = cssSchema;
     this.htmlSchema = htmlSchema;
     this.meta = meta;
     this.mc = mc;
     this.mq = mq;
+    this.aRewriter = new HtmlAttributeRewriter(meta, cssSchema, htmlSchema, mq);
   }
 
   /**
@@ -223,8 +182,7 @@ public class TemplateCompiler {
           attr = el.getOwnerDocument().createAttribute(attrNameStr);
           String safeValue;
           if (a.getType() == HTML.Attribute.Type.URI) {
-            safeValue = Nodes.getFilePositionFor(el)
-                .source().getUri().toString();
+            safeValue = "" + Nodes.getFilePositionFor(el).source().getUri();
           } else {
             safeValue = a.getSafeValue();
           }
@@ -275,230 +233,11 @@ public class TemplateCompiler {
    * if it can be statically rewritten.
    */
   private void inspectHtmlAttribute(Attr attr, HTML.Attribute info) {
-    FilePosition pos = Nodes.getFilePositionForValue(attr);
-    String value = attr.getValue();
-
-    Expression dynamicValue;
-    switch (info.getType()) {
-      case CLASSES:
-        if (!checkRestrictedNames(value, pos)) { return; }
-        dynamicValue = null;
-        break;
-      case FRAME_TARGET:
-      case LOCAL_NAME:
-        if (!checkRestrictedName(value, pos)) { return; }
-        dynamicValue = null;
-        break;
-      case GLOBAL_NAME:
-      case ID:
-      case IDREF:
-        if (!checkRestrictedName(value, pos)) { return; }
-        dynamicValue = rewriteIdentifiers(pos, value);
-        break;
-      case IDREFS:
-        if (!checkRestrictedNames(value, pos)) { return; }
-        dynamicValue = rewriteIdentifiers(pos, value);
-        break;
-      case NONE:
-        dynamicValue = null;
-        break;
-      case SCRIPT:
-        String handlerFnName = handlerCache.get(attr.getValue());
-        if (handlerFnName == null) {
-          Block b;
-          try {
-            b = parseJsFromAttrValue(attr);
-          } catch (ParseException ex) {
-            ex.toMessageQueue(mq);
-            return;
-          }
-          if (b.children().isEmpty()) { return; }
-          rewriteEventHandlerReferences(b);
-
-          handlerFnName = meta.generateUniqueName("c");
-          Declaration handler = (Declaration) QuasiBuilder.substV(
-              ""
-              + "var @handlerName = ___./*@synthetic*/markFuncFreeze("
-              + "    /*@synthetic*/function ("
-              + "        event, " + ReservedNames.THIS_NODE + ") { @body*; });",
-              "handlerName", SyntheticNodes.s(
-                  new Identifier(FilePosition.UNKNOWN, handlerFnName)),
-              "body", new ParseTreeNodeContainer(b.children()));
-          handlers.add(handler);
-          handlerCache.put(attr.getValue(), handlerFnName);
-        }
-
-        FunctionConstructor eventAdapter
-            = (FunctionConstructor) QuasiBuilder.substV(
-            ""
-            + "(/*@synthetic*/ function (event) {"
-            + "  return /*@synthetic*/ (plugin_dispatchEvent___("
-            + "      /*@synthetic*/this, event, "
-            + "      ___./*@synthetic*/getId(IMPORTS___), @tail));"
-            + "})",
-            "tail", new Reference(SyntheticNodes.s(
-                new Identifier(pos, handlerFnName))));
-        eventAdapter.setFilePosition(pos);
-        dynamicValue = eventAdapter;
-        break;
-      case STYLE:
-        CssTree.DeclarationGroup decls;
-        try {
-          decls = parseStyleAttrib(attr);
-          if (decls == null) { return; }
-        } catch (ParseException ex) {
-          ex.toMessageQueue(mq);
-          return;
-        }
-
-        // The validator will check that property values are well-formed,
-        // marking those that aren't, and identifies all URLs.
-        CssValidator v = new CssValidator(cssSchema, htmlSchema, mq)
-            .withInvalidNodeMessageLevel(MessageLevel.WARNING);
-        v.validateCss(AncestorChain.instance(decls));
-        // The rewriter will remove any unsafe constructs.
-        // and put URLs in the proper filename namespace
-        new CssRewriter(meta, mq)
-            .withInvalidNodeMessageLevel(MessageLevel.WARNING)
-            .rewrite(AncestorChain.instance(decls));
-
-        StringBuilder css = new StringBuilder();
-        RenderContext rc = new RenderContext(decls.makeRenderer(css, null));
-        decls.render(rc);
-        rc.getOut().noMoreTokens();
-
-        dynamicValue = StringLiteral.valueOf(pos, css);
-        break;
-      case URI:
-        try {
-          URI uri = new URI(value);
-          ExternalReference ref = new ExternalReference(uri, pos);
-          String rewrittenUri = meta.getPluginEnvironment()
-              .rewriteUri(ref, info.getMimeTypes());
-          if (rewrittenUri == null) {
-            mq.addMessage(
-                IhtmlMessageType.MALFORMED_URI, pos,
-                MessagePart.Factory.valueOf(uri.toString()));
-            return;
-          }
-          dynamicValue = StringLiteral.valueOf(
-              ref.getReferencePosition(), rewrittenUri);
-        } catch (URISyntaxException ex) {
-          mq.addMessage(
-              IhtmlMessageType.MALFORMED_URI, pos,
-              MessagePart.Factory.valueOf(value));
-          return;
-        }
-        break;
-      default:
-        throw new RuntimeException(info.getType().name());
+    HtmlAttributeRewriter.SanitizedAttr r = aRewriter.sanitizeStringValue(
+        HtmlAttributeRewriter.fromAttr(attr, info));
+    if (r.isSafe) {
+      scriptsPerNode.put(attr, r.result);
     }
-    scriptsPerNode.put(attr, dynamicValue);
-  }
-
-  private static final Pattern IDENTIFIER_SEPARATOR = Pattern.compile("\\s+");
-  private static final Pattern ALLOWED_NAME = Pattern.compile(
-      "^[\\p{Alpha}_:][\\p{Alnum}.\\-_:]*$");
-  /** True if value is a valid XML names outside the restricted namespace. */
-  private boolean checkRestrictedName(String value, FilePosition pos) {
-    assert "".equals(value) || !IDENTIFIER_SEPARATOR.matcher(value).find();
-    if (ALLOWED_NAME.matcher(value).find()) { return true; }
-    System.err.println("rejected ident `" + value + "`");
-    if (!"".equals(value)) {
-      mq.addMessage(
-          IhtmlMessageType.ILLEGAL_NAME, pos,
-          MessagePart.Factory.valueOf(value));
-    }
-    return false;
-  }
-  /**
-   * True iff value is a space separated group of XML names outside the
-   * restricted namespace.
-   */
-  private boolean checkRestrictedNames(String value, FilePosition pos) {
-    if ("".equals(value)) { return true; }
-    boolean ok = true;
-    for (String ident : IDENTIFIER_SEPARATOR.split(value)) {
-      if ("".equals(ident)) { continue; }
-      if (!ALLOWED_NAME.matcher(ident).matches()) {
-        mq.addMessage(
-            IhtmlMessageType.ILLEGAL_NAME, pos,
-            MessagePart.Factory.valueOf(ident));
-        ok = false;
-      }
-    }
-    return ok;
-  }
-
-  /** "foo bar baz" -> "foo-suffix___ bar-suffix___ baz-suffix___". */
-  private Expression rewriteIdentifiers(FilePosition pos, String names) {
-    if ("".equals(names)) { return null; }
-    String[] idents = IDENTIFIER_SEPARATOR.split(names);
-    String idClass = meta.getIdClass();
-    if (idClass != null) {
-      StringBuilder result = new StringBuilder(names.length());
-      for (String ident : idents) {
-        if ("".equals(ident)) { continue; }
-        if (result.length() != 0) { result.append(' '); }
-        result.append(ident).append('-').append(idClass);
-      }
-      return StringLiteral.valueOf(pos, result.toString());
-    } else {
-      Expression result = null;
-      for (String ident : idents) {
-        if ("".equals(ident)) { continue; }
-        Expression oneRewritten = (Expression) QuasiBuilder.substV(
-            "@ident + IMPORTS___.getIdClass___()",
-            "ident", StringLiteral.valueOf(
-                pos, (result != null ? " " : "") + ident + "-"));
-        if (result != null) {
-          result = QuasiUtil.concat(result, oneRewritten);
-        } else {
-          result = oneRewritten;
-        }
-      }
-      return result;
-    }
-  }
-
-  /**
-   * Convert "this" -> "thisNode___" in event handlers.  Event handlers are
-   * run in a context where this points to the current node.
-   * We need to emulate that but still allow the event handlers to be simple
-   * functions, so we pass in the tamed node as the first parameter.
-   *
-   * The event handler goes from:<br>
-   *   {@code if (this.type === 'text') alert(this.value); }
-   * to a function like:<pre>
-   *   function (thisNode___, event) {
-   *     if (thisNode___.type === 'text') {
-   *       alert(thisNode___.value);
-   *     }
-   *   }</pre>
-   * <p>
-   * And the resulting function is called via a handler attribute like
-   * {@code onchange="plugin_dispatchEvent___(this, node, 1234, 'handlerName')"}
-   */
-  private static void rewriteEventHandlerReferences(Block block) {
-    block.acceptPreOrder(
-        new Visitor() {
-          public boolean visit(AncestorChain<?> ancestors) {
-            ParseTreeNode node = ancestors.node;
-            // Do not recurse into closures.
-            if (node instanceof FunctionConstructor) { return false; }
-            if (node instanceof Reference) {
-              Reference r = (Reference) node;
-              if (Keyword.THIS.toString().equals(r.getIdentifierName())) {
-                Identifier oldRef = r.getIdentifier();
-                Identifier thisNode = new Identifier(
-                    oldRef.getFilePosition(), ReservedNames.THIS_NODE);
-                r.replaceChild(SyntheticNodes.s(thisNode), oldRef);
-              }
-              return false;
-            }
-            return true;
-          }
-        }, null);
   }
 
   /**
@@ -523,7 +262,7 @@ public class TemplateCompiler {
 
     // Emit safe HTML with JS which attaches dynamic attributes.
     SafeHtmlMaker htmlMaker = new SafeHtmlMaker(
-        meta, mc, doc, scriptsPerNode, ihtmlRoots, handlers);
+        meta, mc, doc, scriptsPerNode, ihtmlRoots, aRewriter.getHandlers());
     Pair<Node, List<Block>> htmlAndJs = htmlMaker.make();
     Node html = htmlAndJs.a;
     List<Block> js = htmlAndJs.b;
@@ -540,71 +279,5 @@ public class TemplateCompiler {
       js.remove(firstJs);
     }
     return Pair.pair(html, js);
-  }
-
-  /**
-   * Parses an {@code onclick} handler's or other handler's attribute value
-   * as a javascript statement.
-   */
-  private Block parseJsFromAttrValue(Attr attr) throws ParseException {
-    FilePosition pos = Nodes.getFilePositionForValue(attr);
-    CharProducer cp = fromAttrValue(attr);
-    JsTokenQueue tq = new JsTokenQueue(new JsLexer(cp, false), pos.source());
-    tq.setInputRange(pos);
-    if (tq.isEmpty()) {
-      return new Block(pos, Collections.<Statement>emptyList());
-    }
-    // Parse as a javascript block.
-    Block b = new Parser(tq, mq).parse();
-    // Block will be sanitized in a later pass.
-    b.setFilePosition(pos);
-    return b;
-  }
-
-  /**
-   * Parses a style attribute's value as a CSS declaration group.
-   */
-  private CssTree.DeclarationGroup parseStyleAttrib(Attr a)
-      throws ParseException {
-    CharProducer cp = fromAttrValue(a);
-    // Parse the CSS as a set of declarations separated by semicolons.
-    TokenQueue<CssTokenType> tq = CssParser.makeTokenQueue(cp, mq, false);
-    if (tq.isEmpty()) { return null; }
-    tq.setInputRange(Nodes.getFilePositionForValue(a));
-    CssParser p = new CssParser(tq, mq, MessageLevel.WARNING);
-    CssTree.DeclarationGroup decls = p.parseDeclarationGroup();
-    tq.expectEmpty();
-    return decls;
-  }
-
-  private static CharProducer fromAttrValue(Attr a) {
-    String value = a.getNodeValue();
-    FilePosition pos = Nodes.getFilePositionForValue(a);
-    String rawValue = Nodes.getRawValue(a);
-    // Use the raw value so that the file positions come out right in
-    // error messages.
-    if (rawValue != null) {
-      // The raw value is HTML so we wrap it in an HTML decoder.
-      CharProducer cp = CharProducer.Factory.fromHtmlAttribute(
-          CharProducer.Factory.create(
-              new StringReader(deQuote(rawValue)), pos));
-      // Check if the attribute value has been set since parsing.
-      if (String.valueOf(cp.getBuffer(), cp.getOffset(), cp.getLength())
-          .equals(value)) {
-        return cp;
-      }
-    }
-    // Reached if no raw value stored or if the raw value is out of sync.
-    return CharProducer.Factory.create(new StringReader(value), pos);
-  }
-
-  /** Strip quotes from an attribute value if there are any. */
-  private static String deQuote(String s) {
-    int len = s.length();
-    if (len < 2) { return s; }
-    char ch0 = s.charAt(0);
-    return (('"' == ch0 || '\'' == ch0) && ch0 == s.charAt(len - 1))
-           ? " " + s.substring(1, len - 1) + " "
-           : s;
   }
 }

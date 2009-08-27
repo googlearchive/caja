@@ -42,15 +42,14 @@ public class CssRewriterTest extends CajaTestCase {
             "a, i {\n  display: none\n}");
   }
 
-  // TODO(ihab): Make final decision whether to keep or remove. This test was
-  // disabled since we decided to support more arbitrary HTML, but the deeper
-  // implications are not yet clear.
   public final void testBadTagsRemoved() throws Exception {
-    if (false) {
-      runTest("script { display: none }", "");
-      runTest("strike, script, strong { display: none }",
-              ".test strike, .test strong {\n  display: none\n}");
-    }
+    runTest("script { display: none }", "");
+    runTest("strike, script, strong { display: none }",
+            "strike, strong {\n  display: none\n}");  // See error
+    assertMessage(
+        true, PluginMessageType.UNSAFE_TAG, MessageLevel.ERROR,
+        Name.html("script"));
+    assertNoErrors();
   }
 
   public final void testBadAttribsRemoved() throws Exception {
@@ -307,34 +306,33 @@ public class CssRewriterTest extends CajaTestCase {
                      HtmlSchema.getDefault(mq), mq)
         .validateCss(AncestorChain.instance(t));
     new CssRewriter(
-        new PluginMeta(
-            new PluginEnvironment() {
-              public CharProducer loadExternalResource(
-                  ExternalReference ref, String mimeType) {
+        new PluginEnvironment() {
+          public CharProducer loadExternalResource(
+              ExternalReference ref, String mimeType) {
+            return null;
+          }
+          public String rewriteUri(ExternalReference ref, String mimeType) {
+            URI uri = ref.getUri();
+
+            if ("test".equals(uri.getScheme())  // Used by CajaTestCase
+                && uri.getHost() == null
+                && uri.getPath() != null
+                && uri.getPath().startsWith("/")) {
+              try {
+                return new URI(null, null, "/foo" + uri.getPath(),
+                               uri.getQuery(), uri.getFragment())
+                    .toString();
+              } catch (URISyntaxException ex) {
+                ex.printStackTrace();
                 return null;
               }
-              public String rewriteUri(ExternalReference ref, String mimeType) {
-                URI uri = ref.getUri();
-
-                if ("test".equals(uri.getScheme())  // Used by CajaTestCase
-                    && uri.getHost() == null
-                    && uri.getPath() != null
-                    && uri.getPath().startsWith("/")) {
-                  try {
-                    return new URI(null, null, "/foo" + uri.getPath(),
-                                   uri.getQuery(), uri.getFragment())
-                        .toString();
-                  } catch (URISyntaxException ex) {
-                    ex.printStackTrace();
-                    return null;
-                  }
-                } else if ("whitelisted-host.com".equals(uri.getHost())) {
-                  return uri.toString();
-                } else {
-                  return null;
-                }
-              }
-            }),
+            } else if ("whitelisted-host.com".equals(uri.getHost())) {
+              return uri.toString();
+            } else {
+              return null;
+            }
+          }
+        },
         mq)
         .rewrite(AncestorChain.instance(t));
 

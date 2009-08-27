@@ -18,10 +18,7 @@ import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Expression;
 import com.google.caja.parser.js.ExpressionStmt;
-import com.google.caja.parser.js.Operation;
-import com.google.caja.parser.js.Operator;
 import com.google.caja.parser.js.Statement;
-import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.parser.quasiliteral.QuasiBuilder;
 
 final class QuasiUtil {
@@ -31,26 +28,5 @@ final class QuasiUtil {
       return new ExpressionStmt(FilePosition.UNKNOWN, (Expression) n);
     }
     return (Statement) n;
-  }
-
-
-  static Expression concat(Expression left, Expression... other) {
-    Expression e = left;
-    boolean isString = e instanceof StringLiteral;
-    for (Expression f : other) {
-      if (isString) {
-        if (f instanceof StringLiteral) {
-          e = StringLiteral.valueOf(
-              FilePosition.span(e.getFilePosition(), f.getFilePosition()),
-              ((StringLiteral) e).getUnquotedValue()
-              + ((StringLiteral) f).getUnquotedValue());
-          continue;
-        } else {
-          isString = false;
-        }
-      }
-      e = Operation.createInfix(Operator.ADDITION, e, f);
-    }
-    return e;
   }
 }

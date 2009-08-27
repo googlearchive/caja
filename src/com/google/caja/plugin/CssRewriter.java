@@ -53,14 +53,14 @@ import java.util.regex.Pattern;
  * @author mikesamuel@gmail.com
  */
 public final class CssRewriter {
-  private final PluginMeta meta;
+  private final PluginEnvironment env;
   private final MessageQueue mq;
   private MessageLevel invalidNodeMessageLevel = MessageLevel.ERROR;
 
-  public CssRewriter(PluginMeta meta, MessageQueue mq) {
+  public CssRewriter(PluginEnvironment env, MessageQueue mq) {
     assert null != mq;
-    assert null != meta;
-    this.meta = meta;
+    assert null != env;
+    this.env = env;
     this.mq = mq;
   }
 
@@ -606,8 +606,7 @@ public final class CssRewriter {
               URI uri = baseUri.resolve(new URI(uriStr));
               ExternalReference ref = new ExternalReference(
                   uri, content.getFilePosition());
-              if (meta.getPluginEnvironment().rewriteUri(ref, "image/*")
-                  == null) {
+              if (env.rewriteUri(ref, "image/*") == null) {
                 removeMsg = new Message(
                     PluginMessageType.DISALLOWED_URI,
                     node.getFilePosition(),
@@ -702,8 +701,7 @@ public final class CssRewriter {
                 // mime-type of text/*.
                 ExternalReference ref = new ExternalReference(
                     uri, content.getFilePosition());
-                String rewrittenUri = meta.getPluginEnvironment().rewriteUri(
-                    ref, "image/*");
+                String rewrittenUri = env.rewriteUri(ref, "image/*");
                 CssTree.UriLiteral replacement = new CssTree.UriLiteral(
                         content.getFilePosition(), URI.create(rewrittenUri));
                 replacement.getAttributes().putAll(content.getAttributes());

@@ -40,18 +40,14 @@ import java.io.IOException;
 public class SourceSnippetRenderer implements TokenConsumer {
 
   private class OriginalSourceLine {
-    private final InputSource source;
     private final int lineNo;
     private final String text;
     private Map<Integer, Integer> evidence = new HashMap<Integer, Integer>();
 
-    public OriginalSourceLine(InputSource source, int lineNo, String text) {
-      this.source = source;
+    public OriginalSourceLine(int lineNo, String text) {
       this.lineNo = lineNo;
       this.text = text;
     }
-
-    public InputSource getSource() { return source; }
 
     public int getLineNo() { return lineNo; }
 
@@ -82,17 +78,13 @@ public class SourceSnippetRenderer implements TokenConsumer {
   }
 
   private class RenderedSourceLine {
-    private final int lineNo;
     private final StringBuilder textBuffer = new StringBuilder();
     private final Map<InputSource, Map<Integer, OriginalSourceLine>> lines =
         new HashMap<InputSource, Map<Integer, OriginalSourceLine>>();
 
-    public RenderedSourceLine(int lineNo, String text) {
-      this.lineNo = lineNo;
+    public RenderedSourceLine(String text) {
       textBuffer.append(text);
     }
-
-    public int getLineNo() { return lineNo; }
 
     public void appendText(String text) {
       textBuffer.append(text);
@@ -162,7 +154,7 @@ public class SourceSnippetRenderer implements TokenConsumer {
     this.delegateRenderer = new JsPrettyPrinter(
         new Concatenator(renderedTextAccumulator, exHandler));
     buildOriginalSourceLines(originalSource);
-    renderedLines.add(new RenderedSourceLine(0, ""));
+    renderedLines.add(new RenderedSourceLine(""));
   }
 
   public void mark(FilePosition pos) {
@@ -204,12 +196,12 @@ public class SourceSnippetRenderer implements TokenConsumer {
 
   private void buildOriginalSourceLines(
       Map<InputSource, ? extends CharSequence> originalSource) {
-    for (Map.Entry<InputSource, ? extends CharSequence> entry 
+    for (Map.Entry<InputSource, ? extends CharSequence> entry
         : originalSource.entrySet()) {
       List<OriginalSourceLine> lines = new ArrayList<OriginalSourceLine>();
       String[] text = splitLines(entry.getValue().toString());
       for (int i = 0; i < text.length; i++) {
-        lines.add(new OriginalSourceLine(entry.getKey(), i, text[i]));
+        lines.add(new OriginalSourceLine(i, text[i]));
       }
       originalSourceLines.put(entry.getKey(), lines);
     }
@@ -228,8 +220,7 @@ public class SourceSnippetRenderer implements TokenConsumer {
 
     // Subsequent elements add new lines
     for (int i = 1; i < textLines.length; ++i) {
-      renderedLines.add(
-          new RenderedSourceLine(renderedLines.size(), textLines[i]));
+      renderedLines.add(new RenderedSourceLine(textLines[i]));
       addEvidenceForCurrentMark(mark, textLines[i].length());
     }
   }

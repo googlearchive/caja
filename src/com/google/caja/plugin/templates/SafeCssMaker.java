@@ -84,13 +84,11 @@ final class SafeCssMaker {
         if (n == 0) {
           cssParts.addAll(children);
         } else {
-          cssParts.set(
-              n - 1,
-              QuasiUtil.concat(
-                  cssParts.get(n - 1),
-                  StringLiteral.valueOf(
-                      FilePosition.startOf(child0.getFilePosition()), "\n"),
-                  child0));
+          JsConcatenator cat = new JsConcatenator();
+          cat.append(cssParts.get(n - 1));
+          cat.append(FilePosition.startOf(child0.getFilePosition()), "\n");
+          cat.append(child0);
+          cssParts.set(n - 1, cat.toExpression(false));
           cssParts.addAll(children.subList(1, children.size()));
         }
         dynamicPos = dynamicPos == null

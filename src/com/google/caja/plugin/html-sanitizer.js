@@ -166,7 +166,7 @@ var html = (function () {
   function escapeAttrib(s) {
     // Escaping '=' defangs many UTF-7 and SGML short-tag attacks.
     return s.replace(ampRe, '&amp;').replace(ltRe, '&lt;').replace(gtRe, '&gt;')
-        .replace(quotRe, '&quot;').replace(eqRe, '&#61;');
+        .replace(quotRe, '&#34;').replace(eqRe, '&#61;');
   }
 
   /**
