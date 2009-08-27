@@ -1047,14 +1047,11 @@ var attachDocumentStub = (function () {
 
     function tameRelatedNode(node, editable, tameNodeCtor) {
       if (node === null || node === void 0) { return null; }
-      // catch errors because node might be from a different domain
+      // Catch errors because node might be from a different domain.
       try {
         var docElem = node.ownerDocument.documentElement;
         for (var ancestor = node; ancestor; ancestor = ancestor.parentNode) {
-          // TODO(mikesamuel): replace with cursors so that subtrees are
-          // delegable.
-          // TODO: handle multiple classes.
-          if (idClass === ancestor.className) {
+          if (idClassPattern.test(ancestor.className)) {
             return tameNodeCtor(node, editable);
           } else if (ancestor === docElem) {
             return null;
@@ -3575,6 +3572,8 @@ var attachDocumentStub = (function () {
       throw new Error('id suffix "' + idSuffix + '" must start with "-"');
     }
     var idClass = idSuffix.substring(1);
+    var idClassPattern = new RegExp(
+        '(?:^|\\s)' + idClass.replace(/[\.$]/g, '\\$&') + '(?:\\s|$)');
     /** A per-gadget class used to separate style rules. */
     imports.getIdClass___ = function () {
       return idClass;

@@ -102,12 +102,24 @@ public final class CssRuleRewriter {
             // by this rule.
             CssTree.SimpleSelector baseSelector = (CssTree.SimpleSelector)
                 sel.children().get(0);
-            // If this selector is like body.ie or body.firefox, move over
-            // it so that it remains topmost.
-            if (sel.children().size() > 2
-                && selectorMatchesElement(baseSelector, "body")
-                && isDescendant(sel.children().get(1))) {
-              baseSelector = (CssTree.SimpleSelector) sel.children().get(2);
+            boolean baseIsDescendant = true;
+            if (selectorMatchesElement(baseSelector, "body")) {
+              if (sel.children().size() > 2
+                  && isDescendant(sel.children().get(1))) {
+                // If this selector is like body.ie or body.firefox, move over
+                // it so that it remains topmost.
+                baseSelector = (CssTree.SimpleSelector) sel.children().get(2);
+              } else {
+                // Otherwise, rewrite it to use the class name that is typically
+                // attached to virtual document bodies.
+                CssTree.IdentLiteral elName = (CssTree.IdentLiteral)
+                    baseSelector.children().get(0);
+                baseSelector.replaceChild(
+                    new CssTree.ClassLiteral(
+                        elName.getFilePosition(), ".vdoc-body___"),
+                    elName);
+                baseIsDescendant = false;
+              }
             }
 
             // Use the start position of the base selector as the position of
@@ -115,18 +127,22 @@ public final class CssRuleRewriter {
             FilePosition pos = FilePosition.startOf(
                 baseSelector.getFilePosition());
 
-            CssTree.Combination op = new CssTree.Combination(
-                pos, CssTree.Combinator.DESCENDANT);
-
             CssTree.ClassLiteral restrictClass = new CssTree.ClassLiteral(
                 pos, "." + gadgetNameSuffix);
-            CssTree.SimpleSelector restrictSel = new CssTree.SimpleSelector(
-                pos, Collections.singletonList(restrictClass));
 
-            sel.createMutation()
-               .insertBefore(op, baseSelector)
-               .insertBefore(restrictSel, op)
-               .execute();
+            if (baseIsDescendant) {
+              CssTree.Combination op = new CssTree.Combination(
+                  pos, CssTree.Combinator.DESCENDANT);
+              CssTree.SimpleSelector restrictSel = new CssTree.SimpleSelector(
+                  pos, Collections.singletonList(restrictClass));
+
+              sel.createMutation()
+                 .insertBefore(op, baseSelector)
+                 .insertBefore(restrictSel, op)
+                 .execute();
+            } else {
+              baseSelector.appendChild(restrictClass);
+            }
             return false;
           }
         }, null);

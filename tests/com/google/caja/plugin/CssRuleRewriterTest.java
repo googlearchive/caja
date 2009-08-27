@@ -52,9 +52,12 @@ public class CssRuleRewriterTest extends CajaTestCase {
     assertCompiledCss(
         "body.ie6#zoicks p {color:blue}",
         "[ 'body.ie6#zoicks-', ' .', ' p {\\n  color: blue\\n}' ]");
-    assertCompiledCss(  // Body markers cannot apply to the body directly.
+    assertCompiledCss(  // Body markers do not apply to the body directly.
         "body.ie6 {color:blue}",
-        "[ '.', ' body.ie6 {\\n  color: blue\\n}' ]");
+        "[ '.vdoc-body___.ie6.', ' {\\n  color: blue\\n}' ]");
+    assertCompiledCss(
+        "body { font-size: 12pt }",
+        "[ '.vdoc-body___.', ' {\\n  font-size: 12pt\\n}' ]");
   }
 
   public final void testCompoundRule() {
