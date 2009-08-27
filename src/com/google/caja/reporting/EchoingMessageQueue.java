@@ -26,15 +26,16 @@ import java.util.List;
  * @author mikesamuel@gmail.com
  */
 public class EchoingMessageQueue extends AbstractMessageQueue {
-  private List<Message> messages;
-  private MessageContext mc;
+  private final List<Message> messages;
+  private final MessageContext mc;
+  private boolean dumpStack;
 
   public EchoingMessageQueue(PrintWriter out, MessageContext context) {
     this(out, context, true);
   }
 
   public EchoingMessageQueue(
-      final PrintWriter out, MessageContext context, final boolean dumpStack) {
+      final PrintWriter out, MessageContext context, boolean dumpStack) {
     this.mc = context;
     this.messages = new AbstractList<Message>() {
       List<Message> backing = new ArrayList<Message>();
@@ -46,7 +47,7 @@ public class EchoingMessageQueue extends AbstractMessageQueue {
           out.append(element.getMessageLevel().name()).append(':');
           element.format(mc, out);
           out.append('\n');
-          if (dumpStack && element.getMessageLevel()
+          if (EchoingMessageQueue.this.dumpStack && element.getMessageLevel()
               .compareTo(MessageLevel.LINT) >= 0) {
             new Exception().printStackTrace(out);
           }
@@ -72,6 +73,7 @@ public class EchoingMessageQueue extends AbstractMessageQueue {
       }
 
     };
+    this.dumpStack = dumpStack;
   }
 
   public List<Message> getMessages() {
@@ -79,4 +81,6 @@ public class EchoingMessageQueue extends AbstractMessageQueue {
   }
 
   public MessageContext getMessageContext() { return mc; }
+
+  public void setDumpStack(boolean dumpStack) { this.dumpStack = dumpStack; }
 }

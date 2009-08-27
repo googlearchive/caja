@@ -339,6 +339,20 @@ public abstract class CajaTestCase extends TestCase {
     for (MessagePart expectedPart : parts) {
       for (MessagePart candidate : msg.getMessageParts()) {
         if (candidate.equals(expectedPart)) { continue outerLoop; }
+        if (candidate instanceof FilePosition
+            && expectedPart instanceof FilePosition) {
+          FilePosition a = (FilePosition) candidate;
+          FilePosition b = (FilePosition) expectedPart;
+          // Ignore startCharInFile for purposes of testing to make tests more
+          // robust against changes.
+          if (a.source().equals(b.source())
+              && a.startLineNo() == b.startLineNo()
+              && a.startCharInLine() == b.startCharInLine()
+              && a.endLineNo() == b.endLineNo()
+              && a.endCharInLine() == b.endCharInLine()) {
+            continue outerLoop;
+          }
+        }
       }
       ++missing;
     }

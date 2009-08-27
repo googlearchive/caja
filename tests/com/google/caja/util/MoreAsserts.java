@@ -18,7 +18,7 @@ import java.util.Formatter;
 import java.util.List;
 import java.util.ListIterator;
 
-import junit.framework.Assert;
+import junit.framework.ComparisonFailure;
 
 /**
  * Extensions to junit.framework.Asserts that can be statically imported as by
@@ -83,19 +83,22 @@ public final class MoreAsserts {
       }
     }
 
-    Assert.fail(
+    throw new ComparisonFailure(
         "Expected: {{{\n"
         + snippet(expected,
                   Math.max(commonPrefix - diffContext, 0),
-                  Math.min(m, m - commonSuffix + diffContext))
+                  Math.min(m, m - commonSuffix + diffContext), 84)
         + "\n}}} != {{{\n"
         + snippet(actual,
                   Math.max(commonPrefix - diffContext, 0),
-                  Math.min(n, n - commonSuffix + diffContext))
-        + "\n}}}");
+                  Math.min(n, n - commonSuffix + diffContext), 84)
+        + "\n}}}",
+        snippet(expected, 0, expected.size(), Integer.MAX_VALUE),
+        snippet(actual, 0, actual.size(), Integer.MAX_VALUE)
+        );
   }
 
-  private static String snippet(List<?> a, int start, int end) {
+  private static String snippet(List<?> a, int start, int end, int maxlen) {
     StringBuilder sb = new StringBuilder();
     if (start != 0) {
       sb.append("\t...");
@@ -108,7 +111,7 @@ public final class MoreAsserts {
       if (item != null) {
         String type = item.getClass().getSimpleName();
         f.format("\t%3d %s: %s", Integer.valueOf(index),
-                 abbreviatedString("" + item, 204 - type.length()), type);
+                 abbreviatedString("" + item, maxlen - type.length()), type);
       } else {
         f.format("\t%3d <null>", Integer.valueOf(index));
       }

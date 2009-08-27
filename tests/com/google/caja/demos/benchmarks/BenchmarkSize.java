@@ -33,11 +33,11 @@ import java.util.zip.GZIPOutputStream;
 
 /**
  * Unit test which measures the size of cajoled javascript
- * 
+ *
  * @author Jasvir Nagra (jasvir@gmail.com)
  */
 public class BenchmarkSize extends CajaTestCase {
-  
+
   // Javascript files to benchmark
   // TODO(jasvir): Find a nice collection of "typical" html files!
   String[][] pureJs = {
@@ -56,25 +56,25 @@ public class BenchmarkSize extends CajaTestCase {
       {"loop-empty.js", "testLoopEmpty"},
       {"loop-sum.js", "testLoopSum"},
   };
-  
-  public void testOverhead () throws UnsupportedEncodingException, IOException {
-    varzOverhead("valija", "minify", "plain", 
+
+  public final void testOverhead() throws IOException {
+    varzOverhead("valija", "minify", "plain",
         size(charset(plain(fromResource("../../plugin/domita-minified.js")))) +
         size(charset(plain(fromResource("../../plugin/valija.co.js")))) +
         size(charset(plain(
             fromResource("../../plugin/html-sanitizer-minified.js")))));
-    varzOverhead("valija", "minify", "gzip", 
+    varzOverhead("valija", "minify", "gzip",
         size(gzip(charset(plain(
             fromResource("../../plugin/domita-minified.js"))))) +
         size(gzip(charset(plain(fromResource("../../plugin/valija.co.js"))))) +
         size(gzip(charset(plain(
             fromResource("../../plugin/html-sanitizer-minified.js"))))));
 
-    varzOverhead("cajita", "minify", "plain", 
+    varzOverhead("cajita", "minify", "plain",
         size(charset(plain(fromResource("../../plugin/domita-minified.js")))) +
         size(charset(plain(
             fromResource("../../plugin/html-sanitizer-minified.js")))));
-    varzOverhead("cajita", "minify", "gzip", 
+    varzOverhead("cajita", "minify", "gzip",
         size(gzip(charset(plain(
             fromResource("../../plugin/domita-minified.js"))))) +
         size(gzip(charset(plain(
@@ -88,35 +88,35 @@ public class BenchmarkSize extends CajaTestCase {
    * VarZ:benchmark.<benchmark>.size.<html|js>.<original|cajita|valija>
    *               .<pretty|minified>.<plain|gzip>
    */
-  public void testJavascript () throws ParseException, IOException {
+  public final void testJavascript() throws ParseException, IOException {
     for (String[] pair : pureJs) {
       String js = pair[0];
       String name = pair[1];
-      varzJS(name, "original", "pretty", "plain", 
+      varzJS(name, "original", "pretty", "plain",
           size(charset(plain(fromResource(js)))));
-      varzJS(name, "original", "pretty", "gzip", 
+      varzJS(name, "original", "pretty", "gzip",
           size(gzip(charset((plain(fromResource(js)))))));
-      varzJS(name, "original", "minify", "plain", 
+      varzJS(name, "original", "minify", "plain",
           size(charset(minify(js(fromResource(js))))));
-      varzJS(name, "original", "minify", "gzip", 
+      varzJS(name, "original", "minify", "gzip",
           size(gzip(charset(minify(js(fromResource(js)))))));
 
-      varzJS(name, "cajita", "pretty", "plain", 
+      varzJS(name, "cajita", "pretty", "plain",
           size(charset(render(cajita(js(fromResource(js)))))));
-      varzJS(name, "cajita", "pretty", "gzip", 
+      varzJS(name, "cajita", "pretty", "gzip",
           size(gzip(charset(render(cajita(js(fromResource(js))))))));
-      varzJS(name, "cajita", "minify", "plain", 
+      varzJS(name, "cajita", "minify", "plain",
           size(charset(minify(cajita(js(fromResource(js)))))));
-      varzJS(name, "cajita", "minify", "gzip", 
+      varzJS(name, "cajita", "minify", "gzip",
           size(gzip(charset(minify(cajita(js(fromResource(js))))))));
 
-      varzJS(name, "valija", "pretty", "plain", 
+      varzJS(name, "valija", "pretty", "plain",
           size(charset(render(valija(js(fromResource(js)))))));
-      varzJS(name, "valija", "pretty", "gzip", 
+      varzJS(name, "valija", "pretty", "gzip",
           size(gzip(charset(render(valija(js(fromResource(js))))))));
-      varzJS(name, "valija", "minify", "plain", 
+      varzJS(name, "valija", "minify", "plain",
           size(charset(minify(valija(js(fromResource(js)))))));
-      varzJS(name, "valija", "minify", "gzip", 
+      varzJS(name, "valija", "minify", "gzip",
           size(gzip(charset(minify(valija(js(fromResource(js))))))));
     }
   }
@@ -124,7 +124,7 @@ public class BenchmarkSize extends CajaTestCase {
   private int size(byte[] data) {
     return data == null ? -1 : data.length;
   }
-    
+
   private void varzJS(String name, String lang, String rendering, String enc,
       long value) {
     System.out.println("VarZ:benchmark." + name + ".size.js." +
@@ -140,7 +140,7 @@ public class BenchmarkSize extends CajaTestCase {
   public byte[] charset(String v) throws UnsupportedEncodingException {
     return v == null ? null : v.getBytes("UTF-8");
   }
-  
+
   public byte[] gzip(byte[] data) throws IOException {
     if (data == null) {
       return null;
@@ -151,11 +151,11 @@ public class BenchmarkSize extends CajaTestCase {
     gzipper.finish();
     return stream.toByteArray();
   }
-  
+
   public CajoledModule valija(Block plain) {
     return cajole(plain, true);
   }
-  
+
   public CajoledModule cajita(Block plain) {
     return cajole(plain, false);
   }

@@ -79,8 +79,7 @@ public final class FilePosition implements MessagePart {
   public static FilePosition between(FilePosition a, FilePosition b) {
     if (a.getBreaks() != b.getBreaks()) { return FilePosition.UNKNOWN; }
     int start = a.startCharInFile() + a.length();
-    return new FilePosition(
-          a.getBreaks(), start, b.startCharInFile() - start);
+    return new FilePosition(a.getBreaks(), start, b.startCharInFile() - start);
   }
 
   public static FilePosition instance(
@@ -96,6 +95,7 @@ public final class FilePosition implements MessagePart {
     return breaks.toFilePosition(charInFile, charInFile + length);
   }
 
+  /** Produce a FilePosition divorced from SourceBreaks to ease testing. */
   public static FilePosition fromLinePositions(
       InputSource source,
       int startLineNo, int startCharInLine, int endLineNo, int endCharInLine) {
