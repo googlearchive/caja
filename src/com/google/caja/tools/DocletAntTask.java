@@ -22,6 +22,8 @@ import com.google.caja.parser.quasiliteral.RuleDoclet;
 import com.google.caja.parser.quasiliteral.TextRuleDoclet;
 import com.google.caja.parser.quasiliteral.WikiRuleDoclet;
 import com.google.caja.reporting.BuildInfo;
+import com.google.caja.reporting.MessageQueue;
+import com.google.caja.reporting.SimpleMessageQueue;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -81,6 +83,8 @@ public class DocletAntTask extends Task {
           actuals[i] = Boolean.FALSE;  // No logging
         } else if (BuildInfo.class.isAssignableFrom(ptype)) {
           actuals[i] = BuildInfo.getInstance();
+        } else if (MessageQueue.class.isAssignableFrom(ptype)) {
+          actuals[i] = new SimpleMessageQueue();
         }
         ++i;
       }
