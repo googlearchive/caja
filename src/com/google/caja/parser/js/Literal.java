@@ -41,4 +41,10 @@ public abstract class Literal extends AbstractExpression {
     rc.getOut().mark(getFilePosition());
     rc.getOut().consume(getValue().toString());
   }
+
+  @Override
+  public Expression simplifyForSideEffect() { return null; }
+
+  @Override
+  public Boolean conditionResult() { return getValueInBooleanContext(); }
 }

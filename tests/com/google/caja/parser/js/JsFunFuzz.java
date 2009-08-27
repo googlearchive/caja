@@ -67,10 +67,10 @@ public class JsFunFuzz extends CajaTestCase {
   /**
    * Generates a snippet of Java code suitable for pasting into a JUnit test
    */
-  private String generateTestCase (String testCase, int testCount, String e) {
+  private String generateTestCase(String testCase, int testCount, String e) {
       StringBuilder test = new StringBuilder();
       test.append("  // Should not throw " + e + "\n");
-      test.append("  public void testParse" + testCount + " () {\n");
+      test.append("  public final void testParse" + testCount + "() {\n");
       test.append("    throwsParseException(\n");
       test.append(quoteAndWrap(testCase) + "\n");
       test.append("    );\n");
@@ -84,7 +84,7 @@ public class JsFunFuzz extends CajaTestCase {
    * Fail if the parser throws anything other than a ParseException.
    * Formats and prints the failing case to stderr for pasting in to JUnit tests
    */
-  public void testParsesFuzz() {
+  public final void testParsesFuzz() {
     StringBuilder testCases = new StringBuilder();
     String randomJs = "";
     boolean failed = false;

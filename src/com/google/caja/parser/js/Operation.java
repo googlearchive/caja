@@ -91,6 +91,74 @@ public abstract class Operation extends AbstractExpression {
   public Operator getOperator() { return op; }
 
   @Override
+  public Expression simplifyForSideEffect() {
+    List<? extends Expression> operands;
+    switch (op) {
+      case LOGICAL_OR: case LOGICAL_AND: case COMMA: {
+        operands = children();
+        Expression sa = operands.get(0).simplifyForSideEffect();
+        Expression sb = operands.get(1).simplifyForSideEffect();
+        return sb == null ? sa : sa == null ? sb : this;
+      }
+      case VOID:
+        operands = children();
+        return operands.get(0).simplifyForSideEffect();
+      default: break;
+    }
+    return this;
+  }
+
+  @Override
+  public Boolean conditionResult() {
+    Boolean opResult;
+    List<? extends Expression> operands = children();
+    switch (op) {
+      case COMMA:
+        return operands.get(1).conditionResult();
+      case CONSTRUCTOR:
+        return true;
+      case FUNCTION_CALL:
+        return (operands.get(0) instanceof Operation
+                && Operator.CONSTRUCTOR == operands.get(0).getValue())
+            ? true : null;
+      case LOGICAL_AND:
+        opResult = operands.get(0).conditionResult();
+        if (opResult != null) {
+          return !opResult ? false : operands.get(1).conditionResult();
+        } else {
+          opResult = operands.get(1).conditionResult();
+          if (opResult != null && !opResult) { return false; }
+        }
+        break;
+      case LOGICAL_OR:
+        opResult = operands.get(0).conditionResult();
+        if (opResult != null) {
+          return opResult ? true : operands.get(1).conditionResult();
+        } else {
+          opResult = operands.get(1).conditionResult();
+          if (opResult != null && opResult) { return true; }
+        }
+        break;
+      case TERNARY:
+        opResult = operands.get(0).conditionResult();
+        if (opResult != null) {
+          return operands.get(opResult ? 1 : 2).conditionResult();
+        } else {
+          Boolean a = operands.get(1).conditionResult();
+          Boolean b = operands.get(2).conditionResult();
+          return a != null && a.equals(b) ? a : null;
+        }
+      case NOT:
+        opResult = operands.get(0).conditionResult();
+        return opResult != null ? !opResult : null;
+      case VOID:
+        return false;
+      default: break;
+    }
+    return null;
+  }
+
+  @Override
   public boolean isLeftHandSide() {
     switch (op) {
       case MEMBER_ACCESS:

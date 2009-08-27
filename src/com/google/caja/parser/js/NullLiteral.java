@@ -15,11 +15,14 @@
 package com.google.caja.parser.js;
 
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.Keyword;
 import com.google.caja.parser.ParseTreeNode;
 
 import java.util.List;
 
 /**
+ * A value literal for the <code>{@link Keyword#NULL null}</code> keyword.
+ *
  * @author mikesamuel@gmail.com
  */
 public final class NullLiteral extends Literal {
@@ -41,14 +44,14 @@ public final class NullLiteral extends Literal {
 
   @Override
   public NullPlaceholder getValue() {
-    return VALUE;
+    return NullPlaceholder.VALUE;
   }
 
-  public static final NullPlaceholder VALUE = new NullPlaceholder();
+  private static class NullPlaceholder {
+    static final NullPlaceholder VALUE = new NullPlaceholder();
 
-  public static class NullPlaceholder {
     @Override
-    public String toString() { return "null"; }
+    public String toString() { return Keyword.NULL.toString(); }
 
     private NullPlaceholder() { /* singleton */ }
   }

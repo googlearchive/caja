@@ -42,4 +42,8 @@ public abstract class AbstractExpression
       Appendable out, Callback<IOException> exHandler) {
     return new JsPrettyPrinter(new Concatenator(out, exHandler));
   }
+
+  public Expression simplifyForSideEffect() { return this; }
+
+  public Boolean conditionResult() { return null; }
 }

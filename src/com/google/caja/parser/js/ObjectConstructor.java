@@ -102,6 +102,9 @@ public final class ObjectConstructor extends AbstractExpression {
     return null;
   }
 
+  @Override
+  public Boolean conditionResult() { return true; }
+
   public void render(RenderContext rc) {
     TokenConsumer out = rc.getOut();
     out.mark(getFilePosition());

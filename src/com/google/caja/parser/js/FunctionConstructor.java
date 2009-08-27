@@ -84,6 +84,9 @@ public final class FunctionConstructor
   @Override
   public Object getValue() { return null; }
 
+  @Override
+  public Boolean conditionResult() { return true; }
+
   public void render(RenderContext rc) {
     TokenConsumer out = rc.getOut();
     out.mark(getFilePosition());

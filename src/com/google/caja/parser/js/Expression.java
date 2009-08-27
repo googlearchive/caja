@@ -22,4 +22,19 @@ import com.google.caja.parser.MutableParseTreeNode;
  */
 public interface Expression extends MutableParseTreeNode {
   boolean isLeftHandSide();
+
+  /**
+   * Returns an expression that has identical side effects, but that may return
+   * a different result.
+   * @return null if there are no side effects.
+   */
+  Expression simplifyForSideEffect();
+
+  /**
+   * Returns the result of evaluating the expression in a boolean context or
+   * null if indeterminable.  This result is valid assuming that the expression
+   * does not throw an exception.  If the expression provably always throws
+   * an exception, then it may return any result.
+   */
+  Boolean conditionResult();
 }
