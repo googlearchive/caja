@@ -22,10 +22,11 @@ import com.google.caja.reporting.RenderContext;
 import java.util.List;
 
 /**
- * ES262-12.10: The with statement adds a computed object to the front
+ * ES3-12.10: The with statement adds a computed object to the front
  * of the scope chain of the current execution context, then executes a
  * statement with this augmented scope chain, then restores the scope
- * chain.
+ * chain. (ES5 expresses this in terms of environment records but with 
+ * similar effect.)
  *
  * @author mikesamuel@gmail.com
  */

@@ -85,7 +85,7 @@ public abstract class ParserBase {
    * String form of a regular expression that matches the javascript
    * IdentifierOrKeyword production, with extensions for quasiliteral
    * syntax.
-   * <p>From section 7.6 of
+   * <p>From section 7.6 of EcmaScript 262 Edition 3 (ES3), currently found at
    * http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-262.pdf
    * and based on http://www.erights.org/elang/grammar/quasi-overview.html
    * <pre>

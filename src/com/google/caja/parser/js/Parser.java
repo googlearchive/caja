@@ -46,8 +46,8 @@ import java.util.Set;
  *
  * <p>
  * The grammar below is a context-free representation of the grammar this
- * parser parses.  It disagrees with EcmaScript 262 where implementations
- * disagree with EcmaScript 262.  The rules for semicolon insertion and
+ * parser parses.  It disagrees with EcmaScript 262 Edition 3 (ES3) where 
+ * implementations disagree with ES3.  The rules for semicolon insertion and
  * the possible backtracking in expressions needed to properly handle
  * backtracking are commented thoroughly in code, since semicolon insertion
  * requires information from both the lexer and parser and is not determinable
@@ -567,7 +567,7 @@ public final class Parser extends ParserBase {
           tq.advance();
           AbstractExpression value;
           // Check for semicolon insertion without lookahead since return is a
-          // restricted production.  See the grammar above and ES262 S7.9.1
+          // restricted production. See the grammar above and ES3 or ES5 S7.9.1
           if (semicolonInserted() || tq.lookaheadToken(Punctuation.SEMI)) {
             value = null;
           } else {
@@ -779,7 +779,7 @@ public final class Parser extends ParserBase {
         if (null == op) {
           op = Operator.lookupOperation(t.text, OperatorType.TERNARY);
           // Check for semicolon insertion since postfix operators are
-          // "restricted productions" according to ES262 S7.9.1.
+          // "restricted productions" according to ES3 or ES5 S7.9.1.
           if (null == op) {
             if (!semicolonInserted()) {
               op = Operator.lookupOperation(t.text, OperatorType.POSTFIX);

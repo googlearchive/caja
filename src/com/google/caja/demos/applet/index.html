@@ -184,7 +184,13 @@
                   <applet code="com.google.caja.demos.applet.CajaApplet" name="cajoler"
                     archive="testbed.jar,htmlparser.jar,json_simple.jar,xercesImpl.jar"
                     codebase="." height="1" width="1" scriptable="true" MAYSCRIPT>
+                    <param name="classloader_cache" value="false">
+                    <param name="separate_jvm" value="true">
                   </applet>
+                  <!-- 
+                    See http://java.sun.com/javase/6/webnotes/6u10/plugin2/#SEPARATE_JVM
+                    for documentation of classloader_cache and separate_jvm parameters. 
+                  -->
                 </span><br/>
                 <span style="font-size:12px" id="cajolerVersion"></span>
               </td>

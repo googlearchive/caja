@@ -651,6 +651,21 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         );
   }
   
+  /**
+   * Tests that Error objects are not frozen by being caught by a Valija catch.
+   * 
+   * See issue 1097, issue 1038, 
+   *     and {@link CommonJsRewriterTestCase#testErrorTaming()}}.
+   */
+  public final void testErrorFreeze() throws Exception {
+    rewriteAndExecute(
+            "try {" +
+            "  throw new Error('foo');" +
+            "} catch (ex) {" +
+            "  assertFalse(cajita.isFrozen(ex));" +
+            "}");
+  }
+  
   @Override
   protected Object executePlain(String caja)
       throws IOException, ParseException {

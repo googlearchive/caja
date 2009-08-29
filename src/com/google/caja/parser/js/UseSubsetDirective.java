@@ -29,9 +29,16 @@ import java.util.Set;
  * place restrictions on code that follows.
  *
  * <p>
- * "Use subsets" are defined in ES3.1.
- * An <a href="http://wiki.ecmascript.org/lib/exe/fetch.php?id=es3.1%3Aes3.1_proposal_working_draft&amp;cache=cache&amp;media=es3.1:tc39-es31-draft27oct08.pdf"
- * >ES3.1 draft</a> defines the use grammar as:<blockquote><pre>
+ * "Use subsets" are they were defined in ES5.
+ * Since then the grammar was changed to use a separate string literal per
+ * use-directive. The use-directives do not necessarily define subsets. But 
+ * they typically should define at least almost subsets in practice so 
+ * the code within their scope will still work on browsers that do not 
+ * recognize the "subset" to be used. For example, ES5/strict is not a subset 
+ * of ES5/non-strict. See issue 1111.
+ * 
+ * <p>An <a href="http://wiki.ecmascript.org/lib/exe/fetch.php?id=es3.1%3Aes3.1_proposal_working_draft&amp;cache=cache&amp;media=es3.1:tc39-es31-draft27oct08.pdf"
+ * >ES5 draft</a> defined the use grammar as:<blockquote><pre>
  * UseSubsetDirective opt :
  *     " use SubsetList(opt) " ;
  * SubsetList :
@@ -47,8 +54,7 @@ import java.util.Set;
  *   <li>Evaluate SubsetList
  *   <li>Return Result(1)
  * </ol>
- * TODO(mikesamuel): check after Kona meeting
- *
+ * 
  * <p>
  * The production SubsetList : Subset is evaluated as follows:<ol>
  *   <li>If Subset is not the name of a usage subset that is supported by this

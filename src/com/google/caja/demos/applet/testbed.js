@@ -179,8 +179,7 @@ var cajole = (function () {
       eval(script);
       gadgetPublicApis['gadget' + uiSuffix] = ___.primFreeze(imports.exports);
     } catch (ex) {
-      var cajitaStack = ex.cajitaStack___
-          && ___.unsealCallerStack(ex.cajitaStack___);
+      var cajitaStack = ex.cajitaStack___;
       if (cajitaStack) {
         stackTrace.style.display = '';
         document.getElementById('cajita-stack' + uiSuffix).appendChild(

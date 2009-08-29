@@ -18,7 +18,7 @@ import junit.framework.AssertionFailedError;
 
 /**
  * Contains all the tests that should apply to any JS dialect defined
- * by the Caja project (i.e., Caja or Cajita).
+ * by the Caja project (i.e., Valija or Cajita).
  *
  * @author ihab.awad@gmail.com
  */
@@ -386,7 +386,43 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
         "assertTrue(({}).hasOwnProperty.bind(null)('foo'));" +
         "assertFalse(({bar: 7}).hasOwnProperty.bind(null)('bar'));");
   }
+
+  /**
+   * Tests that Error objects are preserved by tamed try/catch and that they
+   * are born non-frozen.
+   * 
+   * See issue 1097, issue 1038, {@link CajitaRewriterTest#testErrorFreeze},
+   *     and {@link DefaultValijaRewriterTest#testErrorFreeze}.
+   */
+  public final void testErrorTaming() throws Exception {
+    rewriteAndExecute(
+            "var t = new Error('foo');" +
+            "assertFalse(cajita.isFrozen(t));" +
+            "try {" +
+            "  throw t;" +
+            "} catch (ex) {" +
+            "  assertTrue(t === ex);" +
+            "}");
+  }
+  
+  /**
+   * Tests that the apparent [[Class]] of the tamed JSON object is 'JSON', as 
+   * it should be according to ES5.
+   * 
+   * See issue 1086
+   */
+  public final void testJSONClass() throws Exception {
+    rewriteAndExecute(
+            "assertTrue(({}).toString.call(JSON) === '[object JSON]');");
+    
+    // Neither of the following tests pass in both Cajita and Valija.
+    // This does not block closing issue 1086, but is mysterious and so
+    // should be figured out. Filed separately as issue 1114.
+//    rewriteAndExecute("assertTrue(JSON.toString() === '[object JSON]');");
+//    rewriteAndExecute("assertTrue(''+JSON === '[object JSON]');");
+  }
 }
+
 
 // Instructions for reviewers that appear at the end of codereview.appspot.
 // Please make all test methods final so that they cannot be unintentionally

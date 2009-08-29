@@ -554,13 +554,13 @@ function isDomNode(candidate) {
   if (nodeType !== +nodeType) { return false; }
   // If an attacker can invoke Object.watch or define{Getter,Setter}
   // or create their own host objects, they can spoof this step.
-  // In ES3.1, properties and objects can be frozen.
+  // In ES5, properties and objects can be frozen.
   // For that, we'd have to detect the language version
   // and use type checks.
   try {
     candidate.nodeType = null;  // should be read-only for Nodes
   } catch (ex) {
-    // An ES3.1 or SpiderMonkey setter can throw an exception
+    // An ES5 or SpiderMonkey setter can throw an exception
     // after mutating the object, but we have no way to recover
     // from that side-effect.
     return true;

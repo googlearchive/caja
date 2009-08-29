@@ -63,9 +63,13 @@ abstract class BufferingRenderer implements TokenConsumer {
         // When we see a line comment, scan forward until the next non-comment
         // token.  If the canBreakBetween check fails, then remove any
         // line-breaks by rewriting the comment.
-        // We have to rewrite multi-line block comments, since ES3.1 says that
-        // a multi-line comment is replaced with a newline for the purposes
-        // of semicolon insertion.
+        // We have to rewrite multi-line block comments, since ES3 and ES5 say
+        // that a multi-line comment is replaced with a newline for the 
+        // purposes of semicolon insertion.
+        //
+        // This is inconsistently implemented, but the rewriting works 
+        // regardless of whether an implementation actually treats the 
+        // comment as a newline for semicolon insertion.
         String nextToken = null;
         for (int j = i + 1; j < nTokens; ++j) {
           switch (TokenClassification.classify(outputTokens.get(j))) {

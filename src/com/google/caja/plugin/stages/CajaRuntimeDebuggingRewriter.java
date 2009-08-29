@@ -152,18 +152,6 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
     addRule(new AddPositionParamRule() {
           @Override
           @RuleDescription(
-              name="func",
-              synopsis="adds debug info to ___.func calls",
-              reason="",
-              matches="___.markFuncOnly(@fun, @name)",
-              substitutes="___.markFuncOnly(@fun, @name, @debug)")
-          public ParseTreeNode fire(ParseTreeNode n, Scope s) {
-            return super.fire(n, s);
-          }
-        });
-    addRule(new AddPositionParamRule() {
-          @Override
-          @RuleDescription(
               name="frozenFuncAnon",
               synopsis="adds debug info to ___.markFuncFreeze calls",
               reason="",

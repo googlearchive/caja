@@ -72,24 +72,10 @@ Object.prototype.proto___ = null;
 // TODO(erights): Move such extensions to a separate extensions.js.
 ////////////////////////////////////////////////////////////////////////
 
-if (Date.prototype.toISOString === void 0) {
-  /** In anticipation of ES3.1 */
-  Date.prototype.toISOString = function () {
-    function f(n) {
-      return n < 10 ? '0' + n : n;
-    }
-    return (this.getUTCFullYear()     + '-' +
-            f(this.getUTCMonth() + 1) + '-' +
-            f(this.getUTCDate())      + 'T' +
-            f(this.getUTCHours())     + ':' +
-            f(this.getUTCMinutes())   + ':' +
-            f(this.getUTCSeconds())   + 'Z');
-  };
-}
-
-if (Date.prototype.toJSON === void 0) {
-  /** In anticipation of ES3.1 */
-  Date.prototype.toJSON = Date.prototype.toISOString;
+/** In anticipation of ES5 */
+if (Date.prototype.toISOString === void 0 && 
+    typeof Date.prototype.toJSON === 'function') {
+  Date.prototype.toISOString = Date.prototype.toJSON;
 }
 
 /**
@@ -98,7 +84,7 @@ if (Date.prototype.toJSON === void 0) {
  * exotic case of an array-like x with typeof x !== 'object'.
  */
 if (Array.slice === void 0) {
-  Array.slice = function (self, start, end) {
+  Array.slice = function(self, start, end) {
     if (typeof self === 'object') {
       return Array.prototype.slice.call(self, start || 0, end || self.length);
     } else {
@@ -109,7 +95,7 @@ if (Array.slice === void 0) {
 
 
 /**
- * In anticipation of ES3.1.
+ * In anticipation of ES5.
  * <p>
  * Bind this function to <tt>self</tt>, which will serve
  * as the value of <tt>this</tt> during invocation. Curry on a
@@ -127,7 +113,7 @@ if (Array.slice === void 0) {
  * available to Cajita code.
  */
 if (Function.prototype.bind === void 0) {
-  Function.prototype.bind = function (self, var_args) {
+  Function.prototype.bind = function(self, var_args) {
     var thisFunc = this;
     var leftArgs = Array.slice(arguments, 1);
     function funcBound(var_args) {
@@ -136,11 +122,6 @@ if (Function.prototype.bind === void 0) {
     }
     return funcBound;
   };
-}
-
-// Use json_sans_eval.js if there is no native implementation.
-if ('undefined' === typeof JSON) {
-  JSON = { parse: jsonParse };
 }
 
 // The following may or may not exist in the browser-supplied
@@ -274,6 +255,7 @@ var safeJSON;
   }
 
   var myOriginalHOP = Object.prototype.hasOwnProperty;
+  var myOriginalToString = Object.prototype.toString;
 
   /**
    * <tt>hasOwnProp(obj, name)</tt> means what
@@ -559,7 +541,7 @@ var safeJSON;
       return void 0;
     }
     obj = Object(obj);
-    var result = null;
+    var result;
     if (myOriginalHOP.call(obj, 'proto___')) {
       var proto = obj.proto___;
       // At this point we know that (typeOf(proto) === 'object')
@@ -569,6 +551,7 @@ var safeJSON;
       if (result.prototype !== proto || typeOf(result) !== 'function') {
         result = directConstructor(proto);
       }
+
     } else {
       if (!myOriginalHOP.call(obj, 'constructor')) {
         // TODO(erights): Detect whether this is a valid constructor
@@ -596,6 +579,7 @@ var safeJSON;
                oldConstr);
         }
       }
+
       if (typeOf(result) !== 'function' || !(obj instanceof result)) {
         fail('Discovery of direct constructors for foreign begotten ',
              'objects not implemented on this platform.\n');
@@ -653,7 +637,13 @@ var safeJSON;
    * an object literal ("<tt>{...}</tt>") in the JSON language.
    */
   function isRecord(obj) {
-    return isDirectInstanceOf(obj, Object);
+    if (!obj) { return false; }
+    if (obj.RECORD___ === obj) { return true; }
+    if (isDirectInstanceOf(obj, Object)) {
+      obj.RECORD___ = obj;
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -674,6 +664,8 @@ var safeJSON;
    * expressed in the JSON language.
    */
   function isJSONContainer(obj) {
+    if (!obj) { return false; }
+    if (obj.RECORD___ === obj) { return true; }
     var constr = directConstructor(obj);
     if (constr === void 0) { return false; }
     var typeTag = constr.typeTag___;
@@ -771,20 +763,35 @@ var safeJSON;
   }
 
   /**
-   * Like primFreeze(obj), but applicable only to JSON containers and
-   * (pointlessly but harmlessly) to functions.
+   * Like primFreeze(obj), but applicable only to JSON containers,
+   * (pointlessly but harmlessly) to functions, and to Errors.
+   * <p>
+   * Errors are constructed objects whose only whitelisted
+   * properties are <tt>name</tt> and <tt>message</tt>, both of which
+   * are strings on at least all A-grade browsers and on all browsers
+   * that conform to either the ES3 or ES5 specs. Therefore, we
+   * could consider Errors to simply be frozen. We don't only to avoid
+   * slowing down <tt>isFrozen()</tt>, which needs to be really
+   * fast. Instead, we allow cajoled code to freeze it. We also
+   * freeze it in <tt>tameException()</tt>, so all Errors are frozen
+   * by the time cajoled code can catch them.
    */
   function freeze(obj) {
-    if (!isJSONContainer(obj)) {
-      if (typeOf(obj) === 'function') {
-        enforce(isFrozen(obj), 'Internal: non-frozen function: ' + obj);
-        return obj;
-      }
-      fail('cajita.freeze(obj) applies only to JSON Containers: ',
-           debugReference(obj));
+    if (isJSONContainer(obj)) {
+      return primFreeze(obj);
     }
-    return primFreeze(obj);
+    if (typeOf(obj) === 'function') {
+      enforce(isFrozen(obj), 'Internal: non-frozen function: ' + obj);
+      return obj;
+    }
+    if (isInstanceOf(obj, Error)) {
+      return primFreeze(obj);
+    }
+    fail('cajita.freeze(obj) applies only to JSON Containers, ',
+         'functions, and Errors: ',
+         debugReference(obj));
   }
+  
 
   /**
    * Makes a mutable copy of a JSON container.
@@ -994,10 +1001,10 @@ var safeJSON;
    * Mark <tt>constr</tt> as a constructor.
    * <p>
    * A function is tamed and classified by calling one of
-   * <tt>markCtor()</tt>, <tt>markXo4a()</tt>, or <tt>markFuncOnly()</tt>. Each
-   * of these checks that the function hasn't already been classified by
-   * any of the others. A function which has not been so classified is an
-   * <i>untamed function</i>.
+   * <tt>markCtor()</tt>, <tt>markXo4a()</tt>, or
+   * <tt>markFuncFreeze()</tt>. Each of these checks that the function
+   * hasn't already been classified by any of the others. A function
+   * which has not been so classified is an <i>untamed function</i>.
    * <p>
    * If <tt>opt_Sup</tt> is provided, record that const.prototype
    * inherits from opt_Sup.prototype. This bookkeeping helps
@@ -1103,7 +1110,7 @@ var safeJSON;
    */
   function extend(hiddenCtor, someSuper, opt_name) {
     if (!('function' === typeof hiddenCtor)) {
-      throw 'Internal: Provided constructor is not a function';
+      fail('Internal: Provided constructor is not a function');
     }
     someSuper = asCtor(someSuper.prototype.constructor);
     var noop = function () {};
@@ -1112,7 +1119,7 @@ var safeJSON;
     hiddenCtor.prototype.proto___ = someSuper.prototype;
 
     var inert = function() {
-      throw 'This constructor cannot be called directly';
+      fail('This constructor cannot be called directly');
     };
 
     inert.prototype = hiddenCtor.prototype;
@@ -1179,36 +1186,29 @@ var safeJSON;
   }
 
   /**
-   * Mark fun as a simple function.
-   * <p>
-   * For use only by the cajoled output of the Cajita rewriter; not for use
-   * for taming, since it does not also freeze the function. See 
-   * markFuncFreeze.
+   * Mark fun as a simple function and freeze it.
    * <p>
    * opt_name, if provided, should be the name of the
    * function. Currently, this is used only to generate friendlier
-   * error messages.
-   */
-  function markFuncOnly(fun, opt_name) {
-    enforceType(fun, 'function', opt_name);
-    if (isCtor(fun)) {
-      fail("Constructors can't be simple functions: ", fun);
-    }
-    if (isXo4aFunc(fun)) {
-      fail("Exophoric functions can't be simple functions: ", fun);
-    }
-    fun.FUNC___ = true;
-    if (opt_name) {
-      fun.NAME___ = String(opt_name);
-    }
-    return fun;  // translator freezes fun later
-  }
-
-  /**
-   * Mark fun as a simple function and freeze it.
+   * error messages. 
    */
   function markFuncFreeze(fun, opt_name) {
-    return primFreeze(markFuncOnly(fun, opt_name));
+    // inline: enforceType(fun, 'function', opt_name);
+    if (typeOf(fun) !== 'function') {
+      fail('expected function instead of ', typeOf(fun),
+           ': ', (opt_name || fun));
+    }
+
+    // inline: if (isCtor(fun)) {
+    if (fun.CONSTRUCTOR___) {
+      fail("Constructors can't be simple functions: ", fun);
+    }
+    // inline: if (isXo4aFunc(fun)) {
+    if (fun.XO4A___) {
+      fail("Exophoric functions can't be simple functions: ", fun);
+    }
+    fun.FUNC___ = opt_name ? String(opt_name) : true;
+    return primFreeze(fun);
   }
 
   /** This "Only" form doesn't freeze */
@@ -1246,8 +1246,8 @@ var safeJSON;
     if (isCtor(fun)) {
       if (fun === Number || fun === String || fun === Boolean) {
         // TODO(erights): To avoid accidents, <tt>markXo4a</tt>,
-        // <tt>markFuncOnly</tt>, and <tt>markCtor</tt> each ensure that
-        // these classifications are exclusive. A function can be
+        // <tt>markFuncFreeze</tt>, and <tt>markCtor</tt> each ensure
+        // that these classifications are exclusive. A function can be
         // classified as in at most one of these categories. However,
         // some primordial type conversion functions like
         // <tt>String</tt> need to be invocable both ways, so we
@@ -1399,7 +1399,7 @@ var safeJSON;
    */
   function inPub(name, obj) {
     var t = typeof obj;
-    if (obj === null || (t !== "object" && t !== "function")) {
+    if (obj === null || (t !== 'object' && t !== 'function')) {
       throw new TypeError('invalid "in" operand: ' + obj);
     }
     obj = Object(obj);
@@ -1418,8 +1418,8 @@ var safeJSON;
   function readPub(obj, name) {
     if (typeof name === 'number' && name >= 0) {
       if (typeof obj === 'string') {
-        // In partial anticipation of ES3.1.
-        // TODO(erights): Once ES3.1 settles, revisit this and
+        // In partial anticipation of ES5.
+        // TODO(erights): Once ES5 settles, revisit this and
         // correctly implement the agreed semantics.
         // Mike Samuel suggested also making it conditional on
         //  (+name) === (name & 0x7fffffff)
@@ -1435,7 +1435,7 @@ var safeJSON;
     name = String(name);
     if (canReadPub(obj, name)) { return obj[name]; }
     if (obj === null || obj === void 0) {
-      throw new TypeError("Can't read " + name + " on " + obj);
+      throw new TypeError("Can't read " + name + ' on ' + obj);
     }
     return obj.handleRead___(name);
   }
@@ -1493,7 +1493,7 @@ var safeJSON;
     forOwnKeys(permitsUsed, markFuncFreeze(function(name, subPermits) {
       // Don't factor out since we don't enforce frozen if permitsUsed
       // are empty.
-      // TODO(erights): Once we have ES3.1ish attribute control, it
+      // TODO(erights): Once we have ES5ish attribute control, it
       // will suffice to enforce that each used property is frozen
       // independent of the object as a whole.
       enforce(isFrozen(result), 'Assumed frozen: ', result);
@@ -1733,7 +1733,7 @@ var safeJSON;
   function callPub(obj, name, args) {
     name = String(name);
     if (obj === null || obj === void 0) {
-      throw new TypeError("Can't call " + name + " on " + obj);
+      throw new TypeError("Can't call " + name + ' on ' + obj);
     }
     if (obj[name + '_canCall___'] || canCallPub(obj, name)) {
       return obj[name].apply(obj, args);
@@ -1776,7 +1776,7 @@ var safeJSON;
     }
     name = String(name);
     if (obj === null || obj === void 0) {
-      throw new TypeError("Can't set " + name + " on " + obj);
+      throw new TypeError("Can't set " + name + ' on ' + obj);
     }
     if (obj[name + '_canSet___'] === obj) {
       return obj[name] = val;
@@ -1807,9 +1807,8 @@ var safeJSON;
       log('Can only set static members on simple-functions: ' + fun);
       return false;
     }
-    // disallows prototype, call, apply, bind
-    if (staticMemberName in fun) {
-      log('Cannot override static member: ' + staticMemberName);
+    if (staticMemberName === 'toString') {
+      // no diagnostic as this is a normal fault-handling case.
       return false;
     }
     // statics are public
@@ -1817,8 +1816,9 @@ var safeJSON;
       log('Illegal static member name: ' + staticMemberName);
       return false;
     }
-    if (staticMemberName === 'toString') {
-      // no diagnostic as this is a normal fault-handling case.
+    // disallows prototype, call, apply, bind
+    if (staticMemberName in fun) {
+      log('Cannot override static member: ' + staticMemberName);
       return false;
     }
     return true;
@@ -1862,7 +1862,7 @@ var safeJSON;
   function deletePub(obj, name) {
     name = String(name);
     if (obj === null || obj === void 0) {
-      throw new TypeError("Can't delete " + name + " on " + obj);
+      throw new TypeError("Can't delete " + name + ' on ' + obj);
     }
     if (canDeletePub(obj, name)) {
       // See deleteFieldEntirely for reasons why we don't cache deletability.
@@ -1923,44 +1923,75 @@ var safeJSON;
    * A call to cajita.manifest(data) is dynamically ignored, but if the
    * data expression is valid static JSON text, its value is made
    * statically available to the module loader.
+   * <p>
+   * TODO(erights): Find out if this is still the plan.
    */
   function manifest(ignored) {}
 
-  /** Sealer for call stacks as from {@code (new Error).stack}. */
-  var callStackSealer = makeSealerUnsealerPair();
+  /**
+   * All the extra fields observed in Error objects on any supported
+   * browser which seem to carry possibly-useful diagnostic info.
+   * <p>
+   * By "extra", we means any fields other that those already
+   * accessible to cajoled code, namely <tt>name</tt> and
+   * <tt>message</tt>. 
+   */
+  var stackInfoFields = [
+    'stack', 'fileName', 'lineNumer', // Seen in FF 3.0.3
+    'description', // Seen in IE 6.0.2900, but seems identical to "message"
+    'stackTrace', // Seen on Opera 9.51 after enabling
+                  // "opera:config#UserPrefs|Exceptions Have Stacktrace"
+    'sourceURL', 'line' // Seen on Safari 3.1.2
+  ];
 
   /**
-   * Receives the exception caught by a user defined catch block.
-   * @param ex a value caught in a try block.
-   * @return a tamed exception.
+   * If given an Error in which hidden diagnostic info may be found,
+   * return a record in which that diagnostic info is available to
+   * cajoled code. 
+   * <p>
+   * This is so named because it used to be implemented as the
+   * unsealer of a sealer/unsealer pair. TODO(erights) consider
+   * renaming and deprecating the current name.
+   */
+  function callStackUnsealer(ex) {
+    if (ex && isInstanceOf(ex, Error)) {
+      var stackInfo = {};
+      var numStackInfoFields = stackInfoFields.length;
+      for (var i = 0; i < numStackInfoFields; i++) {
+        var k = stackInfoFields[i];
+        if (k in ex) { stackInfo[k] = ex[k]; }
+      }
+      if ('cajitaStack___' in ex) {
+        // Set by cajita-debugmode.js
+        stackInfo.cajitaStack = ex.cajitaStack___;
+      }
+      return primFreeze(stackInfo);
+    }
+    return void 0;
+  }
+
+  /**
+   * Receives whatever was caught by a user defined try/catch block.
+   *
+   * @param ex A value caught in a try block.
+   * @return The value to make available to the cajoled catch block.
    */
   function tameException(ex) {
+    if (ex && ex.UNCATCHABLE___) { throw ex; }
     try {
       switch (typeOf(ex)) {
-        case 'object': {
-          if (ex === null) { return null; }
-          if (isInstanceOf(ex, Error)) {
-            // See Ecma-262 S15.11 for the definitions of these properties.
-            var message = ex.message || ex.desc;
-            var stack = ex.stack;
-            var name = ex.constructor && ex.constructor.name;  // S15.11.7.9
-            // Convert to undefined if falsy, or a string otherwise.
-            message = !message ? void 0 : '' + message;
-            stack = !stack ? void 0 : callStackSealer.seal('' + stack);
-            name = !name ? void 0 : '' + name;
-            return primFreeze({ message: message, name: name, stack: stack });
-          }
-          if (ex.throwable___) { return ex; }
-          return '' + ex;
-        }
         case 'string':
         case 'number':
-        case 'boolean': {
+        case 'boolean': 
+        case 'undefined': {
           // Immutable.
           return ex;
         }
-        case 'undefined': {
-          return (void 0);
+        case 'object': {
+          if (ex === null) { return null; }
+          if (ex.throwable___) { return ex; }
+          if (isInstanceOf(ex, Error)) { return primFreeze(ex); }
+          return '' + ex;
         }
         case 'function': {
           // According to Pratap Lakhsman's "JScript Deviations" S2.11
@@ -1980,16 +2011,21 @@ var safeJSON;
           // problems as with.
 
           // We return a different, powerless function instead.
-          return markFuncFreeze(function () {});
+          var name = '' + (ex.name || ex);
+          function inLieuOfThrownFunction() {
+            return 'In lieu of thrown function: ' + name;
+          };
+          inLieuOfThrownFunction.NAME___ = name;
+          return markFuncFreeze(inLieuOfThrownFunction);
         }
         default: {
-          log('Unrecognized exception type ' + (typeOf(ex)));
-          return 'Unrecognized exception type ' + (typeOf(ex));
+          log('Unrecognized exception type: ' + (typeOf(ex)));
+          return 'Unrecognized exception type: ' + (typeOf(ex));
         }
       }
     } catch (_) {
       // Can occur if coercion to string fails, or if ex has getters
-      // that fail.  This function must never throw an exception
+      // that fail. This function must never throw an exception
       // because doing so would cause control to leave a catch block
       // before the handler fires.
       log('Exception during exception handling.');
@@ -2001,12 +2037,32 @@ var safeJSON;
    * Makes a new empty object that directly inherits from <tt>proto</tt>.
    */
   function primBeget(proto) {
-    if (proto === null) { fail("Cannot beget from null."); }
-    if (proto === (void 0)) { fail("Cannot beget from undefined."); }
+    if (proto === null) { fail('Cannot beget from null.'); }
+    if (proto === (void 0)) { fail('Cannot beget from undefined.'); }
     function F() {}
     F.prototype = proto;
     var result = new F();
     result.proto___ = proto;
+    return result;
+  }
+
+  /**
+   * Creates a well formed Cajita record from a list of alternating
+   * keys and values. 
+   * <p>
+   * The translator translates Cajita object literals into calls to
+   * <tt>initializeMap</tt> so that a potentially toxic function
+   * cannot be made the <tt>toString</tt> property of even a temporary
+   * object. 
+   */
+  function initializeMap(list) {
+    var result = {};
+    for (var i = 0; i < list.length; i += 2) {
+      // Call asFirstClass() here to prevent, for example, a toxic
+      // function being used as the toString property of an object
+      // literal.
+      setPub(result, list[i], asFirstClass(list[i + 1]));
+    }
     return result;
   }
 
@@ -2279,7 +2335,13 @@ var safeJSON;
   /// Object
 
   markCtor(Object, void 0, 'Object');
-  grantToString(Object.prototype);
+  Object.prototype.TOSTRING___ = markXo4a(function() {
+    if (this.CLASS___) {
+      return '[object ' + this.CLASS___ + ']';
+    } else {
+      return myOriginalToString.call(this);
+    }
+  });
   all2(grantGenericMethod, Object.prototype, [
     'toLocaleString', 'valueOf', 'isPrototypeOf'
   ]);
@@ -2407,7 +2469,7 @@ var safeJSON;
   all2(grantTypedMethod, Date.prototype, [
     'toDateString','toTimeString', 'toUTCString',
     'toLocaleString', 'toLocaleDateString', 'toLocaleTimeString',
-    'toISOString',
+    'toISOString', 'toJSON',
     'getDay', 'getUTCDay', 'getTimezoneOffset',
 
     'getTime', 'getFullYear', 'getUTCFullYear', 'getMonth', 'getUTCMonth',
@@ -2557,7 +2619,7 @@ var safeJSON;
        * Runs the newModule's module function.
        * <p>
        * Updates the last outcome to report the module function's
-       * reported outcome. Propogate this outcome by terminating in
+       * reported outcome. Propagate this outcome by terminating in
        * the same manner.
        */
       handle: markFuncFreeze(function handle(newModule) {
@@ -2635,7 +2697,7 @@ var safeJSON;
     function theModule(imports) {
       return module.instantiate(___, imports);
     }
-    markFuncOnly(theModule);
+    theModule.FUNC___ = 'theModule';
       
     forOwnKeys(module, markFuncFreeze(function(k, v) {
       if (k != 'instantiate') {
@@ -2733,77 +2795,251 @@ var safeJSON;
 
 
   ////////////////////////////////////////////////////////////////////////
-  // Trademarking
+  // Guards and Trademarks
   ////////////////////////////////////////////////////////////////////////
 
   /**
-   * Return a trademark object.
+   * The identity function just returns its argument.
    */
-  function Trademark(name) {
-    return Token(name);
+  function identity(x) { return x; }
+
+  /**
+   * One-arg form is known in scheme as "call with escape
+   * continuation", and is the semantics currently proposed for
+   * EcmaScript Harmony's "return to label".
+   * <p>
+   * In this analogy, a call to <tt>escape</tt> emulates a labeled
+   * statement. The ejector passed to the <tt>attemptFunc</tt>
+   * emulates the label part. The <tt>attemptFunc</tt> itself
+   * emulates the statement being labeled. And a call to
+   * <tt>eject</tt> with this ejector emulates the return-to-label
+   * statement. 
+   * <p>
+   * We extend the normal notion of call/ec with an
+   * <tt>opt_failFunc</tt> in order to give more the sense of a
+   * <tt>try/catch</tt> (or similarly, the <tt>escape</tt> special
+   * form in E). The <tt>attemptFunc</tt> is like the <tt>try</tt>
+   * clause and the <tt>opt_failFunc</tt> is like the <tt>catch</tt>
+   * clause. If omitted, <tt>opt_failFunc</tt> defaults to the
+   * <tt>identity</tt> function. 
+   * <p>
+   * <tt>escape</tt> creates a fresh ejector -- a one argument
+   * function -- for exiting from this attempt. It then calls
+   * <tt>attemptFunc</tt> passing that ejector as argument. If
+   * <tt>attemptFunc</tt> completes without calling the ejector, then
+   * this call to <tt>escape</tt> completes likewise. Otherwise, if the
+   * ejector is called with an argument, then <tt>opt_failFunc</tt> is
+   * called with that argument. The completion of <tt>opt_failFunc</tt>
+   * is then the completion of the <tt>escape</tt> as a whole.
+   * <p>
+   * The ejector stays live until <tt>attemptFunc</tt> is exited, at
+   * which point the ejector is disabled. Calling a disabled ejector
+   * throws. 
+   * <p>
+   * In order to emulate the semantics I expect of ES-Harmony's
+   * return-to-label and to prevent the reification of the internal
+   * token thrown in order to emulate call/ec, <tt>tameException</tt>
+   * immediately rethrows this token, preventing Cajita and Valija
+   * <tt>catch</tt> clauses from catching it. However,
+   * <tt>finally</tt> clauses will still be run while unwinding an
+   * ejection. If these do their own non-local exit, that takes
+   * precedence over the ejection in progress but leave the ejector
+   * live. 
+   * <p>
+   * Historic note: I believe the first invention of this abstraction
+   * is by John C. Reynolds circa 1967. XXX find name of
+   * paper. Reynold's invention was a special form as in E, rather
+   * than a higher order function as here and in call/ec.
+   */
+  function escape(attemptFunc, opt_failFunc) {
+    var failFunc = opt_failFunc || identity;
+    var disabled = false;
+    var token = new Token('ejection');
+    token.UNCATCHABLE___ = true;
+    var stash;
+    function ejector(result) {
+      if (disabled) {
+        cajita.fail('ejector disabled');
+      } else {
+        // don't disable here.
+        stash = result;
+        throw token;
+      }
+    }
+    markFuncFreeze(ejector);
+    try {
+      try {
+        return callPub(attemptFunc, 'call', [USELESS, ejector]);
+      } finally {
+        disabled = true;
+      }
+    } catch (e) {
+      if (e === token) {
+        return callPub(failFunc, 'call', [USELESS, stash]);
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  /**
+   * Safely invokes <tt>opt_ejector</tt> with <tt>result</tt>.
+   * <p>
+   * If <tt>opt_ejector</tt> is falsy, disabled, or returns
+   * normally, then <tt>eject</tt> throws. Under no conditions does
+   * <tt>eject</tt> return normally.
+   */
+  function eject(opt_ejector, result) {
+    if (opt_ejector) {
+      callPub(opt_ejector, 'call', [USELESS, result]);
+      fail('Ejector did not exit: ', opt_ejector);
+    } else {
+      fail(result);
+    }
+  }
+  
+  /**
+   * Internal routine for making a trademark from a table.
+   * <p>
+   * To untangle a cycle, the guard made by <tt>makeTrademark</tt> is
+   * not yet either stamped or frozen. The caller of
+   * <tt>makeTrademark</tt> must do both before allowing it to
+   * escape. 
+   */
+  function makeTrademark(typename, table) {
+    typename = String(typename);
+    return primFreeze({
+      toString: markFuncFreeze(function() { return typename + 'Mark'; }),
+
+      stamp: primFreeze({
+        toString: markFuncFreeze(function() { return typename + 'Stamp'; }),
+        mark___: markFuncFreeze(function(obj) {
+          table.set(obj, true);
+          return obj;
+        })
+      }),
+
+      guard: {
+        toString: markFuncFreeze(function() { return typename + 'T'; }),
+        coerce: markFuncFreeze(function(specimen, opt_ejector) {
+          if (table.get(specimen)) { return specimen; }
+          eject(opt_ejector,
+                'Specimen does not have the "' + typename + '" trademark');
+        })
+      }
+    });
+  }
+
+  /**
+   * Objects representing guards should be marked as such, so that
+   * they will pass the <tt>GuardT</tt> guard.
+   * <p>
+   * <tt>GuardT</tt> is generally accessible as
+   * <tt>cajita.GuardT</tt>. However, <tt>GuardStamp</tt> must not be
+   * made generally accessible, but rather only given to code trusted
+   * to use it to deem as guards things that act in a guard-like
+   * manner: A guard MUST be immutable and SHOULD be idempotent. By
+   * "idempotent", we mean that<pre>
+   *     var x = g(specimen, ej); // may fail
+   *     // if we're still here, then without further failure
+   *     g(x) === x
+   * </pre>
+   */
+  var GuardMark = makeTrademark('Guard', newTable(true));
+  var GuardT = GuardMark.guard;
+  var GuardStamp = GuardMark.stamp;
+  primFreeze(GuardStamp.mark___(GuardT));  
+
+  /**
+   * The <tt>Trademark</tt> constructor makes a trademark, which is a
+   * guard/stamp pair, where the stamp marks and freezes unfrozen
+   * records as carrying that trademark and the corresponding guard
+   * cerifies objects as carrying that trademark (and therefore as
+   * having been marked by that stamp).
+   * <p>
+   * By convention, a guard representing the type-like concept 'Foo'
+   * is named 'FooT'. The corresponding stamp is 'FooStamp'. And the
+   * record holding both is 'FooMark'. Many guards also have
+   * <tt>of</tt> methods for making guards like themselves but
+   * parameterized by further constraints, which are usually other
+   * guards. For example, <tt>T.ListT</tt> is the guard representing
+   * frozen array, whereas <tt>T.ListT.of(cajita.GuardT)</tt>
+   * represents frozen arrays of guards.
+   */
+  function Trademark(typename) {
+    var result = makeTrademark(typename, newTable(true));
+    primFreeze(GuardStamp.mark___(result.guard));
+    return result;
   }
   markFuncFreeze(Trademark);
 
   /**
-   * Returns true if the object has a list of trademarks
-   * and the given trademark is in the list.
+   * First ensures that g is a guard; then does 
+   * <tt>g.coerce(specimen, opt_ejector)</tt>.
    */
-  function hasTrademark(trademark, obj) {
-    if (!hasOwnProp(obj, 'trademarks___')) { return false; }
-    var list = obj.trademarks___;
-    for (var i = 0; i < list.length; ++i) {
-      if (list[i] === trademark) { return true; }
-    }
-    return false;
+  function guard(g, specimen, opt_ejector) {
+    g = GuardT.coerce(g); // failure throws rather than ejects
+    return g.coerce(specimen, opt_ejector);
   }
 
   /**
-   * Throws an exception if the object does not have any trademarks or
-   * the given trademark is not in the list of trademarks.
+   * First ensures that g is a guard; then checks whether the specimen
+   * passes that guard.
+   * <p>
+   * If g is a coercing guard, this only checks that g coerces the
+   * specimen to something rather than failing. Note that trademark
+   * guards are non-coercing, so if specimen passes a trademark guard,
+   * then specimen itself has been marked with that trademark.
    */
-  function guard(trademark, obj) {
-    if (!hasTrademark(trademark, obj)) {
-      fail('Object "' + obj + '" does not have the "'
-           + (trademark.toString() || '*unknown*') + '" trademark');
-    }
+  function passesGuard(g, specimen) {
+    g = GuardT.coerce(g); // failure throws rather than ejects
+    return escape(
+      markFuncFreeze(function(opt_ejector) {
+        g.coerce(specimen, opt_ejector);
+        return true;
+      }),
+      markFuncFreeze(function(ignored) {
+        return false;
+      })
+    );
   }
 
   /**
-   * This function adds the given trademark to the given object's list of
-   * trademarks.
-   * If the trademark list doesn't exist yet, this function creates it.
-   * JSON containers and functions may be stamped at any time; constructed
-   * objects may only be stamped during construction unless the third
-   * parameter is truthy.
+   * Given that <tt>stamps</tt> is a list of stamps and
+   * <tt>record</tt> is a non-frozen record, this marks record with
+   * the trademarks of all of these stamps, and then freezes and
+   * returns the record.
+   * <p>
+   * If any of these conditions do not hold, this throws.
    */
-  function stamp(trademark, obj, opt_allow_constructed) {
-    if (typeOf(trademark) !== 'object') {
-      fail('The supplied trademark is not an object.');
+  function stamp(stamps, record) {
+    if (!isRecord(record)) {
+      fail('Can only stamp records: ', record);
     }
-    if (isFrozen(obj)) { fail('The supplied object ' + obj + ' is frozen.'); }
-    if (!isJSONContainer(obj) &&
-        (typeOf(obj) !== 'function') &&
-        !obj.underConstruction___ &&
-        !opt_allow_constructed) {
-      fail('The supplied object ', obj,
-           ' has already been constructed and may not be stamped.');
+    if (isFrozen(record)) {
+      fail("Can't stamp frozen objects: ", record);
     }
-    var list = obj.underConstruction___ ?
-        'delayedTrademarks___' : 'trademarks___';
-    if (!obj[list]) { obj[list] = []; }
-    obj[list].push(trademark);
-    return obj;
-  }
-
-  function initializeMap(list) {
-    var result = {};
-    for (var i = 0; i < list.length; i += 2) {
-      // Call asFirstClass() here to prevent, for example, a toxic
-      // function being used as the toString property of an object
-      // literal.
-      setPub(result, list[i], asFirstClass(list[i + 1]));
+    var numStamps = stamps.length >>> 0;
+    // First ensure that we will succeed before applying any stamps to
+    // the record. If we ever extend Cajita with mutating getters, we
+    // will need to do more to ensure impossibility of failure after
+    // partial stamping.
+    for (var i = 0; i < numStamps; i++) {
+      if (!('mark___' in stamps[i])) {
+        fail("Can't stamp with a non-stamp: ", stamps[i]);
+      }
     }
-    return result;
+    // Looping again over the same untrusted stamps alleged-array is safe
+    // assuming single-threaded execution and non-mutating accessors.
+    // If we extend Cajita to allow getters/setters, we'll need to make a 
+    // copy of the array above and loop over the copy below.
+    for (var i = 0; i < numStamps; i++) {
+      var stamp = stamps[i];
+      // Only works for real stamps, postponing the need for a
+      // user-implementable auditing protocol.
+      stamp.mark___(record);
+    }
+    return freeze(record);
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -2813,34 +3049,33 @@ var safeJSON;
   /**
    * Returns a pair of functions such that the seal(x) wraps x in an object
    * so that only unseal can get x back from the object.
+   * <p>
+   * TODO(erights): The only remaining use as of this writing is
+   * in domita for css. Perhaps a refactoring is in order.
    *
    * @return {object} of the form
-   *     { seal: function seal(x) { return {}; },
-   *       unseal: function unseal(obj) { return x; } }.
+   *     { seal: function seal(x) { return Token('(box)'); },
+   *       unseal: function unseal(box) { return x; } }.
    */
   function makeSealerUnsealerPair() {
-    var flag = false;  // Was a box successfully unsealed
-    var squirrel = null;  // Receives the payload from an unsealed box.
+    var table = newTable(true);
+    var undefinedStandin = {};
     function seal(payload) {
-      function box() {
-        flag = true;
-        squirrel = payload;
+      if (payload === void 0) {
+        payload = undefinedStandin;
       }
-      box.toString = markFuncFreeze(function toString() { return '(box)'; });
-      return markFuncFreeze(box);
+      var box = Token('(box)');
+      table.set(box, payload);
+      return box;
     }
     function unseal(box) {
-      // Start off in a known good state.
-      flag = false;
-      squirrel = null;
-      try {  // Don't do anything outside try to foil forwarding functions.
-        box.CALL___();
-        if (!flag) { throw new Error('Sealer/Unsealer mismatch'); }
-        return squirrel;
-      } finally {
-        // Restore to a known good state.
-        flag = false;
-        squirrel = null;
+      var payload = table.get(box);
+      if (payload === void 0) {
+        fail('Sealer/Unsealer mismatch'); 
+      } else if (payload === undefinedStandin) {
+        return void 0;
+      } else {
+        return payload;
       }
     }
     return freeze({
@@ -2854,8 +3089,8 @@ var safeJSON;
   ////////////////////////////////////////////////////////////////////////
 
   /**
-   * <tt>cajita.construct(ctor, [args...])</tt> invokes a simple function as
-   * a constructor using 'new'.
+   * <tt>cajita.construct(ctor, [args...])</tt> invokes a constructor
+   * or simple function as a constructor using 'new'.
    */
   function construct(ctor, args) {
     ctor = asCtor(ctor);
@@ -3100,7 +3335,7 @@ var safeJSON;
   function getOwnPropertyNames(obj) {
     var result = [];
     var seen = {};
-    // TODO(erights): revisit once we do es3.1ish attribute control.
+    // TODO(erights): revisit once we do ES5ish attribute control.
     var implicit = isJSONContainer(obj);
     for (var k in obj) {
       if (hasOwnProp(obj, k)) {
@@ -3159,20 +3394,62 @@ var safeJSON;
     if (!isRecord(parent)) {
       fail('Can only beget() records: ', parent);
     }
-    return primBeget(parent);
+    var result = primBeget(parent);
+    result.RECORD___ = result;
+    return result;
   }
 
+  ////////////////////////////////////////////////////////////////////////
+  // JSON
+  ////////////////////////////////////////////////////////////////////////
+
+  var nativeJSON = global.JSON;
+  safeJSON = primFreeze({
+    CLASS___: 'JSON',
+    parse: markFuncFreeze(function (text, opt_reviver) {
+      var attenuatedReviver;
+      // In attenuatedReviver, key will be a string, and "this" will be an
+      // object constructed by the JSON parser or attached to the JSON parser
+      // during a previous call to the reviver.
+
+      text = String(text);
+      if (opt_reviver) {
+        opt_reviver = toFunc(opt_reviver);
+        throw new Error('JSON.parse with a reviver unimplemented');
+        // TODO(mikesamuel): implement me
+      } else {
+        return nativeJSON.parse(text, function (key, value) {
+          return canSetPub(this, key) ? value : void 0;
+        });
+      }
+    }),
+    stringify: markFuncFreeze(function (obj, opt_replacer, opt_space) {
+      switch (typeof opt_space) {
+        case 'object': case 'function': case 'boolean':
+          throw new TypeError('space must be a number or string');
+      }
+      if (opt_replacer) {
+        opt_replacer = toFunc(opt_replacer);
+        throw new Error('JSON.stringify with a replacer unimplemented');
+        // TODO(mikesamuel): implement me
+      } else {
+        return nativeJSON.stringify(obj, function (key, value) {
+          return (canReadPub(this, key)) ? value : void 0;
+        }, opt_space);
+      }
+    })
+  });
 
   ////////////////////////////////////////////////////////////////////////
   // Exports
   ////////////////////////////////////////////////////////////////////////
+
   cajita = {
     // Diagnostics and condition enforcement
     log: log,
     fail: fail,
     enforce: enforce,
     enforceType: enforceType,
-    enforceNat: enforceNat,
 
     // walking prototype chain, checking JSON containers
     directConstructor: directConstructor,
@@ -3198,10 +3475,20 @@ var safeJSON;
     canSetPub: canSetPub,         setPub: setPub,
     canDeletePub: canDeletePub,   deletePub: deletePub,
 
-    // Trademarking
+    // Object indistinguishability and object-keyed tables
+    Token: Token,
+    identical: identical,
+    newTable: newTable,
+
+    // Guards and Trademarks
+    identity: identity,
+    escape: escape,
+    eject: eject,
+    GuardT: GuardT,
     Trademark: Trademark,
-    hasTrademark: hasTrademark,
     guard: guard,
+    passesGuard: passesGuard,
+    stamp: stamp,
 
     // Sealing & Unsealing
     makeSealerUnsealerPair: makeSealerUnsealerPair,
@@ -3212,13 +3499,16 @@ var safeJSON;
 
     // Needed for Valija
     construct: construct,
-    newTable: newTable,
     inheritsFrom: inheritsFrom,
     getSuperCtor: getSuperCtor,
     getOwnPropertyNames: getOwnPropertyNames,
     getProtoPropertyNames: getProtoPropertyNames,
     getProtoPropertyValue: getProtoPropertyValue,
-    beget: beget
+    beget: beget,
+
+    // deprecated
+    enforceNat: deprecate(enforceNat, '___.enforceNat',
+                          'Use (x === x >>> 0) instead as a UInt32 test')
   };
 
   forOwnKeys(cajita, markFuncFreeze(function(k, v) {
@@ -3233,42 +3523,6 @@ var safeJSON;
       }
     }
   }));
-
-  var nativeJSON = global.JSON;
-  safeJSON = primFreeze({
-    parse: markFuncFreeze(function (text, opt_reviver) {
-      var attenuatedReviver;
-      // In attenuatedReviver, key will be a string, and "this" will be an
-      // object constructed by the JSON parser or attached to the JSON parser
-      // during a previous call to the reviver.
-
-      text = String(text);
-      if (opt_reviver) {
-        opt_reviver = toFunc(opt_reviver);
-        throw new Error('JSON.parse with a reviver unimplemented');
-        // TODO(mikesamuel): implement me
-      } else {
-        return nativeJSON.parse(text, function (key, value) {
-          return canSetPub(this, key) ? value : void 0;
-        });
-      }
-    }),
-    stringify: markFuncFreeze(function (obj, opt_replacer, opt_space) {
-      switch (typeof opt_space) {
-        case 'object': case 'function':
-          throw new TypeError('space must be a number or string');
-      }
-      if (opt_replacer) {
-        opt_replacer = toFunc(opt_replacer);
-        throw new Error('JSON.stringify with a replacer unimplemented');
-        // TODO(mikesamuel): implement me
-      } else {
-        return nativeJSON.stringify(obj, function (key, value) {
-          return (canReadPub(this, key)) ? value : void 0;
-        }, opt_space);
-      }
-    })
-  });
 
   sharedImports = {
     cajita: cajita,
@@ -3343,9 +3597,8 @@ var safeJSON;
     isCtor: isCtor,
     isFunc: isFunc,
     markCtor: markCtor,           extend: extend,
-    markFuncOnly: markFuncOnly,   markFuncFreeze: markFuncFreeze,
+    markFuncFreeze: markFuncFreeze,
     asFunc: asFunc,               toFunc: toFunc,
-    initializeMap: initializeMap,
 
     // Accessing properties
     inPub: inPub,
@@ -3354,14 +3607,14 @@ var safeJSON;
     // Other
     typeOf: typeOf,
     hasOwnProp: hasOwnProp,
-    identical: identical,
     args: args,
     tameException: tameException,
     primBeget: primBeget,
-    callStackUnsealer: callStackSealer.unseal,
+    callStackUnsealer: callStackUnsealer,
     RegExp: RegExp,  // Available to rewrite rule w/o risk of masking
-    stamp: stamp,
+    GuardStamp: GuardStamp,
     asFirstClass: asFirstClass,
+    initializeMap: initializeMap,
 
     // Taming mechanism
     useGetHandler: useGetHandler,
@@ -3420,11 +3673,15 @@ var safeJSON;
                     'a function as exophoric. Use one of the exophoric ' +
                     'method tamers (e.g., ___.grantGenericMethod) instead.'),
     ctor: deprecate(markCtor, '___.ctor',
-		    'Use ___.markCtor instead.'),
-    func: deprecate(markFuncOnly, '___.func',
-		    'Use ___.markFuncOnly instead.'),
+                    'Use ___.markCtor instead.'),
+    func: deprecate(markFuncFreeze, '___.func',
+                    '___.func should not be called ' +
+                    'from manually written code.'),
     frozenFunc: deprecate(markFuncFreeze, '___.frozenFunc',
-			  'Use ___.markFuncFreeze instead.'),
+                          'Use ___.markFuncFreeze instead.'),
+    markFuncOnly: deprecate(markFuncFreeze, '___.markFuncOnly',
+                            '___.markFuncOnly should not be called ' +
+                            'from manually written code.'),
 
     // Taming decisions
     sharedImports: sharedImports

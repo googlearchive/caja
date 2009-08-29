@@ -337,8 +337,9 @@ var valijaMaker = (function(outers) {
     result.apply = function(self, args) {
       return callFn.apply(cajita.USELESS, [self].concat(Array.slice(args, 0)));
     };
-    result.prototype = cajita.beget(ObjectPrototype);
-    result.prototype.constructor = result;
+    var disproto = cajita.beget(ObjectPrototype);
+    result.prototype = disproto;
+    disproto.constructor = result;
     result.length = callFn.length - 1;
     // TODO(erights): Why are we testing for the empty string here?
     if (opt_name !== void 0 && opt_name !== '') {
@@ -476,7 +477,7 @@ var valijaMaker = (function(outers) {
   var undefIndicator = {};
   
   function exceptionTableSet(ex) {
-    var result = cajita.Trademark('' + ex);
+    var result = cajita.Token('' + ex);
     t.set(result, (ex === void 0) ? undefIndicator : ex);
     return result;
   }

@@ -84,19 +84,12 @@
     }
   }
 
-  var stackSealer = cajita.makeSealerUnsealerPair();
   /**
-   * Unseals a sealed call stack.  Not available to cajoled code.
-   */
-  var unsealCallerStack = stackSealer.unseal;
-  stackSealer = stackSealer.seal;
-
-  /**
-   * Returns a sealed call stack, that will not be mutated by subsequent
+   * Returns a call stack that will not be mutated by subsequent
    * changes.
    */
   function getCallerStack() {
-    return stackInvalid ? void 0 : stackSealer(cajita.freeze(stack.slice(0)));
+    return stackInvalid ? void 0 : cajita.freeze(stack.slice(0));
   }
 
   function pushFrame(stackFrame) {
@@ -142,10 +135,10 @@
    * Associate the cajita call stack with an Error object if there is none there
    * already.
    */
-  function attachCajaStack(error) {
+  function attachCajaStack(ex) {
     // Associate the current stack with ex if it is an Error.
-    if (error instanceof Error && !error.cajitaStack___) {
-      error.cajitaStack___ = getCallerStack();
+    if (ex && ex instanceof Error && !ex.cajitaStack___) {
+      ex.cajitaStack___ = getCallerStack();
     }
   }
 
@@ -229,7 +222,7 @@
     // fun might pass asCtor because it is simple.  Copy only the bits onto
     // wrapper that allow it to survive similar checks.
     if (fun.FUNC___) {
-      wrapper.FUNC___ = true;
+      wrapper.FUNC___ = fun.FUNC___;
     } else if (fun.XO4A___) {
       wrapper.XO4A___ = true;
     }
@@ -239,12 +232,14 @@
 
   function tameException(ex) {
     var ex = orig.tameException(ex);
-    // Make sure that tamed Errors propogate the cajitaStack___,
+    // Make sure that tamed Errors propagate the cajitaStack___,
     // so that an exception can be rethrown.
+    
     // We need to make sure tameException has the property that
     //     try { f(); } catch (ex) { throw ex; }
-    // doesn't make ex unavailable to code with access to the unsealer.
-    if (ex && (typeof ex) === 'object' && !ex.cajitaStack___) {
+    // preserves stack information if it was captured by an earlier throw,
+    // so it will be available to code with access to the unsealer.
+    if (ex && ex instanceof Error && !ex.cajitaStack___) {
       ex.cajitaStack___ = getCallerStack();
     }
     return ex;
@@ -268,7 +263,7 @@
     } catch (ex) {
       if ('undefined' !== typeof console) {
         if (ex && ex.cajitaStack___) {
-          var stack = unsealCallerStack(ex.cajitaStack___);
+          var stack = ex.cajitaStack___;
           if (stack) {
             console.group(
                 ex.message + ' @ ' + ex.fileName + ':' + ex.lineNumber);
@@ -364,7 +359,6 @@
        'getCallerStack', getCallerStack,
        'requireObject', requireObject,
        'startCallerStack', startCallerStack,
-       'unsealCallerStack', unsealCallerStack,
        'useDebugSymbols', useDebugSymbols,
        'userException', userException
       ]);

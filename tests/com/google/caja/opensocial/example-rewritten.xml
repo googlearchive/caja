@@ -27,7 +27,8 @@ ___.loadModule({
                                            function externalScript$_self() {
                                              alert.CALL___('external script');
                                            }
-                                           return ___.markFuncOnly(externalScript$_self, 'externalScript');
+                                           externalScript$_self.FUNC___ = 'externalScript';
+                                           return externalScript$_self;
                                          })();
                      }
                    } catch (ex___) {

@@ -271,7 +271,7 @@ public class DefaultValijaRewriter extends Rewriter {
             "this variable to a new anonymous function every time control re-enters " +
             "the enclosing block." +
             "\n" +
-            "Note that ES3.1 and ES4 specify a better and safer semantics -- block " +
+            "Note that ES-Harmony will specify a better and safer semantics -- block " +
             "level lexical scoping -- that we'd like to adopt into Caja eventually. " +
             "However, it so challenging to implement this semantics by " +
             "translation to currently-implemented JavaScript that we provide " +

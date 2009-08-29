@@ -331,7 +331,7 @@ public class ParserTest extends CajaTestCase {
   public final void testUnnormalizedIdentifiers() throws Exception {
     // Test that identifiers not normalized to Normal Form C (Unicode NFC)
     // result in a ParseException with a useful error message.
-    // According to chapter 6 of ES3.1, "The [source] text is expected to
+    // According to chapter 6 of ES5, "The [source] text is expected to
     // have been normalized to Unicode Normalized Form C (canonical
     // composition)."
     try {

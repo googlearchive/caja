@@ -65,11 +65,15 @@ final class PermitTemplate {
       "cajita", new PermitTemplate(
           "BREAK", CanRead,
           "USELESS", CanRead,
+          "GuardT", new PermitTemplate(
+              "toString", CanCall,
+              "coerce", CanCall),
+
           "log", CanCall,
           "fail", CanCall,
           "enforce", CanCall,
           "enforceType", CanCall,
-          "enforceNat", CanCall,
+
           "directConstructor", CanCall,
           "getFuncCategory", CanCall,
           "isDirectInstanceOf", CanCall,
@@ -81,6 +85,7 @@ final class PermitTemplate {
           "isFrozen", CanCall,
           "copy", CanCall,
           "snapshot", CanCall,
+
           "canReadPub", CanCall,
           "readPub", CanCall,
           "hasOwnPropertyOf", CanCall,
@@ -98,13 +103,24 @@ final class PermitTemplate {
           "setPub", CanCall,
           "canDeletePub", CanCall,
           "deletePub", CanCall,
-          "Trademark", CanCall,
-          "hasTrademark", CanCall,
-          "guard", CanCall,
-          "makeSealerUnsealerPair", CanCall,
-          "manifest", CanCall,
-          "construct", CanCall,
+
+          "Token", CanCall,
+          "identical", CanCall,
           "newTable", CanCall,
+
+          "identity", CanCall,
+          "escape", CanCall,
+          "eject", CanCall,
+          "Trademark", CanCall,
+          "guard", CanCall,
+          "passesGuard", CanCall,
+          "stamp", CanCall,
+
+          "makeSealerUnsealerPair", CanCall,
+
+          "manifest", CanCall,
+
+          "construct", CanCall,
           "inheritsFrom", CanCall,
           "getSuperCtor", CanCall,
           "getOwnPropertyNames", CanCall,
@@ -152,6 +168,10 @@ final class PermitTemplate {
           "sin", CanCall,
           "sqrt", CanCall,
           "tan", CanCall),
+      "JSON", new PermitTemplate(
+          "parse", CanCall,
+          "stringify", CanCall),
+
       "Object", CanCall,
       "Array", new PermitTemplate(
           "()", CanRead,
@@ -172,6 +192,7 @@ final class PermitTemplate {
           "parse", CanCall,
           "UTC", CanCall),
       "RegExp", CanCall,
+
       "Error", CanCall,
       "EvalError", CanCall,
       "RangeError", CanCall,

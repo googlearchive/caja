@@ -102,7 +102,7 @@
           return origModuleHandler.handle.apply(origModuleHandler, arguments);
         } catch (e) {
           if (e.cajitaStack___) {
-            console.error(___.unsealCallerStack(e.cajitaStack___).join('\n'));
+            console.error(e.cajitaStack___.join('\n'));
           }
           throw e;
         }

@@ -253,7 +253,7 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
                + "} catch (e) {                                        "
                + "  stack = e.cajitaStack___;                          "
                + "  if (!stack) { throw e; }                           "
-               + "  stack = ___.unsealCallerStack(stack).join('\\n');  "
+               + "  stack = stack.join('\\n');  "
                + "}                                                    "
                + "stack                                               ");
   }

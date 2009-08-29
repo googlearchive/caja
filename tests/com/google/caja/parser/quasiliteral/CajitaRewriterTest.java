@@ -209,7 +209,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "  function boo() {\n" +
         "    return x;\n" +
         "  }\n" +
-        "  ___.markFuncOnly(boo, \'boo\');"
+        "  boo.FUNC___ = \'boo\';"
         + ";"
         + "var x;");
   }
@@ -380,7 +380,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
    * "http://code.google.com/p/google-caja/issues/detail?id=292"
    * >bug#292</a> is fixed.
    * <p>
-   * In anticipation of ES3.1, we should be able to index into strings
+   * In anticipation of ES5, we should be able to index into strings
    * using indexes which are numbers or stringified numbers, so long as
    * they are in range.
    */
@@ -444,7 +444,8 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "var foo; { foo = (function () {\n" +
         "             function foo$_self() {\n" +
         "             }\n" +
-        "             return ___.markFuncOnly(foo$_self, \'foo\');\n" +
+        "             foo$_self.FUNC___ = \'foo\';\n" +
+        "             return foo$_self;" +
         "           })(); }"));
     checkSucceeds(input, expectedResult);
   }
@@ -513,7 +514,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
             + "  return (x + y___) * z;"
             + "}"
             // Since the function is not synthetic, it's marked.
-            + "___.markFuncOnly(f, 'f');;")));
+            + "f.FUNC___ = 'f';;")));
 
     SyntheticNodes.s(fc);
     checkSucceeds(
@@ -543,7 +544,8 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "{ foo = (function () {\n" +
         "             function foo$_self() {\n" +
         "             }\n" +
-        "             return ___.markFuncOnly(foo$_self, \'foo\');\n" +
+        "             foo$_self.FUNC___ = \'foo\';\n" +
+        "             return foo$_self;\n" +
         "           })(); }");
   }
 
@@ -682,9 +684,9 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute(
         "var handled = false;" +
         "try {" +
-        "  throw function () { throw 'should not be called'; };" +
+        "  throw function foo() { throw 'should not be called'; };" +
         "} catch (ex) {" +
-        "  assertEquals(undefined, ex());" +
+        "  assertEquals('In lieu of thrown function: foo', ex());" +
         "  handled = true;" +
         "}" +
         "assertTrue(handled);");
@@ -1556,7 +1558,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "     y = ___.readPub(g, i);\n" +
         "     return foo.CALL___(x - 1, y - 1);\n" +
         "   }\n" +
-        "   ___.markFuncOnly(foo, \'foo\');" +
+        "   foo.FUNC___ = \'foo\';" +
         "  ;"+
         "});");
     checkSucceeds(
@@ -1566,7 +1568,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "  function foo(x, y) {\n" +
         "    return foo.CALL___(x - 1, y - 1);\n" +
         "  }\n" +
-        "  ___.markFuncOnly(foo, \'foo\');" +
+        "  foo.FUNC___ = \'foo\';" +
         ";");
     rewriteAndExecute(
         "(function () {" +
@@ -1677,7 +1679,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         weldPrelude("g") +
         "function foo() {\n" +
         "}\n" +
-        "___.markFuncOnly(foo, \'foo\');" +
+        "foo.FUNC___ = \'foo\';" +
         ";" +
         "___.readPub(g, void 0) instanceof ___.primFreeze(foo);");
     checkSucceeds(
@@ -2093,91 +2095,88 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
   public final void testStamp() throws Exception {
     rewriteAndExecute(
-        "___.getNewModuleHandler().getImports().stamp =" +
-        "    ___.markFuncFreeze(___.stamp);" +
-        "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
         "function Foo(){}" +
-        "var foo = new Foo;" +
+        "var foo = new Foo();" +
+        "var TestMark = cajita.Trademark('Test');" +
         "var passed = false;" +
-        "cajita.log('### stamp = ' + stamp);" +
-        "try { stamp(cajita.Trademark('test'), foo); }" +
-        "catch (e) {" +
-        "  if (!e.message.match('may not be stamped')) {" +
+        "try { " +
+        "  cajita.stamp([TestMark.stamp], foo);" +
+        "} catch (e) {" +
+        "  if (e.message !== 'Can only stamp records: [object Object]') {" +
         "    fail(e.message);" +
         "  }" +
         "  passed = true;" +
         "}" +
-        "if (!passed) { fail ('Able to stamp constructed objects.'); }",
-        "");
+        "if (!passed) { fail ('Able to stamp constructed objects.'); }");
     rewriteAndExecute(
-        "___.getNewModuleHandler().getImports().stamp =" +
-        "    ___.markFuncFreeze(___.stamp);" +
-        "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
+        // Shows how privileged or uncajoled code can stamp
+        // constructed objects anyway. Should only do this during
+        // construction, though this is unenforceable.
+        "___.getNewModuleHandler().getImports().stampAnyway =" +
+        "  ___.markFuncFreeze(function(stamp, obj) {" +
+        "    stamp.mark___(obj);" +
+        "  });",
         "function Foo(){}" +
-        "var foo = new Foo;" +
-        "try { stamp(cajita.Trademark('test'), foo, true); }" +
-        "catch (e) {" +
+        "var foo = new Foo();" +
+        "var TestMark = cajita.Trademark('Test');" +
+        "try { " +
+        "  stampAnyway(TestMark.stamp, foo);" +
+        "} catch (e) {" +
         "  fail(e.message);" +
-        "}",
+        "}" +
+        "cajita.guard(TestMark.guard, foo);",
         "");
     rewriteAndExecute(
-        "___.getNewModuleHandler().getImports().stamp =" +
-        "    ___.markFuncFreeze(___.stamp);" +
-        "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
         "var foo = {};" +
-        "var tm = cajita.Trademark('test');" +
-        "stamp(tm, foo);" +
-        "cajita.guard(tm, foo);",
-        "");
+        "var TestMark = cajita.Trademark('Test');" +
+        "cajita.stamp([TestMark.stamp], foo);" +
+        "cajita.guard(TestMark.guard, foo);");
     rewriteAndExecute(
-        "___.getNewModuleHandler().getImports().stamp =" +
-        "    ___.markFuncFreeze(___.stamp);" +
-        "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
         "var foo = {};" +
-        "var tm = cajita.Trademark('test');" +
+        "var TestMark = cajita.Trademark('Test');" +
+        "cajita.stamp([TestMark.stamp], foo);" +
+        "TestMark.guard.coerce(foo);");
+    rewriteAndExecute(
+        "var foo = {};" +
+        "var TestMark = cajita.Trademark('Test');" +
         "var passed = false;" +
-        "try { cajita.guard(tm, foo); }" +
-        "catch (e) {" +
-        "  if (e.message != 'Object \"[object Object]\" does not have the \"test\" trademark') {" +
+        "try { " +
+        "  cajita.guard(TestMark.guard, foo);" +
+        "} catch (e) {" +
+        "  if (e.message !== 'Specimen does not have the \"Test\" trademark') {" +
         "    fail(e.message);" +
         "  }" +
         "  passed = true;" +
         "}" +
-        "if (!passed) { fail ('Able to forge trademarks.'); }",
-        "");
+        "if (!passed) { fail ('Able to forge trademarks.'); }");
     rewriteAndExecute(
-        "___.getNewModuleHandler().getImports().stamp =" +
-        "    ___.markFuncFreeze(___.stamp);" +
-        "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
         "var foo = {};" +
-        "var tm = cajita.Trademark('test');" +
-        "var tm2 = cajita.Trademark('test2');" +
+        "var T1Mark = cajita.Trademark('T1');" +
+        "var T2Mark = cajita.Trademark('T2');" +
         "var passed = false;" +
-        "try { stamp(tm, foo); cajita.guard(tm2, foo); }" +
-        "catch (e) {" +
-        "  if (e.message != 'Object \"[object Object]\" does not have the \"test2\" trademark') {" +
+        "try { " +
+        "  cajita.stamp([T1Mark.stamp], foo);" +
+        "  cajita.guard(T2Mark.guard, foo);" +
+        "} catch (e) {" +
+        "  if (e.message !== 'Specimen does not have the \"T2\" trademark') {" +
         "    fail(e.message);" +
         "  }" +
         "  passed = true;" +
         "}" +
-        "if (!passed) { fail ('Able to forge trademarks.'); }",
-        "");
+        "if (!passed) { fail ('Able to forge trademarks.'); }");
     rewriteAndExecute(
-        "___.getNewModuleHandler().getImports().stamp =" +
-        "    ___.markFuncFreeze(___.stamp);" +
-        "___.grantRead(___.getNewModuleHandler().getImports(), 'stamp');",
-        "function foo(){};" +
-        "var tm = cajita.Trademark('test');" +
+        "var foo = cajita.freeze({});" +
+        "var TestMark = cajita.Trademark('Test');" +
         "var passed = false;" +
-        "try { stamp(tm, foo); }" +
-        "catch (e) {" +
-        "  if (!e.message.match('is frozen')) {" +
+        "try {" +
+        "  cajita.stamp(TestMark.stamp, foo);" +
+        "} catch (e) {" +
+        "  if (e.message !== 'Can\\'t stamp frozen objects: [object Object]') {" +
         "    fail(e.message);" +
         "  }" +
         "  passed = true;" +
         "}" +
-        "if (!passed) { fail ('Able to stamp frozen objects.'); }",
-        "");
+        "if (!passed) { fail ('Able to stamp frozen objects.'); }");
   }
 
   public final void testForwardReference() throws Exception {
@@ -2284,7 +2283,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "zap();",
 
         "function foo() { debugger; }" +
-        "___.markFuncOnly(foo, 'foo');" +
+        "foo.FUNC___ = 'foo';" +
         "var x0___;;" +
         "var x = ___.initializeMap(['bar', (function () {" +
         "  function bar$_lit() { foo.CALL___(); }" +
@@ -2375,6 +2374,21 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     setRewriter(cajitaRewriter);
   }
 
+  /**
+   * Tests that Error objects are frozen on being caught by a Cajita catch.
+   * 
+   * See issue 1097, issue 1038, 
+   *     and {@link CommonJsRewriterTestCase#testErrorTaming()}}.
+   */
+  public final void testErrorFreeze() throws Exception {
+    rewriteAndExecute(
+            "try {" +
+            "  throw new Error('foo');" +
+            "} catch (ex) {" +
+            "  assertTrue(cajita.isFrozen(ex));" +
+            "}");
+  }
+  
   @Override
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();
