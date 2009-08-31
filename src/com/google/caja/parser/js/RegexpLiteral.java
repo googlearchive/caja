@@ -56,8 +56,8 @@ public final class RegexpLiteral extends Literal {
     TokenConsumer out = rc.getOut();
     out.mark(getFilePosition());
 
-    String body = getMatchText();
-    String mods = getModifiers();
+    String body = value.getMatchText();
+    String mods = value.getModifiers();
     if ("".equals(body) || !areRegexpModifiersValid(mods)) {
       // (new (/./.constructor))('', 'g')
       out.consume("(");
@@ -114,6 +114,14 @@ public final class RegexpLiteral extends Literal {
       sb.append('/').append(modifiers);
       return new RegexpWrapper(sb.toString());
     }
+
+    public String getMatchText() {
+      return regexpText.substring(1, regexpText.lastIndexOf('/'));
+    }
+
+    public String getModifiers() {
+      return regexpText.substring(regexpText.lastIndexOf('/') + 1);
+    }
   }
 
   @Override
@@ -154,15 +162,5 @@ public final class RegexpLiteral extends Literal {
       seen = seen | flagMask;
     }
     return true;
-  }
-
-  public String getMatchText() {
-    String text = this.value.toString();
-    return text.substring(1, text.lastIndexOf('/'));
-  }
-
-  public String getModifiers() {
-    String text = this.value.toString();
-    return text.substring(text.lastIndexOf('/') + 1);
   }
 }
