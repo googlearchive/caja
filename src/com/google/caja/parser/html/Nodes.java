@@ -270,7 +270,7 @@ public class Nodes {
                 out.consume(cdataContent);
                 break;
               }
-              // fall-through
+              //$FALL-THROUGH$
             default:
               for (Node c = first; c != null; c = c.getNextSibling()) {
                 render(c, rc);

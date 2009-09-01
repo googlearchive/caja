@@ -2805,8 +2805,8 @@ var safeJSON;
 
   /**
    * One-arg form is known in scheme as "call with escape
-   * continuation", and is the semantics currently proposed for
-   * EcmaScript Harmony's "return to label".
+   * continuation" (call/ec), and is the semantics currently 
+   * proposed for EcmaScript Harmony's "return to label".
    * <p>
    * In this analogy, a call to <tt>escape</tt> emulates a labeled
    * statement. The ejector passed to the <tt>attemptFunc</tt>
@@ -2846,10 +2846,11 @@ var safeJSON;
    * precedence over the ejection in progress but leave the ejector
    * live. 
    * <p>
-   * Historic note: I believe the first invention of this abstraction
-   * is by John C. Reynolds circa 1967. XXX find name of
-   * paper. Reynold's invention was a special form as in E, rather
-   * than a higher order function as here and in call/ec.
+   * Historic note: This was first invented by John C. Reynolds in 
+   * <a href="http://doi.acm.org/10.1145/800194.805852"
+   * >Definitional interpreters for higher-order programming 
+   * languages</a>. Reynold's invention was a special form as in E, 
+   * rather than a higher order function as here and in call/ec.
    */
   function escape(attemptFunc, opt_failFunc) {
     var failFunc = opt_failFunc || identity;
@@ -3157,46 +3158,21 @@ var safeJSON;
   var MAGIC_NAME = '_index;'+ MAGIC_NUM + ';';
 
   /**
+   * 
    * Creates a new mutable associative table mapping from the
    * identity of arbitrary keys (as defined by tt>identical()</tt>) to
    * arbitrary values.
    * <p>
-   * Once there is a conventional way for JavaScript implementations
-   * to provide weak-key tables, this should feature-test and use that
-   * where it is available, in which case the opt_useKeyLifetime flag
-   * can be ignored. When no weak-key table is primitively provided,
-   * this flag determines which of two possible approximations to
-   * use. In all three cases (actual weak key tables,
-   * opt_useKeyLifetime is falsy, and opt_useKeyLifetime is
-   * truthy), the table returned
-   * <ul>
-   * <li>should work across frames,
-   * <li>should have O(1) complexity measure within a frame where
-   *     collision is impossible,
-   * <li>and should have O(1) complexity measure between frames with
-   *     high probability.
-   * <li>the table should not retain its keys. In other words, if a
-   *     given table T is non-garbage but a given value K is otherwise
-   *     garbage, the presence of K as a key in table T will
-   *     not, by itself, prevent K from being garbage collected. (Note
-   *     that this is not quite as aggressive as the contract provided
-   *     by ephemerons.)
-   * </ul>
-   * Given that a K=>V association has been stored in table T, the
-   * three cases differ according to how long they retain V:
-   * <ul>
-   * <li>A genuine weak-key table retains V only while both T and K
-   *     are not garbage.
-   * <li>If opt_useKeyLifetime is falsy, retain V while T is not
-   *     garbage.
-   * <li>If opt_useKeyLifetime is truthy, retain V while K is not
-   *     garbage. In this case, K must be an object rather than a
-   *     primitive value.
-   * </ul>
+   * Operates as specified by <a href=
+   * "http://wiki.ecmascript.org/doku.php?id=strawman:weak_references#ephemeron_tables"
+   * >ephemeron tables</a>, including the "Implementation
+   * Considerations" section regarding emulation on ES3, except that,
+   * when <tt>opt_useKeyLifetime</tt> is falsy or absent, the keys
+   * here may be primitive types as well. 
    * <p>
    * To support Domita, the keys might be host objects.
    */
-  function newTable(opt_useKeyLifetime) {
+  function newTable(opt_useKeyLifetime, opt_expectedSize) {
     magicCount++;
     var myMagicIndexName = MAGIC_NAME + magicCount + '___';
 
@@ -3205,11 +3181,18 @@ var safeJSON;
         fail("Can't use key lifetime on primitive keys: ", key);
       }
       var list = key[myMagicIndexName];
-      if (!list) {
-        key[myMagicIndexName] = [MAGIC_TOKEN, value];
+      // To distinguish key from objects that derive from it,
+      //    list[0] should be === key
+      // For odd positive i,
+      //    list[i] is the MAGIC_TOKEN for a Cajita runtime (i.e., a
+      //            browser frame in which the Cajita runtime has been
+      //            loaded). The myMagicName and the MAGIC_TOKEN
+      //            together uniquely identify a table.
+      //    list[i+1] is the value stored in that table under this key.
+      if (!list || list[0] !== key) {
+        key[myMagicIndexName] = [key, MAGIC_TOKEN, value];
       } else {
-        var i = 0;
-        for (; i < list.length; i += 2) {
+        for (var i = 1; i < list.length; i += 2) {
           if (list[i] === MAGIC_TOKEN) { break; }
         }
         list[i] = MAGIC_TOKEN;
@@ -3222,11 +3205,10 @@ var safeJSON;
         fail("Can't use key lifetime on primitive keys: ", key);
       }
       var list = key[myMagicIndexName];
-      if (!list) {
+      if (!list || list[0] !== key) {
         return void 0;
       } else {
-        var i = 0;
-        for (; i < list.length; i += 2) {
+        for (var i = 1; i < list.length; i += 2) {
           if (list[i] === MAGIC_TOKEN) { return list[i + 1]; }
         }
         return void 0;
@@ -3243,20 +3225,41 @@ var safeJSON;
     var myValues = [];
 
     function setOnTable(key, value) {
+      var index;
       switch (typeof key) {
         case 'object':
         case 'function': {
           if (null === key) { myValues.prim_null = value; return; }
-          var index = getOnKey(key);
-          if (index === void 0) {
-            index = myValues.length;
-            setOnKey(key, index);
+          index = getOnKey(key);
+	  if (value === void 0) {
+	    if (index === void 0) {
+	      return;
+	    } else {
+	      setOnKey(key, void 0);
+	    }
+	  } else {
+	    if (index === void 0) {
+              index = myValues.length;
+              setOnKey(key, index);
+	    }
           }
-          myValues[index] = value;
-          return;
+	  break;
         }
-        case 'string': { myValues['str_' + key] = value; return; }
-        default: { myValues['prim_' + key] = value; return; }
+        case 'string': {
+	  index = 'str_' + key;
+	  break;
+	}
+        default: { 
+	  index = 'prim_' + key;
+	  break; 
+	}
+      }
+      if (value === void 0) {
+	// TODO(erights): Not clear that this is the performant
+	// thing to do when index is numeric and < length-1.
+	delete myValues[index];
+      } else {
+	myValues[index] = value;
       }
     }
 

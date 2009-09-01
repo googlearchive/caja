@@ -2169,7 +2169,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "var TestMark = cajita.Trademark('Test');" +
         "var passed = false;" +
         "try {" +
-        "  cajita.stamp(TestMark.stamp, foo);" +
+        "  cajita.stamp([TestMark.stamp], foo);" +
         "} catch (e) {" +
         "  if (e.message !== 'Can\\'t stamp frozen objects: [object Object]') {" +
         "    fail(e.message);" +
@@ -2177,6 +2177,15 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "  passed = true;" +
         "}" +
         "if (!passed) { fail ('Able to stamp frozen objects.'); }");
+    rewriteAndExecute(
+        "var foo = {};" +
+        "var bar = cajita.beget(foo);" +
+        "var baz = cajita.beget(bar);" +
+        "var TestMark = cajita.Trademark('Test');" +
+        "cajita.stamp([TestMark.stamp], bar);" +
+        "assertFalse(cajita.passesGuard(TestMark.guard, foo));" +
+        "assertTrue(cajita.passesGuard(TestMark.guard, bar));" +
+        "assertFalse(cajita.passesGuard(TestMark.guard, baz));");
   }
 
   public final void testForwardReference() throws Exception {
@@ -2225,9 +2234,9 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   /**
    * Tests the cajita.newTable(opt_useKeyLifetime) abstraction.
    * <p>
-   * From here, we are not in a position to test the weak-GC properties this abstraction is
-   * designed to provide, nor its O(1) complexity measure. However, we can test that it works
-   * as a simple lookup table.
+   * From here, we are not in a position to test the weak-GC properties this 
+   * abstraction is designed to provide, nor its O(1) complexity measure. 
+   * However, we can test that it works as a simple lookup table.
    */
   public final void testTable() throws Exception {
     rewriteAndExecute(
@@ -2260,6 +2269,52 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     rewriteAndExecute(
         "var t = cajita.newTable(true);" +
         "assertThrows(function(){t.set('foo', 'v1');});");
+    rewriteAndExecute(
+        "var t = cajita.newTable(true);" +
+        "var k1 = {};" +
+        "var k2 = cajita.beget(k1);" +
+        "var k3 = cajita.beget(k2);" +
+        "var k4 = cajita.beget(k3);" +
+        "t.set(k2, 'foo');" +
+        "t.set(k3, 'bar');" +
+        "assertEquals(t.get(k2), 'foo');\n" +
+        "assertEquals(t.get(k3), 'bar');\n" +
+        "assertTrue(t.get(k1) === void 0);\n" +
+        "assertTrue(t.get(k4) === void 0);");
+    rewriteAndExecute(
+        "var t = cajita.newTable();" +
+        "var k1 = {};" +
+        "var k2 = cajita.beget(k1);" +
+        "var k3 = cajita.beget(k2);" +
+        "var k4 = cajita.beget(k3);" +
+        "t.set(k2, 'foo');" +
+        "t.set(k3, 'bar');" +
+        "assertEquals(t.get(k2), 'foo');\n" +
+        "assertEquals(t.get(k3), 'bar');\n" +
+        "assertTrue(t.get(k1) === void 0);\n" +
+        "assertTrue(t.get(k4) === void 0);");
+    rewriteAndExecute(
+        "var t1 = cajita.newTable(true);" +
+        "var t2 = cajita.newTable(true);" +
+        "var k = {};" +
+        "t1.set(k, 'foo');" +
+        "t2.set(k, 'bar');" +
+        "assertEquals(t1.get(k), 'foo');" +
+        "assertEquals(t2.get(k), 'bar');" +
+        "t1.set(k, void 0);" +
+        "assertTrue(t1.get(k) === void 0);" +
+        "assertEquals(t2.get(k), 'bar');");
+    rewriteAndExecute(
+        "var t1 = cajita.newTable();" +
+        "var t2 = cajita.newTable();" +
+        "var k = {};" +
+        "t1.set(k, 'foo');" +
+        "t2.set(k, 'bar');" +
+        "assertEquals(t1.get(k), 'foo');" +
+        "assertEquals(t2.get(k), 'bar');" +
+        "t1.set(k, void 0);" +
+        "assertTrue(t1.get(k) === void 0);" +
+        "assertEquals(t2.get(k), 'bar');");
   }
 
   /**
