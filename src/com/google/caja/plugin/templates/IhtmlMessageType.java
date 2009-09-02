@@ -24,7 +24,8 @@ import java.io.IOException;
 
 public enum IhtmlMessageType implements MessageTypeInt {
   BAD_ATTRIB(
-      "%s: Element %s has bad attribute %s with value `%s`", MessageLevel.ERROR),
+      "%s: Element %s has bad attribute %s with value `%s`",
+      MessageLevel.ERROR),
   BAD_ELEMENT("%s: Unrecognized element %s", MessageLevel.ERROR),
   DUPLICATE_IDENTIFIER(
       "%s: Identifier %s already declared at %s", MessageLevel.FATAL_ERROR),
@@ -39,6 +40,7 @@ public enum IhtmlMessageType implements MessageTypeInt {
       "%s: cannot have content inside %s", MessageLevel.ERROR),
   MALFORMED_MESSAGE("%s: Message %s is malformed", MessageLevel.ERROR),
   MALFORMED_URI("%s: URI %s is malformed", MessageLevel.ERROR),
+  MISPLACED_ELEMENT("%s: Element %s not allowed inside %s", MessageLevel.ERROR),
   MISSING_ATTRIB(
       "%s: Element %s is missing required attribute %s", MessageLevel.ERROR),
   MISSING_PLACEHOLDER("%s: No such message with name %s", MessageLevel.ERROR),
@@ -47,7 +49,6 @@ public enum IhtmlMessageType implements MessageTypeInt {
       "%s: Placeholder not inside a message", MessageLevel.ERROR),
   ORPHANED_PLACEHOLDER_END(
       "%s: Placeholder end does not match an open", MessageLevel.ERROR),
-  REDECLARATION("%s: Variable %s already declared at %s", MessageLevel.ERROR),
   UNCLOSED_PLACEHOLDER("%s: Placeholder not closed", MessageLevel.ERROR),
   UNKNOWN_TAG("%s: removing unknown tag %s", MessageLevel.WARNING),
   UNSAFE_TAG("%s: removing disallowed tag %s", MessageLevel.WARNING),

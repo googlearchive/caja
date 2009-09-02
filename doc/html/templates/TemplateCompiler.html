@@ -386,7 +386,7 @@ Otherwise the body is every child, and the alternate is the empty node list.
 &lt;/a&gt;
 </pre>
 
-<p>Used in conjunction with <code>ihtml:dynamic</code> and <ocde>ihtml:message</code> to specify an attribute value.
+<p>Used in conjunction with <code>ihtml:dynamic</code> and <code>ihtml:message</code> to specify an attribute value.
 <p>Must have a <code>name</code> attribute which must be a valid HTML attribute name.
 If the element is a descendant of an <code>ihtml:template</code> then it's name attribute
 must be allowed on the type of element from which the template is called.  Otherwise it
@@ -479,11 +479,11 @@ where the content is HTML.
 </pre></td>
 <td>&rarr;</td>
 <td>Greeting in English: <code>"Hello &lt;ihtml:ph name='planet'/&gt;!"</code>
-<br>Greeting in Spanish: <code>"&#xA1;Ola &lt;ihtml:ph name='planet'/&gt;!"</code>
+<br>Greeting in Spanish: <code>"&#xA1;Hola &lt;ihtml:ph name='planet'/&gt;!"</code>
 <br>Locale: es
 <td>&rarr;</td>
 <td><pre class="prettyprint lang-html">
-&#xA1;Ola &lt;ihtml:dynamic expr="planet"/&gt;!
+&#xA1;Hola &lt;ihtml:dynamic expr="planet"/&gt;!
 </pre></td>
 </table>
 by doing the following:

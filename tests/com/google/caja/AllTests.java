@@ -72,7 +72,10 @@ import com.google.caja.plugin.stages.DebuggingSymbolsStageTest;
 import com.google.caja.plugin.stages.InlineCssImportsStageTest;
 import com.google.caja.plugin.stages.OpenTemplateStageTest;
 import com.google.caja.plugin.stages.RewriteHtmlStageTest;
+import com.google.caja.plugin.templates.IhtmlSanityCheckerTest;
 import com.google.caja.plugin.templates.JsConcatenatorTest;
+import com.google.caja.plugin.templates.LocalizedHtmlTest;
+import com.google.caja.plugin.templates.LocalizerTest;
 import com.google.caja.plugin.templates.TemplateCompilerTest;
 import com.google.caja.plugin.templates.TemplateSanitizerTest;
 import com.google.caja.render.CssPrettyPrinterTest;
@@ -154,6 +157,7 @@ public class AllTests {
         HtmlLexerTest.class,
         HtmlSchemaTest.class,
         HtmlSnippetProducerTest.class,
+        IhtmlSanityCheckerTest.class,
         IllegalReferenceCheckRewriterTest.class,
         InlineCssImportsStageTest.class,
         InnocentCodeRewriterTest.class,
@@ -165,6 +169,8 @@ public class AllTests {
         JsMinimalPrinterTest.class,
         JsPrettyPrinterTest.class,
         LayoutTest.class,
+        LocalizedHtmlTest.class,
+        LocalizerTest.class,
         MatchTest.class,
         ModuleFormatTest.class,
         NodesTest.class,
