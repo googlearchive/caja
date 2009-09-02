@@ -17,8 +17,8 @@ package com.google.caja.util;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -104,13 +104,17 @@ public class CollectionsTest extends TestCase {
 
   public void testPetulantCollection() {
     Multimap<String, String> m
-        = new Multimaps.AbstractMultimap<String, String, Collection<String>>(
-            new HashMap<String, Collection<String>>()) {
-              @Override
-              Collection<String> makeCollection() {
+        = new Multimaps.MultimapImpl<String, String, Collection<String>>(
+            new Multimaps.Maker<Map<String, Collection<String>>>() {
+              public Map<String, Collection<String>> newInstance() {
+                return Maps.newHashMap();
+              }
+            },
+            new Multimaps.Maker<Collection<String>>() {
+              public Collection<String> newInstance() {
                 return new PetulantCollection();
               }
-            };
+            });
     assertTrue(m.isEmpty());
     assertEquals("[]", m.keySet().toString());
     assertEquals("[]", m.get("foo").toString());
@@ -146,36 +150,43 @@ public class CollectionsTest extends TestCase {
     assertTrue(m.isEmpty());
   }
 
+  public void testClone() {
+    Multimap<String, String> m = Multimaps.newListLinkedHashMultimap();
+    m.put("a", "A");
+    m.put("b", "B");
+    m.put("b", "BEE");
+    m.put("d", "D");
+
+    Multimap<String, String> m2 = m.clone();
+    m2.put("a", "AYE");
+    m2.put("c", "C");
+    m2.remove("b", "BEE");
+
+    assertEquals("[A]", m.get("a").toString());
+    assertEquals("[B, BEE]", m.get("b").toString());
+    assertEquals("[]", m.get("c").toString());
+    assertEquals("[D]", m.get("d").toString());
+    assertEquals("[A, AYE]", m2.get("a").toString());
+    assertEquals("[B]", m2.get("b").toString());
+    assertEquals("[C]", m2.get("c").toString());
+    assertEquals("[D]", m2.get("d").toString());
+  }
+
   private static class PetulantCollection implements Collection<String> {
-    @Override
     public boolean add(String e) { return false; }
-    @Override
-    public boolean addAll(Collection<? extends String> c) {
-      return false;
-    }
-    @Override
+    public boolean addAll(Collection<? extends String> c) { return false; }
     public void clear() {}
-    @Override
     public boolean contains(Object o) { return false; }
-    @Override
     public boolean containsAll(Collection<?> c) { return false; }
-    @Override
     public boolean isEmpty() { return true; }
-    @Override
     public Iterator<String> iterator() {
       return Collections.<String>emptyList().iterator();
     }
-    @Override
     public boolean remove(Object o) { return false; }
-    @Override
     public boolean removeAll(Collection<?> c) { return false; }
-    @Override
     public boolean retainAll(Collection<?> c) { return false; }
-    @Override
     public int size() { return 0; }
-    @Override
     public Object[] toArray() { return new Object[0]; }
-    @Override
     public <T> T[] toArray(T[] a) { return a; }
   }
 }

@@ -37,4 +37,5 @@ public interface Multimap<K, V> {
   void removeAll(K k, Collection<? extends V> v);
   /** True if there are no values in the map. */
   boolean isEmpty();
+  Multimap<K, V> clone();
 }

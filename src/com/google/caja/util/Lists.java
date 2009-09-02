@@ -32,6 +32,11 @@ public final class Lists {
   }
 
   public static <E>
+  List<E> newArrayList(int capacity) {
+    return new ArrayList<E>(capacity);
+  }
+
+  public static <E>
   List<E> newArrayList(Collection<? extends E> els) {
     return new ArrayList<E>(els);
   }

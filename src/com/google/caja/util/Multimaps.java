@@ -14,13 +14,8 @@
 
 package com.google.caja.util;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,7 +32,8 @@ public class Multimaps {
   /** Creates an empty Multimap whose values are stored in {@link List}s. */
   public static <K, V>
   Multimap<K, V> newListHashMultimap() {
-    return new ArrayListMultimap<K, V>(new HashMap<K, List<V>>());
+    return new MultimapImpl<K, V, List<V>>(
+        new HashMapMaker<K, List<V>>(), new ListMaker<V>());
   }
   /**
    * Creates an empty Multimap whose values are stored in {@link List}s, and
@@ -45,7 +41,8 @@ public class Multimaps {
    */
   public static <K, V>
   Multimap<K, V> newListLinkedHashMultimap() {
-    return new ArrayListMultimap<K, V>(new LinkedHashMap<K, List<V>>());
+    return new MultimapImpl<K, V, List<V>>(
+        new LinkedHashMapMaker<K, List<V>>(), new ListMaker<V>());
   }
   /**
    * Creates an empty Multimap whose values are stored in {@link List}s, and
@@ -53,14 +50,16 @@ public class Multimaps {
    */
   public static <K, V>
   Multimap<K, V> newListIdentityMultimap() {
-    return new ArrayListMultimap<K, V>(new IdentityHashMap<K, List<V>>());
+    return new MultimapImpl<K, V, List<V>>(
+        new IdentityHashMapMaker<K, List<V>>(), new ListMaker<V>());
   }
   /**
    * Creates an empty Multimap whose values are stored in hash {@link Set}s.
    */
   public static <K, V>
   Multimap<K, V> newSetHashMultimap() {
-    return new LinkedHashSetMultimap<K, V>(new HashMap<K, Set<V>>());
+    return new MultimapImpl<K, V, Set<V>>(
+        new HashMapMaker<K, Set<V>>(), new SetMaker<V>());
   }
   /**
    * Creates an empty Multimap whose values are stored in hash {@link Set}s, and
@@ -68,7 +67,8 @@ public class Multimaps {
    */
   public static <K, V>
   Multimap<K, V> newSetLinkedHashMultimap() {
-    return new LinkedHashSetMultimap<K, V>(new LinkedHashMap<K, Set<V>>());
+    return new MultimapImpl<K, V, Set<V>>(
+        new LinkedHashMapMaker<K, Set<V>>(), new SetMaker<V>());
   }
   /**
    * Creates an empty Multimap whose values are stored in hash {@link Set}s, and
@@ -76,23 +76,61 @@ public class Multimaps {
    */
   public static <K, V>
   Multimap<K, V> newSetIdentityMultimap() {
-    return new LinkedHashSetMultimap<K, V>(new IdentityHashMap<K, Set<V>>());
+    return new MultimapImpl<K, V, Set<V>>(
+        new IdentityHashMapMaker<K, Set<V>>(), new SetMaker<V>());
+  }
+
+  static interface Maker<T> {
+    T newInstance();
+  }
+
+  private static class HashMapMaker<K, V> implements Maker<Map<K, V>> {
+    public Map<K, V> newInstance() { return Maps.newHashMap(); }
+  }
+
+  private static class LinkedHashMapMaker<K, V> implements Maker<Map<K, V>> {
+    public Map<K, V> newInstance() { return Maps.newLinkedHashMap(); }
+  }
+
+  private static class IdentityHashMapMaker<K, V> implements Maker<Map<K, V>> {
+    public Map<K, V> newInstance() { return Maps.newIdentityHashMap(); }
+  }
+
+  private static class ListMaker<T> implements Maker<List<T>> {
+    public List<T> newInstance() { return Lists.newArrayList(); }
+  }
+
+  private static class SetMaker<T> implements Maker<Set<T>> {
+    public Set<T> newInstance() { return Sets.newLinkedHashSet(); }
   }
 
   // Visible for testing
-  static abstract class AbstractMultimap<K, V, C extends Collection<V>>
+  static final class MultimapImpl<K, V, C extends Collection<V>>
       implements Multimap<K, V> {
-    /** Maps to non-empty collections produced by {@link #makeCollection}. */
+    private final Maker<Map<K, C>> mapMaker;
+    private final Maker<C> collectionMaker;
+    /** Maps to non-empty collections produced by {@link #collectionMaker}. */
     private final Map<K, C> underlying;
 
-    AbstractMultimap(Map<K, C> underlying) {
-      this.underlying = underlying;
+    MultimapImpl(Maker<Map<K, C>> mapMaker, Maker<C> collectionMaker) {
+      this.mapMaker = mapMaker;
+      this.collectionMaker = collectionMaker;
+      this.underlying = mapMaker.newInstance();
     }
 
-    /** Makes an instance for a value collection. */
-    abstract C makeCollection();
-
     @Override
+    public final Multimap<K, V> clone() {
+      MultimapImpl<K, V, C> clone = new MultimapImpl<K, V, C>(
+          mapMaker, collectionMaker);
+      clone.underlying.putAll(this.underlying);
+      for (Map.Entry<K, C> e : clone.underlying.entrySet()) {
+        C c = collectionMaker.newInstance();
+        c.addAll(e.getValue());
+        e.setValue(c);
+      }
+      return clone;
+    }
+
     public Collection<V> get(K k) {
       C c = underlying.get(k);
       return c != null
@@ -100,18 +138,15 @@ public class Multimaps {
           : Collections.<V>emptySet();
     }
 
-    @Override
     public boolean isEmpty() { return underlying.isEmpty(); }
 
-    @Override
     public Set<K> keySet() { return underlying.keySet(); }
 
-    @Override
     public boolean put(K k, V v) {
       C c = underlying.get(k);
       boolean result;
       if (c == null) {
-        c = makeCollection();
+        c = collectionMaker.newInstance();
         result = c.add(v);
         if (!c.isEmpty()) { underlying.put(k, c); }
       } else {
@@ -120,12 +155,11 @@ public class Multimaps {
       return result;
     }
 
-    @Override
     public void putAll(K k, Collection<? extends V> v) {
       if (v.isEmpty()) { return; }
       C c = underlying.get(k);
       if (c == null) {
-        c = makeCollection();
+        c = collectionMaker.newInstance();
         c.addAll(v);
         if (!c.isEmpty()) { underlying.put(k, c); }
       } else {
@@ -133,7 +167,6 @@ public class Multimaps {
       }
     }
 
-    @Override
     public boolean remove(K k, V v) {
       C c = underlying.get(k);
       if (c == null) { return false; }
@@ -142,7 +175,6 @@ public class Multimaps {
       return result;
     }
 
-    @Override
     public void removeAll(K k, Collection<? extends V> v) {
       C c = underlying.get(k);
       if (c != null) {
@@ -150,21 +182,5 @@ public class Multimaps {
         if (c.isEmpty()) { underlying.remove(k); }
       }
     }
-  }
-
-  private static final class ArrayListMultimap<K, V>
-      extends AbstractMultimap<K, V, List<V>> {
-    ArrayListMultimap(Map<K, List<V>> underlying) { super(underlying); }
-
-    @Override
-    List<V> makeCollection() { return new ArrayList<V>(); }
-  }
-
-  private static final class LinkedHashSetMultimap<K, V>
-      extends AbstractMultimap<K, V, Set<V>> {
-    LinkedHashSetMultimap(Map<K, Set<V>> underlying) { super(underlying); }
-
-    @Override
-    Set<V> makeCollection() { return new LinkedHashSet<V>(); }
   }
 }
