@@ -91,6 +91,7 @@ import com.google.caja.service.CajolingServiceTest;
 import com.google.caja.service.ContentTypeCheckTest;
 import com.google.caja.util.AbbreviatorTest;
 import com.google.caja.util.CapturingReaderTest;
+import com.google.caja.util.CollectionsTest;
 import com.google.caja.util.JoinTest;
 import com.google.caja.util.RhinoAssertsTest;
 import com.google.caja.util.SparseBitSetTest;
@@ -120,6 +121,7 @@ public class AllTests {
         CajolingServiceTest.class,
         CapturingReaderTest.class,
         CharProducerTest.class,
+        CollectionsTest.class,
         ConfigUtilTest.class,
         ContentTypeCheckTest.class,
         CssLexerTest.class,
