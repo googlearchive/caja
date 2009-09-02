@@ -2695,7 +2695,14 @@ var safeJSON;
    */
   function prepareModule(module) {
     function theModule(imports) {
-      return module.instantiate(___, imports);
+      // The supplied 'imports' contain arguments supplied by the caller of the
+      // module. We need to add the primordials (Array, Object, ...) to these
+      // before invoking the Cajita module.
+      var completeImports = copy(sharedImports);
+      forOwnKeys(imports, markFuncFreeze(function(k, v) {
+        completeImports[k] = v;
+      }));
+      return module.instantiate(___, primFreeze(completeImports));
     }
     theModule.FUNC___ = 'theModule';
       

@@ -2401,6 +2401,10 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     setRewriter(moduleRewriter);
 
     rewriteAndExecute(
+        "var r = load('foo/testPrimordials')({}); "
+        + "assertEquals(r, 9);");
+
+    rewriteAndExecute(
         "var r = load('foo/b')({x: 6, y: 3}); "
         + "assertEquals(r, 11);");
 
