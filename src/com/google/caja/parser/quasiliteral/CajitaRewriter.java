@@ -163,7 +163,7 @@ public class CajitaRewriter extends Rewriter {
     result.getAttributes().putAll(node.getAttributes());
     return result;
   }
-
+  
   // A NOTE ABOUT MATCHING MEMBER ACCESS EXPRESSIONS
   // When we match the pattern like '@x.@y' or '@x.@y()' against a specimen,
   // the result is that 'y' is bound to the rightmost component, and 'x' is
@@ -228,17 +228,18 @@ public class CajitaRewriter extends Rewriter {
           synopsis="rewrites the load function.",
           reason="",
           matches="load(@arg)",
-          substitutes="moduleMap___[@moduleIndex]")
+          substitutes="<depending on whether bundle the modules")
       public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
         Map<String, ParseTreeNode> bindings = match(node);
         if (bindings != null && scope.isImported("load")) {
           ParseTreeNode arg = bindings.get("arg");
           if (arg instanceof StringLiteral) {
             assert(moduleManager != null);
-
             int index = moduleManager.getModule((StringLiteral) arg);
             if (index != -1) {
-              return substV("moduleIndex",
+              return QuasiBuilder.substV(
+                  "moduleMap___[@moduleIndex]",
+                  "moduleIndex",
                   new IntegerLiteral(FilePosition.UNKNOWN, index));
             } else {
               // error messages were logged in the function getModule

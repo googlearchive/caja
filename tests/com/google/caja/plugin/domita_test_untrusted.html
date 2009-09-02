@@ -418,6 +418,11 @@ Script Module Loader Failure</p>
 <p class="testcontainer" id="recursive-module">
 Recursive Module</p>
 
+<p class="testcontainer" id="server-js-module">ServerJS Module</p>
+
+<p class="testcontainer" id="server-js-recursive-module">
+ServerJS Recursive Module</p>
+
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
 
@@ -2839,7 +2844,7 @@ function testAsyncModuleLoaderFailure(load, includeScript, prefix) {
   };
   
   var f2 = function(reason) {
-    if (reason.substring(0, 26) === 'Retrieving module failed, ') { 
+    if (reason.substring(0, 22) === 'Retrieving the module ') { 
       pass(prefix + '-module-loader-failure');
     }
   };
@@ -2885,6 +2890,50 @@ jsunitRegister('testRecursiveModule',
     Q.when(m, f1, f2);
   } else {
     pass('recursive-module');
+  }
+});
+
+jsunitRegister('testServerJsModule',
+        function testServerJsModule() {
+  if (valijaMode) {
+    var m = serverJsModuleLoad('foo/inc.vo');
+    Q.when(m, function(module) {
+                var r = module.inc(env.x);
+                Q.when(r, function(result) {
+                            assertEquals(result, 7);
+                            pass("server-js-module");
+                          },
+                          function(reason) {
+                            fail(reason);
+                          });
+                  },
+                  function(reason) {
+                    fail("Loading module inc failed, " + reason);
+                  });
+  } else {
+    pass("server-js-module");
+  }
+});
+
+jsunitRegister('testServerJsRecursiveModule',
+        function testServerJsRecursiveModule() {
+  if (valijaMode) {
+    var m = serverJsModuleLoad('serverJsRecursion.vo');
+    Q.when(m, function(module) {
+                var r = module.isNonNegative(env.x);
+                Q.when(r, function(result) {
+                            assertEquals(result, true);
+                            pass("server-js-recursive-module");
+                          },
+                          function(reason) {
+                            fail("Waiting for result failed, " + reason);
+                          });
+              },
+              function(reason) {
+                fail("Loading module Recursion failed, " + reason);
+              });
+  } else {
+    pass("server-js-recursive-module");
   }
 });
 

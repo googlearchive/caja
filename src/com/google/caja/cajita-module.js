@@ -15,13 +15,14 @@
 /**
  * @author maoziqing@gmail.com
  * @requires ___
- * @provides xhrModuleLoader, scriptModuleLoader
+ * @provides xhrModuleLoad, scriptModuleLoad
  * 
- * Each loader object contains one method 'async', which returns a module 
- * function given the source URL. 
+ * Each load object contains one method
+ *  load.async(src): given the source URL, fetches the module asynchronously 
+ *                   and returns a promise to the module function. 
  */
-var xhrModuleLoader;
-var scriptModuleLoader;
+var xhrModuleLoad;
+var scriptModuleLoad;
 var clearModuleCache;
 
 (function() {
@@ -33,7 +34,7 @@ var clearModuleCache;
     }
     return src;
   }
-  
+
   function xhrLoad(src) {
     var r = Q.defer();
 
@@ -50,8 +51,8 @@ var clearModuleCache;
               handle: ___.markFuncFreeze(function theHandler(module) {
                 try {
                   var securedModule = ___.prepareModule(module);
-                  r.resolve(securedModule);
                   cache[src] = securedModule; 
+                  r.resolve(securedModule);
               	} catch (e) {
               	  r.resolve(Q.reject(e));
               	}
@@ -62,7 +63,8 @@ var clearModuleCache;
             ___.setNewModuleHandler(savedModuleHandler);
           } else {
             r.resolve(Q.reject(
-                "Retrieving module failed, status code = " + xhr.status));
+                "Retrieving the module " + src + "failed, "
+                + "status code = " + xhr.status));
           }
         }
       };
@@ -74,9 +76,9 @@ var clearModuleCache;
     }
     return r.promise;
   }
-  
-  xhrModuleLoader = ___.primFreeze({ async: ___.markFuncFreeze(xhrLoad) });
 
+  xhrModuleLoad = ___.primFreeze({ async: ___.markFuncFreeze(xhrLoad) });
+  
   var head = 0;
   var queue = [];
   var busy = false;
@@ -160,8 +162,8 @@ var clearModuleCache;
     return r.promise;
   }
   
-  scriptModuleLoader = ___.primFreeze(
-      { async: ___.markFuncFreeze(scriptLoad) });
+  scriptModuleLoad = ___.primFreeze(
+      { async: ___.markFuncFreeze(scriptLoad) });  
   
   clearModuleCache = ___.markFuncFreeze(function() {
     cajita.forOwnKeys(cache, ___.markFuncFreeze(function(k, v) {
