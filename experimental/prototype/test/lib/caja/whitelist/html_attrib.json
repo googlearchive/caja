@@ -16,36 +16,36 @@
 
   "types": [
     {
-      "key": "A:ACCESSKEY",
+      "key": "A::ACCESSKEY",
       "description": "Allow the A:ACCESSKEY accessibility key character",
       "pattern": ".?",
       "optional": true
     },
     
     {
-      "key": "INPUT:TYPE",
+      "key": "INPUT::TYPE",
       "description": "Overwrite INPUT:TYPE rule to allow for DATE value.",
       "pattern": "TEXT|PASSWORD|CHECKBOX|RADIO|SUBMIT|RESET|FILE|HIDDEN|IMAGE|BUTTON|DATE",
       "optional": true
     },
     
     {
-      "key": "A:TABINDEX",
+      "key": "A::TABINDEX",
       "description": "Overwrite A:TABINDEX to allow for an empty value",
       "pattern": ".*",
       "optional": true
     },
     
     {
-      "key": "DIV:FOO",
-      "description": "Custom BAR attribute.",
+      "key": "DIV::FOO",
+      "description": "Custom FOO attribute.",
       "pattern": ".*",
       "optional": true
     },
     
     {
-      "key": "DIV:BAR",
-      "description": "Custom FOO attribute",
+      "key": "DIV::BAR",
+      "description": "Custom BAR attribute",
       "pattern": ".*",
       "optional": true
     }
