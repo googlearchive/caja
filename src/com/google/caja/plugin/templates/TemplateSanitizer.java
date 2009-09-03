@@ -113,7 +113,9 @@ public final class TemplateSanitizer {
         // first occurrence of an attribute could be spoofed.
         break;
       }
-      case Node.TEXT_NODE: case Node.CDATA_SECTION_NODE:
+      case Node.TEXT_NODE: 
+      case Node.CDATA_SECTION_NODE:
+      case Node.COMMENT_NODE:
         break;
       default:
         throw new AssertionError(t.getNodeName());
