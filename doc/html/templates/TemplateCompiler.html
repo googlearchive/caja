@@ -46,8 +46,7 @@ scripts have running in a browser by partitioning a document into a multiple
 virtual documents.
 
 <p><a href="http://www.quirksmode.org/dom/innerhtml.html">Benchmarks</a> show
-that using DOM manipulation to create a UI on the browser is slow even on
-recently released browsers:
+that creating a UI via <b>DOM manipulation is slow</b> even on modern browsers:
 <blockquote>
   The most obvious conclusion of these tests is that innerHTML is
   faster than "real" W3C DOM methods in all browsers. The W3C DOM
@@ -59,29 +58,30 @@ recently released browsers:
 >XSL</a>, languages that compile to javascript like
 <a href="http://code.google.com/p/gxp/wiki/WhyGxp">GXP</a>, javascript only
 solutions like <a href="http://code.google.com/p/google-jstemplate/"
->JSTemplates</a>, and others), there is no consensus on how to do templating on
-the browser.  The wide use of systems like FBML, YML, and OSML amongst gadget
-authors show that templating languages are used.
+>JSTemplates</a>, and others), <b>there is no consensus on how to do templating
+on the browser</b>.  The wide use of systems like FBML, YML, and OSML amongst
+gadget authors show that templating languages are used.
 
 <p>Many of these existing templating languages are widely tied to app-hosting
 services (like Facebook and FBML) but there are a number of non-proprietary
 in-browser templating languages.
 
 <p>Some of these templating languages use sensible defaults to mitigate XSS and
-other injection problems, but none of them address malicious template authors.
+other injection problems, but
+<b>no template engine addresses malicious template authors</b>.
 
 <h2>Goal</h2>
 <p>A mechanism to allow HTML templating schemes like Soy, OpenSocial
-Templates, client-side GXP, XSL, and others to plug into a sandboxed
-web application framework like Caja without compromising the security
+Templates, client-side GXP, XSL, and others to <b>work with a Javascript
+sandbox</b> like Caja without compromising the security
 properties of the sandbox even against malicious developers.
 
-<p>It is a goal to support a large part of a range of templating languages
+<p>It is a goal to support a wide range of templating languages
 including dynamic attribute values, dynamic textual content, conditional and
 repeated evaluation, and decomposition of large templates into smaller ones.
 Dynamic tag names, such as <code>&lt;h$number&gt;</code> is a nice-to-have.
 
-<p>It is a goal for templates to be compiled to efficient javascript
+<p>It is a goal for templates to <b>compile to efficient javascript</b>
 functions.  Since there is a 10x-100x performance penalty for DOM manipulation
 over parsing <code>innerHTML</code> it is a goal for templates to not incur
 a performance penalty for the portions that can be statically verified safe
@@ -100,7 +100,8 @@ exported from a caja module for use by event handlers.
 <p>It is not a goal to support arbitrary policies and we restrict
 policies to those which can be specified in terms of whitelists of
 elements, attributes, and regular grammar constraints on HTML
-attributes and CSS properties.  Supporting trusted-path is
+attributes and CSS properties.  Supporting
+<a href="http://en.wikipedia.org/wiki/Trusted_path">trusted-path</a> is
 nice-to-have but is not a goal.
 
 <p>It is goal for a cajoled HTML page to be compilable to a zero-argument
@@ -114,37 +115,41 @@ are specified in terms of string interpolation.
 self-evaluate (i.e. treat an input as a string of the template language),
 or that allow expressions to introspect over a partially built output.
 
-<p>It is a non-goal to allow production of arbitrary well-formedness HTML.
-
 
 <h2>Glossary</h2>
 <dl>
-<dt>Alpha renaming</dt>
+<dt><a href="http://en.wikipedia.org/wiki/AlphaRenaming">Alpha renaming</a></dt>
 <dd>An operation that replaces all uses of an identifier corresponding to
 the same memory slot with a name that is unique within a compilation unit.
+After an alpha renaming, scope analysis is simple since no identifier masks
+another identifier.
 <dt>CSS Schema</dt>
 <dd>Describes allowed values for CSS properties, and possibly normalizing
-    transformations (e.g. quoting font names).
+    transformations (e.g. quoting font names, or turning string URLs into
+    the <code>url("...")</code> form).
 <dt>Dynamics</dt>
 <dd>Portions of an HTML document that cannot be verified statically.
 <dt>Falsey</dt>
-<dd>A javascript value x where <code class="prettyprint">false === !!x</code>.
+<dd>A javascript value <code>x</code> such that
+    <code class="prettyprint">false === !!x</code>.
 <dt>HTML Schema</dt>
 <dd>Describes allowed elements and attributes, constraints on
     attribute values, and possibly containment relationships between
     elements.
 <dt>HTML Template</dt>
-<dd>A function from input values to strings of HTML usually specified as
+<dd>A function from input values to strings of HTML usually specified via
     a language with some superficial similarity to HTML.
 <dt>IHTML</dt>
-<dd>HTML plus five custom elements which allow for (1) template definition
+<dd>A language defined in this document used as an intermediate representation
+    of HTML templates.
+    It is HTML plus a few custom elements which allow for (1) template definition
     and scoping, (2) calling of a defined template, (3) repetition and
     alternation, (4) specification of a dynamic portion in terms of
     javascript, and (5) text localization.
-<dt>L10N</dt>
+<dt><a href="http://en.wikipedia.org/wiki/Internationalization_and_localization">L10N</a></dt>
 <dd>Text Localization is a mechanism by which appropriate passages of human
     language text are chosen based on a viewer's locale.
-<dt>RTL Script</dt>
+<dt><a href="http://en.wikipedia.org/wiki/Writing_direction#Directionality">RTL Script</a></dt>
 <dd>Right-To-Left, e.g. the Arabic, Hebrew, and Perso-Arabic scripts.
 <dt>Safe identifier</dt>
 <dd>A valid javascript identifier in unicode normal form C that does not
@@ -157,12 +162,16 @@ the same memory slot with a name that is unique within a compilation unit.
 <dt>TCB</dt>
 <dd>Trusted Computing Base.  The portion of code that must be correct for
     the design to preserve the security properties that it purports to.
-<dt>Trademark</dt>
+<dt>Template Translator</dt>
+<dd>A program that converts a template in an HTML templating language into IHTML.
+<dt>((Trademark))</dt>
 <dd>An unforgeable marker attached to an object which asserts that the
     object has certain security properties.  This can be viewed either
     as memoizing the fact that the object has passed some validation,
-    or that the object has been blessed by some code that is
-    explicitly trusted by code that checks the trademark.
+    or that the object has been
+    <a href="http://en.wikipedia.org/wiki/Trademark_computer_security"
+     >trademarked</a> by some code that is explicitly trusted by code that
+    checks the trademark.
 <dt>Truthy</dt>
 <dd>A javascript value x where <code class="prettyprint">true === !!x</code>.
 </dl>
@@ -173,10 +182,12 @@ the same memory slot with a name that is unique within a compilation unit.
 <h2>Overview</h2>
 <img src="TemplateCompiler.png" alt="Pipeline"
  style="float: left; margin-left: -3px; margin-right: 3px">
-<p>We first define an intermediate language, IHTML, that a template can be
-compiled to.  Template language designers can implement this conversion,
-and the system does not depend on any aspect of this conversion to
-maintain security properties so they need not have a background in security.
+((TODO: Replace template system with template translator in diagram))
+<p>We first define an intermediate language, IHTML, that a template
+can be compiled to.  Template language designers can implement a
+translator which performs this conversion, and the security of the
+system does not depend on any aspect of this conversion, so the author
+of the template language does not need to be a security expert.
 <pre class="prettyprint"
 >&lt;template name="helloPlanets"&gt;
   <b>&lt;ul&gt;</b>
@@ -189,16 +200,16 @@ maintain security properties so they need not have a background in security.
 &lt;/template&gt;</pre>
 might compile to
 <pre class="prettyprint">
-&lt;ihtml:template name="helloPlanets" formals="planet"&gt;
+&lt;ihtml:template name="helloPlanets" formals="planets"&gt;
   <b>&lt;ul&gt;</b>
-    &lt;ihtml:do vars="planet,i" init="(i = 0) &lt; planets.length"
-     while="++i &lt; planets.length"&gt;
+    &lt;ihtml:do vars="i n" init="i = 0, n = planets.length"
+     while="++i &lt; n"&gt;
       &lt;ihtml:template name="loopbody0" formals="planet"&gt;
         <b>&lt;li&gt;</b>
           <b>Hello </b>&lt;ihtml:dynamic expr="planet"/&gt;
         <b>&lt;/li&gt;</b>
       &lt;/ihtml:template&gt;
-      &lt;ihtml:call ihtml:template="loopbody0" planet="planet"/&gt;
+      &lt;ihtml:call ihtml:template="loopbody0" planet="planets[i]"/&gt;
     &lt;/ihtml:do&gt;
   <b>&lt;/ul&gt;</b>
 &lt;ihtml:template&gt;</pre>
@@ -210,11 +221,11 @@ elements, HTML attributes, and CSS properties.  IHTML nodes are ignored entirely
 by the schemas, so that once schemas have been successfully applied the
 non-IHTML portion is known to be a safe quantity.
 
-<p>IHTML nodes contain javascript and that is run through a
+<p>IHTML nodes contain javascript which is run through a
 <a href="http://code.google.com/p/google-caja/">Javascript sandboxer</a>
 which will complain if any expressions have unexpected free variables, and
-may add runtime checks.  This same sandboxer is typically used to sanitize
-<code>onclick</code> attributes and the like.
+may add runtime checks.  This same sandboxer is used with static HTML to
+sanitize <code>onclick</code> attributes, etc.
 
 <p>Once validation is done, the IHTML&rarr;JS compiler converts the IHTML tree
 to a javascript function.  This stage may be implemented in a number of ways:
@@ -224,7 +235,8 @@ to a javascript function.  This stage may be implemented in a number of ways:
     repeated sections, and walking the tree to inject dynamic bits at the
     right place.
 </ul>
-but they all have to vet dynamic values.  For each dynamic bit they have to apply a policy:
+but they all have to vet dynamic values.  For each dynamic bit they have to
+apply a policy:
 <ul>
 <li>For dynamic element names, they have to whitelist the name, and check
     whether it can appear in its parent.
@@ -257,7 +269,6 @@ Possible return conventions include:
 <li>as another approach but continuation passing style.
 </ul>
 
-
 <p>There are a variety of ways applications could display a template output
 created by untrusted code, but one way is to provide a privileged channel
 that checks the trademark on its input, and if it passes, injects it into
@@ -284,9 +295,10 @@ template call contributes the union of the elements in the template
 body.  Since all template calls are dispatched statically, we can
 preserve containment relationships specified in the HTML schema.
 
-<p>IHTML adds five elements to HTML that can appear anywhere
-<a href="http://www.w3.org/TR/REC-html40/sgml/dtd.html#special">elements</a>
-can appear.
+<p>IHTML adds seven elements to HTML that can appear anywhere
+<a href="http://www.w3.org/TR/REC-html40/sgml/dtd.html#special"
+>HTML special elements</a> can appear.  Though there are restrictions on which
+IHTML elements can contain others.
 
 <h4>Template definition : <code>ihtml:template</code></h4>
 <pre class="prettyprint">
@@ -308,15 +320,18 @@ unit and an edge for each <code>ihtml:call</code> from the closest containing
 <code>ihtml:template</code> to the called template.  This graph has to be
 computed post <a href="#alpha-renaming">alpha renaming</a>.
 
+<p>Template definitions can appear at the top level or as children of other
+templates.
+
 <h4>Template invocation : <code>ihtml:call</code></h4>
 <pre class="prettyprint">
 &lt;ihtml:call ihtml:template="foo" bar="1" baz="2"/&gt;
 </pre>
-<p>Invokes a template substituting the DOM produced by the template into.
-A template that is declared inside another template is assumed to inherit
-all the state of the outer.  Inner templates are not first-class so there
-is no danger of a template being called after the scope in which it's
-declared has been left.
+<p>Invokes a template substituting the DOM produced by the template at
+the call site.  A template that is declared inside another template is
+assumed to inherit all the state of the outer template.  Inner
+templates are not first-class so there is no danger of a template
+being called after the scope in which it's declared has been left.
 <p>The required <code>ihtml:template</code> attribute is a safe identifier and
 specifies the template to call.  If it is the name of an inner template
 then that one is used.  Otherwise, it must be the name of a top-level
@@ -325,10 +340,11 @@ template in the same compilation unit.
 identifiers in the called template's <code>formals</code> list.
 The set of actual attributes in the <code>ihtml:call</code> must match
 the set of formals in the called template.
-<p><code>ihtml:call</code> elements cannot appear inside an element that
-allows CDATA content.  Template compiler implementors should translate
-<code>XMP</code>, <code>LISTING</code>, and <code>PLAINTEXT</code>
-elements to <code>PRE</code> tags if those need to be supported.
+<p>Calls can appear anywhere a text node, HTML element,
+<code>ihtml:attribute</code>, or <code>ihtml:element</code>
+could appear, though it is an error for a call that might produce
+elements to appear inside an <code>ihtml:attribute</code>
+or <code>ihtml:element</code> element.
 
 <h4>Block scoping, repetition and conditional evaluation
  : <code>ihtml:do</code> and <code>ihtml:else</code></h4>
@@ -337,14 +353,13 @@ elements to <code>PRE</code> tags if those need to be supported.
  vars="aLocalVariableName,another"
  init="aBooleanExpression()"
  while="aBooleanExpression()"&gt;
-  &lt;p&gt;Evaluated once if init is initially truthy and then continually until
-     the while attribute evaluates to falsey.&lt;/p&gt;
+  &lt;p&gt;Evaluated until the while attribute evaluates to falsey.&lt;/p&gt;
 &lt;ihtml:else/&gt;
   &lt;p&gt;Evaluated once if init is initially falsey.&lt;/p&gt;
 &lt;/ihtml:do&gt;
 </pre>
 
-<p>Introduces a block scope, and possibly repeatedly evaluates its body.
+<p>Introduces a scoping block, and possibly repeatedly evaluates its body.
 <p>The optional <code>vars</code> attribute specifies a set of variables
 that enter scope when the <code>ihtml:do</code> is entered, and which
 are cleaned up when it is exited.
@@ -356,13 +371,13 @@ This can be used to initialize <code>vars</code> as in
 <code class="prettyprint">a = 1, b = 2, true</code>.
 <p>The optional <code>while</code> attribute is a javascript expression.
 The body is evaluated as long as the <code>while</code> attribute's result is
-truthy.  The <code>init</code> expression controls whether the body is executed
-the first time, and the <code>while</code> expression determines whether control
-reenters the body.
+truthy.
 <p>The <code>ihtml:do</code> may contain a single <code>ihtml:else</code>
 element.  If it does, its body is every child before the
 <code>ihtml:else</code> and its alternate is every child after.
 Otherwise the body is every child, and the alternate is the empty node list.
+<p><code>ihtml:do</code>s can appear anywhere a text node, HTML element,
+<code>ihtml:attribute</code> or <code>ihtml:element</code> can appear.
 
 <h4>Element Names : <code>ihtml:element</code></h4>
 <pre class="prettyprint">
@@ -372,8 +387,24 @@ Otherwise the body is every child, and the alternate is the empty node list.
 &lt;/h1&gt;
 </pre>
 
-<p>Used in conjunction with <code>ihtml:dynamic</code> to specify a replacement for the tag name of the containing HTML element.  Must be a descendant of an HTML element.
-<p>Contains textual content specifying the name of an element to use in place of a containing HTML element.  The containing element must be one that has a set of attribute definitions that have the same meaning when applied to the replacement tag type, and must be able to appear in similar circumstances.  E.g. if the containing element is a <code>TBODY</code> then the textual content of the body of the <code>ihtml:element</code> (after <code>ihtml:dynamic</code> evaluation) could be any of <code>TBODY</code>, <code>TFOOT</code>, or <code>THEAD</code> since all of those can appear in the same position, can contain the same kinds of nodes, and have the same set of attribute definitions.
+<p>Used in conjunction with <code>ihtml:dynamic</code> to specify a
+replacement for the tag name of the containing HTML element.  Must be
+a descendant of an HTML element.
+
+<p>Contains textual content specifying the name of an element to use
+in place of a containing HTML element.  The containing element must be
+one that has a set of attribute definitions that have the same meaning
+when applied to the replacement tag type, and must be able to appear
+in similar circumstances.  E.g. if the containing element is
+a <code>TBODY</code> then the textual content of the body of
+the <code>ihtml:element</code> (after <code>ihtml:dynamic</code>
+evaluation) could be any of <code>TBODY</code>, <code>TFOOT</code>,
+or <code>THEAD</code> since all of those can appear in the same
+position, can contain the same kinds of nodes, and have the same set
+of attribute definitions.
+
+<p>Can appear inside any HTML element, or as a child of either an
+<code>ihtml:template</code> or <code>ihtml:do</code> element.</p>
 
 <h4>Attribute Values : <code>ihtml:attribute</code></h4>
 <pre class="prettyprint">
@@ -386,20 +417,38 @@ Otherwise the body is every child, and the alternate is the empty node list.
 &lt;/a&gt;
 </pre>
 
-<p>Used in conjunction with <code>ihtml:dynamic</code> and <code>ihtml:message</code> to specify an attribute value.
-<p>Must have a <code>name</code> attribute which must be a valid HTML attribute name.
-If the element is a descendant of an <code>ihtml:template</code> then it's name attribute
-must be allowed on the type of element from which the template is called.  Otherwise it
-must be allowed on the closest containing HTML element.
-<p>SCRIPT attributes (e.g. <code>onclick</code>) attributes cannot be added this way.
-<p>If its content is a single <code>&lt;ihtml:dynamic&gt;</code> element, and the attribute specified is a valueless attribute (e.g. <code>checked</code> or <code>selected</code>) then the expression will be treated as a boolean expression which specifies whether or not the attribute is present on the output &mdash; any truthy value will cause the attribute to be present, and any falsy value will cause it to be absent.
+<p>Used in conjunction with <code>ihtml:dynamic</code> and
+<code>ihtml:message</code> to specify an attribute value.
+<p>Must have a <code>name</code> attribute which must be a valid HTML
+attribute name.  If the element is a descendant of
+an <code>ihtml:template</code> then it's name attribute must be
+allowed on the type of element from which the template is called.
+Otherwise it must be allowed on the closest containing HTML element.
+
+<p>SCRIPT attributes (e.g. <code>onclick</code>) attributes cannot be
+added this way.
+
+<p>If its content is a single <code>&lt;ihtml:dynamic&gt;</code>
+element, and the attribute specified is a valueless attribute
+(e.g. <code>checked</code> or <code>selected</code>) then the
+expression will be treated as a boolean expression which specifies
+whether or not the attribute is present on the output &mdash; any
+truthy value will cause the attribute to be present, and any falsy
+value will cause it to be absent.
+
+<p>Can appear inside any HTML element, or as a child of either an
+<code>ihtml:template</code> or <code>ihtml:do</code> element.</p>
+
 
 <h4>Dynamic content : <code>ihtml:dynamic</code></h4>
 <pre class="prettyprint">
 &lt;!-- Dynamic text --&gt;
 &lt;p&gt;My name is <b>&lt;ihtml:dynamic expr="name"/&gt;</b>.&lt;/p&gt;
 </pre>
-<p>Uses javascript to output dynamic text.  This can be used to specify dynamic PCDATA text nodes, or if it appears inside an <code>ihtml:element</code> or <code>ihtml:attribute</code>, then it can be used to change an element name or attribute value.
+<p>Uses javascript to output dynamic text.  This can be used to
+specify dynamic PCDATA text nodes, or if it appears inside
+an <code>ihtml:element</code> or <code>ihtml:attribute</code>, then it
+can be used to change an element name or attribute value.
 
 <h4>Text Localization : <code>ihtml:message</code></h4>
 <pre class="prettyprint">
@@ -437,8 +486,8 @@ console.
 <p>This template scheme provides no explicit mechanism for
 internationalization(<a href="#auto-rtl">*</a>),
 though it does provide for text localization (L10N).  A templating language
-that provides syntactic support for I18N should use javascript libraries to
-provide formatting.
+that provides syntactic support for I18N concerns, like date and number
+formatting, should use javascript libraries to provide formatting.
 
 <p>Text localization is almost orthogonal to generic templating &mdash;
 a template compiler could implement it's own message extraction and
@@ -493,13 +542,14 @@ by doing the following:
      >&lt;ihtml:ph name="&hellip;"/&gt;&hellip;&lt;ihtml:eph/&gt;</code>)
     into a map indexed by the <code>ihtml:ph</code>s' name attributes.
     If a name is reused, report an error.
+    Placeholder content is represented as a sequence of HTML tokens.
   <li>Lookup the message matching the <code>ihtml:message</code>'s
     <code>name</code> attribute.
   <li>If the set of placeholder names in the <code>ihtml:message</code> is
     different from that in the message bundle message, report an error.
-  <li>Parse the message bundle message to a document fragment, and replace
-    all <code>ihtml:ph</code> elements with the corresponding placeholder
-    extracted in step 1.
+  <li>Generate a token sequence from the message bundle message with the token
+    sequences for placeholders substituted with those extracted in step 1,
+    and parse that token sequence to a document fragment.
   <li>Replace the <code>ihtml:message</code> element with the document
     fragment's children.
 </ul>
@@ -519,7 +569,6 @@ their templates content (or nothing if recursion would result), all
 <code>ihtml:do</code> were replaced with either their body or
 alternate, and all other <code>ihtml:</code> elements were replaced
 with their children.
-<p>We also assume that
 
 <h3>Javascript sandboxing</h3>
 <p>Some of the custom <code>ihtml:</code> elements contain attributes that are
@@ -546,7 +595,7 @@ outer scope.  We do an alpha-renaming because javascript is not a
 block scoped language, but the <code>ihtml:template</code> and
 <code>ihtml:do</code> constructs specify block scoping.
 
-<p>After an alpha it becomes trivial to inline <code>ihtml:call</code>s
+<p>After an alpha renaming it becomes trivial to inline <code>ihtml:call</code>s
 which is important since we provide only one operation that can decompose
 the input.
 
@@ -561,7 +610,6 @@ final class NameContext {
   static final class VarInfo {
     final String newName;
     final FilePosition declaredAt;
-    final boolean isTemplate;
   }
 
   /**
@@ -579,39 +627,23 @@ final class NameContext {
     return subScope;
   }
 
-  void declare(String originalName, FilePosition declarationSite,
-               boolean isTemplate) {
+  void declare(String originalName, FilePosition declarationSite) {
     if (vars.contains(originalName)) { throw &hellip; }
-    vars.put(originalName,
-             new VarInfo(nameGenerator.next(), declarationSite, isTemplate));
+    vars.put(originalName, new VarInfo(nameGenerator.next(), declarationSite));
   }
 
-  private VarInfo lookup(String originalName, boolean isTemplate) {
+  private VarInfo lookup(String originalName) {
     for (NameContext c = this; c != null; c = c.parent) {
       VarInfo vi = c.vars.get(originalName);
-      if (vi != null &amp;&amp; vi.isTemplate == isTemplate) { return vi; }
+      if (vi != null) { return vi; }
     }
     return null;
   }
-
-  VarInfo lookupVar(String originalName) {
-    return lookup(originalName, false);
-  }
-
-  VarInfo lookupTemplate(String originalName) {
-    return lookup(originalName, true);
-  }
-
-  Iterable&lt;VarInfo&gt; newVarNames() {
-    return Iterables.filter(vars.values(), new Predicate&lt;VarInfo&gt;() {
-      public boolean apply(VarInfo vi) { return !vi.isTemplate; }
-    });
-  }
 }</pre>
 
-<p>We create a blank <code>NameContext</code> instance which will collect all
-top-level template names, and recursively walk the DOM.  We also create an
-empty set of variables to import.
+<p>We create a pair of blank <code>NameContext</code>s, one for the
+template namespace, and one for the namespace of variables, and recursively
+walk the DOM.
 
 <p>We invoke <code>NameContext.subScope()</code> to create a new scope for each
 <code>ihtml:template</code> and <code>ihtml:do</code> element we reach.
@@ -627,6 +659,39 @@ free variables, add it to the import set.
 <p>After this step completes, we know that the javascript expressions are
 encapsulated into their appropriate scopes.
 
+<h4>Inferring Template Context</h4>
+<p>To be able to rewrite <code>ihtml:attribute</code> expressions, we need
+to know the element type that each attribute appears in.  For example, in</p>
+<pre class="prettyprint">
+&lt;ihtml:template name="type" formals="t"&gt;
+  &lt;ihtml:attribute name="type"&gt;
+    &lt;ihtml:dynamic expr="t"/&gt;
+  &lt;/ihtml:attribute&gt;
+&lt;/ihtml:template&gt;
+&lt;input&gt;&lt;ihtml:call ihtml:template="type" t=" 'text' "/>&lt;/input&gt;
+&lt;ul&gt;&lt;ihtml:call ihtml:template="type" t=" 'square' "/>&lt;/ul&gt;
+</pre>
+the dynamic attribute is used in both <code>input</code> and <code>ul</code>
+elements which have very different meanings for the <code>type</code> attribute.
+We walk the template call graph first to propagate the name of the HTML element
+that a template is reachable from.  If a template is reachable from multiple,
+then we copy it, as below:
+<pre class="prettyprint">
+&lt;ihtml:template name="type" formals="t" callingContext="input"&gt;
+  &lt;ihtml:attribute name="type"&gt;
+    &lt;ihtml:dynamic expr="t"/&gt;
+  &lt;/ihtml:attribute&gt;
+&lt;/ihtml:template&gt;
+&lt;ihtml:template name="type" formals="t" callingContext="ul"&gt;
+  &lt;ihtml:attribute name="type"&gt;
+    &lt;ihtml:dynamic expr="t"/&gt;
+  &lt;/ihtml:attribute&gt;
+&lt;/ihtml:template&gt;
+</pre>
+When we later link calls to templates, we take into account the calling context.
+<p>This scheme works because templates are not first-class, and allows us to
+preserve Tenant's correspondance principle.
+
 <h4>Sandboxing JS Expressions</h4>
 <p>The cajoler is detailed elsewhere, and so will not be described here.
 <p>This design relies on the cajoler to effectively sandbox malicious code,
@@ -634,10 +699,11 @@ and requires the cajoler to allow it to introduce safe identifiers into scope.
 <p>Every javascript expression must contain only free variables that
 are a formal template parameter declared in an enclosing
 <code>ihtml:template</code> or a variable declared in an enclosing
-<code>ihtml:do</code>'s <code>vars</code> attribute.  If a template
-implementor wishes to avoid declarations, they should examine the
-javascript they generate to find the set of free variables and add
-declarations at the appropriate level.
+<code>ihtml:do</code>'s <code>vars</code> attribute, or an extern supplied
+by the template translator to allow calling out into cajoled template language
+support code.  If a template language does not contain explicit var
+declarations, the template translator should examine user supplied javascript
+to find the set of free variables and add declarations at the appropriate level.
 
 <h3>IHTML &rarr; JS Compiler</h3>
 <p>The IHTML&rarr;JS compiler produces a javascript function.  It accepts a set
@@ -649,11 +715,15 @@ The names of the top level templates must be distinct.
 <h4>Compilation</h4>
 <p>Fist, the compiler creates empty functions for all top-level templates
 and all re-entrant inner templates.  The function signatures look like
-<code class="prettyprint">function <i>&lt;alphaName&gt;</i>(out__, <i>&lt;formal0&gt;</i>, &hellip;) { var tn___, as___, ap___; &hellip; }</code>.
-The <code>out__</code> parameter is an array that will accumulate chunks of
-HTML that will be joined together later.  The <code>tn___</code> is a convenient
-way to propagate tag names to attribute sanitizers, and <code>as___</code>
-helps avoids duplicate attributes.
+<code class="prettyprint">function <i>&lt;alphaName&gt;</i>(<i>&lt;outputBuffer0&gt;</i>, &hellip; <i>&lt;formal0&gt;</i>, &hellip;) { var <i>temporary0___</i>, &hellip;; &hellip; }</code>.
+The output buffers are arrays that will accumulate chunks of HTML that
+will be joined together later.  They may include one template for
+textual content/markup, one for element names, and/or one for HTML
+attributes.  The latter 2 are only appended to
+by <code>ihtml:element</code> and <code>ihtml:attribute</code>
+elements in the template body that are not contained in an HTML
+element.  Templates that are called from within <code>ihtml:element</code>
+to produce textual content put it onto the markup/text buffer.
 
 <p>Second, the compiler recursively applies the algorithm described below to
 turn the bodies of the templates for which we generated signatures into
@@ -663,37 +733,62 @@ function bodies.
 that templates have a reliable path to call one another, and which produces
 functions that can be loaded into the scope where the templates are needed.
 
+<h4 id=contentFlavors>Content Flavors</h4>
+<p>The set of buffers that must be passed to a function compiled from a
+template depends on the types of content it can produce.  Each buffer
+corresponds to a content flavor:
+<ul>
+<li>Text/Markup &mdash; produced by any template that contains an HTML
+  element, or text node or <code>ihtml:dynamic</code> element outside a
+  <code>ihtml:attribute</code> or <code>ihtml:element</code> element.
+  <pre class="prettyprint">
+    &lt;ihtml:template &hellip;&gt;  &lt;!-- has text flavor --&gt;
+      Hello, World!
+    &lt;/ihtml:template&gt;
+    &lt;ihtml:template &hellip;&gt;  &lt;!-- no text flavor --&gt;
+      &lt;ihtml:attribute &hellip;&gt;Hello, World!&lt;/ihtml:attribute&gt;
+    &lt;/ihtml:template&gt;</pre>
+<li>Attributes &mdash; produced by any template that contains an
+  <code>ihtml:attribute</code> element that is not contained in an
+  HTML element in the same template.
+  <pre class="prettyprint">
+    &lt;ihtml:template &hellip;&gt;  &lt;!-- has attribute flavor --&gt;
+      &lt;ihtml:attribute &hellip;&gt;
+    &lt;/ihtml:template&gt;
+    &lt;ihtml:template &hellip;&gt;  &lt;!-- no attribute flavor --&gt;
+      &lt;p&gt;
+        &lt;ihtml:attribute &hellip;&gt;
+      &lt;/p&gt;
+    &lt;/ihtml:template&gt;</pre>
+<li>Element Names &mdash; produced by any template that contains an
+  <code>ihtml:element</code> element that is not contained in an
+  HTML element in the same template.
+  <pre class="prettyprint">
+    &lt;ihtml:template &hellip;&gt;  &lt;!-- has element name flavor --&gt;
+      &lt;ihtml:element&gt;
+    &lt;/ihtml:template&gt;
+    &lt;ihtml:template &hellip;&gt;  &lt;!-- no element name flavor --&gt;
+      &lt;div&gt;
+        &lt;ihtml:element&gt;
+      &lt;/div&gt;
+    &lt;/ihtml:template&gt;</pre>
+</ul>
 <h4>Recursive transform</h4>
 <p>The transforms below take IHTML nodes and translate them into javascript.
-They use javascript quasiliterals which are detailed elsewhere, and the
-operation <code>emitHtmlChunk(b, e)</code> which works as follows:
-<ul>
-<li>Given a block b that is known to produce only strings of well-formed
-  HTML on <code>out___</code> that can be concatenated with the expression e to
-  produce a well-formed string of HTML,
-<li>If b does not end with a statement like <code>out___.push(&hellip;);</code>
-  add a statement <code>out___.push();</code>
-<li>If e is a string literal and the last actual parameter to the last
-  statement is a string literal, replace the last actual with the
-  concatenation of it and e.
-<li>else add e to the actual parameter list of the last statement.
-</ul>
+They use javascript quasiliterals which are detailed elsewhere.
 
 <p>When an <code>ihtml:template</code> is seen, skip it without recursing.</p>
 
 <p>When an <code>ihtml:call</code> is seen, look up the corresponding
 <code>ihtml:template</code> element using the alpha name of its
-<code>ihtml:template</code> attribute.
-If it is a non-reentrant inner template, inline its body as in
+<code>ihtml:template</code> attribute and the tag context.
+If it is a non-reentrant inner template that does not introduce local variables,
+inline its body as in
 <pre class="prettyprint">
 // Below a4, a5 are formal parameters, and (3, "hello") are actual parameters.
-{
-  // TODO: This is glossing over details.  We should preserve the order of
-  // side-effects as specified in the ihtml:call's attribute order.
-  var a4 = 3, a5 = "hello";
-  &lt;body&gt;
-  // Could clean up a4, a5 here.
-}
+var a4, a5;  // Added to enclosing function as temporaries.
+&hellip;
+(a4 = 3, a5 = hello, &lt;body&gt;)
 </pre>
 This inlining is valid because the alpha-renaming done earlier makes namespace
 collision impossible, and because inner templates don't return a value or
@@ -702,147 +797,86 @@ transfer control non-locally.
 Otherwise, if the call is to a top-level or reentrant template, then expand as
 in
 <pre class="prettyprint">
-// a0 is the template names, and (3, "hello") are the actual parameters.
-// TODO: We may need to assign parameters to temporaries to preserve order of
-// side-effects as specified in the ihtml:call's attribute order.
-// We pass out___ so the called template uses the same output buffer.
-ao(out___, 3, "hello");
+// t is the template's alpha name, and (3, "hello") are the actual parameters.
+// We pass o___ so the called template uses the same output buffer.
+// We may pass more, fewer, or different buffer parameters depending on the
+// <a href="#contentFlavors">content flavors</a> produced.
+t(o___, 3, "hello");
 </pre>
 
-<p>When we see an <code>ihtml:dynamic</code> element with
-<code>pcdata</code> type attribute, we invoke the compiler's
-<code>emitHtmlChunk</code> operation wrapping the <code>expr</code>
-expression in a call to a javascript function that escapes HTML
-special characters.
+<p>When we see an <code>ihtml:dynamic</code> element, we put the
+<code>expr</code> onto the current output buffer, wrapping it in a call
+that converts its result to a string and encodes HTML special characters
+to HTML entities.
 
-<p>When we see another kind of <code>ihtml:dynamic</code> element we
-ignore it since those are handled along with the HTML element
-containing them.
-
-<p>When we see a <code>ihtml:do</code> element we do the following:
+<p>When we see an <code>ihtml:do</code> element we do the following:
 <ol>
-<li>For each identifier in the <code>vars</code> attribute we call
-<code>lookupVar</code> on the element's <code>NameContext</code> instance
-and add it to a list of vars to declare.  If that list is non-empty,
-add a statement like <code class="prettyprint">var a0, a1, &hellip;</code>.
-<li>If the <code>init</code> attribute is not present or is guaranted to return
-a truthy value, then let <code>@initSideEffect</code> be the side effecting
-portion of the <code>init</code> attribute and <code>@body</code> be the
-result of recursing to the body, and append statements from expanding the
-quasiliteral
-<code class="prettyprint">@initSideEffect?; while (@while) @body;</code>.
-<li>Else if the <code>while</code> attribute is not specified, let
-<code>@body</code> be the result of recursing to the body,
-and <code>@alternate</code> be the result of
-recursing to the alternate, and append statements from expanding the
-quasiliteral
-<code class="prettyprint">if (@init) @body; else @alternate;</code>.
-<li>Else append statements from expanding the quasiliteral
-<code class="prettyprint">if (@init) { while (@while) @body; } else @alternate;
-</code>.
+<li>Add its alpha-renamed variable names to the list of local variables
+  for the current template</code>.
+<li>Produce a form of the below with semantics preserving optimizations:
+<pre class="prettyprint">
+  if (@init) {
+    do {
+      @thenClause*;
+    } while (@whileCond);
+  } else {
+    @elseClause*;
+  }
+</pre>
 </ol>
 
 When we see a non-<code>ihtml</code> element e, do the following:
 <ol>
-<li>Let dTagName be the list of all
-    <code>&lt;ihtml:element&gt;</code> elements
-    that are direct children of e.
-<li>Let dAttrs be the list of all
-    <code>&lt;ihtml:attribute&gt;</code> elements
-    that are direct children of e.
-<li>Let rChildren be the list of all direct children not in dTagName or dAttrs.
-<li>Let sAttrs be the set of the names of all attributes on e.
-<li>If dTagName is not null and its size is &gt; 1, issue an error and set
-    dTagName to null.
-<li>If dTagName is not null, invoke <code>emitHtmlChunk('&lt;')</code> followed by
-    <pre class="prettyprint">
-    emitHtmlChunk(
-        QuasiBuilder.substV(
-            "tn___ = ___.sanitizeTagName(@dTagName, @sTagName)",
-            "dTagName", dTagName[0],
-            "sTagName", StringLiteral.valueOf(e.getTagName)));</pre> where
-    the <code>___.safeTagName</code> is a sanitizer that checks that
-    its first argument is a white-listed element of the same kind as
-    its second argument.  If that check fails, it may either return
-    the second argument, or raise an exception.
-<li>Else if dAttrNames is not empty,
-    <pre class="prettyprint">
-    emitHtmlChunk("&lt;");
-    emitHtmlChunk(QuasiBuilder.substV("tn___ = @dTagName",
-                  "dTagName", StringLiteral.valueOf(e.getTagName())))</pre>
-<li>Else <code class="prettyprint">emitHtmlChunk("&lt;" + e.getTagName())</code>
-<li>If dAttrs is not empty, append the statement <code>as___ = {};</code>
-<li>For each element a in dAttrs, append the statement from expanding the
-    quasiliteral
-    <pre class="prettyprint">
-    ap___ = @a;
-    if (!(ap___[0] in as___) &amp;&amp; ___.sanitizeAttr(tn___, ap___)) {
-      out___.push(' ', ap___[0], '="', ap___[1], '"')
-      as___[ap___[0]] = true;  // So we don't write a dupe later.
-    }</pre>
-    where <code>___.sanitizeAttr</code> returns true iff the named
-    attribute and value are allowed in the named tag, possibly rewriting
-    the value in place.
-<li>For each attribute a in sAttrs, append the statement from expanding the
-    quasiliteral
-    <pre class="prettyprint">if (!(@aname in as___)) out___.push(@aHtml);</pre>
-    where <code>@aname</code> is the name of the attribute, and
-    <code>@aHtml</code> is a space followed by a name, followed by
-    <code>=</code> followed by the properly quoted and escaped attibute value
-    followed by a close quote.
-<li>Else for each attribute a in sAttrs, invoke <code>emitHtmlChunk</code>
-    with a value computed as per <code class="prettyprint">@aHtml</code>
-    in the previous step.
-<li>If rChildren is not empty and dTagName is null and
-    <code>e.getTagName()</code> is an empty
-    element, invoke <code class="prettyprint">emitHtmlChunk(" /&gt;")</code>.
-    We cannot always emit an end tag because HTML5 specifies that in
-    some contexts, for <blockquote>An end tag whose tag name is "br",
-    act as if a start tag token with the tag name "br" had been
-    seen</blockquote>
-<li>Else invoke <code class="prettyprint">emitHtmlChunk("&gt;")</code>
-    and recurse to rChildren.
-<li>Invoke <code class="prettyprint"
-    >emitHtmlChunk("&lt;/" + e.getTagName() + "&gt;")</code>
+<li>Push "<" onto the output/markup buffer
+<li>If the body contains the element name content flavor, create a temporary
+    variable, and emit an assignment that initializes it to the empty list.
+    Push a reference to that temporary onto the output/markup buffer.
+<li>Find <code>ihtml:attribute</code>s that are always executed 
+    (not inside a <code>ihtml:do</code>), and that
+    have inlinable bodies, and special case them here.
+<li>If the body without those special cased attributes have the attributes
+    content flavor, create a temporary variable and emit an assignment that
+    initializes it to the empty list, and push a reference to that temporary
+    onto the output/markup buffer.
+<li>If the named element does not allow content, and the body does not have
+    the text/markup content flavor, push " />" onto the output/markup buffer,
+    and exit.
+<li>Push ">" onto the output/markup buffer.
+<li>Recurse to children passing the appropriate temporary buffers for
+    the attribute and element name content flavors.
+<li>Push "</" onto the output/markup buffer.
+<li>If we created a temporary for the element name, emit a call to a function
+    that consolidates content on the element name buffer, and that checks that
+    it is safe to substitute for the original element name, and push a reference
+    to the element name buffer onto the text/markup buffer; else push the
+    element name onto the text/markup buffer.
+<li>If we create a temporary for dynamic attributes, emit a call to a function
+    that sanitizes them.
+<li>Push ">" onto the output/markup buffer.
 </ol>
 
-<p>When we see a text node do the following
-<ol>
-<li>If the containing non-ihtml element contains CDATA, then invoke
-<code>emitHtmlChunk</code> with the value.  Maybe make sure that the
-content does not contain the string <code>--&gt;</code> and wrap in an
-escaping text span.  This containing non-ihtml element check works
-because <code>ihtml:call</code> elements can only be found inside
-PCDATA or RCDATA elements.
-<li>Else invoke <code>emitHtmlChunk</code> with the properly escaped value.
-</ol>
-
+<p>When we see a text node, push the content onto the appropriate output
+buffer, after HTML escaping it.
 
 
 <h4>Compilation Unit Envelope</h4>
 If the compilation unit contained one top-level template named foo, the envelope
 would look like
 <pre class="prettyprint">
-(function (IMPORTS___) {
-  // In this example, i1 is the only variable in the <a href="#import-set">import set</a>.
-  // This import scheme will allow a template compiler to insert references
-  // to cajoled support code, but will not allow template expressions to
-  // modify imports after module load.
-  var i1 = ___.readImport(IMPORTS, 'i1');
-
-  // a0 is the <a href="#alpha-renaming">&alpha;-name</a> for the template foo, and a1 is the &alpha;-name of
+(function (T___, <i>&lt;externs_specified_by_template_translator&gt;</i>) {
+  // a is the <a href="#alpha-renaming">&alpha;-name</a> for the template foo, and b is the &alpha;-name of
   // its only formal paramater.
-  function <b>a0</b>(out___, a1) { &hellip; }
+  function <b>a</b>(<i>&lt;outputBuffers&gt;</i>, b) { &hellip; }
 
   return {
     // It would be nice if foo could show up as the name of the function so
     // that it would show in stacktraces, but then the name would be in scope
     // in the function below, which might mask names produced by the
     // alpha-renamer.
-    <b>foo</b>: function (a1) {
-      var out___ = [];
-      a0(out___, a1);
-      return trademarkHtml(out___.join(''));
+    <b>foo</b>: function (p0___) {
+      var o___ = [];
+      a0(o___, p0___);
+      return T___.tm(o___);  // Joins and trademarks HTML
     }
   };
 })
@@ -851,22 +885,26 @@ would look like
 <h3>Dynamic Sanitizes</h3>
 <p>The code generated above defines several sanitizer and escaping methods.
 <dl>
-<dt><code>___.sanitizeTagName</code>
-<dd>Given a dynamic tag name, and a known good tag name
-    (in (DIV, SPAN, THEAD, or TR))
+<dt><code>T___.e</code>
+<dd>Given an output buffer containg a dynamic tag name, and a known good tag name
     returns the first if it can appear wherever the known good one can without
     extra required attributes, and otherwise errors out or returns the known
-    good one.
-    Uses client side schemas.
-<dt><code>___.sanitizeAttr</code>
-<dd>Takes a tag name, and an array containing a name and value, and
-    returns true if the attribute is allowed, and possibly normalizes or
-    rewrites the value.
-    Uses client side schemas.
-<dt>an HTML escaping method
+    good one.  Makes sure the output buffer always has length 1 afterwards
+    by joining content.
+<dt><code>T___.a</code>
+<dd>Takes an output buffer with dynamic HTML attributes where some attribute
+    values are preceded by type hints, and rewrites those attribute
+    values using the type hints.
+    Makes sure the output buffer always has length 1 afterwards
+    by removing type hints and joining content.
+<dt><code>T___.h</code>
 <dd>Remove characters not allowed in XML (such as NUL U+0, and BOM U+FEFF) and
     rewrite all HTML special characters to entities including those
     special in attribute values.
+<dt><code>T___.tm</code>
+<dd>Takes an output buffer and joins it on the empty string to produce a string
+    of known safe HTML.  Trademarks that HTML so that other parts of the system
+    can verify that it is safe.
 </dl>
 
 <h2>Possible Extensions</h2>
@@ -1059,11 +1097,11 @@ facilities for parsing JS/CSS/HTML and manipulating parse trees.
 <p>Client side schemas are already done, as are versions of the
 client side sanitization methods.
 <p>The bulk of the work would be in implementing the IHTML&rarr;JS compiler
-which is specified as a fairly simple transform.  Probably one week.
+which is specified as a fairly simple transform.  Took several weeks.
 <p>Before this can be tested though, we would need to implement a
 template compiler.  Perhaps something with simple perl style "$string"
 interpolation anywhere with if &amp; foreach tags using javascript as the
-expression language.  That could be implemented quickly on top of the
+expression language.  Implemented on top of the
 existing DOM parser.
 <p>Porting a more serious templating language like OSML or YML would
 take longer the first time through since significant debugging of the
