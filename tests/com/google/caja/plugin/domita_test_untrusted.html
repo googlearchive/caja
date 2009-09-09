@@ -71,7 +71,7 @@
   <button type="button" name="b">Button B 2</button>
   <input type="checkbox" name="c">
 </form>
-    
+
 <form id="test-onreset-form">
   <div class="clickme-testcontainer" id="test-onreset">
     <input type="reset" value="click me">
@@ -278,6 +278,8 @@ After
 <div class="testcontainer" id="test-clone-node-structure">
   <p>I have <b title="I have attributes">content</b></p>
 </div>
+
+<p class="testcontainer" id="test-compat-mode">Compat Mode:</p>
 
 <div class="testcontainer" id="test-clone-node-listeners">
   <input id="test-clone-node-clickable" type="checkbox">
@@ -2163,6 +2165,12 @@ jsunitRegister('testCloneNodeCustomAttrs', function testCloneNodeCustomAttrs() {
   pass('test-clone-node-custom-attrs');
 });
 
+jsunitRegister('testCompatMode',
+               function testCompatMode() {
+  assertEquals('CSS1Compat', document.compatMode);
+  pass('test-compat-mode');
+});
+
 jsunitRegister('testCustomEvents',
                function testCustomEvents() {
   assertTrue(!!document.createEvent);
@@ -2792,12 +2800,12 @@ function testAsyncModuleLoader(load, includeScript, prefix) {
   }
 }
 
-jsunitRegister('testXhrModuleLoader', 
+jsunitRegister('testXhrModuleLoader',
                function testXhrModuleLoader() {
   testAsyncModuleLoader(xhrModuleLoad, xhrIncludeScript, "xhr");
 });
 
-jsunitRegister('testScriptModuleLoader', 
+jsunitRegister('testScriptModuleLoader',
                function testScriptModuleLoader() {
   testAsyncModuleLoader(scriptModuleLoad, scriptIncludeScript, "script");
 });
@@ -2807,14 +2815,14 @@ function testAsyncModuleLoader2(load, prefix) {
   if (!valijaMode) {
     var m = load.async('foo/b.co');
     var f1 = function(module) {
-      var r = module({x: 1, y: 2, load: { async: function(src) 
-          { return load.async('foo/' + src); } }, 
+      var r = module({x: 1, y: 2, load: { async: function(src)
+          { return load.async('foo/' + src); } },
           Q: Q, fail: fail});
-      Q.when(r, function(result) { 
+      Q.when(r, function(result) {
                   assertEquals(result, 5);
                   pass(prefix + '-module-loader-2');
                 },
-                function(reason) { 
+                function(reason) {
                   fail("Waiting for result failed, " + reason);
                 });
     };
@@ -2824,15 +2832,15 @@ function testAsyncModuleLoader2(load, prefix) {
     Q.when(m, f1, f2);
   } else {
     pass(prefix + '-module-loader-2');
-  }  
+  }
 }
 
-jsunitRegister('testXhrModuleLoader2', 
+jsunitRegister('testXhrModuleLoader2',
         function testXhrModuleLoader2() {
   testAsyncModuleLoader2(xhrModuleLoad, "xhr");
 });
 
-jsunitRegister('testScriptModuleLoader2', 
+jsunitRegister('testScriptModuleLoader2',
                function testScriptModuleLoader2() {
   testAsyncModuleLoader2(scriptModuleLoad, "script");
 });
@@ -2842,21 +2850,20 @@ function testAsyncModuleLoaderFailure(load, includeScript, prefix) {
   var f1 = function(module) {
       fail('It should not be resolved.');
   };
-  
+
   var f2 = function(reason) {
-    if (reason.substring(0, 22) === 'Retrieving the module ') { 
+    if (reason.substring(0, 22) === 'Retrieving the module ') {
       pass(prefix + '-module-loader-failure');
     }
   };
-  
+
   if (!valijaMode) {
     var m = xhrModuleLoad.async('b.co');
     Q.when(m, f1, f2);
-  }
-  else {
+  } else {
     var m = xhrIncludeScript.async('foo/x.vo');
     Q.when(m, f1, f2);
-  }  
+  }
 }
 
 jsunitRegister('testXhrModuleLoaderFailure',
@@ -2876,15 +2883,15 @@ jsunitRegister('testRecursiveModule',
     var m = scriptModuleLoad.async('recursion.co');
     var f1 = function(module) {
       var r = module({x: 5, load: scriptModuleLoad, Q: Q});
-        Q.when(r, function(result) { 
+        Q.when(r, function(result) {
                     assertEquals(result, 120);
                     pass('recursive-module');
                   },
-                  function(reason) { 
+                  function(reason) {
                     fail("Waiting for result failed, " + reason);
                   });
       };
-    var f2 = function(reason) { 
+    var f2 = function(reason) {
       fail("Loading module Recursion failed, " + reason);
     };
     Q.when(m, f1, f2);
