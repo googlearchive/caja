@@ -234,7 +234,20 @@ public class TokenQueue<T extends TokenType> {
    * raises a ParseException otherwise.
    */
   public void expectToken(String text) throws ParseException {
-    Token<T> t = peek();
+    Token<T> t;
+    try {
+      t = peek();
+    } catch (ParseException ex) {
+      if (prev != null
+          && ex.getCajaMessage().getMessageType() == MessageType.END_OF_FILE) {
+        throw new ParseException(
+            new Message(MessageType.EXPECTED_TOKEN,
+                        FilePosition.endOf(prev.t.pos),
+                        MessagePart.Factory.valueOf(text),
+                        MessagePart.Factory.valueOf("EOF")));
+      }
+      throw ex;
+    }
     if (t.text.equals(text)) {
       advance();
       return;
