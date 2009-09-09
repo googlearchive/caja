@@ -74,7 +74,7 @@ public enum PluginMessageType implements MessageTypeInt {
       "%s: css attribute type %s not allowed in selector", MessageLevel.ERROR),
   CSS_LINK_PSEUDO_SELECTOR_NOT_ALLOWED_ON_NONANCHOR(
       "%s: css :link and :visited pseudo selectors only allowed on A elements",
-      MessageLevel.ERROR),      
+      MessageLevel.ERROR),
   SKIPPING_CSS_PROPERTY(
       "%s: skipping invalid css property %s", MessageLevel.WARNING),
   IMPORTS_NOT_ALLOWED_HERE("%s: @import not allowed here", MessageLevel.ERROR),
@@ -94,6 +94,8 @@ public enum PluginMessageType implements MessageTypeInt {
       "%s: assuming pixels for length %s", MessageLevel.WARNING),
   MALFORMED_ENVELOPE(
       "%s: malformed envelope around cajoled code", MessageLevel.ERROR),
+  SPECIALIZING_CSS_PROPERTY(
+      "%s: specialized CSS property %s to %s", MessageLevel.WARNING),
   ;
 
   private final String formatString;

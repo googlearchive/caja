@@ -33,6 +33,8 @@ import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageTypeInt;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Multimap;
+import com.google.caja.util.Multimaps;
 import com.google.caja.util.Name;
 import com.google.caja.util.Strings;
 import com.google.caja.util.SyntheticAttributeKey;
@@ -169,6 +171,18 @@ public final class CssValidator {
     // Is it an empty declaration?  Effectively a noop, but the CSS2 spec
     // insists that a noop is a full-class declaration.
     CssTree.Property prop = d.getProperty();
+    // Replace invalid but commonly used forms with a valid form, e.g.
+    // replace font:12px with font-size:12px.
+    Name moreSpecificName = specializeProperty(d);
+    if (!moreSpecificName.equals(prop.getPropertyName())) {
+      CssTree.Property specializedProp = new CssTree.Property(
+          prop.getFilePosition(), moreSpecificName, prop.children());
+      mq.addMessage(
+          PluginMessageType.SPECIALIZING_CSS_PROPERTY, prop.getFilePosition(),
+          prop.getPropertyName(), moreSpecificName);
+      d.replaceChild(specializedProp, prop);
+      prop = specializedProp;
+    }
     CssSchema.CssPropertyInfo pinfo = cssSchema.getCssProperty(
         prop.getPropertyName());
     if (null == pinfo
@@ -260,7 +274,7 @@ public final class CssValidator {
     }
     return valid;
   }
-  
+
   /**
    * Attrib must exist in HTML 4 whitelist.
    */
@@ -287,7 +301,7 @@ public final class CssValidator {
    */
   private static final Collection<HTML.Attribute.Type>
       DISALLOWED_SELECTOR_ATTRIBUTE_TYPES =
-      Collections.unmodifiableSet(EnumSet.of(      
+      Collections.unmodifiableSet(EnumSet.of(
           HTML.Attribute.Type.ID,
           HTML.Attribute.Type.IDREF,
           HTML.Attribute.Type.IDREFS,
@@ -568,9 +582,68 @@ public final class CssValidator {
     if (null != c.warning) { c.warning.toMessageQueue(mq); }
     return true;
   }
+
+  /**
+   * A property name and a pattern that matches some subset of values for that
+   * property.
+   */
+  private static final class Specialization {
+    final Name specialName;
+    final CssPropertySignature sig;
+    Specialization(Name specialName, CssPropertySignature sig) {
+      this.specialName = specialName;
+      this.sig = sig;
+    }
+  }
+  /**
+   * Maps general property names (e.g. font) to more specialized properties
+   * (e.g. font-size).  In cases where the general property name has a
+   * complicated syntax, but there is a commonly used simple but incorrect
+   * syntax, we should register a specialization to coerce the property name
+   * to one with a simple syntax that matches the input.
+   * @see CssValidatorTest#testFontSpecialization
+   */
+  private static final Multimap<Name, Specialization> SPECIALIZATIONS
+      = Multimaps.newListHashMultimap();
+  private static void specialization(
+      String generalName, String specialName, String sig) {
+    SPECIALIZATIONS.put(
+        Name.css(generalName),
+        new Specialization(Name.css(specialName),
+                           CssPropertySignature.Parser.parseSignature(sig)));
+  }
+  static {
+    // A font has to have at least a font-size and a name unless it is a special
+    // keyword value.
+    specialization(
+        "font", "font-size",
+        "<absolute-size> | <relative-size> | <length:0,> | <percentage:0,>");
+    specialization("font", "font-family", "<loose-quotable-words>");
+  }
+
+  private Name specializeProperty(CssTree.PropertyDeclaration p) {
+    Name propertyName = p.getProperty().getPropertyName();
+    CssTree.Expr expr = p.getExpr();
+    for (Specialization s : SPECIALIZATIONS.get(propertyName)) {
+      SignatureResolver r = new SignatureResolver(expr, cssSchema);
+      List<Candidate> matches = r.applySignature(
+          Collections.singletonList(new Candidate(0, null, null)),
+          propertyName, s.sig);
+
+      int end = expr.children().size();
+      int matchCount = 0;
+      for (Candidate match : matches) {
+        if (match.exprIdx == end) { ++matchCount; }
+      }
+      if (matchCount == 1) {
+        return s.specialName;
+      }
+    }
+    return propertyName;
+  }
 }
 
-/** A possible match of a css expression to a css property signature. */
+/** A possible match of a CSS expression to a CSS property signature. */
 final class Candidate {
   int exprIdx;
   Match match;
@@ -696,8 +769,8 @@ final class SignatureResolver {
       if (sig instanceof CssPropertySignature.SetSignature) {
         applySetSignature((CssPropertySignature.SetSignature) sig,
                           candidate, propertyName, passed);
-      } else if (sig instanceof CssPropertySignature.SeriesSignature) {    
-        applySeriesSignature((CssPropertySignature.SeriesSignature) sig,     
+      } else if (sig instanceof CssPropertySignature.SeriesSignature) {
+        applySeriesSignature((CssPropertySignature.SeriesSignature) sig,
                           candidate, propertyName, passed);
       } else if (sig instanceof CssPropertySignature.RepeatedSignature) {
         applyRepeatedSignature(

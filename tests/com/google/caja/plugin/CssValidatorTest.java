@@ -162,9 +162,17 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : p\n"
-            + "    EmptyDeclaration\n",
-            "WARNING: removing css property font with bad value:"
-            + " ==>waption<==");
+            + "    PropertyDeclaration\n"
+            + "      Property : font-family\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
+            + "          IdentLiteral : waption\n"
+            + "    EmptyDeclaration",
+            // This message is misleading.  There is not likely a font named
+            // waption, but we don't make a change without saying anything.
+            "WARNING: specialized CSS property font to font-family");
     runTest("p, dl { font: status-bar; }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -238,9 +246,21 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
+            + "    PropertyDeclaration\n"
+            + "      Property : font-family\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
+            + "          IdentLiteral : twelve\n"
+            + "        Operation : NONE\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                                           + "::loose-quotable-words\n"
+            + "          IdentLiteral : Arial\n"
             + "    EmptyDeclaration",
-            "WARNING: removing css property font with bad value:"
-            + " ==>twelve<==  Arial");
+            // A similarly misleading but correct message
+            "WARNING: specialized CSS property font to font-family");
     runTest("p, dl { font: 150% Arial; }",
             "StyleSheet\n"
             + "  RuleSet\n"
@@ -316,8 +336,14 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
+            + "    PropertyDeclaration\n"
+            + "      Property : font-size\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=IDENT"
+                        + " ; cssPropertyPart=font-size::absolute-size\n"
+            + "          IdentLiteral : medium\n"
             + "    EmptyDeclaration",
-            "WARNING: removing css property font with bad value: medium");
+            "WARNING: specialized CSS property font to font-size");
 
     // style weight size family
     runTest("p, dl { font: italic bolder 150% Arial; }",
@@ -442,8 +468,14 @@ public final class CssValidatorTest extends CajaTestCase {
             + "    Selector\n"
             + "      SimpleSelector\n"
             + "        IdentLiteral : dl\n"
+            + "    PropertyDeclaration\n"
+            + "      Property : font-size\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=LENGTH"
+                        + " ; cssPropertyPart=font-size\n"
+            + "          QuantityLiteral : 800\n"
             + "    EmptyDeclaration",
-            "WARNING: removing css property font with bad value: 800");
+            "WARNING: specialized CSS property font to font-size");
 
     // variant weight family
     runTest("p, dl { font: normal 800 150% Arial; }",
@@ -1392,6 +1424,59 @@ public final class CssValidatorTest extends CajaTestCase {
     fails("* html > p { color: blue }");
     fails("* html object { color: blue }");
     fails("* html#hiya p { color: blue }");
+  }
+
+  public final void testFontSpecialization() throws Exception {
+    runTest("a {font:12px} b {font:x-small} i {font:caption} p {font:arial}",
+            "StyleSheet\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : a\n"
+            + "    PropertyDeclaration\n"
+            + "      Property : font-size\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=LENGTH"
+                        + " ; cssPropertyPart=font-size\n"
+            + "          QuantityLiteral : 12px\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : b\n"
+            + "    PropertyDeclaration\n"
+            + "      Property : font-size\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=IDENT"
+                        + " ; cssPropertyPart=font-size::absolute-size\n"
+            + "          IdentLiteral : x-small\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : i\n"
+            + "    PropertyDeclaration\n"
+            + "      Property : font\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=IDENT"
+                        + " ; cssPropertyPart=font\n"
+            + "          IdentLiteral : caption\n"
+            + "  RuleSet\n"
+            + "    Selector\n"
+            + "      SimpleSelector\n"
+            + "        IdentLiteral : p\n"
+            + "    PropertyDeclaration\n"
+            + "      Property : font-family\n"
+            + "      Expr\n"
+            + "        Term ; cssPropertyPartType=LOOSE_WORD"
+                        + " ; cssPropertyPart=font-family::family-name"
+                           + "::loose-quotable-words\n"
+            + "          IdentLiteral : arial\n",
+
+            "WARNING: specialized CSS property font to font-size",
+            "WARNING: specialized CSS property font to font-size",
+            // caption is a legal font value and should not be specialized to
+            // font-family.
+            "WARNING: specialized CSS property font to font-family"
+            );
   }
 
   public final void testAttrSelectorNoTag() throws Exception {
