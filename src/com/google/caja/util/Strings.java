@@ -43,9 +43,9 @@ public final class Strings {
     if (b.length() != length) { return false; }
     for (int i = length; --i >= 0;) {
       char c = a.charAt(i), d = b.charAt(i);
-      if (c <= 'z') {
-        if (c <= 'Z' && c >= 'A') { c += ('a' - 'A'); }
-        if (d <= 'Z' && d >= 'A') { d += ('a' - 'A'); }
+      if (c <= 'z' && c >= 'A') {
+        if (c <= 'Z') { c |= 0x20; }
+        if (d <= 'Z' && d >= 'A') { d |= 0x20; }
       }
       if (c != d) { return false; }
     }
@@ -63,19 +63,27 @@ public final class Strings {
     return true;
   }
 
+  private static final char[] LCASE_CHARS = new char['Z' + 1];
+  private static final char[] UCASE_CHARS = new char['z' + 1];
+  static {
+    for (int i = 0; i < 'A'; ++i) { LCASE_CHARS[i] = (char) i; }
+    for (int i = 'A'; i <= 'Z'; ++i) { LCASE_CHARS[i] = (char) (i | 0x20); }
+    for (int i = 0; i < 'a'; ++i) { UCASE_CHARS[i] = (char) i; }
+    for (int i = 'a'; i <= 'z'; ++i) { UCASE_CHARS[i] = (char) (i & ~0x20); }
+  }
   public static String toLowerCase(String s) {
     for (int i = s.length(); --i >= 0;) {
-      char c = s.charAt(i);
+      int c = s.charAt(i);
       if (c <= 'Z' && c >= 'A') {
         char[] chars = s.toCharArray();
-        chars[i] = (char) (c + ('a' - 'A'));
+        chars[i] = LCASE_CHARS[c];
         while (--i >= 0) {
           c = chars[i];
-          if (c <= 'Z' && c >= 'A') {
-            chars[i] = (char) (c + ('a' - 'A'));
+          if (c <= 'Z') {
+            chars[i] = LCASE_CHARS[c];
           }
         }
-        return new String(chars);
+        return String.valueOf(chars);
       }
     }
     return s;
@@ -86,14 +94,14 @@ public final class Strings {
       char c = s.charAt(i);
       if (c <= 'z' && c >= 'a') {
         char[] chars = s.toCharArray();
-        chars[i] = (char) (c + ('A' - 'a'));
+        chars[i] = UCASE_CHARS[c];
         while (--i >= 0) {
           c = chars[i];
-          if (c <= 'z' && c >= 'a') {
-            chars[i] = (char) (c + ('A' - 'a'));
+          if (c <= 'z') {
+            chars[i] = UCASE_CHARS[c];
           }
         }
-        return new String(chars);
+        return String.valueOf(chars);
       }
     }
     return s;

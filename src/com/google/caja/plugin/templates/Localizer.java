@@ -14,12 +14,14 @@
 
 package com.google.caja.plugin.templates;
 
+import com.google.caja.lexer.CharProducer;
 import com.google.caja.lexer.FilePosition;
+import com.google.caja.lexer.HtmlLexer;
 import com.google.caja.lexer.HtmlTokenType;
 import com.google.caja.lexer.ParseException;
 import com.google.caja.lexer.Token;
-import com.google.caja.lexer.TokenConsumer;
 import com.google.caja.parser.html.Nodes;
+import com.google.caja.render.Concatenator;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
@@ -173,33 +175,59 @@ public class Localizer {
     // Clone the message.
     message = (Element) message.cloneNode(true);
     String name = IHTML.getName(message).getValue();
-    // Render an XHTML string containing the message content, with embedded <ph>
-    // elements.
-    final StringBuilder xhtml = new StringBuilder();
-    RenderContext rc = new RenderContext(new TokenConsumer() {
-      // 1 - saw <, 2 - saw html:ph, 3 - saw >, 4 - saw <, 5 - saw ihtml:eph
-      int state = 0;
-      public void consume(String text) {
-        // Filter out everything from the end of the <ihtml:ph> exclusive to the
-        // end of the <ihtml:eph> inclusive.
-        if (state <= 2) { xhtml.append(text); }
-        switch (state) {
-          case 0: if ("<".equals(text)) { state = 1; } break;
-          case 1: if ("ihtml:ph".equals(text)) { state = 2; } break;
-          case 2: if (text.endsWith(">")) { state = 3; } break;
-          case 3: if ("<".equals(text)) { state = 4; } break;
-          case 4: if ("ihtml:eph".equals(text)) { state = 5; } break;
-          case 5: if (text.endsWith(">")) { state = 0; } break;
-        }
+    StringBuilder filteredXhtml = new StringBuilder();
+    if (message.getFirstChild() != null) {
+      // Render an XHTML string containing the message content, with embedded <ph>
+      // elements.
+      StringBuilder xhtml = new StringBuilder();
+      RenderContext rc = new RenderContext(new Concatenator(xhtml))
+          .withAsXml(true).withAsciiOnly(true);
+      for (Node c : Nodes.childrenOf(message)) {
+        Nodes.render(c, rc);
       }
-      public void mark(FilePosition pos) {}
-      public void noMoreTokens() {}
-    }).withAsciiOnly(true).withAsXml(true);
-    for (Node c : Nodes.childrenOf(message)) {
-      Nodes.render(c, rc);
+      rc.getOut().noMoreTokens();
+      HtmlLexer lexer = new HtmlLexer(
+          CharProducer.Factory.fromString(
+              xhtml.toString(),
+              Nodes.getFilePositionFor(message.getFirstChild())));
+      lexer.setTreatedAsXml(true);
+      // 1 - saw <html:ph, 2 - saw >, 3 - saw <ihtml:eph
+      int state = 0;
+      // Filter out everything from the end of the <ihtml:ph> exclusive to the
+      // end of the <ihtml:eph> inclusive.
+      try {
+        while (lexer.hasNext()) {
+          Token<HtmlTokenType> tt = lexer.next();
+          boolean emit = state < 2;
+          switch (tt.type) {
+            case TAGBEGIN:
+              if (state == 0 && "<ihtml:ph".equals(tt.text)) {
+                state = 1;
+              } else if (state == 2 && "<ihtml:eph".equals(tt.text)) {
+                state = 3;
+              }
+              break;
+            case TAGEND:
+              if (state == 1) { state = 2; }
+              else if (state == 3) { state = 0; }
+              if (emit && "/>".equals(tt.text)) { filteredXhtml.append(' '); }
+              break;
+            case ATTRNAME:
+              if (emit) { filteredXhtml.append(' '); }
+              break;
+            case ATTRVALUE:
+              if (emit) { filteredXhtml.append('='); }
+              break;
+            default: break;
+          }
+          if (emit) { filteredXhtml.append(tt.text); }
+        }
+      } catch (ParseException ex) {
+        throw new RuntimeException("IOException reading from String");
+      }
     }
-    rc.getOut().noMoreTokens();
-    return new LocalizedHtml(name, xhtml.toString());
+
+    return new LocalizedHtml(name, filteredXhtml.toString());
   }
 
   private static class Placeholder {

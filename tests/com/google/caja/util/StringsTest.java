@@ -25,6 +25,24 @@ public class StringsTest extends TestCase {
     assertTrue(Strings.equalsIgnoreCase("FOO", "foo"));
     assertTrue(Strings.equalsIgnoreCase("123", "123"));
     assertTrue(Strings.equalsIgnoreCase("FOO-bar", "foo-BAR"));
+    assertTrue(Strings.equalsIgnoreCase("FOO^bar", "foo^BAR"));
+    assertTrue(Strings.equalsIgnoreCase("FOO bar", "foo BAR"));
+    assertTrue(Strings.equalsIgnoreCase("FOO~bar", "foo~BAR"));
+    assertTrue(Strings.equalsIgnoreCase("foo-BAR", "FOO-bar"));
+    assertTrue(Strings.equalsIgnoreCase("foo^BAR", "FOO^bar"));
+    assertTrue(Strings.equalsIgnoreCase("foo BAR", "FOO bar"));
+    assertTrue(Strings.equalsIgnoreCase("foo~BAR", "FOO~bar"));
+    // Unequal due to characters on various sides of the letter blocks.
+    assertFalse(Strings.equalsIgnoreCase("foo-BAR", "FOO^bar"));
+    assertFalse(Strings.equalsIgnoreCase("foo^BAR", "FOO-bar"));
+    assertFalse(Strings.equalsIgnoreCase("foo BAR", "FOO~bar"));
+    assertFalse(Strings.equalsIgnoreCase("foo~BAR", "FOO bar"));
+    // Check chars one below [aA] and one above [zZ]
+    assertFalse(Strings.equalsIgnoreCase("@", "`"));
+    assertFalse(Strings.equalsIgnoreCase("`", "@"));
+    assertFalse(Strings.equalsIgnoreCase("[", "{"));
+    assertFalse(Strings.equalsIgnoreCase("{", "["));
+    // More unequal strings
     assertFalse(Strings.equalsIgnoreCase(null, ""));
     assertFalse(Strings.equalsIgnoreCase("", null));
     assertFalse(Strings.equalsIgnoreCase("", "foo"));
@@ -32,6 +50,26 @@ public class StringsTest extends TestCase {
     assertFalse(Strings.equalsIgnoreCase("foo", "FOOd"));
     assertFalse(Strings.equalsIgnoreCase("123", "456"));
     assertFalse(Strings.equalsIgnoreCase("\u0391", "\u03B1"));
+    assertTrue(Strings.equalsIgnoreCase(
+        " !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN"
+        + "OPQRSTUVWXYZ[\\]^_`ABCDEFGHIJKLMNOPQRSTUVWXYZ{|}~",
+        " !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN"
+        + "OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"));
+    assertTrue(Strings.equalsIgnoreCase(
+        " !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN"
+        + "OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+        " !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN"
+        + "OPQRSTUVWXYZ[\\]^_`ABCDEFGHIJKLMNOPQRSTUVWXYZ{|}~"));
+    assertTrue(Strings.equalsIgnoreCase(
+        " !\"#$%&\\'()*+,-./0123456789:;<=>?@abcdefghijklmn"
+        + "opqrstuvwxyz[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+        " !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN"
+        + "OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"));
+    assertTrue(Strings.equalsIgnoreCase(
+        " !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN"
+        + "OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
+        " !\"#$%&\\'()*+,-./0123456789:;<=>?@abcdefghijklmn"
+        + "opqrstuvwxyz[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"));
   }
 
   public final void testIsLowerCase() {
@@ -41,6 +79,7 @@ public class StringsTest extends TestCase {
     assertTrue(Strings.isLowerCase("foo-bar"));
     assertTrue(Strings.isLowerCase("\u0391"));
     assertTrue(Strings.isLowerCase("\u03B1"));
+    assertTrue(Strings.isLowerCase("@`[{"));
     assertFalse(Strings.isLowerCase("FOO"));
     assertFalse(Strings.isLowerCase("Foo"));
     assertFalse(Strings.isLowerCase("fooD"));
@@ -60,6 +99,7 @@ public class StringsTest extends TestCase {
     assertEquals("456", Strings.toLowerCase("456"));
     assertEquals("\u0391", Strings.toLowerCase("\u0391"));
     assertEquals("\u03B1", Strings.toLowerCase("\u03B1"));
+    assertEquals("@`[{", Strings.toLowerCase("@`[{"));
     assertEquals(
         " !\"#$%&\\'()*+,-./0123456789:;<=>?@abcdefghijklmn"
         + "opqrstuvwxyz[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
@@ -81,6 +121,7 @@ public class StringsTest extends TestCase {
     assertEquals("456", Strings.toUpperCase("456"));
     assertEquals("\u0391", Strings.toUpperCase("\u0391"));
     assertEquals("\u03B1", Strings.toUpperCase("\u03B1"));
+    assertEquals("@`[{", Strings.toUpperCase("@`[{"));
     assertEquals(
         " !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN"
         + "OPQRSTUVWXYZ[\\]^_`ABCDEFGHIJKLMNOPQRSTUVWXYZ{|}~",

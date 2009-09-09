@@ -32,7 +32,7 @@ final class Escaper {
   private final int minNonPrecomputed;
 
   /**
-   * @param precomputedEscapes maps ascii characters to escape to the escapes.
+   * @param precomputedEscapes maps ASCII characters to escape to the escapes.
    *   Must not overlap with otherEscapes.  Escaped codepoints in precomputed
    *   greater than otherEscapes.minSetBit() will be ignored.
    */
@@ -42,7 +42,7 @@ final class Escaper {
     this.precomputedEscapes = precomputedEscapes;
     this.otherEscapes = otherEscapes;
     this.minNonPrecomputed
-        = otherEscapes.isEmpty() ? 128 : otherEscapes.minSetBit();
+        = otherEscapes.isEmpty() ? 127 : otherEscapes.minSetBit();
     this.encoder = encoder;
     this.out = out;
   }
@@ -56,24 +56,32 @@ final class Escaper {
 
     int pos = 0;  // The index into chars past the last char written to out.
 
-    int codepoint = Character.codePointAt(chars, 0);
-    for (int i = 0; i < end;) {
-      int charCount = Character.charCount(codepoint);
-      int i2 = i + charCount;
-      int nextCodepoint = i2 < end ? Character.codePointAt(chars, i2) : -1;
-
-      if (escapeOneCodepoint(pos, i, codepoint, nextCodepoint)) {
-        pos = i2;
+    if (otherEscapes.isEmpty()) {
+      for (int i = 0; i < end; ++i) {
+        if (escapeOneChar(pos, i, chars.charAt(i))) {
+          pos = i + 1;
+        }
       }
+    } else {
+      int codepoint = Character.codePointAt(chars, 0);
+      for (int i = 0; i < end;) {
+        int charCount = Character.charCount(codepoint);
+        int i2 = i + charCount;
+        int nextCodepoint = i2 < end ? Character.codePointAt(chars, i2) : -1;
 
-      i = i2;
-      codepoint = nextCodepoint;
+        if (escapeOneCodepoint(pos, i, codepoint, nextCodepoint)) {
+          pos = i2;
+        }
+
+        i = i2;
+        codepoint = nextCodepoint;
+      }
     }
     out.append(chars, pos, end);
   }
 
   /**
-   * Like escape, but treates the input as an already escaped string and only
+   * Like escape, but treats the input as an already escaped string and only
    * tries to ensure that characters that might or need not be escaped for
    * correctness are consistently escaped.
    */
@@ -109,8 +117,28 @@ final class Escaper {
   }
 
   /**
+   * Escapes a single ASCII code onto the output buffer.
+   * @param pos the position past the last character in chars that has been
+   *   written to out.
+   * @param limit the position past the last character in chars that should
+   *   be written preceding ch.
+   * @param ch in the range [0, 0x7f]
+   * @return true iff characters between pos and limit and ch itself
+   *   were written to out.  false iff out was not changed by this call.
+   */
+  private boolean escapeOneChar(int pos, int limit, char ch)
+      throws IOException {
+    String esc = precomputedEscapes.getEscape(ch);
+    if (esc != null) {
+      out.append(chars, pos, limit).append(esc);
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Escapes a single unicode codepoint onto the output buffer iff it is
-   * contained by either the otherEscapes set or the ascii set.
+   * contained by either the otherEscapes set or the ASCII set.
    * @param pos the position past the last character in chars that has been
    *   written to out.
    * @param limit the position past the last character in chars that should

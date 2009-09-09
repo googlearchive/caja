@@ -207,113 +207,13 @@ public class Nodes {
    *   {@link Concatenator}, and the {@link RenderContext#asXml} is significant.
    */
   public static void render(Node node, RenderContext rc) {
+    StringBuilder sb = new StringBuilder(1 << 18);
+    new Renderer(sb, rc.asXml(), rc.isAsciiOnly()).render(node);
     TokenConsumer out = rc.getOut();
-    boolean asXml = rc.asXml();
     FilePosition pos = getFilePositionFor(node);
-    out.mark(pos);
-    switch (node.getNodeType()) {
-      case Node.DOCUMENT_NODE: case Node.DOCUMENT_FRAGMENT_NODE:
-        for (Node c = node.getFirstChild();
-             c != null; c = c.getNextSibling()) {
-          render(c, rc);
-        }
-        break;
-      case Node.ELEMENT_NODE: {
-        Element el = (Element) node;
-        out.consume("<");
-        Name tagName = asXml
-            ? Name.xml(el.getTagName()) : Name.html(el.getTagName());
-        renderHtmlIdentifier(tagName, rc);
-
-        NamedNodeMap attrs = el.getAttributes();
-        for (int i = 0, n = attrs.getLength(); i < n; ++i) {
-          out.consume(" ");
-          render(attrs.item(i), rc);
-        }
-
-        Node first = el.getFirstChild();
-        if (first == null &&
-            (asXml || HtmlTextEscapingMode.isVoidElement(tagName))) {
-          // This is safe regardless of whether the output is XML or HTML since
-          // we only skip the end tag for HTML elements that don't require one,
-          // and the slash will cause XML to treat it as a void tag.
-          out.consume(" />");
-        } else {
-          out.consume(">");
-          HtmlTextEscapingMode escMode = HtmlTextEscapingMode
-              .getModeForTag(tagName);
-          switch (escMode) {
-            case CDATA: case PLAIN_TEXT:
-              if (!asXml) {
-                StringBuilder sb = new StringBuilder();
-                for (Node c = first; c != null; c = c.getNextSibling()) {
-                  switch (c.getNodeType()) {
-                    case Node.TEXT_NODE: case Node.CDATA_SECTION_NODE:
-                      sb.append(c.getNodeValue());
-                      break;
-                  }
-                }
-                // Make sure that the CDATA section does not contain a close
-                // tag.
-                String cdataContent = sb.toString();
-                if (cdataContent.contains("</")) {
-                  String canonCloseTag = (
-                      "</" + Name.html(tagName.getCanonicalForm())
-                      .getCanonicalForm());
-                  if (Strings.toLowerCase(cdataContent)
-                      .contains(canonCloseTag)) {
-                    throw new IllegalStateException(
-                        "XML document not renderable as HTML due to "
-                        + canonCloseTag + " in CDATA tag");
-                  }
-                }
-                out.consume(cdataContent);
-                break;
-              }
-              //$FALL-THROUGH$
-            default:
-              for (Node c = first; c != null; c = c.getNextSibling()) {
-                render(c, rc);
-              }
-              break;
-          }
-          // This is not correct for HTML <plaintext> nodes, but live with it,
-          // since handling plaintext correctly would require omitting end tags
-          // for parent nodes, and so significantly complicate rendering for a
-          // node we shouldn't ever render anyway.
-          out.mark(FilePosition.endOfOrNull(pos));
-          out.consume("</");
-          renderHtmlIdentifier(tagName, rc);
-          out.consume(">");
-        }
-        break;
-      }
-      case Node.TEXT_NODE:
-        renderHtml(node.getNodeValue(), rc);
-        break;
-      case Node.CDATA_SECTION_NODE:
-        String value = node.getNodeValue();
-        if (!value.contains("]]>") && asXml) {
-          out.consume("<![CDATA[");
-          out.consume(value);
-          out.consume("]]>");
-        } else {
-          renderHtml(value, rc);
-        }
-        break;
-      case Node.ATTRIBUTE_NODE: {
-        Attr a = (Attr) node;
-        Name attribName = asXml
-            ? Name.xml(a.getName())
-            : Name.html(a.getName());
-        renderHtmlIdentifier(attribName, rc);
-        out.consume("=\"");
-        out.mark(Nodes.getFilePositionForValue(a));
-        renderHtmlAttributeValue(a.getValue(), rc);
-        out.consume("\"");
-        break;
-      }
-    }
+    out.mark(FilePosition.startOf(pos));
+    out.consume(sb.toString());
+    out.mark(FilePosition.endOf(pos));
   }
 
   public static String render(Node node) {
@@ -329,23 +229,138 @@ public class Nodes {
     return sb.toString();
   }
 
-  private static void renderHtmlIdentifier(Name name, RenderContext r) {
-    StringBuilder sb = new StringBuilder();
-    Escaping.escapeXml(name.getCanonicalForm(), r.isAsciiOnly(), sb);
-    r.getOut().consume(sb.toString());
-  }
-
-  private static void renderHtmlAttributeValue(String text, RenderContext r) {
-    StringBuilder sb = new StringBuilder();
-    Escaping.escapeXml(text, r.isAsciiOnly(), sb);
-    r.getOut().consume(sb.toString());
-  }
-
-  private static void renderHtml(String text, RenderContext r) {
-    StringBuilder sb = new StringBuilder();
-    Escaping.escapeXml(text, r.isAsciiOnly(), sb);
-    r.getOut().consume(sb.toString());
-  }
-
   private Nodes() {}
+}
+
+final class Renderer {
+  final StringBuilder out;
+  final boolean asXml;
+  final boolean isAsciiOnly;
+
+  Renderer(StringBuilder out, boolean asXml, boolean isAsciiOnly) {
+    this.out = out;
+    this.asXml = asXml;
+    this.isAsciiOnly = isAsciiOnly;
+  }
+
+  void render(Node node) {
+    switch (node.getNodeType()) {
+      case Node.DOCUMENT_NODE: case Node.DOCUMENT_FRAGMENT_NODE:
+        for (Node c = node.getFirstChild();
+             c != null; c = c.getNextSibling()) {
+          render(c);
+        }
+        break;
+      case Node.ELEMENT_NODE: {
+        Element el = (Element) node;
+        Name tagName = asXml
+            ? Name.xml(el.getTagName()) : Name.html(el.getTagName());
+        out.append('<');
+        int tagNameStart = out.length();
+        Escaping.escapeXml(tagName.getCanonicalForm(), isAsciiOnly, out);
+        int tagNameEnd = out.length();
+
+        NamedNodeMap attrs = el.getAttributes();
+        for (int i = 0, n = attrs.getLength(); i < n; ++i) {
+          out.append(' ');
+          renderAttr((Attr) attrs.item(i));
+        }
+
+        Node first = el.getFirstChild();
+        if (first == null &&
+            (asXml || HtmlTextEscapingMode.isVoidElement(tagName))) {
+          // This is safe regardless of whether the output is XML or HTML since
+          // we only skip the end tag for HTML elements that don't require one,
+          // and the slash will cause XML to treat it as a void tag.
+          out.append(" />");
+        } else {
+          out.append('>');
+          if (!asXml) {
+            HtmlTextEscapingMode m = HtmlTextEscapingMode.getModeForTag(
+                tagName);
+            if (m == HtmlTextEscapingMode.CDATA
+                || m == HtmlTextEscapingMode.PLAIN_TEXT) {
+              StringBuilder cdataContent = new StringBuilder();
+              for (Node c = first; c != null; c = c.getNextSibling()) {
+                switch (c.getNodeType()) {
+                  case Node.TEXT_NODE: case Node.CDATA_SECTION_NODE:
+                    cdataContent.append(c.getNodeValue());
+                    break;
+                }
+              }
+              // Make sure that the CDATA section does not contain a close
+              // tag.
+              if (containsEndTag(cdataContent)) {
+                String canonCloseTag = (
+                    "</" + Name.html(tagName.getCanonicalForm())
+                    .getCanonicalForm());
+                if (Strings.toLowerCase(cdataContent.toString())
+                    .contains(canonCloseTag)) {
+                  throw new IllegalStateException(
+                      "XML document not renderable as HTML due to "
+                      + canonCloseTag + " in CDATA tag");
+                }
+              }
+              out.append(cdataContent);
+            } else {
+              for (Node c = first; c != null; c = c.getNextSibling()) {
+                render(c);
+              }
+            }
+          } else {
+            for (Node c = first; c != null; c = c.getNextSibling()) {
+              render(c);
+            }
+          }
+          // This is not correct for HTML <plaintext> nodes, but live with it,
+          // since handling plaintext correctly would require omitting end tags
+          // for parent nodes, and so significantly complicate rendering for a
+          // node we shouldn't ever render anyway.
+          out.append("</")
+              .append(out, tagNameStart, tagNameEnd)
+              .append('>');
+        }
+        break;
+      }
+      case Node.TEXT_NODE:
+        Escaping.escapeXml(node.getNodeValue(), isAsciiOnly, out);
+        break;
+      case Node.CDATA_SECTION_NODE:
+        String value = node.getNodeValue();
+        if (asXml && !value.contains("]]>")) {
+          out.append("<![CDATA[");
+          out.append(value);
+          out.append("]]>");
+        } else {
+          Escaping.escapeXml(value, isAsciiOnly, out);
+        }
+        break;
+      case Node.ATTRIBUTE_NODE: {
+        renderAttr((Attr) node);
+      }
+    }
+  }
+
+  private void renderAttr(Attr a) {
+    Escaping.escapeXml(
+        asXml ? a.getName() : Strings.toLowerCase(a.getName()),
+        isAsciiOnly, out);
+    out.append("=\"");
+    Escaping.escapeXml(a.getValue(), isAsciiOnly, out);
+    out.append("\"");
+  }
+
+  private static boolean containsEndTag(StringBuilder sb) {
+    for (int i = 0, n = sb.length(); i < n; i += 2) {
+      switch (sb.charAt(i)) {
+        case '<':
+          if (i + 1 < n && sb.charAt(i + 1) == '/') { return true; }
+          break;
+        case '/':
+          if (i > 0 && sb.charAt(i - 1) == '<') { return true; }
+          break;
+      }
+    }
+    return false;
+  }
 }
