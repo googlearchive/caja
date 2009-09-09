@@ -220,11 +220,7 @@ class Indenter {
       // Maintain the indent stack, and indent as necessary.
       switch (tok.charAt(0)) {
         case '(': case '[':
-          int indentLevel = charsInLine;
-          if (i + 1 < n && "\n".equals(tokens.get(i + 1))
-              || indentLevel > lineLengthLimit / 2) {
-            indentLevel = Math.min(indentLevel, indents.get(0).spaces + 4);
-          }
+          int indentLevel = Math.min(charsInLine, indents.get(0).spaces + 2);
           indents.addFirst(new Indent(indentLevel, parenthetical[i]));
           break;
         case '{':
@@ -238,7 +234,8 @@ class Indenter {
         case ']': case ')':
           if (indents.size() > 1) { indents.removeFirst(); }
           break;
-        case ' ': break;
+        case ' ':
+          break;
         case '\n':
           if (i + 1 < n) {
             String nextToken = tokens.get(i + 1);

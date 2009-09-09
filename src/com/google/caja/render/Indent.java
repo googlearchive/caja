@@ -47,7 +47,7 @@ final class Indent {
   }
 
   int getIndentLevel() {
-    return this.spaces + (this.inStatement ? 4 : 0);
+    return this.spaces + (this.inStatement ? 2 : 0);
   }
 
   Indent withInStatement(boolean inStatement) {

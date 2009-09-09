@@ -2,7 +2,7 @@
 'instantiate':
  function ( ___, IMPORTS___) {
  var moduleResult___ =
-      ___. NO_RESULT;
+    ___. NO_RESULT;
  moduleResult___ = 1 +
  1;
  return moduleResult___;
@@ -14,16 +14,15 @@
 'sourceLocationMap': {
   'type': 'content',
   'content': [
-              '/** Begin line maps. **/{ file: \'file:///CAJOLED-OUTPUT\', count: 7 }',
-              '[0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,]', '[0,,,,,,,,,,,,,,,,,,,,,]',
-              '[0,,,,,,,,,,,,,,,,,,,,]', '[0,,,,,,,,,,,,,,,,,,1,,,]', '[2,,3]',
-              '[0,,,,,,,,,,,,,,,,,,,,,,,]', '[0]',
-              '/** Begin file information. **/', '[(void 0)]', '[(void 0)]',
-              '[(void 0)]', '[\'testModule.js\',(void 0)]',
-              '[\'testModule.js\']', '[(void 0)]', '[(void 0)]',
-              '/** Begin mapping definitions. **/', '[(void 0),0,0]',
-              '[\'testModule.js\',1,1]', '[\'testModule.js\',1,5]',
-              '[\'testModule.js\',1,6]' ]
+    '/** Begin line maps. **/{ file: \'file:///CAJOLED-OUTPUT\', count: 7 }',
+    '[0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,]', '[0,,,,,,,,,,,,,,,,,,,,,]',
+    '[0,,,,,,,,,,,,,,,,,,]', '[0,,,,,,,,,,,,,,,,,,1,,,]', '[2,,3]',
+    '[0,,,,,,,,,,,,,,,,,,,,,,,]', '[0]', '/** Begin file information. **/',
+    '[(void 0)]', '[(void 0)]', '[(void 0)]', '[\'testModule.js\',(void 0)]',
+    '[\'testModule.js\']', '[(void 0)]', '[(void 0)]',
+    '/** Begin mapping definitions. **/', '[(void 0),0,0]',
+    '[\'testModule.js\',1,1]', '[\'testModule.js\',1,5]',
+    '[\'testModule.js\',1,6]' ]
 },
 'originalSource': {
   'testModule.js': {

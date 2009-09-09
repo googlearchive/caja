@@ -216,75 +216,74 @@ public class CajolingServiceTest extends CajaTestCase {
                     moduleEnvelope,
                     "<script src=bar.js></script><p>Hello, World!</p>"),
                 "application/xml");
-    String indent = "                 ";
+    String indent = "    ";
     assertEquals(
         String.format(
             moduleEnvelope,
             "<p>Hello, World!</p><script type=\"text/javascript\">{\n"
             + "  ___.loadModule({\n"
-            + indent + "  'instantiate': function (___, IMPORTS___) {\n"
-            + indent + "    var moduleResult___ = ___.NO_RESULT;\n"
-            + indent + "    var foo = ___.readImport(IMPORTS___, 'foo');\n"
-            + indent + "    var onerror = ___.readImport("
+            + "      'instantiate': function (___, IMPORTS___) {\n"
+            + "        var moduleResult___ = ___.NO_RESULT;\n"
+            + "        var foo = ___.readImport(IMPORTS___, 'foo');\n"
+            + "        var onerror = ___.readImport("
                                            + "IMPORTS___, 'onerror');\n"
-            + indent + "    try {\n"
-            + indent + "      {\n"
-            + indent + "        moduleResult___ = foo.CALL___();\n"
-            + indent + "      }\n"
-            + indent + "    } catch (ex___) {\n"
-            + indent + "      ___.getNewModuleHandler()"
-                               + ".handleUncaughtException(ex___,\n"
-            + indent + "          onerror, 'bar.js', '1');\n"
-            + indent + "    }\n"
-            + indent + "    return moduleResult___;\n"
-            + indent + "  },\n"
-            + indent + "  'cajolerName': 'com.google.caja',\n"
-            + indent + "  'cajolerVersion': 'testBuildVersion',\n"
-            + indent + "  'cajoledDate': 0\n"
-            + indent + "});\n"
+            + "        try {\n"
+            + "          {\n"
+            + "            moduleResult___ = foo.CALL___();\n"
+            + "          }\n"
+            + "        } catch (ex___) {\n"
+            + "          ___.getNewModuleHandler()"
+                               + ".handleUncaughtException(ex___, onerror,\n"
+            + "            'bar.js', '1');\n"
+            + "        }\n"
+            + "        return moduleResult___;\n"
+            + "      },\n"
+            + "      'cajolerName': 'com.google.caja',\n"
+            + "      'cajolerVersion': 'testBuildVersion',\n"
+            + "      'cajoledDate': 0\n"
+            + "    });\n"
             + "}</script>"),
         (String) request("?url=http://foo/bar.xml&mime-type=*/*"));
   }
 
   private static String valijaModule(String... lines) {
-    String indent = "                 ";
     String prefix = (
         ""
         + "{\n"
         + "  ___.loadModule({\n"
-        + indent + "  'instantiate': function (___, IMPORTS___) {\n"
-        + indent + "    var moduleResult___ = ___.NO_RESULT;\n"
-        + indent + "    var $v = ___.readImport(IMPORTS___, '$v', {\n"
-        + indent + "          'getOuters': {\n"
-        + indent + "            '()': { }\n"
-        + indent + "          },\n"
-        + indent + "          'initOuter': {\n"
-        + indent + "            '()': { }\n"
-        + indent + "          },\n"
-        + indent + "          'cf': {\n"
-        + indent + "            '()': { }\n"
-        + indent + "          },\n"
-        + indent + "          'ro': {\n"
-        + indent + "            '()': { }\n"
-        + indent + "          }\n"
-        + indent + "        });\n"
-        + indent + "    var $dis = $v.getOuters();\n"
-        + indent + "    $v.initOuter('onerror');\n"
+        + "      'instantiate': function (___, IMPORTS___) {\n"
+        + "        var moduleResult___ = ___.NO_RESULT;\n"
+        + "        var $v = ___.readImport(IMPORTS___, '$v', {\n"
+        + "            'getOuters': {\n"
+        + "              '()': { }\n"
+        + "            },\n"
+        + "            'initOuter': {\n"
+        + "              '()': { }\n"
+        + "            },\n"
+        + "            'cf': {\n"
+        + "              '()': { }\n"
+        + "            },\n"
+        + "            'ro': {\n"
+        + "              '()': { }\n"
+        + "            }\n"
+        + "          });\n"
+        + "        var $dis = $v.getOuters();\n"
+        + "        $v.initOuter('onerror');\n"
         );
     String suffix = (
         ""
-        + indent + "    return moduleResult___;\n"
-        + indent + "  },\n"
-        + indent + "  'cajolerName': 'com.google.caja',\n"
-        + indent + "  'cajolerVersion': 'testBuildVersion',\n"
-        + indent + "  'cajoledDate': 0\n"
-        + indent + "});\n"
+        + "        return moduleResult___;\n"
+        + "      },\n"
+        + "      'cajolerName': 'com.google.caja',\n"
+        + "      'cajolerVersion': 'testBuildVersion',\n"
+        + "      'cajoledDate': 0\n"
+        + "    });\n"
         + "}"
         );
     StringBuilder sb = new StringBuilder();
     sb.append(prefix);
     for (String line : lines) {
-      sb.append("                     ").append(line).append('\n');
+      sb.append("        ").append(line).append('\n');
     }
     sb.append(suffix);
     return sb.toString();
