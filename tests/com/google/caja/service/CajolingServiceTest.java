@@ -216,7 +216,6 @@ public class CajolingServiceTest extends CajaTestCase {
                     moduleEnvelope,
                     "<script src=bar.js></script><p>Hello, World!</p>"),
                 "application/xml");
-    String indent = "    ";
     assertEquals(
         String.format(
             moduleEnvelope,

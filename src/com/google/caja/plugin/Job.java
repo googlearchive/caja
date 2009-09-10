@@ -34,20 +34,11 @@ public final class Job {
   }
 
   private final AncestorChain<?> root;
-  private final AncestorChain<?> target;
   private final Job.JobType type;
 
   public Job(AncestorChain<?> root) {
-    this(root, null);
-  }
-
-  /**
-   * @param target the location to insert the compiled output or null.
-   */
-  public Job(AncestorChain<?> root, AncestorChain<?> target) {
-    assert root != null && (target == null || target.parent != null);
+    assert root != null;
     this.root = root;
-    this.target = target;
     ParseTreeNode rootNode = root.node;
     if (rootNode instanceof Statement
         || rootNode instanceof Expression
@@ -64,12 +55,6 @@ public final class Job {
   }
 
   public AncestorChain<?> getRoot() { return root; }
-
-  /**
-   * The node to replace with the compiled or rewritten root, or
-   * null.
-   */
-  public AncestorChain<?> getTarget() { return target; }
 
   public Job.JobType getType() { return type; }
 

@@ -17,7 +17,6 @@ package com.google.caja.plugin.stages;
 import com.google.caja.lexer.FilePosition;
 import com.google.caja.parser.AncestorChain;
 import com.google.caja.parser.MutableParseTreeNode;
-import com.google.caja.parser.ParseTreeNode;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.UncajoledModule;
@@ -47,23 +46,17 @@ public final class ConsolidateCodeStage implements Pipeline.Stage<Jobs> {
       Job job = it.next();
       if (Job.JobType.JAVASCRIPT != job.getType()) { continue; }
 
-      if (job.getTarget() != null) {
-        AncestorChain<?> toReplace = job.getTarget();
-        ((MutableParseTreeNode) toReplace.parent.node).replaceChild(
-            job.getRoot().cast(ParseTreeNode.class).node, toReplace.node);
-      } else {
-        Statement stmt = (Statement) job.getRoot().node;
-        if (stmt instanceof Block) {
-          Block body = (Block) stmt;
-          MutableParseTreeNode.Mutation old = body.createMutation();
-          for (Statement s : body.children()) {
-            old.removeChild(s);
-            mut.appendChild(s);
-          }
-          old.execute();
-        } else {
-          mut.appendChild(stmt);
+      Statement stmt = (Statement) job.getRoot().node;
+      if (stmt instanceof Block) {
+        Block body = (Block) stmt;
+        MutableParseTreeNode.Mutation old = body.createMutation();
+        for (Statement s : body.children()) {
+          old.removeChild(s);
+          mut.appendChild(s);
         }
+        old.execute();
+      } else {
+        mut.appendChild(stmt);
       }
 
       it.remove();
