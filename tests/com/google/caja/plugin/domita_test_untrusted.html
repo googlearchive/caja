@@ -39,6 +39,10 @@
   <b>Click me</b>
 </p>
 
+<p class="clickme-testcontainer" id="test-innerhtml-onclick">
+  <b>do not click yet</b>
+</p>
+
 <div class="clickme-testcontainer" id="test-case-insensitive-attrs">
   <table id="is-red">
     <tr>
@@ -754,6 +758,23 @@ jsunitRegister('testDomClassHierarchy',
         pass('test-dom-class-hierarchy');
       });
 });
+
+jsunitRegister('testInnerhtmlOnclick',
+               function testInnerhtmlOnclick() {
+  var el = document.getElementById('test-innerhtml-onclick');
+  if (directAccess.isValija) {
+    el.innerHTML = '<b onclick="innerhtmlClicked();">Click me</b>';
+  } else {
+    // in cajita, innerhtmlClicked is a local module function,
+    // and there's no way for domita.js to access it.
+    el.innerHTML = "<span>Cajita can't link up onclick= functions</span>";
+    pass('test-innerhtml-onclick');
+  }
+});
+
+function innerhtmlClicked() {
+  pass('test-innerhtml-onclick');
+}
 
 jsunitRegister('testCaseInsensitiveAttrs',
                function testCaseInsensitiveAttrs() {
