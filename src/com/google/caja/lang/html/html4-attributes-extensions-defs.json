@@ -5,6 +5,17 @@
 
   "types": [
       { "key": "*::NAME", "description": "other name",
-        "type": "GLOBAL_NAME", "optional": true }
+        "type": "GLOBAL_NAME", "optional": true },
+
+      { "key": "*::ONLOAD", "description": "fires when content is loaded",
+        "type": "SCRIPT", "optional": true,
+        "comment": [
+          "HTML5 defines onload for every element.  In particular,",
+          "<img onload=> is useful and supported by most browsers." ] }
+
+      ],
+
+  "allowed": [
+      "*::ONLOAD"
       ]
 }
