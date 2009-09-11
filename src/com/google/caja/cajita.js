@@ -2693,12 +2693,13 @@ var safeJSON;
   /**
    * Produces a function module given an object literal module 
    */
-  function prepareModule(module) {
+  function prepareModule(module, load) {
     function theModule(imports) {
       // The supplied 'imports' contain arguments supplied by the caller of the
       // module. We need to add the primordials (Array, Object, ...) to these
       // before invoking the Cajita module.
       var completeImports = copy(sharedImports);
+      completeImports.load = load;
       forOwnKeys(imports, markFuncFreeze(function(k, v) {
         completeImports[k] = v;
       }));

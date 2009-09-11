@@ -15,6 +15,9 @@
 /**
  * @author maoziqing@gmail.com
  * 
- * A test file for bundled synchronous module loading in Cajita
+ * A test file for commonJS-style module loading in Valija
  */
-load('../c')({x: x + 1, y: y + 1});
+env.assertEquals(env.w, 6);
+exports.add = function(a, b) {
+  return a + b;
+};

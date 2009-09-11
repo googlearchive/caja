@@ -424,10 +424,19 @@ Script Module Loader Failure</p>
 <p class="testcontainer" id="recursive-module">
 Recursive Module</p>
 
-<p class="testcontainer" id="server-js-module">ServerJS Module</p>
+<p class="testcontainer" id="common-js-module">CommonJS Module</p>
 
-<p class="testcontainer" id="server-js-recursive-module">
-ServerJS Recursive Module</p>
+<p class="testcontainer" id="common-js-recursive-module">
+CommonJS Recursive Module</p>
+
+<p class="testcontainer" id="xhr-unbundled-module-loader">
+XHR Unbundled Module Loader</p>
+
+<p class="testcontainer" id="script-unbundled-module-loader">
+Script Unbundled Module Loader</p>
+
+<p class="testcontainer" id="static-common-js-module">
+Static CommonJS Module</p>
 
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
@@ -2798,7 +2807,7 @@ jsunitRegister('testOnReset',
 function testAsyncModuleLoader(load, includeScript, prefix) {
   directAccess.clearModuleCache();
   if (!valijaMode) {
-    var m = load.async('a.co');
+    var m = load.async('./a.co');
     var f1 = function(module) {
       var r = module({x: 1, y: 2});
       assertEquals(r, 3);
@@ -2809,7 +2818,7 @@ function testAsyncModuleLoader(load, includeScript, prefix) {
     };
     Q.when(m, f1, f2);
   } else {
-    var m = includeScript.async('x.vo');
+    var m = includeScript.async('./x.vo');
     var f1 = function(result) {
       assertEquals(x, 3);
       pass(prefix + '-module-loader');
@@ -2834,11 +2843,9 @@ jsunitRegister('testScriptModuleLoader',
 function testAsyncModuleLoader2(load, prefix) {
   directAccess.clearModuleCache();
   if (!valijaMode) {
-    var m = load.async('foo/b.co');
+    var m = load.async('./foo/b.co');
     var f1 = function(module) {
-      var r = module({x: 1, y: 2, load: { async: function(src)
-          { return load.async('foo/' + src); } },
-          Q: Q, fail: fail});
+      var r = module({x: 1, y: 2, Q: Q, fail: fail});
       Q.when(r, function(result) {
                   assertEquals(result, 5);
                   pass(prefix + '-module-loader-2');
@@ -2879,17 +2886,17 @@ function testAsyncModuleLoaderFailure(load, includeScript, prefix) {
   };
 
   if (!valijaMode) {
-    var m = xhrModuleLoad.async('b.co');
+    var m = xhrModuleLoad.async('./b.co');
     Q.when(m, f1, f2);
   } else {
-    var m = xhrIncludeScript.async('foo/x.vo');
+    var m = xhrIncludeScript.async('./foo/x.vo');
     Q.when(m, f1, f2);
   }
 }
 
 jsunitRegister('testXhrModuleLoaderFailure',
                function testXhrModuleLoaderFailure() {
-   testAsyncModuleLoaderFailure(xhrModuleLoad, xhrIncludeScript, 'xhr');
+  testAsyncModuleLoaderFailure(xhrModuleLoad, xhrIncludeScript, 'xhr');
 });
 
 jsunitRegister('testScriptModuleLoaderFailure',
@@ -2901,9 +2908,9 @@ jsunitRegister('testRecursiveModule',
                function testRecursiveModule() {
   directAccess.clearModuleCache();
   if (!valijaMode) {
-    var m = scriptModuleLoad.async('recursion.co');
+    var m = scriptModuleLoad.async('./recursion.co');
     var f1 = function(module) {
-      var r = module({x: 5, load: scriptModuleLoad, Q: Q});
+      var r = module({x: 5, Q: Q});
         Q.when(r, function(result) {
                     assertEquals(result, 120);
                     pass('recursive-module');
@@ -2921,15 +2928,16 @@ jsunitRegister('testRecursiveModule',
   }
 });
 
-jsunitRegister('testServerJsModule',
-        function testServerJsModule() {
+jsunitRegister('testCommonJsModule',
+               function testCommonJsModule() {
+  directAccess.clearModuleCache();
   if (valijaMode) {
-    var m = serverJsModuleLoad('foo/inc.vo');
+    var m = commonJsModuleLoad('./foo/inc.vo');
     Q.when(m, function(module) {
                 var r = module.inc(env.x);
                 Q.when(r, function(result) {
                             assertEquals(result, 7);
-                            pass("server-js-module");
+                            pass("common-js-module");
                           },
                           function(reason) {
                             fail(reason);
@@ -2939,29 +2947,76 @@ jsunitRegister('testServerJsModule',
                     fail("Loading module inc failed, " + reason);
                   });
   } else {
-    pass("server-js-module");
+    pass("common-js-module");
   }
 });
 
-jsunitRegister('testServerJsRecursiveModule',
-        function testServerJsRecursiveModule() {
+jsunitRegister('testCommonJsRecursiveModule',
+               function testCommonJsRecursiveModule() {
+  directAccess.clearModuleCache();
   if (valijaMode) {
-    var m = serverJsModuleLoad('serverJsRecursion.vo');
+    var m = commonJsModuleLoad('./commonJsRecursion.vo');
     Q.when(m, function(module) {
                 var r = module.isNonNegative(env.x);
                 Q.when(r, function(result) {
                             assertEquals(result, true);
-                            pass("server-js-recursive-module");
+                            pass("common-js-recursive-module");
                           },
                           function(reason) {
                             fail("Waiting for result failed, " + reason);
                           });
               },
               function(reason) {
-                fail("Loading module Recursion failed, " + reason);
+                fail("Loading module CommonJsRecursion failed, " + reason);
               });
   } else {
-    pass("server-js-recursive-module");
+    pass("common-js-recursive-module");
+  }
+});
+
+function testUnbundledModuleLoader(load, prefix) {
+  //directAccess.clearModuleCache();
+  if (!valijaMode) {
+    var m = load.async('./foo/f.co');
+    var f1 = function(module) {
+               var result = module({x: 1, y: 2});
+               assertEquals(result, 5);
+               pass(prefix + '-unbundled-module-loader');
+             };
+    var f2 = function(reason) {
+      fail("loading module F failed, " + reason);
+    };
+    Q.when(m, f1, f2);
+  } else {
+    pass(prefix + '-unbundled-module-loader');
+  }  
+}
+
+jsunitRegister('testXhrUnbundledModuleLoader', 
+               function testXhrUnbundledModuleLoader() {
+  testUnbundledModuleLoader(xhrModuleLoad, "xhr");
+});
+
+jsunitRegister('testScriptUnbundledModuleLoader', 
+               function testScriptUnbundledModuleLoader() {
+  testUnbundledModuleLoader(scriptModuleLoad, "script");
+});
+
+jsunitRegister('testStaticCommonJsModule',
+               function testStaticCommonJsModule() {
+  directAccess.clearModuleCache();
+  if (valijaMode) {
+    var m = commonJsModuleLoad('./foo/staticinc.vo');
+    Q.when(m, function(module) {
+                var r = module.inc(env.w);
+                assertEquals(r, 7);
+                pass("static-common-js-module");
+              },
+              function(reason) {
+                fail("Loading module staticinc failed, " + reason);
+              });
+  } else {
+    pass("static-common-js-module");
   }
 });
 

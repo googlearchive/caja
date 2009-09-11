@@ -61,6 +61,7 @@ public class ModuleFormatTest extends CajaTestCase {
     assertTrue(QuasiBuilder.match(
         "  ({"
         + "  instantiate: @instantiate,"
+        + "  includedModules: @includedModules,"
         + "  cajolerName: @cajolerName,"
         + "  cajolerVersion: @cajolerVersion,"
         + "  cajoledDate: @cajoledDate"

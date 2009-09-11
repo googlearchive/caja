@@ -15,6 +15,15 @@
 /**
  * @author maoziqing@gmail.com
  * 
- * A test file for bundled synchronous module loading in Cajita
+ * A test file for recursive commonJS-style module loading in Valija
  */
-load('../c')({x: x + 1, y: y + 1});
+exports.isNegative = function(a) {
+  if (a < 0) { return true; } else { return false; }
+};
+exports.isNonNegative = function (a) {
+  var m = require.async('./commonJsRecursion.vo');
+  var r = env.Q.defer();
+  env.Q.when(m, function(module) { r.resolve(!module.isNegative(a)); },
+                function(reason) { r.resolve(env.Q.reject(reason)); });
+  return r.promise;
+};

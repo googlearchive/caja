@@ -429,9 +429,22 @@
      <output file="${lib}/com/google/caja/add.vo.js" language="valija"/>
     </transform>
     <transform>
-     <include file="${tests}/com/google/caja/serverJsRecursion.js"/>
-     <output file="${lib}/com/google/caja/serverJsRecursion.vo.js"
+     <include file="${tests}/com/google/caja/commonJsRecursion.js"/>
+     <output file="${lib}/com/google/caja/commonJsRecursion.vo.js"
       language="valija"/>
+    </transform>
+    <transform>
+     <include file="${tests}/com/google/caja/foo/f.js"/>
+     <output file="${lib}/com/google/caja/foo/f.co.js" language="cajita"/>
+    </transform>
+    <transform>
+     <include file="${tests}/com/google/caja/foo/staticinc.js"/>
+     <output file="${lib}/com/google/caja/foo/staticinc.vo.js"
+       language="valija"/>
+    </transform>
+    <transform>
+     <include file="${tests}/com/google/caja/sum.js"/>
+     <output file="${lib}/com/google/caja/sum.vo.js" language="valija"/>
     </transform>
     <copy todir="${lib}">
       <fileset dir="${src}" includes="**/*.html"/>
@@ -445,9 +458,9 @@
       <include file="${src}/com/google/caja/valija-cajita.js"/>
     </transform>
     <transform>
-      <output file="${lib}/com/google/caja/plugin/serverjs-sandbox.co.js"
+      <output file="${lib}/com/google/caja/plugin/commonjs-sandbox.co.js"
         language="cajita"/>
-      <include file="${src}/com/google/caja/serverjs-sandbox.js"/>
+      <include file="${src}/com/google/caja/commonjs-sandbox.js"/>
     </transform>
   </target>
 

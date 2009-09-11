@@ -37,6 +37,7 @@
         }
         return moduleResult___;
       },
+      \'includedModules\': [ ],
       \'cajolerName\': \'com.google.caja\',
       \'cajolerVersion\': \'testBuildVersion\',
       \'cajoledDate\': 0

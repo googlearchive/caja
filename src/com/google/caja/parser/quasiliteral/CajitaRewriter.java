@@ -68,6 +68,7 @@ import static com.google.caja.parser.js.SyntheticNodes.s;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +89,10 @@ public class CajitaRewriter extends Rewriter {
 
   private final BuildInfo buildInfo;
   private final ModuleManager moduleManager;
+  // TODO: move this into scope if we use a single CajitaRewriter to rewrite
+  // multiple modules 
+  private final Set<StringLiteral> moduleNameList
+      = new HashSet<StringLiteral>();
 
   /** Mark a tree as having been translated from another language. */
   private static void markTranslated(ParseTreeNode node) {
@@ -234,16 +239,25 @@ public class CajitaRewriter extends Rewriter {
         if (bindings != null && scope.isImported("load")) {
           ParseTreeNode arg = bindings.get("arg");
           if (arg instanceof StringLiteral) {
-            assert(moduleManager != null);
-            int index = moduleManager.getModule((StringLiteral) arg);
-            if (index != -1) {
-              return QuasiBuilder.substV(
-                  "moduleMap___[@moduleIndex]",
-                  "moduleIndex",
-                  new IntegerLiteral(FilePosition.UNKNOWN, index));
+            if (moduleManager != null) {
+              int index = moduleManager.getModule((StringLiteral) arg);
+              if (index != -1) {
+                return QuasiBuilder.substV(
+                    "moduleMap___[@moduleIndex]",
+                    "moduleIndex",
+                    new IntegerLiteral(FilePosition.UNKNOWN, index));
+              } else {
+                // error messages were logged in the function getModule
+                return node;
+              }
             } else {
-              // error messages were logged in the function getModule
-              return node;
+              String name = ((StringLiteral) arg).getUnquotedValue();
+              moduleNameList.add(new StringLiteral(
+                  FilePosition.UNKNOWN, name));
+              return QuasiBuilder.substV(
+                  "load(@name)",
+                  "name",
+                  new StringLiteral(FilePosition.UNKNOWN, name));
             }
           } else {
             mq.addMessage(
@@ -276,6 +290,7 @@ public class CajitaRewriter extends Rewriter {
               + "        @rewrittenModuleStmts*;"
               + "        return moduleResult___;"
               + "      },"
+              + "      includedModules: @moduleNames,"
               + "      cajolerName: @cajolerName,"
               + "      cajolerVersion: @cajolerVersion,"
               + "      cajoledDate: @cajoledDate"
@@ -290,6 +305,9 @@ public class CajitaRewriter extends Rewriter {
           Block rewrittenModuleStmts = (Block) expand(inputModuleStmts, null);
           ObjectConstructor moduleObjectLiteral = (ObjectConstructor) substV(
               "rewrittenModuleStmts", returnLast(rewrittenModuleStmts),
+              "moduleNames", new ArrayConstructor(
+                  FilePosition.UNKNOWN, 
+                  new ArrayList<StringLiteral>(moduleNameList)),
               "cajolerName", new StringLiteral(
                   FilePosition.UNKNOWN, "com.google.caja"),
               "cajolerVersion", new StringLiteral(

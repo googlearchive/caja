@@ -15,6 +15,7 @@
 /**
  * @author maoziqing@gmail.com
  * 
- * A test file for bundled synchronous module loading in Cajita
+ * A test file for unbundled synchronous module loading in Cajita
  */
-load('../c')({x: x + 1, y: y + 1});
+var m = load('../c.co');
+m({x: x}) + m({x: y});

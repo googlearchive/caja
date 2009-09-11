@@ -206,16 +206,16 @@
     })();</script>
 
     <script type="text/javascript">
-    var serverJsSandboxMaker;
+    var commonJsSandboxMaker;
     (function () {
       if (isValija) {
         var testImports = ___.copy(___.sharedImports);
         testImports.loader = ___.freeze({
               provide: ___.markFuncFreeze(function (v)
-                  { serverJsSandboxMaker = v; })
+                  { commonJsSandboxMaker = v; })
             });
         ___.getNewModuleHandler().setImports(testImports);
-        loadScript('serverjs-sandbox.co.js');
+        loadScript('commonjs-sandbox.co.js');
       }
     })();</script>
 
@@ -404,25 +404,18 @@
 
       testImports.Q = Q;
 
-      testImports.xhrModuleLoad = ___.primFreeze({
-        async: ___.markFuncFreeze(function(src) {
-          return xhrModuleLoad.async(
-              '/ant-lib/com/google/caja/' + src);
-        })
-      });
+      testImports.xhrModuleLoad = xhrModuleLoadMaker(
+        '/ant-lib/com/google/caja/domita_test');
         
-      testImports.scriptModuleLoad = ___.primFreeze({
-        async: ___.markFuncFreeze(function(src) {
-          return scriptModuleLoad.async(
-              'http://localhost:8000/ant-lib/com/google/caja/' + src);
-        })
-      });
+      testImports.scriptModuleLoad = scriptModuleLoadMaker(
+        'http://localhost:8000/ant-lib/com/google/caja/domita_test');
 
       if (isValija) {
         testImports.xhrIncludeScript = ___.primFreeze({ 
           async: ___.markFuncFreeze(function(src) {
-            var m = xhrModuleLoad.async(
-                '/ant-lib/com/google/caja/' + src);
+            var m = xhrModuleLoadMaker(
+                '/ant-lib/com/google/caja/domita_test'
+                ).async(src);
             return Q.when(m,
                 function(module) { return module({$v: testImports.$v}); });
           })
@@ -430,8 +423,9 @@
             
         testImports.scriptIncludeScript = ___.primFreeze({ 
           async: ___.markFuncFreeze(function(src) {
-            var m = scriptModuleLoad.async(
-                'http://localhost:8000/ant-lib/com/google/caja/' + src);
+            var m = scriptModuleLoadMaker(
+                'http://localhost:8000/ant-lib/com/google/caja/domita_test'
+                ).async(src);
             return Q.when(m,
                 function(module) { return module({$v: testImports.$v}); });
           })
@@ -439,9 +433,11 @@
         
         testImports.env = testImports;
         testImports.env.x = 6;
-        var $s = serverJsSandboxMaker.CALL___(
-                testImports.env, valijaMaker, testImports.xhrModuleLoad);
-        testImports.serverJsModuleLoad = $s.loadModule;
+        testImports.env.w = 6;
+        var $s = commonJsSandboxMaker.CALL___(testImports.env, valijaMaker);
+        testImports.commonJsModuleLoad = ___.markFuncFreeze(function(src) {
+          return $s.loadModule(testImports.xhrModuleLoad.async(src));
+        });
       }
 
       attachDocumentStub(
@@ -481,7 +477,7 @@
       window.toString = function () { return '[WINDOW]'; };
 
       inlineHtml(isValija ? 'domita_test.vo.html' : 'domita_test.co.html',
-                 testDomContainer);
+          testDomContainer);
     })(); </script>
 
   </body>

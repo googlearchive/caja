@@ -207,6 +207,66 @@ public class DefaultValijaRewriter extends Rewriter {
       }
     },
 
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="staticCommonJsModuleLoading",
+          synopsis="based on the Cajita module loading",
+          reason="",
+          matches="require(@arg)",
+          substitutes="$v.cf($v.ro('require'), [load(@arg)])")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null && scope.isOuter("includeScript")) {
+          ParseTreeNode arg = bindings.get("arg");
+          if (arg instanceof StringLiteral) {
+            String src = ((StringLiteral) arg).getUnquotedValue();
+            if (!src.endsWith(".vo")) {
+              src = src + ".vo";
+            }
+            return substV("arg", 
+                new StringLiteral(FilePosition.UNKNOWN, src));
+          } else {
+            mq.addMessage(
+                RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_SERVERJS_MODULE,
+                node.getFilePosition());
+            return node;
+          }
+        }
+        return NONE;
+      }
+    },
+
+    new Rule() {
+      @Override
+      @RuleDescription(
+          name="dynamicCommonJsModuleLoading",
+          synopsis="based on the Cajita module loading",
+          reason="",
+          matches="require.async(@arg)",
+          substitutes="$v.cm($v.ro('require'), 'async', [load.async(@arg)])")
+      public ParseTreeNode fire(ParseTreeNode node, Scope scope) {
+        Map<String, ParseTreeNode> bindings = match(node);
+        if (bindings != null && scope.isOuter("includeScript")) {
+          ParseTreeNode arg = bindings.get("arg");
+          if (arg instanceof StringLiteral) {
+            String src = ((StringLiteral) arg).getUnquotedValue();
+            if (!src.endsWith(".vo")) {
+              src = src + ".vo";
+            }
+            return substV("arg", 
+                new StringLiteral(FilePosition.UNKNOWN, src));
+          } else {
+            mq.addMessage(
+                RewriterMessageType.CANNOT_LOAD_A_DYNAMIC_SERVERJS_MODULE,
+                node.getFilePosition());
+            return node;
+          }
+        }
+        return NONE;
+      }
+    },
+
     ////////////////////////////////////////////////////////////////////////
     // Module envelope
     ////////////////////////////////////////////////////////////////////////
