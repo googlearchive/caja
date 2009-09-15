@@ -36,13 +36,14 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.MessageType;
+import com.google.caja.util.Maps;
 import com.google.caja.util.Pair;
 
 import static com.google.caja.parser.js.SyntheticNodes.s;
 import static com.google.caja.parser.quasiliteral.QuasiBuilder.substV;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.List;
@@ -182,7 +183,7 @@ public class Scope {
   private boolean containsArguments = false;
   private int tempVariableCounter = 0;
   private final Map<String, Pair<LocalType, FilePosition>> locals
-      = new HashMap<String, Pair<LocalType, FilePosition>>();
+      = Maps.newLinkedHashMap();
   private final List<Statement> startStatements = new ArrayList<Statement>();
   // TODO(ihab.awad): importedVariables is only used by the root-most scope; it is
   // empty everywhere else. Define subclasses of Scope so that this confusing
@@ -286,9 +287,17 @@ public class Scope {
     return importedVariables;
   }
 
+  public Iterable<String> getLocals() {
+    return Collections.unmodifiableSet(locals.keySet());
+  }
+
+  public FilePosition getLocationOfDeclaration(String localName) {
+    return locals.get(localName).b;
+  }
+
   /**
-   * Add a start statement to the closest enclosing true Scope (i.e., a Scope that can contain
-   * unique 'var' declarations).
+   * Add a start statement to the closest enclosing true Scope (i.e., a Scope
+   * that can contain unique 'var' declarations).
    *
    * @param s a Statement.
    * @see #getStartStatements()

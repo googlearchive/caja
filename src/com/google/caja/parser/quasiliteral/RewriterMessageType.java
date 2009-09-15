@@ -86,6 +86,12 @@ public enum RewriterMessageType implements MessageTypeInt {
       "%s: identifier contains non-ASCII characters: %s",
       MessageLevel.FATAL_ERROR),
 
+  ALPHA_RENAMING_FAILURE(
+      "%s: INTERNAL COMPILER ERROR: output of alpha renamer has free vars %s."
+      + "  Please report this error at "
+      + "http://code.google.com/p/google-caja/issues/",
+      MessageLevel.ERROR),
+
   ILLEGAL_IDENTIFIER_LEFT_OVER(
       "%s: INTERNAL COMPILER ERROR. "
           + "Illegal identifier passed through from rewriter: %s. "
@@ -122,6 +128,9 @@ public enum RewriterMessageType implements MessageTypeInt {
           + "Please report this error at: http://code.google.com/p/google-caja/issues/",
           MessageLevel.ERROR),
 
+  ARGUMENTS_IN_GLOBAL_CONTEXT(
+      "%s: 'arguments' used in a global context", MessageLevel.ERROR),
+
   THIS_IN_GLOBAL_CONTEXT(
       "%s: \"this\" cannot be used in the global context",
       MessageLevel.FATAL_ERROR),
@@ -129,6 +138,8 @@ public enum RewriterMessageType implements MessageTypeInt {
   CANNOT_ASSIGN_TO_FREE_VARIABLE(
       "%s: Cannot assign to a free module variable: %s, %s",
       MessageLevel.FATAL_ERROR),
+
+  FREE_VARIABLE("%s: free variable %s", MessageLevel.ERROR),
 
   CANNOT_MASK_IDENTIFIER(
       "%s: Cannot mask identifier \"%s\"", MessageLevel.FATAL_ERROR),
@@ -153,6 +164,10 @@ public enum RewriterMessageType implements MessageTypeInt {
   CANNOT_REDECLARE_FUNCTION_NAME(
       "%s: Cannot redeclare a function name: %s, %s",
       MessageLevel.FATAL_ERROR),
+
+  CANNOT_REDECLARE_VAR(
+      "%s: Cannot redeclare %s originally declared at %s",
+      MessageLevel.ERROR),
 
   PROTOTYPICAL_INHERITANCE_NOT_IN_CAJITA(
       "%s: Prototypical inheritance is not supported in Cajita. "
@@ -183,7 +198,7 @@ public enum RewriterMessageType implements MessageTypeInt {
   CANNOT_LOAD_A_DYNAMIC_VALIJA_MODULE(
       "%s: Dynamically computed names should use includeScript.async()",
       MessageLevel.FATAL_ERROR),
-      
+
   CANNOT_LOAD_A_DYNAMIC_SERVERJS_MODULE(
       "%s: Dynamically computed names should use require.async()",
       MessageLevel.FATAL_ERROR);
