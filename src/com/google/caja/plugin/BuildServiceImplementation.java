@@ -55,6 +55,7 @@ import java.io.Writer;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -200,6 +201,10 @@ public class BuildServiceImplementation implements BuildService {
       outputHtml = null;
     }
 
+    // From the ignore attribute to the <transform> element.
+    Set<?> toIgnore = (Set<?>) options.get("toIgnore");
+    if (toIgnore == null) { toIgnore = Collections.emptySet(); }
+
     // Log messages
     SnippetProducer snippetProducer = new SnippetProducer(originalSources, mc);
     for (Message msg : mq.getMessages()) {
@@ -208,7 +213,10 @@ public class BuildServiceImplementation implements BuildService {
       }
       String snippet = snippetProducer.getSnippet(msg);
       if (!"".equals(snippet)) { snippet = "\n" + snippet; }
-      logger.println(msg.getMessageLevel() + " : " + msg.format(mc) + snippet);
+      if (!passed || !toIgnore.contains(msg.getMessageType().name())) {
+        logger.println(
+            msg.getMessageLevel() + " : " + msg.format(mc) + snippet);
+      }
     }
 
     // Write the output

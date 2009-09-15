@@ -768,23 +768,28 @@
   <target name="slides" depends="dirs,pluginc,MinifiedJs,CajoledValija,lolcat-search"
    description="Explain Caja">
     <transform>
-      <output file="${www}/slides/redirection.co.html" language="valija"/>
+      <output file="${www}/slides/redirection.co.html" language="valija"
+       ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"/>
       <include file="${demos}/slides/redirection.html"/>
     </transform>
     <transform>
-      <output file="${www}/slides/history.co.html" language="valija"/>
+      <output file="${www}/slides/history.co.html" language="valija"
+       ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"/>
       <include file="${demos}/slides/history.html"/>
     </transform>
     <transform>
-      <output file="${www}/slides/cookie.co.html" language="valija"/>
+      <output file="${www}/slides/cookie.co.html" language="valija"
+       ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"/>
       <include file="${demos}/slides/cookie.html"/>
     </transform>
     <transform>
-      <output file="${www}/slides/script-injection.co.html" language="valija"/>
+      <output file="${www}/slides/script-injection.co.html" language="valija"
+       ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"/>
       <include file="${demos}/slides/script-injection.html"/>
     </transform>
     <transform>
-      <output file="${www}/slides/tame-alert.co.html" language="valija"/>
+      <output file="${www}/slides/tame-alert.co.html" language="valija"
+       ignore="UNSAFE_TAG DISALLOWED_CSS_PROPERTY_IN_SELECTOR"/>
       <include file="${demos}/slides/tame-alert.html"/>
     </transform>
 

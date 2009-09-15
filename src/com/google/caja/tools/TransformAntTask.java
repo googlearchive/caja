@@ -14,10 +14,14 @@
 
 package com.google.caja.tools;
 
+import com.google.caja.util.Sets;
+
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.tools.ant.BuildException;
 
 /**
@@ -29,7 +33,8 @@ import org.apache.tools.ant.BuildException;
  *   <include file="baz/input2.css"/>
  *   <depend file="baz/boo.css"/>
  *   <output language="cajita" debug="false" file="output-file-1.js"/>
- *   <output language="valija" debug="true" file="output-file-2.js"/>
+ *   <output language="valija" debug="true" file="output-file-2.js"
+ *    ignore="YOUR_CODES_ARE_ON_FIRE"/>
  * </transform>
  * }
  * cajoles input1.js and input2.css to foo/bar.js allowing the inputs to
@@ -47,6 +52,13 @@ import org.apache.tools.ant.BuildException;
  * "pretty" is the default and uses the
  * {@link com.google.caja.render.JsPrettyPrinter}.
  * "minify" to use {@link com.google.caja.render.JsMinimalPrinter}.
+ * <p>
+ * The optional {@code ignore} attribute specifies a set of message names to
+ * ignore if the build otherwise succeeds.
+ * The default is none -- no messages above {@link MessageLevel.LOG} are ignored
+ * but sometimes we build demos specifically because we want to show that
+ * attacks fail, so we ignore expected warnings from those.  The value is a
+ * comma or space separated list of message {@link MessageTypeInt#name name}s.
  *
  * @author mikesamuel@gmail.com
  */
@@ -63,11 +75,12 @@ public class TransformAntTask extends AbstractCajaAntTask {
   Output makeOutput() {
     return new TranslateTaskOutput();
   }
-  
+
   public class TranslateTaskOutput extends Output {
     private boolean debug;
     private String language;
     private String renderer = "pretty";
+    private Set<String> messagesToIgnore = Sets.newHashSet();
 
     @Override
     public Map<String, Object> getOptions() {
@@ -75,6 +88,7 @@ public class TransformAntTask extends AbstractCajaAntTask {
       options.put("debug", debug);
       options.put("language", language);
       options.put("renderer", renderer);
+      options.put("toIgnore", messagesToIgnore);
       return options;
     }
 
@@ -82,5 +96,12 @@ public class TransformAntTask extends AbstractCajaAntTask {
     public void setDebug(boolean debug) { this.debug = debug; }
     public void setLanguage(String language) { this.language = language; }
     public void setRenderer(String renderer) { this.renderer = renderer; }
+    public void setIgnore(String messageTypeNames) {
+      messageTypeNames = messageTypeNames.trim();
+      if (!"".equals(messageTypeNames)) {
+        this.messagesToIgnore.addAll(Arrays.asList(
+            messageTypeNames.split("[\\s,]+")));
+      }
+    }
   }
 }
