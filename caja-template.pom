@@ -1,0 +1,46 @@
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>caja</artifactId>
+  <groupId>caja</groupId>
+  <version>%%build.svnVersion%%</version>
+  <name>Caja</name>
+  <url>http://code.google.com/p/google-caja</url>
+  <description>
+    Caja is a JavaScript/HTML/CSS rewriter that makes javascript code obey object capabilities rules.
+  </description>
+  <organization>
+    <name>Google</name>
+    <url>http://www.google.com</url>
+  </organization>
+  <licenses>
+    <license>
+      <name>Apache 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+    </license>
+  </licenses>
+  <dependencies>
+    <dependency>
+      <!--
+        - Includes trunk/third_party/java/htmlparser 
+        - as described at http://about.validator.nu/htmlparser/
+        -->
+      <groupId>nu.validator.htmlparser</groupId>
+      <artifactId>htmlparser</artifactId>
+      <version>1.0.7</version>
+    </dependency>
+    <!--
+      - The next two dependencies include third_party/java/xerces/
+      - as described at http://xerces.apache.org/xerces-j/
+      -->
+    <dependency>
+      <groupId>xerces</groupId>
+      <artifactId>xercesImpl</artifactId>
+      <version>2.9.1</version>
+    </dependency>
+    <dependency>
+      <groupId>xerces</groupId>
+      <artifactId>xmlParserAPIs</artifactId>
+      <version>2.6.2</version>
+    </dependency>
+  </dependencies>
+</project>

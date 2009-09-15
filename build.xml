@@ -55,6 +55,7 @@
   <property name="javadocs"    location="${docs}/java"/>
   <property name="jars"        location="ant-jars"/>
   <property name="www"         location="ant-www"/>  <!-- demo files dir -->
+  <property name="maven"       location="ant-maven"/>  <!-- maven distro -->
 
   <!--== classpaths ==-->
   <path id="classpath.compile">
@@ -126,6 +127,7 @@
     <delete dir="${jars}"/>
     <delete dir="${lib}"/>
     <delete dir="${www}"/>
+    <mkdir dir="${maven}"/>
   </target>
 
   <target name="dirs">
@@ -135,6 +137,7 @@
     <mkdir dir="${jars}"/>
     <mkdir dir="${lib}"/>
     <mkdir dir="${www}"/>
+    <mkdir dir="${maven}"/>
   </target>
 
   <target name="runtests" depends="AllTests"
@@ -377,11 +380,15 @@
         <include name="xercesImpl.jar"/>
       </fileset>
     </copy>
-    <jar destfile="${jars}/pluginc.jar" basedir="${lib}">
+    <jar destfile="${jars}/pluginc.jar">
       <manifest>
         <attribute name="Main-Class"
          value="com.google.caja.plugin.PluginCompilerMain"/>
       </manifest>
+      <fileset dir="${lib}">
+        <include name="com/google/caja/**"/>
+        <include name="js/json_sans_eval/json_sans_eval.js"/>
+      </fileset>
     </jar>
     <jar destfile="${jars}/pluginc-src.jar" basedir="${src}"/>
   </target>
@@ -584,6 +591,10 @@
       <fileset dir="${third_party}">
       </fileset>
       <fileset dir="${src}">
+        <include name="**/caja/cajita.js"/>
+        <include name="**/caja/cajita-debugmode.js"/>
+        <include name="**/caja/console.js"/>
+        <include name="**/caja/log-to-console.js"/>
         <include name="**/caja/plugin/bridal.js"/>
         <include name="**/caja/plugin/domita.js"/>
         <include name="**/caja/plugin/html-emitter.js"/>
@@ -1076,6 +1087,18 @@
       <include file="yuitest/dom_test.html"/>
       <output file="yuitest/dom_test.vo.html" language="valija"/>
     </transform>
+  </target>
+
+  <target name="maven" depends="jars,dirs,build.info">
+    <copy file="${jars}/pluginc.jar"
+          tofile="${maven}/caja-${build.svnVersion}.jar"/>
+    <copy file="${jars}/pluginc-src.jar"
+          tofile="${maven}/caja-${build.svnVersion}-src.jar"/>
+    <copy file="caja-template.pom"
+          tofile="${maven}/caja-${build.svnVersion}.pom"/>
+    <replace file="${maven}/caja-${build.svnVersion}.pom"
+             token="%%build.svnVersion%%"
+             value="${build.svnVersion}"/>
   </target>
 
   <!--
