@@ -2405,6 +2405,18 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         + "assertEquals(r, 9);");
 
     rewriteAndExecute(
+        "var m = load('foo/testPrimordials'); "
+        + "assertTrue(m.cajolerName !== undefined);"
+        + "assertTrue(m.cajolerVersion !== undefined);"
+        + "assertTrue(m.cajoledDate !== undefined);"
+        + "assertTrue(m.includedModules !== undefined);"
+        + "assertThrows(function() { m.cajolerName = 'bar'; });"
+        + "assertThrows(function() { m.includedModules = 'bar'; });"
+        + "assertThrows(function() { m.includedModules.foo = 'bar'; });"
+        + "assertThrows(function() { m.foo = 'bar'; });"
+        );
+
+    rewriteAndExecute(
         "var r = load('foo/b')({x: 6, y: 3}); "
         + "assertEquals(r, 11);");
 

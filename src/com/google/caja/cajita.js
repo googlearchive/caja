@@ -2706,12 +2706,18 @@ var safeJSON;
       return module.instantiate(___, primFreeze(completeImports));
     }
     theModule.FUNC___ = 'theModule';
-      
-    forOwnKeys(module, markFuncFreeze(function(k, v) {
-      if (k != 'instantiate') {
-        setStatic(theModule, k, v);
-      }
-    }));
+
+    // Whitelist certain module properties as visible to Cajita code. These
+    // are all primitive values that do not allow two Cajita entities with
+    // access to the same module object to communicate.
+    setStatic(theModule, 'cajolerName', module.cajolerName);
+    setStatic(theModule, 'cajolerVersion', module.cajolerName);
+    setStatic(theModule, 'cajoledDate', module.cajolerName);
+    setStatic(theModule, 'moduleId', module.moduleId);
+    // The below is a transitive freeze because includedModules is an array
+    // of strings.
+    setStatic(theModule, 'includedModules', ___.freeze(module.includedModules));
+
     return primFreeze(theModule);
   }
 
