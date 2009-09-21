@@ -177,7 +177,7 @@ public final class HTML {
     private final String safeValue_;
 
     /**
-     * Is the attribute's value irrelevent?
+     * Is the attribute's value irrelevant?
      * The state of the attribute is specified entirely by whether or not it is
      * present.
      */

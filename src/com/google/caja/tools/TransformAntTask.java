@@ -55,10 +55,12 @@ import org.apache.tools.ant.BuildException;
  * <p>
  * The optional {@code ignore} attribute specifies a set of message names to
  * ignore if the build otherwise succeeds.
- * The default is none -- no messages above {@link MessageLevel.LOG} are ignored
+ * The default is none -- no messages above
+ * {@link com.google.caja.reporting.MessageLevel#LOG} are ignored
  * but sometimes we build demos specifically because we want to show that
  * attacks fail, so we ignore expected warnings from those.  The value is a
- * comma or space separated list of message {@link MessageTypeInt#name name}s.
+ * comma or space separated list of message
+ * {@link com.google.caja.reporting.MessageTypeInt#name name}s.
  *
  * @author mikesamuel@gmail.com
  */

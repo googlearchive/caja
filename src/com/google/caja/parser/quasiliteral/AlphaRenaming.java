@@ -71,7 +71,7 @@ import java.util.Set;
  * (foo + bar)       // user defined code.
  * </pre>
  * We generate a {@link NameContext} for user defined code that uses a
- * {@link SafeIdentifierMaker} to remap variable names:
+ * {@link com.google.caja.util.SafeIdentifierMaker} to remap variable names:
  * <pre>
  *   foo &rarr; a
  *   bar &rarr; b

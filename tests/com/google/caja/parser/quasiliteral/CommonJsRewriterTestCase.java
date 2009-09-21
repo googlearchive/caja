@@ -26,7 +26,6 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
 
   /**
    * Tests that "in" works as expected
-   * @throws Exception
    */
   public final void testIn() throws Exception {
     assertConsistent(
@@ -52,7 +51,6 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
 
   /**
    * Tests that the length property whitelisting works on non-objects
-   * @throws Exception
    */
   public final void testStringLength() throws Exception {
     assertConsistent("('123').length;");
@@ -390,7 +388,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
   /**
    * Tests that Error objects are preserved by tamed try/catch and that they
    * are born non-frozen.
-   * 
+   *
    * See issue 1097, issue 1038, {@link CajitaRewriterTest#testErrorFreeze},
    *     and {@link DefaultValijaRewriterTest#testErrorFreeze}.
    */
@@ -404,17 +402,17 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
             "  assertTrue(t === ex);" +
             "}");
   }
-  
+
   /**
-   * Tests that the apparent [[Class]] of the tamed JSON object is 'JSON', as 
+   * Tests that the apparent [[Class]] of the tamed JSON object is 'JSON', as
    * it should be according to ES5.
-   * 
+   *
    * See issue 1086
    */
   public final void testJSONClass() throws Exception {
     rewriteAndExecute(
             "assertTrue(({}).toString.call(JSON) === '[object JSON]');");
-    
+
     // Neither of the following tests pass in both Cajita and Valija.
     // This does not block closing issue 1086, but is mysterious and so
     // should be figured out. Filed separately as issue 1114.

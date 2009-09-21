@@ -74,4 +74,14 @@ public class FilePositionTest extends TestCase {
     assertEquals(0, inst.length());
     assertEquals("foo:2+1@30", inst.toString());
   }
+
+  public final void testFilePositionFor() {
+    InputSource is = new InputSource(URI.create("t:///bar"));
+    FilePosition inst = FilePosition.fromLinePositions(is, 1, 1, 10, 100);
+    assertEquals(is, inst.source());
+    assertEquals(1, inst.startLineNo());
+    assertEquals(1, inst.startCharInLine());
+    assertEquals(10, inst.endLineNo());
+    assertEquals(100, inst.endCharInLine());
+  }
 }

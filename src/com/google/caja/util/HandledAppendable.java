@@ -17,7 +17,7 @@ package com.google.caja.util;
 import java.io.IOException;
 
 /**
- * Given any {@code Appendable} and an {@code} exception handler, implements
+ * Given any {@code Appendable} and an exception handler, implements
  * the {@code Appendable} interface in a manner that does not throw.
  *
  * @author ihab.awad@gmail.com (Ihab Awad)
