@@ -16,34 +16,34 @@
 
 <style type="text/css">
   .testcontainer { background: yellow; border: 2px solid yellow }
-  .testcontainer.passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
-  .clickme-testcontainer { background: yellow; border: 2px solid yellow }
-  .waiting-testcontainer { background: yellow; border: 2px solid yellow }
+  .clickme { border: 2px solid fuchsia; }
+  .waiting { border: 2px solid aqua; }
+  .passed { background: #c0ffc0; border: 2px solid #c0ffc0 }
   .invisible { display: none; float: left }
   .inline { display: inline }
 </style>
 
-<p class="waiting-testcontainer" id="test-timeout-and-interval">
+<p class="waiting testcontainer" id="test-timeout-and-interval">
   Timeouts and Intervals<br>
 </p>
 
-<p class="clickme-testcontainer" id="test-add-event-listener">
+<p class="clickme testcontainer" id="test-add-event-listener">
   <b id="test-add-event-listener-label">click me</b>
 </p>
 
-<p class="clickme-testcontainer" id="test-remove-event-listener">
+<p class="clickme testcontainer" id="test-remove-event-listener">
   <b id="test-remove-event-listener-label">click me</b>
 </p>
 
-<p class="clickme-testcontainer" id="test-dom-class-hierarchy">
+<p class="clickme testcontainer" id="test-dom-class-hierarchy">
   <b>Click me</b>
 </p>
 
-<p class="clickme-testcontainer" id="test-innerhtml-onclick">
+<p class="clickme testcontainer" id="test-innerhtml-onclick">
   <b>do not click yet</b>
 </p>
 
-<div class="clickme-testcontainer" id="test-case-insensitive-attrs">
+<div class="clickme testcontainer" id="test-case-insensitive-attrs">
   <table id="is-red">
     <tr>
       <td><strong>Click me if this is red</strong></td>
@@ -77,12 +77,12 @@
 </form>
 
 <form id="test-onreset-form">
-  <div class="clickme-testcontainer" id="test-onreset">
+  <div class="clickme testcontainer" id="test-onreset">
     <input type="reset" value="click me">
   </div>
 </form>
 
-<p class="clickme-testcontainer" id="test-onclick-handler">
+<p class="clickme testcontainer" id="test-onclick-handler">
   <b id="test-onclick-handler-label"
      onclick="pass('test-onclick-handler');">click me</b>
 </p>
@@ -265,7 +265,7 @@
 
 <div class="testcontainer" id="test-xhr-sync">XHR sync</div>
 
-<div class="testcontainer" id="test-xhr-async">XHR async</div>
+<div class="waiting testcontainer" id="test-xhr-async">XHR async</div>
 
 <div class="testcontainer" id="test-computed-style">
   <div id="test-computed-style-block">Block</div>
@@ -405,37 +405,37 @@ Test row cell
   duck-4
 </div>
 
-<p class="testcontainer" id="xhr-module-loader">XHR Module Loader</p>
+<p class="waiting testcontainer" id="xhr-module-loader">XHR Module Loader</p>
 
-<p class="testcontainer" id="script-module-loader">Script Module Loader</p>
+<p class="waiting testcontainer" id="script-module-loader">Script Module Loader</p>
 
-<p class="testcontainer" id="xhr-module-loader-2">
+<p class="waiting testcontainer" id="xhr-module-loader-2">
 XHR Module Loader 2</p>
 
-<p class="testcontainer" id="script-module-loader-2">
+<p class="waiting testcontainer" id="script-module-loader-2">
 Script Module Loader 2</p>
 
-<p class="testcontainer" id="xhr-module-loader-failure">
+<p class="waiting testcontainer" id="xhr-module-loader-failure">
 XHR Module Loader Failure</p>
 
-<p class="testcontainer" id="script-module-loader-failure">
+<p class="waiting testcontainer" id="script-module-loader-failure">
 Script Module Loader Failure</p>
 
-<p class="testcontainer" id="recursive-module">
+<p class="waiting testcontainer" id="recursive-module">
 Recursive Module</p>
 
-<p class="testcontainer" id="common-js-module">CommonJS Module</p>
+<p class="waiting testcontainer" id="common-js-module">CommonJS Module</p>
 
-<p class="testcontainer" id="common-js-recursive-module">
+<p class="waiting testcontainer" id="common-js-recursive-module">
 CommonJS Recursive Module</p>
 
-<p class="testcontainer" id="xhr-unbundled-module-loader">
+<p class="waiting testcontainer" id="xhr-unbundled-module-loader">
 XHR Unbundled Module Loader</p>
 
-<p class="testcontainer" id="script-unbundled-module-loader">
+<p class="waiting testcontainer" id="script-unbundled-module-loader">
 Script Unbundled Module Loader</p>
 
-<p class="testcontainer" id="static-common-js-module">
+<p class="waiting testcontainer" id="static-common-js-module">
 Static CommonJS Module</p>
 
 <p class="testcontainer" id="test-document-body-appendChild"

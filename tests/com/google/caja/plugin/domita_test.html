@@ -305,10 +305,10 @@
         if (!node) return;
         node = node.node___;
         node.appendChild(document.createTextNode('Passed ' + id));
-        if (node.className) {
-          node.className = node.className.replace(/^clickme-|^waiting-/, '');
-        }
-        node.className = (node.className || '') + ' passed';
+        var cl = node.className || '';
+        cl = cl.replace(/\b(clickme|waiting)\b\s*/g, '');
+        cl += ' passed';
+        node.className = cl;
       }, 'pass');
 
       testImports.checkGlobalSideEffect =
