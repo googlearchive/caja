@@ -473,7 +473,8 @@ var getImports = (function () {
       var htmlContainer = document.getElementById('caja-html' + uiSuffix);
       htmlContainer.className = idClass;
       htmlContainer.innerHTML = '';
-      testImports.htmlEmitter___ = new HtmlEmitter(htmlContainer);
+      testImports.htmlEmitter___ = new HtmlEmitter(
+          htmlContainer, testImports.document);
     };
     /**
      * Put styles inside a node that is cleared for each gadget so that

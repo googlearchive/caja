@@ -284,6 +284,9 @@ final class SafeHtmlMaker {
   private void signalLoaded() {
     if (started) {
       emitStatement(quasiStmt("emitter___./*@synthetic*/signalLoaded();"));
+    } else if (!js.isEmpty()) {
+      emitStatement(quasiStmt(
+          "IMPORTS___.htmlEmitter___./*@synthetic*/signalLoaded();"));
     }
   }
 

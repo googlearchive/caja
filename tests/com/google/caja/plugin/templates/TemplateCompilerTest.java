@@ -277,6 +277,9 @@ public class TemplateCompilerTest extends CajaTestCase {
             + "} catch (ex___) {"
             + "  ___.getNewModuleHandler().handleUncaughtException("
             + "      ex___, onerror, 'testDeferredScripts', '1');"
+            + "}"
+            + "{"
+            + "  IMPORTS___.htmlEmitter___.signalLoaded();"
             + "}"))
         );
   }
