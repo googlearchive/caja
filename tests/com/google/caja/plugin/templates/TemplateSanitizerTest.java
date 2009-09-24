@@ -199,6 +199,17 @@ public class TemplateSanitizerTest extends CajaTestCase {
         "WARNING: removing disallowed attribute charset on tag a");
   }
 
+  public void testStrangeIds() throws Exception {
+    String html =
+      "<input name=\"tag[]\" />\n"
+      + "<input name=\"form$location\" />\n"
+      + "<span id=\"23skiddoo\">a</span>\n"
+      + "<span id=\"8675309\">b</span>\n";
+    assertValid(
+        htmlFragment(fromString(html)),
+        html);
+  }
+
   private void assertValid(Node input, String golden, String... warnings)
       throws Exception {
     sanitize(input, golden, true, warnings);

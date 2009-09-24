@@ -34,6 +34,7 @@ import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.MessageLevel;
+import com.google.caja.reporting.MessagePart;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Pair;
 
@@ -429,6 +430,154 @@ public class TemplateCompilerTest extends CajaTestCase {
         new Block());
   }
 
+  public final void testValidClassNames() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString("<div class='$-.:;()[]='></div>")),
+        htmlFragment(fromString("<div class='$-.:;()[]='></div>")),
+        new Block());
+    assertNoWarnings();
+
+    assertSafeHtml(
+        htmlFragment(fromString("<div class='!@{} ok__1'></div>")),
+        htmlFragment(fromString("<div class='!@{} ok__1'></div>")),
+        new Block());
+    assertNoWarnings();
+  }
+
+  public final void testValidIdNames() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString("<input name='tag[]'>")),
+        htmlFragment(fromString("<input name='tag[]'>")),
+        new Block());
+    assertNoWarnings();
+
+    assertSafeHtml(
+        htmlFragment(fromString("<input name='form$location'>")),
+        htmlFragment(fromString("<input name='form$location'>")),
+        new Block());
+    assertNoWarnings();
+
+    assertSafeHtml(
+        htmlFragment(fromString("<input name='$-.:;()[]='>")),
+        htmlFragment(fromString("<input name='$-.:;()[]='>")),
+        new Block());
+    assertNoWarnings();
+
+    assertSafeHtml(
+        htmlFragment(fromString(
+            "<div id='23skiddoo'></div>"
+            + "<div id='8675309'></div>"
+            + "<div id='$-.:;()[]='></div>")),
+        htmlFragment(fromString(
+            "<div id='id_1___'></div>"
+            + "<div id='id_2___'></div>"
+            + "<div id='id_3___'></div>")),
+        js(fromString(
+            "{"
+            + "  var el___;"
+            + "  var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "  el___ = emitter___.byId('id_1___');"
+            + "  emitter___.setAttr(el___, 'id',"
+            + "    '23skiddoo-' + IMPORTS___.getIdClass___());"
+            + "  el___ = emitter___.byId('id_2___');"
+            + "  emitter___.setAttr(el___, 'id',"
+            + "    '8675309-' + IMPORTS___.getIdClass___());"
+            + "  el___ = emitter___.byId('id_3___');"
+            + "  emitter___.setAttr(el___, 'id',"
+            + "    '$-.:;()[]=-' + IMPORTS___.getIdClass___());"
+            + "  el___ = emitter___.finish();"
+            + "  emitter___.signalLoaded();"
+            + "}")));
+    assertNoWarnings();
+  }
+
+  public final void testInvalidClassNames() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString("<div class='ok bad__'></div>")),
+        htmlFragment(fromString("<div></div>")),
+        new Block());
+    assertMessage(true, IhtmlMessageType.ILLEGAL_NAME, MessageLevel.WARNING,
+        MessagePart.Factory.valueOf("bad__"));
+    assertNoWarnings();
+
+    assertSafeHtml(
+        htmlFragment(fromString("<div class='ok bad__ '></div>")),
+        htmlFragment(fromString("<div></div>")),
+        new Block());
+    assertMessage(true, IhtmlMessageType.ILLEGAL_NAME, MessageLevel.WARNING,
+        MessagePart.Factory.valueOf("bad__"));
+    assertNoWarnings();
+
+    assertSafeHtml(
+        htmlFragment(fromString("<div class='bad__ ok'></div>")),
+        htmlFragment(fromString("<div></div>")),
+        new Block());
+    assertMessage(true, IhtmlMessageType.ILLEGAL_NAME, MessageLevel.WARNING,
+        MessagePart.Factory.valueOf("bad__"));
+    assertNoWarnings();
+  }
+
+  public final void testInvalidIdNames() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString("<input id='bad1__' name='bad2__'>")),
+        htmlFragment(fromString("<input>")),
+        new Block());
+    assertMessage(true, IhtmlMessageType.ILLEGAL_NAME, MessageLevel.WARNING,
+        MessagePart.Factory.valueOf("bad1__"));
+    assertMessage(true, IhtmlMessageType.ILLEGAL_NAME, MessageLevel.WARNING,
+        MessagePart.Factory.valueOf("bad2__"));
+    assertNoWarnings();
+
+    assertSafeHtml(
+        htmlFragment(fromString("<input id='bad1__ ' name='bad2__ '>")),
+        htmlFragment(fromString("<input>")),
+        new Block());
+    assertMessage(true, IhtmlMessageType.ILLEGAL_NAME, MessageLevel.WARNING,
+        MessagePart.Factory.valueOf("bad1__ "));
+    assertMessage(true, IhtmlMessageType.ILLEGAL_NAME, MessageLevel.WARNING,
+        MessagePart.Factory.valueOf("bad2__ "));
+    assertNoWarnings();
+
+    assertSafeHtml(
+        htmlFragment(fromString("<input id='b__ c'>")),
+        htmlFragment(fromString("<input>")),
+        new Block(),
+        false);
+    assertMessage(true, IhtmlMessageType.ILLEGAL_NAME, MessageLevel.ERROR,
+        MessagePart.Factory.valueOf("b__ c"));
+    assertNoWarnings();
+
+    assertSafeHtml(
+       htmlFragment(fromString("<input name='d__ e'>")),
+       htmlFragment(fromString("<input>")),
+       new Block(),
+       false);
+    assertMessage(true, IhtmlMessageType.ILLEGAL_NAME, MessageLevel.ERROR,
+        MessagePart.Factory.valueOf("d__ e"));
+    assertNoWarnings();
+  }
+
+  public final void testIdRefsRewriting() throws Exception {
+    assertSafeHtml(
+        htmlFragment(fromString(
+            "<table><tr><td headers='a b'></td></tr></table>")),
+        htmlFragment(fromString(
+            "<table><tr><td id='id_1___'></td></tr></table>")),
+        js(fromString(
+            ""
+            + "{"
+            + "  var el___;"
+            + "  var emitter___ = IMPORTS___.htmlEmitter___;"
+            + "  el___ = emitter___.byId('id_1___');"
+            + "  emitter___.setAttr(el___, 'headers',"
+            + "    'a-' + IMPORTS___.getIdClass___()"
+            + "    + ' b-' + IMPORTS___.getIdClass___());"
+            + "  el___.removeAttribute('id');"
+            + "  el___ = emitter___.finish();"
+            + "  emitter___.signalLoaded();"
+            + "}")));
+  }
+
   public final void testMultiDocs() throws Exception {
     assertSafeHtml(
         Arrays.asList(
@@ -441,12 +590,25 @@ public class TemplateCompilerTest extends CajaTestCase {
   private void assertSafeHtml(
       DocumentFragment input, DocumentFragment htmlGolden, Block jsGolden)
       throws ParseException {
-    assertSafeHtml(Collections.singletonList(input), htmlGolden, jsGolden);
+    assertSafeHtml(input, htmlGolden, jsGolden, true);
   }
 
   private void assertSafeHtml(
-      List<DocumentFragment> inputs, DocumentFragment htmlGolden, Block jsGolden)
-      throws ParseException {
+      DocumentFragment input, DocumentFragment htmlGolden, Block jsGolden,
+      boolean checkErrors) throws ParseException {
+    assertSafeHtml(Collections.singletonList(input), htmlGolden, jsGolden,
+        checkErrors);
+  }
+
+  private void assertSafeHtml(
+      List<DocumentFragment> inputs, DocumentFragment htmlGolden,
+      Block jsGolden) throws ParseException {
+    assertSafeHtml(inputs, htmlGolden, jsGolden, true);
+  }
+
+  private void assertSafeHtml(
+      List<DocumentFragment> inputs, DocumentFragment htmlGolden,
+      Block jsGolden, boolean checkErrors) throws ParseException {
     List<Node> html = new ArrayList<Node>();
     List<CssTree.StyleSheet> css = new ArrayList<CssTree.StyleSheet>();
     for (DocumentFragment input : inputs) {
@@ -458,8 +620,11 @@ public class TemplateCompilerTest extends CajaTestCase {
         HtmlSchema.getDefault(mq), meta, mc, mq);
     Document doc = DomParser.makeDocument(null, null);
     Pair<Node, List<Block>> safeContent = tc.getSafeHtml(doc);
-    assertMessagesLessSevereThan(MessageLevel.ERROR);
-    // No warnings about skipped elements.  Warning is not the compiler's job.
+
+    if (checkErrors) {
+      assertNoErrors();
+      // No warnings about skipped elements.  Warning is not the compiler's job.
+    }
 
     assertEquals(safeContent.a.getOwnerDocument(), doc);
 

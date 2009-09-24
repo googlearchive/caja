@@ -52,7 +52,6 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
-import com.google.caja.util.Join;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -134,38 +133,46 @@ public final class HtmlAttributeRewriter {
   }
 
   SanitizedAttr sanitizeStringValue(AttrValue attr) {
-    Expression dynamicValue;
+    Expression dynamicValue = null;
     FilePosition pos = attr.valuePos;
     String value = attr.getPlainValue();
+    // There are two cases for name handling.
+    // 1. For names that have local scope or names that can't be mangled,
+    //    we pass them through unchanged, except we deny the '__' suffix
+    //    as reserved for use by the container.
+    // 2. For other names, we mangle them by appending a container suffix.
+    //    We could allow these names to end with '__', but I think the
+    //    inconsistency is more confusing than helpful.
+    // Note that this logic matches the logic in domita.js.
     switch (attr.attrInfo.getType()) {
       case CLASSES:
-        if (!checkRestrictedNames(value, pos)) { return noResult(attr); }
-        String classes = Join.join(" ", identifiers(value));
-        dynamicValue = null;
-        if (!classes.equals(value)) {
-          dynamicValue = StringLiteral.valueOf(pos, classes);
-        }
+        // className is arbitrary CDATA, it's not restricted by spec,
+        // and some js libs depend on putting rich data in className.
+        // http://www.w3.org/TR/html401/struct/global.html#adef-class
+        // We still ban classNames with words ending '__'.
+        // We could try deleting just the bad words, but it seems unlikely
+        // that narrow sanitization will allow broken code to still work,
+        // and we can revisit this if there are enough cases in the wild.
+        if (!checkForbiddenIdList(value, pos)) { return noResult(attr); }
         break;
       case FRAME_TARGET:
       case LOCAL_NAME:
-        if (!checkRestrictedName(value, pos)) { return noResult(attr); }
-        dynamicValue = null;
+        if (!checkValidId(value, pos)) { return noResult(attr); }
         break;
       case GLOBAL_NAME:
       case ID:
       case IDREF:
-        if (!checkRestrictedName(value, pos)) { return noResult(attr); }
+        if (!checkValidId(value, pos)) { return noResult(attr); }
         dynamicValue = rewriteIdentifiers(pos, value);
         break;
       case IDREFS:
-        if (!checkRestrictedNames(value, pos)) { return noResult(attr); }
+        if (!checkValidIdList(value, pos)) { return noResult(attr); }
         dynamicValue = rewriteIdentifiers(pos, value);
         break;
       case NONE:
         if (!attr.attrInfo.getValueCriterion().accept(value)) {
           return noResult(attr);
         }
-        dynamicValue = null;
         break;
       case SCRIPT:
         String handlerFnName = handlerCache.get(value);
@@ -261,39 +268,50 @@ public final class HtmlAttributeRewriter {
     return new SanitizedAttr(true, dynamicValue);
   }
 
-  private static final Pattern ALLOWED_NAME = Pattern.compile(
-      "^[\\p{Alpha}_:][\\p{Alnum}.\\-_:]*$");
-  /** True if value is a valid XML names outside the restricted namespace. */
-  boolean checkRestrictedName(String value, FilePosition pos) {
-    if (ALLOWED_NAME.matcher(value).find()) { return true; }
-    if (!"".equals(value)) {
-      mq.addMessage(
-          IhtmlMessageType.ILLEGAL_NAME, pos,
-          MessagePart.Factory.valueOf(value));
-    }
+  private static final Pattern FORBIDDEN_ID = Pattern.compile("__\\s*$");
+
+  private static final Pattern VALID_ID =
+      Pattern.compile("^[\\p{Alnum}_$\\-.:;=()\\[\\]]+$");
+
+  /** True iff value is not a forbidden id */
+  private boolean checkForbiddenId(String value, FilePosition pos) {
+    if (!FORBIDDEN_ID.matcher(value).find()) { return true; }
+    mq.addMessage(
+        IhtmlMessageType.ILLEGAL_NAME, MessageLevel.WARNING, pos,
+        MessagePart.Factory.valueOf(value));
     return false;
   }
 
-  /**
-  * True iff value is a space separated group of XML names outside the
-  * restricted namespace.
-  */
-  boolean checkRestrictedNames(String value, FilePosition pos) {
-    if ("".equals(value)) { return true; }
+  /** True iff value does not contain a forbidden id */
+  private boolean checkForbiddenIdList(String value, FilePosition pos) {
     boolean ok = true;
     for (String ident : identifiers(value)) {
-      if ("".equals(ident)) { continue; }
-      if (!ALLOWED_NAME.matcher(ident).matches()) {
-        mq.addMessage(
-            IhtmlMessageType.ILLEGAL_NAME, pos,
-            MessagePart.Factory.valueOf(ident));
-        ok = false;
-      }
+      ok &= checkForbiddenId(ident, pos);
     }
     return ok;
   }
 
-/** "foo bar baz" -> "foo-suffix___ bar-suffix___ baz-suffix___". */
+  /** True if value is a valid id */
+  private boolean checkValidId(String value, FilePosition pos) {
+    if (!checkForbiddenId(value, pos)) { return false; }
+    if ("".equals(value)) { return true; }
+    if (VALID_ID.matcher(value).find()) { return true; }
+    mq.addMessage(
+        IhtmlMessageType.ILLEGAL_NAME, pos,
+        MessagePart.Factory.valueOf(value));
+    return false;
+  }
+
+  /** True iff value is a space-separated list of valid ids. */
+  private boolean checkValidIdList(String value, FilePosition pos) {
+    boolean ok = true;
+    for (String ident : identifiers(value)) {
+      ok &= checkValidId(ident, pos);
+    }
+    return ok;
+  }
+
+  /** "foo bar baz" -> "foo-suffix___ bar-suffix___ baz-suffix___". */
   private Expression rewriteIdentifiers(FilePosition pos, String names) {
     if ("".equals(names)) { return null; }
     String idClass = meta.getIdClass();

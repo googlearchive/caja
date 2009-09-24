@@ -99,6 +99,7 @@
       checkOperator(function (x, y) { return +(x) && +(y); });
       checkOperator(function (x, y) { return nou(x) + nou(y); });
       checkOperator(function (x, y, z) { return x ? +(y) : +(z); });
+      jsunit.pass();
     });
 
     jsunitRegister('testCatchScope', function testCatchScope() {
@@ -121,6 +122,7 @@
          }
        })();
       assertEquals('undefined', typeof e);
+      jsunit.pass();
     });
 
     jsunitRegister('testFinallyReturns', function testFinallyReturns() {
@@ -137,6 +139,7 @@
                return 'finally';
              }
            })());
+      jsunit.pass();
     });
 
     jsunitRegister('testFunctionCall', function testFunctionCall() {
@@ -153,6 +156,8 @@
 
       var o4 = { toString: function (typeHint) { return void 0; } };
       (function () { assertEquals('o4', this, o4); }).call(o4);
+
+      jsunit.pass();
     });
 
     jsunitRegister('testUnnormalizedIdentifiers',
@@ -185,6 +190,7 @@
       assertEquals(1, o['C\u0327_1'] || o['\xC7_1']);
       assertEquals(2, o['C\u0327_2']);
       assertEquals(3, o['C\u0327_3']);
+      jsunit.pass();
     });
 
     // Discussed at http://code.google.com/p/google-caja/issues/detail?id=935
@@ -198,6 +204,7 @@
         results.push(node.name);
       }
       assertEquals('length, 3, 1', results.join(', '));
+      jsunit.pass();
     });
 
     // Test scoping across eval boundaries.
@@ -220,6 +227,7 @@
       assertEquals('undefined', typeof k);
       assertEquals('number', typeof f);
       assertEquals(3, f);  // not overidden by function declaration.
+      jsunit.pass();
     });
     </script>
 
@@ -275,16 +283,18 @@
           borderRightColor: true, borderTopColor: true,
           borderColor: true, color: true, outlineColor: true };
       var differences = [];
+      var expected = true;
       for (var i = 0, n = styleProps.length; i < n; ++i) {
         var styleProp = styleProps[i];
         if (visited[styleProp] !== unvisited[styleProp]) {
           differences.push(styleProp);
-          assertTrue(styleProp, allowedDifferences.hasOwnProperty(styleProp));
+          expected &= allowedDifferences.hasOwnProperty(styleProp);
         }
       }
-
       document.body.appendChild(document.createTextNode(
           'Visited style affects [' + differences + ']'));
+      assertTrue('visited differences', !!expected);
+      jsunit.pass();
     });
     jsunitRegister('testIdsAsTargets',
                    function testIdsAsTargets() {
@@ -306,5 +316,73 @@
           innerHTML = 'testIdsAsTargets passed.';
     });
     </script>
+
+    <!-- ascii 33-126, excluding \" \' & \\ < > -->
+    <div id="_!_#$%__" class="_ ! _ # $ % _ _"></div>
+    <div id="()*+,-./" class="( ) * + , - . /"></div>
+    <div id="01234567" class="0 1 2 3 4 5 6 7"></div>
+    <div id="89:;_=_?" class="8 9 : ; _ = _ ?"></div>
+    <div id="@ABCDEFG" class="@ A B C D E F G"></div>
+    <div id="HIJKLMNO" class="H I J K L M N O"></div>
+    <div id="PQRSTUVW" class="P Q R S T U V W"></div>
+    <div id="XYZ[_]^_" class="X Y Z [ _ ] ^ _"></div>
+    <div id="`abcdefg" class="` a b c d e f g"></div>
+    <div id="hijklmno" class="h i j k l m n o"></div>
+    <div id="pqrstuvw" class="p q r s t u v w"></div>
+    <div id="xyz{|}~_" class="x y z { | } ~ _"></div>
+
+    <script>
+    jsunitRegister('testNonstandardIds',
+                   function testNonstandardNamesIds() {
+
+      // workaround for IE[67] bug
+      function getClass(el) {
+        return el.getAttribute('class') || el.getAttribute('className');
+      }
+
+      var ids = [
+        "_!_#$%__",
+        "()*+,-./",
+        "01234567",
+        "89:;_=_?",
+        "@ABCDEFG",
+        "HIJKLMNO",
+        "PQRSTUVW",
+        "XYZ[_]^_",
+        "`abcdefg",
+        "hijklmno",
+        "pqrstuvw",
+        "xyz{|}~_"
+      ];
+      for (var k = 0; k < ids.length; ++k) {
+        var id = ids[k];
+
+        var el = document.getElementById(id);
+        assertTrue(id + 'get', !!el);
+
+        // weird static ids are not mangled
+        assertEquals(id, el.id);
+        assertEquals(id, el.getAttribute('id'));
+
+        // weird static classNames are not mangled
+        var className = id.split('').join(' ');
+        assertEquals(className, el.className);
+        assertEquals(className, getClass(el));
+
+        // weird dynamic ids are not mangled
+        var rid = id.substr(1, 7) + id.substr(0, 1);
+        el.id = rid;
+        assertEquals(rid, el.id);
+        assertEquals(rid, el.getAttribute('id'));
+
+        // weird dynamic classNames are not mangled
+        el.className = rid;
+        assertEquals(rid, el.className);
+        assertEquals(rid, getClass(el));
+      }
+      jsunit.pass();
+    });
+    </script>
+
   </body>
 </html>

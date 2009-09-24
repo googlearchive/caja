@@ -293,6 +293,10 @@ public abstract class CajaTestCase extends TestCase {
     assertMessagesLessSevereThan(MessageLevel.ERROR);
   }
 
+  protected void assertNoWarnings() {
+    assertMessagesLessSevereThan(MessageLevel.WARNING);
+  }
+
   protected void assertMessage(
       MessageTypeInt type, MessageLevel level, MessagePart... expectedParts) {
     assertMessage(false, type, level, expectedParts);

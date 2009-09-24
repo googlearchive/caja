@@ -279,6 +279,12 @@
 After
 </div>
 
+<div class="testcontainer" id="test-illegal-suffixes"></div>
+
+<div class="testcontainer" id="test-id-refs-rewriting"></div>
+
+<div class="testcontainer" id="test-strange-ids"></div>
+
 <div class="testcontainer" id="test-clone-node-structure">
   <p>I have <b title="I have attributes">content</b></p>
 </div>
@@ -1983,7 +1989,75 @@ jsunitRegister('testClassNames', function testClassNames() {
 
   assertTrue('has class', el.hasAttribute('class'));
 
+  el.className = '$-.:;()[]=';
+  assertEquals('$-.:;()[]=', el.className);
+
+  el.className = '!@{} ok__1';
+  assertEquals('!@{} ok__1', el.className);
+
+  el.className = 'simple';
+  assertEquals('simple', el.className);
+
+  el.className = 'ok bad__';
+  assertEquals('set class "ok bad__"', 'simple', el.className);
+
+  el.className = 'ok bad__ ';
+  assertEquals('set class "ok bad__ "', 'simple', el.className);
+
+  el.className = 'bad__ ok';
+  assertEquals('set class "bad__ ok"', 'simple', el.className);
+
+  el.className = '';
+  assertEquals('set class ""', '', el.className);
+
   pass('test-class-names');
+});
+
+jsunitRegister('testIllegalSuffixes', function testIllegalSuffixes() {
+  var el = document.getElementById('test-illegal-suffixes');
+
+  el.innerHTML = '<input id="bad1__" name="bad2__">';
+  assertFalse('id="bad1__"', !!el.firstChild.getAttribute('id'));
+  assertFalse('name="bad2__"', !!el.firstChild.getAttribute('name'));
+
+  el.innerHTML = '<input id="bad1__ " name="bad2__ ">';
+  assertFalse('id="bad1__ "', !!el.firstChild.getAttribute('id'));
+  assertFalse('name="bad2__ "', !!el.firstChild.getAttribute('name'));
+
+  el.innerHTML = '<input id="b__ c" name="d__ e">';
+  assertFalse('id="b__ c"', !!el.firstChild.getAttribute('id'));
+  assertFalse('name="d__ e"', !!el.firstChild.getAttribute('name'));
+
+  pass('test-illegal-suffixes');
+});
+
+jsunitRegister('testIdRefsRewriting', function testIdRefsRewriting() {
+  var el = document.getElementById('test-id-refs-rewriting');
+  el.innerHTML = '<table><tr><td id="tirr1" headers="aa bb"></td></tr></table>';
+  var tirr1 = document.getElementById('tirr1');
+  var real = directAccess.getAttribute(tirr1, 'headers');
+  assertEquals('real ids', 'aa-xyz___ bb-xyz___', real);
+  assertEquals('rewritten ids', 'aa bb', tirr1.getAttribute('headers'));
+  var html = el.innerHTML;
+  assertTrue('innerHTML', new RegExp('"aa bb"').test(html));
+  pass('test-id-refs-rewriting');
+});
+
+jsunitRegister('testStrangeIds', function testStrangeIds() {
+  function $(id) { return document.getElementById(id); }
+  var el = $('test-strange-ids');
+  el.innerHTML = (
+      "<input id='test-strange-ids-1' name='tag[]'>\n"
+      + "<input id='test-strange-ids-2' name='form$location'>\n"
+      + "<span id='23skiddoo'></span>\n"
+      + "<span id='8675309'></span>\n"
+      + "<span id='$-.:;()[]='></span>\n");
+  assertEquals('tag[]', $('test-strange-ids-1').name);
+  assertEquals('form$location', $('test-strange-ids-2').name);
+  assertEquals('23skiddoo', $('23skiddoo').id);
+  assertEquals('8675309', $('8675309').id);
+  assertEquals('$-.:;()[]=', $('$-.:;()[]=').id);
+  pass('test-strange-ids');
 });
 
 jsunitRegister('testCloneNodeStructure', function testCloneNodeStructure() {

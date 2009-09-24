@@ -26,28 +26,33 @@ jsunit.testCount = 0;
 jsunit.passTests = {};
 jsunit.passCount = 0;
 jsunit.failCount = 0;
+jsunit.currentTestId = '';
 jsunit.originalTitle = '';
 
+// at the moment, every test should explicitly call jsunit.pass(),
+// because some tests don't pass until event handlers fire.
+// TODO: create jsunitRegisterAsync(), then make passes implicit.
 jsunit.pass = function(id) {
+  if (!id) id = jsunit.currentTestId;
   if (id in jsunit.passTests) {
     throw new Error('dupe pass ' + id);
   }
   jsunit.passTests[id] = true;
   jsunit.passCount += 1;
-  jsunit.updateStatus();
-  console.log('PASS: ' + id);
+  jsunit.updateStatus()
+  if (typeof console !== 'undefined') {
+    console.log('PASS: ' + id);
+  }
 };
 
 jsunit.updateStatus = function() {
-  var status = ' -';
-  if (jsunit.failCount) {
-    status += ' ' + jsunit.failCount + '/' + jsunit.testCount + ' fail';
-  }
-  status += ' ' + jsunit.passCount + '/' + jsunit.testCount + ' pass';
+  var status = '';
   if (!jsunit.failCount && jsunit.passCount == jsunit.testCount) {
-    status += ' - all tests passed';
+    status += 'all tests passed:';
   }
-  document.title = jsunit.originalTitle + status;
+  status += ' ' + jsunit.failCount + '/' + jsunit.testCount + ' fail';
+  status += ' ' + jsunit.passCount + '/' + jsunit.testCount + ' pass';
+  document.title = status + ' - ' + jsunit.originalTitle;
 };
 
 /** Register a test that can be run later. */
@@ -121,6 +126,7 @@ function jsunitRun(opt_testNames) {
       console.group('running %s', testName);
       console.time(testName);
     }
+    jsunit.currentTestId = testName;
     try {
       (typeof setUp === 'function') && setUp();
       jsunit.tests[testName].call(this);
@@ -129,8 +135,8 @@ function jsunitRun(opt_testNames) {
       firstFailure = firstFailure || e;
       jsunit.failCount++;
       jsunit.updateStatus();
-      console.log('FAIL: ' + testName);
       if (typeof console !== 'undefined') {
+        console.log('FAIL: ' + testName);
         if (e.isJsUnitException) {
           console.error(
               e.comment + '\n' + e.jsUnitMessage + '\n' + e.stackTrace);
