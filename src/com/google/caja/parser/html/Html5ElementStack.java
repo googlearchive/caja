@@ -130,14 +130,21 @@ public class Html5ElementStack implements OpenElementStack {
     return Name.html(attributeName);
   }
 
-  public static String canonicalElementName(String elementName) {
-    // forces LANG=C like behavior.
-    return Strings.toLowerCase(elementName);
+  public static String canonicalizeName(String name) {
+    if (name.indexOf(':') >= 0) {  // Do not case-normalize embedded XML.
+      return name;
+    } else {
+      // Forces LANG=C like behavior.
+      return Strings.toLowerCase(name);
+    }
   }
 
-  public static String canonicalAttributeName(String attributeName) {
-    // forces LANG=C like behavior.
-    return Strings.toLowerCase(attributeName);
+  static String canonicalElementName(String elementName) {
+    return canonicalizeName(elementName);
+  }
+
+  static String canonicalAttributeName(String attributeName) {
+    return canonicalizeName(attributeName);
   }
 
   /** {@inheritDoc} */

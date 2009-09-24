@@ -98,6 +98,7 @@ import com.google.caja.util.AbbreviatorTest;
 import com.google.caja.util.CapturingReaderTest;
 import com.google.caja.util.CollectionsTest;
 import com.google.caja.util.JoinTest;
+import com.google.caja.util.NameTest;
 import com.google.caja.util.RhinoAssertsTest;
 import com.google.caja.util.SparseBitSetTest;
 import com.google.caja.util.StringsTest;
@@ -176,6 +177,7 @@ public class AllTests {
         LocalizerTest.class,
         MatchTest.class,
         ModuleFormatTest.class,
+        NameTest.class,
         NodesTest.class,
         NumberLiteralTest.class,
         OpenTemplateStageTest.class,

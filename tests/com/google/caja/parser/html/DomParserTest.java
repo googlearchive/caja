@@ -2030,6 +2030,23 @@ public class DomParserTest extends CajaTestCase {
             ));
   }
 
+  public final void testEmbeddedXmlInHtml() throws Exception {
+    assertParsedHtmlFragment(
+        Arrays.asList(
+            "<DIV><os:If condition='${foo}'><Br/></os:If></div>"
+            ),
+        Arrays.asList(
+            "Fragment 1+1-1+51",
+            "  Element : div 1+1-1+51",
+            "    Element : os:If 1+6-1+45",
+            "      Attrib : condition 1+13-1+22",
+            "        Value : ${foo} 1+23-1+31",
+            "      Element : br 1+32-1+37"
+            ),
+        Arrays.<String>asList(),
+        Arrays.asList("<div><os:If condition=\"${foo}\"><br /></os:If></div>"));
+  }
+
   public final void testRender() throws Exception {
     DocumentFragment t = xmlFragment(fromString(
         ""
