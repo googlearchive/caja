@@ -300,6 +300,45 @@ public class AlphaRenamingTest extends CajaTestCase {
     assertNoErrors();
   }
 
+  public final void testRenamingOfPseudoKeywords() throws Exception {
+    assertRenamed(
+        ""
+        + "[function (a) { return arguments; }"
+        + " function () { return arguments; }]",
+        ""
+        + "[function (arguments) { return arguments; },"
+        + " function () { return arguments; }]");
+    assertRenamed(
+        ""
+        + "[function (b) { return b; }"
+        + " function () { return a; }]",
+        ""
+        + "[function (undefined) { return undefined; },"
+        + " function () { return undefined; }]",
+        "undefined");
+    assertMessage(
+        true, MessageType.DUPLICATE_FORMAL_PARAM, MessageLevel.ERROR,
+        MessagePart.Factory.valueOf("arguments"));
+    assertMessage(
+        true, RewriterMessageType.CANNOT_MASK_IDENTIFIER,
+        MessageLevel.FATAL_ERROR, MessagePart.Factory.valueOf("arguments"));
+    assertNoErrors();
+  }
+
+  public final void testDuplicateFormals() throws Exception {
+    assertRenamed(
+        "function (a, b, a) { return a - b; }",
+        "function (x, y, x) { return x - y; }");
+    assertMessage(
+        true, MessageType.DUPLICATE_FORMAL_PARAM, MessageLevel.ERROR,
+        MessagePart.Factory.valueOf("x"));
+    // From the sanity check.
+    assertMessage(
+        true, MessageType.DUPLICATE_FORMAL_PARAM, MessageLevel.ERROR,
+        MessagePart.Factory.valueOf("a"));
+    assertNoErrors();
+  }
+
   private void assertRenamed(String golden, String input, String... globals)
       throws Exception {
     NameContext<String, ?> nc = new NameContext<String, Object>(

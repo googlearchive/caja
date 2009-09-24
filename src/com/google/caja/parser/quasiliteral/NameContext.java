@@ -67,6 +67,7 @@ public final class NameContext<NAME, BINDING> {
   }
 
   /**
+   * Creates a context with no parent context.
    * @param nameGenerator an infinite iterator that returns safe identifiers
    *    and that never returns the same String twice.
    *    Typically, a {@link com.google.caja.util.SafeIdentifierMaker}.
@@ -81,12 +82,24 @@ public final class NameContext<NAME, BINDING> {
     this.nameGenerator = nameGenerator;
   }
 
+  /**
+   * Produces a context that has the same name generator and which has this
+   * context as its parent.
+   */
   public NameContext<NAME, BINDING> makeChildContext() {
     return new NameContext<NAME, BINDING>(this, this.nameGenerator);
   }
 
+  /**
+   * The context that is used to resolve original names that have not been
+   * declared in this context, or null if no such context.
+   */
   public NameContext<NAME, BINDING> getParentContext() { return parent; }
 
+  /**
+   * Introduce a new declaration which will mask any declaration with the same
+   * name in the {@link #getParentContext} context.
+   */
   public VarInfo<NAME, BINDING> declare(NAME origName, FilePosition declSite)
       throws RedeclarationException {
     VarInfo<NAME, BINDING> d = vars.get(origName);
@@ -104,6 +117,11 @@ public final class NameContext<NAME, BINDING> {
     }
   }
 
+  /**
+   * Find a declaration with the given original name, looking in ancestor
+   * contexts if {@code declare(originalName, ...)} was never called on this
+   * context.
+   */
   public VarInfo<NAME, BINDING> lookup(NAME originalName) {
     for (NameContext<NAME, BINDING> c = this; c != null; c = c.parent) {
       VarInfo<NAME, BINDING> vi = c.vars.get(originalName);
@@ -112,10 +130,17 @@ public final class NameContext<NAME, BINDING> {
     return null;
   }
 
+  /**
+   * The set of vars declared in this context, not including any in ancestor
+   * contexts.
+   */
   public Iterable<VarInfo<NAME, BINDING>> vars() {
     return Collections.unmodifiableMap(vars).values();
   }
 
+  /**
+   * The name generator used to generate names for new declarations.
+   */
   public Iterator<String> getNameGenerator() { return nameGenerator; }
 
   public static class RedeclarationException extends CajaException {

@@ -87,7 +87,7 @@ import java.util.Set;
  * So we alpha-rename code which allows us to move all user-generated
  * identifiers into a distinct namespace, makes analysis easier, and
  * makes it easy for us to segregate pieces of user-code by bounding
- * the set of free variables of any given expression.
+ * the set of free identifiers of any given expression.
  * The alpha renaming of the above would leave us with:
  * <pre>
  * // Machine generated variables
@@ -100,7 +100,7 @@ import java.util.Set;
  *
  * <p>
  * This class deals with renaming expressions only.  It could be extended to
- * rename arbitrary javascript parse trees, but there is an added wrinkle that
+ * rename arbitrary JavaScript parse trees, but there is an added wrinkle that
  * will have to be considered when rewriting a program.  Top level declarations
  * in a program alias properties in the global object, so we cannot simply
  * rewrite top-level declarations and remain semantics-preserving.
@@ -143,7 +143,7 @@ public final class AlphaRenaming {
     Expression f = (Expression) new AlphaRenamingRewriter(mq, renamableExterns)
         .expand(e);
 
-    // Check that the rewriter was correct by creating a scope that declares
+    // Performs a sanity check on the output by creating a scope that declares
     // locally everything in renamableExterns, and reruns Scope to make sure
     // that now there are no free variables.
     Map<String, FormalParam> rewrittenNames = Maps.newLinkedHashMap();
@@ -169,14 +169,14 @@ public final class AlphaRenaming {
             Lists.newArrayList(rewrittenNames.values())),
         "f", new ExpressionStmt(f));
     MessageQueue sanityCheckMq = DevNullMessageQueue.singleton();
-    Set<String> freeVars = Sets.newLinkedHashSet();
+    Set<String> freeIdents = Sets.newLinkedHashSet();
     Scope programScope = Scope.fromProgram(program, sanityCheckMq);
-    checkScope(program, programScope, freeVars);
+    checkScope(program, programScope, freeIdents);
 
-    if (!freeVars.isEmpty()) {
+    if (!freeIdents.isEmpty()) {
       List<MessagePart> freeVarParts = Lists.newArrayList();
-      for (String freeVar : freeVars) {
-        freeVarParts.add(MessagePart.Factory.valueOf(freeVar));
+      for (String freeIdent : freeIdents) {
+        freeVarParts.add(MessagePart.Factory.valueOf(freeIdent));
       }
       mq.addMessage(
           RewriterMessageType.ALPHA_RENAMING_FAILURE, e.getFilePosition(),

@@ -115,8 +115,8 @@ public enum Keyword implements MessagePart {
     return JAVASCRIPT_KEYWORDS.get(keywordText);
   }
 
-  public static boolean isKeyword(String identifier) {
-    return JAVASCRIPT_KEYWORDS.containsKey(identifier);
+  public static boolean isKeyword(String name) {
+    return JAVASCRIPT_KEYWORDS.containsKey(name);
   }
 
   private static final Map<String, Keyword> JAVASCRIPT_KEYWORDS

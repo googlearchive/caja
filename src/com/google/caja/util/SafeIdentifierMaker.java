@@ -25,7 +25,7 @@ import java.util.NoSuchElementException;
  * {@link SafeIdentifierMaker#isSafeIdentifier unsafe}
  * identifiers.
  *
- * @author msamuel@google.com
+ * @author mikesamuel@gmail.com
  */
 public final class SafeIdentifierMaker implements Iterator<String> {
   private final char[] alphabet;
@@ -83,7 +83,7 @@ public final class SafeIdentifierMaker implements Iterator<String> {
     for (int i = 0; i < startsAndEnds.length; i += 2) {
       char j = startsAndEnds[i];
       char e = startsAndEnds[i + 1];
-      assert j < e;
+      assert j <= e;
       while (j <= e) {
         ranges[k++] = j++;
       }

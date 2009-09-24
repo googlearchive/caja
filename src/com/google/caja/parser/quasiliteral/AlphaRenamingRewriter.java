@@ -127,9 +127,21 @@ final class AlphaRenamingRewriter extends Rewriter {
             List<FormalParam> newFormals = Lists.newArrayList();
             for (FormalParam p : fc.getParams()) {
               if (!isSynthetic(p.getIdentifier())) {
+                NameContext.VarInfo<String, ?> v
+                    = newContext.lookup(p.getIdentifierName());
+                if (v == null) {
+                  // Occurs when an invalid parameter appears,
+                  // e.g., function (arguments) { ... }
+                  try {
+                    v = newContext.declare(
+                        p.getIdentifierName(), p.getFilePosition());
+                  } catch (NameContext.RedeclarationException ex) {
+                    // If it was previously declared then v wouldn't be null.
+                    throw new RuntimeException();
+                  }
+                }
                 FormalParam newP = new FormalParam(new Identifier(
-                    p.getFilePosition(),
-                    newContext.lookup(p.getIdentifierName()).newName));
+                    p.getFilePosition(), v.newName));
                 newFormals.add(newP);
               } else {
                 newFormals.add(p);
@@ -137,15 +149,37 @@ final class AlphaRenamingRewriter extends Rewriter {
             }
 
             Declaration selfDecl = null;
+            // For a declaration, a name is normally introduced in both the
+            // scope containing the declaration, and the function body scope.
+            // We produce a declaration with the outer name, but in the inner
+            // scope the function name should refer to the function itself.
+            // The only exception is that if there is a local declaration
+            // inside the local scope that masks the function name, then we
+            // should not clobber it.
+            // Examples:
+            //     (function f() {
+            //       var f = 0;
+            //       return f;
+            //     })() === 0
+            // and
+            //     (function f() {
+            //       function f() { return 0; }
+            //       return f();
+            //     })() === 0
+            //
+            // Because the var f or inner function f masks the outer function f,
+            // the name "f" should not be considered to refer to the function
+            // within its body. The condition
+            //     newScope.isFunction(name.getName())
+            //     && !newScope.isDeclaredFunction(name.getName())
+            // checks that the name still refers to the outer function, not a
+            // variable or a different function that is declared within the
+            // body.
+            // The second clause is required because isDeclaredFunction implies
+            // isFunction but we need to distinguish the two cases.
             if (isDeclaration && !isSynthetic(name)
-                // If there is a local declaration inside the local scope that
-                // masks the function name, then don't clobber it.
                 && newScope.isFunction(name.getName())
                 && !newScope.isDeclaredFunction(name.getName())) {
-              // For a declaration, a name is introduced in both the scope
-              // containing the function, and the function body scope.
-              // We produce a declaration with the outer name, but in the inner
-              // scope, the function name should always refer to itself.
               selfDecl = (Declaration) QuasiBuilder.substV(
                   "var @innerName = @outerName;",
                   "outerName", new Reference(rewrittenName),
