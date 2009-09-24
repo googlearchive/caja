@@ -146,14 +146,14 @@ public class AlphaRenamingTest extends CajaTestCase {
 
   public final void testLocalThis() throws Exception {
     assertRenamed(
-        "(function () { return this; })",
+        "(function () { var a = this; return a; })",
         "(function () { return this; })");
     assertNoErrors();
   }
 
   public final void testLocalArguments() throws Exception {
     assertRenamed(
-        "(function () { return arguments; })",
+        "(function () { var a = arguments; return a; })",
         "(function () { return arguments; })");
     assertNoErrors();
   }
@@ -242,8 +242,10 @@ public class AlphaRenamingTest extends CajaTestCase {
     assertRenamed(
         ""
         + "(function () {"
-        + "  var arguments = arguments;"
-        + "  return arguments;"
+        // This matches the behavior of all major interpreters except Opera.
+        + "  var a = arguments;"
+        + "  var a = a;"
+        + "  return a;"
         + "})",
         ""
         + "(function () {"
@@ -303,8 +305,8 @@ public class AlphaRenamingTest extends CajaTestCase {
   public final void testRenamingOfPseudoKeywords() throws Exception {
     assertRenamed(
         ""
-        + "[function (a) { return arguments; }"
-        + " function () { return arguments; }]",
+        + "[function (a) { var a = arguments; return a; }"
+        + " function () { var b = arguments; return b; }]",
         ""
         + "[function (arguments) { return arguments; },"
         + " function () { return arguments; }]");
