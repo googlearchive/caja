@@ -69,6 +69,11 @@ public abstract class CharProducer {
     return String.valueOf(buf, start, end - start);
   }
 
+  @Override
+  public final String toString() {
+    return toString(offset, limit);
+  }
+
   /** Number of characters available in buffer between the offset and limit. */
   public final int getLength() { return limit - offset; }
 

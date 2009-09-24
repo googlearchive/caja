@@ -205,7 +205,7 @@ public final class Config {
                 usage("File \"" + input + "\" does not exist", stderr);
                 return false;
               }
-              if (!inputFile.isFile()) {
+              if (!inputFile.canRead() || inputFile.isDirectory()) {
                 usage("File \"" + input + "\" is not a regular file", stderr);
                 return false;
               }
@@ -248,7 +248,7 @@ public final class Config {
 
         if (outputJsFile == null) {
           usage("Please specify js output via " + OUTPUT_JS.getLongOpt(),
-              stderr);
+                stderr);
         }
         outputHtmlFile = cl.getOptionValue(OUTPUT_HTML.getOpt()) == null
             ? toFileWithExtension(inputUri, "out.html")
@@ -256,7 +256,7 @@ public final class Config {
 
         if (outputHtmlFile == null) {
           usage("Please specify js output via " + OUTPUT_HTML.getLongOpt(),
-              stderr);
+                stderr);
         }
       }
 
@@ -317,7 +317,7 @@ public final class Config {
 
   public void usage(String msg, PrintWriter out) {
     out.println(BuildInfo.getInstance().getBuildInfo());
-      out.println();
+    out.println();
     if (msg != null && !"".equals(msg)) {
       out.println(msg);
       out.println();

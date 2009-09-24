@@ -30,12 +30,12 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
 import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
+import com.google.caja.util.Lists;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -181,26 +181,21 @@ public final class CssRewriter {
 
   private Pair<CssTree.RuleSet, CssTree.RuleSet> rewriteHistorySensitiveRuleset(
       CssTree.RuleSet ruleSet) {
-    List<CssTree> linkeyChildren = null;
-    List<CssTree> nonLinkeyChildren = null;
+    List<CssTree> linkeyChildren = Lists.newArrayList();
+    List<CssTree> nonLinkeyChildren = Lists.newArrayList();
 
     for (CssTree child : ruleSet.children()) {
       if (child instanceof CssTree.Selector) {
         CssTree.Selector selector = (CssTree.Selector) child;
-        if (addAnchorToHistorySensitiveSelector(selector)) {
-          if (linkeyChildren == null) {
-            linkeyChildren = new ArrayList<CssTree>();
-          }
+        if (vetLinkToHistorySensitiveSelector(selector)) {
           linkeyChildren.add(selector);
-        }
-        else {
-          if (nonLinkeyChildren == null) {
-            nonLinkeyChildren = new ArrayList<CssTree>();
-          }
+        } else {
           nonLinkeyChildren.add(selector);
         }
       } else {
-        if (linkeyChildren == null || nonLinkeyChildren == null) {
+        // All the selectors come first, so now we know whether we need to split
+        // the child lists in two.
+        if (linkeyChildren.isEmpty() || nonLinkeyChildren.isEmpty()) {
           return null;
         } else {
           linkeyChildren.add(child);
@@ -214,13 +209,16 @@ public final class CssRewriter {
         new CssTree.RuleSet(ruleSet.getFilePosition(), nonLinkeyChildren));
   }
 
-  /** Argument is a compound selector like "div#foo > p > *:visited". */
-  private boolean addAnchorToHistorySensitiveSelector(
-      CssTree.Selector selector) {
+  /**
+   * Rewrites any visited or link pseudo class elements to have element name A.
+   * @return true if argument is a compound selector like
+   *     {@code div#foo > p > *:visited}.
+   */
+  private boolean vetLinkToHistorySensitiveSelector(CssTree.Selector selector) {
     boolean modified = false;
     for (CssTree child : selector.children()) {
       if (child instanceof CssTree.SimpleSelector) {
-        modified |= addAnchorToHistorySensitiveSimpleSelector(
+        modified |= vetLinkToHistorySensitiveSimpleSelector(
             (CssTree.SimpleSelector) child);
       }
     }
@@ -230,8 +228,11 @@ public final class CssRewriter {
   /** The name of an anchor (<A>) HTML tag. */
   private static final Name HTML_ANCHOR = Name.html("a");
 
-  /** Argument is a simple selector like "div#foo", "p", or "*:visited". */
-  private boolean addAnchorToHistorySensitiveSimpleSelector(
+  /**
+   * Rewrites any visited or link pseudo class elements to have element name A.
+   * @return true iff argument is a simple selector like {@code *:visited}.
+   */
+  private boolean vetLinkToHistorySensitiveSimpleSelector(
       CssTree.SimpleSelector selector) {
     if (selector.children().isEmpty()) { return false; }
     if (!containsLinkPseudoClass(selector)) { return false; }

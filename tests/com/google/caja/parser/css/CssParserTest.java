@@ -26,6 +26,7 @@ import com.google.caja.reporting.Message;
 import com.google.caja.reporting.MessageContext;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessagePart;
+import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.SnippetProducer;
 import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Join;
@@ -165,24 +166,47 @@ public class CssParserTest extends CajaTestCase {
     assertEquals("2", vl1.getValue());
   }
 
+  public final void testErrorMessages() throws Exception {
+    runTestCssParser(
+        fromString("p { color:e# }"),
+        fromString(Join.join(
+            "\n",
+            "StyleSheet",
+            "  RuleSet",
+            "    Selector",
+            "      SimpleSelector",
+            "        IdentLiteral : p")),
+        true);
+    assertMessage(
+        true, MessageType.EXPECTED_TOKEN, MessageLevel.WARNING,
+        MessagePart.Factory.valueOf(";"), MessagePart.Factory.valueOf("#"));
+    assertMessage(true, MessageType.SKIPPING, MessageLevel.WARNING);
+    assertMessagesLessSevereThan(MessageLevel.WARNING);
+  }
+
   private void runTestCssParser(
       String cssFile, String goldenFile, boolean tolerant)
       throws Exception {
-    String golden = TestUtil.readResource(getClass(), goldenFile);
-    CharProducer cp = fromResource(cssFile);
+    runTestCssParser(fromResource(cssFile), fromResource(goldenFile), tolerant);
+  }
+
+  private void runTestCssParser(
+      CharProducer css, CharProducer golden, boolean tolerant)
+      throws Exception {
     MessageLevel lvl = tolerant
         ? MessageLevel.WARNING : MessageLevel.FATAL_ERROR;
     CssTree.StyleSheet stylesheet = new CssParser(
-        CssParser.makeTokenQueue(cp, mq, false), mq, lvl).parseStyleSheet();
+        CssParser.makeTokenQueue(css.clone(), mq, false), mq, lvl)
+        .parseStyleSheet();
     assertCloneable(stylesheet);
     StringBuilder sb = new StringBuilder();
     stylesheet.format(new MessageContext(), sb);
-    assertEquals(golden.trim(), sb.toString().trim());
+    assertEquals(golden.toString().trim(), sb.toString().trim());
 
     if (!tolerant) {
       // run in tolerant mode to make sure being tolerant doesn't introduce
       // failures.
-      runTestCssParser(cssFile, goldenFile, true);
+      runTestCssParser(css, golden.clone(), true);
     }
   }
 

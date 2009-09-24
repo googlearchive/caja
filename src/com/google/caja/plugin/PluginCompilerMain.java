@@ -191,11 +191,6 @@ public final class PluginCompilerMain {
       Parser p = new Parser(tq, mq);
       input = p.parse();
       tq.expectEmpty();
-    } else if (path.endsWith(".html") || path.endsWith(".xhtml")) {
-      DomParser p = new DomParser(new HtmlLexer(cp), is, mq);
-      if (p.getTokenQueue().isEmpty()) { return null; }
-      input = new Dom(p.parseFragment(DomParser.makeDocument(null, null)));
-      p.getTokenQueue().expectEmpty();
     } else if (path.endsWith(".css")) {
       TokenQueue<CssTokenType> tq = CssParser.makeTokenQueue(cp, mq, false);
       if (tq.isEmpty()) { return null; }
@@ -203,6 +198,12 @@ public final class PluginCompilerMain {
       CssParser p = new CssParser(tq, mq, MessageLevel.WARNING);
       input = p.parseStyleSheet();
       tq.expectEmpty();
+    } else if (path.endsWith(".html") || path.endsWith(".xhtml")
+               || cp.lookahead() == '<') {
+      DomParser p = new DomParser(new HtmlLexer(cp), is, mq);
+      if (p.getTokenQueue().isEmpty()) { return null; }
+      input = new Dom(p.parseFragment(DomParser.makeDocument(null, null)));
+      p.getTokenQueue().expectEmpty();
     } else {
       throw new AssertionError("Can't classify input " + is);
     }
