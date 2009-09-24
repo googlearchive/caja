@@ -190,7 +190,7 @@ public abstract class CssTree extends AbstractParseTreeNode {
 
     public UriLiteral getUri() { return (UriLiteral) children().get(0); }
     public List<Medium> getMedia() {
-      List<Medium> media = new ArrayList<Medium>();
+      List<Medium> media = new ArrayList<Medium>(children().size() - 1);
       for (CssTree t : children().subList(1, children().size())) {
         media.add((Medium) t);
       }
@@ -1283,7 +1283,13 @@ public abstract class CssTree extends AbstractParseTreeNode {
 
     public String getBody() {
       String value = getValue();
-      return value.substring(2, value.lastIndexOf('}'));
+      // Produce a string of the same length, so that the file position makes
+      // sense.
+      StringBuilder sb = new StringBuilder("  ");  // skip ${
+      int end = value.lastIndexOf('}');  // until }
+      sb.append(value, 2, end);
+      while (sb.length() < value.length()) { sb.append(' '); }
+      return sb.toString();
     }
 
     public String getSuffix() {

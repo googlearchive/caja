@@ -127,7 +127,7 @@
     <delete dir="${jars}"/>
     <delete dir="${lib}"/>
     <delete dir="${www}"/>
-    <mkdir dir="${maven}"/>
+    <delete dir="${maven}"/>
   </target>
 
   <target name="dirs">

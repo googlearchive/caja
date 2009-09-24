@@ -771,7 +771,7 @@ final class SignatureResolver {
                           candidate, propertyName, passed);
       } else if (sig instanceof CssPropertySignature.SeriesSignature) {
         applySeriesSignature((CssPropertySignature.SeriesSignature) sig,
-                          candidate, propertyName, passed);
+                             candidate, propertyName, passed);
       } else if (sig instanceof CssPropertySignature.RepeatedSignature) {
         applyRepeatedSignature(
             (CssPropertySignature.RepeatedSignature) sig,
@@ -934,7 +934,7 @@ final class SignatureResolver {
           toApply = applySignature(toApply, propertyName, repeated);
         } else {
           // Special handling for || groups
-          List<Candidate> passedSet  = new ArrayList<Candidate>();
+          List<Candidate> passedSet = new ArrayList<Candidate>();
           for (Candidate setCandidate : toApply) {
             if (setCandidate.exprIdx == expr.children().size()) {
               passed.add(setCandidate);
@@ -1156,7 +1156,7 @@ final class SignatureResolver {
   // Suffixes for substitutions.  A substitution like ${x * 4}em can only be
   // a length.  Substitutions without a suffix can only be of certain kinds
   private static final Pattern LENGTH_SUFFIX_RE = Pattern.compile(
-      "\\}(?:in|cm|mm|pt|pc|em|ex|px)$", Pattern.CASE_INSENSITIVE);
+      "\\}(?:in|cm|mm|pt|pc|em|ex|px)?$", Pattern.CASE_INSENSITIVE);
   private static final Pattern PERCENTAGE_SUFFIX_RE = Pattern.compile("\\}%$");
   private static final Pattern NUMBER_SUFFIX_RE = Pattern.compile("\\}$");
   private static final Pattern COLOR_SUFFIX_RE = NUMBER_SUFFIX_RE;

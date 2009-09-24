@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
  * A lexer that recognizes the
  * <a href="http://www.w3.org/TR/CSS21/grammar.html#scanner">CSS 2.1 Grammar</a>
  * plus line comments as interpreted by most browsers.
- *
+ * <p>
  * TODO(mikesamuel): CSS2.1 has changed lexical conventions to effectively
  * decode escapes at lex time in most contexts.  E.g., the rule
  * <code>"@import"              IMPORT_SYM</code> now reads

@@ -96,7 +96,7 @@ public class ParseTreeNodes {
       Class<?>[] parameterTypes = ctor.getParameterTypes();
       if (parameterTypes.length == 3
           && FilePosition.class.equals(parameterTypes[0])
-          && ctor.getParameterTypes()[2].isAssignableFrom(List.class)
+          && parameterTypes[2].isAssignableFrom(List.class)
           && isReflectiveCtorAnnotated(ctor)) {
         cloneCtorCache.put(clazz, ctor);
         return ctor;
@@ -108,7 +108,7 @@ public class ParseTreeNodes {
   private static final boolean isReflectiveCtorAnnotated(Constructor<?> ctor) {
     for (int i = 0; i < ctor.getDeclaredAnnotations().length; ++i) {
       if (ctor.getDeclaredAnnotations()[i]
-              instanceof ParseTreeNode.ReflectiveCtor) {
+          instanceof ParseTreeNode.ReflectiveCtor) {
         return true;
       }
     }
