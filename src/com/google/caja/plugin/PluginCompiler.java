@@ -24,6 +24,7 @@ import com.google.caja.plugin.stages.CompileHtmlStage;
 import com.google.caja.plugin.stages.ConsolidateCodeStage;
 import com.google.caja.plugin.stages.DebuggingSymbolsStage;
 import com.google.caja.plugin.stages.InferFilePositionsStage;
+import com.google.caja.plugin.stages.InlineCssImportsStage;
 import com.google.caja.plugin.stages.OpenTemplateStage;
 import com.google.caja.plugin.stages.RewriteCssStage;
 import com.google.caja.plugin.stages.RewriteHtmlStage;
@@ -124,6 +125,7 @@ public final class PluginCompiler {
 
     List<Pipeline.Stage<Jobs>> stages = compilationPipeline.getStages();
     stages.add(new RewriteHtmlStage());
+    stages.add(new InlineCssImportsStage());
     stages.add(new SanitizeHtmlStage(htmlSchema));
     stages.add(new ValidateCssStage(cssSchema, htmlSchema));
     stages.add(new RewriteCssStage());
