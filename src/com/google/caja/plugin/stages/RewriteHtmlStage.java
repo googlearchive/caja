@@ -62,9 +62,9 @@ import org.w3c.dom.Text;
 
 /**
  * Extract some unsafe bits from HTML for processing by later stages.
- * Specifically, extracts {@code onclick} and other handlers, the contents of
- * {@code <script>} elements, and the contents of {@code <style>} elements,
- * and the content referred to by {@code <link rel=stylesheet>} elements.
+ * Specifically, extracts the contents of {@code <script>} elements,
+ * and the contents of {@code <style>} elements, and the content
+ * referred to by {@code <link rel=stylesheet>} elements.
  *
  * <p>
  * This stage is not responsible for producing a safe tree.  It is only meant to
