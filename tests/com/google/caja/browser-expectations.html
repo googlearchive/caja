@@ -37,7 +37,7 @@
 
     <div id="test-ids-as-targets">
       <iframe style="display:none" id="test-ids-as-targets-1"></iframe>
-      <form target="test-ids-as-targets-1" 
+      <form target="test-ids-as-targets-1"
             id="test-ids-as-targets-1-form"
             action="http://www.google.com"></form>
     </div>
@@ -381,6 +381,16 @@
         assertEquals(rid, getClass(el));
       }
       jsunit.pass();
+    });
+
+    jsunitRegister('testInstanceofWoutCtorThrows',
+                   function testInstanceofWoutCtorThrows() {
+      assertThrows(function () { return ({}) instanceof 0; });
+      assertThrows(function () { return ({}) instanceof false; });
+      assertThrows(function () { return ({}) instanceof 'Object'; });
+      assertThrows(function () { return ({}) instanceof {}; });
+      assertThrows(function () { return ({}) instanceof null; });
+      assertThrows(function () { return ({}) instanceof undefined; });
     });
     </script>
 
