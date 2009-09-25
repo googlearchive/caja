@@ -1181,6 +1181,21 @@ jsunitRegister('testInnerHtml',
       + '?url=http%3A%2F%2Fbar.com%2Fbaz&amp;mimeType=*%2F*" id="foo-xyz___"'
       + ' target="_blank" title="A link">A &amp; B &amp; C&lt;</a>',
       canonInnerHtml(directAccess.getInnerHTML(container)));
+      
+  var span = document.createElement('SPAN');
+  container.appendChild(span);
+  // See Issue 714 for the derivation of these tests.
+  var inputsAndGoldens = [
+      [null, ''],
+      [undefined, 'undefined'],
+      [4, '4'],
+      [{}, '[object Object]'],
+      ['my_string', 'my_string']];
+  for (var i = 0; i < inputsAndGoldens.length; ++i) {
+    var pair = inputsAndGoldens[i];
+    span.innerHTML = pair[0];
+    assertEquals(pair[1], span.innerHTML);
+  }
 
   pass('test-inner-html');
 });

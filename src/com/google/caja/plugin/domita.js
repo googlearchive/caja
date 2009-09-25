@@ -2255,13 +2255,20 @@ var attachDocumentStub = (function () {
       if (!html4.ELEMENTS.hasOwnProperty(tagName)) { throw new Error(); }
       var flags = html4.ELEMENTS[tagName];
       if (flags & html4.eflags.UNSAFE) { throw new Error(); }
-      var sanitizedHtml;
-      if (flags & html4.eflags.RCDATA) {
-        sanitizedHtml = html.normalizeRCData(String(htmlFragment || ''));
+      var isRcData = flags & html4.eflags.RCDATA;
+      var htmlFragmentString;
+      if (!isRcData && htmlFragment instanceof Html) {
+        htmlFragmentString = '' + safeHtml(htmlFragment);
+      } else if (htmlFragment === null) {
+        htmlFragmentString = '';
       } else {
-        sanitizedHtml = (htmlFragment instanceof Html
-                        ? safeHtml(htmlFragment)
-                        : sanitizeHtml(String(htmlFragment || '')));
+        htmlFragmentString = '' + htmlFragment;
+      }
+      var sanitizedHtml;
+      if (isRcData) {
+        sanitizedHtml = html.normalizeRCData(htmlFragmentString);
+      } else {
+        sanitizedHtml = sanitizeHtml(htmlFragmentString);
       }
       this.node___.innerHTML = sanitizedHtml;
       return htmlFragment;
