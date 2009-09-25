@@ -237,6 +237,10 @@
 
 <p class="testcontainer" id="test-inner-HTML-style-sanitizer"></p>
 
+<p class="testcontainer" id="test-offset-parent" style="position:relative">
+<span id="test-offset-parent-inner">inner</span>
+</p>
+
 <div class="testcontainer" id="test-whitespace-nodes-1">
   <div style="width: 150px; border: 1px solid blue; margin: 0; padding: 2px"
    id="whitespace-outer">
@@ -1781,6 +1785,19 @@ jsunitRegister('testInnerHTMLStyleSanitizer',
   pass('test-inner-HTML-style-sanitizer');
 });
 
+jsunitRegister('testOffsetParent',
+               function testOffsetParent() {
+  var outer = document.getElementById('test-offset-parent');
+  var inner = document.getElementById('test-offset-parent-inner');
+  assertEquals("wrong inner.offsetParent: " + inner.offsetParent,
+               outer, inner.offsetParent);
+  assertEquals("wrong outer.offsetParent: " + outer.offsetParent,
+               document.body, outer.offsetParent);
+  assertEquals("wront body.offsetParent: " + document.body.offsetParent,
+               undefined, document.body.offsetParent);
+  pass('test-offset-parent');
+});
+
 function assertWithin(msg, golden, actual, tolerance) {
   if (!(Math.abs(golden - actual) <= tolerance)) {
     assertEquals(msg, golden, actual);
@@ -3063,15 +3080,15 @@ function testUnbundledModuleLoader(load, prefix) {
     Q.when(m, f1, f2);
   } else {
     pass(prefix + '-unbundled-module-loader');
-  }  
+  }
 }
 
-jsunitRegister('testXhrUnbundledModuleLoader', 
+jsunitRegister('testXhrUnbundledModuleLoader',
                function testXhrUnbundledModuleLoader() {
   testUnbundledModuleLoader(xhrModuleLoad, "xhr");
 });
 
-jsunitRegister('testScriptUnbundledModuleLoader', 
+jsunitRegister('testScriptUnbundledModuleLoader',
                function testScriptUnbundledModuleLoader() {
   testUnbundledModuleLoader(scriptModuleLoad, "script");
 });

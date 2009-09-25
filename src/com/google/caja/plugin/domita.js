@@ -1083,6 +1083,14 @@ var attachDocumentStub = (function () {
 
     function tameRelatedNode(node, editable, tameNodeCtor) {
       if (node === null || node === void 0) { return null; }
+      if (node === tameDocument.body___) {
+        if (tameDocument.editable___ && !editable) {
+          // FIXME: return a non-editable version of body.
+          throw new Error(NOT_EDITABLE);
+        }
+        return tameDocument.getBody();
+      }
+
       // Catch errors because node might be from a different domain.
       try {
         var docElem = node.ownerDocument.documentElement;
@@ -1511,15 +1519,8 @@ var attachDocumentStub = (function () {
       return defaultTameNode(this.node___.previousSibling, this.editable___);
     };
     TameBackedNode.prototype.getParentNode = function () {
-      var parent = this.node___.parentNode;
-      if (parent === tameDocument.body___) {
-        if (tameDocument.editable___ && !this.editable___) {
-          // FIXME: return a non-editable version of body.
-          throw new Error(NOT_EDITABLE);
-        }
-        return tameDocument.getBody();
-      }
-      return tameRelatedNode(parent, this.editable___, defaultTameNode);
+      return tameRelatedNode(
+          this.node___.parentNode, this.editable___, defaultTameNode);
     };
     TameBackedNode.prototype.getElementsByTagName = function (tagName) {
       return tameGetElementsByTagName(
