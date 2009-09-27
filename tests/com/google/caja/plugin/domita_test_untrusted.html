@@ -586,11 +586,12 @@ function assertDomTree(skeleton, node, opt_stack) {
  */
 function canonInnerHtml(s) {
   // Sort attributes.
-  var htmlAttribute = new RegExp('^\\s*(\\w+)(?:\\s*=\\s*("[^\\"]*"'
-                                 + '|\'[^\\\']*\'|[^\\\'\\"\\s>]+))?');
+  var htmlAttribute = new RegExp(
+      '\\s*(\\w+)(?:\\s*=\\s*("[^\\"]*"|\'[^\\\']*\'|[^\\\'\\"\\s>]+))?');
   var quot = new RegExp('"', 'g');
-  var htmlStartTag = new RegExp('(<\\w+)\\s+([^\\s>][^>]*)>', 'g');
-  var htmlTag = new RegExp('(<\/?)(\\w+)(\\s+[^\\s>][^>]*)?>', 'g');
+  var tagBody = '(?:"[^"]*"|\'[^\']*\'|[^>"\']+)*';
+  var htmlStartTag = new RegExp('(<\\w+)(' + tagBody + ')>', 'g');
+  var htmlTag = new RegExp('(<\/?)(\\w+)(' + tagBody + ')>', 'g');
   var ignorableWhitespace = new RegExp('^[ \\t]*(\\r\\n?|\\n)|\\s+$', 'g');
   var tagEntityOrText = new RegExp(
       '(?:(</?\\w[^>]*>|&[a-zA-Z#]|[^<&>]+)|([<&>]))', 'g');
@@ -598,7 +599,7 @@ function canonInnerHtml(s) {
       htmlStartTag,
       function (_, tagStart, tagBody) {
         var attrs = [];
-        for (var m; !!tagBody && (m = tagBody.match(htmlAttribute));) {
+        for (var m; tagBody && (m = tagBody.match(htmlAttribute));) {
           var name = m[1];
           var value = m[2];
           var hasValue = value != null;
