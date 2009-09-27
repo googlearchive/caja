@@ -112,8 +112,9 @@ public final class PluginCompilerMain {
       PluginMeta meta = new PluginMeta(makeEnvironment(config));
       meta.setDebugMode(config.debugMode());
       meta.setValijaMode(true);
-      PluginCompiler compiler =
-          new PluginCompiler(BuildInfo.getInstance(), meta, mq);
+      meta.setIdClass(config.getIdClass());
+      PluginCompiler compiler = new PluginCompiler(
+          BuildInfo.getInstance(), meta, mq);
       mc = compiler.getMessageContext();
       compiler.setCssSchema(config.getCssSchema(mq));
       compiler.setHtmlSchema(config.getHtmlSchema(mq));

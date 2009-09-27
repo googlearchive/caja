@@ -1511,12 +1511,12 @@ var attachDocumentStub = (function () {
       return defaultTameNode(this.node___.lastChild, this.childrenEditable___);
     };
     TameBackedNode.prototype.getNextSibling = function () {
-      // TODO(mikesamuel): replace with cursors so that subtrees are delegable
-      return defaultTameNode(this.node___.nextSibling, this.editable___);
+      return tameRelatedNode(this.node___.nextSibling, this.editable___,
+                             defaultTameNode);
     };
     TameBackedNode.prototype.getPreviousSibling = function () {
-      // TODO(mikesamuel): replace with cursors so that subtrees are delegable
-      return defaultTameNode(this.node___.previousSibling, this.editable___);
+      return tameRelatedNode(this.node___.previousSibling, this.editable___,
+                             defaultTameNode);
     };
     TameBackedNode.prototype.getParentNode = function () {
       return tameRelatedNode(

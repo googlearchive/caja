@@ -102,6 +102,12 @@ public final class Config {
   private final Option VIEW = defineOption(
       "v", "view", "Gadget view to render (default is 'canvas')", true);
 
+  private final Option ID_CLASS = defineOption(
+      "c",
+      "id_class",
+      "The module ID if it is statically known",
+      true);
+
   private final Option DEBUG_MODE = defineBooleanOption(
       "g", "debug", "Set to add debugging info to cajoled output.");
 
@@ -134,6 +140,7 @@ public final class Config {
   private boolean debugMode;
   private SourceRenderMode renderer;
   private int servicePort;
+  private String idClass;
 
   public Config(Class<?> mainClass, PrintStream stderr, String usageText) {
     this(mainClass, new PrintWriter(stderr), usageText);
@@ -176,6 +183,8 @@ public final class Config {
   }
 
   public String getGadgetView() { return gadgetView; }
+
+  public String getIdClass() { return idClass; }
 
   public boolean debugMode() { return debugMode; }
 
@@ -285,6 +294,7 @@ public final class Config {
       }
 
       gadgetView = cl.getOptionValue(VIEW.getOpt(), "canvas");
+      idClass = cl.getOptionValue(ID_CLASS.getOpt(), null);
       debugMode = cl.hasOption(DEBUG_MODE.getOpt());
 
       String servicePortString;
