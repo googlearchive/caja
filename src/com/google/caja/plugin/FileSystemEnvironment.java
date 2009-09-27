@@ -31,7 +31,7 @@ import java.net.URISyntaxException;
 public abstract class FileSystemEnvironment implements PluginEnvironment {
   private final File directory;
 
-  FileSystemEnvironment(File directory) {
+  public FileSystemEnvironment(File directory) {
     this.directory = directory;
   }
 
