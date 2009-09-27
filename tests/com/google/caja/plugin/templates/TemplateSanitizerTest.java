@@ -108,8 +108,8 @@ public class TemplateSanitizerTest extends CajaTestCase {
         htmlFragment(fromString("<meta http-equiv='refresh' content='1'/>")),
         "",
         "WARNING: removing disallowed tag meta",
-        "WARNING: removing attribute content when folding meta into parent",
-        "WARNING: removing attribute http-equiv when folding meta into parent");
+        "WARNING: removing disallowed attribute http-equiv on tag meta",
+        "WARNING: removing disallowed attribute content on tag meta");
   }
   public final void testDisallowedElement4() throws Exception {
     assertValid(
