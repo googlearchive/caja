@@ -298,9 +298,14 @@
     });
     jsunitRegister('testIdsAsTargets',
                    function testIdsAsTargets() {
+      function note(msg) {
+        var el = document.getElementById('test-ids-as-targets');
+        el.innerHTML = 'testIdsAsTargets: ' + msg;
+        return msg;
+      }
       var w = window.open();
-      if (w === null) {
-        fail('Popup blocker must be disabled for this test.');
+      if (w === null || w === undefined) {
+        fail(note('FAIL: Popup blocker must be disabled for this test.'));
       }
       w.close();
       document.getElementById('test-ids-as-targets-1-form').submit();
@@ -310,10 +315,10 @@
         var loc = document.
             getElementById('test-ids-as-targets-1').contentWindow.location;
       } catch (e) {
-        fail('This browser allows ids as targets');
+        fail(note('FAIL: This browser allows ids as targets'));
       }
-      document.getElementById('test-ids-as-targets').
-          innerHTML = 'testIdsAsTargets passed.';
+      note('Passed.');
+      jsunit.pass();
     });
     </script>
 
@@ -391,6 +396,7 @@
       assertThrows(function () { return ({}) instanceof {}; });
       assertThrows(function () { return ({}) instanceof null; });
       assertThrows(function () { return ({}) instanceof undefined; });
+      jsunit.pass();
     });
     </script>
 
