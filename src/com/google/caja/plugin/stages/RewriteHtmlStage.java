@@ -32,6 +32,7 @@ import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.Nodes;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Parser;
+import com.google.caja.parser.js.StringLiteral;
 import com.google.caja.plugin.Dom;
 import com.google.caja.plugin.ExtractedHtmlContent;
 import com.google.caja.plugin.Job;
@@ -164,11 +165,15 @@ public class RewriteHtmlStage implements Pipeline.Stage<Jobs> {
       jsStream = env.loadExternalResource(
           new ExternalReference(absUri, srcValuePos), "text/javascript");
       if (jsStream == null) {
-        parent.removeChild(scriptTag);
         jobs.getMessageQueue().addMessage(
             PluginMessageType.FAILED_TO_LOAD_EXTERNAL_URL,
             srcValuePos, MessagePart.Factory.valueOf("" + srcUri));
-        return;
+        // Throw an exception so any user installed error handler will fire.
+        jsStream = CharProducer.Factory.fromString(
+            "throw new Error("
+            + StringLiteral.toQuotedValue("Failed to load " + srcUri.toString())
+            + ");",
+            srcPos);
       }
       scriptPos = null;
     }

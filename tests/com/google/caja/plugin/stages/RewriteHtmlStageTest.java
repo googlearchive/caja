@@ -176,6 +176,21 @@ public final class RewriteHtmlStageTest extends PipelineStageTestCase {
     assertNoErrors();
   }
 
+  public final void testUnloadableScripts() throws Exception {
+    assertPipeline(
+        job("<script src=content:onerror=panic;></script>"
+            + "<script src=\"http://bogus.com/bogus.js#'!\"></script>"
+            + "<script src=content:foo()></script>",
+            Job.JobType.HTML),
+        job("<span jobnum=\"1\"></span><span jobnum=\"2\"></span>"
+            + "<span jobnum=\"3\"></span>",
+            Job.JobType.HTML),
+        job("{\n  onerror = panic;\n}", Job.JobType.JAVASCRIPT),
+        job("{\n  throw new Error('Failed to load http://bogus.com/bogus.js#\\'!');\n}", Job.JobType.JAVASCRIPT),
+        job("{ foo(); }", Job.JobType.JAVASCRIPT));
+    assertNoErrors();
+  }
+
   @Override
   protected boolean runPipeline(Jobs jobs) throws Exception {
     mq.getMessages().clear();

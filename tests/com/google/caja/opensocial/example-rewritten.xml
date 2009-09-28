@@ -2,6 +2,7 @@
   ___.loadModule({
       'instantiate': function (___, IMPORTS___) {
         var moduleResult___ = ___.NO_RESULT;
+        var Error = ___.readImport(IMPORTS___, 'Error', { });
         var alert = ___.readImport(IMPORTS___, 'alert');
         var handleClicky = ___.readImport(IMPORTS___, 'handleClicky');
         var onerror = ___.readImport(IMPORTS___, 'onerror');
@@ -39,6 +40,13 @@
           el___ = emitter___.byId('id_3___');
           emitter___.setAttr(el___, 'id', 'p3-' + IMPORTS___.getIdClass___());
           emitter___.discard(emitter___.attach('id_4___'));
+        }
+        try {
+          {
+            throw ___.construct(Error, [ 'Failed to load example-gadget-files/no-such-file.js' ]);
+          }
+        } catch (ex___) {
+          ___.getNewModuleHandler().handleUncaughtException(ex___, onerror, 'example.xml', '28');
         }
         try {
           {
