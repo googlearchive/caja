@@ -192,7 +192,8 @@ public class LocalizerTest extends CajaTestCase {
     LocalizedHtml msg = context.getMessageByName("notSiblings");
     assertEquals(
         Nodes.render(xmlFragment(fromString(
-            "<ihtml:ph name=startLink/>Click<ihtml:ph name=endLink/>")), true),
+            "<ihtml:ph name=startLink />Click<ihtml:ph name=endLink />")),
+            true),
         msg.getSerializedForm());
     assertEquals(
         Nodes.render(xmlFragment(fromString(

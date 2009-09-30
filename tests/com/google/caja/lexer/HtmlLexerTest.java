@@ -35,7 +35,7 @@ public class HtmlLexerTest extends CajaTestCase {
     lex(new HtmlLexer(p), actual);
 
     // Get the golden.
-    String golden = TestUtil.readResource(getClass(), "htmllexergolden1.txt");
+    String golden = fromResource("htmllexergolden1.txt").toString();
 
     // Compare.
     assertEquals(golden, actual.toString());
@@ -74,6 +74,27 @@ public class HtmlLexerTest extends CajaTestCase {
         "TAGEND: >",
         "UNESCAPED: w('</b')",
         "TAGBEGIN: </script",
+        "TAGEND: >");
+  }
+
+  public final void testUrlEndingInSlashOutsideQuotes() throws Exception {
+    assertTokens(
+        "<a href=http://foo.com/>Clicky</a>", false,
+        "TAGBEGIN: <a",
+        "ATTRNAME: href",
+        "ATTRVALUE: http://foo.com/",
+        "TAGEND: >",
+        "TEXT: Clicky",
+        "TAGBEGIN: </a",
+        "TAGEND: >");
+    assertTokens(
+        "<a href=http://foo.com/>Clicky</a>", true,
+        "TAGBEGIN: <a",
+        "ATTRNAME: href",
+        "ATTRVALUE: http://foo.com/",
+        "TAGEND: >",
+        "TEXT: Clicky",
+        "TAGBEGIN: </a",
         "TAGEND: >");
   }
 

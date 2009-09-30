@@ -596,7 +596,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             ""
             + "<map name='foo-suffix___'>"
-            + "<area target=_blank href=foo.html/>"
+            + "<area target=_blank href=foo.html />"
             + "</map>"
             + "<img usemap=#foo-suffix___ src=pic.gif>")),
          new Block());
@@ -613,7 +613,7 @@ public class TemplateCompilerTest extends CajaTestCase {
         htmlFragment(fromString(
             ""
             + "<map name='foo-suffix___'>"
-            + "<area target=_blank href=foo.html/>"
+            + "<area target=_blank href=foo.html />"
             + "</map>"
             + "<img src=foo.gif>"
             + "<img src=bar.gif>")),

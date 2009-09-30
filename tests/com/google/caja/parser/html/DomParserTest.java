@@ -971,7 +971,7 @@ public class DomParserTest extends CajaTestCase {
             // Links don't nest
             "<a href=bar>Bar",
             // unless they do.  Table is a scoping element.
-            "<table><caption><a href=baz>Baz</table>boo",
+            "<table><caption><a href=http://baz/>Baz</table>boo",
             "</a>"
             ),
         Arrays.asList(
@@ -986,20 +986,20 @@ public class DomParserTest extends CajaTestCase {
             "      Attrib : href 3+4-3+8",
             "        Value : bar 3+9-3+12",
             "      Text : Bar\\n 3+13-4+1",
-            "      Element : table 4+1-4+40",
-            "        Element : caption 4+8-4+32",
-            "          Element : a 4+17-4+32",
+            "      Element : table 4+1-4+48",
+            "        Element : caption 4+8-4+40",
+            "          Element : a 4+17-4+40",
             "            Attrib : href 4+20-4+24",
-            "              Value : baz 4+25-4+28",
-            "            Text : Baz 4+29-4+32",
-            "      Text : boo\\n 4+40-5+1"
+            "              Value : http://baz/ 4+25-4+36",
+            "            Text : Baz 4+37-4+40",
+            "      Text : boo\\n 4+48-5+1"
             ),
         Arrays.<String>asList(
             "LINT testLinksDontNest:3+1 - 13:"
             + " An 'a' start tag seen with already an active 'a' element.",
-            "LINT testLinksDontNest:4+32 - 40:"
+            "LINT testLinksDontNest:4+40 - 48:"
             + " 'table' closed but 'caption' was still open.",
-            "LINT testLinksDontNest:4+32 - 40:"
+            "LINT testLinksDontNest:4+40 - 48:"
             + " Unclosed elements on stack.",
             "LINT testLinksDontNest:5+5:"
             + " End of file seen and there were open elements."
@@ -1008,7 +1008,9 @@ public class DomParserTest extends CajaTestCase {
             "<div>",
             "<a href=\"foo\">Foo",
             "</a><a href=\"bar\">Bar",
-            "<table><caption><a href=\"baz\">Baz</a></caption></table>boo",
+            (""
+             + "<table><caption><a href=\"http://baz/\">Baz</a></caption>"
+             + "</table>boo"),
             "</a></div>"
             )
         );

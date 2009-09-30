@@ -389,6 +389,7 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
     ;
   }
 
+  private String lastNonIgnorable = null;
   /**
    * Breaks the character stream into tokens.
    * This method returns a stream of tokens such that each token starts where
@@ -439,7 +440,8 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
         for (; end < limit; ++end) {
           ch = buffer[end];
           // End a text chunk before />
-          if ('/' == ch && end + 1 < limit && '>' == buffer[end + 1]) {
+          if (!"=".equals(lastNonIgnorable) && '/' == ch && end + 1 < limit
+              && '>' == buffer[end + 1]) {
             break;
           } else if ('>' == ch || '=' == ch
                      || Character.isWhitespace(ch)) {
@@ -722,13 +724,10 @@ final class HtmlInputSplitter extends AbstractTokenStream<HtmlTokenType> {
       type = HtmlTokenType.TEXT;
     }
 
-    SourceBreaks breaks = p.getSourceBreaks(start);
     p.consumeTo(end);
-    return Token.instance(
-        p.toString(start, end), type,
-        breaks.toFilePosition(
-            p.getCharInFile(start),
-            p.getCharInFile(end)));
+    String text = p.toString(start, end);
+    if (type != HtmlTokenType.IGNORABLE) { lastNonIgnorable = text; }
+    return Token.instance(text, type, p.filePositionForOffsets(start, end));
   }
 
   protected Name name(String tagName) {
