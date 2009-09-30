@@ -512,6 +512,14 @@ function html_sanitize(htmlText, opt_urlPolicy, opt_nmTokenPolicy) {
               case html4.atype.URI:
                 value = opt_urlPolicy && opt_urlPolicy(value);
                 break;
+              case html4.atype.URI_FRAGMENT:
+                if (value && '#' === value.charAt(0)) {
+                  value = opt_nmTokenPolicy ? opt_nmTokenPolicy(value) : value;
+                  if (value) { value = '#' + value; }
+                } else {
+                  value = null;
+                }
+                break;
             }
           } else {
             value = null;

@@ -33,6 +33,7 @@ import com.google.caja.parser.Visitor;
 import com.google.caja.parser.css.CssParser;
 import com.google.caja.parser.css.CssTree;
 import com.google.caja.parser.html.Nodes;
+import com.google.caja.parser.js.AbstractExpression;
 import com.google.caja.parser.js.Block;
 import com.google.caja.parser.js.Declaration;
 import com.google.caja.parser.js.Expression;
@@ -171,6 +172,10 @@ public final class HtmlAttributeRewriter {
         break;
       case NONE:
         if (!attr.attrInfo.getValueCriterion().accept(value)) {
+          mq.addMessage(
+              IhtmlMessageType.BAD_ATTRIB, pos,
+              attr.attrInfo.getElementName(), attr.attrInfo.getAttributeName(),
+              MessagePart.Factory.valueOf(value));
           return noResult(attr);
         }
         break;
@@ -262,6 +267,21 @@ public final class HtmlAttributeRewriter {
           return noResult(attr);
         }
         break;
+      case URI_FRAGMENT:
+        if (value.length() < 2 || !value.startsWith("#")) {
+          mq.addMessage(
+              IhtmlMessageType.BAD_ATTRIB, pos,
+              attr.attrInfo.getElementName(), attr.attrInfo.getAttributeName(),
+              MessagePart.Factory.valueOf(value));
+          return noResult(attr);
+        }
+        String id = value.substring(1);
+        if (!checkValidId(id, pos)) { return noResult(attr); }
+        JsConcatenator out = new JsConcatenator();
+        out.append(FilePosition.startOf(pos), "#");
+        rewriteIdentifiers(pos, id, out);
+        dynamicValue = out.toExpression(false);
+        break;
       default:
         throw new RuntimeException(attr.attrInfo.getType().name());
     }
@@ -270,8 +290,8 @@ public final class HtmlAttributeRewriter {
 
   private static final Pattern FORBIDDEN_ID = Pattern.compile("__\\s*$");
 
-  private static final Pattern VALID_ID =
-      Pattern.compile("^[\\p{Alnum}_$\\-.:;=()\\[\\]]+$");
+  private static final Pattern VALID_ID = Pattern.compile(
+      "^[\\p{Alnum}_$\\-.:;=()\\[\\]]+$");
 
   /** True iff value is not a forbidden id */
   private boolean checkForbiddenId(String value, FilePosition pos) {
@@ -314,26 +334,29 @@ public final class HtmlAttributeRewriter {
   /** "foo bar baz" -> "foo-suffix___ bar-suffix___ baz-suffix___". */
   private Expression rewriteIdentifiers(FilePosition pos, String names) {
     if ("".equals(names)) { return null; }
+    JsConcatenator concat = new JsConcatenator();
+    rewriteIdentifiers(pos, names, concat);
+    Expression result = concat.toExpression(false);
+    ((AbstractExpression) result).setFilePosition(pos);
+    return result;
+  }
+  private void rewriteIdentifiers(
+      FilePosition pos, String names, JsConcatenator concat) {
+    Expression idClassExpr;
     String idClass = meta.getIdClass();
     if (idClass != null) {
-      StringBuilder result = new StringBuilder(names.length());
-      for (String ident : identifiers(names)) {
-        if ("".equals(ident)) { continue; }
-        if (result.length() != 0) { result.append(' '); }
-        result.append(ident).append('-').append(idClass);
-      }
-      return StringLiteral.valueOf(pos, result.toString());
+      idClassExpr = StringLiteral.valueOf(FilePosition.UNKNOWN, idClass);
     } else {
-      JsConcatenator concat = new JsConcatenator();
-      boolean first = true;
-      for (String ident : identifiers(names)) {
-        if ("".equals(ident)) { continue; }
-        concat.append(pos, (first ? "" : " ") + ident + "-");
-        concat.append(
-            (Expression) QuasiBuilder.substV("IMPORTS___.getIdClass___()"));
-        first = false;
-      }
-      return concat.toExpression(false);
+      idClassExpr = (Expression) QuasiBuilder.substV(
+          "IMPORTS___.getIdClass___()");
+    }
+    boolean first = true;
+    for (String ident : identifiers(names)) {
+      if ("".equals(ident)) { continue; }
+      concat.append(pos, (first ? "" : " ") + ident + "-");
+      concat.append(idClassExpr);
+      first = false;
+      pos = FilePosition.endOf(pos);
     }
   }
 

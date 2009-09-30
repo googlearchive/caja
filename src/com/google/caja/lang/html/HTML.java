@@ -109,6 +109,13 @@ public final class HTML {
        */
       URI,
       /**
+       * A URI that can only refer to a {@link #GLOBAL_NAME} or {@link #ID}
+       * defined within the document.  Such as {@code #foo}.
+       * Syntactically the same as an {@link #IDREF} but with a preceding '#'
+       * sign.
+       */
+      URI_FRAGMENT,
+      /**
        * Javascript or vbscript content.
        * @see <a href=
        *       "http://www.w3.org/TR/html401/types.html#h-6.14">

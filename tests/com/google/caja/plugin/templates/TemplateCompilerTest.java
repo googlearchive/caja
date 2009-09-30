@@ -39,7 +39,6 @@ import com.google.caja.util.CajaTestCase;
 import com.google.caja.util.Pair;
 
 import java.net.URI;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -585,6 +584,40 @@ public class TemplateCompilerTest extends CajaTestCase {
             htmlFragment(fromString(", World!"))),
         htmlFragment(fromString("Hello, World!")),
         new Block());
+  }
+
+  public final void testUsemapSanitized() throws Exception {
+    meta.setIdClass("suffix___");
+    assertSafeHtml(
+        htmlFragment(fromString(
+            ""
+            + "<map name=foo><area href=foo.html></map>"
+            + "<img usemap=#foo src=pic.gif>")),
+        htmlFragment(fromString(
+            ""
+            + "<map name='foo-suffix___'>"
+            + "<area target=_blank href=foo.html/>"
+            + "</map>"
+            + "<img usemap=#foo-suffix___ src=pic.gif>")),
+         new Block());
+  }
+
+  public final void testBadUriFragments() throws Exception {
+    meta.setIdClass("suffix___");
+    assertSafeHtml(
+        htmlFragment(fromString(
+            ""
+            + "<map name=foo><area href=foo.html></map>"
+            + "<img usemap=foo src=foo.gif>"
+            + "<img usemap=##foo src=bar.gif>")),
+        htmlFragment(fromString(
+            ""
+            + "<map name='foo-suffix___'>"
+            + "<area target=_blank href=foo.html/>"
+            + "</map>"
+            + "<img src=foo.gif>"
+            + "<img src=bar.gif>")),
+         new Block(), false);
   }
 
   private void assertSafeHtml(

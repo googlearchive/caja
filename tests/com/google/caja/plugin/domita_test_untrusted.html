@@ -448,6 +448,11 @@ Script Unbundled Module Loader</p>
 <p class="waiting testcontainer" id="static-common-js-module">
 Static CommonJS Module</p>
 
+<p class="testcontainer" id="test-usemap"
+><map name="foo"><area href="areatarget.html"
+></map
+><img usemap="#foo" src="mappic.gif"></p>
+
 <p class="testcontainer" id="test-document-body-appendChild"
  >I should be the last element until something is appended to document.body</p>
 
@@ -1442,8 +1447,8 @@ jsunitRegister('testReplaceChild',
   var result = parent.replaceChild(newChild, oldChild);
   assertEquals(oldChild, result);
   assertEquals(
-    'bravo<span id="test-replace-child-1">alpha</span>',
-    canonInnerHtml(parent.innerHTML));
+      'bravo<span id="test-replace-child-1">alpha</span>',
+      canonInnerHtml(parent.innerHTML));
   pass('test-replace-child');
 });
 
@@ -2854,6 +2859,20 @@ jsunitRegister('testEmitterIe',
   }
 
   pass('test-emitter-ie');
+});
+
+jsunitRegister('testUsemap',
+               function testUsemap() {
+  assertEquals(
+      (''
+       + '<map name="foo-xyz___">'
+       + '<area href="http://proxy/?mime-type=*%2F*&amp;uri=areatarget.html"'
+       + ' target="_blank">'
+       + '</map>'
+       + '<img usemap="#foo-xyz___"'
+       + ' src="http://proxy/?mime-type=image%2F*&amp;uri=mappic.gif">'),
+      directAccess.getInnerHTML(document.getElementById('test-usemap')));
+  pass('test-usemap');               
 });
 
 jsunitRegister('testDocumentBodyAppendChild',

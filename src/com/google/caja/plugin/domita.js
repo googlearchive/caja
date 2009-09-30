@@ -839,6 +839,14 @@ var attachDocumentStub = (function () {
               function(_, id, spaces) {
                 return unsuffix(id, idSuffix, '') + (spaces ? ' ' : '');
               });
+        case html4.atype.URI_FRAGMENT:
+          if (realValue && '#' === realValue.charAt(0)) {
+            realValue = unsuffix(realValue.substring(1), idSuffix, null);
+            return realValue ? '#' + realValue : null;
+          } else {
+            return null;
+          }
+          break;
         default:
           return realValue;
       }
@@ -946,6 +954,12 @@ var attachDocumentStub = (function () {
           // TODO(mikesamuel): determine mime type properly.
           return uriCallback.rewrite(
               value, mimeTypeForAttr(tagName, attribName)) || null;
+        case html4.atype.URI_FRAGMENT:
+          value = String(value);
+          if (value.charAt(0) === '#' && isValidId(value.substring(1))) {
+            return '#' + value + idSuffix;
+          }
+          return null;
         case html4.atype.STYLE:
           if ('function' !== typeof value) {
             return sanitizeStyleAttrValue(String(value));
