@@ -23,7 +23,7 @@ import java.util.Map;
 import junit.framework.TestCase;
 
 public class CollectionsTest extends TestCase {
-  public void testListMultimaps() {
+  public final void testListMultimaps() {
     Multimap<String, String> m = Multimaps.newListHashMultimap();
     assertTrue(m.isEmpty());
     assertEquals("[]", m.keySet().toString());
@@ -65,7 +65,7 @@ public class CollectionsTest extends TestCase {
     assertTrue(m.isEmpty());
   }
 
-  public void testSetMultimaps() {
+  public final void testSetMultimaps() {
     Multimap<String, String> m = Multimaps.newSetHashMultimap();
     assertTrue(m.isEmpty());
     assertEquals("[]", m.keySet().toString());
@@ -102,7 +102,7 @@ public class CollectionsTest extends TestCase {
     assertTrue(m.isEmpty());
   }
 
-  public void testPetulantCollection() {
+  public final void testPetulantCollection() {
     Multimap<String, String> m
         = new Multimaps.MultimapImpl<String, String, Collection<String>>(
             new Multimaps.Maker<Map<String, Collection<String>>>() {
@@ -150,7 +150,7 @@ public class CollectionsTest extends TestCase {
     assertTrue(m.isEmpty());
   }
 
-  public void testClone() {
+  public final void testClone() {
     Multimap<String, String> m = Multimaps.newListLinkedHashMultimap();
     m.put("a", "A");
     m.put("b", "B");

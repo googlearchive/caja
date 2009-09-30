@@ -30,7 +30,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 public class PositionInfererTest extends CajaTestCase {
-  public void testNoGuides() throws ParseException {
+  public final void testNoGuides() throws ParseException {
     DocumentFragment f = xmlFragment(fromString("<br/>"));
     FilePosition spanningPos = Nodes.getFilePositionFor(f);  // 1+1 - 6
 
@@ -51,7 +51,7 @@ public class PositionInfererTest extends CajaTestCase {
         f);
   }
 
-  public void testGaps() throws ParseException {
+  public final void testGaps() throws ParseException {
     DocumentFragment f = xmlFragment(fromString("<br/>Foo<br/>"));
     FilePosition spanningPos = Nodes.getFilePositionFor(f);
 
@@ -76,7 +76,7 @@ public class PositionInfererTest extends CajaTestCase {
         f);
   }
 
-  public void testSparseRelations() throws ParseException {
+  public final void testSparseRelations() throws ParseException {
     DocumentFragment f = xmlFragment(fromString(
         ""
         + "<b><hr/><br/></b>\n"
@@ -125,7 +125,7 @@ public class PositionInfererTest extends CajaTestCase {
         f);
   }
 
-  public void testDoesNotDamageKnownData() throws ParseException {
+  public final void testDoesNotDamageKnownData() throws ParseException {
     DocumentFragment f = xmlFragment(fromString(
         ""
         + "<b><hr/><br/></b>\n"

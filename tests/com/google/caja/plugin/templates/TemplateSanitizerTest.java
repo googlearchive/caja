@@ -199,7 +199,7 @@ public class TemplateSanitizerTest extends CajaTestCase {
         "WARNING: removing disallowed attribute charset on tag a");
   }
 
-  public void testStrangeIds() throws Exception {
+  public final void testStrangeIds() throws Exception {
     String html =
       "<input name=\"tag[]\" />\n"
       + "<input name=\"form$location\" />\n"

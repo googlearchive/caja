@@ -17,13 +17,13 @@ package com.google.caja.util;
 import junit.framework.TestCase;
 
 public class NameTest extends TestCase {
-  public void testCss() {
+  public final void testCss() {
     assertEquals("color", Name.css("color").getCanonicalForm());
     assertEquals("color", Name.css("colOr").getCanonicalForm());
     assertEquals("color", Name.css("COLOR").getCanonicalForm());
   }
 
-  public void testHtml() {
+  public final void testHtml() {
     assertEquals("foo", Name.html("foo").getCanonicalForm());
     assertEquals("foo", Name.html("Foo").getCanonicalForm());
     assertEquals("foo", Name.html("FOO").getCanonicalForm());
@@ -32,7 +32,7 @@ public class NameTest extends TestCase {
     assertEquals("FOO:BAR", Name.html("FOO:BAR").getCanonicalForm());
   }
 
-  public void testXml() {
+  public final void testXml() {
     assertEquals("foo", Name.xml("foo").getCanonicalForm());
     assertEquals("Foo", Name.xml("Foo").getCanonicalForm());
     assertEquals("FOO", Name.xml("FOO").getCanonicalForm());
