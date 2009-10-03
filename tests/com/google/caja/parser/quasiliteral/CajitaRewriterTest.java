@@ -97,7 +97,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
     return
         tempObj + " = " + obj + "," +
         tempValue + " = " + value + "," +
-        "    " + tempObj + "." + varName + "_canSet___ ?" +
+        "    " + tempObj + "." + varName + "_canSet___ === " + tempObj + " ?" +
         "    " + tempObj + "." + varName + " = " + tempValue + ":" +
         "    ___.setPub(" + tempObj + ", '" + varName + "', " + tempValue + ")";
   }
@@ -961,7 +961,8 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "var arr = [1, 2, 3];" +
         "arr.length = 4;",
         "var arr = [1, 2, 3];" +
-        "arr.length_canSet___ ? (arr.length = 4) : ___.setPub(arr, 'length', 4)"
+        "arr.length_canSet___ === arr ? (arr.length = 4) : " +
+        "                               ___.setPub(arr, 'length', 4)"
         );
     checkSucceeds(
         "var arr = [1, 2, 3];" +
@@ -969,7 +970,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "var x0___;" +
         "var arr = [1, 2, 3];" +
         "x0___ = arr.length - 1," +
-        "arr.length_canSet___" +
+        "arr.length_canSet___ === arr" +
         " ? (arr.length = x0___)" +
         " : ___.setPub(arr, 'length', x0___);"
         );
@@ -1203,7 +1204,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         + "x0___ = myArray.CALL___(),"
         + "x1___ = (x0___.key_canRead___"
         + "         ? x0___.key : ___.readPub(x0___, 'key')) + 1,"
-        + "x0___.key_canSet___"
+        + "x0___.key_canSet___ === x0___"
         + "     ? (x0___.key = x1___) : ___.setPub(x0___, 'key', x1___);");
     checkSucceeds(
         "myArray()[myKey()] += 1;",
@@ -1327,7 +1328,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "x0___ = o," +
         "x1___ = +(x0___.x_canRead___ ? x0___.x : ___.readPub(x0___, 'x'))," +
         "(x2___ = x1___ + 1," +
-        " x0___.x_canSet___" +
+        " x0___.x_canSet___ === x0___" +
         "     ? (x0___.x = x2___)" +
         "     : ___.setPub(x0___, 'x', x2___))," +
         "x1___;");
@@ -2349,7 +2350,8 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "    x.bar_canCall___? x.bar(): ___.callPub(x, 'bar', []);" +
         "  }" +
         "  return ___.markFuncFreeze(baz$_meth, 'baz$_meth');" +
-        "})(), x.baz_canSet___ ? (x.baz = x0___) : ___.setPub(x, 'baz', x0___);" +
+        "})(), x.baz_canSet___ === x? (x.baz = x0___) : " +
+        "                             ___.setPub(x, 'baz', x0___);" +
         "var zip = (function () {" +
         "  function zip$_var() {" +
         "    x.baz_canCall___ ? x.baz() : ___.callPub(x, 'baz', []);" +

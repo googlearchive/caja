@@ -734,6 +734,8 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
             "___.grantFunc(testImports, 'assertTrue');" +
             "testImports.assertFalse = assertFalse;" +
             "___.grantFunc(testImports, 'assertFalse');" +
+            "testImports.assertThrows = assertThrows;" +
+            "___.grantFunc(testImports, 'assertThrows');" +
             "testImports.fail = fail;" +
             "___.grantFunc(testImports, 'fail');" +
             "testImports.$v = valijaMaker.CALL___(testImports);\n" +

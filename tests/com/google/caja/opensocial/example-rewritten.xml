@@ -55,7 +55,7 @@
                     alert.CALL___('You clicked something!!!');
                   }
                   return ___.markFuncFreeze(handleClicky, 'handleClicky');
-                })(), outers.handleClicky_canSet___? (outers.handleClicky =
+                })(), outers.handleClicky_canSet___ === outers? (outers.handleClicky =
                 x0___): ___.setPub(outers, 'handleClicky', x0___));
           }
         } catch (ex___) {

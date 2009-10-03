@@ -26,7 +26,7 @@
             .pc('\n\n    ');
         {
            x2___ = 16711680,
-           IMPORTS___.color_canSet___
+           IMPORTS___.color_canSet___ === IMPORTS___
                ? (IMPORTS___.color = x2___)
                : ___.setPub(IMPORTS___, 'color', x2___);
            x4___ = (

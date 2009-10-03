@@ -419,6 +419,24 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
 //    rewriteAndExecute("assertTrue(JSON.toString() === '[object JSON]');");
 //    rewriteAndExecute("assertTrue(''+JSON === '[object JSON]');");
   }
+  
+  /**
+   * Tests that an inherited <tt>*_canSet___</tt> fastpath flag does not enable
+   * bogus writability.
+   * <p>
+   * See <a href="http://code.google.com/p/google-caja/issues/detail?id=1052"
+   * >issue 1052</a>.
+   */
+  public final void testNoCanSetInheritance() throws Exception {
+    rewriteAndExecute(
+            "(function() {" +
+            "  var a = {};" +
+            "  var b = cajita.freeze(cajita.beget(a));" +
+            "  a.x = 8;" +
+            "  assertThrows(function(){b.x = 9;});" +
+            "  assertEquals(b.x, 8);" +
+            "})();");
+  }
 }
 
 

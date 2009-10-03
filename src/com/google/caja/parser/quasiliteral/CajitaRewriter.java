@@ -1123,7 +1123,8 @@ public class CajitaRewriter extends Rewriter {
           ParseTreeNode r = bindings.get("r");
           Pair<Expression, Expression> rPair = reuse(nymize(r, propertyName, "meth"), scope);
           return commas(oPair.b, rPair.b, (Expression) QuasiBuilder.substV(
-              "@oRef.@pCanSet ? (@oRef.@p = @rRef) : ___.setPub(@oRef, @pName, @rRef);",
+              "@oRef.@pCanSet === @oRef ? (@oRef.@p = @rRef) : " +
+              "                           ___.setPub(@oRef, @pName, @rRef);",
               "oRef", oPair.a,
               "rRef", rPair.a,
               "pCanSet", newReference(

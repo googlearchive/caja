@@ -218,7 +218,7 @@ final class CajaRuntimeDebuggingRewriter extends Rewriter {
               synopsis="remove fasttrack so it can't dereference null",
               reason=("fasttrack useless in debug mode but it can still cause"
                       + "errors outside our stack"),
-              matches="@obj.@key_canSet___ ? (@obj.@key = @y) : @operation",
+              matches="@obj.@key_canSet___ === @obj ? (@obj.@key = @y) : @operation",
               substitutes="@operation")
           public ParseTreeNode fire(ParseTreeNode n, Scope s) {
             return transform(n, s);
