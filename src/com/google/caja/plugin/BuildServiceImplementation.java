@@ -121,8 +121,10 @@ public class BuildServiceImplementation implements BuildService {
 
         public String rewriteUri(ExternalReference uri, String mimeType) {
           try {
+            // TODO(ihab.awad): Need to pass in the URI rewriter from the build
+            // file somehow (as a Cajita program?). The below is a stub.
             return URI.create(
-                "http://proxy/"
+                "http://example.com/"
                 + "?mime-type=" + URLEncoder.encode(mimeType, "UTF-8")
                 + "&uri=" + URLEncoder.encode("" + uri.getUri(), "UTF-8"))
                 .toString();

@@ -2866,11 +2866,12 @@ jsunitRegister('testUsemap',
   assertEquals(
       (''
        + '<map name="foo-xyz___">'
-       + '<area href="http://proxy/?mime-type=*%2F*&amp;uri=areatarget.html"'
+       + '<area href="http://example.com/'
+       + '?mime-type=*%2F*&amp;uri=areatarget.html"'
        + ' target="_blank">'
        + '</map>'
        + '<img usemap="#foo-xyz___"'
-       + ' src="http://proxy/?mime-type=image%2F*&amp;uri=mappic.gif">'),
+       + ' src="http://example.com/?mime-type=image%2F*&amp;uri=mappic.gif">'),
       directAccess.getInnerHTML(document.getElementById('test-usemap')));
   pass('test-usemap');               
 });

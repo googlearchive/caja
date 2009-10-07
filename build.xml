@@ -367,6 +367,12 @@
       <fileset dir="${third_party}/java/htmlparser">
         <include name="htmlparser.jar"/>
       </fileset>
+      <fileset dir="${third_party}/java/jaf">
+        <include name="activation.jar"/>
+      </fileset>
+      <fileset dir="${third_party}/java/javamail">
+        <include name="mail.jar"/>
+      </fileset>
       <fileset dir="${third_party}/java/json_simple">
         <include name="json_simple.jar"/>
       </fileset>
