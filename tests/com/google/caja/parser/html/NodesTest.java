@@ -14,9 +14,11 @@
 
 package com.google.caja.parser.html;
 
-import junit.framework.TestCase;
+import com.google.caja.util.CajaTestCase;
 
-public class NodesTest extends TestCase {
+import org.w3c.dom.Element;
+
+public class NodesTest extends CajaTestCase {
   public final void testDecode() throws Exception {
     assertEquals(Nodes.decode("1 &lt; 2 &amp;&amp; 4 &gt; &quot;3&quot;"),
                  "1 < 2 && 4 > \"3\"");
@@ -82,5 +84,21 @@ public class NodesTest extends TestCase {
 
     assertEquals("&;", Nodes.decode("&;"));
     assertEquals("&bogus;", Nodes.decode("&bogus;"));
+  }
+
+  public final void testRenderSpeed() throws Exception {
+    Element doc = html(fromResource("amazon.com.html"));
+    benchmark(100, doc);  // prime the JIT
+    Thread.sleep(250);  // Let the JIT kick-in.
+    int microsPerRun = benchmark(250, doc);
+    // See extractVarZ in "tools/dashboard/dashboard.pl".
+    System.out.println(
+        " VarZ:" + getClass().getName() + ".msPerRun=" + microsPerRun);
+  }
+
+  private int benchmark(int nRuns, Element el) {
+    long t0 = System.nanoTime();
+    for (int i = nRuns; --i >= 0;) { Nodes.render(el); }
+    return (int) ((((double) (System.nanoTime() - t0)) / nRuns) / 1e3);
   }
 }
