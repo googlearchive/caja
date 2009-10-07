@@ -1,0 +1,13 @@
+URL: http://java.sun.com/javase/technologies/desktop/javabeans/jaf/
+Version: 1.1.1
+License: Sun Microsystems, Inc. ("Sun") ENTITLEMENT for SOFTWARE
+License File: LICENSE
+
+Description:
+A standard extension to the Java platform that lets you take advantage
+of standard services to: determine the type of an arbitrary piece of
+data; encapsulate access to it; discover the operations available on
+it; and instantiate the appropriate bean to perform the operation(s).
+
+Local Modifications:
+None

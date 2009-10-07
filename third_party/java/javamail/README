@@ -1,0 +1,11 @@
+URL: http://java.sun.com/products/javamail/
+Version: 1.4.2
+License: Sun Microsystems, Inc. ("Sun") ENTITLEMENT for SOFTWARE
+License File: LICENSE
+
+Description:
+Provides a platform-independent and protocol-independent framework to
+build mail and messaging applications.
+
+Local Modifications:
+None

@@ -17,19 +17,18 @@ package com.google.caja.service;
 import com.google.caja.reporting.BuildInfo;
 import com.google.caja.util.Pair;
 import com.google.caja.lexer.ExternalReference;
+import com.google.caja.lexer.InputSource;
 import com.google.caja.opensocial.UriCallback;
 import com.google.caja.opensocial.UriCallbackException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLConnection;
 import java.util.List;
 import java.util.Vector;
 
@@ -90,18 +89,84 @@ public class CajolingService extends HttpServlet {
   }
 
   @Override
+  public void doPost(HttpServletRequest req, HttpServletResponse resp)
+      throws ServletException {
+    if (req.getContentType() == null) {
+      closeBadRequest(resp);
+      return;
+    }
+
+    FetchedData fetchedData;
+    try {
+      fetchedData = new FetchedData(req.getInputStream(),
+          req.getContentType(), req.getCharacterEncoding());
+    } catch (IOException e) {
+      closeBadRequest(resp);
+      return;
+    }
+
+    String inputUrlString = getParam(req, "url", false /* required */);
+    URI inputUri;
+    if (inputUrlString == null) {
+      inputUri = InputSource.UNKNOWN.getUri();
+    } else {
+      try {
+        inputUri = new URI(inputUrlString);
+      } catch (URISyntaxException ex) {
+        throw (ServletException) new ServletException().initCause(ex);
+      }
+    }
+
+    handle(req, resp, inputUri, fetchedData);
+  }
+
+  @Override
   public void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException {
-
-    String gadgetUrlString = getParam(req, "url", true /* required */);
-    URI gadgetUrl;
+    String inputUrlString = getParam(req, "url", true /* required */);
+    URI inputUri;
     try {
-      gadgetUrl = new URI(gadgetUrlString);
+      inputUri = new URI(inputUrlString);
     } catch (URISyntaxException ex) {
       throw (ServletException) new ServletException().initCause(ex);
     }
 
-    String expectedMimeType = getParam(req, "mime-type", true /* required */);
+    String expectedInputContentType = getParam(req, "mime-type",
+        false /* required */);
+    if (expectedInputContentType == null) {
+      expectedInputContentType = getParam(req, "input-mime-type",
+          true /* required */);
+    }
+
+    String inputContentType, inputCharSet;
+    byte[] content;
+
+    FetchedData fetchedData;
+    try {
+      fetchedData = fetch(inputUri);
+    } catch (IOException ex) {
+      closeBadRequest(resp);
+      return;
+    }
+
+    if (!typeCheck.check(expectedInputContentType,
+            fetchedData.getContentType())) {
+      closeBadRequest(resp);
+      return;
+    }
+
+    handle(req, resp, inputUri, fetchedData);
+  }
+
+  private void handle(HttpServletRequest req, HttpServletResponse resp,
+                      URI inputUri, FetchedData fetchedData)
+      throws ServletException {
+    String outputContentType = getParam(req, "output-mime-type",
+        false /* required */);
+    if (outputContentType == null) {
+      outputContentType = "*/*";
+    }
+
     Transform transform;
     try {
       transform = Transform.valueOf(
@@ -110,31 +175,14 @@ public class CajolingService extends HttpServlet {
       transform = null;
     }
 
-    String contentType, contentCharSet;
-    byte[] content;
-
-    try {
-      FetchedData fetched = fetch(gadgetUrl);
-      contentType = fetched.contentType;
-      content = fetched.content;
-      contentCharSet = fetched.charSet;
-    } catch (IOException ex) {
-      closeBadRequest(resp);
-      return;
-    }
-
-    if (!typeCheck.check(expectedMimeType, contentType)) {
-      closeBadRequest(resp);
-      return;
-    }
-
     ByteArrayOutputStream intermediateResponse = new ByteArrayOutputStream();
     Pair<String, String> contentInfo;
     try {
       contentInfo = applyHandler(
-          URI.create(gadgetUrl.toString()),
-          transform, contentType, contentCharSet,
-          content, intermediateResponse);
+          inputUri,
+          transform, fetchedData.getContentType(), outputContentType,
+          fetchedData.getCharSet(), fetchedData.getContent(),
+          intermediateResponse);
     } catch (UnsupportedContentTypeException e) {
       closeBadRequest(resp);
       return;
@@ -162,40 +210,14 @@ public class CajolingService extends HttpServlet {
     }
   }
 
-  private static int MAX_RESPONSE_SIZE_BYTES = 1 << 18;  // 256kB
-  protected FetchedData fetch(URI uri) throws IOException {
-    URLConnection urlConnect = uri.toURL().openConnection();
-    urlConnect.connect();
-    String contentType = urlConnect.getContentType();
-    String contentCharSet = urlConnect.getContentEncoding();
-
-    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-    InputStream stream = urlConnect.getInputStream();
-    try {
-      byte[] barr = new byte[4096];
-      int totalLen = 0;
-      for (int n; (n = stream.read(barr)) > 0;) {
-        if ((totalLen += n) > MAX_RESPONSE_SIZE_BYTES) {
-          throw new IOException("Response too large");
-        }
-        buffer.write(barr, 0, n);
-      }
-    } finally {
-      stream.close();
-    }
-    byte[] content = buffer.toByteArray();
-    return new FetchedData(content, contentType, contentCharSet);
-  }
-
   public void registerHandlers(BuildInfo buildInfo) {
     UriCallback retriever = new UriCallback() {
       public Reader retrieve(ExternalReference extref, String mimeType)
           throws UriCallbackException {
         try {
           FetchedData data = fetch(extref.getUri());
-          if (data == null) { return null; }
           return new InputStreamReader(
-              new ByteArrayInputStream(data.content), data.charSet);
+              new ByteArrayInputStream(data.getContent()), data.getCharSet());
         } catch (IOException ex) {
           throw new UriCallbackException(extref, ex);
         }
@@ -212,27 +234,22 @@ public class CajolingService extends HttpServlet {
     handlers.add(new HtmlHandler(buildInfo, host, retriever));
   }
 
+  protected FetchedData fetch(URI uri) throws IOException {
+    return new FetchedData(uri);
+  }
+
   private Pair<String, String> applyHandler(
-      URI uri, Transform t, String contentType, String charSet,
-      byte[] content, OutputStream response)
+      URI uri, Transform t, String inputContentType, String outputContentType,
+      String charSet, byte[] content, OutputStream response)
       throws UnsupportedContentTypeException {
     for (ContentHandler handler : handlers) {
-      if (handler.canHandle(uri, t, contentType, typeCheck)) {
-        return handler.apply(uri, t, contentType, charSet, content, response);
+      if (handler.canHandle(uri, t, inputContentType,
+              outputContentType, typeCheck)) {
+        return handler.apply(uri, t, inputContentType,
+            outputContentType, charSet, content, response);
       }
     }
     throw new UnsupportedContentTypeException();
-  }
-
-  public static final class FetchedData {
-    final byte[] content;
-    final String contentType;
-    final String charSet;
-    FetchedData(byte[] content, String contentType, String charSet) {
-      this.content = content;
-      this.contentType = contentType;
-      this.charSet = charSet;
-    }
   }
 
   // Used to protect against header splitting attacks.

@@ -108,12 +108,16 @@ public class HtmlHandler implements ContentHandler {
   }
 
   public boolean canHandle(URI uri, CajolingService.Transform transform,
-      String contentType, ContentTypeCheck checker) {
-    return checker.check("text/html", contentType);
+      String inputContentType, String outputContentType,
+      ContentTypeCheck checker) {
+    // TODO(ihab.awad): Here is where we support "application/javascript" output
+    return checker.check("text/html", inputContentType)
+        && checker.check(outputContentType, "text/html");
   }
 
   public Pair<String,String> apply(URI uri, CajolingService.Transform transform,
-      String contentType, String charset, byte[] content, OutputStream response)
+      String inputContentType, String outputContentType, String charset,
+      byte[] content, OutputStream response)
       throws UnsupportedContentTypeException {
     if (charset == null) { charset = "UTF-8"; }
     try {

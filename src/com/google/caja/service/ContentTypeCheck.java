@@ -16,10 +16,18 @@ package com.google.caja.service;
 public abstract class ContentTypeCheck {
 
   /**
-   * Tests whether content-type {@code requested} mime-type
-   * is consistent with {@code received} mime-type
-   * @return true if they are consistent 
+   * Tests whether content-type {@code spec} mime-type
+   * is consistent with {@code candidate} mime-type.
+   *
+   * @param spec a specification by the recipient of a stream of data
+   * describing the set of mime-types that the recipient can accept. This
+   * mime-type may contain wildcards.
+   *
+   * @param candidate the concrete mime-type of a stream of data. This
+   * mime-type must never contain wildcards.
+   *
+   * @return true if the {@code candidate} mime-type meets the requirements
+   * of the {@code} spec.
    */
-  public abstract boolean check(String requested, String received);
-  
+  public abstract boolean check(String spec, String candidate);
 }

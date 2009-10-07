@@ -49,15 +49,18 @@ public class JsHandler implements ContentHandler {
   }
 
   public boolean canHandle(URI uri, CajolingService.Transform transform,
-      String contentType, ContentTypeCheck checker) {
-    return checker.check("text/javascript",contentType)
-      && (transform == null
-          || transform.equals(CajolingService.Transform.CAJITA)
-          || transform.equals(CajolingService.Transform.VALIJA));
+      String inputContentType, String outputContentType,
+      ContentTypeCheck checker) {
+    return checker.check("text/javascript", inputContentType)
+        && checker.check(outputContentType, "text/javascript")
+        && (transform == null
+            || transform.equals(CajolingService.Transform.CAJITA)
+            || transform.equals(CajolingService.Transform.VALIJA));
   }
 
   public Pair<String,String> apply(URI uri, CajolingService.Transform transform,
-      String contentType, String charset, byte[] content, OutputStream response)
+      String inputContentType, String outputContentType, String charset,
+      byte[] content, OutputStream response)
       throws UnsupportedContentTypeException {
     if (charset == null) { charset = "UTF-8"; }
     try {

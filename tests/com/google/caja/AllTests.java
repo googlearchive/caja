@@ -94,6 +94,11 @@ import com.google.caja.reporting.HtmlSnippetProducerTest;
 import com.google.caja.reporting.SnippetProducerTest;
 import com.google.caja.service.CajolingServiceTest;
 import com.google.caja.service.ContentTypeCheckTest;
+import com.google.caja.service.GadgetHandlerTest;
+import com.google.caja.service.HtmlHandlerTest;
+import com.google.caja.service.ImageHandlerTest;
+import com.google.caja.service.InnocentHandlerTest;
+import com.google.caja.service.JsHandlerTest;
 import com.google.caja.util.AbbreviatorTest;
 import com.google.caja.util.CapturingReaderTest;
 import com.google.caja.util.CollectionsTest;
@@ -153,20 +158,25 @@ public class AllTests {
         ExpressionTest.class,
         FilePositionTest.class,
         FuzzedParserTest.class,
+        GadgetHandlerTest.class,
         GadgetParserTest.class,
         HcalTest.class,
         HtmlCompiledPluginTest.class,
         HtmlEmitterTest.class,
+        HtmlHandlerTest.class,
         HtmlLexerTest.class,
         HtmlQuasiBuilderTest.class,
         HtmlSchemaTest.class,
         HtmlSnippetProducerTest.class,
         IhtmlSanityCheckerTest.class,
         IllegalReferenceCheckRewriterTest.class,
+        ImageHandlerTest.class,
         InlineCssImportsStageTest.class,
         InnocentCodeRewriterTest.class,
+        InnocentHandlerTest.class,
         JoinTest.class,
         JsConcatenatorTest.class,
+        JsHandlerTest.class,
         JsHtmlSanitizerTest.class,
         JsLexerTest.class,
         JsLinePreservingPrinterTest.class,

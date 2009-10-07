@@ -28,16 +28,19 @@ import java.net.URI;
 public class ImageHandler implements ContentHandler {
 
   public boolean canHandle(URI uri, CajolingService.Transform transform, 
-      String contentType, ContentTypeCheck checker) {
-    return checker.check("image/*", contentType);
+      String inputContentType, String outputContentType,
+      ContentTypeCheck checker) {
+    return checker.check("image/*", inputContentType)
+        && checker.check(outputContentType, inputContentType);
   }
 
   public Pair<String, String> apply(URI uri, CajolingService.Transform trans,
-      String contentType, String charSet, byte[] content, OutputStream response)
+      String inputContentType, String outputContentType, String charSet,
+      byte[] content, OutputStream response)
     throws UnsupportedContentTypeException {
     try {
       response.write(content);
-      return new Pair<String,String>(contentType, "");
+      return new Pair<String,String>(inputContentType, "");
     } catch (IOException e) {
       throw new UnsupportedContentTypeException();
     }

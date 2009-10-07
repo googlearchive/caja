@@ -41,13 +41,16 @@ import java.net.URI;
 public class InnocentHandler implements ContentHandler {
 
   public boolean canHandle(URI uri, CajolingService.Transform transform,
-      String contentType, ContentTypeCheck checker) {
+      String inputContentType, String outputContentType,
+      ContentTypeCheck checker) {
     return CajolingService.Transform.INNOCENT.equals(transform)
-      && checker.check("text/javascript", contentType);
+      && checker.check("text/javascript", inputContentType)
+      && checker.check(outputContentType, "text/javascript");
   }
 
   public Pair<String,String> apply(URI uri, CajolingService.Transform transform,
-      String contentType, String charset, byte[] content, OutputStream response)
+      String inputContentType, String outputContentType, String charset,
+      byte[] content, OutputStream response)
       throws UnsupportedContentTypeException {
     if (!CajolingService.Transform.INNOCENT.equals(transform)) {
       return null;

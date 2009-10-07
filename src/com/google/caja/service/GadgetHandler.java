@@ -46,12 +46,15 @@ public class GadgetHandler implements ContentHandler {
 
   public boolean canHandle(
       URI uri, CajolingService.Transform transform,
-      String contentType, ContentTypeCheck checker) {
-    return checker.check("application/xml", contentType);
+      String inputContentType, String outputContentType,
+      ContentTypeCheck checker) {
+    return checker.check("application/xml", inputContentType)
+        && checker.check(outputContentType, "text/javascript");
   }
 
   public Pair<String, String> apply(URI uri, CajolingService.Transform trans, 
-      String contentType, String charSet, byte[] content, OutputStream response)
+      String inputContentType, String outputContentType, String charSet,
+      byte[] content, OutputStream response)
         throws UnsupportedContentTypeException {
     try {
       OutputStreamWriter writer = new OutputStreamWriter(response, "UTF-8");
