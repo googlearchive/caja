@@ -33,9 +33,9 @@ function html_sanitize(htmlText, opt_urlPolicy, opt_nmTokenPolicy) {
           var attribName = attribs[i];
           var value = attribs[i + 1];
           var attribKey;
-          if ((attribKey = tagName + ':' + attribName,
+          if ((attribKey = tagName + '::' + attribName,
                html4.ATTRIBS.hasOwnProperty(attribKey))
-              || (attribKey = '*:' + attribName,
+              || (attribKey = '*::' + attribName,
                   html4.ATTRIBS.hasOwnProperty(attribKey))) {
             var atype = html4.ATTRIBS[attribKey];
             switch (atype) {

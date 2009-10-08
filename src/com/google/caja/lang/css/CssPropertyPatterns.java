@@ -40,8 +40,10 @@ import com.google.caja.reporting.MessageQueue;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.SimpleMessageQueue;
 import com.google.caja.tools.BuildCommand;
+import com.google.caja.util.Maps;
 import com.google.caja.util.Name;
 import com.google.caja.util.Pair;
+import com.google.caja.util.Sets;
 import com.google.caja.util.Strings;
 
 import java.io.File;
@@ -55,8 +57,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -159,15 +159,14 @@ public class CssPropertyPatterns {
    * to probe the user's history as described at
    * https://bugzilla.mozilla.org/show_bug.cgi?id=147777 .
    */
-  public static Set<Name> HISTORY_INSENSITIVE_STYLE_WHITELIST =
-      new HashSet<Name>(
-          Arrays.asList(
-              Name.css("display"), Name.css("filter"), Name.css("float"),
-              Name.css("height"), Name.css("left"), Name.css("opacity"),
-              Name.css("overflow"), Name.css("position"), Name.css("right"),
-              Name.css("top"), Name.css("visibility"), Name.css("width"),
-              Name.css("padding-left"), Name.css("padding-right"),
-              Name.css("padding-top"), Name.css("padding-bottom")));
+  public static Set<Name> HISTORY_INSENSITIVE_STYLE_WHITELIST
+      = Sets.newLinkedHashSet(
+          Name.css("display"), Name.css("filter"), Name.css("float"),
+          Name.css("height"), Name.css("left"), Name.css("opacity"),
+          Name.css("overflow"), Name.css("position"), Name.css("right"),
+          Name.css("top"), Name.css("visibility"), Name.css("width"),
+          Name.css("padding-left"), Name.css("padding-right"),
+          Name.css("padding-top"), Name.css("padding-bottom"));
 
   public CssPropertyPatterns(CssSchema schema) {
     this.schema = schema;
@@ -291,8 +290,7 @@ public class CssPropertyPatterns {
     return new Repetition(new Union(children), 1, Integer.MAX_VALUE);
   }
 
-  private static final Map<String, String> BUILTINS
-      = new HashMap<String, String>();
+  private static final Map<String, String> BUILTINS = Maps.newHashMap();
   static {
     // http://www.w3.org/TR/REC-CSS2/syndata.html
     String unsignedNum = "(?:\\d+(?:\\.\\d+)?)";
@@ -445,7 +443,7 @@ public class CssPropertyPatterns {
         }
       }
       // Remove duplicates
-      Set<Pattern> seen = new HashSet<Pattern>();
+      Set<Pattern> seen = Sets.newHashSet();
       for (Iterator<Pattern> it = newChildren.iterator(); it.hasNext();) {
         if (!seen.add(it.next())) { it.remove(); }
       }
@@ -539,7 +537,7 @@ public class CssPropertyPatterns {
             return a.name.compareTo(b.name);
           }
         });
-    Map<String, int[]> constantPoolMap = new HashMap<String, int[]>();
+    Map<String, int[]> constantPoolMap = Maps.newHashMap();
     List<Pair<CssSchema.CssPropertyInfo, String>> patterns
         = new ArrayList<Pair<CssSchema.CssPropertyInfo, String>>();
     List<RegexpLiteral> constantPool = new ArrayList<RegexpLiteral>();
@@ -664,7 +662,7 @@ public class CssPropertyPatterns {
       MessageQueue mq = new EchoingMessageQueue(
           new PrintWriter(new OutputStreamWriter(System.err), true), mc, false);
 
-      Set<File> inputsAndDeps = new HashSet<File>();
+      Set<File> inputsAndDeps = Sets.newHashSet();
       for (File f : inputs) { inputsAndDeps.add(f.getAbsoluteFile()); }
       for (File f : deps) { inputsAndDeps.add(f.getAbsoluteFile()); }
 

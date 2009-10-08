@@ -206,7 +206,7 @@ public final class HtmlDefinitions {
       if (schema.isAttributeAllowed(elementName, attributeName)) {
         HTML.Attribute a = schema.lookupAttribute(elementName, attributeName);
         HTML.Attribute.Type type = a.getType();
-        attributeFlags.put(elementName + ":" + attributeName, type);
+        attributeFlags.put(elementName + "::" + attributeName, type);
       }
     }
     return attributeFlags;

@@ -784,9 +784,9 @@ var attachDocumentStub = (function () {
             var attribName = attribs[i];
             var value = attribs[i + 1];
             var atype = null, attribKey;
-            if ((attribKey = tagName + ':' + attribName,
+            if ((attribKey = tagName + '::' + attribName,
                  html4.ATTRIBS.hasOwnProperty(attribKey))
-                || (attribKey = '*:' + attribName,
+                || (attribKey = '*::' + attribName,
                     html4.ATTRIBS.hasOwnProperty(attribKey))) {
               atype = html4.ATTRIBS[attribKey];
               value = rewriteAttribute(tagName, attribName, atype, value);
@@ -2018,11 +2018,11 @@ var attachDocumentStub = (function () {
 
     function getAttributeType(tagName, attribName) {
       var attribKey;
-      attribKey = tagName + ':' + attribName;
+      attribKey = tagName + '::' + attribName;
       if (html4.ATTRIBS.hasOwnProperty(attribKey)) {
         return html4.ATTRIBS[attribKey];
       }
-      attribKey = '*:' + attribName;
+      attribKey = '*::' + attribName;
       if (html4.ATTRIBS.hasOwnProperty(attribKey)) {
         return html4.ATTRIBS[attribKey];
       }
@@ -2087,7 +2087,7 @@ var attachDocumentStub = (function () {
 
     // Register set handlers for onclick, onmouseover, etc.
     function registerElementScriptAttributeHandlers(aTameElement) {
-      var attrNameRe = /:(.*)/;
+      var attrNameRe = /::(.*)/;
       for (var html4Attrib in html4.ATTRIBS) {
         if (html4.atype.SCRIPT === html4.ATTRIBS[html4Attrib]) {
           (function (attribName) {

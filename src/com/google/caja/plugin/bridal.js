@@ -70,11 +70,11 @@ var bridal = (function() {
     }
     var tagAttr = false;
     if (opt_tagName) {
-      tagAttr = String(opt_tagName).toLowerCase() + ':on' + type;
+      tagAttr = String(opt_tagName).toLowerCase() + '::on' + type;
     }
     if (!opt_isCustom
         && ((tagAttr && html4.atype.SCRIPT === html4.ATTRIBS[tagAttr])
-            || html4.atype.SCRIPT === html4.ATTRIBS['*:on' + type])) {
+            || html4.atype.SCRIPT === html4.ATTRIBS['*::on' + type])) {
       return type;
     }
     return type + CUSTOM_EVENT_TYPE_SUFFIX;

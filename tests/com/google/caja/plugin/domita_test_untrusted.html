@@ -639,8 +639,6 @@ function canonInnerHtml(s) {
   return s;
 }
 
-// This should be first, so its results come in while the rest of the tests are
-// running.
 jsunitRegister('testTimeoutAndInterval',
                function testTimeoutAndInterval() {
   var timeout1Ran = false,
@@ -1851,12 +1849,12 @@ jsunitRegister('testWhitespaceNodes1',
 
   assertWithin('outer DIV height',
                2 * textOnlyP.offsetHeight
-               + 2 * 4 /* inner padding */
-               + 30 /* inner margin, top/middle/bottom */
-               + 2 * 2 /* inner borders */
-               + 4 /* outer padding */
-               + 2 /* outer border -- may be skipped */,
-               3 /* slop for outer border & rounding */,
+               + 2 * 4  // inner padding
+               + 30     // inner margin, top/middle/bottom
+               + 2 * 2  // inner borders
+               + 4      // outer padding
+               + 2,     // outer border -- may be skipped
+               3,       // slop for outer border & rounding
                outerDiv.offsetHeight);
   pass('test-whitespace-nodes-1');
 });

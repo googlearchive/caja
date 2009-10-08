@@ -490,9 +490,9 @@ function html_sanitize(htmlText, opt_urlPolicy, opt_nmTokenPolicy) {
           var attribName = attribs[i];
           var value = attribs[i + 1];
           var atype = null, attribKey;
-          if ((attribKey = tagName + ':' + attribName,
+          if ((attribKey = tagName + '::' + attribName,
                html4.ATTRIBS.hasOwnProperty(attribKey))
-              || (attribKey = '*:' + attribName,
+              || (attribKey = '*::' + attribName,
                   html4.ATTRIBS.hasOwnProperty(attribKey))) {
             atype = html4.ATTRIBS[attribKey];
           }
