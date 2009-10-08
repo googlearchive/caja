@@ -138,9 +138,6 @@ public class CajolingService extends HttpServlet {
           true /* required */);
     }
 
-    String inputContentType, inputCharSet;
-    byte[] content;
-
     FetchedData fetchedData;
     try {
       fetchedData = fetch(inputUri);

@@ -14,8 +14,6 @@
 
 package com.google.caja.service;
 
-import com.google.caja.util.CajaTestCase;
-
 import java.util.Arrays;
 
 /**

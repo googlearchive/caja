@@ -16,12 +16,11 @@ package com.google.caja.service;
 
 import com.google.caja.util.CajaTestCase;
 
-import java.net.URLConnection;
-import java.net.URL;
-import java.net.URI;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
 
 /**
  * @author ihab.awad@gmail.com (Ihab Awad)
@@ -46,18 +45,18 @@ public class FetchedDataTest extends CajaTestCase {
     }
 
     @Override
-    public InputStream getInputStream() throws IOException {
+    public InputStream getInputStream() {
       return new ByteArrayInputStream(data.getBytes());
     }
   }
 
   private URL testUrl;
 
+  @Override
   public void setUp() throws Exception {
+    super.setUp();
     testUrl = URI.create("http://www.example.com/").toURL();
   }
-
-  public void tearDown() throws Exception { }
 
   public void testSimpleContent() throws Exception {
     FetchedData fd = new FetchedData(

@@ -127,7 +127,7 @@ final class TestHttpServletRequest implements HttpServletRequest {
     final ByteArrayInputStream bais = new ByteArrayInputStream(content);
     return new ServletInputStream() {
       @Override
-      public int read() throws IOException {
+      public int read() {
         return bais.read();
       }
       @Override
