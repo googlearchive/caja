@@ -174,6 +174,9 @@ h6 {
 .Failure {
     font-weight:bold; color:purple;
 }
+.Expected {
+    font-weight:bold
+}
 .Properties {
   text-align:right;
 }
@@ -239,7 +242,7 @@ h6 {
 
             <h2>Tests</h2>
             <table class="details" border="0" cellpadding="5" cellspacing="2" width="95%">
-        <xsl:call-template name="testcase.test.header"/>
+              <xsl:call-template name="testcase.test.header"/>
               <!--
               test can even not be started at all (failure to load the class)
               so report the error directly
@@ -624,6 +627,8 @@ h6 {
             <xsl:choose>
                 <xsl:when test="error">Error</xsl:when>
                 <xsl:when test="failure">Failure</xsl:when>
+                <xsl:when test="expected-error">Expected</xsl:when>
+                <xsl:when test="expected-failure">Expected</xsl:when>
                 <xsl:otherwise>TableRowColor</xsl:otherwise>
             </xsl:choose>
         </xsl:attribute>
@@ -636,6 +641,14 @@ h6 {
             <xsl:when test="error">
                 <td>Error</td>
                 <td><xsl:apply-templates select="error"/></td>
+            </xsl:when>
+            <xsl:when test="expected-failure">
+                <td>Expected</td>
+                <td><xsl:apply-templates select="expected-failure"/></td>
+            </xsl:when>
+            <xsl:when test="expected-error">
+                <td>Expected</td>
+                <td><xsl:apply-templates select="expected-error"/></td>
             </xsl:when>
             <xsl:otherwise>
                 <td>Success</td>
@@ -658,6 +671,14 @@ h6 {
 </xsl:template>
 
 <xsl:template match="error">
+    <xsl:call-template name="display-failures"/>
+</xsl:template>
+
+<xsl:template match="expected-failure">
+    <xsl:call-template name="display-failures"/>
+</xsl:template>
+
+<xsl:template match="expected-error">
     <xsl:call-template name="display-failures"/>
 </xsl:template>
 

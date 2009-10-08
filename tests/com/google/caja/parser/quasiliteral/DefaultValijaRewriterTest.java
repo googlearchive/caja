@@ -39,6 +39,7 @@ import com.google.caja.parser.js.Statement;
 import com.google.caja.parser.js.SyntheticNodes;
 import com.google.caja.parser.js.UncajoledModule;
 import com.google.caja.plugin.PluginEnvironment;
+import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.RhinoTestBed;
 import com.google.caja.reporting.TestBuildInfo;
 
@@ -610,20 +611,20 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         "$v.cf($v.ro('zap'), [ ]);");
   }
 
+  @FailureIsAnOption
   public final void testInMonkeyDelete() throws Exception {
     assertConsistent(
         // TODO(erights): Fix when bug 953 is fixed.
-        "var BAD_TEST = true;" +
         "delete Array.prototype.push;" +
-        "('push' in []) || BAD_TEST;");
+        "('push' in []);");
   }
 
+  @FailureIsAnOption
   public final void testMonkeyOverride() throws Exception {
     assertConsistent(
         // TODO(erights): Fix when bug 953 is fixed.
-        "var BAD_TEST = true;" +
         "Date.prototype.propertyIsEnumerable = function(p) { return true; };" +
-        "(new Date()).propertyIsEnumerable('foo') || BAD_TEST;");
+        "(new Date()).propertyIsEnumerable('foo');");
   }
 
   public final void testValijaTypeofConsistent() throws Exception {
@@ -643,18 +644,18 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
         + "foo();"
         );
   }
-  
+
   public final void testStaticModuleLoading() throws Exception {
     rewriteAndExecute(
         "includeScript('x');"
         + "assertEquals(x, 3);"
         );
   }
-  
+
   /**
    * Tests that Error objects are not frozen by being caught by a Valija catch.
-   * 
-   * See issue 1097, issue 1038, 
+   *
+   * See issue 1097, issue 1038,
    *     and {@link CommonJsRewriterTestCase#testErrorTaming()}}.
    */
   public final void testErrorFreeze() throws Exception {
@@ -665,7 +666,7 @@ public class DefaultValijaRewriterTest extends CommonJsRewriterTestCase {
             "  assertFalse(cajita.isFrozen(ex));" +
             "}");
   }
-  
+
   @Override
   protected Object executePlain(String caja)
       throws IOException, ParseException {

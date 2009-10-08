@@ -16,22 +16,11 @@ package com.google.caja.util;
 
 import java.util.BitSet;
 import java.util.Random;
-import junit.framework.TestCase;
 
 /**
  * @author msamuel@google.com (Mike Samuel)
  */
-public class SparseBitSetTest extends TestCase {
-
-  /**
-   * For random tests we choose a seed by using a system property so that
-   * failing random tests can be repeated.
-   */
-  private static final long SEED = Long.parseLong(
-      System.getProperty("junit.seed", "" + System.currentTimeMillis()));
-  static {
-    System.err.println("junit.seed=" + SEED);
-  }
+public class SparseBitSetTest extends CajaTestCase {
 
   public final void testAgainstRegularImplementation() throws Exception {
     Random rnd = new Random(SEED);

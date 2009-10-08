@@ -23,6 +23,7 @@ import com.google.caja.plugin.PluginMeta;
 import com.google.caja.reporting.Message;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.Pipeline;
 import com.google.caja.util.RhinoTestBed;
 
@@ -131,25 +132,24 @@ public class DebuggingSymbolsStageTest extends CajaTestCase {
         "testDeleteOfFrozenObject:2+1 - 16");
   }
 
+  @FailureIsAnOption
   public final void testEnumerateOfNull() throws Exception {
-    if (false) {  // TODO: enable under Valija
-      assertStackTrace(
-          ""
-          + "{\n"
-          + "  (function () {\n"
-          //    ^ 2+4
-          + "    var myObj = null;\n"
-          + "    for (var k in myObj) {\n"
-          //                   ^^^^^ 4+19-24
-          + "      ;\n"
-          + "    }\n"
-          + "  })();\n"
-          //   ^ 7+4
-          + "}",
+    assertStackTrace(
+        ""
+        + "{\n"
+        + "  (function () {\n"
+        //    ^ 2+4
+        + "    var myObj = null;\n"
+        + "    for (var k in myObj) {\n"
+        //                   ^^^^^ 4+19-24
+        + "      ;\n"
+        + "    }\n"
+        + "  })();\n"
+        //   ^ 7+4
+        + "}",
 
-          "testEnumerateOfNull:2+4 - 7+4\n"
-          + "testEnumerateOfNull:4+19 - 24");
-    }
+        "testEnumerateOfNull:2+4 - 7+4\n"
+        + "testEnumerateOfNull:4+19 - 24");
   }
 
   public final void testPropertyInNull() throws Exception {

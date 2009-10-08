@@ -24,6 +24,7 @@ import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.RenderContext;
 import com.google.caja.reporting.TestBuildInfo;
 import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.TestUtil;
 
 import java.io.FileNotFoundException;
@@ -139,15 +140,14 @@ public class DefaultGadgetRewriterTest extends CajaTestCase {
         MessageLevel.WARNING, false /* should not fail */);
   }
 
+  @FailureIsAnOption
   public final void testStylesInScript() throws Exception {
     // CSS template expansion works on style templates in extracted event
     // handlers and script tags.
     // TODO(ihab.awad): Rewrite "golden" or turn into a functional test
-    if (false) {
     assertRewriteMatches("example-dynamic-styles.xml",
                          "example-dynamic-styles-rewritten.xml",
                          MessageLevel.WARNING);
-    }
   }
 
   private void assertRewritePasses(String file, MessageLevel failLevel)

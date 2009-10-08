@@ -14,14 +14,15 @@
 
 package com.google.caja.parser.js;
 
+import com.google.caja.util.CajaTestCase;
+
 import java.util.Random;
-import junit.framework.TestCase;
 
 /**
  *
  * @author mikesamuel@gmail.com
  */
-public class StringLiteralTest extends TestCase {
+public class StringLiteralTest extends CajaTestCase {
   public final void testUnquotedValue() throws Exception {
     assertEquals("", StringLiteral.getUnquotedValueOf(""));
     assertEquals("foo", StringLiteral.getUnquotedValueOf("foo"));
@@ -76,16 +77,6 @@ public class StringLiteralTest extends TestCase {
     assertEquals("'\\'foo\\''", StringLiteral.toQuotedValue("'foo'"));
     assertEquals("'\\\"foo\\\"'", StringLiteral.toQuotedValue("\"foo\""));
     assertEquals("'\\\"foo\\\\\\\"'", StringLiteral.toQuotedValue("\"foo\\\""));
-  }
-
-  /**
-   * For random tests we choose a seed by using a system property so that
-   * failing random tests can be repeated.
-   */
-  private static final long SEED = Long.parseLong(
-      System.getProperty("junit.seed", "" + System.currentTimeMillis()));
-  static {
-    System.err.println("junit.seed=" + SEED);
   }
 
   public final void testQuotingAndUnquotingAreComplements() {

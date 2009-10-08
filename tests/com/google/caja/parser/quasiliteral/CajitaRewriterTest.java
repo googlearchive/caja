@@ -37,6 +37,7 @@ import com.google.caja.plugin.PluginEnvironment;
 import com.google.caja.reporting.MessageLevel;
 import com.google.caja.reporting.MessageType;
 import com.google.caja.reporting.TestBuildInfo;
+import com.google.caja.util.FailureIsAnOption;
 import com.google.caja.util.RhinoTestBed;
 
 import java.io.IOException;
@@ -386,11 +387,12 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
    */
   public final void testStringIndexing() throws Exception {
     rewriteAndExecute("assertEquals('b', 'abc'[1]);");
+  }
 
+  @FailureIsAnOption
+  public final void testStringIndexing2() throws Exception {
     // TODO(erights): This test isn't green because we haven't yet fixed the bug.
-    if (false) {
-      rewriteAndExecute("assertEquals('b', 'abc'['1']);");
-    }
+    rewriteAndExecute("assertEquals('b', 'abc'['1']);");
   }
 
   /**
@@ -2053,17 +2055,16 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
    * Tests that the container can get access to
    * "virtual globals" defined in cajoled code.
    */
+  @FailureIsAnOption
   public final void testWrapperAccess() throws Exception {
     // TODO(ihab.awad): SECURITY: Re-enable by reading (say) x.foo, and
     // defining the property IMPORTS___.foo.
-    if (false) {
     rewriteAndExecute(
         "",
         "x='test';",
         "if (___.getNewModuleHandler().getImports().x != 'test') {" +
           "fail('Cannot see inside the wrapper');" +
         "}");
-    }
   }
 
   /**
@@ -2235,8 +2236,8 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
   /**
    * Tests the cajita.newTable(opt_useKeyLifetime) abstraction.
    * <p>
-   * From here, we are not in a position to test the weak-GC properties this 
-   * abstraction is designed to provide, nor its O(1) complexity measure. 
+   * From here, we are not in a position to test the weak-GC properties this
+   * abstraction is designed to provide, nor its O(1) complexity measure.
    * However, we can test that it works as a simple lookup table.
    */
   public final void testTable() throws Exception {
@@ -2366,6 +2367,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "zap.CALL___();");
   }
 
+  @FailureIsAnOption
   public final void testRecordInheritance() throws Exception {
     rewriteAndExecute(
         "var x = {a: 8};" +
@@ -2373,8 +2375,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
         "testImports.y = y;",
 
         // TODO(erights): Fix when bug 956 is fixed.
-        "var BAD_TEST = true;" +
-        "assertTrue(cajita.canReadPub(y, 'a') || BAD_TEST);",
+        "assertTrue(cajita.canReadPub(y, 'a'));",
         "");
   }
 
@@ -2449,8 +2450,8 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
 
   /**
    * Tests that Error objects are frozen on being caught by a Cajita catch.
-   * 
-   * See issue 1097, issue 1038, 
+   *
+   * See issue 1097, issue 1038,
    *     and {@link CommonJsRewriterTestCase#testErrorTaming()}}.
    */
   public final void testErrorFreeze() throws Exception {
@@ -2461,7 +2462,7 @@ public class CajitaRewriterTest extends CommonJsRewriterTestCase {
             "  assertTrue(cajita.isFrozen(ex));" +
             "}");
   }
-  
+
   @Override
   protected Object executePlain(String caja) throws IOException {
     mq.getMessages().clear();

@@ -161,8 +161,7 @@
       - forking, check your JAVA and JAVA_HOME environment variables and make
       - sure ant is using jdk1.6.
      -->
-    <junit printsummary="yes" fork="yes" maxmemory="512m"
-     errorProperty="runtests.error" failureProperty="runtests.failure">
+    <junit printsummary="yes" fork="yes" maxmemory="512m">
       <assertions><enable/></assertions>  <!-- ignored unless fork="yes" -->
       <classpath refid="classpath.tests.run"/>
       <formatter type="xml" usefile="true" unless="emma.enabled"/>
@@ -182,6 +181,12 @@
       <sysproperty key="user.region" value="TR"/>
       <test name="com.google.caja.AllTests" if="emma.enabled"/>
     </junit>
+    <summarize errorProperty="runtests.error"
+     failureProperty="runtests.failure">
+      <fileset dir="${reports}/tests">
+        <include name="TEST-*.xml"/>
+      </fileset>
+    </summarize>
     <!-- Generate the code coverage report. -->
     <emma enabled="${emma.enabled}">
       <report sourcepath="${src}:${tests}" sort="+name"
@@ -248,6 +253,8 @@
      classpathref="classpath.run"/>
     <taskdef name="genrule" classname="com.google.caja.tools.GenRuleAntTask"
      classpathref="classpath.run"/>
+    <taskdef name="summarize" classname="com.google.caja.tools.TestSummary"
+     classpathref="classpath.tests.run" />
   </target>
 
   <target name="pluginc" depends="dirs,PluginCompiler,build.info,tools"
@@ -518,7 +525,7 @@
     <copy todir="${lib}">
       <fileset dir="${src}">
         <include name="**/caja/cajita.js"/>
-	<include name="**/caja/cajita-promise.js"/>
+        <include name="**/caja/cajita-promise.js"/>
         <include name="**/caja/cajita-module.js"/>
         <include name="**/caja/cajita-debugmode.js"/>
         <include name="**/caja/console.js"/>
@@ -1130,6 +1137,11 @@
       - org.commons.cli.apache and other third_party classes will not be.
      -->
     <property name="emma.filter" value="com.google.*"/>
+  </target>
+
+  <target name="reportAllFailure" depends=""
+   description="Do not skip known failures when running tests.">
+    <property name="test.failureNotAnOption" value="true" />
   </target>
 
 </project>

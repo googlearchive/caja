@@ -14,93 +14,44 @@
 
 package com.google.caja.lexer;
 
-import com.google.caja.util.TestUtil;
+import com.google.caja.util.CajaTestCase;
+import com.google.caja.util.FailureIsAnOption;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.net.URI;
-import java.net.URISyntaxException;
-
-import junit.framework.TestCase;
 
 /**
  * testcases for {@link JsLexer}.
  *
  * @author mikesamuel@gmail.com
  */
-public class JsLexerTest extends TestCase {
+public class JsLexerTest extends CajaTestCase {
 
   public final void testLexer() throws Exception {
-    InputSource input = new InputSource(
-        TestUtil.getResource(getClass(), "lexertest1.js"));
     StringBuilder output = new StringBuilder();
-    BufferedReader in = new BufferedReader(
-        new InputStreamReader(TestUtil.getResourceAsStream(
-                                  getClass(), "lexertest1.js"), "UTF-8"));
-    try {
-      JsLexer t = new JsLexer(CharProducer.Factory.create(in, input));
-      while (t.hasNext()) {
-        Token<JsTokenType> tok = t.next();
-        output.append(tok.type.toString().substring(0, 4)
-                      + " [" + tok.text + "]: " + tok.pos + "\n");
-      }
-    } finally {
-      in.close();
+    JsLexer t = new JsLexer(fromResource("lexertest1.js"));
+    while (t.hasNext()) {
+      Token<JsTokenType> tok = t.next();
+      output.append(tok.type.toString().substring(0, 4)
+                    + " [" + tok.text + "]: " + tok.pos + "\n");
     }
 
-    String golden;
-    BufferedReader goldenIn = new BufferedReader(
-        new InputStreamReader(TestUtil.getResourceAsStream(
-                                  getClass(), "lexergolden1.txt"), "UTF-8"));
-    try {
-      StringBuilder sb = new StringBuilder();
-      char[] buf = new char[1024];
-      for (int n; (n = goldenIn.read(buf)) > 0;) {
-        sb.append(buf, 0, n);
-      }
-      golden = sb.toString();
-    } finally {
-      goldenIn.close();
-    }
+    String golden = fromResource("lexergolden1.txt").toString();
 
     assertEquals(golden, output.toString());
   }
 
   public final void testLexer2() throws Exception {
-    InputSource input = new InputSource(
-        TestUtil.getResource(getClass(), "lexertest2.js"));
     StringBuilder output = new StringBuilder();
 
-    BufferedReader in = new BufferedReader(
-        new InputStreamReader(TestUtil.getResourceAsStream(
-                                  getClass(), "lexertest2.js"), "UTF-8"));
-    JsLexer t = new JsLexer(CharProducer.Factory.create(in, input));
-    try {
-      while (t.hasNext()) {
-        Token<JsTokenType> tok = t.next();
-        output.append(tok.type.toString().substring(0, 4)
-                      + " [" + tok.text + "]: " + tok.pos + "\n");
-      }
-    } catch (ParseException ex) {
-      ex.printStackTrace();
-    } finally {
-      in.close();
+    JsLexer t = new JsLexer(fromResource("lexertest2.js"));
+    while (t.hasNext()) {
+      Token<JsTokenType> tok = t.next();
+      output.append(tok.type.toString().substring(0, 4)
+                    + " [" + tok.text + "]: " + tok.pos + "\n");
     }
 
-    String golden;
-    BufferedReader goldenIn = new BufferedReader(
-        new InputStreamReader(TestUtil.getResourceAsStream(
-                                  getClass(), "lexergolden2.txt"), "UTF-8"));
-    try {
-      StringBuilder sb = new StringBuilder();
-      char[] buf = new char[1024];
-      for (int n; (n = goldenIn.read(buf)) > 0;) {
-        sb.append(buf, 0, n);
-      }
-      golden = sb.toString();
-    } finally {
-      goldenIn.close();
-    }
+    String golden = fromResource("lexergolden2.txt").toString();
 
     assertEquals(golden, output.toString());
   }
@@ -275,16 +226,14 @@ public class JsLexerTest extends TestCase {
     assertEmpty(lexer);
   }
 
+  @FailureIsAnOption
   public final void testRegexpFollowingPreincrement() {
-    // KNOWN FAILURE
-    if (false) {
-      JsLexer lexer = createLexer("x = ++/x/m", false);
-      assertNext(lexer, JsTokenType.WORD, "x");
-      assertNext(lexer, JsTokenType.PUNCTUATION, "=");
-      assertNext(lexer, JsTokenType.PUNCTUATION, "++");
-      assertNext(lexer, JsTokenType.REGEXP, "/x/m");
-      assertEmpty(lexer);
-    }
+    JsLexer lexer = createLexer("x = ++/x/m", false);
+    assertNext(lexer, JsTokenType.WORD, "x");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "=");
+    assertNext(lexer, JsTokenType.PUNCTUATION, "++");
+    assertNext(lexer, JsTokenType.REGEXP, "/x/m");
+    assertEmpty(lexer);
   }
 
   public final void testRegexpFollowingPostincrement() {
@@ -303,15 +252,7 @@ public class JsLexerTest extends TestCase {
   }
 
   private JsLexer createLexer(String src, boolean isQuasiliteral) {
-    InputSource input;
-    try {
-      input = new InputSource(new URI("file:///no/such/file"));
-    } catch (URISyntaxException e) {
-      throw new RuntimeException(e);
-    }
-    return new JsLexer(
-        CharProducer.Factory.create(new StringReader(src), input),
-        isQuasiliteral);
+    return new JsLexer(fromString(src), isQuasiliteral);
   }
 
   private void assertNext(JsLexer lexer, JsTokenType type, String text) {

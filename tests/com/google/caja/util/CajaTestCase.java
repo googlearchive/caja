@@ -57,6 +57,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.lang.reflect.Method;
 import java.net.URI;
 
 public abstract class CajaTestCase extends TestCase {
@@ -64,8 +65,22 @@ public abstract class CajaTestCase extends TestCase {
   protected MessageContext mc;
   protected MessageQueue mq;
 
+  /**
+   * For random tests we choose a seed by using a system property so that
+   * failing random tests can be repeated.
+   */
+  protected static final long SEED = Long.parseLong(
+      System.getProperty("junit.seed", "" + System.currentTimeMillis()));
+  private static boolean dumpedSeed;
   @Override
   protected void setUp() throws Exception {
+    synchronized (CajaTestCase.class) {
+      if (!dumpedSeed) {
+        dumpedSeed = true;
+        // Make sure it shows up in the junit test runner trace.
+        System.err.println("junit.seed=" + SEED);
+      }
+    }
     this.is = new InputSource(URI.create("test:///" + getName()));
     this.mc = new MessageContext();
     mc.addInputSource(is);
@@ -383,5 +398,33 @@ public abstract class CajaTestCase extends TestCase {
     assertFalse("test.headless==false in headless environment",
         GraphicsEnvironment.isHeadless());
     return false;
+  }
+
+  @Override
+  protected void runTest() throws Throwable {
+    // In Eclipse, to suppress known test failures,
+    // (1) right click on the test in the package explorer and choose properties
+    // (2) Choose the Run/Debug Settings tab
+    // (3) Choose your favorite launch configuration and click edit.
+    //     If there is none, make one by running the test.
+    // (4) In the "Environment" tab, add a property
+    //     test.suppressKnownFailures=true
+    if ("true".equals("test.suppressKnownFailures")) {
+      try {
+        Method method = getClass().getMethod(getName(), new Class[0]);
+        if (method.isAnnotationPresent(FailureIsAnOption.class)) {
+          try {
+            super.runTest();
+          } catch (Throwable th) {
+            System.err.println("Suppressing known failure of " + getName());
+            th.printStackTrace();
+          }
+        }
+        return;
+      } catch (NoSuchMethodException ex) {
+        // skip
+      }
+    }
+    super.runTest();
   }
 }

@@ -14,6 +14,8 @@
 
 package com.google.caja.parser.quasiliteral;
 
+import com.google.caja.util.FailureIsAnOption;
+
 import junit.framework.AssertionFailedError;
 
 /**
@@ -167,10 +169,10 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
         "if(!success)fail('Object.watch is accessible');");
   }
 
-  public final void testForIn() throws Exception {
+  @FailureIsAnOption
+  public final void testForIn1() throws Exception {
     // TODO(ihab.awad): Disabled until we figure out how to get a test fixture
     // that allows us to add stuff to IMPORTS___ before the test is run.
-    if (false) {
     rewriteAndExecute(
         "",
         "function Foo() {" +
@@ -221,7 +223,6 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
         "    ___.getNewModuleHandler().getImports().obj.test()" +
         "        .sort().toSource()," +
         "    (['test', 'x_', 'y']).toSource());");
-    }
   }
 
   public final void testFor() throws Exception {
@@ -419,7 +420,7 @@ public abstract class CommonJsRewriterTestCase extends RewriterTestCase {
 //    rewriteAndExecute("assertTrue(JSON.toString() === '[object JSON]');");
 //    rewriteAndExecute("assertTrue(''+JSON === '[object JSON]');");
   }
-  
+
   /**
    * Tests that an inherited <tt>*_canSet___</tt> fastpath flag does not enable
    * bogus writability.
