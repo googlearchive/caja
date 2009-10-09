@@ -90,6 +90,10 @@ public final class JsMinimalPrinter extends BufferingRenderer {
         // is true:
         // ...
         // 2.   The offending token is }.
+
+        // NOTE: this could turn an invalid token sequence into a valid one.
+        // E.g. ({ a: 0; }) => ({ a: 0 })
+        //             ^
         outputTokens.set(outputTokens.size() - 1, text);
       } else {
         outputTokens.add(text);
