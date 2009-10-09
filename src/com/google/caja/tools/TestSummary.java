@@ -148,7 +148,7 @@ public final class TestSummary extends Task {
           // Undo changes made if tests were previously run without the
           // override.
           int f = rewriteChildElements(testCase, "expected-failure", "failure");
-          int e = rewriteChildElements(testCase, "error", "expected-error");
+          int e = rewriteChildElements(testCase, "expected-error", "error");
 
           testCase.removeAttribute("expected");
           subtract(-e, -f, (Element) testCase.getParentNode());
